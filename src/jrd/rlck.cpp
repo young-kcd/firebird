@@ -307,7 +307,6 @@ LCK RLCK_record_locking(JRD_REL relation)
 	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
-	lock->lck_attachment = tdbb->tdbb_attachment;
 	lock->lck_type = LCK_record_locking;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 
@@ -561,7 +560,6 @@ void RLCK_signal_refresh(JRD_TRA transaction)
 
 		local_lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 		local_lock->lck_dbb = dbb;
-		local_lock->lck_attachment = tdbb->tdbb_attachment;
 		local_lock->lck_length = sizeof(SLONG);
 		local_lock->lck_type = LCK_range_relation;
 		local_lock->lck_owner_handle =
@@ -803,7 +801,6 @@ static LCK allocate_record_lock(JRD_TRA transaction, RPB * rpb)
 /* allocate a lock block for the record lock */
 	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
-	lock->lck_attachment = attachment;
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
 	lock->lck_type = LCK_record;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -856,7 +853,6 @@ static LCK allocate_relation_lock(MemoryPool* pool, JRD_REL relation)
 	dbb = tdbb->tdbb_database;
 	lock = FB_NEW_RPT(*pool, sizeof(SLONG)) lck();
 	lock->lck_dbb = dbb;
-	lock->lck_attachment = tdbb->tdbb_attachment;
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = relation->rel_id;
 	lock->lck_type = LCK_relation;

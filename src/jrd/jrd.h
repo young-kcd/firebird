@@ -385,6 +385,8 @@ typedef dbb* DBB;
 class att : public pool_alloc<type_att>
 {
 public:
+	~att();
+
 /*	att()
 	:	att_database(0),
 		att_next(0),

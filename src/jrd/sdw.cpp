@@ -345,7 +345,6 @@ void SDW_check(void)
 		if (SDW_lck_update((SLONG) 0)) {
 			lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) lck();
 			lock->lck_dbb = dbb;
-			lock->lck_attachment = tdbb->tdbb_attachment;
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = -1;
 			lock->lck_type = LCK_update_shadow;
@@ -794,7 +793,6 @@ BOOLEAN SDW_rollover_to_shadow(FIL file, BOOLEAN inAst)
 
 	update_lock = &temp_lock;
 	update_lock->lck_dbb = dbb;
-	update_lock->lck_attachment = tdbb->tdbb_attachment;
 	update_lock->lck_length = sizeof(SLONG);
 	update_lock->lck_key.lck_long = -1;
 	update_lock->lck_type = LCK_update_shadow;

@@ -1826,7 +1826,6 @@ static bool create_relation(TDBB	tdbb,
 
 		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->tdbb_default, sizeof(SLONG)) lck;
 		lock->lck_dbb = dbb;
-		lock->lck_attachment = tdbb->tdbb_attachment;
 		lock->lck_length = sizeof(SLONG);
 		lock->lck_key.lck_long = -1;
 		lock->lck_type = LCK_relation;

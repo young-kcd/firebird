@@ -402,6 +402,7 @@ static DBB		init(TDBB, ISC_STATUS*, TEXT*, USHORT);
 static void		make_jrn_data(UCHAR*, USHORT*, TEXT*, USHORT, TEXT*, USHORT);
 static ISC_STATUS	prepare(TDBB, JRD_TRA, ISC_STATUS*, USHORT, UCHAR*);
 static void		release_attachment(ATT);
+static void		detachLocksFromAttachment(ATT);
 static ISC_STATUS	return_success(TDBB);
 static BOOLEAN	rollback(TDBB, JRD_TRA, ISC_STATUS*, USHORT);
 
@@ -5899,15 +5900,7 @@ static void release_attachment(ATT attachment)
 		LCK_release(tdbb, record_lock);
 	}
 
-/* bug #7781, need to null out the attachment pointer of all locks which
-   were hung off this attachment block, to ensure that the attachment
-   block doesn't get dereferenced after it is released */
-
-	for (record_lock = attachment->att_long_locks; record_lock;
-		 record_lock = record_lock->lck_next)
-	{
-		record_lock->lck_attachment = NULL;
-	}
+	detachLocksFromAttachment(attachment);
 
 	if (attachment->att_flags & ATT_lck_init_done)
 		LCK_fini(tdbb, LCK_OWNER_attachment);	/* For the attachment */
@@ -5931,6 +5924,48 @@ static void release_attachment(ATT attachment)
 			break;
 		}
 	}
+}
+
+
+static void detachLocksFromAttachment(att* attachment)
+{
+/**************************************
+ *
+ *	d e t a c h L o c k s F r o m A t t a c h m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ * Bug #7781, need to null out the attachment pointer of all locks which
+ * were hung off this attachment block, to ensure that the attachment
+ * block doesn't get dereferenced after it is released
+ *
+ **************************************/
+	// Disable delivery of ASTs for the moment while queue of locks is in flux
+	AstInhibit aiHolder;
+
+	lck* long_lock = attachment->att_long_locks;
+	while (long_lock) {
+		lck* next = long_lock->lck_next;
+		long_lock->lck_attachment = NULL;
+		long_lock->lck_next = NULL;
+		long_lock->lck_prior = NULL;
+		long_lock = next;
+	}
+
+	attachment->att_long_locks = NULL;
+}
+
+
+att::~att()
+{
+// For normal attachments that happens release_attachment(),
+// but for special ones like GC should be done also in dtor - 
+// they do not (and should not) call release_attachment().
+// It's no danger calling detachLocksFromAttachment() 
+// once more here because it nulls att_long_locks.
+//		AP 2007
+	detachLocksFromAttachment(this);
 }
 
 

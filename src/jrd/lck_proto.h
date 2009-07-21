@@ -25,6 +25,8 @@
 #define JRD_LCK_PROTO_H
 
 #include "../jrd/lck.h"
+#include "../jrd/thd.h"
+#include "../jrd/sch_proto.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,5 +52,33 @@ extern void LCK_write_data(struct lck *, SLONG);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+// This class inhibits AST processing
+
+class AstInhibit
+{
+public:
+	AstInhibit()
+	{
+#ifdef MULTI_THREAD
+		AST_DISABLE;
+#else
+		SIGNAL_INHIBIT;
+#endif
+	}
+
+	~AstInhibit()
+	{
+#ifdef MULTI_THREAD
+		AST_ENABLE;
+#else
+		SIGNAL_ENABLE;
+#endif
+	}
+
+private:
+	// Forbid copy constructor
+	AstInhibit(const AstInhibit&);
+};
 
 #endif /* JRD_LCK_PROTO_H */
