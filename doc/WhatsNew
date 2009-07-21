@@ -76,6 +76,12 @@
         Alex Peshkov <peshkoff at mail.ru>
         Dmitry Yemanov <yemanov at yandex.ru>
 
+    * Fixed bug CORE-538
+        Firebird 1.5.3 SS crashes under load
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
 
   **************
   * v1.5.5
