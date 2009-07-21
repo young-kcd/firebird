@@ -2921,7 +2921,11 @@ int ISC_mutex_init(struct mtx* mutex)
 	//int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));
 	int state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
 
-	if (state && (state != ENOTSUP || bugFlag))
+	if (state
+#if defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)
+	 && (state != ENOTSUP || bugFlag)
+#endif
+			 )
 	{
 		iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) <<
 			"pthread_mutex_init" << Arg::Unix(state)).value());
