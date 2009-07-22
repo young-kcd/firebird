@@ -1,3 +1,59 @@
+2009-07-22 08:36  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.99):
+
+	fixed "make clean" after my changes
+
+2009-07-21 16:18  paulbeach
+
+	* firebird2/src/common/fb_exception.cpp (1.52):
+
+	And the long march to making Firebird build and run on MacOSX
+	continues
+
+2009-07-21 15:59  paulbeach
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.40),
+	common/classes/ClumpletReader.h (1.24),
+	common/classes/ClumpletWriter.cpp (1.31),
+	common/classes/ClumpletWriter.h (1.15), common/fb_exception.cpp
+	(1.51), include/fb_exception.h (1.36):
+
+	And the long march to making Firebird build and run on MacOSX
+	continues
+
+2009-07-21 15:55  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.211):
+
+	Fixed build for systems with old glibc
+
+2009-07-21 15:39  alexpeshkoff
+
+	* firebird2/: configure.in (1.348), src/jrd/common.h (1.200),
+	src/jrd/inf_pub.h (1.31), src/jrd/pag.cpp (1.210), src/jrd/utl.cpp
+	(1.136):
+
+	Applied Dan's patch to start port for s390 - primarily to reserve
+	CLASS and IMPLEMENTATION
+
+2009-07-21 15:34  paulbeach
+
+	* firebird2/builds/: install/arch-specific/darwin/install-script
+	(1.19), posix/darwin.defaults (1.2), posix/fbtrace.darwin.vers
+	(1.1), posix/prefix.darwin_i386 (1.16):
+
+	And the long march to making Firebird build and run on MacOSX
+	continues
+
+2009-07-21 15:00  alexpeshkoff
+
+	* firebird2/: configure.in (1.347),
+	builds/posix/Makefile.in.extern.editline (1.11),
+	builds/posix/make.defaults (1.87):
+
+	Applied sligtly modified patch from Dan Horak to use system libread
+
 2009-07-21 13:51  alexpeshkoff
 
 	* firebird2/src/common/classes/locks.h (1.59):
