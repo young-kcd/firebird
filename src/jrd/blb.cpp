@@ -86,7 +86,7 @@ inline bool SEGMENTED(const blb* blob)
 
 static ArrayField* alloc_array(jrd_tra*, Ods::InternalArrayDesc*);
 static blb* allocate_blob(thread_db*, jrd_tra*);
-static ISC_STATUS blob_filter(USHORT, BlobControl*, SSHORT, SLONG);
+static ISC_STATUS blob_filter(USHORT, BlobControl*);
 static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*, USHORT);
 static void delete_blob(thread_db*, blb*, ULONG);
 static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
@@ -335,11 +335,7 @@ blb* BLB_create2(thread_db* tdbb,
 						blob_id,
 						bpb_length,
 						bpb,
-						// CVC: This cast is very suspicious to me.
-						// We have to research if seek really gets params
-						// from the control struct instead. Maybe y-valve has a special case.
-						// Otherwise, blob_filter's sig would be like any filter.
-						reinterpret_cast<FPTR_BFILTER_CALLBACK>(*blob_filter),
+						blob_filter,
 						filter);
 		blob->blb_flags |= BLB_temporary;
 		return blob;
@@ -1421,7 +1417,7 @@ blb* BLB_open2(thread_db* tdbb,
 	{
 		BlobControl* control = 0;
 		BLF_open_blob(tdbb, transaction, &control, blob_id, bpb_length, bpb,
-					  reinterpret_cast<FPTR_BFILTER_CALLBACK>(*blob_filter), filter);
+					  blob_filter, filter);
 		blob->blb_filter = control;
 		blob->blb_max_segment = control->ctl_max_segment;
 		blob->blb_count = control->ctl_number_segments;
@@ -1907,9 +1903,7 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 
 
 static ISC_STATUS blob_filter(USHORT	action,
-							  BlobControl*	control,
-							  SSHORT	mode,
-							  SLONG	offset)
+							  BlobControl*	control)
 {
 /**************************************
  *
@@ -1982,7 +1976,8 @@ static ISC_STATUS blob_filter(USHORT	action,
 		return FB_SUCCESS;
 
 	case isc_blob_filter_seek:
-		return BLB_lseek(control->source_handle, mode, offset);
+		fb_assert(false);
+		// fail through ...
 
 	default:
 		ERR_post(Arg::Gds(isc_uns_ext));

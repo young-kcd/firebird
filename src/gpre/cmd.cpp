@@ -39,22 +39,7 @@
 #include "../gpre/msc_proto.h"
 #include "../gpre/gpre_meta.h"
 
-//typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*,
-//									  void*
-//									  // TMN: NOTE, parameter type unknown!
-//									  );
-// CVC: This was an unaceptable hack in the original code and Mike only
-// found the problem when C++ couldn't compile. Let's see, the
-// two functions that get this cast are
-// void	CME_expr(gpre_nod*, gpre_req*);
-// and
-// void	CME_rse(gpre_rse*, gpre_req*);
-// Obviously, they can't see a third parameter. Therefore, I've changed the
-// signature, after verifying the third param was always zero.
 typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*);
-// The call to CME_rse still needs the cast due to the different first param.
-
-
 
 //static void add_cache(gpre_req*, const act*, gpre_dbb*);
 static void alter_database(gpre_req*, act*);
@@ -1771,8 +1756,7 @@ static bool create_view(gpre_req* request,
 
 	// write out blr
 
-	put_blr(request, isc_dyn_view_blr, (gpre_nod*) relation->rel_view_rse,
-			reinterpret_cast<pfn_local_trigger_cb>(*CME_rse));
+	put_blr(request, isc_dyn_view_blr, (gpre_nod*) relation->rel_view_rse, CME_rse);
 
 	// write out view source
 

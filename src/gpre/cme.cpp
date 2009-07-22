@@ -468,7 +468,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 	case nod_unique:
 	// count2 next line would be deleted
 	case nod_count:
-		CME_rse((gpre_rse*) node->nod_arg[0], request);
+		CME_rse(node->nod_arg[0], request);
 		break;
 
 	case nod_max:
@@ -479,12 +479,12 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 //
 //	case nod_count:
 //
-		CME_rse((gpre_rse*) node->nod_arg[0], request);
+		CME_rse(node->nod_arg[0], request);
 		CME_expr(node->nod_arg[1], request);
 		break;
 
 	case nod_via:
-		CME_rse((gpre_rse*) node->nod_arg[0], request);
+		CME_rse(node->nod_arg[0], request);
 		CME_expr(node->nod_arg[1], request);
 		CME_expr(node->nod_arg[2], request);
 	}
