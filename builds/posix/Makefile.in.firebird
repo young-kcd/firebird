@@ -536,7 +536,9 @@ clean: clean_objects clean_dependancies clean_extern_objects clean_build \
 		clean_yacc_gen clean_gpre_gen clean_icu clean_dbs clean_examples
 
 ifeq ($(EDITLINE_FLG),Y)
+ifeq ($(STD_EDITLINE),false)
 clean: clean_editline
+endif
 endif
 
 clean_config clean_all: clean clean_makefiles
