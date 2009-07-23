@@ -1172,11 +1172,13 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
 
 	// Transaction for all frontend commands
 	if (DB && !gds_trans)
+	{
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return 0;
 		}
+	}
 
 	SSHORT l = 0;
 	FOR FLD IN RDB$FIELDS WITH
@@ -1217,11 +1219,13 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 
 	// Transaction for all frontend commands
 	if (DB && !gds_trans)
+	{
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return;
 		}
+	}
 
 	//if (collation) {
 	if (collation || collate_only)
@@ -1320,11 +1324,13 @@ void ISQL_get_default_source(const TEXT* rel_name,
 
 	// Transaction for all frontend commands
 	if (DB && !gds_trans)
+	{
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return;
 		}
+	}
 
 	if (rel_name)
 	{
@@ -1385,11 +1391,13 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 
 	// Transaction for all frontend commands
 	if (DB && !gds_trans)
+	{
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return 0;
 		}
+	}
 
 	TEXT* const segs_end = segs + buf_size - 1;
 	// Query to get column names
@@ -1473,11 +1481,13 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 
 	// Transaction for all frontend commands
 	if (DB && !gds_trans)
+	{
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return false;
 		}
+	}
 
 /*
    Using view_name and view_context get the relation name from
@@ -1545,11 +1555,13 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 
 	// Transaction for all frontend commands
 	if (DB && !gds_trans)
+	{
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return false;
 		}
+	}
 
 	if (rel_name)
 	{
@@ -1575,8 +1587,10 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 						null_flag = false;
 				}
 				else
+				{
 					null_flag = ISQL_get_base_column_null_flag (rel_name,
-																RFR.RDB$VIEW_CONTEXT, RFR.RDB$BASE_FIELD);
+						RFR.RDB$VIEW_CONTEXT, RFR.RDB$BASE_FIELD);
+				}
 			}
 
 		END_FOR
@@ -1682,11 +1696,13 @@ bool ISQL_is_domain(const TEXT* field_name)
 
 	// Transaction for all frontend commands
 	if (DB && !gds_trans)
+	{
 		if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return false;
 		}
+	}
 
 	FOR FLD IN RDB$FIELDS WITH
 		FLD.RDB$FIELD_NAME EQ field_name
@@ -1911,19 +1927,23 @@ static processing_state add_row(TEXT* tabname)
 	// There may have been a commit transaction before we got here
 
 	if (!M__trans)
+	{
 		if (isc_start_transaction(isc_status, &M__trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return FAIL;
 		}
+	}
 
 	// Start default transaction for prepare
 	if (!D__trans)
+	{
 		if (isc_start_transaction(isc_status, &D__trans, 1, &DB, 0, NULL))
 		{
 			ISQL_errmsg(isc_status);
 			return FAIL;
 		}
+	}
 
 	chop_at(tabname, QUOTEDLENGTH);
 	if (tabname[0] != DBL_QUOTE)
@@ -4738,6 +4758,7 @@ static processing_state frontend(const TEXT* statement)
 	case FrontOptions::show:
 		// Transaction for all frontend commands
 		if (DB && !gds_trans)
+		{
 			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 			{
 				ISQL_errmsg(isc_status);
@@ -4745,6 +4766,8 @@ static processing_state frontend(const TEXT* statement)
 				frontend_free_parms(parms, lparms, parm_defaults);
 				return FAIL;
 			}
+		}
+
 		ret = SHOW_metadata(parms, lparms);
 		if (gds_trans)
 			commit_trans(&gds_trans);
@@ -4752,6 +4775,7 @@ static processing_state frontend(const TEXT* statement)
 
 	case FrontOptions::add:
 		if (DB && !gds_trans)
+		{
 			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 			{
 				ISQL_errmsg(isc_status);
@@ -4759,6 +4783,8 @@ static processing_state frontend(const TEXT* statement)
 				frontend_free_parms(parms, lparms, parm_defaults);
 				return FAIL;
 			}
+		}
+
 		ret = add_row(lparms[1]);
 		if (gds_trans)
 			commit_trans(&gds_trans);
@@ -4766,6 +4792,7 @@ static processing_state frontend(const TEXT* statement)
 
 	case FrontOptions::copy:
 		if (DB && !gds_trans)
+		{
 			if (isc_start_transaction(isc_status, &gds_trans, 1, &DB, 0, NULL))
 			{
 				ISQL_errmsg(isc_status);
@@ -4773,6 +4800,8 @@ static processing_state frontend(const TEXT* statement)
 				frontend_free_parms(parms, lparms, parm_defaults);
 				return FAIL;
 			}
+		}
+
 		ret = copy_table(lparms[1], lparms[2], lparms[3]);
 		if (gds_trans)
 			commit_trans(&gds_trans);
@@ -5148,7 +5177,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 
 	case SetOptions::planonly:
 		ret = do_set_command (parms[2], &Planonly);
-		if ( Planonly && !Plan )
+		if (Planonly && !Plan)
 		{
 			// turn on plan
 			ret = do_set_command ("ON", &Plan);
@@ -6347,7 +6376,8 @@ static bool isyesno(const TEXT* buffer)
  **********************************************/
 
 	if (!have_trans)
-	{			// get the translation if we don't have it already
+	{
+		// get the translation if we don't have it already
 		ISQL_msg_get(YES_ANS, sizeof(yesword), yesword);
 		have_trans = true;
 	}

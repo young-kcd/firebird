@@ -863,5 +863,3 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT
 
 	return false;
 }
-
-

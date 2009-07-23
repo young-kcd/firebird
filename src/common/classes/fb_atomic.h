@@ -329,9 +329,11 @@ private:
 // No GNU CC implementation on Solaris 9 is planned!
 extern "C"
 {
-extern int fetch_and_add_il(volatile unsigned int *word_addr, int value);
-extern boolean_t compare_and_swap_il(volatile unsigned int *word_addr, unsigned int *old_val_addr, unsigned int new_val);
+	extern int fetch_and_add_il(volatile unsigned int* word_addr, int value);
+	extern boolean_t compare_and_swap_il(volatile unsigned int* word_addr,
+		unsigned int* old_val_addr, unsigned int new_val);
 }
+
 namespace Firebird {
 
 class AtomicCounter

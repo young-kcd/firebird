@@ -309,7 +309,7 @@ ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 	return status_vector[1];
 }
 
-const char* LongJump::what() const throw() 
+const char* LongJump::what() const throw()
 {
 	return "Firebird::LongJump";
 }
@@ -417,4 +417,3 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception&
 }
 
 }	// namespace Firebird
-

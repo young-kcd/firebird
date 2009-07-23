@@ -424,8 +424,8 @@ AC_ARG_WITH(system-editline,
 READLINE=edit	# builtin default
 saveLIBS=$LIBS
 if test "$STD_EDITLINE" = "true"; then
-  AC_CHECK_LIB(edit, readline, READLINE=edit, 
-    AC_CHECK_LIB(editline, readline, READLINE=editline, 
+  AC_CHECK_LIB(edit, readline, READLINE=edit,
+    AC_CHECK_LIB(editline, readline, READLINE=editline,
       AC_CHECK_LIB(readline, readline, READLINE=readline, STD_EDITLINE=false)))
 fi
 if test "$STD_EDITLINE" = "true"; then
@@ -802,8 +802,8 @@ case "$PLATFORM" in
     dnl MOD: Check for /proc/self/exe mainly used on linux systems
     dnl      this is used to determine path to executable file.
     AC_CHECK_FILES(/proc/self/exe)
-
     ;;
+
   FREEBSD|GENTOOFREEBSD)
     dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
     dnl so test for socklen_t with sys/socket.h included

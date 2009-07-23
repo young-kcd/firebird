@@ -30,4 +30,3 @@ static const char* const REG_KEY_ROOT_PRODUCT	= "SOFTWARE\\Firebird Project\\Fir
 static const char* const REG_KEY_ROOT_INSTANCES	= "SOFTWARE\\Firebird Project\\Firebird Server\\Instances";
 
 #endif // REGISTRY_DEFINES_H
-

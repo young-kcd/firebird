@@ -1416,8 +1416,7 @@ blb* BLB_open2(thread_db* tdbb,
 	if (filter_required)
 	{
 		BlobControl* control = 0;
-		BLF_open_blob(tdbb, transaction, &control, blob_id, bpb_length, bpb,
-					  blob_filter, filter);
+		BLF_open_blob(tdbb, transaction, &control, blob_id, bpb_length, bpb, blob_filter, filter);
 		blob->blb_filter = control;
 		blob->blb_max_segment = control->ctl_max_segment;
 		blob->blb_count = control->ctl_number_segments;
@@ -1930,7 +1929,7 @@ static ISC_STATUS blob_filter(USHORT	action,
 	}
 #endif
 
-	blb* blob = 0;
+	blb* blob = NULL;
 
 	switch (action)
 	{

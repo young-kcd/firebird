@@ -48,7 +48,7 @@ static bool get_sql_code(SSHORT *);
 static bool get_sql_subclass(char*);
 static bool store_sql_msg();
 static bool translate(const UCHAR*, UCHAR*, SSHORT);
-static bool get_symbol( char*);
+static bool get_symbol(char*);
 
 const int FAC_SQL_POSITIVE	= 14;
 const int FAC_SQL_NEGATIVE	= 13;

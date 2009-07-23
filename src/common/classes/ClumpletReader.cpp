@@ -121,14 +121,14 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, si
 	rewind();	// this will set cur_offset and spbState
 }
 
-const UCHAR* ClumpletReader::getBuffer() const 
-{ 
-	return static_buffer; 
+const UCHAR* ClumpletReader::getBuffer() const
+{
+	return static_buffer;
 }
 
-const UCHAR* ClumpletReader::getBufferEnd() const 
-{ 
-	return static_buffer_end; 
+const UCHAR* ClumpletReader::getBufferEnd() const
+{
+	return static_buffer_end;
 }
 
 void ClumpletReader::usage_mistake(const char* what) const

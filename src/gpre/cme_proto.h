@@ -35,4 +35,3 @@ inline void	CME_rse(gpre_nod* node, gpre_req* request)
 }
 
 #endif // GPRE_CME_PROTO_H
-

@@ -44,11 +44,9 @@ const int COLUMN_WIDTH	= 20;
 const int RIGHT_MARGIN	= 70;
 
 #ifdef UNIX
-const char* const TARGET	= "help/help.fdb";
-#endif
-
-#if (defined WIN_NT)
-const char* const TARGET	= "help\\help.fdb";
+const char* const TARGET = "help/help.fdb";
+#elif defined(WIN_NT)
+const char* const TARGET = "help\\help.fdb";
 #endif
 
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
@@ -352,4 +350,3 @@ static const TEXT* strip( const TEXT* string)
 
 	return p;
 }
-

@@ -30,8 +30,8 @@ const int APP_VSIZE			= 150;
 /* This is the title used by the hidden msgs window in the engine.
    Both fbclient.dll and fbserver.exe should use the same. */
 
-static const char* const APP_NAME		= "Firebird Server";
-static const char* const APP_LABEL		= "Firebird Server";
+static const char* const APP_NAME	= "Firebird Server";
+static const char* const APP_LABEL	= "Firebird Server";
 
 #define ON_NOTIFYICON		WM_USER + 2
 

@@ -1077,8 +1077,8 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
 	{
 		// ASF: In Windows, \n characters are printed as \r\n in text mode.
-		// If the original string is \r\n, it's printed as \r\r\n, resulting
-		// in mixed/wrong line endings. So here, we're filtering any \r just
+		// If the original string has \r\n, they're printed as \r\r\n, resulting
+		// in mixed/wrong line endings. So here, we filter any \r present just
 		// before \n.
 		bool prevEndedWithCr = endedWithCr;
 
@@ -4642,7 +4642,6 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 
 		if (first && !has_dbtrig)
 			return OBJECT_NOT_FOUND;
-
 
 		return (SKIP);
 	}

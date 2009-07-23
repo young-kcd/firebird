@@ -475,7 +475,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	}
 
 	if (!flags || !(flags & ~(sw_user | sw_password | sw_fetch_password |
-									sw_trusted_auth | sw_trusted_svc | sw_trusted_role)))
+								sw_trusted_auth | sw_trusted_svc | sw_trusted_role)))
 	{
 		if (!help && !uSvc->isService())
 		{

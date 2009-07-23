@@ -28,4 +28,3 @@ int EXE_action(const TEXT*, const SINT64);
 int EXE_two_phase(const TEXT*, const SINT64);
 
 #endif // ALICE_EXE_PROTO_H
-

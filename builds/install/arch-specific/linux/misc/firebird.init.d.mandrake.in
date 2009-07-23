@@ -53,7 +53,7 @@ case "$1" in
 		echo -n "$FULLNAME server is stopped"
 		echo
 	fi
-	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$name      
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$name
 	;;
   status)
 	if [ -f $pidfile ]

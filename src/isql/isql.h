@@ -393,4 +393,3 @@ const char DBL_QUOTE	= '\042';
 const char SINGLE_QUOTE	= '\'';
 
 #endif // ISQL_ISQL_H
-

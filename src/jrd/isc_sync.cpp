@@ -2923,7 +2923,7 @@ int ISC_mutex_init(struct mtx* mutex)
 
 	if (state
 #if defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)
-	 && (state != ENOTSUP || bugFlag)
+		&& (state != ENOTSUP || bugFlag)
 #endif
 			 )
 	{

@@ -208,4 +208,3 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception&
 
 
 #endif	// FB_EXCEPTION_H
-

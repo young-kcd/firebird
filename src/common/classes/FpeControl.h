@@ -151,7 +151,7 @@ private:
 	// have to use the Solaris FPE routines.
 	static void maskAll() throw()
 	{
-		fpsetmask( ~(FP_X_OFL | FP_X_INV | FP_X_UFL | FP_X_DZ | FP_X_IMP));
+		fpsetmask(~(FP_X_OFL | FP_X_INV | FP_X_UFL | FP_X_DZ | FP_X_IMP));
 	}
 
 private:
@@ -164,7 +164,7 @@ private:
 		{
 			fp_except saved;
 			saved = fpgetmask();
-			fpsetmask( ~(FP_X_OFL | FP_X_INV | FP_X_UFL | FP_X_DZ | FP_X_IMP));
+			fpsetmask(~(FP_X_OFL | FP_X_INV | FP_X_UFL | FP_X_DZ | FP_X_IMP));
 			clean = fpgetmask();
 			fpsetmask(saved);
 		}
@@ -187,8 +187,8 @@ private:
 
 	void restoreMask() throw()
 	{
-		fpsetsticky (0); // clear exception sticky flags
-		fpsetmask (savedMask);
+		fpsetsticky(0); // clear exception sticky flags
+		fpsetmask(savedMask);
 	}
 
 #else
