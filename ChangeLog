@@ -1,3 +1,38 @@
+2009-07-23 10:58  alexpeshkoff
+
+	* firebird2/: configure.in (1.350), builds/posix/prefix.hpux_aCC
+	(1.1), src/common/StatusArg.h (1.17), src/include/types_pub.h
+	(1.12), src/jrd/common.h (1.201):
+
+	HPUX port by Bill Oliver and Jerry Adair
+
+2009-07-23 02:56  asfernandes
+
+	* firebird2/: configure.in (1.349),
+	builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+	(1.14), src/alice/alice.cpp (1.120), src/alice/exe_proto.h (1.9),
+	src/alice/tdr.cpp (1.65), src/common/fb_exception.cpp (1.53),
+	src/common/classes/ClumpletReader.cpp (1.41),
+	src/common/classes/ClumpletWriter.cpp (1.32),
+	src/common/classes/FpeControl.h (1.7),
+	src/common/classes/fb_atomic.h (1.25), src/gpre/cme_proto.h (1.12),
+	src/include/fb_exception.h (1.37), src/isql/isql.epp (1.287),
+	src/isql/isql.h (1.74), src/isql/show.epp (1.151), src/jrd/blb.cpp
+	(1.205), src/jrd/isc_sync.cpp (1.212), src/msgs/enter_msgs.epp
+	(1.22), src/qli/help.epp (1.34), src/remote/os/win32/window.h
+	(1.13), src/utilities/install/registry.h (1.10):
+
+	Misc
+
+2009-07-22 15:43  alexpeshkoff
+
+	* firebird2/src/: gpre/cmd.cpp (1.60), gpre/cme.cpp (1.59),
+	gpre/cme_proto.h (1.11), jrd/blb.cpp (1.204):
+
+	This fixes bugs with blob_filter in my recent commit and at the
+	same time should be compileable on SUn Studio. Thanks to Dmitry
+	Yemanov.
+
 2009-07-22 08:36  alexpeshkoff
 
 	* firebird2/builds/posix/Makefile.in.firebird (1.99):
