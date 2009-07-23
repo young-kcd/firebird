@@ -371,6 +371,11 @@ extern "C" int remove(const char* path);
 //#define FB_DOUBLE_ALIGN    8
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
+#if defined (__HP_aCC)
+// aCC error, __thread can be used only with C-like structs
+#undef HAVE___THREAD
+#endif
+
 #define IEEE
 #pragma OPT_LEVEL 1
 // 16-Apr-2002 HP10 in unistd.h Paul Beach

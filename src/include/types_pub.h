@@ -29,7 +29,7 @@
 
 #include <stddef.h>
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined (__HP_cc) || defined (__HP_aCC)
 #include <inttypes.h>
 #else
 

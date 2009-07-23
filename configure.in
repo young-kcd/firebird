@@ -239,38 +239,35 @@ dnl CPU_TYPE=ppc64
   ia64-*-hpux*)
     comp=`echo "$CXX" | cut -c1-3`
     case $comp in
-       aCC) MAKEFILE_PREFIX=hpux-aCC ;
+       aCC) MAKEFILE_PREFIX=hpux_aCC ;
            ICU_PLATFORM=HP-UX11ACC ;
-           AC_DEFINE(HPUXACC, 1, [Define this if using native compilers])
-           libdir=/opt/aCC/lib ;;
+           ;;
        *)  MAKEFILE_PREFIX=hpux_ia64 ;
-           libdir=/opt/hp-gcc-4.3.1/lib ;;
+           ;;
+    esac
+    INSTALL_PREFIX=hpux
+    PLATFORM=HPUX
+    AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
+    EDITLINE_FLG=Y
+    libdir=/usr/lib/pa20_64
+    RT_LIB_CHECK=true
+    ;;
+
+  hppa*-*-hpux*)
+    comp=`echo "$CXX" | cut -c1-3`
+    case $comp in
+       aCC) MAKEFILE_PREFIX=hpux_aCC ;
+           ICU_PLATFORM=HP-UX11ACC ;
+           ;;
+       *)  MAKEFILE_PREFIX=hpux ;
+           ;;
     esac
     INSTALL_PREFIX=hpux
     PLATFORM=HPUX
     AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
-dnl    libdir=/opt/hp-gcc-4.3.1/lib
-dnl    libdir=/usr/lib/pa20_64
-    RT_LIB_CHECK=true
-    ;;
-
-  *-*-hpux*)
-    comp=`echo "$CXX" | cut -c1-3`
-    case $comp in
-       aCC) MAKEFILE_PREFIX=hpux-aCC ;
-           ICU_PLATFORM=HP-UX11ACC ;
-           AC_DEFINE(HPUXACC, 1, [Define this if using native compilers])
-           libdir=/opt/aCC/lib ;;
-       *)  MAKEFILE_PREFIX=hpux ;
-           libdir=/opt/hp-gcc-4.3.1/lib ;;
-    esac
-    PLATFORM=HPUX
-    AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=sl
-dnl    libdir=/usr/lib/pa20_64
+    libdir=/usr/lib/pa20_64
     RT_LIB_CHECK=true
     ;;
 

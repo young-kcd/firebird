@@ -42,7 +42,12 @@ class StatusVector;
 
 class Base
 {
+#ifdef __HP_aCC
+// aCC gives error, cannot access protected member class ImplBase
+public:
+#else
 protected:
+#endif
 	class ImplBase
 	{
 	private:
@@ -75,7 +80,6 @@ protected:
 	~Base() { delete implementation; }
 
 	ImplBase* const implementation;
-
 public:
 	ISC_STATUS getKind() const throw() { return implementation->getKind(); }
 	ISC_STATUS getCode() const throw() { return implementation->getCode(); }
