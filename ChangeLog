@@ -1,3 +1,10 @@
+2009-07-24 04:15  asfernandes
+
+	* firebird2/src/: common/fb_exception.cpp (1.54),
+	include/fb_exception.h (1.38):
+
+	Misc
+
 2009-07-23 10:58  alexpeshkoff
 
 	* firebird2/: configure.in (1.350), builds/posix/prefix.hpux_aCC
