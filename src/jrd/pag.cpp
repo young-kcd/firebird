@@ -2435,7 +2435,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		lock->lck_type = LCK_page_space;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_length = sizeof(USHORT);
+		lock->lck_length = sizeof(lock->lck_key.lck_long);
 		lock->lck_dbb = dbb;
 
 		PAG_attachment_id(tdbb);
