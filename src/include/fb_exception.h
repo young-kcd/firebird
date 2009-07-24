@@ -190,7 +190,6 @@ public:
 	static void raise(const char* syscall);
 };
 
-// Moved what() here due to gpre. Didn't want to use macros for gpre_static.
 class fatal_exception : public status_exception
 {
 public:

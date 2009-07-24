@@ -382,9 +382,6 @@ fatal_exception::fatal_exception(const char* message) :
 	set_status(temp, false);
 }
 
-// Moved to the header due to gpre. Gpre non-static can't receive it, but we
-// want to avoid problems with picky compilers that can't find what().
-// We can't link this file into normal gpre.
 // Keep in sync with the constructor above, please; "message" becomes 4th element
 // after initialization of status vector in constructor.
 const char* fatal_exception::what() const throw()
