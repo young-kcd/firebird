@@ -844,7 +844,7 @@ static void readNextInputLine(const char* prompt)
 	if (Interactive && !Input_file)// || Echo)
 	{
 		// Write the prompt out.
-		fprintf(stdout, prompt);
+		fprintf(stdout, "%s", prompt);
 		fflush(stdout);
 	}
 
