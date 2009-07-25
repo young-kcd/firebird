@@ -764,7 +764,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	// field at page_inv_page for this purpose in ODS 12.
 	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && dbb->dbb_minor_version >= 1);
 
-/* Find an allocation page with something on it */
+	// Find an allocation page with something on it
 
 	SLONG relative_bit = -1;
 	SLONG sequence;
@@ -780,107 +780,119 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 		for (bytes = &pip_page->pip_bits[pip_page->pip_min >> 3]; bytes < end; bytes++)
 		{
 			if (*bytes != 0) {
-				/* 'byte' is not zero, so it describes at least one free page. */
+				// 'byte' is not zero, so it describes at least one free page.
 				bit = 1;
-				for (SLONG i = 0; i < 8; i++, bit <<= 1) {
-					if (bit & *bytes) {
+				for (SLONG i = 0; i < 8; i++, bit <<= 1)
+				{
+					if (bit & *bytes)
+					{
 						relative_bit = ((bytes - pip_page->pip_bits) << 3) + i;
 						pipMin = MIN(pipMin, relative_bit);
 
 						const SLONG pageNum = relative_bit + sequence * pageMgr.pagesPerPIP;
 						window->win_page = pageNum;
-						new_page = CCH_fake(tdbb, window, 0);	/* don't wait on latch */
+						new_page = CCH_fake(tdbb, window, 0);	// don't wait on latch
 						if (new_page)
 						{
-							if (isODS11_x)
+							if (!isODS11_x)
+								break;
+
+							BackupManager::StateReadGuard stateGuard(tdbb);
+							const bool nbak_stalled =
+								dbb->dbb_backup_manager->getState() == nbak_state_stalled;
+
+							USHORT next_init_pages = 1;
+							// ensure there are space on disk for faked page
+							if (relative_bit + 1 > pip_page->pip_header.reserved)
 							{
-								BackupManager::StateReadGuard stateGuard(tdbb);
-								const bool nbak_stalled = (dbb->dbb_backup_manager->getState() == nbak_state_stalled);
+								fb_assert(relative_bit == pip_page->pip_header.reserved);
 
-								USHORT next_init_pages = 1;
-								// ensure there are space on disk for faked page
-								if (relative_bit + 1 > pip_page->pip_header.reserved)
+								USHORT init_pages = 0;
+								if (!nbak_stalled)
 								{
-									fb_assert(relative_bit == pip_page->pip_header.reserved);
-
-									USHORT init_pages = 0;
-									if (!nbak_stalled)
+									init_pages = 1;
+									if (!(dbb->dbb_flags & DBB_no_reserve))
 									{
-										init_pages = 1;
-										if (!(dbb->dbb_flags & DBB_no_reserve))
-										{
-											const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
-											init_pages = sequence ? 64 : MIN(pip_page->pip_header.reserved / 16, 64);
+										const int minExtendPages =
+											MIN_EXTEND_BYTES / dbb->dbb_page_size;
 
-											// don't touch pages belongs to the next PIP
-											init_pages =
-												MIN(init_pages, pageMgr.pagesPerPIP - pip_page->pip_header.reserved);
+										init_pages = sequence ?
+											64 : MIN(pip_page->pip_header.reserved / 16, 64);
 
-											if (init_pages < minExtendPages)
-												init_pages = 1;
+										// don't touch pages belongs to the next PIP
+										init_pages = MIN(init_pages,
+											pageMgr.pagesPerPIP - pip_page->pip_header.reserved);
 
-											next_init_pages = init_pages;
-										}
+										if (init_pages < minExtendPages)
+											init_pages = 1;
 
-										ISC_STATUS_ARRAY status;
-										const ULONG start =
-											sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
-
-										init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
+										next_init_pages = init_pages;
 									}
 
-									if (init_pages) {
-										pip_page->pip_header.reserved += init_pages;
-									}
-									else
-									{
-										// PIO_init_data returns zero - perhaps it is not supported, no space
-										// left on disk or IO error occurred. Try to write one page and handle
-										// IO errors if any
-										CCH_must_write(window);
-										try {
-											CCH_RELEASE(tdbb, window);
-											pip_page->pip_header.reserved = relative_bit + 1;
-										}
-										catch (Firebird::status_exception)
-										{
-											// forget about this page as if we never tried to fake it
-											CCH_forget_page(tdbb, window);
+									ISC_STATUS_ARRAY status;
+									const ULONG start = sequence * pageMgr.pagesPerPIP +
+										pip_page->pip_header.reserved;
 
-											// normally all page buffers now released by CCH_unwind
-											// only exception is when TDBB_no_cache_unwind flag is set
-											if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
-												CCH_RELEASE(tdbb, &pip_window);
-
-											throw;
-										}
-
-										new_page = CCH_fake(tdbb, window, 1);
-									}
-									fb_assert(new_page);
+									init_pages = PIO_init_data(dbb, pageSpace->file, status,
+										start, init_pages);
 								}
 
-								if (!(dbb->dbb_flags & DBB_no_reserve) && !nbak_stalled)
-								{
-									const ULONG initialized =
-										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
-
-									// At this point we ensure database has at least "initialized" pages
-									// allocated. To avoid file growth by few pages when all this space
-									// will be used, extend file up to initialized + next_init_pages now
-									pageSpace->extend(tdbb, initialized + next_init_pages);
+								if (init_pages) {
+									pip_page->pip_header.reserved += init_pages;
 								}
+								else
+								{
+									// PIO_init_data returns zero - perhaps it is not supported,
+									// no space left on disk or IO error occurred. Try to write
+									// one page and handle IO errors if any.
+									CCH_must_write(window);
+									try
+									{
+										CCH_RELEASE(tdbb, window);
+										pip_page->pip_header.reserved = relative_bit + 1;
+									}
+									catch (Firebird::status_exception)
+									{
+										// forget about this page as if we never tried to fake it
+										CCH_forget_page(tdbb, window);
+
+										// normally all page buffers now released by CCH_unwind
+										// only exception is when TDBB_no_cache_unwind flag is set
+										if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
+											CCH_RELEASE(tdbb, &pip_window);
+
+										throw;
+									}
+
+									new_page = CCH_fake(tdbb, window, 1);
+								}
+
+								fb_assert(new_page);
 							}
-							break;	/* Found a page and successfully fake-ed it */
+
+							if (!(dbb->dbb_flags & DBB_no_reserve) && !nbak_stalled)
+							{
+								const ULONG initialized =
+									sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
+
+								// At this point we ensure database has at least "initialized" pages
+								// allocated. To avoid file growth by few pages when all this space
+								// will be used, extend file up to initialized + next_init_pages now
+								pageSpace->extend(tdbb, initialized + next_init_pages);
+							}
+
+							break;	// Found a page and successfully fake-ed it
 						}
 					}
 				}
 			}
 			if (new_page)
-				break;			/* Found a page and successfully fake-ed it */
+				break;	// Found a page and successfully fake-ed it
 		}
+
 		if (new_page)
-			break;				/* Found a page and successfully fake-ed it */
+			break;		// Found a page and successfully fake-ed it
+
 		CCH_RELEASE(tdbb, &pip_window);
 	}
 
@@ -905,8 +917,8 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 		return new_page;
 	}
 
-/* We've allocated the last page on the space management page.  Rather
-   than returning it, format it as a page inventory page, and recurse. */
+	// We've allocated the last page on the space management page. Rather
+	// than returning it, format it as a page inventory page, and recurse.
 
 	page_inv_page* new_pip_page = (page_inv_page*) new_page;
 	new_pip_page->pip_header.pag_type = pag_pages;
