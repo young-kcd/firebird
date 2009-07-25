@@ -371,13 +371,16 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 		{
 			// Write the data to the shared memory
-			try
+			if (!(dbb->dbb_flags & DBB_not_in_use))
 			{
-				dumpData(tdbb);
-			}
-			catch (const Exception& ex)
-			{
-				iscLogException("Cannot dump the monitoring data", ex);
+				try
+				{
+					dumpData(tdbb);
+				}
+				catch (const Exception& ex)
+				{
+					iscLogException("Cannot dump the monitoring data", ex);
+				}
 			}
 
 			// Release the lock and mark dbb as requesting a new one
@@ -716,11 +719,6 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
-
-	if (dbb->dbb_flags & DBB_not_in_use)
-	{
-		return;
-	}
 
 	if (!dbb->dbb_monitoring_data)
 	{
