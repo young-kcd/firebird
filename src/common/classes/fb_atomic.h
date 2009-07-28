@@ -392,7 +392,7 @@ private:
 
 // Sometimes in the future it can become the best choice for all platforms.
 // Currently far not CPUs/OSs/compilers are supported well.
-// Therefore use it as lsct chance to build successfully.
+// Therefore use it as last chance to build successfully.
 
 #include <atomic_ops.h>
 
