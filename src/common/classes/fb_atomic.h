@@ -86,67 +86,6 @@ private:
 
 } // namespace Firebird
 
-#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
-
-namespace Firebird {
-
-// Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
-class AtomicCounter
-{
-public:
-	typedef int counter_type;
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
-	~AtomicCounter() {}
-
-	counter_type exchangeAdd(counter_type value)
-	{
-		register counter_type result;
-		__asm __volatile (
-			"lock; xaddl %0, %1"
-			 : "=r" (result), "=m" (counter)
-			 : "0" (value), "m" (counter));
-		return result;
-	}
-
-	counter_type operator +=(counter_type value)
-	{
-		return exchangeAdd(value) + value;
-	}
-
-	counter_type operator -=(counter_type value)
-	{
-		return exchangeAdd(-value) - value;
-	}
-
-	counter_type operator ++()
-	{
-		return exchangeAdd(1) + 1;
-	}
-
-	counter_type operator --()
-	{
-		return exchangeAdd(-1) - 1;
-	}
-
-	counter_type value() const { return counter; }
-
-	counter_type setValue(counter_type val)
-	{
-		register counter_type result;
-		__asm __volatile (
-			"lock; xchg %0, %1"
-			 : "=r" (result), "=m" (counter)
-			 : "0" (val), "m" (counter));
-		return result;
-	}
-
-private:
-	volatile counter_type counter;
-};
-
-} // namespace Firebird
-
 #elif defined(AIX)
 
 #include <sys/atomic_op.h>
@@ -379,6 +318,137 @@ public:
 		{
 			old = counter;
 		} while (!compare_and_swap_il(&counter, &old, value));
+		return old;
+	}
+
+private:
+	counter_type counter;
+};
+
+} // namespace Firebird
+
+#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
+
+namespace Firebird {
+
+// Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
+class AtomicCounter
+{
+public:
+	typedef int counter_type;
+
+	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	~AtomicCounter() {}
+
+	counter_type exchangeAdd(counter_type value)
+	{
+		register counter_type result;
+		__asm __volatile (
+			"lock; xaddl %0, %1"
+			 : "=r" (result), "=m" (counter)
+			 : "0" (value), "m" (counter));
+		return result;
+	}
+
+	counter_type operator +=(counter_type value)
+	{
+		return exchangeAdd(value) + value;
+	}
+
+	counter_type operator -=(counter_type value)
+	{
+		return exchangeAdd(-value) - value;
+	}
+
+	counter_type operator ++()
+	{
+		return exchangeAdd(1) + 1;
+	}
+
+	counter_type operator --()
+	{
+		return exchangeAdd(-1) - 1;
+	}
+
+	counter_type value() const { return counter; }
+
+	counter_type setValue(counter_type val)
+	{
+		register counter_type result;
+		__asm __volatile (
+			"lock; xchg %0, %1"
+			 : "=r" (result), "=m" (counter)
+			 : "0" (val), "m" (counter));
+		return result;
+	}
+
+private:
+	volatile counter_type counter;
+};
+
+} // namespace Firebird
+
+#elif defined(HAVE_AO_COMPARE_AND_SWAP_FULL)
+
+// Sometimes in the future it can become the best choice for all platforms.
+// Currently far not CPUs/OSs/compilers are supported well.
+// Therefore use it as lsct chance to build successfully.
+
+#include <atomic_ops.h>
+
+namespace Firebird {
+
+class AtomicCounter
+{
+public:
+	typedef AO_t counter_type;
+
+	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	~AtomicCounter() {}
+
+/*	counter_type exchangeAdd(counter_type value)
+	{
+		return AO_fetch_and_add_full(&counter, value);
+	} */
+	counter_type exchangeAdd(counter_type value)
+	{
+		counter_type old;
+		do
+		{
+			old = counter;
+		} while (!AO_compare_and_swap_full(&counter, old, old + value));
+		return old;
+	}
+
+	counter_type operator +=(counter_type value)
+	{
+		return exchangeAdd(value) + value;
+	}
+
+	counter_type operator -=(counter_type value)
+	{
+		return exchangeAdd(-value) - value;
+	}
+
+	counter_type operator ++()
+	{
+		return exchangeAdd(1) + 1;
+	}
+
+	counter_type operator --()
+	{
+		return exchangeAdd(-1) - 1;
+	}
+
+	counter_type value() const { return counter; }
+
+	counter_type setValue(counter_type val)
+	{
+		counter_type old;
+		do
+		{
+			old = counter;
+		} while (!AO_compare_and_swap_full(&counter, old, val));
 		return old;
 	}
 
