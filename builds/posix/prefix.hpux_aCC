@@ -40,20 +40,26 @@
 
 
 # Flags shared by production and debug build
-#COMMON_FLAGS= -DHP11 -DHPUX -D_HPUX_SOURCE -D_XOPEN_SOURCE_EXTENDED 
-COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED \
-	-D_POSIX_C_SOURCE=199506L -mt $(ISA_COMMON_FLAGS)
+# Suppress these warnings for now
+# 2830, function "operator new..." has no corresponding operator delete
+# 4232, conversion to a more strictly aligned type may cause misaligned access
+# 749, cast from/to is 'reinterpret_cast'. This operation is non-portable
+# 863, result of operation is widened
+# 1042, subscript out of range
+# 2175, subscript out of range (again)
+COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -AA \
+    +W2830,4232,749,863,1042,2175
 
 # Production flags
-PROD_FLAGS= -fast -O -DNDEBUG \
+PROD_FLAGS= +Ofast -DNDEBUG \
 	$(COMMON_FLAGS)
 
 # Devel flags
-DEV_FLAGS= -g -AA \
-	$(COMMON_FLAGS) $(ISA_DEV_FLAGS)
+# -z, disallow dereferencing of null pointers at runtime
+DEV_FLAGS= -g -z \
+	$(COMMON_FLAGS)
 
 OS_ServerFiles=inet_server.cpp
-Server_main_dummy= os/sun/server_main_dummy.cpp
 
 # link options for HP-UX linker, /usr/bin/ld
 LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA -latomic

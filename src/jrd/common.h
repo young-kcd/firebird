@@ -377,7 +377,6 @@ extern "C" int remove(const char* path);
 #endif
 
 #define IEEE
-#pragma OPT_LEVEL 1
 // 16-Apr-2002 HP10 in unistd.h Paul Beach
 //#define setreuid(ruid, euid)     setresuid (ruid, euid, -1)
 //#define setregid(rgid, egid)     setresgid (rgid, egid, -1)
@@ -388,7 +387,7 @@ extern "C" int remove(const char* path);
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int. */
-#define QUADCONST(n) (n##LL)
+#define QUADCONST(n) (n)
 
 #ifndef USE_POSIX_THREADS
 // HPUX v B.11.23 does not have _POSIX_THREADS defined, their implementation

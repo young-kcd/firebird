@@ -241,6 +241,7 @@ dnl CPU_TYPE=ppc64
     case $comp in
        aCC) MAKEFILE_PREFIX=hpux_aCC ;
            ICU_PLATFORM=HP-UX11ACC ;
+           PTHREAD_CFLAGS=-mt
            ;;
        *)  MAKEFILE_PREFIX=hpux_ia64 ;
            ;;
@@ -258,6 +259,7 @@ dnl CPU_TYPE=ppc64
     case $comp in
        aCC) MAKEFILE_PREFIX=hpux_aCC ;
            ICU_PLATFORM=HP-UX11ACC ;
+           PTHREAD_CFLAGS=-mt
            ;;
        *)  MAKEFILE_PREFIX=hpux ;
            ;;
