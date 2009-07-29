@@ -185,11 +185,11 @@ namespace {
 	class FileLock
 	{
 	public:
-		enum LockLevel {NONE, SHARED, EXCL};
+		enum LockLevel {LCK_NONE, LCK_SHARED, LCK_EXCL};
 		enum DtorMode {CLOSED, OPENED, LOCKED};
 
 		FileLock(ISC_STATUS* pStatus, int pFd, DtorMode pMode = CLOSED)
-			: status(pStatus), level(NONE), fd(pFd), dtorMode(pMode)
+			: status(pStatus), level(LCK_NONE), fd(pFd), dtorMode(pMode)
 		{ }
 
 		~FileLock()
@@ -211,7 +211,7 @@ namespace {
 	// unlocking can only put error into log file - we can't throw in dtors
 		void unlock()
 		{
-			if (level == NONE)
+			if (level == LCK_NONE)
 			{
 				return;
 			}
@@ -231,7 +231,7 @@ namespace {
 				error(local, NAME, errno);
 				iscLogStatus("Unlock error", local);
 			}
-			level = NONE;
+			level = LCK_NONE;
 		}
 
 		// Call it to keep file locked & opened after dtor is called
@@ -277,12 +277,12 @@ namespace {
 	private:
 		bool doLock(bool shared, bool wait)
 		{
-			const LockLevel newLevel = shared ? SHARED : EXCL;
+			const LockLevel newLevel = shared ? LCK_SHARED : LCK_EXCL;
 			if (newLevel == level)
 			{
 				return true;
 			}
-			if (level != NONE)
+			if (level != LCK_NONE)
 			{
 				unlock();
 			}
@@ -1749,7 +1749,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 /* make the complete filename for the init file this file is to be used as a
    master lock to eliminate possible race conditions with just a single file
    locking. The race condition is caused as the conversion of a EXCLUSIVE
-   lock to a SHARED lock is not atomic*/
+   lock to a LCK_SHARED lock is not atomic*/
 
 	TEXT init_filename[MAXPATHLEN];
 	gds__prefix_lock(init_filename, INIT_FILE);
@@ -3675,7 +3675,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 		SharedFile* sf = SharedFile::locate(shmem_data->sh_mem_address);
 
 		FileLock lock(status_vector, shmem_data->sh_mem_handle);
-		lock.setLevel(FileLock::SHARED);
+		lock.setLevel(FileLock::LCK_SHARED);
 		semTable->cleanup(sf->getNum(), lock.tryExclusive());
 		SharedFile::remove(shmem_data->sh_mem_address);
 	}
