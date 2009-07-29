@@ -236,12 +236,14 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 	ADD_SPB_NUMERIC(p, 1);
 	*p++ = isc_info_end;
 
+	const USHORT sendSize = (p - send);
+
 	char results[MAXBUF];
 	bool noData;
 	do
 	{
 		if (isc_service_query(status, &m_svcHandle, 0,
-				p - send, send,
+				sendSize, send,
 				sizeof(query), query,
 				sizeof(results) - 1, results))
 		{
