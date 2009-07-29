@@ -33,7 +33,7 @@
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
 WCFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan \
-	-DNAMESPACE=Vulcan $(THR_FLAGS)
+	-DNAMESPACE=Vulcan
 
 ifeq ($(STD_ICU),false)
   WCFLAGS:= $(WCFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
