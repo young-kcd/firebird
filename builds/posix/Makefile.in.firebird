@@ -591,6 +591,7 @@ clean_dependancies:
 
 clean_build:
 	$(RM) `find $(GEN_ROOT)/firebird -type f -print`
+	$(RM) `find $(GEN_ROOT)/firebird -type l -print`
 #	$(RM) $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 
 # 
