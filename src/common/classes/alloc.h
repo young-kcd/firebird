@@ -378,11 +378,35 @@ public:
 	// The same routine, but more easily callable from the debugger
 	void print_contents(const char* filename, bool = false, const char* filter_path = 0);
 
+	// These method is needed when C++ runtime can call
+	// redefined by us operator new before initialization of global variables.
+#ifdef LIBC_CALLS_NEW
+	static void* globalAlloc(size_t s) THROW_BAD_ALLOC;
+#else // LIBC_CALLS_NEW
+	static void* globalAlloc(size_t s) THROW_BAD_ALLOC 
+	{
+		return processMemoryPool->allocate(s
+#ifdef DEBUG_GDS_ALLOC
+	  		,__FILE__, __LINE__
+#endif
+		);
+	}
+#endif // LIBC_CALLS_NEW
+
 	// Deallocate memory block. Pool is derived from block header
 	static void globalFree(void* block)
 	{
+#ifdef LIBC_CALLS_NEW
+		if (!processMemoryPool)
+		{
+			// the best we can do when invoked after destruction of globals
+			return;
+		}
+#endif // LIBC_CALLS_NEW
 	    if (block)
-		  ((MemoryBlock*)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool->deallocate(block);
+		{
+			((MemoryBlock*)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool->deallocate(block);
+		}
 	}
 
 	// Allocate zero-initialized block of memory
@@ -403,11 +427,6 @@ public:
 	// Initialize and finalize global memory pool
 	static void init();
 	static void cleanup();
-
-	/// Returns the pool the memory was allocated from.
-	//static MemoryPool* blk_pool(const void* mem) {
-	//	return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool;
-	//}
 
 	friend class InternalAllocator;
 };
@@ -465,19 +484,11 @@ inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::
 // Global versions of operators new and delete
 inline void* operator new(size_t s) THROW_BAD_ALLOC
 {
-	return getDefaultMemoryPool()->allocate(s
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__, __LINE__
-#endif
-	);
+	return Firebird::MemoryPool::globalAlloc(s);
 }
 inline void* operator new[](size_t s) THROW_BAD_ALLOC
 {
-	return getDefaultMemoryPool()->allocate(s
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__, __LINE__
-#endif
-	);
+	return Firebird::MemoryPool::globalAlloc(s);
 }
 
 inline void operator delete(void* mem) throw()
