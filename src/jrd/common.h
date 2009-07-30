@@ -770,6 +770,15 @@ void routine(const char* message, ...) \
 #define UQUADFORMAT QUADFORMAT"u"
 #define SQUADFORMAT QUADFORMAT"d"
 
+// Let use size_t in printf() correctly
+#ifndef SIZEFORMAT
+#if (SIZEOF_LONG == 8)
+#define SIZEFORMAT UQUADFORMAT 
+#else
+#define SIZEFORMAT "u"
+#endif
+#endif // SIZEFORMAT
+
 #ifdef DEV_BUILD
 
 /* Define any debugging symbols and macros here.  This

@@ -1123,7 +1123,8 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 				if (blk->mbk_flags & MBK_LAST)
 					break;
 			}
-			fprintf(file, "Blocks %d min %d max %d size %d \n\n", cnt, min, max, sum);
+			fprintf(file, "Blocks %"SIZEFORMAT" min %"SIZEFORMAT" max %"SIZEFORMAT" size %"SIZEFORMAT" \n\n",
+					cnt, min, max, sum);
 		}
 
 		if (prn_extents == &extents_os)
