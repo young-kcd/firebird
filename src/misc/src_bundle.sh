@@ -31,7 +31,10 @@
 # Determine root of local checkout
 SRCROOT=`dirname $0`/../..
 MODULE=$SRCROOT/temp/src
-MEMBERS=`awk -F / <$SRCROOT/CVS/Entries '{print $2;}'`
+MEMBERS=''
+for m in `cat $SRCROOT/CVS/Entries* | awk -F / '{print $2;}' | sort | uniq`; do
+	[ -e $SRCROOT/$m ] && MEMBERS="$MEMBERS $m"
+done
 
 # Cleanup
 rm -rf $MODULE
