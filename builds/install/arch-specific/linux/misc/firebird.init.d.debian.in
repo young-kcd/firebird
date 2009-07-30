@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# chkconfig: 345 20 80
+# chkconfig: 345 80 20
 # description: Start/Stop firebird database server
 #
 # This file belongs in /etc/init.d where it will be run
