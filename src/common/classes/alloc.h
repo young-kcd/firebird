@@ -378,7 +378,7 @@ public:
 	// The same routine, but more easily callable from the debugger
 	void print_contents(const char* filename, bool = false, const char* filter_path = 0);
 
-	// These method is needed when C++ runtime can call
+	// Theis method is needed when C++ runtime can call
 	// redefined by us operator new before initialization of global variables.
 #ifdef LIBC_CALLS_NEW
 	static void* globalAlloc(size_t s) THROW_BAD_ALLOC;
