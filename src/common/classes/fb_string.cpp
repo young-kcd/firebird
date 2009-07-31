@@ -339,7 +339,7 @@ extern "C" {
 #endif // WIN_NT
 	}
 
-	void AbstractString::baseTrim(TrimType WhereTrim, const_pointer ToTrim)
+	void AbstractString::baseTrim(const TrimType WhereTrim, const_pointer ToTrim)
 	{
 		const strBitMask sm(ToTrim, strlen(ToTrim));
 		const_pointer b = c_str();

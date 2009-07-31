@@ -194,13 +194,13 @@ namespace Firebird
 
 		pointer baseAppend(const size_type n);
 
-		pointer baseInsert(const size_type p0, size_type n);
+		pointer baseInsert(const size_type p0, const size_type n);
 
 		void baseErase(size_type p0, size_type n);
 
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
 
-		void baseTrim(TrimType WhereTrim, const_pointer ToTrim);
+		void baseTrim(const TrimType WhereTrim, const_pointer ToTrim);
 
 	public:
 		inline const_pointer c_str() const

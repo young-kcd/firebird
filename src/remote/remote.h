@@ -701,7 +701,7 @@ private:		// this is refCounted object
 	~rem_port();
 
 public:
-	void linkParent(rem_port* parent);
+	void linkParent(rem_port* const parent);
 
 	void unlinkParent();
 
