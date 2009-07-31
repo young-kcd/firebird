@@ -954,8 +954,7 @@ rem_port* INET_reconnect(SOCKET handle, ISC_STATUS* status_vector)
 	port->port_server_flags |= SRVR_server;
 
 	int n = 0, optval = TRUE;
-	n = setsockopt(port->port_handle, SOL_SOCKET,
-				   SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+	n = setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
 	}
@@ -1344,8 +1343,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
 
 	int optval = 1;
-	setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
-			   (SCHAR*) &optval, sizeof(optval));
+	setsockopt(n, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	const int inetErrNo = INET_ERRNO;
@@ -2043,8 +2041,7 @@ static rem_port* select_accept( rem_port* main_port)
 	}
 
 	int optval = 1;
-	setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
-			   (SCHAR*) &optval, sizeof(optval));
+	setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 
 	port->port_flags |= PORT_server;
 
