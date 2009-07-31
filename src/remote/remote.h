@@ -508,7 +508,7 @@ inline void Rsr::releaseException()
 /* Generalized port definition. */
 
 #ifndef WIN_NT
-typedef int SOCKET
+typedef int SOCKET;
 #endif
 
 
