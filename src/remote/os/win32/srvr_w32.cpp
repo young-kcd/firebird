@@ -258,7 +258,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 
 		if (server_flag & SRVR_inet)
 		{
-			port = INET_reconnect(connection_handle, status_vector);
+			port = INET_reconnect((SOCKET) connection_handle, status_vector);
 
 			if (port)
 			{

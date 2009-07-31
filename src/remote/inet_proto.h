@@ -34,8 +34,8 @@ namespace Firebird
 rem_port*	INET_analyze(const Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*,
 	bool, Firebird::ClumpletReader&);
 rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT, Firebird::ClumpletReader*);
-rem_port*	INET_reconnect(HANDLE, ISC_STATUS*);
-rem_port*	INET_server(int);
+rem_port*	INET_reconnect(SOCKET, ISC_STATUS*);
+rem_port*	INET_server(SOCKET);
 void		INET_set_clients(int);
 void		setStopMainThread(FPTR_INT func);
 

@@ -508,8 +508,8 @@ inline void Rsr::releaseException()
 /* Generalized port definition. */
 
 #ifndef WIN_NT
-typedef int HANDLE;
-#endif  /* WIN_NT */
+typedef int SOCKET
+#endif
 
 
 //////////////////////////////////////////////////////////////////
@@ -617,14 +617,15 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	SLONG			port_dummy_packet_interval; /* keep alive dummy packet interval */
 	SLONG			port_dummy_timeout;	/* time remaining until keepalive packet */
 	ISC_STATUS*		port_status_vector;
-	HANDLE			port_handle;		/* handle for connection (from by OS) */
+	SOCKET			port_handle;		/* handle for INET socket */
 	int				port_channel;		/* handle for connection (from by OS) */
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 	Rdb*			port_context;
 	ThreadHandle	port_events_thread;	// handle of thread, handling incoming events
 	void			(*port_events_shutdown)(rem_port*);	// hack - avoid changing API at beta stage
 #ifdef WIN_NT
-	HANDLE			port_event;			// event associated with port, Windows only
+	HANDLE			port_pipe;			// port pipe handle
+	HANDLE			port_event;			// event associated with a port
 #endif
 	XDR				port_receive;
 	XDR				port_send;
@@ -671,7 +672,7 @@ public:
 		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0),
 		port_context(0), port_events_thread(0), port_events_shutdown(0),
 #ifdef WIN_NT
-		port_event(INVALID_HANDLE_VALUE),
+		port_pipe(INVALID_HANDLE_VALUE), port_event(INVALID_HANDLE_VALUE),
 #endif
 #ifdef DEBUG_XDR_MEMORY
 		port_packet_vector(0),
