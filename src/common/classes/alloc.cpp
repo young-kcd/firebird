@@ -1957,7 +1957,7 @@ MemoryPool& AutoStorage::getAutoMemoryPool()
 }
 
 #ifdef LIBC_CALLS_NEW
-void* MemoryPool::globalAlloc(size_t s) THROW_BAD_ALLOC 
+void* MemoryPool::globalAlloc(size_t s) THROW_BAD_ALLOC
 {
 	if (!processMemoryPool)
 	{

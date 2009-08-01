@@ -200,7 +200,7 @@ namespace Firebird
 
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
 
-		void baseTrim(const TrimType WhereTrim, const_pointer ToTrim);
+		void baseTrim(const TrimType whereTrim, const_pointer toTrim);
 
 	public:
 		inline const_pointer c_str() const

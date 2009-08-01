@@ -1097,7 +1097,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			current_process_id = getpid();
 			gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 
-			// Allow other (server) process to SYNCHRONIZE with our process 
+			// Allow other (server) process to SYNCHRONIZE with our process
 			// to establish communication
 			ISC_get_security_desc();
 		}

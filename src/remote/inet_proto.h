@@ -40,4 +40,3 @@ void		INET_set_clients(int);
 void		setStopMainThread(FPTR_INT func);
 
 #endif // REMOTE_INET_PROTO_H
-

@@ -773,7 +773,7 @@ void routine(const char* message, ...) \
 // Let use size_t in printf() correctly
 #ifndef SIZEFORMAT
 #if (SIZEOF_LONG == 8)
-#define SIZEFORMAT UQUADFORMAT 
+#define SIZEFORMAT UQUADFORMAT
 #else
 #define SIZEFORMAT "u"
 #endif

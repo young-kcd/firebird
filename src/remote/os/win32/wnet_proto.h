@@ -42,4 +42,3 @@ rem_port*	WNET_reconnect(HANDLE, ISC_STATUS*);
 
 
 #endif // REMOTE_WNET_PROTO_H
-
