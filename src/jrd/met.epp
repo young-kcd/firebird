@@ -36,11 +36,6 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2004.01.16 Vlad Horsun: added support for default parameters
  */
-// This MUST be at the top of the file
-#ifdef DARWIN
-#define _STLP_CCTYPE
-#endif
-
 
 #include "firebird.h"
 #include <stdio.h>

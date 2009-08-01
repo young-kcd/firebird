@@ -33,11 +33,6 @@
  * Adriano dos Santos Fernandes
  */
 
-//This MUST be before any other includes
-#ifdef DARWIN
-#define _STLP_CCTYPE
-#endif
-
 #include "firebird.h"
 #include <ctype.h>
 #include <string.h>

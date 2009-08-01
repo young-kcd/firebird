@@ -26,11 +26,6 @@
  *
  */
 
-// This MUST be at the top of the file
-#ifdef DARWIN
-#define _STLP_CCTYPE
-#endif
-
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
