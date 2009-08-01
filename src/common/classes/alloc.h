@@ -378,12 +378,12 @@ public:
 	// The same routine, but more easily callable from the debugger
 	void print_contents(const char* filename, bool = false, const char* filter_path = 0);
 
-	// Theis method is needed when C++ runtime can call
+	// This method is needed when C++ runtime can call
 	// redefined by us operator new before initialization of global variables.
 #ifdef LIBC_CALLS_NEW
 	static void* globalAlloc(size_t s) THROW_BAD_ALLOC;
 #else // LIBC_CALLS_NEW
-	static void* globalAlloc(size_t s) THROW_BAD_ALLOC 
+	static void* globalAlloc(size_t s) THROW_BAD_ALLOC
 	{
 		return processMemoryPool->allocate(s
 #ifdef DEBUG_GDS_ALLOC
@@ -405,7 +405,7 @@ public:
 #endif // LIBC_CALLS_NEW
 	    if (block)
 		{
-			((MemoryBlock*)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool->deallocate(block);
+			((MemoryBlock*) ((char*) block - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool->deallocate(block);
 		}
 	}
 
