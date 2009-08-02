@@ -163,7 +163,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = file_name.length();
+	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// Note: prior to V3.1E a receivers could not in truth handle more
@@ -172,7 +172,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 
 	// If we want user verification, we can't speak anything less than version 7
 
-	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
@@ -215,12 +215,12 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_operation = op_attach;
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
@@ -255,12 +255,12 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_operation = op_attach;
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
@@ -419,8 +419,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		GetModuleFileName(NULL, name, sizeof(name));
 
 		Firebird::string cmdLine;
-		cmdLine.printf("%s -w -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) port->port_pipe,
-			GetCurrentProcessId());
+		cmdLine.printf("%s -w -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, port->port_pipe, GetCurrentProcessId());
 
 		STARTUPINFO start_crud;
 		PROCESS_INFORMATION pi;
@@ -713,7 +712,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	}
 
 	P_RESP* response = &packet->p_resp;
-	response->p_resp_data.cstr_length = strlen(str_pid);
+	response->p_resp_data.cstr_length = (USHORT) strlen(str_pid);
 	memcpy(response->p_resp_data.cstr_address, str_pid, response->p_resp_data.cstr_length);
 
 	return new_port;
@@ -1562,7 +1561,7 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 
 	sprintf(temp, "%lu", number);
 
-	USHORT length = strlen(temp);
+	size_t length = strlen(temp);
 	if (length < 8)
 	{
 		strcpy(name, temp);
@@ -1574,7 +1573,7 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 
 	while (length)
 	{
-		USHORT len = (length > 8) ? 8 : length;
+		size_t len = (length > 8) ? 8 : length;
 		length -= len;
 		do {
 			*p++ = *q++;

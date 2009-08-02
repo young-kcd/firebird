@@ -245,14 +245,14 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = file_name.length();
+	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// Note: prior to V3.1E a recievers could not in truth handle more
 	// then 5 protocol descriptions; however, the interprocess server
 	// was created in 4.0 so this does not apply.
 
-	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
@@ -295,12 +295,12 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_operation = op_attach;
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
@@ -334,12 +334,12 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_operation = op_attach;
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
-		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =

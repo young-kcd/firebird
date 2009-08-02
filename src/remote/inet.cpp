@@ -432,7 +432,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 	P_CNCT*	cnct = &packet->p_cnct;
 
-	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
@@ -464,7 +464,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
@@ -489,7 +489,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
@@ -1035,8 +1035,10 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 	// Pick up account and password, if given
 
-	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged, cnct->p_cnct_user_id.cstr_address,
-									   cnct->p_cnct_user_id.cstr_length);
+	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
+								cnct->p_cnct_user_id.cstr_address,
+								cnct->p_cnct_user_id.cstr_length);
+
 	SLONG eff_gid = -1, eff_uid = -1;
 	bool user_verification = false;
 	for (id.rewind(); !id.isEof(); id.moveNext())
@@ -1053,7 +1055,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 		case CNCT_group:
 			{
-				const int length = id.getClumpLength();
+				const size_t length = id.getClumpLength();
 				if (length != 0)
 				{
 					eff_gid = 0;
@@ -1685,8 +1687,7 @@ static int fork(SOCKET old_handle, USHORT flag)
 	}
 
 	Firebird::string cmdLine;
-	cmdLine.printf("%s -i -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) new_handle,
-		GetCurrentProcessId());
+	cmdLine.printf("%s -i -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, new_handle, GetCurrentProcessId());
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -2170,8 +2171,8 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 							if (badSocket || INET_ERRNO == NOTASOCKET)
 							{
 								// not a socket, strange !
-								gds__log("INET/select_wait: found \"not a socket\" socket : %u",
-										 (unsigned) port->port_handle);
+								gds__log("INET/select_wait: found \"not a socket\" socket : %"HANDLEFORMAT,
+										 port->port_handle);
 
 								// this will lead to receive() which will break bad connection
 								selct->slct_count = selct->slct_width = 0;
@@ -2764,7 +2765,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = file_name.length();
+	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// If we can't talk to a server, punt.  Let somebody else generate
