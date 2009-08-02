@@ -424,6 +424,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 
 	if (blr)
 	{
+		fb_assert(length > 0);
 		isc_print_blr2(p, length - 1, dump_blr, control, 0);
 		control->ctl_data[1] = control->ctl_data[0];
 	}

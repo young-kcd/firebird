@@ -3234,7 +3234,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_begin:
-			while ((SCHAR) control->ctl_blr_reader.peekByte() != (SCHAR) blr_end)
+			while (control->ctl_blr_reader.peekByte() != (UCHAR) blr_end)
 				blr_print_verb(control, level);
 			break;
 
