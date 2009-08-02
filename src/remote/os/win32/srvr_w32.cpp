@@ -572,7 +572,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 							{
 								p++;
 								*pp++ = '\0';
-								connection_handle = (HANDLE) atoi64(buffer);
+								connection_handle = (HANDLE) _atoi64(buffer);
 								pp = buffer;
 							}
 							else
@@ -582,7 +582,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 
 						if (connection_handle == INVALID_HANDLE_VALUE)
 						{
-							connection_handle = (HANDLE) atoi64(buffer);
+							connection_handle = (HANDLE) _atoi64(buffer);
 						}
 						else
 						{
