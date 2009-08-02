@@ -659,7 +659,7 @@ struct ISC_TIMESTAMP
 #if defined(WIN_NT) && defined(AMD64)
 #define HANDLEFORMAT QUADFORMAT
 #else
-#define HANDLEFORMAT LONGFORMAT
+#define HANDLEFORMAT SLONGFORMAT
 #endif
 
 
