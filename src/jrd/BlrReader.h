@@ -46,7 +46,7 @@ public:
 	}
 
 public:
-	const UCHAR* getPos()
+	const UCHAR* getPos() const
 	{
 		fb_assert(pos);
 		return pos;
@@ -68,12 +68,12 @@ public:
 		setPos(getPos() + n);
 	}
 
-	unsigned getOffset()
+	unsigned getOffset() const
 	{
 		return getPos() - start;
 	}
 
-	UCHAR peekByte()
+	UCHAR peekByte() const
 	{
 		fb_assert(pos);
 
