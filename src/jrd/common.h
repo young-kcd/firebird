@@ -655,6 +655,14 @@ struct ISC_TIMESTAMP
 #endif // __GNUC__
 #endif
 
+// format for handles
+#if defined(WIN_NT) && defined(AMD64)
+#define HANDLEFORMAT QUADFORMAT
+#else
+#define HANDLEFORMAT LONGFORMAT
+#endif
+
+
 /* conditional compilation macros */
 
 

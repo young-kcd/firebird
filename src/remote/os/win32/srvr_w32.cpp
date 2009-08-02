@@ -216,7 +216,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 
 	strcpy(instance, FB_DEFAULT_INSTANCE);
 
-	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
+	const HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
 #ifdef SUPERSERVER
 	// get priority class from the config file
@@ -572,7 +572,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 							{
 								p++;
 								*pp++ = '\0';
-								connection_handle = (HANDLE) atol(buffer);
+								connection_handle = (HANDLE) atoi64(buffer);
 								pp = buffer;
 							}
 							else
@@ -580,8 +580,9 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						}
 						*pp++ = '\0';
 
-						if (connection_handle == INVALID_HANDLE_VALUE) {
-							connection_handle = (HANDLE) atol(buffer);
+						if (connection_handle == INVALID_HANDLE_VALUE)
+						{
+							connection_handle = (HANDLE) atoi64(buffer);
 						}
 						else
 						{
