@@ -337,8 +337,8 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			if (!dbg_blob_id.isEmpty())
 				DBG_parse_debug_info(tdbb, &dbg_blob_id, csb->csb_dbg_info);
 
-			PAR_blr(tdbb, relation, blr.begin(),  NULL, &csb, &request, (relation ? true : false),
-					par_flags);
+			PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &request,
+				(relation ? true : false), par_flags);
 
 			delete csb;
 		}
@@ -3491,7 +3491,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 								Attachment**		db_handle,
 								jrd_tra**		tra_handle,
-								USHORT	/*blr_length*/,
+								USHORT	blr_length,
 								const SCHAR*	blr,
 								USHORT	in_msg_length,
 								const SCHAR*	in_msg,
@@ -3532,7 +3532,9 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
+			CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
+				blr_length, FALSE);
+
 			request = CMP_make_request(tdbb, csb, false);
 			CMP_verify_access(tdbb, request);
 
@@ -6633,7 +6635,7 @@ void JRD_compile(thread_db* tdbb,
 	if (*req_handle)
 		status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
-	jrd_req* request = CMP_compile2(tdbb, blr, FALSE, dbginfo_length, dbginfo);
+	jrd_req* request = CMP_compile2(tdbb, blr, blr_length, FALSE, dbginfo_length, dbginfo);
 
 	request->req_attachment = attachment;
 	request->req_request = attachment->att_requests;

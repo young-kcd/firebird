@@ -333,6 +333,7 @@
 	_isc_ftof
 	_isc_free
 	_isc_print_blr
+	_isc_print_blr2
 	_isc_qtoq
 	_isc_set_debug
 	_isc_to_sqlda

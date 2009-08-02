@@ -100,12 +100,6 @@
 /* Pick up relation ids */
 #include "../jrd/ini.h"
 
-// Replaced by the definition taken from par.cpp
-//#define BLR_BYTE        *(csb->csb_running)++
-#define BLR_BYTE	csb->getBlrByte()
-//#define BLR_PEEK    *(control->ctl_blr)
-//const char BLANK	= '\040';
-
 DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
@@ -1382,6 +1376,7 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 jrd_nod* MET_get_dependencies(thread_db* tdbb,
 							  jrd_rel* relation,
 							  const UCHAR* blob,
+							  const ULONG blob_length,
 							  CompilerScratch* view_csb,
 							  bid* blob_id,
 							  jrd_req** request,
@@ -1412,8 +1407,8 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 	jrd_nod* node;
 	if (blob)
 	{
-		node = PAR_blr(	tdbb, relation, blob, view_csb, &csb, request,
-						(type == obj_trigger && relation != NULL), 0);
+		node = PAR_blr(tdbb, relation, blob, blob_length, view_csb, &csb, request,
+					   (type == obj_trigger && relation != NULL), 0);
 	}
 	else
 	{
@@ -2763,12 +2758,12 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	const SLONG length = blob->blb_length + 10;
+	SLONG length = blob->blb_length + 10;
 	Firebird::HalfStaticArray<UCHAR, 512> tmp;
 	UCHAR* temp = tmp.getBuffer(length);
-	BLB_get_data(tdbb, blob, temp, length);
+	length = BLB_get_data(tdbb, blob, temp, length);
 
-	jrd_nod* node = PAR_blr(tdbb, relation, temp, NULL, csb_ptr, request_ptr, trigger, 0);
+	jrd_nod* node = PAR_blr(tdbb, relation, temp, length, NULL, csb_ptr, request_ptr, trigger, 0);
 
 	return node;
 }
@@ -2860,9 +2855,9 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 		if (ptr)
 		{
 			blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &TRG.RDB$TRIGGER_BLR);
-			const SLONG length = blob->blb_length + 10;
+			SLONG length = blob->blb_length + 10;
 			Firebird::HalfStaticArray<UCHAR, 128> blr;
-			BLB_get_data(tdbb, blob, blr.getBuffer(length), length);
+			length = BLB_get_data(tdbb, blob, blr.getBuffer(length), length);
 
 			USHORT par_flags = (USHORT) ((trig_flags & TRG_ignore_perm) ? csb_ignore_perm : 0);
 			if (type & 1)
@@ -2873,7 +2868,8 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 			jrd_req* request = NULL;
 			{
 				Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
-				PAR_blr(tdbb, relation, blr.begin(), NULL, NULL, &request, true, par_flags);
+				PAR_blr(tdbb, relation, blr.begin(), length, NULL, NULL,
+					&request, true, par_flags);
 			}
 
 			request->req_trg_name = name;
@@ -3738,7 +3734,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 			{
 				Firebird::MetaName depName(REL.RDB$RELATION_NAME);
 				relation->rel_view_rse =
-					(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, NULL,
+					(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, 0, NULL,
 											&REL.RDB$VIEW_BLR, NULL,
 											&csb, depName, obj_view, 0, depTrans);
 			}
@@ -3852,17 +3848,19 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 			case RSR_computed_blr:
 				field->fld_computation = dependencies ?
-					MET_get_dependencies(tdbb, relation, p, csb, NULL, NULL, NULL, field->fld_name,
-										 obj_computed, 0, depTrans) :
-					PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, 0);
+					MET_get_dependencies(tdbb, relation, p, length, csb, NULL, NULL, NULL,
+										 field->fld_name, obj_computed, 0, depTrans) :
+					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0);
 				break;
 
 			case RSR_missing_value:
-				field->fld_missing_value = PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, 0);
+				field->fld_missing_value = PAR_blr(tdbb, relation, p, length, csb,
+					NULL, NULL, false, 0);
 				break;
 
 			case RSR_default_value:
-				field->fld_default_value = PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, 0);
+				field->fld_default_value = PAR_blr(tdbb, relation, p, length, csb,
+					NULL, NULL, false, 0);
 				break;
 
 			case RSR_validation_blr:
@@ -3874,14 +3872,14 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				// Because a VIEW can't have a validation section i ignored the whole call.
 				if (!csb)
 				{
-					field->fld_validation =
-						PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, csb_validation);
+					field->fld_validation = PAR_blr(tdbb, relation, p, length, csb,
+						NULL, NULL, false, csb_validation);
 				}
 				break;
 
 			case RSR_field_not_null:
-				field->fld_not_null =
-					PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, csb_validation);
+				field->fld_not_null = PAR_blr(tdbb, relation, p, length, csb, NULL,
+					NULL, false, csb_validation);
 				break;
 
 			case RSR_security_class:
@@ -4479,12 +4477,11 @@ static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::M
 	SLONG length = blob->blb_length + 10;
 	Firebird::HalfStaticArray<UCHAR, 512> temp;
 
-	BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
-	csb->csb_blr = temp.begin();
+	length = BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
 
-	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, NULL, false, 0);
+	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, NULL, false, 0);
 
-	csb->csb_blr = 0;
+	csb->csb_blr_reader = BlrReader();
 	delete csb;
 
 	return node;
@@ -4497,15 +4494,15 @@ static jrd_nod* parse_param_blr(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	blb*	blob   = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	SLONG	length = blob->blb_length + 10;
+	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
+	SLONG length = blob->blb_length + 10;
 	Firebird::HalfStaticArray<UCHAR, 512> temp;
 
-	BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
-	csb->csb_blr = temp.begin();
+	length = BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
 
-	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), NULL, &csb, &procedure->prc_request, false, 0);
-	csb->csb_blr = 0;
+	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb,
+		&procedure->prc_request, false, 0);
+	csb->csb_blr_reader = BlrReader();
 
 	return node;
 }
@@ -4532,12 +4529,12 @@ static jrd_nod* parse_procedure_blr(thread_db* tdbb,
 	const SLONG length = blob->blb_length + 10;
 	Firebird::HalfStaticArray<UCHAR, 512> tmp;
 	UCHAR* temp = tmp.getBuffer(length);
-	csb->csb_blr = temp;
 	const ULONG real_len = BLB_get_data(tdbb, blob, temp, length);
 	fb_assert(real_len >= length - 10 && real_len <= ULONG(MAX_USHORT));
-	par_messages(tdbb, csb->csb_blr, (USHORT) real_len, procedure, csb);
+	par_messages(tdbb, temp, (USHORT) real_len, procedure, csb);
 
-	return PAR_blr(tdbb, NULL, csb->csb_blr, NULL, &csb, &procedure->prc_request, false, 0);
+	return PAR_blr(tdbb, NULL, temp, real_len, NULL, &csb,
+		&procedure->prc_request, false, 0);
 }
 
 
@@ -4563,27 +4560,28 @@ static void par_messages(thread_db* tdbb,
  		ERR_post(Arg::Gds(isc_metadata_corrupt));
  	blr_length -= 2;
 
-	csb->csb_running = blr;
-	const SSHORT version = BLR_BYTE;
+	csb->csb_blr_reader = BlrReader(blr, blr_length);
+
+	const SSHORT version = csb->csb_blr_reader.getByte();
 	if (version != blr_version4 && version != blr_version5) {
 		ERR_post(Arg::Gds(isc_metadata_corrupt) <<
 				 Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
-	if (BLR_BYTE != blr_begin) {
+	if (csb->csb_blr_reader.getByte() != blr_begin) {
 		ERR_post(Arg::Gds(isc_metadata_corrupt));
 	}
 
 	SET_TDBB(tdbb);
 
-	while (BLR_BYTE == blr_message)
+	while (csb->csb_blr_reader.getByte() == blr_message)
 	{
 		if (blr_length < 4) // Covers the call above and the next three
 			ERR_post(Arg::Gds(isc_metadata_corrupt));
 		blr_length -= 4;
-		const USHORT msg_number = BLR_BYTE;
-		USHORT count = BLR_BYTE;
-		count += (BLR_BYTE) << 8;
+		const USHORT msg_number = csb->csb_blr_reader.getByte();
+		USHORT count = csb->csb_blr_reader.getByte();
+		count += (csb->csb_blr_reader.getByte()) << 8;
 		Format* format = Format::newFormat(*tdbb->getDefaultPool(), count);
 
 		ULONG offset = 0;
@@ -4595,7 +4593,7 @@ static void par_messages(thread_db* tdbb,
 			if (blr_length < 2)
 				ERR_post(Arg::Gds(isc_metadata_corrupt));
 
-			const UCHAR* const savePos = csb->csb_running;
+			const UCHAR* const savePos = csb->csb_blr_reader.getPos();
 
 			const USHORT align = PAR_desc(tdbb, csb, &*desc);
 			if (align) {
@@ -4606,7 +4604,7 @@ static void par_messages(thread_db* tdbb,
 
 			// This solution only checks that PAR_desc doesn't run out of bounds, but it
 			// does after the disaster happened.
-			const int diff = csb->csb_running - savePos;
+			const int diff = csb->csb_blr_reader.getPos() - savePos;
 			if (diff > blr_length)
 				ERR_post(Arg::Gds(isc_metadata_corrupt));
 			blr_length -= diff;
@@ -4858,7 +4856,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	{
 		const SLONG length = blrBlob->blb_length + 10;
 		UCHAR* ptr2 = t.blr.getBuffer(length);
-		BLB_get_data(tdbb, blrBlob, ptr2, length);
+		t.blr.resize(BLB_get_data(tdbb, blrBlob, ptr2, length));
 	}
 	if (dbgBlobID)
 		t.dbg_blob_id = *dbgBlobID;

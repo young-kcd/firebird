@@ -2666,7 +2666,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		gds__trace_raw("Statement:\n");
 		gds__trace_raw(string, string_length);
 		gds__trace_raw("\nBLR:\n");
-		gds__print_blr(statement->req_blr_data.begin(),
+		isc_print_blr2(statement->req_blr_data.begin(),
+			(USHORT) statement->req_blr_data.getCount(),
 			gds__trace_printer, 0, 0);
 	}
 #endif

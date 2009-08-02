@@ -2773,7 +2773,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				MemoryPool* new_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
+				MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
 				dbb->deletePool(new_pool);
@@ -2917,7 +2917,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				MemoryPool* new_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
+				MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
 				dbb->deletePool(new_pool);
@@ -4060,7 +4060,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 			Firebird::MetaName depName(work->dfw_name);
-			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, compile ? &request : NULL,
+			MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
 								 NULL, depName, obj_procedure, 0, transaction);
 
 			if (request)
@@ -4129,7 +4129,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 		Firebird::MetaName depName(work->dfw_name);
-		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id, compile ? &request : NULL,
+		MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
 							 NULL, depName, obj_trigger, par_flags, transaction);
 
 		if (request)

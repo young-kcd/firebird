@@ -46,14 +46,17 @@ const int ACCESS_TYPE	= 6;
 
 struct dsc;
 
-Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, Jrd::CompilerScratch*,
-					Jrd::CompilerScratch**, Jrd::jrd_req**, const bool, USHORT);
+Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG blr_length,
+						Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::jrd_req**, const bool,
+						USHORT);
 USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, Jrd::ItemInfo* = NULL);
 Jrd::jrd_nod*	PAR_gen_field(Jrd::thread_db*, USHORT, USHORT);
 Jrd::jrd_nod*	PAR_make_field(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, const Firebird::MetaName&);
 Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, Jrd::NodeStack&);
 Jrd::jrd_nod*	PAR_make_node(Jrd::thread_db*, int);
-Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR*, USHORT, USHORT = 0, const UCHAR* = NULL);
+Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR*, ULONG, USHORT,
+	USHORT = 0, const UCHAR* = NULL);
+
 SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
 
 typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool, Jrd::CompilerScratch* csb);

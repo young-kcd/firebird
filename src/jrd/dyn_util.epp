@@ -147,7 +147,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
 			memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
 			p += sizeof(gen_id_blr2);
 
-			request = CMP_compile2(tdbb, blr.begin(), TRUE);
+			request = CMP_compile2(tdbb, blr.begin(), blr.getCount(), TRUE);
 		}
 
 		EXE_start(tdbb, request, dbb->dbb_sys_trans);
@@ -582,7 +582,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 	if (!request)
 	{
-		request = CMP_compile2(tdbb, prot_blr, TRUE);
+		request = CMP_compile2(tdbb, prot_blr, sizeof(prot_blr), TRUE);
 	}
 	gds__vtov(rname, in_msg.relation_name, sizeof(in_msg.relation_name));
 	gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));

@@ -339,6 +339,7 @@ global:
 	isc_ftof;
 	isc_free;
 	isc_print_blr;
+	isc_print_blr2;
 	isc_qtoq;
 	isc_reset_fpe;
 	isc_set_debug;

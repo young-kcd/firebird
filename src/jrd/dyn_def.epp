@@ -4871,7 +4871,7 @@ static bool get_who( thread_db* tdbb, Global* gbl, Firebird::MetaName& output_na
 	try {
 		if (!request)
 		{
-			request = CMP_compile2(tdbb, who_blr, TRUE);
+			request = CMP_compile2(tdbb, who_blr, sizeof(who_blr), TRUE);
 		}
 		EXE_start(tdbb, request, gbl->gbl_transaction);
 		SqlIdentifier x;

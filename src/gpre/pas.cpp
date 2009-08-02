@@ -2569,7 +2569,7 @@ static void gen_request( const gpre_req* request, int column)
 
 			default:
 				string_type = "BLR";
-				if (gds__print_blr(request->req_blr, gen_blr, 0, 1))
+				if (isc_print_blr2(request->req_blr, request->req_length, gen_blr, 0, 1))
 					CPR_error("internal error during BLR generation");
 				break;
 			}

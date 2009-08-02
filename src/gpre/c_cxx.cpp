@@ -2915,7 +2915,7 @@ static void gen_request(const gpre_req* request)
 
 			default:
 				string_type = "blr";
-				if (gds__print_blr(request->req_blr, gen_blr, 0, 0))
+				if (isc_print_blr2(request->req_blr, request->req_length, gen_blr, 0, 0))
 				{
 					CPR_error("internal error during BLR generation");
 				}

@@ -73,7 +73,7 @@ void		MET_error(const TEXT*, ...);
 Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 bool		MET_get_char_coll_subtype(Jrd::thread_db*, USHORT*, const UCHAR*, USHORT);
 bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, USHORT, SubtypeInfo* info);
-Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
+Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, int, USHORT,
 								Jrd::jrd_tra*, Firebird::MetaName = Firebird::MetaName());

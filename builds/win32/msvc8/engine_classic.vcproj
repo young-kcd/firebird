@@ -735,6 +735,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\BlrReader.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\include\gen\blrtable.h"
 				>
 			</File>

@@ -72,7 +72,7 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool,
 {
 	InAutonomousTransactionNode* node = FB_NEW(pool) InAutonomousTransactionNode(pool);
 
-	if (csb->getBlrByte() != 0)	// Reserved for future improvements. Should be 0 for now.
+	if (csb->csb_blr_reader.getByte() != 0)	// Reserved for future improvements. Should be 0 for now.
 		PAR_syntax_error(csb, "0");
 
 	node->action = PAR_parse_node(tdbb, csb, STATEMENT);

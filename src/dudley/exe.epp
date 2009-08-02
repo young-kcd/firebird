@@ -3916,11 +3916,11 @@ static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 #endif
 
 	GENERATE_blr(&blr, node);
+	length = blr.str_current - blr.str_start;
 #ifdef DEBUG
-	gds__print_blr((const UCHAR*)blr.str_start, 0, 0, 0);
+	isc_print_blr2(blr.str_start, length, 0, 0, 0);
 #endif
 	handle = create_blob(blob_id, 0, NULL);
-	length = blr.str_current - blr.str_start;
 
 	if (isc_put_segment(status_vector, &handle, length,
 		reinterpret_cast<const SCHAR*>(blr.str_start)))

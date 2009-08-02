@@ -108,6 +108,7 @@ USHORT	API_ROUTINE gds__parse_bpb(USHORT, const UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, const UCHAR*, SSHORT*, SSHORT*,
 	USHORT*, USHORT*, bool*, bool*, bool*, bool*);
 SLONG API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*, const USHORT length2);
+ISC_STATUS	API_ROUTINE isc_print_blr2(const UCHAR*, USHORT, FPTR_PRINT_CALLBACK, void*, SSHORT);
 int		API_ROUTINE gds__print_blr(const UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
 void	API_ROUTINE gds__put_error(const TEXT*);
 void	API_ROUTINE gds__qtoq(const void*, void*);

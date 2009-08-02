@@ -799,13 +799,6 @@ static int upcase(const TEXT* from, TEXT* const to)
 }
 #endif // NOT_USED_OR_REPLACED
 
-// CVC: Not sure why it's defined here, probably to not depend on jrd/alt.cpp?
-ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
-          FPTR_PRINT_CALLBACK callback, void* callback_argument, SSHORT language)
-{
-        return gds__print_blr((const UCHAR*) blr, callback, callback_argument, language);
-}
-
 extern "C" {
 
 void ERR_bugcheck(int)

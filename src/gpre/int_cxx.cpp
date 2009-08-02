@@ -289,8 +289,9 @@ static void gen_compile( const gpre_req* request, int column)
 	//const gpre_sym* symbol = db->dbb_name;
 	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);
-	fprintf(gpreGlob.out_file, "%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", TRUE);",
-			   request->req_handle, request->req_ident);
+	fprintf(gpreGlob.out_file,
+		"%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"), TRUE);",
+			   request->req_handle, request->req_ident, request->req_ident);
 }
 
 
@@ -502,7 +503,7 @@ static void gen_request( const gpre_req* request)
 	if (gpreGlob.sw_raw)
 		gen_raw(request);
 	else
-		gds__print_blr(request->req_blr, gen_blr, 0, 0);
+		isc_print_blr2(request->req_blr, request->req_length, gen_blr, 0, 0);
 
 	printa(INDENT, "};\t// end of blr string \n");
 }

@@ -1020,13 +1020,14 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 		add_byte(blr, blr_eoc);
 	}
 
+	const SSHORT blr_length = blr - blr_buffer;
+
 #ifdef DEBUG
 	if (debug_on)
-		isc_print_blr((const char*)blr_buffer, NULL, NULL, 0);
+		isc_print_blr2(blr_buffer, blr_length, NULL, NULL, 0);
 #endif
 
 	ISC_STATUS_ARRAY status_vector;
-	const SSHORT blr_length = blr - blr_buffer;
 	if (isc_compile_request(status_vector, &DB, &gen_id_reqh, blr_length, (const char*) blr_buffer))
 	{
 		// if there's no gen_id, never mind ...
@@ -1817,21 +1818,21 @@ void put_data(burp_rel* relation)
 	add_byte(blr, blr_end);
 	add_byte(blr, blr_eoc);
 
+	SSHORT blr_length = blr - blr_buffer;
+
 #ifdef DEBUG
 	if (debug_on)
-		isc_print_blr((const char*)blr_buffer, NULL, NULL, 0);
+		isc_print_blr2(blr_buffer, blr_length, NULL, NULL, 0);
 #endif
-
 
 	// Compile request
 
 	FB_API_HANDLE request = 0;
-	SSHORT blr_length = blr - blr_buffer;
 	if (isc_compile_request(status_vector, &DB, &request, blr_length, (const SCHAR*) blr_buffer))
 	{
 		BURP_error_redirect(status_vector, 27);
 		// msg 27 isc_compile_request failed
-		isc_print_blr((const char*) blr_buffer, NULL, NULL, 0);
+		isc_print_blr2(blr_buffer, blr_length, NULL, NULL, 0);
 	}
 
 	BURP_free(blr_buffer);

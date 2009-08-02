@@ -331,6 +331,7 @@ EXPORTS
 	isc_ftof	@138
 	isc_free	@241
 	isc_print_blr	@149
+	isc_print_blr2	@280
 	isc_qtoq	@154
 	isc_reset_fpe
 	isc_set_debug	@163
