@@ -1,4 +1,4 @@
-Firebird Database Server 2.5 Beta 1
+Firebird Database Server 2.5 Beta 2
 ==================================================
 
 This document is a guide to installing this package of
