@@ -681,6 +681,12 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 
 	case nod_select_expr:
 		{
+			if (statement->isPsql())
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
+						  Arg::Gds(isc_dsql_subselect_err));
+			}
+
 			const DsqlContextStack::iterator base(*statement->req_context);
 			node = MAKE_node(nod_via, e_via_count);
 			dsql_nod* rse = PASS1_rse(statement, input, NULL);
@@ -910,6 +916,12 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 
 			if (sub2->nod_type == nod_select_expr)
 			{
+				if (statement->isPsql())
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
+							  Arg::Gds(isc_dsql_subselect_err));
+				}
+
 				if (sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON)
 				{
 					const DsqlContextStack::iterator base(*statement->req_context);
@@ -1464,7 +1476,8 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 				ERRD_post(Arg::Gds(isc_prcmismat) << Arg::Str(name->str_data));
 			}
 
-			node->nod_arg[e_exe_inputs] = PASS1_node(statement, input->nod_arg[e_exe_inputs]);
+			node->nod_arg[e_exe_inputs] = pass1_node_psql(
+				statement, input->nod_arg[e_exe_inputs], false);
 
 			if (count)
 			{
@@ -4832,7 +4845,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 		// Due this mappings are created and we simple reference to these mappings.
 		// Optimizer effects:
 		//   Good thing is that only 1 recordstream is made for the sub-select, but
-		//   the worse thing is that a UNION currently can't be used in
+		//   the worse thing is that a UNION curently can't be used in
 		//   deciding the JOIN order.
 		bool foundSubSelect = false;
 		if (query->nod_type == nod_query_spec) {

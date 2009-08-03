@@ -377,6 +377,7 @@ extern "C" int remove(const char* path);
 #endif
 
 #define IEEE
+#pragma OPT_LEVEL 1
 // 16-Apr-2002 HP10 in unistd.h Paul Beach
 //#define setreuid(ruid, euid)     setresuid (ruid, euid, -1)
 //#define setregid(rgid, egid)     setresgid (rgid, egid, -1)
@@ -387,7 +388,7 @@ extern "C" int remove(const char* path);
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int. */
-#define QUADCONST(n) (n)
+#define QUADCONST(n) (n##LL)
 
 #ifndef USE_POSIX_THREADS
 // HPUX v B.11.23 does not have _POSIX_THREADS defined, their implementation
@@ -655,14 +656,6 @@ struct ISC_TIMESTAMP
 #endif // __GNUC__
 #endif
 
-// format for handles
-#if defined(WIN_NT) && defined(AMD64)
-#define HANDLEFORMAT QUADFORMAT
-#else
-#define HANDLEFORMAT SLONGFORMAT
-#endif
-
-
 /* conditional compilation macros */
 
 
@@ -777,15 +770,6 @@ void routine(const char* message, ...) \
 // Shortcuts to make it easier to convert code using SLONGFORMAT/ULONGFORMAT
 #define UQUADFORMAT QUADFORMAT"u"
 #define SQUADFORMAT QUADFORMAT"d"
-
-// Let use size_t in printf() correctly
-#ifndef SIZEFORMAT
-#if (SIZEOF_LONG == 8)
-#define SIZEFORMAT UQUADFORMAT
-#else
-#define SIZEFORMAT "u"
-#endif
-#endif // SIZEFORMAT
 
 #ifdef DEV_BUILD
 

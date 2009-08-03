@@ -67,7 +67,7 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 		"  -STO[P]                               Stop trace session\n"
 		"  -SU[SPEND]                            Suspend trace session\n"
 		"  -R[ESUME]                             Resume trace session\n"
-		"  -L[IST]                               List existing trace sessions\n"
+		"  -L[IST]                               List existing trace sessions\n\n"
 		"\n"
 		"Action parameters: \n"
 		"  -N[AME]    <string>                   Session name\n"
@@ -82,11 +82,11 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 		"  -T[RUSTED]  <string>                  Force trusted authentication\n"
 		"\n"
 		"Examples: \n"
-		"  fbtracemgr -SE remote_host:service_mgr -USER SYSDBA -PASS masterkey -LIST\n"
-		"  fbtracemgr -SE service_mgr -START -NAME my_trace -CONFIG my_cfg.txt\n"
-		"  fbtracemgr -SE service_mgr -SUSPEND -ID 2\n"
-		"  fbtracemgr -SE service_mgr -RESUME -ID 2\n"
-		"  fbtracemgr -SE service_mgr -STOP -ID 4\n"
+		"  fbtracemgr -LIST\n"
+		"  fbtracemgr -START -NAME my_trace -CONFIG my_cfg.txt\n"
+		"  fbtracemgr -SUSPEND -ID 2\n"
+		"  fbtracemgr -RESUME -ID 2\n"
+		"  fbtracemgr -STOP -ID 4\n"
 		"\n"
 		"Notes:\n"
 		"  Press CTRL+C to stop interactive trace session\n"
@@ -243,7 +243,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				case IN_SW_TRACE_SUSPEND:
 				case IN_SW_TRACE_RESUME:
 				case IN_SW_TRACE_LIST:
-					usage(uSvc, TRACE_ERR_PARAM_ACT_NOTCOMPAT, sw->in_sw_name, action_sw->in_sw_name);
+					usage(uSvc, TRACE_ERR_PARAM_ACT_NOTCOMPAT, sw->in_sw, action_sw->in_sw_name);
 					break;
 			}
 

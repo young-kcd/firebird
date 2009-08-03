@@ -44,6 +44,9 @@ STD_EDITLINE=false
 STD_ICU=false
 RPM64=
 
+dnl Test for realtime library presence?
+RT_LIB_CHECK=false
+
 dnl Test for special ar options?
 AR_OPT_CHECK=false
 
@@ -238,7 +241,6 @@ dnl CPU_TYPE=ppc64
     case $comp in
        aCC) MAKEFILE_PREFIX=hpux_aCC ;
            ICU_PLATFORM=HP-UX11ACC ;
-           PTHREAD_CFLAGS=-mt
            ;;
        *)  MAKEFILE_PREFIX=hpux_ia64 ;
            ;;
@@ -247,8 +249,8 @@ dnl CPU_TYPE=ppc64
     PLATFORM=HPUX
     AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
     EDITLINE_FLG=Y
-    SHRLIB_EXT=so
     libdir=/usr/lib/pa20_64
+    RT_LIB_CHECK=true
     ;;
 
   hppa*-*-hpux*)
@@ -256,7 +258,6 @@ dnl CPU_TYPE=ppc64
     case $comp in
        aCC) MAKEFILE_PREFIX=hpux_aCC ;
            ICU_PLATFORM=HP-UX11ACC ;
-           PTHREAD_CFLAGS=-mt
            ;;
        *)  MAKEFILE_PREFIX=hpux ;
            ;;
@@ -267,6 +268,7 @@ dnl CPU_TYPE=ppc64
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
+    RT_LIB_CHECK=true
     ;;
 
   i386-pc-solaris*)
@@ -289,6 +291,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    RT_LIB_CHECK=true
     ;;
 
   sparc-sun-solaris*)
@@ -310,6 +313,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    RT_LIB_CHECK=true
     ;;
 
   *-*-mingw*)
@@ -378,18 +382,13 @@ fi
 
 dnl Find out how to use threads on this platform
 pre_acx_pthread_cflags=$CFLAGS
-pre_acx_pthread_libs=$LIBS
 ACX_PTHREAD([
   AC_DEFINE(HAVE_MULTI_THREAD, 1,
     [Define this if multi-threading should be supported])])
 CFLAGS=$pre_acx_pthread_cflags
-LIBS=$pre_acx_pthread_libs
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
-dnl Later we always build threaded binaries
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-LIBS="$LIBS $PTHREAD_LIBS"
 
 AC_ARG_ENABLE(raw-devices,
   [  --enable-raw-devices    enable databases on raw devices (default on POSIX)],
@@ -563,10 +562,9 @@ AC_CHECK_HEADERS(sys/sem.h)
 AC_CHECK_HEADERS(semaphore.h)
 AC_CHECK_HEADERS(float.h)
 AC_CHECK_HEADERS(atomic.h)
-AC_CHECK_HEADERS(atomic_ops.h)
 
 dnl Check for libraries
-AC_SEARCH_LIBS(dlopen, dl)
+AC_CHECK_LIB(dl, main)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
 	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
@@ -577,8 +575,10 @@ if test "$EDITLINE_FLG" = "Y"; then
 	AC_SUBST(TERMLIB)
 	XE_APPEND(-l$TERMLIB, LIBS)
 fi
-AC_SEARCH_LIBS(inet_aton, resolv)
-AC_CHECK_LIB(atomic_ops, main)
+if test "$RT_LIB_CHECK" = "true"; then
+	AC_CHECK_LIB(rt, main)
+	AC_CHECK_LIB(resolv, inet_aton)
+fi
 
 dnl Check for libraries for static C++ runtime linking
 AC_CHECK_LIB(supc++, main, XE_APPEND(-lsupc++, STATIC_CXXSUPPORT_LIB))
@@ -675,19 +675,16 @@ AC_CHECK_FUNCS(fchmod)
 AC_CHECK_FUNCS(semtimedop)
 AC_CHECK_FUNCS(fegetenv)
 AC_CHECK_FUNCS(strerror_r)
-dnl AC_CHECK_FUNCS(AO_compare_and_swap_full)
-AC_COMPILE_IFELSE(
-	[AC_LANG_PROGRAM([[#include <atomic_ops.h>]], [[AO_T x; AO_compare_and_swap_full(&x, 0, 0); return 0;]])],
-	AC_DEFINE(HAVE_AO_COMPARE_AND_SWAP_FULL, 1, [Define this if AO_compare_and_swap_full() is defined in atomic_ops.h]))
 
-dnl Checks for pthread functions
+# Checks for pthread functions
+savedFlags="$CFLAGS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+
 AC_CHECK_FUNCS(pthread_mutexattr_setprotocol)
 AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
 AC_CHECK_FUNCS(pthread_mutex_consistent_np)
 
-dnl Semaphores
 if test "$ac_cv_header_semaphore_h" = "yes"; then
-AC_SEARCH_LIBS(sem_init, rt)
 AC_CHECK_FUNCS(sem_timedwait)
 AC_CHECK_FUNCS(sem_init)
 if test "$ac_cv_func_sem_init" = "yes"; then
@@ -700,19 +697,20 @@ AC_TRY_RUN([#include <semaphore.h>
 	],
 [AC_DEFINE(WORKING_SEM_INIT,1,[Define this if sem_init() works on the platform])
 AC_MSG_RESULT(yes)],
-[AC_MSG_RESULT(no)
-AC_SEARCH_LIBS(sem_open, rt)])
+[AC_MSG_RESULT(no)])
 fi
 fi
 
-dnl HPUX has a bug in .h files. To detect it we need C++ here.
+CFLAGS="$savedFlags"
+
+# HPUX has a bug in .h files. To detect it we need C++ here.
 AC_LANG_PUSH(C++)
 AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM([[#include <fcntl.h>]], [[posix_fadvise(0, 0, 0, 0);]])],
 	AC_DEFINE(HAVE_POSIX_FADVISE, 1, [Define this if posix_fadvise() is present on the platform]))
 AC_LANG_POP(C++)
 
-dnl Checks for typedefs, structures, and compiler characteristics.
+# Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
 AC_C_VOLATILE
 AC_TYPE_SIGNAL

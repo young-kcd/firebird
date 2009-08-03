@@ -47,7 +47,6 @@
 #include "../jrd/sbm.h"
 
 #include "../jrd/DebugInterface.h"
-#include "../jrd/BlrReader.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -807,7 +806,9 @@ class CompilerScratch : public pool_alloc<type_csb>
 {
 public:
 	CompilerScratch(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
-	:	/*csb_node(0),
+	:	/*csb_blr(0),
+		csb_running(0),
+		csb_node(0),
 		csb_variables(0),
 		csb_dependencies(0),
 #ifdef SCROLLABLE_CURSORS
@@ -840,6 +841,11 @@ public:
 		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
 	}
 
+	UCHAR getBlrByte()
+	{
+		return *csb_running++;
+	}
+
 	int nextStream(bool check = true)
 	{
 		if (csb_n_stream >= MAX_STREAMS && check)
@@ -849,7 +855,8 @@ public:
 		return csb_n_stream++;
 	}
 
-	BlrReader		csb_blr_reader;
+	const UCHAR*	csb_blr;
+	const UCHAR*	csb_running;
 	jrd_nod*		csb_node;
 	ExternalAccessList csb_external;      /* Access to outside procedures/triggers to be checked */
 	AccessItemList	csb_access;			/* Access items to be checked */

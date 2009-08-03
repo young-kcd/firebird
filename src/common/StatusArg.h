@@ -80,7 +80,6 @@ protected:
 	~Base() { delete implementation; }
 
 	ImplBase* const implementation;
-
 public:
 	ISC_STATUS getKind() const throw() { return implementation->getKind(); }
 	ISC_STATUS getCode() const throw() { return implementation->getCode(); }

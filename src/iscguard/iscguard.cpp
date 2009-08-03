@@ -190,8 +190,7 @@ static bool parse_args(LPCSTR lpszArgs)
 					delimited = false;
 					while (*p && *p == ' ')
 						p++;
-					if (*p && *p == '"')
-					{
+					if (*p && *p == '"') {
 						p++;
 						delimited = true;
 					}
@@ -209,8 +208,7 @@ static bool parse_args(LPCSTR lpszArgs)
 					}
 					else
 					{
-						if (*p && *p != '-')
-						{
+						if (*p && *p != '-') {
 							char* pi = instance;
 							const char* pend = instance + sizeof(instance) - 1;
 							while (*p && *p != ' ' && pi < pend) {
@@ -255,8 +253,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	{
 		gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &thread_id);
 
-		if (thread_id == (DWORD) -1)
-		{
+		if (thread_id == (DWORD) -1) {
 			/* error starting server thread */
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
@@ -268,8 +265,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 
 /* Make sure that there is only 1 instance of the guardian running */
 	HWND hWnd = FindWindow(GUARDIAN_CLASS_NAME, GUARDIAN_APP_NAME);
-	if (hWnd)
-	{
+	if (hWnd) {
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_ALREADYSTARTED, szMsgString, 256);
 		MessageBox(NULL, szMsgString, GUARDIAN_APP_LABEL, MB_OK | MB_ICONHAND);
@@ -290,8 +286,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	wcl.cbWndExtra = 0;
 	wcl.hbrBackground = (HBRUSH) GetStockObject(WHITE_BRUSH);
 
-	if (!RegisterClass(&wcl))
-	{
+	if (!RegisterClass(&wcl)) {
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_REGERROR, szMsgString, 256);
 		MessageBox(NULL, szMsgString, GUARDIAN_APP_LABEL, MB_OK);
@@ -337,8 +332,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 			BOOL bPSMsg = PropSheet_IsDialogMessage(hPSDlg, &message);
 
 			/* Check if the property sheet dialog is still valid, if not destroy it */
-			if (!PropSheet_GetCurrentPageHwnd(hPSDlg))
-			{
+			if (!PropSheet_GetCurrentPageHwnd(hPSDlg)) {
 				DestroyWindow(hPSDlg);
 				hPSDlg = NULL;
 			}
@@ -376,15 +370,16 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	switch (message)
 	{
 	case WM_CLOSE:
-		/* Clean up memory for log_entry */
-		while (log_entry->next)
 		{
-			log_info* tmp = log_entry->next;
+			/* Clean up memory for log_entry */
+			while (log_entry->next) {
+				log_info* tmp = log_entry->next;
+				free(log_entry);
+				log_entry = tmp;
+			}
 			free(log_entry);
-			log_entry = tmp;
+			DestroyWindow(hWnd);
 		}
-		free(log_entry);
-		DestroyWindow(hWnd);
 		break;
 
 	case WM_COMMAND:
@@ -453,8 +448,7 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 		break;
 
 	case ON_NOTIFYICON:
-		if (bStartup)
-		{
+		if (bStartup) {
 			SendMessage(hWnd, WM_COMMAND, 0, 0);
 			return TRUE;
 		}
@@ -474,8 +468,7 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 		break;
 
 	case WM_CREATE:
-		if (!service_flag)
-		{
+		if (!service_flag) {
 			HICON hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBGUARD),
 									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 
@@ -682,8 +675,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				DWORD server_pid;
 				GetWindowThreadProcessId(hTmpWnd, &server_pid);
 				procHandle = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, server_pid);
-				if (procHandle == NULL)
-				{
+				if (procHandle == NULL) {
 					error = GetLastError();
 					success = FALSE;
 				}
@@ -735,8 +727,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 		DWORD exit_status;
 		if (service_flag)
 		{
-			while (WaitForSingleObject(procHandle, 500) == WAIT_OBJECT_0)
-			{
+			while (WaitForSingleObject(procHandle, 500) == WAIT_OBJECT_0) {
 				ReleaseMutex(procHandle);
 				Sleep(100);
 			}
@@ -782,8 +773,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 					done = false;
 			}
 		}
-		else
-		{
+		else {
 			/* Normal shutdown - ie: via ibmgr - don't restart the server */
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_NORMAL_TERM, szMsgString, 256);
@@ -798,8 +788,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 
 /* If on WINNT */
-	if (service_flag)
-	{
+	if (service_flag) {
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
 		CNTL_stop_service(); //(service_name->c_str());
@@ -858,7 +847,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 }
 
 
-LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM /*wParam*/, LPARAM lParam)
+LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -945,7 +934,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM /*wParam*/, LPARAM lP
 				 */
 				lvC.iSubItem = index;
 				lvC.cx = 85;
-				LoadString(hInstance, IDS_ACTION + (index * 10), szText, sizeof(szText));
+				LoadString(hInstance, IDS_ACTION + (index * 10), szText,
+						   sizeof(szText));
 				ListView_InsertColumn(hWndLog, index, &lvC);
 			}
 
@@ -1105,13 +1095,14 @@ void write_log(int log_action, const char* buff)
 			LoadString(hInstance_gbl, log_action + 1, tmp_buff, sizeof(tmp_buff));
 			sprintf(act_buff[0], "%s", buff);
 
-			LPTSTR lpMsgBuf;
+			LPVOID lpMsgBuf;
 			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 						  FORMAT_MESSAGE_ARGUMENT_ARRAY |
 						  FORMAT_MESSAGE_FROM_STRING,
 						  tmp_buff, 0, 0, (LPTSTR) &lpMsgBuf, 0,
 						  reinterpret_cast<va_list*>(act_buff));
-			strncpy(act_buff[0], lpMsgBuf, strlen(lpMsgBuf) - 1);
+			strncpy(act_buff[0], (LPTSTR) lpMsgBuf,
+					strlen(static_cast<const char*>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
 			WORD wLogType;
 
@@ -1134,7 +1125,8 @@ void write_log(int log_action, const char* buff)
 							  FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
 							  GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),	// Default language
 							  (LPTSTR) & lpMsgBuf, 0, NULL);
-				gds__log("Unable to update NT Event Log.\n\tOS Message: %s", lpMsgBuf);
+				gds__log("Unable to update NT Event Log.\n\tOS Message: %s",
+						 lpMsgBuf);
 				LocalFree(lpMsgBuf);
 			}
 			// CVC: free(act_buff[0]); ???

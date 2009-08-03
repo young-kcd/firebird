@@ -133,6 +133,9 @@ const int NOTASOCKET = WSAENOTSOCK;
 
 #else // WIN_NT
 
+#ifndef SOCKET
+#define SOCKET  int
+#endif
 #ifndef SOCLOSE
 #define SOCLOSE	close
 #endif
@@ -432,7 +435,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 	P_CNCT*	cnct = &packet->p_cnct;
 
-	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
@@ -464,7 +467,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
@@ -489,7 +492,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 		// try again with next set of known protocols
 
-		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
@@ -726,9 +729,9 @@ rem_port* INET_connect(const TEXT* name,
 
 	// Allocate a port block and initialize a socket for communications
 
-	port->port_handle = socket(AF_INET, SOCK_STREAM, 0);
+	port->port_handle = (HANDLE) socket(AF_INET, SOCK_STREAM, 0);
 
-	if (port->port_handle == INVALID_SOCKET)
+	if ((SOCKET) port->port_handle == INVALID_SOCKET)
 	{
 		inet_error(port, "socket", isc_net_connect_err, INET_ERRNO);
 		disconnect(port);
@@ -756,7 +759,7 @@ rem_port* INET_connect(const TEXT* name,
 			// If host has two addresses and the first one failed,
 			// but the second one succeeded - no need to worry
 
-			n = connect(port->port_handle, (struct sockaddr*) &address, sizeof(address));
+			n = connect((SOCKET) port->port_handle, (struct sockaddr*) &address, sizeof(address));
 			inetErrNo = INET_ERRNO;
 
 			if (n != -1 && send_full(port, packet))
@@ -785,7 +788,7 @@ rem_port* INET_connect(const TEXT* name,
 		//			e.g. while it's listening. This is surely not what we want.
 
 		int optval = TRUE;
-		n = setsockopt(port->port_handle, SOL_SOCKET, SO_REUSEADDR,
+		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_REUSEADDR,
 					   (SCHAR*) &optval, sizeof(optval));
 		if (n == -1)
 		{
@@ -799,13 +802,13 @@ rem_port* INET_connect(const TEXT* name,
 		// disconnect.  SO_LINGER should be set by default on the socket
 
 		socklen_t optlen = sizeof(port->port_linger);
-		n = getsockopt(port->port_handle, SOL_SOCKET, SO_LINGER,
+		n = getsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
 					   (SCHAR *) & port->port_linger, &optlen);
 
 		if (n != 0)				// getsockopt failed
 			port->port_linger.l_onoff = 0;
 
-		n = setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER,
+		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
 					   (SCHAR *) & lingerInfo, sizeof(lingerInfo));
 		if (n == -1)
 		{
@@ -822,7 +825,7 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 
-	n = bind(port->port_handle, (struct sockaddr*) &address, sizeof(address));
+	n = bind((SOCKET) port->port_handle, (struct sockaddr*) &address, sizeof(address));
 
 	if (n == -1)
 	{
@@ -832,7 +835,7 @@ rem_port* INET_connect(const TEXT* name,
 		for (int retry = 0; INET_ERRNO == INET_ADDR_IN_USE && retry < INET_RETRY_CALL; retry++)
 		{
 			sleep(10);
-			n = bind(port->port_handle, (struct sockaddr *) &address, sizeof(address));
+			n = bind((SOCKET) port->port_handle, (struct sockaddr *) &address, sizeof(address));
 			if (n == 0)
 				break;
 		}
@@ -845,7 +848,7 @@ rem_port* INET_connect(const TEXT* name,
 		return NULL;
 	}
 
-	n = listen(port->port_handle, 5);
+	n = listen((SOCKET) port->port_handle, 5);
 
 	if (n == -1)
 	{
@@ -869,7 +872,7 @@ rem_port* INET_connect(const TEXT* name,
 	while (true)
 	{
 		socklen_t l = sizeof(address);
-		SOCKET s = accept(port->port_handle, (struct sockaddr*) &address, &l);
+		SOCKET s = accept((SOCKET) port->port_handle, (struct sockaddr*) &address, &l);
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET)
 		{
@@ -886,8 +889,8 @@ rem_port* INET_connect(const TEXT* name,
 		if ((flag & SRVR_debug) || !fork())
 #endif
 		{
-			SOCLOSE(port->port_handle);
-			port->port_handle = s;
+			SOCLOSE((SOCKET) port->port_handle);
+			port->port_handle = (HANDLE) s;
 			port->port_server_flags |= SRVR_server | SRVR_debug;
 			port->port_flags |= PORT_server;
 			return port;
@@ -929,7 +932,7 @@ rem_port* INET_connect(const TEXT* name,
 }
 
 
-rem_port* INET_reconnect(SOCKET handle, ISC_STATUS* status_vector)
+rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -954,7 +957,8 @@ rem_port* INET_reconnect(SOCKET handle, ISC_STATUS* status_vector)
 	port->port_server_flags |= SRVR_server;
 
 	int n = 0, optval = TRUE;
-	n = setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+	n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET,
+					SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
 	}
@@ -966,7 +970,7 @@ rem_port* INET_reconnect(SOCKET handle, ISC_STATUS* status_vector)
 	return port;
 }
 
-rem_port* INET_server(SOCKET sock)
+rem_port* INET_server(int sock)
 {
 /**************************************
  *
@@ -983,7 +987,7 @@ rem_port* INET_server(SOCKET sock)
 	rem_port* const port = alloc_port(NULL);
 	port->port_flags |= PORT_server;
 	port->port_server_flags |= SRVR_server;
-	port->port_handle = sock;
+	port->port_handle = (HANDLE) sock;
 
 	int optval = 1;
 	n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
@@ -1035,10 +1039,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 	// Pick up account and password, if given
 
-	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
-								cnct->p_cnct_user_id.cstr_address,
-								cnct->p_cnct_user_id.cstr_length);
-
+	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged, cnct->p_cnct_user_id.cstr_address,
+									   cnct->p_cnct_user_id.cstr_length);
 	SLONG eff_gid = -1, eff_uid = -1;
 	bool user_verification = false;
 	for (id.rewind(); !id.isEof(); id.moveNext())
@@ -1055,7 +1057,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 		case CNCT_group:
 			{
-				const size_t length = id.getClumpLength();
+				const int length = id.getClumpLength();
 				if (length != 0)
 				{
 					eff_gid = 0;
@@ -1124,7 +1126,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	socklen_t l = sizeof(address);
 
 	memset(&address, 0, sizeof(address));
-	int status = getpeername(port->port_handle, (struct sockaddr *) &address, &l);
+	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
 	if (status == 0)
 	{
 		Firebird::string addr_str;
@@ -1270,7 +1272,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 #ifdef WIN_NT
 				select(FD_SETSIZE, &slct_fdset, NULL, NULL, &timeout);
 #else
-				select(port->port_channel + 1, &slct_fdset, NULL, NULL, &timeout);
+				select((SOCKET) port->port_channel + 1, &slct_fdset, NULL, NULL, &timeout);
 #endif
 			inetErrNo = INET_ERRNO;
 
@@ -1302,7 +1304,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		}
 
 		SOCLOSE(port->port_channel);
-		port->port_handle = n;
+		port->port_handle = (HANDLE) n;
 		port->port_flags |= PORT_async;
 		return port;
 	}
@@ -1334,7 +1336,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	// should be configured to be a fixed port number in the server configuration.
 
 	memset(&address, 0, sizeof(address));
-	int status = getpeername(port->port_handle, (struct sockaddr *) &address, &l);
+	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
 	if (status != 0)
 	{
 		inet_error(port, "socket", isc_net_event_connect_err, INET_ERRNO);
@@ -1345,7 +1347,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
 
 	int optval = 1;
-	setsockopt(n, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
+			   (SCHAR*) &optval, sizeof(optval));
 
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	const int inetErrNo = INET_ERRNO;
@@ -1357,7 +1360,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-	new_port->port_handle = n;
+	new_port->port_handle = (HANDLE) n;
 
 	return new_port;
 }
@@ -1437,7 +1440,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	P_RESP* response = &packet->p_resp;
 
 	struct sockaddr_in port_address;
-	if (getsockname(port->port_handle, (struct sockaddr *) &port_address, &length) < 0)
+	if (getsockname((SOCKET) port->port_handle, (struct sockaddr *) &port_address, &length) < 0)
 	{
 		inet_error(port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
@@ -1467,7 +1470,7 @@ static bool check_host(rem_port* port)
 
 	socklen_t length = sizeof(address);
 
-	if (getpeername(port->port_handle, (struct sockaddr*) &address, &length) == -1)
+	if (getpeername((int) port->port_handle, (struct sockaddr*) &address, &length) == -1)
 		return false;
 
 	// If source address is in the loopback net - trust it
@@ -1526,18 +1529,23 @@ static void disconnect(rem_port* const port)
 
 	if (port->port_linger.l_onoff)
 	{
-		setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER,
-				   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
+		setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
+					   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
 	}
 
 #if defined WIN_NT
-	if (port->port_handle && port->port_handle != INVALID_SOCKET)
-#else
-	if (port->port_handle)
-#endif
-	{
-		shutdown(port->port_handle, 2);
+
+	if (port->port_handle && (SOCKET) port->port_handle != INVALID_SOCKET) {
+		shutdown((int) port->port_handle, 2);
 	}
+
+#else // WIN_NT
+
+	if (port->port_handle) {
+		shutdown((int) port->port_handle, 2);
+	}
+
+#endif // WIN_NT
 
 	Firebird::MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
@@ -1554,7 +1562,7 @@ static void disconnect(rem_port* const port)
 	inet_ports->unRegisterPort(port);
 
 	if (port->port_handle) {
-		SOCLOSE(port->port_handle);
+		SOCLOSE((SOCKET) port->port_handle);
 	}
 
 	port->release();
@@ -1592,18 +1600,25 @@ static void force_close(rem_port* port)
 
 	port->port_state = rem_port::BROKEN;
 
-	const SOCKET handle = port->port_handle;
+#ifdef WIN_NT
+	SOCKET handle = (SOCKET) port->port_handle;
 	port->port_handle = 0;
 
-#ifdef WIN_NT
 	if (handle && handle != INVALID_SOCKET)
-#else
-	if (handle)
-#endif
 	{
 		shutdown(handle, 2);
 		SOCLOSE(handle);
 	}
+#else
+	int handle = (int) port->port_handle;
+	port->port_handle = 0;
+
+	if (handle)
+	{
+		shutdown(handle, 2);
+		SOCLOSE(handle);
+	}
+#endif
 }
 
 
@@ -1663,7 +1678,7 @@ static void wsaExitHandler(void*)
 }
 
 
-static int fork(SOCKET old_handle, USHORT flag)
+static int fork( SOCKET old_handle, USHORT flag)
 {
 /**************************************
  *
@@ -1687,7 +1702,8 @@ static int fork(SOCKET old_handle, USHORT flag)
 	}
 
 	Firebird::string cmdLine;
-	cmdLine.printf("%s -i -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, new_handle, GetCurrentProcessId());
+	cmdLine.printf("%s -i -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) new_handle,
+		GetCurrentProcessId());
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -1969,7 +1985,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				if (main_port->port_state != rem_port::BROKEN)
 				{
 					main_port->port_state = rem_port::BROKEN;
-					const SOCKET s = main_port->port_handle;
+					SOCKET s = (SOCKET) main_port->port_handle;
 					shutdown(s, 2);
 					SOCLOSE(s);
 				}
@@ -2033,8 +2049,9 @@ static rem_port* select_accept( rem_port* main_port)
 	socklen_t l = sizeof(address);
 	inet_ports->registerPort(port);
 
-	port->port_handle = accept(main_port->port_handle, (struct sockaddr*) &address, &l);
-	if (port->port_handle == INVALID_SOCKET)
+	port->port_handle =
+		(HANDLE) accept((SOCKET) main_port->port_handle, (struct sockaddr*) &address, &l);
+	if ((SOCKET) port->port_handle == INVALID_SOCKET)
 	{
 		inet_error(port, "accept", isc_net_connect_err, INET_ERRNO);
 		disconnect(port);
@@ -2042,7 +2059,8 @@ static rem_port* select_accept( rem_port* main_port)
 	}
 
 	int optval = 1;
-	setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
+			   (SCHAR*) &optval, sizeof(optval));
 
 	port->port_flags |= PORT_server;
 
@@ -2077,10 +2095,11 @@ static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
 
 	for (port = main_port; port; port = port->port_next)
 	{
-		const SOCKET n = port->port_handle;
 #ifdef WIN_NT
+		const SOCKET n = (SOCKET) port->port_handle;
 		const int ok = FD_ISSET(n, &selct->slct_fdset);
 #else
+		const int n = (int) port->port_handle;
 		if (n < 0 || n >= FD_SETSIZE) {
 			return;
 		}
@@ -2162,28 +2181,29 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 #ifdef WIN_NT
 							false;
 #else
-							(port->port_handle < 0 || port->port_handle >= FD_SETSIZE);
+							((SOCKET) port->port_handle < 0) ||
+							((SOCKET) port->port_handle) >= FD_SETSIZE;
 #endif
 
-						if (badSocket || getsockopt(port->port_handle,
+						if (badSocket || getsockopt((SOCKET) port->port_handle,
 								SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
 						{
 							if (badSocket || INET_ERRNO == NOTASOCKET)
 							{
 								// not a socket, strange !
-								gds__log("INET/select_wait: found \"not a socket\" socket : %"HANDLEFORMAT,
-										 port->port_handle);
+								gds__log("INET/select_wait: found \"not a socket\" socket : %u",
+									(SOCKET) port->port_handle);
 
 								// this will lead to receive() which will break bad connection
 								selct->slct_count = selct->slct_width = 0;
 								FD_ZERO(&selct->slct_fdset);
 								if (!badSocket)
 								{
-									FD_SET(port->port_handle, &selct->slct_fdset);
+									FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
 #ifdef WIN_NT
 									++selct->slct_width;
 #else
-									selct->slct_width = port->port_handle + 1;
+									selct->slct_width = (int) port->port_handle + 1;
 #endif
 								}
 								return true;
@@ -2194,11 +2214,11 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 					// if process is shuting down - don't listen on main port
 					if (!INET_shutting_down || port != main_port)
 					{
-						FD_SET(port->port_handle, &selct->slct_fdset);
+						FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
 #ifdef WIN_NT
 						++selct->slct_width;
 #else
-						selct->slct_width = MAX(selct->slct_width, port->port_handle + 1);
+						selct->slct_width = MAX(selct->slct_width, (int) port->port_handle + 1);
 #endif
 						found = true;
 					}
@@ -2253,7 +2273,11 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 					Firebird::MutexLockGuard guard(port_mutex);
 					for (rem_port* port = main_port; port; port = port->port_next)
 					{
+#ifdef WIN_NT
+						FD_CLR((SOCKET)port->port_handle, &selct->slct_fdset);
+#else
 						FD_CLR(port->port_handle, &selct->slct_fdset);
+#endif
 					}
 				}
 				return true;
@@ -2765,7 +2789,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
-	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
+	cnct->p_cnct_file.cstr_length = file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// If we can't talk to a server, punt.  Let somebody else generate
@@ -2951,7 +2975,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 	// Thanks to Brad Pepers who reported this bug  FSG 3 MAY 2001
 	const timeval savetime = timeout;
 
-	const SOCKET ph = port->port_handle;
+	int ph = (int) port->port_handle;
 
 	// Unsed to send a dummy packet, but too big to be defined in the loop.
 	PACKET packet;
@@ -2985,7 +3009,8 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 #if (defined WIN_NT)
 				slct_count = select(FD_SETSIZE, &slct_fdset, NULL, NULL, time_ptr);
 #else
-				slct_count = select(port->port_handle + 1, &slct_fdset, NULL, NULL, time_ptr);
+				slct_count = select((SOCKET) port->port_handle + 1, &slct_fdset,
+					NULL, NULL, time_ptr);
 #endif
 				inetErrNo = INET_ERRNO;
 
@@ -3029,7 +3054,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 			}
 		}
 
-		n = recv(port->port_handle, reinterpret_cast<char*>(buffer), buffer_length, 0);
+		n = recv((SOCKET) port->port_handle, reinterpret_cast<char*>(buffer), buffer_length, 0);
 		inetErrNo = INET_ERRNO;
 
 		if (n != -1 || !INTERRUPT_ERROR(inetErrNo))
@@ -3099,7 +3124,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			fflush(stdout);
 		}
 #endif
-		SSHORT n = send(port->port_handle, data, length, FB_SEND_FLAGS);
+		SSHORT n = send((SOCKET) port->port_handle, data, length, FB_SEND_FLAGS);
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations)
 		{
@@ -3136,7 +3161,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 		SSHORT n;
 		int inetErrNo = 0;
 		const char* b = buffer;
-		while ((n = send(port->port_handle, b, 1, MSG_OOB | FB_SEND_FLAGS)) == -1 &&
+		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB | FB_SEND_FLAGS)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{
 			inetErrNo = INET_ERRNO;
@@ -3228,8 +3253,8 @@ static bool setNoNagleOption(rem_port* port)
 	if (Config::getTcpNoNagle())
 	{
 		int optval = TRUE;
-		int n = setsockopt(port->port_handle, IPPROTO_TCP, TCP_NODELAY,
-						   (SCHAR*) &optval, sizeof(optval));
+		int n = setsockopt((SOCKET) port->port_handle, IPPROTO_TCP,
+					TCP_NODELAY, (SCHAR*) &optval, sizeof(optval));
 
 		if (n == -1)
 		{

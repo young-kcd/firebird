@@ -34,6 +34,10 @@
  *
  */
 
+#ifdef DARWIN
+#define _STLP_CCTYPE
+#endif
+
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>

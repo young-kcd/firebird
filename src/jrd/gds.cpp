@@ -49,7 +49,6 @@
 #include "../jrd/constants.h"
 #include "../jrd/status.h"
 #include "../jrd/os/os_utils.h"
-#include "../jrd/BlrReader.h"
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/locks.h"
@@ -151,7 +150,6 @@ const SLONG GENERIC_SQLCODE		= -999;
 #include "../common/classes/MsgPrint.h"
 
 using Firebird::TimeStamp;
-using Jrd::BlrReader;
 
 // This structure is used to parse the firebird.msg file.
 struct gds_msg
@@ -172,7 +170,8 @@ struct gds_msg
 // between the two modules.
 struct gds_ctl
 {
-	BlrReader ctl_blr_reader;
+	const UCHAR* ctl_blr;				/* Running blr string */
+	const UCHAR* ctl_blr_start;		/* Original start of blr string */
 	FPTR_PRINT_CALLBACK ctl_routine; /* Call back */
 	void* ctl_user_arg;			/* User argument */
 	SSHORT ctl_language;
@@ -245,6 +244,10 @@ static SLONG gds_pid = 0;
 #endif
 
 /* BLR Pretty print stuff */
+
+#define BLR_PEEK    *(control->ctl_blr)
+#define BLR_BYTE	*(control->ctl_blr)++
+#define PUT_BYTE(byte)	control->ctl_string += byte
 
 const int op_line		= 1;
 const int op_verb		= 2;
@@ -1973,12 +1976,13 @@ SLONG API_ROUTINE gds__ftof(const SCHAR* string,
 }
 
 
-ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
-	FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
+int API_ROUTINE gds__print_blr(const UCHAR* blr,
+							   FPTR_PRINT_CALLBACK routine,
+							   void* user_arg, SSHORT language)
 {
 /**************************************
  *
- *	i s c _ p r i n t _ b l r _ 2
+ *	g d s _ $ p r i n t _ b l r
  *
  **************************************
  *
@@ -1998,10 +2002,10 @@ ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
 
 		control->ctl_routine = routine;
 		control->ctl_user_arg = user_arg;
-		control->ctl_blr_reader = BlrReader(blr, blr_length);
+		control->ctl_blr = control->ctl_blr_start = blr;
 		control->ctl_language = language;
 
-		const SSHORT version = control->ctl_blr_reader.getByte();
+		const SSHORT version = BLR_BYTE;
 
 		if ((version != blr_version4) && (version != blr_version5))
 			blr_error(control, "*** blr version %d is not supported ***", (int) version);
@@ -2013,8 +2017,8 @@ ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
 		blr_print_line(control, (SSHORT) offset);
 		blr_print_verb(control, level);
 
-		offset = control->ctl_blr_reader.getOffset();
-		const SCHAR eoc = control->ctl_blr_reader.getByte();
+		offset = control->ctl_blr - control->ctl_blr_start;
+		const SCHAR eoc = BLR_BYTE;
 
 		if (eoc != blr_eoc)
 			blr_error(control, "*** expected end of command, encounted %d ***", (int) eoc);
@@ -2028,25 +2032,6 @@ ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
 	}
 
 	return 0;
-}
-
-
-int API_ROUTINE gds__print_blr(const UCHAR* blr, FPTR_PRINT_CALLBACK routine,
-	void* user_arg, SSHORT language)
-{
-/**************************************
- *
- *	g d s _ $ p r i n t _ b l r
- *
- **************************************
- *
- * Functional description
- *	Pretty print blr thru callback routine.
- *  ASF: DANGEROUS FUNCTION - do not use it in the server.
- *  Use isc_print_blr2 when possible, because the blr_length parameter.
- *
- **************************************/
-	return isc_print_blr2(blr, MAX_USHORT, routine, user_arg, language);
 }
 
 
@@ -2717,7 +2702,7 @@ static void blr_indent(gds_ctl* control, SSHORT level)
 
 	level *= 3;
 	while (--level >= 0)
-		control->ctl_string += ' ';
+		PUT_BYTE(' ');
 }
 
 
@@ -2757,7 +2742,7 @@ static SCHAR blr_print_byte(gds_ctl* control)
  *	Print a byte as a numeric value and return same.
  *
  **************************************/
-	const UCHAR v = control->ctl_blr_reader.getByte();
+	const UCHAR v = BLR_BYTE;
 	blr_format(control, (control->ctl_language) ? "chr(%d), " : "%d, ", (int) v);
 
 	return v;
@@ -2779,7 +2764,7 @@ static SCHAR blr_print_char(gds_ctl* control)
 	SCHAR c;
 	UCHAR v;
 
-	v = c = control->ctl_blr_reader.getByte();
+	v = c = BLR_BYTE;
 	const bool printable = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 		(c >= '0' && c <= '9') || c == '$' || c == '_';
 
@@ -2808,7 +2793,7 @@ static void blr_print_cond(gds_ctl* control)
  **************************************/
 	SSHORT n;
 
-	const USHORT ctype = control->ctl_blr_reader.getByte();
+	const USHORT ctype = BLR_BYTE;
 
 	switch (ctype)
 	{
@@ -2865,7 +2850,7 @@ static int blr_print_dtype(gds_ctl* control)
  **************************************/
 	SSHORT length;
 
-	const USHORT dtype = control->ctl_blr_reader.getByte();
+	const USHORT dtype = BLR_BYTE;
 
 /* Special case blob (261) to keep down the size of the
    jump table */
@@ -2918,10 +2903,8 @@ static int blr_print_dtype(gds_ctl* control)
 			string = "double";
 
 			/* for double literal, return the length of the numeric string */
-			const UCHAR* pos = control->ctl_blr_reader.getPos();
-			const UCHAR v1 = control->ctl_blr_reader.getByte();
-			const UCHAR v2 = control->ctl_blr_reader.getByte();
-			control->ctl_blr_reader.setPos(pos);
+			const UCHAR v1 = *(control->ctl_blr);
+			const UCHAR v2 = *(control->ctl_blr + 1);
 			length = ((v2 << 8) | v1) + 2;
 			break;
 		}
@@ -3080,7 +3063,7 @@ static void blr_print_join(gds_ctl* control)
  **************************************/
 	const TEXT *string;
 
-	const USHORT join_type = control->ctl_blr_reader.getByte();
+	const USHORT join_type = BLR_BYTE;
 
 	switch (join_type)
 	{
@@ -3126,7 +3109,7 @@ static SLONG blr_print_line(gds_ctl* control, SSHORT offset)
 							control->ctl_string.c_str());
 	control->ctl_string.erase();
 
-	return control->ctl_blr_reader.getOffset();
+	return control->ctl_blr - control->ctl_blr_start;
 }
 
 
@@ -3142,9 +3125,9 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
  *	Primary recursive routine to print BLR.
  *
  **************************************/
-	SLONG offset = control->ctl_blr_reader.getOffset();
+	SLONG offset = control->ctl_blr - control->ctl_blr_start;
 	blr_indent(control, level);
-	UCHAR blr_operator = control->ctl_blr_reader.getByte();
+	UCHAR blr_operator = BLR_BYTE;
 
 	if (blr_operator == blr_end)
 	{
@@ -3186,7 +3169,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_pad:
-			control->ctl_string += ' ';
+			PUT_BYTE(' ');
 			break;
 
 		case op_dtype:
@@ -3234,7 +3217,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_begin:
-			while (control->ctl_blr_reader.peekByte() != (UCHAR) blr_end)
+			while ((SCHAR) * (control->ctl_blr) != (SCHAR) blr_end)
 				blr_print_verb(control, level);
 			break;
 
@@ -3271,7 +3254,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_relation:
-			blr_operator = control->ctl_blr_reader.getByte();
+			blr_operator = BLR_BYTE;
 			blr_print_blr(control, blr_operator);
 			// Strange message. Notice that blr_lock_relation was part of PC_ENGINE.
 			if (blr_operator != blr_relation && blr_operator != blr_rid)
@@ -3323,7 +3306,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 			int inputs = 0;
 			int outputs = 0;
-			while ((blr_operator = control->ctl_blr_reader.getByte()) != blr_end)
+			while ((blr_operator = BLR_BYTE) != blr_end)
 			{
 				blr_indent(control, level);
 				blr_format(control, "blr_exec_stmt_%s, ", sub_codes[blr_operator]);
@@ -3401,7 +3384,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			}
 
 			// print blr_end
-			control->ctl_blr_reader.seekBackward(1);
+			control->ctl_blr--;
 			blr_print_verb(control, level);
 			break;
 		}
@@ -3449,8 +3432,8 @@ static int blr_print_word(gds_ctl* control)
  *	Print a VAX word as a numeric value an return same.
  *
  **************************************/
-	const UCHAR v1 = control->ctl_blr_reader.getByte();
-	const UCHAR v2 = control->ctl_blr_reader.getByte();
+	const UCHAR v1 = BLR_BYTE;
+	const UCHAR v2 = BLR_BYTE;
 	blr_format(control, (control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ", (int) v1, (int) v2);
 
 	return (v2 << 8) | v1;

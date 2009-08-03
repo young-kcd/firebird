@@ -237,9 +237,9 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 
 	if (!status)
 	{
-		if (l > length && temp[length - 1] != blr_eoc)
+		if ((l > length) && (temp[length - 1] != blr_eoc))
 			temp[length] = blr_eoc;
-		isc_print_blr2(temp, length, dump_blr, control, 0);
+		gds__print_blr(temp, dump_blr, control, 0);
 	}
 
 	control->ctl_data[1] = control->ctl_data[0];
@@ -411,32 +411,31 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		sprintf(line, "*** unknown verb %d ***", (int) buff[0]);
 	}
 
-	USHORT strLen = strlen(line);
-
-	if (strLen > control->ctl_buffer_length)
+	if ((length = strlen(line)) > control->ctl_buffer_length)
 	{
 		/* The string is too long for the caller's buffer.  Save the
 		   entire string for output by the string_filter routine. */
 
 		string_put(control, line);
-		strLen = 0;
+		length = 0;
 	}
 
 	if (blr)
 	{
-		fb_assert(length > 0);
-		isc_print_blr2(p, length - 1, dump_blr, control, 0);
+		gds__print_blr(p, dump_blr, control, 0);
 		control->ctl_data[1] = control->ctl_data[0];
 	}
 
-	if (strLen == 0)
+	if (!length)
 	{
-		// The string was too long for the caller's buffer. Return as much as possible to the user.
+		/* The string was too long for the caller's buffer.  Return
+		   as much as possible to the user. */
+
 		return string_filter(action, control);
 	}
 
-	control->ctl_segment_length = strLen;
-	memcpy(control->ctl_buffer, line, strLen);
+	control->ctl_segment_length = length;
+	memcpy(control->ctl_buffer, line, length);
 
 	return status;
 }

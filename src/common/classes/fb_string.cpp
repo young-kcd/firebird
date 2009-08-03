@@ -339,12 +339,12 @@ extern "C" {
 #endif // WIN_NT
 	}
 
-	void AbstractString::baseTrim(const TrimType whereTrim, const_pointer toTrim)
+	void AbstractString::baseTrim(TrimType WhereTrim, const_pointer ToTrim)
 	{
-		const strBitMask sm(toTrim, strlen(toTrim));
+		const strBitMask sm(ToTrim, strlen(ToTrim));
 		const_pointer b = c_str();
 		const_pointer e = &c_str()[length() - 1];
-		if (whereTrim != TrimRight) {
+		if (WhereTrim != TrimRight) {
 			while (b <= e) {
 				if (! sm.Contains(*b)) {
 					break;
@@ -352,7 +352,7 @@ extern "C" {
 				++b;
 			}
 		}
-		if (whereTrim != TrimLeft) {
+		if (WhereTrim != TrimLeft) {
 			while (b <= e) {
 				if (! sm.Contains(*e)) {
 					break;

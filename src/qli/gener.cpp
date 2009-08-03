@@ -603,10 +603,10 @@ static void gen_compile( qli_req* request)
 	STUFF(blr_end);
 	STUFF(blr_eoc);
 
-	const USHORT length = rlb->rlb_data - rlb->rlb_base;
-
 	if (QLI_blr)
-		isc_print_blr2(rlb->rlb_base, length, 0, 0, 0);
+		gds__print_blr(rlb->rlb_base, 0, 0, 0);
+
+	const USHORT length = rlb->rlb_data - rlb->rlb_base;
 
 	qli_dbb* dbb = request->req_database;
 
