@@ -68,7 +68,7 @@ EXPORTS
 	isc_portable_integer@8		PRIVATE
 	isc_prepare_transaction@8	PRIVATE
 	isc_print_blr@16			PRIVATE
-	isc_print_blr2@20			PRIVATE
+	fb_print_blr@20				PRIVATE
 	isc_print_status@4			PRIVATE
 	isc_put_segment@16			PRIVATE
 	isc_put_slice@40			PRIVATE

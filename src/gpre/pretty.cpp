@@ -586,7 +586,7 @@ static int print_dyn_verb( ctl* control, SSHORT level)
 		if (length)
 		{
 			control->ctl_level = level;
-			isc_print_blr2(control->ctl_blr, length, print_blr_line, control, control->ctl_language);
+			fb_print_blr(control->ctl_blr, length, print_blr_line, control, control->ctl_language);
 			control->ctl_blr += length;
 		}
 		return 0;

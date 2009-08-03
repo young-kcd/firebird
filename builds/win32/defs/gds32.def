@@ -157,7 +157,7 @@ EXPORTS
     isc_prepare_transaction=fbclient.isc_prepare_transaction @147
     isc_prepare_transaction2=fbclient.isc_prepare_transaction2 @148
     isc_print_blr=fbclient.isc_print_blr @149
-    isc_print_blr2=fbclient.isc_print_blr2 @280
+    fb_print_blr=fbclient.fb_print_blr @280
     isc_print_sqlerror=fbclient.isc_print_sqlerror @150
     isc_print_status=fbclient.isc_print_status @151
     isc_put_segment=fbclient.isc_put_segment @152

@@ -300,7 +300,7 @@
 +e isc_ftof
 +e isc_free
 +e isc_print_blr
-+e isc_print_blr2
++e fb_print_blr
 +e isc_qtoq
 +e isc_reset_fpe
 +e isc_set_debug

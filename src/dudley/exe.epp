@@ -3918,7 +3918,7 @@ static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 	GENERATE_blr(&blr, node);
 	length = blr.str_current - blr.str_start;
 #ifdef DEBUG
-	isc_print_blr2(blr.str_start, length, 0, 0, 0);
+	fb_print_blr(blr.str_start, length, 0, 0, 0);
 #endif
 	handle = create_blob(blob_id, 0, NULL);
 

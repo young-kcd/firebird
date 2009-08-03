@@ -1024,7 +1024,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 
 #ifdef DEBUG
 	if (debug_on)
-		isc_print_blr2(blr_buffer, blr_length, NULL, NULL, 0);
+		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
 #endif
 
 	ISC_STATUS_ARRAY status_vector;
@@ -1822,7 +1822,7 @@ void put_data(burp_rel* relation)
 
 #ifdef DEBUG
 	if (debug_on)
-		isc_print_blr2(blr_buffer, blr_length, NULL, NULL, 0);
+		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
 #endif
 
 	// Compile request
@@ -1832,7 +1832,7 @@ void put_data(burp_rel* relation)
 	{
 		BURP_error_redirect(status_vector, 27);
 		// msg 27 isc_compile_request failed
-		isc_print_blr2(blr_buffer, blr_length, NULL, NULL, 0);
+		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
 	}
 
 	BURP_free(blr_buffer);

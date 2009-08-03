@@ -131,7 +131,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 #ifdef CMP_DEBUG
 	cmp_trace("BLR code given for JRD parsing:");
 	// CVC: Couldn't find isc_trace_printer, so changed it to gds__trace_printer.
-	isc_print_blr2(blr, blr_length, gds__trace_printer, 0, 0);
+	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
 #endif
 
 	CompilerScratch* csb;

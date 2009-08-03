@@ -1065,11 +1065,11 @@ ISC_STATUS ISC_EXPORT isc_print_blr(const ISC_SCHAR*,
 									void*,
 									short);
 
-ISC_STATUS ISC_EXPORT isc_print_blr2(const ISC_UCHAR*,
-									 ISC_USHORT,
-									 ISC_PRINT_CALLBACK,
-									 void*,
-									 short);
+int ISC_EXPORT fb_print_blr(const ISC_UCHAR*,
+							ISC_ULONG,
+							ISC_PRINT_CALLBACK,
+							void*,
+							short);
 
 void ISC_EXPORT isc_set_debug(int);
 

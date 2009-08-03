@@ -1973,12 +1973,12 @@ SLONG API_ROUTINE gds__ftof(const SCHAR* string,
 }
 
 
-ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
+int API_ROUTINE fb_print_blr(const UCHAR* blr, ULONG blr_length,
 	FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
 {
 /**************************************
  *
- *	i s c _ p r i n t _ b l r _ 2
+ *	f b _ p r i n t _ b l r
  *
  **************************************
  *
@@ -1986,12 +1986,13 @@ ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
  *	Pretty print blr thru callback routine.
  *
  **************************************/
-	try {
-
+	try
+	{
 		gds_ctl ctl;
 		gds_ctl* control = &ctl;
 
-		if (!routine) {
+		if (!routine)
+		{
 			routine = gds__default_printer;
 			user_arg = NULL;
 		}
@@ -2003,7 +2004,7 @@ ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
 
 		const SSHORT version = control->ctl_blr_reader.getByte();
 
-		if ((version != blr_version4) && (version != blr_version5))
+		if (version != blr_version4 && version != blr_version5)
 			blr_error(control, "*** blr version %d is not supported ***", (int) version);
 
 		blr_format(control, (version == blr_version4) ? "blr_version4," : "blr_version5,");
@@ -2021,13 +2022,13 @@ ISC_STATUS API_ROUTINE isc_print_blr2(const UCHAR* blr, USHORT blr_length,
 
 		blr_format(control, "blr_eoc");
 		blr_print_line(control, (SSHORT) offset);
-
-	}	// try
-	catch (const Firebird::LongJump&) {
-		return -1;
+	}
+	catch (const Firebird::Exception&)
+	{
+		return FB_FAILURE;
 	}
 
-	return 0;
+	return FB_SUCCESS;
 }
 
 
@@ -2043,10 +2044,11 @@ int API_ROUTINE gds__print_blr(const UCHAR* blr, FPTR_PRINT_CALLBACK routine,
  * Functional description
  *	Pretty print blr thru callback routine.
  *  ASF: DANGEROUS FUNCTION - do not use it in the server.
- *  Use isc_print_blr2 when possible, because the blr_length parameter.
+ *  Use fb_print_blr when possible, because the blr_length parameter.
  *
  **************************************/
-	return isc_print_blr2(blr, MAX_USHORT, routine, user_arg, language);
+	int ret = fb_print_blr(blr, MAX_ULONG, routine, user_arg, language);
+	return ret ? -1 : 0;
 }
 
 
@@ -2736,7 +2738,7 @@ static void blr_print_blr(gds_ctl* control, UCHAR blr_operator)
  **************************************/
 	const char* p;
 
-	if (blr_operator > FB_NELEM(blr_table) || !(p = blr_table[blr_operator].blr_string))
+	if (blr_operator >= FB_NELEM(blr_table) || !(p = blr_table[blr_operator].blr_string))
 	{
 		blr_error(control, "*** blr operator %d is undefined ***", (int) blr_operator);
 	}

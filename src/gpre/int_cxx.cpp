@@ -503,7 +503,7 @@ static void gen_request( const gpre_req* request)
 	if (gpreGlob.sw_raw)
 		gen_raw(request);
 	else
-		isc_print_blr2(request->req_blr, request->req_length, gen_blr, 0, 0);
+		fb_print_blr(request->req_blr, request->req_length, gen_blr, 0, 0);
 
 	printa(INDENT, "};\t// end of blr string \n");
 }

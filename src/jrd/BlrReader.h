@@ -36,6 +36,8 @@ public:
 		  end(buffer + maxLen),
 		  pos(buffer)
 	{
+		if (end < start)
+			end = (UCHAR*) -1;
 	}
 
 	BlrReader()

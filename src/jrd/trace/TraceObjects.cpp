@@ -172,7 +172,7 @@ void TraceDYNRequestImpl::print_dyn(void* arg, SSHORT offset, const char* line)
 const char* BLRPrinter::getText()
 {
 	if (m_text.empty() && getDataLength())
-		isc_print_blr2(getData(), (USHORT) getDataLength(), print_blr, this, 0);
+		fb_print_blr(getData(), (ULONG) getDataLength(), print_blr, this, 0);
 	return m_text.c_str();
 }
 

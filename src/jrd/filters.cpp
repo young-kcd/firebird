@@ -239,7 +239,7 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 	{
 		if (l > length && temp[length - 1] != blr_eoc)
 			temp[length] = blr_eoc;
-		isc_print_blr2(temp, length, dump_blr, control, 0);
+		fb_print_blr(temp, length, dump_blr, control, 0);
 	}
 
 	control->ctl_data[1] = control->ctl_data[0];
@@ -425,7 +425,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 	if (blr)
 	{
 		fb_assert(length > 0);
-		isc_print_blr2(p, length - 1, dump_blr, control, 0);
+		fb_print_blr(p, length - 1, dump_blr, control, 0);
 		control->ctl_data[1] = control->ctl_data[0];
 	}
 
