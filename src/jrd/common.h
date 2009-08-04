@@ -638,7 +638,20 @@ struct ISC_TIMESTAMP
 #endif
 #endif
 
-//format for __LINE__
+// Shortcuts to make it easier to convert code using SLONGFORMAT/ULONGFORMAT
+#define UQUADFORMAT QUADFORMAT"u"
+#define SQUADFORMAT QUADFORMAT"d"
+
+// format for size_t
+#ifndef SIZEFORMAT
+#if (SIZEOF_SIZE_T == 8)
+#define SIZEFORMAT UQUADFORMAT
+#else
+#define SIZEFORMAT ULONGFORMAT
+#endif
+#endif // SIZEFORMAT
+
+// format for __LINE__
 #ifndef LINEFORMAT
 #ifdef __GNUC__
 #define LINEFORMAT "d"
@@ -647,7 +660,7 @@ struct ISC_TIMESTAMP
 #endif // __GNUC__
 #endif
 
-// format for handles
+// format for OS handles
 #if defined(WIN_NT) && defined(AMD64)
 #define HANDLEFORMAT QUADFORMAT
 #else
@@ -765,19 +778,6 @@ void routine(const char* message, ...) \
 	va_end(params); \
 	gds__trace(buffer); \
 }
-
-// Shortcuts to make it easier to convert code using SLONGFORMAT/ULONGFORMAT
-#define UQUADFORMAT QUADFORMAT"u"
-#define SQUADFORMAT QUADFORMAT"d"
-
-// Let use size_t in printf() correctly
-#ifndef SIZEFORMAT
-#if (SIZEOF_LONG == 8)
-#define SIZEFORMAT UQUADFORMAT
-#else
-#define SIZEFORMAT "u"
-#endif
-#endif // SIZEFORMAT
 
 #ifdef DEV_BUILD
 
