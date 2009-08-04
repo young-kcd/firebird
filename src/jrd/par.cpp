@@ -2990,8 +2990,11 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 			node->nod_arg[e_for_stall] = PAR_parse_node(tdbb, csb, STATEMENT);
 
-		if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse || csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular)
+		if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
+			csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular)
+		{
 			node->nod_arg[e_for_re] = PAR_parse_node(tdbb, csb, TYPE_RSE);
+		}
 		else
 			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
 		node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, sub_type);

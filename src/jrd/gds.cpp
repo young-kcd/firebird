@@ -168,13 +168,13 @@ struct gds_msg
 // blob_filter.h and "struct isc_blob_ctl" from ibase.h. These two should match
 // for blob filters to work. However, this one is private to gds.cpp and hence
 // I renamed it gds_ctl to avoid confusion and possible name clashes.
-// However, filters.cpp calls gds__print_blr(), but this struct is not shared
+// However, filters.cpp calls fb_print_blr(), but this struct is not shared
 // between the two modules.
 struct gds_ctl
 {
 	BlrReader ctl_blr_reader;
-	FPTR_PRINT_CALLBACK ctl_routine; /* Call back */
-	void* ctl_user_arg;			/* User argument */
+	FPTR_PRINT_CALLBACK ctl_routine;	// Call back
+	void* ctl_user_arg;					// User argument
 	SSHORT ctl_language;
 	Firebird::string ctl_string;
 };
@@ -3124,8 +3124,7 @@ static SLONG blr_print_line(gds_ctl* control, SSHORT offset)
  *
  **************************************/
 
-	(*control->ctl_routine)(control->ctl_user_arg, offset,
-							control->ctl_string.c_str());
+	(*control->ctl_routine)(control->ctl_user_arg, offset, control->ctl_string.c_str());
 	control->ctl_string.erase();
 
 	return control->ctl_blr_reader.getOffset();
@@ -3422,7 +3421,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			if (blr_operator == blr_cursor_fetch)
 			{
 #ifdef SCROLLABLE_CURSORS
-				if (BLR_PEEK == blr_seek) {
+				if (control->ctl_blr_reader.peekByte() == blr_seek) {
 					blr_print_verb(control, level);
 				}
 #endif
