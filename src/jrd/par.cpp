@@ -3418,10 +3418,9 @@ void PAR_syntax_error(CompilerScratch* csb, const TEXT* string)
 
 	csb->csb_blr_reader.seekBackward(1);
 
-	error(csb,
-		Arg::Gds(isc_syntaxerr) << Arg::Str(string) <<
-		Arg::Num(csb->csb_blr_reader.getOffset()) <<
-		Arg::Num(csb->csb_blr_reader.peekByte()));
+	error(csb, Arg::Gds(isc_syntaxerr) << Arg::Str(string) <<
+										  Arg::Num(csb->csb_blr_reader.getOffset()) <<
+										  Arg::Num(csb->csb_blr_reader.peekByte()));
 }
 
 
