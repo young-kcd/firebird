@@ -638,14 +638,6 @@ struct ISC_TIMESTAMP
 #endif
 #endif
 
-#ifndef SIZEFORMAT
-#if (SIZEOF_LONG == 8) && defined(__GNUC__)
-#define SIZEFORMAT "ld"
-#else
-#define SIZEFORMAT "d"
-#endif
-#endif // SIZEFORMAT
-
 //format for __LINE__
 #ifndef LINEFORMAT
 #ifdef __GNUC__
