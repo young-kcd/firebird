@@ -661,8 +661,8 @@ struct ISC_TIMESTAMP
 #endif
 
 // format for OS handles
-#if defined(WIN_NT) && defined(AMD64)
-#define HANDLEFORMAT QUADFORMAT
+#if defined(WIN_NT) && (SIZEOF_VOID_P == 8)
+#define HANDLEFORMAT SQUADFORMAT
 #else
 #define HANDLEFORMAT SLONGFORMAT
 #endif
