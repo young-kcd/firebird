@@ -996,17 +996,14 @@ int gbak(Firebird::UtilSvc* uSvc)
 	if (tdgbl->gbl_sw_page_size)
 	{
 		if (sw_replace == IN_SW_BURP_B)
-			BURP_error(8, true);
-			// msg 8 page size is allowed only on restore or create
+			BURP_error(8, true); // msg 8 page size is allowed only on restore or create
 		int temp = tdgbl->gbl_sw_page_size;
+		for (int curr_pg_size = MIN_NEW_PAGE_SIZE; curr_pg_size <= MAX_PAGE_SIZE; curr_pg_size <<= 1)
 		{
-			int curr_pg_size = 1024;
-			while (curr_pg_size <= MAX_PAGE_SIZE) {
-				if (temp <= curr_pg_size) {
-					temp = curr_pg_size;
-					break;
-				}
-				curr_pg_size <<= 1;
+			if (temp <= curr_pg_size) 
+			{
+				temp = curr_pg_size;
+				break;
 			}
 		}
 		if (temp > MAX_PAGE_SIZE)
