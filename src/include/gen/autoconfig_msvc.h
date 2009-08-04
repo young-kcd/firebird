@@ -221,12 +221,16 @@
 #if defined(_M_IX86)
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 4
+/* sizeof(size_t) */
+#define SIZEOF_SIZE_T 4
 /* alignment of long */
 #define FB_ALIGNMENT 4
 #elif defined(_M_AMD64)
 #define AMD64
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 8
+/* sizeof(size_t) */
+#define SIZEOF_SIZE_T 8
 /* alignment of long */
 #define FB_ALIGNMENT 8
 #else
