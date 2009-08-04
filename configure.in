@@ -733,6 +733,7 @@ fi
 
 AC_CHECK_SIZEOF(void *)
 AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(size_t)
 AC_CHECK_TYPES([socklen_t],,,[#include <sys/socket.h>])
 AH_BOTTOM([#ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;
