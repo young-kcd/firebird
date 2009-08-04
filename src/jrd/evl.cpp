@@ -2143,7 +2143,7 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 			  node->nod_type == nod_agg_total_distinct ||
 			  node->nod_type == nod_agg_average_distinct);
 
-	dsc* result = &value->vlu_desc;
+	dsc* const result = &value->vlu_desc;
 
 /* Handle date arithmetic */
 
@@ -2157,6 +2157,11 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = (node->nod_type == nod_subtract) ? d2 - d1 : d1 + d2;
+		if (isinf(value->vlu_misc.vlu_double))
+		{
+			ERR_post(Arg::Gds(isc_arith_except) <<
+					 Arg::Gds(isc_exception_float_overflow));
+		}
 		result->dsc_dtype = DEFAULT_DOUBLE;
 		result->dsc_length = sizeof(double);
 		result->dsc_scale = 0;
@@ -2183,9 +2188,14 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 /* Everything else defaults to longword */
 
+	// CVC: Maybe we should upgrade the sum to double if it doesn't fit?
+	// This is what was done for multiplicaton in dialect 1.
 	const SLONG l1 = MOV_get_long(desc, node->nod_scale);
-	const SLONG l2 = MOV_get_long(&value->vlu_desc, node->nod_scale);
-	value->make_long(((node->nod_type == nod_subtract) ? l2 - l1 : l1 + l2), node->nod_scale);
+	const SINT64 l2 = MOV_get_long(&value->vlu_desc, node->nod_scale);
+	SINT64 rc = (node->nod_type == nod_subtract) ? l2 - l1 : l2 + l1;
+	if (rc < MIN_SLONG || rc > MAX_SLONG)
+		ERR_post(Arg::Gds(isc_exception_integer_overflow));
+	value->make_long(rc, node->nod_scale);
 	return result;
 }
 
@@ -2228,6 +2238,11 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = (node->nod_type == nod_subtract2) ? d2 - d1 : d1 + d2;
+		if (isinf(value->vlu_misc.vlu_double))
+		{
+			ERR_post(Arg::Gds(isc_arith_except) <<
+					 Arg::Gds(isc_exception_float_overflow));
+		}
 		result->dsc_dtype = DEFAULT_DOUBLE;
 		result->dsc_length = sizeof(double);
 		result->dsc_scale = 0;
@@ -2877,7 +2892,12 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 				ERR_post(Arg::Gds(isc_arith_except) <<
 						 Arg::Gds(isc_exception_float_divide_by_zero));
 			}
-			impure->vlu_misc.vlu_double = DOUBLE_DIVIDE(MOV_get_double(desc1), divisor);
+			impure->vlu_misc.vlu_double = MOV_get_double(desc1) / divisor;
+			if (isinf(impure->vlu_misc.vlu_double))
+			{
+				ERR_post(Arg::Gds(isc_arith_except) <<
+						 Arg::Gds(isc_exception_float_overflow));
+			}
 			impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 			impure->vlu_desc.dsc_length = sizeof(double);
 			impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
@@ -4071,7 +4091,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 	if (node->nod_flags & nod_double) {
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
-		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY(d1, d2);
+		value->vlu_misc.vlu_double = d1 * d2;
 		if (isinf(value->vlu_misc.vlu_double))
 		{
 			ERR_post(Arg::Gds(isc_arith_except) <<
@@ -4127,7 +4147,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 		/* This is the Borland solution instead of the five lines above.
 		d1 = MOV_get_double (desc);
 		d2 = MOV_get_double (&value->vlu_desc);
-		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY (d1, d2); */
+		value->vlu_misc.vlu_double = d1 * d2; */
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
 		value->vlu_desc.dsc_scale = 0;
@@ -4168,7 +4188,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
-		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY(d1, d2);
+		value->vlu_misc.vlu_double = d1 * d2;
 		if (isinf(value->vlu_misc.vlu_double))
 		{
 			ERR_post(Arg::Gds(isc_arith_except) <<
@@ -4272,7 +4292,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 					 Arg::Gds(isc_exception_float_divide_by_zero));
 		}
 		const double d1 = MOV_get_double(&value->vlu_desc);
-		value->vlu_misc.vlu_double = DOUBLE_DIVIDE(d1, d2);
+		value->vlu_misc.vlu_double = d1 / d2;
 		if (isinf(value->vlu_misc.vlu_double))
 		{
 			ERR_post(Arg::Gds(isc_arith_except) <<

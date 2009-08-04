@@ -830,14 +830,6 @@ void GDS_breakpoint(int);
 #define LSEEK_OFFSET_CAST (off_t)
 #endif
 
-#ifndef DOUBLE_MULTIPLY
-#define DOUBLE_MULTIPLY(a, b)    (((double) (a)) * ((double) (b)))
-#endif
-
-#ifndef DOUBLE_DIVIDE
-#define DOUBLE_DIVIDE(a, b)      (((double) (a)) / ((double) (b)))
-#endif
-
 #define STRINGIZE_AUX(x)	#x
 #define STRINGIZE(x)		STRINGIZE_AUX(x)
 
