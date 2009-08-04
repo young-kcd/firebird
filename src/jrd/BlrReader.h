@@ -36,8 +36,11 @@ public:
 		  end(buffer + maxLen),
 		  pos(buffer)
 	{
+		// ASF: A big maxLen like MAX_ULONG could overflow the pointer size and
+		// points to something before start. In this case, we set the end to the
+		// max possible address.
 		if (end < start)
-			end = (UCHAR*) -1;
+			end = ((UCHAR*) 0) - 1;
 	}
 
 	BlrReader()
