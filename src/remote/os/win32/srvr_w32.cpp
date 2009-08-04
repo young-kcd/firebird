@@ -587,7 +587,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						else
 						{
 							const DWORD parent_id = atol(buffer);
-							HANDLE parent_handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, parent_id);
+							const HANDLE parent_handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, parent_id);
 							if (!parent_handle)
 							{
 								gds__log("SERVER: OpenProcess failed. Errno = %d, parent PID = %d", GetLastError(), parent_id);
