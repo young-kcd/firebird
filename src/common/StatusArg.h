@@ -138,13 +138,33 @@ public:
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }
 
 	// generic argument insert
-	StatusVector& operator<<(const Base& arg) throw() { implementation->shiftLeft(arg); return *this; }
+	StatusVector& operator<<(const Base& arg) throw()
+	{
+		implementation->shiftLeft(arg);
+		return *this;
+	}
 	// warning special case - to setup first warning location
-	StatusVector& operator<<(const Warning& arg) throw() { implementation->shiftLeft(arg); return *this; }
+	StatusVector& operator<<(const Warning& arg) throw()
+	{
+		implementation->shiftLeft(arg);
+		return *this;
+	}
 	// Str special case - make the code simpler & better readable
-	StatusVector& operator<<(const char* text) throw() { implementation->shiftLeft(text); return *this; }
-	StatusVector& operator<<(const AbstractString& text) throw() { implementation->shiftLeft(text); return *this; }
-	StatusVector& operator<<(const MetaName& text) throw() { implementation->shiftLeft(text); return *this; }
+	StatusVector& operator<<(const char* text) throw()
+	{
+		implementation->shiftLeft(text);
+		return *this;
+	}
+	StatusVector& operator<<(const AbstractString& text) throw()
+	{
+		implementation->shiftLeft(text);
+		return *this;
+	}
+	StatusVector& operator<<(const MetaName& text) throw()
+	{
+		implementation->shiftLeft(text);
+		return *this;
+	}
 
 private:
 };

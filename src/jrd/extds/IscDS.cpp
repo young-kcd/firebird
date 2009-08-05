@@ -1519,10 +1519,9 @@ static bool isConnectionBrokenError(ISC_STATUS status)
 static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &descs)
 {
 	size_t offset = 0;
-    int i = 0;
 	XSQLVAR* xVar = xsqlda->sqlvar;
 
-    for (; i < xsqlda->sqld; xVar++, i++)
+    for (int i = 0; i < xsqlda->sqld; xVar++, i++)
 	{
 		const UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
 		xVar->sqltype |= 1;
@@ -1547,7 +1546,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 	offset = 0;
 	xVar = xsqlda->sqlvar;
 
-    for (i = 0; i < xsqlda->sqld; xVar++, i++)
+    for (int i = 0; i < xsqlda->sqld; xVar++, i++)
 	{
 		const UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
 		if (type_alignments[dtype])
