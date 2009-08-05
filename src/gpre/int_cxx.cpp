@@ -290,7 +290,7 @@ static void gen_compile( const gpre_req* request, int column)
 	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);
 	fprintf(gpreGlob.out_file,
-		"%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"), TRUE);",
+		"%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"), true);",
 			   request->req_handle, request->req_ident, request->req_ident);
 }
 

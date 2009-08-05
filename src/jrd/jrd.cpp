@@ -1712,7 +1712,8 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		TraceBlrCompile trace(tdbb, blr_length, (UCHAR*) blr);
 		try
 		{
-			JRD_compile(tdbb, attachment, req_handle, blr_length, reinterpret_cast<const UCHAR*>(blr),
+			JRD_compile(tdbb, attachment, req_handle,
+						(USHORT) blr_length, reinterpret_cast<const UCHAR*>(blr),
 						RefStrPtr(), 0, NULL);
 
 			fb_assert(*req_handle);
@@ -6589,7 +6590,7 @@ void JRD_unwind_request(thread_db* tdbb, jrd_req* request, SSHORT level)
 void JRD_compile(thread_db* tdbb,
 				 Attachment* attachment,
 				 jrd_req** req_handle,
-				 SSHORT blr_length,
+				 ULONG blr_length,
 				 const UCHAR* blr,
 				 RefStrPtr ref_str,
 				 USHORT dbginfo_length, const UCHAR* dbginfo)
@@ -6607,7 +6608,7 @@ void JRD_compile(thread_db* tdbb,
 	if (*req_handle)
 		status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
-	jrd_req* request = CMP_compile2(tdbb, blr, blr_length, FALSE, dbginfo_length, dbginfo);
+	jrd_req* request = CMP_compile2(tdbb, blr, blr_length, false, dbginfo_length, dbginfo);
 
 	request->req_attachment = attachment;
 	request->req_request = attachment->att_requests;

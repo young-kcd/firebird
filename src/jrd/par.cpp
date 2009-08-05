@@ -186,14 +186,17 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	}
 
 	const SSHORT version = csb->csb_blr_reader.getByte();
-
-	if (version != blr_version4 && version != blr_version5) {
+	switch (version)
+	{
+	case blr_version4:
+		csb->csb_g_flags |= csb_blr_version4;
+		break;
+	case blr_version5:
+		break; // nothing to do
+	default:
 		error(csb, Arg::Gds(isc_metadata_corrupt) <<
 				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
-
-	if (version == blr_version4)
-		csb->csb_g_flags |= csb_blr_version4;
 
 	jrd_nod* node = PAR_parse_node(tdbb, csb, OTHER);
 	csb->csb_node = node;
@@ -665,7 +668,7 @@ jrd_nod* PAR_make_node(thread_db* tdbb, int size)
 
 
 CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
-	USHORT internal_flag, USHORT dbginfo_length, const UCHAR* dbginfo)
+	bool internal_flag, USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
  *
@@ -682,18 +685,19 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
 
-	const SSHORT version = csb->csb_blr_reader.getByte();
 	if (internal_flag)
 		csb->csb_g_flags |= csb_internal;
 
-	if (version != blr_version4 && version != blr_version5)
+	const SSHORT version = csb->csb_blr_reader.getByte();
+	switch (version)
 	{
-		error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
-	}
-
-	if (version == blr_version4)
-	{
+	case blr_version4:
 		csb->csb_g_flags |= csb_blr_version4;
+		break;
+	case blr_version5:
+		break; // nothing to do
+	default:
+		error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
 	if (dbginfo_length > 0)
