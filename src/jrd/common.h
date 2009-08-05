@@ -215,6 +215,8 @@
 #define API_ROUTINE_VARARG API_ROUTINE
 #define INTERNAL_API_ROUTINE API_ROUTINE
 #define FB_EXPORTED __attribute__((visibility("default")))
+
+#define O_DIRECT F_NOCACHE
 #endif /* Darwin Platforms */
 
 
