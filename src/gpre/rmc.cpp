@@ -786,6 +786,7 @@ static void asgn_from( const act* action, const ref* reference)
 							{
 							case dtype_short:
 							case dtype_long:
+							case dtype_int64:
 								RMC_print_buffer(output_buffer, false);
 								sprintf(output_buffer, "%sCALL \"rmc_btoc\" USING %s GIVING %s\n",
 										names[COLUMN], variable, variable);
@@ -886,6 +887,7 @@ static void asgn_to( const act* action, ref* reference)
 					{
 					case dtype_short:
 					case dtype_long:
+					case dtype_int64:
 						sprintf(output_buffer, "%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
 								names[COLUMN], s, s);
 						RMC_print_buffer(output_buffer, false);
@@ -976,7 +978,8 @@ static void asgn_to_proc( const ref* reference)
 					else
 					{
 						if ((reference->ref_field->fld_dtype == dtype_short) ||
-							(reference->ref_field->fld_dtype == dtype_long))
+							(reference->ref_field->fld_dtype == dtype_long) ||
+							(reference->ref_field->fld_dtype == dtype_int64))
 						{
 							sprintf(output_buffer, "%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
 									names[COLUMN], s, s);
@@ -1073,6 +1076,7 @@ static void gen_based( const act* action)
 	{
 	case dtype_short:
 	case dtype_long:
+	case dtype_int64:
 		digits = (datatype == dtype_short) ? 5 : 10;
 		fprintf(gpreGlob.out_file, "%sPIC S", names[COLUMN]);
 		if (field->fld_scale >= -digits && field->fld_scale <= 0)
@@ -1081,7 +1085,12 @@ static void gen_based( const act* action)
 				fprintf(gpreGlob.out_file, "9(%d)", digits + field->fld_scale);
 			if (field->fld_scale)
 				fprintf(gpreGlob.out_file, "V9(%d)", digits - (digits + field->fld_scale));
-			fprintf(gpreGlob.out_file, (datatype == dtype_short) ? USAGE_BINARY2 : USAGE_BINARY4);
+			if (datatype == dtype_short)
+				fprintf(gpreGlob.out_file, USAGE_BINARY2);
+			else if (datatype == dtype_long)
+				fprintf(gpreGlob.out_file, USAGE_BINARY4);
+			else
+				fprintf(gpreGlob.out_file, USAGE_BINARY8);
 		}
 		else if (field->fld_scale > 0)
 			fprintf(gpreGlob.out_file, "9(%d)P(%d)", digits, field->fld_scale);
@@ -3112,16 +3121,40 @@ static void gen_release( const act* action)
 		const gpre_dbb* db = request->req_database;
 		if (exp_db && db != exp_db)
 			continue;
-		if (!(request->req_flags & REQ_exp_hand))
+		if (db && request->req_handle)
 		{
-			printa(names[COLUMN], false, "IF %s NOT = 0 AND %s NOT = 0 THEN",
-				   db->dbb_name->sym_string,
-				   request->req_handle);
-			printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s",
-				   ISC_RELEASE_REQUEST, status_vector(action),
-				   request->req_handle);
-			printa(names[COLUMN], false, "END-IF");
-			printa(names[COLUMN], false, "MOVE 0 to %s", request->req_handle);
+			if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open | REQ_sql_blob_create)) &&
+			    request->req_type != REQ_slice &&
+				request->req_type != REQ_procedure)
+			{
+				printa(names[COLUMN], false, "IF %s NOT = 0 AND %s NOT = 0 THEN",
+					   db->dbb_name->sym_string,
+					   request->req_handle);
+				printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s",
+					   ISC_RELEASE_REQUEST, status_vector(action),
+					   request->req_handle);
+				printa(names[COLUMN], false, "END-IF");
+				printa(names[COLUMN], false, "MOVE 0 to %s", request->req_handle);
+			}
+			if (!(request->req_flags & REQ_exp_hand))
+			{
+				for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
+				{
+					printa(names[COLUMN], false, "IF %s NOT = 0 AND %s%d NOT = 0 THEN",
+						   db->dbb_name->sym_string,
+						   names[isc_a_pos],
+						   blob->blb_ident);
+					printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s%d",
+						   ISC_RELEASE_REQUEST,
+						   status_vector(action),
+						   names[isc_a_pos],
+						   blob->blb_ident);
+					printa(names[COLUMN], false, "END-IF");
+					printa(names[COLUMN], false, "MOVE 0 to %s%d",
+						   names[isc_a_pos],
+						   blob->blb_ident);
+				}
+			}
 		}
 	}
 }
@@ -3871,7 +3904,13 @@ static void make_array_declaration( ref* reference)
 	{
 	case dtype_short:
 	case dtype_long:
-		digits = (field->fld_array_info->ary_dtype == dtype_short) ? 5 : 10;
+	case dtype_int64:
+		if (field->fld_array_info->ary_dtype == dtype_short)
+			digits = 5;
+		else if (field->fld_array_info->ary_dtype == dtype_long)
+			digits = 10;
+		else
+			digits = 19;
 		scale = field->fld_array->fld_scale;
 		strcpy(p, "PIC S");
 		while (*p)
@@ -3891,6 +3930,12 @@ static void make_array_declaration( ref* reference)
 			sprintf(p, "VP(%d)9(%d)", -(scale + digits), digits);
 		while (*p)
 			p++;
+		if (field->fld_array_info->ary_dtype == dtype_short)
+			strcpy(p, USAGE_BINARY2);
+		else if (field->fld_array_info->ary_dtype == dtype_long)
+			strcpy(p, USAGE_BINARY4);
+		else
+			strcpy(p, USAGE_BINARY8);
 		strcpy(p, (field->fld_array_info->ary_dtype == dtype_short) ? USAGE_BINARY2 : USAGE_BINARY4);
 		strcat(p, ".");
 		break;
@@ -4033,7 +4078,13 @@ static void make_port(const gpre_port* port)
 		{
 		case dtype_short:
 		case dtype_long:
-			digits = (field->fld_dtype == dtype_short) ? 5 : 10;
+		case dtype_int64:
+			if (field->fld_dtype == dtype_short)
+				digits = 5;
+			else if (field->fld_dtype == dtype_long)
+				digits = 10;
+			else
+				digits = 19;
 			fprintf(gpreGlob.out_file, "%s03  %s%d PIC S",
 					   COLUMN12, names[isc_a_pos], reference->ref_ident);
 			if (field->fld_scale >= -digits && field->fld_scale <= 0)
@@ -4047,8 +4098,12 @@ static void make_port(const gpre_port* port)
 				fprintf(gpreGlob.out_file, "9(%d)P(%d)", digits, field->fld_scale);
 			else
 				fprintf(gpreGlob.out_file, "VP(%d)9(%d)", -(field->fld_scale + digits), digits);
-			fprintf(gpreGlob.out_file, "%s.\n",
-					(field->fld_dtype == dtype_short) ? USAGE_BINARY2 : USAGE_BINARY4);
+			if (field->fld_dtype == dtype_short)
+				fprintf(gpreGlob.out_file, "%s.\n", USAGE_BINARY2);
+			else if (field->fld_dtype == dtype_long)
+				fprintf(gpreGlob.out_file, "%s.\n", USAGE_BINARY4);
+			else
+				fprintf(gpreGlob.out_file, "%s.\n", USAGE_BINARY8);
 			break;
 
 		case dtype_cstring:

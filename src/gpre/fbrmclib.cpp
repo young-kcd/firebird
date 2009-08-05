@@ -300,10 +300,24 @@ static ISC_UCHAR* CobolToString(const argument_entry *arg)
 	return (s);
 }
 
-// Convert a Cobol BINARY(n) to a C integer.
-static ISC_ULONG CvtCobolToInt(const ISC_UCHAR *s, ISC_USHORT len, char type)
+// Return the int64 value of an array of ASCII characters
+static ISC_UINT64 atoi64(const char *s)
 {
-	ISC_ULONG		temp;
+	ISC_UINT64 rslt = 0;
+	while (*s)
+	{
+		if ((*s >= '0') && (*s <= '9'))
+			rslt = (rslt * 10) + *s - '0';
+		else
+			return (0);
+		s++;
+	}
+	return (rslt);
+}
+// Convert a Cobol BINARY(n) to a C integer.
+static ISC_UINT64 CvtCobolToInt(const ISC_UCHAR *s, ISC_USHORT len, char type)
+{
+	ISC_UINT64		temp;
 
 	switch (len)
 	{
@@ -311,10 +325,19 @@ static ISC_ULONG CvtCobolToInt(const ISC_UCHAR *s, ISC_USHORT len, char type)
 		temp = (*(s) << 8) + *(s + 1);
 		// If source is negative and signed, extend sign to dest
 		if ((*(s + 1) & 0x80) && (type == 11))
-			temp |= 0xffff0000;
+			temp |= 0xffffffffffff0000;
 		break;
 	case 4:
 		temp = (*(s) << 24) + (*(s + 1) << 16) + (*(s + 2) << 8) + *(s + 3);
+		// If source is negative and signed, extend sign to dest
+		if ((*(s + 1) & 0x80) && (type == 11))
+			temp |= 0xffffffff00000000;
+		break;
+	case 8:
+		temp = ((ISC_UINT64)*(s) << 56) + ((ISC_UINT64)*(s + 1) << 48) +
+			   ((ISC_UINT64)*(s + 2) << 40) + ((ISC_UINT64)*(s + 3) << 32) +
+		       ((ISC_UINT64)*(s+ 4) << 24) + ((ISC_UINT64)*(s + 5) << 16) +
+			   ((ISC_UINT64)*(s + 6) << 8) + (ISC_UINT64)*(s + 7);
 		break;
 	default:
 		temp = 0;
@@ -327,25 +350,25 @@ static ISC_ULONG CvtCobolToInt(const ISC_UCHAR *s, ISC_USHORT len, char type)
 // Convert a cobol argument to a C integer. Make allowances for different
 // data types, since constants get passed as DISPLAY (NSU or NTS) and fields
 // should be BINARY (NBS or NBU)
-static ISC_ULONG CvtArgToInt(const argument_entry *arg)
+static ISC_UINT64 CvtArgToInt(const argument_entry *arg)
 {
-	ISC_ULONG		temp;
+	ISC_UINT64		temp;
 	char			*stemp;
 	char			sign;
 
 	switch (arg->a_type)
 	{
 	case 1:														// NSU
-		temp = (ISC_ULONG)atoi((char *)CobolToString(arg));
+		temp = (ISC_UINT64)atoi64((char *)CobolToString(arg));
 		break;
 	case 2:														// NTS
 		stemp = (char *)CobolToString(arg);
 		sign = *(stemp + strlen(stemp) - 1);
 		*(stemp + strlen(stemp) - 1) = '\0';
 		if (sign == '-')
-			temp = (ISC_USHORT)((short)(atoi(stemp) * -1));
+			temp = (ISC_UINT64)((ISC_INT64)atoi64(stemp) * -1);
 		else
-			temp = (ISC_USHORT)atoi(stemp);
+			temp = atoi64(stemp);
 		break;
 	case 11:													// NBS
 	case 12:													// NBU
@@ -405,7 +428,7 @@ static void CobolToStatus(ISC_STATUS *stat, const argument_entry *arg)
 }
 
 // Store a C integer into a Cobol format memory buffer
-static void CvtIntToCobol(ISC_UCHAR *s, ISC_ULONG l, ISC_USHORT len)
+static void CvtIntToCobol(ISC_UCHAR *s, ISC_UINT64 l, ISC_USHORT len)
 {
 	memset(s, 0, len);
 	switch (len)
@@ -420,11 +443,21 @@ static void CvtIntToCobol(ISC_UCHAR *s, ISC_ULONG l, ISC_USHORT len)
 			*(s + 2) = (ISC_UCHAR)((l >> 8) & 0xff);
 			*(s + 3) = (ISC_UCHAR)(l & 0xff);
 			break;
+		case 8:
+			*(s) = (ISC_UCHAR)((l >> 56) & 0xff);
+			*(s + 1) = (ISC_UCHAR)((l >> 48) & 0xff);
+			*(s + 2) = (ISC_UCHAR)((l >> 40) & 0xff);
+			*(s + 3) = (ISC_UCHAR)((l >> 32) & 0xff);
+			*(s + 4) = (ISC_UCHAR)((l >> 24) & 0xff);
+			*(s + 5) = (ISC_UCHAR)((l >> 16) & 0xff);
+			*(s + 6) = (ISC_UCHAR)((l >> 8) & 0xff);
+			*(s + 7) = (ISC_UCHAR)(l & 0xff);
+			break;
 	}
 }
 
 // Store a C integer into a Cobol BINARY(n) (big-endian) field
-static void IntToCobol(argument_entry *arg, const ISC_ULONG *i)
+static void IntToCobol(argument_entry *arg, const ISC_UINT64 *i)
 {
 	if (arg->a_address)
 		CvtIntToCobol(arg->a_address, *i, (ISC_USHORT)arg->a_length);
@@ -912,7 +945,7 @@ EXPORT RM_ENTRY(rmc_get_slice)
 				  *CobolToInt(&arg_vector[8]),
 				  (void *)arg_vector[9].a_address,
 				  p1);
-	IntToCobol(&arg_vector[11], (ISC_ULONG *)p1);
+	IntToCobol(&arg_vector[11], (ISC_UINT64 *)p1);
 	StatusToCobol(&arg_vector[0], stat);
 
 	return (0);
@@ -1159,7 +1192,7 @@ EXPORT RM_ENTRY(rmc_sqlcode)
 	ISC_STATUS *stat = AllocStatusPool();
 	CobolToStatus(stat, &arg_vector[0]);
 	ISC_LONG sqlcode = isc_sqlcode(stat);
-	IntToCobol(&arg_vector[-1], (ISC_ULONG *)&sqlcode);
+	IntToCobol(&arg_vector[-1], (ISC_UINT64 *)&sqlcode);
 
 	return (0);
 }
@@ -1172,7 +1205,7 @@ EXPORT RM_ENTRY(rmc_embed_dsql_fetch)
 											 (char *)CobolToString(&arg_vector[1]),
 											 *CobolToShort(&arg_vector[2]),
 											 (XSQLDA *)arg_vector[3].a_address);
-	IntToCobol(&arg_vector[-1], (ISC_ULONG *)&retval);
+	IntToCobol(&arg_vector[-1], (ISC_UINT64 *)&retval);
 	StatusToCobol(&arg_vector[0], stat);
 
 	return (0);
@@ -1243,7 +1276,7 @@ EXPORT RM_ENTRY(rmc_interprete)
 	ISC_STATUS retval = isc_interprete(bfr,
 									  (ISC_STATUS **)arg_vector[1].a_address);
 	StringToCobol(&arg_vector[0], (ISC_UCHAR *)bfr);
-	IntToCobol(&arg_vector[-1], (ISC_ULONG *)&retval);
+	IntToCobol(&arg_vector[-1], (ISC_UINT64 *)&retval);
 
 	return (0);
 }
@@ -1359,12 +1392,13 @@ EXPORT RM_ENTRY(rmc_status_address)
 // data fields before calling other isc_routines
 EXPORT RM_ENTRY(rmc_btoc)
 {
-	ISC_ULONG temp = CvtArgToInt(&arg_vector[0]);
+	ISC_UINT64 temp = CvtArgToInt(&arg_vector[0]);
 	if (arg_vector[-1].a_length == 2)
 		*(ISC_USHORT *)arg_vector[-1].a_address = (ISC_USHORT)temp;
-	else
+	else if (arg_vector[-1].a_length == 4)
 		*(ISC_ULONG *)arg_vector[-1].a_address = temp;
-
+	else
+		*(ISC_UINT64 *)arg_vector[-1].a_address = temp;
 	return (0);
 }
 
@@ -1372,12 +1406,14 @@ EXPORT RM_ENTRY(rmc_btoc)
 // numeric data fields after calling other isc_ routines
 EXPORT RM_ENTRY(rmc_ctob)
 {
-	ISC_ULONG		temp;
+	ISC_UINT64		temp;
 
 	if (arg_vector[0].a_length == 2)
 		temp = *(ISC_USHORT *)arg_vector[0].a_address;
-	else
+	else if (arg_vector[0].a_length == 4)
 		temp = *(ISC_ULONG *)arg_vector[0].a_address;
+	else if (arg_vector[0].a_length == 8)
+		temp = *(ISC_UINT64 *)arg_vector[0].a_address;
 	IntToCobol(&arg_vector[-1], &temp);
 
 	return (0);
@@ -1392,12 +1428,13 @@ EXPORT RM_ENTRY(rmc_dtoc)
 	date_fmt	fmt;
 
 	ClearParamPool();
+	const int dtlen = arg_vector[1].a_length;
 	const ISC_UCHAR* dt = arg_vector[1].a_address;
 	const ISC_UCHAR* fmtString = CobolToString(&arg_vector[2]);
 
 	ParseDateFormat(fmtString, &fmt);
 	memset(&tim, 0, sizeof(tim));
-	if (fmt.yr_start != -1)
+	if ((fmt.yr_start != -1) && (fmt.yr_start < dtlen))
 	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.yr_start, fmt.yr_len);
@@ -1410,31 +1447,31 @@ EXPORT RM_ENTRY(rmc_dtoc)
 		else
 			tim.tm_year += 100;
 	}
-	if (fmt.mon_start != -1)
+	if ((fmt.mon_start != -1) && (fmt.mon_start < dtlen))
 	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.mon_start, 2);
 		tim.tm_mon = atoi(stemp) - 1;
 	}
-	if (fmt.day_start != -1)
+	if ((fmt.day_start != -1) && (fmt.day_start < dtlen))
 	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.day_start, 2);
 		tim.tm_mday = atoi(stemp);
 	}
-	if (fmt.hr_start != -1)
+	if ((fmt.hr_start != -1) && (fmt.hr_start < dtlen))
 	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.hr_start, 2);
 		tim.tm_hour = atoi(stemp);
 	}
-	if (fmt.min_start != -1)
+	if ((fmt.min_start != -1) && (fmt.min_start < dtlen))
 	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.min_start, 2);
 		tim.tm_min = atoi(stemp);
 	}
-	if (fmt.sec_start != -1)
+	if ((fmt.sec_start != -1) && (fmt.sec_start < dtlen))
 	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.sec_start, 2);
