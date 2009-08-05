@@ -947,15 +947,15 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 		BURP_error_redirect (NULL, 32);
 		// msg 32 Expected database description record
 
-	if (tdgbl->gbl_sw_page_size &&
-		(tdgbl->gbl_sw_page_size < page_size))
-	{
-		BURP_print (110, SafeArg() << page_size << tdgbl->gbl_sw_page_size);
-		// msg 110 Reducing the database page size from %ld bytes to %ld bytes
-	}
-
 	if (tdgbl->gbl_sw_page_size)
+	{
+		if (tdgbl->gbl_sw_page_size < page_size)
+		{
+			BURP_print (110, SafeArg() << page_size << tdgbl->gbl_sw_page_size);
+			// msg 110 Reducing the database page size from %ld bytes to %ld bytes
+		}
 		page_size = tdgbl->gbl_sw_page_size;
+	}
 
 	tdgbl->hdr_forced_writes = forced_writes;
 
