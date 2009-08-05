@@ -601,6 +601,7 @@ clean_makefiles:
 	-$(RM) $(GEN_ROOT)/examples/Make*
 	$(RM) $(ROOT)/Makefile
 	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
+	$(RM) $(SRC_ROOT)/include/gen/blrtable.h
 
 clean_gpre_gen:
 	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
