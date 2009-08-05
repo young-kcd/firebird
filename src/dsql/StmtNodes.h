@@ -35,7 +35,8 @@ public:
 	explicit InAutonomousTransactionNode(MemoryPool& pool)
 		: StmtNode(pool),
 		  dsqlAction(NULL),
-		  action(NULL)
+		  action(NULL),
+		  savNumber(0)
 	{
 	}
 
@@ -55,6 +56,7 @@ public:
 public:
 	dsql_nod* dsqlAction;
 	jrd_nod* action;
+	SLONG savNumber;
 };
 
 

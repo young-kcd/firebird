@@ -29,6 +29,7 @@
 #include "../jrd/exe_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/vio_proto.h"
 #include "../dsql/gen_proto.h"
 #include "../dsql/pass1_proto.h"
 
@@ -139,6 +140,9 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 											 request->req_transaction);
 		tdbb->setTransaction(request->req_transaction);
 
+		VIO_start_save_point(tdbb, request->req_transaction);
+		savNumber = request->req_transaction->tra_save_point->sav_number;
+
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION START triggers
@@ -148,19 +152,30 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		return action;
 	}
 
+	jrd_tra* transaction = request->req_transaction;
+	fb_assert(transaction);
+	fb_assert(transaction != tdbb->getDatabase()->dbb_sys_trans);
+
 	switch (request->req_operation)
 	{
 	case jrd_req::req_return:
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
-			EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+		}
+
+		if (transaction->tra_save_point &&
+			!(transaction->tra_save_point->sav_flags & SAV_user) &&
+			!transaction->tra_save_point->sav_verb_count)
+		{
+			VIO_verb_cleanup(tdbb, transaction);
 		}
 
 		{ // scope
 			Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
-			TRA_commit(tdbb, request->req_transaction, false);
+			TRA_commit(tdbb, transaction, false);
 		} // end scope
 		break;
 
@@ -172,13 +187,20 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 				{
 					// run ON TRANSACTION COMMIT triggers
-					EXE_execute_db_triggers(tdbb, request->req_transaction,
+					EXE_execute_db_triggers(tdbb, transaction,
 											jrd_req::req_trigger_trans_commit);
+				}
+
+				if (transaction->tra_save_point &&
+					!(transaction->tra_save_point->sav_flags & SAV_user) &&
+					!transaction->tra_save_point->sav_verb_count)
+				{
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 
 				Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
-				TRA_commit(tdbb, request->req_transaction, false);
+				TRA_commit(tdbb, transaction, false);
 			}
 			catch (...)
 			{
@@ -195,7 +217,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 				try
 				{
 					// run ON TRANSACTION ROLLBACK triggers
-					EXE_execute_db_triggers(tdbb, request->req_transaction,
+					EXE_execute_db_triggers(tdbb, transaction,
 											jrd_req::req_trigger_trans_rollback);
 				}
 				catch (const Firebird::Exception&)
@@ -211,7 +233,17 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 			{
 				Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
-				TRA_rollback(tdbb, request->req_transaction, false, false);
+
+				// undo all savepoints up to our one
+				for (const Savepoint* save_point = transaction->tra_save_point;
+					save_point && savNumber <= save_point->sav_number;
+					save_point = transaction->tra_save_point)
+				{
+					++transaction->tra_save_point->sav_verb_count;
+					VIO_verb_cleanup(tdbb, transaction);
+				}
+
+				TRA_rollback(tdbb, transaction, false, false);
 			}
 			catch (const Firebird::Exception&)
 			{
