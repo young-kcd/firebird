@@ -30,7 +30,7 @@ INSTANCE=default
 FIREBIRD=@prefix@
 
 # No changes needed below for multiple instances
-name=firebird_$INSTANCE
+name=$(basename `readlink -f $0`)
 FBRunUser=firebird
 pidfile=/var/run/firebird/$INSTANCE.pid
 FULLNAME="Firebird server [$INSTANCE]"
