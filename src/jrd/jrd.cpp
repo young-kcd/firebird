@@ -255,7 +255,8 @@ namespace
 		AttachmentHolder& operator =(const AttachmentHolder&);
 	};
 
-	class DatabaseContextHolder : public AttachmentHolder, Database::SyncGuard, public Jrd::ContextPoolHolder
+	class DatabaseContextHolder : public AttachmentHolder, Database::SyncGuard,
+		public Jrd::ContextPoolHolder
 	{
 	public:
 		explicit DatabaseContextHolder(thread_db* arg, bool lockAtt = true)
@@ -723,8 +724,8 @@ static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
 
 
-void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options,
-	bool create, bool no_priv)
+void trace_failed_attach(TraceManager* traceManager, const char* filename,
+	const DatabaseOptions& options, bool create, bool no_priv)
 {
 	// Report to Trace API that attachment has not been created
 	if (!traceManager)
@@ -1532,9 +1533,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS* user_status, Attachment** handle, SLONG
 }
 
 
-ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
-							   Attachment** handle,
-							   USHORT option)
+ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Attachment** handle, USHORT option)
 {
 /**************************************
  *
@@ -2577,10 +2576,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
-						jrd_tra** tra_handle,
-						USHORT length,
-						const UCHAR* msg)
+ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status, jrd_tra** tra_handle, USHORT length, const UCHAR* msg)
 {
 /**************************************
  *
@@ -2747,7 +2743,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 						jrd_req** req_handle,
 						USHORT msg_type,
 						USHORT msg_length,
-						SCHAR * msg,
+						SCHAR* msg,
 						SSHORT level
 #ifdef SCROLLABLE_CURSORS
 						, USHORT direction,
@@ -2906,8 +2902,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status,
-									jrd_tra** tra_handle)
+ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -2973,7 +2968,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 						blb** blob_handle,
 						SSHORT mode,
 						SLONG offset,
-						SLONG * result)
+						SLONG* result)
 {
 /**************************************
  *
@@ -3009,7 +3004,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 					jrd_req** req_handle,
 					USHORT msg_type,
 					USHORT msg_length,
-					SCHAR * msg,
+					SCHAR* msg,
 					SSHORT level)
 {
 /**************************************
@@ -3300,10 +3295,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_START(ISC_STATUS* user_status,
-					jrd_req** req_handle,
-					jrd_tra** tra_handle,
-					SSHORT level)
+ISC_STATUS GDS_START(ISC_STATUS* user_status, jrd_req** req_handle, jrd_tra** tra_handle, SSHORT level)
 {
 /**************************************
  *
@@ -3407,10 +3399,7 @@ int GDS_SHUTDOWN(unsigned int timeout)
 }
 
 
-ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status,
-							jrd_tra** tra_handle,
-							USHORT count,
-							TEB * vector)
+ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status, jrd_tra** tra_handle, USHORT count, TEB* vector)
 {
 /**************************************
  *
@@ -3437,10 +3426,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
-								jrd_tra** tra_handle,
-								SSHORT count,
-								...)
+ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, jrd_tra** tra_handle, SSHORT count, ...)
 {
 /**************************************
  *
@@ -3660,9 +3646,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status,
-						jrd_req** req_handle,
-						SSHORT level)
+ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, jrd_req** req_handle, SSHORT level)
 {
 /**************************************
  *
@@ -3695,9 +3679,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
-							 Attachment** db_handle,
-							 dsql_req** stmt_handle)
+ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status, Attachment** db_handle, dsql_req** stmt_handle)
 {
 	try
 	{
@@ -3834,9 +3816,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
-						 dsql_req** stmt_handle,
-						 USHORT option)
+ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, dsql_req** stmt_handle, USHORT option)
 {
 	try
 	{
@@ -4259,9 +4239,7 @@ static void check_transaction(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-static void commit(thread_db* tdbb,
-				   jrd_tra* transaction,
-				   const bool retaining_flag)
+static void commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -4996,10 +4974,7 @@ static void init_database_locks(thread_db* tdbb)
 }
 
 
-static void prepare(thread_db* tdbb,
-					jrd_tra* transaction,
-					USHORT length,
-					const UCHAR* msg)
+static void prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCHAR* msg)
 {
 /**************************************
  *
@@ -5273,9 +5248,7 @@ void Attachment::cancelExternalConnection(thread_db* tdbb)
 }
 
 
-static void rollback(thread_db* tdbb,
-					 jrd_tra* transaction,
-					 const bool retaining_flag)
+static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag)
 {
 /**************************************
  *
@@ -5460,6 +5433,7 @@ static void strip_quotes(string& out)
  *
  * Functional description
  *	Get rid of quotes around strings
+ *	Quotes in the middle will confuse this routine!
  *
  **************************************/
 	if (out.isEmpty())
@@ -5684,7 +5658,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 
 #ifdef WIN_NT
 	if (flag == JRD_info_drivemask)
-		*(ULONG *) lbuf = drive_mask;
+		*(ULONG*) lbuf = drive_mask;
 #endif
 
 	// CVC: Apparently, the original condition will leak memory, because flag
@@ -5798,9 +5772,7 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 }
 
 
-static void purge_attachment(thread_db*		tdbb,
-							 Attachment*	attachment,
-							 const bool		force_flag)
+static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool force_flag)
 {
 /**************************************
  *
