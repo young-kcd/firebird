@@ -33,7 +33,8 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgI
 {
 	Database* dbb = tdbb->getDatabase();
 	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	const SLONG length = blob->blb_length;
+	const ULONG length = blob->blb_length;
+	fb_assert(length < MAX_USHORT); // CVC: Otherwise, we'll overflow the function below.
 	Firebird::HalfStaticArray<UCHAR, 128> tmp;
 
 	UCHAR* temp = tmp.getBuffer(length);
