@@ -1745,9 +1745,8 @@ static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
 		SqlIdentifier st;
 		char* s = st;
 		l = MAX_SQL_IDENTIFIER_LEN;
-		while (l--) {
+		while (l--)
 			*s++ = csb->csb_blr_reader.getByte();
-		}
 		*s = 0;
 		ERR_post(Arg::Gds(isc_identifier_too_long) << Arg::Str(st));
 	}
@@ -1755,9 +1754,7 @@ static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
 	char* s = name.getBuffer(l);
 
 	while (l--)
-	{
 		*s++ = csb->csb_blr_reader.getByte();
-	}
 
 	return name.length();
 }
@@ -1780,9 +1777,7 @@ static size_t par_name(CompilerScratch* csb, Firebird::string& name)
 	char* s = name.getBuffer(l);
 
 	while (l--)
-	{
 		*s++ = csb->csb_blr_reader.getByte();
-	}
 
 	return name.length();
 }
@@ -1912,8 +1907,10 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	            }
 
 				if (csb->csb_blr_reader.peekByte() == blr_indices)
+				{
 					// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
 					extra_count = 3;
+				}
 				else
 					break;
 			}

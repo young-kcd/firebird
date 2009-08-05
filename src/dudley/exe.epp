@@ -3947,10 +3947,8 @@ static void store_query_header( DUDLEY_NOD node, ISC_QUAD* blob_id)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	USHORT bpb_length;
+	USHORT bpb_length = 0;
 	UCHAR bpb[20];
-
-	bpb_length = 0;
 
 	FB_API_HANDLE blob = create_blob(blob_id, bpb_length, bpb);
 
@@ -4018,9 +4016,8 @@ static void store_text( TXT text, ISC_QUAD* blob_id)
  *	BLR expression in a blob.
  *
  **************************************/
-	UCHAR bpb[20];
-
 	USHORT bpb_length = 0;
+	UCHAR bpb[20];
 
 	FB_API_HANDLE blob = create_blob(blob_id, bpb_length, bpb);
 	LEX_put_text(blob, text);

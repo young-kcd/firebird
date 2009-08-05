@@ -147,7 +147,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
 			memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
 			p += sizeof(gen_id_blr2);
 
-			request = CMP_compile2(tdbb, blr.begin(), blr.getCount(), TRUE);
+			request = CMP_compile2(tdbb, blr.begin(), (ULONG) blr.getCount(), TRUE);
 		}
 
 		EXE_start(tdbb, request, dbb->dbb_sys_trans);

@@ -670,8 +670,6 @@ struct ISC_TIMESTAMP
 
 /* conditional compilation macros */
 
-
-
 /* MAX and MIN for datatypes */
 
 #define MAX_UCHAR		((UCHAR)0xFF)

@@ -45,4 +45,3 @@ new feature in Firebird 2.5
 Happy Testing!
 
 From the Firebird team.
-

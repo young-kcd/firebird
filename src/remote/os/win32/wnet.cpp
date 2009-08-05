@@ -1577,7 +1577,7 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 		length -= len;
 		do {
 			*p++ = *q++;
-		} while ((--len) != 0);
+		} while (--len != 0);
 
 		if (length)
 			*p++ = '\\';
