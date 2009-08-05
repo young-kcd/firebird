@@ -134,6 +134,7 @@ void ClumpletWriter::size_overflow()
 
 void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value)
 {
+	fb_assert(ptr && length > 0 && length < 9); // We can't handle numbers bigger than int64.
 	int shift = 0;
 	while (length--)
 	{

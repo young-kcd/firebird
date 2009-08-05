@@ -52,6 +52,8 @@ Base::Base(ISC_STATUS k, ISC_STATUS c) :
 
 StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw() : Base::ImplBase(0, 0)
 {
+	fb_assert(s);
+
 	clear();
 	// special case - empty initialized status vector, no warnings
 	if (s[0] != isc_arg_gds || s[1] != 0 || s[2] != 0)
@@ -113,6 +115,11 @@ bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) thr
 
 bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
 {
+	// CVC: I didn't expect count to be zero but it's, in some calls
+	fb_assert(count >= 0 && count <= ISC_STATUS_LENGTH);
+	if (!count)
+		return true; // not sure it's the best option here
+
 	unsigned int copied = 0;
 
 	for (int i = 0; i < count; )
@@ -175,8 +182,7 @@ void StatusVector::raise() const
 	{
 		status_exception::raise(*this);
 	}
-	status_exception::raise(Gds(isc_random) <<
-		Str("Attempt to raise empty exception"));
+	status_exception::raise(Gds(isc_random) << Str("Attempt to raise empty exception"));
 }
 
 ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw()
@@ -185,7 +191,8 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 	{
 		memcpy(dest, value(), (length() + 1u) * sizeof(ISC_STATUS));
 	}
-	else {
+	else
+	{
 		dest[0] = isc_arg_gds;
 		dest[1] = FB_SUCCESS;
 		dest[2] = isc_arg_end;
