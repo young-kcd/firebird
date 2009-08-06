@@ -123,6 +123,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass1(thread_db* tdbb,
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
+	savNumberOffset = CMP_impure(csb, sizeof(SLONG));
 	action = CMP_pass2(tdbb, csb, action, node);
 	return this;
 }
@@ -130,6 +131,8 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 
 jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 {
+	SLONG* savNumber = (SLONG*) ((char*) request + savNumberOffset);
+
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		fb_assert(tdbb->getTransaction() == request->req_transaction);
@@ -141,7 +144,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		tdbb->setTransaction(request->req_transaction);
 
 		VIO_start_save_point(tdbb, request->req_transaction);
-		savNumber = request->req_transaction->tra_save_point->sav_number;
+		*savNumber = request->req_transaction->tra_save_point->sav_number;
 
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 		{
@@ -236,7 +239,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 
 				// undo all savepoints up to our one
 				for (const Savepoint* save_point = transaction->tra_save_point;
-					save_point && savNumber <= save_point->sav_number;
+					save_point && *savNumber <= save_point->sav_number;
 					save_point = transaction->tra_save_point)
 				{
 					++transaction->tra_save_point->sav_verb_count;

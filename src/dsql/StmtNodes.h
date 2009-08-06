@@ -36,7 +36,7 @@ public:
 		: StmtNode(pool),
 		  dsqlAction(NULL),
 		  action(NULL),
-		  savNumber(0)
+		  savNumberOffset(0)
 	{
 	}
 
@@ -56,7 +56,7 @@ public:
 public:
 	dsql_nod* dsqlAction;
 	jrd_nod* action;
-	SLONG savNumber;
+	SLONG savNumberOffset;
 };
 
 
