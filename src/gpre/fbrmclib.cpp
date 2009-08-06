@@ -457,10 +457,10 @@ static void CvtIntToCobol(ISC_UCHAR *s, ISC_UINT64 l, ISC_USHORT len)
 }
 
 // Store a C integer into a Cobol BINARY(n) (big-endian) field
-static void IntToCobol(argument_entry *arg, const ISC_UINT64 *i)
+static void IntToCobol(argument_entry *arg, const ISC_UINT64 i)
 {
 	if (arg->a_address)
-		CvtIntToCobol(arg->a_address, *i, (ISC_USHORT)arg->a_length);
+		CvtIntToCobol(arg->a_address, i, (ISC_USHORT)arg->a_length);
 }
 
 // Store a C short integer into a Cobol BINARY(n) (big-endian) field
@@ -945,7 +945,7 @@ EXPORT RM_ENTRY(rmc_get_slice)
 				  *CobolToInt(&arg_vector[8]),
 				  (void *)arg_vector[9].a_address,
 				  p1);
-	IntToCobol(&arg_vector[11], (ISC_UINT64 *)p1);
+	IntToCobol(&arg_vector[11], (ISC_UINT64)p1);
 	StatusToCobol(&arg_vector[0], stat);
 
 	return (0);
@@ -1192,7 +1192,7 @@ EXPORT RM_ENTRY(rmc_sqlcode)
 	ISC_STATUS *stat = AllocStatusPool();
 	CobolToStatus(stat, &arg_vector[0]);
 	ISC_LONG sqlcode = isc_sqlcode(stat);
-	IntToCobol(&arg_vector[-1], (ISC_UINT64 *)&sqlcode);
+	IntToCobol(&arg_vector[-1], (ISC_UINT64)sqlcode);
 
 	return (0);
 }
@@ -1205,7 +1205,7 @@ EXPORT RM_ENTRY(rmc_embed_dsql_fetch)
 											 (char *)CobolToString(&arg_vector[1]),
 											 *CobolToShort(&arg_vector[2]),
 											 (XSQLDA *)arg_vector[3].a_address);
-	IntToCobol(&arg_vector[-1], (ISC_UINT64 *)&retval);
+	IntToCobol(&arg_vector[-1], (ISC_UINT64)retval);
 	StatusToCobol(&arg_vector[0], stat);
 
 	return (0);
@@ -1276,7 +1276,7 @@ EXPORT RM_ENTRY(rmc_interprete)
 	ISC_STATUS retval = isc_interprete(bfr,
 									  (ISC_STATUS **)arg_vector[1].a_address);
 	StringToCobol(&arg_vector[0], (ISC_UCHAR *)bfr);
-	IntToCobol(&arg_vector[-1], (ISC_UINT64 *)&retval);
+	IntToCobol(&arg_vector[-1], (ISC_UINT64)retval);
 
 	return (0);
 }
@@ -1414,7 +1414,7 @@ EXPORT RM_ENTRY(rmc_ctob)
 		temp = *(ISC_ULONG *)arg_vector[0].a_address;
 	else if (arg_vector[0].a_length == 8)
 		temp = *(ISC_UINT64 *)arg_vector[0].a_address;
-	IntToCobol(&arg_vector[-1], &temp);
+	IntToCobol(&arg_vector[-1], temp);
 
 	return (0);
 }
