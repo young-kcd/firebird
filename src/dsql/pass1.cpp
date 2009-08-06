@@ -8318,15 +8318,16 @@ static dsql_nod* pass1_simple_case( CompiledStatement* statement, dsql_nod* inpu
 	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
 
 	dsql_nod* node = MAKE_node(nod_simple_case, 4);
-	node->nod_count = 3;	// we do not want to reprocess last parameter later
+	node->nod_count = 3;	// we do not want to reprocess e_simple_case_case_operand2 later
 
 	// build case_operand node
 	node->nod_arg[e_simple_case_case_operand] = PASS1_node(statement, input->nod_arg[0]);
-	node->nod_arg[e_simple_case_case_operand2] =
-		pass1_hidden_variable(statement, node->nod_arg[e_simple_case_case_operand]);
+	node->nod_arg[e_simple_case_case_operand2] = pass1_hidden_variable(
+		statement, node->nod_arg[e_simple_case_case_operand]);
 
-	if (!node->nod_arg[e_simple_case_case_operand2])
-		node->nod_arg[e_simple_case_case_operand2] = node->nod_arg[e_simple_case_case_operand];
+	// If a hidden variable was generated, it will be stored in e_simple_case_case_operand2 and
+	// we'll use it in GEN. Otherwise, e_simple_case_case_operand2 is NULL and we should use the
+	// original expression (e_simple_case_case_operand) in GEN.
 
 	dsql_nod* list = input->nod_arg[1];
 
