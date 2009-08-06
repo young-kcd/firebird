@@ -2647,7 +2647,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		statement->req_flags |= REQ_blr_version4;
 
 	GEN_request(statement, node);
-	const ULONG length = statement->req_blr_data.getCount();
+	const ULONG length = (ULONG) statement->req_blr_data.getCount();
 
 	// stop here for ddl statements
 

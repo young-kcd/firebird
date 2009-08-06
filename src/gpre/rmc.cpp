@@ -4506,4 +4506,3 @@ static void t_start_auto(const gpre_req* request,
 
 	set_sqlcode(action);
 }
-

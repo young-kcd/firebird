@@ -307,7 +307,7 @@ static ISC_UINT64 atoi64(const char *s)
 	while (*s)
 	{
 		if ((*s >= '0') && (*s <= '9'))
-			rslt = (rslt * 10) + *s - '0';
+			rslt = (rslt * 10) + (*s - '0');
 		else
 			return (0);
 		s++;

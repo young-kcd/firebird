@@ -143,23 +143,27 @@ public:
 		implementation->shiftLeft(arg);
 		return *this;
 	}
+
 	// warning special case - to setup first warning location
 	StatusVector& operator<<(const Warning& arg) throw()
 	{
 		implementation->shiftLeft(arg);
 		return *this;
 	}
+
 	// Str special case - make the code simpler & better readable
 	StatusVector& operator<<(const char* text) throw()
 	{
 		implementation->shiftLeft(text);
 		return *this;
 	}
+
 	StatusVector& operator<<(const AbstractString& text) throw()
 	{
 		implementation->shiftLeft(text);
 		return *this;
 	}
+
 	StatusVector& operator<<(const MetaName& text) throw()
 	{
 		implementation->shiftLeft(text);

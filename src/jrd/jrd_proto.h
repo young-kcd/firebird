@@ -165,4 +165,3 @@ void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req
 bool JRD_verify_database_access(const Firebird::PathName&);
 
 #endif /* JRD_JRD_PROTO_H */
-

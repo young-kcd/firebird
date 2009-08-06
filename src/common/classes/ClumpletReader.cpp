@@ -546,7 +546,7 @@ const UCHAR* ClumpletReader::getBytes() const
 SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length)
 {
 	// We can't handle numbers bigger than int64. Some cases use length == 0.
-	fb_assert(ptr && length >= 0 && length < 9); 
+	fb_assert(ptr && length >= 0 && length < 9);
 	// This code is taken from gds__vax_integer
 	SINT64 value = 0;
 	int shift = 0;
