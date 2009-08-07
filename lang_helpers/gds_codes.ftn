@@ -1374,6 +1374,10 @@ C --
       PARAMETER (GDS__internal_rejected_params         = 335544980)
       INTEGER*4 GDS__sysf_fp_overflow                
       PARAMETER (GDS__sysf_fp_overflow                 = 335544981)
+      INTEGER*4 GDS__udf_fp_overflow                 
+      PARAMETER (GDS__udf_fp_overflow                  = 335544982)
+      INTEGER*4 GDS__udf_fp_nan                      
+      PARAMETER (GDS__udf_fp_nan                       = 335544983)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
