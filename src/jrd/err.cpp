@@ -601,7 +601,7 @@ static void internal_error(ISC_STATUS status, int number, const TEXT* file, int 
 	if (file) 
 	{
 		// Remove path information
-		const TEXT* ptr = (TEXT*)file + strlen(file);
+		const TEXT* ptr = file + strlen(file);
 		for (; ptr > file; ptr--) 
 		{
 			if ((*ptr == '/') || (*ptr == '\\')) 
