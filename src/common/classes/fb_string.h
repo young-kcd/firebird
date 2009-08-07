@@ -240,7 +240,8 @@ namespace Firebird
 			Storage *tmp = StringData;
 			StringData = str.StringData;
 			str.StringData = tmp;
-		}*/
+		}
+		*/
 
 		inline size_type find(const AbstractString& str, size_type pos = 0) const
 		{
@@ -739,20 +740,41 @@ namespace Firebird
 			const difference_type dl = length() - n;
 			return (dl < 0) ? -1 : (dl > 0) ? 1 : 0;
 		}
+		// These four functions are to speed up the most common comparisons: equality and inequality.
+		bool equals(const StringType& str) const
+		{
+			const size_type n = str.length();
+			return (length() != n) ? false : (Comparator::compare(c_str(), str.c_str(), n) == 0);
+		}
+		bool different(const StringType& str) const
+		{
+			const size_type n = str.length();
+			return (length() != n) ? true : (Comparator::compare(c_str(), str.c_str(), n) != 0);
+		}
+		bool equals(const_pointer s) const
+		{
+			const size_type n = strlen(s);
+			return (length() != n) ? false : (Comparator::compare(c_str(), s, n) == 0);
+		}
+		bool different(const_pointer s) const
+		{
+			const size_type n = strlen(s);
+			return (length() != n) ? true : (Comparator::compare(c_str(), s, n) != 0);
+		}
 
 		inline bool operator< (const StringType& str) const {return compare(str) <  0;}
 		inline bool operator<=(const StringType& str) const {return compare(str) <= 0;}
-		inline bool operator==(const StringType& str) const {return compare(str) == 0;}
+		inline bool operator==(const StringType& str) const {return equals(str);}
 		inline bool operator>=(const StringType& str) const {return compare(str) >= 0;}
 		inline bool operator> (const StringType& str) const {return compare(str) >  0;}
-		inline bool operator!=(const StringType& str) const {return compare(str) != 0;}
+		inline bool operator!=(const StringType& str) const {return different(str);}
 
 		inline bool operator< (const char_type* str) const {return compare(str) <  0;}
 		inline bool operator<=(const char_type* str) const {return compare(str) <= 0;}
-		inline bool operator==(const char_type* str) const {return compare(str) == 0;}
+		inline bool operator==(const char_type* str) const {return equals(str);}
 		inline bool operator>=(const char_type* str) const {return compare(str) >= 0;}
 		inline bool operator> (const char_type* str) const {return compare(str) >  0;}
-		inline bool operator!=(const char_type* str) const {return compare(str) != 0;}
+		inline bool operator!=(const char_type* str) const {return different(str);}
     };
 
 	typedef StringBase<StringComparator> string;
