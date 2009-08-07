@@ -140,14 +140,17 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 		index = idx_name;
 
 	bool haveConstraint = true;
-	if (index.hasData()) {
+	if (index.hasData()) 
+	{
 		MET_lookup_cnstrt_for_index(tdbb, constraint, index);
-		if (constraint.isEmpty()) {
+		if (constraint.isEmpty()) 
+		{
 			haveConstraint = false;
 			constraint = "***unknown***";
 		}
 	}
-	else {
+	else 
+	{
 		haveConstraint = false;
 		index = constraint = "***unknown***";
 	}
@@ -245,13 +248,13 @@ void ERR_log(int facility, int number, const TEXT* message)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	DEBUG;
-	if (message) {
+	if (message) 
+	{
 		strncpy(errmsg, message, sizeof(errmsg));
 		errmsg[sizeof(errmsg) - 1] = 0;
 	}
-	else
-		if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL) < 1)
-			strcpy(errmsg, "Internal error code");
+	else if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL) < 1)
+		strcpy(errmsg, "Internal error code");
 
 	const size_t len = strlen(errmsg);
 	fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
@@ -276,7 +279,7 @@ bool ERR_post_warning(const Arg::StatusVector& v)
 	fb_assert(v.value()[0] == isc_arg_warning);
 
 	int indx = 0, warning_indx = 0;
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	ISC_STATUS* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -339,8 +342,9 @@ void ERR_make_permanent(ISC_STATUS* s)
  *
  **************************************/
 {
-	Attachment* att = JRD_get_thread_data()->getAttachment();
-	if (att) {
+	Attachment* const att = JRD_get_thread_data()->getAttachment();
+	if (att) 
+	{
 		MutexLockGuard(att->att_strings_mutex);
 		if (att->att_strings_buffer != ((StringsBuffer*)(~0)))
 		{
@@ -410,7 +414,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	ISC_STATUS* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -428,7 +432,8 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 	/* check for duplicated error code */
 	int i;
-	for (i = 0; i < ISC_STATUS_LENGTH; i++) {
+	for (i = 0; i < ISC_STATUS_LENGTH; i++) 
+	{
 		if (status_vector[i] == isc_arg_end && i == status_len)
 			break;				/* end of argument list */
 
@@ -451,7 +456,8 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 	ISC_STATUS_ARRAY warning_status;
 	int warning_count = 0;
-	if (warning_indx) {
+	if (warning_indx) 
+	{
 		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
 		memcpy(warning_status, &status_vector[warning_indx],
@@ -462,7 +468,8 @@ static void internal_post(const ISC_STATUS* tmp_status)
 /* add the status into a real buffer right in between last error
    and first warning */
 
-	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
+	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) 
+	{
 		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
@@ -571,8 +578,7 @@ void ERR_build_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
 }
 
 
-static void internal_error(ISC_STATUS status, int number,
-						   const TEXT* file, int line)
+static void internal_error(ISC_STATUS status, int number, const TEXT* file, int line)
 {
 /**************************************
  *
@@ -592,11 +598,14 @@ static void internal_error(ISC_STATUS status, int number,
 
 	const size_t len = strlen(errmsg);
 
-	if (file) {
+	if (file) 
+	{
 		// Remove path information
 		const TEXT* ptr = (TEXT*)file + strlen(file);
-		for (; ptr > file; ptr--) {
-			if ((*ptr == '/') || (*ptr == '\\')) {
+		for (; ptr > file; ptr--) 
+		{
+			if ((*ptr == '/') || (*ptr == '\\')) 
+			{
 				ptr++;
 				break;
 			}
