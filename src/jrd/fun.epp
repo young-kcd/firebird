@@ -62,6 +62,7 @@
 #include "../jrd/blb.h"
 #include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/FpeControl.h"
 
 #ifndef WIN_NT
 #include <dlfcn.h>	// dladdr
@@ -644,7 +645,22 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 		value->vlu_desc.dsc_flags |= DSC_null; // redundant, but be safe
 	}
 	else
+	{
+		if (value->vlu_desc.dsc_dtype == dtype_double)
+		{
+			if (isinf(value->vlu_misc.vlu_double))
+			{
+				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_udf_fp_overflow) << Arg::Str(function->fun_name));
+			}
+			else if (isnan(value->vlu_misc.vlu_double))
+			{
+				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_udf_fp_nan) << Arg::Str(function->fun_name));
+			}
+		}
 		request->req_flags &= ~req_null;
+	}
 
 	while (array_stack.hasData())
 	{

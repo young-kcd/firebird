@@ -667,6 +667,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 -- Not sure about the SQL code and class here
 (-104, 'HY', '000', 0, 660, 'internal_rejected_params', NULL, NULL)
 (-833, '42', '000', 0, 661, 'sysf_fp_overflow', NULL, NULL)
+(-901, '39', '000', 0, 662, 'udf_fp_overflow', NULL, NULL)
+(-901, '39', '000', 0, 663, 'udf_fp_nan', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
