@@ -29,7 +29,7 @@
 #
 ROOT=..
 ObjModuleType=superserver
-CFLAGS+=-DSUPERSERVER
+CXXFLAGS+= -DSUPERSERVER
 ArchType=super
 
 include     $(ROOT)/gen/make.defaults

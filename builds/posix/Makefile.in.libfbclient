@@ -30,7 +30,7 @@
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT
+CXXFLAGS+= -DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

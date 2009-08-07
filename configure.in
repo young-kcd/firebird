@@ -273,8 +273,11 @@ dnl CPU_TYPE=ppc64
     dnl detect native compiler, Sun Studio Pro
     comp=`echo "$CXX" | cut -c1-2`
     case $comp in
-       CC) MAKEFILE_PREFIX=solaris ;
-           ICU_PLATFORM=SOLARISX86 ;;
+       CC) MAKEFILE_PREFIX=solaris
+           ICU_PLATFORM=SOLARISX86
+           PTHREAD_CFLAGS=-mt
+           PTHREAD_LIBS=-lpthread
+           ;;
        *)  MAKEFILE_PREFIX=solx86gcc ;
            ICU_PLATFORM=SOLARISX86GCC ;
            PTHREAD_CFLAGS=-pthreads ;;
@@ -298,6 +301,8 @@ dnl CPU_TYPE=ppc64
        CC) MAKEFILE_PREFIX=solaris ;
            ICU_PLATFORM=SOLARISCC 
            dnl inline assembly for atomic operations on Solaris 9 w SSPRO
+           PTHREAD_CFLAGS=-mt
+           PTHREAD_LIBS=-lpthread
            if test "${target#*solaris}" = "2.9"; then
              ATOMIC_OPTIONS="../src/common/classes/fb_atomic.il";
            fi
@@ -389,6 +394,7 @@ AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
 dnl Later we always build threaded binaries
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
 LIBS="$LIBS $PTHREAD_LIBS"
 
 AC_ARG_ENABLE(raw-devices,

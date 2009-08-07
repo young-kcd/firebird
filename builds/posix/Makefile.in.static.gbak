@@ -29,7 +29,7 @@
 #
 ROOT=..
 ObjModuleType=boot
-CFLAGS += -DBOOT_BUILD
+CXXFLAGS+= -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
