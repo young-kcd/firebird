@@ -1,3 +1,647 @@
+2009-08-08 14:43  hvlad
+
+	* firebird2/lang_helpers/: gds_codes.ftn (1.101), gds_codes.pas
+	(1.100):
+
+	Updated generated helpers
+
+2009-08-08 14:42  hvlad
+
+	* firebird2/src/include/gen/: codetext.h (1.110), iberror.h
+	(1.114), msgs.h (1.140), sql_code.h (1.116), sql_state.h (1.46):
+
+	Updated generated headers
+
+2009-08-08 14:41  hvlad
+
+	* firebird2/src/: jrd/isc_sync.cpp (1.215), msgs/facilities2.sql
+	(1.75), msgs/messages2.sql (1.99), msgs/system_errors2.sql (1.62):
+
+	Improvement CORE-2587 : User friendly diagnostic when engine can't
+	create shared memory already created by the antoher engine process
+	in another windows session
+
+2009-08-08 14:39  hvlad
+
+	* firebird2/src/: common/utils.cpp (1.73), common/utils_proto.h
+	(1.39), jrd/isc_sync.cpp (1.214), jrd/os/win32/isc_ipc.cpp (1.36):
+
+	Fixed bug CORE-2586 : Make all kernel object names in the same
+	namespace
+
+2009-08-08 13:08  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.558):
+
+	Forgot this when changing PAR_parse, CMP_compile2 and friends (not
+	important).
+
+2009-08-08 08:36  robocop
+
+	* firebird2/src/extlib/ib_udf.cpp (1.15):
+
+	Style (anyway irrelevant since this library contains now only
+	superseded functions except frac).
+
+2009-08-07 15:28  alexpeshkoff
+
+	* firebird2/: configure.in (1.357),
+	builds/posix/Makefile.in.boot.gpre (1.33),
+	builds/posix/Makefile.in.client.fbudf (1.16),
+	builds/posix/Makefile.in.embed.fbudf (1.12),
+	builds/posix/Makefile.in.fbserver (1.28),
+	builds/posix/Makefile.in.fbtrace (1.13),
+	builds/posix/Makefile.in.intl (1.35),
+	builds/posix/Makefile.in.libfbclient (1.43),
+	builds/posix/Makefile.in.libfbstatic (1.12),
+	builds/posix/Makefile.in.smp_server (1.7),
+	builds/posix/Makefile.in.static.gbak (1.19),
+	builds/posix/Makefile.in.static.gpre (1.23),
+	builds/posix/Makefile.in.static.isql (1.17),
+	builds/posix/make.rules (1.46), builds/posix/prefix.solaris (1.32):
+
+	We perform C++, not plain C compilation - therefore ese CXXFLAGS
+	instead of CFLAGS
+
+2009-08-07 14:14  robocop
+
+	* firebird2/src/jrd/err.cpp (1.94):
+
+	Misc.
+
+2009-08-07 14:13  robocop
+
+	* firebird2/src/common/classes/fb_string.h (1.27):
+
+	Little improvement.
+
+2009-08-07 12:39  robocop
+
+	* firebird2/src/jrd/err.cpp (1.93):
+
+	Style.
+
+2009-08-07 09:27  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.100),
+	lang_helpers/gds_codes.pas (1.99), src/include/gen/codetext.h
+	(1.109), src/include/gen/iberror.h (1.113), src/include/gen/msgs.h
+	(1.139), src/include/gen/sql_code.h (1.115),
+	src/include/gen/sql_state.h (1.45):
+
+	CORE-2582 Infinity from UDF should be trapped by the engine (and
+	NaN as well).
+
+2009-08-07 07:22  robocop
+
+	* firebird2/src/: jrd/fun.epp (1.123), msgs/facilities2.sql (1.74),
+	msgs/messages2.sql (1.98), msgs/system_errors2.sql (1.61):
+
+	CORE-2582 Infinity from UDF should be trapped by the engine (and
+	NaN as well).
+
+2009-08-06 15:12  robocop
+
+	* firebird2/src/msgs/facilities2.sql (1.73):
+
+	Reserve numbers in msg.fdb like reserving airline tickets (no
+	discount for massive changes, however).
+
+2009-08-06 13:21  sboyd
+
+	* firebird2/src/gpre/fbrmclib.cpp (1.15):
+
+	Fixed bugs introduced by addition of 64 bit column support.
+
+2009-08-06 12:45  paulbeach
+
+	* firebird2/builds/posix/darwin.defaults (1.3):
+
+	Fix a problem with the name and location of the util library
+
+2009-08-06 08:30  hvlad
+
+	* firebird2/src/dsql/: StmtNodes.cpp (1.10), StmtNodes.h (1.4):
+
+	Fixed error in my patch for CORE-2558 : store save point number at
+	impure area. Thanks to Adriano.
+
+2009-08-06 04:32  asfernandes
+
+	* firebird2/src/dsql/: gen.cpp (1.185), pass1.cpp (1.456):
+
+	Fixed CORE-2584 - Wrong results for CASE used together with GROUP
+	BY
+
+2009-08-06 03:05  asfernandes
+
+	* firebird2/: doc/README.build.posix.html (1.2),
+	src/common/StatusArg.h (1.20),
+	src/common/classes/ClumpletReader.cpp (1.43), src/dsql/dsql.cpp
+	(1.289), src/gpre/fbrmclib.cpp (1.14), src/gpre/rmc.cpp (1.29),
+	src/jrd/jrd_proto.h (1.83):
+
+	Misc
+
+2009-08-05 23:36  hvlad
+
+	* firebird2/src/dsql/: StmtNodes.cpp (1.9), StmtNodes.h (1.3):
+
+	Fixed bug CORE-2558 : AV at engine when some statement under
+	autonomous transaction dropped transaction level savepoint
+
+2009-08-05 20:41  asfernandes
+
+	* firebird2/src/jrd/met_proto.h (1.72):
+
+	Patch from Bill for compilers that treat constant parameters as
+	part of the function signature
+
+2009-08-05 17:32  sboyd
+
+	* firebird2/src/gpre/: fbrmclib.cpp (1.13), rmc.cpp (1.28):
+
+	Added support for 64-bit integers to RM/Cobol code generator and
+	run time.
+
+2009-08-05 17:26  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.356):
+
+	More complete solution for CORE-1971 (evaluation from left to
+	right).
+
+2009-08-05 15:55  alexpeshkoff
+
+	* firebird2/configure.in (1.356):
+
+	A little better behavior when standard editline library requested
+	but not found
+
+2009-08-05 14:31  robocop
+
+	* firebird2/src/jrd/DebugInterface.cpp (1.12):
+
+	Debug checks.
+
+2009-08-05 14:30  robocop
+
+	* firebird2/src/: dsql/dsql.cpp (1.288), gpre/int_cxx.cpp (1.54),
+	jrd/cmp.cpp (1.349), jrd/cmp_proto.h (1.37), jrd/dyn_def.epp
+	(1.182), jrd/dyn_util.epp (1.62), jrd/jrd.cpp (1.557),
+	jrd/jrd_proto.h (1.82), jrd/par.cpp (1.246), jrd/par_proto.h
+	(1.26):
+
+	Change the interface again. Please full rebuild (although the many
+	recent changes to common.h almost qualify as full rebuild).
+
+2009-08-05 13:52  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+	(1.16):
+
+	Mandriva specific change, suggested by Philippe Makowski
+
+2009-08-05 13:45  uid87371
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.101):
+
+	Bug in clean_all - patch from Bill Oliver
+
+2009-08-05 13:16  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.targets (1.30):
+
+	Fixed posix build - thanks to Bill Oliver
+
+2009-08-05 12:43  alexpeshkoff
+
+	* firebird2/doc/README.build.posix.html (1.1):
+
+	The first draft of posix build instructions from Bill Oliver
+
+2009-08-05 09:36  alexpeshkoff
+
+	* firebird2/src/jrd/: common.h (1.212), os/posix/unix.cpp (1.123):
+
+	Moved O_DIRECT definition for DARWIN to common place
+
+2009-08-05 08:35  robocop
+
+	* firebird2/src/burp/restore.epp (1.177):
+
+	Misc.
+
+2009-08-05 08:33  robocop
+
+	* firebird2/src/: common/StatusArg.h (1.19), jrd/extds/IscDS.cpp
+	(1.32):
+
+	Style.
+
+2009-08-05 08:26  robocop
+
+	* firebird2/src/common/: classes/ClumpletReader.cpp (1.42),
+	classes/ClumpletWriter.cpp (1.33), StatusArg.cpp (1.21):
+
+	Debug checks.
+
+2009-08-05 06:48  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.556):
+
+	Style.
+
+2009-08-05 04:12  asfernandes
+
+	* firebird2/: builds/install/arch-specific/win32/Readme.txt (1.22),
+	src/burp/burp.cpp (1.173), src/dudley/exe.epp (1.76),
+	src/gpre/c_cxx.cpp (1.92), src/gpre/gpre_meta_boot.cpp (1.71),
+	src/jrd/common.h (1.211), src/jrd/dyn_util.epp (1.61),
+	src/jrd/par.cpp (1.245), src/remote/os/win32/wnet.cpp (1.87):
+
+	Misc
+
+2009-08-04 17:32  asfernandes
+
+	* firebird2/src/jrd/BlrReader.h (1.4):
+
+	Comment and fix for 64 bit
+
+2009-08-04 15:01  robocop
+
+	* firebird2/src/jrd/: common.h (1.210), evl.cpp (1.305):
+
+	Fix CORE-2581 Infinity should not escape from the engine. UDF
+	issues not touched yet.
+
+2009-08-04 14:59  robocop
+
+	* firebird2/src/burp/burp.cpp (1.172):
+
+	Start from our minimum accepted page size instead of the legacy
+	value.
+
+2009-08-04 13:36  dimitr
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.80):
+
+	Misc.
+
+2009-08-04 13:35  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.296):
+
+	Cleanup the code not relevant anymore.
+
+2009-08-04 13:32  dimitr
+
+	* firebird2/src/jrd/common.h (1.209):
+
+	Fixed Win64 build.
+
+2009-08-04 13:01  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.linux_s390x (1.1):
+
+	s390 port - added forgotten file
+
+2009-08-04 12:59  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.solaris (1.31):
+
+	Solaris port - -fast does not provide correct FB code
+
+2009-08-04 12:42  dimitr
+
+	* firebird2/src/jrd/common.h (1.208):
+
+	Fix SIZEFORMAT definitions for 64-bit Windows and 32-bit Linux.
+
+2009-08-04 12:39  dimitr
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.120):
+
+	Need sizeof(size_t) to correctly define format in common.h
+
+2009-08-04 12:37  alexpeshkoff
+
+	* firebird2/configure.in (1.355):
+
+	Need sizeof(size_t) to correctly define format in common.h
+
+2009-08-04 11:55  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.207):
+
+	Removed twice defined macro
+
+2009-08-04 10:58  robocop
+
+	* firebird2/src/jrd/par.cpp (1.244):
+
+	Misc: follow Alex' style.
+
+2009-08-04 10:42  robocop
+
+	* firebird2/src/jrd/: gds.cpp (1.306), par.cpp (1.243):
+
+	Misc.
+
+2009-08-03 17:52  asfernandes
+
+	* firebird2/: builds/posix/firebird.darwin.client.vers (1.5),
+	builds/posix/firebird.darwin.embed.vers (1.5),
+	builds/posix/firebird.exp (1.3), builds/posix/firebird.hpux.vers
+	(1.5), builds/posix/firebird.vers (1.17),
+	builds/win32/defs/fbclient.def (1.25),
+	builds/win32/defs/fbclient_s.def (1.10),
+	builds/win32/defs/gds32.def (1.15), src/burp/backup.epp (1.125),
+	src/burp/restore.epp (1.176), src/dsql/dsql.cpp (1.287),
+	src/dudley/exe.epp (1.75), src/gpre/ada.cpp (1.69),
+	src/gpre/c_cxx.cpp (1.91), src/gpre/cob.cpp (1.84),
+	src/gpre/ftn.cpp (1.81), src/gpre/int_cxx.cpp (1.53),
+	src/gpre/pas.cpp (1.71), src/gpre/pretty.cpp (1.45),
+	src/gpre/rmc.cpp (1.27), src/jrd/BlrReader.h (1.3),
+	src/jrd/filters.cpp (1.77), src/jrd/gds.cpp (1.305),
+	src/jrd/gds_proto.h (1.59), src/jrd/ibase.h (1.144),
+	src/jrd/par.cpp (1.242), src/jrd/trace/TraceObjects.cpp (1.15),
+	src/qli/gener.cpp (1.58):
+
+	Some things discussed with Dmitry and Claudio - rename the new
+	function to fb_print_blr, use ULONG parameter for blr_length and
+	return int
+
+2009-08-03 15:55  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt (1.21),
+	installation_readme.txt (1.23):
+
+	Bump version from beta 1 to beta 2
+
+2009-08-02 16:50  robocop
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.79):
+
+	Fix the Win32 build by brute force for VC2008 (other compilers may
+	complain).
+
+2009-08-02 16:26  robocop
+
+	* firebird2/src/jrd/BlrReader.h (1.2):
+
+	Style.
+
+2009-08-02 16:24  robocop
+
+	* firebird2/src/jrd/: filters.cpp (1.76), gds.cpp (1.304):
+
+	Misc.
+
+2009-08-02 16:23  robocop
+
+	* firebird2/src/jrd/common.h (1.206):
+
+	Fix the Win32 build.
+
+2009-08-02 12:46  dimitr
+
+	* firebird2/src/: remote/os/win32/srvr_w32.cpp (1.78), jrd/common.h
+	(1.205):
+
+	Little battle against warnings.
+
+2009-08-02 12:35  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.295), xnet.cpp (1.141),
+	os/win32/wnet.cpp (1.86):
+
+	Little battle against warnings.
+
+2009-08-02 06:09  asfernandes
+
+	* firebird2/: builds/posix/firebird.darwin.client.vers (1.4),
+	builds/posix/firebird.darwin.embed.vers (1.4),
+	builds/posix/firebird.exp (1.2), builds/posix/firebird.hpux.vers
+	(1.4), builds/posix/firebird.vers (1.16),
+	builds/win32/defs/fbclient.def (1.24),
+	builds/win32/defs/fbclient_s.def (1.9), builds/win32/defs/gds32.def
+	(1.14), builds/win32/msvc7/engine.vcproj (1.82),
+	builds/win32/msvc7/engine_classic.vcproj (1.82),
+	builds/win32/msvc7/engine_embed.vcproj (1.71),
+	builds/win32/msvc8/engine.vcproj (1.35),
+	builds/win32/msvc8/engine_classic.vcproj (1.36),
+	builds/win32/msvc8/engine_embed.vcproj (1.33),
+	builds/win32/msvc9/engine.vcproj (1.6),
+	builds/win32/msvc9/engine_classic.vcproj (1.6),
+	builds/win32/msvc9/engine_embed.vcproj (1.6), src/burp/backup.epp
+	(1.124), src/burp/restore.epp (1.175), src/dsql/StmtNodes.cpp
+	(1.8), src/dsql/dsql.cpp (1.286), src/dudley/exe.epp (1.74),
+	src/gpre/ada.cpp (1.68), src/gpre/c_cxx.cpp (1.90),
+	src/gpre/cob.cpp (1.83), src/gpre/ftn.cpp (1.80),
+	src/gpre/gpre_meta_boot.cpp (1.70), src/gpre/int_cxx.cpp (1.52),
+	src/gpre/pas.cpp (1.70), src/gpre/pretty.cpp (1.44),
+	src/gpre/rmc.cpp (1.26), src/jrd/BlrReader.h (1.1), src/jrd/cmp.cpp
+	(1.348), src/jrd/cmp_proto.h (1.36), src/jrd/dfw.epp (1.278),
+	src/jrd/dyn_def.epp (1.181), src/jrd/dyn_util.epp (1.60),
+	src/jrd/exe.h (1.135), src/jrd/filters.cpp (1.75), src/jrd/gds.cpp
+	(1.303), src/jrd/gds_proto.h (1.58), src/jrd/ibase.h (1.143),
+	src/jrd/jrd.cpp (1.555), src/jrd/met.epp (1.287),
+	src/jrd/met_proto.h (1.71), src/jrd/par.cpp (1.241),
+	src/jrd/par_proto.h (1.25), src/jrd/pcmet.epp (1.60),
+	src/jrd/trace/TraceObjects.cpp (1.14), src/qli/gener.cpp (1.57):
+
+	Fixed CORE-2576 - Server may crash parsing wrong or truncated BLR
+
+	Full rebuild required - CMP_compile2 prototype changed
+
+2009-08-01 20:41  asfernandes
+
+	* firebird2/src/: common/classes/alloc.cpp (1.128),
+	common/classes/fb_string.cpp (1.46), common/classes/fb_string.h
+	(1.26), jrd/common.h (1.204), remote/inet_proto.h (1.21),
+	remote/xnet.cpp (1.140), remote/os/win32/wnet_proto.h (1.13):
+
+	Misc
+
+2009-08-01 20:29  asfernandes
+
+	* firebird2/src/common/classes/alloc.h (1.95):
+
+	Fix typo
+
+2009-08-01 20:20  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.455):
+
+	Fixed CORE-2579 - Parameters and variables cannot be used as
+	expressions in EXECUTE PROCEDURE parameters without a colon prefix.
+	 Improvement CORE-2580 - Allow usage of subselects as PSQL
+	expressions
+
+2009-08-01 07:37  robocop
+
+	* firebird2/src/: jrd/isc.cpp (1.97), jrd/met.epp (1.286),
+	jrd/scl.epp (1.108), isql/isql.epp (1.289), dsql/make.cpp (1.188):
+
+	Paul Beach confirmed this Darwin code is no longer necessary.
+
+2009-07-31 11:29  robocop
+
+	* firebird2/src/common/classes/alloc.h (1.94):
+
+	Totally misc.
+
+2009-07-31 11:26  alexpeshkoff
+
+	* firebird2/src/jrd/flu.cpp (1.71):
+
+	Cleanup - make h and cpp files exactly match
+
+2009-07-31 11:17  alexpeshkoff
+
+	* firebird2/src/: common/classes/fb_string.cpp (1.45),
+	common/classes/fb_string.h (1.25), remote/remote.h (1.98):
+
+	Patch from Bill Oliver and some more consts
+
+2009-07-31 11:05  alexpeshkoff
+
+	* firebird2/src/remote/remote.h (1.97):
+
+	Fixed posix build
+
+2009-07-31 10:55  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.294):
+
+	Someone attempted to turn on a keepalive option for the event
+	channel, but used a main connection socket handle instead of the
+	event one ;-)
+
+2009-07-31 10:45  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.293), inet_proto.h (1.20),
+	remote.h (1.96), os/win32/srvr_w32.cpp (1.77), os/win32/wnet.cpp
+	(1.85), os/win32/wnet_proto.h (1.12):
+
+	Use a proper handle type for TCP sockets. Don't share that handle
+	with named pipes. This allows to eliminate many unnecessary casts.
+
+2009-07-30 15:27  alexpeshkoff
+
+	* firebird2/src/common/classes/: alloc.cpp (1.127), alloc.h (1.93):
+
+	HPUX port - support crazy C-runtime on Itanium
+
+2009-07-30 14:16  alexpeshkoff
+
+	* firebird2/src/: common/classes/alloc.cpp (1.126), jrd/common.h
+	(1.203):
+
+	Fixed use of size_t variables in printf() - thanks to Claudio
+
+2009-07-30 14:07  alexpeshkoff
+
+	* firebird2/src/jrd/ibase.h (1.142):
+
+	Fixed gcc warning
+
+2009-07-30 13:30  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+	(1.11):
+
+	Keep in sync with mandrake script
+
+2009-07-30 11:19  alexpeshkoff
+
+	* firebird2/src/misc/src_bundle.sh (1.9):
+
+	Make it work with new CVS version
+
+2009-07-29 13:31  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.213):
+
+	Avoid conflicts with system headers on HPUX
+
+2009-07-29 13:00  alexpeshkoff
+
+	* firebird2/configure.in (1.354):
+
+	HPUX port
+
+2009-07-29 12:56  alexpeshkoff
+
+	* firebird2/: configure.in (1.353), builds/posix/make.defaults
+	(1.88), builds/posix/make.rules (1.45):
+
+	Always build threaded binaries. This lets simplify configure.in a
+	bit.
+
+2009-07-29 10:59  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.139):
+
+	Fixed regression in Beta2 : can't connect using XNET
+
+2009-07-29 10:54  hvlad
+
+	* firebird2/src/utilities/fbtracemgr/traceMgrMain.cpp (1.8):
+
+	Fixed wrong variable usage : varibale "p" changed its value in loop
+	and no longer points to the end of send buffer
+
+2009-07-29 10:15  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.100):
+
+	Remove symbolic links in build directory when doing "make clean"
+
+2009-07-29 10:07  makowski
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+	(1.15):
+
+	change start stop order, add LSB header
+
+2009-07-29 02:12  asfernandes
+
+	* firebird2/src/jrd/dfw_proto.h (1.20):
+
+	Misc
+
+2009-07-28 14:28  alexpeshkoff
+
+	* firebird2/: configure.in (1.352), builds/posix/prefix.hpux_aCC
+	(1.2), src/jrd/common.h (1.202):
+
+	HPUX port
+
+2009-07-28 14:03  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_atomic.h (1.27):
+
+	comment
+
+2009-07-28 13:16  alexpeshkoff
+
+	* firebird2/: configure.in (1.351), src/common/classes/fb_atomic.h
+	(1.26):
+
+	Implementation of atomic counter using libatomic_ops. Useful at
+	least for s390/linux.
+
+2009-07-28 12:34  alexpeshkoff
+
+	* firebird2/src/jrd/dfw_proto.h (1.19):
+
+	gcc warning
+
 2009-07-25 20:43  asfernandes
 
 	* firebird2/src/jrd/pag.cpp (1.212):
