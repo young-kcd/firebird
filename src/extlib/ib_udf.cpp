@@ -143,17 +143,15 @@ double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
 		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.quot);
 	}
-	else
-	{
-		// This is a Kludge!  We need to return INF,
-		// but this seems to be the only way to do
-		// it since there seens to be no constant for it.
+
+	// This is a Kludge!  We need to return INF,
+	// but this seems to be the only way to do
+	// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
-		return INFINITY;
+	return INFINITY;
 #else
-		return (1 / tan(0.0));
+	return (1 / tan(0.0));
 #endif
-	}
 }
 
 double EXPORT IB_UDF_floor( double *a)
@@ -212,7 +210,8 @@ char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 
 	const long avalue = *a;
 
-	if (avalue >= 0) {
+	if (avalue >= 0)
+	{
 		long current = 0;
 		const long length = strlen(s);
 		const long padlength = strlen(c);
@@ -221,21 +220,23 @@ char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 
 		if (padlength)
 		{
-			while (current + length < avalue) {
+			while (current + length < avalue)
+			{
 				memcpy(&buf[current], c, padlength);
 				current += padlength;
 			}
 			memcpy(&buf[(avalue - length < 0) ? 0 : avalue - length], s, stop);
 			buf[avalue] = '\0';
 		}
-		else {
+		else
+		{
 			memcpy(buf, s, stop);
 			buf[stop] = '\0';
 		}
 		return buf;
 	}
-	else
-		return NULL;
+
+	return NULL;
 }
 
 char *EXPORT IB_UDF_ltrim( const char *s)
@@ -263,17 +264,15 @@ double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
 		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.rem);
 	}
-	else
-	{
-		// This is a Kludge!  We need to return INF,
-		// but this seems to be the only way to do
-		// it since there seens to be no constant for it.
+
+	// This is a Kludge!  We need to return INF,
+	// but this seems to be the only way to do
+	// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
-		return INFINITY;
+	return INFINITY;
 #else
-		return (1 / tan(0.0));
+	return (1 / tan(0.0));
 #endif
-	}
 }
 
 double EXPORT IB_UDF_pi()
@@ -299,7 +298,8 @@ char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 
 	const long avalue = *a;
 
-	if (avalue >= 0) {
+	if (avalue >= 0)
+	{
 		const long length = strlen(s);
 		long current = (avalue - length) < 0 ? avalue : length;
 		const long padlength = strlen(c);
@@ -308,7 +308,8 @@ char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 
 		if (padlength)
 		{
-			while (current + padlength < avalue) {
+			while (current + padlength < avalue)
+			{
 				memcpy(&buf[current], c, padlength);
 				current += padlength;
 			}
@@ -320,8 +321,8 @@ char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 
 		return buf;
 	}
-	else
-		return NULL;
+
+	return NULL;
 }
 
 char *EXPORT IB_UDF_rtrim( const char *s)
@@ -330,7 +331,8 @@ char *EXPORT IB_UDF_rtrim( const char *s)
 		return 0;
 
 	const char* p = s + strlen(s);
-	while (--p >= s && *p == ' '); // empty loop body
+	while (--p >= s && *p == ' ')
+		; // empty loop body
 
 	const long length = p - s + 1;
 	char* buf = (char *) ib_util_malloc(length + 1);
@@ -422,7 +424,8 @@ char* EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 		buf = (char*)ib_util_malloc(1);
 		buf[0] = '\0';
 	}
-	else {
+	else
+	{
 		/* we want from the mth char to the (m+n)th char inclusive,
 		 * so add one to the length.
 		 */
