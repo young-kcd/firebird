@@ -1378,6 +1378,8 @@ C --
       PARAMETER (GDS__udf_fp_overflow                  = 335544982)
       INTEGER*4 GDS__udf_fp_nan                      
       PARAMETER (GDS__udf_fp_nan                       = 335544983)
+      INTEGER*4 GDS__instance_conflict               
+      PARAMETER (GDS__instance_conflict                = 335544984)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
