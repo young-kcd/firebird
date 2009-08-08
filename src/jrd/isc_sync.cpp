@@ -2402,8 +2402,14 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 							 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
+		const DWORD err = GetLastError();
+
+		if ((err == ERROR_USER_MAPPED_FILE) && init_flag && file_exists && trunc_flag)
+			Arg::Gds(isc_instance_conflict).copyTo(status_vector);
+		else
+			error(status_vector, "CreateFile", err);
+
 		CloseHandle(event_handle);
-		error(status_vector, "CreateFile", GetLastError());
 		return NULL;
 	}
 
