@@ -685,6 +685,7 @@ static const struct {
 	{"sysf_fp_overflow", 335544981},
 	{"udf_fp_overflow", 335544982},
 	{"udf_fp_nan", 335544983},
+	{"instance_conflict", 335544984},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

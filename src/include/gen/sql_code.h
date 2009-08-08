@@ -684,6 +684,7 @@ static const struct {
 	{335544981, -833}, /* 661 sysf_fp_overflow */
 	{335544982, -901}, /* 662 udf_fp_overflow */
 	{335544983, -901}, /* 663 udf_fp_nan */
+	{335544984, -902}, /* 664 instance_conflict */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
