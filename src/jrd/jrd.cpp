@@ -3520,7 +3520,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 			CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
-				blr_length, FALSE);
+				blr_length, false);
 
 			request = CMP_make_request(tdbb, csb, false);
 			CMP_verify_access(tdbb, request);
