@@ -28,6 +28,7 @@
 #include "firebird.h"
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
+#include "../../common/utils_proto.h"
 #include "../../jrd/common.h"
 #include "../../jrd/err_proto.h"
 #include "../../jrd/isc_proto.h"
@@ -84,7 +85,21 @@ ConfigStorage::ConfigStorage()
 	m_dirty = false;
 
 	PathName filename;
+#ifdef WIN_NT
+	DWORD sesID = 0;
+	if (fb_utils::isGlobalKernelPrefix() || 
+		(ProcessIdToSessionId(GetCurrentProcessId(), &sesID) == 0) ||
+		(sesID == 0)) 
+	{
+		filename.printf(TRACE_FILE); // TODO: it must be per engine instance
+	}
+	else 
+	{
+		filename.printf("%s.%u", TRACE_FILE, sesID);
+	}
+#else
 	filename.printf(TRACE_FILE); // TODO: it must be per engine instance
+#endif
 
 	ISC_STATUS_ARRAY status;
 	ISC_map_file(status, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
