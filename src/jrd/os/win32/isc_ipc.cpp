@@ -39,6 +39,7 @@
 
 #include "firebird.h"
 #include "../../../common/classes/init.h"
+#include "../../../common/utils_proto.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/isc.h"
@@ -159,13 +160,19 @@ void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
  **************************************/
 	ISC_signal_init();
 
-	const BOOLEAN man_rst = manual_reset ? TRUE : FALSE;
+	const BOOL man_rst = manual_reset ? TRUE : FALSE;
 
 	if (!signal_number)
 		return CreateEvent(NULL, man_rst, FALSE, NULL);
 
 	TEXT event_name[BUFFER_TINY];
 	sprintf(event_name, "_firebird_process%u_signal%d", process_idL, signal_number);
+
+	if (!fb_utils::prefix_kernel_object_name(event_name, sizeof(event_name)))
+	{
+		SetLastError(ERROR_FILENAME_EXCED_RANGE);
+		return NULL;
+	}
 
 	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
 

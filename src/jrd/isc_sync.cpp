@@ -2389,7 +2389,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	DWORD fdw_create;
 	if (init_flag && file_exists && trunc_flag)
-		fdw_create = TRUNCATE_EXISTING | OPEN_ALWAYS;
+		fdw_create = TRUNCATE_EXISTING;
 	else
 		fdw_create = OPEN_ALWAYS;
 
@@ -2467,13 +2467,23 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 /* Create the real file mapping object. */
 
 	TEXT mapping_name[MAXPATHLEN + 15]; // enough for int32 as text
-	sprintf(mapping_name, "%s_mapping_%"ULONGFORMAT, filename, header_address[1]);
+	sprintf(mapping_name, "_mapping_%"ULONGFORMAT, header_address[1]);
+
+	if (!make_object_name(object_name, sizeof(object_name), filename, mapping_name))
+	{
+		error(status_vector, "make_object_name", GetLastError());
+		UnmapViewOfFile(header_address);
+		CloseHandle(header_obj);
+		CloseHandle(event_handle);
+		CloseHandle(file_handle);
+		return NULL;
+	}
 
 	HANDLE file_obj = CreateFileMapping(file_handle,
 										ISC_get_security_desc(),
 										PAGE_READWRITE,
 										0, length,
-										mapping_name);
+										object_name);
 	if (file_obj == NULL)
 	{
 		error(status_vector, "CreateFileMapping", GetLastError());
@@ -3521,24 +3531,28 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
  * is generated with the mapped file is created.
  */
 
-	HANDLE file_obj;
+	HANDLE file_obj = NULL;
 
 	while (true)
 	{
-		TEXT mapping_name[MAXPATHLEN + 15]; // enough for int32 as text
-		sprintf(mapping_name, "%s_mapping_%"ULONGFORMAT,
-				shmem_data->sh_mem_name, shmem_data->sh_mem_hdr_address[1] + 1);
+		TEXT mapping_name[64]; // enough for int32 as text
+		sprintf(mapping_name, "_mapping_%"ULONGFORMAT, shmem_data->sh_mem_hdr_address[1] + 1);
+
+		TEXT object_name[MAXPATHLEN];
+		if (!make_object_name(object_name, sizeof(object_name), shmem_data->sh_mem_name, mapping_name))
+			break;
 
 		file_obj = CreateFileMapping(shmem_data->sh_mem_handle,
 									 ISC_get_security_desc(),
 									 PAGE_READWRITE,
 									 0, new_length,
-									 mapping_name);
+									 object_name);
 
 		if (!((GetLastError() == ERROR_ALREADY_EXISTS) && flag))
 			break;
 
 		CloseHandle(file_obj);
+		file_obj = NULL;
 		shmem_data->sh_mem_hdr_address[1]++;
 	}
 

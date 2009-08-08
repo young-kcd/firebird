@@ -97,6 +97,7 @@ namespace fb_utils
 
 #ifdef WIN_NT
 	bool prefix_kernel_object_name(char* name, size_t bufsize);
+	bool isGlobalKernelPrefix();
 #endif
 
 	Firebird::PathName get_process_name();

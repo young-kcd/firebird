@@ -326,7 +326,6 @@ char* cleanup_passwd(char* arg)
 #ifdef WIN_NT
 
 static bool validateProductSuite (LPCSTR lpszSuiteToValidate);
-static bool isGlobalKernelPrefix();
 
 // hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for
 // names of all kernel objects we use. For Win9x we must not add this prefix.
