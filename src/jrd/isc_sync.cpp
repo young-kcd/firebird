@@ -2472,7 +2472,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 /* Create the real file mapping object. */
 
-	TEXT mapping_name[MAXPATHLEN + 15]; // enough for int32 as text
+	TEXT mapping_name[64]; // enough for int32 as text
 	sprintf(mapping_name, "_mapping_%"ULONGFORMAT, header_address[1]);
 
 	if (!make_object_name(object_name, sizeof(object_name), filename, mapping_name))
