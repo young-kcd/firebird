@@ -150,7 +150,7 @@ double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
 #ifdef HAVE_INFINITY
 	return INFINITY;
 #else
-	return (1 / tan(0.0));
+	return 1 / tan(0.0);
 #endif
 }
 
@@ -271,7 +271,7 @@ double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
 #ifdef HAVE_INFINITY
 	return INFINITY;
 #else
-	return (1 / tan(0.0));
+	return 1 / tan(0.0);
 #endif
 }
 

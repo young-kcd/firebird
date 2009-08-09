@@ -740,6 +740,7 @@ namespace Firebird
 			const difference_type dl = length() - n;
 			return (dl < 0) ? -1 : (dl > 0) ? 1 : 0;
 		}
+
 		// These four functions are to speed up the most common comparisons: equality and inequality.
 		bool equals(const StringType& str) const
 		{

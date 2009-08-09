@@ -87,13 +87,13 @@ ConfigStorage::ConfigStorage()
 	PathName filename;
 #ifdef WIN_NT
 	DWORD sesID = 0;
-	if (fb_utils::isGlobalKernelPrefix() || 
-		(ProcessIdToSessionId(GetCurrentProcessId(), &sesID) == 0) ||
-		(sesID == 0)) 
+	if (fb_utils::isGlobalKernelPrefix() ||
+		ProcessIdToSessionId(GetCurrentProcessId(), &sesID) == 0 ||
+		sesID == 0)
 	{
 		filename.printf(TRACE_FILE); // TODO: it must be per engine instance
 	}
-	else 
+	else
 	{
 		filename.printf("%s.%u", TRACE_FILE, sesID);
 	}

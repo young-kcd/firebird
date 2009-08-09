@@ -140,16 +140,16 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 		index = idx_name;
 
 	bool haveConstraint = true;
-	if (index.hasData()) 
+	if (index.hasData())
 	{
 		MET_lookup_cnstrt_for_index(tdbb, constraint, index);
-		if (constraint.isEmpty()) 
+		if (constraint.isEmpty())
 		{
 			haveConstraint = false;
 			constraint = "***unknown***";
 		}
 	}
-	else 
+	else
 	{
 		haveConstraint = false;
 		index = constraint = "***unknown***";
@@ -248,7 +248,7 @@ void ERR_log(int facility, int number, const TEXT* message)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	DEBUG;
-	if (message) 
+	if (message)
 	{
 		strncpy(errmsg, message, sizeof(errmsg));
 		errmsg[sizeof(errmsg) - 1] = 0;
@@ -343,7 +343,7 @@ void ERR_make_permanent(ISC_STATUS* s)
  **************************************/
 {
 	Attachment* const att = JRD_get_thread_data()->getAttachment();
-	if (att) 
+	if (att)
 	{
 		MutexLockGuard(att->att_strings_mutex);
 		if (att->att_strings_buffer != ((StringsBuffer*)(~0)))
@@ -432,7 +432,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 	/* check for duplicated error code */
 	int i;
-	for (i = 0; i < ISC_STATUS_LENGTH; i++) 
+	for (i = 0; i < ISC_STATUS_LENGTH; i++)
 	{
 		if (status_vector[i] == isc_arg_end && i == status_len)
 			break;				/* end of argument list */
@@ -456,7 +456,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 	ISC_STATUS_ARRAY warning_status;
 	int warning_count = 0;
-	if (warning_indx) 
+	if (warning_indx)
 	{
 		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
@@ -468,7 +468,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 /* add the status into a real buffer right in between last error
    and first warning */
 
-	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) 
+	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH)
 	{
 		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
@@ -598,13 +598,13 @@ static void internal_error(ISC_STATUS status, int number, const TEXT* file, int 
 
 	const size_t len = strlen(errmsg);
 
-	if (file) 
+	if (file)
 	{
 		// Remove path information
 		const TEXT* ptr = file + strlen(file);
-		for (; ptr > file; ptr--) 
+		for (; ptr > file; ptr--)
 		{
-			if ((*ptr == '/') || (*ptr == '\\')) 
+			if ((*ptr == '/') || (*ptr == '\\'))
 			{
 				ptr++;
 				break;
@@ -619,4 +619,3 @@ static void internal_error(ISC_STATUS status, int number, const TEXT* file, int 
 
 	ERR_post(Arg::Gds(status) << Arg::Str(errmsg));
 }
-

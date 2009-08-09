@@ -2404,7 +2404,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	{
 		const DWORD err = GetLastError();
 
-		if ((err == ERROR_USER_MAPPED_FILE) && init_flag && file_exists && trunc_flag)
+		if (err == ERROR_USER_MAPPED_FILE && init_flag && file_exists && trunc_flag)
 			Arg::Gds(isc_instance_conflict).copyTo(status_vector);
 		else
 			error(status_vector, "CreateFile", err);
@@ -3554,7 +3554,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 									 0, new_length,
 									 object_name);
 
-		if (!((GetLastError() == ERROR_ALREADY_EXISTS) && flag))
+		if (!(GetLastError() == ERROR_ALREADY_EXISTS && flag))
 			break;
 
 		CloseHandle(file_obj);
