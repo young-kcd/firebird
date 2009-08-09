@@ -1,3 +1,16 @@
+2009-08-09 10:14  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.216):
+
+	Misc.
+
+2009-08-08 15:12  hvlad
+
+	* firebird2/src/jrd/trace/TraceConfigStorage.cpp (1.25):
+
+	Improvement CORE-2588 : Allow to run engine instances in different
+	Windows sessions without conflics on trace shared memory
+
 2009-08-08 14:43  hvlad
 
 	* firebird2/lang_helpers/: gds_codes.ftn (1.101), gds_codes.pas
