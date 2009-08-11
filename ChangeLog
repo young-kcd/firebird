@@ -1,3 +1,17 @@
+2009-08-10 12:13  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin_x86_64 (1.13):
+
+	64bit MacOSX needs the same flags as 32bit
+
+2009-08-10 00:21  asfernandes
+
+	* firebird2/src/: common/classes/fb_string.h (1.28),
+	extlib/ib_udf.cpp (1.16), jrd/err.cpp (1.95), jrd/isc_sync.cpp
+	(1.217), jrd/trace/TraceConfigStorage.cpp (1.26):
+
+	Misc
+
 2009-08-09 10:14  robocop
 
 	* firebird2/src/jrd/isc_sync.cpp (1.216):
