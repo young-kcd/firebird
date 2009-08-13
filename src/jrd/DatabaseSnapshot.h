@@ -169,7 +169,7 @@ class DatabaseSnapshot
 			memcpy(ptr, &adjusted_length, sizeof(adjusted_length));
 			ptr += sizeof(USHORT);
 			memcpy(ptr, value, length);
-			offset += delta;
+			offset += (ULONG) delta;
 		}
 
 		UCHAR buffer[MAX_FORMAT_SIZE];
