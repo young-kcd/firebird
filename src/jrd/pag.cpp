@@ -2443,7 +2443,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 	Attachment* att = tdbb->getAttachment();
 	if (!att->att_temp_pg_lock)
 	{
-		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(USHORT)) Lock();
+		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(lock->lck_key.lck_long)) Lock();
 		lock->lck_type = LCK_page_space;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
