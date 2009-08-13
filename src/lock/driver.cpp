@@ -42,28 +42,30 @@ static const struct tbl
 {
 	const char* tbl_string;
 	SSHORT tbl_code;
-} types[] = {
-	{"null", LCK_null},
-	{"pr", LCK_PR},
-	{"sr", LCK_SR},
-	{"pw", LCK_PW},
-	{"sw", LCK_SW},
-	{"ex", LCK_EX},
-	{NULL, LCK_none}
+} types[] =
+	{
+		{"null", LCK_null},
+		{"pr", LCK_PR},
+		{"sr", LCK_SR},
+		{"pw", LCK_PW},
+		{"sw", LCK_SW},
+		{"ex", LCK_EX},
+		{NULL, LCK_none}
 	};
 
 static const struct tagg
 {
 	const char* tagg_string;
 	SSHORT tagg_code;
-} aggs[] = {
-	{"min", LCK_MIN},
-	{"max", LCK_MAX},
-	{"cnt", LCK_CNT},
-	{"sum", LCK_SUM},
-	{"avg", LCK_AVG},
-	{"any", LCK_ANY},
-	{NULL, 0}
+} aggs[] =
+	{
+		{"min", LCK_MIN},
+		{"max", LCK_MAX},
+		{"cnt", LCK_CNT},
+		{"sum", LCK_SUM},
+		{"avg", LCK_AVG},
+		{"any", LCK_ANY},
+		{NULL, 0}
 	};
 
 static int wait, sw_release, locks[100], levels[100];
@@ -92,7 +94,8 @@ void main( int argc, char **argv)
 	printf("pid = %d\n\n", getpid());
 	printf("\n");
 
-	if (LOCK_init(status_vector, getpid(), 1, &lck_owner_handle)) {
+	if (LOCK_init(status_vector, getpid(), 1, &lck_owner_handle))
+	{
 		printf("LOCK_init failed\n");
 		isc_print_status(status_vector);
 		exit(0);
@@ -123,7 +126,8 @@ void main( int argc, char **argv)
 		if (!strcmp(op, "rel"))
 		{
 			const SSHORT n = atoi(arg);
-			if (n < slot && (lock = locks[n])) {
+			if (n < slot && (lock = locks[n]))
+			{
 				LOCK_deq(lock);
 				locks[n] = 0;
 			}
@@ -146,7 +150,8 @@ void main( int argc, char **argv)
 		if (!strcmp(op, "rd"))
 		{
 			const SSHORT n = atoi(arg);
-			if (n >= slot || !(lock = locks[n])) {
+			if (n >= slot || !(lock = locks[n]))
+			{
 				printf("bad lock\n");
 				continue;
 			}
@@ -157,7 +162,8 @@ void main( int argc, char **argv)
 		if (!strcmp(op, "wd"))
 		{
 			const SSHORT n = atoi(arg);
-			if (n >= slot || !(lock = locks[n])) {
+			if (n >= slot || !(lock = locks[n]))
+			{
 				printf("bad lock\n");
 				continue;
 			}
@@ -169,7 +175,8 @@ void main( int argc, char **argv)
 		if (!strcmp(op, "qd"))
 		{
 			const SSHORT agg = lookup_agg(arg);
-			if (!agg) {
+			if (!agg)
+			{
 				printf("bad query aggregate\n");
 				continue;
 			}
@@ -184,11 +191,13 @@ void main( int argc, char **argv)
 		{
 			const SSHORT n = atoi(arg);
 			scanf("%s", op);
-			if (!(type = lookup_lock(op))) {
+			if (!(type = lookup_lock(op)))
+			{
 				printf("bad lock type\n");
 				continue;
 			}
-			if (n >= slot || !(lock = locks[n])) {
+			if (n >= slot || !(lock = locks[n]))
+			{
 				printf("bad lock\n");
 				continue;
 			}
@@ -224,12 +233,14 @@ void main( int argc, char **argv)
 							type,	/* lock type */
 							(sw_release ? ast : NULL), slot,	/* AST and argument */
 							0, wait, status_vector, lck_owner_handle);
-			if (lock) {
+			if (lock)
+			{
 				printf("lock# %d = %d\n", slot, lock);
 				levels[slot] = type;
 				locks[slot++] = lock;
 			}
-			else {
+			else
+			{
 				printf("*** LOCK REJECTED: status_vector[1] = %d", status_vector[1]);
 				switch (status_vector[1])
 				{
@@ -274,18 +285,21 @@ static int ast(void* slot_void)
 
 	printf("*** blocking AST for lock# %d ", slot);
 
-	if (sw_release < 0) {
+	if (sw_release < 0)
+	{
 		printf("In the AST routine.\n");
 		printf("Enter ar value [1=nothing, 2=release, 3=downgrade]:");
 		scanf("%d", &sw_release_use);
 	}
 
-	if (sw_release_use == 1) {
+	if (sw_release_use == 1)
+	{
 		printf("-- ignored ***\n");
 		return 0;
 	}
 
-	if (sw_release_use > 2 && levels[slot] == LCK_EX) {
+	if (sw_release_use > 2 && levels[slot] == LCK_EX)
+	{
 		LOCK_convert(locks[slot], LCK_SR, wait, NULL, 0, status_vector);
 		levels[slot] = LCK_SR;
 		printf("-- down graded to SR ***\n");

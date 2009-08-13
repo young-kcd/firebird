@@ -191,14 +191,20 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		redir_err = _open_osfhandle(redir_err, 0);
 #endif
 		if (redir_in != 0)
+		{
 			if (dup2((int) redir_in, 0))
 				close((int) redir_in);
+		}
 		if (redir_out != 1)
+		{
 			if (dup2((int) redir_out, 1))
 				close((int) redir_out);
+		}
 		if (redir_err != 2)
+		{
 			if (dup2((int) redir_err, 2))
 				close((int) redir_err);
+		}
 		argv += 4;
 		argc -= 4;
 	}
@@ -961,8 +967,7 @@ static void prt_history(OUTFILE outfile,
 }
 
 
-static void prt_lock(OUTFILE outfile,
-					 const lhb* LOCK_header, lbl* lock, USHORT sw_series)
+static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, lbl* lock, USHORT sw_series)
 {
 /**************************************
  *
@@ -1343,16 +1348,16 @@ static void prt_que2(OUTFILE outfile,
 
 static void prt_html_begin(OUTFILE outfile)
 {
-	/**************************************
-	 *
-	 *      p r t _ h t m l _ b e g i n
-	 *
-	 **************************************
-	 *
-	 * Functional description
-	 *      Print the html header if heeded
-	 *
-	 **************************************/
+/**************************************
+ *
+ *      p r t _ h t m l _ b e g i n
+ *
+ **************************************
+ *
+ * Functional description
+ *      Print the html header if heeded
+ *
+ **************************************/
 	if (!sw_html_format)
 		return;
 
@@ -1363,16 +1368,16 @@ static void prt_html_begin(OUTFILE outfile)
 
 static void prt_html_end(OUTFILE outfile)
 {
-	/**************************************
-	 *
-	 *      p r t _ h t m l _ e n d
-	 *
-	 **************************************
-	 *
-	 * Functional description
-	 *      Print the html finishing items
-	 *
-	 **************************************/
+/**************************************
+ *
+ *      p r t _ h t m l _ e n d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Print the html finishing items
+ *
+ **************************************/
 	if (!sw_html_format)
 		return;
 
