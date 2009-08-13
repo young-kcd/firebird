@@ -5313,7 +5313,7 @@ static bool shadow_defined(thread_db* tdbb)
  **************************************
  *
  * Functional description
- *	Return TRUE if any shadows have been has been defined
+ *	Return true if any shadows have been has been defined
  *      for the database else return false.
  *
  **************************************/
