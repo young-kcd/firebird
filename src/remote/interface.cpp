@@ -6169,7 +6169,6 @@ static bool receive_packet_noqueue(rem_port* port, PACKET * packet, ISC_STATUS *
 		if (bCheckResponse || bFreeStmt)
 		{
 			statement = port->port_objects[stmt_id];
-			CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 		}
 
 		if (bCheckResponse)
