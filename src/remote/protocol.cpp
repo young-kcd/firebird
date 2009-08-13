@@ -92,7 +92,7 @@ enum SQL_STMT_TYPE
 
 static bool alloc_cstring(XDR*, CSTRING*);
 static void free_cstring(XDR*, CSTRING*);
-static Rsr* get_statement(XDR*, SSHORT);
+static void reset_statement(XDR*, SSHORT);
 static bool_t xdr_cstring(XDR*, CSTRING*);
 static inline bool_t xdr_cstring_const(XDR*, CSTRING_CONST*);
 static bool_t xdr_datum(XDR*, const DSC*, BLOB_PTR*);
@@ -597,10 +597,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			// cleared out.  This should be done before fetching any message
 			// information (for example: blr info)
 
-			Rsr* statement = NULL;
-			statement = get_statement(xdrs, sqldata->p_sqldata_statement);
-			if (statement)
-				REMOTE_reset_statement(statement);
+			reset_statement(xdrs, sqldata->p_sqldata_statement);
 		}
 
 		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
@@ -1314,10 +1311,16 @@ static bool_t xdr_request(XDR* xdrs,
 	if (request_id >= port->port_objects.getCount())
 		return FALSE;
 
-	Rrq* request = port->port_objects[request_id];
+	Rrq* request;
 
-	if (!request)
+	try
+	{
+		request = port->port_objects[request_id];
+	}
+	catch (const Firebird::status_exception&)
+	{
 		return FALSE;
+	}
 
 	if (incarnation && !(request = REMOTE_find_request(request, incarnation)))
 		return FALSE;
@@ -1461,13 +1464,22 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		return TRUE;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
+
 	Rsr* statement;
+
 	if (statement_id >= 0)
 	{
 		if (static_cast<ULONG>(statement_id) >= port->port_objects.getCount())
 			return FALSE;
-		if (!(statement = port->port_objects[statement_id]))
+
+		try
+		{
+			statement = port->port_objects[statement_id];
+		}
+		catch (const Firebird::status_exception&)
+		{
 			return FALSE;
+		}
 	}
 	else
 	{
@@ -1519,7 +1531,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	if (!(statement->rsr_format = *fmt_ptr))
 		return TRUE;
 
-    RMessage* message = statement->rsr_buffer;
+	RMessage* message = statement->rsr_buffer;
 	if (!message || statement->rsr_format->fmt_length > statement->rsr_fmt_length)
 	{
 		REMOTE_release_messages(message);
@@ -1554,14 +1566,25 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		return TRUE;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
+
 	if (statement_id >= 0)
 	{
 		if (static_cast<ULONG>(statement_id) >= port->port_objects.getCount())
 			return FALSE;
-		statement = port->port_objects[statement_id];
+
+		try
+		{
+			statement = port->port_objects[statement_id];
+		}
+		catch (const Firebird::status_exception&)
+		{
+			return FALSE;
+		}
 	}
 	else
+	{
 		statement = port->port_statement;
+	}
 
 	if (!statement)
 		return FALSE;
@@ -1768,19 +1791,16 @@ static bool_t xdr_trrq_message( XDR* xdrs, USHORT msg_type)
 }
 
 
-static Rsr* get_statement( XDR* xdrs, SSHORT statement_id)
+static void reset_statement( XDR* xdrs, SSHORT statement_id)
 {
 /**************************************
  *
- *	g e t _ s t a t e m e n t
+ *	r e s e t _ s t a t e m e n t
  *
  **************************************
  *
  * Functional description
- *	Returns the statement based upon the statement id
- *      if statement_id = -1 then statement = port_statement
- *      otherwise, the statement comes from port_objects[statement_id]
- *      if there are no port_objects, then statement = NULL
+ *	Resets the statement.
  *
  **************************************/
 
@@ -1799,9 +1819,13 @@ static Rsr* get_statement( XDR* xdrs, SSHORT statement_id)
 
 	if (((ULONG) statement_id < port->port_objects.getCount()) && (statement_id >= 0))
 	{
-		statement = port->port_objects[statement_id];
+		try
+		{
+			statement = port->port_objects[statement_id];
+			REMOTE_reset_statement(statement);
+		}
+		catch (const Firebird::status_exception&)
+		{} // no-op
 	}
-
-	return statement;
 }
 
