@@ -133,7 +133,8 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
  *
  **************************************/
 	indexNode->nodePointer = pagePointer;
-	if (flags & Ods::btr_large_keys) {
+	if (flags & Ods::btr_large_keys)
+	{
 
 		// Get first byte that contains internal flags and 6 bits from number
 		UCHAR* localPointer = pagePointer;
@@ -145,7 +146,8 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 		indexNode->isEndBucket = (internalFlags == BTN_END_BUCKET_FLAG);
 
 		// If this is a END_LEVEL marker then we're done
-		if (indexNode->isEndLevel) {
+		if (indexNode->isEndLevel)
+		{
 			indexNode->prefix = 0;
 			indexNode->length = 0;
 			indexNode->recordNumber.setValue(0);
@@ -156,27 +158,34 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 		// Get remaining bits for number
 		ULONG tmp = *localPointer++;
 		number |= (tmp & 0x7F) << 5;
-		if (tmp >= 128) {
+		if (tmp >= 128)
+		{
 			tmp = *localPointer++;
 			number |= (tmp & 0x7F) << 12;
-			if (tmp >= 128) {
+			if (tmp >= 128)
+			{
 				tmp = *localPointer++;
 				number |= (tmp & 0x7F) << 19;
-				if (tmp >= 128) {
+				if (tmp >= 128)
+				{
 					tmp = *localPointer++;
 					number |= (FB_UINT64) (tmp & 0x7F) << 26;
-					if (tmp >= 128) {
+					if (tmp >= 128)
+					{
 						tmp = *localPointer++;
 						number |= (FB_UINT64) (tmp & 0x7F) << 33;
 /*
 	Uncomment this if you need more bits in record number
-						if (tmp >= 128) {
+						if (tmp >= 128)
+						{
 							tmp = *localPointer++;
 							number |= (FB_UINT64) (tmp & 0x7F) << 40;
-							if (tmp >= 128) {
+							if (tmp >= 128)
+							{
 								tmp = *localPointer++;
 								number |= (FB_UINT64) (tmp & 0x7F) << 47;
-								if (tmp >= 128) {
+								if (tmp >= 128)
+								{
 									tmp = *localPointer++;
 									number |= (FB_UINT64) (tmp & 0x7F) << 54; // We get 61 bits at this point!
 								}
@@ -189,36 +198,45 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 		}
 		indexNode->recordNumber.setValue(number);
 
-		if (!leafNode) {
+		if (!leafNode)
+		{
 			// Get page number for non-leaf pages
 			tmp = *localPointer++;
 			number = (tmp & 0x7F);
-			if (tmp >= 128) {
+			if (tmp >= 128)
+			{
 				tmp = *localPointer++;
 				number |= (tmp & 0x7F) << 7;
-				if (tmp >= 128) {
+				if (tmp >= 128)
+				{
 					tmp = *localPointer++;
 					number |= (tmp & 0x7F) << 14;
-					if (tmp >= 128) {
+					if (tmp >= 128)
+					{
 						tmp = *localPointer++;
 						number |= (tmp & 0x7F) << 21;
-						if (tmp >= 128) {
+						if (tmp >= 128)
+						{
 							tmp = *localPointer++;
 							number |= (tmp & 0x0F) << 28;
 /*
 	Change number to 64-bit type and enable this for 64-bit support
 
 							number |= (*tmp & 0x7F) << 28;
-							if (tmp >= 128) {
+							if (tmp >= 128)
+							{
 								tmp = *localPointer++;
 								number |= (*tmp & 0x7F) << 35;
-								if (tmp >= 128) {
+								if (tmp >= 128)
+								{
 									tmp = *localPointer++;
 									number |= (*tmp & 0x7F) << 42;
-									if (tmp >= 128) {
+									if (tmp >= 128)
+									{
 										tmp = *localPointer++;
 										number |= (*tmp & 0x7F) << 49;
-										if (tmp >= 128) {
+										if (tmp >= 128)
+										{
 											tmp = *localPointer++;
 											number |= (*tmp & 0x7F) << 56; // We get 63 bits at this point!
 										}
@@ -233,15 +251,18 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 			indexNode->pageNumber = number;
 		}
 
-		if (internalFlags == BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG) {
+		if (internalFlags == BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG)
+		{
 			// Prefix is zero
 			indexNode->prefix = 0;
 		}
-		else {
+		else
+		{
 			// Get prefix
 			tmp = *localPointer++;
 			indexNode->prefix = (tmp & 0x7F);
-			if (tmp & 0x80) {
+			if (tmp & 0x80)
+			{
 				tmp = *localPointer++;
 				indexNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 			}
@@ -253,15 +274,18 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 			// Length is zero
 			indexNode->length = 0;
 		}
-		else if (internalFlags == BTN_ONE_LENGTH_FLAG) {
+		else if (internalFlags == BTN_ONE_LENGTH_FLAG)
+		{
 			// Length is one
 			indexNode->length = 1;
 		}
-		else {
+		else
+		{
 			// Get length
 			tmp = *localPointer++;
 			indexNode->length = (tmp & 0x7F);
-			if (tmp & 0x80) {
+			if (tmp & 0x80)
+			{
 				tmp = *localPointer++;
 				indexNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 			}
@@ -273,16 +297,19 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 
 		return localPointer;
 	}
-	else {
+	else
+	{
 		indexNode->prefix = *pagePointer++;
 		indexNode->length = *pagePointer++;
-		if (leafNode) {
+		if (leafNode)
+		{
 			// Nice sign extension should happen here
 			indexNode->recordNumber.setValue(get_long(pagePointer));
 			indexNode->isEndLevel = (indexNode->recordNumber.getValue() == Ods::END_LEVEL);
 			indexNode->isEndBucket = (indexNode->recordNumber.getValue() == Ods::END_BUCKET);
 		}
-		else {
+		else
+		{
 			indexNode->pageNumber = get_long(pagePointer);
 			indexNode->isEndLevel = (indexNode->pageNumber == Ods::END_LEVEL);
 			indexNode->isEndBucket = (indexNode->pageNumber == Ods::END_BUCKET);

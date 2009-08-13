@@ -142,7 +142,8 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
 		VIO_verb_cleanup(tdbb, transaction);
 		fb_assert(ptr <= ddl + length); // disaster check after it happened
 	}
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		const Savepoint* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
@@ -168,9 +169,7 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
 }
 
 
-void DYN_error(bool	status_flag,
-			   USHORT	number,
-			   const SafeArg& sarg)
+void DYN_error(bool	status_flag, USHORT number, const SafeArg& sarg)
 {
 /**************************************
  *
@@ -213,9 +212,7 @@ void DYN_error(bool	status_flag,
 }
 
 
-void DYN_error_punt(bool	status_flag,
-					USHORT	number,
-					const SafeArg& arg)
+void DYN_error_punt(bool status_flag, USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -233,9 +230,7 @@ void DYN_error_punt(bool	status_flag,
 }
 
 
-void DYN_error_punt(bool	status_flag,
-					USHORT	number,
-					const char* str)
+void DYN_error_punt(bool status_flag, USHORT number, const char* str)
 {
 /**************************************
  *
@@ -679,10 +674,10 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
 	HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
 	USHORT l = length;
 
-	if (l) {
+	if (l)
+	{
 		if (length >= size) {
-			DYN_error_punt(false, 159);
-			// msg 159: Name longer than database field size
+			DYN_error_punt(false, 159); // msg 159: Name longer than database field size
 		}
 
 		TEXT* p2 = (transliterate ? temp.getBuffer(length) : field);
@@ -893,7 +888,8 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	USHORT length = *p++;
 	length |= (*p++) << 8;
 
-	if (!length) {
+	if (!length)
+	{
 		*ptr = p;
 		return length;
 	}
@@ -903,7 +899,8 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106);
 		/* msg 106: "Create metadata blob failed" */
@@ -932,7 +929,8 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	USHORT length = *p++;
 	length |= (*p++) << 8;
 
-	if (!length) {
+	if (!length)
+	{
 		*ptr = p;
 		return length;
 	}
@@ -980,7 +978,8 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106);
 		/* msg 106: "Create metadata blob failed" */
@@ -1107,14 +1106,17 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			{
 				GET_STRING(ptr, user);
 				/* This test may become obsolete as we now allow explicit ROLE keyword. */
-				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+				{
 					user_type = obj_sql_role;
-					if (user == NULL_ROLE) {
+					if (user == NULL_ROLE)
+					{
 						DYN_error_punt(false, 195, user.c_str());
-					/* msg 195: keyword NONE could not be used as SQL role name. */
+						/* msg 195: keyword NONE could not be used as SQL role name. */
 					}
 				}
-				else {
+				else
+				{
 					user_type = obj_user;
 					user.upper7();
 				}
@@ -1130,13 +1132,15 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_role:
 		    user_type = obj_sql_role;
 		    GET_STRING(ptr, user);
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			{
 				DYN_error_punt(false, 188, user.c_str());
-			/* msg 188: Role doesn't exist. */
+				/* msg 188: Role doesn't exist. */
 			}
-			if (user == NULL_ROLE) {
+			if (user == NULL_ROLE)
+			{
 				DYN_error_punt(false, 195, user.c_str());
-			/* msg 195: keyword NONE could not be used as SQL role name. */
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 			break;
 
@@ -1144,13 +1148,15 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
                 DYN_error_punt(false, 196);
 			}
-			else {
+			else
+			{
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 				grant_role_stmt = true;
-				if (object == NULL_ROLE) {
+				if (object == NULL_ROLE)
+				{
 					DYN_error_punt(false, 195, object.c_str());
-				/* msg 195: keyword NONE could not be used as SQL role name. */
+					/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
 			}
 			break;
@@ -1276,19 +1282,21 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			}
 			id = drq_get_role_nm;
 
-			if (!grantor_can_grant_role(tdbb, gbl, grantor, object)) {
+			if (!grantor_can_grant_role(tdbb, gbl, grantor, object))
+			{
 				// ERR_punt();
 				goto do_punt;
 			}
 
-			if (user_type == obj_sql_role) {
-			/****************************************************
-            **
-            ** temporary restriction. This should be removed once
-            ** GRANT role1 TO rolex is supported and this message
-            ** could be reused for blocking cycles of role grants
-            **
-            *****************************************************/
+			if (user_type == obj_sql_role)
+			{
+				/****************************************************
+	            **
+	            ** temporary restriction. This should be removed once
+	            ** GRANT role1 TO rolex is supported and this message
+	            ** could be reused for blocking cycles of role grants
+	            **
+	            *****************************************************/
 	            DYN_error_punt(false, 192, user.c_str());
 			}
 		}
@@ -1328,7 +1336,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	}	// for (...)
 
 	}	// try
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
@@ -1415,7 +1424,8 @@ static bool grantor_can_grant(Global* gbl,
 	END_FOR;
 	if (!DYN_REQUEST(drq_gcg4))
 		DYN_REQUEST(drq_gcg4) = request;
-	if (!relation_exists) {
+	if (!relation_exists)
+	{
 		DYN_error(false, 175, SafeArg() << relation_name.c_str());
 		/* table/view .. does not exist */
 		return false;
@@ -1440,7 +1450,8 @@ static bool grantor_can_grant(Global* gbl,
 		END_FOR;
 		if (!DYN_REQUEST(drq_gcg5))
 			DYN_REQUEST(drq_gcg5) = request;
-		if (!field_exists) {
+		if (!field_exists)
+		{
 			DYN_error(false, 176, SafeArg() << field_name.c_str() << relation_name.c_str());
 			/* column .. does not exist in table/view .. */
 			return false;
@@ -1501,14 +1512,17 @@ static bool grantor_can_grant(Global* gbl,
 		if (!DYN_REQUEST(drq_gcg1))
 			DYN_REQUEST(drq_gcg1) = request;
 
-		if (PRV.RDB$FIELD_NAME.NULL) {
+		if (PRV.RDB$FIELD_NAME.NULL)
+		{
 			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
 				go_rel = 0;
 			else if (go_rel)
 				go_rel = 1;
 		}
-		else {
-			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION) {
+		else
+		{
+			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
+			{
 				if (field_name.length() && field_name == PRV.RDB$FIELD_NAME)
 					go_fld = 0;
 			}
@@ -1608,7 +1622,8 @@ static bool grantor_can_grant(Global* gbl,
 					return false;
 				}
 		}
-		else {
+		else
+		{
 			if (!grantor_can_grant(gbl, grantor, privilege, G_VIEW.RDB$RELATION_NAME,
 									G_FLD.RDB$BASE_FIELD, false))
 			{
@@ -1622,7 +1637,8 @@ static bool grantor_can_grant(Global* gbl,
 	// all done.
 
 	}	// try
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, err_num);
@@ -1796,7 +1812,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	SSHORT user_type = -1;
 	SSHORT obj_type = -1;
 
-	while ((verb = *(*ptr)++) != isc_dyn_end) {
+	while ((verb = *(*ptr)++) != isc_dyn_end)
+	{
 		switch (verb)
 		{
 		case isc_dyn_rel_name:
@@ -1821,14 +1838,17 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
 			/* This test may become obsolete as we now allow explicit ROLE keyword. */
-			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			{
 				user_type = obj_sql_role;
-				if (user == NULL_ROLE) {
+				if (user == NULL_ROLE)
+				{
 					DYN_error_punt(false, 195, user.c_str());
 					// msg 195: keyword NONE could not be used as SQL role name.
 				}
 			}
-			else {
+			else
+			{
 				user_type = obj_user;
 				user.upper7();
 			}
@@ -1843,13 +1863,15 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_role:
 			user_type = obj_sql_role;
 			GET_STRING(ptr, user);
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			{
 				DYN_error_punt(false, 188, user.c_str());
-			/* msg 188: Role doesn't exist. */
+				/* msg 188: Role doesn't exist. */
 			}
-			if (user == NULL_ROLE) {
+			if (user == NULL_ROLE)
+			{
 				DYN_error_punt(false, 195, user.c_str());
-			/* msg 195: keyword NONE could not be used as SQL role name. */
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 		    break;
 
@@ -1857,7 +1879,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
                 DYN_error_punt(false, 196);
 			}
-			else {
+			else
+			{
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 /* CVC: Make this a warning in the future.
@@ -1974,7 +1997,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				DYN_REQUEST(drq_e_grant2) = request;
 		}
 
-		if (options && grant_erased) {
+		if (options && grant_erased)
+		{
 			/* Add the privilege without the grant option
 			 * There is a modify trigger on the rdb$user_privileges
 			 * which disallows the table from being updated.  It would
@@ -2007,7 +2031,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
@@ -2059,14 +2084,17 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
 			/* This test may become obsolete as we now allow explicit ROLE keyword. */
-			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+			{
 				user_type = obj_sql_role;
-				if (user == NULL_ROLE) {
+				if (user == NULL_ROLE)
+				{
 					DYN_error_punt(false, 195, user.c_str());
 					// msg 195: keyword NONE could not be used as SQL role name.
 				}
 			}
-			else {
+			else
+			{
 				user_type = obj_user;
 				user.upper7();
 			}
@@ -2082,12 +2110,12 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, user);
 			user_type = obj_sql_role;
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
-				DYN_error_punt(false, 188, user.c_str());
-			/* msg 188: Role doesn't exist. */
+				DYN_error_punt(false, 188, user.c_str()); /* msg 188: Role doesn't exist. */
 			}
-			if (user == NULL_ROLE) {
+			if (user == NULL_ROLE)
+			{
 				DYN_error_punt(false, 195, user.c_str());
-			/* msg 195: keyword NONE could not be used as SQL role name. */
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 		    break;
 
@@ -2142,7 +2170,8 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 			// msg 247: Warning: @1 on @2 is not granted to @3.
 		}
 	}
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		ex.stuff_exception(tdbb->tdbb_status_vector);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 255);
@@ -2151,9 +2180,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 }
 
 
-static void set_field_class_name(Global* gbl,
-								 const MetaName& relation,
-								 const MetaName& field)
+static void set_field_class_name(Global* gbl, const MetaName& relation, const MetaName& field)
 {
 /**************************************
  *
@@ -2246,7 +2273,8 @@ static void store_privilege(Global* gbl,
 			strcpy(PRIV.RDB$GRANTOR, grantor.c_str());
 			PRIV.RDB$USER_TYPE = user_type;
 			PRIV.RDB$OBJECT_TYPE = obj_type;
-			if (field.length()) {
+			if (field.length())
+			{
 				strcpy(PRIV.RDB$FIELD_NAME, field.c_str());
 				PRIV.RDB$FIELD_NAME.NULL = FALSE;
 				set_field_class_name(gbl, object, field);
@@ -2261,7 +2289,8 @@ static void store_privilege(Global* gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 79);

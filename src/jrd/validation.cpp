@@ -581,7 +581,7 @@ static USHORT VAL_debug_level = 0;
 using namespace Jrd;
 using namespace Ods;
 
-/* Validation/garbage collection/repair control block */
+// Validation/garbage collection/repair control block
 
 struct vdr
 {
@@ -590,17 +590,17 @@ struct vdr
 	USHORT vdr_flags;
 	USHORT vdr_errors;
 	SLONG vdr_max_transaction;
-	ULONG vdr_rel_backversion_counter;	/* Counts slots w/rhd_chain */
-	ULONG vdr_rel_chain_counter;	/* Counts chains w/rdr_chain */
-	RecordBitmap* vdr_rel_records;		/* 1 bit per valid record */
-	RecordBitmap* vdr_idx_records;		/* 1 bit per index item */
+	ULONG vdr_rel_backversion_counter;	// Counts slots w/rhd_chain
+	ULONG vdr_rel_chain_counter;		// Counts chains w/rdr_chain
+	RecordBitmap* vdr_rel_records;		// 1 bit per valid record
+	RecordBitmap* vdr_idx_records;		// 1 bit per index item
 };
 
 // vdr_flags
 
-const USHORT vdr_update		= 2;		/* fix simple things */
-const USHORT vdr_repair		= 4;		/* fix non-simple things (-mend) */
-const USHORT vdr_records	= 8;		/* Walk all records */
+const USHORT vdr_update		= 2;		// fix simple things
+const USHORT vdr_repair		= 4;		// fix non-simple things (-mend)
+const USHORT vdr_records	= 8;		// Walk all records
 
 enum FETCH_CODE {
 	fetch_ok,
@@ -713,7 +713,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 		control.vdr_rel_records = NULL;
 		control.vdr_idx_records = NULL;
 
-		/* initialize validate errors */
+		// initialize validate errors
 
 		if (!att->att_val_errors) {
 			att->att_val_errors = vcl::newVector(*att->att_pool, VAL_MAX_ERROR);
@@ -839,7 +839,7 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	if (!control)
 		return fetch_ok;
 
-/* If "damaged" flag was set, checksum may be incorrect.  Check. */
+	// If "damaged" flag was set, checksum may be incorrect.  Check.
 
 	if ((dbb->dbb_flags & DBB_damaged) && !CCH_validate(window))
 	{
@@ -850,11 +850,11 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 
 	control->vdr_max_page = MAX(control->vdr_max_page, page_number);
 
-/* For walking back versions & record fragments on data pages we
-   sometimes will fetch the same page more than once.  In that
-   event we don't report double allocation.  If the page is truely
-   double allocated (to more than one relation) we'll find it
-   when the on-page relation id doesn't match */
+	// For walking back versions & record fragments on data pages we
+	// sometimes will fetch the same page more than once.  In that
+	// event we don't report double allocation.  If the page is truely
+	// double allocated (to more than one relation) we'll find it
+	// when the on-page relation id doesn't match
 
 	if ((type != pag_data) && PageBitmap::test(control->vdr_page_bitmap, page_number))
 	{
@@ -918,8 +918,8 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 				}
 				else if (!(byte & 1) && (control->vdr_flags & vdr_records))
 				{
-					/* Page is potentially an orphan - but don't declare it as such
-					unless we think we walked all pages */
+					// Page is potentially an orphan - but don't declare it as such
+					// unless we think we walked all pages
 
 					corrupt(tdbb, control, VAL_PAG_ORPHAN, 0, number);
 					if (control->vdr_flags & vdr_update)
@@ -938,10 +938,10 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 	}
 
 #ifdef DEBUG_VAL_VERBOSE
-/* Dump verbose output of all the pages fetched */
+	// Dump verbose output of all the pages fetched
 	if (VAL_debug_level >= 2)
 	{
-		//We are assuming RSE_get_forward
+		// We are assuming RSE_get_forward
 		if (control->vdr_page_bitmap->getFirst())
 			do {
 				SLONG dmp_page_number = control->vdr_page_bitmap->current();
@@ -1018,12 +1018,12 @@ static RTN walk_blob(thread_db* tdbb,
 	}
 #endif
 
-/* Level 0 blobs have no work to do. */
+	// Level 0 blobs have no work to do.
 
 	if (header->blh_level == 0)
 		return rtn_ok;
 
-/* Level 1 blobs are a little more complicated */
+	// Level 1 blobs are a little more complicated
 	WIN window1(DB_PAGE_SPACE, -1), window2(DB_PAGE_SPACE, -1);
 
 	const SLONG* pages1 = header->blh_page;
@@ -1213,7 +1213,7 @@ static RTN walk_data_page(thread_db* tdbb,
 		return corrupt(tdbb, control, VAL_DATA_PAGE_CONFUSED, relation, page_number, sequence);
 	}
 
-/* Walk records */
+	// Walk records
 
 	const UCHAR* const end_page = (UCHAR *) page + dbb->dbb_page_size;
 	const data_page::dpg_repeat* const end = page->dpg_rpt + page->dpg_count;
@@ -1240,15 +1240,15 @@ static RTN walk_data_page(thread_db* tdbb,
 			if (header->rhd_flags & rhd_chain)
 				control->vdr_rel_backversion_counter++;
 
-			/* Record the existance of a primary version of a record */
+			// Record the existance of a primary version of a record
 
 			if ((control->vdr_flags & vdr_records) &&
 				!(header->rhd_flags & (rhd_chain | rhd_fragment | rhd_blob)))
 			{
-				/* Only set committed (or limbo) records in the bitmap. If there
-				   is a backversion then at least one of the record versions is
-				   committed. If there's no backversion then check transaction
-				   state of the lone primary record version. */
+				// Only set committed (or limbo) records in the bitmap. If there
+				// is a backversion then at least one of the record versions is
+				// committed. If there's no backversion then check transaction
+				// state of the lone primary record version.
 
 				if (header->rhd_b_page)
 					RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
@@ -1796,10 +1796,7 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 	}
 }
 
-static RTN walk_pointer_page(thread_db*	tdbb,
-							vdr*		control,
-							jrd_rel*		relation,
-							int		sequence)
+static RTN walk_pointer_page(thread_db*	tdbb, vdr* control, jrd_rel* relation, int sequence)
 {
 /**************************************
  *
@@ -1808,8 +1805,7 @@ static RTN walk_pointer_page(thread_db*	tdbb,
  **************************************
  *
  * Functional description
- *	Walk a pointer page for a relation.  Return TRUE if there are more
- *	to go.
+ *	Walk a pointer page for a relation.  Return rtn_ok if there are more to go.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -1834,7 +1830,7 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 	}
 #endif
 
-/* Give the page a quick once over */
+	// Give the page a quick once over
 
 	if (page->ppg_relation != relation->rel_id || page->ppg_sequence != sequence)
 	{
@@ -1842,7 +1838,7 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 		return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation, sequence);
 	}
 
-/* Walk the data pages (someday we may optionally walk pages with "large objects" */
+	// Walk the data pages (someday we may optionally walk pages with "large objects"
 
 	SLONG seq = (SLONG) sequence *dbb->dbb_dp_per_pp;
 
@@ -1860,7 +1856,7 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 		}
 	}
 
-/* If this is the last pointer page in the relation, we're done */
+	// If this is the last pointer page in the relation, we're done
 
 	if (page->ppg_header.pag_flags & ppg_eof)
 	{
@@ -1868,7 +1864,7 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 		return rtn_eof;
 	}
 
-/* Make sure the "next" pointer agrees with the pages relation */
+	// Make sure the "next" pointer agrees with the pages relation
 
 	if (++sequence >= static_cast<int>(vector->count()) ||
 		(page->ppg_next && page->ppg_next != (*vector)[sequence]))
@@ -1922,7 +1918,7 @@ static RTN walk_record(thread_db* tdbb,
 		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number, header->rhd_transaction);
 	}
 
-/* If there's a back pointer, verify that it's good */
+	// If there's a back pointer, verify that it's good
 
 	if (header->rhd_b_page && !(header->rhd_flags & rhd_chain))
 	{
@@ -1931,8 +1927,8 @@ static RTN walk_record(thread_db* tdbb,
 			return result;
 	}
 
-/* If the record is a fragment, not large, or we're not interested in
-   chasing records, skip the record */
+	// If the record is a fragment, not large, or we're not interested in
+	// chasing records, skip the record
 
 	if (header->rhd_flags & (rhd_fragment | rhd_deleted) ||
 		!((header->rhd_flags & rhd_large) || (control && (control->vdr_flags & vdr_records))))
@@ -1940,7 +1936,7 @@ static RTN walk_record(thread_db* tdbb,
 		return rtn_ok;
 	}
 
-/* Pick up what length there is on the fragment */
+	// Pick up what length there is on the fragment
 
 	const rhdf* fragment = (rhdf*) header;
 
@@ -1974,7 +1970,7 @@ static RTN walk_record(thread_db* tdbb,
 		}
 	}
 
-/* Next, chase down fragments, if any */
+	// Next, chase down fragments, if any
 
 	SLONG page_number = fragment->rhdf_f_page;
 	USHORT line_number = fragment->rhdf_f_line;
@@ -2031,7 +2027,7 @@ static RTN walk_record(thread_db* tdbb,
 		CCH_RELEASE(tdbb, &window);
 	}
 
-/* Check out record length and format */
+	// Check out record length and format
 
 	const Format* format = MET_format(tdbb, relation, header->rhd_format);
 
@@ -2078,14 +2074,14 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 				   relation->rel_name.c_str(), relation->rel_owner_name.c_str());
 #endif
 
-/* If it's a view, external file or virtual table, skip this */
+	// If it's a view, external file or virtual table, skip this
 
 	if (relation->rel_view_rse || relation->rel_file || relation->isVirtual()) {
 		return rtn_ok;
 	}
 
 
-/* Walk pointer and selected data pages associated with relation */
+	// Walk pointer and selected data pages associated with relation
 
 	if (control)
 	{
@@ -2152,7 +2148,7 @@ static RTN walk_root(thread_db* tdbb, vdr* control, jrd_rel* relation)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* If the relation has an index root, walk it */
+	// If the relation has an index root, walk it
 	RelationPages* relPages = relation->getBasePages();
 
 	if (!relPages->rel_index_root) {

@@ -58,7 +58,8 @@ bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
 	if (!database.empty())
 	{
 		replace_dir_sep(database);
-		if (PathUtils::isRelative(database)) {
+		if (PathUtils::isRelative(database))
+		{
 			gds__log("Value %s configured for alias %s "
 				"is not a fully qualified path name, ignored",
 						database.c_str(), alias.c_str());

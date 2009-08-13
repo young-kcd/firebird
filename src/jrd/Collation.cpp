@@ -355,9 +355,11 @@ private:
 		SLONG l1 = l1_bytes / sizeof(CharType);
 		SLONG l2 = l2_bytes / sizeof(CharType);
 
-		while (l2-- > 0) {
+		while (l2-- > 0)
+		{
 			const CharType c = *p2++;
-			if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY)) {
+			if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY))
+			{
 				while ((l2 > 0) && (*p2 == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY)))
 				{
 					l2--;
@@ -437,7 +439,8 @@ private:
 		fb_assert(match <= end_match);
 		fb_assert(obj->getCanonicalWidth() == sizeof(CharType));
 
-		while (match < end_match) {
+		while (match < end_match)
+		{
 			CharType c = *match++;
 			if ((c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) && (c = *match++)) ||
 				(size_t(c) < FB_NELEM(SLEUTH_SPECIAL) && !SLEUTH_SPECIAL[c]))
@@ -450,7 +453,8 @@ private:
 					if (c != d)
 						return false;
 				}
-				else {
+				else
+				{
 					++match;
 					for (;;)
 					{
@@ -477,7 +481,8 @@ private:
 
 					search++;
 				}
-				else {
+				else
+				{
 					if (++match >= end_match)
 						return true;
 
@@ -494,7 +499,8 @@ private:
 			else if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_CLASS_START))
 			{
 				const CharType* const char_class = match;
-				while (*match++ != *(CharType*) obj->getCanonicalChar(CHAR_GDML_CLASS_END)) {
+				while (*match++ != *(CharType*) obj->getCanonicalChar(CHAR_GDML_CLASS_END))
+				{
 					if (match >= end_match)
 						return false;
 				}
@@ -504,7 +510,8 @@ private:
 					if (!className(obj, /*flags,*/ char_class, end_class, *search++))
 						return false;
 				}
-				else {
+				else
+				{
 					++match;
 					for (;;)
 					{
@@ -560,18 +567,22 @@ private:
 
 		bool result = true;
 
-		if (*char_class == *(CharType*) obj->getCanonicalChar(CHAR_GDML_NOT)) {
+		if (*char_class == *(CharType*) obj->getCanonicalChar(CHAR_GDML_NOT))
+		{
 			++char_class;
 			result = false;
 		}
 
-		while (char_class < end_class) {
+		while (char_class < end_class)
+		{
 			const CharType c = *char_class++;
-			if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE)) {
+			if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE))
+			{
 				if (*char_class++ == character)
 					return true;
 			}
-			else if (*char_class == *(CharType*) obj->getCanonicalChar(CHAR_GDML_RANGE)) {
+			else if (*char_class == *(CharType*) obj->getCanonicalChar(CHAR_GDML_RANGE))
+			{
 				char_class += 2;
 				if (character >= c && character <= char_class[-1])
 					return result;
@@ -621,16 +632,19 @@ private:
 
 		// Parse control string into substitution strings and initializing string
 
-		while (control < end_control) {
+		while (control < end_control)
+		{
 			CharType c = *control++;
-			if (*control == *(CharType*) obj->getCanonicalChar(CHAR_GDML_SUBSTITUTE)) {
+			if (*control == *(CharType*) obj->getCanonicalChar(CHAR_GDML_SUBSTITUTE))
+			{
 				/* Note: don't allow substitution characters larger than vector */
 				CharType** const end_vector = vector + (((int) c < FB_NELEM(vector)) ? c : 0);
 				while (v <= end_vector)
 					*v++ = 0;
 				*end_vector = t;
 				++control;
-				while (control < end_control) {
+				while (control < end_control)
+				{
 					c = *control++;
 					if ((t > temp && t[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE)) ||
 						((c != *(CharType*) obj->getCanonicalChar(CHAR_GDML_COMMA)) &&
@@ -676,10 +690,9 @@ private:
 					*comb++ = *match++;
 				}
 			}
-
-			// at this point we've got a non-match, but as it might be one of ours, quote it
-
-			else {
+			else
+			{
+				// at this point we've got a non-match, but as it might be one of ours, quote it
 				if (size_t(c) < FB_NELEM(SLEUTH_SPECIAL) && SLEUTH_SPECIAL[c] &&
 					comb > combined && comb[-1] != *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE))
 				{

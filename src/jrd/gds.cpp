@@ -862,7 +862,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 
 				for (int i = 0; messages[i].code_number; ++i)
 				{
-					if (code == messages[i].code_number) {
+					if (code == messages[i].code_number)
+					{
 						if (legacy && strchr(messages[i].code_text, '%'))
 						{
 							sprintf(s, messages[i].code_text,
@@ -1404,7 +1405,8 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 			s += temp;
 			s += " not found";
 		}
-		else {
+		else
+		{
 			fb_utils::snprintf(formatted, size, "message system code %d", n);
 			s += formatted;
 		}
@@ -1521,11 +1523,13 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		{
 			for (const msgnod* node = (msgnod*) messageL->msg_bucket; !status; node++)
 			{
-				if (node >= end) {
+				if (node >= end)
+				{
 					status = -8;
 					break;
 				}
-				else if (node->msgnod_code >= code) {
+				if (node->msgnod_code >= code)
+				{
 					position = node->msgnod_seek;
 					break;
 				}
@@ -1581,7 +1585,8 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 		return -2;
 
 	isc_msghdr header;
-	if (read(n, &header, sizeof(header)) < 0) {
+	if (read(n, &header, sizeof(header)) < 0)
+	{
 		close(n);
 		return -3;
 	}
@@ -1598,7 +1603,9 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 
 	gds_msg* messageL = (gds_msg*) gds__alloc((SLONG) sizeof(gds_msg) + header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
-	if (!messageL) {				/* NOMEM: return non-open error */
+	if (!messageL)
+	{
+		/* NOMEM: return non-open error */
 		close(n);
 		return -5;
 	}
@@ -1801,7 +1808,8 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 
 	const ISC_STATUS* vector = vec;
 
-	if (!safe_interpret(s, BUFFER_LARGE, &vector)) {
+	if (!safe_interpret(s, BUFFER_LARGE, &vector))
+	{
 		gds__free(s);
 		return vec[1];
 	}
@@ -2145,7 +2153,8 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
  *	first code for which there is a non-generic SQLCODE, return it.
  *
  **************************************/
-	if (!status_vector) {
+	if (!status_vector)
+	{
 		DEV_REPORT("gds__sqlcode: NULL status vector");
 		return GENERIC_SQLCODE;
 	}
@@ -2181,8 +2190,10 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 				{
 					for (int i = 0; gds__sql_code[i].gds_code; ++i)
 					{
-						if (gdscode == gds__sql_code[i].gds_code) {
-							if (gds__sql_code[i].sql_code != GENERIC_SQLCODE) {
+						if (gdscode == gds__sql_code[i].gds_code)
+						{
+							if (gds__sql_code[i].sql_code != GENERIC_SQLCODE)
+							{
 								sqlcode = gds__sql_code[i].sql_code;
 								have_sqlcode = true;
 							}
@@ -2190,7 +2201,8 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 						}
 					}
 				}
-				else {
+				else
+				{
 					sqlcode = 0;
 					have_sqlcode = true;
 				}
@@ -2243,12 +2255,14 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
  *  status vector. It could happen.
  *
  **************************************/
-	if (!status_vector) {
+	if (!status_vector)
+	{
 		DEV_REPORT("fb_sqlstate: NULL status vector");
 		return;
 	}
 
-	if (status_vector[1] == 0) {
+	if (status_vector[1] == 0)
+	{
 		// status_vector[1] == 0 is no error, by definition
 		strcpy(sqlstate, "00000");
 		return;
@@ -2589,7 +2603,8 @@ void API_ROUTINE gds__vtov(const SCHAR* string, char* fieldL, SSHORT length)
 	--length;
 
 	while ((*fieldL++ = *string++) != 0)
-		if (--length <= 0) {
+		if (--length <= 0)
+		{
 			*fieldL = 0;
 			return;
 		}
@@ -2624,7 +2639,8 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 	*p = 0;
 	gds__put_error(error_buffer);
 
-	if (status && status[1]) {
+	if (status && status[1])
+	{
 		gds__put_error("ISC STATUS: ");
 		gds__print_status(status);
 	}
@@ -3204,7 +3220,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_message:
-			while (--n >= 0) {
+			while (--n >= 0)
+			{
 				blr_indent(control, level);
 				blr_print_dtype(control);
 				offset = blr_print_line(control, (SSHORT) offset);
@@ -3219,7 +3236,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_error_handler:
-			while (--n >= 0) {
+			while (--n >= 0)
+			{
 				blr_indent(control, level);
 				blr_print_cond(control);
 				offset = blr_print_line(control, (SSHORT) offset);
@@ -3240,7 +3258,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_map:
-			while (--n >= 0) {
+			while (--n >= 0)
+			{
 				blr_indent(control, level);
 				blr_print_word(control);
 				offset = blr_print_line(control, (SSHORT) offset);
@@ -3265,7 +3284,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_union:
-			while (--n >= 0) {
+			while (--n >= 0)
+			{
 				blr_print_verb(control, level);
 				blr_print_verb(control, level);
 			}
@@ -3282,7 +3302,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 						  (int) blr_operator);
 			}
 
-			if (blr_operator == blr_relation) {
+			if (blr_operator == blr_relation)
+			{
 				n = blr_print_byte(control);
 				while (--n >= 0)
 					blr_print_char(control);
@@ -3415,7 +3436,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			blr_print_verb(control, level);
 			break;
 
-		case op_cursor_stmt: {
+		case op_cursor_stmt:
 			blr_operator = blr_print_byte(control);
 			blr_print_word(control);
 			if (blr_operator == blr_cursor_fetch)
@@ -3428,7 +3449,6 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			}
 			offset = blr_print_line(control, (SSHORT) offset);
 			break;
-		}
 
 		default:
 			fb_assert(false);

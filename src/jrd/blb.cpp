@@ -203,7 +203,8 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 
 	blob->blb_flags |= BLB_closed;
 
-	if (!(blob->blb_flags & BLB_temporary)) {
+	if (!(blob->blb_flags & BLB_temporary))
+	{
 		release_blob(blob, true);
 		return;
 	}
@@ -545,7 +546,8 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
 
 	blb* blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
 
-	if (blob->blb_length < sizeof(Ods::InternalArrayDesc)) {
+	if (blob->blb_length < sizeof(Ods::InternalArrayDesc))
+	{
 		BLB_close(tdbb, blob);
 		IBERROR(193);			/* msg 193 null or invalid array */
 	}
@@ -650,7 +652,8 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 
 	if (blob->blb_flags & BLB_seek)
 	{
-		if (blob->blb_seek >= blob->blb_length) {
+		if (blob->blb_seek >= blob->blb_length)
+		{
 			blob->blb_flags |= BLB_eof;
 			return 0;
 		}
@@ -659,17 +662,20 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 		seek = (USHORT)(blob->blb_seek % l);	// safe cast
 		blob->blb_flags &= ~BLB_seek;
 		blob->blb_fragment_size = 0;
-		if (blob->blb_level) {
+		if (blob->blb_level)
+		{
 			blob->blb_space_remaining = 0;
 			blob->blb_segment = NULL;
 		}
-		else {
+		else
+		{
 			blob->blb_space_remaining = blob->blb_length - seek;
 			blob->blb_segment = blob->getBuffer() + seek;
 		}
 	}
 
-	if (!blob->blb_space_remaining && blob->blb_segment) {
+	if (!blob->blb_space_remaining && blob->blb_segment)
+	{
 		blob->blb_flags |= BLB_eof;
 		return 0;
 	}
@@ -685,7 +691,8 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 	bool active_page = false;
 	fb_assert(blob->blb_pg_space_id);
 	WIN window(blob->blb_pg_space_id, -1); // there was no initialization of win_page here.
-	if (blob->blb_flags & BLB_large_scan) {
+	if (blob->blb_flags & BLB_large_scan)
+	{
 		window.win_flags = WIN_large_scan;
 		window.win_scans = 1;
 	}
@@ -699,14 +706,16 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 		{
 			while (length < 2)
 			{
-				if (active_page) {
+				if (active_page)
+				{
 					if (window.win_flags & WIN_large_scan)
 						CCH_RELEASE_TAIL(tdbb, &window);
 					else
 						CCH_RELEASE(tdbb, &window);
 				}
 				const blob_page* page = get_next_page(tdbb, blob, &window);
-				if (!page) {
+				if (!page)
+				{
 					blob->blb_flags |= BLB_eof;
 					return 0;
 				}
@@ -726,7 +735,8 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 
 		USHORT l = MIN(buffer_length, length);
 
-		if (SEGMENTED(blob)) {
+		if (SEGMENTED(blob))
+		{
 			l = MIN(l, blob->blb_fragment_size);
 			blob->blb_fragment_size -= l;
 		}
@@ -744,14 +754,16 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 
 		if (!length)
 		{
-			if (active_page) {
+			if (active_page)
+			{
 				if (window.win_flags & WIN_large_scan)
 					CCH_RELEASE_TAIL(tdbb, &window);
 				else
 					CCH_RELEASE(tdbb, &window);
 			}
 			const blob_page* page = get_next_page(tdbb, blob, &window);
-			if (!page) {
+			if (!page)
+			{
 				active_page = false;
 				break;
 			}
@@ -852,8 +864,10 @@ SLONG BLB_get_slice(thread_db* tdbb,
 								  				 info.sdl_info_dimensions, info.sdl_info_lower);
 		const SLONG to = SDL_compute_subscript(tdbb->tdbb_status_vector, desc,
 								  			   info.sdl_info_dimensions, info.sdl_info_upper);
-		if (from != -1 && to != -1) {
-			if (from) {
+		if (from != -1 && to != -1)
+		{
+			if (from)
+			{
 				offset = from * desc->iad_element_length;
 				BLB_lseek(blob, 0, offset + (SLONG) desc->iad_length);
 			}
@@ -1061,7 +1075,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	// If the target is a view, this must be from a view update trigger.
 	// Just pass the blob id thru.
 
-	if (relation->rel_view_rse) {
+	if (relation->rel_view_rse)
+	{
 		*destination = *source;
 		return;
 	}
@@ -1099,7 +1114,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 				blobIndex = &transaction->tra_blobs->current();
 				if (blobIndex->bli_materialized)
 				{
-					if (blobIndex->bli_request) {
+					if (blobIndex->bli_request)
+					{
 						// Walk through call stack looking if our BLOB is
 						// owned by somebody from our call chain
 						jrd_req* temp_req = request;
@@ -1108,7 +1124,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 								break;
 							temp_req = temp_req->req_caller;
 						} while (temp_req);
-						if (!temp_req) {
+						if (!temp_req)
+						{
 							// Trying to use temporary id of materialized blob from another request
 							ERR_post(Arg::Gds(isc_bad_segstr_id));
 						}
@@ -1170,7 +1187,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	{
 		// hvlad: we have possible thread switch in DPM_store_blob above and somebody
 		// can modify transaction->tra_blobs therefore we must update our blobIndex
-		if (!transaction->tra_blobs->locate(blob->blb_temp_id)) {
+		if (!transaction->tra_blobs->locate(blob->blb_temp_id))
+		{
 			// If we didn't find materialized blob in transaction blob index it
 			// means memory structures are inconsistent and crash is appropriate
 			BUGCHECK(305); // msg 305 Blobs accounting is inconsistent
@@ -1184,7 +1202,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		if (blobIndex->bli_request) {
 			own_request = blobIndex->bli_request;
 		}
-		else {
+		else
+		{
 			own_request = request;
 			while (own_request->req_caller)
 				own_request = own_request->req_caller;
@@ -1276,7 +1295,8 @@ blb* BLB_open2(thread_db* tdbb,
 
 			/* Search the index of transaction blobs for a match */
 			const blb* new_blob = NULL;
-			if (transaction->tra_blobs->locate(blob_id->bid_temp_id())) {
+			if (transaction->tra_blobs->locate(blob_id->bid_temp_id()))
+			{
 				current = &transaction->tra_blobs->current();
 				if (!current->bli_materialized)
 					new_blob = current->bli_blob_object;
@@ -1392,7 +1412,8 @@ blb* BLB_open2(thread_db* tdbb,
 
 	BlobFilter* filter = NULL;
 	bool filter_required = false;
-	if (to && from != to) {
+	if (to && from != to)
+	{
 		filter = find_filter(tdbb, from, to);
 		filter_required = true;
 	}
@@ -1478,7 +1499,8 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 	if (!(blob->blb_flags & BLB_temporary))
 		IBERROR(195);			/* msg 195 cannot update old blob */
 
-	if (blob->blb_filter) {
+	if (blob->blb_filter)
+	{
 		BLF_put_segment(tdbb, &blob->blb_filter, segment_length, segment);
 		return;
 	}
@@ -1496,11 +1518,13 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 
 	ULONG length;				// length of segment + overhead
 	bool length_flag;
-	if (SEGMENTED(blob)) {
+	if (SEGMENTED(blob))
+	{
 		length = segment_length + 2;
 		length_flag = true;
 	}
-	else {
+	else
+	{
 		length = segment_length;
 		length_flag = false;
 	}
@@ -1581,7 +1605,8 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 
 		/* If there's still a length waiting to be moved, move it already! */
 
-		if (length_flag) {
+		if (length_flag)
+		{
 			const BLOB_PTR* q = (UCHAR*) &segment_length;
 			*p++ = *q++;
 			*p++ = *q++;
@@ -1699,7 +1724,8 @@ void BLB_put_slice(	thread_db*	tdbb,
 
 		arg.slice_high_water = array->arr_data + array->arr_effective_length;
 	}
-	else {
+	else
+	{
 		array = alloc_array(transaction, &array_desc->arr_desc);
 		arg.slice_high_water = array->arr_data;
 	}
@@ -1753,7 +1779,8 @@ void BLB_release_array(ArrayField* array)
 	{
 		for (ArrayField** ptr = &transaction->tra_arrays; *ptr; ptr = &(*ptr)->arr_next)
 		{
-			if (*ptr == array) {
+			if (*ptr == array)
+			{
 				*ptr = array->arr_next;
 				break;
 			}
@@ -1796,7 +1823,8 @@ void BLB_scalar(thread_db*		tdbb,
 												(desc.dsc_length % sizeof(double) ? 1 : 0)));
 
 	const SLONG number = SDL_compute_subscript(tdbb->tdbb_status_vector, array_desc, count, subscripts);
-	if (number < 0) {
+	if (number < 0)
+	{
 		BLB_close(tdbb, blob);
 		ERR_punt();
 	}
@@ -2078,7 +2106,8 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 
 	if (blob->blb_level == 1)
 	{
-		for (; ptr < end; ++ptr) {
+		for (; ptr < end; ++ptr)
+		{
 			if (*ptr) {
 				PAG_release_page(tdbb, PageNumber(pageSpaceID, *ptr), prior);
 			}
@@ -2173,7 +2202,8 @@ static ArrayField* find_array(jrd_tra* transaction, const bid* blob_id)
  **************************************/
 	ArrayField* array = transaction->tra_arrays;
 
-	for (; array; array = array->arr_next) {
+	for (; array; array = array->arr_next)
+	{
 		if (array->arr_temp_id == blob_id->bid_temp_id()) {
 			break;
 		}
@@ -2200,7 +2230,8 @@ static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 	CHECK_DBB(dbb);
 
 	BlobFilter* cache = dbb->dbb_blob_filters;
-	for (; cache; cache = cache->blf_next) {
+	for (; cache; cache = cache->blf_next)
+	{
 		if (cache->blf_from == from && cache->blf_to == to)
 			return cache;
 	}
@@ -2210,7 +2241,8 @@ static BlobFilter* find_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 		cache = MET_lookup_filter(tdbb, from, to);
 	}
 
-	if (cache) {
+	if (cache)
+	{
 		cache->blf_next = dbb->dbb_blob_filters;
 		dbb->dbb_blob_filters = cache;
 	}
@@ -2232,7 +2264,8 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
  *      the next page. if there's no next page, return NULL.
  *
  **************************************/
-	if (blob->blb_level == 0 || blob->blb_sequence > blob->blb_max_sequence) {
+	if (blob->blb_level == 0 || blob->blb_sequence > blob->blb_max_sequence)
+	{
 		blob->blb_space_remaining = 0;
 		return NULL;
 	}
@@ -2359,7 +2392,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		/*  See if there is room in the page vector.  If so, just update
 		   the vector. */
 
-		if (blob->blb_sequence < blob->blb_max_pages) {
+		if (blob->blb_sequence < blob->blb_max_pages)
+		{
 			if (blob->blb_sequence >= vector->count()) {
 				vector->resize(blob->blb_sequence + 1);
 			}
@@ -2487,11 +2521,13 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 		{
 			// Delete BLOB from request owned blob list
 			jrd_req* blob_request = current->bli_request;
-			if (blob_request) {
+			if (blob_request)
+			{
 				if (blob_request->req_blobs.locate(blob_temp_id)) {
 					blob_request->req_blobs.fastRemove();
 				}
-				else {
+				else
+				{
 					// We should never get here because when bli_request is assigned
 					// item should be added to req_blobs array
 					fb_assert(false);
@@ -2725,7 +2761,8 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 				MOV_move(tdbb, array_desc, slice_desc);
 			++arg->slice_count;
 		}
-		else {
+		else
+		{
 		    const SLONG l = slice_desc->dsc_length;
 			if (l)
 				memset(slice_desc->dsc_address, 0, l);
@@ -2770,7 +2807,8 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 	const USHORT seg_limit = 32768;
 	const BLOB_PTR* p = array->arr_data;
 	SLONG length = array->arr_effective_length;
-	while (length > seg_limit) {
+	while (length > seg_limit)
+	{
 		BLB_put_segment(tdbb, blob, p, seg_limit);
 		length -= seg_limit;
 		p += seg_limit;

@@ -908,7 +908,8 @@ bool DSC_make_descriptor(DSC* desc,
 	{
 /* Execute this validation code once per server startup only */
 		static bool been_here = false;
-		if (!been_here) {
+		if (!been_here)
+		{
 			been_here = true;
 			fb_assert(validate_dsc_tables());
 		}
@@ -983,7 +984,8 @@ bool DSC_make_descriptor(DSC* desc,
 	case blr_blob:
 		desc->dsc_length = 2 * sizeof(SLONG);
 		desc->dsc_dtype = dtype_blob;
-		if (sub_type == isc_blob_text) {
+		if (sub_type == isc_blob_text)
+		{
 			fb_assert(charset <= MAX_SCHAR);
 			desc->dsc_scale = (SCHAR) charset;
 			desc->dsc_flags = collation << 8;	// collation of blob
@@ -1120,8 +1122,10 @@ static bool validate_dsc_tables()
  *          so it won't detach from its controlling terminal.
  *
  **************************************/
-	for (BYTE op1 = dtype_unknown; op1 < DTYPE_TYPE_MAX; op1++) {
-		for (BYTE op2 = dtype_unknown; op2 < DTYPE_TYPE_MAX; op2++) {
+	for (BYTE op1 = dtype_unknown; op1 < DTYPE_TYPE_MAX; op1++)
+	{
+		for (BYTE op2 = dtype_unknown; op2 < DTYPE_TYPE_MAX; op2++)
+		{
 
 			if ((DSC_add_result[op1][op2] >= DTYPE_TYPE_MAX) &&
 				(DSC_add_result[op1][op2] != DTYPE_CANNOT))
@@ -1134,7 +1138,8 @@ static bool validate_dsc_tables()
 			}
 
 			/* Addition operator must be communitive */
-			if (DSC_add_result[op1][op2] != DSC_add_result[op2][op1]) {
+			if (DSC_add_result[op1][op2] != DSC_add_result[op2][op1])
+			{
 /*
 	fprintf (stderr,
 "Not commutative: DSC_add_result[%d][%d] = %d, ... [%d][%d] = %d\n",
