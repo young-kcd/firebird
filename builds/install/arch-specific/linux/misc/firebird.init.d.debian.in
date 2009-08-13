@@ -47,6 +47,7 @@ case "$1" in
   	echo -n "Forcibly killing Firebird server..."
 	killall fbguard
 	killall fbserver
+	killall fb_smp_server
 	echo "done."
 	RETVAL=0
 	;;
