@@ -1630,13 +1630,13 @@ static LBL alloc_lock( USHORT length, ISC_STATUS * status_vector)
  *	one.
  *
  **************************************/
-	length = (length + 3) & ~3;
+	length = FB_ALIGN(length, 4);
 
 	ASSERT_ACQUIRED;
 	srq* lock_srq;
 	SRQ_LOOP(LOCK_header->lhb_free_locks, lock_srq) {
 		lbl* lock = (LBL) ((UCHAR *) lock_srq - OFFSET(LBL, lbl_lhb_hash));
-		if (lock->lbl_size == length) {
+		if (lock->lbl_size >= length) {
 			remove_que(&lock->lbl_lhb_hash);
 			lock->lbl_type = type_lbl;
 			return lock;
