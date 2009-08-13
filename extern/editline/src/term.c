@@ -925,13 +925,20 @@ term_set(EditLine *el, const char *term)
 
 	i = tgetent(el->el_term.t_cap, term);
 
+#ifdef __hpux
+// hp-ux returns 0 if all is well
+	if (i == -1) {
+#else
 	if (i <= 0) {
+#endif
 		if (i == -1)
 			(void) fprintf(el->el_errfile,
 			    "Cannot read termcap database;\n");
+#ifndef __hpux
 		else if (i == 0)
 			(void) fprintf(el->el_errfile,
 			    "No entry for terminal type \"%s\";\n", term);
+#endif
 		(void) fprintf(el->el_errfile,
 		    "using dumb terminal settings.\n");
 		Val(T_co) = 80;	/* do a dumb terminal */
@@ -976,7 +983,11 @@ term_set(EditLine *el, const char *term)
 	(void) sigprocmask(SIG_SETMASK, &oset, NULL);
 	term_bind_arrow(el);
 	el->el_term.t_name = term;
+#ifdef __hpux
+	return (i == -1 ? -1 : 0);
+#else
 	return (i <= 0 ? -1 : 0);
+#endif
 }
 
 
