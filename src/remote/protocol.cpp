@@ -603,8 +603,11 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 				REMOTE_reset_statement(statement);
 		}
 
-		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
-					&sqldata->p_sqldata_blr, false, TYPE_PREPARED);
+		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
+						 &sqldata->p_sqldata_blr, false, TYPE_PREPARED))
+		{
+			return P_FALSE(xdrs, p);
+		}
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
 		if (sqldata->p_sqldata_messages)
@@ -614,7 +617,10 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		}
 		if (p->p_operation == op_execute2)
 		{
-			xdr_sql_blr(xdrs, (SLONG) - 1, &sqldata->p_sqldata_out_blr, true, TYPE_PREPARED);
+			if (!xdr_sql_blr(xdrs, (SLONG) - 1, &sqldata->p_sqldata_out_blr, true, TYPE_PREPARED))
+			{
+				return P_FALSE(xdrs, p);
+			}
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_out_message_number));
 		}
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
@@ -622,7 +628,10 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 	case op_exec_immediate2:
 		prep_stmt = &p->p_sqlst;
-		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_blr, false, TYPE_IMMEDIATE);
+		if (!xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_blr, false, TYPE_IMMEDIATE))
+		{
+			return P_FALSE(xdrs, p);
+		}
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_messages));
 		if (prep_stmt->p_sqlst_messages)
@@ -630,7 +639,10 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			if (!xdr_sql_message(xdrs, (SLONG) - 1))
 				return P_FALSE(xdrs, p);
 		}
-		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_out_blr, true, TYPE_IMMEDIATE);
+		if (!xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_out_blr, true, TYPE_IMMEDIATE))
+		{
+			return P_FALSE(xdrs, p);
+		}
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_out_message_number));
 		// Fall into ...
 
@@ -649,8 +661,11 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_fetch:
 		sqldata = &p->p_sqldata;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
-		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
-					&sqldata->p_sqldata_blr, true, TYPE_PREPARED);
+		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
+						 &sqldata->p_sqldata_blr, true, TYPE_PREPARED))
+		{
+			return P_FALSE(xdrs, p);
+		}
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
@@ -683,8 +698,11 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_insert:
 		sqldata = &p->p_sqldata;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
-		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
-					&sqldata->p_sqldata_blr, false, TYPE_PREPARED);
+		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
+						 &sqldata->p_sqldata_blr, false, TYPE_PREPARED))
+		{
+			return P_FALSE(xdrs, p);
+		}
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
 		if (sqldata->p_sqldata_messages)
