@@ -5127,10 +5127,11 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
  *
  **************************************/
 
+	try {
+
 	Firebird::FpeControl::maskAll();
 
 	Worker worker;
-	rem_port* port = NULL;
 
 	while (!Worker::isShuttingDown())
 	{
@@ -5147,6 +5148,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 			while (request)
 			{
+				rem_port* port = NULL;
+
 				// Bind a thread to a port.
 
 				if (request->req_port->port_server_flags & SRVR_thread_per_port)
@@ -5173,11 +5176,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				{ // port_sync scope
 					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync);
 
-					if (request->req_port->port_state != rem_port::DISCONNECTED)
-					{
-						process_packet(request->req_port, &request->req_send, &request->req_receive, &port);
-					}
-					else
+					if (request->req_port->port_state == rem_port::DISCONNECTED ||
+						!process_packet(request->req_port, &request->req_send, &request->req_receive, &port))
 					{
 						port = NULL;
 					}
@@ -5307,6 +5307,12 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 			if (!worker.wait())
 				break;
 		}
+	}
+
+	} // try
+	catch (const Firebird::Exception&)
+	{
+		return 1;
 	}
 
 	return 0;
