@@ -28,14 +28,14 @@ See http://developers.sun.com/solaris/articles/atomic_sparc/
 /* sparc version of fetch_and_add atomic operation, see fb_atomic.h */
 /* extern int fetch_and_add_il(volatile unsigned *word_addr, int value); */
 
-.inline fetch_and_add_il,2
+.inline fetch_and_add_il,8
 	membar #LoadStore|#StoreStore
 	ld [%o0],%g1 ! load *word_addr from %o0 to %g1
 	add %g1,%o1,%o2 ! compute the desired result, %g1 + %o1 (value) -> %o2 (temporary)
-loop:
+0:
 	cas [%o0],%g1,%o2 ! try to CAS it into place
 	cmp %g1,%o2 ! compare old to new
-	bne,a,pn %icc,loop ! CAS failed, try again
+	bne,a,pn %icc,0b ! CAS failed, try again
 	mov %o2,%g1 ! copy result -> %g1 for next iteration
 	mov %o2,%o0 ! return old value
 	membar #LoadLoad|#LoadStore
@@ -44,7 +44,7 @@ loop:
 /* sparc version of compare_and_swap, see fb_atomic.h */
 /* extern boolean_t compare_and_swap_il(volatile unsigned *word_addr, unsigned *old_val_addr, int new_val); */
 
-.inline compare_and_swap_il,3
+.inline compare_and_swap_il,12
 	membar #LoadStore|#StoreStore
 	ld    [%o1],%g1 ! set the old value
 	cas   [%o0],%g1,%o2 ! try the CAS
