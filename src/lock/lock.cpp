@@ -1246,13 +1246,18 @@ lbl* LockManager::alloc_lock(USHORT length, ISC_STATUS* status_vector)
  *	one.
  *
  **************************************/
-	length = (length + 3) & ~3;
+	length = FB_ALIGN(length, 8);
 
 	ASSERT_ACQUIRED;
 	srq* lock_srq;
 	SRQ_LOOP(m_header->lhb_free_locks, lock_srq) {
 		lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
-		if (lock->lbl_size == length) {
+		// Here we use the "first fit" approach which costs us some memory,
+		// but works fast. The "best fit" one is proven to be unacceptably slow.
+		// Maybe there could be some compromise, e.g. limiting the number of "best fit"
+		// iterations before defaulting to a "first fit" match. Another idea could be
+		// to introduce yet another hash table for the free locks queue.
+		if (lock->lbl_size >= length) {
 			remove_que(&lock->lbl_lhb_hash);
 			lock->lbl_type = type_lbl;
 			return lock;
