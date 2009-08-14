@@ -1828,4 +1828,3 @@ static void reset_statement( XDR* xdrs, SSHORT statement_id)
 		{} // no-op
 	}
 }
-

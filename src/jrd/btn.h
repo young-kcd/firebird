@@ -333,4 +333,3 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 }
 
 #endif // JRD_BTN_H
-

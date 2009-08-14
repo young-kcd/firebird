@@ -2697,8 +2697,8 @@ static int blocking_ast_bdb(void* ast_object)
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 
-		// If dbb_bcb is NULL, this means database is not initialized completely, 
-		// and we can't process this AST 
+		// If dbb_bcb is NULL, this means database is not initialized completely,
+		// and we can't process this AST
 		if (! dbb->dbb_bcb) {
 			return 0;
 		}

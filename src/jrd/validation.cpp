@@ -943,10 +943,12 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 	{
 		// We are assuming RSE_get_forward
 		if (control->vdr_page_bitmap->getFirst())
+		{
 			do {
 				SLONG dmp_page_number = control->vdr_page_bitmap->current();
 				DMP_page(dmp_page_number, dbb->dbb_page_size);
 			} while (control->vdr_page_bitmap->getNext());
+		}
 	}
 #endif
 }
@@ -1019,7 +1021,6 @@ static RTN walk_blob(thread_db* tdbb,
 #endif
 
 	// Level 0 blobs have no work to do.
-
 	if (header->blh_level == 0)
 		return rtn_ok;
 

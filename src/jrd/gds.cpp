@@ -2603,11 +2603,13 @@ void API_ROUTINE gds__vtov(const SCHAR* string, char* fieldL, SSHORT length)
 	--length;
 
 	while ((*fieldL++ = *string++) != 0)
+	{
 		if (--length <= 0)
 		{
 			*fieldL = 0;
 			return;
 		}
+	}
 }
 
 
