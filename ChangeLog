@@ -1,3 +1,11 @@
+2009-08-13 16:56  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.114.4.8):
+
+	Backported CORE-2591: High mutex wait ratio and degraded
+	performance after some time of performing normally.  The allocation
+	granularity remains the same there.
+
 2009-07-21 11:45  robocop
 
 	* firebird2/src/jrd/jrd.cpp (1.237.2.34):
