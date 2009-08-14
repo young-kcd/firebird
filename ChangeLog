@@ -1,3 +1,82 @@
+2009-08-14 12:05  robocop
+
+	* firebird2/src/remote/xnet.cpp (1.142):
+
+	Style.
+
+2009-08-14 12:03  robocop
+
+	* firebird2/src/remote/: remote.h (1.99), xdr.h (1.16):
+
+	Comments.
+
+2009-08-14 11:44  robocop
+
+	* firebird2/src/remote/: inet_server.cpp (1.100), protocol.h
+	(1.51):
+
+	Comments.
+
+2009-08-14 11:32  robocop
+
+	* firebird2/src/iscguard/: cntl_guard.cpp (1.33), iscguard.cpp
+	(1.70), iscguard.h (1.13):
+
+	Comments.
+
+2009-08-14 09:25  robocop
+
+	* firebird2/src/lock/: driver.cpp (1.26), lock.cpp (1.198),
+	print.cpp (1.89):
+
+	Comments.
+
+2009-08-14 07:51  robocop
+
+	* firebird2/src/lock/lock.cpp (1.197):
+
+	Style.
+
+2009-08-14 03:58  asfernandes
+
+	* firebird2/:
+	builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+	(1.13), src/jrd/btn.h (1.23), src/jrd/cch.cpp (1.238),
+	src/jrd/gds.cpp (1.308), src/jrd/validation.cpp (1.52),
+	src/remote/protocol.cpp (1.94):
+
+	Misc
+
+2009-08-13 17:08  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.h (1.37):
+
+	Misc.
+
+2009-08-13 16:35  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.196):
+
+	Easy fix for CORE-2591: High mutex wait ratio and degraded
+	performance after some time of performing normally.  Let's field
+	tests to show us whether we would need a more complex solution in
+	order to utilize the shared memory better.  Also, changed the
+	allocation granularity from 4 to 8 bytes, as our most common locks
+	are equal or longer than 8 bytes now.
+
+2009-08-13 16:22  robocop
+
+	* firebird2/src/lock/: driver.cpp (1.25), print.cpp (1.88):
+
+	Style.
+
+2009-08-13 15:41  verbguy
+
+	* firebird2/doc/README.build.posix.html (1.3):
+
+	open office ate my formatting. fix compiler version for HP-UX on
+	Itanium
+
 2009-08-13 14:46  alexpeshkoff
 
 	* firebird2/src/jrd/cch.cpp (1.237):
