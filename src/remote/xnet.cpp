@@ -54,7 +54,7 @@
 using namespace Firebird;
 
 static bool accept_connection(rem_port*, const P_CNCT*);
-static rem_port* alloc_port(rem_port*, UCHAR *, ULONG, UCHAR *, ULONG);
+static rem_port* alloc_port(rem_port*, UCHAR*, ULONG, UCHAR*, ULONG);
 static rem_port* aux_connect(rem_port*, PACKET*);
 static rem_port* aux_request(rem_port*, PACKET*);
 
@@ -68,9 +68,9 @@ static void force_close(rem_port*);
 static void exit_handler(rem_port*);
 static int cleanup_ports(const int, const int, void* arg);
 
-static rem_port* receive(rem_port*, PACKET *);
-static int send_full(rem_port*, PACKET *);
-static int send_partial(rem_port*, PACKET *);
+static rem_port* receive(rem_port*, PACKET*);
+static int send_full(rem_port*, PACKET*);
+static int send_partial(rem_port*, PACKET*);
 
 #ifdef SUPERCLIENT
 static HANDLE server_process_handle = 0;
@@ -83,18 +83,18 @@ static bool server_init(ISC_STATUS*, USHORT);
 static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
 static bool fork(ULONG, USHORT, ULONG*);
 
-static int xdrxnet_create(XDR *, rem_port*, UCHAR *, USHORT, xdr_op);
+static int xdrxnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
 
 static int xnet_destroy(XDR*);
-static bool_t xnet_getbytes(XDR *, SCHAR *, u_int);
-static bool_t xnet_getlong(XDR *, SLONG *);
-static u_int xnet_getpostn(XDR *);
-static caddr_t xnet_inline(XDR *, u_int);
-static bool_t xnet_putlong(XDR *, const SLONG *);
-static bool_t xnet_putbytes(XDR *, const SCHAR *, u_int);
-static bool_t xnet_setpostn(XDR *, u_int);
-static bool_t xnet_read(XDR * xdrs);
-static bool_t xnet_write(XDR * xdrs);
+static bool_t xnet_getbytes(XDR*, SCHAR*, u_int);
+static bool_t xnet_getlong(XDR*, SLONG*);
+static u_int xnet_getpostn(XDR*);
+static caddr_t xnet_inline(XDR*, u_int);
+static bool_t xnet_putlong(XDR*, const SLONG*);
+static bool_t xnet_putbytes(XDR*, const SCHAR*, u_int);
+static bool_t xnet_setpostn(XDR*, u_int);
+static bool_t xnet_read(XDR* xdrs);
+static bool_t xnet_write(XDR* xdrs);
 
 static xdr_t::xdr_ops xnet_ops =
 {
@@ -792,9 +792,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_S2C_EVENTS];
 
 		UCHAR* const channel_c2s_client_ptr =
-			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps));
+			((UCHAR*) xcc->xcc_mapped_addr + sizeof(struct xps));
 		UCHAR* const channel_s2c_client_ptr =
-			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
+			((UCHAR*) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
 
 		// alloc new port and link xcc to it
 		rem_port* const new_port = alloc_port(NULL,
@@ -921,9 +921,9 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		xcc->xcc_recv_channel = &xps->xps_channels[XPS_CHANNEL_C2S_EVENTS];
 
 		UCHAR* const channel_s2c_client_ptr =
-			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
+			((UCHAR*) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
 		UCHAR* const channel_c2s_client_ptr =
-			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps));
+			((UCHAR*) xcc->xcc_mapped_addr + sizeof(struct xps));
 
 		// alloc new port and link xcc to it
 		rem_port* const new_port = alloc_port(NULL,
@@ -1258,7 +1258,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 
 		xcc->xcc_map_handle = xpm->xpm_handle;
 		xcc->xcc_mapped_addr =
-			(UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
+			(UCHAR*) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
 		xcc->xcc_map_num = map_num;
 		xcc->xcc_slot = slot_num;
 		xcc->xcc_xpm = xpm;
@@ -1585,7 +1585,7 @@ static int cleanup_ports(const int, const int, void* /*arg*/)
 }
 
 
-static rem_port* receive( rem_port* main_port, PACKET * packet)
+static rem_port* receive( rem_port* main_port, PACKET* packet)
 {
 /**************************************
  *
@@ -1605,7 +1605,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 }
 
 
-static int send_full( rem_port* port, PACKET * packet)
+static int send_full( rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1630,7 +1630,7 @@ static int send_full( rem_port* port, PACKET * packet)
 }
 
 
-static int send_partial( rem_port* port, PACKET * packet)
+static int send_partial( rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1689,7 +1689,7 @@ static void server_shutdown(rem_port* port)
 #endif	// SUPERCLIENT
 
 
-static int xdrxnet_create(XDR * xdrs, rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
+static int xdrxnet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
 {
 /**************************************
  *
@@ -1782,7 +1782,7 @@ static void xnet_error(rem_port* port, ISC_STATUS operation, int status)
 }
 
 
-static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
+static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -1850,7 +1850,7 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 }
 
 
-static bool_t xnet_getlong(XDR * xdrs,  SLONG * lp)
+static bool_t xnet_getlong(XDR* xdrs,  SLONG* lp)
 {
 /**************************************
  *
@@ -1867,7 +1867,7 @@ static bool_t xnet_getlong(XDR * xdrs,  SLONG * lp)
 }
 
 
-static u_int xnet_getpostn(XDR * xdrs)
+static u_int xnet_getpostn(XDR* xdrs)
 {
 /**************************************
  *
@@ -1884,7 +1884,7 @@ static u_int xnet_getpostn(XDR * xdrs)
 }
 
 
-static caddr_t xnet_inline(XDR * xdrs, u_int bytecount)
+static caddr_t xnet_inline(XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -2025,7 +2025,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t xnet_putlong(XDR * xdrs, const SLONG* lp)
+static bool_t xnet_putlong(XDR* xdrs, const SLONG* lp)
 {
 /**************************************
  *
@@ -2042,7 +2042,7 @@ static bool_t xnet_putlong(XDR * xdrs, const SLONG* lp)
 }
 
 
-static bool_t xnet_read(XDR * xdrs)
+static bool_t xnet_read(XDR* xdrs)
 {
 /**************************************
  *
@@ -2122,7 +2122,7 @@ static bool_t xnet_read(XDR * xdrs)
 }
 
 
-static bool_t xnet_write(XDR * xdrs)
+static bool_t xnet_write(XDR* xdrs)
 {
 /**************************************
  *
@@ -2151,7 +2151,7 @@ static bool_t xnet_write(XDR * xdrs)
 }
 
 
-static bool_t xnet_setpostn(XDR * xdrs, u_int bytecount)
+static bool_t xnet_setpostn(XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -2213,10 +2213,7 @@ void release_all()
 /********************** ONLY SERVER CODE FROM HERE *********************/
 /***********************************************************************/
 
-static bool make_map(ULONG map_number,
-					 ULONG timestamp,
-					 FILE_ID* map_handle,
-					 CADDR_T* map_address)
+static bool make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
 {
 /**************************************
  *
