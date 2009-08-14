@@ -45,10 +45,10 @@
 #include "../common/classes/init.h"
 
 #ifdef WIN_NT
-#include <process.h>			/* _beginthread */
+#include <process.h>			// _beginthread
 #endif
 
-/* Startup Configuration Entry point for regcfg.exe. */
+// Startup Configuration Entry point for regcfg.exe.
 //#define SVC_CONFIG          4
 //#define REGCFG_ENTRYPOINT   "LaunchInstReg"
 //#define REGCFG_DLL	        "REGCFG.DLL"
@@ -65,7 +65,7 @@ static DWORD aMenuHelpIDs[] = {
 	0, 0
 };
 
-/* Function prototypes */
+// Function prototypes
 static LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM);
 #ifdef NOT_USED_OR_REPLACED
@@ -83,13 +83,13 @@ LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
 
 HINSTANCE hInstance_gbl;
 HWND hPSDlg, hWndGbl;
-static int nRestarts = 0;		/* the number of times the server was restarted */
+static int nRestarts = 0;		// the number of times the server was restarted
 static bool service_flag = true;
 static TEXT instance[MAXPATHLEN];
 static Firebird::GlobalPtr<Firebird::string> service_name;
 static Firebird::GlobalPtr<Firebird::string> remote_name;
 static Firebird::GlobalPtr<Firebird::string> mutex_name;
-/* unsigned short shutdown_flag = FALSE; */
+// unsigned short shutdown_flag = FALSE;
 static log_info* log_entry;
 
 
@@ -115,14 +115,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	remote_name->printf(REMOTE_SERVICE, instance);
 	mutex_name->printf(GUARDIAN_MUTEX, instance);
 
-/* set the global HINSTANCE as we need it in WINDOW_main */
+	// set the global HINSTANCE as we need it in WINDOW_main
 	hInstance_gbl = hInstance;
 
-/* allocate space for the event list */
+	// allocate space for the event list
 	log_entry = static_cast<log_info*>(malloc(sizeof(log_info)));
 	log_entry->next = NULL;
 
-/* since the flag is set we run as a service */
+	// since the flag is set we run as a service
 	if (service_flag)
 	{
 		CNTL_init(WINDOW_main, instance);
@@ -250,14 +250,14 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 
 	unsigned long thread_id = 0;
 
-/* If we're a service, don't create a window */
+	// If we're a service, don't create a window
 	if (service_flag)
 	{
 		gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &thread_id);
 
 		if (thread_id == (DWORD) -1)
 		{
-			/* error starting server thread */
+			// error starting server thread
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
 			gds__log(szMsgString);
@@ -266,7 +266,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 		return 0;
 	}
 
-/* Make sure that there is only 1 instance of the guardian running */
+	// Make sure that there is only 1 instance of the guardian running
 	HWND hWnd = FindWindow(GUARDIAN_CLASS_NAME, GUARDIAN_APP_NAME);
 	if (hWnd)
 	{
@@ -277,7 +277,7 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 		return 0;
 	}
 
-/* initialize main window */
+	// initialize main window
 	WNDCLASS wcl;
 	wcl.hInstance = hInstance_gbl;
 	wcl.lpszClassName = GUARDIAN_CLASS_NAME;
@@ -308,15 +308,15 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 						  CW_USEDEFAULT,
 						  HWND_DESKTOP, NULL, hInstance_gbl, NULL);
 
-/* Save the window handle for the thread */
+	// Save the window handle for the thread
 	hWndGbl = hWnd;
 
-/* begin a new thread for calling the start_and_watch_server */
+	// begin a new thread for calling the start_and_watch_server
 	gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &thread_id);
 
 	if (thread_id == (DWORD) -1)
 	{
-		/* error starting server thread */
+		// error starting server thread
 		char szMsgString[256];
 		LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
 		MessageBox(NULL, szMsgString, GUARDIAN_APP_LABEL, MB_OK);
@@ -332,11 +332,12 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	while (GetMessage(&message, NULL, 0, 0))
 	{
 		if (hPSDlg)
-		{			/* If property sheet dialog is open */
-			/* Check if the message is property sheet dialog specific */
+		{
+			// If property sheet dialog is open
+			// Check if the message is property sheet dialog specific
 			BOOL bPSMsg = PropSheet_IsDialogMessage(hPSDlg, &message);
 
-			/* Check if the property sheet dialog is still valid, if not destroy it */
+			// Check if the property sheet dialog is still valid, if not destroy it
 			if (!PropSheet_GetCurrentPageHwnd(hPSDlg))
 			{
 				DestroyWindow(hPSDlg);
@@ -376,7 +377,7 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	switch (message)
 	{
 	case WM_CLOSE:
-		/* Clean up memory for log_entry */
+		// Clean up memory for log_entry
 		while (log_entry->next)
 		{
 			log_info* tmp = log_entry->next;
@@ -396,11 +397,11 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 		case IDM_OPENPOPUP:
 			{
-				/* The SetForegroundWindow() has to be called because our window
-				   does not become the Foreground one (inspite of clicking on
-				   the icon).  This is so because the icon is painted on the task
-				   bar and is not the same as a minimized window.
-				 */
+				// The SetForegroundWindow() has to be called because our window
+				// does not become the Foreground one (inspite of clicking on
+				// the icon).  This is so because the icon is painted on the task
+				// bar and is not the same as a minimized window.
+
 				SetForegroundWindow(hWnd);
 
 				HMENU hPopup = CreatePopupMenu();
@@ -488,13 +489,13 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 			nid.hIcon = hIcon;
 			lstrcpy(nid.szTip, GUARDIAN_APP_LABEL);
 
-			/* This will be true if we are using the explorer interface */
+			// This will be true if we are using the explorer interface
 			bInTaskBar = Shell_NotifyIcon(NIM_ADD, &nid);
 
 			if (hIcon)
 				DestroyIcon(hIcon);
 
-			/* This will be true if we are using the program manager interface */
+			// This will be true if we are using the program manager interface
 			if (!bInTaskBar)
 			{
 				char szMsgString[256];
@@ -590,7 +591,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 		SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
 	SC_HANDLE hScManager = 0, hService = 0;
 
-/* get the guardian startup information */
+	// get the guardian startup information
 	const short option = Config::getGuardianOption();
 
 	char prefix_buffer[MAXPATHLEN];
@@ -600,12 +601,12 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 	path = "\"" + path + "\"";
 	Firebird::PathName prog_name = path + " -a -n";
 
-/* if the guardian is set to FOREVER then set the error mode */
+	// if the guardian is set to FOREVER then set the error mode
 	UINT old_error_mode = 0;
 	if (option == START_FOREVER)
 		old_error_mode = SetErrorMode(error_mode);
 
-/* Spawn the new process */
+	// Spawn the new process
 	do {
 		SERVICE_STATUS ServiceStatus;
 		char out_buf[1024];
@@ -625,9 +626,9 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 			procHandle = CreateMutex(NULL, FALSE, mutex_name->c_str());
 
-			/* start as a service.  If the service can not be found or
-			   fails to start, close the handle to the mutex and set
-			   success = FALSE */
+			// start as a service.  If the service can not be found or
+			// fails to start, close the handle to the mutex and set
+			// success = FALSE
 			if (!hScManager)
 				hScManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 			if (!hService)
@@ -638,13 +639,13 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			success = StartService(hService, 0, NULL);
 			if (success != TRUE)
 				error = GetLastError();
-			/* if the server is already running, then inform it that it should
-			 * open the guardian mutex so that it may be governed. */
+			// if the server is already running, then inform it that it should
+			// open the guardian mutex so that it may be governed.
 			if (!error || error == ERROR_SERVICE_ALREADY_RUNNING)
 			{
-				/* Make sure that it is actually ready to receive commands.
-				 * If we were the one who started it, then it will need a few
-				 * seconds to get ready. */
+				// Make sure that it is actually ready to receive commands.
+				// If we were the one who started it, then it will need a few
+				// seconds to get ready.
 				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE) &&
 					(ServiceStatus.dwCurrentState != SERVICE_RUNNING))
 				{
@@ -673,7 +674,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 					error = GetLastError();
 
 				procHandle = pi.hProcess;
-				/* TMN: 04 Aug 2000 - closed the handle that previously leaked. */
+				// TMN: 04 Aug 2000 - closed the handle that previously leaked.
 				CloseHandle(pi.hThread);
 			}
 			else
@@ -695,7 +696,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 		if (success != TRUE)
 		{
-			/* error creating new process */
+			// error creating new process
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
 			sprintf(out_buf, "%s : %s errno : %d", path.c_str(), szMsgString, error);
@@ -704,9 +705,8 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			if (service_flag)
 			{
 				SERVICE_STATUS status_info;
-				/* wait a second to get the mutex handle (just in case) and
-				   then close it
-				 */
+				// wait a second to get the mutex handle (just in case) and
+				// then close it
 				WaitForSingleObject(procHandle, 1000);
 				CloseHandle(procHandle);
 				hService = OpenService(hScManager, remote_name->c_str(),
@@ -731,7 +731,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			write_log(IDS_LOG_START, out_buf);
 		}
 
-		/* wait for process to terminate */
+		// wait for process to terminate
 		DWORD exit_status;
 		if (service_flag)
 		{
@@ -758,7 +758,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 		if (exit_status != NORMAL_EXIT)
 		{
-			/* check for startup error */
+			// check for startup error
 			if (exit_status == STARTUP_ERROR)
 			{
 				char szMsgString[256];
@@ -775,7 +775,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				sprintf(out_buf, "%s: %s (%lu)\n", path.c_str(), szMsgString, exit_status);
 				write_log(IDS_LOG_TERM, out_buf);
 
-				/* switch the icons if the server restarted */
+				// switch the icons if the server restarted
 				if (!service_flag)
 					PostMessage(hWndGbl, WM_SWITCHICONS, 0, 0);
 				if (option == START_FOREVER)
@@ -784,7 +784,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 		}
 		else
 		{
-			/* Normal shutdown - ie: via ibmgr - don't restart the server */
+			// Normal shutdown - ie: via ibmgr - don't restart the server
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_NORMAL_TERM, szMsgString, 256);
 			sprintf(out_buf, "%s: %s\n", path.c_str(), szMsgString);
@@ -797,7 +797,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 	} while (!done);
 
 
-/* If on WINNT */
+	// If on WINNT
 	if (service_flag)
 	{
 		CloseServiceHandle(hScManager);
@@ -892,13 +892,12 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM /*wParam*/, LPARAM lP
 			int index = 0;
 			const int NCOLS = 3;
 
-			/* Display the number of times the server has been started by
-			   this session of the guardian
-			 */
+			// Display the number of times the server has been started by
+			//   this session of the guardian
 			SetDlgItemInt(hDlg, IDC_RESTARTS, nRestarts, FALSE);
 
-			/* get the path to the exe.
-			   Make sure that it is null terminated */
+			// get the path to the exe.
+			// Make sure that it is null terminated
 			GetModuleFileName(hInstance, szWindowText, sizeof(szWindowText));
 			char* pszPtr = strrchr(szWindowText, '\\');
 			*(pszPtr + 1) = 0x00;
@@ -906,13 +905,13 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM /*wParam*/, LPARAM lP
 			ChopFileName(szWindowText, szWindowText, 38);
 			SetDlgItemText(hDlg, IDC_LOCATION, szWindowText);
 
-			/* Get version information from the application */
+			// Get version information from the application
 			GetModuleFileName(hInstance, szFullPath, sizeof(szFullPath));
 			DWORD dwVerHnd;
 			const DWORD dwVerInfoSize = GetFileVersionInfoSize(szFullPath, &dwVerHnd);
 			if (dwVerInfoSize)
 			{
-				/* If we were able to get the information, process it: */
+				// If we were able to get the information, process it:
 				UINT cchVer = 25;
 				LPSTR lszVer = NULL;
 
@@ -930,7 +929,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM /*wParam*/, LPARAM lP
 				GlobalFree(hMem);
 			}
 
-			/* Create the columns Action, Date, Time for the listbox */
+			// Create the columns Action, Date, Time for the listbox
 			HWND hWndLog = GetDlgItem(hDlg, IDC_LOG);
 			LV_COLUMN lvC;
 			lvC.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -939,10 +938,9 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM /*wParam*/, LPARAM lP
 
 			for (index = 0; index < NCOLS; index++)
 			{
-				/* NOTE:  IDS_ACTION = 220
-				   IDS_DATE   = 230
-				   IDS_TIME   = 240
-				 */
+				// NOTE:  IDS_ACTION = 220
+				// IDS_DATE   = 230
+				// IDS_TIME   = 240
 				lvC.iSubItem = index;
 				lvC.cx = 85;
 				LoadString(hInstance, IDS_ACTION + (index * 10), szText, sizeof(szText));
@@ -1020,9 +1018,8 @@ THREAD_ENTRY_DECLARE  swap_icons(THREAD_ENTRY_PARAM param)
 	nidAlert.uFlags = NIF_ICON;
 	nidAlert.hIcon = hIconAlert;
 
-/* Animate until the property sheet is displayed.  Once the property sheet is
-displayed, stop animating the icon
-*/
+	// Animate until the property sheet is displayed.  Once the property sheet is
+	// displayed, stop animating the icon
 	while (!hPSDlg)
 	{
 		if (!Shell_NotifyIcon(NIM_MODIFY, &nidAlert))
@@ -1033,7 +1030,7 @@ displayed, stop animating the icon
 			SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconNormal);
 		Sleep(500);
 	}
-/* Make sure that the icon is normal */
+	// Make sure that the icon is normal
 	if (!Shell_NotifyIcon(NIM_MODIFY, &nidNormal))
 		SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconNormal);
 
@@ -1060,7 +1057,7 @@ void write_log(int log_action, const char* buff)
  *****************************************************************************/
 	char tmp_buff[128];
 
-/* Move to the end of the log_entry list */
+	// Move to the end of the log_entry list
 	log_info* log_temp = log_entry;
 	while (log_temp->next)
 		log_temp = log_temp->next;
@@ -1076,8 +1073,8 @@ void write_log(int log_action, const char* buff)
 	sprintf(tmp->log_time, "%02d:%02d", today->tm_hour, today->tm_min);
 	sprintf(tmp->log_date, "%02d/%02d/%02d", today->tm_mon + 1, today->tm_mday, today->tm_year % 100);
 #else
-/* TMN: Fixed this after bug-report. Should it really force */
-/* 24hr format in e.g US, where they use AM/PM wharts?      */
+	// TMN: Fixed this after bug-report. Should it really force
+	// 24hr format in e.g US, where they use AM/PM wharts?
 	GetTimeFormat(LOCALE_USER_DEFAULT, TIME_NOSECONDS | TIME_FORCE24HOURFORMAT, NULL, NULL,
 				  tmp->log_time, sizeof(tmp->log_time));
 	GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE, NULL, NULL,
@@ -1086,7 +1083,7 @@ void write_log(int log_action, const char* buff)
 
 	if (log_action >= IDS_LOG_START && log_action <= IDS_LOG_TERM)
 	{
-		/* Only Windows 95 needs this information since it goes in the property sheet */
+		// Only Windows 95 needs this information since it goes in the property sheet
 		LoadString(hInstance_gbl, log_action, tmp_buff, sizeof(tmp->log_action));
 		sprintf(tmp->log_action, "%s", tmp_buff);
 		tmp->next = NULL;
@@ -1094,7 +1091,8 @@ void write_log(int log_action, const char* buff)
 	}
 
 	if (service_flag)
-	{	/* on NT */
+	{
+		// on NT
 		HANDLE hLog = RegisterEventSource(NULL, service_name->c_str());
 		if (!hLog)
 			gds__log("Error opening Windows NT Event Log");
@@ -1132,7 +1130,8 @@ void write_log(int log_action, const char* buff)
 				FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 							  FORMAT_MESSAGE_FROM_SYSTEM |
 							  FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-							  GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),	// Default language
+							  GetLastError(),
+							  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),	// Default language
 							  (LPTSTR) & lpMsgBuf, 0, NULL);
 				gds__log("Unable to update NT Event Log.\n\tOS Message: %s", lpMsgBuf);
 				LocalFree(lpMsgBuf);
@@ -1142,7 +1141,7 @@ void write_log(int log_action, const char* buff)
 		}
 	}
 
-/* Write to the Firebird log */
+	// Write to the Firebird log
 	if (*buff)
 		gds__log(buff);
 }

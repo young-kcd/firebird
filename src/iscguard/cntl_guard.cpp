@@ -88,9 +88,9 @@ void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
 	if (!service_handle)
 		return;
 
-/* start everything, and wait here for ever, or at
- * least until we get the stop event indicating that
- * the service is stoping. */
+	// start everything, and wait here for ever, or at
+	// least until we get the stop event indicating that
+	// the service is stoping.
 
 	bool failure = true;
 	DWORD temp = 0;
@@ -111,10 +111,10 @@ void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
 	if (stop_event_handle)
 		CloseHandle(stop_event_handle);
 
-/* ONce we are stopped, we will tell the server to
- * do the same.  We could not do this in the control_thread
- * since the Services Control Manager is single threaded,
- * and thus can only process one request at the time. */
+	// Once we are stopped, we will tell the server to
+	// do the same.  We could not do this in the control_thread
+	// since the Services Control Manager is single threaded,
+	// and thus can only process one request at the time.
 	SERVICE_STATUS status_info;
 	SC_HANDLE hScManager = 0, hService = 0;
 	hScManager =
