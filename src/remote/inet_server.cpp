@@ -299,8 +299,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 
 #if defined(SUPERSERVER) && (defined SOLARIS || defined HPUX || defined LINUX)
 	{
-		/* Increase max open files to hard limit for Unix
-		   platforms which are known to have low soft limits. */
+		// Increase max open files to hard limit for Unix
+		// platforms which are known to have low soft limits.
 
 		struct rlimit old;
 
