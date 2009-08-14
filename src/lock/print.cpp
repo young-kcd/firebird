@@ -171,9 +171,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  **************************************/
 	OUTFILE outfile = stdout;
 
-/* Perform some special handling when run as a Firebird service.  The
-   first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
+	// Perform some special handling when run as a Firebird service.  The
+	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	if (argc > 1 && !strcmp(argv[1], "-svc"))
 	{
@@ -211,7 +211,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	//const int orig_argc = argc;
 	//SCHAR** orig_argv = argv;
 
-/* Handle switches, etc. */
+	// Handle switches, etc.
 
 	argv++;
 	bool sw_consistency = false;
@@ -459,14 +459,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			exit(FINI_OK);
 		}
 
-		/* Make sure the lock file is valid - if it's a zero length file we
-		 * can't look at the header without causing a BUS error by going
-		 * off the end of the mapped region.
-		 */
+		// Make sure the lock file is valid - if it's a zero length file we
+		// can't look at the header without causing a BUS error by going
+		// off the end of the mapped region.
 
 		if (shmem_data.sh_mem_length_mapped < sizeof(lhb))
 		{
-			/* Mapped file is obviously too small to really be a lock file */
+			// Mapped file is obviously too small to really be a lock file
 			FPRINTF(outfile, "Unable to access lock table - file too small.\n");
 			exit(FINI_OK);
 		}
@@ -517,7 +516,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	fb_assert(LOCK_header);
 
-/* if we can't read this version - admit there's nothing to say and return. */
+	// if we can't read this version - admit there's nothing to say and return.
 
 	if (LOCK_header->lhb_version != LHB_VERSION)
 	{
@@ -533,7 +532,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		exit(FINI_OK);
 	}
 
-/* Print lock activity report */
+	// Print lock activity report
 
 	if (sw_interactive)
 	{
@@ -547,11 +546,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (sw_consistency)
 	{
-		/* To avoid changes in the lock file while we are dumping it - make
-		 * a local buffer, lock the lock file, copy it, then unlock the
-		 * lock file to let processing continue.  Printing of the lock file
-		 * will continue from the in-memory copy.
-		 */
+		// To avoid changes in the lock file while we are dumping it - make
+		// a local buffer, lock the lock file, copy it, then unlock the
+		// lock file to let processing continue.  Printing of the lock file
+		// will continue from the in-memory copy.
+
 		header = (lhb*) gds__alloc(LOCK_header->lhb_length);
 		if (!header)
 		{
@@ -566,7 +565,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		LOCK_header = header;
 	}
 
-/* Print lock header block */
+	// Print lock header block
 	prt_html_begin(outfile);
 
 	FPRINTF(outfile, "LOCK_HEADER BLOCK\n");
@@ -649,13 +648,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	prt_que(outfile, LOCK_header, "\tFree requests",
 			&LOCK_header->lhb_free_requests, OFFSET(lrq*, lrq_lbl_requests));
 
-/* Print lock ordering option */
+	// Print lock ordering option
 
 	FPRINTF(outfile, "\tLock Ordering: %s\n",
 			(LOCK_header->lhb_flags & LHB_lock_ordering) ? "Enabled" : "Disabled");
 	FPRINTF(outfile, "\n");
 
-/* Print known owners */
+	// Print known owners
 
 	if (sw_owners)
 	{
@@ -668,7 +667,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		}
 	}
 
-/* Print known locks */
+	// Print known locks
 
 	if (sw_locks || sw_series)
 	{
@@ -1166,9 +1165,9 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 	for (USHORT i = indent; i; i--)
 		FPRINTF(outfile, " ");
 
-/* Check to see if we're in a cycle of owners - this might be
-   a deadlock, or might not, if the owners haven't processed
-   their blocking queues */
+	// Check to see if we're in a cycle of owners - this might be
+	// a deadlock, or might not, if the owners haven't processed
+	// their blocking queues
 
 	for (USHORT i = 0; i < waiters->waitque_depth; i++)
 		if (SRQ_REL_PTR(owner) == waiters->waitque_entry[i])
@@ -1219,7 +1218,7 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 
 			if (LOCK_header->lhb_flags & LHB_lock_ordering && !owner_conversion)
 			{
-				/* Requests AFTER our request can't block us */
+				// Requests AFTER our request can't block us
 				if (owner_request == lock_request)
 					break;
 
@@ -1231,7 +1230,7 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 			}
 			else
 			{
-				/* Requests AFTER our request CAN block us */
+				// Requests AFTER our request CAN block us
 				if (lock_request == owner_request)
 					continue;
 

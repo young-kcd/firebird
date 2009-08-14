@@ -105,15 +105,15 @@ void main( int argc, char **argv)
 	sw_release = 1;
 	SSHORT slot = 0;
 
-/* Force a dummy parent lock to test query data functionality */
+	// Force a dummy parent lock to test query data functionality
 
-	const SLONG parent = LOCK_enq(NULL,		/* prior request */
-							NULL,		/* parent request */
-							0,		/* series */
-							"parent",	/* value */
-							strlen("parent"),	/* length of key */
-							LCK_SR,	/* lock type */
-							NULL, NULL,	/* AST and argument */
+	const SLONG parent = LOCK_enq(NULL,			// prior request
+							NULL,				// parent request
+							0,					// series
+							"parent",			// value
+							strlen("parent"),	// length of key
+							LCK_SR,				// lock type
+							NULL, NULL,			// AST and argument
 							0, wait, status_vector, lck_owner_handle);
 
 	while (true)
@@ -225,13 +225,13 @@ void main( int argc, char **argv)
 		}
 		if (type = lookup_lock(op))
 		{
-			lock = LOCK_enq(NULL,	/* prior request */
-							parent,	/* parent request */
-							0,	/* series */
-							arg,	/* value */
-							strlen(arg),	/* length of key */
-							type,	/* lock type */
-							(sw_release ? ast : NULL), slot,	/* AST and argument */
+			lock = LOCK_enq(NULL,			// prior request
+							parent,			// parent request
+							0,				// series
+							arg,			// value
+							strlen(arg),	// length of key
+							type,			// lock type
+							(sw_release ? ast : NULL), slot,	// AST and argument
 							0, wait, status_vector, lck_owner_handle);
 			if (lock)
 			{

@@ -395,7 +395,7 @@ bool LockManager::setOwnerHandle(SRQ_PTR request_offset, SRQ_PTR new_owner_offse
 
 	acquire_shmem(new_owner_offset);
 
-	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
+	request = (lrq*) SRQ_ABS_PTR(request_offset);	// Re-init after a potential remap
 #ifdef DEV_BUILD
 	own* const old_owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
 	fb_assert(old_owner->own_pending_request != request_offset);
@@ -512,7 +512,7 @@ SRQ_PTR LockManager::enqueue(thread_db* tdbb,
 		remove_que(&request->lrq_lbl_requests);
 	}
 
-	owner = (own*) SRQ_ABS_PTR(owner_offset);	/* Re-init after a potential remap */
+	owner = (own*) SRQ_ABS_PTR(owner_offset);	// Re-init after a potential remap
 	post_history(his_enq, owner_offset, (SRQ_PTR)0, SRQ_REL_PTR(request), true);
 
 	request->lrq_type = type_lrq;
@@ -634,7 +634,7 @@ bool LockManager::convert(thread_db* tdbb,
 
 	acquire_shmem(request->lrq_owner);
 	++m_header->lhb_converts;
-	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* remap */
+	request = (lrq*) SRQ_ABS_PTR(request_offset);	// remap
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++m_header->lhb_operations[lock->lbl_series];
@@ -671,7 +671,7 @@ UCHAR LockManager::downgrade(thread_db* tdbb, const SRQ_PTR request_offset)
 	acquire_shmem(owner_offset);
 	++m_header->lhb_downgrades;
 
-	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
+	request = (lrq*) SRQ_ABS_PTR(request_offset);	// Re-init after a potential remap
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	UCHAR pending_state = LCK_none;
 
@@ -734,7 +734,7 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
 
 	acquire_shmem(owner_offset);
 	++m_header->lhb_deqs;
-	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* remap */
+	request = (lrq*) SRQ_ABS_PTR(request_offset);	// remap
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++m_header->lhb_operations[lock->lbl_series];
@@ -1644,7 +1644,7 @@ bool LockManager::create_owner(ISC_STATUS* status_vector,
 		own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
 		if (owner->own_owner_id == owner_id && (UCHAR) owner->own_owner_type == owner_type)
 		{
-			purge_owner(DUMMY_OWNER, owner);	/* purging owner_offset has not been set yet */
+			purge_owner(DUMMY_OWNER, owner);	// purging owner_offset has not been set yet
 			break;
 		}
 	}
