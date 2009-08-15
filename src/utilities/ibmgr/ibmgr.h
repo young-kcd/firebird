@@ -38,8 +38,7 @@ const USHORT MSG_FAC	= 18;
 const int MSG_LEN		= 128;
 
 
-/* Basic operation definitions
-*/
+// Basic operation definitions
 const USHORT OP_NONE		= 0;
 const USHORT OP_START		= 1;
 const USHORT OP_SHUT		= 2;
@@ -51,8 +50,7 @@ const USHORT OP_VERSION		= 7;
 const USHORT OP_PRINT		= 8;
 
 
-/* Suboperation definitions
-*/
+// Suboperation definitions
 const USHORT SOP_NONE			= 0;
 const USHORT SOP_START_ONCE		= 1;
 const USHORT SOP_START_FOREVER	= 2;
@@ -62,41 +60,36 @@ const USHORT SOP_SHUT_NOTR		= 5;
 const USHORT SOP_SHUT_IGN		= 6;
 const USHORT SOP_PRINT_POOL		= 7;
 const USHORT SOP_START_SIGNORE	= 8;
-/* Flags that are used in "par_entered" field of the IBMGR_DATA.
-*/
+// Flags that are used in "par_entered" field of the IBMGR_DATA.
 const USHORT ENT_HOST		= 0x1;
 const USHORT ENT_PASSWORD	= 0x2;
 const USHORT ENT_USER		= 0x4;
 
 
-/* Flags that are used in "reattach" field of the IBMGR_DATA.
-   Note: "par_entered" field is cleared each time we are going
-	 to get a new command line, while the "reattach" field
-	 is cleared only after new attachment to service is made
-*/
+// Flags that are used in "reattach" field of the IBMGR_DATA.
+// Note: "par_entered" field is cleared each time we are going
+// to get a new command line, while the "reattach" field
+// is cleared only after new attachment to service is made
 const USHORT REA_HOST		= ENT_HOST;
 const USHORT REA_PASSWORD	= ENT_PASSWORD;
 const USHORT REA_USER		= ENT_USER;
 
-/* structure to hold all information
-*/
+// structure to hold all information
 struct ibmgr_data_t
 {
-
-    USHORT		operation;	/* what's to be done */
-    USHORT		suboperation;	/* suboperation */
-    USHORT		par_entered;	/* parameters that were entered */
-    TEXT		host[128];	/* server's host */
-    TEXT		user[128];	/* the user name */
-    TEXT		real_user[128];	/* the os user name */
-    TEXT		password[32];	/* user's passwd */
-    bool		shutdown;	/* shutdown is in progress */
-    USHORT		reattach;	/* need to reattach because host,
-					   passwd or user has been changed */
-    isc_svc_handle	attached;	/* !=NULL if we attached to service */
-    TEXT		print_file[MAXPATHLEN];/* Dump file name */
-    TEXT		pidfile[MAXPATHLEN];	// fbserver's PID file name
-
+	USHORT		operation;				// what's to be done
+	USHORT		suboperation;			// suboperation
+	USHORT		par_entered;			// parameters that were entered
+	TEXT		host[128];				// server's host
+	TEXT		user[128];				// the user name
+	TEXT		real_user[128];			// the os user name
+	TEXT		password[32];			// user's passwd
+	bool		shutdown;				// shutdown is in progress
+	USHORT		reattach;				// need to reattach because host,
+										// passwd or user has been changed
+	isc_svc_handle	attached;			// !=NULL if we attached to service
+	TEXT		print_file[MAXPATHLEN];	// Dump file name
+	TEXT		pidfile[MAXPATHLEN];	// fbserver's PID file name
 };
 
 

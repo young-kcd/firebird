@@ -40,24 +40,24 @@
 
 enum FileOpenFlags
 {
-	fo_rdonly = 0x0000,  /* open for reading only */
-	fo_wronly = 0x0001,  /* open for writing only */
-	fo_rdwr   = 0x0002,  /* open for reading and writing */
-	fo_append = 0x0008,  /* writes done at eof */
+	fo_rdonly = 0x0000,			// open for reading only
+	fo_wronly = 0x0001,			// open for writing only
+	fo_rdwr   = 0x0002,			// open for reading and writing
+	fo_append = 0x0008,			// writes done at eof
 
-	fo_creat  = 0x0100,  /* create and open file */
-	fo_trunc  = 0x0200,  /* open and truncate */
-	fo_excl   = 0x0400,  /* open only if file doesn't already exist */
+	fo_creat  = 0x0100,			// create and open file
+	fo_trunc  = 0x0200,			// open and truncate
+	fo_excl   = 0x0400,			// open only if file doesn't already exist
 
-	/* Temporary file bit - file is deleted when last handle is closed */
-	fo_temporary = 0x0040,  /* temporary file bit */
+	// Temporary file bit - file is deleted when last handle is closed
+	fo_temporary = 0x0040,		// temporary file bit
 
-	/* temporary access hint */
-	fo_short_lived = 0x1000,  /* temporary storage file, try not to flush */
+	// temporary access hint
+	fo_short_lived = 0x1000,	// temporary storage file, try not to flush
 
-	/* sequential/random access hints */
-	fo_sequential = 0x0020,  /* file access is primarily sequential */
-	fo_random = 0x0010  /* file access is primarily random */
+	// sequential/random access hints
+	fo_sequential = 0x0020,		// file access is primarily sequential
+	fo_random = 0x0010			// file access is primarily random
 };
 
 enum SeekOrigin

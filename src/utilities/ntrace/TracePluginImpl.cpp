@@ -1876,7 +1876,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 	logRecordTrans(event_type, connection, transaction);
 }
 
-/***************************** PLUGIN INTERFACE ********************************/
+//***************************** PLUGIN INTERFACE ********************************
 
 ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin)
 {
@@ -1896,7 +1896,7 @@ const char* TracePluginImpl::ntrace_get_error(const TracePlugin* /*tpl_plugin*/)
 	return get_error_string();
 }
 
-/* Create/close attachment */
+// Create/close attachment
 ntrace_boolean_t TracePluginImpl::ntrace_event_attach(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, ntrace_boolean_t create_db,
 	ntrace_result_t att_result)
@@ -1929,7 +1929,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_detach(const TracePlugin* tpl_plu
 	}
 }
 
-/* Start/end transaction */
+// Start/end transaction
 ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_start(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result)
@@ -1964,7 +1964,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_end(const TracePlugin
 	}
 }
 
-/* Assignment to context variables */
+// Assignment to context variables
 ntrace_boolean_t TracePluginImpl::ntrace_event_set_context(const struct TracePlugin* tpl_plugin,
 		TraceConnection* connection, TraceTransaction* transaction,
 		TraceContextVariable* variable)
@@ -1982,7 +1982,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_set_context(const struct TracePlu
 	}
 }
 
-/* Stored procedure executing */
+// Stored procedure executing
 ntrace_boolean_t TracePluginImpl::ntrace_event_proc_execute(const struct TracePlugin* tpl_plugin,
 		TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 		bool started, ntrace_result_t proc_result)
@@ -2018,7 +2018,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_trigger_execute(const TracePlugin
 }
 
 
-/* DSQL statement lifecycle */
+// DSQL statement lifecycle
 ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_prepare(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
@@ -2070,7 +2070,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_execute(const TracePlugin* t
 }
 
 
-/* BLR requests */
+// BLR requests
 ntrace_boolean_t TracePluginImpl::ntrace_event_blr_compile(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
@@ -2105,7 +2105,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_blr_execute(const TracePlugin* tp
 	}
 }
 
-/* DYN requests */
+// DYN requests
 ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result)
@@ -2123,7 +2123,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tp
 	}
 }
 
-/* Using the services */
+// Using the services
 ntrace_boolean_t TracePluginImpl::ntrace_event_service_attach(const TracePlugin* tpl_plugin,
 	TraceService* service, ntrace_result_t att_result)
 {

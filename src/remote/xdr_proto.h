@@ -50,5 +50,4 @@ bool_t	xdr_wrapstring (XDR *, SCHAR **);
 bool_t	xdr_hyper(XDR *, void *);
 SLONG	getOperation(const void* data, size_t size);
 
-#endif	/* REMOTE_XDR_PROTO_H */
-
+#endif	// REMOTE_XDR_PROTO_H
