@@ -61,7 +61,7 @@ static void dump(FILE*, rbdb*, ULONG, ULONG, UCHAR);
 static void dump_tips(FILE*, rbdb*);
 static void format_header(const rbdb*, header_page*, int, ULONG, ULONG, ULONG, ULONG);
 static void format_index_root(index_root_page*, int, SSHORT, SSHORT);
-static void format_pointer(pointer_page*, int, SSHORT, SSHORT, bool, SSHORT, SLONG *);
+static void format_pointer(pointer_page*, int, SSHORT, SSHORT, bool, SSHORT, const SLONG*);
 static void format_pip(page_inv_page*, int, int);
 static void format_tip(tx_inv_page*, int, SLONG);
 static void get_next_file(rbdb*, header_page*);
@@ -642,11 +642,13 @@ static void format_index_root(index_root_page* page,
 }
 
 
+// Unused function.
 static void format_pointer(pointer_page* page,
 						   int page_size,
 						   SSHORT relation_id,
 						   SSHORT sequence,
-						   bool eof, SSHORT count, SLONG * page_vector)
+						   bool eof, SSHORT count,
+						   const SLONG* page_vector)
 {
 /**************************************
  *
