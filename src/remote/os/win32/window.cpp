@@ -49,6 +49,17 @@
 
 #include "../common/config/config.h"
 
+inline bool CHECK_VOLUME(PDEV_BROADCAST_VOLUME a)
+{
+	return a->dbcv_devicetype == DBT_DEVTYP_VOLUME;
+}
+
+inline bool CHECK_USAGE(PDEV_BROADCAST_VOLUME a, ULONG ulInUseMask)
+{
+	return a->dbcv_unitmask & ulInUseMask;
+}
+
+
 
 static HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
@@ -201,13 +212,13 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return TRUE;
 
 	case WM_CLOSE:
-		/* If we are running as a non-service server, then query the user
-		 * to determine if we should end the session.  Otherwise, assume that
-		 * the server is a service  and could be servicing remote clients and
-		 * therefore should not be shut down.  The DestroyWindow() will destroy
-		 * the hidden window created by the server for IPC.  This should get
-		 * destroyed when the user session ends.
-		 */
+		// If we are running as a non-service server, then query the user
+		// to determine if we should end the session.  Otherwise, assume that
+		// the server is a service  and could be servicing remote clients and
+		// therefore should not be shut down.  The DestroyWindow() will destroy
+		// the hidden window created by the server for IPC.  This should get
+		// destroyed when the user session ends.
+
 		if (usServerFlags & SRVR_non_service)
 		{
 			if (CanEndServer(hWnd))
@@ -399,7 +410,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 		case DBT_DEVICEQUERYREMOVE:
 			if (CHECK_VOLUME(pdbcv) && (ulLastMask != pdbcv->dbcv_unitmask))
-				if (CHECK_USAGE(pdbcv))
+				if (CHECK_USAGE(pdbcv, ulInUseMask))
 				{
 					char tmp[BUFFER_MEDIUM];
 					char* p = tmp;
@@ -408,10 +419,12 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 					*p++ = '\r';
 					*p++ = '\n';
 
+					fb_assert(p > tmp);
 					len = LoadString(hInstance, IDS_PNP2, p, p - tmp + sizeof(tmp));
 					p += len;
 					*p++ = '\r';
 					*p++ = '\n';
+					fb_assert(p > tmp);
 					len = LoadString(hInstance, IDS_PNP3, p, p - tmp + sizeof(tmp));
 					ulLastMask = pdbcv->dbcv_unitmask;
 					GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
@@ -424,14 +437,14 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 					//DestroyWindow(hWnd);
 					return TRUE;
 				}
-			/* Fall through to MOVEPENDING if we receive a QUERYDEVICE for the
-			   * same device twice.  This will occur if we say yes to the removal
-			   * of a controller.  The OS will prompt for the removal of all
-			   * devices connected to that controller.  If you respond no, the
-			   * OS will prompt you again, and then remove the device anyway...
-			 */
+			// Fall through to MOVEPENDING if we receive a QUERYDEVICE for the
+			// same device twice.  This will occur if we say yes to the removal
+			// of a controller.  The OS will prompt for the removal of all
+			// devices connected to that controller.  If you respond no, the
+			// OS will prompt you again, and then remove the device anyway...
+
 		case DBT_DEVICEREMOVEPENDING:
-			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv))
+			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv, ulInUseMask))
 			{
 				char tmp[BUFFER_MEDIUM];
 				char* p = tmp;
@@ -439,6 +452,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				p += len;
 				*p++ = '\r';
 				*p++ = '\n';
+				fb_assert(p > tmp);
 				len = LoadString(hInstance, IDS_PNP2, p, sizeof(tmp) - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
