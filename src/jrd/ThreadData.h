@@ -35,18 +35,18 @@
 #include "../common/classes/rwlock.h"
 #include "../common/classes/alloc.h"
 
-/* Thread specific data */
+// Thread specific data
 
 class ThreadData
 {
 public:
 	enum ThreadDataType {
 		tddGBL = 1,		// used by backup/restore
-		tddSQL = 2,		// used by DSQL
+		//tddSQL = 2,	// used by DSQL, obsolete
 		tddDBB = 3,		// used in engine
-		tddRDB = 4,		// used in remote interface
-		tddDBA = 5,		// used in DBA utility
-		tddIDB = 6,		// used by interprocess server // ??
+		//tddRDB = 4,	// used in remote interface, obsolete
+		tddDBA = 5,		// used in gstat utility
+		//tddIDB = 6,	// used by interprocess server, obsolete
 		tddALICE = 7,	// used by gfix
 		tddSEC = 8		// used by gsec
 	};
