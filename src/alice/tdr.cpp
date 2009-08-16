@@ -671,11 +671,12 @@ static SINT64 ask()
 		ALICE_print(85);
 		// msg 85: Commit, rollback, or neither (c, r, or n)?
 		int c;
-		char* p;
-		for (p = response; (c = getchar()) != '\n' && !feof(stdin) && !ferror(stdin);)
+		const char* end = response + sizeof(response) - 1;
+		char* p = response;
+		while ((c = getchar()) != '\n' && !feof(stdin) && !ferror(stdin) && p < end)
 			*p++ = c;
 		if (p == response)
-			return ~0;
+			return ~(SINT64(0));
 		*p = 0;
 		ALICE_down_case(response, response, sizeof(response));
 		if (!strcmp(response, "n") || !strcmp(response, "c") || !strcmp(response, "r"))
