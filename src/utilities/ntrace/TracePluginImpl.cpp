@@ -1858,7 +1858,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 	{
 		case res_successful:
 			event_type = started ? "EXECUTE_TRIGGER_START" :
-								   "EXECUTE_TRIGGER_FINISH" ;
+								   "EXECUTE_TRIGGER_FINISH";
 			break;
 		case res_failed:
 			event_type = started ? "FAILED EXECUTE_TRIGGER_START" :

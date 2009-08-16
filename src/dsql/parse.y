@@ -1462,7 +1462,7 @@ table_constraint_definition : constraint_name_opt table_constraint
 constraint_name_opt : CONSTRAINT symbol_constraint_name
 			{ $$ = $2; }
 		|
-			{ $$ = NULL ;}
+			{ $$ = NULL; }
 		;
 
 table_constraint : unique_constraint
@@ -2905,8 +2905,8 @@ character_keyword 	   : CHARACTER
 
 national_character_keyword : NCHAR
 			   | NATIONAL CHARACTER
-				   | NATIONAL KW_CHAR
-				   ;
+			   | NATIONAL KW_CHAR
+			   ;
 
 
 
@@ -3231,7 +3231,7 @@ tbl_reserve_options: RESERVING restr_list
 lock_type	: KW_SHARED
 			{ $$ = (dsql_nod*) NOD_SHARED; }
 		| PROTECTED
-			{ $$ = (dsql_nod*) NOD_PROTECTED ; }
+			{ $$ = (dsql_nod*) NOD_PROTECTED; }
 		|
 			{ $$ = (dsql_nod*) 0; }
 		;
@@ -5928,7 +5928,7 @@ int Parser::yylexAux()
 		FB_UINT64 number		= 0;
 		FB_UINT64 limit_by_10	= MAX_SINT64 / 10;
 
-		for (--lex.ptr ; lex.ptr < lex.end ; lex.ptr++)
+		for (--lex.ptr ; lex.ptr < lex.end; lex.ptr++)
 		{
 			c = *lex.ptr;
 			if (have_exp_digit && (! (classes(c) & CHR_DIGIT)))

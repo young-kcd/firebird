@@ -78,7 +78,8 @@ void Manager::init()
 
 void Manager::addProvider(Provider* provider)
 {
-	for (const Provider* prv = m_providers; prv; prv = prv->m_next) {
+	for (const Provider* prv = m_providers; prv; prv = prv->m_next)
+	{
 		if (prv->m_name == provider->m_name) {
 			return;
 		}
@@ -91,7 +92,8 @@ void Manager::addProvider(Provider* provider)
 
 Provider* Manager::getProvider(const string& prvName)
 {
-	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
+	for (Provider* prv = m_providers; prv; prv = prv->m_next)
+	{
 		if (prv->m_name == prvName) {
 			return prv;
 		}
@@ -572,13 +574,13 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 	jrd_tra* tran = tdbb->getTransaction();
 	switch (m_scope)
 	{
-	case traCommon :
+	case traCommon:
 		this->m_nextTran = tran->tra_ext_common;
 		this->m_jrdTran = tran;
 		tran->tra_ext_common = this;
 		break;
 
-	case traTwoPhase :
+	case traTwoPhase:
 		// join transaction
 		// this->m_jrdTran = tran;
 		// tran->tra_ext_two_phase = ext_tran;
@@ -639,7 +641,8 @@ Transaction* Transaction::getTransaction(thread_db* tdbb, Connection* conn, TraS
 		ext_tran = conn->createTransaction();
 
 		TraModes traMode = traConcurrency;
-		if (tran->tra_flags & TRA_read_committed) {
+		if (tran->tra_flags & TRA_read_committed)
+		{
 			if (tran->tra_flags & TRA_rec_version)
 				traMode = traReadCommitedRecVersions;
 			else
@@ -883,7 +886,8 @@ void Statement::close(thread_db* tdbb)
 	if (m_transaction && m_transaction->getScope() == traAutonomous)
 	{
 		bool commitFailed = false;
-		if (!m_error) {
+		if (!m_error)
+		{
 			try {
 				m_transaction->commit(tdbb, false);
 			}
@@ -898,7 +902,8 @@ void Statement::close(thread_db* tdbb)
 			}
 		}
 
-		if (m_error || commitFailed) {
+		if (m_error || commitFailed)
+		{
 			try {
 				m_transaction->rollback(tdbb, false);
 			}
@@ -924,7 +929,8 @@ void Statement::close(thread_db* tdbb)
 
 void Statement::deallocate(thread_db* tdbb)
 {
-	if (isAllocated()) {
+	if (isAllocated())
+	{
 		try {
 			doClose(tdbb, true);
 		}
@@ -955,7 +961,8 @@ static TokenType getToken(const char** begin, const char* end)
 	case '"':
 		while (p < end)
 		{
-			if (*p++ == c) {
+			if (*p++ == c)
+			{
 				ret = ttString;
 				break;
 			}
@@ -967,8 +974,10 @@ static TokenType getToken(const char** begin, const char* end)
 		{
 			ret = ttBrokenComment;
 			p++;
-			while (p < end) {
-				if (*p++ == '*' && p < end && *p == '/') {
+			while (p < end)
+			{
+				if (*p++ == '*' && p < end && *p == '/')
+				{
 					p++;
 					ret = ttComment;
 					break;
@@ -981,9 +990,12 @@ static TokenType getToken(const char** begin, const char* end)
 		break;
 
 	case '-':
-		if (p < end && *p == '-') {
-			while (p < end) {
-				if (*p++ == '\n') {
+		if (p < end && *p == '-')
+		{
+			while (p < end)
+			{
+				if (*p++ == '\n')
+				{
 					p--;
 					ret = ttComment;
 					break;
@@ -1044,7 +1056,8 @@ void Statement::preprocess(const string& sql, string& ret)
 		tok = getToken(&p, end);
 	}
 
-	if (p >= end || tok != ttIdent) {
+	if (p >= end || tok != ttIdent)
+	{
 		// Execute statement preprocess SQL error
 		// Statement expected
 		ERR_post(Arg::Gds(isc_eds_preprocess) <<
@@ -1064,7 +1077,8 @@ void Statement::preprocess(const string& sql, string& ret)
 			i2 = p;
 			tok = getToken(&p, end);
 		}
-		if (p >= end || tok != ttIdent) {
+		if (p >= end || tok != ttIdent)
+		{
 			// Execute statement preprocess SQL error
 			// Statement expected
 			ERR_post(Arg::Gds(isc_eds_preprocess) <<
@@ -1118,7 +1132,8 @@ void Statement::preprocess(const string& sql, string& ret)
 				}
 				m_sqlParamsMap.add(m_sqlParamNames[n]);
 			}
-			else {
+			else
+			{
 				// Execute statement preprocess SQL error
 				// Parameter name expected
 				ERR_post(Arg::Gds(isc_eds_preprocess) <<
@@ -1172,7 +1187,8 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 	m_error = (names && ((int) m_sqlParamNames.getCount() != count || !count)) ||
 		(!names && m_sqlParamNames.getCount());
 
-	if (m_error) {
+	if (m_error)
+	{
 		// Input parameters mismatch
 		status_exception::raise(Arg::Gds(isc_eds_input_prm_mismatch));
 	}
@@ -1500,7 +1516,8 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 			m_tdbb->getTransaction()->tra_callback_count++;
 		}
 
-		if (m_tdbb->getAttachment()) {
+		if (m_tdbb->getAttachment())
+		{
 			fb_assert(!m_tdbb->getAttachment()->att_ext_connection);
 			m_tdbb->getAttachment()->att_ext_connection = &conn;
 		}

@@ -718,7 +718,7 @@ static void gen_based( const act* action, int column)
 
 	default:
 		sprintf(s2, "datatype %d unknown\n", field->fld_dtype);
-		return ;
+		return;
 	}
 
 	for (p = s2; *p; p++, q++)
