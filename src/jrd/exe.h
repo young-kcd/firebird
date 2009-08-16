@@ -56,7 +56,7 @@
 DEFINE_TRACE_ROUTINE(cmp_trace);
 #define CMP_TRACE(args) cmp_trace args
 #else
-#define CMP_TRACE(args) /* nothing */
+#define CMP_TRACE(args) // nothing
 #endif
 
 class VaryingString;
@@ -89,11 +89,11 @@ class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
 {
 public:
 	jrd_nod*	nod_parent;
-	SLONG	nod_impure;			/* Inpure offset from request block */
-	nod_t	nod_type;				/* Type of node */
-	USHORT	nod_flags;
-	SCHAR	nod_scale;			/* Target scale factor */
-	USHORT	nod_count;			/* Number of arguments */
+	SLONG		nod_impure;			// Inpure offset from request block
+	nod_t		nod_type;			// Type of node
+	USHORT		nod_flags;
+	SCHAR		nod_scale;			// Target scale factor
+	USHORT		nod_count;			// Number of arguments
 };
 
 
@@ -113,25 +113,25 @@ public:
 	jrd_nod*	nod_arg[1];
 };
 
-const int nod_comparison = 1;
-const int nod_id		= 1;		/* marks a field node as a blr_fid guy */
-const int nod_quad		= 2;		/* compute in quad (default is long) */
-const int nod_double	= 4;
-const int nod_date		= 8;
-const int nod_value		= 16;		/* full value area required in impure space */
-const int nod_deoptimize	= 32;	/* boolean which requires deoptimization */
-const int nod_agg_dbkey	= 64;		/* dbkey of an aggregate */
-const int nod_invariant	= 128;		/* node is recognized as being invariant */
-const int nod_recurse	= 256;		/* union node is a recursive union */
-const int nod_unique_sort	= 512;	// sorts using unique key - for distinct and group by
+const int nod_comparison	= 1;
+const int nod_id			= 1;		// marks a field node as a blr_fid guy
+const int nod_quad			= 2;		// compute in quad (default is long)
+const int nod_double		= 4;
+const int nod_date			= 8;
+const int nod_value			= 16;		// full value area required in impure space
+const int nod_deoptimize	= 32;		// boolean which requires deoptimization
+const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
+const int nod_invariant		= 128;		// node is recognized as being invariant
+const int nod_recurse		= 256;		// union node is a recursive union
+const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
 
-/* Special RecordSelExpr node */
+// Special RecordSelExpr node
 
 class RecordSelExpr : public jrd_node_base
 {
 public:
 	USHORT		rse_count;
-	USHORT		rse_jointype;		/* inner, left, full */
+	USHORT		rse_jointype;		// inner, left, full
 	bool		rse_writelock;
 #ifdef SCROLLABLE_CURSORS
 	RecordSource*	rse_rsb;
@@ -141,11 +141,11 @@ public:
 	jrd_nod*	rse_boolean;
 	jrd_nod*	rse_sorted;
 	jrd_nod*	rse_projection;
-	jrd_nod*	rse_aggregate;	/* singleton aggregate for optimizing to index */
-	jrd_nod*	rse_plan;		/* user-specified access plan */
-	VarInvariantArray *rse_invariants; /* Invariant nodes bound to top-level RSE */
+	jrd_nod*	rse_aggregate;	// singleton aggregate for optimizing to index
+	jrd_nod*	rse_plan;		// user-specified access plan
+	VarInvariantArray *rse_invariants; // Invariant nodes bound to top-level RSE
 #ifdef SCROLLABLE_CURSORS
-	jrd_nod*	rse_async_message;	/* asynchronous message to send for scrolling */
+	jrd_nod*	rse_async_message;	// asynchronous message to send for scrolling
 #endif
 	jrd_nod*	rse_relation[1];
 };
@@ -153,8 +153,8 @@ public:
 
 // First one is obsolete: was used for PC_ENGINE
 //const int rse_stream	= 1;	// flags RecordSelExpr-type node as a blr_stream type
-const int rse_singular	= 2;	/* flags RecordSelExpr-type node as from a singleton select */
-const int rse_variant	= 4;	/* flags RecordSelExpr as variant (not invariant?) */
+const int rse_singular	= 2;	// flags RecordSelExpr-type node as from a singleton select
+const int rse_variant	= 4;	// flags RecordSelExpr as variant (not invariant?)
 
 // Number of nodes may fit into nod_arg of normal node to get to rse_relation
 const size_t rse_delta = (sizeof(RecordSelExpr) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
@@ -165,7 +165,7 @@ const int rse_nulls_first	= 1;
 const int rse_nulls_last	= 2;
 
 
-/* Literal value */
+// Literal value
 
 class Literal : public jrd_node_base
 {
@@ -177,28 +177,28 @@ public:
 const size_t lit_delta	= ((sizeof(Literal) - sizeof(jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**));
 
 
-/* Aggregate Sort Block (for DISTINCT aggregates) */
+// Aggregate Sort Block (for DISTINCT aggregates)
 
 class AggregateSort : public pool_alloc<type_asb>
 {
 public:
 	jrd_nod*	nod_parent;
-	SLONG	nod_impure;			/* Impure offset from request block */
-	nod_t	nod_type;				/* Type of node */
+	SLONG	nod_impure;			// Impure offset from request block
+	nod_t	nod_type;			// Type of node
 	UCHAR	nod_flags;
 	SCHAR	nod_scale;
 	USHORT	nod_count;
 	dsc		asb_desc;
 	USHORT	asb_length;
 	bool	asb_intl;
-	sort_key_def* asb_key_desc;	/* for the aggregate   */
+	sort_key_def* asb_key_desc;	// for the aggregate
 	UCHAR	asb_key_data[1];
 };
 
 const size_t asb_delta	= ((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jrd_nod**));
 
 
-/* Various structures in the impure area */
+// Various structures in the impure area
 
 struct impure_state
 {
@@ -265,7 +265,7 @@ const int VLU_computed	= 1;	// An invariant sub-query has been computed
 const int VLU_null		= 2;	// An invariant sub-query computed to null
 const int VLU_checked	= 4;	// Constraint already checked in first read or assignment to argument/variable
 
-/* Inversion (i.e. nod_index) impure area */
+// Inversion (i.e. nod_index) impure area
 
 struct impure_inversion
 {
@@ -273,7 +273,7 @@ struct impure_inversion
 };
 
 
-/* AggregateSort impure area */
+// AggregateSort impure area
 
 struct impure_agg_sort
 {
@@ -584,10 +584,10 @@ struct Resource
 	};
 
 	enum rsc_s	rsc_type;
-	USHORT		rsc_id;			/* Id of the resource */
-	jrd_rel*	rsc_rel;		/* Relation block */
-	jrd_prc*	rsc_prc;		/* Procedure block */
-	Collation*	rsc_coll;		/* Collation block */
+	USHORT		rsc_id;			// Id of the resource
+	jrd_rel*	rsc_rel;		// Relation block
+	jrd_prc*	rsc_prc;		// Procedure block
+	Collation*	rsc_coll;		// Collation block
 
 	static bool greaterThan(const Resource& i1, const Resource& i2)
 	{
@@ -851,25 +851,27 @@ public:
 
 	BlrReader		csb_blr_reader;
 	jrd_nod*		csb_node;
-	ExternalAccessList csb_external;      /* Access to outside procedures/triggers to be checked */
-	AccessItemList	csb_access;			/* Access items to be checked */
-	vec<jrd_nod*>*	csb_variables;		/* Vector of variables, if any */
-	ResourceList	csb_resources;		/* Resources (relations and indexes) */
-	NodeStack		csb_dependencies;	/* objects this request depends upon */
-	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */
+	ExternalAccessList csb_external;			// Access to outside procedures/triggers to be checked
+	AccessItemList	csb_access;					// Access items to be checked
+	vec<jrd_nod*>*	csb_variables;				// Vector of variables, if any
+	ResourceList	csb_resources;				// Resources (relations and indexes)
+	NodeStack		csb_dependencies;			// objects this request depends upon
+	Firebird::Array<RecordSource*> csb_fors;	// stack of fors
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
-	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
-	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
+	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
+	Firebird::Array<jrd_node_base*> csb_current_nodes;	// RecordSelExpr's and other invariant
+												// candidates within whose scope we are
 #ifdef SCROLLABLE_CURSORS
-	RecordSelExpr*	csb_current_rse;	/* this holds the RecordSelExpr currently being processed;
-									   unlike the current_rses stack, it references any expanded view RecordSelExpr */
-	jrd_nod*		csb_async_message;	/* asynchronous message to send to request */
+	RecordSelExpr*	csb_current_rse;			// this holds the RecordSelExpr currently being processed;
+												// unlike the current_rses stack, it references any
+												// expanded view RecordSelExpr
+	jrd_nod*		csb_async_message;			// asynchronous message to send to request
 #endif
-	USHORT			csb_n_stream;		/* Next available stream */
-	USHORT			csb_msg_number;		/* Highest used message number */
-	SLONG			csb_impure;			/* Next offset into impure area */
+	USHORT			csb_n_stream;				// Next available stream
+	USHORT			csb_msg_number;				// Highest used message number
+	SLONG			csb_impure;					// Next offset into impure area
 	USHORT			csb_g_flags;
-	MemoryPool&		csb_pool;			// Memory pool to be used by csb
+	MemoryPool&		csb_pool;					// Memory pool to be used by csb
 	Firebird::DbgInfo	csb_dbg_info;			// Debug information
 	MapFieldInfo		csb_map_field_info;		// Map field name to field info
 	MapItemInfo			csb_map_item_info;		// Map item to item info
@@ -903,24 +905,24 @@ public:
 			csb_rsb_ptr(0)
 		{}
 
-		UCHAR csb_stream;			/* Map user context to internal stream */
-		UCHAR csb_view_stream;		/* stream number for view relation, below */
+		UCHAR csb_stream;				// Map user context to internal stream
+		UCHAR csb_view_stream;			// stream number for view relation, below
 		USHORT csb_flags;
-		USHORT csb_indices;			/* Number of indices */
+		USHORT csb_indices;				// Number of indices
 
 		jrd_rel* csb_relation;
-		Firebird::string* csb_alias;	/* SQL alias name for this instance of relation */
+		Firebird::string* csb_alias;	// SQL alias name for this instance of relation
 		jrd_prc* csb_procedure;
-		jrd_rel* csb_view;		/* parent view */
+		jrd_rel* csb_view;				// parent view
 
-		IndexDescAlloc* csb_idx;	/* Packed description of indices */
-		jrd_nod* csb_message;			/* Msg for send/receive */
-		Format* csb_format;		/* Default Format for stream */
-		UInt32Bitmap* csb_fields;		/* Fields referenced */
-		float csb_cardinality;		/* Cardinality of relation */
-		jrd_nod* csb_plan;				/* user-specified plan for this relation */
-		UCHAR* csb_map;				/* Stream map for views */
-		RecordSource** csb_rsb_ptr;	/* point to rsb for nod_stream */
+		IndexDescAlloc* csb_idx;		// Packed description of indices
+		jrd_nod* csb_message;			// Msg for send/receive
+		Format* csb_format;				// Default Format for stream
+		UInt32Bitmap* csb_fields;		// Fields referenced
+		float csb_cardinality;			// Cardinality of relation
+		jrd_nod* csb_plan;				// user-specified plan for this relation
+		UCHAR* csb_map;					// Stream map for views
+		RecordSource** csb_rsb_ptr;		// point to rsb for nod_stream
 	};
 
 
