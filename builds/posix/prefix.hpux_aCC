@@ -38,7 +38,6 @@
 # __ia64, defined for IA-64
 # __unix
 
-
 # Flags shared by production and debug build
 # Suppress these warnings for now
 # 2830, function "operator new..." has no corresponding operator delete
@@ -50,9 +49,17 @@
 COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -AA \
     +W2830,4232,749,863,1042,2175
 
-# Production flags
-PROD_FLAGS= +Ofast -DNDEBUG \
+# Production flags...
+ifeq ($(shell uname -m),ia64)
+# ...for IA-64
+PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Ofltacc=strict +Ofenvaccess \
 	$(COMMON_FLAGS)
+else
+# ...for PA-RISC
+# PA-RISC requires old version of aCC, 3.85, with different flags
+PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Olibcalls +Onomoveflops \
+	$(COMMON_FLAGS)
+endif
 
 # Devel flags
 # -z, disallow dereferencing of null pointers at runtime
