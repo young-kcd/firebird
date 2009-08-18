@@ -80,7 +80,7 @@ struct user_action
 
 
 
-//  String block: used to store a string of constant length.
+// String block: used to store a string of constant length.
 
 class alice_str : public pool_alloc_rpt<UCHAR, alice_type_str>
 {
@@ -89,30 +89,31 @@ public:
 	UCHAR str_data[2];
 };
 
-//  Transaction block: used to store info about a multidatabase transaction.
+// Transaction block: used to store info about a multidatabase transaction.
 // Transaction Description Record
 
 struct tdr : public pool_alloc<alice_type_tdr>
 {
-	tdr* tdr_next;				// next subtransaction
-	SLONG tdr_id;				// database-specific transaction id
-	alice_str* tdr_fullpath;			// full (possibly) remote pathname
-	const TEXT* tdr_filename;	// filename within full pathname
-	alice_str* tdr_host_site;			// host for transaction
+	tdr* tdr_next;					// next subtransaction
+	SLONG tdr_id;					// database-specific transaction id
+	alice_str* tdr_fullpath;		// full (possibly) remote pathname
+	const TEXT* tdr_filename;		// filename within full pathname
+	alice_str* tdr_host_site;		// host for transaction
 	alice_str* tdr_remote_site;		// site for remote transaction
-	FB_API_HANDLE tdr_handle;			// reconnected transaction handle
-	FB_API_HANDLE tdr_db_handle;		// reattached database handle
-	USHORT tdr_db_caps;			// capabilities of database
-	USHORT tdr_state;			// see flags below
+	FB_API_HANDLE tdr_handle;		// reconnected transaction handle
+	FB_API_HANDLE tdr_db_handle;	// reattached database handle
+	USHORT tdr_db_caps;				// capabilities of database
+	USHORT tdr_state;				// see flags below
 };
 
+// CVC: This information should match Transaction Description Record constants in acl.h
 const int TDR_VERSION		= 1;
 enum tdr_vals {
 	TDR_HOST_SITE		= 1,
 	TDR_DATABASE_PATH	= 2,
 	TDR_TRANSACTION_ID	= 3,
-	TDR_REMOTE_SITE		= 4,
-	TDR_PROTOCOL		= 5
+	TDR_REMOTE_SITE		= 4
+	//TDR_PROTOCOL		= 5 // CVC: Unused
 };
 
 // flags for tdr_db_caps
