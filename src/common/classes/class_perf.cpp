@@ -56,7 +56,7 @@ static void testTree()
 	Vector<int, TEST_ITEMS> *v = new Vector<int, TEST_ITEMS>();
 	int n = 0;
 	int i;
-	for (i=0;i<TEST_ITEMS;i++) {
+	for (i = 0; i < TEST_ITEMS; i++) {
 		n = n * 45578 - 17651;
 		// Fill it with quasi-random values in range 0...TEST_ITEMS-1
 		v->add(((i+n) % TEST_ITEMS + TEST_ITEMS)/2);
@@ -67,9 +67,9 @@ static void testTree()
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>,
 		DefaultComparator<int>, 30, 30> tree30(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		tree30.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
+	for (i = 0; i < TEST_ITEMS; i++) {
 		if (tree30.locate((*v)[i]))
 			tree30.fastRemove();
 	}
@@ -78,9 +78,9 @@ static void testTree()
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>,
 		DefaultComparator<int>, 50, 50> tree50(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		tree50.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
+	for (i = 0; i < TEST_ITEMS; i++) {
 		if (tree50.locate((*v)[i]))
 			tree50.fastRemove();
 	}
@@ -89,9 +89,9 @@ static void testTree()
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>,
 		DefaultComparator<int>, 75, 75> tree75(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		tree75.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
+	for (i = 0; i < TEST_ITEMS; i++) {
 		if (tree75.locate((*v)[i]))
 			tree75.fastRemove();
 	}
@@ -100,9 +100,9 @@ static void testTree()
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>,
 		DefaultComparator<int>, 100, 100> tree100(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		tree100.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
+	for (i = 0; i < TEST_ITEMS; i++) {
 		if (tree100.locate((*v)[i]))
 			tree100.fastRemove();
 	}
@@ -111,9 +111,9 @@ static void testTree()
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>,
 		DefaultComparator<int>, 100, 250> tree100_250(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		tree100_250.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
+	for (i = 0; i < TEST_ITEMS; i++) {
 		if (tree100_250.locate((*v)[i]))
 			tree100_250.fastRemove();
 	}
@@ -122,9 +122,9 @@ static void testTree()
 	start();
 	BePlusTree<int, int, MallocAllocator, DefaultKeyValue<int>,
 		DefaultComparator<int>, 200, 200> tree200(NULL);
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		tree200.add((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++) {
+	for (i = 0; i < TEST_ITEMS; i++) {
 		if (tree200.locate((*v)[i]))
 			tree200.fastRemove();
 	}
@@ -132,9 +132,9 @@ static void testTree()
 
 	std::set<int> stlTree;
 	start();
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		stlTree.insert((*v)[i]);
-	for (i=0; i<TEST_ITEMS;i++)
+	for (i = 0; i < TEST_ITEMS; i++)
 		stlTree.erase((*v)[i]);
 	clock_t d = clock();
 	printf("Just a reference: add+remove %d elements from STL tree took %d milliseconds. \n",
@@ -157,8 +157,9 @@ struct AllocItem
 {
 	int order;
 	void *item;
-	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
-		return i1.order > i2.order || (i1.order==i2.order && i1.item > i2.item);
+	static bool greaterThan(const AllocItem &i1, const AllocItem &i2)
+	{
+		return i1.order > i2.order || (i1.order == i2.order && i1.item > i2.item);
 	}
 };
 
@@ -172,7 +173,7 @@ static void testAllocatorOverhead()
 	// Allocate small items
 	int n = 0;
 	int i;
-	for (i=0;i<ALLOC_ITEMS;i++) {
+	for (i = 0; i < ALLOC_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, (void*)(long)i};
 		items.add(temp);
@@ -184,7 +185,7 @@ static void testAllocatorOverhead()
 		n++;
 	} while (n < ALLOC_ITEMS / 2 && items.getNext());
 	// Allocate big items
-	for (i=0;i<BIG_ITEMS;i++) {
+	for (i = 0; i < BIG_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, (void*)(long)i};
 		bigItems.add(temp);
@@ -210,7 +211,7 @@ static void testAllocatorMemoryPool()
 		bigItems(&allocator);
 	// Allocate small items
 	int i, n = 0;
-	for (i=0;i<ALLOC_ITEMS;i++) {
+	for (i = 0; i < ALLOC_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1)};
 		items.add(temp);
@@ -222,7 +223,7 @@ static void testAllocatorMemoryPool()
 		n++;
 	} while (n < ALLOC_ITEMS / 2 && items.getNext());
 	// Allocate big items
-	for (i=0;i<BIG_ITEMS;i++) {
+	for (i = 0; i < BIG_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE) / 2 + 1)};
 		bigItems.add(temp);
@@ -248,7 +249,7 @@ static void testAllocatorMalloc()
 		bigItems(&allocator);
 	// Allocate small items
 	int i, n = 0;
-	for (i=0;i<ALLOC_ITEMS;i++) {
+	for (i = 0; i < ALLOC_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, malloc((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1)};
 		items.add(temp);
@@ -260,7 +261,7 @@ static void testAllocatorMalloc()
 		n++;
 	} while (n < ALLOC_ITEMS / 2 && items.getNext());
 	// Allocate big items
-	for (i=0;i<BIG_ITEMS;i++) {
+	for (i = 0; i < BIG_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, malloc((n % BIG_SIZE + BIG_SIZE) / 2 + 1)};
 		bigItems.add(temp);
@@ -287,7 +288,7 @@ static void testAllocatorMalloc()
 	// Allocate small items
 	int n = 0;
 	int i;
-	for (i=0;i<ALLOC_ITEMS;i++) {
+	for (i = 0; i < ALLOC_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1, 0)};
 		items.add(temp);
@@ -299,7 +300,7 @@ static void testAllocatorMalloc()
 		n++;
 	} while (n < ALLOC_ITEMS / 2 && items.getNext());
 	// Allocate big items
-	for (i=0;i<BIG_ITEMS;i++) {
+	for (i = 0; i < BIG_ITEMS; i++) {
 		n = n * 47163 - 57412;
 		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE) / 2 + 1, 0)};
 		bigItems.add(temp);
