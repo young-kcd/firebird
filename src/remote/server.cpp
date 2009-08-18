@@ -5313,7 +5313,6 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 	catch (const Firebird::Exception& ex)
 	{
 		iscLogException("Error while processing the incoming packet", ex);
-		return 1;
 	}
 
 	return 0;
