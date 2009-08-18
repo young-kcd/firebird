@@ -182,8 +182,8 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 				values[i] = (ConfigValue) dst;
 			}
 			break;
-		case TYPE_STRING_VECTOR:
-			break;
+		//case TYPE_STRING_VECTOR:
+		//	break;
 		}
 	}
 }
@@ -204,8 +204,8 @@ ConfigImpl::~ConfigImpl()
 		case TYPE_STRING:
 			delete[] (char*) values[i];
 			break;
-		case TYPE_STRING_VECTOR:
-			break;
+		//case TYPE_STRING_VECTOR:
+		//	break;
 		}
 	}
 	delete[] values;

@@ -45,8 +45,8 @@ class ConfigImpl : public ConfigRoot
 	{
 		TYPE_BOOLEAN,
 		TYPE_INTEGER,
-		TYPE_STRING,
-		TYPE_STRING_VECTOR
+		TYPE_STRING
+		//TYPE_STRING_VECTOR // CVC: Unused
 	};
 
 	typedef const char* ConfigKey;
