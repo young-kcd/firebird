@@ -101,6 +101,7 @@ struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 	PACKET			rdb_packet;			// Communication structure
 
 public:
+	// Values for rdb_flags
 	enum {
 		SERVICE = 1
 	};
@@ -155,6 +156,7 @@ struct Rbl : public Firebird::GlobalStorage, public TypedHandle<rem_type_rbl>
 	USHORT		rbl_target_interp;	// destination interp (for reading)
 
 public:
+	// Values for rbl_flags
 	enum {
 		EOF_SET = 1,
 		SEGMENT = 2,
@@ -596,13 +598,12 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 		XNET			// Windows NT shared memory connection
 	}				port_type;
 	enum state_t {
-		CLOSED,			// no connection
 		PENDING,		// connection is pending
 		BROKEN,			// connection is broken
 		DISCONNECTED	// port is disconnected
 	}				port_state;
 
-	P_ARCH			port_client_arch;	// so we can tell arch of client
+	//P_ARCH		port_client_arch;	// so we can tell arch of client
 	rem_port*		port_clients;		// client ports
 	rem_port*		port_next;			// next client port
 	rem_port*		port_parent;		// parent port (for client ports)
@@ -665,7 +666,7 @@ public:
 		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0),
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
-		port_type(t), port_state(PENDING), 	port_client_arch(arch_generic),
+		port_type(t), port_state(PENDING), //port_client_arch(arch_generic),
 		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
