@@ -67,7 +67,8 @@ struct qli_msg; // forward decl.
 
 // Request block
 
-struct qli_req {
+struct qli_req
+{
     blk				req_header;
     qli_req*		req_next;		// Next request in statement
     qli_dbb*		req_database;	// Database for request
@@ -101,7 +102,8 @@ enum CTX_T {
     CTX_STREAM
 };
 
-struct qli_ctx {
+struct qli_ctx
+{
     blk				ctx_header;
     CTX_T			ctx_type;		// Type of context
     qli_ctx*		ctx_source;		// Source context for MODIFY
@@ -121,7 +123,8 @@ struct qli_ctx {
 
 // Aggregate/union map block
 
-struct qli_map {
+struct qli_map
+{
     blk			map_header;
 	qli_map*	map_next;			// Next map in item
     qli_nod*	map_node;			// Value for map item
@@ -130,7 +133,8 @@ struct qli_map {
 
 // Message block
 
-struct qli_msg {
+struct qli_msg
+{
     blk			msg_header;
     qli_req*	msg_request;		// Parent request
     //qli_ctx*	msg_context;		// Contexts in message
@@ -144,7 +148,8 @@ struct qli_msg {
 
 // Parameter block
 
-struct qli_par {
+struct qli_par
+{
 	blk			par_header;
 	dsc			par_desc;			// Value descriptor
 	qli_par*	par_next;			// Next par block in context
@@ -169,7 +174,8 @@ enum itm_t
     item_report_header
 };
 
-struct qli_print_item {
+struct qli_print_item
+{
     blk			itm_header;
     qli_nod*	itm_value;
     const TEXT*	itm_edit_string;
@@ -196,7 +202,8 @@ const USHORT ITM_overlapped	= 1;			// Overlapped by another item
 
 // Print Control Block
 
-struct qli_prt {
+struct qli_prt
+{
     blk		prt_header;
     FILE*	prt_file;		// FILE pointer
     struct qli_rpt*	prt_report;		// Report block (if report)
@@ -208,7 +215,8 @@ struct qli_prt {
 
 // General node blocks
 
-struct qli_nod {
+struct qli_nod
+{
     blk			nod_header;
     nod_t		nod_type;		// Type of node
     dsc			nod_desc;		// Descriptor
