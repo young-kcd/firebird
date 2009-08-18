@@ -74,16 +74,13 @@ class DirectoryList : public ObjectsArray<ParsedPath>
 {
 private:
 	typedef ObjectsArray<ParsedPath> inherited;
-	// ListMode must be changed together with ListKeys in dir_list.cpp
-	enum ListMode {NotInitialized = -1,
-		None = 0, Restrict = 1, Full = 2, SimpleList = 3};
+	enum ListMode {NotInitialized = -1, None = 0, Restrict = 1, Full = 2, SimpleList = 3};
 	ListMode mode;
 	// Check, whether Value begins with Key,
 	// followed by any character from Next.
 	// If Next is empty, Value shoult exactly match Key.
 	// If Key found, sets Mode to KeyMode and returns true.
-	bool keyword(const ListMode keyMode, PathName& value,
-		PathName key, PathName next);
+	bool keyword(const ListMode keyMode, PathName& value, PathName key, PathName next);
 protected:
 	// Clear allocated memory and reinitialize
 	void clear()
