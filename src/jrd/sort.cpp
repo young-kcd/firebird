@@ -64,7 +64,6 @@
 #include <io.h> // lseek, read, write, close
 #endif
 
-//const ULONG IO_RETRY			= 20;
 const USHORT RUN_GROUP			= 8;
 const USHORT MAX_MERGE_LEVEL	= 2;
 
@@ -1102,52 +1101,10 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 
 	delete streams;
 
-	//SORTP* buffer = (SORTP*) scb->scb_first_pointer;
 	merge->mrg_header.rmh_parent = NULL;
 	scb->scb_merge = merge;
 	scb->scb_longs -= SIZEOF_SR_BCKPTR_IN_LONGS;
 
-	// Divvy up the sort space among buffers for runs. Although something slightly
-	// better could be arranged, for now give them all the same size hunk.
-
-/**
-	ULONG size;
-	const ULONG temp = DIFF_LONGS(scb->scb_end_memory, buffer);
-	count = temp / (scb->scb_longs * run_count);
-	if (count)
-	{
-		size = count * (SSHORT) scb->scb_longs;
-		count = run_count;
-	}
-	else
-	{
-		size = (SSHORT) scb->scb_longs;
-		count = temp / scb->scb_longs;
-	}
-
-	// Allocate buffer space for either all the runs, if they fit, or for
-	// as many as allow
-
-	for (run = scb->scb_runs; run && count; count--, run = run->run_next)
-	{
-		run->run_buffer = buffer;
-		buffer += size;
-		run->run_record = reinterpret_cast<sort_record*>(run->run_end_buffer = buffer);
-		run->run_buff_cache = false;
-	}
-
-	// If there was not enough buffer space, get some more for the remaining runs
-	// allocating enough for the merge space plus a link
-
-	for (; run; run = run->run_next)
-	{
-		run->run_buffer = (ULONG*) scb->scb_pool->allocate(size * sizeof(ULONG));
-		run->run_buff_alloc = true;
-		run->run_record =
-			reinterpret_cast<sort_record*>(run->run_end_buffer = run->run_buffer + size);
-		run->run_buff_cache = false;
-	}
-**/
 	// Allocate space for runs. The more memory we assign to each run the
 	// faster we will read scratch file and return sorted records to caller.
 	// At first try to reuse free memory from temp space. Note that temp space
@@ -2188,8 +2145,6 @@ static void merge_runs(sort_context* scb, USHORT n)
 	// space requirements, and filling in a vector of streams with run pointers
 
 	const USHORT rec_size = scb->scb_longs << SHIFTLONG;
-	//const USHORT buffers = scb->scb_size_memory / rec_size;
-	//ULONG size = rec_size * (buffers / (USHORT) (2 * n));
 	BLOB_PTR* buffer = (BLOB_PTR*) scb->scb_first_pointer;
 	run_control temp_run;
 	memset(&temp_run, 0, sizeof(run_control));
@@ -2564,7 +2519,6 @@ static ULONG order(sort_context* scb)
 
 	Firebird::HalfStaticArray<ULONG, 1024> record_buffer(*scb->scb_pool);
 	SORTP* buffer = record_buffer.getBuffer(scb->scb_longs);
-		//(SORTP*) scb->scb_pool->allocate(scb->scb_longs * sizeof(ULONG));
 
 	// Length of the key part of the record
 	const SSHORT length = scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS;
@@ -2627,8 +2581,6 @@ static ULONG order(sort_context* scb)
 		output = reinterpret_cast<sort_record*>((sort_ptr_t*) ((SORTP*) output + length));
 	}
 
-	//delete buffer;
-
 	return (((SORTP*) output) -
 			((SORTP*) scb->scb_last_record)) / (scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS);
 }
@@ -2670,7 +2622,6 @@ static void order_and_save(sort_context* scb)
 
 	const ULONG key_length = (scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
 	run->run_size = run->run_records * key_length;
-	//FB_UINT64 seek =
 	run->run_seek = find_file_space(scb, run->run_size);
 
 	TempSpace* tmpSpace = scb->scb_space;
@@ -2757,20 +2708,6 @@ static void put_run(sort_context* scb)
 					 run->run_seek, (UCHAR*) scb->scb_last_record, run->run_size);
 #else
 	order_and_save(scb);
-/*
-	run->run_records = order(scb);
-
-	// Write records to scratch file. Keep track of the number of bytes
-	// written, etc.
-
-	run->run_size =
-		run->run_records * (scb->scb_longs -
-							SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
-	run->run_seek = find_file_space(scb, run->run_size);
-	SORT_write_block(scb->scb_status_vector, scb->scb_space,
-					 run->run_seek, (UCHAR*) scb->scb_last_record,
-					 run->run_size);
-*/
 #endif
 	}
 	catch (const Firebird::BadAlloc&) {
