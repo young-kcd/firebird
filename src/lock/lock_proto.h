@@ -55,7 +55,6 @@ public:
 
 	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	void shutdownOwner(thread_db*, SRQ_PTR*);
-	bool setOwnerHandle(SRQ_PTR, SRQ_PTR);
 
 	SLONG enqueue(thread_db*, SRQ_PTR, SRQ_PTR, const USHORT, const UCHAR*, const USHORT, UCHAR,
 				  lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);

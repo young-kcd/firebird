@@ -466,34 +466,6 @@ SLONG LCK_get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
 }
 
 
-bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_handle)
-{
-/**************************************
- *
- *	L C K _ s e t _ o w n e r _ h a n d l e
- *
- **************************************
- *
- * Functional description
- *	Change lock owner, remove request from old owner que and
- *  grant it onto new one.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-
-	fb_assert(LCK_CHECK_LOCK(lock));
-	fb_assert(lock->lck_physical > LCK_none);
-
-	const bool result = dbb->dbb_lock_mgr->setOwnerHandle(lock->lck_id, owner_handle);
-
-	if (result)
-		lock->lck_owner_handle = owner_handle;
-
-	return result;
-}
-
-
 void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 {
 /**************************************
