@@ -108,6 +108,14 @@ static const TEXT preOwn[] = "own";
 static const TEXT preRequest[] = "request";
 static const TEXT preLock[] = "lock";
 
+#ifdef WIN_NT
+static struct mtx shmemMutex;
+#define MUTEX &shmemMutex
+#else
+#define MUTEX &LOCK_header->lhb_mutex
+#endif
+
+
 class HtmlLink
 {
 public:
@@ -477,6 +485,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false);
 #endif
 		}
+
+#ifdef WIN_NT
+		ISC_mutex_init(MUTEX, shmem_data.sh_mem_name);
+#endif
 	}
 	else if (lock_file)
 	{
@@ -544,7 +556,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	lhb* header = NULL;
 
-	if (sw_consistency)
+	if (sw_consistency && db_file)
 	{
 		// To avoid changes in the lock file while we are dumping it - make
 		// a local buffer, lock the lock file, copy it, then unlock the
@@ -559,9 +571,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			exit(FINI_OK);
 		}
 
-		ISC_mutex_lock(&LOCK_header->lhb_mutex);
+		ISC_mutex_lock(MUTEX);
 		memcpy(header, LOCK_header, LOCK_header->lhb_length);
-		ISC_mutex_unlock(&LOCK_header->lhb_mutex);
+		ISC_mutex_unlock(MUTEX);
 		LOCK_header = header;
 	}
 
