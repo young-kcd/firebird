@@ -684,13 +684,13 @@ void COB_print_buffer(TEXT* output_bufferL,
 				// Back up until we reach a comma
 				for (p--; (p > s); p--, q--)
 				{
-					if (*(p + 1) == '\"' || *(p + 1) == '\'')
+					if (p[1] == '\"' || p[1] == '\'')
 					{
 						// If we have a single or double quote, toggle the
 						// quote switch and indicate single or double quote
 						open_quote = !open_quote;
 						if (open_quote)
-							single_quote = (*(p + 1) == '\'');
+							single_quote = (p[1] == '\'');
 						else
 							single_quote = false;
 					}
@@ -706,13 +706,13 @@ void COB_print_buffer(TEXT* output_bufferL,
 					single_quote = save_single_quote;
 					for (p--; p > s; p--, q--)
 					{
-						if (*(p + 1) == '\"' || *(p + 1) == '\'')
+						if (p[1] == '\"' || p[1] == '\'')
 						{
 							// If we have a single or double quote, toggle the
 							// quote switch and indicate single or double quote
 							open_quote = !open_quote;
 							if (open_quote)
-								single_quote = (*(p + 1) == '\'');
+								single_quote = (p[1] == '\'');
 							else
 								single_quote = false;
 						}
@@ -737,13 +737,13 @@ void COB_print_buffer(TEXT* output_bufferL,
 				// back up to a blank
 				for (p--; p > s; p--, q--)
 				{
-					if (*(p + 1) == '\"' || *(p + 1) == '\'')
+					if (p[1] == '\"' || p[1] == '\'')
 					{
 						// If we have a single or double quote, toggle the
 						// quote switch and indicate single or double quote
 						open_quote = !open_quote;
 						if (open_quote)
-							single_quote = (*(p + 1) == '\'');
+							single_quote = (p[1] == '\'');
 						else
 							single_quote = false;
 					}
@@ -771,7 +771,8 @@ void COB_print_buffer(TEXT* output_bufferL,
 			}
 			else
 				strcpy(s, names[CONTINUE]);
-			for (p = s; *p; p++);
+			for (p = s; *p; p++)
+				;
 		}
 	}
 	*p = 0;
@@ -1734,8 +1735,7 @@ static void gen_database( const act* action)
 	for (gpre_req* request = gpreGlob.requests; request; request = request->req_next)
 	{
 		gen_request(request);
-		gpre_port* port;
-		for (port = request->req_ports; port; port = port->por_next)
+		for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 			make_port(port);
 		for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 		{
@@ -1749,7 +1749,8 @@ static void gen_database( const act* action)
 
 		// Array declarations
 
-		if (port = request->req_primary)
+		const gpre_port* port = request->req_primary;
+		if (port)
 			for (ref* reference = port->por_references; reference; reference = reference->ref_next)
 			{
 				if (reference->ref_field->fld_array_info)

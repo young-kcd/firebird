@@ -590,13 +590,13 @@ void RMC_print_buffer(TEXT* output_bufferL, bool function_call)
 				// Back up until we reach a comma
 				for (p--; (p > s); p--, q--)
 				{
-					if (*(p + 1) == '\"' || *(p + 1) == '\'')
+					if (p[1] == '\"' || p[1] == '\'')
 					{
 						// If we have a single or double quote, toggle the
 						// quote switch and indicate single or double quote
 						open_quote = !open_quote;
 						if (open_quote)
-							single_quote = (*(p + 1) == '\'');
+							single_quote = (p[1] == '\'');
 						else
 							single_quote = false;
 					}
@@ -612,13 +612,13 @@ void RMC_print_buffer(TEXT* output_bufferL, bool function_call)
 					single_quote = save_single_quote;
 					for (p--; p > s; p--, q--)
 					{
-						if (*(p + 1) == '\"' || *(p + 1) == '\'')
+						if (p[1] == '\"' || p[1] == '\'')
 						{
 							// If we have a single or double quote, toggle the
 							// quote switch and indicate single or double quote
 							open_quote = !open_quote;
 							if (open_quote)
-								single_quote = (*(p + 1) == '\'');
+								single_quote = (p[1] == '\'');
 							else
 								single_quote = false;
 						}
@@ -643,13 +643,13 @@ void RMC_print_buffer(TEXT* output_bufferL, bool function_call)
 				// back up to a blank
 				for (p--; p > s; p--, q--)
 				{
-					if (*(p + 1) == '\"' || *(p + 1) == '\'')
+					if (p[1] == '\"' || p[1] == '\'')
 					{
 						// If we have a single or double quote, toggle the
 						// quote switch and indicate single or double quote
 						open_quote = !open_quote;
 						if (open_quote)
-							single_quote = (*(p + 1) == '\'');
+							single_quote = (p[1] == '\'');
 						else
 							single_quote = false;
 					}
