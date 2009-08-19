@@ -180,15 +180,16 @@ class pool_alloc_rpt : public TypedHandle<BLOCK_TYPE>
     public:
 		typedef RPT blk_repeat_type;
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, int rpt, const char* file, int line)
+        void* operator new(size_t s, MemoryPool& p, size_t rpt, const char* file, int line)
             { return p.calloc(s + sizeof(RPT) * rpt, file, line); }
 #else
-        void* operator new(size_t s, MemoryPool& p, int rpt)
+        void* operator new(size_t s, MemoryPool& p, size_t rpt)
             { return p.calloc(s + sizeof(RPT) * rpt); }
 #endif
-        void operator delete(void* mem, MemoryPool& p, int /*rpt*/)
+        void operator delete(void* mem, MemoryPool& p)
             { if (mem) p.deallocate(mem); }
-        void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
+        void operator delete(void* mem)
+			{ if (mem) MemoryPool::globalFree(mem); }
 
     private:
         // These operations are not supported on static repeat-base objects
@@ -196,7 +197,8 @@ class pool_alloc_rpt : public TypedHandle<BLOCK_TYPE>
             { return 0; }
         void operator delete[](void* mem, MemoryPool& p)
             { }
-        void operator delete[](void* mem) { }
+        void operator delete[](void* mem)
+			{ }
 
 private:
     /* These operators are off-limits */
