@@ -1,3 +1,9 @@
+2009-08-19 08:47  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.1.2.39):
+
+	Update.
+
 2009-07-21 11:11  robocop
 
 	* firebird2/src/jrd/jrd.cpp (1.76.2.17):
