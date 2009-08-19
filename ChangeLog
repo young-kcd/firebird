@@ -1,3 +1,65 @@
+2009-08-19 12:14  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.132):
+
+	Cleaned up the old code which is commented out since v2.1. Use the
+	CVS history to recover, if required.
+
+2009-08-19 11:54  dimitr
+
+	* firebird2/src/lock/print.cpp (1.90):
+
+	Fixed CORE-2598: fb_lock_print -c[onsistency] switch doesn't work
+	on Windows.
+
+2009-08-19 11:35  dimitr
+
+	* firebird2/doc/README.monitoring_tables (1.14):
+
+	Fixed CORE-2478: mon$memory_usage: Incorrect database memory
+	reported on CS and SC.
+
+2009-08-19 11:30  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.111):
+
+	Fixed CORE-2478: mon$memory_usage: Incorrect database memory
+	reported on CS and SC.
+
+2009-08-19 11:18  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.117), Optimizer.h (1.35):
+
+	More optimizer adjustments + named constants instead of hardcoded
+	numbers.  In particular, this commit should resolve the degraded
+	restore performance.
+
+2009-08-19 10:06  dimitr
+
+	* firebird2/src/: lock/lock.cpp (1.200), lock/lock_proto.h (1.31),
+	jrd/lck.cpp (1.102), jrd/lck_proto.h (1.20):
+
+	Cleanup. New nbackup internals don't need this code anymore.
+
+2009-08-19 09:49  alexpeshkoff
+
+	* firebird2/src/: jrd/cch.cpp (1.239), lock/lock.cpp (1.199),
+	lock/lock.h (1.53):
+
+	Much better fix for CORE-2590, thanks to Dmitry Yemanov
+
+2009-08-18 14:56  robocop
+
+	* firebird2/src/remote/protocol.h (1.52):
+
+	Comment obsolete architectures.
+
+2009-08-18 14:55  robocop
+
+	* firebird2/src/remote/remote.h (1.100):
+
+	Comment or delete unused things.
+
 2009-08-18 14:43  robocop
 
 	* firebird2/src/common/classes/class_perf.cpp (1.20):
