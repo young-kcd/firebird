@@ -2697,12 +2697,6 @@ static int blocking_ast_bdb(void* ast_object)
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 
-		// If dbb_bcb is NULL, this means database is not initialized completely,
-		// and we can't process this AST
-		if (! dbb->dbb_bcb) {
-			return 0;
-		}
-
 		// Do some fancy footwork to make sure that pages are
 		// not removed from the btc tree at AST level. Then
 		// restore the flag to whatever it was before.

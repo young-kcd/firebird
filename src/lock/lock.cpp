@@ -360,6 +360,17 @@ void LockManager::shutdownOwner(thread_db* tdbb, SRQ_PTR* owner_offset)
 	if (--owner->own_count > 0)
 		return;
 
+	while (owner->own_ast_count)
+	{
+		m_localMutex.leave();
+		{ // scope
+			Database::Checkout dco(tdbb->getDatabase());
+			THREAD_SLEEP(10);
+		}
+		m_localMutex.enter();
+		owner = (own*) SRQ_ABS_PTR(offset); // Re-init after a potential remap
+	}
+
 	acquire_shmem(offset);
 	owner = (own*) SRQ_ABS_PTR(offset);	// Re-init after a potential remap
 
@@ -1370,7 +1381,7 @@ void LockManager::blocking_action(thread_db* tdbb,
 
 		if (routine)
 		{
-			owner->own_count++;
+			owner->own_ast_count++;
 			release_shmem(blocked_owner_offset);
 			m_localMutex.leave();
 			if (tdbb)
@@ -1385,12 +1396,9 @@ void LockManager::blocking_action(thread_db* tdbb,
 			m_localMutex.enter();
 			acquire_shmem(blocked_owner_offset);
 			owner = (own*) SRQ_ABS_PTR(blocking_owner_offset);
-			owner->own_count--;
+			owner->own_ast_count--;
 		}
 	}
-
-	if (!owner->own_count)
-		purge_owner(blocked_owner_offset, owner);
 }
 
 
@@ -2260,6 +2268,7 @@ void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T ow
 	SRQ_INIT(owner->own_blocks);
 	owner->own_pending_request = 0;
 	owner->own_acquire_time = 0;
+	owner->own_ast_count = 0;
 
 	ISC_event_init(&owner->own_wakeup);
 }
