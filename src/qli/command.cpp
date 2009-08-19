@@ -349,17 +349,20 @@ void CMD_set( qli_syntax* node)
 		case set_matching_language:
 			if (QLI_matching_language)
 				ALLQ_release((qli_frb*) QLI_matching_language);
-			if (!(string = (qli_const*) value))
-			{
+			string = (qli_const*) value;
+			if (!string)
 				QLI_matching_language = NULL;
-				break;
+			else
+			{
+				const USHORT len = string->con_desc.dsc_length;
+				QLI_matching_language = (qli_const*) ALLOCPV(type_con, len);
+				fb_utils::copy_terminate((char*) QLI_matching_language->con_data,
+										 (char*) string->con_data, len + 1);
+				dsc& lang = QLI_matching_language->con_desc;
+				lang.dsc_dtype = dtype_text;
+				lang.dsc_address = QLI_matching_language->con_data;
+				lang.dsc_length = len;
 			}
-			QLI_matching_language = (qli_const*) ALLOCPV(type_con, string->con_desc.dsc_length);
-			fb_utils::copy_terminate((char*) QLI_matching_language->con_data, (char*) string->con_data,
-					string->con_desc.dsc_length + 1);
-			QLI_matching_language->con_desc.dsc_dtype = dtype_text;
-			QLI_matching_language->con_desc.dsc_address = QLI_matching_language->con_data;
-			QLI_matching_language->con_desc.dsc_length = string->con_desc.dsc_length;
 			break;
 
 		case set_user:

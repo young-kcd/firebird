@@ -1954,11 +1954,8 @@ static void show_matching()
 		return;
 	if (QLI_matching_language)
 	{
-		buf_type buffer;
-		strncpy(buffer, (char*) QLI_matching_language->con_data,
-				QLI_matching_language->con_desc.dsc_length);
-		buffer[QLI_matching_language->con_desc.dsc_length] = 0;
-		printf("\n\t%s\n", buffer);
+		printf("\n\t%.*s\n",
+			int(QLI_matching_language->con_desc.dsc_length), QLI_matching_language->con_data);
 	}
 }
 
@@ -2185,34 +2182,30 @@ static void show_rels( qli_dbb* dbb, enum show_t sw, SSHORT width)
 	switch (sw)
 	{
 	case show_relations:
+		show_dbb(dbb);
+		buffer[0] = 0;
+		for (const qli_rel* relation = dbb->dbb_relations; relation;
+			 relation = relation->rel_next)
 		{
-			show_dbb(dbb);
-			buffer[0] = 0;
-			for (const qli_rel* relation = dbb->dbb_relations; relation;
-				 relation = relation->rel_next)
-			{
-				if (!(relation->rel_flags & REL_system))
-					show_names(relation->rel_symbol->sym_string, width, buffer);
-			}
-			if (buffer[0])
-				printf("%s\n", buffer);
-			printf("\n");
-			break;
+			if (!(relation->rel_flags & REL_system))
+				show_names(relation->rel_symbol->sym_string, width, buffer);
 		}
+		if (buffer[0])
+			printf("%s\n", buffer);
+		printf("\n");
+		break;
 	case show_system_relations:
+		show_dbb(dbb);
+		buffer[0] = 0;
+		for (const qli_rel* relation = dbb->dbb_relations; relation;
+			 relation = relation->rel_next)
 		{
-			show_dbb(dbb);
-			buffer[0] = 0;
-			for (const qli_rel* relation = dbb->dbb_relations; relation;
-				 relation = relation->rel_next)
-			{
-				if (relation->rel_flags & REL_system)
-					show_names(relation->rel_symbol->sym_string, width, buffer);
-			}
-			if (buffer[0])
-				printf("%s\n", buffer);
-			printf("\n");
+			if (relation->rel_flags & REL_system)
+				show_names(relation->rel_symbol->sym_string, width, buffer);
 		}
+		if (buffer[0])
+			printf("%s\n", buffer);
+		printf("\n");
 	}
 }
 

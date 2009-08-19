@@ -220,7 +220,8 @@ int name_length(const TEXT* const name)
  *
  **************************************/
 	const TEXT* q = name - 1;
-	for (const TEXT* p = name; *p; p++) {
+	for (const TEXT* p = name; *p; p++)
+	{
 		if (*p != ' ') {
 			q = p;
 		}
@@ -428,7 +429,8 @@ bool isGlobalKernelPrefix()
 
 		DynLibHandle hmodAdvApi(LoadLibrary("advapi32.dll"));
 
-		if (!hmodAdvApi) {
+		if (!hmodAdvApi)
+		{
 			gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
 			return false;
 		}
@@ -444,7 +446,8 @@ bool isGlobalKernelPrefix()
 		PFnPrivilegeCheck pfnPrivilegeCheck =
 			(PFnPrivilegeCheck) GetProcAddress(hmodAdvApi, "PrivilegeCheck");
 
-		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
+		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck)
+		{
 			// Should never happen, really
 			gds__log("Cannot access privilege management API");
 			return false;
@@ -452,7 +455,8 @@ bool isGlobalKernelPrefix()
 
 		HANDLE hProcess = GetCurrentProcess();
 		HANDLE hToken;
-		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
+		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0)
+		{
 			gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
 			return false;
 		}
@@ -461,7 +465,8 @@ bool isGlobalKernelPrefix()
 		memset(&ps, 0, sizeof(ps));
 		ps.Control = PRIVILEGE_SET_ALL_NECESSARY;
 		ps.PrivilegeCount = 1;
-		if (pfnLookupPrivilegeValue(NULL, TEXT("SeCreateGlobalPrivilege"), &ps.Privilege[0].Luid) == 0) {
+		if (pfnLookupPrivilegeValue(NULL, TEXT("SeCreateGlobalPrivilege"), &ps.Privilege[0].Luid) == 0)
+		{
 			// Failure here means we're running on old version of Windows 2000 or XP
 			// which always allow creating global handles
 			CloseHandle(hToken);
@@ -469,7 +474,8 @@ bool isGlobalKernelPrefix()
 		}
 
 		BOOL checkResult;
-		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
+		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0)
+		{
 			gds__log("PrivilegeCheck failed. Error code: %lu", GetLastError());
 			CloseHandle(hToken);
 			return false;
@@ -702,7 +708,8 @@ namespace {
 			else {
 				f = fopen(name.c_str(), "rt");
 			}
-			if (f && isatty(fileno(f))) {
+			if (f && isatty(fileno(f)))
+			{
 				fprintf(stderr, "Enter password: ");
 				fflush(stderr);
 #ifdef HAVE_TERMIOS_H
