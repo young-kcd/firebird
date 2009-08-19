@@ -57,7 +57,10 @@ const double REDUCE_SELECTIVITY_FACTOR_EQUALITY = 0.1;
 const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.5;
 
 const double MAXIMUM_SELECTIVITY = 1.0;
+const double DEFAULT_SELECTIVITY = 0.1;
+
 const double MINIMUM_CARDINALITY = 1.0;
+const double THRESHOLD_CARDINALITY = 5.0;
 
 // Default (Minimum) cost (nr. of pages) for an index.
 const int DEFAULT_INDEX_COST = 1;

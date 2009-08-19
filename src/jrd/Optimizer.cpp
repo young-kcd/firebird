@@ -1702,7 +1702,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					if (unique && cardinality)
 						selectivity = 1 / cardinality;
 					else
-						selectivity = MAXIMUM_SELECTIVITY / 10;
+						selectivity = DEFAULT_SELECTIVITY;
 				}
 
 				InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
@@ -1949,33 +1949,24 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		return NULL;
 	}
 
+	const double streamCardinality =
+		MAX(csb->csb_rpt[stream].csb_cardinality, MINIMUM_CARDINALITY);
+
+	// Prepared statements could be optimized against an almost empty table
+	// and then cached (such as in the restore process), thus causing slowdown
+	// when the table grows. In this case, let's consider all available indices.
+	const bool smallTable = (streamCardinality <= THRESHOLD_CARDINALITY);
+
 	// This flag disables our smart index selection algorithm.
 	// It's set for any explicit (i.e. user specified) plan which
 	// requires all existing indices to be considered for a retrieval.
-	const bool acceptAll = csb->csb_rpt[stream].csb_plan;
-
-	double streamCardinality = csb->csb_rpt[stream].csb_cardinality;
-	// When the cardinality is very small then the statement is being
-	// prepared on an almost empty table, which would meant no indexes
-	// will be used at all. The prepared statement could be cached
-	// (such as in system restore process) and cause slowdown when the
-	// table grows. Set the cardinality to a value so that at least
-	// some indexes are chosen.
-	if (streamCardinality <= 5) {
-		streamCardinality = 5;
-	}
+	// Also, it's set for very small tables (see above).
+	const bool acceptAll = csb->csb_rpt[stream].csb_plan || smallTable;
 
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
 	double totalIndexCost = 0;
 
-	// Allow indexes also to be used on very small tables. Limit starts
-	// now above 5 indexes + almost all datapages.
-	// Also when the table is small and a statement is prepared, but would grow
-	// while inserting data into this would really slow down the statement.
-	// An example here is with system tables and the restore process of gbak.
-	//
-	// dimitr: TO BE REVIEWED!!!
-	//
+	// The upper limit to use an index based retrieval is five indexes + almost all datapages
 	const double maximumCost = (DEFAULT_INDEX_COST * 5) + (streamCardinality * 0.95);
 	const double minimumSelectivity = 1 / streamCardinality;
 
