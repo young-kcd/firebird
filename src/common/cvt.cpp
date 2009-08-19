@@ -189,11 +189,13 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	const int width = MIN(to_len, (int) sizeof(temp) - 1); // minimum width to print
 
 	int precision;
-	if (dtype_double == from->dsc_dtype) {
+	if (dtype_double == from->dsc_dtype)
+	{
 		precision = 16;			// minimum significant digits in a double
 		d = *(double*) from->dsc_address;
 	}
-	else {
+	else
+	{
 		fb_assert(dtype_real == from->dsc_dtype);
 		precision = 8;			// minimum significant digits in a float
 		d = (double) *(float*) from->dsc_address;
@@ -246,7 +248,8 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 			// for the destination.  If so, reduce the precision once more.
 			// This is certain to give a short-enough result.
 
-			if (chars_printed > width) {
+			if (chars_printed > width)
+			{
 				precision -= (chars_printed - width);
 				if (precision < 2)
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -338,7 +341,8 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	FB_UINT64 u;
 	if (n >= 0)
 		u = n;
-	else {
+	else
+	{
 		neg = 1;
 		u = -n;
 	}
@@ -355,7 +359,8 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	// if scale < 0, we need at least abs(scale)+1 digits, so add
 	// any leading zeroes required.
-	while (l + scale <= 0) {
+	while (l + scale <= 0)
+	{
 		*p++ = '0';
 		l++;
 	}
@@ -432,7 +437,8 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 	}
 
-	if (to->dsc_dtype == dtype_cstring) {
+	if (to->dsc_dtype == dtype_cstring)
+	{
 		*q = 0;
 		return;
 	}
@@ -549,7 +555,8 @@ static void string_to_datetime(const dsc* desc,
 		{
 			USHORT precision = 0;
 			n = 0;
-			while (p < end && DIGIT(*p)) {
+			while (p < end && DIGIT(*p))
+			{
 				n = n * 10 + *p++ - '0';
 				precision++;
 			}
@@ -560,7 +567,8 @@ static void string_to_datetime(const dsc* desc,
 			TEXT temp[sizeof(YESTERDAY) + 1];
 
 			TEXT* t = temp;
-			while ((p < end) && (t < &temp[sizeof(temp) - 1])) {
+			while ((p < end) && (t < &temp[sizeof(temp) - 1]))
+			{
 				c = UPPER7(*p);
 				if (!LETTER7(c))
 					break;
@@ -570,7 +578,8 @@ static void string_to_datetime(const dsc* desc,
 			*t = 0;
 
 			// Insist on at least 3 characters for month names
-			if (t - temp < 3) {
+			if (t - temp < 3)
+			{
 				CVT_conversion_error(desc, err);
 				return;
 			}
@@ -583,7 +592,8 @@ static void string_to_datetime(const dsc* desc,
 				{
 					t = temp;
 					const TEXT* m = *month_ptr++;
-					while (*t && *t == *m) {
+					while (*t && *t == *m)
+					{
 						++t;
 						++m;
 					}
@@ -606,18 +616,21 @@ static void string_to_datetime(const dsc* desc,
 
 					if (strcmp(temp, NOW) == 0)
 						return;
-					if (expect_type == expect_sql_time) {
+					if (expect_type == expect_sql_time)
+					{
 						CVT_conversion_error(desc, err);
 						return;
 					}
 					date->timestamp_time = 0;
 					if (strcmp(temp, TODAY) == 0)
 						return;
-					if (strcmp(temp, TOMORROW) == 0) {
+					if (strcmp(temp, TOMORROW) == 0)
+					{
 						date->timestamp_date++;
 						return;
 					}
-					if (strcmp(temp, YESTERDAY) == 0) {
+					if (strcmp(temp, YESTERDAY) == 0)
+					{
 						date->timestamp_date--;
 						return;
 					}
@@ -647,11 +660,13 @@ static void string_to_datetime(const dsc* desc,
 			break;
 
 		// Grab a separator character
-		if (*p == '/' || *p == '-' || *p == ',' || *p == ':') {
+		if (*p == '/' || *p == '-' || *p == ',' || *p == ':')
+		{
 			p++;
 			continue;
 		}
-		if (*p == '.') {
+		if (*p == '.')
+		{
 			if (i <= 1)
 				dot_separator_seen = true;
 			p++;
@@ -660,13 +675,15 @@ static void string_to_datetime(const dsc* desc,
 	}
 
 	// User must provide at least 2 components
-	if (i - start_component < 1) {
+	if (i - start_component < 1)
+	{
 		CVT_conversion_error(desc, err);
 		return;
 	}
 
 	// Dates cannot have a Time portion
-	if (expect_type == expect_sql_date && i > 2) {
+	if (expect_type == expect_sql_date && i > 2)
+	{
 		CVT_conversion_error(desc, err);
 		return;
 	}
@@ -689,36 +706,37 @@ static void string_to_datetime(const dsc* desc,
 	{
 		// Figure out what format the user typed the date in
 
-		// A 4 digit number to start implies YYYY-MM-DD
-		if (description[0] >= 3) {
+		if (description[0] >= 3)
+		{
+			// A 4 digit number to start implies YYYY-MM-DD
 			position_year = 0;
 			position_month = 1;
 			position_day = 2;
 		}
-
-		// An English month to start implies MM-DD-YYYY
-		else if (description[0] == ENGLISH_MONTH) {
+		else if (description[0] == ENGLISH_MONTH)
+		{
+			// An English month to start implies MM-DD-YYYY
 			position_year = 2;
 			position_month = 0;
 			position_day = 1;
 		}
-
-		// An English month in the middle implies DD-MM-YYYY
-		else if (description[1] == ENGLISH_MONTH) {
+		else if (description[1] == ENGLISH_MONTH)
+		{
+			// An English month in the middle implies DD-MM-YYYY
 			position_year = 2;
 			position_month = 1;
 			position_day = 0;
 		}
-
-		// A period as a separator implies DD.MM.YYYY
-		else if (dot_separator_seen) {
+		else if (dot_separator_seen)
+		{
+			// A period as a separator implies DD.MM.YYYY
 			position_year = 2;
 			position_month = 1;
 			position_day = 0;
 		}
-
-		// Otherwise assume MM-DD-YYYY
-		else {
+		else
+		{
+			// Otherwise assume MM-DD-YYYY
 			position_year = 2;
 			position_month = 0;
 			position_day = 1;
@@ -750,10 +768,9 @@ static void string_to_datetime(const dsc* desc,
 		if (description[position_year] == 0) {
 			times.tm_year = times2.tm_year + 1900;
 		}
-
-		// Handle conversion of 2-digit years
-
-		else if (description[position_year] <= 2) {
+		else if (description[position_year] <= 2)
+		{
+			// Handle conversion of 2-digit years
 			if (times.tm_year < (times2.tm_year - 50) % 100)
 				times.tm_year += 2000;
 			else
@@ -763,7 +780,8 @@ static void string_to_datetime(const dsc* desc,
 		times.tm_year -= 1900;
 		times.tm_mon -= 1;
 	}
-	else {
+	else
+	{
 		// The date portion isn't needed for time - but to
 		// keep the conversion in/out of isc_time clean lets
 		// initialize it properly anyway
@@ -791,7 +809,8 @@ static void string_to_datetime(const dsc* desc,
 
 	Firebird::TimeStamp ts(times);
 
-	if (!ts.isValid()) {
+	if (!ts.isValid())
+	{
 		switch (expect_type)
 		{
 			case expect_sql_date:
@@ -809,7 +828,8 @@ static void string_to_datetime(const dsc* desc,
 		}
 	}
 
-	if (expect_type != expect_sql_time) {
+	if (expect_type != expect_sql_time)
+	{
 		tm times2;
 		ts.decode(&times2);
 
@@ -939,12 +959,14 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 		// do different things if the value is larger than a long can hold
 		// If rounding would yield a legitimate value, permit it
 
-		if (d < (double) LONG_MIN_real) {
+		if (d < (double) LONG_MIN_real)
+		{
 			if (d > (double) LONG_MIN_real - 1.)
 				return SLONG_MIN;
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 		}
-		if (d > (double) LONG_MAX_real) {
+		if (d > (double) LONG_MAX_real)
+		{
 			if (d < (double) LONG_MAX_real + 1.)
 				return LONG_MAX_int;
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -1075,30 +1097,34 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 			const char* const end = p + length;
 
 			// skip initial spaces
-			for (; p < end && *p == ' '; p++)
-				;
+			while (p < end && *p == ' ')
+				++p;
 
 			for (; p < end; p++)
 			{
-				if (DIGIT(*p)) {
+				if (DIGIT(*p))
+				{
 					digit_seen = true;
 					past_sign = true;
 					if (fraction)
 						scale++;
 					value = value * 10. + (*p - '0');
 				}
-				else if (*p == '.') {
+				else if (*p == '.')
+				{
 					past_sign = true;
 					if (fraction)
 						CVT_conversion_error(desc, err);
 					else
 						fraction = true;
 				}
-				else if (!past_sign && *p == '-') {
+				else if (!past_sign && *p == '-')
+				{
 					sign = -1;
 					past_sign = true;
 				}
-				else if (!past_sign && *p == '+') {
+				else if (!past_sign && *p == '+')
+				{
 					sign = 1;
 					past_sign = true;
 				}
@@ -1107,8 +1133,8 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 				else if (*p == ' ')
 				{
 					// skip spaces
-					for (; p < end && *p == ' '; p++)
-						;
+					while (p < end && *p == ' ')
+						++p;
 
 					// throw if there is something after the spaces
 					if (p < end)
@@ -1153,8 +1179,8 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 					else if (*p == ' ')
 					{
 						// skip spaces
-						for (; p < end && *p == ' '; p++)
-							;
+						while (p < end && *p == ' ')
+							++p;
 
 						// throw if there is something after the spaces
 						if (p < end)
@@ -1256,7 +1282,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	// optimal, it would cost more to find the fast move than the
 	// fast move would gain.
 
-	if (DSC_EQUIV(from, to, false)) {
+	if (DSC_EQUIV(from, to, false))
+	{
 		if (length) {
 			memcpy(p, q, length);
 		}
@@ -1490,7 +1517,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				fill = ULONG(to->dsc_length) - length;
 
 				CVT_COPY_BUFF(q, p, length);
-				if (fill > 0) {
+				if (fill > 0)
+				{
 					memset(p, fill_char, fill);
 					p += fill;
 					// Note: above is correct only for narrow
@@ -1530,7 +1558,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 			cb->validateLength(toCharset, toLength, start, to_size, cb->err);
 
-			if (l) {
+			if (l)
+			{
 				// Scan the truncated string to ensure only spaces lost
 				// Warning: it is correct only for narrow and multi-byte
 				// character sets which use ASCII or NULL for the SPACE character
@@ -1573,7 +1602,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 	case dtype_blob:
 	case dtype_array:
-		if (from->dsc_dtype == dtype_quad) {
+		if (from->dsc_dtype == dtype_quad)
+		{
 			((SLONG *) p)[0] = ((SLONG *) q)[0];
 			((SLONG *) p)[1] = ((SLONG *) q)[1];
 			return;
@@ -1608,7 +1638,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 
 	case dtype_quad:
-		if (from->dsc_dtype == dtype_blob || from->dsc_dtype == dtype_array) {
+		if (from->dsc_dtype == dtype_blob || from->dsc_dtype == dtype_array)
+		{
 			((SLONG *) p)[0] = ((SLONG *) q)[0];
 			((SLONG *) p)[1] = ((SLONG *) q)[1];
 			return;
@@ -1827,7 +1858,8 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_ttype() = ttype_ascii;
 	desc.dsc_length = (p - temp);
-	if (from->dsc_dtype == dtype_timestamp && version4) {
+	if (from->dsc_dtype == dtype_timestamp && version4)
+	{
 		// Prior to BLR Version5, when a timestamp is converted to a string it
 		// is silently truncated if the destination string is not large enough
 
@@ -1877,7 +1909,8 @@ USHORT CVT_make_string(const dsc*          desc,
 		if (desc->dsc_dtype == dtype_cstring)
 			return MIN((USHORT) strlen((char *) desc->dsc_address), from_len - 1);
 
-		if (desc->dsc_dtype == dtype_varying) {
+		if (desc->dsc_dtype == dtype_varying)
+		{
 			vary* varying = (vary*) desc->dsc_address;
 			*address = varying->vary_string;
 			return MIN(varying->vary_length, (USHORT) (from_len - sizeof(USHORT)));
@@ -1998,8 +2031,8 @@ SSHORT CVT_decompose(const char* string,
 	const char* end = p + length;
 
 	// skip initial spaces
-	for (; p < end && *p == ' '; p++)
-		;
+	while (p < end && *p == ' ')
+		++p;
 
 	// Check if this is a numeric hex string. Must start with 0x or 0X, and be
 	// no longer than 16 hex digits + 2 (the length of the 0x prefix) = 18.
@@ -2055,7 +2088,8 @@ SSHORT CVT_decompose(const char* string,
 			// tricky: the value doesn't always become negative after an
 			// overflow!
 
-			if (value >= limit_by_10) {
+			if (value >= limit_by_10)
+			{
 				// possibility of an overflow
 				if (value > limit_by_10)
 				{
@@ -2132,8 +2166,8 @@ SSHORT CVT_decompose(const char* string,
 			else if (*p == ' ')
 			{
 				// skip spaces
-				for (; p < end && *p == ' '; p++)
-					;
+				while (p < end && *p == ' ')
+					++p;
 
 				// throw if there is something after the spaces
 				if (p < end)
@@ -2208,7 +2242,8 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 		if (desc->dsc_dtype == dtype_cstring)
 			return MIN((USHORT) strlen((char *) desc->dsc_address),
 					   desc->dsc_length - 1);
-		if (desc->dsc_dtype == dtype_varying) {
+		if (desc->dsc_dtype == dtype_varying)
+		{
 			vary* varying = (vary*) desc->dsc_address;
 			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
 			return MIN(varying->vary_length,
@@ -2324,7 +2359,8 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		// do different things if the value is larger than a quad
 		// can hold
 
-		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d) {
+		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d)
+		{
 			// If rounding would yield a legitimate value, permit it
 
 			if (d > (double) QUAD_MIN_real - 1.)
