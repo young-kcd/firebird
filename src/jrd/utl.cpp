@@ -77,18 +77,18 @@
 #include <sys/file.h>
 #endif
 
-/* Bug 7119 - BLOB_load will open external file for read in BINARY mode. */
+// Bug 7119 - BLOB_load will open external file for read in BINARY mode.
 
 #ifdef WIN_NT
-static const char* FOPEN_READ_TYPE		= "rb";
-static const char* FOPEN_WRITE_TYPE		= "wb";
-static const char* FOPEN_READ_TYPE_TEXT	= "rt";
-static const char* FOPEN_WRITE_TYPE_TEXT= "wt";
+static const char* const FOPEN_READ_TYPE		= "rb";
+static const char* const FOPEN_WRITE_TYPE		= "wb";
+static const char* const FOPEN_READ_TYPE_TEXT	= "rt";
+static const char* const FOPEN_WRITE_TYPE_TEXT	= "wt";
 #else
-static const char* FOPEN_READ_TYPE		= "r";
-static const char* FOPEN_WRITE_TYPE		= "w";
-static const char* FOPEN_READ_TYPE_TEXT	= FOPEN_READ_TYPE;
-static const char* FOPEN_WRITE_TYPE_TEXT= FOPEN_WRITE_TYPE;
+static const char* const FOPEN_READ_TYPE		= "r";
+static const char* const FOPEN_WRITE_TYPE		= "w";
+static const char* const FOPEN_READ_TYPE_TEXT	= FOPEN_READ_TYPE;
+static const char* const FOPEN_WRITE_TYPE_TEXT	= FOPEN_WRITE_TYPE;
 #endif
 
 #define LOWER7(c) ( (c >= 'A' && c<= 'Z') ? c + 'a' - 'A': c )
@@ -229,12 +229,10 @@ static const TEXT* const impl_implementation[] =
 #if (defined SOLARIS ) || (defined __cplusplus)
 extern "C" {
 #endif
-/* Avoid C++ linkage API functions*/
+// Avoid C++ linkage API functions
 
 
-int API_ROUTINE gds__blob_size(FB_API_HANDLE* b,
-							   SLONG* size,
-							   SLONG* seg_count, SLONG* max_seg)
+int API_ROUTINE gds__blob_size(FB_API_HANDLE* b, SLONG* size, SLONG* seg_count, SLONG* max_seg)
 {
 /**************************************
  *
@@ -610,9 +608,7 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
 #endif
 
 
-SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
-								   UCHAR ** result_buffer,
-								   USHORT count, ...)
+SLONG API_ROUTINE gds__event_block(UCHAR** event_buffer, UCHAR** result_buffer, USHORT count, ...)
 {
 /**************************************
  *
@@ -643,7 +639,8 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 
 	length = 1;
 	i = count;
-	while (i--) {
+	while (i--)
+	{
 		q = va_arg(ptr, SCHAR *);
 		length += strlen(q) + 5;
 	}
@@ -654,7 +651,9 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 		return 0;
 	*result_buffer = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
 	/* FREE: unknown */
-	if (!*result_buffer) {		/* NOMEM: */
+	if (!*result_buffer)
+	{
+		/* NOMEM: */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
@@ -674,7 +673,8 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 	va_start(ptr, count);
 
 	i = count;
-	while (i--) {
+	while (i--)
+	{
 		q = va_arg(ptr, SCHAR *);
 
 		/* Strip trailing blanks from string */
@@ -695,10 +695,10 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 }
 
 
-USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
-									  SCHAR ** result_buffer,
+USHORT API_ROUTINE gds__event_block_a(SCHAR** event_buffer,
+									  SCHAR** result_buffer,
 									  SSHORT count,
-									  SCHAR ** name_buffer)
+									  SCHAR** name_buffer)
 {
 /**************************************
  *
@@ -721,7 +721,8 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 	USHORT i = count;
 	const SCHAR* const* nb = name_buffer;
 	SLONG length = 0;
-	while (i--) {
+	while (i--)
+	{
 		const SCHAR* q = *nb++;
 
 		/* Strip trailing blanks from string */
@@ -737,7 +738,9 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 		return 0;
 	*result_buffer = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
 /* FREE: unknown */
-	if (!*result_buffer) {		/* NOMEM: */
+	if (!*result_buffer)
+	{
+		/* NOMEM: */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
@@ -754,7 +757,8 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 
 	nb = name_buffer;
 
-	while (i--) {
+	while (i--)
+	{
 		const SCHAR* q = *nb++;
 
 		/* Strip trailing blanks from string */
@@ -774,11 +778,11 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 }
 
 
-void API_ROUTINE gds__event_block_s(SCHAR ** event_buffer,
-									SCHAR ** result_buffer,
+void API_ROUTINE gds__event_block_s(SCHAR** event_buffer,
+									SCHAR** result_buffer,
 									SSHORT count,
-									SCHAR ** name_buffer,
-									SSHORT * return_count)
+									SCHAR** name_buffer,
+									SSHORT* return_count)
 {
 /**************************************
  *
@@ -823,7 +827,8 @@ void API_ROUTINE isc_event_counts(ULONG* result_vector,
 
 	p++;
 	q++;
-	while (p < end) {
+	while (p < end)
+	{
 		/* skip over the event name */
 
 		const USHORT i = (USHORT)* p++;
@@ -846,7 +851,7 @@ void API_ROUTINE isc_event_counts(ULONG* result_vector,
 }
 
 
-void API_ROUTINE isc_get_client_version(SCHAR *buffer)
+void API_ROUTINE isc_get_client_version(SCHAR* buffer)
 {
 /**************************************
  *
@@ -955,7 +960,8 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 
 	bool user_seen = false, password_seen = false;
 
-	if (*dpb && *dpb_size) {
+	if (*dpb && *dpb_size)
+	{
 	    const UCHAR* p = *dpb;
 		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;)
 		{
@@ -996,8 +1002,7 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 }
 
 
-void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
-									 SSHORT* dpb_size, const TEXT* single_user)
+void API_ROUTINE isc_set_single_user(const UCHAR** dpb, SSHORT* dpb_size, const TEXT* single_user)
 {
 /****************************************
  *
@@ -1015,7 +1020,8 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 	bool single_user_seen = false;
 
-	if ((*dpb) && (*dpb_size)) {
+	if ((*dpb) && (*dpb_size))
+	{
 		const UCHAR* p = *dpb;
 		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;)
 		{
@@ -1048,8 +1054,7 @@ static void print_version(void*, const char* version)
 }
 
 
-int API_ROUTINE isc_version(FB_API_HANDLE* handle,
-							 FPTR_VERSION_CALLBACK routine, void* user_arg)
+int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine, void* user_arg)
 {
 /**************************************
  *
@@ -1114,7 +1119,8 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 		/* Our buffer wasn't large enough to hold all the information,
 		 * make a larger one and try again.
 		 */
-		if (redo) {
+		if (redo)
+		{
 			if (buf != buffer)
 				gds__free(buf);
 			buf_len += 1024;
@@ -1131,7 +1137,8 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 
 	TEXT s[128];
 
-	while (count-- > 0) {
+	while (count-- > 0)
+	{
 		const USHORT implementation_nr = *implementations++;
 		const USHORT impl_class_nr = *implementations++;
 		const int l = *versions++; // it was UCHAR
@@ -1183,27 +1190,31 @@ void API_ROUTINE isc_format_implementation(USHORT implementation_nr,
  * 	by looking up their values in the internal tables.
  *
  **************************************/
-	if (ibuflen > 0) {
+	if (ibuflen > 0)
+	{
 		if (implementation_nr >= FB_NELEM(impl_implementation) ||
 			!(impl_implementation[implementation_nr]))
 		{
 			strncpy(ibuf, "**unknown**", ibuflen - 1);
 			ibuf[MIN(11, ibuflen - 1)] = '\0';
 		}
-		else {
+		else
+		{
 			strncpy(ibuf, impl_implementation[implementation_nr], ibuflen - 1);
 			const int len = strlen(impl_implementation[implementation_nr]);
 			ibuf[MIN(len, ibuflen - 1)] = '\0';
 		}
 	}
 
-	if (cbuflen > 0) {
+	if (cbuflen > 0)
+	{
 		if (impl_class_nr >= FB_NELEM(impl_class) || !(impl_class[impl_class_nr]))
 		{
 			strncpy(cbuf, "**unknown**", cbuflen - 1);
 			cbuf[MIN(11, cbuflen - 1)] = '\0';
 		}
-		else {
+		else
+		{
 			strncpy(cbuf, impl_class[impl_class_nr], cbuflen - 1);
 			const int len = strlen(impl_class[impl_class_nr]);
 			cbuf[MIN(len, cbuflen - 1)] = '\0';
@@ -1264,7 +1275,8 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 	if (!bstream->bstr_blob)
 		return FALSE;
 
-	if (bstream->bstr_mode & BSTR_output) {
+	if (bstream->bstr_mode & BSTR_output)
+	{
 		const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 		if (l > 0)
 		{
@@ -1347,7 +1359,8 @@ int API_ROUTINE blob__dump(SLONG blob_id[2],
 	// CVC: The old logic passed garbage to BLOB_dump if !*name_length
 	TEXT temp[129];
 	USHORT l = *name_length;
-	if (l != 0) {
+	if (l != 0)
+	{
 		if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
 
@@ -1482,7 +1495,8 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 	if (!bstream->bstr_buffer)
 		return EOF;
 
-	while (true) {
+	while (true)
+	{
 		if (--bstream->bstr_cnt >= 0)
 			return *bstream->bstr_ptr++ & 0377;
 
@@ -1490,7 +1504,8 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 			// safe - cast from short, alignment is OK
 			reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
 			bstream->bstr_length, bstream->bstr_buffer);
-		if (status_vector[1] && status_vector[1] != isc_segment) {
+		if (status_vector[1] && status_vector[1] != isc_segment)
+		{
 			bstream->bstr_ptr = 0;
 			bstream->bstr_cnt = 0;
 			if (status_vector[1] != isc_segstr_eof)
@@ -1521,7 +1536,8 @@ int API_ROUTINE blob__load(SLONG blob_id[2],
 	// CVC: The old logic passed garbage to BLOB_load if !*name_length
 	TEXT temp[129];
 	USHORT l = *name_length;
-	if (l != 0) {
+	if (l != 0)
+	{
 		if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
 
@@ -1635,12 +1651,14 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 
 	BSTREAM* bstream = BLOB_open(blob, NULL, 0);
 
-	if (*mode == 'w' || *mode == 'W') {
+	if (*mode == 'w' || *mode == 'W')
+	{
 		bstream->bstr_mode |= BSTR_output;
 		bstream->bstr_cnt = bstream->bstr_length;
 		bstream->bstr_ptr = bstream->bstr_buffer;
 	}
-	else {
+	else
+	{
 		bstream->bstr_cnt = 0;
 		bstream->bstr_mode |= BSTR_input;
 	}
@@ -1683,10 +1701,13 @@ BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 	bstream->bstr_cnt = 0;
 	bstream->bstr_ptr = 0;
 
-	if (!(bstream->bstr_buffer = buffer)) {
+	if (!(bstream->bstr_buffer = buffer))
+	{
 		bstream->bstr_buffer = (SCHAR*) gds__alloc((SLONG) (sizeof(SCHAR) * bstream->bstr_length));
 		/* FREE: This structure is freed in BLOB_close() */
-		if (!bstream->bstr_buffer) {	/* NOMEM: */
+		if (!bstream->bstr_buffer)
+		{
+			/* NOMEM: */
 			gds__free(bstream);
 			return NULL;
 		}
@@ -1775,10 +1796,12 @@ static int dump(ISC_QUAD* blob_id,
 	SCHAR buffer[256];
 	const SSHORT short_length = sizeof(buffer);
 
-	for (;;) {
+	for (;;)
+	{
 		USHORT l = 0;
 		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
-		if (status_vector[1] && status_vector[1] != isc_segment) {
+		if (status_vector[1] && status_vector[1] != isc_segment)
+		{
 			if (status_vector[1] != isc_segstr_eof)
 				isc_print_status(status_vector);
 			break;
@@ -1853,12 +1876,14 @@ static int edit(ISC_QUAD* blob_id,
 	}
 
 	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
-	if (!file) {
+	if (!file)
+	{
 		unlink(tmpf.c_str());
 		return FALSE;
 	}
 
-	if (!dump(blob_id, database, transaction, file)) {
+	if (!dump(blob_id, database, transaction, file))
+	{
 		fclose(file);
 		unlink(tmpf.c_str());
 		return FALSE;
@@ -1866,9 +1891,11 @@ static int edit(ISC_QUAD* blob_id,
 
 	fclose(file);
 
-	if (type = gds__edit(tmpf.c_str(), type)) {
+	if (type = gds__edit(tmpf.c_str(), type))
+	{
 
-		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT))) {
+		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT)))
+		{
 			unlink(tmpf.c_str());
 			return FALSE;
 		}
@@ -2025,7 +2052,8 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 		p = new_dpb;
 		/* FREE: done by client process in GPRE generated code */
 		if (!new_dpb)
-		{			/* NOMEM: don't trash existing dpb */
+		{
+			/* NOMEM: don't trash existing dpb */
 			DEV_REPORT("isc_extend_dpb: out of memory");
 			return;				/* NOMEM: not really handled */
 		}
@@ -2124,7 +2152,8 @@ static int load(ISC_QUAD* blob_id,
 	TEXT* p = buffer;
 	const TEXT* const buffer_end = buffer + sizeof(buffer);
 
-	for (;;) {
+	for (;;)
+	{
 		const SSHORT c = fgetc(file);
 		if (feof(file))
 			break;
@@ -2132,7 +2161,8 @@ static int load(ISC_QUAD* blob_id,
 		if ((c != '\n') && p < buffer_end)
 			continue;
 		const SSHORT l = p - buffer;
-		if (isc_put_segment(status_vector, &blob, l, buffer)) {
+		if (isc_put_segment(status_vector, &blob, l, buffer))
+		{
 			isc_print_status(status_vector);
 			isc_close_blob(status_vector, &blob);
 			return FALSE;
@@ -2143,7 +2173,8 @@ static int load(ISC_QUAD* blob_id,
 	const SSHORT l = p - buffer;
 	if (l != 0)
 	{
-		if (isc_put_segment(status_vector, &blob, l, buffer)) {
+		if (isc_put_segment(status_vector, &blob, l, buffer))
+		{
 			isc_print_status(status_vector);
 			isc_close_blob(status_vector, &blob);
 			return FALSE;
