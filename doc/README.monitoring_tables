@@ -224,6 +224,9 @@ Monitoring tables
         record has these columns populated with non-zero values. Small allocations don't go
         to the OS level, they're redirected to the database memory pool instead. So usually
         only MON$DATABASE and memory-bound objects point to non-zero "allocated" values.
+      - the counter set linked to a record in MON$DATABASE reports the memory shared among
+        all attachments. In Classic and SuperClassic, these counters are zero meaning no
+        shared cache in these architectures.
 
     6) For table MON$CONTEXT_VARIABLES:
       - column MON$ATTACHMENT_ID contains a valid ID only for session-level context variables.
