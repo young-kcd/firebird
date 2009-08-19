@@ -449,14 +449,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		exit(FINI_OK);
 	}
 
-	Firebird::AutoPtr<UCHAR> buffer;
+	ISC_STATUS_ARRAY status_vector;
+	sh_mem shmem_data;
+
+	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > buffer;
 	lhb* LOCK_header = NULL;
 
 	if (db_file)
 	{
-		sh_mem shmem_data;
-
-		ISC_STATUS_ARRAY status_vector;
 		LOCK_header = (lhb*) ISC_map_file(status_vector, filename.c_str(),
 										  prt_lock_init, NULL, 0, &shmem_data);
 
@@ -486,9 +486,36 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #endif
 		}
 
+		if (sw_consistency)
+		{
+			// To avoid changes in the lock file while we are dumping it - make
+			// a local buffer, lock the lock file, copy it, then unlock the
+			// lock file to let processing continue.  Printing of the lock file
+			// will continue from the in-memory copy.
+
+			try
+			{
+				buffer = new UCHAR[LOCK_header->lhb_length];
+			}
+			catch (const Firebird::BadAlloc&)
+			{
+				FPRINTF(outfile, "Insufficient memory for consistent lock statistics.\n");
+				FPRINTF(outfile, "Try omitting the -c switch.\n");
+				exit(FINI_OK);
+			}
+
 #ifdef WIN_NT
-		ISC_mutex_init(MUTEX, shmem_data.sh_mem_name);
+			ISC_mutex_init(MUTEX, shmem_data.sh_mem_name);
 #endif
+
+			ISC_mutex_lock(MUTEX);
+			memcpy(buffer, LOCK_header, LOCK_header->lhb_length);
+			ISC_mutex_unlock(MUTEX);
+
+			LOCK_header = (lhb*)(UCHAR*) buffer;
+
+			ISC_mutex_fini(MUTEX);
+		}
 	}
 	else if (lock_file)
 	{
@@ -498,6 +525,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			FPRINTF(outfile, "Unable to open lock file.\n");
 			exit(FINI_OK);
 		}
+
 		struct stat file_stat;
 		if (fstat(fd, &file_stat) == -1)
 		{
@@ -505,19 +533,25 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			FPRINTF(outfile, "Unable to retrieve lock file size.\n");
 			exit(FINI_OK);
 		}
+
 		if (!file_stat.st_size)
 		{
 			close(fd);
 			FPRINTF(outfile, "Lock file is empty.\n");
 			exit(FINI_OK);
 		}
-		buffer = new UCHAR[file_stat.st_size];
-		LOCK_header = (lhb*) (UCHAR*) buffer;
-		if (!LOCK_header)
+
+		try
+		{
+			buffer = new UCHAR[file_stat.st_size];
+		}
+		catch (const Firebird::BadAlloc&)
 		{
 			FPRINTF(outfile, "Insufficient memory to read lock file.\n");
 			exit(FINI_OK);
 		}
+
+		LOCK_header = (lhb*)(UCHAR*) buffer;
 		read(fd, LOCK_header, file_stat.st_size);
 		close(fd);
 	}
@@ -552,29 +586,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		prt_lock_activity(outfile, LOCK_header, sw_interactive, (USHORT) sw_seconds,
 						  (USHORT) sw_intervals);
 		exit(FINI_OK);
-	}
-
-	lhb* header = NULL;
-
-	if (sw_consistency && db_file)
-	{
-		// To avoid changes in the lock file while we are dumping it - make
-		// a local buffer, lock the lock file, copy it, then unlock the
-		// lock file to let processing continue.  Printing of the lock file
-		// will continue from the in-memory copy.
-
-		header = (lhb*) gds__alloc(LOCK_header->lhb_length);
-		if (!header)
-		{
-			FPRINTF(outfile, "Insufficient memory for consistent lock statistics.\n");
-			FPRINTF(outfile, "Try omitting the -c switch.\n");
-			exit(FINI_OK);
-		}
-
-		ISC_mutex_lock(MUTEX);
-		memcpy(header, LOCK_header, LOCK_header->lhb_length);
-		ISC_mutex_unlock(MUTEX);
-		LOCK_header = header;
 	}
 
 	// Print lock header block
@@ -702,8 +713,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	prt_html_end(outfile);
 
-	if (header)
-		gds__free(header);
+	if (db_file)
+	{
+		ISC_unmap_file(status_vector, &shmem_data);
+	}
 
 	return FINI_OK;
 }
