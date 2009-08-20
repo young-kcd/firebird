@@ -147,29 +147,29 @@ private:
 template<BlockType BLOCK_TYPE = type_unknown>
 class pool_alloc : public TypedHandle<BLOCK_TYPE>
 {
-    public:
+public:
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, const char* file, int line)
-            { return p.calloc(s, file, line); }
-        void* operator new[](size_t s, MemoryPool& p, const char* file, int line)
-            { return p.calloc(s, file, line); }
+    void* operator new(size_t s, MemoryPool& p, const char* file, int line)
+        { return p.calloc(s, file, line); }
+    void* operator new[](size_t s, MemoryPool& p, const char* file, int line)
+        { return p.calloc(s, file, line); }
 #else
-        void* operator new(size_t s, MemoryPool& p )
-            { return p.calloc(s); }
-        void* operator new[](size_t s, MemoryPool& p)
-            { return p.calloc(s); }
+    void* operator new(size_t s, MemoryPool& p )
+        { return p.calloc(s); }
+    void* operator new[](size_t s, MemoryPool& p)
+        { return p.calloc(s); }
 #endif
 
-        void operator delete(void* mem, MemoryPool& p)
-            { if (mem) p.deallocate(mem); }
-        void operator delete[](void* mem, MemoryPool& p)
-            { if (mem) p.deallocate(mem); }
+    void operator delete(void* mem, MemoryPool& p)
+        { if (mem) p.deallocate(mem); }
+    void operator delete[](void* mem, MemoryPool& p)
+        { if (mem) p.deallocate(mem); }
 
-        void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
-        void operator delete[](void* mem) { if (mem) MemoryPool::globalFree(mem); }
+    void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
+    void operator delete[](void* mem) { if (mem) MemoryPool::globalFree(mem); }
 
 private:
-    /* These operators are off-limits */
+    // These operators are off-limits
 	void* operator new(size_t s) { return 0; }
     void* operator new[](size_t s) { return 0; }
 };
@@ -177,33 +177,32 @@ private:
 template<typename RPT, BlockType BLOCK_TYPE = type_unknown>
 class pool_alloc_rpt : public TypedHandle<BLOCK_TYPE>
 {
-    public:
-		typedef RPT blk_repeat_type;
+public:
+	typedef RPT blk_repeat_type;
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, size_t rpt, const char* file, int line)
-            { return p.calloc(s + sizeof(RPT) * rpt, file, line); }
+    void* operator new(size_t s, MemoryPool& p, size_t rpt, const char* file, int line)
+        { return p.calloc(s + sizeof(RPT) * rpt, file, line); }
 #else
-        void* operator new(size_t s, MemoryPool& p, size_t rpt)
-            { return p.calloc(s + sizeof(RPT) * rpt); }
+    void* operator new(size_t s, MemoryPool& p, size_t rpt)
+        { return p.calloc(s + sizeof(RPT) * rpt); }
 #endif
-        void operator delete(void* mem, MemoryPool& p)
-            { if (mem) p.deallocate(mem); }
-        void operator delete(void* mem)
-			{ if (mem) MemoryPool::globalFree(mem); }
-
-    private:
-        // These operations are not supported on static repeat-base objects
-        void* operator new[](size_t s, MemoryPool& p)
-            { return 0; }
-        void operator delete[](void* mem, MemoryPool& p)
-            { }
-        void operator delete[](void* mem)
-			{ }
+    void operator delete(void* mem, MemoryPool& p)
+        { if (mem) p.deallocate(mem); }
+    void operator delete(void* mem)
+		{ if (mem) MemoryPool::globalFree(mem); }
 
 private:
-    /* These operators are off-limits */
+    // These operations are not supported on static repeat-base objects
+    void* operator new[](size_t s, MemoryPool& p)
+        { return 0; }
+    void operator delete[](void* mem, MemoryPool& p)
+        { }
+    void operator delete[](void* mem)
+		{ }
+
+    // These operators are off-limits
 	void* operator new(size_t s) { return 0; }
     void* operator new[](size_t s) { return 0; }
 };
 
-#endif	/* INCLUDE_FB_BLK */
+#endif	// INCLUDE_FB_BLK
