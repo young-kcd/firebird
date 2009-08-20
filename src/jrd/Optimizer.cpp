@@ -756,16 +756,16 @@ USHORT OPT_nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
  **************************************/
 	DEV_BLKCHK(rsb, type_rsb);
 #ifdef SCROLLABLE_CURSORS
-/* allocate extra impure area to hold the current key,
-   plus an upper and lower bound key value, for a total
-   of three times the key length for the index */
+	// allocate extra impure area to hold the current key,
+	// plus an upper and lower bound key value, for a total
+	// of three times the key length for the index
 	size += sizeof(struct irsb_nav) + 3 * key_length;
 #else
 	size += sizeof(struct irsb_nav) + 2 * key_length;
 #endif
 	size = FB_ALIGN(size, FB_ALIGNMENT);
-/* make room for an idx structure to describe the index
-   that was used to generate this rsb */
+	// make room for an idx structure to describe the index
+	// that was used to generate this rsb
 	if (rsb->rsb_type == rsb_navigate)
 		rsb->rsb_arg[RSB_NAV_idx_offset] = (RecordSource*) (IPTR) size;
 	size += sizeof(index_desc);

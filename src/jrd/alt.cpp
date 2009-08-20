@@ -78,9 +78,8 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 
 	va_start(ptr, count);
 
-/* calculate length of event parameter block,
-   setting initial length to include version
-   and counts for each argument */
+	// calculate length of event parameter block, setting initial length to include version
+	// and counts for each argument
 
 	SLONG length = 1;
 	USHORT i = count;
@@ -92,25 +91,26 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 	va_end(ptr);
 
 	UCHAR* p = *event_buffer = (UCHAR *) gds__alloc((SLONG) length);
-/* FREE: apparently never freed */
-	if (!*event_buffer)			/* NOMEM: */
+	// FREE: apparently never freed
+	if (!*event_buffer)			// NOMEM:
 		return 0;
 	if ((*result_buffer = (UCHAR *) gds__alloc((SLONG) length)) == NULL)
-	{	/* NOMEM: */
-		/* FREE: apparently never freed */
+	{
+		// NOMEM:
+		// FREE: apparently never freed
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-/* I can find no place where these are freed */
-/* 1994-October-25 David Schnepper  */
+	// I can find no place where these are freed
+	// 1994-October-25 David Schnepper
 	gds_alloc_flag_unfreed((void *) *event_buffer);
 	gds_alloc_flag_unfreed((void *) *result_buffer);
-#endif /* DEBUG_GDS_ALLOC */
+#endif // DEBUG_GDS_ALLOC
 
-/* initialize the block with event names and counts */
+	// initialize the block with event names and counts
 
 	*p++ = EPB_version1;
 
@@ -121,7 +121,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 	{
 		const char* q = va_arg(ptr, SCHAR *);
 
-		/* Strip the blanks from the ends */
+		// Strip the blanks from the ends
 		const char* end = q + strlen(q);
 		while (--end >= q && *end == ' ')
 			;
@@ -158,9 +158,8 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
  **************************************/
 	const int MAX_NAME_LENGTH = 31;
 
-/* calculate length of event parameter block,
-   setting initial length to include version
-   and counts for each argument */
+	// calculate length of event parameter block, setting initial length to include version
+	// and counts for each argument
 
 	USHORT i = count;
 	TEXT** nb = name_buffer;
@@ -169,7 +168,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
 	{
 		const TEXT* const q = *nb++;
 
-		/* Strip trailing blanks from string */
+		// Strip trailing blanks from string
 		const char* end = q + MAX_NAME_LENGTH;
 		while (--end >= q && *end == ' ')
 			;
@@ -179,23 +178,24 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
 
 	i = count;
 	char* p = *event_buffer = (SCHAR *) gds__alloc((SLONG) length);
-/* FREE: apparently never freed */
-	if (!(*event_buffer))		/* NOMEM: */
+	// FREE: apparently never freed
+	if (!(*event_buffer))		// NOMEM:
 		return 0;
 	if ((*result_buffer = (SCHAR *) gds__alloc((SLONG) length)) == NULL)
-	{	/* NOMEM: */
-		/* FREE: apparently never freed */
+	{
+		// NOMEM:
+		// FREE: apparently never freed
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-/* I can find no place where these are freed */
-/* 1994-October-25 David Schnepper  */
+	// I can find no place where these are freed
+	// 1994-October-25 David Schnepper
 	gds_alloc_flag_unfreed((void *) *event_buffer);
 	gds_alloc_flag_unfreed((void *) *result_buffer);
-#endif /* DEBUG_GDS_ALLOC */
+#endif // DEBUG_GDS_ALLOC
 
 	*p++ = EPB_version1;
 
@@ -205,7 +205,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
 	{
 		const TEXT* q = *nb++;
 
-		/* Strip trailing blanks from string */
+		// Strip trailing blanks from string
 		const char* end = q + MAX_NAME_LENGTH;
 		while (--end >= q && *end == ' ')
 			;
@@ -258,10 +258,11 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS* status_vector,
 
 	if (count > FB_NELEM(tebs))
 		teb = (teb_t*) gds__alloc(((SLONG) sizeof(teb_t) * count));
-	/* FREE: later in this module */
+	// FREE: later in this module
 
 	if (!teb)
-	{					/* NOMEM: */
+	{
+		// NOMEM:
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_virmemexh;
 		status_vector[2] = isc_arg_end;
@@ -695,7 +696,7 @@ ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 	return isc_wait_for_event(status_vector, db_handle, events_length, events, events_update);
 }
 
-/* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
+// CVC: This non-const signature is needed for compatibility, see gds.cpp.
 SLONG API_ROUTINE isc_interprete(SCHAR* buffer, ISC_STATUS** status_vector_p)
 {
 	return gds__interprete(buffer, status_vector_p);

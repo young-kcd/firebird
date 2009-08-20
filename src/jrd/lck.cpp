@@ -73,7 +73,7 @@ static bool internal_enqueue(thread_db*, Lock*, USHORT, SSHORT, bool);
 static void set_lock_attachment(Lock*, Attachment*);
 
 
-/* globals and macros */
+// globals and macros
 
 #ifdef SUPERSERVER
 
@@ -769,14 +769,13 @@ static bool compatible(const Lock* lock1, const Lock* lock2, USHORT level2)
 	fb_assert(LCK_CHECK_LOCK(lock1));
 	fb_assert(LCK_CHECK_LOCK(lock2));
 
-/* if the locks have the same compatibility block,
-   they are always compatible regardless of level */
+	// if the locks have the same compatibility block,
+	// they are always compatible regardless of level
 
 	if (lock1->lck_compatible && lock2->lck_compatible && lock1->lck_compatible == lock2->lck_compatible)
 	{
-		/* check for a second level of compatibility as well:
-		   if a second level was specified, the locks must
-		   also be compatible at the second level */
+		// check for a second level of compatibility as well:
+		// if a second level was specified, the locks must also be compatible at the second level
 
 		if (!lock1->lck_compatible2 || !lock2->lck_compatible2 ||
 			lock1->lck_compatible2 == lock2->lck_compatible2)
@@ -846,8 +845,8 @@ static int external_ast(void* lock_void)
 	Lock* lock = static_cast<Lock*>(lock_void);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-/* go through the list, saving the next lock in the list
-   in case the current one gets deleted in the ast */
+	// go through the list, saving the next lock in the list
+	// in case the current one gets deleted in the ast
 
 	Lock* next;
 	for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next) {
@@ -875,8 +874,7 @@ static USHORT hash_func(const UCHAR* value, USHORT length)
  *
  **************************************/
 
-/* Hash the value, preserving its distribution
-   as much as possible */
+	// Hash the value, preserving its distribution as much as possible
 
 	ULONG hash_value = 0;
 	UCHAR* p = 0;
@@ -947,7 +945,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	if (hash_slot)
 		*hash_slot = hash_value;
 
-/* if no collisions found, we're done */
+	// if no collisions found, we're done
 
 	Lock* match = (*att->att_compatibility_table)[hash_value];
 	if (!match)
@@ -956,7 +954,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	if (prior)
 		*prior = & (*att->att_compatibility_table)[hash_value];
 
-/* look for an identical lock */
+	// look for an identical lock
 
 	fb_assert(LCK_CHECK_LOCK(match));
 	for (Lock* collision = match; collision; collision = collision->lck_collision)
@@ -967,7 +965,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 			collision->lck_type == lock->lck_type &&
 			collision->lck_length == lock->lck_length)
 		{
-			/* check that the keys are the same */
+			// check that the keys are the same
 
 			if (!memcmp(lock->lck_key.lck_string, collision->lck_key.lck_string, lock->lck_length))
 				return collision;
@@ -1000,7 +998,7 @@ static void hash_insert_lock(Lock* lock)
 	if (!att)
 		return;
 
-/* if no identical is returned, place it in the collision list */
+	// if no identical is returned, place it in the collision list
 
 	USHORT hash_slot;
 	Lock* identical = hash_get_lock(lock, &hash_slot, 0);
@@ -1010,7 +1008,7 @@ static void hash_insert_lock(Lock* lock)
 		return;
 	}
 
-/* place it second in the list, out of pure laziness */
+	// place it second in the list, out of pure laziness
 
 	lock->lck_identical = identical->lck_identical;
 	identical->lck_identical = lock;
@@ -1037,17 +1035,17 @@ static bool hash_remove_lock(Lock* lock, Lock** match)
 	Lock** prior;
 	Lock* next = hash_get_lock(lock, 0, &prior);
 	if (!next) {
-		/* set lck_compatible to NULL to make sure we don't
-		   try to release the lock again in bugchecking */
+		// set lck_compatible to NULL to make sure we don't
+		// try to release the lock again in bugchecking
 
 		lock->lck_compatible = NULL;
-		BUGCHECK(285);			/* lock not found in internal lock manager */
+		BUGCHECK(285);			// lock not found in internal lock manager
 	}
 
 	if (match)
 		*match = next;
 
-/* special case if our lock is the first one in the identical list */
+	// special case if our lock is the first one in the identical list
 
 	if (next == lock)
 	{
@@ -1070,7 +1068,7 @@ static bool hash_remove_lock(Lock* lock, Lock** match)
 
 	if (!next) {
 		lock->lck_compatible = NULL;
-		BUGCHECK(285);			/* lock not found in internal lock manager */
+		BUGCHECK(285);			// lock not found in internal lock manager
 	}
 
 	last->lck_identical = next->lck_identical;
@@ -1098,15 +1096,15 @@ static void internal_ast(Lock* lock)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-/* go through the list, saving the next lock in the list
-   in case the current one gets deleted in the ast */
+	// go through the list, saving the next lock in the list
+	// in case the current one gets deleted in the ast
 
 	Lock* next;
 	for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next)
 	{
 		next = match->lck_identical;
 
-		/* don't deliver the ast to any locks which are already compatible */
+		// don't deliver the ast to any locks which are already compatible
 
 		if (match != lock && !compatible(match, lock, lock->lck_logical) && match->lck_ast)
 		{
@@ -1137,10 +1135,8 @@ static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
 
 	Lock* next;
 
-/* first check if there are any locks which are
-   incompatible which do not have blocking asts;
-   if so, there is no chance of getting a compatible
-   lock */
+	// first check if there are any locks which are incompatible which do not have blocking asts;
+	// if so, there is no chance of getting a compatible lock
 
 	for (next = match; next; next = next->lck_identical)
 	{
@@ -1148,11 +1144,11 @@ static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
 			return false;
 	}
 
-/* now deliver the blocking asts, attempting to gain
-   compatibility by getting everybody to downgrade */
+	// now deliver the blocking asts, attempting to gain
+	// compatibility by getting everybody to downgrade
 	internal_ast(match);
 
-/* make one more pass to see if all locks were downgraded */
+	// make one more pass to see if all locks were downgraded
 
 	for (next = match; next; next = next->lck_identical)
 	{
@@ -1184,7 +1180,7 @@ static void internal_dequeue(thread_db* tdbb, Lock* lock)
 	fb_assert(LCK_CHECK_LOCK(lock));
 	fb_assert(lock->lck_compatible);
 
-/* if this is the last identical lock in the hash table, release it */
+	// if this is the last identical lock in the hash table, release it
 
 	Lock* match;
 	if (hash_remove_lock(lock, &match))
@@ -1199,7 +1195,7 @@ static void internal_dequeue(thread_db* tdbb, Lock* lock)
 		return;
 	}
 
-/* check for a potential downgrade */
+	// check for a potential downgrade
 
 	internal_downgrade(tdbb, match);
 }
@@ -1227,14 +1223,13 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 
 	Lock* lock;
 
-/* find the highest required lock level */
+	// find the highest required lock level
 
 	USHORT level = LCK_none;
 	for (lock = first; lock; lock = lock->lck_identical)
 		level = MAX(level, lock->lck_logical);
 
-/* if we can convert to that level, set all identical
-   locks as having that level */
+	// if we can convert to that level, set all identical locks as having that level
 
 	if (level < first->lck_physical)
 	{
@@ -1282,30 +1277,28 @@ static bool internal_enqueue(thread_db* tdbb,
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
-/* look for an identical lock */
+	// look for an identical lock
 
 	Lock* match = hash_get_lock(lock, 0, 0);
 	if (match)
 	{
-		/* if there are incompatible locks for which
-		   there are no blocking asts defined, give up */
+		// if there are incompatible locks for which there are no blocking asts defined, give up
 
 		if (!internal_compatible(match, lock, level)) {
-			/* for now return a lock conflict; it would be better if we were to
-			   do a wait on the other lock by setting some flag bit or some such */
+			// for now return a lock conflict; it would be better if we were to
+			// do a wait on the other lock by setting some flag bit or some such
 
 			Arg::Gds(isc_lock_conflict).copyTo(status);
 			return false;
 		}
 
-		/* if there is still an identical lock,
-		   convert the lock, otherwise fall
-		   through and enqueue a new one */
+		// if there is still an identical lock, convert the lock, otherwise fall
+		// through and enqueue a new one
 
 		if ( (match = hash_get_lock(lock, 0, 0)) )
 		{
-			/* if a conversion is necessary, update all identical
-			   locks to reflect the new physical lock level */
+			// if a conversion is necessary, update all identical
+			// locks to reflect the new physical lock level
 
 			if (level > match->lck_physical)
 			{
@@ -1329,8 +1322,8 @@ static bool internal_enqueue(thread_db* tdbb,
 			lock->lck_logical = level;
 			lock->lck_physical = match->lck_physical;
 
-			/* When converting a lock (from the callers point of view),
-			   then no new lock needs to be inserted. */
+			// When converting a lock (from the callers point of view),
+			// then no new lock needs to be inserted.
 
 			if (!convert_flg)
 				hash_insert_lock(lock);
@@ -1339,8 +1332,8 @@ static bool internal_enqueue(thread_db* tdbb,
 		}
 	}
 
-/* enqueue the lock, but swap out the ast and the ast argument
-   with the local ast handler, passing it the lock block itself */
+	// enqueue the lock, but swap out the ast and the ast argument
+	// with the local ast handler, passing it the lock block itself
 
 	lock->lck_id = dbb->dbb_lock_mgr->enqueue(tdbb,
 											  lock->lck_id,
@@ -1355,7 +1348,7 @@ static bool internal_enqueue(thread_db* tdbb,
 											  wait,
 											  lock->lck_owner_handle);
 
-/* If the lock exchange failed, set the lock levels appropriately */
+	// If the lock exchange failed, set the lock levels appropriately
 	if (lock->lck_id == 0)
 	{
 		lock->lck_physical = lock->lck_logical = LCK_none;

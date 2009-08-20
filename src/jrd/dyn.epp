@@ -156,7 +156,7 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
 				VIO_verb_cleanup(tdbb, transaction);
 			}
 			catch (const Exception&) {
-				BUGCHECK(290);	/* msg 290 error during savepoint backout */
+				BUGCHECK(290);	// msg 290 error during savepoint backout
 			}
 		}
 
@@ -328,7 +328,7 @@ void DYN_unsupported_verb()
  **************************************/
 
 	static const SafeArg dummy;
-	DYN_error_punt(false, 2, dummy);	/* msg 2: "unsupported DYN verb" */
+	DYN_error_punt(false, 2, dummy);	// msg 2: "unsupported DYN verb"
 }
 
 
@@ -361,8 +361,8 @@ void DYN_execute(Global* gbl,
 		++(*ptr);
 		break;
 
-		/* Runtime security-related dynamic DDL should not require licensing.
-		   A placeholder case statement for SQL 3 Roles is reserved below. */
+		// Runtime security-related dynamic DDL should not require licensing.
+		// A placeholder case statement for SQL 3 Roles is reserved below.
 
 	case isc_dyn_grant:
 		grant(gbl, ptr);
@@ -382,7 +382,7 @@ void DYN_execute(Global* gbl,
 	break;
 ***/
 	default:
-		/* make sure that the license allows metadata operations */
+		// make sure that the license allows metadata operations
 
 		switch (verb)
 		{
@@ -903,7 +903,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106);
-		/* msg 106: "Create metadata blob failed" */
+		// msg 106: "Create metadata blob failed"
 	}
 
 	*ptr = p + length;
@@ -982,7 +982,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106);
-		/* msg 106: "Create metadata blob failed" */
+		// msg 106: "Create metadata blob failed"
 	}
 
 	*ptr = end;
@@ -1105,14 +1105,14 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		case isc_dyn_grant_user:
 			{
 				GET_STRING(ptr, user);
-				/* This test may become obsolete as we now allow explicit ROLE keyword. */
+				// This test may become obsolete as we now allow explicit ROLE keyword.
 				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
 				{
 					user_type = obj_sql_role;
 					if (user == NULL_ROLE)
 					{
 						DYN_error_punt(false, 195, user.c_str());
-						/* msg 195: keyword NONE could not be used as SQL role name. */
+						// msg 195: keyword NONE could not be used as SQL role name.
 					}
 				}
 				else
@@ -1135,16 +1135,16 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
 			{
 				DYN_error_punt(false, 188, user.c_str());
-				/* msg 188: Role doesn't exist. */
+				// msg 188: Role doesn't exist.
 			}
 			if (user == NULL_ROLE)
 			{
 				DYN_error_punt(false, 195, user.c_str());
-				/* msg 195: keyword NONE could not be used as SQL role name. */
+				// msg 195: keyword NONE could not be used as SQL role name.
 			}
 			break;
 
-		case isc_dyn_sql_role_name:	/* role name in role_name_list */
+		case isc_dyn_sql_role_name:	// role name in role_name_list
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
                 DYN_error_punt(false, 196);
 			}
@@ -1156,7 +1156,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				if (object == NULL_ROLE)
 				{
 					DYN_error_punt(false, 195, object.c_str());
-					/* msg 195: keyword NONE could not be used as SQL role name. */
+					// msg 195: keyword NONE could not be used as SQL role name.
 				}
 			}
 			break;
@@ -1230,7 +1230,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				}
 				else
 				{
-					ERASE PRIV;	/* has to be 0 and options == 1 */
+					ERASE PRIV;	// has to be 0 and options == 1
 				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_l_grant1))
@@ -1261,7 +1261,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				}
 				else
 				{
-					ERASE PRIV;	/* has to be 0 and options == 1 */
+					ERASE PRIV;	// has to be 0 and options == 1
 				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_l_grant2))
@@ -1314,7 +1314,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			   for privileges of current user. AP-2008 */
 
 			if (!obj_type)
-			{	/* relation or view because we cannot distinguish at this point. */
+			{
+				// relation or view because we cannot distinguish at this point.
 				id = drq_gcg1;
 				if (!grantor_can_grant(gbl,
 										tdbb->getAttachment()->att_user->usr_user_name.c_str(),
@@ -1339,9 +1340,9 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	catch (const Exception& ex)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
-		/* we need to rundown as we have to set the env.
-		   But in case the error is from store_priveledge we have already
-		   unwound the request so passing that as null */
+		// we need to rundown as we have to set the env.
+		// But in case the error is from store_priveledge we have already
+		// unwound the request so passing that as null
 		jrd_req* req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
 		DYN_rundown_request(req1, -1);
 
@@ -1402,17 +1403,17 @@ static bool grantor_can_grant(Global* gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
-/* Verify that the input relation exists. */
+	// Verify that the input relation exists.
 
 	jrd_req* request = CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
 
 
 	try {
 
-	err_num = 182;				/* for the longjump */
+	err_num = 182;				// for the longjump
 	bool sql_relation = false;
 	bool relation_exists = false;
-/* SELECT RDB$RELATIONS failed in grant */
+	// SELECT RDB$RELATIONS failed in grant
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH
 			REL.RDB$RELATION_NAME = relation_name.c_str()
@@ -1427,18 +1428,18 @@ static bool grantor_can_grant(Global* gbl,
 	if (!relation_exists)
 	{
 		DYN_error(false, 175, SafeArg() << relation_name.c_str());
-		/* table/view .. does not exist */
+		// table/view .. does not exist
 		return false;
 	}
 
-/* Verify the the input field exists. */
+	// Verify the the input field exists.
 
 	if (field_name.length() > 0)
 	{
 		err_num = 183;
 		bool field_exists = false;
 
-		/* SELECT RDB$RELATION_FIELDS failed in grant */
+		// SELECT RDB$RELATION_FIELDS failed in grant
 		request = CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			G_FLD IN RDB$RELATION_FIELDS WITH
@@ -1453,23 +1454,23 @@ static bool grantor_can_grant(Global* gbl,
 		if (!field_exists)
 		{
 			DYN_error(false, 176, SafeArg() << field_name.c_str() << relation_name.c_str());
-			/* column .. does not exist in table/view .. */
+			// column .. does not exist in table/view ..
 			return false;
 		}
 	}
 
-/* If the current user is locksmith - allow all grants to occur */
+	// If the current user is locksmith - allow all grants to occur
 
 	if (tdbb->getAttachment()->locksmith()) {
 		return true;
 	}
 
-/* If this is a non-sql table, then the owner will probably not have any
-   entries in the rdb$user_privileges table.  Give the owner of a GDML
-   table all privileges. */
+	// If this is a non-sql table, then the owner will probably not have any
+	// entries in the rdb$user_privileges table.  Give the owner of a GDML
+	// table all privileges.
 	err_num = 184;
 	bool grantor_is_owner = false;
-/* SELECT RDB$RELATIONS/RDB$OWNER_NAME failed in grant */
+	// SELECT RDB$RELATIONS/RDB$OWNER_NAME failed in grant
 
 	request = CMP_find_request(tdbb, drq_gcg2, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1495,11 +1496,11 @@ static bool grantor_can_grant(Global* gbl,
 	SSHORT go_fld = -1;
 
 
-/* Verify that the grantor has the grant option for this relation/field
-   in the rdb$user_privileges.  If not, then we don't need to look further. */
+	// Verify that the grantor has the grant option for this relation/field
+	// in the rdb$user_privileges.  If not, then we don't need to look further.
 
 	err_num = 185;
-/* SELECT RDB$USER_PRIVILEGES failed in grant */
+	// SELECT RDB$USER_PRIVILEGES failed in grant
 
 	request = CMP_find_request(tdbb, drq_gcg1, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1545,7 +1546,7 @@ static bool grantor_can_grant(Global* gbl,
 			DYN_error(false,
 					(USHORT)(top_level ? 167 : 168),
 					SafeArg() << privilege << field_name.c_str() << relation_name.c_str());
-			/* no grant option for privilege .. on column .. of [base] table/view .. */
+			// no grant option for privilege .. on column .. of [base] table/view ..
 			return false;
 		}
 
@@ -1556,7 +1557,7 @@ static bool grantor_can_grant(Global* gbl,
 				DYN_error(false,
 						(USHORT)(top_level ? 169 : 170),
 						SafeArg() << privilege << relation_name.c_str() << field_name.c_str());
-				/* no grant option for privilege .. on [base] table/view .. (for column ..) */
+				// no grant option for privilege .. on [base] table/view .. (for column ..)
 				return false;
 			}
 
@@ -1565,7 +1566,7 @@ static bool grantor_can_grant(Global* gbl,
 				DYN_error(false,
 						(USHORT)(top_level ? 171 : 172),
 						SafeArg() << privilege << relation_name.c_str() << field_name.c_str());
-				/* no .. privilege with grant option on [base] table/view .. (for column ..) */
+				// no .. privilege with grant option on [base] table/view .. (for column ..)
 				return false;
 			}
 		}
@@ -1575,31 +1576,30 @@ static bool grantor_can_grant(Global* gbl,
 		if (go_rel == 0)
 		{
 			DYN_error(false, 173, SafeArg() << privilege << relation_name.c_str());
-			/* no grant option for privilege .. on table/view ..  */
+			// no grant option for privilege .. on table/view ..
 			return false;
 		}
 
 		if (go_rel == -1)
 		{
 			DYN_error(false, 174, SafeArg() << privilege << relation_name.c_str());
-			/* no .. privilege with grant option on table/view .. */
+			// no .. privilege with grant option on table/view ..
 			return false;
 		}
 	}
 
-/* If the grantor is not the owner of the relation, then we don't need to
-   check the base table(s)/view(s) because that check was performed when
-   the grantor was given its privileges. */
+	// If the grantor is not the owner of the relation, then we don't need to
+	// check the base table(s)/view(s) because that check was performed when
+	// the grantor was given its privileges.
 
 	if (!grantor_is_owner) {
 		return true;
 	}
 
-/* Find all the base fields/relations and check for the correct
-   grant privileges on them. */
+	// Find all the base fields/relations and check for the correct grant privileges on them.
 
 	err_num = 186;
-/* SELECT RDB$VIEW_RELATIONS/RDB$RELATION_FIELDS/... failed in grant */
+	// SELECT RDB$VIEW_RELATIONS/RDB$RELATION_FIELDS/... failed in grant
 
 	request = CMP_find_request(tdbb, drq_gcg3, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1642,7 +1642,7 @@ static bool grantor_can_grant(Global* gbl,
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, err_num);
-		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
+		// msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant"
 
 		return false;
 	}
@@ -1685,11 +1685,7 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 	}
 	else
 	{
-		/****************************************************
-		**
-		**  role name not exist.
-		**
-		*****************************************************/
+		// role name not exist.
 		DYN_error(false, 188, SafeArg() << role_name.c_str());
 		return false;
 	}
@@ -1723,12 +1719,8 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 
 	if (!grantable)
 	{
-		/****************************************************
-		**
-		**  189: user have no admin option.
-		**  190: user is not a member of the role.
-		**
-		*****************************************************/
+		// 189: user have no admin option.
+		// 190: user is not a member of the role.
 		DYN_error(false, no_admin ? 189 : 190, SafeArg() << grantor.c_str() << role_name.c_str());
 		return false;
 	}
@@ -1797,7 +1789,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
-/* Stash away a copy of the revoker's name, in uppercase form */
+	// Stash away a copy of the revoker's name, in uppercase form
 
 	const UserId* revoking_user = tdbb->getAttachment()->att_user;
 	MetaName revoking_as_user_name(revoking_user->usr_user_name);
@@ -1837,7 +1829,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
-			/* This test may become obsolete as we now allow explicit ROLE keyword. */
+			// This test may become obsolete as we now allow explicit ROLE keyword.
 			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
 			{
 				user_type = obj_sql_role;
@@ -1866,16 +1858,16 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
 			{
 				DYN_error_punt(false, 188, user.c_str());
-				/* msg 188: Role doesn't exist. */
+				// msg 188: Role doesn't exist.
 			}
 			if (user == NULL_ROLE)
 			{
 				DYN_error_punt(false, 195, user.c_str());
-				/* msg 195: keyword NONE could not be used as SQL role name. */
+				// msg 195: keyword NONE could not be used as SQL role name.
 			}
 		    break;
 
-		case isc_dyn_sql_role_name:	/* role name in role_name_list */
+		case isc_dyn_sql_role_name:	// role name in role_name_list
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
                 DYN_error_punt(false, 196);
 			}
@@ -1883,11 +1875,12 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			{
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
-/* CVC: Make this a warning in the future.
+/*
+				CVC: Make this a warning in the future.
 				if (object == NULL_ROLE)
 					DYN_error_punt(false, 195, object.c_str());
 */
-				/* msg 195: keyword NONE could not be used as SQL role name. */
+				// msg 195: keyword NONE could not be used as SQL role name.
 			}
 			break;
 
@@ -1978,10 +1971,10 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				if (!DYN_REQUEST(drq_e_grant2))
 					DYN_REQUEST(drq_e_grant2) = request;
 
-				/* revoking a permission at the table level implies
-				   revoking the perm. on all columns. So for all fields
-				   in this table which have been granted the privilege, we
-				   erase the entries from RDB$USER_PRIVILEGES. */
+				// revoking a permission at the table level implies
+				// revoking the perm. on all columns. So for all fields
+				// in this table which have been granted the privilege, we
+				// erase the entries from RDB$USER_PRIVILEGES.
 
 				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
 				{
@@ -1999,12 +1992,11 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 
 		if (options && grant_erased)
 		{
-			/* Add the privilege without the grant option
-			 * There is a modify trigger on the rdb$user_privileges
-			 * which disallows the table from being updated.  It would
-			 * have to be changed such that only the grant_option
-			 * field can be updated.
-			 */
+			// Add the privilege without the grant option
+			// There is a modify trigger on the rdb$user_privileges
+			// which disallows the table from being updated.  It would
+			// have to be changed such that only the grant_option
+			// field can be updated.
 
 			const USHORT old_id = id;
 			id = drq_s_grant;
@@ -2034,24 +2026,24 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	catch (const Exception& ex)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
-		/* we need to rundown as we have to set the env.
-		   But in case the error is from store_priveledge we have already
-		   unwound the request so passing that as null */
+		// we need to rundown as we have to set the env.
+		// But in case the error is from store_priveledge we have already
+		// unwound the request so passing that as null
 		DYN_rundown_request(((id == drq_s_grant) ? NULL : request), -1);
 		if (id == drq_e_grant1)
 		{
 			DYN_error_punt(true, 111);
-			/* msg 111: "ERASE RDB$USER_PRIVILEGES failed in revoke(1)" */
+			// msg 111: "ERASE RDB$USER_PRIVILEGES failed in revoke(1)"
 		}
 		else if (id == drq_e_grant2)
 		{
 			DYN_error_punt(true, 113);
-			/* msg 113: "ERASE RDB$USER_PRIVILEGES failed in revoke (3)" */
+			// msg 113: "ERASE RDB$USER_PRIVILEGES failed in revoke (3)"
 		}
 		else
 		{
 			ERR_punt();
-			/* store_priviledge error already handled, just bail out */
+			// store_priviledge error already handled, just bail out
 		}
 	}
 }
@@ -2083,7 +2075,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);
-			/* This test may become obsolete as we now allow explicit ROLE keyword. */
+			// This test may become obsolete as we now allow explicit ROLE keyword.
 			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
 			{
 				user_type = obj_sql_role;
@@ -2110,12 +2102,12 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, user);
 			user_type = obj_sql_role;
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
-				DYN_error_punt(false, 188, user.c_str()); /* msg 188: Role doesn't exist. */
+				DYN_error_punt(false, 188, user.c_str()); // msg 188: Role doesn't exist.
 			}
 			if (user == NULL_ROLE)
 			{
 				DYN_error_punt(false, 195, user.c_str());
-				/* msg 195: keyword NONE could not be used as SQL role name. */
+				// msg 195: keyword NONE could not be used as SQL role name.
 			}
 		    break;
 
@@ -2175,7 +2167,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 		ex.stuff_exception(tdbb->tdbb_status_vector);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 255);
-		/* msg 255: "ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL" */
+		// msg 255: "ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL"
 	}
 }
 
@@ -2294,7 +2286,7 @@ static void store_privilege(Global* gbl,
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 79);
-		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
+		// msg 79: "STORE RDB$USER_PRIVILEGES failed in grant"
 	}
 }
 
