@@ -699,4 +699,3 @@ public:
 } PACKET;
 
 #endif // REMOTE_PROTOCOL_H
-

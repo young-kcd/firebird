@@ -66,9 +66,9 @@
 #endif
 
 #ifdef SUPERSERVER
-const bool sharedDbb = true;
+static const bool SHARED_DBB = true;
 #else
-const bool sharedDbb = false;
+static const bool SHARED_DBB = false;
 #endif
 
 
@@ -887,7 +887,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	writer.putRecord(record);
 	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 
-	if (sharedDbb)
+	if (SHARED_DBB)
 	{
 		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
@@ -961,7 +961,7 @@ bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& write
 	writer.putRecord(record);
 	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 
-	if (sharedDbb)
+	if (SHARED_DBB)
 	{
 		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}

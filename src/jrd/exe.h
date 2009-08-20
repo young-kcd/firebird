@@ -584,10 +584,10 @@ struct Resource
 	};
 
 	enum rsc_s	rsc_type;
-	USHORT		rsc_id;			// Id of the resource
-	jrd_rel*	rsc_rel;		// Relation block
-	jrd_prc*	rsc_prc;		// Procedure block
-	Collation*	rsc_coll;		// Collation block
+	USHORT		rsc_id;		// Id of the resource
+	jrd_rel*	rsc_rel;	// Relation block
+	jrd_prc*	rsc_prc;	// Procedure block
+	Collation*	rsc_coll;	// Collation block
 
 	static bool greaterThan(const Resource& i1, const Resource& i2)
 	{

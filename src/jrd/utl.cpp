@@ -1020,7 +1020,7 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb, SSHORT* dpb_size, const 
 
 	bool single_user_seen = false;
 
-	if ((*dpb) && (*dpb_size))
+	if (*dpb && *dpb_size)
 	{
 		const UCHAR* p = *dpb;
 		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;)

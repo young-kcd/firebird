@@ -676,7 +676,7 @@ static SINT64 ask()
 		while ((c = getchar()) != '\n' && !feof(stdin) && !ferror(stdin) && p < end)
 			*p++ = c;
 		if (p == response)
-			return ~(SINT64(0));
+			return ~SINT64(0);
 		*p = 0;
 		ALICE_down_case(response, response, sizeof(response));
 		if (!strcmp(response, "n") || !strcmp(response, "c") || !strcmp(response, "r"))

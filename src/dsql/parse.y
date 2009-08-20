@@ -5928,7 +5928,7 @@ int Parser::yylexAux()
 		FB_UINT64 number		= 0;
 		FB_UINT64 limit_by_10	= MAX_SINT64 / 10;
 
-		for (--lex.ptr ; lex.ptr < lex.end; lex.ptr++)
+		for (--lex.ptr; lex.ptr < lex.end; lex.ptr++)
 		{
 			c = *lex.ptr;
 			if (have_exp_digit && (! (classes(c) & CHR_DIGIT)))

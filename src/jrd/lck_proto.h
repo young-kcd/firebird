@@ -48,4 +48,3 @@ void	LCK_re_post(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_write_data(Jrd::thread_db*, Jrd::Lock*, SLONG);
 
 #endif // JRD_LCK_PROTO_H
-

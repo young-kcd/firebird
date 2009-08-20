@@ -3619,7 +3619,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 		SRQ_LOOP(lock->lbl_requests, que_of_lbl_requests)
 		{
 			const lrq* const pending =
-				(lrq*) ((UCHAR *) que_of_lbl_requests - OFFSET(lrq*, lrq_lbl_requests));
+				(lrq*) ((UCHAR*) que_of_lbl_requests - OFFSET(lrq*, lrq_lbl_requests));
 			if (SRQ_REL_PTR(pending) == owner_own_pending_request)
 			{
 				found_pending = true;

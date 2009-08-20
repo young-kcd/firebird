@@ -87,4 +87,3 @@ const int TDR_TRANSACTION_ID	= 3;
 const int TDR_REMOTE_SITE		= 4;
 
 #endif // JRD_ACL_H
-

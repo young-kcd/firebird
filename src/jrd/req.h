@@ -128,9 +128,9 @@ const int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 
 // Store allocation policy types.  Parameter to DPM_store()
 
-const USHORT DPM_primary	= 1;		// New primary record
-const USHORT DPM_secondary	= 2;		// Chained version of primary record
-const USHORT DPM_other		= 3;		// Independent (or don't care) record
+const USHORT DPM_primary	= 1;	// New primary record
+const USHORT DPM_secondary	= 2;	// Chained version of primary record
+const USHORT DPM_other		= 3;	// Independent (or don't care) record
 
 // Record block (holds data, remember data?)
 
@@ -153,9 +153,9 @@ public:
 
 // rec_flags
 
-const UCHAR REC_same_tx		= 1;		// record inserted/updated and deleted by same tx
-const UCHAR REC_gc_active	= 2;		// relation garbage collect record block in use
-const UCHAR REC_new_version	= 4;		// savepoint created new record version and deleted it
+const UCHAR REC_same_tx		= 1;	// record inserted/updated and deleted by same tx
+const UCHAR REC_gc_active	= 2;	// relation garbage collect record block in use
+const UCHAR REC_new_version	= 4;	// savepoint created new record version and deleted it
 
 // save record_param block
 
@@ -380,4 +380,3 @@ public:
 } //namespace Jrd
 
 #endif // JRD_REQ_H
-
