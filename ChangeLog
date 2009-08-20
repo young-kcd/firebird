@@ -1,3 +1,94 @@
+2009-08-20 13:46  robocop
+
+	* firebird2/src/lock/lock.cpp (1.202):
+
+	Misc.
+
+2009-08-20 13:18  robocop
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.118), alt.cpp (1.83),
+	dpm.epp (1.101), dyn.epp (1.151), lck.cpp (1.103):
+
+	Comments.
+
+2009-08-20 12:19  robocop
+
+	* firebird2/src/jrd/opt.cpp (1.357):
+
+	Mostly comments.
+
+2009-08-20 08:25  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.139):
+
+	Mostly comments.
+
+2009-08-20 08:12  robocop
+
+	* firebird2/src/include/fb_blk.h (1.21):
+
+	Fix strange indentation.
+
+2009-08-20 08:11  robocop
+
+	* firebird2/src/utilities/ntrace/TracePluginConfig.h (1.5):
+
+	Comment unused enum.
+
+2009-08-20 03:55  asfernandes
+
+	* firebird2/src/jrd/BlrReader.h (1.5):
+
+	Fix warning with HP-UX compiler - reported by Bill
+
+2009-08-20 03:32  asfernandes
+
+	* firebird2/src/: alice/tdr.cpp (1.67), dsql/parse.y (1.308),
+	jrd/DatabaseSnapshot.cpp (1.112), jrd/acl.h (1.8), jrd/exe.h
+	(1.137), jrd/lck_proto.h (1.21), jrd/req.h (1.97), jrd/utl.cpp
+	(1.138), lock/lock.cpp (1.201), remote/protocol.h (1.53):
+
+	Misc
+
+2009-08-19 20:00  dimitr
+
+	* firebird2/src/include/fb_blk.h (1.20):
+
+	Warnings.
+
+2009-08-19 19:05  dimitr
+
+	* firebird2/src/lock/print.cpp (1.91):
+
+	Added ISC_mutex_fini(), per Claudio's request. Also added
+	ISC_unmap_file().  Moved the consistency switch handling into the
+	proper scope. Fixed the memory allocation.
+
+2009-08-19 16:12  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.137):
+
+	Style.
+
+2009-08-19 15:01  robocop
+
+	* firebird2/src/common/cvt.cpp (1.34):
+
+	Style.
+
+2009-08-19 14:59  robocop
+
+	* firebird2/src/gpre/: cob.cpp (1.85), rmc.cpp (1.30):
+
+	Seems more readable to me.
+
+2009-08-19 14:58  robocop
+
+	* firebird2/src/: common/utils.cpp (1.74), qli/command.cpp (1.36),
+	qli/show.epp (1.55):
+
+	Misc and style.
+
 2009-08-19 12:14  dimitr
 
 	* firebird2/src/jrd/sort.cpp (1.132):
