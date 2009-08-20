@@ -40,7 +40,7 @@ public:
 		// points to something before start. In this case, we set the end to the
 		// max possible address.
 		if (end < start)
-			end = ((UCHAR*) 0) - 1;
+			end = (UCHAR*) ~U_IPTR(0);
 	}
 
 	BlrReader()
