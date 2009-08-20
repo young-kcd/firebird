@@ -450,7 +450,7 @@ SRQ_PTR LockManager::enqueue(thread_db* tdbb,
 	else
 	{
 		ASSERT_ACQUIRED;
-		request = (lrq*) ((UCHAR *) SRQ_NEXT(m_header->lhb_free_requests) -
+		request = (lrq*) ((UCHAR*) SRQ_NEXT(m_header->lhb_free_requests) -
 						 OFFSET(lrq*, lrq_lbl_requests));
 		remove_que(&request->lrq_lbl_requests);
 	}
@@ -624,7 +624,7 @@ UCHAR LockManager::downgrade(thread_db* tdbb, const SRQ_PTR request_offset)
 	srq* lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
-		const lrq* pending = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		const lrq* pending = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 		if (pending->lrq_flags & LRQ_pending && pending != request)
 		{
 			pending_state = MAX(pending->lrq_requested, pending_state);
@@ -797,7 +797,7 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
 			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
-			const lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
 			if (lock->lbl_parent != parent->lrq_lock)
 				continue;
@@ -835,7 +835,7 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_backward);
 			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward))
 		{
-			const lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
 			if (lock->lbl_parent != parent->lrq_lock)
 				continue;
@@ -1219,7 +1219,7 @@ lbl* LockManager::alloc_lock(USHORT length, ISC_STATUS* status_vector)
 	srq* lock_srq;
 	SRQ_LOOP(m_header->lhb_free_locks, lock_srq)
 	{
-		lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
+		lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
 		// Here we use the "first fit" approach which costs us some memory,
 		// but works fast. The "best fit" one is proven to be unacceptably slow.
 		// Maybe there could be some compromise, e.g. limiting the number of "best fit"
@@ -1293,7 +1293,7 @@ void LockManager::blocking_action(thread_db* tdbb,
 			owner->own_flags &= ~OWN_signaled;
 			break;
 		}
-		lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
+		lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		lock_ast_t routine = request->lrq_ast_routine;
 		void* arg = request->lrq_ast_argument;
 		remove_que(&request->lrq_own_blocks);
@@ -1387,7 +1387,7 @@ void LockManager::blocking_action_thread()
 			srq* lock_srq;
 			SRQ_LOOP(process->prc_owners, lock_srq)
 			{
-				own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_prc_owners));
+				own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
 				blocking_owners.add(SRQ_REL_PTR(owner));
 			}
 
@@ -1447,7 +1447,7 @@ void LockManager::bug_assert(const TEXT* string, ULONG line)
 	TEXT buffer[MAXPATHLEN + 100];
 	lhb LOCK_header_copy;
 
-	sprintf((char *) buffer, "%s %"ULONGFORMAT": lock assertion failure: %.60s\n",
+	sprintf((char*) buffer, "%s %"ULONGFORMAT": lock assertion failure: %.60s\n",
 			__FILE__, line, string);
 
 	// Copy the shared memory so we can examine its state when we crashed
@@ -1581,7 +1581,7 @@ bool LockManager::create_owner(ISC_STATUS* status_vector,
 	srq* lock_srq;
 	SRQ_LOOP(m_header->lhb_owners, lock_srq)
 	{
-		own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
+		own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_lhb_owners));
 		if (owner->own_owner_id == owner_id && (UCHAR) owner->own_owner_type == owner_type)
 		{
 			purge_owner(DUMMY_OWNER, owner);	// purging owner_offset has not been set yet
@@ -1643,7 +1643,7 @@ bool LockManager::create_process(ISC_STATUS* status_vector)
 	srq* lock_srq;
 	SRQ_LOOP(m_header->lhb_processes, lock_srq)
 	{
-		prc* process = (prc*) ((UCHAR *) lock_srq - OFFSET(prc*, prc_lhb_processes));
+		prc* process = (prc*) ((UCHAR*) lock_srq - OFFSET(prc*, prc_lhb_processes));
 		if (process->prc_process_id == PID)
 		{
 			purge_process(process);
@@ -1661,7 +1661,7 @@ bool LockManager::create_process(ISC_STATUS* status_vector)
 	}
 	else
 	{
-		process = (prc*) ((UCHAR *) SRQ_NEXT(m_header->lhb_free_processes) -
+		process = (prc*) ((UCHAR*) SRQ_NEXT(m_header->lhb_free_processes) -
 					   OFFSET(prc*, prc_lhb_processes));
 		remove_que(&process->prc_lhb_processes);
 	}
@@ -1730,7 +1730,7 @@ void LockManager::deadlock_clear()
 	srq* lock_srq;
 	SRQ_LOOP(m_header->lhb_owners, lock_srq)
 	{
-		own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
+		own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_lhb_owners));
 		SRQ_PTR pending_offset = owner->own_pending_request;
 		if (!pending_offset)
 			continue;
@@ -1836,7 +1836,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 	srq* lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
-		lrq* block = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		lrq* block = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 
 		if (!lockOrdering() || conversion)
 		{
@@ -2008,7 +2008,7 @@ lbl* LockManager::find_lock(SRQ_PTR parent,
 		for (USHORT l = 0; l < length; l++)
 		{
 			if (!(l & 3))
-				p = (UCHAR *) &hash_value;
+				p = (UCHAR*) &hash_value;
 			*p++ += *q++;
 		}
 	} // scope
@@ -2022,7 +2022,7 @@ lbl* LockManager::find_lock(SRQ_PTR parent,
 	for (srq* lock_srq = (SRQ) SRQ_ABS_PTR(hash_header->srq_forward);
 		 lock_srq != hash_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 	{
-		lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
+		lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
 		if (lock->lbl_series != series || lock->lbl_length != length || lock->lbl_parent != parent)
 		{
 			continue;
@@ -2347,7 +2347,7 @@ void LockManager::insert_data_que(lbl* lock)
 		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
 			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
-			const lbl* lock2 = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* lock2 = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock2->lbl_series == lock->lbl_series);
 			if (lock2->lbl_parent != lock->lbl_parent)
 				continue;
@@ -2590,7 +2590,7 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 	SRQ lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
-		lrq* const block = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		lrq* const block = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 
 		// Figure out if this lock request is blocking our own lock request.
 		// Of course, our own request cannot block ourselves.  Compatible
@@ -2714,7 +2714,7 @@ void LockManager::post_pending(lbl* lock)
 	SRQ lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
-		lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 		if (!(request->lrq_flags & LRQ_pending))
 			continue;
 		if (request->lrq_state)
@@ -2813,7 +2813,7 @@ bool LockManager::probe_processes()
 	SRQ lock_srq;
 	SRQ_LOOP(m_header->lhb_processes, lock_srq)
 	{
-		prc* const process = (prc*) ((UCHAR *) lock_srq - OFFSET(prc*, prc_lhb_processes));
+		prc* const process = (prc*) ((UCHAR*) lock_srq - OFFSET(prc*, prc_lhb_processes));
 		if (process->prc_process_id != PID && !ISC_check_process_existence(process->prc_process_id))
 		{
 			dead_processes.add(process);
@@ -2854,7 +2854,7 @@ void LockManager::purge_owner(SRQ_PTR purging_owner_offset, own* owner)
 	SRQ lock_srq;
 	while ((lock_srq = SRQ_NEXT(owner->own_requests)) != &owner->own_requests)
 	{
-		lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_requests));
+		lrq* request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_requests));
 		release_request(request);
 	}
 
@@ -2862,7 +2862,7 @@ void LockManager::purge_owner(SRQ_PTR purging_owner_offset, own* owner)
 
 	while ((lock_srq = SRQ_NEXT(owner->own_blocks)) != &owner->own_blocks)
 	{
-		lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
+		lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		remove_que(&request->lrq_own_blocks);
 		request->lrq_type = type_null;
 		insert_tail(&m_header->lhb_free_requests, &request->lrq_lbl_requests);
@@ -2901,7 +2901,7 @@ void LockManager::purge_process(prc* process)
 	SRQ lock_srq;
 	while ((lock_srq = SRQ_NEXT(process->prc_owners)) != &process->prc_owners)
 	{
-		own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_prc_owners));
+		own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
 		purge_owner(SRQ_REL_PTR(owner), owner);
 	}
 
@@ -2937,7 +2937,7 @@ void LockManager::remap_local_owners()
 	srq* lock_srq;
 	SRQ_LOOP(process->prc_owners, lock_srq)
 	{
-		own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_prc_owners));
+		own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
 		if (owner->own_flags & OWN_waiting)
 		{
 			ISC_event_post(&owner->own_wakeup);
@@ -3271,7 +3271,7 @@ void LockManager::validate_parent(const lhb* alhb, const SRQ_PTR isSomeoneParent
 	const srq* lock_srq;
 	SRQ_LOOP(owner->own_requests, lock_srq)
 	{
-		const lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_requests));
+		const lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_requests));
 
 		if (!(request->lrq_flags & LRQ_repost))
 		{
@@ -3323,7 +3323,7 @@ void LockManager::validate_lhb(const lhb* alhb)
 		const srq* const que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		const own* const owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
+		const own* const owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_lhb_owners));
 		validate_owner(SRQ_REL_PTR(owner), EXPECT_inuse);
 	}
 
@@ -3333,7 +3333,7 @@ void LockManager::validate_lhb(const lhb* alhb)
 		const srq* const que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		const own* const owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_lhb_owners));
+		const own* const owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_lhb_owners));
 		validate_owner(SRQ_REL_PTR(owner), EXPECT_freed);
 	}
 
@@ -3343,7 +3343,7 @@ void LockManager::validate_lhb(const lhb* alhb)
 		const srq* const que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		const lbl* const lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
+		const lbl* const lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_hash));
 		validate_lock(SRQ_REL_PTR(lock), EXPECT_freed, (SRQ_PTR) 0);
 	}
 
@@ -3353,7 +3353,7 @@ void LockManager::validate_lhb(const lhb* alhb)
 		const srq* const que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
 
-		const lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		const lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 		validate_request(SRQ_REL_PTR(request), EXPECT_freed, RECURSE_not);
 	}
 
@@ -3413,7 +3413,7 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		// Any requests of a freed lock should also be free
 		CHECK(freed == EXPECT_inuse);
 
-		const lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		const lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 		// Note: Don't try to validate_request here, it leads to recursion
 
 		if (SRQ_REL_PTR(request) == lrq_ptr)
@@ -3527,7 +3527,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 
 		CHECK(freed == EXPECT_inuse);	// should not be in loop for freed owner
 
-		const lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_requests));
+		const lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_requests));
 		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
 		CHECK(request->lrq_owner == own_ptr);
 
@@ -3543,7 +3543,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 				const srq* const que2_next = SRQ_NEXT((*que2));
 				CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));
 
-				const lrq* const request2 = (lrq*) ((UCHAR *) que2 - OFFSET(lrq*, lrq_own_blocks));
+				const lrq* const request2 = (lrq*) ((UCHAR*) que2 - OFFSET(lrq*, lrq_own_blocks));
 				CHECK(request2->lrq_owner == own_ptr);
 
 				if (SRQ_REL_PTR(request2) == SRQ_REL_PTR(request))
@@ -3565,7 +3565,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 
 		CHECK(freed == EXPECT_inuse);	// should not be in loop for freed owner
 
-		const lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
+		const lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		validate_request(SRQ_REL_PTR(request), EXPECT_inuse, RECURSE_not);
 
 		LOCK_TRACE(("Validate own_block: %ld\n", SRQ_REL_PTR(request)));
@@ -3587,7 +3587,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 			const srq* const que2_next = SRQ_NEXT((*que2));
 			CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));
 
-			const lrq* const request2 = (lrq*) ((UCHAR *) que2 - OFFSET(lrq*, lrq_own_requests));
+			const lrq* const request2 = (lrq*) ((UCHAR*) que2 - OFFSET(lrq*, lrq_own_requests));
 			CHECK(request2->lrq_owner == own_ptr);
 
 			if (SRQ_REL_PTR(request2) == SRQ_REL_PTR(request))
