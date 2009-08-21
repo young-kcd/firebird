@@ -779,13 +779,11 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 	parent = (lrq*) SRQ_ABS_PTR(parent_request);	// remap
 
 	++m_header->lhb_query_data;
-	srq* data_header = &m_header->lhb_data[series];
+	const srq& data_header = m_header->lhb_data[series];
 	SLONG data = 0, count = 0;
 
 	// Simply walk the lock series data queue forward for the minimum
 	// and backward for the maximum -- it's maintained in sorted order.
-
-	SRQ lock_srq;
 
 	switch (aggregate)
 	{
@@ -794,8 +792,8 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 	case LCK_AVG:
 	case LCK_SUM:
 	case LCK_ANY:
-		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
-			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
+		for (const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_forward);
+			 lock_srq != &data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
 			const lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
@@ -832,8 +830,8 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const 
 		break;
 
 	case LCK_MAX:
-		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_backward);
-			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward))
+		for (const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_backward);
+			 lock_srq != &data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward))
 		{
 			const lbl* lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
@@ -875,7 +873,7 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
 
 	++m_header->lhb_read_data;
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	// Re-init after a potential remap
-	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
+	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	const SLONG data = lock->lbl_data;
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++m_header->lhb_operations[lock->lbl_series];
@@ -917,10 +915,9 @@ SLONG LockManager::readData2(SRQ_PTR parent_request,
 		++m_header->lhb_operations[0];
 
 	SRQ_PTR parent;
-	lrq* request;
 	if (parent_request)
 	{
-		request = get_request(parent_request);
+		lrq* request = get_request(parent_request);
 		parent = request->lrq_lock;
 	}
 	else

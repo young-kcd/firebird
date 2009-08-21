@@ -356,8 +356,10 @@ void DYN_execute(Global* gbl,
 	{
 	case isc_dyn_begin:
 		while (**ptr != isc_dyn_end)
+		{
 			DYN_execute(gbl, ptr, relation_name, field_name,
 						trigger_name, function_name, procedure_name);
+		}
 		++(*ptr);
 		break;
 

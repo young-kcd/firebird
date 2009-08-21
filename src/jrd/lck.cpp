@@ -256,12 +256,13 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 	Database* dbb = lock->lck_dbb;
 
-	Attachment* old_attachment = lock->lck_attachment;
+	Attachment* const old_attachment = lock->lck_attachment;
 	set_lock_attachment(lock, tdbb->getAttachment());
 
 	const bool result = CONVERT(tdbb, lock, level, wait);
 
-	if (!result) {
+	if (!result)
+	{
 	    set_lock_attachment(lock, old_attachment);
 
 		switch (tdbb->tdbb_status_vector[1])
@@ -304,7 +305,8 @@ bool LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
 	lock->lck_logical = level;
 	Database* dbb = lock->lck_dbb;
 
-	if (dbb->dbb_ast_flags & DBB_assert_locks) {
+	if (dbb->dbb_ast_flags & DBB_assert_locks)
+	{
 		lock->lck_logical = old_level;
 		return LCK_convert(tdbb, lock, level, LCK_NO_WAIT);
 	}
@@ -329,13 +331,15 @@ void LCK_downgrade(thread_db* tdbb, Lock* lock)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	if (lock->lck_id && lock->lck_physical != LCK_none) {
+	if (lock->lck_id && lock->lck_physical != LCK_none)
+	{
 		const USHORT level = DOWNGRADE(tdbb, lock);
 		if (!lock->lck_compatible)
 			lock->lck_physical = lock->lck_logical = level;
 	}
 
-	if (lock->lck_physical == LCK_none) {
+	if (lock->lck_physical == LCK_none)
+	{
 		lock->lck_id = lock->lck_data = 0;
 	    set_lock_attachment(lock, NULL);
 	}
@@ -578,7 +582,8 @@ bool LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	lock->lck_logical = level;
 	Database* dbb = lock->lck_dbb;
 
-	if (dbb->dbb_ast_flags & DBB_assert_locks) {
+	if (dbb->dbb_ast_flags & DBB_assert_locks)
+	{
 		lock->lck_logical = LCK_none;
 		return LCK_lock(tdbb, lock, level, wait);
 	}
@@ -693,7 +698,8 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	if (lock->lck_compatible) {
+	if (lock->lck_compatible)
+	{
 		if (lock->lck_ast) {
 			(*lock->lck_ast)(lock->lck_object);
 		}
@@ -849,7 +855,8 @@ static int external_ast(void* lock_void)
 	// in case the current one gets deleted in the ast
 
 	Lock* next;
-	for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next) {
+	for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next)
+	{
 		next = match->lck_identical;
 		if (match->lck_ast) {
 			(*match->lck_ast)(match->lck_object);
@@ -880,9 +887,10 @@ static USHORT hash_func(const UCHAR* value, USHORT length)
 	UCHAR* p = 0;
 	const UCHAR* q = value;
 
-	for (USHORT l = 0; l < length; l++) {
+	for (USHORT l = 0; l < length; l++)
+	{
 		if (!(l & 3))
-			p = (UCHAR *) & hash_value;
+			p = (UCHAR*) &hash_value;
 		*p++ = *q++;
 	}
 
@@ -908,7 +916,8 @@ static void hash_allocate(Lock* lock)
 	Database* dbb = lock->lck_dbb;
 
 	Attachment* attachment = lock->lck_attachment;
-	if (attachment) {
+	if (attachment)
+	{
 		attachment->att_compatibility_table =
 			vec<Lock*>::newVector(*dbb->dbb_permanent, LOCK_HASH_SIZE);
 	}
@@ -933,7 +942,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Attachment* att = lock->lck_attachment;
+	Attachment* const att = lock->lck_attachment;
 	if (!att)
 		return NULL;
 
@@ -994,7 +1003,7 @@ static void hash_insert_lock(Lock* lock)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Attachment* att = lock->lck_attachment;
+	Attachment* const att = lock->lck_attachment;
 	if (!att)
 		return;
 
@@ -1002,7 +1011,8 @@ static void hash_insert_lock(Lock* lock)
 
 	USHORT hash_slot;
 	Lock* identical = hash_get_lock(lock, &hash_slot, 0);
-	if (!identical) {
+	if (!identical)
+	{
 		lock->lck_collision = (*att->att_compatibility_table)[hash_slot];
 		(*att->att_compatibility_table)[hash_slot] = lock;
 		return;
@@ -1034,7 +1044,8 @@ static bool hash_remove_lock(Lock* lock, Lock** match)
 
 	Lock** prior;
 	Lock* next = hash_get_lock(lock, 0, &prior);
-	if (!next) {
+	if (!next)
+	{
 		// set lck_compatible to NULL to make sure we don't
 		// try to release the lock again in bugchecking
 
@@ -1049,7 +1060,8 @@ static bool hash_remove_lock(Lock* lock, Lock** match)
 
 	if (next == lock)
 	{
-		if (lock->lck_identical) {
+		if (lock->lck_identical)
+		{
 			lock->lck_identical->lck_collision = lock->lck_collision;
 			*prior = lock->lck_identical;
 			return false;
@@ -1066,7 +1078,8 @@ static bool hash_remove_lock(Lock* lock, Lock** match)
 			break;
 	}
 
-	if (!next) {
+	if (!next)
+	{
 		lock->lck_compatible = NULL;
 		BUGCHECK(285);			// lock not found in internal lock manager
 	}
@@ -1133,12 +1146,10 @@ static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
 	fb_assert(LCK_CHECK_LOCK(match));
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Lock* next;
-
 	// first check if there are any locks which are incompatible which do not have blocking asts;
 	// if so, there is no chance of getting a compatible lock
 
-	for (next = match; next; next = next->lck_identical)
+	for (const Lock* next = match; next; next = next->lck_identical)
 	{
 		if (!next->lck_ast && !compatible(next, lock, level))
 			return false;
@@ -1150,7 +1161,7 @@ static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
 
 	// make one more pass to see if all locks were downgraded
 
-	for (next = match; next; next = next->lck_identical)
+	for (const Lock* next = match; next; next = next->lck_identical)
 	{
 		if (!compatible(next, match, level))
 			return false;
@@ -1221,12 +1232,10 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 	fb_assert(LCK_CHECK_LOCK(first));
 	fb_assert(first->lck_compatible);
 
-	Lock* lock;
-
 	// find the highest required lock level
 
 	USHORT level = LCK_none;
-	for (lock = first; lock; lock = lock->lck_identical)
+	for (const Lock* lock = first; lock; lock = lock->lck_identical)
 		level = MAX(level, lock->lck_logical);
 
 	// if we can convert to that level, set all identical locks as having that level
@@ -1235,7 +1244,7 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 	{
 		if (dbb->dbb_lock_mgr->convert(tdbb, first->lck_id, level, LCK_NO_WAIT, external_ast, first))
 		{
-			for (lock = first; lock; lock = lock->lck_identical)
+			for (Lock* lock = first; lock; lock = lock->lck_identical)
 			{
 				lock->lck_physical = level;
 			}
@@ -1275,7 +1284,7 @@ static bool internal_enqueue(thread_db* tdbb,
 	fb_assert(LCK_CHECK_LOCK(lock));
 	fb_assert(lock->lck_compatible);
 
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	ISC_STATUS* const status = tdbb->tdbb_status_vector;
 
 	// look for an identical lock
 
@@ -1284,7 +1293,8 @@ static bool internal_enqueue(thread_db* tdbb,
 	{
 		// if there are incompatible locks for which there are no blocking asts defined, give up
 
-		if (!internal_compatible(match, lock, level)) {
+		if (!internal_compatible(match, lock, level))
+		{
 			// for now return a lock conflict; it would be better if we were to
 			// do a wait on the other lock by setting some flag bit or some such
 
@@ -1385,16 +1395,19 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 		Lock* const next = lock->lck_next;
 		Lock* const prior = lock->lck_prior;
 
-		if (prior) {
+		if (prior)
+		{
 			fb_assert(prior->lck_next == lock);
 			prior->lck_next = next;
 		}
-		else {
+		else
+		{
 			fb_assert(lock->lck_attachment->att_long_locks == lock);
 			lock->lck_attachment->att_long_locks = next;
 		}
 
-		if (next) {
+		if (next)
+		{
 			fb_assert(next->lck_prior == lock);
 			next->lck_prior = prior;
 		}
@@ -1405,7 +1418,8 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 
 
 	// Enlist in new attachment
-	if (attachment) {
+	if (attachment)
+	{
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
 		fb_assert(attachment->att_flags != 0xDEADBEEF);
 

@@ -146,6 +146,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
 			p += name_length;
 			memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
 			p += sizeof(gen_id_blr2);
+			fb_assert(size_t(p - blr.begin()) == blr_size);
 
 			request = CMP_compile2(tdbb, blr.begin(), (ULONG) blr.getCount(), true);
 		}
@@ -192,7 +193,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 
 	do {
 		buffer.printf("INTEG_%" SQUADFORMAT,
-				(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_con, "RDB$CONSTRAINT_NAME"));
+				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_con, "RDB$CONSTRAINT_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
 		id = drq_f_nxt_con;
@@ -213,11 +214,12 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	} while (found);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 131);
-		/* msg 131: "Generation of constraint name failed" */
+		// msg 131: "Generation of constraint name failed"
 	}
 }
 
@@ -264,7 +266,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 
 	do {
 		buffer.printf("RDB$%" SQUADFORMAT,
-				(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_fld, "RDB$FIELD_NAME"));
+				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_fld, "RDB$FIELD_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
 		id = drq_f_nxt_fld;
@@ -284,11 +286,12 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 	} while (found);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 81);
-		/* msg 81: "Generation of field name failed" */
+		// msg 81: "Generation of field name failed"
 	}
 }
 
@@ -335,11 +338,12 @@ void DYN_UTIL_generate_field_position(thread_db* tdbb,
 	*field_pos = field_position;
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 162);
-		/* msg 162: "Looking up field position failed" */
+		// msg 162: "Looking up field position failed"
 	}
 }
 
@@ -382,7 +386,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 		}
 
 		buffer.printf(format,
-			(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_idx, "RDB$INDEX_NAME"));
+			DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_idx, "RDB$INDEX_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
 		id = drq_f_nxt_idx;
@@ -401,11 +405,12 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 82);
-		/* msg 82: "Generation of index name failed" */
+		// msg 82: "Generation of index name failed"
 	}
 }
 
@@ -434,7 +439,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 
 	do {
 		buffer.printf("CHECK_%" SQUADFORMAT,
-			(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_trg, "RDB$TRIGGER_NAME"));
+			DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_trg, "RDB$TRIGGER_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
 		id = drq_f_nxt_trg;
@@ -453,11 +458,12 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 		request = NULL;
 	} while (found);
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, id);
 		DYN_error_punt(true, 83);
-		/* msg 83: "Generation of trigger name failed" */
+		// msg 83: "Generation of trigger name failed"
 	}
 }
 
@@ -541,11 +547,12 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 			}
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 80);
-		/* msg 80: "Specified domain or source field does not exist" */
+		// msg 80: "Specified domain or source field does not exist"
 	}
 
 	return found;
@@ -587,13 +594,14 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 	gds__vtov(rname, in_msg.relation_name, sizeof(in_msg.relation_name));
 	gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));
 	EXE_start(tdbb, request, gbl->gbl_transaction);
-	EXE_send(tdbb, request, 0, sizeof(in_msg), (UCHAR*)&in_msg);
-	EXE_receive(tdbb, request, 1, sizeof(SecurityClass::flags_t), (UCHAR*)prot_mask);
+	EXE_send(tdbb, request, 0, sizeof(in_msg), (UCHAR*) &in_msg);
+	EXE_receive(tdbb, request, 1, sizeof(SecurityClass::flags_t), (UCHAR*) prot_mask);
 
 	DYN_rundown_request(request, drq_l_prot_mask);
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_prot_mask);
 		return false;
@@ -636,11 +644,12 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 		DYN_REQUEST(drq_s_chk_con) = request;
 	}
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_s_chk_con);
 		DYN_error_punt(true, 122);
-		/* msg 122: "STORE RDB$CHECK_CONSTRAINTS failed" */
+		// msg 122: "STORE RDB$CHECK_CONSTRAINTS failed"
 	}
 }
 
