@@ -510,7 +510,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 
 // we need a class here only to return memory on shutdown and avoid
 // false memory leak reports
-static InitInstance<HugeStaticBuffer> zeros;
+static Firebird::InitInstance<ZeroBuffer> zeros;
 
 
 USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector,
@@ -526,6 +526,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
  *	Initialize tail of file with zeros
  *
  **************************************/
+	const char* const zero_buff = zeros().getBuffer();
+	const size_t zero_buff_size = zeros().getSize();
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
 	// as we already know file to work with
@@ -553,7 +555,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	for (ULONG i = startPage; i < startPage + initBy; )
 	{
 		bdb.bdb_page = PageNumber(0, i);
-		USHORT write_pages = ZERO_BUF_SIZE / dbb->dbb_page_size;
+		USHORT write_pages = zero_buff_size / dbb->dbb_page_size;
 		if (write_pages > leftPages)
 			write_pages = leftPages;
 
@@ -564,7 +566,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		{
 			if (!(file = seek_file(file, &bdb, &offset, status_vector)))
 				return false;
-			if ((written = pwrite(file->fil_desc, zeros().get(), to_write, LSEEK_OFFSET_CAST offset)) == to_write)
+			if ((written = pwrite(file->fil_desc, zero_buff, to_write, LSEEK_OFFSET_CAST offset)) == to_write)
 				break;
 			if (written == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err, status_vector);

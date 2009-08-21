@@ -46,6 +46,7 @@
 
 #include "../jrd/gdsassert.h"
 #include "../jrd/os/path_utils.h"
+#include "../common/classes/init.h"
 
 #include "../common/classes/TempFile.h"
 
@@ -66,6 +67,10 @@ static const char* DEFAULT_PATH =
 static const char* const NAME_PATTERN = "XXXXXX";
 static const char* const NAME_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
 static const size_t MAX_TRIES = 256;
+
+// we need a class here only to return memory on shutdown and avoid
+// false memory leak reports
+static Firebird::InitInstance<ZeroBuffer> zeros;
 
 //
 // TempFile::getTempPath
@@ -115,9 +120,8 @@ PathName TempFile::create(const PathName& prefix, const PathName& directory)
 		TempFile file(*getDefaultMemoryPool(), prefix, directory, false);
 		filename = file.getName();
 	}
-	catch (const Exception&) {
-		// do nothing
-	}
+	catch (const Exception&)
+	{} // do nothing
 
 	return filename;
 }
@@ -171,7 +175,7 @@ void TempFile::init(const PathName& directory, const PathName& prefix)
 	}
 	if (handle == INVALID_HANDLE_VALUE)
 	{
-		system_call_failed::raise("CreateFile");
+		system_error::raise("CreateFile");
 	}
 #else
 	filename += prefix;
@@ -182,7 +186,7 @@ void TempFile::init(const PathName& directory, const PathName& prefix)
 #else
 	if (!mktemp(filename.begin()))
 	{
-		system_call_failed::raise("mktemp");
+		system_error::raise("mktemp");
 	}
 
 	do {
@@ -192,7 +196,7 @@ void TempFile::init(const PathName& directory, const PathName& prefix)
 
 	if (handle == -1)
 	{
-		system_call_failed::raise("open");
+		system_error::raise("open");
 	}
 
 	if (doUnlink)
@@ -241,13 +245,13 @@ void TempFile::seek(const offset_t offset)
 		SetFilePointer(handle, (LONG) liOffset.LowPart, &liOffset.HighPart, FILE_BEGIN);
 	if (seek_result == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 	{
-		system_call_failed::raise("SetFilePointer");
+		system_error::raise("SetFilePointer");
 	}
 #else
 	const off_t seek_result = ::lseek(handle, (off_t) offset, SEEK_SET);
 	if (seek_result == (off_t) -1)
 	{
-		system_call_failed::raise("lseek");
+		system_error::raise("lseek");
 	}
 #endif
 	position = offset;
@@ -263,7 +267,14 @@ void TempFile::seek(const offset_t offset)
 
 void TempFile::extend(size_t delta)
 {
-	seek(size + delta);
+	const char* const buffer = zeros().getBuffer();
+	const size_t bufferSize = zeros().getSize();
+	const size_t newSize = size + delta;
+	for (size_t offset = size; offset < newSize; offset += bufferSize)
+	{
+		const size_t length = MIN(newSize - size, bufferSize);
+		write(offset, buffer, length);
+	}
 }
 
 //
@@ -280,13 +291,13 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 	DWORD bytes = 0;
 	if (!ReadFile(handle, buffer, length, &bytes, NULL) || bytes != length)
 	{
-		system_call_failed::raise("ReadFile");
+		system_error::raise("ReadFile");
 	}
 #else
 	const int bytes = ::read(handle, buffer, length);
 	if (bytes < 0 || size_t(bytes) != length)
 	{
-		system_call_failed::raise("read");
+		system_error::raise("read");
 	}
 #endif
 	position += bytes;
@@ -307,13 +318,13 @@ size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
 	DWORD bytes = 0;
 	if (!WriteFile(handle, buffer, length, &bytes, NULL) || bytes != length)
 	{
-		system_call_failed::raise("WriteFile");
+		system_error::raise("WriteFile");
 	}
 #else
 	const int bytes = ::write(handle, buffer, length);
 	if (bytes < 0 || size_t(bytes) != length)
 	{
-		system_call_failed::raise("write");
+		system_error::raise("write");
 	}
 #endif
 	position += bytes;

@@ -33,6 +33,7 @@
 #include "../jrd/thread_proto.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/array.h"
+#include "../common/classes/File.h"
 
 namespace Jrd {
 
@@ -121,25 +122,6 @@ const UCHAR PIOB_error		= 1;	/* I/O error occurred */
 const UCHAR PIOB_success	= 2;	/* I/O successfully completed */
 const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
 #endif
-
-static const int ZERO_BUF_SIZE = 1024 * 128;
-
-class HugeStaticBuffer
-{
-public:
-	explicit HugeStaticBuffer(MemoryPool& p)
-		: zeroArray(p),
-		  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE))
-	{
-		memset(zeroBuff, 0, ZERO_BUF_SIZE);
-	}
-
-	const char* get() const { return zeroBuff; }
-
-private:
-	Firebird::Array<char> zeroArray;
-	char* const zeroBuff;
-};
 
 } //namespace Jrd
 
