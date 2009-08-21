@@ -1970,7 +1970,7 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	// Get rid of extra merge space
 
 	ULONG** merge_buf;
-	while ( (merge_buf = (ULONG **) scb->scb_merge_space) )
+	while ( (merge_buf = (ULONG**) scb->scb_merge_space) )
 	{
 		scb->scb_merge_space = *merge_buf;
 		delete merge_buf;
@@ -2343,8 +2343,8 @@ static void merge_runs(sort_context* scb, USHORT n)
 
 inline void swap(SORTP** a, SORTP** b)
 {
-	((SORTP ***) (*a))[BACK_OFFSET] = b;
-	((SORTP ***) (*b))[BACK_OFFSET] = a;
+	((SORTP***) (*a))[BACK_OFFSET] = b;
+	((SORTP***) (*b))[BACK_OFFSET] = a;
 	SORTP* temp = *a;
 	*a = *b;
 	*b = temp;
@@ -2739,14 +2739,14 @@ static void sort(sort_context* scb)
 	// Next, call QuickSort. Keep in mind that the first pointer is the
 	// low key and not a record.
 
-	SORTP** j = (SORTP **) (scb->scb_first_pointer) + 1;
-	const ULONG n = (SORTP **) (scb->scb_next_pointer) - j;	// calculate # of records
+	SORTP** j = (SORTP**) (scb->scb_first_pointer) + 1;
+	const ULONG n = (SORTP**) (scb->scb_next_pointer) - j;	// calculate # of records
 
 	quick(n, j, scb->scb_longs);
 
 	// Scream through and correct any out of order pairs
 	// hvlad: don't compare user keys against high_key
-	while (j < (SORTP **) scb->scb_next_pointer - 1)
+	while (j < (SORTP**) scb->scb_next_pointer - 1)
 	{
 		SORTP** i = j;
 		j++;
@@ -2781,7 +2781,7 @@ static void sort(sort_context* scb)
 	j = reinterpret_cast<SORTP**>(scb->scb_first_pointer + 1);
 
 	// hvlad: don't compare user keys against high_key
-	while (j < ((SORTP **) scb->scb_next_pointer) - 1)
+	while (j < ((SORTP**) scb->scb_next_pointer) - 1)
 	{
 		SORTP** i = j;
 		j++;
@@ -2803,7 +2803,7 @@ static void sort(sort_context* scb)
 #endif
 			if ((*scb->scb_dup_callback) ((const UCHAR*) *i, (const UCHAR*) *j, scb->scb_dup_callback_arg))
 			{
-				((SORTP ***) (*i))[BACK_OFFSET] = NULL;
+				((SORTP***) (*i))[BACK_OFFSET] = NULL;
 				*i = NULL;
 			}
 			else
@@ -2885,8 +2885,8 @@ static void validate(sort_context* scb)
  *      Validate data structures.
  *
  **************************************/
-	for (SORTP** ptr = (SORTP **) (scb->scb_first_pointer + 1);
-		ptr < (SORTP **) scb->scb_next_pointer; ptr++)
+	for (SORTP** ptr = (SORTP**) (scb->scb_first_pointer + 1);
+		ptr < (SORTP**) scb->scb_next_pointer; ptr++)
 	{
 		SORTP* record = *ptr;
 		if (record[-SIZEOF_SR_BCKPTR_IN_LONGS] != (SORTP) ptr)
