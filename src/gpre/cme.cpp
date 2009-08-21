@@ -1411,12 +1411,11 @@ static void cmp_array( gpre_nod* node, gpre_req* request)
 	{
 		reference->add_byte(isc_sdl_relation);
 		reference->add_byte(strlen(field->fld_relation->rel_symbol->sym_string));
-		const TEXT* p;
-		for (p = field->fld_relation->rel_symbol->sym_string; *p; p++)
+		for (const TEXT* p = field->fld_relation->rel_symbol->sym_string; *p; p++)
 			reference->add_byte(*p);
 		reference->add_byte(isc_sdl_field);
 		reference->add_byte(strlen(field->fld_symbol->sym_string));
-		for (p = field->fld_symbol->sym_string; *p; p++)
+		for (const TEXT* p = field->fld_symbol->sym_string; *p; p++)
 			reference->add_byte(*p);
 	}
 
@@ -2076,9 +2075,9 @@ static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 
 	if (gpreGlob.sw_language == lang_fortran)
 	{
-		const dim* dimension;
-		for (dimension = field->fld_array_info->ary_dimension;
-			 dimension->dim_next; dimension = dimension->dim_next);
+		const dim* dimension = field->fld_array_info->ary_dimension;
+		while (dimension->dim_next)
+			dimension = dimension->dim_next;
 
 		for (SSHORT i = 0; i < field->fld_array_info->ary_dimension_count;
 			 i++, dimension = dimension->dim_previous)

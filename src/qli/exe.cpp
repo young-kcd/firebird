@@ -1101,7 +1101,7 @@ static void print_counts( qli_req* request)
 	// print out the counts of any records affected
 
 	int length = 0;
-	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length)
+	for (const UCHAR* c = count_buffer; *c != isc_info_end; c += length)
 	{
 		const UCHAR item = *c++;
 		length = gds__vax_integer(c, 2);

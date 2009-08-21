@@ -654,7 +654,8 @@ static void gen_based( const act* action, int column)
 	{
 		datatype = field->fld_array->fld_dtype;
 		sprintf(s, "array (");
-		for (q = s; *q; q++);
+		for (q = s; *q; q++)
+			;
 
 		// Print out the dimension part of the declaration
 		const dim* dimension = field->fld_array_info->ary_dimension;
@@ -2692,10 +2693,9 @@ static void gen_routine( const act* action, int column)
 
 	for (gpre_req* request = (gpre_req*) action->act_object; request; request = request->req_routine)
 	{
-		gpre_port* port;
-		for (port = request->req_ports; port; port = port->por_next)
+		for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 			make_port(port, column);
-		for (port = request->req_ports; port; port = port->por_next)
+		for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 			printa(column, "isc_%d\t: isc_%dt;\t\t\t-- message --", port->por_ident, port->por_ident);
 
 		for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
@@ -2919,8 +2919,7 @@ static void gen_slice( const act* action, int column)
 
 	// Make assignments to variable vector
 
-	const ref* reference;
-	for (reference = request->req_values; reference; reference = reference->ref_next)
+	for (const ref* reference = request->req_values; reference; reference = reference->ref_next)
 	{
 		printa(column, "isc_%dv (%d) := %s;", request->req_ident,
 			   reference->ref_id + 1, reference->ref_value);
@@ -2935,7 +2934,7 @@ static void gen_slice( const act* action, int column)
 	args.pat_ident1 = request->req_ident;	// request name
 	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length
 
-	reference = (ref*) slice->slc_array->nod_arg[0];
+	const ref* reference = (ref*) slice->slc_array->nod_arg[0];
 	args.pat_string5 = reference->ref_value;	// array name
 	args.pat_string6 = "isc_array_length";
 
@@ -3362,9 +3361,7 @@ static void make_port( const gpre_port* port, int column)
 {
 	printa(column, "type isc_%dt is record", port->por_ident);
 
-	const ref* reference;
-
-	for (reference = port->por_references; reference; reference = reference->ref_next)
+	for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 	{
 		const gpre_fld* field = reference->ref_field;
 		const TEXT* name;
@@ -3440,7 +3437,7 @@ static void make_port( const gpre_port* port, int column)
 	printa(column, "for isc_%dt use record at mod 4;", port->por_ident);
 
 	int pos = 0;
-	for (reference = port->por_references; reference; reference = reference->ref_next)
+	for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 	{
 		const gpre_fld* field = reference->ref_field;
 		if (reference->ref_value && field->fld_array_info)

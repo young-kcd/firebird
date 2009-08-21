@@ -2971,8 +2971,7 @@ static void resolve_really( qli_fld* variable, const qli_syntax* field_node)
 		resolved = MET_declare(0, variable, fld_name);
 	else if (field_node->syn_count == 2)
 	{
-		qli_symbol *symbol;
-		for (symbol = rel_name->nam_symbol; symbol; symbol = symbol->sym_homonym)
+		for (qli_symbol* symbol = rel_name->nam_symbol; symbol; symbol = symbol->sym_homonym)
 		{
 			if (symbol->sym_type == SYM_database)
 			{
@@ -2985,7 +2984,7 @@ static void resolve_really( qli_fld* variable, const qli_syntax* field_node)
 		if (!resolved)
 		{
 			for (qli_dbb* dbb = QLI_databases; dbb && !resolved; dbb = dbb->dbb_next)
-				for (symbol = rel_name->nam_symbol; symbol; symbol = symbol->sym_homonym)
+				for (qli_symbol* symbol = rel_name->nam_symbol; symbol; symbol = symbol->sym_homonym)
 				{
 					qli_rel* relation;
 					if (symbol->sym_type == SYM_relation &&
