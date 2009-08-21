@@ -83,7 +83,7 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-// Verify database file path against DatabaseAccess entry of firebird.conf
+	// Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(file_name))
 	{
 		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") <<
@@ -100,8 +100,8 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 
 	Shadow* shadow = allocate_shadow(shadow_file, shadow_number, file_flags);
 
-/* dump out the header page, even if it is a conditional
-   shadow--the page will be fixed up properly */
+	// dump out the header page, even if it is a conditional
+	// shadow--the page will be fixed up properly
 
 	if (shadow->sdw_flags & SDW_conditional)
 		shadow->sdw_flags &= ~SDW_conditional;
@@ -131,7 +131,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-/* Find the file to be extended */
+	// Find the file to be extended
 
 	jrd_file* shadow_file = 0;
 	Shadow* shadow;
@@ -149,14 +149,14 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		return 0;
 	}
 
-/* find the last file in the list, open the new file */
+	// find the last file in the list, open the new file
 
 	jrd_file* file = shadow_file;
 	while (file->fil_next) {
 		file = file->fil_next;
 	}
 
-// Verify shadow file path against DatabaseAccess entry of firebird.conf
+	// Verify shadow file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(file_name))
 	{
 		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("database shadow") <<
@@ -174,13 +174,12 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		PIO_force_write(next, dbb->dbb_flags & DBB_force_write, dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
-/* Always write the header page, even for a conditional
- * shadow that hasn't been activated.
- */
+	// Always write the header page, even for a conditional
+	// shadow that hasn't been activated.
 
-/* allocate a spare buffer which is large enough,
-   and set up to release it in case of error. Align
-   the spare page buffer for raw disk access. */
+	// allocate a spare buffer which is large enough,
+	// and set up to release it in case of error. Align
+	// the spare page buffer for raw disk access.
 
 	SCHAR* const spare_buffer =
 		FB_NEW(*tdbb->getDefaultPool()) char[dbb->dbb_page_size + MIN_PAGE_SIZE];
@@ -191,7 +190,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 
 	try {
 
-	/* create the header using the spare_buffer */
+		// create the header using the spare_buffer
 
 		header_page* header = (header_page*) spare_page;
 		header->hdr_header.pag_type = pag_header;
@@ -201,7 +200,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		header->hdr_end = HDR_SIZE;
 		header->hdr_next_page = 0;
 
-	/* fool PIO_write into writing the scratch page into the correct place */
+		// fool PIO_write into writing the scratch page into the correct place
 		BufferDesc temp_bdb;
 		temp_bdb.bdb_page = next->fil_min_page;
 		temp_bdb.bdb_dbb = dbb;
@@ -214,26 +213,26 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		}
 		next->fil_fudge = 1;
 
-/* Update the previous header page to point to new file --
-   we can use the same header page, suitably modified,
-   because they all look pretty much the same at this point */
+		// Update the previous header page to point to new file --
+		//	we can use the same header page, suitably modified,
+		// because they all look pretty much the same at this point
 
 /*******************
-   Fix for bug 7925. drop_gdb wan not dropping secondary file in
-   multi-shadow files. The structure was not being filled with the
-   info. Commented some code so that the structure will always
-   be filled.
+		Fix for bug 7925. drop_gdb wan not dropping secondary file in
+		multi-shadow files. The structure was not being filled with the
+		info. Commented some code so that the structure will always be filled.
 
-	-Sudesh 07/06/95
+			-Sudesh 07/06/95
 
-   The original code :
+		The original code :
 ===
-if (shadow_file == file)
-    copy_header(tdbb);
-else
+		if (shadow_file == file)
+		    copy_header(tdbb);
+		else
 ===
 ************************/
-/** Temporarly reverting the change ------- Sudesh 07/07/95 *******/
+		// Temporarly reverting the change ------- Sudesh 07/07/95 *******
+
 		if (shadow_file == file)
 		{
 			copy_header(tdbb);
@@ -295,13 +294,11 @@ void SDW_check(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-/* first get rid of any shadows that need to be
-   deleted or shutdown; deleted shadows must also
-   be shutdown
+	// first get rid of any shadows that need to be
+	// deleted or shutdown; deleted shadows must also be shutdown
 
-   Check to see if there is a valid shadow in the shadow set,
-   if not then it is time to start an conditional shadow (if
-   one has been defined). */
+	// Check to see if there is a valid shadow in the shadow set,
+	// if not then it is time to start an conditional shadow (if one has been defined).
 
 	Shadow* next_shadow;
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = next_shadow)
@@ -315,8 +312,7 @@ void SDW_check(thread_db* tdbb)
 					 shadow->sdw_file->fil_string, dbb->dbb_filename.c_str());
 		}
 
-		/* note that shutting down a shadow is destructive to
-		   the shadow block */
+		// note that shutting down a shadow is destructive to the shadow block
 
 		if (shadow->sdw_flags & SDW_shutdown)
 			shutdown_shadow(shadow);
@@ -364,13 +360,11 @@ bool SDW_check_conditional(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* first get rid of any shadows that need to be
-   deleted or shutdown; deleted shadows must also
-   be shutdown
+	// first get rid of any shadows that need to be
+	// deleted or shutdown; deleted shadows must also be shutdown
 
-   Check to see if there is a valid shadow in the shadow set,
-   if not then it is time to start an conditional shadow (if
-   one has been defined). */
+	// Check to see if there is a valid shadow in the shadow set,
+	// if not then it is time to start an conditional shadow (if one has been defined).
 
 	bool start_conditional = true;
 	Shadow* next_shadow;
@@ -386,9 +380,9 @@ bool SDW_check_conditional(thread_db* tdbb)
 			}
 	}
 
-/* if there weren't any conventional shadows, now is
-   the time to start the first conditional shadow in the list
-   Note that allocate_shadow keeps the sdw_next list sorted */
+	// if there weren't any conventional shadows, now is
+	// the time to start the first conditional shadow in the list
+	// Note that allocate_shadow keeps the sdw_next list sorted
 
 	if (start_conditional)
 	{
@@ -453,12 +447,12 @@ void SDW_dump_pages(thread_db* tdbb)
 	gds__log("conditional shadow dumped for database %s", dbb->dbb_filename.c_str());
 	const SLONG max = PAG_last_page(tdbb);
 
-/* mark the first shadow in the list because we don't
-   want to start shadowing to any files that are added
-   while we are in the middle of dumping pages */
+	// mark the first shadow in the list because we don't
+	// want to start shadowing to any files that are added
+	// while we are in the middle of dumping pages
 
-/* none of these pages should need any alteration
-   since header pages for extend files are not handled at this level */
+	// none of these pages should need any alteration
+	// since header pages for extend files are not handled at this level
 	WIN window(DB_PAGE_SPACE, -1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
@@ -485,11 +479,11 @@ void SDW_dump_pages(thread_db* tdbb)
 			{
 				window.win_page = page_number;
 
-				/* when copying a database, it is possible that there are some pages defined
-				   in the pip that were never actually written to disk, in the case of a faked
-				   page which was never written to disk because of a rollback; to prevent
-				   checksum errors on this type of page, don't check for checksum when the
-				   page type is 0 */
+				// when copying a database, it is possible that there are some pages defined
+				// in the pip that were never actually written to disk, in the case of a faked
+				// page which was never written to disk because of a rollback; to prevent
+				// checksum errors on this type of page, don't check for checksum when the
+				// page type is 0
 
 				CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_read, pag_undefined);
 				if (!CCH_write_all_shadows(tdbb, shadow, window.win_bdb,
@@ -506,7 +500,7 @@ void SDW_dump_pages(thread_db* tdbb)
 		}
 	}
 
-/* mark all shadows seen to this point as dumped */
+	// mark all shadows seen to this point as dumped
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 	{
@@ -533,8 +527,7 @@ void SDW_get_shadows(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* unless we have one, get a shared lock to ensure that we don't miss any
-   signals */
+	// unless we have one, get a shared lock to ensure that we don't miss any signals
 
 	dbb->dbb_ast_flags &= ~DBB_get_shadows;
 
@@ -542,7 +535,7 @@ void SDW_get_shadows(thread_db* tdbb)
 
 	if (lock->lck_physical != LCK_SR)
 	{
-		/* fb_assert (lock->lck_physical == LCK_none); */
+		// fb_assert (lock->lck_physical == LCK_none);
 
 		WIN window(HEADER_PAGE_NUMBER);
 		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
@@ -551,9 +544,9 @@ void SDW_get_shadows(thread_db* tdbb)
 		CCH_RELEASE(tdbb, &window);
 	}
 
-/* get all new shadow files, marking that we looked at them first
-   to prevent missing any new ones later on, although it does not
-   matter for the purposes of the current page being written */
+	// get all new shadow files, marking that we looked at them first
+	// to prevent missing any new ones later on, although it does not
+	// matter for the purposes of the current page being written
 
 	MET_get_shadow_files(tdbb, false);
 }
@@ -579,7 +572,7 @@ void SDW_init(thread_db* tdbb, bool activate, bool delete_files)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* set up the lock block for synchronizing addition of new shadows */
+	// set up the lock block for synchronizing addition of new shadows
 
 	header_page* header; // for sizeof here, used later
 	const USHORT key_length = sizeof(header->hdr_shadow_count);
@@ -596,7 +589,7 @@ void SDW_init(thread_db* tdbb, bool activate, bool delete_files)
 	if (activate)
 		activate_shadow(tdbb);
 
-/* get current shadow lock count from database header page */
+	// get current shadow lock count from database header page
 
 	WIN window(HEADER_PAGE_NUMBER);
 
@@ -638,8 +631,9 @@ bool SDW_lck_update(thread_db* tdbb, SLONG sdw_update_flags)
 	if (!lock)
 		return false;
 
-	if (lock->lck_physical != LCK_SR) {
-		/* fb_assert (lock->lck_physical == LCK_none); */
+	if (lock->lck_physical != LCK_SR)
+	{
+		// fb_assert (lock->lck_physical == LCK_none);
 		return false;
 	}
 
@@ -676,24 +670,24 @@ void SDW_notify(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* get current shadow lock count from database header page --
-   note that since other processes need the header page to issue locks
-   on the shadow count, this is effectively an uninterruptible operation */
+	// get current shadow lock count from database header page --
+	// note that since other processes need the header page to issue locks
+	// on the shadow count, this is effectively an uninterruptible operation
 
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 
-/* get an exclusive lock on the current shadowing semaphore to
-   notify other processes to find my shadow -- if we have a shared
-   on it already, convert to exclusive */
+	// get an exclusive lock on the current shadowing semaphore to
+	// notify other processes to find my shadow -- if we have a shared
+	// on it already, convert to exclusive
 
 	Lock* lock = dbb->dbb_shadow_lock;
 
 	if (lock->lck_physical == LCK_SR)
 	{
 		if (lock->lck_key.lck_long != header->hdr_shadow_count)
-			BUGCHECK(162);		/* msg 162 shadow lock not synchronized properly */
+			BUGCHECK(162);		// msg 162 shadow lock not synchronized properly
 		LCK_convert(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 	else
@@ -704,8 +698,8 @@ void SDW_notify(thread_db* tdbb)
 
 	LCK_release(tdbb, lock);
 
-/* now get a shared lock on the incremented shadow count to ensure that
-   we will get notification of the next shadow add */
+	// now get a shared lock on the incremented shadow count to ensure that
+	// we will get notification of the next shadow add
 
 	lock->lck_key.lck_long = ++header->hdr_shadow_count;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
@@ -781,8 +775,8 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 
 	Lock* shadow_lock = dbb->dbb_shadow_lock;
 
-/* check the various status flags to see if there
-   is a valid shadow to roll over to */
+	// check the various status flags to see if there
+	// is a valid shadow to roll over to
 
 	Shadow* shadow;
 	for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
@@ -807,8 +801,7 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 		return true;
 	}
 
-/* close the main database file if possible
-   and release all file blocks */
+	// close the main database file if possible and release all file blocks
 
 	PIO_close(pageSpace->file);
 
@@ -818,18 +811,18 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 		delete file;
 	}
 
-/* point the main database file at the file of the first shadow
-   in the list and mark that shadow as rolled over to
-   so that we won't write to it twice -- don't remove
-   this shadow from the linked list of shadows because
-   that would cause us to create a new shadow block for
-   it the next time we do a MET_get_shadow_files () */
+	/* point the main database file at the file of the first shadow
+	in the list and mark that shadow as rolled over to
+	so that we won't write to it twice -- don't remove
+	this shadow from the linked list of shadows because
+	that would cause us to create a new shadow block for
+	it the next time we do a MET_get_shadow_files () */
 
 	pageSpace->file = shadow->sdw_file;
 	shadow->sdw_flags |= SDW_rollover;
 
-/* check conditional does a meta data update - since we were
-   successfull updating LCK_data we will be the only one doing so */
+	// check conditional does a meta data update - since we were
+	// successfull updating LCK_data we will be the only one doing so
 
 	bool start_conditional = false;
 	if (!inAst)
@@ -873,7 +866,7 @@ static void shutdown_shadow(Shadow* shadow)
  **************************************/
 	Database* dbb = GET_DBB();
 
-/* find the shadow block and delete it from linked list */
+	// find the shadow block and delete it from linked list
 
 	for (Shadow** ptr = &dbb->dbb_shadow; *ptr; ptr = &(*ptr)->sdw_next)
 	{
@@ -883,7 +876,7 @@ static void shutdown_shadow(Shadow* shadow)
 		}
 	}
 
-/* close the shadow files and free up the associated memory */
+	// close the shadow files and free up the associated memory
 
 	if (shadow)
 	{
@@ -921,9 +914,9 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 	USHORT header_fetched = 0;
 
-/* check that this shadow has not already been started,
-   (unless it is marked as invalid, in which case it may
-   be an old shadow of the same number) */
+	// check that this shadow has not already been started,
+	// (unless it is marked as invalid, in which case it may
+	// be an old shadow of the same number)
 
 	Shadow* shadow;
 	for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
@@ -940,8 +933,8 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			break;
 	}
 
-/* check to see if the shadow is the same as the current database --
-   if so, a shadow file is being accessed as a database */
+	// check to see if the shadow is the same as the current database --
+	// if so, a shadow file is being accessed as a database
 
 	Firebird::PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
@@ -956,15 +949,14 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 		ERR_post(Arg::Gds(isc_shadow_accessed));
 	}
 
-// Verify shadow file path against DatabaseAccess entry of firebird.conf
+	// Verify shadow file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(expanded_name))
 	{
 		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("database shadow") <<
 													 Arg::Str(expanded_name));
 	}
 
-/* catch errors: delete the shadow file if missing,
-   and deallocate the spare buffer */
+	// catch errors: delete the shadow file if missing, and deallocate the spare buffer
 
 	shadow = NULL;
 	SLONG* const spare_buffer =
@@ -988,10 +980,10 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 	if (!(file_flags & FILE_conditional))
 	{
-		/* make some sanity checks on the database and shadow header pages:
-		   1. make sure that the proper database filename is accessing this shadow
-		   2. make sure the database and shadow are in sync by checking the creation time/transaction id
-		   3. make sure that the shadow has not already been activated */
+		// make some sanity checks on the database and shadow header pages:
+		// 1. make sure that the proper database filename is accessing this shadow
+		// 2. make sure the database and shadow are in sync by checking the creation time/transaction id
+		// 3. make sure that the shadow has not already been activated
 
 		window.win_page = HEADER_PAGE_NUMBER;
 		const header_page* database_header =
@@ -1005,23 +997,21 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 		const header_page* shadow_header = (header_page*) spare_page;
 
-		/*
-		 *          NOTE ! NOTE! NOTE!
-		 * Starting V4.0, header pages can have over flow pages.  For the shadow,
-		 * we are making an assumption that the shadow header page will not
-		 * overflow, as the only things written on a shadow header is the
-		 * HDR_root_file_name, HDR_file, and HDR_last_page
-		 */
+		//          NOTE ! NOTE! NOTE!
+		// Starting V4.0, header pages can have overflow pages.  For the shadow,
+		// we are making an assumption that the shadow header page will not
+		// overflow, as the only things written on a shadow header is the
+		// HDR_root_file_name, HDR_file, and HDR_last_page
 
 		const UCHAR* p = shadow_header->hdr_data;
 		while (*p != HDR_end && *p != HDR_root_file_name) {
 			p += 2 + p[1];
 		}
 		if (*p++ == HDR_end)
-			BUGCHECK(163);		/* msg 163 root file name not listed for shadow */
+			BUGCHECK(163);		// msg 163 root file name not listed for shadow
 
-		/* if the database file is not the same and the original file is
-		   still around, then there is a possibility for shadow corruption */
+		// if the database file is not the same and the original file is
+		// still around, then there is a possibility for shadow corruption
 
 		const int string_length = (USHORT) *p++;
 		const char* fname = reinterpret_cast<const char*>(p);
@@ -1042,15 +1032,15 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 		header_fetched--;
 	}
 
-/* allocate the shadow block and mark it as
-   dumped (except for the cases when it isn't) */
+	// allocate the shadow block and mark it as
+	// dumped (except for the cases when it isn't)
 
 	shadow = allocate_shadow(shadow_file, shadow_number, file_flags);
 	if (!(file_flags & FILE_conditional)) {
 		shadow->sdw_flags |= SDW_dumped;
 	}
 
-/* get the ancillary files and reset the error environment */
+	// get the ancillary files and reset the error environment
 
 	PAG_init2(tdbb, shadow_number);
 
@@ -1102,7 +1092,7 @@ static void activate_shadow(thread_db* tdbb)
 
 	MET_activate_shadow(tdbb);
 
-/* clear the shadow bit on the header page */
+	// clear the shadow bit on the header page
 
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -1137,13 +1127,12 @@ static Shadow* allocate_shadow(jrd_file* shadow_file,
 	if (file_flags & FILE_conditional)
 		shadow->sdw_flags |= SDW_conditional;
 
-/* Link the new shadow into the list of shadows according to
- * shadow number position.  This is so we will activate
- * conditional shadows in the order specified by shadow number.
- * Note that the shadow number may not be unique in this list
- * - as could happen when shadow X is dropped, and then X is
- * recreated.
- */
+	// Link the new shadow into the list of shadows according to
+	// shadow number position.  This is so we will activate
+	// conditional shadows in the order specified by shadow number.
+	// Note that the shadow number may not be unique in this list
+	// - as could happen when shadow X is dropped, and then X is
+	// recreated.
 
 	Shadow** pShadow;
 	for (pShadow = &dbb->dbb_shadow; *pShadow; pShadow = &((*pShadow)->sdw_next))
@@ -1286,8 +1275,8 @@ static void copy_header(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* get the database header page and write it out --
-   CCH will take care of modifying it */
+	// get the database header page and write it out --
+	// CCH will take care of modifying it
 
 	WIN window(HEADER_PAGE_NUMBER);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -1310,7 +1299,7 @@ static void update_dbb_to_sdw(Database* dbb)
  *
  **************************************/
 
-/* find shadow to rollover to */
+	// find shadow to rollover to
 
 	Shadow* shadow;
 	for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
@@ -1322,10 +1311,9 @@ static void update_dbb_to_sdw(Database* dbb)
 	}
 
 	if (!shadow)
-		return;					/* should be a BUGCHECK */
+		return;					// should be a BUGCHECK
 
-/* close the main database file if possible
-   and release all file blocks */
+	// close the main database file if possible and release all file blocks
 
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	PIO_close(pageSpace->file);
