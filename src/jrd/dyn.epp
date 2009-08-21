@@ -113,8 +113,8 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	thread_db* const tdbb = JRD_get_thread_data();
+	Database* const dbb = tdbb->getDatabase();
 
 	const UCHAR* ptr = ddl;
 
@@ -181,7 +181,7 @@ void DYN_error(bool	status_flag, USHORT number, const SafeArg& sarg)
  *	DDL failed.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* const tdbb = JRD_get_thread_data();
 
 	if (tdbb->tdbb_status_vector[1] == isc_no_meta_update)
 		return;
@@ -285,7 +285,7 @@ bool DYN_is_it_sql_role(Global* gbl,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -946,7 +946,8 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		Database* dbb = tdbb->getDatabase();
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 		{
-			bpb.resize(15);
+			const size_t convSize = 15;
+			bpb.resize(convSize);
 
 			UCHAR* p = bpb.begin();
 			*p++ = isc_bpb_version1;
@@ -966,6 +967,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 			*p++ = isc_bpb_target_interp;
 			*p++ = 1;
 			*p++ = CS_METADATA;
+			fb_assert(size_t(p - bpb.begin()) <= convSize);
 
 			// set the array count to the number of bytes we used
 			bpb.shrink(p - bpb.begin());
@@ -1064,7 +1066,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	bool grant_role_stmt = false;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	MetaName grantor = tdbb->getAttachment()->att_user->usr_user_name;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
@@ -1403,7 +1405,7 @@ static bool grantor_can_grant(Global* gbl,
 	USHORT err_num;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	// Verify that the input relation exists.
 
@@ -1675,7 +1677,7 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 	bool no_admin = false;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	// Fetch the name of the owner of the ROLE
 	MetaName owner;
@@ -1786,7 +1788,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	MetaName dummy_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -2068,7 +2070,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 	SSHORT user_type = -1;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	while ((verb = *(*ptr)++) != isc_dyn_end)
 	{
@@ -2188,7 +2190,7 @@ static void set_field_class_name(Global* gbl, const MetaName& relation, const Me
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
 	jrd_req* request2 = NULL;
@@ -2252,7 +2254,7 @@ static void store_privilege(Global* gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 
@@ -2306,8 +2308,8 @@ static void dyn_user(Global* /*gbl*/, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-	jrd_tra* tra = tdbb->getTransaction();
+	Database* const dbb = tdbb->getDatabase();
+	jrd_tra* const tra = tdbb->getTransaction();
 
 	Database::Checkout dcoHolder(dbb);
 
