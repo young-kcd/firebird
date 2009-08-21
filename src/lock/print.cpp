@@ -478,6 +478,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			exit(FINI_OK);
 		}
 
+		if (sw_consistency)
+		{
+#ifdef WIN_NT
+			ISC_mutex_init(MUTEX, shmem_data.sh_mem_name);
+#endif
+			ISC_mutex_lock(MUTEX);
+		}
+
 		if (LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
 		{
 #if defined HAVE_MMAP || defined WIN_NT
@@ -504,17 +512,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				exit(FINI_OK);
 			}
 
-#ifdef WIN_NT
-			ISC_mutex_init(MUTEX, shmem_data.sh_mem_name);
-#endif
-
-			ISC_mutex_lock(MUTEX);
 			memcpy(buffer, LOCK_header, LOCK_header->lhb_length);
 			ISC_mutex_unlock(MUTEX);
 
 			LOCK_header = (lhb*)(UCHAR*) buffer;
 
+#ifdef WIN_NT
 			ISC_mutex_fini(MUTEX);
+#endif
 		}
 	}
 	else if (lock_file)
