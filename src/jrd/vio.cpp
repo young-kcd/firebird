@@ -127,7 +127,7 @@ static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, //record_param*,
 					  const bool, const bool);
 
-/* Pick up relation ids */
+// Pick up relation ids
 #include "../jrd/ini.h"
 
 #ifdef GARBAGE_THREAD
@@ -258,10 +258,10 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	VIO_bump_count(tdbb, DBB_backout_count, relation);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_BACKOUTS);
 
-/* If there is data in the record, fetch it now.  If the old version
-   is a differences record, we will need it sooner.  In any case, we
-   will need it eventually to clean up blobs and indices. If the record
-   has changed in between, stop now before things get worse.*/
+	// If there is data in the record, fetch it now.  If the old version
+	// is a differences record, we will need it sooner.  In any case, we
+	// will need it eventually to clean up blobs and indices. If the record
+	// has changed in between, stop now before things get worse.
 
 	record_param temp = *rpb;
 	if (!DPM_get(tdbb, &temp, LCK_read)) {
@@ -311,12 +311,12 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		going.push(temp.rpb_record);
 	}
 
-/* Set up an extra record parameter block.  This will be used to preserve
-   the main record information while we chase fragments. */
+	// Set up an extra record parameter block.  This will be used to preserve
+	// the main record information while we chase fragments.
 
 	record_param temp2 = temp = *rpb;
 
-/* If there is an old version of the record, fetch it's data now. */
+	// If there is an old version of the record, fetch it's data now.
 
 	Record* gc_rec1 = NULL;
 
@@ -353,7 +353,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		}
 	}
 
-/* Re-fetch the record. */
+	// Re-fetch the record.
 
 	if (!DPM_get(tdbb, rpb, LCK_write))
 		goto gc_cleanup;
@@ -367,7 +367,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	}
 #endif
 
-/* If the record is in any way suspicious, release the record and give up. */
+	// If the record is in any way suspicious, release the record and give up.
 
 	if (rpb->rpb_b_page != temp2.rpb_b_page || rpb->rpb_b_line != temp2.rpb_b_line ||
 		rpb->rpb_transaction_nr != temp2.rpb_transaction_nr)
@@ -376,7 +376,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		goto gc_cleanup;
 	}
 
-/* even if the record isn't suspicious, it may have changed a little */
+	// even if the record isn't suspicious, it may have changed a little
 
 	temp2 = *rpb;
 	rpb->rpb_undo = old_data;
@@ -384,7 +384,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	if (rpb->rpb_flags & rpb_delta)
 		rpb->rpb_prior = data;
 
-/* Handle the case of no old version simply. */
+	// Handle the case of no old version simply.
 
 	if (!rpb->rpb_b_page)
 	{
@@ -399,8 +399,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		goto gc_cleanup;
 	}
 
-/* If both record versions are on the same page, things are a little
-   simpler */
+	// If both record versions are on the same page, things are a little simpler
 
 	if (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior)
 	{
@@ -411,8 +410,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	}
 	else
 	{
-		/* Bring the old version forward.  If the outgoing version was deleted,
-		   there is no garbage collection to be done.  */
+		// Bring the old version forward.  If the outgoing version was deleted,
+		// there is no garbage collection to be done.
 
 		rpb->rpb_address = temp.rpb_address;
 		rpb->rpb_length = temp.rpb_length;
@@ -428,21 +427,21 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		{
 			replace_record(tdbb, rpb, 0, transaction);
 			if (!DPM_fetch(tdbb, &temp, LCK_write))
-				BUGCHECK(291);	/* msg 291 cannot find record back version */
+				BUGCHECK(291);	// msg 291 cannot find record back version
 			delete_record(tdbb, &temp, rpb->rpb_page, 0);
 			goto gc_cleanup;
 		}
 
-		/* There is cleanup to be done.  Bring the old version forward first */
+		// There is cleanup to be done.  Bring the old version forward first
 
 		rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
 		DPM_update(tdbb, rpb, 0, transaction);
 		delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
 
-		/* Next, delete the old copy of the now current version. */
+		// Next, delete the old copy of the now current version.
 
 		if (!DPM_fetch(tdbb, &temp, LCK_write))
-			BUGCHECK(291);		/* msg 291 cannot find record back version */
+			BUGCHECK(291);		// msg 291 cannot find record back version
 		delete_record(tdbb, &temp, rpb->rpb_page, 0);
 	}
 
@@ -459,7 +458,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	clearRecordStack(staying);
 
-/* Return relation garbage collect record blocks to vector. */
+	// Return relation garbage collect record blocks to vector.
 
   gc_cleanup:
 	if (gc_rec1)
@@ -558,17 +557,17 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 	}
 #endif
 
-/* Handle the fast path first.  If the record is committed, isn't deleted,
-   and doesn't have an old version that is a candidate for garbage collection,
-   return without further ado */
+	// Handle the fast path first.  If the record is committed, isn't deleted,
+	// and doesn't have an old version that is a candidate for garbage collection,
+	// return without further ado
 
 	int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-/* Reset the garbage collect active flag if the transaction state is
-   in a terminal state. If committed it must have been a precommitted
-   transaction that was backing out a dead record version and the
-   system crashed. Clear the flag and set the state to tra_dead to
-   reattempt the backout. */
+	// Reset the garbage collect active flag if the transaction state is
+	// in a terminal state. If committed it must have been a precommitted
+	// transaction that was backing out a dead record version and the
+	// system crashed. Clear the flag and set the state to tra_dead to
+	// reattempt the backout.
 
 	if (rpb->rpb_flags & rpb_gc_active)
 	{
@@ -599,11 +598,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 	Attachment* attachment = transaction->tra_attachment;
 
-/* OK, something about the record is fishy.  Loop thru versions until a
-   satisfactory version is found or we run into a brick wall.  Do any
-   garbage collection that seems appropriate. */
+	// OK, something about the record is fishy.  Loop thru versions until a
+	// satisfactory version is found or we run into a brick wall.  Do any
+	// garbage collection that seems appropriate.
 
-/* First, save the record indentifying information to be restored on exit */
+	// First, save the record indentifying information to be restored on exit
 
 	while (true)
 	{
@@ -629,9 +628,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			if (state == tra_active)
 				state = tra_limbo;
 		}
-		/* If the transaction is a read committed and chooses the no version
-		 * option, wait for reads also!
-		 */
+		// If the transaction is a read committed and chooses the no version
+		// option, wait for reads also!
+
 		if ((transaction->tra_flags & TRA_read_committed) &&
 			(!(transaction->tra_flags & TRA_rec_version) || writelock))
 		{
@@ -645,13 +644,13 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 				state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-				/* will come back with active if lock mode is no wait */
+				// will come back with active if lock mode is no wait
 
 				if (state == tra_active)
 				{
-					/* error if we cannot ignore limbo, else fall through
-					 * to next version
-					 */
+					// error if we cannot ignore limbo, else fall through
+					// to next version
+
 					if (!(transaction->tra_flags & TRA_ignore_limbo))
 					{
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
@@ -664,20 +663,20 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 			else if (state == tra_active && !(rpb->rpb_flags & rpb_gc_active))
 			{
-				/* A read committed, no record version transaction has to wait
-				   if the record has been modified by an active transaction. But
-				   it shouldn't wait if this is a transient fragmented backout
-				   of a dead record version. */
+				// A read committed, no record version transaction has to wait
+				// if the record has been modified by an active transaction. But
+				// it shouldn't wait if this is a transient fragmented backout
+				// of a dead record version.
 
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
 				if (state == tra_active)
 					ERR_post(Arg::Gds(isc_deadlock));
 
-				/* refetch the record and try again.  The active transaction
-				 * could have updated the record a second time.
-				 * go back to outer loop
-				 */
+				// refetch the record and try again.  The active transaction
+				// could have updated the record a second time.
+				// go back to outer loop
+
 
 				if (!DPM_get(tdbb, rpb, LCK_read)) {
 					return false;
@@ -690,8 +689,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 		switch (state)
 		{
-			/* If it's dead, back it out, if possible.  Otherwise continue to
-			   chase backward */
+			// If it's dead, back it out, if possible.  Otherwise continue to chase backward
 
 		case tra_dead:
 #ifdef VIO_DEBUG
@@ -753,9 +751,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 						rpb->rpb_prior = rpb->rpb_record;
 					}
 				}
-				/* Fetch a back version.  If a latch timeout occurs, refetch the
-				   primary version and start again.  If the primary version is
-				   gone, then return 'record not found'. */
+				// Fetch a back version.  If a latch timeout occurs, refetch the
+				// primary version and start again.  If the primary version is
+				// gone, then return 'record not found'.
 				if (!DPM_fetch_back(tdbb, rpb, LCK_read, -1))
 				{
 					if (!DPM_get(tdbb, rpb, LCK_read)) {
@@ -772,7 +770,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 			break;
 
-			/* If it's active, prepare to fetch the old version. */
+			// If it's active, prepare to fetch the old version.
 
 		case tra_limbo:
 #ifdef VIO_DEBUG
@@ -798,7 +796,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 #endif
 
-			/* we can't use this one so if there aren't any more just stop now. */
+			// we can't use this one so if there aren't any more just stop now.
 
 			if (rpb->rpb_b_page == 0)
 			{
@@ -820,9 +818,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			if (!(rpb->rpb_flags & rpb_delta))
 			{
 				rpb->rpb_prior = NULL;
-				/* Fetch a back version.  If a latch timeout occurs, refetch the
-				   primary version and start again.  If the primary version is
-				   gone, then return 'record not found'. */
+				// Fetch a back version.  If a latch timeout occurs, refetch the
+				// primary version and start again.  If the primary version is
+				// gone, then return 'record not found'.
 				if (!DPM_fetch_back(tdbb, rpb, LCK_read, -1))
 				{
 					if (!DPM_get(tdbb, rpb, LCK_read)) {
@@ -847,11 +845,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					rpb->rpb_line = temp.rpb_b_line;
 					if (!DPM_fetch(tdbb, rpb, LCK_read))
 					{
-						/* Things have changed, start all over again. */
+						// Things have changed, start all over again.
 						if (!DPM_get(tdbb, rpb, LCK_read)) {
-							return false;	/* entire record disappeared */
+							return false;	// entire record disappeared
 						}
-						break;	/* start from the primary version again */
+						break;	// start from the primary version again
 					}
 				}
 				else
@@ -860,11 +858,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					rpb->rpb_line = temp.rpb_line;
 					if (!DPM_fetch(tdbb, rpb, LCK_read))
 					{
-						/* Things have changed, start all over again. */
+						// Things have changed, start all over again.
 						if (!DPM_get(tdbb, rpb, LCK_read)) {
-							return false;	/* entire record disappeared */
+							return false;	// entire record disappeared
 						}
-						break;	/* start from the primary version again */
+						break;	// start from the primary version again
 					}
 					if (rpb->rpb_transaction_nr != temp.rpb_transaction_nr)
 					{
@@ -881,9 +879,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					}
 					if (!(rpb->rpb_flags & rpb_delta))
 						rpb->rpb_prior = NULL;
-					/* Fetch a back version.  If a latch timeout occurs, refetch the
-					   primary version and start again.  If the primary version is
-					   gone, then return 'record not found'. */
+					// Fetch a back version.  If a latch timeout occurs, refetch the
+					// primary version and start again.  If the primary version is
+					// gone, then return 'record not found'.
 					if (!DPM_fetch_back(tdbb, rpb, LCK_read, -1))
 					{
 						if (!DPM_get(tdbb, rpb, LCK_read)) {
@@ -910,7 +908,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 			return true;
 
-			/* If it's committed, worry a bit about garbage collection. */
+			// If it's committed, worry a bit about garbage collection.
 
 		case tra_committed:
 #ifdef VIO_DEBUG
@@ -944,11 +942,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				return false;
 			}
 
-			/* Check if no garbage collection can (should) be done.
-			   It might be important not to garbage collect if the primary
-			   record version is not yet committed because garbage collection
-			   might interfere with the updater (prepare_update, update_in_place...).
-			   That might be the reason for the rpb_chained check. */
+			// Check if no garbage collection can (should) be done.
+			// It might be important not to garbage collect if the primary
+			// record version is not yet committed because garbage collection
+			// might interfere with the updater (prepare_update, update_in_place...).
+			// That might be the reason for the rpb_chained check.
 
 			const bool cannotGC =
 				rpb->rpb_transaction_nr >= transaction->tra_oldest_active || rpb->rpb_b_page == 0 ||
@@ -968,7 +966,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				return true;
 			}
 
-			/* Garbage collect. */
+			// Garbage collect.
 
 #ifdef GARBAGE_THREAD
 			if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc) &&
@@ -980,7 +978,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 #endif
 			purge(tdbb, rpb);
 
-			/* Go back to be primary record version and chase versions all over again. */
+			// Go back to be primary record version and chase versions all over again.
 			if (!DPM_get(tdbb, rpb, LCK_read)) {
 				return false;
 			}
@@ -988,11 +986,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 		state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		/* Reset the garbage collect active flag if the transaction state is
-		   in a terminal state. If committed it must have been a precommitted
-		   transaction that was backing out a dead record version and the
-		   system crashed. Clear the flag and set the state to tra_dead to
-		   reattempt the backout. */
+		// Reset the garbage collect active flag if the transaction state is
+		// in a terminal state. If committed it must have been a precommitted
+		// transaction that was backing out a dead record version and the
+		// system crashed. Clear the flag and set the state to tra_dead to
+		// reattempt the backout.
 
 		if (!(rpb->rpb_flags & rpb_chained) && rpb->rpb_flags & rpb_gc_active)
 		{
@@ -1138,7 +1136,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 			    rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page, rpb->rpb_f_line);
 		}
 #endif
-		BUGCHECK(183);			/* msg 183 wrong record length */
+		BUGCHECK(183);			// msg 183 wrong record length
 	}
 
 	rpb->rpb_address = record->rec_data;
@@ -1185,9 +1183,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	}
 #endif
 
-/* If the stream was sorted, the various fields in the rpb are
-   probably junk.  Just to make sure that everything is cool,
-   refetch the record. */
+	// If the stream was sorted, the various fields in the rpb are
+	// probably junk.  Just to make sure that everything is cool, refetch the record.
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch)
 	{
@@ -1197,10 +1194,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	bool same_tx = false;
 	if (rpb->rpb_transaction_nr == transaction->tra_number) {
-		same_tx = true;			/* deleting tx has updated/inserted this record before */
+		same_tx = true;			// deleting tx has updated/inserted this record before
 	}
 
-/* Special case system transaction */
+	// Special case system transaction
 
 	if (transaction->tra_flags & TRA_system)
 	{
@@ -1211,8 +1208,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	transaction->tra_flags |= TRA_write;
 	jrd_rel* relation = rpb->rpb_relation;
 
-/* If we're about to erase a system relation, check to make sure
-   everything is completely kosher. */
+	// If we're about to erase a system relation, check to make sure
+	// everything is completely kosher.
 
 	DSC desc, desc2;
 
@@ -1235,7 +1232,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				id = MOV_get_long(&desc2, 0);
 				if (id < (int) rel_MAX)
 				{
-					IBERROR(187);	/* msg 187 cannot delete system relations */
+					IBERROR(187);	// msg 187 cannot delete system relations
 				}
 				DFW_post_work(transaction, dfw_delete_relation, &desc, id);
 				MET_lookup_relation_id(tdbb, id, false);
@@ -1404,7 +1401,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_triggers:
 			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 
-			/* check if this  request go through without checking permissions */
+			// check if this  request go through without checking permissions
 			if (!(request->req_flags & req_ignore_perm)) {
 				SCL_check_relation(tdbb, &desc, SCL_control);
 			}
@@ -1443,12 +1440,12 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			DFW_post_work(transaction, dfw_grant, &desc, id);
 			break;
 
-		default:    /* Shut up compiler warnings */
+		default:    // Shut up compiler warnings
 			break;
 		}
 	}
 
-/* If the page can be updated simply, we can skip the remaining crud */
+	// If the page can be updated simply, we can skip the remaining crud
 
 	record_param temp;
 	temp.rpb_transaction_nr = transaction->tra_number;
@@ -1473,7 +1470,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	}
 	else
 	{
-		/* Update stub didn't find one page -- do a long, hard update */
+		// Update stub didn't find one page -- do a long, hard update
 		PageStack stack;
 		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, stack, false))
 		{
@@ -1482,7 +1479,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 		}
 
-		/* Old record was restored and re-fetched for write.  Now replace it.  */
+		// Old record was restored and re-fetched for write.  Now replace it.
 
 		rpb->rpb_transaction_nr = transaction->tra_number;
 		rpb->rpb_b_page = temp.rpb_page;
@@ -1495,7 +1492,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		replace_record(tdbb, rpb, &stack, transaction);
 	}
 
-/* Check to see if recursive revoke needs to be propagated */
+	// Check to see if recursive revoke needs to be propagated
 
 	if ((RIDS) relation->rel_id == rel_priv)
 	{
@@ -1520,7 +1517,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	VIO_bump_count(tdbb, DBB_delete_count, relation);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_DELETES);
 
-/* for an autocommit transaction, mark a commit as necessary */
+	// for an autocommit transaction, mark a commit as necessary
 
 	if (transaction->tra_flags & TRA_autocommit)
 	{
@@ -1614,11 +1611,11 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 
 		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		/* Reset the garbage collect active flag if the transaction state is
-		   in a terminal state. If committed it must have been a precommitted
-		   transaction that was backing out a dead record version and the
-		   system crashed. Clear the flag and set the state to tra_dead to
-		   reattempt the backout. */
+		// Reset the garbage collect active flag if the transaction state is
+		// in a terminal state. If committed it must have been a precommitted
+		// transaction that was backing out a dead record version and the
+		// system crashed. Clear the flag and set the state to tra_dead to
+		// reattempt the backout.
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
@@ -1691,14 +1688,13 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* Allocate a vector of garbage collect record blocks for relation. */
+	// Allocate a vector of garbage collect record blocks for relation.
 	vec<Record*>* vector = relation->rel_gc_rec;
 	if (!vector) {
 		vector = relation->rel_gc_rec = vec<Record*>::newVector(*dbb->dbb_permanent, 1);
 	}
 
-/* Set the active flag on an inactive garbage collect record block
-   and return it. */
+	// Set the active flag on an inactive garbage collect record block and return it.
 	vec<Record*>::iterator rec_ptr = vector->begin();
 	for (const vec<Record*>::const_iterator end = vector->end(); rec_ptr != end; ++rec_ptr)
 	{
@@ -1709,13 +1705,13 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 		}
 	}
 
-/* Allocate a garbage collect record block if all are active. */
+	// Allocate a garbage collect record block if all are active.
 	record_param rpb;
 	rpb.rpb_record = 0;
 	Record* record = VIO_record(tdbb, &rpb, MET_current(tdbb, relation), dbb->dbb_permanent);
 	record->rec_flags |= REC_gc_active;
 
-/* Insert the new record block into the last slot of the vector. */
+	// Insert the new record block into the last slot of the vector.
 
 	size_t slot = vector->count() - 1;
 	if ((*vector)[slot]) {
@@ -1749,9 +1745,9 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 	}
 #endif
 
-/* Fetch data page from a modify/erase input stream with a write
-   lock. This saves an upward conversion to a write lock when
-   refetching the page in the context of the output stream. */
+	// Fetch data page from a modify/erase input stream with a write
+	// lock. This saves an upward conversion to a write lock when
+	// refetching the page in the context of the output stream.
 
 	const USHORT lock_type = (rpb->rpb_stream_flags & RPB_s_update) ? LCK_write : LCK_read;
 
@@ -1833,7 +1829,7 @@ bool VIO_get_current(thread_db* tdbb,
 
 	while (true)
 	{
-		/* If the record doesn't exist, no problem. */
+		// If the record doesn't exist, no problem.
 
 		if (!DPM_get(tdbb, rpb, LCK_read)) {
 			return false;
@@ -1851,7 +1847,7 @@ bool VIO_get_current(thread_db* tdbb,
 		}
 #endif
 
-		/* Get data if there is data. */
+		// Get data if there is data.
 
 		if (rpb->rpb_flags & rpb_deleted) {
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
@@ -1860,17 +1856,17 @@ bool VIO_get_current(thread_db* tdbb,
 			VIO_data(tdbb, rpb, pool);
 		}
 
-		/* If we deleted the record, everything's fine, otherwise
-		   the record must be considered real. */
+		// If we deleted the record, everything's fine, otherwise
+		// the record must be considered real.
 
 		if (rpb->rpb_transaction_nr == transaction->tra_number) {
 			break;
 		}
 
-		/* check the state of transaction  - tra_us is taken care of above
-		 * For now check the state in the tip_cache or tip bitmap. If
-		 * record is committed (most cases), this will be faster.
-		 */
+		// check the state of transaction  - tra_us is taken care of above
+		// For now check the state in the tip_cache or tip bitmap. If
+		// record is committed (most cases), this will be faster.
+
 
 		int state;
 		if (transaction->tra_flags & TRA_read_committed) {
@@ -1880,11 +1876,11 @@ bool VIO_get_current(thread_db* tdbb,
 			state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 		}
 
-		/* Reset the garbage collect active flag if the transaction state is
-		   in a terminal state. If committed it must have been a precommitted
-		   transaction that was backing out a dead record version and the
-		   system crashed. Clear the flag and set the state to tra_dead to
-		   reattempt the backout. */
+		// Reset the garbage collect active flag if the transaction state is
+		// in a terminal state. If committed it must have been a precommitted
+		// transaction that was backing out a dead record version and the
+		// system crashed. Clear the flag and set the state to tra_dead to
+		// reattempt the backout.
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
@@ -1916,19 +1912,17 @@ bool VIO_get_current(thread_db* tdbb,
 			continue;
 		case tra_precommitted:
 			Database::Checkout dcoHolder(dbb);
-			THREAD_SLEEP(100);	/* milliseconds */
+			THREAD_SLEEP(100);	// milliseconds
 			continue;
 		}
 
-		/* The record belongs to somebody else.  Wait for him to
-		   commit, rollback, or die. */
+		// The record belongs to somebody else.  Wait for him to commit, rollback, or die.
 
 		const SLONG tid_fetch = rpb->rpb_transaction_nr;
 
-		/* Wait as long as it takes for an active transaction which has modified
-		   the record. If an active transaction has used its TID to safely
-		   backout a fragmented dead record version, spin wait because it will
-		   finish shortly. */
+		// Wait as long as it takes for an active transaction which has modified
+		// the record. If an active transaction has used its TID to safely
+		// backout a fragmented dead record version, spin wait because it will finish shortly.
 
 		if (!(rpb->rpb_flags & rpb_gc_active))
 		{
@@ -1948,28 +1942,28 @@ bool VIO_get_current(thread_db* tdbb,
 		switch (state)
 		{
 		case tra_committed:
-			/* If the record doesn't exist anymore, no problem. This
-			 * can happen in two cases.  The transaction that inserted
-			 * the record deleted it or the transaction rolled back and
-			 * removed the records it modified and marked itself
-			 * committed
-			 */
+			// If the record doesn't exist anymore, no problem. This
+			// can happen in two cases.  The transaction that inserted
+			// the record deleted it or the transaction rolled back and
+			// removed the records it modified and marked itself
+			// committed
+
 
 			if (!DPM_get(tdbb, rpb, LCK_read)) {
 				return false;
 			}
 
-			/* if the transaction actually rolled back and what
-			 * we are reading is another record (newly inserted),
-			 * loop back and try again.
-			 */
+			// if the transaction actually rolled back and what
+			// we are reading is another record (newly inserted),
+			// loop back and try again.
+
 
 			if (tid_fetch != rpb->rpb_transaction_nr) {
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				continue;
 			}
 
-			/* Get latest data if there is data. */
+			// Get latest data if there is data.
 
 			if (rpb->rpb_flags & rpb_deleted) {
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
@@ -2009,7 +2003,7 @@ bool VIO_get_current(thread_db* tdbb,
 			break;
 
 		default:
-			BUGCHECK(184);		/* limbo impossible */
+			BUGCHECK(184);		// limbo impossible
 		}
 	}
 
@@ -2038,8 +2032,7 @@ void VIO_init(thread_db* tdbb)
 		return;
 	}
 
-/* If there's no presence of a garbage collector running
-   then start one up. */
+	// If there's no presence of a garbage collector running then start one up.
 
 	if (!(dbb->dbb_flags & DBB_garbage_collector))
 	{
@@ -2053,10 +2046,10 @@ void VIO_init(thread_db* tdbb)
 		}
 	}
 
-/* Database backups and sweeps perform their own garbage collection
-   unless passing a no garbage collect switch which means don't
-   notify the garbage collector to garbage collect. Every other
-   attachment notifies the garbage collector to do their dirty work. */
+	// Database backups and sweeps perform their own garbage collection
+	// unless passing a no garbage collect switch which means don't
+	// notify the garbage collector to garbage collect. Every other
+	// attachment notifies the garbage collector to do their dirty work.
 
 	if (dbb->dbb_flags & DBB_garbage_collector &&
 		!(attachment->att_flags & (ATT_no_cleanup | ATT_gbak_attachment)))
@@ -2166,9 +2159,9 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	new_rpb->rpb_flags = 0;
 	new_rpb->getWindow(tdbb).win_flags = WIN_secondary;
 
-/* If the stream was sorted, the various fields in the rpb are
-   probably junk.  Just to make sure that everything is cool,
-   refetch and release the record. */
+	// If the stream was sorted, the various fields in the rpb are
+	// probably junk.  Just to make sure that everything is cool,
+	// refetch and release the record.
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch)
 	{
@@ -2176,8 +2169,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
-/* If we're the system transaction, modify stuff in place.  This saves
-   endless grief on cleanup */
+	// If we're the system transaction, modify stuff in place.  This saves
+	// endless grief on cleanup
 
 	VIO_bump_count(tdbb, DBB_update_count, relation);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_UPDATES);
@@ -2187,8 +2180,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 		return;
 	}
 
-/* If we're about to modify a system relation, check to make sure
-   everything is completely kosher. */
+	// If we're about to modify a system relation, check to make sure
+	// everything is completely kosher.
 
 	DSC desc1, desc2;
 
@@ -2331,15 +2324,16 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 		}
 	}
 
-/* We're almost ready to go.  To modify the record, we must first
-   make a copy of the old record someplace else.  Then we must re-fetch
-   the record (for write) and verify that it is legal for us to
-   modify it -- that it was written by a transaction that was committed
-   when we started.  If not, the transaction that wrote the record
-   is either active, dead, or in limbo.  If the transaction is active,
-   wait for it to finish.  If it commits, we can't procede and must
-   return an update conflict.  If the transaction is dead, back out the
-   old version of the record and try again.  If in limbo, punt.  */
+	/* We're almost ready to go.  To modify the record, we must first
+	make a copy of the old record someplace else.  Then we must re-fetch
+	the record (for write) and verify that it is legal for us to
+	modify it -- that it was written by a transaction that was committed
+	when we started.  If not, the transaction that wrote the record
+	is either active, dead, or in limbo.  If the transaction is active,
+	wait for it to finish.  If it commits, we can't procede and must
+	return an update conflict.  If the transaction is dead, back out the
+	old version of the record and try again.  If in limbo, punt.
+	*/
 
 	if (org_rpb->rpb_transaction_nr == transaction->tra_number &&
 		org_rpb->rpb_format_number == new_rpb->rpb_format_number)
@@ -2366,7 +2360,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 	IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
 
-/* Old record was restored and re-fetched for write.  Now replace it.  */
+	// Old record was restored and re-fetched for write.  Now replace it.
 
 	org_rpb->rpb_transaction_nr = new_rpb->rpb_transaction_nr;
 	org_rpb->rpb_format_number = new_rpb->rpb_format_number;
@@ -2385,7 +2379,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 		verb_post(tdbb, transaction, org_rpb, 0, /*0,*/ false, false);
 	}
 
-/* for an autocommit transaction, mark a commit as necessary */
+	// for an autocommit transaction, mark a commit as necessary
 
 	if (transaction->tra_flags & TRA_autocommit) {
 		transaction->tra_flags |= TRA_perform_autocommit;
@@ -2424,9 +2418,9 @@ bool VIO_next_record(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Fetch data page from a modify/erase input stream with a write
-   lock. This saves an upward conversion to a write lock when
-   refetching the page in the context of the output stream. */
+	// Fetch data page from a modify/erase input stream with a write
+	// lock. This saves an upward conversion to a write lock when
+	// refetching the page in the context of the output stream.
 
 	const USHORT lock_type = (rpb->rpb_stream_flags & RPB_s_update) ? LCK_write : LCK_read;
 
@@ -2515,7 +2509,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, Mem
 	}
 #endif
 
-/* If format wasn't given, look one up */
+	// If format wasn't given, look one up
 
 	if (!format)
 		format = MET_format(tdbb, rpb->rpb_relation, rpb->rpb_format_number);
@@ -2745,7 +2739,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_triggers:
 			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 
-			/* check if this  request go through without checking permissions */
+			// check if this  request go through without checking permissions
 			if (!(request->req_flags & req_ignore_perm)) {
 				SCL_check_relation(tdbb, &desc, SCL_control);
 			}
@@ -2776,7 +2770,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			} // scope
 			break;
 
-		default:    /* Shut up compiler warnings */
+		default:    // Shut up compiler warnings
 			break;
 		}
 	}
@@ -2829,7 +2823,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		verb_post(tdbb, transaction, rpb, 0, /*0,*/ false, false);
 	}
 
-/* for an autocommit transaction, mark a commit as necessary */
+	// for an autocommit transaction, mark a commit as necessary
 
 	if (transaction->tra_flags & TRA_autocommit) {
 		transaction->tra_flags |= TRA_perform_autocommit;
@@ -2988,10 +2982,10 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		(transaction->tra_save_point->sav_flags & SAV_trans_level) &&
 		VIO_savepoint_large(sav_point, SAV_LARGE) < 0)
 	{
-		VIO_verb_cleanup(tdbb, transaction);	/* get rid of tx-level savepoint */
+		VIO_verb_cleanup(tdbb, transaction);	// get rid of tx-level savepoint
 	}
 
-/* Cleanup/merge deferred work/event post */
+	// Cleanup/merge deferred work/event post
 
 	if (sav_point->sav_verb_actions || (sav_point->sav_flags & SAV_force_dfw))
 	{
@@ -3003,9 +2997,9 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 						   (transaction->tra_save_point ? transaction->tra_save_point->sav_number : 0));
 		}
 
-		/* The save point may be reused, so reset it.  If the work was
-		 * not rolled back, set flag for the previous save point.
-		 */
+		// The save point may be reused, so reset it.  If the work was
+		// not rolled back, set flag for the previous save point.
+
 
 		if (sav_point->sav_flags & SAV_force_dfw)
 		{
@@ -3039,15 +3033,15 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 				if (sav_point->sav_verb_count)
 				{
-					/* This savepoint needs to be undone because the
-					verb_count is not zero. */
+					// This savepoint needs to be undone because the
+					// verb_count is not zero.
 
 					RecordBitmap::Accessor accessor(action->vct_records);
 					if (accessor.getFirst())
 						do {
 							rpb.rpb_number.setValue(accessor.current());
 							if (!DPM_get(tdbb, &rpb, LCK_write)) {
-								BUGCHECK(186);	/* msg 186 record disappeared */
+								BUGCHECK(186);	// msg 186 record disappeared
 							}
 							if (rpb.rpb_flags & rpb_delta) {
 								VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
@@ -3056,7 +3050,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 							}
 							if (rpb.rpb_transaction_nr != transaction->tra_number) {
-								BUGCHECK(185);	/* msg 185 wrong record version */
+								BUGCHECK(185);	// msg 185 wrong record version
 							}
 							if (!action->vct_undo ||
 								!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
@@ -3068,8 +3062,8 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								Record* const record = action->vct_undo->current().setupRecord(transaction);
 								const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
 
-								/* Have we done BOTH an update and delete to this record
-								in the same transaction? */
+								// Have we done BOTH an update and delete to this record
+								// in the same transaction?
 
 								if (same_tx)
 								{
@@ -3082,7 +3076,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									if (record->rec_length == 0 && record->rec_flags & REC_new_version)
 									{
 										if (!DPM_get(tdbb, &rpb, LCK_write)) {
-											BUGCHECK(186);	/* msg 186 record disappeared */
+											BUGCHECK(186);	// msg 186 record disappeared
 										}
 										if (rpb.rpb_flags & rpb_delta) {
 											VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
@@ -3104,7 +3098,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									if (!(rpb.rpb_flags & rpb_delta))
 									{
 										if (!DPM_get(tdbb, &rpb, LCK_write)) {
-											BUGCHECK(186);	/* msg 186 record disappeared */
+											BUGCHECK(186);	// msg 186 record disappeared
 										}
 										VIO_data(tdbb, &rpb, tdbb->getDefaultPool());
 									}
@@ -3119,7 +3113,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 				}
 				else
 				{
-					/* This savepoint needs to be posted to the previous savepoint. */
+					// This savepoint needs to be posted to the previous savepoint.
 
 					RecordBitmap::Accessor accessor(action->vct_records);
 					if (accessor.getFirst())
@@ -3132,13 +3126,13 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 							}
 							else
 							{
-								/* Setup more of rpb because verb_post is probably going to
-								garbage-collect.  Note that the data doesn't need to be set up
-								because old_data will be used.  (this guarantees that the
-								rpb points to the first fragment of the record) */
+								// Setup more of rpb because verb_post is probably going to
+								// garbage-collect.  Note that the data doesn't need to be set up
+								// because old_data will be used.  (this guarantees that the
+								// rpb points to the first fragment of the record)
 
 								if (!DPM_get(tdbb, &rpb, LCK_read)) {
-									BUGCHECK(186);	/* msg 186 record disappeared */
+									BUGCHECK(186);	// msg 186 record disappeared
 								}
 								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 								Record* const record = action->vct_undo->current().setupRecord(transaction);
@@ -3191,10 +3185,9 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	sav_point->sav_next = transaction->tra_save_free;
 	transaction->tra_save_free = sav_point;
 
-/* If the only remaining savepoint is the 'transaction-level' savepoint
-   that was started by TRA_start, then check if it hasn't grown out of
-   bounds yet.  If it has, then give up on this transaction-level
-   savepoint. */
+	// If the only remaining savepoint is the 'transaction-level' savepoint
+	// that was started by TRA_start, then check if it hasn't grown out of
+	// bounds yet.  If it has, then give up on this transaction-level savepoint.
 
 	if (transaction->tra_save_point &&
 		(transaction->tra_save_point->sav_flags & SAV_trans_level) &&
@@ -3259,7 +3252,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 	while (true)
 	{
 
-		/* Refetch and release the record if it is needed */
+		// Refetch and release the record if it is needed
 		if (org_rpb->rpb_stream_flags & RPB_s_refetch)
 		{
 			// const SLONG tid_fetch = org_rpb->rpb_transaction_nr;
@@ -3303,7 +3296,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 				return false;
 		}
 
-		/* Old record was restored and re-fetched for write.  Now replace it.  */
+		// Old record was restored and re-fetched for write.  Now replace it.
 
 		org_rpb->rpb_transaction_nr = transaction->tra_number;
 		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
@@ -3320,7 +3313,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 			verb_post(tdbb, transaction, org_rpb, 0, /*0,*/ false, false);
 		}
 
-		/* for an autocommit transaction, mark a commit as necessary */
+		// for an autocommit transaction, mark a commit as necessary
 
 		if (transaction->tra_flags & TRA_autocommit) {
 			transaction->tra_flags |= TRA_perform_autocommit;
@@ -3450,9 +3443,8 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 	const TEXT* const end = p + desc->dsc_length;
 	const TEXT* q = tdbb->getAttachment()->att_user->usr_user_name.c_str();
 
-/* It is OK to not internationalize this function for v4.00 as
- * User names are limited to 7-bit ASCII for v4.00
- */
+	// It is OK to not internationalize this function for v4.00 as
+	// User names are limited to 7-bit ASCII for v4.00
 
 	for (; p < end && *p != ' '; p++, q++)
 	{
@@ -3593,11 +3585,10 @@ static UCHAR* delete_tail(thread_db* tdbb,
 		rpb->rpb_page = rpb->rpb_f_page;
 		rpb->rpb_line = rpb->rpb_f_line;
 
-		/* Since the callers are modifying this record, it should not be
-		   garbage collected. */
+		// Since the callers are modifying this record, it should not be garbage collected.
 
 		if (!DPM_fetch(tdbb, rpb, LCK_write)) {
-			BUGCHECK(248);		/* msg 248 cannot find record fragment */
+			BUGCHECK(248);		// msg 248 cannot find record fragment
 		}
 		if (tail) {
 			tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
@@ -3670,7 +3661,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 		return;
 	}
 
-/* Re-fetch the record */
+	// Re-fetch the record
 
 	if (!DPM_get(tdbb, rpb, LCK_write))
 	{
@@ -3694,7 +3685,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 	}
 #endif
 
-/* Make sure it looks kosher and delete the record. */
+	// Make sure it looks kosher and delete the record.
 
 	if (!(rpb->rpb_flags & rpb_deleted) || rpb->rpb_transaction_nr >= transaction->tra_oldest_active)
 	{
@@ -3711,13 +3702,13 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 
 	delete_record(tdbb, rpb, prior_page, 0);
 
-/* If there aren't any old versions, don't worry about garbage collection. */
+	// If there aren't any old versions, don't worry about garbage collection.
 
 	if (!rpb->rpb_b_page) {
 		return;
 	}
 
-/* Delete old versions fetching data for garbage collection. */
+	// Delete old versions fetching data for garbage collection.
 
 	record_param temp = *rpb;
 	RecordStack empty_staying;
@@ -3768,7 +3759,7 @@ static void garbage_collect(thread_db* tdbb,
 	}
 #endif
 
-/* Delete old versions fetching data for garbage collection. */
+	// Delete old versions fetching data for garbage collection.
 
 	RecordStack going;
 
@@ -3779,14 +3770,13 @@ static void garbage_collect(thread_db* tdbb,
 		rpb->rpb_page = rpb->rpb_b_page;
 		rpb->rpb_line = rpb->rpb_b_line;
 		if (!DPM_fetch(tdbb, rpb, LCK_write)) {
-			BUGCHECK(291);		/* msg 291 cannot find record back version */
+			BUGCHECK(291);		// msg 291 cannot find record back version
 		}
 		delete_record(tdbb, rpb, prior_page, tdbb->getDefaultPool());
 		if (rpb->rpb_record) {
 			going.push(rpb->rpb_record);
 		}
-		/* Don't monopolize the server while chasing long
-		   back version chains. */
+		// Don't monopolize the server while chasing long back version chains.
 		if (--tdbb->tdbb_quantum < 0)
 			JRD_reschedule(tdbb, 0, true);
 	}
@@ -3816,11 +3806,10 @@ static void garbage_collect_idx(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-/* There should be a way to quickly check if there are indices and/or if there
-   are blob-colums. */
+	// There should be a way to quickly check if there are indices and/or if there are blob-colums.
 
-/* Garbage collect.  Start by getting all existing old versions (other
-   than the immediate two in question). */
+	// Garbage collect.  Start by getting all existing old versions (other
+	// than the immediate two in question).
 
 	RecordStack going, staying;
 	list_staying(tdbb, org_rpb, staying);
@@ -3829,7 +3818,7 @@ static void garbage_collect_idx(thread_db* tdbb,
 		staying.push(staying_data);
 	}
 
-/* The data that is going is passed either via old_data, or via org_rpb. */
+	// The data that is going is passed either via old_data, or via org_rpb.
 
 	going.push(old_data ? old_data : org_rpb->rpb_record);
 
@@ -3869,7 +3858,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	ISC_STATUS_ARRAY status_vector;
 	MOVE_CLEAR(status_vector, sizeof(status_vector));
 
-/* Establish a thread context. */
+	// Establish a thread context.
 	ThreadContextHolder tdbb(status_vector);
 
 	tdbb->setDatabase(dbb);
@@ -3878,7 +3867,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-/* Surrender if resources to start up aren't available. */
+	// Surrender if resources to start up aren't available.
 	bool found = false, flush = false;
 	record_param rpb;
 	MOVE_CLEAR(&rpb, sizeof(record_param));
@@ -3887,7 +3876,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	jrd_tra* transaction = NULL;
 
 	try {
-/* Pseudo attachment needed for lock owner identification. */
+		// Pseudo attachment needed for lock owner identification.
 
 		Attachment* const attachment = Attachment::create(dbb);
 		tdbb->setAttachment(attachment);
@@ -3898,7 +3887,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 		LCK_init(tdbb, LCK_OWNER_attachment);
 
-/* Notify our creator that we have started */
+		// Notify our creator that we have started
 		dbb->dbb_flags |= DBB_garbage_collector;
 		dbb->dbb_gc_init.release();
 
@@ -3909,12 +3898,12 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 	try {
 
-/* Initialize status vector after logging error. */
+		// Initialize status vector after logging error.
 
 		MOVE_CLEAR(status_vector, sizeof(status_vector));
 
-/* The garbage collector flag is cleared to request the thread
-   to finish up and exit. */
+		// The garbage collector flag is cleared to request the thread
+		// to finish up and exit.
 
 		while (dbb->dbb_flags & DBB_garbage_collector)
 		{
@@ -3923,10 +3912,10 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			found = false;
 			relation = 0;
 
-			/* If background thread activity has been suspended because
-			   of I/O errors then idle until the condition is cleared.
-			   In particular, make worker threads perform their own
-			   garbage collection so that errors are reported to users. */
+			// If background thread activity has been suspended because
+			// of I/O errors then idle until the condition is cleared.
+			// In particular, make worker threads perform their own
+			// garbage collection so that errors are reported to users.
 
 			if (dbb->dbb_flags & DBB_suspend_bgio)
 			{
@@ -3960,9 +3949,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 				}
 			}
 
-			/* Scan relation garbage collection bitmaps for candidate data pages.
-			   Express interest in the relation to prevent it from being deleted
-			   out from under us while garbage collection is in-progress. */
+			// Scan relation garbage collection bitmaps for candidate data pages.
+			// Express interest in the relation to prevent it from being deleted
+			// out from under us while garbage collection is in-progress.
 
 			vec<jrd_rel*>* vector = dbb->dbb_relations;
 			for (ULONG id = 0; vector && id < vector->count(); ++id)
@@ -4000,18 +3989,18 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 							if (!transaction)
 							{
-								/* Start a "precommitted" transaction by using read-only,
-								   read committed. Of particular note is the absence of a
-								   transaction lock which means the transaction does not
-								   inhibit garbage collection by its very existence. */
+								// Start a "precommitted" transaction by using read-only,
+								// read committed. Of particular note is the absence of a
+								// transaction lock which means the transaction does not
+								// inhibit garbage collection by its very existence.
 
 								transaction = TRA_start(tdbb, sizeof(gc_tpb), gc_tpb);
 								tdbb->setTransaction(transaction);
 							}
 							else
 							{
-								/* Refresh our notion of the oldest transactions for
-								   efficient garbage collection. This is very cheap. */
+								// Refresh our notion of the oldest transactions for
+								// efficient garbage collection. This is very cheap.
 
 								transaction->tra_oldest = dbb->dbb_oldest_transaction;
 								transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
@@ -4021,7 +4010,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 							rpb.rpb_number.setValue(((SINT64) dp_sequence * dbb->dbb_max_records) - 1);
 							const RecordNumber last(rpb.rpb_number.getValue() + dbb->dbb_max_records);
 
-							/* Attempt to garbage collect all records on the data page. */
+							// Attempt to garbage collect all records on the data page.
 
 							while (VIO_next_record(tdbb, &rpb, /*NULL,*/ transaction, NULL,
 #ifdef SCROLLABLE_CURSORS
@@ -4054,7 +4043,7 @@ rel_exit:
 					{
 						if (!relation->rel_gc_bitmap->getFirst())
 						{
-							/* If the bitmap is empty then release it */
+							// If the bitmap is empty then release it
 							delete relation->rel_gc_bitmap;
 							relation->rel_gc_bitmap = 0;
 						}
@@ -4073,8 +4062,8 @@ rel_exit:
 				}
 			}
 
-			/* If there's more work to do voluntarily ask to be rescheduled.
-			   Otherwise, wait for event notification. */
+			// If there's more work to do voluntarily ask to be rescheduled.
+			// Otherwise, wait for event notification.
 
 			if (found)
 			{
@@ -4084,9 +4073,9 @@ rel_exit:
 			{
 				dbb->dbb_flags &= ~DBB_gc_pending;
 
-				/* Make no mistake about it, garbage collection is our first
-				   priority. But if there's no garbage left to collect, assist
-				   the overworked cache writer and reader threads. */
+				// Make no mistake about it, garbage collection is our first
+				// priority. But if there's no garbage left to collect, assist
+				// the overworked cache writer and reader threads.
 
 				while (dbb->dbb_flags & DBB_garbage_collector && !(dbb->dbb_flags & DBB_gc_pending))
 				{
@@ -4101,12 +4090,12 @@ rel_exit:
 #endif
 					if (flush)
 					{
-						/* As a last resort, flush garbage collected pages to
-						   disk. This isn't strictly necessary but contributes
-						   to the supply of free pages available for user
-						   transactions. It also reduces the likelihood of
-						   orphaning free space on lower precedence pages that
-						   haven't been written if a crash occurs. */
+						// As a last resort, flush garbage collected pages to
+						// disk. This isn't strictly necessary but contributes
+						// to the supply of free pages available for user
+						// transactions. It also reduces the likelihood of
+						// orphaning free space on lower precedence pages that
+						// haven't been written if a crash occurs.
 
 						flush = false;
 						if (transaction) {
@@ -4126,7 +4115,7 @@ rel_exit:
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		/* Perfunctory error reporting -- got any better ideas ? */
+		// Perfunctory error reporting -- got any better ideas ?
 
 		Firebird::stuff_exception(status_vector, ex);
 		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
@@ -4155,13 +4144,13 @@ gc_exit:
 		}
 
 		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
-		/* Notify the finalization caller that we're finishing. */
+		// Notify the finalization caller that we're finishing.
 		dbb->dbb_gc_fini.release();
 
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		/* Perfunctory error reporting -- got any better ideas ? */
+		// Perfunctory error reporting -- got any better ideas ?
 
 		Firebird::stuff_exception(status_vector, ex);
 		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
@@ -4201,21 +4190,21 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 	for (;;)
 	{
-		/* Each time thru the loop, start from the latest version of the record
-		   because during the call to VIO_data (below), things might change. */
+		// Each time thru the loop, start from the latest version of the record
+		// because during the call to VIO_data (below), things might change.
 
 		record_param temp = *rpb;
 		depth = 0;
 
-		/* If the entire record disappeared, then there is nothing staying. */
+		// If the entire record disappeared, then there is nothing staying.
 		if (!DPM_fetch(tdbb, &temp, LCK_read))
 		{
 			clearRecordStack(staying);
 			return;
 		}
 
-		/* If anything changed, then start all over again.  This time with the
-		   new, latest version of the record. */
+		// If anything changed, then start all over again.  This time with the
+		// new, latest version of the record.
 
 		if (temp.rpb_b_page != rpb->rpb_b_page || temp.rpb_b_line != rpb->rpb_b_line ||
 			temp.rpb_flags != rpb->rpb_flags)
@@ -4229,8 +4218,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 		depth++;
 
-		/* Each time thru the for-loop, we process the next older version.
-		   The while-loop finds this next older version. */
+		// Each time thru the for-loop, we process the next older version.
+		// The while-loop finds this next older version.
 
 		bool timed_out = false;
 		while (temp.rpb_b_page &&
@@ -4250,8 +4239,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 				break;
 			}
 			depth++;
-			/* Don't monopolize the server while chasing long
-			   back version chains. */
+			// Don't monopolize the server while chasing long back version chains.
 			if (--tdbb->tdbb_quantum < 0)
 				JRD_reschedule(tdbb, 0, true);
 		}
@@ -4259,8 +4247,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			continue;
 		}
 
-		/* If there is a next older version, then process it: remember that
-		   version's data in 'staying'. */
+		// If there is a next older version, then process it: remember that
+		// version's data in 'staying'.
 
 		if (temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line)
 		{
@@ -4286,10 +4274,10 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 		}
 	}
 
-/* If the current number of back versions (depth) is smaller than the number
-   of back versions that we saw in a previous iteration (max_depth), then
-   somebody else must have been garbage collecting also.  Remove the entries
-   in 'staying' that have already been garbage collected. */
+	// If the current number of back versions (depth) is smaller than the number
+	// of back versions that we saw in a previous iteration (max_depth), then
+	// somebody else must have been garbage collecting also.  Remove the entries
+	// in 'staying' that have already been garbage collected.
 	while (depth < max_depth--)
 	{
 		if (staying.hasData())
@@ -4330,16 +4318,16 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 	if (tranid == 0)
 		return;
 
-/* If this is a large sequential scan then defer the release
-   of the data page to the LRU tail until the garbage collector
-   can garbage collect the page. */
+	// If this is a large sequential scan then defer the release
+	// of the data page to the LRU tail until the garbage collector
+	// can garbage collect the page.
 
 	if (rpb->getWindow(tdbb).win_flags & WIN_large_scan) {
 		rpb->getWindow(tdbb).win_flags |= WIN_garbage_collect;
 	}
 
-/* A relation's garbage collect bitmap is allocated
-   from the database permanent pool. */
+	// A relation's garbage collect bitmap is allocated
+	// from the database permanent pool.
 
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 	const SLONG dp_sequence = rpb->rpb_number.getValue() / dbb->dbb_max_records;
@@ -4355,8 +4343,8 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 	if (tranid > relation->rel_garbage->minTranID())
 		tranid = relation->rel_garbage->minTranID();
 
-/* If the garbage collector isn't active then poke
-   the event on which it sleeps to awaken it. */
+	// If the garbage collector isn't active then poke
+	// the event on which it sleeps to awaken it.
 
 	dbb->dbb_flags |= DBB_gc_pending;
 
@@ -4444,26 +4432,27 @@ static int prepare_update(	thread_db*		tdbb,
 	}
 #endif
 
-/* We're almost ready to go.  To erase the record, we must first
-   make a copy of the old record someplace else.  Then we must re-fetch
-   the record (for write) and verify that it is legal for us to
-   erase it -- that it was written by a transaction that was committed
-   when we started.  If not, the transaction that wrote the record
-   is either active, dead, or in limbo.  If the transaction is active,
-   wait for it to finish.  If it commits, we can't procede and must
-   return an update conflict.  If the transaction is dead, back out the
-   old version of the record and try again.  If in limbo, punt.
+	/* We're almost ready to go.  To erase the record, we must first
+	make a copy of the old record someplace else.  Then we must re-fetch
+	the record (for write) and verify that it is legal for us to
+	erase it -- that it was written by a transaction that was committed
+	when we started.  If not, the transaction that wrote the record
+	is either active, dead, or in limbo.  If the transaction is active,
+	wait for it to finish.  If it commits, we can't procede and must
+	return an update conflict.  If the transaction is dead, back out the
+	old version of the record and try again.  If in limbo, punt.
 
-   The above is true only for concurrency & consistency mode transactions.
-   For read committed transactions, check if the latest commited version
-   is the same as the version that was read for the update.  If yes,
-   the update can take place.  If some other transaction has modified
-   the record and committed, then an update error will be returned.*/
+	The above is true only for concurrency & consistency mode transactions.
+	For read committed transactions, check if the latest commited version
+	is the same as the version that was read for the update.  If yes,
+	the update can take place.  If some other transaction has modified
+	the record and committed, then an update error will be returned.
+   */
 
 	*temp = *rpb;
 	Record* record = rpb->rpb_record;
 
-/* Mark the record as chained version, and re-store it */
+	// Mark the record as chained version, and re-store it
 
 	temp->rpb_address = record->rec_data;
 	temp->rpb_length = record->rec_format->fmt_length;
@@ -4474,7 +4463,7 @@ static int prepare_update(	thread_db*		tdbb,
 		temp->rpb_flags |= rpb_delta;
 	}
 
-/* If it makes sense, store a differences record */
+	// If it makes sense, store a differences record
 	UCHAR differences[MAX_DIFFERENCES];
 	if (new_rpb)
 	{
@@ -4513,9 +4502,9 @@ static int prepare_update(	thread_db*		tdbb,
 	temp->rpb_number = rpb->rpb_number;
 	DPM_store(tdbb, temp, stack, DPM_secondary);
 
-/* Re-fetch the original record for write in anticipation of
-   replacing it with a completely new version.  Make sure it
-   was the same one we stored above. */
+	// Re-fetch the original record for write in anticipation of
+	// replacing it with a completely new version.  Make sure it
+	// was the same one we stored above.
 	record_param org_rpb;
 	SLONG update_conflict_trans = -1;
 	while (true)
@@ -4526,19 +4515,19 @@ static int prepare_update(	thread_db*		tdbb,
 
 		if (!DPM_get(tdbb, rpb, LCK_write))
 		{
-			/* There is no reason why this record would disappear for a
-			   snapshot transaction. */
+			// There is no reason why this record would disappear for a
+			// snapshot transaction.
 			if (!(transaction->tra_flags & TRA_read_committed))
 			{
-				BUGCHECK(186);	/* msg 186 record disappeared */
+				BUGCHECK(186);	// msg 186 record disappeared
 			}
 			else
 			{
-				/* A read-committed transaction, on the other hand, doesn't
-				   insist on the presence of any version, so versions of records
-				   and entire records it has already read might be garbage-collected. */
+				// A read-committed transaction, on the other hand, doesn't
+				// insist on the presence of any version, so versions of records
+				// and entire records it has already read might be garbage-collected.
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
-					BUGCHECK(291);	/* msg 291 cannot find record back version */
+					BUGCHECK(291);	// msg 291 cannot find record back version
 				}
 				delete_record(tdbb, temp, (SLONG) 0, 0);
 				return PREPARE_DELETE;
@@ -4547,11 +4536,11 @@ static int prepare_update(	thread_db*		tdbb,
 
 		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		/* Reset the garbage collect active flag if the transaction state is
-		   in a terminal state. If committed it must have been a precommitted
-		   transaction that was backing out a dead record version and the
-		   system crashed. Clear the flag and set the state to tra_dead to
-		   reattempt the backout. */
+		// Reset the garbage collect active flag if the transaction state is
+		// in a terminal state. If committed it must have been a precommitted
+		// transaction that was backing out a dead record version and the
+		// system crashed. Clear the flag and set the state to tra_dead to
+		// reattempt the backout.
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
@@ -4586,32 +4575,32 @@ static int prepare_update(	thread_db*		tdbb,
 			if (rpb->rpb_flags & rpb_deleted)
 			{
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				/* get rid of the back records we just created */
+				// get rid of the back records we just created
 				if (!(transaction->tra_attachment->att_flags & ATT_no_cleanup))
 				{
 					if (!DPM_fetch(tdbb, temp, LCK_write)) {
-						BUGCHECK(291);	/* msg 291 cannot find record back version */
+						BUGCHECK(291);	// msg 291 cannot find record back version
 					}
 					delete_record(tdbb, temp, (SLONG) 0, 0);
 				}
 				if (writelock) {
 					return PREPARE_DELETE;
 				}
-				IBERROR(188);	/* msg 188 cannot update erased record */
+				IBERROR(188);	// msg 188 cannot update erased record
 			}
 
-			/* For read committed transactions, if the record version we read
-			 * and started the update
-			 * has been updated by another transaction which committed in the
-			 * meantime, we cannot proceed further - update conflict error.
-			 */
+			// For read committed transactions, if the record version we read
+			// and started the update
+			// has been updated by another transaction which committed in the
+			// meantime, we cannot proceed further - update conflict error.
+
 
 			if ((transaction->tra_flags & TRA_read_committed) &&
 				(commit_tid_read != rpb->rpb_transaction_nr))
 			{
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
-					BUGCHECK(291);	/* msg 291 cannot find record back version */
+					BUGCHECK(291);	// msg 291 cannot find record back version
 				}
 				delete_record(tdbb, temp, (SLONG) 0, 0);
 				return PREPARE_CONFLICT;
@@ -4647,17 +4636,16 @@ static int prepare_update(	thread_db*		tdbb,
 					(rpb->rpb_f_page != org_rpb.rpb_f_page || rpb->rpb_f_line != org_rpb.rpb_f_line))
 			{
 
-				/* the primary copy of the record was dead and someone else
-				   backed it out for us.  Our data is OK but our pointers
-				   aren't, so get rid of the record we created and try again
-				 */
+				// the primary copy of the record was dead and someone else
+				// backed it out for us.  Our data is OK but our pointers
+				// aren't, so get rid of the record we created and try again
 
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				if (!(transaction->tra_attachment->att_flags & ATT_no_cleanup))
 				{
 					record_param temp2 = *temp;
 					if (!DPM_fetch(tdbb, &temp2, LCK_write)) {
-						BUGCHECK(291);	/* msg 291 cannot find record back version */
+						BUGCHECK(291);	// msg 291 cannot find record back version
 					}
 					delete_record(tdbb, &temp2, (SLONG) 0, 0);
 				}
@@ -4685,10 +4673,10 @@ static int prepare_update(	thread_db*		tdbb,
 #endif
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
-			/* Wait as long as it takes for an active transaction which has modified
-			   the record. If an active transaction has used its TID to safely
-			   backout a fragmented dead record version, spin wait because it will
-			   finish shortly. */
+			// Wait as long as it takes for an active transaction which has modified
+			// the record. If an active transaction has used its TID to safely
+			// backout a fragmented dead record version, spin wait because it will
+			// finish shortly.
 
 			if (!(rpb->rpb_flags & rpb_gc_active)) {
 				state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
@@ -4705,10 +4693,10 @@ static int prepare_update(	thread_db*		tdbb,
 				}
 			}
 
-			/* The snapshot says: transaction was active.  The TIP page says: transaction
-			   is committed.  Maybe the transaction was rolled back via a transaction
-			   level savepoint.  In that case, the record DPM_get-ed via rpb is already
-			   backed out.  Try to refetch that record one more time. */
+			// The snapshot says: transaction was active.  The TIP page says: transaction
+			// is committed.  Maybe the transaction was rolled back via a transaction
+			// level savepoint.  In that case, the record DPM_get-ed via rpb is already
+			// backed out.  Try to refetch that record one more time.
 
 			if ((state == tra_committed) && (rpb->rpb_transaction_nr != update_conflict_trans))
 			{
@@ -4718,7 +4706,7 @@ static int prepare_update(	thread_db*		tdbb,
 			if (state != tra_dead && !(temp->rpb_flags & rpb_deleted))
 			{
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
-					BUGCHECK(291);	/* msg 291 cannot find record back version */
+					BUGCHECK(291);	// msg 291 cannot find record back version
 				}
 				delete_record(tdbb, temp, (SLONG) 0, 0);
 			}
@@ -4805,9 +4793,9 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	}
 #endif
 
-/* Release and re-fetch the page for write.  Make sure it's still the
-   same record (give up if not).  Then zap the back pointer and release
-   the record.  */
+	// Release and re-fetch the page for write.  Make sure it's still the
+	// same record (give up if not).  Then zap the back pointer and release
+	// the record.
 
 	record_param temp = *rpb;
 	jrd_rel* relation = rpb->rpb_relation;
@@ -4887,8 +4875,8 @@ static Record* replace_gc_record(jrd_rel* relation, Record** gc_record, USHORT l
 		}
 	}
 
-	BUGCHECK(288);				/* msg 288 garbage collect record disappeared */
-	return NULL;			/* Added to remove compiler warnings */
+	BUGCHECK(288);			// msg 288 garbage collect record disappeared
+	return NULL;			// Added to remove compiler warnings
 }
 
 
@@ -5012,11 +5000,10 @@ static void update_in_place(thread_db* tdbb,
 	jrd_rel* relation = org_rpb->rpb_relation;
 	Record* const old_data = org_rpb->rpb_record;
 
-/* If the old version has been stored as a delta, things get complicated.  Clearly,
-   if we overwrite the current record, the differences from the current version
-   becomes meaningless.  What we need to do is replace the old "delta" record
-   with an old "complete" record, update in placement, then delete the old
-   delta record */
+	// If the old version has been stored as a delta, things get complicated.  Clearly,
+	// if we overwrite the current record, the differences from the current version
+	// becomes meaningless.  What we need to do is replace the old "delta" record
+	// with an old "complete" record, update in placement, then delete the old delta record
 
 	Record* gc_rec = NULL;
 	record_param temp2;
@@ -5044,7 +5031,7 @@ static void update_in_place(thread_db* tdbb,
 	}
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write)) {
-		BUGCHECK(186);			/* msg 186 record disappeared */
+		BUGCHECK(186);			// msg 186 record disappeared
 	}
 
 	if (prior)
@@ -5078,8 +5065,8 @@ static void update_in_place(thread_db* tdbb,
 
 	if (transaction->tra_flags & TRA_system)
 	{
-		/* Garbage collect.  Start by getting all existing old versions (other
-		   than the immediate two in question). */
+		// Garbage collect.  Start by getting all existing old versions (other
+		// than the immediate two in question).
 
 		RecordStack staying;
 		list_staying(tdbb, org_rpb, staying);
@@ -5098,7 +5085,7 @@ static void update_in_place(thread_db* tdbb,
 	if (prior)
 	{
 		if (!DPM_fetch(tdbb, &temp2, LCK_write)) {
-			BUGCHECK(291);		/* msg 291 cannot find record back version */
+			BUGCHECK(291);		// msg 291 cannot find record back version
 		}
 		delete_record(tdbb, &temp2, org_rpb->rpb_page, 0);
 	}
@@ -5140,7 +5127,7 @@ static void verb_post(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-/* Find action block for relation */
+	// Find action block for relation
 	VerbAction* action;
 	for (action = transaction->tra_save_point->sav_verb_actions; action; action = action->vct_next)
 	{
@@ -5167,8 +5154,8 @@ static void verb_post(thread_db* tdbb,
 		RBM_SET(tdbb->getDefaultPool(), &action->vct_records, rpb->rpb_number.getValue());
 		if (old_data)
 		{
-			/* An update-in-place is being posted to this savepoint, and this
-			   savepoint hasn't seen this record before. */
+			// An update-in-place is being posted to this savepoint, and this
+			// savepoint hasn't seen this record before.
 
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
@@ -5178,8 +5165,8 @@ static void verb_post(thread_db* tdbb,
 		}
 		else if (same_tx)
 		{
-			/* An insert/update followed by a delete is posted to this savepoint,
-			   and this savepoint hasn't seen this record before. */
+			// An insert/update followed by a delete is posted to this savepoint,
+			// and this savepoint hasn't seen this record before.
 
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
@@ -5193,15 +5180,14 @@ static void verb_post(thread_db* tdbb,
 		Record* undo = NULL;
 		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue()))
 		{
-			/* An insert/update followed by a delete is posted to this savepoint,
-			   and this savepoint has already undo for this record. */
+			// An insert/update followed by a delete is posted to this savepoint,
+			// and this savepoint has already undo for this record.
 			undo = action->vct_undo->current().setupRecord(transaction, REC_same_tx);
 		}
 		else
 		{
-			/* An insert/update followed by a delete is posted to this savepoint,
-			   and this savepoint has seen this record before but it doesn't have
-			   undo data. */
+			// An insert/update followed by a delete is posted to this savepoint,
+			// and this savepoint has seen this record before but it doesn't have undo data.
 
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
@@ -5211,17 +5197,17 @@ static void verb_post(thread_db* tdbb,
 		}
 		if (old_data)
 		{
-			/* The passed old_data will not be used.  Thus, garbage collect. */
+			// The passed old_data will not be used.  Thus, garbage collect.
 
 			garbage_collect_idx(tdbb, rpb, /*new_rpb,*/ old_data, undo);
 		}
 	}
 	else if (old_data)
 	{
-		/* We are posting an update-in-place, but the current savepoint has
-		   already undo data for this record.  The old_data will not be used,
-		   so make sure we garbage collect before we lose track of the
-		   in-place-updated record. */
+		// We are posting an update-in-place, but the current savepoint has
+		// already undo data for this record.  The old_data will not be used,
+		// so make sure we garbage collect before we lose track of the
+		// in-place-updated record.
 
 		Record* undo = NULL;
 		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue())) {

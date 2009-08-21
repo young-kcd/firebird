@@ -161,7 +161,7 @@ static const struct	// Used in make_int64_key()
  * This part was changed as a fix for bug 10267. - bsriram 04-Mar-1999
  */
 
-/* enumerate the possible outcomes of deleting a node */
+// enumerate the possible outcomes of deleting a node
 
 enum contents {
 	contents_empty = 0,
@@ -2805,10 +2805,10 @@ static void compress(thread_db* tdbb,
 			*p++ = *q++;
 		}
 	}
-#endif /* !WORDS_BIGENDIAN */
+#endif // !WORDS_BIGENDIAN
 
 
-#else /* IEEE */
+#else // IEEE
 
 
 	// The conversion from G_FLOAT to D_FLOAT made below was removed because
@@ -2838,7 +2838,7 @@ static void compress(thread_db* tdbb,
 #error to handle the following:
 #error 	a) idx_sql_date, idx_sql_time, idx_timestamp2 b) idx_numeric2
 
-#endif /* IEEE */
+#endif // IEEE
 
 	// Test the sign of the double precision number.  Just to be sure, don't
 	// rely on the byte comparison being signed.  If the number is negative,
@@ -2861,7 +2861,7 @@ static void compress(thread_db* tdbb,
 		// short part will unsigned-compare correctly.
 		key->key_data[8] ^= 1 << 7;
 
-		/*p = &key->key_data[(!int64_key_op) ? temp_copy_length - 1 : INT64_KEY_LENGTH - 1];*/
+		//p = &key->key_data[(!int64_key_op) ? temp_copy_length - 1 : INT64_KEY_LENGTH - 1];
 		p = &key->key_data[INT64_KEY_LENGTH - 1];
 	}
 	else {
@@ -6395,7 +6395,7 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 	fprintf(stderr, "\n");
 	return;
 }
-#endif /* DEBUG_INDEXKEY */
+#endif // DEBUG_INDEXKEY
 
 
 static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* window)
