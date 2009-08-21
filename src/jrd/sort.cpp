@@ -290,8 +290,7 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *      direction - true for SORT_put() and false for SORT_get()
  *
  **************************************/
-	UCHAR c1, fill_char, *fill_pos;
-	USHORT fill;
+	UCHAR c1;
 	SSHORT longs, flag;
 	ULONG lw;
 
@@ -331,9 +330,9 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 				if (!(scb->scb_flags & scb_sorted))
 				{
 					*((USHORT*) (record + key->skd_vary_offset)) = vlen;
-					fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					fill_pos = p + sizeof(USHORT) + vlen;
-					fill = n - sizeof(USHORT) - vlen;
+					const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+					UCHAR* fill_pos = p + sizeof(USHORT) + vlen;
+					const USHORT fill = n - sizeof(USHORT) - vlen;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
@@ -342,13 +341,13 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 
 			if (key->skd_dtype == SKD_cstring && direction)
 			{
-				fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+				const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted))
 				{
 					const USHORT l = strlen(reinterpret_cast<char*>(p));
 					*((USHORT*) (record + key->skd_vary_offset)) = l;
-					fill_pos = p + l;
-					fill = n - l;
+					UCHAR* fill_pos = p + l;
+					const USHORT fill = n - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
@@ -518,10 +517,7 @@ void SORT_fini(sort_context* scb, Attachment* att)
 
 
 #ifdef SCROLLABLE_CURSORS
-void SORT_get(thread_db* tdbb,
-			  sort_context* scb,
-			  ULONG ** record_address,
-			  rse_get_mode mode)
+void SORT_get(thread_db* tdbb, sort_context* scb, ULONG** record_address, rse_get_mode mode)
 {
 /**************************************
  *
@@ -613,9 +609,7 @@ void SORT_get(thread_db* tdbb,
 	tdbb->bumpStats(RuntimeStatistics::SORT_GETS);
 }
 #else
-void SORT_get(thread_db* tdbb,
-			  sort_context* scb,
-			  ULONG** record_address)
+void SORT_get(thread_db* tdbb, sort_context* scb, ULONG** record_address)
 {
 /**************************************
  *
@@ -709,7 +703,6 @@ sort_context* SORT_init(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	MemoryPool* const pool = tdbb->getDatabase()->dbb_permanent;
-	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
 	sort_context* scb = NULL;
 
 	try
@@ -1030,7 +1023,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 		{
 			if (run->run_buff_alloc)
 			{
-				delete run->run_buffer;
+				delete (UCHAR*) run->run_buffer;
 				run->run_buff_alloc = false;
 			}
 			++run_count;
@@ -1150,7 +1143,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 					run->run_buff_alloc = true;
 					run->run_buff_cache = false;
 
-					run->run_buffer = reinterpret_cast<SORTP*> (mem);
+					run->run_buffer = reinterpret_cast<SORTP*>(mem);
 					mem += mem_size;
 					run->run_record = reinterpret_cast<sort_record*>(mem);
 					run->run_end_buffer = reinterpret_cast<SORTP*> (mem);
@@ -1211,8 +1204,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *      direction - true for SORT_put() and false for SORT_get()
  *
  **************************************/
-	UCHAR *fill_pos, fill_char;
-	USHORT fill, flag;
+	USHORT flag;
 
 	for (sort_key_def* key = scb->scb_description, *end = key + scb->scb_keys; key < end; key++)
 	{
@@ -1238,9 +1230,9 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 				if (!(scb->scb_flags & scb_sorted))
 				{
 					*((USHORT*) (record + key->skd_vary_offset)) = vlen;
-					fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					fill_pos = p + sizeof(USHORT) + vlen;
-					fill = n - sizeof(USHORT) - vlen;
+					const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+					UCHAR* fill_pos = p + sizeof(USHORT) + vlen;
+					const USHORT fill = n - sizeof(USHORT) - vlen;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
@@ -1251,13 +1243,13 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		case SKD_cstring:
 			if (direction)
 			{
-				fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+				const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted))
 				{
 					const USHORT l = strlen(reinterpret_cast<char*>(p));
 					*((USHORT*) (record + key->skd_vary_offset)) = l;
-					fill_pos = p + l;
-					fill = n - l;
+					UCHAR* fill_pos = p + l;
+					const USHORT fill = n - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
@@ -1340,8 +1332,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *      direction - true for SORT_put() and false for SORT_get()
  *
  **************************************/
-	UCHAR c1, fill_char, *fill_pos;
-	USHORT fill;
+	UCHAR c1;
 	SSHORT longs, flag;
 	ULONG lw;
 #ifndef IEEE
@@ -1383,9 +1374,9 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 				if (!(scb->scb_flags & scb_sorted))
 				{
 					*((USHORT*) (record + key->skd_vary_offset)) = vlen;
-					fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					fill_pos = p + sizeof(USHORT) + vlen;
-					fill = n - sizeof(USHORT) - vlen;
+					const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+					UCHAR* fill_pos = p + sizeof(USHORT) + vlen;
+					const USHORT fill = n - sizeof(USHORT) - vlen;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
@@ -1394,13 +1385,13 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 
 			if (key->skd_dtype == SKD_cstring && direction)
 			{
-				fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+				const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted))
 				{
 					const USHORT l = strlen(reinterpret_cast<char*>(p));
 					*((USHORT*) (record + key->skd_vary_offset)) = l;
-					fill_pos = p + l;
-					fill = n - l;
+					UCHAR* fill_pos = p + l;
+					const USHORT fill = n - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
@@ -1684,6 +1675,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 		// If've we got a record, somebody asked for it. Find out who.
 
 		if (record)
+		{
 			if (merge->mrg_stream_a && !merge->mrg_record_a)
 				if (eof)
 					merge->mrg_stream_a = NULL;
@@ -1693,6 +1685,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 				merge->mrg_stream_b = NULL;
 			else
 				merge->mrg_record_b = record;
+		}
 
 
 		// If either streams need a record and is still active, loop back to pick
@@ -1727,7 +1720,8 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			continue;
 		}
 
-		if (!merge->mrg_record_a) {
+		if (!merge->mrg_record_a)
+		{
 			record = merge->mrg_record_b;
 			merge->mrg_record_b = NULL;
 			merge = merge->mrg_header.rmh_parent;
@@ -1925,7 +1919,7 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	{
 		scb->scb_runs = run->run_next;
 		if (run->run_buff_alloc)
-			delete run->run_buffer;
+			delete (UCHAR*) run->run_buffer;
 		delete run;
 	}
 
@@ -1935,7 +1929,7 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	{
 		scb->scb_free_runs = run->run_next;
 		if (run->run_buff_alloc)
-			delete run->run_buffer;
+			delete (UCHAR*) run->run_buffer;
 		delete run;
 	}
 
@@ -2258,7 +2252,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	scb->scb_free_runs = run->run_next;
 	if (run->run_buff_alloc)
 	{
-		delete run->run_buffer;
+		delete (UCHAR*) run->run_buffer;
 		run->run_buff_alloc = false;
 	}
 	temp_run.run_header.rmh_type = RMH_TYPE_RUN;
