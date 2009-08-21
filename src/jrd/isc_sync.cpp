@@ -3357,7 +3357,11 @@ int ISC_mutex_init(struct mtx* mutex, const TEXT* mutex_name)
 		return FB_FAILURE;
 	}
 
-	return !initializeFastMutex(&mutex->mtx_fast, ISC_get_security_desc(), FALSE, name_buffer);
+	if (initializeFastMutex(&mutex->mtx_fast, ISC_get_security_desc(), FALSE, name_buffer))
+		return FB_SUCCESS;
+
+	fb_assert(GetLastError() != 0);
+	return GetLastError();
 }
 
 
