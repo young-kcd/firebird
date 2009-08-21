@@ -22,11 +22,13 @@
 
 #include "firebird.h"
 
+#include "iberror.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../jrd/os/path_utils.h"
 
 #include "../jrd/TempSpace.h"
@@ -293,7 +295,8 @@ void TempSpace::extend(size_t size)
 		if (!block)
 		{
 			// allocate block in the temp file
-			TempFile* file = setupFile(size);
+			TempFile* const file = setupFile(size);
+			fb_assert(file);
 			if (tail && tail->sameFile(file))
 			{
 				tail->size += size;
@@ -359,10 +362,12 @@ TempSpace::Block* TempSpace::findBlock(offset_t& offset) const
 
 TempFile* TempSpace::setupFile(size_t size)
 {
-	TempFile* file = NULL;
+	ISC_STATUS_ARRAY status_vector;
 
 	for (size_t i = 0; i < tempDirs->getCount(); i++)
 	{
+		TempFile* file = NULL;
+
 		Firebird::PathName directory = (*tempDirs)[i];
 		PathUtils::ensureSeparator(directory);
 
@@ -388,29 +393,22 @@ TempFile* TempSpace::setupFile(size_t size)
 
 			file->extend(size);
 		}
-		catch (const Firebird::system_call_failed&)
+		catch (const Firebird::system_error& ex)
 		{
-			if (i < tempDirs->getCount() - 1)
-			{
-				// no room, let's try another directory
-				file = NULL;
-			}
-			else
-			{
-				// no room in all directories
-				gds__log("No free space found in temporary directories");
-				throw;
-			}
+			ex.stuff_exception(status_vector);
+			continue;
 		}
 
-		if (file)
-		{
-			break;
-		}
+		return file;
 	}
 
-	fb_assert(file);
-	return file;
+	// no room in all directories
+	Firebird::Arg::Gds status(isc_out_of_temp_space);
+	status.append(Firebird::Arg::StatusVector(status_vector));
+	iscLogStatus(NULL, status.value());
+	status.raise();
+
+	return NULL; // compiler silencer
 }
 
 //

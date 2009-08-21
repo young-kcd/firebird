@@ -1380,6 +1380,8 @@ C --
       PARAMETER (GDS__udf_fp_nan                       = 335544983)
       INTEGER*4 GDS__instance_conflict               
       PARAMETER (GDS__instance_conflict                = 335544984)
+      INTEGER*4 GDS__out_of_temp_space               
+      PARAMETER (GDS__out_of_temp_space                = 335544985)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

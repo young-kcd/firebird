@@ -772,6 +772,7 @@ Data source : @4', NULL, NULL)
 ('udf_fp_overflow', 'FUN_evaluate', 'fun.epp', NULL, 0, 662, NULL, 'Floating point overflow in result from UDF @1', NULL, NULL);
 ('udf_fp_nan', 'FUN_evaluate', 'fun.epp', NULL, 0, 663, NULL, 'Invalid floating point value returned by UDF @1', NULL, NULL);
 ('instance_conflict', 'ISC_map_file', 'isc_sync.cpp', NULL, 0, 664, NULL, 'Database is probably already opened by another engine instance in another Windows session', NULL, NULL);
+('out_of_temp_space', 'setupFile', 'TempSpace.cpp', NULL, 0, 665, NULL, 'No free space found in temporary directories', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

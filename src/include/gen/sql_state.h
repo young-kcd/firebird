@@ -685,6 +685,7 @@ static const struct {
 	{335544982, "39000"}, // 662 udf_fp_overflow
 	{335544983, "39000"}, // 663 udf_fp_nan
 	{335544984, "42000"}, // 664 instance_conflict
+	{335544985, "HY000"}, // 665 out_of_temp_space
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

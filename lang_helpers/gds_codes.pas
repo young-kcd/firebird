@@ -697,6 +697,7 @@ const
 	gds_udf_fp_overflow                  = 335544982;
 	gds_udf_fp_nan                       = 335544983;
 	gds_instance_conflict                = 335544984;
+	gds_out_of_temp_space                = 335544985;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
