@@ -67,6 +67,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/RefCounted.h"
 #include "../jrd/thread_proto.h"
 #include "gen/iberror.h"
 #include "../jrd/msg_encode.h"
@@ -184,6 +185,8 @@ static SCHAR *alloc(SLONG);
 static void free_block(void*);
 static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
 										  const int proc, const ISC_STATUS specCode = 0);
+static void release_dsql_support(sqlda_sup&);
+
 namespace Jrd {
 	class Attachment;
 	class jrd_tra;
@@ -201,12 +204,19 @@ namespace
 	const UCHAR HANDLE_STATEMENT_prepared	= 0x02;
 
 	// forwards
-	class Attachment;
-	class Transaction;
-	class Request;
-	class Blob;
-	class Statement;
-	class Service;
+	class CAttachment;
+	class CTransaction;
+	class CRequest;
+	class CBlob;
+	class CStatement;
+	class CService;
+
+	typedef RefPtr<CAttachment> Attachment;
+	typedef RefPtr<CTransaction> Transaction;
+	typedef RefPtr<CRequest> Request;
+	typedef RefPtr<CBlob> Blob;
+	typedef RefPtr<CStatement> Statement;
+	typedef RefPtr<CService> Service;
 
 	// force use of default memory pool for Y-Valve objects
 	typedef GlobalStorage DefaultMemory;
@@ -266,22 +276,21 @@ namespace
 		}
 	};
 
-	class BaseHandle : public DefaultMemory
+	class BaseHandle : public DefaultMemory, public RefCounted
 	{
 	public:
 		UCHAR			type;
 		UCHAR			flags;
 		USHORT			implementation;
 		FB_API_HANDLE	public_handle;
-		Attachment*		parent;
+		Attachment		parent;
     	FB_API_HANDLE*	user_handle;
 
 	protected:
-		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp = ~0);
+		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment par, USHORT imp = ~0);
 
 	public:
 		static BaseHandle* translate(FB_API_HANDLE);
-		Jrd::Attachment* getAttachmentHandle();
 
 		void release_user_handle()
 		{
@@ -291,73 +300,73 @@ namespace
 			}
 		}
 
-		~BaseHandle();
-
 		// required to put pointers to it into the tree
 		static const FB_API_HANDLE& generate(const void* /*sender*/, const BaseHandle* value)
 		{
 			return value->public_handle;
 		}
+
+		static void drop(BaseHandle*);
+
+	protected:
+		~BaseHandle();
 	};
 
-	template <typename HType>
-		void toParent(SortedArray<HType*>& members, HType* newMember, Mutex& mutex)
+	template <typename T>
+	class HandleArray
 	{
-		MutexLockGuard guard(mutex);
-		members.add(newMember);
-	}
+	public:
+		HandleArray(MemoryPool& p) : arr(p) { }
+		HandleArray() : arr(*getDefaultMemoryPool()) { }
 
-	template <typename HType>
-		void fromParent(SortedArray<HType*>& members, HType* newMember, Mutex& mutex)
-	{
-		MutexLockGuard guard(mutex);
-		size_t pos;
-		if (members.find(newMember, pos))
+		void destroy()
 		{
-			members.remove(pos);
-		}
-#ifdef DEV_BUILD
-		else
-		{
-			//Attempt to deregister not registered member
-			fb_assert(false);
-		}
-#endif
-	}
+			MutexLockGuard guard(mtx);
 
-	template <typename ToHandle>
-		ToHandle* translate(FB_API_HANDLE* handle)
-	{
-		if (shutdownStarted)
-		{
-			status_exception::raise(Arg::Gds(isc_att_shutdown));
-		}
-
-		if (handle && *handle)
-		{
-			BaseHandle* rc = BaseHandle::translate(*handle);
-			if (rc && rc->type == ToHandle::hType())
+			size_t i;
+			while ((i = arr.getCount()))
 			{
-				return static_cast<ToHandle*>(rc);
+				T::destroy(arr[i - 1]);
 			}
 		}
 
-		status_exception::raise(Arg::Gds(ToHandle::hError()));
-		// compiler warning silencer
-		return 0;
-	}
+		void toParent(T* newMember)
+		{
+			MutexLockGuard guard(mtx);
 
-	class Attachment : public BaseHandle
+			arr.add(newMember);
+		}
+
+		void fromParent(T* oldMember)
+		{
+			MutexLockGuard guard(mtx);
+
+			size_t pos;
+			if (arr.find(oldMember, pos))
+			{
+				arr.remove(pos);
+			}
+#ifdef DEV_BUILD
+			else
+			{
+				//Attempt to deregister not registered member
+				fb_assert(false);
+			}
+#endif
+		}
+
+	private:
+		SortedArray<T*> arr;
+		Mutex mtx;
+	};
+
+	class CAttachment : public BaseHandle
 	{
 	public:
-		SortedArray<Transaction*> transactions;
-		SortedArray<Request*> requests;
-		SortedArray<Blob*> blobs;
-		SortedArray<Statement*> statements;
-		// Each array can be protected with personal mutex,
-		// but possibility of collision is so slow here, that's why
-		// I prefer to save resources, using single mutex.
-		Mutex mutex;
+		HandleArray<CTransaction> transactions;
+		HandleArray<CRequest> requests;
+		HandleArray<CBlob> blobs;
+		HandleArray<CStatement> statements;
 
 		int enterCount;
 		Mutex enterMutex;
@@ -377,18 +386,26 @@ namespace
 		}
 
 	public:
-		Attachment(StoredAtt*, FB_API_HANDLE*, USHORT);
-		~Attachment();
+		CAttachment(StoredAtt*, FB_API_HANDLE*, USHORT);
+		static void destroy(CAttachment*);
+		bool destroying()
+		{
+			return flagDestroying;
+		}
+
+	private:
+		~CAttachment() { }
+
+		bool flagDestroying;
 	};
 
-	class Transaction : public BaseHandle
+	class CTransaction : public BaseHandle
 	{
 	public:
 		Clean<TransactionCleanupRoutine, FB_API_HANDLE> cleanup;
-		Transaction* next;
+		Transaction next;
 		StoredTra* handle;
-		SortedArray<Blob*> blobs;
-		Mutex mutex;	// protects blobs array
+		HandleArray<CBlob> blobs;
 
 		static ISC_STATUS hError()
 		{
@@ -401,21 +418,26 @@ namespace
 		}
 
 	public:
-		Transaction(StoredTra* h, FB_API_HANDLE* pub, Attachment* par)
-			: BaseHandle(hType(), pub, par), next(0), handle(h), blobs(getPool())
+		CTransaction(StoredTra* h, FB_API_HANDLE* pub, Attachment par)
+			: BaseHandle(hType(), pub, par), next(0), handle(h), 
+			blobs(getPool())
 		{
-			toParent<Transaction>(parent->transactions, this, parent->mutex);
+			parent->transactions.toParent(this);
 		}
 
-		Transaction(FB_API_HANDLE* pub, USHORT a_implementation)
-			: BaseHandle(hType(), pub, 0, a_implementation), next(0), handle(0)
+		CTransaction(FB_API_HANDLE* pub, USHORT a_implementation)
+			: BaseHandle(hType(), pub, Attachment(0), a_implementation), next(0), handle(0),
+			blobs(getPool())
 		{
 		}
 
-		~Transaction();
+		static void destroy(CTransaction*);
+
+	private:
+		~CTransaction() { }
 	};
 
-	class Request : public BaseHandle
+	class CRequest : public BaseHandle
 	{
 	public:
 		StoredReq* handle;
@@ -431,23 +453,28 @@ namespace
 		}
 
 	public:
-		Request(StoredReq* h, FB_API_HANDLE* pub, Attachment* par)
+		CRequest(StoredReq* h, FB_API_HANDLE* pub, Attachment par)
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
-			toParent<Request>(parent->requests, this, parent->mutex);
+			parent->requests.toParent(this);
 		}
 
-		~Request()
+		static void destroy(CRequest* h)
 		{
-			fromParent<Request>(parent->requests, this, parent->mutex);
+			h->release_user_handle();
+			h->parent->requests.fromParent(h);
+			drop(h);
 		}
+
+	private:
+		~CRequest() { }
 	};
 
-	class Blob : public BaseHandle
+	class CBlob : public BaseHandle
 	{
 	public:
 		StoredBlb* handle;
-		Transaction* tra;
+		Transaction tra;
 
 		static ISC_STATUS hError()
 		{
@@ -460,21 +487,25 @@ namespace
 		}
 
 	public:
-		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par, Transaction* t)
+		CBlob(StoredBlb* h, FB_API_HANDLE* pub, Attachment par, Transaction t)
 			: BaseHandle(hType(), pub, par), handle(h), tra(t)
 		{
-			toParent<Blob>(parent->blobs, this, parent->mutex);
-			toParent<Blob>(tra->blobs, this, tra->mutex);
+			parent->blobs.toParent(this);
+			tra->blobs.toParent(this);
 		}
 
-		~Blob()
+		static void destroy(CBlob* h)
 		{
-			fromParent<Blob>(tra->blobs, this, tra->mutex);
-			fromParent<Blob>(parent->blobs, this, parent->mutex);
+			h->tra->blobs.fromParent(h);
+			h->parent->blobs.fromParent(h);
+			drop(h);
 		}
+
+	private:
+		~CBlob() { }
 	};
 
-	class Statement : public BaseHandle
+	class CStatement : public BaseHandle
 	{
 	public:
 		StoredStm* handle;
@@ -491,10 +522,10 @@ namespace
 		}
 
 	public:
-		Statement(StoredStm* h, FB_API_HANDLE* pub, Attachment* par)
+		CStatement(StoredStm* h, FB_API_HANDLE* pub, Attachment par)
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
-			toParent<Statement>(parent->statements, this, parent->mutex);
+			parent->statements.toParent(this);
 			memset(&das, 0, sizeof das);
 		}
 
@@ -506,13 +537,24 @@ namespace
 			}
 		}
 
-		~Statement()
+		static void destroy(CStatement* h)
 		{
-			fromParent<Statement>(parent->statements, this, parent->mutex);
+			h->release_user_handle();
+			h->parent->statements.fromParent(h);
+			drop(h);
+		}
+
+	private:
+		~CStatement()
+		{ 
+			if (parent->destroying())
+			{
+				release_dsql_support(das);
+			}
 		}
 	};
 
-	class Service : public BaseHandle
+	class CService : public BaseHandle
 	{
 	public:
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
@@ -529,15 +571,19 @@ namespace
 		}
 
 	public:
-		Service(StoredSvc* h, FB_API_HANDLE* pub, USHORT impl)
-			: BaseHandle(hType(), pub, 0, impl), handle(h)
+		CService(StoredSvc* h, FB_API_HANDLE* pub, USHORT impl)
+			: BaseHandle(hType(), pub, Attachment(0), impl), handle(h)
 		{
 		}
 
-		~Service()
+		static void destroy(CService* h)
 		{
-			cleanup.call(&public_handle);
+			h->cleanup.call(&h->public_handle);
+			drop(h);
 		}
+
+	private:
+		~CService() { }
 	};
 
 	typedef BePlusTree<BaseHandle*, FB_API_HANDLE, MemoryPool, BaseHandle> HandleMapping;
@@ -546,8 +592,8 @@ namespace
 	ULONG handle_sequence_number = 0;
 	GlobalPtr<RWLock> handleMappingLock;
 
-	InitInstance<SortedArray<Attachment*> > attachments;
-	GlobalPtr<Mutex> attachmentsMutex, shutdownCallbackMutex;
+	InitInstance<HandleArray<CAttachment> > attachments;
+	GlobalPtr<Mutex> shutdownCallbackMutex;
 
 	class ShutChain : public GlobalStorage
 	{
@@ -601,11 +647,13 @@ namespace
 	ShutChain* ShutChain::list = 0;
 
 
-	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp)
+	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment par, USHORT imp)
 		: type(t), flags(0), implementation(par ? par->implementation : imp),
 		  parent(par), user_handle(0)
 	{
 		fb_assert(par || (imp != USHORT(~0)));
+
+		addRef();
 
 		{ // scope for write lock on handleMappingLock
 			WriteLockGuard sync(handleMappingLock);
@@ -632,8 +680,6 @@ namespace
 
 	BaseHandle* BaseHandle::translate(FB_API_HANDLE handle)
 	{
-		ReadLockGuard sync(handleMappingLock);
-
 		HandleMapping::Accessor accessor(&handleMapping);
 		if (accessor.locate(handle))
 		{
@@ -643,17 +689,38 @@ namespace
 		return 0;
 	}
 
-	Jrd::Attachment* BaseHandle::getAttachmentHandle()
+	template <typename ToHandle>
+		RefPtr<ToHandle> translate(FB_API_HANDLE* handle)
 	{
-		return parent ? parent->handle : 0;
+		if (shutdownStarted)
+		{
+			status_exception::raise(Arg::Gds(isc_att_shutdown));
+		}
+
+		if (handle && *handle)
+		{
+			ReadLockGuard sync(handleMappingLock);
+
+			BaseHandle* rc = BaseHandle::translate(*handle);
+			if (rc && rc->type == ToHandle::hType())
+			{
+				return RefPtr<ToHandle>(static_cast<ToHandle*>(rc));
+			}
+		}
+
+		status_exception::raise(Arg::Gds(ToHandle::hError()));
+		// compiler warning silencer
+		return RefPtr<ToHandle>(0);
 	}
 
-	BaseHandle::~BaseHandle()
+	BaseHandle::~BaseHandle() { }
+
+	void BaseHandle::drop(BaseHandle* h)
 	{
 		WriteLockGuard sync(handleMappingLock);
 
 		// Silently ignore bad handles for PROD_BUILD
-		if (handleMapping->locate(public_handle))
+		if (handleMapping->locate(h->public_handle))
 		{
 			handleMapping->fastRemove();
 		}
@@ -664,44 +731,80 @@ namespace
 			fb_assert(false);
 		}
 #endif
+		h->release();
 	}
 
-	Attachment::Attachment(StoredAtt* h, FB_API_HANDLE* pub, USHORT impl)
-		: BaseHandle(hType(), pub, 0, impl),
-		  transactions(*getDefaultMemoryPool()),
-		  requests(*getDefaultMemoryPool()),
-		  blobs(*getDefaultMemoryPool()),
-		  statements(*getDefaultMemoryPool()),
+	CAttachment::CAttachment(StoredAtt* h, FB_API_HANDLE* pub, USHORT impl)
+		: BaseHandle(hType(), pub, Attachment(0), impl),
+		  transactions(getPool()),
+		  requests(getPool()),
+		  blobs(getPool()),
+		  statements(getPool()),
 		  enterCount(0),
 		  handle(h),
-		  db_path(*getDefaultMemoryPool())
+		  db_path(getPool()),
+		  flagDestroying(false)
 	{
-		toParent<Attachment>(attachments(), this, attachmentsMutex);
+		attachments().toParent(this);
 		parent = this;
 	}
 
-	Attachment::~Attachment()
+	void CAttachment::destroy(CAttachment* h)
 	{
-		cleanup.call(&public_handle);
-		fromParent<Attachment>(attachments(), this, attachmentsMutex);
-	}
+		h->cleanup.call(&h->public_handle);
 
-	Transaction::~Transaction()
-	{
-		cleanup.call(public_handle);
-
-		size_t i;
-		while ((i = blobs.getCount()))
+		// cleanup
+		try
 		{
-			delete blobs[i - 1];
+			h->flagDestroying = true;
+
+			h->requests.destroy();
+			h->statements.destroy();
+			h->blobs.destroy();
+			// There should not be transactions at this point,
+			// but it's no danger in cleaning empty array
+			h->transactions.destroy();
+
+			h->flagDestroying = false;
+		}
+		catch(const Exception&)
+		{
+			h->flagDestroying = false;
+			throw;
 		}
 
-		if (parent)
+		attachments().fromParent(h);
+		drop(h);
+	}
+
+	void CTransaction::destroy(CTransaction* h)
+	{
+		h->cleanup.call(h->public_handle);
+		h->blobs.destroy();
+
+		if (h->parent)
 		{
-			fromParent<Transaction>(parent->transactions, this, parent->mutex);
+			h->parent->transactions.fromParent(h);
+		}
+
+		CTransaction* sub = h->next;
+
+		drop(h);
+
+		if (sub)
+		{
+			CTransaction::destroy(sub);
 		}
 	}
 
+	template <typename T>
+	void destroy(RefPtr<T> h)
+	{
+		if (h)
+		{
+			T::destroy(h);
+		}
+	}
 }
 
 #ifdef DEV_BUILD
@@ -711,11 +814,11 @@ static void check_status_vector(const ISC_STATUS*);
 static void event_ast(void*, USHORT, const UCHAR*);
 static void exit_handler(void*);
 
-static Transaction* find_transaction(Attachment*, Transaction*);
+static Transaction find_transaction(Attachment, Transaction);
 
-inline Transaction* findTransaction(FB_API_HANDLE* public_handle, Attachment *a)
+inline Transaction findTransaction(FB_API_HANDLE* public_handle, Attachment a)
 {
-	Transaction* t = find_transaction(a, translate<Transaction>(public_handle));
+	Transaction t = find_transaction(a, translate<CTransaction>(public_handle));
 	if (! t)
 	{
 		bad_handle(isc_bad_trans_handle);
@@ -724,17 +827,16 @@ inline Transaction* findTransaction(FB_API_HANDLE* public_handle, Attachment *a)
 	return t;
 }
 
-static int get_database_info(Transaction*, TEXT**);
+static int get_database_info(Transaction, TEXT**);
 static const PTR get_entrypoint(int, int);
 static USHORT sqlda_buffer_size(USHORT, const XSQLDA*, USHORT);
-static ISC_STATUS get_transaction_info(ISC_STATUS*, Transaction*, TEXT**);
+static ISC_STATUS get_transaction_info(ISC_STATUS*, Transaction, TEXT**);
 
 static void iterative_sql_info(ISC_STATUS*, FB_API_HANDLE*, USHORT, const SCHAR*, SSHORT,
 							   SCHAR*, USHORT, XSQLDA*);
 static ISC_STATUS open_blob(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, FB_API_HANDLE*, SLONG*,
 						USHORT, const UCHAR*, SSHORT, SSHORT);
-static ISC_STATUS prepare(ISC_STATUS *, Transaction*);
-static void release_dsql_support(sqlda_sup&);
+static ISC_STATUS prepare(ISC_STATUS *, Transaction);
 static void save_error_string(ISC_STATUS*);
 static bool set_path(const PathName&, PathName&);
 
@@ -764,16 +866,6 @@ static bool why_initialized = false;
 static const USHORT FPE_RESET_INIT_ONLY			= 0x0;	/* Don't reset FPE after init */
 static const USHORT FPE_RESET_NEXT_API_CALL		= 0x1;	/* Reset FPE on next gds call */
 static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
-
-#if !(defined SUPERCLIENT || defined SUPERSERVER)
-static ULONG subsystem_usage = 0;
-static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
-#define SUBSYSTEM_USAGE_INCR	subsystem_usage++
-#define SUBSYSTEM_USAGE_DECR	subsystem_usage--
-#else
-#define SUBSYSTEM_USAGE_INCR	/* nothing */
-#define SUBSYSTEM_USAGE_DECR	/* nothing */
-#endif
 
 /*
  * Global array to store string from the status vector in
@@ -952,7 +1044,7 @@ namespace
 
 	private:
 		YEntry(const YEntry&);	// prohibit copy constructor
-		Attachment* att;
+		Attachment att;
 	};
 
 } // anonymous namespace
@@ -1255,7 +1347,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS *ptr;
 	ISC_STATUS_ARRAY temp;
 	StoredAtt* handle = 0;
-	Attachment* attachment = 0;
+	Attachment attachment(0);
 	USHORT n = 0;
 
 	YEntry status(user_status);
@@ -1285,8 +1377,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_shutwarn));
 		}
 #endif // !SUPERCLIENT
-
-		SUBSYSTEM_USAGE_INCR;
 
 		ptr = status;
 
@@ -1364,7 +1454,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 												&handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
-				attachment = new Attachment(handle, public_handle, n);
+				attachment = new CAttachment(handle, public_handle, n);
 				attachment->db_path = expanded_filename;
 
 				status[0] = isc_arg_gds;
@@ -1395,12 +1485,11 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DETACH, n) (temp, &handle);
 		}
-		delete attachment;
+		destroy(attachment);
 
   		e.stuff_exception(status);
 	}
 
-	SUBSYSTEM_USAGE_DECR;
 	return status[1];
 }
 
@@ -1426,7 +1515,7 @@ ISC_STATUS API_ROUTINE GDS_BLOB_INFO(ISC_STATUS*	user_status,
 
 	try
 	{
-		Blob* blob = translate<Blob>(blob_handle);
+		Blob blob = translate<CBlob>(blob_handle);
 		status.setPrimaryHandle(blob);
 		CALL(PROC_BLOB_INFO, blob->implementation) (status, &blob->handle,
 													item_length, items,
@@ -1467,12 +1556,12 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
 
 	try
 	{
-		Blob* blob = translate<Blob>(blob_handle);
+		Blob blob = translate<CBlob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
 		if (! CALL(PROC_CANCEL_BLOB, blob->implementation) (status, &blob->handle))
 		{
-			delete blob;
+			destroy(blob);
 			*blob_handle = 0;
 		}
 	}
@@ -1503,7 +1592,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_EVENTS(ISC_STATUS * user_status,
 
 	try
 	{
-		Attachment* attachment = translate<Attachment>(handle);
+		Attachment attachment = translate<CAttachment>(handle);
 		status.setPrimaryHandle(attachment);
 		CALL(PROC_CANCEL_EVENTS, attachment->implementation) (status, &attachment->handle, id);
 	}
@@ -1534,7 +1623,7 @@ ISC_STATUS API_ROUTINE FB_CANCEL_OPERATION(ISC_STATUS * user_status,
 
 	try
 	{
-		Attachment* attachment = translate<Attachment>(handle);
+		Attachment attachment = translate<CAttachment>(handle);
 		// mutex will be locked here for a really long time
 		MutexLockGuard guard(attachment->enterMutex);
 		if (attachment->enterCount || option != fb_cancel_raise)
@@ -1574,11 +1663,11 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
 
 	try
 	{
-		Blob* blob = translate<Blob>(blob_handle);
+		Blob blob = translate<CBlob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
 		CALL(PROC_CLOSE_BLOB, blob->implementation) (status, &blob->handle);
-		delete blob;
+		destroy(blob);
 		*blob_handle = 0;
 	}
 	catch (const Exception& e)
@@ -1607,8 +1696,8 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 
 	try
 	{
-		Transaction* transaction = translate<Transaction>(tra_handle);
-		Transaction* sub;
+		Transaction transaction = translate<CTransaction>(tra_handle);
+		Transaction sub;
 		status.setPrimaryHandle(transaction);
 
 		if (transaction->implementation != SUBSYSTEMS) {
@@ -1641,10 +1730,8 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 			}
 		}
 
-		while (sub = transaction) {
-			transaction = sub->next;
-			delete sub;
-		}
+		destroy(transaction);
+
 		*tra_handle = 0;
 	}
 	catch (const Exception& e)
@@ -1677,10 +1764,10 @@ ISC_STATUS API_ROUTINE GDS_COMMIT_RETAINING(ISC_STATUS * user_status,
 
 	try
 	{
-		Transaction* transaction = translate<Transaction>(tra_handle);
+		Transaction transaction = translate<CTransaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
 
-		for (Transaction* sub = transaction; sub; sub = sub->next)
+		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
 			if (sub->implementation != SUBSYSTEMS &&
 				CALL(PROC_COMMIT_RETAINING, sub->implementation) (status, &sub->handle))
@@ -1716,27 +1803,27 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	Attachment* dbb = NULL;
+	Attachment attachment(NULL);
 	StoredReq* rq = NULL;
 	try
 	{
-		dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
+		attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
 		nullCheck(req_handle, isc_bad_req_handle);
 
-		if (CALL(PROC_COMPILE, dbb->implementation) (status, &dbb->handle, &rq, blr_length, blr))
+		if (CALL(PROC_COMPILE, attachment->implementation) (status, &attachment->handle, &rq, blr_length, blr))
 		{
 			return status[1];
 		}
 
-		new Request(rq, req_handle, dbb);
+		new CRequest(rq, req_handle, attachment);
 	}
 	catch (const Exception& e)
 	{
-		if (dbb && rq)
+		if (attachment && rq)
 		{
 			*req_handle = 0;
-			CALL(PROC_RELEASE_REQUEST, dbb->implementation) (status, rq);
+			CALL(PROC_RELEASE_REQUEST, attachment->implementation) (status, rq);
 		}
 		e.stuff_exception(status);
 	}
@@ -1769,7 +1856,7 @@ ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS* user_status,
 			return status[1];
 		}
 
-		Request *request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		request->user_handle = req_handle;
 	}
 	catch (const Exception& e)
@@ -1850,7 +1937,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS *ptr;
 	ISC_STATUS_ARRAY temp;
 	StoredAtt* handle = 0;
-	Attachment* attachment = 0;
+	Attachment attachment(0);
 	USHORT n = 0;
 
 	YEntry status(user_status);
@@ -1880,8 +1967,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_shutwarn));
 		}
 #endif // !SUPERCLIENT
-
-		SUBSYSTEM_USAGE_INCR;
 
 		ptr = status;
 
@@ -1941,7 +2026,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				ISC_systemToUtf8(expanded_filename);
 #endif
 
-				attachment = new Attachment(handle, public_handle, n);
+				attachment = new CAttachment(handle, public_handle, n);
 #ifdef WIN_NT
 				attachment->db_path = expanded_filename;
 #else
@@ -1966,10 +2051,9 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DROP_DATABASE, n) (temp, &handle);
 		}
-		delete attachment;
+		destroy(attachment);
 	}
 
-	SUBSYSTEM_USAGE_DECR;
 	return status[1];
 }
 
@@ -1993,7 +2077,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
 
 	try
 	{
-		Attachment* attachment = translate<Attachment>(handle);
+		Attachment attachment = translate<CAttachment>(handle);
 		status.setPrimaryHandle(attachment);
 
 		attachment->cleanup.add(routine, arg);
@@ -2028,7 +2112,7 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
 
 	try
 	{
-		Attachment* attachment = translate<Attachment>(handle);
+		Attachment attachment = translate<CAttachment>(handle);
 		status.setPrimaryHandle(attachment);
 		CALL(PROC_DATABASE_INFO, attachment->implementation) (status, &attachment->handle,
 															item_length, items,
@@ -2063,9 +2147,9 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
 
 	try
 	{
-		Attachment* attachment = translate<Attachment>(db_handle);
+		Attachment attachment = translate<CAttachment>(db_handle);
 		status.setPrimaryHandle(attachment);
-		Transaction* transaction = findTransaction(tra_handle, attachment);
+		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		CALL(PROC_DDL, attachment->implementation) (status, &attachment->handle, &transaction->handle,
 												  length, ddl);
@@ -2113,42 +2197,15 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 
 	try
 	{
-		Attachment* dbb = translate<Attachment>(handle);
+		Attachment attachment = translate<CAttachment>(handle);
 
-		{ // guard scope
-			MutexLockGuard guard(dbb->mutex);
-			size_t i;
-
-			if (CALL(proc, dbb->implementation) (status, &dbb->handle) &&
-			    status[1] != specCode)
-			{
-				return status[1];
-			}
-
-			// Release associated handles
-
-			while ((i = dbb->requests.getCount()))
-			{
-				dbb->requests[i - 1]->release_user_handle();
-				delete dbb->requests[i - 1];
-			}
-
-			while ((i = dbb->statements.getCount()))
-			{
-				dbb->statements[i - 1]->release_user_handle();
-				release_dsql_support(dbb->statements[i - 1]->das);
-				delete dbb->statements[i - 1];
-			}
-
-			while ((i = dbb->blobs.getCount()))
-			{
-				delete dbb->blobs[i - 1];
-			}
-
-			SUBSYSTEM_USAGE_DECR;
+		if (CALL(proc, attachment->implementation) (status, &attachment->handle) &&
+	    	status[1] != specCode)
+		{
+			return status[1];
 		}
 
-		delete dbb;
+		destroy(attachment);
 		*handle = 0;
 	}
 	catch (const Exception& e)
@@ -2230,7 +2287,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOC2(ISC_STATUS * user_status,
 			return status[1];
 		}
 
-		Statement *statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		statement->user_handle = stmt_handle;
 	}
 	catch (const Exception& e)
@@ -2257,30 +2314,30 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	Attachment* dbb = NULL;
+	Attachment attachment(NULL);
 	StoredStm* stmt_handle = NULL;
 
 	try
 	{
-		dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
+		attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
 		// check the statement handle to make sure it's NULL and then initialize it.
 		nullCheck(public_stmt_handle, isc_bad_stmt_handle);
 
-		if (CALL(PROC_DSQL_ALLOCATE, dbb->implementation) (status, &dbb->handle, &stmt_handle))
+		if (CALL(PROC_DSQL_ALLOCATE, attachment->implementation) (status, &attachment->handle, &stmt_handle))
 		{
 			return status[1];
 		}
 
-		//Statement* statement =
-		new Statement(stmt_handle, public_stmt_handle, dbb);
+		//Statement statement =
+		new CStatement(stmt_handle, public_stmt_handle, attachment);
 	}
 	catch (const Exception& e)
 	{
-		if (dbb && stmt_handle)
+		if (attachment && stmt_handle)
 		{
 			*public_stmt_handle = 0;
-			CALL(PROC_DSQL_FREE, dbb->implementation) (status, &stmt_handle, DSQL_drop);
+			CALL(PROC_DSQL_FREE, attachment->implementation) (status, &stmt_handle, DSQL_drop);
 		}
 		e.stuff_exception(status);
 	}
@@ -2308,7 +2365,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 
 		statement->checkPrepared();
 		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_select];
@@ -2376,7 +2433,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 
 		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_bind];
 
@@ -2470,7 +2527,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		USHORT in_blr_length, in_msg_type, in_msg_length,
 			out_blr_length, out_msg_type, out_msg_length;
 
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 
 		sqlda_sup* dasup = &(statement->das);
 		statement->checkPrepared();
@@ -2568,16 +2625,16 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
-		Transaction* transaction = NULL;
+		Transaction transaction(NULL);
 		StoredTra* handle = NULL;
 
 		if (tra_handle && *tra_handle)
 		{
-			transaction = translate<Transaction>(tra_handle);
-			Transaction* t = find_transaction(statement->parent, transaction);
+			transaction = translate<CTransaction>(tra_handle);
+			Transaction t = find_transaction(statement->parent, transaction);
 			if (!t)
 			{
 				bad_handle(isc_bad_trans_handle);
@@ -2597,12 +2654,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 		{
 			if (transaction && !handle)
 			{
-				delete transaction;
+				destroy(transaction);
 				*tra_handle = 0;
 			}
 			else if (!transaction && handle)
 			{
-				transaction = new Transaction(handle, tra_handle, statement->parent);
+				transaction = new CTransaction(handle, tra_handle, statement->parent);
 			}
 		}
 	}
@@ -2928,16 +2985,16 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 			Arg::Gds(isc_command_end_err).raise();
 		}
 
-		Attachment* dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
+		Attachment attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
 
-		Transaction* transaction = NULL;
+		Transaction transaction(NULL);
 		StoredTra* handle = NULL;
 
 		if (tra_handle && *tra_handle)
 		{
-			transaction = translate<Transaction>(tra_handle);
-			Transaction* t = find_transaction(dbb, transaction);
+			transaction = translate<CTransaction>(tra_handle);
+			Transaction t = find_transaction(attachment, transaction);
 			if (!t)
 			{
 				bad_handle(isc_bad_trans_handle);
@@ -2945,8 +3002,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 			handle = t->handle;
 		}
 
-		CALL(PROC_DSQL_EXEC_IMMED2, dbb->implementation) (status,
-														  &dbb->handle, &handle,
+		CALL(PROC_DSQL_EXEC_IMMED2, attachment->implementation) (status,
+														  &attachment->handle, &handle,
 														  length, string, dialect,
 														  in_blr_length, in_blr,
 														  in_msg_type, in_msg_length, in_msg,
@@ -2957,12 +3014,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 		{
 			if (transaction && !handle)
 			{
-				delete transaction;
+				destroy(transaction);
 				*tra_handle = 0;
 			}
 			else if (!transaction && handle)
 			{
-				transaction = new Transaction(handle, tra_handle, dbb);
+				transaction = new CTransaction(handle, tra_handle, attachment);
 			}
 		}
 	}
@@ -2999,7 +3056,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
 		}
 
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 
 		statement->checkPrepared();
 		sqlda_sup& dasup = statement->das;
@@ -3061,7 +3118,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
 		}
 
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 
 		statement->checkPrepared();
 		sqlda_sup& dasup = statement->das;
@@ -3121,7 +3178,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		ISC_STATUS s =
@@ -3173,7 +3230,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		ISC_STATUS s =
@@ -3215,7 +3272,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		if (CALL(PROC_DSQL_FREE, statement->implementation) (status, &statement->handle, option))
@@ -3226,7 +3283,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS* user_status,
 		if (option & DSQL_drop)
 		{
 			release_dsql_support(statement->das);
-			delete statement;
+			destroy(statement);
 			*stmt_handle = 0;
 		}
 	}
@@ -3258,7 +3315,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 
 		statement->checkPrepared();
 		sqlda_sup& dasup = statement->das;
@@ -3306,7 +3363,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		statement->checkPrepared();
@@ -3347,11 +3404,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		sqlda_sup& dasup = statement->das;
 
 		const USHORT buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
-		//Attachment* attachment = statement->parent;
+		//Attachment attachment = statement->parent;
 		Array<SCHAR> db_prepare_buffer;
 		SCHAR* const buffer = db_prepare_buffer.getBuffer(buffer_len);
 
@@ -3489,14 +3546,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 			Arg::Gds(isc_command_end_err).raise();
 		}
 
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		StoredTra* handle = NULL;
 
 		if (tra_handle && *tra_handle)
 		{
-			Transaction* transaction = translate<Transaction>(tra_handle);
+			Transaction transaction = translate<CTransaction>(tra_handle);
 			transaction = find_transaction(statement->parent, transaction);
 			if (!transaction)
 			{
@@ -3538,7 +3595,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		CALL(PROC_DSQL_SET_CURSOR, statement->implementation) (status, &statement->handle,
@@ -3574,7 +3631,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 
 	try
 	{
-		Statement* statement = translate<Statement>(stmt_handle);
+		Statement statement = translate<CStatement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 
 		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
@@ -3693,7 +3750,7 @@ ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS* user_status,
 
 	try
 	{
-		Blob* blob = translate<Blob>(blob_handle);
+		Blob blob = translate<CBlob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
 		ISC_STATUS code =
@@ -3741,11 +3798,11 @@ ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
 
 	try
 	{
-		Attachment* dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
-		Transaction* transaction = findTransaction(tra_handle, dbb);
+		Attachment attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
+		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_GET_SLICE, dbb->implementation) (status, &dbb->handle, &transaction->handle,
+		CALL(PROC_GET_SLICE, attachment->implementation) (status, &attachment->handle, &transaction->handle,
 												   array_id,
 												   sdl_length, sdl,
 												   param_length, param,
@@ -3778,19 +3835,14 @@ ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* user_status,
 
 	try
 	{
-		Transaction* transaction = translate<Transaction>(tra_handle);
+		Transaction transaction = translate<CTransaction>(tra_handle);
 
 		if (!(transaction->flags & HANDLE_TRANSACTION_limbo))
 		{
 			status_exception::raise(Arg::Gds(isc_no_recon));
 		}
 
-		while (transaction)
-		{
-			Transaction* sub = transaction;
-			transaction = sub->next;
-			delete sub;
-		}
+		destroy(transaction);
 	}
 	catch (const Exception& e)
 	{
@@ -3884,10 +3936,10 @@ ISC_STATUS API_ROUTINE GDS_PREPARE2(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	try
 	{
-		Transaction* transaction = translate<Transaction>(tra_handle);
+		Transaction transaction = translate<CTransaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
 
-		for (Transaction* sub = transaction; sub; sub = sub->next)
+		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
 			if (sub->implementation != SUBSYSTEMS &&
 				CALL(PROC_PREPARE, sub->implementation) (status, &sub->handle, msg_length, msg))
@@ -3925,7 +3977,7 @@ ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	try
 	{
-		Blob* blob = translate<Blob>(blob_handle);
+		Blob blob = translate<CBlob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
 		CALL(PROC_PUT_SEGMENT, blob->implementation) (status, &blob->handle, buffer_length, buffer);
@@ -3964,11 +4016,11 @@ ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS* user_status,
 
 	try
 	{
-		Attachment* dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
-		Transaction* transaction = findTransaction(tra_handle, dbb);
+		Attachment attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
+		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_PUT_SLICE, dbb->implementation) (status, &dbb->handle, &transaction->handle,
+		CALL(PROC_PUT_SLICE, attachment->implementation) (status, &attachment->handle, &transaction->handle,
 												   array_id,
 												   sdl_length, sdl,
 												   param_length, param,
@@ -4005,10 +4057,10 @@ ISC_STATUS API_ROUTINE GDS_QUE_EVENTS(ISC_STATUS* user_status,
 
 	try
 	{
-		Attachment* dbb = translate<Attachment>(handle);
-		status.setPrimaryHandle(dbb);
+		Attachment attachment = translate<CAttachment>(handle);
+		status.setPrimaryHandle(attachment);
 
-		CALL(PROC_QUE_EVENTS, dbb->implementation) (status, &dbb->handle,
+		CALL(PROC_QUE_EVENTS, attachment->implementation) (status, &attachment->handle,
 													id, length, events, ast, arg);
 	}
 	catch (const Exception& e)
@@ -4047,7 +4099,7 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
 
 		CALL(PROC_RECEIVE, request->implementation) (status, &request->handle,
@@ -4089,7 +4141,7 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
 
 		CALL(PROC_RECEIVE, request->implementation) (status, &request->handle,
@@ -4128,17 +4180,17 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
 	try
 	{
 		nullCheck(tra_handle, isc_bad_trans_handle);
-		Attachment* dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
+		Attachment attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
 
-		if (CALL(PROC_RECONNECT, dbb->implementation) (status, &dbb->handle,
+		if (CALL(PROC_RECONNECT, attachment->implementation) (status, &attachment->handle,
 													   &handle,
 													   length, id))
 		{
 			return status[1];
 		}
 
-		Transaction* transaction = new Transaction(handle, tra_handle, dbb);
+		Transaction transaction(new CTransaction(handle, tra_handle, attachment));
 		transaction->flags |= HANDLE_TRANSACTION_limbo;
 	}
 	catch (const Exception& e)
@@ -4171,12 +4223,12 @@ ISC_STATUS API_ROUTINE GDS_RELEASE_REQUEST(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
 
 		if (!CALL(PROC_RELEASE_REQUEST, request->implementation) (status, &request->handle))
 		{
-			delete request;
+			destroy(request);
 			*req_handle = 0;
 		}
 	}
@@ -4211,7 +4263,7 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
 
 		CALL(PROC_REQUEST_INFO, request->implementation) (status, &request->handle,
@@ -4248,23 +4300,7 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
  *	Prior setting of the FPE reset flag
  *
  **************************************/
-#if !(defined SUPERCLIENT || defined SUPERSERVER)
-	SLONG prior;
-	prior = (SLONG) subsystem_FPE_reset;
-	switch (fpe_status)
-	{
-	case FPE_RESET_INIT_ONLY:
-	case FPE_RESET_NEXT_API_CALL:
-	case FPE_RESET_ALL_API_CALL:
-		subsystem_FPE_reset = fpe_status;
-		break;
-	default:
-		break;
-	}
-	return prior;
-#else
-	return FPE_RESET_INIT_ONLY;
-#endif
+	return FPE_RESET_ALL_API_CALL;
 }
 
 
@@ -4284,10 +4320,10 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	try
 	{
-		Transaction* transaction = translate<Transaction>(tra_handle);
+		Transaction transaction = translate<CTransaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
 
-		for (Transaction* sub = transaction; sub; sub = sub->next)
+		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
 			if (sub->implementation != SUBSYSTEMS &&
 				CALL(PROC_ROLLBACK_RETAINING, sub->implementation) (status, &sub->handle))
@@ -4323,10 +4359,10 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	try
 	{
-		Transaction* transaction = translate<Transaction>(tra_handle);
+		Transaction transaction = translate<CTransaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
 
-		for (Transaction* sub = transaction; sub; sub = sub->next)
+		for (Transaction sub = transaction; sub; sub = sub->next)
 			if (sub->implementation != SUBSYSTEMS &&
 				CALL(PROC_ROLLBACK, sub->implementation) (status, &sub->handle))
 			{
@@ -4341,12 +4377,8 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS* user_status,
 			fb_utils::init_status(status);
 		}
 
-		while (transaction)
-		{
-			Transaction* sub = transaction;
-			transaction = sub->next;
-			delete sub;
-		}
+		destroy(transaction);
+
 		*tra_handle = 0;
 	}
 	catch (const Exception& e)
@@ -4377,7 +4409,7 @@ ISC_STATUS API_ROUTINE GDS_SEEK_BLOB(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	try
 	{
-		Blob* blob = translate<Blob>(blob_handle);
+		Blob blob = translate<CBlob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
 		CALL(PROC_SEEK_BLOB, blob->implementation) (status, &blob->handle, mode, offset, result);
@@ -4412,7 +4444,7 @@ ISC_STATUS API_ROUTINE GDS_SEND(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
 
 		CALL(PROC_SEND, request->implementation) (status, &request->handle,
@@ -4447,7 +4479,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  *
  **************************************/
 	StoredSvc* handle = 0;
-	Service* service = 0;
+	Service service(0);
 	ISC_STATUS_ARRAY temp;
 	USHORT n = 0;
 	YEntry status(user_status);
@@ -4478,8 +4510,6 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		}
 #endif // !SUPERCLIENT
 
-		SUBSYSTEM_USAGE_INCR;
-
 		string svcname(service_name, service_length ? service_length : strlen(service_name));
 		svcname.rtrim();
 
@@ -4488,7 +4518,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		{
 			if (!CALL(PROC_SERVICE_ATTACH, n) (ptr, svcname.c_str(), &handle, spb_length, spb))
 			{
-				service = new Service(handle, public_handle, n);
+				service = new CService(handle, public_handle, n);
 				status[0] = isc_arg_gds;
 				status[1] = 0;
 				if (status[2] != isc_arg_warning)
@@ -4503,7 +4533,6 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			}
 		}
 
-		SUBSYSTEM_USAGE_DECR;
 		if (status[1] == isc_unavailable)
 		{
 			status[1] = isc_service_att_err;
@@ -4516,7 +4545,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		{
 			CALL(PROC_SERVICE_DETACH, n) (temp, &handle);
 			*public_handle = 0;
-			delete service;
+			destroy(service);
 		}
 	}
 
@@ -4540,16 +4569,14 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_DETACH(ISC_STATUS* user_status, FB_API_HANDLE
 
 	try
 	{
-		Service* service = translate<Service>(handle);
+		Service service = translate<CService>(handle);
 
 		if (CALL(PROC_SERVICE_DETACH, service->implementation) (status, &service->handle))
 		{
 			return status[1];
 		}
 
-		SUBSYSTEM_USAGE_DECR;
-
-		delete service;
+		destroy(service);
 		*handle = 0;
 	}
 	catch (const Exception& e)
@@ -4590,7 +4617,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 
 	try
 	{
-		Service* service = translate<Service>(handle);
+		Service service = translate<CService>(handle);
 
 		CALL(PROC_SERVICE_QUERY, service->implementation) (status,
 														   &service->handle,
@@ -4633,7 +4660,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS* user_status,
 
 	try
 	{
-		Service* service = translate<Service>(handle);
+		Service service = translate<CService>(handle);
 
 		CALL(PROC_SERVICE_START, service->implementation) (status, &service->handle,
 														   NULL,
@@ -4670,9 +4697,9 @@ ISC_STATUS API_ROUTINE GDS_START_AND_SEND(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
-		Transaction* transaction = findTransaction(tra_handle, request->parent);
+		Transaction transaction = findTransaction(tra_handle, request->parent);
 
 		CALL(PROC_START_AND_SEND, request->implementation) (status,
 															&request->handle, &transaction->handle,
@@ -4707,9 +4734,9 @@ ISC_STATUS API_ROUTINE GDS_START(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
-		Transaction* transaction = findTransaction(tra_handle, request->parent);
+		Transaction transaction = findTransaction(tra_handle, request->parent);
 
 		CALL(PROC_START, request->implementation) (status, &request->handle, &transaction->handle,
 												   level);
@@ -4741,9 +4768,9 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
  **************************************/
 	TEB* vector = (TEB*) vec;
 	ISC_STATUS_ARRAY temp;
-	Transaction* transaction = 0;
-	Attachment* dbb = 0;
-	StoredTra* handle = 0;
+	Transaction transaction(NULL);
+	Attachment attachment(NULL);
+	StoredTra* handle = NULL;
 
 	YEntry status(user_status);
 
@@ -4756,7 +4783,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_bad_teb_form));
 		}
 
-		Transaction** ptr;
+		Transaction* ptr;
 		USHORT n;
 		for (n = 0, ptr = &transaction; n < count; n++, ptr = &(*ptr)->next, vector++)
 		{
@@ -4765,22 +4792,22 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 			}
 
-			dbb = translate<Attachment>(vector->teb_database);
+			attachment = translate<CAttachment>(vector->teb_database);
 
-			if (CALL(PROC_START_TRANSACTION, dbb->implementation) (status, &handle, 1, &dbb->handle,
+			if (CALL(PROC_START_TRANSACTION, attachment->implementation) (status, &handle, 1, &attachment->handle,
 																   vector->teb_tpb_length,
 																   vector->teb_tpb))
 			{
 				status_exception::raise(status);
 			}
 
-			*ptr = new Transaction(handle, 0, dbb);
+			*ptr = new CTransaction(handle, 0, attachment);
 			handle = 0;
 		}
 
 		if (transaction->next)
 		{
-			Transaction *sub = new Transaction(tra_handle, SUBSYSTEMS);
+			Transaction sub(new CTransaction(tra_handle, SUBSYSTEMS));
 			sub->next = transaction;
 		}
 		else {
@@ -4795,19 +4822,24 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 		{
 			*tra_handle = 0;
 		}
+
 		while (transaction)
 		{
-			Transaction *sub = transaction;
+			Transaction sub = transaction;
 			transaction = sub->next;
 			if (sub->handle)
 			{
 				CALL(PROC_ROLLBACK, sub->implementation) (temp, &sub->handle);
 			}
-			delete sub;
 		}
-		if (handle && dbb)
+		if (transaction)
 		{
-			CALL(PROC_ROLLBACK, dbb->implementation) (temp, &handle);
+			destroy(transaction);
+		}
+
+		if (handle && attachment)
+		{
+			CALL(PROC_ROLLBACK, attachment->implementation) (temp, &handle);
 		}
 	}
 
@@ -4881,11 +4913,11 @@ ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 
 	try
 	{
-		Attachment* dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
-		Transaction* transaction = findTransaction(tra_handle, dbb);
+		Attachment attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
+		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_TRANSACT_REQUEST, dbb->implementation) (status, &dbb->handle, &transaction->handle,
+		CALL(PROC_TRANSACT_REQUEST, attachment->implementation) (status, &attachment->handle, &transaction->handle,
 														  blr_length, blr,
 														  in_msg_length, in_msg,
 														  out_msg_length, out_msg);
@@ -4917,7 +4949,8 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS* user_status,
 	Status status(user_status);
 	try
 	{
-		translate<Transaction>(tra_handle)->cleanup.add(routine, arg);
+		Transaction transaction = translate<CTransaction>(tra_handle);
+		transaction->cleanup.add(routine, arg);
 	}
 	catch (const Exception& e)
 	{
@@ -4949,7 +4982,7 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 
 	try
 	{
-		Transaction* transaction = translate<Transaction>(tra_handle);
+		Transaction transaction = translate<CTransaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
 
 		if (transaction->implementation != SUBSYSTEMS) {
@@ -4961,7 +4994,7 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		{
 			SSHORT item_len = item_length;
 			SSHORT buffer_len = buffer_length;
-			for (Transaction* sub = transaction->next; sub; sub = sub->next) {
+			for (Transaction sub = transaction->next; sub; sub = sub->next) {
 				if (CALL(PROC_TRANSACTION_INFO, sub->implementation) (status, &sub->handle,
 																	  item_len, items,
 																	  buffer_len, buffer))
@@ -5014,7 +5047,7 @@ ISC_STATUS API_ROUTINE GDS_UNWIND(ISC_STATUS* user_status,
 
 	try
 	{
-		Request* request = translate<Request>(req_handle);
+		Request request = translate<CRequest>(req_handle);
 		status.setPrimaryHandle(request);
 
 		CALL(PROC_UNWIND, request->implementation) (status, &request->handle, level);
@@ -5214,14 +5247,10 @@ static void exit_handler(void*)
  **************************************/
 
 	why_initialized = false;
-#if !(defined SUPERCLIENT || defined SUPERSERVER)
-	subsystem_usage = 0;
-	subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
-#endif
 }
 
 
-static Transaction* find_transaction(Attachment* dbb, Transaction* transaction)
+static Transaction find_transaction(Attachment attachment, Transaction transaction)
 {
 /**************************************
  *
@@ -5237,11 +5266,11 @@ static Transaction* find_transaction(Attachment* dbb, Transaction* transaction)
 
 	for (; transaction; transaction = transaction->next)
 	{
-		if (transaction->parent == dbb)
+		if (transaction->parent == attachment)
 			return transaction;
 	}
 
-	return NULL;
+	return Transaction(NULL);
 }
 
 
@@ -5262,7 +5291,7 @@ static void free_block(void* block)
 }
 
 
-static int get_database_info(Transaction* transaction, TEXT** ptr)
+static int get_database_info(Transaction transaction, TEXT** ptr)
 {
 /**************************************
  *
@@ -5283,7 +5312,7 @@ static int get_database_info(Transaction* transaction, TEXT** ptr)
 	// Our caller (prepare) assumed each call consumes at most 256 bytes (item, len, data)
 	// hence if we don't check here, we have a B.O.
 	TEXT* p = *ptr;
-	Attachment* attachment = transaction->parent;
+	Attachment attachment = transaction->parent;
 	*p++ = TDR_DATABASE_PATH;
 	const TEXT* q = attachment->db_path.c_str();
 	size_t len = strlen(q);
@@ -5363,7 +5392,7 @@ static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda, USH
 
 
 static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
-									   Transaction* transaction,
+									   Transaction transaction,
 									   TEXT** ptr)
 {
 /**************************************
@@ -5485,17 +5514,17 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 	{
 		nullCheck(public_blob_handle, isc_bad_segstr_handle);
 
-		Attachment* dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
-		Transaction* transaction = findTransaction(tra_handle, dbb);
+		Attachment attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
+		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		USHORT flags = 0;
 		USHORT from, to;
 		gds__parse_bpb(bpb_length, bpb, &from, &to);
 
-		if (get_entrypoint(proc2, dbb->implementation) != no_entrypoint &&
-			CALL(proc2, dbb->implementation) (status,
-											  &dbb->handle,
+		if (get_entrypoint(proc2, attachment->implementation) != no_entrypoint &&
+			CALL(proc2, attachment->implementation) (status,
+											  &attachment->handle,
 											  &transaction->handle,
 											  &blob_handle,
 											  blob_id,
@@ -5508,8 +5537,8 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		{
 			// This code has no effect because jrd8_create_blob, jrd8_open_blob,
 			// REM_create_blob and REM_open_blob are defined as no_entrypoint in entry.h
-			CALL(proc, dbb->implementation) (status,
-											 &dbb->handle,
+			CALL(proc, attachment->implementation) (status,
+											 &attachment->handle,
 											 &transaction->handle,
 											 &blob_handle, blob_id);
 		}
@@ -5518,7 +5547,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 			return status[1];
 		}
 
-		Blob* blob = new Blob(blob_handle, public_blob_handle, dbb, transaction);
+		Blob blob(new CBlob(blob_handle, public_blob_handle, attachment, transaction));
 		blob->flags |= flags;
 	}
 	catch (const Exception& e)
@@ -5552,7 +5581,7 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...)
 
 } // extern "C"
 
-static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction* transaction)
+static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 {
 /**************************************
  *
@@ -5567,7 +5596,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction* transaction)
  **************************************/
 	Status status(user_status);
 
-	Transaction* sub;
+	Transaction sub;
 	TEXT tdr_buffer[1024];
 	size_t length = 0;
 	int transcount = 0;
@@ -5660,7 +5689,6 @@ static void release_dsql_support(sqlda_sup& dasup)
 	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_select].dasup_blr);
 	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_bind].dasup_msg);
 	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_select].dasup_msg);
-
 	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_bind].dasup_info_buf);
 	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_select].dasup_info_buf);
 }
