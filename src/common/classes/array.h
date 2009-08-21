@@ -195,13 +195,13 @@ public:
 		count += items.count;
 	}
 
-	void insert(const size_t index, const T* items, const size_t itemsSize)
+	void insert(const size_t index, const T* items, const size_t itemsCount)
 	{
 		fb_assert(index <= count);
-		ensureCapacity(count + itemsSize);
-		memmove(data + index + itemsSize, data + index, sizeof(T) * (count - index));
-		memcpy(data + index, items, sizeof(T) * itemsSize);
-		count += itemsSize;
+		ensureCapacity(count + itemsCount);
+		memmove(data + index + itemsCount, data + index, sizeof(T) * (count - index));
+		memcpy(data + index, items, sizeof(T) * itemsCount);
+		count += itemsCount;
 	}
 
 	size_t add(const T& item)
@@ -211,14 +211,13 @@ public:
   		return ++count;
 	}
 
-	void add(const T* items, const size_t itemsSize)
+	void add(const T* items, const size_t itemsCount)
 	{
-		ensureCapacity(count + itemsSize);
-		memcpy(data + count, items, sizeof(T) * itemsSize);
-		count += itemsSize;
+		ensureCapacity(count + itemsCount);
+		memcpy(data + count, items, sizeof(T) * itemsCount);
+		count += itemsCount;
 	}
 
-	// NOTE: This function may be called in AST. The function doesn't wait.
 	T* remove(const size_t index)
 	{
   		fb_assert(index < count);
