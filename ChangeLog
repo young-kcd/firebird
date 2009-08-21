@@ -1,3 +1,141 @@
+2009-08-21 14:23  robocop
+
+	* firebird2/src/jrd/sort.cpp (1.137):
+
+	Style, unused var and formally correct deallocation.
+
+2009-08-21 14:04  dimitr
+
+	* firebird2/src/lock/print.cpp (1.92):
+
+	Corrections per Claudio's request.
+
+2009-08-21 14:01  robocop
+
+	* firebird2/src/jrd/os/pio.h (1.27):
+
+	Comments.
+
+2009-08-21 13:59  dimitr
+
+	* firebird2/src/common/classes/TempFile.cpp (1.21):
+
+	The same logic just expressed differently.
+
+2009-08-21 13:40  robocop
+
+	* firebird2/src/msgs/facilities2.sql (1.77):
+
+	Misc.
+
+2009-08-21 12:37  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.71), cme.cpp (1.60):
+
+	Style.
+
+2009-08-21 12:33  robocop
+
+	* firebird2/src/qli/: exe.cpp (1.67), expand.cpp (1.53):
+
+	Style.
+
+2009-08-21 12:24  dimitr
+
+	* firebird2/src/jrd/: rse.cpp (1.188), sort.cpp (1.136), sort.h
+	(1.41), sort_proto.h (1.23):
+
+	Cleanup the unused code.
+
+2009-08-21 12:16  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.135):
+
+	Slightly reworked exception handling in the sorter.
+
+2009-08-21 12:14  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.218):
+
+	Return OS-specific error code like the POSIX implementation.
+
+2009-08-21 12:12  robocop
+
+	* firebird2/src/jrd/: dyn.epp (1.153), dyn_util.epp (1.64):
+
+	Style.
+
+2009-08-21 12:07  robocop
+
+	* firebird2/src/jrd/sort.cpp (1.134):
+
+	Style.
+
+2009-08-21 11:45  robocop
+
+	* firebird2/src/jrd/: sdw.cpp (1.93), tpc.cpp (1.43), tra.cpp
+	(1.210):
+
+	Comment.
+
+2009-08-21 11:03  robocop
+
+	* firebird2/src/: jrd/dyn.epp (1.152), jrd/dyn_util.epp (1.63),
+	jrd/lck.cpp (1.104), lock/lock.cpp (1.203):
+
+	Style.
+
+2009-08-21 10:54  robocop
+
+	* firebird2/src/jrd/: btr.cpp (1.253), vio.cpp (1.257):
+
+	Comments.
+
+2009-08-21 10:41  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.133):
+
+	Misc.
+
+2009-08-21 10:36  dimitr
+
+	* firebird2/lang_helpers/: gds_codes.ftn (1.102), gds_codes.pas
+	(1.101):
+
+	Fixed CORE-2514: When there is not enough space on the temp drive
+	an error about CreateFile is reported.	This also fixes CORE-2321:
+	query fails with message 'operating system directive write failed.
+	Invalid argument.
+
+2009-08-21 10:32  dimitr
+
+	* firebird2/src/: jrd/TempSpace.cpp (1.24), msgs/facilities2.sql
+	(1.76), msgs/messages2.sql (1.100), msgs/system_errors2.sql (1.63),
+	include/gen/codetext.h (1.111), include/gen/iberror.h (1.115),
+	include/gen/msgs.h (1.141), include/gen/sql_code.h (1.117),
+	include/gen/sql_state.h (1.47):
+
+	Fixed CORE-2514: When there is not enough space on the temp drive
+	an error about CreateFile is reported.	This also fixes CORE-2321:
+	query fails with message 'operating system directive write failed.
+	Invalid argument.
+
+2009-08-21 10:30  dimitr
+
+	* firebird2/src/common/classes/array.h (1.60):
+
+	Misc.
+
+2009-08-21 10:26  dimitr
+
+	* firebird2/src/: jrd/os/pio.h (1.26), jrd/os/posix/unix.cpp
+	(1.124), jrd/os/win32/winnt.cpp (1.85), common/classes/File.h
+	(1.9), common/classes/TempFile.cpp (1.20):
+
+	Fixed CORE-2422: Server doesn't switch between multiple entries
+	configured in TempDirectories when some of them is out of free
+	space.	Moved the common code to File.h.
+
 2009-08-20 13:46  robocop
 
 	* firebird2/src/lock/lock.cpp (1.202):
