@@ -3352,8 +3352,7 @@ static ULONG read_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 
 	fb_assert(mfb->mfb_space);
 
-	SORT_read_block(tdbb->tdbb_status_vector, mfb->mfb_space,
-					mfb->mfb_block_size * block, mfb->mfb_block_data, mfb->mfb_block_size);
+	SORT_read_block(mfb->mfb_space, mfb->mfb_block_size * block, mfb->mfb_block_data, mfb->mfb_block_size);
 
 	return block;
 }
@@ -3573,8 +3572,7 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 		mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 	}
 
-	SORT_write_block(tdbb->tdbb_status_vector, mfb->mfb_space,
-					 mfb->mfb_block_size * block, mfb->mfb_block_data, mfb->mfb_block_size);
+	SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * block, mfb->mfb_block_data, mfb->mfb_block_size);
 }
 
 

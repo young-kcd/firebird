@@ -537,8 +537,6 @@ void SORT_get(thread_db* tdbb,
  **************************************/
 	sort_record* record = NULL;
 
-	scb->scb_status_vector = tdbb->tdbb_status_vector;
-
 	// If there were runs, get the records from the merge
 	// tree. Otherwise everything fit in memory.
 
@@ -633,8 +631,6 @@ void SORT_get(thread_db* tdbb,
  **************************************/
 	sort_record* record = NULL;
 
-	scb->scb_status_vector = tdbb->tdbb_status_vector;
-
 	try
 	{
 		// If there weren't any runs, everything fit in memory. Just return stuff.
@@ -726,7 +722,6 @@ sort_context* SORT_init(thread_db* tdbb,
 		memset(scb, 0, SCB_LEN(keys));
 
 		scb->scb_pool = pool;
-		scb->scb_status_vector = status_vector;
 		//scb->scb_length = record_length;
 		scb->scb_longs = ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT) >> SHIFTLONG;
 		scb->scb_dup_callback = call_back;
@@ -836,8 +831,6 @@ void SORT_put(thread_db* tdbb, sort_context* scb, ULONG** record_address)
  *      in the scratch files.  The runs are eventually merged.
  *
  **************************************/
-	scb->scb_status_vector = tdbb->tdbb_status_vector;
-
 	try
 	{
 		// Find the last record passed in, and zap the keys something comparable
@@ -909,15 +902,11 @@ void SORT_put(thread_db* tdbb, sort_context* scb, ULONG** record_address)
 
 
 #ifdef SCROLLABLE_CURSORS
-void SORT_read_block(
+void
 #else
-FB_UINT64 SORT_read_block(
+FB_UINT64
 #endif
-						ISC_STATUS* status_vector,
-						TempSpace* tmp_space,
-						FB_UINT64 seek,
-						BLOB_PTR* address,
-						ULONG length)
+SORT_read_block(TempSpace* tmp_space, FB_UINT64 seek, BLOB_PTR* address, ULONG length)
 {
 /**************************************
  *
@@ -981,8 +970,6 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 	run_control* run;
 	merge_control* merge;
 	merge_control* merge_pool;
-
-	scb->scb_status_vector = tdbb->tdbb_status_vector;
 
 	try
 	{
@@ -1189,11 +1176,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 }
 
 
-FB_UINT64 SORT_write_block(ISC_STATUS* status_vector,
-						TempSpace* tmp_space,
-						FB_UINT64 seek,
-						BLOB_PTR* address,
-						ULONG length)
+FB_UINT64 SORT_write_block(TempSpace* tmp_space, FB_UINT64 seek, BLOB_PTR* address, ULONG length)
 {
 /**************************************
  *
@@ -1641,8 +1624,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 				n = run->run_records * scb->scb_longs * sizeof(ULONG);
 				l = MIN(l, n);
 				run->run_seek =
-					SORT_read_block(scb->scb_status_vector, scb->scb_space,
-									run->run_seek, (UCHAR*) run->run_buffer, l);
+					SORT_read_block(scb->scb_space, run->run_seek, (UCHAR*) run->run_buffer, l);
 #else
 			}
 			else
@@ -1674,8 +1656,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			else
 				run->run_seek -= l;
 
-			SORT_read_block(scb->scb_status_vector, scb->scb_space,
-							run->run_seek, (UCHAR*) run->run_buffer, l);
+			SORT_read_block(scb->scb_space, run->run_seek, (UCHAR*) run->run_buffer, l);
 			run->run_cached = l;
 
 			if (mode == RSE_get_forward)
@@ -2216,8 +2197,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 		if (q >= (sort_record*) temp_run.run_end_buffer)
 		{
 			size = (BLOB_PTR*) q - (BLOB_PTR*) temp_run.run_buffer;
-			seek = SORT_write_block(scb->scb_status_vector, scb->scb_space,
-									seek, (UCHAR*) temp_run.run_buffer, size);
+			seek = SORT_write_block(scb->scb_space, seek, (UCHAR*) temp_run.run_buffer, size);
 			q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
 		}
 		count = scb->scb_longs;
@@ -2233,8 +2213,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	// Write the tail of the new run and return any unused space
 
 	if ( (size = (BLOB_PTR*) q - (BLOB_PTR*) temp_run.run_buffer) )
-		seek = SORT_write_block(scb->scb_status_vector, scb->scb_space,
-								seek, (UCHAR*) temp_run.run_buffer, size);
+		seek = SORT_write_block(scb->scb_space, seek, (UCHAR*) temp_run.run_buffer, size);
 
 	// If the records did not fill the allocated run (such as when duplicates are
 	// rejected), then free the remainder and diminish the size of the run accordingly
@@ -2602,8 +2581,7 @@ static void order_and_save(sort_context* scb)
 	{
 		order(scb);
 
-		SORT_write_block(scb->scb_status_vector, scb->scb_space,
-						run->run_seek, (UCHAR*) scb->scb_last_record, run->run_size);
+		SORT_write_block(scb->scb_space, run->run_seek, (UCHAR*) scb->scb_last_record, run->run_size);
 	}
 }
 
@@ -2655,8 +2633,7 @@ static void put_run(sort_context* scb)
 
 	run->run_size = run->run_records * (scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
 	run->run_seek = scb->scb_space->allocateSpace(run->run_size);
-	SORT_write_block(scb->scb_status_vector, scb->scb_space,
-					 run->run_seek, (UCHAR*) scb->scb_last_record, run->run_size);
+	SORT_write_block(scb->scb_space, run->run_seek, (UCHAR*) scb->scb_last_record, run->run_size);
 #else
 	order_and_save(scb);
 #endif
@@ -2839,9 +2816,7 @@ static void validate(sort_context* scb)
 		SORTP* record = *ptr;
 		if (record[-SIZEOF_SR_BCKPTR_IN_LONGS] != (SORTP) ptr)
 		{
-			ISC_STATUS* status_vector = scb->scb_status_vector;
-			Arg::Gds(isc_crrp_data_err).copyTo(status_vector);
-			ERR_punt();
+			Arg::Gds(isc_crrp_data_err).raise();
 		}
 	}
 }

@@ -259,7 +259,6 @@ struct sort_context
 	run_control*	scb_free_runs;	/* ALLOC: Currently unused run blocks */
 	SORTP* scb_merge_space;		/* ALLOC: memory space to do merging */
 	ULONG scb_flags;			/* see flag bits below */
-	ISC_STATUS *scb_status_vector;	/* Status vector for errors */
 	FPTR_REJECT_DUP_CALLBACK scb_dup_callback;	/* Duplicate handling callback */
 	void* scb_dup_callback_arg;	/* Duplicate handling callback arg */
 	//dir_list*	scb_dls;		// Unused
