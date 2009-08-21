@@ -2062,7 +2062,6 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 	const USHORT rec_size = scb->scb_longs << SHIFTLONG;
 	ULONG allocated = 0, count;
 	run_control* run;
-	TempSpace* tempSpace = scb->scb_space;
 
 	// if some run's already in memory cache - use this memory
 	for (run = scb->scb_runs, count = 0; count < n; run = run->run_next, count++)
@@ -2070,7 +2069,7 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 		run->run_buffer = 0;
 
 		char* mem = 0;
-		if (mem = tempSpace->inMemory(run->run_seek, run->run_size))
+		if (mem = scb->scb_space->inMemory(run->run_seek, run->run_size))
 		{
 			run->run_buffer = reinterpret_cast<SORTP*>(mem);
 			run->run_record = reinterpret_cast<sort_record*>(mem);
@@ -2089,7 +2088,7 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 
 	fb_assert(n > allocated);
 	TempSpace::Segments segments(*scb->scb_pool, n - allocated);
-	allocated += tempSpace->allocateBatch(n - allocated, MAX_SORT_BUFFER_SIZE, chunkSize, segments);
+	allocated += scb->scb_space->allocateBatch(n - allocated, MAX_SORT_BUFFER_SIZE, chunkSize, segments);
 
 	if (segments.getCount())
 	{
@@ -2624,8 +2623,7 @@ static void order_and_save(sort_context* scb)
 	run->run_size = run->run_records * key_length;
 	run->run_seek = find_file_space(scb, run->run_size);
 
-	TempSpace* tmpSpace = scb->scb_space;
-	char* mem = tmpSpace->inMemory(run->run_seek, run->run_size);
+	char* mem = scb->scb_space->inMemory(run->run_seek, run->run_size);
 
 	if (mem)
 	{
