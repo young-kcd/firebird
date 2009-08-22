@@ -106,10 +106,10 @@ using namespace Firebird;
 #ifdef SUPERSERVER_V2
 static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
-static bool	maybe_close_file(HANDLE&);
+static bool	maybeCloseFile(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool);
-static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
+static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* const);
 
 #ifdef SUPERSERVER_V2
 static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
@@ -145,7 +145,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false, false);
+	jrd_file* const new_file = PIO_create(dbb, file_name, false, false, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -178,7 +178,7 @@ void PIO_close(jrd_file* main_file)
  **************************************/
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
-		if (maybe_close_file(file->fil_desc))
+		if (maybeCloseFile(file->fil_desc))
 		{
 #ifdef SUPERSERVER_V2
 			for (int i = 0; i < MAX_FILE_IO; i++)
@@ -232,8 +232,8 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 				 Arg::Gds(isc_io_create_err) << Arg::Windows(GetLastError()));
 	}
 
-/* File open succeeded.  Now expand the file name. */
-/* workspace is the expanded name here */
+	// File open succeeded.  Now expand the file name.
+	// workspace is the expanded name here
 
 	Firebird::PathName workspace(string);
 	ISC_expand_filename(workspace, false);
@@ -359,7 +359,7 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 		const int writeMode = (file->fil_flags & FIL_readonly) ? 0 : GENERIC_WRITE;
 
         HANDLE& hFile = file->fil_desc;
-		maybe_close_file(hFile);
+		maybeCloseFile(hFile);
 		hFile = CreateFile(file->fil_string,
 						  GENERIC_READ | writeMode,
 						  g_dwShareFlags,
@@ -559,10 +559,9 @@ jrd_file* PIO_open(Database* dbb,
 
 	if (desc == INVALID_HANDLE_VALUE)
 	{
-		/* Try opening the database file in ReadOnly mode.
-		 * The database file could be on a RO medium (CD-ROM etc.).
-		 * If this fileopen fails, return error.
-		 */
+		// Try opening the database file in ReadOnly mode.
+		// The database file could be on a RO medium (CD-ROM etc.).
+		// If this fileopen fails, return error.
 		desc = CreateFile(ptr,
 						  GENERIC_READ,
 						  FILE_SHARE_READ,
@@ -578,11 +577,9 @@ jrd_file* PIO_open(Database* dbb,
 		}
 		else
 		{
-			/* If this is the primary file, set Database flag to indicate that it is
-			 * being opened ReadOnly. This flag will be used later to compare with
-			 * the Header Page flag setting to make sure that the database is set
-			 * ReadOnly.
-			 */
+			// If this is the primary file, set Database flag to indicate that it is
+			// being opened ReadOnly. This flag will be used later to compare with
+			// the Header Page flag setting to make sure that the database is set ReadOnly.
 			readOnly = true;
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			if (!pageSpace->file)
@@ -682,8 +679,7 @@ bool PIO_read_ahead(Database*		dbb,
 
 	Database::Checkout dcoHolder(dbb);
 
-/* If an I/O status block was passed the caller wants to
-   queue an asynchronous I/O. */
+	// If an I/O status block was passed the caller wants to queue an asynchronous I/O.
 
 	if (!piob) {
 		overlapped_ptr = &overlapped;
@@ -696,7 +692,7 @@ bool PIO_read_ahead(Database*		dbb,
 	BufferDesc bdb;
 	while (pages)
 	{
-		/* Setup up a dummy buffer descriptor block for seeking file. */
+		// Setup up a dummy buffer descriptor block for seeking file.
 
 		bdb.bdb_dbb = dbb;
 		bdb.bdb_page = start_page;
@@ -706,8 +702,8 @@ bool PIO_read_ahead(Database*		dbb,
 			return false;
 		}
 
-		/* Check that every page within the set resides in the same database
-		   file. If not read what you can and loop back for the rest. */
+		// Check that every page within the set resides in the same database
+		// file. If not read what you can and loop back for the rest.
 
 		DWORD segmented_length = 0;
 		while (pages && start_page >= file->fil_min_page && start_page <= file->fil_max_page)
@@ -974,7 +970,7 @@ static jrd_file* seek_file(jrd_file*			file,
 
 	for (;; file = file->fil_next) {
 		if (!file) {
-			CORRUPT(158);		/* msg 158 database file not available */
+			CORRUPT(158);		// msg 158 database file not available
 		}
 		else if (page >= file->fil_min_page && page <= file->fil_max_page) {
 			break;
@@ -1068,7 +1064,7 @@ static jrd_file* setup_file(Database* dbb,
 	return file;
 }
 
-static bool maybe_close_file(HANDLE& hFile)
+static bool maybeCloseFile(HANDLE& hFile)
 {
 /**************************************
  *
@@ -1090,10 +1086,9 @@ static bool maybe_close_file(HANDLE& hFile)
 	return false;
 }
 
-static bool nt_error(TEXT*	string,
-						const jrd_file*		file,
-						ISC_STATUS	operation,
-						ISC_STATUS*	status_vector)
+static bool nt_error(const TEXT* string,
+					 const jrd_file* file, ISC_STATUS operation,
+					 ISC_STATUS* const status_vector)
 {
 /**************************************
  *
