@@ -25,7 +25,7 @@
 #include "../jrd/common.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/jrd.h"  /* For MAXPATHLEN Bug #126614 */
+#include "../jrd/jrd.h"  // For MAXPATHLEN Bug #126614
 #include "../jrd/license.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc_proto.h"
@@ -134,7 +134,8 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 
 	*p = 0;
 
-	for (const FN* function = isc_functions; function->fn_module; ++function) {
+	for (const FN* function = isc_functions; function->fn_module; ++function)
+	{
 		if (!strcmp(temp, function->fn_module) && !strcmp(ep, function->fn_entrypoint))
 		{
 			return function->fn_function;
@@ -303,7 +304,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	if (!tdbb) {
+	if (!tdbb)
+	{
 		// Something is seriously wrong
 		fb_assert(false);
 		return 0;
@@ -321,7 +323,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	if (ns_str == USER_SESSION_NAMESPACE)
 	{
-		if (!att) {
+		if (!att)
+		{
 			fb_assert(false);
 			return 0;
 		}
@@ -330,7 +333,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	}
 	else if (ns_str == USER_TRANSACTION_NAMESPACE)
 	{
-		if (!tra) {
+		if (!tra)
+		{
 			fb_assert(false);
 			return 0;
 		}

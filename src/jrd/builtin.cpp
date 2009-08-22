@@ -39,17 +39,17 @@ struct FN
 
 static const FN isc_builtin_functions[] =
 {
-/*    Internal functions available for QA testing only */
-/*    "DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,
+	// Internal functions available for QA testing only
+	/*
+	"DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,
 
-and so shall it be, *NEVER* include this in a production build
-removed this ugly security hole
-FSG 18.Dez.2000
+	and so shall it be, *NEVER* include this in a production build
+	removed this ugly security hole
+	FSG 18.Dez.2000
+	*/
 
-*/
 
-
-	{NULL, NULL, NULL}			/* End of list marker */
+	{NULL, NULL, NULL}			// End of list marker
 };
 
 
@@ -71,16 +71,15 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
  *
  **************************************/
 
-/* Strip off any preceeding $FIREBIRD path location from the
- * requested module name.
- */
+	// Strip off any preceeding $FIREBIRD path location from the requested module name.
 
 	const TEXT* modname = module;
 
 	TEXT temp[MAXPATHLEN];
 	gds__prefix(temp, "");
 	TEXT* p = temp;
-	for (p = temp; *p; p++, modname++) {
+	for (p = temp; *p; p++, modname++)
+	{
 		if (*p != *modname)
 			break;
 	}
@@ -88,7 +87,7 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 	if (!*p)
 		module = modname;
 
-/* Strip off any trailing spaces from module name */
+	// Strip off any trailing spaces from module name
 
 	p = temp;
 
@@ -97,7 +96,7 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 
 	*p++ = 0;
 
-/* Strip off any trailing spaces from entrypoint name */
+	// Strip off any trailing spaces from entrypoint name
 
 	const TEXT* ep = p;
 
@@ -106,9 +105,10 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 
 	*p = 0;
 
-/* Scan the list for a matching (module, entrypoint) name */
+	// Scan the list for a matching (module, entrypoint) name
 
-	for (const FN* function = isc_builtin_functions; function->fn_module; ++function) {
+	for (const FN* function = isc_builtin_functions; function->fn_module; ++function)
+	{
 		if (!strcmp(temp, function->fn_module) && !strcmp(ep, function->fn_entrypoint))
 		{
 			return function->fn_function;
