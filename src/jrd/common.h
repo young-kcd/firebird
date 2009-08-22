@@ -110,8 +110,6 @@
 //format for __LINE__
 #define LINEFORMAT "d"
 
-//#define KILLER_SIGNALS
-
 #define UNIX
 #define IEEE
 
@@ -246,7 +244,6 @@
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
-//#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #ifndef USE_POSIX_THREADS
@@ -276,8 +273,6 @@
 #endif
 
 #define UNIX
-
-//#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
 #endif /* NETBSD */
@@ -289,11 +284,6 @@
 *****************************************************/
 
 #ifdef __sun
-/* Defined KILLER_SIGNALS for Sun - as we were getting lots of lockups
- * using pipe server.
- * 1995-February-24 David Schnepper
- */
-//#define KILLER_SIGNALS
 
 #ifdef SOLARIS
 
@@ -365,7 +355,6 @@ extern "C" int remove(const char* path);
 
 #ifdef HPUX
 
-//#define KILLER_SIGNALS
 #define UNIX
 //#define CURSES_KEYPAD
 
@@ -409,7 +398,6 @@ extern "C" int remove(const char* path);
 #ifdef _AIX						/* IBM AIX */
 #ifndef _POWER					/* IBM RS/6000 */
 #define AIX
-//#define KILLER_SIGNALS
 #define UNIX
 //#define CURSES_KEYPAD
 //*#define FB_ALIGNMENT       4
@@ -418,7 +406,6 @@ extern "C" int remove(const char* path);
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #else /* AIX PowerPC */
 #define AIX_PPC
-//#define KILLER_SIGNALS
 #define UNIX
 //#define CURSES_KEYPAD
 //#define FB_ALIGNMENT       4
