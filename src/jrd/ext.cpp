@@ -179,15 +179,15 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 	Database* dbb = GET_DBB();
 	CHECK_DBB(dbb);
 
-/* if we already have a external file associated with this relation just
- * return the file structure */
+	// if we already have a external file associated with this relation just
+	// return the file structure
 	if (relation->rel_file) {
 		EXT_fini(relation, false);
 	}
 
 #ifdef WIN_NT
-	/* Default number of file handles stdio.h on Windows is 512, use this
-	call to increase and set to the maximum */
+	// Default number of file handles stdio.h on Windows is 512, use this
+	// call to increase and set to the maximum
 	_setmaxstdio(2048);
 #endif
 
@@ -290,8 +290,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 	file->ext_flags |= EXT_last_read;
 	file->ext_flags &= ~EXT_last_write;
 
-/* Loop thru fields setting missing fields to either blanks/zeros
-   or the missing value */
+	// Loop thru fields setting missing fields to either blanks/zeros or the missing value
 
 	dsc desc;
 	Format::fmt_desc_const_iterator desc_ptr = format->fmt_desc.begin();
@@ -381,11 +380,6 @@ RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream) //, jrd_nod** sort_
  *	set of record source blocks (rsb's).
  *
  **************************************/
-/* all these are un refrenced due to the code commented below
-jrd_nod*		node, inversion;
-OptimizerBlk::opt_repeat	*tail, *opt_end;
-SSHORT		i, size;
-*/
 
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -393,24 +387,26 @@ SSHORT		i, size;
 	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	jrd_rel* relation = csb_tail->csb_relation;
 
-/* Time to find inversions.  For each index on the relation
-   match all unused booleans against the index looking for upper
-   and lower bounds that can be computed by the index.  When
-   all unused conjunctions are exhausted, see if there is enough
-   information for an index retrieval.  If so, build up and
-   inversion component of the boolean. */
+	/* Time to find inversions.  For each index on the relation
+	match all unused booleans against the index looking for upper
+	and lower bounds that can be computed by the index.  When
+	all unused conjunctions are exhausted, see if there is enough
+	information for an index retrieval.  If so, build up and
+	inversion component of the boolean.
+	*/
 
-/*
-	inversion = NULL;
-	opt_end = opt->opt_rpt + opt->opt_count;
+	/*
+	jrd_nod* inversion = NULL;
+	OptimizerBlk::opt_repeat* const opt_end = opt->opt_rpt + opt->opt_count;
 
 	if (opt->opt_count)
-	    for (i = 0; i < csb_tail->csb_indices; i++)
+		//const index_desc* idx = csb_tail->csb_idx->items; ???
+	    for (USHORT i = 0; i < csb_tail->csb_indices; i++)
 		{
 			clear_bounds (opt, idx);
-			for (tail = opt->opt_rpt; tail < opt_end; tail++)
+			for (OptimizerBlk::opt_repeat* tail = opt->opt_rpt; tail < opt_end; tail++)
 			{
-			    node = tail->opt_conjunct;
+			    jrd_nod* node = tail->opt_conjunct;
 			    if (!(tail->opt_flags & opt_used) && OPT_computable(csb, node, -1))
 					match (opt, stream, node, idx);
 			    if (node->nod_type == nod_starts)
@@ -419,7 +415,7 @@ SSHORT		i, size;
 			compose (&inversion, make_index (opt, relation, idx), nod_bit_and);
 			idx = idx->idx_rpt + idx->idx_count;
 		}
-*/
+	*/
 
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
 	rsb->rsb_type = rsb_ext_sequential;
@@ -467,15 +463,13 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 		ext_fopen(tdbb->getDatabase(), file);
 	}
 
-/* Loop thru fields setting missing fields to either blanks/zeros
-   or the missing value */
+	// Loop thru fields setting missing fields to either blanks/zeros or the missing value
 
-/* check if file is read only if read only then
-   post error we cannot write to this file */
+	// check if file is read only if read only then post error we cannot write to this file
 	if (file->ext_flags & EXT_readonly) {
 		Database* dbb = tdbb->getDatabase();
 		CHECK_DBB(dbb);
-		/* Distinguish error message for a ReadOnly database */
+		// Distinguish error message for a ReadOnly database
 		if (dbb->dbb_flags & DBB_read_only)
 			ERR_post(Arg::Gds(isc_read_only_database));
 		else {

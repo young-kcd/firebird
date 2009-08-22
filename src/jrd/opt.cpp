@@ -877,16 +877,16 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		rsb = gen_residual_boolean(tdbb, opt, rsb);
 	}
 
-// if the aggregate was not optimized via an index, get rid of the
-// sort and flag the fact to the calling routine
+	// if the aggregate was not optimized via an index, get rid of the
+	// sort and flag the fact to the calling routine
 	if (aggregate && sort)
 	{
 		rse->rse_aggregate = NULL;
 		sort = NULL;
 	}
 
-// check index usage in all the base streams to ensure
-// that any user-specified access plan is followed
+	// check index usage in all the base streams to ensure
+	// that any user-specified access plan is followed
 
 	for (USHORT i = 1; i <= streams[0]; i++) {
 		check_indices(&csb->csb_rpt[streams[i]]);
@@ -950,7 +950,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	DEBUG
-// free up memory for optimizer structures
+	// free up memory for optimizer structures
 	delete opt;
 
 #ifdef OPT_DEBUG
@@ -7658,7 +7658,7 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 		}
 	}
 
-/*
+	/*
 	// AB: Original code FB1.0 , just left as reference for a while
 	UCHAR *streams, *end;
 	DEV_BLKCHK(river, type_riv);
@@ -7671,7 +7671,7 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 			return true;
 	}
 	return false;
-*/
+	*/
 }
 
 

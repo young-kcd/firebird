@@ -102,12 +102,12 @@ namespace {
 	{
 
 #ifdef WIN_NT
-// to avoid implicit .dll suffix
+		// to avoid implicit .dll suffix
 		{MOD_SUFFIX, ".", false},
 		{MOD_SUFFIX, ".DLL", false},
 #endif
 
-// always try to use module "as is"
+		// always try to use module "as is"
 		{MOD_SUFFIX, "", false},
 
 #ifdef HPUX
