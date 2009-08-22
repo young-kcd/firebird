@@ -1,3 +1,41 @@
+2009-08-22 14:20  robocop
+
+	* firebird2/src/jrd/common.h (1.213):
+
+	Get rid of "KILLER_SIGNALS" legacy definition.
+
+2009-08-22 14:16  robocop
+
+	* firebird2/src/jrd/: cch.h (1.48), ext.cpp (1.92), flu.cpp (1.72),
+	idx.cpp (1.160), opt.cpp (1.358), pag.cpp (1.214):
+
+	Comments.
+
+2009-08-22 14:09  robocop
+
+	* firebird2/src/jrd/: builtin.cpp (1.16), functions.cpp (1.45):
+
+	Comments and style.
+
+2009-08-22 07:11  robocop
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.86):
+
+	Comments and constness.
+
+2009-08-22 07:02  robocop
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.125):
+
+	Comments.
+
+2009-08-21 15:07  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.250):
+
+	Fixed CORE-2599: SegFault in yValve when closing attachment
+	actively used by other thread
+
 2009-08-21 14:23  robocop
 
 	* firebird2/src/jrd/sort.cpp (1.137):
