@@ -83,8 +83,8 @@ using namespace Firebird;
 #define SYNC		O_SYNC
 #endif
 
-    /* Changed to not redfine SYNC if O_SYNC already exists
-       they seem to be the same values anyway. MOD 13-07-2001 */
+// Changed to not redfine SYNC if O_SYNC already exists
+// they seem to be the same values anyway. MOD 13-07-2001
 #if (!(defined SYNC) && (defined O_FSYNC))
 #define SYNC		O_FSYNC
 #endif
@@ -252,7 +252,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
-/* File open succeeded.  Now expand the file name. */
+	// File open succeeded.  Now expand the file name.
 
 	PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
@@ -309,14 +309,14 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
  *
  **************************************/
 
-/* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
-   is a no-op. */
+	// Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this is a no-op.
 #ifndef SUPERSERVER_V2
 	MutexLockGuard guard(main_file->fil_mutex);
 
 	Database::Checkout dcoHolder(dbb);
 	for (jrd_file* file = main_file; file; file = file->fil_next) {
-		if (file->fil_desc != -1) {	/* This really should be an error */
+		if (file->fil_desc != -1) {
+			// This really should be an error
 			fsync(file->fil_desc);
 		}
 	}
@@ -342,8 +342,7 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
  *
  **************************************/
 
-/* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
-   is a no-op. */
+	// Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this is a no-op.
 
 #ifndef SUPERSERVER_V2
 	const bool oldForce = (file->fil_flags & FIL_force_write) != 0;
@@ -478,7 +477,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 			(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data, spare_buffer, length, address);
 		}
 		else
-#endif /* ISC_DATABASE_ENCRYPTION */
+#endif // ISC_DATABASE_ENCRYPTION
 		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1) {
 			if (SYSCALL_INTERRUPTED(errno))
 				continue;
@@ -602,19 +601,18 @@ jrd_file* PIO_open(Database* dbb,
 
 	if (desc == -1)
 	{
-		/* Try opening the database file in ReadOnly mode. The database file could
-		 * be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
-		 */
+		// Try opening the database file in ReadOnly mode. The database file could
+		// be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
+
 		desc = openFile(ptr, false, false, true);
 		if (desc == -1) {
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
-		/* If this is the primary file, set Database flag to indicate that it is
-		 * being opened ReadOnly. This flag will be used later to compare with
-		 * the Header Page flag setting to make sure that the database is set
-		 * ReadOnly.
-		 */
+		// If this is the primary file, set Database flag to indicate that it is
+		// being opened ReadOnly. This flag will be used later to compare with
+		// the Header Page flag setting to make sure that the database is set ReadOnly.
+
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		if (!pageSpace->file)
 			dbb->dbb_flags |= DBB_being_opened_read_only;
@@ -624,16 +622,16 @@ jrd_file* PIO_open(Database* dbb,
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
 #ifdef SUPPORT_RAW_DEVICES
-	/* At this point the file has successfully been opened in either RW or RO
-	 * mode. Check if it is a special file (i.e. raw block device) and if a
-	 * valid database is on it. If not, return an error.
-	 */
+	// At this point the file has successfully been opened in either RW or RO
+	// mode. Check if it is a special file (i.e. raw block device) and if a
+	// valid database is on it. If not, return an error.
+
 	if (PIO_on_raw_device(file_name) && !raw_devices_validate_database(desc, file_name))
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_open_err) << Arg::Unix(ENOENT));
 	}
-#endif /* SUPPORT_RAW_DEVICES */
+#endif // SUPPORT_RAW_DEVICES
 
 	return setup_file(dbb, string, desc, readOnly);
 }
@@ -682,7 +680,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		}
 	}
 	else
-#endif /* ISC_DATABASE_ENCRYPTION */
+#endif // ISC_DATABASE_ENCRYPTION
 	{
 		for (i = 0; i < IO_RETRY; i++)
 		{
@@ -762,7 +760,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 		}
 	}
 	else
-#endif /* ISC_DATABASE_ENCRYPTION */
+#endif // ISC_DATABASE_ENCRYPTION
 	{
 		for (i = 0; i < IO_RETRY; i++)
 		{
@@ -801,7 +799,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
 	for (;; file = file->fil_next)
 	{
 		if (!file) {
-			CORRUPT(158);		/* msg 158 database file not available */
+			CORRUPT(158);		// msg 158 database file not available
 		}
 		else if (page >= file->fil_min_page && page <= file->fil_max_page)
 			break;
@@ -994,16 +992,16 @@ static SLONG pread(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 	io.aio_nbytes = nbytes;
 	io.aio_reqprio = 0;
 	io.aio_sigevent.sigev_notify = SIGEV_NONE;
-	int err = aio_read(&io);		/* atomically reads at offset */
+	int err = aio_read(&io);	// atomically reads at offset
 	if (err != 0)
-		return (err);			/* errno is set */
+		return (err);			// errno is set
 
 	struct aiocb *list[1];
 	list[0] = &io;
-	err = aio_suspend(list, 1, NULL);	/* wait for I/O to complete */
+	err = aio_suspend(list, 1, NULL);	// wait for I/O to complete
 	if (err != 0)
-		return (err);			/* errno is set */
-	return (aio_return(&io));	/* return I/O status */
+		return (err);			// errno is set
+	return (aio_return(&io));	// return I/O status
 }
 
 static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
@@ -1026,19 +1024,19 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 	io.aio_nbytes = nbytes;
 	io.aio_reqprio = 0;
 	io.aio_sigevent.sigev_notify = SIGEV_NONE;
-	int err = aio_write(&io);		/* atomically reads at offset */
+	int err = aio_write(&io);	// atomically reads at offset
 	if (err != 0)
-		return (err);			/* errno is set */
+		return (err);			// errno is set
 
 	struct aiocb *list[1];
 	list[0] = &io;
-	err = aio_suspend(list, 1, NULL);	/* wait for I/O to complete */
+	err = aio_suspend(list, 1, NULL);	// wait for I/O to complete
 	if (err != 0)
-		return (err);			/* errno is set */
-	return (aio_return(&io));	/* return I/O status */
+		return (err);			// errno is set
+	return (aio_return(&io));	// return I/O status
 }
 
-#endif /* !(HAVE_PREAD && HAVE_PWRITE)*/
+#endif // !(HAVE_PREAD && HAVE_PWRITE)
 
 
 #ifdef SUPPORT_RAW_DEVICES
@@ -1096,7 +1094,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	const Ods::header_page* hp = (Ods::header_page*)header;
 	bool retval = false;
 
-	/* Read in database header. Code lifted from PIO_header. */
+	// Read in database header. Code lifted from PIO_header.
 	if (desc == -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("raw_devices_validate_database") <<
@@ -1127,14 +1125,14 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 			 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 
   read_finished:
-	/* Rewind file pointer */
+	// Rewind file pointer
 	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 	}
 
-	/* Validate database header. Code lifted from PAG_header. */
+	// Validate database header. Code lifted from PAG_header.
 	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
 		goto quit;
 
@@ -1144,9 +1142,8 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
 		goto quit;
 
-	/* At this point we think we have identified a database on the device.
- 	 * PAG_header will validate the entire structure later.
- 	 */
+	// At this point we think we have identified a database on the device.
+ 	// PAG_header will validate the entire structure later.
 	retval = true;
 
   quit:
