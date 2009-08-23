@@ -66,9 +66,9 @@ static const FPTR_BFILTER_CALLBACK filters[] =
 
 
 static void open_blob(thread_db*, jrd_tra*, BlobControl**, bid*,
-							USHORT, const UCHAR*,
-							FPTR_BFILTER_CALLBACK,
-							USHORT, BlobFilter*);
+					  USHORT, const UCHAR*,
+					  FPTR_BFILTER_CALLBACK,
+					  USHORT, BlobFilter*);
 
 
 void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
@@ -85,9 +85,9 @@ void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
  **************************************/
 
 	// Walk the chain of filters to find the ultimate source
-	BlobControl* next;
-	for (next = *filter_handle; next->ctl_to_sub_type;
-		 next = next->ctl_handle);
+	BlobControl* next = *filter_handle;
+	while (next->ctl_to_sub_type)
+		next = next->ctl_handle;
 
 	FPTR_BFILTER_CALLBACK callback = next->ctl_source;
 
@@ -148,10 +148,10 @@ void BLF_create_blob(thread_db* tdbb,
 
 
 ISC_STATUS BLF_get_segment(thread_db* tdbb,
-							BlobControl** filter_handle,
-							USHORT * length,
-							USHORT buffer_length,
-							UCHAR * buffer)
+						   BlobControl** filter_handle,
+						   USHORT* length,
+						   USHORT buffer_length,
+						   UCHAR* buffer)
 {
 /**************************************
  *
@@ -306,7 +306,7 @@ void BLF_put_segment(thread_db* tdbb,
 // with destructor of BlobControl
 inline void initializeFilter(thread_db *tdbb,
 							 ISC_STATUS &status,
-							 BlobControl *control,
+							 BlobControl* control,
 							 BlobFilter* filter,
 							 USHORT action)
 {
@@ -342,7 +342,7 @@ static void open_blob(thread_db* tdbb,
 	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset,
 		NULL, NULL, NULL, NULL);
 
-	if ((!filter) || (!filter->blf_filter))
+	if (!filter || !filter->blf_filter)
 	{
 		status_exception::raise(Arg::Gds(isc_nofilter) << Arg::Num(from) << Arg::Num(to));
 	}
@@ -357,7 +357,8 @@ static void open_blob(thread_db* tdbb,
 	temp.ctl_internal[2] = NULL;
 	// CVC: Using ISC_STATUS (SLONG) to return a pointer!!!
 	// If we change the function signature, we'll change the public API.
-	BlobControl* prior = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp); // ISC_STATUS to pointer!
+	// ISC_STATUS to pointer!
+	BlobControl* prior = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp);
 	prior->ctl_source = callback;
 
 	ISC_STATUS_ARRAY localStatus;
@@ -368,12 +369,14 @@ static void open_blob(thread_db* tdbb,
 	prior->ctl_internal[1] = tra_handle;
 	prior->ctl_internal[2] = blob_id;
 
-	if ((*callback) (action, prior)) {
+	if ((*callback) (action, prior))
+	{
 		BLF_close_blob(tdbb, &prior);
 		status_exception::raise(localStatus);
 	}
 
-	BlobControl* control = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp); // ISC_STATUS to pointer!
+	// ISC_STATUS to pointer!
+	BlobControl* control = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp);
 	control->ctl_source = filter->blf_filter;
 	control->ctl_handle = prior;
 	control->ctl_status = localStatus;
