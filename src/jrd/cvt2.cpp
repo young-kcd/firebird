@@ -43,7 +43,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/gds_proto.h"
-/* CVC: I needed them here. */
+// CVC: I needed them here.
 #include "../jrd/jrd.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/tra.h"
@@ -73,26 +73,26 @@ using namespace Firebird;
    */
 static const BYTE compare_priority[] =
 {
-	dtype_unknown,				/* dtype_unknown through dtype_varying  */
-	dtype_text,					/* have their natural values stored  */
-	dtype_cstring,				/* in the table.                     */
+	dtype_unknown,				// dtype_unknown through dtype_varying
+	dtype_text,					// have their natural values stored
+	dtype_cstring,				// in the table.
 	dtype_varying,
-	0, 0,						/* dtypes and 4, 5 are unused.       */
-	dtype_packed,				/* packed through long also have     */
-	dtype_byte,					/* their natural values in the table */
+	0, 0,						// dtypes and 4, 5 are unused.
+	dtype_packed,				// packed through long also have
+	dtype_byte,					// their natural values in the table
 	dtype_short,
 	dtype_long,
-	dtype_quad + 1,				/* quad through array all move up    */
-	dtype_real + 1,				/* by one to make room for int64     */
-	dtype_double + 1,			/* at its proper place in the table. */
+	dtype_quad + 1,				// quad through array all move up
+	dtype_real + 1,				// by one to make room for int64
+	dtype_double + 1,			// at its proper place in the table.
 	dtype_d_float + 1,
 	dtype_sql_date + 1,
 	dtype_sql_time + 1,
 	dtype_timestamp + 1,
 	dtype_blob + 1,
 	dtype_array + 1,
-	dtype_long + 1,				/* int64 goes right after long       */
-	dtype_dbkey					/* compares with nothing except itself */
+	dtype_long + 1,				// int64 goes right after long
+	dtype_dbkey					// compares with nothing except itself
 };
 
 
@@ -116,7 +116,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		BUGCHECK(189);	// msg 189 comparison not supported for specified data types.
 	}
 
-/* Handle the simple (matched) ones first */
+	// Handle the simple (matched) ones first
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
 	{
@@ -199,19 +199,19 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		case dtype_cstring:
 		case dtype_array:
 		case dtype_blob:
-			/* Special processing below */
+			// Special processing below
 			break;
 
 		default:
-			/* the two arguments have identical dtype and scale, but the
-			   dtype is not one of your defined types! */
+			// the two arguments have identical dtype and scale, but the
+			// dtype is not one of your defined types!
 			fb_assert(FALSE);
 			break;
 
-		}						/* switch on dtype */
-	}							/* if dtypes and scales are equal */
+		}						// switch on dtype
+	}							// if dtypes and scales are equal
 
-/* Handle mixed string comparisons */
+	// Handle mixed string comparisons
 
 	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying)
 	{
@@ -295,13 +295,13 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		return 0;
 	}
 
-/* Handle heterogeneous compares */
+	// Handle heterogeneous compares
 
 	if (compare_priority[arg1->dsc_dtype] < compare_priority[arg2->dsc_dtype])
 		return -CVT2_compare(arg2, arg1);
 
-/* At this point, the type of arg1 is guaranteed to be "greater than" arg2,
-   in the sense that it is the preferred type for comparing the two. */
+	// At this point, the type of arg1 is guaranteed to be "greater than" arg2,
+	// in the sense that it is the preferred type for comparing the two.
 
 	switch (arg1->dsc_dtype)
 	{
@@ -357,7 +357,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		}
 
 	case dtype_long:
-		/* Since longs may overflow when scaled, use int64 instead */
+		// Since longs may overflow when scaled, use int64 instead
 	case dtype_int64:
 		{
 			SSHORT scale;
@@ -434,7 +434,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		break;
 
 	default:
-		BUGCHECK(189);			/* msg 189 comparison not supported for specified data types */
+		BUGCHECK(189);			// msg 189 comparison not supported for specified data types
 		break;
 	}
 	return 0;
@@ -465,28 +465,28 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);
 
-/* DEV_BLKCHK (node, type_nod); */
+	// DEV_BLKCHK (node, type_nod);
 
 	if (arg1->dsc_dtype != dtype_blob)
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_datnotsup));
 
 	USHORT ttype1;
 	if (arg1->dsc_sub_type == isc_blob_text)
-		ttype1 = arg1->dsc_blob_ttype();       /* Load blob character set and collation */
+		ttype1 = arg1->dsc_blob_ttype();       // Load blob character set and collation
 	else
 		ttype1 = ttype_binary;
 
 	TextType* obj1 = INTL_texttype_lookup(tdbb, ttype1);
 	ttype1 = obj1->getType();
 
-	/* Is arg2 a blob? */
+	// Is arg2 a blob?
 	if (arg2->dsc_dtype == dtype_blob)
 	{
-	    /* Same blob id address? */
+	    // Same blob id address?
 		if (arg1->dsc_address == arg2->dsc_address)
 			return 0;
 
-		/* Second test for blob id, checking relation and slot. */
+		// Second test for blob id, checking relation and slot.
 		const bid* bid1 = (bid*) arg1->dsc_address;
 		const bid* bid2 = (bid*) arg2->dsc_address;
 		if (*bid1 == *bid2)
@@ -495,7 +495,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 		}
 
 		if (arg2->dsc_sub_type == isc_blob_text)
-			ttype2 = arg2->dsc_blob_ttype();       /* Load blob character set and collation */
+			ttype2 = arg2->dsc_blob_ttype();       // Load blob character set and collation
 		else
 			ttype2 = ttype_binary;
 
@@ -571,12 +571,14 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 		BLB_close(tdbb, blob1);
 		BLB_close(tdbb, blob2);
 	}
-	/* We do not accept arrays for now. Maybe InternalArrayDesc in the future. */
 	else if (arg2->dsc_dtype == dtype_array)
+	{
+		// We do not accept arrays for now. Maybe InternalArrayDesc in the future.
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_datnotsup));
-	/* The second parameter should be a string. */
+	}
 	else
 	{
+		// The second parameter should be a string.
 		if (arg2->dsc_dtype <= dtype_varying)
 		{
 			if ((ttype2 = arg2->dsc_ttype()) != ttype_binary)
@@ -635,7 +637,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string)
  *	Get a name (max length 31, NULL terminated) from a descriptor.
  *
  **************************************/
-	VaryStr<MAX_SQL_IDENTIFIER_SIZE> temp;			/* 31 bytes + 1 NULL */
+	VaryStr<MAX_SQL_IDENTIFIER_SIZE> temp;			// 31 bytes + 1 NULL
 	const char* p;
 
 	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, &temp, sizeof(temp), ERR_post);
@@ -694,7 +696,8 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 	if (desc->dsc_dtype <= dtype_any_text)
 	{
 
-		if (to_interp == from_interp) {
+		if (to_interp == from_interp)
+		{
 			*address = from_buf;
 			return from_len;
 		}
@@ -702,7 +705,8 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 		thread_db* tdbb = JRD_get_thread_data();
 		const USHORT cs1 = INTL_charset(tdbb, to_interp);
 		const USHORT cs2 = INTL_charset(tdbb, from_interp);
-		if (cs1 == cs2) {
+		if (cs1 == cs2)
+		{
 			*address = from_buf;
 			return from_len;
 		}
@@ -714,7 +718,7 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 		return length;
 	}
 
-/* Not string data, then  -- convert value to varying string. */
+	// Not string data, then  -- convert value to varying string.
 
 	dsc temp_desc;
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
