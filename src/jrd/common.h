@@ -585,13 +585,6 @@ extern "C" int remove(const char* path);
 
 /* data type definitions */
 
-#ifndef ATOM_DEFINED			/* 32 or 64 bit */
-typedef long SATOM;
-typedef unsigned long UATOM;
-#else
-#undef ATOM_DEFINED
-#endif
-
 #ifndef ISC_TIMESTAMP_DEFINED
 typedef SLONG ISC_DATE;
 typedef ULONG ISC_TIME;

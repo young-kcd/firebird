@@ -162,7 +162,7 @@ public:
 	que			bdb_waiters;			// latch wait que
 	thread_db*	bdb_exclusive;			// thread holding exclusive latch
 	thread_db*	bdb_io;					// thread holding io latch
-	UATOM		bdb_ast_flags;			// flags manipulated at AST level
+	ULONG		bdb_ast_flags;			// flags manipulated at AST level
 	USHORT		bdb_flags;
 	SSHORT		bdb_use_count;			// Number of active users
 	SSHORT		bdb_scan_count;			// concurrent sequential scans
@@ -174,6 +174,7 @@ public:
 // bdb_flags
 
 // to set/clear BDB_dirty use set_dirty_flag()/clear_dirty_flag()
+// These constants should really be of type USHORT.
 const int BDB_dirty				= 1;		// page has been updated but not written yet
 const int BDB_garbage_collect	= 2;		// left by scan for garbage collector
 const int BDB_writer			= 4;		// someone is updating the page
@@ -197,7 +198,7 @@ const int BDB_no_blocking_ast	= 32768;	// No blocking AST registered with page l
 
 // bdb_ast_flags
 
-const int BDB_blocking 			= 1;	// a blocking ast was sent while page locked
+const ULONG BDB_blocking 		= 1;	// a blocking ast was sent while page locked
 
 
 // PRE -- Precedence block

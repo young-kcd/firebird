@@ -112,17 +112,17 @@ const ULONG DBB_destroying			= 0x100000L;	// database destructor is called
 //
 // dbb_ast_flags
 //
-const UATOM DBB_blocking			= 0x1L;		// Exclusive mode is blocking
-const UATOM DBB_get_shadows			= 0x2L;		// Signal received to check for new shadows
-const UATOM DBB_assert_locks		= 0x4L;		// Locks are to be asserted
-const UATOM DBB_shutdown			= 0x8L;		// Database is shutdown
-const UATOM DBB_shut_attach			= 0x10L;	// no new attachments accepted
-const UATOM DBB_shut_tran			= 0x20L;	// no new transactions accepted
-const UATOM DBB_shut_force			= 0x40L;	// forced shutdown in progress
-const UATOM DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
-const UATOM DBB_shutdown_full		= 0x100L;	// Database fully shut down
-const UATOM DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
-const UATOM DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
+const ULONG DBB_blocking			= 0x1L;		// Exclusive mode is blocking
+const ULONG DBB_get_shadows			= 0x2L;		// Signal received to check for new shadows
+const ULONG DBB_assert_locks		= 0x4L;		// Locks are to be asserted
+const ULONG DBB_shutdown			= 0x8L;		// Database is shutdown
+const ULONG DBB_shut_attach			= 0x10L;	// no new attachments accepted
+const ULONG DBB_shut_tran			= 0x20L;	// no new transactions accepted
+const ULONG DBB_shut_force			= 0x40L;	// forced shutdown in progress
+const ULONG DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
+const ULONG DBB_shutdown_full		= 0x100L;	// Database fully shut down
+const ULONG DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
+const ULONG DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
 
 class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 {
@@ -364,7 +364,7 @@ public:
 
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 
-	UATOM dbb_ast_flags;				// flags modified at AST level
+	ULONG dbb_ast_flags;				// flags modified at AST level
 	ULONG dbb_flags;
 	USHORT dbb_ods_version;				// major ODS version number
 	USHORT dbb_minor_version;			// minor ODS version number
