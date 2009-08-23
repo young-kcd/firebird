@@ -124,7 +124,8 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 {
 	// When request finishes normally transaction reference is not cleared.
 	// Then if afterwards request is restarted TRA_attach_request is called again.
-	if (request->req_transaction) {
+	if (request->req_transaction)
+	{
 		if (request->req_transaction == transaction)
 			return;
 		TRA_detach_request(request);
@@ -138,7 +139,8 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 	request->req_transaction = transaction;
 
 	// Add request to the doubly linked list
-	if (transaction->tra_requests) {
+	if (transaction->tra_requests)
+	{
 		fb_assert(transaction->tra_requests->req_tra_prev == NULL);
 		transaction->tra_requests->req_tra_prev = request;
 		request->req_tra_next = transaction->tra_requests;
@@ -152,16 +154,19 @@ void TRA_detach_request(Jrd::jrd_req* request)
 		return;
 
 	// Remove request from the doubly linked list
-	if (request->req_tra_next) {
+	if (request->req_tra_next)
+	{
 		fb_assert(request->req_tra_next->req_tra_prev == request);
 		request->req_tra_next->req_tra_prev = request->req_tra_prev;
 	}
 
-	if (request->req_tra_prev) {
+	if (request->req_tra_prev)
+	{
 		fb_assert(request->req_tra_prev->req_tra_next == request);
 		request->req_tra_prev->req_tra_next = request->req_tra_next;
 	}
-	else {
+	else
+	{
 		fb_assert(request->req_transaction->tra_requests == request);
 		request->req_transaction->tra_requests = request->req_tra_next;
 	}
@@ -200,12 +205,14 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 	oldest = dbb->dbb_oldest_transaction;
 	active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
 #else
-	if (dbb->dbb_flags & DBB_read_only) {
+	if (dbb->dbb_flags & DBB_read_only)
+	{
 		number = dbb->dbb_next_transaction;
 		oldest = dbb->dbb_oldest_transaction;
 		active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
 	}
-	else {
+	else
+	{
 		WIN window(HEADER_PAGE_NUMBER);
 		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		number = header->hdr_next_transaction;
@@ -234,11 +241,13 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 	temp_lock.lck_parent = dbb->dbb_lock;
 	temp_lock.lck_length = sizeof(SLONG);
 
-	for (; active <= number; active++) {
+	for (; active <= number; active++)
+	{
 		const ULONG byte = TRANS_OFFSET(active - base);
 		const USHORT shift = TRANS_SHIFT(active);
 		const USHORT state = (trans->tra_transactions[byte] >> shift) & TRA_MASK;
-		if (state == tra_active) {
+		if (state == tra_active)
+		{
 			temp_lock.lck_key.lck_long = active;
 			if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT)) {
 				return true;
@@ -447,7 +456,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 #endif
 		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 #ifdef GARBAGE_THREAD
-	else if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected)) {
+	else if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
+	{
 		// If the transaction only read data but is a member of a
 		// multi-database transaction with a transaction description
 		// message then flush RDB$TRANSACTIONS.
@@ -519,7 +529,8 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence) //, WIN* precedence_window)
 
 	// Release prior page
 
-	if (sequence) {
+	if (sequence)
+	{
 		CCH_MARK_MUST_WRITE(tdbb, &prior_window);
 		prior_tip->tip_next = window.win_page.getPageNum();
 		CCH_RELEASE(tdbb, &prior_window);
@@ -607,7 +618,8 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 	// move the first page into the bit vector
 
 	UCHAR* p = bit_vector;
-	if (p) {
+	if (p)
+	{
 		ULONG l = base % trans_per_tip;
 		const UCHAR* q = tip->tip_transactions + TRANS_OFFSET(l);
 		l = TRANS_OFFSET(MIN((top + TRA_MASK - base), trans_per_tip - l));
@@ -617,7 +629,8 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 
 	// move successive pages into the bit vector
 
-	while (sequence <= last) {
+	while (sequence <= last)
+	{
 		base = sequence * trans_per_tip;
 
 		// release the read lock as we go, so that some one else can
@@ -626,7 +639,8 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, ULONG base, ULONG top
 		tip = (tx_inv_page*) CCH_HANDOFF(tdbb, &window, inventory_page(tdbb, sequence++),
 							  LCK_read, pag_transactions);
 		TPC_update_cache(tdbb, tip, sequence - 1);
-		if (p) {
+		if (p)
+		{
 			const ULONG l = TRANS_OFFSET(MIN((top + TRA_MASK - base), trans_per_tip));
 			memcpy(p, tip->tip_transactions, l);
 			p += l;
@@ -691,11 +705,13 @@ void TRA_header_write(thread_db* tdbb, Database* dbb, SLONG number)
 
 	// If transaction number is already on disk just return.
 
-	if (!number || dbb->dbb_last_header_write < number) {
+	if (!number || dbb->dbb_last_header_write < number)
+	{
 		WIN window(HEADER_PAGE_NUMBER);
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-		if (header->hdr_next_transaction) {
+		if (header->hdr_next_transaction)
+		{
 			if (header->hdr_oldest_active > header->hdr_next_transaction)
 				BUGCHECK(266);	//next transaction older than oldest active
 
@@ -707,7 +723,8 @@ void TRA_header_write(thread_db* tdbb, Database* dbb, SLONG number)
 		// for the latch; perform a post fetch check and optimize
 		// this case by not writing the page again.
 
-		if (!number || dbb->dbb_last_header_write < number) {
+		if (!number || dbb->dbb_last_header_write < number)
+		{
 			CCH_MARK_MUST_WRITE(tdbb, &window);
 			if (dbb->dbb_next_transaction > header->hdr_next_transaction)
 				header->hdr_next_transaction = dbb->dbb_next_transaction;
@@ -897,14 +914,16 @@ bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 	CHECK_DBB(dbb);
 
 	vcl* vector = dbb->dbb_pc_transactions;
-	if (!vector) {
+	if (!vector)
+	{
 		if (old_number == new_number)
 			return false;
 		vector = dbb->dbb_pc_transactions = vcl::newVector(*dbb->dbb_permanent, 1);
 	}
 
 	SLONG* zp = 0;
-	for (vcl::iterator p = vector->begin(), end = vector->end(); p < end; ++p) {
+	for (vcl::iterator p = vector->begin(), end = vector->end(); p < end; ++p)
+	{
 		if (*p == old_number)
 			return (*p = new_number) ? true : false;
 		if (!zp && !*p)
@@ -913,9 +932,11 @@ bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 
 	if (old_number == new_number || new_number == 0)
 		return false;
+
 	if (zp)
 		*zp = new_number;
-	else {
+	else
+	{
 		vector->resize(vector->count() + 1);
 		(*vector)[vector->count() - 1] = new_number;
 	}
@@ -924,8 +945,7 @@ bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 }
 
 
-void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
-	const UCHAR* msg)
+void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCHAR* msg)
 {
 /**************************************
  *
@@ -960,7 +980,8 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 	*/
 	fb_assert(!(!msg && length) || (msg && (!*msg && length)));
 
-	if (msg && length) {
+	if (msg && length)
+	{
 		MET_prepare(tdbb, transaction, length, msg);
 		transaction->tra_flags |= TRA_prepare2;
 	}
@@ -980,7 +1001,8 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 #endif
 		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 #ifdef GARBAGE_THREAD
-	else if (transaction->tra_flags & TRA_prepare2) {
+	else if (transaction->tra_flags & TRA_prepare2)
+	{
 		// If the transaction only read data but is a member of a
 		// multi-database transaction with a transaction description
 		// message then flush RDB$TRANSACTIONS.
@@ -1024,7 +1046,8 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	const UCHAR state = (number > dbb->dbb_next_transaction) ?
 		255 : limbo_transaction(tdbb, number);
 
-	if (state != tra_limbo) {
+	if (state != tra_limbo)
+	{
 		USHORT message;
 
 		switch (state)
@@ -1088,11 +1111,13 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			while (true)
 			{
 				BlobIndex *current = &transaction->tra_blobs->current();
-				if (current->bli_materialized) {
+				if (current->bli_materialized)
+				{
 					if (!transaction->tra_blobs->getNext())
 						break;
 				}
-				else {
+				else
+				{
 					ULONG temp_id = current->bli_temp_id;
 					BLB_cancel(tdbb, current->bli_blob_object);
 					if (!transaction->tra_blobs->locate(Firebird::locGreat, temp_id))
@@ -1105,7 +1130,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			BLB_release_array(transaction->tra_arrays);
 	}
 
-	if (transaction->tra_pool) {
+	if (transaction->tra_pool)
+	{
 		// Iterate the doubly linked list of requests for transaction and null out the transaction references
 		while (transaction->tra_requests)
 			TRA_detach_request(transaction->tra_requests);
@@ -1154,7 +1180,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		LCK_release(tdbb, transaction->tra_cancel_lock);
 
 	vec<Lock*>* vector = transaction->tra_relation_locks;
-	if (vector) {
+	if (vector)
+	{
 		vec<Lock*>::iterator lock = vector->begin();
 		for (ULONG i = 0; i < vector->count(); ++i, ++lock)
 		{
@@ -1179,7 +1206,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	for (jrd_tra** ptr = &attachment->att_transactions; *ptr; ptr = &(*ptr)->tra_next)
 	{
-		if (*ptr == transaction) {
+		if (*ptr == transaction)
+		{
 			*ptr = transaction->tra_next;
 			break;
 		}
@@ -1253,7 +1281,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	bool tran_sav = false;
 	for (const Savepoint* temp = transaction->tra_save_point; temp; temp = temp->sav_next)
 	{
-		if (temp->sav_flags & SAV_trans_level) {
+		if (temp->sav_flags & SAV_trans_level)
+		{
 			tran_sav = true;
 			break;
 		}
@@ -1262,7 +1291,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	// Measure transaction savepoint size if there is one. We'll use it for undo
 	// only if it is small enough
 	IPTR count = SAV_LARGE;
-	if (tran_sav) {
+	if (tran_sav)
+	{
 		for (const Savepoint* temp = transaction->tra_save_point; temp; temp = temp->sav_next)
 		{
 		    count = VIO_savepoint_large(temp, count);
@@ -1272,14 +1302,17 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	}
 
 	// We are going to use savepoint to undo transaction
-	if (tran_sav && count > 0) {
+	if (tran_sav && count > 0)
+	{
 		// Undo all user savepoints work
-		while (transaction->tra_save_point->sav_flags & SAV_user) {
+		while (transaction->tra_save_point->sav_flags & SAV_user)
+		{
 			++transaction->tra_save_point->sav_verb_count;	// cause undo
 			VIO_verb_cleanup(tdbb, transaction);
 		}
 	}
-	else {
+	else
+	{
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation
 		// of memory is really done in VIO_verb_cleanup when we pass NULL as sav_next
@@ -1290,7 +1323,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			VIO_verb_cleanup(tdbb, transaction);
 			transaction->tra_save_point = next;
 		}
-		if (transaction->tra_save_point) {
+		if (transaction->tra_save_point)
+		{
 			if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 				BUGCHECK(287);		// Too many savepoints
 			// This transaction savepoint contains wrong data now. Clean it up
@@ -1314,7 +1348,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			// In an attempt to avoid deadlocks, clear the precedence by writing
 			// all dirty buffers for this transaction.
 
-			if (transaction->tra_flags & TRA_write) {
+			if (transaction->tra_flags & TRA_write)
+			{
 				CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 				++transaction->tra_save_point->sav_verb_count;	// cause undo
 				VIO_verb_cleanup(tdbb, transaction);
@@ -1327,13 +1362,15 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			// as committed
 			state = tra_committed;
 		}
-		catch (const Firebird::Exception&) {
+		catch (const Firebird::Exception&)
+		{
 			// Prevent a bugcheck in TRA_set_state to cause a loop
 			// Clear the error because the rollback will succeed.
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
 	}
-	else if (!(transaction->tra_flags & TRA_write)) {
+	else if (!(transaction->tra_flags & TRA_write))
+	{
 		// There were no changes within the transaction, so we may mark it
 		// as committed
 		state = tra_committed;
@@ -1379,7 +1416,8 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 	}
 
 	// If it is a ReadOnly DB, set the new state in the TIP cache and return
-	if ((dbb->dbb_flags & DBB_read_only) && dbb->dbb_tip_cache) {
+	if ((dbb->dbb_flags & DBB_read_only) && dbb->dbb_tip_cache)
+	{
 		TPC_set_state(tdbb, number, state);
 		return;
 	}
@@ -1455,9 +1493,11 @@ void TRA_shutdown_attachment(thread_db* tdbb, Attachment* attachment)
 		// Release the relation locks associated with the transaction
 
 		vec<Lock*>* vector = transaction->tra_relation_locks;
-		if (vector) {
+		if (vector)
+		{
 			vec<Lock*>::iterator lock = vector->begin();
-			for (ULONG i = 0; i < vector->count(); ++i, ++lock) {
+			for (ULONG i = 0; i < vector->count(); ++i, ++lock)
+			{
 				if (*lock)
 					LCK_release(tdbb, *lock);
 			}
@@ -1751,16 +1791,19 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	transaction->tra_attachment->att_flags &= ~ATT_notify_gc;
 #endif
 
-	if (VIO_sweep(tdbb, transaction)) {
+	if (VIO_sweep(tdbb, transaction))
+	{
 		const ULONG base = transaction->tra_oldest & ~TRA_MASK;
 		ULONG active = transaction->tra_oldest;
 		for (; active < (ULONG) transaction->tra_top; active++)
 		{
-			if (transaction->tra_flags & TRA_read_committed) {
+			if (transaction->tra_flags & TRA_read_committed)
+			{
 				if (TPC_cache_state(tdbb, active) == tra_limbo)
 					break;
 			}
-			else {
+			else
+			{
 				const ULONG byte = TRANS_OFFSET(active - base);
 				const USHORT shift = TRANS_SHIFT(active);
 				if (((transaction->tra_transactions[byte] >> shift) & TRA_MASK) == tra_limbo)
@@ -1783,7 +1826,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 		WIN window(HEADER_PAGE_NUMBER);
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-		if (header->hdr_oldest_transaction < --transaction_oldest_active) {
+		if (header->hdr_oldest_transaction < --transaction_oldest_active)
+		{
 			CCH_MARK_MUST_WRITE(tdbb, &window);
 			header->hdr_oldest_transaction = MIN(active, (ULONG) transaction_oldest_active);
 		}
@@ -1800,7 +1844,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	tdbb->tdbb_flags &= ~TDBB_sweeper;
 	tdbb->setTransaction(tdbb_old_trans);
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		try {
 			if (!trans && transaction)
@@ -1811,7 +1856,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
 			tdbb->setTransaction(tdbb_old_trans);
 		}
-		catch (const Firebird::Exception& ex2) {
+		catch (const Firebird::Exception& ex2)
+		{
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex2);
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
@@ -1851,7 +1897,8 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
 	// Create, wait on, and release lock on target transaction.  If
 	// we can't get the lock due to deadlock
 
-	if (wait != jrd_tra::tra_no_wait) {
+	if (wait != jrd_tra::tra_no_wait)
+	{
 		Lock temp_lock;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
@@ -1879,7 +1926,8 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
 	// If the recorded state of the transaction is active, we know better.  If
 	// it were active, he'd be alive now.  Mark him dead.
 
-	if (state == tra_active) {
+	if (state == tra_active)
+	{
 		state = tra_dead;
 		TRA_set_state(tdbb, 0, number, tra_dead);
 	}
@@ -1896,7 +1944,8 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
 
 	if (trans->tra_flags & TRA_read_committed)
 		TPC_set_state(tdbb, number, state);
-	else {
+	else
+	{
 		trans->tra_transactions[byte] &= ~(TRA_MASK << shift);
 		trans->tra_transactions[byte] |= state << shift;
 	}
@@ -2010,7 +2059,8 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 	header_page* header = (header_page*) CCH_FETCH(tdbb, window, LCK_write, pag_header);
 
 	// Before incrementing the next transaction Id, make sure the current one is valid
-	if (header->hdr_next_transaction) {
+	if (header->hdr_next_transaction)
+	{
 		if (header->hdr_oldest_active > header->hdr_next_transaction)
 			BUGCHECK(266);		//next transaction older than oldest active
 
@@ -2107,7 +2157,8 @@ static void compute_oldest_retaining(thread_db* tdbb, jrd_tra* transaction, cons
 	// Get a commit retaining lock, if not present.
 
 	Lock* lock = dbb->dbb_retaining_lock;
-	if (!lock) {
+	if (!lock)
+	{
 		lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 		lock->lck_dbb = dbb;
 		lock->lck_type = LCK_retaining;
@@ -2128,14 +2179,16 @@ static void compute_oldest_retaining(thread_db* tdbb, jrd_tra* transaction, cons
 
 	SLONG youngest_retaining;
 
-	if (write_flag) {
+	if (write_flag)
+	{
 		LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);
 		youngest_retaining = LOCK_read_data(lock->lck_id);
 		if (number > youngest_retaining)
 			LCK_write_data(lock, number);
 		LCK_convert(tdbb, lock, LCK_SR, LCK_WAIT);
 	}
-	else {
+	else
+	{
 		youngest_retaining = LOCK_read_data(lock->lck_id);
 		if (number > youngest_retaining)
 			return;
@@ -2149,7 +2202,8 @@ static void compute_oldest_retaining(thread_db* tdbb, jrd_tra* transaction, cons
 		temp_lock.lck_length = sizeof(SLONG);
 		temp_lock.lck_object = transaction;
 
-		while (number < youngest_retaining) {
+		while (number < youngest_retaining)
+		{
 			temp_lock.lck_key.lck_long = ++number;
 			const SLONG data = LCK_read_data(&temp_lock);
 			if (data && data < transaction->tra_oldest_active)
@@ -2369,7 +2423,8 @@ static SLONG inventory_page(thread_db* tdbb, SLONG sequence)
 
 	WIN window(DB_PAGE_SPACE, -1);
 	vcl* vector = dbb->dbb_t_pages;
-	while (!vector || sequence >= (SLONG) vector->count()) {
+	while (!vector || sequence >= (SLONG) vector->count())
+	{
 		DPM_scan_pages(tdbb);
 		if ((vector = dbb->dbb_t_pages) && sequence < (SLONG) vector->count())
 			break;
@@ -2467,7 +2522,8 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 	for (jrd_req* request = trans->tra_attachment->att_requests; request;
 		request = request->req_request)
 	{
-		if (request->req_transaction) {
+		if (request->req_transaction)
+		{
 			EXE_unwind(tdbb, request);
 			EXE_start(tdbb, request, trans);
 		}
@@ -2476,10 +2532,13 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 		// start at level 1 since level 0 was just handled
 
 		vec<jrd_req*>* vector = request->req_sub_requests;
-		if (vector) {
-			for (USHORT level = 1; level < vector->count(); level++) {
+		if (vector)
+		{
+			for (USHORT level = 1; level < vector->count(); level++)
+			{
 				jrd_req* clone = (*vector)[level];
-				if (clone && clone->req_transaction) {
+				if (clone && clone->req_transaction)
+				{
 					EXE_unwind(tdbb, clone);
 					EXE_start(tdbb, clone, trans);
 				}
@@ -2489,8 +2548,7 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 }
 
 
-static void retain_context(thread_db* tdbb, jrd_tra* transaction,
-						   bool commit, SSHORT state)
+static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, SSHORT state)
 {
 /**************************************
  *
@@ -2530,7 +2588,8 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 #else
 	if (dbb->dbb_flags & DBB_read_only)
 		new_number = dbb->dbb_next_transaction + dbb->genSharedUniqueNumber(tdbb);
-	else {
+	else
+	{
 		const header_page* header = bump_transaction_id(tdbb, &window);
 		new_number = header->hdr_next_transaction;
 	}
@@ -2538,12 +2597,14 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 
 	Lock* new_lock = 0;
 	Lock* old_lock = transaction->tra_lock;
-	if (old_lock) {
+	if (old_lock)
+	{
 		new_lock = create_transaction_lock(tdbb, transaction);
 		new_lock->lck_key.lck_long = new_number;
 		new_lock->lck_data = transaction->tra_lock->lck_data;
 
-		if (!LCK_lock(tdbb, new_lock, LCK_write, LCK_WAIT)) {
+		if (!LCK_lock(tdbb, new_lock, LCK_write, LCK_WAIT))
+		{
 #ifndef SUPERSERVER_V2
 			if (!(dbb->dbb_flags & DBB_read_only))
 				CCH_RELEASE(tdbb, &window);
@@ -2569,7 +2630,8 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 	transaction->tra_number = old_number;
 #endif
 
-	if (!(dbb->dbb_flags & DBB_read_only)) {
+	if (!(dbb->dbb_flags & DBB_read_only))
+	{
 		// Set the state on the inventory page
 		TRA_set_state(tdbb, transaction, old_number, state);
 	}
@@ -2578,7 +2640,8 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 	// Release transaction lock since it isn't needed
 	// anymore and the new one is already in place.
 
-	if (old_lock) {
+	if (old_lock)
+	{
 		++transaction->tra_use_count;
 		LCK_release(tdbb, old_lock);
 		transaction->tra_lock = new_lock;
@@ -2609,7 +2672,8 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 		transaction->tra_save_point = next;
 	}
 
-	if (transaction->tra_save_point) {
+	if (transaction->tra_save_point)
+	{
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		// Too many savepoints
 		VIO_verb_cleanup(tdbb, transaction);	// get rid of transaction savepoint
@@ -2617,7 +2681,8 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 		transaction->tra_save_point->sav_flags |= SAV_trans_level;
 	}
 
-	if (transaction->tra_flags & TRA_precommitted) {
+	if (transaction->tra_flags & TRA_precommitted)
+	{
 		if (!(dbb->dbb_flags & DBB_read_only))
 		{
 			transaction->tra_flags &= ~TRA_precommitted;
@@ -3151,9 +3216,10 @@ static void transaction_options(thread_db* tdbb,
 	if (!vector)
 		return;
 
-	// Try to seize all relation locks.`If any can't be seized, release all and try again.
+	// Try to seize all relation locks. If any can't be seized, release all and try again.
 
-	for (ULONG id = 0; id < vector->count(); id++) {
+	for (ULONG id = 0; id < vector->count(); id++)
+	{
 		Lock* lock = (*vector)[id];
 		if (!lock)
 			continue;
@@ -3162,8 +3228,10 @@ static void transaction_options(thread_db* tdbb,
 		{
 			continue;
 		}
-		for (ULONG l = 0; l < id; l++) {
-			if ( (lock = (*vector)[l]) ) {
+		for (ULONG l = 0; l < id; l++)
+		{
+			if ( (lock = (*vector)[l]) )
+			{
 				level = lock->lck_logical;
 				LCK_release(tdbb, lock);
 				lock->lck_logical = level;
@@ -3208,13 +3276,15 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	oldest_snapshot = dbb->dbb_oldest_snapshot;
 
 #else // SUPERSERVER_V2
-	if (dbb->dbb_flags & DBB_read_only) {
+	if (dbb->dbb_flags & DBB_read_only)
+	{
 		number = dbb->dbb_next_transaction + dbb->genSharedUniqueNumber(tdbb);
 		oldest = dbb->dbb_oldest_transaction;
 		oldest_active = dbb->dbb_oldest_active;
 		oldest_snapshot = dbb->dbb_oldest_snapshot;
 	}
-	else {
+	else
+	{
 		const header_page* header = bump_transaction_id(tdbb, &window);
 		number = header->hdr_next_transaction;
 		oldest = header->hdr_oldest_transaction;
@@ -3264,7 +3334,8 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	lock->lck_data = (trans->tra_flags & TRA_read_committed) ? number : active;
 	lock->lck_object = trans;
 
-	if (!LCK_lock(tdbb, lock, LCK_write, LCK_WAIT)) {
+	if (!LCK_lock(tdbb, lock, LCK_write, LCK_WAIT))
+	{
 #ifndef SUPERSERVER_V2
 		if (!(dbb->dbb_flags & DBB_read_only))
 			CCH_RELEASE(tdbb, &window);
@@ -3283,7 +3354,8 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		CCH_RELEASE(tdbb, &window);
 #endif
 
-	if (dbb->dbb_flags & DBB_read_only) {
+	if (dbb->dbb_flags & DBB_read_only)
+	{
 		// Set transaction flags to TRA_precommitted, TRA_readonly
 		trans->tra_flags |= (TRA_readonly | TRA_precommitted);
 	}
@@ -3317,19 +3389,24 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	bool cleanup = !(number % TRA_ACTIVE_CLEANUP);
 	USHORT oldest_state;
 
-	for (; active < number; active++) {
+	for (; active < number; active++)
+	{
 		if (trans->tra_flags & TRA_read_committed)
 			oldest_state = TPC_cache_state(tdbb, active);
-		else {
+		else
+		{
 			const ULONG byte = TRANS_OFFSET(active - base);
 			const USHORT shift = TRANS_SHIFT(active);
 			oldest_state = (trans->tra_transactions[byte] >> shift) & TRA_MASK;
 		}
-		if (oldest_state == tra_active) {
+		if (oldest_state == tra_active)
+		{
 			temp_lock.lck_key.lck_long = active;
 			SLONG data = LCK_read_data(tdbb, &temp_lock);
-			if (!data) {
-				if (cleanup) {
+			if (!data)
+			{
+				if (cleanup)
+				{
 					if (TRA_wait(tdbb, trans, active, jrd_tra::tra_no_wait) == tra_committed)
 						cleanup = false;
 					continue;
@@ -3391,10 +3468,12 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	oldest_state = tra_committed;
 
-	for (oldest = trans->tra_oldest; oldest < number; oldest++) {
+	for (oldest = trans->tra_oldest; oldest < number; oldest++)
+	{
 		if (trans->tra_flags & TRA_read_committed)
 			oldest_state = TPC_cache_state(tdbb, oldest);
-		else {
+		else
+		{
 			const ULONG byte = TRANS_OFFSET(oldest - base);
 			const USHORT shift = TRANS_SHIFT(oldest);
 			oldest_state = (trans->tra_transactions[byte] >> shift) & TRA_MASK;
