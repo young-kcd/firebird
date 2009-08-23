@@ -1996,48 +1996,6 @@ void PAG_sweep_interval(thread_db* tdbb, SLONG interval)
 }
 
 
-/*
-int PAG_unlicensed(thread_db* tdbb)
-{
-// **************************************
-// *
-// *	P A G _ u n l i c e n s e d
-// *
-// **************************************
-// *
-// * Functional description
-// *	Log unlicensed activity.  Return current count of this
-// *	sort of non-sense.
-// *
-// **************************************
-	SET_TDBB(tdbb);
-
-	WIN window(HEADER_PAGE);
-	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-	CCH_MARK_MUST_WRITE(tdbb, &window);
-
-	SLONG count;
-	USHORT len = sizeof(count);
-	if (PAG_get_clump(tdbb, HEADER_PAGE, HDR_unlicensed, &len, (UCHAR*) &count))
-	{
-		fb_assert(sizeof(count) == len);
-		count++;
-		PAG_add_clump(tdbb, HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR*) &count, CLUMP_REPLACE_ONLY); //, true
-	}
-	else
-	{
-		count = 1;
-		PAG_add_clump(tdbb, HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR*) &count, CLUMP_REPLACE); //, true
-	}
-	CCH_RELEASE(tdbb, &window);
-
-	return count;
-}
-*/
-
-
 static int blocking_ast_attachment(void* ast_object)
 {
 	Attachment* const attachment = static_cast<Attachment*>(ast_object);
