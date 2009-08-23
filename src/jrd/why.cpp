@@ -387,7 +387,9 @@ namespace
 
 	public:
 		CAttachment(StoredAtt*, FB_API_HANDLE*, USHORT);
+
 		static void destroy(CAttachment*);
+
 		bool destroying()
 		{
 			return flagDestroying;
@@ -419,7 +421,7 @@ namespace
 
 	public:
 		CTransaction(StoredTra* h, FB_API_HANDLE* pub, Attachment par)
-			: BaseHandle(hType(), pub, par), next(0), handle(h), 
+			: BaseHandle(hType(), pub, par), next(0), handle(h),
 			blobs(getPool())
 		{
 			parent->transactions.toParent(this);
@@ -546,7 +548,7 @@ namespace
 
 	private:
 		~CStatement()
-		{ 
+		{
 			if (parent->destroying())
 			{
 				release_dsql_support(das);
@@ -689,8 +691,7 @@ namespace
 		return 0;
 	}
 
-	template <typename ToHandle>
-		RefPtr<ToHandle> translate(FB_API_HANDLE* handle)
+	template <typename ToHandle> RefPtr<ToHandle> translate(FB_API_HANDLE* handle)
 	{
 		if (shutdownStarted)
 		{
@@ -2051,6 +2052,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DROP_DATABASE, n) (temp, &handle);
 		}
+
 		destroy(attachment);
 	}
 
@@ -3802,12 +3804,9 @@ ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
 		status.setPrimaryHandle(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_GET_SLICE, attachment->implementation) (status, &attachment->handle, &transaction->handle,
-												   array_id,
-												   sdl_length, sdl,
-												   param_length, param,
-												   slice_length, slice,
-												   return_length);
+		CALL(PROC_GET_SLICE, attachment->implementation) (status, &attachment->handle,
+			&transaction->handle, array_id, sdl_length, sdl, param_length, param,
+			slice_length, slice, return_length);
 	}
 	catch (const Exception& e)
 	{
@@ -4020,11 +4019,9 @@ ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS* user_status,
 		status.setPrimaryHandle(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_PUT_SLICE, attachment->implementation) (status, &attachment->handle, &transaction->handle,
-												   array_id,
-												   sdl_length, sdl,
-												   param_length, param,
-												   slice_length, slice);
+		CALL(PROC_PUT_SLICE, attachment->implementation) (status, &attachment->handle,
+			&transaction->handle, array_id, sdl_length, sdl, param_length, param,
+			 slice_length, slice);
 	}
 	catch (const Exception& e)
 	{
@@ -4061,7 +4058,7 @@ ISC_STATUS API_ROUTINE GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		status.setPrimaryHandle(attachment);
 
 		CALL(PROC_QUE_EVENTS, attachment->implementation) (status, &attachment->handle,
-													id, length, events, ast, arg);
+			id, length, events, ast, arg);
 	}
 	catch (const Exception& e)
 	{
@@ -4184,8 +4181,7 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
 		status.setPrimaryHandle(attachment);
 
 		if (CALL(PROC_RECONNECT, attachment->implementation) (status, &attachment->handle,
-													   &handle,
-													   length, id))
+				&handle, length, id))
 		{
 			return status[1];
 		}
@@ -4794,9 +4790,8 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 
 			attachment = translate<CAttachment>(vector->teb_database);
 
-			if (CALL(PROC_START_TRANSACTION, attachment->implementation) (status, &handle, 1, &attachment->handle,
-																   vector->teb_tpb_length,
-																   vector->teb_tpb))
+			if (CALL(PROC_START_TRANSACTION, attachment->implementation) (status, &handle, 1,
+					&attachment->handle, vector->teb_tpb_length, vector->teb_tpb))
 			{
 				status_exception::raise(status);
 			}
@@ -4832,6 +4827,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 				CALL(PROC_ROLLBACK, sub->implementation) (temp, &sub->handle);
 			}
 		}
+
 		if (transaction)
 		{
 			destroy(transaction);
@@ -4917,10 +4913,9 @@ ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 		status.setPrimaryHandle(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_TRANSACT_REQUEST, attachment->implementation) (status, &attachment->handle, &transaction->handle,
-														  blr_length, blr,
-														  in_msg_length, in_msg,
-														  out_msg_length, out_msg);
+		CALL(PROC_TRANSACT_REQUEST, attachment->implementation) (status, &attachment->handle,
+			&transaction->handle, blr_length, blr, in_msg_length, in_msg, out_msg_length,
+			out_msg);
 	}
 	catch (const Exception& e)
 	{
@@ -4994,7 +4989,8 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		{
 			SSHORT item_len = item_length;
 			SSHORT buffer_len = buffer_length;
-			for (Transaction sub = transaction->next; sub; sub = sub->next) {
+			for (Transaction sub = transaction->next; sub; sub = sub->next)
+			{
 				if (CALL(PROC_TRANSACTION_INFO, sub->implementation) (status, &sub->handle,
 																	  item_len, items,
 																	  buffer_len, buffer))
@@ -5523,13 +5519,9 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		gds__parse_bpb(bpb_length, bpb, &from, &to);
 
 		if (get_entrypoint(proc2, attachment->implementation) != no_entrypoint &&
-			CALL(proc2, attachment->implementation) (status,
-											  &attachment->handle,
-											  &transaction->handle,
-											  &blob_handle,
-											  blob_id,
-											  bpb_length,
-											  bpb) != isc_unavailable)
+			CALL(proc2, attachment->implementation) (status, &attachment->handle,
+				&transaction->handle, &blob_handle, blob_id, bpb_length,
+				bpb) != isc_unavailable)
 		{
 			flags = 0;
 		}
@@ -5537,10 +5529,8 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		{
 			// This code has no effect because jrd8_create_blob, jrd8_open_blob,
 			// REM_create_blob and REM_open_blob are defined as no_entrypoint in entry.h
-			CALL(proc, attachment->implementation) (status,
-											 &attachment->handle,
-											 &transaction->handle,
-											 &blob_handle, blob_id);
+			CALL(proc, attachment->implementation) (status, &attachment->handle,
+				&transaction->handle, &blob_handle, blob_id);
 		}
 
 		if (status[1]) {

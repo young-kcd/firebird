@@ -187,8 +187,8 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	jrd_req* request = NULL;
 	SSHORT id = -1;
 
-	try {
-
+	try
+	{
 		bool found = false;
 
 		do {
@@ -212,7 +212,6 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 				DYN_REQUEST(drq_f_nxt_con) = request;
 			request = NULL;
 		} while (found);
-
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -260,8 +259,8 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 	jrd_req* request = NULL;
 	SSHORT id = -1;
 
-	try {
-
+	try
+	{
 		bool found = false;
 
 		do {
@@ -284,7 +283,6 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 				DYN_REQUEST(drq_f_nxt_fld) = request;
 			request = NULL;
 		} while (found);
-
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -318,8 +316,8 @@ void DYN_UTIL_generate_field_position(thread_db* tdbb,
 
 	jrd_req* request = NULL;
 
-	try {
-
+	try
+	{
 		request = CMP_find_request(tdbb, drq_l_fld_pos, DYN_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
@@ -336,7 +334,6 @@ void DYN_UTIL_generate_field_position(thread_db* tdbb,
 		END_FOR;
 
 		*field_pos = field_position;
-
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -367,8 +364,8 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 	jrd_req* request = NULL;
 	SSHORT id = -1;
 
-	try {
-
+	try
+	{
 		bool found = false;
 
 		do {
@@ -433,8 +430,8 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 	jrd_req* request = NULL;
 	SSHORT id = -1;
 
-	try {
-
+	try
+	{
 		bool found = false;
 
 		do {
@@ -585,8 +582,8 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_prot_mask, DYN_REQUESTS);
 
-	try {
-
+	try
+	{
 		if (!request)
 		{
 			request = CMP_compile2(tdbb, prot_blr, sizeof(prot_blr), true);
@@ -631,8 +628,8 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_chk_con, DYN_REQUESTS);
 
-	try {
-
+	try
+	{
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			CHK IN RDB$CHECK_CONSTRAINTS
 	        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name.c_str());

@@ -1565,7 +1565,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 			// which must be done with an exclusive lock on the database --
 			// if this changes, this policy will have to be reevaluated;
 			// at any rate there is a problem with getting a read lock
-			//because the corresponding page in the main database file may not exist
+			// because the corresponding page in the main database file may not exist
 
 			if (!file->fil_min_page)
 				CCH_FETCH(tdbb, &window, LCK_read, pag_header);

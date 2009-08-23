@@ -5387,11 +5387,13 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	DEV_BLKCHK(prior_rsb, type_rsb);
 	DEV_BLKCHK(sort, type_nod);
 	SET_TDBB(tdbb);
+
 	/* We already know the number of keys, but we also need to compute the
 	total number of fields, keys and non-keys, to be pumped thru sort.  Starting
 	with the number of keys, count the other field referenced.  Since a field
 	is often a key, check for overlap to keep the length of the sort record
 	down. */
+
 	/* Along with the record number, the transaction id of the
 	 * record will also be stored in the sort file.  This will
 	 * be used to detect update conflict in read committed
@@ -5472,6 +5474,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		jrd_nod* node = *node_ptr;
 		dsc* desc = &descriptor;
 		CMP_get_desc(tdbb, csb, node, desc);
+
 		// Allow for "key" forms of International text to grow
 		if (IS_INTL_DATA(desc))
 		{
@@ -5664,7 +5667,9 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_sort_rec_size_err) << Arg::Num(map_length));
 		// Msg438: sort record size of %ld bytes is too big
 	}
+
 	map->smb_length = (USHORT) map_length;
+
 	// That was most unpleasant.  Never the less, it's done (except for the debugging).
 	// All that remains is to build the record source block for the sort.
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) RecordSource();
@@ -6496,6 +6501,7 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 	DEV_BLKCHK(arg1, type_nod);
 	DEV_BLKCHK(arg2, type_nod);
 	fb_assert(boolean->nod_count >= 2);	// must be a conjunction boolean
+
 	// Clone the input predicate
 	jrd_nod* node = PAR_make_node(tdbb, boolean->nod_count);
 	node->nod_type = boolean->nod_type;
@@ -6506,12 +6512,15 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 	//    determined by its dependency on any of the fields
 	// If provisions above change the line below will have to be modified
 	node->nod_flags = boolean->nod_flags;
+
 	// But substitute new values for some of the predicate arguments
 	node->nod_arg[0] = CMP_clone_node_opt(tdbb, csb, arg1);
 	node->nod_arg[1] = CMP_clone_node_opt(tdbb, csb, arg2);
+
 	// Arguments after the first two are just cloned (eg: LIKE ESCAPE clause)
 	for (USHORT n = 2; n < boolean->nod_count; n++)
 		node->nod_arg[n] = CMP_clone_node_opt(tdbb, csb, boolean->nod_arg[n]);
+
 	// Share impure area for cached invariant value used to hold pre-compiled
 	// pattern for new LIKE and CONTAINING algorithms.
 	// Proper cloning of impure area for this node would require careful accounting
@@ -6519,6 +6528,7 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 	// cached pattern value for all node clones. This is faster too.
 	if (node->nod_flags & nod_invariant)
 		node->nod_impure = boolean->nod_impure;
+
 	return node;
 }
 

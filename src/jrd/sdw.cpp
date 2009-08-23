@@ -217,7 +217,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		//	we can use the same header page, suitably modified,
 		// because they all look pretty much the same at this point
 
-/*******************
+		/*******************
 		Fix for bug 7925. drop_gdb wan not dropping secondary file in
 		multi-shadow files. The structure was not being filled with the
 		info. Commented some code so that the structure will always be filled.
@@ -225,12 +225,13 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 			-Sudesh 07/06/95
 
 		The original code :
-===
+		===
 		if (shadow_file == file)
 		    copy_header(tdbb);
 		else
-===
-************************/
+		===
+		************************/
+
 		// Temporarly reverting the change ------- Sudesh 07/07/95 *******
 
 		if (shadow_file == file)
@@ -1328,5 +1329,3 @@ static void update_dbb_to_sdw(Database* dbb)
 	pageSpace->file = shadow->sdw_file;
 	shadow->sdw_flags |= SDW_rollover;
 }
-
-

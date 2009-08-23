@@ -609,6 +609,7 @@ jrd_file* PIO_open(Database* dbb,
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
+
 		// If this is the primary file, set Database flag to indicate that it is
 		// being opened ReadOnly. This flag will be used later to compare with
 		// the Header Page flag setting to make sure that the database is set ReadOnly.

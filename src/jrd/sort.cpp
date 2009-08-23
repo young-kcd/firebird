@@ -1677,16 +1677,17 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 		if (record)
 		{
 			if (merge->mrg_stream_a && !merge->mrg_record_a)
+			{
 				if (eof)
 					merge->mrg_stream_a = NULL;
 				else
 					merge->mrg_record_a = record;
+			}
 			else if (eof)
 				merge->mrg_stream_b = NULL;
 			else
 				merge->mrg_record_b = record;
 		}
-
 
 		// If either streams need a record and is still active, loop back to pick
 		// up the record. If either stream is dry, return the record of the other.

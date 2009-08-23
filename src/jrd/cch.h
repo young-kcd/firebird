@@ -300,10 +300,9 @@ public:
 	SCHAR		prf_unaligned_buffer[PREFETCH_MAX_TRANSFER + MIN_PAGE_SIZE];
 };
 
-const int PRF_active	= 1;			// prefetch block currently in use
+const int PRF_active	= 1;		// prefetch block currently in use
 #endif // SUPERSERVER_V2
 
 } //namespace Jrd
 
 #endif // JRD_CCH_H
-

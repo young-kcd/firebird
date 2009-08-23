@@ -278,4 +278,3 @@ const int scb_sorted		= 2;	/* stream has been sorted */
 } //namespace Jrd
 
 #endif // JRD_SORT_H
-

@@ -362,7 +362,7 @@ TempSpace::Block* TempSpace::findBlock(offset_t& offset) const
 
 TempFile* TempSpace::setupFile(size_t size)
 {
-	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS_ARRAY status_vector = {0};
 
 	for (size_t i = 0; i < tempDirs->getCount(); i++)
 	{

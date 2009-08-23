@@ -1434,4 +1434,3 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 
 	lock->lck_attachment = attachment;
 }
-
