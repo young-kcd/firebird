@@ -118,7 +118,7 @@ void BLB_cancel(thread_db* tdbb, blb* blob)
 
 	SET_TDBB(tdbb);
 
-/* Release filter control resources */
+	// Release filter control resources
 
 	if (blob->blb_flags & BLB_temporary)
 		delete_blob(tdbb, blob, 0);
@@ -196,7 +196,7 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 
 	SET_TDBB(tdbb);
 
-/* Release filter control resources */
+	// Release filter control resources
 
 	if (blob->blb_filter)
 		BLF_close_blob(tdbb, &blob->blb_filter);
@@ -272,7 +272,7 @@ blb* BLB_create2(thread_db* tdbb,
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* Create a blob large enough to hold a single data page */
+	// Create a blob large enough to hold a single data page
 	SSHORT from, to;
 	SSHORT from_charset, to_charset;
 	const SSHORT type = gds__parse_bpb2(bpb_length,
@@ -344,14 +344,14 @@ blb* BLB_create2(thread_db* tdbb,
 
 	blob->blb_flags |= BLB_temporary;
 
-/* Set up for a "small" blob -- a blob that fits on an ordinary blob page */
+	// Set up for a "small" blob -- a blob that fits on an ordinary blob page
 
 	blob_page* page = (blob_page*) blob->getBuffer();
 	memset(page, 0, BLP_SIZE);	// initialize page header with NULLs
 	page->blp_header.pag_type = pag_blob;
 	blob->blb_segment = (UCHAR *) page->blp_page;
 
-/* Format blob id and return blob handle */
+	// Format blob id and return blob handle
 
 	blob_id->set_temporary(blob->blb_temp_id);
 
@@ -549,7 +549,7 @@ blb* BLB_get_array(thread_db* tdbb, jrd_tra* transaction, const bid* blob_id,
 	if (blob->blb_length < sizeof(Ods::InternalArrayDesc))
 	{
 		BLB_close(tdbb, blob);
-		IBERROR(193);			/* msg 193 null or invalid array */
+		IBERROR(193);			// msg 193 null or invalid array
 	}
 
 	BLB_get_segment(tdbb, blob, reinterpret_cast<UCHAR*>(desc), sizeof(Ods::InternalArrayDesc));
@@ -582,9 +582,8 @@ ULONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool
 
 	while (length > 0)
 	{
-		/* I have no idea why this limit is 32768 instead of 32767
-		 * 1994-August-12 David Schnepper
-		 */
+		// I have no idea why this limit is 32768 instead of 32767
+		// 1994-August-12 David Schnepper
 		USHORT n = (USHORT) MIN(length, (SLONG) 32768);
 		n = BLB_get_segment(tdbb, blob, p, n);
 		p += n;
@@ -619,7 +618,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-/* If we reached end of file, we're still there */
+	// If we reached end of file, we're still there
 
 	if (blob->blb_flags & BLB_eof)
 		return 0;
@@ -646,7 +645,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 		return tmp_len;
 	}
 
-/* If there is a seek pending, handle it here */
+	// If there is a seek pending, handle it here
 
 	USHORT seek = 0;
 
@@ -680,10 +679,9 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 		return 0;
 	}
 
-/* Figure out how much data is to be moved, move it, and if necessary,
-   advance to the next page.  The length is a function of segment
-   size (or fragment size), buffer size, and amount of data left
-   in the blob. */
+	// Figure out how much data is to be moved, move it, and if necessary,
+	// advance to the next page.  The length is a function of segment
+	// size (or fragment size), buffer size, and amount of data left in the blob.
 
 	BLOB_PTR* to = segment;
 	const BLOB_PTR* from = blob->blb_segment;
@@ -699,8 +697,8 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 
 	while (true)
 	{
-		/* If the blob is segmented, and this isn't a fragment, pick up
-		   the length of the next segment. */
+		// If the blob is segmented, and this isn't a fragment, pick up
+		// the length of the next segment.
 
 		if (SEGMENTED(blob) && !blob->blb_fragment_size)
 		{
@@ -730,8 +728,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 			length -= 2;
 		}
 
-		/* Figure out how much data can be moved.  Then account for the
-		   space, and move the data */
+		// Figure out how much data can be moved.  Then account for the space, and move the data
 
 		USHORT l = MIN(buffer_length, length);
 
@@ -749,8 +746,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 		to += l;
 		from += l;
 
-		/* If we ran out of space in the data clump, and there is a next
-		   clump, get it. */
+		// If we ran out of space in the data clump, and there is a next clump, get it.
 
 		if (!length)
 		{
@@ -773,8 +769,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 			active_page = true;
 		}
 
-		/* If either the buffer or the fragment is exhausted, we're
-		   done. */
+		// If either the buffer or the fragment is exhausted, we're done.
 
 		if (!buffer_length || (SEGMENTED(blob) && !blob->blb_fragment_size))
 			break;
@@ -797,7 +792,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 	length = to - segment;
 	blob->blb_seek += length;
 
-/* If this is a stream blob, fake fragment unless we're at the end */
+	// If this is a stream blob, fake fragment unless we're at the end
 
 	if (!SEGMENTED(blob)) { // stream blob
 		blob->blb_fragment_size = (blob->blb_seek == blob->blb_length) ? 0 : 1;
@@ -828,7 +823,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
     //Database* database = GET_DBB();
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-/* Checkout slice description language */
+	// Checkout slice description language
 	SLONG variables[64];
 	sdl_info info;
 	memcpy(variables, param, MIN(sizeof(variables), param_length));
@@ -842,12 +837,12 @@ SLONG BLB_get_slice(thread_db* tdbb,
 	blb* blob = BLB_get_array(tdbb, transaction, blob_id, desc);
 	SLONG length = desc->iad_total_length;
 
-/* Get someplace to put data */
+	// Get someplace to put data
 
 	UCharBuffer data_buffer;
 	UCHAR* const data = data_buffer.getBuffer(desc->iad_total_length);
 
-/* zero out memory, so that it does not have to be done for each element */
+	// zero out memory, so that it does not have to be done for each element
 
 	memset(data, 0, desc->iad_total_length);
 
@@ -855,8 +850,8 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 	array_slice arg;
 
-/* If we know something about the subscript bounds, prepare
-   to fetch only stuff we really care about */
+	// If we know something about the subscript bounds, prepare
+	// to fetch only stuff we really care about
 
 	if (info.sdl_info_dimensions)
 	{
@@ -877,7 +872,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 	length = BLB_get_data(tdbb, blob, data + offset, length) + offset;
 
-/* Walk array */
+	// Walk array
 	arg.slice_desc = info.sdl_info_element;
 	arg.slice_desc.dsc_address = slice_addr;
 	arg.slice_end = slice_addr + slice_length;
@@ -998,7 +993,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			case nod_variable:
 				break;
 			default:
-				BUGCHECK(199);			/* msg 199 expected field node */
+				BUGCHECK(199);			// msg 199 expected field node
 		}
 	}
 
@@ -1257,7 +1252,7 @@ blb* BLB_open2(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-/* Handle filter case */
+	// Handle filter case
 	SSHORT from, to;
 	SSHORT from_charset, to_charset;
 	bool from_type_specified;
@@ -1293,7 +1288,7 @@ blb* BLB_open2(thread_db* tdbb,
 			 * better.  94-Jan-07 Daves.
 			 */
 
-			/* Search the index of transaction blobs for a match */
+			// Search the index of transaction blobs for a match
 			const blb* new_blob = NULL;
 			if (transaction->tra_blobs->locate(blob_id->bid_temp_id()))
 			{
@@ -1494,10 +1489,10 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 	Database* dbb = tdbb->getDatabase();
 	const BLOB_PTR* segment = seg;
 
-/* Make sure blob is a temporary blob.  If not, complain bitterly. */
+	// Make sure blob is a temporary blob.  If not, complain bitterly.
 
 	if (!(blob->blb_flags & BLB_temporary))
-		IBERROR(195);			/* msg 195 cannot update old blob */
+		IBERROR(195);			// msg 195 cannot update old blob
 
 	if (blob->blb_filter)
 	{
@@ -1505,7 +1500,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 		return;
 	}
 
-	/* Account for new segment */
+	// Account for new segment
 
 	blob->blb_count++;
 	blob->blb_length += segment_length;
@@ -1513,8 +1508,8 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 	if (segment_length > blob->blb_max_segment)
 		blob->blb_max_segment = segment_length;
 
-/* Compute the effective length of the segment (counts length unless
-   the blob is a stream blob). */
+	// Compute the effective length of the segment (counts length unless
+	// the blob is a stream blob).
 
 	ULONG length;				// length of segment + overhead
 	bool length_flag;
@@ -1529,8 +1524,8 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 		length_flag = false;
 	}
 
-/* Case 0: Transition from small blob to medium size blob.  This really
-   just does a form transformation and drops into the next case. */
+	// Case 0: Transition from small blob to medium size blob.  This really
+	// just does a form transformation and drops into the next case.
 
 	if (blob->blb_level == 0 && length > (ULONG) blob->blb_space_remaining)
 	{
@@ -1542,8 +1537,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 		blob->blb_level = 1;
 	}
 
-/* Case 1: The segment fits.  In what is immaterial.  Just move the segment
-   and get out! */
+	// Case 1: The segment fits.  In what is immaterial.  Just move the segment and get out!
 
 	BLOB_PTR* p = blob->blb_segment;
 
@@ -1564,15 +1558,15 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 		return;
 	}
 
-/* The segment cannot be contained in the current clump.  What does
-   bit is copied to the current page image.  Then allocate a page to
-   hold the current page, copy the page image to the buffer, and release
-   the page.  Since a segment can be much larger than a page, this whole
-   mess is done in a loop. */
+	// The segment cannot be contained in the current clump.  What does
+	// bit is copied to the current page image.  Then allocate a page to
+	// hold the current page, copy the page image to the buffer, and release
+	// the page.  Since a segment can be much larger than a page, this whole
+	// mess is done in a loop.
 
 	while (length_flag || segment_length)
 	{
-		/* Move what fits.  At this point, the length is known not to fit. */
+		// Move what fits.  At this point, the length is known not to fit.
 
 		const USHORT l = MIN(segment_length, blob->blb_space_remaining);
 
@@ -1592,18 +1586,18 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 			}
 		}
 
-		/* Data page is full.  Add the page to the blob data structure. */
+		// Data page is full.  Add the page to the blob data structure.
 
 		insert_page(tdbb, blob);
 		blob->blb_sequence++;
 
-		/* Get ready to start filling the next page. */
+		// Get ready to start filling the next page.
 
 		blob_page* page = (blob_page*) blob->getBuffer();
 		p = blob->blb_segment = (UCHAR *) page->blp_page;
 		blob->blb_space_remaining = blob->blb_clump_size;
 
-		/* If there's still a length waiting to be moved, move it already! */
+		// If there's still a length waiting to be moved, move it already!
 
 		if (length_flag)
 		{
@@ -1641,7 +1635,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-/* Do initial parse of slice description to get relation and field identification */
+	// Do initial parse of slice description to get relation and field identification
 	sdl_info info;
 	if (SDL_info(tdbb->tdbb_status_vector, sdl, &info, 0))
 		ERR_punt();
@@ -1655,7 +1649,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	}
 
 	if (!relation) {
-		IBERROR(196);			/* msg 196 relation for array not known */
+		IBERROR(196);			// msg 196 relation for array not known
 	}
 
 	SSHORT	n;
@@ -1666,12 +1660,12 @@ void BLB_put_slice(	thread_db*	tdbb,
 		n = info.sdl_info_fid;
 	}
 
-/* Make sure relation is scanned */
+	// Make sure relation is scanned
 	MET_scan_relation(tdbb, relation);
 
 	jrd_fld* field;
 	if (n < 0 || !(field = MET_get_field(relation, n))) {
-		IBERROR(197);			/* msg 197 field for array not known */
+		IBERROR(197);			// msg 197 field for array not known
 	}
 
 	ArrayField* array_desc = field->fld_array;
@@ -1680,12 +1674,12 @@ void BLB_put_slice(	thread_db*	tdbb,
 		ERR_post(Arg::Gds(isc_invalid_dimension) << Arg::Num(0) << Arg::Num(1));
 	}
 
-/* Find and/or allocate array block.  There are three distinct cases:
+	// Find and/or allocate array block.  There are three distinct cases:
 
-	1.  Array is totally new.
-	2.  Array is still in "temporary" state.
-	3.  Array exists and is being updated.
-*/
+	// 1.  Array is totally new.
+	// 2.  Array is still in "temporary" state.
+	// 3.  Array exists and is being updated.
+
 	ArrayField* array = 0;
 	array_slice arg;
 	if (blob_id->bid_internal.bid_relation_id)
@@ -1730,7 +1724,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 		arg.slice_high_water = array->arr_data;
 	}
 
-/* Walk array */
+	// Walk array
 
 	arg.slice_desc = info.sdl_info_element;
 	arg.slice_desc.dsc_address = slice_addr;
@@ -1815,8 +1809,8 @@ void BLB_scalar(thread_db*		tdbb,
 	Ods::InternalArrayDesc* array_desc = (Ods::InternalArrayDesc*) stuff;
 	blb* blob = BLB_get_array(tdbb, transaction, blob_id, array_desc);
 
-// Get someplace to put data.
-// We need DOUBLE_ALIGNed buffer, that's why some tricks
+	// Get someplace to put data.
+	// We need DOUBLE_ALIGNed buffer, that's why some tricks
 	HalfStaticArray<double, 64> temp;
 	dsc desc = array_desc->iad_rpt[0].iad_desc;
 	desc.dsc_address = reinterpret_cast<UCHAR*>(temp.getBuffer((desc.dsc_length / sizeof(double)) +
@@ -1833,7 +1827,7 @@ void BLB_scalar(thread_db*		tdbb,
 	BLB_lseek(blob, 0, offset + (SLONG) array_desc->iad_length);
 	BLB_get_segment(tdbb, blob, desc.dsc_address, desc.dsc_length);
 
-/* If we have run out of data, then clear the data buffer. */
+	// If we have run out of data, then clear the data buffer.
 
 	if (blob->blb_flags & BLB_eof) {
 		memset(desc.dsc_address, 0, (int) desc.dsc_length);
@@ -1943,8 +1937,7 @@ static ISC_STATUS blob_filter(USHORT	action,
  *
  **************************************/
 
-/* Note: Cannot remove this JRD_get_thread_data without API change to
-   blob filter routines */
+	// Note: Cannot remove this JRD_get_thread_data without API change to blob filter routines
 
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -2166,15 +2159,15 @@ static void delete_blob_id(thread_db* tdbb,
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	/* If the blob is null, don't bother to delete it.  Reasonable? */
+	// If the blob is null, don't bother to delete it.  Reasonable?
 
 	if (blob_id->isEmpty())
 		return;
 
 	if (blob_id->bid_internal.bid_relation_id != relation->rel_id)
-		CORRUPT(200);			/* msg 200 invalid blob id */
+		CORRUPT(200);			// msg 200 invalid blob id
 
-	/* Fetch blob */
+	// Fetch blob
 
 	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
 	blob->blb_relation = relation;
@@ -2279,11 +2272,11 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	const vcl* vector = blob->blb_pages;
 
 	blob_page* page = 0;
-/* Level 1 blobs are much easier -- page number is in vector. */
+	// Level 1 blobs are much easier -- page number is in vector.
 	if (blob->blb_level == 1)
 	{
 #ifdef SUPERSERVER_V2
-		/* Perform prefetch of blob level 1 data pages. */
+		// Perform prefetch of blob level 1 data pages.
 
 		if (!(blob->blb_sequence % dbb->dbb_prefetch_sequence))
 		{
@@ -2305,7 +2298,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 		window->win_page = (*vector)[blob->blb_sequence / blob->blb_pointers];
 		page = (blob_page*) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 #ifdef SUPERSERVER_V2
-		/* Perform prefetch of blob level 2 data pages. */
+		// Perform prefetch of blob level 2 data pages.
 
 		USHORT sequence = blob->blb_sequence % blob->blb_pointers;
 		if (!(sequence % dbb->dbb_prefetch_sequence))
@@ -2328,7 +2321,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	}
 
 	if (page->blp_sequence != (SLONG) blob->blb_sequence)
-		CORRUPT(201);			/* msg 201 cannot find blob page */
+		CORRUPT(201);			// msg 201 cannot find blob page
 
 	blob->blb_sequence++;
 
@@ -2358,8 +2351,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	vcl* vector = blob->blb_pages;
 	blob->blb_max_sequence = blob->blb_sequence;
 
-/* Allocate a page for the now full blob data page.  Move the page
-   image to the buffer, and release the page.  */
+	// Allocate a page for the now full blob data page.  Move the page
+	// image to the buffer, and release the page.
 
 	const USHORT pageSpaceID = blob->blb_pg_space_id;
 
@@ -2382,15 +2375,14 @@ static void insert_page(thread_db* tdbb, blb* blob)
 	page->blp_length = length - BLP_SIZE;
 	CCH_RELEASE(tdbb, &window);
 
-/* If the blob is at level 1, there are two cases.  First, and easiest,
-   is that there is still room in the page vector to hold the pointer.
-   The second case is that the vector is full, and the blob must be
-   transformed into a level 2 blob. */
+	// If the blob is at level 1, there are two cases.  First, and easiest,
+	// is that there is still room in the page vector to hold the pointer.
+	// The second case is that the vector is full, and the blob must be
+	// transformed into a level 2 blob.
 
 	if (blob->blb_level == 1)
 	{
-		/*  See if there is room in the page vector.  If so, just update
-		   the vector. */
+		// See if there is room in the page vector.  If so, just update the vector.
 
 		if (blob->blb_sequence < blob->blb_max_pages)
 		{
@@ -2401,7 +2393,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 			return;
 		}
 
-		/* The vector just overflowed.  Sigh.  Transform blob to level 2. */
+		// The vector just overflowed.  Sigh.  Transform blob to level 2.
 
 		blob->blb_level = 2;
 		page = (blob_page*) DPM_allocate(tdbb, &window);
@@ -2415,8 +2407,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		CCH_RELEASE(tdbb, &window);
 	}
 
-/* The blob must be level 2.  Find the appropriate pointer page (creating
-   it if need be, and stick the pointer in the appropriate slot. */
+	// The blob must be level 2.  Find the appropriate pointer page (creating
+	// it if need be, and stick the pointer in the appropriate slot.
 
 	USHORT l = blob->blb_sequence / blob->blb_pointers;
 
@@ -2683,16 +2675,15 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 		ERR_post(Arg::Gds(isc_out_of_bounds));
 
 	if (array_desc->dsc_address < arg->slice_base)
-		ERR_error(198);			/* msg 198 array subscript computation error */
+		ERR_error(198);			// msg 198 array subscript computation error
 
 	if (arg->slice_direction == array_slice::slc_writing_array)
 	{
-		/* Storing INTO array */
-		/* FROM slice_desc TO array_desc */
+		// Storing INTO array
+		// FROM slice_desc TO array_desc
 
-		/* If storing beyond the high-water mark, ensure elements
-		 * from the high-water mark to current position are zeroed
-		 */
+		// If storing beyond the high-water mark, ensure elements
+		// from the high-water mark to current position are zeroed
 
 		// Since we are only initializing, it makes sense to throw away
 		// the constness of arg->slice_high_water.
@@ -2700,17 +2691,16 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 		if (l > 0)
 			memset(const_cast<BLOB_PTR*>(arg->slice_high_water), 0, l);
 
-		/* The individual elements of a varying string array may not be aligned
-		   correctly.  If they aren't, some RISC machines may break.  In those
-		   cases, calculate the actual length and then move the length and
-		   text manually. */
+		// The individual elements of a varying string array may not be aligned
+		// correctly.  If they aren't, some RISC machines may break.  In those
+		// cases, calculate the actual length and then move the length and text manually.
 
 		if (array_desc->dsc_dtype == dtype_varying &&
 			(U_IPTR) array_desc->dsc_address !=
 				FB_ALIGN((U_IPTR) array_desc->dsc_address, (MIN(sizeof(USHORT), FB_ALIGNMENT))))
 		{
-			/* Note: cannot remove this JRD_get_thread_data without api change
-			   to slice callback routines */
+			// Note: cannot remove this JRD_get_thread_data without api change
+			// to slice callback routines
 			/*thread_db* tdbb = */ JRD_get_thread_data();
 
 			DynamicVaryStr<1024> tmp_buffer;
@@ -2731,16 +2721,16 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 	}
 	else
 	{
-		/* Fetching FROM array */
-		/* FROM array_desc TO slice_desc */
+		// Fetching FROM array
+		// FROM array_desc TO slice_desc
 
-		/* If the element is under the high-water mark, fetch it,
-		 * otherwise just zero it
-		 */
+		// If the element is under the high-water mark, fetch it,
+		// otherwise just zero it
+
 		if (array_desc->dsc_address < arg->slice_high_water)
 		{
-			/* If a varying string isn't aligned correctly, calculate the actual
-			   length and then treat the string as if it had type text. */
+			// If a varying string isn't aligned correctly, calculate the actual
+			// length and then treat the string as if it had type text.
 
 			if (array_desc->dsc_dtype == dtype_varying &&
 				(U_IPTR) array_desc->dsc_address !=
@@ -2787,23 +2777,23 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Validate array */
+	// Validate array
 
 	const ArrayField* array = find_array(transaction, blob_id);
 	if (!array)
 		return NULL;
 
-/* Create blob for array */
+	// Create blob for array
 
 	blb* blob = BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 	blob->blb_flags |= BLB_stream;
 
-/* Write out array descriptor */
+	// Write out array descriptor
 
 	BLB_put_segment(tdbb, blob, reinterpret_cast<const UCHAR*>(&array->arr_desc),
 					array->arr_desc.iad_length);
 
-/* Write out actual array */
+	// Write out actual array
 	const USHORT seg_limit = 32768;
 	const BLOB_PTR* p = array->arr_data;
 	SLONG length = array->arr_effective_length;

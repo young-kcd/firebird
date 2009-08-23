@@ -47,21 +47,21 @@
 using namespace Jrd;
 using namespace Firebird;
 
-/* System provided internal filters for filtering internal
- * subtypes to text.
- * (from_type in [0..8], to_type == isc_blob_text)
- */
+// System provided internal filters for filtering internal
+// subtypes to text.
+// (from_type in [0..8], to_type == isc_blob_text)
+
 static const FPTR_BFILTER_CALLBACK filters[] =
 {
 	filter_text,
 	filter_transliterate_text,
 	filter_blr,
 	filter_acl,
-	0,							/* filter_ranges, */
+	0,							// filter_ranges,
 	filter_runtime,
 	filter_format,
 	filter_trans,
-	filter_trans				/* should be filter_external_file */
+	filter_trans				// should be filter_external_file
 };
 
 
@@ -84,7 +84,7 @@ void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
  *
  **************************************/
 
-/* Walk the chain of filters to find the ultimate source */
+	// Walk the chain of filters to find the ultimate source
 	BlobControl* next;
 	for (next = *filter_handle; next->ctl_to_sub_type;
 		 next = next->ctl_handle);
@@ -95,25 +95,25 @@ void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
 
 	ISC_STATUS_ARRAY localStatus = {0};
 
-/* Sign off from filter */
-/* Walk the chain again, telling each filter stage to close */
+	// Sign off from filter
+	// Walk the chain again, telling each filter stage to close
 	BlobControl* control;
 	for (next = *filter_handle; (control = next);)
 	{
-		/* Close this stage of the filter */
+		// Close this stage of the filter
 
 		control->ctl_status = localStatus;
 		(*control->ctl_source) (isc_blob_filter_close, control);
 
-		/* Find the next stage */
+		// Find the next stage
 
 		next = control->ctl_handle;
 		if (!control->ctl_to_sub_type)
 			next = NULL;
 
-		/* Free this stage's control block allocated by calling the
-		   final stage with an isc_blob_filter_alloc, which is why we call
-		   the final stage with isc_blob_filter_free here. */
+		// Free this stage's control block allocated by calling the
+		// final stage with an isc_blob_filter_alloc, which is why we call
+		// the final stage with isc_blob_filter_free here.
 
 		(*callback) (isc_blob_filter_free, control);
 	}
@@ -211,7 +211,7 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
  **************************************/
 	Database* dbb = tdbb->getDatabase();
 
-/* Check for system defined filter */
+	// Check for system defined filter
 
 	if (to == isc_blob_text && from >= 0 && from < FB_NELEM(filters))
 	{
@@ -249,9 +249,9 @@ void BLF_open_blob(thread_db* tdbb,
  *
  **************************************/
 
-// CVC: We have a function that deals both with opening and creating blobs.
-// Therefore, throwing const away is safe because it won't be changed.
-// Someone might create some crazy filter that calls put_slice, though.
+	// CVC: We have a function that deals both with opening and creating blobs.
+	// Therefore, throwing const away is safe because it won't be changed.
+	// Someone might create some crazy filter that calls put_slice, though.
 	open_blob(tdbb, tra_handle, filter_handle, const_cast<bid*>(blob_id),
 			  bpb_length, bpb, callback, isc_blob_filter_open, filter);
 }
@@ -347,10 +347,10 @@ static void open_blob(thread_db* tdbb,
 		status_exception::raise(Arg::Gds(isc_nofilter) << Arg::Num(from) << Arg::Num(to));
 	}
 
-/* Allocate a filter control block and open blob */
+	// Allocate a filter control block and open blob
 
-/* utilize a temporary control block just to pass the three
-   necessary internal parameters to the filter */
+	// utilize a temporary control block just to pass the three
+	// necessary internal parameters to the filter
 	BlobControl temp;
 	temp.ctl_internal[0] = dbb;
 	temp.ctl_internal[1] = tra_handle;
@@ -379,13 +379,11 @@ static void open_blob(thread_db* tdbb,
 	control->ctl_status = localStatus;
 	control->ctl_exception_message = filter->blf_exception_message;
 
-/* Two types of filtering can be occuring; either between totally
- * different BLOb sub_types, or between two different
- * character sets (both source & destination subtype must be TEXT
- * in that case).
- * For the character set filter we use the to & from_sub_type fields
- * to tell the filter what character sets to translate between.
- */
+	// Two types of filtering can be occuring; either between totally
+	// different BLOb sub_types, or between two different
+	// character sets (both source & destination subtype must be TEXT in that case).
+	// For the character set filter we use the to & from_sub_type fields
+	// to tell the filter what character sets to translate between.
 
 	if (filter->blf_filter == filter_transliterate_text)
 	{
