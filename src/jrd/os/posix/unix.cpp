@@ -112,8 +112,8 @@ static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
 static jrd_file* setup_file(Database*, const PathName&, int, bool);
 static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = NULL);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
-static SLONG pread(int, SCHAR *, SLONG, SLONG);
-static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
+static SLONG pread(int, SCHAR*, SLONG, SLONG);
+static SLONG pwrite(int, SCHAR*, SLONG, SLONG);
 #endif
 #ifdef SUPPORT_RAW_DEVICES
 static bool raw_devices_validate_database (int, const PathName&);
@@ -173,8 +173,10 @@ void PIO_close(jrd_file* main_file)
  *
  **************************************/
 
-	for (jrd_file* file = main_file; file; file = file->fil_next) {
-		if (file->fil_desc && file->fil_desc != -1) {
+	for (jrd_file* file = main_file; file; file = file->fil_next)
+	{
+		if (file->fil_desc && file->fil_desc != -1)
+		{
 			close(file->fil_desc);
 			file->fil_desc = -1;
 		}
@@ -314,8 +316,10 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 	MutexLockGuard guard(main_file->fil_mutex);
 
 	Database::Checkout dcoHolder(dbb);
-	for (jrd_file* file = main_file; file; file = file->fil_next) {
-		if (file->fil_desc != -1) {
+	for (jrd_file* file = main_file; file; file = file->fil_next)
+	{
+		if (file->fil_desc != -1)
+		{
 			// This really should be an error
 			fsync(file->fil_desc);
 		}
@@ -397,7 +401,8 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
  *
  **************************************/
 
-	if (file->fil_desc == -1) {
+	if (file->fil_desc == -1)
+	{
 		unix_error("fstat", file, isc_io_access_err);
 		return (0);
 	}
@@ -439,7 +444,7 @@ void PIO_get_unique_file_id(const Jrd::jrd_file* file, UCharBuffer& id)
 }
 
 
-void PIO_header(Database* dbb, SCHAR * address, int length)
+void PIO_header(Database* dbb, SCHAR* address, int length)
 {
 /**************************************
  *
@@ -468,7 +473,8 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		{
 			SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1) {
+			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1)
+			{
 				if (SYSCALL_INTERRUPTED(errno))
 					continue;
 				unix_error("read", file, isc_io_read_err);
@@ -478,7 +484,8 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		}
 		else
 #endif // ISC_DATABASE_ENCRYPTION
-		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1) {
+		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1)
+		{
 			if (SYSCALL_INTERRUPTED(errno))
 				continue;
 			unix_error("read", file, isc_io_read_err);
@@ -534,7 +541,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	bdb.bdb_dbb = dbb;
 	bdb.bdb_page = PageNumber(0, startPage);
 
-	FB_UINT64 bytes, offset;
+	FB_UINT64 offset;
 
 	Database::Checkout dcoHolder(dbb);
 
@@ -581,9 +588,9 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 
 jrd_file* PIO_open(Database* dbb,
-			 const PathName& string,
-			 const PathName& file_name,
-			 const bool /*share_delete*/)
+				   const PathName& string,
+				   const PathName& file_name,
+				   const bool /*share_delete*/)
 {
 /**************************************
  *
@@ -605,7 +612,8 @@ jrd_file* PIO_open(Database* dbb,
 		// be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
 
 		desc = openFile(ptr, false, false, true);
-		if (desc == -1) {
+		if (desc == -1)
+		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
@@ -794,7 +802,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	Database* dbb = bdb->bdb_dbb;
+	Database* const dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next)
@@ -973,7 +981,7 @@ static bool unix_error(const TEXT* string,
          interface and are a part of POSIX systems.
 */
 
-static SLONG pread(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
+static SLONG pread(int fd, SCHAR* buf, SLONG nbytes, SLONG offset)
 /**************************************
  *
  *	p r e a d
@@ -1005,7 +1013,7 @@ static SLONG pread(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 	return (aio_return(&io));	// return I/O status
 }
 
-static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
+static SLONG pwrite(int fd, SCHAR* buf, SLONG nbytes, SLONG offset)
 /**************************************
  *
  *	p w r i t e

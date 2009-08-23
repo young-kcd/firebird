@@ -65,7 +65,8 @@ public:
 		if (m_exclusive) {
 			fb_assert(m_lock);
 		}
-		if (m_lock) {
+		if (m_lock)
+		{
 			if (m_exclusive)
 				m_lock->beginWrite();
 			else
@@ -75,7 +76,8 @@ public:
 
 	~FileExtendLockGuard()
 	{
-		if (m_lock) {
+		if (m_lock)
+		{
 			if (m_exclusive)
 				m_lock->endWrite();
 			else
@@ -88,7 +90,7 @@ private:
 	FileExtendLockGuard(const FileExtendLockGuard&);
 	FileExtendLockGuard& operator=(const FileExtendLockGuard&);
 
-	Firebird::RWLock* m_lock;
+	Firebird::RWLock* const m_lock;
 	const bool m_exclusive;
 };
 
@@ -300,7 +302,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 			HANDLE hFile = file->fil_desc;
 
 			LARGE_INTEGER newSize;
-			newSize.QuadPart = (ULONGLONG) (filePages + extendBy) * pageSize;
+			newSize.QuadPart = ((ULONGLONG) filePages + extendBy) * pageSize;
 
 			const DWORD ret = SetFilePointer(hFile, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
 			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
@@ -482,7 +484,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	Database::Checkout dcoHolder(dbb);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
 
-	// Fake buffer, used in seek_file. Page space ID have no matter there
+	// Fake buffer, used in seek_file. Page space ID doesn't matter there
 	// as we already know file to work with
 	BufferDesc bdb;
 	bdb.bdb_dbb = dbb;
@@ -603,7 +605,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
  *	Read a data page.
  *
  **************************************/
-	Database* dbb = bdb->bdb_dbb;
+	Database* const dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
 	Database::Checkout dcoHolder(dbb);
@@ -684,8 +686,9 @@ bool PIO_read_ahead(Database*		dbb,
 	if (!piob) {
 		overlapped_ptr = &overlapped;
 	}
-	else {
-		overlapped_ptr = (OVERLAPPED *) & piob->piob_io_event;
+	else
+	{
+		overlapped_ptr = (OVERLAPPED*) &piob->piob_io_event;
 		piob->piob_flags = 0;
 	}
 
@@ -766,7 +769,8 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
  **************************************/
 	Database::Checkout dcoHolder(dbb);
 
-	if (!(piob->piob_flags & PIOB_success)) {
+	if (!(piob->piob_flags & PIOB_success))
+	{
 		if (piob->piob_flags & PIOB_error) {
 			return false;
 		}
@@ -783,7 +787,7 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
 		}
 	}
 
-	release_io_event(piob->piob_file, (OVERLAPPED *) & piob->piob_io_event);
+	release_io_event(piob->piob_file, (OVERLAPPED*) &piob->piob_io_event);
 	return true;
 }
 #endif
@@ -803,7 +807,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	Database* dbb = bdb->bdb_dbb;
+	Database* const dbb = bdb->bdb_dbb;
 	const DWORD size = dbb->dbb_page_size;
 
 	Database::Checkout dcoHolder(dbb);
@@ -935,7 +939,8 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 
 	for (int i = 0; i < MAX_FILE_IO; i++)
 	{
-		if (!file->fil_io_events[i]) {
+		if (!file->fil_io_events[i])
+		{
 			file->fil_io_events[i] = overlapped->hEvent;
 			overlapped->hEvent = NULL;
 			break;
@@ -948,11 +953,11 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 #endif
 
 
-static jrd_file* seek_file(jrd_file*			file,
-					 BufferDesc*			bdb,
-					 ISC_STATUS*		/*status_vector*/,
-					 OVERLAPPED*	overlapped,
-					 OVERLAPPED**	overlapped_ptr)
+static jrd_file* seek_file(jrd_file*	file,
+					 	   BufferDesc*	bdb,
+					 	   ISC_STATUS*	/*status_vector*/,
+					 	   OVERLAPPED*	overlapped,
+					 	   OVERLAPPED**	overlapped_ptr)
 {
 /**************************************
  *
@@ -965,10 +970,11 @@ static jrd_file* seek_file(jrd_file*			file,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	Database* dbb = bdb->bdb_dbb;
+	Database* const dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page.getPageNum();
 
-	for (;; file = file->fil_next) {
+	for (;; file = file->fil_next)
+	{
 		if (!file) {
 			CORRUPT(158);		// msg 158 database file not available
 		}
@@ -995,8 +1001,10 @@ static jrd_file* seek_file(jrd_file*			file,
 #ifdef SUPERSERVER_V2
 	Firebird::MutexLockGuard guard(file->fil_mutex);
 
-	for (USHORT i = 0; i < MAX_FILE_IO; i++) {
-		if (overlapped->hEvent = (HANDLE) file->fil_io_events[i]) {
+	for (USHORT i = 0; i < MAX_FILE_IO; i++)
+	{
+		if (overlapped->hEvent = (HANDLE) file->fil_io_events[i])
+		{
 			file->fil_io_events[i] = 0;
 			break;
 		}
