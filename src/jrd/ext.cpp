@@ -194,7 +194,9 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 	// If file_name has no path part, expand it in ExternalFilesPath.
 	Firebird::PathName Path, Name;
 	PathUtils::splitLastComponent(Path, Name, file_name);
-	if (Path.length() == 0)	{	// path component not present in file_name
+	if (Path.length() == 0)
+	{
+		// path component not present in file_name
 		if (!(iExternalFileDirectoryList().expandFileName(Path, Name)))
 		{
 			iExternalFileDirectoryList().defaultName(Path, Name);
@@ -224,7 +226,8 @@ void EXT_fini(jrd_rel* relation, bool close_only)
  *	Close the file associated with a relation.
  *
  **************************************/
-	if (relation->rel_file) {
+	if (relation->rel_file)
+	{
 		ExternalFile* file = relation->rel_file;
 		if (file->ext_ifi)
 		{
@@ -304,7 +307,8 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 		if (!desc_ptr->dsc_length || !field)
 			continue;
 		const Literal* literal = (Literal*) field->fld_missing_value;
-		if (literal) {
+		if (literal)
+		{
 			desc = *desc_ptr;
 			desc.dsc_address = record->rec_data + (IPTR) desc.dsc_address;
 			if (!MOV_compare(&literal->lit_desc, &desc))
@@ -357,7 +361,8 @@ void EXT_open(thread_db* tdbb, RecordSource* rsb)
 
 	const Format* format;
 	Record* record = rpb->rpb_record;
-	if (!record || !(format = record->rec_format)) {
+	if (!record || !(format = record->rec_format))
+	{
 		format = MET_current(tdbb, relation);
 		VIO_record(tdbb, rpb, format, request->req_pool);
 	}
@@ -466,13 +471,15 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	// Loop thru fields setting missing fields to either blanks/zeros or the missing value
 
 	// check if file is read only if read only then post error we cannot write to this file
-	if (file->ext_flags & EXT_readonly) {
+	if (file->ext_flags & EXT_readonly)
+	{
 		Database* dbb = tdbb->getDatabase();
 		CHECK_DBB(dbb);
 		// Distinguish error message for a ReadOnly database
 		if (dbb->dbb_flags & DBB_read_only)
 			ERR_post(Arg::Gds(isc_read_only_database));
-		else {
+		else
+		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("insert") << Arg::Str(file->ext_filename) <<
 					 Arg::Gds(isc_io_write_err) <<
 					 Arg::Gds(isc_ext_readonly_err));
@@ -490,12 +497,14 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
 			Literal* literal = (Literal*) field->fld_missing_value;
-			if (literal) {
+			if (literal)
+			{
 				desc = *desc_ptr;
 				desc.dsc_address = p;
 				MOV_move(tdbb, &literal->lit_desc, &desc);
 			}
-			else {
+			else
+			{
 				const UCHAR pad = (desc_ptr->dsc_dtype == dtype_text) ? ' ' : 0;
 				memset(p, pad, desc_ptr->dsc_length);
 			}
