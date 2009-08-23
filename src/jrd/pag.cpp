@@ -640,7 +640,7 @@ bool PAG_add_header_entry(thread_db* tdbb, header_page* header,
 
 		*p = HDR_end;
 
-		header->hdr_end = p - (UCHAR *) header;
+		header->hdr_end = p - (UCHAR*) header;
 
 		return true;
 	}
@@ -929,7 +929,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 	page_inv_page* new_pip_page = (page_inv_page*) new_page;
 	new_pip_page->pip_header.pag_type = pag_pages;
-	const UCHAR* end = (UCHAR *) new_pip_page + dbb->dbb_page_size;
+	const UCHAR* end = (UCHAR*) new_pip_page + dbb->dbb_page_size;
 	memset(new_pip_page->pip_bits, 0xff, end - new_pip_page->pip_bits);
 
 	CCH_must_write(window);
@@ -1384,7 +1384,7 @@ void PAG_header_init(thread_db* tdbb)
 	// sector for raw disk access.
 
 	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
-	SCHAR* temp_page = (SCHAR *) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
+	SCHAR* temp_page = (SCHAR*) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
 
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 	const header_page* header = (header_page*) temp_page;
@@ -2018,18 +2018,18 @@ int PAG_unlicensed(thread_db* tdbb)
 
 	SLONG count;
 	USHORT len = sizeof(count);
-	if (PAG_get_clump(tdbb, HEADER_PAGE, HDR_unlicensed, &len, (UCHAR *) &count))
+	if (PAG_get_clump(tdbb, HEADER_PAGE, HDR_unlicensed, &len, (UCHAR*) &count))
 	{
 		fb_assert(sizeof(count) == len);
 		count++;
 		PAG_add_clump(tdbb, HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR *) &count, CLUMP_REPLACE_ONLY); //, true
+					  (UCHAR*) &count, CLUMP_REPLACE_ONLY); //, true
 	}
 	else
 	{
 		count = 1;
 		PAG_add_clump(tdbb, HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR *) &count, CLUMP_REPLACE); //, true
+					  (UCHAR*) &count, CLUMP_REPLACE); //, true
 	}
 	CCH_RELEASE(tdbb, &window);
 
@@ -2105,7 +2105,7 @@ static void find_clump_space(thread_db* tdbb,
 			next_page = header->hdr_next_page;
 			free_space = dbb->dbb_page_size - header->hdr_end;
 			end_addr = &header->hdr_end;
-			p = (UCHAR *) header + header->hdr_end;
+			p = (UCHAR*) header + header->hdr_end;
 		}
 		else
 		{
@@ -2113,7 +2113,7 @@ static void find_clump_space(thread_db* tdbb,
 			next_page = logp->log_next_page;
 			free_space = dbb->dbb_page_size - logp->log_end;
 			end_addr = &logp->log_end;
-			p = (UCHAR *) logp + logp->log_end;
+			p = (UCHAR*) logp + logp->log_end;
 		}
 
 		if (free_space > (2 + len))
@@ -2136,7 +2136,7 @@ static void find_clump_space(thread_db* tdbb,
 
 			*p = HDR_end;
 
-			*end_addr = (USHORT) (p - (UCHAR *) page);
+			*end_addr = (USHORT) (p - (UCHAR*) page);
 			return;
 		}
 
@@ -2199,7 +2199,7 @@ static void find_clump_space(thread_db* tdbb,
 	}
 
 	*p = HDR_end;
-	*end_addr = (USHORT) (p - (UCHAR *) new_page);
+	*end_addr = (USHORT) (p - (UCHAR*) new_page);
 
 	CCH_RELEASE(tdbb, &new_window);
 
