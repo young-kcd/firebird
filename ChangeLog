@@ -1,3 +1,83 @@
+2009-08-23 14:37  robocop
+
+	* firebird2/src/jrd/ods.h (1.51):
+
+	- Change comments to C++ format - Convert unused information into
+	comments - Add some extra information
+
+2009-08-23 14:36  robocop
+
+	* firebird2/src/jrd/: pag.cpp (1.218), pag_proto.h (1.26):
+
+	Get rid of obsolete function.
+
+2009-08-23 14:35  robocop
+
+	* firebird2/src/jrd/: Database.h (1.40), cch.h (1.50), common.h
+	(1.214):
+
+	Who need SATOM and UATOM these days?
+
+2009-08-23 14:26  robocop
+
+	* firebird2/src/jrd/blob_filter.cpp (1.45):
+
+	Style.
+
+2009-08-23 13:43  robocop
+
+	* firebird2/src/jrd/cch.cpp (1.240):
+
+	Comments.
+
+2009-08-23 13:04  robocop
+
+	* firebird2/src/jrd/pag.cpp (1.217):
+
+	Misc.
+
+2009-08-23 12:06  robocop
+
+	* firebird2/src/jrd/os/: posix/unix.cpp (1.127), win32/winnt.cpp
+	(1.87):
+
+	Style.
+
+2009-08-23 11:50  robocop
+
+	* firebird2/src/jrd/cvt2.cpp (1.72):
+
+	Comments and style.
+
+2009-08-23 11:49  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.211):
+
+	Style.
+
+2009-08-23 09:31  robocop
+
+	* firebird2/src/jrd/: ext.cpp (1.93), pag.cpp (1.216):
+
+	Style.
+
+2009-08-23 09:08  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.207), blob_filter.cpp (1.44):
+
+	Comments.
+
+2009-08-23 03:27  asfernandes
+
+	* firebird2/src/: common/classes/TempFile.cpp (1.22),
+	jrd/TempSpace.cpp (1.25), jrd/cch.h (1.49), jrd/dyn_util.epp
+	(1.65), jrd/lck.cpp (1.105), jrd/opt.cpp (1.359), jrd/pag.cpp
+	(1.215), jrd/sdw.cpp (1.94), jrd/sort.cpp (1.138), jrd/sort.h
+	(1.42), jrd/sort_proto.h (1.24), jrd/why.cpp (1.251),
+	jrd/os/posix/unix.cpp (1.126):
+
+	Misc
+
 2009-08-22 14:20  robocop
 
 	* firebird2/src/jrd/common.h (1.213):
