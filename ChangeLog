@@ -1,3 +1,29 @@
+2009-08-24 12:34  robocop
+
+	* firebird2/src/jrd/: drq.h (1.28), dyn_del.epp (1.82), irq.h
+	(1.18):
+
+	- Comments.  - Mark unused/deprecated items.
+
+2009-08-24 12:33  robocop
+
+	* firebird2/src/jrd/sort.h (1.43):
+
+	Comments.
+
+2009-08-24 12:21  robocop
+
+	* firebird2/src/jrd/: btr.cpp (1.254), ods.h (1.52):
+
+	We never handled ODS_VERSION7 (see FB1 for example). Thanks Dmitry.
+	 Rework code for readability.
+
+2009-08-24 10:01  alexpeshkoff
+
+	* firebird2/src/jrd/: ibase.h (1.145), why.cpp (1.252):
+
+	Deprecate unpublished API function isc_reset_fpe()
+
 2009-08-23 14:37  robocop
 
 	* firebird2/src/jrd/ods.h (1.51):
