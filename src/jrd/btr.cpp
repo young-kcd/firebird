@@ -2492,73 +2492,66 @@ static void compress(thread_db* tdbb,
 
 	if (isNull)
 	{
-		if (dbb->dbb_ods_version >= ODS_VERSION7)
+		// dbb->dbb_ods_version <= ODS_VERSION7 cannot happen, see PAG_header_init()
+		fb_assert(dbb->dbb_ods_version >= ODS_VERSION8);
+
+		UCHAR pad = 0;
+		key->key_flags &= ~key_empty;
+		// AB: NULL should be threated as lowest value possible.
+		//     Therefore don't complement pad when we have an ascending index.
+		if (dbb->dbb_ods_version >= ODS_VERSION11)
 		{
-			UCHAR pad = 0;
-			key->key_flags &= ~key_empty;
-			// AB: NULL should be threated as lowest value possible.
-			//     Therefore don't complement pad when we have an
-			//     ascending index.
-			if (dbb->dbb_ods_version < ODS_VERSION11)
+			if (descending)
 			{
-				if (!descending) {
-					pad ^= -1;
-				}
+				// DESC NULLs are stored as 1 byte
+				*p++ = pad;
+				key->key_length = (p - key->key_data);
 			}
 			else
-			{
-				if (descending)
-				{
-					// DESC NULLs are stored as 1 byte
-					*p++ = pad;
-					key->key_length = (p - key->key_data);
-					return;
-				}
+				key->key_length = 0; // ASC NULLs are stored with no data
 
-				// ASC NULLs are stored with no data
-				key->key_length = 0;
-				return;
-			}
-
-			size_t length;
-			switch (itype)
-			{
-			case idx_numeric:
-				length = sizeof(double);
-				break;
-			case idx_sql_time:
-				length = sizeof(ULONG);
-				break;
-			case idx_sql_date:
-				length = sizeof(SLONG);
-				break;
-			case idx_timestamp2:
-				length = sizeof(SINT64);
-				break;
-			case idx_numeric2:
-				length = INT64_KEY_LENGTH;
-				break;
-			default:
-				length = desc->dsc_length;
-				if (desc->dsc_dtype == dtype_varying) {
-					length -= sizeof(SSHORT);
-				}
-				if (itype >= idx_first_intl_string) {
-					length = INTL_key_length(tdbb, itype, length);
-				}
-				break;
-			}
-			length = (length > sizeof(key->key_data)) ? sizeof(key->key_data) : length;
-			while (length--) {
-				*p++ = pad;
-			}
-			key->key_length = (p - key->key_data);
 			return;
 		}
 
-		// for dbb->dbb_ods_version < ODS_VERSION7
-		key->key_flags &= ~key_empty;
-		memset(&temp, 0, sizeof(temp));
+		if (!descending) {
+			pad ^= -1;
+		}
+
+		size_t length;
+		switch (itype)
+		{
+		case idx_numeric:
+			length = sizeof(double);
+			break;
+		case idx_sql_time:
+			length = sizeof(ULONG);
+			break;
+		case idx_sql_date:
+			length = sizeof(SLONG);
+			break;
+		case idx_timestamp2:
+			length = sizeof(SINT64);
+			break;
+		case idx_numeric2:
+			length = INT64_KEY_LENGTH;
+			break;
+		default:
+			length = desc->dsc_length;
+			if (desc->dsc_dtype == dtype_varying) {
+				length -= sizeof(SSHORT);
+			}
+			if (itype >= idx_first_intl_string) {
+				length = INTL_key_length(tdbb, itype, length);
+			}
+			break;
+		}
+		length = (length > sizeof(key->key_data)) ? sizeof(key->key_data) : length;
+		while (length--) {
+			*p++ = pad;
+		}
+		key->key_length = (p - key->key_data);
+
+		return;
 	}
 
 	if (itype == idx_string || itype == idx_byte_array || itype == idx_metadata ||

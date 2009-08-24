@@ -60,7 +60,7 @@
 // ODS major version -- major versions are not compatible
 
 //const USHORT ODS_VERSION6	= 6;		// on-disk structure as of v3.0
-const USHORT ODS_VERSION7	= 7;		// new on disk structure for fixing index bug
+//const USHORT ODS_VERSION7	= 7;		// new on disk structure for fixing index bug
 const USHORT ODS_VERSION8	= 8;		// new btree structure to support pc semantics
 const USHORT ODS_VERSION9	= 9;		// btree leaf pages are always propagated up
 const USHORT ODS_VERSION10	= 10;		// V6.0 features. SQL delimited idetifier,
