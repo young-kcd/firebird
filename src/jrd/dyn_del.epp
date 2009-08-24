@@ -1539,9 +1539,9 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 			case drq_e_relation:
 				number = 60;
 				break;
-			case drq_e_sec_class:
-				number = 74;
-				break;
+			//case drq_e_sec_class:
+			//	number = 74;
+			//	break;
 			default:
 				number = 62;
 				break;
