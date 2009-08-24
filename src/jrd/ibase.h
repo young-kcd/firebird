@@ -1088,7 +1088,7 @@ int ISC_EXPORT isc_version(isc_db_handle*,
 						   ISC_VERSION_CALLBACK,
 						   void*);
 
-ISC_LONG ISC_EXPORT isc_reset_fpe(ISC_USHORT);
+ISC_LONG FB_API_DEPRECATED ISC_EXPORT isc_reset_fpe(ISC_USHORT);
 
 uintptr_t	ISC_EXPORT isc_baddress(ISC_SCHAR*);
 void		ISC_EXPORT isc_baddress_s(const ISC_SCHAR*,

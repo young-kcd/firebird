@@ -844,28 +844,15 @@ static bool set_path(const PathName&, PathName&);
 GlobalPtr<Semaphore> why_sem;
 static bool why_initialized = false;
 
-/* subsystem_usage is used to count how many active ATTACHMENTs are
- * running though the why valve.  For the first active attachment
- * request we reset the Firebird FPE handler.
- * This counter is incremented for each ATTACH DATABASE, ATTACH SERVER,
- * or CREATE DATABASE.  This counter is decremented for each
- * DETACH DATABASE, DETACH SERVER, or DROP DATABASE.
- *
- * A client-only API call, isc_reset_fpe() also controls the re-setting of
- * the FPE handler.
- *	isc_reset_fpe (0);		(default)
- *		Initialize the FPE handler the first time the gds
- *		library is made active.
- *	isc_reset_fpe (1);
- *		Initialize the FPE handler the NEXT time an API call is
- *		invoked.
- *	isc_reset_fpe (2);
- *		Revert to InterBase pre-V4.1.0 behavior, reset the FPE
- *		handler on every API call.
+/*
+ * A client-only API call, isc_reset_fpe() is deprecated - we do not use 
+ * the FPE handler anymore, it can't be used in multithreaded library. 
+ * Parameter is ignored, it always returns FPE_RESET_ALL_API_CALL, 
+ * this is the most close code to what we are doing now.
  */
 
-static const USHORT FPE_RESET_INIT_ONLY			= 0x0;	/* Don't reset FPE after init */
-static const USHORT FPE_RESET_NEXT_API_CALL		= 0x1;	/* Reset FPE on next gds call */
+//static const USHORT FPE_RESET_INIT_ONLY		= 0x0;	/* Don't reset FPE after init */
+//static const USHORT FPE_RESET_NEXT_API_CALL	= 0x1;	/* Reset FPE on next gds call */
 static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
 
 /*
