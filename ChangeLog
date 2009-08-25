@@ -1,3 +1,53 @@
+2009-08-25 13:55  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.310):
+
+	Add more protection against BOF
+
+2009-08-25 13:38  dimitr
+
+	* firebird2/src/jrd/: Database.h (1.41), shut.cpp (1.70),
+	shut_proto.h (1.9):
+
+	Misc adjustments to the database shutdown manager.
+
+2009-08-25 13:17  dimitr
+
+	* firebird2/src/jrd/pag.cpp (1.219):
+
+	Used the new feature for DELETE FROM MON$ATTACHMENTS.
+
+2009-08-25 13:16  dimitr
+
+	* firebird2/src/jrd/: entry.h (1.35), jrd.cpp (1.559), jrd_proto.h
+	(1.84), why.cpp (1.253), why_proto.h (1.54):
+
+	Introduced the fb_ping() provider call (it's not exported thus it
+	doesn't belong to the public API).  Currently only the engine
+	supports this call. To be extended for the remote provider and
+	exported as public in v3.0.  Used this new call to implement
+	asynchronous (read: immediate) disconnection of the shutdown
+	attachments.
+
+2009-08-25 13:06  dimitr
+
+	* firebird2/src/jrd/jrd.h (1.268):
+
+	Better validation of wrong (already destroyed) attachment handles.
+
+2009-08-25 11:17  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.309):
+
+	Make gds__log() better fit current posix requirements
+
+2009-08-24 14:58  alexpeshkoff
+
+	* firebird2/src/jrd/os/: isc_i_proto.h (1.13), posix/isc_ipc.cpp
+	(1.43):
+
+	cleanup
+
 2009-08-24 12:34  robocop
 
 	* firebird2/src/jrd/: drq.h (1.28), dyn_del.epp (1.82), irq.h
