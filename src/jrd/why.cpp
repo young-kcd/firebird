@@ -6025,7 +6025,7 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
 		{
 			memcpy(attachment->status, status, sizeof(ISC_STATUS_ARRAY));
 			CALL(PROC_DETACH, attachment->implementation) (status, &attachment->handle);
-			return attachment->status[1];
+			status_exception::raise(attachment->status);
 		}
 	}
 	catch (const Exception& e)
