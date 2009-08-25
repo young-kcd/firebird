@@ -1163,12 +1163,6 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	gds__trace_raw(buffer, p - buffer);
 }
 
-#ifndef WIN_NT
-// On non-NT platforms gds__log() is called sometimes from signal-handlers.
-// Mutexes can't be used in that case. We can only hope that we will not
-// swallow too many diagnostic from log.
-static bool inLogger = false;
-#endif
 
 void API_ROUTINE gds__log(const TEXT* text, ...)
 {
@@ -1198,29 +1192,39 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 
 #ifdef WIN_NT
 	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
-#else
-	if (inLogger)
-	{
-		return;
-	}
-	inLogger = true;
 #endif
-	const int oldmask = umask(0111);
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
 	{
+#ifndef WIN_NT
+		// Get an exclusive lock on the file. That way potential race conditions 
+		// are avoided - both between threads and between processes.
+#ifdef HAVE_FLOCK
+		if (flock(fileno(file), LOCK_EX)) 
+#else
+		if (lockf(fileno(file), F_LOCK, 0)) 
+#endif
+		{
+			// give up
+			fclose(file);
+			return;
+		}
+
+		// Now make sure file is correctly positioned after lock is got
+		fseek(file, 0, SEEK_END);
+#endif
+
 		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		va_end(ptr);
 		fprintf(file, "\n\n");
+
+		// This will release file lock set in posix case
 		fclose(file);
 	}
-	umask(oldmask);
 #ifdef WIN_NT
 	ReleaseMutex(CleanupTraceHandles::trace_mutex_handle);
-#else
-	inLogger = false;
 #endif
 }
 
