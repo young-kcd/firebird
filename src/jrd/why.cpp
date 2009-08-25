@@ -355,6 +355,26 @@ namespace
 #endif
 		}
 
+		FB_API_HANDLE getPublicHandle(const void* handle)
+		{
+			if (handle)
+			{
+				MutexLockGuard guard(mtx);
+
+				for (T** itr = arr.begin(); itr < arr.end(); itr++)
+				{
+					T* const member = *itr;
+
+					if (member->handle == handle)
+					{
+						return member->public_handle;
+					}
+				}
+			}
+
+			return 0;
+		}
+
 	private:
 		SortedArray<T*> arr;
 		Mutex mtx;
@@ -373,6 +393,7 @@ namespace
 
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
 		StoredAtt* handle;
+		ISC_STATUS_ARRAY status;
 		PathName db_path;
 
 		static ISC_STATUS hError()
@@ -691,7 +712,7 @@ namespace
 		return 0;
 	}
 
-	template <typename ToHandle> RefPtr<ToHandle> translate(FB_API_HANDLE* handle)
+	template <typename ToHandle> RefPtr<ToHandle> translate(FB_API_HANDLE* handle, bool checkAttachment = true)
 	{
 		if (shutdownStarted)
 		{
@@ -705,6 +726,15 @@ namespace
 			BaseHandle* rc = BaseHandle::translate(*handle);
 			if (rc && rc->type == ToHandle::hType())
 			{
+				if (checkAttachment)
+				{
+					const Attachment attachment = rc->parent;
+					if (attachment && attachment->status[1])
+					{
+						status_exception::raise(attachment->status);
+					}
+				}
+
 				return RefPtr<ToHandle>(static_cast<ToHandle*>(rc));
 			}
 		}
@@ -746,6 +776,7 @@ namespace
 		  db_path(getPool()),
 		  flagDestroying(false)
 	{
+		fb_utils::init_status(status);
 		attachments().toParent(this);
 		parent = this;
 	}
@@ -1188,8 +1219,9 @@ const int PROC_ROLLBACK_RETAINING	= 52;
 const int PROC_CANCEL_OPERATION	= 53;
 
 const int PROC_SHUTDOWN			= 54;
+const int PROC_PING				= 55;
 
-const int PROC_count			= 55;
+const int PROC_count			= 56;
 
 /* Define complicated table for multi-subsystem world */
 
@@ -2184,14 +2216,19 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
  **************************************/
 	YEntry status(user_status);
 
+	const bool dropping = (proc == PROC_DROP_DATABASE);
+
 	try
 	{
-		Attachment attachment = translate<CAttachment>(handle);
+		Attachment attachment = translate<CAttachment>(handle, dropping);
 
-		if (CALL(proc, attachment->implementation) (status, &attachment->handle) &&
-	    	status[1] != specCode)
+		if (attachment->handle)
 		{
-			return status[1];
+			if (CALL(proc, attachment->implementation) (status, &attachment->handle) &&
+		    	status[1] != specCode)
+			{
+				return status[1];
+			}
 		}
 
 		destroy(attachment);
@@ -5830,6 +5867,23 @@ bool WHY_get_shutdown()
 
 	return disableConnections;
 }
+
+// dimitr: to be removed in FB 3.0
+FB_API_HANDLE WHY_get_public_attachment_handle(const void* handle)
+{
+/**************************************
+ *
+ *	W H Y _ g e t _ p u b l i c _ a t t a c h m e n t _ h a n d l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns public attachment handle for a given private handle.
+ *
+ **************************************/
+
+	return attachments().getPublicHandle(handle);
+}
 #endif // !SUPERCLIENT
 
 
@@ -5947,3 +6001,37 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status,
 	return status[1];
 }
 
+
+ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle)
+{
+/**************************************
+ *
+ *	f b _ p i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check the attachment handle for persistent errors.
+ *
+ **************************************/
+	YEntry status(user_status);
+
+	try
+	{
+		Attachment attachment = translate<CAttachment>(db_handle);
+		status.setPrimaryHandle(attachment);
+
+		if (CALL(PROC_PING, attachment->implementation) (status, &attachment->handle))
+		{
+			memcpy(attachment->status, status, ISC_STATUS_LENGTH);
+			CALL(PROC_DETACH, attachment->implementation) (status, &attachment->handle);
+			return attachment->status[1];
+		}
+	}
+	catch (const Exception& e)
+	{
+		e.stuff_exception(status);
+	}
+
+	return status[1];
+}

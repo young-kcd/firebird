@@ -28,6 +28,7 @@
 #include "../common/classes/fb_string.h"
 
 namespace Jrd {
+	class Database;
 	class Attachment;
 	class jrd_tra;
 	class blb;
@@ -115,6 +116,7 @@ ISC_STATUS jrd8_prepare(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, co
 						USHORT, USHORT, const SCHAR*, USHORT, SCHAR*);
 ISC_STATUS jrd8_set_cursor(ISC_STATUS*, Jrd::dsql_req**, const TEXT*, USHORT);
 ISC_STATUS jrd8_sql_info(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, SCHAR*);
+ISC_STATUS jrd8_ping_attachment(ISC_STATUS*, Jrd::Attachment**);
 
 } // extern "C"
 
@@ -163,5 +165,6 @@ void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
 	USHORT dbginfo_length, const UCHAR* dbginfo);
 bool JRD_verify_database_access(const Firebird::PathName&);
+void JRD_shutdown_attachments(const Jrd::Database* dbb);
 
 #endif /* JRD_JRD_PROTO_H */

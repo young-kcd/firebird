@@ -259,7 +259,9 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason);
 ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN_CALLBACK callBack,
 											const int mask, void* arg);
 
-typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
+ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS*, FB_API_HANDLE*);
+
+											typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
 
 ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
@@ -269,7 +271,8 @@ int API_ROUTINE gds__enable_subsystem(TEXT*);
 
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
-void WHY_cleanup_transaction(struct why_hndl* transaction);
+
+FB_API_HANDLE WHY_get_public_attachment_handle(const void*);
 
 bool WHY_set_shutdown(bool);
 bool WHY_get_shutdown();

@@ -213,5 +213,8 @@ ENTRYPOINT( jrd8_cancel_operation,
 // 54
 ENTRYPOINT( jrd8_shutdown_all,
 			/* REM_shutdown_all */ no_entrypoint)
+// 55
+ENTRYPOINT( jrd8_ping_attachment,
+			/* REM_ping_attahcment */ no_entrypoint)
 
 #undef ENTRYPOINT

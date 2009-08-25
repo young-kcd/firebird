@@ -697,6 +697,7 @@ const char SINGLE_QUOTE			= '\'';
 #define GDS_TRANSACTION_INFO	jrd8_transaction_info
 #define GDS_UNWIND				jrd8_unwind_request
 #define GDS_SHUTDOWN			jrd8_shutdown_all
+#define GDS_PING				jrd8_ping_attachment
 
 #define GDS_DSQL_ALLOCATE			jrd8_allocate_statement
 #define GDS_DSQL_EXECUTE			jrd8_execute
@@ -6665,4 +6666,89 @@ bool JRD_verify_database_access(const PathName& name)
  *
  **************************************/
 	return iDatabaseDirectoryList().isPathInList(name);
+}
+
+
+ISC_STATUS GDS_PING(ISC_STATUS* user_status, Attachment** db_handle)
+{
+/**************************************
+ *
+ *	G D S _ P I N G
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check the attachment handle for persistent errors.
+ *
+ **************************************/
+
+	try
+	{
+		ThreadContextHolder tdbb(user_status);
+
+		Attachment* const attachment = *db_handle;
+		validateHandle(tdbb, attachment);
+		DatabaseContextHolder dbbHolder(tdbb, false);
+		check_database(tdbb);
+	}
+	catch (const Exception& ex)
+	{
+		return ex.stuff_exception(user_status);
+	}
+
+	return successful_completion(user_status);
+}
+
+namespace
+{
+	typedef Array<const void*> PingQueue;
+
+	THREAD_ENTRY_DECLARE attachmentShutdownThread(THREAD_ENTRY_PARAM arg)
+	{
+		AutoPtr<PingQueue> queue(static_cast<PingQueue*>(arg));
+
+		while (!queue->isEmpty())
+		{
+			FB_API_HANDLE public_handle = WHY_get_public_attachment_handle(queue->pop());
+			ISC_STATUS_ARRAY local_status = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+			fb_ping(local_status, &public_handle);
+		}
+
+		return 0;
+	}
+} // namespace
+
+
+void JRD_shutdown_attachments(const Database* dbb)
+{
+/**************************************
+ *
+ *      J R D _ s h u t d o w n _ a t t a c h m e n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Schedule the attachments marked as shutdown for disconnection.
+ *
+ **************************************/
+	fb_assert(dbb);
+
+	try
+	{
+		MemoryPool& pool = *getDefaultMemoryPool();
+		PingQueue* const queue = FB_NEW(pool) PingQueue(pool);
+
+		for (const Attachment* attachment = dbb->dbb_attachments;
+			attachment; attachment = attachment->att_next)
+		{
+			if (attachment->att_flags & ATT_shutdown)
+			{
+				queue->add(attachment);
+			}
+		}
+
+		gds__thread_start(attachmentShutdownThread, queue, 0, 0, NULL);
+	}
+	catch (const Exception&)
+	{} // no-op
 }
