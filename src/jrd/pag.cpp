@@ -2014,6 +2014,8 @@ static int blocking_ast_attachment(void* ast_object)
 		attachment->att_flags |= ATT_shutdown;
 		attachment->cancelExternalConnection(tdbb);
 
+		JRD_shutdown_attachments(dbb);
+
 		LCK_release(tdbb, attachment->att_id_lock);
 	}
 	catch (const Firebird::Exception&)
@@ -2439,11 +2441,11 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 	Attachment* att = tdbb->getAttachment();
 	if (!att->att_temp_pg_lock)
 	{
-		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(lock->lck_key.lck_long)) Lock();
+		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 		lock->lck_type = LCK_page_space;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_length = sizeof(SLONG);
 		lock->lck_dbb = dbb;
 
 		PAG_attachment_id(tdbb);
