@@ -3663,7 +3663,7 @@ public:
 		{
 			tempDir = WORKFILE;
 		}
-		strcpy(fbTempDir, tempDir.c_str());
+		tempDir.copyTo(fbTempDir, sizeof(fbTempDir));
 
 		// Find appropriate Firebird lock file prefix
 		// Override conditional defines with the enviroment
