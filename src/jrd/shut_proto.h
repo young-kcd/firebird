@@ -30,7 +30,7 @@ namespace Jrd {
 
 bool		SHUT_blocking_ast(Jrd::thread_db*);
 void		SHUT_database(Jrd::thread_db*, SSHORT, SSHORT);
-bool		SHUT_init(Jrd::thread_db*);
+void		SHUT_init(Jrd::thread_db*);
 void        SHUT_online(Jrd::thread_db*, SSHORT);
 
 #endif // JRD_SHUT_PROTO_H

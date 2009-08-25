@@ -374,12 +374,12 @@ public:
 	USHORT dbb_max_records;				// max record per data page
 	USHORT dbb_max_idx;					// max number of indexes on a root page
 	USHORT dbb_use_count;				// active count of threads
-	USHORT dbb_shutdown_delay;			// seconds until forced shutdown.
-										// Set in shut.cpp but not tested yet.
+
 #ifdef SUPERSERVER_V2
 	USHORT dbb_prefetch_sequence;		// sequence to pace frequency of prefetch requests
 	USHORT dbb_prefetch_pages;			// prefetch pages per request
 #endif
+
 	Firebird::PathName dbb_filename;	// filename string
 	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
 	Firebird::string dbb_encrypt_key;	// encryption key

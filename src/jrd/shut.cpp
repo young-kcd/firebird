@@ -112,17 +112,7 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 			fb_assert(false);
 		}
 
-		dbb->dbb_shutdown_delay = 0; // not tested anywhere
-
 		return false;
-	}
-
-	// hvlad: i don't know if we need to check for isc_dpb_shut_cache
-	if (flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction | isc_dpb_shut_force))
-	{
-		for (Attachment* att = dbb->dbb_attachments; att; att = att->att_next) {
-			att->cancelExternalConnection(tdbb);
-		}
 	}
 
 	if ((flag & isc_dpb_shut_force) && !delay)
@@ -134,7 +124,7 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 		dbb->dbb_ast_flags |= DBB_shut_force;
 	if (flag & isc_dpb_shut_transaction)
 		dbb->dbb_ast_flags |= DBB_shut_tran;
-	dbb->dbb_shutdown_delay = delay; // not tested anywhere
+
 	return false;
 }
 
@@ -319,7 +309,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 }
 
 
-bool SHUT_init(thread_db* tdbb)
+void SHUT_init(thread_db* tdbb)
 {
 /**************************************
  *
@@ -333,7 +323,7 @@ bool SHUT_init(thread_db* tdbb)
  *
  **************************************/
 
-	return SHUT_blocking_ast(tdbb);
+	SHUT_blocking_ast(tdbb);
 }
 
 
@@ -564,7 +554,10 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 	for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		if (!(attachment->att_flags & ATT_shutdown_manager))
+		{
 			attachment->att_flags |= ATT_shutdown;
+			attachment->cancelExternalConnection(tdbb);
+		}
 	}
 
 	if (dbb->dbb_use_count)
