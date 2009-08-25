@@ -234,7 +234,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 //
 // the attachment block; one is created for each attachment to a database
 //
-class Attachment : public pool_alloc<type_att>
+class Attachment : public pool_alloc<type_att>, public Firebird::PublicHandle
 {
 public:
 	static Attachment* create(Database* dbb)
@@ -351,6 +351,16 @@ public:
 	void backupStateWriteUnLock(thread_db* tdbb);
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
 	void backupStateReadUnLock(thread_db* tdbb);
+
+	bool checkHandle() const
+	{
+		if (!isKnownHandle())
+		{
+			return false;
+		}
+
+		return TypedHandle<type_att>::checkHandle();
+	}
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
