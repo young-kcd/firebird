@@ -6023,7 +6023,7 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
 
 		if (CALL(PROC_PING, attachment->implementation) (status, &attachment->handle))
 		{
-			memcpy(attachment->status, status, ISC_STATUS_LENGTH);
+			memcpy(attachment->status, status, sizeof(ISC_STATUS_ARRAY));
 			CALL(PROC_DETACH, attachment->implementation) (status, &attachment->handle);
 			return attachment->status[1];
 		}
