@@ -46,8 +46,11 @@
 # 863, result of operation is widened
 # 1042, subscript out of range
 # 2175, subscript out of range (again)
+# 2111, statement is unreachable (used to suppress g++ warnings)
+# 2161, unrecognized pragma (mostly FB_COMPILER_MESSAGE)
+# 2177, function declared but never referenced
 COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -AA \
-    +W2830,4232,749,863,1042,2175
+    +W2830,4232,749,863,1042,2175,2111,2161,2177
 
 # Production flags...
 ifeq ($(shell uname -m),ia64)
