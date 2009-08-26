@@ -75,4 +75,3 @@ namespace Jrd {
 ULONG	PAG_page_count(Jrd::Database*, Jrd::PageCountCallback*);
 
 #endif // JRD_PAG_PROTO_H
-

@@ -1197,12 +1197,12 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	if (file != NULL)
 	{
 #ifndef WIN_NT
-		// Get an exclusive lock on the file. That way potential race conditions 
+		// Get an exclusive lock on the file. That way potential race conditions
 		// are avoided - both between threads and between processes.
 #ifdef HAVE_FLOCK
-		if (flock(fileno(file), LOCK_EX)) 
+		if (flock(fileno(file), LOCK_EX))
 #else
-		if (lockf(fileno(file), F_LOCK, 0)) 
+		if (lockf(fileno(file), F_LOCK, 0))
 #endif
 		{
 			// give up

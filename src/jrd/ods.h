@@ -662,4 +662,3 @@ inline int IAD_LEN(int count)
 } //namespace Ods
 
 #endif // JRD_ODS_H
-

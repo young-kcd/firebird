@@ -34,4 +34,3 @@ void		SHUT_init(Jrd::thread_db*);
 void        SHUT_online(Jrd::thread_db*, SSHORT);
 
 #endif // JRD_SHUT_PROTO_H
-

@@ -261,7 +261,7 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN
 
 ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS*, FB_API_HANDLE*);
 
-											typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
+typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
 
 ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
@@ -283,4 +283,3 @@ bool WHY_get_shutdown();
 #endif
 
 #endif // JRD_WHY_PROTO_H
-

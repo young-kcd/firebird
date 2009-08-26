@@ -876,9 +876,9 @@ GlobalPtr<Semaphore> why_sem;
 static bool why_initialized = false;
 
 /*
- * A client-only API call, isc_reset_fpe() is deprecated - we do not use 
- * the FPE handler anymore, it can't be used in multithreaded library. 
- * Parameter is ignored, it always returns FPE_RESET_ALL_API_CALL, 
+ * A client-only API call, isc_reset_fpe() is deprecated - we do not use
+ * the FPE handler anymore, it can't be used in multithreaded library.
+ * Parameter is ignored, it always returns FPE_RESET_ALL_API_CALL,
  * this is the most close code to what we are doing now.
  */
 

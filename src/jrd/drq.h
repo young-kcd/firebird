@@ -221,4 +221,3 @@ const int drq_e_grant3			= 167;	// revoke all on all
 const int drq_MAX				= 168;
 
 #endif // JRD_DRQ_H
-
