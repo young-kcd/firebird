@@ -1031,20 +1031,16 @@ namespace
 
 	// YEntry:	Tracks FP exceptions state (via FpeControl).
 	//			Accounts activity per different attachments.
-	class YEntry : public Status, public FpeControl
+	class YEntry : public FpeControl
 	{
 	public:
-		explicit YEntry(ISC_STATUS* v) throw()
-			: Status(v), att(0)
+		explicit YEntry(BaseHandle* primary = 0)
+			: att(0)
 		{
 #ifdef UNIX
 			static GlobalPtr<CtrlCHandler> ctrlCHandler;
 #endif //UNIX
-		}
-
-		void setPrimaryHandle(BaseHandle* primary)
-		{
-			if (primary && primary->parent && (!att))
+			if (primary && primary->parent)
 			{
 				att = primary->parent;
 				MutexLockGuard guard(att->enterMutex);
@@ -1370,10 +1366,12 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	Attachment attachment(0);
 	USHORT n = 0;
 
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
+
 		nullCheck(public_handle, isc_bad_db_handle);
 
 		if (shutdownStarted)
@@ -1531,12 +1529,12 @@ ISC_STATUS API_ROUTINE GDS_BLOB_INFO(ISC_STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		status.setPrimaryHandle(blob);
+		YEntry entryGuard(blob);
 		CALL(PROC_BLOB_INFO, blob->implementation) (status, &blob->handle,
 													item_length, items,
 													buffer_length, buffer);
@@ -1572,12 +1570,12 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
 		return FB_SUCCESS;
 	}
 
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		status.setPrimaryHandle(blob);
+		YEntry entryGuard(blob);
 
 		if (! CALL(PROC_CANCEL_BLOB, blob->implementation) (status, &blob->handle))
 		{
@@ -1608,12 +1606,12 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_EVENTS(ISC_STATUS * user_status,
  *	Try to cancel an event.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		CALL(PROC_CANCEL_EVENTS, attachment->implementation) (status, &attachment->handle, id);
 	}
 	catch (const Exception& e)
@@ -1639,10 +1637,11 @@ ISC_STATUS API_ROUTINE FB_CANCEL_OPERATION(ISC_STATUS * user_status,
  *	Try to cancel an operation.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
 		Attachment attachment = translate<CAttachment>(handle);
 		// mutex will be locked here for a really long time
 		MutexLockGuard guard(attachment->enterMutex);
@@ -1679,12 +1678,12 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		status.setPrimaryHandle(blob);
+		YEntry entryGuard(blob);
 
 		CALL(PROC_CLOSE_BLOB, blob->implementation) (status, &blob->handle);
 		destroy(blob);
@@ -1712,13 +1711,13 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
  *	Commit a transaction.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
 		Transaction sub;
-		status.setPrimaryHandle(transaction);
+		YEntry entryGuard(transaction);
 
 		if (transaction->implementation != SUBSYSTEMS) {
 			// Handle single transaction case
@@ -1780,12 +1779,12 @@ ISC_STATUS API_ROUTINE GDS_COMMIT_RETAINING(ISC_STATUS * user_status,
  * is still running.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		status.setPrimaryHandle(transaction);
+		YEntry entryGuard(transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
@@ -1822,13 +1821,14 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 	Attachment attachment(NULL);
 	StoredReq* rq = NULL;
+
 	try
 	{
 		attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		nullCheck(req_handle, isc_bad_req_handle);
 
 		if (CALL(PROC_COMPILE, attachment->implementation) (status, &attachment->handle, &rq, blr_length, blr))
@@ -1960,10 +1960,12 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	Attachment attachment(0);
 	USHORT n = 0;
 
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
+
 		nullCheck(public_handle, isc_bad_db_handle);
 
 		if (shutdownStarted)
@@ -2094,12 +2096,12 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
  *	Register an attachment specific cleanup handler.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 
 		attachment->cleanup.add(routine, arg);
 	}
@@ -2129,12 +2131,12 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
  *	Provide information on database object.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		CALL(PROC_DATABASE_INFO, attachment->implementation) (status, &attachment->handle,
 															item_length, items,
 															buffer_length, buffer);
@@ -2164,12 +2166,12 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
  *	Do meta-data update.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		CALL(PROC_DDL, attachment->implementation) (status, &attachment->handle, &transaction->handle,
@@ -2214,12 +2216,14 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
  *	Common code for that calls.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	const bool dropping = (proc == PROC_DROP_DATABASE);
 
 	try
 	{
+		YEntry entryGuard;
+
 		Attachment attachment = translate<CAttachment>(handle, dropping);
 
 		if (attachment->handle)
@@ -2339,14 +2343,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
  *	Allocate a statement handle.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 	Attachment attachment(NULL);
 	StoredStm* stmt_handle = NULL;
 
 	try
 	{
 		attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		// check the statement handle to make sure it's NULL and then initialize it.
 		nullCheck(public_stmt_handle, isc_bad_stmt_handle);
 
@@ -2647,12 +2651,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		Transaction transaction(NULL);
 		StoredTra* handle = NULL;
@@ -3002,7 +3006,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
@@ -3012,7 +3016,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 		}
 
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 
 		Transaction transaction(NULL);
 		StoredTra* handle = NULL;
@@ -3200,12 +3204,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		ISC_STATUS s =
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
@@ -3252,12 +3256,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		ISC_STATUS s =
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
@@ -3294,12 +3298,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS* user_status,
  *	release request for an sql statement
  *
  *****************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		if (CALL(PROC_DSQL_FREE, statement->implementation) (status, &statement->handle, option))
 		{
@@ -3385,12 +3389,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		statement->checkPrepared();
 		//sqlda_sup& dasup = statement->das;
@@ -3563,7 +3567,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
@@ -3573,7 +3577,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 		}
 
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		StoredTra* handle = NULL;
 
@@ -3617,12 +3621,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
  *	Set a cursor name for a dynamic request.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		CALL(PROC_DSQL_SET_CURSOR, statement->implementation) (status, &statement->handle,
 															   cursor, type);
@@ -3653,12 +3657,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
  *	Provide information on sql statement.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		status.setPrimaryHandle(statement);
+		YEntry entryGuard(statement);
 
 		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
 				(item_length == 2) && (items[0] == isc_info_sql_stmt_type) &&
@@ -3772,12 +3776,12 @@ ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS* user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		status.setPrimaryHandle(blob);
+		YEntry entryGuard(blob);
 
 		ISC_STATUS code =
 			CALL(PROC_GET_SEGMENT, blob->implementation) (status, &blob->handle,
@@ -3820,12 +3824,12 @@ ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		CALL(PROC_GET_SLICE, attachment->implementation) (status, &attachment->handle,
@@ -3956,11 +3960,12 @@ ISC_STATUS API_ROUTINE GDS_PREPARE2(ISC_STATUS* user_status,
  *	phase commit.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
+
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		status.setPrimaryHandle(transaction);
+		YEntry entryGuard(transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
@@ -3997,11 +4002,12 @@ ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
+
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		status.setPrimaryHandle(blob);
+		YEntry entryGuard(blob);
 
 		CALL(PROC_PUT_SEGMENT, blob->implementation) (status, &blob->handle, buffer_length, buffer);
 	}
@@ -4035,12 +4041,12 @@ ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		CALL(PROC_PUT_SLICE, attachment->implementation) (status, &attachment->handle,
@@ -4074,12 +4080,12 @@ ISC_STATUS API_ROUTINE GDS_QUE_EVENTS(ISC_STATUS* user_status,
  *	Que request for event notification.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 
 		CALL(PROC_QUE_EVENTS, attachment->implementation) (status, &attachment->handle,
 			id, length, events, ast, arg);
@@ -4116,12 +4122,12 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
 						msg, level, (USHORT) blr_continue,	/* means continue in same direction as before */
 						(ULONG) 1);
 #else
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 
 		CALL(PROC_RECEIVE, request->implementation) (status, &request->handle,
 													 msg_type, msg_length, msg,
@@ -4158,12 +4164,12 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS* user_status,
  *	then get a record from the host program.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 
 		CALL(PROC_RECEIVE, request->implementation) (status, &request->handle,
 													 msg_type, msg_length, msg,
@@ -4195,14 +4201,14 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 	StoredTra* handle = 0;
 
 	try
 	{
 		nullCheck(tra_handle, isc_bad_trans_handle);
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 
 		if (CALL(PROC_RECONNECT, attachment->implementation) (status, &attachment->handle,
 				&handle, length, id))
@@ -4239,12 +4245,12 @@ ISC_STATUS API_ROUTINE GDS_RELEASE_REQUEST(ISC_STATUS* user_status,
  *	Release a request.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 
 		if (!CALL(PROC_RELEASE_REQUEST, request->implementation) (status, &request->handle))
 		{
@@ -4279,12 +4285,12 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 
 		CALL(PROC_REQUEST_INFO, request->implementation) (status, &request->handle,
 														  level,
@@ -4337,11 +4343,12 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status,
  *	Abort a transaction, but keep all cursors open.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
+
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		status.setPrimaryHandle(transaction);
+		YEntry entryGuard(transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
@@ -4376,11 +4383,12 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS* user_status,
  *	Abort a transaction.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
+
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		status.setPrimaryHandle(transaction);
+		YEntry entryGuard(transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 			if (sub->implementation != SUBSYSTEMS &&
@@ -4426,11 +4434,12 @@ ISC_STATUS API_ROUTINE GDS_SEEK_BLOB(ISC_STATUS* user_status,
  *	Seek a blob.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
+
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		status.setPrimaryHandle(blob);
+		YEntry entryGuard(blob);
 
 		CALL(PROC_SEEK_BLOB, blob->implementation) (status, &blob->handle, mode, offset, result);
 	}
@@ -4460,12 +4469,12 @@ ISC_STATUS API_ROUTINE GDS_SEND(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 
 		CALL(PROC_SEND, request->implementation) (status, &request->handle,
 												  msg_type, msg_length, msg,
@@ -4502,10 +4511,12 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	Service service(0);
 	ISC_STATUS_ARRAY temp;
 	USHORT n = 0;
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
+
 		nullCheck(public_handle, isc_bad_svc_handle);
 
 		if (shutdownStarted)
@@ -4585,10 +4596,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_DETACH(ISC_STATUS* user_status, FB_API_HANDLE
  *	Close down a service.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
 		Service service = translate<CService>(handle);
 
 		if (CALL(PROC_SERVICE_DETACH, service->implementation) (status, &service->handle))
@@ -4633,10 +4645,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
  *	network).  This parameter will be implemented at
  *	a later date.
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
 		Service service = translate<CService>(handle);
 
 		CALL(PROC_SERVICE_QUERY, service->implementation) (status,
@@ -4676,10 +4689,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS* user_status,
  *	network).  This parameter will be implemented at
  *	a later date.
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
 		Service service = translate<CService>(handle);
 
 		CALL(PROC_SERVICE_START, service->implementation) (status, &service->handle,
@@ -4713,12 +4727,12 @@ ISC_STATUS API_ROUTINE GDS_START_AND_SEND(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 		Transaction transaction = findTransaction(tra_handle, request->parent);
 
 		CALL(PROC_START_AND_SEND, request->implementation) (status,
@@ -4750,12 +4764,12 @@ ISC_STATUS API_ROUTINE GDS_START(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 		Transaction transaction = findTransaction(tra_handle, request->parent);
 
 		CALL(PROC_START, request->implementation) (status, &request->handle, &transaction->handle,
@@ -4792,10 +4806,11 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 	Attachment attachment(NULL);
 	StoredTra* handle = NULL;
 
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
+		YEntry entryGuard;
 		nullCheck(tra_handle, isc_bad_trans_handle);
 
 		if (count <= 0 || !vector)
@@ -4882,6 +4897,7 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try
 	{
 		HalfStaticArray<TEB, 16> tebs;
@@ -4929,12 +4945,12 @@ ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
  *	Execute a procedure.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		CALL(PROC_TRANSACT_REQUEST, attachment->implementation) (status, &attachment->handle,
@@ -4966,6 +4982,7 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS* user_status,
  *
  **************************************/
 	Status status(user_status);
+
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
@@ -4997,12 +5014,12 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
  *	Provide information on transaction object.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		status.setPrimaryHandle(transaction);
+		YEntry entryGuard(transaction);
 
 		if (transaction->implementation != SUBSYSTEMS) {
 			CALL(PROC_TRANSACTION_INFO, transaction->implementation) (status, &transaction->handle,
@@ -5063,12 +5080,12 @@ ISC_STATUS API_ROUTINE GDS_UNWIND(ISC_STATUS* user_status,
  *	asynchronously.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		status.setPrimaryHandle(request);
+		YEntry entryGuard(request);
 
 		CALL(PROC_UNWIND, request->implementation) (status, &request->handle, level);
 	}
@@ -5528,14 +5545,15 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
  *	Open an existing blob (extended edition).
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 	StoredBlb* blob_handle = 0;
+
 	try
 	{
 		nullCheck(public_blob_handle, isc_bad_segstr_handle);
 
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		USHORT flags = 0;
@@ -5908,7 +5926,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		return FB_SUCCESS;
 	}
 
-	YEntry status(NULL);
+	Status status(NULL);
 	int rc = FB_SUCCESS;
 
 #ifdef DEV_BUILD
@@ -5988,7 +6006,8 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status,
  *	Register client callback to be called when FB is going down.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
+
 	try
 	{
 		ShutChain::add(callBack, mask, arg);
@@ -6014,12 +6033,12 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
  *	Check the attachment handle for persistent errors.
  *
  **************************************/
-	YEntry status(user_status);
+	Status status(user_status);
 
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		status.setPrimaryHandle(attachment);
+		YEntry entryGuard(attachment);
 
 		if (CALL(PROC_PING, attachment->implementation) (status, &attachment->handle))
 		{
