@@ -61,7 +61,7 @@ using namespace Jrd;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-static const SCHAR gen_id_blr1[] =
+static const UCHAR gen_id_blr1[] =
 {
 	blr_version5,
 	blr_begin,
@@ -74,7 +74,7 @@ static const SCHAR gen_id_blr1[] =
 	blr_gen_id
 };
 
-static const SCHAR gen_id_blr2[] =
+static const UCHAR gen_id_blr2[] =
 {
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
 		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc
