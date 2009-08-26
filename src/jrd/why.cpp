@@ -123,14 +123,6 @@
 #include <windows.h>
 #endif
 
-#ifndef F_OK
-#define F_OK		0
-#endif
-
-#ifndef F_TLOCK
-#define F_TLOCK		2
-#endif
-
 #ifdef HAVE_SYS_TIMEB_H
 #include <sys/timeb.h>
 #endif
