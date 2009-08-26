@@ -247,7 +247,7 @@ ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, St
 	}
 	else 
 	{
-		// We may loose initial exception, but if something really bad happens
+		// We may lose initial exception, but if something really bad happens
 		// it's better to keep secondary error message - sooner of all it's more dangerous.
 		try
 		{

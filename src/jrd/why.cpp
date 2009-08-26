@@ -308,7 +308,7 @@ namespace
 	class HandleArray
 	{
 	public:
-		HandleArray(MemoryPool& p) : arr(p) { }
+		explicit HandleArray(MemoryPool& p) : arr(p) { }
 		HandleArray() : arr(*getDefaultMemoryPool()) { }
 
 		void destroy()
@@ -403,7 +403,7 @@ namespace
 
 		static void destroy(CAttachment*);
 
-		bool destroying()
+		bool destroying() const
 		{
 			return flagDestroying;
 		}
@@ -544,7 +544,7 @@ namespace
 			memset(&das, 0, sizeof das);
 		}
 
-		void checkPrepared()
+		void checkPrepared() const
 		{
 			if (!(flags & HANDLE_STATEMENT_prepared))
 			{
@@ -4301,7 +4301,7 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
 extern "C"
 #endif
 
-SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
+SLONG API_ROUTINE isc_reset_fpe(USHORT /*fpe_status*/)
 {
 /**************************************
  *
