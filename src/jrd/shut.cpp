@@ -560,13 +560,17 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 		}
 	}
 
-	if (dbb->dbb_use_count)
+	JRD_shutdown_attachments(dbb);
+
+	for (int retry = 0; retry < 10 && dbb->dbb_use_count; retry++)
 	{
-#ifdef SUPERSERVER
 		// Let active database threads rundown
 		Database::Checkout dcoHolder(dbb);
-		THREAD_SLEEP(1 * 1000);
-#endif
+		THREAD_SLEEP(1 * 100);
+	}
+
+	if (dbb->dbb_use_count)
+	{
 		return false;
 	}
 
@@ -619,4 +623,3 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 
 	return true;
 }
-
