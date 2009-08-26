@@ -192,7 +192,7 @@ void createLockDirectory(const char* pathname)
 			errorLogged = true;
 			gds__log(err.c_str());
 		}
-		Firebird::system_call_failed::raise(err.c_str(), errcode);
+		Firebird::fatal_exception::raise(err.c_str());
 	}
 
 	if (!(attr & FILE_ATTRIBUTE_DIRECTORY))

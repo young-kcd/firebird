@@ -245,9 +245,24 @@ ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, St
 			*sv++ = *ptr++;
 		}
 	}
-	else {
-		// Move in status and clone transient strings
-		sb->makePermanentVector(sv, ptr);
+	else 
+	{
+		// We may loose initial exception, but if something really bad happens
+		// it's better to keep secondary error message - sooner of all it's more dangerous.
+		try
+		{
+			// Move in status and clone transient strings
+			sb->makePermanentVector(sv, ptr);
+		}
+		// This kinds of exceptions must contain literal only strings or no strings at all
+		catch (const system_call_failed& ex)
+		{
+			memcpy (status_vector, ex.value(), sizeof(ISC_STATUS_ARRAY));
+		}
+		catch (const BadAlloc& ex)
+		{
+			ex.stuff_exception(status_vector, sb);
+		}
 	}
 
 	return status_vector[1];
@@ -321,9 +336,9 @@ system_error::system_error(const char* syscall, int error_code) :
 	status_exception(0, false), errorCode(error_code)
 {
 	Arg::Gds temp(isc_sys_request);
-	temp << Arg::Str(dupStringTemp2(syscall));
+	temp << Arg::Str(syscall);
 	temp << SYS_ERR(errorCode);
-	set_status(temp.value(), false);
+	set_status(temp.value(), true);
 }
 
 void system_error::raise(const char* syscall, int error_code)

@@ -160,6 +160,10 @@ private:
 	void release_vector() throw();
 };
 
+// Parameter syscall later in both system_error & system_call_failed
+// must be literal string! This helps avoid need in StringsBuffer 
+// when processing this dangerous errors!
+
 // use this class if exception can be handled
 class system_error : public status_exception
 {
