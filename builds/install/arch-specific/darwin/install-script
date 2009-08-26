@@ -167,6 +167,7 @@ if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 	rm -fr /Library/StartupItems/Firebird
 	cp -r "$1/Contents/Resources/StartupItem" /Library/StartupItems/Firebird
 else
+	cp -r "$1/Contents/Resources/StartupItem" $FB_FW/Resources/FirebirdSS
 	rm -fr /Library/StartupItems/Firebird
 fi
 

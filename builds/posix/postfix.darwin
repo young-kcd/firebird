@@ -88,7 +88,10 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
+	cp ../builds/install/arch-specific/darwin/changeMultiConnectMode \
+			$(FB_FW)/Resources/bin/changeMultiConnectMode.sh
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
@@ -138,7 +141,6 @@ darwin_finish_ss_framework:
 	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
 	cp ../gen/firebird/bin/fbserver $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/fbmgr.bin $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
