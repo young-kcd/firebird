@@ -327,8 +327,8 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 				RecordNumber::Packed* numbers = reinterpret_cast<RecordNumber::Packed*>(desc->dsc_address);
 				RecordNumber rel_dbkey;
 				rel_dbkey.bid_decode(&numbers[id]);
-				// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
-				// hvlad: because from the user point of view db_key's begins from 1
+				// Decrement the value in order to switch back to the zero based numbering
+				// (from the user point of view the DB_KEY numbering starts from one)
 				rel_dbkey.decrement();
 				if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
 					RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
@@ -3317,8 +3317,8 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 		// We do not assign it as SLONG because of big-endian machines.
 		*(USHORT*)impure->vlu_misc.vlu_dbkey = relation->rel_id;
 
-		// NS: Encode 40-bit record number. Again, I have no idea why we
-		// increment it by one, but retain algorithm as it were before
+		// Encode 40-bit record number. Before that, increment the value
+		// because users expect the numbering to start with one.
 		RecordNumber temp(rpb->rpb_number.getValue() + 1);
 		temp.bid_encode(reinterpret_cast<RecordNumber::Packed*>(impure->vlu_misc.vlu_dbkey));
 	}
