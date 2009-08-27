@@ -105,8 +105,8 @@ public:
 
 	const UCHAR* getSqlMatchAny() const { return sqlMatchAny; }
 	const UCHAR* getSqlMatchOne() const { return sqlMatchOne; }
-	const BYTE getSqlMatchAnyLength() const { return sqlMatchAnyLength; }
-	const BYTE getSqlMatchOneLength() const { return sqlMatchOneLength; }
+	BYTE getSqlMatchAnyLength() const { return sqlMatchAnyLength; }
+	BYTE getSqlMatchOneLength() const { return sqlMatchOneLength; }
 
 	charset* getStruct() const { return cs; }
 

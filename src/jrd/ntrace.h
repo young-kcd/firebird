@@ -163,7 +163,7 @@ typedef void* ntrace_service_t;
 class TraceService
 {
 public:
-	virtual const ntrace_service_t getServiceID() = 0;
+	virtual ntrace_service_t getServiceID() = 0;
 	virtual const char* getServiceMgr() = 0;
 	virtual const char* getServiceName() = 0;
 

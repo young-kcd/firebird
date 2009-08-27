@@ -42,7 +42,7 @@ public:
 	{
 	}
 
-	static const USHORT generate(const void*, const ViewContext* vc)
+	static USHORT generate(const void*, const ViewContext* vc)
 	{
 		return vc->vcx_context;
 	}

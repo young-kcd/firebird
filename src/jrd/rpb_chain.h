@@ -44,7 +44,7 @@ public:
 	{}
 	traRpbListElement() {}
 
-	static inline const bool greaterThan(const traRpbListElement& i1, const traRpbListElement& i2)
+	static inline bool greaterThan(const traRpbListElement& i1, const traRpbListElement& i2)
 	{
 		return i1.lr_rpb->rpb_relation->rel_id != i2.lr_rpb->rpb_relation->rel_id ?
 			   i1.lr_rpb->rpb_relation->rel_id > i2.lr_rpb->rpb_relation->rel_id :

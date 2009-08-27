@@ -37,7 +37,7 @@ public:
 	USHORT mbs_src_line;
 	USHORT mbs_src_col;
 
-	static const USHORT generate(const void*, const MapBlrToSrcItem& Item)
+	static USHORT generate(const void*, const MapBlrToSrcItem& Item)
 	{ return Item.mbs_offset; }
 };
 

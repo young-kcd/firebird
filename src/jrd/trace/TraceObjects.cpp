@@ -470,7 +470,7 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 
 /// TraceServiceImpl
 
-const ntrace_service_t TraceServiceImpl::getServiceID()
+ntrace_service_t TraceServiceImpl::getServiceID()
 {
 	return (ntrace_service_t) m_svc;
 }

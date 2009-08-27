@@ -852,7 +852,7 @@ inline Transaction findTransaction(FB_API_HANDLE* public_handle, Attachment a)
 }
 
 static int get_database_info(Transaction, TEXT**);
-static const PTR get_entrypoint(int, int);
+static PTR get_entrypoint(int, int);
 static USHORT sqlda_buffer_size(USHORT, const XSQLDA*, USHORT);
 static ISC_STATUS get_transaction_info(ISC_STATUS*, Transaction, TEXT**);
 
@@ -5356,7 +5356,7 @@ static int get_database_info(Transaction transaction, TEXT** ptr)
 }
 
 
-static const PTR get_entrypoint(int proc, int implementation)
+static PTR get_entrypoint(int proc, int implementation)
 {
 /**************************************
  *

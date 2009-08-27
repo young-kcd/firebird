@@ -2317,7 +2317,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 			if (s >= last_status)
 				break;
 
-			const SLONG gdscode = (const SLONG) *s;
+			const SLONG gdscode = (SLONG) *s;
 			if (gdscode != 0)
 			{
 				if (gdscode != isc_random && gdscode != isc_sqlerr)

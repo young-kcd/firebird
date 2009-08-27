@@ -313,7 +313,7 @@ public:
 		m_svc(svc)
 	{}
 
-	virtual const ntrace_service_t getServiceID();
+	virtual ntrace_service_t getServiceID();
 	virtual const char* getServiceMgr();
 	virtual const char* getServiceName();
 	virtual const char* getUserName();
