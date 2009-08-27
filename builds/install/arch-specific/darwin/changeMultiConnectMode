@@ -52,7 +52,7 @@ if ps -axe | grep "fb_smp_server" | grep -v grep
 	exit 1
 fi
 # Remove SuperClassic
-echo "Removng SuperClassic"
+echo "Removing SuperClassic"
 	rm -fr /Library/StartupItems/Firebird
 	rm $FB_FW/Versions/A/Resources/.SuperServer
 
