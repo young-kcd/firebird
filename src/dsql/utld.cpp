@@ -59,7 +59,7 @@ static void print_xsqlda(XSQLDA *);
 static void sqlvar_to_xsqlvar(const SQLVAR*, XSQLVAR*);
 static void xsqlvar_to_sqlvar(const XSQLVAR*, SQLVAR*);
 
-static inline void ch_stuff(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
+static inline void ch_stuff(BLOB_PTR*& p, const UCHAR value, bool& same_flag)
 {
 	if (*p == value)
 		p++;
@@ -69,7 +69,7 @@ static inline void ch_stuff(BLOB_PTR*& p, const SCHAR value, bool& same_flag)
 	}
 }
 
-static inline void ch_stuff_word(BLOB_PTR*& p, const SSHORT value, bool& same_flag)
+static inline void ch_stuff_word(BLOB_PTR*& p, const USHORT value, bool& same_flag)
 {
 	ch_stuff(p, value & 255, same_flag);
 	ch_stuff(p, value >> 8, same_flag);
