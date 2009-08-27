@@ -90,16 +90,18 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 		debugPrint("object file setup failure");
 		return 0;
 	case NSObjectFileImageInappropriateFile:
+		{
 		// try to load as dynamic library
-		void* mod = dlopen(modPath.c_str(), RTLD_LAZY);
-		if (mod)
-		{
+			void* mod = dlopen(modPath.c_str(), RTLD_LAZY);
+			if (mod)
+			{
 			return FB_NEW(*getDefaultMemoryPool()) DarwinModule(NSModule(), mod);
-		}
-		else
-		{
+			}
+			else
+			{
 			debugPrint("not a Mach-O MH_BUNDLE file type or dynamic library");
 			return 0;
+			}
 		}
 	case NSObjectFileImageArch:
 		debugPrint("no object for this architecture");
