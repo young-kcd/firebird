@@ -707,7 +707,25 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 	else if (field.type == VALUE_STRING)
 	{
 		dsc from_desc;
-		from_desc.makeText(field.length, charset, (UCHAR*) field.data);
+		MoveBuffer buffer;
+
+		if (charset == CS_NONE && to_desc.getCharSet() == CS_METADATA)
+		{
+			// ASF: If an attachment using NONE charset have a string using non-ASCII characters,
+			// nobody will can select them in a system field. So we change these characters to
+			// question marks here - CORE-2602.
+
+			UCHAR* p = buffer.getBuffer(field.length);
+			const UCHAR* s = (const UCHAR*) field.data;
+
+			for (const UCHAR* end = buffer.end(); p < end; ++p, ++s)
+				*p = (*s > 0x7F ? '?' : *s);
+
+			from_desc.makeText(field.length, CS_ASCII, buffer.begin());
+		}
+		else
+			from_desc.makeText(field.length, charset, (UCHAR*) field.data);
+
 		MOV_move(tdbb, &from_desc, &to_desc);
 	}
 	else
