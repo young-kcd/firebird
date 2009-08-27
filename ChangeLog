@@ -1,3 +1,90 @@
+2009-08-27 13:25  paulbeach
+
+	* firebird2/src/jrd/os/darwin/mod_loader.cpp (1.13):
+
+	Minor mod. as per James Gregurich to allow compilation under gcc
+	4.2
+
+2009-08-27 12:48  dimitr
+
+	* firebird2/src/jrd/: rse.cpp (1.189), rse.h (1.63):
+
+	Misc.
+
+2009-08-27 11:51  robocop
+
+	* firebird2/src/: common/classes/fb_string.h (1.29), jrd/gds.cpp
+	(1.312), jrd/msg_encode.h (1.6):
+
+	Warnings from Bill Oliver.
+
+2009-08-27 11:45  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.306):
+
+	Comments.
+
+2009-08-27 11:11  robocop
+
+	* firebird2/src/jrd/sort.cpp (1.139):
+
+	Mark code for future review.
+
+2009-08-27 10:07  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.58):
+
+	misc
+
+2009-08-27 04:19  asfernandes
+
+	* firebird2/:
+	builds/install/arch-specific/darwin/Firebird.startupitem/Firebird
+	(1.4), src/common/fb_exception.cpp (1.57),
+	src/include/fb_exception.h (1.40):
+
+	Misc
+
+2009-08-27 04:19  asfernandes
+
+	*
+	firebird2/builds/install/arch-specific/darwin/changeMultiConnectMode
+	(1.2):
+
+	Fix typo
+
+2009-08-26 16:50  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.56), jrd/entry.h
+	(1.36), jrd/why.cpp (1.259):
+
+	Misc.
+
+2009-08-26 16:13  verbguy
+
+	* firebird2/builds/posix/prefix.hpux_aCC (1.4):
+
+	suppress more HP-UX warnings
+
+2009-08-26 15:27  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.258):
+
+	cleanup
+
+2009-08-26 15:14  alexpeshkoff
+
+	* firebird2/src/jrd/dyn_util.epp (1.66):
+
+	Patch from Bill Oliver - blr must be unsigned
+
+2009-08-26 15:08  alexpeshkoff
+
+	* firebird2/src/: common/fb_exception.cpp (1.55),
+	include/fb_exception.h (1.39), jrd/os/win32/os_utils.cpp (1.10):
+
+	Avoid need in StringsBuffer when processing serious system errors
+
 2009-08-26 13:37  alexpeshkoff
 
 	* firebird2/src/jrd/why.cpp (1.257):
