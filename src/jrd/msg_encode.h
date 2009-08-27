@@ -46,7 +46,7 @@ const ISC_STATUS CLASS_MASK	= 0xF0000000;	/* Defines the code as warning, error,
 
 inline ISC_STATUS ENCODE_ISC_MSG(ISC_STATUS code, USHORT facility)
 {
-	return (((facility & 0x1F) << 16) | ((code & 0x3FFF) << 0) | ISC_MASK);
+	return ((ISC_STATUS(facility & 0x1F) << 16) | (code & 0x3FFF) | ISC_MASK);
 }
 
 inline USHORT GET_FACILITY(ISC_STATUS code)

@@ -92,7 +92,7 @@ namespace Firebird
 
 				// Grow buffer exponentially to prevent memory fragmentation
 				if (newSize / 2 < bufferSize)
-					newSize = bufferSize * 2u;
+					newSize = size_t(bufferSize) * 2u;
 
 				// Do not grow buffer beyond string length limit
 				if (newSize > max_length() + 1)

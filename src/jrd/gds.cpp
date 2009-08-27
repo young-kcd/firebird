@@ -2576,10 +2576,13 @@ void API_ROUTINE gds__vtof(const SCHAR* string, SCHAR* fieldL, USHORT length)
  *
  **************************************/
 
+	if (!length)
+		return;
+
 	while (*string)
 	{
 		*fieldL++ = *string++;
-		if (--length <= 0)
+		if (--length == 0)
 			return;
 	}
 
