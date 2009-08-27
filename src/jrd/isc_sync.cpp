@@ -2009,7 +2009,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		return NULL;
 	}
 
-	fprintf(fp, "%ld", key);
+	fprintf(fp, "%"SLONGFORMAT, key);
 
 /* Get an exclusive lock on the file until the initialization process
    is complete.  That way potential race conditions are avoided. */
