@@ -1208,7 +1208,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 
 		Scope* scope;
 
-		while (state != 0 && scopes.getCount() != 0 && (scope = &scopes.back())->i < scope->limit)
+		while (state != 0 && scopes.getCount() != 0 && (scope = &scopes.back(), scope->i < scope->limit))
 		{
 			const Node* node = &nodes[scope->i];
 
