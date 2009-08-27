@@ -32,17 +32,12 @@ private:
 	Firebird::Mutex buffer_lock;
 };
 
-char* dupStringTemp2(const char* s)
+ISC_STATUS dupStringTemp(const char* s)
 {
 	const size_t len = strlen(s);
 	char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 	memcpy(string, s, len + 1);
-	return string;
-}
-
-ISC_STATUS dupStringTemp(const char* s)
-{
-	return (ISC_STATUS)(IPTR) dupStringTemp2(s);
+	return (ISC_STATUS)(IPTR) string;
 }
 
 void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)
