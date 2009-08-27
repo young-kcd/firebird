@@ -403,7 +403,9 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		{
 		case rsb_indexed:
 			impure->irsb_bitmap = EVL_bitmap(tdbb, (jrd_nod*) rsb->rsb_arg[0], NULL);
+#ifdef SUPERSERVER_V2
 			impure->irsb_prefetch_number = -1;
+#endif
 
 		case rsb_navigate:
 		case rsb_sequential:

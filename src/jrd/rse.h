@@ -197,22 +197,21 @@ struct irsb_recurse
 struct irsb_first_n
 {
 	ULONG irsb_flags;
-	//SLONG irsb_number;
     SINT64 irsb_count;
 };
 
 struct irsb_skip_n
 {
     ULONG irsb_flags;
-    //SLONG irsb_number;
     SINT64 irsb_count;
 };
 
 struct irsb_index
 {
 	ULONG irsb_flags;
-	//SLONG irsb_number;
+#ifdef SUPERSERVER_V2
 	SLONG irsb_prefetch_number;
+#endif
 	RecordBitmap**	irsb_bitmap;
 };
 
