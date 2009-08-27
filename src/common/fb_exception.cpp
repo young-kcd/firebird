@@ -245,7 +245,7 @@ ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, St
 			*sv++ = *ptr++;
 		}
 	}
-	else 
+	else
 	{
 		// We may lose initial exception, but if something really bad happens
 		// it's better to keep secondary error message - sooner of all it's more dangerous.
@@ -257,7 +257,7 @@ ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, St
 		// This kinds of exceptions must contain literal only strings or no strings at all
 		catch (const system_call_failed& ex)
 		{
-			memcpy (status_vector, ex.value(), sizeof(ISC_STATUS_ARRAY));
+			memcpy(status_vector, ex.value(), sizeof(ISC_STATUS_ARRAY));
 		}
 		catch (const BadAlloc& ex)
 		{

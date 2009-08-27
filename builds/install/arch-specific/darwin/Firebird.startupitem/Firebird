@@ -17,7 +17,7 @@ StopService ()
     ConsoleMessage "Stopping Firebird SQL Database server"
     killall fbguard
     killall fbserver
-    killall fb_smp_server	
+    killall fb_smp_server
 }
 
 RestartService ()
@@ -25,7 +25,7 @@ RestartService ()
     ConsoleMessage "Restarting Firebird SQL Database server"
     killall fbguard
     killall fbserver
-    killall fb_smp_server	
+    killall fb_smp_server
     /Library/Frameworks/Firebird.framework/Resources/bin/fbguard -daemon -forever
 }
 
