@@ -1899,7 +1899,7 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	delete scb->scb_space;
 
 	// Get rid of extra merge space
-
+	// CVC: This loop seems unused, as scb_merge_space is never populated explicitly.
 	ULONG** merge_buf;
 	while ( (merge_buf = (ULONG**) scb->scb_merge_space) )
 	{
