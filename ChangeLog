@@ -1,3 +1,58 @@
+2009-08-28 12:16  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.115):
+
+	Delete unused constant since v1.104 of this file.
+
+2009-08-28 07:04  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.114):
+
+	Comment.
+
+2009-08-28 06:58  robocop
+
+	* firebird2/src/jrd/dbt.cpp (1.45):
+
+	Not sure if there's hope that this file will compile again.
+
+2009-08-27 22:34  verbguy
+
+	* firebird2/src/jrd/isc_sync.cpp (1.219):
+
+	HP-UX IA-64 warning, argument incompatible with format string
+	conversion
+
+2009-08-27 22:15  verbguy
+
+	* firebird2/src/jrd/: CharSet.h (1.9), DebugInterface.h (1.9),
+	Relation.h (1.12), gds.cpp (1.313), ntrace.h (1.14), rpb_chain.h
+	(1.19), sort.cpp (1.140), why.cpp (1.260), trace/TraceObjects.cpp
+	(1.16), trace/TraceObjects.h (1.6):
+
+	HP-UX IA-64 warnings, type qualifier is meaningless
+
+2009-08-27 18:17  asfernandes
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.113):
+
+	Fixed CORE-2602 - Attachments using NONE charset may cause reads
+	from MON$ tables to fail
+
+2009-08-27 16:35  verbguy
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.25):
+
+	HP-UX IA64 warning, variable "scope" used before value is set.
+	reviewed by adriano
+
+2009-08-27 16:22  verbguy
+
+	* firebird2/src/dsql/utld.cpp (1.67):
+
+	HP-UX IA-64 warning, integer conversion resulted in a change of
+	sign
+
 2009-08-27 13:25  paulbeach
 
 	* firebird2/src/jrd/os/darwin/mod_loader.cpp (1.13):
