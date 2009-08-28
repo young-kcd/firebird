@@ -75,8 +75,6 @@ static const bool SHARED_DBB = false;
 using namespace Firebird;
 using namespace Jrd;
 
-static const UCHAR TAG_RECORD = MAX_UCHAR;
-
 
 // SharedData class
 
