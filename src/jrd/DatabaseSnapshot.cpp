@@ -711,8 +711,8 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 
 		if (charset == CS_NONE && to_desc.getCharSet() == CS_METADATA)
 		{
-			// ASF: If an attachment using NONE charset have a string using non-ASCII characters,
-			// nobody will can select them in a system field. So we change these characters to
+			// ASF: If an attachment using NONE charset has a string using non-ASCII characters,
+			// nobody will be able to select them in a system field. So we change these characters to
 			// question marks here - CORE-2602.
 
 			UCHAR* p = buffer.getBuffer(field.length);
