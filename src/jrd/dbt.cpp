@@ -287,6 +287,7 @@ OptimizerBlk[] =
 		FLD(OptimizerBlk*, "Cnt: %x", opt_count),
 		0
 },
+/* CVC: Obsolete
 BitmapSegment[] =
 {
 	"BIT MAP SEGMENT",
@@ -294,6 +295,7 @@ BitmapSegment[] =
 		FLD(BitmapSegment*, "Max: %x", bms_max),
 		0
 },
+*/
 DeferredWork[] =
 {
 	"DEFERRED WORK BLOCK",
@@ -317,6 +319,7 @@ str[] =
 		FLD(STR, "length: %d", str_length),
 		0
 },
+/* CVC: It doesn't work with the new definition.
 SparseBitmap[] =
 {
 	"SPARSE BIT MAP",
@@ -327,6 +330,7 @@ SparseBitmap[] =
 		FLD(SparseBitmap*, "number: %d", sbm_number),
 		0
 },
+*/
 SortMap[] =
 {
 	"SORT MAP",
@@ -380,7 +384,7 @@ static TEXT_PTR Savepoint[] = {	"SAVE POINT", 0};
 static TEXT_PTR VerbAction[] = {	"VERB", 0};
 static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
 static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
-static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
+//static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
 static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {
@@ -457,17 +461,18 @@ static TEXT_PTR thread_db[] =
 		FLD(thread_db*, "Default: %x", getDefaultPool()),
 		0
 };
-static TEXT_PTR Service[] =		{	"SERVICE MANAGER BLOCK", 0};
+static TEXT_PTR Service[] =			{	"SERVICE MANAGER BLOCK", 0};
 static TEXT_PTR LatchWait[] =		{	"LATCH WAIT BLOCK", 0};
 static TEXT_PTR ViewContext[] =		{	"VIEW CONTEXT BLOCK", 0};
 static TEXT_PTR SaveRecordParam[] =	{	"RPB BLOCK", 0};
 
 
-static int (*dbg_all) (), (*dbg_block) (), (*dbg_examine) (), (*dbg_eval) (),
-	(*dbg_open) (), (*dbg_close) (), (*dbg_pool) (), (*dbg_pretty) (),
-	(*dbg_window) (), (*dbg_rpb) (), (*dbg_bdbs) (), (*dbg_analyze) (),
-	(*dbg_check) (), (*dmp_page) (), (*dmp_active) (), (*dmp_dirty) (),
-	(*dbg_verify) ();
+typedef int (*t_intvoid)();
+
+t_intvoid dbg_all, dbg_block, dbg_examine, dbg_eval,
+	dbg_open, dbg_close, dbg_pool, dbg_pretty,
+	dbg_window, dbg_rpb, dbg_bdbs, dbg_analyze,
+	dbg_check, dmp_page, dmp_active, dmp_dirty, dbg_verify;
 
 
 symb dbt_symbols[] =
