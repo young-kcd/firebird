@@ -1206,10 +1206,12 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 			}
 		}
 
-		Scope* scope;
-
-		while (state != 0 && scopes.getCount() != 0 && (scope = &scopes.back(), scope->i < scope->limit))
+		while (state != 0 && scopes.getCount() != 0)
 		{
+			Scope* scope = &scopes.back();
+			if (scope->i >= scope->limit)
+				break;
+
 			const Node* node = &nodes[scope->i];
 
 			switch (node->op)
