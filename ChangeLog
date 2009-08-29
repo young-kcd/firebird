@@ -1,3 +1,9 @@
+2009-08-28 15:55  verbguy
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.26):
+
+	revise to avoid comma operator, per Claudio's request
+
 2009-08-28 12:16  robocop
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.115):
