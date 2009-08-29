@@ -374,7 +374,7 @@ USHORT SERVICES_status (const char* service_name)
 	return status;
 }
 
-USHORT SERVICES_grant_logon_right(const TEXT* account, pfnSvcError err_handler)
+USHORT SERVICES_grant_privilege(const TEXT* account, pfnSvcError err_handler, const WCHAR* privilege)
 {
 /***************************************************
  *
@@ -447,7 +447,7 @@ USHORT SERVICES_grant_logon_right(const TEXT* account, pfnSvcError err_handler)
 	ULONG i;
 	for (i = 0; i < CountOfRights; i++)
 	{
-		if (wcscmp(UserRights[i].Buffer, L"SeServiceLogonRight") == 0)
+		if (wcscmp(UserRights[i].Buffer, privilege) == 0)
 			break;
 	}
 	LsaFreeMemory(UserRights); // Don't leak
@@ -455,9 +455,14 @@ USHORT SERVICES_grant_logon_right(const TEXT* account, pfnSvcError err_handler)
 	if (CountOfRights == 0 || i == CountOfRights)
 	{
 		// Grant the SeServiceLogonRight to users represented by pSid.
-		PrivilegeString.Buffer = L"SeServiceLogonRight";
-		PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
-		PrivilegeString.MaximumLength = (USHORT)(19 + 1) * sizeof(WCHAR);
+		const int string_buff_size = 100;
+		WCHAR tempStr[string_buff_size];
+		wcsncpy(tempStr, privilege, string_buff_size-1);
+		tempStr[string_buff_size-1] = 0;
+
+		PrivilegeString.Buffer = tempStr;
+		PrivilegeString.Length = wcslen(tempStr) * sizeof(WCHAR);
+		PrivilegeString.MaximumLength = sizeof(tempStr);
 		if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1)) != (NTSTATUS) 0)
 		{
 			LsaClose(PolicyHandle);
@@ -471,7 +476,7 @@ USHORT SERVICES_grant_logon_right(const TEXT* account, pfnSvcError err_handler)
 		LsaClose(PolicyHandle);
 		LocalFree(pSid);
 		LocalFree(pDomain);
-		return FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED;
+		return FB_PRIVILEGE_ALREADY_GRANTED;
 	}
 
 	LsaClose(PolicyHandle);

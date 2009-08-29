@@ -118,11 +118,12 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
 	{TYPE_STRING,		"Authentication",			(ConfigValue) AmNative},	// use native, trusted or mixed
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
-	{TYPE_INTEGER,		"MaxFileSystemCache",		(ConfigValue) 65536},	// page buffers
+	{TYPE_INTEGER,		"FileSystemCacheTreshold",	(ConfigValue) 65536},	// page buffers
 	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false},	// if true relax strict alias checking rules in DSQL a bit
 	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false},	// if true disallow SET A = B, B = A to exchange column values
 	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
-	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10}		// maximum size of user session trace log
+	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
+	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 30}		// percent
 };
 
 /******************************************************************************
@@ -481,9 +482,9 @@ int Config::getDatabaseGrowthIncrement()
 	return (int) sysConfig().values[KEY_DATABASE_GROWTH_INCREMENT];
 }
 
-int Config::getMaxFileSystemCache()
+int Config::getFileSystemCacheTreshold()
 {
-	return (int) sysConfig().values[KEY_MAX_FILESYSTEM_CACHE];
+	return (int) sysConfig().values[KEY_FILESYSTEM_CACHE_TRESHOLD];
 }
 
 bool Config::getRelaxedAliasChecking()
@@ -494,6 +495,11 @@ bool Config::getRelaxedAliasChecking()
 bool Config::getOldSetClauseSemantics()
 {
 	return (bool) sysConfig().values[KEY_OLD_SET_CLAUSE_SEMANTICS];
+}
+
+int Config::getFileSystemCacheSize()
+{
+	return (int) sysConfig().values[KEY_FILESYSTEM_CACHE_SIZE];
 }
 
 const char *Config::getAuditTraceConfigFile()

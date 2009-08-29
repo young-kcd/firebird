@@ -269,9 +269,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 
 		// Let's grant "Logon as a Service" right to the -login user
-		switch (SERVICES_grant_logon_right(full_username, svc_error))
+		switch (SERVICES_grant_privilege(full_username, svc_error, L"SeServiceLogonRight"))
 		{
-			case FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED:
+			case FB_PRIVILEGE_ALREADY_GRANTED:
 				/*
 				// OM - I think it is better not to bother the admin with this message.
 				printf("The 'Logon as a Service' right was already granted to %s\n", oem_username);
@@ -283,6 +283,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			case FB_FAILURE:
 			default:
 				printf("Failed granting the 'Logon as a Service' right to %s\n", oem_username);
+				exit(FINI_ERROR);
+				break;
+		}
+
+		// Let's grant "Adjust memory quotas for a process" right to the -login user
+		switch (SERVICES_grant_privilege(full_username, svc_error, L"SeIncreaseQuotaPrivilege"))
+		{
+			case FB_PRIVILEGE_ALREADY_GRANTED:
+				break;
+			case FB_SUCCESS:
+				printf("The 'Adjust memory quotas for a process' right has been granted to %s\n", oem_username);
+				break;
+			case FB_FAILURE:
+			default:
+				printf("Failed granting the 'Adjust memory quotas for a process' right to %s\n", oem_username);
 				exit(FINI_ERROR);
 				break;
 		}

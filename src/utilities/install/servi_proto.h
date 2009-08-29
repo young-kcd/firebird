@@ -52,7 +52,7 @@ USHORT	SERVICES_stop(SC_HANDLE, const char*, /*const char*,*/ pfnSvcError);
 
 USHORT	SERVICES_status(const char*);
 
-USHORT	SERVICES_grant_logon_right(const TEXT*, pfnSvcError);
+USHORT	SERVICES_grant_privilege(const TEXT* account, pfnSvcError err_handler, const WCHAR* privilege);
 
 USHORT	SERVICES_grant_access_rights(const char*, const TEXT*, pfnSvcError);
 

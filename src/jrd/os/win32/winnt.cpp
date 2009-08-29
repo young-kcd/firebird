@@ -51,6 +51,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/classes/init.h"
+#include "../common/config/config.h"
 
 #include <windows.h>
 
@@ -112,6 +113,13 @@ static bool	maybeCloseFile(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool);
 static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* const);
+static void adjustFileSystemCacheSize();
+
+struct AdjustFsCache {
+	static void init() { adjustFileSystemCacheSize(); }
+};
+
+InitMutex<AdjustFsCache> adjustFsCacheOnce;
 
 #ifdef SUPERSERVER_V2
 static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
@@ -210,6 +218,8 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
  *	Create a new database file.
  *
  **************************************/
+	adjustFsCacheOnce.init();
+
 	const TEXT* file_name = string.c_str();
 
 	DWORD dwShareMode = (temporary ? g_dwShareTempFlags : g_dwShareFlags);
@@ -336,7 +346,6 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 		FlushFileBuffers(file->fil_desc);
 	}
 }
-
 
 void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSCache)
 {
@@ -549,6 +558,8 @@ jrd_file* PIO_open(Database* dbb,
  **************************************/
 	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	bool readOnly = false;
+
+	adjustFsCacheOnce.init();
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
@@ -1123,3 +1134,151 @@ static bool nt_error(const TEXT* string,
 
 	return false;
 }
+
+// These are defined in Windows Server 2008 SDK
+#ifndef FILE_CACHE_FLAGS_DEFINED
+#define FILE_CACHE_MAX_HARD_ENABLE      0x00000001
+#define FILE_CACHE_MAX_HARD_DISABLE     0x00000002
+#define FILE_CACHE_MIN_HARD_ENABLE      0x00000004
+#define FILE_CACHE_MIN_HARD_DISABLE     0x00000008
+#endif // FILE_CACHE_FLAGS_DEFINED
+
+BOOL SetPrivilege(
+    HANDLE hToken,          // access token handle
+    LPCTSTR lpszPrivilege,  // name of privilege to enable/disable
+    BOOL bEnablePrivilege   // to enable or disable privilege
+    )
+{
+	TOKEN_PRIVILEGES tp;
+	LUID luid;
+
+	if ( !LookupPrivilegeValue( 
+			NULL,            // lookup privilege on local system
+			lpszPrivilege,   // privilege to lookup 
+			&luid ) )        // receives LUID of privilege
+	{
+		// gds__log("LookupPrivilegeValue error: %u", GetLastError() ); 
+		return FALSE; 
+	}
+
+	tp.PrivilegeCount = 1;
+	tp.Privileges[0].Luid = luid;
+	if (bEnablePrivilege)
+		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	else
+		tp.Privileges[0].Attributes = 0;
+
+	// Enable or disable the privilege
+
+	if ( !AdjustTokenPrivileges(
+		   hToken, 
+		   FALSE, 
+		   &tp, 
+		   sizeof(TOKEN_PRIVILEGES), 
+		   (PTOKEN_PRIVILEGES) NULL, 
+		   (PDWORD) NULL) )
+	{ 
+		  //gds__log("AdjustTokenPrivileges error: %u", GetLastError() ); 
+		  return FALSE; 
+	} 
+
+	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
+
+	{
+		  //gds__log("The token does not have the specified privilege");
+		  return FALSE;
+	} 
+
+	return TRUE;
+}
+
+static void adjustFileSystemCacheSize() {
+	int percent = Config::getFileSystemCacheSize();
+
+	// firebird.conf asks to do nothing
+	if (percent == 0) return;
+
+	// Ensure that the setting has a sensible value
+	if (percent > 95 || percent < 10) {
+		gds__log("Incorrect FileSystemCacheSize setting %d. Using default (30 percent).", percent);
+		percent = 30;
+	}
+
+	HMODULE hmodKernel32 = GetModuleHandle("kernel32.dll");
+
+	// This one requires 64-bit XP or Windows Server 2003 SP1
+	typedef BOOL (WINAPI *PFnSetSystemFileCacheSize)(SIZE_T, SIZE_T, DWORD);
+
+	typedef BOOL (WINAPI *PFnGetSystemFileCacheSize)(PSIZE_T, PSIZE_T, PDWORD);
+
+	// This one needs any NT, but load it dynamically anyways just in case
+	typedef BOOL (WINAPI *PFnGlobalMemoryStatusEx)(LPMEMORYSTATUSEX);
+
+	PFnSetSystemFileCacheSize pfnSetSystemFileCacheSize = 
+		(PFnSetSystemFileCacheSize) GetProcAddress(hmodKernel32, "SetSystemFileCacheSize");
+	PFnGetSystemFileCacheSize pfnGetSystemFileCacheSize = 
+		(PFnGetSystemFileCacheSize) GetProcAddress(hmodKernel32, "GetSystemFileCacheSize");
+	PFnGlobalMemoryStatusEx pfnGlobalMemoryStatusEx =
+		(PFnGlobalMemoryStatusEx) GetProcAddress(hmodKernel32, "GlobalMemoryStatusEx");
+
+	// If we got too old OS and functions are not there - do not bother
+	if (!pfnGetSystemFileCacheSize || !pfnSetSystemFileCacheSize || !pfnGlobalMemoryStatusEx)
+		return;
+
+	MEMORYSTATUSEX msex;
+	msex.dwLength = sizeof (msex);
+
+	// This should work
+	if (!pfnGlobalMemoryStatusEx(&msex))
+		system_call_failed::raise("GlobalMemoryStatusEx", GetLastError());
+
+	SIZE_T origMinimumFileCacheSize, origMaximumFileCacheSize;
+	DWORD origFlags;
+
+	BOOL result = pfnGetSystemFileCacheSize(&origMinimumFileCacheSize, 
+		&origMaximumFileCacheSize, &origFlags);
+
+	if (!result) {
+		gds__log("GetSystemFileCacheSize error %d", GetLastError());
+		return;
+	}
+
+	// Somebody has already configured maximum cache size limit
+	// Hope it is a sensible one - do not bother to adjust it
+	if ((origFlags & FILE_CACHE_MAX_HARD_ENABLE) != 0)
+		return;
+
+	DWORDLONG maxMem = (msex.ullTotalPhys / 100) * percent;
+
+#ifndef _WIN64
+	// If we are trying to set the limit so high that it doesn't fit
+	// in 32-bit API - leave settings alone and write a message to log file
+	if (maxMem > (SIZE_T)(-2)) {
+		gds__log("Could not use 32-bit SetSystemFileCacheSize API to set cache size limit to %I64d."
+				"Please use 64-bit engine or configure cache size limit externally", maxMem);
+		return;
+	}
+#endif
+
+	HANDLE hToken;
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken)) {
+		gds__log("OpenProcessToken error %d", GetLastError());
+		return;
+	}
+
+	SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", TRUE);
+	result = pfnSetSystemFileCacheSize(0, maxMem, FILE_CACHE_MAX_HARD_ENABLE);
+	DWORD error = GetLastError();
+	SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", FALSE);
+	CloseHandle(hToken);
+
+	if (!result)
+	{
+		// If we do not have enough permissions - silently ignore the error
+		gds__log("SetSystemFileCacheSize error %d. "
+			"The engine will continue to operate, but the system "
+			"performance may degrade significantly when working with "
+			"large databases", error);
+	}
+}
+
