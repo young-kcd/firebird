@@ -101,16 +101,19 @@ namespace Jrd {
 class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
 {
 public:
+	enum Type
+	{
+		TYPE_SIMPLE = 0,
+		TYPE_HEXA,
+		TYPE_DELIMITED
+	};
+
+public:
 	const char* str_charset;	// ASCIIZ Character set identifier for string
-	//USHORT      str_flags;
-	bool        delimited_id;
-	ULONG       str_length;		// length of string in BYTES
-	char        str_data[2];	// one for ALLOC and one for the NULL
+	Type	type;
+	ULONG	str_length;		// length of string in BYTES
+	char	str_data[2];	// one for ALLOC and one for the NULL
 };
-
-// values used in str_flags
-
-//const USHORT STR_delimited_id		= 0x1L;
 
 // blocks used to cache metadata
 

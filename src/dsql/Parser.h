@@ -77,6 +77,7 @@ private:
 		const TEXT* ptr;
 		const TEXT* end;
 		const TEXT* last_token;
+		const TEXT* start;
 		const TEXT* line_start;
 		const TEXT* last_token_bk;
 		const TEXT* line_start_bk;
@@ -84,6 +85,14 @@ private:
 		SSHORT lines_bk;
 		int prev_keyword;
 		USHORT param_number;
+	};
+
+	struct IntroducerMark
+	{
+		unsigned pos;
+		unsigned length;
+		unsigned textPos;
+		unsigned textLength;
 	};
 
 public:
@@ -94,10 +103,18 @@ public:
 public:
 	YYSTYPE parse();
 
+	const Firebird::string& getTransformedString()
+	{
+		return transformedString;
+	}
+
 	bool isStmtAmbiguous() const
 	{
 		return stmt_ambiguous;
 	}
+
+private:
+	void transformString(const char* start, unsigned length, Firebird::string& dest);
 
 // start - defined in btyacc_fb.ske
 private:
@@ -134,6 +151,8 @@ private:
 	USHORT db_dialect;
 	USHORT parser_version;
 
+	Firebird::string transformedString;
+	Firebird::Array<IntroducerMark> introducerMarks;
 	bool stmt_ambiguous;
 	YYSTYPE DSQL_parse;
 

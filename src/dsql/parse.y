@@ -2121,7 +2121,9 @@ begin_trigger	:
 end_trigger	:
 			{
 				const TEXT* start = lex.beginnings.pop();
-				$$ = (dsql_nod*) MAKE_string(start, lex_position() - start);
+				string str;
+				transformString(start, lex_position() - start, str);
+				$$ = (dsql_nod*) MAKE_string(str.c_str(), str.length());
 			}
 		;
 
@@ -4407,12 +4409,28 @@ internal_info	: CURRENT_CONNECTION
 						MAKE_const_slong (internal_rows_affected)); }
 		;
 
-sql_string	: STRING			/* string in current charset */
-			{ $$ = $1; }
-		| INTRODUCER STRING		/* string in specific charset */
-			{ ((dsql_str*) $2)->str_charset = (TEXT*) $1;
-			  $$ = $2; }
-		;
+sql_string
+	: STRING			// string in current charset
+		{ $$ = $1; }
+	| INTRODUCER STRING	// string in specific charset
+		{
+			dsql_str* str = (dsql_str*) $2;
+			str->str_charset = (TEXT*) $1;
+			if (str->type == dsql_str::TYPE_SIMPLE)
+			{
+				IntroducerMark mark;
+				mark.pos = lex.last_token - lex.start;
+				mark.length = lex.ptr - lex.last_token;
+				mark.textLength = str->str_length;
+
+				fb_assert(mark.length - mark.textLength == 2);
+				mark.textPos = mark.pos + 1;
+
+				introducerMarks.push(mark);
+			}
+			$$ = $2;
+		}
+	;
 
 signed_short_integer	:	nonneg_short_integer
 		| '-' neg_short_integer
@@ -5639,8 +5657,7 @@ int Parser::yylexAux()
 				}
 				yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 				dsql_str* delimited_id_str = (dsql_str*) yylval;
-				//delimited_id_str->str_flags |= STR_delimited_id;
-				delimited_id_str->delimited_id = true;
+				delimited_id_str->type = dsql_str::TYPE_DELIMITED;
 				if (buffer != string)
 					gds__free (buffer);
 				return SYMBOL;
@@ -5768,6 +5785,7 @@ int Parser::yylexAux()
 			}
 
 			dsql_str* string = MAKE_string(temp.c_str(), temp.length());
+			string->type = dsql_str::TYPE_HEXA;
 			string->str_charset = "BINARY";
 			yylval = (dsql_nod*) string;
 

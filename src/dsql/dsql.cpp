@@ -2540,7 +2540,6 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	statement->req_dbb = database;
 	statement->req_transaction = transaction;
 	statement->req_client_dialect = client_dialect;
-	statement->req_sql_text = FB_NEW(pool) RefString(pool, Firebird::string(pool, string, string_length));
 	statement->req_traced = true;
 
 	trace.setStatement(statement);
@@ -2553,6 +2552,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		parser_version, string, string_length, tdbb->getAttachment()->att_charset);
 
 	dsql_nod* node = parser.parse();
+
+	statement->req_sql_text = FB_NEW(pool) RefString(pool, parser.getTransformedString());
 
 	if (!node)
 	{

@@ -24,6 +24,7 @@
 #include "../dsql/Parser.h"
 #include "../jrd/jrd.h"
 
+using namespace Firebird;
 using namespace Jrd;
 
 
@@ -33,6 +34,8 @@ Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHOR
 	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
 	  parser_version(aParserVersion),
+	  transformedString(pool),
+	  introducerMarks(pool),
 	  stmt_ambiguous(false)
 {
 	yyps = 0;
@@ -48,6 +51,7 @@ Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHOR
 	yylexp = 0;
 	yylexemes = 0;
 
+	lex.start = string;
 	lex.line_start = lex.ptr = string;
 	lex.end = string + length;
 	lex.lines = 1;
@@ -90,6 +94,56 @@ Parser::YYSTYPE Parser::parse()
 	if (parseAux() != 0)
 		return NULL;
 
+	transformString(lex.start, lex.end - lex.start, transformedString);
+
 	return DSQL_parse;
 }
 
+
+// Transform strings (or substrings) prefixed with introducer (_charset) to ASCII equivalent.
+void Parser::transformString(const char* start, unsigned length, string& dest)
+{
+	const static char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'A', 'B', 'C', 'D', 'E', 'F'};
+
+	unsigned fromBegin = start - lex.start;
+	HalfStaticArray<char, 256> buffer;
+	const char* pos = start;
+
+	for (size_t i = 0; i < introducerMarks.getCount(); ++i)
+	{
+		const IntroducerMark& mark = introducerMarks[i];
+
+		if (mark.pos < fromBegin)
+			continue;
+		else if (mark.pos >= fromBegin + length)
+			break;
+
+		const char* s = lex.start + mark.pos;
+		buffer.add(pos, s - pos);
+
+		size_t count = buffer.getCount();
+		buffer.grow(count + 2 + mark.textLength * 2 + 1);
+		char* p = buffer.begin() + count;
+
+		*p++ = 'X';
+		*p++ = '\'';
+
+		const char* s2 = lex.start + mark.textPos;
+
+		for (const char* end = lex.start + mark.textPos + mark.textLength; s2 < end; ++s2)
+		{
+			*p++ = HEX_DIGITS[UCHAR(*s2) >> 4];
+			*p++ = HEX_DIGITS[UCHAR(*s2) & 0xF];
+		}
+
+		*p = '\'';
+
+		pos = s + mark.length;
+	}
+
+	fb_assert(start + length - pos >= 0);
+	buffer.add(pos, start + length - pos);
+
+	dest = string(buffer.begin(), MIN(string::max_length(), buffer.getCount()));
+}

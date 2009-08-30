@@ -1278,7 +1278,7 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		{
 			stuff(statement, blr_exception);
 		}
-		if (!string->delimited_id)
+		if (string->type != dsql_str::TYPE_DELIMITED)
 		{
 			ULONG id_length = string->str_length;
 			for (TEXT* p = string->str_data; *p && id_length; ++p, --id_length)
