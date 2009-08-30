@@ -57,4 +57,3 @@ USHORT	SERVICES_grant_privilege(const TEXT* account, pfnSvcError err_handler, co
 USHORT	SERVICES_grant_access_rights(const char*, const TEXT*, pfnSvcError);
 
 #endif // UTILITIES_SERVI_PROTO_H
-

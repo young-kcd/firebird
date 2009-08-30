@@ -1314,7 +1314,6 @@ void PAG_header(thread_db* tdbb, bool info)
 
 	const bool useFSCache = dbb->dbb_bcb->bcb_count < Config::getFileSystemCacheTreshold();
 
-
 	if ((header->hdr_flags & hdr_force_write) || !useFSCache)
 	{
 		dbb->dbb_flags |=

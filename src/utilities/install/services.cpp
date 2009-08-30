@@ -457,8 +457,8 @@ USHORT SERVICES_grant_privilege(const TEXT* account, pfnSvcError err_handler, co
 		// Grant the SeServiceLogonRight to users represented by pSid.
 		const int string_buff_size = 100;
 		WCHAR tempStr[string_buff_size];
-		wcsncpy(tempStr, privilege, string_buff_size-1);
-		tempStr[string_buff_size-1] = 0;
+		wcsncpy(tempStr, privilege, string_buff_size - 1);
+		tempStr[string_buff_size - 1] = 0;
 
 		PrivilegeString.Buffer = tempStr;
 		PrivilegeString.Length = wcslen(tempStr) * sizeof(WCHAR);
