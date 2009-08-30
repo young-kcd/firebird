@@ -113,7 +113,7 @@ class Config
 		KEY_OLD_COLUMN_NAMING,						// 38
 		KEY_AUTH_METHOD,							// 39
 		KEY_DATABASE_GROWTH_INCREMENT,				// 40
-		KEY_FILESYSTEM_CACHE_TRESHOLD,				// 41
+		KEY_FILESYSTEM_CACHE_THRESHOLD,				// 41
 		KEY_RELAXED_ALIAS_CHECKING,					// 42
 		KEY_OLD_SET_CLAUSE_SEMANTICS,				// 43
 		KEY_TRACE_CONFIG,							// 44
@@ -257,7 +257,7 @@ public:
 
 	static int getDatabaseGrowthIncrement();
 
-	static int getFileSystemCacheTreshold();
+	static int getFileSystemCacheThreshold();
 
 	static int getFileSystemCacheSize();
 

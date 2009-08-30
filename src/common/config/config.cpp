@@ -118,7 +118,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
 	{TYPE_STRING,		"Authentication",			(ConfigValue) AmNative},	// use native, trusted or mixed
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
-	{TYPE_INTEGER,		"FileSystemCacheTreshold",	(ConfigValue) 65536},	// page buffers
+	{TYPE_INTEGER,		"FileSystemCacheThreshold",	(ConfigValue) 65536},	// page buffers
 	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false},	// if true relax strict alias checking rules in DSQL a bit
 	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false},	// if true disallow SET A = B, B = A to exchange column values
 	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
@@ -482,9 +482,9 @@ int Config::getDatabaseGrowthIncrement()
 	return (int) sysConfig().values[KEY_DATABASE_GROWTH_INCREMENT];
 }
 
-int Config::getFileSystemCacheTreshold()
+int Config::getFileSystemCacheThreshold()
 {
-	return (int) sysConfig().values[KEY_FILESYSTEM_CACHE_TRESHOLD];
+	return (int) sysConfig().values[KEY_FILESYSTEM_CACHE_THRESHOLD];
 }
 
 bool Config::getRelaxedAliasChecking()
