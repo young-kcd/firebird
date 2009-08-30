@@ -75,7 +75,8 @@ bool get_user_home(int /*user_id*/, Firebird::PathName& /*homeDir*/)
 void adjustLockDirectoryAccess(const char* pathname)
 {
 	PSECURITY_DESCRIPTOR pSecDesc = NULL;
-	PSID pSID = NULL;
+	PSID pSID_Users = NULL;
+	PSID pSID_Administrators = NULL;
 	PACL pNewACL = NULL;
 	try
 	{
@@ -111,22 +112,35 @@ void adjustLockDirectoryAccess(const char* pathname)
 
 		SID_IDENTIFIER_AUTHORITY sidAuth = SECURITY_NT_AUTHORITY;
 		if (!AllocateAndInitializeSid(&sidAuth, 2, SECURITY_BUILTIN_DOMAIN_RID,
-				DOMAIN_ALIAS_RID_USERS, 0, 0, 0, 0, 0, 0, &pSID))
+			DOMAIN_ALIAS_RID_USERS, 0, 0, 0, 0, 0, 0, &pSID_Users))
 		{
 			Firebird::system_error::raise("AllocateAndInitializeSid");
 		}
 
-		EXPLICIT_ACCESS ea;
-		memset(&ea, 0, sizeof(ea));
+		if (!AllocateAndInitializeSid(&sidAuth, 2, SECURITY_BUILTIN_DOMAIN_RID,
+			DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pSID_Administrators))
+		{
+			Firebird::system_error::raise("AllocateAndInitializeSid");
+		}
 
-		ea.grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | DELETE;
-		ea.grfAccessMode = GRANT_ACCESS;
-		ea.grfInheritance = SUB_OBJECTS_ONLY_INHERIT;
-		ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
-		ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-		ea.Trustee.ptstrName  = (LPSTR) pSID;
+		EXPLICIT_ACCESS eas[2];
+		memset(eas, 0, sizeof(eas));
 
-		if (SetEntriesInAcl(1, &ea, pOldACL, &pNewACL) != ERROR_SUCCESS)
+		eas[0].grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | DELETE;
+		eas[0].grfAccessMode = GRANT_ACCESS;
+		eas[0].grfInheritance = SUB_OBJECTS_ONLY_INHERIT;
+		eas[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+		eas[0].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+		eas[0].Trustee.ptstrName  = (LPSTR) pSID_Users;
+
+		eas[1].grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | DELETE;
+		eas[1].grfAccessMode = GRANT_ACCESS;
+		eas[1].grfInheritance = SUB_OBJECTS_ONLY_INHERIT;
+		eas[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+		eas[1].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+		eas[1].Trustee.ptstrName  = (LPSTR) pSID_Administrators;
+
+		if (SetEntriesInAcl(2, eas, pOldACL, &pNewACL) != ERROR_SUCCESS)
 			Firebird::system_error::raise("SetEntriesInAcl");
 
 		if (SetNamedSecurityInfo((LPSTR) pathname,
@@ -144,8 +158,11 @@ void adjustLockDirectoryAccess(const char* pathname)
 		iscLogException(str.c_str(), ex);
 	}
 
-	if (pSID) {
-		FreeSid(pSID);
+	if (pSID_Users) {
+		FreeSid(pSID_Users);
+	}
+	if (pSID_Administrators) {
+		FreeSid(pSID_Administrators);
 	}
 	if (pNewACL) {
 		LocalFree(pNewACL);

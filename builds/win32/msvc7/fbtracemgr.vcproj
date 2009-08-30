@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="Windows-1252"?>
-<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="isql" ProjectGUID="{DEE75AD5-F165-40E1-80B2-400E27725D5C}">
+<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="fbtracemgr" ProjectGUID="{58C7E370-0EDD-4F5E-8617-3F5071170205}" RootNamespace="fbtracemgr" Keyword="Win32Proj">
   <Platforms>
     <Platform Name="Win32" />
   </Platforms>
@@ -12,7 +12,7 @@
       <Tool Name="VCXMLDataGeneratorTool" />
       <Tool Name="VCWebServiceProxyGeneratorTool" />
       <Tool Name="VCMIDLTool" />
-      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;_CONSOLE;SUPERCLIENT;DEV_BUILD;WIN32" BrowseInformation="1" AdditionalOptions="/EHsc-" OmitFramePointers="true" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="1" BasicRuntimeChecks="3" />
+      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT,DEV_BUILD" AdditionalOptions="/EHsc-" OmitFramePointers="true" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformation="0" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="1" BasicRuntimeChecks="3" />
       <Tool Name="VCManagedResourceCompilerTool" />
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG" Culture="1053" />
       <Tool Name="VCPreLinkEventTool" />
@@ -33,7 +33,7 @@
       <Tool Name="VCXMLDataGeneratorTool" />
       <Tool Name="VCWebServiceProxyGeneratorTool" />
       <Tool Name="VCMIDLTool" />
-      <Tool Name="VCCLCompilerTool" Optimization="2" InlineFunctionExpansion="1" EnableIntrinsicFunctions="true" FavorSizeOrSpeed="1" PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32" BrowseInformation="1" AdditionalOptions="/EHsc-" OmitFramePointers="true" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="0" />
+      <Tool Name="VCCLCompilerTool" Optimization="2" InlineFunctionExpansion="1" EnableIntrinsicFunctions="true" FavorSizeOrSpeed="1" PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT" AdditionalOptions="/EHsc-" OmitFramePointers="true" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformation="0" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="0" />
       <Tool Name="VCManagedResourceCompilerTool" />
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG" Culture="1053" />
       <Tool Name="VCPreLinkEventTool" />
@@ -52,51 +52,11 @@
   <References>
   </References>
   <Files>
-    <Filter Name="ISQL files" Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-      <File RelativePath="..\..\..\src\isql\ColList.cpp">
+    <Filter Name="UTILITIES files" Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+      <File RelativePath="..\..\..\src\utilities\fbtracemgr\traceMgrMain.cpp">
       </File>
-      <File RelativePath="..\..\..\src\isql\Extender.cpp">
-      </File>
-      <File RelativePath="..\..\..\gen\$(PlatformName)\isql\extract.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\common\fb_exception.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\isql\InputDevices.cpp">
-      </File>
-      <File RelativePath="..\..\..\gen\$(PlatformName)\isql\isql.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\isql\OptionsBase.cpp">
-      </File>
-      <File RelativePath="..\..\..\gen\$(PlatformName)\isql\show.cpp">
-      </File>
-      <Filter Name="epp Source Files" Filter="epp">
-        <File RelativePath="..\..\..\src\isql\extract.epp">
-        </File>
-        <File RelativePath="..\..\..\src\isql\isql.epp">
-        </File>
-        <File RelativePath="..\..\..\src\isql\show.epp">
-        </File>
-      </Filter>
     </Filter>
     <Filter Name="Header files" Filter="h;hpp;hxx;hm;inl">
-      <File RelativePath="..\..\..\src\isql\ColList.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\Extender.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\extra_proto.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\InputDevices.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\isql.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\isql_proto.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\isql_res.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\OptionsBase.h">
-      </File>
-      <File RelativePath="..\..\..\src\isql\show_proto.h">
-      </File>
     </Filter>
     <Filter Name="Resource files">
       <File RelativePath="..\..\..\src\jrd\version.rc">
@@ -106,6 +66,10 @@
         <FileConfiguration Name="Release|Win32">
           <Tool Name="VCResourceCompilerTool" AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)" />
         </FileConfiguration>
+      </File>
+    </Filter>
+    <Filter Name="JRD files">
+      <File RelativePath="..\..\..\src\jrd\trace\TraceCmdLine.cpp">
       </File>
     </Filter>
   </Files>

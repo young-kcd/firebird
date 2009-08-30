@@ -12,11 +12,11 @@
       <Tool Name="VCXMLDataGeneratorTool" />
       <Tool Name="VCWebServiceProxyGeneratorTool" />
       <Tool Name="VCMIDLTool" PreprocessorDefinitions="_DEBUG" MkTypLibCompatible="true" TargetEnvironment="1" />
-      <Tool Name="VCCLCompilerTool" Optimization="2" InlineFunctionExpansion="1" EnableIntrinsicFunctions="true" FavorSizeOrSpeed="1" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include;../../../src/include,../../../src/include/gen" PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32" BrowseInformation="1" AdditionalOptions="/EHsc-" OmitFramePointers="true" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="2" />
+      <Tool Name="VCCLCompilerTool" Optimization="2" InlineFunctionExpansion="1" EnableIntrinsicFunctions="true" FavorSizeOrSpeed="1" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include;../../../src/include,../../../src/include/gen" PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32" BrowseInformation="1" AdditionalOptions="/EHsc-" OmitFramePointers="true" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="0" />
       <Tool Name="VCManagedResourceCompilerTool" />
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG" Culture="1053" />
       <Tool Name="VCPreLinkEventTool" />
-      <Tool Name="VCLinkerTool" AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\$(ProjectName)\fb$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
+      <Tool Name="VCLinkerTool" AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\$(ProjectName)\fb$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
       <Tool Name="VCALinkTool" />
       <Tool Name="VCManifestTool" />
       <Tool Name="VCXDCMakeTool" />
@@ -33,11 +33,11 @@
       <Tool Name="VCXMLDataGeneratorTool" />
       <Tool Name="VCWebServiceProxyGeneratorTool" />
       <Tool Name="VCMIDLTool" PreprocessorDefinitions="_DEBUG" MkTypLibCompatible="true" TargetEnvironment="1" />
-      <Tool Name="VCCLCompilerTool" Optimization="0" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include;../../../src/include,../../../src/include/gen" PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;DEV_BUILD" BrowseInformation="1" AdditionalOptions="/EHsc-" OmitFramePointers="true" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="3" BasicRuntimeChecks="3" />
+      <Tool Name="VCCLCompilerTool" Optimization="0" AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen;../../../extern/icu/include;../../../src/include,../../../src/include/gen" PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;DEV_BUILD" BrowseInformation="1" AdditionalOptions="/EHsc-" OmitFramePointers="true" ExceptionHandling="0" RuntimeTypeInfo="false" PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch" AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/" BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\" WarningLevel="3" SuppressStartupBanner="true" DebugInformationFormat="3" CompileAs="0" UseFullPaths="false" RuntimeLibrary="1" BasicRuntimeChecks="3" />
       <Tool Name="VCManagedResourceCompilerTool" />
       <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG" Culture="1053" />
       <Tool Name="VCPreLinkEventTool" />
-      <Tool Name="VCLinkerTool" AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\$(ProjectName)\fb$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
+      <Tool Name="VCLinkerTool" AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\$(ProjectName)\fb$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
       <Tool Name="VCALinkTool" />
       <Tool Name="VCManifestTool" />
       <Tool Name="VCXDCMakeTool" />
@@ -273,7 +273,11 @@
       </File>
       <File RelativePath="..\..\..\src\intl\collations\db866ru0.h">
       </File>
+      <File RelativePath="..\..\..\src\jrd\gds_proto.h">
+      </File>
       <File RelativePath="..\..\..\src\jrd\IntlUtil.h">
+      </File>
+      <File RelativePath="..\..\..\src\jrd\isc_proto.h">
       </File>
       <File RelativePath="..\..\..\src\intl\kanji.h">
       </File>
@@ -294,6 +298,8 @@
       <File RelativePath="..\..\..\src\intl\ldcommon.h">
       </File>
       <File RelativePath="..\..\..\src\jrd\os\mod_loader.h">
+      </File>
+      <File RelativePath="..\..\..\src\jrd\os\os_utils.h">
       </File>
       <File RelativePath="..\..\..\src\intl\collations\pd437intl.h">
       </File>
@@ -343,8 +349,6 @@
       </File>
       <File RelativePath="..\..\..\src\intl\collations\pw1253turk.h">
       </File>
-      <File RelativePath="..\..\..\src\common\StatusArg.h">
-      </File>
       <File RelativePath="..\..\..\src\intl\conversions\tx437_865.h">
       </File>
       <File RelativePath="..\..\..\src\intl\conversions\tx437_lat1.h">
@@ -387,27 +391,19 @@
       </File>
     </Filter>
     <Filter Name="COMMON files">
-      <File RelativePath="..\..\..\src\common\classes\alloc.cpp">
-      </File>
       <File RelativePath="..\..\..\src\common\dllinst.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\common\fb_exception.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\common\classes\fb_string.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\common\classes\init.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\common\classes\locks.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\common\StatusArg.cpp">
-      </File>
-      <File RelativePath="..\..\..\src\common\thd.cpp">
       </File>
     </Filter>
     <Filter Name="JRD files">
+      <File RelativePath="..\..\..\src\jrd\gds.cpp">
+      </File>
       <File RelativePath="..\..\..\src\jrd\IntlUtil.cpp">
       </File>
+      <File RelativePath="..\..\..\src\jrd\isc.cpp">
+      </File>
       <File RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
+      </File>
+      <File RelativePath="..\..\..\src\jrd\os\win32\os_utils.cpp">
       </File>
       <File RelativePath="..\..\..\src\jrd\unicode_util.cpp">
       </File>

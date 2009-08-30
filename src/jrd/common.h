@@ -489,6 +489,11 @@ extern "C" int remove(const char* path);
 #define INET_ERRNO	WSAGetLastError()
 #define H_ERRNO		WSAGetLastError()
 
+// For Visual Studio 2003 and earlier enable Windows 9X support
+#if defined _MSC_VER && (_MSC_VER < 1400)
+#define WIN9X_SUPPORT
+#endif
+
 #endif /* WIN_NT */
 
 

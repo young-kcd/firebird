@@ -26,8 +26,8 @@
  *
  */
 
-// minimum win32 version: win95 / winnt4
-#define _WIN32_WINNT 0x0400
+// minimum win32 version: win98 / winnt4 SP3
+#define _WIN32_WINNT 0x0403
 
 #include <windows.h>
 #include <wincrypt.h>

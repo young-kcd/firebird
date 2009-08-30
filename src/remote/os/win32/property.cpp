@@ -103,15 +103,17 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 	PSHdr.nStartPage = 0;
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;
 	PSHdr.pfnCallback = NULL;
-
+ 
 	// Initialize the gray brush to paint the background
 	// for all prop. sheet pages and their controls
 	hGrayBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 
 	hPSDlg = (HWND) PropertySheet(&PSHdr);
 
-	if (hPSDlg <= 0)
+	if (hPSDlg == 0 || hPSDlg == (HWND)-1) {
+		gds__log("Create property sheet window failed. Error code %d", GetLastError());
 		hPSDlg = NULL;
+	}
 
 	return hPSDlg;
 }

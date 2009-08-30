@@ -72,8 +72,27 @@ public:
 		// Ensure that our process has the SYNCHRONIZE privilege granted to everyone
 		PSECURITY_DESCRIPTOR pOldSD = NULL;
 		PACL pOldACL = NULL;
-		GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION,
-						NULL, NULL, &pOldACL, NULL, &pOldSD);
+
+		// Pseudo-handles do not work on WinNT. Need real process handle.
+		HANDLE hCurrentProcess = OpenProcess(READ_CONTROL | WRITE_DAC, FALSE, GetCurrentProcessId());
+		if (hCurrentProcess == NULL) {
+			Firebird::system_call_failed::raise("OpenProcess");
+		}
+
+		DWORD result = GetSecurityInfo(hCurrentProcess, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION,
+							NULL, NULL, &pOldACL, NULL, &pOldSD);
+
+		if (result == ERROR_CALL_NOT_IMPLEMENTED) {
+			// For Win9X - sumulate that the call worked alright
+			pOldACL = NULL;
+			result = ERROR_SUCCESS;
+		}
+
+		if (result != ERROR_SUCCESS)
+		{
+			CloseHandle(hCurrentProcess);
+			Firebird::system_call_failed::raise("GetSecurityInfo", result);
+		}
 
 		// NULL pOldACL means all privileges. If we assign pNewACL in this case
 		// we'll lost all privileges except assigned SYNCHRONIZE
@@ -96,7 +115,7 @@ public:
 			PACL pNewACL = NULL;
 			SetEntriesInAcl(1, &ea, pOldACL, &pNewACL);
 
-			SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION,
+			SetSecurityInfo(hCurrentProcess, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION,
 							NULL, NULL, pNewACL, NULL);
 
 			if (pSID) {
@@ -104,8 +123,10 @@ public:
 			}
 			if (pNewACL) {
 				LocalFree(pNewACL);
-			}
+			}	
 		}
+
+		CloseHandle(hCurrentProcess);
 
 		if (pOldSD) {
 			LocalFree(pOldSD);
@@ -516,6 +537,38 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 	return 0;
 }
 
+
+#ifdef WIN9X_SUPPORT
+
+static DWORD os_type;
+
+// Returns the type of OS: true for NT,
+// false for the 16-bit based ones (9x/ME, ...).
+//
+bool ISC_is_WinNT()
+{
+	// NS: this is thread safe. 
+	// In the worst case initialization will be called more than once
+	if (!os_type)
+	{
+		/* The first time this routine is called we use the Windows API
+		   call GetVersion to determine whether Windows NT or 9X
+		   is running. */
+		OSVERSIONINFO OsVersionInfo;
+		
+		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo))
+		{
+			os_type = OsVersionInfo.dwPlatformId;
+			fb_assert(os_type);
+		} else {
+			os_type = VER_PLATFORM_WIN32_NT;			/* Default to NT */
+		}
+	}
+
+	return os_type >= VER_PLATFORM_WIN32_NT; // Windows NT, CE and future platforms
+}
+#endif
 
 #ifdef WIN_NT
 LPSECURITY_ATTRIBUTES ISC_get_security_desc()

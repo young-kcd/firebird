@@ -1,164 +1,64 @@
 <?xml version="1.0" encoding="Windows-1252"?>
-<VisualStudioProject
-	ProjectType="Visual C++"
-	Version="7.10"
-	Name="stubdata"
-	SccProjectName=""
-	SccLocalPath="">
-	<Platforms>
-		<Platform
-			Name="Win32"/>
-	</Platforms>
-	<Configurations>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="2"
-				ImproveFloatingPointConsistency="TRUE"
-				AdditionalIncludeDirectories="..\common"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;STUBDATA_EXPORTS"
-				StringPooling="TRUE"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
-				DisableLanguageExtensions="TRUE"
-				PrecompiledHeaderFile=".\Release/stubdata.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				OutputFile="..\..\bin\icudt30.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\Release/icudt26l.pdb"
-				ImportLibrary="..\..\lib\icudata.lib"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/stubdata.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"
-				CommandLine="echo &quot;File with stubdata build time, used as a dependency to trigger fresh data build, since stubdata dll will overwrite the real one.&quot; &gt; &quot;$(ProjectDir)stubdatabuilt.txt&quot;"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				ImproveFloatingPointConsistency="TRUE"
-				OptimizeForProcessor="2"
-				AdditionalIncludeDirectories="..\common"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;STUBDATA_EXPORTS"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				DisableLanguageExtensions="TRUE"
-				PrecompiledHeaderFile=".\Debug/stubdata.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386"
-				OutputFile="..\..\bin\icudt30.dll"
-				LinkIncremental="2"
-				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\Debug/icudt26l.pdb"
-				ImportLibrary="..\..\lib\icudata.lib"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/stubdata.tlb"/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"
-				CommandLine="echo &quot;File with stubdata build time, used as a dependency to trigger fresh data build, since stubdata dll will overwrite the real one.&quot; &gt; &quot;$(ProjectDir)stubdatabuilt.txt&quot;"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-	</Configurations>
-	<References>
-	</References>
-	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-			<File
-				RelativePath=".\stubdata.c">
-			</File>
-		</Filter>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl">
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
-		</Filter>
-	</Files>
-	<Globals>
-	</Globals>
+<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="stubdata" ProjectGUID="{203EC78A-0531-43F0-A636-285439BDE025}">
+  <Platforms>
+    <Platform Name="Win32" />
+  </Platforms>
+  <ToolFiles>
+  </ToolFiles>
+  <Configurations>
+    <Configuration Name="Release|Win32" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="false" CharacterSet="2" OutputDirectory="$(PlatformName)\$(ConfigurationName)" IntermediateDirectory="$(PlatformName)\$(ConfigurationName)">
+      <Tool Name="VCPreBuildEventTool" />
+      <Tool Name="VCCustomBuildTool" />
+      <Tool Name="VCXMLDataGeneratorTool" />
+      <Tool Name="VCWebServiceProxyGeneratorTool" />
+      <Tool Name="VCMIDLTool" PreprocessorDefinitions="NDEBUG" MkTypLibCompatible="true" TargetEnvironment="1" TypeLibraryName="$(IntDir)/stubdata.tlb" />
+      <Tool Name="VCCLCompilerTool" AdditionalIncludeDirectories="..\common" PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;STUBDATA_EXPORTS" CompileAs="0" EnableFunctionLevelLinking="false" DisableLanguageExtensions="true" WarningLevel="3" DebugInformationFormat="3" InlineFunctionExpansion="2" />
+      <Tool Name="VCManagedResourceCompilerTool" />
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="NDEBUG" Culture="1033" />
+      <Tool Name="VCPreLinkEventTool" CommandLine="echo &quot;File with stubdata build time, used as a dependency to trigger fresh data build, since stubdata dll will overwrite the real one.&quot; &gt; &quot;$(ProjectDir)stubdatabuilt.txt&quot;" />
+      <Tool Name="VCLinkerTool" AdditionalOptions="/MACHINE:I386" OutputFile="..\..\$(PlatformName)\$(ConfigurationName)\bin\icudt30.dll" ProgramDatabaseFile="$(IntDir)/icudt26l.pdb" ImportLibrary="$(OutDir)\icudata.lib" LinkIncremental="1" IgnoreDefaultLibraryNames="msvcrt.lib" />
+      <Tool Name="VCALinkTool" />
+      <Tool Name="VCManifestTool" />
+      <Tool Name="VCXDCMakeTool" />
+      <Tool Name="VCBscMakeTool" />
+      <Tool Name="VCFxCopTool" />
+      <Tool Name="VCAppVerifierTool" />
+      <Tool Name="VCWebDeploymentTool" />
+      <Tool Name="VCPostBuildEventTool" />
+    </Configuration>
+    <Configuration Name="Debug|Win32" ConfigurationType="2" UseOfMFC="0" ATLMinimizesCRunTimeLibraryUsage="false" CharacterSet="2" OutputDirectory="$(PlatformName)\$(ConfigurationName)" IntermediateDirectory="$(PlatformName)\$(ConfigurationName)">
+      <Tool Name="VCPreBuildEventTool" />
+      <Tool Name="VCCustomBuildTool" />
+      <Tool Name="VCXMLDataGeneratorTool" />
+      <Tool Name="VCWebServiceProxyGeneratorTool" />
+      <Tool Name="VCMIDLTool" PreprocessorDefinitions="_DEBUG" MkTypLibCompatible="true" TargetEnvironment="1" TypeLibraryName="$(IntDir)/stubdata.tlb" />
+      <Tool Name="VCCLCompilerTool" AdditionalIncludeDirectories="..\common" PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;STUBDATA_EXPORTS" DebugInformationFormat="4" CompileAs="0" EnableFunctionLevelLinking="false" DisableLanguageExtensions="true" WarningLevel="3" Optimization="0" BasicRuntimeChecks="3" RuntimeLibrary="1" BrowseInformation="1" Detect64BitPortabilityProblems="true" />
+      <Tool Name="VCManagedResourceCompilerTool" />
+      <Tool Name="VCResourceCompilerTool" PreprocessorDefinitions="_DEBUG" Culture="1033" />
+      <Tool Name="VCPreLinkEventTool" CommandLine="echo &quot;File with stubdata build time, used as a dependency to trigger fresh data build, since stubdata dll will overwrite the real one.&quot; &gt; &quot;$(ProjectDir)stubdatabuilt.txt&quot;" />
+      <Tool Name="VCLinkerTool" OutputFile="..\..\$(PlatformName)\$(ConfigurationName)\bin\icudt30.dll" ProgramDatabaseFile="$(IntDir)/icudt26l.pdb" ImportLibrary="$(OutDir)\icudata.lib" GenerateDebugInformation="true" LinkIncremental="2" />
+      <Tool Name="VCALinkTool" />
+      <Tool Name="VCManifestTool" />
+      <Tool Name="VCXDCMakeTool" />
+      <Tool Name="VCBscMakeTool" />
+      <Tool Name="VCFxCopTool" />
+      <Tool Name="VCAppVerifierTool" />
+      <Tool Name="VCWebDeploymentTool" />
+      <Tool Name="VCPostBuildEventTool" />
+    </Configuration>
+  </Configurations>
+  <References>
+  </References>
+  <Files>
+    <Filter Name="Source Files" Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+      <File RelativePath=".\stubdata.c">
+      </File>
+    </Filter>
+    <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inl">
+    </Filter>
+    <Filter Name="Resource Files" Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+    </Filter>
+  </Files>
+  <Globals>
+  </Globals>
 </VisualStudioProject>

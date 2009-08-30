@@ -55,6 +55,10 @@
 
 #include <windows.h>
 
+#ifdef WIN9X_SUPPORT
+#include "win9x_nt.h"
+#endif
+
 namespace Jrd {
 
 class FileExtendLockGuard
@@ -1072,7 +1076,13 @@ static jrd_file* setup_file(Database* dbb,
 		if (pageSpace && pageSpace->file)
 			return file;
 
-		file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) Firebird::RWLock();
+#ifdef WIN9X_SUPPORT
+		// Disable sophisticated file extension when running on 9X
+		if (ISC_is_WinNT())
+#endif
+		{
+			file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) Firebird::RWLock();
+		}
 	}
 	catch (const Firebird::Exception&)
 	{

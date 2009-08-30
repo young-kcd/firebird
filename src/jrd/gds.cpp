@@ -121,6 +121,7 @@ static const TEXT gdslogid[] = "";
 
 #ifdef WIN_NT
 #include <shlobj.h>
+#include <shfolder.h>
 #define _WINSOCKAPI_
 #include <share.h>
 #include "err_proto.h"
@@ -3675,11 +3676,32 @@ public:
 		if (!fb_utils::readenv(FB_LOCK_ENV, lockPrefix))
 		{
 #ifdef WIN_NT
-			char cmnData[MAXPATHLEN];
-			if (!SHGetSpecialFolderPath(NULL, cmnData, CSIDL_COMMON_APPDATA, TRUE)) {
-				Firebird::system_call_failed::raise("SHGetSpecialFolderPath");
+			// shell32.dll version 5.0 and later supports SHGetFolderPath entry point
+			HMODULE hShFolder = LoadLibrary("shell32.dll");
+			PFNSHGETFOLDERPATHA pfnSHGetFolderPath = 
+				(PFNSHGETFOLDERPATHA)GetProcAddress(hShFolder, "SHGetFolderPathA");
+
+			if (!pfnSHGetFolderPath) {
+				// For old OS versions fall back to shfolder.dll
+				FreeLibrary(hShFolder);
+				hShFolder = LoadLibrary("shfolder.dll");
+				pfnSHGetFolderPath = 
+					(PFNSHGETFOLDERPATHA)GetProcAddress(hShFolder, "SHGetFolderPathA");
 			}
-			PathUtils::concatPath(lockPrefix, cmnData, LOCKDIR);
+
+			char cmnData[MAXPATHLEN];
+			if (pfnSHGetFolderPath &&
+				pfnSHGetFolderPath(NULL, CSIDL_COMMON_APPDATA | CSIDL_FLAG_CREATE, NULL, 
+					SHGFP_TYPE_CURRENT, cmnData) == S_OK) 
+			{
+				PathUtils::concatPath(lockPrefix, cmnData, LOCKDIR);
+			}
+			else 
+			{
+				// If shfolder.dll is missing or API fails fall back to using old style location for locks
+				lockPrefix = prefix;
+			}
+			FreeLibrary(hShFolder);
 #else
 			PathUtils::concatPath(lockPrefix, WORKFILE, LOCKDIR);
 #endif

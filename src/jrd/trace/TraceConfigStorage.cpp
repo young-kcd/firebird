@@ -87,8 +87,17 @@ ConfigStorage::ConfigStorage()
 	PathName filename;
 #ifdef WIN_NT
 	DWORD sesID = 0;
+
+	typedef BOOL (WINAPI *PFnProcessIdToSessionId) (DWORD, DWORD *);
+
+	HMODULE hmodKernel32 = GetModuleHandle("kernel32.dll");
+
+	PFnProcessIdToSessionId pfnProcessIdToSessionId =
+		(PFnProcessIdToSessionId) GetProcAddress(hmodKernel32, "ProcessIdToSessionId");
+
 	if (fb_utils::isGlobalKernelPrefix() ||
-		ProcessIdToSessionId(GetCurrentProcessId(), &sesID) == 0 ||
+		!pfnProcessIdToSessionId ||
+		pfnProcessIdToSessionId(GetCurrentProcessId(), &sesID) == 0 ||
 		sesID == 0)
 	{
 		filename.printf(TRACE_FILE); // TODO: it must be per engine instance

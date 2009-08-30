@@ -67,12 +67,6 @@ private:
 	typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection
 		(LPCRITICAL_SECTION lpCriticalSection);
 
-	static BOOL WINAPI notImpl(LPCRITICAL_SECTION)
-	{
-		system_call_failed::raise("TryEnterCriticalSection is not implemented", 0);
-		return false;
-	}
-
 	static tTryEnterCriticalSection* m_funct;
 };
 
@@ -93,7 +87,7 @@ public:
 
 	~Mutex()
 	{
-#ifdef DEV_BUILD
+#if defined DEV_BUILD && !defined WIN9X_SUPPORT
 		if (spinlock.OwningThread != 0)
 			DebugBreak();
 #endif
@@ -112,7 +106,9 @@ public:
 
 	void leave()
 	{
-#ifdef DEV_BUILD
+#if defined DEV_BUILD && !defined WIN9X_SUPPORT
+		// NS: This check is based on internal structure on CRITICAL_SECTION
+		// On 9X it works differently, and future OS versions may break this check as well
 		if ((U_IPTR) spinlock.OwningThread != GetCurrentThreadId())
 			DebugBreak();
 #endif
@@ -123,16 +119,9 @@ public:
 	static void initMutexes() { }
 };
 
-typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
-	LPCRITICAL_SECTION lpCriticalSection,
-	DWORD dwSpinCount
-);
-
 class Spinlock : public Mutex
 {
 private:
-	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
-
 	void init();
 
 public:

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="intl"
 	ProjectGUID="{DFFA2117-E6A8-4806-BB69-94DAC8F8F42A}"
 	>
@@ -779,7 +779,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\gds_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\IntlUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_proto.h"
 				>
 			</File>
 			<File
@@ -820,6 +828,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\mod_loader.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\os_utils.h"
 				>
 			</File>
 			<File
@@ -916,10 +928,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\pw1253turk.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusArg.h"
 				>
 			</File>
 			<File
@@ -1027,35 +1035,7 @@
 			Name="COMMON files"
 			>
 			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\dllinst.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusArg.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp"
 				>
 			</File>
 		</Filter>
@@ -1063,11 +1043,23 @@
 			Name="JRD files"
 			>
 			<File
+				RelativePath="..\..\..\src\jrd\gds.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\IntlUtil.cpp"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\isc.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\os_utils.cpp"
 				>
 			</File>
 			<File
