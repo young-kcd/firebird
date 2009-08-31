@@ -6,15 +6,17 @@ AC_CONFIG_SRCDIR([src/strlcat.c])
 AC_CONFIG_HEADER([config.h])
 
 AM_INIT_AUTOMAKE
-AC_PROG_LIBTOOL
+AC_CANONICAL_HOST
 
+# changes to AR_FLAGS must be made before we call AC_PROG_LIBTOOL
+case $host in
+   *-sun-*) AC_DEFINE([_SUNOS], [], [Solaris's term.h does horrid things.]);;
+   *-aix*) test -z "$AR_FLAGS" && AR_FLAGS="-X64 cru";;
+esac
+
+AC_PROG_LIBTOOL
 # libtool -version-info
 AC_SUBST(LT_VERSION, [0:24:0])
-
-# AC_PROG_LIBTOOL runs AC_CANONICAL_HOST
-case $host in 
-   *-sun-*) AC_DEFINE([_SUNOS], [], [Solaris's term.h does horrid things.]);;
-esac
 
 # Checks for programs.
 AC_PROG_CXX
