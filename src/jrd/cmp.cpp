@@ -1915,6 +1915,12 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				dsc* targetDesc = FB_NEW(*tdbb->getDefaultPool()) dsc();
 				args.push(targetDesc);
 				CMP_get_desc(tdbb, csb, *p, targetDesc);
+
+				// dsc_address is verified in makeFunc to get literals. If the node is not a
+				// literal, set it to NULL, to prevent wrong interpretation of offsets as
+				// pointers - CORE-2612.
+				if ((*p)->nod_type != nod_literal)
+					targetDesc->dsc_address = NULL;
 			}
 
 			DataTypeUtil dataTypeUtil(tdbb);
