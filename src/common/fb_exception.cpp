@@ -56,25 +56,30 @@ private:
 
 		bool thisThread()
 		{
+			const FB_THREAD_ID currTID = getThreadId();
+
 #ifdef WIN_NT
-			HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, false, thread);
+			if (thread != currTID)
+			{
+				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, false, thread);
 //		commented exit code check - looks like OS does not return handle 
 //		for already exited thread
-//			DWORD exitCode = STILL_ACTIVE;
-			if (hThread)
-			{
-//				GetExitCodeThread(hThread, &exitCode);
-				CloseHandle(hThread);
-			}
-			
-//			if ((!hThread) || (exitCode != STILL_ACTIVE))
-			if (!hThread)
-			{
-				// Thread does not exist any more
-				thread = getThreadId();
+//				DWORD exitCode = STILL_ACTIVE;
+				if (hThread)
+				{
+//					GetExitCodeThread(hThread, &exitCode);
+					CloseHandle(hThread);
+				}
+				
+//				if ((!hThread) || (exitCode != STILL_ACTIVE))
+				if (!hThread)
+				{
+					// Thread does not exist any more
+					thread = currTID;
+				}
 			}
 #endif
-			return thread == getThreadId();
+			return thread == currTID;
 		}
 	};
 
