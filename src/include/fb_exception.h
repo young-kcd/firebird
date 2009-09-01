@@ -74,9 +74,6 @@ public:
 class status_exception : public Exception
 {
 public:
-	// This constructor can modify passed status_vector!
-	status_exception(ISC_STATUS *status_vector) throw();
-
 	status_exception(const ISC_STATUS *status_vector) throw();
 	virtual ~status_exception() throw();
 
@@ -86,7 +83,6 @@ public:
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 
 	static void raise(const ISC_STATUS *status_vector);
-	static void raise(ISC_STATUS *status_vector);
 	static void raise(const Arg::StatusVector& statusVector);
 
 protected:

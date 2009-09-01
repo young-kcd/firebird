@@ -492,7 +492,7 @@ void ERR_punt()
 		}
 	}
 
-	status_exception::raise(tdbb->tdbb_status_vector);
+	ERR_make_permanent(tdbb->tdbb_status_vector);
 	status_exception::raise(tdbb->tdbb_status_vector);
 }
 

@@ -241,17 +241,6 @@ status_exception::status_exception(const ISC_STATUS *status_vector) throw()
 	}
 }
 
-status_exception::status_exception(ISC_STATUS *status_vector) throw()
-{
-	memset(m_status_vector, 0, sizeof(m_status_vector));
-
-	if (status_vector)
-	{
-		set_status(status_vector);
-		memcpy(status_vector, m_status_vector, sizeof(m_status_vector));
-	}
-}
-
 void status_exception::set_status(const ISC_STATUS *new_vector) throw()
 {
 	fb_assert(new_vector != 0);
@@ -268,20 +257,13 @@ const char* status_exception::what() const throw()
 	return "Firebird::status_exception";
 }
 
-
 void status_exception::raise(const ISC_STATUS *status_vector)
-{
-	throw status_exception(status_vector);
-}
-
-void status_exception::raise(ISC_STATUS *status_vector)
 {
 	throw status_exception(status_vector);
 }
 
 void status_exception::raise(const Arg::StatusVector& statusVector)
 {
-	ISC_STATUS_ARRAY temp;
 	throw status_exception(statusVector.value());
 }
 
