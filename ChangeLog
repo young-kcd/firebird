@@ -1,3 +1,57 @@
+2009-09-01 12:36  alexpeshkoff
+
+	* firebird2/src/: common/fb_exception.cpp (1.62),
+	include/fb_exception.h (1.42), jrd/err.cpp (1.97):
+
+	Avoid suspicious ctor according to Claudio's request
+
+2009-09-01 12:02  hvlad
+
+	* firebird2/builds/win32/msvc8/fbrmclib.vcproj (1.10):
+
+	Fixed MSVC8 build
+
+2009-09-01 11:44  hvlad
+
+	* firebird2/src/common/fb_exception.cpp (1.61):
+
+	Optimize a bit
+
+2009-09-01 11:20  alexpeshkoff
+
+	* firebird2/src/: alice/exe.cpp (1.63), burp/burp.cpp (1.174),
+	common/StatusHolder.cpp (1.8), common/UtilSvc.cpp (1.15),
+	common/UtilSvc.h (1.14), common/fb_exception.cpp (1.60),
+	common/thd.cpp (1.9), common/thd.h (1.2), common/classes/init.cpp
+	(1.19), include/fb_exception.h (1.41), jrd/alt.cpp (1.84),
+	jrd/dfw.epp (1.280), jrd/err.cpp (1.96), jrd/isc_sync.cpp (1.220),
+	jrd/jrd.cpp (1.560), jrd/jrd.h (1.269), jrd/jrd_pwd.h (1.38),
+	jrd/pwd.cpp (1.79), jrd/sdl.cpp (1.59), jrd/svc.cpp (1.280),
+	jrd/svc.h (1.79), remote/remote.cpp (1.92), utilities/nbackup.cpp
+	(1.94):
+
+	Use per-thread circular strings buffers instead common and
+	per-attachment combination
+
+2009-08-31 21:32  verbguy
+
+	* firebird2/extern/editline/configure.ac (1.2):
+
+	AIX archive tool, ar, needs -X64 option
+
+2009-08-31 17:52  asfernandes
+
+	* firebird2/builds/win32/msvc8/Firebird2.sln (1.18):
+
+	Redo fbintl dependency change removing the noise in Firebird2.sln
+
+2009-08-31 17:28  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.350):
+
+	Fixed CORE-2612 - Connection lost immediatelly after compiling
+	procedure with RPAD system function
+
 2009-08-30 20:59  skidder
 
 	* firebird2/: builds/win32/adjust_vc7_files.cmd (1.1),
