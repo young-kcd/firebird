@@ -482,7 +482,7 @@ void DelayFailedLogin::raise(int sec)
 	throw DelayFailedLogin(sec);
 }
 
-ISC_STATUS DelayFailedLogin::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer*) const throw()
+ISC_STATUS DelayFailedLogin::stuff_exception(ISC_STATUS* const status_vector) const throw()
 {
 	Arg::Gds(isc_login).copyTo(status_vector);
 

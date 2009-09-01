@@ -41,7 +41,6 @@
 struct serv_entry;
 namespace Firebird {
 	class ClumpletReader;
-	class StringsBuffer;
 	namespace Arg {
 		class StatusVector;
 	}
@@ -124,8 +123,6 @@ public:		// utilities interface with service
 	virtual void checkService();
 	// add address path (taken from spb) to dpb if present
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb);
-	// dup strings in service's circular buffer
-	virtual void makePermanentVector(ISC_STATUS* s);
 
 	virtual TraceManager* getTraceManager()
 	{
@@ -267,7 +264,6 @@ private:
 	Firebird::string	svc_remote_process;
 	SLONG				svc_remote_pid;
 
-	Firebird::StringsBuffer* svc_strings_buffer;
 	TraceManager*		svc_trace_manager;
 };
 

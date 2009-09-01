@@ -44,8 +44,7 @@ namespace
 		ISC_STATUS_ARRAY status;
 		if (e)
 		{
-			Firebird::CircularStringsBuffer<4096> localBuffer;
-			e->stuff_exception(status, &localBuffer);
+			e->stuff_exception(status);
 		}
 		// we do not have big choice in error reporting when running destructors
 		abort();

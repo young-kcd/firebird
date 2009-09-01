@@ -92,10 +92,6 @@
 // Error codes
 #include "../include/gen/iberror.h"
 
-namespace Firebird {
-	class StringsBuffer;
-}
-
 class str;
 struct dsc;
 struct thread;
@@ -333,9 +329,6 @@ public:
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	Firebird::Mutex att_mutex;				// attachment mutex
-
-	Firebird::StringsBuffer* att_strings_buffer;	// per attachment circular strings buffer
-	Firebird::Mutex att_strings_mutex;				// mutex for this buffer access
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	TraceManager* att_trace_manager;		// Trace API manager

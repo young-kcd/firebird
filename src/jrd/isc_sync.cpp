@@ -3792,7 +3792,7 @@ static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS stat
  **************************************/
 
 	(Arg::Gds(isc_sys_request) << Arg::Str(string) << SYS_ERR(status)).copyTo(status_vector);
-	StringsBuffer::makeEnginePermanentVector(status_vector);
+	makePermanentVector(status_vector);
 }
 
 

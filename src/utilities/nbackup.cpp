@@ -156,9 +156,6 @@ namespace
 
 	const int MSG_LEN = 1024;
 	const size_t NBACKUP_FAILURE_SPACE = MSG_LEN * 4;
-	typedef Firebird::CircularStringsBuffer<NBACKUP_FAILURE_SPACE> NbkStringsBuffer;
-	GlobalPtr<NbkStringsBuffer> nbkStringsBuffer;
-	GlobalPtr<Mutex> nbkBufMutex;
 
 	// HPUX has non-posix-conformant method to return error codes from posix_fadvise().
 	// Instead of error code, directly returned by function (like specified by posix),
@@ -219,17 +216,10 @@ public:
 
 		throw b_error(temp);
 	}
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw()
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw()
 	{
-		if (! sb)
-		{
-			sb = &nbkStringsBuffer;
-		}
-
 		(Arg::Gds(isc_random) << txt).copyTo(status_vector);
-
-		MutexLockGuard guard(nbkBufMutex);
-		sb->makePermanentVector(status_vector, status_vector);
+		makePermanentVector(status_vector);
 
 		return status_vector[1];
 	}

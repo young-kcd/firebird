@@ -585,7 +585,7 @@ static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v)
  *
  **************************************/
 	v.copyTo(status_vector);
-	StringsBuffer::makeEnginePermanentVector(status_vector);
+	makePermanentVector(status_vector);
 
 	return status_vector[1];
 }

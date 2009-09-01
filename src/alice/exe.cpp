@@ -99,12 +99,12 @@ int EXE_action(const TEXT* database, const SINT64 switches)
 
 		if (tdgbl->status[2] == isc_arg_warning)
 		{
-			tdgbl->uSvc->makePermanentVector(tdgbl->status);
+			Firebird::makePermanentVector(tdgbl->status);
 			ALICE_print_status(tdgbl->status);
 		}
 		else if (error)
 		{
-			tdgbl->uSvc->makePermanentVector(tdgbl->status);
+			Firebird::makePermanentVector(tdgbl->status);
 		}
 
 		if (handle != 0)
@@ -175,7 +175,7 @@ int EXE_two_phase(const TEXT* database, const SINT64 switches)
 
 		if (error)
 		{
-			tdgbl->uSvc->makePermanentVector(tdgbl->status);
+			Firebird::makePermanentVector(tdgbl->status);
 		}
 
 		if (handle)

@@ -118,7 +118,7 @@ void StatusHolder::raise()
 	if (getError())
 	{
 		m_raised = true;
-		throw status_exception(m_status_vector, true);
+		status_exception::raise(m_status_vector);
 	}
 }
 

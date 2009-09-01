@@ -33,6 +33,8 @@
 #include "../common/thd.h"
 #include "../jrd/gdsassert.h"
 #include "../common/classes/semaphore.h"
+#include "../common/classes/alloc.h"
+#include "../common/classes/init.h"
 
 
 #ifdef WIN_NT
@@ -152,3 +154,112 @@ void THD_yield()
 	SleepEx(0, FALSE);
 #endif
 }
+
+// Cleanup on thread completion
+
+#ifdef USE_POSIX_THREADS
+namespace {
+
+pthread_key_t key;
+pthread_once_t keyOnce = PTHREAD_ONCE_INIT;
+
+void makeKey()
+{
+	int err = pthread_key_create(&key, ThreadCleanup::destructor);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_key_create", err);
+	}
+}
+
+
+void initThreadCleanup()
+{
+	int err = pthread_once(&keyOnce, makeKey);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_once", err);
+	}
+
+	err = pthread_setspecific(key, &key);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_setspecific", err);
+	}
+}
+
+ThreadCleanup* chain = NULL;
+Firebird::GlobalPtr<Firebird::Mutex> cleanupMutex;
+
+} // anonymous namespace
+
+ThreadCleanup** ThreadCleanup::findCleanup(FPTR_VOID_PTR cleanup, void* arg)
+{
+	for (ThreadCleanup** ptr = &chain; *ptr; ptr = &((*ptr)->next))
+	{
+		if ((*ptr)->function == cleanup && (*ptr)->argument == arg)
+		{
+			return ptr;
+		}
+	}
+
+	return NULL;
+}
+
+void ThreadCleanup::destructor(void*)
+{
+	Firebird::MutexLockGuard guard(cleanupMutex);
+
+	for (ThreadCleanup* ptr = chain; ptr; ptr = ptr->next)
+	{
+		ptr->function(ptr->argument);
+	}
+}
+
+void ThreadCleanup::add(FPTR_VOID_PTR cleanup, void* arg)
+{
+	Firebird::MutexLockGuard guard(cleanupMutex);
+
+	initThreadCleanup();
+
+	if (findCleanup(cleanup, arg))
+	{
+		return;
+	}
+
+	chain = FB_NEW(*getDefaultMemoryPool()) ThreadCleanup(cleanup, arg, chain);
+}
+
+void ThreadCleanup::remove(FPTR_VOID_PTR cleanup, void* arg)
+{
+	ThreadCleanup** ptr = findCleanup(cleanup, arg);
+	if (!ptr)
+	{
+		return;
+	}
+
+	ThreadCleanup* toDelete = *ptr;
+	*ptr = toDelete->next;
+	delete toDelete;
+}
+
+#else //USE_POSIX_THREADS
+
+ThreadCleanup** ThreadCleanup::findCleanup(FPTR_VOID_PTR, void*)
+{
+	return NULL;
+}
+
+void ThreadCleanup::destructor(void*)
+{
+}
+
+void ThreadCleanup::add(FPTR_VOID_PTR, void*)
+{
+}
+
+void ThreadCleanup::remove(FPTR_VOID_PTR, void*)
+{
+}
+
+#endif //USE_POSIX_THREADS

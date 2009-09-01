@@ -47,11 +47,6 @@ IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 const SLONG DUMMY_INTERVAL		= 60;	// seconds
 const int ATTACH_FAILURE_SPACE	= 16 * 1024;	// bytes
 
-static Firebird::StringsBuffer* attachFailures = NULL;
-static Firebird::GlobalPtr<Firebird::Mutex> attachFailuresMutex;
-
-static void cleanup_memory(void*);
-
 
 void REMOTE_cleanup_transaction( Rtr* transaction)
 {
@@ -583,44 +578,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
  *	strings to a special buffer.
  *
  **************************************/
-	Firebird::MutexLockGuard guard(attachFailuresMutex);
-
-	if (!attachFailures)
-	{
-		try
-		{
-			attachFailures = FB_NEW(*getDefaultMemoryPool()) Firebird::CircularStringsBuffer<ATTACH_FAILURE_SPACE>;
-			// FREE: freed by exit handler cleanup_memory()
-		}
-		catch (const Firebird::BadAlloc&)	// NOMEM: don't bother trying to copy
-		{
-			return;
-		}
-
-		gds__register_cleanup(cleanup_memory, 0);
-	}
-
-	attachFailures->makePermanentVector(vector, vector);
-}
-
-
-static void cleanup_memory(void* /*block*/)
-{
-/**************************************
- *
- *	c l e a n u p _ m e m o r y
- *
- **************************************
- *
- * Functional description
- *	Cleanup any allocated memory.
- *
- **************************************/
-
-	delete attachFailures;
-	attachFailures = NULL;
-
-	gds__unregister_cleanup(cleanup_memory, 0);
+	Firebird::makePermanentVector(vector);
 }
 
 

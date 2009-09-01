@@ -5025,20 +5025,6 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	if (!attachment)
 		return;
 
-	if (attachment->att_strings_buffer && (attachment->att_strings_buffer != ((StringsBuffer*)(~0))))
-	{
-		if (! s)
-		{
-			// if no user vector passed for save operation, this is not error return
-			// let's save warning strings if present
-			s = tdbb->tdbb_status_vector;
-		}
-		StringsBuffer::makeEnginePermanentVector(s);
-		delete attachment->att_strings_buffer;		// attachment will be released in the end of this function,
-													// keep that in sync please
-		attachment->att_strings_buffer = (StringsBuffer*)(~0);
-	}
-
 #ifdef SUPERSERVER
 	if (dbb->dbb_relations)
 	{
@@ -5209,7 +5195,6 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_remote_process(*pool),
 	att_dsql_cache(*pool),
 	att_udf_pointers(*pool),
-	att_strings_buffer(NULL),
 	att_ext_connection(NULL),
 	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
 {
@@ -5228,10 +5213,6 @@ Attachment::~Attachment()
 	// once more here because it nulls att_long_locks.
 	//		AP 2007
 	detachLocksFromAttachment(this);
-	if (att_strings_buffer != ((StringsBuffer*)(~0)))
-	{
-		delete att_strings_buffer;
-	}
 	att_mutex.leave();
 }
 

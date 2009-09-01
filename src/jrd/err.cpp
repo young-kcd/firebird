@@ -342,22 +342,7 @@ void ERR_make_permanent(ISC_STATUS* s)
  *
  **************************************/
 {
-	Attachment* const att = JRD_get_thread_data()->getAttachment();
-	if (att)
-	{
-		MutexLockGuard(att->att_strings_mutex);
-		if (att->att_strings_buffer != ((StringsBuffer*)(~0)))
-		{
-			if (!att->att_strings_buffer)
-			{
-				att->att_strings_buffer = FB_NEW(*att->att_pool) CircularStringsBuffer<MAXPATHLEN * 4>;
-			}
-			att->att_strings_buffer->makePermanentVector(s, s);
-			return;
-		}
-	}
-
-	StringsBuffer::makeEnginePermanentVector(s);
+	makePermanentVector(s);
 }
 
 
@@ -507,6 +492,7 @@ void ERR_punt()
 		}
 	}
 
+	status_exception::raise(tdbb->tdbb_status_vector);
 	status_exception::raise(tdbb->tdbb_status_vector);
 }
 

@@ -101,11 +101,6 @@ public:
 		status_exception::raise(Arg::Gds(isc_utl_trusted_switch));
 	}
 
-	virtual void makePermanentVector(ISC_STATUS* s)
-	{
-		StringsBuffer::makeEnginePermanentVector(s);
-	}
-
 	// do nothing for non-service
 	virtual void finish() { m_finished = true; }
 	virtual void started() { }

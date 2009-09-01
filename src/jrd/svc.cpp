@@ -540,17 +540,6 @@ void Service::getAddressPath(ClumpletWriter& dpb)
 	}
 }
 
-void Service::makePermanentVector(ISC_STATUS *s)
-{
-	MutexLockGuard guard(svc_mutex);
-
-	if (!svc_strings_buffer)
-	{
-		svc_strings_buffer = FB_NEW(*getDefaultMemoryPool()) CircularStringsBuffer<MAXPATHLEN * 4>;
-	}
-	svc_strings_buffer->makePermanentVector(s, s);
-}
-
 void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
 {
 	status << Arg::Gds(isc_insufficient_svc_privileges) << Arg::Str(message);
@@ -693,7 +682,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
-	svc_remote_pid(0), svc_strings_buffer(NULL)
+	svc_remote_pid(0)
 {
 	svc_trace_manager = NULL;
 	memset(svc_status, 0, sizeof svc_status);
@@ -2096,7 +2085,6 @@ void Service::readFbLog()
 		{
 			(Arg::Gds(isc_sys_request) << Arg::Str(file ? "fgets" : "fopen") <<
 										  SYS_ERR(errno)).copyTo(svc_status);
-			StringsBuffer::makeEnginePermanentVector(svc_status);
 			if (!svc_started)
 			{
 				started();
