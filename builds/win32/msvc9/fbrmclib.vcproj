@@ -198,6 +198,10 @@
 				RelativePath="..\..\..\src\common\StatusArg.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\thd.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="JRD files"
