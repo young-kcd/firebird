@@ -420,7 +420,6 @@ typedef struct p_resp
 	struct bid	p_resp_blob_id;		// Blob id
 	CSTRING		p_resp_data;		// Data
 	ISC_STATUS*	p_resp_status_vector;
-	UCHAR*		p_resp_strings[10];
 } P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number

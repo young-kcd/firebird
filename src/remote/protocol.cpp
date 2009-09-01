@@ -104,7 +104,7 @@ static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
 static bool_t xdr_quad(XDR*, struct bid*);
 static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
-static bool_t xdr_status_vector(XDR*, ISC_STATUS*, TEXT * strings[]);
+static bool_t xdr_status_vector(XDR*, ISC_STATUS*);
 static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
@@ -398,8 +398,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(response->p_resp_object));
 		MAP(xdr_quad, response->p_resp_blob_id);
 		MAP(xdr_cstring, response->p_resp_data);
-		return xdr_status_vector(xdrs, response->p_resp_status_vector,
-								 reinterpret_cast<char**>(response->p_resp_strings)) ?
+		return xdr_status_vector(xdrs, response->p_resp_status_vector) ?
 								 	P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
 
 	case op_transact:
@@ -1601,7 +1600,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 }
 
 
-static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector, TEXT* strings[])
+static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector)
 {
 /**************************************
  *
@@ -1619,17 +1618,11 @@ static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector, TEXT* strings[])
 
 	if (xdrs->x_op == XDR_FREE)
 	{
-		TEXT **sp, **end;
-		for (sp = strings, end = strings + 10; sp < end; sp++)
-		{
-			if (*sp && !xdr_wrapstring(xdrs, sp))
-				return FALSE;
-		}
 		return TRUE;
 	}
 
 	SLONG vec;
-	XDR temp_xdrs;
+	SCHAR* sp = NULL;
 
 	while (true)
 	{
@@ -1640,7 +1633,7 @@ static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector, TEXT* strings[])
 		if (xdrs->x_op == XDR_DECODE)
 			*vector++ = (ISC_STATUS) vec;
 
-		switch ((USHORT) vec)
+		switch (static_cast<ISC_STATUS>(vec))
 		{
 		case isc_arg_end:
 			return TRUE;
@@ -1655,25 +1648,24 @@ static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector, TEXT* strings[])
 			}
 			else
 			{
-				// Use the first slot in the strings table
-				TEXT** sp = strings;
-				if (*sp)
-				{
-					// Slot is used, by a string passed in a previous
-					// status vector.  Free that string, and allocate
-					// a new one to prevent any size mismatches trashing
-					// memory.
-
-					temp_xdrs.x_public = xdrs->x_public;
-					temp_xdrs.x_op = XDR_FREE;
-					if (!xdr_wrapstring(&temp_xdrs, sp))
-						return FALSE;
-					*sp = NULL;
-				}
-				if (!xdr_wrapstring(xdrs, sp))
+				if (!xdr_wrapstring(xdrs, &sp))
 					return FALSE;
-				*vector++ = (ISC_STATUS) * sp;
-				strings++;
+				*vector++ = (ISC_STATUS)(IPTR) sp;
+				*vector = 0;
+
+				// Save string in circular buffer
+				Firebird::makePermanentVector(vector - 2);
+
+				// Free memory allocated by xdr_wrapstring()
+				if (sp)
+				{
+					XDR freeXdrs;
+					freeXdrs.x_public = xdrs->x_public;
+					freeXdrs.x_op = XDR_FREE;
+					if (!xdr_wrapstring(&freeXdrs, &sp))
+						return FALSE;
+					sp = NULL;
+				}
 			}
 			break;
 
