@@ -103,7 +103,7 @@ public:
 public:
 	YYSTYPE parse();
 
-	const Firebird::string& getTransformedString()
+	const Firebird::string& getTransformedString() const
 	{
 		return transformedString;
 	}

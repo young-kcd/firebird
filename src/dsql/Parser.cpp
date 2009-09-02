@@ -106,7 +106,7 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 	const static char HEX_DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'A', 'B', 'C', 'D', 'E', 'F'};
 
-	unsigned fromBegin = start - lex.start;
+	const unsigned fromBegin = start - lex.start;
 	HalfStaticArray<char, 256> buffer;
 	const char* pos = start;
 
@@ -116,14 +116,16 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 
 		if (mark.pos < fromBegin)
 			continue;
-		else if (mark.pos >= fromBegin + length)
+
+		if (mark.pos >= fromBegin + length)
 			break;
 
 		const char* s = lex.start + mark.pos;
 		buffer.add(pos, s - pos);
 
-		size_t count = buffer.getCount();
-		buffer.grow(count + 2 + mark.textLength * 2 + 1);
+		const size_t count = buffer.getCount();
+		const size_t newSize = count + 2 + mark.textLength * 2 + 1;
+		buffer.grow(newSize);
 		char* p = buffer.begin() + count;
 
 		*p++ = 'X';
@@ -138,6 +140,7 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 		}
 
 		*p = '\'';
+		fb_assert(p <= buffer.begin() + newSize);
 
 		pos = s + mark.length;
 	}

@@ -61,8 +61,8 @@
 #if defined _MSC_VER && _MSC_VER < 1400
 // NS: in VS2003 these only work with static CRT
 extern "C" {
-int __cdecl _fseeki64(FILE *, __int64, int);
-__int64 __cdecl _ftelli64(FILE *);
+int __cdecl _fseeki64(FILE*, __int64, int);
+__int64 __cdecl _ftelli64(FILE*);
 }
 #endif
 

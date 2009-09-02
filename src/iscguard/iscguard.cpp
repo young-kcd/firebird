@@ -852,7 +852,8 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 
 	hPSDlg = (HWND) PropertySheet(&PSHdr);
 
-	if (hPSDlg == 0 || hPSDlg == (HWND)-1) {
+	if (hPSDlg == 0 || hPSDlg == (HWND) -1)
+	{
 		gds__log("Create property sheet window failed. Error code %d", GetLastError());
 		hPSDlg = NULL;
 	}

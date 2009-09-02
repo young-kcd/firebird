@@ -1206,7 +1206,8 @@ static void adjustFileSystemCacheSize()
 		return;
 
 	// Ensure that the setting has a sensible value
-	if (percent > 95 || percent < 10) {
+	if (percent > 95 || percent < 10)
+	{
 		gds__log("Incorrect FileSystemCacheSize setting %d. Using default (30 percent).", percent);
 		percent = 30;
 	}
@@ -1264,7 +1265,7 @@ static void adjustFileSystemCacheSize()
 	if (maxMem > (SIZE_T)(-2))
 	{
 		gds__log("Could not use 32-bit SetSystemFileCacheSize API to set cache size limit to %I64d."
-				"Please use 64-bit engine or configure cache size limit externally", maxMem);
+				" Please use 64-bit engine or configure cache size limit externally", maxMem);
 		return;
 	}
 #endif
@@ -1278,7 +1279,7 @@ static void adjustFileSystemCacheSize()
 
 	SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", TRUE);
 	result = pfnSetSystemFileCacheSize(0, maxMem, FILE_CACHE_MAX_HARD_ENABLE);
-	DWORD error = GetLastError();
+	const DWORD error = GetLastError();
 	SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", FALSE);
 	CloseHandle(hToken);
 

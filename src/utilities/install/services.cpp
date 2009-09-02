@@ -443,7 +443,7 @@ USHORT SERVICES_grant_privilege(const TEXT* account, pfnSvcError err_handler, co
 	PLSA_UNICODE_STRING UserRights;
 	ULONG CountOfRights = 0;
 	NTSTATUS ntStatus = LsaEnumerateAccountRights(PolicyHandle, pSid, &UserRights, &CountOfRights);
-	if (ntStatus == (NTSTATUS)0xC0000034L) //STATUS_OBJECT_NAME_NOT_FOUND
+	if (ntStatus == (NTSTATUS) 0xC0000034L) //STATUS_OBJECT_NAME_NOT_FOUND
 		CountOfRights = 0;
 	// Check if the seServiceLogonRight is already granted
 	ULONG i;

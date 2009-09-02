@@ -25,13 +25,16 @@
  *  Contributor(s): ______________________________________.
  */
 
+#include "../../include/firebird.h"
+#include "../../jrd/common.h"
+
+#ifdef WIN9X_SUPPORT
 // minimum win32 version: win98 / winnt4 SP3
 #define _WIN32_WINNT 0x0403
+#endif
 
-#include "../../include/firebird.h"
 #include "../../common/classes/locks.h"
 #include "../../common/thd.h"
-#include "../../jrd/common.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -44,7 +47,7 @@ namespace Firebird {
 // Win9X support
 #ifdef WIN9X_SUPPORT
 
-// NS: This code is adopted from from KernelEx project, with the explicit
+// NS: This code is adapted from from KernelEx project, with the explicit
 // permission from the author. KernelEx project aims to provide Windows XP
 // compatibility layer for Windows 98 and Windows ME. For futher information
 // please refer to http://www.sourceforge.net/projects/kernelex/
@@ -141,13 +144,15 @@ TryEnterCS::TryEnterCS()
 			OsVersionInfo.dwMajorVersion == 4) 
 		{
 			// Windows 98
-			if (OsVersionInfo.dwMinorVersion == 10) {
+			if (OsVersionInfo.dwMinorVersion == 10)
+			{
 				tdbx_offset = TDBX_WIN98;
 				m_funct = TryEnterCriticalSection_Win9X;
 			}
 
 			// Windows ME
-			if (OsVersionInfo.dwMinorVersion == 90) {
+			if (OsVersionInfo.dwMinorVersion == 90)
+			{
 				tdbx_offset = TDBX_WINME;
 				m_funct = TryEnterCriticalSection_Win9X;
 			}
@@ -156,7 +161,8 @@ TryEnterCS::TryEnterCS()
 #endif
 }
 
-void Spinlock::init() {
+void Spinlock::init()
+{
 	SetCriticalSectionSpinCount(&spinlock, 4000);
 }
 

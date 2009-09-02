@@ -557,11 +557,12 @@ bool ISC_is_WinNT()
 		OSVERSIONINFO OsVersionInfo;
 		
 		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo))
+		if (GetVersionEx((LPOSVERSIONINFO) &OsVersionInfo))
 		{
 			os_type = OsVersionInfo.dwPlatformId;
 			fb_assert(os_type);
-		} else {
+		}
+		else {
 			os_type = VER_PLATFORM_WIN32_NT;			/* Default to NT */
 		}
 	}
@@ -569,6 +570,7 @@ bool ISC_is_WinNT()
 	return os_type >= VER_PLATFORM_WIN32_NT; // Windows NT, CE and future platforms
 }
 #endif
+
 
 #ifdef WIN_NT
 LPSECURITY_ATTRIBUTES ISC_get_security_desc()
