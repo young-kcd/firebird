@@ -42,6 +42,7 @@
 #include "../jrd/sbm.h" // For bid structure
 
 #include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/TempSpace.h"
 
 namespace Jrd {
 
@@ -83,22 +84,30 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 /* Transaction block */
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
+const char* const TRA_BLOB_SPACE = "fb_blob_";
 
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
-    public:
+public:
 	enum wait_t {
 		tra_no_wait,
 		tra_probe,
 		tra_wait
 	};
 
-	jrd_tra(MemoryPool& p) :
-		tra_blobs(&p),
-		tra_resources(p),
-		tra_context_vars(p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
+	jrd_tra(JrdMemoryPool* p) :
+		tra_pool(p),
+		tra_blobs(p),
+		tra_resources(*p),
+		tra_context_vars(*p),
+		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
+		tra_blob_space(NULL)
 	{}
+
+	~jrd_tra()
+	{
+		delete tra_blob_space;
+	}
 
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
@@ -108,7 +117,7 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 								   gargage-collected by this tx */
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
-	JrdMemoryPool* tra_pool;		/* pool for transaction */
+	JrdMemoryPool* tra_pool;	/* pool for transaction */
 	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
@@ -131,12 +140,26 @@ class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
-	UCHAR tra_transactions[1];
 
+private:
+	TempSpace* tra_blob_space;	// temp space storage
+
+public:
 	SSHORT getLockWait() const
 	{
 		return -tra_lock_timeout;
 	}
+
+	TempSpace* getTempSpace()
+	{
+		if (!tra_blob_space)
+			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
+
+		return tra_blob_space;
+	}
+
+public:
+	UCHAR tra_transactions[1];
 };
 
 // System transaction is always transaction 0.

@@ -1464,7 +1464,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 
 		if (blob->blb_level == 0) {
 			blob->blb_space_remaining = length;
-			UCHAR* p = blob->blb_data;
+			UCHAR* p = blob->getBuffer();
 			if (length) {
 				MOVE_FASTER(q, p, length);
 			}
@@ -2005,12 +2005,34 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	USHORT length;
 	const UCHAR* q;
 	PageStack stack;
+	Firebird::Array<UCHAR> buffer;
 
 	if (blob->blb_level == 0) {
 		length = blob->blb_clump_size - blob->blb_space_remaining;
-		q = (UCHAR *) ((blob_page*) blob->blb_data)->blp_page;
+
+		if (!blob->hasBuffer())
+		{
+			if (blob->blb_temp_size > 0)
+			{
+				blob->blb_transaction->getTempSpace()->read(
+					blob->blb_temp_offset, buffer.getBuffer(blob->blb_temp_size),
+					blob->blb_temp_size);
+				q = buffer.begin();
+			}
+			else
+			{
+				fb_assert(length == 0);
+				q = NULL;
+			}
+		}
+		else
+			q = blob->getBuffer();
+
+		if (q)
+			q = (UCHAR*) ((blob_page*) q)->blp_page;
 	}
-	else {
+	else
+	{
 		vector = blob->blb_pages;
 		length = vector->count() * sizeof(SLONG);
 		q = (UCHAR *) (vector->begin());

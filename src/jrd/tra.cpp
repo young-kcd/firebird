@@ -750,10 +750,9 @@ void TRA_init(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra(*dbb->dbb_permanent);
+	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra(dbb->dbb_permanent);
 	dbb->dbb_sys_trans = trans;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
-	trans->tra_pool = dbb->dbb_permanent;
 }
 
 
@@ -988,8 +987,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 
 
 	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
-	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
-	trans->tra_pool = tdbb->getDefaultPool();
+	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool());
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
@@ -1524,8 +1522,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
    make up the real transaction block. */
 
 	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
-	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
-	temp->tra_pool = tdbb->getDefaultPool();
+	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool());
 	transaction_options(tdbb, temp, tpb, tpb_length);
 
 	Lock* lock = TRA_transaction_lock(tdbb, temp);
@@ -1574,12 +1571,12 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 
 	jrd_tra* trans;
 	if (temp->tra_flags & TRA_read_committed)
-		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(*tdbb->getDefaultPool());
+		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool());
 	else {
-		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), (number - base + TRA_MASK) / 4) jrd_tra(*tdbb->getDefaultPool());
+		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), (number - base + TRA_MASK) / 4) jrd_tra(tdbb->getDefaultPool());
 	}
 
-	trans->tra_pool = temp->tra_pool;
+	fb_assert(trans->tra_pool == temp->tra_pool);
 	trans->tra_relation_locks = temp->tra_relation_locks;
 	trans->tra_lock_timeout = temp->tra_lock_timeout;
 	trans->tra_flags = temp->tra_flags;
