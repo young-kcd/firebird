@@ -28,7 +28,7 @@
 #include "../../include/firebird.h"
 #include "../../jrd/common.h"
 
-#ifdef WIN9X_SUPPORT
+#if defined(WIN_NT)
 // minimum win32 version: win98 / winnt4 SP3
 #define _WIN32_WINNT 0x0403
 #endif
@@ -36,9 +36,6 @@
 #include "../../common/classes/locks.h"
 #include "../../common/thd.h"
 
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 
 namespace Firebird {
 
