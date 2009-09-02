@@ -62,16 +62,16 @@ private:
 			if (thread != currTID)
 			{
 				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, false, thread);
-//		commented exit code check - looks like OS does not return handle 
-//		for already exited thread
-//				DWORD exitCode = STILL_ACTIVE;
+				// commented exit code check - looks like OS does not return handle 
+				// for already exited thread
+				//DWORD exitCode = STILL_ACTIVE;
 				if (hThread)
 				{
-//					GetExitCodeThread(hThread, &exitCode);
+					//GetExitCodeThread(hThread, &exitCode);
 					CloseHandle(hThread);
 				}
 				
-//				if ((!hThread) || (exitCode != STILL_ACTIVE))
+				//if ((!hThread) || (exitCode != STILL_ACTIVE))
 				if (!hThread)
 				{
 					// Thread does not exist any more
@@ -89,7 +89,7 @@ private:
 	Firebird::Mutex mutex;
 
 public:
-	StringsBuffer(Firebird::MemoryPool& p) : processBuffer(p) { }
+	explicit StringsBuffer(Firebird::MemoryPool& p) : processBuffer(p) { }
 
 	~StringsBuffer()
 	{
