@@ -721,6 +721,7 @@ const ISC_STATUS isc_udf_fp_overflow                  = 335544982L;
 const ISC_STATUS isc_udf_fp_nan                       = 335544983L;
 const ISC_STATUS isc_instance_conflict                = 335544984L;
 const ISC_STATUS isc_out_of_temp_space                = 335544985L;
+const ISC_STATUS isc_eds_expl_tran_ctrl               = 335544986L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1014,7 +1015,7 @@ const ISC_STATUS isc_fbsvcmgr_fp_open                 = 336986160L;
 const ISC_STATUS isc_fbsvcmgr_fp_read                 = 336986161L;
 const ISC_STATUS isc_fbsvcmgr_fp_empty                = 336986162L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 958;
+const ISC_STATUS isc_err_max                          = 959;
 
 #else /* c definitions */
 
@@ -1705,6 +1706,7 @@ const ISC_STATUS isc_err_max                          = 958;
 #define isc_udf_fp_nan                       335544983L
 #define isc_instance_conflict                335544984L
 #define isc_out_of_temp_space                335544985L
+#define isc_eds_expl_tran_ctrl               335544986L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1998,7 +2000,7 @@ const ISC_STATUS isc_err_max                          = 958;
 #define isc_fbsvcmgr_fp_read                 336986161L
 #define isc_fbsvcmgr_fp_empty                336986162L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          958
+#define isc_err_max                          959
 
 #endif
 

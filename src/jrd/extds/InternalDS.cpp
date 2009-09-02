@@ -394,7 +394,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	case REQ_COMMIT_RETAIN:
 	case REQ_ROLLBACK_RETAIN:
 	case REQ_CREATE_DB:
-		// forbidden ?
+		ERR_build_status(status, Arg::Gds(isc_eds_expl_tran_ctrl));
+		raise(status, tdbb, "jrd8_prepare", &sql);
 		break;
 
 	case REQ_INSERT:

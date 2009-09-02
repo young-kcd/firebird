@@ -423,6 +423,16 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 		m_stmt_selectable = (stmt_type == isc_info_sql_stmt_select ||
 			stmt_type == isc_info_sql_stmt_select_for_upd);
+
+		if (stmt_type == isc_info_sql_stmt_start_trans ||
+			stmt_type == isc_info_sql_stmt_commit ||
+			stmt_type == isc_info_sql_stmt_rollback)
+		{
+			ERR_build_status(status, Arg::Gds(isc_eds_expl_tran_ctrl));
+
+			sWhereError = "isc_dsql_prepare";
+			raise(status, tdbb, sWhereError, &sql);
+		}
 	}
 }
 
