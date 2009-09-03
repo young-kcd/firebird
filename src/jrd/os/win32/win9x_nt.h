@@ -50,9 +50,9 @@ struct LocksArrayItem {
 };
 
 Firebird::SortedArray<
-	LocksArrayItem, 
+	LocksArrayItem,
 	Firebird::InlineStorage<LocksArrayItem, 16>,
-	HANDLE, 
+	HANDLE,
 	LocksArrayItem > file_locks_9X(*getDefaultMemoryPool());
 
 // This header can be included in winnt.h
@@ -70,10 +70,10 @@ HANDLE CreateFile_9X(
 		dwShareMode &= ~FILE_SHARE_DELETE;
 
 	HANDLE file = CreateFileA(
-		lpFileName, 
-		dwDesiredAccess, 
-		dwShareMode, 
-		lpSecurityAttributes, 
+		lpFileName,
+		dwDesiredAccess,
+		dwShareMode,
+		lpSecurityAttributes,
 		dwCreationDisposition,
 		dwFlagsAndAttributes,
 		hTemplateFile);
@@ -84,7 +84,7 @@ HANDLE CreateFile_9X(
         MutexLockGuard sync(file_locks_mutex);
         file_locks_9X.add(
             LocksArrayItem(
-                file, 
+                file,
                 new Firebird::Mutex()));
     }
 
@@ -92,7 +92,7 @@ HANDLE CreateFile_9X(
     return file;
 }
 
-BOOL CloseHandle_9X(HANDLE hObject) 
+BOOL CloseHandle_9X(HANDLE hObject)
 {
 	if (!ISC_is_WinNT()) {
 		MutexLockGuard sync(file_locks_mutex);
@@ -111,9 +111,9 @@ BOOL ReadFile_9X(
   LPVOID lpBuffer,
   DWORD nNumberOfBytesToRead,
   LPDWORD lpNumberOfBytesRead,
-  LPOVERLAPPED lpOverlapped) 
+  LPOVERLAPPED lpOverlapped)
 {
-	if (ISC_is_WinNT()) 
+	if (ISC_is_WinNT())
 		return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
 
 	Firebird::Mutex* fileMutex = NULL;
@@ -130,7 +130,7 @@ BOOL ReadFile_9X(
 		MutexLockGuard sync(*fileMutex);
 
 		if (lpOverlapped != NULL) {
-			const DWORD ret = SetFilePointer(hFile, lpOverlapped->Offset, 
+			const DWORD ret = SetFilePointer(hFile, lpOverlapped->Offset,
 				(PLONG)&lpOverlapped->OffsetHigh, FILE_BEGIN);
 			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 				return 0;
@@ -152,7 +152,7 @@ BOOL WriteFile_9X(
   LPOVERLAPPED lpOverlapped
 )
 {
-	if (ISC_is_WinNT()) 
+	if (ISC_is_WinNT())
 		return WriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
 
 	Firebird::Mutex* fileMutex = NULL;
@@ -169,7 +169,7 @@ BOOL WriteFile_9X(
 		MutexLockGuard sync(*fileMutex);
 
 		if (lpOverlapped != NULL) {
-			const DWORD ret = SetFilePointer(hFile, lpOverlapped->Offset, 
+			const DWORD ret = SetFilePointer(hFile, lpOverlapped->Offset,
 				(PLONG)&lpOverlapped->OffsetHigh, FILE_BEGIN);
 			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 				return 0;

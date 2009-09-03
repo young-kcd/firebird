@@ -146,7 +146,7 @@ namespace Firebird
 			return ptr;
 		}
 
-		/* NS: you cannot have operator bool here. It creates ambiguity with 
+		/* NS: you cannot have operator bool here. It creates ambiguity with
 		  operator T* with some of the compilers (at least VS2003)
 
 		operator bool() const

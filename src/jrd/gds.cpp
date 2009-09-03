@@ -3681,26 +3681,26 @@ public:
 #ifdef WIN9X_SUPPORT
 			// shell32.dll version 5.0 and later supports SHGetFolderPath entry point
 			HMODULE hShFolder = LoadLibrary("shell32.dll");
-			PFNSHGETFOLDERPATHA pfnSHGetFolderPath = 
+			PFNSHGETFOLDERPATHA pfnSHGetFolderPath =
 				(PFNSHGETFOLDERPATHA) GetProcAddress(hShFolder, "SHGetFolderPathA");
 
-			if (!pfnSHGetFolderPath) 
+			if (!pfnSHGetFolderPath)
 			{
 				// For old OS versions fall back to shfolder.dll
 				FreeLibrary(hShFolder);
 				hShFolder = LoadLibrary("shfolder.dll");
-				pfnSHGetFolderPath = 
+				pfnSHGetFolderPath =
 					(PFNSHGETFOLDERPATHA) GetProcAddress(hShFolder, "SHGetFolderPathA");
 			}
 
 			char cmnData[MAXPATHLEN];
 			if (pfnSHGetFolderPath &&
-				pfnSHGetFolderPath(NULL, CSIDL_COMMON_APPDATA | CSIDL_FLAG_CREATE, NULL, 
-					SHGFP_TYPE_CURRENT, cmnData) == S_OK) 
+				pfnSHGetFolderPath(NULL, CSIDL_COMMON_APPDATA | CSIDL_FLAG_CREATE, NULL,
+					SHGFP_TYPE_CURRENT, cmnData) == S_OK)
 			{
 				PathUtils::concatPath(lockPrefix, cmnData, LOCKDIR);
 			}
-			else 
+			else
 			{
 				// If shfolder.dll is missing or API fails fall back to using old style location for locks
 				lockPrefix = prefix;
@@ -3712,8 +3712,8 @@ public:
 				Firebird::system_call_failed::raise("SHGetSpecialFolderPath");
 			}
 			PathUtils::concatPath(lockPrefix, cmnData, LOCKDIR);
-#endif
-#endif
+#endif  // WIN9X_SUPPORT
+#endif  // WIN_NT
 		}
 		lockPrefix.copyTo(fb_prefix_lock_val, sizeof(fb_prefix_lock_val));
 		fb_prefix_lock = fb_prefix_lock_val;

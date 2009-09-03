@@ -62,7 +62,7 @@ private:
 			if (thread != currTID)
 			{
 				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, false, thread);
-				// commented exit code check - looks like OS does not return handle 
+				// commented exit code check - looks like OS does not return handle
 				// for already exited thread
 				//DWORD exitCode = STILL_ACTIVE;
 				if (hThread)
@@ -70,7 +70,7 @@ private:
 					//GetExitCodeThread(hThread, &exitCode);
 					CloseHandle(hThread);
 				}
-				
+
 				//if ((!hThread) || (exitCode != STILL_ACTIVE))
 				if (!hThread)
 				{
@@ -79,6 +79,7 @@ private:
 				}
 			}
 #endif
+
 			return thread == currTID;
 		}
 	};
@@ -406,7 +407,7 @@ fatal_exception::fatal_exception(const char* message) :
 	{
 		isc_arg_gds,
 		isc_random,
-		isc_arg_string, 
+		isc_arg_string,
 		(ISC_STATUS)(IPTR) message,
 		isc_arg_end
 	};

@@ -46,14 +46,14 @@ namespace Firebird {
 
 // NS: This code is adapted from from KernelEx project, with the explicit
 // permission from the author. KernelEx project aims to provide Windows XP
-// compatibility layer for Windows 98 and Windows ME. For futher information
+// compatibility layer for Windows 98 and Windows ME. For further information
 // please refer to http://www.sourceforge.net/projects/kernelex/
 
 static const K32OBJ_CRITICAL_SECTION = 4;
 static const TDBX_WIN98 = 0x50;
 static const TDBX_WINME = 0x80;
 
-typedef struct _CRIT_SECT     // Size = 0x20 
+typedef struct _CRIT_SECT     // Size = 0x20
 {
 	BYTE      Type;           // 00 = 4: K32_OBJECT_CRITICAL_SECTION
 	int       RecursionCount; // 04 initially 0, incremented on lock
@@ -116,7 +116,7 @@ BOOL WINAPI TryEnterCriticalSection_Win9X(CRITICAL_SECTION* cs)
 	WIN_CRITICAL_SECTION* mycs = (WIN_CRITICAL_SECTION*) cs;
 	if (mycs->Type != K32OBJ_CRITICAL_SECTION)
 		RaiseException(STATUS_ACCESS_VIOLATION, 0, 0, NULL);
-	
+
 	return TryEnterCrst(mycs->crit);
 }
 
@@ -133,12 +133,12 @@ TryEnterCS::TryEnterCS()
 // Win9X support
 #ifdef WIN9X_SUPPORT
 	OSVERSIONINFO OsVersionInfo;
-		
+
 	OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	if (GetVersionEx((LPOSVERSIONINFO) &OsVersionInfo))
 	{
 		if (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS &&
-			OsVersionInfo.dwMajorVersion == 4) 
+			OsVersionInfo.dwMajorVersion == 4)
 		{
 			// Windows 98
 			if (OsVersionInfo.dwMinorVersion == 10)

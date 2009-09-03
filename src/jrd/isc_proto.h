@@ -45,4 +45,3 @@ struct _SECURITY_ATTRIBUTES* ISC_get_security_desc();
 #endif
 
 #endif // JRD_ISC_PROTO_H
-

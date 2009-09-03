@@ -43,6 +43,7 @@ public:
 	static void add(FPTR_VOID_PTR cleanup, void* arg);
 	static void remove(FPTR_VOID_PTR cleanup, void* arg);
 	static void destructor(void*);
+
 private:
 	FPTR_VOID_PTR function;
 	void* argument;

@@ -140,7 +140,7 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 		}
 
 		*p = '\'';
-		fb_assert(p <= buffer.begin() + newSize);
+		fb_assert(p < buffer.begin() + newSize);
 
 		pos = s + mark.length;
 	}

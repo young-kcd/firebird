@@ -172,7 +172,6 @@ void makeKey()
 	}
 }
 
-
 void initThreadCleanup()
 {
 	int err = pthread_once(&keyOnce, makeKey);
@@ -243,7 +242,7 @@ void ThreadCleanup::remove(FPTR_VOID_PTR cleanup, void* arg)
 	delete toDelete;
 }
 
-#else //USE_POSIX_THREADS
+#else // USE_POSIX_THREADS
 
 ThreadCleanup** ThreadCleanup::findCleanup(FPTR_VOID_PTR, void*)
 {
@@ -262,4 +261,4 @@ void ThreadCleanup::remove(FPTR_VOID_PTR, void*)
 {
 }
 
-#endif //USE_POSIX_THREADS
+#endif // USE_POSIX_THREADS
