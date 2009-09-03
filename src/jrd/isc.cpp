@@ -123,7 +123,7 @@ public:
 			}
 			if (pNewACL) {
 				LocalFree(pNewACL);
-			}	
+			}
 		}
 
 		CloseHandle(hCurrentProcess);
@@ -540,14 +540,14 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 
 #ifdef WIN9X_SUPPORT
 
-static DWORD os_type;
+static DWORD os_type = 0;
 
 // Returns the type of OS: true for NT,
 // false for the 16-bit based ones (9x/ME, ...).
 //
 bool ISC_is_WinNT()
 {
-	// NS: this is thread safe. 
+	// NS: this is thread safe.
 	// In the worst case initialization will be called more than once
 	if (!os_type)
 	{
@@ -555,7 +555,7 @@ bool ISC_is_WinNT()
 		   call GetVersion to determine whether Windows NT or 9X
 		   is running. */
 		OSVERSIONINFO OsVersionInfo;
-		
+
 		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		if (GetVersionEx((LPOSVERSIONINFO) &OsVersionInfo))
 		{
@@ -563,7 +563,7 @@ bool ISC_is_WinNT()
 			fb_assert(os_type);
 		}
 		else {
-			os_type = VER_PLATFORM_WIN32_NT;			/* Default to NT */
+			os_type = VER_PLATFORM_WIN32_NT; // Default to NT
 		}
 	}
 
