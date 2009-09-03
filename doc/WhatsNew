@@ -2,10 +2,147 @@
   * v2.5 Release Candidate 1
   **************************
 
-    * Bugfix CORE-915
+    * Bugfix CORE-2612
+        Connection lost immediatelly after compiling procedure with RPAD system function
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2608
+        Recent Windows versions stop responding when Firebird is working with large databases
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+
+    * Bugfix CORE-2607
+        Introducer (_charset) problems with monitoring and persistent modules
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2602
+        Attachments using NONE charset may fail reading from the monitoring tables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2599
+        Segmentation fault in the Y-valve when closing an attachment actively used by other threads
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2598
+        fb_lock_print -c[onsistency] switch doesn't work on Windows
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2591
+        High mutex wait ratio and degraded performance after some time of performing normally
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2590
+        Segmentation fault in the page cache AST routine under high load
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2586
+        Make all kernel object names belonging to the same namespace
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2584
+        Wrong results for CASE used together with GROUP BY
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2582
+        Infinity from UDF should be trapped by the engine
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2579
+        Parameters and variables cannot be used as expressions
+        in EXECUTE PROCEDURE parameters without a colon prefix
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2576
+        Server may crash parsing wrong or truncated BLR
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2573
+        The server crashes when selecting from the MON$ tables in the ON DISCONNECT trigger
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2572
+        Locks of type LCK_page_space are processed incorrectly (on big-endian machines)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2558
+        Engine crashes when some statement under an autonomous transaction
+        drops the transaction level savepoint
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2514
+        An error about CreateFile is reported when there's not enough space on the temp drive
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2478
+        MON$MEMORY_USAGE: incorrect database memory reported on Classic and SuperClassic
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2422
+        Server doesn't switch between multiple entries configured in TempDirectories
+        when some of them is out of free space
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2321
+        Query fails with message 'operating system directive write failed. Invalid argument.'
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2252
+        EXECUTE STATEMENT on EXTERNAL SOURCE does not check the status of the transaction
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2609
+        Support for Windows NT4/98/ME
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+
+    * Improvement CORE-2588
+        Allow to run engine instances in different Windows sessions
+        without conflics on the trace shared memory
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2587
+        User friendly diagnostics when the engine can't create shared memory
+        already created by the another engine process in another Windows session
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2580
+        Allow usage of subselects as PSQL expressions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-915
         ISQL extracts procedures body with double line break
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * New feature CORE-2559
+        Add support for Linux/s390x platform
+      Contributor(s):
+        Dan Horak <dan at danny.cz>
+        Alex Peshkov <peshkoff at mail.ru>
 
 
   *************
