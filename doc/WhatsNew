@@ -111,6 +111,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-915
+        ISQL extracts procedures body with double line break
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Improvement CORE-2609
         Support for Windows NT4/98/ME
       Contributor(s):
@@ -130,11 +135,6 @@
 
     * Improvement CORE-2580
         Allow usage of subselects as PSQL expressions
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Improvement CORE-915
-        ISQL extracts procedures body with double line break
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
