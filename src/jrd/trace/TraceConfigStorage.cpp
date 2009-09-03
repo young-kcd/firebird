@@ -415,13 +415,12 @@ void ConfigStorage::removeSession(ULONG id)
 		if (!getItemLength(tag, len))
 			return;
 
-		bool err;
 		if (tag == tagID)
 		{
 			ULONG currID;
 			fb_assert(len == sizeof(currID));
 
-			err = (::read(m_cfg_file, &currID, len) != len);
+			bool err = (::read(m_cfg_file, &currID, len) != len);
 			if (!err && currID == id)
 			{
 				setDirty();

@@ -1347,7 +1347,7 @@ blb* BLB_open2(thread_db* tdbb,
 	if (try_relations)
 	{
 		// Ordinarily, we would call MET_relation to get the relation id.
-		// However, since the blob id must be consider suspect, this is
+		// However, since the blob id must be considered suspect, this is
 		// not a good idea.  On the other hand, if we don't already
 		// know about the relation, the blob id has got to be invalid
 		// anyway.

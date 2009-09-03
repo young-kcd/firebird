@@ -3951,7 +3951,7 @@ static bool make_object_name(TEXT* buffer, size_t bufsize,
  **************************************/
 	char hostname[64];
 	const int rc = snprintf(buffer, bufsize, object_name, ISC_get_host(hostname, sizeof(hostname)));
-	if (rc == bufsize || rc <= 0)
+	if (size_t(rc) == bufsize || rc <= 0)
 	{
 		SetLastError(ERROR_FILENAME_EXCED_RANGE);
 		return false;

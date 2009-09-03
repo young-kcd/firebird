@@ -210,8 +210,8 @@ bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string&
 {
 	if (m_isCurrent)
 		return (tdbb->getAttachment() == m_attachment);
-	else
-		return Connection::isSameDatabase(tdbb, dbName, user, pwd, role);
+
+	return Connection::isSameDatabase(tdbb, dbName, user, pwd, role);
 }
 
 Transaction* InternalConnection::doCreateTransaction()
