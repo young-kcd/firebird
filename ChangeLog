@@ -1,3 +1,33 @@
+2009-09-04 08:13  dimitr
+
+	* firebird2/doc/WhatsNew (1.181):
+
+	Update.
+
+2009-09-04 08:11  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.255), cmp.cpp (1.351), evl.cpp
+	(1.307), idx.cpp (1.161), ini.epp (1.110), jrd.cpp (1.562), req.h
+	(1.98), rse.cpp (1.190), sort.cpp (1.141), sort.h (1.44),
+	sort_proto.h (1.25), tra.h (1.101):
+
+	More explicit (and shorter) life-time for sort blocks. Now they
+	belong to either requests (user sorts) or transactions (index
+	sorts).  This also resolves CORE-2477: mon$memory_usage: Sorting
+	memory should be reported as owned by the statement.
+
+2009-09-04 06:19  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.561):
+
+	Delete unused function param.
+
+2009-09-03 17:19  dimitr
+
+	* firebird2/doc/WhatsNew (1.180):
+
+	Correction.
+
 2009-09-03 13:17  robocop
 
 	* firebird2/src/jrd/: blb.cpp (1.208), isc_sync.cpp (1.221),
