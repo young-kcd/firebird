@@ -95,6 +95,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2477
+        MON$MEMORY_USAGE: sorting memory should be reported as owned by the statement
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-2422
         Server doesn't switch between multiple entries configured in TempDirectories
         when some of them is out of free space
