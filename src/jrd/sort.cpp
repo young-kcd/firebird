@@ -37,6 +37,7 @@
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/val.h"
 #include "../jrd/err_proto.h"
@@ -69,6 +70,14 @@ const USHORT MAX_MERGE_LEVEL	= 2;
 
 using namespace Jrd;
 using namespace Firebird;
+
+SortOwner::~SortOwner()
+{
+	while (sorts.getCount())
+	{
+		SORT_fini(sorts.pop());
+	}
+}
 
 // The sort buffer size should be just under a multiple of the
 // hardware memory page size to account for memory allocator
@@ -124,7 +133,6 @@ static sort_record*	get_merge(merge_control*, sort_context*);
 
 static ULONG allocate_memory(sort_context*, ULONG, ULONG, bool);
 static void init(sort_context*);
-static bool local_fini(sort_context*, Attachment*);
 static void merge_runs(sort_context*, USHORT);
 static void quick(SLONG, SORTP**, ULONG);
 static ULONG order(sort_context*);
@@ -498,7 +506,7 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 #endif
 
 
-void SORT_fini(sort_context* scb, Attachment* att)
+void SORT_fini(sort_context* scb)
 {
 /**************************************
  *
@@ -511,8 +519,55 @@ void SORT_fini(sort_context* scb, Attachment* att)
  *
  **************************************/
 
-	if (scb && local_fini(scb, att))
+	if (scb)
+	{
+		// Unlink the sort
+
+		scb->scb_owner->unlinkSort(scb);
+
+		// Loop through the sfb list and close work files
+
+		delete scb->scb_space;
+
+		// Get rid of extra merge space
+		// CVC: This loop seems unused, as scb_merge_space is never populated explicitly.
+		ULONG** merge_buf;
+		while ( (merge_buf = (ULONG**) scb->scb_merge_space) )
+		{
+			scb->scb_merge_space = *merge_buf;
+			delete merge_buf;
+		}
+
+		// If runs are allocated and not in the big block, release them.
+		// Then release the big block.
+
+		delete scb->scb_memory;
+
+		// Clean up the runs that were used
+
+		run_control* run;
+		while ( (run = scb->scb_runs) )
+		{
+			scb->scb_runs = run->run_next;
+			if (run->run_buff_alloc)
+				delete (UCHAR*) run->run_buffer;
+			delete run;
+		}
+
+		// Clean up the free runs also
+
+		while ( (run = scb->scb_free_runs) )
+		{
+			scb->scb_free_runs = run->run_next;
+			if (run->run_buff_alloc)
+				delete (UCHAR*) run->run_buffer;
+			delete run;
+		}
+
+		delete scb->scb_merge_pool;
+
 		delete scb;
+	}
 }
 
 
@@ -671,7 +726,8 @@ void SORT_get(thread_db* tdbb, sort_context* scb, ULONG** record_address)
 #endif
 
 
-sort_context* SORT_init(thread_db* tdbb,
+sort_context* SORT_init(Database* dbb,
+						SortOwner* owner,
 						USHORT record_length,
 						USHORT keys,
 						USHORT unique_keys,
@@ -700,9 +756,8 @@ sort_context* SORT_init(thread_db* tdbb,
  *		includes index key (which must be unique) and record numbers
  *
  **************************************/
-	SET_TDBB(tdbb);
+	fb_assert(dbb && owner);
 
-	MemoryPool* const pool = tdbb->getDatabase()->dbb_permanent;
 	sort_context* scb = NULL;
 
 	try
@@ -711,10 +766,11 @@ sort_context* SORT_init(thread_db* tdbb,
 		// key description vector. Round the record length up to the next
 		// longword, and add a longword to a pointer back to the pointer slot.
 
-		scb = (sort_context*) pool->allocate(SCB_LEN(keys));
+		MemoryPool& pool = owner->getPool();
+		scb = (sort_context*) pool.allocate(SCB_LEN(keys));
 		memset(scb, 0, SCB_LEN(keys));
 
-		scb->scb_pool = pool;
+		scb->scb_dbb = dbb;
 		//scb->scb_length = record_length;
 		scb->scb_longs = ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT) >> SHIFTLONG;
 		scb->scb_dup_callback = call_back;
@@ -743,7 +799,7 @@ sort_context* SORT_init(thread_db* tdbb,
 #ifdef DEBUG_MERGE
 		// To debug the merge algorithm, force the in-memory pool to be VERY small
 		scb->scb_size_memory = 2000;
-		scb->scb_memory = (SORTP*) scb->scb_pool->allocate(scb->scb_size_memory);
+		scb->scb_memory = (SORTP*) pool.allocate(scb->scb_size_memory);
 #else
 		// Try to get a big chunk of memory, if we can't try smaller and
 		// smaller chunks until we can get the memory. If we get down to
@@ -755,7 +811,7 @@ sort_context* SORT_init(thread_db* tdbb,
 		{
 			try
 			{
-				scb->scb_memory = (SORTP*) scb->scb_pool->allocate(scb->scb_size_memory);
+				scb->scb_memory = (SORTP*) pool.allocate(scb->scb_size_memory);
 				break;
 			}
 			catch (const BadAlloc&)
@@ -773,21 +829,16 @@ sort_context* SORT_init(thread_db* tdbb,
 
 		// Set up the temp space
 
-		scb->scb_space = FB_NEW(*pool) TempSpace(*pool, SCRATCH);
+		scb->scb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 
 		// Set up to receive the first record
 
 		init(scb);
 
-		// If a linked list pointer was given, link in new sort block
+		// Link in new sort block
 
-		Attachment* att = tdbb->getAttachment();
-		if (att)
-		{
-			scb->scb_next = att->att_active_sorts;
-			att->att_active_sorts = scb;
-			scb->scb_attachment = att;
-		}
+		scb->scb_owner = owner;
+		owner->linkSort(scb);
 	}
 	catch (const BadAlloc&)
 	{
@@ -919,32 +970,6 @@ SORT_read_block(TempSpace* tmp_space, FB_UINT64 seek, BLOB_PTR* address, ULONG l
 }
 
 
-void SORT_shutdown(Attachment* att)
-{
-/**************************************
- *
- *      S O R T _ s h u t d o w n
- *
- **************************************
- *
- * Functional description
- *      Clean up any pending sorts.
- *
- **************************************/
-
-	// We ignore the result from local_fini,
-	// since the expectation is that from the
-	// way we are passing in the structures
-	// that every sort_context *IS* part of the ptr
-	// chain. Also, we're not freeing the
-	// structure here, so if something goes
-	// wrong, it's not *CRITICAL*.  -- mrs
-
-	while (att->att_active_sorts)
-		local_fini(att->att_active_sorts, att);
-}
-
-
 void SORT_sort(thread_db* tdbb, sort_context* scb)
 {
 /**************************************
@@ -1030,7 +1055,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 		}
 
 		run_merge_hdr** streams =
-			(run_merge_hdr**) scb->scb_pool->allocate(run_count * sizeof(run_merge_hdr*));
+			(run_merge_hdr**) scb->scb_owner->getPool().allocate(run_count * sizeof(run_merge_hdr*));
 
 		run_merge_hdr** m1 = streams;
 		for (run = scb->scb_runs; run; run = run->run_next)
@@ -1046,7 +1071,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 			try
 			{
 				scb->scb_merge_pool =
-					(merge_control*) scb->scb_pool->allocate((count - 1) * sizeof(merge_control));
+					(merge_control*) scb->scb_owner->getPool().allocate((count - 1) * sizeof(merge_control));
 				merge_pool = scb->scb_merge_pool;
 				memset(merge_pool, 0, (count - 1) * sizeof(merge_control));
 			}
@@ -1131,14 +1156,14 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 					char* mem = NULL;
 					try
 					{
-						mem = (char*) scb->scb_pool->allocate(mem_size);
+						mem = (char*) scb->scb_owner->getPool().allocate(mem_size);
 					}
 					catch (const BadAlloc&)
 					{
 						mem_size = (mem_size / (2 * rec_size)) * rec_size;
 						if (!mem_size)
 							throw;
-						mem = (char*) scb->scb_pool->allocate(mem_size);
+						mem = (char*) scb->scb_owner->getPool().allocate(mem_size);
 					}
 					run->run_buff_alloc = true;
 					run->run_buff_cache = false;
@@ -1824,11 +1849,11 @@ static void init(sort_context* scb)
 		scb->scb_runs->run_depth == MAX_MERGE_LEVEL)
 	{
 		const ULONG mem_size = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
-		void* const mem = scb->scb_pool->allocate_nothrow(mem_size);
+		void* const mem = scb->scb_owner->getPool().allocate_nothrow(mem_size);
 
 		if (mem)
 		{
-			scb->scb_pool->deallocate(scb->scb_memory);
+			scb->scb_owner->getPool().deallocate(scb->scb_memory);
 
 			scb->scb_memory = (SORTP*) mem;
 			scb->scb_size_memory = mem_size;
@@ -1845,104 +1870,6 @@ static void init(sort_context* scb)
 	scb->scb_last_record = (SR*) scb->scb_end_memory;
 
 	*scb->scb_next_pointer++ = reinterpret_cast<sort_record*>(low_key);
-}
-
-
-static bool local_fini(sort_context* scb, Attachment* att)
-{
-/**************************************
- *
- *      l o c a l _ f i n i
- *
- **************************************
- *
- * Functional description
- *      Finish sort, and release all resources.
- *
- **************************************/
-	bool found_it = true;
-
-	if (att)
-	{
-
-		// Cover case where a posted error caused reuse by another thread
-
-		if (scb->scb_attachment != att)
-			att = scb->scb_attachment;
-		found_it = false;
-	}
-
-	// Start by unlinking from que, if present
-
-	if (att)
-	{
-		for (sort_context** ptr = &att->att_active_sorts; *ptr; ptr = &(*ptr)->scb_next)
-		{
-			if (*ptr == scb)
-			{
-				*ptr = scb->scb_next;
-				found_it = true;
-				break;
-			}
-		}
-	}
-
-	// *NO*. I won't free it if it's not in
-    // the pointer list that has been passed
-    // to me. THIS MEANS MEMORY LEAK.  -- mrs
-
-	if (!found_it)
-		return false;
-
-	// Loop through the sfb list and close work files
-
-	delete scb->scb_space;
-
-	// Get rid of extra merge space
-	// CVC: This loop seems unused, as scb_merge_space is never populated explicitly.
-	ULONG** merge_buf;
-	while ( (merge_buf = (ULONG**) scb->scb_merge_space) )
-	{
-		scb->scb_merge_space = *merge_buf;
-		delete merge_buf;
-	}
-
-	// If runs are allocated and not in the big block, release them.
-	// Then release the big block.
-
-	delete scb->scb_memory;
-	scb->scb_memory = NULL;
-
-	// Clean up the runs that were used
-
-	run_control* run;
-	while ( (run = scb->scb_runs) )
-	{
-		scb->scb_runs = run->run_next;
-		if (run->run_buff_alloc)
-			delete (UCHAR*) run->run_buffer;
-		delete run;
-	}
-
-	// Clean up the free runs also
-
-	while ( (run = scb->scb_free_runs) )
-	{
-		scb->scb_free_runs = run->run_next;
-		if (run->run_buff_alloc)
-			delete (UCHAR*) run->run_buffer;
-		delete run;
-	}
-
-	delete scb->scb_merge_pool;
-	scb->scb_merge_pool = NULL;
-
-	scb->scb_merge = NULL;
- 	scb->scb_attachment = NULL;
- 	scb->scb_impure = NULL;
- 	scb->scb_next = NULL;
-
-	return true;
 }
 
 
@@ -2018,7 +1945,7 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 	// try to use free blocks from memory cache of work file
 
 	fb_assert(n > allocated);
-	TempSpace::Segments segments(*scb->scb_pool, n - allocated);
+	TempSpace::Segments segments(scb->scb_owner->getPool(), n - allocated);
 	allocated += scb->scb_space->allocateBatch(n - allocated, MAX_SORT_BUFFER_SIZE, chunkSize, segments);
 
 	if (segments.getCount())
@@ -2114,7 +2041,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 			{
 				if (!run->run_buff_alloc)
 				{
-					run->run_buffer = (ULONG*) scb->scb_pool->allocate(rec_size * 2);
+					run->run_buffer = (ULONG*) scb->scb_owner->getPool().allocate(rec_size * 2);
 					run->run_buff_alloc = true;
 				}
 				run->run_end_buffer =
@@ -2445,7 +2372,7 @@ static ULONG order(sort_context* scb)
 	sort_record* output = reinterpret_cast<sort_record*>(scb->scb_last_record);
 	sort_ptr_t* lower_limit = reinterpret_cast<sort_ptr_t*>(output);
 
-	HalfStaticArray<ULONG, 1024> record_buffer(*scb->scb_pool);
+	HalfStaticArray<ULONG, 1024> record_buffer(scb->scb_owner->getPool());
 	SORTP* buffer = record_buffer.getBuffer(scb->scb_longs);
 
 	// Length of the key part of the record
@@ -2531,7 +2458,7 @@ static void order_and_save(sort_context* scb)
  *		scratch file as one big chunk
  *
  **************************************/
-	Database::Checkout dcoHolder(scb->scb_attachment->att_database);
+	Database::Checkout dcoHolder(scb->scb_dbb);
 
 	run_control* run = scb->scb_runs;
 	run->run_records = 0;
@@ -2602,7 +2529,7 @@ static void put_run(sort_context* scb)
 		scb->scb_free_runs = run->run_next;
 	}
 	else {
-		run = (run_control*) FB_NEW(*scb->scb_pool) run_control;
+		run = (run_control*) FB_NEW(scb->scb_owner->getPool()) run_control;
 	}
 	memset(run, 0, sizeof(run_control));
 
@@ -2651,7 +2578,7 @@ static void sort(sort_context* scb)
  *
  **************************************/
 
-	Database::Checkout dcoHolder(scb->scb_attachment->att_database);
+	Database::Checkout dcoHolder(scb->scb_dbb);
 
 	// First, insert a pointer to the high key
 
@@ -2772,7 +2699,8 @@ static void sort_runs_by_seek(sort_context* scb, int n)
  *
  **************************************/
 
-	SortedArray<RunSort, InlineStorage<RunSort, RUN_GROUP>, FB_UINT64, RunSort> runs(*scb->scb_pool, n);
+	SortedArray<RunSort, InlineStorage<RunSort, RUN_GROUP>, FB_UINT64, RunSort>
+		runs(scb->scb_owner->getPool(), n);
 
 	run_control* run;
 	for (run = scb->scb_runs; run && n; run = run->run_next, n--) {

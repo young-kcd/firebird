@@ -58,6 +58,7 @@
 #include "../jrd/drq.h"
 #include "../jrd/intl.h"
 #include "../jrd/btr.h"
+#include "../jrd/sort.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"
@@ -77,6 +78,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
+#include "../jrd/sort_proto.h"
 #include "../jrd/execute_statement.h"
 #include "../jrd/Optimizer.h"
 
@@ -2482,6 +2484,10 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 	}
 
 	request->req_sql_text = NULL;
+
+	// We have to call the destructor explicitly because of
+	// the delete-by-pool cleanup practice for requests
+	request->req_sorts.~SortOwner();
 
 	dbb->deletePool(request->req_pool);
 }

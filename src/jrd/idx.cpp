@@ -247,6 +247,8 @@ void IDX_create_index(thread_db* tdbb,
 
 	get_root_page(tdbb, relation);
 
+	fb_assert(transaction);
+
 	BTR_reserve_slot(tdbb, relation, transaction, idx);
 
 	if (index_id) {
@@ -311,7 +313,7 @@ void IDX_create_index(thread_db* tdbb,
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
 	sort_context* sort_handle =
-		SORT_init(tdbb, key_length + sizeof(index_sort_record),
+		SORT_init(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
 				  2, 1, key_desc, callback, callback_arg);
 
 	try {
@@ -352,7 +354,7 @@ void IDX_create_index(thread_db* tdbb,
 #endif
 		false))
 	{
-		if (transaction && !VIO_garbage_collect(tdbb, &primary, transaction))
+		if (!VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
 		if (primary.rpb_flags & rpb_deleted)
 			CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
@@ -509,7 +511,7 @@ void IDX_create_index(thread_db* tdbb,
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		SORT_fini(sort_handle, tdbb->getAttachment());
+		SORT_fini(sort_handle);
 		ERR_punt();
 	}
 

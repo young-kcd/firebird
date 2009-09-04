@@ -1939,6 +1939,8 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 	RelationPages* relPages = relation->getPages(tdbb);
 	fb_assert(relPages && relPages->rel_index_root);
 
+	fb_assert(transaction);
+
 	// Get root page, assign an index id, and store the index descriptor.
 	// Leave the root pointer null for the time being.
 	// Index id for temporary index instance of global temporary table is
@@ -2034,10 +2036,7 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 	fb_assert(idx->idx_count <= MAX_UCHAR);
 	slot->irt_keys = (UCHAR) idx->idx_count;
 	slot->irt_flags = idx->idx_flags | irt_in_progress;
-
-	if (transaction) {
-		slot->irt_stuff.irt_transaction = transaction->tra_number;
-	}
+	slot->irt_stuff.irt_transaction = transaction->tra_number;
 
 	slot->irt_root = 0;
 
@@ -4054,7 +4053,7 @@ static SLONG fast_load(thread_db* tdbb,
 	tdbb->tdbb_flags &= ~TDBB_no_cache_unwind;
 
 	// do some final housekeeping
-	SORT_fini(sort_handle, tdbb->getAttachment());
+	SORT_fini(sort_handle);
 
 	// If index flush fails, try to delete the index tree.
 	// If the index delete fails, just go ahead and punt.

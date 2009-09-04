@@ -229,7 +229,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			return;
 
 		case rsb_sort:
-			SORT_fini(impure->irsb_sort_handle, tdbb->getAttachment());
+			SORT_fini(impure->irsb_sort_handle);
 			impure->irsb_sort_handle = NULL;
 			rsb = rsb->rsb_next;
 			break;
@@ -2879,21 +2879,14 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 
 	// Get rid of the old sort areas if this request has been used already
 
-	if (impure->irsb_sort_handle && impure->irsb_sort_handle->scb_impure == impure)
-	{
-		SORT_fini(impure->irsb_sort_handle, tdbb->getAttachment());
-	}
+	SORT_fini(impure->irsb_sort_handle);
 
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
 
 	impure->irsb_sort_handle =
-		SORT_init(tdbb, map->smb_length, map->smb_keys, map->smb_keys, map->smb_key_desc,
+		SORT_init(tdbb->getDatabase(), &request->req_sorts, map->smb_length, map->smb_keys, map->smb_keys, map->smb_key_desc,
          		  ((map->smb_flags & SMB_project) ? reject : NULL), 0); //, max_records);
-
-	// Mark sort_context with the impure area pointer
-
-	impure->irsb_sort_handle->scb_impure = impure;
 
 	try {
 
@@ -2982,7 +2975,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		SORT_fini(impure->irsb_sort_handle, tdbb->getAttachment());
+		SORT_fini(impure->irsb_sort_handle);
 		impure->irsb_sort_handle = NULL;
 		ERR_punt();
 	}

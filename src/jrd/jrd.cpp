@@ -5845,8 +5845,6 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 			{
 				ERR_post(Arg::Gds(isc_open_trans) << Arg::Num(count));
 			}
-
-			SORT_shutdown(attachment);
 		}
 	}
 	catch (const Exception&)

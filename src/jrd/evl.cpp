@@ -3036,7 +3036,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 
 		if (data == NULL) {
 			/* we are done, close the sort */
-			SORT_fini(asb_impure->iasb_sort_handle, tdbb->getAttachment());
+			SORT_fini(asb_impure->iasb_sort_handle);
 			asb_impure->iasb_sort_handle = NULL;
 			break;
 		}
@@ -3767,7 +3767,7 @@ static void fini_agg_distinct(thread_db* tdbb, const jrd_nod *const node)
 				const size_t asb_index = (from->nod_type == nod_agg_list_distinct) ? 2 : 1;
 				const AggregateSort* asb = (AggregateSort*) from->nod_arg[asb_index];
 				impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-				SORT_fini(asb_impure->iasb_sort_handle, tdbb->getAttachment());
+				SORT_fini(asb_impure->iasb_sort_handle);
 				asb_impure->iasb_sort_handle = NULL;
 			}
 		}
@@ -3925,8 +3925,11 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((char*) request + asb->nod_impure);
 	const sort_key_def* sort_key = asb->asb_key_desc;
 
+	// Get rid of the old sort areas if this request has been used already
+	SORT_fini(asb_impure->iasb_sort_handle);
+
 	asb_impure->iasb_sort_handle =
-		SORT_init(tdbb, ROUNDUP_LONG(asb->asb_length),
+		SORT_init(tdbb->getDatabase(), &request->req_sorts, ROUNDUP_LONG(asb->asb_length),
 		(asb->asb_intl ? 2 : 1), 1, sort_key, reject_duplicate, 0);
 }
 

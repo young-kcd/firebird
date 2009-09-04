@@ -37,6 +37,7 @@ struct sort_work_file;
 class Attachment;
 struct irsb_sort;
 struct merge_control;
+class SortOwner;
 
 // SORTP is used throughout sort.c as a pointer into arrays of
 // longwords(32 bits).
@@ -233,8 +234,8 @@ typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 
 struct sort_context
 {
-	MemoryPool*			scb_pool;
-	sort_context*		scb_next;			// Next known sort in system
+	Database*			scb_dbb;			// Database
+	SortOwner*			scb_owner;			// Sort owner
 	SORTP*				scb_memory;			// ALLOC: Memory for sort
 	SORTP*				scb_end_memory;		// End of memory
 	ULONG				scb_size_memory;	// Bytes allocated
@@ -259,10 +260,7 @@ struct sort_context
 	ULONG				scb_flags;			// see flag bits below
 	FPTR_REJECT_DUP_CALLBACK scb_dup_callback;	// Duplicate handling callback
 	void*				scb_dup_callback_arg;	// Duplicate handling callback arg
-	//dir_list*			scb_dls;			// Unused
 	merge_control*		scb_merge_pool;		// ALLOC: pool of merge_control blocks
-	Attachment*			scb_attachment;		// back pointer to attachment
-	irsb_sort*			scb_impure;			// back pointer to request's impure area
 	sort_key_def		scb_description[1];
 };
 
@@ -272,6 +270,46 @@ const int scb_initialized	= 1;
 const int scb_sorted		= 2;	// stream has been sorted
 
 #define SCB_LEN(n_k)	(sizeof (sort_context) + (SLONG)(n_k) * sizeof (sort_key_def))
+
+class SortOwner
+{
+public:
+	explicit SortOwner(MemoryPool& p)
+		: pool(p), sorts(p)
+	{}
+
+	~SortOwner();
+
+	void linkSort(sort_context* scb)
+	{
+		fb_assert(scb);
+
+		if (!sorts.exist(scb))
+		{
+			sorts.add(scb);
+		}
+	}
+
+	void unlinkSort(sort_context* scb)
+	{
+		fb_assert(scb);
+
+		size_t pos;
+		if (sorts.find(scb, pos))
+		{
+			sorts.remove(pos);
+		}
+	}
+
+	MemoryPool& getPool() const
+	{
+		return pool;
+	}
+
+private:
+	MemoryPool& pool;
+	Firebird::SortedArray<sort_context*> sorts;
+};
 
 } //namespace Jrd
 

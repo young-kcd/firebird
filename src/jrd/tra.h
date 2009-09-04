@@ -39,6 +39,7 @@
 #include "../jrd/rpb_chain.h"
 #include "../jrd/blb.h" // For bid structure
 #include "../jrd/sbm.h" // For bid structure
+#include "../jrd/sort.h"
 
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
@@ -126,7 +127,8 @@ public:
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
-		tra_user_management(NULL)
+		tra_user_management(NULL),
+		tra_sorts(*p)
 	{
 		if (outer)
 		{
@@ -209,6 +211,7 @@ public:
 	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
 	jrd_req* tra_callback_caller;		// caller request for execute statement
 	Firebird::Array<UCHAR> tra_transactions;
+	SortOwner tra_sorts;
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;

@@ -31,6 +31,7 @@
 #include "../include/fb_blk.h"
 
 #include "../jrd/exe.h"
+#include "../jrd/sort.h"
 #include "../jrd/RecordNumber.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
@@ -201,7 +202,8 @@ public:
 		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
 		req_exec_sta(*pool), req_ext_stmt(NULL), req_invariants(*pool),
 		req_blr(*pool), req_domain_validation(NULL),
-		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool)
+		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool),
+		req_sorts(*pool)
 	{}
 
 	Attachment*	req_attachment;			// database attachment
@@ -279,6 +281,7 @@ public:
 	MapFieldInfo	req_map_field_info;		// Map field name to field info
 	MapItemInfo		req_map_item_info;		// Map item to item info
 	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
+	SortOwner		req_sorts;
 
 	enum req_ta {
 		// order should be maintained because the numbers are stored in BLR
