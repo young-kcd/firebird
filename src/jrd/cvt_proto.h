@@ -33,13 +33,39 @@ GDS_DATE	CVT_get_sql_date(const dsc*);
 GDS_TIME	CVT_get_sql_time(const dsc*);
 GDS_TIMESTAMP CVT_get_timestamp(const dsc*);
 
-namespace Jrd {
-	extern Firebird::Callbacks toEngine;
+namespace Jrd
+{
+	class EngineCallbacks : public Firebird::Callbacks
+	{
+	public:
+		EngineCallbacks(ErrorFunction aErr)
+			: Callbacks(aErr)
+		{
+		}
+
+		EngineCallbacks()
+			: Callbacks(ERR_post)
+		{
+		}
+
+	public:
+		virtual bool transliterate(const dsc* from, dsc* to, CHARSET_ID&);
+		virtual CHARSET_ID getChid(const dsc* d);
+		virtual CharSet* getToCharset(CHARSET_ID charset2);
+		virtual void validateData(CharSet* toCharset, SLONG length, const UCHAR* q);
+		virtual void validateLength(CharSet* toCharset, SLONG toLength, const UCHAR* start,
+			const USHORT to_size);
+		virtual SLONG getCurDate();
+		virtual void isVersion4(bool& v4);
+
+	public:
+		static EngineCallbacks instance;
+	};
 }
 
 inline void CVT_move(const dsc* from, dsc* to)
 {
-	CVT_move_common(from, to, &Jrd::toEngine);
+	CVT_move_common(from, to, &Jrd::EngineCallbacks::instance);
 }
 
 #endif // JRD_CVT_PROTO_H

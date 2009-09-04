@@ -37,16 +37,30 @@ class CharSet;
 
 namespace Firebird {
 
-struct Callbacks
+class Callbacks
 {
-	bool (*transliterate)(const dsc* from, dsc* to, CHARSET_ID&, ErrorFunction err);
-	CHARSET_ID (*getChid)(const dsc* d);
-	ErrorFunction err;
-	Jrd::CharSet* (*getToCharset)(CHARSET_ID charset2);
-	void (*validateData)(Jrd::CharSet* toCharset, SLONG length, const UCHAR* q, ErrorFunction err);
-	void (*validateLength)(Jrd::CharSet* toCharset, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err);
-	SLONG (*getCurDate)();
-	void (*isVersion4)(bool& v4);
+public:
+	Callbacks(ErrorFunction aErr)
+		: err(aErr)
+	{
+	}
+
+	virtual ~Callbacks()
+	{
+	}
+
+public:
+	virtual bool transliterate(const dsc* from, dsc* to, CHARSET_ID&) = 0;
+	virtual CHARSET_ID getChid(const dsc* d) = 0;
+	virtual Jrd::CharSet* getToCharset(CHARSET_ID charset2) = 0;
+	virtual void validateData(Jrd::CharSet* toCharset, SLONG length, const UCHAR* q) = 0;
+	virtual void validateLength(Jrd::CharSet* toCharset, SLONG toLength, const UCHAR* start,
+		const USHORT to_size) = 0;
+	virtual SLONG getCurDate() = 0;
+	virtual void isVersion4(bool& v4) = 0;
+
+public:
+	const ErrorFunction err;
 };
 
 }

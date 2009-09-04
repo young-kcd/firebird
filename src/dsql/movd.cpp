@@ -29,6 +29,7 @@
 #include "../dsql/dsql.h"
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
+#include "../jrd/cvt_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
 #include "../common/cvt.h"
@@ -37,6 +38,23 @@ using namespace Jrd;
 using namespace Firebird;
 
 static void post_error(const Arg::StatusVector&);
+
+namespace
+{
+	class DsqlCallbacks : public EngineCallbacks
+	{
+	public:
+		DsqlCallbacks()
+			: EngineCallbacks(post_error)
+		{
+		}
+
+	public:
+		static DsqlCallbacks instance;
+	};
+
+	DsqlCallbacks DsqlCallbacks::instance;
+}	// namespace
 
 
 /**
@@ -52,7 +70,7 @@ static void post_error(const Arg::StatusVector&);
  **/
 void MOVD_move(const dsc* from, dsc* to)
 {
-	CVT_move(from, to, post_error);
+	CVT_move_common(from, to, &DsqlCallbacks::instance);
 }
 
 

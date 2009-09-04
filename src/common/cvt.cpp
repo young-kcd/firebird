@@ -134,13 +134,6 @@ static void integer_to_text(const dsc*, dsc*, Callbacks*);
 static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, const EXPECT_DATETIME, ErrorFunction);
 static SINT64 hex_to_value(const char*& string, const char* end);
 
-static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err);
-static Jrd::CharSet* getToCharset(CHARSET_ID charset2);
-static void validateData(Jrd::CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err);
-static void validateLength(Jrd::CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err);
-static CHARSET_ID getChid(const dsc* to);
-static SLONG getCurDate();
-static void isVersion4(bool& v4);
 static void localError(const Firebird::Arg::StatusVector&);
 
 class DummyException {};
@@ -411,7 +404,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		} while (++scale);
 	}
 
-	cb->validateLength(cb->getToCharset(to->getCharSet()), length, start, TEXT_LEN(to), cb->err);
+	cb->validateLength(cb->getToCharset(to->getCharSet()), length, start, TEXT_LEN(to));
 
 	// If padding is required, do it now.
 
@@ -1430,7 +1423,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 
 				Jrd::CharSet* charSet = cb->getToCharset(to->getCharSet());
-				cb->validateData(charSet, from->dsc_length, from->dsc_address, cb->err);
+				cb->validateData(charSet, from->dsc_length, from->dsc_address);
 
 				memcpy(ptr, from->dsc_address, from->dsc_length);
 				l -= from->dsc_length;
@@ -1486,7 +1479,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			 */
 
 			CHARSET_ID charset2;
-			if (cb->transliterate(from, to, charset2, cb->err))
+			if (cb->transliterate(from, to, charset2))
 				return;
 
 			{ // scope
@@ -1510,7 +1503,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			{
 			case dtype_text:
 				length = MIN(length, to->dsc_length);
-				cb->validateData(toCharset, length, q, cb->err);
+				cb->validateData(toCharset, length, q);
 				toLength = length;
 
 				l -= length;
@@ -1534,7 +1527,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 				fb_assert(to->dsc_length > 0)
 				length = MIN(length, ULONG(to->dsc_length - 1));
-				cb->validateData(toCharset, length, q, cb->err);
+				cb->validateData(toCharset, length, q);
 				toLength = length;
 
 				l -= length;
@@ -1544,7 +1537,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 			case dtype_varying:
 				length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
-				cb->validateData(toCharset, length, q, cb->err);
+				cb->validateData(toCharset, length, q);
 				toLength = length;
 
 				l -= length;
@@ -1556,7 +1549,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				break;
 			}
 
-			cb->validateLength(toCharset, toLength, start, to_size, cb->err);
+			cb->validateLength(toCharset, toLength, start, to_size);
 
 			if (l)
 			{
@@ -2628,44 +2621,67 @@ static SINT64 hex_to_value(const char*& string, const char* end)
 	return value;
 }
 
-static bool transliterate(const dsc*, dsc* to, CHARSET_ID& charset2, ErrorFunction)
+
+namespace
 {
-	charset2 = INTL_TTYPE(to);
-	return false;
-}
+	class CommonCallbacks : public Callbacks
+	{
+	public:
+		CommonCallbacks()
+			: Callbacks(localError)
+		{
+		}
 
+	public:
+		virtual bool transliterate(const dsc* from, dsc* to, CHARSET_ID&);
+		virtual CHARSET_ID getChid(const dsc* d);
+		virtual Jrd::CharSet* getToCharset(CHARSET_ID charset2);
+		virtual void validateData(Jrd::CharSet* toCharset, SLONG length, const UCHAR* q);
+		virtual void validateLength(Jrd::CharSet* toCharset, SLONG toLength, const UCHAR* start,
+			const USHORT to_size);
+		virtual SLONG getCurDate();
+		virtual void isVersion4(bool& v4);
 
-static Jrd::CharSet* getToCharset(CHARSET_ID)
-{
-	return NULL;
-}
+	public:
+		static CommonCallbacks instance;
+	};
 
+	CommonCallbacks CommonCallbacks::instance;
 
-static void validateData(Jrd::CharSet*, SLONG, const UCHAR*, ErrorFunction)
-{
-}
+	bool CommonCallbacks::transliterate(const dsc*, dsc* to, CHARSET_ID& charset2)
+	{
+		charset2 = INTL_TTYPE(to);
+		return false;
+	}
 
+	Jrd::CharSet* CommonCallbacks::getToCharset(CHARSET_ID)
+	{
+		return NULL;
+	}
 
-static void validateLength(Jrd::CharSet*, SLONG, const UCHAR*, const USHORT, ErrorFunction)
-{
-}
+	void CommonCallbacks::validateData(Jrd::CharSet*, SLONG, const UCHAR*)
+	{
+	}
 
+	void CommonCallbacks::validateLength(Jrd::CharSet*, SLONG, const UCHAR*, const USHORT)
+	{
+	}
 
-static CHARSET_ID getChid(const dsc* d)
-{
-	return INTL_TTYPE(d);
-}
+	CHARSET_ID CommonCallbacks::getChid(const dsc* d)
+	{
+		return INTL_TTYPE(d);
+	}
 
+	SLONG CommonCallbacks::getCurDate()
+	{
+		return TimeStamp::getCurrentTimeStamp().value().timestamp_date;
+	}
 
-static SLONG getCurDate()
-{
-	return Firebird::TimeStamp::getCurrentTimeStamp().value().timestamp_date;
-}
+	void CommonCallbacks::isVersion4(bool& /*v4*/)
+	{
+	}
+}	// namespace
 
-
-static void isVersion4(bool& /*v4*/)
-{
-}
 
 static void localError(const Firebird::Arg::StatusVector&)
 {
@@ -2685,8 +2701,5 @@ void CVT_move(const dsc* from, dsc* to, ErrorFunction err)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	Callbacks toCommon = {transliterate, getChid, err, getToCharset,
-						  validateData, validateLength, getCurDate, isVersion4};
-
-	CVT_move_common(from, to, &toCommon);
+	CVT_move_common(from, to, &CommonCallbacks::instance);
 }

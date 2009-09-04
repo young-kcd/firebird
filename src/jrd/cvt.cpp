@@ -88,15 +88,6 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err);
-static CharSet* getToCharset(CHARSET_ID charset2);
-static void validateData(CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err);
-static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err);
-static CHARSET_ID getChid(const dsc* to);
-static SLONG getCurDate();
-static void isVersion4(bool& v4);
-
-
 double CVT_date_to_double(const dsc* desc)
 {
 /**************************************
@@ -376,7 +367,10 @@ GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc)
 }
 
 
-static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err)
+EngineCallbacks EngineCallbacks::instance;
+
+
+bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2)
 {
 	CHARSET_ID charset1;
 	if (INTL_TTYPE(from) == ttype_dynamic)
@@ -407,21 +401,22 @@ static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorF
 }
 
 
-static CharSet* getToCharset(CHARSET_ID charset2)
+CharSet* EngineCallbacks::getToCharset(CHARSET_ID charset2)
 {
 	return charset2 == ttype_dynamic || charset2 == CS_METADATA ? NULL :
 		   INTL_charset_lookup(NULL, charset2);
 }
 
 
-static void validateData(CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err)
+void EngineCallbacks::validateData(CharSet* toCharSet, SLONG length, const UCHAR* q)
 {
 	if (toCharSet && !toCharSet->wellFormed(length, q))
 		err(Arg::Gds(isc_malformed_string));
 }
 
 
-static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err)
+void EngineCallbacks::validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start,
+	const USHORT to_size)
 {
 	if (toCharSet)
 	{
@@ -439,7 +434,7 @@ static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* star
 }
 
 
-static CHARSET_ID getChid(const dsc* to)
+CHARSET_ID EngineCallbacks::getChid(const dsc* to)
 {
 	if (INTL_TTYPE(to) == ttype_dynamic)
 		return INTL_charset(NULL, INTL_TTYPE(to));
@@ -448,7 +443,7 @@ static CHARSET_ID getChid(const dsc* to)
 }
 
 
-static SLONG getCurDate()
+SLONG EngineCallbacks::getCurDate()
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -462,7 +457,7 @@ static SLONG getCurDate()
 }
 
 
-static void isVersion4(bool& v4)
+void EngineCallbacks::isVersion4(bool& v4)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -470,10 +465,4 @@ static void isVersion4(bool& v4)
 	{
 		v4 = tdbb->getRequest()->req_flags & req_blr_version4 ? true : false;
 	}
-}
-
-namespace Jrd
-{
-	Callbacks toEngine = {transliterate, getChid, ERR_post, getToCharset,
-						  validateData, validateLength, getCurDate, isVersion4};
 }
