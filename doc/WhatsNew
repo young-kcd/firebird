@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 1
   **************************
 
+    * Bugfix CORE-2615
+        Silent truncation when using UTF-8 parameters and UTF-8 client character set encoding
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2612
         Connection lost immediatelly after compiling procedure with RPAD system function
       Contributor(s):
