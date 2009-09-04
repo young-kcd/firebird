@@ -538,7 +538,7 @@ static void		ExtractDriveLetter(const TEXT*, ULONG*);
 
 static Database*	init(thread_db*, const PathName&, bool);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
-static void		release_attachment(thread_db*, Attachment*, ISC_STATUS* = NULL);
+static void		release_attachment(thread_db*, Attachment*);
 static void		detachLocksFromAttachment(Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		shutdown_database(Database*, const bool);
@@ -2410,7 +2410,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		}
 
 		// Unlink attachment from database
-		release_attachment(tdbb, attachment);	// normal release, no need to process status vector
+		release_attachment(tdbb, attachment);
 
 		shutdown_database(dbb, false);
 
@@ -5006,7 +5006,7 @@ static void prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const 
 }
 
 
-static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STATUS* s)
+static void release_attachment(thread_db* tdbb, Attachment* attachment)
 {
 /**************************************
  *
@@ -5864,7 +5864,7 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 
 	// Unlink attachment from database
 
-	release_attachment(tdbb, attachment);	// normal release - no status vector processing
+	release_attachment(tdbb, attachment);
 
 	// If there are still attachments, do a partial shutdown
 
@@ -6103,7 +6103,7 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 
 			if (attachment)
 			{
-				release_attachment(tdbb, attachment, userStatus);
+				release_attachment(tdbb, attachment);
 			}
 
 			if (dbb->checkHandle())
