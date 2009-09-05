@@ -70,4 +70,3 @@ inline void CVT_move(const dsc* from, dsc* to)
 }
 
 #endif // JRD_CVT_PROTO_H
-

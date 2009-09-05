@@ -133,7 +133,6 @@ static void float_to_text(const dsc*, dsc*, Callbacks*);
 static void integer_to_text(const dsc*, dsc*, Callbacks*);
 static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, const EXPECT_DATETIME, ErrorFunction);
 static SINT64 hex_to_value(const char*& string, const char* end);
-
 static void localError(const Firebird::Arg::StatusVector&);
 
 class DummyException {};
@@ -2622,6 +2621,12 @@ static SINT64 hex_to_value(const char*& string, const char* end)
 }
 
 
+static void localError(const Firebird::Arg::StatusVector&)
+{
+	throw DummyException();
+}
+
+
 namespace
 {
 	class CommonCallbacks : public Callbacks
@@ -2681,12 +2686,6 @@ namespace
 	{
 	}
 }	// namespace
-
-
-static void localError(const Firebird::Arg::StatusVector&)
-{
-	throw DummyException();
-}
 
 
 void CVT_move(const dsc* from, dsc* to, ErrorFunction err)

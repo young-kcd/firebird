@@ -39,22 +39,8 @@ using namespace Firebird;
 
 static void post_error(const Arg::StatusVector&);
 
-namespace
-{
-	class DsqlCallbacks : public EngineCallbacks
-	{
-	public:
-		DsqlCallbacks()
-			: EngineCallbacks(post_error)
-		{
-		}
 
-	public:
-		static DsqlCallbacks instance;
-	};
-
-	DsqlCallbacks DsqlCallbacks::instance;
-}	// namespace
+static EngineCallbacks dsqlCallbacks(post_error);
 
 
 /**
@@ -70,7 +56,7 @@ namespace
  **/
 void MOVD_move(const dsc* from, dsc* to)
 {
-	CVT_move_common(from, to, &DsqlCallbacks::instance);
+	CVT_move_common(from, to, &dsqlCallbacks);
 }
 
 
@@ -93,4 +79,3 @@ static void post_error(const Arg::StatusVector& v)
 
 	ERRD_punt(status_vector.value());
 }
-
