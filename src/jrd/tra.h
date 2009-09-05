@@ -124,11 +124,11 @@ public:
 		tra_open_cursors(*p),
 		tra_outer(outer),
 		tra_transactions(*p),
+		tra_sorts(*p),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
-		tra_user_management(NULL),
-		tra_sorts(*p)
+		tra_user_management(NULL)
 	{
 		if (outer)
 		{
