@@ -25,6 +25,7 @@
 #define JRD_CVT_PROTO_H
 
 #include "../common/cvt.h"
+#include "../jrd/err_proto.h"
 
 double		CVT_date_to_double(const dsc*);
 void		CVT_double_to_date(double, SLONG[2]);
