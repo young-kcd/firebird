@@ -2885,8 +2885,9 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 	// establish a callback routine to reject duplicate records.
 
 	impure->irsb_sort_handle =
-		SORT_init(tdbb->getDatabase(), &request->req_sorts, map->smb_length, map->smb_keys, map->smb_keys, map->smb_key_desc,
-         		  ((map->smb_flags & SMB_project) ? reject : NULL), 0); //, max_records);
+		SORT_init(tdbb->getDatabase(), &request->req_sorts,
+				  map->smb_length, map->smb_keys, map->smb_keys, map->smb_key_desc,
+				  ((map->smb_flags & SMB_project) ? reject : NULL), 0); //, max_records);
 
 	try {
 
