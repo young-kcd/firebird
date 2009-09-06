@@ -219,7 +219,19 @@ OwnedBlobStack::~OwnedBlobStack()
 void OwnedBlobStack::close()
 {
 	while (this->hasData())
-		BLB_close(m_tdbb, this->pop());
+	{
+		blb* aux = this->object();
+		if (aux != m_blob_created)
+		{
+			this->pop();
+			BLB_close(m_tdbb, aux);
+		}
+		else
+		{
+			BLB_close(m_tdbb, aux);
+			this->pop();
+		}
+	}
 }
 
 
