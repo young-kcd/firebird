@@ -2632,8 +2632,8 @@ namespace
 	class CommonCallbacks : public Callbacks
 	{
 	public:
-		CommonCallbacks()
-			: Callbacks(localError)
+		explicit CommonCallbacks(ErrorFunction aErr)
+			: Callbacks(aErr)
 		{
 		}
 
@@ -2646,12 +2646,7 @@ namespace
 			const USHORT to_size);
 		virtual SLONG getCurDate();
 		virtual void isVersion4(bool& v4);
-
-	public:
-		static CommonCallbacks instance;
 	};
-
-	CommonCallbacks CommonCallbacks::instance;
 
 	bool CommonCallbacks::transliterate(const dsc*, dsc* to, CHARSET_ID& charset2)
 	{
@@ -2700,5 +2695,6 @@ void CVT_move(const dsc* from, dsc* to, ErrorFunction err)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	CVT_move_common(from, to, &CommonCallbacks::instance);
+	CommonCallbacks callbacks(err);
+	CVT_move_common(from, to, &callbacks);
 }
