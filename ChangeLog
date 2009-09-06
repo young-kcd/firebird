@@ -1,3 +1,45 @@
+2009-09-06 11:39  hvlad
+
+	* firebird2/src/jrd/: cch.cpp (1.241), cch.h (1.51):
+
+	Improvement CORE-1687 : Allow bigger cache sizes than 2 GB (16K *
+	128 K) for x64 builds
+
+2009-09-06 08:36  robocop
+
+	* firebird2/src/jrd/fun.epp (1.124):
+
+	This strange code is to ensure that read blobs that cannot be
+	closed normally are ignored by the destructor, but if the created
+	(write) blob cannot be closed normally, it will be cancelled by the
+	destructor of OwnedBlobStack (previously it was ignored because the
+	pop() happened always before the close() call).
+
+2009-09-06 08:25  robocop
+
+	* firebird2/src/jrd/rse.cpp (1.191):
+
+	Misc: too long line.
+
+2009-09-06 08:24  robocop
+
+	* firebird2/src/: common/cvt.h (1.4), jrd/cvt_proto.h (1.17):
+
+	Misc.
+
+2009-09-05 20:18  asfernandes
+
+	* firebird2/src/: common/cvt.cpp (1.36), dsql/movd.cpp (1.26),
+	jrd/cvt_proto.h (1.16):
+
+	Misc
+
+2009-09-05 20:18  asfernandes
+
+	* firebird2/src/jrd/tra.h (1.102):
+
+	Warnings - initialization order
+
 2009-09-05 10:47  dimitr
 
 	* firebird2/src/jrd/cvt_proto.h (1.15):
