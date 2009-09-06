@@ -5515,8 +5515,8 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 
 	UCHAR* memory = NULL;
 	SLONG buffers = 0;
-	const SLONG page_size = (SLONG) dbb->dbb_page_size;
-	SLONG memory_size = page_size * (number + 1);
+	const size_t page_size = dbb->dbb_page_size;
+	size_t memory_size = page_size * (number + 1);
 	fb_assert(memory_size > 0);
 
 	SLONG old_buffers = 0;

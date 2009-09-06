@@ -66,7 +66,11 @@ class Database;
 // Page buffer cache size constraints.
 
 const ULONG MIN_PAGE_BUFFERS = 50;
+#if SIZEOF_VOID_P == 4
 const ULONG MAX_PAGE_BUFFERS = 131072;
+#else
+const ULONG MAX_PAGE_BUFFERS = MAX_SLONG - 1;
+#endif
 
 #define DIRTY_LIST
 //#define DIRTY_TREE
