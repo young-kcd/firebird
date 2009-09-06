@@ -39,7 +39,7 @@ namespace Jrd
 	class EngineCallbacks : public Firebird::Callbacks
 	{
 	public:
-		EngineCallbacks(ErrorFunction aErr)
+		explicit EngineCallbacks(ErrorFunction aErr)
 			: Callbacks(aErr)
 		{
 		}

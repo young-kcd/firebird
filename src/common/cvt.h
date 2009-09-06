@@ -40,7 +40,7 @@ namespace Firebird {
 class Callbacks
 {
 public:
-	Callbacks(ErrorFunction aErr)
+	explicit Callbacks(ErrorFunction aErr)
 		: err(aErr)
 	{
 	}
