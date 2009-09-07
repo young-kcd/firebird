@@ -9925,6 +9925,8 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 				remap_field(statement, field->nod_arg[e_rse_boolean], context, current_level);
 			field->nod_arg[e_rse_items] =
 				remap_field(statement, field->nod_arg[e_rse_items], context, current_level);
+			field->nod_arg[e_rse_sort] =
+				remap_field(statement, field->nod_arg[e_rse_sort], context, current_level);
 			current_level--;
 			return field;
 
