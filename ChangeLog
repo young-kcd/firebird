@@ -1,3 +1,23 @@
+2009-09-07 05:58  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.457):
+
+	Fixed CORE-1787 - Consistency check when subquery is ordered by
+	aggregate function from other context
+
+2009-09-07 04:55  asfernandes
+
+	* firebird2/src/jrd/fun.epp (1.125):
+
+	Document the strange code in-place so its reason could be
+	remembered in a month
+
+2009-09-06 17:42  asfernandes
+
+	* firebird2/src/common/cvt.cpp (1.37):
+
+	Fix problem verified by Claudio
+
 2009-09-06 11:39  hvlad
 
 	* firebird2/src/jrd/: cch.cpp (1.241), cch.h (1.51):
