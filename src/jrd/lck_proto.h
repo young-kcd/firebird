@@ -27,6 +27,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/thd.h"
 #include "../jrd/sch_proto.h"
+#include "../jrd/isc_i_proto.h"
 
 #ifdef __cplusplus
 extern "C" {
