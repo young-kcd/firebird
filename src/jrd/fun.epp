@@ -220,6 +220,11 @@ void OwnedBlobStack::close()
 {
 	while (this->hasData())
 	{
+		// This strange code is to ensure that read blobs that cannot be closed
+		// normally are ignored by the destructor, but if the created (write)
+		// blob cannot be closed normally, it will be cancelled by the destructor
+		// of OwnedBlobStack.
+
 		blb* aux = this->object();
 		if (aux != m_blob_created)
 		{
