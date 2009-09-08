@@ -109,7 +109,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 {
 	if (!m_initialized)
 	{
-		MutexLockGuard guard(m_mutex);
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 		if (!m_initialized)
 		{
 			init();
@@ -185,18 +185,20 @@ Provider::~Provider()
 Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	const string& user, const string& pwd, const string& role, TraScope tra_scope)
 {
-	MutexLockGuard guard(m_mutex);
+	{ // m_mutex scope
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 
-	Connection** conn_ptr = m_connections.begin();
-	Connection** end = m_connections.end();
-
-	for (; conn_ptr < end; conn_ptr++)
-	{
-		Connection* conn = *conn_ptr;
-		if (conn->isSameDatabase(tdbb, dbName, user, pwd, role) &&
-			conn->isAvailable(tdbb, tra_scope))
+		Connection** conn_ptr = m_connections.begin();
+		Connection** end = m_connections.end();
+	
+		for (; conn_ptr < end; conn_ptr++)
 		{
-			return conn;
+			Connection* conn = *conn_ptr;
+			if (conn->isSameDatabase(tdbb, dbName, user, pwd, role) &&
+				conn->isAvailable(tdbb, tra_scope))
+			{
+				return conn;
+			}
 		}
 	}
 
@@ -210,7 +212,11 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 		Connection::deleteConnection(tdbb, conn);
 		throw;
 	}
-	m_connections.add(conn);
+
+	{ // m_mutex scope
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
+		m_connections.add(conn);
+	}
 
 	return conn;
 }
@@ -219,21 +225,25 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 // I have not implemented way to delete long idle connections.
 void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool /*inPool*/)
 {
-	MutexLockGuard guard(m_mutex);
+	{ // m_mutex scope
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 
-	size_t pos;
-	if (m_connections.find(&conn, pos))
-	{
+		size_t pos;
+		if (!m_connections.find(&conn, pos))
+		{
+			fb_assert(false);
+			return;
+		}
+
 		m_connections.remove(pos);
-		Connection::deleteConnection(tdbb, &conn);
-		return;
 	}
-
-	fb_assert(false);
+	Connection::deleteConnection(tdbb, &conn);
 }
 
 void Provider::clearConnections(thread_db* tdbb)
 {
+	fb_assert(!tdbb || !tdbb->getDatabase());
+
 	MutexLockGuard guard(m_mutex);
 
 	Connection** ptr = m_connections.begin();
@@ -250,6 +260,8 @@ void Provider::clearConnections(thread_db* tdbb)
 
 void Provider::cancelConnections(thread_db* tdbb)
 {
+	fb_assert(!tdbb || !tdbb->getDatabase());
+
 	MutexLockGuard guard(m_mutex);
 
 	Connection** ptr = m_connections.begin();
