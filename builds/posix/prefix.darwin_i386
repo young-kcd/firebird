@@ -16,6 +16,20 @@
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
+#
+# From MacOSX 10.6 (Snow Leopard), 32bit builds are no longer
+# the default. To build 32bit Firebird on MacOSX 10.6 you 
+# need to do the following.
+#
+# 1. edit configure.in so that MAKEFILE_PREFIX=darwin_i386
+# 2. comment the CPU_TYPE
+# 3. edit extern/icu/source/config/mh-darwin and set the right 32bit flags (-m32 -arch i386)
+# for CFLAGS, CXXFLAGS & LDFLAGS
+# 4. export MACOSX_DEPLOYMENT_TARGET=10.4
+# 5. export CFLAGS='-m32 -arch i386'
+# 6. export CXXFLAGS='-m32 -arch i386'
+# 7. export LDFLAGS='-m32 -arch i386'
+
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
 export DYLD_LIBRARY_PATH
@@ -34,8 +48,8 @@ CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_l
 Physical_IO_Module=os/posix/unix.cpp
 PLATFORM_PATH=os/darwin
 
-LINK_OPTS:=
-LD_FLAGS+=-isysroot /Developer/SDKs/MacOSX10.4u.sdk
+LINK_OPTS:=-m32 -arch i386
+LD_FLAGS+= -m32 -arch i386 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
 LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
 LIB_LINK_SONAME:=-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000
@@ -44,7 +58,8 @@ LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.dar
 LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
 
-LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
+LIB_LINK_RPATH:=
+LIB_LINK_DYNAMIC:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
