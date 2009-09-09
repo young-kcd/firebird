@@ -80,6 +80,19 @@ typedef struct perf
 	struct tms perf_times;
 } PERF;
 
+typedef struct perf64
+{
+	ISC_INT64 perf_fetches;
+	ISC_INT64 perf_marks;
+	ISC_INT64 perf_reads;
+	ISC_INT64 perf_writes;
+	ISC_INT64 perf_current_memory;
+	ISC_INT64 perf_max_memory;
+	long perf_buffers;
+	long perf_page_size;
+	long perf_elapsed;
+	struct tms perf_times;
+} PERF64;
 
 /* Letter codes controlling printing of statistics:
 

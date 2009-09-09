@@ -455,13 +455,13 @@ static bool process_statement(bool flush_flag)
 				{
 					if (!dbb->dbb_statistics)
 					{
-						dbb->dbb_statistics = (int *) gds__alloc((SLONG) sizeof(PERF));
+						dbb->dbb_statistics = (int *) gds__alloc((SLONG) sizeof(PERF64));
 #ifdef DEBUG_GDS_ALLOC
 						// We don't care about QLI specific memory leaks for V4.0
 						gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
 #endif
 					}
-					perf_get_info(&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
+					perf64_get_info(&dbb->dbb_handle, (perf64*) dbb->dbb_statistics);
 				}
 			}
 		}
@@ -472,7 +472,7 @@ static bool process_statement(bool flush_flag)
 
 		if (QLI_statistics)
 		{
-			PERF statistics;
+			PERF64 statistics;
 			TEXT buffer[512], report[256];
 			for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 			{
@@ -484,8 +484,8 @@ static bool process_statement(bool flush_flag)
 					size_t used_len = strlen(report);
 					ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
 					// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b"
-					perf_get_info(&dbb->dbb_handle, &statistics);
-					perf_format((perf*) dbb->dbb_statistics, &statistics, report, buffer, 0);
+					perf64_get_info(&dbb->dbb_handle, &statistics);
+					perf64_format((perf64*) dbb->dbb_statistics, &statistics, report, buffer, 0);
 					ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);
 					// Msg26 Statistics for database %s %s
 					QLI_skip_line = true;

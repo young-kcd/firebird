@@ -344,7 +344,7 @@ static processing_state passthrough(const char* cmd);
 static SSHORT print_item(TEXT**, XSQLVAR*, const int);
 static void print_item_numeric(SINT64, int, int, TEXT*);
 static processing_state print_line(XSQLDA*, const int pad[], TEXT line[]);
-static void print_performance(perf* perf_before);
+static void print_performance(perf64* perf_before);
 static processing_state print_sqlda_input(const bool is_selectable);
 static void print_sqlda_output(const XSQLDA& sqlda);
 static void process_header(const XSQLDA* sqlda, const int pad[], TEXT header[], TEXT header2[]);
@@ -2570,9 +2570,9 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 
 	// If statistics are requested, then reserve them here
 
-	perf perf_before;
+	perf64 perf_before;
 	if (Stats)
-		perf_get_info(&DB, &perf_before);
+		perf64_get_info(&DB, &perf_before);
 
 	// Prepare the dynamic query stored in string.
 	// But put this on the DDL transaction to get maximum visibility of
@@ -8006,14 +8006,14 @@ static processing_state print_line(XSQLDA* sqlda, const int pad[], TEXT line[])
 // p r i n t _ p e r f o r m a n c e
 // *********************************
 // As the name implies, show performance as extracted from the API routines.
-static void print_performance(perf* perf_before)
+static void print_performance(perf64* perf_before)
 {
 	// Translation of report strings. Do not remove "static" modifier.
 	static bool have_report = false;
 	static TEXT report_1[MSG_LENGTH + MSG_LENGTH];
 
-	perf perf_after;
-	perf_get_info(&DB, &perf_after);
+	perf64 perf_after;
+	perf64_get_info(&DB, &perf_after);
 	if (!have_report)
 	{
 		ISQL_msg_get(REPORT1, report_1);
@@ -8026,7 +8026,7 @@ static void print_performance(perf* perf_before)
 		have_report = true;
 	}
 	SCHAR statistics[256];
-	perf_format(perf_before, &perf_after, report_1, statistics, NULL);
+	perf64_format(perf_before, &perf_after, report_1, statistics, NULL);
 	ISQL_printf2(Diag, "%s%s", statistics, NEWLINE);
 }
 
@@ -8562,9 +8562,9 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 
 	// If statistics are requested, then reserve them here
 
-	perf perf_before;
+	perf64 perf_before;
 	if (Stats)
-		perf_get_info(&DB, &perf_before);
+		perf64_get_info(&DB, &perf_before);
 
 	// Prepare the dynamic query stored in string.
 	// But put this on the DDL transaction to get maximum visibility of

@@ -132,6 +132,10 @@ EXPORTS
 	perf_get_info	@101
 	perf_report	@102
 
+	perf64_format
+	perf64_get_info
+	perf64_report
+
 ;----------------------------
 ; PUBLIC INTERFACE, i.e. API
 ;----------------------------

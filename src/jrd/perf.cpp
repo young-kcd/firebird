@@ -51,7 +51,7 @@
 #endif
 
 
-static SLONG get_parameter(const SCHAR**);
+static SINT64 get_parameter(const SCHAR**);
 #ifndef HAVE_TIMES
 static void times(struct tms*);
 #endif
@@ -81,9 +81,9 @@ static const SCHAR* report = "elapsed = !e cpu = !u reads = !r writes = !w fetch
 #define TICK	((SLONG)CLK_TCK)
 #endif
 
-
-int API_ROUTINE perf_format(const PERF* before, const PERF* after,
-							const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
+template<typename P>
+static int perf_format(const P* before, const P* after,
+				const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
 {
 /**************************************
  *
@@ -108,7 +108,7 @@ int API_ROUTINE perf_format(const PERF* before, const PERF* after,
 			*p++ = c;
 		else
 		{
-			SLONG delta;
+			SINT64 delta;
 			switch (c = *string++)
 			{
 			case 'r':
@@ -164,7 +164,7 @@ int API_ROUTINE perf_format(const PERF* before, const PERF* after,
 			case 'b':
 			case 'c':
 			case 'x':
-				sprintf(p, "%"SLONGFORMAT, delta);
+				sprintf(p, "%"SQUADFORMAT, delta);
 				while (*p)
 					p++;
 				break;
@@ -195,7 +195,8 @@ int API_ROUTINE perf_format(const PERF* before, const PERF* after,
 }
 
 
-void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
+template<typename P>
+static void perf_get_info(FB_API_HANDLE* handle, P* perf)
 {
 /**************************************
  *
@@ -312,8 +313,8 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 }
 
 
-void API_ROUTINE perf_report(const PERF* before,
-							 const PERF* after, SCHAR* buffer, SSHORT* buf_len)
+template<typename P>
+static void perf_report(const P* before, const P* after, SCHAR* buffer, SSHORT* buf_len)
 {
 /**************************************
  *
@@ -330,7 +331,7 @@ void API_ROUTINE perf_report(const PERF* before,
 }
 
 
-static SLONG get_parameter(const SCHAR** ptr)
+static SINT64 get_parameter(const SCHAR** ptr)
 {
 /**************************************
  *
@@ -345,7 +346,7 @@ static SLONG get_parameter(const SCHAR** ptr)
  **************************************/
 	SSHORT l = *(*ptr)++;
 	l += (*(*ptr)++) << 8;
-	const SLONG parameter = isc_vax_integer(*ptr, l);
+	const SINT64 parameter = isc_portable_integer(reinterpret_cast<const ISC_UCHAR*>(*ptr), l);
 	*ptr += l;
 
 	return parameter;
@@ -371,3 +372,36 @@ static void times(struct tms* buffer)
 #endif
 
 
+int API_ROUTINE perf_format(const PERF* before, const PERF* after,
+				const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
+{
+	return perf_format<PERF>(before, after, string, buffer, buf_len);
+}
+
+int API_ROUTINE perf64_format(const PERF64* before, const PERF64* after,
+				const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
+{
+	return perf_format<PERF64>(before, after, string, buffer, buf_len);
+}
+
+
+void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
+{
+	return perf_get_info<PERF>(handle, perf);
+}
+
+void API_ROUTINE perf64_get_info(FB_API_HANDLE* handle, PERF64* perf)
+{
+	return perf_get_info<PERF64>(handle, perf);
+}
+
+
+void API_ROUTINE perf_report(const PERF* before, const PERF* after, SCHAR* buffer, SSHORT* buf_len)
+{
+	return perf_report<PERF>(before, after, buffer, buf_len);
+}
+
+void API_ROUTINE perf64_report(const PERF64* before, const PERF64* after, SCHAR* buffer, SSHORT* buf_len)
+{
+	return perf_report<PERF64>(before, after, buffer, buf_len);
+}
