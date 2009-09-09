@@ -10,8 +10,9 @@ SHAREDLIBCXXFLAGS = -dynamic
 SHAREDLIBCPPFLAGS =
 
 # Pad out the paths to the maximum possible length
-LD_FLAGS += -headerpad_max_install_names
-#LD_FLAGS += -headerpad_max_install_names -arch x86_64
+#LD_FLAGS += -headerpad_max_install_names -arch i386
+LD_FLAGS += -headerpad_max_install_names -arch x86_64
+#LD_FLAGS += -headerpad_max_install_names -arch ppc 
 #LD_FLAGS += -headerpad_max_install_names -arch ppc64
 
 # Set CFLAGS and CXXFLAGS for relevant MacOS architecture
