@@ -39,14 +39,22 @@ namespace Firebird {
 class AtomicCounter
 {
 public:
+#ifdef _WIN64
+	typedef LONGLONG counter_type;
+#else
 	typedef LONG counter_type;
+#endif
 
 	explicit AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
 
 	counter_type exchangeAdd(counter_type val)
 	{
+#ifdef _WIN64
+		return InterlockedExchangeAdd64(&counter, val);
+#else
 		return InterlockedExchangeAdd(&counter, val);
+#endif
 	}
 
 	counter_type operator +=(counter_type val)
@@ -61,19 +69,31 @@ public:
 
 	counter_type operator ++()
 	{
+#ifdef _WIN64
+		return InterlockedIncrement64(&counter);
+#else
 		return InterlockedIncrement(&counter);
+#endif
 	}
 
 	counter_type operator --()
 	{
+#ifdef _WIN64
+		return InterlockedDecrement64(&counter);
+#else
 		return InterlockedDecrement(&counter);
+#endif
 	}
 
 	counter_type value() const { return counter; }
 
 	counter_type setValue(counter_type val)
 	{
+#ifdef _WIN64
+		return InterlockedExchange64(&counter, val);
+#else
 		return InterlockedExchange(&counter, val);
+#endif
 	}
 
 private:
