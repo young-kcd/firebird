@@ -54,7 +54,7 @@ namespace EDS {
 GlobalPtr<Manager> Manager::manager;
 Mutex Manager::m_mutex;
 Provider* Manager::m_providers = NULL;
-bool Manager::m_initialized = false;
+volatile bool Manager::m_initialized = false;
 
 Manager::Manager(MemoryPool& pool) :
 	PermanentStorage(pool)

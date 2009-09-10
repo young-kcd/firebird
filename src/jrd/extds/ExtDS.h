@@ -77,7 +77,7 @@ private:
 	static Firebird::GlobalPtr<Manager> manager;
 	static Firebird::Mutex m_mutex;
 	static Provider* m_providers;
-	static bool m_initialized;
+	static volatile bool m_initialized;
 };
 
 
