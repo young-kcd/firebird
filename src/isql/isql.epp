@@ -344,7 +344,7 @@ static processing_state passthrough(const char* cmd);
 static SSHORT print_item(TEXT**, XSQLVAR*, const int);
 static void print_item_numeric(SINT64, int, int, TEXT*);
 static processing_state print_line(XSQLDA*, const int pad[], TEXT line[]);
-static void print_performance(perf64* perf_before);
+static void print_performance(const perf64* perf_before);
 static processing_state print_sqlda_input(const bool is_selectable);
 static void print_sqlda_output(const XSQLDA& sqlda);
 static void process_header(const XSQLDA* sqlda, const int pad[], TEXT header[], TEXT header2[]);
@@ -8006,7 +8006,7 @@ static processing_state print_line(XSQLDA* sqlda, const int pad[], TEXT line[])
 // p r i n t _ p e r f o r m a n c e
 // *********************************
 // As the name implies, show performance as extracted from the API routines.
-static void print_performance(perf64* perf_before)
+static void print_performance(const perf64* perf_before)
 {
 	// Translation of report strings. Do not remove "static" modifier.
 	static bool have_report = false;
