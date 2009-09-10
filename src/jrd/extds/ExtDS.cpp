@@ -190,7 +190,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 
 		Connection** conn_ptr = m_connections.begin();
 		Connection** end = m_connections.end();
-	
+
 		for (; conn_ptr < end; conn_ptr++)
 		{
 			Connection* conn = *conn_ptr;

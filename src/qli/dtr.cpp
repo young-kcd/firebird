@@ -455,7 +455,7 @@ static bool process_statement(bool flush_flag)
 				{
 					if (!dbb->dbb_statistics)
 					{
-						dbb->dbb_statistics = (int *) gds__alloc((SLONG) sizeof(PERF64));
+						dbb->dbb_statistics = (int*) gds__alloc((SLONG) sizeof(PERF64));
 #ifdef DEBUG_GDS_ALLOC
 						// We don't care about QLI specific memory leaks for V4.0
 						gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
