@@ -60,8 +60,8 @@ Firebird::AtomicCounter event_counter;
 
 static Firebird::GlobalPtr<PortsCleanup> wnet_ports;
 static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
-static bool wnet_initialized = false;
-static bool wnet_shutdown = false;
+static volatile bool wnet_initialized = false;
+static volatile bool wnet_shutdown = false;
 
 static bool		accept_connection(rem_port*, const P_CNCT*);
 static rem_port*		alloc_port(rem_port*);

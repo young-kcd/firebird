@@ -111,7 +111,6 @@ const SLONG SIG_informs_continue	= 0;	/* continue on signal processing */
 const SLONG SIG_informs_stop		= 1;	/* stop signal processing */
 
 
-static bool initialized_signals = false;
 static SIG volatile signals = NULL;
 static SLONG volatile overflow_count = 0;
 

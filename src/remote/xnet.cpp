@@ -138,8 +138,8 @@ static char xnet_endpoint[BUFFER_TINY] = "";
 
 #endif // WIN_NT
 
-static bool xnet_initialized = false;
-static bool xnet_shutdown = false;
+static volatile bool xnet_initialized = false;
+static volatile bool xnet_shutdown = false;
 static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
 static Firebird::GlobalPtr<PortsCleanup>	xnet_ports;
 static ULONG xnet_next_free_map_num = 0;

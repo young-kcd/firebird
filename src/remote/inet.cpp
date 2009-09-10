@@ -358,8 +358,8 @@ static XDR::xdr_ops inet_ops =
 
 SLONG INET_remote_buffer;
 static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
-static bool INET_initialized = false;
-static bool INET_shutting_down = false;
+static volatile bool INET_initialized = false;
+static volatile bool INET_shutting_down = false;
 static slct_t INET_select = { 0, 0, 0 };
 static int INET_max_clients;
 static rem_port* inet_async_receive = NULL;
