@@ -1,3 +1,36 @@
+2009-09-10 08:40  hvlad
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.45), ExtDS.h (1.20):
+
+	Use volatile for better thread-safety, noted by Adriano
+
+2009-09-10 08:13  robocop
+
+	* firebird2/src/isql/isql.epp (1.291):
+
+	Misc.
+
+2009-09-10 08:04  robocop
+
+	* firebird2/src/common/classes/Aligner.h (1.7):
+
+	Misc.
+
+2009-09-10 03:31  asfernandes
+
+	* firebird2/: builds/install/arch-specific/solaris/CS/prototype.in
+	(1.12), src/jrd/extds/ExtDS.cpp (1.44), src/qli/dtr.cpp (1.75):
+
+	Misc
+
+2009-09-09 16:00  verbguy
+
+	* firebird2/builds/posix/: firebird.exp (1.4), firebird.vers
+	(1.18):
+
+	make perf64_format, perf64_get_info, perf64_report visible for unix
+	builds
+
 2009-09-09 12:27  hvlad
 
 	* firebird2/: src/isql/isql.epp (1.290), src/jrd/perf.cpp (1.46),
