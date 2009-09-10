@@ -38,7 +38,7 @@ template <typename C>
 class OutAligner
 {
 private:
-	UCHAR* userBuffer;
+	UCHAR* const userBuffer;
 #ifdef RISC_ALIGNMENT
 	Firebird::HalfStaticArray<C, BUFFER_SMALL> localBuffer;
 	ULONG bSize;
