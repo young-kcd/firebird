@@ -105,7 +105,8 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
 	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
-	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "Restrict UDF"},	// location(s) of UDFs
+#define UDF_DEFAULT_CONFIG_VALUE "Restrict UDF"
+	{TYPE_STRING,		"UdfAccess",				(ConfigValue) UDF_DEFAULT_CONFIG_VALUE},	// location(s) of UDFs
 	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
 #ifdef DEV_BUILD
  	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) true},	// whether to abort() engine when internal error is found
@@ -439,7 +440,33 @@ const char *Config::getDatabaseAccess()
 
 const char *Config::getUdfAccess()
 {
-	return (const char*) sysConfig().values[KEY_UDF_ACCESS];
+	static Firebird::GlobalPtr<Firebird::Mutex> udfMutex;
+	static Firebird::GlobalPtr<Firebird::string> udfValue;
+	static const char* volatile value = 0;
+
+	if (value)
+	{
+		return value;
+	}
+
+	Firebird::MutexLockGuard guard(udfMutex);
+
+	if (value)
+	{
+		return value;
+	}
+
+	const char* v = (const char*) sysConfig().values[KEY_UDF_ACCESS];
+	if (! strcmp(v, UDF_DEFAULT_CONFIG_VALUE) && FB_UDFDIR[0])
+	{
+		udfValue->printf("Restrict %s", FB_UDFDIR);
+		value = udfValue->c_str();
+	}
+	else
+	{
+		value = v;
+	}
+	return value;
 }
 
 const char *Config::getTempDirectories()
@@ -511,3 +538,4 @@ int Config::getMaxUserTraceLogSize()
 {
 	return (int) sysConfig().values[KEY_MAX_TRACELOG_SIZE];
 }
+

@@ -64,7 +64,7 @@ TryAddUser() {
 	
     if [ -z "$testStr" ]
       then
-        useradd $AdditionalParameter -d $FBRootDir -s /bin/false \
+        useradd $AdditionalParameter -d @FB_CONFDIR@ -s /bin/false \
             -c "Firebird Database Owner" -g firebird firebird 
     fi
 
@@ -301,7 +301,7 @@ EOF
 	if [ "$initScript" ]
 	then
 	    # Install the firebird init.d script
-    	cp $FBRootDir/misc/$srcScript $initScript
+    	cp @FB_MISCDIR@/$srcScript $initScript
 	    chown root:root $initScript
     	chmod ug=rx,o=r $initScript
 
@@ -332,16 +332,16 @@ EOF
     	then
       		if [ -x /bin/fillup ]
 	        then
-    	      /bin/fillup -q -d = /etc/rc.config $FBRootDir/misc/rc.config.firebird
+    	      /bin/fillup -q -d = /etc/rc.config @FB_MISCDIR@/rc.config.firebird
         	fi
 	    elif [ -d /etc/sysconfig ]
     	then
-        	cp $FBRootDir/misc/rc.config.firebird /etc/sysconfig/firebird
+        	cp @FB_MISCDIR@/rc.config.firebird /etc/sysconfig/firebird
 	    fi
 	
 	else
 		echo "Couldn't autodetect linux type. You must select"
-		echo "the most appropriate startup script in $FBRootDir/misc/"
+		echo "the most appropriate startup script in @FB_MISCDIR@"
 		echo "and manually register it in your OS."
 	fi
 

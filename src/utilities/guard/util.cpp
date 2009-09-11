@@ -60,6 +60,7 @@
 #include "../utilities/guard/util_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../common/utils_proto.h"
 
 
 pid_t UTIL_start_process(const char* process, const char* process2, char** argv, const char* prog_name)
@@ -83,28 +84,26 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
  *     expanded process name. (MAXPATHLEN recommended)
  *
  **************************************/
-	TEXT string[MAXPATHLEN];
-
 	fb_assert(process != NULL);
 	fb_assert(argv != NULL);
 
 	// prepend Firebird home directory to the program name
 	// choose correct (super/superclassic) image - to be removed in 3.0
-	gds__prefix(string, process);
-	if (access(string, X_OK) < 0) {
-		gds__prefix(string, process2);
+	Firebird::PathName string = fb_utils::getPrefix(fb_utils::FB_DIR_SBIN, process);
+	if (access(string.c_str(), X_OK) < 0) {
+		string = fb_utils::getPrefix(fb_utils::FB_DIR_SBIN, process2);
 	}
 	if (prog_name) {
-		gds__log("%s: guardian starting %s\n", prog_name, string);
+		gds__log("%s: guardian starting %s\n", prog_name, string.c_str());
 	}
 
 	// add place in argv for visibility to "ps"
-	strcpy(argv[0], string);
+	strcpy(argv[0], string.c_str());
 #if (defined SOLARIS)
 	pid_t pid = fork1();
 	if (!pid)
 	{
-		if (execv(string, argv) == -1) {
+		if (execv(string.c_str(), argv) == -1) {
 			//ib_fprintf(ib_stderr, "Could not create child process %s with args %s\n", string, argv);
 		}
 		exit(FINI_ERROR);
@@ -115,7 +114,7 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 	pid_t pid = vfork();
 	if (!pid)
 	{
-		execv(string, argv);
+		execv(string.c_str(), argv);
 		_exit(FINI_ERROR);
 	}
 #endif
@@ -250,16 +249,14 @@ int UTIL_ex_lock(const TEXT* file)
  *
  **************************************/
 
-	TEXT expanded_filename[MAXPATHLEN];
-
 	// get the file name and prepend the complete path etc
-	gds__prefix(expanded_filename, file);
+	Firebird::PathName expanded_filename = fb_utils::getPrefix(fb_utils::FB_DIR_GUARD, file);
 
 	// file fd for the opened and locked file
-	int fd_file = open(expanded_filename, O_RDWR | O_CREAT, 0666);
+	int fd_file = open(expanded_filename.c_str(), O_RDWR | O_CREAT, 0666);
 	if (fd_file == -1)
 	{
-		fprintf(stderr, "Could not open %s for write\n", expanded_filename);
+		fprintf(stderr, "Could not open %s for write\n", expanded_filename.c_str());
 		return (-1);
 	}
 

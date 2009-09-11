@@ -35,10 +35,7 @@ origDir=`pwd`
 if [ "$1" = "install-embedded" ]
 then
 	# remove server files not needed for embedded usage
-    cd $FBRootDir/bin
-    rm -f fb_inet_server
-    rm -f fb_smp_server
-    cd $FBRootDir
+    rm -f @FB_SBINDIR@/fb_inet_server @FB_SBINDIR@/fb_smp_server
     exit 0
 fi
 
@@ -52,12 +49,12 @@ if [ $RunUser = firebird ]; then
 fi
 
 # Create the fbmgr shell script.
-if [ -x $FBBin/fbmgr.bin ]; then
-	cat > $FBBin/fbmgr <<EOF
+if [ -x @FB_SBINDIR@/fbmgr.bin ]; then
+	cat > @FB_SBINDIR@/fbmgr <<EOF
 #!/bin/sh
-FIREBIRD=$FBRootDir
+FIREBIRD=@FB_CONFDIR@
 export FIREBIRD
-exec \$FIREBIRD/bin/fbmgr.bin \$@
+exec @FB_SBINDIR@/fbmgr.bin \$@
 EOF
 fi
 
@@ -81,8 +78,6 @@ resetInetdServer
 
 # start the db server so we can change the password
 startService @FIREBIRD_ARCH_TYPE@
-
-cd $FBRootDir
 
 # Change sysdba password
 changeDBAPassword

@@ -36,8 +36,6 @@ BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
 PackageVersion=@FIREBIRD_PACKAGE_VERSION@
 CpuType=@CPU_TYPE@
 
-FBRootDir=@prefix@
-
 Version="$BuildVersion-$PackageVersion.$CpuType"
 
 
@@ -56,7 +54,7 @@ AskQuestion "Press Enter to start uninstall or ^C to abort"
 
 # Here we are uninstalling from a install tar.gz file
 
-scriptsDir=$FBRootDir/misc/scripts
+scriptsDir=@FB_MISCDIR@/scripts
 
 
 if [ -e $scriptsDir ]

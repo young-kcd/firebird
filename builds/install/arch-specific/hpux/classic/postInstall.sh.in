@@ -61,7 +61,5 @@
     updateInetdServiceEntry
     resetInetdServer
 
-    cd $FBRootDir
-    
     # Change sysdba password
     changeDBAPassword

@@ -77,9 +77,6 @@ printStatus() {
 
 
 
-    FBRootDir=@prefix@
-    FBBin=$FBRootDir/bin
-
     quitIfRealFile @libdir@/libgds.sl
     quitIfRealFile @libdir@/libgds.sl.0
 

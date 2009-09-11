@@ -44,6 +44,7 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
+#include "../jrd/os/path_utils.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -916,6 +917,112 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 		target.append(buffer + iter, len);
 	else
 		target.assign(buffer + iter, len);
+}
+
+
+Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
+{
+/**************************************
+ *
+ *	i s c F b P r e f i x
+ *
+ **************************************
+ *
+ * Functional description
+ *	Build full file name in specified directory
+ *
+ **************************************/
+	Firebird::PathName s;
+	char tmp[MAXPATHLEN];
+
+#ifndef BOOT_BUILD
+	const char* configDir[] = {
+		FB_BINDIR, FB_SBINDIR, FB_CONFDIR, FB_LIBDIR, FB_INCDIR, FB_DOCDIR, FB_UDFDIR, FB_SAMPLEDIR,
+		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR, 
+		FB_GUARDDIR, FB_PLUGDIR
+	};
+
+	fb_assert(FB_NELEM(configDir) == FB_DIR_LAST);
+	fb_assert(prefType < FB_DIR_LAST);
+
+	if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
+	{
+		// Value is set explicitly and is not environment overridable
+		PathUtils::concatPath(s, configDir[prefType], name);
+		return s;
+	}
+#endif
+
+	switch(prefType)
+	{
+		case FB_DIR_BIN:
+		case FB_DIR_SBIN:
+			s = "bin";
+			break;
+
+		case FB_DIR_CONF:
+		case FB_DIR_LOG:
+		case FB_DIR_GUARD:
+		case FB_DIR_SECDB:
+			s = "";
+			break;
+
+		case FB_DIR_LIB:
+			s = "lib";
+			break;
+
+		case FB_DIR_PLUGINS:
+			s = "plugins";
+			break;
+
+		case FB_DIR_INC:
+			s = "include";
+			break;
+
+		case FB_DIR_DOC:
+			s = "doc";
+			break;
+
+		case FB_DIR_UDF:
+			s = "UDF";
+			break;
+
+		case FB_DIR_SAMPLE:
+			s = "examples";
+			break;
+
+		case FB_DIR_SAMPLEDB:
+			s = "examples/empbuild";
+			break;
+
+		case FB_DIR_HELP:
+			s = "help";
+			break;
+
+		case FB_DIR_INTL:
+			s = "intl";
+			break;
+
+		case FB_DIR_MISC:
+			s = "misc";
+			break;
+
+		case FB_DIR_MSG:
+			gds__prefix_msg(tmp, name);
+			return tmp;
+
+		default:
+			fb_assert(false);
+			break;
+	}
+
+	if (s.hasData() && name[0])
+	{
+		s += '/';
+	}
+	s += name;
+	gds__prefix(tmp, s.c_str());
+	return tmp;
 }
 
 } // namespace fb_utils

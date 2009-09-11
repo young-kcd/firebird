@@ -68,9 +68,6 @@ printStatus() {
 #= Main ====================================================================
 
 
-    FBRootDir=@prefix@
-    FBBin=$FBRootDir/bin
-
 cat <<EOF
 For classic server there are two optional backward compatible client libraries.
 These are libfbclient.so and libfbembed.so.  

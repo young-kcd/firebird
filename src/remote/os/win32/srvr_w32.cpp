@@ -318,9 +318,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	// due to remote access
 
 	//gds_alloc_report(0, __FILE__, __LINE__);
-	char name[MAXPATHLEN];
-	gds__prefix(name, "memdebug.log");
-	FILE* file = fopen(name, "w+t");
+	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "memdebug.log");
+	FILE* file = fopen(name.c_str(), "w+t");
 	if (file)
 	{
 		fprintf(file, "Global memory pool allocated objects\n");

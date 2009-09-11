@@ -3970,11 +3970,11 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
  ******************************************************/
 	TEXT fname[MAXPATHLEN];
 
-	gds__prefix(fname, "proc_info.log");
-	FILE* fptr = fopen(fname, "a+");
+	Firebird::string fname = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "proc_info.log");
+	FILE* fptr = fopen(fname.c_str(), "a+");
 	if (!fptr)
 	{
-		gds__log("Failed to open %s\n", fname);
+		gds__log("Failed to open %s\n", fname.c_str());
 		return;
 	}
 

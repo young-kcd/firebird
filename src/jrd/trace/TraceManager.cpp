@@ -138,9 +138,8 @@ void TraceManager::load_modules()
 
 	init_modules = true;
 
-	char plugdir[MAXPATHLEN];
-	gds__prefix(plugdir, "plugins");
-	ScanDir plugins(plugdir, "*.*");
+	PathName plugdir = fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, "");
+	ScanDir plugins(plugdir.c_str(), "*.*");
 
 	while (plugins.next())
 	{

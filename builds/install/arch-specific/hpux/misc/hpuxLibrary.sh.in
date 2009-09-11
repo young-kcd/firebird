@@ -36,7 +36,7 @@ TryAddUser() {
 	
     if [ -z "$testStr" ]
       then
-        useradd $AdditionalParameter -d $FBRootDir -s /bin/false \
+        useradd $AdditionalParameter -d @FB_CONFDIR@ -s /bin/false \
             -c "Firebird Database Owner" -g firebird firebird 
     fi
 

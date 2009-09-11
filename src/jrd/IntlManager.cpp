@@ -421,8 +421,7 @@ bool IntlManager::initialize()
 	ObjectsArray<string> conflicts;
 	string builtinConfig;
 
-	Firebird::PathName intlPath;
-	PathUtils::concatPath(intlPath, Config::getRootDirectory(), "intl");
+	Firebird::PathName intlPath = fb_utils::getPrefix(fb_utils::FB_DIR_INTL, "");
 
 	ScanDir dir(intlPath.c_str(), "*.conf");
 

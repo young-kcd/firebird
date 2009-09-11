@@ -31,13 +31,7 @@ include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 
 
-FirebirdInstallPrefix=@prefix@
-
  @SET_MAKE@
-
-FIREBIRD=$(FirebirdInstallPrefix)
-
-export -n FIREBIRD
 
 .PHONY: install dist packages tarfile rpmfile 
 .PHONY: buildTarDir buildImageDir buildRoot buildDebugInfo
@@ -50,13 +44,6 @@ export -n FIREBIRD
 BuildRoot=$(GEN_ROOT)
 
 InstallRoot=.
-
-
-FirebirdBuildPrefix=$(GEN_ROOT)
-
-#export FirebirdBuildPrefix
-#export FirebirdInstallPrefix
-#export PackageVersion
 
 BuildVersion=$(FirebirdVersion).$(BuildNum)
 
@@ -144,20 +131,16 @@ buildDebugInfo: buildRoot
             mkdir -p $(GEN_ROOT)/$(DebugDir)/`dirname $$x`/.debug; \
             echo Generating external debug info for $$x; \
             cp $${FIL} $${D_FIL}; \
-            if objcopy --add-gnu-debuglink $${D_FIL} $${FIL}; > /dev/null 2> /dev/null; then \
-                echo Succeeded using objcopy from binutils; \
-            else \
-                echo Failed to set debug link for $${x}; \
-            fi; \
+            objcopy --add-gnu-debuglink=$${D_FIL} $${FIL}; \
             echo Stripping unneeded symbols from $${x}; \
             objcopy --strip-debug --strip-unneeded $${FIL}; \
         fi; \
     done
 # Work around GDB 6.0 bug
-	mkdir -p $(GEN_ROOT)/$(DebugDir)@libdir@/.debug
-	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
-        ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)@libdir@/.debug; \
-    done
+#	mkdir -p $(GEN_ROOT)/$(DebugDir)@libdir@/.debug
+#	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
+#       ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)@libdir@/.debug; \
+#   done
 
 # Use this line if you don't want to use separate debug info
 #buildImageDir: buildRoot

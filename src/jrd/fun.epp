@@ -64,7 +64,10 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/FpeControl.h"
 
-#ifndef WIN_NT
+#ifdef WIN_NT
+#define LIBNAME "ib_util"
+#else
+#define LIBNAME "libib_util"
 #include <dlfcn.h>	// dladdr
 #endif
 
@@ -80,21 +83,44 @@ namespace
 		IbUtilStartup(MemoryPool& p) : libUtilPath(p)
 		{
 #if defined(WIN_NT)
-			libUtilPath.assign("ib_util");
+			libUtilPath.assign(LIBNAME);
 #elif defined(DARWIN)
-			libUtilPath = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libib_util";
+			libUtilPath = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/" LIBNAME;
 #else
 			const PathName id(Config::getInstallDirectory());
-			PathUtils::concatPath(libUtilPath, id, "lib/libib_util");
+			PathUtils::concatPath(libUtilPath, id, "lib/" LIBNAME);
 #endif // WIN_NT
-
-			ModuleLoader::doctorModuleExtention(libUtilPath);
 		}
 
 		PathName libUtilPath;
 	};
 
 	InitInstance<IbUtilStartup> ibUtilStartup;
+	bool volatile initDone = false;
+
+	bool tryLibrary(PathName libName, string& message)
+	{
+		ModuleLoader::doctorModuleExtention(libName);
+
+		ModuleLoader::Module* module = ModuleLoader::loadModule(libName);
+		if (!module)
+		{
+			message.printf("%s library has not been found", libName.c_str());
+			return false;
+		}
+
+		void (*ibUtilUnit)(void* (*)(long));
+		if (!module->findSymbol("ib_util_init", ibUtilUnit))
+		{
+			message.printf("ib_util_init not found in %s", libName.c_str());
+			delete module;
+			return false;
+		}
+
+		ibUtilUnit(IbUtil::alloc);
+		initDone = true;
+		return true;
+	}
 }
 #endif
 
@@ -102,19 +128,31 @@ namespace
 void IbUtil::initialize()
 {
 #ifndef BOOT_BUILD
-	ModuleLoader::Module* module = ModuleLoader::loadModule(ibUtilStartup().libUtilPath);
+	if (initDone)
+		return;
 
-	if (module)
-	{
-		void (*ibUtilUnit)(void* (*)(long));
+	string message[4];		// To suppress logs when correct library is found
 
-		if (module->findSymbol("ib_util_init", ibUtilUnit))
-			ibUtilUnit(alloc);
-		else
-			gds__log("ib_util_init not found in %s", ibUtilStartup().libUtilPath.c_str());
-	}
-	else
-		gds__log("%s library has not been found", ibUtilStartup().libUtilPath.c_str());
+	// using install directory
+	if (tryLibrary(ibUtilStartup().libUtilPath, message[0]))
+		return;
+
+	// using firebird root (takes into an account environment settings)
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, "lib/" LIBNAME), message[1]))
+		return;
+
+	// using libraries directory
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, LIBNAME), message[2]))
+		return;
+
+	// using default paths
+	if (tryLibrary(LIBNAME, message[3]))
+		return;
+
+	// all failed - log error
+	gds__log("ib_util init failed, UDFs can't be used - looks like firebird misconfigured\n"
+			 "\t%s\n\t%s\n\t%s\n\t%s", message[0].c_str(), message[1].c_str(), 
+									   message[2].c_str(), message[3].c_str());
 #endif	// !BOOT_BUILD
 }
 
@@ -276,6 +314,13 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
  *	Evaluate a function.
  *
  **************************************/
+#ifndef BOOT_BUILD
+	// We may be in danger of AV in UDF if ib_util init failed
+	if (!initDone)
+	{
+		ERR_post(Arg::Gds(isc_random) << "ib_util init failed - UDF usage disabled");
+	}
+#endif
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	HalfStaticArray<UCHAR, 800> temp;

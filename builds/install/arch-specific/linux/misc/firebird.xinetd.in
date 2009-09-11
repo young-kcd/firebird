@@ -16,5 +16,5 @@ service gds_db
 # using default firewall configuration (SF#1065511)
 #	log_on_success	+= USERID
 #	log_on_failure	+= USERID
-	server		= @prefix@/bin/fb_inet_server
+	server		= @FB_SBINDIR@/fb_inet_server
 }

@@ -61,8 +61,8 @@ const USHORT ONETIME	= 2;
 const USHORT IGNORE		= 3;
 const USHORT NORMAL_EXIT= 0;
 
-const char* const SUPER_SERVER_BINARY	= "bin/fbserver";
-const char* const SUPER_CLASSIC_BINARY	= "bin/fb_smp_server";
+const char* const SUPER_SERVER_BINARY	= "fbserver";
+const char* const SUPER_CLASSIC_BINARY	= "fb_smp_server";
 
 const char* const INTERBASE_USER		= "interbase";
 const char* const FIREBIRD_USER			= "firebird";

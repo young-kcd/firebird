@@ -44,6 +44,7 @@
 #include "../common/stuff.h"
 #include "../utilities/ibmgr/ibmgr.h"
 #include "../utilities/ibmgr/srvrmgr_proto.h"
+#include "../common/utils_proto.h"
 
 const int SPB_BUFLEN		= 128;	// service params buffer length
 //#define SEND_BUFLEN             32	// length of send and resp
@@ -481,8 +482,7 @@ static bool start_server( ibmgr_data_t* data)
 	// We failed to attach to service, thus server might not be running
 	// You know what? We'll try to start it.
 
-	TEXT path[MAXPATHLEN];
-	gds__prefix(path, SERVER_GUARDIAN);
+	Firebird::PathName path = fb_utils::getPrefix(fb_utils::FB_DIR_SBIN, SERVER_GUARDIAN);
 
 	// CVC: Newer compilers won't accept assigning literal strings to non-const
 	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]
@@ -493,7 +493,7 @@ static bool start_server( ibmgr_data_t* data)
 	static char option_p[] = "-p";
 
 	TEXT *argv[5];
-	argv[0] = path;
+	argv[0] = path.begin();
 	switch (data->suboperation)
 	{
 	case SOP_START_ONCE:
@@ -525,8 +525,8 @@ static bool start_server( ibmgr_data_t* data)
 
 	if (!(pid = fork1()))
 	{
-		if (execv(path, argv) == -1) {
-			printf("Could not create child process %s with args %s \n", path, argv[1]);
+		if (execv(path.c_str(), argv) == -1) {
+			printf("Could not create child process %s with args %s \n", path.c_str(), argv[1]);
 		}
 		_exit(FINI_ERROR);
 	}
@@ -535,7 +535,7 @@ static bool start_server( ibmgr_data_t* data)
 
 	if (!(pid = vfork()))
 	{
-		execv(path, argv);
+		execv(path.c_str(), argv);
 		_exit(FINI_ERROR);
 	}
 #endif

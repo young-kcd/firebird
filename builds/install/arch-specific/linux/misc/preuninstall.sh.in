@@ -26,19 +26,17 @@
 
 checkIfServerRunning
 
-cd $FBRootDir
-
-if [ -f $SecurityDatabase ]; then 
-	cp $SecurityDatabase /tmp 
+if [ -f @FB_SECDBDIR@/$SecurityDatabase ]; then 
+	cp @FB_SECDBDIR@/$SecurityDatabase /tmp 
 	echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
 	chown root:root /tmp/$SecurityDatabase
 	chmod 0600 /tmp/$SecurityDatabase
 fi 
 
-for i in fb_guard firebird.log SYSDBA.password; do
+for i in @FB_GUARDDIR@/fb_guard @FB_LOGDIR@/firebird.log @FB_CONFDIR@/SYSDBA.password; do
 	if [ -f $i ]; then
 		rm -f $i
 	fi
 done
 
-rm -f $FBBin/fbmgr
+rm -f @FB_SBINDIR@/fbmgr

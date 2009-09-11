@@ -194,8 +194,6 @@
 
 #== Main Pre =================================================================
 
-	    FBRootDir=@prefix@
-	    FBBin=$FBRootDir/bin
 	    ArchiveDateTag=`date +"%Y%m%d_%H%M"`
 	    ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar"
 

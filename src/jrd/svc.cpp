@@ -2062,9 +2062,8 @@ void Service::readFbLog()
 {
 	bool svc_started = false;
 
-	TEXT name[MAXPATHLEN];
-	gds__prefix(name, LOGFILE);
-	FILE* file = fopen(name, "r");
+	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
+	FILE* file = fopen(name.c_str(), "r");
 
 	try
 	{

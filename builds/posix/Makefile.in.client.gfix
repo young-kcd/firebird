@@ -46,7 +46,7 @@ GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
 
 AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) \
- $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects)
+			 $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects)
 
 Dependencies = $(AllObjects:.o=.d) 
 

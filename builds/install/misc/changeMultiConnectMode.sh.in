@@ -23,9 +23,6 @@
 
 #= Main ====================================================================
 
-FBRootDir=@prefix@
-FBBin=$FBRootDir/bin
-
 cat <<EOF
 For classic server there are two ways to support multiple connections:
 multiprocess (traditional for FB classic server) and multithread (new for FB 2.5).

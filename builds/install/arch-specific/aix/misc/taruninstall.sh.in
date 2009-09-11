@@ -32,8 +32,7 @@
 #  
 # 
 
-cd $FBRootDir
-cd ..
+cd /
 
 removeInstalledFiles  # Remove installed files 
 removeUninstallFiles  # Remove the 'uninstall' utility files

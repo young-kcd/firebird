@@ -5,8 +5,8 @@
 #
 # Example Database:
 #
-employee.fdb = @prefix@/examples/empbuild/employee.fdb
-employee = @prefix@/examples/empbuild/employee.fdb
+employee.fdb = @FB_SAMPLEDBDIR@/employee.fdb
+employee = @FB_SAMPLEDBDIR@/employee.fdb
 
 #
 # Live Databases:

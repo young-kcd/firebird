@@ -24,7 +24,7 @@
 #
 
 FB_FW=/Library/Frameworks/Firebird.framework/
-FB_RES=$FBRootDir/Versions/A/Resources
+FB_RES=@prefix@/Versions/A/Resources
 
 cat <<EOF
 There are now two ways to support multiple connections 

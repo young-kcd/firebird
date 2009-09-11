@@ -43,12 +43,12 @@ GFIX_Files = alice_meta.epp \
 			 alice.cpp exe.cpp tdr.cpp aliceMain.cpp
 
 GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp jrd/path_utils.cpp \
-					  common/UtilSvc.cpp 
+					  common/UtilSvc.cpp
 
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
 
-AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects)
+AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
@@ -58,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 gfix : $(LIBFBEMBED_SO) $(GFIX)
 
-$(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+$(GFIX):	$(AllObjects)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 

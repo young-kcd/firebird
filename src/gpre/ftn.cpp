@@ -160,7 +160,7 @@ static adl* array_decl_list;
 
 #if (defined AIX || defined AIX_PPC)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "%VAL(";
 const char* const I2CONST_2			= ")";
@@ -177,7 +177,7 @@ const char* const INLINE_COMMENT	= "!";
 const char* const COMMA				= ",";
 #elif defined(__sun)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
 const char* const I2CONST_2			= "";
@@ -194,7 +194,7 @@ const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(LINUX)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
 const char* const I2CONST_2			= "";
@@ -211,7 +211,7 @@ const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(WIN_NT)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  \'%s\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
 const char* const I2CONST_2			= "";
@@ -228,7 +228,7 @@ const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif (defined FREEBSD || defined NETBSD)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
 const char* const I2CONST_2			= "";
@@ -262,7 +262,7 @@ const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(HPUX)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const INCLUDE_FTN_FILE	= "gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "ISC_INT2(";
 const char* const I2CONST_2			= ")";
@@ -1363,10 +1363,10 @@ static void gen_database()
 
 static void gen_database_data() //(const act* action)
 {
-	TEXT include_buffer[MAXPATHLEN];
+	Firebird::PathName include_buffer;
 
-	gds__prefix(include_buffer, INCLUDE_FTN_FILE);
-	sprintf(output_buffer, INCLUDE_ISC_FTN, include_buffer);
+	include_buffer = fb_utils::getPrefix(fb_utils::FB_DIR_INC, INCLUDE_FTN_FILE);
+	sprintf(output_buffer, INCLUDE_ISC_FTN, include_buffer.c_str());
 
 	FTN_print_buffer(output_buffer);
 

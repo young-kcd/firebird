@@ -270,14 +270,4 @@ public:
 	static int getMaxUserTraceLogSize();
 };
 
-namespace Firebird {
-
-// Add appropriate file prefix.
-inline void Prefix(PathName& result, const PathName& file)
-{
-	PathUtils::concatPath(result, Config::getRootDirectory(), file);
-}
-
-} //namespace Firebird
-
 #endif // COMMON_CONFIG_H

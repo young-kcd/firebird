@@ -25,6 +25,7 @@
 #include "../common/config/config_file.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
+#include "../common/utils_proto.h"
 
 using namespace Firebird;
 
@@ -45,8 +46,7 @@ static void replace_dir_sep(PathName& s)
 
 bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
 {
-	PathName alias_filename;
-	Firebird::Prefix(alias_filename, ALIAS_FILE);
+	PathName alias_filename = fb_utils::getPrefix(fb_utils::FB_DIR_CONF, ALIAS_FILE);
 	ConfigFile aliasConfig(false, true);
 	aliasConfig.setConfigFilePath(alias_filename);
 

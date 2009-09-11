@@ -390,9 +390,7 @@ int fb_msg_format(void*        handle,
 		else if (n == -2)
 		{
 			s += "message file ";
-			TEXT temp[MAXPATHLEN];
-			gds__prefix_msg(temp, MSG_FILE);
-			s += temp;
+			s += fb_utils::getPrefix(fb_utils::FB_DIR_MSG, MSG_FILE).ToString();
 			s += " not found";
 		}
 		else

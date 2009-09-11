@@ -29,14 +29,11 @@
 Answer=""
 OrigPasswd=""
 TmpFile=""
-FBRootDir=@prefix@
-export FBRootDir
-FBBin=$FBRootDir/bin
-export FBBin
 SecurityDatabase=security2.fdb
+UninstallScript=FirebirdUninstall.sh
 ArchiveDateTag=`date +"%Y%m%d_%H%M"`
 export ArchiveDateTag
-ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}"
+ArchiveMainFile="@FB_CONFDIR@_${ArchiveDateTag}"
 export ArchiveMainFile
 
 
@@ -267,7 +264,7 @@ askForOrigDBAPassword() {
     do
         AskQuestion "Please enter current password for SYSDBA user: "
         OrigPasswd=$Answer
-        if ! runSilent "$FBBin/gsec -user sysdba -password $OrigPasswd -di"
+        if ! runSilent "@FB_BINDIR@/gsec -user sysdba -password $OrigPasswd -di"
 		then
 			OrigPasswd=""
 		fi
@@ -296,7 +293,7 @@ askUserForNewDBAPassword() {
         NewPasswd=$Answer
         if [ ! -z "$NewPasswd" ]
         then
-            if ! runSilent "$FBBin/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
+            if ! runSilent "@FB_BINDIR@/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
             then
 				NewPasswd=""
 			fi
@@ -363,11 +360,11 @@ removeLineFromFile() {
 
 
 #------------------------------------------------------------------------
-# Write new password to the @prefix@/SYSDBA.password file
+# Write new password to the @FB_CONFDIR@/SYSDBA.password file
 
 writeNewPassword() {
     NewPasswd=$1
-	DBAPasswordFile=$FBRootDir/SYSDBA.password
+	DBAPasswordFile=@FB_CONFDIR@/SYSDBA.password
 
 	cat <<EOT >$DBAPasswordFile
 # Firebird generated password for user SYSDBA is:
@@ -388,7 +385,7 @@ EOT
 	cat <<EOT >>$DBAPasswordFile
 
 # Your password can be changed to a more suitable one using the
-# @prefix@/bin/gsec utility.
+# @FB_BINDIR@/gsec utility.
 EOT
 
     chmod u=r,go= $DBAPasswordFile
@@ -399,7 +396,7 @@ EOT
 
     if [ $NewPasswd != "masterkey" ]
     then
-        runSilent "$FBBin/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
+        runSilent "@FB_BINDIR@/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
     fi
 }
 
@@ -429,14 +426,12 @@ buildUninstallFile() {
         return
     fi
 
-	cp manifest.txt $FBRootDir/misc
+	cp manifest.txt @FB_MISCDIR@
 
-	cp -r scripts $FBRootDir/misc/
-	[ -f scripts/tarMainUninstall.sh ] && cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
-	[ -f scripts/tarmainUninstall.sh ] && cp scripts/tarmainUninstall.sh $FBRootDir/bin/uninstall.sh
-	[ -f $FBRootDir/bin/uninstall.sh ] && chmod u=rx,go= $FBRootDir/bin/uninstall.sh
-
-	cd $FBRootDir
+	cp -r scripts @FB_MISCDIR@
+	[ -f scripts/tarMainUninstall.sh ] && cp scripts/tarMainUninstall.sh @FB_SBINDIR@/$UninstallScript
+	[ -f scripts/tarmainUninstall.sh ] && cp scripts/tarmainUninstall.sh @FB_SBINDIR@/$UninstallScript
+	[ -f @FB_SBINDIR@/$UninstallScript ] && chmod u=rx,go= @FB_SBINDIR@/$UninstallScript
 }
 
 
@@ -480,14 +475,13 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
-	cd $FBRootDir
 	if [ "$1" ]
 	then
 		# Use library name from parameter
-		newLibrary=$FBRootDir/lib/$1
+		newLibrary=@FB_LIBDIR@/$1
 	else
 	    # Use DefaultLibrary, set by appropriate install library
-    	newLibrary=$FBRootDir/lib/$DefaultLibrary.so
+    	newLibrary=@FB_LIBDIR@/$DefaultLibrary.so
 	fi
 
 	safeLink $newLibrary @libdir@/libgds.so
@@ -503,23 +497,6 @@ createLinksForBackCompatibility() {
 removeLinksForBackCompatibility() {
     removeIfOnlyAlink @libdir@/libgds.so
     removeIfOnlyAlink @libdir@/libgds.so.0
-}
-
-
-#------------------------------------------------------------------------
-#  Set correct permissions for $FbRoot/doc tree 
-
-fixDocPermissions() {
-	cd $FBRootDir
-
-	for i in `find doc -print`; do
-		chown root:root $i
-		if [ -d $i ]; then
-			chmod 0755 $i
-		else
-			chmod 0644 $i
-		fi
-	done
 }
 
 
@@ -573,16 +550,25 @@ archivePriorInstallSystemFiles() {
 
     cd /
 
-    DestFile=${FBRootDir#/}   # strip off leading /
-    if [ -e "$DestFile"  ]
+	if [ -f ${oldPWD}/manifest.txt ]; then
+		manifest=`cat ${oldPWD}/manifest.txt`
+		for i in $manifest; do
+			if [ -f $i ]; then
+				i=${i#/}	# strip off leading /
+				archiveFileList="$archiveFileList $i"
+			fi
+		done
+	fi
+
+    DestFile=@FB_CONFDIR@
+    if [ -e "$DestFile" ]
     then
         echo ""
         echo ""
         echo ""
         echo "--- Warning ----------------------------------------------"
-        echo "    The installation target directory: $FBRootDir"
-        echo "    Already contains a prior installation of InterBase/Firebird."
-        echo "    This and files found in /usr/include and @libdir@ will be"
+        echo "    The installation target directory $DestFile already exists."
+        echo "    This and other related files found will be"
         echo "    archived in the file : ${tarArc}"
         echo "" 
 
@@ -601,9 +587,10 @@ archivePriorInstallSystemFiles() {
     for i in ibase.h ib_util.h
     do
         DestFile=usr/include/$i
-        if [ -e $DestFile ]
-        then
-            archiveFileList="$archiveFileList $DestFile"
+        if [ -e $DestFile ]; then
+			if [ ! "`echo $archiveFileList | grep $DestFile`" ]; then
+            	archiveFileList="$archiveFileList $DestFile"
+			fi
         fi
     done
 
@@ -611,30 +598,21 @@ archivePriorInstallSystemFiles() {
 	do
 		for DestFile in usr/lib/$i
 	    do
-        	if [ -e $DestFile ]
-	        then
-    	        archiveFileList="$archiveFileList $DestFile"
+        	if [ -e $DestFile ]; then
+				if [ ! "`echo $archiveFileList | grep $DestFile`" ]; then
+    	        	archiveFileList="$archiveFileList $DestFile"
+				fi
         	fi
 		done
     done
 
-#    for i in `cat manifest.txt`
-#    do
-#        if [ ! -d /$i ]  # Ignore directories 
-#        then
-#            if [ -e /$i ]
-#            then
-#                archiveFileList="$archiveFileList $i"          
-#            fi
-#        fi
-#    done
-
     for i in usr/sbin/rcfirebird etc/init.d/firebird etc/rc.d/init.d/firebird
     do
         DestFile=./$i
-        if [ -e /$DestFile ]
-        then
-            archiveFileList="$archiveFileList $DestFile"
+        if [ -e $DestFile ]; then
+			if [ ! "`echo $archiveFileList | grep $DestFile`" ]; then
+            	archiveFileList="$archiveFileList $DestFile"
+			fi
         fi
     done
 	
@@ -661,9 +639,9 @@ archivePriorInstallSystemFiles() {
 # 
 removeInstalledFiles() {
 
-    manifestFile=$FBRootDir/misc/manifest.txt
+    manifestFile=@FB_MISCDIR@/manifest.txt
 
-    if [ ! -f  $manifestFile ]
+    if [ ! -f "$manifestFile" ]
       then
         return
     fi
@@ -692,11 +670,9 @@ removeInstalledFiles() {
 
 removeUninstallFiles() {
     # remove the uninstall scripts files.
-    #echo $FBRootDir/misc/scripts
-    rm -rf $FBRootDir/misc/scripts
-    rm -f $FBRootDir/misc/manifest.txt
-    rm -f $FBRootDir/bin/uninstall.sh
-
+    rm -rf @FB_MISCDIR@/scripts
+    rm -f @FB_MISCDIR@/manifest.txt
+    rm -f @FB_SBINDIR@/$UninstallScript
 }
 
 
@@ -710,23 +686,24 @@ removeUninstallFiles() {
 removeEmptyDirs() {
 
     dirContentChanged='yes'
-    while [ ! -z $dirContentChanged ]
-      do
+    while [ "$dirContentChanged" ]; do
         dirContentChanged=''
-        for i in `find $FBRootDir -type d -print`; do
-            ls $i/* >/dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                rmdir $i
-                dirContentChanged=$i
-            fi
-        done
 
-        if [ ! -d $FBRootDir ]  # end loop if the FBRootDir was deleted.
-          then
-            dirContentChanged=''
-        fi
+		for rootDir in @FB_BINDIR@ @FB_SBINDIR@ @FB_LIBDIR@ @FB_INCDIR@ @FB_DOCDIR@ @FB_UDFDIR@ @FB_SAMPLEDIR@ @FB_SAMPLEDBDIR@ \
+					   @FB_HELPDIR@ @FB_INTLDIR@ @FB_MISCDIR@ @FB_SECDBDIR@ @FB_MSGDIR@ @FB_LOGDIR@ @FB_GUARDDIR@ @FB_PLUGDIR@ \
+					   @FB_CONFDIR@; do
 
-      done
+			if [ -d $rootDir ]; then	
+		        for i in `find $rootDir -type d -print`; do
+		            ls $i/* >/dev/null 2>&1
+	    	        if [ $? -ne 0 ]; then
+	        	        rmdir $i && dirContentChanged=$i
+	    	        fi
+		        done
+			fi
+
+		done
+	done
 }
 
 
@@ -738,74 +715,30 @@ removeEmptyDirs() {
 #  more work.
 
 fixFilePermissions() {
-    cd $FBRootDir
-
-    # For security reasons initially force all root:root non-writable
-    chown -R root:root $FBRootDir
-    chmod -R uga-w $FBRootDir
-
-	# Set up configuration files - make them root-writable
-    cd $FBRootDir
-	chmod u+w *.conf
-
-    # Prepare bin
-    cd $FBBin
-
-    # Everyone may execute clients
-    chmod a=rx *
-
-    # Shell scripts changing security attributes are for root only
-    chmod u=rx,go= *.sh
-    
     # Lock files
-    cd $FBRootDir
-    for i in fb_guard
+    cd @FB_GUARDDIR@
+    for FileName in fb_guard
     do
-        FileName=$i
         touch $FileName
         MakeFileFirebirdWritable $FileName
     done
 
 	# Log file
+	cd @FB_LOGDIR@
     touch firebird.log
     MakeFileFirebirdWritable firebird.log
     
     # Security database
+	cd @FB_SECDBDIR@
     MakeFileFirebirdWritable $SecurityDatabase
 
-	# set up libraries & plugins - everyone may use them
-	cd $FBRootDir
-	chmod a=rx lib/lib* plugins/lib*
-
-	# set up include files - everyone may use them
-	cd $FBRootDir/include
-	chmod a=r *
-
-	# fix up examples' permissions
-    cd $FBRootDir/examples
-    # set a default of read all files in examples
-    for i in `find . -name '*' -type f -print`
-    do
-         chmod a=r $i
-    done
-    # set a default of read&search all dirs in examples
-    for i in `find . -name '*' -type d -print`
-    do
-         chmod a=rx $i
-    done
     # make examples DB(s) writable
-    for i in `find . -name '*.fdb' -print`
+    for i in `find @FB_SAMPLEDBDIR@ -name '*.fdb' -print`
     do
 		MakeFileFirebirdWritable $i
     done
 
-	# fix up doc permissions
-	cd $FBRootDir
-	fixDocPermissions
-
 	# Architecture (CS/SS) specific permissions
-	cd $FBRootDir
 	fixArcSpecificPermissions
-	cd $FBRootDir
 }
 

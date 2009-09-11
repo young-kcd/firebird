@@ -32,7 +32,7 @@
 static const char* const FIREBIRD_USER_NAME		= "firebird";
 static const char* const INTERBASE_USER_NAME	= "interbase";
 static const char* const INTERBASE_USER_SHORT	= "interbas";
-static const char* const SERVER_GUARDIAN		= "bin/fbguard";
+static const char* const SERVER_GUARDIAN		= "fbguard";
 
 const USHORT MSG_FAC	= 18;
 const int MSG_LEN		= 128;

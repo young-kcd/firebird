@@ -28,6 +28,7 @@
 #define JRD_PWD_H
 
 #include "../jrd/ibase.h"
+#include "../common/utils_proto.h"
 #include "../jrd/sha.h"
 #include "gen/iberror.h"
 #ifdef HAVE_STDLIB_H
@@ -56,7 +57,8 @@ public:
 	static void getPath(TEXT* path_buffer)
 	{
 		static const char* USER_INFO_NAME = "security2.fdb";
-		gds__prefix(path_buffer, USER_INFO_NAME);
+		Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_SECDB, USER_INFO_NAME);
+		name.copyTo(path_buffer, MAXPATHLEN);
 	}
 
 	static void initialize();

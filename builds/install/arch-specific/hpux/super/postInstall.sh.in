@@ -159,7 +159,7 @@ writeNewPassword() {
 
     if [ $NewPasswd != "masterkey" ]
       then
-        $FBBin/gsec -user sysdba -password masterkey <<EOF
+        @FB_BINDIR@/gsec -user sysdba -password masterkey <<EOF
 modify sysdba -pw $NewPasswd
 EOF
     fi
@@ -446,13 +446,9 @@ removeLineFromFile() {
 
     origDir=`pwd`
 
-    FBRootDir=@prefix@
-    FBBin=$FBRootDir/bin
 #    RunUser=root
     RunUser=firebird
-    DBAPasswordFile=$FBRootDir/SYSDBA.password
-    export FBRootDir
-    export FBBin
+    DBAPasswordFile=@FB_CONFDIR@/SYSDBA.password
     export RunUser
     export DBAPasswordFile
 
@@ -508,15 +504,12 @@ removeLineFromFile() {
    chown -R root:root $FBRootDir
    chmod -R u-w,g-w,a-w $FBRootDir
 
-    # Prepare bin
-    cd $FBBin
-
     # Create the fbmgr shell script.
-    cat > fbmgr <<EOF
+    cat > @FB_SBINDIR@/fbmgr <<EOF
 #!/bin/sh
-FIREBIRD=$FBRootDir
+FIREBIRD=@FB_CONFDIR@
 export FIREBIRD
-exec \$FIREBIRD/bin/fbmgr.bin \$@
+exec @FB_SBINDIR@/fbmgr.bin \$@
 EOF
 
 

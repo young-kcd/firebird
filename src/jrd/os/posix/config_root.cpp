@@ -66,6 +66,17 @@ static string getRootPathFromExePath()
 
 void ConfigRoot::osConfigRoot()
 {
+	// Try to use value set at configure time
+	if (FB_CONFDIR[0])
+	{
+		root_dir = FB_CONFDIR;
+		if (root_dir[root_dir.length() - 1] != PathUtils::dir_sep)
+		{
+			root_dir += PathUtils::dir_sep;
+		}
+		return;
+	}
+
 #ifdef SUPERSERVER
 	// Try getting the root path from the executable
 	root_dir = getRootPathFromExePath();

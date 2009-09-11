@@ -23,10 +23,9 @@
 
 # stored configuration values
 
-fb_root=@prefix@
-fb_bindir=$fb_root/bin
-fb_libdir=$fb_root/lib
-fb_incdir=$fb_root/include
+fb_bindir=@FB_BINDIR@
+fb_libdir=@FB_LIBDIR@
+fb_incdir=@FB_INCDIR@
 
 fb_cflags="-I$fb_incdir"
 fb_libs="-L$fb_libdir -lfbclient"

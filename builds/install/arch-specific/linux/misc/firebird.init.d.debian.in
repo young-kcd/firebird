@@ -15,13 +15,16 @@
 #. /etc/rc.d/init.d/functions
 
 
-FIREBIRD=@prefix@
+FIREBIRD=@FB_CONFDIR@
 FBRunUser=firebird
 pidfile=/var/run/firebird/`basename $0`.pid
 FB_OPTS="-pidfile $pidfile -daemon -forever"
 export FIREBIRD 
 
 GUARDIAN=$FIREBIRD/bin/fbguard
+if [ ! -x $GUARDIAN ]; then
+	GUARDIAN=@FB_SBINDIR@/fbguard
+fi
 
 # See how we were called.
 case "$1" in

@@ -55,7 +55,7 @@
 
 # AIX ld option to set run-time library path is -blibpath:path1:path2
 # Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
-LIB_PATH_OPTS= -blibpath:$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl:/usr/local/lib:/usr/lib:/lib
+LIB_PATH_OPTS= -blibpath:@FB_LIBDIR@:@FB_INTLDIR@:/usr/local/lib:/usr/lib:/lib
 
 ifeq ($(STD_ICU),true)
    ICU_LIBS= -L/usr/local/lib -licuuc -licudata -licui18n

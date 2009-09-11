@@ -664,11 +664,10 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int 
  *
  **************************************/
 // Skidder: Calls to this function must be replaced with MemoryPool::print_contents
-	char report_name[MAXPATHLEN];
-	gds__prefix(report_name, "fbsrvreport.txt");
+	Firebird::PathName report_name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "fbsrvreport.txt");
 	// Our new facilities don't expose flags for reporting.
 	const bool used_only = !(flags & ALLOC_verbose);
-	getDefaultMemoryPool()->print_contents(report_name, used_only, filter_filename);
+	getDefaultMemoryPool()->print_contents(report_name.c_str(), used_only, filter_filename);
 }
 
 
@@ -1032,7 +1031,6 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
  *
  * Functional description
  *	Write trace event to a log file
- *  This function tries to be async-signal safe
  *
  **************************************/
 	if (!length)
@@ -1047,11 +1045,10 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	{
 		if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE)
 		{
-			TEXT name[MAXPATHLEN];
-			gds__prefix(name, LOGFILE);
+			Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
 			// We do not care to close this file.
 			// It will be closed automatically when our process terminates.
-			CleanupTraceHandles::trace_file_handle = CreateFile(name, GENERIC_WRITE,
+			CleanupTraceHandles::trace_file_handle = CreateFile(name.c_str(), GENERIC_WRITE,
 				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE)
@@ -1072,11 +1069,8 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	}
 	ReleaseMutex(CleanupTraceHandles::trace_mutex_handle);
 #else
-	TEXT name[MAXPATHLEN];
-
-	// Note: signal-safe code
-	gds__prefix(name, LOGFILE);
-	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
+	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
+	int file = open(name.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0660);
 	if (file == -1)
 		return;
 
@@ -1179,7 +1173,6 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
  **************************************/
 	va_list ptr;
 	time_t now;
-	TEXT name[MAXPATHLEN];
 
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tv;
@@ -1189,12 +1182,12 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	gds__prefix(name, LOGFILE);
+	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
 
 #ifdef WIN_NT
 	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
 #endif
-	FILE* file = fopen(name, "a");
+	FILE* file = fopen(name.c_str(), "a");
 	if (file != NULL)
 	{
 #ifndef WIN_NT
@@ -1215,7 +1208,8 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 		fseek(file, 0, SEEK_END);
 #endif
 
-		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
+		TEXT buffer[MAXPATHLEN];
+		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(buffer, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		va_end(ptr);
@@ -1244,7 +1238,6 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
  **************************************/
 	va_list ptr;
 	time_t now;
-	TEXT name[MAXPATHLEN];
 
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tv;
@@ -1254,16 +1247,17 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	gds__prefix(name, LOGFILE);
+	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
 	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
 #endif
-	FILE* file = fopen(name, "a");
+	FILE* file = fopen(name.c_str(), "a");
 	if (file != NULL)
 	{
-		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
+		TEXT buffer[MAXPATHLEN];
+		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(buffer, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		va_end(ptr);
@@ -3637,13 +3631,13 @@ public:
 		{
 			prefix = Config::getRootDirectory();
 			if (prefix.isEmpty() && !GetProgramFilesDir(prefix))
-				prefix = FB_PREFIX;
+				prefix = FB_CONFDIR[0] ? FB_CONFDIR : FB_PREFIX;
 		}
 		catch (Firebird::fatal_exception&)
 		{
 			// CVC: Presumably here we failed because the config file can't be located.
 			if (!GetProgramFilesDir(prefix))
-				prefix = FB_PREFIX;
+				prefix = FB_CONFDIR[0] ? FB_CONFDIR : FB_PREFIX;
 		}
 		prefix.copyTo(fb_prefix_val, sizeof(fb_prefix_val));
 		fb_prefix = fb_prefix_val;
@@ -3722,7 +3716,7 @@ public:
 		Firebird::PathName msgPrefix;
 		if (!fb_utils::readenv(FB_MSG_ENV, msgPrefix))
 		{
-			msgPrefix = prefix;
+			msgPrefix = FB_MSGDIR[0] ? FB_MSGDIR : prefix;
 		}
 		msgPrefix.copyTo(fb_prefix_msg_val, sizeof(fb_prefix_msg_val));
 		fb_prefix_msg = fb_prefix_msg_val;

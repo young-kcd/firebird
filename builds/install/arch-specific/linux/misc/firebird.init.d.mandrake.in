@@ -27,7 +27,7 @@
 #   Edit the copied firebird.conf to change at least RemoteServicePort
 #   Optionally run chkconfig to autostart the new service
 INSTANCE=default
-FIREBIRD=@prefix@
+FIREBIRD=@FB_CONFDIR@
 
 # No changes needed below for multiple instances
 name=$(basename `readlink -f $0`)
@@ -39,6 +39,10 @@ LD_LIBRARY_PATH=$FIREBIRD/lib
 export FIREBIRD LD_LIBRARY_PATH
 
 GUARDIAN=$FIREBIRD/bin/fbguard
+if [ ! -x $GUARDIAN ]; then
+	GUARDIAN=@FB_SBINDIR@/fbguard
+fi
+
 # initialize as "success"
 RETVAL=0
 

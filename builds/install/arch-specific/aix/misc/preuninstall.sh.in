@@ -36,7 +36,7 @@
 
     checkIfServerRunning
 
-    cd $FBRootDir
+    cd @FB_SECDBDIR@
     
     if [ -f $SecurityDatabase ] 
       then 
@@ -44,7 +44,7 @@
         echo "Saved a copy of $SecurityDatabase in /tmp" 
     fi 
     
-    for i in fb_guard firebird.log SYSDBA.password
+    for i in @FB_GUARDDIR@/fb_guard @FB_LOGDIR@/firebird.log @FB_CONFDIR@/SYSDBA.password
       do
         if [ -f $i ]
           then

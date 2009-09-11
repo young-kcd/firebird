@@ -48,7 +48,7 @@ typedef unsigned short SHORT;
 /* Name of module that implements text-type (n) */
 
 #ifndef INTL_MODULE
-#define	INTL_MODULE "lib/IBLD_%03d"
+#define	INTL_MODULE "IBLD_%03d"
 #endif
 
 #ifndef INTL_INIT_ENTRY
@@ -84,14 +84,14 @@ int main(int argc, char** argv)
 #ifdef LIKE_JRD
 		{
 			char module[200];
-			char path[MAXPATHLEN];
+			Firebird::PathName path;
 			char entry[200];
 			const int t_type = atoi(vector[i]);
 			sprintf(module, INTL_MODULE, t_type);
-			gds__prefix(path, module);
+			path = fb_utils::getPrefix(fb_utils::FB_DIR_LIB, module);
 			sprintf(entry, INTL_INIT_ENTRY, t_type);
-			printf("path=%s entry=%s\n", path, entry);
-			func = (FPTR_INT) ISC_lookup_entrypoint(path, entry, NULL);
+			printf("path=%s entry=%s\n", path.c_str(), entry);
+			func = (FPTR_INT) ISC_lookup_entrypoint(path.c_str(), entry, NULL);
 		}
 #else
 		if (strcmp(vector[i], "ask") == 0) {

@@ -35,6 +35,8 @@
 #include "../qli/help_proto.h"
 #include "../qli/lex_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/utils_proto.h"
+#include "../common/classes/fb_string.h"
 
 using MsgFormat::SafeArg;
 
@@ -43,11 +45,7 @@ const char* INDENT	= "  ";
 const int COLUMN_WIDTH	= 20;
 const int RIGHT_MARGIN	= 70;
 
-#ifdef UNIX
-const char* const TARGET = "help/help.fdb";
-#elif defined(WIN_NT)
-const char* const TARGET = "help\\help.fdb";
-#endif
+const char* const TARGET = "help.fdb";
 
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
@@ -89,11 +87,11 @@ void HELP_help( qli_syntax* node)
  *	Give the poor sucker help.
  *
  **************************************/
-	TEXT target[MAXPATHLEN];
-
 	if (!HELP_DB)
 	{
-		gds__prefix(target, TARGET);
+		Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_HELP, TARGET);
+		TEXT target[MAXPATHLEN];
+		name.copyTo(target, sizeof target);
 		READY
 		ON_ERROR
 			ERRQ_database_error(NULL, gds_status);
