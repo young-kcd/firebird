@@ -1,3 +1,18 @@
+2009-09-12 03:34  asfernandes
+
+	* firebird2/src/: common/utils.cpp (1.76), common/utils_proto.h
+	(1.41), common/classes/MsgPrint.cpp (1.13),
+	common/config/config.cpp (1.102), jrd/fun.epp (1.127),
+	jrd/os/posix/isc_ipc.cpp (1.45):
+
+	Misc
+
+2009-09-11 15:10  hvlad
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.121):
+
+	Missing MSVC part for CORE-2601
+
 2009-09-11 13:17  alexpeshkoff
 
 	* firebird2/configure.in (1.360):
