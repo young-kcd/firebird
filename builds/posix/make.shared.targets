@@ -100,7 +100,7 @@ $(FilesToAddDialog2): $(GEN_ROOT)/iscguard/iscguard.res
 # Explicit dependence of resource script
 $(GEN_ROOT)/remote/os/win32/window.res: $(SRC_ROOT)/remote/os/win32/window.rc $(SRC_ROOT)/remote/os/win32/window.rh \
  $(SRC_ROOT)/jrd/version.rc $(SRC_ROOT)/jrd/build_no.h $(SRC_ROOT)/remote/os/win32/property.rc \
- $(SRC_ROOT)/remote/os/win32/property.rh $(SRC_ROOT)/remote/os/win32/ibconfig.rc
+ $(SRC_ROOT)/remote/os/win32/property.rh
 
 $(GEN_ROOT)/iscguard/iscguard.res: $(SRC_ROOT)/iscguard/iscguard.rc $(SRC_ROOT)/iscguard/iscguard.rh \
  $(SRC_ROOT)/jrd/version.rc 

@@ -27,7 +27,7 @@ PLATFORM_PATH=os/win32
 
 OS_SPECIFIC_Files=thd_priority.cpp
 
-OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/ibconfig.cpp os/win32/cntl.cpp 
+OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/cntl.cpp 
 
 # Override link command for implicit stdc++ linking
 LIB_LINK=$(LD)
@@ -76,8 +76,8 @@ LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_
 LINK_UDF_LIBS = 
 
 # Special options for trace plugin link
-LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS)
+LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS) $(ICU_LIBS)
 
 # This is ugly HACK!!! Must be removed as soon as somebody find
 # a way to use routines from server
-TRACE_OS_Sources = jrd/gds.cpp
+TRACE_OS_Sources = jrd/gds.cpp jrd/isc_ipc.cpp
