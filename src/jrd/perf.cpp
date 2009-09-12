@@ -327,7 +327,7 @@ static void perf_report(const P* before, const P* after, SCHAR* buffer, SSHORT* 
  *
  **************************************/
 
-	perf_format(before, after, report, buffer, buf_len);
+	perf_format<P>(before, after, report, buffer, buf_len);
 }
 
 
@@ -387,21 +387,21 @@ int API_ROUTINE perf64_format(const PERF64* before, const PERF64* after,
 
 void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 {
-	return perf_get_info<PERF>(handle, perf);
+	perf_get_info<PERF>(handle, perf);
 }
 
 void API_ROUTINE perf64_get_info(FB_API_HANDLE* handle, PERF64* perf)
 {
-	return perf_get_info<PERF64>(handle, perf);
+	perf_get_info<PERF64>(handle, perf);
 }
 
 
 void API_ROUTINE perf_report(const PERF* before, const PERF* after, SCHAR* buffer, SSHORT* buf_len)
 {
-	return perf_report<PERF>(before, after, buffer, buf_len);
+	perf_report<PERF>(before, after, buffer, buf_len);
 }
 
 void API_ROUTINE perf64_report(const PERF64* before, const PERF64* after, SCHAR* buffer, SSHORT* buf_len)
 {
-	return perf_report<PERF64>(before, after, buffer, buf_len);
+	perf_report<PERF64>(before, after, buffer, buf_len);
 }
