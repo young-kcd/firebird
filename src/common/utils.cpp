@@ -920,25 +920,16 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 }
 
 
+// Build full file name in specified directory
 Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 {
-/**************************************
- *
- *	i s c F b P r e f i x
- *
- **************************************
- *
- * Functional description
- *	Build full file name in specified directory
- *
- **************************************/
 	Firebird::PathName s;
 	char tmp[MAXPATHLEN];
 
 #ifndef BOOT_BUILD
 	const char* configDir[] = {
 		FB_BINDIR, FB_SBINDIR, FB_CONFDIR, FB_LIBDIR, FB_INCDIR, FB_DOCDIR, FB_UDFDIR, FB_SAMPLEDIR,
-		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR, 
+		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR,
 		FB_GUARDDIR, FB_PLUGDIR
 	};
 

@@ -403,4 +403,3 @@ int fb_msg_format(void*        handle,
 
 	return (n > 0 ? total_msg : -total_msg);
 }
-

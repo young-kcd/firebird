@@ -110,7 +110,6 @@ const USHORT SIG_informs	= 2;		/* routine tells us whether to chain */
 const SLONG SIG_informs_continue	= 0;	/* continue on signal processing */
 const SLONG SIG_informs_stop		= 1;	/* stop signal processing */
 
-
 static SIG volatile signals = NULL;
 static SLONG volatile overflow_count = 0;
 

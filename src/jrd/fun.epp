@@ -119,6 +119,7 @@ namespace
 
 		ibUtilUnit(IbUtil::alloc);
 		initDone = true;
+
 		return true;
 	}
 }
@@ -151,7 +152,7 @@ void IbUtil::initialize()
 
 	// all failed - log error
 	gds__log("ib_util init failed, UDFs can't be used - looks like firebird misconfigured\n"
-			 "\t%s\n\t%s\n\t%s\n\t%s", message[0].c_str(), message[1].c_str(), 
+			 "\t%s\n\t%s\n\t%s\n\t%s", message[0].c_str(), message[1].c_str(),
 									   message[2].c_str(), message[3].c_str());
 #endif	// !BOOT_BUILD
 }

@@ -538,4 +538,3 @@ int Config::getMaxUserTraceLogSize()
 {
 	return (int) sysConfig().values[KEY_MAX_TRACELOG_SIZE];
 }
-
