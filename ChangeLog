@@ -1,3 +1,17 @@
+2009-09-12 19:17  hvlad
+
+	* firebird2/src/jrd/perf.cpp (1.47):
+
+	Remove unneeded return in void functions.  Make AIX compiler happy
+	with templates usage.
+
+2009-09-12 14:47  aafemt
+
+	* firebird2/builds/posix/: make.shared.targets (1.31), prefix.mingw
+	(1.50):
+
+	No more ibconfig
+
 2009-09-12 03:34  asfernandes
 
 	* firebird2/src/: common/utils.cpp (1.76), common/utils_proto.h
