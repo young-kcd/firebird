@@ -1,3 +1,17 @@
+2009-09-14 09:48  alexpeshkoff
+
+	* firebird2/src/common/config/config.cpp (1.103):
+
+	Take into an account case sesitivity - thanks to Claudio
+
+2009-09-14 09:09  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+	(1.1):
+
+	added forgotten file - thanks to Adriano
+
 2009-09-12 19:17  hvlad
 
 	* firebird2/src/jrd/perf.cpp (1.47):
