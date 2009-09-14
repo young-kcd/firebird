@@ -457,7 +457,8 @@ const char *Config::getUdfAccess()
 	}
 
 	const char* v = (const char*) sysConfig().values[KEY_UDF_ACCESS];
-	if (! strcmp(v, UDF_DEFAULT_CONFIG_VALUE) && FB_UDFDIR[0])
+	if (CASE_SENSITIVITY ? (! strcmp(v, UDF_DEFAULT_CONFIG_VALUE) && FB_UDFDIR[0]) :
+						   (! fb_utils::stricmp(v, UDF_DEFAULT_CONFIG_VALUE) && FB_UDFDIR[0]))
 	{
 		udfValue->printf("Restrict %s", FB_UDFDIR);
 		value = udfValue->c_str();
