@@ -712,6 +712,30 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 		fb_assert(false);
 	}
 
+	// hvlad: detach just created temporary blob from request to bound its 
+	// lifetime to transaction. This is necessary as this blob belongs to
+	// the MON$ table and must be accessible until transaction ends.
+	if (DTYPE_IS_BLOB_OR_QUAD(to_desc.dsc_dtype))
+	{
+		bid *blob_id = reinterpret_cast<bid*>(to_desc.dsc_address);
+		jrd_tra *tran = tdbb->getTransaction();
+
+		const bool found = tran->tra_blobs.locate(blob_id->bid_temp_id());
+		fb_assert(found);
+
+		BlobIndex &blobIdx = tran->tra_blobs.current();
+		fb_assert(!blobIdx.bli_materialized);
+
+		if (blobIdx.bli_request)
+		{
+			const bool found = blobIdx.bli_request->req_blobs.locate(blobIdx.bli_temp_id);
+			fb_assert(found);
+			
+			blobIdx.bli_request->req_blobs.fastRemove();
+			blobIdx.bli_request = NULL;
+		}
+	}
+
 	CLEAR_NULL(record, field.id);
 }
 
