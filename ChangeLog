@@ -1,3 +1,9 @@
+2009-09-15 17:47  verbguy
+
+	* firebird2/src/common/cvt.cpp (1.38):
+
+	Fixed CORE-2315: Better definition of FLOAT_MAX. Tested on AIX.
+
 2009-09-14 09:48  alexpeshkoff
 
 	* firebird2/src/common/config/config.cpp (1.103):
