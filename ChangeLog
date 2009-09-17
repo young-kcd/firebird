@@ -1,3 +1,16 @@
+2009-09-17 13:10  asfernandes
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.117):
+
+	Remove variable shadowing
+
+2009-09-16 23:27  hvlad
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.116):
+
+	Fixed bug CORE-2632 : Invalid BLOB ID when working with monitoring
+	tables
+
 2009-09-15 17:47  verbguy
 
 	* firebird2/src/common/cvt.cpp (1.38):
