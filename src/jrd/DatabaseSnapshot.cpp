@@ -734,7 +734,7 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 	// hvlad: detach just created temporary blob from request to bound its 
 	// lifetime to transaction. This is necessary as this blob belongs to
 	// the MON$ table and must be accessible until transaction ends.
-	if (DTYPE_IS_BLOB_OR_QUAD(to_desc.dsc_dtype))
+	if (to_desc.isBlob())
 	{
 		bid* blob_id = reinterpret_cast<bid*>(to_desc.dsc_address);
 		jrd_tra* tran = tdbb->getTransaction();

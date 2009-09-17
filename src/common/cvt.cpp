@@ -92,9 +92,9 @@ using namespace Firebird;
 #define QUAD_MIN_int    quad_min_int	// min integer value of quad
 #define QUAD_MAX_int    quad_max_int	// max integer value of quad
 
-#ifdef FLT_MAX 
+#ifdef FLT_MAX
 #define FLOAT_MAX FLT_MAX // Approx. 3.4e38 max float (32 bit) value
-#else 
+#else
 #define FLOAT_MAX 3.402823466E+38F // max float (32 bit) value
 #endif
 
