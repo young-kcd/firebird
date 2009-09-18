@@ -221,7 +221,7 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
-  s390x-*-linux*)
+  s390*-*-linux*)
     MAKEFILE_PREFIX=linux_s390x
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
