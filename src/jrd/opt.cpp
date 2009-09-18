@@ -977,7 +977,15 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	if (rse->rse_writelock)
+	{
 		rsb->rsb_flags |= rsb_writelock;
+
+		for (USHORT i = 1; i <= streams[0]; ++i)
+		{
+			const USHORT stream = streams[i];
+			csb->csb_rpt[stream].csb_flags |= csb_update;
+		}
+	}
 
 	// Assign pointer to list of dependent invariant values
 	rsb->rsb_invariants = rse->rse_invariants;
