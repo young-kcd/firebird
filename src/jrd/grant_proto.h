@@ -24,11 +24,11 @@
 #ifndef JRD_GRANT_PROTO_H
 #define JRD_GRANT_PROTO_H
 
-#include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
 
 class Jrd::DeferredWork;
 
-bool GRANT_privileges(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
+void GRANT_privileges(Jrd::thread_db*, const Firebird::string&, USHORT);
 
 #endif // JRD_GRANT_PROTO_H
 

@@ -414,7 +414,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (retaining_flag
 		&& !(transaction->tra_flags & TRA_write
-			 || transaction->tra_deferred_work))
+			 || transaction->tra_deferred_job))
 	{
 		transaction->tra_flags &= ~TRA_prepared;
 		// Get rid of all user savepoints

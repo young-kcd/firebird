@@ -95,9 +95,7 @@ static SecurityClass::flags_t trans_sql_priv(const TEXT*);
 static SecurityClass::flags_t squeeze_acl(Acl&, const Firebird::MetaName&, SSHORT);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
 
-
-bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
-					jrd_tra*) // unused param, makes dfw.epp happy
+void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id)
 {
 /**************************************
  *
@@ -113,88 +111,70 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *
  **************************************/
 
-	switch (phase) {
-	case 1:
-	case 2:
-		return true;
+	SET_TDBB(tdbb);
 
-	case 3:
-		{
-			SET_TDBB(tdbb);
+	bool restrct = false;
 
-			bool restrct = false;
+	Database* dbb = tdbb->getDatabase();
+	Firebird::MetaName s_class, owner, default_class;
+	bool view; // unused after being retrieved.
+	get_object_info(tdbb, name.c_str(), id, owner, s_class, default_class, view);
 
-			Database* dbb = tdbb->getDatabase();
-			Firebird::MetaName s_class, owner, default_class;
-			bool view; // unused after being retrieved.
-			get_object_info(tdbb, work->dfw_name.c_str(), work->dfw_id, owner,
-							s_class, default_class, view);
+	if (s_class.length() == 0) {
+		return;
+	}
 
-			if (s_class.length() == 0) {
-				return false;
-			}
+	/* start the acl off by giving the owner all privileges */
 
-			/* start the acl off by giving the owner all privileges */
+	Acl acl, default_acl;
 
-			Acl acl, default_acl;
+	CHECK_AND_MOVE(acl, ACL_version);
+	grant_user(acl, owner, obj_user,
+			   (id == obj_procedure ? SCL_execute | OWNER_PRIVS : OWNER_PRIVS));
 
-			CHECK_AND_MOVE(acl, ACL_version);
-			grant_user(acl, owner, obj_user,
-					   ((work->dfw_id == obj_procedure) ? (SCL_execute | OWNER_PRIVS) : OWNER_PRIVS));
+	/* Pick up any relation-level privileges */
 
-			/* Pick up any relation-level privileges */
+	const SecurityClass::flags_t public_priv = get_public_privs(tdbb, name.c_str(), id);
+	get_user_privs(tdbb, acl, name.c_str(), id, owner, public_priv);
 
-			const SecurityClass::flags_t public_priv =
-				get_public_privs(tdbb, work->dfw_name.c_str(), work->dfw_id);
-			get_user_privs(tdbb, acl, work->dfw_name.c_str(), work->dfw_id, owner, public_priv);
+	if (id == obj_relation)
+	{
+		default_acl.assign(acl);
 
-			if (work->dfw_id == obj_relation)
-			{
-				default_acl.assign(acl);
+		const SecurityClass::flags_t aggregate_public =
+			save_field_privileges(tdbb, acl, name.c_str(), owner, public_priv);
 
-				const SecurityClass::flags_t aggregate_public =
-					save_field_privileges(tdbb, acl, work->dfw_name.c_str(), owner, public_priv);
-
-				/* SQL tables don't need the 'all priviliges to all views' acl anymore.
-				   This special acl was only generated for SQL. */
+		/* SQL tables don't need the 'all priviliges to all views' acl anymore.
+		   This special acl was only generated for SQL. */
 #ifdef NOT_USED_OR_REPLACED
-				/* grant_views (&acl, VIEW_PRIVS); */
+		/* grant_views (&acl, VIEW_PRIVS); */
 #endif
 
-				/* finish off and store the security class for the relation */
+		/* finish off and store the security class for the relation */
 
-				finish_security_class(acl, aggregate_public);
+		finish_security_class(acl, aggregate_public);
 
-				save_security_class(tdbb, s_class, acl);
+		save_security_class(tdbb, s_class, acl);
 
-				if (acl.getCount() != default_acl.getCount())	/* relation privs were added? */
-					restrct = true;
+		if (acl.getCount() != default_acl.getCount())	/* relation privs were added? */
+			restrct = true;
 
-				/* if there have been privileges added at the relation level which
-				   need to be restricted from other fields in the relation,
-				   update the acl for them */
+		/* if there have been privileges added at the relation level which
+		   need to be restricted from other fields in the relation,
+		   update the acl for them */
 
-				if (restrct)
-				{
-					finish_security_class(default_acl, public_priv);
-					define_default_class(tdbb, work->dfw_name.c_str(), default_class, default_acl);
-				}
-			}
-			else {
-				finish_security_class(acl, public_priv);
-				save_security_class(tdbb, s_class, acl);
-			}
-
-			break;
+		if (restrct)
+		{
+			finish_security_class(default_acl, public_priv);
+			define_default_class(tdbb, name.c_str(), default_class, default_acl);
 		}
-
-	default:
-		break;
+	}
+	else {
+		finish_security_class(acl, public_priv);
+		save_security_class(tdbb, s_class, acl);
 	}
 
 	DFW_perform_system_work(tdbb);
-
-	return false;
 }
 
 
