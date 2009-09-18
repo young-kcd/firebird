@@ -23,7 +23,7 @@ define([XE_PREPEND],[[$2]="[$1] $[$2]"])
 dnl XE_CONF_DIR(param, help, variable, default)
 define([XE_CONF_DIR],[
 AC_ARG_WITH([$1], 
-	[AS_HELP_STRING([--with-$1], [$2])], 
+	[AC_HELP_STRING([--with-$1], [$2])], 
 	[[$3]=$withval
 	 AC_DEFINE_UNQUOTED([$3], "$[$3]", [$2])], 
 	[[$3]=[$4]
