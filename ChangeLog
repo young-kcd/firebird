@@ -1,3 +1,17 @@
+2009-09-18 09:13  hvlad
+
+	* firebird2/src/jrd/opt.cpp (1.360):
+
+	Fixed bug CORE-2633 : SELECT WITH LOCK with no fields are accessed
+	clears the data
+
+2009-09-17 17:55  asfernandes
+
+	* firebird2/src/: common/cvt.cpp (1.39), jrd/DatabaseSnapshot.cpp
+	(1.118):
+
+	Misc
+
 2009-09-17 13:10  asfernandes
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.117):
