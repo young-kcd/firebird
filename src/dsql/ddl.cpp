@@ -6038,6 +6038,10 @@ static void put_field( CompiledStatement* statement, dsql_fld* field, bool udf_f
 			}
 			statement->append_number(isc_dyn_fld_segment_length, field->fld_seg_length);
 		}
+		else
+		{
+			statement->append_number(isc_dyn_fld_length, sizeof(ISC_QUAD));
+		}
 		if (field->fld_sub_type == isc_blob_text) {
 			statement->append_number(isc_dyn_fld_character_set, field->fld_character_set_id);
 			statement->append_number(isc_dyn_fld_collation, field->fld_collation_id);
