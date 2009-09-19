@@ -1,3 +1,24 @@
+2009-09-19 10:05  aafemt
+
+	* firebird2/src/dsql/ddl.cpp (1.283):
+
+	CORE-1991
+
+2009-09-18 23:07  aafemt
+
+	* firebird2/configure.in (1.362):
+
+	Mistype
+
+2009-09-18 15:08  alexpeshkoff
+
+	* firebird2/: configure.in (1.361), builds/posix/prefix.linux_s390x
+	(1.2), src/jrd/common.h (1.216), src/jrd/inf_pub.h (1.32),
+	src/jrd/pag.cpp (1.223), src/jrd/utl.cpp (1.140):
+
+	Impovement CORE-2625: Port to s390 (32-bit), patch from Damyan
+	Ivanov
+
 2009-09-18 09:13  hvlad
 
 	* firebird2/src/jrd/opt.cpp (1.360):
