@@ -1,3 +1,17 @@
+2009-09-20 08:31  robocop
+
+	* firebird2/src/jrd/common.h (1.217):
+
+	Misc.
+
+2009-09-19 23:45  makowski
+
+	* firebird2/builds/install/misc/: fb_config.in (1.5), firebird.conf
+	(1.56):
+
+	CORE-2601 add explanations into firebird.conf about UDF add options
+	to fb_config
+
 2009-09-19 10:05  aafemt
 
 	* firebird2/src/dsql/ddl.cpp (1.283):
