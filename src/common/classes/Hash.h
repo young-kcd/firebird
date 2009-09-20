@@ -94,7 +94,8 @@ namespace Firebird {
 		public:
 			Entry() : previousElement(NULL) { }
 
-			virtual ~Entry() { 
+			virtual ~Entry()
+			{
 				unLink();
 			}
 			
@@ -128,7 +129,7 @@ namespace Firebird {
 					}
 					// ... and next pointer in previous element
 					*previousElement = nextElement;
-					// finally mrk ourself not linked
+					// finally mark ourselves not linked
 					previousElement = 0;
 				}
 			}
@@ -143,7 +144,7 @@ namespace Firebird {
 				return nextElement;
 			}
 
-			virtual bool isEqual(const K&) = 0;
+			virtual bool isEqual(const K&) const = 0;
 			virtual C* get() = 0;
 		}; // class Entry
 
@@ -261,7 +262,7 @@ namespace Firebird {
 
 			iterator& operator++()
 			{
-				if(hasData())
+				if (hasData())
 				{
 					current = current->next();
 					next();

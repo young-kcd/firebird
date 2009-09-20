@@ -242,8 +242,8 @@ public:
 		return dfw_next;
 	}
 
-// hash interface
-	bool isEqual(const DeferredWork& work)
+	// hash interface
+	bool isEqual(const DeferredWork& work) const
 	{
 		if (dfw_type == work.dfw_type && 
 			dfw_id == work.dfw_id &&
@@ -291,10 +291,10 @@ class DfwSavePoint : public DfwSavePointHash::Entry
 public:
 	DfwHash hash;
 
-	DfwSavePoint(SLONG number) : dfw_sav_number(number) { }
+	explicit DfwSavePoint(SLONG number) : dfw_sav_number(number) { }
 
-// hash interface
-	bool isEqual(const SLONG& number)
+	// hash interface
+	bool isEqual(const SLONG& number) const
 	{
 		if (dfw_sav_number == number)
 		{
@@ -596,9 +596,8 @@ void DFW_merge_work(jrd_tra* transaction,
   
 	DfwSavePoint* newSp = job->hash.lookup(new_sav_number);
 
-// Decrement the save point number in the deferred block
-// i.e. merge with the previous level.
-
+	// Decrement the save point number in the deferred block
+	// i.e. merge with the previous level.
 
 	for (DfwHash::iterator itr(oldSp->hash); itr.hasData();)
 	{
@@ -753,7 +752,7 @@ void DFW_perform_work(jrd_tra* transaction)
 				break;
 
 			default:
-			delete work;
+				delete work;
 				break;
 		}
 	}
@@ -5734,7 +5733,7 @@ static Firebird::string get_string(const dsc* desc)
 	// Find the actual length of the string, searching until the claimed
 	// end of the string, or the terminating \0, whichever comes first
 
-	USHORT length = MOV_make_string(desc, ttype_metadata, &str, (vary*)temp, sizeof(temp));
+	USHORT length = MOV_make_string(desc, ttype_metadata, &str, (vary*) temp, sizeof(temp));
 
 	const char* p = str;
 	const char* const q = str + length;
@@ -5743,7 +5742,7 @@ static Firebird::string get_string(const dsc* desc)
 		++p;
 	}
 
-// Trim trailing blanks (bug 3355)
+	// Trim trailing blanks (bug 3355)
 
 	while (--p >= str && *p == ' ')
 		;
