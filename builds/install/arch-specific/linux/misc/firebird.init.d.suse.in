@@ -42,7 +42,24 @@ test "$START_FIREBIRD" = yes || exit 0
 
 FIREBIRD=@FB_CONFDIR@
 FBRunUser=firebird
-pidfile=/var/run/firebird/firebird.pid
+
+makeFbDir() {
+	mDir=${1}
+	if [ ! -d $mDir ]; then
+		rm -rf $mDir
+		mkdir $mDir
+		if [ "$mode" ]; then
+			chmod $mode $mDir
+		fi
+	fi
+	chown $FBRunUser:$FBRunUser $mDir
+}
+runDir=/var/run/firebird
+makeFbDir $runDir
+lockDir=/tmp/firebird
+makeFbDir $lockDir 0770
+
+pidfile="$runDir/$INSTANCE.pid"
 
 export FIREBIRD
 

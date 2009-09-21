@@ -19,7 +19,25 @@ INSTANCE=default
 FIREBIRD=@FB_CONFDIR@
 
 FBRunUser=firebird
-pidfile=/var/run/firebird/$INSTANCE.pid
+
+makeFbDir() {
+	mDir=${1}
+	mode=${2}
+	if [ ! -d $mDir ]; then
+		rm -rf $mDir
+		mkdir $mDir
+		if [ "$mode" ]; then
+			chmod $mode $mDir
+		fi
+	fi
+	chown $FBRunUser:$FBRunUser $mDir
+}
+runDir=/var/run/firebird
+makeFbDir $runDir
+lockDir=/tmp/firebird
+makeFbDir $lockDir 0770
+
+pidfile="$runDir/$INSTANCE.pid"
 FULLNAME="firebird server [$INSTANCE]"
 LD_LIBRARY_PATH=$FIREBIRD/lib
 FB_OPTS="-pidfile $pidfile -daemon -forever"

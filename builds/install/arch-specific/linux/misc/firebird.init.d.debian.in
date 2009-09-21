@@ -14,10 +14,26 @@
 # Source function library.
 #. /etc/rc.d/init.d/functions
 
-
 FIREBIRD=@FB_CONFDIR@
 FBRunUser=firebird
-pidfile=/var/run/firebird/`basename $0`.pid
+
+makeFbDir() {
+	mDir=${1}
+	if [ ! -d $mDir ]; then
+		rm -rf $mDir
+		mkdir $mDir
+		if [ "$mode" ]; then
+			chmod $mode $mDir
+		fi
+	fi
+	chown $FBRunUser:$FBRunUser $mDir
+}
+runDir=/var/run/firebird
+makeFbDir $runDir
+lockDir=/tmp/firebird
+makeFbDir $lockDir 0770
+
+pidfile="$runDir/`basename $0`.pid"
 FB_OPTS="-pidfile $pidfile -daemon -forever"
 export FIREBIRD 
 

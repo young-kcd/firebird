@@ -16,7 +16,24 @@ FIREBIRD=@FB_CONFDIR@
 
 # No changes needed below for multiple instances
 FBRunUser=firebird
-pidfile=/var/run/firebird/$INSTANCE.pid
+
+makeFbDir() {
+	mDir=${1}
+	if [ ! -d $mDir ]; then
+		rm -rf $mDir
+		mkdir $mDir
+		if [ "$mode" ]; then
+			chmod $mode $mDir
+		fi
+	fi
+	chown $FBRunUser:$FBRunUser $mDir
+}
+runDir=/var/run/firebird
+makeFbDir $runDir
+lockDir=/tmp/firebird
+makeFbDir $lockDir 0770
+
+pidfile="$runDir/$INSTANCE.pid"
 FULLNAME="Firebird server [$INSTANCE]"
 LD_LIBRARY_PATH=$FIREBIRD/lib
 
