@@ -79,6 +79,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
+#include "../common/StatusHolder.h"
 
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
@@ -385,7 +386,7 @@ namespace
 
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
 		StoredAtt* handle;
-		ISC_STATUS_ARRAY status;
+		StatusHolder status;		// Do not use raise() method of this class in yValve
 		PathName db_path;
 
 		static ISC_STATUS hError()
@@ -720,10 +721,10 @@ namespace
 			{
 				if (checkAttachment)
 				{
-					const Attachment attachment = rc->parent;
-					if (attachment && attachment->status[1])
+					Attachment attachment = rc->parent;
+					if (attachment && attachment->status.getError())
 					{
-						status_exception::raise(attachment->status);
+						status_exception::raise(attachment->status.value());
 					}
 				}
 
@@ -768,7 +769,6 @@ namespace
 		  db_path(getPool()),
 		  flagDestroying(false)
 	{
-		fb_utils::init_status(status);
 		attachments().toParent(this);
 		parent = this;
 	}
@@ -6034,9 +6034,9 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
 
 		if (CALL(PROC_PING, attachment->implementation) (status, &attachment->handle))
 		{
-			memcpy(attachment->status, status, sizeof(ISC_STATUS_ARRAY));
+			attachment->status.save(status);
 			CALL(PROC_DETACH, attachment->implementation) (status, &attachment->handle);
-			status_exception::raise(attachment->status);
+			status_exception::raise(attachment->status.value());
 		}
 	}
 	catch (const Exception& e)
