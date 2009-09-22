@@ -31,7 +31,8 @@
 
 using namespace Firebird;
 
-namespace {
+namespace
+{
 	class DatabaseDirectoryList : public DirectoryList
 	{
 	private:
@@ -89,18 +90,19 @@ bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
 	}
 
 	// If file_name has no path part, expand it in DatabasesPath
-	Firebird::PathName Path, Name;
-	PathUtils::splitLastComponent(Path, Name, corrected_alias);
+	Firebird::PathName path, name;
+	PathUtils::splitLastComponent(path, name, corrected_alias);
+
 	// if path component not present in file_name
-	if (Path.length() == 0)
+	if (path.isEmpty())
 	{
 		// try to expand to existing file
-		if (databaseDirectoryList().expandFileName(database, Name))
+		if (databaseDirectoryList().expandFileName(database, name))
 		{
 			return true;
 		}
 		// try to use default path
-		if (databaseDirectoryList().defaultName(database, Name))
+		if (databaseDirectoryList().defaultName(database, name))
 		{
 			return true;
 		}
