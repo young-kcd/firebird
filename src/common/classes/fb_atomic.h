@@ -28,6 +28,13 @@
 #ifndef CLASSES_FB_ATOMIC_H
 #define CLASSES_FB_ATOMIC_H
 
+// Here we define an atomic type, which is to be used in interface for all OS
+#if SIZEOF_VOID_P == 8
+typedef SINT64 AtomicType;
+#else
+typedef SLONG AtomicType;
+#endif
+
 #if defined(WIN_NT)
 
 #include <windows.h>
@@ -108,6 +115,10 @@ private:
 
 #elif defined(AIX)
 
+#if SIZEOF_VOID_P != 8
+#error: Only 64-bit mode supported on AIX
+#endif
+
 #include <sys/atomic_op.h>
 
 namespace Firebird {
@@ -115,23 +126,24 @@ namespace Firebird {
 // AIX version - uses AIX atomic API
 class AtomicCounter
 {
-public:
-	typedef int counter_type;
+private:
+	typedef long counter_type;
 
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+public:
+	explicit AtomicCounter(AtomicType value = 0) : counter(value) {}
 	~AtomicCounter() {}
 
-	counter_type exchangeAdd(counter_type value)
+	counter_type exchangeAdd(AtomicType value)
 	{
-		return fetch_and_add(&counter, value);
+		return fetch_and_addlp(&counter, static_cast<unsigned long>(value));
 	}
 
-	counter_type operator +=(counter_type value)
+	counter_type operator +=(AtomicType value)
 	{
 		return exchangeAdd(value) + value;
 	}
 
-	counter_type operator -=(counter_type value)
+	counter_type operator -=(AtomicType value)
 	{
 		return exchangeAdd(-value) - value;
 	}
@@ -148,13 +160,13 @@ public:
 
 	counter_type value() const { return counter; }
 
-	counter_type setValue(counter_type val)
+	counter_type setValue(AtomicType val)
 	{
 		counter_type old;
 		do
 		{
 			old = counter;
-		} while (!compare_and_swap(&counter, &old, val));
+		} while (!compare_and_swaplp(&counter, &old, val));
 		return old;
 	}
 
@@ -355,48 +367,56 @@ namespace Firebird {
 class AtomicCounter
 {
 public:
-	typedef int counter_type;
+	typedef AtomicType counter_type;
 
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	explicit AtomicCounter(AtomicType value = 0) : counter(value) {}
 	~AtomicCounter() {}
 
-	counter_type exchangeAdd(counter_type value)
+	AtomicType exchangeAdd(AtomicType value)
 	{
 		register counter_type result;
 		__asm __volatile (
+#if SIZEOF_VOID_P == 8
+			"lock; xaddq %0, %1"
+#else
 			"lock; xaddl %0, %1"
+#endif
 			 : "=r" (result), "=m" (counter)
 			 : "0" (value), "m" (counter));
 		return result;
 	}
 
-	counter_type operator +=(counter_type value)
+	AtomicType operator +=(AtomicType value)
 	{
 		return exchangeAdd(value) + value;
 	}
 
-	counter_type operator -=(counter_type value)
+	AtomicType operator -=(AtomicType value)
 	{
 		return exchangeAdd(-value) - value;
 	}
 
-	counter_type operator ++()
+	AtomicType operator ++()
 	{
 		return exchangeAdd(1) + 1;
 	}
 
-	counter_type operator --()
+	AtomicType operator --()
 	{
 		return exchangeAdd(-1) - 1;
 	}
 
-	counter_type value() const { return counter; }
+	AtomicType value() const { return counter; }
 
-	counter_type setValue(counter_type val)
+	AtomicType setValue(AtomicType val)
 	{
 		register counter_type result;
 		__asm __volatile (
-			"lock; xchg %0, %1"
+#if SIZEOF_VOID_P == 8
+			"lock; xchgq %0, %1"
+#else
+			"lock; xchgl %0, %1"
+#endif
 			 : "=r" (result), "=m" (counter)
 			 : "0" (val), "m" (counter));
 		return result;
@@ -421,7 +441,7 @@ namespace Firebird {
 class AtomicCounter
 {
 public:
-	typedef AO_t counter_type;
+	typedef AO_t counter_type;		// AO_t should match maximum native in type
 
 	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
@@ -430,46 +450,56 @@ public:
 	{
 		return AO_fetch_and_add_full(&counter, value);
 	} */
-	counter_type exchangeAdd(counter_type value)
+	AtomicType exchangeAdd(AtomicType value)
 	{
+#ifdef DEV_BUILD
+		// check that AO_t size is as we expect (can't fb_assert here)
+		if (sizeof(AtomicType) != sizeof(AO_t)) abort();
+#endif
+
 		counter_type old;
 		do
 		{
 			old = counter;
-		} while (!AO_compare_and_swap_full(&counter, old, old + value));
-		return old;
+		} while (!AO_compare_and_swap_full(&counter, old, old + counter_type(value)));
+		return AtomicType(old);
 	}
 
-	counter_type operator +=(counter_type value)
+	AtomicType operator +=(AtomicType value)
 	{
 		return exchangeAdd(value) + value;
 	}
 
-	counter_type operator -=(counter_type value)
+	AtomicType operator -=(AtomicType value)
 	{
 		return exchangeAdd(-value) - value;
 	}
 
-	counter_type operator ++()
+	AtomicType operator ++()
 	{
 		return exchangeAdd(1) + 1;
 	}
 
-	counter_type operator --()
+	AtomicType operator --()
 	{
 		return exchangeAdd(-1) - 1;
 	}
 
-	counter_type value() const { return counter; }
+	AtomicType value() const { return counter; }
 
-	counter_type setValue(counter_type val)
+	AtomicType setValue(AtomicType val)
 	{
+#ifdef DEV_BUILD
+		// check that AO_t size is as we expect (can't fb_assert here)
+		if (sizeof(AtomicType) != sizeof(AO_t)) abort();
+#endif
+
 		counter_type old;
 		do
 		{
 			old = counter;
-		} while (!AO_compare_and_swap_full(&counter, old, val));
-		return old;
+		} while (!AO_compare_and_swap_full(&counter, old, counter_type(val)));
+		return AtomicType(old);
 	}
 
 private:
