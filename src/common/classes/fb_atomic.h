@@ -446,10 +446,12 @@ public:
 	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
 
-/*	counter_type exchangeAdd(counter_type value)
+	/*
+	counter_type exchangeAdd(counter_type value)
 	{
 		return AO_fetch_and_add_full(&counter, value);
-	} */
+	}
+	*/
 	AtomicType exchangeAdd(AtomicType value)
 	{
 #ifdef DEV_BUILD
