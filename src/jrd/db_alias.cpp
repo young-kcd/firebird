@@ -21,25 +21,45 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
+#include "../common/config/dir_list.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 
 using namespace Firebird;
 
-const char* const ALIAS_FILE = "aliases.conf";
-
-static void replace_dir_sep(PathName& s)
-{
-	const char correct_dir_sep = PathUtils::dir_sep;
-	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
-	for (char* itr = s.begin(); itr < s.end(); ++itr)
+namespace {
+	class DatabaseDirectoryList : public DirectoryList
 	{
-		if (*itr == incorrect_dir_sep)
+	private:
+		const PathName getConfigString() const
 		{
-			*itr = correct_dir_sep;
+			return PathName(Config::getDatabaseAccess());
+		}
+	public:
+		explicit DatabaseDirectoryList(MemoryPool& p)
+			: DirectoryList(p)
+		{
+			initialize();
+		}
+	};
+	InitInstance<DatabaseDirectoryList> databaseDirectoryList;
+
+	const char* const ALIAS_FILE = "aliases.conf";
+
+	void replace_dir_sep(PathName& s)
+	{
+		const char correct_dir_sep = PathUtils::dir_sep;
+		const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
+		for (char* itr = s.begin(); itr < s.end(); ++itr)
+		{
+			if (*itr == incorrect_dir_sep)
+			{
+				*itr = correct_dir_sep;
+			}
 		}
 	}
 }
@@ -66,6 +86,24 @@ bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
 			return false;
 		}
 		return true;
+	}
+
+	// If file_name has no path part, expand it in DatabasesPath
+	Firebird::PathName Path, Name;
+	PathUtils::splitLastComponent(Path, Name, corrected_alias);
+	// if path component not present in file_name
+	if (Path.length() == 0)
+	{
+		// try to expand to existing file
+		if (databaseDirectoryList().expandFileName(database, Name))
+		{
+			return true;
+		}
+		// try to use default path
+		if (databaseDirectoryList().defaultName(database, Name))
+		{
+			return true;
+		}
 	}
 
 	return false;
