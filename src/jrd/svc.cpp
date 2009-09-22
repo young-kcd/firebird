@@ -1464,8 +1464,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		finish(SVC_finished);
 	}
 
-	status.copyTo(tdbb->tdbb_status_vector);
-	return tdbb->tdbb_status_vector[1];
+	status.copyTo(svc_status);
+	return svc_status[1];
 }
 
 
