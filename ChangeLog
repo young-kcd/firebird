@@ -1,3 +1,45 @@
+2009-09-22 11:44  robocop
+
+	* firebird2/src/common/classes/fb_atomic.h (1.30):
+
+	Misc.
+
+2009-09-22 11:08  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_atomic.h (1.29):
+
+	Improvement CORE-2619: make atomic counters 64-bit for 64-bit
+	builds on AIX, linux and with libatomic
+
+2009-09-22 08:11  robocop
+
+	* firebird2/builds/install/misc/firebird.conf (1.60):
+
+	Fix another misc error.
+
+2009-09-21 17:45  asfernandes
+
+	* firebird2/builds/install/misc/firebird.conf (1.59):
+
+	Misc
+
+2009-09-21 16:49  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.261):
+
+	Fixed AV, happening after use of fb_ping
+
+2009-09-21 15:39  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/misc/:
+	firebird.init.d.debian.in (1.15), firebird.init.d.generic.in
+	(1.11), firebird.init.d.gentoo.in (1.11),
+	firebird.init.d.mandrake.in (1.18), firebird.init.d.slackware.in
+	(1.8), firebird.init.d.suse.in (1.12):
+
+	Fixed CORE-2626: Startup scripts in /etc/init.d should take care
+	about presence of /var/run/firebird and /tmp/firebird directories
+
 2009-09-21 13:50  makowski
 
 	* firebird2/builds/install/misc/firebird.conf (1.58):
