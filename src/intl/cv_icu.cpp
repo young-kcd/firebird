@@ -98,6 +98,7 @@ static ULONG unicode_to_icu(csconvert* cv,
 		switch (status)
 		{
 		case U_INVALID_CHAR_FOUND:
+		case U_ILLEGAL_CHAR_FOUND:
 			*errCode = CS_CONVERT_ERROR;
 			break;
 		case U_TRUNCATED_CHAR_FOUND:
@@ -152,6 +153,7 @@ static ULONG icu_to_unicode(csconvert* cv,
 		switch (status)
 		{
 		case U_INVALID_CHAR_FOUND:
+		case U_ILLEGAL_CHAR_FOUND:
 			*errCode = CS_CONVERT_ERROR;
 			break;
 		case U_TRUNCATED_CHAR_FOUND:
