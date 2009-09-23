@@ -1,3 +1,52 @@
+2009-09-23 13:34  alexpeshkoff
+
+	* firebird2/: configure.in (1.363),
+	builds/install/misc/firebird.conf (1.61),
+	builds/install/misc/firebird.conf.in (1.1):
+
+	Added dynamic comment about Restrict UDF, CORE-2626
+
+2009-09-23 12:32  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.257):
+
+	A little paranoid addition to the fix for CORE-2635
+
+2009-09-22 23:01  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.256):
+
+	Fixed bug CORE-2635 : Unique index with a lot of NULL keys can be
+	corrupted at level 1
+
+2009-09-22 17:49  asfernandes
+
+	* firebird2/src/jrd/db_alias.cpp (1.28):
+
+	Fix line ending inconsistence
+
+2009-09-22 17:36  asfernandes
+
+	* firebird2/src/jrd/db_alias.cpp (1.27):
+
+	Name convention
+
+2009-09-22 15:17  alexpeshkoff
+
+	* firebird2/: src/jrd/db_alias.cpp (1.26),
+	builds/posix/Makefile.in.client.util (1.66),
+	builds/posix/Makefile.in.embed.util (1.53):
+
+	Improvement CORE-1643: Use DatabaseAccess configuration parameter
+	for default database location
+
+2009-09-22 15:01  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.282):
+
+	Fixed assertion in jrd8_service_query=>successful_completion,
+	status was saved in bad place
+
 2009-09-22 11:44  robocop
 
 	* firebird2/src/common/classes/fb_atomic.h (1.30):
