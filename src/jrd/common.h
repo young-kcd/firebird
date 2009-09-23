@@ -106,6 +106,10 @@
 //#define xLONGFORMAT "lx"
 //#endif
 
+// format for size_t
+#ifndef SIZEFORMAT
+#define SIZEFORMAT "zi"
+#endif
 
 //format for __LINE__
 #define LINEFORMAT "d"
