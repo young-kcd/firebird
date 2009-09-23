@@ -155,6 +155,7 @@ const IntlManager::CharSetDefinition IntlManager::defaultCharSets[] =
 	{"TIS620", CS_TIS620, 1},
 	{"GBK", CS_GBK, 2},
 	{"CP943C", CS_CP943C, 2},
+	{"GB18030", CS_GB18030, 4},
 	{NULL, 0, 0}
 };
 
@@ -411,6 +412,8 @@ const IntlManager::CollationDefinition IntlManager::defaultCollations[] =
 	{CS_GBK, 1, "GBK_UNICODE", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
 	{CS_CP943C, 0, "CP943C", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
 	{CS_CP943C, 1, "CP943C_UNICODE", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
+	{CS_GB18030, 0, "GB18030", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
+	{CS_GB18030, 1, "GB18030_UNICODE", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
 	{0, 0, NULL, NULL, 0, NULL}
 };
 

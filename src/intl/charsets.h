@@ -96,6 +96,8 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 #define   CS_GBK                67	/* GBK */
 #define   CS_CP943C             68	/* CP943C */
 
-#define   CS_dynamic           127	/* Pseudo number for runtime charset */
+#define   CS_GB18030            69	// GB18030
+
+#define   CS_dynamic           127	// Pseudo number for runtime charset
 
 #endif /* INTL_CHARSETS_H */
