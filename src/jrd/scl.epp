@@ -425,7 +425,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 }
 
 
-SecurityClass* SCL_get_class(const TEXT* _string)
+SecurityClass* SCL_get_class(const TEXT* par_string)
 {
 /**************************************
  *
@@ -444,11 +444,11 @@ SecurityClass* SCL_get_class(const TEXT* _string)
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
-	if (!_string) {
+	if (!par_string) {
 		return NULL;
 	}
 
-	Firebird::string string = _string;
+	Firebird::string string = par_string;
 
 	fb_utils::exact_name(string);
 
