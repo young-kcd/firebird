@@ -6312,6 +6312,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 	jumpNodes->clear();
 
+	new_key->key_flags = 0;
 	if (unique && allRecordNumber)
 	{
 		// hvlad: it is important to set correct flags for all-NULL's key
