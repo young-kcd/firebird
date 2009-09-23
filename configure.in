@@ -1159,7 +1159,7 @@ dnl EKU: handle platform specific installation and packaging
 dnl: Common Files
 case "$PLATFORM" in
   [LINUX|GENTOOFREEBSD|HPUX|AIX])
-    AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
+    AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf.in
     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
     gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
     gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
@@ -1289,6 +1289,13 @@ else
 fi
 AC_SUBST(POSTFIX_INCLUDE)
 
+UDF_COMMENT="#"
+if [ "${with_fbudf+set}" = set ]; then
+	UDF_COMMENT="#
+#  #  For this build Restrict UDF means Restrict ${with_fbudf}
+#"
+fi
+AC_SUBST(UDF_COMMENT)
 
 AC_CONFIG_FILES(
 gen/make.rules:${MAKE_SRC_DIR}/make.rules
