@@ -38,19 +38,23 @@ namespace Firebird {
 		static size_t hash(const void* value, size_t length, size_t hashSize)
 		{
 			size_t sum = 0;
+			size_t val;
 
-			const size_t* l = static_cast<const size_t*>(value);
+			const char* data = static_cast<const char*>(value);
+			
 			while (length >= sizeof(size_t))
 			{
-				sum += *l++;
+				memcpy(&val, data, sizeof(size_t));
+				sum += val;
+				data += sizeof(size_t);
 				length -= sizeof(size_t);
 			}
 
 			if (length)
 			{
-				size_t last = 0;
-				memcpy(&last, l, length);
-				sum += last;
+				val = 0;
+				memcpy(&val, data, length);
+				sum += val;
 			}
 
 			size_t rc = 0;
