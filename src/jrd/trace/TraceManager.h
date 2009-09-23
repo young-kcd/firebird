@@ -165,7 +165,7 @@ private:
 		}
 
 		ntrace_attach_t ntrace_attach;
-		char module[64];
+		char module[MAXPATHLEN];
 	};
 	static Firebird::GlobalPtr<Firebird::Array<ModuleInfo> > modules;
 	static Firebird::GlobalPtr<Firebird::Mutex> init_modules_mtx;

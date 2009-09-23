@@ -47,8 +47,8 @@ void TraceCfgReader::readTraceConfiguration(const char* text,
 
 #define PATH_PARAMETER(NAME, VALUE) \
 	if (!found && el->name == #NAME) { \
-		string temp = el->getAttributeName(0); \
-		expandPattern(temp); \
+		string temp; \
+		expandPattern(el, temp); \
 		m_config.NAME = temp.c_str(); \
 		found = true; \
 	}
@@ -59,12 +59,12 @@ void TraceCfgReader::readTraceConfiguration(const char* text,
 	}
 #define BOOL_PARAMETER(NAME, VALUE) \
 	if (!found && el->name == #NAME) { \
-		m_config.NAME = parseBoolean(el->getAttributeName(0)); \
+		m_config.NAME = parseBoolean(el); \
 		found = true; \
 	}
 #define UINT_PARAMETER(NAME, VALUE) \
 	if (!found && el->name == #NAME) { \
-		m_config.NAME = parseUInteger(el->getAttributeName(0)); \
+		m_config.NAME = parseUInteger(el); \
 		found = true; \
 	}
 
@@ -248,30 +248,35 @@ void TraceCfgReader::readConfig()
 #undef BOOL_PARAMETER
 #undef UINT_PARAMETER
 
-bool TraceCfgReader::parseBoolean(const string& value) const
+bool TraceCfgReader::parseBoolean(const Element* el) const
 {
-	string tempValue = value;
+	const char* value = el->getAttributeName(0);
+	string tempValue(value);
 	tempValue.upper();
-	if (value == "1" || tempValue == "ON" || tempValue == "YES" || tempValue == "TRUE")
+	if (tempValue == "1" || tempValue == "ON" || tempValue == "YES" || tempValue == "TRUE")
 		return true;
-	if (value == "0" || tempValue == "OFF" || tempValue == "NO" || tempValue == "FALSE")
+	if (tempValue == "0" || tempValue == "OFF" || tempValue == "NO" || tempValue == "FALSE")
 		return false;
 
-	fatal_exception::raiseFmt("\"%s\" is not a valid boolean value", value.c_str());
+	fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid boolean value",
+		el->lineNumber + 1, el->name.c_str(), value);
 	return false; // Silence the compiler
 }
 
-ULONG TraceCfgReader::parseUInteger(const string& value) const
+ULONG TraceCfgReader::parseUInteger(const Element* el) const
 {
+	const char *value = el->getAttributeName(0);
 	ULONG result = 0;
-	if (!sscanf(value.c_str(), "%"ULONGFORMAT, &result)) {
-		fatal_exception::raiseFmt("\"%s\" is not a valid integer value", value.c_str());
+	if (!sscanf(value, "%"ULONGFORMAT, &result)) {
+		fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid integer value",
+			el->lineNumber + 1, el->name.c_str(), value);
 	}
 	return result;
 }
 
-void TraceCfgReader::expandPattern(string& valueToExpand)
+void TraceCfgReader::expandPattern(const Element* el, string& valueToExpand)
 {
+	valueToExpand = el->getAttributeName(0);
 	string::size_type pos = 0;
 	while (pos < valueToExpand.length())
 	{
@@ -279,7 +284,8 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 		if (c == '\\')
 		{
 			if (pos + 1 >= valueToExpand.length())
-				fatal_exception::raiseFmt("pattern is invalid");
+				fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
+					el->lineNumber + 1, el->name.c_str(), el->getAttributeName(0));
 
 			c = valueToExpand[pos + 1];
 			if (c == '\\')
@@ -306,7 +312,8 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 				continue;
 			}
 
-			fatal_exception::raiseFmt("pattern is invalid");
+			fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
+				el->lineNumber + 1, el->name.c_str(), el->getAttributeName(0));
 		}
 
 		pos++;

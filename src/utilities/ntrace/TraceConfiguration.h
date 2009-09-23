@@ -62,9 +62,9 @@ private:
 
 	void readConfig();
 
-	void expandPattern(Firebird::string& valueToExpand);
-	bool parseBoolean(const Firebird::string& value) const;
-	ULONG parseUInteger(const Firebird::string& value) const;
+	void expandPattern(const Element* el, Firebird::string& valueToExpand);
+	bool parseBoolean(const Element* el) const;
+	ULONG parseUInteger(const Element* el) const;
 
 	const char* const m_text;
 	const Firebird::PathName& m_databaseName;
