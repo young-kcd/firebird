@@ -5120,7 +5120,7 @@ non_reserved_word :
 //	| WEEK
 //	| WHILE
 	| WORK
-	| WRITE
+	| WRITE				// end of old keywords, that were reserved pre-Firebird.2.5
 	;
 
 %%
