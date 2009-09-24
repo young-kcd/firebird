@@ -5049,6 +5049,78 @@ non_reserved_word :
 	| SOURCE
 	| TWO_PHASE
 	| BIN_NOT
+	| ACTIVE				// old keywords, that were reserved pre-Firebird.2.5
+//	| ADD					// words commented it this list remain reserved due to conflicts
+	| AFTER
+	| ASC
+	| AUTO
+	| BEFORE
+	| COMMITTED
+	| COMPUTED
+	| CONDITIONAL
+	| CONTAINING
+	| CSTRING
+	| DATABASE
+//	| DB_KEY
+	| DESC
+	| DO
+	| DOMAIN
+	| ENTRY_POINT
+	| EXCEPTION
+	| EXIT
+	| KW_FILE
+//	| GDSCODE
+	| GENERATOR
+	| GEN_ID
+	| IF
+	| INACTIVE
+//	| INDEX
+	| INPUT_TYPE
+	| ISOLATION
+	| KEY
+	| LENGTH
+	| LEVEL
+//	| KW_LONG
+	| MANUAL
+	| MODULE_NAME
+	| NAMES
+	| OPTION
+	| OUTPUT_TYPE
+	| OVERFLOW
+	| PAGE
+	| PAGES
+	| KW_PAGE_SIZE
+	| PASSWORD
+//	| PLAN
+//	| POST_EVENT
+	| PRIVILEGES
+	| PROTECTED
+	| READ
+	| RESERVING
+	| RETAIN
+//	| RETURNING_VALUES
+	| SEGMENT
+	| SHADOW
+	| KW_SHARED
+	| SINGULAR
+	| KW_SIZE
+	| SNAPSHOT
+	| SORT
+//	| SQLCODE
+	| STABILITY
+	| STARTING
+	| STATISTICS
+	| SUB_TYPE
+	| SUSPEND
+	| TRANSACTION
+	| UNCOMMITTED
+//	| VARIABLE
+//	| VIEW
+	| WAIT
+//	| WEEK
+//	| WHILE
+	| WORK
+	| WRITE
 	;
 
 %%
