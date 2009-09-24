@@ -151,6 +151,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-1991
+        UDF BLOB as parameter error
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
     * Bugfix CORE-1787
         Consistency check when subquery is ordered by an aggregate function from another context
       Contributor(s):
