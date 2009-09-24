@@ -1,3 +1,9 @@
+2009-09-23 15:35  paulbeach
+
+	* firebird2/src/jrd/scl.epp (1.71.4.8):
+
+	_string will not compile on Darwin using gcc 4.2.1
+
 2009-08-13 16:56  dimitr
 
 	* firebird2/src/lock/lock.cpp (1.114.4.8):
