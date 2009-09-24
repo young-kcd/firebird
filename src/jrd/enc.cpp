@@ -904,6 +904,14 @@ STATIC void init_des()
  *
  * "perm" must be all-zeroes on entry to this routine.
  */
+#ifdef __IBMCPP__
+// 2009-09-23, credentials refused by isql -u sysdba -p masterkey
+// when using IBM xlC optimized build, -O or -O2.
+// xlC -qVersion
+// IBM XL C/C++ for AIX, V10.1
+// Version: 10.01.0000.0004
+#pragma option_override(init_perm, "opt(level, 0)")
+#endif
 STATIC void
 init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 		  unsigned char p[64], int chars_out)
