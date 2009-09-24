@@ -65,6 +65,7 @@ static UCHAR* get_position(thread_db*, RecordSource*, IRSB_NAV, WIN *, rse_get_m
 static bool get_record(thread_db* tdbb, RecordSource*, IRSB_NAV, record_param*, temporary_key*, bool);
 static void init_fetch(IRSB_NAV);
 static UCHAR* nav_open(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN *, rse_get_mode); //, btree_exp**);
+static void set_page(IRSB_NAV impure, WIN* window);
 static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, btree_exp*, const UCHAR*, USHORT);
 static bool setup_bitmaps(thread_db* tdbb, RecordSource*, IRSB_NAV);
 
@@ -969,7 +970,7 @@ static void init_fetch(IRSB_NAV impure)
 	if (impure->irsb_flags & irsb_first)
 	{
 		impure->irsb_flags &= ~irsb_first;
-		impure->irsb_nav_page = 0;
+		set_page(impure, NULL);
 	}
 }
 
@@ -995,7 +996,7 @@ static UCHAR* nav_open(thread_db* tdbb,
 	if (!setup_bitmaps(tdbb, rsb, impure))
 		return NULL;
 
-	impure->irsb_nav_page = 0;
+	set_page(impure, NULL);
 	impure->irsb_nav_length = 0;
 
 #ifdef SCROLLABLE_CURSORS
@@ -1018,7 +1019,7 @@ static UCHAR* nav_open(thread_db* tdbb,
 #else
 	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper);
 #endif
-	impure->irsb_nav_page = window->win_page.getPageNum();
+	set_page(impure, window);
 
 
 #ifdef SCROLLABLE_CURSORS
@@ -1147,6 +1148,39 @@ static UCHAR* nav_open(thread_db* tdbb,
 }
 
 
+static void set_page(IRSB_NAV impure, WIN* window)
+{
+/**************************************
+ *
+ *	s e t _ p a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Take a LCK_btr_dont_gc lock on walked index page to prevent its 
+ *	removal from index while page lock is not taken
+ *
+ **************************************/
+	const SLONG newPage = window ? window->win_page.getPageNum() : 0;
+
+	if (impure->irsb_nav_page != newPage)
+	{
+		thread_db *tdbb = JRD_get_thread_data();
+
+		if (impure->irsb_nav_page)
+			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+
+		if (newPage)
+		{
+			if (!impure->irsb_nav_btr_gc_lock)
+				impure->irsb_nav_btr_gc_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) BtrPageGCLock(tdbb);
+			impure->irsb_nav_btr_gc_lock->disablePageGC(tdbb, window->win_page);
+		}
+		impure->irsb_nav_page = newPage;
+	}
+}
+
+
 static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 				const UCHAR* pointer, btree_exp* expanded_node,
 				const UCHAR* key_data, USHORT length)
@@ -1167,7 +1201,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 	// We can actually set position without having a data page
 	// fetched; if not, just set the incarnation to the lowest possible
 	impure->irsb_nav_incarnation = CCH_get_incarnation(window);
-	impure->irsb_nav_page = window->win_page.getPageNum();
+	set_page(impure, window);
 	impure->irsb_nav_number = rpb->rpb_number;
 
 	// save the current key value if it hasn't already been saved

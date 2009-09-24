@@ -34,6 +34,7 @@
 #include "../jrd/err_proto.h"    // Index error types
 #include "../jrd/RecordNumber.h"
 #include "../jrd/sbm.h"
+#include "../jrd/lck.h"
 
 // 64 turns out not to be enough indexes
 // #define MAX_IDX		 64		// that should be plenty of indexes
@@ -230,6 +231,27 @@ const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning i
 //#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
+
+class BtrPageGCLock : public Lock
+{
+	// We want to put 8 bytes (PageNumber) in lock key. One long is already
+	// reserved by Lock::lck_long, this is the second long. It is really unused
+	// as second long needed for 8-byte key already "allocated" by compiler
+	// because of alignment rules. Anyway, to be formally correct, let introduce
+	// 4-byte field for guarantee we have space for lock key.
+	SLONG unused;
+
+public:
+	explicit BtrPageGCLock(thread_db* tdbb);
+	~BtrPageGCLock();
+
+	void disablePageGC(thread_db* tdbb, const PageNumber &page);
+	void enablePageGC(thread_db* tdbb);
+
+	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page);
+};
+
+
 
 } //namespace Jrd
 

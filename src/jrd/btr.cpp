@@ -210,64 +210,54 @@ static void update_selectivity(index_root_page*, USHORT, const SelectivityList&)
 static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temporary_key&,
 								 const index_desc&, const IndexRetrieval*);
 
-class Jrd::BtrPageGCLock : public Lock
+
+BtrPageGCLock::BtrPageGCLock(thread_db* tdbb)
 {
-	// We want to put 8 bytes (PageNumber) in lock key. One long is already
-	// reserved by Lock::lck_long, this is the second long. It is really unused
-	// as second long needed for 8-byte key already "allocated" by compiler
-	// because of alignment rules. Anyway, to be formally correct, let introduce
-	// 4-byte field for guarantee we have space for lock key.
-	SLONG unused;
+	Database* dbb = tdbb->getDatabase();
+	lck_parent = dbb->dbb_lock;
+	lck_dbb = dbb;
+	lck_length = PageNumber::getLockLen();
+	lck_type = LCK_btr_dont_gc;
+	lck_owner_handle = LCK_get_owner_handle(tdbb, lck_type);
+}
 
-public:
-	explicit BtrPageGCLock(thread_db* tdbb)
-	{
-		Database* dbb = tdbb->getDatabase();
-		lck_parent = dbb->dbb_lock;
-		lck_dbb = dbb;
-		lck_length = PageNumber::getLockLen();
-		lck_type = LCK_btr_dont_gc;
-		lck_owner_handle = LCK_get_owner_handle(tdbb, lck_type);
+BtrPageGCLock::~BtrPageGCLock()
+{
+	// assert in debug build
+	fb_assert(!lck_id);
+
+	// lck_id might be set only if exception occurs
+	if (lck_id) {
+		LCK_release(JRD_get_thread_data(), this);
+	}
+}
+
+void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber &page)
+{
+	page.getLockStr(lck_key.lck_string);
+	LCK_lock(tdbb, this, LCK_read, LCK_WAIT);
+}
+
+void BtrPageGCLock::enablePageGC(thread_db* tdbb)
+{
+	LCK_release(tdbb, this);
+}
+
+bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
+{
+	BtrPageGCLock lock(tdbb);
+	page.getLockStr(lock.lck_key.lck_string);
+
+	ThreadStatusGuard temp_status(tdbb);
+
+	const bool res = LCK_lock(tdbb, &lock, LCK_write, LCK_NO_WAIT);
+
+	if (res) {
+		LCK_release(tdbb, &lock);
 	}
 
-	~BtrPageGCLock()
-	{
-		// assert in debug build
-		fb_assert(!lck_id);
-
-		// lck_id might be set only if exception occurs
-		if (lck_id) {
-			LCK_release(JRD_get_thread_data(), this);
-		}
-	}
-
-	void disablePageGC(thread_db* tdbb, const PageNumber &page)
-	{
-		page.getLockStr(lck_key.lck_string);
-		LCK_lock(tdbb, this, LCK_read, LCK_WAIT);
-	}
-
-	void enablePageGC(thread_db* tdbb)
-	{
-		LCK_release(tdbb, this);
-	}
-
-	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
-	{
-		BtrPageGCLock lock(tdbb);
-		page.getLockStr(lock.lck_key.lck_string);
-
-		ThreadStatusGuard temp_status(tdbb);
-
-		const bool res = LCK_lock(tdbb, &lock, LCK_write, LCK_NO_WAIT);
-
-		if (res) {
-			LCK_release(tdbb, &lock);
-		}
-
-		return res;
-	}
-};
+	return res;
+}
 
 
 USHORT BTR_all(thread_db*		tdbb,
