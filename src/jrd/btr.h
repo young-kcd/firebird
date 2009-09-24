@@ -35,6 +35,7 @@
 #include "../jrd/err_proto.h"    /* Index error types */
 #include "../jrd/RecordNumber.h"
 #include "../jrd/sbm.h"
+#include "../jrd/LocksCache.h"
 
 /* 64 turns out not to be enough indexes */
 /* #define MAX_IDX		 64	*/	/* that should be plenty of indexes */
@@ -224,6 +225,28 @@ const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning i
 //#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
+
+class GlobalRWLock;
+typedef LocksCache<CachedLock> BtrPageLocks;
+
+class BtrPageGCLock
+{
+public:
+	explicit BtrPageGCLock(Jrd::thread_db* tdbb)
+	{
+		m_lock = NULL;
+	}
+
+	~BtrPageGCLock();
+
+	static BtrPageLocks* getLocksCache(thread_db* tdbb);
+	void disablePageGC(thread_db* tdbb, const PageNumber &page);
+	void enablePageGC(thread_db* tdbb);
+	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber &page);
+
+private:
+	GlobalRWLock *m_lock;
+};
 
 } //namespace Jrd
 

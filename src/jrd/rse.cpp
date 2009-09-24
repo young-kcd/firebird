@@ -170,17 +170,25 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			return;
 
 		case rsb_navigate:
-			if (bFreeAll)
 			{
 				irsb_nav* imp_nav = (irsb_nav*) impure;
-				if (imp_nav->irsb_nav_bitmap)
+				if (bFreeAll)
 				{
-					delete (*imp_nav->irsb_nav_bitmap);
-					*imp_nav->irsb_nav_bitmap = NULL;
+					if (imp_nav->irsb_nav_bitmap)
+					{
+						delete (*imp_nav->irsb_nav_bitmap);
+						*imp_nav->irsb_nav_bitmap = NULL;
+					}
+
+					delete imp_nav->irsb_nav_records_visited;
+					imp_nav->irsb_nav_records_visited = NULL;
 				}
 
-				delete imp_nav->irsb_nav_records_visited;
-				imp_nav->irsb_nav_records_visited = NULL;
+				if (imp_nav->irsb_nav_page)
+				{
+					imp_nav->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+					imp_nav->irsb_nav_page = 0;
+				}
 			}
 			return;
 

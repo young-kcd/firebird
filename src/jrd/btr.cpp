@@ -42,7 +42,6 @@
 #include "gen/iberror.h"
 #include "../jrd/common.h"
 #include "../jrd/lck.h"
-#include "../jrd/LocksCache.h"
 #include "../jrd/GlobalRWLock.h"
 #include "../jrd/cch.h"
 #include "../jrd/sort.h"
@@ -221,8 +220,6 @@ static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temp
 								 const index_desc&, const IndexRetrieval*);
 
 
-typedef LocksCache<CachedLock> BtrPageLocks;
-
 void Database::destroyBtrLocks()
 {
 	BtrPageLocks *locks = reinterpret_cast<BtrPageLocks*> (dbb_btr_page_locks);
@@ -231,82 +228,70 @@ void Database::destroyBtrLocks()
 }
 
 
-class Jrd::BtrPageGCLock
+BtrPageGCLock::~BtrPageGCLock()
 {
-public:
-	explicit BtrPageGCLock(thread_db* tdbb)
+	fb_assert(!m_lock);
+
+	if (m_lock) {
+		enablePageGC(JRD_get_thread_data());
+	}
+}
+
+BtrPageLocks* BtrPageGCLock::getLocksCache(thread_db* tdbb)
+{
+	Database *dbb = tdbb->getDatabase();
+	BtrPageLocks* locks = reinterpret_cast<BtrPageLocks*> (dbb->dbb_btr_page_locks);
+	if (!locks)
 	{
-		m_lock = NULL;
+		locks = FB_NEW (*dbb->dbb_permanent) 
+			BtrPageLocks(tdbb, LCK_btr_dont_gc, PageNumber::getLockLen(), 128);
+		dbb->dbb_btr_page_locks = locks;
 	}
 
-	~BtrPageGCLock()
-	{
-		fb_assert(!m_lock);
+	return locks;
+}
 
-		if (m_lock) {
-			enablePageGC(JRD_get_thread_data());
-		}
+void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber &page)
+{
+	fb_assert(!m_lock);
+
+	UCHAR key[8];
+	page.getLockStr(key);
+
+	BtrPageLocks* locks = getLocksCache(tdbb);
+	m_lock = locks->get(tdbb, key);
+	m_lock->lock(tdbb, LCK_read, LCK_WAIT);
+}
+
+void BtrPageGCLock::enablePageGC(thread_db* tdbb)
+{
+	fb_assert(m_lock);
+	m_lock->unlock(tdbb, LCK_read);
+	m_lock = NULL;
+}
+
+bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
+{
+	UCHAR key[8];
+	page.getLockStr(key);
+
+	BtrPageLocks* locks = getLocksCache(tdbb);
+	GlobalRWLock *lock = locks->get(tdbb, key);
+
+	ISC_STATUS_ARRAY temp_status;
+	ISC_STATUS* const org_status = tdbb->tdbb_status_vector;
+	tdbb->tdbb_status_vector = temp_status;
+
+	const bool res = lock->lock(tdbb, LCK_write, LCK_NO_WAIT);
+
+	if (res) {
+		lock->unlock(tdbb, LCK_write);
 	}
 
-	static BtrPageLocks* getLocksCache(thread_db* tdbb)
-	{
-		Database *dbb = tdbb->getDatabase();
-		BtrPageLocks* locks = reinterpret_cast<BtrPageLocks*> (dbb->dbb_btr_page_locks);
-		if (!locks)
-		{
-			locks = FB_NEW (*dbb->dbb_permanent) 
-				BtrPageLocks(tdbb, LCK_btr_dont_gc, PageNumber::getLockLen(), 128);
-			dbb->dbb_btr_page_locks = locks;
-		}
+	tdbb->tdbb_status_vector = org_status;
 
-		return locks;
-	}
-
-	void disablePageGC(thread_db* tdbb, const PageNumber &page)
-	{
-		fb_assert(!m_lock);
-
-		UCHAR key[8];
-		page.getLockStr(key);
-
-		BtrPageLocks* locks = getLocksCache(tdbb);
-		m_lock = locks->get(tdbb, key);
-		m_lock->lock(tdbb, LCK_read, LCK_WAIT);
-	}
-
-	void enablePageGC(thread_db* tdbb)
-	{
-		fb_assert(m_lock);
-		m_lock->unlock(tdbb, LCK_read);
-		m_lock = NULL;
-	}
-
-	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
-	{
-		UCHAR key[8];
-		page.getLockStr(key);
-
-		BtrPageLocks* locks = getLocksCache(tdbb);
-		GlobalRWLock *lock = locks->get(tdbb, key);
-
-		ISC_STATUS_ARRAY temp_status;
-		ISC_STATUS* const org_status = tdbb->tdbb_status_vector;
-		tdbb->tdbb_status_vector = temp_status;
-
-		const bool res = lock->lock(tdbb, LCK_write, LCK_NO_WAIT);
-
-		if (res) {
-			lock->unlock(tdbb, LCK_write);
-		}
-
-		tdbb->tdbb_status_vector = org_status;
-
-		return res;
-	}
-
-private:
-	GlobalRWLock *m_lock;
-};
+	return res;
+}
 
 
 USHORT BTR_all(thread_db*		tdbb,
