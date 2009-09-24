@@ -65,6 +65,7 @@ for %%v in ( btyacc gbak_embed gpre_boot gpre_embed isql_embed ) do (
 
 :: Firebird.conf, etc
 @copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR% > nul
+:: The line @UDF_COMMENT@ should be deleted from the target file.
 @copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in %FB_OUTPUT_DIR%\firebird.conf >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_OUTPUT_DIR%\intl >nul
 @copy %FB_ROOT_PATH%\src\utilities\ntrace\fbtrace.conf %FB_OUTPUT_DIR% >nul
