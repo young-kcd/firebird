@@ -18,6 +18,11 @@
 
 # Compiler settings for HPUX using aCC
 
+# Notes:
+
+# Firebird requires the HP-UX Atomic APIs ("AtomicAPI" bundle), released as an
+# optional Software Pack (SPK) for HP-UX 11i v2 or v3. 
+
 # Before attempting the HPUX build, you must export necessary
 # CFLAGS and CXXFLAGS to be picked up by the configure process and
 # subsequent build. Make sure CC is in the path!
