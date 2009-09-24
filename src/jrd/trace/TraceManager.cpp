@@ -42,18 +42,19 @@ using namespace Firebird;
 
 namespace
 {
-	static const char* NTRACE_PREFIX = "fbtrace";
+	static const char* const NTRACE_PREFIX = "fbtrace";
 }
 
 namespace Jrd {
 
 GlobalPtr<Array<TraceManager::ModuleInfo> > TraceManager::modules;
 GlobalPtr<Mutex> TraceManager::init_modules_mtx;
-bool TraceManager::init_modules = false;
+volatile bool TraceManager::init_modules = false;
 
 StorageInstance TraceManager::storageInstance;
 
-bool TraceManager::check_result(const TracePlugin* plugin, const char* module, const char* function, bool result)
+bool TraceManager::check_result(const TracePlugin* plugin, const char* module, const char* function,
+	bool result)
 {
 	if (result)
 		return true;
@@ -61,7 +62,8 @@ bool TraceManager::check_result(const TracePlugin* plugin, const char* module, c
 	if (!plugin)
 	{
 		gds__log("Trace plugin %s returned error on call %s, "
-			"did not create plugin and provided no additional details on reasons of failure", module, function);
+			"did not create plugin and provided no additional details on reasons of failure",
+			module, function);
 		return false;
 	}
 
