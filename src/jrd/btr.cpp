@@ -6199,6 +6199,27 @@ static SLONG insert_node(thread_db* tdbb,
 	jumpNodes->clear();
 	delete jumpNodes;
 
+	new_key->key_flags = 0;
+	if (unique && allRecordNumber)
+	{
+		// hvlad: it is important to set correct flags for all-NULL's key
+		// else insert_node() at upper level will validate duplicates and 
+		// insert node into the end of duplicates chain instead of correct 
+		// place (in order of record numbers).
+
+		temporary_key nullKey;
+		nullKey.key_length = 0;
+		nullKey.key_flags = 0;
+		nullKey.key_null_segment = 0;
+		BTR_make_null_key(tdbb, insertion->iib_descriptor, &nullKey);
+
+		if (new_key->key_length == nullKey.key_length &&
+			memcmp(new_key->key_data, nullKey.key_data, nullKey.key_length) == 0)
+		{
+			new_key->key_flags = nullKey.key_flags;
+		}
+	}
+
 	return split_page;
 }
 
