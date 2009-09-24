@@ -1,4 +1,59 @@
   ***************************
+  * v2.1.4
+  ***************************
+
+    * Bugfix CORE-2634
+        Performance regression when restoring database with big metadata
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2632
+        "Invalid BLOB ID" error when working with the monitoring tables
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2591
+        High mutex wait ratio and degraded performance after some time of performing normally
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2572
+        Locks of type LCK_page_space are processed incorrectly (big-endian machines)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2532
+        Incorrect size of volumes in multi volume database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2519
+        GSTAT output is incorrect for tables with more than 2 billion records
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2507
+        Intermittent CreateFile failure
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1346
+        LPAD and RPAD with two columns not working
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2597
+        Backport RPAD and LPAD return types from FB 2.5
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1658
+        Avoid memory consumption of <page size> bytes per every temporary blob
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
+  ***************************
   * v2.1.3
   ***************************
 
