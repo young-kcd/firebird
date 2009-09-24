@@ -2,6 +2,21 @@
   * v2.5 Release Candidate 1
   **************************
 
+    * Bugfix CORE-2635
+        Unique index with a lot of NULL keys can be corrupted at level 1
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2633
+        SELECT WITH LOCK with no fields accessed clears the data
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2632
+        "Invalid BLOB ID" error when working with the monitoring tables
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2615
         Silent truncation when using UTF-8 parameters and UTF-8 client character set encoding
       Contributor(s):
@@ -26,6 +41,16 @@
         Attachments using NONE charset may fail reading from the monitoring tables
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2601
+        Fine tuning of the installation directories switches do not work in configure
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2600
+        Server deadlocks while running a few remote EXECUTE STATEMENTs concurrently
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-2599
         Segmentation fault in the Y-valve when closing an attachment actively used by other threads
@@ -116,15 +141,36 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2315
+        Firebird float support does not conform to the original Interbase specification
+      Contributor(s):
+        Bill Oliver <bill.oliver at sas.com>
+
     * Bugfix CORE-2252
         EXECUTE STATEMENT on EXTERNAL SOURCE does not check the status of the transaction
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-1787
+        Consistency check when subquery is ordered by an aggregate function from another context
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-915
         ISQL extracts procedures body with double line break
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2638
+        Make words, non-reserved according to the SQL specification, non-reserved in our grammar
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-2626
+        Startup scripts in /etc/init.d should take care about presence of
+        /var/run/firebird and /tmp/firebird directories
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-2609
         Support for Windows NT4/98/ME
@@ -148,8 +194,29 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Improvement CORE-1687
+        Allow bigger cache sizes than 2 GB (16K * 128 K) for 64-bit builds
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-1643
+        Use DatabaseAccess configuration parameter for default database location
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * New feature CORE-2636
+        Add support for the GB 18030 character set (Chinese government standard)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * New feature CORE-2625
+        Add support for Linux/s390 (32-bit) platform
+      Contributor(s):
+        Damyan Ivanov <dmn at debian.org>
+        Alex Peshkov <peshkoff at mail.ru>
+
     * New feature CORE-2559
-        Add support for Linux/s390x platform
+        Add support for Linux/s390x (64-bit) platform
       Contributor(s):
         Dan Horak <dan at danny.cz>
         Alex Peshkov <peshkoff at mail.ru>
