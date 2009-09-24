@@ -1,3 +1,103 @@
+2009-09-24 13:29  verbguy
+
+	* firebird2/src/jrd/enc.cpp (1.40):
+
+	AIX issue - credentials refused by isql -u sysdba -p masterkey when
+	using IBM xlC optimized build, -O or -O2
+
+2009-09-24 13:26  dimitr
+
+	* firebird2/doc/WhatsNew (1.184):
+
+	Update.
+
+2009-09-24 11:46  dimitr
+
+	* firebird2/doc/WhatsNew (1.183):
+
+	Update.
+
+2009-09-24 11:06  robocop
+
+	* firebird2/builds/win32/make_all.bat (1.55):
+
+	Put an indication that we need further processing in Windows (using
+	sed, probably).
+
+2009-09-24 10:55  robocop
+
+	* firebird2/src/dsql/parse.y (1.311):
+
+	Misc comment, mark the end of the "unreserved" words.
+
+2009-09-24 09:39  alexpeshkoff
+
+	* firebird2/src/dsql/parse.y (1.310):
+
+	Fixed CORE-2638: Make words, non-reserved according to SQL
+	speciication, non-reserved in our grammar
+
+2009-09-24 08:31  robocop
+
+	* firebird2/builds/win32/make_all.bat (1.54):
+
+	make_all fails silently after the canonical config file was
+	renamed.
+
+2009-09-24 08:29  robocop
+
+	* firebird2/src/jrd/trace/TraceManager.cpp (1.16):
+
+	- Fix compilation problem after Adriano's volatile.  - Misc.
+
+2009-09-24 04:11  asfernandes
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.119), jrd/btr.cpp
+	(1.258), jrd/common.h (1.219),
+	utilities/ntrace/TraceConfiguration.cpp (1.13):
+
+	Misc
+
+2009-09-24 04:10  asfernandes
+
+	* firebird2/src/jrd/trace/TraceManager.h (1.7):
+
+	Another necessary volatile
+
+2009-09-24 00:10  hvlad
+
+	* firebird2/src/: jrd/trace/TraceManager.h (1.6),
+	utilities/ntrace/TraceConfiguration.cpp (1.12),
+	utilities/ntrace/TraceConfiguration.h (1.6):
+
+	Better error diagnostics for trace configuration.
+
+2009-09-23 17:58  asfernandes
+
+	* firebird2/src/intl/cv_icu.cpp (1.10):
+
+	Check another ICU status, triggered with GB18030 conversion
+
+2009-09-23 17:44  asfernandes
+
+	* firebird2/: builds/install/misc/fbintl.conf (1.17),
+	extern/icu/source/data/mappings/ucmcore.mk (1.5),
+	src/intl/charsets.h (1.15), src/jrd/IntlManager.cpp (1.37):
+
+	Feature CORE-2636 - Add support for GB 18030 character set
+
+2009-09-23 17:43  asfernandes
+
+	* firebird2/src/jrd/: common.h (1.218), perf.cpp (1.48):
+
+	printf format warnings/errors
+
+2009-09-23 15:35  paulbeach
+
+	* firebird2/src/jrd/scl.epp (1.109):
+
+	_string will not compile on Darwin using gcc 4.2.1
+
 2009-09-23 13:34  alexpeshkoff
 
 	* firebird2/: configure.in (1.363),
