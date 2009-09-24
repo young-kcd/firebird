@@ -253,6 +253,7 @@ bool TraceCfgReader::parseBoolean(const Element* el) const
 	const char* value = el->getAttributeName(0);
 	string tempValue(value);
 	tempValue.upper();
+
 	if (tempValue == "1" || tempValue == "ON" || tempValue == "YES" || tempValue == "TRUE")
 		return true;
 	if (tempValue == "0" || tempValue == "OFF" || tempValue == "NO" || tempValue == "FALSE")

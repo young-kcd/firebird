@@ -731,7 +731,7 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 		fb_assert(false);
 	}
 
-	// hvlad: detach just created temporary blob from request to bound its 
+	// hvlad: detach just created temporary blob from request to bound its
 	// lifetime to transaction. This is necessary as this blob belongs to
 	// the MON$ table and must be accessible until transaction ends.
 	if (to_desc.isBlob())
@@ -749,7 +749,7 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 		{
 			const bool reqFound = blobIdx.bli_request->req_blobs.locate(blobIdx.bli_temp_id);
 			fb_assert(reqFound);
-			
+
 			blobIdx.bli_request->req_blobs.fastRemove();
 			blobIdx.bli_request = NULL;
 		}

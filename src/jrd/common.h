@@ -168,7 +168,7 @@
 #ifdef __s390x__
 #define IMPLEMENTATION  isc_info_db_impl_linux_s390x	// 78
 #else
-#define IMPLEMENTATION  isc_info_db_impl_linux_s390	// 79
+#define IMPLEMENTATION  isc_info_db_impl_linux_s390		// 79
 #endif  // __s390x__
 #endif  // __s390__
 
