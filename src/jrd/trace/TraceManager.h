@@ -169,7 +169,7 @@ private:
 	};
 	static Firebird::GlobalPtr<Firebird::Array<ModuleInfo> > modules;
 	static Firebird::GlobalPtr<Firebird::Mutex> init_modules_mtx;
-	static bool init_modules;
+	static volatile bool init_modules;
 
 	struct SessionInfo
 	{
