@@ -7,6 +7,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2616
+        Error "page <N> is of wrong type (expected 7, found 5)"
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2633
         SELECT WITH LOCK with no fields accessed clears the data
       Contributor(s):
