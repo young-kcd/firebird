@@ -264,7 +264,7 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 
 STATIC void init_des();
 STATIC void init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
-					  unsigned char p[64], int chars_out);
+					  const unsigned char p[64], int chars_out);
 
 
 STATIC void permute(const unsigned char* cp, C_block* out, const C_block* p, int chars_in)
@@ -914,7 +914,7 @@ STATIC void init_des()
 #endif
 STATIC void
 init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
-		  unsigned char p[64], int chars_out)
+		  const unsigned char p[64], int chars_out)
 {
 	for (int k = 0; k < chars_out * 8; k++)
 	{	/* each output bit position */
