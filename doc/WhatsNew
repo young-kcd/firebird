@@ -2,6 +2,11 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-2635
+        Unique index with a lot of NULL keys can be corrupted at level 1
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2634
         Performance regression when restoring database with big metadata
       Contributor(s):
@@ -9,6 +14,11 @@
 
     * Bugfix CORE-2632
         "Invalid BLOB ID" error when working with the monitoring tables
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2616
+        Error "page <N> is of wrong type (expected 7, found 5)"
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
