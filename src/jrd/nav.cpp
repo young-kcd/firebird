@@ -1157,7 +1157,7 @@ static void set_page(IRSB_NAV impure, WIN* window)
  **************************************
  *
  * Functional description
- *	Take a LCK_btr_dont_gc lock on walked index page to prevent its 
+ *	Take a LCK_btr_dont_gc lock on walked index page to prevent its
  *	removal from index while page lock is not taken
  *
  **************************************/

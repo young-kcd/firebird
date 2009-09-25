@@ -182,7 +182,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 						delete (*imp_nav->irsb_nav_bitmap);
 						*imp_nav->irsb_nav_bitmap = NULL;
 					}
-	
+
 					delete imp_nav->irsb_nav_records_visited;
 					imp_nav->irsb_nav_records_visited = NULL;
 				}

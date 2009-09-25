@@ -256,4 +256,3 @@ public:
 } //namespace Jrd
 
 #endif // JRD_BTR_H
-
