@@ -1,3 +1,54 @@
+2009-09-25 12:38  asfernandes
+
+	* firebird2/doc/WhatsNew (1.187):
+
+	Change description per user feedback
+
+2009-09-25 10:05  dimitr
+
+	* firebird2/doc/WhatsNew (1.186):
+
+	Update.
+
+2009-09-25 08:38  robocop
+
+	* firebird2/src/jrd/enc.cpp (1.41):
+
+	Mark input array as const.
+
+2009-09-25 07:02  dimitr
+
+	* firebird2/doc/WhatsNew (1.185):
+
+	Update.
+
+2009-09-25 04:17  asfernandes
+
+	* firebird2/: doc/README.build.posix.html (1.5), src/jrd/btr.h
+	(1.54), src/jrd/nav.cpp (1.84), src/jrd/rse.cpp (1.193):
+
+	Misc
+
+2009-09-24 23:05  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.259), btr.h (1.53), nav.cpp
+	(1.83), rse.cpp (1.192), rse.h (1.64):
+
+	Fixed bug CORE-2616 :  page 1530262 is of wrong type (expected 7,
+	found 5)
+
+2009-09-24 21:15  verbguy
+
+	* firebird2/builds/posix/prefix.hpux_aCC (1.5):
+
+	on HP-UX we need the optional AtomicAPI SPK software package
+
+2009-09-24 21:07  verbguy
+
+	* firebird2/doc/README.build.posix.html (1.4):
+
+	on HP-UX we need the optional AtomicAPI SPK software package
+
 2009-09-24 13:29  verbguy
 
 	* firebird2/src/jrd/enc.cpp (1.40):
