@@ -171,6 +171,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-97
+        GFIX -shut -force leaves lock on a database file thus preventing a subsequent restore
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Improvement CORE-2638
         Make words, non-reserved according to the SQL specification, non-reserved in our grammar
       Contributor(s):
