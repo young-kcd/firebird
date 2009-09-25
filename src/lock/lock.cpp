@@ -3671,8 +3671,11 @@ static void post_pending( LBL lock)
 			if (request->lrq_flags & LRQ_pending)
 				break;
 
-			if (!(request->lrq_flags & (LRQ_blocking_seen | LRQ_blocking)))
+			if (!(request->lrq_flags & (LRQ_blocking_seen | LRQ_blocking)) &&
+				request->lrq_ast_routine)
+			{
 				request->lrq_flags |= LRQ_just_granted;
+			}
 		}
 	}
 }
