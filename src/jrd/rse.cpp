@@ -154,7 +154,17 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 
 		switch (rsb->rsb_type) {
 		case rsb_indexed:
+			return;
+
 		case rsb_navigate:
+			{
+				irsb_nav* imp_nav = (irsb_nav*) impure;
+				if (imp_nav->irsb_nav_page)
+				{
+					imp_nav->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+					imp_nav->irsb_nav_page = 0;
+				}
+			}
 			return;
 
 		case rsb_sequential:
