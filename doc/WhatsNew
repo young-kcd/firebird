@@ -220,7 +220,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * New feature CORE-2636
-        Add support for the GB 18030 character set (Chinese government standard)
+        Add support for the GB 18030 character set (Chinese national standard)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
