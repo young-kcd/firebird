@@ -1,3 +1,26 @@
+2009-09-25 22:57  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.24):
+
+	Backport fix for bug CORE-2635 : Unique index with a lot of NULL
+	keys can be corrupted at level 1
+
+2009-09-25 22:49  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.162.2.23), btr.h (1.43.4.2),
+	nav.cpp (1.60.4.1), rse.cpp (1.104.2.12), rse.h (1.45.4.1):
+
+	Backport fix for bug CORE-2616 : page 1530262 is of wrong type
+	(expected 7, found 5)
+
+2009-09-25 20:57  hvlad
+
+	* firebird2/src/lock/lock.cpp (1.114.4.9):
+
+	Backport fix for bug CORE-2640 : A regular deadlock may not be
+	detected by the lock manager under some conditions, thus resulting
+	in a hang
+
 2009-09-23 15:35  paulbeach
 
 	* firebird2/src/jrd/scl.epp (1.71.4.8):
