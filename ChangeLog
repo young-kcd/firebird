@@ -1,3 +1,25 @@
+2009-09-25 20:28  hvlad
+
+	* firebird2/src/lock/lock.cpp (1.204):
+
+	Fixed bug CORE-2640 : A regular deadlock may not be detected by the
+	lock manager under some conditions, thus resulting in a hang
+
+2009-09-25 15:41  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.44):
+
+	Quench the thirst
+
+2009-09-25 15:38  paul_reeves
+
+	* firebird2/builds/win32/make_all.bat (1.56):
+
+	Make the best of a bad situation. Using find /V will get messy if
+	we have to strip several markers.
+
 2009-09-25 12:38  asfernandes
 
 	* firebird2/doc/WhatsNew (1.187):
