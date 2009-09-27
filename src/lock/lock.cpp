@@ -2762,7 +2762,7 @@ void LockManager::post_pending(lbl* lock)
 			if (request->lrq_flags & LRQ_pending)
 				break;
 
-			if (!(request->lrq_flags & (LRQ_blocking | LRQ_blocking_seen)) && 
+			if (!(request->lrq_flags & (LRQ_blocking | LRQ_blocking_seen)) &&
 				request->lrq_ast_routine)
 			{
 				request->lrq_flags |= LRQ_just_granted;
