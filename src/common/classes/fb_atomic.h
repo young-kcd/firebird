@@ -245,15 +245,15 @@ namespace Firebird {
 class AtomicCounter
 {
 public:
-	typedef uint_t counter_type;
-	typedef int delta_type;
+	typedef volatile ulong_t counter_type;
+	typedef long delta_type;
 
 	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
 
 	counter_type exchangeAdd(delta_type value)
 	{
-		return atomic_add_int_nv(&counter, value);
+		return atomic_add_long_nv(&counter, value);
 	}
 
 	counter_type operator +=(delta_type value)
@@ -268,19 +268,19 @@ public:
 
 	counter_type operator ++()
 	{
-		return atomic_inc_uint_nv(&counter);
+		return atomic_inc_ulong_nv(&counter);
 	}
 
 	counter_type operator --()
 	{
-		return atomic_dec_uint_nv(&counter);
+		return atomic_dec_ulong_nv(&counter);
 	}
 
 	counter_type value() const { return counter; }
 
 	counter_type setValue(delta_type value)
 	{
-		return atomic_swap_uint(&counter, value);
+		return atomic_swap_ulong(&counter, value);
 	}
 
 private:
