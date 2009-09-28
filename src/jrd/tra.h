@@ -111,6 +111,18 @@ public:
 		delete tra_blob_space;
 	}
 
+	static void destroy(Database* const dbb, jrd_tra* const transaction)
+	{
+		if (transaction)
+		{
+			JrdMemoryPool* const pool = transaction->tra_pool;
+			delete transaction;
+
+			if (pool) 
+				JrdMemoryPool::deletePool(pool);
+		}
+	}
+
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */

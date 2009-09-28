@@ -230,6 +230,27 @@ namespace {
 #define TEXT    SCHAR
 #endif	// WIN_NT
 
+
+Jrd::Database::~Database()
+{
+	delete dbb_sys_trans;
+	destroyIntlObjects();
+
+	pool_ptr* itr = dbb_pools.begin();
+	while (itr != dbb_pools.end())
+	{
+		if (*itr && *itr == dbb_bufferpool)
+			dbb_bufferpool = 0;
+		if (*itr && *itr != dbb_permanent)
+			itr = JrdMemoryPool::deletePool(*itr);
+		else
+			++itr;
+	}
+	if (dbb_bufferpool)
+		JrdMemoryPool::deletePool(dbb_bufferpool);
+}
+
+
 void Jrd::Trigger::compile(thread_db* tdbb)
 {
 	if (!request /*&& !compile_in_progress*/)

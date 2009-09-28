@@ -1044,6 +1044,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 	if (transaction->tra_blobs.getFirst()) 
 		while (true) 
@@ -1152,11 +1153,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	delete transaction->tra_db_snapshot;
 
-	// Release the transaction pool.
-
-	JrdMemoryPool* tra_pool = transaction->tra_pool;
-	if (tra_pool)
-		JrdMemoryPool::deletePool(tra_pool);
+	jrd_tra::destroy(dbb, transaction);
 }
 
 

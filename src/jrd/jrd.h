@@ -334,23 +334,7 @@ private:
 		dbb_pools.resize(1);
 	}
 
-	~Database()
-	{
-		destroyIntlObjects();
-
-		pool_ptr* itr = dbb_pools.begin();
-		while (itr != dbb_pools.end())
-		{
-			if (*itr && *itr == dbb_bufferpool)
-				dbb_bufferpool = 0;
-			if (*itr && *itr != dbb_permanent)
-				itr = JrdMemoryPool::deletePool(*itr);
-			else
-				++itr;
-		}
-		if (dbb_bufferpool)
-			JrdMemoryPool::deletePool(dbb_bufferpool);
-	}
+	~Database();
 
 	// temporal measure to avoid unstable state of lock file -
 	// this is anyway called in ~Database(), and in theory should be private
