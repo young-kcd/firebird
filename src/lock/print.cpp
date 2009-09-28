@@ -40,7 +40,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/isc.h"
-#include "../lock/lock.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/db_alias.h"
 #include "../jrd/gds_proto.h"
@@ -486,16 +485,51 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			ISC_mutex_lock(MUTEX);
 		}
 
+#ifdef USE_SHMEM_EXT
+		ULONG extentSize = shmem_data.sh_mem_length_mapped;
+		ULONG totalSize = LOCK_header->lhb_length;
+		ULONG extentsCount = totalSize / extentSize + (totalSize % extentSize == 0 ? 0 : 1);
+
+		try
+		{
+			buffer = new UCHAR[extentsCount * extentSize];
+		}
+		catch (const Firebird::BadAlloc&)
+		{
+			FPRINTF(outfile, "Insufficient memory for lock statistics.\n");
+			exit(FINI_OK);
+		}
+		
+		memcpy(buffer, LOCK_header, extentSize);
+
+		for (ULONG extent = 1; extent < extentsCount; ++extent)
+		{
+			Firebird::PathName extName;
+			sh_mem extData;
+			extName.printf("%s.ext%d", filename.c_str(), extent);
+			UCHAR* ext = (UCHAR*) ISC_map_file(status_vector, extName.c_str(),
+											   prt_lock_init, NULL, 0, &extData);
+			if (! ext)
+			{
+				FPRINTF(outfile, "Could not map extent number %d, file %s.\n", extent, extName.c_str());
+				exit(FINI_OK);
+			}
+			memcpy(((UCHAR*) buffer) + extent * extentSize, ext, extentSize);
+			ISC_unmap_file(status_vector, &extData);
+		}
+
+		LOCK_header = (lhb*)(UCHAR*) buffer;
+#elif (defined HAVE_MMAP || defined WIN_NT)
 		if (LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
 		{
-#if defined HAVE_MMAP || defined WIN_NT
 			const ULONG length = LOCK_header->lhb_length;
 			LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false);
-#endif
 		}
+#endif
 
 		if (sw_consistency)
 		{
+#ifndef USE_SHMEM_EXT
 			// To avoid changes in the lock file while we are dumping it - make
 			// a local buffer, lock the lock file, copy it, then unlock the
 			// lock file to let processing continue.  Printing of the lock file
@@ -512,10 +546,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				exit(FINI_OK);
 			}
 
-			memcpy(buffer, LOCK_header, LOCK_header->lhb_length);
-			ISC_mutex_unlock(MUTEX);
-
+			memcpy((UCHAR*) buffer, LOCK_header, LOCK_header->lhb_length);
 			LOCK_header = (lhb*)(UCHAR*) buffer;
+#endif
+
+			ISC_mutex_unlock(MUTEX);
 
 #ifdef WIN_NT
 			ISC_mutex_fini(MUTEX);
@@ -559,6 +594,50 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		LOCK_header = (lhb*)(UCHAR*) buffer;
 		read(fd, LOCK_header, file_stat.st_size);
 		close(fd);
+
+#ifdef USE_SHMEM_EXT
+		ULONG extentSize = file_stat.st_size;
+		ULONG totalSize = LOCK_header->lhb_length;
+		ULONG extentsCount = totalSize / extentSize + (totalSize % extentSize == 0 ? 0 : 1);
+		UCHAR* newBuf = NULL;
+
+		try
+		{
+			newBuf = new UCHAR[extentsCount * extentSize];
+		}
+		catch (const Firebird::BadAlloc&)
+		{
+			FPRINTF(outfile, "Insufficient memory for lock statistics.\n");
+			exit(FINI_OK);
+		}
+		
+		memcpy(newBuf, LOCK_header, extentSize);
+		buffer = newBuf;
+
+		for (ULONG extent = 1; extent < extentsCount; ++extent)
+		{
+			Firebird::PathName extName;
+			extName.printf("%s.ext%d", filename.c_str(), extent);
+			
+			const int fd = open(extName.c_str(), O_RDONLY | O_BINARY);
+			if (fd == -1)
+			{
+				FPRINTF(outfile, "Unable to open lock file extent number %d, file %s.\n", 
+						extent, extName.c_str());
+				exit(FINI_OK);
+			}
+
+			if (read(fd, ((UCHAR*) buffer) + extent * extentSize, extentSize) != extentSize)
+			{
+				FPRINTF(outfile, "Could not read lock file extent number %d, file %s.\n", 
+						extent, extName.c_str());
+				exit(FINI_OK);
+			}
+			close(fd);
+		}
+
+		LOCK_header = (lhb*)(UCHAR*) buffer;
+#endif
 	}
 	else
 	{

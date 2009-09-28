@@ -108,8 +108,12 @@ inline bool QUE_EMPTY(const que& aque)
 // Self-relative queue BASE should be defined in the source which includes this
 #define SRQ_PTR SLONG
 
+#ifndef SRQ_REL_PTR
 #define SRQ_REL_PTR(item)           (SRQ_PTR) ((UCHAR*) item - SRQ_BASE)
+#endif
+#ifndef SRQ_ABS_PTR
 #define SRQ_ABS_PTR(item)           (SRQ_BASE + item)
+#endif
 
 // CVC: I cannot convert these four to inline functions because SRQ_BASE
 // is defined in event.cpp!

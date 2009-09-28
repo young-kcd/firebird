@@ -894,9 +894,6 @@ typedef Firebird::HalfStaticArray<UCHAR, 256> MoveBuffer;
 
 } //namespace Jrd
 
-// Lock levels
-#include "../lock/lock.h"
-
 // Random string block -- as long as impure areas don't have
 // constructors and destructors, the need this varying string
 

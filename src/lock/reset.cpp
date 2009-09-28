@@ -21,7 +21,7 @@
 #include "/sys5/usr/include/sys/ipc.h"
 #include "/sys5/usr/include/sys/shm.h"
 #include "/sys5/usr/include/sys/sem.h"
-#include "lock.h"
+//#include "lock.h"
 
 int main( int argc, char **argv)
 {

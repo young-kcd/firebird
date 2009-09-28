@@ -37,7 +37,6 @@
 #include "../jrd/common.h"
 #include "../jrd/isc.h"
 #include "../jrd/isc_s_proto.h"
-#include "../lock/lock.h"
 #include "../lock/lock_proto.h"
 #include "../jrd/license.h"
 #include "../jrd/gds_proto.h"

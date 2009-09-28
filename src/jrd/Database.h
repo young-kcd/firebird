@@ -32,7 +32,6 @@
 
 #include "firebird.h"
 #include "../jrd/cch.h"
-#include "../jrd/que.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"

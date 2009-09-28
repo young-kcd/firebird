@@ -363,6 +363,8 @@ extern "C" int remove(const char* path);
 
 #ifdef HPUX
 
+#define USE_SHMEM_EXT	// Looks like everyone else can ISC_remap
+
 #define UNIX
 //#define CURSES_KEYPAD
 

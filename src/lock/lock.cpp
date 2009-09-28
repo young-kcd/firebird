@@ -40,9 +40,12 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
+
+#include "../lock/lock.h"
+#include "../lock/lock_proto.h"
+
 #include "../jrd/ThreadStart.h"
 #include "../jrd/jrd.h"
-#include "../jrd/isc.h"
 #include "gen/iberror.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
@@ -55,8 +58,6 @@
 #include "../common/classes/semaphore.h"
 #include "../common/classes/init.h"
 #include "../common/classes/timestamp.h"
-#include "../lock/lock.h"
-#include "../lock/lock_proto.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -191,6 +192,9 @@ LockManager::LockManager(const Firebird::string& id)
 	  m_dbId(getPool(), id),
 	  m_acquireSpins(Config::getLockAcquireSpins()),
 	  m_memorySize(Config::getLockMemSize())
+#ifdef USE_SHMEM_EXT
+	  , m_extents(getPool())
+#endif
 {
 	ISC_STATUS_ARRAY local_status;
 	if (!attach_shared_file(local_status))
@@ -245,10 +249,23 @@ LockManager::~LockManager()
 		Firebird::PathName name;
 		get_shared_file_name(name);
 		ISC_remove_map_file(name.c_str());
+#ifdef USE_SHMEM_EXT
+		for (ULONG i = 1; i < m_extents.getCount(); ++i)
+		{
+			get_shared_file_name(name, i);
+			ISC_remove_map_file(name.c_str());
+		}
+#endif //USE_SHMEM_EXT
 	}
 	release_mutex();
 
 	detach_shared_file(local_status);
+#ifdef USE_SHMEM_EXT
+	for (ULONG i = 1; i < m_extents.getCount(); ++i)
+	{
+		ISC_unmap_file(local_status, &m_extents[i].sh_data);
+	}
+#endif //USE_SHMEM_EXT
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
@@ -257,6 +274,39 @@ LockManager::~LockManager()
 		fb_assert(false);
 	}
 }
+
+
+#ifdef USE_SHMEM_EXT
+SRQ_PTR LockManager::REL_PTR(const void* par_item)
+{
+	const UCHAR* item = static_cast<const UCHAR*>(par_item);
+	for (ULONG i = 0; i < m_extents.getCount(); ++i)
+	{
+		Extent& l = m_extents[i];
+		UCHAR* adr = reinterpret_cast<UCHAR*>(l.table);
+		if (item >= adr && item < adr + getExtendSize())
+		{
+			return getStartOffset(i) + (item - adr);
+		}
+    }
+
+	errno = 0;
+    bug(NULL, "Extend not found in REL_PTR()");
+    return 0;	// compiler silencer
+}
+
+
+void* LockManager::ABS_PTR(SRQ_PTR item)
+{
+	ULONG extent = item / getExtendSize();
+	if (extent >= m_extents.getCount())
+	{
+		errno = 0;
+		bug(NULL, "Extend not found in ABS_PTR()");
+	}
+	return reinterpret_cast<UCHAR*>(m_extents[extent].table) + (item % getExtendSize());
+}
+#endif //USE_SHMEM_EXT
 
 
 bool LockManager::attach_shared_file(ISC_STATUS* status)
@@ -270,6 +320,9 @@ bool LockManager::attach_shared_file(ISC_STATUS* status)
 		return false;
 
 	fb_assert(m_header->lhb_version == LHB_VERSION);
+#ifdef USE_SHMEM_EXT
+	m_extents[0].sh_data = m_shmem;
+#endif
 	return true;
 }
 
@@ -285,9 +338,15 @@ void LockManager::detach_shared_file(ISC_STATUS* status)
 }
 
 
-void LockManager::get_shared_file_name(Firebird::PathName& name) const
+void LockManager::get_shared_file_name(Firebird::PathName& name, ULONG extent) const
 {
 	name.printf(LOCK_FILE, m_dbId.c_str());
+	if (extent)
+	{
+		Firebird::PathName ename;
+		ename.printf("%s.ext%d", name.c_str(), extent);
+		name = ename;
+	}
 }
 
 
@@ -1075,6 +1134,16 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		owner->own_thread_id = getThreadId();
 	}
 
+#ifdef USE_SHMEM_EXT
+	while (m_header->lhb_length > getTotalMapped())
+	{
+		if (! newExtent())
+		{
+			bug(NULL, "map of lock file extent failed");
+		}
+	}
+#else //USE_SHMEM_EXT	
+
 	if (m_header->lhb_length > m_shmem.sh_mem_length_mapped
 #ifdef LOCK_DEBUG_REMAP
 		// If we're debugging remaps, force a remap every-so-often.
@@ -1082,9 +1151,9 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #endif
 		)
 	{
+#if (defined HAVE_MMAP || defined WIN_NT)
 		const ULONG new_length = m_header->lhb_length;
 
-#if (defined HAVE_MMAP || defined WIN_NT)
 		Firebird::WriteLockGuard guard(m_remapSync);
 		// Post remapping notifications
 		remap_local_owners();
@@ -1100,6 +1169,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			return;
 		}
 	}
+#endif //USE_SHMEM_EXT
 
 	// If we were able to acquire the MUTEX, but there is an prior owner marked
 	// in the the lock table, it means that someone died while owning
@@ -1132,6 +1202,31 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 }
 
 
+#ifdef USE_SHMEM_EXT
+namespace {
+	void initializeExtent(void*, sh_mem*, bool) { }
+}
+
+bool LockManager::newExtent()
+{
+	Firebird::PathName name;
+	get_shared_file_name(name, m_extents.getCount());
+	ISC_STATUS_ARRAY local_status;
+
+	Extent extent;
+
+	if (!(extent.table = (lhb*) ISC_map_file(local_status, name.c_str(), initializeExtent,
+											this, m_memorySize, &extent.sh_data)))
+	{
+		return false;
+	}
+	m_extents.add(extent);
+
+	return true;
+}
+#endif
+
+
 UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
 {
 /**************************************
@@ -1146,13 +1241,21 @@ UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
  **************************************/
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	ASSERT_ACQUIRED;
-	const ULONG block = m_header->lhb_used;
+	ULONG block = m_header->lhb_used;
 
 	// Make sure we haven't overflowed the lock table.  If so, bump the size of the table.
 
 	if (m_header->lhb_used + size > m_header->lhb_length)
 	{
-#if (defined HAVE_MMAP || defined WIN_NT)
+#ifdef USE_SHMEM_EXT
+		// round up so next object starts at beginngin of next extent
+		block = m_header->lhb_used = m_header->lhb_length;
+		if (newExtent())
+		{
+			m_header->lhb_length += m_memorySize;
+		}
+		else
+#elif (defined HAVE_MMAP || defined WIN_NT)
 		Firebird::WriteLockGuard guard(m_remapSync);
 		// Post remapping notifications
 		remap_local_owners();
@@ -2171,7 +2274,7 @@ SRQ_PTR LockManager::grant_or_que(thread_db* tdbb, lrq* request, lbl* lock, SSHO
 }
 
 
-void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id) const
+void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id)
 {
 /**************************************
  *
@@ -2224,6 +2327,15 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 
 	m_header = (lhb*) shmem_data->sh_mem_address;
 	m_sharedFileCreated = initializeMemory;
+
+#ifdef USE_SHMEM_EXT
+	if (m_extents.getCount() == 0)
+	{
+		Extent zero;
+		zero.table = m_header;
+		m_extents.push(zero);
+	}
+#endif
 
 	if (!initializeMemory) {
 		return;
