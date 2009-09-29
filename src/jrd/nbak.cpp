@@ -267,6 +267,12 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		// Create file	
 		NBAK_TRACE(("Creating difference file %s", diff_name.c_str()));
 		diff_file = PIO_create(database, diff_name, true, false, false);
+		if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+		{
+			PIO_force_write(diff_file, 
+				database->dbb_flags & DBB_force_write, 
+				database->dbb_flags & DBB_no_fs_cache);
+		}
 #ifdef UNIX 
 		// adjust difference file access rights to make it match main DB ones
 		if (diff_file && geteuid() == 0) {
@@ -861,6 +867,12 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 		try {
 			NBAK_TRACE(("Open difference file"));
 			diff_file = PIO_open(database, diff_name, false, diff_name, false);
+			if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+			{
+				PIO_force_write(diff_file, 
+					database->dbb_flags & DBB_force_write, 
+					database->dbb_flags & DBB_no_fs_cache);
+			}
 		}
 		catch (const Firebird::Exception& ex) {
 			Firebird::stuff_exception(status, ex);
