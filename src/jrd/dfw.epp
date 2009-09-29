@@ -120,6 +120,8 @@
 #include "../jrd/UserManagement.h"
 #include "../common/utils_proto.h"
 
+#include "../common/classes/Hash.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -141,6 +143,195 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
 using namespace Firebird;
+
+namespace Jrd {
+
+typedef Hash<
+	DeferredWork,
+	DefaultHash<DeferredWork>::DEFAULT_SIZE,
+	DeferredWork,
+	DefaultKeyValue<DeferredWork>,
+	DeferredWork
+> DfwHash;
+
+class DeferredWork : public pool_alloc<type_dfw>, 
+					 public DfwHash::Entry
+{
+private:
+	DeferredWork(const DeferredWork&);
+
+public:
+	enum dfw_t 		dfw_type;		// type of work deferred
+
+private:
+	DeferredWork***	dfw_end;
+	DeferredWork**	dfw_prev;
+	DeferredWork*	dfw_next;
+
+public:
+	Lock*			dfw_lock;		// relation creation lock
+	Array<DeferredWork*>  dfw_args;	// arguments
+	SLONG			dfw_sav_number;	// save point number
+	USHORT			dfw_id;			// object id, if appropriate
+	USHORT			dfw_count;		// count of block posts
+	string			dfw_name;		// name of object
+
+public:
+	DeferredWork(MemoryPool& p, DeferredWork*** end, 
+				 enum dfw_t t, USHORT id, SLONG sn, const string& name)
+	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL), 
+		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
+		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p, name)
+	{
+		// make previous element point to us
+		if (dfw_prev)
+		{
+			*dfw_prev = this;
+			// make next element (if present) to point to us
+			if (dfw_next)
+			{
+				dfw_next->dfw_prev = &dfw_next;
+			}
+		}
+	}
+
+	~DeferredWork()
+	{
+		// if we are linked
+		if (dfw_prev)
+		{
+			if (dfw_next)
+			{
+				// adjust previous pointer in next element ...
+				dfw_next->dfw_prev = dfw_prev;
+			}
+			// adjust next pointer in previous element
+			*dfw_prev = dfw_next;
+
+			// Adjust end marker of the list
+			if (*dfw_end == &dfw_next)
+			{
+				*dfw_end = dfw_prev;
+			}
+		}
+
+		for (DeferredWork** itr = dfw_args.begin(); itr < dfw_args.end(); ++itr)
+		{
+			delete *itr;
+		}
+
+		if (dfw_lock)
+		{
+			LCK_release(JRD_get_thread_data(), dfw_lock);
+			delete dfw_lock;
+		}
+	}
+
+	DeferredWork* findArg(dfw_t type) const
+	{
+		for (DeferredWork* const* itr = dfw_args.begin(); itr < dfw_args.end(); ++itr)
+		{
+			DeferredWork* const arg = *itr;
+
+			if (arg->dfw_type == type)
+			{
+				return arg;
+			}
+		}
+
+		return NULL;
+	}
+
+	DeferredWork** getNextPtr()
+	{
+		return &dfw_next;
+	}
+
+	DeferredWork* getNext() const
+	{
+		return dfw_next;
+	}
+
+	// hash interface
+	bool isEqual(const DeferredWork& work) const
+	{
+		if (dfw_type == work.dfw_type && 
+			dfw_id == work.dfw_id &&
+			dfw_name == work.dfw_name &&
+			dfw_sav_number == work.dfw_sav_number)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	DeferredWork* get() { return this; }
+
+	static size_t hash(const DeferredWork& work, size_t hashSize)
+	{
+		char key[sizeof work.dfw_type + sizeof work.dfw_id + 32];
+		memset(key, 0, sizeof key);
+		char* place = key;
+
+		memcpy(place, &work.dfw_type, sizeof work.dfw_type);
+		place += sizeof work.dfw_type;
+
+		memcpy(place, &work.dfw_id, sizeof work.dfw_id);
+		place += sizeof work.dfw_id;
+
+		work.dfw_name.copyTo(place, 32);	// It's good enough to have first 32 bytes
+
+		return DefaultHash<DeferredWork>::hash(key, sizeof key, hashSize);
+	}
+};
+
+class DfwSavePoint;
+
+typedef Hash<
+	DfwSavePoint,
+	DefaultHash<DfwSavePoint>::DEFAULT_SIZE,
+	SLONG,
+	DfwSavePoint
+> DfwSavePointHash;
+
+class DfwSavePoint : public DfwSavePointHash::Entry
+{
+	SLONG dfw_sav_number;
+
+public:
+	DfwHash hash;
+
+	explicit DfwSavePoint(SLONG number) : dfw_sav_number(number) { }
+
+	// hash interface
+	bool isEqual(const SLONG& number) const
+	{
+		if (dfw_sav_number == number)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	DfwSavePoint* get() { return this; }
+
+	static SLONG generate(const void* /*sender*/, const DfwSavePoint& item)
+	{
+		return item.dfw_sav_number;
+	}
+};
+
+class DeferredJob
+{
+public:
+	DfwSavePointHash hash;
+	DeferredWork* work;
+	DeferredWork** end;
+
+	DeferredJob() : work(0), end(&work) { }
+};
+
+} // namespace Jrd
 
 /*==================================================================
  *
@@ -185,6 +376,7 @@ static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 /* ---------------------------------------------------------------- */
 
@@ -200,7 +392,6 @@ static void get_procedure_dependencies(DeferredWork*, bool, jrd_tra*);
 static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
-static DeferredWork* post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t, const dsc*, USHORT);
 static void put_summary_blob(thread_db* tdbb, blb*, enum rsr_t, bid*, jrd_tra*);
 static void put_summary_record(thread_db* tdbb, blb*, enum rsr_t, const UCHAR*, USHORT);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
@@ -211,6 +402,7 @@ static bool validate_text_type (thread_db*, const TemporaryField*);
 static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
 static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
 static void check_partners(thread_db*, const USHORT);
+static string get_string(const dsc* desc);
 
 static const UCHAR nonnull_validation_blr[] =
 {
@@ -247,7 +439,7 @@ static const deferred_task task_table[] =
 	{ dfw_compute_security, compute_security },
 	{ dfw_create_index, modify_index },
 	{ dfw_create_expression_index, modify_index },
-	{ dfw_grant, GRANT_privileges },
+	{ dfw_grant, grant_privileges },
 	{ dfw_create_trigger, create_trigger },
 	{ dfw_delete_trigger, delete_trigger },
 	{ dfw_modify_trigger, modify_trigger },
@@ -270,7 +462,7 @@ static const deferred_task task_table[] =
 };
 
 
-USHORT DFW_assign_index_type(thread_db* tdbb, DeferredWork* work, SSHORT field_type, SSHORT ttype)
+USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::string& name, SSHORT field_type, SSHORT ttype)
 {
 /**************************************
  *
@@ -308,7 +500,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb, DeferredWork* work, SSHORT field_t
 			return INTL_TEXT_TO_INDEX(ttype);
 
 		ERR_post_nothrow(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
+						 Arg::Gds(isc_random) << Arg::Str(name));
 		INTL_texttype_lookup(tdbb, ttype);	// should punt
 		ERR_punt(); // if INTL_texttype_lookup hasn't punt
 	}
@@ -346,53 +538,36 @@ void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
  *
  **************************************/
 
-/* If there is no deferred work, just return */
+// If there is no deferred work, just return
 
-	if (!transaction->tra_deferred_work) {
+	if (!transaction->tra_deferred_job) {
 		return;
 	}
 
-/* Remove deferred work and events which are to be rolled back */
-	bool deferred_meta = false;
-	DeferredWork* work;
-	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+// Remove deferred work and events which are to be rolled back
+
+	if (sav_number == -1)
 	{
-		if ((work->dfw_sav_number == sav_number) || (sav_number == -1))
+		DeferredWork* work;
+		while (work = transaction->tra_deferred_job->work)
 		{
-			*ptr = work->dfw_next;
 			delete work;
 		}
-		else
-		{
-			ptr = &(*ptr)->dfw_next;
-			if (work->dfw_type != dfw_post_event)
-				deferred_meta = true;
-		}
-	}
-
-	if (!deferred_meta) {
 		transaction->tra_flags &= ~TRA_deferred_meta;
-	}
-}
-
-
-DeferredWork::~DeferredWork()
-{
-	if (dfw_args)
-	{
-		DeferredWork* tmp = dfw_args;
-		while (tmp)
-		{
-			DeferredWork* next = tmp->dfw_next;
-			delete tmp;
-			tmp = next;
-		}
+		return;
 	}
 
-	if (dfw_lock)
+	DfwSavePoint* h = transaction->tra_deferred_job->hash.lookup(sav_number);
+	if (!h)
 	{
-		LCK_release(JRD_get_thread_data(), dfw_lock);
-		delete dfw_lock;
+		return;
+	}
+
+	for (DfwHash::iterator i(h->hash); i.hasData();)
+	{
+		DeferredWork* work(i);
+		++i;
+		delete work;
 	}
 }
 
@@ -413,53 +588,47 @@ void DFW_merge_work(jrd_tra* transaction,
  *
  **************************************/
 
-/* If there is no deferred work, just return */
+	// If there is no deferred work, just return
 
-	if (!transaction->tra_deferred_work)
-		return;
-
-/* Decrement the save point number in the deferred block
- * i.e. merge with the previous level.
- */
-	DeferredWork* work;
-	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+	DeferredJob *job = transaction->tra_deferred_job;
+	if (! job)
 	{
-		if (work->dfw_sav_number == old_sav_number)
+		return;
+	}
+
+	// Check to see if work is already posted
+
+	DfwSavePoint* oldSp = job->hash.lookup(old_sav_number);
+	if (!oldSp)
+	{
+		return;
+	}
+
+	DfwSavePoint* newSp = job->hash.lookup(new_sav_number);
+
+	// Decrement the save point number in the deferred block
+	// i.e. merge with the previous level.
+
+	for (DfwHash::iterator itr(oldSp->hash); itr.hasData();)
+	{
+		if (! newSp)
 		{
-			work->dfw_sav_number = new_sav_number;
-
-			/* merge this entry with other identical entries at
-			 * same save point level. Start from the beginning and
-			 * stop with the that is being merged.
-			 */
-			DeferredWork* work_m;
-			for (DeferredWork** ptr_m = &transaction->tra_deferred_work;
-				 ((work_m = *ptr_m) && (work_m != work));
-				 ptr_m = &(*ptr_m)->dfw_next)
-			{
-				if (work_m->dfw_type == work->dfw_type && work_m->dfw_id == work->dfw_id &&
-					work_m->dfw_name == work->dfw_name &&
-					work_m->dfw_sav_number == work->dfw_sav_number)
-				{
-					/* Yes!  There is a duplicate entry.  Take out the
-					 * entry for which the save point was decremented
-					 */
-
-					*ptr = work->dfw_next;
-
-					if (work_m->dfw_name.length()) {
-						work_m->dfw_count += work->dfw_count;
-					}
-
-					delete work;
-					work = NULL;
-					break;
-				}
-			}
+			newSp = FB_NEW(*transaction->tra_pool) DfwSavePoint(new_sav_number);
+			job->hash.add(newSp);
 		}
 
-		if (work) {
-			ptr = &(*ptr)->dfw_next;
+		DeferredWork* work(itr);
+		++itr;
+		oldSp->hash.remove(*work); // After ++itr
+		work->dfw_sav_number = new_sav_number;
+
+		if (!newSp->hash.lookup(*work))
+		{
+			newSp->hash.add(work);
+		}
+		else
+		{
+			delete work;
 		}
 	}
 }
@@ -504,7 +673,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 /* If no deferred work or it's all deferred event posting
    don't bother */
 
-	if (!transaction->tra_deferred_work || !(transaction->tra_flags & TRA_deferred_meta))
+	if (!transaction->tra_deferred_job || !(transaction->tra_flags & TRA_deferred_meta))
 	{
 		return;
 	}
@@ -531,7 +700,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 			tdbb->tdbb_flags |= (TDBB_dont_post_dfw | TDBB_use_db_page_space);
 			for (const deferred_task* task = task_table; task->task_type != dfw_null; ++task)
 			{
-				for (DeferredWork* work = transaction->tra_deferred_work; work; work = work->dfw_next)
+				for (DeferredWork* work = transaction->tra_deferred_job->work; work; work = work->getNext())
 				{
 					if (work->dfw_type == task->task_type)
 					{
@@ -574,17 +743,20 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
    commit retaining transactions don't re-execute them. Leave
    events to be posted after commit */
 
-	DeferredWork* work;
-	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+	for (DeferredWork* itr = transaction->tra_deferred_job->work; itr;)
 	{
-		if ((work->dfw_type == dfw_post_event) || (work->dfw_type == dfw_delete_shadow))
+		DeferredWork* work = itr;
+		itr = itr->getNext();
+
+		switch (work->dfw_type)
 		{
-			ptr = &(*ptr)->dfw_next;
-		}
-		else
-		{
-			*ptr = work->dfw_next;
+		case dfw_post_event:
+		case dfw_delete_shadow:
+			break;
+
+		default:
 			delete work;
+			break;
 		}
 	}
 
@@ -613,7 +785,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
  *
  **************************************/
 
-	if (!transaction->tra_deferred_work)
+	if (!transaction->tra_deferred_job)
 		return;
 
 	bool pending_events = false;
@@ -621,9 +793,11 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 	Database* dbb = GET_DBB();
 	Lock* lock = dbb->dbb_lock;
 
-	DeferredWork* work;
-	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
+	for (DeferredWork* itr = transaction->tra_deferred_job->work; itr;)
 	{
+		DeferredWork* work = itr;
+		itr = itr->getNext();
+
 		switch (work->dfw_type)
 		{
 		case dfw_post_event:
@@ -633,17 +807,15 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 										  work->dfw_name.length(), work->dfw_name.c_str(),
 										  work->dfw_count);
 
-			*ptr = work->dfw_next;
 			delete work;
 			pending_events = true;
 			break;
 		case dfw_delete_shadow:
 			unlink(work->dfw_name.c_str());
-			*ptr = work->dfw_next;
 			delete work;
 			break;
 		default:
-			ptr = &(*ptr)->dfw_next;
+			break;
 		}
 	}
 
@@ -688,14 +860,59 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
  *
  **************************************/
 
-/* get the current save point number */
+	// get the current save point number
 
 	const SLONG sav_number = transaction->tra_save_point ?
 		transaction->tra_save_point->sav_number : 0;
 
-/* post work */
+	// initialize transaction if needed
 
-	return post_work(transaction, sav_number, &transaction->tra_deferred_work, type, desc, id);
+	DeferredJob *job = transaction->tra_deferred_job;
+	if (! job)
+	{
+		transaction->tra_deferred_job = job = FB_NEW(*transaction->tra_pool) DeferredJob;
+	}
+
+	// Check to see if work is already posted
+
+	DfwSavePoint* sp = job->hash.lookup(sav_number);
+	if (! sp)
+	{
+		sp = FB_NEW(*transaction->tra_pool) DfwSavePoint(sav_number);
+		job->hash.add(sp);
+	}
+
+	const string name = get_string(desc);
+	DeferredWork tmp(AutoStorage::getAutoMemoryPool(), 0, type, id, sav_number, name);
+	DeferredWork* work = sp->hash.lookup(tmp);
+	if (work)
+	{
+		return work;
+	}
+
+	// Not already posted, so do so now.
+
+	work = FB_NEW(*transaction->tra_pool)
+		DeferredWork(*transaction->tra_pool, &(job->end), type, id, sav_number, name);
+	job->end = work->getNextPtr();
+	fb_assert(!(*job->end));
+	sp->hash.add(work);
+
+	switch (type)
+	{
+	case dfw_user_management:
+		transaction->tra_flags |= TRA_deferred_meta;
+		// fall down ...
+	case dfw_post_event:
+		if (transaction->tra_save_point)
+			transaction->tra_save_point->sav_flags |= SAV_force_dfw;
+		break;
+	default:
+		transaction->tra_flags |= TRA_deferred_meta;
+		break;
+	}
+
+	return work;
 }
 
 
@@ -712,8 +929,35 @@ DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const
  *	Post an argument for work to be deferred to commit time.
  *
  **************************************/
+	return DFW_post_work_arg(transaction, work, desc, id, work->dfw_type);
+}
 
-	return post_work(transaction, work->dfw_sav_number, &work->dfw_args, work->dfw_type, desc, id);
+
+DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const dsc* desc,
+	USHORT id, Jrd::dfw_t type)
+{
+/**************************************
+ *
+ *	D F W _ p o s t _ w o r k _ a r g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post an argument for work to be deferred to commit time.
+ *
+ **************************************/
+	const Firebird::string name = get_string(desc);
+
+	DeferredWork* arg = work->findArg(type);
+
+	if (! arg)
+	{
+		arg = FB_NEW(*transaction->tra_pool) 
+			  DeferredWork(*transaction->tra_pool, 0, type, id, 0, name);
+		work->dfw_args.add(arg);
+	}
+
+	return arg;
 }
 
 
@@ -1261,6 +1505,70 @@ static bool user_management(thread_db*		tdbb,
 }
 
 
+bool grant_privileges(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	g r a n t _ p r i v i l e g e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compute access control list from SQL privileges.
+ *
+ **************************************/
+	switch (phase)
+	{
+	case 1:
+	case 2:
+		return true;
+
+	case 3:
+		GRANT_privileges(tdbb, work->dfw_name, work->dfw_id, transaction);
+		break;
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
+
+bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	c r e a t e  _ e x p r e s s i o n _ i n d e x
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create a new expression index.
+ *
+ **************************************/
+	switch (phase)
+	{
+	case 0:
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
+		return false;
+
+	case 1:
+	case 2:
+		return true;
+
+	case 3:
+		PCMET_expression_index(tdbb, work->dfw_name, work->dfw_id, transaction);
+		break;
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
+
 static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& fieldName)
 {
@@ -1635,7 +1943,7 @@ static bool modify_index(thread_db*	tdbb,
 			break;
 
 		case dfw_create_expression_index :
-			task_routine = PCMET_expression_index;
+			task_routine = create_expression_index;
 			break;
 
 		case dfw_delete_index :
@@ -1968,7 +2276,7 @@ static bool create_index(thread_db*	tdbb,
 
 			const SSHORT text_type = INTL_CS_COLL_TO_TTYPE(FLD.RDB$CHARACTER_SET_ID, collate);
 			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_itype =
-				DFW_assign_index_type(tdbb, work, gds_cvt_blr_dtype[FLD.RDB$FIELD_TYPE], text_type);
+				DFW_assign_index_type(tdbb, work->dfw_name, gds_cvt_blr_dtype[FLD.RDB$FIELD_TYPE], text_type);
 
 			// Initialize selectivity to zero. Otherwise random rubbish makes its way into database
 			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_selectivity = 0;
@@ -2134,13 +2442,10 @@ static bool create_procedure(thread_db*	tdbb,
 
 	case 3:
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
+			const bool compile = !work->findArg(dfw_arg_check_blr);
+			get_procedure_dependencies(work, compile, transaction);
 
-			get_procedure_dependencies(work, arg == NULL, transaction);
-
-			jrd_prc* procedure = MET_lookup_procedure(tdbb, work->dfw_name, (arg ? false : true));
+			jrd_prc* procedure = MET_lookup_procedure(tdbb, work->dfw_name, compile);
 			if (!procedure) {
 				return false;
 			}
@@ -2360,26 +2665,16 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			get_trigger_dependencies(work, arg == NULL, transaction);
+			const bool compile = !work->findArg(dfw_arg_check_blr);
+			get_trigger_dependencies(work, compile, transaction);
 			return true;
 		}
 
 	case 4:
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_rel_name))
-				arg = arg->dfw_next;
-
-			if (!arg)
+			if (!work->findArg(dfw_arg_rel_name))
 			{
-				arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_trg_type))
-					arg = arg->dfw_next;
-
+				const DeferredWork* const arg = work->findArg(dfw_arg_trg_type);
 				fb_assert(arg);
 
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
@@ -2901,9 +3196,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			CMP_release(tdbb, handle);
 
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_new_name))
-				arg = arg->dfw_next;
+			const DeferredWork* const arg = work->findArg(dfw_arg_new_name);
 
 			// ASF: If there are procedures depending on the domain, it can't be renamed.
 			if (arg && depName != arg->dfw_name.c_str())
@@ -3028,9 +3321,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	SET_TDBB(tdbb);
 
-	const DeferredWork* arg = work->dfw_args;
-	while (arg && (arg->dfw_type != dfw_arg_index_name))
-		arg = arg->dfw_next;
+	const DeferredWork* arg = work->findArg(dfw_arg_index_name);
 
 	fb_assert(arg);
 	fb_assert(arg->dfw_id > 0);
@@ -3137,11 +3428,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		// if index was bound to deleted FK constraint
 		// then work->dfw_args was set in VIO_erase
-		arg = work->dfw_args;
-		while (arg && (arg->dfw_type != dfw_arg_partner_rel_id))
-		{
-			arg = arg->dfw_next;
-		}
+		arg = work->findArg(dfw_arg_partner_rel_id);
 
 		if (arg) {
 			if (arg->dfw_id) {
@@ -3781,16 +4068,10 @@ static bool delete_trigger(thread_db*	tdbb,
 
 	case 4:
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_rel_name))
-				arg = arg->dfw_next;
-
+			const DeferredWork* arg = work->findArg(dfw_arg_rel_name);
 			if (!arg)
 			{
-				arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_trg_type))
-					arg = arg->dfw_next;
-
+				const DeferredWork* arg = work->findArg(dfw_arg_trg_type);
 				fb_assert(arg);
 
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
@@ -3856,9 +4137,8 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 		break;
 	}
 
-/* Look to see if an object of the desired type is being deleted. */
-
-	for (const DeferredWork* work = transaction->tra_deferred_work; work; work = work->dfw_next)
+// Look to see if an object of the desired type is being deleted.
+	for (DeferredWork* work = transaction->tra_deferred_job->work; work; work = work->getNext())
 	{
 		if ((work->dfw_type == dfw_type ||
 			(work->dfw_type == dfw_modify_procedure && dfw_type == dfw_delete_procedure)) &&
@@ -3867,11 +4147,7 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 			if (work->dfw_type == dfw_modify_procedure)
 			{
 				// Don't consider that procedure is in DFW if we are only checking the BLR
-				const DeferredWork* arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_check_blr))
-					arg = arg->dfw_next;
-
-				if (!arg)
+				if (!work->findArg(dfw_arg_check_blr))
 					return true;
 			}
 			else
@@ -3880,15 +4156,14 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 
 		if (work->dfw_type == dfw_type && dfw_type == dfw_delete_expression_index)
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg)
+			for (size_t i = 0; i < work->dfw_args.getCount(); ++i)
 			{
+				DeferredWork* arg = work->dfw_args[i];
 				if (arg->dfw_type == dfw_arg_index_name &&
 					arg->dfw_name == object_name)
 				{
 					return true;
 				}
-				arg = arg->dfw_next;
 			}
 		}
 	}
@@ -4642,11 +4917,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_view, transaction);
 
 		{ // begin scope
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_force_computed))
-				arg = arg->dfw_next;
-
-			if (arg && arg->dfw_type == dfw_arg_force_computed)
+			const DeferredWork* arg = work->findArg(dfw_arg_force_computed);
+			if (arg)
 			{
 				computed_field = true;
 				MET_delete_dependencies(tdbb, arg->dfw_name, obj_computed, transaction);
@@ -4817,11 +5089,8 @@ static bool modify_procedure(thread_db*	tdbb,
 			MET_remove_procedure(tdbb, work->dfw_id, NULL);
 
 			/* Now handle the new definition */
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			get_procedure_dependencies(work, arg == NULL, transaction);
+			bool compile = !work->findArg(dfw_arg_check_blr);
+			get_procedure_dependencies(work, compile, transaction);
 
 			procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
 		}
@@ -4830,11 +5099,8 @@ static bool modify_procedure(thread_db*	tdbb,
 	case 5:
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			if (arg && arg->dfw_type == dfw_arg_check_blr)
+			const DeferredWork* arg = work->findArg(dfw_arg_check_blr);
+			if (arg)
 			{
 				SSHORT valid_blr = FALSE;
 
@@ -4905,28 +5171,20 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
+			bool compile = !work->findArg(dfw_arg_check_blr);
 
 			/* get rid of old dependencies, bring in the new */
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger, transaction);
-			get_trigger_dependencies(work, arg == NULL, transaction);
+			get_trigger_dependencies(work, compile, transaction);
 		}
 		return true;
 
 	case 4:
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_rel_name))
-				arg = arg->dfw_next;
-
+			const DeferredWork* arg = work->findArg(dfw_arg_rel_name);
 			if (!arg)
 			{
-				arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_trg_type))
-					arg = arg->dfw_next;
-
+				arg = work->findArg(dfw_arg_trg_type);
 				fb_assert(arg);
 
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
@@ -4943,10 +5201,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
+			const DeferredWork* arg = work->findArg(dfw_arg_check_blr);
 			if (arg)
 			{
 				const Firebird::MetaName relation_name(arg->dfw_name);
@@ -5023,96 +5278,6 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	}
 
 	return false;
-}
-
-
-static DeferredWork* post_work(jrd_tra* transaction,
-							   SLONG sav_number,
-							   DeferredWork** list,
-							   enum dfw_t type,
-							   const dsc* desc,
-							   USHORT id)
-{
-/**************************************
- *
- *	p o s t _ w o r k
- *
- **************************************
- *
- * Functional description
- *	Post a piece of work to be deferred to commit time.
- *	If we already know about it, so much the better.
- *
- **************************************/
-	const char* string;
-	USHORT length;
-	VaryStr<MAXPATHLEN> temp;				// Must hold largest metadata field or filename
-
-	if (!desc)
-	{
-		string = NULL;
-		length = 0;
-	}
-	else
-	{
-		/* Find the actual length of the string, searching until the claimed
-		   end of the string, or the terminating \0, whichever comes first. */
-
-		length = MOV_make_string(desc, ttype_metadata, &string, &temp, sizeof(temp));
-
-		const char* p = string;
-		const char* const q = string + length;
-		while (p < q && *p)
-		{
-			++p;
-		}
-
-		// Trim trailing blanks (bug 3355)
-
-		while (--p >= string && *p == ' ')
-			;
-		length = (p + 1) - string;
-	}
-
-	DeferredWork* work;
-	DeferredWork** ptr;
-
-	// Check to see if work is already posted
-
-	for (ptr = list; (work = *ptr); ptr = &(*ptr)->dfw_next)
-	{
-		if (work->dfw_type == type && work->dfw_id == id &&
-			work->dfw_name.length() == length && work->dfw_sav_number == sav_number)
-		{
-			if (!length)
-				return *ptr;
-			if (!memcmp(string, work->dfw_name.c_str(), length)) {
-				++work->dfw_count;
-				return *ptr;
-			}
-		}
-	}
-
-	// Not already posted, so do so now.
-
-	*ptr = FB_NEW(*transaction->tra_pool)
-		DeferredWork(*transaction->tra_pool, type, id, sav_number, string, length);
-
-	switch (type)
-	{
-	case dfw_user_management:
-		transaction->tra_flags |= TRA_deferred_meta;
-		// fall down ...
-	case dfw_post_event:
-		if (transaction->tra_save_point)
-			transaction->tra_save_point->sav_flags |= SAV_force_dfw;
-		break;
-	default:
-		transaction->tra_flags |= TRA_deferred_meta;
-		break;
-	}
-
-	return *ptr;
 }
 
 
@@ -5524,5 +5689,47 @@ static bool validate_text_type(thread_db* tdbb, const TemporaryField* tfb)
 	}
 
 	return true;
+}
+
+
+static string get_string(const dsc* desc)
+{
+/**************************************
+ *
+ *g e t _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *Get string for a given descriptor.
+ *
+ **************************************/
+	const char* str;
+	VaryStr<MAXPATHLEN> temp;// Must hold largest metadata field or filename
+
+	if (!desc)
+	{
+		return string();
+	}
+
+	// Find the actual length of the string, searching until the claimed
+	// end of the string, or the terminating \0, whichever comes first
+
+	USHORT length = MOV_make_string(desc, ttype_metadata, &str, &temp, sizeof(temp));
+
+	const char* p = str;
+	const char* const q = str + length;
+	while (p < q && *p)
+	{
+		++p;
+	}
+
+	// Trim trailing blanks (bug 3355)
+
+	while (--p >= str && *p == ' ')
+		;
+	length = (p + 1) - str;
+
+	return string(str, length);
 }
 

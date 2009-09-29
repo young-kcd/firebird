@@ -416,7 +416,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	// and no events have been posted (via stored procedures etc)
 	// no-op the operation.
 
-	if (retaining_flag && !(transaction->tra_flags & TRA_write || transaction->tra_deferred_work))
+	if (retaining_flag && !(transaction->tra_flags & TRA_write || transaction->tra_deferred_job))
 	{
 		transaction->tra_flags &= ~TRA_prepared;
 		// Get rid of all user savepoints

@@ -31,7 +31,7 @@ namespace Jrd
 	enum dfw_t;
 }
 
-USHORT DFW_assign_index_type(Jrd::thread_db*, Jrd::DeferredWork*, SSHORT, SSHORT);
+USHORT DFW_assign_index_type(Jrd::thread_db*, const Firebird::string&, SSHORT, SSHORT);
 void DFW_delete_deferred(Jrd::jrd_tra*, SLONG);
 void DFW_merge_work(Jrd::jrd_tra*, SLONG, SLONG);
 void DFW_perform_system_work(Jrd::thread_db*);
@@ -40,6 +40,7 @@ void DFW_perform_post_commit_work(Jrd::jrd_tra*);
 Jrd::DeferredWork* DFW_post_system_work(Jrd::thread_db*, Jrd::dfw_t, const dsc*, USHORT);
 Jrd::DeferredWork* DFW_post_work(Jrd::jrd_tra*, Jrd::dfw_t, const dsc*, USHORT);
 Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const dsc*, USHORT);
+Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const dsc*, USHORT, Jrd::dfw_t);
 void DFW_update_index(const TEXT*, USHORT, const Jrd::SelectivityList&, Jrd::jrd_tra*);
 
 #endif // JRD_DFW_PROTO_H

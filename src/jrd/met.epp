@@ -846,7 +846,7 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 
 			DeferredWork* dw2 =
 				DFW_post_work(transaction, dfw_modify_procedure, &desc, PRC.RDB$PROCEDURE_ID);
-			DFW_post_work_arg(transaction, dw2, NULL, 0)->dfw_type = dfw_arg_check_blr;
+			DFW_post_work_arg(transaction, dw2, NULL, 0, dfw_arg_check_blr);
 		END_FOR;
 
 		if (!REQUEST(irq_m_fields2))
@@ -875,12 +875,11 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 			desc.dsc_address = (UCHAR*) trigger_name.c_str();
 
 			DeferredWork* dw2 = DFW_post_work(transaction, dfw_modify_trigger, &desc, 0);
-			DFW_post_work_arg(transaction, dw2, NULL,
-								TRG.RDB$TRIGGER_TYPE)->dfw_type = dfw_arg_trg_type;
+			DFW_post_work_arg(transaction, dw2, NULL, TRG.RDB$TRIGGER_TYPE, dfw_arg_trg_type);
 
 			desc.dsc_length = trigger_relation_name.length();
 			desc.dsc_address = (UCHAR*) trigger_relation_name.c_str();
-			DFW_post_work_arg(transaction, dw2, &desc, 0)->dfw_type = dfw_arg_check_blr;
+			DFW_post_work_arg(transaction, dw2, &desc, 0, dfw_arg_check_blr);
 		END_FOR;
 
 		if (!REQUEST(irq_m_fields3))
@@ -912,7 +911,7 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 
 			DeferredWork* dw2 =
 				DFW_post_work(transaction, dfw_modify_procedure, &desc, PRC.RDB$PROCEDURE_ID);
-			DFW_post_work_arg(transaction, dw2, NULL, 0)->dfw_type = dfw_arg_check_blr;
+			DFW_post_work_arg(transaction, dw2, NULL, 0, dfw_arg_check_blr);
 		END_FOR;
 
 		if (!REQUEST(irq_m_fields4))
@@ -944,12 +943,11 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 			desc.dsc_address = (UCHAR*) trigger_name.c_str();
 
 			DeferredWork* dw2 = DFW_post_work(transaction, dfw_modify_trigger, &desc, 0);
-			DFW_post_work_arg(transaction, dw2, NULL,
-							  TRG.RDB$TRIGGER_TYPE)->dfw_type = dfw_arg_trg_type;
+			DFW_post_work_arg(transaction, dw2, NULL, TRG.RDB$TRIGGER_TYPE, dfw_arg_trg_type);
 
 			desc.dsc_length = trigger_relation_name.length();
 			desc.dsc_address = (UCHAR*) trigger_relation_name.c_str();
-			DFW_post_work_arg(transaction, dw2, &desc, 0)->dfw_type = dfw_arg_check_blr;
+			DFW_post_work_arg(transaction, dw2, &desc, 0, dfw_arg_check_blr);
 		END_FOR;
 
 		if (!REQUEST(irq_m_fields5))

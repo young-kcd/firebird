@@ -60,6 +60,7 @@ class VerbAction;
 class ArrayField;
 class Attachment;
 class DeferredWork;
+class DeferredJob;
 class dsql_opn;
 class UserManagement;
 class thread_db;
@@ -115,7 +116,7 @@ public:
 		tra_memory_stats(parent_stats),
 		tra_blobs_tree(p),
 		tra_blobs(&tra_blobs_tree),
-		tra_deferred_work(NULL),
+		tra_deferred_job(NULL),
 		tra_resources(*p),
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
@@ -195,7 +196,7 @@ public:
 	Savepoint*	tra_save_free;			// free savepoints
 	SLONG tra_save_point_number;		// next save point number to use
 	ULONG tra_flags;
-	DeferredWork*	tra_deferred_work;	// work deferred to commit time
+	DeferredJob*	tra_deferred_job;	// work deferred to commit time
 	ResourceList tra_resources;			// resource existence list
 	Firebird::StringMap tra_context_vars; // Context variables for the transaction
 	traRpbList* tra_rpblist;			// active record_param's of given transaction
@@ -405,31 +406,6 @@ enum dfw_t {
 	dfw_arg_rel_name,		// relation name of a trigger
 	dfw_arg_trg_type,		// trigger type
 	dfw_arg_new_name		// new name
-};
-
-class DeferredWork : public pool_alloc<type_dfw>
-{
-public:
-	enum dfw_t 		dfw_type;		// type of work deferred
-	DeferredWork*	dfw_next;		// next block in transaction
-	Lock*			dfw_lock;		// relation creation lock
-	DeferredWork*	dfw_args;		// arguments
-	SLONG			dfw_sav_number;	// save point number
-	USHORT			dfw_id;			// object id, if appropriate
-	USHORT			dfw_count;		// count of block posts
-	Firebird::string	dfw_name;	// name of object
-
-public:
-	DeferredWork(MemoryPool& p, enum dfw_t t, USHORT id, SLONG sn, const char* string, USHORT length)
-	  : dfw_type(t), dfw_next(NULL), dfw_lock(NULL), dfw_args(NULL),
-		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p)
-	{
-		if (string)
-		{
-			dfw_name.assign(string, length);
-		}
-	}
-	~DeferredWork();
 };
 
 // Verb actions

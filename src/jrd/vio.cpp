@@ -1300,8 +1300,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				}
 
 				// add index id and name (the latter is required to delete dependencies correctly)
-				DeferredWork* arg = DFW_post_work_arg(transaction, work, &idx_name, id);
-				arg->dfw_type = dfw_arg_index_name;
+				DFW_post_work_arg(transaction, work, &idx_name, id, dfw_arg_index_name);
 
 				// get partner relation for FK index
 				if (EVL_field(0, rpb->rpb_record, f_idx_foreign, &desc2))
@@ -1319,15 +1318,14 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 						MET_lookup_partner(tdbb, r2, &idx, index_name) &&
 						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
-						DeferredWork* arg2 = DFW_post_work_arg(transaction, work, 0, partner->rel_id);
-						arg2->dfw_type = dfw_arg_partner_rel_id;
+						DFW_post_work_arg(transaction, work, 0, partner->rel_id, 
+										  dfw_arg_partner_rel_id);
 					}
 					else
 					{	// can't find partner relation - impossible ?
 						// add empty argument to let DFW know dropping
 						// index was bound with FK
-						DeferredWork* arg2 = DFW_post_work_arg(transaction, work, 0, 0);
-						arg2->dfw_type = dfw_arg_partner_rel_id;
+						DFW_post_work_arg(transaction, work, 0, 0, dfw_arg_partner_rel_id);
 					}
 				}
 			}
@@ -1357,8 +1355,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				work = DFW_post_work(transaction, dfw_delete_prm, &desc2, procedure->prc_id);
 
 				// procedure name to track parameter dependencies
-				DeferredWork* arg = DFW_post_work_arg(transaction, work, &desc, procedure->prc_id);
-				arg->dfw_type = dfw_arg_proc_name;
+				DFW_post_work_arg(transaction, work, &desc, procedure->prc_id, dfw_arg_proc_name);
 			}
 			EVL_field(0, rpb->rpb_record, f_prm_sname, &desc2);
 			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
@@ -1412,12 +1409,12 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			work = DFW_post_work(transaction, dfw_delete_trigger, &desc, 0);
 
 			if (!(desc2.dsc_flags & DSC_null))
-				DFW_post_work_arg(transaction, work, &desc2, 0)->dfw_type = dfw_arg_rel_name;
+				DFW_post_work_arg(transaction, work, &desc2, 0, dfw_arg_rel_name);
 
 			if (EVL_field(0, rpb->rpb_record, f_trg_type, &desc2))
 			{
 				DFW_post_work_arg(transaction, work, &desc2,
-					MOV_get_long(&desc2, 0))->dfw_type = dfw_arg_trg_type;
+								  MOV_get_long(&desc2, 0), dfw_arg_trg_type);
 			}
 
 			break;
@@ -2246,13 +2243,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 					bool rc1 = EVL_field(0, org_rpb->rpb_record, f_fld_computed, &desc3);
 					bool rc2 = EVL_field(0, new_rpb->rpb_record, f_fld_computed, &desc4);
 					if (rc1 != rc2 || rc1 && MOV_compare(&desc3, &desc4)) {
-						dw = DFW_post_work_arg(transaction, dw, &desc1, 0);
-						dw->dfw_type = dfw_arg_force_computed;
+						DFW_post_work_arg(transaction, dw, &desc1, 0, dfw_arg_force_computed);
 					}
 				}
 
 				dw = DFW_post_work(transaction, dfw_modify_field, &desc1, 0);
-				DFW_post_work_arg(transaction, dw, &desc2, 0)->dfw_type = dfw_arg_new_name;
+				DFW_post_work_arg(transaction, dw, &desc2, 0, dfw_arg_new_name);
 			}
 			break;
 
@@ -2293,12 +2289,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 				DeferredWork* dw = DFW_post_work(transaction, dfw_modify_trigger, &desc1, 0);
 
 				if (EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc2))
-					DFW_post_work_arg(transaction, dw, &desc2, 0)->dfw_type = dfw_arg_rel_name;
+					DFW_post_work_arg(transaction, dw, &desc2, 0, dfw_arg_rel_name);
 
 				if (EVL_field(0, new_rpb->rpb_record, f_trg_type, &desc2))
 				{
 					DFW_post_work_arg(transaction, dw, &desc2,
-						MOV_get_long(&desc2, 0))->dfw_type = dfw_arg_trg_type;
+						MOV_get_long(&desc2, 0), dfw_arg_trg_type);
 				}
 			}
 			break;
@@ -2666,7 +2662,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				}
 
 				if (check_blr)
-					DFW_post_work_arg(transaction, work, NULL, 0)->dfw_type = dfw_arg_check_blr;
+					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);
 			} // scope
 			set_system_flag(tdbb, rpb, f_prc_sys_flag, 0);
 			break;
@@ -2751,12 +2747,12 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			work = DFW_post_work(transaction, dfw_create_trigger, &desc, 0);
 
 			if (!(desc2.dsc_flags & DSC_null))
-				DFW_post_work_arg(transaction, work, &desc2, 0)->dfw_type = dfw_arg_rel_name;
+				DFW_post_work_arg(transaction, work, &desc2, 0, dfw_arg_rel_name);
 
 			if (EVL_field(0, rpb->rpb_record, f_trg_type, &desc2))
 			{
 				DFW_post_work_arg(transaction, work, &desc2,
-					MOV_get_long(&desc2, 0))->dfw_type = dfw_arg_trg_type;
+					MOV_get_long(&desc2, 0), dfw_arg_trg_type);
 			}
 
 			break;

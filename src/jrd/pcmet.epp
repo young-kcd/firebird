@@ -54,7 +54,7 @@ using namespace Firebird;
 DATABASE DB = FILENAME "ODS.RDB";
 
 
-bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -75,160 +75,144 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	switch (phase)
-	{
-	case 0:
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
-		return false;
+	relation = NULL;
+	MOVE_CLEAR(&idx, sizeof(index_desc));
 
-	case 1:
-	case 2:
-		return true;
-
-	case 3:
-
-		relation = NULL;
-		MOVE_CLEAR(&idx, sizeof(index_desc));
-
-		request = CMP_find_request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
+	request = CMP_find_request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
 /*
-		if (request)
-		{
-			EXE_unwind(tdbb, request);
-		}
+	if (request)
+	{
+		EXE_unwind(tdbb, request);
+	}
 */
-		FOR(REQUEST_HANDLE request)
-			IDX IN RDB$INDICES CROSS
-				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
-				IDX.RDB$EXPRESSION_BLR NOT MISSING AND
-				IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
-
-			if (!REQUEST(irq_c_exp_index))
-			{
-				REQUEST(irq_c_exp_index) = request;
-			}
-
-            if (!relation)
-            {
-				relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
-				if (relation->rel_name.length() == 0) {
-					relation->rel_name = REL.RDB$RELATION_NAME;
-				}
-
-				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
-				{
-					SelectivityList selectivity(*tdbb->getDefaultPool());
-					const USHORT id = IDX.RDB$INDEX_ID - 1;
-					IDX_statistics(tdbb, relation, id, selectivity);
-					DFW_update_index(work->dfw_name.c_str(), id, selectivity, transaction);
-
-					EXE_unwind(tdbb, request);
-					return false;
-				}
-
-				if (IDX.RDB$INDEX_ID)
-				{
-					IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
-					MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
-					MODIFY IDX
-						IDX.RDB$INDEX_ID.NULL = TRUE;
-					END_MODIFY;
-				}
-
-				if (IDX.RDB$INDEX_INACTIVE)
-				{
-					EXE_unwind(tdbb, request);
-					return false;
-				}
-
-				if (IDX.RDB$SEGMENT_COUNT)
-				{
-					/* Msg359: segments not allowed in expression index %s */
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_no_segments_err) << Arg::Str(work->dfw_name));
-				}
-				if (IDX.RDB$UNIQUE_FLAG)
-					idx.idx_flags |= idx_unique;
-				if (IDX.RDB$INDEX_TYPE == 1)
-					idx.idx_flags |= idx_descending;
-
-				CompilerScratch* csb = 0;
-				/* allocate a new pool to contain the expression tree
-				   for the expression index */
-				new_pool = dbb->createPool();
-				{
-					Jrd::ContextPoolHolder context(tdbb, new_pool);
-					MET_scan_relation(tdbb, relation);
-
-					if (!IDX.RDB$EXPRESSION_BLR.NULL)
-					{
-						MetaTmp(IDX.RDB$INDEX_NAME)
-							idx.idx_expression = MET_get_dependencies(tdbb, relation,
-															  NULL, 0, NULL,
-															  &IDX.RDB$EXPRESSION_BLR,
-															  &idx.idx_expression_request,
-															  &csb, tmp,
-															  obj_expression_index, 0,
-															  transaction);
-					}
-				}
-
-				/* fake a description of the index */
-
-				idx.idx_count = 1;
-				idx.idx_flags |= idx_expressn;
-				CMP_get_desc(tdbb, csb, idx.idx_expression, &idx.idx_expression_desc);
-				idx.idx_rpt[0].idx_itype =
-					DFW_assign_index_type(tdbb, work,
-										  idx.idx_expression_desc.dsc_dtype,
-										  idx.idx_expression_desc.dsc_sub_type);
-				idx.idx_rpt[0].idx_selectivity = 0;
-
-				delete csb;
-			}
-
-		END_FOR;
+	FOR(REQUEST_HANDLE request)
+		IDX IN RDB$INDICES CROSS
+			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
+			IDX.RDB$EXPRESSION_BLR NOT MISSING AND
+			IDX.RDB$INDEX_NAME EQ name.c_str()
 
 		if (!REQUEST(irq_c_exp_index))
 		{
 			REQUEST(irq_c_exp_index) = request;
 		}
 
-		if (!relation)
-		{
-			// Msg308: can't create index %s
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
+           if (!relation)
+           {
+			relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
+			if (relation->rel_name.length() == 0) {
+				relation->rel_name = REL.RDB$RELATION_NAME;
+			}
+
+			if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
+			{
+				SelectivityList selectivity(*tdbb->getDefaultPool());
+				const USHORT id = IDX.RDB$INDEX_ID - 1;
+				IDX_statistics(tdbb, relation, id, selectivity);
+				DFW_update_index(name.c_str(), id, selectivity, transaction);
+
+				EXE_unwind(tdbb, request);
+				return;
+			}
+
+			if (IDX.RDB$INDEX_ID)
+			{
+				IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
+				MET_delete_dependencies(tdbb, name, obj_expression_index, transaction);
+				MODIFY IDX
+					IDX.RDB$INDEX_ID.NULL = TRUE;
+				END_MODIFY;
+			}
+
+			if (IDX.RDB$INDEX_INACTIVE)
+			{
+				EXE_unwind(tdbb, request);
+				return;
+			}
+
+			if (IDX.RDB$SEGMENT_COUNT)
+			{
+				/* Msg359: segments not allowed in expression index %s */
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_no_segments_err) << Arg::Str(name));
+			}
+			if (IDX.RDB$UNIQUE_FLAG)
+				idx.idx_flags |= idx_unique;
+			if (IDX.RDB$INDEX_TYPE == 1)
+				idx.idx_flags |= idx_descending;
+
+			CompilerScratch* csb = 0;
+			/* allocate a new pool to contain the expression tree
+			   for the expression index */
+			new_pool = dbb->createPool();
+			{
+				Jrd::ContextPoolHolder context(tdbb, new_pool);
+				MET_scan_relation(tdbb, relation);
+
+				if (!IDX.RDB$EXPRESSION_BLR.NULL)
+				{
+					MetaTmp(IDX.RDB$INDEX_NAME)
+						idx.idx_expression = MET_get_dependencies(tdbb, relation,
+														  NULL, 0, NULL,
+														  &IDX.RDB$EXPRESSION_BLR,
+														  &idx.idx_expression_request,
+														  &csb, tmp,
+														  obj_expression_index, 0,
+														  transaction);
+				}
+			}
+
+			/* fake a description of the index */
+
+			idx.idx_count = 1;
+			idx.idx_flags |= idx_expressn;
+			CMP_get_desc(tdbb, csb, idx.idx_expression, &idx.idx_expression_desc);
+			idx.idx_rpt[0].idx_itype =
+				DFW_assign_index_type(tdbb, name,
+									  idx.idx_expression_desc.dsc_dtype,
+									  idx.idx_expression_desc.dsc_sub_type);
+			idx.idx_rpt[0].idx_selectivity = 0;
+
+			delete csb;
 		}
 
-		// Actually create the index
+	END_FOR;
 
-		SelectivityList selectivity(*tdbb->getDefaultPool());
-
-		current_request = tdbb->getRequest();
-		current_transaction = tdbb->getTransaction();
-		TRA_attach_request(transaction, idx.idx_expression_request);
-		tdbb->setRequest(idx.idx_expression_request);
-
-		fb_assert(work->dfw_id <= dbb->dbb_max_idx);
-		idx.idx_id = work->dfw_id;
-		IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), &work->dfw_id,
-						 transaction, selectivity);
-		fb_assert(work->dfw_id == idx.idx_id);
-
-		TRA_detach_request(idx.idx_expression_request);
-		tdbb->setRequest(current_request);
-		tdbb->setTransaction(current_transaction);
-
-		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
-
-		// Get rid of the pool containing the expression tree
-
-		dbb->deletePool(new_pool);
-		break;
+	if (!REQUEST(irq_c_exp_index))
+	{
+		REQUEST(irq_c_exp_index) = request;
 	}
 
-	return false;
+	if (!relation)
+	{
+		// Msg308: can't create index %s
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_idx_create_err) << Arg::Str(name));
+	}
+
+	// Actually create the index
+
+	SelectivityList selectivity(*tdbb->getDefaultPool());
+
+	current_request = tdbb->getRequest();
+	current_transaction = tdbb->getTransaction();
+	TRA_attach_request(transaction, idx.idx_expression_request);
+	tdbb->setRequest(idx.idx_expression_request);
+
+	fb_assert(id <= dbb->dbb_max_idx);
+	idx.idx_id = id;
+	IDX_create_index(tdbb, relation, &idx, name.c_str(), &id,
+					 transaction, selectivity);
+	fb_assert(id == idx.idx_id);
+
+	TRA_detach_request(idx.idx_expression_request);
+	tdbb->setRequest(current_request);
+	tdbb->setTransaction(current_transaction);
+
+	DFW_update_index(name.c_str(), idx.idx_id, selectivity, transaction);
+
+	// Get rid of the pool containing the expression tree
+
+	dbb->deletePool(new_pool);
 }
 
 
