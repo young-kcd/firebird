@@ -301,7 +301,7 @@ security2.fdb: gdef isql 		# build the security database
 .PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
 
 basic_targets: ref_databases msgs msgs_intl generated_headers \
-               intl extlib includes otherfiles examples_cp
+               intl extlib includes examples_cp
 
 # hack to make code regeneration work
 generated_headers :
@@ -325,8 +325,6 @@ includes:	include_generic
                        # examples still need a good makefile to ship with them
 examples_cp:
 	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
-
-otherfiles: misc_files
 
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
@@ -482,30 +480,6 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 rebuild_codes :
 	$(MAKE) -C jrd $@
 
-
-
-
-#___________________________________________________________________________
-# Install generic files.
-
-#CLASSIC_MiscFiles = firebird.conf
-#SUPER_MiscFiles =  firebird.conf
-
-#ifeq ($(ArchType),super)
-#INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(SUPER_MiscFiles))
-#else
-#INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(CLASSIC_MiscFiles))
-#endif
-
-MiscFiles =  firebird.conf fbintl.conf
-INSTALL_MiscFiles = $(addprefix $(FIREBIRD)/misc/, $(MiscFiles))
-
-
-misc_files : $(INSTALL_MiscFiles)
-
-
-$(FIREBIRD)/misc/% :: $(BLD_ROOT)/install/misc/%
-	$(CP) $^ $@
 
 
 
