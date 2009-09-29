@@ -159,6 +159,7 @@ static void		attach_service2(rem_port*, P_OP, const char*, int,
 								const UCHAR*, int, PACKET*);
 #ifdef TRUSTED_AUTH
 static void		trusted_auth(rem_port*, P_TRAU*, PACKET*);
+static bool		canUseTrusted();
 #endif
 
 #ifdef NOT_USED_OR_REPLACED
@@ -948,7 +949,7 @@ static void attach_database(rem_port* port,
 			// remove extra trusted_auth if present (security measure)
 			dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
 
-			if (port->port_protocol >= PROTOCOL_VERSION11)
+			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
 			{
 				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
 					ServerAuth(file, l, dpb_buffer, attach_database2, operation);
@@ -3747,6 +3748,30 @@ static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
 	sa->part2(port, sa->operation, sa->fileName.c_str(), sa->fileName.length(), 
 		sa->clumplet.begin(), sa->clumplet.getCount(), send);
 }
+
+
+static bool canUseTrusted()
+{
+/**************************************
+ *
+ *	c a n U s e T r u s t e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cache config setting for trusted auth.
+ *
+ **************************************/
+	static AmCache useTrusted = AM_UNKNOWN;
+
+	if (useTrusted == AM_UNKNOWN)
+	{
+		Firebird::PathName authMethod(Config::getAuthMethod());
+		useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? AM_ENABLED : AM_DISABLED;
+	}
+
+	return useTrusted == AM_ENABLED;
+}
 #endif // TRUSTED_AUTH
 
 
@@ -4842,7 +4867,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 			// remove extra trusted tags if present (security measure)
 			spb.deleteWithTag(isc_spb_trusted_auth);
 
-			if (port->port_protocol >= PROTOCOL_VERSION11)
+			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
 			{
 				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
 					ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
