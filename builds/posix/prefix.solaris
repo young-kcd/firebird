@@ -10,13 +10,13 @@
 # for 64-bit Solaris Sparc build
 #    export CC=cc
 #    export CXX=CC
-#    export CFLAGS="-m64 -xarch=sparcvis"
+#    export CFLAGS="-m64"
 #    export CXXFLAGS=$CFLAGS
 #
 # for 64-bit Solaris on AMD64 build
 #    export CC=cc
 #    export CXX=CC
-#    export CFLAGS="-m64 -xarch=sse2"
+#    export CFLAGS="-m64"
 #    export CXXFLAGS=$CFLAGS
 
 # History
@@ -70,11 +70,11 @@ SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
 # Production flags
-# -libmil, use the intrinsic library functions like strlen
 # -O, optimize, implies -O3 in Sun Studio 12
 # -xO2, optimize level 2, safer than -xO3
+# -xlibmil, inline select libm library routines for optimization
 # -xlibmopt -fround=nearest, use optimized math routines
-PROD_FLAGS= -xbuiltin=%all -xlibmil -xmemalign -xO2 -DNDEBUG \
+PROD_FLAGS= -xbuiltin=%all -xO2 -xlibmil -DNDEBUG \
 	$(COMMON_FLAGS) $(SFIO_FLAGS)
 
 # Debug flags
