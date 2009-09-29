@@ -715,8 +715,8 @@ td.right    {
         </p>
         <p>
             The default instruction set architecture for HP-UX Itanium is
-            blended. Enthusiasts may compile with +DSnative, which tunes for
-            the processor on which the compiler is running.
+            blended. Enthusiasts may add +DSnative to the CFLAGS/CXXFLAGS,
+            which tunes for the processor on which the compiler is running.
         </p>
         <h2>
             <a name="hp2" id="hp2">4.3 HP-UX 11i v3 on PA-RISC, HP aCC C++
@@ -784,8 +784,8 @@ td.right    {
         <pre>
    export CC=cc
    export CXX=CC
-   export CFLAGS="-m64 -xarch=sparcvis"
-   export CXXFLAGS="-m64 -xarch=sparcvis"
+   export CFLAGS="-m64"
+   export CXXFLAGS="-m64"
 </pre>
         <p class="caption">
             Autoconf Environment Variables for Solaris 10, SPARC
@@ -793,6 +793,11 @@ td.right    {
         <p>
             This configuration was also tested on Solaris 9, SPARC, using Sun
             Studio 12.
+        </p>
+        <p>
+            The default instruction set architecture for Solaris SPARC is
+            generic (-xarch=generic). Enthusiasts may add -xarch=native to the CFLAGS/CXXFLAGS,
+            which tunes for the processor on which the compiler is running.
         </p>
         <p>
             <b>Note!</b> Sun Studio 12 is the last Sun Studio release to
@@ -806,8 +811,8 @@ td.right    {
         <pre>
    export CC=cc
    export CXX=CC
-   export CFLAGS="-m64 -xarch=sse2a"
-   export CXXFLAGS="-m64 -xarch=sse2a"
+   export CFLAGS="-m64"
+   export CXXFLAGS="-m64"
 </pre>
         <p class="caption">
             Autoconf Environment Variables Solaris 10, AMD64
@@ -815,6 +820,11 @@ td.right    {
         <p>
             Firebird requires Solaris 10 or later when using Sun Studio on
             Solaris AMD64. Solaris 9 is not supported on AMD64.
+        </p>
+        <p>
+            The default instruction set architecture for Solaris on AMD64 is
+            generic (-xarch=generic). Enthusiasts may add -xarch=native to the CFLAGS/CXXFLAGS,
+            which tunes for the processor on which the compiler is running.
         </p>
         <h1>
             <a name="testing" id="testing">5.0 Testing in Place</a>
