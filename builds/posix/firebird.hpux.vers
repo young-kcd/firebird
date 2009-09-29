@@ -130,6 +130,9 @@
 +e perf_format
 +e perf_get_info
 +e perf_report
++e perf64_format
++e perf64_get_info
++e perf64_report
 #----------------------------
 # PUBLIC INTERFACE, i.e. API
 #----------------------------

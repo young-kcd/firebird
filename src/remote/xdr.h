@@ -39,6 +39,13 @@ typedef	char* caddr_t;
 #include <netinet/in.h>
 #endif // WIN_NT
 
+#if defined(__hpux) && !defined(ntohl)
+// this include is only for HP 11i v2.
+// ntohl is not defined in <netinet/in.h> when _XOPEN_SOURCE_EXTENDED
+// is defined, even though ntohl is defined by POSIX
+#include <arpa/inet.h>
+#endif
+
 typedef int XDR_INT;
 typedef int bool_t;
 //#ifndef enum_t

@@ -186,7 +186,7 @@ namespace Firebird {
 class AtomicCounter
 {
 public:
-	typedef uint32_t counter_type;
+	typedef uint64_t counter_type;
 
 	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
@@ -198,7 +198,7 @@ public:
 		{
 			old = counter;
 			errno = 0;
-		} while (atomic_cas_32(&counter, old, old + value) != old);
+		} while (atomic_cas_64(&counter, old, old + value) != old);
 		return old;
 	}
 
@@ -214,19 +214,19 @@ public:
 
 	counter_type operator ++()
 	{
-		return atomic_inc_32(&counter) + 1;
+		return atomic_inc_64(&counter) + 1;
 	}
 
 	counter_type operator --()
 	{
-		return atomic_dec_32(&counter) - 1;
+		return atomic_dec_64(&counter) - 1;
 	}
 
 	counter_type value() const { return counter; }
 
 	counter_type setValue(counter_type val)
 	{
-		return atomic_swap_32(&counter, val);
+		return atomic_swap_64(&counter, val);
 	}
 
 private:

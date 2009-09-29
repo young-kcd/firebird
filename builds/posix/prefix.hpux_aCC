@@ -43,7 +43,7 @@
 # __ia64, defined for IA-64
 # __unix
 
-# Flags shared by production and debug build
+# Common flags shared by production and debug build
 # Suppress these warnings for now
 # 2830, function "operator new..." has no corresponding operator delete
 # 4232, conversion to a more strictly aligned type may cause misaligned access
@@ -54,32 +54,36 @@
 # 2111, statement is unreachable (used to suppress g++ warnings)
 # 2161, unrecognized pragma (mostly FB_COMPILER_MESSAGE)
 # 2177, function declared but never referenced
-COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -AA \
+COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -AA -ext \
     +W2830,4232,749,863,1042,2175,2111,2161,2177
 
-# Production flags...
+# Flags specific to production or debug build...
+# -z, disallow dereferencing of null pointers at runtime
+# -DLIBC_CALLS_NEW, Firebird macro, used when C++ runtime can call
+#   redefined by us operator new before initialization of global variables.
+#   Required on IA-64, but evidently only by debug build!?
+
 ifeq ($(shell uname -m),ia64)
 # ...for IA-64
 PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Ofltacc=strict +Ofenvaccess \
+	$(COMMON_FLAGS)
+DEV_FLAGS= -g -z -DLIBC_CALLS_NEW \
 	$(COMMON_FLAGS)
 else
 # ...for PA-RISC
 # PA-RISC requires old version of aCC, 3.85, with different flags
 PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Olibcalls +Onomoveflops \
 	$(COMMON_FLAGS)
-endif
-
-# Devel flags
-# -z, disallow dereferencing of null pointers at runtime
 DEV_FLAGS= -g -z \
 	$(COMMON_FLAGS)
+endif
 
 OS_ServerFiles=inet_server.cpp
 
 # link options for HP-UX linker, /usr/bin/ld
-LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA -latomic
+LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA -ext -latomic
 LINK_LIBS+= -latomic $(ICU_LIBS)
-LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -latomic -b
+LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -b -ext -latomic
 
 LINK_UDF_LIBS+=$(ICU_LIBS)
 
