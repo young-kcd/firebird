@@ -500,7 +500,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			exit(FINI_OK);
 		}
 		
-		memcpy(buffer, LOCK_header, extentSize);
+		memcpy((UCHAR*) buffer, LOCK_header, extentSize);
 
 		for (ULONG extent = 1; extent < extentsCount; ++extent)
 		{
@@ -598,7 +598,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #ifdef USE_SHMEM_EXT
 		ULONG extentSize = file_stat.st_size;
 		ULONG totalSize = LOCK_header->lhb_length;
-		ULONG extentsCount = totalSize / extentSize + (totalSize % extentSize == 0 ? 0 : 1);
+		const ULONG extentsCount = totalSize / extentSize + (totalSize % extentSize == 0 ? 0 : 1);
 		UCHAR* newBuf = NULL;
 
 		try
