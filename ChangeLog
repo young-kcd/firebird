@@ -1,3 +1,75 @@
+2009-09-29 14:13  alexpeshkoff
+
+	* firebird2/configure.in (1.364):
+
+	Patch for HPUX from Bill
+
+2009-09-29 12:35  alexpeshkoff
+
+	* firebird2/src/: common/classes/Hash.h (1.2), jrd/dfw.epp (1.281),
+	jrd/dfw_proto.h (1.21), jrd/grant.epp (1.80), jrd/grant_proto.h
+	(1.16), jrd/met.epp (1.288), jrd/pcmet.epp (1.61),
+	jrd/pcmet_proto.h (1.13), jrd/tra.cpp (1.212), jrd/tra.h (1.103),
+	jrd/vio.cpp (1.258):
+
+	Ported fix for CORE-2634: Performance regression when restoring
+	database with big metadata
+
+2009-09-29 12:33  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.103):
+
+	Cleanup - do not build unneeded files
+
+2009-09-29 12:17  robocop
+
+	* firebird2/src/jrd/nbak.h (1.40):
+
+	Misc.
+
+2009-09-29 11:24  hvlad
+
+	* firebird2/src/jrd/nbak.cpp (1.95):
+
+	Fixed bug CORE-2648 : Nbackup's delta file ignored Forced Writes
+	database setting
+
+2009-09-29 11:13  hvlad
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.32):
+
+	Fixed bug CORE-2647 : Race condition during detach database can
+	lead to AV
+
+2009-09-29 10:13  hvlad
+
+	* firebird2/src/jrd/: nbak.cpp (1.94), nbak.h (1.39):
+
+	Fixed bug CORE-2646 : After change of physical backup state an
+	engine process writes every page change on disk
+
+2009-09-29 09:33  robocop
+
+	* firebird2/src/lock/print.cpp (1.94):
+
+	Just in case.
+
+2009-09-28 19:14  verbguy
+
+	* firebird2/src/common/classes/fb_atomic.h (1.31):
+
+	Improvement CORE-2619: make Solaris 10 atomic counters 64-bit
+
+2009-09-28 18:03  alexpeshkoff
+
+	* firebird2/src/: jrd/Database.h (1.42), jrd/GlobalRWLock.cpp
+	(1.31), jrd/common.h (1.220), jrd/jrd.h (1.270), jrd/que.h (1.11),
+	lock/driver.cpp (1.27), lock/lock.cpp (1.206), lock/lock.h (1.54),
+	lock/lock_proto.h (1.32), lock/print.cpp (1.93), lock/reset.cpp
+	(1.4), utilities/drop.cpp (1.44):
+
+	Implemented CORE-2644: Make lock table expandable on HPUX
+
 2009-09-27 02:54  asfernandes
 
 	* firebird2/src/lock/lock.cpp (1.205):
