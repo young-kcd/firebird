@@ -1388,10 +1388,12 @@ case $PROD_BUILD_FLG in
  N)       echo "                          Debug : enabled";;
 esac
 
-case $ac_cv_sys_file_offset_bits in
- no)      echo "64 bit I/O for 32-bit platforms : disabled";;
- 64)      echo "64 bit I/O for 32-bit platforms : enabled";;
-esac
+if test $ac_cv_sizeof_void_p -lt 8; then
+  case $ac_cv_sys_file_offset_bits in
+   no)      echo "64 bit I/O for 32-bit platforms : disabled";;
+   64)      echo "64 bit I/O for 32-bit platforms : enabled";;
+  esac
+fi
 
 case $RAW_DEVICES_FLG in
  Y)       echo "                    Raw devices : enabled";;
