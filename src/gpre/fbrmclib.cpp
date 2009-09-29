@@ -1216,8 +1216,8 @@ EXPORT RM_ENTRY(rmc_event_block_a)
 	ClearParamPool();
 	ISC_USHORT retval = isc_event_block_a((char **)arg_vector[0].a_address,
 										  (char **)arg_vector[1].a_address,
-										  *CobolToShort(&arg_vector[2]),
-										  (char **)arg_vector[2].a_address);
+										  atoi((char *)CobolToString(&arg_vector[2])),
+										  (char **)&arg_vector[2].a_address);
 	ShortToCobol(&arg_vector[-1], &retval);
 
 	return (0);
@@ -1241,8 +1241,8 @@ EXPORT RM_ENTRY(rmc_wait_for_event)
 	isc_wait_for_event(stat,
 					   (isc_db_handle *)arg_vector[1].a_address,
 					   (short)*CobolToShort(&arg_vector[2]),
-					   (ISC_UCHAR *)arg_vector[2].a_address,
-					   (ISC_UCHAR *)arg_vector[2].a_address);
+					   (ISC_UCHAR *)*(char **)arg_vector[3].a_address,
+					   (ISC_UCHAR *)*(char **)arg_vector[4].a_address);
 	StatusToCobol(&arg_vector[0], stat);
 
 	return (0);
@@ -1254,8 +1254,8 @@ EXPORT RM_ENTRY(rmc_event_counts)
 	ISC_STATUS *stat = AllocStatusPool();
 	isc_event_counts((ISC_ULONG *)stat,
 					 (short)*CobolToShort(&arg_vector[1]),
-					 (ISC_UCHAR *)arg_vector[2].a_address,
-					 (ISC_UCHAR *)arg_vector[3].a_address);
+					 (ISC_UCHAR *)*(char **)arg_vector[2].a_address,
+					 (ISC_UCHAR *)*(char **)arg_vector[3].a_address);
 	StatusToCobol(&arg_vector[0], stat);
 
 	return (0);
