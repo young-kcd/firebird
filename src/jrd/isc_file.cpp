@@ -372,7 +372,7 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 	{
 		const ULONG dtype = GetDriveType((node_name + ":\\").c_str());
 		// Is it removable, fixed, cdrom or ramdisk?
-		if (dtype > DRIVE_NO_ROOT_DIR && dtype != DRIVE_REMOTE)
+		if (dtype > DRIVE_NO_ROOT_DIR && (dtype != DRIVE_REMOTE || Config::getRemoteFileOpenAbility()))
 		{
 			// CVC: If we didn't match, clean our garbage or we produce side effects
 			// in the caller.
@@ -897,6 +897,11 @@ void ISC_expand_share(tstring& file_name)
 	const size p = file_name.find(':');
 	if (p != 1)
 	{
+		return;
+	}
+
+	// If RemoteFileOpenAbility = 1 doesn't expand share
+	if (Config::getRemoteFileOpenAbility()) {
 		return;
 	}
 
