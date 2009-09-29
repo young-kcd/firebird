@@ -1,3 +1,10 @@
+2009-09-29 12:34  hvlad
+
+	* firebird2/src/jrd/nbak.cpp (1.52.2.11):
+
+	Backport fix for bug CORE-2648 : Nbackup's delta file ignored
+	Forced Writes database setting
+
 2009-09-25 22:57  hvlad
 
 	* firebird2/src/jrd/btr.cpp (1.162.2.24):
