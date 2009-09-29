@@ -24,6 +24,7 @@
  *  Contributor(s):
  *
  *  Roman Simakov <roman-simakov@users.sourceforge.net>
+ *  Khorsun Vladyslav <hvlad@users.sourceforge.net>
  *
  */
 
@@ -169,6 +170,11 @@ void BackupManager::openDelta()
 {
 	fb_assert(!diff_file);
 	diff_file = PIO_open(database, diff_name, diff_name, false);
+	if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache)) {
+		PIO_force_write(diff_file, 
+			database->dbb_flags & DBB_force_write, 
+			database->dbb_flags & DBB_no_fs_cache);
+	}
 }
 
 void BackupManager::closeDelta()
@@ -207,6 +213,11 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name.c_str()));
 		diff_file = PIO_create(database, diff_name, true, false, false);
+		if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache)) {
+			PIO_force_write(diff_file, 
+				database->dbb_flags & DBB_force_write, 
+				database->dbb_flags & DBB_no_fs_cache);
+		}
 #ifdef UNIX
 		// adjust difference file access rights to make it match main DB ones
 		if (diff_file && geteuid() == 0)
