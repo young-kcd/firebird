@@ -1290,7 +1290,7 @@ fi
 AC_SUBST(POSTFIX_INCLUDE)
 
 UDF_COMMENT="#"
-if test -n ${with_fbudf}; then
+if test -n "${with_fbudf}"; then
 	UDF_COMMENT="#
 #  #  For this build Restrict UDF means Restrict ${with_fbudf}
 #"
