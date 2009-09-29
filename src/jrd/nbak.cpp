@@ -100,6 +100,8 @@ void NBackupStateLock::invalidate(thread_db* tdbb)
 
 void NBackupStateLock::blockingAstHandler(thread_db* tdbb)
 {
+	const bool wasWrite = (cachedLock->lck_physical == LCK_write);
+
 	if (!backup_manager->databaseFlushInProgress())
 	{
 		backup_manager->beginFlush();
@@ -108,6 +110,9 @@ void NBackupStateLock::blockingAstHandler(thread_db* tdbb)
 		NBAK_TRACE_AST(("database FLUSHED"));
 	}
 	GlobalRWLock::blockingAstHandler(tdbb);
+
+	if (wasWrite && (cachedLock->lck_physical == LCK_read))
+		backup_manager->endFlush();
 }
 
 

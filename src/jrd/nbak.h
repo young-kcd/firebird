@@ -66,7 +66,7 @@ class AllocItem
 public:
 	ULONG db_page; // Page number in the main database file
 	ULONG diff_page; // Page number in the difference file
-	Record* rec_data;
+	//Record* rec_data;
     static const ULONG& generate(const void* /*sender*/, const AllocItem& item)
 	{
 		return item.db_page;
