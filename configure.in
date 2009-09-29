@@ -490,7 +490,7 @@ XE_CONF_DIR(fbbin, [executables DIR (PREFIX/bin)], FB_BINDIR, $prefix/bin)
 XE_CONF_DIR(fbsbin, [system admin executables DIR (PREFIX/bin)], FB_SBINDIR, $prefix/bin)
 XE_CONF_DIR(fbconf, [config files DIR (PREFIX)], FB_CONFDIR, $prefix)
 XE_CONF_DIR(fblib, [object code libraries DIR (PREFIX/lib)], FB_LIBDIR, $prefix/lib)
-XE_CONF_DIR(fbinclude, [C/C++ header files DIR (PREFIXinclude)], FB_INCDIR, $prefix/include)
+XE_CONF_DIR(fbinclude, [C/C++ header files DIR (PREFIX/include)], FB_INCDIR, $prefix/include)
 XE_CONF_DIR(fbdoc, [documentation root DIR (PREFIX/doc)], FB_DOCDIR, $prefix/doc)
 XE_CONF_DIR(fbudf, [UDF DIR (PREFIX/UDF)], FB_UDFDIR, $prefix/UDF)
 XE_CONF_DIR(fbsample, [examples DIR (PREFIX/examples)], FB_SAMPLEDIR, $prefix/examples)
@@ -1290,7 +1290,7 @@ fi
 AC_SUBST(POSTFIX_INCLUDE)
 
 UDF_COMMENT="#"
-if [ "${with_fbudf+set}" = set ]; then
+if test -n ${with_fbudf}; then
 	UDF_COMMENT="#
 #  #  For this build Restrict UDF means Restrict ${with_fbudf}
 #"
