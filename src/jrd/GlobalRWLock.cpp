@@ -24,6 +24,7 @@
  *  Contributor(s):
  *
  *	Roman Simakov <roman-simakov@users.sourceforge.net>
+ *	Khorsun Vladyslav <hvlad@users.sourceforge.net>
  *
  */
 
@@ -50,14 +51,19 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 
 	try
 	{
-		Database* dbb = globalRWLock->cachedLock->lck_dbb;
+		Firebird::MutexLockGuard counterGuard(globalRWLock->counterMutex);
+		if (!globalRWLock->cachedLock)
+			return 0;
 
+		Database* dbb = globalRWLock->cachedLock->lck_dbb;
 		Database::SyncGuard dsGuard(dbb, true);
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 
-		globalRWLock->blockingAstHandler(tdbb);
+		// do nothing if dbb is shutting down
+		if (!(dbb->dbb_flags & DBB_not_in_use))
+			globalRWLock->blockingAstHandler(tdbb);
 	}
 	catch (const Firebird::Exception&)
 	{} // no-op
@@ -337,11 +343,6 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 	SET_TDBB(tdbb);
 
 	COS_TRACE(("(%p)->blockingAst enter", this));
-/*	Noted by Roman Simakov: We don't checkout dbb_sync to prevent database shutting down.
-	dbb_sync protects counters.
-	Database::CheckoutLockGuard counterGuard(tdbb->getDatabase(), counterMutex);
-*/
-
 	COS_TRACE(("(%p)->blockingAst readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
 
