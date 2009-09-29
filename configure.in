@@ -407,12 +407,19 @@ AC_ARG_WITH(system-editline,
    esac])
 
 # not need editline in default libs, but need to test for its presence
+READLINE=edit	# builtin default
 saveLIBS=$LIBS
 if test "$STD_EDITLINE" = "true"; then
-  AC_CHECK_LIB(editline, readline, EDITLINE_FLG=Y, STD_EDITLINE=false)
+  AC_CHECK_LIB(edit, readline, READLINE=edit, 
+    AC_CHECK_LIB(editline, readline, READLINE=editline, 
+      AC_CHECK_LIB(readline, readline, READLINE=readline, STD_EDITLINE=false)))
+fi
+if test "$STD_EDITLINE" = "true"; then
+  EDITLINE_FLG=Y
 fi
 LIBS=$saveLIBS
 
+AC_SUBST(READLINE)
 AC_SUBST(STD_EDITLINE)
 AC_SUBST(EDITLINE_FLG)
 
