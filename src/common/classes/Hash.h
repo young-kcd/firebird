@@ -198,7 +198,9 @@ namespace Firebird
 
 		Entry** locate(const K& key)
 		{
-			return locate(key, F::hash(key, HASHSIZE) % HASHSIZE);
+			size_t hashValue = F::hash(key, HASHSIZE);
+			fb_assert(hashValue < HASHSIZE);
+			return locate(key, hashValue % HASHSIZE);
 		}
 
 	public:
