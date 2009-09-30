@@ -2455,10 +2455,22 @@ static USHORT parse_blr(USHORT blr_length,
 
 		for (dsql_par* parameter = parameters; parameter; parameter = parameter->par_next)
 		{
-			if (parameter->par_index == index) {
+			if (parameter->par_index == index)
+			{
 				parameter->par_user_desc = desc;
+
+				// ASF: Older than 2.5 engine hasn't validating strings in DSQL. After this has been
+				// implemented in 2.5, selecting a NONE column with UTF-8 attachment charset started
+				// failing. The real problem is that the client encodes SQL_TEXT/SQL_VARYING using
+				// blr_text/blr_varying (i.e. with the connection charset). I'm reseting the charset
+				// here at the server as a way to make older (and not yet changed) client work
+				// correctly.
+				if (parameter->par_user_desc.isText())
+					parameter->par_user_desc.setTextType(ttype_none);
+
 				dsql_par* null = parameter->par_null;
-				if (null) {
+				if (null)
+				{
 					null->par_user_desc.dsc_dtype = dtype_short;
 					null->par_user_desc.dsc_scale = 0;
 					null->par_user_desc.dsc_length = sizeof(SSHORT);
