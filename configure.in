@@ -1154,23 +1154,17 @@ mkdir -p temp/superserver/vulcan
 
 MAKE_SRC_DIR=builds/posix
 
-
-dnl EKU: handle platform specific installation and packaging
-dnl: Common Files
-case "$PLATFORM" in
-  [LINUX|GENTOOFREEBSD|HPUX|AIX])
-    AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf.in
-    gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
-    gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
-    gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
-    gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
-    gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
-    gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
-    gen/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
-    gen/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in],
-   [chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
-   ;;
-esac
+dnl common files for all posix hosts
+AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf.in
+gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
+gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
+gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
+gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
+gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
+gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
+gen/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
+gen/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in],
+[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
 
 dnl: Platform Specific Files
 
