@@ -38,6 +38,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <math.h>
+#include <crtdbg.h>
 
 #include "autoconfig.h"
 #include "fb_types.h"
@@ -201,7 +202,7 @@ static void ClearIntPool()
 	for (int i = 0; i < MAX_PARAMS; i++)
 	{
 		if (intPoolInitialized && intPool[i])
-			free(intPool);
+			free(intPool[i]);
 		intPool[i] = NULL;
 	}
 	intPoolInitialized = true;
@@ -213,7 +214,7 @@ static void ClearShortPool()
 	for (int i = 0; i < MAX_PARAMS; i++)
 	{
 		if (shortPoolInitialized && intPool[i])
-			free(shortPool);
+			free(shortPool[i]);
 		shortPool[i] = NULL;
 	}
 	shortPoolInitialized = true;
@@ -250,7 +251,7 @@ static ISC_ULONG* AllocIntPool()
 	{
 		if (! intPool[i])
 		{
-			intPool[i] = (ISC_ULONG *)malloc(sizeof(int));
+			intPool[i] = (ISC_ULONG *)malloc(sizeof(ISC_ULONG));
 			return (intPool[i]);
 		}
 	}
@@ -265,7 +266,7 @@ static ISC_USHORT* AllocShortPool()
 	{
 		if (! shortPool[i])
 		{
-			shortPool[i] = (ISC_USHORT *)malloc(sizeof(short));
+			shortPool[i] = (ISC_USHORT *)malloc(sizeof(ISC_USHORT));
 			return (shortPool[i]);
 		}
 	}
@@ -1217,7 +1218,7 @@ EXPORT RM_ENTRY(rmc_event_block_a)
 	ISC_USHORT retval = isc_event_block_a((char **)arg_vector[0].a_address,
 										  (char **)arg_vector[1].a_address,
 										  atoi((char *)CobolToString(&arg_vector[2])),
-										  (char **)&arg_vector[2].a_address);
+										  (char **)arg_vector[3].a_address);
 	ShortToCobol(&arg_vector[-1], &retval);
 
 	return (0);
@@ -1256,7 +1257,16 @@ EXPORT RM_ENTRY(rmc_event_counts)
 					 (short)*CobolToShort(&arg_vector[1]),
 					 (ISC_UCHAR *)*(char **)arg_vector[2].a_address,
 					 (ISC_UCHAR *)*(char **)arg_vector[3].a_address);
-	StatusToCobol(&arg_vector[0], stat);
+	// Convert the event counts to Cobol format.  
+	ISC_UCHAR *counts = (ISC_UCHAR *)arg_vector[0].a_address;
+	ISC_UCHAR *cend = counts + arg_vector[0].a_length;
+	int i = 0;
+	while ((counts < cend) && (i < 15)) 
+	{
+		CvtIntToCobol(counts, stat[i], sizeof(ISC_ULONG));
+		counts += sizeof(ISC_ULONG);
+		i++;
+	}
 
 	return (0);
 }
