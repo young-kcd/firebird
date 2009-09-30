@@ -39,4 +39,3 @@ int main( int argc, char **argv)
 		return;
 	return semctl(semid, 0, IPC_RMID, 0);
 }
-

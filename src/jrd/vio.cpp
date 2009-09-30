@@ -1318,7 +1318,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 						MET_lookup_partner(tdbb, r2, &idx, index_name) &&
 						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
-						DFW_post_work_arg(transaction, work, 0, partner->rel_id, 
+						DFW_post_work_arg(transaction, work, 0, partner->rel_id,
 										  dfw_arg_partner_rel_id);
 					}
 					else

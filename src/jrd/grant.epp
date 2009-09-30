@@ -172,7 +172,8 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 								 transaction);
 		}
 	}
-	else {
+	else
+	{
 		finish_security_class(acl, public_priv);
 		save_security_class(tdbb, s_class, acl, transaction);
 	}

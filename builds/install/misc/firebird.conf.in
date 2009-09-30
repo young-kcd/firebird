@@ -276,9 +276,9 @@
 
 # ----------------------------
 # Remove protection against opening databases on NFS mounted volumes on
-# Linux/Unix and SMB/CIFS volumes on Windows
+# Linux/Unix and SMB/CIFS volumes on Windows.
 #
-# This also permits creating database shadows on mounted network volumes
+# This also permits creating database shadows on mounted network volumes.
 #
 #     ***WARNING*** ***WARNING*** ***WARNING*** ***WARNING***
 #

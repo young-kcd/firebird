@@ -30,7 +30,8 @@
 
 #include "../common/classes/vector.h"
 
-namespace Firebird {
+namespace Firebird
+{
 	template <typename K>
 	class DefaultHash
 	{
@@ -41,7 +42,7 @@ namespace Firebird {
 			size_t val;
 
 			const char* data = static_cast<const char*>(value);
-			
+
 			while (length >= sizeof(size_t))
 			{
 				memcpy(&val, data, sizeof(size_t));
@@ -75,7 +76,7 @@ namespace Firebird {
 		const static size_t DEFAULT_SIZE = 97;		// largest prime number < 100
 	};
 
-	template <typename C, 
+	template <typename C,
 			  size_t HASHSIZE = DefaultHash<C>::DEFAULT_SIZE,
 			  typename K = C,						// default key
 			  typename KeyOfValue = DefaultKeyValue<C>,	// default keygen
@@ -88,9 +89,9 @@ namespace Firebird {
 		class Entry;
 		friend class Entry;
 
+		// This class is supposed to be used as a BASE class for class to be hashed
 		class Entry
 		{
-			// This class is supposed to be used as a BASE class for class to be hashed
 		private:
 			Entry** previousElement;
 			Entry* nextElement;
@@ -102,7 +103,7 @@ namespace Firebird {
 			{
 				unLink();
 			}
-			
+
 			void link(Entry** where)
 			{
 				unLink();
@@ -134,7 +135,7 @@ namespace Firebird {
 					// ... and next pointer in previous element
 					*previousElement = nextElement;
 					// finally mark ourselves not linked
-					previousElement = 0;
+					previousElement = NULL;
 				}
 			}
 
@@ -247,7 +248,7 @@ namespace Firebird {
 
 			void next()
 			{
-				while(!current)
+				while (!current)
 				{
 					if (++elem >= HASHSIZE)
 					{
@@ -301,7 +302,6 @@ namespace Firebird {
 				return !(*this == h);
 			}
 		}; // class iterator
-
 	}; // class Hash
 
 } // namespace Firebird

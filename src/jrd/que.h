@@ -38,7 +38,6 @@ struct que
 typedef que* QUE;
 
 
-
 inline void QUE_INIT(que& aque)
 {
 	aque.que_backward = &aque;
@@ -140,4 +139,3 @@ typedef srq *SRQ;
 
 
 #endif /* JRD_QUE_H */
-

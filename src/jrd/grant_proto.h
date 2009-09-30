@@ -34,4 +34,3 @@ namespace Jrd
 void GRANT_privileges(Jrd::thread_db*, const Firebird::string&, USHORT, Jrd::jrd_tra*);
 
 #endif // JRD_GRANT_PROTO_H
-

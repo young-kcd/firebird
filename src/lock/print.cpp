@@ -499,7 +499,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			FPRINTF(outfile, "Insufficient memory for lock statistics.\n");
 			exit(FINI_OK);
 		}
-		
+
 		memcpy((UCHAR*) buffer, LOCK_header, extentSize);
 
 		for (ULONG extent = 1; extent < extentsCount; ++extent)
@@ -610,7 +610,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			FPRINTF(outfile, "Insufficient memory for lock statistics.\n");
 			exit(FINI_OK);
 		}
-		
+
 		memcpy(newBuf, LOCK_header, extentSize);
 		buffer = newBuf;
 
@@ -618,18 +618,18 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		{
 			Firebird::PathName extName;
 			extName.printf("%s.ext%d", filename.c_str(), extent);
-			
+
 			const int fd = open(extName.c_str(), O_RDONLY | O_BINARY);
 			if (fd == -1)
 			{
-				FPRINTF(outfile, "Unable to open lock file extent number %d, file %s.\n", 
+				FPRINTF(outfile, "Unable to open lock file extent number %d, file %s.\n",
 						extent, extName.c_str());
 				exit(FINI_OK);
 			}
 
 			if (read(fd, ((UCHAR*) buffer) + extent * extentSize, extentSize) != extentSize)
 			{
-				FPRINTF(outfile, "Could not read lock file extent number %d, file %s.\n", 
+				FPRINTF(outfile, "Could not read lock file extent number %d, file %s.\n",
 						extent, extName.c_str());
 				exit(FINI_OK);
 			}

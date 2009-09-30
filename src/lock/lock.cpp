@@ -1142,7 +1142,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			bug(NULL, "map of lock file extent failed");
 		}
 	}
-#else //USE_SHMEM_EXT	
+#else //USE_SHMEM_EXT
 
 	if (m_header->lhb_length > m_shmem.sh_mem_length_mapped
 #ifdef LOCK_DEBUG_REMAP
@@ -1248,7 +1248,7 @@ UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
 	if (m_header->lhb_used + size > m_header->lhb_length)
 	{
 #ifdef USE_SHMEM_EXT
-		// round up so next object starts at beginngin of next extent
+		// round up so next object starts at beginning of next extent
 		block = m_header->lhb_used = m_header->lhb_length;
 		if (newExtent())
 		{

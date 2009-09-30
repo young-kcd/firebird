@@ -154,7 +154,7 @@ typedef Hash<
 	DeferredWork
 > DfwHash;
 
-class DeferredWork : public pool_alloc<type_dfw>, 
+class DeferredWork : public pool_alloc<type_dfw>,
 					 public DfwHash::Entry
 {
 private:
@@ -177,9 +177,9 @@ public:
 	string			dfw_name;		// name of object
 
 public:
-	DeferredWork(MemoryPool& p, DeferredWork*** end, 
+	DeferredWork(MemoryPool& p, DeferredWork*** end,
 				 enum dfw_t t, USHORT id, SLONG sn, const string& name)
-	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL), 
+	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL),
 		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
 		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p, name)
 	{
@@ -255,7 +255,7 @@ public:
 	// hash interface
 	bool isEqual(const DeferredWork& work) const
 	{
-		if (dfw_type == work.dfw_type && 
+		if (dfw_type == work.dfw_type &&
 			dfw_id == work.dfw_id &&
 			dfw_name == work.dfw_name &&
 			dfw_sav_number == work.dfw_sav_number)
@@ -306,11 +306,7 @@ public:
 	// hash interface
 	bool isEqual(const SLONG& number) const
 	{
-		if (dfw_sav_number == number)
-		{
-			return true;
-		}
-		return false;
+		return dfw_sav_number == number;
 	}
 
 	DfwSavePoint* get() { return this; }
@@ -328,7 +324,7 @@ public:
 	DeferredWork* work;
 	DeferredWork** end;
 
-	DeferredJob() : work(0), end(&work) { }
+	DeferredJob() : work(NULL), end(&work) { }
 };
 
 } // namespace Jrd
@@ -538,13 +534,13 @@ void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
  *
  **************************************/
 
-// If there is no deferred work, just return
+	// If there is no deferred work, just return
 
 	if (!transaction->tra_deferred_job) {
 		return;
 	}
 
-// Remove deferred work and events which are to be rolled back
+	// Remove deferred work and events which are to be rolled back
 
 	if (sav_number == -1)
 	{
@@ -952,8 +948,8 @@ DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const
 
 	if (! arg)
 	{
-		arg = FB_NEW(*transaction->tra_pool) 
-			  DeferredWork(*transaction->tra_pool, 0, type, id, 0, name);
+		arg = FB_NEW(*transaction->tra_pool)
+			DeferredWork(*transaction->tra_pool, 0, type, id, 0, name);
 		work->dfw_args.add(arg);
 	}
 
@@ -4137,7 +4133,7 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 		break;
 	}
 
-// Look to see if an object of the desired type is being deleted.
+	// Look to see if an object of the desired type is being deleted.
 	for (DeferredWork* work = transaction->tra_deferred_job->work; work; work = work->getNext())
 	{
 		if ((work->dfw_type == dfw_type ||
@@ -5696,12 +5692,11 @@ static string get_string(const dsc* desc)
 {
 /**************************************
  *
- *g e t _ s t r i n g
+ *  g e t _ s t r i n g
  *
  **************************************
  *
- * Functional description
- *Get string for a given descriptor.
+ * Get string for a given descriptor.
  *
  **************************************/
 	const char* str;
@@ -5713,7 +5708,7 @@ static string get_string(const dsc* desc)
 	}
 
 	// Find the actual length of the string, searching until the claimed
-	// end of the string, or the terminating \0, whichever comes first
+	// end of the string, or the terminating \0, whichever comes first.
 
 	USHORT length = MOV_make_string(desc, ttype_metadata, &str, &temp, sizeof(temp));
 
@@ -5732,4 +5727,3 @@ static string get_string(const dsc* desc)
 
 	return string(str, length);
 }
-
