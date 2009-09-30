@@ -200,8 +200,8 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 
 	fb_assert(id <= dbb->dbb_max_idx);
 	idx.idx_id = id;
-	IDX_create_index(tdbb, relation, &idx, name.c_str(), &id,
-					 transaction, selectivity);
+	IDX_create_index(tdbb, relation, &idx, name.c_str(), &id, transaction, selectivity);
+
 	fb_assert(id == idx.idx_id);
 
 	TRA_detach_request(idx.idx_expression_request);
