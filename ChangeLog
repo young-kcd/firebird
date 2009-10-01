@@ -1,3 +1,25 @@
+2009-10-01 11:14  hvlad
+
+	* firebird2/src/jrd/trace/TraceConfigStorage.cpp (1.29):
+
+	Remove double quotes around value of AuditTraceConfigFile setting,
+	if present
+
+2009-10-01 11:12  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.144):
+
+	Make better XNET's error messages in firebird.log
+
+2009-09-30 17:28  sboyd
+
+	* firebird2/src/gpre/fbrmclib.cpp (1.17):
+
+	Some more parameter conversion problems in the event intialization
+	routines.  Fixed a bug in the parameter pool cleanup routines.	I
+	was freeing the entire pool table rather than the individual pool
+	items.
+
 2009-09-30 13:40  verbguy
 
 	* firebird2/configure.in (1.367):
