@@ -181,7 +181,7 @@ static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = NULL)
 	{
 		Firebird::string str("XNET error: ");
 		str += err_msg;
-		gds__log_status(str.c_str(), status);
+		iscLogStatus(str.c_str(), status);
 	}
 	else
 		gds__log("XNET error: %s", err_msg);
@@ -2385,10 +2385,16 @@ static bool server_init(ISC_STATUS* status, USHORT flag)
 	catch (const Firebird::Exception& ex)
 	{
 		stuff_exception(status, ex);
-		xnet_log_error("XNET server initialization failed", status);
+		xnet_log_error("XNET server initialization failed. "
+			"Probably another instance of server is already running.", status);
 
 		connect_fini();
 		xnet_shutdown = true;
+
+		// the real error is already logged, return isc_net_server_shutdown instead
+		Arg::StatusVector temp;
+		temp << Arg::Gds(isc_net_server_shutdown) << Arg::Str("XNET");
+		temp.copyTo(status);
 
 		return false;
 	}
