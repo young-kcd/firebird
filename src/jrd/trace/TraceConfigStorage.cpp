@@ -220,6 +220,17 @@ void ConfigStorage::checkFile()
 		{
 			PathName configFileName(Config::getAuditTraceConfigFile());
 
+			// remove quotes around path if present
+			{ // scope
+				const size_t pathLen = configFileName.length();
+				if (pathLen > 1 && configFileName[0] == '"' && 
+					configFileName[pathLen - 1] == '"')
+				{
+					configFileName.erase(0, 1);
+					configFileName.erase(pathLen - 2, 1);
+				}
+			}
+
 			if (configFileName.empty())
 				return;
 
