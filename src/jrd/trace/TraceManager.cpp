@@ -162,7 +162,7 @@ void TraceManager::load_modules()
 
 		ModuleInfo info;
 		info.ntrace_attach = ntrace_attach_func;
-		fullModName.copyTo(info.module, sizeof(info.module));
+		modLib.copyTo(info.module, sizeof(info.module));
 		modules->add(info);
 	}
 }
