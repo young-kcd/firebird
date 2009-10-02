@@ -1257,11 +1257,11 @@ EXPORT RM_ENTRY(rmc_event_counts)
 					 (short)*CobolToShort(&arg_vector[1]),
 					 (ISC_UCHAR *)*(char **)arg_vector[2].a_address,
 					 (ISC_UCHAR *)*(char **)arg_vector[3].a_address);
-	// Convert the event counts to Cobol format.  
+	// Convert the event counts to Cobol format.
 	ISC_UCHAR *counts = (ISC_UCHAR *)arg_vector[0].a_address;
 	ISC_UCHAR *cend = counts + arg_vector[0].a_length;
 	int i = 0;
-	while ((counts < cend) && (i < 15)) 
+	while ((counts < cend) && (i < 15))
 	{
 		CvtIntToCobol(counts, stat[i], sizeof(ISC_ULONG));
 		counts += sizeof(ISC_ULONG);

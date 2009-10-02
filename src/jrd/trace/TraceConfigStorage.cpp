@@ -223,7 +223,7 @@ void ConfigStorage::checkFile()
 			// remove quotes around path if present
 			{ // scope
 				const size_t pathLen = configFileName.length();
-				if (pathLen > 1 && configFileName[0] == '"' && 
+				if (pathLen > 1 && configFileName[0] == '"' &&
 					configFileName[pathLen - 1] == '"')
 				{
 					configFileName.erase(0, 1);
