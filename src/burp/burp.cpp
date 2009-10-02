@@ -419,6 +419,10 @@ static in_sw_tab_t* findSwitch(in_sw_tab_t* const table, Firebird::string sw, bo
 
 	for (in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
+		if (sw.length() < in_sw_tab->in_sw_min_length)
+		{
+			continue;
+		}
 		if (switchMatch(sw, in_sw_tab->in_sw_name))
 		{
 			return in_sw_tab;

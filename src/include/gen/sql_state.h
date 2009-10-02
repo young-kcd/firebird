@@ -687,6 +687,7 @@ static const struct {
 	{335544984, "42000"}, // 664 instance_conflict
 	{335544985, "HY000"}, // 665 out_of_temp_space
 	{335544986, "42000"}, // 666 eds_expl_tran_ctrl
+	{335544987, "28000"}, // 667 no_trusted_spb
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

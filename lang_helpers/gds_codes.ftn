@@ -1384,6 +1384,8 @@ C --
       PARAMETER (GDS__out_of_temp_space                = 335544985)
       INTEGER*4 GDS__eds_expl_tran_ctrl              
       PARAMETER (GDS__eds_expl_tran_ctrl               = 335544986)
+      INTEGER*4 GDS__no_trusted_spb                  
+      PARAMETER (GDS__no_trusted_spb                   = 335544987)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

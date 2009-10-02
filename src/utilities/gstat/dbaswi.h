@@ -68,8 +68,8 @@ const static struct in_sw_tab_t dba_in_sw_table[] =
     {IN_SW_DBA_VERSION,		0,							"Z",		0,0,0,	false,	28,	0, NULL},	// msg 28: -z      display version number
 	// special switch to avoid including creation date, only for tests (no message)
     {IN_SW_DBA_NOCREATION,	isc_spb_sts_nocreation,	"NOCREATION",	0,0,0,	false,	0,	0, NULL},	// msg (ignored) -n suppress creation date
-    {IN_SW_DBA_TRUSTEDUSER,	0,				TRUSTED_USER_SWITCH,	0,0,0,	false,	0,	0, NULL},	// msg 0 - ignored
-    {IN_SW_DBA_TRUSTEDROLE,	0,				TRUSTED_ROLE_SWITCH,	0,0,0,	false,	0,	0, NULL},	// msg 0 - ignored
+    {IN_SW_DBA_TRUSTEDUSER,	0,				TRUSTED_USER_SWITCH,	0,0,0,	false,	0,	TRUSTED_USER_SWITCH_LEN, NULL},	// msg 0 - ignored
+    {IN_SW_DBA_TRUSTEDROLE,	0,				TRUSTED_ROLE_SWITCH,	0,0,0,	false,	0,	TRUSTED_ROLE_SWITCH_LEN, NULL},	// msg 0 - ignored
 #ifdef TRUSTED_AUTH
     {IN_SW_DBA_TRUSTEDAUTH,	0,							"TRUSTED",	0,0,0,	false,	36,	0, NULL},	// msg 36: -tr     use trusted authentication
 #endif

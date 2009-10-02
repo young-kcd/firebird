@@ -182,6 +182,15 @@ namespace {
 
 				case isc_spb_command_line:
 					spb.getString(spb_command_line);
+					{
+						string cLine = spb_command_line;
+						cLine.upper();
+						if (cLine.find(TRUSTED_USER_SWITCH) != string::npos ||
+							cLine.find(TRUSTED_ROLE_SWITCH) != string::npos)
+						{
+							(Arg::Gds(isc_bad_spb_form) << Arg::Gds(isc_no_trusted_spb)).raise();
+						}
+					}
 					break;
 
 				case isc_spb_address_path:
@@ -2510,6 +2519,14 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					string s;
 					spb.getString(s);
+
+					string cLine = s;
+					cLine.upper();
+					if (cLine.find(TRUSTED_USER_SWITCH) != string::npos ||
+						cLine.find(TRUSTED_ROLE_SWITCH) != string::npos)
+					{
+						(Arg::Gds(isc_bad_spb_form) << Arg::Gds(isc_no_trusted_spb)).raise();
+					}
 					switches += s;
 					switches += ' ';
 				}

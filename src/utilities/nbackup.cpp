@@ -1218,7 +1218,8 @@ void nbackup(UtilSvc* uSvc)
 
 		if (uSvc->isService())
 		{
-			const PathName sw = &argv[itr][1];
+			PathName sw = &argv[itr][1];
+			sw.upper();
 			if (sw == TRUSTED_USER_SWITCH)
 			{
 				if (++itr >= argc)

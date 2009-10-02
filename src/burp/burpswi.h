@@ -170,12 +170,12 @@ static const in_sw_tab_t reference_burp_in_sw_table[] =
     {IN_SW_BURP_TRUSTED_USER, 0,				"TRUSTED",			0, 0, 0, false, 295,	0, NULL, boGeneral},
 				// msg 295: @1TRU(STED)            use trusted authentication
 #endif
-    {IN_SW_BURP_TRUSTED_SVC, 0,	 				TRUSTED_USER_SWITCH, 0, 0, 0, false, 0,		0, NULL, boGeneral},
-	{IN_SW_BURP_TRUSTED_ROLE, 0, 				TRUSTED_ROLE_SWITCH, 0, 0, 0, false, 0,		0, NULL, boGeneral},
+    {IN_SW_BURP_TRUSTED_SVC, 0,	 				TRUSTED_USER_SWITCH, 0, 0, 0, false, 0,		TRUSTED_USER_SWITCH_LEN, NULL, boGeneral},
+	{IN_SW_BURP_TRUSTED_ROLE, 0, 				TRUSTED_ROLE_SWITCH, 0, 0, 0, false, 0,		TRUSTED_ROLE_SWITCH_LEN, NULL, boGeneral},
 /*
     {IN_SW_BURP_U,    0,						"UNPROTECTED",		0, 0, 0, false, 0,		0, NULL, boGeneral},
 */
-    {IN_SW_BURP_US,   isc_spb_res_use_all_space,	"USE_ALL_SPACE", 0, 0, 0, false, 276,	0, NULL, boRestore},
+    {IN_SW_BURP_US,   isc_spb_res_use_all_space,   "USE_ALL_SPACE", 0, 0, 0, false, 276,	0, NULL, boRestore},
                 // msg 276: %sUSE_(ALL_SPACE) do not reserve space for record versions
     {IN_SW_BURP_USER, 0,						"USER",				0, 0, 0, false, 191,	0, NULL, boGeneral},
                 // msg 191: %sUSER Firebird user name

@@ -230,9 +230,9 @@ static const in_sw_tab_t alice_in_sw_table[] =
 #endif
 	// We should better use #defines here, but alice wants lower case
 	{IN_SW_ALICE_TRUSTED_SVC, 0, /*TRUSTED_USER_SWITCH*/ "trusted_svc", sw_trusted_svc,
-		0, (sw_user | sw_password), false, 0, 0, NULL},
+		0, (sw_trusted_svc | sw_user | sw_password), false, 0, TRUSTED_USER_SWITCH_LEN, NULL},
 	{IN_SW_ALICE_TRUSTED_ROLE, 0, /*TRUSTED_ROLE_SWITCH*/ "trusted_role", sw_trusted_role,
-		sw_trusted_svc, (sw_user | sw_password), false, 0, 0, NULL},
+		sw_trusted_svc, (sw_user | sw_password), false, 0, TRUSTED_ROLE_SWITCH_LEN, NULL},
 	{IN_SW_ALICE_NO_RESERVE, 0, "use", sw_no_reserve,
 		0, ~(sw_no_reserve | sw_user | sw_password), false, 49, 0, NULL},
 	// msg 49: \t-use\t\tuse full or reserve space for versions
