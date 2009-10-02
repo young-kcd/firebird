@@ -43,6 +43,7 @@
 extern "C"
 {
 
+#ifndef __ICC
 #ifndef SOLARIS
 #ifdef WIN_NT
 #define exception_type _exception
@@ -55,6 +56,7 @@ int MATHERR(struct exception_type*)
 }
 #undef exception_type
 #endif /* SOLARIS */
+#endif //__ICC
 
 double EXPORT IB_UDF_abs( double *a)
 {
