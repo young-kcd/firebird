@@ -729,13 +729,17 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename,
 	const DatabaseOptions& options, bool create, bool no_priv)
 {
 	// Report to Trace API that attachment has not been created
+	const char* orig_fname = filename;
+	if (options.dpb_org_filename.hasData())
+		orig_fname = options.dpb_org_filename.c_str();
+
 	if (!traceManager)
 	{
-		TraceManager tempMgr(filename);
+		TraceManager tempMgr(orig_fname);
 
 		if (tempMgr.needs().event_attach)
 		{
-			TraceFailedConnection conn(filename, &options);
+			TraceFailedConnection conn(orig_fname, &options);
 			tempMgr.event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
 		}
 	}
@@ -743,7 +747,7 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename,
 	{
 		if (traceManager->needs().event_attach)
 		{
-			TraceFailedConnection conn(filename, &options);
+			TraceFailedConnection conn(orig_fname, &options);
 			traceManager->event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
 		}
 	}
