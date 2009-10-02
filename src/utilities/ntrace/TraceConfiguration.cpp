@@ -94,7 +94,19 @@ void TraceCfgReader::readConfig()
 {
 	Firebird::AutoPtr<ConfigFile> cfgFile(new ConfigFile(Lex::LEX_none));
 	cfgFile->addText(m_text);
-	cfgFile->parse();
+	try
+	{
+		cfgFile->parse();
+	}
+	catch (const AdminException& ex)
+	{
+		fatal_exception::raiseFmt("error while parsing trace configuration\n\t%s", 
+			ex.getText());
+	}
+	catch (...)
+	{
+		fatal_exception::raiseFmt("unknown error while parsing trace configuration");
+	}
 
 	m_subpatterns[0].start = 0;
 	m_subpatterns[0].end = m_databaseName.length();
