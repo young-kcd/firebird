@@ -3847,25 +3847,27 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
 				AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
 
-				// ASF: If the view field don't reference an item of a stream, evaluate it
+				// ASF: If the view field doesn't reference an item of a stream, evaluate it
 				// based on the view dbkey - CORE-1245.
-				if (sub->nod_type != nod_field && sub->nod_type != nod_map &&
+				if (sub->nod_type != nod_field &&
+					sub->nod_type != nod_map &&
 					sub->nod_type != nod_dbkey)
 				{
 					NodeStack stack;
 					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, false);
+					const UCHAR streamCount = (UCHAR) stack.getCount();
 
-					if (stack.hasData())
+					if (streamCount)
 					{
 						jrd_nod* new_node = PAR_make_node(tdbb, e_derived_expr_length);
 						new_node->nod_type = nod_derived_expr;
 						new_node->nod_count = e_derived_expr_count;
 						new_node->nod_arg[e_derived_expr_expr] = sub;
 
-						USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[stack.getCount()];
+						USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
 
 						new_node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
-						new_node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) stack.getCount();
+						new_node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
 
 						for (NodeStack::iterator i(stack); i.hasData(); ++i)
 							*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
@@ -3882,7 +3884,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_derived_expr:
 		{
-			const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+			UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
 			USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
 			NodeStack stack;
 
@@ -3892,10 +3894,11 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				expand_view_nodes(tdbb, csb, streamList[i], stack, nod_dbkey, true);
 			}
 
-			streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[stack.getCount()];
+			streamCount = (UCHAR) stack.getCount();
+			streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
 
 			node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
-			node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) stack.getCount();
+			node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
 
 			for (NodeStack::iterator i(stack); i.hasData(); ++i)
 				*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
