@@ -100,7 +100,7 @@ void TraceCfgReader::readConfig()
 	}
 	catch (const AdminException& ex)
 	{
-		fatal_exception::raiseFmt("error while parsing trace configuration\n\t%s", 
+		fatal_exception::raiseFmt("error while parsing trace configuration\n\t%s",
 			ex.getText());
 	}
 	catch (...)

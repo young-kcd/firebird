@@ -198,4 +198,3 @@ static const in_sw_tab_t reference_burp_in_sw_table[] =
 
 
 #endif // BURP_BURP_H
-

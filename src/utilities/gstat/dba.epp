@@ -364,7 +364,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 				if (UPPER(c) != *q++)
 					break;
 			}
-			if ((!c) && (strlen(str + 1) >= in_sw_tab->in_sw_min_length)) 
+			if (!c && strlen(str + 1) >= in_sw_tab->in_sw_min_length)
 			{
 				break;
 			}

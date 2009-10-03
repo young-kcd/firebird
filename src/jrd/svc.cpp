@@ -183,6 +183,7 @@ namespace {
 				case isc_spb_command_line:
 					spb.getString(spb_command_line);
 					{
+						// HACK: this does not care about the words on allowed places.
 						string cLine = spb_command_line;
 						cLine.upper();
 						if (cLine.find(TRUSTED_USER_SWITCH) != string::npos ||
@@ -2520,6 +2521,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					string s;
 					spb.getString(s);
 
+					// HACK: this does not care about the words on allowed places.
 					string cLine = s;
 					cLine.upper();
 					if (cLine.find(TRUSTED_USER_SWITCH) != string::npos ||
@@ -2527,6 +2529,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					{
 						(Arg::Gds(isc_bad_spb_form) << Arg::Gds(isc_no_trusted_spb)).raise();
 					}
+
 					switches += s;
 					switches += ' ';
 				}

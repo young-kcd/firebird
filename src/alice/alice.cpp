@@ -188,11 +188,11 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 
 			TEXT* q = &string[1];
-			while (*q && *p++ == *q) 
+			while (*q && *p++ == *q)
 			{
 				q++;
 			}
-			if ((!*q) && (q - &string[1] >= table->in_sw_min_length)) 
+			if (!*q && (q - &string[1] >= table->in_sw_min_length))
 			{
 				break;
 			}
