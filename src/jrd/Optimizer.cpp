@@ -171,32 +171,6 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 		}
 		return csb->csb_rpt[n].csb_flags & csb_active;
 
-	case nod_derived_expr:
-	{
-		const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-		const USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
-		bool active = true;
-
-		for (UCHAR i = 0; i < streamCount; ++i)
-		{
-			n = streamList[i];
-			if (allowOnlyCurrentStream)
-			{
-				if (n != stream && !(csb->csb_rpt[n].csb_flags & csb_sub_stream))
-					return false;
-			}
-			else
-			{
-				if (n == stream)
-					return false;
-			}
-
-			active = active && (csb->csb_rpt[n].csb_flags & csb_active);
-		}
-
-		return active;
-	}
-
 	case nod_min:
 	case nod_max:
 	case nod_average:
@@ -1114,23 +1088,6 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 			{
 				if (!streamList->exist(keyStream))
 					streamList->add(keyStream);
-			}
-			return;
-		}
-
-		case nod_derived_expr:
-		{
-			const UCHAR derivedStreamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-			const USHORT* derivedStreamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
-
-			for (UCHAR i = 0; i < derivedStreamCount; ++i)
-			{
-				const int keyStream = derivedStreamList[i];
-				if (keyStream != stream && (csb->csb_rpt[keyStream].csb_flags & csb_active))
-				{
-					if (!streamList->exist(keyStream))
-						streamList->add(keyStream);
-				}
 			}
 			return;
 		}
