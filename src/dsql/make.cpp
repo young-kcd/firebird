@@ -432,7 +432,13 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 	case nod_map:
 		map = (dsql_map*) node->nod_arg[e_map_map];
+		context = (dsql_ctx*) node->nod_arg[e_map_context];
 		MAKE_desc(statement, desc, map->map_node, null_replacement);
+
+		// ASF: We should mark nod_agg_count as nullable when it's in an outer join - CORE-2660.
+		if (context->ctx_flags & CTX_outer_join)
+			desc->dsc_flags |= DSC_nullable;
+
 		return;
 
 	case nod_agg_min:

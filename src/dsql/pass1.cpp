@@ -8028,6 +8028,12 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
 		parent_context->ctx_context = statement->req_context_number++;
 		parent_context->ctx_scope_level = statement->req_scope_level;
+
+		// When we're in a outer-join part mark context for it.
+		if (statement->req_in_outer_join)
+			parent_context->ctx_flags |= CTX_outer_join;
+		parent_context->ctx_in_outer_join = statement->req_in_outer_join;
+
 		aggregate = MAKE_node(nod_aggregate, e_agg_count);
 		aggregate->nod_arg[e_agg_context] = (dsql_nod*) parent_context;
 		aggregate->nod_arg[e_agg_rse] = rse;
