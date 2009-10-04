@@ -1213,6 +1213,13 @@ const int PROC_count			= 56;
 
 /* Define complicated table for multi-subsystem world */
 
+namespace
+{
+	const char* const subsystems[] = {"REMINT", "GDSSHR"};
+	const size_t SUBSYSTEMS = FB_NELEM(subsystems);
+	int enabledSubsystems = 0;
+}
+
 extern "C" {
 
 static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
@@ -1224,8 +1231,6 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 #endif
 
 #include "../jrd/entry.h"
-
-#define SUBSYSTEMS 2
 
 static PTR entrypoints[PROC_count * SUBSYSTEMS] =
 {
@@ -1460,6 +1465,11 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
+			if (enabledSubsystems && !(enabledSubsystems & (1 << n)))
+			{
+				continue;
+			}
+
 			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, expanded_filename.c_str(),
 												&handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
@@ -2027,6 +2037,11 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
+			if (enabledSubsystems && !(enabledSubsystems & (1 << n)))
+			{
+				continue;
+			}
+
 			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, expanded_filename.c_str(),
 												&handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
@@ -2238,7 +2253,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 	return status[1];
 }
 
-int API_ROUTINE gds__disable_subsystem(TEXT* /*subsystem*/)
+int API_ROUTINE gds__disable_subsystem(TEXT* subsystem)
 {
 /**************************************
  *
@@ -2251,6 +2266,17 @@ int API_ROUTINE gds__disable_subsystem(TEXT* /*subsystem*/)
  *	has been explicitly disabled, all are available.
  *
  **************************************/
+	for (size_t i = 0; i < SUBSYSTEMS; i++)
+	{
+		if (!strcmp(subsystems[i], subsystem))
+		{
+			if (!enabledSubsystems)
+				enabledSubsystems = ~enabledSubsystems;
+			enabledSubsystems &= ~(1 << i);
+			return TRUE;
+		}
+	}
+
 	return FALSE;
 }
 
@@ -3692,7 +3718,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 }
 
 
-int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
+int API_ROUTINE gds__enable_subsystem(TEXT* subsystem)
 {
 /**************************************
  *
@@ -3705,6 +3731,17 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
  *	has been explicitly enabled, all are available.
  *
  **************************************/
+	for (size_t i = 0; i < SUBSYSTEMS; i++)
+	{
+		if (!strcmp(subsystems[i], subsystem))
+		{
+			if (!~enabledSubsystems)
+				enabledSubsystems = 0;
+			enabledSubsystems |= (1 << i);
+			return TRUE;
+		}
+	}
+
 	return FALSE;
 }
 
@@ -4539,6 +4576,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		ISC_STATUS* ptr = status;
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
+			if (enabledSubsystems && !(enabledSubsystems & (1 << n)))
+			{
+				continue;
+			}
+
 			if (!CALL(PROC_SERVICE_ATTACH, n) (ptr, svcname.c_str(), &handle, spb_length, spb))
 			{
 				service = new CService(handle, public_handle, n);
