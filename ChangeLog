@@ -1,3 +1,9 @@
+2009-10-04 13:27  dimitr
+
+	* firebird2/src/jrd/why.cpp (1.262):
+
+	Restored the legacy enable/disable subsystem logic.
+
 2009-10-03 13:37  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.119):
