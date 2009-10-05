@@ -37,4 +37,8 @@
 		ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
 		ImportLibrary="$(IntDir)\$(TargetName).lib"
 	/>
+	<Tool
+		Name="VCManifestTool"
+		AdditionalManifestFiles="$(SolutionDir)asInvoker.manifest"
+	/>
 </VisualStudioPropertySheet>
