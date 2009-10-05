@@ -50,6 +50,10 @@ UserManagement::UserManagement(jrd_tra* tra)
 	{
 		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 	}
+	else if (!att->att_user->usr_sql_role_name.empty())
+	{
+		dpb.insertString(isc_dpb_trusted_role, att->att_user->usr_sql_role_name);
+	}
 
 	if (isc_attach_database(status, 0, securityDatabaseName, &database,
 							dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
@@ -140,10 +144,20 @@ void UserManagement::execute(USHORT id)
 	case 0: // nothing
 	    break;
 	case GsecMsg22:
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)) <<
-								Arg::Str(commands[id]->user_name));
+		{
+			Arg::StatusVector tmp;
+			tmp << Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)) << Arg::Str(commands[id]->user_name);
+			tmp.append(Arg::StatusVector(&status[0]));
+			tmp.raise();
+		}
+
 	default:
-		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)));
+		{
+			Arg::StatusVector tmp;
+			tmp << Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC));
+			tmp.append(Arg::StatusVector(&status[0]));
+			tmp.raise();
+		}
 	}
 
 	delete commands[id];
