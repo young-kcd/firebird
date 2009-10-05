@@ -110,4 +110,5 @@ FILE	*fp;
 	section_list[section].ptr = fin_section();
     if (section == -2)
 	error(0, 0, 0, "No sections found in skeleton file \"%s\"", name);
+    fclose(fp);
 }
