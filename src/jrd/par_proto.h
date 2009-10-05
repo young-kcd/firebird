@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		par_proto.h
- *	DESCRIPTION:	Prototype header file for par.cpp
+ *	DESCRIPTION:	Prototype header file for par.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,48 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_PAR_PROTO_H
-#define JRD_PAR_PROTO_H
+#ifndef _JRD_PAR_PROTO_H_
+#define _JRD_PAR_PROTO_H_
 
-namespace Jrd {
-	class jrd_nod;
-	class CompilerScratch;
-	class jrd_rel;
-	class jrd_req;
-	class thread_db;
-	struct ItemInfo;
-	class DmlNode;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* blr type classes */
+struct jrd_nod *PAR_blr(TDBB, struct jrd_rel *, UCHAR *, class Csb *, class Csb **,
+					struct jrd_req **, BOOLEAN, USHORT);
+int PAR_desc(class Csb **, struct dsc *);
+struct jrd_nod *PAR_gen_field(TDBB, USHORT, USHORT);
+struct jrd_nod *PAR_make_field(TDBB, class Csb *, USHORT, TEXT *);
+struct jrd_nod *PAR_make_list(TDBB, struct lls *);
+struct jrd_nod *PAR_make_node(TDBB, int);
+class Csb *PAR_parse(TDBB, UCHAR *, USHORT);
+SLONG PAR_symbol_to_gdscode(const char*);
 
-const int OTHER			= 0;
-const int STATEMENT		= 1;
-const int TYPE_BOOL		= 2;
-const int VALUE			= 3;
-const int TYPE_RSE		= 4;
-const int RELATION		= 5;
-const int ACCESS_TYPE	= 6;
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-struct dsc;
-
-Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG blr_length,
-						Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::jrd_req**, const bool,
-						USHORT);
-USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, Jrd::ItemInfo* = NULL);
-Jrd::jrd_nod*	PAR_gen_field(Jrd::thread_db*, USHORT, USHORT);
-Jrd::jrd_nod*	PAR_make_field(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, const Firebird::MetaName&);
-Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, Jrd::NodeStack&);
-Jrd::jrd_nod*	PAR_make_node(Jrd::thread_db*, int);
-Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length,
-	bool internal_flag, USHORT = 0, const UCHAR* = NULL);
-
-SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
-
-typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool, Jrd::CompilerScratch* csb);
-
-Jrd::jrd_nod* PAR_parse_node(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, USHORT expected);
-void PAR_register(UCHAR blr, NodeParseFunc parseFunc);
-void PAR_syntax_error(Jrd::CompilerScratch* csb, const TEXT* string);
-
-#endif // JRD_PAR_PROTO_H
+#endif /* _JRD_PAR_PROTO_H_ */

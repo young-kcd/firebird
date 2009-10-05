@@ -22,6 +22,8 @@
 #  All Rights Reserved.
 #  Contributor(s): ______________________________________.
 
+# 12 nov 2004 Commented out absent in libfbembed functions (Konstantin)
+# 
 
 {
 global:
@@ -72,6 +74,7 @@ global:
 	gds__get_segment;
 	gds__get_slice;
 	gds__interprete;
+#KLK	gds_interprete_cpp;
 	gds__log;
 	gds__log_status;
 	gds__map_blobs;
@@ -111,6 +114,7 @@ global:
 	gds__start_multiple;
 	gds__start_request;
 	gds__start_transaction;
+	gds__temp_dir;
 	gds__temp_file;
 	gds__thread_enable;
 	gds__thread_enter;
@@ -126,19 +130,14 @@ global:
 	gds__version;
 	gds__vtof;
 	gds__vtov;
-	gds__default_printer;
 
-    gds__alloc_debug;
-
-    gds_alloc_flag_unfreed;
-    gds_alloc_report;
+	gds__alloc_debug;
+	gds_alloc_flag_unfreed;
+	gds_alloc_report;
 
 	perf_format;
 	perf_get_info;
 	perf_report;
-	perf64_format;
-	perf64_get_info;
-	perf64_report;
 
 #----------------------------
 # PUBLIC INTERFACE, i.e. API
@@ -247,12 +246,11 @@ global:
 # Error-handling functions
 
 	isc_interprete;
-	fb_interpret;
+#KLK	isc_interprete_cpp;
 	isc_print_sqlerror;
 	isc_print_status;
 	isc_sqlcode;
 	isc_sql_interprete;
-	fb_sqlstate;
 
 # Event functions
 
@@ -286,7 +284,6 @@ global:
 	isc_start_multiple;
 	isc_start_transaction;
 	isc_transaction_info;
-	fb_disconnect_transaction;
 
 # Other functions
 
@@ -304,7 +301,6 @@ global:
 	isc_start_request;
 	isc_transact_request;
 	isc_unwind_request;
-	fb_cancel_operation;
 
 # Other SQL functions
 
@@ -332,17 +328,11 @@ global:
 	BLOB_text_load;
 	Bopen;
 
-# Server shutdown support
-
-	fb_shutdown;
-	fb_shutdown_callback;
-
 # Other misc functions
 
 	isc_ftof;
 	isc_free;
 	isc_print_blr;
-	fb_print_blr;
 	isc_qtoq;
 	isc_reset_fpe;
 	isc_set_debug;
@@ -358,6 +348,17 @@ global:
 
 	KEYWORD_stringIsAToken;
 	KEYWORD_getTokens;
+
+#--------------------------------------
+#functions needed by Solaris utilities for FB pre 2.0
+#comment it out with new style of thd //Konstantin
+#
+	THD_mutex_lock;
+	THD_mutex_unlock;
+	THD_mutex_destroy;
+	THD_mutex_init;
+	SCH_ast;
+#--------------------------------------
 
 local:
 	*;

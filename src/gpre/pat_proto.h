@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		pat_proto.h
- *	DESCRIPTION:	Prototype header file for pat.cpp
+ *	DESCRIPTION:	Prototype header file for pat.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,10 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_PAT_PROTO_H
-#define GPRE_PAT_PROTO_H
+#ifndef _GPRE_PAT_PROTO_H_
+#define _GPRE_PAT_PROTO_H_
 
-void	PATTERN_expand(USHORT, const TEXT*, PAT*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // GPRE_PAT_PROTO_H
+extern void PATTERN_expand(USHORT, TEXT *, PAT *);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _GPRE_PAT_PROTO_H_ */

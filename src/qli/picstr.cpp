@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		picstr.cpp
+ *	MODULE:		picstr.c
  *	DESCRIPTION:	Picture String Handler
  *
  * The contents of this file are subject to the Interbase Public
@@ -22,34 +22,29 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
-
 #include "../qli/dtr.h"
-#include "../qli/exe.h"
 #include "../qli/format.h"
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/picst_proto.h"
 #include "../qli/mov_proto.h"
-#include "../common/classes/timestamp.h"
-#include "../common/classes/VaryStr.h"
+#include "../jrd/jrd_time.h"
 #include "../jrd/gds_proto.h"
-#include "../common/classes/FpeControl.h"
 
-const int PRECISION	= 10000;
+#define PRECISION	10000
 
-static TEXT* cvt_to_ascii(SLONG, TEXT*, int);
-static const TEXT* default_edit_string(const dsc*, TEXT*);
-static void edit_alpha(const dsc*, pics*, TEXT**, USHORT);
-static void edit_date(const dsc*, pics*, TEXT**);
-static void edit_float(const dsc*, pics*, TEXT**);
-static void edit_numeric(const dsc*, pics*, TEXT**);
-static int generate(pics*);
-static void literal(pics*, TEXT, TEXT**);
+static TEXT *cvt_to_ascii(SLONG, TEXT *, int);
+static TEXT *default_edit_string(DSC *, TEXT *);
+static void edit_alpha(DSC *, PICS, TEXT **, USHORT);
+static void edit_date(DSC *, PICS, TEXT **);
+static void edit_float(DSC *, PICS, TEXT **);
+static void edit_numeric(DSC *, PICS, TEXT **);
+static int generate(PICS);
+static void literal(PICS, TEXT, TEXT **);
 
-static const TEXT* alpha_weekdays[] =
-{
+static TEXT *alpha_weekdays[] = {
 	"Sunday",
 	"Monday",
 	"Tuesday",
@@ -57,26 +52,18 @@ static const TEXT* alpha_weekdays[] =
 	"Thursday",
 	"Friday",
 	"Saturday"
-};
-
-static const TEXT* alpha_months[] =
-{
+}, *alpha_months[] = {
 	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-    "June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December"
-};
+		"February",
+		"March",
+		"April",
+		"May",
+
+		"June",
+		"July", "August", "September", "October", "November", "December"};
 
 
-pics* PIC_analyze(const TEXT* string, const dsc* desc)
+PICS PIC_analyze( TEXT * string, DSC * desc)
 {
 /**************************************
  *
@@ -88,27 +75,26 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
  *	Analyze a picture in preparation for formatting.
  *
  **************************************/
+	PICS picture;
+	TEXT c, d, debit;
+
 	if (!string)
-	{
 		if (!desc)
 			return NULL;
+		else
+			string = default_edit_string(desc, NULL);
 
-		string = default_edit_string(desc, NULL);
-	}
+	debit = 0;
 
-	pics* picture = (pics*) ALLOCD(type_pic);
+	picture = (PICS) ALLOCD(type_pic);
 	picture->pic_string = picture->pic_pointer = string;
 
-	// Make a first pass just counting characters
+/* Make a first pass just counting characters */
 
-	bool debit = false;
-	TEXT c;
-	while ((c = generate(picture)) && c != '?')
-	{
+	while ((c = generate(picture)) && c != '?') {
 
 		c = UPPER(c);
-		switch (c)
-		{
+		switch (c) {
 		case 'X':
 		case 'A':
 			++picture->pic_chars;
@@ -117,9 +103,9 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		case '9':
 		case 'Z':
 		case '*':
-			// Count all digits;
-			// count them as fractions only after a decimal pt and
-			// before an E
+			/* Count all digits; 
+			   count them as fractions only after a decimal pt and 
+			   before an E */
 			++picture->pic_digits;
 			if (picture->pic_decimals && !picture->pic_exponents)
 				++picture->pic_fractions;
@@ -150,12 +136,12 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 			break;
 
 		case 'D':
-			// DB is ambiguous, could be Day Blank or DeBit...
-			if (UPPER(*picture->pic_pointer) == 'B')
-			{
+			/* DB is ambiguous, could be Day Blank or DeBit... */
+			d = UPPER(*picture->pic_pointer);
+			if (d == 'B') {
 				++picture->pic_pointer;
 				++picture->pic_literals;
-				debit = true;
+				++debit;
 			}
 			++picture->pic_days;
 			break;
@@ -193,12 +179,8 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		case '\'':
 		case '"':
 			picture->pic_flags |= PIC_literal;
-			{
-				TEXT d;
-				// Shouldn't UPPER be used on d before comparing with c?
-				while ((d = generate(picture)) && d != c)
-					++picture->pic_literals;
-			}
+			while ((d = generate(picture)) && d != c)
+				++picture->pic_literals;
 			picture->pic_flags &= ~PIC_literal;
 			break;
 
@@ -213,7 +195,7 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		case 'R':
 			picture->pic_flags |= PIC_signed;
 			++picture->pic_brackets;
-			if (generate(picture))
+			if (d = generate(picture))
 				++picture->pic_brackets;
 			else
 				++picture->pic_count;
@@ -245,10 +227,9 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 	if (c == '?')
 		picture->pic_missing = PIC_analyze(picture->pic_pointer, 0);
 
-	// if a DB showed up, and the string is numeric, treat the DB as DeBit
+/* if a DB showed up, and the string is numeric, treat the DB as DeBit */
 
-	if (debit && (picture->pic_digits || picture->pic_hex_digits))
-	{
+	if (debit && (picture->pic_digits || picture->pic_hex_digits)) {
 		--picture->pic_days;
 		--picture->pic_literals;
 		picture->pic_flags |= PIC_signed;
@@ -263,28 +244,35 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		picture->pic_floats +
 		picture->pic_literals +
 		picture->pic_decimals +
-		picture->pic_months + picture->pic_days + picture->pic_weekdays + picture->pic_years +
-		picture->pic_nmonths + picture->pic_julians +
+		picture->pic_months +
+		picture->pic_days +
+		picture->pic_weekdays +
+		picture->pic_years +
+		picture->pic_nmonths +
+		picture->pic_julians +
 		picture->pic_brackets +
 		picture->pic_exponents +
 		picture->pic_float_digits +
-		picture->pic_hours + picture->pic_minutes + picture->pic_seconds +
-		picture->pic_meridian;
+		picture->pic_hours +
+		picture->pic_minutes + picture->pic_seconds + picture->pic_meridian;
 
 
-	if (picture->pic_missing)
-	{
-		picture->pic_length = MAX(picture->pic_print_length, picture->pic_missing->pic_print_length);
+	if (picture->pic_missing) {
+		picture->pic_length =
+			MAX(picture->pic_print_length,
+				picture->pic_missing->pic_print_length);
 		picture->pic_missing->pic_length = picture->pic_length;
 	}
 	else
 		picture->pic_length = picture->pic_print_length;
 
-	if (picture->pic_days || picture->pic_weekdays || picture->pic_months || picture->pic_nmonths ||
-		picture->pic_years || picture->pic_hours || picture->pic_julians)
-	{
-		picture->pic_type = pic_date;
-	}
+	if (picture->pic_days ||
+		picture->pic_weekdays ||
+		picture->pic_months ||
+		picture->pic_nmonths ||
+		picture->pic_years ||
+		picture->pic_hours ||
+		picture->pic_julians) picture->pic_type = pic_date;
 	else if (picture->pic_exponents || picture->pic_float_digits)
 		picture->pic_type = pic_float;
 	else if (picture->pic_digits || picture->pic_hex_digits)
@@ -296,7 +284,7 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 }
 
 
-void PIC_edit(const dsc* desc, pics* picture, TEXT** output, USHORT max_length)
+void PIC_edit( DSC * desc, PICS picture, TEXT ** output, USHORT max_length)
 {
 /**************************************
  *
@@ -311,8 +299,7 @@ void PIC_edit(const dsc* desc, pics* picture, TEXT** output, USHORT max_length)
  *
  **************************************/
 
-	switch (picture->pic_type)
-	{
+	switch (picture->pic_type) {
 	case pic_alpha:
 		edit_alpha(desc, picture, output, max_length);
 		return;
@@ -326,12 +313,12 @@ void PIC_edit(const dsc* desc, pics* picture, TEXT** output, USHORT max_length)
 		edit_float(desc, picture, output);
 		return;
 	default:
-		ERRQ_bugcheck(68);			// Msg 68 PIC_edit: class not yet implemented
+		BUGCHECK(68);			/* Msg 68 PIC_edit: class not yet implemented */
 	}
 }
 
 
-void PIC_missing( qli_const* constant, pics* picture)
+void PIC_missing( CON constant, PICS picture)
 {
 /**************************************
  *
@@ -342,30 +329,36 @@ void PIC_missing( qli_const* constant, pics* picture)
  * Functional description
  *	Create a literal picture string from
  *	a descriptor for a missing value so
- *	we can print the missing value
+ *	we can print the missing value  
  *
  **************************************/
+	STR scratch;
+	int l;
+	TEXT *p;
+	PICS missing_picture;
+	DSC *desc;
 
-	const dsc* desc = &constant->con_desc;
+	desc = &constant->con_desc;
 
-	const int l = MAX(desc->dsc_length, picture->pic_length);
+	l = MAX(desc->dsc_length, picture->pic_length);
 
-	qli_str* scratch = (qli_str*) ALLOCDV(type_str, l + 3);
-	TEXT* p = scratch->str_data;
+	scratch = (STR) ALLOCDV(type_str, l + 3);
+	p = scratch->str_data;
 	*p++ = '\"';
 
 	PIC_edit(desc, picture, &p, l);
 	*p++ = '\"';
 	*p = 0;
 
-    pics* missing_picture = PIC_analyze(scratch->str_data, desc);
-	picture->pic_missing = missing_picture;
-	picture->pic_length = MAX(picture->pic_print_length, missing_picture->pic_print_length);
+	picture->pic_missing = missing_picture =
+		PIC_analyze(scratch->str_data, desc);
+	picture->pic_length =
+		MAX(picture->pic_print_length, missing_picture->pic_print_length);
 	missing_picture->pic_length = picture->pic_length;
 }
 
 
-static TEXT* cvt_to_ascii( SLONG number, TEXT* pointer, int length)
+static TEXT *cvt_to_ascii( SLONG number, TEXT * pointer, int length)
 {
 /**************************************
  *
@@ -378,12 +371,13 @@ static TEXT* cvt_to_ascii( SLONG number, TEXT* pointer, int length)
  *	null), updating pointer.
  *
  **************************************/
+	TEXT *p;
+
 	pointer += length + 1;
-	TEXT* p = pointer;
+	p = pointer;
 	*--p = 0;
 
-	while (--length >= 0)
-	{
+	while (--length >= 0) {
 		*--p = (number % 10) + '0';
 		number /= 10;
 	}
@@ -392,7 +386,8 @@ static TEXT* cvt_to_ascii( SLONG number, TEXT* pointer, int length)
 }
 
 
-static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
+static TEXT *default_edit_string(
+									DSC * desc, TEXT * buff)
 {
 /**************************************
  *
@@ -405,14 +400,15 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
  *
  **************************************/
 	TEXT buffer[32];
+	STR string;
+	SSHORT scale;
 
 	if (!buff)
 		buff = buffer;
 
-	const SSHORT scale = desc->dsc_scale;
+	scale = desc->dsc_scale;
 
-	switch (desc->dsc_dtype)
-	{
+	switch (desc->dsc_dtype) {
 	case dtype_text:
 		sprintf(buff, "X(%d)", desc->dsc_length);
 		break;
@@ -447,20 +443,6 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 			sprintf(buff, "-(%d)9", 11 + scale);
 		break;
 
-	case dtype_int64:
-        // replace 16 with 20 later
-		// (as soon as I have sorted out the rounding issues)
-		// FSG
-		if (!scale)
-			return "-(16)9";
-		if (scale < 0 && scale > -16)
-			sprintf(buff, "-(%d).9(%d)", 16 + scale, -scale);
-		else if (scale < 0)
-			sprintf(buff, "-.9(%d)", -scale);
-		else
-			sprintf(buff, "-(%d)9", 17 + scale);
-		break;
-
 	case dtype_sql_date:
 	case dtype_timestamp:
 		return "DD-MMM-YYYY";
@@ -478,9 +460,8 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 		return "X(11)";
 	}
 
-	if (buff == buffer)
-	{
-		qli_str* string = (qli_str*) ALLOCDV(type_str, strlen(buff));
+	if (buff == buffer) {
+		string = (STR) ALLOCDV(type_str, strlen(buff));
 		strcpy(string->str_data, buff);
 		buff = string->str_data;
 	}
@@ -489,8 +470,9 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 }
 
 
-static void edit_alpha(const dsc* desc,
-					   pics* picture, TEXT** output, USHORT max_length)
+static void edit_alpha(
+					   DSC * desc,
+					   PICS picture, TEXT ** output, USHORT max_length)
 {
 /**************************************
  *
@@ -503,27 +485,24 @@ static void edit_alpha(const dsc* desc,
  *	output pointer.
  *
  **************************************/
-	Firebird::VaryStr<512> temp;
+	TEXT c, *p, *out, *end, temp[512];
+	USHORT l;
 
-	const TEXT* p = NULL;
-	const USHORT l = MOVQ_get_string(desc, &p, &temp, sizeof(temp));
-	const TEXT* const end = p + l;
+	l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
+	end = p + l;
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
-	TEXT* out = *output;
+	out = *output;
 
-	while (p < end)
-	{
+	while (p < end) {
 		if ((out - *output) >= max_length)
 			break;
-		TEXT c = generate(picture);
+		c = generate(picture);
 		if (!c || c == '?')
 			break;
 
 		c = UPPER(c);
-
-		switch (c)
-		{
+		switch (c) {
 		case 'X':
 
 			*out++ = *p++;
@@ -533,7 +512,7 @@ static void edit_alpha(const dsc* desc,
 			if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z'))
 				*out++ = *p++;
 			else
-				IBERROR(69);	// Msg 69 conversion error
+				IBERROR(69);	/* Msg 69 conversion error */
 			break;
 
 		case 'B':
@@ -556,7 +535,7 @@ static void edit_alpha(const dsc* desc,
 }
 
 
-static void edit_date( const dsc* desc, pics* picture, TEXT** output)
+static void edit_date( DSC * desc, PICS picture, TEXT ** output)
 {
 /**************************************
  *
@@ -569,39 +548,37 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
  *	output pointer.
  *
  **************************************/
-	SLONG date[2];
+	SLONG date[2], rel_day, seconds;
 	DSC temp_desc;
-	TEXT d, temp[256];
+	TEXT c, d, *p, *out, *month, *weekday, *year, *nmonth, *day,
+		*hours, temp[256], *meridian, *julians;
+	USHORT sig_day, blank;
+	struct tm times;
 
 	temp_desc.dsc_dtype = dtype_timestamp;
 	temp_desc.dsc_scale = 0;
 	temp_desc.dsc_sub_type = 0;
 	temp_desc.dsc_length = sizeof(date);
-	temp_desc.dsc_address = (UCHAR*) date;
-	QLI_validate_desc(temp_desc);
+	temp_desc.dsc_address = (UCHAR *) date;
 	MOVQ_move(desc, &temp_desc);
 
-    tm times;
-	isc_decode_date((ISC_QUAD*) date, &times);
-	TEXT* p = temp;
+	isc_decode_date((GDS_QUAD*) date, &times);
+	p = temp;
 
-	const TEXT* nmonth = p;
+	nmonth = p;
 	p = cvt_to_ascii((SLONG) times.tm_mon + 1, p, picture->pic_nmonths);
 
-	const TEXT* day = p;
+	day = p;
 	p = cvt_to_ascii((SLONG) times.tm_mday, p, picture->pic_days);
 
-	const TEXT* year = p;
+	year = p;
 	p = cvt_to_ascii((SLONG) times.tm_year + 1900, p, picture->pic_years);
 
-	const TEXT* julians = p;
+	julians = p;
 	p = cvt_to_ascii((SLONG) times.tm_yday + 1, p, picture->pic_julians);
 
-	const TEXT* meridian = "";
-	if (picture->pic_meridian)
-	{
-		if (times.tm_hour >= 12)
-		{
+	if (picture->pic_meridian) {
+		if (times.tm_hour >= 12) {
 			meridian = "PM";
 			if (times.tm_hour > 12)
 				times.tm_hour -= 12;
@@ -609,10 +586,12 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 		else
 			meridian = "AM";
 	}
+	else
+		meridian = "";
 
-	const SLONG seconds = date[1] % (60 * PRECISION);
+	seconds = date[1] % (60 * PRECISION);
 
-	TEXT* hours = p;
+	hours = p;
 	p = cvt_to_ascii((SLONG) times.tm_hour, p, picture->pic_hours);
 	p = cvt_to_ascii((SLONG) times.tm_min, --p, picture->pic_minutes);
 	p = cvt_to_ascii((SLONG) seconds, --p, 6);
@@ -620,28 +599,24 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 	if (*hours == '0')
 		*hours = ' ';
 
-	SLONG rel_day = (date[0] + 3) % 7;
-	if (rel_day < 0)
+	if ((rel_day = (date[0] + 3) % 7) < 0)
 		rel_day += 7;
-	const TEXT* weekday = alpha_weekdays[rel_day];
-	const TEXT* month = alpha_months[times.tm_mon];
+	weekday = alpha_weekdays[rel_day];
+	month = alpha_months[times.tm_mon];
 
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
-	TEXT* out = *output;
+	out = *output;
+	sig_day = FALSE;
+	blank = TRUE;
 
-	bool sig_day = false;
-	bool blank = true;
-
-	for (;;)
-	{
-		TEXT c = generate(picture);
+	for (;;) {
+		c = generate(picture);
 		if (!c || c == '?')
 			break;
 		c = UPPER(c);
 
-		switch (c)
-		{
+		switch (c) {
 		case 'Y':
 			*out++ = *year++;
 			break;
@@ -659,9 +634,8 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 			d = *day++;
 			if (!sig_day && d == '0' && blank)
 				*out++ = ' ';
-			else
-			{
-				sig_day = true;
+			else {
+				sig_day = TRUE;
 				*out++ = d;
 			}
 			break;
@@ -701,14 +675,14 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 			break;
 		}
 		if (c != 'B')
-			blank = false;
+			blank = FALSE;
 	}
 
 	*output = out;
 }
 
 
-static void edit_float( const dsc* desc, pics* picture, TEXT** output)
+static void edit_float( DSC * desc, PICS picture, TEXT ** output)
 {
 /**************************************
  *
@@ -721,89 +695,139 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
  *	output pointer.
  *
  **************************************/
-	TEXT temp[512];
+	TEXT c, d, e, *p, *out, temp[512];
+	BOOLEAN negative, is_signed;
 	USHORT l, width, decimal_digits, w_digits, f_digits;
+	double number;
 
-	double number = MOVQ_get_double(desc);
-	const bool negative = (number < 0);
-	if (negative)
+#ifdef VMS
+	BOOLEAN hack_for_vms_flag;
+#endif
+#ifdef WIN_NT
+	BOOLEAN hack_for_nt_flag;
+#endif
+
+	negative = is_signed = FALSE;
+#ifdef VMS
+	hack_for_vms_flag = FALSE;
+#endif
+#ifdef WIN_NT
+	hack_for_nt_flag = FALSE;
+#endif
+	number = MOVQ_get_double(desc);
+	if (number < 0) {
+		negative = TRUE;
 		number = -number;
+	}
 
-	// If exponents are explicitly requested (E-format edit_string), generate them.
-	// Otherwise, the rules are: if the number in f-format will fit into the allotted
-	// space, print it in f-format; otherwise print it in e-format.
-	// (G-format is untrustworthy.)
+/* If exponents are explicitly requested (E-format edit_string), generate them.
+   Otherwise, the rules are: if the number in f-format will fit into the allotted
+   space, print it in f-format; otherwise print it in e-format.  
+   (G-format is untrustworthy.) */
 
-	if (isnan(number))
-		sprintf(temp, "NaN");
-	else if (isinf(number))
-		sprintf(temp, "Infinity");
-	else if (picture->pic_exponents)
-	{
-		width = picture->pic_print_length - picture->pic_floats - picture->pic_literals;
+	if (picture->pic_exponents) {
+		width =
+			picture->pic_print_length - picture->pic_floats -
+			picture->pic_literals;
 		decimal_digits = picture->pic_fractions;
 		sprintf(temp, "%*.*e", width, decimal_digits, number);
+#ifdef VMS
+		if (!decimal_digits)
+			hack_for_vms_flag = TRUE;
+#endif
+#ifdef WIN_NT
+		hack_for_nt_flag = TRUE;
+#endif
 	}
 	else if (number == 0)
 		sprintf(temp, "%.0f", number);
-	else
-	{
+	else {
 		width = picture->pic_float_digits - 1 + picture->pic_floats;
 		f_digits = (width > 2) ? width - 2 : 0;
 		sprintf(temp, "%.*f", f_digits, number);
 		w_digits = strlen(temp);
-		if (f_digits)
-		{
-			TEXT* p = temp + w_digits;	// find the end
+		if (f_digits) {
+			p = temp + w_digits;	/* find the end */
 			w_digits = w_digits - (f_digits + 1);
 			while (*--p == '0')
 				--f_digits;
 			if (*p != '.')
 				++p;
-			*p = 0;				// move the end
+			*p = 0;				/* move the end */
 		}
-		if ((w_digits > width) || (!f_digits && w_digits == 1 && temp[0] == '0'))
-		{
-			// if the number doesn't fit in the default window, revert
-			// to exponential notation; displaying the maximum number of
-			// mantissa digits.
+		if ((w_digits > width)
+			|| (!f_digits && w_digits == 1 && temp[0] == '0')) {
+			/* if the number doesn't fit in the default window, revert
+			   to exponential notation; displaying the maximum number of
+			   mantissa digits. */
 
 			if (number < 1e100)
 				decimal_digits = (width > 6) ? width - 6 : 0;
 			else
 				decimal_digits = (width > 7) ? width - 7 : 0;
 			sprintf(temp, "%.*e", decimal_digits, number);
+#ifdef VMS
+			if (!decimal_digits)
+				hack_for_vms_flag = TRUE;
+#endif
+#ifdef WIN_NT
+			hack_for_nt_flag = TRUE;
+#endif
 		}
 	}
 
-	TEXT* p = temp;
+#ifdef VMS
+/* If precision of 0 is specified to e- or f-format in VMS, the dec point
+   is printed regardless.  On no other platform is this the case; so take
+   it out here.  When/if this is ever fixed, ALL LINES IN THIS ROUTINE
+   THAT RELATED TO 'hack_for_vms_flag' MAY BE DELETED. */
+
+	if (hack_for_vms_flag) {
+		p = temp;
+		while (*p != '.')
+			++p;
+		while (*p = *(p + 1))
+			++p;
+	}
+#endif
+#ifdef WIN_NT
+/* On Windows NT exponents have three digits regardless of the magnitude
+   of the number being formatted.  To maintain compatiblity with other
+   platforms, if the first digit of the exponent is '0', shift the other
+   digits one to the left. */
+
+	if (hack_for_nt_flag) {
+		p = temp;
+		while (*p != 'e' && *p != 'E')
+			++p;
+		p += 2;
+		if (*p == '0')
+			while (*p = *(p + 1))
+				++p;
+	}
+#endif
+
+	p = temp;
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;
-	TEXT* out = *output;
+	out = *output;
 
 	for (l = picture->pic_length - picture->pic_print_length; l > 0; --l)
 		*out++ = ' ';
 
-	bool is_signed = false;
-
-	for (;;)
-	{
-		const TEXT e = generate(picture);
-		TEXT c = e;
+	for (;;) {
+		c = e = generate(picture);
 		if (!c || c == '?')
 			break;
 		c = UPPER(c);
-
-		switch (c)
-		{
+		switch (c) {
 		case 'G':
-			if (!is_signed)
-			{
+			if (!is_signed) {
 				if (negative)
 					*out++ = '-';
 				else
 					*out++ = ' ';
-				is_signed = true;
+				is_signed = TRUE;
 			}
 			else if (*p)
 				*out++ = *p++;
@@ -821,16 +845,14 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 
 		case '9':
 		case 'Z':
-			{
-				if (!(*p) || *p > '9' || *p < '0')
-					break;
-				TEXT d = *p++;
-				if (c == '9' && d == ' ')
-					d = '0';
-				else if (c == 'Z' && d == '0')
-					d = ' ';
-				*out++ = d;
-			}
+			if (!(*p) || *p > '9' || *p < '0')
+				break;
+			d = *p++;
+			if (c == '9' && d == ' ')
+				d = '0';
+			else if (c == 'Z' && d == '0')
+				d = ' ';
+			*out++ = d;
 			break;
 
 		case '.':
@@ -838,7 +860,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 			break;
 
 		case 'E':
-			if (!*p)
+			if (!(*p))
 				break;
 			*out++ = e;
 			if (UPPER(*p) == c)
@@ -847,10 +869,9 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 
 		case '+':
 		case '-':
-			if (!*p)
+			if (!(*p))
 				break;
-			if (*p != '+' && *p != '-')
-			{
+			if (*p != '+' && *p != '-') {
 				if (is_signed)
 					*out++ = c;
 				else if (c == '-' && !negative)
@@ -859,12 +880,11 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 					*out++ = '-';
 				else
 					*out++ = c;
-				is_signed = true;
+				is_signed = TRUE;
 			}
 			else if (*p == '-' || c == '+')
 				*out++ = *p++;
-			else
-			{
+			else {
 				*out++ = ' ';
 				p++;
 			}
@@ -880,7 +900,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 }
 
 
-static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
+static void edit_numeric( DSC * desc, PICS picture, TEXT ** output)
 {
 /**************************************
  *
@@ -893,120 +913,97 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
  *	output pointer.
  *
  **************************************/
-	bool overflow = false;
+	TEXT c, d, float_char, temp[512], *p, *float_ptr, *out, *hex, *digits;
+	USHORT power, negative, signif, hex_overflow, overflow, l;
+	SSHORT scale;
+	SLONG n;
+	double check, number;
 
-	TEXT* out = *output;
+	out = *output;
+	float_ptr = NULL;
+	negative = signif = FALSE;
+	hex_overflow = overflow = FALSE;
 
-	double number = MOVQ_get_double(desc);
-	const bool negative = (number < 0);
-	if (negative)
-	{
+	number = MOVQ_get_double(desc);
+	if (number < 0) {
 		number = -number;
+		negative = TRUE;
 		if (!(picture->pic_flags & PIC_signed))
-			overflow = true;
+			overflow = TRUE;
 	}
 
-    SSHORT scale = picture->pic_fractions;
-	if (scale)
-	{
+	if (scale = picture->pic_fractions)
 		if (scale < 0)
-		{
-			do {
+			do
 				number /= 10.;
-			} while (++scale);
-		}
+			while (++scale);
 		else if (scale > 0)
-		{
-			do {
+			do
 				number *= 10.;
-			} while (--scale);
-		}
-	}
+			while (--scale);
 
-	TEXT temp[512];
-	TEXT* p = temp;
-	TEXT* digits = p;
+	digits = p = temp;
 
-	double check;
-	USHORT power;
-	if (picture->pic_digits && !overflow)
-	{
+	if (picture->pic_digits && !overflow) {
 		for (check = number, power = picture->pic_digits; power; --power)
-			check /= 10.0;
+			check /= 10.;
 		if (check >= 1)
-			overflow = true;
-		else
-		{
+			overflow = TRUE;
+		else {
 			sprintf(digits, "%0*.0f", picture->pic_digits, number);
 			p = digits + strlen(digits);
 		}
 	}
 
 	picture->pic_pointer = picture->pic_string;
-	bool hex_overflow = false;
-	const TEXT* hex = 0;
-	if (picture->pic_hex_digits)
-	{
+	if (picture->pic_hex_digits) {
 		hex = p;
 		p += picture->pic_hex_digits;
 		for (check = number, power = picture->pic_hex_digits; power; --power)
-			check /= 16.0;
+			check /= 16.;
 		if (check >= 1)
-			hex_overflow = true;
-		else
-		{
-			SLONG nh = static_cast<SLONG>(number);
-			while (p-- > hex)
-			{
-				*p = "0123456789abcdef"[nh & 15];
-				nh >>= 4;
+			hex_overflow = TRUE;
+		else {
+			n = number;
+			while (p-- > hex) {
+				*p = "0123456789abcdef"[n & 15];
+				n >>= 4;
 			}
 		}
 	}
 
-	for (USHORT l = picture->pic_length - picture->pic_print_length; l-- > 0;)
+	for (l = picture->pic_length - picture->pic_print_length; l-- > 0;)
 		*out++ = ' ';
 
-	const SLONG n = (number + 0.5 < 1) ? 0 : 1;
+	n = (number + 0.5 < 1) ? 0 : 1;
 
-	TEXT* float_ptr = NULL;
-	TEXT float_char;
-	TEXT d;
-	bool signif = false;
-
-	for (;;)
-	{
-		TEXT c = generate(picture);
+	for (;;) {
+		c = generate(picture);
 		if (!c || c == '?')
 			break;
 
 		c = UPPER(c);
-		if (overflow && c != 'H')
-		{
+		if (overflow && c != 'H') {
 			*out++ = '*';
 			continue;
 		}
-
-		switch (c)
-		{
+		switch (c) {
 		case '9':
-			signif = true;
+			signif = TRUE;
 			*out++ = *digits++;
 			break;
 
 		case 'H':
-			if (hex_overflow)
-			{
+			if (hex_overflow) {
 				*out++ = '*';
 				continue;
 			}
 		case '*':
 		case 'Z':
 			d = (c == 'H') ? *hex++ : *digits++;
-			if (signif || d != '0')
-			{
+			if (signif || d != '0') {
 				*out++ = d;
-				signif = true;
+				signif = TRUE;
 			}
 			else
 				*out++ = (c == '*') ? '*' : ' ';
@@ -1020,46 +1017,42 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			else if (c == '-' && !negative)
 				c = ' ';
 			float_char = c;
-			if (!float_ptr)
-			{
+			if (!float_ptr) {
 				float_ptr = out;
-				*out++ = n ? c : ' ';
+				*out++ = (n) ? c : ' ';
 				break;
 			}
 			d = *digits++;
-			if (signif || d != '0')
-			{
+			if (signif || d != '0') {
 				*out++ = d;
-				signif = true;
+				signif = TRUE;
 				break;
 			}
 			*float_ptr = ' ';
 			float_ptr = out;
-			*out++ = n ? c : ' ';
+			*out++ = (n) ? c : ' ';
 			break;
 
 		case '(':
 		case ')':
-			*out++ = negative ? c : ' ';
+			*out++ = (negative) ? c : ' ';
 			break;
 
 		case 'C':
 		case 'D':
 			d = generate(picture);
-			if (negative)
-			{
+			if (negative) {
 				*out++ = c;
 				*out++ = UPPER(d);
 			}
-			else if (d)
-			{
+			else if (d) {
 				*out++ = ' ';
 				*out++ = ' ';
 			}
 			break;
 
 		case '.':
-			signif = true;
+			signif = TRUE;
 			*out++ = c;
 			break;
 
@@ -1076,8 +1069,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 		case ',':
 			if (signif)
 				*out++ = c;
-			else if (float_ptr)
-			{
+			else if (float_ptr) {
 				*float_ptr = ' ';
 				float_ptr = out;
 				*out++ = float_char;
@@ -1098,7 +1090,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 }
 
 
-static int generate( pics* picture)
+static int generate( PICS picture)
 {
 /**************************************
  *
@@ -1110,49 +1102,45 @@ static int generate( pics* picture)
  *	Generate the next character from a picture string.
  *
  **************************************/
-	TEXT c;
+	TEXT c, *p;
 
-	for (;;)
-	{
-		// If we're in a repeat, pass it back
+	for (;;) {
+		/* If we're in a repeat, pass it back */
 
-		if (picture->pic_count > 0)
-		{
+		if (picture->pic_count > 0) {
 			--picture->pic_count;
 			return picture->pic_character;
 		}
 
-		// Get the next character.  If null, we're done
+		/* Get the next character.  If null, we're done */
 
 		c = *picture->pic_pointer++;
 
-		// If we're in literal mode, just return the character
+		/* If we're in literal mode, just return the character */
 
 		if (picture->pic_flags & PIC_literal)
 			break;
 
-		// If the next character is also a paren, it is a debit indicating
-		// bracket.  If so, swallow the second.
+		/* If the next character is also a paren, it is a debit indicating
+		   bracket.  If so, swallow the second. */
 
-		if ((c == ')' || c == '(') && *picture->pic_pointer == c)
-		{
+		if ((c == ')' || c == '(') && *picture->pic_pointer == c) {
 			picture->pic_pointer++;
 			return (picture->pic_character = c);
 		}
 
-		// If the character is null and not a repeat count, we're done
+		/* If the character is null and not a repeat count, we're done */
 
 		if (!c || c != '(')
 			break;
 
-		// We're got a potential repeat count.  If real, extract it.
+		/* We're got a potential repeat count.  If real, extract it. */
 
-		const TEXT* p = picture->pic_pointer;
+		p = picture->pic_pointer;
 		while (*p >= '0' && *p <= '9')
 			picture->pic_count = picture->pic_count * 10 + *p++ - '0';
 
-		if (p == picture->pic_pointer)
-		{
+		if (p == picture->pic_pointer) {
 			c = '(';
 			break;
 		}
@@ -1162,9 +1150,9 @@ static int generate( pics* picture)
 
 		picture->pic_pointer = p;
 
-		// Someone may have done something very stupid, like specify a repeat
-		// count of zero.  It's too late, as we've already gen'd one instance
-		// of the edit character -- but let's not access violate, shall we?
+		/* Someone may have done something very stupid, like specify a repeat
+		   count of zero.  It's too late, as we've already gen'd one instance
+		   of the edit character -- but let's not access violate, shall we? */
 
 		if (picture->pic_count)
 			--picture->pic_count;
@@ -1174,7 +1162,7 @@ static int generate( pics* picture)
 }
 
 
-static void literal( pics* picture, TEXT c, TEXT** ptr)
+static void literal( PICS picture, TEXT c, TEXT ** ptr)
 {
 /**************************************
  *
@@ -1186,10 +1174,11 @@ static void literal( pics* picture, TEXT c, TEXT** ptr)
  *	Handle a literal string in a picture string.
  *
  **************************************/
-	TEXT* p = *ptr;
+	TEXT *p, d;
+
+	p = *ptr;
 	picture->pic_flags |= PIC_literal;
 
-	TEXT d;
 	if (c == '\\')
 		*p++ = generate(picture);
 	else
@@ -1199,5 +1188,3 @@ static void literal( pics* picture, TEXT c, TEXT** ptr)
 	*ptr = p;
 	picture->pic_flags &= ~PIC_literal;
 }
-
-

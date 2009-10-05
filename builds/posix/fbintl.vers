@@ -21,17 +21,15 @@
 # 
 #   All Rights Reserved.
 #   Contributor(s): ______________________________________.
-#   Adriano dos Santos Fernandes
 # 
+#
+#  $Id: fbintl.vers,v 1.2.2.1 2004-09-17 20:34:21 skidder Exp $
 #
 
 
 {
 global:
-	LD_lookup_charset;
-	LD_lookup_texttype;
-	LD_setup_attributes;
-	LD_version;
+	LD_lookup;
 
 local:
 	*;

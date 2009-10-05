@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		lck_proto.h
- *	DESCRIPTION:	Prototype header file for lck.cpp
+ *	DESCRIPTION:	Prototype header file for lck.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,26 +25,61 @@
 #define JRD_LCK_PROTO_H
 
 #include "../jrd/lck.h"
-#include "../lock/lock_proto.h"
+#include "../jrd/thd.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/isc_i_proto.h"
 
-namespace Jrd {
-	enum lck_t;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void	LCK_assert(Jrd::thread_db*, Jrd::Lock*);
-bool	LCK_convert(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
-bool	LCK_convert_opt(Jrd::thread_db*, Jrd::Lock*, USHORT);
-void	LCK_downgrade(Jrd::thread_db*, Jrd::Lock*);
-void	LCK_fini(Jrd::thread_db*, Jrd::lck_owner_t);
-SLONG	LCK_get_owner_handle(Jrd::thread_db*, Jrd::lck_t);
-SLONG	LCK_get_owner_handle_by_type(Jrd::thread_db*, Jrd::lck_owner_t);
-void	LCK_init(Jrd::thread_db*, Jrd::lck_owner_t);
-bool	LCK_lock(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
-bool	LCK_lock_opt(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
-SLONG	LCK_query_data(Jrd::thread_db*, Jrd::Lock*, Jrd::lck_t, USHORT);
-SLONG	LCK_read_data(Jrd::thread_db*, Jrd::Lock*);
-void	LCK_release(Jrd::thread_db*, Jrd::Lock*);
-void	LCK_re_post(Jrd::thread_db*, Jrd::Lock*);
-void	LCK_write_data(Jrd::thread_db*, Jrd::Lock*, SLONG);
+extern void LCK_assert(TDBB, struct lck *);
+extern int LCK_convert(TDBB, struct lck *, USHORT, SSHORT);
+extern int LCK_convert_non_blocking(TDBB, struct lck *, USHORT, SSHORT);
+extern int LCK_convert_opt(TDBB, struct lck *, USHORT);
+extern int LCK_downgrade(TDBB, struct lck *);
+extern void LCK_fini(TDBB, enum lck_owner_t);
+extern SLONG LCK_get_owner_handle(TDBB, enum lck_t);
+extern void LCK_init(TDBB, enum lck_owner_t);
+extern int LCK_lock(TDBB, struct lck *, USHORT, SSHORT);
+extern int LCK_lock_non_blocking(TDBB, struct lck *, USHORT, SSHORT);
+extern int LCK_lock_opt(TDBB, struct lck *, USHORT, SSHORT);
+extern SLONG LCK_query_data(struct lck *, enum lck_t, USHORT);
+extern SLONG LCK_read_data(struct lck *);
+extern void LCK_release(TDBB, struct lck *);
+extern void LCK_re_post(struct lck *);
+extern void LCK_write_data(struct lck *, SLONG);
 
-#endif // JRD_LCK_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+// This class inhibits AST processing
+
+class AstInhibit
+{
+public:
+	AstInhibit()
+	{
+#ifdef MULTI_THREAD
+		AST_DISABLE;
+#else
+		SIGNAL_INHIBIT;
+#endif
+	}
+
+	~AstInhibit()
+	{
+#ifdef MULTI_THREAD
+		AST_ENABLE;
+#else
+		SIGNAL_ENABLE;
+#endif
+	}
+
+private:
+	// Forbid copy constructor
+	AstInhibit(const AstInhibit&);
+};
+
+#endif /* JRD_LCK_PROTO_H */

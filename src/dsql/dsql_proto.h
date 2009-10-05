@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		dsql_proto.h
- *	DESCRIPTION:	Prototype Header file for dsql.cpp
+ *	DESCRIPTION:	Prototype Header file for dsql.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -19,58 +19,58 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
-#ifndef DSQL_DSQL_PROTO_H
-#define DSQL_DSQL_PROTO_H
+#ifndef _DSQL_DSQL_PROTO_H_
+#define _DSQL_DSQL_PROTO_H_
 
-#include "../common/classes/fb_string.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace Jrd {
-	class Attachment;
-	class jrd_tra;
-	class dsql_req;
-}
-
-Jrd::dsql_req* DSQL_allocate_statement(Jrd::thread_db*, Jrd::Attachment*);
-void DSQL_execute(Jrd::thread_db*,  Jrd::jrd_tra**, Jrd::dsql_req*,
-				  USHORT, const UCHAR*,
-				  USHORT, USHORT, const UCHAR*,
-				  USHORT, UCHAR*,
-				  /*USHORT,*/ USHORT, UCHAR*);
-void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
-							USHORT, const TEXT*, USHORT,
-							USHORT, const UCHAR*,
-							/*USHORT,*/ USHORT, const UCHAR*,
-							USHORT, UCHAR*,
-							/*USHORT,*/ USHORT, UCHAR*);
+extern ISC_STATUS DLL_EXPORT dsql8_allocate_statement(	ISC_STATUS*,
+													FRBRD **,
+													struct dsql_req **);
+extern ISC_STATUS DLL_EXPORT dsql8_execute(ISC_STATUS *, FRBRD **, struct dsql_req**,
+									   USHORT, SCHAR *, USHORT, USHORT,
+									   SCHAR *, USHORT, SCHAR *, USHORT,
+									   USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT dsql8_execute_immediate(ISC_STATUS *, FRBRD **, FRBRD **,
+												 USHORT, TEXT *, USHORT,
+												 USHORT, SCHAR *, USHORT,
+												 USHORT, SCHAR *, USHORT,
+												 SCHAR *, USHORT, USHORT,
+												 SCHAR *);
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*,
-					  USHORT, const UCHAR*,
-					  /*USHORT,*/ USHORT, UCHAR*,
-					  USHORT, SLONG);
+extern ISC_STATUS DLL_EXPORT dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
+									 USHORT, USHORT, SCHAR *, USHORT, SLONG);
 #else
-ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*,
-					  USHORT, const UCHAR*,
-					  /*USHORT,*/ USHORT, UCHAR*);
-#endif // SCROLLABLE_CURSORS
-void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
-void DSQL_insert(Jrd::thread_db*, Jrd::dsql_req*,
-				 USHORT, const UCHAR*,
-				 /*USHORT,*/ USHORT, const UCHAR*);
-void DSQL_prepare(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::dsql_req**,
-				  USHORT, const TEXT*,
-				  USHORT, USHORT, const UCHAR*,
-				  USHORT, UCHAR*);
-void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*); //, USHORT);
-void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
-				   USHORT, const UCHAR*,
-				   ULONG, UCHAR*);
-ULONG DSQL_get_plan_info(Jrd::thread_db*,
-						  const Jrd::dsql_req*,
-						  SLONG,
-						  SCHAR**,
-						  const bool realloc = true);
+extern ISC_STATUS DLL_EXPORT dsql8_fetch(ISC_STATUS *, struct dsql_req**, USHORT, SCHAR *,
+									 USHORT, USHORT, SCHAR *);
+#endif /* SCROLLABLE_CURSORS */
+extern ISC_STATUS DLL_EXPORT dsql8_free_statement(ISC_STATUS *, struct dsql_req**,
+											  USHORT);
+extern ISC_STATUS DLL_EXPORT dsql8_insert(ISC_STATUS *, struct dsql_req**, USHORT,
+									  SCHAR *, USHORT, USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT dsql8_prepare(ISC_STATUS *, FRBRD **, struct dsql_req**,
+									   USHORT, TEXT *, USHORT, USHORT,
+									   const SCHAR *, USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT dsql8_set_cursor(ISC_STATUS *, struct dsql_req**, TEXT *,
+										  USHORT);
+extern ISC_STATUS DLL_EXPORT dsql8_sql_info(ISC_STATUS *, struct dsql_req**, USHORT,
+										const SCHAR*, USHORT, SCHAR *);
+extern void DSQL_pretty(struct dsql_nod *, int);
 
-#endif //  DSQL_DSQL_PROTO_H
+extern ISC_STATUS callback_execute_immediate(
+		ISC_STATUS *status,
+		class att* jrd_attachment_handle,
+		class jrd_tra* jrd_transaction_handle,
+		TEXT *sql_operator,
+		int len);
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /*  _DSQL_DSQL_PROTO_H_  */

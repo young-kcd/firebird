@@ -21,26 +21,19 @@
 
 /*
  * This file is included in parse.y and isql/isql.epp - at some point a
- * smarter way of doing it so only one instance is needed would be best.
+ * smarter way of doing it so one one instance is needed would be best.
  * MOD 29-Jun-2002
  */
 
-#include "../jrd/common.h"
-
-struct tok
-{
+typedef struct tok {
     USHORT tok_ident;
-    const char* tok_string;
+    SCHAR *tok_string;
     USHORT tok_version;
-    bool nonReserved;
-};
+} TOK;
 
-typedef tok TOK;
-typedef const TOK* Tokens;
-
-// These symbols are exported
 extern "C" {
-int API_ROUTINE KEYWORD_stringIsAToken(const char*);
-Tokens API_ROUTINE KEYWORD_getTokens();
-}
 
+extern bool KEYWORD_stringIsAToken(const char*);
+extern const TOK* KEYWORD_getTokens();
+
+}

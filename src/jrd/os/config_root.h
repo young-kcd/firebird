@@ -27,14 +27,7 @@
 #define CONFIG_ROOT_H
 
 #include "fb_types.h"
-#include "../common/classes/init.h"
-#include "../common/classes/fb_string.h"
-#include "../common/config/config.h"
-
-#include "../jrd/os/path_utils.h"
-#include "../common/utils_proto.h"
-
-static const char* CONFIG_FILE	= "firebird.conf";
+#include "fb_string.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -51,91 +44,24 @@ static const char* CONFIG_FILE	= "firebird.conf";
 		3. Otherwise, return parent directory of this path.
 
 	Pathname of the configuration file is platform-specific and defined by
-	getConfigFilePath() member function.
+	getConfigFile() member function.
 **/
 
-class ConfigRoot : public Firebird::PermanentStorage
+class ConfigRoot
 {
-	// config_file works with OS case-sensitivity
-	typedef Firebird::PathName string;
-
-private:
-	void GetRoot()
-	{
-		const Firebird::PathName* clRoot = Config::getCommandLineRootDirectory();
-		if (clRoot) {
-			root_dir = *clRoot;
-			addSlash();
-			return;
-		}
-#ifdef DEV_BUILD
-		if (getRootFromEnvironment("FIREBIRD_DEV")) {
-			return;
-		}
-#endif
-		if (getRootFromEnvironment("FIREBIRD"))	{
-			return;
-		}
-		osConfigRoot();
-	}
-
-	void GetInstallDir()
-	{
-		// we have no reliable ways to detect install directory in OS-independent way
-		osConfigInstallDir();
-	}
+	typedef Firebird::string string;
 
 public:
-	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
-		root_dir(getPool()), config_file(getPool()), install_dir(getPool())
-	{
-		GetInstallDir();
-		GetRoot();
-		config_file = root_dir + string(CONFIG_FILE);
-	}
-
+	ConfigRoot();
 	virtual ~ConfigRoot() {}
 
-	const char* getInstallDirectory()
-	{
-		return install_dir.c_str();
-	}
-
-	const char* getRootDirectory() const
-	{
-		return root_dir.c_str();
-	}
+	const char *getRootDirectory() const;
 
 protected:
-	const char *getConfigFilePath() const
-	{
-		return config_file.c_str();
-	}
-
+	const char *getConfigFile() const;
+	
 private:
-	string root_dir, config_file, install_dir;
-
-	void addSlash()
-	{
-		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
-		{
-			root_dir += PathUtils::dir_sep;
-		}
-	}
-
-	bool getRootFromEnvironment(const char* envName)
-	{
-		string envValue;
-		if (!fb_utils::readenv(envName, envValue))
-			return false;
-
-		root_dir = envValue;
-		addSlash();
-		return true;
-	}
-
-	void osConfigRoot();
-	void osConfigInstallDir();
+	string root_dir;	
 
 	// copy prohibition
 	ConfigRoot(const ConfigRoot&);

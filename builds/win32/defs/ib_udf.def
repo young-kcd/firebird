@@ -47,10 +47,8 @@ EXPORTS
 	IB_UDF_sin
 	IB_UDF_sinh
 	IB_UDF_sqrt
-	IB_UDF_srand
 	IB_UDF_substr
 	IB_UDF_strlen
 	IB_UDF_tan
 	IB_UDF_tanh
 	IB_UDF_substrlen
-	IB_UDF_frac

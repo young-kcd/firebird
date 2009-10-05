@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		jrd_proto.h
- *	DESCRIPTION:	Prototype header file for jrd.cpp
+ *	DESCRIPTION:	Prototype header file for jrd.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,146 +25,144 @@
 #ifndef JRD_JRD_PROTO_H
 #define JRD_JRD_PROTO_H
 
-#include "../common/classes/fb_string.h"
+#ifndef __cplusplus
 
-namespace Jrd {
-	class Database;
-	class Attachment;
-	class jrd_tra;
-	class blb;
-	struct bid;
-	class jrd_req;
-	class Service;
-	class thread_db;
-	struct teb;
-	class dsql_req;
-}
+/* included for the bid structure */
+#ifndef WIN_NT
+#include "../jrd/blb.h"
+#endif
 
+/* included for the svc structure */
+#ifndef WIN_NT
+#include "../jrd/svc.h"
+#endif
+
+#endif	/* __cplusplus */
+
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-ISC_STATUS jrd8_attach_database(ISC_STATUS*, const TEXT*, Jrd::Attachment**, SSHORT, const UCHAR*);
-ISC_STATUS jrd8_blob_info(ISC_STATUS*, Jrd::blb**, SSHORT, const SCHAR*, SSHORT, SCHAR*);
-ISC_STATUS jrd8_cancel_blob(ISC_STATUS*, Jrd::blb **);
-ISC_STATUS jrd8_cancel_events(ISC_STATUS*, Jrd::Attachment**, SLONG *);
 
-ISC_STATUS jrd8_cancel_operation(ISC_STATUS*, Jrd::Attachment**, USHORT);
-
-ISC_STATUS jrd8_close_blob(ISC_STATUS*, Jrd::blb **);
-ISC_STATUS jrd8_commit_transaction(ISC_STATUS*, Jrd::jrd_tra **);
-ISC_STATUS jrd8_commit_retaining(ISC_STATUS*, Jrd::jrd_tra **);
-ISC_STATUS jrd8_compile_request(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_req**, SSHORT, const SCHAR*);
-ISC_STATUS jrd8_create_blob2(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, Jrd::blb**,
-										   Jrd::bid*, USHORT, const UCHAR*);
-ISC_STATUS jrd8_create_database(ISC_STATUS*, const TEXT*, Jrd::Attachment**, USHORT, const UCHAR*);
-ISC_STATUS jrd8_database_info(ISC_STATUS*, Jrd::Attachment**, SSHORT,
-											const SCHAR*, SSHORT, SCHAR*);
-ISC_STATUS jrd8_ddl(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const SCHAR*);
-ISC_STATUS jrd8_detach_database(ISC_STATUS*, Jrd::Attachment**);
-ISC_STATUS jrd8_drop_database(ISC_STATUS*, Jrd::Attachment**);
-ISC_STATUS jrd8_get_segment(ISC_STATUS*, Jrd::blb**, USHORT *, USHORT, UCHAR *);
-ISC_STATUS jrd8_get_slice(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, ISC_QUAD*, USHORT,
-										const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*, SLONG*);
-ISC_STATUS jrd8_open_blob2(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, Jrd::blb**,
-										 Jrd::bid*, USHORT, const UCHAR*);
-ISC_STATUS jrd8_prepare_transaction(ISC_STATUS*, Jrd::jrd_tra **, USHORT, const UCHAR*);
-ISC_STATUS jrd8_put_segment(ISC_STATUS*, Jrd::blb**, USHORT, const UCHAR*);
-ISC_STATUS jrd8_put_slice(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, ISC_QUAD*, USHORT,
-										const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*);
-ISC_STATUS jrd8_que_events(ISC_STATUS*, Jrd::Attachment**, SLONG*, SSHORT, const UCHAR*,
-										 FPTR_EVENT_CALLBACK, void*);
-ISC_STATUS jrd8_receive(ISC_STATUS*, Jrd::jrd_req**, USHORT, USHORT, SCHAR *, SSHORT);
-ISC_STATUS jrd8_reconnect_transaction(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, SSHORT,
-													const UCHAR*);
-ISC_STATUS jrd8_release_request(ISC_STATUS*, Jrd::jrd_req**);
-ISC_STATUS jrd8_request_info(ISC_STATUS*, Jrd::jrd_req**, SSHORT, SSHORT, const SCHAR*, SSHORT, SCHAR*);
-ISC_STATUS jrd8_rollback_transaction(ISC_STATUS*, Jrd::jrd_tra **);
-ISC_STATUS jrd8_rollback_retaining(ISC_STATUS*, Jrd::jrd_tra **);
-ISC_STATUS jrd8_seek_blob(ISC_STATUS*, Jrd::blb **, SSHORT, SLONG, SLONG *);
-ISC_STATUS jrd8_send(ISC_STATUS *, Jrd::jrd_req**, USHORT, USHORT, SCHAR *, SSHORT);
-ISC_STATUS jrd8_service_attach(ISC_STATUS*, const TEXT*, Jrd::Service**, USHORT, const SCHAR*);
-ISC_STATUS jrd8_service_detach(ISC_STATUS*, Jrd::Service**);
-ISC_STATUS jrd8_service_query(ISC_STATUS*, Jrd::Service**, ULONG*,
-											USHORT, const SCHAR*,
-											USHORT, const SCHAR*,
-											USHORT, SCHAR*);
-ISC_STATUS jrd8_service_start(ISC_STATUS*, Jrd::Service**, ULONG*, USHORT, const SCHAR*);
-ISC_STATUS jrd8_start_and_send(ISC_STATUS*, Jrd::jrd_req**, Jrd::jrd_tra **, USHORT, USHORT,
+extern ISC_STATUS DLL_EXPORT jrd8_attach_database(ISC_STATUS *, SSHORT, TEXT *,
+											  struct att **, SSHORT, UCHAR *,
+											  TEXT *);
+extern ISC_STATUS DLL_EXPORT jrd8_blob_info(ISC_STATUS *, struct blb **, SSHORT,
+										SCHAR *, SSHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_cancel_blob(ISC_STATUS *, struct blb **);
+extern ISC_STATUS DLL_EXPORT jrd8_cancel_events(ISC_STATUS *, struct att **, SLONG *);
+#ifdef CANCEL_OPERATION
+extern ISC_STATUS DLL_EXPORT jrd8_cancel_operation(ISC_STATUS *, struct att **,
+											   USHORT);
+#endif
+extern ISC_STATUS DLL_EXPORT jrd8_close_blob(ISC_STATUS *, struct blb **);
+extern ISC_STATUS DLL_EXPORT jrd8_commit_transaction(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_commit_retaining(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_compile_request(ISC_STATUS *, struct att **,
+											  struct jrd_req **, SSHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_create_blob2(ISC_STATUS *, struct att **,
+										   struct jrd_tra **, struct blb **,
+										   struct bid *, USHORT, UCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_create_database(ISC_STATUS *, USHORT, TEXT *,
+											  struct att **, USHORT, UCHAR *,
+											  USHORT, TEXT *);
+extern ISC_STATUS DLL_EXPORT jrd8_database_info(ISC_STATUS *, struct att **, SSHORT,
+											SCHAR *, SSHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_ddl(ISC_STATUS *, struct att **, struct jrd_tra **,
+								  USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_detach_database(ISC_STATUS *, struct att **);
+extern ISC_STATUS DLL_EXPORT jrd8_drop_database(ISC_STATUS *, struct att **);
+extern ISC_STATUS DLL_EXPORT jrd8_get_segment(ISC_STATUS *, struct blb **, USHORT *,
+										  USHORT, UCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_get_slice(ISC_STATUS *, struct att **,
+										struct jrd_tra **, SLONG *, USHORT,
+										UCHAR *, USHORT, UCHAR *, SLONG,
+										UCHAR *, SLONG *);
+extern ISC_STATUS DLL_EXPORT jrd8_open_blob2(ISC_STATUS *, struct att **,
+										 struct jrd_tra **, struct blb **,
+										 struct bid *, USHORT, UCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_prepare_transaction(ISC_STATUS *, struct jrd_tra **,
+												  USHORT, UCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_put_segment(ISC_STATUS *, struct blb **, USHORT,
+										  UCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_put_slice(ISC_STATUS *, struct att **,
+										struct jrd_tra **, SLONG *, USHORT,
+										UCHAR *, USHORT, UCHAR *, SLONG,
+										UCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_que_events(ISC_STATUS *, struct att **, SLONG *,
+										 SSHORT, UCHAR *, FPTR_VOID, void *);
+extern ISC_STATUS DLL_EXPORT jrd8_receive(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
+									  SCHAR *, SSHORT);
+extern ISC_STATUS DLL_EXPORT jrd8_reconnect_transaction(ISC_STATUS *, struct att **,
+													struct jrd_tra **, SSHORT,
+													UCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_release_request(ISC_STATUS *, struct jrd_req **);
+extern ISC_STATUS DLL_EXPORT jrd8_request_info(ISC_STATUS *, struct jrd_req **, SSHORT,
+										   SSHORT, SCHAR *, SSHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_rollback_transaction(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_rollback_retaining(ISC_STATUS *, struct jrd_tra **);
+extern ISC_STATUS DLL_EXPORT jrd8_seek_blob(ISC_STATUS *, struct blb **, SSHORT,
+										SLONG, SLONG *);
+extern ISC_STATUS DLL_EXPORT jrd8_send(ISC_STATUS *, struct jrd_req **, USHORT, USHORT,
+								   SCHAR *, SSHORT);
+extern ISC_STATUS DLL_EXPORT jrd8_service_attach(ISC_STATUS *, USHORT, SCHAR *,
+											 struct svc **, USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_service_detach(ISC_STATUS *, struct svc **);
+extern ISC_STATUS DLL_EXPORT jrd8_service_query(ISC_STATUS *, struct svc **, ULONG *,
+											USHORT, SCHAR *, USHORT, SCHAR *,
+											USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_service_start(ISC_STATUS *, struct svc **, ULONG *,
+											USHORT, SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_start_and_send(ISC_STATUS *, struct jrd_req **,
+											 struct jrd_tra **, USHORT, USHORT,
 											 SCHAR *, SSHORT);
-ISC_STATUS jrd8_start_request(ISC_STATUS*, Jrd::jrd_req**, Jrd::jrd_tra **, SSHORT);
-ISC_STATUS jrd8_start_multiple(ISC_STATUS*, Jrd::jrd_tra **, USHORT, Jrd::teb *);
-ISC_STATUS jrd8_start_transaction(ISC_STATUS*, Jrd::jrd_tra **, SSHORT, ...);
-ISC_STATUS jrd8_transaction_info(ISC_STATUS*, Jrd::jrd_tra**, SSHORT, const SCHAR*, SSHORT, SCHAR*);
-ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const SCHAR*,
-											   USHORT, const SCHAR*, USHORT, SCHAR*);
-ISC_STATUS jrd8_unwind_request(ISC_STATUS*, Jrd::jrd_req**, SSHORT);
-int jrd8_shutdown_all(unsigned int);
-ISC_STATUS jrd8_allocate_statement(ISC_STATUS*, Jrd::Attachment**, Jrd::dsql_req**);
-ISC_STATUS jrd8_execute(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, const SCHAR*,
-						USHORT, USHORT, const SCHAR*, USHORT, SCHAR*, USHORT, USHORT, SCHAR*);
-ISC_STATUS jrd8_execute_immediate(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const TEXT*,
-								  USHORT, USHORT, const SCHAR*, USHORT, USHORT, const SCHAR*,
-								  USHORT, SCHAR*, USHORT, USHORT, SCHAR*);
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS jrd8_fetch(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, USHORT, SCHAR*,
-					  USHORT, SLONG);
-#else
-ISC_STATUS jrd8_fetch(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, USHORT, SCHAR*);
-#endif // SCROLLABLE_CURSORS
-ISC_STATUS jrd8_free_statement(ISC_STATUS*, Jrd::dsql_req**, USHORT);
-ISC_STATUS jrd8_insert(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, USHORT, const SCHAR*);
-ISC_STATUS jrd8_prepare(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, const TEXT*,
-						USHORT, USHORT, const SCHAR*, USHORT, SCHAR*);
-ISC_STATUS jrd8_set_cursor(ISC_STATUS*, Jrd::dsql_req**, const TEXT*, USHORT);
-ISC_STATUS jrd8_sql_info(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, SCHAR*);
-ISC_STATUS jrd8_ping_attachment(ISC_STATUS*, Jrd::Attachment**);
+extern ISC_STATUS DLL_EXPORT jrd8_start_request(ISC_STATUS *, struct jrd_req **,
+											struct jrd_tra **, SSHORT);
+extern ISC_STATUS DLL_EXPORT jrd8_start_multiple(ISC_STATUS *, struct jrd_tra **, USHORT,
+											 struct teb *);
+extern ISC_STATUS DLL_EXPORT jrd8_start_transaction(ISC_STATUS *, struct jrd_tra **,
+												SSHORT, ...);
+extern ISC_STATUS DLL_EXPORT jrd8_transaction_info(ISC_STATUS *, struct jrd_tra **,
+											   SSHORT, SCHAR *, SSHORT,
+											   SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_transact_request(ISC_STATUS *, struct att **,
+											   struct jrd_tra **, USHORT, SCHAR *,
+											   USHORT, SCHAR *, USHORT,
+											   SCHAR *);
+extern ISC_STATUS DLL_EXPORT jrd8_unwind_request(ISC_STATUS *, struct jrd_req **, SSHORT);
+extern void jrd_vtof(const char*, char*, SSHORT);
 
-} // extern "C"
+#ifdef SERVER_SHUTDOWN
+/* Defines for paramater 3 of JRD_num_attachments */
+#define JRD_info_drivemask	1
+#define JRD_info_dbnames	2
 
-void jrd_vtof(const char*, char*, SSHORT);
+extern TEXT *JRD_num_attachments(TEXT *, USHORT, USHORT, USHORT *, USHORT *);
+extern ULONG JRD_shutdown_all();
+#endif /* SERVER_SHUTDOWN */
 
-// Defines for parameter 3 of JRD_num_attachments
-enum JRD_info_tag
-{
-	JRD_info_none,
-	JRD_info_drivemask,
-	JRD_info_dbnames
-};
+extern void JRD_set_cache_default(ULONG *);
+extern void JRD_blocked(struct att *, struct btb **);
+extern void JRD_mutex_lock(struct mutx_t *);
+extern void JRD_mutex_unlock(struct mutx_t *);
+extern BOOLEAN JRD_reschedule(struct tdbb *, SLONG, BOOLEAN);
+extern void JRD_restore_context(void);
+extern void JRD_set_context(struct tdbb *);
+extern void JRD_unblock(struct btb **);
+extern void JRD_wlck_lock(struct mutx_t *);
+extern void JRD_wlck_unlock(struct mutx_t *);
 
-UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*, ULONG*);
-
-bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
+#ifdef SUPERSERVER
+extern void JRD_print_all_counters(TEXT *);
+extern USHORT JRD_getdir(TEXT *, USHORT);
+#endif
 
 #ifdef DEBUG_PROCS
-void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
+extern void JRD_print_procedure_info(TDBB, char *);
 #endif
 
-
-void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
-void JRD_ddl(Jrd::thread_db* tdbb, /*Jrd::Attachment* attachment,*/ Jrd::jrd_tra* transaction,
-	USHORT ddl_length, const UCHAR* ddl);
-void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, USHORT msg_length,
-	UCHAR* msg, SSHORT level
-#ifdef SCROLLABLE_CURSORS
-	, USHORT direction, ULONG offset
+#ifdef __cplusplus
+} /* extern "C" */
 #endif
-	);
-void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level, SSHORT item_length,
-	const UCHAR* items, SLONG buffer_length, UCHAR* buffer);
-void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction, SSHORT level);
-
-void JRD_commit_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
-void JRD_commit_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
-void JRD_rollback_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
-void JRD_rollback_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
-void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
-	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level);
-void JRD_start_multiple(Jrd::thread_db* tdbb, Jrd::jrd_tra** tra_handle, USHORT count, Jrd::teb* vector);
-void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
-void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level);
-void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
-	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
-	USHORT dbginfo_length, const UCHAR* dbginfo);
-bool JRD_verify_database_access(const Firebird::PathName&);
-void JRD_shutdown_attachments(const Jrd::Database* dbb);
 
 #endif /* JRD_JRD_PROTO_H */

@@ -25,10 +25,10 @@
  *
  */
 
-#ifndef JRD_ALIGN_H
-#define JRD_ALIGN_H
+#ifndef _JRD_ALIGN_H_
+#define _JRD_ALIGN_H_
 
-/*
+/* 
 Maximum alignments for corresponding data types are defined in dsc.h
 */
 
@@ -40,7 +40,7 @@ Maximum alignments for corresponding data types are defined in dsc.h
  *  value is greater than blr_blob_id, be sure to change the next define,
  *  and also add the required entries to all of the arrays below.
  */
-const unsigned char DTYPE_BLR_MAX	= blr_blob_id;
+#define DTYPE_BLR_MAX	blr_blob_id
 
 /*
  the blr types are defined in blr.h
@@ -50,11 +50,9 @@ No need to worry about blr_blob or ?blr_blob_id
 */
 
 #include "../jrd/dsc.h"
-#include "../jrd/RecordNumber.h"
 
 static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
-{
-	0, 0, 0, 0, 0, 0, 0,
+	{ 0, 0, 0, 0, 0, 0, 0,
 	dtype_short,				/* blr_short == 7 */
 	dtype_long,					/* blr_long == 8 */
 	dtype_quad,					/* blr_quad == 9 */
@@ -78,8 +76,7 @@ static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
 	0, 0, 0, 0
 };
 
-static const USHORT type_alignments[DTYPE_TYPE_MAX] =
-{
+static const USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -96,19 +93,17 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] =
 	sizeof(SQUAD),				/* dtype_quad */
 #endif
 	sizeof(float),				/* dtype_real */
-	FB_DOUBLE_ALIGN,			/* dtype_double */
-	FB_DOUBLE_ALIGN,			/* dtype_d_float */
+	DOUBLE_ALIGN,				/* dtype_double */
+	DOUBLE_ALIGN,				/* dtype_d_float */
 	sizeof(GDS_DATE),			/* dtype_sql_date */
 	sizeof(GDS_TIME),			/* dtype_sql_time */
 	sizeof(GDS_DATE),			/* dtype_timestamp */
 	sizeof(SLONG),				/* dtype_blob */
 	sizeof(SLONG),				/* dtype_array */
-	sizeof(SINT64),				/* dtype_int64 */
-	sizeof(ULONG)				/* dtype_dbkey */
+	sizeof(SINT64)				/* dtype_int64 */
 };
 
-static const USHORT type_lengths[DTYPE_TYPE_MAX] =
-{
+static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -119,45 +114,16 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] =
 	sizeof(SCHAR),				/* dtype_byte */
 	sizeof(SSHORT),				/* dtype_short */
 	sizeof(SLONG),				/* dtype_long */
-	sizeof(ISC_QUAD),			/* dtype_quad */
+	sizeof(GDS_QUAD),			/* dtype_quad */
 	sizeof(float),				/* dtype_real */
 	sizeof(double),				/* dtype_double */
 	sizeof(double),				/* dtype_d_float */
 	sizeof(GDS_DATE),			/* dtype_sql_date */
 	sizeof(GDS_TIME),			/* dtype_sql_time */
 	sizeof(GDS_TIMESTAMP),		/* dtype_timestamp */
-	sizeof(ISC_QUAD),			/* dtype_blob */
-	sizeof(ISC_QUAD),			/* dtype_array */
-	sizeof(SINT64),				/* dtype_int64 */
-	sizeof(RecordNumber::Packed) /*dtype_dbkey */
+	sizeof(GDS_QUAD),			/* dtype_blob */
+	sizeof(GDS_QUAD),			/* dtype_array */
+	sizeof(SINT64)				/* dtype_int64 */
 };
 
-
-// This table is only used by gpre's cme.cpp.
-// float, double are numbers from IEEE floating-point standard (IEEE 754)
-static const USHORT type_significant_bits[DTYPE_TYPE_MAX] =
-{
-	0,
-	0,							/* dtype_text */
-	0,							/* dtype_cstring */
-	0,							/* dtype_varying */
-	0,							/* unused */
-	0,							/* unused */
-	0,							/* dtype_packed */
-	sizeof(SCHAR) * 8,			/* dtype_byte */
-	sizeof(SSHORT) * 8,			/* dtype_short */
-	sizeof(SLONG) * 8,			/* dtype_long */
-	sizeof(ISC_QUAD) * 8,		/* dtype_quad */
-	23,							/* dtype_real,  23 sign. bits = 7 sign. digits */
-	52,							/* dtype_double,  52 sign. bits = 15 sign. digits */
-	52,							/* dtype_d_float,  52 sign. bits = 15 sign. digits */
-	sizeof(GDS_DATE) * 8,		/* dtype_sql_date */
-	sizeof(GDS_TIME) * 8,		/* dtype_sql_time */
-	sizeof(GDS_TIMESTAMP) * 8,	/* dtype_timestamp */
-	sizeof(ISC_QUAD) * 8,		/* dtype_blob */
-	sizeof(ISC_QUAD) * 8,		/* dtype_array */
-	sizeof(SINT64) * 8,			/* dtype_int64 */
-	0							// dbkey
-};
-
-#endif /* JRD_ALIGN_H */
+#endif /* _JRD_ALIGN_H_ */

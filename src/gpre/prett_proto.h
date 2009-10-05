@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		prett_proto.h
- *	DESCRIPTION:	Prototype header file for pretty.cpp
+ *	DESCRIPTION:	Prototype header file for pretty.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,12 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_PRETT_PROTO_H
-#define GPRE_PRETT_PROTO_H
+#ifndef _GPRE_PRETT_PROTO_H_
+#define _GPRE_PRETT_PROTO_H_
 
-int PRETTY_print_cdb(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
-int PRETTY_print_dyn(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
-int PRETTY_print_sdl(UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
+typedef int (*PRETTY_print_cb_pfn) ();
 
-#endif // GPRE_PRETT_PROTO_H
+extern int PRETTY_print_cdb(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
+extern int PRETTY_print_dyn(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
+#ifdef PYXIS
+extern int PRETTY_print_form_map(SCHAR *, PRETTY_print_cb_pfn, SCHAR *,
+								 SSHORT);
+#endif
+extern int PRETTY_print_mblr(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
+#ifdef PYXIS
+extern int PRETTY_print_menu(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
+#endif
+extern int PRETTY_print_sdl(SCHAR *, PRETTY_print_cb_pfn, SCHAR *, SSHORT);
 
+#endif /* _GPRE_PRETT_PROTO_H_ */

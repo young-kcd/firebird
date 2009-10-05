@@ -21,8 +21,12 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_PARSE_H
-#define DUDLEY_PARSE_H
+#ifndef _DUDLEY_PARSE_H_
+#define _DUDLEY_PARSE_H_
+
+#define MATCH(kw)		PARSE_match (kw)
+#define SYNTAX_NODE(type,count)	PARSE_make_node (type, count)
+#define KEYWORD(kw)		(DDL_token.tok_keyword == kw)
 
 /* Keywords */
 
@@ -44,16 +48,16 @@ enum kwwords {
 	KW_AVERAGE,
 	KW_BAR,
 	KW_BASED,
-//	KW_BASE_NAME,
+	KW_BASE_NAME,
 	KW_BEGIN,
 	KW_BETWEEN,
 	KW_BLOB,
 	KW_BLR,
 	KW_BY,
-//	KW_CACHE,
-//	KW_CASCADE,
+	KW_CACHE,
+	KW_CASCADE,
 	KW_CHAR,
-//	KW_CHECK_POINT_LEN,
+	KW_CHECK_POINT_LEN,
 	KW_COLON,
 	KW_COMMA,
 	KW_CONDITIONAL,
@@ -108,7 +112,7 @@ enum kwwords {
 	KW_GRANT,
 	KW_GT,
 	KW_GROUP,
-//	KW_GROUP_COMMIT_WAIT,
+	KW_GROUP_COMMIT_WAIT,
 	KW_IF,
 	KW_IN,
 	KW_INACTIVE,
@@ -122,8 +126,8 @@ enum kwwords {
 	KW_L_BRACE,
 	KW_L_BRCKET,
 	KW_LEFT_PAREN,
-//	KW_LOG_BUF_SIZE,
-//	KW_LOG_FILE,
+	KW_LOG_BUF_SIZE,
+	KW_LOG_FILE,
 	KW_LONG,
 	KW_LT,
 	KW_MANUAL,
@@ -141,7 +145,7 @@ enum kwwords {
 	KW_NO,
 	KW_NOT,
 	KW_NULL,
-//	KW_NUM_LOG_BUFS,
+	KW_NUM_LOG_BUFS,
 	KW_OF,
 	KW_OFFSET,
 	KW_ON,
@@ -149,7 +153,7 @@ enum kwwords {
 	KW_OR,
 	KW_OUTPUT_TYPE,
 	KW_OVER,
-//	KW_OVERFLOW,
+	KW_OVERFLOW,
 	KW_OVERWRITE,
 	KW_PAGES,
 	KW_PAGE,
@@ -174,8 +178,8 @@ enum kwwords {
 	KW_QUERY_HEADER,
 	KW_QUERY_NAME,
 	KW_QUIT,
-//	KW_RAW,
-//	KW_RAW_PARTITIONS,
+	KW_RAW,
+	KW_RAW_PARTITIONS,
 	KW_REDUCED,
 	KW_R_BRACE,
 	KW_R_BRCKET,
@@ -195,7 +199,7 @@ enum kwwords {
 	KW_SET_GENERATOR,
 	KW_SHADOW,
 	KW_SHORT,
-//	KW_SIZE,
+	KW_SIZE,
 	KW_SLASH,
 	KW_SORTED,
 	KW_STARTS,
@@ -237,12 +241,21 @@ enum tok_t {
 
 typedef struct tok {
 	enum tok_t tok_type;		/* type of token */
-	sym* tok_symbol;			/* hash block if recognized */
+	struct sym *tok_symbol;		/* hash block if recognized */
 	enum kwwords tok_keyword;	/* keyword number, if recognized */
 	SLONG tok_position;			/* byte number in input stream */
 	USHORT tok_length;
 	TEXT tok_string[MAXSYMLEN];
 } *TOK;
 
-#endif // DUDLEY_PARSE_H
+#ifdef PARSER_MAIN
+#define EXTERN
+#else
+#define EXTERN	extern
+#endif
 
+EXTERN struct tok DDL_token;
+
+#undef EXTERN
+
+#endif /* _DUDLEY_PARSE_H_ */

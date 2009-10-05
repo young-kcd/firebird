@@ -19,7 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001 
  * 26-Sept-2001 Paul Beach - External File Directory Config. Parameter
  * 17-Oct-2001  Mike Nordell - CPU affinity
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
@@ -28,162 +29,246 @@
  *
  */
 
-#ifndef JRD_ISC_H
-#define JRD_ISC_H
+#ifndef _JRD_ISC_H_
+#define _JRD_ISC_H_
 
-// Firebird platform-specific synchronization data structures
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#if defined(DARWIN)
-#define USE_SYS5SEMAPHORE
+
+/* Defines for semaphore and shared memory removal */
+
+#define ISC_SEM_REMOVE    1
+#define ISC_MEM_REMOVE    2
+
+/* InterBase platform-specific synchronization data structures */
+
+#ifdef VMS
+typedef struct itm {
+	SSHORT itm_length;
+	SSHORT itm_code;
+	SCHAR *itm_buffer;
+	SSHORT *itm_return_length;
+} ITM;
+
+typedef struct event {
+	SLONG event_pid;
+	SLONG event_count;
+} EVENT_T, *EVENT;
+
+typedef struct wait {
+	USHORT wait_count;
+	EVENT wait_events;
+	SLONG *wait_values;
+} WAIT;
+
+/* Lock status block */
+
+typedef struct lksb {
+	SSHORT lksb_status;
+	SSHORT lksb_reserved;
+	SLONG lksb_lock_id;
+	SLONG lksb_value[4];
+} LKSB;
+
+/* Poke block (for asynchronous poking) */
+
+typedef struct poke {
+	struct poke *poke_next;
+	LKSB poke_lksb;
+	SLONG poke_parent_id;
+	USHORT poke_value;
+	USHORT poke_use_count;
+} *POKE;
+
+#define SH_MEM_STRUCTURE_DEFINED
+typedef struct sh_mem {
+	int sh_mem_system_flag;
+	UCHAR *sh_mem_address;
+	SLONG sh_mem_length_mapped;
+	SLONG sh_mem_mutex_arg;
+	SLONG sh_mem_handle;
+	SLONG sh_mem_retadr[2];
+	SLONG sh_mem_channel;
+	TEXT sh_mem_filename[128];
+} SH_MEM_T, *SH_MEM;
 #endif
 
 
 #ifdef UNIX
+#define MTX_STRUCTURE_DEFINED
 
-#if defined(USE_POSIX_THREADS)
-
-#if defined(HAVE_PTHREAD_MUTEXATTR_SETROBUST_NP) && defined(HAVE_PTHREAD_MUTEX_CONSISTENT_NP)
-
-#define USE_ROBUST_MUTEX
-
-#if defined(LINUX) && (!defined(__USE_GNU))
-#define __USE_GNU 1	// required on this OS to have this stuff declared
-#endif // LINUX		// should be defined before include <pthread.h> - AP 2009
-
-#endif // ROBUST mutex
-
-#include <pthread.h>
-
-#ifdef USE_SYS5SEMAPHORE
-
-struct Sys5Semaphore
-{
-	int semSet;				// index in shared memory table
-	unsigned short semNum;	// number in semset
-	int getId();
-};
-
-struct mtx : public Sys5Semaphore
-{
-};
-
-struct event_t : public Sys5Semaphore
-{
-	SLONG event_count;
-};
-
-#else
-
-struct mtx
-{
-	pthread_mutex_t mtx_mutex[1];
-};
-
-struct event_t
-{
-	SLONG event_count;
-	int pid;
-	pthread_mutex_t event_mutex[1];
-	pthread_cond_t event_cond[1];
-};
-
-#endif // USE_SYS5SEMAPHORE
-
-#else
-#error: Do not know how to declare shared mutex and event on this system.
+#ifdef __cplusplus
+} /* extern "C" */
 #endif
 
-#define SH_MEM_STRUCTURE_DEFINED
+#include "../jrd/thd.h"
 
-struct sh_mem
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef ANY_THREADING
+typedef struct mtx {
+	THD_MUTEX_STRUCT mtx_mutex[1];
+} MTX_T, *MTX;
+#else
+typedef struct mtx {
+	SLONG mtx_semid;
+	SSHORT mtx_semnum;
+	SCHAR mtx_use_count;
+	SCHAR mtx_wait;
+} MTX_T, *MTX;
+#endif /* ANY_THREADING */
+
+
+#ifdef ANY_THREADING
+typedef struct event
 {
-	UCHAR *sh_mem_address;
-	ULONG sh_mem_length_mapped;
-	SLONG sh_mem_handle;
-};
+	SLONG event_semid;
+	SLONG event_count;
+	THD_MUTEX_STRUCT event_mutex[1];
+	THD_COND_STRUCT event_semnum[1];
+} EVENT_T, *EVENT;
+#else
+typedef struct event
+{
+	SLONG event_semid;
+	SLONG event_count;
+	SSHORT event_semnum;
+} EVENT_T, *EVENT;
+#endif /* ANY_THREADING */
 
-#endif // UNIX
+
+#define SH_MEM_STRUCTURE_DEFINED
+typedef struct sh_mem
+{
+	int sh_mem_semaphores;
+	UCHAR *sh_mem_address;
+	SLONG sh_mem_length_mapped;
+	SLONG sh_mem_mutex_arg;
+	SLONG sh_mem_handle;
+} SH_MEM_T, *SH_MEM;
+#endif /* UNIX */
 
 
 #ifdef WIN_NT
-#include <windows.h>
-
-struct FAST_MUTEX_SHARED_SECTION
+#define MTX_STRUCTURE_DEFINED
+typedef struct mtx
 {
-	SLONG   fInitialized;
-	SLONG   lSpinLock;
-	SLONG   lThreadsWaiting;
-	SLONG   lAvailable;
-#ifdef _DEBUG
-	DWORD  dwThreadId;
-#endif
-};
+	void*	mtx_handle;
+} MTX_T, *MTX;
 
-struct FAST_MUTEX
+typedef struct event
 {
-	HANDLE hEvent;
-	HANDLE hFileMap;
-	SLONG  lSpinCount;
-	volatile FAST_MUTEX_SHARED_SECTION* lpSharedInfo;
-};
-
-struct mtx
-{
-	FAST_MUTEX mtx_fast;
-};
-
-struct event_t
-{
-	SLONG		event_pid;
-	SLONG		event_id;
-	SLONG		event_count;
-	void*		event_handle;
-};
+	SLONG			event_pid;
+	SLONG			event_count;
+	SLONG			event_type;
+	void*			event_handle;
+	struct event*	event_shared;
+} EVENT_T, *EVENT;
 
 #define SH_MEM_STRUCTURE_DEFINED
-struct sh_mem
+typedef struct sh_mem
 {
 	UCHAR*	sh_mem_address;
-	ULONG	sh_mem_length_mapped;
+	SLONG	sh_mem_length_mapped;
+	SLONG	sh_mem_mutex_arg;
 	void*	sh_mem_handle;
 	void*	sh_mem_object;
 	void*	sh_mem_interest;
 	void*	sh_mem_hdr_object;
-	ULONG*	sh_mem_hdr_address;
-	TEXT	sh_mem_name[MAXPATHLEN];
-};
+	SLONG*	sh_mem_hdr_address;
+	TEXT	sh_mem_name[256];
+} SH_MEM_T, *SH_MEM;
 
-#endif // WIN_NT
+#define THREAD_HANDLE_DEFINED
+typedef void *THD_T;
+#endif
+
+
+#ifndef MTX_STRUCTURE_DEFINED
+#define MTX_STRUCTURE_DEFINED
+typedef struct mtx
+{
+	SSHORT	mtx_event_count[3];
+	SCHAR	mtx_use_count;
+	SCHAR	mtx_wait;
+} MTX_T, *MTX;
+#endif
+#undef MTX_STRUCTURE_DEFINED
 
 #ifndef SH_MEM_STRUCTURE_DEFINED
-
 #define SH_MEM_STRUCTURE_DEFINED
-struct sh_mem
+typedef struct sh_mem
 {
 	UCHAR*	sh_mem_address;
-	ULONG	sh_mem_length_mapped;
+	SLONG	sh_mem_length_mapped;
+	SLONG	sh_mem_mutex_arg;
 	SLONG	sh_mem_handle;
-};
-
+} SH_MEM_T, *SH_MEM;
 #endif
 #undef SH_MEM_STRUCTURE_DEFINED
 
+#ifndef THREAD_HANDLE_DEFINED
+#define THREAD_HANDLE_DEFINED
+typedef ULONG THD_T;
+#endif
+#undef THREAD_HANDLE_DEFINED
 
-// Interprocess communication configuration structure
-// This was used to read to and write from the Config dialog when the server
-// or the guardian is showing an icon in the tray.
 
-/*
-struct ipccfg
+/* Interprocess communication configuration structure */
+
+typedef struct ipccfg
 {
 	const char*	ipccfg_keyword;
 	SCHAR		ipccfg_key;
 	SLONG*		ipccfg_variable;
-	SSHORT		ipccfg_parent_offset;	// Relative offset of parent keyword
-	USHORT		ipccfg_found;		// TRUE when keyword has been set
+	SSHORT		ipccfg_parent_offset;	/* Relative offset of parent keyword */
+	USHORT		ipccfg_found;		/* TRUE when keyword has been set */
+} *IPCCFG;
+
+/* AST actions taken by SCH_ast() */
+
+enum ast_t
+{
+	AST_alloc,
+	AST_init,
+	AST_fini,
+	AST_check,
+	AST_disable,
+	AST_enable,
+	AST_enter,
+	AST_exit
 };
 
-typedef ipccfg *IPCCFG;
-*/
+/* AST thread scheduling macros */
 
-#endif // JRD_ISC_H
+#ifdef AST_THREAD
+#define AST_ALLOC	SCH_ast (AST_alloc)
+#define AST_INIT	SCH_ast (AST_init)
+#define AST_FINI	SCH_ast (AST_fini)
+#define AST_CHECK	SCH_ast (AST_check)
+#define AST_DISABLE	SCH_ast (AST_disable)
+#define AST_ENABLE	SCH_ast (AST_enable)
+#define AST_ENTER	SCH_ast (AST_enter)
+#define AST_EXIT	SCH_ast (AST_exit)
+#else
+#define AST_ALLOC
+#define AST_INIT
+#define AST_FINI
+#define AST_CHECK
+#define AST_DISABLE
+#define AST_ENABLE
+#define AST_ENTER
+#define AST_EXIT
+#endif
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_ISC_H_ */

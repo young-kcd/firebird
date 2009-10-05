@@ -1,209 +1,96 @@
 ::
-:: This bat file doesn't use cd, all the paths are full paths.
-:: with this convention this bat file is position independent
-:: and it will be easier to move the place of somefiles.
+:: This bat file doesn't use current working directory.  
+:: All the paths are full paths. With this convention 
+:: this bat file is position independent and it will be 
+:: easier to move the place of some files.
 ::
 
 @echo off
-set ERRLEV=0
 
 :CHECK_ENV
 @call setenvvar.bat
 @if errorlevel 1 (goto :END)
 
-@call set_build_target.bat %*
-
+:: verify that prepare was run before
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb ((goto :HELP ) & ( goto :END))
 
 ::===========
 :MAIN
 @echo.
 @echo Copy autoconfig.h
-@del %FB_ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
-@copy %FB_ROOT_PATH%\src\include\gen\autoconfig_msvc.h %FB_ROOT_PATH%\src\include\gen\autoconfig.h > nul
-@echo Creating directories
-@rmdir /s /q %FB_GEN_DIR% 2>nul
-:: Remove previously generated output, and recreate the directory hierarchy. Note the exceptions to the rule!
-for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples ) do (
-  if NOT "%%v"=="journal" (@mkdir %FB_GEN_DIR%\%%v )
-)
-
-@rmdir /s /q %FB_GEN_DIR%\utilities 2>nul
-@mkdir %FB_GEN_DIR%\utilities 2>nul
-@mkdir %FB_GEN_DIR%\utilities\gstat 2>nul
-@mkdir %FB_GEN_DIR%\utilities\gsec 2>nul
-
-::=======
-call :btyacc
-if "%ERRLEV%"=="1" goto :END
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\btyacc.exe %FB_GEN_DIR%\ > nul
-
-@echo Generating DSQL parser...
-@call parse.bat
-if "%ERRLEV%"=="1" goto :END
-
-::=======
-@echo.
-@echo Building BLR Table
-@call blrtable.bat
-
-::=======
-call :gpre_boot
-if "%ERRLEV%"=="1" goto :END
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gpre_boot.exe %FB_GEN_DIR% > nul
-
-::=======
-@echo Preprocessing the source files needed to build gbak_embed, gpre_embed and isql_embed...
-@call preprocess.bat BOOT
-::=======
-call :gbak_embed
-if "%ERRLEV%"=="1" goto :END
-
-call :gpre_embed
-if "%ERRLEV%"=="1" goto :END
-
-call :isql_embed
-if "%ERRLEV%"=="1" goto :END
-
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gbak_embed.exe %FB_GEN_DIR% > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gpre_embed.exe %FB_GEN_DIR% > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\isql_embed.exe %FB_GEN_DIR% > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\fbembed.dll %FB_GEN_DIR% > nul
-
-for %%v in ( icuuc30 icudt30 icuin30 ) do (
-@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_GEN_DIR% >nul 2>&1
+@del %ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
+@copy %ROOT_PATH%\src\include\gen\autoconfig_msvc.h %ROOT_PATH%\src\include\gen\autoconfig.h > nul
+@echo Creating directories under %ROOT_PATH%\gen
+for %%a in ( alice burp dsql dudley gpre isql jrd msgs qli utilities v5_examples) do (
+  rmdir /s /q %ROOT_PATH%\gen\%%a 2>nul
+  mkdir %ROOT_PATH%\gen\%%a 2>nul
 )
 
 ::=======
-@call :databases
+@call :gpre_boot || ((call :ERROR calling gpre_boot subroutine) & (goto :EOF))
 ::=======
 @echo Preprocessing the entire source tree...
-@call preprocess.bat
+@call preprocess.bat BOOT || ((call :ERROR calling preprocess.bat with BOOT param ) & ( goto :EOF))
+::=======
+@call :gpre_static || ((call :ERROR calling gpre_static subroutine ) & ( goto :EOF))
+::=======
+@echo Preprocessing the entire source tree...
+@call preprocess.bat || ((call :ERROR calling preprocess.bat ) & ( goto :EOF))
 ::=======
 @call :msgs
-if "%ERRLEV%"=="1" goto :END
-@call :codes
-if "%ERRLEV%"=="1" goto :END
 ::=======
-@call create_msgs.bat msg
+@echo Building message file and codes header...
+@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D localhost:%DB_PATH%/gen/dbs/msg.fdb
+@%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen
 ::=======
+@echo Building BLR Table
+@call blrtable.bat || ((call :ERROR calling blrtable.bat with BOOT param ) & ( goto :EOF))
 @call :NEXT_STEP
-@goto :END
+@goto END:
 
-
-::===================
-:: BUILD btyacc
-:btyacc
-@echo.
-@echo Building btyacc (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot btyacc_%FB_TARGET_PLATFORM%.log btyacc
-if errorlevel 1 call :boot2 btyacc
-goto :EOF
 
 ::===================
 :: BUILD gpre_boot
 :gpre_boot
 @echo.
-@echo Building gpre_boot (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gpre_boot_%FB_TARGET_PLATFORM%.log gpre_boot
-if errorlevel 1 goto :gpre_boot2
+@echo Building gpre_boot...
+if "%VS_VER%"=="msvc6" (
+echo Root_path is %ROOT_PATH%
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_boot - Win32 Release"  /REBUILD /OUT make_boot1_gpre_boot.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_boot /rebuild release /OUT make_boot1_gpre_boot.log
+)
+@copy %ROOT_PATH%\temp\release\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 goto :EOF
 
 ::===================
-:: Error gpre_boot
-:gpre_boot2
-echo.
-echo Error building gpre_boot, see gpre_boot_%FB_TARGET_PLATFORM%.log
-echo.
-set ERRLEV=1
-goto :EOF
-
-
-::===================
-:: BUILD gbak_embed
-:gbak_embed
+:: BUILD gpre_static
+:gpre_static
 @echo.
-@echo Building gbak_embed (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gbak_embed_%FB_TARGET_PLATFORM%.log gbak_embed
-if errorlevel 1 call :boot2 gbak_embed
+@echo Building gpre_static...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "gpre_static - Win32 Release"  /REBUILD /OUT make_boot2_gpre_static.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project gpre_static /rebuild release /OUT make_boot2_gpre_static.log
+)
+@copy %ROOT_PATH%\temp\release\firebird\bin\gpre_static.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 
-::===================
-:: BUILD gpre_embed
-:gpre_embed
-@echo.
-@echo Building gpre_embed (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gpre_embed_%FB_TARGET_PLATFORM%.log gpre_embed
-if errorlevel 1 call :boot2 gpre_embed
-@goto :EOF
 
 ::===================
-:: BUILD isql_embed
-:isql_embed
-@echo.
-@echo Building isql_embed (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot isql_embed_%FB_TARGET_PLATFORM%.log isql_embed
-if errorlevel 1 call :boot2 isql_embed
-@goto :EOF
-
-::===================
-:: ERROR boot
-:boot2
-echo.
-echo Error building %1, see %1_%FB_TARGET_PLATFORM%.log
-echo.
-set ERRLEV=1
-goto :EOF
-
-
-::===================
-:: BUILD messages
+:: BUILD messages and codes
 :msgs
 @echo.
-@echo Building build_msg (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot build_msg_%FB_TARGET_PLATFORM%.log build_msg
-if errorlevel 1 goto :msgs2
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\build_msg\build_msg.exe   %FB_GEN_DIR%\ > nul
+@echo Building build_msg and codes...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.dsw /MAKE "build_msg - Win32 Release" "codes - Win32 Release"  /REBUILD /OUT make_boot3_msg_codes.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project build_msg /rebuild release /OUT make_boot3_build_msg.log
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot.sln /project codes  /rebuild release /OUT make_boot4_codes.log
+)
+@copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
+@copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
-:msgs2
-echo.
-echo Error building build_msg, see build_msg_%FB_TARGET_PLATFORM%.log
-echo.
-set ERRLEV=1
-goto :EOF
-
-::===================
-:: BUILD codes
-:codes
-@echo.
-@echo Building codes (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot codes_%FB_TARGET_PLATFORM%.log codes
-if errorlevel 1 goto :codes2
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\codes\codes.exe   %FB_GEN_DIR%\ > nul
-@goto :EOF
-:codes2
-echo.
-echo Error building codes, see codes_%FB_TARGET_PLATFORM%.log
-echo.
-set ERRLEV=1
-goto :EOF
-
-::==============
-:databases
-@rmdir /s /q %FB_GEN_DIR%\dbs 2>nul
-@mkdir %FB_GEN_DIR%\dbs 2>nul
-
-@echo create database '%FB_GEN_DB_DIR%\dbs\security2.fdb'; | "%FB_GEN_DIR%\isql_embed" -q
-@"%FB_GEN_DIR%\isql_embed" -q %FB_GEN_DB_DIR%/dbs/security2.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
-
-@%FB_GEN_DIR%\gbak_embed -r %FB_ROOT_PATH%\builds\misc\metadata.gbak %FB_GEN_DB_DIR%/dbs/metadata.fdb
-
-@call create_msgs.bat db
-
-@%FB_GEN_DIR%\gbak_embed -r %FB_ROOT_PATH%\builds\misc\help.gbak %FB_GEN_DB_DIR%/dbs/help.fdb
-@copy %FB_GEN_DIR%\dbs\metadata.fdb %FB_GEN_DIR%\dbs\yachts.lnk > nul
-
-@goto :EOF
-
 
 ::==============
 :NEXT_STEP
@@ -212,5 +99,19 @@ goto :EOF
 @echo.
 @goto :EOF
 
-:END
+::==============
+:HELP
+@echo.
+@echo    You must run prepare.bat before running this script
+@echo.
+@goto :EOF
 
+
+:ERROR
+@echo.
+@echo Oops - something went wrong.
+@echo There was an error %*
+@echo.
+goto :EOF
+
+:END

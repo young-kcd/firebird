@@ -21,11 +21,11 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_PAT_H
-#define GPRE_PAT_H
+#ifndef _GPRE_PAT_H_
+#define _GPRE_PAT_H_
 
-/*
-Substitution codes:
+/* 
+Substitution codes: 
 
     RH	Request handle
     RL	Request level
@@ -67,36 +67,34 @@ Substitution codes:
 
 */
 
-struct pat
-{
-	const gpre_dbb* pat_database;
-	const gpre_req* pat_request;
-	//gpre_tra* pat_transaction; CVC: unused
-	const blb* pat_blob;
-	const gpre_port* pat_port;
-	const gpre_port* pat_port2;
-	const TEXT* pat_string1;
-	const TEXT* pat_string2;
-	const TEXT* pat_string3;
-	const TEXT* pat_string4;
-	const TEXT* pat_string5;
-	const TEXT* pat_string6;
-	const TEXT* pat_string7;
+struct pat {
+	DBB pat_database;
+	GPRE_REQ pat_request;
+	GPRE_TRA pat_transaction;
+	BLB pat_blob;
+	POR pat_port;
+	POR pat_port2;
+	TEXT *pat_string1;
+	TEXT *pat_string2;
+	TEXT *pat_string3;
+	TEXT *pat_string4;
+	TEXT *pat_string5;
+	TEXT *pat_string6;
+	TEXT *pat_string7;
 	USHORT pat_ident1;
 	USHORT pat_ident2;
-	const TEXT* pat_vector1;
-	const TEXT* pat_vector2;
+	TEXT *pat_vector1;
+	TEXT *pat_vector2;
 	int pat_value1;
 	int pat_value2;
 	int pat_value3;
 	int pat_value4;
 	SLONG pat_long1;
 	SLONG pat_long2;
-	bool pat_condition;
-	const ref* pat_reference;
+	BOOLEAN pat_condition;
+	REF pat_reference;
 };
 
 typedef pat PAT;
 
-#endif // GPRE_PAT_H
-
+#endif /* _GPRE_PAT_H_ */

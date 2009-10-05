@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		lex_proto.h
- *	DESCRIPTION:	Prototype header file for lex.cpp
+ *	DESCRIPTION:	Prototype header file for lex.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,26 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_LEX_PROTO_H
-#define QLI_LEX_PROTO_H
+#ifndef _QLI_LEX_PROTO_H_
+#define _QLI_LEX_PROTO_H_
 
-bool	LEX_active_procedure ();
-void	LEX_edit (SLONG, SLONG);
-qli_tok*	LEX_edit_string();
-qli_tok*	LEX_filename();
-void	LEX_fini ();
-void	LEX_flush ();
-bool	LEX_get_line (const TEXT*, TEXT*, int);
-void	LEX_init ();
-void	LEX_mark_statement ();
-void	LEX_pop_line ();
-void	LEX_procedure(qli_dbb*, FB_API_HANDLE);
-bool	LEX_push_file (const TEXT*, const bool);
-bool	LEX_push_string (const TEXT* const);
-void	LEX_put_procedure (FB_API_HANDLE, SLONG, SLONG);
-void	LEX_real ();
-qli_lls*	LEX_statement_list();
-qli_tok*	LEX_token();
+extern int		LEX_active_procedure (void);
+extern void		LEX_edit (SLONG, SLONG);
+extern struct tok	*LEX_edit_string (void);
+extern struct tok	*LEX_filename (void);
+extern void		LEX_fini (void);
+extern void		LEX_flush (void);
+extern int		LEX_get_line (TEXT *, TEXT *, int);
+extern void		LEX_init (void);
+extern void		LEX_mark_statement (void);
+extern void		LEX_pop_line (void);
+extern void		LEX_procedure (struct dbb *, FRBRD *);
+extern int		LEX_push_file (TEXT *, int);
+extern int		LEX_push_string (TEXT *);
+extern void		LEX_put_procedure (FRBRD *, SLONG, SLONG);
+extern void		LEX_real (void);
+extern struct lls	*LEX_statement_list (void);
+extern struct tok	*LEX_token (void);
 
-#endif // QLI_LEX_PROTO_H
-
+#endif /* _QLI_LEX_PROTO_H_ */

@@ -13,47 +13,61 @@
 # Copyright (C) Inprise Corporation.
 #
 # All Rights Reserved.
-# Contributor(s): Konstantin Kuznetsov
-#			Neil McCalden
-#			Paul Beach
-#			Nickolay Samofatov
-# This file can be used to build Firebird on Solaris 10 using gcc
+# Contributor(s): __Konstantin Kuznetsov___________________________________.
+# This file can be used to build FB on Solaris 2.6 x 86 with gcc 3.3.3 and bash
+#
+# Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
+#  
+# $Id: prefix.solx86gcc,v 1.1.2.7 2004-10-07 21:34:24 skidder Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
+# 2 Oct 2002, Nickolay Samofatov - Major Cleanup
+
+
+#FirebirdInstallPrefix = @prefix@
+
+LD=@CXX@
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
-COMM_SOLX_FLAGS:=-DSOLARIS -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer -fmessage-length=0 -MMD -fPIC
+COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS26 -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer  -fmessage-length=0 -MMD  -fPIC
+
+#SFIO= /export/home/interbase/SfIO
+#SfIO is a pretty portable stdIO 
+#from http://www.research.att.com/sw/tools/sfio/
+
+#SFIO_DIR='/export/home/interbase/SfIO'
+#SFIO_FLAGS='-DSFIO -I/export/home/interbase/SfIO/include'
+#SFIO_LDFLAGS='-L/export/home/interbase/SfIO/lib'
 
 SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
+#STLPort=/export/home/kostik/STL/STLport-4.5.3/stlport	
+
+
 ifdef SFIO
-COMM_SOLX_FLAGS+=$(SFIO_FLAGS) 
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  $(SFIO_FLAGS) $(SFIO_LDFLAGS)
 endif
 
-PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort)
+
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2  -mcpu=pentium 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
-ifdef SFIO
-LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
-STATICLINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
-SO_LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
-endif
 
 OS_ServerFiles=inet_server.cpp
 
-
-LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
+#still ugly hack - becouse can not move it to configure.in
+GPRECOMMON_Files= ../jrd/thd.cpp ../jrd/isc_sync.cpp
+GPRECommon_Sources= $(GPRECOMMON_Files)
 Server_main_dummy = os/sun/server_main_dummy.cpp
-
-LIB_LINK_OPTIONS= -G 
-LIB_PLATFORM_RPATH= -R $(1)
-LIB_LINK_SONAME= -h $(1)
+LIB_LINK_OPTIONS:= -G 
+LIB_LINK_RPATH:=-R
+LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
 
-EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
-CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr fbtracemgr
+LINK_OPTS:= $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib  $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin fb_lock_print
 
-Physical_IO_Module=os/posix/unix.cpp
-
-UNDEF_PLATFORM = -Wl,-z,defs
+Physical_IO_Module= unix.cpp

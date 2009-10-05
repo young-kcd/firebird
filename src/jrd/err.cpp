@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		err.cpp
+ *	MODULE:		err.c
  *	DESCRIPTION:	Bug check routine
  *
  * The contents of this file are subject to the Interbase Public
@@ -27,39 +27,48 @@
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
 #include "../jrd/common.h"
-#include "gen/iberror.h"
-#include <errno.h>
+#include <stdarg.h>
+#include "../jrd/ibsetjmp.h"
+#include "gen/codes.h"
+#include "../jrd/iberr.h"
+
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 #include "../jrd/jrd.h"
-#include "../jrd/os/pio.h"
+#include "../jrd/pio.h"
 #include "../jrd/val.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "../jrd/req.h"
-#include "../jrd/rse.h"
 #include "../jrd/tra.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/met_proto.h"
+#endif
+#include "../jrd/thd_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../common/config/config.h"
-#include "../common/utils_proto.h"
 
-using namespace Jrd;
-using namespace Firebird;
-
-//#define JRD_FAILURE_SPACE	2048
-//#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
+#define JRD_FAILURE_SPACE	2048
+#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
-static void internal_error(ISC_STATUS status, int number, const TEXT* file = NULL, int line = 0);
-static void internal_post(const ISC_STATUS* status_vector);
+extern "C" {
 
 
-void ERR_bugcheck(int number, const TEXT* file, int line)
+static TEXT* jrd_failures = NULL;
+static TEXT* jrd_failures_ptr = NULL;
+
+static void cleanup(void *);
+static void internal_error(ISC_STATUS, int);
+
+
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_bugcheck(int number)
 {
 /**************************************
  *
@@ -71,16 +80,20 @@ void ERR_bugcheck(int number, const TEXT* file, int line)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+
+	dbb = GET_DBB;
 	dbb->dbb_flags |= DBB_bugcheck;
 
 	CCH_shutdown_database(dbb);
 
-	internal_error(isc_bug_check, number, file, line);
+	internal_error(gds_bug_check, number);
 }
+#endif
 
 
-void ERR_bugcheck_msg(const TEXT* msg)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_bugcheck_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -92,17 +105,22 @@ void ERR_bugcheck_msg(const TEXT* msg)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	DBB dbb;
+
+	dbb = GET_DBB;
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;
+
 	CCH_shutdown_database(dbb);
 
-	ERR_post(Arg::Gds(isc_bug_check) << Arg::Str(msg));
+	ERR_post(gds_bug_check, gds_arg_string, ERR_cstring(msg), 0);
 }
+#endif
 
 
-void ERR_corrupt(int number)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_corrupt(int number)
 {
 /**************************************
  *
@@ -115,11 +133,37 @@ void ERR_corrupt(int number)
  *
  **************************************/
 
-	internal_error(isc_db_corrupt, number);
+	internal_error(gds_db_corrupt, number);
+}
+#endif
+
+
+const TEXT* DLL_EXPORT ERR_cstring(const TEXT* in_string)
+{
+/**************************************
+ *
+ *	E R R _ c s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy a stack local string into an area that is
+ *	guaranteed to exist for a reasonable length of time.
+ *	Only strings that are to be placed in status vectors
+ *	should use this routine.
+ *	A circular buffer is used to hold these strings.  It
+ *	is independent of the JRD allocator mechanism.
+ *
+ **************************************/
+
+	return ERR_string(in_string, strlen(in_string));
 }
 
 
-void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_number, const TEXT* idx_name)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_duplicate_error(IDX_E	code,
+									JRD_REL		relation,
+									USHORT index_number)
 {
 /**************************************
  *
@@ -131,66 +175,55 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
  *	Duplicate error during index update.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	TEXT  index[32];
+	TEXT  constraint[32];
+	const TEXT* index_name;
+	const TEXT* constraint_name;
 
-	MetaName index, constraint;
-	if (!idx_name)
-		MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
-	else
-		index = idx_name;
+	TDBB tdbb = GET_THREAD_DATA;
 
-	bool haveConstraint = true;
-	if (index.hasData())
-	{
-		MET_lookup_cnstrt_for_index(tdbb, constraint, index);
-		if (constraint.isEmpty())
-		{
-			haveConstraint = false;
-			constraint = "***unknown***";
-		}
+	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
+	if (index[0]) {
+		index_name = ERR_cstring(index);
+		MET_lookup_cnstrt_for_index(tdbb, constraint, index_name);
+		if (constraint[0])
+			constraint_name = ERR_cstring(constraint);
 	}
-	else
-	{
-		haveConstraint = false;
-		index = constraint = "***unknown***";
+	else {
+		index_name = "***unknown***";
+		constraint_name = "***unknown***";
 	}
 
-	switch (code)
-	{
+	switch (code) {
 	case idx_e_keytoobig:
-		ERR_post(Arg::Gds(isc_imp_exc) <<
-				 Arg::Gds(isc_keytoobig) << Arg::Str(index));
+		ERR_post(gds_imp_exc, gds_arg_gds, gds_keytoobig,
+				 gds_arg_string, ERR_cstring(index_name), 0);
 		break;
 
 	case idx_e_conversion:
 		ERR_punt();
 		break;
 
-	case idx_e_foreign_target_doesnt_exist:
-		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) <<
-											  Arg::Str(relation->rel_name) <<
-			 	 Arg::Gds(isc_foreign_key_target_doesnt_exist));
-		break;
-
-	case idx_e_foreign_references_present:
-		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) <<
-											  Arg::Str(relation->rel_name) <<
-			 	 Arg::Gds(isc_foreign_key_references_present));
+	case idx_e_foreign:
+		ERR_post(gds_foreign_key,
+				 gds_arg_string, ERR_cstring(constraint_name),
+				 gds_arg_string, relation->rel_name, 0);
 		break;
 
 	default:
-		if (haveConstraint)
-		{
-			ERR_post(Arg::Gds(isc_unique_key_violation) << Arg::Str(constraint) <<
-														   Arg::Str(relation->rel_name));
-		}
+		if (constraint[0])
+			ERR_post(gds_unique_key_violation,
+					 gds_arg_string, ERR_cstring(constraint_name),
+					 gds_arg_string, relation->rel_name, 0);
 		else
-			ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index));
+			ERR_post(gds_no_dup, gds_arg_string, ERR_cstring(index_name), 0);
 	}
 }
+#endif
 
 
-void ERR_error(int number)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_error(int number)
 {
 /**************************************
  *
@@ -206,14 +239,16 @@ void ERR_error(int number)
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 
 	DEBUG;
-	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
-		sprintf(errmsg, "error code %d", number);
+	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) <
+		1) sprintf(errmsg, "error code %d", number);
 
-	ERR_post(Arg::Gds(isc_random) << Arg::Str(errmsg));
+	ERR_post(gds_random, gds_arg_string, ERR_cstring(errmsg), 0);
 }
+#endif
 
 
-void ERR_error_msg(const TEXT* msg)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_error_msg(const TEXT* msg)
 {
 /**************************************
  *
@@ -228,11 +263,13 @@ void ERR_error_msg(const TEXT* msg)
  **************************************/
 
 	DEBUG;
-	ERR_post(Arg::Gds(isc_random) << Arg::Str(msg));
+	ERR_post(gds_random, gds_arg_string, ERR_cstring(msg), 0);
 }
+#endif
 
 
-void ERR_log(int facility, int number, const TEXT* message)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
  *
@@ -241,30 +278,36 @@ void ERR_log(int facility, int number, const TEXT* message)
  **************************************
  *
  * Functional description
- *	Log a message to the firebird.log
+ *	Log a message to the firebird.log    
  *
  **************************************/
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
-	thread_db* tdbb = JRD_get_thread_data();
+	TDBB tdbb = GET_THREAD_DATA;
+	UCHAR *dbname = 0;
 
 	DEBUG;
 	if (message)
-	{
-		strncpy(errmsg, message, sizeof(errmsg));
-		errmsg[sizeof(errmsg) - 1] = 0;
-	}
-	else if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL) < 1)
+		strcpy(errmsg, message);
+	else
+		if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL)
+			< 1)
 		strcpy(errmsg, "Internal error code");
 
-	const size_t len = strlen(errmsg);
-	fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
+	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
-	gds__log("Database: %s\n\t%s", (tdbb && tdbb->getAttachment()) ?
-		tdbb->getAttachment()->att_filename.c_str() : "", errmsg);
+	if (tdbb && tdbb->tdbb_attachment)
+	{
+		dbname = ((tdbb->tdbb_attachment->att_filename) ?
+			tdbb->tdbb_attachment->att_filename->str_data : NULL);
+	}
+
+	gds__log("Database: %s\n\t%s", (dbname) ? reinterpret_cast<SCHAR*>(dbname) : "", errmsg, 0);
 }
+#endif
 
 
-bool ERR_post_warning(const Arg::StatusVector& v)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+BOOLEAN DLL_EXPORT ERR_post_warning(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -276,93 +319,85 @@ bool ERR_post_warning(const Arg::StatusVector& v)
  *	Post a warning to the current status vector.
  *
  **************************************/
-	fb_assert(v.value()[0] == isc_arg_warning);
-
+	va_list args;
+	int type, len;
+	ISC_STATUS *status_vector, *q;
 	int indx = 0, warning_indx = 0;
-	ISC_STATUS* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-			status_vector[2] != isc_arg_warning))
-	{
+	VA_START(args, status);
+	status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
+
+	if (status_vector[0] != gds_arg_gds ||
+		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != gds_arg_warning)) {
 		/* this is a blank status vector */
-		fb_utils::init_status(status_vector);
+		status_vector[0] = gds_arg_gds;
+		status_vector[1] = 0;
+		status_vector[2] = gds_arg_end;
 		indx = 2;
 	}
-	else
-	{
+	else {
 		/* find end of a status vector */
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx)
 			--indx;
 	}
 
-	/* stuff the warning */
-	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
-	{
-		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
-        ERR_make_permanent(&status_vector[indx]);
-		return true;
+/* stuff the warning */
+	if (indx + 3 < ISC_STATUS_LENGTH) {
+		status_vector[indx++] = gds_arg_warning;
+		status_vector[indx++] = status;
+		while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
+			switch (status_vector[indx++] = type) {
+			case gds_arg_warning:
+				status_vector[indx++] = (ISC_STATUS) va_arg(args, ISC_STATUS);
+				break;
+
+			case gds_arg_string:
+				q = reinterpret_cast < ISC_STATUS * >(va_arg(args, TEXT *));
+				if (strlen((TEXT *) q) >= MAX_ERRSTR_LEN) {
+					status_vector[(indx - 1)] = gds_arg_cstring;
+					status_vector[indx++] = MAX_ERRSTR_LEN;
+				}
+				status_vector[indx++] = reinterpret_cast < ISC_STATUS > (q);
+				break;
+
+			case gds_arg_interpreted:
+				status_vector[indx++] = va_arg(args, ISC_STATUS);
+				break;
+
+			case gds_arg_cstring:
+				len = va_arg(args, int);
+				status_vector[indx++] =
+					(ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
+				status_vector[indx++] = (ISC_STATUS) va_arg(args, TEXT *);
+				break;
+
+			case gds_arg_number:
+				status_vector[indx++] = (ISC_STATUS) va_arg(args, SLONG);
+				break;
+
+			case gds_arg_vms:
+			case gds_arg_unix:
+			case gds_arg_win32:
+			default:
+				status_vector[indx++] = (ISC_STATUS) va_arg(args, int);
+				break;
+			}
+		status_vector[indx] = gds_arg_end;
+		return TRUE;
 	}
-
-	/* not enough free space */
-	return false;
+	else {
+		/* not enough free space */
+		return FALSE;
+	}
 }
+#endif
 
 
-void ERR_post_nothrow(const Arg::StatusVector& v)
-/**************************************
- *
- *	E R R _ p o s t _ n o t h r o w
- *
- **************************************
- *
- * Functional description
- *	Create a status vector.
- *
- **************************************/
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_post(ISC_STATUS status, ...)
 {
-    fb_assert(v.value()[0] == isc_arg_gds);
-	ISC_STATUS_ARRAY vector;
-	v.copyTo(vector);
-	ERR_make_permanent(vector);
-	internal_post(vector);
-}
-
-
-void ERR_make_permanent(ISC_STATUS* s)
-/**************************************
- *
- *	E R R _ m a k e _ p e r m a n e n t
- *
- **************************************
- *
- * Functional description
- *	Make strings in vector permanent
- *
- **************************************/
-{
-	makePermanentVector(s);
-}
-
-
-void ERR_make_permanent(Arg::StatusVector& v)
-/**************************************
- *
- *	E R R _ m a k e _ p e r m a n e n t
- *
- **************************************
- *
- * Functional description
- *	Make strings in vector permanent
- *
- **************************************/
-{
-	ERR_make_permanent(const_cast<ISC_STATUS*>(v.value()));
-}
-
-
-void ERR_post(const Arg::StatusVector& v)
 /**************************************
  *
  *	E R R _ p o s t
@@ -373,79 +408,62 @@ void ERR_post(const Arg::StatusVector& v)
  *	Create a status vector and return to the user.
  *
  **************************************/
-{
-	ERR_post_nothrow(v);
+	ISC_STATUS *status_vector;
+	ISC_STATUS_ARRAY tmp_status, warning_status;
+	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
+	int warning_count = 0, warning_indx = 0;
 
-	DEBUG;
-	ERR_punt();
-}
+	status_vector = ((TDBB) GET_THREAD_DATA)->tdbb_status_vector;
 
+/* stuff the status into temp buffer */
+	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
+	STUFF_STATUS(tmp_status, status);
 
-static void internal_post(const ISC_STATUS* tmp_status)
-{
-/**************************************
- *
- *	i n t e r n a l _ p o s t
- *
- **************************************
- *
- * Functional description
- *	Append status vector with new values.
- *
- **************************************/
-
-	/* calculate length of the status */
-	int tmp_status_len = 0, warning_indx = 0;
+/* calculate length of the status */
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
-	fb_assert(warning_indx == 0);
+	assert(warning_indx == 0);
 
-	ISC_STATUS* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
-
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-			status_vector[2] != isc_arg_warning))
-	{
+	if (status_vector[0] != gds_arg_gds ||
+		(status_vector[0] == gds_arg_gds && status_vector[1] == 0 &&
+		 status_vector[2] != gds_arg_warning)) {
 		/* this is a blank status vector just stuff the status */
-		memcpy(status_vector, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
-		return;
+		MOVE_FASTER(tmp_status, status_vector,
+					sizeof(ISC_STATUS) * tmp_status_len);
+		DEBUG;
+		ERR_punt();
 	}
 
-	int status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
 
-	/* check for duplicated error code */
-	int i;
-	for (i = 0; i < ISC_STATUS_LENGTH; i++)
-	{
-		if (status_vector[i] == isc_arg_end && i == status_len)
+/* check for duplicated error code */
+	for (i = 0; i < ISC_STATUS_LENGTH; i++) {
+		if (status_vector[i] == gds_arg_end && i == status_len)
 			break;				/* end of argument list */
 
 		if (i && i == warning_indx)
 			break;				/* vector has no more errors */
 
-		if (status_vector[i] == tmp_status[1] && i && status_vector[i - 1] != isc_arg_warning &&
+		if (status_vector[i] == tmp_status[1] && i &&
+			status_vector[i - 1] != gds_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
-			(memcmp(&status_vector[i], &tmp_status[1], sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
-		{
+			(memcmp(&status_vector[i], &tmp_status[1],
+					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0)) {
 			/* duplicate found */
-			return;
+			DEBUG;
+			ERR_punt();
 		}
 	}
 
 /* if the status_vector has only warnings then adjust err_status_len */
-	int err_status_len = i;
-	if (err_status_len == 2 && warning_indx)
+	if ((err_status_len = i) == 2 && warning_indx)
 		err_status_len = 0;
 
-	ISC_STATUS_ARRAY warning_status;
-	int warning_count = 0;
-	if (warning_indx)
-	{
+	if (warning_indx) {
 		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
-		memcpy(warning_status, &status_vector[warning_indx],
+		MOVE_FASTER(&status_vector[warning_indx], warning_status,
 					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
 		PARSE_STATUS(warning_status, warning_count, warning_indx);
 	}
@@ -453,19 +471,23 @@ static void internal_post(const ISC_STATUS* tmp_status)
 /* add the status into a real buffer right in between last error
    and first warning */
 
-	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH)
-	{
-		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
+	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
+		MOVE_FASTER(tmp_status, &status_vector[err_status_len],
+					sizeof(ISC_STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
-			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
+			MOVE_FASTER(warning_status, &status_vector[i - 1],
+						sizeof(ISC_STATUS) * warning_count);
 		}
 	}
-	return;
+	DEBUG;
+	ERR_punt();
 }
+#endif
 
 
-void ERR_punt()
+#if ( !defined( REQUESTER) && !defined(SUPERCLIENT))
+void DLL_EXPORT ERR_punt(void)
 {
 /**************************************
  *
@@ -478,26 +500,93 @@ void ERR_punt()
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB dbb = tdbb->tdbb_database;
+
+	UCHAR* dbname;
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(tdbb->getAttachment()->att_filename.hasData() ?
-						tdbb->getAttachment()->att_filename.c_str() : NULL,
-			tdbb->tdbb_status_vector);
- 		if (Config::getBugcheckAbort())
-		{
-			abort();
-		}
+		dbname = ((tdbb->tdbb_attachment->att_filename) ?
+			tdbb->tdbb_attachment->att_filename->str_data : NULL);
+		gds__log_status(reinterpret_cast<char*>(dbname), tdbb->tdbb_status_vector);
+		if (Config::getBugcheckAbort()) abort();
 	}
 
-	ERR_make_permanent(tdbb->tdbb_status_vector);
-	status_exception::raise(tdbb->tdbb_status_vector);
+	if (! tdbb->tdbb_status_vector[1]) {
+		tdbb->tdbb_status_vector[0] = isc_arg_gds;
+		tdbb->tdbb_status_vector[1] = isc_random;
+		tdbb->tdbb_status_vector[2] = isc_arg_string;
+		tdbb->tdbb_status_vector[3] = (ISC_STATUS)(IPTR)("Unknown error caught in Jrd, may be out of memory");
+		tdbb->tdbb_status_vector[4] = isc_arg_end;
+	}
+	
+#pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")
+
+	Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
+}
+#endif
+
+
+const TEXT* DLL_EXPORT ERR_string(const TEXT* in_string, int length)
+{
+/**************************************
+ *
+ *	E R R _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy a stack local string into an area that is
+ *	guaranteed to exist for a reasonable length of time.
+ *	Only strings that are to be placed in status vectors
+ *	should use this routine.
+ *	A circular buffer is used to hold these strings.  It
+ *	is independent of the JRD allocator mechanism.
+ *
+ **************************************/
+
+	if (!jrd_failures)
+	{
+		jrd_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) JRD_FAILURE_SPACE);
+		/* FREE: apparently never freed */
+		if (!jrd_failures)		/* NOMEM: return a literal */
+			return (TEXT *) JRD_FAILURE_UNKNOWN;
+#ifdef DEBUG_GDS_ALLOC
+		/* This structure does not always get freed before
+		 * process exit
+		 */
+		gds_alloc_flag_unfreed((void *) jrd_failures);
+#endif
+		jrd_failures_ptr = jrd_failures;
+
+#pragma FB_COMPILER_MESSAGE("Fix! Can we change the API to take the real type?")
+		// ugly but currently necessary cast
+		gds__register_cleanup(cleanup, 0);
+	}
+
+/* If there isn't any more room in the buffer, start at the beginning again */
+
+	if (jrd_failures_ptr + length + 1 > jrd_failures + JRD_FAILURE_SPACE)
+	{
+		jrd_failures_ptr = jrd_failures;
+	}
+
+	TEXT* new_string = jrd_failures_ptr;
+
+	while (length-- &&
+		(jrd_failures_ptr < jrd_failures + JRD_FAILURE_SPACE - 1))
+	{
+		*jrd_failures_ptr++ = *in_string++;
+	}
+	*jrd_failures_ptr++ = 0;
+
+	return new_string;
 }
 
 
-void ERR_warning(const Arg::StatusVector& v)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+void DLL_EXPORT ERR_warning(ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -513,58 +602,39 @@ void ERR_warning(const Arg::StatusVector& v)
  *	that subsequent errors can supersede this one.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	ISC_STATUS* s = tdbb->tdbb_status_vector;
+	TDBB tdbb;
 
-	v.copyTo(s);
-	ERR_make_permanent(s);
+	tdbb = GET_THREAD_DATA;
+
+	STUFF_STATUS(tdbb->tdbb_status_vector, status);
 	DEBUG;
-	tdbb->getRequest()->req_flags |= req_warning;
+	tdbb->tdbb_request->req_flags |= req_warning;
 }
+#endif
 
 
-void ERR_append_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+static void cleanup(void *arg)
 {
 /**************************************
  *
- *	E R R _ a p p e n d _ s t a t u s
+ *	c l e a n u p
  *
  **************************************
  *
  * Functional description
- *	Append the given status vector with the passed arguments.
+ *	Exit handler for image exit.
  *
  **************************************/
-	// First build a status vector with the passed one
-	Arg::StatusVector passed(status_vector);
 
-	// Now append the newly vector to the passed one
-	passed.append(v);
+	if (jrd_failures)
+		FREE_LIB_MEMORY(jrd_failures);
 
-	// Return the result
-	passed.copyTo(status_vector);
-	ERR_make_permanent(status_vector);
+	jrd_failures = NULL;
 }
 
 
-void ERR_build_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
-{
-/**************************************
- *
- *	E R R _  a p p e n d _ s t a t u s
- *
- **************************************
- *
- * Functional description
- *	Append the given status vector with the passed arguments.
- *
- **************************************/
-	v.copyTo(status_vector);
-	ERR_make_permanent(status_vector);
-}
-
-
-static void internal_error(ISC_STATUS status, int number, const TEXT* file, int line)
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
+static void internal_error(ISC_STATUS status, int number)
 {
 /**************************************
  *
@@ -579,29 +649,13 @@ static void internal_error(ISC_STATUS status, int number, const TEXT* file, int 
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 
 	DEBUG;
-	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
-		strcpy(errmsg, "Internal error code");
+	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) <
+		1) strcpy(errmsg, "Internal error code");
 
-	const size_t len = strlen(errmsg);
+	sprintf(errmsg + strlen(errmsg), " (%d)", number);
 
-	if (file)
-	{
-		// Remove path information
-		const TEXT* ptr = file + strlen(file);
-		for (; ptr > file; ptr--)
-		{
-			if ((*ptr == '/') || (*ptr == '\\'))
-			{
-				ptr++;
-				break;
-			}
-		}
-		fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len,
-			" (%d), file: %s line: %d", number, ptr, line);
-	}
-	else {
-		fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
-	}
-
-	ERR_post(Arg::Gds(status) << Arg::Str(errmsg));
+	ERR_post(status, gds_arg_string, ERR_cstring(errmsg), 0);
 }
+#endif
+
+} /* extern "C" */

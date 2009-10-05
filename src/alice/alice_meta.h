@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		alice_meta.h
- *	DESCRIPTION:	Prototype header file for alice_meta.epp
+ *	DESCRIPTION:	Prototype header file for alice_meta.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -25,9 +25,8 @@
 #define ALICE_ALICE_META_H
 
 void	MET_disable_wal(ISC_STATUS*, isc_db_handle);
-void	MET_get_state(ISC_STATUS*, tdr*);
-tdr*	MET_get_transaction(ISC_STATUS*, isc_db_handle, SLONG);
-void	MET_set_capabilities(ISC_STATUS*, tdr*);
+void	MET_get_state(ISC_STATUS*, TDR);
+TDR		MET_get_transaction(ISC_STATUS*, isc_db_handle, SLONG);
+void	MET_set_capabilities(ISC_STATUS*, TDR);
 
 #endif	// ALICE_ALICE_META_H
-

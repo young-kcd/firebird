@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		scl_proto.h
- *	DESCRIPTION:	Prototype header file for scl.epp
+ *	DESCRIPTION:	Prototype header file for scl.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,60 +21,30 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_SCL_PROTO_H
-#define JRD_SCL_PROTO_H
+#ifndef _JRD_SCL_PROTO_H_
+#define _JRD_SCL_PROTO_H_
 
-#include "../jrd/scl.h"
-#include "../common/classes/array.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//namespace Jrd {
-//	class SecurityClass;
-//}
+void		SCL_check_access(struct scl*, SLONG, const TEXT*,
+							const TEXT*, USHORT,
+							const TEXT*, const TEXT*);
+void		SCL_check_procedure(struct dsc*, USHORT);
+void		SCL_check_relation(struct dsc*, USHORT);
+struct scl*	SCL_get_class(const TEXT*);
+int			SCL_get_mask(const TEXT*, const TEXT*);
+void		SCL_init(BOOLEAN, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TDBB, BOOLEAN);
+struct scl*	SCL_recompute_class(TDBB, TEXT*);
+void		SCL_release(struct scl*);
+void		SCL_check_index(TDBB, TEXT*, UCHAR, USHORT);
 
-struct dsc;
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
-					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t, const TEXT*, const char*);
-void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
-					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t,
-					  const TEXT*, const Firebird::MetaName&, const Firebird::MetaName&);
-inline void SCL_check_access(Jrd::thread_db* tdbb,
-							 const Jrd::SecurityClass* s_class,
-							 SLONG view_id,
-							 const Firebird::MetaName& trg_name,
-							 const Firebird::MetaName& prc_name,
-							 Jrd::SecurityClass::flags_t mask,
-							 const TEXT* type,
-							 const Firebird::string& name)
-{
-	SCL_check_access(tdbb, s_class, view_id, trg_name, prc_name, mask, type, name.c_str());
-}
-inline void SCL_check_access(Jrd::thread_db* tdbb,
-							 const Jrd::SecurityClass* s_class,
-							 SLONG view_id,
-							 const Firebird::MetaName& trg_name,
-							 const Firebird::MetaName& prc_name,
-							 Jrd::SecurityClass::flags_t mask,
-							 const TEXT* type,
-							 const Firebird::MetaName& name)
-{
-	SCL_check_access(tdbb, s_class, view_id, trg_name, prc_name, mask, type, name.c_str());
-}
-
-void SCL_check_index(Jrd::thread_db*, const Firebird::MetaName&, UCHAR, Jrd::SecurityClass::flags_t);
-void SCL_check_procedure(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);
-void SCL_check_relation(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);
-Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, const TEXT*);
-Jrd::SecurityClass::flags_t SCL_get_mask(Jrd::thread_db* tdbb, const TEXT*, const TEXT*);
-void SCL_init(Jrd::thread_db* tdbb, bool, const Jrd::UserId& tempId);
-Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
-void SCL_release_all(Jrd::SecurityClassList*&);
-
-namespace Jrd {
 typedef Firebird::Array<UCHAR> Acl;
-}
-void SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
+void SCL_move_priv(USHORT, Acl&);
 
-
-#endif // JRD_SCL_PROTO_H
-
+#endif /* _JRD_SCL_PROTO_H_ */

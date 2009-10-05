@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		event.cpp
+ *	MODULE:		event.c
  *	DESCRIPTION:	Event Manager
  *
  * The contents of this file are subject to the Interbase Public
@@ -20,29 +20,30 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
+ * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
+ *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ *
  */
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include "gen/iberror.h"
-#include "../common/classes/init.h"
-#include "../common/config/config.h"
-#include "../jrd/ThreadStart.h"
+#include "gen/codes.h"
+#include "../jrd/thd.h"
 #include "../jrd/event.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/isc_signal.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/thread_proto.h"
-#include "../jrd/err_proto.h"
-#include "../jrd/os/isc_i_proto.h"
-#include "../common/utils_proto.h"
-#include "../jrd/Database.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thd_proto.h"
+#include "../jrd/isc_i_proto.h"
+#include "../common/config/config.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -52,348 +53,90 @@
 #include <unistd.h>
 #endif
 
+#pragma FB_COMPILER_MESSAGE("FIXFIXFIX!!! - DANGER!")
+// We currently can't include jrd/err_proto.h to get the function
+// declaration. :-<
+extern "C" {
+extern void DLL_EXPORT ERR_bugcheck_msg(const TEXT *);
+}
+
+
 #ifdef UNIX
 #include <signal.h>
+#define EVENT_SIGNAL	SIGUSR2
 #endif
 
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
-#define MUTEX		&m_mutex
-#else
-#define MUTEX		&m_header->evh_mutex
+
+#define MUTEX		event_mutex
 #endif
 
-#define SRQ_BASE                  ((UCHAR*) m_header)
-
-namespace Jrd {
-
-Firebird::GlobalPtr<EventManager::DbEventMgrMap> EventManager::g_emMap;
-Firebird::GlobalPtr<Firebird::Mutex> EventManager::g_mapMutex;
-
-
-void EventManager::init(Database* dbb)
-{
-	if (!dbb->dbb_event_mgr)
-	{
-		const Firebird::string id = dbb->getUniqueFileId();
-
-		Firebird::MutexLockGuard guard(g_mapMutex);
-
-		EventManager* eventMgr = NULL;
-		if (!g_emMap->get(id, eventMgr))
-		{
-			eventMgr = new EventManager(id);
-		}
-
-		fb_assert(eventMgr);
-
-		dbb->dbb_event_mgr = eventMgr;
-	}
-}
-
-
-EventManager::EventManager(const Firebird::string& id)
-	: PID(getpid()),
-	  m_header(NULL),
-	  m_process(NULL),
-	  m_processOffset(0),
-	  m_dbId(getPool(), id),
-	  m_sharedFileCreated(false),
-	  m_exiting(false)
-{
-	attach_shared_file();
-
-	Firebird::MutexLockGuard guard(g_mapMutex);
-
-	if (g_emMap->put(m_dbId, this))
-	{
-		fb_assert(false);
-	}
-}
-
-
-EventManager::~EventManager()
-{
-	m_exiting = true;
-	const SLONG process_offset = m_processOffset;
-
-	ISC_STATUS_ARRAY local_status;
-
-	if (m_process)
-	{
-		// Terminate the event watcher thread
-		m_startupSemaphore.tryEnter(5);
-		ISC_event_post(&m_process->prb_event);
-		m_cleanupSemaphore.tryEnter(5);
-
-#if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_unmap_object(local_status, /*&m_shmemData,*/ (UCHAR**) &m_process, sizeof(prb));
-#else
-		m_process = NULL;
+#ifdef SERVER
+#undef MULTI_THREAD
 #endif
-	}
 
-	acquire_shmem();
-	m_processOffset = 0;
-	if (process_offset)
-	{
-		delete_process(process_offset);
-	}
-	if (m_header && SRQ_EMPTY(m_header->evh_processes))
-	{
-		Firebird::PathName name;
-		get_shared_file_name(name);
-		ISC_remove_map_file(name.c_str());
-	}
-	release_shmem();
+#ifndef AST_TYPE
+#define AST_TYPE	void
+#endif
 
-	detach_shared_file();
+#ifndef MUTEX
+#define MUTEX		EVENT_header->evh_mutex
+#endif
 
-	Firebird::MutexLockGuard guard(g_mapMutex);
-
-	if (!g_emMap->remove(m_dbId))
-	{
-		fb_assert(false);
-	}
-}
+#define EVENT_FLAG		64
+#define SEMAPHORES		1
+#define MAX_EVENT_BUFFER	65500
 
 
-void EventManager::attach_shared_file()
-{
-	Firebird::PathName name;
-	get_shared_file_name(name);
-
-	ISC_STATUS_ARRAY local_status;
-	if (!(m_header = (evh*) ISC_map_file(local_status,
-										 name.c_str(),
-										 init_shmem, this,
-										 Config::getEventMemSize(),
-										 &m_shmemData)))
-	{
-		Firebird::status_exception::raise(local_status);
-	}
-
-	fb_assert(m_header->evh_version == EVENT_VERSION);
-}
+extern "C" {
 
 
-void EventManager::detach_shared_file()
-{
-	ISC_STATUS_ARRAY local_status;
-	if (m_header)
-	{
-		ISC_mutex_fini(MUTEX);
-		ISC_unmap_file(local_status, &m_shmemData);
-		m_header = NULL;
-	}
-}
+static EVH acquire(void);
+static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse);
+static SLONG create_process(void);
+static void delete_event(EVNT);
+static void delete_process(SLONG);
+static void delete_request(EVT_REQ);
+static void delete_session(SLONG);
+static AST_TYPE deliver(void);
+static void deliver_request(EVT_REQ);
+static void exit_handler(void *);
+static EVNT find_event(USHORT, TEXT *, EVNT);
+static void free_global(FRB);
+static RINT historical_interest(SES, SLONG);
+static void init(void *, SH_MEM, int);
+static void insert_tail(SRQ *, SRQ *);
+static EVNT make_event(USHORT, TEXT *, SLONG);
+static void mutex_bugcheck(TEXT *, int);
+static void post_process(PRB);
+static void probe_processes(void);
+static void punt(TEXT *);
+static void release(void);
+static void remove_que(SRQ *);
+static BOOLEAN request_completed(EVT_REQ);
+static ISC_STATUS return_ok(ISC_STATUS *);
+static void THREAD_ROUTINE watcher_thread(void *);
+
+static SSHORT acquire_count;
+static EVH EVENT_header = NULL;
+static SLONG EVENT_process_offset, EVENT_default_size;
+#ifdef SOLARIS_MT
+static PRB EVENT_process;
+#endif
+static SH_MEM_T EVENT_data;
+
+#if defined(WIN_NT)
+static MTX_T event_mutex[1];
+#endif
 
 
-void EventManager::get_shared_file_name(Firebird::PathName& name) const
-{
-	name.printf(EVENT_FILE, m_dbId.c_str());
-}
-
-
-SLONG EventManager::createSession()
+void EVENT_cancel(SLONG request_id)
 {
 /**************************************
  *
- *	c r e a t e S e s s i o n
- *
- **************************************
- *
- * Functional description
- *	Create session.
- *
- **************************************/
-	if (!m_processOffset)
-	{
-		create_process();
-	}
-
-	acquire_shmem();
-
-	ses* const session = (ses*) alloc_global(type_ses, sizeof(ses), false);
-	prb* const process = (prb*) SRQ_ABS_PTR(m_processOffset);
-	session->ses_flags = 0;
-
-	insert_tail(&process->prb_sessions, &session->ses_sessions);
-	SRQ_INIT(session->ses_requests);
-	const SLONG id = SRQ_REL_PTR(session);
-
-	release_shmem();
-
-	return id;
-}
-
-
-void EventManager::deleteSession(SLONG session_id)
-{
-/**************************************
- *
- *	d e l e t e S e s s i o n
- *
- **************************************
- *
- * Functional description
- *	Delete a session.
- *
- **************************************/
-	acquire_shmem();
-	delete_session(session_id);
-	release_shmem();
-}
-
-
-SLONG EventManager::queEvents(SLONG session_id,
-							  USHORT string_length, const TEXT* string,
-							  USHORT events_length, const UCHAR* events,
-							  FPTR_EVENT_CALLBACK ast_routine, void* ast_arg)
-{
-/**************************************
- *
- *	q u e E v e n t s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	// Sanity check
-
-	if (events[0] != EPB_version1)
-	{
-		Firebird::Arg::Gds(isc_bad_epb_form).raise();
-	}
-
-	acquire_shmem();
-
-	// Allocate request block
-
-	evt_req* request = (evt_req*) alloc_global(type_reqb, sizeof(evt_req), false);
-	ses* session = (ses*) SRQ_ABS_PTR(session_id);
-	insert_tail(&session->ses_requests, &request->req_requests);
-	request->req_session = session_id;
-	request->req_process = m_processOffset;
-	request->req_ast = ast_routine;
-	request->req_ast_arg = ast_arg;
-	const SLONG id = ++m_header->evh_request_id;
-	request->req_request_id = id;
-
-	const SLONG request_offset = SRQ_REL_PTR(request);
-
-	// Find parent block
-
-	evnt* parent = find_event(string_length, string, 0);
-	if (!parent)
-	{
-		parent = make_event(string_length, string, 0);
-		request = (evt_req*) SRQ_ABS_PTR(request_offset);
-		session = (ses*) SRQ_ABS_PTR(session_id);
-	}
-
-	const SLONG parent_offset = SRQ_REL_PTR(parent);
-
-	// Process event block
-
-	SRQ_PTR* ptr = &request->req_interests;
-	SLONG ptr_offset = SRQ_REL_PTR(ptr);
-	const UCHAR* p = events + 1;
-	const UCHAR* const end = events + events_length;
-	bool flag = false;
-
-	while (p < end)
-	{
-		const USHORT count = *p++;
-
-		// Sanity check
-
-		if (count > end - events)
-		{
-			release_shmem();
-			Firebird::Arg::Gds(isc_bad_epb_form).raise();
-		}
-
-		// The data in the event block may have trailing blanks. Strip them off.
-
-        const UCHAR* find_end = p + count;
-		while (--find_end >= p && *find_end == ' ')
-			; // nothing to do.
-		const USHORT len = find_end - p + 1;
-
-		evnt* event = find_event(len, reinterpret_cast<const char*>(p), parent);
-		if (!event)
-		{
-			event = make_event(len, reinterpret_cast<const char*>(p), parent_offset);
-			parent = (evnt*) SRQ_ABS_PTR(parent_offset);
-			session = (ses*) SRQ_ABS_PTR(session_id);
-			request = (evt_req*) SRQ_ABS_PTR(request_offset);
-			ptr = (SRQ_PTR *) SRQ_ABS_PTR(ptr_offset);
-		}
-
-		p += count;
-		const SLONG event_offset = SRQ_REL_PTR(event);
-
-		req_int* interest, *prior;
-		if (interest = historical_interest(session, event_offset))
-		{
-			for (SRQ_PTR* ptr2 = &session->ses_interests;
-				 *ptr2 && (prior = (req_int*) SRQ_ABS_PTR(*ptr2));
-				 ptr2 = &prior->rint_next)
-			{
-				if (prior == interest)
-				{
-					*ptr2 = interest->rint_next;
-					interest->rint_next = 0;
-					break;
-				}
-			}
-		}
-		else
-		{
-			interest = (req_int*) alloc_global(type_rint, sizeof(req_int), false);
-			event = (evnt*) SRQ_ABS_PTR(event_offset);
-			insert_tail(&event->evnt_interests, &interest->rint_interests);
-			interest->rint_event = event_offset;
-
-			parent = (evnt*) SRQ_ABS_PTR(parent_offset);
-			request = (evt_req*) SRQ_ABS_PTR(request_offset);
-			ptr = (SRQ_PTR *) SRQ_ABS_PTR(ptr_offset);
-			session = (ses*) SRQ_ABS_PTR(session_id);
-		}
-
-		*ptr = SRQ_REL_PTR(interest);
-		ptr = &interest->rint_next;
-		ptr_offset = SRQ_REL_PTR(ptr);
-
-		interest->rint_request = request_offset;
-		interest->rint_count = gds__vax_integer(p, 4);
-		p += 4;
-		if (interest->rint_count <= event->evnt_count)
-		{
-			flag = true;
-		}
-	}
-
-	if (flag)
-	{
-		post_process((prb*) SRQ_ABS_PTR(m_processOffset));
-	}
-
-	release_shmem();
-
-	return id;
-}
-
-
-void EventManager::cancelEvents(SLONG request_id)
-{
-/**************************************
- *
- *	c a n c e l E v e n t s
+ *	E V E N T _ c a n c e l
  *
  **************************************
  *
@@ -401,105 +144,134 @@ void EventManager::cancelEvents(SLONG request_id)
  *	Cancel an outstanding event.
  *
  **************************************/
-	acquire_shmem();
+	PRB process;
+	EVT_REQ request;
+	SES session;
+	SRQ *que, *que2;
 
-	prb* const process = (prb*) SRQ_ABS_PTR(m_processOffset);
+	if (!EVENT_header)
+		return;
 
-	srq* que2;
-	SRQ_LOOP(process->prb_sessions, que2)
-	{
-		ses* const session = (ses*) ((UCHAR*) que2 - OFFSET(ses*, ses_sessions));
-		srq* event_srq;
-		SRQ_LOOP(session->ses_requests, event_srq)
-		{
-			evt_req* const request = (evt_req*) ((UCHAR*) event_srq - OFFSET(evt_req*, req_requests));
-			if (request->req_request_id == request_id)
-			{
+	ACQUIRE;
+
+	process = (PRB) ABS_PTR(EVENT_process_offset);
+
+	QUE_LOOP(process->prb_sessions, que2) {
+		session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
+		QUE_LOOP(session->ses_requests, que) {
+			request = (EVT_REQ) ((UCHAR *) que - OFFSET(EVT_REQ, req_requests));
+			if (request->req_request_id == request_id) {
 				delete_request(request);
-				release_shmem();
+				RELEASE;
 				return;
 			}
 		}
 	}
 
-	release_shmem();
+	RELEASE;
 }
 
 
-void EventManager::postEvent(USHORT major_length, const TEXT* major_code,
-							 USHORT minor_length, const TEXT* minor_code,
-							 USHORT count)
+SLONG EVENT_create_session(ISC_STATUS * status_vector)
 {
 /**************************************
  *
- *	p o s t E v e n t
+ *	E V E N T _ c r e a t e _ s e s s i o n
  *
  **************************************
  *
  * Functional description
- *	Post an event.
+ *	Create session.
  *
  **************************************/
-	acquire_shmem();
+	PRB process;
+	SES session;
+	SLONG id;
 
-	evnt* event;
-	evnt* const parent = find_event(major_length, major_code, 0);
+/* If we're not initialized, do so now */
 
-	if (parent && (event = find_event(minor_length, minor_code, parent)))
-	{
-		event->evnt_count += count;
-		srq* event_srq;
-		SRQ_LOOP(event->evnt_interests, event_srq)
-		{
-			req_int* const interest = (req_int*) ((UCHAR*) event_srq - OFFSET(req_int*, rint_interests));
-			if (interest->rint_request)
-			{
-				evt_req* const request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
+	if (!EVENT_header && !EVENT_init(status_vector, TRUE))
+		return 0;
 
-				if (interest->rint_count <= event->evnt_count)
-				{
-					prb* const process = (prb*) SRQ_ABS_PTR(request->req_process);
-					process->prb_flags |= PRB_wakeup;
-				}
-			}
-		}
-	}
+	if (!EVENT_process_offset)
+		create_process();
 
-	release_shmem();
+	ACQUIRE;
+	session = (SES) alloc_global(type_ses, (SLONG) sizeof(struct ses), FALSE);
+	process = (PRB) ABS_PTR(EVENT_process_offset);
+	session->ses_process = EVENT_process_offset;
+
+#ifdef MULTI_THREAD
+	session->ses_flags = 0;
+#endif
+
+	insert_tail(&process->prb_sessions, &session->ses_sessions);
+	QUE_INIT(session->ses_requests);
+	id = REL_PTR(session);
+	RELEASE;
+
+	return id;
 }
 
 
-void EventManager::deliverEvents()
+void EVENT_delete_session(SLONG session_id)
 {
 /**************************************
  *
- *	d e l i v e r E v e n t s
+ *	E V E N T _ d e l e t e _ s e s s i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Delete a session.
+ *
+ **************************************/
+
+	if (!EVENT_header)
+		return;
+
+	ACQUIRE;
+	delete_session(session_id);
+	RELEASE;
+}
+
+
+void EVENT_deliver()
+{
+/**************************************
+ *
+ *	E V E N T _ d e l i v e r
  *
  **************************************
  *
  * Functional description
  *	Post an event (step 2).
  *
- *  This routine is called by DFW_perform_post_commit_work()
+ *  This code was primarily located in
+ *  EVENT_post (see above). This
+ *  routine is called by DFW_perform_post_commit_work
  *  once all pending events are prepared
- *  for delivery with postEvent().
+ *  for delivery with EVENT_post.
  *
  **************************************/
-	acquire_shmem();
+	SRQ	*que;
 
-	// Deliver requests for posted events
+	/* If we're not initialized, do so now */
+
+	if (!EVENT_header)
+    	return;
+
+	ACQUIRE;
+
+	/* Deliver requests for posted events */
 
 	bool flag = true;
 
-	while (flag)
-	{
+	while (flag) {
 		flag = false;
-		srq* event_srq;
-		SRQ_LOOP (m_header->evh_processes, event_srq)
-		{
-			prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET (prb*, prb_processes));
-			if (process->prb_flags & PRB_wakeup)
-			{
+		QUE_LOOP (EVENT_header->evh_processes, que)	{
+			PRB process = (PRB) ((UCHAR*) que - OFFSET (PRB, prb_processes));
+			if (process->prb_flags & PRB_wakeup) {
 				post_process(process);
 				flag = true;
 				break;
@@ -507,15 +279,260 @@ void EventManager::deliverEvents()
 		}
 	}
 
-	release_shmem();
+	RELEASE;
 }
 
 
-evh* EventManager::acquire_shmem()
+EVH EVENT_init(ISC_STATUS * status_vector, USHORT server_flag)
 {
 /**************************************
  *
- *	a c q u i r e _ s h m e m
+ *	E V E N T _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize for access to shared global region.  If "server_flag" is true,
+ *	create region if it doesn't exist.  Return address of header if region
+ *	exits, otherwise return NULL.
+ *
+ **************************************/
+	TEXT *event_file, buffer[MAXPATHLEN];
+
+/* If we're already initialized, there's nothing to do */
+
+	if (EVENT_header)
+		return EVENT_header;
+
+	EVENT_default_size = Config::getEventMemSize();
+
+#ifdef SERVER
+	EVENT_data.sh_mem_address = EVENT_header =
+		(EVH) gds__alloc((SLONG) EVENT_default_size);
+/* FREE: apparently only freed at process exit */
+	if (!EVENT_header) {		/* NOMEM: */
+		status_vector[0] = gds_arg_gds;
+		status_vector[1] = gds__virmemexh;
+		status_vector[2] = gds_arg_end;
+		return NULL;
+	}
+#ifdef DEBUG_GDS_ALLOC
+/* This structure is apparently only freed when the process exits */
+/* 1994-October-25 David Schnepper */
+	gds_alloc_flag_unfreed((void *) EVENT_header);
+#endif /* DEBUG_GDS_ALLOC */
+
+	EVENT_data.sh_mem_length_mapped = EVENT_default_size;
+	EVENT_data.sh_mem_mutex_arg = 0;
+	init((SLONG) 0, &EVENT_data, TRUE);
+#else
+
+#if (defined UNIX)
+	EVENT_data.sh_mem_semaphores = SEMAPHORES;
+#endif
+
+	gds__prefix_lock(buffer, EVENT_FILE);
+	event_file = buffer;
+
+	if (!(EVENT_header = (EVH) ISC_map_file(status_vector,
+											event_file,
+											reinterpret_cast < void (*)(void *, struct sh_mem*, int) >
+											(init), 0, EVENT_default_size,
+											&EVENT_data))) {
+#ifdef SERVER
+		gds__free(EVENT_data.sh_mem_address);
+#endif /* SERVER */
+		return NULL;
+	}
+
+#endif
+
+	gds__register_cleanup(exit_handler, 0);
+
+#ifdef UNIX
+#ifndef MULTI_THREAD
+	ISC_signal(EVENT_SIGNAL, deliver, 0);
+#endif
+#endif
+
+	return EVENT_header;
+}
+
+
+int EVENT_post(ISC_STATUS * status_vector,
+			   USHORT major_length,
+			   TEXT * major_code,
+			   USHORT minor_length,
+			   TEXT * minor_code,
+			   USHORT count)
+{
+/**************************************
+ *
+ *	E V E N T _ p o s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post an event.
+ *
+ **************************************/
+	EVT_REQ request;
+	SRQ *que;
+	PRB process;
+	EVNT event, parent;
+	RINT interest;
+
+/* If we're not initialized, do so now */
+
+	if (!EVENT_header && !EVENT_init(status_vector, FALSE))
+		return status_vector[1];
+
+	ACQUIRE;
+
+	if ((parent = find_event(major_length, major_code, 0)) &&
+		(event = find_event(minor_length, minor_code, parent))) {
+		event->evnt_count += count;
+		QUE_LOOP(event->evnt_interests, que) {
+			interest = (RINT) ((UCHAR *) que - OFFSET(RINT, rint_interests));
+			if (interest->rint_request) {
+				request = (EVT_REQ) ABS_PTR(interest->rint_request);
+
+				if (interest->rint_count <= event->evnt_count) {
+					process = (PRB) ABS_PTR(request->req_process);
+					process->prb_flags |= PRB_wakeup;
+				}
+			}
+		}
+	}
+
+	RELEASE;
+
+	return return_ok(status_vector);
+}
+
+
+SLONG EVENT_que(ISC_STATUS * status_vector,
+				SLONG session_id,
+				USHORT string_length,
+				TEXT * string,
+				USHORT events_length,
+				UCHAR * events, FPTR_VOID ast_routine, void *ast_arg)
+{
+/**************************************
+ *
+ *	E V E N T _ q u e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	UCHAR *p, *end, *find_end;
+	USHORT count, flag, len;
+	SES session;
+	EVT_REQ request;
+	EVNT event, parent;
+	RINT interest, prior;
+	PTR *ptr, *ptr2;
+	SLONG id, request_offset, parent_offset, event_offset, ptr_offset;
+
+/* Allocate request block */
+
+	ACQUIRE;
+	request = (EVT_REQ) alloc_global(type_req, sizeof(struct evt_req), FALSE);
+	session = (SES) ABS_PTR(session_id);
+	insert_tail(&session->ses_requests, &request->req_requests);
+	request->req_session = session_id;
+	request->req_process = EVENT_process_offset;
+	request->req_ast = ast_routine;
+	request->req_ast_arg = ast_arg;
+	request->req_request_id = id = ++EVENT_header->evh_request_id;
+
+	request_offset = REL_PTR(request);
+
+/* Find parent block */
+
+	if (!(parent = find_event(string_length, string, 0))) {
+		parent = make_event(string_length, string, 0);
+		request = (EVT_REQ) ABS_PTR(request_offset);
+		session = (SES) ABS_PTR(session_id);
+	}
+
+	parent_offset = REL_PTR(parent);
+
+/* Process event block */
+
+	ptr = &request->req_interests;
+	ptr_offset = REL_PTR(ptr);
+	p = events + 1;
+	end = events + events_length;
+	flag = FALSE;
+
+	while (p < end) {
+
+		count = *p++;
+
+		/* The data in the event block may have trailing blanks.  Strip them off. */
+
+		for (find_end = p + count; --find_end >= p && *find_end == ' ';);
+		len = find_end - p + 1;
+		if (!(event = find_event(len, reinterpret_cast < char *>(p), parent))) {
+			event =
+				make_event(len, reinterpret_cast < char *>(p), parent_offset);
+			parent = (EVNT) ABS_PTR(parent_offset);
+			session = (SES) ABS_PTR(session_id);
+			request = (EVT_REQ) ABS_PTR(request_offset);
+			ptr = (PTR *) ABS_PTR(ptr_offset);
+		}
+		p += count;
+		event_offset = REL_PTR(event);
+		if (interest = historical_interest(session, event_offset)) {
+			for (ptr2 = &session->ses_interests;
+				 *ptr2 && (prior = (RINT) ABS_PTR(*ptr2));
+				 ptr2 = &prior->rint_next) if (prior == interest) {
+					*ptr2 = interest->rint_next;
+					interest->rint_next = 0;
+					break;
+				}
+		}
+		else {
+			interest =
+				(RINT) alloc_global(type_rint, (SLONG) sizeof(struct req_int),
+									FALSE);
+			event = (EVNT) ABS_PTR(event_offset);
+			insert_tail(&event->evnt_interests, &interest->rint_interests);
+			interest->rint_event = event_offset;
+
+			parent = (EVNT) ABS_PTR(parent_offset);
+			request = (EVT_REQ) ABS_PTR(request_offset);
+			ptr = (PTR *) ABS_PTR(ptr_offset);
+			session = (SES) ABS_PTR(session_id);
+		}
+		*ptr = REL_PTR(interest);
+		ptr = &interest->rint_next;
+		ptr_offset = REL_PTR(ptr);
+		interest->rint_request = request_offset;
+		interest->rint_count = gds__vax_integer(p, 4);
+		p += 4;
+		if (interest->rint_count <= event->evnt_count)
+			flag = TRUE;
+	}
+
+	if (flag)
+		post_process((PRB) ABS_PTR(EVENT_process_offset));
+
+	RELEASE;
+	return_ok(status_vector);
+
+	return id;
+}
+
+
+static EVH acquire(void)
+{
+/**************************************
+ *
+ *	a c q u i r e
  *
  **************************************
  *
@@ -524,65 +541,79 @@ evh* EventManager::acquire_shmem()
  *
  **************************************/
 
-	int mutex_state = ISC_mutex_lock(MUTEX);
-	if (mutex_state)
-		mutex_bugcheck("mutex lock", mutex_state);
-
-	// Check for shared memory state consistency
-
-	while (SRQ_EMPTY(m_header->evh_processes))
-	{
-		if (! m_sharedFileCreated) {
-			// Someone is going to delete shared file? Reattach.
-			mutex_state = ISC_mutex_unlock(MUTEX);
-			if (mutex_state)
-				mutex_bugcheck("mutex unlock", mutex_state);
-			detach_shared_file();
-
-			THD_yield();
-
-			attach_shared_file();
-			mutex_state = ISC_mutex_lock(MUTEX);
-			if (mutex_state) {
-				mutex_bugcheck("mutex lock", mutex_state);
-			}
-		}
-		else {
-			// complete initialization
-			m_sharedFileCreated = false;
-
-			break;
-		}
-	}
-	fb_assert(!m_sharedFileCreated);
-
-	m_header->evh_current_process = m_processOffset;
-
-	if (m_header->evh_length > m_shmemData.sh_mem_length_mapped)
-	{
-		const ULONG length = m_header->evh_length;
-
-		evh* header = NULL;
-
-#if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_STATUS_ARRAY local_status;
-		header = (evh*) ISC_remap_file(local_status, &m_shmemData, length, false);
+	int mutex_state;
+	SLONG length;
+	EVH header = NULL;
+#ifdef WIN_NT
+	PRB process;
+	EVENT event;
 #endif
-		if (!header)
-		{
-			release_shmem();
-			gds__log("Event table remap failed");
+
+#ifdef MULTI_THREAD
+	if (mutex_state = ISC_mutex_lock(MUTEX))
+		mutex_bugcheck("mutex lock", mutex_state);
+	EVENT_header->evh_current_process = EVENT_process_offset;
+#else
+	if (++acquire_count == 1) {
+#ifndef SERVER
+		if (mutex_state = ISC_mutex_lock(MUTEX))
+			mutex_bugcheck("mutex lock", mutex_state);
+#endif
+		EVENT_header->evh_current_process = EVENT_process_offset;
+	}
+#endif
+
+	if (EVENT_header->evh_length > EVENT_data.sh_mem_length_mapped) {
+		length = EVENT_header->evh_length;
+
+#ifdef WIN_NT
+		/* Before remapping the memory, wakeup the watcher thread.
+		 * Then remap the shared memory and allow the watcher thread
+		 * to remap.
+		 */
+		/* Need to make the following code generic to all SUPERSERVER
+		 * platforms. Postponed for now. B.Sriram, 10-Jul-1997
+		 */
+
+		process = (PRB) ABS_PTR(EVENT_process_offset);
+		process->prb_flags |= PRB_remap;
+		event = process->prb_event;
+
+		post_process(process);
+
+		while (true) {
+			RELEASE;
+			Sleep(3);
+			ACQUIRE;
+
+			process = (PRB) ABS_PTR(EVENT_process_offset);
+			if (!(process->prb_flags & PRB_remap))
+				break;
+		}
+#endif /* WIN_NT */
+
+#if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
+		ISC_STATUS_ARRAY status_vector;
+		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, FALSE);
+#endif
+		if (!header) {
+			RELEASE;
+			gds__log("acquire: Event table remap failed");
 			exit(FINI_ERROR);
 		}
+		EVENT_header = header;
 
-		m_header = header;
+#ifdef WIN_NT
+		process = (PRB) ABS_PTR(EVENT_process_offset);
+		process->prb_flags &= ~PRB_remap_over;
+#endif /* WIN_NT */
 	}
 
-	return m_header;
+	return EVENT_header;
 }
 
 
-frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
+static FRB alloc_global(UCHAR type, ULONG length, BOOLEAN recurse)
 {
 /**************************************
  *
@@ -594,81 +625,111 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
  *	Allocate a block in shared global region.
  *
  **************************************/
-	frb* free;
-	SLONG best_tail = MAX_SLONG;
+	PTR *ptr, *best;
+	FRB free;
+	SLONG tail, best_tail, ev_length, old_length;
+	ISC_STATUS_ARRAY status_vector;
+#ifdef WIN_NT
+	PRB process;
+	EVENT event;
+#endif
 
-	length = FB_ALIGN(length, FB_ALIGNMENT);
-	SRQ_PTR* best = NULL;
+	length = ROUNDUP(length, sizeof(IPTR));
+	best = NULL;
 
-	for (SRQ_PTR* ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
-		ptr = &free->frb_next)
-	{
-		const SLONG tail = free->frb_header.hdr_length - length;
-		if (tail >= 0 && (!best || tail < best_tail))
-		{
+	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
+		 ptr = &free->frb_next) {
+		tail = free->frb_header.hdr_length - length;
+		if (tail >= 0 && (!best || tail < best_tail)) {
 			best = ptr;
 			best_tail = tail;
 		}
 	}
 
-	if (!best && !recurse)
-	{
-		const ULONG old_length = m_shmemData.sh_mem_length_mapped;
-		const ULONG ev_length = old_length + Config::getEventMemSize();
+	if (!best && !recurse) {
+		old_length = EVENT_data.sh_mem_length_mapped;
+		ev_length = old_length + EVENT_EXTEND_SIZE;
 
-		evh* header = NULL;
+#ifdef WIN_NT
 
-#if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_STATUS_ARRAY local_status;
-		header = (evh*) ISC_remap_file(local_status, &m_shmemData, ev_length, true);
+		/* Before remapping the memory, wakeup the watcher thread.
+		 * Then remap the shared memory and allow the watcher thread
+		 * to remap.
+		 */
+
+		process = (PRB) ABS_PTR(EVENT_process_offset);
+		process->prb_flags |= PRB_remap;
+		event = process->prb_event;
+		post_process(process);
+
+		while (true) {
+			RELEASE;
+			THREAD_EXIT;
+			Sleep(3);
+			THREAD_ENTER;
+			ACQUIRE;
+
+			process = (PRB) ABS_PTR(EVENT_process_offset);
+			if (!(process->prb_flags & PRB_remap))
+				break;
+		}
+#endif /* WIN_NT */
+
+	EVH header = 0;
+#if !((defined SUPERSERVER) && (defined HAVE_MMAP))
+		header =
+			reinterpret_cast < EVH >
+			(ISC_remap_file(status_vector, &EVENT_data, ev_length, TRUE));
 #endif
-		if (header)
-		{
-			free = (frb*) ((UCHAR*) header + old_length);
+		if (header) {
+			free = (FRB) ((UCHAR *) header + old_length);
 /**
 	free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
 **/
-			free->frb_header.hdr_length = m_shmemData.sh_mem_length_mapped - old_length;
+			free->frb_header.hdr_length =
+				EVENT_data.sh_mem_length_mapped - old_length;
 			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;
 
-			m_header = header;
-			m_header->evh_length = m_shmemData.sh_mem_length_mapped;
+			EVENT_header = header;
+			EVENT_header->evh_length = EVENT_data.sh_mem_length_mapped;
 
 			free_global(free);
 
-			return alloc_global(type, length, true);
+#ifdef WIN_NT
+			process = (PRB) ABS_PTR(EVENT_process_offset);
+			process->prb_flags &= ~PRB_remap_over;
+#endif /* WIN_NT */
+
+			return alloc_global(type, length, TRUE);
 		}
 	}
 
-	if (!best)
-	{
-		release_shmem();
-		gds__log("Event table space exhausted");
+	if (!best) {
+		RELEASE;
+		gds__log("alloc_global: Event table space exhausted");
 		exit(FINI_ERROR);
 	}
 
-	free = (frb*) SRQ_ABS_PTR(*best);
+	free = (FRB) ABS_PTR(*best);
 
-	if (best_tail < (SLONG) sizeof(frb))
-	{
+	if (best_tail < (SLONG) sizeof(struct frb))
 		*best = free->frb_next;
-	}
-	else
-	{
+	else {
 		free->frb_header.hdr_length -= length;
-		free = (frb*) ((UCHAR*) free + free->frb_header.hdr_length);
+		free = (FRB) ((UCHAR *) free + free->frb_header.hdr_length);
 		free->frb_header.hdr_length = length;
 	}
 
-	memset((UCHAR*) free + sizeof(event_hdr), 0, free->frb_header.hdr_length - sizeof(event_hdr));
+	memset((UCHAR *) free + sizeof(struct hdr), 0,
+		   free->frb_header.hdr_length - sizeof(struct hdr));
 	free->frb_header.hdr_type = type;
 
 	return free;
 }
 
 
-void EventManager::create_process()
+static SLONG create_process(void)
 {
 /**************************************
  *
@@ -680,39 +741,49 @@ void EventManager::create_process()
  *	Create process block unless it already exists.
  *
  **************************************/
-	acquire_shmem();
+	PRB process;
 
-	prb* const process = (prb*) alloc_global(type_prb, sizeof(prb), false);
-	process->prb_process_id = PID;
-	insert_tail(&m_header->evh_processes, &process->prb_processes);
-	SRQ_INIT(process->prb_sessions);
+	if (EVENT_process_offset)
+		return EVENT_process_offset;
 
-	ISC_event_init(&process->prb_event);
+	ACQUIRE;
+	process = (PRB) alloc_global(type_prb, (SLONG) sizeof(struct prb), FALSE);
+	insert_tail(&EVENT_header->evh_processes, &process->prb_processes);
+	QUE_INIT(process->prb_sessions);
+	EVENT_process_offset = REL_PTR(process);
 
-	m_processOffset = SRQ_REL_PTR(process);
+#ifdef MULTI_THREAD
 
-#if (defined HAVE_MMAP || defined WIN_NT)
+#ifdef SOLARIS_MT
 	ISC_STATUS_ARRAY local_status;
-	m_process = (prb*) ISC_map_object(local_status, &m_shmemData, m_processOffset, sizeof(prb));
-
-	if (!m_process)
-	{
-		release_shmem();
-		Firebird::status_exception::raise(local_status);
-	}
-#else
-	m_process = process;
+	ISC_event_init(process->prb_event, 0, EVENT_SIGNAL);
+	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
+										 EVENT_process_offset,
+										 sizeof(struct prb));
 #endif
 
+#if !(defined SOLARIS_MT)
+	ISC_event_init(process->prb_event, EVENT_SIGNAL, 0);
+#endif
+#endif
+
+	process->prb_process_id = getpid();
+
 	probe_processes();
+	RELEASE;
 
-	release_shmem();
+#ifdef MULTI_THREAD
+	if (gds__thread_start
+		(reinterpret_cast < FPTR_INT_VOID_PTR > (watcher_thread), NULL,
+		 THREAD_medium, THREAD_blast, 0))
+		ERR_bugcheck_msg("cannot start thread");
+#endif
 
-	ThreadStart::start(watcher_thread, this, THREAD_medium, NULL);
+	return EVENT_process_offset;
 }
 
 
-void EventManager::delete_event(evnt* event)
+static void delete_event(EVNT event)
 {
 /**************************************
  *
@@ -724,22 +795,21 @@ void EventManager::delete_event(evnt* event)
  *	Delete an unused and unloved event.
  *
  **************************************/
+	EVNT parent;
+
 	remove_que(&event->evnt_events);
 
-	if (event->evnt_parent)
-	{
-		evnt* const parent = (evnt*) SRQ_ABS_PTR(event->evnt_parent);
+	if (event->evnt_parent) {
+		parent = (EVNT) ABS_PTR(event->evnt_parent);
 		if (!--parent->evnt_count)
-		{
 			delete_event(parent);
-		}
 	}
 
-	free_global((frb*) event);
+	free_global((FRB) event);
 }
 
 
-void EventManager::delete_process(SLONG process_offset)
+static void delete_process(SLONG process_offset)
 {
 /**************************************
  *
@@ -751,26 +821,58 @@ void EventManager::delete_process(SLONG process_offset)
  *	Delete a process block including friends and relations.
  *
  **************************************/
-	prb* const process = (prb*) SRQ_ABS_PTR(process_offset);
+	PRB process;
+	SES session;
 
-	// Delete any open sessions
+	process = (PRB) ABS_PTR(process_offset);
 
-	while (!SRQ_EMPTY(process->prb_sessions))
-	{
-		ses* const session = (ses*) ((UCHAR*) SRQ_NEXT(process->prb_sessions) - OFFSET(ses*, ses_sessions));
-		delete_session(SRQ_REL_PTR(session));
+/* Delete any open sessions */
+
+	while (!QUE_EMPTY(process->prb_sessions)) {
+		session =
+			(SES) ((UCHAR *) QUE_NEXT(process->prb_sessions) -
+				   OFFSET(SES, ses_sessions));
+		delete_session(REL_PTR(session));
 	}
 
-	ISC_event_fini(&process->prb_event);
-
-	// Untangle and release process block
+/* Untangle and release process block */
 
 	remove_que(&process->prb_processes);
-	free_global((frb*) process);
+	free_global((FRB) process);
+
+	if (EVENT_process_offset == process_offset) {
+#ifdef MULTI_THREAD
+		EVENT events;
+		SLONG value;
+		BOOLEAN timeout;
+
+		/* Terminate the event watcher thread */
+		/* When we come through the exit handler, the event semaphore might
+		   have already been released by another exit handler.  So we cannot
+		   use that semaphore to post the event.  Besides, the watcher thread 
+		   would be terminated anyway because the whole NLM is being unloaded. */
+
+		process->prb_flags |= PRB_exiting;
+		timeout = FALSE;
+		while (process->prb_flags & PRB_exiting && !timeout) {
+			ISC_event_post(process->prb_event);
+			value = ISC_event_clear(process->prb_event);
+			RELEASE;
+#ifdef SOLARIS_MT
+			events = EVENT_process->prb_event;
+#else
+			events = process->prb_event;
+#endif
+			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000, 0, 0);
+			ACQUIRE;
+		}
+		EVENT_process_offset = 0;
+#endif
+	}
 }
 
 
-void EventManager::delete_request(evt_req* request)
+static void delete_request(EVT_REQ request)
 {
 /**************************************
  *
@@ -782,32 +884,32 @@ void EventManager::delete_request(evt_req* request)
  *	Release an unwanted and unloved request.
  *
  **************************************/
-	ses* const session = (ses*) SRQ_ABS_PTR(request->req_session);
+	SES session;
+	RINT interest;
+	
+	session = (SES) ABS_PTR(request->req_session);
 
-	while (request->req_interests)
-	{
-		req_int* const interest = (req_int*) SRQ_ABS_PTR(request->req_interests);
+	while (request->req_interests) {
+		interest = (RINT) ABS_PTR(request->req_interests);
 
 		request->req_interests = interest->rint_next;
-		if (historical_interest(session, interest->rint_event))
-		{
+		if (historical_interest(session, interest->rint_event)) {
 			remove_que(&interest->rint_interests);
-			free_global((frb*) interest);
+			free_global((FRB) interest);
 		}
-		else
-		{
+		else {
 			interest->rint_next = session->ses_interests;
-			session->ses_interests = SRQ_REL_PTR(interest);
-			interest->rint_request = (SRQ_PTR)0;
+			session->ses_interests = REL_PTR(interest);
+			interest->rint_request = (PTR)0;
 		}
 	}
 
 	remove_que(&request->req_requests);
-	free_global((frb*) request);
+	free_global((FRB) request);
 }
 
 
-void EventManager::delete_session(SLONG session_id)
+static void delete_session(SLONG session_id)
 {
 /**************************************
  *
@@ -819,51 +921,68 @@ void EventManager::delete_session(SLONG session_id)
  *	Delete a session.
  *
  **************************************/
-	ses* const session = (ses*) SRQ_ABS_PTR(session_id);
+	SES session;
+	SRQ requests;
+	EVT_REQ request;
+	EVNT event;
+	RINT interest;
+#ifdef MULTI_THREAD
+/*  This code is very Netware specific, so for now I've #ifdef'ed this
+ *  variable out.  In the future, other platforms may find a need to
+ *  use this as well.  --  Morgan Schweers, November 16, 1994
+ */
+	USHORT kill_anyway = 0;		/*  Kill session despite session delivering. */
+	/*  (Generally means session's deliver is hung. */
+#endif
 
-	// if session currently delivered events, delay its deletion until deliver ends
-	if (session->ses_flags & SES_delivering)
-	{
-		session->ses_flags |= SES_purge;
+	session = (SES) ABS_PTR(session_id);
 
-		// give a chance for delivering thread to detect SES_purge flag we just set
-		release_shmem();
-		THREAD_SLEEP(100);
-		acquire_shmem();
-
-		return;
+#ifdef MULTI_THREAD
+/*  delay gives up control for 250ms, so a 40 iteration timeout is a
+ *  up to 10 second wait for session to finish delivering its message.
+ */
+	while (session->ses_flags & SES_delivering && (++kill_anyway != 40)) {
+		RELEASE;
+		THREAD_EXIT;
+#ifdef WIN_NT
+		Sleep(250);
+#endif
+#if (defined SOLARIS_MT || defined LINUX || defined AIX)
+		sleep(1);
+#endif
+		THREAD_ENTER;
+		ACQUIRE;
+		session = (SES) ABS_PTR(session_id);
 	}
+#endif
 
-	// Delete all requests
+/* Delete all requests */
 
-	while (!SRQ_EMPTY(session->ses_requests))
-	{
-		srq requests = session->ses_requests;
-		evt_req* request = (evt_req*) ((UCHAR*) SRQ_NEXT(requests) - OFFSET(evt_req*, req_requests));
+	while (!QUE_EMPTY(session->ses_requests)) {
+		requests = session->ses_requests;
+		request =
+			(EVT_REQ) ((UCHAR *) QUE_NEXT(requests) - OFFSET(EVT_REQ, req_requests));
 		delete_request(request);
 	}
 
-	// Delete any historical interests
+/* Delete any historical interests */
 
-	while (session->ses_interests)
-	{
-		req_int* const interest = (req_int*) SRQ_ABS_PTR(session->ses_interests);
-		evnt* const event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
+	while (session->ses_interests) {
+		interest = (RINT) ABS_PTR(session->ses_interests);
+		event = (EVNT) ABS_PTR(interest->rint_event);
 		session->ses_interests = interest->rint_next;
 		remove_que(&interest->rint_interests);
-		free_global((frb*) interest);
-		if (SRQ_EMPTY(event->evnt_interests))
-		{
+		free_global((FRB) interest);
+		if (QUE_EMPTY(event->evnt_interests))
 			delete_event(event);
-		}
 	}
 
 	remove_que(&session->ses_sessions);
-	free_global((frb*) session);
+	free_global((FRB) session);
 }
 
 
-void EventManager::deliver()
+static AST_TYPE deliver(void)
 {
 /**************************************
  *
@@ -875,50 +994,53 @@ void EventManager::deliver()
  *	We've been poked -- deliver any satisfying requests.
  *
  **************************************/
-	prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
+	PRB process;
+	EVT_REQ request;
+	SES session;
+	SRQ *que, *que2;
+	USHORT flag;
+	SLONG session_offset, que2_offset;
+
+#ifdef UNIX
+	if (acquire_count)
+		return;
+#endif
+
+	ACQUIRE;
+	process = (PRB) ABS_PTR(EVENT_process_offset);
 	process->prb_flags &= ~PRB_pending;
 
-	srq* que2 = SRQ_NEXT(process->prb_sessions);
-	while (que2 != &process->prb_sessions)
-	{
-		ses* session = (ses*) ((UCHAR*) que2 - OFFSET(ses*, ses_sessions));
+	QUE_LOOP(process->prb_sessions, que2) {
+		session = (SES) ((UCHAR *) que2 - OFFSET(SES, ses_sessions));
+#ifdef MULTI_THREAD
 		session->ses_flags |= SES_delivering;
-		const SLONG session_offset = SRQ_REL_PTR(session);
-		const SLONG que2_offset = SRQ_REL_PTR(que2);
-		for (bool flag = true; flag;)
-		{
-			flag = false;
-			srq* event_srq;
-			SRQ_LOOP(session->ses_requests, event_srq)
-			{
-				evt_req* request = (evt_req*) ((UCHAR*) event_srq - OFFSET(evt_req*, req_requests));
-				if (request_completed(request))
-				{
+#endif
+		session_offset = REL_PTR(session);
+		que2_offset = REL_PTR(que2);
+		for (flag = TRUE; flag;) {
+			flag = FALSE;
+			QUE_LOOP(session->ses_requests, que) {
+				request = (EVT_REQ) ((UCHAR *) que - OFFSET(EVT_REQ, req_requests));
+				if (request_completed(request)) {
 					deliver_request(request);
-					process = (prb*) SRQ_ABS_PTR(m_processOffset);
-					session = (ses*) SRQ_ABS_PTR(session_offset);
-					que2 = (srq *) SRQ_ABS_PTR(que2_offset);
-					flag = !(session->ses_flags & SES_purge);
+					process = (PRB) ABS_PTR(EVENT_process_offset);
+					session = (SES) ABS_PTR(session_offset);
+					que2 = (SRQ *) ABS_PTR(que2_offset);
+					flag = TRUE;
 					break;
 				}
 			}
 		}
+#ifdef MULTI_THREAD
 		session->ses_flags &= ~SES_delivering;
-		if (session->ses_flags & SES_purge)
-		{
-			que2 = SRQ_NEXT((*que2));
-			delete_session(SRQ_REL_PTR(session));
-			break;
-		}
-		else
-		{
-			que2 = SRQ_NEXT((*que2));
-		}
+#endif
 	}
+
+	RELEASE;
 }
 
 
-void EventManager::deliver_request(evt_req* request)
+static void deliver_request(EVT_REQ request)
 {
 /**************************************
  *
@@ -931,60 +1053,103 @@ void EventManager::deliver_request(evt_req* request)
  *	Clean up request.
  *
  **************************************/
-	Firebird::HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
-	UCHAR* p = buffer.getBuffer(1);
+	void (*ast) ();
+	void *arg;
+	SLONG count;
+	RINT interest;
+	PTR next;
+	EVNT event;
+	UCHAR buffer[512], *p, *event_buffer, *end;
 
-	FPTR_EVENT_CALLBACK ast = request->req_ast;
-	void* arg = request->req_ast_arg;
-
+	ast = request->req_ast;
+	arg = request->req_ast_arg;
+	p = event_buffer = buffer;
+	end = buffer + sizeof(buffer);
 	*p++ = EPB_version1;
 
-	// Loop thru interest block picking up event name, counts, and unlinking stuff
+/* Loop thru interest block picking up event name, counts, and unlinking
+   stuff */
 
-	try
+	for (next = request->req_interests;
+		 next && (interest = (RINT) ABS_PTR(next));
+		 next = interest->rint_next)
 	{
-		req_int* interest;
-		for (SRQ_PTR next = request->req_interests;
-			 next && (interest = (req_int*) SRQ_ABS_PTR(next));
-			 next = interest->rint_next)
+		interest = (RINT) ABS_PTR(next);
+		event = (EVNT) ABS_PTR(interest->rint_event);
+		if (end < p + event->evnt_length + 5)
 		{
-			//interest = (req_int*) SRQ_ABS_PTR(next); same line as in the condition above
-			evnt* const event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
-
-			const size_t length = buffer.getCount();
-			const size_t extent = event->evnt_length + sizeof(UCHAR) + sizeof(SLONG);
-
-			if (length + extent > MAX_USHORT)
-			{
-				Firebird::BadAlloc::raise();
+			/* Running out of space - allocate some more and copy it over */
+			assert(event_buffer == buffer);	/* we're in this block only once */
+			UCHAR* new_buffer = (UCHAR*)gds__alloc((SLONG) MAX_EVENT_BUFFER);
+			/* FREE: at procedure exit */
+			if (!new_buffer)
+			{	/* NOMEM: */
+				gds__log("failed to post all events");
+				break;			/* exit loop and send what we have */
 			}
-
-			buffer.grow(length + extent);
-			p = buffer.begin() + length;
-
-			*p++ = event->evnt_length;
-			memcpy(p, event->evnt_name, event->evnt_length);
-			p += event->evnt_length;
-			const SLONG count = event->evnt_count + 1;
-			*p++ = (UCHAR) (count);
-			*p++ = (UCHAR) (count >> 8);
-			*p++ = (UCHAR) (count >> 16);
-			*p++ = (UCHAR) (count >> 24);
+			event_buffer = new_buffer;
+			memcpy(event_buffer, buffer, p - buffer);
+			p = event_buffer + (p - buffer);
+			end = event_buffer + MAX_EVENT_BUFFER;
 		}
-	}
-	catch (const Firebird::BadAlloc&)
-	{
-		gds__log("Out of memory. Failed to post all events.");
+		*p++ = event->evnt_length;
+		memcpy(p, event->evnt_name, event->evnt_length);
+		p += event->evnt_length;
+		count = event->evnt_count + 1;
+		*p++ = (UCHAR) (count);
+		*p++ = (UCHAR) (count >> 8);
+		*p++ = (UCHAR) (count >> 16);
+		*p++ = (UCHAR) (count >> 24);
 	}
 
 	delete_request(request);
-	release_shmem();
-	(*ast)(arg, p - buffer.begin(), buffer.begin());
-	acquire_shmem();
+	RELEASE;
+	reinterpret_cast<void(*)(...)>(*ast)(arg, p - event_buffer, event_buffer);
+	if (event_buffer != buffer)
+	{
+		gds__free(event_buffer);
+	}
+	ACQUIRE;
 }
 
 
-evnt* EventManager::find_event(USHORT length, const TEXT* string, evnt* parent)
+static void exit_handler(void *arg)
+{
+/**************************************
+ *
+ *	e x i t _ h a n d l e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cleanup on exit.
+ *
+ **************************************/
+	ISC_STATUS_ARRAY local_status;
+
+	if (EVENT_process_offset) {
+		if (EVENT_header->evh_current_process != EVENT_process_offset)
+			ACQUIRE;
+		delete_process(EVENT_process_offset);
+		RELEASE;
+	}
+
+	while (acquire_count > 0)
+		RELEASE;
+
+#ifndef SERVER
+#ifdef SOLARIS_MT
+	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**)&EVENT_process,
+					 sizeof(struct prb));
+#endif
+	ISC_unmap_file(local_status, &EVENT_data, 0);
+#endif
+
+	EVENT_header = NULL;
+}
+
+
+static EVNT find_event(USHORT length, TEXT * string, EVNT parent)
 {
 /**************************************
  *
@@ -996,24 +1161,24 @@ evnt* EventManager::find_event(USHORT length, const TEXT* string, evnt* parent)
  *	Lookup an event.
  *
  **************************************/
-	const SRQ_PTR parent_offset = parent ? SRQ_REL_PTR(parent) : 0;
+	EVNT event;
+	SRQ *que;
+	PTR parent_offset;
 
-	srq* event_srq;
-	SRQ_LOOP(m_header->evh_events, event_srq)
-	{
-		evnt* const event = (evnt*) ((UCHAR*) event_srq - OFFSET(evnt*, evnt_events));
-		if (event->evnt_parent == parent_offset && event->evnt_length == length &&
-			!memcmp(string, event->evnt_name, length))
-		{
-			return event;
-		}
+	parent_offset = (parent) ? REL_PTR(parent) : 0;
+
+	QUE_LOOP(EVENT_header->evh_events, que) {
+		event = (EVNT) ((UCHAR *) que - OFFSET(EVNT, evnt_events));
+		if (event->evnt_parent == parent_offset &&
+			event->evnt_length == length &&
+			!memcmp(string, event->evnt_name, length)) return event;
 	}
 
 	return NULL;
 }
 
 
-void EventManager::free_global(frb* block)
+static void free_global(FRB block)
 {
 /**************************************
  *
@@ -1025,51 +1190,52 @@ void EventManager::free_global(frb* block)
  *	Free a previous allocated block.
  *
  **************************************/
-	SRQ_PTR *ptr;
-	frb* free = NULL;
+	PTR *ptr, offset;
+	FRB free, prior;
 
-	frb* prior = NULL;
-	const SRQ_PTR offset = SRQ_REL_PTR(block);
+	prior = NULL;
+	offset = REL_PTR(block);
 	block->frb_header.hdr_type = type_frb;
 
-	for (ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+	for (ptr = &EVENT_header->evh_free; (free = (FRB) ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
-	{
 		if ((SCHAR *) block < (SCHAR *) free)
 			break;
-	}
 
-	if (offset <= 0 || offset > m_header->evh_length ||
-		(prior && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
-	{
+	if (offset <= 0 || offset > EVENT_header->evh_length ||
+		(prior
+		 && (UCHAR *) block <
+		 (UCHAR *) prior + prior->frb_header.hdr_length)) {
 		punt("free_global: bad block");
 		return;
 	}
 
-	// Start by linking block into chain
+/* Start by linking block into chain */
 
 	block->frb_next = *ptr;
 	*ptr = offset;
 
-	// Try to merge free block with next block
+/* Try to merge free block with next block */
 
-	if (free && (SCHAR *) block + block->frb_header.hdr_length == (SCHAR *) free)
-	{
+	if (free
+		&& (SCHAR *) block + block->frb_header.hdr_length ==
+		(SCHAR *) free) {
 		block->frb_header.hdr_length += free->frb_header.hdr_length;
 		block->frb_next = free->frb_next;
 	}
 
-	// Next, try to merge the free block with the prior block
+/* Next, try to merge the free block with the prior block */
 
-	if (prior && (SCHAR *) prior + prior->frb_header.hdr_length ==	(SCHAR *) block)
-	{
+	if (prior
+		&& (SCHAR *) prior + prior->frb_header.hdr_length ==
+		(SCHAR *) block) {
 		prior->frb_header.hdr_length += block->frb_header.hdr_length;
 		prior->frb_next = block->frb_next;
 	}
 }
 
 
-req_int* EventManager::historical_interest(ses* session, SRQ_PTR event_offset)
+static RINT historical_interest(SES session, PTR event)
 {
 /**************************************
  *
@@ -1081,24 +1247,23 @@ req_int* EventManager::historical_interest(ses* session, SRQ_PTR event_offset)
  *	Find a historical interest, if any, of an event with a session.
  *
  **************************************/
-	req_int* interest;
+	PTR ptr;
+	RINT interest;
 
-	for (SRQ_PTR ptr = session->ses_interests;
-		 ptr && (interest = (req_int*) SRQ_ABS_PTR(ptr)); ptr = interest->rint_next)
-	{
-		if (interest->rint_event == event_offset)
+	for (ptr = session->ses_interests;
+		 ptr && (interest = (RINT) ABS_PTR(ptr)); ptr = interest->rint_next)
+		if (interest->rint_event == event)
 			return interest;
-	}
 
 	return NULL;
 }
 
 
-void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
+static void init(void *arg, SH_MEM shmem_data, int initialize)
 {
 /**************************************
  *
- *	i n i t _ s h m e m
+ *	i n i t
  *
  **************************************
  *
@@ -1106,41 +1271,42 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
  *	Initialize global region header.
  *
  **************************************/
+	FRB free;
 	int mutex_state;
 
-#ifdef WIN_NT
-	if ( (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_name)) )
+#if defined(WIN_NT)
+	if (mutex_state = ISC_mutex_init(MUTEX, EVENT_FILE))
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
-
-	m_sharedFileCreated = initialize;
 
 	if (!initialize)
 		return;
 
-	m_header = (evh*) shmem_data->sh_mem_address;
-	m_header->evh_length = m_shmemData.sh_mem_length_mapped;
-	m_header->evh_version = EVENT_VERSION;
-	m_header->evh_request_id = 0;
+	EVENT_header = (EVH) shmem_data->sh_mem_address;
+	EVENT_header->evh_length = EVENT_data.sh_mem_length_mapped;
+	EVENT_header->evh_version = EVENT_VERSION;
+	EVENT_header->evh_request_id = 0;
+	QUE_INIT(EVENT_header->evh_processes);
+	QUE_INIT(EVENT_header->evh_events);
 
-	SRQ_INIT(m_header->evh_processes);
-	SRQ_INIT(m_header->evh_events);
-
-#ifndef WIN_NT
-	if ( (mutex_state = ISC_mutex_init(MUTEX)) )
+#ifndef SERVER
+#if !defined(WIN_NT)
+	if (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_mutex_arg))
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
+#endif
 
-	frb* const free = (frb*) ((UCHAR*) m_header + sizeof(evh));
-	free->frb_header.hdr_length = m_shmemData.sh_mem_length_mapped - sizeof(evh);
+	free = (FRB) ((UCHAR *) EVENT_header + sizeof(struct evh));
+	free->frb_header.hdr_length =
+		EVENT_data.sh_mem_length_mapped - sizeof(struct evh);
 	free->frb_header.hdr_type = type_frb;
 	free->frb_next = 0;
 
-	m_header->evh_free = (UCHAR*) free - (UCHAR*) m_header;
+	EVENT_header->evh_free = (UCHAR *) free - (UCHAR *) EVENT_header;
 }
 
 
-void EventManager::insert_tail(srq * event_srq, srq * node)
+static void insert_tail(SRQ * que, SRQ * node)
 {
 /**************************************
  *
@@ -1149,19 +1315,21 @@ void EventManager::insert_tail(srq * event_srq, srq * node)
  **************************************
  *
  * Functional description
- *	Insert a node at the tail of a event_srq.
+ *	Insert a node at the tail of a que.
  *
  **************************************/
-	node->srq_forward = SRQ_REL_PTR(event_srq);
-	node->srq_backward = event_srq->srq_backward;
+	SRQ *prior;
 
-	srq* const prior = (srq *) SRQ_ABS_PTR(event_srq->srq_backward);
-	prior->srq_forward = SRQ_REL_PTR(node);
-	event_srq->srq_backward = SRQ_REL_PTR(node);
+	node->srq_forward = REL_PTR(que);
+	node->srq_backward = que->srq_backward;
+
+	prior = (SRQ *) ABS_PTR(que->srq_backward);
+	prior->srq_forward = REL_PTR(node);
+	que->srq_backward = REL_PTR(node);
 }
 
 
-evnt* EventManager::make_event(USHORT length, const TEXT* string, SLONG parent_offset)
+static EVNT make_event(USHORT length, TEXT * string, SLONG parent_offset)
 {
 /**************************************
  *
@@ -1173,14 +1341,17 @@ evnt* EventManager::make_event(USHORT length, const TEXT* string, SLONG parent_o
  *	Allocate an link in an event.
  *
  **************************************/
-	evnt* const event = (evnt*) alloc_global(type_evnt, sizeof(evnt) + length, false);
-	insert_tail(&m_header->evh_events, &event->evnt_events);
-	SRQ_INIT(event->evnt_interests);
+	EVNT event, parent;
 
-	if (parent_offset)
-	{
+	event =
+		(EVNT) alloc_global(type_evnt, (SLONG) (sizeof(struct evnt) + length),
+							FALSE);
+	insert_tail(&EVENT_header->evh_events, &event->evnt_events);
+	QUE_INIT(event->evnt_interests);
+
+	if (parent_offset) {
 		event->evnt_parent = parent_offset;
-		evnt* parent = (evnt*) SRQ_ABS_PTR(parent_offset);
+		parent = (EVNT) ABS_PTR(parent_offset);
 		++parent->evnt_count;
 	}
 
@@ -1191,7 +1362,7 @@ evnt* EventManager::make_event(USHORT length, const TEXT* string, SLONG parent_o
 }
 
 
-void EventManager::mutex_bugcheck(const TEXT* string, int mutex_state)
+static void mutex_bugcheck(TEXT * string, int mutex_state)
 {
 /**************************************
  *
@@ -1204,17 +1375,17 @@ void EventManager::mutex_bugcheck(const TEXT* string, int mutex_state)
  *	Post the bugcheck.
  *
  **************************************/
-	TEXT msg[BUFFER_TINY];
+	TEXT msg[128];
 
 	sprintf(msg, "EVENT: %s error, status = %d", string, mutex_state);
 	gds__log(msg);
 
-	fprintf(stderr, "%s\n", msg);
+	ib_fprintf(ib_stderr, "%s\n", msg);
 	exit(FINI_ERROR);
 }
 
 
-void EventManager::post_process(prb* process)
+static void post_process(PRB process)
 {
 /**************************************
  *
@@ -1226,13 +1397,31 @@ void EventManager::post_process(prb* process)
  *	Wakeup process.
  *
  **************************************/
+
 	process->prb_flags &= ~PRB_wakeup;
 	process->prb_flags |= PRB_pending;
-	ISC_event_post(&process->prb_event);
+	RELEASE;
+
+#ifdef SERVER
+	deliver();
+#else
+
+#ifdef MULTI_THREAD
+	ISC_event_post(process->prb_event);
+#else
+
+#ifdef UNIX
+	if (REL_PTR(process) != EVENT_process_offset)
+		ISC_kill(process->prb_process_id, EVENT_SIGNAL);
+#endif
+
+#endif
+	ACQUIRE;
+#endif
 }
 
 
-void EventManager::probe_processes()
+static void probe_processes(void)
 {
 /**************************************
  *
@@ -1241,26 +1430,28 @@ void EventManager::probe_processes()
  **************************************
  *
  * Functional description
- *	Probe a process to see if it still exists.
- *	If it doesn't, get rid of it.
+ *	Probe a process to see if it still exists.  If it doesn't, get
+ *	rid of it.
  *
  **************************************/
-	srq* event_srq;
-	SRQ_LOOP(m_header->evh_processes, event_srq)
-	{
-		prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET(prb*, prb_processes));
-		const SLONG process_offset = SRQ_REL_PTR(process);
-		if (process_offset != m_processOffset &&
-			!ISC_check_process_existence(process->prb_process_id))
-		{
-			event_srq = (srq *) SRQ_ABS_PTR(event_srq->srq_backward);
+	SRQ *que;
+	PRB process;
+	SLONG process_offset;
+
+	QUE_LOOP(EVENT_header->evh_processes, que) {
+		process = (PRB) ((UCHAR *) que - OFFSET(PRB, prb_processes));
+		process_offset = REL_PTR(process);
+		if (process_offset != EVENT_process_offset &&
+			!ISC_check_process_existence(process->prb_process_id,
+										 process->prb_process_uid[0], FALSE)) {
+			que = (SRQ *) ABS_PTR(que->srq_backward);
 			delete_process(process_offset);
 		}
 	}
 }
 
 
-void EventManager::punt(const TEXT* string)
+static void punt(TEXT * string)
 {
 /**************************************
  *
@@ -1272,15 +1463,15 @@ void EventManager::punt(const TEXT* string)
  *
  **************************************/
 
-	printf("(EVENT) punt: global region corrupt -- %s\n", string);
+	ib_printf("(EVENT) punt: global region corrupt -- %s\n", string);
 }
 
 
-void EventManager::release_shmem()
+static void release(void)
 {
 /**************************************
  *
- *	r e l e a s e _ s h m e m
+ *	r e l e a s e
  *
  **************************************
  *
@@ -1288,19 +1479,36 @@ void EventManager::release_shmem()
  *	Release exclusive control of shared global region.
  *
  **************************************/
+	int mutex_state;
+
 #ifdef DEBUG_EVENT
 	validate();
 #endif
 
-	m_header->evh_current_process = 0;
-
-	const int mutex_state = ISC_mutex_unlock(MUTEX);
-	if (mutex_state)
-		mutex_bugcheck("mutex unlock", mutex_state);
+#ifdef MULTI_THREAD
+	EVENT_header->evh_current_process = 0;
+	if (mutex_state = ISC_mutex_unlock(MUTEX))
+		mutex_bugcheck("mutex lock", mutex_state);
+#else
+	if (!--acquire_count) {
+		EVENT_header->evh_current_process = 0;
+#ifndef SERVER
+		if (mutex_state = ISC_mutex_unlock(MUTEX))
+			mutex_bugcheck("mutex lock", mutex_state);
+#endif
+#ifdef UNIX
+		if (EVENT_process_offset) {
+			PRB process = (PRB) ABS_PTR(EVENT_process_offset);
+			if (process->prb_flags & PRB_pending)
+				ISC_kill(process->prb_process_id, EVENT_SIGNAL);
+		}
+#endif
+	}
+#endif
 }
 
 
-void EventManager::remove_que(srq* node)
+static void remove_que(SRQ * node)
 {
 /**************************************
  *
@@ -1309,19 +1517,21 @@ void EventManager::remove_que(srq* node)
  **************************************
  *
  * Functional description
- *	Remove a node from a self-relative event_srq.
+ *	Remove a node from a self-relative que.
  *
  **************************************/
-	srq* event_srq = (srq*) SRQ_ABS_PTR(node->srq_forward);
-	event_srq->srq_backward = node->srq_backward;
+	SRQ *que;
 
-	event_srq = (srq*) SRQ_ABS_PTR(node->srq_backward);
-	event_srq->srq_forward = node->srq_forward;
+	que = (SRQ *) ABS_PTR(node->srq_forward);
+	que->srq_backward = node->srq_backward;
+
+	que = (SRQ *) ABS_PTR(node->srq_backward);
+	que->srq_forward = node->srq_forward;
 	node->srq_forward = node->srq_backward = 0;
 }
 
 
-bool EventManager::request_completed(evt_req* request)
+static BOOLEAN request_completed(EVT_REQ request)
 {
 /**************************************
  *
@@ -1333,21 +1543,44 @@ bool EventManager::request_completed(evt_req* request)
  *	See if request is completed.
  *
  **************************************/
-	req_int* interest;
-	for (SRQ_PTR next = request->req_interests; next; next = interest->rint_next)
-	{
-		interest = (req_int*) SRQ_ABS_PTR(next);
-		evnt* event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
+	PTR next;
+	RINT interest;
+	EVNT event;
+
+	for (next = request->req_interests; next; next = interest->rint_next) {
+		interest = (RINT) ABS_PTR(next);
+		event = (EVNT) ABS_PTR(interest->rint_event);
 		if (interest->rint_count <= event->evnt_count)
-			return true;
+			return TRUE;
 	}
 
-	return false;
+	return FALSE;
+}
+
+
+static ISC_STATUS return_ok(ISC_STATUS * status_vector)
+{
+/**************************************
+ *
+ *	r e t u r n _ o k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Everything is ducky -- return success.
+ *
+ **************************************/
+
+	*status_vector++ = gds_arg_gds;
+	*status_vector++ = 0;
+	*status_vector = gds_arg_end;
+
+	return 0;
 }
 
 
 #ifdef DEBUG_EVENT
-int EventManager::validate()
+static int validate(void)
 {
 /**************************************
  *
@@ -1359,42 +1592,42 @@ int EventManager::validate()
  *	Make sure everything looks ok.
  *
  **************************************/
-// Check consistency of global region (debugging only)
+	SLONG offset;
+	HDR *block;
+	PTR next_free;
 
-	SRQ_PTR next_free = 0;
-	ULONG offset;
+/* Check consistency of global region (debugging only) */
 
-	for (offset = sizeof(evh); offset < m_header->evh_length;
-		offset += block->frb_header.hdr_length)
-	{
-		const event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
-		if (!block->frb_header.hdr_length || !block->frb_header.hdr_type ||
-			block->frb_header.hdr_type >= type_max)
-		{
+	next_free = 0;
+
+	for (offset = sizeof(struct evh); offset < EVENT_header->evh_length;
+		 offset += block->hdr_length) {
+		block = (HDR *) ABS_PTR(offset);
+		if (!block->hdr_length || !block->hdr_type
+			|| block->hdr_type >= type_max) {
 			punt("bad block length or type");
 			break;
 		}
 		if (next_free)
-		{
 			if (offset == next_free)
 				next_free = 0;
 			else if (offset > next_free)
 				punt("bad free chain");
-		}
-		if (block->frb_header.hdr_type == type_frb) {
-			next_free = ((frb*) block)->frb_next;
-			if (next_free >= m_header->evh_length)
+		if (block->hdr_type == type_frb) {
+			next_free = ((FRB) block)->frb_next;
+			if (next_free >= EVENT_header->evh_length)
 				punt("bad frb_next");
 		}
 	}
 
-	if (offset != m_header->evh_length)
+	if (offset != EVENT_header->evh_length)
 		punt("bad block length");
 }
 #endif
 
 
-void EventManager::watcher_thread()
+#ifdef MULTI_THREAD
+static void THREAD_ROUTINE watcher_thread(void *dummy)
 {
 /**************************************
  *
@@ -1406,44 +1639,55 @@ void EventManager::watcher_thread()
  *	Wait for something to happen.
  *
  **************************************/
-	bool startup = true;
+	PRB process;
+	SLONG value;
+	EVENT events;
 
-	try
-	{
-		while (!m_exiting)
-		{
-			acquire_shmem();
+	while (EVENT_process_offset) {
+		ACQUIRE;
+		process = (PRB) ABS_PTR(EVENT_process_offset);
+		process->prb_flags &= ~PRB_wakeup;
 
-			prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
-			process->prb_flags &= ~PRB_wakeup;
-
-			const SLONG value = ISC_event_clear(&process->prb_event);
-
-			if (process->prb_flags & PRB_pending)
-			{
-				deliver();
-			}
-
-			release_shmem();
-
-			if (startup)
-			{
-				startup = false;
-				m_startupSemaphore.release();
-			}
-
-			if (m_exiting)
-				break;
-
-			ISC_event_wait(&m_process->prb_event, value, 0);
+		if (process->prb_flags & PRB_exiting) {
+			process->prb_flags &= ~PRB_exiting;
+			ISC_event_post(process->prb_event);
+			RELEASE;
+			break;
 		}
+#ifdef WIN_NT
+		if (process->prb_flags & PRB_remap) {
+			process->prb_flags |= PRB_remap_over;
+			process->prb_flags &= ~PRB_remap;
+			RELEASE;
+			while (true) {
+				Sleep(3);
+				ACQUIRE;
+				process = (PRB) ABS_PTR(EVENT_process_offset);
+				RELEASE;
+				if (!(process->prb_flags & PRB_remap_over))
+					break;
+			}
+			ACQUIRE;
+			process = (PRB) ABS_PTR(EVENT_process_offset);
+		}
+#endif
 
-		m_cleanupSemaphore.release();
+		value = ISC_event_clear(process->prb_event);
+		RELEASE;
+		deliver();
+		ACQUIRE;
+		process = (PRB) ABS_PTR(EVENT_process_offset);
+		RELEASE;
+#ifdef SOLARIS_MT
+		events = EVENT_process->prb_event;
+#else
+		events = process->prb_event;
+#endif
+		ISC_event_wait(1, &events, &value, 0, 0, 0);
 	}
-	catch (const Firebird::Exception& ex)
-	{
-		iscLogException("Error in event watcher thread\n", ex);
-	}
+
 }
+#endif
 
-} // namespace
+
+} // extern "C"

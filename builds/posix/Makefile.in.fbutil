@@ -27,6 +27,8 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.fbutil,v 1.6.2.1 2006-11-05 14:37:30 alexpeshkoff Exp $
+#
 ROOT=../..
 
 include     $(ROOT)/src/make.defaults
@@ -38,7 +40,7 @@ include     $(ROOT)/src/make.shared.variables
 
 AllObjects= $(FBUTIL_Objects)
 
-Dependancies=$(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 
@@ -58,12 +60,11 @@ jrdlib_dependencies: $(FBUTIL_Objects)
 
 
 libtestx.$(SHRLIB_EXT).2 : $(FBUTIL_Objects)
-#	g++ -shared -o $@ $^ $(STATICLINK_LIBS)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) -o $@ $^
 
 
 
 include $(ROOT)/gen/make.shared.targets
 
--include $(Dependancies)
+-include $(Dependencies)
 

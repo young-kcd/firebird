@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_proto.h
- *	DESCRIPTION:	Prototype header file for isc.cpp
+ *	DESCRIPTION:	Prototype header file for isc.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,27 +21,46 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_ISC_PROTO_H
-#define JRD_ISC_PROTO_H
+#ifndef _JRD_ISC_PROTO_H_
+#define _JRD_ISC_PROTO_H_
 
-#include "../common/classes/fb_string.h"
+#include "../jrd/isc.h"
 
-bool	ISC_check_process_existence(SLONG);
-TEXT*	ISC_get_host(TEXT *, USHORT);
-const TEXT*	ISC_get_host(Firebird::string&);
-bool	ISC_get_user(Firebird::string*, int*, int*, const TEXT*);
-SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Does not add word "Database" in the beginning like gds__log_status
-void	iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector);
-void	iscLogException(const TEXT* text, const Firebird::Exception& e);
+extern void DLL_EXPORT ISC_ast_enter(void);
+extern void DLL_EXPORT ISC_ast_exit(void);
+extern int DLL_EXPORT ISC_check_process_existence(SLONG, SLONG, USHORT);
+extern void DLL_EXPORT ISC_get_config(TEXT *, struct ipccfg *);
+extern int DLL_EXPORT ISC_set_config(TEXT *, struct ipccfg *);
+extern TEXT *INTERNAL_API_ROUTINE ISC_get_host(TEXT *, USHORT);
+extern int INTERNAL_API_ROUTINE ISC_get_user(TEXT *, int *, int *, TEXT *,
+											 TEXT *, int *, TEXT *);
+extern SLONG ISC_get_user_group_id(TEXT *);
+extern void ISC_set_user(TEXT *);
+extern SLONG API_ROUTINE ISC_get_prefix(TEXT *);
+extern void API_ROUTINE ISC_prefix(TEXT *, const TEXT *);
+extern void API_ROUTINE ISC_prefix_lock(TEXT *, const TEXT *);
+extern void API_ROUTINE ISC_prefix_msg(TEXT *, const TEXT *);
 
-#ifdef WIN9X_SUPPORT
-bool	ISC_is_WinNT();
+#ifdef VMS
+extern int ISC_expand_logical_once(TEXT *, USHORT, TEXT *);
+extern int ISC_make_desc(TEXT *, struct dsc$descriptor *, USHORT);
+extern void ISC_wait(SSHORT *, SLONG);
+extern void ISC_wake(SLONG);
+extern void ISC_wake_init(void);
 #endif
 
 #ifdef WIN_NT
-struct _SECURITY_ATTRIBUTES* ISC_get_security_desc();
+extern BOOLEAN ISC_is_WinNT(void);
+extern struct _SECURITY_ATTRIBUTES *ISC_get_security_desc(void);
+extern TEXT *ISC_prefix_interbase(TEXT *, TEXT *);
 #endif
 
-#endif // JRD_ISC_PROTO_H
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* _JRD_ISC_PROTO_H_ */

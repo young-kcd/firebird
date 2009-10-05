@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Data Definition Utility
- *	MODULE:		dyn.epp
+ *	MODULE:		dyn.e
  *	DESCRIPTION:	Dynamic data definition
  *
  * The contents of this file are subject to the Interbase Public
@@ -33,30 +33,30 @@
  *				Honor explicit USER keyword in GRANTs and REVOKEs. *
  *    2002.08.10 Dmitry Yemanov: ALTER VIEW
  *    2002.10.29 Nickolay Samofatov: Added support for savepoints
- *
- *	Alex Peshkov
  */
 
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
 
+#include "../jrd/ibsetjmp.h"
 #include "../jrd/common.h"
+#include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
-#include "../jrd/dfw_proto.h"
-#include "../jrd/UserManagement.h"
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
 #include "../jrd/flags.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/lls.h"
+#include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
-//#include "../jrd/license.h"
+#include "../jrd/license.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -71,36 +71,26 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd_proto.h"
 #include "../jrd/vio_proto.h"
-#include "../jrd/thread_proto.h"
-#include "../common/utils_proto.h"
-#include "../jrd/jrd_pwd.h"
-#include "../utilities/gsec/gsec.h"
-#include "../jrd/msg_encode.h"
+#include "../jrd/sch_proto.h"
 
-using MsgFormat::SafeArg;
-
+#define BLANK	'\040'
 
 DATABASE DB = STATIC "ODS.RDB";
 
-using namespace Jrd;
-using namespace Firebird;
 
 
-static void grant(Global*, const UCHAR**);
-static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const MetaName&,
-	const MetaName&, bool);
-static bool grantor_can_grant_role(thread_db*, Global*, const MetaName&, const MetaName&);
-static const char* privilege_name(char symbol);
-static void	revoke_permission(Global*, const UCHAR**);
-static void revoke_all(Global*, const UCHAR**);
-static void store_privilege(Global*, const MetaName&, const MetaName&, const MetaName&,
-	const TEXT*, SSHORT, SSHORT, int, const MetaName&);
-static void	set_field_class_name(Global*, const MetaName&, const MetaName&);
-static void dyn_user(Global*, const UCHAR**);
+static void grant(GBL, UCHAR **);
+static bool grantor_can_grant_role(TDBB, GBL, TEXT *, TEXT *);
+static bool grantor_can_grant(GBL, TEXT *, TEXT *, TEXT *, TEXT *, bool);
+static void	revoke_permission(GBL, UCHAR **);
+static void store_privilege(GBL, TEXT *, TEXT *, TEXT *, TEXT *, SSHORT,
+							SSHORT, int);
+static void	set_field_class_name(GBL, TEXT *, TEXT *);
 
 
-void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, const UCHAR* ddl)
+void DYN_ddl(ATT attachment, JRD_TRA transaction, USHORT length, UCHAR * ddl)
 {
 /**************************************
  *
@@ -113,39 +103,62 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
  *
  **************************************/
 
-	thread_db* const tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
+	TDBB tdbb = GET_THREAD_DATA;
 
-	const UCHAR* ptr = ddl;
+#if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
+	DBB dbb = tdbb->tdbb_database;
+#endif
 
-	if (*ptr++ != isc_dyn_version_1) {
-		ERR_post(Arg::Gds(isc_wrodynver));
+	UCHAR* ptr = ddl;
+
+	if (*ptr++ != gds_dyn_version_1) {
+		ERR_post(gds_wrodynver, 0);
 	}
 
-	fb_utils::init_status(tdbb->tdbb_status_vector);
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	*status++ = gds_arg_gds;
+	*status++ = 0;
+	*status = gds_arg_end;
 
-	Global gbl(transaction);
+	struct gbl gbl;
+	gbl.gbl_transaction = transaction;
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
-	MemoryPool* const tempPool = dbb->createPool();
-	Jrd::ContextPoolHolder context(tdbb, tempPool);
+	JrdMemoryPool* old_pool = tdbb->tdbb_default;
+	JrdMemoryPool* tempPool = JrdMemoryPool::createPool();
+	tdbb->tdbb_default = tempPool;
 
 	try {
-		Database::CheckoutLockGuard guard(dbb, dbb->dbb_dyn_mutex);
+
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		THREAD_EXIT;
+		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+		THREAD_ENTER;
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
 
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
 
-		DYN_execute(&gbl, &ptr, NULL, NULL, NULL, NULL, NULL);
+		DYN_execute(&gbl, &ptr, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR, (TEXT*)NULL_PTR);
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
-		fb_assert(ptr <= ddl + length); // disaster check after it happened
+
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
+
 	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		const Savepoint* savepoint = transaction->tra_save_point;
+	catch (const std::exception&) {
+		const sav* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
 		{
 			// An error during undo is very bad and has to be dealt with
@@ -155,21 +168,36 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
 			try {
 				VIO_verb_cleanup(tdbb, transaction);
 			}
-			catch (const Exception&) {
-				BUGCHECK(290);	// msg 290 error during savepoint backout
+			catch (const std::exception&) {
+				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
 		}
 
-		dbb->deletePool(tempPool);
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
 
+		tdbb->tdbb_default = old_pool;
+		JrdMemoryPool::deletePool(tempPool);
 		ERR_punt();
 	}
 
-	dbb->deletePool(tempPool);
+	tdbb->tdbb_default = old_pool;
+	JrdMemoryPool::deletePool(tempPool);
 }
 
 
-void DYN_error(bool	status_flag, USHORT number, const SafeArg& sarg)
+void DYN_error(USHORT	status_flag,
+			   USHORT	number,
+			   TEXT*	arg1,
+			   TEXT*	arg2,
+			   TEXT*	arg3,
+			   TEXT*	arg4,
+			   TEXT*	arg5)
 {
 /**************************************
  *
@@ -181,38 +209,62 @@ void DYN_error(bool	status_flag, USHORT number, const SafeArg& sarg)
  *	DDL failed.
  *
  **************************************/
-	thread_db* const tdbb = JRD_get_thread_data();
+	TDBB tdbb;
+	ISC_STATUS_ARRAY local_status;
+	ISC_STATUS *v1, *v2, *end, arg;
 
-	if (tdbb->tdbb_status_vector[1] == isc_no_meta_update)
+
+	tdbb = GET_THREAD_DATA;
+
+	if (tdbb->tdbb_status_vector[1] == gds_no_meta_update)
 		return;
 
 	TEXT error_buffer[BUFFER_MEDIUM];
-	Arg::Gds local_status(isc_no_meta_update);
 
 	if (number)
-	{
-		fb_msg_format(NULL, DYN_MSG_FAC, number, sizeof(error_buffer), error_buffer, sarg);
+		gds__msg_format(NULL_PTR, DYN_MSG_FAC, number,
+						sizeof(TEXT) * BUFFER_MEDIUM, error_buffer, arg1,
+						arg2, arg3, arg4, arg5);
 
-		ISC_STATUS_ARRAY temp_status;
-		fb_utils::init_status(temp_status);
-		temp_status[1] = ENCODE_ISC_MSG(number, DYN_MSG_FAC);
-		FB_SQLSTATE_STRING sqlstate;
-		fb_sqlstate(sqlstate, temp_status);
-		if (!strcmp(sqlstate, "HY000"))
-			strcpy(sqlstate, "42000"); // default SQLSTATE for DYN
+	v1 = local_status;
 
-		local_status << Arg::Gds(isc_random) << Arg::Str(error_buffer) << Arg::SqlState(sqlstate);
+	*v1++ = gds_arg_gds;
+	*v1++ = gds_no_meta_update;
+	if (number) {
+		*v1++ = gds_arg_gds;
+		*v1++ = gds_random;
+		*v1++ = gds_arg_string;
+		*v1++ = (ISC_STATUS) ERR_cstring(error_buffer);
 	}
-	ERR_make_permanent(local_status);
 	if (status_flag) {
-		local_status.append(Arg::StatusVector(tdbb->tdbb_status_vector));
+		v2 = tdbb->tdbb_status_vector;
+
+		/* check every other argument for end of vector */
+
+		end = local_status + sizeof(local_status) - 1;
+		while (v1 < end &&
+			   ((arg = *v2++) != gds_arg_cstring || v1 + 1 < end) &&
+			   (*v1++ = arg)) {
+			*v1++ = *v2++;
+			if (arg == gds_arg_cstring)
+				*v1++ = *v2++;
+		}
 	}
+	*v1 = gds_arg_end;
+	end = v1 + 1;
 
-	local_status.copyTo(tdbb->tdbb_status_vector);
+	for (v1 = local_status, v2 = tdbb->tdbb_status_vector; v1 < end;)
+		*v2++ = *v1++;
 }
 
 
-void DYN_error_punt(bool status_flag, USHORT number, const SafeArg& arg)
+void DYN_error_punt(USHORT	status_flag,
+					USHORT	number,
+					TEXT*	arg1,
+					TEXT*	arg2,
+					TEXT*	arg3,
+					TEXT*	arg4,
+					TEXT*	arg5)
 {
 /**************************************
  *
@@ -225,52 +277,15 @@ void DYN_error_punt(bool status_flag, USHORT number, const SafeArg& arg)
  *
  **************************************/
 
-	DYN_error(status_flag, number, arg);
+	DYN_error(status_flag, number, arg1, arg2, arg3, arg4, arg5);
 	ERR_punt();
 }
 
 
-void DYN_error_punt(bool status_flag, USHORT number, const char* str)
-{
-/**************************************
- *
- *	D Y N _ e r r o r _ p u n t
- *
- **************************************
- *
- * Functional description
- *	DDL failed.
- *
- **************************************/
-
-	DYN_error(status_flag, number, SafeArg() << str);
-	ERR_punt();
-}
-
-
-void DYN_error_punt(bool status_flag, USHORT number)
-{
-/**************************************
- *
- *	D Y N _ e r r o r _ p u n t
- *
- **************************************
- *
- * Functional description
- *	DDL failed.
- *
- **************************************/
-
-	static const SafeArg dummy;
-	DYN_error(status_flag, number, dummy);
-	ERR_punt();
-}
-
-
-bool DYN_is_it_sql_role(Global* gbl,
-						const MetaName&	input_name,
-						MetaName& output_name,
-						thread_db* tdbb)
+BOOLEAN DYN_is_it_sql_role(GBL		gbl,
+						   TEXT*	input_name,
+						   TEXT*	output_name,
+						   TDBB		tdbb)
 {
 /**************************************
  *
@@ -280,30 +295,36 @@ bool DYN_is_it_sql_role(Global* gbl,
  *
  * Functional description
  *
- *	If input_name is found in RDB$ROLES, then returns true. Otherwise
- *    returns false.
+ *	If input_name is found in RDB$ROLES, then returns TRUE. Otherwise
+ *    returns FALSE.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	DBB dbb;
+	BLK request;
+	BOOLEAN found;
+	USHORT major_version, minor_original;
 
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
-	bool found = false;
+	SET_TDBB(tdbb);
+	dbb = tdbb->tdbb_database;
+
+	major_version = (SSHORT) dbb->dbb_ods_version;
+	minor_original = (SSHORT) dbb->dbb_minor_original;
+	found = FALSE;
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 		return found;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
+	request = (BLK) CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$ROLES WITH
-			X.RDB$ROLE_NAME EQ input_name.c_str()
-		if (!DYN_REQUEST(drq_get_role_nm))
-			DYN_REQUEST(drq_get_role_nm) = request;
+			X.RDB$ROLE_NAME EQ input_name
+			if (!DYN_REQUEST(drq_get_role_nm))
+				DYN_REQUEST(drq_get_role_nm) = request;
 
-		found = true;
-		output_name = X.RDB$OWNER_NAME;
+		found = TRUE;
+		DYN_terminate(X.RDB$OWNER_NAME, sizeof(X.RDB$OWNER_NAME));
+		strcpy(output_name, X.RDB$OWNER_NAME);
 
 	END_FOR;
 
@@ -314,7 +335,7 @@ bool DYN_is_it_sql_role(Global* gbl,
 }
 
 
-void DYN_unsupported_verb()
+void DYN_unsupported_verb(void)
 {
 /**************************************
  *
@@ -327,18 +348,17 @@ void DYN_unsupported_verb()
  *
  **************************************/
 
-	static const SafeArg dummy;
-	DYN_error_punt(false, 2, dummy);	// msg 2: "unsupported DYN verb"
+	DYN_error_punt(FALSE, 2, NULL, NULL, NULL, NULL, NULL);	/* msg 2: "unsupported DYN verb" */
 }
 
 
-void DYN_execute(Global* gbl,
-				 const UCHAR** ptr,
-				 const MetaName* relation_name,
-				 MetaName* field_name,
-				 MetaName* trigger_name,
-				 MetaName* function_name,
-				 MetaName* procedure_name)
+void DYN_execute(
+				 GBL gbl,
+				 UCHAR ** ptr,
+				 TEXT * relation_name,
+				 TEXT * field_name,
+				 TEXT * trigger_name,
+TEXT * function_name, TEXT * procedure_name)
 {
 /**************************************
  *
@@ -352,277 +372,226 @@ void DYN_execute(Global* gbl,
  **************************************/
 	UCHAR verb;
 
-	switch (verb = *(*ptr)++)
-	{
-	case isc_dyn_begin:
-		while (**ptr != isc_dyn_end)
-		{
+	switch (verb = *(*ptr)++) {
+	case gds_dyn_begin:
+		while (**ptr != gds_dyn_end)
 			DYN_execute(gbl, ptr, relation_name, field_name,
 						trigger_name, function_name, procedure_name);
-		}
 		++(*ptr);
 		break;
 
-		// Runtime security-related dynamic DDL should not require licensing.
-		// A placeholder case statement for SQL 3 Roles is reserved below.
+		/* Runtime security-related dynamic DDL should not require licensing.
+		   A placeholder case statement for SQL 3 Roles is reserved below. */
 
-	case isc_dyn_grant:
+	case gds_dyn_grant:
 		grant(gbl, ptr);
 		break;
 
-	case isc_dyn_revoke:
+	case gds_dyn_revoke:
 		revoke_permission(gbl, ptr);
 		break;
 
-	case isc_dyn_revoke_all:
-		revoke_all(gbl, ptr);
-		break;
-
 /***
-    case isc_dyn_def_role:
+    case gds_dyn_def_role:
         create_role (gbl, ptr);
 	break;
 ***/
 	default:
-		// make sure that the license allows metadata operations
+		/* make sure that the license allows metadata operations */
 
-		switch (verb)
-		{
-		case isc_dyn_mod_database:
+		switch (verb) {
+		case gds_dyn_mod_database:
 			DYN_modify_database(gbl, ptr);
 			break;
 
-		case isc_dyn_def_collation:
-			DYN_define_collation(gbl, ptr);
-			break;
-
-		case isc_dyn_del_collation:
-			DYN_delete_collation(gbl, ptr);
-			break;
-
-		case isc_dyn_def_rel:
-		case isc_dyn_def_view:
+		case gds_dyn_def_rel:
+		case gds_dyn_def_view:
 			DYN_define_relation(gbl, ptr);
 			break;
 
-		case isc_dyn_mod_rel:
+		case gds_dyn_mod_rel:
 			DYN_modify_relation(gbl, ptr);
 			break;
 
-		case isc_dyn_mod_view:
+		case gds_dyn_mod_view:
 			DYN_modify_view(gbl, ptr);
 			break;
 
-		case isc_dyn_delete_rel:
+		case gds_dyn_delete_rel:
 			DYN_delete_relation(gbl, ptr, relation_name);
 			break;
 
-		case isc_dyn_def_security_class:
+		case gds_dyn_def_security_class:
 			DYN_define_security_class(gbl, ptr);
 			break;
 
-		case isc_dyn_delete_security_class:
+		case gds_dyn_delete_security_class:
 			DYN_delete_security_class(gbl, ptr);
 			break;
 
-		case isc_dyn_def_exception:
+		case gds_dyn_def_exception:
 			DYN_define_exception(gbl, ptr);
 			break;
 
-		case isc_dyn_mod_exception:
+		case gds_dyn_mod_exception:
 			DYN_modify_exception(gbl, ptr);
 			break;
 
-		case isc_dyn_del_exception:
+		case gds_dyn_del_exception:
 			DYN_delete_exception(gbl, ptr);
 			break;
 
-		case isc_dyn_def_filter:
+		case gds_dyn_def_filter:
 			DYN_define_filter(gbl, ptr);
 			break;
 
-		case isc_dyn_mod_filter:
-			DYN_modify_filter(gbl, ptr);
-			break;
-
-		case isc_dyn_delete_filter:
+		case gds_dyn_delete_filter:
 			DYN_delete_filter(gbl, ptr);
 			break;
 
-		case isc_dyn_def_function:
+		case gds_dyn_def_function:
 			DYN_define_function(gbl, ptr);
 			break;
 
-		case isc_dyn_def_function_arg:
+		case gds_dyn_def_function_arg:
 			DYN_define_function_arg(gbl, ptr, function_name);
 			break;
 
-		case isc_dyn_mod_function:
-			DYN_modify_function(gbl, ptr);
-			break;
-
-		case isc_dyn_delete_function:
+		case gds_dyn_delete_function:
 			DYN_delete_function(gbl, ptr);
 			break;
 
-		case isc_dyn_def_generator:
+		case gds_dyn_def_generator:
 			DYN_define_generator(gbl, ptr);
-			break;
-
-		case isc_dyn_mod_generator:
-			DYN_modify_generator(gbl, ptr);
-			break;
-
-		case isc_dyn_delete_generator:
-			DYN_delete_generator(gbl, ptr);
 			break;
 
 		case isc_dyn_def_sql_role:
 			DYN_define_role(gbl, ptr);
 			break;
 
-		case isc_dyn_mod_sql_role:
-			DYN_modify_role(gbl, ptr);
-			break;
-
 		case isc_dyn_del_sql_role:
 			DYN_delete_role(gbl, ptr);
 			break;
 
-		case isc_dyn_def_procedure:
+		case gds_dyn_def_procedure:
 			DYN_define_procedure(gbl, ptr);
 			break;
 
-		case isc_dyn_mod_procedure:
+		case gds_dyn_mod_procedure:
 			DYN_modify_procedure(gbl, ptr);
 			break;
 
-		case isc_dyn_delete_procedure:
+		case gds_dyn_delete_procedure:
 			DYN_delete_procedure(gbl, ptr);
 			break;
 
-		case isc_dyn_def_parameter:
+		case gds_dyn_def_parameter:
 			DYN_define_parameter(gbl, ptr, procedure_name);
 			break;
 
-		case isc_dyn_mod_prc_parameter:
-			DYN_modify_parameter(gbl, ptr);
-			break;
-
-		case isc_dyn_delete_parameter:
+		case gds_dyn_delete_parameter:
 			DYN_delete_parameter(gbl, ptr, procedure_name);
 			break;
 
-		case isc_dyn_def_shadow:
+		case gds_dyn_def_shadow:
 			DYN_define_shadow(gbl, ptr);
 			break;
 
-		case isc_dyn_delete_shadow:
+		case gds_dyn_delete_shadow:
 			DYN_delete_shadow(gbl, ptr);
 			break;
 
-		case isc_dyn_def_trigger:
-			DYN_define_trigger(gbl, ptr, relation_name, NULL, false);
+		case gds_dyn_def_trigger:
+			DYN_define_trigger(gbl, ptr, relation_name, NULL, FALSE);
 			break;
 
-		case isc_dyn_mod_trigger:
+		case gds_dyn_mod_trigger:
 			DYN_modify_trigger(gbl, ptr);
 			break;
 
-		case isc_dyn_delete_trigger:
+		case gds_dyn_delete_trigger:
 			DYN_delete_trigger(gbl, ptr);
 			break;
 
-		case isc_dyn_def_trigger_msg:
+		case gds_dyn_def_trigger_msg:
 			DYN_define_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
-		case isc_dyn_mod_trigger_msg:
+		case gds_dyn_mod_trigger_msg:
 			DYN_modify_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
-		case isc_dyn_delete_trigger_msg:
+		case gds_dyn_delete_trigger_msg:
 			DYN_delete_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
-		case isc_dyn_def_global_fld:
+		case gds_dyn_def_global_fld:
 			DYN_define_global_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_mod_global_fld:
+		case gds_dyn_mod_global_fld:
 			DYN_modify_global_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_delete_global_fld:
+		case gds_dyn_delete_global_fld:
 			DYN_delete_global_field(gbl, ptr);
 			break;
 
-		case isc_dyn_def_local_fld:
+		case gds_dyn_def_local_fld:
 			DYN_define_local_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_mod_local_fld:
-			DYN_modify_local_field(gbl, ptr, relation_name);
+		case gds_dyn_mod_local_fld:
+			DYN_modify_local_field(gbl, ptr, relation_name, NULL);
 			break;
 
-		case isc_dyn_delete_local_fld:
-			DYN_delete_local_field(gbl, ptr, relation_name); //, field_name);
+		case gds_dyn_delete_local_fld:
+			DYN_delete_local_field(gbl, ptr, relation_name, field_name);
 			break;
 
 		case isc_dyn_mod_sql_fld:
-			DYN_modify_sql_field(gbl, ptr, relation_name);
+			DYN_modify_sql_field(gbl, ptr, relation_name, NULL);
 			break;
 
-		case isc_dyn_def_sql_fld:
+		case gds_dyn_def_sql_fld:
 			DYN_define_sql_field(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_rel_constraint:
+		case gds_dyn_def_idx:
+			DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL,
+							 NULL);
+			break;
+
+		case gds_dyn_rel_constraint:
 			DYN_define_constraint(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_delete_rel_constraint:
+		case gds_dyn_delete_rel_constraint:
 			DYN_delete_constraint(gbl, ptr, relation_name);
 			break;
 
-		case isc_dyn_def_idx:
-			DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL, NULL);
-			break;
-
-		case isc_dyn_mod_idx:
+		case gds_dyn_mod_idx:
 			DYN_modify_index(gbl, ptr);
 			break;
 
-		case isc_dyn_delete_idx:
+		case gds_dyn_delete_idx:
 			DYN_delete_index(gbl, ptr);
 			break;
 
-		case isc_dyn_view_relation:
+		case gds_dyn_view_relation:
 			DYN_define_view_relation(gbl, ptr, relation_name);
 			break;
 
-		case isc_dyn_def_dimension:
+		case gds_dyn_def_dimension:
 			DYN_define_dimension(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_delete_dimensions:
-			DYN_delete_dimensions(gbl, ptr); // relation_name, field_name);
+		case gds_dyn_delete_dimensions:
+			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
 			break;
 
-		case isc_dyn_mod_charset:
-			DYN_modify_charset(gbl, ptr);
-			break;
-
-		case isc_dyn_mod_collation:
-			DYN_modify_collation(gbl, ptr);
-			break;
-
-		case isc_dyn_mapping:
-			DYN_modify_mapping(gbl, ptr);
-			break;
-
-		case isc_dyn_user:
-			dyn_user(gbl, ptr);
+		case gds_dyn_delete_generator:
+			DYN_delete_generator(gbl, ptr);
 			break;
 
 		default:
@@ -633,7 +602,7 @@ void DYN_execute(Global* gbl,
 }
 
 
-SLONG DYN_get_number(const UCHAR** ptr)
+SLONG DYN_get_number(UCHAR ** ptr)
 {
 /**************************************
  *
@@ -645,8 +614,11 @@ SLONG DYN_get_number(const UCHAR** ptr)
  *	Pick up a number and possible clear a null flag.
  *
  **************************************/
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
+	UCHAR *p;
+	USHORT length;
+
+	p = *ptr;
+	length = *p++;
 	length |= (*p++) << 8;
 	*ptr = p + length;
 
@@ -654,7 +626,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool transliterate)
+USHORT DYN_get_string(TEXT ** ptr, TEXT * field, USHORT size, USHORT err_flag)
 {
 /**************************************
  *
@@ -669,210 +641,37 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
  *	Strings need enough space for null pad.
  *
  **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
+	TEXT *p;
+	USHORT l, e, length;
+
+	e = 0;
+	p = *ptr;
+	length = (UCHAR) * p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
-	USHORT l = length;
-
-	if (l)
-	{
+	if ( (l = length) ) {
 		if (length >= size) {
-			DYN_error_punt(false, 159); // msg 159: Name longer than database field size
+			if (err_flag)
+				DYN_error_punt(FALSE, 159, NULL, NULL, NULL, NULL, NULL);
+			/* msg 159: Name longer than database field size */
+			else {
+				l = size - 1;
+				e = length - l;
+			}
 		}
-
-		TEXT* p2 = (transliterate ? temp.getBuffer(length) : field);
-
-		do {
-			*p2++ = *p++;
-		} while (--l);
+		do
+			*field++ = *p++;
+		while (--l);
+		for (; e; e--)
+			p++;
 	}
 
-	*ptr = p;
-
-	if (transliterate)
-	{
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) field, size - 1,
-			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
-	}
-
-	field[length] = 0;
-
-	return length;
-}
-
-
-USHORT DYN_get_string(const TEXT** ptr, MetaName& field, size_t, bool transliterate)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Pick up an object name, move to a target. Return length of string.
- *	If destination field size is too small, punt.
- *
- **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	if (length > MAX_SQL_IDENTIFIER_LEN)
-	{
-		DYN_error_punt(false, 159);
-		// msg 159: Name longer than database field size
-	}
-	field.assign(p, length);
-	p += length;
-
-	*ptr = p;
-
-	if (transliterate)
-	{
-		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
-
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
-		field.assign(temp, length);
-	}
-
-	return length;
-}
-
-
-USHORT DYN_get_string(const TEXT** ptr, string& field, size_t, bool transliterate)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Pick up an object name, move to a target. Return length of string.
- *	If destination field size is too small, punt.
- *
- **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	if (length > MAX_SQL_IDENTIFIER_LEN)
-	{
-		DYN_error_punt(false, 159);
-		// msg 159: Name longer than database field size
-	}
-	field.assign(p, length);
-	p += length;
-
-	*ptr = p;
-
-	if (transliterate)
-	{
-		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
-
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
-		field.assign(temp, length);
-	}
-
-	return length;
-}
-
-
-USHORT DYN_get_string(const TEXT** ptr, PathName& field, size_t, bool transliterate)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Pick up a file name, move to a target. Return length
- *	of string.
- *
- **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	field.assign(p, length);
-	p += length;
-
-	*ptr = p;
-
-	if (transliterate)
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-		PathName temp;
-
-		temp.reserve(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, (BYTE*) temp.begin(), temp.capacity(),
-			ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post);
-		field.assign(temp.c_str(), length);
-	}
-
-	return length;
-}
-
-
-USHORT DYN_get_string(const TEXT** ptr, UCharBuffer& array, size_t, bool transliterate)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Pick up a string, move to a target. Return length
- *	of string.
- *
- **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	if (transliterate)
-	{
-		UCharBuffer temp;
-		memcpy(temp.getBuffer(length), p, length);
-
-		thread_db* tdbb = JRD_get_thread_data();
-
-		array.resize(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, temp.begin(), length, ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, array.begin(), array.getCapacity(),
-			ttype_dynamic, temp.begin(), length, ERR_post);
-		array.resize(length);
-	}
-	else
-		memcpy(array.getBuffer(length), p, length);
-
-	p += length;
+	*field = 0;
 	*ptr = p;
 
 	return length;
 }
 
-
-USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_blr_blob(GBL gbl, UCHAR** ptr, BID blob_id)
 {
 /**************************************
  *
@@ -884,28 +683,30 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
  *	Write out a blr blob.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	TDBB	tdbb;
+	BLB		blob;
+	USHORT	length;
+	UCHAR*	p;
 
-	const UCHAR *p = *ptr;
-	USHORT length = *p++;
+	tdbb = GET_THREAD_DATA;
+
+	p = *ptr;
+	length = *p++;
 	length |= (*p++) << 8;
 
-	if (!length)
-	{
+	if (!length) {
 		*ptr = p;
 		return length;
 	}
 
 	try {
-		blb* blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
+		blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106);
-		// msg 106: "Create metadata blob failed"
+	catch (const std::exception&) {
+		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
+		/* msg 106: "Create metadata blob failed" */
 	}
 
 	*ptr = p + length;
@@ -913,7 +714,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_text_blob(GBL gbl, UCHAR ** ptr, BID blob_id)
 {
 /**************************************
  *
@@ -925,55 +726,24 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
  *	Write out a text blob.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	TDBB tdbb;
+	USHORT length;
+	UCHAR *p, *end;
+	BLB blob;
 
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
+	tdbb = GET_THREAD_DATA;
+
+	p = *ptr;
+	length = *p++;
 	length |= (*p++) << 8;
 
-	if (!length)
-	{
+	if (!length) {
 		*ptr = p;
 		return length;
 	}
 
-	// make the code die at some place if DYN_error_punt doesn't jump far away.
-	const UCHAR* end = NULL;
-
 	try {
-		UCharBuffer bpb;
-
-		Database* dbb = tdbb->getDatabase();
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-		{
-			const size_t convSize = 15;
-			bpb.resize(convSize);
-
-			UCHAR* p = bpb.begin();
-			*p++ = isc_bpb_version1;
-
-			*p++ = isc_bpb_source_type;
-			*p++ = 2;
-			put_vax_short(p, isc_blob_text);
-			p += 2;
-			*p++ = isc_bpb_source_interp;
-			*p++ = 1;
-			*p++ = tdbb->getAttachment()->att_charset;
-
-			*p++ = isc_bpb_target_type;
-			*p++ = 2;
-			put_vax_short(p, isc_blob_text);
-			p += 2;
-			*p++ = isc_bpb_target_interp;
-			*p++ = 1;
-			*p++ = CS_METADATA;
-			fb_assert(size_t(p - bpb.begin()) <= convSize);
-
-			// set the array count to the number of bytes we used
-			bpb.shrink(p - bpb.begin());
-		}
-
-		blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, blob_id, bpb.getCount(), bpb.begin());
+		blob = BLB_create(tdbb, gbl->gbl_transaction, blob_id);
 
 		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
 		{
@@ -982,11 +752,9 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106);
-		// msg 106: "Create metadata blob failed"
+	catch (const std::exception&) {
+		DYN_error_punt(TRUE, 106, NULL, NULL, NULL, NULL, NULL);
+		/* msg 106: "Create metadata blob failed" */
 	}
 
 	*ptr = end;
@@ -994,7 +762,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-void DYN_rundown_request(jrd_req* handle, SSHORT id)
+void DYN_rundown_request(BLK handle, SSHORT id)
 {
 /**************************************
  *
@@ -1008,21 +776,23 @@ void DYN_rundown_request(jrd_req* handle, SSHORT id)
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb  = tdbb->getDatabase();
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
+
+#pragma FB_COMPILER_MESSAGE("TMN: FIXME! We do not have a jmp_buf anymore!")
 
 	if (!handle) {
 		return;
 	}
 
-	EXE_unwind(tdbb, handle);
+	EXE_unwind(tdbb, (JRD_REQ)handle);
 	if (id >= 0 && !DYN_REQUEST(id)) {
 		DYN_REQUEST(id) = handle;
 	}
 }
 
 
-USHORT DYN_skip_attribute(const UCHAR** ptr)
+USHORT DYN_skip_attribute(UCHAR ** ptr)
 {
 /**************************************
  *
@@ -1035,16 +805,44 @@ USHORT DYN_skip_attribute(const UCHAR** ptr)
  *	size of count bytes).
  *
  **************************************/
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
+	UCHAR *p;
+	USHORT length;
+
+	p = *ptr;
+	length = *p++;
 	length |= (*p++) << 8;
 	*ptr = p + length;
 
 	return length;
 }
 
+void DYN_terminate( TEXT * string, int length)
+{
+/**************************************
+ *
+ *	D Y N _ t e r m i n a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Remove trailing blanks from a string.
+ *	Ensure that the resulting string (of size length) is
+ *	terminated with a NULL.
+ *
+ **************************************/
+	TEXT *p, *q;
 
-static void grant( Global* gbl, const UCHAR** ptr)
+	q = string - 1;
+	for (p = string; *p && --length; p++) {
+		if (*p != BLANK)
+			q = p;
+	}
+
+	*(q + 1) = '\0';
+}
+
+
+static void grant( GBL gbl, UCHAR ** ptr)
 {
 /**************************************
  *
@@ -1057,47 +855,52 @@ static void grant( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 
-	SSHORT id;
-	char privileges[16];
-	MetaName object;
-	MetaName field;
-	MetaName user;
+	BLK request;
+	//volatile SSHORT err_num;
+	volatile SSHORT id;
+	TEXT privileges[16];
+	TEXT object[32];
+	TEXT field[32];
+	TEXT user[32];
 	TEXT priv[2];
 	bool grant_role_stmt = false;
+	TEXT grantor[32];
+	TEXT* p;
+	TEXT* ptr1;
+	TEXT* ptr2;
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
-	MetaName grantor = tdbb->getAttachment()->att_user->usr_user_name;
+	TDBB tdbb = GET_THREAD_DATA;
+	DBB  dbb  = tdbb->tdbb_database;
 
-	const USHORT major_version  = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	USHORT major_version  = (SSHORT) dbb->dbb_ods_version;
+	USHORT minor_original = (SSHORT) dbb->dbb_minor_original;
 
 	GET_STRING(ptr, privileges);
 	if (!strcmp(privileges, "A")) {
 		strcpy(privileges, ALL_PRIVILEGES);
 	}
 
+	object[0] = field[0] = user[0] = 0;
 	int    options   = 0;
 	SSHORT user_type = -1;
 	SSHORT obj_type  = -1;
-    MetaName dummy_name;
+    TEXT dummy_name[32];
 
 	UCHAR verb;
-	while ((verb = *(*ptr)++) != isc_dyn_end)
+	while ((verb = *(*ptr)++) != gds_dyn_end)
 	{
-		switch (verb)
-		{
-		case isc_dyn_rel_name:
+		switch (verb) {
+		case gds_dyn_rel_name:
 			obj_type = obj_relation;
 			GET_STRING(ptr, object);
 			break;
 
-		case isc_dyn_prc_name:
+		case gds_dyn_prc_name:
 			obj_type = obj_procedure;
 			GET_STRING(ptr, object);
 			break;
 
-		case isc_dyn_fld_name:
+		case gds_dyn_fld_name:
 			GET_STRING(ptr, field);
 			break;
 
@@ -1106,125 +909,117 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_user:
+		case gds_dyn_grant_user:
 			{
 				GET_STRING(ptr, user);
-				// This test may become obsolete as we now allow explicit ROLE keyword.
-				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
-				{
+				DYN_terminate(user, sizeof(user));
+				/* This test may become obsolete as we now allow explicit ROLE keyword. */
+				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 					user_type = obj_sql_role;
-					if (user == NULL_ROLE)
-					{
-						DYN_error_punt(false, 195, user.c_str());
-						// msg 195: keyword NONE could not be used as SQL role name.
+					if (!strcmp(user, "NONE")) {
+						DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+					/* msg 195: keyword NONE could not be used as SQL role name. */
 					}
 				}
-				else
-				{
+				else {
 					user_type = obj_user;
-					user.upper7();
+					for (ptr1 = user; *ptr1; ptr1++) {
+						*ptr1 = UPPER7(*ptr1);
+					}
 				}
 			}
 			break;
 
 		case isc_dyn_grant_user_explicit:
 		    GET_STRING(ptr, user);
+			DYN_terminate(user, sizeof(user));
 			user_type = obj_user;
-			user.upper7();
+			for (ptr1 = user; *ptr1; ptr1++) {
+				*ptr1 = UPPER7(*ptr1);
+			}
 		    break;
 
 		case isc_dyn_grant_role:
 		    user_type = obj_sql_role;
 		    GET_STRING(ptr, user);
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
-			{
-				DYN_error_punt(false, 188, user.c_str());
-				// msg 188: Role doesn't exist.
+			DYN_terminate(user, sizeof(user));
+			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+				DYN_error_punt(FALSE, 188, user, NULL, NULL, NULL, NULL);
+			/* msg 188: Role doesn't exist. */
 			}
-			if (user == NULL_ROLE)
-			{
-				DYN_error_punt(false, 195, user.c_str());
-				// msg 195: keyword NONE could not be used as SQL role name.
+			if (!strcmp(user, "NONE")) {
+				DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 			break;
 
-		case isc_dyn_sql_role_name:	// role name in role_name_list
+		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-                DYN_error_punt(false, 196);
+                DYN_error_punt(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
 			}
-			else
-			{
+			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 				grant_role_stmt = true;
-				if (object == NULL_ROLE)
-				{
-					DYN_error_punt(false, 195, object.c_str());
-					// msg 195: keyword NONE could not be used as SQL role name.
+				DYN_terminate(object, sizeof(object));
+				if (!strcmp (object, "NONE")) {
+					DYN_error_punt(FALSE, 195, object, NULL, NULL, NULL, NULL);
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
 			}
 			break;
 
-		case isc_dyn_grant_proc:
+		case gds_dyn_grant_proc:
 			user_type = obj_procedure;
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_trig:
+		case gds_dyn_grant_trig:
 			user_type = obj_trigger;
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_view:
+		case gds_dyn_grant_view:
 			user_type = obj_view;
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_options:
+		case gds_dyn_grant_options:
 		case isc_dyn_grant_admin_options:
 			options = DYN_get_number(ptr);
-			break;
-
-		case isc_dyn_grant_grantor:
-			if (! tdbb->getAttachment()->locksmith())
-			{
-				DYN_error_punt(false, 252, SYSDBA_USER_NAME);
-			}
-			GET_STRING(ptr, grantor);
 			break;
 
 		default:
 			DYN_unsupported_verb();
 		}
 	}
-	grantor.upper7();
 
-	jrd_req* request = NULL;
 
 	try {
 
-	request = CMP_find_request(tdbb,
-		(USHORT) (field.length() > 0 ? drq_l_grant1 : drq_l_grant2), DYN_REQUESTS);
-	for (const TEXT* pr = privileges; *pr; pr++)
+	request = (BLK)CMP_find_request(tdbb,
+						(USHORT)(field[0] ? drq_l_grant1 : drq_l_grant2),
+						DYN_REQUESTS);
+	for (p = privileges; *p; p++)
 	{
 		bool duplicate = false;
-		priv[0] = *pr;
+		priv[0] = *p;
 		priv[1] = 0;
-		if (field.length() > 0)
+		if (field[0])
 		{
 			id = drq_l_grant1;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PRIV IN RDB$USER_PRIVILEGES WITH
-					PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+					PRIV.RDB$RELATION_NAME EQ object AND
 					PRIV.RDB$OBJECT_TYPE = obj_type AND
 					PRIV.RDB$PRIVILEGE EQ priv AND
-					PRIV.RDB$USER = user.c_str() AND
+					PRIV.RDB$USER = user AND
 					PRIV.RDB$USER_TYPE = user_type AND
-					PRIV.RDB$GRANTOR EQ grantor.c_str() AND
-					PRIV.RDB$FIELD_NAME EQ field.c_str()
-				if (!DYN_REQUEST(drq_l_grant1)) {
-					DYN_REQUEST(drq_l_grant1) = request;
-				}
+					PRIV.RDB$GRANTOR EQ UPPERCASE(RDB$USER_NAME) AND
+					PRIV.RDB$FIELD_NAME EQ field
+					if (!DYN_REQUEST(drq_l_grant1)) {
+						DYN_REQUEST(drq_l_grant1) = request;
+					}
 
 				if ((PRIV.RDB$GRANT_OPTION.NULL) ||
 					(PRIV.RDB$GRANT_OPTION) ||
@@ -1234,7 +1029,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				}
 				else
 				{
-					ERASE PRIV;	// has to be 0 and options == 1
+					ERASE PRIV;	/* has to be 0 and options == 1 */
 				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_l_grant1))
@@ -1247,15 +1042,15 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			id = drq_l_grant2;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PRIV IN RDB$USER_PRIVILEGES WITH
-					PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+					PRIV.RDB$RELATION_NAME EQ object AND
 					PRIV.RDB$OBJECT_TYPE = obj_type AND
 					PRIV.RDB$PRIVILEGE EQ priv AND
-					PRIV.RDB$USER = user.c_str() AND
+					PRIV.RDB$USER = user AND
 					PRIV.RDB$USER_TYPE = user_type AND
-					PRIV.RDB$GRANTOR EQ grantor.c_str() AND
+					PRIV.RDB$GRANTOR EQ UPPERCASE(RDB$USER_NAME) AND
 					PRIV.RDB$FIELD_NAME MISSING
-				if (!DYN_REQUEST(drq_l_grant2))
-					DYN_REQUEST(drq_l_grant2) = request;
+					if (!DYN_REQUEST(drq_l_grant2))
+						DYN_REQUEST(drq_l_grant2) = request;
 
 				if ((PRIV.RDB$GRANT_OPTION.NULL) ||
 					(PRIV.RDB$GRANT_OPTION) ||
@@ -1265,7 +1060,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				}
 				else
 				{
-					ERASE PRIV;	// has to be 0 and options == 1
+					ERASE PRIV;	/* has to be 0 and options == 1 */
 				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_l_grant2))
@@ -1282,26 +1077,31 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		{
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 			{
-	            DYN_error_punt(false, 196);
+	            DYN_error_punt(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
 			}
 			id = drq_get_role_nm;
 
-			if (!grantor_can_grant_role(tdbb, gbl, grantor, object))
+			for (ptr1 = tdbb->tdbb_attachment->att_user->usr_user_name,
+				 ptr2 = grantor; *ptr1; ptr1++, ptr2++)
 			{
+				*ptr2 = UPPER7(*ptr1);
+			}
+			*ptr2 = '\0';
+
+			if (!grantor_can_grant_role(tdbb, gbl, grantor, object)) {
 				// ERR_punt();
 				goto do_punt;
 			}
 
-			if (user_type == obj_sql_role)
-			{
-				/****************************************************
-	            **
-	            ** temporary restriction. This should be removed once
-	            ** GRANT role1 TO rolex is supported and this message
-	            ** could be reused for blocking cycles of role grants
-	            **
-	            *****************************************************/
-	            DYN_error_punt(false, 192, user.c_str());
+			if (user_type == obj_sql_role) {
+			/****************************************************
+            **
+            ** temporary restriction. This should be removed once
+            ** GRANT role1 TO rolex is supported and this message
+            ** could be reused for blocking cycles of role grants
+            **
+            *****************************************************/
+	            DYN_error_punt(FALSE, 192, user, NULL, NULL, NULL, NULL);
 			}
 		}
 		else
@@ -1313,22 +1113,19 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			   his own view.  If the grantor is not the owner of the view, then the
 			   base table/view grant privilege checks were made when the grantor
 			   got its grant privilege on the view and no further checks are
-			   necessary.
-			   As long as only locksmith can use GRANTED BY, no need specially checking
-			   for privileges of current user. AP-2008 */
+			   necessary. */
 
 			if (!obj_type)
-			{
-				// relation or view because we cannot distinguish at this point.
+			{	/* relation or view because we cannot distinguish at this point. */
 				id = drq_gcg1;
 				if (!grantor_can_grant(gbl,
-										tdbb->getAttachment()->att_user->usr_user_name.c_str(),
+										tdbb->tdbb_attachment->att_user->usr_user_name,
 										priv,
 										object,
 										field,
 										true))
 				{
-					// grantor_can_grant has moved the error string already.
+					// grantor_can_grant has moved the error string already. 
 					// just punt back to the setjump
 					// ERR_punt();
 					goto do_punt;
@@ -1337,43 +1134,38 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		}
 
 		id = drq_s_grant;
-		store_privilege(gbl, object, user, field, pr, user_type, obj_type, options, grantor);
+		store_privilege(gbl, object, user, field, p, user_type, obj_type,
+						options);
 	}	// for (...)
 
 	}	// try
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		// we need to rundown as we have to set the env.
-		// But in case the error is from store_priveledge we have already
-		// unwound the request so passing that as null
-		jrd_req* req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
+	catch (const std::exception&) {
+		/* we need to rundown as we have to set the env.
+		   But in case the error is from store_priveledge we have already
+		   unwound the request so passing that as null */
+		BLK req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
 		DYN_rundown_request(req1, -1);
-
-		switch (id)
+		if (id == drq_l_grant1)
 		{
-		case drq_l_grant1:
-			DYN_error_punt(true, 77);
+			DYN_error_punt(TRUE, 77, NULL, NULL, NULL, NULL, NULL);
 			// msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant"
-			break;
-		case drq_l_grant2:
-			DYN_error_punt(true, 78);
+		}
+		else if (id == drq_l_grant2)
+		{
+			DYN_error_punt(TRUE, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
-			break;
-		case drq_s_grant:
-		case drq_gcg1:
+		}
+		else if (id == drq_s_grant || id == drq_gcg1)
+		{
 			ERR_punt();
-			// store_priviledge || grantor_can_grant error already handled,
+			// store_priviledge || grantor_can_grant error already handled, 
 			// just bail out
-			break;
-		case drq_get_role_nm:
+		} else if (id == drq_get_role_nm) {
 			ERR_punt();
-			break;
-		default:
-			fb_assert(id == drq_gcg1);
-			DYN_error_punt(true, 78);
+		} else {
+			assert(id == drq_gcg1);
+			DYN_error_punt(TRUE, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
-			break;
 		}
 	}
 
@@ -1384,12 +1176,12 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-static bool grantor_can_grant(Global* gbl,
-							  const TEXT* grantor,
-							  const TEXT* privilege,
-							  const MetaName& relation_name,
-							  const MetaName& field_name,
-							  bool top_level)
+static bool grantor_can_grant(	GBL		gbl,
+								TEXT*	grantor,
+								TEXT*	privilege,
+								TEXT*	relation_name,
+								TEXT*	field_name,
+								bool	top_level)
 {
 /**************************************
  *
@@ -1398,92 +1190,99 @@ static bool grantor_can_grant(Global* gbl,
  **************************************
  *
  * Functional description
- *	return: true is the grantor has grant privilege on the relation/field.
- *		false otherwise.
+ *	return: TRUE is the grantor has grant privilege on the relation/field.
+ *		FALSE otherwise.
  *
  **************************************/
-	USHORT err_num;
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
+	TDBB tdbb;
+	DBB dbb;
+/* Remember the grant option for non field-specific user-privileges, and the
+   grant option for the user-privileges for the input field.
+   -1 = no privilege found (yet)
+   0 = privilege without grant option found
+   1 = privilege with grant option found */
+	SSHORT go_rel = -1;
+	SSHORT go_fld = -1;
+	BLK request;
+	BOOLEAN sql_relation = FALSE;
+	BOOLEAN relation_exists = FALSE;
+	BOOLEAN field_exists = FALSE;
+	BOOLEAN grantor_is_owner = FALSE;
+	volatile USHORT err_num;
 
-	// Verify that the input relation exists.
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
+/* Verify that the input relation exists. */
+
+	request = (BLK) CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
 
 
 	try {
 
-	err_num = 182;				// for the longjump
-	bool sql_relation = false;
-	bool relation_exists = false;
-	// SELECT RDB$RELATIONS failed in grant
+	err_num = 182;				/* for the longjump */
+/* SELECT RDB$RELATIONS failed in grant */
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH
-			REL.RDB$RELATION_NAME = relation_name.c_str()
-		relation_exists = true;
+			REL.RDB$RELATION_NAME = relation_name relation_exists = TRUE;
 		if ((!REL.RDB$FLAGS.NULL) && (REL.RDB$FLAGS & REL_sql))
-			sql_relation = true;
+			sql_relation = TRUE;
 		if (!DYN_REQUEST(drq_gcg4))
 			DYN_REQUEST(drq_gcg4) = request;
 	END_FOR;
 	if (!DYN_REQUEST(drq_gcg4))
 		DYN_REQUEST(drq_gcg4) = request;
-	if (!relation_exists)
-	{
-		DYN_error(false, 175, SafeArg() << relation_name.c_str());
-		// table/view .. does not exist
+	if (!relation_exists) {
+		DYN_error(FALSE, 175, relation_name, NULL, NULL, NULL, NULL);
+		/* table/view .. does not exist */
 		return false;
 	}
 
-	// Verify the the input field exists.
+/* Verify the the input field exists. */
 
-	if (field_name.length() > 0)
+	if (field_name[0])
 	{
 		err_num = 183;
-		bool field_exists = false;
-
-		// SELECT RDB$RELATION_FIELDS failed in grant
-		request = CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
+		/* SELECT RDB$RELATION_FIELDS failed in grant */
+		request = (BLK) CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			G_FLD IN RDB$RELATION_FIELDS WITH
-				G_FLD.RDB$RELATION_NAME = relation_name.c_str() AND
-				G_FLD.RDB$FIELD_NAME = field_name.c_str()
-			if (!DYN_REQUEST(drq_gcg5))
+				G_FLD.RDB$RELATION_NAME = relation_name AND
+				G_FLD.RDB$FIELD_NAME = field_name if (!DYN_REQUEST(drq_gcg5))
 				DYN_REQUEST(drq_gcg5) = request;
-			field_exists = true;
+			field_exists = TRUE;
 		END_FOR;
 		if (!DYN_REQUEST(drq_gcg5))
 			DYN_REQUEST(drq_gcg5) = request;
-		if (!field_exists)
-		{
-			DYN_error(false, 176, SafeArg() << field_name.c_str() << relation_name.c_str());
-			// column .. does not exist in table/view ..
+		if (!field_exists) {
+			DYN_error(FALSE, 176, field_name, relation_name, NULL, NULL,
+					  NULL);
+			/* column .. does not exist in table/view .. */
 			return false;
 		}
 	}
 
-	// If the current user is locksmith - allow all grants to occur
+/* If the current user is locksmith - allow all grants to occur */
 
-	if (tdbb->getAttachment()->locksmith()) {
+	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
 		return true;
 	}
 
-	// If this is a non-sql table, then the owner will probably not have any
-	// entries in the rdb$user_privileges table.  Give the owner of a GDML
-	// table all privileges.
+/* If this is a non-sql table, then the owner will probably not have any
+   entries in the rdb$user_privileges table.  Give the owner of a GDML
+   table all privileges. */
 	err_num = 184;
-	bool grantor_is_owner = false;
-	// SELECT RDB$RELATIONS/RDB$OWNER_NAME failed in grant
+/* SELECT RDB$RELATIONS/RDB$OWNER_NAME failed in grant */
 
-	request = CMP_find_request(tdbb, drq_gcg2, DYN_REQUESTS);
+	request = (BLK) CMP_find_request(tdbb, drq_gcg2, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH
-			REL.RDB$RELATION_NAME = relation_name.c_str() AND
+			REL.RDB$RELATION_NAME = relation_name AND
 			REL.RDB$OWNER_NAME = UPPERCASE(grantor)
-		if (!DYN_REQUEST(drq_gcg2))
+			if (!DYN_REQUEST(drq_gcg2))
 			DYN_REQUEST(drq_gcg2) = request;
-		grantor_is_owner = true;
+		grantor_is_owner = TRUE;
 	END_FOR;
 	if (!DYN_REQUEST(drq_gcg2))
 		DYN_REQUEST(drq_gcg2) = request;
@@ -1491,49 +1290,38 @@ static bool grantor_can_grant(Global* gbl,
 		return true;
 	}
 
-	// Remember the grant option for non field-specific user-privileges, and
-	// the grant option for the user-privileges for the input field.
-	// -1 = no privilege found (yet)
-	// 0 = privilege without grant option found
-	// 1 = privilege with grant option found
-	SSHORT go_rel = -1;
-	SSHORT go_fld = -1;
-
-
-	// Verify that the grantor has the grant option for this relation/field
-	// in the rdb$user_privileges.  If not, then we don't need to look further.
+/* Verify that the grantor has the grant option for this relation/field
+   in the rdb$user_privileges.  If not, then we don't need to look further. */
 
 	err_num = 185;
-	// SELECT RDB$USER_PRIVILEGES failed in grant
+/* SELECT RDB$USER_PRIVILEGES failed in grant */
 
-	request = CMP_find_request(tdbb, drq_gcg1, DYN_REQUESTS);
+	request = (BLK) CMP_find_request(tdbb, drq_gcg1, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PRV IN RDB$USER_PRIVILEGES WITH
 			PRV.RDB$USER = UPPERCASE(grantor) AND
 			PRV.RDB$USER_TYPE = obj_user AND
-			PRV.RDB$RELATION_NAME = relation_name.c_str() AND
+			PRV.RDB$RELATION_NAME = relation_name AND
 			PRV.RDB$OBJECT_TYPE = obj_relation AND
-			PRV.RDB$PRIVILEGE = privilege
-		if (!DYN_REQUEST(drq_gcg1))
+			PRV.RDB$PRIVILEGE = privilege if (!DYN_REQUEST(drq_gcg1))
 			DYN_REQUEST(drq_gcg1) = request;
 
-		if (PRV.RDB$FIELD_NAME.NULL)
-		{
+		if (PRV.RDB$FIELD_NAME.NULL) {
 			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
 				go_rel = 0;
 			else if (go_rel)
 				go_rel = 1;
 		}
-		else
-		{
-			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
-			{
-				if (field_name.length() && field_name == PRV.RDB$FIELD_NAME)
+		else {
+			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION) {
+				DYN_terminate(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
+				if (field_name[0] && !strcmp(field_name, PRV.RDB$FIELD_NAME))
 					go_fld = 0;
 			}
 			else
 			{
-				if (field_name.length() && field_name == PRV.RDB$FIELD_NAME)
+				DYN_terminate(PRV.RDB$FIELD_NAME, sizeof(PRV.RDB$FIELD_NAME));
+				if (field_name[0] && !strcmp(field_name, PRV.RDB$FIELD_NAME))
 					go_fld = 1;
 			}
 		}
@@ -1543,34 +1331,44 @@ static bool grantor_can_grant(Global* gbl,
 		DYN_REQUEST(drq_gcg1) = request;
 	}
 
-	if (field_name.length())
+	if (field_name[0])
 	{
 		if (go_fld == 0)
 		{
-			DYN_error(false,
+			DYN_error(FALSE,
 					(USHORT)(top_level ? 167 : 168),
-					SafeArg() << privilege << field_name.c_str() << relation_name.c_str());
-			// no grant option for privilege .. on column .. of [base] table/view ..
+					privilege,
+					field_name,
+					relation_name,
+					NULL,
+					NULL);
+			/* no grant option for privilege .. on column .. of [base] table/view .. */
 			return false;
 		}
-
-		if (go_fld == -1)
+		else if (go_fld == -1)
 		{
 			if (go_rel == 0)
 			{
-				DYN_error(false,
+				DYN_error(FALSE,
 						(USHORT)(top_level ? 169 : 170),
-						SafeArg() << privilege << relation_name.c_str() << field_name.c_str());
-				// no grant option for privilege .. on [base] table/view .. (for column ..)
+						privilege,
+						relation_name,
+						field_name,
+						NULL,
+						NULL);
+				/* no grant option for privilege .. on [base] table/view .. (for column ..) */
 				return false;
 			}
-
-			if (go_rel == -1)
+			else if (go_rel == -1)
 			{
-				DYN_error(false,
+				DYN_error(FALSE,
 						(USHORT)(top_level ? 171 : 172),
-						SafeArg() << privilege << relation_name.c_str() << field_name.c_str());
-				// no .. privilege with grant option on [base] table/view .. (for column ..)
+						privilege,
+						relation_name,
+						field_name,
+						NULL,
+						NULL);
+				/* no .. privilege with grant option on [base] table/view .. (for column ..) */
 				return false;
 			}
 		}
@@ -1579,57 +1377,64 @@ static bool grantor_can_grant(Global* gbl,
 	{
 		if (go_rel == 0)
 		{
-			DYN_error(false, 173, SafeArg() << privilege << relation_name.c_str());
-			// no grant option for privilege .. on table/view ..
+			DYN_error(FALSE, 173, privilege, relation_name, NULL, NULL, NULL);
+			/* no grant option for privilege .. on table/view ..  */
 			return false;
 		}
-
-		if (go_rel == -1)
+		else if (go_rel == -1)
 		{
-			DYN_error(false, 174, SafeArg() << privilege << relation_name.c_str());
-			// no .. privilege with grant option on table/view ..
+			DYN_error(FALSE, 174, privilege, relation_name, NULL, NULL, NULL);
+			/* no .. privilege with grant option on table/view .. */
 			return false;
 		}
 	}
 
-	// If the grantor is not the owner of the relation, then we don't need to
-	// check the base table(s)/view(s) because that check was performed when
-	// the grantor was given its privileges.
+/* If the grantor is not the owner of the relation, then we don't need to
+   check the base table(s)/view(s) because that check was performed when 
+   the grantor was given its privileges. */
 
 	if (!grantor_is_owner) {
 		return true;
 	}
 
-	// Find all the base fields/relations and check for the correct grant privileges on them.
+/* Find all the base fields/relations and check for the correct
+   grant privileges on them. */
 
 	err_num = 186;
-	// SELECT RDB$VIEW_RELATIONS/RDB$RELATION_FIELDS/... failed in grant
+/* SELECT RDB$VIEW_RELATIONS/RDB$RELATION_FIELDS/... failed in grant */
 
-	request = CMP_find_request(tdbb, drq_gcg3, DYN_REQUESTS);
+	request = (BLK) CMP_find_request(tdbb, drq_gcg3, DYN_REQUESTS);
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		G_FLD IN RDB$RELATION_FIELDS CROSS
 			G_VIEW IN RDB$VIEW_RELATIONS WITH
-			G_FLD.RDB$RELATION_NAME = relation_name.c_str() AND
+			G_FLD.RDB$RELATION_NAME = relation_name AND
 			G_FLD.RDB$BASE_FIELD NOT MISSING AND
 			G_VIEW.RDB$VIEW_NAME EQ G_FLD.RDB$RELATION_NAME AND
 			G_VIEW.RDB$VIEW_CONTEXT EQ G_FLD.RDB$VIEW_CONTEXT
-		if (!DYN_REQUEST(drq_gcg3)) {
-			DYN_REQUEST(drq_gcg3) = request;
-		}
-
-		if (field_name.length())
+			if (!DYN_REQUEST(drq_gcg3)) {
+				DYN_REQUEST(drq_gcg3) = request;
+			}
+			DYN_terminate(G_FLD.RDB$BASE_FIELD, sizeof(G_FLD.RDB$BASE_FIELD));
+			DYN_terminate(G_FLD.RDB$FIELD_NAME, sizeof(G_FLD.RDB$FIELD_NAME));
+			DYN_terminate(G_VIEW.RDB$RELATION_NAME,
+					  sizeof(G_VIEW.RDB$RELATION_NAME));
+		
+		if (field_name[0])
 		{
-			if (field_name == G_FLD.RDB$FIELD_NAME)
-				if (!grantor_can_grant(gbl, grantor, privilege, G_VIEW.RDB$RELATION_NAME,
-										G_FLD.RDB$BASE_FIELD, false))
-				{
+			if (!strcmp(field_name, G_FLD.RDB$FIELD_NAME))
+				if (!grantor_can_grant
+					(gbl, grantor, privilege, G_VIEW.RDB$RELATION_NAME,
+					 G_FLD.RDB$BASE_FIELD, FALSE)) {
 					return false;
 				}
 		}
-		else
-		{
-			if (!grantor_can_grant(gbl, grantor, privilege, G_VIEW.RDB$RELATION_NAME,
-									G_FLD.RDB$BASE_FIELD, false))
+		else {
+			if (!grantor_can_grant(gbl,
+									grantor,
+									privilege,
+									G_VIEW.RDB$RELATION_NAME,
+									G_FLD.RDB$BASE_FIELD,
+									false))
 			{
 				return false;
 			}
@@ -1641,12 +1446,10 @@ static bool grantor_can_grant(Global* gbl,
 	// all done.
 
 	}	// try
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, err_num);
-		// msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant"
+		DYN_error_punt(TRUE, err_num, NULL, NULL, NULL, NULL, NULL);
+		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
 
 		return false;
 	}
@@ -1655,10 +1458,10 @@ static bool grantor_can_grant(Global* gbl,
 }
 
 
-static bool grantor_can_grant_role(thread_db* tdbb,
-								   Global* gbl,
-								   const MetaName& grantor,
-								   const MetaName& role_name)
+static bool grantor_can_grant_role(	TDBB	tdbb,
+									GBL		gbl,
+									TEXT*	grantor,
+									TEXT*	role_name)
 {
 /**************************************
  *
@@ -1668,99 +1471,88 @@ static bool grantor_can_grant_role(thread_db* tdbb,
  *
  * Functional description
  *
- *	return: true if the grantor has admin privilege on the role.
- *		false otherwise.
+ *	return: TRUE if the grantor has admin privilege on the role.
+ *		FALSE otherwise.
  *
  **************************************/
 
 	bool grantable = false;
-	bool no_admin = false;
+	TEXT owner[32];
 
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	DBB dbb = tdbb->tdbb_database;
+
+	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
+		return true;
+	}
 
 	// Fetch the name of the owner of the ROLE
-	MetaName owner;
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
-		// Both SYSDBA and the owner of this ROLE can grant membership
-		if (tdbb->getAttachment()->locksmith() || owner == grantor)
+		// The owner of the ROLE can always grant membership
+		if (strcmp(owner, grantor) == 0) {
 			return true;
+		}
 	}
 	else
 	{
-		// role name not exist.
-		DYN_error(false, 188, SafeArg() << role_name.c_str());
+		/****************************************************
+		**
+		**  role name not exist.
+		**
+		*****************************************************/
+		DYN_error(FALSE, 188, role_name, NULL, NULL, NULL, NULL);
 		return false;
 	}
 
-	jrd_req* request = CMP_find_request(tdbb, drq_get_role_au, DYN_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, drq_get_role_au, DYN_REQUESTS);
 
 	// The 'grantor' is not the owner of the ROLE, see if they
 	// have admin privilege on the role
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PRV IN RDB$USER_PRIVILEGES WITH
-			PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
+			PRV.RDB$USER = UPPERCASE(grantor) AND
 			PRV.RDB$USER_TYPE = obj_user AND
-			PRV.RDB$RELATION_NAME EQ role_name.c_str() AND
+			PRV.RDB$RELATION_NAME EQ role_name AND
 			PRV.RDB$OBJECT_TYPE = obj_sql_role AND
 			PRV.RDB$PRIVILEGE EQ "M"
-		if (!DYN_REQUEST(drq_get_role_au)) {
-			DYN_REQUEST(drq_get_role_au) = request;
-		}
+			if (!DYN_REQUEST(drq_get_role_au)) {
+				DYN_REQUEST(drq_get_role_au) = request;
+			}
 
-		if (PRV.RDB$GRANT_OPTION == 2)
+		if (PRV.RDB$GRANT_OPTION == 2) {
 			grantable = true;
-		else
-			no_admin = true;
+		} else {
+			/****************************************************
+			**
+			**  user have no admin option.
+			**
+			*****************************************************/
+			DYN_error(FALSE, 189, grantor, role_name, NULL, NULL, NULL);
+			return false;
+		}
 
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_get_role_au))
-	{
+	if (!DYN_REQUEST(drq_get_role_au)) {
 		DYN_REQUEST(drq_get_role_au) = request;
 	}
 
-	if (!grantable)
-	{
-		// 189: user have no admin option.
-		// 190: user is not a member of the role.
-		DYN_error(false, no_admin ? 189 : 190, SafeArg() << grantor.c_str() << role_name.c_str());
+	if (!grantable) {
+		/****************************************************
+		**
+		**  user is not a member of the role.
+		**
+		*****************************************************/
+		DYN_error(FALSE, 190, grantor, role_name, NULL, NULL, NULL);
 		return false;
 	}
 
-	return true;
+	return grantable;
 }
 
 
-static const char* privilege_name(char symbol)
-{
-/**************************************
- *
- *	p r i v i l e g e _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Diagnostics print helper.
- *
- **************************************/
-	switch (UPPER7(symbol))
-	{
-		case 'A': return "All";
-		case 'I': return "Insert";
-		case 'U': return "Update";
-		case 'D': return "Delete";
-		case 'S': return "Select";
-		case 'X': return "Execute";
-		case 'M': return "Role";
-		case 'R': return "Reference";
-	}
-	return "<Unknown>";
-}
-
-
-static void revoke_permission(Global* gbl, const UCHAR** ptr)
+static void revoke_permission(GBL gbl, UCHAR ** ptr)
 {
 /**************************************
  *
@@ -1771,7 +1563,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
  * Functional description
  *	Revoke some privileges.
  *
- *	Note: According to SQL II, section 11.37, pg 280,
+ *	Note: According to SQL II, section 11.37, pg 280, 
  *	general rules 8 & 9,
  *	if the specified priviledge for the specified user
  *	does not exist, it is not an exception error condition
@@ -1782,47 +1574,61 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
  *	1994-August-2 Rich Damon & David Schnepper
  *
  **************************************/
+	TDBB tdbb;
+	DBB dbb;
+	BLK request;
+	//BLK old_request;
+	volatile USHORT old_id, id;
 	UCHAR verb;
-	char privileges[16];
-	MetaName object, field, user;
-	MetaName dummy_name;
+	SSHORT user_type, obj_type;
+	TEXT privileges[16], object[32], field[32], user[32], *p, *q, temp[2];
+	USHORT all_privs = FALSE;
+	int options;
+	USHORT grant_erased;
+	USR revoking_user;
+	TEXT revoking_user_name[32], dummy_name[32];
+	//TEXT grantor[32], *ptr2;
+        TEXT *ptr1;
+	USHORT major_version, minor_original;
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
 
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
 
-	// Stash away a copy of the revoker's name, in uppercase form
+	major_version = (SSHORT) dbb->dbb_ods_version;
+	minor_original = (SSHORT) dbb->dbb_minor_original;
 
-	const UserId* revoking_user = tdbb->getAttachment()->att_user;
-	MetaName revoking_as_user_name(revoking_user->usr_user_name);
-	revoking_as_user_name.upper7();
+/* Stash away a copy of the revoker's name, in uppercase form */
+
+	revoking_user = tdbb->tdbb_attachment->att_user;
+	for (p = revoking_user->usr_user_name, q = revoking_user_name; *p;
+		 p++, q++)
+		*q = UPPER7(*p);
+	*q = 0;
 
 	GET_STRING(ptr, privileges);
 	if (!strcmp(privileges, "A")) {
 		strcpy(privileges, ALL_PRIVILEGES);
+		all_privs = TRUE;
 	}
 
-	int options = 0;
-	SSHORT user_type = -1;
-	SSHORT obj_type = -1;
+	object[0] = field[0] = user[0] = 0;
+	obj_type = user_type = -1;
+	options = 0;
 
-	while ((verb = *(*ptr)++) != isc_dyn_end)
-	{
-		switch (verb)
-		{
-		case isc_dyn_rel_name:
+	while ((verb = *(*ptr)++) != gds_dyn_end)
+		switch (verb) {
+		case gds_dyn_rel_name:
 			obj_type = obj_relation;
 			GET_STRING(ptr, object);
 			break;
 
-		case isc_dyn_prc_name:
+		case gds_dyn_prc_name:
 			obj_type = obj_procedure;
 			GET_STRING(ptr, object);
 			break;
 
-		case isc_dyn_fld_name:
+		case gds_dyn_fld_name:
 			GET_STRING(ptr, field);
 			break;
 
@@ -1831,133 +1637,120 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_user:
+		case gds_dyn_grant_user:
 			GET_STRING(ptr, user);
-			// This test may become obsolete as we now allow explicit ROLE keyword.
-			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
-			{
+			DYN_terminate(user, sizeof(user));
+			/* This test may become obsolete as we now allow explicit ROLE keyword. */
+			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				user_type = obj_sql_role;
-				if (user == NULL_ROLE)
-				{
-					DYN_error_punt(false, 195, user.c_str());
-					// msg 195: keyword NONE could not be used as SQL role name.
+				if (!strcmp(user, "NONE")) {
+					DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
 			}
-			else
-			{
+			else {
 				user_type = obj_user;
-				user.upper7();
+				for (ptr1 = user; *ptr1; ptr1++) {
+					*ptr1 = UPPER7(*ptr1);
+				}
 			}
 			break;
 
 		case isc_dyn_grant_user_explicit:
 		    GET_STRING(ptr, user);
+			DYN_terminate(user, sizeof(user));
 	        user_type = obj_user;
-			user.upper7();
+			for (ptr1 = user; *ptr1; ptr1++) {
+				*ptr1 = UPPER7(*ptr1);
+			}
 			break;
 
 		case isc_dyn_grant_role:
 			user_type = obj_sql_role;
 			GET_STRING(ptr, user);
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
-			{
-				DYN_error_punt(false, 188, user.c_str());
-				// msg 188: Role doesn't exist.
+			DYN_terminate(user, sizeof(user));
+			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+				DYN_error_punt(FALSE, 188, user, NULL, NULL, NULL, NULL);
+			/* msg 188: Role doesn't exist. */
 			}
-			if (user == NULL_ROLE)
-			{
-				DYN_error_punt(false, 195, user.c_str());
-				// msg 195: keyword NONE could not be used as SQL role name.
+			if (!strcmp(user, "NONE")) {
+				DYN_error_punt(FALSE, 195, user, NULL, NULL, NULL, NULL);
+			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 		    break;
 
-		case isc_dyn_sql_role_name:	// role name in role_name_list
+		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-                DYN_error_punt(false, 196);
+                DYN_error_punt(FALSE, 196, NULL, NULL, NULL, NULL, NULL);
 			}
-			else
-			{
+			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
-/*
-				CVC: Make this a warning in the future.
-				if (object == NULL_ROLE)
-					DYN_error_punt(false, 195, object.c_str());
+				DYN_terminate(object, sizeof(object));
+/* CVC: Make this a warning in the future.
+				if (!strcmp(object, "NONE"))
+					DYN_error_punt(FALSE, 195, object, NULL, NULL, NULL, NULL);
 */
-				// msg 195: keyword NONE could not be used as SQL role name.
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 			break;
 
-		case isc_dyn_grant_proc:
+		case gds_dyn_grant_proc:
 			user_type = obj_procedure;
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_trig:
+		case gds_dyn_grant_trig:
 			user_type = obj_trigger;
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_view:
+		case gds_dyn_grant_view:
 			user_type = obj_view;
 			GET_STRING(ptr, user);
 			break;
 
-		case isc_dyn_grant_options:
-		case isc_dyn_grant_admin_options:
+		case gds_dyn_grant_options:
 			options = DYN_get_number(ptr);
-			break;
-
-		case isc_dyn_grant_grantor:
-			if (! tdbb->getAttachment()->locksmith())
-			{
-				DYN_error_punt(false, 252, SYSDBA_USER_NAME);
-			}
-			GET_STRING(ptr, revoking_as_user_name);
 			break;
 
 		default:
 			DYN_unsupported_verb();
 		}
-	}
-	revoking_as_user_name.upper7();
 
-
-	USHORT id = field.length() ? drq_e_grant1 : drq_e_grant2;
-
-	jrd_req* request = CMP_find_request(tdbb, id, DYN_REQUESTS);
+	request = (BLK)CMP_find_request(tdbb,
+						(USHORT)(field[0] ? drq_e_grant1 : drq_e_grant2),
+						DYN_REQUESTS);
+	id = field[0] ? drq_e_grant1 : drq_e_grant2;
 
 	try {
 
-    TEXT temp[2];
 	temp[1] = 0;
-	for (const TEXT* pr = privileges; (temp[0] = *pr); pr++)
+	for (p = privileges; (temp[0] = *p); p++)
 	{
-		bool grant_erased = false;
-		bool bad_grantor = false;
+		grant_erased = FALSE;
 
-		if (field.length())
+		if (field[0])
 		{
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PRIV IN RDB$USER_PRIVILEGES WITH
 					PRIV.RDB$PRIVILEGE EQ temp AND
-					PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+					PRIV.RDB$RELATION_NAME EQ object AND
 					PRIV.RDB$OBJECT_TYPE = obj_type AND
-					PRIV.RDB$USER = user.c_str() AND
+					PRIV.RDB$USER = user AND
 					PRIV.RDB$USER_TYPE = user_type AND
-					PRIV.RDB$FIELD_NAME EQ field.c_str()
-				if (!DYN_REQUEST(drq_e_grant1))
-					DYN_REQUEST(drq_e_grant1) = request;
+					PRIV.RDB$FIELD_NAME EQ field
+					if (!DYN_REQUEST(drq_e_grant1))
+						DYN_REQUEST(drq_e_grant1) = request;
 
-				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
+				DYN_terminate(PRIV.RDB$GRANTOR, sizeof(PRIV.RDB$GRANTOR));
+				if ((revoking_user->usr_flags & USR_locksmith) ||
+					(!strcmp(PRIV.RDB$GRANTOR, revoking_user_name)))
 				{
 					ERASE PRIV;
-					grant_erased = true;
-				}
-				else
-				{
-					bad_grantor = true;
-				}
+					grant_erased = TRUE;
+				};
+
 			END_FOR;
 			if (!DYN_REQUEST(drq_e_grant1)) {
 				DYN_REQUEST(drq_e_grant1) = request;
@@ -1968,215 +1761,75 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PRIV IN RDB$USER_PRIVILEGES WITH
 					PRIV.RDB$PRIVILEGE EQ temp AND
-					PRIV.RDB$RELATION_NAME EQ object.c_str() AND
+					PRIV.RDB$RELATION_NAME EQ object AND
 					PRIV.RDB$OBJECT_TYPE = obj_type AND
-					PRIV.RDB$USER EQ user.c_str() AND
+					PRIV.RDB$USER EQ user AND
 					PRIV.RDB$USER_TYPE = user_type
-				if (!DYN_REQUEST(drq_e_grant2))
-					DYN_REQUEST(drq_e_grant2) = request;
+					if (!DYN_REQUEST(drq_e_grant2))
+						DYN_REQUEST(drq_e_grant2) = request;
 
-				// revoking a permission at the table level implies
-				// revoking the perm. on all columns. So for all fields
-				// in this table which have been granted the privilege, we
-				// erase the entries from RDB$USER_PRIVILEGES.
+				DYN_terminate(PRIV.RDB$GRANTOR, sizeof(PRIV.RDB$GRANTOR));
 
-				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
-				{
+				/* revoking a permission at the table level implies
+				   revoking the perm. on all columns. So for all fields
+				   in this table which have been granted the privilege, we
+				   erase the entries from RDB$USER_PRIVILEGES. */
+
+				if ((revoking_user->usr_flags & USR_locksmith) ||
+					(!strcmp(PRIV.RDB$GRANTOR, revoking_user_name))) {
 					ERASE PRIV;
-					grant_erased = true;
-				}
-				else
-				{
-					bad_grantor = true;
+					grant_erased = TRUE;
 				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_e_grant2))
 				DYN_REQUEST(drq_e_grant2) = request;
 		}
 
-		if (options && grant_erased)
-		{
-			// Add the privilege without the grant option
-			// There is a modify trigger on the rdb$user_privileges
-			// which disallows the table from being updated.  It would
-			// have to be changed such that only the grant_option
-			// field can be updated.
+		if (options && grant_erased) {
+			/* Add the privilege without the grant option 
+			 * There is a modify trigger on the rdb$user_privileges
+			 * which disallows the table from being updated.  It would
+			 * have to be changed such that only the grant_option
+			 * field can be updated.
+			 */
 
-			const USHORT old_id = id;
+			old_id = id;
 			id = drq_s_grant;
 
-			store_privilege(gbl, object, user, field, pr, user_type, obj_type,
-							0, revoking_as_user_name);
+			store_privilege(gbl, object, user, field, p, user_type, obj_type,
+							0);
 
 			id = old_id;
 		}
-
-		if (bad_grantor && !grant_erased)
-		{
-			DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() <<
-				privilege_name(temp[0]) << object.c_str() << user.c_str());
-			// msg 246: @1 is not grantor of @2 on @3 to @4.
-		}
-
-		if (!grant_erased)
-		{
-			ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) <<
-							 Arg::Str(privilege_name(temp[0])) << Arg::Str(object) << Arg::Str(user));
-			// msg 247: Warning: @1 on @2 is not granted to @3.
-		}
 	}
 
 	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		// we need to rundown as we have to set the env.
-		// But in case the error is from store_priveledge we have already
-		// unwound the request so passing that as null
-		DYN_rundown_request(((id == drq_s_grant) ? NULL : request), -1);
+	catch (const std::exception&) {
+		/* we need to rundown as we have to set the env.
+		   But in case the error is from store_priveledge we have already 
+		   unwound the request so passing that as null */
+		DYN_rundown_request(((id == drq_s_grant) ? NULL : request),
+							-1);
 		if (id == drq_e_grant1)
 		{
-			DYN_error_punt(true, 111);
-			// msg 111: "ERASE RDB$USER_PRIVILEGES failed in revoke(1)"
+			DYN_error_punt(TRUE, 111, NULL, NULL, NULL, NULL, NULL);
+			/* msg 111: "ERASE RDB$USER_PRIVILEGES failed in revoke(1)" */
 		}
 		else if (id == drq_e_grant2)
 		{
-			DYN_error_punt(true, 113);
-			// msg 113: "ERASE RDB$USER_PRIVILEGES failed in revoke (3)"
+			DYN_error_punt(TRUE, 113, NULL, NULL, NULL, NULL, NULL);
+			/* msg 113: "ERASE RDB$USER_PRIVILEGES failed in revoke (3)" */
 		}
 		else
 		{
 			ERR_punt();
-			// store_priviledge error already handled, just bail out
+			/* store_priviledge error already handled, just bail out */
 		}
 	}
 }
 
 
-static void revoke_all(Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	r e v o k e _ a l l
- *
- **************************************
- *
- * Functional description
- *	Revoke all privileges on all objects from user/role.
- *
- **************************************/
-	UCHAR verb;
-	MetaName user, dummy_name;
-	SSHORT user_type = -1;
-
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
-
-	while ((verb = *(*ptr)++) != isc_dyn_end)
-	{
-		switch (verb)
-		{
-
-		case isc_dyn_grant_user:
-			GET_STRING(ptr, user);
-			// This test may become obsolete as we now allow explicit ROLE keyword.
-			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
-			{
-				user_type = obj_sql_role;
-				if (user == NULL_ROLE)
-				{
-					DYN_error_punt(false, 195, user.c_str());
-					// msg 195: keyword NONE could not be used as SQL role name.
-				}
-			}
-			else
-			{
-				user_type = obj_user;
-				user.upper7();
-			}
-			break;
-
-		case isc_dyn_grant_user_explicit:
-		    GET_STRING(ptr, user);
-	        user_type = obj_user;
-			user.upper7();
-			break;
-
-		case isc_dyn_grant_role:
-			GET_STRING(ptr, user);
-			user_type = obj_sql_role;
-			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
-				DYN_error_punt(false, 188, user.c_str()); // msg 188: Role doesn't exist.
-			}
-			if (user == NULL_ROLE)
-			{
-				DYN_error_punt(false, 195, user.c_str());
-				// msg 195: keyword NONE could not be used as SQL role name.
-			}
-		    break;
-
-		default:
-			DYN_unsupported_verb();
-		}
-	}
-
-	const UserId* revoking_user = tdbb->getAttachment()->att_user;
-	MetaName revoking_as_user_name(revoking_user->usr_user_name);
-	revoking_as_user_name.upper7();
-
-	bool grant_erased = false;
-	bool bad_grantor = false;
-
-	jrd_req* request = CMP_find_request(tdbb, drq_e_grant3, DYN_REQUESTS);
-
-	try {
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			PRIV IN RDB$USER_PRIVILEGES WITH
-				PRIV.RDB$USER = user.c_str() AND
-				PRIV.RDB$USER_TYPE = user_type
-
-			if (!DYN_REQUEST(drq_e_grant1))
-				DYN_REQUEST(drq_e_grant1) = request;
-
-			if (revoking_user->locksmith() || revoking_as_user_name == PRIV.RDB$GRANTOR)
-			{
-				ERASE PRIV;
-				grant_erased = true;
-			}
-			else
-			{
-				bad_grantor = true;
-			}
-		END_FOR;
-		if (!DYN_REQUEST(drq_e_grant3)) {
-			DYN_REQUEST(drq_e_grant3) = request;
-		}
-
-		if (!grant_erased)
-		{
-			const char* all = "ALL";
-			if (bad_grantor)
-			{
-				DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() <<
-					all << all << user.c_str());
-				// msg 246: @1 is not grantor of @2 on @3 to @4.
-			}
-
-			ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) << all << all << user);
-			// msg 247: Warning: @1 on @2 is not granted to @3.
-		}
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuff_exception(tdbb->tdbb_status_vector);
-		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 255);
-		// msg 255: "ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL"
-	}
-}
-
-
-static void set_field_class_name(Global* gbl, const MetaName& relation, const MetaName& field)
+static void set_field_class_name(GBL gbl, TEXT * relation, TEXT	* field)
 {
 /**************************************
  *
@@ -2189,38 +1842,43 @@ static void set_field_class_name(Global* gbl, const MetaName& relation, const Me
  *      field has a unique class name.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
+	BLK	request, request2 = NULL;
+	BOOLEAN	unique = FALSE;
+	TDBB tdbb;
+	DBB	dbb;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
-	jrd_req* request2 = NULL;
 
-	bool unique = false;
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
+
+
+	request = (BLK) CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
 
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RFR IN RDB$RELATION_FIELDS
-		WITH RFR.RDB$FIELD_NAME = field.c_str() AND
-			RFR.RDB$RELATION_NAME = relation.c_str() AND
+		RFR IN RDB$RELATION_FIELDS 
+		WITH RFR.RDB$FIELD_NAME = field AND
+			RFR.RDB$RELATION_NAME = relation AND
 		RFR.RDB$SECURITY_CLASS MISSING
 
 		MODIFY RFR
-			while (!unique)
-		    {
-				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, SQL_FLD_SECCLASS_PREFIX,
-				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, 1));
+		while (!unique)
+	    {
+			sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT", 
+			DPM_gen_id(tdbb, 
+				MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), 0, (SINT64) 1));
 
-				unique = true;
-				request2 = CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
-				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-					RFR1 IN RDB$RELATION_FIELDS
-					WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
-					unique = false;
-				END_FOR;
-		    }
+			unique = TRUE;
+			request2 = (BLK) CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
+			FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+				RFR1 IN RDB$RELATION_FIELDS 
+				WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
+				unique = FALSE;
+			END_FOR;
+	    }
 
-			RFR.RDB$SECURITY_CLASS.NULL = FALSE;
+		RFR.RDB$SECURITY_CLASS.NULL = FALSE;
 		END_MODIFY;
-
+    
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_s_f_class))
@@ -2232,15 +1890,14 @@ static void set_field_class_name(Global* gbl, const MetaName& relation, const Me
 }
 
 
-static void store_privilege(Global* gbl,
-							const MetaName&	object,
-							const MetaName&	user,
-							const MetaName&	field,
-							const TEXT* privilege,
-							SSHORT user_type,
-							SSHORT obj_type,
-							int option,
-							const MetaName&	grantor)
+static void store_privilege(GBL		gbl,
+							TEXT*	object,
+							TEXT*	user,
+							TEXT*	field,
+							TEXT*	privilege,
+							SSHORT	user_type,
+							SSHORT	obj_type,
+							int		option)
 {
 /**************************************
  *
@@ -2253,25 +1910,26 @@ static void store_privilege(Global* gbl,
  *	routine should not.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
+	TDBB tdbb;
+	DBB dbb;
+	BLK request;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
+	tdbb = GET_THREAD_DATA;
+	dbb = tdbb->tdbb_database;
 
-	// need to unwind our own request here!! SM 27-Sep-96
+	request = (BLK) CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
+
+/* need to unwind our own request here!! SM 27-Sep-96 */
 
 	try {
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			PRIV IN RDB$USER_PRIVILEGES
-			PRIV.RDB$FIELD_NAME.NULL = TRUE;
-			strcpy(PRIV.RDB$RELATION_NAME, object.c_str());
-			strcpy(PRIV.RDB$USER, user.c_str());
-			strcpy(PRIV.RDB$GRANTOR, grantor.c_str());
+			PRIV IN RDB$USER_PRIVILEGES PRIV.RDB$FIELD_NAME.NULL = TRUE;
+			strcpy(PRIV.RDB$RELATION_NAME, object);
+			strcpy(PRIV.RDB$USER, user);
 			PRIV.RDB$USER_TYPE = user_type;
 			PRIV.RDB$OBJECT_TYPE = obj_type;
-			if (field.length())
-			{
-				strcpy(PRIV.RDB$FIELD_NAME, field.c_str());
+			if (field && field[0]) {
+				strcpy(PRIV.RDB$FIELD_NAME, field);
 				PRIV.RDB$FIELD_NAME.NULL = FALSE;
 				set_field_class_name(gbl, object, field);
 			}
@@ -2285,127 +1943,9 @@ static void store_privilege(Global* gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception&) {
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 79);
-		// msg 79: "STORE RDB$USER_PRIVILEGES failed in grant"
-	}
-}
-
-
-static void dyn_user(Global* /*gbl*/, const UCHAR** ptr)
-{
-/**************************************
- *
- *	d y n _ u s e r
- *
- **************************************
- *
- * Functional description
- *	Implements CREATE/ALTER/DROP USER
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
-	jrd_tra* const tra = tdbb->getTransaction();
-
-	Database::Checkout dcoHolder(dbb);
-
-	ISC_STATUS_ARRAY status;
-	try
-	{
-		internal_user_data* userData = FB_NEW(*tra->tra_pool) internal_user_data;
-		UCHAR verb;
-		while ((verb = *(*ptr)++) != isc_user_end)
-		{
-			string text;
-			GET_STRING(ptr, text);
-
-			switch(verb)
-			{
-			case isc_dyn_user_add:
-				text.upper();
-				userData->operation = ADD_OPER;
-				text.copyTo(userData->user_name, sizeof(userData->user_name));
-				userData->user_name_entered = true;
-				break;
-
-			case isc_dyn_user_mod:
-				text.upper();
-				userData->operation = MOD_OPER;
-				text.copyTo(userData->user_name, sizeof(userData->user_name));
-				userData->user_name_entered = true;
-				break;
-
-			case isc_dyn_user_del:
-				text.upper();
-				userData->operation = DEL_OPER;
-				text.copyTo(userData->user_name, sizeof(userData->user_name));
-				userData->user_name_entered = true;
-				break;
-
-			case isc_dyn_user_passwd:
-				if (text.isEmpty())
-				{
-					// 250: Password should not be empty string
-					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(250, DYN_MSG_FAC)));
-				}
-				text.copyTo(userData->password, sizeof(userData->password));
-				userData->password_entered = true;
-				break;
-
-			case isc_dyn_user_first:
-				if (text.hasData())
-				{
-					text.copyTo(userData->first_name, sizeof(userData->first_name));
-					userData->first_name_entered = true;
-				}
-				else
-				{
-					userData->first_name_entered = false;
-					userData->first_name_specified = true;
-				}
-				break;
-
-			case isc_dyn_user_middle:
-				if (text.hasData())
-				{
-					text.copyTo(userData->middle_name, sizeof(userData->middle_name));
-					userData->middle_name_entered = true;
-				}
-				else
-				{
-					userData->middle_name_entered = false;
-					userData->middle_name_specified = true;
-				}
-				break;
-
-			case isc_dyn_user_last:
-				if (text.hasData())
-				{
-					text.copyTo(userData->last_name, sizeof(userData->last_name));
-					userData->last_name_entered = true;
-				}
-				else
-				{
-					userData->last_name_entered = false;
-					userData->last_name_specified = true;
-				}
-				break;
-			}
-		}
-
-		USHORT id = tra->getUserManagement()->put(userData);
-		DFW_post_work(tra, dfw_user_management, NULL, id);
-	}
-	catch (const Exception& e)
-	{
-		e.stuff_exception(status);
-		memmove(&status[2], &status[0], sizeof(status) - 2 * sizeof(status[0]));
-		status[0] = isc_arg_gds;
-		status[1] = isc_no_meta_update;
-		status_exception::raise(status);
+		DYN_error_punt(TRUE, 79, NULL, NULL, NULL, NULL, NULL);
+		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
 	}
 }

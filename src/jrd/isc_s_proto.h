@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		isc_s_proto.h
- *	DESCRIPTION:	Prototype header file for isc_sync.cpp
+ *	DESCRIPTION:	Prototype header file for isc_sync.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -26,51 +26,77 @@
  *
  */
 
-#ifndef JRD_ISC_S_PROTO_H
-#define JRD_ISC_S_PROTO_H
+#ifndef _JRD_ISC_S_PROTO_H_
+#define _JRD_ISC_S_PROTO_H_
 
 #include "../jrd/isc.h"
-// If that file wouldn't be included, we do a FW declaration of struct event_t here.
 
-SLONG	ISC_event_clear(event_t*);
-void	ISC_event_fini(event_t*);
-int		ISC_event_init(event_t*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int		ISC_event_post(event_t*);
-int		ISC_event_wait(event_t*, const SLONG, const SLONG);
 
-typedef void (*FPTR_INIT_GLOBAL_REGION)(void*, struct sh_mem*, bool);
-UCHAR*	ISC_map_file(ISC_STATUS*, const TEXT*, FPTR_INIT_GLOBAL_REGION,
-					 void*, ULONG, struct sh_mem*);
+extern BOOLEAN ISC_check_restart(void);
+extern int ISC_event_blocked(USHORT, struct event **, SLONG *);
+extern SLONG DLL_EXPORT ISC_event_clear(struct event *);
+extern void ISC_event_fini(struct event *);
+extern int DLL_EXPORT ISC_event_init(struct event *, int, int);
+
 #if defined(WIN_NT)
-int		ISC_mutex_init(struct mtx*, const TEXT*);
-#else
-int		ISC_mutex_init(struct mtx*);
+extern int ISC_event_init_shared(struct event *,
+								 int, TEXT *, struct event *, USHORT);
 #endif
-
-int		ISC_mutex_lock(struct mtx*);
-int		ISC_mutex_lock_cond(struct mtx*);
-int		ISC_mutex_unlock(struct mtx*);
-void	ISC_mutex_fini(struct mtx*);
-
-#if defined HAVE_MMAP || defined WIN_NT
-UCHAR*	ISC_map_object(ISC_STATUS*, sh_mem*, ULONG, ULONG);
-void	ISC_unmap_object(ISC_STATUS*, /*sh_mem*,*/ UCHAR**, ULONG);
-#endif
-
-#ifdef UNIX
-void	ISC_exception_post(ULONG, const TEXT*);
-void	ISC_sync_signals_set(void*);
-void	ISC_sync_signals_reset();
-#endif
+extern int DLL_EXPORT ISC_event_post(struct event *);
+extern int DLL_EXPORT ISC_event_wait(SSHORT,
+									 struct event **,
+									 SLONG *, SLONG, FPTR_VOID, void *);
 
 #ifdef WIN_NT
-ULONG	ISC_exception_post(ULONG, const TEXT*);
+extern void *ISC_make_signal(BOOLEAN, BOOLEAN, int, int);
+#endif /* WIN_NT */
+
+extern UCHAR *DLL_EXPORT ISC_map_file(ISC_STATUS *,
+									  TEXT *,
+									  void (*)(void *, struct sh_mem *, int),
+									  void *, SLONG, struct sh_mem *);
+#if defined(WIN_NT)
+int DLL_EXPORT ISC_mutex_init(struct mtx *, TEXT*);
+#else
+int DLL_EXPORT ISC_mutex_init(struct mtx *, SLONG);
 #endif
 
-UCHAR*	ISC_remap_file(ISC_STATUS*, struct sh_mem*, ULONG, bool);
-void	ISC_unmap_file(ISC_STATUS*, struct sh_mem*);
+int DLL_EXPORT ISC_mutex_lock(struct mtx *);
+int DLL_EXPORT ISC_mutex_lock_cond(struct mtx *);
+int DLL_EXPORT ISC_mutex_unlock(struct mtx *);
 
-void	ISC_remove_map_file(const TEXT* filename);
+#ifdef HAVE_MMAP
+extern UCHAR *ISC_map_object(ISC_STATUS *, SH_MEM, SLONG, SLONG);
+extern BOOLEAN ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
+#endif
 
-#endif // JRD_ISC_S_PROTO_H
+#ifdef SUPERSERVER
+#ifdef UNIX
+extern void ISC_exception_post(ULONG, TEXT *);
+extern void ISC_sync_signals_set(void);
+extern void ISC_sync_signals_reset(void);
+#endif /* UNIX */
+
+#ifdef WIN_NT
+extern ULONG ISC_exception_post(ULONG, TEXT *);
+#endif /* WIN_NT */
+
+#endif /* SUPERSERVER */
+
+extern UCHAR *DLL_EXPORT ISC_remap_file(ISC_STATUS *,
+										struct sh_mem *, SLONG, USHORT);
+extern void ISC_reset_timer(FPTR_VOID, void *, SLONG *, void **);
+extern void ISC_set_timer(SLONG, FPTR_VOID, void *, SLONG *, void **);
+extern void DLL_EXPORT ISC_unmap_file(ISC_STATUS *, struct sh_mem *, USHORT);
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+
+#endif /* _JRD_ISC_S_PROTO_H_ */

@@ -1,6 +1,6 @@
 /*
 *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		movd.cpp
+ *	MODULE:		movd.c
  *	DESCRIPTION:	Data mover and converter and comparator, etc.
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,59 +23,85 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
+#include <stdarg.h>
 #include <string.h>
 
 #include "../dsql/dsql.h"
-#include "gen/iberror.h"
-#include "../jrd/jrd.h"
-#include "../jrd/cvt_proto.h"
+#include "gen/codes.h"
+#include "../jrd/iberr.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
-#include "../common/cvt.h"
+#include "../jrd/cvt_proto.h"
+#include "../jrd/thd_proto.h"
 
-using namespace Jrd;
-using namespace Firebird;
-
-static void post_error(const Arg::StatusVector&);
-
-
-static EngineCallbacks dsqlCallbacks(post_error);
+static void post_error(ISC_STATUS, ...);
 
 
 /**
-
+  
  	MOVD_move
-
+  
     @brief	Move (and possible convert) something to something else.
-
+ 
 
     @param from
     @param to
 
  **/
-void MOVD_move(const dsc* from, dsc* to)
+void MOVD_move( DSC * from, DSC * to)
 {
-	CVT_move_common(from, to, &dsqlCallbacks);
+
+	CVT_move(from, to, (FPTR_VOID) post_error);
 }
 
 
 /**
-
+  
  	post_error
-
+  
     @brief	A conversion error occurred.  Complain.
-
+ 
 
     @param status
-    @param
+    @param 
 
  **/
-static void post_error(const Arg::StatusVector& v)
+static void post_error( ISC_STATUS status, ...)
 {
-	Arg::Gds status_vector(isc_dsql_error);
-	status_vector << Arg::Gds(isc_sqlerr) << Arg::Num(-303);
-	status_vector.append(v);
+	TSQL tdsql;
+	ISC_STATUS *v, *v_end, *temp;
+	ISC_STATUS_ARRAY temp_status;
 
-	ERRD_punt(status_vector.value());
+	tdsql = GET_THREAD_DATA;
+
+/* copy into a temporary array any other arguments which may 
+ * have been handed to us, then post the error.
+ * N.B., the last supplied error should be a 0.
+ */
+
+	STUFF_STATUS(temp_status, status);
+
+	v = tdsql->tsql_status;
+	v_end = v + 20;
+	*v++ = gds_arg_gds;
+	*v++ = gds_dsql_error;
+	*v++ = gds_arg_gds;
+	*v++ = gds_sqlerr;
+	*v++ = gds_arg_number;
+	*v++ = -303;
+
+	for (temp = temp_status; v < v_end && (*v = *temp) != gds_arg_end;
+		 v++, temp++)
+		switch (*v) {
+		case gds_arg_cstring:
+			*++v = *++temp;
+			*++v = *++temp;
+			break;
+		default:
+			*++v = *++temp;
+			break;
+		};
+
+	ERRD_punt();
 }

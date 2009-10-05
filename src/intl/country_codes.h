@@ -1,5 +1,5 @@
 /* 93-Jan-05
- * CC_<country> ===> CountryCode_<country>
+ * CC_<country> ===> CountryCode_<country> 
  * Assigned codes are related to telephone system country dialling codes
  * but not exact, for instance FRENCHCAN == CANADA has a unique
  * ID, but shares a dialling code with US.  Former parts of YUGOSLAVIA
@@ -24,8 +24,8 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef INTL_COUNTRY_CODES_H
-#define INTL_COUNTRY_CODES_H
+#ifndef _INTL_COUNTRY_CODES_H_
+#define _INTL_COUNTRY_CODES_H_
 
 #define   CC_C                     0	/* 'C' Language locale */
 
@@ -62,4 +62,4 @@
 #define   CC_NORDAN                92	/* NORDAY + DENMARK */
 #define   CC_SWEDFIN               404	/* SWEDIN + FINLAND */
 
-#endif /* INTL_COUNTRY_CODES_H */
+#endif /* _INTL_COUNTRY_CODES_H_ */

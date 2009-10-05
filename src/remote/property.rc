@@ -1,0 +1,59 @@
+/*
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ */
+#include "property.rh"
+
+GENERAL_DLG DIALOG 6, 15, 202, 191
+STYLE DS_MODALFRAME | 0x4L | WS_CHILD | WS_VISIBLE | WS_DLGFRAME
+FONT 8, "MS Sans Serif"
+{
+ ICON IDI_IBSVR, IDC_IBSVR_ICON, 12, 12, 18, 20
+ LTEXT "", IDC_PRODNAME, 46, 16, 140, 12
+ LTEXT "Location:", IDC_LOCATION_TEXT, 14, 49, 40, 12
+ LTEXT "Version:", IDC_VERSION_TEXT, 14, 69, 40, 12
+ LTEXT "Capabilities:", IDC_CAPABILITIES_TEXT, 14, 106, 40, 12
+ LTEXT "", IDC_PATH, 60, 49, 130, 24
+ LTEXT "", IDC_STAT1, 60, 69, 120, 12
+ LTEXT "", IDC_PROTOCOLS, 60, 106, 120, 32
+ LTEXT "Number of attachments:", IDC_NUM_ATTACH_TEXT, 14, 149, 75, 12
+ LTEXT "Number of databases:", IDC_NUM_DB_TEXT, 14, 166, 75, 12
+ LTEXT "", IDC_STAT2, 102, 149, 28, 12
+ LTEXT "", IDC_STAT3, 102, 166, 28, 12
+ CONTROL "", -1, "STATIC", SS_GRAYRECT | 0x1000L | NOT WS_GROUP, 12, 41, 180, 1
+ CONTROL "", -1, "STATIC", SS_GRAYRECT | 0x1000L | NOT WS_GROUP, 12, 138, 180, 1
+ PUSHBUTTON "&Refresh", IDC_REFRESH, 132, 157, 53, 13
+ LTEXT "License:", IDC_LICENSED_TEXT, 14, 87, 33, 11
+ LTEXT "", IDC_LICENSE, 60, 87, 122, 12
+}
+
+STRINGTABLE 
+BEGIN
+ IDS_TCP, "TCP/IP Client Support"
+ IDS_IPC, "Local Client Support"
+ IDS_NP, "NetBEUI Client Support"
+ IDS_SERVERPROD_NAME, "Firebird SQL Server for Windows"
+ IDS_LOCALPROD_NAME, "Local Firebird Server"
+ IDS_STARTUP_NODLL, "REGCFG.DLL not found"
+ IDS_STARTUP_LAUNCHER, "LaunchInstReg entrypoint not\r\nfound in REGCFG.DLL"
+ IDS_USERS, " User"
+ IDS_UNLIMITED_USERS, "Unlimited Access"
+END
+
+IDI_IBSVR ICON "server.ico"
+
+#include "ibconfig.rc"

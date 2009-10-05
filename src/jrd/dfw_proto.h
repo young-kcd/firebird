@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		dfw_proto.h
- *	DESCRIPTION:	Prototype header file for dfw.cpp
+ *	DESCRIPTION:	Prototype header file for dfw.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,26 +21,25 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_DFW_PROTO_H
-#define JRD_DFW_PROTO_H
+#ifndef _JRD_DFW_PROTO_H_
+#define _JRD_DFW_PROTO_H_
 
-#include "../jrd/btr.h"	// defines SelectivityList
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace Jrd
-{
-	enum dfw_t;
-}
+USHORT DFW_assign_index_type(struct dfw *, SSHORT, SSHORT);
+void DFW_delete_deferred(struct jrd_tra *, SLONG);
+void DFW_merge_work(struct jrd_tra *, SLONG, SLONG);
+void DFW_perform_system_work(void);
+void DFW_perform_work(struct jrd_tra *);
+void DFW_perform_post_commit_work(struct jrd_tra *);
+class dfw * DFW_post_work(struct jrd_tra *, ENUM dfw_t, struct dsc *, USHORT);
+void DFW_post_work_arg(struct jrd_tra *, class dfw *, struct dsc *, USHORT);
+void DFW_update_index(struct dfw *, USHORT, float);
 
-USHORT DFW_assign_index_type(Jrd::thread_db*, const Firebird::string&, SSHORT, SSHORT);
-void DFW_delete_deferred(Jrd::jrd_tra*, SLONG);
-void DFW_merge_work(Jrd::jrd_tra*, SLONG, SLONG);
-void DFW_perform_system_work(Jrd::thread_db*);
-void DFW_perform_work(Jrd::thread_db*, Jrd::jrd_tra*);
-void DFW_perform_post_commit_work(Jrd::jrd_tra*);
-Jrd::DeferredWork* DFW_post_system_work(Jrd::thread_db*, Jrd::dfw_t, const dsc*, USHORT);
-Jrd::DeferredWork* DFW_post_work(Jrd::jrd_tra*, Jrd::dfw_t, const dsc*, USHORT);
-Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const dsc*, USHORT);
-Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const dsc*, USHORT, Jrd::dfw_t);
-void DFW_update_index(const TEXT*, USHORT, const Jrd::SelectivityList&, Jrd::jrd_tra*);
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-#endif // JRD_DFW_PROTO_H
+#endif /* _JRD_DFW_PROTO_H_ */

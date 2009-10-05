@@ -1,4 +1,4 @@
-/* 	PROGRAM:	JRD Access Method
+/* *	PROGRAM:	JRD Access Method
  *	MODULE:		vio_debug.h
  *	DESCRIPTION:	Definitions for tracing VIO activity
  *
@@ -20,19 +20,18 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_VIO_DEBUG_H
-#define JRD_VIO_DEBUG_H
+#ifndef _JRD_VIO_DEBUG_H_
+#define _JRD_VIO_DEBUG_H_
 
-const int DEBUG_WRITES			= 1;
-const int DEBUG_WRITES_INFO		= 2;
-const int DEBUG_READS			= 3;
-const int DEBUG_READS_INFO		= 4;
-const int DEBUG_TRACE			= 5;
-const int DEBUG_TRACE_INFO		= 6;
-const int DEBUG_TRACE_ALL		= 7;
-const int DEBUG_TRACE_ALL_INFO	= 8;
+#define DEBUG_WRITES		1
+#define DEBUG_WRITES_INFO	2
+#define DEBUG_READS		3
+#define DEBUG_READS_INFO	4
+#define DEBUG_TRACE		5
+#define DEBUG_TRACE_INFO	6
+#define DEBUG_TRACE_ALL		7
+#define DEBUG_TRACE_ALL_INFO	8
 
 static int debug_flag;
 
-#endif /* JRD_VIO_DEBUG_H */
-
+#endif /* _JRD_VIO_DEBUG_H_ */

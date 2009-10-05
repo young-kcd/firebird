@@ -29,48 +29,140 @@
  *
  */
 
-#ifndef JRD_FILE_PARAMS_H
-#define JRD_FILE_PARAMS_H
+#ifndef _JRD_FILE_PARAMS_H_
+#define _JRD_FILE_PARAMS_H_
 
-static const char* const EVENT_FILE		= "fb_event_%s";
-static const char* const LOCK_FILE		= "fb_lock_%s";
-static const char* const MONITOR_FILE	= "fb_monitor_%s";
-static const char* const TRACE_FILE		= "fb_trace";
+#define EVENT_DEFAULT_SIZE	32768
+#define EVENT_EXTEND_SIZE	32768
+#define EVENT_VERSION		2
+#define EVENT_SEMAPHORES	1
 
-#ifdef UNIX
-static const char* const INIT_FILE		= "fb_init";
-static const char* const SEM_FILE		= "fb_sem";
-static const char* const PORT_FILE		= "fb_port_%d";
+#ifdef NOHOSTNAME
+#define EVENT_FILE		"isc_event1"
+#define LOCK_FILE		"isc_lock1.gbl"
+#define INIT_FILE		"isc_init1"
+#define GUARD_FILE		"isc_guard1"
+#else
+#ifdef SMALL_FILE_NAMES
+#define EVENT_FILE		"isce1.%s"
+#define LOCK_FILE		"iscl1.%s"
+#define INIT_FILE		"isci1.%s"
+#define GUARD_FILE		"iscg1.%s"
+#endif
 #endif
 
-#ifdef HAVE_SYS_TYPES_H
+
+#ifdef VMS
+#define EVENT_FILE		"[000000]isc_event1.%s"
+#define INIT_FILE		"[000000]isc_init1.%s"
+#define GUARD_FILE		"[000000]isc_guard1.%s"
+#endif
+
+#ifdef WIN_NT
+#define EVENT_FILE		"%s.evn"
+#define LOCK_FILE		"%s.lck"
+#define LOCK_HEADER		"ibconfig"
+#define INIT_FILE		"%s.int"
+#define GUARD_FILE		"%s.grd"
+#endif
+
+#ifndef EVENT_FILE
+#define EVENT_FILE		"isc_event1.%s"
+#endif
+
+#ifndef LOCK_FILE
+#define LOCK_FILE		"isc_lock1.%s"
+#endif
+
+#ifndef LOCK_HEADER
+#define LOCK_HEADER		"isc_config"
+#endif
+
+#ifndef INIT_FILE
+#define INIT_FILE		"isc_init1.%s"
+#endif
+
+#ifndef GUARD_FILE
+#define GUARD_FILE		"isc_guard1.%s"
+#endif
+
+#ifdef sun
 #include <sys/types.h>
+#include <sys/ipc.h>
+#define SUNOS4
 #endif
 
-#ifdef HAVE_SYS_IPC_H
+#ifdef LINUX
+#include <sys/types.h>
 #include <sys/ipc.h>
 #endif
 
+#if defined FREEBSD || defined NETBSD
+#include <sys/types.h>
+#include <sys/ipc.h>
+#endif
+
+#ifdef UNIX
+#define WORKFILE	"/tmp/"
 #ifdef DARWIN
 #undef FB_PREFIX
 #define FB_PREFIX		"/all/files/are/in/framework/resources"
 #define DARWIN_GEN_DIR		"var"
 #define DARWIN_FRAMEWORK_ID	"com.firebirdsql.Firebird"
 #endif
-
-/* keep MSG_FILE_LANG in sync with build_file.epp */
-#ifdef WIN_NT
-static const char* const WORKFILE	= "c:\\temp\\";
-static const char MSG_FILE_LANG[]	= "intl\\%.10s.msg";
-#else
-static const char* const WORKFILE	= "/tmp/";
-static const char MSG_FILE_LANG[]	= "intl/%.10s.msg";
 #endif
 
-static const char* const LOCKDIR	= "firebird";		// created in WORKFILE
-static const char* const LOGFILE	= "firebird.log";
-static const char* const MSG_FILE	= "firebird.msg";
-// Keep in sync with MSG_FILE_LANG
-const int LOCALE_MAX	= 10;
+/* keep MSG_FILE_LANG in sync with build_file.e */
 
-#endif /* JRD_FILE_PARAMS_H */
+#ifdef WIN_NT
+#define WORKFILE	"c:\\temp\\"
+#define MSG_FILE	"firebird.msg"
+#define MSG_FILE_LANG	"intl/%.8s.msg"
+#define LOCALE_MAX	6
+#define LOGFILE		"firebird.log"
+#define TEMP_PATTERN	"XXXXXX"
+#endif
+
+#ifdef VMS
+#define MSG_FILE	"[sysmsg]firebird_msg.dat"
+#define MSG_FILE_LANG	"[sysmsg]firebird_%.10s.dat"
+#define LOCALE_MAX	10
+#define LOGFILE		"[syserr]firebird.log"
+#define WORKFILE	"SYS$SCRATCH:"
+#define ISC_LOGICAL	"interbase:"
+#define ISC_LOGICAL_LOCK	"interbase_lock:"
+
+typedef struct isc_vms_prefix
+{
+	TEXT*	isc_prefix;
+	TEXT*	vms_prefix;
+} *ISC_VMS_PREFIX;
+
+static struct isc_vms_prefix trans_prefix[] =
+{
+	"[SYSMSG]", "SYS$MESSAGE:",
+	"[SYSEXE]", "SYS$SYSTEM:",
+	"[SYSMGR]", "SYS$MANAGER:",
+	"[SYSLIB]", "SYS$LIBRARY:",
+	"[SYSHLP]", "SYS$HELP:",
+	"[SYSERR]", "SYS$ERRORLOG:",
+	"[000000]", "SYS$SYSTEM:",
+	NULL, NULL
+};
+#endif
+
+#ifndef MSG_FILE
+#define MSG_FILE	"firebird.msg"
+#define MSG_FILE_LANG	"intl/%.10s.msg"
+#define LOCALE_MAX	10
+#endif
+
+#ifndef LOGFILE
+#define LOGFILE		"firebird.log"
+#endif
+
+#ifndef TEMP_PATTERN
+#define TEMP_PATTERN	"_XXXXXX"
+#endif
+
+#endif /* _JRD_FILE_PARAMS_H_ */

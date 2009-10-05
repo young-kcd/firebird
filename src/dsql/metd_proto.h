@@ -23,50 +23,41 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DSQL_METD_PROTO_H
-#define DSQL_METD_PROTO_H
+#ifndef _DSQL_METD_PROTO_H
+#define _DSQL_METD_PROTO_H
 
-#include "../common/classes/GenericMap.h"
-#include "../common/classes/MetaName.h"
-#include "../common/classes/fb_pair.h"
-
-typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
-typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
+#ifndef __cplusplus
+#error This header file can only be used from C++
+#endif
 
 // forward declarations
-namespace Jrd {
-	class dsql_req;
-	class dsql_str;
-	class CompiledStatement;
-};
+class dsql_req;
+class str;
 
-void METD_drop_charset(Jrd::dsql_req*, const Firebird::MetaName&);
-void METD_drop_collation(Jrd::dsql_req*, const Jrd::dsql_str*);
-void METD_drop_function(Jrd::dsql_req*, const Jrd::dsql_str*);
-void METD_drop_procedure(Jrd::dsql_req*, const Jrd::dsql_str*);
-void METD_drop_relation(Jrd::dsql_req*, const Jrd::dsql_str*);
+extern "C" {
 
-Jrd::dsql_intlsym*  METD_get_charset(Jrd::dsql_req*, USHORT, const char* name); // UTF-8
-USHORT   METD_get_charset_bpc(Jrd::dsql_req*, SSHORT);
-Firebird::MetaName METD_get_charset_name(Jrd::dsql_req*, SSHORT);
-Jrd::dsql_intlsym* METD_get_collation(Jrd::dsql_req*, const Jrd::dsql_str*, USHORT charset_id);
-USHORT   METD_get_col_default(Jrd::dsql_req*, const char*, const char*, bool*, UCHAR*, USHORT);
-Jrd::dsql_str*      METD_get_default_charset(Jrd::dsql_req*);
-bool METD_get_domain(Jrd::dsql_req*, class Jrd::dsql_fld*, const char* name); // UTF-8
-USHORT   METD_get_domain_default(Jrd::dsql_req*, const TEXT*, bool*, UCHAR*, USHORT);
-bool METD_get_exception(Jrd::dsql_req*, const Jrd::dsql_str*);
-Jrd::dsql_udf*      METD_get_function(Jrd::dsql_req*, const Jrd::dsql_str*);
-Jrd::dsql_nod* METD_get_primary_key(Jrd::dsql_req*, const Jrd::dsql_str*);
-Jrd::dsql_prc* METD_get_procedure(Jrd::CompiledStatement*, const Jrd::dsql_str*);
-Jrd::dsql_rel* METD_get_relation(Jrd::CompiledStatement*, const Jrd::dsql_str*);
-bool   METD_get_trigger(Jrd::dsql_req*, const Jrd::dsql_str*, Jrd::dsql_str**, USHORT*);
-bool   METD_get_type(Jrd::dsql_req*, const Jrd::dsql_str*, const char*, SSHORT*);
-Jrd::dsql_rel* METD_get_view_base(Jrd::CompiledStatement* request,
-							 const char* view_name,	// UTF-8
-							 MetaNamePairMap& fields);
-Jrd::dsql_rel* METD_get_view_relation(Jrd::CompiledStatement* request,
-								const char* view_name,         // UTF-8
-								const char* relation_or_alias); // UTF-8
+void METD_drop_function(dsql_req*, str*);
+void METD_drop_procedure(dsql_req*, str*);
+void METD_drop_relation(dsql_req*, str*);
 
-#endif // DSQL_METD_PROTO_H
+INTLSYM  METD_get_charset(dsql_req*, USHORT, const char* name /* UTF-8 */);
+USHORT   METD_get_charset_bpc (struct dsql_req *, SSHORT);
+INTLSYM  METD_get_collation(dsql_req*, str*);
+void     METD_get_col_default(DSQL_REQ, const char*, const char*, BOOLEAN*, TEXT*, USHORT);
+STR      METD_get_default_charset(dsql_req*);
+USHORT   METD_get_domain(dsql_req*, class dsql_fld*, const char* name /* UTF-8 */);
+void     METD_get_domain_default(dsql_req*, TEXT*, BOOLEAN*, TEXT*, USHORT);
+UDF      METD_get_function(dsql_req*, str*);
+DSQL_NOD METD_get_primary_key(dsql_req*, str*);
+DSQL_PRC METD_get_procedure(dsql_req*, str*);
+DSQL_REL METD_get_relation(dsql_req*, str*);
+STR      METD_get_trigger_relation(dsql_req*, str*, USHORT*);
+USHORT   METD_get_type(dsql_req*, str*, char*, SSHORT*);
+DSQL_REL METD_get_view_relation(dsql_req*   request,
+								const char* view_name         /* UTF-8 */,
+								const char* relation_or_alias /* UTF-8 */,
+								USHORT      level);
 
+} // extern "C"
+
+#endif /*_DSQL_METD_PROTO_H */

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		pag_proto.h
- *	DESCRIPTION:	Prototype header file for pag.cpp
+ *	DESCRIPTION:	Prototype header file for pag.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,57 +21,39 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_PAG_PROTO_H
-#define JRD_PAG_PROTO_H
+#ifndef _JRD_PAG_PROTO_H_
+#define _JRD_PAG_PROTO_H_
 
-namespace Jrd {
-	class thread_db;
-	class Database;
-	class PageNumber;
-	class PageSpace;
-	struct win;
-}
-namespace Ods {
-	struct pag;
-	struct header_page;
-	enum ClumpOper { CLUMP_ADD, CLUMP_REPLACE, CLUMP_REPLACE_ONLY };
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-}
+extern int PAG_add_clump(SLONG, USHORT, USHORT, UCHAR *, USHORT, USHORT);
+extern USHORT PAG_add_file(TEXT *, SLONG);
+extern int PAG_add_header_entry(struct hdr *, USHORT, SSHORT, UCHAR *);
+extern struct pag *PAG_allocate(struct win *);
+extern SLONG PAG_attachment_id(void);
+extern int PAG_delete_clump_entry(SLONG, USHORT);
+extern void PAG_format_header(void);
+extern void PAG_format_log(void);
+extern void PAG_format_pip(void);
+extern int PAG_get_clump(SLONG, USHORT, USHORT *, UCHAR *);
+extern void PAG_header(TEXT *, USHORT);
+extern void PAG_init(void);
+extern void PAG_init2(USHORT);
+extern SLONG PAG_last_page(void);
+extern void PAG_modify_log(SLONG, SLONG);
+extern void PAG_release_page(SLONG, SLONG);
+extern void PAG_set_force_write(struct dbb *, SSHORT);
+extern void PAG_set_no_reserve(struct dbb *, USHORT);
+extern void PAG_set_db_readonly(struct dbb *, SSHORT);
+extern void PAG_set_db_SQL_dialect(struct dbb *, SSHORT);
+extern void PAG_set_page_buffers(ULONG);
+extern void PAG_sweep_interval(SLONG);
+extern int PAG_unlicensed(void);
 
-void	PAG_add_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT, const UCHAR*, Ods::ClumpOper);
-USHORT	PAG_add_file(Jrd::thread_db* tdbb, const TEXT*, SLONG);
-bool	PAG_add_header_entry(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
-void	PAG_attach_temp_pages(Jrd::thread_db*, USHORT pageSpaceID);
-bool	PAG_replace_entry_first(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
-Ods::pag*	PAG_allocate(Jrd::thread_db* tdbb, Jrd::win*);
-SLONG	PAG_attachment_id(Jrd::thread_db*);
-bool	PAG_delete_clump_entry(Jrd::thread_db* tdbb, SLONG, USHORT);
-void	PAG_format_header(Jrd::thread_db*);
-void	PAG_format_log(Jrd::thread_db*);
-void	PAG_format_pip(Jrd::thread_db*, Jrd::PageSpace& pageSpace);
-bool	PAG_get_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT*, UCHAR*);
-void	PAG_header(Jrd::thread_db*, bool);
-void	PAG_header_init(Jrd::thread_db*);
-void	PAG_init(Jrd::thread_db*);
-void	PAG_init2(Jrd::thread_db*, USHORT);
-SLONG	PAG_last_page(Jrd::thread_db* tdbb);
-void	PAG_release_page(Jrd::thread_db* tdbb, const Jrd::PageNumber&, const Jrd::PageNumber&);
-void	PAG_set_force_write(Jrd::thread_db* tdbb, bool);
-void	PAG_set_no_reserve(Jrd::thread_db* tdbb, bool);
-void	PAG_set_db_readonly(Jrd::thread_db* tdbb, bool);
-void	PAG_set_db_SQL_dialect(Jrd::thread_db* tdbb, SSHORT);
-void	PAG_set_page_buffers(Jrd::thread_db* tdbb, ULONG);
-void	PAG_sweep_interval(Jrd::thread_db* tdbb, SLONG);
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-namespace Jrd {
-	class PageCountCallback
-	{
-	public:
-//		PageCountCallback() { }
-		virtual void newPage(const SLONG, Ods::pag*) = 0;
-		virtual ~PageCountCallback() { }
-	};
-}
-ULONG	PAG_page_count(Jrd::Database*, Jrd::PageCountCallback*);
-
-#endif // JRD_PAG_PROTO_H
+#endif /* _JRD_PAG_PROTO_H_ */

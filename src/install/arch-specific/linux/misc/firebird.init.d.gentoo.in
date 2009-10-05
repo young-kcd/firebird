@@ -1,0 +1,43 @@
+#!/sbin/runscript
+#Gentoo Linux RC script
+# description: Start/Stop firebird database server
+#
+# This file belongs in /etc/init.d where it will be run
+# on system startup and shutdown to start the background
+# Firebird/interbase database server daemon
+
+# Source function library.
+. /etc/init.d/functions.sh
+
+ISC_USER:=SYSDBA
+ISC_PASSWORD:=masterke
+FIREBIRD=@prefix@
+FBRunUser=firebird
+
+# WARNING: in a real-world installation, you should not put the 
+# SYSDBA password in a publicly-readable file. 
+# Eventually this file should not need to contain any passwords.
+# as root user alone should be sufficient privledge to stop/start 
+# the server.
+ 
+#  NOTE: make sure you have localhost in your hosts.equiv file see next 2 
+#  lines for example of hosts.equiv contents
+#localhost.localdomain
+#localhost
+
+
+export FIREBIRD
+export ISC_USER
+export ISC_PASSWORD
+
+MANAGER=$FIREBIRD/bin/fbmgr.bin
+
+    start(){
+        echo -n "Starting Firebird server: "
+    	echo $MANAGER -start -forever | su $FBRunUser
+    }
+
+    stop(){
+	echo -n "Stopping Firebird server: "
+	$MANAGER -shut
+    }

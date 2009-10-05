@@ -12,6 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory=".\..\..\..\temp\release\fbclient_static"
+			IntermediateDirectory=".\..\..\..\temp\release\fbclient_static"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -19,16 +21,25 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386=1,WIN32,_LIB,NDEBUG,BOOT_BUILD"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,SERVER_SHUTDOWN,IPSERV,GOVERNOR,EXACT_NUMERICS,I386,_X86_=1,WIN32,_X86_,_LIB,NDEBUG,BOOT_BUILD"
 				StringPooling="TRUE"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
-				RuntimeTypeInfo="TRUE"
-				UsePrecompiledHeader="2"/>
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\..\..\..\temp\release\fbclient_static/fbclient_static.pch"
+				AssemblerListingLocation=".\..\..\..\temp\release\fbclient_static/"
+				ObjectFile=".\..\..\..\temp\release\fbclient_static/"
+				ProgramDataBaseFileName=".\..\..\..\temp\release\fbclient_static/"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-			/>
+				OutputFile=".\..\..\..\temp\release\fbclient_static\fbclient_static.lib"
+				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -52,6 +63,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory=".\..\..\..\temp\debug\fbclient_static"
+			IntermediateDirectory=".\..\..\..\temp\debug\fbclient_static"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -59,14 +72,25 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386=1,WIN32,_LIB,BOOT_BUILD,DEV_BUILD"
-				RuntimeTypeInfo="TRUE"
-				UsePrecompiledHeader="2"/>
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,SERVER_SHUTDOWN,IPSERV,GOVERNOR,EXACT_NUMERICS,I386,_X86_=1,WIN32,_X86_,_LIB,BOOT_BUILD"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\..\..\..\temp\debug\fbclient_static/fbclient_static.pch"
+				AssemblerListingLocation=".\..\..\..\temp\debug\fbclient_static/"
+				ObjectFile=".\..\..\..\temp\debug\fbclient_static/"
+				ProgramDataBaseFileName=".\..\..\..\temp\debug\fbclient_static/"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-			/>
+				OutputFile=".\..\..\..\temp\debug\fbclient_static\fbclient_static.lib"
+				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -118,10 +142,13 @@
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc.h">
+				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc_pub.h">
+				RelativePath="..\..\..\src\jrd\dls_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\enc_proto.h">
@@ -134,6 +161,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\flu_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\gds.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gds_proto.h">
@@ -151,16 +181,19 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sch_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdl.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\thd.h">
+				RelativePath="..\..\..\src\jrd\thd.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\thd_priority.h">
+				RelativePath="..\..\..\src\jrd\thd_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl_proto.h">
@@ -194,7 +227,7 @@
 				RelativePath="..\..\..\src\remote\remote.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp">
+				RelativePath="..\..\..\src\remote\wnet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xdr.cpp">
@@ -204,13 +237,26 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="IPSERVER files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\ipserver\alli.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\ipserver\ipcevent.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\ipserver\ipclient.cpp">
+			</File>
+		</Filter>
+		<Filter
 			Name="DSQL files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\$(PlatformName)\dsql\array.cpp">
+				RelativePath="..\..\..\gen\dsql\array.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\gen\$(PlatformName)\dsql\blob.cpp">
+				RelativePath="..\..\..\gen\dsql\blob.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\keywords.cpp">
@@ -235,6 +281,12 @@
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File
@@ -244,7 +296,7 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp">
+				RelativePath="..\..\..\src\jrd\ibinitdll.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
@@ -253,13 +305,16 @@
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
+				RelativePath="..\..\..\src\jrd\isc_ipc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sch.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl.cpp">
@@ -271,9 +326,6 @@
 				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\utl.cpp">
 			</File>
 			<File
@@ -282,6 +334,9 @@
 		</Filter>
 		<File
 			RelativePath="..\defs\fbclient.def">
+		</File>
+		<File
+			RelativePath="..\defs\fbclient_debug.def">
 		</File>
 	</Files>
 	<Globals>

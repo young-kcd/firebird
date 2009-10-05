@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.libfbclient,v 1.14.2.7 2007-12-17 14:48:24 paulbeach Exp $
 #
 ROOT=..
-ObjModuleType=superclient
-CXXFLAGS+= -DSUPERCLIENT
+ObjModuleName=libfbclient
+CFLAGS:=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -41,7 +42,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 # These are deliberatly unexported otherwise gbak and others will try and check
-# the userid against the security2.fdb database, which doesn't exist at this stage
+# the userid against the security.fdb database, which doesn't exist at this stage 
 # in the build. MOD 11-July-2002
 
 unexport ISC_USER
@@ -55,39 +56,50 @@ unexport ISC_PASSWORD
 SMD_Sources =	$(addprefix remote/,$(Server_main_dummy))
 SMD_Objects =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
 
+JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles))
 JRD_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_ClientSources))))
 
 DSQL_ClientSources = $(addprefix dsql/, $(DSQL_ClientFiles))
 DSQL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DSQL_ClientSources))))
 
 
-REMOTE_ClientObjects = $(INTERFACE_Objects)
+REMOTE_ClientSources = $(addprefix remote/, $(REMOTE_ClientFiles))
+REMOTE_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_ClientSources))))
 
 
 GPRELIB_ClientSources = $(addprefix gpre/, $(GPRELIB_ClientFiles))
 GPRELIB_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_ClientSources))))
 
 
-SECURITY_ClientSources_gsec = $(addprefix utilities/gsec/, $(SECURITY_ClientFiles_gsec))
-SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources_gsec))))
+WAL_ClientSources = $(addprefix wal/, $(WAL_ClientFiles))
+WAL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(WAL_ClientSources))))
+
+
+SECURITY_ClientSources = $(addprefix utilities/, $(SECURITY_ClientFiles))
+SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources))))
 
 
 FBUTIL_ClientSources = $(addprefix fbutil/, $(FBUTIL_ClientFiles))
 FBUTIL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_ClientSources))))
+
+FBCOMMON_ClientSources = $(addprefix common/, $(FBCOMMON_ClientFiles))
+FBCOMMON_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_ClientSources))))
+
+FBCLASSES_ClientSources = $(addprefix common/classes/, $(FBCLASSES_ClientFiles))
+FBCLASSES_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ClientSources))))
 
 
 FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(DSQL_ClientObjects) \
 					$(REMOTE_ClientObjects) \
 					$(GPRELIB_ClientObjects) \
+					$(WAL_ClientObjects) \
 					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
-					$(FBCOMMON_Objects)\
+					$(FBCOMMON_ClientObjects)\
 					$(FBCLASSES_ClientObjects)\
-					$(FBCLASSES_MsgObjects)\
 					$(OS_SPECIFIC_Objects)\
-					$(FBCONFIG_Objects) \
-					$(CLUMPLETS_Objects) \
+					$(FBCONFIG_Objects)\
 					$(SMD_Objects)
 
 
@@ -96,21 +108,25 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 
 libfbclient : $(LIBFBCLIENT_SONAME)
 
-ifneq ($(ClientLibraryNameFull),$(ClientLibrarySoName))
+ifneq ($(ClientLibraryNameFull),$(ClientLibraryNameMajor))
 $(LIBFBCLIENT_SOBASENAME):	$(LIBFBCLIENT_SO)
-	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibrarySoName) )
+	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibraryNameMajor) )
 endif
 
-ifneq ($(ClientLibrarySoName),$(ClientLibraryName))
+ifneq ($(ClientLibraryName),$(ClientLibraryNameMajor))
 $(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
-	(cd $(LIB) && $(LN) -f $(ClientLibrarySoName) $(ClientLibraryName) )
+	(cd $(LIB) && $(LN) -f $(ClientLibraryNameMajor) $(ClientLibraryName) )
 endif
 
+$(LIBFBCLIENT_SO):	LINK_PROD=$(ClientLibraryNameMajor)
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
-	$(LINK_CLIENT) -o $@ $^ $(LINK_CLIENT_LIBS)
+#	$(LIB_LINK) -Wl,-soname,libfbclient.$(SHRLIB_EXT).1 -Wl,-rpath,/usr/lib -o $@ $^
+	$(LIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_SHLIB_LINK_OPTIONS) $(LIB_CLIENT_LINK_OPTIONS) \
+		$(LIB_LINK_SONAME_LINE) $(LIB_LINK_RPATH_LINE) -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+
 
 AllObjects = $(FBCLIENT_Objects)
-Dependencies = $(AllObjects:.o=.d)
+Dependencies=$(AllObjects:.o=.$(DEP_EXT))
 
 
 include $(ROOT)/gen/make.shared.targets

@@ -127,21 +127,3 @@ II. If the stored procedure has special privileges on some objects, the
 dynamic statement submitted in the EXECUTE STATEMENT string does not 
 inherit them. Privileges are restricted to those granted to the user who 
 is executing the procedure.
-
-III. Even though EXECUTE STATEMENT is available in triggers and stored procedures
-only, it's possible to call it directly from DSQL statements, using EXECUTE BLOCK
-facility. Example:
-
-set term ^;
-execute block returns(i bigint) as
-begin
-	execute statement 'select avg(rdb$relation_id)
-	from rdb$database' into :i;
-	suspend;
-end^
-set term ;^
-
-However, for such contrived code, it's better to call EXECUTE BLOCK in a stored
-procedure or to construct the query dynamically in the client side.
-For information on EXECUTE BLOCK, see the README.execute_block document.
-

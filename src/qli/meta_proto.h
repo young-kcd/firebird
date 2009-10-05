@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		meta_proto.h
- *	DESCRIPTION:	Prototype header file for meta.epp
+ *	DESCRIPTION:	Prototype header file for meta.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,36 +21,35 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef QLI_META_PROTO_H
-#define QLI_META_PROTO_H
+#ifndef _QLI_META_PROTO_H_
+#define _QLI_META_PROTO_H_
 
-bool	MET_declare(qli_dbb*, qli_fld*, const qli_name*);
-void	MET_define_field(qli_dbb*, qli_fld*);
-void	MET_define_index(qli_syntax*);
-void	MET_define_relation(qli_rel*, qli_rel*);
-void	MET_define_sql_relation(qli_rel*);
-void	MET_delete_database(qli_dbb*);
-void	MET_delete_field(qli_dbb*, qli_name*);
-void	MET_delete_index(qli_dbb*, qli_name*);
-void	MET_delete_relation(qli_rel*);
-int		MET_dimensions(qli_dbb*, const TEXT*);
-void	MET_fields(qli_rel*);
-void	MET_finish(qli_dbb*);
-int		MET_get_datatype (USHORT);
-void	MET_index_info(qli_dbb* db, const TEXT*, const TEXT*, SCHAR* const, size_t bufsize);
-void	MET_meta_commit(qli_dbb*);
-void	MET_meta_rollback(qli_dbb*);
-FB_API_HANDLE	MET_meta_transaction(qli_dbb*, bool);
-void	MET_modify_field(qli_dbb*, qli_fld*);
-void	MET_modify_index(qli_syntax*);
-void	MET_modify_relation(qli_rel*, qli_fld*);
-void	MET_ready(qli_syntax*, const bool);
-void	MET_shutdown();
-void	MET_sql_alter_table(qli_rel*, qli_fld*);
-void	MET_sql_cr_view(qli_syntax*);
-void	MET_sql_grant(qli_syntax*);
-void	MET_sql_revoke(qli_syntax*);
-FB_API_HANDLE	MET_transaction(nod_t, qli_dbb*);
+extern int	MET_declare (struct dbb *, struct qli_fld *, struct nam *);
+extern void	MET_define_field (struct dbb *, struct qli_fld *);
+extern void	MET_define_index (struct syn *);
+extern void	MET_define_relation (struct qli_rel *, struct qli_rel *);
+extern void	MET_define_sql_relation (struct qli_rel *);
+extern void	MET_delete_database (struct dbb *);
+extern void	MET_delete_field (struct dbb *, struct nam *);
+extern void	MET_delete_index (struct dbb *, struct nam *);
+extern void	MET_delete_relation (struct qli_rel *);
+extern int	MET_dimensions (struct dbb *, TEXT *);
+extern void	MET_fields (struct qli_rel *);
+extern void	MET_finish (struct dbb *);
+extern int	MET_get_datatype (USHORT);
+extern void	MET_index_info (TEXT *, TEXT *, SCHAR *);
+extern void	MET_meta_commit (struct dbb *);
+extern void	MET_meta_rollback (struct dbb *);
+extern FRBRD	*MET_meta_transaction (struct dbb *, int);
+extern void	MET_modify_field (struct dbb *, struct qli_fld *);
+extern void	MET_modify_index (struct syn *);
+extern void	MET_modify_relation (struct qli_rel *, struct qli_fld *);
+extern void	MET_ready (struct syn *, USHORT);
+extern void	MET_shutdown (void);
+extern void	MET_sql_alter_table (struct qli_rel *, struct qli_fld *);
+extern void	MET_sql_cr_view (struct syn *);
+extern void	MET_sql_grant (struct syn *);
+extern void	MET_sql_revoke (struct syn *);
+extern FRBRD	*MET_transaction (NOD_T, struct dbb *);
 
-#endif // QLI_META_PROTO_H
-
+#endif /* _QLI_META_PROTO_H_ */

@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * $Id: license.h,v 1.30.2.3 2007-12-17 14:48:38 paulbeach Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -61,17 +61,22 @@
  *
  */
 
-#ifndef JRD_LICENSE_H
-#define JRD_LICENSE_H
+#ifndef _JRD_LICENSE_H_
+#define _JRD_LICENSE_H_
 
 #include "../jrd/build_no.h"
 #include "../jrd/isc_version.h"
 
 #ifdef HPUX
+#ifdef HP10
+#define FB_PLATFORM	"HU"
+#endif /* HP10 */
+#ifdef HP11
 #define FB_PLATFORM "HU"
+#endif /* HP11 */
 #endif
 
-#ifdef __sun
+#ifdef sun
 #ifdef sparc
 #ifdef SOLARIS
 #define FB_PLATFORM	"SO"
@@ -82,21 +87,26 @@
 #ifdef i386
 #define FB_PLATFORM     "SI"
 #endif /* i386 */
-#ifdef AMD64
-#define FB_PLATFORM	"SI"
-#endif
 #ifndef FB_PLATFORM
 #define FB_PLATFORM	"S3"
 #endif
-#endif /* __sun */
+#endif /* sun */
 
-#ifdef AIX
-#ifdef AIX_PPC
-#define FB_PLATFORM	"PA"
+#ifdef VMS
+#ifdef __ALPHA
+#define FB_PLATFORM     "AV"
 #else
+#define FB_PLATFORM	"VM"
+#endif
+#endif
+
+#ifdef AIX_RS6000
 #define FB_PLATFORM	"IA"
 #endif
-#endif /* aix */
+
+#ifdef AIX_PPC
+#define FB_PLATFORM	"PA"
+#endif
 
 #ifdef WIN_NT
 #ifdef i386
@@ -110,6 +120,10 @@
 #define FB_PLATFORM     "LI"	/* Linux on Intel */
 #endif
 
+#ifdef SINIXZ
+#define FB_PLATFORM     "SZ"	/* SINIX for PC  */
+#endif
+
 #ifdef FREEBSD
 #define FB_PLATFORM     "FB"	/* FreeBSD/i386 */
 #endif
@@ -119,13 +133,13 @@
 #endif
 
 #ifdef DARWIN
-#if defined(i386) || defined(__x86_64__)
-#define FB_PLATFORM		"UI"	/* Darwin/Intel */
+#ifdef i386
+#define FB_PLATFORM	"UI"	/* Darwin/Intel */
 #endif
-#if defined(__ppc__) || defined(__ppc64__)
+#endif
+#if defined(DARWIN) && (__ppc__)
 #define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
-#endif	// DARWIN
 
 #ifndef FB_VERSION
 #define FB_VERSION      FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX
@@ -139,5 +153,5 @@
 #define ISC_VERSION		FB_PLATFORM "-" FB_BUILD_TYPE ISC_MAJOR_VER "." ISC_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX
 #endif
 
-#endif /* JRD_LICENSE_H */
+#endif /* _JRD_LICENSE_H_ */
 

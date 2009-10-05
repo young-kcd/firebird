@@ -1,28 +1,38 @@
 /*
  *	PROGRAM:	Client/Server Common Code
  *	MODULE:		config_root.cpp
- *	DESCRIPTION:	Configuration manager (platform specific - Darwin)
+ *	DESCRIPTION:	Configuration manager (platform specific - linux/posix)
  *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * You may obtain a copy of the Licence at
+ * http://www.gnu.org/licences/lgpl.html
+ * 
+ * As a special exception this file can also be included in modules
+ * with other source code as long as that source code has been 
+ * released under an Open Source Initiative certificed licence.  
+ * More information about OSI certification can be found at: 
+ * http://www.opensource.org 
+ * 
+ * This module is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public Licence for more details.
+ * 
+ * This module was created by members of the firebird development 
+ * team.  All individual contributions remain the Copyright (C) of 
+ * those individuals and all rights are reserved.  Contributors to 
+ * this file are either listed below or can be obtained from a CVS 
+ * history command.
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ *  Created by:  Mark O'Donohue <skywalker@users.sourceforge.net>
  *
- *  The Original Code was created by John Bellardo
- *  for the Firebird Open Source RDBMS project.
+ *  Contributor(s):
+ * 
  *
- *  Copyright (c) 2002 John Bellardo <bellardo at cs.ucsd.edu>
- *  and all contributors signed below.
- *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
- *
+ *  $Id: config_root.cpp,v 1.1.2.3 2008-03-27 13:33:00 paulbeach Exp $
  */
 
 #include "firebird.h"
@@ -32,7 +42,7 @@
 #endif
 
 #include "fb_types.h"
-#include "../common/classes/fb_string.h"
+#include "fb_string.h"
 
 #include "../jrd/os/config_root.h"
 #include "../jrd/os/path_utils.h"
@@ -42,46 +52,44 @@
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 
-typedef Firebird::PathName string;
+typedef Firebird::string string;
 
-static string getFrameworkFromBundle()
+static const char *CONFIG_FILE = "firebird.conf";
+
+ConfigRoot::ConfigRoot()
 {
-	// Attempt to locate the Firebird.framework bundle
-	CFBundleRef fbFramework = CFBundleGetBundleWithIdentifier(CFSTR(DARWIN_FRAMEWORK_ID));
-	if (fbFramework)
+	CFBundleRef fbFramework;
+	CFURLRef	msgFileUrl;
+	CFStringRef	msgFilePath;
+	char file_buff[MAXPATHLEN];
+
+	// Check the environment variable
+	const char* envPath = getenv("FIREBIRD");
+	if (envPath != NULL && strcmp("", envPath))
 	{
-		CFURLRef msgFileUrl = CFBundleCopyResourceURL(fbFramework,
-			CFSTR(DARWIN_GEN_DIR), NULL, NULL);
-		if (msgFileUrl)
+		root_dir = envPath;
+		return;
+	}
+
+	// Attempt to locate the Firebird.framework bundle
+	if ((fbFramework = CFBundleGetBundleWithIdentifier(
+			CFSTR(DARWIN_FRAMEWORK_ID)) ))
+	{
+		if ((msgFileUrl = CFBundleCopyResourceURL( fbFramework,
+			CFSTR(DARWIN_GEN_DIR), NULL, NULL)))
 		{
-			CFStringRef	msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
-				kCFURLPOSIXPathStyle);
-			if (msgFilePath)
+			if ((msgFilePath = CFURLCopyFileSystemPath(msgFileUrl,
+				kCFURLPOSIXPathStyle)))
 			{
-				char file_buff[MAXPATHLEN];
-				if (CFStringGetCString(msgFilePath, file_buff, MAXPATHLEN,
-					kCFStringEncodingMacRoman))
+				if ((CFStringGetCString(msgFilePath, file_buff, MAXPATHLEN,
+					kCFStringEncodingMacRoman )) )
 				{
-					string dir = file_buff;
-					dir += PathUtils::dir_sep;
-					return dir;
+					root_dir = file_buff;
+					root_dir += PathUtils::dir_sep;
+					return;
 				}
 			}
 		}
-	}
-
-	// No luck
-	return "";
-}
-
-
-void ConfigRoot::osConfigRoot()
-{
-	// Attempt to locate the Firebird.framework bundle
-	root_dir = getFrameworkFromBundle();
-	if (root_dir.hasData())
-	{
-		return;
 	}
 
 	// As a last resort get it from the default install directory
@@ -90,18 +98,13 @@ void ConfigRoot::osConfigRoot()
 	root_dir = FB_PREFIX;
 }
 
-
-void ConfigRoot::osConfigInstallDir()
+const char *ConfigRoot::getRootDirectory() const
 {
-	// Attempt to locate the Firebird.framework bundle
-	install_dir = getFrameworkFromBundle();
-	if (install_dir.hasData())
-	{
-		return;
-	}
+	return root_dir.c_str();
+}
 
-	// As a last resort get it from the default install directory
-	// this doesn't make much sense because the framework method should
-	// never fail, but what the heck.
-	install_dir = FB_PREFIX;
+const char *ConfigRoot::getConfigFile() const
+{
+	static string file = root_dir + string(CONFIG_FILE);
+	return file.c_str();
 }

@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		sdw_proto.h
- *	DESCRIPTION:	Prototype Header file for sdw.cpp
+ *	DESCRIPTION:	Prototype Header file for sdw.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -23,25 +23,28 @@
 
 #ifndef JRD_SDW_PROTO_H
 #define JRD_SDW_PROTO_H
-namespace Jrd {
-	class jrd_file;
-	class Shadow;
-}
 
-void	SDW_add(Jrd::thread_db* tdbb, const TEXT*, USHORT, USHORT);
-int		SDW_add_file(Jrd::thread_db* tdbb, const TEXT*, SLONG, USHORT);
-void	SDW_check(Jrd::thread_db* tdbb);
-bool	SDW_check_conditional(Jrd::thread_db* tdbb);
-void	SDW_close();
-void	SDW_dump_pages(Jrd::thread_db* tdbb);
-void	SDW_get_shadows(Jrd::thread_db* tdbb);
-void	SDW_init(Jrd::thread_db* tdbb, bool, bool);
-bool	SDW_lck_update(Jrd::thread_db*, SLONG);
-void	SDW_notify(Jrd::thread_db* tdbb);
-bool	SDW_rollover_to_shadow(Jrd::thread_db* tdbb, Jrd::jrd_file*, const bool);
-// It's never called directly, but through SDW_check().
-//void	SDW_shutdown_shadow(Jrd::Shadow*);
-void	SDW_start(Jrd::thread_db* tdbb, const TEXT*, USHORT, USHORT, bool);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // JRD_SDW_PROTO_H
+extern void SDW_add(TEXT *, USHORT, USHORT);
+extern int SDW_add_file(TEXT *, SLONG, USHORT);
+extern void SDW_check(void);
+extern BOOLEAN SDW_check_conditional(void);
+extern void SDW_close(void);
+extern void SDW_dump_pages(void);
+extern void SDW_get_shadows(void);
+extern void SDW_init(USHORT, USHORT, struct sbm *);
+extern BOOLEAN SDW_lck_update(SLONG);
+extern void SDW_notify(void);
+extern BOOLEAN SDW_rollover_to_shadow(struct fil *, BOOLEAN);
+extern void SDW_shutdown_shadow(struct sdw *);
+extern void SDW_start(TEXT *, USHORT, USHORT, USHORT);
+extern int SDW_start_shadowing(void *ast_object);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* JRD_SDW_PROTO_H */

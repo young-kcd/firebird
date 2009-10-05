@@ -24,6 +24,7 @@
 //
 //____________________________________________________________
 //
+//	$Id: tdr.cpp,v 1.17.2.3 2005-08-09 11:07:07 hvlad Exp $
 //
 // 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete "Apollo" port
 //
@@ -32,33 +33,33 @@
 //
 
 #include "firebird.h"
-#include <stdio.h>
+#include "../jrd/ib_stdio.h"
 #include <string.h>
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
 #include "../alice/alice.h"
 #include "../alice/aliceswi.h"
+#include "../alice/all.h"
+#include "../alice/alloc.h"
 #include "../alice/alice_proto.h"
+#include "../alice/all_proto.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/constants.h"
-#include "../common/classes/ClumpletWriter.h"
+#include "../jrd/svc_proto.h"
+#include "../jrd/thd_proto.h"
 
-using MsgFormat::SafeArg;
-
-
-static SINT64 ask();
-static void print_description(const tdr*);
-static void reattach_database(tdr*);
-static void reattach_databases(tdr*);
-static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, SINT64);
+static ULONG ask(void);
+static void print_description(TDR);
+static void reattach_database(TDR);
+static void reattach_databases(TDR);
+static BOOLEAN reconnect(FRBRD *, SLONG, TEXT *, ULONG);
 
 
-//const char* const NEWLINE = "\n";
+#define NEWLINE	"\n"
 
-static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
+static UCHAR limbo_info[] = { gds_info_limbo, gds_info_end };
 
 
 
@@ -67,7 +68,7 @@ static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 //
 // The following routines are shared by the command line gfix and
 // the windows server manager.  These routines should not contain
-// any direct screen I/O (i.e. printf/getc statements).
+// any direct screen I/O (i.e. ib_printf/ib_getc statements).
 //
 
 
@@ -78,36 +79,32 @@ static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 //		transactions.
 //
 
-USHORT TDR_analyze(const tdr* trans)
+USHORT TDR_analyze(TDR trans)
 {
-	USHORT advice = TRA_none;
+	USHORT state, advice = TRA_none;
 
 	if (trans == NULL)
 		return TRA_none;
 
-	// if the tdr for the first transaction is missing,
-	// we can assume it was committed
+//  if the tdr for the first transaction is missing,
+//  we can assume it was committed
 
-	USHORT state = trans->tdr_state;
+	state = trans->tdr_state;
 	if (state == TRA_none)
 		state = TRA_commit;
 	else if (state == TRA_unknown)
 		advice = TRA_unknown;
 
-	for (trans = trans->tdr_next; trans; trans = trans->tdr_next)
-	{
-		switch (trans->tdr_state)
-		{
-			// an explicitly committed transaction necessitates a check for the
-			// perverse case of a rollback, otherwise a commit if at all possible
+	for (trans = trans->tdr_next; trans; trans = trans->tdr_next) {
+		switch (trans->tdr_state) {
+			/* an explicitly committed transaction necessitates a check for the
+			   perverse case of a rollback, otherwise a commit if at all possible */
 
 		case TRA_commit:
-			if (state == TRA_rollback)
-			{
-				ALICE_print(105);
-				// msg 105: Warning: Multidatabase transaction is in inconsistent state for recovery.
-				ALICE_print(106, SafeArg() << trans->tdr_id);
-				// msg 106: Transaction %ld was committed, but prior ones were rolled back.
+			if (state == TRA_rollback) {
+				ALICE_print(105, 0, 0, 0, 0, 0);	/* msg 105: Warning: Multidatabase transaction is in inconsistent state for recovery. */
+				ALICE_print(106, reinterpret_cast < char *>(trans->tdr_id), 0,
+							0, 0, 0);	/* msg 106: Transaction %ld was committed, but prior ones were rolled back. */
 				return 0;
 			}
 			else
@@ -119,32 +116,27 @@ USHORT TDR_analyze(const tdr* trans)
 			// already has
 
 		case TRA_limbo:
-			switch (state)
-			{
-			case TRA_none:
-			case TRA_commit:
+			if (state == TRA_none)
 				advice = TRA_commit;
-				break;
-			case TRA_rollback:
+			else if (state == TRA_commit)
+				advice = TRA_commit;
+			else if (state == TRA_rollback)
 				advice = TRA_rollback;
-				break;
-			}
 			break;
 
 			// an explicitly rolled back transaction requires a rollback unless a
 			// transaction has committed or is assumed committed
 
 		case TRA_rollback:
-			if ((state == TRA_commit) || (state == TRA_none))
-			{
-				ALICE_print(105);
-				// msg 105: Warning: Multidatabase transaction is in inconsistent state for recovery.
-				ALICE_print(107, SafeArg() << trans->tdr_id);
-				// msg 107: Transaction %ld was rolled back, but prior ones were committed.
+			if ((state == TRA_commit) || (state == TRA_none)) {
+				ALICE_print(105, 0, 0, 0, 0, 0);	/* msg 105: Warning: Multidatabase transaction is in inconsistent state for recovery. */
+				ALICE_print(107, reinterpret_cast < char *>(trans->tdr_id), 0,
+							0, 0, 0);	/* msg 107: Transaction %ld was rolled back, but prior ones were committed. */
 
 				return 0;
 			}
-			advice = TRA_rollback;
+			else
+				advice = TRA_rollback;
 			break;
 
 			// a missing TDR indicates a committed transaction if a limbo one hasn't
@@ -167,8 +159,8 @@ USHORT TDR_analyze(const tdr* trans)
 			break;
 
 		default:
-			ALICE_print(67, SafeArg() << trans->tdr_state);
-			// msg 67: Transaction state %d not in valid range.
+			ALICE_print(67, reinterpret_cast < char *>(trans->tdr_state), 0,
+						0, 0, 0);	/* msg 67: Transaction state %d not in valid range. */
 			return 0;
 		}
 	}
@@ -183,61 +175,73 @@ USHORT TDR_analyze(const tdr* trans)
 //		Attempt to attach a database with a given pathname.
 //
 
-bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* pathname)
+BOOLEAN TDR_attach_database(ISC_STATUS * status_vector,
+							TDR trans, TEXT * pathname)
 {
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
+	UCHAR dpb[128], *d, *q;
+	USHORT dpb_length;
+	TGBL tdgbl;
+
+	tdgbl = GET_THREAD_DATA;
 
 	if (tdgbl->ALICE_data.ua_debug)
-		ALICE_print(68, SafeArg() << pathname);
-		// msg 68: ATTACH_DATABASE: attempted attach of %s
+		ALICE_print(68, pathname, 0, 0, 0, 0);	/* msg 68: ATTACH_DATABASE: attempted attach of %s */
 
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	dpb.insertTag(isc_dpb_no_garbage_collect);
-	dpb.insertTag(isc_dpb_gfix_attach);
-	tdgbl->uSvc->getAddressPath(dpb);
+	d = dpb;
+
+	*d++ = gds_dpb_version1;
+	*d++ = gds_dpb_no_garbage_collect;
+	*d++ = 0;
+	*d++ = isc_dpb_gfix_attach;
+	*d++ = 0;
+
 	if (tdgbl->ALICE_data.ua_user) {
-		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
-	}
-	if (tdgbl->ALICE_data.ua_password)
-	{
-		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-						tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
-	}
-	if (tdgbl->ALICE_data.ua_tr_user)
-	{
-		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_auth,
-						tdgbl->ALICE_data.ua_tr_user,
-						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_tr_user)));
-	}
-	if (tdgbl->ALICE_data.ua_tr_role)
-	{
-		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+		*d++ = gds_dpb_user_name;
+		*d++ =
+			strlen(reinterpret_cast <
+				   const char *>(tdgbl->ALICE_data.ua_user));
+		for (q = tdgbl->ALICE_data.ua_user; *q;)
+			*d++ = *q++;
 	}
 
-	trans->tdr_db_handle = 0;
+	if (tdgbl->ALICE_data.ua_password) {
+		if (!tdgbl->sw_service)
+			*d++ = gds_dpb_password;
+		else
+			*d++ = gds_dpb_password_enc;
+		*d++ =
+			strlen(reinterpret_cast <
+				   const char *>(tdgbl->ALICE_data.ua_password));
+		for (q = tdgbl->ALICE_data.ua_password; *q;)
+			*d++ = *q++;
+	}
 
-	isc_attach_database(status_vector, 0, pathname,
-						 &trans->tdr_db_handle, dpb.getBufferLength(),
-						 reinterpret_cast<const char*>(dpb.getBuffer()));
+	dpb_length = d - dpb;
+	if (dpb_length == 1)
+		dpb_length = 0;
 
-	if (status_vector[1])
-	{
-		if (tdgbl->ALICE_data.ua_debug)
-		{
-			ALICE_print(69);	// msg 69:  failed
+	trans->tdr_db_handle = NULL;
+
+	gds__attach_database(status_vector,
+						 0,
+						 GDS_VAL(pathname),
+						 (GDS_REF(trans->tdr_db_handle)), dpb_length,
+						 reinterpret_cast < char *>(GDS_VAL(dpb)));
+
+	if (status_vector[1]) {
+		if (tdgbl->ALICE_data.ua_debug) {
+			ALICE_print(69, 0, 0, 0, 0, 0);	/* msg 69:  failed */
 			ALICE_print_status(status_vector);
 		}
-		return false;
+		return FALSE;
 	}
 
 	MET_set_capabilities(status_vector, trans);
 
 	if (tdgbl->ALICE_data.ua_debug)
-		ALICE_print(70);	// msg 70:  succeeded
+		ALICE_print(70, 0, 0, 0, 0, 0);	/* msg 70:  succeeded */
 
-	return true;
+	return TRUE;
 }
 
 
@@ -248,11 +252,12 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 //		in a multidatabase transaction.
 //
 
-void TDR_get_states(tdr* trans)
+void TDR_get_states(TDR trans)
 {
 	ISC_STATUS_ARRAY status_vector;
+	TDR ptr;
 
-	for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
+	for (ptr = trans; ptr; ptr = ptr->tdr_next)
 		MET_get_state(status_vector, ptr);
 }
 
@@ -264,12 +269,14 @@ void TDR_get_states(tdr* trans)
 //		a multidatabase transaction.
 //
 
-void TDR_shutdown_databases(tdr* trans)
+void TDR_shutdown_databases(TDR trans)
 {
+	TDR ptr;
 	ISC_STATUS_ARRAY status_vector;
 
-	for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
-		isc_detach_database(status_vector, &ptr->tdr_db_handle);
+	for (ptr = trans; ptr; ptr = ptr->tdr_next)
+		gds__detach_database(status_vector,
+							 (GDS_REF(ptr->tdr_db_handle)));
 }
 
 
@@ -286,80 +293,81 @@ void TDR_shutdown_databases(tdr* trans)
 //		prompt for commit, rollback, or leave well enough alone.
 //
 
-void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switches)
+void TDR_list_limbo(FRBRD *handle, TEXT * name, ULONG switches)
 {
-	UCHAR buffer[1024];
+	UCHAR buffer[1024], *ptr;
 	ISC_STATUS_ARRAY status_vector;
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
+	SLONG id;
+	USHORT item, flag, length;
+	TDR trans;
+	TGBL tdgbl;
 
-	if (isc_database_info(status_vector, &handle, sizeof(limbo_info),
-						   reinterpret_cast<const char*>(limbo_info),
+	tdgbl = GET_THREAD_DATA;
+
+	if (gds__database_info(status_vector,
+						   (GDS_REF(handle)),
+						   sizeof(limbo_info),
+						   reinterpret_cast < char *>(limbo_info),
 						   sizeof(buffer),
-						   reinterpret_cast<char*>(buffer)))
-	{
+						   reinterpret_cast < char *>(buffer))) {
 		ALICE_print_status(status_vector);
 		return;
 	}
 
-    SLONG id;
-   	tdr* trans;
-	UCHAR* ptr = buffer;
-	bool flag = true;
+	ptr = buffer;
+	flag = TRUE;
 
-	while (flag)
-	{
-		const USHORT item = *ptr++;
-		const USHORT length = (USHORT) gds__vax_integer(ptr, 2);
+	while (flag) {
+		item = *ptr++;
+		length = (USHORT) gds__vax_integer(ptr, 2);
 		ptr += 2;
-		switch (item)
-		{
-		case isc_info_limbo:
+		switch (item) {
+		case gds_info_limbo:
 			id = gds__vax_integer(ptr, length);
-			if (switches & (sw_commit | sw_rollback | sw_two_phase | sw_prompt))
-			{
+			if (switches &
+				(sw_commit | sw_rollback | sw_two_phase | sw_prompt)) {
 				TDR_reconnect_multiple(handle, id, name, switches);
 				ptr += length;
 				break;
 			}
-			if (!tdgbl->uSvc->isService())
-			{
-				ALICE_print(71, SafeArg() << id);
-				// msg 71: Transaction %d is in limbo.
-			}
-			if (trans = MET_get_transaction(status_vector, handle, id))
-			{
-				tdgbl->uSvc->putSLong(isc_spb_multi_tra_id, id);
+			if (!tdgbl->sw_service_thd)
+				ALICE_print(71, reinterpret_cast < char *>(id), 0, 0, 0, 0);	/* msg 71: Transaction %d is in limbo. */
+			if (trans = MET_get_transaction(status_vector, handle, id)) {
+#ifdef SUPERSERVER
+				SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_multi_tra_id);
+				SVC_putc(tdgbl->service_blk, (UCHAR) id);
+				SVC_putc(tdgbl->service_blk, (UCHAR) (id >> 8));
+				SVC_putc(tdgbl->service_blk, (UCHAR) (id >> 16));
+				SVC_putc(tdgbl->service_blk, (UCHAR) (id >> 24));
+#endif
 				reattach_databases(trans);
 				TDR_get_states(trans);
 				TDR_shutdown_databases(trans);
 				print_description(trans);
 			}
-			else
-			{
-				tdgbl->uSvc->putSLong(isc_spb_single_tra_id, id);
+#ifdef SUPERSERVER
+			else {
+				SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_single_tra_id);
+				SVC_putc(tdgbl->service_blk, (UCHAR) id);
+				SVC_putc(tdgbl->service_blk, (UCHAR) (id >> 8));
+				SVC_putc(tdgbl->service_blk, (UCHAR) (id >> 16));
+				SVC_putc(tdgbl->service_blk, (UCHAR) (id >> 24));
 			}
+#endif
 			ptr += length;
 			break;
 
-		case isc_info_truncated:
-			if (!tdgbl->uSvc->isService())
-			{
-				ALICE_print(72);
-				// msg 72: More limbo transactions than fit.  Try again
-				// And how it's going to retry with a bigger buffer if the buffer is fixed size?
-			}
-			// fall through
+		case gds_info_truncated:
+			if (!tdgbl->sw_service_thd)
+				ALICE_print(72, 0, 0, 0, 0, 0);	/* msg 72: More limbo transactions than fit.  Try again */
 
-		case isc_info_end:
-			flag = false;
+		case gds_info_end:
+			flag = FALSE;
 			break;
 
 		default:
-			if (!tdgbl->uSvc->isService())
-			{
-				ALICE_print(73, SafeArg() << item);
-				// msg 73: Unrecognized info item %d
-			}
+			if (!tdgbl->sw_service_thd)
+				ALICE_print(73, reinterpret_cast < char *>(item), 0, 0, 0, 0);	/* msg 73: Unrecognized info item %d */
 		}
 	}
 }
@@ -378,38 +386,37 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switche
 //		gfix user.
 //
 
-bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, SINT64 switches)
+BOOLEAN TDR_reconnect_multiple(FRBRD *handle,
+							   SLONG id, TEXT * name, ULONG switches)
 {
+	TDR trans, ptr;
 	ISC_STATUS_ARRAY status_vector;
+	USHORT advice;
+	BOOLEAN error = FALSE;
 
-	// get the state of all the associated transactions
+//  get the state of all the associated transactions
 
-	tdr* trans = MET_get_transaction(status_vector, handle, id);
-	if (!trans)
+	if (!(trans = MET_get_transaction(status_vector, handle, id)))
 		return reconnect(handle, id, name, switches);
 
 	reattach_databases(trans);
 	TDR_get_states(trans);
 
-	// analyze what to do with them; if the advice contradicts the user's
-	// desire, make them confirm it; otherwise go with the flow.
+//  analyze what to do with them; if the advice contradicts the user's
+//  desire, make them confirm it; otherwise go with the flow.
 
-	const USHORT advice = TDR_analyze(trans);
+	advice = TDR_analyze(trans);
 
-	if (!advice)
-	{
+	if (!advice) {
 		print_description(trans);
 		switches = ask();
 	}
-	else
-	{
-		switch (advice)
-		{
+	else {
+		switch (advice) {
 		case TRA_rollback:
-			if (switches & sw_commit)
-			{
-				ALICE_print(74, SafeArg() << trans->tdr_id);
-				// msg 74: A commit of transaction %ld will violate two-phase commit.
+			if (switches & sw_commit) {
+				ALICE_print(74, reinterpret_cast < char *>(trans->tdr_id), 0,
+							0, 0, 0);	/* msg 74: "A commit of transaction %ld will violate two-phase commit. */
 				print_description(trans);
 				switches = ask();
 			}
@@ -417,22 +424,19 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, SI
 				switches |= sw_rollback;
 			else if (switches & sw_two_phase)
 				switches |= sw_rollback;
-			else if (switches & sw_prompt)
-			{
-				ALICE_print(75, SafeArg() << trans->tdr_id);
-				// msg 75: A rollback of transaction %ld is needed to preserve two-phase commit.
+			else if (switches & sw_prompt) {
+				ALICE_print(75, reinterpret_cast < char *>(trans->tdr_id), 0,
+							0, 0, 0);	/* msg 75: A rollback of transaction %ld is needed to preserve two-phase commit. */
 				print_description(trans);
 				switches = ask();
 			}
 			break;
 
 		case TRA_commit:
-			if (switches & sw_rollback)
-			{
-				ALICE_print(76, SafeArg() << trans->tdr_id);
-				// msg 76: Transaction %ld has already been partially committed.
-				ALICE_print(77);
-				// msg 77: A rollback of this transaction will violate two-phase commit.
+			if (switches & sw_rollback) {
+				ALICE_print(76, reinterpret_cast < char *>(trans->tdr_id), 0,
+							0, 0, 0);	/* msg 76: Transaction %ld has already been partially committed. */
+				ALICE_print(77, 0, 0, 0, 0, 0);	/* msg 77: A rollback of this transaction will violate two-phase commit. */
 				print_description(trans);
 				switches = ask();
 			}
@@ -442,20 +446,18 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, SI
 				switches |= sw_commit;
 			else if (switches & sw_prompt)
 			{
-				ALICE_print(78, SafeArg() << trans->tdr_id);
-				// msg 78: Transaction %ld has been partially committed.
-				ALICE_print(79);
-				// msg 79: A commit is necessary to preserve the two-phase commit.
+				ALICE_print(78, reinterpret_cast < char *>(trans->tdr_id), 0,
+							0, 0, 0);	/* msg 78: Transaction %ld has been partially committed. */
+				ALICE_print(79, 0, 0, 0, 0, 0);	/* msg 79: A commit is necessary to preserve the two-phase commit. */
 				print_description(trans);
 				switches = ask();
 			}
 			break;
 
 		case TRA_unknown:
-			ALICE_print(80);
-			// msg 80: Insufficient information is available to determine
-			ALICE_print(81, SafeArg() << trans->tdr_id);
-			// msg 81: a proper action for transaction %ld.
+			ALICE_print(80, 0, 0, 0, 0, 0);	/* msg 80: Insufficient information is available to determine */
+			ALICE_print(81, reinterpret_cast < char *>(trans->tdr_id), 0, 0,
+						0, 0);	/* msg 81: a proper action for transaction %ld. */
 			print_description(trans);
 			switches = ask();
 			break;
@@ -463,39 +465,38 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, SI
 		default:
 			if (!(switches & (sw_commit | sw_rollback)))
 			{
-				ALICE_print(82, SafeArg() << trans->tdr_id);
-				// msg 82: Transaction %ld: All subtransactions have been prepared.
-				ALICE_print(83);
-				// msg 83: Either commit or rollback is possible.
+				ALICE_print(82, reinterpret_cast < char *>(trans->tdr_id), 0,
+							0, 0, 0);	/* msg 82: Transaction %ld: All subtransactions have been prepared. */
+				ALICE_print(83, 0, 0, 0, 0, 0);	/* msg 83: Either commit or rollback is possible. */
 				print_description(trans);
 				switches = ask();
 			}
 		}
 	}
 
-    bool error = false;
-	if (switches != ULONG(~0))
+	if (switches != (ULONG) - 1)
 	{
-		// now do the required operation with all the subtransactions
+		/* now do the required operation with all the subtransactions */
 
 		if (switches & (sw_commit | sw_rollback))
 		{
-			for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
+			for (ptr = trans; ptr; ptr = ptr->tdr_next)
 			{
 				if (ptr->tdr_state == TRA_limbo)
 				{
-					reconnect(ptr->tdr_db_handle, ptr->tdr_id, ptr->tdr_filename, switches);
+					reconnect((ptr->tdr_db_handle),
+							  ptr->tdr_id, ptr->tdr_filename, switches);
 				}
 			}
 		}
 	}
 	else
 	{
-		ALICE_print(84);	// msg 84: unexpected end of input
-		error = true;
+		ALICE_print(84, 0, 0, 0, 0, 0);	/* msg 84: unexpected end of input */
+		error = TRUE;
 	}
 
-	// shutdown all the databases for cleanliness' sake
+//  shutdown all the databases for cleanliness' sake
 
 	TDR_shutdown_databases(trans);
 
@@ -511,141 +512,196 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, SI
 //		in other databases.
 //
 
-static void print_description(const tdr* trans)
+static void print_description(TDR trans)
 {
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
+	TDR ptr;
+	BOOLEAN prepared_seen;
+
+#ifdef SUPERSERVER
+	int i;
+#endif
+
+	TGBL tdgbl = GET_THREAD_DATA;
 
 	if (!trans)
 	{
 		return;
 	}
 
-	if (!tdgbl->uSvc->isService())
+	if (!tdgbl->sw_service_thd)
 	{
-		ALICE_print(92);	// msg 92:   Multidatabase transaction:
+		ALICE_print(92, 0, 0, 0, 0, 0);	/* msg 92:   Multidatabase transaction: */
 	}
 
-	bool prepared_seen = false;
-	for (const tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
+	prepared_seen = FALSE;
+	for (ptr = trans; ptr; ptr = ptr->tdr_next)
 	{
 		if (ptr->tdr_host_site)
 		{
-			const char* pszHostSize = reinterpret_cast<const char*>(ptr->tdr_host_site->str_data);
+			char* pszHostSize =
+				reinterpret_cast<char*>(ptr->tdr_host_site->str_data);
 
-			if (!tdgbl->uSvc->isService())
+#ifndef SUPERSERVER
+			/* msg 93: Host Site: %s */
+			ALICE_print(93, pszHostSize, 0, 0, 0, 0);
+#else
+			const size_t nHostSiteLen = strlen(pszHostSize);
+
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_host_site);
+			SVC_putc(tdgbl->service_blk, (UCHAR) nHostSiteLen);
+			SVC_putc(tdgbl->service_blk, (UCHAR) (nHostSiteLen >> 8 ));
+			for (i = 0; i < (int) nHostSiteLen; i++)
 			{
-				// msg 93: Host Site: %s
-				ALICE_print(93, SafeArg() << pszHostSize);
+				SVC_putc(tdgbl->service_blk, (UCHAR) pszHostSize[i]);
 			}
-			tdgbl->uSvc->putLine(isc_spb_tra_host_site, pszHostSize);
+#endif
 		}
 
 		if (ptr->tdr_id)
 		{
-			if (!tdgbl->uSvc->isService())
-			{
-				// msg 94: Transaction %ld
-				ALICE_print(94, SafeArg() << ptr->tdr_id);
-			}
-			tdgbl->uSvc->putSLong(isc_spb_tra_id, ptr->tdr_id);
+#ifndef SUPERSERVER
+			/* msg 94: Transaction %ld */
+			ALICE_print(94, reinterpret_cast<char*>(ptr->tdr_id), 0, 0, 0, 0);
+#else
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_id);
+			SVC_putc(tdgbl->service_blk, (UCHAR) ptr->tdr_id);
+			SVC_putc(tdgbl->service_blk, (UCHAR) (ptr->tdr_id >> 8));
+			SVC_putc(tdgbl->service_blk, (UCHAR) (ptr->tdr_id >> 16));
+			SVC_putc(tdgbl->service_blk, (UCHAR) (ptr->tdr_id >> 24));
+#endif
 		}
 
 		switch (ptr->tdr_state)
 		{
 		case TRA_limbo:
-			if (!tdgbl->uSvc->isService())
-			{
-				ALICE_print(95);	// msg 95: has been prepared.
-			}
-			tdgbl->uSvc->putChar(isc_spb_tra_state, isc_spb_tra_state_limbo);
-			prepared_seen = true;
+#ifndef SUPERSERVER
+			ALICE_print(95, 0, 0, 0, 0, 0);	/* msg 95: has been prepared. */
+#else
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state_limbo);
+#endif
+			prepared_seen = TRUE;
 			break;
 
 		case TRA_commit:
-			if (!tdgbl->uSvc->isService())
-			{
-				ALICE_print(96);	// msg 96: has been committed.
-			}
-			tdgbl->uSvc->putChar(isc_spb_tra_state, isc_spb_tra_state_commit);
+#ifndef SUPERSERVER
+			ALICE_print(96, 0, 0, 0, 0, 0);	/* msg 96: has been committed. */
+#else
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state_commit);
+#endif
 			break;
 
 		case TRA_rollback:
-			if (!tdgbl->uSvc->isService())
-			{
-				ALICE_print(97);	// msg 97: has been rolled back.
-			}
-			tdgbl->uSvc->putChar(isc_spb_tra_state, isc_spb_tra_state_rollback);
+#ifndef SUPERSERVER
+			ALICE_print(97, 0, 0, 0, 0, 0);	/* msg 97: has been rolled back. */
+#else
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state_rollback);
+#endif
 			break;
 
 		case TRA_unknown:
-			if (!tdgbl->uSvc->isService())
-			{
-				ALICE_print(98);	// msg 98: is not available.
-			}
-			tdgbl->uSvc->putChar(isc_spb_tra_state, isc_spb_tra_state_unknown);
+#ifndef SUPERSERVER
+			ALICE_print(98, 0, 0, 0, 0, 0);	/* msg 98: is not available. */
+#else
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state);
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_state_unknown);
+#endif
 			break;
 
 		default:
-			if (!tdgbl->uSvc->isService())
+#ifndef SUPERSERVER
+			if (prepared_seen)
 			{
-				// msg 99: is not found, assumed not prepared.
-				// msg 100: is not found, assumed to be committed.
-				ALICE_print(prepared_seen ? 99 : 100);
+				/* msg 99: is not found, assumed not prepared. */
+				ALICE_print(99, 0, 0, 0, 0, 0);
 			}
+			else
+			{
+				/* msg 100: is not found, assumed to be committed. */
+				ALICE_print(100, 0, 0, 0, 0, 0);
+			}
+#endif
 			break;
 		}
 
 		if (ptr->tdr_remote_site)
 		{
-			const char* pszRemoteSite = reinterpret_cast<const char*>(ptr->tdr_remote_site->str_data);
+			char* pszRemoteSite =
+				reinterpret_cast<char*>(ptr->tdr_remote_site->str_data);
 
-			if (!tdgbl->uSvc->isService())
+#ifndef SUPERSERVER
+			/*msg 101: Remote Site: %s */
+			ALICE_print(101, pszRemoteSite, 0, 0, 0, 0);
+#else
+			const size_t nRemoteSiteLen = strlen(pszRemoteSite);
+
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_remote_site);
+			SVC_putc(tdgbl->service_blk, (UCHAR) nRemoteSiteLen);
+			SVC_putc(tdgbl->service_blk, (UCHAR) (nRemoteSiteLen >> 8));
+			for (i = 0; i < (int) nRemoteSiteLen; i++)
 			{
-				// msg 101: Remote Site: %s
-				ALICE_print(101, SafeArg() << pszRemoteSite);
+				SVC_putc(tdgbl->service_blk, (UCHAR) pszRemoteSite[i]);
 			}
-			tdgbl->uSvc->putLine(isc_spb_tra_remote_site, pszRemoteSite);
+#endif
 		}
 
 		if (ptr->tdr_fullpath)
 		{
-			const char* pszFullpath = reinterpret_cast<const char*>(ptr->tdr_fullpath->str_data);
+			char* pszFullpath =
+				reinterpret_cast<char*>(ptr->tdr_fullpath->str_data);
 
-			if (!tdgbl->uSvc->isService())
+#ifndef SUPERSERVER
+			/* msg 102: Database Path: %s */
+			ALICE_print(102, pszFullpath, 0, 0, 0, 0);
+#else
+			const size_t nFullpathLen = strlen(pszFullpath);
+
+			SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_db_path);
+			SVC_putc(tdgbl->service_blk, (UCHAR) nFullpathLen);
+			SVC_putc(tdgbl->service_blk, (UCHAR) (nFullpathLen >> 8));
+			for (i = 0; i < (int) nFullpathLen; i++)
 			{
-				// msg 102: Database Path: %s
-				ALICE_print(102, SafeArg() << pszFullpath);
+				SVC_putc(tdgbl->service_blk, (UCHAR) pszFullpath[i]);
 			}
-			tdgbl->uSvc->putLine(isc_spb_tra_db_path, pszFullpath);
+#endif
 		}
+
 	}
 
-	// let the user know what the suggested action is
+//  let the user know what the suggested action is
 
 	switch (TDR_analyze(trans))
 	{
 	case TRA_commit:
-		if (!tdgbl->uSvc->isService())
-		{
-			// msg 103: Automated recovery would commit this transaction.
-			ALICE_print(103);
-		}
-		tdgbl->uSvc->putChar(isc_spb_tra_advise, isc_spb_tra_advise_commit);
+#ifndef SUPERSERVER
+		/* msg 103: Automated recovery would commit this transaction. */
+		ALICE_print(103, 0, 0, 0, 0, 0);
+#else
+		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise);
+		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise_commit);
+#endif
 		break;
 
 	case TRA_rollback:
-		if (!tdgbl->uSvc->isService())
-		{
-			// msg 104: Automated recovery would rollback this transaction.
-			ALICE_print(104);
-		}
-		tdgbl->uSvc->putChar(isc_spb_tra_advise, isc_spb_tra_advise_rollback);
+#ifndef SUPERSERVER
+		/* msg 104: Automated recovery would rollback this transaction. */
+		ALICE_print(104, 0, 0, 0, 0, 0);
+#else
+		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise);
+		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise_rollback);
+#endif
 		break;
 
 	default:
-		tdgbl->uSvc->putChar(isc_spb_tra_advise, isc_spb_tra_advise_unknown);
+#ifdef SUPERSERVER
+		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise);
+		SVC_putc(tdgbl->service_blk, (UCHAR) isc_spb_tra_advise_unknown);
+#endif
 		break;
 	}
+
 }
 
 
@@ -655,34 +711,36 @@ static void print_description(const tdr* trans)
 //		Ask the user whether to commit or rollback.
 //
 
-static SINT64 ask()
+static ULONG ask(void)
 {
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-	if (tdgbl->uSvc->isService())
-	{
-		return ~SINT64(0);
-	}
+#ifndef SUPERCLIENT
+	return (ULONG)-1;
+#else
+	UCHAR response[32], *p;
+	int c;
+	ULONG switches;
+	TGBL tdgbl;
 
-	char response[32];
-	SINT64 switches = 0;
+	tdgbl = GET_THREAD_DATA;
 
-	while (true)
-	{
-		ALICE_print(85);
-		// msg 85: Commit, rollback, or neither (c, r, or n)?
-		int c;
-		const char* end = response + sizeof(response) - 1;
-		char* p = response;
-		while ((c = getchar()) != '\n' && !feof(stdin) && !ferror(stdin) && p < end)
+	switches = 0;
+
+	while (TRUE) {
+		ALICE_print(85, 0, 0, 0, 0, 0);	/* msg 85: Commit, rollback, or neither (c, r, or n)? */
+		if (tdgbl->sw_service)
+			ib_putc('\001', ib_stdout);
+		ib_fflush(ib_stdout);
+		for (p = response; (c = ib_getchar()) != '\n' && !ib_feof(stdin) && !ib_ferror(stdin);)
 			*p++ = c;
 		if (p == response)
-			return ~SINT64(0);
+			return (ULONG) - 1;
 		*p = 0;
-		ALICE_down_case(response, response, sizeof(response));
-		if (!strcmp(response, "n") || !strcmp(response, "c") || !strcmp(response, "r"))
-		{
+		ALICE_down_case(reinterpret_cast < char *>(response),
+						reinterpret_cast < char *>(response));
+		if (!strcmp(reinterpret_cast < const char *>(response), "n")
+			|| !strcmp(reinterpret_cast < const char *>(response), "c")
+			|| !strcmp(reinterpret_cast < const char *>(response), "r"))
 			  break;
-		}
 	}
 
 	if (response[0] == 'c')
@@ -691,6 +749,7 @@ static SINT64 ask()
 		switches |= sw_rollback;
 
 	return switches;
+#endif
 }
 
 
@@ -700,104 +759,102 @@ static SINT64 ask()
 //		until the database is successfully attached.
 //
 
-static void reattach_database(tdr* trans)
+static void reattach_database(TDR trans)
 {
 	ISC_STATUS_ARRAY status_vector;
-	char buffer[1024];
-	// sizeof(buffer) - 1 => leave space for the terminator.
-	const char* const end = buffer + sizeof(buffer) - 1;
-	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
+	UCHAR buffer[1024], *p, *q, *start;
+	STR string;
+	TGBL tdgbl;
 
-	ISC_get_host(buffer, sizeof(buffer));
+	tdgbl = GET_THREAD_DATA;
 
-	// if this is being run from the same host,
-	// try to reconnect using the same pathname
+	ISC_get_host(reinterpret_cast < char *>(buffer), sizeof(buffer));
 
-	if (!strcmp(buffer, reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
-	{
-		if (TDR_attach_database(status_vector, trans,
-								reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
-		{
-			return;
-		}
-	}
-	else if (trans->tdr_host_site)
-	{
-		//  try going through the previous host with all available
-		//  protocols, using chaining to try the same method of
-		//  attachment originally used from that host
-		char* p = buffer;
-		const UCHAR* q = trans->tdr_host_site->str_data;
-		while (*q && p < end)
+ //  if this is being run from the same host,
+ //  try to reconnect using the same pathname
+
+    if (!strcmp(reinterpret_cast < const char *>(buffer),
+        reinterpret_cast < const char *>(trans->tdr_host_site->str_data)))
+    {
+        if (TDR_attach_database(status_vector, trans,
+            reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
+        {
+                return;
+        }
+    }
+
+
+//  try going through the previous host with all available
+//  protocols, using chaining to try the same method of
+//  attachment originally used from that host
+
+    else if (trans->tdr_host_site) {
+		for (p = buffer, q = trans->tdr_host_site->str_data; *q;)
 			*p++ = *q++;
+		start = p;
+
+		p = start;
 		*p++ = ':';
-		q = trans->tdr_fullpath->str_data;
-		while (*q && p < end)
+		for (q = trans->tdr_fullpath->str_data; *q;)
 			*p++ = *q++;
 		*p = 0;
-		if (TDR_attach_database(status_vector, trans, buffer))
-		{
-			return;
-		}
+		if (TDR_attach_database
+			(status_vector, trans,
+			 reinterpret_cast < char *>(buffer))) return;
 	}
 
-	// attaching using the old method didn't work;
-	// try attaching to the remote node directly
+//  attaching using the old method didn't work;
+//  try attaching to the remote node directly
 
-	if (trans->tdr_remote_site)
-	{
-		char* p = buffer;
-		const UCHAR* q = trans->tdr_remote_site->str_data;
-		while (*q && p < end)
+	if (trans->tdr_remote_site) {
+		for (p = buffer, q = trans->tdr_remote_site->str_data; *q;)
 			*p++ = *q++;
+		start = p;
+
+		p = start;
 		*p++ = ':';
-		q = reinterpret_cast<const UCHAR*>(trans->tdr_filename);
-		while (*q && p < end)
+		for (q = (UCHAR *) trans->tdr_filename; *q;)
 			*p++ = *q++;
 		*p = 0;
-		if (TDR_attach_database (status_vector, trans, buffer))
-		{
-			return;
-		}
+		if (TDR_attach_database
+			(status_vector, trans,
+			 reinterpret_cast < char *>(buffer))) return;
 	}
 
-	// we have failed to reattach; notify the user
-	// and let them try to succeed where we have failed
+//  we have failed to reattach; notify the user
+//  and let them try to succeed where we have failed
 
-	ALICE_print(86, SafeArg() << trans->tdr_id);
-	// msg 86: Could not reattach to database for transaction %ld.
-	ALICE_print(87, SafeArg() << trans->tdr_fullpath->str_data);
-	// msg 87: Original path: %s
+	ALICE_print(86, reinterpret_cast < char *>(trans->tdr_id), 0, 0, 0, 0);	/* msg 86: Could not reattach to database for transaction %ld. */
+	ALICE_print(87, reinterpret_cast < char *>(trans->tdr_fullpath->str_data),
+				0, 0, 0, 0);	/* msg 87: Original path: %s */
 
-	if (tdgbl->uSvc->isService())
-	{
-		ALICE_exit(FINI_ERROR, tdgbl);
-	}
+#ifdef SUPERCLIENT
+	for (;;) {
+		ALICE_print(88, 0, 0, 0, 0, 0);	/* msg 88: Enter a valid path:  */
+		for (p = buffer; (*p = ib_getchar()) != '\n' && !ib_feof(stdin) && !ib_ferror(stdin); p++);
 
-	for (;;)
-	{
-		ALICE_print(88);	// msg 88: Enter a valid path:
-		char* p = buffer;
-		while (p < end && (*p = getchar()) != '\n' && !feof(stdin) && !ferror(stdin))
-			++p;
 		*p = 0;
 		if (!buffer[0])
 			break;
 		p = buffer;
 		while (*p == ' ')
-			++p;
-		if (TDR_attach_database(status_vector, trans, p))
+			*p++;
+		if (TDR_attach_database(status_vector,
+								trans,
+								reinterpret_cast<char*>(p)))
 		{
-			const size_t p_len = strlen(p);
-			alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(), p_len + 1) alice_str;
-			strcpy(reinterpret_cast<char*>(string->str_data), p);
-			string->str_length = p_len;
+			string = FB_NEW_RPT(*tdgbl->ALICE_default_pool,
+						strlen(reinterpret_cast<const char*>(p)) + 1) str;
+			strcpy(reinterpret_cast<char*>(string->str_data),
+				   reinterpret_cast<const char*>(p));
+			string->str_length = strlen(reinterpret_cast<const char*>(p));
 			trans->tdr_fullpath = string;
 			trans->tdr_filename = (TEXT *) string->str_data;
 			return;
 		}
-		ALICE_print(89);	// msg 89: Attach unsuccessful.
+		ALICE_print(89, 0, 0, 0, 0, 0);	/* msg 89: Attach unsuccessful. */
 	}
+#endif
 }
 
 
@@ -808,9 +865,11 @@ static void reattach_database(tdr* trans)
 //		a multidatabase transaction.
 //
 
-static void reattach_databases(tdr* trans)
+static void reattach_databases(TDR trans)
 {
-	for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
+	TDR ptr;
+
+	for (ptr = trans; ptr; ptr = ptr->tdr_next)
 		reattach_database(ptr);
 }
 
@@ -821,46 +880,48 @@ static void reattach_databases(tdr* trans)
 //		Commit or rollback a named transaction.
 //
 
-static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT64 switches)
+static BOOLEAN reconnect(FRBRD *handle,
+						 SLONG number, TEXT * name, ULONG switches)
 {
+	FRBRD *transaction;
+	SLONG id;
 	ISC_STATUS_ARRAY status_vector;
 
-	const SLONG id = gds__vax_integer(reinterpret_cast<const UCHAR*>(&number), 4);
-	FB_API_HANDLE transaction = 0;
-	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
-								   sizeof(id), reinterpret_cast<const char*>(&id)))
-	{
-		ALICE_print(90, SafeArg() << name);
-		// msg 90: failed to reconnect to a transaction in database %s
+	id = gds__vax_integer((UCHAR *) & number, 4);
+	transaction = NULL;
+	if (gds__reconnect_transaction(status_vector,
+								   (GDS_REF(handle)),
+								   (GDS_REF(transaction)),
+    							   sizeof(id),
+								   reinterpret_cast <char *>(GDS_REF(id)))) {
+		ALICE_print(90, name, 0, 0, 0, 0);	/* msg 90: failed to reconnect to a transaction in database %s */
 		ALICE_print_status(status_vector);
-		return true;
+		return TRUE;
 	}
 
-	if (!(switches & (sw_commit | sw_rollback)))
-	{
-		ALICE_print(91, SafeArg() << number);
-		// msg 91: Transaction %ld:
+	if (!(switches & (sw_commit | sw_rollback))) {
+		ALICE_print(91, reinterpret_cast < char *>(number), 0, 0, 0, 0);	/* msg 91: Transaction %ld: */
 		switches = ask();
-		if (switches == ~SINT64(0))
-		{
-			ALICE_print(84);
-			// msg 84: unexpected end of input
-			return true;
+		if (switches == (ULONG) - 1) {
+			ALICE_print(84, 0, 0, 0, 0, 0);	/* msg 84: unexpected end of input */
+			return TRUE;
 		}
 	}
 
 	if (switches & sw_commit)
-		isc_commit_transaction(status_vector, &transaction);
+		gds__commit_transaction(status_vector,
+								(GDS_REF(transaction)));
 	else if (switches & sw_rollback)
-		isc_rollback_transaction(status_vector, &transaction);
+		gds__rollback_transaction(status_vector,
+								(GDS_REF(transaction)));
 	else
-		return false;
+		return FALSE;
 
-	if (status_vector[1])
-	{
+	if (status_vector[1]) {
 		ALICE_print_status(status_vector);
-		return true;
+		return TRUE;
 	}
 
-	return false;
+	return FALSE;
 }
+

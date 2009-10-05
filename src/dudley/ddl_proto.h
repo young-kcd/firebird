@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Data Definition Utility
  *	MODULE:		ddl_proto.h
- *	DESCRIPTION:	Prototype header file for ddl.cpp
+ *	DESCRIPTION:	Prototype header file for ddl.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,31 +21,20 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef DUDLEY_DDL_PROTO_H
-#define DUDLEY_DDL_PROTO_H
+#ifndef _DUDLEY_DDL_PROTO_H_
+#define _DUDLEY_DDL_PROTO_H_
 
-#include "../common/classes/SafeArg.h"
+extern UCHAR *DDL_alloc(int);
+extern int DDL_db_error(ISC_STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
+						TEXT *);
+extern int DDL_err(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+extern void DDL_error_abort(ISC_STATUS *, USHORT, TEXT *, TEXT *, TEXT *, TEXT *,
+							TEXT *);
+extern void DDL_exit(int);
+extern void DDL_msg_partial(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+extern void DDL_msg_put(USHORT, TEXT *, TEXT *, TEXT *, TEXT *, TEXT *);
+extern DUDLEY_NOD DDL_pop(LLS *);
+extern void DDL_push(DUDLEY_NOD, LLS *);
+extern int DDL_yes_no(USHORT);
 
-UCHAR*		DDL_alloc(int);
-int			DDL_db_error(ISC_STATUS*, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-int			DDL_err(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void		DDL_error_abort(ISC_STATUS*, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void		DDL_exit(int);
-void		DDL_msg_partial(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void		DDL_msg_put(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-DUDLEY_NOD	DDL_pop(dudley_lls**);
-void		DDL_push(DUDLEY_NOD, dudley_lls**);
-bool		DDL_yes_no(USHORT);
-
-inline void LLS_PUSH(DUDLEY_NOD object, dudley_lls** stack)
-{
-	DDL_push(object, stack);
-}
-
-inline DUDLEY_NOD LLS_POP(dudley_lls** stack)
-{
-	return DDL_pop(stack);
-}
-
-#endif // DUDLEY_DDL_PROTO_H
-
+#endif /* _DUDLEY_DDL_PROTO_H_ */

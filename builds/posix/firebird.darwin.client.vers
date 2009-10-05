@@ -104,6 +104,7 @@
 	_gds__start_multiple
 	_gds__start_request
 	_gds__start_transaction
+	_gds__temp_dir
 	_gds__temp_file
 	_gds__thread_enable
 	_gds__thread_enter
@@ -119,7 +120,6 @@
 	_gds__version
 	_gds__vtof
 	_gds__vtov
-	_gds__default_printer
 	_gds__alloc_debug
 	_gds_alloc_flag_unfreed
 	_gds_alloc_report
@@ -235,8 +235,6 @@
 # Error-handling functions
 
 	_isc_interprete
-	_fb_interpret
-	_fb_sqlstate
 	_isc_print_sqlerror
 	_isc_print_status
 	_isc_sqlcode
@@ -291,7 +289,6 @@
 	_isc_start_request
 	_isc_transact_request
 	_isc_unwind_request
-	_fb_cancel_operation
 
 # Other SQL functions
 
@@ -319,16 +316,11 @@
 	_BLOB_text_load
 	_Bopen
 
-# Server shutdown support
-
-	_fb_shutdown_callback
-
 # Other misc functions
 
 	_isc_ftof
 	_isc_free
 	_isc_print_blr
-	_fb_print_blr
 	_isc_qtoq
 	_isc_set_debug
 	_isc_to_sqlda

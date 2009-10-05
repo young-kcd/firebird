@@ -25,116 +25,117 @@
 //
 //____________________________________________________________
 //
+//	$Id: hsh.cpp,v 1.10 2003-02-10 13:28:18 eku Exp $
 //
 
 #include "firebird.h"
 #include "../gpre/gpre.h"
+#include "../gpre/parse.h"
 #include "../gpre/hsh_proto.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
 
 
-static int hash(const SCHAR*);
-static bool scompare(const SCHAR*, const SCHAR*);
-static bool scompare2(const SCHAR*, const SCHAR*);
+extern "C" {
 
-const int HASH_SIZE = 211;
 
-static gpre_sym* hash_table[HASH_SIZE];
-static gpre_sym* key_symbols;
+static int hash(SCHAR *);
+static BOOLEAN scompare(SCHAR *, SCHAR *);
+static BOOLEAN scompare2(SCHAR *, SCHAR *);
 
-static struct word
-{
-	const char* keyword;
-	kwwords_t id;
-}  keywords[] =
-{
+#define HASH_SIZE 211
+
+static SYM hash_table[HASH_SIZE];
+static SYM key_symbols;
+
+static struct word {
+	SCHAR *keyword;
+	enum kwwords id;
+}  keywords[] = {
 #include "../gpre/hsh.h"
 };
 
 
 //____________________________________________________________
-//
+//  
 //		Release space used by keywords.
-//
+//  
 
-void HSH_fini()
+void HSH_fini(void)
 {
-	while (key_symbols)
-	{
-		gpre_sym* symbol = key_symbols;
-		key_symbols = (gpre_sym*) key_symbols->sym_object;
+	SYM symbol;
+
+	while (key_symbols) {
+		symbol = key_symbols;
+		key_symbols = (SYM) key_symbols->sym_object;
 		HSH_remove(symbol);
-		MSC_free(symbol);
+		FREE((UCHAR *) symbol);
 	}
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Initialize the hash table.  This mostly involves
 //		inserting all known keywords.
-//
+//  
 
-void HSH_init()
+void HSH_init(void)
 {
-	//const char *string;
+	SCHAR *string;
+	SYM symbol, *ptr;
+	int i;
+	struct word *word;
 
-	int i = 0;
-	for (gpre_sym** ptr = hash_table; i < HASH_SIZE; i++)
+	for (ptr = hash_table, i = 0; i < HASH_SIZE; i++)
 		*ptr++ = NULL;
 
 	fflush(stdout);
-	const word* a_word;
-	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++)
-	{
-		// Unused code: SYM_LEN is used always.
-		//for (string = a_word->keyword; *string; string++);
-		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+	for (i = 0, word = keywords; i < FB_NELEM(keywords); i++, word++) {
+		for (string = word->keyword; *string; string++);
+		symbol = (SYM) ALLOC(SYM_LEN);
 		symbol->sym_type = SYM_keyword;
-		symbol->sym_string = a_word->keyword;
-		symbol->sym_keyword = (int) a_word->id;
+		symbol->sym_string = word->keyword;
+		symbol->sym_keyword = (int) word->id;
 		HSH_insert(symbol);
-		symbol->sym_object = (gpre_ctx*) key_symbols;
+		symbol->sym_object = (GPRE_CTX) key_symbols;
 		key_symbols = symbol;
 	}
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Insert a symbol into the hash table.
-//
+//  
 
-void HSH_insert( gpre_sym* symbol)
+void HSH_insert( SYM symbol)
 {
-	const int h = hash(symbol->sym_string);
+	int h;
+	SYM *next;
+	SYM ptr;
 
-	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
-	{
-		for (const gpre_sym* ptr = *next; ptr; ptr = ptr->sym_homonym)
-		{
+	h = hash(symbol->sym_string);
+
+	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision) {
+		for (ptr = *next; ptr; ptr = ptr->sym_homonym)
 			if (ptr == symbol)
 				return;
-		}
 
-		if (scompare(symbol->sym_string, (*next)->sym_string))
-		{
-			// insert in most recently seen order;
-			// This is important for alias resolution in subqueries.
-			// BUT insert tokens AFTER keyword!
-			// In a lookup, keyword should be found first.
-			// This assumes that KEYWORDS are inserted before any other token.
-			// No one should be using a keywords as an alias anyway.
+		if (scompare(symbol->sym_string, (*next)->sym_string)) {
+			/* insert in most recently seen order; 
+			   This is important for alias resolution in subqueries.
+			   BUT insert tokens AFTER KEYWORD!
+			   In a lookup, keyword should be found first.
+			   This assumes that KEYWORDS are inserted before any other token.
+			   No one should be using a keywords as an alias anyway. */
 
-			if ((*next)->sym_type == SYM_keyword)
-			{
+			if ((*next)->sym_type == SYM_keyword) {
 				symbol->sym_homonym = (*next)->sym_homonym;
 				symbol->sym_collision = NULL;
 				(*next)->sym_homonym = symbol;
 			}
-			else
-			{
+			else {
 				symbol->sym_homonym = *next;
 				symbol->sym_collision = (*next)->sym_collision;
 				(*next)->sym_collision = NULL;
@@ -150,89 +151,85 @@ void HSH_insert( gpre_sym* symbol)
 
 
 //____________________________________________________________
-//
+//  
 //		Perform a string lookup against hash table.
-//
+//  
 
-gpre_sym* HSH_lookup(const SCHAR* string)
+SYM HSH_lookup(SCHAR * string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol; symbol = symbol->sym_collision)
-	{
-		if (scompare(string, symbol->sym_string))
-			return symbol;
-	}
+	SYM symbol;
+
+	for (symbol = hash_table[hash(string)]; symbol;
+		 symbol = symbol->sym_collision)
+			if (scompare(string, symbol->sym_string)) return symbol;
 
 	return NULL;
 }
 
 //____________________________________________________________
-//
+//  
 //		Perform a string lookup against hash table.
 //       Calls scompare2 which performs case insensitive
 //		compare.
-//
+//  
 
-gpre_sym* HSH_lookup2(const SCHAR* string)
+SYM HSH_lookup2(SCHAR * string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol; symbol = symbol->sym_collision)
-	{
-		if (scompare2(string, symbol->sym_string))
-			return symbol;
-	}
+	SYM symbol;
+
+	for (symbol = hash_table[hash(string)]; symbol;
+		 symbol = symbol->sym_collision)
+			if (scompare2(string, symbol->sym_string)) return symbol;
 
 	return NULL;
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Remove a symbol from the hash table.
-//
+//  
 
-void HSH_remove( gpre_sym* symbol)
+void HSH_remove( SYM symbol)
 {
-	const int h = hash(symbol->sym_string);
+	int h;
+	SYM *next, *ptr, homonym;
 
-	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
-	{
+	h = hash(symbol->sym_string);
+
+	for (next = &hash_table[h]; *next; next = &(*next)->sym_collision)
 		if (symbol == *next)
-		{
-			gpre_sym* homonym = symbol->sym_homonym;
-			if (homonym)
-			{
+			if (homonym = symbol->sym_homonym) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
+				return;
 			}
 			else {
 				*next = symbol->sym_collision;
-			}
-			return;
-		}
-
-		for (gpre_sym** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
-		{
-			if (symbol == *ptr)
-			{
-				*ptr = symbol->sym_homonym;
 				return;
 			}
-		}
-	}
+		else
+			for (ptr = &(*next)->sym_homonym; *ptr;
+				 ptr = &(*ptr)->sym_homonym) if (symbol == *ptr) {
+					*ptr = symbol->sym_homonym;
+					return;
+				}
 
 	CPR_error("HSH_remove failed");
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Returns the hash function of a string.
-//
+//  
 
-static int hash(const SCHAR* string)
+static int hash( SCHAR * string)
 {
+	SLONG value;
 	SCHAR c;
 
-	SLONG value = 0;
+	value = 0;
 
 	while (c = *string++)
 		value = (value << 1) + UPPER(c);
@@ -242,34 +239,40 @@ static int hash(const SCHAR* string)
 
 
 //____________________________________________________________
-//
-//		case sensitive Compare
-//
+//  
+//		case sensitive Compare 
+//  
 
-static bool scompare(const SCHAR* string1, const SCHAR* string2)
+static BOOLEAN scompare( SCHAR * string1, SCHAR * string2)
 {
-	return strcmp(string1, string2) == 0;
+
+	while (*string1)
+		if (*string1++ != *string2++)
+			return FALSE;
+
+	if (*string2)
+		return FALSE;
+
+	return TRUE;
 }
 
 //____________________________________________________________
-//
+//  
 //		Compare two strings
-//
+//  
 
-static bool scompare2(const SCHAR* string1, const SCHAR* string2)
+static BOOLEAN scompare2( SCHAR * string1, SCHAR * string2)
 {
-	SCHAR c1;
+	SCHAR c1, c2;
 
 	while (c1 = *string1++)
-	{
-		SCHAR c2;
 		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
-			return false;
-	}
-
+			return FALSE;
 	if (*string2)
-		return false;
+		return FALSE;
 
-	return true;
+	return TRUE;
 }
 
+
+} // extern "C"

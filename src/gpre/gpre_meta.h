@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Preprocessor
  *	MODULE:		gpre_meta.h
- *	DESCRIPTION:	Prototype header file for gpre_meta.epp and gpre_meta_boot.cpp
+ *	DESCRIPTION:	Prototype header file for gpre_meta.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,29 +24,36 @@
 #ifndef GPRE_GPRE_META_H
 #define GPRE_GPRE_META_H
 
-gpre_fld*	MET_context_field(gpre_ctx*, const char*);
-bool		MET_database(gpre_dbb*, bool);
-bool		MET_domain_lookup(gpre_req*, gpre_fld*, const char*);
-gpre_fld*	MET_field(gpre_rel*, const char*);
-gpre_nod*	MET_fields(gpre_ctx*);
-void		MET_fini(gpre_dbb*);
-const SCHAR*		MET_generator(const TEXT*, const gpre_dbb*);
-bool		MET_get_column_default(const gpre_rel*, const TEXT*, TEXT*, USHORT);
-bool		MET_get_domain_default(gpre_dbb*, const TEXT*, TEXT*, USHORT);
-USHORT		MET_get_dtype(USHORT, USHORT, USHORT*);
-gpre_lls*	MET_get_primary_key(gpre_dbb*, const TEXT*);
-gpre_prc*	MET_get_procedure(gpre_dbb*, const TEXT*, const TEXT*);
-gpre_rel*	MET_get_relation(gpre_dbb*, const TEXT*, const TEXT*);
-intlsym*	MET_get_text_subtype(SSHORT);
-udf*		MET_get_udf(gpre_dbb*, const TEXT*);
-gpre_rel*	MET_get_view_relation(gpre_req*, const char*, const char*, USHORT);
-gpre_index*	MET_index(gpre_dbb*, TEXT*);
-void		MET_load_hash_table(gpre_dbb*);
-gpre_fld*	MET_make_field(const SCHAR*, SSHORT, SSHORT, bool);
-gpre_index*	MET_make_index(const SCHAR*);
-gpre_rel*	MET_make_relation(const SCHAR*);
-bool		MET_type(gpre_fld*, const TEXT*, SSHORT*);
-bool		MET_trigger_exists(gpre_dbb*, const TEXT*);
+#ifdef __cplusplus
+//extern "C" {
+#endif
 
-#endif // GPRE_GPRE_META_H
+extern GPRE_FLD MET_context_field(GPRE_CTX, char *);
+extern BOOLEAN MET_database(DBB, BOOLEAN);
+extern USHORT MET_domain_lookup(GPRE_REQ, GPRE_FLD, char *);
+extern GPRE_FLD MET_field(GPRE_REL, char *);
+extern GPRE_NOD MET_fields(GPRE_CTX);
+extern void MET_fini(DBB);
+extern SCHAR *MET_generator(TEXT *, DBB);
+extern BOOLEAN MET_get_column_default(GPRE_REL, TEXT *, TEXT *, USHORT);
+extern BOOLEAN MET_get_domain_default(DBB, TEXT *, TEXT *, USHORT);
+extern USHORT MET_get_dtype(USHORT, USHORT, USHORT *);
+extern LLS MET_get_primary_key(DBB, TEXT *);
+extern GPRE_PRC MET_get_procedure(DBB, TEXT *, TEXT *);
+extern GPRE_REL MET_get_relation(DBB, TEXT *, TEXT *);
+extern INTLSYM MET_get_text_subtype(SSHORT);
+extern UDF MET_get_udf(DBB, TEXT *);
+extern GPRE_REL MET_get_view_relation(GPRE_REQ, char *, char *, USHORT);
+extern IND MET_index(DBB, TEXT *);
+extern void MET_load_hash_table(DBB);
+extern GPRE_FLD MET_make_field(SCHAR *, SSHORT, SSHORT, BOOLEAN);
+extern IND MET_make_index(SCHAR *);
+extern GPRE_REL MET_make_relation(SCHAR *);
+extern BOOLEAN MET_type(GPRE_FLD, TEXT *, SSHORT *);
+extern BOOLEAN MET_trigger_exists(DBB, TEXT *);
 
+#ifdef __cplusplus
+//} /* extern "C" */
+#endif
+
+#endif /* GPRE_GPRE_META_H */

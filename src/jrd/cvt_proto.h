@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		cvt_proto.h
- *	DESCRIPTION:	Prototype header file for cvt.cpp
+ *	DESCRIPTION:	Prototype header file for cvt.c
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,52 +21,23 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_CVT_PROTO_H
-#define JRD_CVT_PROTO_H
+#ifndef _JRD_CVT_PROTO_H_
+#define _JRD_CVT_PROTO_H_
 
-#include "../common/cvt.h"
-#include "../jrd/err_proto.h"
+extern double CVT_date_to_double(struct dsc *, FPTR_VOID);
+extern void CVT_double_to_date(double, SLONG[2], FPTR_VOID);
+extern double CVT_get_double(struct dsc *, FPTR_VOID);
+extern SLONG CVT_get_long(struct dsc *, SSHORT, FPTR_VOID);
+extern SINT64 CVT_get_int64(struct dsc *, SSHORT, FPTR_VOID);
+extern UCHAR CVT_get_numeric(UCHAR *, USHORT, SSHORT *, double *, FPTR_VOID);
+extern SQUAD CVT_get_quad(struct dsc *, SSHORT, FPTR_VOID);
+extern USHORT CVT_get_string_ptr(struct dsc *, USHORT *, UCHAR **,
+								 struct vary *, USHORT, FPTR_VOID);
+extern GDS_DATE CVT_get_sql_date(struct dsc *, FPTR_VOID);
+extern GDS_TIME CVT_get_sql_time(struct dsc *, FPTR_VOID);
+extern GDS_TIMESTAMP CVT_get_timestamp(struct dsc *, FPTR_VOID);
+extern USHORT CVT_make_string(struct dsc*, USHORT, const char**, struct vary *,
+							  USHORT, FPTR_VOID);
+extern "C" void DLL_EXPORT CVT_move(struct dsc *, struct dsc *, FPTR_VOID);
 
-double		CVT_date_to_double(const dsc*);
-void		CVT_double_to_date(double, SLONG[2]);
-UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, double*);
-GDS_DATE	CVT_get_sql_date(const dsc*);
-GDS_TIME	CVT_get_sql_time(const dsc*);
-GDS_TIMESTAMP CVT_get_timestamp(const dsc*);
-
-namespace Jrd
-{
-	class EngineCallbacks : public Firebird::Callbacks
-	{
-	public:
-		explicit EngineCallbacks(ErrorFunction aErr)
-			: Callbacks(aErr)
-		{
-		}
-
-		EngineCallbacks()
-			: Callbacks(ERR_post)
-		{
-		}
-
-	public:
-		virtual bool transliterate(const dsc* from, dsc* to, CHARSET_ID&);
-		virtual CHARSET_ID getChid(const dsc* d);
-		virtual CharSet* getToCharset(CHARSET_ID charset2);
-		virtual void validateData(CharSet* toCharset, SLONG length, const UCHAR* q);
-		virtual void validateLength(CharSet* toCharset, SLONG toLength, const UCHAR* start,
-			const USHORT to_size);
-		virtual SLONG getCurDate();
-		virtual void isVersion4(bool& v4);
-
-	public:
-		static EngineCallbacks instance;
-	};
-}
-
-inline void CVT_move(const dsc* from, dsc* to)
-{
-	CVT_move_common(from, to, &Jrd::EngineCallbacks::instance);
-}
-
-#endif // JRD_CVT_PROTO_H
+#endif /* _JRD_CVT_PROTO_H_ */

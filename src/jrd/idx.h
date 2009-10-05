@@ -24,23 +24,21 @@
  * 2002.09.16 Nickolay Samofatov: one more system index
  */
 
-#ifndef JRD_IDX_H
-#define JRD_IDX_H
+#ifndef _JRD_IDX_H_
+#define _JRD_IDX_H_
 
 /* Indices to be created */
 
 /* Maxinum number of segments in any existing system index */
-const int  INI_IDX_MAX_SEGMENTS		= 2;
+#define INI_IDX_MAX_SEGMENTS 2
 
-struct ini_idx_t
-{
+struct ini_idx_t {
 	UCHAR ini_idx_index_id;
 	UCHAR ini_idx_version_flag;
 	UCHAR ini_idx_relid;
-	UCHAR ini_idx_flags;
+	UCHAR ini_idx_unique_flag;
 	UCHAR ini_idx_segment_count;
-	struct ini_idx_segment_t
-	{
+	struct ini_idx_segment_t {
 		UCHAR ini_idx_rfld_id;
 		UCHAR ini_idx_type;
 	} ini_idx_segment[INI_IDX_MAX_SEGMENTS];
@@ -48,16 +46,10 @@ struct ini_idx_t
 
 /* Encoded descriptions of system indices */
 
-using Jrd::idx_unique;
-using Jrd::idx_metadata;
-using Jrd::idx_numeric;
-using Jrd::idx_descending;
+#define INDEX(id,flag,rel,unique,count) {(id),(flag),(UCHAR) (rel),(unique),(count),{
+#define SEGMENT(fld,type) {(fld),(type)}
 
-#define INDEX(id, flag, rel, unique, count) {(id), (flag), (UCHAR) (rel), (unique), (count), {
-#define SEGMENT(fld, type) {(fld), (type)}
-
-static const struct ini_idx_t indices[] =
-{
+static const struct ini_idx_t indices[] = {
 
 /*	define index RDB$INDEX_0 for RDB$RELATIONS unique RDB$RELATION_NAME; */
 	INDEX(0, ODS_8_0, rel_relations, idx_unique, 1)
@@ -130,7 +122,7 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_fmt_format, idx_numeric)	/* format id */
 	}},
 /*	define index RDB$INDEX_17 for RDB$FILTERS RDB$INPUT_SUB_TYPE, RDB$OUTPUT_SUB_TYPE; */
-	INDEX(17, ODS_8_0, rel_filters, idx_unique, 2)
+	INDEX(17, ODS_8_0, rel_filters, 0, 2)
 		SEGMENT(f_flt_input, idx_numeric),	/* input subtype */
 		SEGMENT(f_flt_output, idx_numeric)	/* output subtype */
 	}},
@@ -146,7 +138,7 @@ static const struct ini_idx_t indices[] =
 	 * Per Deej, this is only necessary to prevent someone creating
 	 * a shadow file of the same name as the database file.
 	 * Once large indices are implemented this should be reactivated.
-	 *
+	 * 
 	 *	INDEX (XX, no_ODS, rel_files, idx_unique, 1)
 	 *		SEGMENT (f_file_name, idx_string)
 	 *  }},
@@ -156,26 +148,24 @@ static const struct ini_idx_t indices[] =
 	INDEX(19, ODS_8_0, rel_charsets, idx_unique, 1)
 		SEGMENT(f_cs_cs_name, idx_metadata)	/* character set name */
 	}},
-
-/* 	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$COLLATION_NAME; */
+/*	define index RDB$INDEX_20 for RDB$COLLATIONS unique RDB$COLLATION_NAME; */
 	INDEX(20, ODS_8_0, rel_collations, idx_unique, 1)
-		SEGMENT(f_coll_name, idx_metadata)	// collation name
+		SEGMENT(f_coll_name, idx_metadata)	/* collation name */
 	}},
-
 /*	define index RDB$INDEX_21 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME; */
 	INDEX(21, ODS_8_0, rel_procedures, idx_unique, 1)
 		SEGMENT(f_prc_name, idx_metadata)	/* procedure name */
 	}},
-/*	define index RDB$INDEX_22 for RDB$PROCEDURES unique RDB$PROCEDURE_ID; */
-	INDEX(22, ODS_8_0, rel_procedures, idx_unique, 1)
+/*	define index RDB$INDEX_22 for RDB$PROCEDURES RDB$PROCEDURE_ID; */
+	INDEX(22, ODS_8_0, rel_procedures, 0, 1)
 		SEGMENT(f_prc_id, idx_numeric)	/* procedure id */
 	}},
 /*	define index RDB$INDEX_23 for RDB$EXCEPTIONS unique RDB$EXCEPTION_NAME; */
 	INDEX(23, ODS_8_0, rel_exceptions, idx_unique, 1)
 		SEGMENT(f_xcp_name, idx_metadata)	/* exception name */
 	}},
-/*	define index RDB$INDEX_24 for RDB$EXCEPTIONS unique RDB$EXCEPTION_NUMBER; */
-	INDEX(24, ODS_8_0, rel_exceptions, idx_unique, 1)
+/*	define index RDB$INDEX_24 for RDB$EXCEPTIONS RDB$EXCEPTION_NUMBER; */
+	INDEX(24, ODS_8_0, rel_exceptions, 0, 1)
 		SEGMENT(f_xcp_number, idx_numeric)	/* exception number */
 	}},
 /*	define index RDB$INDEX_25 for RDB$CHARACTER_SETS unique	RDB$CHARACTER_SET_ID; */
@@ -189,9 +179,9 @@ static const struct ini_idx_t indices[] =
 	}},
 
 	/* Last index in ODS 8.0 is RDB$INDEX_26 */
-
+	
 	/* New indices added as part of ODS 8.1
-	 * These are now indices on all system tables that previously
+	 * These are now indices on all system tables that previously 
 	 * did not have one, except for RDB$PAGES & RDB$LOG_FILES
 	 * An index on rel_pages would help DROP TABLE, but not any other
 	 * operation.
@@ -251,9 +241,9 @@ static const struct ini_idx_t indices[] =
 	}},
 
 	/* Last index in ODS 9.0 is RDB$INDEX_39 */
-
+	
 	/* New indices added as part of ODS 9.1
-	 * These are now indices on all system tables that previously
+	 * These are now indices on all system tables that previously 
 	 * did not have one.
 	 */
 
@@ -265,7 +255,7 @@ static const struct ini_idx_t indices[] =
 	/* Last index in both ODS 9.1 and ODS 10.0 is RDB$INDEX_40 */
 
 	/* New indices added as part of ODS 10.1
-	 * These are now indices on all system tables that previously
+	 * These are now indices on all system tables that previously 
 	 * did not have one.
 	 */
 
@@ -281,40 +271,11 @@ static const struct ini_idx_t indices[] =
 /*	define index RDB$INDEX_43 for RDB$RELATION_CONSTRAINTS RDB$INDEX_NAME; */
 	INDEX(43, ODS_10_1, rel_rcon, 0, 1)
 		SEGMENT(f_rcon_iname, idx_metadata),	/* index name */
-	}},
-
+	}}
 	/* Last index in ODS 10.1 is RDB$INDEX_43 */
 
-	/* New indices added as part of ODS 11.0
-	 * These are now indices on all system tables that previously
-	 * did not have one.
-	 */
-
-/*	define index RDB$INDEX_44 for RDB$BACKUP_HISTORY RDB$LEVEL, RDB$BACKUP_ID; */
-	INDEX(44, ODS_11_0, rel_backup_history, idx_unique | idx_descending, 2)
-		SEGMENT(f_backup_level, idx_numeric),	/* backup level */
-		SEGMENT(f_backup_id, idx_numeric)	/* backup id */
-	}},
-/*	define index RDB$INDEX_45 for RDB$FILTERS RDB$FUNCTION_NAME; */
-	INDEX(45, ODS_11_0, rel_filters, idx_unique, 1)
-		SEGMENT(f_flt_name, idx_metadata)	/* function name */
-	}},
-
-	/* Last index in both ODS 11.0 and ODS 11.1 is RDB$INDEX_45 */
-
-	/* New indices added as part of ODS 11.2
-	 * These are now indices on all system tables that previously
-	 * did not have one.
-	 */
-
-	/*	define index RDB$INDEX_46 for RDB$GENERATORS unique RDB$GENERATOR_ID; */
-	INDEX(46, ODS_11_2, rel_gens, idx_unique, 1)
-		SEGMENT(f_gen_id, idx_numeric)	/* generator id */
-	}}
-
-	/* Last index in ODS 11.2 is RDB$INDEX_46 */
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)
 
-#endif /* JRD_IDX_H */
+#endif /* _JRD_IDX_H_ */

@@ -39,7 +39,11 @@
 #include <sys/types.h>
 #include <sys/times.h>
 #else
+#ifdef VMS
+#include <types.h>
+#else
 #include <sys/types.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,8 +52,7 @@ extern "C" {
 /*
  * Structure returned by times()
  */
-struct tms
-{
+struct tms {
 	time_t tms_utime;			/* user time */
 	time_t tms_stime;			/* system time */
 	time_t tms_cutime;			/* user time, children */
@@ -66,8 +69,7 @@ struct tms
 extern "C" {
 #endif
 
-typedef struct perf
-{
+typedef struct perf {
 	long perf_fetches;
 	long perf_marks;
 	long perf_reads;
@@ -80,19 +82,6 @@ typedef struct perf
 	struct tms perf_times;
 } PERF;
 
-typedef struct perf64
-{
-	ISC_INT64 perf_fetches;
-	ISC_INT64 perf_marks;
-	ISC_INT64 perf_reads;
-	ISC_INT64 perf_writes;
-	ISC_INT64 perf_current_memory;
-	ISC_INT64 perf_max_memory;
-	long perf_buffers;
-	long perf_page_size;
-	long perf_elapsed;
-	struct tms perf_times;
-} PERF64;
 
 /* Letter codes controlling printing of statistics:
 

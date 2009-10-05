@@ -12,7 +12,7 @@
  *     language governing rights and limitations under the License.
  *
  *
- *  The Original Code was created by Claudio Valderrama C. for IBPhoenix.
+ *  The Original Code was created by Claudio Valderama C. for IBPhoenix.
  *  The development of the Original Code was sponsored by Craig Leonardi.
  *
  *  Copyright (c) 2001 IBPhoenix
@@ -35,6 +35,10 @@
 #include "firebird.h"
 #include "../../jrd/common.h"
 
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
+
 #ifdef HAVE_MATH_H
 #include <math.h>
 #endif
@@ -45,11 +49,11 @@
 #include <string.h>
 #endif
 
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -66,6 +70,21 @@
 
 //#include "ib_util.h"
 //#include "ib_udf.h"
+
+//#ifdef __cplusplus
+//}
+//#endif
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 
 
 #ifdef HAVE_PTHREAD_H

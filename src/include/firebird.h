@@ -1,97 +1,78 @@
+#ifndef INCLUDE_Firebird
+#define INCLUDE_Firebird
+
 /*
- *	PROGRAM:		Firebird RDBMS definitions
- *	MODULE:			firebird.h
- *	DESCRIPTION:	Main Firebird header.
+ *  The contents of this file are subject to the Mozilla Public
+ *  License Version 1.1 (the "License"); you may not use this file
+ *  except in compliance with the License. You may obtain a copy of
+ *  the License at http://www.mozilla.org/MPL/
+ *  Alternatively, the contents of this file may be used under the
+ *  terms of the GNU General Public License Version 2 or later (the
+ *  "GPL"), in which case the provisions of the GPL are applicable
+ *  instead of those above. You may obtain a copy of the Licence at
+ *  http://www.gnu.org/copyleft/gpl.html
  *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  Relevant for more details.
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ *  This file was created by members of the firebird development team.
+ *  All individual contributions remain the Copyright (C) of those
+ *  individuals.  Contributors to this file are either listed here or
+ *  can be obtained from a CVS history command.
  *
- *  The Original Code was created by Mark O'Donohue, Mike Nordell and John Bellardo
- *  for the Firebird Open Source RDBMS project.
+ *  All rights reserved.
  *
- *  Copyright (c) 2001
+ *  Contributor(s):
  *       Mark O'Donohue <mark.odonohue@ludwig.edu.au>
  *       Mike Nordell   <tamlin@algonet.se>
  *       John Bellardo  <bellardo@cs.ucsd.edu>
-  *  and all contributors signed below.
  *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
  *
- *		Alex Peshkov
+ *  $Id: firebird.h,v 1.12.2.2 2003-10-30 22:25:55 skidder Exp $
+ *
  */
 
-#ifndef INCLUDE_Firebird_H
-#define INCLUDE_Firebird_H
 
 #include "gen/autoconfig.h"
 
-// Vulcan definitions
-#ifdef NAMESPACE
-namespace NAMESPACE{}		// declare namespace before use
-using namespace NAMESPACE;
-#define START_NAMESPACE		namespace NAMESPACE {
-#define CLASS(cls)			namespace NAMESPACE { class cls; }
-#define END_NAMESPACE		}
-#else
-#define START_NAMESPACE
-#define CLASS(cls)			class cls;
-#define END_NAMESPACE
-#endif
-
-// Using our debugging code is pointless when we may use Valgrind features
-#if defined(DEV_BUILD) && !defined(USE_VALGRIND)
-#define DEBUG_GDS_ALLOC
-#endif
-
 #if defined(WIN_NT)
 #define FB_DLL_EXPORT __declspec(dllexport)
-#elif defined(DARWIN)
-#define FB_DLL_EXPORT API_ROUTINE
 #else
 #define FB_DLL_EXPORT
 #endif
-//#if defined(SOLX86)
-// this pragmas is used only with gcc 2.95!
-//#define __PRAGMA_REDEFINE_EXTNAME
-//#define __EXTENSIONS__
-//
-//#endif
+#if defined(SOLX86)
+#define __PRAGMA_REDEFINE_EXTNAME 
+#define __EXTENSIONS__
+#endif
 
 //
 // Macro for function attribute definition
 //
 #if defined(__GNUC__)
-#define ATTRIBUTE_FORMAT(a, b) __attribute__ ((format(printf, a, b)))
+#define ATTRIBUTE_FORMAT(a,b) __attribute__ ((format(printf,a,b)))
 #else
-#define ATTRIBUTE_FORMAT(a, b)
+#define ATTRIBUTE_FORMAT(a,b)
 #endif
 
 #ifdef __cplusplus
 #include "fb_exception.h"
 #endif
 
-#ifndef NULL
-#define NULL            0L
+// 
+#if defined(SUPERSERVER) || defined(WIN_NT)
+#define SERVER_SHUTDOWN		1
 #endif
 
-#if defined(WIN_NT) && defined(SUPERSERVER)
-// Comment this definition to build without priority scheduler
-//	OR:
-// Uncomment this definition to build with priority scheduler
-#define THREAD_PSCHED
+// Check if we need thread synchronization
+#if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
+	defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
+#define MULTI_THREAD 1
 #endif
 
-#if defined(WIN_NT)
-#define TRUSTED_AUTH
+#if defined __cplusplus && defined __GNUC__
+#include "../common/classes/alloc.h"
 #endif
 
-#endif /* INCLUDE_Firebird_H */
+#endif /* INCLUDE_Firebird */

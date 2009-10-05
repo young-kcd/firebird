@@ -1,76 +1,99 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	JRD Access Method
 //		MODULE:		jrdmet.cpp
 //		DESCRIPTION:	Non-database meta data for internal JRD stuff
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
 //  There however is still a bunch of constness errors in this file
+//  
 //
+//____________________________________________________________
 //
+//	$Id: jrdmet.cpp,v 1.7 2003-02-13 09:58:19 dimitr Exp $
 //
 
 #include "firebird.h"
-#include "../jrd/ibase.h"
+#include "../jrd/gds.h"
 #include "../jrd/common.h"
-#include "../jrd/constants.h"
 #include "../jrd/ods.h"
 
+extern "C" {
+
+struct blk {
+	SLONG blk_header;
+};
+
+} // extern "C"
+
 #include "../gpre/gpre.h"
+#include "../jrd/constants.h"
 #define GPRE
 #include "../jrd/ini.h"
 #undef GPRE
 #include "../gpre/hsh_proto.h"
 #include "../gpre/jrdme_proto.h"
-#include "../gpre/msc_proto.h"
+
+
+extern "C" {
 
 
 //____________________________________________________________
-//
+//  
 //		Initialize in memory meta data.
-//
+//  
 
-void JRDMET_init( gpre_dbb* db)
+void JRDMET_init( DBB db)
 {
-	const int* relfld = relfields;
+	GPRE_REL relation;
+	SYM symbol;
+	GPRE_FLD field;
+	TYP type;
+	const RTYP *rtype;
+	const UCHAR *relfld;
+	const UCHAR *fld;
+	int n;
+	struct gfld *gfield;
 
-	while (relfld[RFLD_R_NAME])
-	{
-		gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
+	relfld = relfields;
+
+	while (relfld[RFLD_R_NAME]) {
+		relation = (GPRE_REL) ALLOC(REL_LEN);
 		relation->rel_database = db;
 		relation->rel_next = db->dbb_relations;
 		relation->rel_id = relfld[RFLD_R_ID];
 		db->dbb_relations = relation;
-		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
-		relation->rel_symbol = symbol;
+		relation->rel_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 		symbol->sym_type = SYM_relation;
-		symbol->sym_object = (gpre_ctx*) relation;
+		symbol->sym_object = (GPRE_CTX) relation;
 
-		symbol->sym_string = names[relfld[RFLD_R_NAME]];
+#pragma FB_COMPILER_MESSAGE("FIXFIX! const_cast")
+
+		symbol->sym_string = const_cast < char *>(names[relfld[RFLD_R_NAME]]);
 		HSH_insert(symbol);
 
-		const int* fld = relfld + RFLD_RPT;
-		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH)
-		{
-			const gfld* gfield =
-				fld[RFLD_F_UPD_MINOR] ? &gfields[fld[RFLD_F_UPD_ID]] : &gfields[fld[RFLD_F_ID]];
-			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
+		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			 n++, fld += RFLD_F_LENGTH) {
+			gfield = const_cast < gfld * >((fld[RFLD_F_UPD_MINOR]) ?
+										   &gfields[fld[RFLD_F_UPD_ID]] :
+										   &gfields[fld[RFLD_F_ID]]);
+			field = (GPRE_FLD) ALLOC(FLD_LEN);
 			relation->rel_fields = field;
 			field->fld_relation = relation;
 			field->fld_next = relation->rel_fields;
@@ -78,58 +101,57 @@ void JRDMET_init( gpre_dbb* db)
 			field->fld_length = gfield->gfld_length;
 			field->fld_dtype = gfield->gfld_dtype;
 			field->fld_sub_type = gfield->gfld_sub_type;
-			if (field->fld_dtype == dtype_varying || field->fld_dtype == dtype_text)
-			{
+			if (field->fld_dtype == dtype_varying ||
+				field->fld_dtype == dtype_text) {
 				field->fld_dtype = dtype_cstring;
 				field->fld_flags |= FLD_text;
 				++field->fld_length;
-				if (gfield->gfld_sub_type == dsc_text_type_metadata)
-				{
+				if (gfield->gfld_sub_type == dsc_text_type_metadata) {
 					field->fld_flags |= FLD_charset;
 					field->fld_charset_id = CS_METADATA;
 					field->fld_collate_id = COLLATE_NONE;
 					field->fld_ttype = ttype_metadata;
 				}
-				else
-				{
+				else {
 					field->fld_flags |= FLD_charset;
 					field->fld_charset_id = CS_NONE;
 					field->fld_collate_id = COLLATE_NONE;
 					field->fld_ttype = ttype_none;
 				}
 			}
-			else if (field->fld_dtype == dtype_blob)
-			{
+			else if (field->fld_dtype == dtype_blob) {
 				field->fld_dtype = dtype_blob;
 				field->fld_flags |= FLD_blob;
-				if (gfield->gfld_sub_type == isc_blob_text)
+				if (gfield->gfld_sub_type == BLOB_text)
 					field->fld_charset_id = CS_METADATA;
 			}
 
-			field->fld_symbol = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+			field->fld_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 			symbol->sym_type = SYM_field;
-			symbol->sym_object = (gpre_ctx*) field;
-			symbol->sym_string = names[fld[RFLD_F_NAME]];
+			symbol->sym_object = (GPRE_CTX) field;
+			symbol->sym_string =
+				const_cast < char *>(names[fld[RFLD_F_NAME]]);
 			HSH_insert(symbol);
 
-			field->fld_global = symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
+			field->fld_global = symbol = (SYM) ALLOC(SYM_LEN);
 			symbol->sym_type = SYM_field;
-			symbol->sym_object = (gpre_ctx*) field;
-			symbol->sym_string = names[gfield->gfld_name];
+			symbol->sym_object = (GPRE_CTX) field;
+			symbol->sym_string =
+				const_cast < char *>(names[gfield->gfld_name]);
 		}
 		relfld = fld + 1;
 	}
 
-	for (const rtyp* rtype = types; rtype->rtyp_name; rtype++)
-	{
-		field_type* type = (field_type*) MSC_alloc(TYP_LEN);
-		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
-		type->typ_symbol = symbol;
+	for (rtype = types; rtype->rtyp_name; rtype++) {
+		type = (TYP) ALLOC(TYP_LEN);
+		type->typ_symbol = symbol = (SYM) ALLOC(SYM_LEN);
 		type->typ_value = rtype->rtyp_value;
 		symbol->sym_type = SYM_type;
-		symbol->sym_object = (gpre_ctx*) type;
-		symbol->sym_string = rtype->rtyp_name;
+		symbol->sym_object = (GPRE_CTX) type;
+		symbol->sym_string = const_cast < char *>(rtype->rtyp_name);
 		HSH_insert(symbol);
 	}
 }
 
+
+} // extern "C"

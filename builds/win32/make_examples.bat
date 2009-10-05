@@ -1,117 +1,94 @@
-::@echo off
 
+@echo off
 
 :: Set env vars
 @call setenvvar.bat
-@if errorlevel 1 (goto :EOF)
+@if errorlevel 1 (goto :END)
+
+:: verify that prepare was run before
+@if not exist %ROOT_PATH%\gen\dbs\metadata.fdb (goto :HELP_PREP & goto :END)
 
 :: verify that boot was run before
-@if not exist %FB_GEN_DIR%\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
+@if not exist %ROOT_PATH%\gen\gpre_boot.exe (goto :HELP_BOOT & goto :END)
 
-@call set_build_target.bat %*
-
-::Uncomment this to build intlemp
-::set FB2_INTLEMP=1
-
+::===========
+:: Read input values
+@set DBG=
+@set DBG_DIR=release
+@set CLEAN=/build
+@if "%1"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
+@if "%2"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
+@if "%1"=="CLEAN" (set CLEAN=/REBUILD)
+@if "%2"=="CLEAN" (set CLEAN=/REBUILD)
 
 ::===========
 :MAIN
 @call :BUILD_EMPBUILD
-
-@echo.
-@echo Building %FB_OBJ_DIR%
-if "%VS_VER%"=="msvc6" (
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 examples_%FB_TARGET_PLATFORM%.log empbuild intlbld
-) else (
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples empbuild_%FB_TARGET_PLATFORM%.log empbuild
-    @if defined FB2_INTLEMP (
-      @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples intlbuild_%FB_TARGET_PLATFORM%.log intlbuild
-    )
-)
-@echo.
-@call :MOVE
+@if "%DBG%"=="" (call :RELEASE) else (call :DEBUG)
 @call :BUILD_EMPLOYEE
-@call :MOVE2
-@goto :EOF
+@call :MOVE
+@goto :END
 
 ::===========
 :BUILD_EMPBUILD
 @echo.
 @echo Building empbuild.fdb
-@copy /y %FB_OUTPUT_DIR%\bin\isql.exe %FB_GEN_DIR%\examples\ > nul
-@copy /y %FB_OUTPUT_DIR%\bin\fbclient.dll %FB_GEN_DIR%\examples\ > nul
-@copy /y %FB_ROOT_PATH%\examples\empbuild\*.sql   %FB_GEN_DIR%\examples\ > nul
-@copy /y %FB_ROOT_PATH%\examples\empbuild\*.inp   %FB_GEN_DIR%\examples\ > nul
+@copy %ROOT_PATH%\src\v5_examples\*.sql %ROOT_PATH%\gen\v5_examples\ > nul
+@copy %ROOT_PATH%\src\v5_examples\*.inp %ROOT_PATH%\gen\v5_examples\ > nul
 
 @echo.
+@echo Creating empbuild.fdb
 :: Here we must use cd because isql does not have an option to set a base directory
-@cd %FB_GEN_DIR%\examples
-@echo   Creating empbuild.fdb...
-@echo.
+@cd %ROOT_PATH%\gen\v5_examples
 @del empbuild.fdb 2> nul
-@%FB_GEN_DIR%\examples\isql -i empbld.sql
+@%FIREBIRD%\bin\isql -i empbld.sql
+@cd %ROOT_PATH%\builds\win32
 
-
-if defined FB2_INTLEMP (
-@echo   Creating intlbuild.fdb...
 @echo.
-@del intlbuild.fdb 2> nul
-@%FB_GEN_DIR%\examples\isql -i intlbld.sql
+@echo path = %DB_PATH%/gen/v5_examples
+@echo preprocessing empbuild.e
+@%ROOT_PATH%\gen\gpre_static -r -m -n -z %ROOT_PATH%\src\v5_examples\empbuild.e %ROOT_PATH%\gen\v5_examples\empbuild.c -b localhost:%DB_PATH%/gen/v5_examples/
+@goto :EOF
+
+::===========
+:RELEASE
+@echo.
+@echo Building release
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "v5_examples - Win32 Release" %CLEAN% /OUT v5_examples.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% release /project v5_examples  /OUT v5_examples.log
 )
+@goto :EOF
 
-@cd %FB_ROOT_PATH%\builds\win32
+::===========
+:DEBUG
 @echo.
-@echo path = %FB_GEN_DB_DIR%\examples
-@echo   Preprocessing empbuild.e...
-@echo.
-@%FB_GEN_DIR%\gpre_embed.exe -r -m -n -z %FB_ROOT_PATH%\examples\empbuild\empbuild.e %FB_GEN_DIR%\examples\empbuild.c -b %FB_GEN_DB_DIR%/examples/
-
-if defined FB2_INTLEMP (
-@echo   Preprocessing intlbld.e...
-@echo.
-@%FB_GEN_DIR%\gpre_embed.exe -r -m -n -z %FB_ROOT_PATH%\examples\empbuild\intlbld.e %FB_GEN_DIR%\examples\intlbld.c -b %FB_GEN_DB_DIR%/examples/
+@echo Building debug
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.dsw /MAKE "v5_examples - Win32 Debug" %CLEAN% /OUT v5_examples.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2.sln %CLEAN% debug /project v5_examples   /OUT v5_examples.log
 )
-
 @goto :EOF
 
 
 ::===========
 :MOVE
 @echo.
-@rmdir /q /s %FB_OUTPUT_DIR%\examples 2>nul
-@mkdir %FB_OUTPUT_DIR%\examples
-@mkdir %FB_OUTPUT_DIR%\examples\api
-@mkdir %FB_OUTPUT_DIR%\examples\build_unix
-@mkdir %FB_OUTPUT_DIR%\examples\build_win32
-@mkdir %FB_OUTPUT_DIR%\examples\dyn
-@mkdir %FB_OUTPUT_DIR%\examples\empbuild
-@mkdir %FB_OUTPUT_DIR%\examples\include
-@mkdir %FB_OUTPUT_DIR%\examples\stat
-@mkdir %FB_OUTPUT_DIR%\examples\udf
+@mkdir %ROOT_PATH%\output\v5_examples 2> nul
 @echo Moving files to output directory
-@copy %FB_ROOT_PATH%\examples\* %FB_OUTPUT_DIR%\examples > nul
-@ren %FB_OUTPUT_DIR%\examples\readme readme.txt > nul
-@copy %FB_ROOT_PATH%\examples\api\* %FB_OUTPUT_DIR%\examples\api > nul
-@copy %FB_ROOT_PATH%\examples\build_unix\* %FB_OUTPUT_DIR%\examples\build_unix > nul
-@copy %FB_ROOT_PATH%\examples\build_win32\* %FB_OUTPUT_DIR%\examples\build_win32 > nul
-@copy %FB_ROOT_PATH%\examples\dyn\* %FB_OUTPUT_DIR%\examples\dyn > nul
-:: @copy %FB_ROOT_PATH%\examples\empbuild\* %FB_OUTPUT_DIR%\examples\empbuild > nul
-@copy %FB_ROOT_PATH%\examples\empbuild\employe2.sql %FB_OUTPUT_DIR%\examples\empbuild > nul
-@copy %FB_ROOT_PATH%\examples\include\* %FB_OUTPUT_DIR%\examples\include > nul
-@copy %FB_ROOT_PATH%\examples\stat\* %FB_OUTPUT_DIR%\examples\stat > nul
-@copy %FB_ROOT_PATH%\examples\udf\* %FB_OUTPUT_DIR%\examples\udf > nul
-@copy %FB_ROOT_PATH%\src\extlib\ib_udf* %FB_OUTPUT_DIR%\examples\udf > nul
-@copy %FB_ROOT_PATH%\src\extlib\fbudf\* %FB_OUTPUT_DIR%\examples\udf > nul
-
-::@copy %FB_GEN_DIR%\examples\empbuild.c %FB_OUTPUT_DIR%\examples\empbuild\ > nul
-::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\empbuild.exe %FB_GEN_DIR%\examples\empbuild.exe > nul
-::if defined FB2_INTLEMP (
-::if "%VS_VER%"=="msvc6" (
-::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\intlbld.exe %FB_GEN_DIR%\examples\intlbuild.exe > nul
-::) else (
-::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\intlbuild.exe %FB_GEN_DIR%\examples\intlbuild.exe > nul
-::)
-::)
+@copy %ROOT_PATH%\src\v5_examples\align.h %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\api*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\dyn*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\stat*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\udf*.* %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\example.h %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\employe2.sql %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\readme %ROOT_PATH%\output\v5_examples > nul
+@copy %ROOT_PATH%\src\v5_examples\prefix.win32_bc %ROOT_PATH%\output\v5_examples\makefile.bc > nul
+@copy %ROOT_PATH%\src\v5_examples\prefix.win32_msc %ROOT_PATH%\output\v5_examples\makefile.msc > nul
+@copy %ROOT_PATH%\gen\v5_examples\employee.* %ROOT_PATH%\output\v5_examples > nul
 @goto :EOF
 
 ::===========
@@ -121,32 +98,20 @@ if defined FB2_INTLEMP (
 @echo Building employee.fdb
 :: Here we must use cd because isql does not have an option to set a base directory
 :: and empbuild.exe uses isql
-@cd %FB_GEN_DIR%\examples
-@del %FB_GEN_DIR%\examples\employee.fdb 2>nul
-@%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\empbuild\empbuild.exe %FB_GEN_DB_DIR%/examples/employee.fdb
-
-@if defined FB2_INTLEMP (
-@echo Building intlemp.fdb
-  @del %FB_GEN_DIR%\examples\intlemp.fdb 2>nul
-  @del isql.tmp 2>nul
-  @echo s;intlemp.fdb;%SERVER_NAME%:%FB_GEN_DIR%\examples\intlemp.fdb;g > isql.tmp
-  @%FB_GEN_DIR%\examples\intlbuild.exe %FB_GEN_DB_DIR%/examples/intlemp.fdb
-)
-
-@cd %FB_ROOT_PATH%\builds\win32
+@cd %ROOT_PATH%\gen\v5_examples
+@del %ROOT_PATH%\gen\v5_examples\employee.fdb 2>nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\v5_examples\v5_examples.exe %ROOT_PATH%\gen\v5_examples\empbuild.exe > nul
+@%ROOT_PATH%\gen\v5_examples\empbuild.exe %DB_PATH%/gen/v5_examples/employee.fdb
+@gbak -b localhost:%DB_PATH%/gen/v5_examples/employee.fdb %DB_PATH%/gen/v5_examples/employee.fbk
+@cd %ROOT_PATH%\builds\win32
 
 @goto :EOF
 
 ::==============
-:MOVE2
-@copy %FB_GEN_DIR%\examples\employee.fdb %FB_OUTPUT_DIR%\examples\empbuild\ > nul
-
-if defined FB2_INTLEMP (
-  if exist %FB_GEN_DIR%\examples\intlemp.fdb (
-  @copy %FB_GEN_DIR%\examples\intlemp.fdb %FB_OUTPUT_DIR%\examples\empbuild\ > nul
-  )
-)
-
+:HELP_PREP
+@echo.
+@echo    You must run prepare.bat before running this script
+@echo.
 @goto :EOF
 
 ::==============
@@ -156,14 +121,4 @@ if defined FB2_INTLEMP (
 @echo.
 @goto :EOF
 
-:ERROR
-::====
-@echo.
-@echo   Error  - %*
-@echo.
-cancel_script > nul 2>&1
-::End of ERROR
-::------------
-@goto :EOF
-
-
+:END

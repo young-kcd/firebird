@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Command Oriented Query Language
- *	MODULE:		nounix.cpp
+ *	MODULE:		nounix.c
  *	DESCRIPTION:	Dummy routines
  *
  * The contents of this file are subject to the Interbase Public
@@ -23,13 +23,12 @@
 
 #include "firebird.h"
 
-int pipe()
+int pipe(void)
 {
 	return -1;
 }
 
-int vfork()
+int vfork(void)
 {
 	return -1;
 }
-

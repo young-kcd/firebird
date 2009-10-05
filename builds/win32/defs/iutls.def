@@ -67,7 +67,6 @@ EXPORTS
 	_gds__ftof                     @13
 	_gds__interprete               @14
 	_gds__interprete_a             @15
-	_fb_interpret
 	_gds__log                      @16
 	_gds__log_status               @17
 	_gds__msg_close                @18
@@ -85,6 +84,7 @@ EXPORTS
 	_gds__register_cleanup         @30
 	_gds__sqlcode                  @31
 	_gds__sqlcode_s                @32
+	_gds__temp_file                @33
 	_gds__temp_multi_file          @34
 	_gds__unregister_cleanup       @35
 	_gds__vax_integer              @36

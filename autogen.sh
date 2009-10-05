@@ -2,34 +2,49 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
+# $Id: autogen.sh,v 1.8.2.3 2006-12-06 16:07:31 alexpeshkoff Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-if [ -z "$AUTORECONF" ]
+if [ -z "$AUTOCONF" ]
 then
-  AUTORECONF=autoreconf
+  AUTOCONF=autoconf
+fi
+if [ -z "$LIBTOOL" ]
+then
+  LIBTOOL=libtool
+fi
+if [ -z "$LIBTOOLIZE" ]
+then
+  LIBTOOLIZE=libtoolize
 fi
 
-echo "AUTORECONF="$AUTORECONF
+echo "AUTOCONF="$AUTOCONF
+echo "LIBTOOL="$LIBTOOL
+echo "LIBTOOLiZE="$LIBTOOLIZE
 
-# This prevents calling automake in old autotools
-AUTOMAKE=true
-export AUTOMAKE
-
-# This helps some old aclocal versions find binreloc.m4 in current directory
-ACLOCAL='aclocal -I .'
-export ACLOCAL
-
-VER=`$AUTORECONF --version|grep '^[Aa]utoreconf'|sed 's/^[^0-9]*//'`
+VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
- 2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
+ 2\.[1-4][0-9] | 2\.5[0-2]* )
   echo
-  echo "**Error**: You must have autoconf 2.56 or later installed."
+  echo "**Error**: You must have autoconf 2.53 or later installed."
   echo "Download the appropriate package for your distribution/OS,"
   echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
+  DIE=1
+  ;;
+esac
+
+VER=`$LIBTOOL --version|grep ' libtool)'|sed 's/.*) \([0-9][0-9.]*\) .*/\1/'`
+case "$VER" in
+ 0* | 1\.[0-2] | 1\.[0-2][a-z]* | \
+ 1\.3\.[0-2] | 1\.3\.[0-2][a-z]* )
+  echo
+  echo "**Error**: You must have libtool 1.3.3 or later installed."
+  echo "Download the appropriate package for your distribution/OS,"
+  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/libtool/"
   DIE=1
   ;;
 esac
@@ -49,34 +64,31 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo
 fi
 
-# Some versions of autotools need it
-if [ ! -d m4 ]; then
-	rm -rf m4
-	mkdir m4
+if [ `uname -s` = AIX ]; then
+	export CC=xlc_r7
+	export CXX=xlC_r7
+
+#convert version files to aix export format
+#this is not general format converter and may fail in case of vers file(s) changes
+	mkdir gen
+	for i in builds/posix/*.vers
+	do
+		to="gen/`basename $i`"
+		grep \;\$ $i | grep -v '[\#\*\}]' | awk -F';' '{print $1;}' >$to
+	done
 fi
 
-# Ensure correct utilities are called by AUTORECONF
-autopath=`dirname $AUTORECONF`
-if [ "x$autopath" != "x" ]; then
-	PATH=$autopath:$PATH
-	export PATH
+# Generate configure from configure.in
+echo "Running libtoolize ..."
+LIBTOOL_M4=`$LIBTOOLIZE --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
+if test "x$LIBTOOL_M4" != "x"; then
+ rm -f aclocal.m4
+ cp $LIBTOOL_M4 aclocal.m4
 fi
+$LIBTOOLIZE --copy --force || exit 1
 
-echo "Running autoreconf ..."
-$AUTORECONF --install --force --verbose || exit 1
-
-# Hack to bypass bug in autoreconf - --install switch not passed to libtoolize,
-# therefore missing config.sub and confg.guess files
-CONFIG_AUX_DIR=builds/make.new/config
-if [ ! -f $CONFIG_AUX_DIR/config.sub -o ! -f $CONFIG_AUX_DIR/config.guess ]; then
-	# re-run libtoolize with --install switch, if it does not understand that switch
-	# and there are no config.sub/guess files in CONFIG_AUX_DIR, we will anyway fail
-	echo "Re-running libtoolize ..."
-	if [ -z "$LIBTOOLIZE" ]; then
-		LIBTOOLIZE=libtoolize
-	fi
-	$LIBTOOLIZE --install --copy --force || exit 1
-fi
+echo "Running autoconf ..."
+$AUTOCONF || exit 1
 
 # If NOCONFIGURE is set, skip the call to configure
 if test "x$NOCONFIGURE" = "x"; then

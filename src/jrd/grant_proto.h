@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access method
  *	MODULE:		grant_proto.h
- *	DESCRIPTION:	Function prototypes for file grant.epp
+ *	DESCRIPTION:	Function prototypes for file grant.e
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,16 +21,17 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_GRANT_PROTO_H
-#define JRD_GRANT_PROTO_H
+#ifndef _JRD_GRANT_PROTO_H_
+#define _JRD_GRANT_PROTO_H_
 
-#include "../common/classes/fb_string.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace Jrd
-{
-	class DeferredWork;
-}
+extern int GRANT_privileges(TDBB, SSHORT, struct dfw *);
 
-void GRANT_privileges(Jrd::thread_db*, const Firebird::string&, USHORT, Jrd::jrd_tra*);
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
-#endif // JRD_GRANT_PROTO_H
+#endif /* _JRD_GRANT_PROTO_H_  */
