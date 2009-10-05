@@ -60,8 +60,8 @@ package_classic package_embedded:
 	cp -r ../builds/install/arch-specific/darwin/Firebird.startupitem \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem
 	rm -rf `find $(DIR)/$(INST_NM).pkg/Contents/Resources/StartupItem -name CVS`
-	cp ../builds/install/arch-specific/darwin/installer_background.pdf \
-			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.pdf
+	cp ../builds/install/arch-specific/darwin/installer_background.jpg \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.jpg
 	cp ../builds/install/arch-specific/darwin/install-script \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
 	cp ../builds/install/arch-specific/darwin/install-script \
@@ -120,8 +120,8 @@ package_super package_server:
 			-e 's/_REV_NO_/$(FB_REV_NO)/g' \
 			../builds/install/arch-specific/darwin/Description.plist \
 			> $(DIR)/$(INST_NM).pkg/Contents/Resources/Description.plist
-	cp ../builds/install/arch-specific/darwin/installer_background.pdf \
-			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.pdf
+	cp ../builds/install/arch-specific/darwin/installer_background.jpg \
+			$(DIR)/$(INST_NM).pkg/Contents/Resources/background.jpg
 	cp ../builds/install/arch-specific/darwin/install-script \
 			$(DIR)/$(INST_NM).pkg/Contents/Resources/postinstall
 	cp -r ../builds/install/arch-specific/darwin/Firebird.startupitem \
