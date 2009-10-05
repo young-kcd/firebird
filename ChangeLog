@@ -1,3 +1,46 @@
+2009-10-05 12:27  hvlad
+
+	* firebird2/src/jrd/UserManagement.cpp (1.13):
+
+	1. Pass explicit role to the security database attachment 2. Better
+	error messages - append original error occured in security database
+	after primary error code
+
+2009-10-05 12:26  alexpeshkoff
+
+	* firebird2/src/: burp/burpswi.h (1.32),
+	common/classes/ClumpletReader.cpp (1.44), include/consts_pub.h
+	(1.33), jrd/svc.cpp (1.285), utilities/fbsvcmgr.cpp (1.35):
+
+	Fixed CORE-2439: Add FIX_FSS_DATA and FIX_FSS_METADATA into the
+	server
+
+2009-10-05 10:28  dimitr
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.92):
+
+	Avoid polluting firebird.log with "error 534" when 32-bit binaries
+	run on a 64-bit host.
+
+2009-10-05 09:40  dimitr
+
+	* firebird2/doc/WhatsNew (1.188):
+
+	Update.
+
+2009-10-05 09:06  alexpeshkoff
+
+	* firebird2/extern/btyacc/readskel.c (1.4):
+
+	Close skeleton file after reading it
+
+2009-10-04 23:47  asfernandes
+
+	* firebird2/src/dsql/: make.cpp (1.189), pass1.cpp (1.458):
+
+	Fixed CORE-2660 - COUNT(*) incorrectly returns 0 when a condition
+	of an outer join doesn't match
+
 2009-10-04 13:27  dimitr
 
 	* firebird2/src/jrd/why.cpp (1.262):
