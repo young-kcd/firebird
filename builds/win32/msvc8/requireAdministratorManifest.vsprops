@@ -4,4 +4,8 @@
 	Version="8.00"
 	Name="requireAdministratorManifest"
 	>
+	<Tool
+		Name="VCManifestTool"
+		AdditionalManifestFiles="$(SolutionDir)requireAdministrator.manifest"
+	/>
 </VisualStudioPropertySheet>
