@@ -141,7 +141,7 @@ static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSourc
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, jrd_nod**, bool,
 	bool, jrd_nod**);
 static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*,
-	VaryingString*, jrd_nod*, float);
+	VaryingString*, jrd_nod*, double);
 static RecordSource*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static RecordSource* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
 							RecordSource*, jrd_nod*, bool);
@@ -4392,7 +4392,7 @@ static void gen_join(thread_db*		tdbb,
 		// and many of the records on page may be back versions.
 
 		if (plan_clause) {
-			csb_tail->csb_cardinality = (float) 0;
+			csb_tail->csb_cardinality = 0;
 		}
 		else {
 			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
@@ -5275,7 +5275,7 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 				   RecordSource* rsb,
 				   jrd_nod* inversion,
 				   SSHORT stream,
-				   jrd_rel* relation, VaryingString* alias, jrd_nod* boolean, float cardinality)
+				   jrd_rel* relation, VaryingString* alias, jrd_nod* boolean, double cardinality)
 {
 /**************************************
  *

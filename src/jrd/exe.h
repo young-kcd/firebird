@@ -919,7 +919,7 @@ public:
 		jrd_nod* csb_message;			// Msg for send/receive
 		Format* csb_format;				// Default Format for stream
 		UInt32Bitmap* csb_fields;		// Fields referenced
-		float csb_cardinality;			// Cardinality of relation
+		double csb_cardinality;			// Cardinality of relation
 		jrd_nod* csb_plan;				// user-specified plan for this relation
 		UCHAR* csb_map;					// Stream map for views
 		RecordSource** csb_rsb_ptr;		// point to rsb for nod_stream
