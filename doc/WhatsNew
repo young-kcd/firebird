@@ -38,6 +38,12 @@
         Vlad Khorsun <hvlad at users.sourceforge.net>
         Roman Simakov <roman.simakov at red-soft.biz>
 
+    * Bugfix CORE-2642
+        ICU initialization for properly work in MT environment
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+
     * Bugfix CORE-2640
         A regular deadlock may not be detected by the lock manager under some conditions,
         thus resulting in a hang

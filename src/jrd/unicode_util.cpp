@@ -76,7 +76,8 @@ public:
 	ModuleLoader::Module* ucModule;
 	UVersionInfo collVersion;
 
-	void (U_EXPORT2 *uVersionToString)(UVersionInfo versionArray, char *versionString);
+	void (U_EXPORT2 *uInit)(UErrorCode* status);
+	void (U_EXPORT2 *uVersionToString)(UVersionInfo versionArray, char* versionString);
 
 	int32_t (U_EXPORT2 *ulocCountAvailable)();
 	const char* (U_EXPORT2 *ulocGetAvailable)(int32_t n);
@@ -829,6 +830,9 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 		string symbol;
 
+		symbol.printf("u_init_%s_%s", majorVersion.c_str(), minorVersion.c_str());
+		icu->ucModule->findSymbol(symbol, icu->uInit);
+
 		symbol.printf("u_versionToString_%s_%s", majorVersion.c_str(), minorVersion.c_str());
 		icu->ucModule->findSymbol(symbol, icu->uVersionToString);
 
@@ -880,9 +884,10 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		symbol.printf("utrans_transUChars_%s_%s", majorVersion.c_str(), minorVersion.c_str());
 		icu->inModule->findSymbol(symbol, icu->utransTransUChars);
 
-		if (!icu->uVersionToString || !icu->ulocCountAvailable || !icu->ulocGetAvailable ||
-			!icu->usetClose || !icu->usetGetItem || !icu->usetGetItemCount || !icu->usetOpen ||
-			!icu->ucolClose || !icu->ucolGetContractions || !icu->ucolGetSortKey || !icu->ucolOpen ||
+		if (/*!icu->uInit ||*/ !icu->uVersionToString || !icu->ulocCountAvailable ||
+			!icu->ulocGetAvailable || !icu->usetClose || !icu->usetGetItem ||
+			!icu->usetGetItemCount || !icu->usetOpen || !icu->ucolClose ||
+			!icu->ucolGetContractions || !icu->ucolGetSortKey || !icu->ucolOpen ||
 			!icu->ucolSetAttribute || !icu->ucolStrColl || !icu->ucolGetVersion)
 		{
 			delete icu;
@@ -890,6 +895,16 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		}
 
 		UErrorCode status = U_ZERO_ERROR;
+
+		if (icu->uInit)
+		{
+			icu->uInit(&status);
+			if (status != U_ZERO_ERROR)
+			{
+				delete icu;
+				continue;
+			}
+		}
 
 		UCollator* collator = icu->ucolOpen("", &status);
 		if (!collator)
