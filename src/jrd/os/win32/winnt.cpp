@@ -1248,7 +1248,14 @@ static void adjustFileSystemCacheSize()
 
 	if (!result)
 	{
-		gds__log("GetSystemFileCacheSize error %d", GetLastError());
+		const DWORD error = GetLastError();
+#ifndef _WIN64
+		// This error is returned on 64-bit Windows when the file cache size
+		// overflows the ULONG limit restricted by the 32-bit Windows API.
+		// Let's avoid writing it into the log as it's not a critical failure.
+		if (error != ERROR_ARITHMETIC_OVERFLOW)
+#endif
+		gds__log("GetSystemFileCacheSize error %d", error);
 		return;
 	}
 
