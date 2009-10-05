@@ -448,6 +448,8 @@
 #define isc_spb_res_page_size			10
 #define isc_spb_res_length				11
 #define isc_spb_res_access_mode			12
+#define isc_spb_res_fix_fss_data		13
+#define isc_spb_res_fix_fss_metadata	14
 #define isc_spb_res_deactivate_idx		0x0100
 #define isc_spb_res_no_shadow			0x0200
 #define isc_spb_res_no_validity			0x0400

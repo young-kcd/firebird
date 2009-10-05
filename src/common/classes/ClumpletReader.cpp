@@ -231,6 +231,8 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			{
 			case isc_spb_bkp_file:
 			case isc_spb_dbname:
+			case isc_spb_res_fix_fss_data:
+			case isc_spb_res_fix_fss_metadata:
 				return StringSpb;
 			case isc_spb_bkp_factor:
 			case isc_spb_bkp_length:

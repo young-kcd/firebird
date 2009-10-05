@@ -2545,10 +2545,10 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			switch (spb.getClumpTag())
 			{
 			case isc_spb_bkp_file:
-                get_action_svc_string(spb, burp_backup);
+				get_action_svc_string(spb, burp_backup);
 				break;
 			case isc_spb_dbname:
-                get_action_svc_string(spb, burp_database);
+				get_action_svc_string(spb, burp_database);
 				break;
 			case isc_spb_options:
 				burp_options |= spb.getInt();
@@ -2583,6 +2583,14 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
+				break;
+			case isc_spb_res_fix_fss_data:
+			case isc_spb_res_fix_fss_metadata:
+				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
+				{
+					return false;
+				}
+				get_action_svc_string(spb, switches);
 				break;
 			default:
 				return false;

@@ -120,9 +120,11 @@ static const in_sw_tab_t reference_burp_in_sw_table[] =
                 /* msg 181; %sFACTOR  blocking factor */
     {IN_SW_BURP_FETCHPASS, 0,					"FETCH_PASSWORD",	0, 0, 0, false, 306,	0, NULL, boGeneral},
                 // msg 306: @1FE(TCH_PASSWORD)     fetch password from file
-	{IN_SW_BURP_FIX_FSS_DATA,    0,				"FIX_FSS_DATA",		0, 0, 0, false, 302,	0, NULL, boRestore},
+	{IN_SW_BURP_FIX_FSS_DATA,		isc_spb_res_fix_fss_data,
+												"FIX_FSS_DATA",		0, 0, 0, false, 302,	0, NULL, boRestore},
                 // msg 302: @1FIX_FSS_DATA         fix malformed UNICODE_FSS data
-	{IN_SW_BURP_FIX_FSS_METADATA,    0,			"FIX_FSS_METADATA",	0, 0, 0, false, 303,	0, NULL, boRestore},
+	{IN_SW_BURP_FIX_FSS_METADATA,	isc_spb_res_fix_fss_metadata,
+												"FIX_FSS_METADATA",	0, 0, 0, false, 303,	0, NULL, boRestore},
                 // msg 303: @1FIX_FSS_METADATA     fix malformed UNICODE_FSS metadata
     {IN_SW_BURP_G,    isc_spb_bkp_no_garbage_collect, "GARBAGE_COLLECT", 0, 0, 0, false, 177, 0, NULL, boBackup},
                 // msg 177:%sGARBAGE_COLLECT inhibit garbage collection
