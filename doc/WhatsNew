@@ -2,15 +2,58 @@
   * v2.5 Release Candidate 1
   **************************
 
+    * Bugfix CORE-2660
+        COUNT(*) incorrectly returns 0 when a condition of an outer join doesn't match
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2659
+        Sub-optimal (not indexed) query plan for outer joins involving complex views
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2657
+        Ability to get any permissions (including SYSDBA) working with services
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2651
+        Incorrect "string right truncation" error with NONE column and multi-byte connection charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2648
+        NBackup's delta file ignores the "Forced Writes" database setting
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2647
+        Race condition during detach database can lead to AV
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2646
+        The engine process writes every page change to disk after changing the physical backup state 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Roman Simakov <roman.simakov at red-soft.biz>
+
+    * Bugfix CORE-2640
+        A regular deadlock may not be detected by the lock manager under some conditions,
+        thus resulting in a hang
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-2635
         Unique index with a lot of NULL keys can be corrupted at level 1
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
-    * Bugfix CORE-2616
-        Error "page <N> is of wrong type (expected 7, found 5)"
+    * Bugfix CORE-2634
+        Performance regression when restoring database with big metadata
       Contributor(s):
-        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-2633
         SELECT WITH LOCK with no fields accessed clears the data
@@ -19,6 +62,11 @@
 
     * Bugfix CORE-2632
         "Invalid BLOB ID" error when working with the monitoring tables
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2616
+        Error "page <N> is of wrong type (expected 7, found 5)"
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
@@ -176,6 +224,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-2644
+        Make lock table expandable on HPUX
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Improvement CORE-2638
         Make words, non-reserved according to the SQL specification, non-reserved in our grammar
       Contributor(s):
@@ -185,6 +238,12 @@
         Startup scripts in /etc/init.d should take care about presence of
         /var/run/firebird and /tmp/firebird directories
       Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-2619
+        Make memory and other statistics to work with 64-bit values
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
         Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-2609
@@ -218,6 +277,11 @@
         Use DatabaseAccess configuration parameter for default database location
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1038
+        Remote shadows on NT-based systems
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
 
     * New feature CORE-2636
         Add support for the GB 18030 character set (Chinese national standard)
