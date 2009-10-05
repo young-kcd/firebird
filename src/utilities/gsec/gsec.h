@@ -48,7 +48,7 @@ const int MAP_DROP_OPER	= 9;
 
 const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;
-const int NAME_LEN		= MAX_SQL_IDENTIFIER_SIZE;
+const int NAME_LEN		= 33;
 //const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
 const int _SERVER_LEN	= 128;
 const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
