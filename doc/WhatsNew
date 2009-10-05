@@ -2,6 +2,11 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-2648
+        NBackup's delta file ignores the "Forced Writes" database setting
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2640
         A regular deadlock may not be detected by the lock manager under some conditions,
         thus resulting in a hang
@@ -53,6 +58,11 @@
         Intermittent CreateFile failure
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2084
+        Services API security problem
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-1346
         LPAD and RPAD with two columns not working
