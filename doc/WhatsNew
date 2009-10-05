@@ -2,6 +2,38 @@
   * v2.0.6
   **************************
 
+    * Bugfix CORE-2648
+        NBackup's delta file ignores the "Forced Writes" database setting
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2640
+        A regular deadlock may not be detected by the lock manager under some conditions,
+        thus resulting in a hang
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2635
+        Unique index with a lot of NULL keys can be corrupted at level 1
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2616
+        Error "page <N> is of wrong type (expected 7, found 5)"
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2591
+        High mutex wait ratio and degraded performance after some time of performing normally
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2563
+        Possible DoS attack using the malformed packet sent into the connection port
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-2507
         Intermittent CreateFile() failure
       Contributor(s):
