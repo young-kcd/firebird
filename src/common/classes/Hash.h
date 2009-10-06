@@ -84,11 +84,6 @@ namespace Firebird
 	class Hash
 	{
 	public:
-		class iterator;
-		friend class iterator;
-		class Entry;
-		friend class Entry;
-
 		// This class is supposed to be used as a BASE class for class to be hashed
 		class Entry
 		{
