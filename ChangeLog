@@ -1,3 +1,13 @@
+2009-10-05 17:39  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/: Makefile.in
+	(1.1.12.6), installer_background.jpg (1.1.4.2),
+	installer_background.pdf (1.1.2.2), installer_background.psd
+	(1.1.2.2):
+
+	Correct the corrupt background installer image problem on Mac OSX
+	10.6 while I remember
+
 2009-10-05 09:49  dimitr
 
 	* firebird2/: doc/WhatsNew (1.95.2.45), src/jrd/isc_version.h
@@ -40,6 +50,15 @@
 	* firebird2/src/jrd/scl.epp (1.71.4.8):
 
 	_string will not compile on Darwin using gcc 4.2.1
+
+2009-09-09 14:19  paulbeach
+
+	*
+	firebird2/builds/install/arch-specific/darwin/installer_background.jpg
+	(1.1.4.1):
+
+	file installer_background.jpg was added on branch B2_0_Release on
+	2009-10-05 15:39:42 +0000
 
 2009-08-13 16:56  dimitr
 
