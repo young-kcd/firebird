@@ -235,6 +235,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Improvement CORE-2639
+        Add FIX_FSS_DATA and FIX_FSS_METADATA restore options to the Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Improvement CORE-2638
         Make words, non-reserved according to the SQL specification, non-reserved in our grammar
       Contributor(s):
