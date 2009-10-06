@@ -1,3 +1,92 @@
+2009-10-06 12:57  hvlad
+
+	* firebird2/builds/win32/make_all.bat (1.59):
+
+	Restore lost argument of findstr
+
+2009-10-06 09:40  dimitr
+
+	* firebird2/doc/WhatsNew (1.190):
+
+	Update.
+
+2009-10-06 08:00  paul_reeves
+
+	* firebird2/builds/win32/make_all.bat (1.58):
+
+	Use findstr instead of find, thus removing the namespace clash with
+	posix find and removing the need to parse the file with type prior
+	to deleting the tag.
+
+2009-10-05 23:04  hvlad
+
+	* firebird2/builds/win32/msvc8/instreg.vcproj (1.6):
+
+	I was wrong : instreg also requires administrative privileges.
+
+2009-10-05 18:06  dimitr
+
+	* firebird2/src/jrd/: exe.h (1.138), opt.cpp (1.361):
+
+	Just a consistency with other variables.
+
+2009-10-05 17:53  hvlad
+
+	* firebird2/builds/win32/msvc8/requireAdministratorManifest.vsprops
+	(1.2):
+
+	Missed content. Seems VS IDE doing some dirty tricks with open
+	files
+
+2009-10-05 17:52  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.189), src/jrd/unicode_util.cpp
+	(1.53):
+
+	Fixed CORE-2642 - ICU initialization for properly work in MT
+	environment
+
+2009-10-05 17:42  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/: Makefile.in
+	(1.7), installer_background.jpg (1.2), installer_background.pdf
+	(1.3), installer_background.psd (1.3):
+
+	Correct the corrupt background installer image problem on Mac OSX
+	10.6 while I remember
+
+2009-10-05 16:29  dimitr
+
+	* firebird2/src/utilities/gsec/gsec.h (1.41):
+
+	Fixed regression for test "bugs.core_1076" introduced by some
+	cleanup.  User first/middle/last names have nothing to do with SQL
+	identifiers and their length is limited by 32 characters.
+
+2009-10-05 15:22  hvlad
+
+	* firebird2/builds/win32/msvc8/: instclient.vcproj (1.6),
+	instsvc.vcproj (1.6):
+
+	Mark instclient and instsvc with "requireAdministrator" execution
+	level as its really requires administrative privileges. Note,
+	instreg not requires such privileges.
+
+2009-10-05 15:21  hvlad
+
+	* firebird2/builds/win32/msvc8/firebird2.vsprops (1.3):
+
+	Mark all executable's with "asInvoker" execution level. It avoid
+	virtualization in Vista and Windows 7
+
+2009-10-05 15:19  hvlad
+
+	* firebird2/builds/win32/msvc8/: asInvoker.manifest (1.1),
+	requireAdministrator.manifest (1.1),
+	requireAdministratorManifest.vsprops (1.1):
+
+	Manifests and property sheet for VSVC8
+
 2009-10-05 12:27  hvlad
 
 	* firebird2/src/jrd/UserManagement.cpp (1.13):
