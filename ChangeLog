@@ -1,3 +1,13 @@
+2009-10-05 17:35  paulbeach
+
+	* firebird2/src/install/arch-specific/darwin/: Makefile.in
+	(1.2.2.13), installer_background.jpg (1.1.2.1),
+	installer_background.pdf (1.1.2.3), installer_background.psd
+	(1.1.2.3):
+
+	Correct the corrupt background installer image problem on Mac OSX
+	10.6 while I remember
+
 2009-09-09 17:31  paulbeach
 
 	* firebird2/src/jrd/flu.cpp (1.34.2.7):
