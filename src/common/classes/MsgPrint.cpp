@@ -260,8 +260,9 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 					else if (pos >= 0 && pos <= 9)
 					{
 						// Show the missing or out of range param number.
-						const char s[3] = {iter[0], iter[1], '?'};
-						out_bytes += out_stream.write(s, 3);
+						out_bytes += MsgPrint(out_stream, 
+							"<Missing arg #@1 - possibly status vector overflow>", 
+							SafeArg() << pos);
 					}
 					else // Something not a number following @, invalid.
 						out_bytes += out_stream.write("(error)", 7);
