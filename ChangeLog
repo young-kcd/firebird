@@ -1,3 +1,22 @@
+2009-10-07 11:39  robocop
+
+	* firebird2/src/jrd/why.cpp (1.263):
+
+	Misc comments.
+
+2009-10-07 10:22  alexpeshkoff
+
+	* firebird2/src/common/classes/MsgPrint.cpp (1.14):
+
+	Fixed CORE-2669: Enhance diagnostics in case of status vector
+	overflow
+
+2009-10-06 14:51  alexpeshkoff
+
+	* firebird2/src/common/classes/Hash.h (1.5):
+
+	Cleanup
+
 2009-10-06 12:57  hvlad
 
 	* firebird2/builds/win32/make_all.bat (1.59):
