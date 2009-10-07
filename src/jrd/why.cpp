@@ -1677,7 +1677,7 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
  **************************************
  *
  * Functional description
- *	Abort a partially completed blob.
+ *	Close a blob opened either for reading or writing (creation).
  *
  **************************************/
 	Status status(user_status);
@@ -3802,7 +3802,7 @@ ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Abort a partially completed blob.
+ *	Get a segment from a blob opened for reading.
  *
  **************************************/
 	Status status(user_status);
@@ -4028,7 +4028,7 @@ ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Abort a partially completed blob.
+ *	Put a segment in a blob opened for writing (creation).
  *
  **************************************/
 	Status status(user_status);
@@ -4067,7 +4067,7 @@ ISC_STATUS API_ROUTINE GDS_PUT_SLICE(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Snatch a slice of an array.
+ *	Put a slice in an array.
  *
  **************************************/
 	Status status(user_status);
