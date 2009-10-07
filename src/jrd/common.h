@@ -172,6 +172,16 @@
 #endif  // __s390x__
 #endif  // __s390__
 
+#ifdef SH
+#define IMPLEMENTATION  isc_info_db_impl_linux_sh /* 80  */
+#define RISC_ALIGNMENT
+#endif /* sh */
+
+#ifdef SHEB
+#define IMPLEMENTATION  isc_info_db_impl_linux_sheb /* 81  */
+#define RISC_ALIGNMENT
+#endif /* sheb */
+
 #endif /* LINUX */
 
 

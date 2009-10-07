@@ -223,7 +223,9 @@ static const TEXT* const impl_implementation[] =
 	"Firebird/linux IA64",			// 76
 	"Firebird/Darwin/PowerPC64",	// 77
 	"Firebird/linux s390x",			// 78
-	"Firebird/linux s390"			// 79
+	"Firebird/linux s390",			// 79
+	"Firebird/linux SH",			// 80
+	"Firebird/linux SHEB"			// 81
 };
 
 
