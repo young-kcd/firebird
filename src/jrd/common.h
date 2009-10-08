@@ -164,6 +164,16 @@
 #define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
+#ifdef SH
+#define IMPLEMENTATION  isc_info_db_impl_linux_sh /* 80  */
+#define RISC_ALIGNMENT
+#endif /* sh */
+
+#ifdef SHEB
+#define IMPLEMENTATION  isc_info_db_impl_linux_sheb /* 81  */
+#define RISC_ALIGNMENT
+#endif /* sheb */
+
 #endif /* LINUX */
 
 
