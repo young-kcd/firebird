@@ -151,6 +151,14 @@
 #define RISC_ALIGNMENT
 #endif // IA64
 
+#ifdef __s390__
+#ifdef __s390x__
+#define IMPLEMENTATION  isc_info_db_impl_linux_s390x    // 78
+#else
+#define IMPLEMENTATION  isc_info_db_impl_linux_s390     // 79
+#endif  // __s390x__
+#endif  // __s390__
+
 #define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
