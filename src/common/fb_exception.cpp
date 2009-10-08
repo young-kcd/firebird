@@ -111,6 +111,10 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 	}
 }
 	
+// ********************************* Exception *******************************
+
+Exception::~Exception() throw() { }
+
 /********************************* status_exception *******************************/
 
 status_exception::status_exception() throw() : 
@@ -240,6 +244,11 @@ ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, St
 	return status_vector[1];
 }
 
+const char* status_exception::what() const throw()
+{
+	return "Firebird::status_exception";
+}
+
 /********************************* BadAlloc ****************************/
 
 void BadAlloc::raise()
@@ -256,6 +265,11 @@ ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 	*sv++ = isc_arg_end;
 
 	return status_vector[1];
+}
+
+const char* BadAlloc::what() const throw()
+{
+	return "Firebird::BadAlloc";
 }
 
 /********************************* LongJump ****************************/
@@ -289,6 +303,11 @@ ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 	*/
 	
 	return status_vector[1];
+}
+
+const char* LongJump::what() const throw()
+{
+	return "Firebird::LongJump";
 }
 
 /********************************* system_call_failed ****************************/
@@ -331,19 +350,15 @@ fatal_exception::fatal_exception(const char* message) :
 	set_status(temp, false);
 }
 
-// Moved to the header due to gpre. Gpre non-static can't receive it, but we
-// want to avoid problems with picky compilers that can't find what().
-// We can't link this file into normal gpre.
-// Keep in sync with the constructor above, please; "message" becomes 4th element
-// after initialization of status vector.
-//const char* fatal_exception::what() const throw()
-//{
-//	return reinterpret_cast<const char*>(value()[3]);
-//}
-
 void fatal_exception::raise(const char* message)
 {
 	throw fatal_exception(message);
+}
+
+// after initialization of status vector in constructor.
+const char* fatal_exception::what() const throw()
+{
+	return reinterpret_cast<const char*>(value()[3]);
 }
 
 /************************** exception handling routines ***************************/

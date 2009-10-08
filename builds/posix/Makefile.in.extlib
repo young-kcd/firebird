@@ -85,8 +85,7 @@ else
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 endif
 # ib_util
-# this is plain-C library, therefore CLIENTLIB_LINK 
-# without STATIC_CXXSUPPORT_LIB is used
+# this is plain-C library, therefore use CLIENTLIB_LINK 
 
 lib_ib_util: $(LIBIBUTIL_SO)
 
