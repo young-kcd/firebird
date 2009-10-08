@@ -1,3 +1,17 @@
+2009-10-08 02:21  asfernandes
+
+	* firebird2/src/common/classes/MsgPrint.cpp (1.15):
+
+	Misc
+
+2009-10-07 15:29  alexpeshkoff
+
+	* firebird2/: configure.in (1.368), src/jrd/common.h (1.221),
+	src/jrd/inf_pub.h (1.33), src/jrd/pag.cpp (1.224), src/jrd/utl.cpp
+	(1.141):
+
+	Port to Renesas SH (linux) by Nobuhiro Iwamatsu
+
 2009-10-07 11:39  robocop
 
 	* firebird2/src/jrd/why.cpp (1.263):
