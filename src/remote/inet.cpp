@@ -3039,7 +3039,8 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 
 	if (!n)
 	{
-		inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
+		if (!(port->port_flags & PORT_detached))
+			inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
 		return false;
 	}
 
