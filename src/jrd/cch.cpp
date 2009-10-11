@@ -119,6 +119,8 @@ static void down_grade(thread_db*, BufferDesc*);
 #endif
 static void expand_buffers(thread_db*, ULONG);
 static BufferDesc* get_buffer(thread_db*, const PageNumber, LATCH, SSHORT);
+static int get_related(BufferDesc*, PagesArray&, int, const ULONG);
+static ULONG get_prec_walk_mark(BufferControl*);
 static void invalidate_and_release_buffer(thread_db*, BufferDesc*);
 static SSHORT latch_bdb(thread_db*, LATCH, BufferDesc*, const PageNumber, SSHORT);
 static SSHORT lock_buffer(thread_db*, BufferDesc*, const SSHORT, const SCHAR);
@@ -130,7 +132,7 @@ static void prefetch_init(Prefetch*, thread_db*);
 static void prefetch_io(Prefetch*, ISC_STATUS *);
 static void prefetch_prologue(Prefetch*, SLONG *);
 #endif
-static SSHORT related(const BufferDesc*, const BufferDesc*, SSHORT);
+static SSHORT related(BufferDesc*, const BufferDesc*, SSHORT, const ULONG);
 static void release_bdb(thread_db*, BufferDesc*, const bool, const bool, const bool);
 static void unmark(thread_db*, WIN*);
 static bool writeable(BufferDesc*);
@@ -278,7 +280,7 @@ const PageNumber FREE_PAGE(DB_PAGE_SPACE,		-3);
 const PageNumber CHECKPOINT_PAGE(DB_PAGE_SPACE,	-4);
 const PageNumber MIN_PAGE_NUMBER(DB_PAGE_SPACE,	-5);
 
-const int PRE_SEARCH_LIMIT	= 100;
+const int PRE_SEARCH_LIMIT	= 256;
 const int PRE_EXISTS		= -1;
 const int PRE_UNKNOWN		= -2;
 
@@ -1538,6 +1540,39 @@ SLONG CCH_get_incarnation(WIN* window)
  *
  **************************************/
 	return window->win_bdb->bdb_incarnation;
+}
+
+
+void CCH_get_related(thread_db* tdbb, PageNumber page, PagesArray &lowPages)
+{
+/**************************************
+ *
+ *	C C H _ g e t _ r e l a t e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Collect all pages, dependent on given page (i.e. all pages which must be
+ *  written after given page). To do it, walk low part of precedence graph
+ *  starting from given page and put its numbers into array. 
+ *
+ **************************************/
+
+	Database* dbb = tdbb->getDatabase();
+	BufferControl* bcb = dbb->dbb_bcb;
+	QUE mod_que = &bcb->bcb_rpt[page.getPageNum() % bcb->bcb_count].bcb_page_mod;
+
+	QUE que_inst;
+	for (que_inst = mod_que->que_forward; que_inst != mod_que; que_inst = que_inst->que_forward)
+	{
+		BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
+		if (bdb->bdb_page == page) 
+		{
+			const ULONG mark = get_prec_walk_mark(bcb);
+			get_related(bdb, lowPages, PRE_SEARCH_LIMIT, mark);
+			return;
+		}
+	}
 }
 
 
@@ -4341,7 +4376,8 @@ static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 
 	if (QUE_NOT_EMPTY(high->bdb_lower))
 	{
-		const SSHORT relationship = related(low, high, PRE_SEARCH_LIMIT);
+		const ULONG mark = get_prec_walk_mark(bcb);
+		const SSHORT relationship = related(low, high, PRE_SEARCH_LIMIT, mark);
 		if (relationship == PRE_EXISTS)
 		{
 			//PRE_MUTEX_RELEASE;
@@ -4367,7 +4403,8 @@ static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 
 	if (QUE_NOT_EMPTY(low->bdb_lower))
 	{
-		const SSHORT relationship = related(high, low, PRE_SEARCH_LIMIT);
+		const ULONG mark = get_prec_walk_mark(bcb);
+		const SSHORT relationship = related(high, low, PRE_SEARCH_LIMIT, mark);
 		if (relationship == PRE_EXISTS || relationship == PRE_UNKNOWN)
 		{
 			const PageNumber low_page = low->bdb_page;
@@ -5076,6 +5113,78 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 		}
 	}
 }
+
+
+static ULONG get_prec_walk_mark(BufferControl* bcb)
+{
+/**************************************
+ *
+ *	g e t _ p r e c _ w a l k _ m a r k
+ *
+ **************************************
+ *
+ * Functional description
+ *  Get next mark for walking precedence graph.
+ *
+ **************************************/
+	if (++bcb->bcb_prec_walk_mark == 0)
+	{
+		for (ULONG i = 0; i < bcb->bcb_count; i++) {
+			bcb->bcb_rpt[i].bcb_bdb->bdb_prec_walk_mark = 0;
+		}
+
+		bcb->bcb_prec_walk_mark = 1;
+	}
+	return bcb->bcb_prec_walk_mark;
+}
+
+
+static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const ULONG mark)
+{
+/**************************************
+ *
+ *	g e t _ r e l a t e d
+ *
+ **************************************
+ *
+ * Functional description
+ *  Recursively walk low part of precedence graph of given buffer and put 
+ *  low pages numbers into array. 
+ *
+ **************************************/
+	const struct que* base = &bdb->bdb_lower;
+	for (const struct que* que_inst = base->que_forward; que_inst != base; que_inst = que_inst->que_forward)
+	{
+		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
+		if (precedence->pre_flags & PRE_cleared)
+			continue;
+
+		BufferDesc *low = precedence->pre_low;
+		if (low->bdb_prec_walk_mark == mark)
+			continue;
+
+		if (!--limit)
+			return 0;
+
+		const SLONG lowPage = low->bdb_page.getPageNum();
+		size_t pos;
+		if (!lowPages.find(lowPage, pos))
+			lowPages.insert(pos, lowPage);
+
+		if (QUE_NOT_EMPTY(low->bdb_lower))
+		{
+			limit = get_related(low, lowPages, limit, mark);
+			if (!limit)
+				return 0;
+		}
+		else
+			low->bdb_prec_walk_mark = mark;
+	}
+
+	bdb->bdb_prec_walk_mark = mark;
+	return limit;
+}
+
 
 static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
 {
@@ -5835,7 +5944,7 @@ static void prefetch_prologue(Prefetch* prefetch, SLONG* start_page)
 #endif // CACHE_READER
 
 
-static SSHORT related(const BufferDesc* low, const BufferDesc* high, SSHORT limit)
+static SSHORT related(BufferDesc* low, const BufferDesc* high, SSHORT limit, const ULONG mark)
 {
 /**************************************
  *
@@ -5860,16 +5969,26 @@ static SSHORT related(const BufferDesc* low, const BufferDesc* high, SSHORT limi
 		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
 		if (!(precedence->pre_flags & PRE_cleared))
 		{
+			if (precedence->pre_hi->bdb_prec_walk_mark == mark)
+				continue;
+
 			if (precedence->pre_hi == high) {
 				return PRE_EXISTS;
 			}
-			limit = related(precedence->pre_hi, high, limit);
-			if (limit == PRE_EXISTS || limit == PRE_UNKNOWN) {
-				return limit;
+
+			if (QUE_NOT_EMPTY(precedence->pre_hi->bdb_higher))
+			{
+				limit = related(precedence->pre_hi, high, limit, mark);
+				if (limit == PRE_EXISTS || limit == PRE_UNKNOWN) {
+					return limit;
+				}
 			}
+			else
+				precedence->pre_hi->bdb_prec_walk_mark = mark;
 		}
 	}
 
+	low->bdb_prec_walk_mark = mark;
 	return limit;
 }
 
@@ -6136,16 +6255,8 @@ static inline bool writeable(BufferDesc* bdb)
 	}
 
 	BufferControl* bcb = bdb->bdb_dbb->dbb_bcb;
-	if (++bcb->bcb_writeable_mark == 0)
-	{
-		for (ULONG i = 0; i < bcb->bcb_count; i++) {
-			bcb->bcb_rpt[i].bcb_bdb->bdb_writeable_mark = 0;
-		}
-
-		bcb->bcb_writeable_mark = 1;
-	}
-
-	return is_writeable(bdb, bcb->bcb_writeable_mark);
+	const ULONG mark = get_prec_walk_mark(bcb);
+	return is_writeable(bdb, mark);
 }
 
 
@@ -6179,17 +6290,17 @@ static bool is_writeable(BufferDesc* bdb, const ULONG mark)
 				return false;
 			}
 
-			if (high->bdb_writeable_mark != mark)
+			if (high->bdb_prec_walk_mark != mark)
 			{
 				if (QUE_EMPTY(high->bdb_higher))
-					high->bdb_writeable_mark = mark;
+					high->bdb_prec_walk_mark = mark;
 				else if (!is_writeable(high, mark))
 					return false;
 			}
 		}
 	}
 
-	bdb->bdb_writeable_mark = mark;
+	bdb->bdb_prec_walk_mark = mark;
 	return true;
 }
 
@@ -6558,3 +6669,5 @@ static void clear_dirty_flag(thread_db* tdbb, BufferDesc* bdb)
 		tdbb->getDatabase()->dbb_backup_manager->unlockDirtyPage(tdbb);
 	}
 }
+
+

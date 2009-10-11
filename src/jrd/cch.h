@@ -114,7 +114,7 @@ public:
 	SSHORT		bcb_free_minimum;	// Threshold to activate cache writer
 	ULONG		bcb_count;			// Number of buffers allocated
 	ULONG		bcb_checkpoint;		// Count of buffers to checkpoint
-	ULONG		bcb_writeable_mark;	// mark value used in precedence graph walk
+	ULONG		bcb_prec_walk_mark;	// mark value used in precedence graph walk
 #ifdef SUPERSERVER_V2
 	PageBitmap*	bcb_prefetch;		// Bitmap of pages to prefetch
 #endif
@@ -171,7 +171,7 @@ public:
 	SSHORT		bdb_use_count;			// Number of active users
 	SSHORT		bdb_scan_count;			// concurrent sequential scans
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
-	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk
+	ULONG		bdb_prec_walk_mark;		// mark value used in precedence graph walk
 	que			bdb_shared;				// shared latches queue
 };
 
@@ -307,6 +307,8 @@ public:
 
 const int PRF_active	= 1;		// prefetch block currently in use
 #endif // SUPERSERVER_V2
+
+typedef Firebird::SortedArray<SLONG, Firebird::InlineStorage<SLONG, 256>, SLONG> PagesArray;
 
 } //namespace Jrd
 

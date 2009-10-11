@@ -3028,6 +3028,8 @@ static rhd* locate_space(thread_db* tdbb,
 
 	// If there is a preferred page, try there first
 
+	PagesArray lowPages(*getDefaultMemoryPool());
+	SLONG dp_primary = 0;
 	if (type == DPM_secondary)
 	{
 		USHORT pp_sequence;
@@ -3037,13 +3039,16 @@ static rhd* locate_space(thread_db* tdbb,
 			get_pointer_page(tdbb, relation, relPages, window, pp_sequence, LCK_read);
 		if (ppage)
 		{
-			SLONG dp_number;
-			if (slot < ppage->ppg_count && ((dp_number = ppage->ppg_page[slot])) )
+			if (slot < ppage->ppg_count && ((dp_primary = ppage->ppg_page[slot])) )
 			{
-				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
+				CCH_HANDOFF(tdbb, window, dp_primary, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
 				if (space)
 					return (rhd*) space;
+
+				if (!window->win_page.isTemporary()) {
+					CCH_get_related(tdbb, window->win_page, lowPages);
+				}
 			}
 			else {
 				CCH_RELEASE(tdbb, window);
@@ -3068,6 +3073,11 @@ static rhd* locate_space(thread_db* tdbb,
 		for (USHORT slot = ppage->ppg_min_space; slot < ppage->ppg_count; slot++)
 		{
 			const SLONG dp_number = ppage->ppg_page[slot];
+
+			// hvlad: avoid creating circle in precedence graph, if possible
+			if (type == DPM_secondary && lowPages.exist(dp_number))
+				continue;
+
 			if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
 			{
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);

@@ -44,6 +44,7 @@ void		CCH_fini(Jrd::thread_db*);
 void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
 bool		CCH_free_page(Jrd::thread_db*);
 SLONG		CCH_get_incarnation(Jrd::win*);
+void		CCH_get_related(Jrd::thread_db*, Jrd::PageNumber, Jrd::PagesArray&);
 Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SCHAR, SSHORT, const bool);
 void		CCH_init(Jrd::thread_db*, ULONG);
 void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT, USHORT);
