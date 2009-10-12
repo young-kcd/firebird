@@ -17,6 +17,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-2656
+        "Error reading data from the connection" in firebird.log (on disconnect)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2651
         Incorrect "string right truncation" error with NONE column and multi-byte connection charset
       Contributor(s):
@@ -230,6 +235,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-2672
+        Reduce precedence writes for updates
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Improvement CORE-2644
         Make lock table expandable on HPUX
       Contributor(s):
@@ -293,6 +303,12 @@
         Remote shadows on NT-based systems
       Contributor(s):
         Nickolay Samofatov <skidder at users.sourceforge.net>
+
+    * New feature CORE-2655
+        Add support for Linux/sh4 (Renesas SH) platform
+      Contributor(s):
+        Nobuhiro Iwamatsu <iwamatsu at nigauri.org>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * New feature CORE-2636
         Add support for the GB 18030 character set (Chinese national standard)
