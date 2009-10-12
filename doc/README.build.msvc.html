@@ -11,13 +11,13 @@
 <BODY>
 <H2>VisualStudio build Notes</H2>
 <hr/>
-Last Update: May 27 2006<br>
+Last Update: Oct 12 2008<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h3>0.-Introduction</h3>
 <blockquote>
 
-<p>There are two VisualStudio builds, msvc6 and msvc7. The msvc7 build is the official build of FB in win32.</p>
+<p>There are two VisualStudio builds, msvc8 and msvc9. The msvc8 build is the official build of FB in win32.</p>
 <p>Under the directory where you put Firebird2 sources you will see the following directories</p>
 <ul>
 <li>builds</li>
@@ -60,7 +60,7 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <p>To prepare the standard msvc build of FB you need:</p>
 <ul>
-<li>Microsoft VisualStudio 6 or 7.</li>
+<li>Microsoft VisualStudio 8 (2005) or 9 (2008).</li>
 <li>sed unix utility</li>
 </ul>
 
@@ -77,9 +77,8 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 
 <h4>2.1.-Visual Studio</h4>
 <ol>
-<li>Install VisualStudio 6/7</li>
-<li>If you use VisualStudio 6, before building Firebird and its tools, you need to apply some patches from the following site<br>
-<a href="http://www.dinkumware.com/vc_fixes.html">http://www.dinkumware.com/vc_fixes.html</a>
+<li>Install VisualStudio 8/9</li>
+<li>You can try to compile it with <a href=http://www.microsoft.com/express/vc/>Visual Studio Express</a> but it will no be able to build the <a href=http://www.nabble.com/building-head-with-visual-studio-2008-%28vc9%29-td25620414.html>control panel applet</a> but the server building is ok <br>
 </li>
 </ol>
 
