@@ -230,17 +230,6 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
-  sh*-*-linux*)
-    MAKEFILE_PREFIX=linux_generic
-    INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    AC_DEFINE(SH, 1, [Architecture is little-endian sh4])
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    ;;
-
   sh*eb-*-linux*)
     MAKEFILE_PREFIX=linux_generic
     INSTALL_PREFIX=linux
@@ -252,6 +241,17 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
+
+  sh*-*-linux*)
+    MAKEFILE_PREFIX=linux_generic
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    AC_DEFINE(SH, 1, [Architecture is little-endian sh4])
+    LOCK_MANAGER_FLG=Y
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    ;;
 
   *-*-linux*)
     MAKEFILE_PREFIX=linux_generic
