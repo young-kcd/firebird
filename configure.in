@@ -796,6 +796,9 @@ if test "$ac_cv_sys_file_offset_bits" = "no"; then
 fi
 
 AC_CHECK_SIZEOF(void *)
+VOID_PTR_SIZE=$ac_cv_sizeof_void_p
+AC_SUBST(VOID_PTR_SIZE)
+
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(size_t)
 AC_CHECK_TYPES([socklen_t],,,[#include <sys/socket.h>])
