@@ -1,3 +1,48 @@
+2009-10-12 10:20  alexpeshkoff
+
+	* firebird2/configure.in (1.369):
+
+	Correct system detection - thanks to Adriano
+
+2009-10-12 08:58  dimitr
+
+	* firebird2/doc/README.user.embedded (1.6):
+
+	Corrections for v2.5.
+
+2009-10-12 08:42  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.292):
+
+	Optimization for the large number of columns, basically mirroring
+	the one inside var_info().
+
+2009-10-12 08:39  dimitr
+
+	* firebird2/src/jrd/dpm.epp (1.103):
+
+	Let's better use a context pool, if required.
+
+2009-10-12 07:22  dimitr
+
+	* firebird2/doc/WhatsNew (1.191):
+
+	Update.
+
+2009-10-12 00:15  hvlad
+
+	* firebird2/src/jrd/: cch.cpp (1.242), cch.h (1.52), cch_proto.h
+	(1.33), dpm.epp (1.102):
+
+	Improvement CORE-2672 :  Reduce precedence writes
+
+2009-10-11 21:54  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.298):
+
+	Fixed bug CORE-2656 :  Error reading data from the connection. On
+	disconnect Thanks to Oleg Matveyev for test case and assistance
+
 2009-10-08 02:21  asfernandes
 
 	* firebird2/src/common/classes/MsgPrint.cpp (1.15):
