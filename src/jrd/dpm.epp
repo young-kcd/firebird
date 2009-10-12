@@ -3028,7 +3028,7 @@ static rhd* locate_space(thread_db* tdbb,
 
 	// If there is a preferred page, try there first
 
-	PagesArray lowPages(*getDefaultMemoryPool());
+	PagesArray lowPages;
 	SLONG dp_primary = 0;
 	if (type == DPM_secondary)
 	{
