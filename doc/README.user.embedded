@@ -23,7 +23,7 @@ Firebird 2.0 Embedded Server notes
     i.e. NOT a TCP/IP connection string that includes 
     the server name "localhost" or IP address 127.0.0.1. 
 
-    The embedded server supports only the local connect
+    The embedded server supports only the local connection
     to a database file path without a server name.
 
     The database file can be accessed by multiple client
