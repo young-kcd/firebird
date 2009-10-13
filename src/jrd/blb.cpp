@@ -309,16 +309,16 @@ blb* BLB_create2(thread_db* tdbb,
 			filter_required = true;
 		}
 	}
-	else if (to == isc_blob_text && (from_charset != to_charset))
+	else if (to == isc_blob_text && from_charset != to_charset)
 	{
 		if (from_charset == CS_dynamic)
 			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->getAttachment()->att_charset;
 
-		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
-			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
-			(from_charset != to_charset))
+		if (to_charset != CS_NONE && from_charset != CS_NONE &&
+			to_charset != CS_BINARY && from_charset != CS_BINARY &&
+			from_charset != to_charset)
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
@@ -1411,16 +1411,16 @@ blb* BLB_open2(thread_db* tdbb,
 		filter = find_filter(tdbb, from, to);
 		filter_required = true;
 	}
-	else if (to == isc_blob_text && (from_charset != to_charset))
+	else if (to == isc_blob_text && from_charset != to_charset)
 	{
 		if (from_charset == CS_dynamic)
 			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->getAttachment()->att_charset;
 
-		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
-			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
-			(from_charset != to_charset))
+		if (to_charset != CS_NONE && from_charset != CS_NONE &&
+			to_charset != CS_BINARY && from_charset != CS_BINARY &&
+			from_charset != to_charset)
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
