@@ -320,8 +320,7 @@ blb* BLB_create2(thread_db* tdbb,
 			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
 			(from_charset != to_charset))
 		{
-			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
-			filter->blf_filter = filter_transliterate_text;
+			filter = find_filter(tdbb, from, to);
 			filter_required = true;
 		}
 	}
@@ -1423,8 +1422,7 @@ blb* BLB_open2(thread_db* tdbb,
 			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
 			(from_charset != to_charset))
 		{
-			filter = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
-			filter->blf_filter = filter_transliterate_text;
+			filter = find_filter(tdbb, from, to);
 			filter_required = true;
 		}
 	}
