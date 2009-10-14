@@ -134,6 +134,15 @@ void IbUtil::initialize()
 
 	string message[4];		// To suppress logs when correct library is found
 
+#ifdef WIN_NT
+	// using bin folder 
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_BIN, LIBNAME), message[1]))
+		return;
+
+	// using firebird root (takes into an account environment settings)
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, LIBNAME), message[2]))
+		return;
+#else
 	// using install directory
 	if (tryLibrary(ibUtilStartup().libUtilPath, message[0]))
 		return;
@@ -145,6 +154,7 @@ void IbUtil::initialize()
 	// using libraries directory
 	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, LIBNAME), message[2]))
 		return;
+#endif // WIN_NT
 
 	// using default paths
 	if (tryLibrary(LIBNAME, message[3]))
