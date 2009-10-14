@@ -139,7 +139,7 @@ void IbUtil::initialize()
 	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_BIN, LIBNAME), message[1]))
 		return;
 
-	// using firebird root (takes into an account environment settings)
+	// using firebird root (takes into account environment settings)
 	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, LIBNAME), message[2]))
 		return;
 #else
