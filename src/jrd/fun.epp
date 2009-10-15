@@ -135,7 +135,7 @@ void IbUtil::initialize()
 	string message[4];		// To suppress logs when correct library is found
 
 #ifdef WIN_NT
-	// using bin folder 
+	// using bin folder
 	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_BIN, LIBNAME), message[1]))
 		return;
 

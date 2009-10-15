@@ -1554,7 +1554,7 @@ void CCH_get_related(thread_db* tdbb, PageNumber page, PagesArray &lowPages)
  * Functional description
  *	Collect all pages, dependent on given page (i.e. all pages which must be
  *  written after given page). To do it, walk low part of precedence graph
- *  starting from given page and put its numbers into array. 
+ *  starting from given page and put its numbers into array.
  *
  **************************************/
 
@@ -1566,7 +1566,7 @@ void CCH_get_related(thread_db* tdbb, PageNumber page, PagesArray &lowPages)
 	for (que_inst = mod_que->que_forward; que_inst != mod_que; que_inst = que_inst->que_forward)
 	{
 		BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
-		if (bdb->bdb_page == page) 
+		if (bdb->bdb_page == page)
 		{
 			const ULONG mark = get_prec_walk_mark(bcb);
 			get_related(bdb, lowPages, PRE_SEARCH_LIMIT, mark);
@@ -5148,8 +5148,8 @@ static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const U
  **************************************
  *
  * Functional description
- *  Recursively walk low part of precedence graph of given buffer and put 
- *  low pages numbers into array. 
+ *  Recursively walk low part of precedence graph of given buffer and put
+ *  low pages numbers into array.
  *
  **************************************/
 	const struct que* base = &bdb->bdb_lower;
