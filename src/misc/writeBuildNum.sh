@@ -3,7 +3,7 @@
 # This file is used both to rebuild the header file and to set the
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.25939 2009-10-15 09:32:47 hvlad Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.25940 2009-10-15 10:04:54 robocop Exp $"
 
 BuildType=T
 MajorVer=3
@@ -69,7 +69,7 @@ eof
     Result=$?
     if [ $Result -lt 0 ]
        then
-         echo "error compareing $tempfile and $headerFile"
+         echo "error comparing $tempfile and $headerFile"
     elif [ $Result -gt 0 ]
       then
       echo "updating header file $headerFile"
