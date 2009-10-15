@@ -819,6 +819,9 @@ public:
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
+#ifdef CMP_DEBUG
+		csb_dump(p),
+#endif
 		csb_external(p),
 		csb_access(p),
 		csb_resources(p),
@@ -848,6 +851,23 @@ public:
 		}
 		return csb_n_stream++;
 	}
+
+#ifdef CMP_DEBUG
+	void dump(const char* format, ...)
+	{
+		va_list params;
+		va_start(params, format);
+
+		Firebird::string s;
+		s.vprintf(format, params);
+
+		va_end(params);
+
+		csb_dump += s;
+	}
+
+	Firebird::string csb_dump;
+#endif
 
 	BlrReader		csb_blr_reader;
 	jrd_nod*		csb_node;

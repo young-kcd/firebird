@@ -612,6 +612,26 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		request = CMP_make_request(tdbb, csb, internal_flag);
 		new_pool->setStatsGroup(request->req_memory_stats);
 
+#ifdef CMP_DEBUG
+		if (csb->csb_dump.hasData())
+		{
+			csb->dump("streams:\n");
+			for (unsigned i = 0; i < csb->csb_n_stream; ++i)
+			{
+				const CompilerScratch::csb_repeat& s = csb->csb_rpt[i];
+				csb->dump(
+					"\t%2d - view_stream: %2d; alias: %s; relation: %s; procedure: %s; view: %s\n",
+					i, s.csb_view_stream,
+					(s.csb_alias ? s.csb_alias->c_str() : ""),
+					(s.csb_relation ? s.csb_relation->rel_name.c_str() : ""),
+					(s.csb_procedure ? s.csb_procedure->prc_name.c_str() : ""),
+					(s.csb_view ? s.csb_view->rel_name.c_str() : ""));
+			}
+
+			cmp_trace("\n%s\n", csb->csb_dump.c_str());
+		}
+#endif
+
 		if (internal_flag) {
 			request->req_flags |= req_internal;
 		}
@@ -2848,8 +2868,14 @@ static jrd_nod* copy(thread_db* tdbb,
 				if (field->fld_source)
 					field_id = (USHORT)(IPTR) field->fld_source->nod_arg[e_fld_id];
 			}
+
 			if (remap)
+			{
+#ifdef CMP_DEBUG
+				csb->dump("remap nod_field: %d -> %d\n", stream, remap[stream]);
+#endif
 				stream = remap[stream];
+			}
 
 			jrd_nod* temp_node = PAR_gen_field(tdbb, stream, field_id);
 			if (input->nod_type == nod_field && input->nod_arg[e_fld_default_value])
@@ -2872,6 +2898,12 @@ static jrd_nod* copy(thread_db* tdbb,
 			const UCHAR streamCount = (UCHAR)(IPTR) input->nod_arg[e_derived_expr_stream_count];
 			const USHORT* oldStreamList = (USHORT*) input->nod_arg[e_derived_expr_stream_list];
 			USHORT* newStreamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
+
+#ifdef CMP_DEBUG
+			csb->dump("remap nod_derived_expr:\n");
+			for (UCHAR i = 0; i < streamCount; ++i)
+				csb->dump("\t%d: %d -> %d\n", i, oldStreamList[i], remap[oldStreamList[i]]);
+#endif
 
 			for (UCHAR i = 0; i < streamCount; ++i)
 				newStreamList[i] = remap[oldStreamList[i]];
@@ -3170,7 +3202,12 @@ static jrd_nod* copy(thread_db* tdbb,
 	case nod_dbkey:
 		stream = (USHORT)(IPTR) input->nod_arg[0];
 		if (remap)
+		{
+#ifdef CMP_DEBUG
+			csb->dump("remap nod_dbkey: %d -> %d\n", stream, remap[stream]);
+#endif
 			stream = remap[stream];
+		}
 
 		node = PAR_make_node(tdbb, 1);
 		node->nod_type = input->nod_type;
@@ -3888,6 +3925,13 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
 			NodeStack stack;
 
+#ifdef CMP_DEBUG
+			csb->dump("expand nod_derived_expr:");
+			for (UCHAR i = 0; i < streamCount; ++i)
+				csb->dump(" %d", streamList[i]);
+			csb->dump("\n");
+#endif
+
 			for (UCHAR i = 0; i < streamCount; ++i)
 			{
 				mark_variant(tdbb, csb, streamList[i]);
@@ -3899,6 +3943,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
 			node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
+
+#ifdef CMP_DEBUG
+			for (NodeStack::iterator i(stack); i.hasData(); ++i)
+				csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
+			csb->dump("\n");
+#endif
 
 			for (NodeStack::iterator i(stack); i.hasData(); ++i)
 				*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
@@ -4004,6 +4054,10 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type, false);
 
+#ifdef CMP_DEBUG
+			csb->dump("expand nod_dbkey: %d\n", stream);
+#endif
+
 			if (stack.hasData())
 			{
 				const size_t stackCount = stack.getCount();
@@ -4018,6 +4072,10 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 					for (NodeStack::iterator i(stack); i.hasData(); ++i)
 					{
+#ifdef CMP_DEBUG
+						csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
+#endif
+
 						jrd_nod* new_node = PAR_make_node(tdbb, 3);
 						new_node->nod_type = nod_value_if;
 						new_node->nod_count = 3;
@@ -4091,8 +4149,16 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					node = new_node;
 				}
 
+#ifdef CMP_DEBUG
+				csb->dump("\n");
+#endif
+
 				return node;
 			}
+
+#ifdef CMP_DEBUG
+			csb->dump("\n");
+#endif
 
 			// The user is asking for the dbkey/record version of an aggregate.
 			// Humor him with a key filled with zeros.
