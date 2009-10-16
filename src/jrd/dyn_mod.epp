@@ -2166,6 +2166,17 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 				END_FOR;
 
 				CMP_release(tdbb, request2);
+
+				request2 = NULL;
+
+				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+					TRG IN RDB$TRIGGERS
+					WITH TRG.RDB$RELATION_NAME EQ view_name.c_str()
+
+					ERASE TRG;
+				END_FOR
+
+				CMP_release(tdbb, request2);
 			}
 
 			UCHAR verb;
