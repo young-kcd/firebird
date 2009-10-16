@@ -1,3 +1,35 @@
+2009-10-16 09:05  robocop
+
+	* firebird2/src/jrd/exe.h (1.141):
+
+	Misc: cardinality is double.
+
+2009-10-15 18:13  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.354), exe.h (1.140):
+
+	Argh. Fix for the second time problem with line endings
+
+2009-10-15 18:06  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.353), exe.h (1.139):
+
+	Added some debug code to cmp
+
+2009-10-15 11:16  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.260):
+
+	Fixed bug CORE-2684 : Error page NNN is of wrong type (expected 7,
+	found N)
+
+2009-10-15 04:15  asfernandes
+
+	* firebird2/: doc/README.build.msvc.html (1.16), src/jrd/cch.cpp
+	(1.243), src/jrd/dpm.epp (1.104), src/jrd/fun.epp (1.130):
+
+	Misc
+
 2009-10-14 12:22  robocop
 
 	* firebird2/src/jrd/fun.epp (1.129):
