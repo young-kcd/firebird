@@ -919,7 +919,7 @@ public:
 			csb_message(0),
 			csb_format(0),
 			csb_fields(0),
-			csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
+			csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
 			csb_plan(0),
 			csb_map(0),
 			csb_rsb_ptr(0)
