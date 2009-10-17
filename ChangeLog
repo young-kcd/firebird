@@ -1,3 +1,10 @@
+2009-10-16 17:40  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.118):
+
+	Fixed CORE-2685 - ALTER VIEW does not remove the system triggers of
+	view with check option
+
 2009-10-16 09:05  robocop
 
 	* firebird2/src/jrd/exe.h (1.141):
