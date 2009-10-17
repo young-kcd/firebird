@@ -2171,7 +2171,8 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 					TRG IN RDB$TRIGGERS
-					WITH TRG.RDB$RELATION_NAME EQ view_name.c_str()
+					WITH TRG.RDB$RELATION_NAME EQ view_name.c_str() AND
+						 TRG.RDB$SYSTEM_FLAG EQ fb_sysflag_view_check
 
 					ERASE TRG;
 				END_FOR
