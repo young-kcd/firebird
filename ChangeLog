@@ -1,3 +1,9 @@
+2009-10-17 18:32  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.119):
+
+	Fix for my previous commit (CORE-2685)
+
 2009-10-16 17:40  asfernandes
 
 	* firebird2/src/jrd/dyn_mod.epp (1.118):
