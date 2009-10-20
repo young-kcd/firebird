@@ -62,7 +62,7 @@ dnl Test for special ar options?
 AR_OPT_CHECK=false
 
 case "$target" in
-  i686-*-darwin*)
+  i*86-*-darwin*)
     MAKEFILE_PREFIX=darwin_i386
     MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
