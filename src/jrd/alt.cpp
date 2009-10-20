@@ -819,6 +819,21 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 	err(isc_random, isc_arg_string, "CVT_move() private API not supported any more", isc_arg_end);
 }
 
+#ifndef WIN_NT
+// This function was exported earlier for reasons, not completely clear to me.
+// It MUST not be ever exported - looks like I've missed bad commit in CVS.
+// Keep it here to avoid senseless API change.
+enum ast_t
+{
+    AST_dummy
+};
+
+void API_ROUTINE SCH_ast(enum ast_t)
+{
+	// call to this function may be safely ingored
+}
+#endif
+
 #if !defined(SUPERSERVER) || defined(SUPERCLIENT)
 // AP: isc_*_user entrypoints are used only in any kind of embedded
 // server (both posix and windows) and fbclient
