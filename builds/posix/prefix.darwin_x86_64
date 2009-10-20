@@ -16,6 +16,8 @@
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
+#
+# Default build from 10.6
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
 export DYLD_LIBRARY_PATH
