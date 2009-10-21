@@ -5055,16 +5055,15 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 	// left sibling
 	WIN left_window(pageSpaceID, left_number);
 	btree_page* left_page = (btree_page*) CCH_FETCH(tdbb, &left_window, LCK_write, pag_undefined);
-	if ((left_page->btr_header.pag_type != pag_index) ||
-		(left_page->btr_relation != relation_number) ||
-		(left_page->btr_id != (UCHAR)(index_id % 256)) ||
-		(left_page->btr_level != index_level))
+	if (left_page->btr_header.pag_type != pag_index ||
+		left_page->btr_relation != relation_number ||
+		left_page->btr_id != UCHAR(index_id % 256) ||
+		left_page->btr_level != index_level)
 	{
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, &left_window);
 		return contents_above_threshold;
 	}
-
 
 	while (left_page->btr_sibling != window->win_page.getPageNum())
 	{
