@@ -65,12 +65,12 @@ Objectives:
       It's well know in programming world that having code grouped in some way (for example in
       namespaces, units or classes) is a good thing. With standard procedures and functions in the
       database this is not possible. It's possible to group them in different scripts files, but
-      two problems remains:
+      two problems remain:
       1) The grouping is not represented in the database metadata.
       2) They all participate in a flat namespace and all routines are callable by everyone (not
          talking about security permissions here).
     
-    - Facilitate dependency tracking between its internal routines and between others packaged and
+    - Facilitate dependency tracking between its internal routines and between other packaged and
       unpackaged routines.
 
       Firebird packages are divided in two pieces: a header (aka PACKAGE) and a body (aka
@@ -104,7 +104,7 @@ Objectives:
       defining package.
 
       All programming languages have the notion of routine scope. But without some form of grouping,
-      this is not possible. Firebird packages also works as Delphi units in this regard. If a
+      this is not possible. Firebird packages also work as Delphi units in this regard. If a
       routine is not declared on the package header (interface) and is implemented in the body
       (implementation), it becomes a private routine. A private routine can only be called from
       inside its package.
@@ -117,7 +117,7 @@ Syntax rules:
       procedures not declared.
 
 Notes:
-    - DROP PACKAGE drops the package body before drop its header.
+    - DROP PACKAGE drops the package body before dropping its header.
     - UDFs (DECLARE EXTERNAL FUNCTION) are currently not supported inside packages.
 
 Examples:

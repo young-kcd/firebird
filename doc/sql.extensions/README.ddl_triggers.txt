@@ -104,7 +104,7 @@ DDL_TRIGGER context namespace:
 	procedures called by DDL triggers.
 	The DDL_TRIGGER context works like a stack. Before a DDL trigger is fired, it's pushed on that
 	stack the values relative to the executed command. After the trigger finishes, the value is
-	poped. So in the case of cascade DDL statements, when an user DDL command fires a DDL trigger
+	popped. So in the case of cascade DDL statements, when an user DDL command fires a DDL trigger
 	and this trigger executes another DDL command with EXECUTE STATEMENT, the values of DDL_TRIGGER
 	namespace are the ones relative to the command that fired the last DDL trigger on the call
 	stack.
@@ -157,7 +157,7 @@ set term ;!
 ----------------------------------------
 
 
-2) Implement handy-made DDL security. Only certainly users could run DDL commands.
+2) Implement hand-made DDL security. Only certainly users could run DDL commands.
 
 create exception e_access_denied 'Access denied';
 
@@ -247,7 +247,7 @@ commit;
 
 -- Test
 
--- This will be logged one time (as T1 did not exists, RECREATE acts as CREATE) with OK = Y.
+-- This will be logged one time (as T1 did not exist, RECREATE acts as CREATE) with OK = Y.
 recreate table t1 (
     n1 integer,
     n2 integer

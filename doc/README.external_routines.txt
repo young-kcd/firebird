@@ -63,10 +63,10 @@ config example present below).
 
 When Firebird wants to load an external routine (function, procedure or trigger) into its metadata
 cache, it gets (if not already done for the database*) the external engine through the plugin
-external engine factory and ask it for the routine. The plugin used is the one referenced by the
+external engine factory and asks it for the routine. The plugin used is the one referenced by the
 attribute plugin_module of the external engine.
 
-* This is in Super-Server. In [Super-]Classic, different attachments to one database creates
+* This is in Super-Server. In [Super-]Classic, different attachments to one database create
 multiple metadata caches and hence multiple external engine instances.
 
 
@@ -93,8 +93,8 @@ the correspondent plugin_config tag. By default, UDR modules should be on <fbroo
 accordingly to its path attribute in <fbroot>/plugins/udr_engine.conf.
 
 The user library should include FirebirdUdr.h (or FirebirdUdrCpp.h) and link with the udr_engine
-library. Routines are easily defined and registered using some macros, but nothing prevent you of
-doing things manually. A example routine library is implemented in examples/plugins, showing how to
+library. Routines are easily defined and registered using some macros, but nothing prevents you from
+doing things manually. An example routine library is implemented in examples/plugins, showing how to
 write functions, selectable procedures and triggers. Also it shows how to interact with the current
 database through the ISC API.
 
@@ -102,6 +102,6 @@ The UDR routines state (i.e., member variables) are shared between multiple invo
 routine until it's unloaded from the metadata cache. But note that it isolates the instances per
 session, different from the raw interface that shares instances by multiple sessions in SuperServer.
 
-By default, UDR routines uses the same character set specified by the client. They can modify it
+By default, UDR routines use the same character set specified by the client. They can modify it
 overriding the getCharSet method. The chosen character set is valid for communication with the ISC
 library as well as the communications done through the FirebirdExternal API.
