@@ -41,6 +41,7 @@
 #include "../../jrd/RuntimeStatistics.h"
 #include "../../jrd/trace/TraceSession.h"
 
+//// TODO: DDL triggers, packages and external procedures and functions support
 namespace Jrd {
 
 class Database;
@@ -253,7 +254,7 @@ public:
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
 	{}
 
-	virtual const char* getProcName()	{ return m_request->req_procedure->prc_name.c_str(); }
+	virtual const char* getProcName()	{ return m_request->req_procedure->prc_name.identifier.c_str(); }
 	virtual TraceParams* getInputs()	{ return &m_inputs; }
 	virtual PerformanceInfo* getPerf()	{ return m_perf; };
 

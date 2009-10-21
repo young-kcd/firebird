@@ -66,6 +66,7 @@ const USHORT ODS_VERSION9	= 9;		// btree leaf pages are always propagated up
 const USHORT ODS_VERSION10	= 10;		// V6.0 features. SQL delimited idetifier,
 										// SQLDATE, and 64-bit exact numeric type
 const USHORT ODS_VERSION11	= 11;		// Firebird 2.x features
+const USHORT ODS_VERSION12	= 12;		// Firebird 3.x features
 
 // ODS minor version -- minor versions ARE compatible, but may be
 // increasingly functional.  Add new minor versions, but leave previous
@@ -111,8 +112,13 @@ const USHORT ODS_CURRENT11_1	= 1;	// Firebird 2.1 features
 const USHORT ODS_CURRENT11_2	= 2;	// Firebird 2.5 features
 const USHORT ODS_CURRENT11		= 2;
 
+// Minor versions for ODS 12
+
+const USHORT ODS_CURRENT12_0	= 0;		/* Firebird 3.0 features */
+const USHORT ODS_CURRENT12		= 0;
+
 // useful ODS macros. These are currently used to flag the version of the
-// system triggers and system indices in ini.epp
+// system triggers and system indices in ini.e
 
 inline USHORT ENCODE_ODS(USHORT major, USHORT minor)
 {
@@ -128,6 +134,7 @@ const USHORT ODS_10_1		= ENCODE_ODS(ODS_VERSION10, 1);
 const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 const USHORT ODS_11_1		= ENCODE_ODS(ODS_VERSION11, 1);
 const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
+const USHORT ODS_12_0		= ENCODE_ODS(ODS_VERSION12, 0);
 
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
@@ -146,16 +153,16 @@ inline USHORT DECODE_ODS_MINOR(USHORT ods_version)
 
 // Set current ODS major and minor version
 
-const USHORT ODS_VERSION = ODS_VERSION11;		// Current ODS major version -- always
+const USHORT ODS_VERSION = ODS_VERSION12;		// Current ODS major version -- always
 												// the highest.
 
-const USHORT ODS_RELEASED = ODS_CURRENT11_0;	// The lowest stable minor version
+const USHORT ODS_RELEASED = ODS_CURRENT12_0;	// The lowest stable minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT = ODS_CURRENT11;		// The highest defined minor version
+const USHORT ODS_CURRENT = ODS_CURRENT12;		// The highest defined minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT_VERSION = ODS_11_2;	// Current ODS version in use which includes
+const USHORT ODS_CURRENT_VERSION = ODS_12_0;	// Current ODS version in use which includes
 												// both major and minor ODS versions!
 
 

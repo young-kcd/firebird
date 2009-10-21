@@ -44,7 +44,7 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb);
 
 protected:
-	virtual InAutonomousTransactionNode* dsqlPass();
+	virtual InAutonomousTransactionNode* internalDsqlPass();
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
@@ -57,6 +57,43 @@ public:
 	dsql_nod* dsqlAction;
 	jrd_nod* action;
 	SLONG savNumberOffset;
+};
+
+
+class ExecBlockNode : public StmtNode, public BlockNode
+{
+public:
+	explicit ExecBlockNode(MemoryPool& pool)
+		: StmtNode(pool),
+		  legacyParameters(NULL),
+		  legacyReturns(NULL),
+		  localDeclList(NULL),
+		  body(NULL)
+	{
+	}
+
+protected:
+	virtual ExecBlockNode* internalDsqlPass();
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void genBlr();
+	virtual ExecBlockNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExecBlockNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
+
+public:
+	virtual void genReturn();
+	virtual dsql_nod* resolveVariable(const dsql_str* varName);
+
+private:
+	static dsql_par* revertParametersOrder(dsql_par* parameter, dsql_par* prev);
+
+public:
+	dsql_nod* legacyParameters;
+	dsql_nod* legacyReturns;
+	dsql_nod* localDeclList;
+	dsql_nod* body;
 };
 
 

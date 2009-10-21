@@ -171,6 +171,8 @@
 	const USHORT  f_trg_flags = 9;
 	const USHORT  f_trg_valid_blr = 10;
 	const USHORT  f_trg_debug_info = 11;
+	const USHORT  f_trg_engine_name = 12;
+	const USHORT  f_trg_entry = 13;
 
 
 	const USHORT  f_dpd_name = 0;
@@ -178,6 +180,7 @@
 	const USHORT  f_dpd_f_name = 2;
 	const USHORT  f_dpd_type = 3;
 	const USHORT  f_dpd_o_type = 4;
+	const USHORT  f_dpd_pkg_name = 5;
 
 
 	const USHORT  f_fun_name = 0;
@@ -188,6 +191,10 @@
 	const USHORT  f_fun_entry = 5;
 	const USHORT  f_fun_ret_arg = 6;
 	const USHORT  f_fun_sys_flag = 7;
+	const USHORT  f_fun_engine_name = 8;
+	const USHORT  f_fun_pkg_name = 9;
+	const USHORT  f_fun_private_flag = 10;
+	const USHORT  f_fun_source = 11;
 
 
 	const USHORT  f_arg_fun_name = 0;
@@ -200,6 +207,7 @@
 	const USHORT  f_arg_charset_id = 7;
 	const USHORT  f_arg_precision = 8;
 	const USHORT  f_arg_char_length = 9;
+	const USHORT  f_arg_pkg_name = 10;
 
 
 	const USHORT  f_flt_name = 0;
@@ -285,6 +293,10 @@
 	const USHORT  f_prc_type = 11;
 	const USHORT  f_prc_valid_blr = 12;
 	const USHORT  f_prc_debug_info = 13;
+	const USHORT  f_prc_engine_name = 14;
+	const USHORT  f_prc_entry = 15;
+	const USHORT  f_prc_pkg_name = 16;
+	const USHORT  f_prc_private_flag = 17;
 
 
 	const USHORT  f_prm_name = 0;
@@ -301,6 +313,7 @@
 	const USHORT  f_prm_mech = 11;
 	const USHORT  f_prm_fname = 12;
 	const USHORT  f_prm_rname = 13;
+	const USHORT  f_prm_pkg_name = 14;
 
 
 	const USHORT  f_cs_cs_name = 0;
@@ -419,6 +432,7 @@
 	const USHORT  f_mon_call_src_line = 6;
 	const USHORT  f_mon_call_src_column = 7;
 	const USHORT  f_mon_call_stat_id = 8;
+	const USHORT  f_mon_call_pkg_name = 9;
 
 
 	const USHORT  f_mon_io_stat_id = 0;
@@ -453,5 +467,17 @@
 	const USHORT  f_mon_mem_cur_alloc = 3;
 	const USHORT  f_mon_mem_max_used = 4;
 	const USHORT  f_mon_mem_max_alloc = 5;
+
+
+// Continue persistent tables
+
+
+	const USHORT  f_pkg_name = 0;
+	const USHORT  f_pkg_header_source = 1;
+	const USHORT  f_pkg_body_source = 2;
+	const USHORT  f_pkg_class = 3;
+	const USHORT  f_pkg_owner = 4;
+	const USHORT  f_pkg_sys_flag = 5;
+	const USHORT  f_pkg_desc = 6;
 
 

@@ -48,6 +48,9 @@ public:
 	/// String used to point to parent directory
 	static const char* up_dir_link;
 
+	/// The directory list separator for the platform.
+	static const char dir_list_sep;
+
 	/** An abstract base class for iterating through the contents of a directory.
 		Instances of this class are created using the newDirItr method of
 		the PathUtils class.  Each platform implementation is expected to

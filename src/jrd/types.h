@@ -92,6 +92,8 @@ TYPE ("GENERATOR", obj_generator, nam_obj_type)
 TYPE ("UDF",  obj_udf, nam_obj_type)
 TYPE ("BLOB_FILTER", obj_blob_filter, nam_obj_type)
 TYPE ("COLLATION", obj_collation, nam_obj_type)
+TYPE ("PACKAGE", obj_package_header, nam_obj_type)
+TYPE ("PACKAGE BODY", obj_package_body, nam_obj_type)
 
 TYPE("LIMBO", 1, nam_trans_state)
 TYPE("COMMITTED", 2, nam_trans_state)

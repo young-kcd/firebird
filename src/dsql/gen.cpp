@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
+#include "../dsql/DdlNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
@@ -92,7 +93,6 @@ static void stuff_context(CompiledStatement*, const dsql_ctx*);
 static void stuff_cstring(CompiledStatement*, const char*);
 static void stuff_meta_string(CompiledStatement*, const char*);
 static void stuff_string(CompiledStatement*, const char*, int);
-static void stuff_string(CompiledStatement* statement, const Firebird::MetaName& name);
 static void stuff_word(CompiledStatement*, USHORT);
 
 // STUFF is defined in dsql.h for use in common with ddl.c
@@ -359,6 +359,10 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 	case nod_agg_max:
 		blr_operator = blr_agg_max;
 		break;
+
+	case nod_window:
+		GEN_expr(statement, node->nod_arg[0]);
+		return;
 
 	case nod_agg_average:
 		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
@@ -708,7 +712,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 void GEN_port(CompiledStatement* statement, dsql_msg* message)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* att = tdbb->getAttachment();
+	Jrd::Attachment* att = tdbb->getAttachment();
 
 //	if (statement->req_blr_string) {
 		stuff(statement, blr_message);
@@ -726,10 +730,10 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 
 		const USHORT fromCharSet = parameter->par_desc.getCharSet();
 		const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
-			fromCharSet : att->att_charset;
+			fromCharSet : tdbb->getCharSet();
 
 		if (parameter->par_desc.dsc_dtype <= dtype_any_text &&
-			att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
+			tdbb->getCharSet() != CS_NONE && tdbb->getCharSet() != CS_BINARY)
 		{
 			USHORT adjust = 0;
 			if (parameter->par_desc.dsc_dtype == dtype_varying)
@@ -754,7 +758,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 					statement->req_dbb->dbb_minor_version) >= ODS_11_1 &&
 			parameter->par_desc.dsc_dtype == dtype_blob &&
 			parameter->par_desc.dsc_sub_type == isc_blob_text &&
-			att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
+			tdbb->getCharSet() != CS_NONE && tdbb->getCharSet() != CS_BINARY)
 		{
 			if (fromCharSet != toCharSet)
 				parameter->par_desc.setTextType(toCharSet);
@@ -1093,13 +1097,12 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		stuff(statement, blr_end);
 		return;
 
-	case nod_exec_block:
-		DDL_gen_block(statement, node);
-		return;
-
 	case nod_class_node:
-		reinterpret_cast<StmtNode*>(node->nod_arg[0])->genBlr();
+	{
+		StmtNode* stmtNode = reinterpret_cast<StmtNode*>(node->nod_arg[0]);
+		stmtNode->genBlr();
 		return;
+	}
 
 	case nod_for_select:
 		gen_for_select(statement, node);
@@ -1198,13 +1201,8 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_return:
-		if ( (temp = node->nod_arg[e_rtn_procedure]) )
-		{
-			if (temp->nod_type == nod_exec_block)
-				GEN_return(statement, temp->nod_arg[e_exe_blk_outputs], false);
-			else
-				GEN_return(statement, temp->nod_arg[e_prc_outputs], false);
-		}
+		if (node->nod_arg[e_rtn_procedure])
+			((BlockNode*) node->nod_arg[e_rtn_procedure])->genReturn();
 		return;
 
 	case nod_exit:
@@ -1214,7 +1212,12 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 
 	case nod_breakleave:
 		stuff(statement, blr_leave);
-		stuff(statement, (int) (IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
+		stuff(statement, (int)(IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
+		return;
+
+	case nod_continue:
+		stuff(statement, blr_continue_loop);
+		stuff(statement, (int)(IPTR) node->nod_arg[e_continue_label]->nod_arg[e_label_number]);
 		return;
 
 	case nod_abort:
@@ -1400,26 +1403,35 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
  **/
 static void gen_aggregate( CompiledStatement* statement, const dsql_nod* node)
 {
-	const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
-	stuff(statement, blr_aggregate);
+	dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
+	bool window = (node->nod_flags & NOD_AGG_WINDOW);
+	stuff(statement, (window ? blr_window : blr_aggregate));
 	stuff_context(statement, context);
 	gen_rse(statement, node->nod_arg[e_agg_rse]);
 
-	// Handle GROUP BY clause
+	// Handle PARTITION BY and GROUP BY clause
 
-	stuff(statement, blr_group_by);
+	if (window)
+	{
+		stuff(statement, blr_partition_by);
+		stuff(statement, 0);	// partition by expression count
+  	}
+  	else
+	{
+		stuff(statement, blr_group_by);
 
-	dsql_nod* list = node->nod_arg[e_agg_group];
-	if (list != NULL) {
-		stuff(statement, list->nod_count);
-		dsql_nod** ptr = list->nod_arg;
-		for (const dsql_nod* const* end = ptr + list->nod_count; ptr < end; ptr++)
-		{
-			GEN_expr(statement, *ptr);
+		dsql_nod* list = node->nod_arg[e_agg_group];
+		if (list != NULL) {
+			stuff(statement, list->nod_count);
+			dsql_nod** ptr = list->nod_arg;
+			for (const dsql_nod* const* end = ptr + list->nod_count; ptr < end; ptr++)
+			{
+				GEN_expr(statement, *ptr);
+			}
 		}
+		else
+			stuff(statement, 0);
 	}
-	else
-		stuff(statement, 0);
 
 	// Generate value map
 
@@ -2297,13 +2309,24 @@ static void gen_relation( CompiledStatement* statement, dsql_ctx* context)
 	}
 	else if (procedure)
 	{
-		if (DDL_ids(statement)) {
+		if (DDL_ids(statement))
+		{
 			stuff(statement, blr_pid);
 			stuff_word(statement, procedure->prc_id);
 		}
-		else {
-			stuff(statement, blr_procedure);
-			stuff_meta_string(statement, procedure->prc_name.c_str());
+		else
+		{
+			if (procedure->prc_name.qualifier.hasData())
+			{
+				stuff(statement, blr_procedure2);
+				stuff_meta_string(statement, procedure->prc_name.qualifier.c_str());
+				stuff_meta_string(statement, procedure->prc_name.identifier.c_str());
+			}
+			else
+			{
+				stuff(statement, blr_procedure);
+				stuff_meta_string(statement, procedure->prc_name.identifier.c_str());
+			}
 		}
 		stuff_context(statement, context);
 
@@ -2919,7 +2942,14 @@ static void gen_statement(CompiledStatement* statement, const dsql_nod* node)
 		break;
 
 	case nod_exec_procedure:
-		stuff(statement, blr_exec_proc);
+		if (node->nod_arg[e_exe_package])
+		{
+			stuff(statement, blr_exec_proc2);
+			stuff_meta_string(statement, ((dsql_str*) node->nod_arg[e_exe_package])->str_data);
+		}
+		else
+			stuff(statement, blr_exec_proc);
+
 		name = (dsql_str*) node->nod_arg[e_exe_procedure];
 		stuff_meta_string(statement, name->str_data);
 
@@ -3054,11 +3084,19 @@ static void gen_table_lock( CompiledStatement* statement, const dsql_nod* tbl_lo
 static void gen_udf( CompiledStatement* statement, const dsql_nod* node)
 {
 	const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
-	stuff(statement, blr_function);
-	stuff_string(statement, userFunc->udf_name);
+
+	if (userFunc->udf_name.qualifier.isEmpty())
+		stuff(statement, blr_function);
+	else
+	{
+		stuff(statement, blr_function2);
+		stuff_meta_string(statement, userFunc->udf_name.qualifier.c_str());
+	}
+
+	stuff_meta_string(statement, userFunc->udf_name.identifier.c_str());
 
 	const dsql_nod* list;
-	if ((node->nod_count == 2) && (list = node->nod_arg[1]))
+	if ((node->nod_count == 3) && (list = node->nod_arg[2]))
 	{
 		stuff(statement, list->nod_count);
 		dsql_nod* const* ptr = list->nod_arg;
@@ -3207,12 +3245,6 @@ static void stuff_string(CompiledStatement* statement, const char* string, int l
 
 	stuff(statement, len);
 	statement->append_raw_string(string, len);
-}
-
-
-static void stuff_string(CompiledStatement* statement, const Firebird::MetaName& name)
-{
-	stuff_string(statement, name.c_str(), name.length());
 }
 
 

@@ -42,6 +42,7 @@
 #include <string.h>
 
 #include "../jrd/common.h"
+#include "../dsql/DdlNodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
@@ -100,7 +101,8 @@ static void	set_field_class_name(Global*, const MetaName&, const MetaName&);
 static void dyn_user(Global*, const UCHAR**);
 
 
-void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, const UCHAR* ddl)
+void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, const UCHAR* ddl,
+	const string& sqlText)
 {
 /**************************************
  *
@@ -124,7 +126,7 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
 
 	fb_utils::init_status(tdbb->tdbb_status_vector);
 
-	Global gbl(transaction);
+	Global gbl(transaction, sqlText);
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
@@ -402,7 +404,7 @@ void DYN_execute(Global* gbl,
 
 		case isc_dyn_def_rel:
 		case isc_dyn_def_view:
-			DYN_define_relation(gbl, ptr);
+			DYN_define_relation(gbl, ptr, verb == isc_dyn_def_view);
 			break;
 
 		case isc_dyn_mod_rel:
@@ -461,10 +463,6 @@ void DYN_execute(Global* gbl,
 			DYN_modify_function(gbl, ptr);
 			break;
 
-		case isc_dyn_delete_function:
-			DYN_delete_function(gbl, ptr);
-			break;
-
 		case isc_dyn_def_generator:
 			DYN_define_generator(gbl, ptr);
 			break;
@@ -489,30 +487,6 @@ void DYN_execute(Global* gbl,
 			DYN_delete_role(gbl, ptr);
 			break;
 
-		case isc_dyn_def_procedure:
-			DYN_define_procedure(gbl, ptr);
-			break;
-
-		case isc_dyn_mod_procedure:
-			DYN_modify_procedure(gbl, ptr);
-			break;
-
-		case isc_dyn_delete_procedure:
-			DYN_delete_procedure(gbl, ptr);
-			break;
-
-		case isc_dyn_def_parameter:
-			DYN_define_parameter(gbl, ptr, procedure_name);
-			break;
-
-		case isc_dyn_mod_prc_parameter:
-			DYN_modify_parameter(gbl, ptr);
-			break;
-
-		case isc_dyn_delete_parameter:
-			DYN_delete_parameter(gbl, ptr, procedure_name);
-			break;
-
 		case isc_dyn_def_shadow:
 			DYN_define_shadow(gbl, ptr);
 			break;
@@ -525,24 +499,12 @@ void DYN_execute(Global* gbl,
 			DYN_define_trigger(gbl, ptr, relation_name, NULL, false);
 			break;
 
-		case isc_dyn_mod_trigger:
-			DYN_modify_trigger(gbl, ptr);
-			break;
-
-		case isc_dyn_delete_trigger:
-			DYN_delete_trigger(gbl, ptr);
-			break;
-
 		case isc_dyn_def_trigger_msg:
 			DYN_define_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
 		case isc_dyn_mod_trigger_msg:
 			DYN_modify_trigger_msg(gbl, ptr, trigger_name);
-			break;
-
-		case isc_dyn_delete_trigger_msg:
-			DYN_delete_trigger_msg(gbl, ptr, trigger_name);
 			break;
 
 		case isc_dyn_def_global_fld:
@@ -958,7 +920,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 			p += 2;
 			*p++ = isc_bpb_source_interp;
 			*p++ = 1;
-			*p++ = tdbb->getAttachment()->att_charset;
+			*p++ = tdbb->getCharSet();
 
 			*p++ = isc_bpb_target_type;
 			*p++ = 2;
@@ -1097,6 +1059,11 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, object);
 			break;
 
+		case isc_dyn_pkg_name:
+			obj_type = obj_package_header;
+			GET_STRING(ptr, object);
+			break;
+
 		case isc_dyn_fld_name:
 			GET_STRING(ptr, field);
 			break;
@@ -1163,6 +1130,11 @@ static void grant( Global* gbl, const UCHAR** ptr)
 					// msg 195: keyword NONE could not be used as SQL role name.
 				}
 			}
+			break;
+
+		case isc_dyn_grant_package:
+			user_type = obj_package_header;
+			GET_STRING(ptr, user);
 			break;
 
 		case isc_dyn_grant_proc:
@@ -1822,6 +1794,11 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, object);
 			break;
 
+		case isc_dyn_pkg_name:
+			obj_type = obj_package_header;
+			GET_STRING(ptr, object);
+			break;
+
 		case isc_dyn_fld_name:
 			GET_STRING(ptr, field);
 			break;
@@ -1886,6 +1863,11 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 */
 				// msg 195: keyword NONE could not be used as SQL role name.
 			}
+			break;
+
+		case isc_dyn_grant_package:
+			user_type = obj_package_header;
+			GET_STRING(ptr, user);
 			break;
 
 		case isc_dyn_grant_proc:
@@ -2295,7 +2277,7 @@ static void store_privilege(Global* gbl,
 }
 
 
-static void dyn_user(Global* /*gbl*/, const UCHAR** ptr)
+static void dyn_user(Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
@@ -2311,8 +2293,6 @@ static void dyn_user(Global* /*gbl*/, const UCHAR** ptr)
 	Database* const dbb = tdbb->getDatabase();
 	jrd_tra* const tra = tdbb->getTransaction();
 
-	Database::Checkout dcoHolder(dbb);
-
 	ISC_STATUS_ARRAY status;
 	try
 	{
@@ -2323,7 +2303,7 @@ static void dyn_user(Global* /*gbl*/, const UCHAR** ptr)
 			string text;
 			GET_STRING(ptr, text);
 
-			switch(verb)
+			switch (verb)
 			{
 			case isc_dyn_user_add:
 				text.upper();
@@ -2397,8 +2377,37 @@ static void dyn_user(Global* /*gbl*/, const UCHAR** ptr)
 			}
 		}
 
+		int ddlAction = 0;
+
+		switch (userData->operation)
+		{
+			case ADD_OPER:
+				ddlAction = DDL_TRIGGER_CREATE_USER;
+				break;
+
+			case MOD_OPER:
+				ddlAction = DDL_TRIGGER_ALTER_USER;
+				break;
+
+			case DEL_OPER:
+				ddlAction = DDL_TRIGGER_DROP_USER;
+				break;
+		}
+
+		if (ddlAction != 0)
+		{
+			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+				ddlAction, userData->user_name, gbl->sqlText);
+		}
+
 		USHORT id = tra->getUserManagement()->put(userData);
 		DFW_post_work(tra, dfw_user_management, NULL, id);
+
+		if (ddlAction != 0)
+		{
+			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+				ddlAction, userData->user_name, gbl->sqlText);
+		}
 	}
 	catch (const Exception& e)
 	{

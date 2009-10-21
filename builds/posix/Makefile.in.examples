@@ -79,12 +79,12 @@ INTL_Sources =   $(addprefix $(EXAMPLES_DEST)/, $(INTL_Files))
 EMPLOYEE_DB=	$(EXAMPLES_DEST)/employee.fdb
 INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 
-.PHONY: all examples
+.PHONY: all examples plugins_examples
 
-all: examples
+all: examples plugins_examples
 
 # examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
-examples: $(EMPLOYEE_DB) $(FIREBIRD)/examples/README
+examples: $(EMPLOYEE_DB) $(FIREBIRD)/examples/README plugins_examples
 
 $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
@@ -165,3 +165,6 @@ $(EXAMPLES_DEST)/%.e: $(EXAMPLES_SRC)/empbuild/%.e
 
 $(EXAMPLES_DEST)/%.h: $(EXAMPLES_SRC)/common/%.h
 	$(CP) $^ $@
+
+plugins_examples:                # plugins examples
+	$(MAKE) -f $(GEN_ROOT)/examples/Makefile.plugins_examples

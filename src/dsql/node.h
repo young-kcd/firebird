@@ -47,6 +47,9 @@ namespace Dsql {
 
 enum nod_t
 {
+	// ASF: 1) These commented numbers are not all correct now;
+	// 2) They are going to continue been deleted;
+	// 3) There is no sense to numerate them.
 	nod_unknown_type = 0,
 	nod_commit = 1,	// Commands, not executed.
 	nod_rollback,
@@ -68,15 +71,6 @@ enum nod_t
 	nod_del_index,
 	nod_def_view,
 	nod_def_constraint, // 20
-	nod_def_trigger,
-	nod_mod_trigger,
-	nod_del_trigger,
-//	nod_def_trigger_msg,
-//	nod_mod_trigger_msg,
-//	nod_del_trigger_msg,
-	nod_def_procedure,
-	nod_mod_procedure,
-	nod_del_procedure,
 	nod_def_exception,
 	nod_mod_exception,
 	nod_del_exception,
@@ -302,15 +296,12 @@ enum nod_t
 	nod_redef_relation, // allows silent creation/overwriting of a relation.
 	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_limit, // limit support
-	nod_redef_procedure, // allows silent creation/overwriting of a procedure.
 	nod_exec_sql, // EXECUTE STATEMENT
 	nod_internal_info, // internal engine info
 	nod_searched_case, // 230	// searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
 	nod_mod_view, // ALTER VIEW
-	nod_replace_procedure, // CREATE OR ALTER PROCEDURE
-	nod_replace_trigger, // CREATE OR ALTER TRIGGER
 	nod_replace_view, // CREATE OR ALTER VIEW
 	nod_redef_view, // allows silent creation/overwriting of a view
 	nod_for_update, // FOR UPDATE clause
@@ -330,14 +321,12 @@ enum nod_t
 	nod_cursor_fetch,
 	nod_cursor_close,
 	nod_fetch_seek,
-	nod_exec_block,		// EXECUTE BLOCK support
 	nod_param_val,		// default value for SP parameters support
 	nod_rows,	// ROWS support
 	nod_query_spec,
 	nod_equiv,  // IS DISTINCT FROM
 	nod_redef_exception, // RECREATE EXCEPTION
 	nod_replace_exception, // 260	// CREATE OR ALTER EXCEPTION
-	nod_comment,
 	nod_mod_udf,
 	nod_def_collation,
 	nod_del_collation,
@@ -348,7 +337,6 @@ enum nod_t
 	nod_strlen,
 	nod_trim, // 270
 	nod_returning,
-	nod_redef_trigger,
 	nod_tra_misc,
 	nod_lock_timeout,
 	nod_agg_list,
@@ -375,8 +363,15 @@ enum nod_t
 	nod_tran_params,
 	nod_named_param,
 	nod_dfl_collate,
+	nod_trg_act,
+	nod_trg_ext,
 	nod_class_node,
-	nod_hidden_var	// 300
+	nod_hidden_var,	// 300
+	nod_package_name,
+	nod_package_obj,
+	nod_window,
+	nod_mod_field_null_flag,
+	nod_continue
 };
 
 /* enumerations of the arguments to a node, offsets
@@ -520,25 +515,11 @@ enum node_args {
 	e_cur_number,
 	e_cur_count,
 
-	e_prc_name = 0,			// nod_procedure
-	e_prc_inputs,
-	e_prc_outputs,
-	e_prc_dcls,
-	e_prc_body,
-	e_prc_source,
-	e_prc_count,
-
 	e_exe_procedure = 0,	// nod_exec_procedure
 	e_exe_inputs,
 	e_exe_outputs,
+	e_exe_package,
 	e_exe_count,
-
-	e_exe_blk = 0,			// nod_exec_block
-	e_exe_blk_inputs = 0,
-	e_exe_blk_outputs,
-	e_exe_blk_dcls,
-	e_exe_blk_body,
-	e_exe_blk_count,
 
 	e_prm_val_fld = 0,
 	e_prm_val_val,
@@ -667,6 +648,7 @@ enum node_args {
 	e_rpn_name = 0,			// nod_rel_proc_name
 	e_rpn_alias,
 	e_rpn_inputs,
+	e_rpn_package,
 	e_rpn_count,
 
 	e_join_left_rel = 0,	// nod_join
@@ -762,19 +744,6 @@ enum node_args {
 	e_cnstr_actions,
 	e_cnstr_source,
 	e_cnstr_count,
-
-	e_trg_name = 0,			// nod_mod_trigger and nod_def_trigger
-	e_trg_table,
-	e_trg_active,
-	e_trg_type,
-	e_trg_position,
-	e_trg_actions,
-	e_trg_source,
-	e_trg_count,
-
-	e_trg_act_dcls = 0,
-	e_trg_act_body,
-	e_trg_act_count,
 
 	e_abrt_number = 0,		// nod_abort
 	e_abrt_count,
@@ -952,12 +921,6 @@ enum node_args {
 	e_agg_function_scope_level,
 	e_agg_function_count,
 
-	e_comment_obj_type = 0,
-	e_comment_object,
-	e_comment_part,
-	e_comment_string,
-	e_comment_count,
-
 	e_mod_udf_name = 0,				// nod_mod_udf
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
@@ -1012,7 +975,17 @@ enum node_args {
 
 	e_hidden_var_expr = 0,			// nod_hidden_var
 	e_hidden_var_var,
-	e_hidden_var_count
+	e_hidden_var_count,
+
+ 	e_window_expr = 0,
+ 	e_window_count,
+
+	e_mod_fld_null_flag_field = 0,				// nod_mod_field_null_flag
+	e_mod_fld_null_flag_value,
+	e_mod_fld_null_flag_count,
+
+	e_continue_label = 0,			// nod_continue
+	e_continue_count,
 };
 
 } // namespace
@@ -1109,7 +1082,9 @@ enum nod_flags_vals {
 	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
 	NOD_TRAN_COMMON = 2,
 	NOD_TRAN_2PC = 3,
-	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON
+	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON,
+
+	NOD_AGG_WINDOW = 1				// nod_aggregate
 };
 
 } // namespace

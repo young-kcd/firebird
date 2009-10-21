@@ -971,7 +971,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
 	// If we've been here before just return the id
@@ -1257,7 +1257,7 @@ void PAG_header(thread_db* tdbb, bool info)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
 	WIN window(HEADER_PAGE_NUMBER);
@@ -1385,7 +1385,7 @@ void PAG_header_init(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	Attachment* const attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
 	// Allocate a spare buffer which is large enough,
@@ -2012,7 +2012,7 @@ void PAG_sweep_interval(thread_db* tdbb, SLONG interval)
 
 static int blocking_ast_attachment(void* ast_object)
 {
-	Attachment* const attachment = static_cast<Attachment*>(ast_object);
+	Jrd::Attachment* const attachment = static_cast<Jrd::Attachment*>(ast_object);
 
 	try
 	{
@@ -2452,7 +2452,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 #else
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Attachment* att = tdbb->getAttachment();
+	Jrd::Attachment* att = tdbb->getAttachment();
 	if (!att->att_temp_pg_lock)
 	{
 		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();

@@ -180,6 +180,25 @@ namespace Firebird {
 			}
 		}
 
+		// Push a element on the stack and pop when we go out of scope.
+		class AutoPushPop
+		{
+		public:
+			AutoPushPop(Stack<Object, Capacity>& s, Object& o)
+				: stack(s)
+			{
+				stack.push(o);
+			}
+
+			~AutoPushPop()
+			{
+				stack.pop();
+			}
+
+		private:
+			Stack<Object, Capacity>& stack;
+		};
+
 		class iterator;
 		friend class iterator;
 

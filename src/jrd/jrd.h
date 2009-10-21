@@ -51,6 +51,8 @@
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/scl.h"
+ 
+#include "../jrd/ExtEngineManager.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -147,15 +149,25 @@ public:
 	jrd_req*	request;					// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
-	UCHAR		type;						// Trigger type
+	FB_UINT64	type;						// Trigger type
 	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
 	jrd_rel*	relation;					// Trigger parent relation
 	Firebird::MetaName	name;				// Trigger name
+	Firebird::MetaName	engine;				// External engine name
+	Firebird::string	entryPoint;			// External trigger entrypoint
+	Firebird::string	extBody;			// External trigger body
+	ExtEngineManager::Trigger* extTrigger;	// External trigger
+
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
 
 	explicit Trigger(MemoryPool& p)
-		: blr(p), name(p)
+		: blr(p),
+		  name(p),
+		  engine(p),
+		  entryPoint(p),
+		  extBody(p),
+		  extTrigger(NULL)
 	{
 		dbg_blob_id.clear();
 	}
@@ -227,19 +239,34 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 	Firebird::string, DSqlCacheItem> > > DSqlCache;
 
 
+struct DdlTriggerContext
+{
+	DdlTriggerContext()
+		: ddlEvent(*getDefaultMemoryPool()),
+		  objectName(*getDefaultMemoryPool()),
+		  sqlText(*getDefaultMemoryPool())
+	{
+	}
+
+	Firebird::string ddlEvent;
+	Firebird::MetaName objectName;
+	Firebird::string sqlText;
+};
+
+
 //
 // the attachment block; one is created for each attachment to a database
 //
 class Attachment : public pool_alloc<type_att>, public Firebird::PublicHandle
 {
 public:
-	static Attachment* create(Database* dbb)
+	static Attachment* create(Database* dbb, FB_API_HANDLE publicHandle)
 	{
 		MemoryPool* const pool = dbb->createPool();
 
 		try
 		{
-			Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb);
+			Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb, publicHandle);
 			pool->setStatsGroup(attachment->att_memory_stats);
 			return attachment;
 		}
@@ -292,6 +319,7 @@ public:
 	Firebird::MemoryStats att_memory_stats;
 
 	Database*	att_database;				// Parent database block
+	FB_API_HANDLE att_public_handle;		// Public handle
 	Attachment*	att_next;					// Next attachment to database
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
@@ -309,7 +337,8 @@ public:
 	vcl*		att_counts[DBB_max_count];
 	RuntimeStatistics	att_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment
-	SSHORT		att_charset;				// user's charset specified in dpb
+	SSHORT		att_client_charset;			// user's charset specified in dpb
+	SSHORT		att_charset;				// current (client or external) attachment charset
 	Lock*		att_long_locks;				// outstanding two phased locks
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
@@ -317,6 +346,7 @@ public:
 	Firebird::PathName	att_filename;			// alias used to attach the database
 	const Firebird::TimeStamp	att_timestamp;	// Connection date and time
 	Firebird::StringMap att_context_vars;	// Context variables for the connection
+	Firebird::Stack<DdlTriggerContext> ddlTriggersContext;	// Context variables for DDL trigger event
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
 	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
 	SLONG att_remote_pid;					// Process id of remote client
@@ -329,6 +359,7 @@ public:
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	Firebird::Mutex att_mutex;				// attachment mutex
+	bool att_in_use;						// attachment in use (can't be detached or dropped)
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	TraceManager* att_trace_manager;		// Trace API manager
@@ -356,7 +387,7 @@ public:
 	}
 
 private:
-	Attachment(MemoryPool* pool, Database* dbb);
+	Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle);
 	~Attachment();
 };
 
@@ -423,8 +454,9 @@ public:
 											// (it will usually be 0)
 	Lock* prc_existence_lock;				// existence lock, if any
 	Firebird::MetaName prc_security_name;	// security class name for procedure
-	Firebird::MetaName prc_name;			// ascic name
+	Firebird::QualifiedName prc_name;		// name
 	USHORT prc_alter_count;					// No. of times the procedure was altered
+	ExtEngineManager::Procedure* prc_external;
 
 public:
 	explicit jrd_prc(MemoryPool& p)
@@ -459,11 +491,17 @@ public:
 	USHORT		prm_number;
 	dsc			prm_desc;
 	jrd_nod*	prm_default_value;
+	bool		prm_nullable;
+	prm_mech_t	prm_mechanism;
 	Firebird::MetaName prm_name;			// asciiz name
-//public:
+	Firebird::MetaName prm_field_source;
+
+public:
 	explicit Parameter(MemoryPool& p)
-		: prm_name(p)
-	{ }
+		: prm_name(p),
+		  prm_field_source(p)
+	{
+	}
 };
 
 // Index block to cache index information
@@ -749,6 +787,8 @@ public:
 	}
 
 	void setRequest(jrd_req* val);
+
+	SSHORT getCharSet();
 
 	void bumpStats(const RuntimeStatistics::StatType index)
 	{

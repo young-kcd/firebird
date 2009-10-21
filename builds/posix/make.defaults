@@ -252,12 +252,15 @@ LINK_FIREBIRD_CLIENT_SYMBOLS = $(LINK_FIREBIRD_SYMBOLS)
 LINK_TRACE_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.vers
+LINK_UDRENG_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/udr_engine.vers
+LINK_EMPTY_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/empty.vers
+LINK_EXEC_EXPORT=-rdynamic
 
 LIB_PLATFORM_RPATH = -Wl,-rpath,$(1)
 ifeq ($(strip @BINRELOC_CFLAGS@),)
 LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,$(if $(subst intl,,$(1)),@FB_LIBDIR@,@FB_INTLDIR@))
 else
-LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,'$$$$ORIGIN/../$(1)')
+LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,'$$ORIGIN/../$(1)')
 endif
 LIB_PATH_OPTS = $(call LIB_LINK_RPATH,lib) $(call LIB_LINK_RPATH,intl)
 LIB_LINK_SONAME= -Wl,-soname,$(1)

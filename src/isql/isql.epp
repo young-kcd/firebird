@@ -5496,6 +5496,9 @@ static processing_state get_statement(TEXT* const statement,
 		in_double_quoted_string
 	} state = normal;
 
+	char lastChar = '\0';
+	char altQuoteChar = '\0';
+
 	while (!done)
 	{
 		SSHORT c = getNextInputChar();
@@ -5624,10 +5627,36 @@ static processing_state get_statement(TEXT* const statement,
 			switch (state)
 			{
 				case normal:
+					if (lastChar == 'q' || lastChar == 'Q')
+					{
+						*p++ = lastChar = c;
+						count++;
+						altQuoteChar = c = getNextInputChar();
+
+						switch (altQuoteChar)
+						{
+							case '{':
+								altQuoteChar = '}';
+								break;
+							case '(':
+								altQuoteChar = ')';
+								break;
+							case '[':
+								altQuoteChar = ']';
+								break;
+							case '<':
+								altQuoteChar = '>';
+								break;
+						}
+					}
+					else
+						altQuoteChar = '\0';
+
 					state = in_single_quoted_string;
 					break;
 				case in_single_quoted_string:
-					state = normal;
+					if (!altQuoteChar || lastChar == altQuoteChar)
+						state = normal;
 					break;
 			}
 			break;
@@ -5673,7 +5702,7 @@ static processing_state get_statement(TEXT* const statement,
 			}
 		}
 
-		*p++ = c;
+		*p++ = lastChar = c;
 		count++;
 
 		if (count > bufsize && !done)

@@ -689,9 +689,7 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 		MOV_move(tdbb, &from_desc, &to_desc);
 
 		if (set_charset)
-		{
 			charset = (int) value;
-		}
 	}
 	else if (field.type == VALUE_TIMESTAMP)
 	{
@@ -784,7 +782,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
-		if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
+		if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
 			continue;
 
 		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
@@ -939,7 +937,8 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 }
 
 
-bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& writer, int stat_id)
+bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* attachment,
+	Writer& writer, int stat_id)
 {
 	fb_assert(attachment);
 
@@ -989,7 +988,7 @@ bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& write
 	// remote process name
 	record.storeString(f_mon_att_remote_process, attachment->att_remote_process);
 	// charset
-	record.storeInteger(f_mon_att_charset_id, attachment->att_charset);
+	record.storeInteger(f_mon_att_charset_id, tdbb->getCharSet());
 	// timestamp
 	record.storeTimestamp(f_mon_att_timestamp, attachment->att_timestamp);
 	// garbage collection flag
@@ -1139,7 +1138,10 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 	// object name/type
 	if (request->req_procedure)
 	{
-		record.storeString(f_mon_call_name, request->req_procedure->prc_name);
+		if (request->req_procedure->prc_name.qualifier.hasData())
+			record.storeString(f_mon_call_pkg_name, request->req_procedure->prc_name.qualifier);
+
+		record.storeString(f_mon_call_name, request->req_procedure->prc_name.identifier);
 		record.storeInteger(f_mon_call_type, obj_procedure);
 	}
 	else if (!request->req_trg_name.isEmpty())

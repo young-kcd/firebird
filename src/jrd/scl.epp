@@ -73,9 +73,9 @@ static bool check_number(const UCHAR*, USHORT);
 static bool check_user_group(thread_db* tdbb, const UCHAR*, USHORT);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
 static SecurityClass::flags_t compute_access(thread_db* tdbb, const SecurityClass*,
-	const jrd_rel*,	const Firebird::MetaName&, const Firebird::MetaName&);
+	const jrd_rel*,	const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&);
 static SecurityClass::flags_t walk_acl(thread_db* tdbb, const Acl&, const jrd_rel*,
-	const Firebird::MetaName&, const Firebird::MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&);
 
 static inline void check_and_move(UCHAR from, Acl& to)
 {
@@ -110,6 +110,7 @@ void SCL_check_access(thread_db* tdbb,
 					  SLONG view_id,
 					  const Firebird::MetaName& trg_name,
 					  const Firebird::MetaName& prc_name,
+					  const Firebird::MetaName& pkg_name,
 					  SecurityClass::flags_t mask,
 					  const TEXT* type,
 					  const char* name)
@@ -135,7 +136,7 @@ void SCL_check_access(thread_db* tdbb,
 										  Arg::Str(s_class->scl_name));
 	}
 
-	const Attachment& attachment = *tdbb->getAttachment();
+	const Jrd::Attachment& attachment = *tdbb->getAttachment();
 
 	// Allow the database owner to back up a database even if he does not have
 	// read access to all the tables in the database
@@ -168,8 +169,8 @@ void SCL_check_access(thread_db* tdbb,
 		if (view_id) {
 			view = MET_lookup_relation_id(tdbb, view_id, false);
 		}
-		if ((view || trg_name.length() || prc_name.length()) &&
-			 (compute_access(tdbb, s_class, view, trg_name, prc_name) & mask))
+		if ((view || trg_name.hasData() || prc_name.hasData() || pkg_name.hasData()) &&
+			 (compute_access(tdbb, s_class, view, trg_name, prc_name, pkg_name) & mask))
 		{
 			return;
 		}
@@ -202,6 +203,7 @@ void SCL_check_access(thread_db* tdbb,
 					  SLONG view_id,
 					  const Firebird::MetaName& trg_name,
 					  const Firebird::MetaName& prc_name,
+					  const Firebird::MetaName& pkg_name,
 					  SecurityClass::flags_t mask,
 					  const TEXT* type,
 					  const Firebird::MetaName& name,
@@ -229,7 +231,8 @@ void SCL_check_access(thread_db* tdbb,
 		fullFieldName += name.c_str();
 	}
 
-	SCL_check_access(tdbb, s_class, view_id, trg_name, prc_name, mask, type, fullFieldName.c_str());
+	SCL_check_access(tdbb, s_class, view_id, trg_name, prc_name, pkg_name, mask, type,
+		fullFieldName.c_str());
 }
 
 
@@ -314,7 +317,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		return;
 	}
 
-	SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask, object_table, reln_name);
+	SCL_check_access(tdbb, s_class, 0, NULL, NULL, NULL, mask, object_table, reln_name);
 
 	request = NULL;
 
@@ -341,12 +344,15 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		fullFieldName += '.';
 		fullFieldName += RF.RDB$FIELD_NAME;
 		fullFieldName.rtrim();
-        if (!RF.RDB$SECURITY_CLASS.NULL) {
+        if (!RF.RDB$SECURITY_CLASS.NULL)
+        {
 			s_class = SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS);
-			SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask, object_column, fullFieldName);
+			SCL_check_access(tdbb, s_class, 0, NULL, NULL, NULL, mask, object_column, fullFieldName);
 		}
-		else {
-			SCL_check_access(tdbb, default_s_class, 0, NULL, NULL, mask, object_column, fullFieldName);
+		else
+		{
+			SCL_check_access(tdbb, default_s_class, 0, NULL, NULL, NULL, mask, object_column,
+				fullFieldName);
 		}
 
 	END_FOR;
@@ -359,6 +365,50 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		}
 		throw;
 	}
+}
+
+
+void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t mask)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ p a c k a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Given a package name, check for a set of privileges.  The
+ *	package in question may or may not have been created, let alone
+ *	scanned.  This is used exclusively for meta-data operations.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	// Get the name in CSTRING format, ending on NULL or SPACE
+	fb_assert(dsc_name->dsc_dtype == dtype_text);
+	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
+		dsc_name->dsc_length);
+
+	Database* dbb = tdbb->getDatabase();
+	const SecurityClass* s_class = NULL;
+
+	jrd_req* request = CMP_find_request(tdbb, irq_pkg_security, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		PKG IN RDB$PACKAGES
+		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
+
+        if (!REQUEST(irq_pkg_security))
+			REQUEST(irq_pkg_security) = request;
+
+		if (!PKG.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(tdbb, PKG.RDB$SECURITY_CLASS);
+	END_FOR;
+
+	if (!REQUEST(irq_pkg_security))
+		REQUEST(irq_pkg_security) = request;
+
+	SCL_check_access(tdbb, s_class, 0, NULL, NULL, name, mask, object_package, name);
 }
 
 
@@ -388,8 +438,10 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 
 	jrd_req* request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request) SPROC IN RDB$PROCEDURES
-		WITH SPROC.RDB$PROCEDURE_NAME EQ name.c_str()
+	FOR (REQUEST_HANDLE request)
+		SPROC IN RDB$PROCEDURES
+		WITH SPROC.RDB$PROCEDURE_NAME EQ name.c_str() AND
+			 SPROC.RDB$PACKAGE_NAME MISSING
 
         if (!REQUEST(irq_p_security))
 			REQUEST(irq_p_security) = request;
@@ -401,7 +453,7 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, NULL, name, mask, object_procedure, name);
+	SCL_check_access(tdbb, s_class, 0, NULL, name, NULL, mask, object_procedure, name);
 }
 
 
@@ -445,7 +497,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask, object_table, name);
+	SCL_check_access(tdbb, s_class, 0, NULL, NULL, NULL, mask, object_table, name);
 }
 
 
@@ -480,7 +532,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 		return NULL;
 	}
 
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	// Look for the class already known
 
@@ -493,7 +545,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 	MemoryPool& pool = *attachment->att_pool;
 
 	SecurityClass* const s_class = FB_NEW(pool) SecurityClass(pool, string);
-	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL);
+	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
@@ -527,7 +579,7 @@ SecurityClass::flags_t SCL_get_mask(thread_db* tdbb, const TEXT* relation_name, 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	// Start with database security class
 
@@ -699,7 +751,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		role_name = NULL_ROLE;
 	}
 
-	Attachment* const attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	MemoryPool& pool = *attachment->att_pool;
 	UserId* const user = FB_NEW(pool) UserId(pool, tempId);
 	user->usr_sql_role_name = role_name.c_str();
@@ -802,7 +854,7 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 		return NULL;
 	}
 
-	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL);
+	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists) {
 		return s_class;
@@ -993,7 +1045,8 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 											 const SecurityClass* s_class,
 											 const jrd_rel* view,
 											 const Firebird::MetaName& trg_name,
-											 const Firebird::MetaName& prc_name)
+											 const Firebird::MetaName& prc_name,
+											 const Firebird::MetaName& pkg_name)
 {
 /**************************************
  *
@@ -1047,7 +1100,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 
 		if (acl.getCount() > 0)
 		{
-			privileges |= walk_acl(tdbb, acl, view, trg_name, prc_name);
+			privileges |= walk_acl(tdbb, acl, view, trg_name, prc_name, pkg_name);
 		}
 	END_FOR;
 
@@ -1062,7 +1115,8 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 									   const Acl& acl,
 									   const jrd_rel* view,
 									   const Firebird::MetaName& trg_name,
-									   const Firebird::MetaName& prc_name)
+									   const Firebird::MetaName& prc_name,
+									   const Firebird::MetaName& pkg_name)
 {
 /**************************************
  *
@@ -1179,6 +1233,11 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 
 				case id_view:
 					if (!view || check_string(a, view->rel_name))
+						hit = false;
+					break;
+
+				case id_package:
+					if (check_string(a, pkg_name))
 						hit = false;
 					break;
 

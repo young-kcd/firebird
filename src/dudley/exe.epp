@@ -2972,7 +2972,7 @@ static void get_triggers( DBB databaseL)
 			trigger->trg_relation = (DUDLEY_REL) rel_name->sym_object;
 		else
 			trigger->trg_relation = (DUDLEY_REL) get_symbol(SYM_relation, T.RDB$RELATION_NAME, NULL);
-		trigger->trg_type = (TRG_T) T.RDB$TRIGGER_TYPE;
+		trigger->trg_type = (TRG_T)(SINT64) T.RDB$TRIGGER_TYPE;
 		trigger->trg_inactive = T.RDB$TRIGGER_INACTIVE;
 		trigger->trg_sequence = T.RDB$TRIGGER_SEQUENCE;
 	END_FOR;

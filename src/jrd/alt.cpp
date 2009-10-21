@@ -50,11 +50,11 @@
 #include "../jrd/alt_proto.h"
 #include "../jrd/constants.h"
 
-#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
+///#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
 #if !defined(BOOT_BUILD)
 static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
 #endif // BOOT_BUILD
-#endif
+///#endif
 
 SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 										 UCHAR** result_buffer,
@@ -819,8 +819,8 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 	err(isc_random, isc_arg_string, "CVT_move() private API not supported any more", isc_arg_end);
 }
 
-#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
-// AP: isc_*_user entrypoints are used only in any kind of embedded
+///#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
+// AP: isc_*_user entrypoints are used only in any kind of embedded 
 // server (both posix and windows) and fbclient
 
 #ifndef BOOT_BUILD
@@ -1224,4 +1224,4 @@ static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 
 #endif // BOOT_BUILD
 
-#endif // !defined(SUPERSERVER) || defined(SUPERCLIENT)
+///#endif // !defined(SUPERSERVER) || defined(SUPERCLIENT)

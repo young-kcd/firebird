@@ -37,6 +37,7 @@
 #include "../jrd/lls.h"
 #include "../jrd/sbm.h"
 
+#include "../jrd/ExtEngineManager.h"
 #include "../jrd/RecordBuffer.h"
 
 struct dsc;
@@ -52,6 +53,7 @@ struct sort_context;
 class CompilerScratch;
 class jrd_prc;
 class Format;
+class RecordStream;
 class VaryingStr;
 class BtrPageGCLock;
 
@@ -75,7 +77,7 @@ enum rsb_t
 	rsb_navigate,						// navigational walk on an index
 	rsb_left_cross,						// left outer join as a nested loop
 	rsb_procedure,						// stored procedure
-	rsb_virt_sequential,				// sequential access to a virtual table
+	rsb_record_stream,					// RecordStream class
 	rsb_recursive_union					// Recursive union
 };
 
@@ -111,6 +113,7 @@ public:
 	StreamStack*	rsb_left_streams;
 	RsbStack*		rsb_left_rsbs;
 	VarInvariantArray *rsb_invariants; /* Invariant nodes bound to top-level RSB */
+	RecordStream*	rsb_record_stream;
 
 	RecordSource* rsb_arg[1];
 };

@@ -30,7 +30,7 @@
 /* Indices to be created */
 
 /* Maxinum number of segments in any existing system index */
-const int  INI_IDX_MAX_SEGMENTS		= 2;
+const int  INI_IDX_MAX_SEGMENTS		= 3;
 
 struct ini_idx_t
 {
@@ -95,14 +95,16 @@ static const struct ini_idx_t indices[] =
 	INDEX(8, ODS_8_0, rel_triggers, idx_unique, 1)
 		SEGMENT(f_trg_name, idx_metadata)	/* trigger name */
 	}},
+#if 0	// removed for package support
 /*	define index RDB$INDEX_9 for RDB$FUNCTIONS unique RDB$FUNCTION_NAME; */
 	INDEX(9, ODS_8_0, rel_funs, idx_unique, 1)
-		SEGMENT(f_fun_name, idx_metadata)	/* function name */
+		SEGMENT(f_fun_name, idx_metadata)	// function name
 	}},
 /*	define index RDB$INDEX_10 for RDB$FUNCTION_ARGUMENTS RDB$FUNCTION_NAME; */
 	INDEX(10, ODS_8_0, rel_args, 0, 1)
-		SEGMENT(f_arg_fun_name, idx_metadata)	/* function name */
+		SEGMENT(f_arg_fun_name, idx_metadata)	// function name
 	}},
+#endif
 /*	define index RDB$INDEX_11 for RDB$GENERATORS unique RDB$GENERATOR_NAME; */
 	INDEX(11, ODS_8_0, rel_gens, idx_unique, 1)
 		SEGMENT(f_gen_name, idx_metadata)	/* Generator name */
@@ -134,11 +136,13 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_flt_input, idx_numeric),	/* input subtype */
 		SEGMENT(f_flt_output, idx_numeric)	/* output subtype */
 	}},
+#if 0	// removed for package support
 /*	define index RDB$INDEX_18 for RDB$PROCEDURE_PARAMETERS unique RDB$PROCEDURE_NAME, RDB$PARAMETER_NAME; */
 	INDEX(18, ODS_8_0, rel_prc_prms, idx_unique, 2)
-		SEGMENT(f_prm_procedure, idx_metadata),	/* procedure name */
-		SEGMENT(f_prm_name, idx_metadata)	/* parameter name */
+		SEGMENT(f_prm_procedure, idx_metadata),	// procedure name
+		SEGMENT(f_prm_name, idx_metadata)		// parameter name
 	}},
+#endif
 
 	/* Index on rel_files removed 93-Feb-27 by DaveS.
 	 * f_file_name is now 255 bytes, which with roundup creates
@@ -162,10 +166,12 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_coll_name, idx_metadata)	// collation name
 	}},
 
+#if 0	// removed for package support
 /*	define index RDB$INDEX_21 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME; */
 	INDEX(21, ODS_8_0, rel_procedures, idx_unique, 1)
-		SEGMENT(f_prc_name, idx_metadata)	/* procedure name */
+		SEGMENT(f_prc_name, idx_metadata)	// procedure name
 	}},
+#endif
 /*	define index RDB$INDEX_22 for RDB$PROCEDURES unique RDB$PROCEDURE_ID; */
 	INDEX(22, ODS_8_0, rel_procedures, idx_unique, 1)
 		SEGMENT(f_prc_id, idx_numeric)	/* procedure id */
@@ -310,9 +316,38 @@ static const struct ini_idx_t indices[] =
 	/*	define index RDB$INDEX_46 for RDB$GENERATORS unique RDB$GENERATOR_ID; */
 	INDEX(46, ODS_11_2, rel_gens, idx_unique, 1)
 		SEGMENT(f_gen_id, idx_numeric)	/* generator id */
-	}}
+	}},
 
 	/* Last index in ODS 11.2 is RDB$INDEX_46 */
+
+	// define index RDB$INDEX_47 for RDB$FUNCTIONS unique RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
+	INDEX(47, ODS_12_0, rel_funs, idx_unique, 2)
+		SEGMENT(f_fun_name, idx_metadata),		// function name
+		SEGMENT(f_fun_pkg_name, idx_metadata)	// package name
+	}},
+	// define index RDB$INDEX_48 for RDB$FUNCTION_ARGUMENTS RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
+	INDEX(48, ODS_12_0, rel_args, 0, 2)
+		SEGMENT(f_arg_fun_name, idx_metadata),	// function name
+		SEGMENT(f_arg_pkg_name, idx_metadata)	// package name
+	}},
+	// define index RDB$INDEX_49 for RDB$PACKAGES unique RDB$PACKAGE_NAME;
+	INDEX(49, ODS_12_0, rel_packages, idx_unique, 1)
+		SEGMENT(f_pkg_name, idx_metadata)		// package name
+	}},
+	// define index RDB$INDEX_50 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME, RDB$PACKAGE_NAME;
+	INDEX(50, ODS_12_0, rel_procedures, idx_unique, 2)
+		SEGMENT(f_prc_name, idx_metadata),		// procedure name
+		SEGMENT(f_prc_pkg_name, idx_metadata)	// package name
+	}},
+	// define index RDB$INDEX_51 for RDB$PROCEDURE_PARAMETERS unique RDB$PROCEDURE_NAME,
+	// RDB$PARAMETER_NAME, RDB$PACKAGE_NAME;
+	INDEX(51, ODS_12_0, rel_prc_prms, idx_unique, 3)
+		SEGMENT(f_prm_procedure, idx_metadata),	// procedure name
+		SEGMENT(f_prm_name, idx_metadata),		// parameter name
+		SEGMENT(f_prm_pkg_name, idx_metadata)	// package name
+	}}
+
+	// Last index in ODS 12.0 is RDB$INDEX_51
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)

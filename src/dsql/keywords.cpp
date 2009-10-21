@@ -30,6 +30,11 @@
 #include <string.h>
 #endif
 
+#include "../dsql/Nodes.h"
+#include "../dsql/DdlNodes.h"
+#include "../dsql/PackageNodes.h"
+#include "../dsql/StmtNodes.h"
+#include "../common/classes/TriState.h"
 #include "dsql.tab.h"
 #include "keywords.h"
 
@@ -92,6 +97,7 @@ static const TOK tokens[] =
 	{BIT_LENGTH, "BIT_LENGTH", 2, false},
 	{BLOB, "BLOB", 1, false},
 	{BLOCK, "BLOCK", 2, true},
+	{BODY, "BODY", 2, true},
 	{BOTH, "BOTH", 2, false},
 	{KW_BREAK, "BREAK", 2, true},
 	{BY, "BY", 1, false},
@@ -121,6 +127,7 @@ static const TOK tokens[] =
 	{CONNECT, "CONNECT", 2, false},
 	{CONSTRAINT, "CONSTRAINT", 1, false},
 	{CONTAINING, "CONTAINING", 1, false},
+	{CONTINUE, "CONTINUE", 2, true},
 	{COS, "COS", 2, false},
 	{COSH, "COSH", 2, false},
 	{COT, "COT", 2, false},
@@ -143,6 +150,7 @@ static const TOK tokens[] =
 	{DATEADD, "DATEADD", 2, false},
 	{DATEDIFF, "DATEDIFF", 2, false},
 	{DAY, "DAY", 2, false},
+	{DDL, "DDL", 2, false},
 	{KW_DEC, "DEC", 1, false},
 	{DECIMAL, "DECIMAL", 1, false},
 	{DECLARE, "DECLARE", 1, false},
@@ -162,6 +170,7 @@ static const TOK tokens[] =
 	{DROP, "DROP", 1, false},
 	{ELSE, "ELSE", 1, false},
 	{END, "END", 1, false},
+	{ENGINE, "ENGINE", 2, false},
 	{ENTRY_POINT, "ENTRY_POINT", 1, false},
 	{ESCAPE, "ESCAPE", 1, false},
 	{EXCEPTION, "EXCEPTION", 1, false},
@@ -247,6 +256,7 @@ static const TOK tokens[] =
 	{MOD, "MOD", 2, false},
 	{MODULE_NAME, "MODULE_NAME", 1, false},
 	{MONTH, "MONTH", 2, false},
+	{NAME, "NAME", 2, false},
 	{NAMES, "NAMES", 1, false},
 	{NATIONAL, "NATIONAL", 1, false},
 	{NATURAL, "NATURAL", 1, false},
@@ -269,8 +279,10 @@ static const TOK tokens[] =
 	{OS_NAME, "OS_NAME", 2, false},
 	{OUTER, "OUTER", 1, false},
 	{OUTPUT_TYPE, "OUTPUT_TYPE", 1, false},
+	{OVER, "OVER", 2, false},
 	{OVERFLOW, "OVERFLOW", 1, false},
 	{OVERLAY, "OVERLAY", 2, false},
+	{PACKAGE, "PACKAGE", 2, true},
 	{PAD, "PAD", 2, true},
 	{PAGE, "PAGE", 1, false},
 	{PAGES, "PAGES", 1, false},
@@ -291,6 +303,8 @@ static const TOK tokens[] =
 	{PROTECTED, "PROTECTED", 1, false},
 	{RAND, "RAND", 2, false},
 	{DB_KEY, "RDB$DB_KEY", 1, false},
+	{RDB_GET_CONTEXT, "RDB$GET_CONTEXT", 2, false},
+	{RDB_SET_CONTEXT, "RDB$SET_CONTEXT", 2, false},
 	{READ, "READ", 1, false},
 	{REAL, "REAL", 1, false},
 	{VERSION, "RECORD_VERSION", 1, false},

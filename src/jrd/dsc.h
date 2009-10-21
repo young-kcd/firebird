@@ -212,6 +212,14 @@ typedef struct dsc
 		dsc_address = (UCHAR*) address;
 	}
 
+	void makeDate(GDS_DATE* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_sql_date;
+		dsc_length = sizeof(GDS_DATE);
+		dsc_address = (UCHAR*) address;
+	}
+
 	void makeDouble(double* address = NULL)
 	{
 		clear();
@@ -265,6 +273,15 @@ typedef struct dsc
 		dsc_length = length;
 		setTextType(ttype);
 		dsc_address = address;
+	}
+
+	void makeTime(GDS_TIME* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_sql_time;
+		dsc_length = sizeof(GDS_TIME);
+		dsc_scale = 0;
+		dsc_address = (UCHAR*) address;
 	}
 
 	void makeTimestamp(GDS_TIMESTAMP* address = NULL)

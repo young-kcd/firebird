@@ -271,7 +271,10 @@ Firebird::string ConfObject::expand(const char* rawValue)
 	if (!changed)
 		return temp;
 
-	return PathName::expandFilename (temp);
+	// ASF: Do not try to expand relative filenames. It seems better to use $(this), or if necessary
+	// a new expansion variable. Also, this function is bugged and is returning incorrect values.
+	// return PathName::expandFilename (temp);
+	return temp;
 }
 
 Firebird::string ConfObject::getValue(const char* attributeName)

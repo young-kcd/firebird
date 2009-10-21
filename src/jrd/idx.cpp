@@ -335,7 +335,7 @@ void IDX_create_index(thread_db* tdbb,
 
 	// Unless this is the only attachment or a database restore, worry about
 	// preserving the page working sets of other attachments.
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 	{
 		if (attachment->att_flags & ATT_gbak_attachment ||

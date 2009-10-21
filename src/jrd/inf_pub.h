@@ -309,6 +309,7 @@ enum info_db_provider
 #define isc_info_rsb_skip		22
 #define isc_info_rsb_virt_sequential	23
 #define isc_info_rsb_recursive	24
+#define isc_info_rsb_window		25
 
 /**********************/
 /* Bitmap expressions */

@@ -146,6 +146,7 @@ public:
 const char* const object_table		= "TABLE";
 const char* const object_procedure	= "PROCEDURE";
 const char* const object_column		= "COLUMN";
+const char* const object_package	= "PACKAGE";
 
 } //namespace Jrd
 

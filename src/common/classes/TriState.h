@@ -32,6 +32,71 @@
 #include "firebird.h"
 
 
+// Do not have constructor to allow usage in unions (used in the parser).
+template <typename T> class TriStateRawType
+{
+public:
+	static TriStateRawType<T> val(const T& v)
+	{
+		TriStateRawType<T> triState;
+		triState.value = v;
+		triState.specified = true;
+		return triState;
+	}
+
+	static TriStateRawType<T> empty()
+	{
+		TriStateRawType<T> triState;
+		triState.value = (T) 0;
+		triState.specified = false;
+		return triState;
+	}
+
+	void operator =(const T& newValue)
+	{
+		value = newValue;
+		specified = true;
+	}
+
+	bool operator ==(const TriStateRawType<T>& o) const
+	{
+		return (!specified && !o.specified) || (specified == o.specified && value == o.value);
+	}
+
+public:
+	T value;
+	bool specified;
+};
+
+template <typename T> class TriStateType : public TriStateRawType<T>
+{
+public:
+	TriStateType<T>(const T& v)
+	{
+		this->value = v;
+		this->specified = true;
+	}
+
+	TriStateType<T>(const TriStateType<T>& o)
+	{
+		this->value = o.value;
+		this->specified = o.specified;
+	}
+
+	TriStateType<T>()
+	{
+		this->value = 0;
+		this->specified = false;
+	}
+
+public:
+	void operator =(const TriStateRawType<T>& o)
+	{
+		this->value = o.value;
+		this->specified = o.specified;
+	}
+};
+
 class TriState
 {
 public:

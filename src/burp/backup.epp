@@ -132,13 +132,14 @@ void write_exceptions();
 void write_field_dimensions();
 void write_filters();
 void write_functions();
-void write_function_args(GDS_NAME);
+void write_function_args(const GDS_NAME, GDS_NAME);
 void write_generators();
 void write_sql_roles();
 void write_mapping();
 void write_global_fields();
+void write_packages();
 void write_procedures();
-void write_procedure_prms(GDS_NAME);
+void write_procedure_prms(const GDS_NAME, const GDS_NAME);
 void write_ref_constraints();
 void write_rel_constraints();
 void write_relations();
@@ -175,9 +176,20 @@ enum backup_capabilities
 								// rdb$valid_blr in rdb$procedures
 								// rdb$default_value, rdb$default_source, rdb$collation_id,
 								// rdb$null_flag and rdb$parameter_mechanism in rdb$procedure_parameters
-	BCK_ods11_2			= 65536	// rdb$field_name and rdb$relation_name in rdb$procedure_parameters
+	BCK_ods11_2			= 65536,// rdb$field_name and rdb$relation_name in rdb$procedure_parameters
 								// rdb$admin system role
 								// rdb$message enlarged to 1023.
+	BCK_ods12_0			=131072	// rdb$engine_name and rdb$entrypoint in rdb$triggers
+								// rdb$package_name in rdb$dependencies
+								// rdb$engine_name, rdb$package_name and rdb$private_flag
+								// in rdb$functions
+								// rdb$package_name in rdb$function_arguments
+								// rdb$engine_name, rdb$entry_point, rdb$package_name
+								// and rdb$private_flag in rdb$procedures
+								// rdb$package_name in rdb$procedure_parameters
+								// rdb$package_name in mon$call_stack
+								// Table rdb$packages
+								// Type of rdb$triggers.rdb$trigger_type changed from SMALLINT to BIGINT
 };
 // ASF: Engine that works with ODS11.1 supports access to non-existent system fields.
 // Reads returns NULL and writes do nothing.
@@ -232,6 +244,7 @@ const rfr_tab_t rfr_table[] =
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$PARAMETER_MECHANISM", BCK_ods11_1},
 	{"RDB$PROCEDURE_PARAMETERS", "RDB$FIELD_NAME", BCK_ods11_2},
 	//{"RDB$PROCEDURE_PARAMETERS", "RDB$RELATION_NAME", BCK_ods11_2},
+	{"RDB$PROCEDURES", "RDB$ENGINE_NAME", BCK_ods12_0},
 	{0, 0, 0}
 };
 
@@ -384,6 +397,13 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		// Write Collations
 		BURP_verbose(msgVerbose_write_collations);
 		write_collations();
+	}
+
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	{
+		// Write packages
+		BURP_verbose(336);	// msg 336 writing packages
+		write_packages();
 	}
 
 	if (tdgbl->BCK_capabilities & BCK_ffmptt)
@@ -3046,38 +3066,82 @@ void write_functions()
  *
  **************************************/
 	GDS_NAME func;
-	TEXT temp[GDS_NAME_LEN];
+	TEXT temp[GDS_NAME_LEN * 2];
 	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$FUNCTIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
-		put(tdgbl, rec_function);
-		const SSHORT l = PUT_TEXT (att_function_name, X.RDB$FUNCTION_NAME);
-		MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
-		BURP_verbose (147, temp);
-		// msg 147 writing function %.*s
-		put_source_blob (att_function_description2, att_function_description, X.RDB$DESCRIPTION);
-		PUT_TEXT (att_function_module_name, X.RDB$MODULE_NAME);
-		PUT_TEXT (att_function_entrypoint, X.RDB$ENTRYPOINT);
-		put_numeric (att_function_return_arg, X.RDB$RETURN_ARGUMENT);
-		put_numeric (att_function_type, X.RDB$FUNCTION_TYPE);
-		PUT_TEXT (att_function_query_name, X.RDB$QUERY_NAME);
-		put(tdgbl, att_end);
-		COPY (X.RDB$FUNCTION_NAME, func);
-		write_function_args (func);
-		put(tdgbl, rec_function_end);
-	END_FOR;
-	ON_ERROR
-		general_on_error();
-	END_ERROR;
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$FUNCTIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_function);
+
+			SSHORT prefixLen = 0;
+
+			if (!X.RDB$PACKAGE_NAME.NULL)
+			{
+				prefixLen = PUT_TEXT(att_function_package_name, X.RDB$PACKAGE_NAME);
+				MISC_terminate(X.RDB$PACKAGE_NAME, temp, prefixLen, sizeof(temp));
+				temp[prefixLen++] = '.';
+			}
+
+			const SSHORT l = PUT_TEXT (att_function_name, X.RDB$FUNCTION_NAME);
+			MISC_terminate (X.RDB$FUNCTION_NAME, temp + prefixLen, l, sizeof(temp) - prefixLen);
+			BURP_verbose (147, temp);
+			// msg 147 writing function %.*s
+			put_source_blob (att_function_description2, att_function_description, X.RDB$DESCRIPTION);
+			PUT_TEXT (att_function_module_name, X.RDB$MODULE_NAME);
+			PUT_TEXT (att_function_entrypoint, X.RDB$ENTRYPOINT);
+			put_numeric (att_function_return_arg, X.RDB$RETURN_ARGUMENT);
+			put_numeric (att_function_type, X.RDB$FUNCTION_TYPE);
+			PUT_TEXT (att_function_query_name, X.RDB$QUERY_NAME);
+
+			if (!X.RDB$ENGINE_NAME.NULL)
+				PUT_TEXT(att_function_engine_name, X.RDB$ENGINE_NAME);
+
+			if (!X.RDB$PRIVATE_FLAG.NULL)
+				put_numeric(att_function_private_flag, X.RDB$PRIVATE_FLAG);
+
+			put(tdgbl, att_end);
+			COPY (X.RDB$FUNCTION_NAME, func);
+			write_function_args ((X.RDB$PACKAGE_NAME.NULL ? "" : X.RDB$PACKAGE_NAME), func);
+			put(tdgbl, rec_function_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$FUNCTIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_function);
+			const SSHORT l = PUT_TEXT (att_function_name, X.RDB$FUNCTION_NAME);
+			MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
+			BURP_verbose (147, temp);
+			// msg 147 writing function %.*s
+			put_source_blob (att_function_description2, att_function_description, X.RDB$DESCRIPTION);
+			PUT_TEXT (att_function_module_name, X.RDB$MODULE_NAME);
+			PUT_TEXT (att_function_entrypoint, X.RDB$ENTRYPOINT);
+			put_numeric (att_function_return_arg, X.RDB$RETURN_ARGUMENT);
+			put_numeric (att_function_type, X.RDB$FUNCTION_TYPE);
+			PUT_TEXT (att_function_query_name, X.RDB$QUERY_NAME);
+			put(tdgbl, att_end);
+			COPY (X.RDB$FUNCTION_NAME, func);
+			write_function_args ("", func);
+			put(tdgbl, rec_function_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
 
 	MISC_release_request_silent(req_handle1);
 }
 
 
-void write_function_args( GDS_NAME funcptr)
+void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 {
 /**************************************
  *
@@ -3089,7 +3153,7 @@ void write_function_args( GDS_NAME funcptr)
  * 	write all arguments for a function.
  *
  **************************************/
-	TEXT temp[GDS_NAME_LEN];
+	TEXT temp[GDS_NAME_LEN * 2];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3099,7 +3163,48 @@ void write_function_args( GDS_NAME funcptr)
 	// requests--this requires more code but it is well worth it
 	// for the performance benefits, especially remotely--deej
 
-	if (tdgbl->BCK_capabilities & BCK_ods10)
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	{
+		FOR (REQUEST_HANDLE tdgbl->handles_write_function_args_req_handle1)
+			X IN RDB$FUNCTION_ARGUMENTS
+			WITH X.RDB$FUNCTION_NAME EQ funcptr AND
+				 X.RDB$PACKAGE_NAME EQUIV NULLIF(package, '')
+
+			put(tdgbl, rec_function_arg);
+
+			SSHORT prefixLen = 0;
+
+			if (!X.RDB$PACKAGE_NAME.NULL)
+			{
+				prefixLen = PUT_TEXT(att_functionarg_package_name, X.RDB$PACKAGE_NAME);
+				MISC_terminate(X.RDB$PACKAGE_NAME, temp, prefixLen, sizeof(temp));
+				temp[prefixLen++] = '.';
+			}
+
+			const SSHORT l = PUT_TEXT (att_functionarg_name, X.RDB$FUNCTION_NAME);
+			MISC_terminate (X.RDB$FUNCTION_NAME, temp + prefixLen, l, sizeof(temp) - prefixLen);
+			BURP_verbose (141, temp);
+			// msg 141 writing argument for function %s
+
+			put_numeric (att_functionarg_position, X.RDB$ARGUMENT_POSITION);
+			put_numeric (att_functionarg_mechanism, X.RDB$MECHANISM);
+			put_numeric (att_functionarg_field_type, X.RDB$FIELD_TYPE);
+			put_numeric (att_functionarg_field_scale, X.RDB$FIELD_SCALE);
+			put_numeric (att_functionarg_field_length, X.RDB$FIELD_LENGTH);
+			put_numeric (att_functionarg_field_sub_type, X.RDB$FIELD_SUB_TYPE);
+			if (!X.RDB$CHARACTER_SET_ID.NULL)
+				put_numeric (att_functionarg_character_set, X.RDB$CHARACTER_SET_ID);
+
+			if (!X.RDB$FIELD_PRECISION.NULL)
+				put_numeric (att_functionarg_field_precision, X.RDB$FIELD_PRECISION);
+
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else if (tdgbl->BCK_capabilities & BCK_ods10)
 	{
 		FOR (REQUEST_HANDLE tdgbl->handles_write_function_args_req_handle1)
 			X IN RDB$FUNCTION_ARGUMENTS WITH
@@ -3436,6 +3541,65 @@ void write_global_fields()
 }
 
 
+void write_packages()
+{
+/**************************************
+ *
+ *	w r i t e _ p a c k a g e s
+ *
+ **************************************
+ *
+ * Functional description
+ * 	write a record in the burp file for
+ *	each package.
+ *
+ **************************************/
+	TEXT temp[GDS_NAME_LEN];
+	isc_req_handle req_handle1 = 0;
+
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+
+	FOR (REQUEST_HANDLE req_handle1)
+		X IN RDB$PACKAGES
+		WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+	{
+		put(tdgbl, rec_package);
+		const SSHORT l = PUT_TEXT(att_package_name, X.RDB$PACKAGE_NAME);
+		MISC_terminate(X.RDB$PACKAGE_NAME, temp, l, sizeof(temp));
+
+		BURP_verbose(335, temp);	// msg 335 writing package @1
+
+		if (!X.RDB$PACKAGE_HEADER_SOURCE.NULL)
+		{
+			put_source_blob(att_package_header_source, att_package_header_source,
+				X.RDB$PACKAGE_HEADER_SOURCE);
+		}
+
+		if (!X.RDB$PACKAGE_BODY_SOURCE.NULL)
+		{
+			put_source_blob(att_package_body_source, att_package_body_source,
+				X.RDB$PACKAGE_BODY_SOURCE);
+		}
+
+		if (!X.RDB$SECURITY_CLASS.NULL)
+			PUT_TEXT(att_package_security_class, X.RDB$SECURITY_CLASS);
+		if (!X.RDB$OWNER_NAME.NULL)
+			PUT_TEXT(att_package_owner_name, X.RDB$OWNER_NAME);
+
+		if (!X.RDB$DESCRIPTION.NULL)
+			put_source_blob(att_package_description, att_package_description, X.RDB$DESCRIPTION);
+
+		put(tdgbl, att_end);
+	}
+	END_FOR
+	ON_ERROR
+		general_on_error();
+	END_ERROR
+
+	MISC_release_request_silent(req_handle1);
+}
+
+
 void write_procedures()
 {
 /**************************************
@@ -3461,18 +3625,32 @@ void write_procedures()
 			X IN RDB$PROCEDURES
 			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
 			put(tdgbl, rec_procedure);
-			const SSHORT l = PUT_TEXT (att_procedure_name, X.RDB$PROCEDURE_NAME);
-			MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
+
+			SSHORT prefixLen = 0;
+
+			if (!X.RDB$PACKAGE_NAME.NULL)
+			{
+				prefixLen = PUT_TEXT(att_procedure_package_name, X.RDB$PACKAGE_NAME);
+				MISC_terminate (X.RDB$PACKAGE_NAME, temp, prefixLen, sizeof(temp));
+				temp[prefixLen++] = '.';
+			}
+
+			const SSHORT len = PUT_TEXT (att_procedure_name, X.RDB$PROCEDURE_NAME);
+			MISC_terminate (X.RDB$PROCEDURE_NAME, temp + prefixLen, len, sizeof(temp) - prefixLen);
+
 			BURP_verbose (193, temp);
 			// msg 193 writing stored procedure %.*s
 			put_numeric (att_procedure_inputs, X.RDB$PROCEDURE_INPUTS);
 			put_numeric (att_procedure_outputs, X.RDB$PROCEDURE_OUTPUTS);
 			put_source_blob(att_procedure_description2, att_procedure_description, X.RDB$DESCRIPTION);
 			put_source_blob (att_procedure_source2, att_procedure_source, X.RDB$PROCEDURE_SOURCE);
-			put_blr_blob (att_procedure_blr, X.RDB$PROCEDURE_BLR);
+
+			if (!X.RDB$PROCEDURE_BLR.NULL)
+				put_blr_blob (att_procedure_blr, X.RDB$PROCEDURE_BLR);
+
 			if (!X.RDB$SECURITY_CLASS.NULL)
 				PUT_TEXT (att_procedure_security_class, X.RDB$SECURITY_CLASS);
-			if (!X.RDB$SECURITY_CLASS.NULL)
+			if (!X.RDB$OWNER_NAME.NULL)
 				PUT_TEXT (att_procedure_owner_name, X.RDB$OWNER_NAME);
 			if (!X.RDB$PROCEDURE_TYPE.NULL)
 				put_numeric (att_procedure_type, X.RDB$PROCEDURE_TYPE);
@@ -3480,9 +3658,19 @@ void write_procedures()
 				put_numeric (att_procedure_valid_blr, X.RDB$VALID_BLR);
 			if (!X.RDB$DEBUG_INFO.NULL)
 				put_blr_blob (att_procedure_debug_info, X.RDB$DEBUG_INFO);
+
+			if (!X.RDB$ENGINE_NAME.NULL)
+				PUT_TEXT(att_procedure_engine_name, X.RDB$ENGINE_NAME);
+
+			if (!X.RDB$ENTRYPOINT.NULL)
+				PUT_TEXT(att_procedure_entrypoint, X.RDB$ENTRYPOINT);
+
+			if (!X.RDB$PRIVATE_FLAG.NULL)
+				put_numeric(att_procedure_private_flag, X.RDB$PRIVATE_FLAG);
+
 			put(tdgbl, att_end);
 			COPY(X.RDB$PROCEDURE_NAME, proc);
-			write_procedure_prms (proc);
+			write_procedure_prms ((X.RDB$PACKAGE_NAME.NULL ? "" : X.RDB$PACKAGE_NAME), proc);
 			put(tdgbl, rec_procedure_end);
 		END_FOR;
 		ON_ERROR
@@ -3509,7 +3697,7 @@ void write_procedures()
 				PUT_TEXT (att_procedure_owner_name, X.RDB$OWNER_NAME);
 			put(tdgbl, att_end);
 			COPY(X.RDB$PROCEDURE_NAME, proc);
-			write_procedure_prms (proc);
+			write_procedure_prms ("", proc);
 			put(tdgbl, rec_procedure_end);
 		END_FOR;
 		ON_ERROR
@@ -3521,7 +3709,7 @@ void write_procedures()
 }
 
 
-void write_procedure_prms( GDS_NAME procptr)
+void write_procedure_prms(const GDS_NAME package, const GDS_NAME procptr)
 {
 /**************************************
  *
@@ -3540,7 +3728,10 @@ void write_procedure_prms( GDS_NAME procptr)
 	if (tdgbl->BCK_capabilities & BCK_ods11_1)
 	{
 		FOR (REQUEST_HANDLE tdgbl->handles_write_procedure_prms_req_handle1)
-			X IN RDB$PROCEDURE_PARAMETERS WITH X.RDB$PROCEDURE_NAME EQ procptr
+			X IN RDB$PROCEDURE_PARAMETERS
+			WITH X.RDB$PROCEDURE_NAME EQ procptr AND
+				 X.RDB$PACKAGE_NAME EQUIV NULLIF(package, '')
+		{
 			put(tdgbl, rec_procedure_prm);
 			const SSHORT l = PUT_TEXT (att_procedureprm_name, X.RDB$PARAMETER_NAME);
 			MISC_terminate (X.RDB$PARAMETER_NAME, temp, l, sizeof(temp));
@@ -3568,6 +3759,7 @@ void write_procedure_prms( GDS_NAME procptr)
 				PUT_TEXT(att_procedureprm_relation_name, X.RDB$RELATION_NAME);
 
 			put(tdgbl, att_end);
+		}
 		END_FOR;
 		ON_ERROR
 			general_on_error();
@@ -4037,7 +4229,12 @@ void write_triggers()
 				PUT_TEXT (att_trig_relation_name, X.RDB$RELATION_NAME);
 
 			put_numeric (att_trig_sequence, X.RDB$TRIGGER_SEQUENCE);
-			put_numeric (att_trig_type, X.RDB$TRIGGER_TYPE);
+
+			if (X.RDB$TRIGGER_TYPE >= SLONG_MIN && X.RDB$TRIGGER_TYPE <= SLONG_MAX)
+				put_numeric (att_trig_type, (SLONG) X.RDB$TRIGGER_TYPE);
+			else
+				put_int64 (att_trig_type2, X.RDB$TRIGGER_TYPE);
+
 			put_blr_blob (att_trig_blr, X.RDB$TRIGGER_BLR);
 			put_source_blob (att_trig_source2, att_trig_source, X.RDB$TRIGGER_SOURCE);
 			put_source_blob (att_trig_description2, att_trig_description, X.RDB$DESCRIPTION);
@@ -4052,6 +4249,12 @@ void write_triggers()
 
 			if (!X.RDB$DEBUG_INFO.NULL)
 				put_blr_blob (att_trig_debug_info, X.RDB$DEBUG_INFO);
+
+			if (!X.RDB$ENGINE_NAME.NULL)
+				PUT_TEXT(att_trig_engine_name, X.RDB$ENGINE_NAME);
+
+			if (!X.RDB$ENTRYPOINT.NULL)
+				PUT_TEXT(att_trig_entrypoint, X.RDB$ENTRYPOINT);
 
 			put(tdgbl, att_end);
 

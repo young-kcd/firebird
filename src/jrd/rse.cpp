@@ -68,6 +68,7 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/VirtualTable.h"
+#include "../jrd/opt_proto.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
 
@@ -108,7 +109,6 @@ static bool fetch_left(thread_db*, RecordSource*, IRSB);
 #endif
 static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
 static bool get_procedure(thread_db*, RecordSource*, irsb_procedure*, record_param*);
-static bool get_record(thread_db*, RecordSource*, RecordSource*, rse_get_mode);
 static bool get_union(thread_db*, RecordSource*, IRSB);
 static void invalidate_child_rpbs(thread_db*, RecordSource*);
 static void join_to_nulls(thread_db*, StreamStack*);
@@ -261,8 +261,8 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			EXT_close(rsb);
 			return;
 
-		case rsb_virt_sequential:
-			VirtualTable::close(tdbb, rsb);
+		case rsb_record_stream:
+			rsb->rsb_record_stream->close(tdbb);
 			return;
 
 		default:
@@ -281,7 +281,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, rse_get_mode mode)
  **************************************
  *
  * Functional description
- *	External entrypoint for get_record().
+ *	External entrypoint for RSE_internal_get_record().
  *	Handle the "stickiness" of directionality.
  *	Check whether we need to count records
  *	retrieved at the top level of the rsb tree.
@@ -312,7 +312,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, rse_get_mode mode)
 	request->req_flags &= ~req_count_records;
 
 	bool result;
-	while ( (result = get_record(tdbb, rsb, NULL, mode)) )
+	while ( (result = RSE_internal_get_record(tdbb, rsb, NULL, mode)) )
 	{
 		if (rsb->rsb_flags & rsb_writelock)
 		{
@@ -432,7 +432,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				   effect of large sequential scans on the page working sets of
 				   other attachments. */
 
-				Attachment* attachment = tdbb->getAttachment();
+				Jrd::Attachment* attachment = tdbb->getAttachment();
 				if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 				{
 					/* If the relation has more data pages than the number of
@@ -550,8 +550,8 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			EXT_open(tdbb, rsb);
 			return;
 
-		case rsb_virt_sequential:
-			VirtualTable::open(tdbb, rsb);
+		case rsb_record_stream:
+			rsb->rsb_record_stream->open(tdbb);
 			return;
 
 		case rsb_left_cross:
@@ -634,6 +634,7 @@ static void close_procedure(thread_db* tdbb, RecordSource* rsb)
 	jrd_req* request = tdbb->getRequest();
 	irsb_procedure* impure = (irsb_procedure*) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
+
 	if (proc_request) {
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_flags &= ~req_in_use;
@@ -752,7 +753,7 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n
 
 	RecordSource* sub_rsb = rsb->rsb_arg[n];
 
-	if (get_record(tdbb, sub_rsb, NULL
+	if (RSE_internal_get_record(tdbb, sub_rsb, NULL
 #ifdef SCROLLABLE_CURSORS
 				   , mode
 #else
@@ -780,7 +781,7 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n
 		}
 		RSE_open(tdbb, sub_rsb);
 
-		if (get_record(tdbb, sub_rsb, NULL
+		if (RSE_internal_get_record(tdbb, sub_rsb, NULL
 #ifdef SCROLLABLE_CURSORS
 					   , mode
 #else
@@ -830,7 +831,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 
 			if (impure->irsb_flags & irsb_mustread)
 			{
-				if (!get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, mode))
+				if (!RSE_internal_get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, mode))
 				{
 					if (mode == RSE_get_backward)
 						return false;
@@ -865,7 +866,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 
 			/* fetch records from the inner stream until exhausted */
 
-			while (get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL, mode))
+			while (RSE_internal_get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL, mode))
 			{
 				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
 					EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
@@ -902,7 +903,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 				   find the records that haven't been. */
 				bool found;
 				do {
-					if (!get_record(tdbb, full, NULL, mode)) {
+					if (!RSE_internal_get_record(tdbb, full, NULL, mode)) {
 						if (mode == RSE_get_forward)
 							return false;
 
@@ -910,7 +911,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 					}
 
 					RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
-					while (found = get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, mode))
+					while (found = RSE_internal_get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, mode))
 					{
 						if (
 							(!rsb->rsb_arg[RSB_LEFT_boolean] ||
@@ -926,7 +927,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 					RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
 				} while (found);
 			}
-			else if (!get_record(tdbb, full, NULL, mode))
+			else if (!RSE_internal_get_record(tdbb, full, NULL, mode))
 			{
 				if (mode == RSE_get_forward)
 					return false;
@@ -980,7 +981,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 		{
 			if (impure->irsb_flags & irsb_mustread)
 			{
-				if (!get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, RSE_get_forward))
+				if (!RSE_internal_get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, RSE_get_forward))
 				{
 					if (rsb->rsb_left_inner_streams->isEmpty())
 						return false;
@@ -1006,7 +1007,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 				RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
 			}
 
-			while (get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL, RSE_get_forward))
+			while (RSE_internal_get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL, RSE_get_forward))
 			{
 				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
 					EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
@@ -1040,10 +1041,10 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 		   find the records that haven't been. */
 		bool found;
 		do {
-			if (!get_record(tdbb, full, NULL, RSE_get_forward))
+			if (!RSE_internal_get_record(tdbb, full, NULL, RSE_get_forward))
 				return false;
 			RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
-			while ( (found = get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, RSE_get_forward)) )
+			while ( (found = RSE_internal_get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, RSE_get_forward)) )
 			{
 				if ((!rsb->rsb_arg[RSB_LEFT_boolean] ||
 						EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean])) &&
@@ -1058,7 +1059,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 			RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
 		} while (found);
 	}
-	else if (!get_record(tdbb, full, NULL, RSE_get_forward))
+	else if (!RSE_internal_get_record(tdbb, full, NULL, RSE_get_forward))
 		return false;
 
 	join_to_nulls(tdbb, rsb->rsb_left_inner_streams);
@@ -1725,29 +1726,30 @@ static bool get_procedure(thread_db*			tdbb,
 	TraceProcFetch trace(tdbb, proc_request);
 	try {
 		EXE_receive(tdbb, proc_request, 1, oml, om);
+
+		dsc desc = msg_format->fmt_desc[msg_format->fmt_count - 1];
+		desc.dsc_address = (UCHAR*) (om + (IPTR) desc.dsc_address);
+		USHORT eos;
+		dsc eos_desc;
+		eos_desc.dsc_dtype = dtype_short;
+		eos_desc.dsc_scale = 0;
+		eos_desc.dsc_length = sizeof(SSHORT);
+		eos_desc.dsc_sub_type = 0;
+		eos_desc.dsc_flags = 0;
+		eos_desc.dsc_address = (UCHAR*) &eos;
+		MOV_move(tdbb, &desc, &eos_desc);
+
+		if (!eos)
+		{
+			trace.fetch(true, res_successful);
+			return false;
+		}
 	}
 	catch (const Firebird::Exception&)
 	{
 		trace.fetch(true, res_failed);
 		close_procedure(tdbb, rsb);
 		throw;
-	}
-
-	dsc desc = msg_format->fmt_desc[msg_format->fmt_count - 1];
-	desc.dsc_address = (UCHAR*) (om + (IPTR) desc.dsc_address);
-	USHORT eos;
-	dsc eos_desc;
-	eos_desc.dsc_dtype = dtype_short;
-	eos_desc.dsc_scale = 0;
-	eos_desc.dsc_length = sizeof(SSHORT);
-	eos_desc.dsc_sub_type = 0;
-	eos_desc.dsc_flags = 0;
-	eos_desc.dsc_address = (UCHAR *) & eos;
-	MOV_move(tdbb, &desc, &eos_desc);
-	if (!eos)
-	{
-		trace.fetch(true, res_successful);
-		return false;
 	}
 
 	for (int i = 0; i < rec_format->fmt_count; i++)
@@ -1766,14 +1768,14 @@ static bool get_procedure(thread_db*			tdbb,
 }
 
 
-static bool get_record(thread_db*	tdbb,
-						  RecordSource*	rsb,
-						  RecordSource*	parent_rsb,
-						  rse_get_mode	mode)
+bool RSE_internal_get_record(thread_db*	tdbb,
+							 RecordSource*	rsb,
+							 RecordSource*	parent_rsb,
+							 rse_get_mode	mode)
 {
 /**************************************
  *
- *	g e t _ r e c o r d
+ *	R S E _ i n t e r n a l _ g e t _ r e c o r d
  *
  **************************************
  *
@@ -1960,7 +1962,7 @@ static bool get_record(thread_db*	tdbb,
 
 					any_null = false;
 					any_true = false;
-					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+					while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb, mode))
 					{
 						if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0]))
 						{
@@ -2022,7 +2024,7 @@ static bool get_record(thread_db*	tdbb,
 					   ANY is true */
 
 					result = false;
-					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+					while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb, mode))
 					{
 						if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0])) {
 							result = true;
@@ -2051,7 +2053,7 @@ static bool get_record(thread_db*	tdbb,
 					   NOT ALL is true */
 
 					any_false = false;
-					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+					while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb, mode))
 					{
 						request->req_flags &= ~req_null;
 
@@ -2100,7 +2102,7 @@ static bool get_record(thread_db*	tdbb,
 					   ALL is true */
 
 					any_false = false;
-					while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+					while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb, mode))
 					{
 						request->req_flags &= ~req_null;
 
@@ -2142,7 +2144,7 @@ static bool get_record(thread_db*	tdbb,
 				bool flag = false;
 
 				result = false;
-				while (get_record(tdbb, rsb->rsb_next, rsb, mode))
+				while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb, mode))
 				{
 					if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0])) {
 						result = true;
@@ -2187,7 +2189,7 @@ static bool get_record(thread_db*	tdbb,
 				return false;
 			}
 			((irsb_first_n*) impure)->irsb_count--;
-			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+			if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
 
@@ -2198,13 +2200,13 @@ static bool get_record(thread_db*	tdbb,
 				invalidate_child_rpbs(tdbb, rsb);
 				return false;
 			}
-			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+			if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
 
 		case RSE_get_backward:
 			((irsb_first_n*) impure)->irsb_count++;
-			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+			if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
 #endif
@@ -2227,12 +2229,12 @@ static bool get_record(thread_db*	tdbb,
 				if (skip->irsb_count == 0)
 				{
 					skip->irsb_count++;
-					if (get_record(tdbb, rsb->rsb_next, NULL, mode))
+					if (RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 						invalidate_child_rpbs(tdbb, rsb);
 					return false;
 				}
 				skip->irsb_count++;
-				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 					return false;
 				break;
 
@@ -2242,7 +2244,7 @@ static bool get_record(thread_db*	tdbb,
 					invalidate_child_rpbs(tdbb, rsb);
 					return false;
 				}
-				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 					return false;
 				break;
 #endif
@@ -2250,11 +2252,11 @@ static bool get_record(thread_db*	tdbb,
 			case RSE_get_forward:
 				while (skip->irsb_count > 1) {
 					skip->irsb_count--;
-					if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+					if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 						return false;
 				}
 				skip->irsb_count--;
-				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, mode))
 					return false;
 				break;
 			}
@@ -2396,8 +2398,8 @@ static bool get_record(thread_db*	tdbb,
 		rpb->rpb_number.setValid(true);
 		break;
 
-	case rsb_virt_sequential:
-		if (!VirtualTable::get(tdbb, rsb))
+	case rsb_record_stream:
+		if (!rsb->rsb_record_stream->get(tdbb))
 		{
 			rpb->rpb_number.setValid(false);
 			return false;
@@ -2435,7 +2437,7 @@ static bool get_record(thread_db*	tdbb,
 	{
 		push_rpbs(tdbb, request, rsb);
 		impure->irsb_flags |= irsb_checking_singular;
-		if (get_record(tdbb, rsb, parent_rsb, mode)) {
+		if (RSE_internal_get_record(tdbb, rsb, parent_rsb, mode)) {
 			impure->irsb_flags &= ~irsb_checking_singular;
 			ERR_post(Arg::Gds(isc_sing_select_err));
 		}
@@ -2501,7 +2503,7 @@ static bool get_union(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 
 /* March thru the sub-streams (tributaries?) looking for a record */
 
-	while (!get_record(tdbb, *rsb_ptr, NULL, RSE_get_forward))
+	while (!RSE_internal_get_record(tdbb, *rsb_ptr, NULL, RSE_get_forward))
 	{
 		RSE_close(tdbb, *rsb_ptr);
 		impure->irsb_count += 2;
@@ -2550,7 +2552,7 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 			case rsb_ext_sequential:
 			case rsb_ext_indexed:
 			case rsb_ext_dbkey:
-			case rsb_virt_sequential:
+			case rsb_record_stream:
 			case rsb_procedure:
 				rpb->rpb_number.setValid(false);
 				return;
@@ -2905,7 +2907,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 
 	dsc to, temp;
 
-	while (get_record(tdbb, rsb->rsb_next, NULL, RSE_get_forward))
+	while (RSE_internal_get_record(tdbb, rsb->rsb_next, NULL, RSE_get_forward))
 	{
 		records++;
 
@@ -3138,7 +3140,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_union:
 	case rsb_recursive_union:
 	case rsb_aggregate:
-	case rsb_virt_sequential:
+	case rsb_record_stream:
 		{
 			record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 			restore_record(rpb);
@@ -3253,7 +3255,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_union:
 	case rsb_recursive_union:
 	case rsb_aggregate:
-	case rsb_virt_sequential:
+	case rsb_record_stream:
 		{
 			record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 			save_record(tdbb, rpb);
@@ -3689,7 +3691,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 
 	// Get the data -- if there is none go back one level and when
 	// there isn't a previous level, we're done
-	while (!get_record(tdbb, *rsb_ptr, NULL, RSE_get_forward))
+	while (!RSE_internal_get_record(tdbb, *rsb_ptr, NULL, RSE_get_forward))
 	{
 		if (irsb->irsb_level == 1)
 		{

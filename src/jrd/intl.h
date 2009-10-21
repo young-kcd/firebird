@@ -148,7 +148,7 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
 #define MAP_CHARSET_TO_TTYPE(cs)	(cs & 0x00FF)
 
 #define	INTL_RES_TTYPE(desc)	(INTL_DYNAMIC_CHARSET(desc) ?\
-			MAP_CHARSET_TO_TTYPE(tdbb->getAttachment()->att_charset) :\
+			MAP_CHARSET_TO_TTYPE(tdbb->getCharSet()) :\
 		 	INTL_GET_TTYPE (desc))
 
 #define INTL_INDEX_TYPE(desc)	INTL_TEXT_TO_INDEX (INTL_RES_TTYPE (desc))

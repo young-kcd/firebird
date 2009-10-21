@@ -1,7 +1,7 @@
 /* MAX_NUMBER is the next number to be used, always one more than the highest message number. */
 set bulk_insert INSERT INTO FACILITIES (LAST_CHANGE, FACILITY, FAC_CODE, MAX_NUMBER) VALUES (?, ?, ?, ?);
 --
-('2009-10-02 20:33:37', 'JRD', 0, 668)
+('2009-10-20 12:37:00', 'JRD', 0, 670)
 -- Reserved 513-529 by CVC
 ('2009-07-16 05:41:59', 'QLI', 1, 530)
 ('2008-11-28 20:27:04', 'GDEF', 2, 346)
@@ -19,7 +19,7 @@ set bulk_insert INSERT INTO FACILITIES (LAST_CHANGE, FACILITY, FAC_CODE, MAX_NUM
 ('1996-11-07 13:39:40', 'INSTALL', 10, 1)
 ('1996-11-07 13:38:41', 'TEST', 11, 4)
 -- Reserved 326-334 by CVC
-('2009-07-27 03:59:31', 'GBAK', 12, 335)
+('2009-08-07 22:42:00', 'GBAK', 12, 339)
 ('2009-06-05 23:07:00', 'SQLERR', 13, 970)
 ('1996-11-07 13:38:42', 'SQLWARN', 14, 613)
 ('2006-09-10 03:04:31', 'JRD_BUGCHK', 15, 307)

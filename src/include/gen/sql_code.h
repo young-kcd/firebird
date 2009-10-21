@@ -688,6 +688,8 @@ static const struct {
 	{335544985, -901}, /* 665 out_of_temp_space */
 	{335544986, -901}, /* 666 eds_expl_tran_ctrl */
 	{335544987, -902}, /* 667 no_trusted_spb */
+	{335544988, -901}, /* 668 package_name */
+	{335544989, -901}, /* 669 cannot_make_not_null */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
@@ -745,7 +747,21 @@ static const struct {
 	{336003101, -817}, /*  29 upd_ins_with_complex_view */
 	{336003102, -817}, /*  30 dsql_incompatible_trigger_type */
 	{336003103, -817}, /*  31 dsql_db_trigger_type_cant_change */
+	{336068645, -901}, /*  37 dyn_filter_not_found */
+	{336068649, -901}, /*  41 dyn_func_not_found */
+	{336068656, -901}, /*  48 dyn_index_not_found */
+	{336068662, -901}, /*  54 dyn_view_not_found */
+	{336068697, -901}, /*  89 dyn_domain_not_found */
+	{336068717, -901}, /* 109 dyn_cant_modify_auto_trig */
 	{336068740, -901}, /* 132 dyn_dup_table */
+	{336068748, -901}, /* 140 dyn_proc_not_found */
+	{336068752, -901}, /* 144 dyn_exception_not_found */
+	{336068754, -901}, /* 146 dyn_proc_param_not_found */
+	{336068755, -901}, /* 147 dyn_trig_not_found */
+	{336068759, -901}, /* 151 dyn_charset_not_found */
+	{336068760, -901}, /* 152 dyn_collation_not_found */
+	{336068763, -901}, /* 155 dyn_role_not_found */
+	{336068767, -901}, /* 159 dyn_name_longer */
 	{336068784, -901}, /* 176 dyn_column_does_not_exist */
 	{336068796, -901}, /* 188 dyn_role_does_not_exist */
 	{336068797, -901}, /* 189 dyn_no_grant_admin_opt */
@@ -764,9 +780,11 @@ static const struct {
 	{336068817, -829}, /* 209 dyn_invalid_dtype_conversion */
 	{336068818, -829}, /* 210 dyn_dtype_conv_invalid */
 	{336068820, -901}, /* 212 dyn_zero_len_id */
+	{336068822, -901}, /* 214 dyn_gen_not_found */
 	{336068829, -829}, /* 221 max_coll_per_charset */
 	{336068830, -829}, /* 222 invalid_coll_attr */
 	{336068840, -901}, /* 232 dyn_wrong_gtt_scope */
+	{336068849, -901}, /* 241 dyn_table_not_found */
 	{336068852, -829}, /* 244 dyn_scale_too_big */
 	{336068853, -829}, /* 245 dyn_precision_too_small */
 	{336068855,  106}, /* 247 dyn_miss_priv_warning */

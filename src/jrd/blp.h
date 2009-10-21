@@ -227,6 +227,12 @@ static const struct
 	{"exec_stmt", exec_stmt},
 	{"stmt_expr", two},
 	{"derived_expr", derived_expr},
+	{"procedure2", procedure2},
+	{"exec_proc2", exec_proc2},
+	{"function2", function2},
+	{"window", aggregate},
+	{"partition_by", byte_args},
+	{"continue_loop", byte_line},
 	{0, 0}
 };
 

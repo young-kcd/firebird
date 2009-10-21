@@ -379,6 +379,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ErrorImpl.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\event.cpp"
 				>
 			</File>
@@ -403,6 +407,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ExtEngineManager.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\filters.cpp"
 				>
 			</File>
@@ -412,10 +420,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\gen\$(PlatformName)\jrd\fun.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\functions.cpp"
 				>
 			</File>
 			<File
@@ -540,6 +544,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\gen\$(PlatformName)\jrd\pcmet.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\PluginManager.cpp"
 				>
 			</File>
 			<File
@@ -683,6 +691,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ValueImpl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ValuesImpl.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\vio.cpp"
 				>
 			</File>
@@ -692,6 +708,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\why.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\WindowRsb.cpp"
 				>
 			</File>
 			<File
@@ -899,6 +919,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ErrorImpl.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\event.h"
 				>
 			</File>
@@ -932,6 +956,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\extds\ExtDS.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ExtEngineManager.h"
 				>
 			</File>
 			<File
@@ -1439,6 +1467,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\ValueImpl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ValuesImpl.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\vio_debug.h"
 				>
 			</File>
@@ -1452,6 +1488,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\why_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\WindowRsb.h"
 				>
 			</File>
 		</Filter>

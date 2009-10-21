@@ -688,6 +688,8 @@ static const struct {
 	{335544985, "HY000"}, // 665 out_of_temp_space
 	{335544986, "42000"}, // 666 eds_expl_tran_ctrl
 	{335544987, "28000"}, // 667 no_trusted_spb
+	{335544988, "42000"}, // 668 package_name
+	{335544989, "22006"}, // 669 cannot_make_not_null
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw
@@ -745,7 +747,21 @@ static const struct {
 	{336003101, "54001"}, //  29 upd_ins_with_complex_view
 	{336003102, "42000"}, //  30 dsql_incompatible_trigger_type
 	{336003103, "42000"}, //  31 dsql_db_trigger_type_cant_change
+	{336068645, "42000"}, //  37 dyn_filter_not_found
+	{336068649, "42000"}, //  41 dyn_func_not_found
+	{336068656, "42000"}, //  48 dyn_index_not_found
+	{336068662, "42000"}, //  54 dyn_view_not_found
+	{336068697, "42000"}, //  89 dyn_domain_not_found
+	{336068717, "42000"}, // 109 dyn_cant_modify_auto_trig
 	{336068740, "42S01"}, // 132 dyn_dup_table
+	{336068748, "42000"}, // 140 dyn_proc_not_found
+	{336068752, "42000"}, // 144 dyn_exception_not_found
+	{336068754, "42000"}, // 146 dyn_proc_param_not_found
+	{336068755, "42000"}, // 147 dyn_trig_not_found
+	{336068759, "42000"}, // 151 dyn_charset_not_found
+	{336068760, "42000"}, // 152 dyn_collation_not_found
+	{336068763, "42000"}, // 155 dyn_role_not_found
+	{336068767, "42000"}, // 159 dyn_name_longer
 	{336068784, "42S22"}, // 176 dyn_column_does_not_exist
 	{336068796, "28000"}, // 188 dyn_role_does_not_exist
 	{336068797, "28000"}, // 189 dyn_no_grant_admin_opt
@@ -764,9 +780,11 @@ static const struct {
 	{336068817, "42000"}, // 209 dyn_invalid_dtype_conversion
 	{336068818, "42000"}, // 210 dyn_dtype_conv_invalid
 	{336068820, "42000"}, // 212 dyn_zero_len_id
+	{336068822, "42000"}, // 214 dyn_gen_not_found
 	{336068829, "2C000"}, // 221 max_coll_per_charset
 	{336068830, "HY000"}, // 222 invalid_coll_attr
 	{336068840, "HY000"}, // 232 dyn_wrong_gtt_scope
+	{336068849, "42000"}, // 241 dyn_table_not_found
 	{336068852, "42000"}, // 244 dyn_scale_too_big
 	{336068853, "42000"}, // 245 dyn_precision_too_small
 	{336068855, "42000"}, // 247 dyn_miss_priv_warning

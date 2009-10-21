@@ -298,10 +298,10 @@ security2.fdb: gdef isql 		# build the security database
 # database earlier, then perhaps we could build the jrdlib in one step and
 # include the security bits and pieces.
 
-.PHONY: ref_databases msgs msgs_intl generated_headers intl extlib includes
+.PHONY: ref_databases msgs msgs_intl generated_headers intl extlib plugins includes
 
 basic_targets: ref_databases msgs msgs_intl generated_headers \
-               intl extlib includes examples_cp
+               intl extlib plugins includes examples_cp
 
 # hack to make code regeneration work
 generated_headers :
@@ -318,6 +318,9 @@ intl:                  # international lang components $(FIREBIRD)/intl/
 
 extlib:                # external programs than can be called
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extlib
+
+plugins:                # plugins
+	$(MAKE) -f $(GEN_ROOT)/Makefile.plugins
 
                        # distribution header include files
 includes:	include_generic 

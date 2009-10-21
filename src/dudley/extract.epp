@@ -1354,34 +1354,20 @@ static void extract_triggers()
         if (T.RDB$TRIGGER_INACTIVE)
             fprintf(output_file, "\tinactive\n");
 
-        switch (T.RDB$TRIGGER_TYPE) {
-        case trg_store:
+        if (T.RDB$TRIGGER_TYPE == (SSHORT) trg_store)
             fprintf(output_file, "\tpre store");
-            break;
-
-        case trg_post_store:
+        else if (T.RDB$TRIGGER_TYPE == (SSHORT) trg_post_store)
             fprintf(output_file, "\tpost store");
-            break;
-
-        case trg_modify:
+        else if (T.RDB$TRIGGER_TYPE == (SSHORT) trg_modify)
 	       fprintf(output_file, "\tpre modify");
-	       break;
-
-        case trg_post_modify:
+        else if (T.RDB$TRIGGER_TYPE == (SSHORT) trg_post_modify)
 	       fprintf(output_file, "\tpost modify");
-	       break;
-
-        case trg_pre_erase:
+        else if (T.RDB$TRIGGER_TYPE == (SSHORT) trg_pre_erase)
             fprintf(output_file, "\tpre erase");
-            break;
-
-        case trg_erase:
+        else if (T.RDB$TRIGGER_TYPE == (SSHORT) trg_erase)
             fprintf(output_file, "\tpost erase");
-            break;
-
-        default:
+        else
             put_comment(261);       /* msg 261: ***** trigger type not understood **** */
-	   }
 
         fprintf(output_file, " %d:\n", T.RDB$TRIGGER_SEQUENCE);
         if (T.RDB$TRIGGER_SOURCE.NULL) {

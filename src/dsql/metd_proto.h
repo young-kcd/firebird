@@ -30,11 +30,11 @@
 #include "../common/classes/MetaName.h"
 #include "../common/classes/fb_pair.h"
 
-typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
-typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
-
 // forward declarations
 namespace Jrd {
+	typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
+	typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
+
 	class dsql_req;
 	class dsql_str;
 	class CompiledStatement;
@@ -42,8 +42,8 @@ namespace Jrd {
 
 void METD_drop_charset(Jrd::dsql_req*, const Firebird::MetaName&);
 void METD_drop_collation(Jrd::dsql_req*, const Jrd::dsql_str*);
-void METD_drop_function(Jrd::dsql_req*, const Jrd::dsql_str*);
-void METD_drop_procedure(Jrd::dsql_req*, const Jrd::dsql_str*);
+void METD_drop_function(Jrd::dsql_req*, const Jrd::dsql_str*, const Firebird::MetaName&);
+void METD_drop_procedure(Jrd::dsql_req*, const Jrd::dsql_str*, const Firebird::MetaName&);
 void METD_drop_relation(Jrd::dsql_req*, const Jrd::dsql_str*);
 
 Jrd::dsql_intlsym*  METD_get_charset(Jrd::dsql_req*, USHORT, const char* name); // UTF-8
@@ -55,15 +55,15 @@ Jrd::dsql_str*      METD_get_default_charset(Jrd::dsql_req*);
 bool METD_get_domain(Jrd::dsql_req*, class Jrd::dsql_fld*, const char* name); // UTF-8
 USHORT   METD_get_domain_default(Jrd::dsql_req*, const TEXT*, bool*, UCHAR*, USHORT);
 bool METD_get_exception(Jrd::dsql_req*, const Jrd::dsql_str*);
-Jrd::dsql_udf*      METD_get_function(Jrd::dsql_req*, const Jrd::dsql_str*);
+Jrd::dsql_udf* METD_get_function(Jrd::CompiledStatement*, const Jrd::dsql_str*, const Jrd::dsql_str*);
 Jrd::dsql_nod* METD_get_primary_key(Jrd::dsql_req*, const Jrd::dsql_str*);
-Jrd::dsql_prc* METD_get_procedure(Jrd::CompiledStatement*, const Jrd::dsql_str*);
+Jrd::dsql_prc* METD_get_procedure(Jrd::CompiledStatement*, const Jrd::dsql_str*, const Jrd::dsql_str*);
 Jrd::dsql_rel* METD_get_relation(Jrd::CompiledStatement*, const Jrd::dsql_str*);
 bool   METD_get_trigger(Jrd::dsql_req*, const Jrd::dsql_str*, Jrd::dsql_str**, USHORT*);
 bool   METD_get_type(Jrd::dsql_req*, const Jrd::dsql_str*, const char*, SSHORT*);
 Jrd::dsql_rel* METD_get_view_base(Jrd::CompiledStatement* request,
 							 const char* view_name,	// UTF-8
-							 MetaNamePairMap& fields);
+							 Jrd::MetaNamePairMap& fields);
 Jrd::dsql_rel* METD_get_view_relation(Jrd::CompiledStatement* request,
 								const char* view_name,         // UTF-8
 								const char* relation_or_alias); // UTF-8

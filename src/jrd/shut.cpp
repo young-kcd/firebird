@@ -143,7 +143,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -341,7 +341,7 @@ void SHUT_online(thread_db* tdbb, SSHORT flag)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
@@ -549,7 +549,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 		fb_assert(false);
 	}
 
-	Attachment* attachment;
+	Jrd::Attachment* attachment;
 
 	for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
@@ -577,7 +577,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 /* Since no attachment is actively running, release all
    attachment-specfic locks while they're not looking. */
 
-	const Attachment* shut_attachment = NULL;
+	const Jrd::Attachment* shut_attachment = NULL;
 
 	for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{

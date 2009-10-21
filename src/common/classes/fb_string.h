@@ -650,7 +650,8 @@ namespace Firebird
 
 		inline StringType& operator=(const StringType& v)
 		{
-			fb_assert(&v != this);
+			if (&v == this)
+				return *this;
 			return assign(v);
 		}
 		inline StringType& operator=(const_pointer s)

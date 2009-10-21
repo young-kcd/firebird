@@ -91,6 +91,7 @@ enum irq_type_t
 	irq_r_params,			// scan procedure parameters
 
 	irq_r_procedure,		// scan procedure
+	irq_pkg_security,		// verify security for package
 	irq_p_security,			// verify security for procedure
 	irq_c_prc_dpd,			// create procedure dependencies for delete
 
@@ -124,8 +125,8 @@ enum irq_type_t
 	irq_m_fields3,			// process a modification of RDB$FIELDS for triggers (ODS 11.1)
 	irq_m_fields4,			// process a modification of RDB$FIELDS for procedures (TYPE OF COLUMN)
 	irq_m_fields5,			// process a modification of RDB$FIELDS for triggers (TYPE OF COLUMN)
+	irq_m_fields6,			// process a modification of RDB$FIELDS for packaged procedures (TYPE OF COLUMN)
 	irq_r_params2,			// scan procedure parameters (ODS 11.1)
-	irq_l_trg_dbg,			// lookup trigger debug_info (ODS 11.1)
 	irq_l_colls,			// lookup collations
 	irq_l_relfield,			// lookup a relation field
 	irq_verify_trusted_role, // ensure trusted role exists
@@ -154,6 +155,8 @@ enum irq_type_t
 	irq_default_cs,			// DSQL/METD: lookup the default charset
 	irq_rel_ids,			// DSQL/METD: check relation/field ids
 	irq_comp_circ_dpd,		// check computed circular dependencies
+	irq_grant10,			// process grant option (packages)
+	irq_l_procedure_pkg_class,	// lookup security class of a packaged procedure
 
 	irq_MAX
 };

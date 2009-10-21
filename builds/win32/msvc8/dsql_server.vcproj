@@ -346,6 +346,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\dsql\PackageNodes.epp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\dsql\metd.epp"
 					>
 				</File>
@@ -363,6 +367,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\gen\$(PlatformName)\dsql\DdlNodes.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\gen\$(PlatformName)\dsql\PackageNodes.cpp"
 					>
 				</File>
 				<File
@@ -402,6 +410,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\DdlNodes.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\PackageNodes.h"
 				>
 			</File>
 			<File

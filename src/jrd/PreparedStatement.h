@@ -23,11 +23,13 @@
 #ifndef JRD_PREPARED_STATEMENT_H
 #define JRD_PREPARED_STATEMENT_H
 
+#include "firebird.h"
+#include "../jrd/common.h"
+#include "../jrd/dsc.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
-
-struct dsc;
+#include "../common/classes/MetaName.h"
 
 namespace Jrd {
 
@@ -49,10 +51,38 @@ public:
 	~PreparedStatement();
 
 public:
+	void setDesc(thread_db* tdbb, int param, const dsc& value);
+
+	void setNull(int param)
+	{
+		const dsc* desc = &inValues[(param - 1) * 2 + 1];
+		fb_assert(desc->dsc_dtype == dtype_short);
+		*reinterpret_cast<SSHORT*>(desc->dsc_address) = -1;
+	}
+
+	void setString(thread_db* tdbb, int param, const Firebird::AbstractString& value)
+	{
+		dsc desc;
+		desc.makeText((USHORT) value.length(), inValues[(param - 1) * 2].getTextType(),
+			(UCHAR*) value.c_str());
+
+		setDesc(tdbb, param, desc);
+	}
+
+	void setString(thread_db* tdbb, int param, const Firebird::MetaName& value)
+	{
+		dsc desc;
+		desc.makeText((USHORT) value.length(), inValues[(param - 1) * 2].getTextType(),
+			(UCHAR*) value.c_str());
+
+		setDesc(tdbb, param, desc);
+	}
+
 	void execute(thread_db* tdbb, jrd_tra* transaction);
 	ResultSet* executeQuery(thread_db* tdbb, jrd_tra* transaction);
 
 	int getResultCount() const;
+	int getUpdateCount() const;
 
 	dsql_req* getRequest()
 	{
@@ -60,15 +90,13 @@ public:
 	}
 
 	static void parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values, Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg);
-
-private:
 	static void generateBlr(const dsc* desc, Firebird::UCharBuffer& blr);
 
 private:
 	dsql_req* request;
-	Firebird::Array<dsc> values;
-	Firebird::UCharBuffer blr;
-	Firebird::UCharBuffer message;
+	Firebird::Array<dsc> inValues, outValues;
+	Firebird::UCharBuffer inBlr, outBlr;
+	Firebird::UCharBuffer inMessage, outMessage;
 	ResultSet* resultSet;
 };
 

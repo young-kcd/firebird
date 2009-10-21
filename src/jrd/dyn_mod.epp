@@ -315,7 +315,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 
 						if (!DBB.RDB$CHARACTER_SET_NAME.NULL)
 						{
-							AlterCharSetNode node(*tdbb->getDefaultPool(),
+							AlterCharSetNode node(*tdbb->getDefaultPool(), "",
 								DBB.RDB$CHARACTER_SET_NAME, collation);
 							node.execute(tdbb, gbl->gbl_transaction);
 						}
@@ -366,10 +366,10 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 	bool found = false;
 
-	try {
-
 	MetaName t;
 	GET_STRING(ptr, t);
+
+	try {
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -380,6 +380,10 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_m_xcp) = request;
 
 		found = true;
+
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+			DDL_TRIGGER_ALTER_EXCEPTION, t, gbl->sqlText);
+
 		MODIFY X
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -406,7 +410,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_m_xcp))
 		DYN_REQUEST(drq_m_xcp) = request;
 
-	}
+	} // try
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
@@ -414,7 +418,12 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		// msg 145: "MODIFY EXCEPTION failed"
 	}
 
-	if (!found)
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_EXCEPTION, t, gbl->sqlText);
+	}
+	else
 	{
 		DYN_error_punt(false, 144);
 		// msg 144: "Exception not found"
@@ -503,13 +512,24 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, t);
 
 	try {
-		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FUNCTIONS
-				WITH X.RDB$FUNCTION_NAME EQ t
+			WITH X.RDB$FUNCTION_NAME EQ t AND
+				 X.RDB$PACKAGE_NAME MISSING
 
 			if (!DYN_REQUEST(drq_m_fun))
 				DYN_REQUEST(drq_m_fun) = request;
+
+			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+				DDL_TRIGGER_ALTER_FUNCTION, t, gbl->sqlText);
+
+			if (!X.RDB$ENGINE_NAME.NULL)
+			{
+				//// TODO: localize
+				status_exception::raise(
+					Arg::Gds(isc_random) <<
+					Arg::Str("Cannot alter new style function with ALTER EXTERNAL FUNCTION"));
+			}
 
 			found = true;
 			MODIFY X
@@ -552,7 +572,12 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 		// msg 92: "MODIFY RDB$FUNCTIONS failed"
 	}
 
-	if (!found)
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_FUNCTION, t, gbl->sqlText);
+	}
+	else
 	{
 		DYN_error_punt(false, 41, t);
 		// msg 41: "Function %s not found"
@@ -575,7 +600,6 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, t);
 
 	try {
-		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$GENERATORS
 				WITH X.RDB$GENERATOR_NAME EQ t
@@ -584,6 +608,10 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 				DYN_REQUEST(drq_m_gen) = request;
 
 			found = true;
+
+			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+				DDL_TRIGGER_ALTER_SEQUENCE, t, gbl->sqlText);
+
 			MODIFY X
 				UCHAR verb;
 				while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -614,7 +642,12 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 		// msg 94: "MODIFY GENERATOR failed"
 	}
 
-	if (!found)
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_SEQUENCE, t, gbl->sqlText);
+	}
+	else
 	{
 		DYN_error_punt(false, 214, t);
 		// msg 214: "Generator %s not found"
@@ -661,7 +694,6 @@ void DYN_modify_global_field(Global* gbl,
 
 	GET_STRING(ptr, orig_dom.dyn_fld_name);
 
-	found = false;
 	int field_adjusted_count = 0;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -671,6 +703,9 @@ void DYN_modify_global_field(Global* gbl,
 			DYN_REQUEST(drq_m_gfield) = request;
 
 		found = true;
+
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+			DDL_TRIGGER_ALTER_DOMAIN, orig_dom.dyn_fld_name, gbl->sqlText);
 
 		DSC_make_descriptor(&orig_dom.dyn_dsc,
 							FLD.RDB$FIELD_TYPE,
@@ -1145,7 +1180,7 @@ void DYN_modify_global_field(Global* gbl,
 	if (!DYN_REQUEST(drq_m_gfield))
 		DYN_REQUEST(drq_m_gfield) = request;
 
-	}
+	} // try
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
@@ -1153,7 +1188,12 @@ void DYN_modify_global_field(Global* gbl,
 		/* msg 87: "MODIFY RDB$FIELDS failed" */
 	}
 
-	if (!found)
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_DOMAIN, orig_dom.dyn_fld_name, gbl->sqlText);
+	}
+	else
 	{
 		DYN_error_punt(false, 89);
 		/* msg 89: "Global field not found" */
@@ -1185,7 +1225,6 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 
 	GET_STRING(ptr, name);
 
-	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name.c_str()
 
@@ -1193,6 +1232,10 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_m_index) = request;
 
 		found = true;
+
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+			DDL_TRIGGER_ALTER_INDEX, name, gbl->sqlText);
+
 		MODIFY IDX USING
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1231,7 +1274,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_m_index))
 		DYN_REQUEST(drq_m_index) = request;
 
-	}
+	} // try
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
@@ -1239,7 +1282,12 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 		// msg 91: "MODIFY RDB$INDICES failed"
 	}
 
-	if (!found)
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_INDEX, name, gbl->sqlText);
+	}
+	else
 	{
 		DYN_error_punt(false, 48);
 		/* msg 48: "Index not found" */
@@ -1278,9 +1326,11 @@ void DYN_modify_local_field(Global* gbl,
 
 	bool sfflag, qnflag, qhflag, esflag, dflag, system_flag, scflag, nnflag, ntflag, npflag;
 	sfflag = qnflag = qhflag = esflag = dflag = scflag = npflag = nnflag = ntflag = false;
+	TriState nullFlag;
 
 	UCHAR verb;
 	while ((verb = *(*ptr)++) != isc_dyn_end)
+	{
 		switch (verb)
 		{
 		case isc_dyn_rel_name:
@@ -1338,10 +1388,19 @@ void DYN_modify_local_field(Global* gbl,
 			DYN_skip_attribute(ptr);
 			break;
 
+		case isc_dyn_fld_not_null:
+			nullFlag = true;
+			break;
+
+		case isc_dyn_fld_null:
+			nullFlag = false;
+			break;
+
 		default:
 			--(*ptr);
 			DYN_execute(gbl, ptr, relation_name, NULL, NULL, NULL, NULL);
 		}
+	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_lfield, DYN_REQUESTS);
 	bool found = false;
@@ -1425,6 +1484,9 @@ void DYN_modify_local_field(Global* gbl,
 				else
 					FLD.RDB$DESCRIPTION.NULL = TRUE;
 			}
+
+			if (nullFlag.isAssigned())
+				FLD.RDB$NULL_FLAG = (SSHORT) nullFlag.asBool();
 		END_MODIFY;
 	END_FOR;
 
@@ -1445,231 +1507,6 @@ void DYN_modify_local_field(Global* gbl,
 	{
 		DYN_error_punt(false, 176, SafeArg() << f.c_str() << r.c_str());
 		// msg 176: "column %s does not exist in table/view %s"
-	}
-}
-
-
-// ***************************************
-// D Y N _ m o d i f y _ p a r a m e t e r
-// ***************************************
-// The sole objective of this function is to allow changing the comment
-// in procedure's parameters without going into other changes.
-void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = CMP_find_request(tdbb, drq_m_prm, DYN_REQUESTS);
-	bool found = false;
-
-	SqlIdentifier t;
-	GET_STRING(ptr, t);
-	SqlIdentifier p;
-
-	try {
-		if (**ptr == isc_dyn_prc_name)
-		{
-			++*ptr;
-			GET_STRING(ptr, p);
-		}
-		else
-			DYN_unsupported_verb();
-
-		found = false;
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$PROCEDURE_PARAMETERS
-			WITH X.RDB$PARAMETER_NAME EQ t
-			AND X.RDB$PROCEDURE_NAME EQ p
-
-			if (!DYN_REQUEST(drq_m_prm))
-				DYN_REQUEST(drq_m_prm) = request;
-
-			found = true;
-			MODIFY X
-				UCHAR verb;
-				while ((verb = *(*ptr)++) != isc_dyn_end)
-				{
-					switch (verb)
-					{
-					case isc_dyn_description:
-						if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
-							X.RDB$DESCRIPTION.NULL = FALSE;
-						else
-							X.RDB$DESCRIPTION.NULL = TRUE;
-						break;
-
-					default:
-						DYN_unsupported_verb();
-					}
-				}
-			END_MODIFY;
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_m_prm))
-			DYN_REQUEST(drq_m_prm) = request;
-	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 100);
-		// msg 100: "MODIFY RDB$PROCEDURE_PARAMETERS failed"
-	}
-
-	if (!found)
-	{
-		DYN_error_punt(false, 146, SafeArg() << t << p);
-		// msg : "Parameter %s in procedure %s not found"
-	}
-}
-
-
-void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ m o d i f y _ p r o c e d u r e
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement.
- *
- **************************************/
-	MetaName procedure_name;
-
-	GET_STRING(ptr, procedure_name);
-
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = NULL;
-	bool found = false;
-	bool only_description = false;
-
-	try {
-
-	request = CMP_find_request(tdbb, drq_m_prcs, DYN_REQUESTS);
-
-	found = false;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME = procedure_name.c_str()
-
-		if (!DYN_REQUEST(drq_m_prcs))
-			DYN_REQUEST(drq_m_prcs) = request;
-
-		found = true;
-
-		/* Set NULL flags to TRUE only for fields which must be specified in the DYN string.
-		   Retain existing values on other fields (RDB$DESCRIPTION, RDB$SECURITY_CLASS),
-		   unless explicitly changed in the DYN string */
-		MODIFY P
-
-			if (**ptr == isc_dyn_description)
-			{
-				++*ptr;
-				if (DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION))
-					P.RDB$DESCRIPTION.NULL = FALSE;
-				else
-					P.RDB$DESCRIPTION.NULL = TRUE;
-
-				if (**ptr == isc_dyn_end)
-					only_description = true;
-			}
-
-			if (!only_description)
-			{
-				P.RDB$SYSTEM_FLAG = 0;
-				P.RDB$SYSTEM_FLAG.NULL = FALSE;
-				P.RDB$PROCEDURE_BLR.NULL = TRUE;
-				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-				P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-				P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
-
-				// ODS_11_1 fields
-				P.RDB$DEBUG_INFO.NULL = TRUE;
-
-				P.RDB$PROCEDURE_TYPE = prc_legacy;
-				P.RDB$PROCEDURE_TYPE.NULL = FALSE;
-
-				P.RDB$VALID_BLR = TRUE;
-				P.RDB$VALID_BLR.NULL = FALSE;
-			}
-
-			UCHAR verb;
-			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb)
-				{
-				case isc_dyn_system_flag:
-					P.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
-					P.RDB$SYSTEM_FLAG.NULL = FALSE;
-					break;
-
-				case isc_dyn_prc_blr:
-					if (DYN_put_blr_blob(gbl, ptr, &P.RDB$PROCEDURE_BLR))
-						P.RDB$PROCEDURE_BLR.NULL = FALSE;
-					else
-						P.RDB$PROCEDURE_BLR.NULL = TRUE;
-					break;
-
-				case isc_dyn_description:
-					if (DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION))
-						P.RDB$DESCRIPTION.NULL = FALSE;
-					else
-						P.RDB$DESCRIPTION.NULL = TRUE;
-					break;
-
-				case isc_dyn_prc_source:
-					if (DYN_put_text_blob(gbl, ptr, &P.RDB$PROCEDURE_SOURCE))
-						P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-					else
-						P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-					break;
-
-				case isc_dyn_prc_inputs:
-					P.RDB$PROCEDURE_INPUTS = DYN_get_number(ptr);
-					P.RDB$PROCEDURE_INPUTS.NULL = FALSE;
-					break;
-
-				case isc_dyn_prc_outputs:
-					P.RDB$PROCEDURE_OUTPUTS = DYN_get_number(ptr);
-					P.RDB$PROCEDURE_OUTPUTS.NULL = FALSE;
-					break;
-
-				case isc_dyn_security_class:
-					GET_STRING(ptr, P.RDB$SECURITY_CLASS);
-					P.RDB$SECURITY_CLASS.NULL = FALSE;
-					break;
-
-				case isc_dyn_debug_info:
-					DYN_put_blr_blob(gbl, ptr, &P.RDB$DEBUG_INFO);	// ODS_11_1 field
-					P.RDB$DEBUG_INFO.NULL = FALSE;
-					break;
-
-				case isc_dyn_prc_type:
-					P.RDB$PROCEDURE_TYPE = DYN_get_number(ptr);	// ODS_11_1 field
-					break;
-
-				default:
-					--(*ptr);
-					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
-				}
-
-		END_MODIFY;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_m_prcs))
-		DYN_REQUEST(drq_m_prcs) = request;
-	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 141);
-		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
-	}
-
-	if (!found) {
-		DYN_error_punt(false, 140, procedure_name.c_str());
-		/* msg 140: "Procedure %s not found" */
 	}
 }
 
@@ -1698,12 +1535,14 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 
 	try {
 
-	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ name.c_str()
 
 		if (!DYN_REQUEST(drq_m_relation))
 			DYN_REQUEST(drq_m_relation) = request;
+
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+			DDL_TRIGGER_ALTER_TABLE, name, gbl->sqlText);
 
 		if (!REL.RDB$VIEW_BLR.NULL)
 			DYN_error_punt(false, 177);
@@ -1756,7 +1595,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_m_relation))
 		DYN_REQUEST(drq_m_relation) = request;
 
-	}
+	} // try
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
@@ -1764,7 +1603,12 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
 	}
 
-	if (!found)
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_TABLE, name, gbl->sqlText);
+	}
+	else
 	{
 		DYN_error_punt(false, 101);
 		/* msg 101: "Relation field not found" */
@@ -1787,7 +1631,6 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, t);
 
 	try {
-		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$ROLES
 				WITH X.RDB$ROLE_NAME EQ t
@@ -1796,6 +1639,10 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 				DYN_REQUEST(drq_m_rol) = request;
 
 			found = true;
+
+			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+				DDL_TRIGGER_ALTER_ROLE, t, gbl->sqlText);
+
 			MODIFY X
 				UCHAR verb;
 				while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1826,196 +1673,15 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 		// msg 158: "MODIFY RDB$ROLES failed"
 	}
 
-	if (!found)
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_ROLE, t, gbl->sqlText);
+	}
+	else
 	{
 		DYN_error_punt(false, 155, t);
 		// msg 155: "Role %s not found"
-	}
-}
-
-
-void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ m o d i f y _ t r i g g e r
- *
- **************************************
- *
- * Functional description
- *	Modify a trigger for a relation.
- *
- **************************************/
-	MetaName trigger_name;
-
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
-	bool found = false;
-	bool only_description = false;
-
-	try {
-
-	GET_STRING(ptr, trigger_name);
-	const UCHAR* source = NULL;
-	const UCHAR* blr = NULL;
-	const UCHAR* debug_info_ptr = NULL;
-
-	found = false;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ trigger_name.c_str()
-
-		if (!DYN_REQUEST(drq_m_trigger)) {
-			DYN_REQUEST(drq_m_trigger) = request;
-		}
-
-		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(Arg::Gds(isc_adm_task_denied));
-
-		// CVC: I think that we'll do well by hiding our automatic triggers from this function.
-		// Why would a user want to fiddle with triggers that were generated automatically?
-
-		if (!X.RDB$SYSTEM_FLAG.NULL)
-		{
-			switch (X.RDB$SYSTEM_FLAG)
-			{
-			case fb_sysflag_check_constraint:
-			case fb_sysflag_referential_constraint:
-			case fb_sysflag_view_check:
-				DYN_error_punt(false, 109);
-				// msg 109: "Triggers created automatically cannot be modified"
-				break;
-			default:
-				break;
-			}
-		}
-
-		found = true;
-
-		MODIFY X
-
-			if (**ptr == isc_dyn_description)
-			{
-				++*ptr;
-				if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
-					X.RDB$DESCRIPTION.NULL = FALSE;
-				else
-					X.RDB$DESCRIPTION.NULL = TRUE;
-
-				if (**ptr == isc_dyn_end)
-					only_description = true;
-			}
-
-			UCHAR verb;
-			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb)
-				{
-				case isc_dyn_trg_name:
-					{
-						MetaName new_trigger_name;
-						GET_STRING(ptr, new_trigger_name);
-						if (new_trigger_name.length() == 0)
-							DYN_error_punt(false, 212);
-							// msg 212: "Zero length identifiers not allowed"
-					    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name.c_str());
-					}
-					break;
-
-				case isc_dyn_trg_type:
-					X.RDB$TRIGGER_TYPE = DYN_get_number(ptr);
-					X.RDB$TRIGGER_TYPE.NULL = FALSE;
-					break;
-
-				case isc_dyn_trg_sequence:
-					X.RDB$TRIGGER_SEQUENCE = DYN_get_number(ptr);
-					X.RDB$TRIGGER_SEQUENCE.NULL = FALSE;
-					break;
-
-				case isc_dyn_trg_inactive:
-					X.RDB$TRIGGER_INACTIVE = DYN_get_number(ptr);
-					X.RDB$TRIGGER_INACTIVE.NULL = FALSE;
-					break;
-
-				case isc_dyn_rel_name:
-					GET_STRING(ptr, X.RDB$RELATION_NAME);
-					X.RDB$RELATION_NAME.NULL = FALSE;
-					break;
-
-				case isc_dyn_trg_blr:
-					blr = *ptr;
-					DYN_skip_attribute(ptr);
-					if (DYN_put_blr_blob(gbl, &blr, &X.RDB$TRIGGER_BLR))
-						X.RDB$TRIGGER_BLR.NULL = FALSE;
-					else
-						X.RDB$TRIGGER_BLR.NULL = TRUE;
-					break;
-
-				case isc_dyn_trg_source:
-					source = *ptr;
-					DYN_skip_attribute(ptr);
-					if (DYN_put_text_blob(gbl, &source, &X.RDB$TRIGGER_SOURCE))
-						X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					else
-						X.RDB$TRIGGER_SOURCE.NULL = TRUE;
-					break;
-
-				case isc_dyn_description:
-					if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
-						X.RDB$DESCRIPTION.NULL = FALSE;
-					else
-						X.RDB$DESCRIPTION.NULL = TRUE;
-					break;
-
-				case isc_dyn_debug_info:
-					debug_info_ptr = *ptr;
-					DYN_skip_attribute(ptr);
-					break;
-
-				default:
-					--(*ptr);
-					DYN_execute(gbl, ptr, NULL, NULL, &trigger_name, NULL, NULL);
-				}
-		END_MODIFY;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_m_trigger))
-		DYN_REQUEST(drq_m_trigger) = request;
-
-	if (!only_description)
-	{
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-		{
-			jrd_req* sub_request = NULL;
-
-			FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-				TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
-
-				MODIFY TRG USING
-					TRG.RDB$VALID_BLR = TRUE;
-					TRG.RDB$VALID_BLR.NULL = FALSE;
-
-					TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
-					if (debug_info_ptr)
-						DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
-				END_MODIFY;
-			END_FOR;
-
-			CMP_release(tdbb, sub_request);
-		}
-	}
-
-	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 102);
-		/* msg 102: "MODIFY TRIGGER failed" */
-	}
-
-	if (!found) {
-		DYN_error_punt(false, 147, trigger_name.c_str());
-		/* msg 147: "Trigger %s not found" */
 	}
 }
 
@@ -2122,7 +1788,6 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 	request = CMP_find_request(tdbb, drq_m_view, DYN_REQUESTS);
 
-	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS
 			WITH REL.RDB$RELATION_NAME EQ view_name.c_str()
@@ -2132,6 +1797,10 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_m_view) = request;
 
 		found = true;
+
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+			DDL_TRIGGER_ALTER_VIEW, view_name, gbl->sqlText);
+
 		bool only_description = false;
 
 		MODIFY REL
@@ -2226,7 +1895,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_m_view))
 		DYN_REQUEST(drq_m_view) = request;
 
-	}
+	} // try
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
@@ -2234,7 +1903,13 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
 	}
 
-	if (!found) {
+	if (found)
+	{
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
+			DDL_TRIGGER_ALTER_VIEW, view_name, gbl->sqlText);
+	}
+	else
+	{
 		DYN_error_punt(false, 54, view_name.c_str());
 		/* msg 54: "View %s not found" */
 	}

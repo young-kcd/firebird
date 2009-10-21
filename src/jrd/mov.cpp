@@ -437,6 +437,16 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 }
 
 
+Firebird::string MOV_make_string2(Jrd::thread_db* tdbb, const dsc* desc, USHORT ttype, bool limit)
+{
+	Jrd::MoveBuffer buffer;
+	UCHAR* ptr;
+	int len = MOV_make_string2(tdbb, desc, ttype, &ptr, buffer, limit);
+
+	return string((const char*) ptr, len);
+}
+
+
 void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
 {
 /**************************************

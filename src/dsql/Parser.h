@@ -27,8 +27,13 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../common/classes/TriState.h"
 #include "../common/classes/stack.h"
+
+#define _yacc_defines_keywords
+#include "../dsql/dsql.tab.h"
 
 namespace Jrd {
 
@@ -38,7 +43,6 @@ class Parser : public Firebird::PermanentStorage
 {
 private:
 	typedef int Yshort;
-	typedef dsql_nod* YYSTYPE;
 	typedef int YYPOSN;	// user-defined text position type
 
 	struct yyparsestate
@@ -64,7 +68,7 @@ private:
 		// This is, in fact, parser state. Not used in lexer itself
 		dsql_fld* g_field;
 		dsql_fil* g_file;
-		YYSTYPE g_field_name;
+		dsql_nod* g_field_name;
 		int dsql_debug;
 
 		// Actual lexer state begins from here
@@ -101,7 +105,7 @@ public:
 	~Parser();
 
 public:
-	YYSTYPE parse();
+	dsql_nod* parse();
 
 	const Firebird::string& getTransformedString() const
 	{
@@ -139,14 +143,15 @@ private:
 	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
 
 	const TEXT* lex_position();
-	YYSTYPE make_list (YYSTYPE node);
-	YYSTYPE make_parameter();
-	YYSTYPE make_node(Dsql::nod_t type, int count, ...);
-	YYSTYPE makeClassNode(Node* node);
-	YYSTYPE make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
+	dsql_nod* make_list (dsql_nod* node);
+	dsql_nod* make_parameter();
+	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
+	dsql_nod* makeClassNode(Node* node);
+	dsql_nod* make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 
 private:
+	Firebird::string compilingText;
 	USHORT client_dialect;
 	USHORT db_dialect;
 	USHORT parser_version;
@@ -154,7 +159,7 @@ private:
 	Firebird::string transformedString;
 	Firebird::Array<IntroducerMark> introducerMarks;
 	bool stmt_ambiguous;
-	YYSTYPE DSQL_parse;
+	dsql_nod* DSQL_parse;
 
 	// These value/posn are taken from the lexer
 	YYSTYPE yylval;

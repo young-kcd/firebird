@@ -134,7 +134,6 @@ static dsc* add_datetime(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_sql_date(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_sql_time(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
-static void adjust_text_descriptor(thread_db*, dsc*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
 static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
 static void compute_agg_distinct(thread_db*, jrd_nod*);
@@ -232,7 +231,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 			   convert the charset to the declared charset of the process. */
 
 			INTL_ASSIGN_DSC(&impure->vlu_desc,
-							tdbb->getAttachment()->att_charset, COLLATE_NONE);
+							tdbb->getCharSet(), COLLATE_NONE);
 		}
 		return &impure->vlu_desc;
 
@@ -864,7 +863,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
 
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
-				adjust_text_descriptor(tdbb, &impure->vlu_desc);
+				INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 			USHORT* impure_flags = (USHORT*) ((UCHAR *) request +
 				(IPTR) message->nod_arg[e_msg_impure_flags] +
@@ -945,7 +944,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (!relation || !(relation->rel_flags & REL_system))
 			{
 				if (impure->vlu_desc.dsc_dtype == dtype_text)
-					adjust_text_descriptor(tdbb, &impure->vlu_desc);
+					INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 			}
 
 			return &impure->vlu_desc;
@@ -1102,7 +1101,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc = impure2->vlu_desc;
 
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
-				adjust_text_descriptor(tdbb, &impure->vlu_desc);
+				INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 			if (!(impure2->vlu_flags & VLU_checked))
 			{
@@ -1399,7 +1398,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 }
 
 
-USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT state)
+USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* const node, USHORT state)
 {
 /**************************************
  *
@@ -2776,63 +2775,6 @@ return_result:
 }
 
 
-static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
-{
-/**************************************
- *
- *      a d j u s t _ t e x t _ d e s c r i p t o r
- *
- **************************************
- *
- * Functional description
- *      This function receives a text descriptor with
- *      dsc_length = numberOfCharacters * maxBytesPerChar
- *      and change dsc_length to number of bytes used by the string.
- *
- **************************************/
-	if (desc->dsc_dtype == dtype_text)
-	{
-		SET_TDBB(tdbb);
-
-		USHORT ttype = INTL_TTYPE(desc);
-
-		CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
-
-		if (charSet->isMultiByte())
-		{
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-
-			if (charSet->getFlags() & CHARSET_LEGACY_SEMANTICS)
-			{
-				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address, TEXT_LEN(desc),
-										buffer.getBuffer(TEXT_LEN(desc) * charSet->maxBytesPerChar()), 0,
-										TEXT_LEN(desc));
-
-				const ULONG maxLength = TEXT_LEN(desc) / charSet->maxBytesPerChar();
-				ULONG charLength = charSet->length(desc->dsc_length, desc->dsc_address, true);
-
-				while (charLength > maxLength)
-				{
-					if (desc->dsc_address[desc->dsc_length - 1] == *charSet->getSpace())
-					{
-						--desc->dsc_length;
-						--charLength;
-					}
-					else
-						break;
-				}
-			}
-			else
-			{
-				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address,
-										TEXT_LEN(desc), buffer.getBuffer(TEXT_LEN(desc)), 0,
-										TEXT_LEN(desc) / charSet->maxBytesPerChar());
-			}
-		}
-	}
-}
-
-
 static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
@@ -2990,7 +2932,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 		MOV_move(tdbb, value, &impure->vlu_desc);
 
 	if (impure->vlu_desc.dsc_dtype == dtype_text)
-		adjust_text_descriptor(tdbb, &impure->vlu_desc);
+		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 	return &impure->vlu_desc;
 }

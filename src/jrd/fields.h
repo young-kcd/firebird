@@ -64,13 +64,13 @@
 	FIELD(fld_trg_name		, nam_trg_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata, 0		, NULL)
 	FIELD(fld_gnr_name		, nam_gnr_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata, 0		, NULL)
 	FIELD(fld_fun_name		, nam_fun_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata, 0		, NULL)
-	FIELD(fld_ext_name		, nam_ext_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, 0						, 0		, NULL)
+	FIELD(fld_ext_name		, nam_ext_name		, dtype_text	, 255						, 0						, 0		, NULL)
 	FIELD(fld_typ_name		, nam_typ_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata, 0		, NULL)
 	FIELD(fld_dimensions	, nam_dimensions	, dtype_short	, sizeof(SSHORT)			, 0						, 0		, NULL)
 	FIELD(fld_runtime		, nam_runtime		, dtype_blob	, BLOB_SIZE					, isc_blob_summary		, 0		, NULL)
 	FIELD(fld_trg_seq		, nam_trg_seq		, dtype_short	, sizeof(SSHORT)			, 0						, 0		, NULL)
 	FIELD(fld_gnr_type		, nam_gnr_type		, dtype_short	, sizeof(SSHORT)			, 0						, 0		, NULL)
-	FIELD(fld_trg_type		, nam_trg_type		, dtype_short	, sizeof(SSHORT)			, 0						, 0		, NULL)
+	FIELD(fld_trg_type		, nam_trg_type		, dtype_int64	, sizeof(SINT64)			, 0						, 0		, NULL)
 	FIELD(fld_obj_type		, nam_obj_type		, dtype_short	, sizeof(SSHORT)			, 0						, 0		, NULL)
 	FIELD(fld_mechanism		, nam_mechanism		, dtype_short	, sizeof(SSHORT)			, 0						, 0		, NULL)
 	FIELD(fld_f_descr		, nam_desc			, dtype_blob	, BLOB_SIZE					, isc_blob_format		, 0		, NULL)
@@ -154,3 +154,7 @@
 
 	FIELD(fld_ctx_var_name	, nam_ctx_var_name	, dtype_varying	, 80						, 0						, 0		, NULL)
 	FIELD(fld_ctx_var_value	, nam_ctx_var_value	, dtype_varying	, 255						, 0						, 0		, NULL)
+
+	FIELD(fld_engine_name	, nam_engine_name	, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata, 0		, NULL)
+
+	FIELD(fld_pkg_name		, nam_pkg_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata, 0		, NULL)

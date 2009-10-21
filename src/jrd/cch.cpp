@@ -531,7 +531,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if (attachment->att_flags & ATT_exclusive) {
 		return true;
 	}
@@ -546,7 +546,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	if (level != LCK_none)
 	{
-		for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
+		for (Jrd::Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
 		{
 			if (*ptr == attachment)
 			{
@@ -698,7 +698,7 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 		SDW_get_shadows(tdbb);
 	}
 
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	if (!attachment->backupStateReadLock(tdbb, latch_wait))
 		return NULL;
@@ -899,7 +899,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	}
 
 	// Look for the page in the cache.
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	if (!attachment->backupStateReadLock(tdbb, wait))
 		return -2;
@@ -2284,7 +2284,7 @@ void CCH_release_exclusive(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	dbb->dbb_flags &= ~DBB_exclusive;
 
-	Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if (attachment) {
 		attachment->att_flags &= ~ATT_exclusive;
 	}
@@ -4001,7 +4001,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 	// Dummy attachment needed for lock owner identification.
 	tdbb->setDatabase(dbb);
-	Attachment* const attachment = Attachment::create(dbb);
+	Jrd::Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
@@ -4119,7 +4119,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
-	Attachment::destroy(attachment);	// no need saving warning error strings here
+	Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
 	tdbb->setAttachment(NULL);
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	dbb->dbb_reader_fini.post();
@@ -4163,7 +4163,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	// Dummy attachment needed for lock owner identification.
 
 	tdbb->setDatabase(dbb);
-	Attachment* const attachment = Attachment::create(dbb);
+	Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, 0);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
@@ -4279,7 +4279,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		Attachment::destroy(attachment);	// no need saving warning error strings here
+		Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		// Notify the finalization caller that we're finishing.

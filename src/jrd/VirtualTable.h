@@ -18,6 +18,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ *  Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_VIRTUAL_TABLE_H
@@ -25,20 +26,48 @@
 
 namespace Jrd {
 
-// To be refactored to a class
 
-namespace VirtualTable {
+class RecordStream	//// TODO: create RecordStream.h
+{
+public:
+	virtual ~RecordStream()
+	{
+	}
 
-void close(Jrd::thread_db*, Jrd::RecordSource*);
-void erase(Jrd::thread_db*, Jrd::record_param*);
-void fini(Jrd::jrd_rel*);
-bool get(Jrd::thread_db*, Jrd::RecordSource*);
-void modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
-void open(Jrd::thread_db*, Jrd::RecordSource*);
-Jrd::RecordSource* optimize(Jrd::thread_db*, Jrd::OptimizerBlk*, SSHORT);
-void store(Jrd::thread_db*, Jrd::record_param*);
+public:
+	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen) = 0;
+	virtual void open(thread_db* tdbb) = 0;
+	virtual void close(thread_db* tdbb) = 0;
+	virtual bool get(thread_db* tdbb) = 0;
+	virtual void markRecursive() = 0;
+};
 
-} // namespace VirtualTable
+
+class VirtualTable : public RecordStream
+{
+public:
+	VirtualTable(RecordSource* aRsb)
+		: rsb(aRsb)
+	{
+	}
+
+public:
+	static RecordSource* create(thread_db*, OptimizerBlk*, SSHORT);
+	static void erase(thread_db*, record_param*);
+	static void modify(thread_db*, record_param*, record_param*);
+	static void store(thread_db*, record_param*);
+
+public:
+	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen);
+	virtual void open(thread_db* tdbb);
+	virtual void close(thread_db* tdbb);
+	virtual bool get(thread_db* tdbb);
+	virtual void markRecursive();
+
+private:
+	RecordSource* rsb;
+};
+
 
 } // namespace Jrd
 

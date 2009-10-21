@@ -124,6 +124,7 @@ const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
 const int nod_invariant		= 128;		// node is recognized as being invariant
 const int nod_recurse		= 256;		// union node is a recursive union
 const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
+const int nod_window		= 1024;		// aggregate for window function
 
 // Special RecordSelExpr node
 
@@ -570,6 +571,12 @@ const int e_derived_expr_stream_count	= 1;
 const int e_derived_expr_stream_list	= 2;
 const int e_derived_expr_count			= 1;
 const int e_derived_expr_length			= 3;
+
+// index (in nod_list) for external procedure blr
+const int e_extproc_input_message	= 0;
+const int e_extproc_output_message	= 1;
+const int e_extproc_input_assign	= 2;
+const int e_extproc_output_assign	= 3;
 
 // Request resources
 

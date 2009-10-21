@@ -315,8 +315,6 @@ void HSHD_set_flag(const void* database,
 	switch (type)
 	{
 	case SYM_relation:
-	case SYM_procedure:
-	case SYM_udf:
 		break;
 	default:
 		return;
@@ -349,20 +347,6 @@ void HSHD_set_flag(const void* database,
 						{
 							dsql_rel* sym_rel = (dsql_rel*) homonym->sym_object;
 							sym_rel->rel_flags |= flag;
-							break;
-						}
-
-					case SYM_procedure:
-						{
-							dsql_prc* sym_prc = (dsql_prc*) homonym->sym_object;
-							sym_prc->prc_flags |= flag;
-							break;
-						}
-
-					case SYM_udf:
-						{
-							dsql_udf* sym_udf = (dsql_udf*) homonym->sym_object;
-							sym_udf->udf_flags |= flag;
 							break;
 						}
 					}

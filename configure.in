@@ -978,6 +978,7 @@ mkdir -p gen/jrd
 mkdir -p gen/jrd/extds
 mkdir -p gen/jrd/trace
 mkdir -p gen/msgs
+mkdir -p gen/plugins/udr_engine
 mkdir -p gen/qli
 mkdir -p gen/utilities
 mkdir -p gen/examples
@@ -999,11 +1000,13 @@ dnl # mkdir -p gen/firebird/examples/build_unix
 dnl # mkdir -p gen/firebird/examples/build_win32
 mkdir -p gen/firebird/examples/empbuild
 mkdir -p gen/firebird/examples/include
+mkdir -p gen/firebird/examples/udr
 mkdir -p gen/firebird/examples/stat
 mkdir -p gen/firebird/examples/udf
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
+mkdir -p gen/firebird/plugins/udr
 
 dnl # rebuild version header if needed
 ./src/misc/writeBuildNum.sh rebuildHeader
@@ -1035,6 +1038,7 @@ mkdir -p temp/boot/jrd/os/darwin
 mkdir -p temp/boot/lock
 mkdir -p temp/boot/misc
 mkdir -p temp/boot/msgs
+# mkdir -p temp/boot/plugins/udr_engine
 mkdir -p temp/boot/qli
 mkdir -p temp/boot/remote
 mkdir -p temp/boot/remote/os/win32
@@ -1077,6 +1081,7 @@ mkdir -p temp/std/jrd/os/darwin
 mkdir -p temp/std/lock
 mkdir -p temp/std/misc
 mkdir -p temp/std/msgs
+mkdir -p temp/std/plugins/udr_engine
 mkdir -p temp/std/qli
 mkdir -p temp/std/remote
 mkdir -p temp/std/remote/os/win32
@@ -1118,6 +1123,7 @@ mkdir -p temp/superclient/jrd/os/darwin
 mkdir -p temp/superclient/lock
 mkdir -p temp/superclient/misc
 mkdir -p temp/superclient/msgs
+mkdir -p temp/superclient/plugins/udr_engine
 mkdir -p temp/superclient/qli
 mkdir -p temp/superclient/remote
 mkdir -p temp/superclient/remote/os/win32
@@ -1159,6 +1165,7 @@ mkdir -p temp/superserver/jrd/os/darwin
 mkdir -p temp/superserver/lock
 mkdir -p temp/superserver/misc
 mkdir -p temp/superserver/msgs
+mkdir -p temp/superserver/plugins/udr_engine
 mkdir -p temp/superserver/qli
 mkdir -p temp/superserver/remote
 mkdir -p temp/superserver/remote/os/win32
@@ -1175,6 +1182,8 @@ mkdir -p temp/superserver/utilities/nbackup
 mkdir -p temp/superserver/utilities/rebuild
 mkdir -p temp/superserver/utilities/ntrace
 mkdir -p temp/superserver/vulcan
+
+mkdir -p temp/examples/udr
 
 ])
 
@@ -1349,7 +1358,9 @@ gen/Makefile.client.gsec:${MAKE_SRC_DIR}/Makefile.in.client.gsec
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
+gen/Makefile.plugins:${MAKE_SRC_DIR}/Makefile.in.plugins
 gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
+gen/examples/Makefile.plugins_examples:${MAKE_SRC_DIR}/Makefile.in.plugins_examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
 gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util

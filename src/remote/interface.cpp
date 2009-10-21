@@ -263,6 +263,7 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 
 
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
+							   FB_API_HANDLE public_handle,
 							   const TEXT* filename,
 							   Rdb** handle,
 							   SSHORT dpb_length,
@@ -796,6 +797,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
+							   FB_API_HANDLE public_handle,
 							   const TEXT* filename,
 							   Rdb** handle,
 							   SSHORT dpb_length,
@@ -4249,6 +4251,7 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
+								 FB_API_HANDLE public_handle,
 								 Rtr** rtr_handle,
 								 SSHORT /*count*/,
 								 Rdb** db_handle,

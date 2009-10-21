@@ -304,6 +304,8 @@ static const UCHAR
 	union_ops[] = { op_byte, op_byte, op_line, op_union, 0},
     map[]  	    = { op_word, op_line, op_map, 0},
 	function[]	= { op_byte, op_literal, op_byte, op_line, op_args, 0},
+	function2[]	= { op_byte, op_literal, op_pad, op_byte, op_literal, op_pad, op_byte, op_line,
+					op_args, 0},
 	gen_id[]	= { op_byte, op_literal, op_line, op_verb, 0},
 	declare[]	= { op_word, op_dtype, op_line, 0},
 	variable[]	= { op_word, op_line, 0},
@@ -312,7 +314,11 @@ static const UCHAR
 	join[]		= { op_join, op_line, 0},
 	exec_proc[] = { op_byte, op_literal, op_line, op_indent, op_word, op_line,
 					op_parameters, op_indent, op_word, op_line, op_parameters, 0},
+	exec_proc2[] = { op_byte, op_literal, op_pad, op_byte, op_literal, op_line, op_indent, op_word, op_line,
+					op_parameters, op_indent, op_word, op_line, op_parameters, 0},
 	procedure[] = { op_byte, op_literal, op_pad, op_byte, op_line, op_indent,
+					op_word, op_line, op_parameters, 0},
+	procedure2[] = { op_byte, op_literal, op_pad, op_byte, op_literal, op_pad, op_byte, op_line, op_indent,
 					op_word, op_line, op_parameters, 0},
 	pid[]		= { op_word, op_pad, op_byte, op_line, op_indent, op_word,
 					op_line, op_parameters, 0},
@@ -3598,7 +3604,8 @@ void gds__trace_printer(void* /*arg*/, SSHORT offset, const TEXT* line)
 	gds__ulstr(p, offset, 4, ' ');
 	p += strlen(p);
 	*p++ = ' ';
-	strcpy(p, line);
+	strncpy(p, line, PRETTY_BUFFER_SIZE);
+	p[PRETTY_BUFFER_SIZE] = '\0';
 	p += strlen(p);
 	*p++ = '\n';
 	*p = 0;

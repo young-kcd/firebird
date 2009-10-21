@@ -443,6 +443,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 	case nod_agg_min:
 	case nod_agg_max:
+	case nod_window:
 		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		return;
@@ -1806,27 +1807,6 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 
 /**
 
- 	MAKE_trigger_type
-
-    @brief	Make a trigger type
-
-
-    @param prefix_node
-    @param suffix_node
-
- **/
-dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
-{
-	const SLONG prefix = prefix_node->getSlong();
-	const SLONG suffix = suffix_node->getSlong();
-	delete prefix_node;
-	delete suffix_node;
-	return MAKE_const_slong(prefix + suffix - 1);
-}
-
-
-/**
-
  	MAKE_variable
 
     @brief	Make up a field node.
@@ -2024,7 +2004,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_udf:
 		{
 			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
-			name_alias = userFunc->udf_name.c_str();
+			name_alias = userFunc->udf_name.identifier.c_str();
 			break;
 		}
 	case nod_sys_function:
@@ -2196,7 +2176,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		}
 		else if (context->ctx_procedure)
 		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name.c_str();
+			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
 			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
 		}
 

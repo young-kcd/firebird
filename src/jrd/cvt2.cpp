@@ -715,6 +715,7 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 		UCHAR* tempptr = temp.getBuffer(length);
 		length = INTL_convert_bytes(tdbb, cs1, tempptr, length, cs2, from_buf, from_len, ERR_post);
 		*address = tempptr;
+		temp.resize(length);
 		return length;
 	}
 

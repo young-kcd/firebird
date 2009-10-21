@@ -46,13 +46,15 @@ class jrd_tra;
 class Global
 {
 public:
-	Global(jrd_tra* t) //, const UCHAR* dyn, size_t length)
-		: gbl_transaction(t)//, gbl_length(length), gbl_end(dyn + length)
+	Global(jrd_tra* t, const Firebird::string& aSqlText) //, const UCHAR* dyn, size_t length)
+		: gbl_transaction(t),// gbl_length(length), gbl_end(dyn + length)
+		  sqlText(aSqlText)
 	{ }
 
 	jrd_tra* const gbl_transaction;
 	//size_t gbl_length;			// length of BLR stream
 	//const UCHAR* const gbl_end;	// end of BLR sream
+	Firebird::string sqlText;
 };
 
 class dyn_fld

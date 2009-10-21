@@ -78,6 +78,7 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/VirtualTable.h"
+#include "../jrd/WindowRsb.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 
@@ -159,7 +160,6 @@ static jrd_nod* make_missing(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHO
 static jrd_nod* make_starts(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHORT, index_desc*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
-static void mark_rsb_recursive(RecordSource*);
 static int match_index(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static bool match_indices(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
@@ -445,6 +445,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 				fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 				local_streams[++local_streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_agg_stream];
+
+				if (node->nod_flags & nod_window)
+					rsb = WindowRsb::create(tdbb, opt, rsb);
 			}
 			break;
 
@@ -2393,7 +2396,7 @@ static bool dump_index(const jrd_nod* node, UCHAR** buffer_ptr, SLONG* buffer_le
 			MoveBuffer nameBuffer;
 			const char* namePtr = index_name.c_str();
 
-			const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
+			const CHARSET_ID charset = tdbb->getCharSet();
 			if (charset != CS_METADATA && charset != CS_NONE)
 			{
 				namePtr = (const char*) nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(
@@ -2471,7 +2474,7 @@ static bool dump_rsb(const jrd_req* request,
 
 	if (name)
 	{
-		const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
+		const CHARSET_ID charset = tdbb->getCharSet();
 		if (charset != CS_METADATA && charset != CS_NONE)
 		{
 			nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(length, CS_METADATA, charset));
@@ -2558,8 +2561,8 @@ static bool dump_rsb(const jrd_req* request,
 
 		if (request->req_procedure || procedure->prc_request->req_fors.getCount() == 0)
 		{
-			const Firebird::MetaName& n = procedure->prc_name;
-			const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
+			const Firebird::string n = procedure->prc_name.toString();
+			const CHARSET_ID charset = tdbb->getCharSet();
 			if (charset != CS_METADATA && charset != CS_NONE)
 			{
 				nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(n.length(), CS_METADATA,
@@ -2647,8 +2650,8 @@ static bool dump_rsb(const jrd_req* request,
 		*buffer++ = isc_info_rsb_left_cross;
 		break;
 
-	case rsb_virt_sequential:
-		*buffer++ = isc_info_rsb_virt_sequential;
+	case rsb_record_stream:
+		buffer += rsb->rsb_record_stream->dump(buffer, *buffer_length);
 		break;
 
 	default:
@@ -3668,7 +3671,7 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 		case rsb_navigate:
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
-		case rsb_virt_sequential:
+		case rsb_record_stream:
 			// No need to go any farther down with these.
 			stream_list->push(rsb->rsb_stream);
 			return;
@@ -3736,7 +3739,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 		case rsb_sequential:
 		case rsb_union:
 		case rsb_recursive_union:
-		case rsb_virt_sequential:
+		case rsb_record_stream:
 			stream = rsb->rsb_stream;
 			found = true;
 			break;
@@ -4974,7 +4977,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else if (relation->isVirtual())
 	{
 		// Virtual
-		rsb = VirtualTable::optimize(tdbb, opt, stream);
+		rsb = VirtualTable::create(tdbb, opt, stream);
 	}
 	else if (opt->opt_conjuncts.getCount() || (sort_ptr && *sort_ptr)
 	 //|| (project_ptr && *project_ptr)
@@ -6005,7 +6008,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 		*rsb_ptr++ = (RecordSource*)(IPTR) (csb->csb_impure - rsb->rsb_impure);
 		*rsb_ptr = (RecordSource*) (IPTR) union_node->nod_arg[e_uni_map_stream];
 
-		mark_rsb_recursive(rsb);
+		OPT_mark_rsb_recursive(rsb);
 	}
 
 	return rsb;
@@ -7033,11 +7036,11 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 }
 
 
-static void mark_rsb_recursive(RecordSource* rsb)
+void OPT_mark_rsb_recursive(RecordSource* rsb)
 {
 /**************************************
  *
- *	m a r k _ r s b _ r e c u r s i v e
+ *	O P T _ m a r k _ r s b _ r e c u r s i v e
  *
  **************************************
  *
@@ -7058,8 +7061,11 @@ static void mark_rsb_recursive(RecordSource* rsb)
 			case rsb_ext_sequential:
 			case rsb_ext_indexed:
 			case rsb_ext_dbkey:
-			case rsb_virt_sequential:
 			case rsb_procedure:
+				return;
+
+			case rsb_record_stream:
+				rsb->rsb_record_stream->markRecursive();
 				return;
 
 			case rsb_first:
@@ -7075,13 +7081,13 @@ static void mark_rsb_recursive(RecordSource* rsb)
 					RecordSource** ptr = rsb->rsb_arg;
 					const RecordSource* const* const end = ptr + rsb->rsb_count;
 					for (; ptr < end; ptr++)
-						mark_rsb_recursive(*ptr);
+						OPT_mark_rsb_recursive(*ptr);
 				}
 				return;
 
 			case rsb_left_cross:
-				mark_rsb_recursive(rsb->rsb_arg[RSB_LEFT_outer]);
-				mark_rsb_recursive(rsb->rsb_arg[RSB_LEFT_inner]);
+				OPT_mark_rsb_recursive(rsb->rsb_arg[RSB_LEFT_outer]);
+				OPT_mark_rsb_recursive(rsb->rsb_arg[RSB_LEFT_inner]);
 				return;
 
 			case rsb_merge:
@@ -7090,7 +7096,7 @@ static void mark_rsb_recursive(RecordSource* rsb)
 					const RecordSource* const* const end = ptr + rsb->rsb_count * 2;
 
 					for (; ptr < end; ptr += 2)
-						mark_rsb_recursive(*ptr);
+						OPT_mark_rsb_recursive(*ptr);
 				}
 				return;
 
@@ -7100,13 +7106,13 @@ static void mark_rsb_recursive(RecordSource* rsb)
 					const RecordSource* const* end = ptr + rsb->rsb_count;
 
 					for (; ptr < end; ptr += 2)
-						mark_rsb_recursive(*ptr);
+						OPT_mark_rsb_recursive(*ptr);
 				}
 				return;
 
 			case rsb_recursive_union:
-				mark_rsb_recursive(rsb->rsb_arg[0]);
-				mark_rsb_recursive(rsb->rsb_arg[2]);
+				OPT_mark_rsb_recursive(rsb->rsb_arg[0]);
+				OPT_mark_rsb_recursive(rsb->rsb_arg[2]);
 				return;
 
 			default:

@@ -29,6 +29,7 @@
 namespace Jrd {
 
 class CompilerScratch;
+class TypeClause;
 
 
 class Node : public Firebird::PermanentStorage
@@ -48,14 +49,14 @@ public:
 	Node* dsqlPass(CompiledStatement* aCompiledStatement)
 	{
 		compiledStatement = aCompiledStatement;
-		return dsqlPass();
+		return internalDsqlPass();
 	}
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const = 0;
 
 protected:
-	virtual Node* dsqlPass()
+	virtual Node* internalDsqlPass()
 	{
 		return this;
 	}
@@ -68,13 +69,41 @@ protected:
 class DdlNode : public Node
 {
 public:
-	explicit DdlNode(MemoryPool& pool)
-		: Node(pool)
+	explicit DdlNode(MemoryPool& pool, const Firebird::string& aSqlText)
+		: Node(pool),
+		  sqlText(pool, aSqlText)
 	{
 	}
 
+public:
+	const Firebird::string& getSqlText()
+	{
+		return sqlText;
+	}
+
+public:
+	enum DdlTriggerWhen { DTW_BEFORE, DTW_AFTER };
+	static void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
+		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName,
+		const Firebird::string& sqlText);
+
+public:
+	static void checkEmptyName(const Firebird::MetaName& name);
+	static Firebird::MetaName nameInMetaCharSet(thread_db* tdbb, const Firebird::MetaName& name);
+	static Firebird::MetaName nameInUserCharSet(thread_db* tdbb, const Firebird::MetaName& name);
+	static void storeTextBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
+		const Firebird::string& text);
+	static void storeBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
+		const UCHAR* data, unsigned length);
+
 protected:
-	virtual Node* dsqlPass()
+	void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
+		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName);
+	void putType(const TypeClause& type, bool useSubType);
+	void resetContextStack();
+
+protected:
+	virtual Node* internalDsqlPass()
 	{
 		compiledStatement->req_type = REQ_DDL;
 		return this;
@@ -82,6 +111,9 @@ protected:
 
 public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction) = 0;
+
+private:
+	Firebird::string sqlText;
 };
 
 
@@ -89,7 +121,8 @@ class DmlNode : public Node
 {
 public:
 	explicit DmlNode(MemoryPool& pool)
-		: Node(pool)
+		: Node(pool),
+		  node(NULL)
 	{
 	}
 
@@ -114,6 +147,20 @@ public:
 		: DmlNode(pool)
 	{
 	}
+};
+
+
+// Common node for all "code blocks" (i.e.: procedures, triggers and execute block)
+class BlockNode
+{
+public:
+	virtual ~BlockNode()
+	{
+	}
+
+public:
+	virtual void genReturn() = 0;
+	virtual dsql_nod* resolveVariable(const dsql_str* varName) = 0;
 };
 
 

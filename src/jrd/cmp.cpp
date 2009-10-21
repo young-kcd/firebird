@@ -91,6 +91,7 @@
 #include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
 #include "../dsql/Nodes.h"
+#include "../jrd/ValuesImpl.h"
 
 using Firebird::AutoSetRestore;
 
@@ -391,7 +392,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 			SCL_check_access(tdbb, sec_class,
 							(access->acc_view_id) ? access->acc_view_id : (view ? view->rel_id : 0),
-							t.request->req_trg_name, NULL, access->acc_mask,
+							t.request->req_trg_name, NULL, NULL, access->acc_mask,
 							access->acc_type, access->acc_name, access->acc_r_name);
 		}
 	}
@@ -429,8 +430,19 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 				 access++)
 			{
 				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-				SCL_check_access(tdbb, sec_class, access->acc_view_id, NULL, prc->prc_name,
-								access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
+
+				if (prc->prc_name.qualifier.isEmpty())
+				{
+					SCL_check_access(tdbb, sec_class, access->acc_view_id, NULL,
+						prc->prc_name.identifier, NULL, access->acc_mask, access->acc_type,
+						access->acc_name, access->acc_r_name);
+				}
+				else
+				{
+					SCL_check_access(tdbb, sec_class, access->acc_view_id, NULL,
+						NULL, prc->prc_name.qualifier, access->acc_mask, access->acc_type,
+						access->acc_name, access->acc_r_name);
+				}
 			}
 		}
 		else {
@@ -466,12 +478,10 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	// this request is called immediately by caller (check for empty req_caller).
 	// Currently (in v2.5) this rule will work for EXECUTE STATEMENT only, as
 	// tra_callback_count incremented only by it.
-	// When external SP's will be introduced we need to decide if they also can
-	// inherit caller's privileges
+	// In v3.0, this rule also work for external procedures and triggers.
 	jrd_tra* transaction = tdbb->getTransaction();
-	const jrd_req* exec_stmt_caller =
-		(transaction && transaction->tra_callback_count && !request->req_caller) ?
-			transaction->tra_callback_caller : NULL;
+	const bool useCallerPrivs = transaction && transaction->tra_callback_count &&
+		!request->req_caller;
 
 	for (const AccessItem* access = request->req_access.begin();
 		access < request->req_access.end();
@@ -479,11 +489,17 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	{
 		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 
-		Firebird::MetaName trgName(exec_stmt_caller ? exec_stmt_caller->req_trg_name : NULL);
-		Firebird::MetaName prcName(exec_stmt_caller && exec_stmt_caller->req_procedure ?
-			exec_stmt_caller->req_procedure->prc_name : NULL);
+		Firebird::MetaName trgName(
+			useCallerPrivs && transaction->tra_caller_name.type == obj_trigger ?
+				transaction->tra_caller_name.name : NULL);
+		Firebird::MetaName prcName(
+			useCallerPrivs && transaction->tra_caller_name.type == obj_procedure ?
+				transaction->tra_caller_name.name : NULL);
+		Firebird::MetaName pkgName(
+			useCallerPrivs && transaction->tra_caller_name.type == obj_package_header ?
+				transaction->tra_caller_name.name : NULL);
 
-		SCL_check_access(tdbb, sec_class, access->acc_view_id, trgName, prcName,
+		SCL_check_access(tdbb, sec_class, access->acc_view_id, trgName, prcName, pkgName,
 			access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
 	}
 }
@@ -507,7 +523,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	SET_TDBB(tdbb);
 
 	Database* const dbb = tdbb->getDatabase();
-	Attachment* const attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(dbb);
 
 	// find the request if we've got it
@@ -529,8 +545,17 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 			const TEXT* prc_sec_name = (procedure->prc_security_name.length() > 0 ?
 				procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(tdbb, prc_sec_name);
-			SCL_check_access(tdbb, sec_class, 0, NULL, NULL, SCL_execute,
-							 object_procedure, procedure->prc_name);
+
+			if (procedure->prc_name.qualifier.isEmpty())
+			{
+				SCL_check_access(tdbb, sec_class, 0, NULL, NULL, NULL, SCL_execute,
+								 object_procedure, procedure->prc_name.identifier);
+			}
+			else
+			{
+				SCL_check_access(tdbb, sec_class, 0, NULL, NULL, NULL, SCL_execute,
+								 object_package, procedure->prc_name.qualifier);
+			}
 		}
 
 		CMP_verify_access(tdbb, request);
@@ -557,6 +582,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_procedure = request->req_procedure;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
+	clone->req_charset = request->req_charset;
 	clone->req_id = fb_utils::genUniqueId();
 
 	// We are cloning full lists here, not assigning pointers
@@ -632,7 +658,9 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		}
 #endif
 
-		if (internal_flag) {
+		if (internal_flag)
+		{
+			request->req_charset = CS_METADATA;
 			request->req_flags |= req_internal;
 		}
 
@@ -2086,7 +2114,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
-	Attachment* const attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	jrd_req* const old_request = tdbb->getRequest();
 	tdbb->setRequest(NULL);
@@ -2153,6 +2181,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
 	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
+	request->req_charset = tdbb->getAttachment()->att_charset;
 	request->req_id = fb_utils::genUniqueId();
 
 	// CVC: Unused.
@@ -2203,7 +2232,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 					char buffer[256];
 					sprintf(buffer,
 							"Called from CMP_make_request():\n\t Incrementing use count of %s\n",
-							procedure->prc_name->c_str());
+							procedure->prc_name->toString().c_str());
 					JRD_print_procedure_info(tdbb, buffer);
 				}
 #endif
@@ -2393,7 +2422,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 		char buffer[256];
 		sprintf(buffer,
 				"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
-				procedure->prc_name->c_str());
+				procedure->prc_name->toString().c_str());
 		JRD_print_procedure_info(tdbb, buffer);
 	}
 #endif
@@ -2434,7 +2463,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 
 	// release existence locks on references
 
-	Attachment* attachment = request->req_attachment;
+	Jrd::Attachment* attachment = request->req_attachment;
 	if (!attachment || !(attachment->att_flags & ATT_shutdown))
 	{
 		for (Resource* resource = request->req_resources.begin();
@@ -2504,6 +2533,12 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 	}
 
 	request->req_sql_text = NULL;
+
+	delete request->inputParams;
+	request->inputParams = NULL;
+
+	delete request->outputParams;
+	request->outputParams = NULL;
 
 	// We have to call the destructor explicitly because of
 	// the delete-by-pool cleanup practice for requests
@@ -5605,7 +5640,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
 				node->nod_arg[e_fun_function] = (jrd_nod*) FUN_resolve(tdbb, csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
-					ERR_post(Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name));
+					ERR_post(Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name.toString()));
 				}
 			}
 			dsc descriptor_a;
@@ -6120,8 +6155,16 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 		(procedure->prc_security_name.length() > 0 ? procedure->prc_security_name.c_str() : NULL);
 
 	// this request must have EXECUTE permission on the stored procedure
-	CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
-					procedure->prc_name.c_str());
+	if (procedure->prc_name.qualifier.isEmpty())
+	{
+		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
+						procedure->prc_name.identifier.c_str());
+	}
+	else
+	{
+		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_package,
+						procedure->prc_name.qualifier.c_str());
+	}
 
 	// Add the procedure to list of external objects accessed
 	ExternalAccess temp(procedure->prc_id);

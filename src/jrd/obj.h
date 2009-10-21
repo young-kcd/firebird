@@ -45,9 +45,11 @@ const int obj_generator			= 14;
 const int obj_udf				= 15;
 const int obj_blob_filter		= 16;
 const int obj_collation			= 17;
+const int obj_package_header	= 18;
+const int obj_package_body		= 19;
 
 // keep this last !
-const int obj_type_MAX			= 18;
+const int obj_type_MAX			= 20;
 
 #endif /* JRD_OBJ_H */
 

@@ -1470,12 +1470,14 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				continue;
 			}
 
-			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, expanded_filename.c_str(),
-												&handle, newDpb.getBufferLength(),
+			attachment = new CAttachment(NULL, public_handle, n);
+			attachment->db_path = expanded_filename;
+
+			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, *public_handle, expanded_filename.c_str(),
+												&attachment->handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
-				attachment = new CAttachment(handle, public_handle, n);
-				attachment->db_path = expanded_filename;
+				handle = attachment->handle;
 
 				status[0] = isc_arg_gds;
 				status[1] = 0;
@@ -1493,6 +1495,12 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 				return status[1];
 			}
+			else
+			{
+				*public_handle = 0;
+				destroy(attachment);
+			}
+
 			if (ptr[1] != isc_unavailable)
 			{
 				ptr = temp;
@@ -2042,10 +2050,19 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				continue;
 			}
 
-			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, expanded_filename.c_str(),
-												&handle, newDpb.getBufferLength(),
+			attachment = new CAttachment(NULL, public_handle, n);
+#ifdef WIN_NT
+			attachment->db_path = expanded_filename;
+#else
+			attachment->db_path = org_filename;
+#endif
+
+			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, *public_handle, expanded_filename.c_str(),
+												&attachment->handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
+				handle = attachment->handle;
+
 #ifdef WIN_NT
             	// Now we can expand, the file exists
 				expanded_filename = org_filename;
@@ -2055,13 +2072,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				ISC_systemToUtf8(expanded_filename);
 #endif
 
-				attachment = new CAttachment(handle, public_handle, n);
-#ifdef WIN_NT
-				attachment->db_path = expanded_filename;
-#else
-				attachment->db_path = org_filename;
-#endif
-
 				status[0] = isc_arg_gds;
 				status[1] = 0;
 				if (status[2] != isc_arg_warning)
@@ -2069,6 +2079,12 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 				return status[1];
 			}
+			else
+			{
+				*public_handle = 0;
+				destroy(attachment);
+			}
+
 			if (ptr[1] != isc_unavailable)
 				ptr = temp;
 		}
@@ -4838,7 +4854,6 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY temp;
 	Transaction transaction(NULL);
 	Attachment attachment(NULL);
-	StoredTra* handle = NULL;
 
 	Status status(user_status);
 
@@ -4848,29 +4863,25 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 		nullCheck(tra_handle, isc_bad_trans_handle);
 
 		if (count <= 0 || !vector)
-		{
 			status_exception::raise(Arg::Gds(isc_bad_teb_form));
-		}
 
-		Transaction* ptr;
-		USHORT n;
-		for (n = 0, ptr = &transaction; n < count; n++, ptr = &(*ptr)->next, vector++)
+		if (vector->teb_tpb_length < 0 || (vector->teb_tpb_length > 0 && !vector->teb_tpb))
+			status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+
+		Transaction* ptr = &transaction;
+
+		for (USHORT n = 0; n < count; n++, ptr = &(*ptr)->next, vector++)
 		{
-			if (vector->teb_tpb_length < 0 || (vector->teb_tpb_length > 0 && !vector->teb_tpb))
-			{
-				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
-			}
-
 			attachment = translate<CAttachment>(vector->teb_database);
 
-			if (CALL(PROC_START_TRANSACTION, attachment->implementation) (status, &handle, 1,
-					&attachment->handle, vector->teb_tpb_length, vector->teb_tpb))
+			*ptr = new CTransaction(0, 0, attachment);
+
+			if (CALL(PROC_START_TRANSACTION, attachment->implementation) (status,
+					(*ptr)->public_handle, &(*ptr)->handle, 1, &attachment->handle,
+					vector->teb_tpb_length, vector->teb_tpb))
 			{
 				status_exception::raise(status);
 			}
-
-			*ptr = new CTransaction(handle, 0, attachment);
-			handle = 0;
 		}
 
 		if (transaction->next)
@@ -4886,7 +4897,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 	{
 		e.stuff_exception(status);
 
-		if (handle || transaction)
+		if (transaction)
 		{
 			*tra_handle = 0;
 		}
@@ -4904,11 +4915,6 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 		if (transaction)
 		{
 			destroy(transaction);
-		}
-
-		if (handle && attachment)
-		{
-			CALL(PROC_ROLLBACK, attachment->implementation) (temp, &handle);
 		}
 	}
 
@@ -5419,7 +5425,6 @@ static PTR get_entrypoint(int proc, int implementation)
 		return *entry;
 
 	return &no_entrypoint;
-
 }
 
 

@@ -1,0 +1,1140 @@
+/*
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Adriano dos Santos Fernandes
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2009 Adriano dos Santos Fernandes <adrianosf@uol.com.br>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ */
+
+#include "firebird.h"
+#include "../jrd/common.h"
+#include "../dsql/PackageNodes.h"
+#include "../jrd/dyn.h"
+#include "../jrd/intl.h"
+#include "../jrd/jrd.h"
+#include "../jrd/tra.h"
+#include "../jrd/dfw_proto.h"
+#include "../jrd/dyn_dl_proto.h"
+#include "../jrd/exe_proto.h"
+#include "../jrd/met_proto.h"
+#include "../jrd/vio_proto.h"
+#include "../dsql/make_proto.h"
+#include "../dsql/metd_proto.h"
+#include "../dsql/pass1_proto.h"
+#include "../common/StatusArg.h"
+
+using namespace Firebird;
+
+namespace Jrd {
+
+using namespace Firebird;
+using namespace Dsql;
+
+DATABASE DB = STATIC "ODS.RDB";
+
+
+//----------------------
+
+
+namespace
+{
+	struct ParameterInfo
+	{
+		ParameterInfo(MemoryPool& p)
+			: type(0),
+			  number(0),
+			  name(p),
+			  fieldSource(p),
+			  fieldName(p),
+			  relationName(p),
+			  mechanism(0)
+		{
+			defaultSource.clear();
+			defaultValue.clear();
+		}
+
+		ParameterInfo(MemoryPool& p, const ParameterInfo& o)
+			: type(o.type),
+			  number(o.number),
+			  name(p, o.name),
+			  fieldSource(p, o.fieldSource),
+			  fieldName(p, o.fieldName),
+			  relationName(p, o.relationName),
+			  collationId(o.collationId),
+			  nullFlag(o.nullFlag),
+			  mechanism(0),
+			  fieldLength(o.fieldLength),
+			  fieldScale(o.fieldScale),
+			  fieldType(o.fieldType),
+			  fieldSubType(o.fieldSubType),
+			  fieldSegmentLength(o.fieldSegmentLength),
+			  fieldNullFlag(o.fieldNullFlag),
+			  fieldCharLength(o.fieldCharLength),
+			  fieldCollationId(o.fieldCollationId),
+			  fieldCharSetId(o.fieldCharSetId),
+			  fieldPrecision(o.fieldPrecision),
+			  defaultSource(o.defaultSource),
+			  defaultValue(o.defaultValue)
+		{
+		}
+
+		SSHORT type;
+		SSHORT number;
+		MetaName name;
+		MetaName fieldSource;
+		MetaName fieldName;
+		MetaName relationName;
+		TriStateType<SSHORT> collationId;
+		TriStateType<SSHORT> nullFlag;
+		SSHORT mechanism;
+		TriStateType<SSHORT> fieldLength;
+		TriStateType<SSHORT> fieldScale;
+		TriStateType<SSHORT> fieldType;
+		TriStateType<SSHORT> fieldSubType;
+		TriStateType<SSHORT> fieldSegmentLength;
+		TriStateType<SSHORT> fieldNullFlag;
+		TriStateType<SSHORT> fieldCharLength;
+		TriStateType<SSHORT> fieldCollationId;
+		TriStateType<SSHORT> fieldCharSetId;
+		TriStateType<SSHORT> fieldPrecision;
+
+		// Not compared
+		bid defaultSource;
+		bid defaultValue;
+
+		bool operator >(const ParameterInfo& o) const
+		{
+			return type > o.type || (type == o.type && number > o.number);
+		}
+
+		bool operator ==(const ParameterInfo& o) const
+		{
+			return type == o.type && number == o.number && name == o.name &&
+				(fieldSource == o.fieldSource ||
+					(fb_utils::implicit_domain(fieldSource.c_str()) &&
+						fb_utils::implicit_domain(o.fieldSource.c_str()))) &&
+				fieldName == o.fieldName && relationName == o.relationName &&
+				collationId == o.collationId && nullFlag == o.nullFlag &&
+				mechanism == o.mechanism && fieldLength == o.fieldLength &&
+				fieldScale == o.fieldScale && fieldType == o.fieldType &&
+				fieldSubType == o.fieldSubType && fieldSegmentLength == o.fieldSegmentLength &&
+				fieldNullFlag == o.fieldNullFlag && fieldCharLength == o.fieldCharLength &&
+				fieldCollationId == o.fieldCollationId && fieldCharSetId == o.fieldCharSetId &&
+				fieldPrecision == o.fieldPrecision;
+		}
+
+		bool operator !=(const ParameterInfo& o) const
+		{
+			return !(*this == o);
+		}
+	};
+
+	struct Signature
+	{
+		Signature(MemoryPool& p, const MetaName& aName)
+			: name(p, aName),
+			  parameters(p),
+			  defined(false)
+		{
+		}
+
+		Signature(const MetaName& aName)
+			: name(aName),
+			  parameters(*getDefaultMemoryPool()),
+			  defined(false)
+		{
+		}
+
+		Signature(MemoryPool& p)
+			: name(p),
+			  parameters(p),
+			  defined(false)
+		{
+		}
+
+		Signature(MemoryPool& p, const Signature& o)
+			: name(p, o.name),
+			  parameters(p),
+			  defined(o.defined)
+		{
+			for (SortedObjectsArray<ParameterInfo>::const_iterator i = o.parameters.begin();
+				 i != o.parameters.end(); ++i)
+			{
+				parameters.add(*i);
+			}
+		}
+
+		bool operator >(const Signature& o) const
+		{
+			return name > o.name;
+		}
+
+		bool operator ==(const Signature& o) const
+		{
+			if (name != o.name || parameters.getCount() != o.parameters.getCount())
+				return false;
+
+			for (SortedObjectsArray<ParameterInfo>::const_iterator i = parameters.begin(),
+																   j = o.parameters.begin();
+				i != parameters.end(); ++i, ++j)
+			{
+				if (*i != *j)
+					return false;
+			}
+
+			return true;
+		}
+
+		bool operator !=(const Signature& o) const
+		{
+			return !(*this == o);
+		}
+
+		MetaName name;
+		SortedObjectsArray<ParameterInfo> parameters;
+		bool defined;
+	};
+
+
+	// Return function and procedure names (in the user charset) and optionally its details for a
+	// given package.
+	void collectPackagedItems(thread_db* tdbb, jrd_tra* transaction, const MetaName& metaName,
+		SortedObjectsArray<Signature>& functions,
+		SortedObjectsArray<Signature>& procedures, bool details)
+	{
+		Database* dbb = tdbb->getDatabase();
+
+		AutoCacheRequest requestHandle(tdbb, drq_l_pkg_funcs, DYN_REQUESTS);
+		AutoCacheRequest requestHandle2(tdbb, drq_l_pkg_func_args, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			FUN IN RDB$FUNCTIONS
+			WITH FUN.RDB$PACKAGE_NAME EQ metaName.c_str()
+		{
+			Signature function(DdlNode::nameInUserCharSet(tdbb, FUN.RDB$FUNCTION_NAME));
+			function.defined = !FUN.RDB$ENTRYPOINT.NULL;
+
+			if (details)
+			{
+				FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
+					ARG IN RDB$FUNCTION_ARGUMENTS
+					WITH ARG.RDB$PACKAGE_NAME EQ metaName.c_str() AND
+						 ARG.RDB$FUNCTION_NAME EQ FUN.RDB$FUNCTION_NAME
+				{
+					ParameterInfo parameter(*getDefaultMemoryPool());
+					parameter.number = ARG.RDB$ARGUMENT_POSITION;
+					parameter.mechanism = ARG.RDB$MECHANISM;
+
+					if (!ARG.RDB$FIELD_LENGTH.NULL)
+						parameter.fieldLength = ARG.RDB$FIELD_LENGTH;
+					if (!ARG.RDB$FIELD_SCALE.NULL)
+						parameter.fieldScale = ARG.RDB$FIELD_SCALE;
+					if (!ARG.RDB$FIELD_TYPE.NULL)
+						parameter.fieldType = ARG.RDB$FIELD_TYPE;
+					if (!ARG.RDB$FIELD_SUB_TYPE.NULL)
+						parameter.fieldSubType = ARG.RDB$FIELD_SUB_TYPE;
+					if (!ARG.RDB$CHARACTER_LENGTH.NULL)
+						parameter.fieldCharLength = ARG.RDB$CHARACTER_LENGTH;
+					if (!ARG.RDB$CHARACTER_SET_ID.NULL)
+						parameter.fieldCharSetId = ARG.RDB$CHARACTER_SET_ID;
+					if (!ARG.RDB$FIELD_PRECISION.NULL)
+						parameter.fieldPrecision = ARG.RDB$FIELD_PRECISION;
+
+					function.parameters.add(parameter);
+				}
+				END_FOR
+			}
+
+			functions.add(function);
+		}
+		END_FOR
+
+		requestHandle.reset(tdbb, drq_l_pkg_procs, DYN_REQUESTS);
+		requestHandle2.reset(tdbb, drq_l_pkg_proc_args, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			PRC IN RDB$PROCEDURES
+			WITH PRC.RDB$PACKAGE_NAME EQ metaName.c_str()
+		{
+			Signature procedure(DdlNode::nameInUserCharSet(tdbb, PRC.RDB$PROCEDURE_NAME));
+			procedure.defined = !PRC.RDB$PROCEDURE_BLR.NULL || !PRC.RDB$ENTRYPOINT.NULL;
+
+			if (details)
+			{
+				FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
+					PRM IN RDB$PROCEDURE_PARAMETERS CROSS
+					FLD IN RDB$FIELDS
+					WITH PRM.RDB$PACKAGE_NAME EQ metaName.c_str() AND
+						 PRM.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME AND
+						 FLD.RDB$FIELD_NAME EQ PRM.RDB$FIELD_SOURCE
+				{
+					ParameterInfo parameter(*getDefaultMemoryPool());
+					parameter.type = PRM.RDB$PARAMETER_TYPE;
+					parameter.number = PRM.RDB$PARAMETER_NUMBER;
+					parameter.name = DdlNode::nameInUserCharSet(tdbb, PRM.RDB$PARAMETER_NAME);
+					parameter.fieldSource = DdlNode::nameInUserCharSet(tdbb, PRM.RDB$FIELD_SOURCE);
+
+					if (!PRM.RDB$FIELD_NAME.NULL)
+						parameter.fieldName = DdlNode::nameInUserCharSet(tdbb, PRM.RDB$FIELD_NAME);
+
+					if (!PRM.RDB$RELATION_NAME.NULL)
+					{
+						parameter.relationName = DdlNode::nameInUserCharSet(tdbb,
+							PRM.RDB$RELATION_NAME);
+					}
+
+					if (!PRM.RDB$COLLATION_ID.NULL)
+						parameter.collationId = PRM.RDB$COLLATION_ID;
+					if (!PRM.RDB$NULL_FLAG.NULL)
+						parameter.nullFlag = PRM.RDB$NULL_FLAG;
+
+					parameter.mechanism = PRM.RDB$PARAMETER_MECHANISM;
+
+					if (!FLD.RDB$FIELD_LENGTH.NULL)
+						parameter.fieldLength = FLD.RDB$FIELD_LENGTH;
+					if (!FLD.RDB$FIELD_SCALE.NULL)
+						parameter.fieldScale = FLD.RDB$FIELD_SCALE;
+					if (!FLD.RDB$FIELD_TYPE.NULL)
+						parameter.fieldType = FLD.RDB$FIELD_TYPE;
+					if (!FLD.RDB$FIELD_SUB_TYPE.NULL)
+						parameter.fieldSubType = FLD.RDB$FIELD_SUB_TYPE;
+					if (!FLD.RDB$SEGMENT_LENGTH.NULL)
+						parameter.fieldSegmentLength = FLD.RDB$SEGMENT_LENGTH;
+					if (!FLD.RDB$NULL_FLAG.NULL)
+						parameter.fieldNullFlag = FLD.RDB$NULL_FLAG;
+					if (!FLD.RDB$CHARACTER_LENGTH.NULL)
+						parameter.fieldCharLength = FLD.RDB$CHARACTER_LENGTH;
+					if (!FLD.RDB$COLLATION_ID.NULL)
+						parameter.fieldCollationId = FLD.RDB$COLLATION_ID;
+					if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+						parameter.fieldCharSetId = FLD.RDB$CHARACTER_SET_ID;
+					if (!FLD.RDB$FIELD_PRECISION.NULL)
+						parameter.fieldPrecision = FLD.RDB$FIELD_PRECISION;
+
+					if (!PRM.RDB$DEFAULT_SOURCE.NULL)
+						parameter.defaultSource = PRM.RDB$DEFAULT_SOURCE;
+					if (!PRM.RDB$DEFAULT_VALUE.NULL)
+						parameter.defaultValue = PRM.RDB$DEFAULT_VALUE;
+
+					procedure.parameters.add(parameter);
+				}
+				END_FOR
+			}
+
+			procedures.add(procedure);
+		}
+		END_FOR
+	}
+}	// namespace
+
+
+//----------------------
+
+
+void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	fb_assert(items);
+
+	text.printf(
+		"CreateAlterPackageNode\n"
+		"  name: '%s'  create: %d  alter: %d\n"
+		"  Items:\n"
+		"--------\n",
+		name.c_str(), create, alter);
+
+	for (unsigned i = 0; i < items->getCount(); ++i)
+	{
+		string item;
+		Array<dsql_nod*> nodes;
+
+		switch ((*items)[i].type)
+		{
+			case Item::FUNCTION:
+				(*items)[i].function->print(item, nodes);
+				break;
+
+			case Item::PROCEDURE:
+				(*items)[i].procedure->print(item, nodes);
+				break;
+		}
+
+		text += item;
+	}
+
+	text += "--------\n";
+}
+
+
+Node* CreateAlterPackageNode::internalDsqlPass()
+{
+	source.ltrim("\n\r\t ");
+
+	// items
+	for (unsigned i = 0; i < items->getCount(); ++i)
+	{
+		CompiledStatement* itemStatement = FB_NEW(getPool()) CompiledStatement(getPool());
+		itemStatement->req_dbb = compiledStatement->req_dbb;
+		itemStatement->req_transaction = compiledStatement->req_transaction;
+		itemStatement->req_client_dialect = compiledStatement->req_client_dialect;
+		itemStatement->req_package = name;
+		itemStatement->req_ddl_node = MAKE_node(nod_class_node, 1);
+
+		switch ((*items)[i].type)
+		{
+			case CreateAlterPackageNode::Item::FUNCTION:
+				functionNames.add((*items)[i].function->name);
+				(*items)[i].function->alter = true;
+				(*items)[i].function->package = name;
+				itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*items)[i].function;
+				(*items)[i].function->dsqlPass(itemStatement);
+				break;
+
+			case CreateAlterPackageNode::Item::PROCEDURE:
+				procedureNames.add((*items)[i].procedure->name);
+				(*items)[i].procedure->alter = true;
+				(*items)[i].procedure->package = name;
+				itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*items)[i].procedure;
+				(*items)[i].procedure->dsqlPass(itemStatement);
+				break;
+		}
+	}
+
+	return DdlNode::internalDsqlPass();
+}
+
+
+void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	fb_assert(create || alter);
+
+	Database* dbb = tdbb->getDatabase();
+
+	dbb->checkOdsForDsql(ODS_12_0);
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	if (alter)
+	{
+		if (!executeAlter(tdbb, transaction))
+		{
+			if (create)	// create or alter
+				executeCreate(tdbb, transaction);
+			else
+			{
+				//// TODO: localize
+				status_exception::raise(
+					Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(isc_random) <<
+					Arg::Str("Package not found") <<
+					Arg::Gds(isc_random) <<
+					Arg::Str(name));
+			}
+		}
+	}
+	else
+		executeCreate(tdbb, transaction);
+
+	// items
+	for (unsigned i = 0; i < items->getCount(); ++i)
+	{
+		switch ((*items)[i].type)
+		{
+			case Item::FUNCTION:
+				(*items)[i].function->execute(tdbb, transaction);
+				break;
+
+			case Item::PROCEDURE:
+				(*items)[i].procedure->packageOwner = owner;
+				(*items)[i].procedure->execute(tdbb, transaction);
+				break;
+		}
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+
+void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
+	MetaName metaName(nameInMetaCharSet(tdbb, name));
+
+	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE, metaName);
+
+	AutoCacheRequest requestHandle(tdbb, drq_s_pkg, DYN_REQUESTS);
+
+	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PKG IN RDB$PACKAGES USING
+	{
+		PKG.RDB$PACKAGE_NAME.NULL = FALSE;
+		strcpy(PKG.RDB$PACKAGE_NAME, metaName.c_str());
+
+		PKG.RDB$SYSTEM_FLAG.NULL = FALSE;
+		PKG.RDB$SYSTEM_FLAG = 0;
+
+		PKG.RDB$OWNER_NAME.NULL = FALSE;
+		strcpy(PKG.RDB$OWNER_NAME, attachment->att_user->usr_user_name.c_str());
+
+		PKG.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
+		storeTextBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE, source);
+	}
+	END_STORE
+
+	for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++)
+	{
+		requestHandle.reset(tdbb, drq_s_pkg_usr_prvs, DYN_REQUESTS);
+
+		STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			X IN RDB$USER_PRIVILEGES
+		{
+			strcpy(X.RDB$RELATION_NAME, metaName.c_str());
+			strcpy(X.RDB$USER, attachment->att_user->usr_user_name.c_str());
+			X.RDB$USER_TYPE = obj_user;
+			X.RDB$OBJECT_TYPE = obj_package_header;
+			X.RDB$PRIVILEGE[0] = *p;
+			X.RDB$PRIVILEGE[1] = 0;
+		}
+		END_STORE;
+	}
+
+	owner = attachment->att_user->usr_user_name;
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE, metaName);
+}
+
+
+bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
+	MetaName metaName(nameInMetaCharSet(tdbb, name));
+
+	AutoCacheRequest requestHandle(tdbb, drq_m_pkg, DYN_REQUESTS);
+	bool modified = false;
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PKG IN RDB$PACKAGES
+		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+	{
+		modified = true;
+
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_PACKAGE, metaName);
+
+		SortedObjectsArray<Signature> existingFuncs(getPool());
+		SortedObjectsArray<Signature> existingProcs(getPool());
+		collectPackagedItems(tdbb, transaction, metaName, existingFuncs, existingProcs, false);
+
+		for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
+			 i != existingFuncs.end(); ++i)
+		{
+			if (!functionNames.exist(i->name))
+			{
+				DropFunctionNode dropNode(getPool(), "", i->name);
+				dropNode.package = name;
+				dropNode.dsqlPass(compiledStatement);
+				dropNode.execute(tdbb, transaction);
+			}
+		}
+
+		for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
+			 i != existingProcs.end(); ++i)
+		{
+			if (!procedureNames.exist(i->name))
+			{
+				DropProcedureNode dropNode(getPool(), "", i->name);
+				dropNode.package = name;
+				dropNode.dsqlPass(compiledStatement);
+				dropNode.execute(tdbb, transaction);
+			}
+		}
+
+		MODIFY PKG
+			PKG.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
+			storeTextBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE, getSqlText());
+
+			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
+		END_MODIFY
+
+		owner = PKG.RDB$OWNER_NAME;
+	}
+	END_FOR
+
+	if (modified)
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, metaName);
+
+	return modified;
+}
+
+
+//----------------------
+
+
+void DropPackageNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf(
+		"DropPackageNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+
+void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
+	MetaName metaName(nameInMetaCharSet(tdbb, name));
+
+	dbb->checkOdsForDsql(ODS_12_0);
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	bool found = false;
+	AutoCacheRequest requestHandle(tdbb, drq_e_pkg, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PKG IN RDB$PACKAGES
+		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+	{
+		found = true;
+
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE, metaName);
+
+		ERASE PKG;
+
+		if (!PKG.RDB$SECURITY_CLASS.NULL)
+			DYN_delete_security_class2(transaction, PKG.RDB$SECURITY_CLASS);
+
+		dsc desc;
+		desc.makeText(metaName.length(), ttype_metadata,
+			(UCHAR*) const_cast<char*>(metaName.c_str()));	// safe const_cast
+		DFW_post_work(transaction, dfw_drop_package_header, &desc, 0);
+	}
+	END_FOR
+
+	if (!found && !silent)
+	{
+		//// TODO: localize
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(isc_random) <<
+			Arg::Str("Package not found") <<
+			Arg::Gds(isc_random) <<
+			Arg::Str(name));
+	}
+
+	SortedObjectsArray<Signature> existingFuncs(getPool());
+	SortedObjectsArray<Signature> existingProcs(getPool());
+	collectPackagedItems(tdbb, transaction, metaName, existingFuncs, existingProcs, false);
+
+	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
+		 i != existingFuncs.end(); ++i)
+	{
+		DropFunctionNode dropNode(getPool(), "", i->name);
+		dropNode.package = name;
+		dropNode.dsqlPass(compiledStatement);
+		dropNode.execute(tdbb, transaction);
+	}
+
+	for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
+		 i != existingProcs.end(); ++i)
+	{
+		DropProcedureNode dropNode(getPool(), "", i->name);
+		dropNode.package = name;
+		dropNode.dsqlPass(compiledStatement);
+		dropNode.execute(tdbb, transaction);
+	}
+
+	requestHandle.reset(tdbb, drq_e_pkg_prv, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PRIV IN RDB$USER_PRIVILEGES
+		WITH (PRIV.RDB$RELATION_NAME EQ metaName.c_str() AND
+				PRIV.RDB$OBJECT_TYPE = obj_package_header) OR
+			 (PRIV.RDB$USER EQ metaName.c_str() AND PRIV.RDB$USER_TYPE = obj_package_header)
+	{
+		ERASE PRIV;
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE, metaName);
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void RecreatePackageNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("RecreatePackageNode\n");
+}
+
+
+Node* RecreatePackageNode::internalDsqlPass()
+{
+	createNode->dsqlPass(compiledStatement);
+	dropNode.dsqlPass(compiledStatement);
+	return DdlNode::internalDsqlPass();
+}
+
+
+void RecreatePackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	dropNode.execute(tdbb, transaction);
+	createNode->execute(tdbb, transaction);
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	fb_assert(items);
+
+	text.printf(
+		"CreatePackageBodyNode\n"
+		"  name: '%s'\n"
+		"  declaredItems:\n"
+		"--------\n",
+		name.c_str());
+
+	if (declaredItems)
+	{
+		for (unsigned i = 0; i < declaredItems->getCount(); ++i)
+		{
+			string item;
+			Array<dsql_nod*> nodes;
+
+			switch ((*declaredItems)[i].type)
+			{
+				case CreateAlterPackageNode::Item::FUNCTION:
+					(*declaredItems)[i].function->print(item, nodes);
+					break;
+
+				case CreateAlterPackageNode::Item::PROCEDURE:
+					(*declaredItems)[i].procedure->print(item, nodes);
+					break;
+			}
+
+			text += item;
+		}
+	}
+
+	text +=
+		"--------\n"
+		"  items:\n"
+		"--------\n";
+
+	for (unsigned i = 0; i < items->getCount(); ++i)
+	{
+		string item;
+		Array<dsql_nod*> nodes;
+
+		switch ((*items)[i].type)
+		{
+			case CreateAlterPackageNode::Item::FUNCTION:
+				(*items)[i].function->print(item, nodes);
+				break;
+
+			case CreateAlterPackageNode::Item::PROCEDURE:
+				(*items)[i].procedure->print(item, nodes);
+				break;
+		}
+
+		text += item;
+	}
+
+	text += "--------\n";
+}
+
+
+Node* CreatePackageBodyNode::internalDsqlPass()
+{
+	source.ltrim("\n\r\t ");
+
+	// process declaredItems and items
+	Array<CreateAlterPackageNode::Item>* arrays[] = {declaredItems, items};
+
+	for (unsigned i = 0; i < FB_NELEM(arrays); ++i)
+	{
+		if (!arrays[i])
+			continue;
+
+		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
+		{
+			CompiledStatement* itemStatement = FB_NEW(getPool()) CompiledStatement(getPool());
+			itemStatement->req_dbb = compiledStatement->req_dbb;
+			itemStatement->req_transaction = compiledStatement->req_transaction;
+			itemStatement->req_client_dialect = compiledStatement->req_client_dialect;
+			itemStatement->req_package = name;
+			itemStatement->req_ddl_node = MAKE_node(nod_class_node, 1);
+
+			switch ((*arrays[i])[j].type)
+			{
+				case CreateAlterPackageNode::Item::FUNCTION:
+					(*arrays[i])[j].function->package = name;
+					(*arrays[i])[j].function->create = true;
+					if (arrays[i] == items)
+						(*arrays[i])[j].function->alter = true;
+					else
+						(*arrays[i])[j].function->privateScope = true;
+					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*arrays[i])[j].function;
+					(*arrays[i])[j].function->dsqlPass(itemStatement);
+					break;
+
+				case CreateAlterPackageNode::Item::PROCEDURE:
+					(*arrays[i])[j].procedure->package = name;
+					(*arrays[i])[j].procedure->create = true;
+					if (arrays[i] == items)
+						(*arrays[i])[j].procedure->alter = true;
+					else
+						(*arrays[i])[j].procedure->privateScope = true;
+					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*arrays[i])[j].procedure;
+					(*arrays[i])[j].procedure->dsqlPass(itemStatement);
+					break;
+			}
+		}
+	}
+
+	return DdlNode::internalDsqlPass();
+}
+
+
+void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
+	MetaName metaName(nameInMetaCharSet(tdbb, name));
+
+	dbb->checkOdsForDsql(ODS_12_0);
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	AutoCacheRequest requestHandle(tdbb, drq_m_pkg_body, DYN_REQUESTS);
+	bool modified = false;
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PKG IN RDB$PACKAGES
+		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+	{
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE_BODY, metaName);
+
+		MODIFY PKG
+			storeTextBlob(tdbb, transaction, &PKG.RDB$PACKAGE_BODY_SOURCE, source);
+		END_MODIFY
+
+		modified = true;
+
+		owner = PKG.RDB$OWNER_NAME;
+	}
+	END_FOR
+
+	if (!modified)
+	{
+		//// TODO: localize
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(isc_random) <<
+			Arg::Str("Package not found") <<
+			Arg::Gds(isc_random) <<
+			Arg::Str(name));
+	}
+
+	SortedObjectsArray<Signature> existingFuncs(getPool());
+	SortedObjectsArray<Signature> existingProcs(getPool());
+
+	// process declaredItems and items
+	Array<CreateAlterPackageNode::Item>* arrays[] = {declaredItems, items};
+
+	for (unsigned i = 0; i < FB_NELEM(arrays); ++i)
+	{
+		if (!arrays[i])
+			continue;
+
+		if (arrays[i] == items)
+			collectPackagedItems(tdbb, transaction, metaName, existingFuncs, existingProcs, true);
+
+		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
+		{
+			switch ((*arrays[i])[j].type)
+			{
+				case CreateAlterPackageNode::Item::FUNCTION:
+					(*arrays[i])[j].function->execute(tdbb, transaction);
+					break;
+
+				case CreateAlterPackageNode::Item::PROCEDURE:
+					(*arrays[i])[j].procedure->packageOwner = owner;
+					(*arrays[i])[j].procedure->execute(tdbb, transaction);
+					break;
+			}
+		}
+	}
+
+	SortedObjectsArray<Signature> newFuncs(getPool());
+	SortedObjectsArray<Signature> newProcs(getPool());
+	collectPackagedItems(tdbb, transaction, metaName, newFuncs, newProcs, true);
+
+	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
+		 i != existingFuncs.end(); ++i)
+	{
+		size_t pos;
+		bool found = newFuncs.find(i->name, pos);
+
+		if (!found || !newFuncs[pos].defined)
+		{
+			//// TODO: localize
+			status_exception::raise(
+				Arg::Gds(isc_random) << Arg::Str(string("Function ") + i->name.c_str() +
+					" has not defined on the package body " + name.c_str()));
+		}
+		else if (newFuncs[pos] != *i)
+		{
+			//// TODO: localize
+			status_exception::raise(
+				Arg::Gds(isc_random) << Arg::Str(string("Function ") + i->name.c_str() +
+					" signature mismatch on package body " + name.c_str()));
+		}
+	}
+
+	for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
+		 i != existingProcs.end(); ++i)
+	{
+		size_t pos;
+		bool found = newProcs.find(i->name, pos);
+
+		if (!found || !newProcs[pos].defined)
+		{
+			//// TODO: localize
+			status_exception::raise(
+				Arg::Gds(isc_random) << Arg::Str(string("Procedure ") + i->name.c_str() +
+					" has not defined on the package body " + name.c_str()));
+		}
+		else if (newProcs[pos] != *i)
+		{
+			//// TODO: localize
+			status_exception::raise(
+				Arg::Gds(isc_random) << Arg::Str(string("Procedure ") + i->name.c_str() +
+					" signature mismatch on package body " + name.c_str()));
+		}
+
+		for (SortedObjectsArray<ParameterInfo>::iterator j = newProcs[pos].parameters.begin(),
+														 k = i->parameters.begin();
+			 j != newProcs[pos].parameters.end(); ++j, ++k)
+		{
+			if (!j->defaultSource.isEmpty() || !j->defaultValue.isEmpty())
+			{
+				//// TODO: localize
+				status_exception::raise(
+					Arg::Gds(isc_random) << Arg::Str("Default values for parameters are "
+						"allowed only in declaration of packaged procedure"));
+			}
+		}
+	}
+
+	// Lets recreate default of public procedure parameters
+
+	requestHandle.reset(tdbb, drq_m_pkg_prm_defs, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PRM IN RDB$PROCEDURE_PARAMETERS
+		WITH PRM.RDB$PACKAGE_NAME EQ metaName.c_str()
+	{
+		size_t pos;
+		if (existingProcs.find(MetaName(PRM.RDB$PROCEDURE_NAME), pos))
+		{
+			const Signature& proc = existingProcs[pos];
+
+			ParameterInfo param(getPool());
+			param.type = PRM.RDB$PARAMETER_TYPE;
+			param.number = PRM.RDB$PARAMETER_NUMBER;
+
+			if (proc.parameters.find(param, pos))
+			{
+				const ParameterInfo& param = proc.parameters[pos];
+
+				MODIFY PRM
+					PRM.RDB$DEFAULT_SOURCE = param.defaultSource;
+					PRM.RDB$DEFAULT_SOURCE.NULL = param.defaultSource.isEmpty();
+
+					PRM.RDB$DEFAULT_VALUE = param.defaultValue;
+					PRM.RDB$DEFAULT_VALUE.NULL = param.defaultValue.isEmpty();
+				END_MODIFY
+			}
+		}
+	}
+	END_FOR
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE_BODY, metaName);
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf(
+		"DropPackageBodyNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+
+void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
+	MetaName metaName(nameInMetaCharSet(tdbb, name));
+
+	dbb->checkOdsForDsql(ODS_12_0);
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	bool found = false;
+	AutoCacheRequest requestHandle(tdbb, drq_m_pkg_body2, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PKG IN RDB$PACKAGES
+		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+	{
+		found = true;
+
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE_BODY, metaName);
+
+		MODIFY PKG
+			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
+
+			dsc desc;
+			desc.makeText(metaName.length(), ttype_metadata,
+				(UCHAR*) const_cast<char*>(metaName.c_str()));	// safe const_cast
+			DFW_post_work(transaction, dfw_drop_package_body, &desc, 0);
+		END_MODIFY
+	}
+	END_FOR
+
+	if (!found)
+	{
+		//// TODO: localize
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(isc_random) <<
+			Arg::Str("Package not found") <<
+			Arg::Gds(isc_random) <<
+			Arg::Str(name));
+	}
+
+	requestHandle.reset(tdbb, drq_m_pkg_fun, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		FUN IN RDB$FUNCTIONS
+		WITH FUN.RDB$PACKAGE_NAME EQ metaName.c_str()
+	{
+		if (!FUN.RDB$PRIVATE_FLAG.NULL && FUN.RDB$PRIVATE_FLAG != 0)
+		{
+			DropFunctionNode dropNode(getPool(), "", nameInUserCharSet(tdbb, FUN.RDB$FUNCTION_NAME));
+			dropNode.package = name;
+			dropNode.dsqlPass(compiledStatement);
+			dropNode.execute(tdbb, transaction);
+		}
+		else
+		{
+			MODIFY FUN
+				FUN.RDB$MODULE_NAME.NULL = TRUE;
+				FUN.RDB$ENGINE_NAME.NULL = TRUE;
+				FUN.RDB$ENTRYPOINT.NULL = TRUE;
+			END_MODIFY
+		}
+	}
+	END_FOR
+
+	requestHandle.reset(tdbb, drq_m_pkg_prc, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PRC IN RDB$PROCEDURES
+		WITH PRC.RDB$PACKAGE_NAME EQ metaName.c_str()
+	{
+		if (!PRC.RDB$PRIVATE_FLAG.NULL && PRC.RDB$PRIVATE_FLAG != 0)
+		{
+			DropProcedureNode dropNode(getPool(), "", nameInUserCharSet(tdbb, PRC.RDB$PROCEDURE_NAME));
+			dropNode.package = name;
+			dropNode.dsqlPass(compiledStatement);
+			dropNode.execute(tdbb, transaction);
+		}
+		else
+		{
+			MODIFY PRC
+				PRC.RDB$PROCEDURE_TYPE = (SSHORT) prc_legacy;
+				PRC.RDB$PROCEDURE_BLR.NULL = TRUE;
+				PRC.RDB$DEBUG_INFO.NULL = TRUE;
+				PRC.RDB$ENGINE_NAME.NULL = TRUE;
+				PRC.RDB$ENTRYPOINT.NULL = TRUE;
+			END_MODIFY
+		}
+	}
+	END_FOR
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE_BODY, metaName);
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void RecreatePackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("RecreatePackageBodyNode\n");
+}
+
+
+Node* RecreatePackageBodyNode::internalDsqlPass()
+{
+	createNode->dsqlPass(compiledStatement);
+	dropNode.dsqlPass(compiledStatement);
+	return DdlNode::internalDsqlPass();
+}
+
+
+void RecreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	dropNode.execute(tdbb, transaction);
+	createNode->execute(tdbb, transaction);
+
+	savePoint.release();	// everything is ok
+}
+
+
+}	// namespace Jrd

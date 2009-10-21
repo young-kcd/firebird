@@ -1460,7 +1460,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		// Unless this is the only attachment, don't allow the sequential scan
 		// of very large blobs to flush pages used by other attachments.
 
-		Attachment* attachment = tdbb->getAttachment();
+		Jrd::Attachment* attachment = tdbb->getAttachment();
 		if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 		{
 			// If the blob has more pages than the page buffer cache then mark

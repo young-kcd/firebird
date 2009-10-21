@@ -80,8 +80,9 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 	NSObjectFileImage image;
 
 	/* Create an object file image from the given path */
-	const NSObjectFileImageReturnCode retVal =
-		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
+	const NSObjectFileImageReturnCode retVal = modPath.hasData() ?
+		NSCreateObjectFileImageFromFile(modPath.c_str(), &image) : NSObjectFileImageInappropriateFile;
+
 	switch (retVal)
 	{
 	case NSObjectFileImageSuccess:

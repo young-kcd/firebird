@@ -175,10 +175,12 @@ public:
 	USHORT			dfw_id;			// object id, if appropriate
 	USHORT			dfw_count;		// count of block posts
 	string			dfw_name;		// name of object
+	MetaName		dfw_package;	// package name
 
 public:
 	DeferredWork(MemoryPool& p, DeferredWork*** end,
-				 enum dfw_t t, USHORT id, SLONG sn, const string& name)
+				 enum dfw_t t, USHORT id, SLONG sn, const string& name,
+				 const MetaName& package)
 	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL),
 		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
 		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p, name)
@@ -258,6 +260,7 @@ public:
 		if (dfw_type == work.dfw_type &&
 			dfw_id == work.dfw_id &&
 			dfw_name == work.dfw_name &&
+			dfw_package == work.dfw_package &&
 			dfw_sav_number == work.dfw_sav_number)
 		{
 			return true;
@@ -372,7 +375,10 @@ static bool add_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool check_not_null(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool drop_package_header(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 /* ---------------------------------------------------------------- */
@@ -381,7 +387,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 	jrd_tra* transaction);
 static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& fieldName);
-static void check_dependencies(thread_db*, const TEXT*, const TEXT*, int, jrd_tra*);
+static void check_dependencies(thread_db*, const TEXT*, const TEXT*, const TEXT*, int, jrd_tra*);
 static void check_filename(const Firebird::string&, bool);
 static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
@@ -442,6 +448,8 @@ static const deferred_task task_table[] =
 	{ dfw_create_trigger, create_trigger },
 	{ dfw_delete_trigger, delete_trigger },
 	{ dfw_modify_trigger, modify_trigger },
+	{ dfw_drop_package_header, drop_package_header },	// packages should be before procedures
+	{ dfw_drop_package_body, drop_package_body },		// packages should be before procedures
 	{ dfw_create_procedure, create_procedure },
 	{ dfw_delete_procedure, delete_procedure },
 	{ dfw_modify_procedure, modify_procedure },
@@ -457,6 +465,7 @@ static const deferred_task task_table[] =
 	{ dfw_begin_backup, begin_backup },
 	{ dfw_end_backup, end_backup },
 	{ dfw_user_management, user_management },
+	{ dfw_check_not_null, check_not_null },
 	{ dfw_null, NULL }
 };
 
@@ -842,11 +851,12 @@ DeferredWork* DFW_post_system_work(thread_db* tdbb, enum dfw_t type, const dsc* 
 
 	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
 
-	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id);
+	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id, "");
 }
 
 
-DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc, USHORT id)
+DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc, USHORT id,
+	const MetaName& package)
 {
 /**************************************
  *
@@ -882,7 +892,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
 	}
 
 	const string name = get_string(desc);
-	DeferredWork tmp(AutoStorage::getAutoMemoryPool(), 0, type, id, sav_number, name);
+	DeferredWork tmp(AutoStorage::getAutoMemoryPool(), 0, type, id, sav_number, name, package);
 	DeferredWork* work = sp->hash.lookup(tmp);
 	if (work)
 	{
@@ -892,7 +902,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
 	// Not already posted, so do so now.
 
 	work = FB_NEW(*transaction->tra_pool)
-		DeferredWork(*transaction->tra_pool, &(job->end), type, id, sav_number, name);
+		DeferredWork(*transaction->tra_pool, &(job->end), type, id, sav_number, name, package);
 	job->end = work->getNextPtr();
 	fb_assert(!(*job->end));
 	sp->hash.add(work);
@@ -952,7 +962,7 @@ DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const
 	if (! arg)
 	{
 		arg = FB_NEW(*transaction->tra_pool)
-			DeferredWork(*transaction->tra_pool, 0, type, id, 0, name);
+			DeferredWork(*transaction->tra_pool, 0, type, id, 0, name, "");
 		work->dfw_args.add(arg);
 	}
 
@@ -1470,6 +1480,192 @@ static bool end_backup(	thread_db*	tdbb,
 	return false;
 }
 
+static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	c h e c k _ n o t _ n u l l
+ *
+ **************************************
+ *
+ * Scan relation to detect NULLs in fields being changed to NOT NULL.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	Lock* relationLock = NULL;
+	bool releaseRelationLock = false;
+
+	switch (phase)
+	{
+	case 1:
+	case 2:
+		return true;
+
+	case 3:
+		try
+		{
+			jrd_rel* relation = MET_lookup_relation(tdbb, work->dfw_name);
+			if (relation->rel_view_rse)
+				break;
+
+			// Protect relation from modification
+			relationLock = protect_relation(tdbb, transaction, relation, releaseRelationLock);
+
+			HalfStaticArray<USHORT, 5> fields;
+			jrd_req* handle = NULL;
+
+			FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+				RFL IN RDB$RELATION_FIELDS
+				WITH RFL.RDB$RELATION_NAME = relation->rel_name.c_str()
+			{
+				int fid = MET_lookup_field(tdbb, relation, RFL.RDB$FIELD_NAME, NULL);
+
+				if (!RFL.RDB$NULL_FLAG.NULL && RFL.RDB$NULL_FLAG &&
+					(*relation->rel_fields)[fid]->fld_not_null)
+				{
+					fields.add(fid);
+				}
+			}
+			END_FOR
+
+			CMP_release(tdbb, handle);
+
+			UCharBuffer blr;
+
+			blr.add(blr_version5);
+			blr.add(blr_begin);
+			blr.add(blr_message);
+			blr.add(1);	// message number
+			blr.add(fields.getCount() & 0xFF);
+			blr.add(fields.getCount() << 8);
+
+			for (size_t i = 0; i < fields.getCount(); ++i)
+			{
+				blr.add(blr_short);
+				blr.add(0);
+			}
+
+			blr.add(blr_for);
+			blr.add(blr_stall);
+			blr.add(blr_rse);
+			blr.add(1);
+			blr.add(blr_rid);
+			blr.add(relation->rel_id & 0xFF);
+			blr.add(relation->rel_id << 8);
+			blr.add(0);	// stream
+			blr.add(blr_boolean);
+
+			for (size_t i = 0; i < fields.getCount(); ++i)
+			{
+				if (i != fields.getCount() - 1)
+					blr.add(blr_or);
+
+				blr.add(blr_missing);
+				blr.add(blr_fid);
+				blr.add(0);	// stream
+				blr.add(fields[i] & 0xFF);
+				blr.add(fields[i] << 8);
+			}
+
+			blr.add(blr_end);
+
+			blr.add(blr_send);
+			blr.add(1);
+			blr.add(blr_begin);
+
+			for (size_t i = 0; i < fields.getCount(); ++i)
+			{
+				blr.add(blr_assignment);
+
+				blr.add(blr_value_if);
+				blr.add(blr_missing);
+				blr.add(blr_fid);
+				blr.add(0);	// stream
+				blr.add(fields[i] & 0xFF);
+				blr.add(fields[i] << 8);
+
+				blr.add(blr_literal);
+				blr.add(blr_short);
+				blr.add(0);
+				blr.add(1);
+				blr.add(0);
+
+				blr.add(blr_literal);
+				blr.add(blr_short);
+				blr.add(0);
+				blr.add(0);
+				blr.add(0);
+
+				blr.add(blr_parameter);
+				blr.add(1);	// message number
+				blr.add(i & 0xFF);
+				blr.add(i << 8);
+			}
+
+			blr.add(blr_end);
+
+			blr.add(blr_send);
+			blr.add(1);
+			blr.add(blr_begin);
+
+			for (size_t i = 0; i < fields.getCount(); ++i)
+			{
+				blr.add(blr_assignment);
+				blr.add(blr_literal);
+				blr.add(blr_short);
+				blr.add(0);
+				blr.add(0);
+				blr.add(0);
+				blr.add(blr_parameter);
+				blr.add(1);	// message number
+				blr.add(i & 0xFF);
+				blr.add(i << 8);
+			}
+
+			blr.add(blr_end);
+			blr.add(blr_end);
+			blr.add(blr_eoc);
+
+			jrd_req* request = CMP_compile2(tdbb, blr.begin(), TRUE, 0, NULL);
+			HalfStaticArray<USHORT, 5> hasRecord;
+
+			EXE_start(tdbb, request, transaction);
+			EXE_receive(tdbb, request, 1, fields.getCount() * sizeof(USHORT),
+				(UCHAR*) hasRecord.getBuffer(fields.getCount()));
+			EXE_unwind(tdbb, request);
+
+			CMP_release(tdbb, request);
+
+			for (size_t i = 0; i < fields.getCount(); ++i)
+			{
+				if (hasRecord[i])
+				{
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_cannot_make_not_null) <<
+							 Arg::Str((*relation->rel_fields)[fields[i]]->fld_name));
+				}
+			}
+
+			if (relationLock && releaseRelationLock)
+				release_protect_lock(tdbb, transaction, relationLock);
+		}
+		catch (const Exception&)
+		{
+			if (relationLock && releaseRelationLock)
+				release_protect_lock(tdbb, transaction, relationLock);
+
+			throw;
+		}
+
+		break;
+	}
+
+	return false;
+}
+
 static bool user_management(thread_db*		tdbb,
 							SSHORT			phase,
 							DeferredWork*	work,
@@ -1497,6 +1693,43 @@ static bool user_management(thread_db*		tdbb,
 		return true;
 	case 4:
 		transaction->getUserManagement()->commit();	// safe to be called multiple times
+		return false;
+	}
+
+	return false;
+}
+
+
+// Drop dependencies of a package header.
+static bool drop_package_header(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+	case 0:
+		return false;
+	case 1:
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_package_body, transaction);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_package_header, transaction);
+		return false;
+	}
+
+	return false;
+}
+
+
+// Drop dependencies of a package body.
+static bool drop_package_body(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+	case 0:
+		return false;
+	case 1:
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_package_body, transaction);
 		return false;
 	}
 
@@ -1639,6 +1872,7 @@ static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
 static void check_dependencies(thread_db* tdbb,
 							   const TEXT* dpdo_name,
 							   const TEXT* field_name,
+							   const TEXT* package_name,
 							   int dpdo_type,
 							   jrd_tra* transaction)
 {
@@ -1656,6 +1890,8 @@ static void check_dependencies(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	const MetaName packageName(package_name);
+
 	SLONG dep_counts[obj_type_MAX];
 	for (int i = 0; i < obj_type_MAX; i++)
 		dep_counts[i] = 0;
@@ -1669,6 +1905,7 @@ static void check_dependencies(thread_db* tdbb,
 				WITH DEP.RDB$DEPENDED_ON_NAME EQ dpdo_name
 				AND DEP.RDB$DEPENDED_ON_TYPE = dpdo_type
 				AND DEP.RDB$FIELD_NAME EQ field_name
+				AND DEP.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
 				REDUCED TO DEP.RDB$DEPENDENT_NAME
 			if (!REQUEST(irq_ch_f_dpd))
 				REQUEST(irq_ch_f_dpd) = request;
@@ -1693,6 +1930,7 @@ static void check_dependencies(thread_db* tdbb,
 			DEP IN RDB$DEPENDENCIES
 				WITH DEP.RDB$DEPENDED_ON_NAME EQ dpdo_name
 				AND DEP.RDB$DEPENDED_ON_TYPE = dpdo_type
+				AND DEP.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
 				REDUCED TO DEP.RDB$DEPENDENT_NAME
 
 			if (!REQUEST(irq_ch_dpd))
@@ -1763,6 +2001,10 @@ static void check_dependencies(thread_db* tdbb,
 		case obj_index:
 			obj_type = isc_index_name;
 			break;
+		case obj_package_header:
+		case obj_package_body:
+			obj_type = isc_package_name;
+			break;
 		default:
 			fb_assert(FALSE);
 			break;
@@ -1770,7 +2012,7 @@ static void check_dependencies(thread_db* tdbb,
 
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_no_delete) <<						/* can not delete */
-				 Arg::Gds(obj_type) << Arg::Str(dpdo_name) <<
+				 Arg::Gds(obj_type) << Arg::Str(QualifiedName(dpdo_name, packageName).toString()) <<
 				 Arg::Gds(isc_dependency) << Arg::Num(total));	/* there are %ld dependencies */
 	}
 }
@@ -2445,7 +2687,8 @@ static bool create_procedure(thread_db*	tdbb,
 			const bool compile = !work->findArg(dfw_arg_check_blr);
 			get_procedure_dependencies(work, compile, transaction);
 
-			jrd_prc* procedure = MET_lookup_procedure(tdbb, work->dfw_name, compile);
+			jrd_prc* procedure = MET_lookup_procedure(tdbb,
+				QualifiedName(work->dfw_name, work->dfw_package), compile);
 			if (!procedure) {
 				return false;
 			}
@@ -2677,10 +2920,19 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				const DeferredWork* const arg = work->findArg(dfw_arg_trg_type);
 				fb_assert(arg);
 
-				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+				if (arg)
 				{
-					MET_load_trigger(tdbb, NULL, work->dfw_name,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
+					// ASF: arg->dfw_id is RDB$TRIGGER_TYPE truncated to USHORT
+					if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+					{
+						MET_load_trigger(tdbb, NULL, work->dfw_name,
+							&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
+					}
+					else if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
+					{
+						MET_load_trigger(tdbb, NULL, work->dfw_name,
+							&tdbb->getDatabase()->dbb_ddl_triggers);
+					}
 				}
 			}
 		}
@@ -2847,7 +3099,7 @@ static bool delete_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return false;
 
 	case 1:
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, obj_collation, transaction);
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_collation, transaction);
 		return true;
 
 	case 2:
@@ -2887,7 +3139,7 @@ static bool delete_exception(thread_db*	tdbb,
 		return false;
 
 	case 1:
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, obj_exception, transaction);
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_exception, transaction);
 		return true;
 
 	case 2:
@@ -2929,7 +3181,7 @@ static bool delete_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			return false;
 		case 1:
 			check_system_generator(gen_name, dfw_delete_generator);
-			check_dependencies(tdbb, gen_name, 0, obj_generator, transaction);
+			check_dependencies(tdbb, gen_name, NULL, NULL, obj_generator, transaction);
 			return true;
 		case 2:
 			return true;
@@ -3010,7 +3262,7 @@ static bool delete_udf(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		case 0:
 			return false;
 		case 1:
-			check_dependencies(tdbb, work->dfw_name.c_str(), 0, obj_udf, transaction);
+			check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_udf, transaction);
 			return true;
 		case 2:
 			return true;
@@ -3143,7 +3395,7 @@ static bool delete_field(thread_db*	tdbb,
 					 Arg::Gds(isc_dependency) << Arg::Num(field_count)); 	/* Msg310: there are %ld dependencies */
 		}
 
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, obj_field, transaction);
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_field, transaction);
 
 	case 2:
 		return true;
@@ -3200,7 +3452,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			// ASF: If there are procedures depending on the domain, it can't be renamed.
 			if (arg && depName != arg->dfw_name.c_str())
-				check_dependencies(tdbb, depName.c_str(), NULL, obj_field, transaction);
+				check_dependencies(tdbb, depName.c_str(), NULL, NULL, obj_field, transaction);
 
 			MET_delete_dependencies(tdbb, depName, obj_validation, transaction);
 
@@ -3358,7 +3610,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return false;
 
 	case 1:
-		check_dependencies(tdbb, arg->dfw_name.c_str(), NULL, obj_index, transaction);
+		check_dependencies(tdbb, arg->dfw_name.c_str(), NULL, NULL, obj_index, transaction);
 		return true;
 
 	case 2:
@@ -3580,7 +3832,8 @@ static bool delete_procedure(thread_db*	tdbb,
 		return false;
 
 	case 1:
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, obj_procedure, transaction);
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, work->dfw_package.c_str(),
+			obj_procedure, transaction);
 		return true;
 
 	case 2:
@@ -3608,53 +3861,60 @@ static bool delete_procedure(thread_db*	tdbb,
 		return true;
 
 	case 4:
-		procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, true, true, 0);
-		if (!procedure) {
-			return false;
-		}
-
-		// Do not allow to drop procedure used by user requests
-		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 		{
-			/*
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-			*/
-			gds__log("Deleting procedure %s which is currently in use by active user requests",
-					 work->dfw_name.c_str());
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
+			procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, true, true, 0);
+			if (!procedure) {
+				return false;
+			}
+
+			QualifiedName name(work->dfw_name, work->dfw_package);
+
+			// Do not allow to drop procedure used by user requests
+			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
+			{
+				/*
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+				*/
+				gds__log("Deleting procedure %s which is currently in use by active user requests",
+						 name.toString().c_str());
+
+				if (work->dfw_package.isEmpty())
+					MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
+
+				if (procedure->prc_existence_lock) {
+					LCK_release(tdbb, procedure->prc_existence_lock);
+				}
+				(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
+				return false;
+			}
+
+			old_flags = procedure->prc_flags;
+			procedure->prc_flags |= PRC_obsolete;
+			if (procedure->prc_request)
+			{
+				if (CMP_clone_is_active(procedure->prc_request))
+				{
+					procedure->prc_flags = old_flags;
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+				}
+
+				CMP_release(tdbb, procedure->prc_request);
+				procedure->prc_request = 0;
+			}
+
+			/* delete dependency lists */
+
+			if (work->dfw_package.isEmpty())
+				MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
 
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 			}
-			(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
-			return false;
-		}
-
-		old_flags = procedure->prc_flags;
-		procedure->prc_flags |= PRC_obsolete;
-		if (procedure->prc_request)
-		{
-			if (CMP_clone_is_active(procedure->prc_request))
-			{
-				procedure->prc_flags = old_flags;
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-			}
-
-			CMP_release(tdbb, procedure->prc_request);
-			procedure->prc_request = 0;
-		}
-
-		/* delete dependency lists */
-
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
-
-		if (procedure->prc_existence_lock) {
-			LCK_release(tdbb, procedure->prc_existence_lock);
 		}
 		break;
-	}
+	}	// switch
 
 	return false;
 }
@@ -3725,7 +3985,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					 Arg::Gds(isc_dependency) << Arg::Num(view_count));
 					 /* Msg310: there are %ld dependencies */
 		}
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, obj_relation, transaction);
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_relation, transaction);
 		return true;
 
 	case 2:
@@ -3934,7 +4194,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if ( (relation = MET_lookup_relation_id(tdbb, work->dfw_id, false)) )
 		{
 			MET_scan_relation(tdbb, relation);
-			check_dependencies(tdbb, relation->rel_name.c_str(), work->dfw_name.c_str(),
+			check_dependencies(tdbb, relation->rel_name.c_str(), work->dfw_name.c_str(), NULL,
 							   relation->rel_view_rse ? obj_view : obj_relation,
 							   transaction);
 		}
@@ -4074,6 +4334,7 @@ static bool delete_trigger(thread_db*	tdbb,
 				const DeferredWork* arg = work->findArg(dfw_arg_trg_type);
 				fb_assert(arg);
 
+				// ASF: arg->dfw_id is RDB$TRIGGER_TYPE truncated to USHORT
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 				{
 					MET_release_trigger(tdbb,
@@ -4132,6 +4393,12 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 	case obj_expression_index:
 		dfw_type = dfw_delete_expression_index;
 		break;
+	case obj_package_header:
+		dfw_type = dfw_drop_package_header;
+		break;
+	case obj_package_body:
+		dfw_type = dfw_drop_package_body;
+		break;
 	default:
 		fb_assert(false);
 		break;
@@ -4142,7 +4409,8 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 	{
 		if ((work->dfw_type == dfw_type ||
 			(work->dfw_type == dfw_modify_procedure && dfw_type == dfw_delete_procedure)) &&
-			work->dfw_name == object_name && (!rel_id || rel_id == work->dfw_id))
+			work->dfw_name == object_name && work->dfw_package.isEmpty() &&
+			(!rel_id || rel_id == work->dfw_id))
 		{
 			if (work->dfw_type == dfw_modify_procedure)
 			{
@@ -4306,11 +4574,13 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$PROCEDURES WITH
-			X.RDB$PROCEDURE_NAME EQ work->dfw_name.c_str()
+			X.RDB$PROCEDURE_NAME EQ work->dfw_name.c_str() AND
+			X.RDB$PACKAGE_NAME EQUIV NULLIF(work->dfw_package.c_str(), '')
 		if (!REQUEST(irq_c_prc_dpd))
 			REQUEST(irq_c_prc_dpd) = handle;
 		blob_id = X.RDB$PROCEDURE_BLR;
-		procedure = MET_lookup_procedure(tdbb, work->dfw_name, !compile);
+		procedure = MET_lookup_procedure(tdbb, QualifiedName(work->dfw_name, work->dfw_package),
+			!compile);
 
 	END_FOR;
 
@@ -4333,9 +4603,12 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			Firebird::MetaName depName(work->dfw_name);
+			Firebird::MetaName depName(work->dfw_package.isEmpty() ?
+				work->dfw_name : work->dfw_package);
 			MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
-								 NULL, depName, obj_procedure, 0, transaction);
+								 NULL, depName,
+								 (work->dfw_package.isEmpty() ? obj_procedure : obj_package_body),
+								 0, transaction);
 
 			if (request)
 				CMP_release(tdbb, request);
@@ -4969,6 +5242,7 @@ static bool modify_procedure(thread_db*	tdbb,
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	QualifiedName name(work->dfw_name, work->dfw_package);
 
 	switch (phase)
 	{
@@ -5004,7 +5278,7 @@ static bool modify_procedure(thread_db*	tdbb,
 			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX, transaction->getLockWait()))
 			{
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
 			}
 		}
 
@@ -5028,16 +5302,16 @@ static bool modify_procedure(thread_db*	tdbb,
 			{
 				/*
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
 				*/
 				gds__log("Modifying procedure %s which is currently in use by active user requests",
-						 work->dfw_name.c_str());
+						 name.toString().c_str());
 
 				USHORT prc_alter_count = procedure->prc_alter_count;
 				if (prc_alter_count > MAX_PROC_ALTER)
 				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_proc_name) << Arg::Str(work->dfw_name) <<
+							 Arg::Gds(isc_proc_name) << Arg::Str(name.toString()) <<
 							 Arg::Gds(isc_version_err));
 					/* Msg357: too many versions */
 				}
@@ -5059,8 +5333,10 @@ static bool modify_procedure(thread_db*	tdbb,
 			if (procedure->prc_request)
 			{
 				if (CMP_clone_is_active(procedure->prc_request))
+				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+				}
 
 				/* release the request */
 
@@ -5070,7 +5346,8 @@ static bool modify_procedure(thread_db*	tdbb,
 
 			/* delete dependency lists */
 
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
+			if (work->dfw_package.isEmpty())
+				MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
 
 			/* the procedure has just been scanned by MET_lookup_procedure_id
 			   and its PRC_scanned flag is set. We are going to reread it
@@ -5187,6 +5464,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				arg = work->findArg(dfw_arg_trg_type);
 				fb_assert(arg);
 
+				// ASF: arg->dfw_id is RDB$TRIGGER_TYPE truncated to USHORT
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 				{
 					MET_release_trigger(tdbb,

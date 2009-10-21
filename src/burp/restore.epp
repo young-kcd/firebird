@@ -52,6 +52,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/SafeArg.h"
+#include "../common/utils_proto.h"
 #include "memory_routines.h"
 
 using MsgFormat::SafeArg;
@@ -81,6 +82,7 @@ const int DB_VERSION_DDL10		= 100; // ods10 db, IB6, FB1, FB1.5
 const int DB_VERSION_DDL11		= 110; // ods11 db, FB2
 const int DB_VERSION_DDL11_1	= 111; // ods11.1 db, FB2.1
 const int DB_VERSION_DDL11_2	= 112; // ods11.2 db, FB2.5
+const int DB_VERSION_DDL12_0	= 120; // ods12.0 db, FB3.0
 
 const int DB_VERSION_OLDEST_SUPPORTED = DB_VERSION_DDL8;  // IB4.0 is ods8
 
@@ -137,8 +139,9 @@ bool	get_index(BurpGlobals* tdgbl, const burp_rel*);
 void	get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
 SLONG	get_numeric(BurpGlobals* tdgbl);
 SINT64  get_int64(BurpGlobals* tdgbl);
+bool	get_package(BurpGlobals* tdgbl);
 bool	get_procedure(BurpGlobals* tdgbl);
-bool	get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME );
+bool	get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME, GDS_NAME);
 bool	get_ref_constraint(BurpGlobals* tdgbl);
 bool	get_rel_constraint(BurpGlobals* tdgbl);
 bool	get_relation(BurpGlobals* tdgbl);
@@ -258,7 +261,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
  *
  **************************************/
 	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0;
-	isc_req_handle	req_handle4 = 0, req_handle5 = 0;
+	isc_req_handle	req_handle4 = 0, req_handle5 = 0, req_handle6 = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -267,6 +270,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	tdgbl->io_cnt = 0;
 
 	tdgbl->relations = NULL;
+	tdgbl->packages = NULL;
 	tdgbl->procedures = NULL;
 	tdgbl->RESTORE_format = 0;
 	tdgbl->RESTORE_ods = 0;
@@ -482,30 +486,84 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	//
 	update_view_dbkey_lengths(tdgbl);
 
-	// Change ownership of any procedures necessary
+	// Change ownership of any packages
+	for (burp_pkg* package = tdgbl->packages; package; package = package->pkg_next)
+	{
+		if (package->pkg_owner[0])
+		{
+			FOR (REQUEST_HANDLE req_handle6)
+				X IN RDB$PACKAGES
+				WITH X.RDB$PACKAGE_NAME EQ package->pkg_name
+			{
+				MODIFY X
+					strcpy(X.RDB$OWNER_NAME, package->pkg_owner);
+				END_MODIFY;
+				ON_ERROR
+					MISC_release_request_silent(req_handle6);
+					general_on_error();
+				END_ERROR;
 
+				if (!X.RDB$SECURITY_CLASS.NULL)
+					restore_security_class(tdgbl, package->pkg_owner, X.RDB$SECURITY_CLASS);
+			}
+			END_FOR
+			ON_ERROR
+				MISC_release_request_silent(req_handle6);
+				general_on_error ();
+			END_ERROR
+		}
+	}
+
+	// Change ownership of any procedures necessary
 	for (burp_prc* procedure = tdgbl->procedures; procedure; procedure = procedure->prc_next)
 	{
 		if (procedure->prc_owner[0])
 		{
-			FOR (REQUEST_HANDLE req_handle4)
-				X IN RDB$PROCEDURES WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name
+			if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12_0)
+			{
+				FOR (REQUEST_HANDLE req_handle4)
+					X IN RDB$PROCEDURES
+					WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name AND
+						 X.RDB$PACKAGE_NAME EQUIV NULLIF(procedure->prc_package, '')
+				{
+					MODIFY X
+						strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
+					END_MODIFY;
+					ON_ERROR
+						MISC_release_request_silent(req_handle4);
+						general_on_error ();
+					END_ERROR
 
-				MODIFY X
-					strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
-				END_MODIFY;
+					if (!X.RDB$SECURITY_CLASS.NULL)
+						restore_security_class(tdgbl, procedure->prc_owner, X.RDB$SECURITY_CLASS);
+				}
+				END_FOR;
 				ON_ERROR
 					MISC_release_request_silent(req_handle4);
 					general_on_error ();
-				END_ERROR;
+				END_ERROR
+			}
+			else
+			{
+				FOR (REQUEST_HANDLE req_handle4)
+					X IN RDB$PROCEDURES WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name
+				{
+					MODIFY X
+						strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
+					END_MODIFY;
+					ON_ERROR
+						MISC_release_request_silent(req_handle4);
+						general_on_error ();
+					END_ERROR;
 
-				restore_security_class(tdgbl, procedure->prc_owner, X.RDB$SECURITY_CLASS);
-
-			END_FOR;
-			ON_ERROR
-				MISC_release_request_silent(req_handle4);
-				general_on_error ();
-			END_ERROR;
+					restore_security_class(tdgbl, procedure->prc_owner, X.RDB$SECURITY_CLASS);
+				}
+				END_FOR
+				ON_ERROR
+					MISC_release_request_silent(req_handle4);
+					general_on_error ();
+				END_ERROR
+			}
 		}
 	}
 
@@ -847,6 +905,7 @@ void check_db_version(BurpGlobals* tdgbl)
 		{"RDB$ROLES",					"RDB$DESCRIPTION",		DB_VERSION_DDL11},		// FB2
 		{"RDB$RELATIONS",				"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1},	// FB2.1
 		{"RDB$PROCEDURE_PARAMETERS",	"RDB$FIELD_NAME",		DB_VERSION_DDL11_2},	// FB2.5
+		{"RDB$PROCEDURES",				"RDB$ENGINE_NAME",		DB_VERSION_DDL12_0},	// FB3.0
 		{0, 0, 0}
 	};
 
@@ -3523,79 +3582,175 @@ bool get_function(BurpGlobals* tdgbl)
  *
  **************************************/
 	att_type	attribute;
-	GDS_NAME	function_name;
-	TEXT		temp[GDS_NAME_LEN];
+	///GDS_NAME	function_name;
+	TEXT		temp[GDS_NAME_LEN * 2];
 	SSHORT		l;
 	scan_attr_t	scan_next_attr;
 
 	bool existFlag = false;
 
-	STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
-		X IN RDB$FUNCTIONS
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12_0)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
+			X IN RDB$FUNCTIONS
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$ENGINE_NAME.NULL = TRUE;
+			X.RDB$PACKAGE_NAME.NULL = TRUE;
+			X.RDB$PRIVATE_FLAG.NULL = TRUE;
 
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_function_name:
-				l = GET_TEXT(X.RDB$FUNCTION_NAME);
-				MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
-				BURP_verbose (118, temp);
-				// msg 118 restoring function %s
-				break;
+				switch (attribute)
+				{
+				case att_function_name:
+				{
+					SSHORT prefixLen = 0;
+					if (!X.RDB$PACKAGE_NAME.NULL)
+					{
+						prefixLen = strlen(X.RDB$PACKAGE_NAME);
+						memcpy(temp, X.RDB$PACKAGE_NAME, prefixLen);
+						temp[prefixLen++] = '.';
+					}
 
-			case att_function_description:
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
-				break;
+					l = GET_TEXT(X.RDB$FUNCTION_NAME);
+					MISC_terminate (X.RDB$FUNCTION_NAME, temp + prefixLen, l,
+						sizeof(temp) - prefixLen);
+					BURP_verbose (118, temp);
+					// msg 118 restoring function %s
+					break;
+				}
 
-			case att_function_description2:
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
-				break;
+				case att_function_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					break;
 
-			case att_function_module_name:
-				GET_TEXT(X.RDB$MODULE_NAME);
-				break;
+				case att_function_description2:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					break;
 
-			case att_function_entrypoint:
-				GET_TEXT(X.RDB$ENTRYPOINT);
-				break;
+				case att_function_module_name:
+					GET_TEXT(X.RDB$MODULE_NAME);
+					break;
 
-			case att_function_return_arg:
-				X.RDB$RETURN_ARGUMENT = (USHORT) get_numeric(tdgbl);
-				break;
+				case att_function_entrypoint:
+					GET_TEXT(X.RDB$ENTRYPOINT);
+					break;
 
-			case att_function_query_name:
-				GET_TEXT(X.RDB$QUERY_NAME);
-				break;
+				case att_function_return_arg:
+					X.RDB$RETURN_ARGUMENT = (USHORT) get_numeric(tdgbl);
+					break;
 
-			case att_function_type:
-				X.RDB$FUNCTION_TYPE = (USHORT) get_numeric(tdgbl);
-				break;
+				case att_function_query_name:
+					GET_TEXT(X.RDB$QUERY_NAME);
+					break;
 
-			default:
-				bad_attribute (scan_next_attr, attribute, 89);
-				// msg 89 function
-				break;
+				case att_function_type:
+					X.RDB$FUNCTION_TYPE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_function_engine_name:
+					GET_TEXT(X.RDB$ENGINE_NAME);
+					X.RDB$ENGINE_NAME.NULL = FALSE;
+					break;
+
+				case att_function_package_name:
+					GET_TEXT(X.RDB$PACKAGE_NAME);
+					fb_utils::exact_name(X.RDB$PACKAGE_NAME);
+					X.RDB$PACKAGE_NAME.NULL = FALSE;
+					break;
+
+				case att_function_private_flag:
+					X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$PRIVATE_FLAG.NULL = FALSE;
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 89);
+					// msg 89 function
+					break;
+				}
 			}
-		}
-	strcpy (function_name, X.RDB$FUNCTION_NAME);
-	END_STORE;
-	ON_ERROR
-		if (gds_status[1] != isc_no_dup)
-		{
-			general_on_error ();
-		}
-		else
-		{
-			existFlag = true;
-		}
-	END_ERROR;
+
+			///strcpy (function_name, X.RDB$FUNCTION_NAME);
+		END_STORE;
+		ON_ERROR
+			if (gds_status[1] != isc_no_dup)
+				general_on_error ();
+			else
+				existFlag = true;
+		END_ERROR;
+	}
+	else
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
+			X IN RDB$FUNCTIONS
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_function_name:
+					l = GET_TEXT(X.RDB$FUNCTION_NAME);
+					MISC_terminate (X.RDB$FUNCTION_NAME, temp, l, sizeof(temp));
+					BURP_verbose (118, temp);
+					// msg 118 restoring function %s
+					break;
+
+				case att_function_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					break;
+
+				case att_function_description2:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					break;
+
+				case att_function_module_name:
+					GET_TEXT(X.RDB$MODULE_NAME);
+					break;
+
+				case att_function_entrypoint:
+					GET_TEXT(X.RDB$ENTRYPOINT);
+					break;
+
+				case att_function_return_arg:
+					X.RDB$RETURN_ARGUMENT = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_function_query_name:
+					GET_TEXT(X.RDB$QUERY_NAME);
+					break;
+
+				case att_function_type:
+					X.RDB$FUNCTION_TYPE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 89);
+					// msg 89 function
+					break;
+				}
+			}
+
+			///strcpy (function_name, X.RDB$FUNCTION_NAME);
+		END_STORE;
+		ON_ERROR
+			if (gds_status[1] != isc_no_dup)
+				general_on_error ();
+			else
+				existFlag = true;
+		END_ERROR;
+	}
 
 	// at the end of args for a function is the rec_function_end marker
 	while (get(tdgbl) == rec_function_arg)
@@ -3618,7 +3773,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
  **************************************/
 	att_type	attribute;
 	SSHORT		l;
-	TEXT		temp[GDS_NAME_LEN];
+	TEXT		temp[GDS_NAME_LEN * 2];
 	scan_attr_t		scan_next_attr;
 
 	if (skip_arguments)
@@ -3665,6 +3820,10 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				get_numeric(tdgbl);
 				break;
 
+			case att_functionarg_package_name:
+				GET_TEXT(buf);
+				break;
+
 			default:
 				bad_attribute (scan_next_attr, attribute, 90);
 				// msg 90 function argument
@@ -3674,7 +3833,97 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 		return;
 	}
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12_0)
+	{
+		// with RDB$FIELD_PRECISION
+		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
+			X IN RDB$FUNCTION_ARGUMENTS
+			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$FIELD_PRECISION.NULL = TRUE;
+			X.RDB$PACKAGE_NAME.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_functionarg_name:
+				{
+					SSHORT prefixLen = 0;
+					if (!X.RDB$PACKAGE_NAME.NULL)
+					{
+						prefixLen = strlen(X.RDB$PACKAGE_NAME);
+						memcpy(temp, X.RDB$PACKAGE_NAME, prefixLen);
+						temp[prefixLen++] = '.';
+					}
+
+					l = GET_TEXT(X.RDB$FUNCTION_NAME);
+					MISC_terminate(X.RDB$FUNCTION_NAME, temp + prefixLen, l,
+						sizeof(temp) - prefixLen);
+					BURP_verbose (119, temp);
+					// msg 119 restoring argument for function %s
+					break;
+				}
+
+				case att_functionarg_position:
+					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_functionarg_mechanism:
+					X.RDB$MECHANISM = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_functionarg_field_type:
+					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_functionarg_field_scale:
+					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_functionarg_field_length:
+					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_functionarg_field_sub_type:
+					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_functionarg_character_set:
+					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_functionarg_field_precision:
+					if (tdgbl->RESTORE_format >= 6)
+					{
+						X.RDB$FIELD_PRECISION.NULL = FALSE;
+						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
+					}
+					else
+						bad_attribute (scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_package_name:
+					l = GET_TEXT(X.RDB$PACKAGE_NAME);
+					X.RDB$PACKAGE_NAME.NULL = FALSE;
+					fb_utils::exact_name(X.RDB$PACKAGE_NAME);
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 90);
+					// msg 90 function argument
+					break;
+				}
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
 	{
 		// with RDB$FIELD_PRECISION
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
@@ -4859,6 +5108,91 @@ SINT64 get_int64(BurpGlobals* tdgbl)
 	return isc_portable_integer ((UCHAR *) value, length);
 }
 
+bool get_package(BurpGlobals* tdgbl)
+{
+/**************************************
+ *
+ *	g e t _ p a c k a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Reconstruct a package.
+ *
+ **************************************/
+	att_type attribute;
+	TEXT temp[GDS_NAME_LEN];
+	SSHORT len;
+	scan_attr_t scan_next_attr;
+
+	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+
+	burp_pkg* package = (burp_pkg*) BURP_alloc_zero(sizeof(burp_pkg));
+	package->pkg_next = tdgbl->packages;
+	tdgbl->packages = package;
+
+	STORE (TRANSACTION_HANDLE local_trans REQUEST_HANDLE tdgbl->handles_get_package_req_handle1)
+		X IN RDB$PACKAGES
+	{
+		X.RDB$PACKAGE_HEADER_SOURCE.NULL = TRUE;
+		X.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
+		X.RDB$SECURITY_CLASS.NULL = TRUE;
+		X.RDB$OWNER_NAME.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		X.RDB$DESCRIPTION.NULL = TRUE;
+
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
+			{
+			case att_package_name:
+				len = GET_TEXT(X.RDB$PACKAGE_NAME);
+				strcpy(package->pkg_name, X.RDB$PACKAGE_NAME);
+				MISC_terminate(X.RDB$PACKAGE_NAME, temp, len, sizeof(temp));
+				BURP_verbose(337, temp);	// msg 337 restoring package %s
+				break;
+
+			case att_package_header_source:
+				get_source_blob(tdgbl, X.RDB$PACKAGE_HEADER_SOURCE, true);
+				X.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
+				break;
+
+			case att_package_body_source:
+				get_source_blob(tdgbl, X.RDB$PACKAGE_BODY_SOURCE, true);
+				X.RDB$PACKAGE_BODY_SOURCE.NULL = FALSE;
+				break;
+
+			case att_package_security_class:
+				GET_TEXT(X.RDB$SECURITY_CLASS);
+				if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
+					X.RDB$SECURITY_CLASS.NULL = FALSE;
+				break;
+
+			case att_package_owner_name:
+				GET_TEXT(package->pkg_owner);
+				break;
+
+			case att_package_description:
+				get_source_blob(tdgbl, X.RDB$DESCRIPTION, true);
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				break;
+
+			default:
+				bad_attribute (scan_next_attr, attribute, 338);	// msg 338 package
+				break;
+			}
+		}
+	}
+	END_STORE
+	ON_ERROR
+		general_on_error();
+	END_ERROR
+
+	return true;
+}
+
 bool get_procedure(BurpGlobals* tdgbl)
 {
 /**************************************
@@ -4875,8 +5209,9 @@ bool get_procedure(BurpGlobals* tdgbl)
  *
  **************************************/
 	att_type	attribute;
+	GDS_NAME	package_name = "";
 	GDS_NAME	procedure_name = "";
-	TEXT		temp[GDS_NAME_LEN];
+	TEXT		temp[GDS_NAME_LEN * 2];
 	SSHORT		l;
 	scan_attr_t		scan_next_attr;
 
@@ -4901,6 +5236,11 @@ bool get_procedure(BurpGlobals* tdgbl)
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$VALID_BLR.NULL = TRUE;
 			X.RDB$DEBUG_INFO.NULL = TRUE;
+			X.RDB$PROCEDURE_BLR.NULL = TRUE;
+			X.RDB$ENGINE_NAME.NULL = TRUE;
+			X.RDB$ENTRYPOINT.NULL = TRUE;
+			X.RDB$PACKAGE_NAME.NULL = TRUE;
+			X.RDB$PRIVATE_FLAG.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -4908,13 +5248,25 @@ bool get_procedure(BurpGlobals* tdgbl)
 				switch (attribute)
 				{
 				case att_procedure_name:
+				{
+					SSHORT prefixLen = 0;
+					if (package_name[0])
+					{
+						prefixLen = strlen(package_name);
+						memcpy(temp, package_name, prefixLen);
+						temp[prefixLen++] = '.';
+					}
+
 					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
 					//procedure->prc_name_length = l;
 					strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
-					MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
+
+					MISC_terminate (X.RDB$PROCEDURE_NAME, temp + prefixLen, l,
+						sizeof(temp) - prefixLen);
 					BURP_verbose (195, temp);
 					// msg 195 restoring stored procedure %s
 					break;
+				}
 
 				case att_procedure_description:
 					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
@@ -4938,6 +5290,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_blr:
 					get_blr_blob (tdgbl, X.RDB$PROCEDURE_BLR, true);
+					X.RDB$PROCEDURE_BLR.NULL = FALSE;
 					break;
 
 				case att_procedure_security_class:
@@ -4987,6 +5340,29 @@ bool get_procedure(BurpGlobals* tdgbl)
 					}
 					else
 						bad_attribute (scan_next_attr, attribute, 290);
+					break;
+
+				case att_procedure_engine_name:
+					GET_TEXT(X.RDB$ENGINE_NAME);
+					X.RDB$ENGINE_NAME.NULL = FALSE;
+					break;
+
+				case att_procedure_entrypoint:
+					GET_TEXT(X.RDB$ENTRYPOINT);
+					X.RDB$ENTRYPOINT.NULL = FALSE;
+					break;
+
+				case att_procedure_package_name:
+					GET_TEXT(X.RDB$PACKAGE_NAME);
+					X.RDB$PACKAGE_NAME.NULL = FALSE;
+					strcpy(procedure->prc_package, X.RDB$PACKAGE_NAME);
+					strcpy(package_name, X.RDB$PACKAGE_NAME);
+					fb_utils::exact_name(package_name);
+					break;
+
+				case att_procedure_private_flag:
+					X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$PRIVATE_FLAG.NULL = FALSE;
 					break;
 
 				default:
@@ -5096,12 +5472,12 @@ bool get_procedure(BurpGlobals* tdgbl)
 	// at the end of prms for a procedure is the rec_procedure_end marker
 
 	while (get(tdgbl) == rec_procedure_prm)
-		get_procedure_prm (tdgbl, procedure_name);
+		get_procedure_prm (tdgbl, package_name, procedure_name);
 
 	return true;
 }
 
-bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
+bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME procptr)
 {
 /**************************************
  *
@@ -5131,6 +5507,14 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 
 			strcpy(X.RDB$PROCEDURE_NAME, procptr);
 
+			if (package_name[0])
+			{
+				strcpy(X.RDB$PACKAGE_NAME, package_name);
+				X.RDB$PACKAGE_NAME.NULL = FALSE;
+			}
+			else
+				X.RDB$PACKAGE_NAME.NULL = TRUE;
+			
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$DEFAULT_VALUE.NULL = TRUE;
 			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
@@ -6474,6 +6858,8 @@ bool get_trigger(BurpGlobals* tdgbl)
 			X.RDB$FLAGS.NULL = TRUE;
 			X.RDB$VALID_BLR.NULL = TRUE;
 			X.RDB$DEBUG_INFO.NULL = TRUE;
+			X.RDB$ENGINE_NAME.NULL = TRUE;
+			X.RDB$ENTRYPOINT.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -6482,6 +6868,10 @@ bool get_trigger(BurpGlobals* tdgbl)
 				{
 				case att_trig_type:
 					X.RDB$TRIGGER_TYPE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_trig_type2:
+					X.RDB$TRIGGER_TYPE = get_int64(tdgbl);
 					break;
 
 				case att_trig_flags:
@@ -6557,6 +6947,16 @@ bool get_trigger(BurpGlobals* tdgbl)
 					}
 					else
 						bad_attribute (scan_next_attr, attribute, 134);
+					break;
+
+				case att_trig_engine_name:
+					GET_TEXT(X.RDB$ENGINE_NAME);
+					X.RDB$ENGINE_NAME.NULL = FALSE;
+					break;
+
+				case att_trig_entrypoint:
+					GET_TEXT(X.RDB$ENTRYPOINT);
+					X.RDB$ENTRYPOINT.NULL = FALSE;
 					break;
 
 				default:
@@ -6942,10 +7342,22 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 	bool exists = false;
 	switch (object_type)
 	{
+	case obj_package_header:
+		{
+		for (const burp_pkg* pkg = tdgbl->packages; pkg; pkg = pkg->pkg_next)
+			if (strcmp(pkg->pkg_name, relation_name) == 0)
+			{
+				exists = true;
+				local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+				break;
+			}
+		}
+		break;
+
 	case obj_procedure:
 		{
 		for (const burp_prc* proc = tdgbl->procedures; proc; proc = proc->prc_next)
-			if (!strcmp(proc->prc_name, relation_name))
+			if (!proc->prc_package[0] && strcmp(proc->prc_name, relation_name) == 0)
 			{
 				exists = true;
 				local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
@@ -6957,7 +7369,7 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 	case obj_relation:
 		{
 		for (const burp_rel* rel = tdgbl->relations; rel; rel = rel->rel_next)
-			if (!strcmp(rel->rel_name, relation_name))
+			if (strcmp(rel->rel_name, relation_name) == 0)
 			{
 				exists = true;
 				if (rel->rel_flags & REL_view)
@@ -6967,9 +7379,9 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 		}
 		break;
 
-		default:
-			exists = true;
-			break;
+	default:
+		exists = true;
+		break;
 	}
 
 	if (tdgbl->RESTORE_ods <= DB_VERSION_DDL8)
@@ -7003,10 +7415,10 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 			if (flags & USER_PRIV_GRANT_OPTION)
 			{
 				X.RDB$GRANT_OPTION = grant_option;
-					if (grant_option == 0)
-						X.RDB$GRANT_OPTION.NULL = TRUE;
-					else
-						X.RDB$GRANT_OPTION.NULL = FALSE;
+				if (grant_option == 0)
+					X.RDB$GRANT_OPTION.NULL = TRUE;
+				else
+					X.RDB$GRANT_OPTION.NULL = FALSE;
 			}
 
 			if (flags & USER_PRIV_OBJECT_NAME)
@@ -7690,6 +8102,12 @@ bool restore(BurpGlobals*	tdgbl,
 
 		case rec_function:
 			if (!get_function(tdgbl))
+				return false;
+			flag = true;
+			break;
+
+		case rec_package:
+			if (!get_package(tdgbl))
 				return false;
 			flag = true;
 			break;

@@ -43,6 +43,7 @@
 
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
+#include "../jrd/obj.h"
 
 namespace EDS {
 class Transaction;
@@ -95,6 +96,29 @@ struct BlobIndex
 typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexTree;
 
 // Transaction block
+
+struct CallerName
+{
+	CallerName(int aType, const Firebird::MetaName& aName)
+		: type(aType),
+		  name(aName)
+	{
+	}
+
+	CallerName()
+		: type(obj_type_MAX)
+	{
+	}
+
+	CallerName(const CallerName& o)
+		: type(o.type),
+		  name(o.name)
+	{
+	}
+
+	int type;
+	Firebird::MetaName name;
+};
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
@@ -175,6 +199,7 @@ public:
 		}
 	}
 
+	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
 	SLONG tra_number;					// transaction number
 	SLONG tra_top;						// highest transaction in snapshot
@@ -209,8 +234,9 @@ public:
 	DatabaseSnapshot* tra_db_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
+	bool tra_in_use;					// transaction in use (can't be committed or rolled back)
 	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
-	jrd_req* tra_callback_caller;		// caller request for execute statement
+	CallerName tra_caller_name;			// caller object name
 	Firebird::Array<UCHAR> tra_transactions;
 	SortOwner tra_sorts;
 
@@ -396,6 +422,9 @@ enum dfw_t {
 	dfw_begin_backup,
 	dfw_end_backup,
 	dfw_user_management,
+	dfw_drop_package_header,
+	dfw_drop_package_body,
+	dfw_check_not_null,
 
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory

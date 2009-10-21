@@ -350,7 +350,9 @@ namespace Firebird
 		explicit SortedObjectsArray(MemoryPool& p) :
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
-				ObjectCmp> >(p) { }
+				ObjectCmp> >(p)
+		{ }
+
 		bool find(const ObjectKey& item, size_t& pos) const
 		{
 			const ObjectKey* const pItem = &item;
@@ -358,11 +360,13 @@ namespace Firebird
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
+
 		bool exist(const ObjectKey& item) const
 		{
-			size_t pos;
+			size_t pos;	// ignored
 			return find(item, pos);
 		}
+
 		size_t add(const ObjectValue& item)
 		{
 			return inherited::add(item);

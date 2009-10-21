@@ -80,7 +80,7 @@ static void		close_cursor(thread_db*, dsql_req*);
 static USHORT	convert(SLONG, UCHAR*);
 static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, const UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
-static void		execute_immediate(thread_db*, Attachment*, jrd_tra**,
+static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
 							  USHORT, const TEXT*, USHORT,
 							  USHORT, const UCHAR*, /*USHORT,*/ USHORT, const UCHAR*,
 							  USHORT, UCHAR*, /*USHORT,*/ USHORT, UCHAR*);
@@ -90,7 +90,7 @@ static SSHORT	filter_sub_type(const dsql_nod*);
 static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
 static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
-static dsql_dbb*	init(Attachment*);
+static dsql_dbb*	init(Jrd::Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
@@ -174,7 +174,7 @@ dsql_dbb::~dsql_dbb()
     @param attachment
 
  **/
-dsql_req* DSQL_allocate_statement(thread_db* tdbb, Attachment* attachment)
+dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
 {
 	SET_TDBB(tdbb);
 
@@ -315,7 +315,7 @@ void DSQL_execute(thread_db* tdbb,
 
  **/
 void DSQL_execute_immediate(thread_db* tdbb,
-							Attachment* attachment,
+							Jrd::Attachment* attachment,
 							jrd_tra** tra_handle,
 							USHORT length, const TEXT* string, USHORT dialect,
 							USHORT in_blr_length, const UCHAR* in_blr,
@@ -473,7 +473,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	dsql_msg* message = (dsql_msg*) request->req_receive;
 
 	// Set up things for tracing this call
-	Attachment* att = request->req_dbb->dbb_attachment;
+	Jrd::Attachment* att = request->req_dbb->dbb_attachment;
 	TraceDSQLFetch trace(att, request);
 
 	// Insure that the blr for the message is parsed, regardless of
@@ -893,7 +893,7 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* attachment = request->req_dbb->dbb_attachment;
+	Jrd::Attachment* attachment = request->req_dbb->dbb_attachment;
 	if (request->req_request)
 	{
 		ThreadStatusGuard status_vector(tdbb);
@@ -1081,7 +1081,7 @@ static void execute_blob(thread_db* tdbb,
 
  **/
 static void execute_immediate(thread_db* tdbb,
-							  Attachment* attachment,
+							  Jrd::Attachment* attachment,
 							  jrd_tra** tra_handle,
 							  USHORT length, const TEXT* string, USHORT dialect,
 							  USHORT in_blr_length, const UCHAR* in_blr,
@@ -2055,7 +2055,7 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
     @param db_handle
 
  **/
-static dsql_dbb* init(Attachment* attachment)
+static dsql_dbb* init(Jrd::Attachment* attachment)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -2840,7 +2840,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 		close_cursor(tdbb, request);
 	}
 
-	Attachment* att = request->req_dbb->dbb_attachment;
+	Jrd::Attachment* att = request->req_dbb->dbb_attachment;
 	const bool need_trace_free = request->req_traced && TraceManager::need_dsql_free(att);
 	if (need_trace_free)
 	{

@@ -42,7 +42,7 @@ namespace Jrd {
 
 extern "C" {
 
-ISC_STATUS jrd8_attach_database(ISC_STATUS*, const TEXT*, Jrd::Attachment**, SSHORT, const UCHAR*);
+ISC_STATUS jrd8_attach_database(ISC_STATUS*, FB_API_HANDLE, const TEXT*, Jrd::Attachment**, SSHORT, const UCHAR*);
 ISC_STATUS jrd8_blob_info(ISC_STATUS*, Jrd::blb**, SSHORT, const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS*, Jrd::blb **);
 ISC_STATUS jrd8_cancel_events(ISC_STATUS*, Jrd::Attachment**, SLONG *);
@@ -55,7 +55,7 @@ ISC_STATUS jrd8_commit_retaining(ISC_STATUS*, Jrd::jrd_tra **);
 ISC_STATUS jrd8_compile_request(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_req**, SSHORT, const SCHAR*);
 ISC_STATUS jrd8_create_blob2(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, Jrd::blb**,
 										   Jrd::bid*, USHORT, const UCHAR*);
-ISC_STATUS jrd8_create_database(ISC_STATUS*, const TEXT*, Jrd::Attachment**, USHORT, const UCHAR*);
+ISC_STATUS jrd8_create_database(ISC_STATUS*, FB_API_HANDLE, const TEXT*, Jrd::Attachment**, USHORT, const UCHAR*);
 ISC_STATUS jrd8_database_info(ISC_STATUS*, Jrd::Attachment**, SSHORT,
 											const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_ddl(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const SCHAR*);
@@ -90,9 +90,9 @@ ISC_STATUS jrd8_service_query(ISC_STATUS*, Jrd::Service**, ULONG*,
 ISC_STATUS jrd8_service_start(ISC_STATUS*, Jrd::Service**, ULONG*, USHORT, const SCHAR*);
 ISC_STATUS jrd8_start_and_send(ISC_STATUS*, Jrd::jrd_req**, Jrd::jrd_tra **, USHORT, USHORT,
 											 SCHAR *, SSHORT);
-ISC_STATUS jrd8_start_request(ISC_STATUS*, Jrd::jrd_req**, Jrd::jrd_tra **, SSHORT);
-ISC_STATUS jrd8_start_multiple(ISC_STATUS*, Jrd::jrd_tra **, USHORT, Jrd::teb *);
-ISC_STATUS jrd8_start_transaction(ISC_STATUS*, Jrd::jrd_tra **, SSHORT, ...);
+ISC_STATUS jrd8_start_request(ISC_STATUS*, Jrd::jrd_req**, Jrd::jrd_tra**, SSHORT);
+ISC_STATUS jrd8_start_multiple(ISC_STATUS*, FB_API_HANDLE, Jrd::jrd_tra**, USHORT, Jrd::teb*);
+ISC_STATUS jrd8_start_transaction(ISC_STATUS*, FB_API_HANDLE, Jrd::jrd_tra**, SSHORT, ...);
 ISC_STATUS jrd8_transaction_info(ISC_STATUS*, Jrd::jrd_tra**, SSHORT, const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const SCHAR*,
 											   USHORT, const SCHAR*, USHORT, SCHAR*);
@@ -141,7 +141,7 @@ void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 
 void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_ddl(Jrd::thread_db* tdbb, /*Jrd::Attachment* attachment,*/ Jrd::jrd_tra* transaction,
-	USHORT ddl_length, const UCHAR* ddl);
+	USHORT ddl_length, const UCHAR* ddl, const Firebird::string& sqlText);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, USHORT msg_length,
 	UCHAR* msg, SSHORT level
 #ifdef SCROLLABLE_CURSORS
@@ -158,7 +158,8 @@ void JRD_rollback_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_rollback_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
 	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level);
-void JRD_start_multiple(Jrd::thread_db* tdbb, Jrd::jrd_tra** tra_handle, USHORT count, Jrd::teb* vector);
+void JRD_start_multiple(Jrd::thread_db* tdbb, Jrd::jrd_tra** tra_handle, USHORT count,
+	Jrd::teb* vector, FB_API_HANDLE public_handle = 0);
 void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level);
 void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,

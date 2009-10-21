@@ -32,8 +32,10 @@
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/QualifiedName.h"
 
 #include "../jrd/dsc.h"
+#include "../jrd/ExtEngineManager.h"
 
 #define FLAG_BYTES(n)	(((n + BITS_PER_LONG) & ~((ULONG)BITS_PER_LONG - 1)) >> 3)
 
@@ -93,7 +95,7 @@ struct fun_repeat
 class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 {
 public:
-	Firebird::MetaName fun_name;	// Function name
+	Firebird::QualifiedName fun_name;		// Function name
 	Firebird::string fun_exception_message;	/* message containing the exception error message */
 	UserFunction*	fun_homonym;	/* Homonym functions */
 	Symbol*		fun_symbol;			/* Symbol block */
@@ -103,7 +105,8 @@ public:
 	USHORT		fun_return_arg;		/* Return argument */
 	USHORT		fun_type;			/* Type of function */
 	ULONG		fun_temp_length;	/* Temporary space required */
-    fun_repeat fun_rpt[1];
+	Jrd::ExtEngineManager::Function* fun_external;
+	fun_repeat fun_rpt[1];
 
 public:
 	explicit UserFunction(MemoryPool& p)

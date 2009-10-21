@@ -1386,6 +1386,10 @@ C --
       PARAMETER (GDS__eds_expl_tran_ctrl               = 335544986)
       INTEGER*4 GDS__no_trusted_spb                  
       PARAMETER (GDS__no_trusted_spb                   = 335544987)
+      INTEGER*4 GDS__package_name                    
+      PARAMETER (GDS__package_name                     = 335544988)
+      INTEGER*4 GDS__cannot_make_not_null            
+      PARAMETER (GDS__cannot_make_not_null             = 335544989)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1500,8 +1504,36 @@ C --
       PARAMETER (GDS__dsql_incompatible_trigger_type   = 336003102)
       INTEGER*4 GDS__dsql_db_trigger_type_cant_change
       PARAMETER (GDS__dsql_db_trigger_type_cant_change = 336003103)
+      INTEGER*4 GDS__dyn_filter_not_found            
+      PARAMETER (GDS__dyn_filter_not_found             = 336068645)
+      INTEGER*4 GDS__dyn_func_not_found              
+      PARAMETER (GDS__dyn_func_not_found               = 336068649)
+      INTEGER*4 GDS__dyn_index_not_found             
+      PARAMETER (GDS__dyn_index_not_found              = 336068656)
+      INTEGER*4 GDS__dyn_view_not_found              
+      PARAMETER (GDS__dyn_view_not_found               = 336068662)
+      INTEGER*4 GDS__dyn_domain_not_found            
+      PARAMETER (GDS__dyn_domain_not_found             = 336068697)
+      INTEGER*4 GDS__dyn_cant_modify_auto_trig       
+      PARAMETER (GDS__dyn_cant_modify_auto_trig        = 336068717)
       INTEGER*4 GDS__dyn_dup_table                   
       PARAMETER (GDS__dyn_dup_table                    = 336068740)
+      INTEGER*4 GDS__dyn_proc_not_found              
+      PARAMETER (GDS__dyn_proc_not_found               = 336068748)
+      INTEGER*4 GDS__dyn_exception_not_found         
+      PARAMETER (GDS__dyn_exception_not_found          = 336068752)
+      INTEGER*4 GDS__dyn_proc_param_not_found        
+      PARAMETER (GDS__dyn_proc_param_not_found         = 336068754)
+      INTEGER*4 GDS__dyn_trig_not_found              
+      PARAMETER (GDS__dyn_trig_not_found               = 336068755)
+      INTEGER*4 GDS__dyn_charset_not_found           
+      PARAMETER (GDS__dyn_charset_not_found            = 336068759)
+      INTEGER*4 GDS__dyn_collation_not_found         
+      PARAMETER (GDS__dyn_collation_not_found          = 336068760)
+      INTEGER*4 GDS__dyn_role_not_found              
+      PARAMETER (GDS__dyn_role_not_found               = 336068763)
+      INTEGER*4 GDS__dyn_name_longer                 
+      PARAMETER (GDS__dyn_name_longer                  = 336068767)
       INTEGER*4 GDS__dyn_column_does_not_exist       
       PARAMETER (GDS__dyn_column_does_not_exist        = 336068784)
       INTEGER*4 GDS__dyn_role_does_not_exist         
@@ -1538,12 +1570,16 @@ C --
       PARAMETER (GDS__dyn_dtype_conv_invalid           = 336068818)
       INTEGER*4 GDS__dyn_zero_len_id                 
       PARAMETER (GDS__dyn_zero_len_id                  = 336068820)
+      INTEGER*4 GDS__dyn_gen_not_found               
+      PARAMETER (GDS__dyn_gen_not_found                = 336068822)
       INTEGER*4 GDS__max_coll_per_charset            
       PARAMETER (GDS__max_coll_per_charset             = 336068829)
       INTEGER*4 GDS__invalid_coll_attr               
       PARAMETER (GDS__invalid_coll_attr                = 336068830)
       INTEGER*4 GDS__dyn_wrong_gtt_scope             
       PARAMETER (GDS__dyn_wrong_gtt_scope              = 336068840)
+      INTEGER*4 GDS__dyn_table_not_found             
+      PARAMETER (GDS__dyn_table_not_found              = 336068849)
       INTEGER*4 GDS__dyn_scale_too_big               
       PARAMETER (GDS__dyn_scale_too_big                = 336068852)
       INTEGER*4 GDS__dyn_precision_too_small         

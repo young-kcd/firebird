@@ -70,7 +70,7 @@ static void internal_dequeue(thread_db*, Lock*);
 static USHORT internal_downgrade(thread_db*, Lock*);
 static bool internal_enqueue(thread_db*, Lock*, USHORT, SSHORT, bool);
 
-static void set_lock_attachment(Lock*, Attachment*);
+static void set_lock_attachment(Lock*, Jrd::Attachment*);
 
 
 // globals and macros
@@ -256,7 +256,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 	Database* dbb = lock->lck_dbb;
 
-	Attachment* const old_attachment = lock->lck_attachment;
+	Jrd::Attachment* const old_attachment = lock->lck_attachment;
 	set_lock_attachment(lock, tdbb->getAttachment());
 
 	const bool result = CONVERT(tdbb, lock, level, wait);
@@ -915,7 +915,7 @@ static void hash_allocate(Lock* lock)
 
 	Database* dbb = lock->lck_dbb;
 
-	Attachment* attachment = lock->lck_attachment;
+	Jrd::Attachment* attachment = lock->lck_attachment;
 	if (attachment)
 	{
 		attachment->att_compatibility_table =
@@ -942,7 +942,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Attachment* const att = lock->lck_attachment;
+	Jrd::Attachment* const att = lock->lck_attachment;
 	if (!att)
 		return NULL;
 
@@ -1003,7 +1003,7 @@ static void hash_insert_lock(Lock* lock)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Attachment* const att = lock->lck_attachment;
+	Jrd::Attachment* const att = lock->lck_attachment;
 	if (!att)
 		return;
 
@@ -1378,7 +1378,7 @@ static bool internal_enqueue(thread_db* tdbb,
 }
 
 
-static void set_lock_attachment(Lock* lock, Attachment* attachment)
+static void set_lock_attachment(Lock* lock, Jrd::Attachment* attachment)
 {
 	if (lock->lck_attachment == attachment)
 		return;

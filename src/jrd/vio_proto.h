@@ -70,5 +70,26 @@ bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
 IPTR	VIO_savepoint_large(const Jrd::Savepoint*, IPTR);
 
+namespace Jrd
+{
+	// Starts a savepoint and rollback it in destructor if release() is not called.
+	class AutoSavePoint
+	{
+	public:
+		AutoSavePoint(thread_db* tdbb, jrd_tra* aTransaction);
+		~AutoSavePoint();
+
+	public:
+		void release()
+		{
+			released = true;
+		}
+
+	private:
+		jrd_tra* transaction;
+		bool released;
+	};
+}
+
 #endif // JRD_VIO_PROTO_H
 

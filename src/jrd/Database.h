@@ -324,6 +324,20 @@ public:
 		return TypedHandle<type_dbb>::checkHandle();
 	}
 
+	void checkOdsForDsql(USHORT encodedVersion)
+	{
+		using namespace Firebird;
+
+		if (ENCODE_ODS(dbb_ods_version, dbb_minor_original) < encodedVersion)
+		{
+			// Feature not supported on ODS version older than %d.%d
+			status_exception::raise(
+				Arg::Gds(isc_dsql_feature_not_supported_ods) <<
+				Arg::Num(DECODE_ODS_MAJOR(encodedVersion)) <<
+				Arg::Num(DECODE_ODS_MINOR(encodedVersion)));
+		}
+	}
+
 	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive
 
 	Firebird::RefPtr<LockManager>	dbb_lock_mgr;
@@ -349,10 +363,12 @@ public:
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
 	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
+	trig_vec*	dbb_ddl_triggers;
 
 	DatabaseSnapshot::SharedData*	dbb_monitoring_data;	// monitoring data
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
+ 	ExtEngineManager dbb_extManager;	// external engine manager
 
 	Firebird::Mutex dbb_meta_mutex;		// Mutex to protect metadata changes while dbb_sync is unlocked
 	Firebird::Mutex dbb_cmp_clone_mutex;
@@ -436,7 +452,9 @@ public:
 	BackupManager*	dbb_backup_manager;	// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; // creation date
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::MetaName, UserFunction*> > > dbb_functions;	// User defined functions
+		Firebird::QualifiedName, UserFunction*> > > dbb_functions;	// User defined functions
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, USHORT> > > dbb_charset_ids;	// Character set ids
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -458,6 +476,7 @@ private:
 	:	dbb_sync(FB_NEW(*getDefaultMemoryPool()) Sync),
 		dbb_page_manager(*p),
 		dbb_modules(*p),
+		dbb_extManager(*p),
 		dbb_filename(*p),
 		dbb_database_name(*p),
 		dbb_encrypt_key(*p),
@@ -469,7 +488,8 @@ private:
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_charsets(*p),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
-		dbb_functions(*p)
+		dbb_functions(*p),
+		dbb_charset_ids(*p)
 	{
 		dbb_pools.add(p);
 		dbb_internal.grow(irq_MAX);

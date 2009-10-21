@@ -209,7 +209,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 
 	USHORT id = TTYPE_TO_CHARSET(ttype);
 	if (id == CS_dynamic)
-		id = tdbb->getAttachment()->att_charset;
+		id = tdbb->getCharSet();
 
 	if (id >= dbb->dbb_charsets.getCount())
 		dbb->dbb_charsets.resize(id + 10);
@@ -486,6 +486,63 @@ void Database::destroyIntlObjects()
 }
 
 
+void INTL_adjust_text_descriptor(thread_db* tdbb, dsc* desc)
+{
+/**************************************
+ *
+ *      I N T L _ a d j u s t _ t e x t _ d e s c r i p t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *      This function receives a text descriptor with
+ *      dsc_length = numberOfCharacters * maxBytesPerChar
+ *      and change dsc_length to number of bytes used by the string.
+ *
+ **************************************/
+	if (desc->dsc_dtype == dtype_text)
+	{
+		SET_TDBB(tdbb);
+
+		USHORT ttype = INTL_TTYPE(desc);
+
+		CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
+
+		if (charSet->isMultiByte())
+		{
+			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+
+			if (charSet->getFlags() & CHARSET_LEGACY_SEMANTICS)
+			{
+				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address, TEXT_LEN(desc),
+										buffer.getBuffer(TEXT_LEN(desc) * charSet->maxBytesPerChar()), 0,
+										TEXT_LEN(desc));
+
+				ULONG maxLength = TEXT_LEN(desc) / charSet->maxBytesPerChar();
+				ULONG charLength = charSet->length(desc->dsc_length, desc->dsc_address, true);
+
+				while (charLength > maxLength)
+				{
+					if (desc->dsc_address[desc->dsc_length - 1] == *charSet->getSpace())
+					{
+						--desc->dsc_length;
+						--charLength;
+					}
+					else
+						break;
+				}
+			}
+			else
+			{
+				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address,
+										TEXT_LEN(desc), buffer.getBuffer(TEXT_LEN(desc)), 0,
+										TEXT_LEN(desc) / charSet->maxBytesPerChar());
+			}
+		}
+	}
+}
+
+
 CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 {
 /**************************************
@@ -511,7 +568,7 @@ CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 		return (CS_BINARY);
 	case ttype_dynamic:
 		SET_TDBB(tdbb);
-		return (tdbb->getAttachment()->att_charset);
+		return (tdbb->getCharSet());
 	default:
 		return (TTYPE_TO_CHARSET(ttype));
 	}
@@ -694,10 +751,10 @@ CsConvert INTL_convert_lookup(thread_db* tdbb,
 	CHECK_DBB(dbb);
 
 	if (from_cs == CS_dynamic)
-		from_cs = tdbb->getAttachment()->att_charset;
+		from_cs = tdbb->getCharSet();
 
 	if (to_cs == CS_dynamic)
-		to_cs = tdbb->getAttachment()->att_charset;
+		to_cs = tdbb->getCharSet();
 
 /* Should from_cs == to_cs? be handled better? YYY */
 
@@ -1045,7 +1102,7 @@ Collation* INTL_texttype_lookup(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	if (parm1 == ttype_dynamic)
-		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getAttachment()->att_charset);
+		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getCharSet());
 
 	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, parm1);
 

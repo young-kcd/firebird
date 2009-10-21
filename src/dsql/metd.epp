@@ -72,7 +72,6 @@ static const UCHAR blr_bpb[] =
 };
 
 static void convert_dtype(dsql_fld*, SSHORT);
-static void free_procedure(dsql_prc*);
 static void free_relation(dsql_rel*);
 static void insert_symbol(dsql_sym*);
 static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, const SYM_TYPE, USHORT = 0);
@@ -172,7 +171,7 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
 }
 
 
-void METD_drop_function(dsql_req* request, const dsql_str* name)
+void METD_drop_function(dsql_req* request, const dsql_str* name, const MetaName& packageName)
 {
 /**************************************
  *
@@ -190,25 +189,24 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
  *  accessing it.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	MutexHolder holder(request);
 
-	// If the symbol wasn't defined, we've got nothing to do
+	QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
+	dsql_udf* function;
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
-
-	if (symbol) {
-		dsql_udf* userFunc = (dsql_udf*) symbol->sym_object;
-		userFunc->udf_flags |= UDF_dropped;
+	if (request->req_dbb->dbb_functions.get(metaName, function))
+	{
+		MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.qualifier);
+		function->udf_flags |= UDF_dropped;
+		request->req_dbb->dbb_functions.remove(metaName);
 	}
-
-	// mark other potential candidates as maybe dropped
-
-	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_udf, UDF_dropped);
 
 }
 
 
-void METD_drop_procedure(dsql_req* request, const dsql_str* name)
+void METD_drop_procedure(dsql_req* request, const dsql_str* name, const MetaName& packageName)
 {
 /**************************************
  *
@@ -226,21 +224,19 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
  *  accessing it.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	MutexHolder holder(request);
 
-	// If the symbol wasn't defined, we've got nothing to do
+	QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
+	dsql_prc* procedure;
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
-
-	if (symbol) {
-		dsql_prc* procedure = (dsql_prc*) symbol->sym_object;
+	if (request->req_dbb->dbb_procedures.get(metaName, procedure))
+	{
+		MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.qualifier);
 		procedure->prc_flags |= PRC_dropped;
+		request->req_dbb->dbb_procedures.remove(metaName);
 	}
-
-	// mark other potential candidates as maybe dropped
-
-	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_procedure, PRC_dropped);
-
 }
 
 
@@ -575,7 +571,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 	dsql_dbb* dbb = request->req_dbb;
 
 	if (charset_id == CS_dynamic)
-		charset_id = tdbb->getAttachment()->att_charset;
+		charset_id = tdbb->getCharSet();
 
 	dsql_intlsym* cs_sym = 0;
 	size_t pos = 0;
@@ -610,10 +606,10 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = request->req_dbb;
+    dsql_dbb* dbb = request->req_dbb;
 
-	if (charset_id == CS_dynamic)
-		charset_id = tdbb->getAttachment()->att_charset;
+    if (charset_id == CS_dynamic)
+		charset_id = tdbb->getCharSet();
 
 	size_t pos = 0;
 	if (dbb->dbb_charsets_by_id.find(charset_id, pos))
@@ -907,7 +903,8 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
 }
 
 
-dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
+dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
+	const dsql_str* package)
 {
 /**************************************
  *
@@ -921,48 +918,69 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	dsql_dbb* dbb = statement->req_dbb;
+	QualifiedName metaName(MetaName(name->str_data, name->str_length),
+		(package ? MetaName(package->str_data, package->str_length) : NULL));
 
-	MutexHolder holder(request);
+	MutexHolder holder(statement);
+
+	bool maybeUnqualified = statement->req_package.hasData() && metaName.qualifier.isEmpty();
+	if (maybeUnqualified)
+		metaName.qualifier = statement->req_package;
 
 	// Start by seeing if symbol is already defined
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
-	if (symbol)
-		return (dsql_udf*) symbol->sym_object;
+	dsql_udf* userFunc = NULL;
+	if (dbb->dbb_functions.get(metaName, userFunc))
+	{
+		if (userFunc->udf_private && metaName.qualifier != statement->req_package)
+			return NULL;
+
+		if (MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.qualifier))
+			userFunc->udf_flags |= UDF_dropped;
+
+		return userFunc;
+	}
 
 	// Now see if it is in the database
 
-	validateTransaction(request);
+	validateTransaction(statement);
 
-	dsql_dbb* dbb = request->req_dbb;
-	dsql_udf* userFunc = NULL;
 	USHORT return_arg = 0;
 
-	jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
+	while (!userFunc)
+	{
+		jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
-		X IN RDB$FUNCTIONS WITH
-		X.RDB$FUNCTION_NAME EQ name->str_data
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
+			X IN RDB$FUNCTIONS WITH
+			X.RDB$FUNCTION_NAME EQ name->str_data AND
+			X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
+
+			if (!DSQL_REQUEST(irq_function))
+				DSQL_REQUEST(irq_function) = handle1;
+
+			userFunc = FB_NEW(dbb->dbb_pool) dsql_udf(dbb->dbb_pool);
+			userFunc->udf_name = metaName;
+			userFunc->udf_private = !X.RDB$PRIVATE_FLAG.NULL && X.RDB$PRIVATE_FLAG != 0;
+
+			return_arg = X.RDB$RETURN_ARGUMENT;
+
+		END_FOR
 
 		if (!DSQL_REQUEST(irq_function))
 			DSQL_REQUEST(irq_function) = handle1;
 
-		userFunc = FB_NEW(dbb->dbb_pool) dsql_udf(dbb->dbb_pool);
-		// Moved below as still can't say for sure it will be stored.
-		// Following the same logic for MET_get_procedure and MET_get_relation
-		// userFunc->udf_next = dbb->dbb_functions;
-		// dbb->dbb_functions = userFunc;
-
-		userFunc->udf_name = name->str_data;
-		return_arg = X.RDB$RETURN_ARGUMENT;
-
-	END_FOR
-
-	if (!DSQL_REQUEST(irq_function))
-		DSQL_REQUEST(irq_function) = handle1;
-
-	if (!userFunc) {
-		return NULL;
+		if (!userFunc)
+		{
+			if (maybeUnqualified)
+			{
+				maybeUnqualified = false;
+				metaName.qualifier = "";
+			}
+			else
+				return NULL;
+		}
 	}
 
 	// Note: The following two requests differ in the fields which are
@@ -973,9 +991,10 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_func_return, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
-		X.RDB$FUNCTION_NAME EQ name->str_data
+		X.RDB$FUNCTION_NAME EQ name->str_data AND
+		X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
 		SORTED BY X.RDB$ARGUMENT_POSITION
 
 		if (!DSQL_REQUEST(irq_func_return))
@@ -1059,27 +1078,12 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	else if (userFunc->udf_dtype == dtype_varying)
 		userFunc->udf_length += sizeof(USHORT);
 
-	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_udf)))
-	{
-		// Get rid of all the stuff we just read in. Use existing one
-		delete userFunc;
-		return (dsql_udf*) symbol->sym_object;
-	}
+	dbb->dbb_functions.put(userFunc->udf_name, userFunc);
 
-	// Add udf in the front of the list.
-	userFunc->udf_next = dbb->dbb_functions;
-	dbb->dbb_functions = userFunc;
+	if (userFunc->udf_private && metaName.qualifier != statement->req_package)
+		return NULL;
 
-	// Store in the symbol table
-	// The UDF_new_udf flag is not used, so nothing extra to check.
-
-	symbol = userFunc->udf_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-	symbol->sym_object = userFunc;
-	symbol->sym_string = userFunc->udf_name.c_str();
-	symbol->sym_length = userFunc->udf_name.length();
-	symbol->sym_type = SYM_udf;
-	symbol->sym_dbb = dbb;
-	insert_symbol(symbol);
+	MET_dsql_cache_use(tdbb, SYM_udf, userFunc->udf_name.identifier, userFunc->udf_name.qualifier);
 
 	return userFunc;
 }
@@ -1133,7 +1137,8 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 }
 
 
-dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
+dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
+	const dsql_str* package)
 {
 /**************************************
  *
@@ -1150,53 +1155,102 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_dbb* dbb = statement->req_dbb;
+	QualifiedName metaName(MetaName(name->str_data, name->str_length),
+		(package ? MetaName(package->str_data, package->str_length) : ""));
 
-	// see if the procedure is the one currently being defined in this statement
-
-	dsql_prc* temp = statement->req_procedure;
-	if (temp != NULL && temp->prc_name == name->str_data)
-	{
-		return temp;
-	}
+	// ASF: I've removed the code where we verify if the procedure being looked up is the one being
+	// defined (statement->req_procedure). This code is totally incorrect, not considering
+	// transactions and savepoints, hence being incompatible with packages).
+	// Example (with autocommit off):
+	//
+	// SQL> create procedure p1 as begin end!
+	// SQL> create procedure p2 as begin execute procedure p1; end!
+	// SQL> rollback!
+	// SQL> execute procedure p2!
+	// Statement failed, SQLSTATE = 42000
+	// Dynamic SQL Error
+	// -SQL error code = -204
+	// -Procedure unknown
+	// -P2
+	// SQL> execute procedure p1!
+	// Statement failed, SQLSTATE = 42000
+	// invalid request BLR at offset 5
+	// -procedure P1 is not defined
+	//
+	// The side effect is that this occur in more cases now:
+	//
+	// SQL> create procedure p as begin execute procedure p; execute procedure p2; end!
+	// Statement failed, SQLSTATE = 42000
+	// Dynamic SQL Error
+	// -SQL error code = -204
+	// -Procedure unknown
+	// -P2
+	// SQL> execute procedure p!
+	// Statement failed, SQLSTATE = 42000
+	// invalid request BLR at offset 4
+	// -procedure P is not defined
+	//
+	// I hope for a solution, involving savepoint logic.
 
 	MutexHolder holder(statement);
 
+	bool maybeUnqualified = statement->req_package.hasData() && metaName.qualifier.isEmpty();
+	if (maybeUnqualified)
+		metaName.qualifier = statement->req_package;
+
 	// Start by seeing if symbol is already defined
 
-	dsql_sym* symbol = lookup_symbol(statement->req_dbb, name, SYM_procedure);
-	if (symbol)
-		return (dsql_prc*) symbol->sym_object;
+	dsql_prc* procedure = NULL;
+	if (dbb->dbb_procedures.get(metaName, procedure))
+	{
+		if (procedure->prc_private && metaName.qualifier != statement->req_package)
+			return NULL;
+
+		if (MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.qualifier))
+			procedure->prc_flags |= PRC_dropped;
+
+		return procedure;
+	}
 
 	// now see if it is in the database
 
 	validateTransaction(statement);
 
-	dsql_prc* procedure = NULL;
+	while (!procedure)
+	{
+		jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
 
-	jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
+			X IN RDB$PROCEDURES
+			WITH X.RDB$PROCEDURE_NAME EQ name->str_data AND
+				 X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
 
-	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
-		X IN RDB$PROCEDURES WITH
-		X.RDB$PROCEDURE_NAME EQ name->str_data
+			if (!DSQL_REQUEST(irq_procedure))
+				DSQL_REQUEST(irq_procedure) = handle1;
+
+			fb_utils::exact_name(X.RDB$OWNER_NAME);
+
+			procedure = FB_NEW(dbb->dbb_pool) dsql_prc(dbb->dbb_pool);
+			procedure->prc_id = X.RDB$PROCEDURE_ID;
+			procedure->prc_name = metaName;
+			procedure->prc_owner = X.RDB$OWNER_NAME;
+			procedure->prc_private = !X.RDB$PRIVATE_FLAG.NULL && X.RDB$PRIVATE_FLAG != 0;
+
+		END_FOR
 
 		if (!DSQL_REQUEST(irq_procedure))
 			DSQL_REQUEST(irq_procedure) = handle1;
 
-		fb_utils::exact_name(X.RDB$OWNER_NAME);
-
-		procedure = FB_NEW(dbb->dbb_pool) dsql_prc(dbb->dbb_pool);
-		procedure->prc_id = X.RDB$PROCEDURE_ID;
-
-		procedure->prc_name = name->str_data;
-		procedure->prc_owner = X.RDB$OWNER_NAME;
-
-	END_FOR
-
-	if (!DSQL_REQUEST(irq_procedure))
-		DSQL_REQUEST(irq_procedure) = handle1;
-
-	if (!procedure) {
-		return NULL;
+		if (!procedure)
+		{
+			if (maybeUnqualified)
+			{
+				maybeUnqualified = false;
+				metaName.qualifier = "";
+			}
+			else
+				return NULL;
+		}
 	}
 
 	// Lookup parameter stuff
@@ -1213,12 +1267,13 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 
 		jrd_req* handle2 = CMP_find_request(tdbb, irq_parameters, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
-			PR IN RDB$PROCEDURE_PARAMETERS CROSS
-			FLD IN RDB$FIELDS
-			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
-			AND PR.RDB$PROCEDURE_NAME EQ name->str_data
-			AND PR.RDB$PARAMETER_TYPE = type
+		FOR (REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
+			PR IN RDB$PROCEDURE_PARAMETERS
+			CROSS FLD IN RDB$FIELDS
+			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE AND
+				 PR.RDB$PROCEDURE_NAME EQ name->str_data AND
+				 PR.RDB$PARAMETER_TYPE = type AND
+				 PR.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
 			SORTED BY DESCENDING PR.RDB$PARAMETER_NUMBER
 
 			if (!DSQL_REQUEST(irq_parameters))
@@ -1235,9 +1290,12 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 			{
 				jrd_req* handle3 = CMP_find_request(tdbb, irq_parameters2, IRQ_REQUESTS);
 
+				MetaName packageName(PR.RDB$PACKAGE_NAME.NULL ? NULL : PR.RDB$PACKAGE_NAME);
+
 				FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
 					PR2 IN RDB$PROCEDURE_PARAMETERS
 					WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
+						 PR2.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '') AND
 						 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
 
 					if (!DSQL_REQUEST(irq_parameters2))
@@ -1322,34 +1380,13 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 		}
 	}
 
-	// Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
-	// calls, another thread may have added the same procedure in the mean time
+	dbb->dbb_procedures.put(procedure->prc_name, procedure);
 
-	if ((symbol = lookup_symbol(statement->req_dbb, name, SYM_procedure)))
-	{
-		// Get rid of all the stuff we just read in. Use existing one
-		free_procedure(procedure);
-		return (dsql_prc*) symbol->sym_object;
-	}
+	if (procedure->prc_private && metaName.qualifier != statement->req_package)
+		return NULL;
 
-	// store in the symbol table unless the procedure is not yet committed
-	// CVC: This is strange, because PRC_new_procedure is never set.
-
-	if (!(procedure->prc_flags & PRC_new_procedure))
-	{
-		// add procedure in the front of the list
-
-		procedure->prc_next = dbb->dbb_procedures;
-		dbb->dbb_procedures = procedure;
-
-		symbol = procedure->prc_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-		symbol->sym_object = procedure;
-		symbol->sym_string = procedure->prc_name.c_str();
-		symbol->sym_length = procedure->prc_name.length();
-		symbol->sym_type = SYM_procedure;
-		symbol->sym_dbb = dbb;
-		insert_symbol(symbol);
-	}
+	MET_dsql_cache_use(tdbb, SYM_procedure, procedure->prc_name.identifier,
+		procedure->prc_name.qualifier);
 
 	return procedure;
 }
@@ -1911,6 +1948,7 @@ static void convert_dtype(dsql_fld* field, SSHORT field_type)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static void free_procedure(dsql_prc* procedure)
 {
 /**************************************
@@ -1943,6 +1981,7 @@ static void free_procedure(dsql_prc* procedure)
 
 	delete procedure;
 }
+#endif	// NOT_USED_OR_REPLACED
 
 
 static void free_relation(dsql_rel* relation)
@@ -2036,18 +2075,8 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
 			{
 				break;
 			}
-			else if (type == SYM_procedure && (procedure = (dsql_prc*) symbol->sym_object) &&
-				!(procedure->prc_flags & PRC_dropped))
-			{
-				break;
-			}
 			else if (type == SYM_relation && (relation = (dsql_rel*) symbol->sym_object) &&
 				!(relation->rel_flags & REL_dropped))
-			{
-				break;
-			}
-			else if (type == SYM_udf && (userFunc = (dsql_udf*) symbol->sym_object) &&
-				!(userFunc->udf_flags & UDF_dropped))
 			{
 				break;
 			}
@@ -2067,16 +2096,8 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
 					intlSym->intlsym_flags |= INTLSYM_dropped;
 					break;
 
-				case SYM_procedure:
-					procedure->prc_flags |= PRC_dropped;
-					break;
-
 				case SYM_relation:
 					relation->rel_flags |= REL_dropped;
-					break;
-
-				case SYM_udf:
-					userFunc->udf_flags |= UDF_dropped;
 					break;
 
 				default:

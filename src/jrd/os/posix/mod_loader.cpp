@@ -65,6 +65,9 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 
 void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
+	if (name.isEmpty())
+		return;
+
 	Firebird::PathName::size_type pos = name.rfind(".so");
 	if (pos != Firebird::PathName::npos && pos == name.length() - 3)
 		return;		// No doctoring necessary
@@ -73,7 +76,7 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
-	void* module = dlopen(modPath.c_str(), RTLD_LAZY);
+	void* module = dlopen(modPath.nullStr(), RTLD_LAZY);
 	if (module == NULL)
 		return 0;
 

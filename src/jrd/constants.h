@@ -254,7 +254,7 @@ const int TRIGGER_TYPE_MASK			= (0x3 << TRIGGER_TYPE_SHIFT);
 
 const int TRIGGER_TYPE_DML			= (0 << TRIGGER_TYPE_SHIFT);
 const int TRIGGER_TYPE_DB			= (1 << TRIGGER_TYPE_SHIFT);
-//const int TRIGGER_TYPE_DDL		= (2 << TRIGGER_TYPE_SHIFT);
+const int TRIGGER_TYPE_DDL			= (2 << TRIGGER_TYPE_SHIFT);
 
 const int DB_TRIGGER_CONNECT		= 0;
 const int DB_TRIGGER_DISCONNECT		= 1;
@@ -263,8 +263,103 @@ const int DB_TRIGGER_TRANS_COMMIT	= 3;
 const int DB_TRIGGER_TRANS_ROLLBACK	= 4;
 const int DB_TRIGGER_MAX			= 5;
 
+static const char* const DDL_TRIGGER_ACTION_NAMES[] =
+{
+	"CREATE TABLE",
+	"ALTER TABLE",
+	"DROP TABLE",
+	"CREATE PROCEDURE",
+	"ALTER PROCEDURE",
+	"DROP PROCEDURE",
+	"CREATE FUNCTION",
+	"ALTER FUNCTION",
+	"DROP FUNCTION",
+	"CREATE TRIGGER",
+	"ALTER TRIGGER",
+	"DROP TRIGGER",
+	"", "", "",	// gap for TRIGGER_TYPE_MASK - 3 bits
+	"CREATE EXCEPTION",
+	"ALTER EXCEPTION",
+	"DROP EXCEPTION",
+	"CREATE VIEW",
+	"ALTER VIEW",
+	"DROP VIEW",
+	"CREATE DOMAIN",
+	"ALTER DOMAIN",
+	"DROP DOMAIN",
+	"CREATE ROLE",
+	"ALTER ROLE",
+	"DROP ROLE",
+	"CREATE INDEX",
+	"ALTER INDEX",
+	"DROP INDEX",
+	"CREATE SEQUENCE",
+	"ALTER SEQUENCE",
+	"DROP SEQUENCE",
+	"CREATE USER",
+	"ALTER USER",
+	"DROP USER",
+	"CREATE COLLATION",
+	"DROP COLLATION",
+	"ALTER CHARACTER SET",
+	"CREATE PACKAGE",
+	"ALTER PACKAGE",
+	"DROP PACKAGE",
+	"CREATE PACKAGE BODY",
+	"DROP PACKAGE BODY"
+};
+
+const int DDL_TRIGGER_BEFORE	= 0;
+const int DDL_TRIGGER_AFTER		= 1;
+
+const int DDL_TRIGGER_CREATE_TABLE				= 1;
+const int DDL_TRIGGER_ALTER_TABLE				= 2;
+const int DDL_TRIGGER_DROP_TABLE				= 3;
+const int DDL_TRIGGER_CREATE_PROCEDURE			= 4;
+const int DDL_TRIGGER_ALTER_PROCEDURE			= 5;
+const int DDL_TRIGGER_DROP_PROCEDURE			= 6;
+const int DDL_TRIGGER_CREATE_FUNCTION			= 7;
+const int DDL_TRIGGER_ALTER_FUNCTION			= 8;
+const int DDL_TRIGGER_DROP_FUNCTION				= 9;
+const int DDL_TRIGGER_CREATE_TRIGGER			= 10;
+const int DDL_TRIGGER_ALTER_TRIGGER				= 11;
+const int DDL_TRIGGER_DROP_TRIGGER				= 12;
+// gap for TRIGGER_TYPE_MASK - 3 bits
+const int DDL_TRIGGER_CREATE_EXCEPTION			= 16;
+const int DDL_TRIGGER_ALTER_EXCEPTION			= 17;
+const int DDL_TRIGGER_DROP_EXCEPTION			= 18;
+const int DDL_TRIGGER_CREATE_VIEW				= 19;
+const int DDL_TRIGGER_ALTER_VIEW				= 20;
+const int DDL_TRIGGER_DROP_VIEW					= 21;
+const int DDL_TRIGGER_CREATE_DOMAIN				= 22;
+const int DDL_TRIGGER_ALTER_DOMAIN				= 23;
+const int DDL_TRIGGER_DROP_DOMAIN				= 24;
+const int DDL_TRIGGER_CREATE_ROLE				= 25;
+const int DDL_TRIGGER_ALTER_ROLE				= 26;
+const int DDL_TRIGGER_DROP_ROLE					= 27;
+const int DDL_TRIGGER_CREATE_INDEX				= 28;
+const int DDL_TRIGGER_ALTER_INDEX				= 29;
+const int DDL_TRIGGER_DROP_INDEX				= 30;
+const int DDL_TRIGGER_CREATE_SEQUENCE			= 31;
+const int DDL_TRIGGER_ALTER_SEQUENCE			= 32;
+const int DDL_TRIGGER_DROP_SEQUENCE				= 33;
+const int DDL_TRIGGER_CREATE_USER				= 34;
+const int DDL_TRIGGER_ALTER_USER				= 35;
+const int DDL_TRIGGER_DROP_USER					= 36;
+const int DDL_TRIGGER_CREATE_COLLATION			= 37;
+const int DDL_TRIGGER_DROP_COLLATION			= 38;
+const int DDL_TRIGGER_ALTER_CHARACTER_SET		= 39;
+const int DDL_TRIGGER_CREATE_PACKAGE			= 40;
+const int DDL_TRIGGER_ALTER_PACKAGE				= 41;
+const int DDL_TRIGGER_DROP_PACKAGE				= 42;
+const int DDL_TRIGGER_CREATE_PACKAGE_BODY		= 43;
+const int DDL_TRIGGER_DROP_PACKAGE_BODY			= 44;
+
 // that's how database trigger action types are encoded
 //    (TRIGGER_TYPE_DB | type)
+
+// that's how DDL trigger action types are encoded
+//    (TRIGGER_TYPE_DDL | DDL_TRIGGER_{AFTER | BEFORE} [ | DDL_TRIGGER_??? ...])
 
 // switches for username and password used when an username and/or password
 // is specified by the client application

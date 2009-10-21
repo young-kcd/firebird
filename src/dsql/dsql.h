@@ -72,6 +72,7 @@ namespace Jrd
 	class blb;
 	struct bid;
 
+	class BlockNode;
 	class dsql_ctx;
 	class dsql_str;
 	class dsql_nod;
@@ -103,9 +104,10 @@ class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
 public:
 	enum Type
 	{
-		TYPE_SIMPLE = 0,
-		TYPE_HEXA,
-		TYPE_DELIMITED
+		TYPE_SIMPLE = 0,	// '...'
+		TYPE_ALTERNATE,		// q'{...}'
+		TYPE_HEXA,			// x'...'
+		TYPE_DELIMITED		// "..."
 	};
 
 public:
@@ -131,8 +133,10 @@ class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
 	class dsql_rel* dbb_relations;		// known relations in database
-	class dsql_prc*	dbb_procedures;		// known procedures in database
-	class dsql_udf*	dbb_functions;		// known functions in database
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::QualifiedName, class dsql_prc*> > > dbb_procedures;	// known procedures in database
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::QualifiedName, class dsql_udf*> > > dbb_functions;	// known functions in database
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
 	Database*		dbb_database;
 	Attachment*		dbb_attachment;
@@ -149,7 +153,10 @@ public:
 	Firebird::Mutex dbb_cache_mutex;	// mutex protecting the DSQL metadata cache
 
 	explicit dsql_dbb(MemoryPool& p) :
-		dbb_pool(p), dbb_charsets_by_id(p, 16)
+		dbb_procedures(p),
+		dbb_functions(p),
+		dbb_pool(p),
+		dbb_charsets_by_id(p, 16)
 	{}
 
 	~dsql_dbb();
@@ -268,17 +275,16 @@ public:
 	{
 	}
 
-	dsql_prc*	prc_next;		// Next relation in database
-	dsql_sym*	prc_symbol;		// Hash symbol for procedure
 	dsql_fld*	prc_inputs;		// Input parameters
 	dsql_fld*	prc_outputs;	// Output parameters
-	Firebird::MetaName prc_name;	// Name of procedure
+	Firebird::QualifiedName prc_name;	// Name of procedure
 	Firebird::MetaName prc_owner;	// Owner of procedure
 	SSHORT		prc_in_count;
 	SSHORT		prc_def_count;	// number of inputs with default values
 	SSHORT		prc_out_count;
 	USHORT		prc_id;			// Procedure id
 	USHORT		prc_flags;
+	bool		prc_private;	// Packaged private procedure
 };
 
 // prc_flags bits
@@ -297,8 +303,6 @@ public:
 	{
 	}
 
-	dsql_udf*	udf_next;
-	dsql_sym*	udf_symbol;		// Hash symbol for udf
 	USHORT		udf_dtype;
 	SSHORT		udf_scale;
 	SSHORT		udf_sub_type;
@@ -306,8 +310,9 @@ public:
 	SSHORT		udf_character_set_id;
 	//USHORT		udf_character_length;
     USHORT      udf_flags;
-	Firebird::MetaName udf_name;
+	Firebird::QualifiedName udf_name;
 	Firebird::Array<dsc> udf_arguments;
+	bool		udf_private;	// Packaged private function
 };
 
 // udf_flags bits
@@ -397,6 +402,7 @@ public:
 	dsql_dbb* req_dbb;			// DSQL attachment
 	jrd_tra* req_transaction;	// JRD transaction
 	dsql_nod* req_ddl_node;		// Store metadata request
+	BlockNode* blockNode;
 	class dsql_blb* req_blob;	// Blob info for blob requests
 	jrd_req*	req_request;	// JRD request
 	//dsql_str*	req_blr_string;	// String block during BLR generation
@@ -451,6 +457,7 @@ public:
 		  req_labels(p),
 		  req_cursors(p),
 		  req_hidden_vars(p),
+		  req_package(p),
 		  req_curr_ctes(p),
 		  req_ctes(p),
 		  req_cte_aliases(p)
@@ -544,7 +551,6 @@ public:
 		psql = value;
 	}
 
-	dsql_nod* req_blk_node;		// exec_block node
 	dsql_rel* req_relation;		// relation created by this request (for DDL)
 	dsql_prc* req_procedure;	// procedure created by this request (for DDL)
 	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
@@ -573,6 +579,7 @@ public:
 	dsql_str*		req_alias_relation_prefix;	// prefix for every relation-alias.
 	DsqlNodStack	req_hidden_vars;			// hidden variables
 	USHORT			req_hidden_vars_number;		// next hidden variable number
+	Firebird::MetaName req_package;				// package being defined
 
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
 	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
@@ -793,8 +800,23 @@ enum
 {
 	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
 	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
-	ddl_charset, ddl_collation//, ddl_sec_class
+	ddl_charset, ddl_collation, ddl_package//, ddl_sec_class
 };
+
+class CStrCmp
+{
+public:
+	static int greaterThan(const char* s1, const char* s2)
+	{
+		return strcmp(s1, s2) > 0;
+	}
+};
+
+typedef Firebird::SortedArray<const char*,
+			Firebird::EmptyStorage<const char*>, const char*,
+			Firebird::DefaultKeyValue<const char*>,
+			CStrCmp>
+		StrArray;
 
 } // namespace
 

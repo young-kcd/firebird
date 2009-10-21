@@ -33,6 +33,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
 #include "../jrd/RecordNumber.h"
+#include "../jrd/ExtEngineManager.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
@@ -201,7 +202,7 @@ public:
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
 		req_exec_sta(*pool), req_ext_stmt(NULL), req_invariants(*pool),
-		req_blr(*pool), req_domain_validation(NULL),
+		req_charset(CS_dynamic), req_blr(*pool), req_domain_validation(NULL),
 		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool),
 		req_sorts(*pool)
 	{}
@@ -265,6 +266,7 @@ public:
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
 	Firebird::TimeStamp	req_timestamp;	// Start time of request
+	SSHORT req_charset;					// Client charset for this request
 	Firebird::RefStrPtr req_sql_text;	// SQL text
 	Firebird::Array<UCHAR> req_blr;		// BLR for non-SQL query
 
@@ -281,10 +283,14 @@ public:
 	MapFieldInfo	req_map_field_info;		// Map field name to field info
 	MapItemInfo		req_map_item_info;		// Map item to item info
 	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
+	ExtEngineManager::ResultSet* resultSet;	// external procedure result set
+	ValuesImpl* inputParams;				// external procedure input values
+	ValuesImpl* outputParams;				// external procedure output values
 	SortOwner		req_sorts;
 
 	enum req_ta {
-		// order should be maintained because the numbers are stored in BLR
+		// Order should be maintained because the numbers are stored in BLR
+		// and should be in sync with ExternalTrigger::Action.
 		req_trigger_insert			= 1,
 		req_trigger_update			= 2,
 		req_trigger_delete			= 3,
@@ -292,7 +298,8 @@ public:
 		req_trigger_disconnect		= 5,
 		req_trigger_trans_start		= 6,
 		req_trigger_trans_commit	= 7,
-		req_trigger_trans_rollback	= 8
+		req_trigger_trans_rollback	= 8,
+		req_trigger_ddl				= 9
 	} req_trigger_action;			// action that caused trigger to fire
 
 	enum req_s {
@@ -352,6 +359,7 @@ const ULONG req_ignore_perm		= 0x40000L;		// ignore permissions checks
 const ULONG req_fetch_required	= 0x80000L;		// need to fetch next record
 const ULONG req_error_handler	= 0x100000L;	// looper is called to handle error
 const ULONG req_blr_version4	= 0x200000L;	// Request is of blr_version4
+const ULONG req_continue_loop	= 0x800000L;	// PSQL continue statement
 
 // Mask for flags preserved in a clone of a request
 const ULONG REQ_FLAGS_CLONE_MASK = (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);

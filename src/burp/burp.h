@@ -114,7 +114,8 @@ enum rec_type {
 	rec_charset,		// Character sets
 	rec_collation,		// Collations
 	rec_sql_roles,		// SQL roles
-	rec_mapping			// Mapping of security names
+	rec_mapping,		// Mapping of security names
+	rec_package			// Package
 };
 
 
@@ -387,6 +388,9 @@ enum att_type {
 	att_trig_flags,
 	att_trig_valid_blr,
 	att_trig_debug_info,
+	att_trig_engine_name,
+	att_trig_entrypoint,
+	att_trig_type2,
 
 	// Function attributes
 
@@ -399,6 +403,9 @@ enum att_type {
 	att_function_query_name,
 	att_function_type,
 	att_function_description2,
+	att_function_engine_name,
+	att_function_package_name,
+	att_function_private_flag,
 
 	// Function argument attributes
 
@@ -411,6 +418,7 @@ enum att_type {
 	att_functionarg_field_sub_type,
 	att_functionarg_character_set,
 	att_functionarg_field_precision,
+	att_functionarg_package_name,
 
 	// TYPE relation attributes
 	att_type_name = SERIES,
@@ -474,6 +482,10 @@ enum att_type {
 	att_procedure_type,
 	att_procedure_valid_blr,
 	att_procedure_debug_info,
+	att_procedure_engine_name,
+	att_procedure_entrypoint,
+	att_procedure_package_name,
+	att_procedure_private_flag,
 
 	// Stored procedure parameter attributes
 
@@ -551,7 +563,15 @@ enum att_type {
 	att_map_os = SERIES,
 	att_map_user,
 	att_map_role,
-	att_auto_map_role
+	att_auto_map_role,
+
+	// Package attributes
+	att_package_name = SERIES,
+	att_package_header_source,
+	att_package_body_source,
+	att_package_security_class,
+	att_package_owner_name,
+	att_package_description
 };
 
 
@@ -655,12 +675,21 @@ enum burp_rel_flags_vals {
 	REL_external	= 2
 };
 
+// package definition
+struct burp_pkg
+{
+	burp_pkg*	pkg_next;
+	GDS_NAME	pkg_name;
+	GDS_NAME	pkg_owner;
+};
+
 // procedure definition - holds useful procedure type stuff
 
 struct burp_prc
 {
 	burp_prc*	prc_next;
 	//SSHORT	prc_name_length; // Currently useless, but didn't want to delete it.
+	GDS_NAME	prc_package;
 	GDS_NAME	prc_name;
 	GDS_NAME	prc_owner;		// relation owner, if not us
 };
@@ -866,6 +895,7 @@ public:
 	UCHAR*		io_ptr;
 	int			io_cnt;
 	burp_rel*	relations;
+	burp_pkg*	packages;
 	burp_prc*	procedures;
 	SLONG		BCK_capabilities;
 	// Format of the backup being read on restore; gbak always creates it using the latest version
@@ -922,6 +952,7 @@ public:
 	isc_req_handle	handles_get_index_req_handle2;
 	isc_req_handle	handles_get_index_req_handle3;
 	isc_req_handle	handles_get_index_req_handle4;
+	isc_req_handle	handles_get_package_req_handle1;
 	isc_req_handle	handles_get_procedure_prm_req_handle1;
 	isc_req_handle	handles_get_procedure_req_handle1;
 	isc_req_handle	handles_get_ranges_req_handle1;
