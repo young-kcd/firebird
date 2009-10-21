@@ -135,31 +135,34 @@ void ValueMover::setValue(dsc* desc, USHORT* nullFlag, dsc* from) const
 //-------------------------------------
 
 
-ValueImpl::ValueImpl(const dsc* aDesc, const Firebird::MetaName& aName, bool aNullable)
-	: name(*getDefaultMemoryPool()),
+ValueImpl::ValueImpl(MemoryPool& p, const dsc* aDesc, const Firebird::MetaName& aName, bool aNullable)
+	: PermanentStorage(p),
+	  name(p),
 	  fieldNumber(0),
-	  buffer(*getDefaultMemoryPool()),
-	  charSetName(*getDefaultMemoryPool())
+	  buffer(p),
+	  charSetName(p)
 {
 	make(aDesc, aName, aNullable);
 }
 
 
-ValueImpl::ValueImpl(const Format* format, unsigned index, UCHAR* msg,
+ValueImpl::ValueImpl(MemoryPool& p, const Format* format, unsigned index, UCHAR* msg,
 		const Firebird::MetaName& aName, bool aNullable)
-	: name(*getDefaultMemoryPool()),
+	: PermanentStorage(p),
+	  name(p),
 	  fieldNumber(0),
-	  buffer(*getDefaultMemoryPool()),
-	  charSetName(*getDefaultMemoryPool())
+	  buffer(p),
+	  charSetName(p)
 {
 	make(format, index, msg, aName, aNullable);
 }
 
 
-ValueImpl::ValueImpl()
-	: nullFlag(NULL),
-	  name(*getDefaultMemoryPool()),
-	  buffer(*getDefaultMemoryPool())
+ValueImpl::ValueImpl(MemoryPool& p)
+	: PermanentStorage(p),
+	  nullFlag(NULL),
+	  name(p),
+	  buffer(p)
 {
 	desc.clear();
 }

@@ -399,14 +399,15 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 	Attachment* attachment = tdbb->getAttachment();
 
 	impure->vlu_desc.dsc_flags = DSC_null;
-	ValueImpl result(&impure->vlu_desc, "", true);
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	ValueImpl result(pool, &impure->vlu_desc, "", true);
 
 	Firebird::HalfStaticArray<impure_value, 32> impureArgs;
 
 	impure_value* impureArgsPtr = impureArgs.getBuffer(args->nod_count);
 	try
 	{
-		ValuesImpl params(args->nod_count);
+		ValuesImpl params(pool, args->nod_count);
 
 		for (int i = 0; i < args->nod_count; ++i)
 		{
@@ -414,8 +415,8 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 
 			if (impureArgsPtr->vlu_desc.isText())
 			{
-				impureArgsPtr->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(),
-					impureArgsPtr->vlu_desc.getStringLength()) VaryingString();
+				impureArgsPtr->vlu_string =
+					FB_NEW_RPT(pool, impureArgsPtr->vlu_desc.getStringLength()) VaryingString();
 				impureArgsPtr->vlu_desc.dsc_address = (UCHAR*) impureArgsPtr->vlu_string;
 			}
 			else
@@ -574,15 +575,16 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, Firebird::ExternalTrigg
 	Array<dsc*> descs;
 	try
 	{
+		MemoryPool& pool = *tdbb->getDefaultPool();
 		AutoPtr<ValuesImpl> oldValues, newValues;
 		int valueOldCount = 0;
 		int valueNewCount = 0;
 
 		if (oldRpb)
-			valueOldCount = setValues(tdbb, attInfo->context, oldValues, descs, oldRpb);
+			valueOldCount = setValues(tdbb, pool, attInfo->context, oldValues, descs, oldRpb);
 
 		if (newRpb)
-			valueNewCount = setValues(tdbb, attInfo->context, newValues, descs, newRpb);
+			valueNewCount = setValues(tdbb, pool, attInfo->context, newValues, descs, newRpb);
 
 		{	// scope
 			Database::Checkout dcoHolder(tdbb->getDatabase());
@@ -612,8 +614,9 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, Firebird::ExternalTrigg
 }
 
 
-int ExtEngineManager::Trigger::setValues(thread_db* tdbb, ExternalContextImpl* context,
-	AutoPtr<ValuesImpl>& values, Array<dsc*>& descs, record_param* rpb)
+int ExtEngineManager::Trigger::setValues(thread_db* tdbb, MemoryPool& pool,
+	ExternalContextImpl* context, AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
+	record_param* rpb)
 {
 	Attachment* attachment = tdbb->getAttachment();
 
@@ -623,7 +626,7 @@ int ExtEngineManager::Trigger::setValues(thread_db* tdbb, ExternalContextImpl* c
 	Record* record = rpb->rpb_record;
 	const Format* format = record->rec_format;
 
-	values = FB_NEW(*tdbb->getDefaultPool()) ValuesImpl(format->fmt_count);
+	values = FB_NEW(pool) ValuesImpl(pool, format->fmt_count);
 
 	int start = descs.getCount();
 	descs.resize(start + format->fmt_count);
@@ -632,7 +635,7 @@ int ExtEngineManager::Trigger::setValues(thread_db* tdbb, ExternalContextImpl* c
 
 	for (int i = 0; i < format->fmt_count; ++i)
 	{
-		descs[start + i] = FB_NEW(*tdbb->getDefaultPool()) dsc;
+		descs[start + i] = FB_NEW(pool) dsc;
 
 		if (format->fmt_desc[i].dsc_dtype != dtype_unknown)
 		{

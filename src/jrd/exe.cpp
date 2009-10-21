@@ -1865,7 +1865,7 @@ static void execute_triggers(thread_db* tdbb,
 			MET_release_triggers(tdbb, &vector);
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Firebird::Exception&)
 	{
 		delete null_rec;
 		if (vector != *triggers) {
@@ -2061,14 +2061,16 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						{
 							UCHAR* inMsg = (UCHAR*) request + request->req_message->nod_impure;
 
-							request->inputParams = FB_NEW(*getDefaultMemoryPool()) ValuesImpl(tdbb,
-								format, inMsg, *request->req_procedure->prc_input_fields);
+							request->inputParams = FB_NEW(*request->req_pool) ValuesImpl(
+								*request->req_pool, format, inMsg,
+								*request->req_procedure->prc_input_fields);
 						}
 
 						if (!request->outputParams)
 						{
-							request->outputParams = FB_NEW(*getDefaultMemoryPool()) ValuesImpl(tdbb,
-								outFormat, outMsg, *request->req_procedure->prc_output_fields);
+							request->outputParams = FB_NEW(*request->req_pool) ValuesImpl(
+								*request->req_pool, outFormat, outMsg,
+								*request->req_procedure->prc_output_fields);
 							request->outputParams->setNull();
 						}
 

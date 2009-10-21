@@ -31,14 +31,14 @@
 namespace Jrd {
 
 
-class ValuesImpl : public Firebird::Values
+class ValuesImpl : public Firebird::Values, public Firebird::PermanentStorage
 {
 private:
 	// ValuesQueue used for Values composed by independent fields. This is slower.
-	class IndividualQueue : public Firebird::ValuesQueue
+	class IndividualQueue : public Firebird::ValuesQueue, public Firebird::PermanentStorage
 	{
 	public:
-		IndividualQueue(Firebird::Error* error, ValuesImpl* aValues);
+		IndividualQueue(Firebird::MemoryPool& p, Firebird::Error* error, ValuesImpl* aValues);
 		virtual ~IndividualQueue();
 
 	public:
@@ -51,7 +51,6 @@ private:
 		virtual bool FB_CALL dequeue(Firebird::Error* error);
 
 	private:
-		MemoryPool& pool;
 		ValuesImpl* values;
 		Firebird::uint valueCount;
 		Firebird::uint recordSize;
@@ -62,10 +61,10 @@ private:
 	};
 
 	// ValuesQueue used for Values composed by fields of a message. This is faster.
-	class MsgQueue : public Firebird::ValuesQueue
+	class MsgQueue : public Firebird::ValuesQueue, public Firebird::PermanentStorage
 	{
 	public:
-		MsgQueue(Firebird::Error* error, UCHAR* aMsg, unsigned aMsgLength);
+		MsgQueue(Firebird::MemoryPool& p, Firebird::Error* error, UCHAR* aMsg, unsigned aMsgLength);
 		virtual ~MsgQueue();
 
 	public:
@@ -78,7 +77,6 @@ private:
 		virtual bool FB_CALL dequeue(Firebird::Error* error);
 
 	private:
-		MemoryPool& pool;
 		UCHAR* msg;
 		unsigned msgLength;
 		Firebird::Array<UCHAR*> records;
@@ -87,26 +85,34 @@ private:
 	};
 
 public:
-	ValuesImpl(Firebird::uint aCount)
-		: msg(NULL),
+	ValuesImpl(Firebird::MemoryPool& p, Firebird::uint aCount)
+		: PermanentStorage(p),
+		  msg(NULL),
 		  msgLength(0),
+		  valuesArray(p),
 		  count(aCount)
 	{
-		autoValues = values = FB_NEW(*getDefaultMemoryPool()) ValueImpl[count];
+		while (aCount-- > 0)
+			valuesArray.add();
+		
+		values = &valuesArray;
 	}
 
-	ValuesImpl(thread_db* tdbb, const Format* format, UCHAR* aMsg, const vec<Parameter*>& parameters)
-		: msg(aMsg),
+	ValuesImpl(Firebird::MemoryPool& p, const Format* format, UCHAR* aMsg,
+			const vec<Parameter*>& parameters)
+		: PermanentStorage(p),
+		  msg(aMsg),
 		  msgLength(format->fmt_length),
+		  valuesArray(p),
 		  count(format->fmt_count / 2)
 	{
-		autoValues = values = FB_NEW(*getDefaultMemoryPool()) ValueImpl[count];
-
 		for (unsigned i = 0; i < count; ++i)
 		{
 			const Parameter* parameter = parameters[i];
-			values[i].make(format, i, msg, parameter->prm_name, parameter->prm_nullable);
+			valuesArray.add().make(format, i, msg, parameter->prm_name, parameter->prm_nullable);
 		}
+
+		values = &valuesArray;
 	}
 
 	virtual ~ValuesImpl()
@@ -123,13 +129,13 @@ public:
 	Jrd::ValueImpl* getValue(Firebird::uint index) const
 	{
 		fb_assert(index >= 1 && index <= count);
-		return &values[index - 1];
+		return values->getPointer(index - 1);
 	}
 
 	void setNull()
 	{
 		for (unsigned i = 0; i < count; ++i)
-			values[i].setNull();
+			(*values)[i].setNull();
 	}
 
 public:
@@ -161,8 +167,8 @@ public:
 private:
 	UCHAR* msg;
 	unsigned msgLength;
-	Firebird::AutoPtr<ValueImpl, Firebird::ArrayDelete<ValueImpl> > autoValues;
-	ValueImpl* values;
+	Firebird::ObjectsArray<ValueImpl> valuesArray;
+	Firebird::ObjectsArray<ValueImpl>* values;
 	Firebird::uint count;
 };
 

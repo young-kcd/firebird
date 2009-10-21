@@ -32,12 +32,12 @@ using Firebird::uint;
 namespace Jrd {
 
 
-ValuesImpl::IndividualQueue::IndividualQueue(Error* error, ValuesImpl* aValues)
-	: pool(*getDefaultMemoryPool()),	//// TODO: pass the pool in the callers
+ValuesImpl::IndividualQueue::IndividualQueue(MemoryPool& p, Error* error, ValuesImpl* aValues)
+	: PermanentStorage(p),
 	  values(aValues),
 	  valueCount(values->getCount()),
 	  recordSize(0),
-	  records(pool),
+	  records(p),
 	  enqueuePos(0),
 	  recordNumber(0)
 {
@@ -70,7 +70,7 @@ void FB_CALL ValuesImpl::IndividualQueue::enqueue(Error* error)
 	thread_db* tdbb = JRD_get_thread_data();
 	size_t recordCount = records.getCount();
 	UCHAR* buffer = (enqueuePos < recordCount ?
-		records[enqueuePos] : FB_NEW(pool) UCHAR[recordSize]);
+		records[enqueuePos] : FB_NEW(getPool()) UCHAR[recordSize]);
 	UCHAR* nullsBuffer = buffer + nullsStart;
 	uint pos = 0;
 
@@ -141,11 +141,11 @@ bool FB_CALL ValuesImpl::IndividualQueue::dequeue(Error* error)
 //---------------------
 
 
-ValuesImpl::MsgQueue::MsgQueue(Error* error, UCHAR* aMsg, unsigned aMsgLength)
-	: pool(*getDefaultMemoryPool()),	//// TODO: pass the pool in the callers
+ValuesImpl::MsgQueue::MsgQueue(MemoryPool& p, Error* error, UCHAR* aMsg, unsigned aMsgLength)
+	: PermanentStorage(p),
 	  msg(aMsg),
 	  msgLength(aMsgLength),
-	  records(pool),
+	  records(p),
 	  enqueuePos(0),
 	  recordNumber(0)
 {
@@ -164,7 +164,7 @@ void FB_CALL ValuesImpl::MsgQueue::enqueue(Error* error)
 	thread_db* tdbb = JRD_get_thread_data();
 	size_t recordCount = records.getCount();
 	UCHAR* buffer = (enqueuePos < recordCount ?
-		records[enqueuePos] : FB_NEW(pool) UCHAR[msgLength]);
+		records[enqueuePos] : FB_NEW(getPool()) UCHAR[msgLength]);
 
 	memcpy(buffer, msg, msgLength);
 
@@ -200,7 +200,7 @@ Firebird::uint FB_CALL ValuesImpl::getIndexByName(Error* error, const char* name
 
 	for (unsigned i = 0; i < count; ++i)
 	{
-		const char* valName = values[i].getName(error);
+		const char* valName = (*values)[i].getName(error);
 
 		if (valName)
 		{
@@ -229,9 +229,9 @@ Value* FB_CALL ValuesImpl::getValueByName(Error* error, const char* name) const
 ValuesQueue* FB_CALL ValuesImpl::createQueue(Error* error)
 {
 	if (msg)
-		return new MsgQueue(error, msg, msgLength);
+		return new MsgQueue(getPool(), error, msg, msgLength);
 	else
-		return new IndividualQueue(error, this);
+		return new IndividualQueue(getPool(), error, this);
 }
 
 

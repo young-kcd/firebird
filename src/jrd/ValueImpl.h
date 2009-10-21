@@ -55,13 +55,14 @@ public:
 };
 
 
-class ValueImpl : public Firebird::Value
+class ValueImpl : public Firebird::Value, Firebird::PermanentStorage
 {
 public:
-	ValueImpl(const dsc* aDesc, const Firebird::MetaName& aName, bool aNullable);
-	ValueImpl(const Format* format, unsigned index, UCHAR* msg, const Firebird::MetaName& aName,
-		bool aNullable);
-	ValueImpl();
+	ValueImpl(Firebird::MemoryPool& p, const dsc* aDesc,
+		const Firebird::MetaName& aName, bool aNullable);
+	ValueImpl(Firebird::MemoryPool& p, const Format* format, unsigned index, UCHAR* msg,
+		const Firebird::MetaName& aName, bool aNullable);
+	ValueImpl(Firebird::MemoryPool& p);
 
 	virtual ~ValueImpl()
 	{
