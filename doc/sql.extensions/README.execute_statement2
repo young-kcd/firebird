@@ -21,7 +21,7 @@ Syntax and notes :
     
 - Order of clauses below is not fixed :
     [ON EXTERNAL [DATA SOURCE] <connection_string>]
-    [WITH AUTONOMOUS | COMMON TRANSACTION]
+    [WITH AUTONOMOUS TRANSACTION | COMMON TRANSACTION]
     [AS USER <user_name>]
     [PASSWORD <password>]
     [ROLE <role_name>]
