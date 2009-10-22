@@ -1864,7 +1864,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		CCH_RELEASE(tdbb, &window);
 		CCH_RELEASE(tdbb, root_window);
 
-		index_root_page* root = 
+		index_root_page*root = 
 			(index_root_page*) CCH_FETCH(tdbb, root_window, LCK_write, pag_root);
 		page = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 
@@ -4907,7 +4907,17 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 	// left sibling
 	WIN left_window(left_number);
 	btree_page* left_page =
-		(btree_page*) CCH_FETCH(tdbb, &left_window, LCK_write, pag_index);
+		(btree_page*) CCH_FETCH(tdbb, &left_window, LCK_write, pag_undefined);
+	if ((left_page->btr_header.pag_type != pag_index) ||
+		(left_page->btr_relation != relation_number) ||
+		(left_page->btr_id != (UCHAR)(index_id % 256)) ||
+		(left_page->btr_level != index_level))
+	{
+		CCH_RELEASE(tdbb, &parent_window);
+		CCH_RELEASE(tdbb, &left_window);
+		return contents_above_threshold;
+	}
+
 	while (left_page->btr_sibling != window->win_page) {
 #ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, &parent_window);
