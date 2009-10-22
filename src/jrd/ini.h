@@ -67,7 +67,7 @@ const USHORT TIMESTAMP_SIZE	= 8;
 /* Pick up global ids */
 
 
-#define FIELD(type, name, dtype, length, sub_type, ods, dflt_blr)	type,
+#define FIELD(type, name, dtype, length, sub_type, dflt_blr)	type,
 enum gflds {
 #include "../jrd/fields.h"
 gfld_MAX};
@@ -78,11 +78,11 @@ typedef gflds GFLDS;
 /* Pick up actual global fields */
 
 #ifndef GPRE
-#define FIELD(type, name, dtype, length, sub_type, ods, dflt_blr)	\
-	{ (int) type, (int) name, dtype, length, sub_type, ods, dflt_blr, sizeof(dflt_blr) },
+#define FIELD(type, name, dtype, length, sub_type, dflt_blr)	\
+	{ (int) type, (int) name, dtype, length, sub_type, dflt_blr, sizeof(dflt_blr) },
 #else
-#define FIELD(type, name, dtype, length, sub_type, ods, dflt_blr)	\
-	{ (int) type, (int) name, dtype, length, sub_type, ods, NULL, 0 },
+#define FIELD(type, name, dtype, length, sub_type, dflt_blr)	\
+	{ (int) type, (int) name, dtype, length, sub_type, NULL, 0 },
 #endif
 
 struct gfld
@@ -92,14 +92,13 @@ struct gfld
 	UCHAR gfld_dtype;
 	USHORT gfld_length;
 	UCHAR gfld_sub_type;	// mismatch; dsc2.h uses SSHORT.
-	UCHAR gfld_minor;
 	const UCHAR *gfld_dflt_blr;
 	USHORT gfld_dflt_len;
 };
 
 static const struct gfld gfields[] = {
 #include "../jrd/fields.h"
-	{ 0, 0, dtype_unknown, 0, 0, 0, NULL, 0 }
+	{ 0, 0, dtype_unknown, 0, 0, NULL, 0 }
 };
 #undef FIELD
 
@@ -110,7 +109,7 @@ static const struct gfld gfields[] = {
 /* Pick up relation ids */
 
 #define RELATION(name, id, ods, type) id,
-#define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)
+#define FIELD(symbol, name, id, update, ods)
 #define END_RELATION
 enum rids {
 #include "../jrd/relations.h"
@@ -124,8 +123,8 @@ typedef rids RIDS;
 /* Pick up relations themselves */
 
 #define RELATION(name, id, ods, type)	(int) name, (int) id, ods, type,
-#define FIELD(symbol, name, id, update, ods, upd_id, upd_ods)\
-				(int) name, (int) id, update, ods, (int) upd_id, upd_ods,
+#define FIELD(symbol, name, id, update, ods)\
+				(int) name, (int) id, update, (int) ods,
 #define END_RELATION		0,
 
 const int RFLD_R_NAME	= 0;
@@ -137,10 +136,8 @@ const int RFLD_RPT		= 4;
 const int RFLD_F_NAME	= 0;
 const int RFLD_F_ID		= 1;
 const int RFLD_F_UPDATE	= 2;
-const int RFLD_F_MINOR	= 3;
-const int RFLD_F_UPD_ID	= 4;
-const int RFLD_F_UPD_MINOR	= 5;
-const int RFLD_F_LENGTH	= 6;
+const int RFLD_F_ODS	= 3;
+const int RFLD_F_LENGTH	= 4;
 
 static const int relfields[] =
 {

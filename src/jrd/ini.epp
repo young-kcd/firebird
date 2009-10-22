@@ -67,16 +67,13 @@ const int FB_MAX_ACL_SIZE	= 4096;
 
 
 static void add_index_set(Database*, bool, USHORT, USHORT);
-static void add_relation_fields(thread_db*, USHORT);
 static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
 		const TEXT*, const UCHAR*, const SSHORT);
-static int init2_helper(const int* fld, int n, jrd_rel* relation);
-static void modify_relation_field(thread_db*, const int*, const int*, jrd_req**);
 static void store_generator(thread_db*, const gen*, jrd_req**);
 static void store_global_field(thread_db*, const gfld*, jrd_req**);
 static void store_intlnames(thread_db*, Database*);
 static void store_message(thread_db*, const trigger_msg*, jrd_req**);
-static void store_relation_field(thread_db*, const int*, const int*, int, jrd_req**, bool);
+static void store_relation_field(thread_db*, const int*, const int*, int, jrd_req**);
 static void store_trigger(thread_db*, const jrd_trg*, jrd_req**);
 
 
@@ -291,13 +288,10 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
-			if (!fld[RFLD_F_MINOR])
-			{
-				const int* pFld    = fld;
-				const int* pRelFld = relfld;
-				store_relation_field(tdbb, pFld, pRelFld, n, &handle2, true);
-				n++;
-			}
+			const int* pFld    = fld;
+			const int* pRelFld = relfld;
+			store_relation_field(tdbb, pFld, pRelFld, n, &handle2);
+			n++;
 		}
 
 		STORE(REQUEST_HANDLE handle1) X IN RDB$RELATIONS
@@ -457,8 +451,6 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	CMP_release(tdbb, handle1);
 
 	DFW_perform_system_work(tdbb);
-
-	add_relation_fields(tdbb, 0);
 
 /*
 ====================================================================
@@ -658,120 +650,8 @@ void INI_init2(thread_db* tdbb)
 			int n = 0;
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 			{
-				/* If the ODS is less than 10, then remove all fields named
-				 * RDB$FIELD_PRECISION and field RDB$CHARACTER_LENGTH from
-				 * relation RDB$FUNCTION_ARGUMENTS, as they were not present
-				 * in < 10 ODS
-				 */
-				if (fld[RFLD_F_NAME] == nam_f_precision ||
-					(fld[RFLD_F_NAME] == nam_char_length && relfld[RFLD_R_NAME] == nam_args))
-				{
-					if (major_version >= ODS_VERSION10)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_statistics && relfld[RFLD_R_NAME] == nam_i_segments)
-				{
-					if (major_version >= ODS_VERSION11)
-						n = init2_helper(fld, n, relation);
-				}
-				else if ((fld[RFLD_F_NAME] == nam_description || fld[RFLD_F_NAME] == nam_sys_flag) &&
-					relfld[RFLD_R_NAME] == nam_roles)
-				{
-					if (major_version >= ODS_VERSION11)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_description && relfld[RFLD_R_NAME] == nam_gens)
-				{
-					if (major_version >= ODS_VERSION11)
-						n = init2_helper(fld, n, relation);
-				}
-				else if ((fld[RFLD_F_NAME] == nam_base_collation_name ||
-						fld[RFLD_F_NAME] == nam_specific_attr) &&
-					relfld[RFLD_R_NAME] == nam_collations)
-				{
-					if (major_version >= ODS_VERSION11)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_r_type && relfld[RFLD_R_NAME] == nam_relations)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_valid_blr && relfld[RFLD_R_NAME] == nam_trgs)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
-						n = init2_helper(fld, n, relation);
-				}
-				else if ((fld[RFLD_F_NAME] == nam_prc_type || fld[RFLD_F_NAME] == nam_valid_blr) &&
-					relfld[RFLD_R_NAME] == nam_procedures)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_debug_info &&
-					(relfld[RFLD_R_NAME] == nam_trgs || relfld[RFLD_R_NAME] == nam_procedures))
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
-						n = init2_helper(fld, n, relation);
-				}
-				else if ((fld[RFLD_F_NAME] == nam_default || fld[RFLD_F_NAME] == nam_d_source ||
-						fld[RFLD_F_NAME] == nam_collate_id || fld[RFLD_F_NAME] == nam_null_flag ||
-						fld[RFLD_F_NAME] == nam_prm_mechanism) &&
-					relfld[RFLD_R_NAME] == nam_proc_parameters)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
-						n = init2_helper(fld, n, relation);
-				}
-				else if ((fld[RFLD_F_NAME] == nam_f_name || fld[RFLD_F_NAME] == nam_r_name) &&
-					relfld[RFLD_R_NAME] == nam_proc_parameters)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_2)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_engine_name && (
-							relfld[RFLD_R_NAME] == nam_funs ||
-							relfld[RFLD_R_NAME] == nam_procedures ||
-							relfld[RFLD_R_NAME] == nam_trgs))
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_12_0)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_entry && (
-							relfld[RFLD_R_NAME] == nam_procedures ||
-							relfld[RFLD_R_NAME] == nam_trgs))
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_12_0)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_pkg_name &&
-						 (relfld[RFLD_R_NAME] == nam_funs ||
-						  relfld[RFLD_R_NAME] == nam_args ||
-						  relfld[RFLD_R_NAME] == nam_procedures ||
-						  relfld[RFLD_R_NAME] == nam_proc_parameters ||
-						  relfld[RFLD_R_NAME] == nam_dpds))
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_12_0)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_fun_source && relfld[RFLD_R_NAME] == nam_funs)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_12_0)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_private_flag &&
-						 (relfld[RFLD_R_NAME] == nam_funs || relfld[RFLD_R_NAME] == nam_procedures))
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_12_0)
-						n = init2_helper(fld, n, relation);
-				}
-				else if (fld[RFLD_F_NAME] == nam_mon_pkg_name &&
-						 relfld[RFLD_R_NAME] == nam_mon_calls)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_12_0)
-						n = init2_helper(fld, n, relation);
-				}
-				else
-					n = init2_helper(fld, n, relation);
+				if (ENCODE_ODS(major_version, minor_original) >= fld[RFLD_F_ODS])
+					n++;
 			}
 
 			relation->rel_fields->resize(n);
@@ -919,65 +799,6 @@ static void add_index_set(Database*	dbb,
 }
 
 
-static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
-{
-/**************************************
- *
- *	a d d _ r e l a t i o n _ f i e l d s
- *
- **************************************
- *
- * Functional description
- *	Add any local fields which have a non-zero
- *	update number in the relfields table.  That
- *	is, those that have been added since the last
- *	ODS change.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	//Database* dbb = tdbb->getDatabase();
-
-/* add desired fields to system relations, forcing a new format version */
-
-	jrd_req* s_handle = NULL;
-	jrd_req* m_handle = NULL;
-	const int* fld;
-	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
-	{
-		int n = 0;
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; n++, fld += RFLD_F_LENGTH)
-		{
-			if (minor_version < fld[RFLD_F_MINOR] || minor_version < fld[RFLD_F_UPD_MINOR])
-			{
-				if (minor_version < fld[RFLD_F_MINOR])
-				{
-					store_relation_field(tdbb, fld, relfld, n, &s_handle, false);
-				}
-				else
-				{
-					modify_relation_field(tdbb, fld, relfld, &m_handle);
-				}
-				dsc desc;
-				desc.dsc_dtype = dtype_text;
-				INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
-				desc.dsc_address = (UCHAR*) names[relfld[RFLD_R_NAME]];
-				desc.dsc_length = strlen((char*)desc.dsc_address);
-				DFW_post_system_work(tdbb, dfw_update_format, &desc, 0);
-			}
-		}
-	}
-
-	if (s_handle) {
-		CMP_release(tdbb, s_handle);
-	}
-	if (m_handle) {
-		CMP_release(tdbb, m_handle);
-	}
-
-	DFW_perform_system_work(tdbb);
-}
-
-
 // The caller used an UCHAR* to store the acl, it was converted to TEXT* to
 // be passed to this function, only to be converted to UCHAR* to be passed
 // to BLB_put_segment. Therefore, "acl" was changed to UCHAR* as param.
@@ -1105,54 +926,6 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	CMP_release(tdbb, handle1);
 
-}
-
-
-static int init2_helper(const int* fld, int n, jrd_rel* relation)
-{
-	if (!fld[RFLD_F_MINOR])
-	{
-		++n;
-		if (fld[RFLD_F_UPD_MINOR])
-			relation->rel_flags |= REL_force_scan;
-	}
-	else
-	{
-		relation->rel_flags |= REL_force_scan;
-	}
-	return n;
-}
-
-
-static void modify_relation_field(thread_db*	tdbb,
-								  const int*	fld,
-								  const int*	relfld,
-								  jrd_req**	handle)
-{
-/**************************************
- *
- *	m o d i f y _ r e l a t i o n _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Modify a local field according to the
- *	passed information.  Note that the field id and
- *	field position do not change.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	FOR(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS WITH
-		X.RDB$RELATION_NAME EQ names[relfld[RFLD_R_NAME]] AND
-			X.RDB$FIELD_NAME EQ names[fld[RFLD_F_NAME]]
-		MODIFY X USING
-			const gfld* gfield = &gfields[fld[RFLD_F_UPD_ID]];
-			PAD(names[gfield->gfld_name], X.RDB$FIELD_SOURCE);
-			X.RDB$UPDATE_FLAG = fld[RFLD_F_UPDATE];
-		END_MODIFY;
-	END_FOR;
 }
 
 
@@ -1453,8 +1226,7 @@ static void store_relation_field(thread_db*		tdbb,
 								 const int*		fld,
 								 const int*		relfld,
 								 int			field_id,
-								 jrd_req**		handle,
-								 bool			fmt0_flag)
+								 jrd_req**		handle)
 {
 /**************************************
  *
@@ -1471,8 +1243,7 @@ static void store_relation_field(thread_db*		tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS
-		const gfld* gfield = (fld[RFLD_F_UPD_MINOR] && !fmt0_flag) ?
-			&gfields[fld[RFLD_F_UPD_ID]] : &gfields[fld[RFLD_F_ID]];
+		const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 		PAD(names[relfld[RFLD_R_NAME]], X.RDB$RELATION_NAME);
 		PAD(names[fld[RFLD_F_NAME]], X.RDB$FIELD_NAME);
 		PAD(names[gfield->gfld_name], X.RDB$FIELD_SOURCE);
