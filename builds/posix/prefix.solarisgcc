@@ -1,0 +1,72 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): Konstantin Kuznetsov
+#			Neil McCalden
+#			Paul Beach
+#			Nickolay Samofatov
+# This file can be used to build Firebird on Solaris 10 using gcc
+#
+# Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
+
+#WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
+COMMON_FLAGS:=-DSOLARIS -DSOLARIS_MT -DBSD_COMP -MMD -fPIC -Dsparc -m32
+
+SFIO=@SFIO_DIR@
+SFIO_FLAGS=@SFIO_FLAGS@
+SFIO_LDFLAGS=@SFIO_LDFLAGS@
+
+ifeq ($(ObjModuleType),superserver)
+ifdef SFIO
+COMMON_FLAGS+=$(SFIO_FLAGS) 
+endif
+endif
+
+PROD_FLAGS=-DNDEBUG -w $(COMMON_FLAGS) -O2 -mcpu=ultrasparc -mtune=ultrasparc
+DEV_FLAGS=$(COMMON_FLAGS) -ggdb -g3 $(WARNINGS)
+ 
+ifdef SFIO
+LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
+STATICLINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
+SO_LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
+endif
+
+OS_ServerFiles=inet_server.cpp
+
+GPRECOMMON_Files= ../jrd/ThreadData.cpp ../jrd/isc_sync.cpp
+GPRECommon_Sources= $(GPRECOMMON_Files)
+
+JRDBOOT_Extra_Files= isc_sync.cpp
+
+GFIX_Other_Sources= jrd/isc_sync.cpp jrd/os/posix/isc_ipc.cpp 
+DROP_Other_Sources= jrd/ThreadData.cpp
+LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
+Server_main_dummy = os/sun/server_main_dummy.cpp
+
+LIB_LINK_OPTIONS:= -G 
+LIB_LINK_RPATH:=-R
+LIB_LINK_SONAME:=-h
+LIB_LINK_MAPFILE= -Xlinker -M
+
+LD=g++
+LDFLAGS=-m32
+LINK_OPTS:=$(LDFLAGS)
+
+EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print fbsvcmgr
+CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
+
+Physical_IO_Module=os/posix/unix.cpp
+
+UNDEF_PLATFORM = -Wl,-z,defs

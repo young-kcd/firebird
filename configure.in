@@ -298,7 +298,8 @@ dnl CPU_TYPE=ppc64
     ;;
 
   sparc-sun-solaris*)
-    MAKEFILE_PREFIX=solaris
+    MAKEFILE_PREFIX=solarisgcc
+dnl    MAKEFILE_PREFIX=solarisgcc_64
     INSTALL_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
@@ -309,6 +310,8 @@ dnl CPU_TYPE=ppc64
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISGCC
     service_thread_CS=true
+dnl    libdir=/usr/lib/64
+dbl    CPU_TYPE=sparc64
     RT_LIB_CHECK=true
     ;;
 
