@@ -1,3 +1,10 @@
+2009-10-22 10:12  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.25):
+
+	Backport fix for bug CORE-2684 : Error page NNN is of wrong type
+	(expected 7, found N)
+
 2009-10-05 17:39  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/: Makefile.in
