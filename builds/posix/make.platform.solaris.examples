@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: make.platform.solaris.examples,v 1.1.4.2 2008-09-04 10:21:44 paulbeach Exp $
+# $Id: make.platform.solaris.examples,v 1.1.4.3 2009-10-22 13:24:43 paulbeach Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -29,7 +29,10 @@ COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-poin
 SFIO=@SFIO_DIR@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
+# For AMD/Intel
 PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
+# For Sparc
+#PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -mcpu=ultrasparc -mtune=ultrasparc 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
 
 ifdef SFIO

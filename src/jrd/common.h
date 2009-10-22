@@ -335,7 +335,7 @@
 /* 	Need to use full sfio not just stdio emulation to fix
 	file descriptor number limit. nmcc Dec2002
 */
-#if (!defined(SFIO) && defined(SUPERSERVER))
+#if (!defined(__arch64__)) && (!defined(SFIO)) && defined(SUPERSERVER)
 #error "need to use SFIO"
 #endif
 
