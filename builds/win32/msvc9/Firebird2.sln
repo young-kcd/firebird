@@ -216,6 +216,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbtracemgr", "fbtracemgr.vc
 		{492E7BDA-8948-408D-A43E-4C0A5B86AFB8} = {492E7BDA-8948-408D-A43E-4C0A5B86AFB8}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udr_engine", "udr_engine.vcproj", "{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -574,6 +579,14 @@ Global
 		{58C7E370-0EDD-4F5E-8617-3F5071170205}.Release|Win32.Build.0 = Release|Win32
 		{58C7E370-0EDD-4F5E-8617-3F5071170205}.Release|x64.ActiveCfg = Release|x64
 		{58C7E370-0EDD-4F5E-8617-3F5071170205}.Release|x64.Build.0 = Release|x64
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Debug|Win32.Build.0 = Debug|Win32
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Debug|x64.ActiveCfg = Debug|x64
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Debug|x64.Build.0 = Debug|x64
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Release|Win32.ActiveCfg = Release|Win32
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Release|Win32.Build.0 = Release|Win32
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Release|x64.ActiveCfg = Release|x64
+		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

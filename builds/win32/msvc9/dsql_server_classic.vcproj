@@ -350,6 +350,10 @@
 					RelativePath="..\..\..\src\dsql\metd.epp"
 					>
 				</File>
+				<File
+					RelativePath="..\..\..\src\dsql\PackageNodes.epp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="Generated files"
@@ -368,6 +372,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\gen\$(PlatformName)\dsql\metd.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\gen\$(PlatformName)\dsql\PackageNodes.cpp"
 					>
 				</File>
 			</Filter>
@@ -451,6 +459,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\Nodes.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\PackageNodes.h"
 				>
 			</File>
 			<File
