@@ -3035,6 +3035,7 @@ keyword_or_column	: valid_symbol_name
 		| SENSITIVE
 		| START
 		| SIMILAR				/* added in FB 2.5 */
+		| OVER					/* added in FB 3.0 */
 		;
 
 col_opt	: ALTER
