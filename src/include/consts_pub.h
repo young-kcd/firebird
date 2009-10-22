@@ -671,7 +671,7 @@
 #define isc_dyn_fld_character_set         203
 #define isc_dyn_del_computed              242
 
-#define isc_dyn_def_engine                245
+#define isc_dyn_def_engine                250
 
 /***********************************/
 /* Local field specific attributes */
@@ -897,7 +897,7 @@
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
-#define isc_dyn_last_dyn_value            250
+#define isc_dyn_last_dyn_value            251
 
 /******************************************/
 /* Array slice description language (SDL) */
