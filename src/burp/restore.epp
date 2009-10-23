@@ -514,6 +514,8 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 		}
 	}
 
+	MISC_release_request_silent(req_handle6);
+
 	// Change ownership of any procedures necessary
 	for (burp_prc* procedure = tdgbl->procedures; procedure; procedure = procedure->prc_next)
 	{

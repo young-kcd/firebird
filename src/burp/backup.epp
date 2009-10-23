@@ -3614,7 +3614,7 @@ void write_procedures()
  *
  **************************************/
 	GDS_NAME proc;
-	TEXT temp[GDS_NAME_LEN];
+	TEXT temp[GDS_NAME_LEN * 2];
 	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
