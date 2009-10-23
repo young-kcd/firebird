@@ -366,7 +366,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 				throw;
 			}
-		
+
 			request->req_trg_name = name;
 
 			if (sys_trigger)

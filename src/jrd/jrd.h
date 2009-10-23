@@ -51,7 +51,7 @@
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/scl.h"
- 
+
 #include "../jrd/ExtEngineManager.h"
 
 #ifdef DEV_BUILD

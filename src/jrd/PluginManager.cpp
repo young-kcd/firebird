@@ -44,7 +44,7 @@ using Firebird::uint;
 namespace Jrd {
 
 
-namespace 
+namespace
 {
 	class PluginsMap : public GenericMap<Pair<Left<string, PluginImpl*> > >
 	{

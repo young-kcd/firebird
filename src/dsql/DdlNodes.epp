@@ -615,7 +615,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		if (column.hasData())
 		{
 			sqlStmt += " where " + column + " = ?";
-			
+
 			if (subColumn.hasData())
 				sqlStmt += " and " + subColumn + " = ?";
 		}
@@ -636,7 +636,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		if (column.hasData())
 		{
 			ps->setString(tdbb, ++n, objName);
-			
+
 			if (subColumn.hasData())
 				ps->setString(tdbb, ++n, subName);
 		}
@@ -1039,7 +1039,7 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	bool found = false;
 
 	AutoCacheRequest requestHandle(tdbb, drq_e_funcs, DYN_REQUESTS);
-    
+
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		FUN IN RDB$FUNCTIONS
 		WITH FUN.RDB$FUNCTION_NAME EQ metaName.c_str() AND
@@ -1690,7 +1690,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 
 		// ASF: I moved this block to write defaults on RDB$PROCEDURE_PARAMETERS.
 		// It was writing in RDB$FIELDS, but that would require special support
-		// for packaged procedures signature verification. 
+		// for packaged procedures signature verification.
 
 		PRM.RDB$DEFAULT_VALUE.NULL = !parameter.legacyDefault;
 		PRM.RDB$DEFAULT_SOURCE.NULL = !parameter.legacyDefault;
@@ -1871,7 +1871,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 {
 	Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_e_prms2, DYN_REQUESTS);
-    
+
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRM IN RDB$PROCEDURE_PARAMETERS
 		WITH PRM.RDB$PROCEDURE_NAME EQ nameInMetaCharSet(tdbb, procedureName).c_str() AND
@@ -1946,7 +1946,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	dropParameters(tdbb, transaction, metaName, package);
 
 	AutoCacheRequest requestHandle(tdbb, drq_e_prcs2, DYN_REQUESTS);
-    
+
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRC IN RDB$PROCEDURES
 		WITH PRC.RDB$PROCEDURE_NAME EQ metaName.c_str() AND

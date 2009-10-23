@@ -5514,7 +5514,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 			}
 			else
 				X.RDB$PACKAGE_NAME.NULL = TRUE;
-			
+
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$DEFAULT_VALUE.NULL = TRUE;
 			X.RDB$DEFAULT_SOURCE.NULL = TRUE;

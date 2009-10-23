@@ -8200,7 +8200,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 
 	bool sortWindow = rse->nod_arg[e_rse_sort] &&
 		aggregate_found(statement, rse->nod_arg[e_rse_sort], true);
-	
+
 	// WINDOW functions
 	if ((rse->nod_arg[e_rse_items] && aggregate_found(statement, rse->nod_arg[e_rse_items], true)) ||
 		sortWindow)

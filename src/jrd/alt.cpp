@@ -820,7 +820,7 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 }
 
 ///#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
-// AP: isc_*_user entrypoints are used only in any kind of embedded 
+// AP: isc_*_user entrypoints are used only in any kind of embedded
 // server (both posix and windows) and fbclient
 
 #ifndef BOOT_BUILD

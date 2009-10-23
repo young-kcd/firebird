@@ -94,7 +94,7 @@ public:
 	{
 		while (aCount-- > 0)
 			valuesArray.add();
-		
+
 		values = &valuesArray;
 	}
 

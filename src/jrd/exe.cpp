@@ -2961,7 +2961,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 #endif
 
 		case nod_set_generator:
-		case nod_set_generator2:		
+		case nod_set_generator2:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
 				SSHORT genId = (SSHORT)(IPTR) node->nod_arg[e_gen_id];

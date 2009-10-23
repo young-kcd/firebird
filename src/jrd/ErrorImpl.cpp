@@ -39,7 +39,7 @@ namespace Jrd {
 
 ErrorImpl::~ErrorImpl()
 {
-	for (ISC_STATUS* p = status; p <= next; p++) 
+	for (ISC_STATUS* p = status; p <= next; p++)
 	{
 		if (*p == isc_arg_cstring)
 		{

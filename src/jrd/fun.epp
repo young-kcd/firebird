@@ -378,7 +378,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
  		function->fun_external->execute(tdbb, node, value);
  		return;
  	}
- 
+
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	HalfStaticArray<UCHAR, 800> temp;
 
@@ -392,7 +392,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	//Stack<blb*> blob_stack;
 	//blb* blob_created = 0;
 	OwnedBlobStack blob_stack(tdbb);
-	
+
 	jrd_nod** ptr = node->nod_arg;
 
 	// We'll use to this trick to give the UDF a way to signal
@@ -878,7 +878,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
  			function->fun_external = NULL;
   			function->fun_entrypoint =
  				Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
- 
+
  			// Could not find a function with given MODULE, ENTRYPOINT.
  			// Try the list of internally implemented functions.
  			if (!function->fun_entrypoint)
