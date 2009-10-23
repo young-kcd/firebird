@@ -1688,6 +1688,14 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 			strcpy(PRM.RDB$FIELD_SOURCE, nameInMetaCharSet(tdbb, parameter.fieldSource).c_str());
 		}
 
+		// ASF: If we used a collate with a domain or table.column type, write it
+		// in RDB$PROCEDURE_PARAMETERS.
+
+		PRM.RDB$COLLATION_ID.NULL = !(parameter.collateSpecified && parameter.typeOfName.hasData());
+
+		if (!PRM.RDB$COLLATION_ID.NULL)
+			PRM.RDB$COLLATION_ID = parameter.collationId;
+
 		// ASF: I moved this block to write defaults on RDB$PROCEDURE_PARAMETERS.
 		// It was writing in RDB$FIELDS, but that would require special support
 		// for packaged procedures signature verification.
