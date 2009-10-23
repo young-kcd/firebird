@@ -25,6 +25,8 @@
 #ifndef FB_INPUT_DEVICES_H
 #define FB_INPUT_DEVICES_H
 
+#include "../common/classes/fb_string.h"
+#include "../jrd/os/path_utils.h"
 #include <stdio.h>
 
 // This is basically a stack of input files caused by the INPUT command,
@@ -38,7 +40,6 @@
 class InputDevices
 {
 public:
-
 	class indev
 	{
 	public:
@@ -48,7 +49,7 @@ public:
 		void init(const indev& src);
 		//~indev();
 		void copy_from(const indev* src);
-		const char* fileName() const;
+		Firebird::PathName fileName() const;
 		void close();
 		void drop();
 		void getPos(fpos_t* out) const;
@@ -57,8 +58,13 @@ public:
 		int indev_line;
 		int indev_aux;
 		indev* indev_next;
+
 	private:
-		char indev_fn[MAXPATHLEN];
+		void makeFullFileName();
+
+	private:
+		Firebird::PathName indev_fn;
+
 		void operator=(const void*); // prevent surprises.
 	};
 
@@ -87,7 +93,7 @@ private:
 };
 
 
-inline const char* InputDevices::indev::fileName() const
+inline Firebird::PathName InputDevices::indev::fileName() const
 {
 	return indev_fn;
 }

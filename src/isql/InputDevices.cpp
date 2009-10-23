@@ -38,17 +38,20 @@
 #include "../common/utils_proto.h"
 #include "InputDevices.h"
 
+using Firebird::PathName;
+
 
 InputDevices::indev::indev()
-	: indev_fpointer(0), indev_line(0), indev_aux(0), indev_next(0)
+	: indev_fpointer(0), indev_line(0), indev_aux(0), indev_next(0), indev_fn(*getDefaultMemoryPool())
 {
-	indev_fn[0] = 0;
+	makeFullFileName();
 }
 
 InputDevices::indev::indev(FILE* fp, const char* fn)
-	: indev_fpointer(fp), indev_line(0), indev_aux(0), indev_next(0)
+	: indev_fpointer(fp), indev_line(0), indev_aux(0), indev_next(0), indev_fn(*getDefaultMemoryPool())
 {
-	fb_utils::copy_terminate(indev_fn, fn, sizeof(indev_fn));
+	indev_fn = fn;
+	makeFullFileName();
 }
 
 // Performs the same task that one of the constructors, but called manually.
@@ -59,8 +62,10 @@ void InputDevices::indev::init(FILE* fp, const char* fn)
 	indev_fpointer = fp;
 	indev_line = 0;
 	indev_aux = 0;
-	fb_utils::copy_terminate(indev_fn, fn, sizeof(indev_fn));
+	indev_fn = fn;
 	indev_next = 0;
+
+	makeFullFileName();
 }
 
 // Copies only the file handle and file name from one indev to another.
@@ -70,7 +75,7 @@ void InputDevices::indev::init(const indev& src)
 	indev_fpointer = src.indev_fpointer;
 	indev_line = 0;
 	indev_aux = 0;
-	strcpy(indev_fn, src.indev_fn);
+	indev_fn = src.indev_fn;
 	indev_next = 0;
 }
 
@@ -87,7 +92,7 @@ void InputDevices::indev::copy_from(const indev* src)
 	indev_fpointer = src->indev_fpointer;
 	indev_line = src->indev_line;
 	indev_aux = src->indev_aux;
-	strcpy(indev_fn, src->indev_fn);
+	indev_fn = src->indev_fn;
 	// indev_next not copied.
 }
 
@@ -95,9 +100,9 @@ void InputDevices::indev::copy_from(const indev* src)
 void InputDevices::indev::drop()
 {
 	fb_assert(indev_fpointer != stdin);
-	fb_assert(indev_fn[0]); // Some name should exist.
+	fb_assert(!indev_fn.isEmpty()); // Some name should exist.
 	fclose(indev_fpointer);
-	unlink(indev_fn);
+	unlink(indev_fn.c_str());
 }
 
 // Save the reading position in the parameter.
@@ -119,6 +124,17 @@ void InputDevices::indev::setPos(const fpos_t* in)
 #else
 	fsetpos(indev_fpointer, in);
 #endif
+}
+
+void InputDevices::indev::makeFullFileName()
+{
+	if (!indev_fn.isEmpty() && PathUtils::isRelative(indev_fn))
+	{
+		PathName name = indev_fn;
+		PathName path;
+		fb_utils::getCwd(path);
+		PathUtils::concatPath(indev_fn, path, name);
+	}
 }
 
 
@@ -175,7 +191,7 @@ bool InputDevices::insert(FILE* fp, const char* name)
 // Shortcut for inserting the currently input file in the indev chain.
 bool InputDevices::insertIfp()
 {
-	if (insert(0, ""))
+	if (insert(NULL, ""))
 	{
 		m_head->copy_from(&m_ifp);
 		return true;

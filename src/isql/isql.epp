@@ -60,6 +60,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
 #include "../common/classes/FpeControl.h"
+#include "../jrd/os/path_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -121,6 +122,7 @@ enum literal_string_type
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/MsgPrint.h"
 
+using Firebird::PathName;
 using Firebird::TempFile;
 using MsgFormat::SafeArg;
 
@@ -1058,10 +1060,10 @@ void ISQL_errmsg(const ISC_STATUS* status)
 			if (linenum != -1)
 			{
 				linenum += Ifp.indev_line;
-				ISQL_msg_get(EXACTLINE, errbuf, SafeArg() << linenum << Ifp.fileName());
+				ISQL_msg_get(EXACTLINE, errbuf, SafeArg() << linenum << Ifp.fileName().c_str());
 			}
 			else
-                ISQL_msg_get(AFTERLINE, errbuf, SafeArg() << Ifp.indev_line << Ifp.fileName());
+                ISQL_msg_get(AFTERLINE, errbuf, SafeArg() << Ifp.indev_line << Ifp.fileName().c_str());
 
 			STDERROUT(errbuf);
 		}
@@ -4470,9 +4472,9 @@ static processing_state edit(const TEXT* const* cmd)
 		// Close the file, edit it, then reopen and read from the top
 		InputDevices::indev& Ofp = Filelist->Ofp();
 		Ofp.close();
-		const char* Tmpfile = Ofp.fileName();
-		gds__edit(Tmpfile, 0);
-		Ofp.init(fopen(Tmpfile, "r+"), Tmpfile); // We don't check for failure.
+		PathName tmpfile = Ofp.fileName();
+		gds__edit(tmpfile.c_str(), 0);
+		Ofp.init(fopen(tmpfile.c_str(), "r+"), tmpfile.c_str()); // We don't check for failure.
 		Filelist->Ifp().init(Ofp);
 		Input_file = true;
 		getColumn = -1;
@@ -6689,21 +6691,32 @@ static processing_state newinput(const TEXT* infile)
 
 	TEXT path[MAXPATHLEN];
 	strip_quotes(infile, path);
-	const TEXT* file = path;
+
+	PathName file;
+
+	if (PathUtils::isRelative(path))
+	{
+		PathName newPath, temp;
+		PathUtils::splitLastComponent(newPath, temp, Filelist->Ifp().fileName());
+
+		PathUtils::concatPath(file, newPath, path);
+	}
+	else
+		file = path;
 
 	// filelist is a linked list of file pointers.  We must add a node to
 	// the linked list before discarding the current Ifp.
-	//  Filelist is a global pointing to base of list.
+	// Filelist is a global pointing to base of list.
 
-	FILE* fp = fopen(file, "r");
+	FILE* fp = fopen(file.c_str(), "r");
 	if (fp)
 	{
 		Filelist->insertIfp();
-		Filelist->Ifp().init(fp, file);
+		Filelist->Ifp().init(fp, file.c_str());
 	}
 	else
 	{
-		ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << file);
+		ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << file.c_str());
 		STDERROUT(errbuf);
 		return FAIL;
 	}
