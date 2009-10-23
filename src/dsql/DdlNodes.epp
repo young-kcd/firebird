@@ -1081,15 +1081,15 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 	END_FOR
 
+	if (found && package.isEmpty())
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_FUNCTION, metaName);
+
 	savePoint.release();	// everything is ok
 
 	// Update DSQL cache
 	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
 	METD_drop_function(compiledStatement, str, package);
 	MET_dsql_cache_release(tdbb, SYM_udf, str->str_data, package);
-
-	if (found && package.isEmpty())
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_FUNCTION, metaName);
 }
 
 
@@ -2003,15 +2003,15 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		END_FOR
 	}
 
+	if (found && package.isEmpty())
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PROCEDURE, metaName);
+
 	savePoint.release();	// everything is ok
 
 	// Update DSQL cache
 	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
 	METD_drop_procedure(compiledStatement, str, package);
 	MET_dsql_cache_release(tdbb, SYM_procedure, str->str_data, package);
-
-	if (found && package.isEmpty())
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PROCEDURE, metaName);
 }
 
 
