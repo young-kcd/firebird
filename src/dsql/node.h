@@ -107,14 +107,10 @@ enum nod_t
 	nod_erase, // 60
 	nod_assign,
 	nod_exec_procedure,
-	nod_return,	// Procedure statements
-	nod_exit,
-	nod_while,
-	nod_if,
+	nod_while,	// Procedure statements
 	nod_for_select,
 	nod_erase_current,
 	nod_modify_current,
-	nod_post, // 70
 	nod_block,
 	nod_on_error,
 	nod_sqlcode,
@@ -305,9 +301,6 @@ enum nod_t
 	nod_replace_view, // CREATE OR ALTER VIEW
 	nod_redef_view, // allows silent creation/overwriting of a view
 	nod_for_update, // FOR UPDATE clause
-	nod_user_savepoint, // savepoints support
-	nod_release_savepoint, // 240
-	nod_undo_savepoint,
 	nod_label, // label support
 	// CVC: This node seems obsolete.
 	nod_exec_into, // EXECUTE STATEMENT INTO
@@ -393,9 +386,6 @@ enum node_args {
 	e_fpd_list = 0,			// nod_for_update
 	e_fpd_count,
 
-	e_sav_name = 0,			// nod_user_savepoint, nod_undo_savepoint
-	e_sav_count,
-
 	e_fld_context = 0,		// nod_field
 	e_fld_field,
 	e_fld_indices,
@@ -419,10 +409,6 @@ enum node_args {
 
 	e_var_variable = 0,		// nod_variable
 	e_var_count,
-
-	e_pst_event = 0,		// nod_post
-	e_pst_argument,
-	e_pst_count,
 
 	e_exec_sql_stmnt = 0,	// nod_exec_sql
 	e_exec_sql_count,
@@ -461,9 +447,6 @@ enum node_args {
 	e_xcps_name = 0,		// nod_exception_stmt
 	e_xcps_msg,
 	e_xcps_count,
-
-	e_rtn_procedure = 0,	// nod_procedure
-	e_rtn_count,
 
 	e_vrn_name = 0,			// nod_variable_name
 	e_vrn_count,
@@ -661,11 +644,6 @@ enum node_args {
 	e_via_value_1,
 	e_via_value_2,
 	e_via_count,
-
-	e_if_condition = 0,		// nod_if
-	e_if_true,
-	e_if_false,
-	e_if_count,
 
 	e_while_cond = 0,		// nod_while
 	e_while_action,

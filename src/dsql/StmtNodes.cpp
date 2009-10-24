@@ -27,11 +27,14 @@
 #include "../jrd/exe.h"
 #include "../jrd/tra.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/dfw_proto.h"
+#include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/pass1_proto.h"
@@ -69,11 +72,107 @@ DmlNode* DmlNode::pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
 //--------------------
 
 
+static RegisterNode<IfNode> regIfNode(blr_if);
+
+
+DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	IfNode* node = FB_NEW(pool) IfNode(pool);
+
+	node->condition = PAR_parse_node(tdbb, csb, TYPE_BOOL);
+	node->trueAction = PAR_parse_node(tdbb, csb, STATEMENT);
+	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_end)
+		csb->csb_blr_reader.getByte(); // skip blr_end
+	else
+		node->falseAction = PAR_parse_node(tdbb, csb, STATEMENT);
+
+	return node;
+}
+
+
+IfNode* IfNode::internalDsqlPass()
+{
+	IfNode* node = FB_NEW(getPool()) IfNode(getPool());
+	node->compiledStatement = compiledStatement;
+	node->dsqlCondition = PASS1_node(compiledStatement, dsqlCondition);
+	node->dsqlTrueAction = PASS1_statement(compiledStatement, dsqlTrueAction);
+	node->dsqlFalseAction = PASS1_statement(compiledStatement, dsqlFalseAction);
+
+	return node;
+}
+
+
+void IfNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "IfNode";
+	nodes.add(dsqlCondition);
+	nodes.add(dsqlTrueAction);
+	if (dsqlFalseAction)
+		nodes.add(dsqlFalseAction);
+}
+
+
+void IfNode::genBlr()
+{
+	stuff(compiledStatement, blr_if);
+	GEN_expr(compiledStatement, dsqlCondition);
+	GEN_statement(compiledStatement, dsqlTrueAction);
+	if (dsqlFalseAction)
+		GEN_statement(compiledStatement, dsqlFalseAction);
+	else
+		stuff(compiledStatement, blr_end);
+}
+
+
+IfNode* IfNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	condition = CMP_pass1(tdbb, csb, condition);
+	trueAction = CMP_pass1(tdbb, csb, trueAction);
+	falseAction = CMP_pass1(tdbb, csb, falseAction);
+	return this;
+}
+
+
+IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	condition = CMP_pass2(tdbb, csb, condition, node);
+	trueAction = CMP_pass2(tdbb, csb, trueAction, node);
+	falseAction = CMP_pass2(tdbb, csb, falseAction, node);
+	return this;
+}
+
+
+jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request)
+{
+	if (request->req_operation == jrd_req::req_evaluate)
+	{
+		if (EVL_boolean(tdbb, condition))
+		{
+			request->req_operation = jrd_req::req_evaluate;
+			return trueAction;
+		}
+
+		if (falseAction)
+		{
+			request->req_operation = jrd_req::req_evaluate;
+			return falseAction;
+		}
+
+		request->req_operation = jrd_req::req_return;
+	}
+
+	return node->nod_parent;
+}
+
+
+//--------------------
+
+
 static RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode(blr_auto_trans);
 
 
-DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool,
-		CompilerScratch* csb)
+DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	UCHAR blrOp)
 {
 	InAutonomousTransactionNode* node = FB_NEW(pool) InAutonomousTransactionNode(pool);
 
@@ -104,7 +203,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
 
 void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
-	text = "in autonomous transaction";
+	text = "InAutonomousTransactionNode";
 	nodes.add(dsqlAction);
 }
 
@@ -313,7 +412,7 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 
 void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
-	text = "execute block";
+	text = "ExecBlockNode";
 	nodes.add(legacyParameters);
 	nodes.add(legacyReturns);
 	nodes.add(localDeclList);
@@ -481,27 +580,6 @@ void ExecBlockNode::genBlr()
 }
 
 
-ExecBlockNode* ExecBlockNode::pass1(thread_db* tdbb, CompilerScratch* csb)
-{
-	fb_assert(false);
-	return this;
-}
-
-
-ExecBlockNode* ExecBlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
-{
-	fb_assert(false);
-	return this;
-}
-
-
-jrd_nod* ExecBlockNode::execute(thread_db* tdbb, jrd_req* request)
-{
-	fb_assert(false);
-	return NULL;
-}
-
-
 void ExecBlockNode::genReturn()
 {
 	GEN_return(compiledStatement, legacyReturns, false);
@@ -548,6 +626,382 @@ dsql_par* ExecBlockNode::revertParametersOrder(dsql_par* parameter, dsql_par* pr
 	parameter->par_next = prev;
 
 	return result;
+}
+
+
+//--------------------
+
+
+ExitNode* ExitNode::internalDsqlPass()
+{
+	return this;
+}
+
+
+void ExitNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "ExitNode";
+}
+
+
+void ExitNode::genBlr()
+{
+	stuff(compiledStatement, blr_leave);
+	stuff(compiledStatement, 0);
+}
+
+
+//--------------------
+
+
+static RegisterNode<PostEventNode> regPostEventNode1(blr_post);
+static RegisterNode<PostEventNode> regPostEventNode2(blr_post_arg);
+
+
+DmlNode* PostEventNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	PostEventNode* node = FB_NEW(pool) PostEventNode(pool);
+
+	node->event = PAR_parse_node(tdbb, csb, VALUE);
+	if (blrOp == blr_post_arg)
+		node->argument = PAR_parse_node(tdbb, csb, VALUE);
+
+	return node;
+}
+
+
+PostEventNode* PostEventNode::internalDsqlPass()
+{
+	PostEventNode* node = FB_NEW(getPool()) PostEventNode(getPool());
+	node->compiledStatement = compiledStatement;
+
+	node->dsqlEvent = PASS1_node(compiledStatement, dsqlEvent);
+	node->dsqlArgument = PASS1_node(compiledStatement, dsqlArgument);
+
+	return node;
+}
+
+
+void PostEventNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "PostEventNode";
+	nodes.add(dsqlEvent);
+	if (dsqlArgument)
+		nodes.add(dsqlArgument);
+}
+
+
+void PostEventNode::genBlr()
+{
+	if (dsqlArgument)
+	{
+		stuff(compiledStatement, blr_post_arg);
+		GEN_expr(compiledStatement, dsqlEvent);
+		GEN_expr(compiledStatement, dsqlArgument);
+	}
+	else
+	{
+		stuff(compiledStatement, blr_post);
+		GEN_expr(compiledStatement, dsqlEvent);
+	}
+}
+
+
+PostEventNode* PostEventNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	event = CMP_pass1(tdbb, csb, event);
+	argument = CMP_pass1(tdbb, csb, argument);
+	return this;
+}
+
+
+PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	event = CMP_pass2(tdbb, csb, event, node);
+	argument = CMP_pass2(tdbb, csb, argument, node);
+	return this;
+}
+
+
+jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request)
+{
+	jrd_tra* transaction = request->req_transaction;
+
+	DeferredWork* work = DFW_post_work(transaction, dfw_post_event, EVL_expr(tdbb, event), 0);
+	if (argument)
+		DFW_post_work_arg(transaction, work, EVL_expr(tdbb, argument), 0);
+
+	// For an autocommit transaction, events can be posted without any updates.
+
+	if (transaction->tra_flags & TRA_autocommit)
+		transaction->tra_flags |= TRA_perform_autocommit;
+
+	if (request->req_operation == jrd_req::req_evaluate)
+		request->req_operation = jrd_req::req_return;
+
+	return node->nod_parent;
+}
+
+
+//--------------------
+
+
+static RegisterNode<SavepointNode> regSavepointNode(blr_user_savepoint);
+
+
+DmlNode* SavepointNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	SavepointNode* node = FB_NEW(pool) SavepointNode(pool);
+
+	node->command = (Command) csb->csb_blr_reader.getByte();
+	PAR_name(csb, node->name);
+
+	return node;
+}
+
+
+SavepointNode* SavepointNode::internalDsqlPass()
+{
+	// ASF: It should never enter in this IF, because the grammar does not allow it.
+	if (compiledStatement->req_flags & REQ_block) // blocks, procedures and triggers
+	{
+		ERRD_post(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+			// Token unknown
+			Arg::Gds(isc_token_err) <<
+			Arg::Gds(isc_random) <<
+			Arg::Str(command == CMD_SET ? "SAVEPOINT" : command == CMD_ROLLBACK ? "ROLLBACK" : "RELEASE"));
+	}
+
+	compiledStatement->req_type = REQ_SAVEPOINT;
+
+	return this;
+}
+
+
+void SavepointNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "SavepointNode";
+}
+
+
+void SavepointNode::genBlr()
+{
+	stuff(compiledStatement, blr_user_savepoint);
+	stuff(compiledStatement, (UCHAR) command);
+	stuff_cstring(compiledStatement, name.c_str());
+}
+
+
+SavepointNode* SavepointNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	return this;
+}
+
+
+SavepointNode* SavepointNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	return this;
+}
+
+
+jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request)
+{
+	Database* dbb = request->req_attachment->att_database;
+	jrd_tra* transaction = request->req_transaction;
+
+	if (request->req_operation == jrd_req::req_evaluate && transaction != dbb->dbb_sys_trans)
+	{
+		// Skip the savepoint created by EXE_start
+		Savepoint* savepoint = transaction->tra_save_point->sav_next;
+		Savepoint* previous = transaction->tra_save_point;
+
+		// Find savepoint
+		bool found = false;
+		while (true)
+		{
+			if (!savepoint || !(savepoint->sav_flags & SAV_user))
+				break;
+
+			if (!strcmp(name.c_str(), savepoint->sav_name))
+			{
+				found = true;
+				break;
+			}
+
+			previous = savepoint;
+			savepoint = savepoint->sav_next;
+		}
+
+		if (!found && command != CMD_SET)
+			ERR_post(Arg::Gds(isc_invalid_savepoint) << Arg::Str(name));
+
+		switch (command)
+		{
+			case CMD_SET:
+				// Release the savepoint
+				if (found)
+				{
+					Savepoint* const current = transaction->tra_save_point;
+					transaction->tra_save_point = savepoint;
+					EXE_verb_cleanup(tdbb, transaction);
+					previous->sav_next = transaction->tra_save_point;
+					transaction->tra_save_point = current;
+				}
+
+				// Use the savepoint created by EXE_start
+				transaction->tra_save_point->sav_flags |= SAV_user;
+				strcpy(transaction->tra_save_point->sav_name, name.c_str());
+				break;
+
+			case CMD_RELEASE_ONLY:
+			{
+				// Release the savepoint
+				Savepoint* const current = transaction->tra_save_point;
+				transaction->tra_save_point = savepoint;
+				EXE_verb_cleanup(tdbb, transaction);
+				previous->sav_next = transaction->tra_save_point;
+				transaction->tra_save_point = current;
+				break;
+			}
+
+			case CMD_RELEASE:
+			{
+				const SLONG sav_number = savepoint->sav_number;
+
+				// Release the savepoint and all subsequent ones
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number >= sav_number)
+				{
+					EXE_verb_cleanup(tdbb, transaction);
+				}
+
+				// Restore the savepoint initially created by EXE_start
+				VIO_start_save_point(tdbb, transaction);
+				break;
+			}
+
+			case CMD_ROLLBACK:
+			{
+				const SLONG sav_number = savepoint->sav_number;
+
+				// Undo the savepoint
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number >= sav_number)
+				{
+					transaction->tra_save_point->sav_verb_count++;
+					EXE_verb_cleanup(tdbb, transaction);
+				}
+
+				// Now set the savepoint again to allow to return to it later
+				VIO_start_save_point(tdbb, transaction);
+				transaction->tra_save_point->sav_flags |= SAV_user;
+				strcpy(transaction->tra_save_point->sav_name, name.c_str());
+				break;
+			}
+
+			default:
+				BUGCHECK(232);
+				break;
+		}
+	}
+
+	request->req_operation = jrd_req::req_return;
+
+	return node->nod_parent;
+}
+
+
+//--------------------
+
+
+static RegisterNode<SuspendNode> regSuspendNode(blr_send);
+
+
+DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	SuspendNode* node = FB_NEW(pool) SuspendNode(pool);
+
+	USHORT n = csb->csb_blr_reader.getByte();
+	node->message = csb->csb_rpt[n].csb_message;
+	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+
+	return node;
+}
+
+
+SuspendNode* SuspendNode::internalDsqlPass()
+{
+	if (compiledStatement->req_flags & REQ_trigger)	// triggers only
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Token unknown
+				  Arg::Gds(isc_token_err) <<
+				  Arg::Gds(isc_random) << Arg::Str("SUSPEND"));
+	}
+
+	if (compiledStatement->req_flags & REQ_in_auto_trans_block)	// autonomous transaction
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
+	}
+
+	compiledStatement->req_flags |= REQ_selectable;
+
+	blockNode = compiledStatement->blockNode;
+
+	return this;
+}
+
+
+void SuspendNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "SuspendNode";
+}
+
+
+void SuspendNode::genBlr()
+{
+	if (blockNode)
+		blockNode->genReturn();
+}
+
+
+SuspendNode* SuspendNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	statement = CMP_pass1(tdbb, csb, statement);
+	return this;
+}
+
+
+SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	statement = CMP_pass2(tdbb, csb, statement, node);
+	return this;
+}
+
+
+// Execute a SEND statement.
+jrd_nod* SuspendNode::execute(thread_db* tdbb, jrd_req* request)
+{
+	switch (request->req_operation)
+	{
+	case jrd_req::req_evaluate:
+		return statement;
+
+	case jrd_req::req_return:
+		request->req_operation = jrd_req::req_send;
+		request->req_message = message;
+		request->req_flags |= req_stall;
+		return node;
+
+	case jrd_req::req_proceed:
+		request->req_operation = jrd_req::req_return;
+		return node->nod_parent;
+
+	default:
+		return node->nod_parent;
+	}
 }
 
 

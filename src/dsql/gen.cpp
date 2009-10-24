@@ -90,9 +90,7 @@ static void gen_table_lock(CompiledStatement*, const dsql_nod*, USHORT);
 static void gen_udf(CompiledStatement*, const dsql_nod*);
 static void gen_union(CompiledStatement*, const dsql_nod*);
 static void stuff_context(CompiledStatement*, const dsql_ctx*);
-static void stuff_cstring(CompiledStatement*, const char*);
 static void stuff_meta_string(CompiledStatement*, const char*);
-static void stuff_string(CompiledStatement*, const char*, int);
 static void stuff_word(CompiledStatement*, USHORT);
 
 // STUFF is defined in dsql.h for use in common with ddl.c
@@ -1116,16 +1114,6 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		GEN_expr(statement, node->nod_arg[e_gen_id_value]);
 		return;
 
-	case nod_if:
-		stuff(statement, blr_if);
-		GEN_expr(statement, node->nod_arg[e_if_condition]);
-		GEN_statement(statement, node->nod_arg[e_if_true]);
-		if (node->nod_arg[e_if_false])
-			GEN_statement(statement, node->nod_arg[e_if_false]);
-		else
-			stuff(statement, blr_end);
-		return;
-
 	case nod_list:
 		if (!(node->nod_flags & NOD_SIMPLE_LIST))
 			stuff(statement, blr_begin);
@@ -1155,18 +1143,6 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 			gen_error_condition(statement, *ptr);
 		}
 		GEN_statement(statement, node->nod_arg[e_err_action]);
-		return;
-
-	case nod_post:
-		if ( (temp = node->nod_arg[e_pst_argument]) ) {
-			stuff(statement, blr_post_arg);
-			GEN_expr(statement, node->nod_arg[e_pst_event]);
-			GEN_expr(statement, temp);
-		}
-		else {
-			stuff(statement, blr_post);
-			GEN_expr(statement, node->nod_arg[e_pst_event]);
-		}
 		return;
 
 	case nod_exec_sql:
@@ -1200,16 +1176,6 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		gen_exec_stmt(statement, node);
 		return;
 
-	case nod_return:
-		if (node->nod_arg[e_rtn_procedure])
-			((BlockNode*) node->nod_arg[e_rtn_procedure])->genReturn();
-		return;
-
-	case nod_exit:
-		stuff(statement, blr_leave);
-		stuff(statement, 0);
-		return;
-
 	case nod_breakleave:
 		stuff(statement, blr_leave);
 		stuff(statement, (int)(IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
@@ -1231,29 +1197,6 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 
 	case nod_end_savepoint:
 		stuff(statement, blr_end_savepoint);
-		return;
-
-	case nod_user_savepoint:
-		stuff(statement, blr_user_savepoint);
-		stuff(statement, blr_savepoint_set);
-		stuff_cstring(statement, ((dsql_str*)node->nod_arg[e_sav_name])->str_data);
-		return;
-
-	case nod_release_savepoint:
-		stuff(statement, blr_user_savepoint);
-		if (node->nod_arg[1]) {
-			stuff(statement, blr_savepoint_release_single);
-		}
-		else {
-			stuff(statement, blr_savepoint_release);
-		}
-		stuff_cstring(statement, ((dsql_str*)node->nod_arg[e_sav_name])->str_data);
-		return;
-
-	case nod_undo_savepoint:
-		stuff(statement, blr_user_savepoint);
-		stuff(statement, blr_savepoint_undo);
-		stuff_cstring(statement, ((dsql_str*)node->nod_arg[e_sav_name])->str_data);
 		return;
 
 	case nod_exception_stmt:
@@ -3196,23 +3139,6 @@ static void stuff_context(CompiledStatement* statement, const dsql_ctx* context)
 
 /**
 
- 	stuff_cstring
-
-    @brief	Write out a string with one byte of length.
-
-
-    @param statement
-    @param string
-
- **/
-static void stuff_cstring(CompiledStatement* statement, const char* string)
-{
-	stuff_string(statement, string, strlen(string));
-}
-
-
-/**
-
  	stuff_meta_string
 
     @brief	Write out a string in metadata charset with one byte of length.
@@ -3225,26 +3151,6 @@ static void stuff_cstring(CompiledStatement* statement, const char* string)
 static void stuff_meta_string(CompiledStatement* statement, const char* string)
 {
 	statement->append_meta_string(string);
-}
-
-
-/**
-
- 	stuff_string
-
-    @brief	Write out a string with one byte of length.
-
-
-    @param statement
-    @param string
-
- **/
-static void stuff_string(CompiledStatement* statement, const char* string, int len)
-{
-	fb_assert(len >= 0 && len <= 255);
-
-	stuff(statement, len);
-	statement->append_raw_string(string, len);
 }
 
 

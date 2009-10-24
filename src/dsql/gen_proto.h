@@ -39,5 +39,20 @@ inline void stuff(Jrd::CompiledStatement* statement, const UCHAR byte)
 	statement->req_blr_data.add(byte);
 }
 
+// Write out a string with one byte of length.
+inline void stuff_string(Jrd::CompiledStatement* statement, const char* string, int len)
+{
+	fb_assert(len >= 0 && len <= 255);
+
+	stuff(statement, len);
+	statement->append_raw_string(string, len);
+}
+
+// Write out a string with one byte of length.
+inline void stuff_cstring(Jrd::CompiledStatement* statement, const char* string)
+{
+	stuff_string(statement, string, strlen(string));
+}
+
 #endif //  DSQL_GEN_PROTO_H
 

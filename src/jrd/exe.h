@@ -322,10 +322,6 @@ const int e_erase_stream	= 2;
 const int e_erase_rsb		= 3;
 const int e_erase_length	= 4;
 
-const int e_sav_operation	= 0;
-const int e_sav_name		= 1;
-const int e_sav_length		= 2;
-
 const int e_mod_statement	= 0;
 const int e_mod_statement2	= 1;
 const int e_mod_sub_mod		= 2;
@@ -363,11 +359,6 @@ const int e_lbl_length		= 2;
 const int e_any_rse			= 0;
 const int e_any_rsb			= 1;
 const int e_any_length		= 2;
-
-const int e_if_boolean		= 0;
-const int e_if_true			= 1;
-const int e_if_false		= 2;
-const int e_if_length		= 3;
 
 const int e_val_boolean		= 0;
 const int e_val_value		= 1;

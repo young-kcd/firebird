@@ -151,6 +151,7 @@
 #include "../jrd/constants.h"
 #include "../jrd/intl_classes.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
@@ -1241,6 +1242,9 @@ dsql_nod* PASS1_rse(CompiledStatement* statement, dsql_nod* input, dsql_nod* upd
  **/
 dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 {
+	if (!input)
+		return NULL;
+
 	DEV_BLKCHK(statement, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -1487,16 +1491,6 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		pass1_blob(statement, input);
 		return input;
 
-	case nod_if:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_if_condition] = PASS1_node(statement, input->nod_arg[e_if_condition]);
-		node->nod_arg[e_if_true] = PASS1_statement(statement, input->nod_arg[e_if_true]);
-		if (input->nod_arg[e_if_false])
-			node->nod_arg[e_if_false] = PASS1_statement(statement, input->nod_arg[e_if_false]);
-		else
-			node->nod_arg[e_if_false] = NULL;
-		break;
-
 	case nod_exception_stmt:
 		node = input;
 		// if exception value is defined, pass value node
@@ -1554,12 +1548,6 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_err_errs] = input->nod_arg[e_err_errs];
 		node->nod_arg[e_err_action] = PASS1_statement(statement, input->nod_arg[e_err_action]);
-		return node;
-
-	case nod_post:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_pst_event] = PASS1_node(statement, input->nod_arg[e_pst_event]);
-		node->nod_arg[e_pst_argument] = PASS1_node(statement, input->nod_arg[e_pst_argument]);
 		return node;
 
 	case nod_exec_sql:
@@ -1711,9 +1699,6 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 
 		return pass1_savepoint(statement, node);
 
-	case nod_exit:
-		return input;
-
 	case nod_breakleave:
 		if (!statement->req_loop_level)
 		{
@@ -1734,26 +1719,6 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 					  Arg::Gds(isc_random) << Arg::Str("CONTINUE"));
 		}
 		input->nod_arg[e_continue_label] = pass1_label(statement, input);
-		return input;
-
-	case nod_return:
-		if (statement->req_flags & REQ_trigger)	// triggers only
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("SUSPEND"));
-		}
-
-		if (statement->req_flags & REQ_in_auto_trans_block)	// autonomous transaction
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-					  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
-		}
-
-		statement->req_flags |= REQ_selectable;
-
-		input->nod_arg[e_rtn_procedure] = (dsql_nod*) statement->blockNode;
 		return input;
 
 	case nod_select:
@@ -1806,39 +1771,6 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 	case nod_exception:
 	case nod_sqlcode:
 	case nod_gdscode:
-		return input;
-
-	case nod_user_savepoint:
-		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("SAVEPOINT"));
-		}
-		statement->req_type = REQ_SAVEPOINT;
-		return input;
-
-	case nod_release_savepoint:
-		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("RELEASE"));
-		}
-		statement->req_type = REQ_SAVEPOINT;
-		return input;
-
-	case nod_undo_savepoint:
-		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("ROLLBACK"));
-		}
-		statement->req_type = REQ_SAVEPOINT;
 		return input;
 
 	case nod_null:
@@ -7147,28 +7079,30 @@ static dsql_nod* pass1_merge(CompiledStatement* statement, dsql_nod* input)
 	}
 
 	// build a IF (target.RDB$DB_KEY IS NULL)
-	dsql_nod* action = MAKE_node(nod_if, e_if_count);
-	action->nod_arg[e_if_condition] = MAKE_node(nod_missing, 1);
-	action->nod_arg[e_if_condition]->nod_arg[0] = MAKE_node(nod_dbkey, 1);
-	action->nod_arg[e_if_condition]->nod_arg[0]->nod_arg[0] = target;
+	IfNode* action = FB_NEW(statement->req_pool) IfNode(statement->req_pool);
+
+	action->dsqlCondition = MAKE_node(nod_missing, 1);
+	action->dsqlCondition->nod_arg[0] = MAKE_node(nod_dbkey, 1);
+	action->dsqlCondition->nod_arg[0]->nod_arg[0] = target;
 
 	if (insert)
 	{
-		action->nod_arg[e_if_true] = insert;	// then INSERT
-		action->nod_arg[e_if_false] = modify;	// else UPDATE
+		action->dsqlTrueAction = insert;	// then INSERT
+		action->dsqlFalseAction = modify;	// else UPDATE
 	}
 	else
 	{
 		// negate the condition -> IF (target.RDB$DB_KEY IS NOT NULL)
 		dsql_nod* not_node = MAKE_node(nod_not, 1);
-		not_node->nod_arg[0] = action->nod_arg[e_if_condition];
-		action->nod_arg[e_if_condition] = not_node;
+		not_node->nod_arg[0] = action->dsqlCondition;
+		action->dsqlCondition = not_node;
 
-		action->nod_arg[e_if_true] = modify;	// then UPDATE
+		action->dsqlTrueAction = modify;	// then UPDATE
 	}
 
 	// insert the IF inside the FOR SELECT
-	for_select->nod_arg[e_flp_action] = action;
+	for_select->nod_arg[e_flp_action] = MAKE_node(nod_class_node, 1);
+	for_select->nod_arg[e_flp_action]->nod_arg[0] = (dsql_nod*) action;
 
 	// describe it as an INSERT
 	statement->req_type = REQ_INSERT;
@@ -9686,16 +9620,17 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	statement->req_flags = save_req_flags;
 
 	// if (ROW_COUNT = 0) then INSERT
-	dsql_nod* if_nod = MAKE_node(nod_if, e_if_count);
-	if_nod->nod_arg[e_if_condition] = eql;
-	if_nod->nod_arg[e_if_true] = insert;
+	IfNode* ifNod = FB_NEW(statement->req_pool) IfNode(statement->req_pool);
+	ifNod->dsqlCondition = eql;
+	ifNod->dsqlTrueAction = insert;
 
 	// build the temporary vars / UPDATE / IF nodes
 	dsql_nod* list = MAKE_node(nod_list, 3);
 	list->nod_arg[0] = MAKE_list(varStack);
 	list->nod_arg[0]->nod_flags |= NOD_SIMPLE_LIST;
 	list->nod_arg[1] = update;
-	list->nod_arg[2] = if_nod;
+	list->nod_arg[2] = MAKE_node(nod_class_node, 1);
+	list->nod_arg[2]->nod_arg[0] = (dsql_nod*) ifNod;
 
 	// if RETURNING is present, req_type is already REQ_EXEC_PROCEDURE
 	if (!input->nod_arg[e_upi_return])
@@ -11179,10 +11114,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_rel_proc_name:
 		verb = "rel/proc name";
 		break;
-	case nod_return:
-		verb = "return";
-		ptr = end;
-		break;
 	case nod_revoke:
 		verb = "revoke";
 		break;
@@ -11393,20 +11324,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_view_obj:
 		verb = "view_obj";
 		break;
-	case nod_exit:
-		verb = "exit";
-		break;
-	case nod_if:
-		verb = "if";
-		break;
 	case nod_erase_current:
 		verb = "erase_current";
 		break;
 	case nod_modify_current:
 		verb = "modify_current";
-		break;
-	case nod_post:
-		verb = "post";
 		break;
 	case nod_sqlcode:
 		verb = "sqlcode";
@@ -11551,15 +11473,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_for_update:
 		verb = "for_update";
-		break;
-	case nod_user_savepoint:
-		verb = "user_savepoint";
-		break;
-	case nod_release_savepoint:
-		verb = "release_savepoint";
-		break;
-	case nod_undo_savepoint:
-		verb = "undo_savepoint";
 		break;
 	case nod_difference_file:
 		verb = "difference_file";

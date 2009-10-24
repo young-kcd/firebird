@@ -2860,10 +2860,6 @@ static jrd_nod* copy(thread_db* tdbb,
 		args = e_erase_length;
 		break;
 
-	case nod_user_savepoint:
-		args = e_sav_length;
-		break;
-
 	case nod_modify:
 		args = e_mod_length;
 		break;

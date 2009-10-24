@@ -95,8 +95,6 @@ static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
-static USHORT par_name(CompilerScratch*, Firebird::MetaName&);
-static size_t par_name(CompilerScratch* csb, Firebird::string& name);
 static jrd_nod* par_partition_by(thread_db*, CompilerScratch*);
 static jrd_nod* par_plan(thread_db*, CompilerScratch*);
 static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
@@ -358,7 +356,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		{
 			bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
 			Firebird::MetaName* name = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
-			par_name(csb, *name);
+			PAR_name(csb, *name);
 
 			FieldInfo fieldInfo;
 			bool exist = csb->csb_map_field_info.get(*name, fieldInfo);
@@ -417,9 +415,9 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		{
 			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
 			Firebird::MetaName* relationName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
-			par_name(csb, *relationName);
+			PAR_name(csb, *relationName);
 			Firebird::MetaName* fieldName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
-			par_name(csb, *fieldName);
+			PAR_name(csb, *fieldName);
 
 			FieldInfo fieldInfo;
 			Firebird::MetaName fieldSource = MET_get_relation_field(tdbb, *relationName, *fieldName, desc, &fieldInfo);
@@ -926,7 +924,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		{
 			string name;
 			item.xcp_type = xcp_gds_code;
-			par_name(csb, name);
+			PAR_name(csb, name);
 			name.lower();
 			SLONG code_number = PAR_symbol_to_gdscode(name);
 			if (code_number)
@@ -941,7 +939,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		{
 			MetaName name;
 			item.xcp_type = xcp_xcp_code;
-			par_name(csb, name);
+			PAR_name(csb, name);
 			if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
 				error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
 			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
@@ -997,7 +995,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 			{
 				string name;
 				item.xcp_type = xcp_gds_code;
-				par_name(csb, name);
+				PAR_name(csb, name);
 				name.lower();
 				SLONG code_number = PAR_symbol_to_gdscode(name);
 				if (code_number)
@@ -1011,7 +1009,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 			{
 				MetaName name;
 				item.xcp_type = xcp_xcp_code;
-				par_name(csb, name);
+				PAR_name(csb, name);
 				if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
 					error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
 				jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
@@ -1161,8 +1159,8 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 		else
 		{
 			if (blr_operator == blr_exec_proc2)
-				par_name(csb, name.qualifier);
-			par_name(csb, name.identifier);
+				PAR_name(csb, name.qualifier);
+			PAR_name(csb, name.identifier);
 			procedure = MET_lookup_procedure(tdbb, name, false);
 		}
 
@@ -1266,7 +1264,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		}
 		else {
 			Firebird::MetaName name;
-			par_name(csb, name);
+			PAR_name(csb, name);
 		}
 
 		jrd_nod* node = PAR_make_node(tdbb, e_domval_length);
@@ -1321,7 +1319,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 		if (procedure)
 		{
-			par_name(csb, name);
+			PAR_name(csb, name);
 			if ((id = find_proc_field(procedure, name)) == -1)
 			{
 				error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) <<
@@ -1341,7 +1339,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 					MET_scan_relation(tdbb, relation);
 			}
 
-			par_name(csb, name);
+			PAR_name(csb, name);
 			if ((id = MET_lookup_field(tdbb, relation, name.c_str(), 0)) < 0)
 			{
 				if (csb->csb_g_flags & csb_validation) {
@@ -1436,9 +1434,9 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	USHORT count = 0;
 
 	if (blr_operator == blr_function2)
-		count = par_name(csb, name.qualifier);
+		count = PAR_name(csb, name.qualifier);
 
-	count += par_name(csb, name.identifier);
+	count += PAR_name(csb, name.identifier);
 
 	if (blr_operator == blr_function &&
 		(name.identifier == "RDB$GET_CONTEXT" || name.identifier == "RDB$SET_CONTEXT"))
@@ -1759,11 +1757,11 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 }
 
 
-static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
+USHORT PAR_name(CompilerScratch* csb, Firebird::MetaName& name)
 {
 /**************************************
  *
- *	p a r _ n a m e
+ *	P A R _ n a m e
  *
  **************************************
  *
@@ -1794,11 +1792,11 @@ static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
 }
 
 
-static size_t par_name(CompilerScratch* csb, Firebird::string& name)
+size_t PAR_name(CompilerScratch* csb, Firebird::string& name)
 {
 /**************************************
  *
- *	p a r _ n a m e
+ *	P A R _ n a m e
  *
  **************************************
  *
@@ -1922,7 +1920,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				/* pick up the index name and look up the appropriate ids */
 
-				par_name(csb, name);
+				PAR_name(csb, name);
 	            /* CVC: We can't do this. Index names are identifiers.
 	               for (p = name; *p; *p++)
 	               *p = UPPER (*p);
@@ -1990,7 +1988,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;)
 				{
-					par_name(csb, name);
+					PAR_name(csb, name);
 	          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
 					 for (p = name; *p; *p++)
 					 *p = UPPER(*p);
@@ -2069,9 +2067,9 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 		if (blr_operator == blr_procedure || blr_operator == blr_procedure2)
 		{
 			if (blr_operator == blr_procedure2)
-				par_name(csb, name.qualifier);
+				PAR_name(csb, name.qualifier);
 
-			par_name(csb, name.identifier);
+			PAR_name(csb, name.identifier);
 			procedure = MET_lookup_procedure(tdbb, name, false);
 		}
 		else
@@ -2270,7 +2268,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 			const SSHORT id = csb->csb_blr_reader.getWord();
 			if (blr_operator == blr_rid2) {
 				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-				par_name(csb, *alias_string);
+				PAR_name(csb, *alias_string);
 			}
 			if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
 				name.printf("id %d", id);
@@ -2280,10 +2278,10 @@ static jrd_nod* par_relation(thread_db* tdbb,
 		break;
 	case blr_relation:
 	case blr_relation2:
-		par_name(csb, name);
+		PAR_name(csb, name);
 		if (blr_operator == blr_relation2) {
 			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-			par_name(csb, *alias_string);
+			PAR_name(csb, *alias_string);
 		}
 		if (!(relation = MET_lookup_relation(tdbb, name)))
 			error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name));
@@ -2564,7 +2562,7 @@ static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
 	SET_TDBB(tdbb);
 
 	Firebird::MetaName name;
-	const USHORT count = par_name(csb, name);
+	const USHORT count = PAR_name(csb, name);
 
 	const SysFunction* function = SysFunction::lookup(name);
 
@@ -2752,7 +2750,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_agg_count_distinct:
 	case blr_agg_total_distinct:
 	case blr_agg_average_distinct:
-	case blr_post:
 	case blr_internal_info:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
@@ -2907,7 +2904,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 						if (code == blr_exec_stmt_in_params2)
 						{
 							Firebird::string name;
-							if (par_name(csb, name))
+							if (PAR_name(csb, name))
 							{
 								Firebird::MemoryPool& pool = csb->csb_pool;
 								if (!paramNames) {
@@ -2950,11 +2947,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		}
 		break;
 
-	case blr_post_arg:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
 	case blr_null:
 	case blr_agg_count:
 	case blr_user_name:
@@ -2980,15 +2972,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		}
 		node->nod_arg[0] = (jrd_nod*) (IPTR) n;
 		break;
-
-	case blr_user_savepoint:
-		{
-			*arg++ = (jrd_nod*) (IPTR) csb->csb_blr_reader.getByte();
-			Firebird::MetaName name;
-			par_name(csb, name);
-			*arg++ = (jrd_nod*) stringDup(*tdbb->getDefaultPool(), name.c_str());
-			break;
-		}
 
 	case blr_store:
 	case blr_store2:
@@ -3174,7 +3157,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		{
 			Firebird::MetaName name;
 
-			par_name(csb, name);
+			PAR_name(csb, name);
 			const SLONG tmp = MET_lookup_generator(tdbb, name.c_str());
 			if (tmp < 0) {
 				error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
@@ -3209,7 +3192,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		par_fetch(tdbb, csb, node);
 		break;
 
-	case blr_send:
 	case blr_receive:
 		n = csb->csb_blr_reader.getByte();
 		node->nod_arg[e_send_message] = csb->csb_rpt[n].csb_message;
@@ -3372,17 +3354,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			break;
 		}
 
-	case blr_if:
-		node->nod_arg[e_if_boolean] = PAR_parse_node(tdbb, csb, TYPE_BOOL);
-		node->nod_arg[e_if_true] = PAR_parse_node(tdbb, csb, sub_type);
-		if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_end) {
-			node->nod_count = 2;
-			csb->csb_blr_reader.getByte(); // skip blr_end
-			break;
-		}
-		node->nod_arg[e_if_false] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
 	case blr_label:
 		node->nod_arg[e_lbl_label] = (jrd_nod*) (IPTR) csb->csb_blr_reader.getByte();
 		node->nod_arg[e_lbl_statement] = PAR_parse_node(tdbb, csb, sub_type);
@@ -3442,7 +3413,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			fb_assert(blr_parsers[blr_operator]);
 
 			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-				blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb));
+				blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb, blr_operator));
 		}
 		else
 			PAR_syntax_error(csb, elements[expected]);

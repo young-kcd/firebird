@@ -689,7 +689,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> having_clause
 
-%type <legacyNode> if_then_else in_predicate in_predicate_value
+%type <legacyNode> in_predicate in_predicate_value
 %type <legacyNode> index_definition index_list init_alter_db input_parameters
 %type <legacyNode> input_proc_parameter input_proc_parameters ins_column_list ins_column_parens
 %type <legacyNode> ins_column_parens_opt insert integer_keyword internal_info
@@ -784,7 +784,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <intVal> ddl_type0 ddl_type1 ddl_type2
 
 %type <ddlNode> alter_charset_clause
-%type <stmtNode> in_autonomous_transaction exec_block
+%type <stmtNode> if_then_else in_autonomous_transaction exec_block
 
 %type <createAlterFunctionNode> alter_function_clause function_clause function_clause_start replace_function_clause
 %type <createAlterProcedureNode> alter_procedure_clause procedure_clause procedure_clause_start replace_procedure_clause
@@ -2172,17 +2172,16 @@ simple_proc_statement	: assignment
 		| breakleave
 		| continue
 		| SUSPEND
-			{ $$ = make_node (nod_return, (int) e_rtn_count, NULL); }
+			{ $$ = makeClassNode(FB_NEW(getPool()) SuspendNode(getPool())); }
 		| EXIT
-			{ $$ = make_node (nod_exit, 0, NULL); }
+			{ $$ = makeClassNode(FB_NEW(getPool()) ExitNode(getPool())); }
 		;
 
 complex_proc_statement
 	: in_autonomous_transaction
-		{
-			$$ = makeClassNode($1);
-		}
+		{ $$ = makeClassNode($1); }
 	| if_then_else
+		{ $$ = makeClassNode($1); }
 	| while
 	| for_select
 	| for_exec_into
@@ -2340,21 +2339,40 @@ ext_privs
 		{ $$ = make_node (nod_exec_stmt_privs, 1, NULL); }
 	;
 
-if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
-			{ $$ = make_node (nod_if, (int) e_if_count, $3, $6, $8); }
-		| IF '(' search_condition ')' THEN proc_block
-			{ $$ = make_node (nod_if, (int) e_if_count, $3, $6, NULL); }
-		;
+if_then_else
+	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
+		{
+			IfNode* node = FB_NEW(getPool()) IfNode(getPool());
+			node->dsqlCondition = $3;
+			node->dsqlTrueAction = $6;
+			node->dsqlFalseAction = $8;
+			$$ = node;
+		}
+	| IF '(' search_condition ')' THEN proc_block
+		{
+			IfNode* node = FB_NEW(getPool()) IfNode(getPool());
+			node->dsqlCondition = $3;
+			node->dsqlTrueAction = $6;
+			$$ = node;
+		}
+	;
 
-post_event	: POST_EVENT value event_argument_opt
-			{ $$ = make_node (nod_post, (int) e_pst_count, $2, $3); }
-		;
+post_event
+	: POST_EVENT value event_argument_opt
+		{
+			PostEventNode* node = FB_NEW(getPool()) PostEventNode(getPool());
+			node->dsqlEvent = $2;
+			node->dsqlArgument = $3;
+			$$ = makeClassNode(node);
+		}
+	;
 
-event_argument_opt	: /*',' value
-			{ $$ = $2; }
-		|*/
-			{ $$ = NULL; }
-		;
+event_argument_opt
+	: /*',' value
+		{ $$ = $2; }
+	|*/
+		{ $$ = NULL; }
+	;
 
 singleton_select	: select INTO variable_list
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $1,
@@ -3715,23 +3733,42 @@ savepoint	: set_savepoint
 		| undo_savepoint
 		;
 
-set_savepoint : SAVEPOINT symbol_savepoint_name
-			{ $$ = make_node (nod_user_savepoint, 1, $2); }
-		;
+set_savepoint
+	: SAVEPOINT symbol_savepoint_name
+		{
+			SavepointNode* node = FB_NEW(getPool()) SavepointNode(getPool());
+			node->command = SavepointNode::CMD_SET;
+			node->name = toName($2);
+			$$ = makeClassNode(node);
+		}
+	;
 
-release_savepoint	: RELEASE SAVEPOINT symbol_savepoint_name release_only_opt
-			{ $$ = make_node (nod_release_savepoint, 2, $3, $4); }
-		;
+release_savepoint
+	: RELEASE SAVEPOINT symbol_savepoint_name release_only_opt
+		{
+			SavepointNode* node = FB_NEW(getPool()) SavepointNode(getPool());
+			node->command = ($4 ? SavepointNode::CMD_RELEASE_ONLY : SavepointNode::CMD_RELEASE);
+			node->name = toName($3);
+			$$ = makeClassNode(node);
+		}
+	;
 
-release_only_opt	: ONLY
-			{ $$ = make_node (nod_flag, 0, NULL); }
-		|
-			{ $$ = 0; }
-		;
+release_only_opt
+	: ONLY
+		{ $$ = make_node(nod_flag, 0, NULL); }
+	|
+		{ $$ = NULL; }
+	;
 
-undo_savepoint : ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name
-			{ $$ = make_node (nod_undo_savepoint, 1, $5); }
-		;
+undo_savepoint
+	: ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name
+		{
+			SavepointNode* node = FB_NEW(getPool()) SavepointNode(getPool());
+			node->command = SavepointNode::CMD_ROLLBACK;
+			node->name = toName($5);
+			$$ = makeClassNode(node);
+		}
+	;
 
 optional_savepoint
 	: SAVEPOINT

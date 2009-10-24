@@ -213,14 +213,12 @@ static jrd_nod* seek_rse(thread_db*, jrd_req*, jrd_nod*);
 static void seek_rsb(thread_db*, jrd_req*, RecordSource*, USHORT, SLONG);
 #endif
 static jrd_nod* selct(thread_db*, jrd_nod*);
-static jrd_nod* send_msg(thread_db*, jrd_nod*);
 static void set_error(thread_db*, const xcp_repeat*, jrd_nod*);
 static jrd_nod* stall(thread_db*, jrd_nod*);
 static jrd_nod* store(thread_db*, jrd_nod*, SSHORT);
 static bool test_and_fixup_error(thread_db*, const PsqlException*, jrd_req*);
 static void trigger_failure(thread_db*, jrd_req*);
 static void validate(thread_db*, jrd_nod*);
-inline void verb_cleanup(thread_db*, jrd_tra*);
 inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*,
 	record_param*, jrd_req::req_ta);
 static void stuff_stack_trace(const jrd_req*);
@@ -2348,109 +2346,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 			break;
 
-		case nod_user_savepoint:
-			switch (request->req_operation)
-			{
-			case jrd_req::req_evaluate:
-				if (transaction != dbb->dbb_sys_trans)
-				{
-
-					const UCHAR operation = (UCHAR) (IPTR) node->nod_arg[e_sav_operation];
-					const TEXT* node_savepoint_name = (TEXT*) node->nod_arg[e_sav_name];
-
-					// Skip the savepoint created by EXE_start
-					Savepoint* savepoint = transaction->tra_save_point->sav_next;
-					Savepoint* previous = transaction->tra_save_point;
-
-					// Find savepoint
-					bool found = false;
-					while (true)
-					{
-						if (!savepoint || !(savepoint->sav_flags & SAV_user))
-							break;
-
-						if (!strcmp(node_savepoint_name, savepoint->sav_name)) {
-							found = true;
-							break;
-						}
-
-						previous = savepoint;
-						savepoint = savepoint->sav_next;
-					}
-					if (!found && operation != blr_savepoint_set) {
-						ERR_post(Arg::Gds(isc_invalid_savepoint) << Arg::Str(node_savepoint_name));
-					}
-
-					switch (operation)
-					{
-					case blr_savepoint_set:
-						// Release the savepoint
-						if (found) {
-							Savepoint* const current = transaction->tra_save_point;
-							transaction->tra_save_point = savepoint;
-							verb_cleanup(tdbb, transaction);
-							previous->sav_next = transaction->tra_save_point;
-							transaction->tra_save_point = current;
-						}
-
-						// Use the savepoint created by EXE_start
-						transaction->tra_save_point->sav_flags |= SAV_user;
-						strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
-						break;
-					case blr_savepoint_release_single:
-					{
-						// Release the savepoint
-						Savepoint* const current = transaction->tra_save_point;
-						transaction->tra_save_point = savepoint;
-						verb_cleanup(tdbb, transaction);
-						previous->sav_next = transaction->tra_save_point;
-						transaction->tra_save_point = current;
-						break;
-					}
-					case blr_savepoint_release:
-					{
-						const SLONG sav_number = savepoint->sav_number;
-
-						// Release the savepoint and all subsequent ones
-						while (transaction->tra_save_point &&
-							transaction->tra_save_point->sav_number >= sav_number)
-						{
-							verb_cleanup(tdbb, transaction);
-						}
-
-						// Restore the savepoint initially created by EXE_start
-						VIO_start_save_point(tdbb, transaction);
-						break;
-					}
-					case blr_savepoint_undo:
-					{
-						const SLONG sav_number = savepoint->sav_number;
-
-						// Undo the savepoint
-						while (transaction->tra_save_point &&
-							transaction->tra_save_point->sav_number >= sav_number)
-						{
-							transaction->tra_save_point->sav_verb_count++;
-							verb_cleanup(tdbb, transaction);
-						}
-
-						// Now set the savepoint again to allow to return to it later
-						VIO_start_save_point(tdbb, transaction);
-						transaction->tra_save_point->sav_flags |= SAV_user;
-						strcpy(transaction->tra_save_point->sav_name, node_savepoint_name);
-						break;
-					}
-					default:
-						BUGCHECK(232);
-						break;
-					}
-				}
-			default:
-				node = node->nod_parent;
-				request->req_operation = jrd_req::req_return;
-			}
-			break;
-
 		case nod_start_savepoint:
 			switch (request->req_operation)
 			{
@@ -2480,7 +2375,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (error_pending) {
 						++transaction->tra_save_point->sav_verb_count;
 					}
-					verb_cleanup(tdbb, transaction);
+					EXE_verb_cleanup(tdbb, transaction);
 				}
 
 			default:
@@ -2538,7 +2433,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								save_point && count <= save_point->sav_number;
 								save_point = transaction->tra_save_point)
 							{
-								verb_cleanup(tdbb, transaction);
+								EXE_verb_cleanup(tdbb, transaction);
 							}
 						}
 
@@ -2556,7 +2451,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							save_point = transaction->tra_save_point)
 						{
 							++transaction->tra_save_point->sav_verb_count;
-							verb_cleanup(tdbb, transaction);
+							EXE_verb_cleanup(tdbb, transaction);
 						}
 					}
 
@@ -2626,7 +2521,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 										save_point && count <= save_point->sav_number;
 										save_point = transaction->tra_save_point)
 									{
-										verb_cleanup(tdbb, transaction);
+										EXE_verb_cleanup(tdbb, transaction);
 									}
 								}
 							}
@@ -2648,7 +2543,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							save_point = transaction->tra_save_point)
 						{
 							++transaction->tra_save_point->sav_verb_count;
-							verb_cleanup(tdbb, transaction);
+							EXE_verb_cleanup(tdbb, transaction);
 						}
 					}
 				}
@@ -2663,7 +2558,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						 save_point && count <= save_point->sav_number;
 						 save_point = transaction->tra_save_point)
 					{
-						verb_cleanup(tdbb, transaction);
+						EXE_verb_cleanup(tdbb, transaction);
 					}
 				}
 			default:
@@ -2772,26 +2667,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 			break;
 
-		case nod_if:
-			if (request->req_operation == jrd_req::req_evaluate)
-			{
-				if (EVL_boolean(tdbb, node->nod_arg[e_if_boolean])) {
-					node = node->nod_arg[e_if_true];
-					request->req_operation = jrd_req::req_evaluate;
-					break;
-				}
-
-				if (node->nod_arg[e_if_false]) {
-					node = node->nod_arg[e_if_false];
-					request->req_operation = jrd_req::req_evaluate;
-					break;
-				}
-
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
 		case nod_modify:
 			{
 				impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
@@ -2879,25 +2754,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			node = execute_statement(tdbb, request, node);
 			break;
 
-		case nod_post:
-			{
-				DeferredWork* work =
-					DFW_post_work(transaction, dfw_post_event, EVL_expr(tdbb, node->nod_arg[0]), 0);
-				if (node->nod_arg[1])
-					DFW_post_work_arg(transaction, work, EVL_expr(tdbb, node->nod_arg[1]), 0);
-			}
-
-			// for an autocommit transaction, events can be posted
-			// without any updates
-
-			if (transaction->tra_flags & TRA_autocommit)
-				transaction->tra_flags |= TRA_perform_autocommit;
-
-			if (request->req_operation == jrd_req::req_evaluate)
-				request->req_operation = jrd_req::req_return;
-			node = node->nod_parent;
-			break;
-
 		case nod_message:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
@@ -2916,10 +2772,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_select:
 			node = selct(tdbb, node);
-			break;
-
-		case nod_send:
-			node = send_msg(tdbb, node);
 			break;
 
 		case nod_store:
@@ -3059,7 +2911,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					save_point = transaction->tra_save_point)
 				{
 					++transaction->tra_save_point->sav_verb_count;
-					verb_cleanup(tdbb, transaction);
+					EXE_verb_cleanup(tdbb, transaction);
 				}
 			}
 
@@ -3075,7 +2927,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		if (transaction != dbb->dbb_sys_trans && transaction->tra_save_point)
 		{
 			++transaction->tra_save_point->sav_verb_count;
-			verb_cleanup(tdbb, transaction);
+			EXE_verb_cleanup(tdbb, transaction);
 		}
 
 		error_pending = true;
@@ -3144,7 +2996,7 @@ end:
 				 save_point = transaction->tra_save_point)
 			{
 				++transaction->tra_save_point->sav_verb_count;
-				verb_cleanup(tdbb, transaction);
+				EXE_verb_cleanup(tdbb, transaction);
 			}
 		}
 
@@ -3802,44 +3654,6 @@ static jrd_nod* selct(thread_db* tdbb, jrd_nod* node)
 }
 
 
-
-static jrd_nod* send_msg(thread_db* tdbb, jrd_nod* node)
-{
-/**************************************
- *
- *	s e n d _ m s g
- *
- **************************************
- *
- * Functional description
- *	Execute a SEND statement.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
-	BLKCHK(node, type_nod);
-
-	switch (request->req_operation)
-	{
-	case jrd_req::req_evaluate:
-		return (node->nod_arg[e_send_statement]);
-
-	case jrd_req::req_return:
-		request->req_operation = jrd_req::req_send;
-		request->req_message = node->nod_arg[e_send_message];
-		request->req_flags |= req_stall;
-		return node;
-
-	case jrd_req::req_proceed:
-		request->req_operation = jrd_req::req_return;
-		return node->nod_parent;
-
-	default:
-		return (node->nod_parent);
-	}
-}
-
-
 static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
 {
 /**************************************
@@ -4335,11 +4149,11 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 }
 
 
-inline void verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
+void EXE_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
- *	v e r b _ c l e a n u p
+ *	E X E _ v e r b _ c l e a n u p
  *
  **************************************
  *
@@ -4350,13 +4164,14 @@ inline void verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
  *  by calling bugcheck.
  *
  **************************************/
-	try {
-	    VIO_verb_cleanup(tdbb, transaction);
-    }
-	catch (const Firebird::Exception&) {
-		if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck) {
+	try
+	{
+		VIO_verb_cleanup(tdbb, transaction);
+	}
+	catch (const Firebird::Exception&)
+	{
+		if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
-    	BUGCHECK(290); // msg 290 error during savepoint backout
+		BUGCHECK(290); // msg 290 error during savepoint backout
 	}
 }

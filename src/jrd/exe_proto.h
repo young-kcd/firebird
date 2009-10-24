@@ -47,6 +47,7 @@ void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
 #ifdef SCROLLABLE_CURSORS
 void EXE_seek(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG);
 #endif
+void EXE_verb_cleanup(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 
 namespace Jrd
 {
