@@ -42,27 +42,31 @@ using Firebird::PathName;
 
 
 InputDevices::indev::indev()
-	: indev_fpointer(0), indev_line(0), indev_aux(0), indev_next(0), indev_fn(*getDefaultMemoryPool())
+	: indev_fpointer(0), indev_line(0), indev_aux(0), indev_next(0),
+	  indev_fn(*getDefaultMemoryPool()), indev_fn_display(*getDefaultMemoryPool())
 {
 	makeFullFileName();
 }
 
-InputDevices::indev::indev(FILE* fp, const char* fn)
-	: indev_fpointer(fp), indev_line(0), indev_aux(0), indev_next(0), indev_fn(*getDefaultMemoryPool())
+InputDevices::indev::indev(FILE* fp, const char* fn, const char* fn_display)
+	: indev_fpointer(fp), indev_line(0), indev_aux(0), indev_next(0),
+	  indev_fn(*getDefaultMemoryPool()), indev_fn_display(*getDefaultMemoryPool())
 {
 	indev_fn = fn;
+	indev_fn_display = fn_display;
 	makeFullFileName();
 }
 
 // Performs the same task that one of the constructors, but called manually.
 // File handle and file name are assumed to be valid and the rest of the data
 // members aren't copied but reset.
-void InputDevices::indev::init(FILE* fp, const char* fn)
+void InputDevices::indev::init(FILE* fp, const char* fn, const char* fn_display)
 {
 	indev_fpointer = fp;
 	indev_line = 0;
 	indev_aux = 0;
 	indev_fn = fn;
+	indev_fn_display = fn_display;
 	indev_next = 0;
 
 	makeFullFileName();
@@ -76,6 +80,7 @@ void InputDevices::indev::init(const indev& src)
 	indev_line = 0;
 	indev_aux = 0;
 	indev_fn = src.indev_fn;
+	indev_fn_display = src.indev_fn_display;
 	indev_next = 0;
 }
 
@@ -93,6 +98,7 @@ void InputDevices::indev::copy_from(const indev* src)
 	indev_line = src->indev_line;
 	indev_aux = src->indev_aux;
 	indev_fn = src->indev_fn;
+	indev_fn_display = src->indev_fn_display;
 	// indev_next not copied.
 }
 
@@ -170,18 +176,18 @@ void InputDevices::clear(FILE* fpointer)
 }
 
 // Insert an indev in the chain, always in LIFO way.
-bool InputDevices::insert(FILE* fp, const char* name)
+bool InputDevices::insert(FILE* fp, const char* name, const char* display)
 {
 	if (!m_head)
 	{
 		fb_assert(m_count == 0);
-		m_head = new indev(fp, name);
+		m_head = new indev(fp, name, display);
 	}
 	else
 	{
 		fb_assert(m_count > 0);
 		indev* p = m_head;
-		m_head = new indev(fp, name);
+		m_head = new indev(fp, name, display);
 		m_head->indev_next = p;
 	}
 	++m_count;
@@ -191,7 +197,7 @@ bool InputDevices::insert(FILE* fp, const char* name)
 // Shortcut for inserting the currently input file in the indev chain.
 bool InputDevices::insertIfp()
 {
-	if (insert(NULL, ""))
+	if (insert(NULL, "", ""))
 	{
 		m_head->copy_from(&m_ifp);
 		return true;

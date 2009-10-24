@@ -44,12 +44,12 @@ public:
 	{
 	public:
 		indev();
-		indev(FILE* fp, const char* fn);
-		void init(FILE* fp, const char* fn);
+		indev(FILE* fp, const char* fn, const char* fn_display);
+		void init(FILE* fp, const char* fn, const char* fn_display);
 		void init(const indev& src);
 		//~indev();
 		void copy_from(const indev* src);
-		Firebird::PathName fileName() const;
+		Firebird::PathName fileName(bool display) const;
 		void close();
 		void drop();
 		void getPos(fpos_t* out) const;
@@ -63,7 +63,7 @@ public:
 		void makeFullFileName();
 
 	private:
-		Firebird::PathName indev_fn;
+		Firebird::PathName indev_fn, indev_fn_display;
 
 		void operator=(const void*); // prevent surprises.
 	};
@@ -75,7 +75,7 @@ public:
 	//const indev* getHead();
 	indev& Ifp();
 	indev& Ofp();
-	bool insert(FILE* fp, const char* name);
+	bool insert(FILE* fp, const char* name, const char* display);
 	bool remove();
 	bool insertIfp();
 	void removeIntoIfp();
@@ -93,9 +93,9 @@ private:
 };
 
 
-inline Firebird::PathName InputDevices::indev::fileName() const
+inline Firebird::PathName InputDevices::indev::fileName(bool display) const
 {
-	return indev_fn;
+	return display ? indev_fn_display : indev_fn;
 }
 
 inline void InputDevices::indev::close()
@@ -106,12 +106,12 @@ inline void InputDevices::indev::close()
 
 
 inline InputDevices::InputDevices()
-	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, "")
+	: m_count(0), m_head(0), m_ifp(0, "", ""), m_ofp(0, "", "")
 {
 }
 
 inline InputDevices::InputDevices(Firebird::MemoryPool&)
-	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, "")
+	: m_count(0), m_head(0), m_ifp(0, "", ""), m_ofp(0, "", "")
 {
 }
 
