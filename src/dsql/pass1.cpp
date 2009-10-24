@@ -11105,6 +11105,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_procedure_name:
 		verb = "procedure name";
 		break;
+	case nod_package_name:
+		verb = "package name";
+		break;
 	case nod_put_segment:
 		verb = "put segment";
 		break;
@@ -11544,6 +11547,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
 			return;
 		}
+
+	case nod_window:
+		verb = "window";
+		DSQL_pretty(node->nod_arg[e_window_expr], column + 1);
+		return;
 
 	case nod_constant:
 		verb = "constant";

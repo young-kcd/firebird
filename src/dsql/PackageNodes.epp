@@ -76,7 +76,7 @@ namespace
 			  relationName(p, o.relationName),
 			  collationId(o.collationId),
 			  nullFlag(o.nullFlag),
-			  mechanism(0),
+			  mechanism(o.mechanism),
 			  fieldLength(o.fieldLength),
 			  fieldScale(o.fieldScale),
 			  fieldType(o.fieldType),
@@ -359,16 +359,16 @@ void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& nodes) const
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
 		string item;
-		Array<dsql_nod*> nodes;
+		Array<dsql_nod*> tempNodes;
 
 		switch ((*items)[i].type)
 		{
 			case Item::FUNCTION:
-				(*items)[i].function->print(item, nodes);
+				(*items)[i].function->print(item, tempNodes);
 				break;
 
 			case Item::PROCEDURE:
-				(*items)[i].procedure->print(item, nodes);
+				(*items)[i].procedure->print(item, tempNodes);
 				break;
 		}
 
@@ -728,16 +728,16 @@ void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
 		for (unsigned i = 0; i < declaredItems->getCount(); ++i)
 		{
 			string item;
-			Array<dsql_nod*> nodes;
+			Array<dsql_nod*> tempNodes;
 
 			switch ((*declaredItems)[i].type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
-					(*declaredItems)[i].function->print(item, nodes);
+					(*declaredItems)[i].function->print(item, tempNodes);
 					break;
 
 				case CreateAlterPackageNode::Item::PROCEDURE:
-					(*declaredItems)[i].procedure->print(item, nodes);
+					(*declaredItems)[i].procedure->print(item, tempNodes);
 					break;
 			}
 
@@ -753,16 +753,16 @@ void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
 		string item;
-		Array<dsql_nod*> nodes;
+		Array<dsql_nod*> tempNodes;
 
 		switch ((*items)[i].type)
 		{
 			case CreateAlterPackageNode::Item::FUNCTION:
-				(*items)[i].function->print(item, nodes);
+				(*items)[i].function->print(item, tempNodes);
 				break;
 
 			case CreateAlterPackageNode::Item::PROCEDURE:
-				(*items)[i].procedure->print(item, nodes);
+				(*items)[i].procedure->print(item, tempNodes);
 				break;
 		}
 
@@ -943,9 +943,8 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 					" signature mismatch on package body " + name.c_str()));
 		}
 
-		for (SortedObjectsArray<ParameterInfo>::iterator j = newProcs[pos].parameters.begin(),
-														 k = i->parameters.begin();
-			 j != newProcs[pos].parameters.end(); ++j, ++k)
+		for (SortedObjectsArray<ParameterInfo>::iterator j = newProcs[pos].parameters.begin();
+			 j != newProcs[pos].parameters.end(); ++j)
 		{
 			if (!j->defaultSource.isEmpty() || !j->defaultValue.isEmpty())
 			{
@@ -970,11 +969,11 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			const Signature& proc = existingProcs[pos];
 
-			ParameterInfo param(getPool());
-			param.type = PRM.RDB$PARAMETER_TYPE;
-			param.number = PRM.RDB$PARAMETER_NUMBER;
+			ParameterInfo paramKey(getPool());
+			paramKey.type = PRM.RDB$PARAMETER_TYPE;
+			paramKey.number = PRM.RDB$PARAMETER_NUMBER;
 
-			if (proc.parameters.find(param, pos))
+			if (proc.parameters.find(paramKey, pos))
 			{
 				const ParameterInfo& param = proc.parameters[pos];
 
