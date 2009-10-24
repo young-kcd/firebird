@@ -625,14 +625,14 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
 }
 
-%type <legacyNode> access_mode access_type aggregate_function alias_list all_noise
+%type <legacyNode> access_mode access_type aggregate_function alias_list
 %type <legacyNode> alter alter_clause alter_column_name
 %type <legacyNode> alter_data_type_or_domain alter_db alter_domain_op alter_domain_ops
 %type <legacyNode> alter_exception_clause alter_index_clause alter_op alter_ops
 %type <legacyNode> alter_role_clause alter_role_enable alter_sequence_clause
 %type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
 %type <legacyNode> arg_desc arg_desc_list arg_desc_list1 array_element array_range
-%type <legacyNode> array_spec array_type as_noise as_opt assignment assignments
+%type <legacyNode> array_spec array_type as_opt assignment assignments
 
 %type <legacyNode> begin_string begin_trigger between_predicate bit_length_expression
 %type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
@@ -662,7 +662,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> decimal_keyword declare declare_clause
 %type <legacyNode> decode_pairs def_computed default_par_opt default_value delete delete_positioned
 %type <legacyNode> delete_rule delete_searched delimiter_opt derived_column_list derived_table
-%type <legacyNode> distinct_clause distinct_noise distinct_predicate domain_clause domain_constraint
+%type <legacyNode> distinct_clause distinct_predicate domain_clause domain_constraint
 %type <legacyNode> domain_constraint_clause domain_constraint_def domain_constraint_list
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
 %type <legacyNode> domain_or_non_array_type_name domain_type drop drop_behaviour
@@ -677,7 +677,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> extract_expression
 %type <legacyStr>  end_trigger entry_op external_file
 
-%type <legacyNode> fetch_cursor fetch_opt file1 file_clause file_clause_noise file_desc file_desc1
+%type <legacyNode> fetch_cursor fetch_opt file1 file_clause file_desc file_desc1
 %type <legacyNode> filter_clause_io filter_decl_clause first_clause first_file_length
 %type <legacyNode> float_type for_exec_into for_select for_update_clause for_update_list from_clause
 %type <legacyNode> from_list full_proc_block full_proc_block_body function
@@ -717,9 +717,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> octet_length_expression open_cursor opt_snapshot optional_retain
 %type <legacyNode> optional_savepoint optional_work order_clause order_direction order_item order_list
-%type <legacyNode> outer_noise output_parameters output_proc_parameters
+%type <legacyNode> output_parameters output_proc_parameters
 
-%type <legacyNode> page_noise param_mechanism parameter plan_clause
+%type <legacyNode> param_mechanism parameter plan_clause
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type pos_short_integer
 %type <legacyNode> post_event prec_scale precision_opt predicate primary_constraint privilege
 %type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt proc_parameter
@@ -757,7 +757,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  sql_string
 
 %type <legacyNode> table_clause table_constraint table_constraint_definition table_element table_elements
-%type <legacyNode> table_list table_lock table_name table_noise table_or_alias_list table_primary
+%type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
 %type <legacyNode> table_proc table_proc_inputs table_reference table_subquery tbl_reserve_options
 %type <legacyNode> timestamp_part top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
 %type <legacyNode> trigger_action_predicate
@@ -861,8 +861,8 @@ grant	: GRANT privileges ON table_noise simple_table_name
 		;
 
 table_noise
-	: TABLE
-	| { $$ = NULL; }
+	:
+	| TABLE
 	;
 
 privileges	: ALL
@@ -1526,13 +1526,13 @@ file_clause	: STARTING file_clause_noise long_integer
 		;
 
 file_clause_noise
-	: { $$ = NULL; }
+	:
 	| AT
 	| AT PAGE
 	;
 
 page_noise
-	: { $$ = NULL; }
+	:
 	| PAGE
 	| PAGES
 	;
@@ -4127,8 +4127,8 @@ select_item	: value
 		;
 
 as_noise
-	: AS
-	| { $$ = NULL; }
+	:
+	| AS
 	;
 
 /* FROM clause */
@@ -4249,7 +4249,7 @@ join_type	: INNER
 
 outer_noise
 	: OUTER
-	| { $$ = NULL; }
+	|
 	;
 
 
@@ -5532,13 +5532,13 @@ timestamp_part	: YEAR
 		;
 
 all_noise
-	: ALL
-	| { $$ = NULL; }
+	:
+	| ALL
 	;
 
 distinct_noise
-	: DISTINCT
-	| { $$ = NULL; }
+	:
+	| DISTINCT
 	;
 
 null_value	: KW_NULL
