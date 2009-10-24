@@ -1742,130 +1742,131 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* transaction)
 		return;
 
 	compiled = true;
+
+	if (!body)
+		return;
+
 	invalid = true;
 
-	if (body)
+	compiledStatement->begin_debug();
+	compiledStatement->req_blr_data.clear();
+
+	if (compiledStatement->req_flags & REQ_blr_version4)
+		compiledStatement->append_uchar(blr_version4);
+	else
+		compiledStatement->append_uchar(blr_version5);
+
+	compiledStatement->append_uchar(blr_begin);
+
+	if (parameters.getCount() != 0)
 	{
-		compiledStatement->begin_debug();
-		compiledStatement->req_blr_data.clear();
-
-		if (compiledStatement->req_flags & REQ_blr_version4)
-			compiledStatement->append_uchar(blr_version4);
-		else
-			compiledStatement->append_uchar(blr_version5);
-
-		compiledStatement->append_uchar(blr_begin);
-
-		if (parameters.getCount() != 0)
-		{
-			compiledStatement->append_uchar(blr_message);
-			compiledStatement->append_uchar(0);
-			compiledStatement->append_ushort(2 * parameters.getCount());
-
-			for (unsigned i = 0; i < parameters.getCount(); ++i)
-			{
-				ParameterClause& parameter = parameters[i];
-				compiledStatement->put_debug_argument(fb_dbg_arg_input, i,
-					nameInMetaCharSet(tdbb, parameter.name).c_str());
-				putType(parameter, true);
-
-				// add slot for null flag (parameter2)
-				compiledStatement->append_uchar(blr_short);
-				compiledStatement->append_uchar(0);
-
-				legacyParameters->nod_arg[i] = MAKE_variable(parameter.legacyField,
-					parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0);
-			}
-		}
-
 		compiledStatement->append_uchar(blr_message);
-		compiledStatement->append_uchar(1);
-		compiledStatement->append_ushort(2 * returns.getCount() + 1);
-
-		if (returns.getCount() != 0)
-		{
-			for (unsigned i = 0; i < returns.getCount(); ++i)
-			{
-				ParameterClause& parameter = returns[i];
-				compiledStatement->put_debug_argument(fb_dbg_arg_output, i,
-					nameInMetaCharSet(tdbb, parameter.name).c_str());
-				putType(parameter, true);
-
-				// add slot for null flag (parameter2)
-				compiledStatement->append_uchar(blr_short);
-				compiledStatement->append_uchar(0);
-
-				legacyReturns->nod_arg[i] = MAKE_variable(parameter.legacyField,
-					parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
-			}
-		}
-
-		// add slot for EOS
-		compiledStatement->append_uchar(blr_short);
 		compiledStatement->append_uchar(0);
-
-		if (parameters.getCount() != 0)
-		{
-			compiledStatement->append_uchar(blr_receive);
-			compiledStatement->append_uchar(0);
-		}
-
-		compiledStatement->append_uchar(blr_begin);
+		compiledStatement->append_ushort(2 * parameters.getCount());
 
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
+			compiledStatement->put_debug_argument(fb_dbg_arg_input, i,
+				nameInMetaCharSet(tdbb, parameter.name).c_str());
+			putType(parameter, true);
 
-			if (parameter.fullDomain || parameter.notNull)
-			{
-				// ASF: To validate input parameters we need only to read his value.
-				// Assigning it to null is an easy way to do this.
-				compiledStatement->append_uchar(blr_assignment);
-				compiledStatement->append_uchar(blr_parameter2);
-				compiledStatement->append_uchar(0);	// input
-				compiledStatement->append_ushort(i * 2);
-				compiledStatement->append_ushort(i * 2 + 1);
-				compiledStatement->append_uchar(blr_null);
-			}
+			// add slot for null flag (parameter2)
+			compiledStatement->append_uchar(blr_short);
+			compiledStatement->append_uchar(0);
+
+			legacyParameters->nod_arg[i] = MAKE_variable(parameter.legacyField,
+				parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0);
 		}
-
-		if (returns.getCount() != 0)
-		{
-			dsql_nod* params = legacyReturns;
-			dsql_nod** ptr = params->nod_arg;
-			for (const dsql_nod* const* const end = ptr + params->nod_count; ptr < end; ptr++)
-			{
-				dsql_nod* parameter = *ptr;
-				dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-				DDL_put_local_variable(compiledStatement, variable, 0, NULL);
-			}
-		}
-
-		// ASF: This is here to not change the old logic (proc_flag)
-		// of previous calls to PASS1_node and PASS1_statement.
-		compiledStatement->setPsql(true);
-
-		DDL_put_local_variables(compiledStatement, localDeclList, returns.getCount());
-
-		compiledStatement->append_uchar(blr_stall);
-		// put a label before body of procedure,
-		// so that any EXIT statement can get out
-		compiledStatement->append_uchar(blr_label);
-		compiledStatement->append_uchar(0);
-		compiledStatement->req_loop_level = 0;
-		compiledStatement->req_cursor_number = 0;
-
-		GEN_statement(compiledStatement, PASS1_statement(compiledStatement, body));
-
-		compiledStatement->req_type = REQ_DDL;
-		compiledStatement->append_uchar(blr_end);
-		GEN_return(compiledStatement, legacyReturns, true);
-
-		compiledStatement->append_uchar(blr_end);
-		compiledStatement->append_uchar(blr_eoc);
-
-		compiledStatement->end_debug();
 	}
+
+	compiledStatement->append_uchar(blr_message);
+	compiledStatement->append_uchar(1);
+	compiledStatement->append_ushort(2 * returns.getCount() + 1);
+
+	if (returns.getCount() != 0)
+	{
+		for (unsigned i = 0; i < returns.getCount(); ++i)
+		{
+			ParameterClause& parameter = returns[i];
+			compiledStatement->put_debug_argument(fb_dbg_arg_output, i,
+				nameInMetaCharSet(tdbb, parameter.name).c_str());
+			putType(parameter, true);
+
+			// add slot for null flag (parameter2)
+			compiledStatement->append_uchar(blr_short);
+			compiledStatement->append_uchar(0);
+
+			legacyReturns->nod_arg[i] = MAKE_variable(parameter.legacyField,
+				parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
+		}
+	}
+
+	// add slot for EOS
+	compiledStatement->append_uchar(blr_short);
+	compiledStatement->append_uchar(0);
+
+	if (parameters.getCount() != 0)
+	{
+		compiledStatement->append_uchar(blr_receive);
+		compiledStatement->append_uchar(0);
+	}
+
+	compiledStatement->append_uchar(blr_begin);
+
+	for (unsigned i = 0; i < parameters.getCount(); ++i)
+	{
+		ParameterClause& parameter = parameters[i];
+
+		if (parameter.fullDomain || parameter.notNull)
+		{
+			// ASF: To validate input parameters we need only to read his value.
+			// Assigning it to null is an easy way to do this.
+			compiledStatement->append_uchar(blr_assignment);
+			compiledStatement->append_uchar(blr_parameter2);
+			compiledStatement->append_uchar(0);	// input
+			compiledStatement->append_ushort(i * 2);
+			compiledStatement->append_ushort(i * 2 + 1);
+			compiledStatement->append_uchar(blr_null);
+		}
+	}
+
+	if (returns.getCount() != 0)
+	{
+		dsql_nod* params = legacyReturns;
+		dsql_nod** ptr = params->nod_arg;
+		for (const dsql_nod* const* const end = ptr + params->nod_count; ptr < end; ptr++)
+		{
+			dsql_nod* parameter = *ptr;
+			dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
+			DDL_put_local_variable(compiledStatement, variable, 0, NULL);
+		}
+	}
+
+	// ASF: This is here to not change the old logic (proc_flag)
+	// of previous calls to PASS1_node and PASS1_statement.
+	compiledStatement->setPsql(true);
+
+	DDL_put_local_variables(compiledStatement, localDeclList, returns.getCount());
+
+	compiledStatement->append_uchar(blr_stall);
+	// put a label before body of procedure,
+	// so that any EXIT statement can get out
+	compiledStatement->append_uchar(blr_label);
+	compiledStatement->append_uchar(0);
+	compiledStatement->req_loop_level = 0;
+	compiledStatement->req_cursor_number = 0;
+
+	GEN_statement(compiledStatement, PASS1_statement(compiledStatement, body));
+
+	compiledStatement->req_type = REQ_DDL;
+	compiledStatement->append_uchar(blr_end);
+	GEN_return(compiledStatement, legacyReturns, true);
+
+	compiledStatement->append_uchar(blr_end);
+	compiledStatement->append_uchar(blr_eoc);
+
+	compiledStatement->end_debug();
 
 	invalid = false;
 }
