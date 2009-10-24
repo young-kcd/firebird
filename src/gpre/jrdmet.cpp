@@ -68,8 +68,7 @@ void JRDMET_init( gpre_dbb* db)
 		const int* fld = relfld + RFLD_RPT;
 		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH)
 		{
-			const gfld* gfield =
-				fld[RFLD_F_UPD_MINOR] ? &gfields[fld[RFLD_F_UPD_ID]] : &gfields[fld[RFLD_F_ID]];
+			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			relation->rel_fields = field;
 			field->fld_relation = relation;

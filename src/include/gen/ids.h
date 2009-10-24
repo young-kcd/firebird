@@ -22,8 +22,10 @@
  * Contributor(s): ______________________________________.
  */
 
-// Persistent tables
+// Order of relations in this file affect their IDs,
+// so please add new relations to the end of the list
 
+// Relation 0 (RDB$PAGES)
 
 	const USHORT  f_pag_page = 0;
 	const USHORT  f_pag_id = 1;
@@ -31,11 +33,15 @@
 	const USHORT  f_pag_type = 3;
 
 
+// Relation 1 (RDB$DATABASE)
+
 	const USHORT  f_dat_desc = 0;
 	const USHORT  f_dat_id = 1;
 	const USHORT  f_dat_class = 2;
 	const USHORT  f_dat_charset = 3;
 
+
+// Relation 2 (RDB$FIELDS)
 
 	const USHORT  f_fld_name = 0;
 	const USHORT  f_fld_qname = 1;
@@ -67,11 +73,15 @@
 	const USHORT  f_fld_precision = 27;
 
 
+// Relation 3 (RDB$INDEX_SEGMENTS)
+
 	const USHORT  f_seg_name = 0;
 	const USHORT  f_seg_field = 1;
 	const USHORT  f_seg_position = 2;
 	const USHORT  f_seg_statistics = 3;
 
+
+// Relation 4 (RDB$INDICES)
 
 	const USHORT  f_idx_name = 0;
 	const USHORT  f_idx_relation = 1;
@@ -87,6 +97,8 @@
 	const USHORT  f_idx_exp_source = 11;
 	const USHORT  f_idx_statistics = 12;
 
+
+// Relation 5 (RDB$RELATION_FIELDS)
 
 	const USHORT  f_rfr_fname = 0;
 	const USHORT  f_rfr_rname = 1;
@@ -109,6 +121,8 @@
 	const USHORT  f_rfr_coll_id = 18;
 
 
+// Relation 6 (RDB$RELATIONS)
+
 	const USHORT  f_rel_blr = 0;
 	const USHORT  f_rel_source = 1;
 	const USHORT  f_rel_desc = 2;
@@ -128,21 +142,29 @@
 	const USHORT  f_rel_type = 16;
 
 
+// Relation 7 (RDB$VIEW_RELATIONS)
+
 	const USHORT  f_vrl_vname = 0;
 	const USHORT  f_vrl_rname = 1;
 	const USHORT  f_vrl_context = 2;
 	const USHORT  f_vrl_cname = 3;
 
 
+// Relation 8 (RDB$FORMATS)
+
 	const USHORT  f_fmt_rid = 0;
 	const USHORT  f_fmt_format = 1;
 	const USHORT  f_fmt_desc = 2;
 
 
+// Relation 9 (RDB$SECURITY_CLASSES)
+
 	const USHORT  f_cls_class = 0;
 	const USHORT  f_cls_acl = 1;
 	const USHORT  f_cls_desc = 2;
 
+
+// Relation 10 (RDB$FILES)
 
 	const USHORT  f_file_name = 0;
 	const USHORT  f_file_seq = 1;
@@ -152,12 +174,16 @@
 	const USHORT  f_file_shad_num = 5;
 
 
+// Relation 11 (RDB$TYPES)
+
 	const USHORT  f_typ_field = 0;
 	const USHORT  f_typ_type = 1;
 	const USHORT  f_typ_name = 2;
 	const USHORT  f_typ_desc = 3;
 	const USHORT  f_typ_sys_flag = 4;
 
+
+// Relation 12 (RDB$TRIGGERS)
 
 	const USHORT  f_trg_name = 0;
 	const USHORT  f_trg_rname = 1;
@@ -175,6 +201,8 @@
 	const USHORT  f_trg_entry = 13;
 
 
+// Relation 13 (RDB$DEPENDENCIES)
+
 	const USHORT  f_dpd_name = 0;
 	const USHORT  f_dpd_o_name = 1;
 	const USHORT  f_dpd_f_name = 2;
@@ -182,6 +210,8 @@
 	const USHORT  f_dpd_o_type = 4;
 	const USHORT  f_dpd_pkg_name = 5;
 
+
+// Relation 14 (RDB$FUNCTIONS)
 
 	const USHORT  f_fun_name = 0;
 	const USHORT  f_fun_type = 1;
@@ -197,6 +227,8 @@
 	const USHORT  f_fun_source = 11;
 
 
+// Relation 15 (RDB$FUNCTION_ARGUMENTS)
+
 	const USHORT  f_arg_fun_name = 0;
 	const USHORT  f_arg_pos = 1;
 	const USHORT  f_arg_mech = 2;
@@ -210,6 +242,8 @@
 	const USHORT  f_arg_pkg_name = 10;
 
 
+// Relation 16 (RDB$FILTERS)
+
 	const USHORT  f_flt_name = 0;
 	const USHORT  f_flt_desc = 1;
 	const USHORT  f_flt_module = 2;
@@ -219,10 +253,14 @@
 	const USHORT  f_flt_sys_flag = 6;
 
 
+// Relation 17 (RDB$TRIGGER_MESSAGES)
+
 	const USHORT  f_msg_trigger = 0;
 	const USHORT  f_msg_number = 1;
 	const USHORT  f_msg_msg = 2;
 
+
+// Relation 18 (RDB$USER_PRIVILEGES)
 
 	const USHORT  f_prv_user = 0;
 	const USHORT  f_prv_grantor = 1;
@@ -234,11 +272,15 @@
 	const USHORT  f_prv_o_type = 7;
 
 
+// Relation 19 (RDB$TRANSACTIONS)
+
 	const USHORT  f_trn_id = 0;
 	const USHORT  f_trn_state = 1;
 	const USHORT  f_trn_time = 2;
 	const USHORT  f_trn_desc = 3;
 
+
+// Relation 20 (RDB$GENERATORS)
 
 	const USHORT  f_gen_name = 0;
 	const USHORT  f_gen_id = 1;
@@ -246,11 +288,15 @@
 	const USHORT  f_gen_desc = 3;
 
 
+// Relation 21 (RDB$FIELD_DIMENSIONS)
+
 	const USHORT  f_dims_fname = 0;
 	const USHORT  f_dims_dim = 1;
 	const USHORT  f_dims_lower = 2;
 	const USHORT  f_dims_upper = 3;
 
+
+// Relation 22 (RDB$RELATION_CONSTRAINTS)
 
 	const USHORT  f_rcon_cname = 0;
 	const USHORT  f_rcon_ctype = 1;
@@ -260,6 +306,8 @@
 	const USHORT  f_rcon_iname = 5;
 
 
+// Relation 23 (RDB$REF_CONSTRAINTS)
+
 	const USHORT  f_refc_cname = 0;
 	const USHORT  f_refc_uq = 1;
 	const USHORT  f_refc_match = 2;
@@ -267,9 +315,13 @@
 	const USHORT  f_refc_del_rul = 4;
 
 
+// Relation 24 (RDB$CHECK_CONSTRAINTS)
+
 	const USHORT  f_ccon_cname = 0;
 	const USHORT  f_ccon_tname = 1;
 
+
+// Relation 25 (RDB$LOG_FILES)
 
 	const USHORT  f_log_name = 0;
 	const USHORT  f_log_seq = 1;
@@ -278,6 +330,8 @@
 	const USHORT  f_log_p_offset = 4;
 	const USHORT  f_log_flags = 5;
 
+
+// Relation 26 (RDB$PROCEDURES)
 
 	const USHORT  f_prc_name = 0;
 	const USHORT  f_prc_id = 1;
@@ -299,6 +353,8 @@
 	const USHORT  f_prc_private_flag = 17;
 
 
+// Relation 27 (RDB$PROCEDURE_PARAMETERS)
+
 	const USHORT  f_prm_name = 0;
 	const USHORT  f_prm_procedure = 1;
 	const USHORT  f_prm_number = 2;
@@ -316,6 +372,8 @@
 	const USHORT  f_prm_pkg_name = 14;
 
 
+// Relation 28 (RDB$CHARACTER_SETS)
+
 	const USHORT  f_cs_cs_name = 0;
 	const USHORT  f_cs_form_of_use = 1;
 	const USHORT  f_cs_num_chars = 2;
@@ -326,6 +384,8 @@
 	const USHORT  f_cs_fun_name = 7;
 	const USHORT  f_cs_bytes_char = 8;
 
+
+// Relation 29 (RDB$COLLATIONS)
 
 	const USHORT  f_coll_name = 0;
 	const USHORT  f_coll_id = 1;
@@ -338,6 +398,8 @@
 	const USHORT  f_coll_specific_attr = 8;
 
 
+// Relation 30 (RDB$EXCEPTIONS)
+
 	const USHORT  f_xcp_name = 0;
 	const USHORT  f_xcp_number = 1;
 	const USHORT  f_xcp_msg = 2;
@@ -345,11 +407,15 @@
 	const USHORT  f_xcp_sys_flag = 4;
 
 
+// Relation 31 (RDB$ROLES)
+
 	const USHORT  f_rol_name = 0;
 	const USHORT  f_rol_owner = 1;
 	const USHORT  f_rol_desc = 2;
 	const USHORT  f_rol_sys_flag = 3;
 
+
+// Relation 32 (RDB$BACKUP_HISTORY)
 
 	const USHORT  f_backup_id = 0;
 	const USHORT  f_backup_time = 1;
@@ -359,8 +425,7 @@
 	const USHORT  f_backup_name = 5;
 
 
-// Virtual tables
-
+// Relation 33 (MON$DATABASE)
 
 	const USHORT  f_mon_db_name = 0;
 	const USHORT  f_mon_db_page_size = 1;
@@ -383,6 +448,8 @@
 	const USHORT  f_mon_db_backup_state = 18;
 
 
+// Relation 34 (MON$ATTACHMENTS)
+
 	const USHORT  f_mon_att_id = 0;
 	const USHORT  f_mon_att_server_pid = 1;
 	const USHORT  f_mon_att_state = 2;
@@ -399,6 +466,8 @@
 	const USHORT  f_mon_att_stat_id = 13;
 
 
+// Relation 35 (MON$TRANSACTIONS)
+
 	const USHORT  f_mon_tra_id = 0;
 	const USHORT  f_mon_tra_att_id = 1;
 	const USHORT  f_mon_tra_state = 2;
@@ -414,6 +483,8 @@
 	const USHORT  f_mon_tra_stat_id = 12;
 
 
+// Relation 36 (MON$STATEMENTS)
+
 	const USHORT  f_mon_stmt_id = 0;
 	const USHORT  f_mon_stmt_att_id = 1;
 	const USHORT  f_mon_stmt_tra_id = 2;
@@ -422,6 +493,8 @@
 	const USHORT  f_mon_stmt_sql_text = 5;
 	const USHORT  f_mon_stmt_stat_id = 6;
 
+
+// Relation 37 (MON$CALL_STACK)
 
 	const USHORT  f_mon_call_id = 0;
 	const USHORT  f_mon_call_stmt_id = 1;
@@ -435,6 +508,8 @@
 	const USHORT  f_mon_call_pkg_name = 9;
 
 
+// Relation 38 (MON$IO_STATS)
+
 	const USHORT  f_mon_io_stat_id = 0;
 	const USHORT  f_mon_io_stat_group = 1;
 	const USHORT  f_mon_io_page_reads = 2;
@@ -442,6 +517,8 @@
 	const USHORT  f_mon_io_page_fetches = 4;
 	const USHORT  f_mon_io_page_marks = 5;
 
+
+// Relation 39 (MON$RECORD_STATS)
 
 	const USHORT  f_mon_rec_stat_id = 0;
 	const USHORT  f_mon_rec_stat_group = 1;
@@ -455,11 +532,15 @@
 	const USHORT  f_mon_rec_expunges = 9;
 
 
+// Relation 40 (MON$CONTEXT_VARIABLES)
+
 	const USHORT  f_mon_ctx_var_att_id = 0;
 	const USHORT  f_mon_ctx_var_tra_id = 1;
 	const USHORT  f_mon_ctx_var_name = 2;
 	const USHORT  f_mon_ctx_var_value = 3;
 
+
+// Relation 41 (MON$MEMORY_USAGE)
 
 	const USHORT  f_mon_mem_stat_id = 0;
 	const USHORT  f_mon_mem_stat_group = 1;
@@ -469,8 +550,7 @@
 	const USHORT  f_mon_mem_max_alloc = 5;
 
 
-// Continue persistent tables
-
+// Relation 42 (RDB$PACKAGES)
 
 	const USHORT  f_pkg_name = 0;
 	const USHORT  f_pkg_header_source = 1;
