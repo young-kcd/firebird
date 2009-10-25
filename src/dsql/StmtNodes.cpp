@@ -632,12 +632,6 @@ dsql_par* ExecBlockNode::revertParametersOrder(dsql_par* parameter, dsql_par* pr
 //--------------------
 
 
-ExitNode* ExitNode::internalDsqlPass()
-{
-	return this;
-}
-
-
 void ExitNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "ExitNode";

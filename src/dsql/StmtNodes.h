@@ -141,9 +141,6 @@ public:
 	{
 	}
 
-protected:
-	virtual ExitNode* internalDsqlPass();
-
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void genBlr();

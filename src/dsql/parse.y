@@ -4248,8 +4248,8 @@ join_type	: INNER
 		;
 
 outer_noise
-	: OUTER
-	|
+	:
+	| OUTER
 	;
 
 
