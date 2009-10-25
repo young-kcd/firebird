@@ -1,3 +1,54 @@
+2009-10-25 02:11  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.317):
+
+	Use bool type in release_only_opt
+
+2009-10-25 02:08  asfernandes
+
+	* firebird2/src/dsql/: StmtNodes.cpp (1.13), StmtNodes.h (1.7),
+	parse.y (1.316):
+
+	Misc
+
+2009-10-24 21:15  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.315):
+
+	Do not declare type for "noise" nodes
+
+2009-10-24 21:07  asfernandes
+
+	* firebird2/src/dsql/: PackageNodes.epp (1.3), pass1.cpp (1.462):
+
+	Fix some problems found by Claudio
+
+2009-10-24 20:38  asfernandes
+
+	* firebird2/src/dsql/DdlNodes.epp (1.10):
+
+	Misc
+
+2009-10-24 19:45  asfernandes
+
+	* firebird2/src/: dsql/Nodes.h (1.5), dsql/StmtNodes.cpp (1.12),
+	dsql/StmtNodes.h (1.6), dsql/gen.cpp (1.188), dsql/gen_proto.h
+	(1.21), dsql/node.h (1.126), dsql/parse.y (1.314), dsql/pass1.cpp
+	(1.461), jrd/cmp.cpp (1.356), jrd/exe.cpp (1.308), jrd/exe.h
+	(1.143), jrd/exe_proto.h (1.21), jrd/nod.h (1.33), jrd/par.cpp
+	(1.248), jrd/par_proto.h (1.27), misc/blrtable.cpp (1.42):
+
+	Some statements nodes refactor - creation of IfNode, ExitNode,
+	SuspendNode, PostEventNode and SavePointNode.
+
+2009-10-24 17:28  asfernandes
+
+	* firebird2/src/isql/: InputDevices.cpp (1.6), InputDevices.h
+	(1.6), isql.epp (1.294):
+
+	Do not convert filenames to absolute form for display. That breaks
+	tests made with ISQL. (CORE-2575)
+
 2009-10-24 03:55  asfernandes
 
 	* firebird2/src/: gpre/jrdmet.cpp (1.30), include/gen/ids.h (1.38):
