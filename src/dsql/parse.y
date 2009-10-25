@@ -604,6 +604,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 {
 	TriStateRawType<int> triIntVal;
 	TriStateRawType<bool> triBoolVal;
+	bool boolVal;
 	int intVal;
 	unsigned uintVal;
 	FB_UINT64 uint64Val;
@@ -729,7 +730,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> qualified_join quantified_predicate query_spec query_term
 
 %type <legacyNode> raise_statement recreate recreate_clause referential_action referential_constraint
-%type <legacyNode> referential_trigger_action release_only_opt release_savepoint replace_clause
+%type <legacyNode> referential_trigger_action release_savepoint replace_clause
 %type <legacyNode> replace_exception_clause
 %type <legacyNode> replace_view_clause restr_list restr_option return_mechanism return_value
 %type <legacyNode> return_value1 returning_clause rev_admin_option rev_grant_option revoke
@@ -782,6 +783,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 // New nodes
 
 %type <intVal> ddl_type0 ddl_type1 ddl_type2
+
+%type <boolVal> release_only_opt
 
 %type <ddlNode> alter_charset_clause
 %type <stmtNode> if_then_else in_autonomous_transaction exec_block
@@ -3754,10 +3757,10 @@ release_savepoint
 	;
 
 release_only_opt
-	: ONLY
-		{ $$ = make_node(nod_flag, 0, NULL); }
-	|
-		{ $$ = NULL; }
+	:
+		{ $$ = false; }
+	| ONLY
+		{ $$ = true; }
 	;
 
 undo_savepoint
