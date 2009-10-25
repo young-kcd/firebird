@@ -5092,15 +5092,15 @@ sql_string
 	| INTRODUCER STRING	// string in specific charset
 		{
 			dsql_str* str = $2;
-			$2->str_charset = $1;
-			if ($2->type == dsql_str::TYPE_SIMPLE || $2->type == dsql_str::TYPE_ALTERNATE)
+			str->str_charset = $1;
+			if (str->type == dsql_str::TYPE_SIMPLE || str->type == dsql_str::TYPE_ALTERNATE)
 			{
 				IntroducerMark mark;
 				mark.pos = lex.last_token - lex.start;
 				mark.length = lex.ptr - lex.last_token;
-				mark.textLength = $2->str_length;
+				mark.textLength = str->str_length;
 
-				if ($2->type == dsql_str::TYPE_SIMPLE)
+				if (str->type == dsql_str::TYPE_SIMPLE)
 				{
 					fb_assert(mark.length - mark.textLength == 2);
 					mark.textPos = mark.pos + 1;
@@ -5113,7 +5113,7 @@ sql_string
 
 				introducerMarks.push(mark);
 			}
-			$$ = $2;
+			$$ = str;
 		}
 	;
 
