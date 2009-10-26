@@ -1,3 +1,9 @@
+2009-10-25 15:46  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.318):
+
+	Use already declared variable instead of $2 as see by Claudio
+
 2009-10-25 02:11  asfernandes
 
 	* firebird2/src/dsql/parse.y (1.317):
