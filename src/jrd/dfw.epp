@@ -183,7 +183,8 @@ public:
 				 const MetaName& package)
 	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL),
 		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
-		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p, name)
+		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p, name),
+		dfw_package(p, package)
 	{
 		// make previous element point to us
 		if (dfw_prev)
@@ -1540,7 +1541,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(blr_message);
 			blr.add(1);	// message number
 			blr.add(fields.getCount() & 0xFF);
-			blr.add(fields.getCount() << 8);
+			blr.add(fields.getCount() >> 8);
 
 			for (size_t i = 0; i < fields.getCount(); ++i)
 			{
@@ -1554,7 +1555,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(1);
 			blr.add(blr_rid);
 			blr.add(relation->rel_id & 0xFF);
-			blr.add(relation->rel_id << 8);
+			blr.add(relation->rel_id >> 8);
 			blr.add(0);	// stream
 			blr.add(blr_boolean);
 
@@ -1567,7 +1568,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				blr.add(blr_fid);
 				blr.add(0);	// stream
 				blr.add(fields[i] & 0xFF);
-				blr.add(fields[i] << 8);
+				blr.add(fields[i] >> 8);
 			}
 
 			blr.add(blr_end);
@@ -1585,7 +1586,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				blr.add(blr_fid);
 				blr.add(0);	// stream
 				blr.add(fields[i] & 0xFF);
-				blr.add(fields[i] << 8);
+				blr.add(fields[i] >> 8);
 
 				blr.add(blr_literal);
 				blr.add(blr_short);
@@ -1602,7 +1603,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				blr.add(blr_parameter);
 				blr.add(1);	// message number
 				blr.add(i & 0xFF);
-				blr.add(i << 8);
+				blr.add(i >> 8);
 			}
 
 			blr.add(blr_end);
@@ -1622,7 +1623,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				blr.add(blr_parameter);
 				blr.add(1);	// message number
 				blr.add(i & 0xFF);
-				blr.add(i << 8);
+				blr.add(i >> 8);
 			}
 
 			blr.add(blr_end);

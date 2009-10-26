@@ -888,13 +888,6 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
  			}
 		}
 
-		// Could not find a function with given MODULE, ENTRYPOINT.
-		// Try the list of internally implemented functions.
-		if (!function->fun_entrypoint)
-		{
-			function->fun_entrypoint = BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
-		}
-
 		// ASF: All the places handling fun_homonym is something that doesn't work really.
 		// Our current system table rdb$function_arguments doesn't support overloaded
 		// functions as it has a rdb$function_name column instead of an ID.
