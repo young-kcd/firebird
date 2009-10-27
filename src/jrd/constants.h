@@ -265,6 +265,7 @@ const int DB_TRIGGER_MAX			= 5;
 
 static const char* const DDL_TRIGGER_ACTION_NAMES[] =
 {
+	NULL,
 	"CREATE TABLE",
 	"ALTER TABLE",
 	"DROP TABLE",

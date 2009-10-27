@@ -86,7 +86,7 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 		return;
 
 	DdlTriggerContext context;
-	context.ddlEvent = DDL_TRIGGER_ACTION_NAMES[action - 1];
+	context.ddlEvent = DDL_TRIGGER_ACTION_NAMES[action];
 	context.objectName = objectName;
 	context.sqlText = sqlText;
 
