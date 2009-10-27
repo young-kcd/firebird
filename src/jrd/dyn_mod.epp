@@ -1541,11 +1541,11 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_relation))
 			DYN_REQUEST(drq_m_relation) = request;
 
-		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
-			DDL_TRIGGER_ALTER_TABLE, name, gbl->sqlText);
-
 		if (!REL.RDB$VIEW_BLR.NULL)
 			DYN_error_punt(false, 177);
+
+		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
+			DDL_TRIGGER_ALTER_TABLE, name, gbl->sqlText);
 
 		found = true;
 		MODIFY REL USING
