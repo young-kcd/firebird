@@ -691,8 +691,8 @@ void RecreatePackageNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 Node* RecreatePackageNode::internalDsqlPass()
 {
-	createNode->dsqlPass(compiledStatement);
 	dropNode.dsqlPass(compiledStatement);
+	createNode->dsqlPass(compiledStatement);
 	return DdlNode::internalDsqlPass();
 }
 
@@ -1118,8 +1118,8 @@ void RecreatePackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 Node* RecreatePackageBodyNode::internalDsqlPass()
 {
-	createNode->dsqlPass(compiledStatement);
 	dropNode.dsqlPass(compiledStatement);
+	createNode->dsqlPass(compiledStatement);
 	return DdlNode::internalDsqlPass();
 }
 

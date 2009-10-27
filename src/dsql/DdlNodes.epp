@@ -2035,8 +2035,8 @@ void RecreateProcedureNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 Node* RecreateProcedureNode::internalDsqlPass()
 {
-	createNode->dsqlPass(compiledStatement);
 	dropNode.dsqlPass(compiledStatement);
+	createNode->dsqlPass(compiledStatement);
 	return DdlNode::internalDsqlPass();
 }
 
@@ -2574,8 +2574,8 @@ void RecreateTriggerNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 Node* RecreateTriggerNode::internalDsqlPass()
 {
-	createNode->dsqlPass(compiledStatement);
 	dropNode.dsqlPass(compiledStatement);
+	createNode->dsqlPass(compiledStatement);
 	return DdlNode::internalDsqlPass();
 }
 
