@@ -1,3 +1,10 @@
+2009-10-26 15:48  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.285), fun.epp (1.133):
+
+	Fix some original problems and others done in merges, thanks to
+	Claudio
+
 2009-10-25 15:46  asfernandes
 
 	* firebird2/src/dsql/parse.y (1.318):
