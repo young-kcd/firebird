@@ -71,7 +71,7 @@ public:
 	{
 		if (!tryReleaseLock(tdbb))
 			return false;
-		
+
 		memcpy(&cached_lock->lck_key, key, cached_lock->lck_length);
 		return true;
 	}
@@ -155,37 +155,44 @@ GlobalRWLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 			int tries = MIN(m_capacity / 2, 16);
 			while (true)
 			{
+				if (tries == 0)
+				{
+					m_capacity++;
+					lock = FB_NEW (m_pool) LockClass(tdbb, m_pool, m_lockType, m_lockLen, key);
+					break;
+				}
+
+				// We going to change key of the least recently used lock.
+				// To prevent someone from acquire this lock while we not in 
+				// sheduler (inside setLockKey() below) we should remove 
+				// our lock from internal structures first and only then try 
+				// to change its key
+
 				lock = (LockClass*) ((SCHAR*) que_inst - OFFSET (LockClass*, m_lru));
 
 				bool found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
 				fb_assert(found);
 
-				if (lock->setLockKey(tdbb, key))
-				{
-					m_sortedLocks.remove(pos);
-					QUE_DELETE((*que_inst));
+				que_inst = que_inst->que_backward;
+				QUE_DELETE(lock->m_lru);
+				m_sortedLocks.remove(pos);
 
-					found = (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos));
-					fb_assert(!found);
+				if (lock->setLockKey(tdbb, key)) 
 					break;
-				}
-				else if (tries == 0)
-				{
-					m_capacity++;
-					lock = FB_NEW (m_pool) LockClass(tdbb, m_pool, m_lockType, m_lockLen, key);
-					found = (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos));
-					fb_assert(!found);
-					break;
-				}
-				else
-				{
-					que_inst = que_inst->que_backward;
-					tries--;
-					// move busy lock to the head of LRU queue
-					QUE_DELETE(lock->m_lru);
-					QUE_INSERT(m_lru, lock->m_lru);
-				}
+				
+				tries--;
+
+				// move busy lock to the head of LRU queue
+				QUE_INSERT(m_lru, lock->m_lru);
+
+				// and put it back to the sorted array
+				found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
+				fb_assert(!found);
+				m_sortedLocks.insert(pos, lock);
 			}
+
+			const bool found = (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos));
+			fb_assert(!found);
 		}
 		m_sortedLocks.insert(pos, lock);
 	}
