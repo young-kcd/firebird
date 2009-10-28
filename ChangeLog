@@ -1,3 +1,22 @@
+2009-10-27 15:58  asfernandes
+
+	* firebird2/src/dsql/: DdlNodes.epp (1.12), PackageNodes.epp (1.4):
+
+	Misc
+
+2009-10-27 15:50  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.11), jrd/constants.h (1.67):
+
+	Misc
+
+2009-10-27 15:43  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.121):
+
+	Check if table is really table before call before triggers, as see
+	by Claudio
+
 2009-10-26 15:48  asfernandes
 
 	* firebird2/src/jrd/: dfw.epp (1.285), fun.epp (1.133):
