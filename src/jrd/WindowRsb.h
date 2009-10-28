@@ -30,7 +30,7 @@ namespace Jrd {
 
 class WindowRsb : public RecordStream
 {
-public:
+private:
 	WindowRsb(RecordSource* aRsb);
 
 public:

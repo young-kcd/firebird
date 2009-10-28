@@ -4865,13 +4865,13 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 		if (count <= 0 || !vector)
 			status_exception::raise(Arg::Gds(isc_bad_teb_form));
 
-		if (vector->teb_tpb_length < 0 || (vector->teb_tpb_length > 0 && !vector->teb_tpb))
-			status_exception::raise(Arg::Gds(isc_bad_tpb_form));
-
 		Transaction* ptr = &transaction;
 
 		for (USHORT n = 0; n < count; n++, ptr = &(*ptr)->next, vector++)
 		{
+			if (vector->teb_tpb_length < 0 || (vector->teb_tpb_length > 0 && !vector->teb_tpb))
+				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+
 			attachment = translate<CAttachment>(vector->teb_database);
 
 			*ptr = new CTransaction(0, 0, attachment);

@@ -45,7 +45,7 @@ public:
 
 class VirtualTable : public RecordStream
 {
-public:
+private:
 	VirtualTable(RecordSource* aRsb)
 		: rsb(aRsb)
 	{
