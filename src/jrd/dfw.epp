@@ -5573,34 +5573,20 @@ static void put_summary_blob(thread_db* tdbb, blb* blob, rsr_t type, bid* blob_i
  *
  **************************************/
 
-	UCHAR temp[128];
-
 	SET_TDBB(tdbb);
-	//Database* dbb  = tdbb->getDatabase();
 
-	/* If blob is null, don't bother */
-
-	if (blob_id->isEmpty())
+	if (blob_id->isEmpty())	// If blob is null, don't bother.
 		return;
 
 	// Go ahead and open blob
 	blb* blr = BLB_open(tdbb, transaction, blob_id);
 	fb_assert(blr->blb_length <= MAX_USHORT);
-	USHORT length = (USHORT)blr->blb_length;
-	UCHAR* const buffer = (length > sizeof(temp)) ?
-		FB_NEW(*getDefaultMemoryPool()) UCHAR[length] : temp;
-	try {
-		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
-		put_summary_record(tdbb, blob, type, buffer, length);
-	}
-	catch (const Firebird::Exception&) {
-		if (buffer != temp)
-			delete[] buffer;
-		throw;
-	}
 
-	if (buffer != temp)
-		delete[] buffer;
+	USHORT length = (USHORT) blr->blb_length;
+	HalfStaticArray<UCHAR, 128> buffer;
+
+	length = (USHORT) BLB_get_data(tdbb, blr, buffer.getBuffer(length), (SLONG) length);
+	put_summary_record(tdbb, blob, type, buffer.begin(), length);
 }
 
 
