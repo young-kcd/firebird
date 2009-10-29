@@ -278,6 +278,7 @@ ExternalEngineFactory* PluginImpl::getExternalEngineFactory()
 {
 	if (!externalEngineFactory)
 	{
+		//// TODO: localize
 		status_exception::raise(
 			Arg::Gds(isc_random) <<
 			Arg::Str("Plugin @1 does not create @2 instances") <<

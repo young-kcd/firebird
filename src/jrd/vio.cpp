@@ -5011,11 +5011,7 @@ static void set_system_flag(thread_db* tdbb, record_param* rpb, USHORT field_id,
 	}
 
 	dsc desc2;
-	desc2.dsc_dtype = dtype_short;
-	desc2.dsc_length = sizeof(SSHORT);
-	desc2.dsc_scale = 0;
-	desc2.dsc_sub_type = 0;
-	desc2.dsc_address = (UCHAR *) & flag;
+	desc2.makeShort(0, &flag);
 	MOV_move(tdbb, &desc2, &desc1);
 	CLEAR_NULL(record, field_id);
 }
