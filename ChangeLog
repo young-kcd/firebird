@@ -1,3 +1,16 @@
+2009-10-29 00:39  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.286):
+
+	Misc: replace array + conditional allocation by HalfStaticArray
+
+2009-10-28 16:31  asfernandes
+
+	* firebird2/src/jrd/: VirtualTable.h (1.6), WindowRsb.h (1.3),
+	why.cpp (1.265):
+
+	Misc and bugfix per Claudio
+
 2009-10-27 15:58  asfernandes
 
 	* firebird2/src/dsql/: DdlNodes.epp (1.12), PackageNodes.epp (1.4):
