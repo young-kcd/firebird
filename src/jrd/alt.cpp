@@ -823,10 +823,6 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 // This function was exported earlier for reasons, not completely clear to me.
 // It MUST not be ever exported - looks like I've missed bad commit in CVS.
 // Keep it here to avoid senseless API change.
-enum ast_t
-{
-    AST_dummy
-};
 
 void API_ROUTINE SCH_ast(enum ast_t)
 {
