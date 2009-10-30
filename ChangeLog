@@ -1,3 +1,72 @@
+2009-10-30 11:57  robocop
+
+	* firebird2/src/: jrd/SysFunction.cpp (1.82), jrd/ValueImpl.cpp
+	(1.4), jrd/ValuesImpl.cpp (1.4), jrd/ValuesImpl.h (1.5),
+	jrd/VirtualTable.cpp (1.17), jrd/VirtualTable.h (1.7),
+	jrd/WindowRsb.cpp (1.3), jrd/WindowRsb.h (1.4), jrd/tra.h (1.105),
+	jrd/vio_proto.h (1.35), plugins/udr_engine/UdrEngine.cpp (1.3),
+	remote/interface.cpp (1.224), isql/InputDevices.h (1.7):
+
+	Misc.
+
+2009-10-30 11:50  robocop
+
+	* firebird2/src/jrd/: cmp.cpp (1.357), dfw.epp (1.287), ErrorImpl.h
+	(1.3), ExtEngineManager.cpp (1.4), ExtEngineManager.h (1.4),
+	PluginManager.cpp (1.5), PreparedStatement.cpp (1.15), drq.h
+	(1.32), dyn_util.epp (1.68), exe.cpp (1.309), intl.cpp (1.132),
+	jrd.cpp (1.568), jrd.h (1.273), met.epp (1.290), ods.h (1.55):
+
+	Misc.
+
+2009-10-30 11:42  robocop
+
+	* firebird2/src/: common/classes/QualifiedName.h (1.3),
+	common/classes/TriState.h (1.7), common/classes/rwlock.h (1.42),
+	dsql/DdlNodes.epp (1.13), dsql/Nodes.h (1.6), dsql/PackageNodes.epp
+	(1.5), dsql/ddl_proto.h (1.19), dsql/gen_proto.h (1.22),
+	dsql/metd.epp (1.147), dsql/parse.y (1.319), dsql/StmtNodes.cpp
+	(1.14), dsql/StmtNodes.h (1.8), dsql/pass1.cpp (1.463),
+	include/FirebirdUdrCpp.h (1.3):
+
+	Misc.
+
+2009-10-30 11:04  dimitr
+
+	* firebird2/builds/win32/msvc8/udr_engine.vcproj (1.3):
+
+	Added DllNoEmbedManifest rule to the UDR engine library.
+
+2009-10-30 10:42  dimitr
+
+	* firebird2/builds/win32/msvc8/: asInvokerManifest.vsprops (1.1),
+	btyacc.vcproj (1.6), build_msg.vcproj (1.7), codes.vcproj (1.6),
+	empbuild.vcproj (1.8), fb_inet_server.vcproj (1.18),
+	fb_lock_print.vcproj (1.11), fbguard.vcproj (1.6), fbserver.vcproj
+	(1.19), fbsvcmgr.vcproj (1.3), fbtracemgr.vcproj (1.2),
+	firebird2.vsprops (1.4), gbak.vcproj (1.7), gbak_embed.vcproj
+	(1.9), gdef.vcproj (1.8), gfix.vcproj (1.9), gpre.vcproj (1.10),
+	gpre_boot.vcproj (1.10), gpre_embed.vcproj (1.7), gsec.vcproj
+	(1.8), gsplit.vcproj (1.6), gstat.vcproj (1.10), intlbuild.vcproj
+	(1.7), isql.vcproj (1.9), isql_embed.vcproj (1.7), nbackup.vcproj
+	(1.7), qli.vcproj (1.9):
+
+	Fixed the manifest conflict that VC8 ignores but VC8 SP1 takes into
+	account.  This is expected to resolve CORE-2711.
+
+2009-10-30 09:03  dimitr
+
+	* firebird2/builds/win32/msvc9/: udr_engine.vcproj (1.1),
+	udrcpp_example.vcproj (1.1):
+
+	Committed the forgotten files.
+
+2009-10-29 15:39  asfernandes
+
+	* firebird2/src/jrd/: PluginManager.cpp (1.4), vio.cpp (1.261):
+
+	Misc
+
 2009-10-29 00:39  asfernandes
 
 	* firebird2/src/jrd/dfw.epp (1.286):
