@@ -130,7 +130,7 @@ public:
 class ModulesMap : public GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >
 {
 public:
-	ModulesMap(MemoryPool& p)
+	explicit ModulesMap(MemoryPool& p)
 		: GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >(p)
 	{
 	}
@@ -494,7 +494,7 @@ Engine::~Engine()
 
 void Engine::loadModule(const string& str, PathName* moduleName, string* entryPoint, string* info)
 {
-	size_t pos = str.find('!');
+	const size_t pos = str.find('!');
 	if (pos == string::npos)
 	{
 		static const ISC_STATUS statusVector[] = {
@@ -592,7 +592,7 @@ template <typename ObjType> void Engine::deleteChildren(
 	GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children)
 {
 	// No need to lock childrenMutex as if there are more threads simultaneously accessing
-	// this children in this moment there will be a memory corruption anyway.
+	// these children in this moment there will be a memory corruption anyway.
 
 	typedef typename GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >::Accessor ChildrenAccessor;
 	ChildrenAccessor accessor(&children);
@@ -604,7 +604,7 @@ template <typename ObjType> void Engine::deleteChildren(
 template <typename T, typename T2> T* Engine::findNode(T* nodes,
 		const PathName& moduleName, T2* params)
 {
-	string entryPoint(params->entryPoint);
+	const string entryPoint(params->entryPoint);
 
 	for (T* node = nodes; node; node = node->next)
 	{
@@ -752,15 +752,13 @@ public:
 	{
 		if (strcmp(name, "UDR") == 0)
 			return new Engine();
-		else
-		{
-			const char* const msg = "Engine not implemented";
 
-			error->addCode(isc_arg_gds);
-			error->addCode(isc_random);
-			error->addString(msg, strlen(msg));
-			return NULL;
-		}
+		const char* const msg = "Engine not implemented";
+
+		error->addCode(isc_arg_gds);
+		error->addCode(isc_random);
+		error->addString(msg, strlen(msg));
+		return NULL;
 	}
 } factory;
 

@@ -34,7 +34,6 @@ public:
 	{
 	}
 
-public:
 	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen) = 0;
 	virtual void open(thread_db* tdbb) = 0;
 	virtual void close(thread_db* tdbb) = 0;
@@ -46,7 +45,7 @@ public:
 class VirtualTable : public RecordStream
 {
 private:
-	VirtualTable(RecordSource* aRsb)
+	explicit VirtualTable(RecordSource* aRsb)
 		: rsb(aRsb)
 	{
 	}

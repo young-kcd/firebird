@@ -79,7 +79,6 @@ namespace Jrd
 		AutoSavePoint(thread_db* tdbb, jrd_tra* aTransaction);
 		~AutoSavePoint();
 
-	public:
 		void release()
 		{
 			released = true;

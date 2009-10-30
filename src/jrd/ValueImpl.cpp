@@ -183,6 +183,8 @@ void ValueImpl::make(const dsc* aDesc, const Firebird::MetaName& aName, bool aNu
 void ValueImpl::make(const Format* format, unsigned index, UCHAR* msg,
 	const Firebird::MetaName& aName, bool aNullable, USHORT aFieldNumber)
 {
+	fb_assert(index * 2 < format->fmt_count);
+
 	desc = format->fmt_desc[index * 2];
 	desc.dsc_address = msg + (IPTR) desc.dsc_address;
 
@@ -262,8 +264,7 @@ int FB_CALL ValueImpl::getSubType(Error* error) const
 {
 	if (desc.isBlob())
 		return desc.getBlobSubType();
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -519,6 +520,19 @@ Firebird::int64 FB_CALL ValueImpl::getBlobId(Error* error, bool* isNull) const
 }
 
 
+void FB_CALL ValueImpl::setBlobId(Error* error, Firebird::int64 value)
+{
+	bid bid;
+	bid.bid_quad.bid_quad_low = value;
+	bid.bid_quad.bid_quad_high = value >> 32;
+
+	dsc from;
+	from.makeBlob(desc.getBlobSubType(), mover.getClientCharSet(), reinterpret_cast<ISC_QUAD*>(&bid));
+
+	setValue(error, &from);
+}
+
+
 void FB_CALL ValueImpl::getDate(Error* error, Date* value, bool* isNull) const
 {
 	DelegateError err(error);
@@ -651,7 +665,8 @@ void FB_CALL ValueImpl::setTimeStamp(Error* error, const DateTime* value)
 		&timeStamp2.time.minutes, &timeStamp2.time.seconds, &timeStamp2.time.fractions);
 
 	tm t2;
-	TimeStamp(gdsTimeStamp).decode(&t2);
+	//TimeStamp(gdsTimeStamp).decode(&t2);
+	TimeStamp::decode_date(gdsTimeStamp.timestamp_date, &t2);
 
 	if (timeStamp2.time.hours != value->time.hours ||
 		timeStamp2.time.minutes != value->time.minutes ||
@@ -672,19 +687,6 @@ void FB_CALL ValueImpl::setTimeStamp(Error* error, const DateTime* value)
 
 	dsc from;
 	from.makeTimestamp(&gdsTimeStamp);
-	setValue(error, &from);
-}
-
-
-void FB_CALL ValueImpl::setBlobId(Error* error, Firebird::int64 value)
-{
-	bid bid;
-	bid.bid_quad.bid_quad_low = value;
-	bid.bid_quad.bid_quad_high = value >> 32;
-
-	dsc from;
-	from.makeBlob(desc.getBlobSubType(), mover.getClientCharSet(), reinterpret_cast<ISC_QUAD*>(&bid));
-
 	setValue(error, &from);
 }
 

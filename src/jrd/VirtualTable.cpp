@@ -122,7 +122,7 @@ void VirtualTable::modify(thread_db* tdbb, record_param* /*org_rpb*/, record_par
 }
 
 
-void VirtualTable::store(thread_db* tdbb, record_param* rpb)
+void VirtualTable::store(thread_db* tdbb, record_param* /*rpb*/)
 {
 	ERR_post(Arg::Gds(isc_read_only));
 }

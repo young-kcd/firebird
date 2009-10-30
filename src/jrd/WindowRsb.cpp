@@ -40,11 +40,11 @@ WindowRsb::WindowRsb(RecordSource* aRsb)
 }
 
 
-RecordSource* WindowRsb::create(thread_db* tdbb, OptimizerBlk* opt, RecordSource* next)
+RecordSource* WindowRsb::create(thread_db* tdbb, OptimizerBlk* /*opt*/, RecordSource* next)
 {
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = opt->opt_csb;
+	//CompilerScratch* csb = opt->opt_csb;
 
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
 	rsb->rsb_type = rsb_record_stream;
@@ -94,7 +94,7 @@ bool WindowRsb::get(thread_db* tdbb)
 	if (!RSE_internal_get_record(tdbb, next->rsb_next, NULL, RSE_get_forward))
 		return false;
 
-	jrd_req* request = tdbb->getRequest();
+	//jrd_req* request = tdbb->getRequest();
 	jrd_nod* node = (jrd_nod*) next->rsb_arg[0];
 	jrd_nod* map = node->nod_arg[e_agg_map];
 
@@ -102,7 +102,7 @@ bool WindowRsb::get(thread_db* tdbb)
 	for (const jrd_nod* const* end = ptr + map->nod_count; ptr < end; ptr++)
 	{
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+		//impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
 
 		switch (from->nod_type)
 		{

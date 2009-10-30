@@ -31,12 +31,11 @@ namespace Jrd {
 class WindowRsb : public RecordStream
 {
 private:
-	WindowRsb(RecordSource* aRsb);
+	explicit WindowRsb(RecordSource* aRsb);
 
 public:
 	static RecordSource* create(thread_db*, OptimizerBlk* opt, RecordSource* next);
 
-public:
 	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen);
 	virtual void open(thread_db* tdbb);
 	virtual void close(thread_db* tdbb);

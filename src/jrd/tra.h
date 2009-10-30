@@ -116,6 +116,15 @@ struct CallerName
 	{
 	}
 
+	void operator=(const CallerName& o)
+	{
+		if (&o != this)
+		{
+			type = o.type;
+			name = o.name;
+		}
+	}
+
 	int type;
 	Firebird::MetaName name;
 };

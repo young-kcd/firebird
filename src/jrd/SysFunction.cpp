@@ -187,7 +187,6 @@ dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* a
 dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 
 
-// Context variable function names. Do not forget to change functions.h too if changing
 const char
 	RDB_GET_CONTEXT[] = "RDB$GET_CONTEXT",
 	RDB_SET_CONTEXT[] = "RDB$SET_CONTEXT";
@@ -355,8 +354,7 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 }
 
 
-void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction* function,
-	int argsCount, dsc** args)
+void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
 		args[0]->makeText(80, ttype_none);
@@ -705,8 +703,8 @@ void makeDateAdd(DataTypeUtilBase*, const SysFunction*, dsc* result, int argsCou
 }
 
 
-void makeGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
-	int argsCount, const dsc** args)
+void makeGetSetContext(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* function, dsc* result,
+	int argsCount, const dsc** /*args*/)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -2196,7 +2194,7 @@ dsc* evlSetContext(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	fb_assert(args->nod_count == 3);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	jrd_tra* transaction = tdbb->getTransaction();
 	jrd_req* request = tdbb->getRequest();
 

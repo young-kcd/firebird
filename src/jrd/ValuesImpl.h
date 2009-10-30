@@ -42,7 +42,7 @@ private:
 		virtual ~IndividualQueue();
 
 	public:
-		virtual void FB_CALL dispose(Firebird::Error* error)
+		virtual void FB_CALL dispose(Firebird::Error* /*error*/)
 		{
 			delete this;
 		}
@@ -68,7 +68,7 @@ private:
 		virtual ~MsgQueue();
 
 	public:
-		virtual void FB_CALL dispose(Firebird::Error* error)
+		virtual void FB_CALL dispose(Firebird::Error* /*error*/)
 		{
 			delete this;
 		}
@@ -150,13 +150,11 @@ public:
 	{
 		if (index >= 1 && index <= count)
 			return getValue(index);
-		else
-		{
-			//// TODO: localize
-			const static char* const msg = "Invalid index";
-			error->addString(msg, strlen(msg));
-			return NULL;
-		}
+
+		//// TODO: localize
+		const static char* const msg = "Invalid index";
+		error->addString(msg, strlen(msg));
+		return NULL;
 	}
 
 	virtual Firebird::Value* FB_CALL getValueByName(Firebird::Error* error,

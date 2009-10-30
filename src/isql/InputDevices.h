@@ -62,7 +62,6 @@ public:
 	private:
 		void makeFullFileName();
 
-	private:
 		Firebird::PathName indev_fn, indev_fn_display;
 
 		void operator=(const void*); // prevent surprises.

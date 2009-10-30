@@ -196,7 +196,7 @@ bool FB_CALL ValuesImpl::MsgQueue::dequeue(Error* error)
 
 Firebird::uint FB_CALL ValuesImpl::getIndexByName(Error* error, const char* name) const
 {
-	string nameStr(name);
+	const string nameStr(name);
 
 	for (unsigned i = 0; i < count; ++i)
 	{
@@ -221,8 +221,8 @@ Value* FB_CALL ValuesImpl::getValueByName(Error* error, const char* name) const
 
 	if (index > 0)
 		return getValue(error, index);
-	else
-		return NULL;
+
+	return NULL;
 }
 
 
@@ -230,8 +230,8 @@ ValuesQueue* FB_CALL ValuesImpl::createQueue(Error* error)
 {
 	if (msg)
 		return new MsgQueue(getPool(), error, msg, msgLength);
-	else
-		return new IndividualQueue(getPool(), error, this);
+
+	return new IndividualQueue(getPool(), error, this);
 }
 
 
