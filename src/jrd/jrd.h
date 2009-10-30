@@ -788,7 +788,7 @@ public:
 
 	void setRequest(jrd_req* val);
 
-	SSHORT getCharSet();
+	SSHORT getCharSet() const;
 
 	void bumpStats(const RuntimeStatistics::StatType index)
 	{

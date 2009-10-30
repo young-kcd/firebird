@@ -49,7 +49,7 @@ namespace
 	class PluginsMap : public GenericMap<Pair<Left<string, PluginImpl*> > >
 	{
 	public:
-		PluginsMap(MemoryPool& p)
+		explicit PluginsMap(MemoryPool& p)
 			: GenericMap<Pair<Left<string, PluginImpl*> > >(p)
 		{
 		}
@@ -127,7 +127,7 @@ void PluginManager::initialize()
 						for (Element* elConfig = objConfig->object->children;
 							 elConfig; elConfig = elConfig->sibling)
 						{
-							string key = elConfig->name;
+							const string key = elConfig->name;
 							string value;
 							const char* attribute;
 

@@ -47,23 +47,19 @@ public:
 
 	virtual ~ErrorImpl();
 
-public:
 	static void statusVectorToError(const ISC_STATUS* vector, Error* error);
 	static void exceptionToError(const Firebird::Exception& ex, Error* error);
 
-public:
-	bool errorOccurred()
+	bool errorOccurred() const
 	{
 		return next != status;
 	}
 
-public:
 	inline operator Error* ()
 	{
 		return this;
 	}
 
-public:
 	virtual bool FB_CALL addCode(Firebird::int32 code);
 	virtual bool FB_CALL addString(const char* str, Firebird::uint strLength);
 
@@ -90,7 +86,7 @@ public:
 class DelegateError : public Firebird::Error
 {
 public:
-	DelegateError(Firebird::Error* aError)
+	explicit DelegateError(Firebird::Error* aError)
 		: error(aError),
 		  raised(false)
 	{
@@ -108,7 +104,7 @@ public:
 		return error->addString(str, strLength);
 	}
 
-	bool isRaised()
+	bool isRaised() const
 	{
 		return raised;
 	}

@@ -1494,7 +1494,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	Lock* relationLock = NULL;
 	bool releaseRelationLock = false;
@@ -3868,7 +3868,7 @@ static bool delete_procedure(thread_db*	tdbb,
 				return false;
 			}
 
-			QualifiedName name(work->dfw_name, work->dfw_package);
+			const QualifiedName name(work->dfw_name, work->dfw_package);
 
 			// Do not allow to drop procedure used by user requests
 			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
@@ -5243,7 +5243,7 @@ static bool modify_procedure(thread_db*	tdbb,
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	QualifiedName name(work->dfw_name, work->dfw_package);
+	const QualifiedName name(work->dfw_name, work->dfw_package);
 
 	switch (phase)
 	{

@@ -292,7 +292,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
 }
 
 
-void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
+void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* /*gbl*/, Firebird::MetaName& buffer)
 {
 /**************************************
  *
@@ -364,7 +364,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, TEXT* buffer)
 }
 
 
-void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
+void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* /*gbl*/, Firebird::MetaName& buffer)
 {
 /**************************************
  *
@@ -468,7 +468,7 @@ void DYN_UTIL_generate_field_position(thread_db* tdbb,
 }
 
 
-void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
+void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* /*gbl*/,
 								  Firebird::MetaName& buffer, UCHAR verb)
 {
 /**************************************
@@ -535,7 +535,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 }
 
 
-void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::MetaName& buffer)
+void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* /*gbl*/, Firebird::MetaName& buffer)
 {
 /**************************************
  *

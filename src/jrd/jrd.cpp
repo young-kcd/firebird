@@ -6266,12 +6266,12 @@ void thread_db::setRequest(jrd_req* val)
 	reqStat = val ? &val->req_stats : RuntimeStatistics::getDummy();
 }
 
-SSHORT thread_db::getCharSet()
+SSHORT thread_db::getCharSet() const
 {
 	if (request && request->req_charset != CS_dynamic)
 		return request->req_charset;
-	else
-		return attachment->att_charset;
+
+	return attachment->att_charset;
 }
 
 
@@ -6536,7 +6536,6 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
  *
  **************************************/
 	jrd_tra* prior = NULL;
-	jrd_tra* transaction = NULL;
 
 	try
 	{
@@ -6570,7 +6569,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 			}
 
-			transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
+			jrd_tra* transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
 			transaction->tra_public_handle = public_handle;
 
 			transaction->tra_sibling = prior;

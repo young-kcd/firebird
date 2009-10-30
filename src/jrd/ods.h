@@ -114,7 +114,7 @@ const USHORT ODS_CURRENT11		= 2;
 
 // Minor versions for ODS 12
 
-const USHORT ODS_CURRENT12_0	= 0;		/* Firebird 3.0 features */
+const USHORT ODS_CURRENT12_0	= 0;	// Firebird 3.0 features
 const USHORT ODS_CURRENT12		= 0;
 
 // useful ODS macros. These are currently used to flag the version of the

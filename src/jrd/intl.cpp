@@ -518,7 +518,7 @@ void INTL_adjust_text_descriptor(thread_db* tdbb, dsc* desc)
 										buffer.getBuffer(TEXT_LEN(desc) * charSet->maxBytesPerChar()), 0,
 										TEXT_LEN(desc));
 
-				ULONG maxLength = TEXT_LEN(desc) / charSet->maxBytesPerChar();
+				const ULONG maxLength = TEXT_LEN(desc) / charSet->maxBytesPerChar();
 				ULONG charLength = charSet->length(desc->dsc_length, desc->dsc_address, true);
 
 				while (charLength > maxLength)

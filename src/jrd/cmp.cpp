@@ -478,7 +478,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	// this request is called immediately by caller (check for empty req_caller).
 	// Currently (in v2.5) this rule will work for EXECUTE STATEMENT only, as
 	// tra_callback_count incremented only by it.
-	// In v3.0, this rule also work for external procedures and triggers.
+	// In v3.0, this rule also works for external procedures and triggers.
 	jrd_tra* transaction = tdbb->getTransaction();
 	const bool useCallerPrivs = transaction && transaction->tra_callback_count &&
 		!request->req_caller;

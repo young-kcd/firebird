@@ -147,7 +147,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 	// To generate correct BLR we must walk params in ascending par_index order.
 	// So store all params in array in an ascending par_index order despite of
 	// order in linked list.
-	// ASF: Input parameters doesn't come necessary in ascending or descending order,
+	// ASF: Input parameters don't come necessarily in ascending or descending order,
 	// so I changed the code to use a SortedArray.
 
 	SortedArray<

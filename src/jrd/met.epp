@@ -3184,14 +3184,14 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			jrd_req* request2 = CMP_find_request(tdbb, irq_r_params, IRQ_REQUESTS);
 
-			MetaName packageName(P.RDB$PACKAGE_NAME.NULL ? NULL : P.RDB$PACKAGE_NAME);
+			const MetaName packageName(P.RDB$PACKAGE_NAME.NULL ? NULL : P.RDB$PACKAGE_NAME);
 
 			FOR (REQUEST_HANDLE request2)
 				PA IN RDB$PROCEDURE_PARAMETERS
 				CROSS F IN RDB$FIELDS
 				WITH F.RDB$FIELD_NAME = PA.RDB$FIELD_SOURCE AND
 					 PA.RDB$PROCEDURE_NAME = P.RDB$PROCEDURE_NAME AND
-					 PA.RDB$PACKAGE_NAME EQUIV NULLIF(MetaName(packageName).c_str(), '')
+					 PA.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
 
 	            if (!REQUEST(irq_r_params))
 				{
@@ -3211,7 +3211,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 						PA2 IN RDB$PROCEDURE_PARAMETERS
 						WITH PA2.RDB$PROCEDURE_NAME EQ PA.RDB$PROCEDURE_NAME AND
 							 PA2.RDB$PARAMETER_NAME EQ PA.RDB$PARAMETER_NAME AND
-							 PA2.RDB$PACKAGE_NAME EQUIV NULLIF(MetaName(packageName).c_str(), '')
+							 PA2.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
 
 						if (!REQUEST(irq_r_params2))
 							REQUEST(irq_r_params2) = request3;
@@ -4654,11 +4654,13 @@ static void gen_ext_message(Firebird::UCharBuffer& blr, UCHAR message,
 	const vec<Parameter*>* parameters)
 {
 	size_t count = (parameters ? parameters->count() : 0);
+	count = count * 2 + message;
+	fb_assert(count < MAX_USHORT);
 
 	blr.add(blr_message);	// e_extproc_input_message, e_extproc_output_message
 	blr.add(message);
-	blr.add(count * 2 + message);	// parameters (with nulls)
-	blr.add((count * 2 + message) >> 8);
+	blr.add(count);	// parameters (with nulls)
+	blr.add(count >> 8);
 
 	dsc shortDesc;
 	shortDesc.makeShort(0);
@@ -4690,6 +4692,7 @@ static void gen_ext_message(Firebird::UCharBuffer& blr, UCHAR message,
 
 			blr.add(blr_domain_full);
 
+			fb_assert(parameter->prm_field_source.length() <= MAX_UCHAR);
 			blr.add(parameter->prm_field_source.length());
 			blr.push(reinterpret_cast<const UCHAR*>(parameter->prm_field_source.c_str()),
 				parameter->prm_field_source.length());
@@ -4743,6 +4746,7 @@ static jrd_nod* parse_procedure_blr(thread_db* tdbb,
 
 		tmp.add(blr_begin);	// e_extproc_input_assign
 
+		fb_assert(procedure->prc_inputs < MAX_USHORT / 2);
 		for (USHORT i = 0; i < procedure->prc_inputs; ++i)
 		{
 			tmp.add(blr_assignment);
@@ -4759,6 +4763,7 @@ static jrd_nod* parse_procedure_blr(thread_db* tdbb,
 
 		tmp.add(blr_begin);	// e_extproc_output_assign
 
+		fb_assert(procedure->prc_outputs < MAX_USHORT / 2);
 		for (USHORT i = 0; i < procedure->prc_outputs; ++i)
 		{
 			tmp.add(blr_assignment);

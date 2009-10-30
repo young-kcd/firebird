@@ -173,8 +173,8 @@ private:
 		{	// scope
 			Database::Checkout dcoHolder(tdbb->getDatabase());
 
-			obj->getCharSet(RaiseError(), attInfo->context, charSetName, MAX_SQL_IDENTIFIER_SIZE - 1);
-			charSetName[MAX_SQL_IDENTIFIER_SIZE - 1] = '\0';
+			obj->getCharSet(RaiseError(), attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
+			charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
 		}
 
 		USHORT charSetId;
@@ -192,9 +192,10 @@ private:
 	EngineAttachmentInfo* attInfo;
 	Jrd::Attachment* attachment;
 	jrd_tra* transaction;
-	USHORT charSet;
-	bool attInUse;
-	bool traInUse;
+	// These data members are to restore the original information.
+	const USHORT charSet;
+	const bool attInUse;
+	const bool traInUse;
 	CallerName callerName;
 };
 
@@ -396,7 +397,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo,
 		function);	// CallerName(obj_udf, function->fun_name)
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 
 	impure->vlu_desc.dsc_flags = DSC_null;
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -615,10 +616,10 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, Firebird::ExternalTrigg
 
 
 int ExtEngineManager::Trigger::setValues(thread_db* tdbb, MemoryPool& pool,
-	ExternalContextImpl* context, AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
+	ExternalContextImpl* /*context*/, AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
 	record_param* rpb)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 
 	if (!rpb || !rpb->rpb_record)
 		return 0;
@@ -720,7 +721,7 @@ void ExtEngineManager::initialize()
 }
 
 
-void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
+void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* /*attachment*/)
 {
 	Array<ExternalEngine*> enginesCopy;
 
@@ -932,8 +933,8 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 
 							Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
 							engine->open(RaiseError(), attInfo->context, charSetName,
-								MAX_SQL_IDENTIFIER_SIZE - 1);
-							charSetName[MAX_SQL_IDENTIFIER_SIZE - 1] = '\0';
+								MAX_SQL_IDENTIFIER_LEN);
+							charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
 
 							if (!MET_get_char_coll_subtype(tdbb, &attInfo->adminCharSet,
 									reinterpret_cast<const UCHAR*>(charSetName),

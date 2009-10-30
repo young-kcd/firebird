@@ -66,11 +66,9 @@ private:
 		ExternalContextImpl(thread_db* tdbb, Firebird::ExternalEngine* aEngine);
 		virtual ~ExternalContextImpl();
 
-	public:
 		void releaseTransaction();
 		void setTransaction(thread_db* tdbb);
 
-	public:
 		virtual Firebird::ExternalEngine* FB_CALL getEngine(Firebird::Error* error);
 		virtual Firebird::Attachment* FB_CALL getAttachment(Firebird::Error* error);
 		virtual Firebird::Transaction* FB_CALL getTransaction(Firebird::Error* error);
@@ -112,7 +110,8 @@ private:
 	{
 		EngineAttachmentInfo()
 			: engine(NULL),
-			  context(NULL)
+			  context(NULL),
+			  adminCharSet(0)
 		{
 		}
 
@@ -131,7 +130,6 @@ public:
 			const UserFunction* aUdf);
 		~Function();
 
-	public:
 		void execute(thread_db* tdbb, jrd_nod* args, impure_value* impure);
 
 	private:
@@ -153,7 +151,6 @@ public:
 			const jrd_prc* aPrc);
 		~Procedure();
 
-	public:
 		ResultSet* open(thread_db* tdbb, ValuesImpl* inputParams, ValuesImpl* outputParams);
 
 	private:
@@ -173,7 +170,6 @@ public:
 			Procedure* aProcedure);
 		~ResultSet();
 
-	public:
 		bool fetch(thread_db* tdbb);
 
 	private:
@@ -194,7 +190,6 @@ public:
 			const Jrd::Trigger* aTrg);
 		~Trigger();
 
-	public:
 		void execute(thread_db* tdbb, Firebird::ExternalTrigger::Action action,
 			record_param* oldRpb, record_param* newRpb);
 
@@ -203,7 +198,6 @@ public:
 			Firebird::AutoPtr<ValuesImpl>& values, Firebird::Array<dsc*>& descs,
 			record_param* rpb);
 
-	private:
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;
 		Firebird::ExternalTrigger* trigger;
@@ -212,7 +206,7 @@ public:
 	};
 
 public:
-	ExtEngineManager(MemoryPool& p)
+	explicit ExtEngineManager(MemoryPool& p)
 		: PermanentStorage(p),
 		  engines(p),
 		  enginesAttachments(p)

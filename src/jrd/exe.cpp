@@ -595,7 +595,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 
 	if (tdbb->getDatabase()->dbb_ddl_triggers)
 	{
-		jrd_tra* old_transaction = tdbb->getTransaction();
+		jrd_tra* const old_transaction = tdbb->getTransaction();
 		tdbb->setTransaction(transaction);
 
 		try
@@ -1588,12 +1588,10 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 		EXE_start(tdbb, proc_request, transaction);
 		if (in_message) {
-			EXE_send(tdbb, proc_request, 0, in_msg_length,
-					 reinterpret_cast<const UCHAR*>(in_msg));
+			EXE_send(tdbb, proc_request, 0, in_msg_length, in_msg);
 		}
 
-		EXE_receive(tdbb, proc_request, 1, out_msg_length,
-				reinterpret_cast<UCHAR*>(out_msg));
+		EXE_receive(tdbb, proc_request, 1, out_msg_length, out_msg);
 
 /* Clean up all savepoints started during execution of the
    procedure */
