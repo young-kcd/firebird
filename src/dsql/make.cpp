@@ -1411,6 +1411,14 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, desc, node->nod_arg[e_hidden_var_expr], null_replacement);
 		return;
 
+	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
+		node = node->nod_arg[e_sel_query_spec];
+		fb_assert(node->nod_type == nod_query_spec);
+		node = node->nod_arg[e_qry_list];
+		fb_assert(node->nod_type == nod_list && node->nod_count > 0);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
+		return;
+
 	default:
 		fb_assert(false);			// unexpected dsql_nod type
 

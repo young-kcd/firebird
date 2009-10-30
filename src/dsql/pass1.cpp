@@ -3469,6 +3469,8 @@ static dsql_nod* pass1_any( CompiledStatement* statement, dsql_nod* input, NOD_T
 	DEV_BLKCHK(statement, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	set_parameter_type(statement, input->nod_arg[0], input->nod_arg[1], false);
+
 	// create a derived table representing our subquery
 	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
 	// Ignore validation for columnames that must exist for "user" derived tables.
