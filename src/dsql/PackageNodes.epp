@@ -54,7 +54,7 @@ namespace
 {
 	struct ParameterInfo
 	{
-		ParameterInfo(MemoryPool& p)
+		explicit ParameterInfo(MemoryPool& p)
 			: type(0),
 			  number(0),
 			  name(p),
@@ -152,14 +152,14 @@ namespace
 		{
 		}
 
-		Signature(const MetaName& aName)
+		explicit Signature(const MetaName& aName)
 			: name(aName),
 			  parameters(*getDefaultMemoryPool()),
 			  defined(false)
 		{
 		}
 
-		Signature(MemoryPool& p)
+		explicit Signature(MemoryPool& p)
 			: name(p),
 			  parameters(p),
 			  defined(false)
@@ -345,7 +345,7 @@ namespace
 //----------------------
 
 
-void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& nodes) const
+void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	fb_assert(items);
 
@@ -396,19 +396,25 @@ Node* CreateAlterPackageNode::internalDsqlPass()
 		switch ((*items)[i].type)
 		{
 			case CreateAlterPackageNode::Item::FUNCTION:
-				functionNames.add((*items)[i].function->name);
-				(*items)[i].function->alter = true;
-				(*items)[i].function->package = name;
-				itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*items)[i].function;
-				(*items)[i].function->dsqlPass(itemStatement);
+				{
+					CreateAlterFunctionNode* const fun = (*items)[i].function;
+					functionNames.add(fun->name);
+					fun->alter = true;
+					fun->package = name;
+					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) fun;
+					fun->dsqlPass(itemStatement);
+				}
 				break;
 
 			case CreateAlterPackageNode::Item::PROCEDURE:
-				procedureNames.add((*items)[i].procedure->name);
-				(*items)[i].procedure->alter = true;
-				(*items)[i].procedure->package = name;
-				itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*items)[i].procedure;
-				(*items)[i].procedure->dsqlPass(itemStatement);
+				{
+					CreateAlterProcedureNode* const proc = (*items)[i].procedure;
+					procedureNames.add(proc->name);
+					proc->alter = true;
+					proc->package = name;
+					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) proc;
+					proc->dsqlPass(itemStatement);
+				}
 				break;
 		}
 	}
@@ -473,7 +479,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 {
 	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE, metaName);
 
@@ -521,9 +527,9 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_pkg, DYN_REQUESTS);
 	bool modified = false;
@@ -585,7 +591,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void DropPackageNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DropPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"DropPackageNode\n"
@@ -596,7 +602,7 @@ void DropPackageNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
@@ -683,7 +689,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void RecreatePackageNode::print(string& text, Array<dsql_nod*>& nodes) const
+void RecreatePackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf("RecreatePackageNode\n");
 }
@@ -712,7 +718,7 @@ void RecreatePackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
+void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	fb_assert(items);
 
@@ -797,25 +803,31 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 			switch ((*arrays[i])[j].type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
-					(*arrays[i])[j].function->package = name;
-					(*arrays[i])[j].function->create = true;
-					if (arrays[i] == items)
-						(*arrays[i])[j].function->alter = true;
-					else
-						(*arrays[i])[j].function->privateScope = true;
-					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*arrays[i])[j].function;
-					(*arrays[i])[j].function->dsqlPass(itemStatement);
+					{
+						CreateAlterFunctionNode* const fun = (*arrays[i])[j].function;
+						fun->package = name;
+						fun->create = true;
+						if (arrays[i] == items)
+							fun->alter = true;
+						else
+							fun->privateScope = true;
+						itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) fun;
+						fun->dsqlPass(itemStatement);
+					}
 					break;
 
 				case CreateAlterPackageNode::Item::PROCEDURE:
-					(*arrays[i])[j].procedure->package = name;
-					(*arrays[i])[j].procedure->create = true;
-					if (arrays[i] == items)
-						(*arrays[i])[j].procedure->alter = true;
-					else
-						(*arrays[i])[j].procedure->privateScope = true;
-					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) (*arrays[i])[j].procedure;
-					(*arrays[i])[j].procedure->dsqlPass(itemStatement);
+					{
+						CreateAlterProcedureNode* const proc = (*arrays[i])[j].procedure;
+						proc->package = name;
+						proc->create = true;
+						if (arrays[i] == items)
+							proc->alter = true;
+						else
+							proc->privateScope = true;
+						itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) proc;
+						proc->dsqlPass(itemStatement);
+					}
 					break;
 			}
 		}
@@ -827,9 +839,9 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 
 void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	dbb->checkOdsForDsql(ODS_12_0);
 
@@ -904,14 +916,14 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		 i != existingFuncs.end(); ++i)
 	{
 		size_t pos;
-		bool found = newFuncs.find(i->name, pos);
+		bool found = newFuncs.find(Signature(getPool(), i->name), pos);
 
 		if (!found || !newFuncs[pos].defined)
 		{
 			//// TODO: localize
 			status_exception::raise(
 				Arg::Gds(isc_random) << Arg::Str(string("Function ") + i->name.c_str() +
-					" has not defined on the package body " + name.c_str()));
+					" has not been defined on the package body " + name.c_str()));
 		}
 		else if (newFuncs[pos] != *i)
 		{
@@ -926,14 +938,14 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		 i != existingProcs.end(); ++i)
 	{
 		size_t pos;
-		bool found = newProcs.find(i->name, pos);
+		bool found = newProcs.find(Signature(getPool(), i->name), pos);
 
 		if (!found || !newProcs[pos].defined)
 		{
 			//// TODO: localize
 			status_exception::raise(
 				Arg::Gds(isc_random) << Arg::Str(string("Procedure ") + i->name.c_str() +
-					" has not defined on the package body " + name.c_str()));
+					" has not been defined on the package body " + name.c_str()));
 		}
 		else if (newProcs[pos] != *i)
 		{
@@ -965,7 +977,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		WITH PRM.RDB$PACKAGE_NAME EQ metaName.c_str()
 	{
 		size_t pos;
-		if (existingProcs.find(MetaName(PRM.RDB$PROCEDURE_NAME), pos))
+		if (existingProcs.find(Signature(getPool(), MetaName(PRM.RDB$PROCEDURE_NAME)), pos))
 		{
 			const Signature& proc = existingProcs[pos];
 
@@ -998,7 +1010,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"DropPackageBodyNode\n"
@@ -1009,9 +1021,9 @@ void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	dbb->checkOdsForDsql(ODS_12_0);
 
@@ -1110,7 +1122,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void RecreatePackageBodyNode::print(string& text, Array<dsql_nod*>& nodes) const
+void RecreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf("RecreatePackageBodyNode\n");
 }

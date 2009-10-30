@@ -382,6 +382,7 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 		compiledStatement->req_type = REQ_SELECT_BLOCK;
 	else
 		compiledStatement->req_type = REQ_EXEC_BLOCK;
+
 	compiledStatement->req_flags |= REQ_block;
 
 	ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
@@ -427,13 +428,13 @@ void ExecBlockNode::genBlr()
 
 	compiledStatement->begin_debug();
 
-	SSHORT inputs = 0, outputs = 0, locals = 0;
+	USHORT inputs = 0, outputs = 0, locals = 0;
 	dsql_nod* parameters;
 
 	// now do the input parameters
 	if (parameters = legacyParameters)
 	{
-		SSHORT position = 0;
+		USHORT position = 0;
 
 		dsql_nod** ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
@@ -456,7 +457,7 @@ void ExecBlockNode::genBlr()
 	// now do the output parameters
 	if (parameters = legacyReturns)
 	{
-		SSHORT position = 0;
+		USHORT position = 0;
 		dsql_nod** ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ++ptr)
 		{
@@ -484,7 +485,7 @@ void ExecBlockNode::genBlr()
 
 	if (outputs)
 	{
-		SSHORT	position = 0;
+		USHORT position = 0;
 		parameters = legacyReturns;
 
 		dsql_nod** ptr = parameters->nod_arg;
@@ -572,6 +573,7 @@ void ExecBlockNode::genBlr()
 		compiledStatement->req_type = REQ_SELECT_BLOCK;
 	else
 		compiledStatement->req_type = REQ_EXEC_BLOCK;
+
 	compiledStatement->append_uchar(blr_end);
 	GEN_return(compiledStatement, legacyReturns, true);
 	compiledStatement->append_uchar(blr_end);
@@ -623,6 +625,7 @@ dsql_par* ExecBlockNode::revertParametersOrder(dsql_par* parameter, dsql_par* pr
 		result = revertParametersOrder(parameter->par_next, parameter);
 	else
 		result = parameter;
+
 	parameter->par_next = prev;
 
 	return result;
@@ -632,7 +635,7 @@ dsql_par* ExecBlockNode::revertParametersOrder(dsql_par* parameter, dsql_par* pr
 //--------------------
 
 
-void ExitNode::print(string& text, Array<dsql_nod*>& nodes) const
+void ExitNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "ExitNode";
 }
@@ -759,12 +762,32 @@ SavepointNode* SavepointNode::internalDsqlPass()
 	// ASF: It should never enter in this IF, because the grammar does not allow it.
 	if (compiledStatement->req_flags & REQ_block) // blocks, procedures and triggers
 	{
+		const char* cmd = 0;
+		switch (command)
+		{
+		//case CMD_NOTHING:
+		case CMD_SET:
+			cmd = "SAVEPOINT";
+			break;
+		case CMD_RELEASE:
+			cmd = "RELEASE";
+			break;
+		case CMD_RELEASE_ONLY:
+			cmd = "RELEASE ONLY";
+			break;
+		case CMD_ROLLBACK:
+			cmd = "ROLLBACK";
+			break;
+		default:
+			cmd = "UNKNOWN";
+		}
+
 		ERRD_post(
 			Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			// Token unknown
 			Arg::Gds(isc_token_err) <<
 			Arg::Gds(isc_random) <<
-			Arg::Str(command == CMD_SET ? "SAVEPOINT" : command == CMD_ROLLBACK ? "ROLLBACK" : "RELEASE"));
+			Arg::Str(cmd));
 	}
 
 	compiledStatement->req_type = REQ_SAVEPOINT;
@@ -773,7 +796,7 @@ SavepointNode* SavepointNode::internalDsqlPass()
 }
 
 
-void SavepointNode::print(string& text, Array<dsql_nod*>& nodes) const
+void SavepointNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "SavepointNode";
 }
@@ -948,7 +971,7 @@ SuspendNode* SuspendNode::internalDsqlPass()
 }
 
 
-void SuspendNode::print(string& text, Array<dsql_nod*>& nodes) const
+void SuspendNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "SuspendNode";
 }

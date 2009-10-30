@@ -159,21 +159,21 @@ public:
 	}
 
 public:
-	DsqlOnlyStmtNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	DsqlOnlyStmtNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return this;
 	}
 
 
-	DsqlOnlyStmtNode* pass2(thread_db* tdbb, CompilerScratch* csb)
+	DsqlOnlyStmtNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return this;
 	}
 
 
-	jrd_nod* execute(thread_db* tdbb, jrd_req* request)
+	jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/)
 	{
 		fb_assert(false);
 		return NULL;

@@ -265,13 +265,13 @@ namespace Firebird {
 class ReadLockGuard
 {
 public:
-	ReadLockGuard(RWLock& alock)
+	explicit ReadLockGuard(RWLock& alock)
 		: lock(&alock)
 	{
 		lock->beginRead();
 	}
 
-	ReadLockGuard(RWLock* alock)
+	explicit ReadLockGuard(RWLock* alock)
 		: lock(alock)
 	{
 		if (lock)
@@ -302,13 +302,13 @@ private:
 class WriteLockGuard
 {
 public:
-	WriteLockGuard(RWLock& alock)
+	explicit WriteLockGuard(RWLock& alock)
 		: lock(&alock)
 	{
 		lock->beginWrite();
 	}
 
-	WriteLockGuard(RWLock* alock)
+	explicit WriteLockGuard(RWLock* alock)
 		: lock(alock)
 	{
 		if (lock)

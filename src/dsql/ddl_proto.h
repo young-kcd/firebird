@@ -56,7 +56,7 @@ const USHORT blr_dtypes[] = {
 	blr_sql_date,				// dtype_sql_date
 	blr_sql_time,				// dtype_sql_time
 	blr_timestamp,				// dtype_timestamp
-	blr_blob,					// dtype_blob		// ASF: CAST use blr_blob2 because blr_blob don't fit in UCHAR
+	blr_blob,					// dtype_blob		// ASF: CAST use blr_blob2 because blr_blob doesn't fit in UCHAR
 	blr_short,					// dtype_array
 	blr_int64					// dtype_int64
 };

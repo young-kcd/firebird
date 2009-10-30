@@ -85,6 +85,7 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 	if (attachment->att_flags & ATT_no_db_triggers)
 		return;
 
+	fb_assert(action > 0);
 	DdlTriggerContext context;
 	context.ddlEvent = DDL_TRIGGER_ACTION_NAMES[action];
 	context.objectName = objectName;
@@ -121,10 +122,10 @@ MetaName DdlNode::nameInMetaCharSet(thread_db* tdbb, const MetaName& name)
 	if (charSet == CS_METADATA || charSet == CS_NONE)
 		return name;
 
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
 
-	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer, MAX_SQL_IDENTIFIER_SIZE - 1,
+	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer, MAX_SQL_IDENTIFIER_LEN,
 		charSet, (const BYTE*) name.c_str(), name.length(), ERR_post);
 	buffer[len] = '\0';
 
@@ -138,10 +139,10 @@ MetaName DdlNode::nameInUserCharSet(thread_db* tdbb, const MetaName& name)
 	if (charSet == CS_METADATA || charSet == CS_NONE)
 		return name;
 
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
 
-	ULONG len = INTL_convert_bytes(tdbb, charSet, buffer, MAX_SQL_IDENTIFIER_SIZE - 1,
+	ULONG len = INTL_convert_bytes(tdbb, charSet, buffer, MAX_SQL_IDENTIFIER_LEN,
 		CS_METADATA, (const BYTE*) name.c_str(), name.length(), ERR_post);
 	buffer[len] = '\0';
 
@@ -403,8 +404,8 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		MET_dsql_cache_release(tdbb, SYM_intlsym_charset, charSet);
 	}
 
-	Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, charSet));
+	//Database* dbb = tdbb->getDatabase();
+	const MetaName metaName(nameInMetaCharSet(tdbb, charSet));
 	bool charSetFound = false;
 	bool collationFound = false;
 
@@ -455,7 +456,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void CommentOnNode::print(string& text, Array<dsql_nod*>& nodes) const
+void CommentOnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"CommentOnNode\n"
@@ -652,7 +653,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void CreateAlterFunctionNode::print(string& text, Array<dsql_nod*>& nodes) const
+void CreateAlterFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"CreateAlterFunctionNode\n"
@@ -926,7 +927,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 			Arg::Str("DEFAULT in function parameters"));
 	}
 
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_s_func_args2, DYN_REQUESTS);
 
 	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -1020,7 +1021,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 //----------------------
 
 
-void DropFunctionNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DropFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"DropFunctionNode\n"
@@ -1031,8 +1032,8 @@ void DropFunctionNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	//Database* dbb = tdbb->getDatabase();
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -1134,7 +1135,7 @@ dsql_nod* ProcedureNode::resolveVariable(const dsql_str* varName)
 //----------------------
 
 
-void CreateAlterProcedureNode::print(string& text, Array<dsql_nod*>& nodes) const
+void CreateAlterProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"CreateAlterProcedureNode\n"
@@ -1316,9 +1317,9 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	if (package.isEmpty())
 	{
@@ -1409,7 +1410,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transacti
 bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 	bool secondPass, bool runTriggers)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
@@ -1730,7 +1731,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 }
 
 
-void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* transaction)
+void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 {
 	if (invalid)
 	{
@@ -1760,6 +1761,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* transaction)
 
 	if (parameters.getCount() != 0)
 	{
+		fb_assert(parameters.getCount() < MAX_USHORT / 2);
 		compiledStatement->append_uchar(blr_message);
 		compiledStatement->append_uchar(0);
 		compiledStatement->append_ushort(2 * parameters.getCount());
@@ -1780,6 +1782,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* transaction)
 		}
 	}
 
+	fb_assert(returns.getCount() < MAX_USHORT / 2);
 	compiledStatement->append_uchar(blr_message);
 	compiledStatement->append_uchar(1);
 	compiledStatement->append_ushort(2 * returns.getCount() + 1);
@@ -1820,7 +1823,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* transaction)
 
 		if (parameter.fullDomain || parameter.notNull)
 		{
-			// ASF: To validate input parameters we need only to read his value.
+			// ASF: To validate an input parameter we need only to read its value.
 			// Assigning it to null is an easy way to do this.
 			compiledStatement->append_uchar(blr_assignment);
 			compiledStatement->append_uchar(blr_parameter2);
@@ -1927,7 +1930,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 }
 
 
-void DropProcedureNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DropProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"DropProcedureNode\n"
@@ -1945,7 +1948,7 @@ Node* DropProcedureNode::internalDsqlPass()
 
 void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	// run all statements under savepoint control
@@ -2027,7 +2030,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void RecreateProcedureNode::print(string& text, Array<dsql_nod*>& nodes) const
+void RecreateProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf("RecreateProcedureNode\n");
 }
@@ -2061,13 +2064,9 @@ dsql_nod* TriggerNode::resolveVariable(const dsql_str* varName)
 	// try to resolve variable name against local variables
 
 	CreateAlterTriggerNode* node = getCreateAlterNode();
-	dsql_nod* varNode;
 
 	if (node->localDeclList)
-	{
-		if (varNode = PASS1_resolve_variable_name(node->localDeclList, varName))
-			return varNode;
-	}
+		return PASS1_resolve_variable_name(node->localDeclList, varName);
 
 	return NULL;
 }
@@ -2076,7 +2075,7 @@ dsql_nod* TriggerNode::resolveVariable(const dsql_str* varName)
 //----------------------
 
 
-void CreateAlterTriggerNode::print(string& text, Array<dsql_nod*>& nodes) const
+void CreateAlterTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"CreateAlterTriggerNode\n"
@@ -2190,8 +2189,8 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
 	Database* dbb = tdbb->getDatabase();
-	Attachment* attachment = tdbb->getAttachment();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	//Attachment* attachment = tdbb->getAttachment();
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, metaName);
 
@@ -2226,7 +2225,7 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction, bool runTriggers)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 	bool modified = false;
@@ -2349,7 +2348,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 }
 
 
-void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* transaction)
+void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 {
 	if (invalid)
 	{
@@ -2451,7 +2450,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void DropTriggerNode::print(string& text, Array<dsql_nod*>& nodes) const
+void DropTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"DropTriggerNode\n"
@@ -2469,8 +2468,8 @@ Node* DropTriggerNode::internalDsqlPass()
 
 void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
+	//Database* dbb = tdbb->getDatabase();
+	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -2566,7 +2565,7 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void RecreateTriggerNode::print(string& text, Array<dsql_nod*>& nodes) const
+void RecreateTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf("RecreateTriggerNode\n");
 }

@@ -185,6 +185,7 @@ class SavepointNode : public StmtNode
 public:
 	enum Command
 	{
+		CMD_NOTHING,
 		CMD_SET = blr_savepoint_set,
 		CMD_RELEASE = blr_savepoint_release,
 		CMD_RELEASE_ONLY = blr_savepoint_release_single,
@@ -194,7 +195,7 @@ public:
 public:
 	explicit SavepointNode(MemoryPool& pool)
 		: StmtNode(pool),
-		  command((Command) 0),
+		  command(CMD_NOTHING),
 		  name(pool)
 	{
 	}

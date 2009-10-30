@@ -263,7 +263,7 @@ public:
 	class Exception
 	{
 	public:
-		Exception(Info* aInfo)
+		explicit Exception(Info* aInfo)
 			: info(aInfo)
 		{
 		}
@@ -273,7 +273,7 @@ public:
 		{
 			Info* end = FB_NULL;
 
-			for (Info* p = e.info; p; p = p->next)
+			for (const Info* p = e.info; p; p = p->next)
 			{
 				Info* newInfo = new Info;
 				newInfo->type = p->type;
@@ -304,7 +304,7 @@ public:
 	public:
 		void stuff(Error* error) const
 		{
-			for (Info* p = info; p; p = p->next)
+			for (const Info* p = info; p; p = p->next)
 			{
 				if (p->type == Info::TYPE_CODE)
 					error->addCode(p->code);
@@ -549,7 +549,7 @@ public:
 template <typename T> class FunctionFactoryImpl : public FunctionFactory
 {
 public:
-	FunctionFactoryImpl(const char* aName)
+	explicit FunctionFactoryImpl(const char* aName)
 		: name(aName)
 	{
 		fbUdrRegFunction(this);
@@ -576,7 +576,7 @@ private:
 template <typename T> class ProcedureFactoryImpl : public ProcedureFactory
 {
 public:
-	ProcedureFactoryImpl(const char* aName)
+	explicit ProcedureFactoryImpl(const char* aName)
 		: name(aName)
 	{
 		fbUdrRegProcedure(this);
@@ -603,7 +603,7 @@ private:
 template <typename T> class TriggerFactoryImpl : public TriggerFactory
 {
 public:
-	TriggerFactoryImpl(const char* aName)
+	explicit TriggerFactoryImpl(const char* aName)
 		: name(aName)
 	{
 		fbUdrRegTrigger(this);

@@ -47,7 +47,7 @@ public:
 	{
 	}
 
-	QualifiedName(MemoryPool& p)
+	explicit QualifiedName(MemoryPool& p)
 		: identifier(p),
 		  qualifier(p)
 	{

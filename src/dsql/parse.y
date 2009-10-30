@@ -1674,8 +1674,7 @@ data_type_descriptor :	init_data_type data_type
 			}
 		;
 
-init_data_type
-	:
+init_data_type :
 		{
 			lex.g_field = make_field(NULL);
 			$$ = lex.g_field;

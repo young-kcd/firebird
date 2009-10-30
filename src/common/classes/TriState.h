@@ -71,7 +71,7 @@ public:
 template <typename T> class TriStateType : public TriStateRawType<T>
 {
 public:
-	TriStateType<T>(const T& v)
+	explicit TriStateType<T>(const T& v)
 	{
 		this->value = v;
 		this->specified = true;
@@ -89,13 +89,19 @@ public:
 		this->specified = false;
 	}
 
-public:
 	void operator =(const TriStateRawType<T>& o)
 	{
 		this->value = o.value;
 		this->specified = o.specified;
 	}
+
+	void operator=(const T& v)
+	{
+		this->value = v;
+		this->specified = true;
+	}
 };
+
 
 class TriState
 {

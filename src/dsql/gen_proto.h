@@ -43,6 +43,7 @@ inline void stuff(Jrd::CompiledStatement* statement, const UCHAR byte)
 inline void stuff_string(Jrd::CompiledStatement* statement, const char* string, int len)
 {
 	fb_assert(len >= 0 && len <= 255);
+	// CVC: Maybe the Release version should truncate "len" to 255?
 
 	stuff(statement, len);
 	statement->append_raw_string(string, len);

@@ -193,7 +193,7 @@ void METD_drop_function(dsql_req* request, const dsql_str* name, const MetaName&
 
 	MutexHolder holder(request);
 
-	QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
+	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_udf* function;
 
 	if (request->req_dbb->dbb_functions.get(metaName, function))
@@ -228,7 +228,7 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name, const MetaName
 
 	MutexHolder holder(request);
 
-	QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
+	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_prc* procedure;
 
 	if (request->req_dbb->dbb_procedures.get(metaName, procedure))
@@ -2053,9 +2053,7 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_intlsym* intlSym = NULL;
-	dsql_prc* procedure = NULL;
 	dsql_rel* relation = NULL;
-	dsql_udf* userFunc = NULL;
 
 	dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
 

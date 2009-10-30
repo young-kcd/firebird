@@ -5747,6 +5747,7 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 				found |= pass1_found_field(node->nod_arg[2], check_scope_level, match_type, field);
 			}
 			break;
+
 		case nod_exists:
 		case nod_singular:
 		case nod_coalesce:
@@ -10338,7 +10339,7 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 	dsql_nod* node, bool force_varchar)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment* att = tdbb->getAttachment();
+	//Jrd::Attachment* att = tdbb->getAttachment();
 
 	DEV_BLKCHK(in_node, dsql_type_nod);
 	DEV_BLKCHK(node, dsql_type_nod);
