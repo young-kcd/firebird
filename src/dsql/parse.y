@@ -589,6 +589,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %left	'=' '<' '>' LIKE EQL NEQ GTR LSS GEQ LEQ NOT_GTR NOT_LSS
 %left	'+' '-'
 %left	'*' '/'
+%left	UMINUS UPLUS
 %left	CONCATENATE
 %left	COLLATE
 
@@ -4877,10 +4878,10 @@ value	: column_name
 		| case_expression
 		| next_value_expression
 		| udf
-		| '-' value
+		| '-' value %prec UMINUS
 			{ $$ = make_node (nod_negate, 1, $2); }
-				| '+' value
-						{ $$ = $2; }
+		| '+' value %prec UPLUS
+			{ $$ = $2; }
 		| value '+' value
 			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
