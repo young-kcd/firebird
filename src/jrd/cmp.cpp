@@ -994,7 +994,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 	case nod_agg_count:
 	case nod_agg_count2:
 	case nod_agg_count_distinct:
-	//case nod_count2:
 	case nod_count:
 	case nod_gen_id:
 	case nod_lock_state:
@@ -3008,7 +3007,6 @@ static jrd_nod* copy(thread_db* tdbb,
 		return (node);
 
 	case nod_count:
-	//case nod_count2:
 	case nod_max:
 	case nod_min:
 	case nod_total:
@@ -4045,7 +4043,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_average:
 	case nod_from:
 	case nod_count:
-	//case nod_count2:
 	case nod_total:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_stat_rse], view);
 		break;
@@ -5287,7 +5284,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_max:
 	case nod_min:
 	case nod_count:
-	//case nod_count2:
 	case nod_average:
 	case nod_total:
 	case nod_from:
@@ -5424,7 +5420,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_count:
 	case nod_agg_count2:
 	case nod_agg_count_distinct:
-	//case nod_count2:
 	case nod_agg_min:
 	case nod_agg_max:
 	case nod_agg_count:

@@ -3362,9 +3362,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_maximum:
 	case blr_minimum:
 	case blr_count:
-/* count2
-    case blr_count2:
-*/
 	case blr_average:
 	case blr_total:
 	case blr_from:

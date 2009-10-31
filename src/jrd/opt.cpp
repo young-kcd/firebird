@@ -3079,7 +3079,6 @@ static bool expression_contains_stream(CompilerScratch* csb,
 
 		case nod_average:
 		case nod_count:
-		//case nod_count2:
 		case nod_from:
 		case nod_max:
 		case nod_min:
@@ -6057,7 +6056,6 @@ static void get_expression_streams(const jrd_nod* node,
 
 		case nod_average:
 		case nod_count:
-		//case nod_count2:
 		case nod_from:
 		case nod_max:
 		case nod_min:
