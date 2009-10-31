@@ -95,7 +95,7 @@ public:
 		this->specified = o.specified;
 	}
 
-	void operator=(const T& v)
+	void operator =(const T& v)
 	{
 		this->value = v;
 		this->specified = true;

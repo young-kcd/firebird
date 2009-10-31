@@ -595,7 +595,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 
 	if (tdbb->getDatabase()->dbb_ddl_triggers)
 	{
-		jrd_tra* const old_transaction = tdbb->getTransaction();
+		jrd_tra* const oldTransaction = tdbb->getTransaction();
 		tdbb->setTransaction(transaction);
 
 		try
@@ -617,11 +617,11 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 			execute_triggers(tdbb, &triggersPtr, NULL, NULL,
 				jrd_req::req_trigger_ddl, ALL_TRIGS);
 
-			tdbb->setTransaction(old_transaction);
+			tdbb->setTransaction(oldTransaction);
 		}
 		catch (...)
 		{
-			tdbb->setTransaction(old_transaction);
+			tdbb->setTransaction(oldTransaction);
 			throw;
 		}
 	}

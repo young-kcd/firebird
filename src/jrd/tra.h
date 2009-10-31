@@ -116,7 +116,7 @@ struct CallerName
 	{
 	}
 
-	void operator=(const CallerName& o)
+	void operator =(const CallerName& o)
 	{
 		if (&o != this)
 		{

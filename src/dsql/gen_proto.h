@@ -56,4 +56,3 @@ inline void stuff_cstring(Jrd::CompiledStatement* statement, const char* string)
 }
 
 #endif //  DSQL_GEN_PROTO_H
-

@@ -762,7 +762,8 @@ SavepointNode* SavepointNode::internalDsqlPass()
 	// ASF: It should never enter in this IF, because the grammar does not allow it.
 	if (compiledStatement->req_flags & REQ_block) // blocks, procedures and triggers
 	{
-		const char* cmd = 0;
+		const char* cmd = NULL;
+
 		switch (command)
 		{
 		//case CMD_NOTHING:
@@ -780,6 +781,7 @@ SavepointNode* SavepointNode::internalDsqlPass()
 			break;
 		default:
 			cmd = "UNKNOWN";
+			fb_assert(false);
 		}
 
 		ERRD_post(

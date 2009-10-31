@@ -397,7 +397,6 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo,
 		function);	// CallerName(obj_udf, function->fun_name)
-	//Attachment* attachment = tdbb->getAttachment();
 
 	impure->vlu_desc.dsc_flags = DSC_null;
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -582,10 +581,10 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, Firebird::ExternalTrigg
 		int valueNewCount = 0;
 
 		if (oldRpb)
-			valueOldCount = setValues(tdbb, pool, attInfo->context, oldValues, descs, oldRpb);
+			valueOldCount = setValues(tdbb, pool, oldValues, descs, oldRpb);
 
 		if (newRpb)
-			valueNewCount = setValues(tdbb, pool, attInfo->context, newValues, descs, newRpb);
+			valueNewCount = setValues(tdbb, pool, newValues, descs, newRpb);
 
 		{	// scope
 			Database::Checkout dcoHolder(tdbb->getDatabase());
@@ -616,11 +615,9 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, Firebird::ExternalTrigg
 
 
 int ExtEngineManager::Trigger::setValues(thread_db* tdbb, MemoryPool& pool,
-	ExternalContextImpl* /*context*/, AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
+	AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
 	record_param* rpb)
 {
-	//Attachment* attachment = tdbb->getAttachment();
-
 	if (!rpb || !rpb->rpb_record)
 		return 0;
 

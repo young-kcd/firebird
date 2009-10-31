@@ -194,7 +194,7 @@ public:
 			record_param* oldRpb, record_param* newRpb);
 
 	private:
-		int setValues(thread_db* tdbb, Firebird::MemoryPool& pool, ExternalContextImpl* context,
+		int setValues(thread_db* tdbb, Firebird::MemoryPool& pool,
 			Firebird::AutoPtr<ValuesImpl>& values, Firebird::Array<dsc*>& descs,
 			record_param* rpb);
 

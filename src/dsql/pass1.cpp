@@ -10341,7 +10341,6 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 	dsql_nod* node, bool force_varchar)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	//Jrd::Attachment* att = tdbb->getAttachment();
 
 	DEV_BLKCHK(in_node, dsql_type_nod);
 	DEV_BLKCHK(node, dsql_type_nod);

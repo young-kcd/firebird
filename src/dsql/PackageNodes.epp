@@ -527,7 +527,6 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
@@ -602,7 +601,6 @@ void DropPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
@@ -839,7 +837,6 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 
 void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
@@ -1021,7 +1018,6 @@ void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 

@@ -91,4 +91,3 @@ namespace Jrd
 }
 
 #endif // JRD_VIO_PROTO_H
-

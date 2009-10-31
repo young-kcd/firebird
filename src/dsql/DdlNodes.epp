@@ -85,7 +85,7 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 	if (attachment->att_flags & ATT_no_db_triggers)
 		return;
 
-	fb_assert(action > 0);
+	fb_assert(action > 0);	// first element is NULL
 	DdlTriggerContext context;
 	context.ddlEvent = DDL_TRIGGER_ACTION_NAMES[action];
 	context.objectName = objectName;
@@ -122,9 +122,7 @@ MetaName DdlNode::nameInMetaCharSet(thread_db* tdbb, const MetaName& name)
 	if (charSet == CS_METADATA || charSet == CS_NONE)
 		return name;
 
-	//Attachment* attachment = tdbb->getAttachment();
 	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
-
 	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer, MAX_SQL_IDENTIFIER_LEN,
 		charSet, (const BYTE*) name.c_str(), name.length(), ERR_post);
 	buffer[len] = '\0';
@@ -139,9 +137,7 @@ MetaName DdlNode::nameInUserCharSet(thread_db* tdbb, const MetaName& name)
 	if (charSet == CS_METADATA || charSet == CS_NONE)
 		return name;
 
-	//Attachment* attachment = tdbb->getAttachment();
 	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
-
 	ULONG len = INTL_convert_bytes(tdbb, charSet, buffer, MAX_SQL_IDENTIFIER_LEN,
 		CS_METADATA, (const BYTE*) name.c_str(), name.length(), ERR_post);
 	buffer[len] = '\0';
@@ -404,7 +400,6 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		MET_dsql_cache_release(tdbb, SYM_intlsym_charset, charSet);
 	}
 
-	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, charSet));
 	bool charSetFound = false;
 	bool collationFound = false;
@@ -927,7 +922,6 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 			Arg::Str("DEFAULT in function parameters"));
 	}
 
-	//Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_s_func_args2, DYN_REQUESTS);
 
 	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -1032,7 +1026,6 @@ void DropFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	// run all statements under savepoint control
@@ -1317,7 +1310,6 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
@@ -1410,7 +1402,6 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transacti
 bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 	bool secondPass, bool runTriggers)
 {
-	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
@@ -1948,7 +1939,6 @@ Node* DropProcedureNode::internalDsqlPass()
 
 void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	// run all statements under savepoint control
@@ -2189,7 +2179,6 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
 	Database* dbb = tdbb->getDatabase();
-	//Attachment* attachment = tdbb->getAttachment();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, metaName);
@@ -2225,7 +2214,6 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction, bool runTriggers)
 {
-	//Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 	bool modified = false;
@@ -2468,7 +2456,6 @@ Node* DropTriggerNode::internalDsqlPass()
 
 void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	// run all statements under savepoint control

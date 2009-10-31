@@ -2194,7 +2194,6 @@ dsc* evlSetContext(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	fb_assert(args->nod_count == 3);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	//Database* dbb = tdbb->getDatabase();
 	jrd_tra* transaction = tdbb->getTransaction();
 	jrd_req* request = tdbb->getRequest();
 

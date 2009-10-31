@@ -72,4 +72,3 @@ void DDL_put_local_variable(Jrd::CompiledStatement*, Jrd::dsql_var*, Jrd::dsql_n
 void DDL_put_local_variables(Jrd::CompiledStatement*, Jrd::dsql_nod*, SSHORT);
 
 #endif // DSQL_DDL_PROTO_H
-
