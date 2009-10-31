@@ -47,11 +47,15 @@ namespace Dsql {
 
 enum nod_t
 {
-	// ASF: 1) These commented numbers are not all correct now;
-	// 2) They are going to continue been deleted;
-	// 3) There is no sense to numerate them.
+	// NOTE: when adding an expression node, be sure to
+	// test various combinations; in particular, think
+	// about parameterization using a '?' - there is code
+	// in PASS1_node which must be updated to find the
+	// data type of the parameter based on the arguments
+	// to an expression node.
+
 	nod_unknown_type = 0,
-	nod_commit = 1,	// Commands, not executed.
+	nod_commit,
 	nod_rollback,
 	nod_trans,
 	nod_def_default,
@@ -60,7 +64,7 @@ enum nod_t
 	nod_def_domain,
 	nod_mod_domain,
 	nod_del_domain,
-	nod_mod_database, // 10
+	nod_mod_database,
 	nod_def_relation,
 	nod_mod_relation,
 	nod_del_relation,
@@ -70,11 +74,11 @@ enum nod_t
 	nod_def_index,
 	nod_del_index,
 	nod_def_view,
-	nod_def_constraint, // 20
+	nod_def_constraint,
 	nod_def_exception,
 	nod_mod_exception,
 	nod_del_exception,
-	nod_def_generator, //30
+	nod_def_generator,
 	nod_del_generator,
 	nod_def_filter,
 	nod_del_filter,
@@ -84,7 +88,7 @@ enum nod_t
 	nod_del_udf,
 	nod_grant,
 	nod_revoke,
-	nod_rel_constraint, // 40
+	nod_rel_constraint,
 	nod_delete_rel_constraint,
 	nod_primary,
 	nod_foreign,
@@ -93,8 +97,8 @@ enum nod_t
 	nod_proc_obj,
 	nod_trig_obj,
 	nod_view_obj,
-	nod_list,	// SQL statements, mapped into GDML statements
-	nod_select, // 50
+	nod_list,
+	nod_select,
 	nod_insert,
 	nod_delete,
 	nod_update,
@@ -104,10 +108,10 @@ enum nod_t
 	nod_execute,	// EXECUTE privilege
 	nod_store,
 	nod_modify,
-	nod_erase, // 60
+	nod_erase,
 	nod_assign,
 	nod_exec_procedure,
-	nod_while,	// Procedure statements
+	nod_while,
 	nod_for_select,
 	nod_erase_current,
 	nod_modify_current,
@@ -120,7 +124,7 @@ enum nod_t
 	nod_default,
 	nod_start_savepoint,
 	nod_end_savepoint,
-	nod_cursor,	//80	// used to create record streams
+	nod_cursor,
 	nod_relation,
 	nod_relation_name,
 	nod_procedure_name,
@@ -130,14 +134,8 @@ enum nod_t
 	nod_union,
 	nod_aggregate,
 	nod_order,
-	nod_flag, // 90
+	nod_flag,
 	nod_join,
-/* NOTE: when adding an expression node, be sure to
-   test various combinations; in particular, think
-   about parameterization using a '?' - there is code
-   in PASS1_node which must be updated to find the
-   data type of the parameter based on the arguments
-   to an expression node */
 	nod_eql,
 	nod_neq,
 	nod_gtr,
@@ -146,7 +144,7 @@ enum nod_t
 	nod_lss,
 	nod_between,
 	nod_like,
-	nod_missing, // 100
+	nod_missing,
 	nod_and,
 	nod_or,
 	nod_any,
@@ -155,8 +153,8 @@ enum nod_t
 	nod_containing,
 	nod_starting,
 	nod_via,
-	nod_field,	// values
-	nod_dom_value, // 110
+	nod_field,
+	nod_dom_value,
 	nod_field_name,
 	nod_parameter,
 	nod_constant,
@@ -166,8 +164,8 @@ enum nod_t
 	nod_user_group,
 	nod_variable,
 	nod_var_name,
-	nod_array, // 120
-	nod_add,	// functions
+	nod_array,
+	nod_add,
 	nod_subtract,
 	nod_multiply,
 	nod_divide,
@@ -176,28 +174,22 @@ enum nod_t
 	nod_substr,
 	nod_null,
 	nod_dbkey,
-	nod_udf, // 130
+	nod_udf,
 	nod_cast,
 	nod_upcase,
 	nod_lowcase,
 	nod_collate,
 	nod_gen_id,
-	nod_add2,	// functions different for dialect >= V6_TRANSITION
+	nod_add2,
 	nod_subtract2,
 	nod_multiply2,
 	nod_divide2,
-	nod_gen_id2, // 140
-	nod_average,	// aggregates
-	nod_from,
-	nod_max,
-	nod_min,
-	nod_total,
-	//nod_count,    // obsolete
+	nod_gen_id2,
 	nod_exists,
 	nod_singular,
 	nod_agg_average,
 	nod_agg_max,
-	nod_agg_min, // 150
+	nod_agg_min,
 	nod_agg_total,
 	nod_agg_count,
 	nod_agg_average2,
@@ -207,9 +199,8 @@ enum nod_t
 	nod_join_inner,	// join types
 	nod_join_left,
 	nod_join_right,
-	nod_join_full, // 160
+	nod_join_full,
 	nod_join_cross,
-	// sql transaction support
 	nod_access,
 	nod_wait,
 	nod_isolation,
@@ -218,83 +209,66 @@ enum nod_t
 	nod_lock_mode,
 	nod_reserve,
 	nod_retain,
-	// sql database stmts support
-	nod_page_size, // 170
+	nod_page_size,
 	nod_file_length,
 	nod_file_desc,
 	nod_dfl_charset,
-	// sql connect options support (used for create database)
 	nod_password,
 	nod_lc_ctype,	// SET NAMES
-	// Misc nodes
 	nod_udf_return_value,
-	// computed field
 	nod_def_computed,
-	// access plan stuff
 	nod_plan_expr,
 	nod_plan_item,
-	nod_merge_plan, // 180
+	nod_merge_plan,
 	nod_natural,
 	nod_index,
 	nod_index_order,
 	nod_set_generator,
-	nod_set_generator2,	// SINT64 value for dialect > V6_TRANSITION
-	// alter index
-	nod_mod_index,
+	nod_set_generator2,
+	nod_mod_index,	// alter index
 	nod_idx_active,
 	nod_idx_inactive,
-		// drop behaviour
-	nod_restrict,
-	nod_cascade, // 190
-	// set statistics
-	nod_set_statistics,
-	// record version
-	nod_rec_version,
-	// ANY keyword used
-	nod_ansi_any,
+	nod_restrict,	// drop behaviour
+	nod_cascade,
+	nod_set_statistics,	// set statistics
+	nod_rec_version,	// record version
+	nod_ansi_any,	// ANY keyword used
 	nod_eql_any,
 	nod_neq_any,
 	nod_gtr_any,
 	nod_geq_any,
 	nod_leq_any,
 	nod_lss_any,
-	// ALL keyword used
-	nod_ansi_all, // 200
+	nod_ansi_all,	// ALL keyword used
 	nod_eql_all,
 	nod_neq_all,
 	nod_gtr_all,
 	nod_geq_all,
 	nod_leq_all,
 	nod_lss_all,
-	//referential integrity actions
-	nod_ref_upd_del,
+	nod_ref_upd_del,	// referential integrity actions
 	nod_ref_trig_action,
-	// SQL role support
-	nod_def_role,
-	nod_role_name, // 210
+	nod_def_role,	// SQL role support
+	nod_role_name,
 	nod_grant_admin,
 	nod_del_role,
-	// SQL time & date support
-	nod_current_time,
+	nod_current_time,	// SQL time & date support
 	nod_current_date,
 	nod_current_timestamp,
 	nod_extract,
-	// ALTER column/domain support
-	nod_mod_domain_type,
+	nod_mod_domain_type,	// ALTER column/domain support
 	nod_mod_field_name,
 	nod_mod_field_type,
-	nod_mod_field_pos, // 220
-
-	// CVC: SQL requires that DROP VIEW and DROP table are independent.
-	nod_del_view,
-	nod_current_role, // nod_role_name is already taken but only for DDL.
+	nod_mod_field_pos,
+	nod_del_view,	// CVC: SQL requires that DROP VIEW and DROP table are independent
+	nod_current_role, // nod_role_name is already taken but only for DDL
 	nod_breakleave,
-	nod_redef_relation, // allows silent creation/overwriting of a relation.
+	nod_redef_relation, // allows silent creation/overwriting of a relation
 	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_limit, // limit support
 	nod_exec_sql, // EXECUTE STATEMENT
 	nod_internal_info, // internal engine info
-	nod_searched_case, // 230	// searched CASE function
+	nod_searched_case, // searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
 	nod_mod_view, // ALTER VIEW
@@ -302,7 +276,6 @@ enum nod_t
 	nod_redef_view, // allows silent creation/overwriting of a view
 	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
-	// CVC: This node seems obsolete.
 	nod_exec_into, // EXECUTE STATEMENT INTO
 	nod_difference_file,
 	nod_drop_difference,
@@ -310,7 +283,7 @@ enum nod_t
 	nod_end_backup,
 	nod_derived_table, // Derived table support
 	nod_derived_field,  // Derived table support
-	nod_cursor_open, // 250
+	nod_cursor_open,
 	nod_cursor_fetch,
 	nod_cursor_close,
 	nod_fetch_scroll,
@@ -319,7 +292,7 @@ enum nod_t
 	nod_query_spec,
 	nod_equiv,  // IS DISTINCT FROM
 	nod_redef_exception, // RECREATE EXCEPTION
-	nod_replace_exception, // 260	// CREATE OR ALTER EXCEPTION
+	nod_replace_exception, // CREATE OR ALTER EXCEPTION
 	nod_mod_udf,
 	nod_def_collation,
 	nod_del_collation,
@@ -328,7 +301,7 @@ enum nod_t
 	nod_collation_attr,
 	nod_collation_specific_attr,
 	nod_strlen,
-	nod_trim, // 270
+	nod_trim,
 	nod_returning,
 	nod_tra_misc,
 	nod_lock_timeout,
@@ -337,7 +310,7 @@ enum nod_t
 	nod_with,
 	nod_update_or_insert,
 	nod_merge,
-	nod_merge_when, // 280
+	nod_merge_when,
 	nod_merge_update,
 	nod_merge_insert,
 	nod_sys_function,
@@ -347,7 +320,7 @@ enum nod_t
 	nod_mod_user,
 	nod_del_user,
 	nod_exec_stmt,
-	nod_exec_stmt_inputs,	// 290
+	nod_exec_stmt_inputs,
 	nod_exec_stmt_datasrc,
 	nod_exec_stmt_user,
 	nod_exec_stmt_pwd,
@@ -359,7 +332,7 @@ enum nod_t
 	nod_trg_act,
 	nod_trg_ext,
 	nod_class_node,
-	nod_hidden_var,	// 300
+	nod_hidden_var,
 	nod_package_name,
 	nod_package_obj,
 	nod_window,

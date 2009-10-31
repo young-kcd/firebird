@@ -10874,9 +10874,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_assign:
 		verb = "assign";
 		break;
-	case nod_average:
-		verb = "average";
-		break;
 	case nod_between:
 		verb = "between";
 		break;
@@ -10892,9 +10889,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_containing:
 		verb = "containing";
 		break;
-	//case nod_count:
-	//	verb = "count";
-	//	break;
 	case nod_current_date:
 		verb = "current_date";
 		break;
@@ -11057,12 +11051,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_lss:
 		verb = "lss";
 		break;
-	case nod_max:
-		verb = "max";
-		break;
-	case nod_min:
-		verb = "min";
-		break;
 	case nod_missing:
 		verb = "missing";
 		break;
@@ -11148,9 +11136,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_trim:
 		verb = "trim";
-		break;
-	case nod_total:
-		verb = "total";
 		break;
 	case nod_update:
 		verb = "update";
@@ -11358,9 +11343,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_user_group:
 		verb = "user_group";
-		break;
-	case nod_from:
-		verb = "from";
 		break;
 	case nod_agg_average2:
 		verb = "agg_average2";

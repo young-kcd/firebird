@@ -2223,22 +2223,10 @@ raise_statement	: EXCEPTION
 			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, NULL, NULL); }
 		;
 
-//exec_sql	: EXECUTE STATEMENT value
-//			{ $$ = make_node (nod_exec_sql, (int) e_exec_sql_count, $3); }
-//		;
-
 for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $3,
 					  make_list ($5), $6, $8, $1); }
 		;
-
-//for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc_block
-//			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $5, $9, make_list ($7), $1); }
-//		;
-//
-//exec_into	: EXECUTE STATEMENT value INTO variable_list
-//			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, NULL, make_list ($5), NULL); }
-//		;
 
 exec_sql
 	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options

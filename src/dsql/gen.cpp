@@ -543,46 +543,6 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		gen_searched_case(statement, node);
 		return;
 
-	case nod_average:
-	//case nod_count:
-	case nod_from:
-	case nod_max:
-	case nod_min:
-	case nod_total:
-		switch (node->nod_type)
-		{
-		case nod_average:
-			blr_operator = blr_average;
-			break;
-		//case nod_count:
-		//	blr_operator = blr_count;
-		// count2
-		//	blr_operator = node->nod_arg[0]->nod_arg[e_rse_items] ? blr_count2 : blr_count;
-
-		//	break;
-		case nod_from:
-			blr_operator = blr_from;
-			break;
-		case nod_max:
-			blr_operator = blr_maximum;
-			break;
-		case nod_min:
-			blr_operator = blr_minimum;
-			break;
-		case nod_total:
-			blr_operator = blr_total;
-			break;
-
-		default:
-			break;
-		}
-
-		stuff(statement, blr_operator);
-		gen_rse(statement, node->nod_arg[0]);
-		if (blr_operator != blr_count)
-			GEN_expr(statement, node->nod_arg[0]->nod_arg[e_rse_items]);
-		return;
-
 	case nod_trim:
 		stuff(statement, blr_trim);
 		stuff(statement, node->nod_arg[e_trim_specification]->getSlong());
