@@ -272,9 +272,6 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 		printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
 		msg->msg_next = msg;
-#ifdef SCROLLABLE_CURSORS
-		msg->msg_prior = msg;
-#endif
 		msg->msg_number = tail->rrq_message->msg_number;
 		tail->rrq_message = msg;
 	}
@@ -552,9 +549,6 @@ void REMOTE_reset_statement( Rsr* statement)
 
 	temp->msg_next = message->msg_next;
 	message->msg_next = message;
-#ifdef SCROLLABLE_CURSORS
-	message->msg_prior = message;
-#endif
 
 	statement->rsr_buffer = statement->rsr_message;
 

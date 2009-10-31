@@ -131,9 +131,6 @@ static bool check_response(Rdb*, PACKET *);
 static bool clear_queue(rem_port*, ISC_STATUS *);
 static bool clear_stmt_que(rem_port*, ISC_STATUS*, Rsr*);
 static void disconnect(rem_port*);
-#ifdef SCROLLABLE_CURSORS
-static RMessage* dump_cache(rem_port*, ISC_STATUS *, Rrq::rrq_repeat *);
-#endif
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
@@ -163,9 +160,6 @@ static void release_statement(Rsr**);
 static void release_sql_request(Rsr*);
 static void release_transaction(Rtr*);
 static ISC_STATUS return_success(Rdb*);
-#ifdef SCROLLABLE_CURSORS
-static RMessage* scroll_cache(ISC_STATUS *, Rrq*, rem_port*, Rrq::rrq_repeat *, USHORT *, ULONG *);
-#endif
 static ISC_STATUS send_and_receive(Rdb*, PACKET *, ISC_STATUS *);
 static ISC_STATUS send_blob(ISC_STATUS*, Rbl*, USHORT, const UCHAR*);
 static void send_cancel_event(Rvnt*);
@@ -694,16 +688,10 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 			next = message->msg_next;
 
 			message->msg_next = message;
-#ifdef SCROLLABLE_CURSORS
-			message->msg_prior = message;
-#endif
 
 			Rrq::rrq_repeat * tail = &request->rrq_rpt[message->msg_number];
 			tail->rrq_message = message;
 			tail->rrq_xdr = message;
-#ifdef SCROLLABLE_CURSORS
-			tail->rrq_last = NULL;
-#endif
 			tail->rrq_format = (rem_fmt*) message->msg_address;
 
 			message->msg_address = NULL;
@@ -1316,9 +1304,6 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 				port->port_statement->rsr_buffer = message2;
 				port->port_statement->rsr_message = message2;
 				message2->msg_next = message2;
-#ifdef SCROLLABLE_CURSORS
-				message2->msg_prior = message2;
-#endif
 				port->port_statement->rsr_fmt_length = 0;
 			}
 		}
@@ -1330,9 +1315,6 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 			statement->rsr_message = message;
 
 			message->msg_next = message;
-#ifdef SCROLLABLE_CURSORS
-			message->msg_prior = message;
-#endif
 
 			statement->rsr_fmt_length = 0;
 		}
@@ -1566,9 +1548,6 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			statement->rsr_buffer = message = new RMessage(0);
 			statement->rsr_message = message;
 			message->msg_next = message;
-#ifdef SCROLLABLE_CURSORS
-			message->msg_prior = message;
-#endif
 			statement->rsr_fmt_length = 0;
 		}
 		else {
@@ -1749,9 +1728,6 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			statement->rsr_buffer = new RMessage(0);
 			statement->rsr_message = statement->rsr_buffer;
 			statement->rsr_message->msg_next = statement->rsr_message;
-#ifdef SCROLLABLE_CURSORS
-			statement->rsr_message->msg_prior = statement->rsr_message;
-#endif
 			statement->rsr_fmt_length = 0;
 		}
 
@@ -2085,9 +2061,6 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 			statement->rsr_buffer = message = new RMessage(0);
 			statement->rsr_message = message;
 			message->msg_next = message;
-#ifdef SCROLLABLE_CURSORS
-			message->msg_prior = message;
-#endif
 			statement->rsr_fmt_length = 0;
 		}
 		else {
@@ -3217,12 +3190,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 					   USHORT msg_type,
 					   USHORT msg_length,
 					   UCHAR * msg,
-					   SSHORT level
-#ifdef SCROLLABLE_CURSORS
-					 , USHORT direction
-					 , ULONG offset
-#endif
-	)
+					   SSHORT level)
 {
 /**************************************
  *
@@ -3253,16 +3221,6 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		Rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 
 		RMessage* message = tail->rrq_message;
-#ifdef SCROLLABLE_CURSORS
-		if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
-		{
-			message = scroll_cache(user_status, request, port, tail, &direction, &offset);
-			if (!message) {
-				return user_status[1];
-			}
-		}
-#endif
-
 
 #ifdef DEBUG
 		fprintf(stdout, "Rows Pending in REM_receive=%d\n", tail->rrq_rows_pending);
@@ -3305,48 +3263,6 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 			data->p_data_request = request->rrq_id;
 			data->p_data_message_number = msg_type;
 			data->p_data_incarnation = level;
-#ifdef SCROLLABLE_CURSORS
-			// if the protocol can handle it, tell the server to scroll before returning records
-
-			if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
-			{
-				data->p_data_direction = direction;
-				data->p_data_offset = offset;
-
-				// set the appropriate flags according to the way we're about to scroll
-				// the next layer down, and calculate the offset from the beginning
-				// of the result set
-
-				switch (direction)
-				{
-				case blr_forward:
-					tail->rrq_flags &= ~Rrq::BACKWARD;
-					tail->rrq_absolute +=
-						(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
-					break;
-
-				case blr_backward:
-					tail->rrq_flags |= Rrq::BACKWARD;
-					tail->rrq_absolute +=
-						(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
-					break;
-
-				case blr_bof_forward:
-					tail->rrq_flags &= ~Rrq::BACKWARD;
-					tail->rrq_flags &= ~Rrq::ABSOLUTE_BACKWARD;
-					tail->rrq_absolute = offset;
-					direction = blr_forward;
-					break;
-
-				case blr_eof_backward:
-					tail->rrq_flags |= Rrq::BACKWARD;
-					tail->rrq_flags |= Rrq::ABSOLUTE_BACKWARD;
-					tail->rrq_absolute = offset;
-					direction = blr_backward;
-					break;
-				}
-			}
-#endif
 
 			// Compute how many to send in a batch.  While this calculation
 			// is the same for each batch (June 1996), perhaps in the future it
@@ -3429,9 +3345,6 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		message = tail->rrq_message;
 		memcpy(msg, message->msg_address, msg_length);
 
-#ifdef SCROLLABLE_CURSORS
-		tail->rrq_last = message;
-#else
 		// Move the head-of-full-buffer-queue pointer forward
 
 		tail->rrq_message = message->msg_next;
@@ -3439,7 +3352,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		// Mark the buffer the message came from as available for reuse
 
 		message->msg_address = NULL;
-#endif
+
 		tail->rrq_msgs_waiting--;
 	}
 	catch (const Exception& ex)
@@ -4941,20 +4854,10 @@ static bool batch_dsql_fetch(rem_port*	port,
 
 			new_msg->msg_next = message;
 
-#ifdef SCROLLABLE_CURSORS
-			// link the new message in a doubly linked list to make it
-			// easier to scroll back and forth through the records
-
-			RMessage* prior = message->msg_prior;
-			message->msg_prior = new_msg;
-			prior->msg_next = new_msg;
-			new_msg->msg_prior = prior;
-#else
 			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
 			}
 			message->msg_next = new_msg;
-#endif
 		}
 
 		if (!receive_packet_noqueue(port, packet, tmp_status))
@@ -5099,22 +5002,12 @@ static bool batch_gds_receive(rem_port*		port,
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
 
-#ifdef SCROLLABLE_CURSORS
-			// link the new message in a doubly linked list to make it
-			// easier to scroll back and forth through the records
-
-			RMessage* prior = message->msg_prior;
-			message->msg_prior = new_msg;
-			prior->msg_next = new_msg;
-			new_msg->msg_prior = prior;
-#else
 			// Walk the que until we find the predecessor of message
 
 			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
 			}
 			message->msg_next = new_msg;
-#endif
 		}
 
 		// Note: not receive_packet
@@ -5148,21 +5041,6 @@ static bool batch_gds_receive(rem_port*		port,
 			break;
 		}
 
-#ifdef SCROLLABLE_CURSORS
-		// at this point we've received a row into the message, so mark the message
-		// with the absolute offset
-		const bool bIsBackward    = (tail->rrq_flags & Rrq::BACKWARD) != 0;
-		const bool bIsAbsBackward = (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) != 0;
-
-		if (bIsBackward == bIsAbsBackward) {
-				tail->rrq_absolute++;
-		}
-		else {
-			tail->rrq_absolute--;
-		}
-		message->msg_absolute = tail->rrq_absolute;
-#endif
-
 		tail->rrq_msgs_waiting++;
 		tail->rrq_rows_pending--;
 #ifdef DEBUG
@@ -5187,14 +5065,6 @@ static bool batch_gds_receive(rem_port*		port,
 
 		if (!clear_queue)
 			break;
-
-#ifdef SCROLLABLE_CURSORS
-		// if we are just trying to clear the queue, then NULL out the message
-		// address so we don't get a record out of order--it would mess up
-		// scrolling through the cache
-
-		message->msg_address = NULL;
-#endif
 	}
 
 	packet->p_resp.p_resp_status_vector = save_status;
@@ -5348,42 +5218,6 @@ static void disconnect( rem_port* port)
 	port->disconnect();
 	delete rdb;
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-static RMessage* dump_cache(rem_port* port, ISC_STATUS * user_status, Rrq::rrq_repeat * tail)
-{
-/**************************************
- *
- *	d u m p _ c a c h e
- *
- **************************************
- *
- * Functional description
- *	We have encountered a situation where what's in
- *	cache is not useful, so clear any pending requests
- *	and empty the cache in preparation for refilling it.
- *
- **************************************/
-	if (!clear_queue(port, user_status))
-		return NULL;
-
-	RMessage* message = tail->rrq_message;
-	while (true)
-	{
-		message->msg_address = NULL;
-		message = message->msg_next;
-		if (message == tail->rrq_message)
-			break;
-	}
-
-	tail->rrq_xdr = message;
-	tail->rrq_last = NULL;
-	tail->rrq_rows_pending = 0;
-
-	return message;
-}
-#endif
 
 
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
@@ -6024,19 +5858,9 @@ static void receive_after_start( Rrq* request, USHORT msg_type)
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
 
-#ifdef SCROLLABLE_CURSORS
-			// link the new message in a doubly linked list to make it
-			// easier to scroll back and forth through the records
-
-			RMessage* prior = message->msg_prior;
-			message->msg_prior = new_msg;
-			prior->msg_next = new_msg;
-			new_msg->msg_prior = prior;
-#else
 			while (message->msg_next != new_msg->msg_next)
 				message = message->msg_next;
 			message->msg_next = new_msg;
-#endif
 		}
 
 		// Note: not receive_packet
@@ -6550,192 +6374,6 @@ static ISC_STATUS return_success( Rdb* rdb)
 
 	return FB_SUCCESS;
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-static RMessage* scroll_cache(ISC_STATUS * user_status,
-							Rrq* request,
-							rem_port* port,
-							Rrq::rrq_repeat * tail,
-							USHORT * direction, ULONG * offset)
-{
-/**************************************
- *
- *	s c r o l l _ c a c h e
- *
- **************************************
- *
- * Functional description
- *
- * Try to fetch the requested record from cache, if possible.  This algorithm depends
- * on all scrollable cursors being INSENSITIVE to database changes, so that absolute
- * record numbers within the result set will remain constant.
- *
- *  1.  BOF Forward or EOF Backward:  Retain the record number of the offset from the
- *      beginning or end of the result set.  If we can figure out the relative offset
- *      from the absolute, then scroll to it.  If it's in cache, great, otherwise dump
- *      the cache and have the server scroll the correct number of records.
- *
- *  2.  Forward or Backward:  Try to scroll the desired offset in cache.  If we
- *      scroll off the end of the cache, dump the cache and ask the server for a
- *      packetful of records.
- *
- *  In the forward direction, assume X is the number of records cached.
- *  If offset <= X, scroll forward offset records.  If offset > X,
- *  dump the cache and send a message to the server to scroll forward (offset - X)
- *  records.  However, if the server last scrolled in the backward direction,
- *  ask the server to scroll forward (offset - X + C) records, where C is the
- *  total number of records in cache.
- *
- *  In the backward direction, do the same thing but in reverse.
- *
- **************************************/
-
-	// if we are to continue in the current direction, set direction to
-	// the last direction scrolled; then depending on the direction asked
-	// for, save the last direction asked for by the next layer above
-
-	if (*direction == blr_continue)
-	{
-		if (tail->rrq_flags & Rrq::LAST_BACKWARD)
-			*direction = blr_backward;
-		else
-			*direction = blr_forward;
-	}
-
-	if (*direction == blr_forward || *direction == blr_bof_forward)
-		tail->rrq_flags &= ~Rrq::LAST_BACKWARD;
-	else
-		tail->rrq_flags |= Rrq::LAST_BACKWARD;
-
-	// set to the last message returned to the higher level;
-	// if none, set to the first message in cache
-	RMessage* message = tail->rrq_last;
-	if (!message)
-	{
-		message = tail->rrq_message;
-
-		// if the first record hasn't been returned yet and we are doing a relative seek
-		// forward (or backward when caching backwards), we effectively have just seeked
-		// forward one by positioning to the first record, so decrement the offset by one
-
-		if (*offset &&
-			((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
-			((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
-		{
-			(*offset)--;
-		}
-	}
-
-	// if we are scrolling from BOF and the cache was started from EOF
-	// (or vice versa), the cache is unusable.
-
-	if (
-		(*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)) ||
-		(*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
-	{
-		return dump_cache(port, user_status, tail);
-	}
-
-	// if we are going to an absolute position, see if we can find that position
-	// in cache, otherwise change to a relative seek from our former position
-
-	if (*direction == blr_bof_forward || *direction == blr_eof_backward)
-	{
-		// if offset is before our current position, scroll backwards
-		// through the cache to see if we can find it
-
-		if (*offset < message->msg_absolute)
-		{
-			for (;;)
-			{
-				if (message == tail->rrq_xdr || !message->msg_address)
-				{
-					// if the cache was formed in the backward direction, see if
-					// there are any packets pending which might contain the record
-
-					if ((tail->rrq_flags & Rrq::BACKWARD) && (tail->rrq_rows_pending > 0))
-					{
-						tail->rrq_message = message;
-						while (!message->msg_address && !request->rrq_status_vector[1])
-						{
-							if (!receive_queued_packet(port, user_status, request->rrq_id))
-							{
-								return NULL;
-							}
-						}
-					}
-
-					if ((message == tail->rrq_xdr) || !message->msg_address) {
-						return dump_cache(port, user_status, tail);
-					}
-				}
-				else {
-					message = message->msg_prior;
-				}
-
-				if (*offset == message->msg_absolute)
-					return message;
-			}
-		}
-
-		// convert the absolute to relative, and prepare to scroll forward or
-		// back to look for the record
-
-		*offset -= message->msg_absolute;
-		if (*direction == blr_bof_forward)
-			*direction = blr_forward;
-		else
-			*direction = blr_backward;
-	}
-
-	for (; *offset; (*offset)--)
-	{
-		// if the record was not found, see if there are any packets pending
-		// which might contain the record; otherwise dump the cache
-
-		if (!message->msg_address || message == tail->rrq_xdr)
-		{
-			if (tail->rrq_rows_pending > 0)
-			{
-				if (((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
-					((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
-				{
-					tail->rrq_message = message;
-					while (!message->msg_address && !request->rrq_status_vector[1])
-					{
-						if (!receive_queued_packet(port, user_status,
-												   request->rrq_id))
-						{
-							return NULL;
-						}
-					}
-				}
-			}
-
-			if ((message == tail->rrq_xdr) || !message->msg_address)
-			{
-				return dump_cache(port, user_status, tail);
-			}
-		}
-
-		// step one record forward or back, depending on whether the cache was
-		// initially formed in the forward or backward direction
-
-		if (((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
-			((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
-		{
-			message = message->msg_next;
-		}
-		else
-		{
-			message = message->msg_prior;
-		}
-	}
-
-	return message;
-}
-#endif
 
 
 static ISC_STATUS send_and_receive(Rdb* rdb, PACKET* packet, ISC_STATUS* user_status)

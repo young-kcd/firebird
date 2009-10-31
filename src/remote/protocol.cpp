@@ -360,15 +360,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_transaction));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_messages));
-#ifdef SCROLLABLE_CURSORS
-		port = (rem_port*) xdrs->x_public;
-		if ((p->p_operation == op_receive) && (port->port_protocol > PROTOCOL_VERSION8))
-		{
-			MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_direction));
-			MAP(xdr_long, reinterpret_cast<SLONG&>(data->p_data_offset));
-		}
-
-#endif
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -1538,9 +1529,6 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
-#ifdef SCROLLABLE_CURSORS
-		message->msg_prior = message;
-#endif
 	}
 
 	return TRUE;

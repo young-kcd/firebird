@@ -102,14 +102,8 @@ ISC_STATUS	REM_put_slice(ISC_STATUS* user_status, struct Rdb** db_handle,
 	USHORT param_length, const UCHAR* param, SLONG slice_length, UCHAR* slice);
 ISC_STATUS	REM_que_events(ISC_STATUS* user_status, struct Rdb** handle, SLONG* id,
 	SSHORT length, const UCHAR* items, FPTR_EVENT_CALLBACK ast, void* arg);
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS	REM_receive(ISC_STATUS* user_status, struct Rrq** req_handle,
-	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level,
-	USHORT direction, ULONG offset);
-#else
 ISC_STATUS	REM_receive(ISC_STATUS* user_status, struct Rrq** req_handle,
 	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level);
-#endif
 ISC_STATUS	REM_reconnect_transaction(ISC_STATUS* user_status, struct Rdb** db_handle,
 	struct Rtr** rtr_handle, USHORT length, const UCHAR* id);
 ISC_STATUS	REM_release_request(ISC_STATUS* user_status, struct Rrq** req_handle);

@@ -77,7 +77,7 @@ static HANDLE server_process_handle = 0;
 static void server_shutdown(rem_port* port);
 #endif
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
-static bool make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
+static void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
 static bool server_init(ISC_STATUS*, USHORT);
 static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
@@ -262,10 +262,6 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5)
-#ifdef SCROLLABLE_CURSORS
-		,
-		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
-#endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
@@ -2213,7 +2209,7 @@ void release_all()
 /********************** ONLY SERVER CODE FROM HERE *********************/
 /***********************************************************************/
 
-static bool make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
+static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
 {
 /**************************************
  *
@@ -2252,8 +2248,6 @@ static bool make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CAD
 			CloseHandle(*map_handle);
 		throw;
 	}
-
-	return true;
 }
 
 
@@ -2272,8 +2266,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 	FILE_ID map_handle = 0;
 	CADDR_T map_address = 0;
 
-	if (!make_map(map_number, timestamp, &map_handle, &map_address))
-		return NULL;
+	make_map(map_number, timestamp, &map_handle, &map_address);
 
 	// allocate XPM structure and initialize it
 
