@@ -453,7 +453,6 @@ const int e_cast_fmt		= 1;
 const int e_cast_iteminfo	= 2;
 const int e_cast_length		= 3;
 
-
 // This is for the plan node
 const int e_retrieve_relation		= 0;
 const int e_retrieve_access_type	= 1;

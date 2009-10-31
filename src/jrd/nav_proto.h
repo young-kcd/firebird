@@ -39,4 +39,3 @@ namespace Jrd {
 bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::irsb_nav*, Jrd::record_param*);
 
 #endif // JRD_NAV_PROTO_H
-

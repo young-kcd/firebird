@@ -2474,13 +2474,15 @@ fetch_cursor	: FETCH fetch_opt symbol_cursor_name INTO variable_list
 		{ $$ = make_node (nod_cursor_fetch, (int) e_cur_stmt_count, $3, $2, make_list ($5)); }
 	;
 
-fetch_opt	: fetch_scroll_opt FROM
+fetch_opt
+	: fetch_scroll_opt FROM
 		{ $$ = $1; }
 	|
 		{ $$ = NULL; }
 	;
 
-fetch_scroll_opt	: FIRST
+fetch_scroll_opt
+	: FIRST
 		{ $$ = make_node (nod_fetch_scroll, 2,
 				MAKE_const_slong (blr_scroll_bof), NULL); }
 	| LAST

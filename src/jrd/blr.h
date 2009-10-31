@@ -376,6 +376,8 @@
 #define blr_stmt_expr				(unsigned char) 190
 #define blr_derived_expr			(unsigned char) 191
 
+// FB 3.0 specific BLR
+
 #define blr_procedure2				(unsigned char) 192
 #define blr_exec_proc2				(unsigned char) 193
 #define blr_function2				(unsigned char) 194

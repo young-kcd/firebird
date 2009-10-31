@@ -453,4 +453,3 @@ public:
 } //namespace Jrd
 
 #endif // JRD_RSE_H
-

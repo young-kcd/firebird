@@ -67,8 +67,7 @@ static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, btree_exp*
 static bool setup_bitmaps(thread_db* tdbb, RecordSource*, IRSB_NAV);
 
 
-bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
-					IRSB_NAV impure, record_param* rpb)
+bool NAV_get_record(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure, record_param* rpb)
 {
 /**************************************
  *

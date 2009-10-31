@@ -4546,9 +4546,9 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 			((temp == rse_nulls_first && ptr[sort->nod_count]) ||
 			    (temp == rse_nulls_last && !ptr[sort->nod_count]))) ||
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
-			(dbb->dbb_ods_version < ODS_VERSION11 && temp == rse_nulls_first)
-			|| (ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
-			|| (!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)))
+			(dbb->dbb_ods_version < ODS_VERSION11 && temp == rse_nulls_first) ||
+			(ptr[sort->nod_count] && !(idx->idx_flags & idx_descending)) ||
+			(!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)))
 		{
 			return NULL;
 		}
@@ -4573,6 +4573,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 	// a navigational rsb for it.
 	*sort_ptr = NULL;
 	idx->idx_runtime_flags |= idx_navigate;
+
 	return gen_nav_rsb(tdbb, opt, stream, relation, alias, idx);
 }
 

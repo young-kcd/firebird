@@ -39,4 +39,3 @@ bool RSE_internal_get_record(Jrd::thread_db*, Jrd::RecordSource*, Jrd::RecordSou
 void RSE_open(Jrd::thread_db*, Jrd::RecordSource*);
 
 #endif // JRD_RSE_PROTO_H
-

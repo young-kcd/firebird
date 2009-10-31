@@ -828,7 +828,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION12) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
-			 protocol->p_cnct_architecture == ARCHITECTURE) &&
+			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
 		{
 			accepted = true;
@@ -3921,8 +3921,9 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		{
 			if (!prior)
 				prior = tail->rrq_xdr;
-				while (prior->msg_next != message)
-					prior = prior->msg_next;
+
+			while (prior->msg_next != message)
+				prior = prior->msg_next;
 
 			// allocate a new message block and put it in the cache
 

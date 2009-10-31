@@ -69,4 +69,3 @@ void DPM_create_relation_pages(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::RelationPage
 void DPM_delete_relation_pages(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::RelationPages*);
 
 #endif // JRD_DPM_PROTO_H
-
