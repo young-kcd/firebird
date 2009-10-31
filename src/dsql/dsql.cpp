@@ -62,9 +62,6 @@
 #include "../jrd/trace/TraceDSQLHelpers.h"
 #include "../common/classes/init.h"
 #include "../common/utils_proto.h"
-#ifdef SCROLLABLE_CURSORS
-#include "../jrd/scroll_cursors.h"
-#endif
 #include "../common/StatusArg.h"
 
 #ifdef HAVE_CTYPE_H
@@ -127,9 +124,6 @@ namespace
 		isc_info_db_sql_dialect,
 		isc_info_ods_version,
 		isc_info_ods_minor_version,
-#ifdef SCROLLABLE_CURSORS
-		isc_info_base_level,
-#endif
 		isc_info_db_read_only,
 		isc_info_end
 	};
@@ -208,7 +202,6 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
     @param in_msg
     @param out_blr_length
     @param out_blr
-    @param out_msg_type OBSOLETE
     @param out_msg_length
     @param out_msg
 
@@ -219,7 +212,7 @@ void DSQL_execute(thread_db* tdbb,
 				  USHORT in_blr_length, const UCHAR* in_blr,
 				  USHORT in_msg_type, USHORT in_msg_length, const UCHAR* in_msg,
 				  USHORT out_blr_length, UCHAR* out_blr,
-				  /*USHORT out_msg_type,*/ USHORT out_msg_length, UCHAR* out_msg)
+				  USHORT out_msg_length, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
 
@@ -304,12 +297,10 @@ void DSQL_execute(thread_db* tdbb,
     @param dialect
     @param in_blr_length
     @param in_blr
-    @param in_msg_type OBSOLETE
     @param in_msg_length
     @param in_msg
     @param out_blr_length
     @param out_blr
-    @param out_msg_type OBSOLETE
     @param out_msg_length
     @param out_msg
 
@@ -319,14 +310,14 @@ void DSQL_execute_immediate(thread_db* tdbb,
 							jrd_tra** tra_handle,
 							USHORT length, const TEXT* string, USHORT dialect,
 							USHORT in_blr_length, const UCHAR* in_blr,
-							/*USHORT in_msg_type,*/ USHORT in_msg_length, const UCHAR* in_msg,
+							USHORT in_msg_length, const UCHAR* in_msg,
 							USHORT out_blr_length, UCHAR* out_blr,
-							/*USHORT out_msg_type,*/ USHORT out_msg_length, UCHAR* out_msg)
+							USHORT out_msg_length, UCHAR* out_msg)
 {
 	execute_immediate(tdbb, attachment, tra_handle, length,
 		string, dialect,
-		in_blr_length, in_blr, /*in_msg_type,*/ in_msg_length, in_msg,
-		out_blr_length, out_blr, /*out_msg_type,*/ out_msg_length, out_msg);
+		in_blr_length, in_blr, in_msg_length, in_msg,
+		out_blr_length, out_blr, out_msg_length, out_msg);
 }
 
 
@@ -341,7 +332,6 @@ void DSQL_execute_immediate(thread_db* tdbb,
     @param req_handle
     @param blr_length
     @param blr
-    @param msg_type OBSOLETE
     @param msg_length
     @param dsql_msg
     @param direction
@@ -351,11 +341,7 @@ void DSQL_execute_immediate(thread_db* tdbb,
 ISC_STATUS DSQL_fetch(thread_db* tdbb,
 					  dsql_req* request,
 					  USHORT blr_length, const UCHAR* blr,
-					  /*USHORT msg_type,*/ USHORT msg_length, UCHAR* dsql_msg_buf
-#ifdef SCROLLABLE_CURSORS
-						  , USHORT direction, SLONG offset
-#endif
-						  )
+					  USHORT msg_length, UCHAR* dsql_msg_buf)
 {
 	SET_TDBB(tdbb);
 
@@ -368,107 +354,6 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 				  Arg::Gds(isc_dsql_cursor_err) <<
 				  Arg::Gds(isc_dsql_cursor_not_open));
 	}
-
-#ifdef SCROLLABLE_CURSORS
-
-	// check whether we need to send an asynchronous scrolling message
-	// to the engine; the engine will automatically advance one record
-	// in the same direction as before, so optimize out messages of that
-	// type
-
-	if (request->req_type == REQ_SELECT && request->req_dbb->dbb_base_level >= 5)
-	{
-		switch (direction)
-		{
-		case isc_fetch_next:
-			if (!(request->req_flags & REQ_backwards))
-				offset = 0;
-			else {
-				direction = blr_forward;
-				offset = 1;
-				request->req_flags &= ~REQ_backwards;
-			}
-			break;
-
-		case isc_fetch_prior:
-			if (request->req_flags & REQ_backwards)
-				offset = 0;
-			else {
-				direction = blr_backward;
-				offset = 1;
-				request->req_flags |= REQ_backwards;
-			}
-			break;
-
-		case isc_fetch_first:
-			direction = blr_bof_forward;
-			offset = 1;
-			request->req_flags &= ~REQ_backwards;
-			break;
-
-		case isc_fetch_last:
-			direction = blr_eof_backward;
-			offset = 1;
-			request->req_flags |= REQ_backwards;
-			break;
-
-		case isc_fetch_absolute:
-			direction = blr_bof_forward;
-			request->req_flags &= ~REQ_backwards;
-			break;
-
-		case isc_fetch_relative:
-			if (offset < 0) {
-				direction = blr_backward;
-				offset = -offset;
-				request->req_flags |= REQ_backwards;
-			}
-			else {
-				direction = blr_forward;
-				request->req_flags &= ~REQ_backwards;
-			}
-			break;
-
-		default:
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_sqlda_err));
-		}
-
-		if (offset)
-		{
-			DSC desc;
-
-			dsql_msg* message = (dsql_msg*) request->req_async;
-
-			desc.dsc_dtype = dtype_short;
-			desc.dsc_scale = 0;
-			desc.dsc_length = sizeof(USHORT);
-			desc.dsc_flags = 0;
-			desc.dsc_address = (UCHAR*) & direction;
-
-			dsql_par* offset_parameter = message->msg_parameters;
-			dsql_par* parameter = offset_parameter->par_next;
-			MOVD_move(&desc, &parameter->par_desc);
-
-			desc.dsc_dtype = dtype_long;
-			desc.dsc_scale = 0;
-			desc.dsc_length = sizeof(SLONG);
-			desc.dsc_flags = 0;
-			desc.dsc_address = (UCHAR*) & offset;
-
-			MOVD_move(&desc, &offset_parameter->par_desc);
-
-			DsqlCheckout dcoHolder(request->req_dbb);
-
-			if (isc_receive2(tdbb->tdbb_status_vector, &request->req_request,
-							 message->msg_number, message->msg_length,
-							 message->msg_buffer, 0, direction, offset))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-		}
-	}
-#endif
 
 	dsql_msg* message = (dsql_msg*) request->req_receive;
 
@@ -573,7 +458,6 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
     @param req_handle
     @param blr_length
     @param blr
-    @param msg_type OBSOLETE
     @param msg_length
     @param dsql_msg
 
@@ -581,7 +465,7 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 void DSQL_insert(thread_db* tdbb,
 				 dsql_req* request,
 				 USHORT blr_length, const UCHAR* blr,
-				 /*USHORT msg_type,*/ USHORT msg_length, const UCHAR* dsql_msg_buf)
+				 USHORT msg_length, const UCHAR* dsql_msg_buf)
 {
 	SET_TDBB(tdbb);
 
@@ -779,7 +663,6 @@ void DSQL_prepare(thread_db* tdbb,
 void DSQL_set_cursor(thread_db* tdbb,
 				     dsql_req* request,
 					 const TEXT* input_cursor)
-					 //USHORT type)
 {
 	SET_TDBB(tdbb);
 
@@ -1070,12 +953,10 @@ static void execute_blob(thread_db* tdbb,
 	@param dialect
     @param in_blr_length
     @param in_blr
-    @param in_msg_type OBSOLETE
     @param in_msg_length
     @param in_msg
     @param out_blr_length
     @param out_blr
-    @param out_msg_type OBSOLETE
     @param out_msg_length
     @param out_msg
 
@@ -1085,9 +966,9 @@ static void execute_immediate(thread_db* tdbb,
 							  jrd_tra** tra_handle,
 							  USHORT length, const TEXT* string, USHORT dialect,
 							  USHORT in_blr_length, const UCHAR* in_blr,
-							  /*USHORT in_msg_type,*/ USHORT in_msg_length, const UCHAR* in_msg,
+							  USHORT in_msg_length, const UCHAR* in_msg,
 							  USHORT out_blr_length, UCHAR* out_blr,
-							  /*USHORT out_msg_type,*/ USHORT out_msg_length, UCHAR* out_msg)
+							  USHORT out_msg_length, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
 
@@ -2123,13 +2004,6 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 			// Note: this info item is so old it apparently uses an
 			// archaic format, not a standard vax integer format.
 
-#ifdef SCROLLABLE_CURSORS
-			case isc_info_base_level:
-				fb_assert(l == 2 && data[0] == UCHAR(1));
-				database->dbb_base_level = (USHORT) data[1];
-				break;
-#endif
-
 			case isc_info_db_read_only:
 				fb_assert(l == 1);
 				database->dbb_read_only = (USHORT) data[0] ? true : false;
@@ -2586,16 +2460,6 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	dsql_msg* message = FB_NEW(pool) dsql_msg;
 	statement->req_receive = message;
 	message->msg_number = 1;
-
-#ifdef SCROLLABLE_CURSORS
-	if (statement->req_dbb->dbb_base_level >= 5) {
-		// allocate a message in which to send scrolling information
-		// outside of the normal send/receive protocol
-
-		statement->req_async = message = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
-		message->msg_number = 2;
-	}
-#endif
 
 	statement->req_type = REQ_SELECT;
 	statement->req_flags &= ~REQ_cursor_open;

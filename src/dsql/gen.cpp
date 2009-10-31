@@ -1263,7 +1263,11 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 	case nod_cursor:
 		stuff(statement, blr_dcl_cursor);
 		stuff_word(statement, (int) (IPTR) node->nod_arg[e_cur_number]);
-		GEN_expr(statement, node->nod_arg[e_cur_rse]);
+		if (node->nod_arg[e_cur_scroll])
+		{
+			stuff(statement, blr_scrollable);
+		}
+		gen_rse(statement, node->nod_arg[e_cur_rse]);
 		temp = node->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
 		stuff_word(statement, temp->nod_count);
 		ptr = temp->nod_arg;
@@ -1277,23 +1281,32 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 	case nod_cursor_close:
 	case nod_cursor_fetch:
 		{
+			const dsql_nod* scroll = node->nod_arg[e_cur_stmt_scroll];
 			// op-code
 			stuff(statement, blr_cursor_stmt);
 			if (node->nod_type == nod_cursor_open)
 				stuff(statement, blr_cursor_open);
 			else if (node->nod_type == nod_cursor_close)
 				stuff(statement, blr_cursor_close);
+			else if (scroll)
+				stuff(statement, blr_cursor_fetch_scroll);
 			else
 				stuff(statement, blr_cursor_fetch);
 			// cursor reference
 			dsql_nod* cursor = node->nod_arg[e_cur_stmt_id];
 			stuff_word(statement, (int) (IPTR) cursor->nod_arg[e_cur_number]);
-			// preliminary navigation
-			const dsql_nod* seek = node->nod_arg[e_cur_stmt_seek];
-			if (seek) {
-				stuff(statement, blr_seek);
-				GEN_expr(statement, seek->nod_arg[0]);
-				GEN_expr(statement, seek->nod_arg[1]);
+			// scrolling
+			if (scroll)
+			{
+				GEN_expr(statement, scroll->nod_arg[0]);
+				if (scroll->nod_arg[1])
+				{
+					GEN_expr(statement, scroll->nod_arg[1]);
+				}
+				else
+				{
+					stuff(statement, blr_null);
+				}
 			}
 			// assignment
 			dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
@@ -2440,24 +2453,6 @@ static void gen_rse( CompiledStatement* statement, const dsql_nod* rse)
 		gen_plan(statement, node);
 	}
 
-#ifdef SCROLLABLE_CURSORS
-	// generate a statement to be executed if the user scrolls
-	// in a direction other than forward; a message is sent outside
-	// the normal send/receive protocol to specify the direction
-	// and offset to scroll; note that we do this only on a SELECT
-	// type statement and only when talking to a 4.1 engine or greater
-
-	if (statement->req_type == REQ_SELECT && statement->req_dbb->dbb_base_level >= 5)
-	{
-		stuff(statement, blr_receive);
-		stuff(statement, statement->req_async->msg_number);
-		stuff(statement, blr_seek);
-		const dsql_par* parameter = statement->req_async->msg_parameters;
-		gen_parameter(statement, parameter->par_next);
-		gen_parameter(statement, parameter);
-	}
-#endif
-
 	stuff(statement, blr_end);
 }
 
@@ -2565,28 +2560,6 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 		}
 	}
 
-#ifdef SCROLLABLE_CURSORS
-	// define the parameters for the scrolling message--offset and direction,
-	// in that order to make it easier to generate the statement
-
-	if (statement->req_type == REQ_SELECT && statement->req_dbb->dbb_base_level >= 5)
-	{
-		dsql_par* parameter = MAKE_parameter(statement->req_async, false, false, 0, NULL);
-		parameter->par_desc.dsc_dtype = dtype_short;
-		parameter->par_desc.dsc_length = sizeof(USHORT);
-		parameter->par_desc.dsc_scale = 0;
-		parameter->par_desc.dsc_flags = 0;
-		parameter->par_desc.dsc_sub_type = 0;
-
-		parameter = MAKE_parameter(statement->req_async, false, false, 0, NULL);
-		parameter->par_desc.dsc_dtype = dtype_long;
-		parameter->par_desc.dsc_length = sizeof(ULONG);
-		parameter->par_desc.dsc_scale = 0;
-		parameter->par_desc.dsc_flags = 0;
-		parameter->par_desc.dsc_sub_type = 0;
-	}
-#endif
-
 	// Generate definitions for the messages
 
 	GEN_port(statement, statement->req_receive);
@@ -2595,10 +2568,6 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 		GEN_port(statement, message);
 	else
 		statement->req_send = NULL;
-#ifdef SCROLLABLE_CURSORS
-	if (statement->req_type == REQ_SELECT && statement->req_dbb->dbb_base_level >= 5)
-		GEN_port(statement, statement->req_async);
-#endif
 
 	// If there is a send message, build a RECEIVE
 

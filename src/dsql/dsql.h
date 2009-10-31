@@ -141,9 +141,6 @@ public:
 	Database*		dbb_database;
 	Attachment*		dbb_attachment;
 	dsql_str*		dbb_dfl_charset;
-#ifdef SCROLLABLE_CURSORS
-	USHORT			dbb_base_level;		// indicates the version of the engine code itself
-#endif
 	bool			dbb_no_charset;
 	bool			dbb_read_only;
 	USHORT			dbb_db_SQL_dialect;
@@ -627,19 +624,15 @@ enum req_flags_vals {
 	REQ_procedure			= 0x00008,
 	REQ_trigger				= 0x00010,
 	REQ_orphan				= 0x00020,
-	//REQ_enforce_scope		= 0x00040, // NOT USED
-	REQ_no_batch			= 0x00080,
-#ifdef SCROLLABLE_CURSORS
-	REQ_backwards			= 0x00100,
-#endif
-	REQ_blr_version4		= 0x00200,
-	REQ_blr_version5		= 0x00400,
-	REQ_block				= 0x00800,
-	REQ_selectable			= 0x01000,
-	REQ_CTE_recursive		= 0x02000,
-	REQ_dsql_upd_or_ins		= 0x04000,
-	REQ_returning_into		= 0x08000,
-	REQ_in_auto_trans_block	= 0x10000
+	REQ_no_batch			= 0x00040,
+	REQ_blr_version4		= 0x00080,
+	REQ_blr_version5		= 0x00100,
+	REQ_block				= 0x00200,
+	REQ_selectable			= 0x00400,
+	REQ_CTE_recursive		= 0x00800,
+	REQ_dsql_upd_or_ins		= 0x01000,
+	REQ_returning_into		= 0x02000,
+	REQ_in_auto_trans_block	= 0x04000
 };
 
 //! Blob

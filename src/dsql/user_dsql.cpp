@@ -379,38 +379,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch(ISC_STATUS* user_status,
 }
 
 
-#ifdef SCROLLABLE_CURSORS
-//____________________________________________________________
-//
-//	Fetch next record from a dynamic SQL cursor
-//
-ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2(ISC_STATUS*	user_status,
-											 const SCHAR*	cursor_name,
-											 USHORT	dialect,
-											 XSQLDA*	sqlda,
-											 USHORT	direction,
-											 SLONG	offset)
-{
-	ISC_STATUS_ARRAY local_status;
-
-	INIT_DSQL(user_status, local_status);
-	try
-	{
-		// get the symbol table entry
-
-		dsql_stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
-
-		return isc_dsql_fetch2(user_status, &statement->stmt_handle,
-							   dialect, sqlda, direction, offset);
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		return error(ex);
-	}
-}
-#endif
-
-
 //____________________________________________________________
 //
 //	Fetch next record from a dynamic SQL cursor (ADA version)
@@ -430,35 +398,6 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch_a(ISC_STATUS*	user_status,
 
 	return FB_SUCCESS;
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2_a(ISC_STATUS* user_status,
-											   int *sqlcode,
-											   const SCHAR* cursor_name,
-											   USHORT dialect,
-											   XSQLDA* sqlda,
-											   USHORT direction, SLONG offset)
-{
-/**************************************
- *
- *	i s c _ e m b e d _ d s q l _ f e t c h 2 _ a
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor (ADA version)
- *
- **************************************/
-	*sqlcode = 0;
-
-	ISC_STATUS s = isc_embed_dsql_fetch2(user_status, cursor_name, dialect, sqlda, direction, offset);
-	if (s == 100)
-		*sqlcode = 100;
-
-	return FB_SUCCESS;
-}
-#endif
 
 
 ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS* user_status,
@@ -764,38 +703,6 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_a(ISC_STATUS* user_status,
 
 	return FB_SUCCESS;
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE isc_dsql_fetch2_a(ISC_STATUS* user_status,
-										 int *sqlcode,
-										 int *stmt_handle,
-										 USHORT dialect,
-										 int *sqlda,
-										 USHORT direction,
-										 SLONG offset)
-{
-/**************************************
- *
- *	i s c _ d s q l _ f e t c h 2 _ a
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor (ADA version)
- *
- **************************************/
-	*sqlcode = 0;
-
-	const ISC_STATUS s =
-		isc_dsql_fetch2(user_status, reinterpret_cast<FB_API_HANDLE*>(stmt_handle),
-						dialect, reinterpret_cast<XSQLDA*>(sqlda), direction, offset);
-	if (s == 100)
-		*sqlcode = 100;
-
-	return FB_SUCCESS;
-}
-#endif
 
 
 /**************************************

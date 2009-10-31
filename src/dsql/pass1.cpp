@@ -1845,9 +1845,9 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		input->nod_arg[e_cur_stmt_id] =
 			pass1_cursor_name(statement, (dsql_str*) input->nod_arg[e_cur_stmt_id],
 							  NOD_CURSOR_EXPLICIT, true);
-		// process a seek node, if exists
-		if (input->nod_arg[e_cur_stmt_seek]) {
-			input->nod_arg[e_cur_stmt_seek] = PASS1_node(statement, input->nod_arg[e_cur_stmt_seek]);
+		// process a scroll node, if exists
+		if (input->nod_arg[e_cur_stmt_scroll]) {
+			input->nod_arg[e_cur_stmt_scroll] = PASS1_node(statement, input->nod_arg[e_cur_stmt_scroll]);
 		}
 		// process an assignment node, if exists
 		if (input->nod_arg[e_cur_stmt_into]) {
@@ -11689,8 +11689,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_cursor_close:
 		verb = "cursor_close";
 		break;
-	case nod_fetch_seek:
-		verb = "fetch_seek";
+	case nod_fetch_scroll:
+		verb = "fetch_scroll";
 		break;
 
 	case nod_param_val:

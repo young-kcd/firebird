@@ -575,6 +575,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> PACKAGE
 %token <legacyNode> RDB_GET_CONTEXT
 %token <legacyNode> RDB_SET_CONTEXT
+%token <legacyNode> SCROLL
+%token <legacyNode> PRIOR
+%token <legacyNode> ABSOLUTE
+%token <legacyNode> RELATIVE
+
 
 /* precedence declarations for expression evaluation */
 
@@ -678,7 +683,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> extract_expression
 %type <legacyStr>  end_trigger entry_op external_file
 
-%type <legacyNode> fetch_cursor fetch_opt file1 file_clause file_desc file_desc1
+%type <legacyNode> fetch_cursor fetch_opt fetch_scroll_opt file1 file_clause file_desc file_desc1
 %type <legacyNode> filter_clause_io filter_decl_clause first_clause first_file_length
 %type <legacyNode> float_type for_exec_into for_select for_update_clause for_update_list from_clause
 %type <legacyNode> from_list full_proc_block full_proc_block_body function
@@ -738,7 +743,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> role_name role_name_list rollback rows_clause rtable_clause
 %type <legacyNode> rview_clause
 
-%type <legacyNode> savepoint search_condition searched_case searched_when_clause sec_precision_opt
+%type <legacyNode> savepoint scroll_opt search_condition searched_case searched_when_clause sec_precision_opt
 %type <legacyNode> sec_shadow_files segment_clause_io segment_length_io select select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
 %type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause signed_long_integer
@@ -2110,10 +2115,18 @@ var_decl_opt	: VARIABLE
 			{ $$ = NULL; }
 		;
 
-cursor_declaration_item	: symbol_cursor_name CURSOR FOR '(' select ')'
+cursor_declaration_item	: symbol_cursor_name scroll_opt CURSOR FOR '(' select ')'
 			{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_EXPLICIT,
-				(int) e_cur_count, $1, $5, NULL, NULL); }
+				(int) e_cur_count, $1, $2, $6, NULL, NULL); }
  		;
+
+scroll_opt	: SCROLL
+			{ $$ = make_node (nod_flag, 0, NULL); }
+		| NO SCROLL
+			{ $$ = NULL; }
+		|
+			{ $$ = NULL; }
+		;
 
 proc_block	: proc_statement
 		| full_proc_block
@@ -2426,7 +2439,7 @@ continue
 
 cursor_def	: AS CURSOR symbol_cursor_name
 			{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_FOR,
-				(int) e_cur_count, $3, NULL, NULL, NULL); }
+				(int) e_cur_count, $3, NULL, NULL, NULL, NULL); }
 		|
 			{ $$ = NULL; }
 		;
@@ -2473,46 +2486,32 @@ fetch_cursor	: FETCH fetch_opt symbol_cursor_name INTO variable_list
 		{ $$ = make_node (nod_cursor_fetch, (int) e_cur_stmt_count, $3, $2, make_list ($5)); }
 	;
 
-fetch_opt	:
+fetch_opt	: fetch_scroll_opt FROM
+		{ $$ = $1; }
+	|
 		{ $$ = NULL; }
 	;
-/*
-fetch_opt	: fetch_seek_opt FROM
+
+fetch_scroll_opt	: FIRST
+		{ $$ = make_node (nod_fetch_scroll, 2,
+				MAKE_const_slong (blr_scroll_bof), NULL); }
+	| LAST
+		{ $$ = make_node (nod_fetch_scroll, 2,
+				MAKE_const_slong (blr_scroll_eof), NULL); }
+	| PRIOR
+		{ $$ = make_node (nod_fetch_scroll, 2,
+				MAKE_const_slong (blr_scroll_backward), NULL); }
+	| NEXT
+		{ $$ = make_node (nod_fetch_scroll, 2,
+				MAKE_const_slong (blr_scroll_forward), NULL); }
+	| ABSOLUTE value
+		{ $$ = make_node (nod_fetch_scroll, 2,
+				MAKE_const_slong (blr_scroll_absolute), $2); }
+	| RELATIVE value
+		{ $$ = make_node (nod_fetch_scroll, 2,
+				MAKE_const_slong (blr_scroll_relative), $2); }
 	;
 
-fetch_seek_opt	:
-	| FIRST
-		{ $$ = make_node (nod_fetch_seek, 2,
-				// corresponds to (blr_bof_forward, 0)
-				MAKE_const_slong (3),
-				MAKE_const_slong (0)); }
-	| LAST
-		{ $$ = make_node (nod_fetch_seek, 2,
-				// corresponds to (blr_eof_backward, 0)
-				MAKE_const_slong (4),
-				MAKE_const_slong (0)); }
-	| PRIOR
-		{ $$ = make_node (nod_fetch_seek, 2,
-				// corresponds to (blr_backward, 1)
-				MAKE_const_slong (2),
-				MAKE_const_slong (1)); }
-	| NEXT
-		{ $$ = make_node (nod_fetch_seek, 2,
-				// corresponds to (blr_forward, 1)
-				MAKE_const_slong (1),
-				MAKE_const_slong (1)); }
-	| ABSOLUTE value
-		{ $$ = make_node (nod_fetch_seek, 2,
-				// corresponds to (blr_bof_forward, value)
-				MAKE_const_slong (3),
-				$2); }
-	| RELATIVE value
-		{ $$ = make_node (nod_fetch_seek, 2,
-				// corresponds to (blr_forward, value)
-				MAKE_const_slong (1),
-				$2); }
-	;
-*/
 
 /* EXECUTE PROCEDURE */
 
@@ -3057,6 +3056,7 @@ keyword_or_column	: valid_symbol_name
 		| START
 		| SIMILAR				/* added in FB 2.5 */
 		| OVER					/* added in FB 3.0 */
+		| SCROLL
 		;
 
 col_opt	: ALTER
@@ -4528,7 +4528,7 @@ returning_clause	: RETURNING value_list
 		;
 
 cursor_clause	: WHERE CURRENT OF symbol_cursor_name
-			{ $$ = make_node (nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL); }
+			{ $$ = make_node (nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL, NULL); }
 		;
 
 
@@ -5833,6 +5833,9 @@ non_reserved_word :
 	| PACKAGE
 	| RDB_GET_CONTEXT
 	| RDB_SET_CONTEXT
+	| PRIOR
+	| ABSOLUTE
+	| RELATIVE
 	;
 
 %%

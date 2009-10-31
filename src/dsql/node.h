@@ -313,7 +313,7 @@ enum nod_t
 	nod_cursor_open, // 250
 	nod_cursor_fetch,
 	nod_cursor_close,
-	nod_fetch_seek,
+	nod_fetch_scroll,
 	nod_param_val,		// default value for SP parameters support
 	nod_rows,	// ROWS support
 	nod_query_spec,
@@ -494,6 +494,7 @@ enum node_args {
 	e_flp_count,
 
 	e_cur_name = 0,			// nod_cursor
+	e_cur_scroll,
 	e_cur_rse,
 	e_cur_number,
 	e_cur_count,
@@ -890,7 +891,7 @@ enum node_args {
 	e_derived_field_count,
 
 	e_cur_stmt_id = 0,
-	e_cur_stmt_seek,
+	e_cur_stmt_scroll,
 	e_cur_stmt_into,
 	e_cur_stmt_count,
 
