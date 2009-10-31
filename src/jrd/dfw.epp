@@ -1629,7 +1629,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(blr_end);
 			blr.add(blr_eoc);
 
-			jrd_req* request = CMP_compile2(tdbb, blr.begin(), TRUE, 0, NULL);
+			jrd_req* request = CMP_compile2(tdbb, blr.begin(), blr.getCount(), true, 0, NULL);
 			HalfStaticArray<USHORT, 5> hasRecord;
 
 			EXE_start(tdbb, request, transaction);
