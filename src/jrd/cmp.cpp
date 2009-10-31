@@ -998,9 +998,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 	case nod_count:
 	case nod_gen_id:
 	case nod_lock_state:
-#ifdef SCROLLABLE_CURSORS
-	case nod_seek:
-#endif
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_scale = 0;
@@ -2190,10 +2187,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	if (csb->csb_g_flags & csb_blr_version4) {
 		request->req_flags |= req_blr_version4;
 	}
-
-#ifdef SCROLLABLE_CURSORS
-	request->req_async_message = csb->csb_async_message;
-#endif
 
 	// Take out existence locks on resources used in request. This is
 	// a little complicated since relation locks MUST be taken before
@@ -4042,10 +4035,9 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node);
 
 	case nod_cursor_stmt:
-		if ((UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op] == blr_cursor_fetch) {
-			node->nod_arg[e_cursor_stmt_seek] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_seek]);
-			node->nod_arg[e_cursor_stmt_into] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
-		}
+		node->nod_arg[e_cursor_stmt_scroll_op] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_op]);
+		node->nod_arg[e_cursor_stmt_scroll_val] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val]);
+		node->nod_arg[e_cursor_stmt_into] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
 		break;
 
 	case nod_max:
@@ -4689,9 +4681,6 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	jrd_nod* skip = rse->rse_skip;
 	jrd_nod* plan = rse->rse_plan;
 	const bool writelock = rse->rse_writelock;
-#ifdef SCROLLABLE_CURSORS
-	jrd_nod* async_message = rse->rse_async_message;
-#endif
 
 	// zip thru RecordSelExpr expanding views and inner joins
 	jrd_nod** arg = rse->rse_relation;
@@ -4764,13 +4753,6 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	}
 
 	rse->rse_writelock = writelock;
-
-#ifdef SCROLLABLE_CURSORS
-	if (async_message) {
-		rse->rse_async_message = CMP_pass1(tdbb, csb, async_message);
-		csb->csb_async_message = rse->rse_async_message;
-	}
-#endif
 
 	// we are no longer in the scope of this RecordSelExpr
 
@@ -5289,32 +5271,18 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_for:
 		rse_node = node->nod_arg[e_for_re];
 		rsb_ptr = (RecordSource**) & node->nod_arg[e_for_rsb];
-#ifdef SCROLLABLE_CURSORS
-		csb->csb_current_rse = rse_node;
-#endif
 		break;
 
 	case nod_dcl_cursor:
 		rse_node = node->nod_arg[e_dcl_cursor_rse];
 		rsb_ptr = (RecordSource**) & node->nod_arg[e_dcl_cursor_rsb];
-#ifdef SCROLLABLE_CURSORS
-		csb->csb_current_rse = rse_node;
-#endif
 		break;
 
 	case nod_cursor_stmt:
-		if ((UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op] == blr_cursor_fetch) {
-			CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_seek], node);
-			CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
-		}
+		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_op], node);
+		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val], node);
+		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
 		break;
-
-#ifdef SCROLLABLE_CURSORS
-	case nod_seek:
-		// store the RecordSelExpr in whose scope we are defined
-		node->nod_arg[e_seek_rse] = (jrd_nod*) csb->csb_current_rse;
-		break;
-#endif
 
 	case nod_max:
 	case nod_min:
@@ -5598,9 +5566,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_current_timestamp:
 	case nod_current_date:
 	case nod_derived_expr:
-#ifdef SCROLLABLE_CURSORS
-	case nod_seek:
-#endif
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
@@ -5846,11 +5811,6 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 		plan_check(csb, rse);
 	}
 
-#ifdef SCROLLABLE_CURSORS
-	if (rse->rse_async_message) {
-		CMP_pass2(tdbb, csb, rse->rse_async_message, 0);
-	}
-#endif
 	csb->csb_current_nodes.pop();
 }
 
@@ -6193,6 +6153,10 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 		rsb->rsb_flags |= rsb_singular;
 	}
 
+	if (rse->nod_flags & rse_scrollable) {
+		rsb->rsb_flags |= rsb_scrollable;
+	}
+
 	// mark all the substreams as inactive
 
 	jrd_nod** ptr = rse->rse_relation;
@@ -6212,9 +6176,6 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 	}
 
 	csb->csb_fors.push(rsb);
-#ifdef SCROLLABLE_CURSORS
-	rse->rse_rsb = rsb;
-#endif
 
 	return rsb;
 }

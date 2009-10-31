@@ -36,11 +36,7 @@ namespace Jrd {
 	struct irsb_nav;
 }
 
-#ifdef SCROLLABLE_CURSORS
-exp_index_buf* NAV_expand_index(Jrd::win*, Jrd::irsb_nav*);
-#endif
-bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::irsb_nav*,
-					Jrd::record_param*, Jrd::rse_get_mode);
+bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::irsb_nav*, Jrd::record_param*);
 
 #endif // JRD_NAV_PROTO_H
 

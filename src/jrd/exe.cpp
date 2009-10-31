@@ -208,10 +208,6 @@ static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
 static void release_blobs(thread_db*, jrd_req*);
 static void release_proc_save_points(jrd_req*);
-#ifdef SCROLLABLE_CURSORS
-static jrd_nod* seek_rse(thread_db*, jrd_req*, jrd_nod*);
-static void seek_rsb(thread_db*, jrd_req*, RecordSource*, USHORT, SLONG);
-#endif
 static jrd_nod* selct(thread_db*, jrd_nod*);
 static void set_error(thread_db*, const xcp_repeat*, jrd_nod*);
 static jrd_nod* stall(thread_db*, jrd_nod*);
@@ -237,12 +233,6 @@ const int PRE_TRIG	= 1;
 const int POST_TRIG	= 2;
 
 const size_t MAX_STACK_TRACE = 2048;
-
-#ifdef SCROLLABLE_CURSORS
-static const rse_get_mode g_RSE_get_mode = RSE_get_next;
-#else
-static const rse_get_mode g_RSE_get_mode = RSE_get_forward;
-#endif
 
 
 void EXE_assignment(thread_db* tdbb, jrd_nod* node)
@@ -762,11 +752,7 @@ void EXE_receive(thread_db*		tdbb,
 		execute_looper(tdbb, request, transaction, jrd_req::req_sync);
 	else
 	{
-		if (request->req_message->nod_type == nod_stall
-#ifdef SCROLLABLE_CURSORS
-			|| request->req_flags & req_fetch_required
-#endif
-			)
+		if (request->req_message->nod_type == nod_stall)
 		{
 			execute_looper(tdbb, request, transaction, jrd_req::req_sync);
 		}
@@ -840,42 +826,6 @@ void EXE_receive(thread_db*		tdbb,
 }
 
 
-#ifdef SCROLLABLE_CURSORS
-void EXE_seek(thread_db* tdbb, jrd_req* request, USHORT direction, ULONG offset)
-{
-/**************************************
- *
- *      E X E _ s e e k
- *
- **************************************
- *
- * Functional description
- *	Seek a given request in a particular direction
- *	for offset records.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DEV_BLKCHK(request, type_req);
-
-/* loop through all RSEs in the request,
-   and describe the rsb tree for that rsb;
-   go backwards because items were popped
-   off the stack backwards */
-
-/* find the top-level rsb in the request and seek it */
-
-	for (SLONG i = request->req_fors.getCount() - 1; i >= 0; i--)
-	{
-		RecordSource* rsb = request->req_fors[i];
-		if (rsb) {
-			seek_rsb(tdbb, request, rsb, direction, offset);
-			break;
-		}
-	}
-}
-#endif
-
-
 void EXE_send(thread_db*		tdbb,
 			  jrd_req*		request,
 			  USHORT	msg,
@@ -904,40 +854,9 @@ void EXE_send(thread_db*		tdbb,
 
 	jrd_nod* message;
 	jrd_nod* node;
-#ifdef SCROLLABLE_CURSORS
-/* look for an asynchronous send message--if such
-   a message was defined, we allow the user to send
-   us a message at any time during request execution */
-	jrd_nod* save_next = NULL;
-	jrd_nod* save_message = NULL;
-	jrd_req::req_s save_operation = jrd_req::req_evaluate;
-
-	if ((message = request->req_async_message) && (node = message->nod_arg[e_send_message]) &&
-		(msg == (USHORT)(ULONG) node->nod_arg[e_msg_number]))
-	{
-		/* save the current state of the request so we can go
-		   back to what was interrupted */
-
-		save_operation = request->req_operation;
-		save_message = request->req_message;
-		save_next = request->req_next;
-
-		request->req_operation = jrd_req::req_receive;
-		request->req_message = node;
-		request->req_next = message->nod_arg[e_send_statement];
-
-		/* indicate that we are processing an asynchronous message */
-
-		request->req_flags |= req_async_processing;
-	}
-	else {
-#endif
-		if (request->req_operation != jrd_req::req_receive)
-			ERR_post(Arg::Gds(isc_req_sync));
-		node = request->req_message;
-#ifdef SCROLLABLE_CURSORS
-	}
-#endif
+	if (request->req_operation != jrd_req::req_receive)
+		ERR_post(Arg::Gds(isc_req_sync));
+	node = request->req_message;
 
 	jrd_tra* transaction = request->req_transaction;
 	const bool external = request->req_procedure && request->req_procedure->prc_external;
@@ -1029,18 +948,6 @@ void EXE_send(thread_db*		tdbb,
 
 	if (!external)
 		execute_looper(tdbb, request, transaction, jrd_req::req_proceed);
-
-#ifdef SCROLLABLE_CURSORS
-	if (save_next) {
-		/* if the message was sent asynchronously, restore all the
-		   previous values so that whatever we were trying to do when
-		   the message came in is what we do next */
-
-		request->req_operation = save_operation;
-		request->req_message = save_message;
-		request->req_next = save_next;
-	}
-#endif
 }
 
 
@@ -2205,7 +2112,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					break;
 				}
 			case jrd_req::req_sync:
-				if (RSE_get_record(tdbb, (RecordSource*) node->nod_arg[e_for_rsb], g_RSE_get_mode))
+				if (RSE_get_record(tdbb, (RecordSource*) node->nod_arg[e_for_rsb]))
 				{
 					node = node->nod_arg[e_for_statement];
 					request->req_operation = jrd_req::req_evaluate;
@@ -2281,6 +2188,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					node = node->nod_parent;
 					break;
 				case blr_cursor_fetch:
+				case blr_cursor_fetch_scroll:
 					switch (request->req_operation)
 					{
 					case jrd_req::req_evaluate:
@@ -2292,13 +2200,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							ERR_post(Arg::Gds(isc_stream_eof));
 						}
 						request->req_records_affected.clear();
-						// perform preliminary navigation, if specified
-						if (node->nod_arg[e_cursor_stmt_seek]) {
-							node = node->nod_arg[e_cursor_stmt_seek];
-							break;
-						}
 						// fetch one record
-						if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+						if (RSE_get_record(tdbb, rsb))
 						{
 							node = node->nod_arg[e_cursor_stmt_into];
 							request->req_operation = jrd_req::req_evaluate;
@@ -2804,12 +2707,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 			break;
 
-#ifdef SCROLLABLE_CURSORS
-		case nod_seek:
-			node = seek_rse(tdbb, request, node);
-			break;
-#endif
-
 		case nod_set_generator:
 		case nod_set_generator2:
 			if (request->req_operation == jrd_req::req_evaluate)
@@ -2949,11 +2846,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	// request unless we are in the middle of processing an
 	// asynchronous message
 
-	if (in_node->nod_type != nod_stmt_expr && !node
-#ifdef SCROLLABLE_CURSORS
-		&& !(request->req_flags & req_async_processing)
-#endif
-		)
+	if (in_node->nod_type != nod_stmt_expr && !node)
 	{
 		// Close active cursors
 		if (request->req_cursors)
@@ -3406,213 +3299,6 @@ static void release_proc_save_points(jrd_req* request)
 	}
 	request->req_proc_sav_point = NULL;
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-static jrd_nod* seek_rse(thread_db* tdbb, jrd_req* request, jrd_nod* node)
-{
-/**************************************
- *
- *      s e e k _ r s e
- *
- **************************************
- *
- * Functional description
- *	Execute a nod_seek, which specifies
- *	a direction and offset in which to
- *	scroll a record selection expression.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DEV_BLKCHK(node, type_nod);
-
-	if (request->req_operation == jrd_req::req_proceed)
-	{
-		/* get input arguments */
-
-		const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_seek_direction]);
-		const USHORT direction = (desc && !(request->req_flags & req_null)) ?
-			MOV_get_long(desc, 0) : MAX_USHORT;
-
-		desc = EVL_expr(tdbb, node->nod_arg[e_seek_offset]);
-		const SLONG offset = (desc && !(request->req_flags & req_null)) ? MOV_get_long(desc, 0) : 0;
-
-		RecordSelExpr* rse = (RecordSelExpr*) node->nod_arg[e_seek_rse];
-
-		seek_rsb(tdbb, request, rse->rse_rsb, direction, offset);
-
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return node->nod_parent;
-}
-#endif
-
-
-#ifdef SCROLLABLE_CURSORS
-static void seek_rsb(thread_db* tdbb,
-					 jrd_req* request, RecordSource* rsb, USHORT direction, SLONG offset)
-{
-/**************************************
- *
- *      s e e k _ r s b
- *
- **************************************
- *
- * Functional description
- *	Allow scrolling through a stream as defined
- *	by the input rsb.  Handles multiple seeking.
- *	Uses RSE_get_record() to do the actual work.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	DEV_BLKCHK(rsb, type_rsb);
-	irsb* impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
-
-/* look past any boolean to the actual stream */
-
-	if (rsb->rsb_type == rsb_boolean)
-	{
-		seek_rsb(tdbb, request, rsb->rsb_next, direction, offset);
-
-		/* set the backwards flag */
-
-		const irsb* next_impure = (IRSB) ((UCHAR *) request + rsb->rsb_next->rsb_impure);
-
-		if (next_impure->irsb_flags & irsb_last_backwards)
-			impure->irsb_flags |= irsb_last_backwards;
-		else
-			impure->irsb_flags &= ~irsb_last_backwards;
-		return;
-	}
-
-/* do simple boundary checking for bof and eof */
-
-	switch (direction)
-	{
-	case blr_forward:
-		if (impure->irsb_flags & irsb_eof)
-			ERR_post(Arg::Gds(isc_stream_eof));
-		break;
-
-	case blr_backward:
-		if (impure->irsb_flags & irsb_bof)
-			ERR_post(Arg::Gds(isc_stream_bof));
-		break;
-
-	case blr_bof_forward:
-	case blr_eof_backward:
-		break;
-
-	default:
-		// was: BUGCHECK(232);
-		// replaced with this error to be consistent with find()
-		ERR_post(Arg::Gds(isc_invalid_direction));
-	}
-
-/* the actual offset to seek may be one less because the next time
-   through the blr_for loop we will seek one record--flag the fact
-   that a fetch is required on this stream in case it doesn't happen
-   (for example when GPRE generates BLR which does not stall prior to
-   the blr_for, as DSQL does) */
-
-	if (offset > 0)
-		switch (direction)
-		{
-		case blr_forward:
-		case blr_bof_forward:
-			if (!(impure->irsb_flags & irsb_last_backwards)) {
-				offset--;
-				if (!(impure->irsb_flags & irsb_bof))
-					request->req_flags |= req_fetch_required;
-			}
-			break;
-
-		case blr_backward:
-		case blr_eof_backward:
-			if (impure->irsb_flags & irsb_last_backwards) {
-				offset--;
-				if (!(impure->irsb_flags & irsb_eof))
-					request->req_flags |= req_fetch_required;
-			}
-			break;
-		}
-
-/* now do the actual seek */
-
-	switch (direction)
-	{
-	case blr_forward:			/* go forward from the current location */
-
-		/* the rsb_backwards flag is used to indicate the direction to seek in;
-		   this is sticky in the sense that after the user has seek'ed in the
-		   backward direction, the next retrieval from a blr_for loop will also
-		   be in the backward direction--this allows us to continue scrolling
-		   without constantly sending messages to the engine */
-
-		impure->irsb_flags &= ~irsb_last_backwards;
-
-		while (offset) {
-			offset--;
-			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
-				break;
-		}
-		break;
-
-	case blr_backward:			/* go backward from the current location */
-
-		impure->irsb_flags |= irsb_last_backwards;
-
-		while (offset) {
-			offset--;
-			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
-				break;
-		}
-		break;
-
-	case blr_bof_forward:		/* go forward from the beginning of the stream */
-
-		RSE_close(tdbb, rsb);
-		RSE_open(tdbb, rsb);
-
-		impure->irsb_flags &= ~irsb_last_backwards;
-
-		while (offset) {
-			offset--;
-			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
-				break;
-		}
-		break;
-
-	case blr_eof_backward:		/* go backward from the end of the stream */
-
-		RSE_close(tdbb, rsb);
-		RSE_open(tdbb, rsb);
-
-		/* if this is a stream type which uses bof and eof flags,
-		   reverse the sense of bof and eof in this case */
-
-		if (impure->irsb_flags & irsb_bof) {
-			impure->irsb_flags &= ~irsb_bof;
-			impure->irsb_flags |= irsb_eof;
-		}
-
-		impure->irsb_flags |= irsb_last_backwards;
-
-		while (offset) {
-			offset--;
-			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
-				break;
-		}
-		break;
-
-	default:
-		// Should never go here, because of the boundary
-		// check above, but anyway...
-		BUGCHECK(232);
-	}
-}
-#endif
 
 
 static jrd_nod* selct(thread_db* tdbb, jrd_nod* node)

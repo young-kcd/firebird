@@ -397,13 +397,8 @@ void INF_database_info(const UCHAR* items,
 			 * base_level represents what the server 'knows'
 			 */
 			STUFF(p, 1);		/* Count */
-#ifdef SCROLLABLE_CURSORS
-			UPDATE WITH VERSION OF SERVER SUPPORTING
-				SCROLLABLE CURSORS STUFF(p, 5);	/* base level of scrollable cursors */
-#else
 			/* IB_MAJOR_VER is defined as a character string */
 			STUFF(p, DBSERVER_BASE_LEVEL);	/* base level of current version */
-#endif
 			length = p - buffer;
 			break;
 

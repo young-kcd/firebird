@@ -170,14 +170,6 @@ const SINT64 ISC_TICKS_PER_DAY			= SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION;
 const SCHAR DIALECT_3_TIMESTAMP_SCALE	= -9;
 const SCHAR DIALECT_1_TIMESTAMP_SCALE	= 0;
 
-#ifdef SCROLLABLE_CURSORS
-static const rse_get_mode g_RSE_get_mode = RSE_get_next;
-#else
-static const rse_get_mode g_RSE_get_mode = RSE_get_forward;
-#endif
-
-
-
 
 dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 {
@@ -640,7 +632,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 			RSE_open(tdbb, select);
-			value = RSE_get_record(tdbb, select, g_RSE_get_mode);
+			value = RSE_get_record(tdbb, select);
 			RSE_close(tdbb, select);
 			if (node->nod_type == nod_any)
 				request->req_flags &= ~req_null;
@@ -750,10 +742,10 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			RecordSource* urs = reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]);
 			RSE_open(tdbb, urs);
-			value = RSE_get_record(tdbb, urs, g_RSE_get_mode);
+			value = RSE_get_record(tdbb, urs);
 			if (value)
 			{
-				value = !RSE_get_record(tdbb, urs, g_RSE_get_mode);
+				value = !RSE_get_record(tdbb, urs);
 			}
 			RSE_close(tdbb, urs);
 			request->req_flags &= ~req_null;
@@ -1534,7 +1526,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* const node, USHORT
 	if ((state == 0) || (state == 3))
 	{
 		RSE_open(tdbb, rsb);
-		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		if (!RSE_get_record(tdbb, rsb))
 		{
 			if (group) {
 				fini_agg_distinct(tdbb, node);
@@ -1767,7 +1759,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod* const node, USHORT
 		if (state == 2)
 			break;
 
-		if (!RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		if (!RSE_get_record(tdbb, rsb))
 		{
 			state = 2;
 		}
@@ -2970,11 +2962,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 
 	while (true) {
 		UCHAR* data;
-		SORT_get(tdbb, asb_impure->iasb_sort_handle, reinterpret_cast<ULONG**>(&data)
-#ifdef SCROLLABLE_CURSORS
-				 , RSE_get_forward
-#endif
-			);
+		SORT_get(tdbb, asb_impure->iasb_sort_handle, reinterpret_cast<ULONG**>(&data));
 
 		if (data == NULL) {
 			/* we are done, close the sort */
@@ -3341,7 +3329,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		{
 		case nod_count:
 			flag = 0;
-			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			while (RSE_get_record(tdbb, rsb))
 			{
 				++impure->vlu_misc.vlu_long;
 			}
@@ -3350,7 +3338,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		/*
 		case nod_count2:
 			flag = 0;
-			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			while (RSE_get_record(tdbb, rsb))
 			{
 				EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (!(request->req_flags & req_null)) {
@@ -3362,7 +3350,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 		case nod_min:
 		case nod_max:
-			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			while (RSE_get_record(tdbb, rsb))
 			{
 				dsc* value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null) {
@@ -3379,7 +3367,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			break;
 
 		case nod_from:
-			if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			if (RSE_get_record(tdbb, rsb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			}
@@ -3395,7 +3383,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 		case nod_average:			/* total or average with dialect-1 semantics */
 		case nod_total:
-			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			while (RSE_get_record(tdbb, rsb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null) {
@@ -3424,7 +3412,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			break;
 
 		case nod_average2:			/* average with dialect-3 semantics */
-			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			while (RSE_get_record(tdbb, rsb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null)

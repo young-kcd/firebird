@@ -104,12 +104,7 @@ ISC_STATUS jrd8_execute(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, co
 ISC_STATUS jrd8_execute_immediate(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const TEXT*,
 								  USHORT, USHORT, const SCHAR*, USHORT, USHORT, const SCHAR*,
 								  USHORT, SCHAR*, USHORT, USHORT, SCHAR*);
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS jrd8_fetch(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, USHORT, SCHAR*,
-					  USHORT, SLONG);
-#else
 ISC_STATUS jrd8_fetch(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, USHORT, SCHAR*);
-#endif // SCROLLABLE_CURSORS
 ISC_STATUS jrd8_free_statement(ISC_STATUS*, Jrd::dsql_req**, USHORT);
 ISC_STATUS jrd8_insert(ISC_STATUS*, Jrd::dsql_req**, USHORT, const SCHAR*, USHORT, USHORT, const SCHAR*);
 ISC_STATUS jrd8_prepare(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, const TEXT*,
@@ -143,11 +138,7 @@ void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_ddl(Jrd::thread_db* tdbb, /*Jrd::Attachment* attachment,*/ Jrd::jrd_tra* transaction,
 	USHORT ddl_length, const UCHAR* ddl, const Firebird::string& sqlText);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, USHORT msg_length,
-	UCHAR* msg, SSHORT level
-#ifdef SCROLLABLE_CURSORS
-	, USHORT direction, ULONG offset
-#endif
-	);
+	UCHAR* msg, SSHORT level);
 void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level, SSHORT item_length,
 	const UCHAR* items, SLONG buffer_length, UCHAR* buffer);
 void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction, SSHORT level);

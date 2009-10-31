@@ -941,7 +941,6 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 	// Dump verbose output of all the pages fetched
 	if (VAL_debug_level >= 2)
 	{
-		// We are assuming RSE_get_forward
 		if (control->vdr_page_bitmap->getFirst())
 		{
 			do {

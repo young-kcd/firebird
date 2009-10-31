@@ -231,9 +231,6 @@ public:
 	//vec<jrd_nod*>*	req_variables;	// Vector of variables, if any CVC: UNUSED
 	ResourceList req_resources;			// Resources (relations and indices)
 	jrd_nod*	req_message;			// Current message for send/receive
-#ifdef SCROLLABLE_CURSORS
-	jrd_nod*	req_async_message;		// Asynchronous message (used in scrolling)
-#endif
 	jrd_prc*	req_procedure;			// procedure, if any
 	Firebird::MetaName	req_trg_name;	// name of request (trigger), if any
 	//USHORT		req_length;			// message length for send/receive
@@ -338,11 +335,7 @@ const size_t REQ_SIZE = sizeof(jrd_req) - sizeof(jrd_req::blk_repeat_type);
 const ULONG req_active			= 0x1L;
 const ULONG req_stall			= 0x2L;
 const ULONG req_leave			= 0x4L;
-#ifdef SCROLLABLE_CURSORS
-const ULONG req_async_processing= 0x8L;
-#endif
 const ULONG req_null			= 0x10L;
-//const ULONG req_broken			= 0x20L;
 const ULONG req_abort			= 0x40L;
 const ULONG req_internal		= 0x80L;
 const ULONG req_warning			= 0x100L;

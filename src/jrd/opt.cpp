@@ -130,12 +130,7 @@ static RecordSource* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod
 static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
 static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*,
 	index_desc*, jrd_nod**);
-#ifdef SCROLLABLE_CURSORS
-static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*,
-	index_desc*, rse_get_mode);
-#else
 static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*, index_desc*);
-#endif
 static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverStack&, jrd_nod**, jrd_nod**);
 static RecordSource* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
@@ -4527,13 +4522,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 	}
 
 	// check to see if the fields in the sort match the fields in the index
-	// in the exact same order--we used to check for ascending/descending prior
-	// to SCROLLABLE_CURSORS, but now descending sorts can use ascending indices
-	// and vice versa.
-#ifdef SCROLLABLE_CURSORS
-	rse_get_mode mode;
-	rse_get_mode last_mode = RSE_get_next;
-#endif
+	// in the exact same order
 
 	index_desc::idx_repeat* idx_tail = idx->idx_rpt;
 	jrd_nod** ptr = sort->nod_arg;
@@ -4559,29 +4548,11 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 			    (temp == rse_nulls_last && !ptr[sort->nod_count]))) ||
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
 			(dbb->dbb_ods_version < ODS_VERSION11 && temp == rse_nulls_first)
-#ifndef SCROLLABLE_CURSORS
 			|| (ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
-			|| (!ptr[sort->nod_count] && (idx->idx_flags & idx_descending))
-#endif
-		   )
+			|| (!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)))
 		{
 			return NULL;
 		}
-
-#ifdef SCROLLABLE_CURSORS
-		// determine whether we ought to navigate backwards or forwards through
-		// the index--we can't allow navigating one index in two different directions
-		// on two different fields at the same time!
-		mode = ((ptr[sort->nod_count] && !(idx->idx_flags & idx_descending)) ||
-				(!ptr[sort->nod_count] && (idx->idx_flags & idx_descending))) ?
-					RSE_get_backward : RSE_get_forward;
-		if (last_mode == RSE_get_next) {
-			last_mode = mode;
-		}
-		else if (last_mode != mode) {
-			return NULL;
-		}
-#endif
 
 		dsc desc;
 		CMP_get_desc(tdbb, opt->opt_csb, node, &desc);
@@ -4603,21 +4574,13 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 	// a navigational rsb for it.
 	*sort_ptr = NULL;
 	idx->idx_runtime_flags |= idx_navigate;
-	return gen_nav_rsb(tdbb, opt, stream, relation, alias, idx
-#ifdef SCROLLABLE_CURSORS
-					   , mode
-#endif
-		);
+	return gen_nav_rsb(tdbb, opt, stream, relation, alias, idx);
 }
 
 
 static RecordSource* gen_nav_rsb(thread_db* tdbb,
 					   OptimizerBlk* opt,
-					   USHORT stream, jrd_rel* relation, VaryingString* alias, index_desc* idx
-#ifdef SCROLLABLE_CURSORS
-					   , rse_get_mode mode
-#endif
-	)
+					   USHORT stream, jrd_rel* relation, VaryingString* alias, index_desc* idx)
 {
 /**************************************
  *
@@ -4643,15 +4606,6 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 	rsb->rsb_alias = alias;
 	rsb->rsb_arg[RSB_NAV_index] = (RecordSource*) OPT_make_index(tdbb, opt, relation, idx);
 	rsb->rsb_arg[RSB_NAV_key_length] = (RecordSource*) (IPTR) key_length;
-
-#ifdef SCROLLABLE_CURSORS
-	// indicate that the index needs to be navigated in a mirror-image
-	// fashion; that when the user wants to go backwards we actually go
-	// forwards and vice versa
-	if (mode == RSE_get_backward) {
-		rsb->rsb_flags |= rsb_descending;
-	}
-#endif
 
 	const USHORT size = OPT_nav_rsb_size(rsb, key_length, 0);
 	rsb->rsb_impure = CMP_impure(opt->opt_csb, size);

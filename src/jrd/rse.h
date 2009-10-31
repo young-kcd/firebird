@@ -121,11 +121,10 @@ public:
 // bits for the rsb_flags field
 
 const USHORT rsb_singular = 1;			// singleton select, expect 0 or 1 records
-//const USHORT rsb_stream_type = 2;		// rsb is for stream type request, PC_ENGINE
-const USHORT rsb_descending = 4;		// an ascending index is being used for a descending sort or vice versa
-const USHORT rsb_project = 8;			// projection on this stream is requested
-const USHORT rsb_writelock = 16;		// records should be locked for writing
-const USHORT rsb_recursive = 32;		// this rsb is a sub_rsb of recursive rsb
+const USHORT rsb_scrollable = 2;		// scrollable cursor
+const USHORT rsb_project = 4;			// projection on this stream is requested
+const USHORT rsb_writelock = 8;			// records should be locked for writing
+const USHORT rsb_recursive = 16;		// this rsb is a sub_rsb of recursive rsb
 
 // special argument positions within the RecordSource
 
@@ -298,23 +297,12 @@ const ULONG irsb_first = 1;
 const ULONG irsb_joined = 2;				// set in left join when current record has been joined to something
 const ULONG irsb_mustread = 4;				// set in left join when must read a record from left stream
 const ULONG irsb_open = 8;					// indicated rsb is open
-#ifdef SCROLLABLE_CURSORS
-const ULONG irsb_backwards = 16;			// backwards navigation has been performed on this stream
-#endif
-const ULONG irsb_in_opened = 32;			// set in outer join when inner stream has been opened
-const ULONG irsb_join_full = 64;			// set in full join when left join has completed
-const ULONG irsb_checking_singular = 128;	// fetching to verify singleton select
-const ULONG irsb_singular_processed = 256;	// singleton stream already delivered one record
-#ifdef SCROLLABLE_CURSORS
-const ULONG irsb_last_backwards = 512;		// rsb was last scrolled in the backward direction
-const ULONG irsb_bof = 1024;				// rsb is at beginning of stream
-const ULONG irsb_eof = 2048;				// rsb is at end of stream
-#endif
-const ULONG irsb_key_changed = 4096;		// key has changed since record last returned from rsb
-// The below flag duplicates the one from the disabled SCROLLABLE_CURSORS
-// implementation, but it's used slightly differently (at the top RSB levels).
-// To be renamed if the SCROLLABLE_CURSORS code will ever be enabled.
-const ULONG irsb_eof = 8192;				// rsb is at end of stream
+const ULONG irsb_in_opened = 16;			// set in outer join when inner stream has been opened
+const ULONG irsb_join_full = 32;			// set in full join when left join has completed
+const ULONG irsb_checking_singular = 64;	// fetching to verify singleton select
+const ULONG irsb_singular_processed = 128;	// singleton stream already delivered one record
+const ULONG irsb_key_changed = 256;			// key has changed since record last returned from rsb
+const ULONG irsb_eof = 512;					// rsb is at end of stream
 
 
 // Sort map block
@@ -460,22 +448,6 @@ public:
 	USHORT riv_number;			// temporary number for river
 	UCHAR riv_count;			// count of streams
 	UCHAR riv_streams[1];		// actual streams
-};
-
-
-// types for navigating through a stream
-
-enum rse_get_mode
-{
-	RSE_get_forward
-#ifdef SCROLLABLE_CURSORS
-	,
-	RSE_get_backward,
-	RSE_get_current,
-	RSE_get_first,
-	RSE_get_last,
-	RSE_get_next
-#endif
 };
 
 } //namespace Jrd

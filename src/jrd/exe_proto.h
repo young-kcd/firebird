@@ -44,9 +44,6 @@ void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*, bool = 
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, const UCHAR*);
 void EXE_start(Jrd::thread_db*, Jrd::jrd_req*, Jrd::jrd_tra*);
 void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
-#ifdef SCROLLABLE_CURSORS
-void EXE_seek(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG);
-#endif
 void EXE_verb_cleanup(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 
 namespace Jrd

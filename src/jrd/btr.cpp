@@ -638,11 +638,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	lower.key_length = 0;
 	upper.key_flags = 0;
 	upper.key_length = 0;
-	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper
-#ifdef SCROLLABLE_CURSORS
-							, false
-#endif
-							);
+	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper);
 
 	const bool descending = (idx.idx_flags & idx_descending);
 	bool skipLowerKey = (retrieval->irb_generic & irb_exclude_lower);
@@ -812,12 +808,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 						  WIN* window,
 						  index_desc* idx,
 						  temporary_key* lower,
-						  temporary_key* upper
-#ifdef SCROLLABLE_CURSORS
-						  ,
-						  const bool backwards
-#endif
-						  )
+						  temporary_key* upper)
 {
 /**************************************
  *
@@ -890,13 +881,8 @@ btree_page* BTR_find_page(thread_db* tdbb,
 	const bool ignoreNulls = ((idx->idx_count == 1) && !(idx->idx_flags & idx_descending) &&
 		(retrieval->irb_generic & irb_ignore_null_value_key) && !(retrieval->irb_lower_count));
 
-#ifdef SCROLLABLE_CURSORS
-	const bool firstData =
-		((!backwards && retrieval->irb_lower_count) || (!backwards && ignoreNulls) ||
-			(backwards && retrieval->irb_upper_count));
-#else
 	const bool firstData = (retrieval->irb_lower_count || ignoreNulls);
-#endif
+
 	if (firstData)
 	{
 		// Make a temporary key with length 1 and zero byte, this will return
@@ -910,12 +896,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		{
 			while (true)
 			{
-#ifdef SCROLLABLE_CURSORS
-				const temporary_key* tkey =
-					backwards ? upper : (ignoreNulls ? &firstNotNullKey : lower);
-#else
 				const temporary_key* tkey = ignoreNulls ? &firstNotNullKey : lower;
-#endif
 				const SLONG number = find_page(page, tkey, idx->idx_flags,
 					NO_VALUE, (retrieval->irb_generic & (irb_starting | irb_partial)));
 				if (number != END_BUCKET)
@@ -935,36 +916,13 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		{
 			UCHAR* pointer;
 			const UCHAR* const endPointer = (UCHAR*) page + page->btr_length;
-#ifdef SCROLLABLE_CURSORS
-			if (backwards) {
-				pointer = BTR_last_node(page, NAV_expand_index(window, 0), 0);
-			}
-			else
-#endif
-			{
-				pointer = BTreeNode::getPointerFirstNode(page);
-			}
-
+			pointer = BTreeNode::getPointerFirstNode(page);
 			pointer = BTreeNode::readNode(&node, pointer, page->btr_header.pag_flags, false);
 			// Check if pointer is still valid
 			if (pointer > endPointer) {
 				BUGCHECK(204);	// msg 204 index inconsistent
 			}
 			page = (btree_page*) CCH_HANDOFF(tdbb, window, node.pageNumber, LCK_read, pag_index);
-
-			// make sure that we are actually on the last page on this
-			// level when scanning in the backward direction
-#ifdef SCROLLABLE_CURSORS
-			if (backwards)
-			{
-				while (page->btr_sibling)
-				{
-					page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
-													 LCK_read, pag_index);
-				}
-			}
-#endif
-
 		}
 	}
 
@@ -1410,109 +1368,6 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	return key_length;
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-UCHAR* BTR_last_node(btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node)
-{
-/**************************************
- *
- *	B T R _ l a s t _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Find the last node on a page.  Used when walking
- *	down the right side of an index tree.
- *
- **************************************/
-
-	// the last expanded node is always at the end of the page
-	// minus the size of a btree_exp, since there is always an extra
-	// btree_exp node with zero-length tail at the end of the page
-	btree_exp* enode = (btree_exp*) ((UCHAR*)expanded_page + expanded_page->exp_length - BTX_SIZE);
-
-	// starting at the end of the page, find the
-	// first node that is not an end marker
-	UCHAR* pointer = ((UCHAR*)page + page->btr_length);
-	const UCHAR flags = page->btr_header.pag_flags;
-	IndexNode node;
-	while (true)
-	{
-		pointer = BTreeNode::previousNode(/*&node,*/ pointer, /*flags,*/ &enode);
-		if (!node.isEndBucket && !node.isEndLevel)
-		{
-			if (expanded_node) {
-				*expanded_node = enode;
-			}
-			return node.nodePointer;
-		}
-	}
-}
-#endif
-
-
-#ifdef SCROLLABLE_CURSORS
-btree_page* BTR_left_handoff(thread_db* tdbb, WIN* window, btree_page* page, SSHORT lock_level)
-{
-/**************************************
- *
- *	B T R _ l e f t _ h a n d o f f
- *
- **************************************
- *
- * Functional description
- *	Handoff a btree page to the left.  This is more difficult than a
- *	right handoff because we have to traverse pages without handing
- *	off locks.  (A lock handoff to the left while someone was handing
- *	off to the right could result in deadlock.)
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-	const PageNumber original_page(window->win_page);
-	const SLONG left_sibling = page->btr_left_sibling;
-
-	CCH_RELEASE(tdbb, window);
-	window->win_page = left_sibling;
-	page = (btree_page*) CCH_FETCH(tdbb, window, lock_level, pag_index);
-
-	SLONG sibling = page->btr_sibling;
-	if (sibling == original_page) {
-		return page;
-	}
-
-	// Since we are not handing off pages, a page could split before we get to it.
-	// To detect this case, fetch the left sibling pointer and then handoff right
-	// sibling pointers until we reach the page to the left of the page passed
-	// to us.
-
-	while (sibling != original_page)
-	{
-		page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling, lock_level, pag_index);
-		sibling = page->btr_sibling;
-	}
-	WIN fix_win(original_page);
-	btree_page* fix_page = (btree_page*) CCH_FETCH(tdbb, &fix_win, LCK_write, pag_index);
-
-	// if someone else already fixed it, just return
-	if (fix_page->btr_left_sibling == window->win_page)
-	{
-		CCH_RELEASE(tdbb, &fix_win);
-		return page;
-	}
-
-	CCH_MARK(tdbb, &fix_win);
-	fix_page->btr_left_sibling = window->win_page;
-
-	CCH_RELEASE(tdbb, &fix_win);
-
-	return page;
-}
-#endif
 
 
 USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buffer,
@@ -3446,11 +3301,7 @@ static SLONG fast_load(thread_db* tdbb,
 			// Get the next record in sorted order.
 
 			UCHAR* record;
-			SORT_get(tdbb, sort_handle, reinterpret_cast<ULONG**>(&record)
-#ifdef SCROLLABLE_CURSORS
-				 , RSE_get_forward
-#endif
-			);
+			SORT_get(tdbb, sort_handle, reinterpret_cast<ULONG**>(&record));
 
 			if (!record) {
 				break;

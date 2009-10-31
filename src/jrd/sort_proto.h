@@ -32,15 +32,8 @@ namespace Jrd {
 	class SortOwner;
 }
 
-#ifdef SCROLLABLE_CURSORS
-void SORT_diddle_key(UCHAR*, Jrd::sort_context*, bool);
-void SORT_get(Jrd::thread_db*, Jrd::sort_context*, ULONG**, Jrd::rse_get_mode);
-void SORT_read_block(TempSpace*, FB_UINT64, BLOB_PTR*, ULONG);
-#else
 void SORT_get(Jrd::thread_db*, Jrd::sort_context*, ULONG**);
 FB_UINT64 SORT_read_block(TempSpace*, FB_UINT64, BLOB_PTR*, ULONG);
-#endif
-
 void SORT_fini(Jrd::sort_context*);
 Jrd::sort_context* SORT_init(Jrd::Database*, Jrd::SortOwner*,
 							 USHORT, USHORT, USHORT, const Jrd::sort_key_def*,

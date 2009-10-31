@@ -729,14 +729,7 @@ USHORT OPT_nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
  *
  **************************************/
 	DEV_BLKCHK(rsb, type_rsb);
-#ifdef SCROLLABLE_CURSORS
-	// allocate extra impure area to hold the current key,
-	// plus an upper and lower bound key value, for a total
-	// of three times the key length for the index
-	size += sizeof(struct irsb_nav) + 3 * key_length;
-#else
 	size += sizeof(struct irsb_nav) + 2 * key_length;
-#endif
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	// make room for an idx structure to describe the index
 	// that was used to generate this rsb
@@ -1348,9 +1341,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 		}
 
 		// check to see if the fields in the sort match the fields in the index
-		// in the exact same order--we used to check for ascending/descending prior
-		// to SCROLLABLE_CURSORS, but now descending sorts can use ascending indices
-		// and vice versa.
+		// in the exact same order
 
 		bool usableIndex = true;
 		index_desc::idx_repeat* idx_tail = idx->idx_rpt;

@@ -96,9 +96,6 @@
 #include "../common/classes/FpeControl.h"
 #include "../jrd/constants.h"
 #include "../jrd/ThreadStart.h"
-#ifdef SCROLLABLE_CURSORS
-#include "../jrd/blr.h"
-#endif
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -1089,11 +1086,6 @@ namespace
 #define GDS_QUE_EVENTS			isc_que_events
 #define GDS_RECONNECT			isc_reconnect_transaction
 #define GDS_RECEIVE				isc_receive
-
-#ifdef SCROLLABLE_CURSORS
-#define GDS_RECEIVE2			isc_receive2
-#endif
-
 #define GDS_RELEASE_REQUEST		isc_release_request
 #define GDS_REQUEST_INFO		isc_request_info
 #define GDS_ROLLBACK			isc_rollback_transaction
@@ -3155,71 +3147,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 }
 
 
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
-									   FB_API_HANDLE* stmt_handle,
-									   USHORT dialect,
-									   XSQLDA* sqlda,
-									   USHORT direction,
-									   SLONG offset)
-{
-/**************************************
- *
- *	i s c _ d s q l _ f e t c h 2
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor
- *
- **************************************/
-	Status status(user_status);
-
-	try
-	{
-		if (!sqlda)
-		{
-			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
-		}
-
-		Statement statement = translate<CStatement>(stmt_handle);
-
-		statement->checkPrepared();
-		sqlda_sup& dasup = statement->das;
-
-		USHORT blr_length, msg_type, msg_length;
-
-		if (UTLD_parse_sqlda(status, &dasup, &blr_length, &msg_type, &msg_length,
-							 dialect, sqlda, DASUP_CLAUSE_select))
-		{
-			return status[1];
-		}
-
-		ISC_STATUS s = GDS_DSQL_FETCH2_M(status, stmt_handle, blr_length,
-										 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
-										 0, msg_length,
-										 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg,
-										 direction, offset);
-		if (s && s != 101)
-		{
-			return s;
-		}
-
-		if (UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect, sqlda, DASUP_CLAUSE_select))
-		{
-			return status[1];
-		}
-	}
-	catch (const Exception& e)
-	{
-		e.stuff_exception(status);
-	}
-
-	return status[1];
-}
-#endif
-
-
 ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 										FB_API_HANDLE* stmt_handle,
 										USHORT blr_length,
@@ -3248,12 +3175,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 		ISC_STATUS s =
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
 															  blr_length, blr,
-															  msg_type, msg_length, msg
-#ifdef SCROLLABLE_CURSORS
-															  ,
-															  (USHORT) 0, (ULONG) 1
-#endif // SCROLLABLE_CURSORS
-															  );
+															  msg_type, msg_length, msg);
 
 		if (s == 100 || s == 101)
 		{
@@ -3267,55 +3189,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 
 	return status[1];
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
-										 FB_API_HANDLE* stmt_handle,
-										 USHORT blr_length,
-										 SCHAR* blr,
-										 USHORT msg_type,
-										 USHORT msg_length,
-										 SCHAR* msg,
-										 USHORT direction,
-										 SLONG offset)
-{
-/**************************************
- *
- *	i s c _ d s q l _ f e t c h 2 _ m
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor
- *
- **************************************/
-	Status status(user_status);
-
-	try
-	{
-		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
-
-		ISC_STATUS s =
-			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
-															  blr_length, blr,
-															  msg_type, msg_length, msg,
-															  direction, offset);
-
-		if (s == 100 || s == 101)
-		{
-			return s;
-		}
-	}
-	catch (const Exception& e)
-	{
-		e.stuff_exception(status);
-	}
-
-	return status[1];
-}
-#endif
 
 
 ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS* user_status,
@@ -4161,12 +4034,6 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-
-#ifdef SCROLLABLE_CURSORS
-	return GDS_RECEIVE2(user_status, req_handle, msg_type, msg_length,
-						msg, level, (USHORT) blr_continue,	/* means continue in same direction as before */
-						(ULONG) 1);
-#else
 	Status status(user_status);
 
 	try
@@ -4184,50 +4051,7 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
 	}
 
 	return status[1];
-#endif
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS* user_status,
-									FB_API_HANDLE* req_handle,
-									USHORT msg_type,
-									USHORT msg_length,
-									SCHAR* msg,
-									SSHORT level,
-									USHORT direction,
-									ULONG offset)
-{
-/**************************************
- *
- *	i s c _ r e c e i v e 2
- *
- **************************************
- *
- * Functional description
- *	Scroll through the request output stream,
- *	then get a record from the host program.
- *
- **************************************/
-	Status status(user_status);
-
-	try
-	{
-		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
-
-		CALL(PROC_RECEIVE, request->implementation) (status, &request->handle,
-													 msg_type, msg_length, msg,
-													 level, direction, offset);
-	}
-	catch (const Exception& e)
-	{
-		e.stuff_exception(status);
-	}
-
-	return status[1];
-}
-#endif
 
 
 ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,

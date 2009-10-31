@@ -134,9 +134,6 @@ public:
 	USHORT		rse_count;
 	USHORT		rse_jointype;		// inner, left, full
 	bool		rse_writelock;
-#ifdef SCROLLABLE_CURSORS
-	RecordSource*	rse_rsb;
-#endif
 	jrd_nod*	rse_first;
 	jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
@@ -145,17 +142,13 @@ public:
 	jrd_nod*	rse_aggregate;	// singleton aggregate for optimizing to index
 	jrd_nod*	rse_plan;		// user-specified access plan
 	VarInvariantArray *rse_invariants; // Invariant nodes bound to top-level RSE
-#ifdef SCROLLABLE_CURSORS
-	jrd_nod*	rse_async_message;	// asynchronous message to send for scrolling
-#endif
 	jrd_nod*	rse_relation[1];
 };
 
 
-// First one is obsolete: was used for PC_ENGINE
-//const int rse_stream	= 1;	// flags RecordSelExpr-type node as a blr_stream type
-const int rse_singular	= 2;	// flags RecordSelExpr-type node as from a singleton select
-const int rse_variant	= 4;	// flags RecordSelExpr as variant (not invariant?)
+const int rse_scrollable	= 1;	// flags RSE as a scrollable cursor
+const int rse_singular		= 2;	// flags RSE as a singleton select
+const int rse_variant		= 4;	// flags RSE as variant (not invariant?)
 
 // Number of nodes may fit into nod_arg of normal node to get to rse_relation
 const size_t rse_delta = (sizeof(RecordSelExpr) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
@@ -461,14 +454,6 @@ const int e_cast_iteminfo	= 2;
 const int e_cast_length		= 3;
 
 
-// CVC: These belong to SCROLLABLE_CURSORS, but I can't mark them with the macro
-// because e_seek_length is used in blrtable.h.
-const int e_seek_offset		= 0;	// for seeking through a stream
-const int e_seek_direction	= 1;
-const int e_seek_rse		= 2;
-const int e_seek_length		= 3;
-
-
 // This is for the plan node
 const int e_retrieve_relation		= 0;
 const int e_retrieve_access_type	= 1;
@@ -496,11 +481,12 @@ const int e_dcl_cursor_number	= 2;
 const int e_dcl_cursor_rsb		= 3;
 const int e_dcl_cursor_length	= 4;
 
-const int e_cursor_stmt_op		= 0;
-const int e_cursor_stmt_number	= 1;
-const int e_cursor_stmt_seek	= 2;
-const int e_cursor_stmt_into	= 3;
-const int e_cursor_stmt_length	= 4;
+const int e_cursor_stmt_op			= 0;
+const int e_cursor_stmt_number		= 1;
+const int e_cursor_stmt_scroll_op	= 2;
+const int e_cursor_stmt_scroll_val	= 3;
+const int e_cursor_stmt_into		= 4;
+const int e_cursor_stmt_length		= 5;
 
 const int e_strlen_value	= 0;
 const int e_strlen_type		= 1;
@@ -808,10 +794,6 @@ public:
 	:	/*csb_node(0),
 		csb_variables(0),
 		csb_dependencies(0),
-#ifdef SCROLLABLE_CURSORS
-		csb_current_rse(0),
-		csb_async_message(0),
-#endif
 		csb_count(0),
 		csb_n_stream(0),
 		csb_msg_number(0),
@@ -879,12 +861,6 @@ public:
 	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	// RecordSelExpr's and other invariant
 												// candidates within whose scope we are
-#ifdef SCROLLABLE_CURSORS
-	RecordSelExpr*	csb_current_rse;			// this holds the RecordSelExpr currently being processed;
-												// unlike the current_rses stack, it references any
-												// expanded view RecordSelExpr
-	jrd_nod*		csb_async_message;			// asynchronous message to send to request
-#endif
 	USHORT			csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number
 	SLONG			csb_impure;					// Next offset into impure area

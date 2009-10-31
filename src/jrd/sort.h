@@ -196,15 +196,9 @@ struct run_control
 	run_merge_hdr	run_header;
 	run_control*	run_next;			// Next (actually last) run
 	ULONG			run_records;		// Records (remaining) in run
-#ifdef SCROLLABLE_CURSORS
-	ULONG			run_max_records;	// total number of records in run
-#endif
 	USHORT			run_depth;			// Number of "elementary" runs
 	FB_UINT64		run_seek;			// Offset in file of run
 	FB_UINT64		run_size;			// Length of run in work file
-#ifdef SCROLLABLE_CURSORS
-	FB_UINT64		run_cached;			// amount of cached data from run file
-#endif
 	sort_record*	run_record;			// Next record in run
 	SORTP*			run_buffer;			// Run buffer
 	SORTP*			run_end_buffer;		// End of buffer
@@ -242,9 +236,6 @@ struct sort_context
 	SR*					scb_last_record;	// Address of last record
 	sort_record**		scb_first_pointer;	// Memory for sort
 	sort_record**		scb_next_pointer;	// Address for next pointer
-#ifdef SCROLLABLE_CURSORS
-	sort_record**		scb_last_pointer;	// Address for last pointer in block
-#endif
 	//USHORT			scb_length;			// Record length. Unused.
 	USHORT				scb_longs;			// Length of record in longwords
 	ULONG				scb_keys;			// Number of keys

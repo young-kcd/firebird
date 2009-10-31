@@ -2415,19 +2415,6 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			rse->rse_writelock = true;
 			break;
 
-#ifdef SCROLLABLE_CURSORS
-			/* if a receive is seen here, then it is intended to be an asynchronous
-			   receive which can happen at any time during the scope of the RecordSelExpr--
-			   this is intended to be a more efficient mechanism for scrolling through
-			   a record stream, to prevent having to send a message to the engine
-			   for each record */
-
-		case blr_receive:
-			csb->csb_blr_reader.seekBackward(1);
-			rse->rse_async_message = PAR_parse_node(tdbb, csb, STATEMENT);
-			break;
-#endif
-
 		default:
 			if (op == (UCHAR) blr_end)
 			{
@@ -3038,12 +3025,15 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			node->nod_arg[e_for_stall] = PAR_parse_node(tdbb, csb, STATEMENT);
 
 		if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
-			csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular)
+			csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
+			csb->csb_blr_reader.peekByte() == (UCHAR) blr_scrollable)
 		{
 			node->nod_arg[e_for_re] = PAR_parse_node(tdbb, csb, TYPE_RSE);
 		}
 		else
+		{
 			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
+		}
 		node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
@@ -3070,11 +3060,11 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		case blr_cursor_open:
 		case blr_cursor_close:
 			break;
+		case blr_cursor_fetch_scroll:
+			node->nod_arg[e_cursor_stmt_scroll_op] = PAR_parse_node(tdbb, csb, VALUE);
+			node->nod_arg[e_cursor_stmt_scroll_val] = PAR_parse_node(tdbb, csb, VALUE);
+			// FALL INTO
 		case blr_cursor_fetch:
-#ifdef SCROLLABLE_CURSORS
-			if (csb->csb_blr_reader.peekByte() == blr_seek)
-				node->nod_arg[e_cursor_stmt_seek] = PAR_parse_node(tdbb, csb, STATEMENT);
-#endif
 			csb->csb_g_flags |= csb_reuse_context;
 			node->nod_arg[e_cursor_stmt_into] = PAR_parse_node(tdbb, csb, STATEMENT);
 			csb->csb_g_flags &= ~csb_reuse_context;
@@ -3092,6 +3082,11 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_singular:
 		node = PAR_parse_node(tdbb, csb, TYPE_RSE);
 		((RecordSelExpr*) node)->nod_flags |= rse_singular;
+		break;
+
+	case blr_scrollable:
+		node = PAR_parse_node(tdbb, csb, TYPE_RSE);
+		((RecordSelExpr*) node)->nod_flags |= rse_scrollable;
 		break;
 
 	case blr_relation:
@@ -3380,13 +3375,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		if (blr_operator == blr_via)
 			node->nod_arg[e_stat_default] = PAR_parse_node(tdbb, csb, VALUE);
 		break;
-
-#ifdef SCROLLABLE_CURSORS
-	case blr_seek:
-		node->nod_arg[e_seek_direction] = PAR_parse_node(tdbb, csb, VALUE);
-		node->nod_arg[e_seek_offset] = PAR_parse_node(tdbb, csb, VALUE);
-		break;
-#endif
 
 	case blr_init_variable:
 		{

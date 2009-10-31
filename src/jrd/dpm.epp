@@ -1530,9 +1530,6 @@ punt:
 bool DPM_next(thread_db* tdbb,
 				 record_param* rpb,
 				 USHORT lock_type,
-#ifdef SCROLLABLE_CURSORS
-				 bool backwards,
-#endif
 				 bool onepage)
 {
 /**************************************
@@ -1570,40 +1567,7 @@ bool DPM_next(thread_db* tdbb,
 
 	// Find starting point
 
-#ifdef SCROLLABLE_CURSORS
-	if (backwards)
-	{
-		if (rpb->rpb_number.isEmpty())
-			return false;
-
-		if (!rpb->rpb_number.isBof()) {
-			rpb->rpb_number.decrement();
-		}
-		else
-		{
-			/*  if the stream was just opened, assume we want to start
-			at the end of the stream, so compute the last theoretically
-			possible rpb_number and go down from there.
-			For now, we must force a scan to make sure that we get
-			the last pointer page: this should be changed to use
-			a coordination mechanism (probably using a shared lock)
-			to keep apprised of when a pointer page gets added */
-
-			DPM_scan_pages(tdbb);
-			const vcl* vector = relPages->rel_pages;
-			if (!vector) {
-				return false;
-			}
-			const size_t pp_sequence = vector->count();
-			rpb->rpb_number.setValue(
-				((SINT64) pp_sequence) * dbb->dbb_dp_per_pp * dbb->dbb_max_records - 1);
-		}
-	}
-	else
-#endif
-	{
-		rpb->rpb_number.increment();
-	}
+	rpb->rpb_number.increment();
 
 	SSHORT slot, line;
 	USHORT pp_sequence;
@@ -1625,12 +1589,6 @@ bool DPM_next(thread_db* tdbb,
 				BUGCHECK(249);	// msg 249 pointer page vanished from DPM_next
 		}
 
-#ifdef SCROLLABLE_CURSORS
-		if (backwards && slot >= ppage->ppg_count) {
-			slot = ppage->ppg_count - 1;
-		}
-#endif
-
 		for (; slot >= 0 && slot < ppage->ppg_count;)
 		{
 			const SLONG page_number = ppage->ppg_page[slot];
@@ -1640,11 +1598,7 @@ bool DPM_next(thread_db* tdbb,
 				// Perform sequential prefetch of relation's data pages.
 				// This may need more work for scrollable cursors.
 
-#ifdef SCROLLABLE_CURSORS
-				if (!onepage && !line && !backwards)
-#else
 				if (!onepage && !line)
-#endif
 				{
 					if (!(slot % dbb->dbb_prefetch_sequence))
 					{
@@ -1669,19 +1623,7 @@ bool DPM_next(thread_db* tdbb,
 				const data_page* dpage = (data_page*) CCH_HANDOFF(tdbb, window,
 									page_number, lock_type, pag_data);
 
-#ifdef SCROLLABLE_CURSORS
-				if (backwards && line >= dpage->dpg_count) {
-					line = dpage->dpg_count - 1;
-				}
-#endif
-
-				for (; line >= 0 && line < dpage->dpg_count;
-#ifdef SCROLLABLE_CURSORS
-					backwards ? line-- : line++
-#else
-					++line
-#endif
-					)
+				for (; line >= 0 && line < dpage->dpg_count; ++line)
 				{
 					if (get_header(window, line, rpb) &&
 						!(rpb->rpb_flags & (rpb_blob | rpb_chained | rpb_fragment)))
@@ -1725,35 +1667,14 @@ bool DPM_next(thread_db* tdbb,
 				return false;
 			}
 
-#ifdef SCROLLABLE_CURSORS
-			if (backwards)
-			{
-				slot--;
-				line = dbb->dbb_max_records - 1;
-			}
-			else
-#endif
-			{
-				slot++;
-				line = 0;
-			}
+			slot++;
+			line = 0;
 		}
 
 		const UCHAR flags = ppage->ppg_header.pag_flags;
-#ifdef SCROLLABLE_CURSORS
-		if (backwards)
-		{
-			pp_sequence--;
-			slot = ppage->ppg_count - 1;
-			line = dbb->dbb_max_records - 1;
-		}
-		else
-#endif
-		{
-			pp_sequence++;
-			slot = 0;
-			line = 0;
-		}
+		pp_sequence++;
+		slot = 0;
+		line = 0;
 
 		if (window->win_flags & WIN_large_scan) {
 			CCH_RELEASE_TAIL(tdbb, window);

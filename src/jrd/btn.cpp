@@ -400,46 +400,6 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 }
 
 
-#ifdef SCROLLABLE_CURSORS
-UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node)
-{
-/**************************************
- *
- *	l a s t N o d e
- *
- **************************************
- *
- * Functional description
- *	Find the last node on a page.  Used when walking
- *	down the right side of an index tree.
- *
- **************************************/
-
-	// the last expanded node is always at the end of the page
-	// minus the size of a btree_exp, since there is always an extra
-	// btree_exp node with zero-length tail at the end of the page
-	btree_exp* enode = (btree_exp*) ((UCHAR*) expanded_page + expanded_page->exp_length - BTX_SIZE);
-
-	// starting at the end of the page, find the
-	// first node that is not an end marker
-	UCHAR* pointer = ((UCHAR*) page + page->btr_length);
-	const UCHAR flags = page->btr_header.pag_flags;
-	IndexNode node;
-	while (true)
-	{
-		pointer = previousNode(/*&node,*/ pointer, /*flags,*/ &enode);
-		if (!node.isEndBucket && !node.isEndLevel)
-		{
-			if (expanded_node) {
-				*expanded_node = enode;
-			}
-			return node.nodePointer;
-		}
-	}
-}
-#endif
-
-
 UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
 					UCHAR flags,  btree_exp** expanded_node)
 {
@@ -465,31 +425,6 @@ UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
 
 	return pointer;
 }
-
-
-#ifdef SCROLLABLE_CURSORS
-UCHAR* previousNode(/*IndexNode* node,*/ UCHAR* pointer,
-					/*UCHAR flags,*/  btree_exp** expanded_node)
-{
-/**************************************
- *
- *	p r e v i o u s N o d e
- *
- **************************************
- *
- * Functional description
- *	Find the previous node on a page.  Used when walking
- *	an index backwards.
- *
- **************************************/
-
-	pointer = (pointer - (*expanded_node)->btx_btr_previous_length);
-
-	*expanded_node = (btree_exp*) ((UCHAR*) *expanded_node - (*expanded_node)->btx_previous_length);
-
-	return pointer;
-}
-#endif
 
 
 UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)

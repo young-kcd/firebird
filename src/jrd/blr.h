@@ -120,9 +120,9 @@
 #define blr_maximum		(unsigned char)29
 #define blr_minimum		(unsigned char)30
 #define blr_total		(unsigned char)31
-/* count 2
-#define blr_count2		32
-*/
+
+// unused codes: 32..33
+
 #define blr_add			(unsigned char)34
 #define blr_subtract		(unsigned char)35
 #define blr_multiply		(unsigned char)36
@@ -133,7 +133,6 @@
 #define blr_parameter2		(unsigned char)41
 #define blr_from		(unsigned char)42
 #define blr_via			(unsigned char)43
-#define blr_parameter2_old	(unsigned char)44	/* Confusion */
 #define blr_user_name   	(unsigned char)44	/* added from gds.h */
 #define blr_null		(unsigned char)45
 
@@ -156,8 +155,7 @@
 #define blr_unique		(unsigned char)62
 #define blr_like		(unsigned char)63
 
-//#define blr_stream      	(unsigned char)65
-//#define blr_set_index   	(unsigned char)66
+// unused codes: 64..66
 
 #define blr_rse			(unsigned char)67
 #define blr_first		(unsigned char)68
@@ -174,6 +172,8 @@
 #define blr_aggregate		(unsigned char)79
 #define blr_join_type		(unsigned char)80
 
+// unused codes: 81..82
+
 #define blr_agg_count		(unsigned char)83
 #define blr_agg_max		(unsigned char)84
 #define blr_agg_min		(unsigned char)85
@@ -189,6 +189,8 @@
 #define blr_agg_total_distinct	(unsigned char)95
 #define blr_agg_average_distinct (unsigned char)96
 
+// unused codes: 97..99
+
 #define blr_function		(unsigned char)100
 #define blr_gen_id		(unsigned char)101
 #define blr_prot_mask		(unsigned char)102
@@ -198,31 +200,16 @@
 #define blr_matching2		(unsigned char)106
 #define blr_index		(unsigned char)107
 #define blr_ansi_like		(unsigned char)108
-//#define blr_bookmark		(unsigned char)109
-//#define blr_crack		(unsigned char)110
-//#define blr_force_crack		(unsigned char)111
-#define blr_seek		(unsigned char)112
-//#define blr_find		(unsigned char)113
+#define blr_scrollable		(unsigned char) 109
 
-/* these indicate directions for blr_seek and blr_find */
-
-#define blr_continue		(unsigned char)0
-#define blr_forward		(unsigned char)1
-#define blr_backward		(unsigned char)2
-#define blr_bof_forward		(unsigned char)3
-#define blr_eof_backward	(unsigned char)4
-
-//#define blr_lock_relation 	(unsigned char)114
-//#define blr_lock_record		(unsigned char)115
-//#define blr_set_bookmark 	(unsigned char)116
-//#define blr_get_bookmark 	(unsigned char)117
+// unused codes: 110..117
 
 #define blr_run_count		(unsigned char)118	/* changed from 88 to avoid conflict with blr_parameter3 */
 #define blr_rs_stream		(unsigned char)119
 #define blr_exec_proc		(unsigned char)120
-//#define blr_begin_range 	(unsigned char)121
-//#define blr_end_range 		(unsigned char)122
-//#define blr_delete_range 	(unsigned char)123
+
+// unused codes: 121..123
+
 #define blr_procedure		(unsigned char)124
 #define blr_pid			(unsigned char)125
 #define blr_exec_pid		(unsigned char)126
@@ -232,13 +219,13 @@
 #define blr_error_handler	(unsigned char)130
 
 #define blr_cast		(unsigned char)131
-//#define blr_release_lock	(unsigned char)132
-//#define blr_release_locks	(unsigned char)133
+
+// unused codes: 132..133
+
 #define blr_start_savepoint	(unsigned char)134
 #define blr_end_savepoint	(unsigned char)135
-//#define blr_find_dbkey		(unsigned char)136
-//#define blr_range_relation	(unsigned char)137
-//#define blr_delete_ranges	(unsigned char)138
+
+// unused codes: 136..138
 
 #define blr_plan		(unsigned char)139	/* access plan items */
 #define blr_merge		(unsigned char)140
@@ -250,20 +237,21 @@
 
 #define blr_relation2		(unsigned char)146
 #define blr_rid2		(unsigned char)147
-//#define blr_reset_stream	(unsigned char)148
-//#define blr_release_bookmark	(unsigned char)149
+
+// unused codes: 148..149
 
 #define blr_set_generator       (unsigned char)150
 
 #define blr_ansi_any		(unsigned char)151   /* required for NULL handling */
 #define blr_exists		(unsigned char)152   /* required for NULL handling */
-//#define blr_cardinality		(unsigned char)153
+
+// unused codes: 153
 
 #define blr_record_version	(unsigned char)154	/* get tid of record */
 #define blr_stall		(unsigned char)155	/* fake server stall */
 
-//#define blr_seek_no_warn	(unsigned char)156
-//#define blr_find_dbkey_version	(unsigned char)157   /* find dbkey with record version */
+// unused codes: 156..157
+
 #define blr_ansi_all		(unsigned char)158   /* required for NULL handling */
 
 #define blr_extract		(unsigned char)159
@@ -297,6 +285,8 @@
 #define blr_agg_list		(unsigned char)170
 #define blr_agg_list_distinct	(unsigned char)171
 #define blr_modify2			(unsigned char)172
+
+// unused codes: 173
 
 /* FB 1.0 specific BLR */
 
@@ -344,6 +334,16 @@
 #define blr_cursor_open			(unsigned char)0
 #define blr_cursor_close		(unsigned char)1
 #define blr_cursor_fetch		(unsigned char)2
+#define blr_cursor_fetch_scroll	(unsigned char)3
+
+/* scroll options */
+
+#define blr_scroll_forward		(unsigned char)0
+#define blr_scroll_backward		(unsigned char)1
+#define blr_scroll_bof			(unsigned char)2
+#define blr_scroll_eof			(unsigned char)3
+#define blr_scroll_absolute		(unsigned char)4
+#define blr_scroll_relative		(unsigned char)5
 
 /* FB 2.1 specific BLR */
 

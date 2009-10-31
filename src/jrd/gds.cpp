@@ -3449,13 +3449,11 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		case op_cursor_stmt:
 			blr_operator = blr_print_byte(control);
 			blr_print_word(control);
-			if (blr_operator == blr_cursor_fetch)
+			offset = blr_print_line(control, (SSHORT) offset);
+			if (blr_operator == blr_cursor_fetch_scroll)
 			{
-#ifdef SCROLLABLE_CURSORS
-				if (control->ctl_blr_reader.peekByte() == blr_seek) {
-					blr_print_verb(control, level);
-				}
-#endif
+				blr_print_verb(control, level);
+				blr_print_verb(control, level);
 			}
 			offset = blr_print_line(control, (SSHORT) offset);
 			break;

@@ -348,11 +348,7 @@ void IDX_create_index(thread_db* tdbb,
 
 	// Loop thru the relation computing index keys.  If there are old versions, find them, too.
 	temporary_key key;
-	while (DPM_next(tdbb, &primary, LCK_read,
-#ifdef SCROLLABLE_CURSORS
-		false,
-#endif
-		false))
+	while (DPM_next(tdbb, &primary, LCK_read, false))
 	{
 		if (!VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;

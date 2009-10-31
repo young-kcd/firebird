@@ -2799,12 +2799,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 						USHORT msg_type,
 						USHORT msg_length,
 						SCHAR* msg,
-						SSHORT level
-#ifdef SCROLLABLE_CURSORS
-						, USHORT direction,
-						ULONG offset
-#endif
-	)
+						SSHORT level)
 {
 /**************************************
  *
@@ -2826,11 +2821,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level
-#ifdef SCROLLABLE_CURSORS
-			, direction, offset
-#endif
-			);
+		JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level);
 	}
 	catch (const Exception& ex)
 	{
@@ -3841,11 +3832,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 						  dsql_req** stmt_handle,
 						  USHORT blr_length, const SCHAR* blr,
-						  USHORT /*msg_type*/, USHORT msg_length, SCHAR* dsql_msg_buf
-#ifdef SCROLLABLE_CURSORS
-						  , USHORT direction, SLONG offset
-#endif
-						  )
+						  USHORT /*msg_type*/, USHORT msg_length, SCHAR* dsql_msg_buf)
 {
 	ISC_STATUS return_code = FB_SUCCESS;
 
@@ -3859,11 +3846,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		check_database(tdbb);
 
 		return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-						/*msg_type,*/ msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
-#ifdef SCROLLABLE_CURSORS
-						  , direction, offset
-#endif
-						  );
+						/*msg_type,*/ msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf));
 	}
 	catch (const Exception& ex)
 	{
@@ -6340,11 +6323,7 @@ void JRD_ddl(thread_db* tdbb, /*Jrd::Attachment* attachment,*/ jrd_tra* transact
 
 
 void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_length,
-	UCHAR* msg, SSHORT level
-#ifdef SCROLLABLE_CURSORS
-	, USHORT direction, ULONG offset
-#endif
-	)
+	UCHAR* msg, SSHORT level)
 {
 /**************************************
  *
@@ -6357,11 +6336,6 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
  *
  **************************************/
 	verify_request_synchronization(request, level);
-
-#ifdef SCROLLABLE_CURSORS
-	if (direction)
-		EXE_seek(tdbb, request, direction, offset);
-#endif
 
 	EXE_receive(tdbb, request, msg_type, msg_length, msg, true);
 

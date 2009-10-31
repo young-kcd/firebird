@@ -72,7 +72,7 @@ void WindowRsb::open(thread_db* tdbb)
 	SET_TDBB(tdbb);
 
 	RSE_open(tdbb, next);
-	RSE_internal_get_record(tdbb, next, NULL, RSE_get_forward);
+	RSE_internal_get_record(tdbb, next, NULL);
 	RSE_close(tdbb, next);
 
 	RSE_open(tdbb, next->rsb_next);
@@ -91,7 +91,7 @@ bool WindowRsb::get(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	if (!RSE_internal_get_record(tdbb, next->rsb_next, NULL, RSE_get_forward))
+	if (!RSE_internal_get_record(tdbb, next->rsb_next, NULL))
 		return false;
 
 	jrd_nod* node = (jrd_nod*) next->rsb_arg[0];
