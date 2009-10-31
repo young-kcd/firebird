@@ -150,8 +150,8 @@ public:
 };
 
 
-// Used to represent nodes that doesn't have a specific BLR verb, i.e.,
-// does not use RegisterNode.
+// Used to represent nodes that don't have a specific BLR verb, i.e.,
+// do not use RegisterNode.
 class DsqlOnlyStmtNode : public StmtNode
 {
 public:
