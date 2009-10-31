@@ -272,6 +272,10 @@
 			Name="JRD files"
 			>
 			<File
+				RelativePath="..\..\..\src\jrd\AggregateRsb.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\alt.cpp"
 				>
 			</File>
@@ -725,6 +729,10 @@
 			>
 			<File
 				RelativePath="..\..\..\src\jrd\acl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\AggregateRsb.h"
 				>
 			</File>
 			<File

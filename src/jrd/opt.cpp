@@ -78,6 +78,7 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/VirtualTable.h"
+#include "../jrd/AggregateRsb.h"
 #include "../jrd/WindowRsb.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
@@ -2621,10 +2622,6 @@ static bool dump_rsb(const jrd_req* request,
 		*buffer++ = isc_info_rsb_recursive;
 		break;
 
-	case rsb_aggregate:
-		*buffer++ = isc_info_rsb_aggregate;
-		break;
-
 	case rsb_merge:
 		*buffer++ = isc_info_rsb_merge;
 		break;
@@ -3655,19 +3652,23 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 	{
 		case rsb_union:
 		case rsb_recursive_union:
-		case rsb_aggregate:
 		case rsb_procedure:
 			if (rsb_list) {
 				rsb_list->push(rsb);
 			}
+			// fall through
+
 		case rsb_indexed:
 		case rsb_sequential:
 		case rsb_navigate:
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
-		case rsb_record_stream:
 			// No need to go any farther down with these.
 			stream_list->push(rsb->rsb_stream);
+			return;
+
+		case rsb_record_stream:
+			rsb->rsb_record_stream->findRsbs(stream_list, rsb_list);
 			return;
 
 		case rsb_cross:
@@ -3691,8 +3692,8 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 			}
 			break;
 
-        default:   // Shut up compiler warnings
-                break;
+		default:   // Shut up compiler warnings
+			break;
 	}
 
 	find_rsbs(rsb->rsb_next, stream_list, rsb_list);
@@ -3723,8 +3724,6 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 
 	switch (rsb->rsb_type)
 	{
-
-		case rsb_aggregate:
 		case rsb_ext_indexed:
 		case rsb_ext_sequential:
 		case rsb_indexed:
@@ -4042,15 +4041,10 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 
 	// allocate and optimize the record source block
 
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) RecordSource();
-	rsb->rsb_type = rsb_aggregate;
 	fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
 	fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
-	rsb->rsb_stream = (UCHAR) (IPTR) node->nod_arg[e_agg_stream];
-	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
-	rsb->rsb_next = OPT_compile(tdbb, csb, rse, &deliverStack);
-	rsb->rsb_arg[0] = (RecordSource*) node;
-	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
+
+	RecordSource* rsb = AggregateRsb::create(tdbb, opt, node, deliverStack, rse);
 
 	if (rse->rse_aggregate)
 	{
@@ -7024,7 +7018,6 @@ void OPT_mark_rsb_recursive(RecordSource* rsb)
 			case rsb_first:
 			case rsb_skip:
 			case rsb_boolean:
-			case rsb_aggregate:
 			case rsb_sort:
 				rsb = rsb->rsb_next;
 				break;

@@ -96,7 +96,6 @@ static bool fetch_left(thread_db*, RecordSource*, IRSB);
 static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
 static bool get_procedure(thread_db*, RecordSource*, irsb_procedure*, record_param*);
 static bool get_union(thread_db*, RecordSource*, IRSB);
-static void invalidate_child_rpbs(thread_db*, RecordSource*);
 static void join_to_nulls(thread_db*, StreamStack*);
 static void map_sort_data(thread_db*, jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
@@ -131,7 +130,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	invalidate_child_rpbs(tdbb, rsb);
+	RSE_invalidate_child_rpbs(tdbb, rsb);
 
 	jrd_req* request = tdbb->getRequest();
 	const bool bFreeAll = (rsb->rsb_flags & rsb_recursive);
@@ -195,7 +194,6 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 		case rsb_first:
         case rsb_skip:
 		case rsb_boolean:
-		case rsb_aggregate:
 			rsb = rsb->rsb_next;
 			break;
 
@@ -501,11 +499,6 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			RSBRecurse::open(tdbb, rsb, (irsb_recurse*) impure);
 			return;
 
-		case rsb_aggregate:
-			((IRSB) impure)->irsb_count = 3;
-			VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->getDefaultPool());
-			return;
-
 		case rsb_merge:
 			open_merge(tdbb, rsb, (irsb_mrg*) impure);
 			return;
@@ -517,7 +510,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			return;
 
 		case rsb_record_stream:
-			rsb->rsb_record_stream->open(tdbb);
+			rsb->rsb_record_stream->open(tdbb, request);
 			return;
 
 		case rsb_left_cross:
@@ -1441,7 +1434,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 						result = true;
 					else
 					{
-						invalidate_child_rpbs(tdbb, rsb);
+						RSE_invalidate_child_rpbs(tdbb, rsb);
 						return false;
 					}
 					break;
@@ -1465,7 +1458,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 					if (result)
 						break;
 
-					invalidate_child_rpbs(tdbb, rsb);
+					RSE_invalidate_child_rpbs(tdbb, rsb);
 					return false;
 				}
 			}
@@ -1514,7 +1507,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 					request->req_flags &= ~req_null;
 					if (any_false)
 					{
-						invalidate_child_rpbs(tdbb, rsb);
+						RSE_invalidate_child_rpbs(tdbb, rsb);
 						return false;
 					}
 
@@ -1561,7 +1554,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 					request->req_flags &= ~req_null;
 					if (any_false)
 					{
-						invalidate_child_rpbs(tdbb, rsb);
+						RSE_invalidate_child_rpbs(tdbb, rsb);
 						return false;
 					}
 
@@ -1590,7 +1583,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 				if (result)
 					break;
 
-				invalidate_child_rpbs(tdbb, rsb);
+				RSE_invalidate_child_rpbs(tdbb, rsb);
 				return false;
 			}
 		}
@@ -1612,7 +1605,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 	case rsb_first:
 		if (((irsb_first_n*) impure)->irsb_count <= 0)
 		{
-			invalidate_child_rpbs(tdbb, rsb);
+			RSE_invalidate_child_rpbs(tdbb, rsb);
 			return false;
 		}
 		((irsb_first_n*) impure)->irsb_count--;
@@ -1711,15 +1704,6 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 			return false;
 		break;
 
-	case rsb_aggregate:
-		if ( (impure->irsb_count =
-			EVL_group(tdbb, rsb->rsb_next, (jrd_nod*) rsb->rsb_arg[0], impure->irsb_count)) )
-		{
-			rpb->rpb_number.setValid(true);
-			break;
-		}
-		return false;
-
 	case rsb_ext_sequential:
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
@@ -1732,7 +1716,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 		break;
 
 	case rsb_record_stream:
-		if (!rsb->rsb_record_stream->get(tdbb))
+		if (!rsb->rsb_record_stream->get(tdbb, request))
 		{
 			rpb->rpb_number.setValid(false);
 			return false;
@@ -1846,11 +1830,11 @@ static bool get_union(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 }
 
 
-static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
+void RSE_invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 {
 /**************************************
  *
- *	i n v a l i d a t e _ c h i l d _ r p b s
+ *	R S E _ i n v a l i d a t e _ c h i l d _ r p b s
  *
  **************************************
  *
@@ -1873,15 +1857,17 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 			case rsb_ext_sequential:
 			case rsb_ext_indexed:
 			case rsb_ext_dbkey:
-			case rsb_record_stream:
 			case rsb_procedure:
 				rpb->rpb_number.setValid(false);
+				return;
+
+			case rsb_record_stream:
+				rsb->rsb_record_stream->invalidate(tdbb, rpb);
 				return;
 
 			case rsb_first:
 			case rsb_skip:
 			case rsb_boolean:
-			case rsb_aggregate:
 			case rsb_sort:
 				rsb = rsb->rsb_next;
 				break;
@@ -1891,14 +1877,14 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 					RecordSource** ptr = rsb->rsb_arg;
 					for (const RecordSource* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
 					{
-						invalidate_child_rpbs(tdbb, *ptr);
+						RSE_invalidate_child_rpbs(tdbb, *ptr);
 					}
 					return;
 				}
 
 			case rsb_left_cross:
-				invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
-				invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
+				RSE_invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
+				RSE_invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
 				return;
 
 			case rsb_merge:
@@ -1908,7 +1894,7 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 					for (const RecordSource* const* const end = ptr + rsb->rsb_count * 2;
 						ptr < end; ptr += 2)
 					{
-						invalidate_child_rpbs(tdbb, *ptr);
+						RSE_invalidate_child_rpbs(tdbb, *ptr);
 					}
 				}
 				return;
@@ -1918,7 +1904,7 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 					RecordSource** ptr = rsb->rsb_arg;
 
 					for (const RecordSource* const* end = ptr + rsb->rsb_count; ptr < end; ptr += 2)
-						invalidate_child_rpbs(tdbb, *ptr);
+						RSE_invalidate_child_rpbs(tdbb, *ptr);
 				}
 				return;
 
@@ -1927,8 +1913,8 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 					// hvlad: recursive CTE is always a 'union all' of
 					// exactly two members.
 					// see also comments for RSBRecurse::open
-					invalidate_child_rpbs(tdbb, rsb->rsb_arg[0]);
-					invalidate_child_rpbs(tdbb, rsb->rsb_arg[2]);
+					RSE_invalidate_child_rpbs(tdbb, rsb->rsb_arg[0]);
+					RSE_invalidate_child_rpbs(tdbb, rsb->rsb_arg[2]);
 				}
 				return;
 
@@ -2460,7 +2446,6 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_navigate:
 	case rsb_union:
 	case rsb_recursive_union:
-	case rsb_aggregate:
 	case rsb_record_stream:
 		{
 			record_param* rpb = &request->req_rpb[rsb->rsb_stream];
@@ -2575,7 +2560,6 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_navigate:
 	case rsb_union:
 	case rsb_recursive_union:
-	case rsb_aggregate:
 	case rsb_record_stream:
 		{
 			record_param* rpb = &request->req_rpb[rsb->rsb_stream];

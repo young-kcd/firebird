@@ -34,7 +34,7 @@ using namespace Firebird;
 
 
 WindowRsb::WindowRsb(RecordSource* aRsb)
-	: rsb(aRsb),
+	: RecordStream(aRsb),
 	  next(rsb->rsb_next)
 {
 }
@@ -67,7 +67,7 @@ unsigned WindowRsb::dump(UCHAR* buffer, unsigned bufferLen)
 }
 
 
-void WindowRsb::open(thread_db* tdbb)
+void WindowRsb::open(thread_db* tdbb, jrd_req* request)
 {
 	SET_TDBB(tdbb);
 
@@ -87,7 +87,7 @@ void WindowRsb::close(thread_db* tdbb)
 }
 
 
-bool WindowRsb::get(thread_db* tdbb)
+bool WindowRsb::get(thread_db* tdbb, jrd_req* request)
 {
 	SET_TDBB(tdbb);
 

@@ -30,15 +30,35 @@ namespace Jrd {
 class RecordStream	//// TODO: create RecordStream.h
 {
 public:
+	RecordStream(RecordSource* aRsb)
+		: rsb(aRsb)
+	{
+	}
+
 	virtual ~RecordStream()
 	{
 	}
 
+public:
+	virtual void findRsbs(StreamStack* streamList, RsbStack* rsbList)
+	{
+		streamList->push(rsb->rsb_stream);
+	}
+
+	virtual void invalidate(thread_db* tdbb, record_param* rpb)
+	{
+		rpb->rpb_number.setValid(false);
+	}
+
+public:
 	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen) = 0;
-	virtual void open(thread_db* tdbb) = 0;
+	virtual void open(thread_db* tdbb, jrd_req* request) = 0;
 	virtual void close(thread_db* tdbb) = 0;
-	virtual bool get(thread_db* tdbb) = 0;
+	virtual bool get(thread_db* tdbb, jrd_req* request) = 0;
 	virtual void markRecursive() = 0;
+
+protected:
+	RecordSource* rsb;
 };
 
 
@@ -46,7 +66,7 @@ class VirtualTable : public RecordStream
 {
 private:
 	explicit VirtualTable(RecordSource* aRsb)
-		: rsb(aRsb)
+		: RecordStream(aRsb)
 	{
 	}
 
@@ -58,13 +78,10 @@ public:
 
 public:
 	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen);
-	virtual void open(thread_db* tdbb);
+	virtual void open(thread_db* tdbb, jrd_req* request);
 	virtual void close(thread_db* tdbb);
-	virtual bool get(thread_db* tdbb);
+	virtual bool get(thread_db* tdbb, jrd_req* request);
 	virtual void markRecursive();
-
-private:
-	RecordSource* rsb;
 };
 
 

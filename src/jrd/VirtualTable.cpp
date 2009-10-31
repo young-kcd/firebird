@@ -139,11 +139,9 @@ unsigned VirtualTable::dump(UCHAR* buffer, unsigned bufferLen)
 }
 
 
-void VirtualTable::open(thread_db* tdbb)
+void VirtualTable::open(thread_db* tdbb, jrd_req* request)
 {
 	SET_TDBB(tdbb);
-
-	jrd_req* request = tdbb->getRequest();
 
 	jrd_rel* const relation = rsb->rsb_relation;
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
@@ -177,11 +175,9 @@ void VirtualTable::close(thread_db* tdbb)
 }
 
 
-bool VirtualTable::get(thread_db* tdbb)
+bool VirtualTable::get(thread_db* tdbb, jrd_req* request)
 {
 	SET_TDBB(tdbb);
-
-	jrd_req* request = tdbb->getRequest();
 
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
 	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR*) request + rsb->rsb_impure);

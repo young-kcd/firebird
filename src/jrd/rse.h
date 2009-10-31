@@ -70,7 +70,6 @@ enum rsb_t
 	rsb_sequential,						// natural scan access
 	rsb_sort,							// sort
 	rsb_union,							// union
-	rsb_aggregate,						// aggregation
 	rsb_ext_sequential,					// external sequential access
 	rsb_ext_indexed,					// external indexed access
 	rsb_ext_dbkey,						// external DB_KEY access
