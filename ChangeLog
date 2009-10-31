@@ -1,3 +1,118 @@
+2009-10-31 12:45  dimitr
+
+	* firebird2/src/dsql/: gen.cpp (1.190), node.h (1.128), parse.y
+	(1.322), pass1.cpp (1.467):
+
+	Cleanup.
+
+2009-10-31 12:27  robocop
+
+	* firebird2/src/jrd/req.h (1.101):
+
+	Compact the flags values.
+
+2009-10-31 12:08  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.359), evl.cpp (1.310), nod.h
+	(1.35), opt.cpp (1.364), par.cpp (1.250):
+
+	Cleanup.
+
+2009-10-31 09:20  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.295):
+
+	Misc.
+
+2009-10-31 07:26  dimitr
+
+	* firebird2/src/: isql/isql.epp (1.295), isql/isql.h (1.75),
+	misc/blrtable.cpp (1.43), gpre/ada.cpp (1.72), gpre/c_cxx.cpp
+	(1.93), gpre/cme.cpp (1.61), gpre/cmp.cpp (1.50), gpre/cob.cpp
+	(1.86), gpre/gpre.h (1.110), gpre/gpre_meta.epp (1.74),
+	gpre/gpre_meta_boot.cpp (1.72), gpre/hsh.h (1.14), gpre/pas.cpp
+	(1.72), gpre/rmc.cpp (1.31), gpre/sql.cpp (1.91), gpre/words.h
+	(1.12):
+
+	Wipe out the SCROLLABLE_CURSORS code + minor cleanup.
+
+2009-10-31 07:25  dimitr
+
+	* firebird2/src/jrd/: blr.h (1.46), btn.cpp (1.31), btn.h (1.24),
+	btr.cpp (1.262), btr_proto.h (1.46), cmp.cpp (1.358), dpm.epp
+	(1.106), dpm_proto.h (1.21), evl.cpp (1.309), exe.cpp (1.311),
+	exe.h (1.144), exe_proto.h (1.22), gds.cpp (1.319), idx.cpp
+	(1.163), inf.cpp (1.105), jrd.cpp (1.569), Optimizer.cpp (1.120),
+	WindowRsb.cpp (1.5), jrd_proto.h (1.86), nav.cpp (1.85),
+	nav_proto.h (1.19), nod.h (1.34), opt.cpp (1.363), par.cpp (1.249),
+	req.h (1.100), rse.cpp (1.195), rse.h (1.66), rse_proto.h (1.17),
+	scroll_cursors.h (1.9), sort.cpp (1.142), sort.h (1.45),
+	sort_proto.h (1.26), validation.cpp (1.53), vio.cpp (1.262),
+	vio_proto.h (1.37), why.cpp (1.266), why_proto.h (1.56):
+
+	Wipe out the SCROLLABLE_CURSORS code + minor cleanup.  Also,
+	surfaced scrollability for PSQL cursors (without internal support
+	yet).
+
+2009-10-31 07:17  dimitr
+
+	* firebird2/src/dsql/: dsql.cpp (1.294), dsql.h (1.158),
+	dsql_proto.h (1.27), gen.cpp (1.189), node.h (1.127), parse.y
+	(1.321), pass1.cpp (1.466), user__proto.h (1.14), user_dsql.cpp
+	(1.65):
+
+	Wipe out the SCROLLABLE_CURSORS code + minor cleanup.  Also,
+	surfaced scrollability for PSQL cursors (without internal support
+	yet).
+
+2009-10-31 06:20  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.300), inter_proto.h (1.25),
+	interface.cpp (1.225), protocol.cpp (1.96), protocol.h (1.55),
+	remote.cpp (1.93), remote.h (1.101), server.cpp (1.265), xnet.cpp
+	(1.145), os/win32/wnet.cpp (1.89):
+
+	Wipe out the SCROLLABLE_CURSORS code + minor cleanup.
+
+2009-10-31 04:33  robocop
+
+	* firebird2/src/dsql/Nodes.h (1.8):
+
+	Misc.
+
+2009-10-31 02:46  asfernandes
+
+	* firebird2/src/: common/classes/TriState.h (1.8),
+	dsql/DdlNodes.epp (1.14), dsql/PackageNodes.epp (1.6),
+	dsql/StmtNodes.cpp (1.15), dsql/StmtNodes.h (1.9), dsql/ddl_proto.h
+	(1.20), dsql/gen_proto.h (1.23), dsql/parse.y (1.320),
+	dsql/pass1.cpp (1.465), jrd/ExtEngineManager.cpp (1.5),
+	jrd/ExtEngineManager.h (1.5), jrd/SysFunction.cpp (1.83),
+	jrd/WindowRsb.cpp (1.4), jrd/dfw.epp (1.288), jrd/exe.cpp (1.310),
+	jrd/tra.h (1.106), jrd/vio_proto.h (1.36):
+
+	Misc
+
+2009-10-31 01:58  asfernandes
+
+	* firebird2/builds/win32/msvc8/udrcpp_example.vcproj (1.3):
+
+	I believe the manifest should not be here too, as it's a library.
+	To be reviewed by Dmitry/Vlad.
+
+2009-10-30 15:47  asfernandes
+
+	* firebird2/src/dsql/: make.cpp (1.191), pass1.cpp (1.464):
+
+	Improvement CORE-2697 - Support the "? in SELECT some_col FROM
+	some_table" subqueries
+
+2009-10-30 15:24  asfernandes
+
+	* firebird2/src/dsql/Nodes.h (1.7):
+
+	Misc
+
 2009-10-30 11:57  robocop
 
 	* firebird2/src/: jrd/SysFunction.cpp (1.82), jrd/ValueImpl.cpp
