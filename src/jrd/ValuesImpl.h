@@ -119,7 +119,6 @@ public:
 	{
 	}
 
-
 private:
 	// copying is prohibited
 	ValuesImpl(const ValuesImpl&);

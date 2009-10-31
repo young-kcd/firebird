@@ -51,9 +51,9 @@ namespace
 namespace Jrd {
 
 
-PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
-			Attachment* attachment, jrd_tra* transaction, const Firebird::string& text)
-	: Firebird::PermanentStorage(pool),
+PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
+			Attachment* attachment, jrd_tra* transaction, const string& text)
+	: PermanentStorage(pool),
 	  inValues(pool),
 	  outValues(pool),
 	  inBlr(pool),
@@ -77,7 +77,7 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool
 		if (request->req_receive)
 			parseDsqlMessage(request->req_receive, outValues, outBlr, outMessage);
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		DSQL_free_statement(tdbb, request, DSQL_drop);
 		throw;
@@ -139,8 +139,8 @@ int PreparedStatement::getUpdateCount() const
 }
 
 
-void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values,
-	Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg)
+void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
+	UCharBuffer& blr, UCharBuffer& msg)
 {
 	// hvlad: Parameters in dsqlMsg->msg_parameters almost always linked in descending
 	// order by par_index. The only known exception is EXECUTE BLOCK statement.
@@ -229,7 +229,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 }
 
 
-void PreparedStatement::generateBlr(const dsc* desc, Firebird::UCharBuffer& blr)
+void PreparedStatement::generateBlr(const dsc* desc, UCharBuffer& blr)
 {
 	USHORT length = 0;
 
