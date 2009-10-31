@@ -654,10 +654,9 @@ void DSQL_prepare(thread_db* tdbb,
     @brief	Set a cursor name for a dynamic request
 
 
-    @param user_status
+    @param tdbb
     @param req_handle
     @param input_cursor
-    @param type OBSOLETE
 
  **/
 void DSQL_set_cursor(thread_db* tdbb,
