@@ -203,23 +203,6 @@ void CMP_compile_request( gpre_req* request)
 	if (request->req_values)
 		request->req_vport = make_port(request, request->req_values);
 
-#ifdef SCROLLABLE_CURSORS
-	// If there is an asynchronous message to be sent, make a port for it
-
-	if (request->req_flags & REQ_sql_cursor && request->req_database->dbb_base_level >= 5)
-	{
-		gpre_fld* direction_field = MET_make_field("direction", dtype_short, sizeof(SSHORT), false);
-		gpre_fld* offset_field = MET_make_field("offset", dtype_long, sizeof(SLONG), false);
-
-		reference = request->req_avalues;
-		reference->ref_field = direction_field;
-		reference = reference->ref_next;
-		reference->ref_field = offset_field;
-
-		request->req_aport = make_port(request, request->req_avalues);
-	}
-#endif
-
 	// If this is a FOR type request, an eof field reference needs
 	// to be generated.  Do it.
 

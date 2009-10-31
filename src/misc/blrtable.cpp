@@ -164,9 +164,6 @@ static const VERB verbs[] =
 	PAIR(nod_not, blr_not, 1, 1, TYPE_BOOL, TYPE_BOOL),
 	PAIR(nod_rse, blr_rse, 0, 0, TYPE_RSE, OTHER),
 
-	// nodes for SCROLLABLE_CURSORS
-	PAIR(nod_seek, blr_seek, e_seek_length, 2, STATEMENT, VALUE),
-
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
 	PAIR(nod_union, blr_recurse, 0, 0, RELATION, OTHER),

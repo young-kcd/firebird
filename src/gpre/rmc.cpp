@@ -2528,50 +2528,6 @@ static void gen_fetch( const act* action)
 {
 	gpre_req* request = action->act_request;
 
-#ifdef SCROLLABLE_CURSORS
-	gpre_port* port = request->req_aport;
-	if (port)
-	{
-		// set up the reference to point to the correct value
-		// in the linked list of values, and prepare for the
-		// next FETCH statement if applicable
-
-		ref* reference;
-		for (reference = port->por_references; reference; reference = reference->ref_next)
-		{
-			gpre_value* value = reference->ref_values;
-			reference->ref_value = value->val_value;
-			reference->ref_values = value->val_next;
-		}
-
-		// find the direction and offset parameters
-
-		reference = port->por_references;
-		const char* offset = reference->ref_value;
-		reference = reference->ref_next;
-		const char* direction = reference->ref_value;
-
-		// the direction in which the engine will scroll is sticky, so check to see
-		// the last direction passed to the engine; if the direction is the same and
-		// the offset is 1, then there is no need to pass the message; this prevents
-		// extra packets and allows for batch fetches in either direction
-
-		printa(names[COLUMN], false, "IF %s%dDI MOD 2 NOT = %s || %s NOT = 1 THEN",
-			   names[isc_a_pos], request->req_ident, direction, offset);
-
-		// assign the direction and offset parameters to the appropriate message,
-		// then send the message to the engine
-
-		asgn_from(action, port->por_references);
-		gen_send(action, port);
-		printa(names[COLUMN], false, "MOVE %s TO %s%dDI",
-			   direction, names[isc_a_pos], request->req_ident);
-		printa(names[COLUMN], false, "END-IF");
-
-		printa(names[COLUMN], false, "IF SQLCODE NOT = 0 THEN");
-	}
-#endif
-
 	if (request->req_sync)
 		gen_send(action, request->req_sync);
 
@@ -2586,11 +2542,6 @@ static void gen_fetch( const act* action)
 	printa(names[COLUMN], false, "ELSE");
 	printa(names[COLUMN], false, "MOVE 100 TO SQLCODE");
 	printa(names[COLUMN], false, "END-IF");
-
-#ifdef SCROLLABLE_CURSORS
-	if (port)
-		printa(names[COLUMN], false, "END-IF");
-#endif
 }
 
 
@@ -3228,11 +3179,6 @@ static void gen_request( gpre_req* request)
 		if (request->req_flags & REQ_sql_cursor)
 			printa(COLUMN8, false, "01  %s%dS PIC S9(10) %s VALUE IS 0.",
 				   names[isc_a_pos], request->req_ident, USAGE_BINARY4);
-#ifdef SCROLLABLE_CURSORS
-		if (request->req_flags & REQ_scroll)
-			printa(COLUMN8, false, "01  %s%dDI PIC S9(5) %s VALUE IS 0.",
-				   names[isc_a_pos], request->req_ident, USAGE_BINARY2);
-#endif
 		printa(COLUMN8, false, "01  %s%d.", names[isc_a_pos], request->req_ident);
 		gen_raw(request->req_blr, request->req_type, request->req_length, request->req_ident);
 

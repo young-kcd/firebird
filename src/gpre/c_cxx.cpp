@@ -2140,54 +2140,6 @@ static void gen_fetch( const act* action, int column)
 {
 	gpre_req* request = action->act_request;
 
-#ifdef SCROLLABLE_CURSORS
-	gpre_port* port = request->req_aport;
-	if (port)
-	{
-		// set up the reference to point to the correct value
-		// in the linked list of values, and prepare for the
-		// next FETCH statement if applicable
-
-		ref* reference;
-		for (reference = port->por_references; reference; reference = reference->ref_next)
-		{
-			gpre_value* value = reference->ref_values;
-			reference->ref_value = value->val_value;
-			reference->ref_values = value->val_next;
-		}
-
-		// find the direction and offset parameters
-
-		reference = port->por_references;
-		const SCHAR* offset = reference->ref_value;
-		reference = reference->ref_next;
-		const SCHAR* direction = reference->ref_value;
-
-		// the direction in which the engine will scroll is sticky, so check to see
-		// the last direction passed to the engine; if the direction is the same and
-		// the offset is 1, then there is no need to pass the message; this prevents
-		// extra packets and allows for batch fetches in either direction
-
-		printa(column, "if (isc_%ddirection %% 2 != %s || %s != 1)",
-			   request->req_ident, direction, offset);
-		column += INDENT;
-		begin(column);
-
-		// assign the direction and offset parameters to the appropriate message,
-		// then send the message to the engine
-
-		asgn_from(action, port->por_references, column);
-		gen_send(action, port, column);
-		printa(column, "isc_%ddirection = %s;", request->req_ident, direction);
-		column -= INDENT;
-		endp(column);
-
-		printa(column, "if (!SQLCODE)");
-		column += INDENT;
-		begin(column);
-	}
-#endif
-
 	if (request->req_sync)
 	{
 		gen_send(action, request->req_sync, column);
@@ -2221,14 +2173,6 @@ static void gen_fetch( const act* action, int column)
 		column -= INDENT;
 		endp(column);
 	}
-
-#ifdef SCROLLABLE_CURSORS
-	if (port)
-	{
-		column -= INDENT;
-		endp(column);
-	}
-#endif
 }
 
 
@@ -2853,11 +2797,6 @@ static void gen_request(const gpre_req* request)
 		if (request->req_flags & REQ_sql_cursor)
 			printa(0, "static isc_stmt_handle\n   isc_%ds;\t\t/* sql statement handle */",
 				   request->req_ident);
-#ifdef SCROLLABLE_CURSORS
-		if (request->req_flags & REQ_scroll)
-			printa(0, "static short\n   isc_%ddirection;\t\t/* last direction sent to engine */",
-				   request->req_ident);
-#endif
 		printa(0, "static %sshort\n   isc_%dl = %d;",
 			   (request->req_flags & REQ_extend_dpb) ? "" : CONST_STR,
 			   request->req_ident, request->req_length);

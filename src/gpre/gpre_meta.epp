@@ -56,10 +56,6 @@ static const UCHAR blr_bpb[] =
 	isc_bpb_target_type, 1, isc_blob_blr
 };
 
-#ifdef SCROLLABLE_CURSORS
-static const SCHAR db_version_info[] = { isc_info_base_level };
-#endif
-
 // CVC: I made this class as a quick solution for the many buffer overruns
 // that would result in erratic behavior.
 class MetIdentifier
@@ -287,61 +283,6 @@ bool MET_database(gpre_dbb* database, bool print_version)
 	\n\tCompile time db Sql Dialect  : %d\
 	\n\tClient Sql dialect set to    : %d\n\n",
 	gpreGlob.sw_server_version, gpreGlob.sw_ods_version, gpreGlob.compiletime_db_dialect, gpreGlob.sw_sql_dialect);
-#endif
-
-#ifdef SCROLLABLE_CURSORS
-
-	SCHAR buffer[16];
-
-	// get the base level of the engine
-
-	if (isc_database_info(gds_status, &DB, sizeof(db_version_info),
-						  db_version_info, sizeof(buffer), buffer))
-	{
-		isc_print_status(gds_status);
-		return false;
-	}
-
-	// this seems like a lot of rigamarole to read one info item,
-	// but it provides for easy extensibility in case we need
-	// more info items later
-
-	const SCHAR* data = buffer;
-	while (*data != isc_info_end)
-	{
-	    const SCHAR item = *data++;
-		const USHORT l = isc_vax_integer(data, sizeof(USHORT));
-		data += sizeof(USHORT);
-
-		switch (item)
-		{
-			// This flag indicates the version level of the engine
-			// itself, so we can tell what capabilities the engine
-			// code itself (as opposed to the on-disk structure).
-			// Apparently the base level up to now indicated the major
-			// version number, but for 4.1 the base level is being
-			// incremented, so the base level indicates an engine version
-			// as follows:
-			// 1 == v1.x
-			// 2 == v2.x
-			// 3 == v3.x
-			// 4 == v4.0 only
-			// 5 == v4.1. (v5, too)
-			// 6 == v6, FB1
-			// Note: this info item is so old it apparently uses an
-			// archaic format, not a standard vax integer format.
-
-		case isc_info_base_level:
-			fb_assert(l == 2 && data[0] == UCHAR(1));
-			database->dbb_base_level = (USHORT) data[1];
-			break;
-
-		default:
-			;
-		}
-
-		data += l;
-	}
 #endif
 
 	return true;

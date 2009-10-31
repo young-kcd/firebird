@@ -205,10 +205,6 @@ const int NO_TRIGGER				= 121;      // There is no trigger %s in this database
 const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table %s in this database
 const int NO_COMMENTS				= 115;		// There are no comments for objects in this database.
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size
-#ifdef SCROLLABLE_CURSORS
-const int HLP_SETFETCH				= 95;		// \tSET AUTOfetch  -- toggle autofetch of records\n
-#endif
-
 const int NO_ROLES					= 95;		// There are no roles in this database
 const int NO_REL_OR_PROC_OR_ROLE	= 96;		// There is no table, stored procedure, or
 											// role %s in this database
