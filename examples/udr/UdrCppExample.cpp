@@ -59,6 +59,19 @@ create function wait_event (
 ***/
 FB_UDR_DECLARE_FUNCTION(wait_event)
 
+
+/***
+create function sum_args (
+    n1 integer,
+    n2 integer,
+    n3 integer
+) returns integer
+    external name 'udrcpp_example!sum_args'
+    engine udr;
+***/
+FB_UDR_DECLARE_FUNCTION(sum_args)
+
+
 /***
 create procedure gen_rows (
     start_n integer not null,
@@ -164,6 +177,22 @@ FB_UDR_BEGIN_FUNCTION(wait_event)
 	result->setInt(ThrowError(), counter);
 }
 FB_UDR_END_FUNCTION(wait_event)
+
+
+FB_UDR_BEGIN_FUNCTION(sum_args)
+{
+	unsigned count = params->getCount();
+	int ret = 0;
+
+	for (unsigned i = 0; i < count; ++i)
+	{
+		Value* val = params->getValue(ThrowError(), i + 1);
+		ret += val->getInt(ThrowError());
+	}
+
+	result->setInt(ThrowError(), ret);
+}
+FB_UDR_END_FUNCTION(sum_args)
 
 
 FB_UDR_BEGIN_PROCEDURE(gen_rows)
