@@ -1162,7 +1162,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 				break;
 
 			case opExactly:
-				if (node->len > bufferEnd - bufferPos || memcmp(node->str, bufferPos, node->len) != 0)
+				if (node->len > bufferEnd - bufferPos ||
+					memcmp(node->str, bufferPos, node->len * sizeof(CharType)) != 0)
 				{
 					return false;
 				}
@@ -1440,7 +1441,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 				case opExactly:
 					fb_assert(state == msIterating);
 					if (node->len > bufferEnd - bufferPos ||
-						memcmp(node->str, bufferPos, node->len) != 0)
+						memcmp(node->str, bufferPos, node->len * sizeof(CharType)) != 0)
 					{
 						ret = false;
 						state = msReturning;
