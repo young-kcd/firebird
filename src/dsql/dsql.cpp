@@ -41,7 +41,9 @@
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/jrd.h"
+#include "../jrd/CharSet.h"
 #include "../dsql/Parser.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/dsql_proto.h"
@@ -56,6 +58,7 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/inf_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/trace/TraceManager.h"
@@ -2440,8 +2443,32 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		parser_version, string, string_length, tdbb->getAttachment()->att_charset);
 
 	dsql_nod* node = parser.parse();
+	Firebird::string transformedText = parser.getTransformedString();
+	SSHORT charSetId = database->dbb_attachment->att_charset;
 
-	statement->req_sql_text = FB_NEW(pool) RefString(pool, parser.getTransformedString());
+	// If the attachment charset is NONE, replace non-ASCII characters by question marks, so that
+	// engine internals doesn't receive non-mappeable data to UTF8. If an attachment charset is
+	// used, validate the string.
+	if (charSetId == CS_NONE)
+	{
+		for (char* p = transformedText.begin(), *end = transformedText.end(); p < end; ++p)
+		{
+			if (UCHAR(*p) > 0x7F)
+				*p = '?';
+		}
+	}
+	else
+	{
+		CharSet* charSet = INTL_charset_lookup(tdbb, charSetId);
+
+		if (!charSet->wellFormed(transformedText.length(), (const UCHAR*) transformedText.begin(), NULL))
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  Arg::Gds(isc_malformed_string));
+		}
+	}
+
+	statement->req_sql_text = FB_NEW(pool) RefString(pool, transformedText);
 
 	if (!node)
 	{
