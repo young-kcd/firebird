@@ -7082,7 +7082,7 @@ static dsql_nod* pass1_merge(CompiledStatement* statement, dsql_nod* input)
 	}
 
 	// build a IF (target.RDB$DB_KEY IS NULL)
-	IfNode* action = FB_NEW(statement->req_pool) IfNode(statement->req_pool);
+	IfNode* action = FB_NEW(statement->req_pool) IfNode(statement->req_pool, statement);
 
 	action->dsqlCondition = MAKE_node(nod_missing, 1);
 	action->dsqlCondition->nod_arg[0] = MAKE_node(nod_dbkey, 1);
@@ -9623,7 +9623,7 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	statement->req_flags = save_req_flags;
 
 	// if (ROW_COUNT = 0) then INSERT
-	IfNode* ifNod = FB_NEW(statement->req_pool) IfNode(statement->req_pool);
+	IfNode* ifNod = FB_NEW(statement->req_pool) IfNode(statement->req_pool, statement);
 	ifNod->dsqlCondition = eql;
 	ifNod->dsqlTrueAction = insert;
 
