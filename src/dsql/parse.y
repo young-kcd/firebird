@@ -504,7 +504,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> FLOOR
 %token <legacyNode> GEN_UUID
 %token <legacyNode> GENERATED
-%token <legacyNode> GLOBAL 
+%token <legacyNode> GLOBAL
 %token <legacyNode> HASH
 %token <legacyNode> INSENSITIVE
 %token <legacyNode> LIST
@@ -525,7 +525,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> POWER
 %token <legacyNode> PRESERVE
 %token <legacyNode> RAND
-%token <legacyNode> RECURSIVE 
+%token <legacyNode> RECURSIVE
 %token <legacyNode> REPLACE
 %token <legacyNode> REVERSE
 %token <legacyNode> ROUND
@@ -539,7 +539,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> START
 %token <legacyNode> TAN
 %token <legacyNode> TANH
-%token <legacyNode> TEMPORARY 
+%token <legacyNode> TEMPORARY
 %token <legacyNode> TRUNC
 %token <legacyNode> WEEK
 
@@ -577,8 +577,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> RDB_SET_CONTEXT
 %token <legacyNode> SCROLL
 %token <legacyNode> PRIOR
-%token <legacyNode> ABSOLUTE
-%token <legacyNode> RELATIVE
+%token <legacyNode> KW_ABSOLUTE
+%token <legacyNode> KW_RELATIVE
 
 
 /* precedence declarations for expression evaluation */
@@ -1054,7 +1054,7 @@ udf_decl_clause
 	: symbol_UDF_name arg_desc_list1 RETURNS return_value1
 			ENTRY_POINT sql_string MODULE_NAME sql_string
 		{
-			$$ = make_node (nod_def_udf, (int) e_udf_count, 
+			$$ = make_node (nod_def_udf, (int) e_udf_count,
 				$1, $6, $8, make_list ($2), $4);
 		}
 	;
@@ -2495,10 +2495,10 @@ fetch_scroll_opt
 	| NEXT
 		{ $$ = make_node (nod_fetch_scroll, 2,
 				MAKE_const_slong (blr_scroll_forward), NULL); }
-	| ABSOLUTE value
+	| KW_ABSOLUTE value
 		{ $$ = make_node (nod_fetch_scroll, 2,
 				MAKE_const_slong (blr_scroll_absolute), $2); }
-	| RELATIVE value
+	| KW_RELATIVE value
 		{ $$ = make_node (nod_fetch_scroll, 2,
 				MAKE_const_slong (blr_scroll_relative), $2); }
 	;
@@ -3984,7 +3984,7 @@ ddl_subname
 	: '.' symbol_ddl_name
 		{ $$ = $2; }
 	;
-			
+
 ddl_desc
     : sql_string
 	| KW_NULL
@@ -5825,8 +5825,8 @@ non_reserved_word :
 	| RDB_GET_CONTEXT
 	| RDB_SET_CONTEXT
 	| PRIOR
-	| ABSOLUTE
-	| RELATIVE
+	| KW_ABSOLUTE
+	| KW_RELATIVE
 	;
 
 %%
