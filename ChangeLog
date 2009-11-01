@@ -1,3 +1,10 @@
+2009-10-31 21:03  hvlad
+
+	* firebird2/src/dsql/parse.y (1.200.4.6):
+
+	Backport fix for bug CORE-2720 : Wrong evaluation result with
+	divide and unary plus\minus operations
+
 2009-10-22 10:12  hvlad
 
 	* firebird2/src/jrd/btr.cpp (1.162.2.25):
