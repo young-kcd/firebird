@@ -1003,16 +1003,20 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (*source == *destination)
 		return;
 
+	UCHAR fromCharSet = from_desc->getCharSet();
+	UCHAR toCharSet = to_desc->getCharSet();
+
 	const bool needFilter =
 		(from_desc->dsc_sub_type != isc_blob_untyped && to_desc->dsc_sub_type != isc_blob_untyped &&
 			(from_desc->dsc_sub_type != to_desc->dsc_sub_type ||
 		 		(from_desc->dsc_sub_type == isc_blob_text &&
-		 		from_desc->dsc_scale != to_desc->dsc_scale &&
-				to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)));
+					fromCharSet != toCharSet &&
+					toCharSet != CS_NONE && toCharSet != CS_BINARY &&
+					fromCharSet != CS_NONE && fromCharSet != CS_BINARY)));
 
 	if (!needFilter && to_desc->isBlob() &&
-        (from_desc->getCharSet() == CS_NONE || from_desc->getCharSet() == CS_BINARY) &&
-        (to_desc->getCharSet() != CS_NONE && to_desc->getCharSet() != CS_BINARY))
+        (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) &&
+        (toCharSet != CS_NONE && toCharSet != CS_BINARY))
 	{
 		AutoBlb blob(tdbb, BLB_open(tdbb, tdbb->getTransaction(), source));
 		BLB_check_well_formed(tdbb, to_desc, blob.getBlb());
