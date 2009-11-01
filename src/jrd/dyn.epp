@@ -2290,7 +2290,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
+	//Database* const dbb = tdbb->getDatabase();
 	jrd_tra* const tra = tdbb->getTransaction();
 
 	ISC_STATUS_ARRAY status;

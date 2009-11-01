@@ -75,7 +75,7 @@ DmlNode* DmlNode::pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
 static RegisterNode<IfNode> regIfNode(blr_if);
 
 
-DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	IfNode* node = FB_NEW(pool) IfNode(pool);
 
@@ -172,7 +172,7 @@ static RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode(
 
 
 DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
-	UCHAR blrOp)
+	UCHAR /*blrOp*/)
 {
 	InAutonomousTransactionNode* node = FB_NEW(pool) InAutonomousTransactionNode(pool);
 
@@ -746,7 +746,7 @@ jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request)
 static RegisterNode<SavepointNode> regSavepointNode(blr_user_savepoint);
 
 
-DmlNode* SavepointNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* SavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	SavepointNode* node = FB_NEW(pool) SavepointNode(pool);
 
@@ -812,13 +812,13 @@ void SavepointNode::genBlr()
 }
 
 
-SavepointNode* SavepointNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+SavepointNode* SavepointNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
 
 
-SavepointNode* SavepointNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+SavepointNode* SavepointNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
@@ -937,7 +937,7 @@ jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request)
 static RegisterNode<SuspendNode> regSuspendNode(blr_send);
 
 
-DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	SuspendNode* node = FB_NEW(pool) SuspendNode(pool);
 
@@ -1001,7 +1001,7 @@ SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 
 // Execute a SEND statement.
-jrd_nod* SuspendNode::execute(thread_db* tdbb, jrd_req* request)
+jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request)
 {
 	switch (request->req_operation)
 	{

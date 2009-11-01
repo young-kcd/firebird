@@ -216,7 +216,7 @@ namespace
 		SortedObjectsArray<Signature>& functions,
 		SortedObjectsArray<Signature>& procedures, bool details)
 	{
-		Database* dbb = tdbb->getDatabase();
+		//Database* dbb = tdbb->getDatabase();
 
 		AutoCacheRequest requestHandle(tdbb, drq_l_pkg_funcs, DYN_REQUESTS);
 		AutoCacheRequest requestHandle2(tdbb, drq_l_pkg_func_args, DYN_REQUESTS);
@@ -478,7 +478,7 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE, metaName);
@@ -527,7 +527,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_pkg, DYN_REQUESTS);

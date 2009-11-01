@@ -30,7 +30,7 @@ namespace Jrd {
 class RecordStream	//// TODO: create RecordStream.h
 {
 public:
-	RecordStream(RecordSource* aRsb)
+	explicit RecordStream(RecordSource* aRsb)
 		: rsb(aRsb)
 	{
 	}
@@ -40,12 +40,12 @@ public:
 	}
 
 public:
-	virtual void findRsbs(StreamStack* streamList, RsbStack* rsbList)
+	virtual void findRsbs(StreamStack* streamList, RsbStack* /*rsbList*/)
 	{
 		streamList->push(rsb->rsb_stream);
 	}
 
-	virtual void invalidate(thread_db* tdbb, record_param* rpb)
+	virtual void invalidate(thread_db* /*tdbb*/, record_param* rpb)
 	{
 		rpb->rpb_number.setValid(false);
 	}

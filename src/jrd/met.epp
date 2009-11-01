@@ -4787,7 +4787,7 @@ static jrd_nod* parse_procedure_blr(thread_db* tdbb,
 		const SLONG length = blob->blb_length + 10;
 		UCHAR* temp = tmp.getBuffer(length);
 		const ULONG realLen = BLB_get_data(tdbb, blob, temp, length);
-		fb_assert(realLen >= length - 10 && realLen <= ULONG(MAX_USHORT));
+		fb_assert(realLen >= ULONG(length) - 10 && realLen <= ULONG(MAX_USHORT));
 		tmp.resize(realLen);
 	}
 

@@ -131,8 +131,8 @@ bool AggregateRsb::get(thread_db* tdbb, jrd_req* request)
 
 	if ((impure->irsb_count = evlGroup(tdbb, request, impure->irsb_count)))
 		return true;
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -145,7 +145,7 @@ void AggregateRsb::markRecursive()
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state
 // variable. The values of the state are:
 //
-// 3  Entering EVL group beforing fetching the first record.
+// 3  Entering EVL group before fetching the first record.
 // 1  Values are pending from a prior fetch
 // 2  We encountered EOF from the last attempted fetch
 // 0  We processed everything now process (EOF)
@@ -159,8 +159,8 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 	impure_value vtemp;
 	vtemp.vlu_string = NULL;
 
-	jrd_nod* map = aggNode->nod_arg[e_agg_map];
-	jrd_nod* group = aggNode->nod_arg[e_agg_group];
+	jrd_nod* const map = aggNode->nod_arg[e_agg_map];
+	jrd_nod* const group = aggNode->nod_arg[e_agg_group];
 
 	jrd_nod** ptr;
 	const jrd_nod* const* end;
