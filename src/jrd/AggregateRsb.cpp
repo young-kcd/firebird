@@ -202,7 +202,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 				// convert the descriptor to double.
 				impure->make_int64(0, from->nod_scale);
 				if (from->nod_type == nod_agg_average_distinct2)
-					/* Initialize a sort to reject duplicate values */
+					// Initialize a sort to reject duplicate values
 					initDistinct(request, from);
 				break;
 
@@ -623,7 +623,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 					temp.dsc_length = sizeof(SINT64);
 					temp.dsc_scale = impure->vlu_desc.dsc_scale;
 					temp.dsc_address = (UCHAR*) &i;
-					i = *((SINT64 *) impure->vlu_desc.dsc_address) / impure->vlux_count;
+					i = *((SINT64*) impure->vlu_desc.dsc_address) / impure->vlux_count;
 				}
 				else
 				{

@@ -670,7 +670,6 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 void GEN_port(CompiledStatement* statement, dsql_msg* message)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	//Jrd::Attachment* att = tdbb->getAttachment();
 
 //	if (statement->req_blr_string) {
 		stuff(statement, blr_message);

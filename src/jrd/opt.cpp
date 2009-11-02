@@ -4063,8 +4063,8 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	// distinct operation;
 	// note that this should be optimized to use indices if possible
 
-	DSC      descriptor;
-	DSC*     desc = &descriptor;
+	DSC descriptor;
+	DSC* desc = &descriptor;
 	ptr = map->nod_arg;
 	for (const jrd_nod* const* const end = ptr + map->nod_count; ptr < end; ptr++)
 	{
