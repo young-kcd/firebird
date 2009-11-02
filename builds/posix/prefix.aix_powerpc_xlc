@@ -65,8 +65,6 @@ endif
 SHRLIB_FOREIGN_EXT=a
 
 # Flags shared by production and debug build
-# -qstaticinline, treat inline functions as static instead of extern
-#    -qstaticinline removed, interferes with FB's placement new
 COMMON_FLAGS= -qchars=signed -qlanglvl=newexcp -qroconst -qpic \
 	-D__IBM_ALLOW_OVERRIDE_PLACEMENT_NEW \
 	-qsuppress=1540-1103 \
@@ -84,8 +82,11 @@ COMMON_FLAGS= -qchars=signed -qlanglvl=newexcp -qroconst -qpic \
 #    -O2 implies -qstrict, but -O3 and higher does not.
 # -qmaxmem, limits the amount of memory that the compiler allocates while performing
 #    specific, memory-intensive optimizations. Only need when using -O | -O2.
+# -qstaticinline, treat inline functions as static instead of extern
 # -O, same as -O2. 2009-05, tried -O3 unsuccessfully.
-PROD_FLAGS=$(COMMON_FLAGS) -O -qstaticinline -qmaxmem=-1
+PROD_FLAGS=$(COMMON_FLAGS) -O -qstaticinline -qmaxmem=-1 \
+	-qsuppress=1540-1401
+
 DEV_FLAGS=$(COMMON_FLAGS) -g \
 	-qcheck -qformat=noall:exarg:zln
 
