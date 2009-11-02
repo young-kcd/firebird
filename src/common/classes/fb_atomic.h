@@ -176,7 +176,7 @@ private:
 
 } // namespace Firebird
 
-#elif defined(HPUX)
+#elif defined(HPUX) && defined(HAVE_ATOMIC_H)
 
 #include <atomic.h>
 
@@ -428,11 +428,14 @@ private:
 
 } // namespace Firebird
 
-#elif defined(HAVE_AO_COMPARE_AND_SWAP_FULL)
+#elif defined(HAVE_AO_COMPARE_AND_SWAP_FULL) && !defined(HPUX)
 
 // Sometimes in the future it can become the best choice for all platforms.
 // Currently far not CPUs/OSs/compilers are supported well.
 // Therefore use it as last chance to build successfully.
+
+// wbo 2009-10 - We tested libatomic_ops against Firebird 2.5/HPUX and the
+// atomic implementation was incomplete on IA-64/HPPA
 
 #include <atomic_ops.h>
 

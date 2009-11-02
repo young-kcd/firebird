@@ -54,7 +54,8 @@
 # 2111, statement is unreachable (used to suppress g++ warnings)
 # 2161, unrecognized pragma (mostly FB_COMPILER_MESSAGE)
 # 2177, function declared but never referenced
-COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -AA -ext \
+COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -D_HP_ATOMIC_INLINE \
+    -AA +e \
     +W2830,4232,749,863,1042,2175,2111,2161,2177
 
 # Flags specific to production or debug build...
@@ -81,9 +82,9 @@ endif
 OS_ServerFiles=inet_server.cpp
 
 # link options for HP-UX linker, /usr/bin/ld
-LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA -ext -latomic
-LINK_LIBS+= -latomic $(ICU_LIBS)
-LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -b -ext -latomic
+LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -AA +e -Wl,+concatrpath
+LINK_LIBS+= $(ICU_LIBS)
+LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -b +e -Wl,+concatrpath
 
 LINK_UDF_LIBS+=$(ICU_LIBS)
 
