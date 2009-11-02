@@ -31,6 +31,7 @@
 #include "FirebirdExternalApi.h"
 #include "FirebirdUdr.h"
 #include "ibase.h"
+#include "iberror.h"
 #include <string.h>
 
 

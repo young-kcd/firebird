@@ -21,6 +21,7 @@
  */
 
 #include "firebird.h"
+#include "../jrd/ibase.h"
 #include "FirebirdUdr.h"
 #include "FirebirdUdrCpp.h"
 #include "FirebirdPluginApi.h"
