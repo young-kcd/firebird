@@ -1228,6 +1228,12 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 
 	const rem_port* port = (rem_port*) xdrs->x_public;
 
+
+	if ((!message) || (!format))
+	{
+		return FALSE;
+	}
+
 	// If we are running a symmetric version of the protocol, just slop
 	// the bits and don't sweat the translations
 
@@ -1589,12 +1595,15 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		return FALSE;
 
 	RMessage* message = statement->rsr_buffer;
-	if (message)
+	if (!message)
 	{
-		statement->rsr_buffer = message->msg_next;
-		if (!message->msg_address)
-			message->msg_address = message->msg_buffer;
+		// We should not call xdr_message() with NULL
+		return FALSE;
 	}
+	
+	statement->rsr_buffer = message->msg_next;
+	if (!message->msg_address)
+		message->msg_address = message->msg_buffer;
 
 	return xdr_message(xdrs, message, statement->rsr_format);
 }
