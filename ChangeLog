@@ -1,3 +1,50 @@
+2009-11-02 10:31  robocop
+
+	* firebird2/examples/udr/UdrCppExample.cpp (1.4):
+
+	Correction.
+
+2009-11-02 04:01  asfernandes
+
+	* firebird2/src/: include/FirebirdUdrCpp.h (1.4),
+	plugins/udr_engine/UdrEngine.cpp (1.4):
+
+	Fix build with a clean checkout
+
+2009-11-01 19:51  asfernandes
+
+	* firebird2/src/dsql/: StmtNodes.h (1.10), pass1.cpp (1.468):
+
+	Fixed CORE-2723 - When execute command UPDATE OR INSERT the server
+	crashes
+
+2009-11-01 19:38  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.296):
+
+	Fixed CORE-2724 - Validate or transform string of DML queries so
+	that engine internals doesn't receive malformed strings
+
+2009-11-01 17:59  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.212):
+
+	Fixed CORE-2722 - Storage of malformed blob is allowed when copying
+	from a blob with NONE/OCTETS charset
+
+2009-11-01 17:40  aafemt
+
+	* firebird2/examples/udf/udflib.c (1.4):
+
+	Use right allocation method
+
+2009-11-01 14:54  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.27):
+
+	Fixed CORE-2721 - Issue with SIMILAR TO and UTF8 on 2.5 Beta 2 (and
+	1)
+
 2009-11-01 11:56  robocop
 
 	* firebird2/src/: dsql/PackageNodes.epp (1.7), dsql/StmtNodes.cpp
