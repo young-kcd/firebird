@@ -284,7 +284,8 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 	ThrowError::check(funcDsqlFreeStatement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
 
 	delete [] inSqlDa->sqlvar[0].sqldata;
-	delete [] inSqlDa;
+	delete [] reinterpret_cast<char*>(inSqlDa);
+	inSqlDa = NULL;
 
 	int count = values->getCount();
 
@@ -411,7 +412,7 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 	}
 
 	delete [] outSqlDa->sqlvar[0].sqldata;
-	delete [] outSqlDa;
+	delete [] reinterpret_cast<char*>(outSqlDa);
 
 	initialized = true;
 }
