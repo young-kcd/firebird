@@ -233,6 +233,8 @@ FB_UDR_TRIGGER(replicate)::~FB_UDR_TRIGGER(replicate)()
 		delete var->sqlind;
 	}
 
+	delete [] reinterpret_cast<char*>(inSqlDa);
+
 	ISC_STATUS_ARRAY statusVector = {0};
 	funcDsqlFreeStatement(statusVector, &stmtHandle, DSQL_drop);
 }
