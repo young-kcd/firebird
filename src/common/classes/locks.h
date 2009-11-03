@@ -74,6 +74,9 @@ class Mutex
 {
 protected:
 	CRITICAL_SECTION spinlock;
+#ifdef DEV_BUILD
+	const char* reason;
+#endif
 
 public:
 	Mutex()
@@ -94,9 +97,20 @@ public:
 		DeleteCriticalSection(&spinlock);
 	}
 
+#ifdef DEV_BUILD
+	void enter(const char* aReason)
+	{
+		EnterCriticalSection(&spinlock);
+		reason = aReason;
+	}
+#endif
+
 	void enter()
 	{
 		EnterCriticalSection(&spinlock);
+#ifdef DEV_BUILD
+		reason = "<..unspecified..>";
+#endif
 	}
 
 	bool tryEnter()
@@ -145,6 +159,9 @@ friend class Condition;
 private:
 	pthread_mutex_t mlock;
 	static pthread_mutexattr_t attr;
+#ifdef DEV_BUILD
+	const char* reason;
+#endif
 
 private:
 	void init()
@@ -165,11 +182,24 @@ public:
 			system_call_failed::raise("pthread_mutex_destroy", rc);
 	}
 
+#ifdef DEV_BUILD
+	void enter(const char* aReason)
+	{
+		int rc = pthread_mutex_lock(&mlock);
+		if (rc)
+			system_call_failed::raise("pthread_mutex_lock", rc);
+		reason = aReason;
+	}
+#endif
+
 	void enter()
 	{
 		int rc = pthread_mutex_lock(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_lock", rc);
+#ifdef DEV_BUILD
+		reason = "<..unspecified..>";
+#endif
 	}
 
 	bool tryEnter()
@@ -240,8 +270,18 @@ typedef Mutex Spinlock;
 class MutexLockGuard
 {
 public:
-	explicit MutexLockGuard(Mutex &alock)
-		: lock(&alock)
+	MutexLockGuard(Mutex &aLock, const char* aReason)
+		: lock(&aLock)
+	{
+		lock->enter(
+#ifdef DEV_BUILD
+					aReason
+#endif
+		);
+	}
+
+	explicit MutexLockGuard(Mutex &aLock)
+		: lock(&aLock)
 	{
 		lock->enter();
 	}
