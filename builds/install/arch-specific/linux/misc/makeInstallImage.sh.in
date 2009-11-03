@@ -256,7 +256,7 @@ copyFiles() {
 
 	#intl
     cp $BuiltFBDir/intl/libfbintl.so ${TargetDir}@FB_INTLDIR@/fbintl
-    cp $BuildRootDir/gen/install/misc/fbintl.conf ${TargetDir}@FB_INTLDIR@
+    cp $BuiltFBDir/intl/fbintl.conf ${TargetDir}@FB_INTLDIR@
 
 	chown root:root ${TargetDir}@FB_INTLDIR@/fbintl*
 	chmod 0755 ${TargetDir}@FB_INTLDIR@/fbintl
@@ -305,8 +305,8 @@ copyFiles() {
 	chmod -R go-rwx ${TargetDir}@FB_MISCDIR@
 
 	#conf
-    cp $BuildRootDir/gen/install/misc/firebird.conf ${TargetDir}@FB_CONFDIR@
-    cp $BuildRootDir/gen/install/misc/aliases.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuiltFBDir/firebird.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuiltFBDir/aliases.conf ${TargetDir}@FB_CONFDIR@
 
 	chown root:root ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf
