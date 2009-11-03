@@ -207,7 +207,7 @@ LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
 # to the fbserver. MOD 28-July-2002
 
 ClientLibraryName = $(LIB_PREFIX)fbclient.$(SHRLIB_EXT)
-ClientLibrarySoName = $(ClientLibraryName).${MajorVer}
+ClientLibrarySoName = $(ClientLibraryName).2
 ClientLibraryNameFull = $(ClientLibraryName).${FirebirdVersion}
 
 LIBFBCLIENT_SO = $(LIB)/$(ClientLibraryNameFull)
