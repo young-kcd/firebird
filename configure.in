@@ -342,7 +342,7 @@ dnl CPU_TYPE=ppc64
            PTHREAD_CFLAGS=-mt
            PTHREAD_LIBS=-lpthread
            if test "${target#*solaris}" = "2.9"; then
-             ATOMIC_OPTIONS="../src/common/classes/fb_atomic.il";
+             ATOMIC_OPTIONS=`pwd`"/src/common/classes/fb_atomic.il";
            fi
            ;;
        *)  MAKEFILE_PREFIX=solaris-64gcc ;
