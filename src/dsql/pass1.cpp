@@ -9706,9 +9706,12 @@ static dsql_nod* pass1_variable( CompiledStatement* statement, dsql_nod* input)
 
 	DEV_BLKCHK(var_name, dsql_type_str);
 
-	dsql_nod* var_node = statement->blockNode->resolveVariable(var_name);
-	if (var_node)
-		return var_node;
+	if (statement->blockNode)	// Are we processing a PSQL block?
+	{
+		dsql_nod* var_node = statement->blockNode->resolveVariable(var_name);
+		if (var_node)
+			return var_node;
+	}
 
 	// field unresolved
 	// CVC: That's all [the fix], folks!
