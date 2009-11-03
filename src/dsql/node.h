@@ -937,7 +937,7 @@ enum node_args {
 	e_mod_fld_null_flag_count,
 
 	e_continue_label = 0,			// nod_continue
-	e_continue_count,
+	e_continue_count
 };
 
 } // namespace
