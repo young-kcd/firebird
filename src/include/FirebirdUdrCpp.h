@@ -446,7 +446,7 @@ public:
 		return tra->getHandle(ThrowError());
 	}
 
-	static void* getEntryPoint(ExternalContext* context, const char* entryPoint)
+	static void* getEntryPoint(ExternalContext* /*context*/, const char* entryPoint)
 	{
 		return fbUdrGetFunction(entryPoint);
 	}
@@ -469,7 +469,7 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* error)
+	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
 	{
 		delete this;
 	}
@@ -489,12 +489,12 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Error* error)
+	virtual void FB_CALL dispose(Error* /*error*/)
 	{
 		delete this;
 	}
 
-	void FB_CALL getCharSet(Error* error, ExternalContext* context, Utf8* name, uint nameSize)
+	void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/, Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
 
@@ -511,12 +511,12 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Error* error)
+	virtual void FB_CALL dispose(Error* /*error*/)
 	{
 		delete this;
 	}
 
-	void FB_CALL getCharSet(Error* error, ExternalContext* context, Utf8* name, uint nameSize)
+	void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/, Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
 
@@ -533,12 +533,12 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Error* error)
+	virtual void FB_CALL dispose(Error* /*error*/)
 	{
 		delete this;
 	}
 
-	void FB_CALL getCharSet(Error* error, ExternalContext* context, Utf8* name, uint nameSize)
+	void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/, Utf8* /*name*/, uint /*nameSize*/)
 	{
 	}
 

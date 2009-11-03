@@ -190,7 +190,7 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* error)
+	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
 	{
 		delete this;
 	}
@@ -269,7 +269,7 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* error)
+	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
 	{
 		delete this;
 	}
@@ -358,7 +358,7 @@ public:
 	}
 
 public:
-	virtual void FB_CALL dispose(Firebird::Error* error)
+	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
 	{
 		delete this;
 	}
@@ -634,19 +634,19 @@ template <typename T, typename T2, typename T3> T2* Engine::getNode(T* nodes,
 }
 
 
-int FB_CALL Engine::getVersion(Error* error)
+int FB_CALL Engine::getVersion(Error* /*error*/)
 {
 	return EXTERNAL_VERSION_1;
 }
 
 
-void FB_CALL Engine::open(Error* error, ExternalContext* context, Utf8* name, uint nameSize)
+void FB_CALL Engine::open(Error* /*error*/, ExternalContext* /*context*/, Utf8* name, uint nameSize)
 {
 	strncpy(name, "UTF-8", nameSize);
 }
 
 
-void FB_CALL Engine::openAttachment(Error* error, ExternalContext* context)
+void FB_CALL Engine::openAttachment(Error* /*error*/, ExternalContext* /*context*/)
 {
 }
 
@@ -687,7 +687,7 @@ void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 }
 
 
-ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* context,
+ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* /*context*/,
 	const char* package, const char* name, const char* entryPoint, const char* body)
 {
 	try
@@ -703,7 +703,7 @@ ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* co
 }
 
 
-ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* context,
+ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* /*context*/,
 	const char* package, const char* name, const char* entryPoint, const char* body)
 {
 	try
@@ -719,7 +719,7 @@ ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* 
 }
 
 
-ExternalTrigger* FB_CALL Engine::makeTrigger(Error* error, ExternalContext* context,
+ExternalTrigger* FB_CALL Engine::makeTrigger(Error* error, ExternalContext* /*context*/,
 	const char* name, const char* entryPoint, const char* body, const char* table,
 	ExternalTrigger::Type type)
 {
@@ -736,7 +736,7 @@ ExternalTrigger* FB_CALL Engine::makeTrigger(Error* error, ExternalContext* cont
 }
 
 
-void FB_CALL Engine::dispose(Error* error)
+void FB_CALL Engine::dispose(Error* /*error*/)
 {
 	delete this;
 }
@@ -748,7 +748,7 @@ void FB_CALL Engine::dispose(Error* error)
 class ExternalEngineFactoryImpl : public ExternalEngineFactory
 {
 public:
-	virtual ExternalEngine* FB_CALL createEngine(Error* error, int version,
+	virtual ExternalEngine* FB_CALL createEngine(Error* error, int /*version*/,
 		const char* name)
 	{
 		if (strcmp(name, "UDR") == 0)
