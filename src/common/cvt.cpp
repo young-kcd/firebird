@@ -51,6 +51,7 @@
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/FpeControl.h"
 #include "../jrd/dsc_proto.h"
+#include "../common/utils_proto.h"
 
 
 #ifdef HAVE_SYS_TYPES_H
@@ -212,18 +213,25 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	int chars_printed;			// number of characters printed
 	if ((dtype_double == from->dsc_dtype) && (from->dsc_scale < 0))
-		chars_printed = sprintf(temp, "%- #*.*f", width, -from->dsc_scale, d);
+	{
+		chars_printed = fb_utils::snprintf(temp, sizeof(temp), "%- #*.*f", width, -from->dsc_scale, d);
+		if (chars_printed <= 0 || chars_printed > width)
+			chars_printed = -1;
+	}
 	else
-		chars_printed = LONG_MAX_int;	// sure to be greater than to_len
+		chars_printed = -1;
 
 	// If it's not an old-style numeric, or the f-format was too long for the
 	// destination, try g-format with the maximum precision which makes sense
 	// for the input type: if it fits, we're done.
 
-	if (chars_printed > width)
+	if (chars_printed == -1)
 	{
+		char temp2[50];
 		const char num_format[] = "%- #*.*g";
-		chars_printed = sprintf(temp, num_format, width, precision, d);
+		chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
+		if (chars_printed <= 0 || chars_printed >= sizeof(temp2))
+			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
 		// If the full-precision result is too wide for the destination,
 		// reduce the precision and try again.
@@ -237,7 +245,9 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 			if (precision < 2)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
-			chars_printed = sprintf(temp, num_format, width, precision, d);
+			chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
+			if (chars_printed <= 0 || chars_printed >= sizeof(temp2))
+				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
 			// It's possible that reducing the precision caused sprintf to switch
 			// from f-format to e-format, and that the output is still too long
@@ -249,9 +259,16 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 				precision -= (chars_printed - width);
 				if (precision < 2)
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-			    chars_printed = sprintf(temp, num_format, width, precision, d);
+				// Note: we use here temp2 with sizeof(temp) because temp2 is bigger than temp.
+				// The check should be chars_printed > width because it's our last chance to
+				// fit into "width" else we should throw error.
+				chars_printed = fb_utils::snprintf(temp2, sizeof(temp), num_format, width, precision, d);
+				if (chars_printed <= 0 || chars_printed > width)
+					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 			}
 		}
+		
+		memcpy(temp, temp2, sizeof(temp));
 	}
 	fb_assert(chars_printed <= width);
 
@@ -276,6 +293,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	}
 	else
 	{
+		fb_assert(chars_printed > 0);
 		if (!temp[0])
 			temp[1] = 0;
 		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp) + 1;
@@ -1621,7 +1639,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		// TMN: Here we should really have the following fb_assert
 		// fb_assert(l <= MAX_SSHORT);
 		*(SSHORT *) p = (SSHORT) l;
-		if (*(SSHORT *) p != l)
+		if (*(SSHORT *) p != SLONG(l))
 			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 		return;
 
