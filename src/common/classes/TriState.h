@@ -52,12 +52,6 @@ public:
 		return triState;
 	}
 
-	void operator =(const T& newValue)
-	{
-		value = newValue;
-		specified = true;
-	}
-
 	bool operator ==(const TriStateRawType<T>& o) const
 	{
 		return (!specified && !o.specified) || (specified == o.specified && value == o.value);
