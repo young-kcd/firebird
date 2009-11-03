@@ -69,9 +69,16 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 		return;
 
 	Firebird::PathName::size_type pos = name.rfind(".so");
-	if (pos != Firebird::PathName::npos && pos == name.length() - 3)
-		return;		// No doctoring necessary
-	name += ".so";
+	if (pos == Firebird::PathName::npos || pos != name.length() - 3)
+	{
+		name += ".so";
+	}
+	pos = name.rfind('/');
+	pos = (pos == Firebird::PathName::npos) ? 0 : pos + 1;
+	if (name.find("lib", pos) != pos)
+	{
+		name.insert(pos, "lib");
+	}
 }
 
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
