@@ -65,6 +65,7 @@
 
 #include "../jrd/why_proto.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/tree.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/RefCounted.h"

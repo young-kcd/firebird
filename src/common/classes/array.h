@@ -29,6 +29,7 @@
 
 #include "../jrd/gdsassert.h"
 #include <string.h>
+#include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
 
 namespace Firebird {
