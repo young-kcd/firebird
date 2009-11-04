@@ -287,7 +287,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 				MemBlock *block = (MemBlock*) hunk->memory;
 				hunk->memory += length;
 				hunk->spaceRemaining -= length;
-				block->length = -length;
+				block->length = -(SINT64)length;
 
 				return block;
 			}
@@ -304,7 +304,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 		block = (MemBlock*) ((UCHAR*) hunk + l);
 		hunk->spaceRemaining = minAllocation - length - l;
 		hunk->memory = (UCHAR*) block + length;
-		block->length = -length;
+		block->length = -(SINT64)length;
 
 		return block;
 	}
