@@ -1,4 +1,3 @@
-/* $Id: Interlock.h,v 1.2 2009-11-04 10:51:27 robocop Exp $ */
 #ifndef __INTERLOCK_H
 #define __INTERLOCK_H
 
