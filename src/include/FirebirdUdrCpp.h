@@ -30,8 +30,10 @@
 #include "FirebirdApi.h"
 #include "FirebirdExternalApi.h"
 #include "FirebirdUdr.h"
-#include "../jrd/ibase.h"
+#ifndef JRD_IBASE_H
+#include "ibase.h"
 #include "iberror.h"
+#endif
 #include <string.h>
 
 
