@@ -43,9 +43,6 @@
 #include <string.h>
 
 #ifdef SOLARIS
-#ifndef DEV_BUILD
-#define NDEBUG                                 // Turn off fb_assert() macros
-#endif
 #include "../jrd/gdsassert.h"
 #endif
 

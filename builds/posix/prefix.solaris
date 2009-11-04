@@ -74,7 +74,7 @@ SFIO_LDFLAGS=@SFIO_LDFLAGS@
 # -xO2, optimize level 2, safer than -xO3
 # -xlibmil, inline select libm library routines for optimization
 # -xlibmopt -fround=nearest, use optimized math routines
-PROD_FLAGS= -xbuiltin=%all -xO2 -xlibmil -DNDEBUG \
+PROD_FLAGS= -xbuiltin=%all -xO2 -xlibmil \
 	$(COMMON_FLAGS) $(SFIO_FLAGS)
 
 # Debug flags

@@ -25,7 +25,7 @@ COMM_SOLX_FLAGS:=-DSOLARIS -DBSD_COMP -fno-omit-frame-pointer -fmessage-length=0
 SFIO=@SFIO_DIR@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
+PROD_FLAGS=-w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
 
 ifdef SFIO
