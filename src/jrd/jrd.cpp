@@ -3218,7 +3218,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 					recv_item_length, recv_items2, buffer_length, buffer2);
 
 			// If there is a status vector from a service thread, copy it into the thread status
-			int len, warning;
+			size_t len, warning;
 			PARSE_STATUS(service->getStatus(), len, warning);
 			if (len)
 			{

@@ -334,7 +334,7 @@ void Service::parseSwitches()
 
 void Service::output(const char* text)
 {
-	ULONG len = strlen(text);
+	size_t len = strlen(text);
 	enqueue(reinterpret_cast<const UCHAR*>(text), len);
 }
 
@@ -445,7 +445,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 	ISC_STATUS* status = tmp_status;
 	*status++ = isc_arg_gds;
 	*status++ = ENCODE_ISC_MSG(errcode, facility);
-	int tmp_status_len = 3;
+	size_t tmp_status_len = 3;
 
 	// We preserve the five params of the old code.
 	// Don't want to overflow the status vector.
@@ -464,14 +464,14 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 	}
 	else
 	{
-		int status_len = 0, warning_indx = 0;
+		size_t status_len = 0, warning_indx = 0;
 		PARSE_STATUS(svc_status, status_len, warning_indx);
 		if (status_len)
 			--status_len;
 
 		// check for duplicated error code
 		bool duplicate = false;
-		int i;
+		size_t i;
 		for (i = 0; i < ISC_STATUS_LENGTH; i++)
 		{
 			if (svc_status[i] == isc_arg_end && i == status_len)
@@ -495,12 +495,12 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 		if (!duplicate)
 		{
 			// if the status_vector has only warnings then adjust err_status_len
-			int err_status_len = i;
+			size_t err_status_len = i;
 			if (err_status_len == 2 && warning_indx != 0)
 				err_status_len = 0;
 
 			ISC_STATUS_ARRAY warning_status;
-			int warning_count = 0;
+			size_t warning_count = 0;
 			if (warning_indx)
 			{
 				// copy current warning(s) to a temp buffer

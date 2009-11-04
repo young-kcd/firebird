@@ -2606,7 +2606,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	// restore warnings (if there are any)
 	if (local_status[2] == isc_arg_warning)
 	{
-		int indx, len, warning;
+		size_t indx, len, warning;
 
 		// find end of a status vector
 		PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);

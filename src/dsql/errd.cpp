@@ -149,7 +149,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
     fb_assert(v.value()[0] == isc_arg_warning);
 
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
-	int indx = 0;
+	size_t indx = 0;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -164,16 +164,16 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 	else
 	{
 		// find end of a status vector
-		int warning_indx = 0;
+		size_t warning_indx = 0;
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx) {
 			--indx;
 		}
 	}
 
-	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
+	if (indx + static_cast<size_t>(v.length()) + 1 < ISC_STATUS_LENGTH)
 	{
-		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
+		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (static_cast<size_t>(v.length()) + 1));
 		ERR_make_permanent(&status_vector[indx]);
 		return true;
 	}
@@ -220,7 +220,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	// calculate length of the status
-	int tmp_status_len = 0, warning_indx = 0;
+	size_t tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
@@ -234,13 +234,13 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		status_vector[2] = isc_arg_end;
 	}
 
-    int status_len = 0;
+    size_t status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
 
 	// check for duplicated error code
-	int i;
+	size_t i;
 	for (i = 0; i < ISC_STATUS_LENGTH; i++)
 	{
 		if (status_vector[i] == isc_arg_end && i == status_len) {
@@ -261,12 +261,12 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	}
 
 	// if the status_vector has only warnings then adjust err_status_len
-	int err_status_len = i;
+	size_t err_status_len = i;
 	if (err_status_len == 2 && warning_indx) {
 		err_status_len = 0;
 	}
 
-	int warning_count = 0;
+	size_t warning_count = 0;
 	ISC_STATUS_ARRAY warning_status;
 
 	if (warning_indx) {
