@@ -167,6 +167,13 @@ static bool		event_blocked(const event_t* event, const SLONG value);
 #ifdef UNIX
 
 static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
+#ifdef __cplusplus
+extern "C" {
+#endif
+static void		longjmp_sig_handler(int);
+#ifdef __cplusplus
+}
+#endif
 static void		longjmp_sig_handler(int);
 static GlobalPtr<Mutex> openFdInit;
 
