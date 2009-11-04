@@ -1,3 +1,133 @@
+2009-11-04 14:05  robocop
+
+	* firebird2/src/common/classes/Interlock.h (1.3):
+
+	Misc.
+
+2009-11-04 12:37  alexpeshkoff
+
+	* firebird2/src/common/classes/: alloc.cpp (1.132), alloc.h (1.98):
+
+	Some hanges suggested by Claudio, also fixed compile errors
+
+2009-11-04 12:01  alexpeshkoff
+
+	* firebird2/configure.in (1.375):
+
+	misc binreloc-related
+
+2009-11-04 11:51  robocop
+
+	* firebird2/src/common/classes/: Interlock.h (1.2), alloc.cpp
+	(1.131):
+
+	Misc (hope the change is for better).
+
+2009-11-04 11:04  alexpeshkoff
+
+	* firebird2/: builds/posix/make.platform.solaris.examples (1.7),
+	builds/posix/prefix.aix_powerpc (1.12),
+	builds/posix/prefix.darwin_i386 (1.19),
+	builds/posix/prefix.darwin_powerpc (1.15),
+	builds/posix/prefix.darwin_ppc64 (1.11),
+	builds/posix/prefix.darwin_x86_64 (1.15),
+	builds/posix/prefix.freebsd (1.20), builds/posix/prefix.hpux
+	(1.13), builds/posix/prefix.hpux_aCC (1.8),
+	builds/posix/prefix.hpux_ia64 (1.5), builds/posix/prefix.linux
+	(1.38), builds/posix/prefix.linux_amd64 (1.19),
+	builds/posix/prefix.linux_arm (1.8),
+	builds/posix/prefix.linux_generic (1.13),
+	builds/posix/prefix.linux_ia64 (1.6),
+	builds/posix/prefix.linux_mips (1.7),
+	builds/posix/prefix.linux_mipsel (1.10),
+	builds/posix/prefix.linux_powerpc (1.9),
+	builds/posix/prefix.linux_s390x (1.3),
+	builds/posix/prefix.linux_sparc32 (1.17),
+	builds/posix/prefix.netbsd (1.9), builds/posix/prefix.solaris
+	(1.34), builds/posix/prefix.solaris-64gcc (1.12),
+	builds/posix/prefix.solx86 (1.33), builds/posix/prefix.solx86gcc
+	(1.37), builds/posix/prefix.solx86gcc_64 (1.9),
+	src/common/classes/test.sh (1.16), src/jrd/isc_sync.cpp (1.222):
+
+	cleanup unused NDEBUG macro
+
+2009-11-04 10:50  alexpeshkoff
+
+	* firebird2/src/common/classes/locks.h (1.62):
+
+	Added initialization - thanks to Adriano
+
+2009-11-04 10:39  alexpeshkoff
+
+	* firebird2/src/common/classes/Interlock.h (1.1):
+
+	Added forgotten new file - thanks to Adriano
+
+2009-11-04 03:11  verbguy
+
+	* firebird2/src/include/FirebirdUdrCpp.h (1.7):
+
+	improved fix from Adriano for ibase.h woes
+
+2009-11-04 01:20  asfernandes
+
+	* firebird2/src/common/: cvt.cpp (1.41), classes/alloc.cpp (1.130),
+	classes/alloc.h (1.97):
+
+	1) Misc; 2) Fix bad indenting
+
+2009-11-04 00:16  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.469):
+
+	Fix problem reported by Bill - usage of variable in non-PSQL block
+	crashs the server. Test case: -- -- Defect S0320338 -- EXTRA COLON
+	CAUSES ISQL TO CRASH -- create database 'test.fdb';
+
+	create table USER_DATA (     BASE_DATA_ID numeric(18,0) not null,
+	  OWNER_IDENTITY_ID numeric(18,0),     primary key (BASE_DATA_ID)
+	);
+
+	create table IDENTITY (     IDENTITY_ID numeric(18,0) not null,
+	OBJECT_VERSION numeric(18,0) not null,	   IS_ACTIVE char(1),
+	IS_GROUP char(1),     OMRID varchar(80) not null unique,     NAME
+	varchar(80) not null,	  IDENTITY_PROXY_ID numeric(18,0) unique,
+	  primary key (IDENTITY_ID) );
+
+	SELECT ident.IDENTITY_PROXY_ID FROM USER_DATA ud JOIN IDENTITY
+	ident on ud.OWNER_IDENTITY_ID = ident.IDENTITY_ID WHERE
+	ud.BASE_DATA_ID = :OBJECT_ID; -- this query should fail, but not
+	crash
+
+	drop database;
+
+2009-11-03 17:00  verbguy
+
+	* firebird2/src/include/FirebirdUdrCpp.h (1.6):
+
+	fix Sun Studio build
+
+2009-11-03 16:58  verbguy
+
+	* firebird2/configure.in (1.374):
+
+	Solaris 9 fix - use absolute path to atomic in-line assembly
+	routines, instead of relative path. Build of examples was broken
+	when example code moved to new directory.
+
+2009-11-03 16:31  verbguy
+
+	* firebird2/src/dsql/node.h (1.129):
+
+	fix Sun Studio warning, Identifier expected instead of "}".
+
+2009-11-03 16:02  verbguy
+
+	* firebird2/src/common/classes/TriState.h (1.9):
+
+	fix Sun Studio error, "a union member cannot have a user-defined
+	assignment operator," per Adriano's suggestion
+
 2009-11-03 14:35  alexpeshkoff
 
 	* firebird2/builds/: posix/Makefile.in.examples (1.13),
