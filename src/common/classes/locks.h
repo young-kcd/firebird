@@ -80,10 +80,16 @@ protected:
 
 public:
 	Mutex()
+#ifdef DEV_BUILD
+		: reason(NULL)
+#endif
 	{
 		InitializeCriticalSection(&spinlock);
 	}
 	explicit Mutex(MemoryPool&)
+#ifdef DEV_BUILD
+		: reason(NULL)
+#endif
 	{
 		InitializeCriticalSection(&spinlock);
 	}
@@ -166,6 +172,9 @@ private:
 private:
 	void init()
 	{
+#ifdef DEV_BUILD
+		reason = NULL;
+#endif
 		int rc = pthread_mutex_init(&mlock, &attr);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_init", rc);
