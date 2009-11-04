@@ -112,7 +112,7 @@ extern "C"
 #define INTERLOCKED_INCREMENT(variable)	InterlockedIncrement (&variable)
 #define INTERLOCKED_DECREMENT(variable)	InterlockedDecrement (&variable)
 
-//#define INTERLOCK_TYPE	LONG
+#define INTERLOCK_TYPE	LONG
 #define COMPARE_EXCHANGE(target,compare,exchange)\
 	(InterlockedCompareExchange(target, exchange, compare) == compare)
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
