@@ -121,6 +121,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if ((user.isEmpty() || user == attachment->att_user->usr_user_name) &&
+		pwd.isEmpty() &&
 		(role.isEmpty() || role == attachment->att_user->usr_sql_role_name))
 	{
 		m_isCurrent = true;
@@ -208,8 +209,14 @@ bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string&
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role) const
 {
+	const UserId *attUser = m_attachment->att_user;
+
 	if (m_isCurrent)
-		return (tdbb->getAttachment() == m_attachment);
+	{
+		return ((user.isEmpty() || user == attUser->usr_user_name) &&
+				pwd.isEmpty() &&
+				(role.isEmpty() || role == attUser->usr_sql_role_name));
+	}
 
 	return Connection::isSameDatabase(tdbb, dbName, user, pwd, role);
 }
