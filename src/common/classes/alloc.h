@@ -262,7 +262,7 @@ private:
 	AtomicCounter used_memory, mapped_memory;
 
 protected:
-	MemBlock* alloc(size_t size) throw (std::bad_alloc);
+	MemBlock* alloc(const size_t length) throw (std::bad_alloc);
 	void releaseBlock(MemBlock *block) throw ();
 
 public:
@@ -280,7 +280,6 @@ private:
 	void remove(MemFreeBlock* block) throw ();
 	void insert(MemFreeBlock* block) throw ();
 	void* allocRaw(size_t length) throw (std::bad_alloc);
-	void debugStop(void);
 	void validateFreeList(void) throw ();
 	void validateBigBlock(MemBigObject* block) throw ();
 	static void release(void* block) throw ();

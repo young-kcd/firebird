@@ -148,6 +148,8 @@ void MemoryPool::cleanup()
 	defaultMemoryManager = NULL;
 	default_stats_group->~MemoryStats();
 	default_stats_group = NULL;
+	cache_mutex->~Mutex();
+	cache_mutex = NULL;
 }
 
 MemoryPool::MemoryPool(MemoryStats& s, bool shared, int rounding, int cutoff, int minAlloc)
@@ -233,7 +235,7 @@ void MemoryPool::setStatsGroup(MemoryStats& newStats) throw ()
 	stats->increment_usage(sav_used_memory);
 }
 
-MemBlock* MemoryPool::alloc(size_t length) throw (std::bad_alloc)
+MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 {
 	MutexLockGuard guard(mutex, "MemoryPool::alloc");
 
@@ -756,7 +758,7 @@ inline size_t get_map_page_size()
 void* MemoryPool::allocRaw(size_t size) throw (std::bad_alloc)
 {
 #ifndef USE_VALGRIND
-	if (size == defaultAllocation)
+	if (size == DEFAULT_ALLOCATION)
 	{
 		MutexLockGuard guard(*cache_mutex);
 		void* result = NULL;
@@ -817,10 +819,6 @@ void* MemoryPool::allocRaw(size_t size) throw (std::bad_alloc)
 	return result;
 }
 
-void MemoryPool::debugStop(void)
-{
-}
-
 void MemoryPool::validateFreeList(void) throw ()
 {
 	size_t len = 0;
@@ -865,7 +863,7 @@ void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 void MemoryPool::releaseRaw(void *block, size_t size) throw ()
 {
 #ifndef USE_VALGRIND
-	if (size == defaultAllocation)
+	if (size == DEFAULT_ALLOCATION)
 	{
 		MutexLockGuard guard(*cache_mutex);
 		if (extents_cache.getCount() < extents_cache.getCapacity())
