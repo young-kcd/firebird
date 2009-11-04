@@ -1197,9 +1197,9 @@ mkdir -p temp/examples/udr
 MAKE_SRC_DIR=builds/posix
 
 dnl common files for all posix hosts
-AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf.in
-gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
-gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
+AC_CONFIG_FILES([gen/firebird/firebird.conf:builds/install/misc/firebird.conf.in
+gen/firebird/aliases.conf:builds/install/misc/aliases.conf.in
+gen/firebird/intl/fbintl.conf:builds/install/misc/fbintl.conf
 gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
 gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
 gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
