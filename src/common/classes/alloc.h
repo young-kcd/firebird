@@ -86,9 +86,9 @@ static inline size_t MEM_ALIGN(size_t value)
 	return FB_ALIGN(value, ALLOC_ALIGNMENT);
 }
 
-static const int defaultRounding = 8;
-static const int defaultCutoff = 4096;
-static const int defaultAllocation = 65536;
+static const int DEFAULT_ROUNDING = 8;
+static const int DEFAULT_CUTOFF = 4096;
+static const int DEFAULT_ALLOCATION = 65536;
 
 class MemoryPool;
 class MemoryStats
@@ -167,7 +167,7 @@ private:
 
 typedef SLONG INT32;
 
-class MemHeader 
+class MemHeader
 {
 public:
 	MemoryPool	*pool;
@@ -180,8 +180,8 @@ public:
     const char mbk_valgrind_redzone[VALGRIND_REDZONE];
 #endif
 };
-	
-class MemBlock : public MemHeader 
+
+class MemBlock : public MemHeader
 {
 public:
 	UCHAR		body;
@@ -203,7 +203,7 @@ public:
 };
 
 
-class MemFreeBlock : public MemBigObject 
+class MemFreeBlock : public MemBigObject
 {
 public:
 	MemFreeBlock	*nextLarger;
@@ -213,7 +213,7 @@ public:
 };
 
 
-class MemSmallHunk 
+class MemSmallHunk
 {
 public:
 	MemSmallHunk	*nextHunk;
@@ -221,8 +221,8 @@ public:
 	UCHAR			*memory;
 	size_t			spaceRemaining;
 };
-	
-class MemBigHunk 
+
+class MemBigHunk
 {
 public:
 	MemBigHunk		*nextHunk;
@@ -234,13 +234,13 @@ class MemoryPool
 {
 public:
 	MemoryPool(MemoryStats& stats = *default_stats_group,
-			   bool shared=true, int rounding=defaultRounding, 
-			   int cutoff=defaultCutoff, int minAllocation=defaultAllocation);
+			   bool shared = true, int rounding = DEFAULT_ROUNDING,
+			   int cutoff = DEFAULT_CUTOFF, int minAllocation = DEFAULT_ALLOCATION);
 	virtual ~MemoryPool(void);
 
 	static MemoryPool* defaultMemoryManager;
 
-private:	
+private:
 	size_t			roundingSize, threshold, minAllocation;
 	//int			headerSize;
 	MemBlock		**freeObjects;
@@ -292,7 +292,7 @@ private:
 	size_t delayedFreeCount;
 	size_t delayedFreePos;
 #endif
-	
+
 public:
 	static void deletePool(MemoryPool* pool);
 	static void globalFree(void* block) throw ();

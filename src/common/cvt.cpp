@@ -267,7 +267,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 			}
 		}
-		
+
 		memcpy(temp, temp2, sizeof(temp));
 	}
 	fb_assert(chars_printed <= width);
