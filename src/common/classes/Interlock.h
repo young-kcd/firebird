@@ -1,4 +1,4 @@
-/* $Id: Interlock.h,v 1.1 2009-11-04 09:39:25 alexpeshkoff Exp $ */
+/* $Id: Interlock.h,v 1.2 2009-11-04 10:51:27 robocop Exp $ */
 #ifndef __INTERLOCK_H
 #define __INTERLOCK_H
 
@@ -11,9 +11,9 @@ extern void membar_flush(void);
 extern void membar_wait(void);
 }
 #define COMPARE_EXCHANGE(target,compare,exchange)\
-	(cas(target,compare,exchange)== compare)
+	(cas(target, compare, exchange) == compare)
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
-	(casx((volatile void**)target,(void*)compare,(void*)exchange)== compare)
+	(casx((volatile void**)target, (void*)compare, (void*)exchange) == compare)
 #endif
 
 #ifdef SOLARIS
@@ -57,12 +57,12 @@ void asm_sync(void);
 #include <CoreServices/CoreServices.h>
 extern "C"
 {
-static inline int COMPARE_EXCHANGE(volatile int * target, int compare, int exchange)
+static inline int COMPARE_EXCHANGE(volatile int* target, int compare, int exchange)
 {
 	return CompareAndSwap((UInt32)compare, (UInt32) exchange, (UInt32 *)(target));
 }
 
-static inline int COMPARE_EXCHANGE_POINTER(void * target, volatile void * compare, void * exchange)
+static inline int COMPARE_EXCHANGE_POINTER(void* target, volatile void* compare, void* exchange)
 {
 	return CompareAndSwap( (UInt32) compare, (UInt32) exchange, (UInt32 *) target);
 }
@@ -85,10 +85,10 @@ static inline void* casx (volatile void *state, volatile void *compare, void *ex
 }
 }
 #define COMPARE_EXCHANGE(target,compare,exchange)\
-	(cas(target,compare,exchange)== compare)
+	(cas(target, compare, exchange) == compare)
 
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
-	(casx(target,compare,exchange)== compare)
+	(casx(target, compare, exchange) == compare)
 
 #endif
 
@@ -115,9 +115,9 @@ extern "C"
 
 //#define INTERLOCK_TYPE	LONG
 #define COMPARE_EXCHANGE(target,compare,exchange)\
-	(InterlockedCompareExchange(target,exchange,compare)==compare)
+	(InterlockedCompareExchange(target, exchange, compare) == compare)
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
-	(InterlockedCompareExchangePointer((volatile PVOID*) target,(PVOID)exchange,(PVOID)compare)==compare)
+	(InterlockedCompareExchangePointer((volatile PVOID*) target, (PVOID)exchange, (PVOID)compare) == compare)
 #ifndef InterlockedIncrement
 #define InterlockedIncrement		_InterlockedIncrement
 #define InterlockedDecrement		_InterlockedDecrement
@@ -143,9 +143,9 @@ extern "C"
 
 #if defined (__i386) || (__x86_64__)
 #define COMPARE_EXCHANGE(target,compare,exchange)\
-	(inline_cas(target,compare,exchange))
+	(inline_cas(target, compare, exchange))
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
-	(inline_cas_pointer((volatile void**)target,(void*)compare,(void*)exchange))
+	(inline_cas_pointer((volatile void**)target, (void*)compare, (void*)exchange))
 #endif
 
 #ifndef INTERLOCK_TYPE
@@ -175,7 +175,7 @@ inline INTERLOCK_TYPE interlockedIncrement(volatile INTERLOCK_TYPE *ptr)
 		{
 		int oldValue = *ptr;
 		int newValue = oldValue + 1;
-		if (COMPARE_EXCHANGE(ptr,oldValue,newValue))
+		if (COMPARE_EXCHANGE(ptr, oldValue, newValue))
 			return newValue;
 		}
 #endif
@@ -204,7 +204,7 @@ inline INTERLOCK_TYPE interlockedDecrement(volatile INTERLOCK_TYPE *ptr)
 		{
 		int oldValue = *ptr;
 		int newValue = oldValue - 1;
-		if (COMPARE_EXCHANGE(ptr,oldValue,newValue))
+		if (COMPARE_EXCHANGE(ptr, oldValue, newValue))
 			return newValue;
 		}
 #endif

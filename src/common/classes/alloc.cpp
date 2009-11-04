@@ -154,8 +154,8 @@ MemoryPool::MemoryPool(MemoryStats& s, bool shared, int rounding, int cutoff, in
   :	roundingSize(rounding), threshold(cutoff), minAllocation(minAlloc),
 	threadShared(shared), pool_destroying(false), stats(&s)
 {
-	int vecSize = (cutoff + rounding) / rounding;
-	int l = vecSize * sizeof(void*);
+	size_t vecSize = (cutoff + rounding) / rounding;
+	size_t l = vecSize * sizeof(void*);
 	freeObjects = (MemBlock**) allocRaw(l);
 	memset(freeObjects, 0, l);
 	bigHunks = NULL;
@@ -192,7 +192,7 @@ MemoryPool::~MemoryPool(void)
 	for (size_t i = 0; i < delayedFreeCount; i++)
 	{
 		MemBlock* block = delayedFree[i];
-		void* object = &(block->body);
+		void* object = &block->body;
 
 		VALGRIND_DISCARD(
             VALGRIND_MAKE_MEM_DEFINED(block, OFFSET(MemBlock*, body)));
@@ -298,7 +298,7 @@ MemBlock* MemoryPool::alloc(size_t length) throw (std::bad_alloc)
 		hunk->nextHunk = smallHunks;
 		smallHunks = hunk;
 
-		int l = ROUNDUP(sizeof(MemSmallHunk), sizeof(double));
+		size_t l = ROUNDUP(sizeof(MemSmallHunk), sizeof(double));
 		block = (MemBlock*) ((UCHAR*) hunk + l);
 		hunk->spaceRemaining = minAllocation - length - l;
 		hunk->memory = (UCHAR*) block + length;
@@ -444,7 +444,7 @@ void* MemoryPool::allocate(size_t size
 #endif
 ) throw (std::bad_alloc)
 {
-	int length = ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + OFFSET(MemBlock*, body) + GUARD_BYTES;
+	size_t length = ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + OFFSET(MemBlock*, body) + GUARD_BYTES;
 	MemBlock* memory = alloc(length);
 
 #ifdef USE_VALGRIND
@@ -498,7 +498,7 @@ void MemoryPool::release(void* object) throw ()
 		MemBlock* requested_block = block;
 
 		block = pool->delayedFree[pool->delayedFreePos];
-		object = &(block->body);
+		object = &block->body;
 
 		// Re-enable access to MemBlock
 		VALGRIND_DISCARD(VALGRIND_MAKE_MEM_DEFINED(block, OFFSET(MemBlock*, body)));
