@@ -70,7 +70,13 @@ void IscProvider::getRemoteError(ISC_STATUS* status, string& err) const
 {
 	err = "";
 
-	char buff[512];
+	// We can't use safe fb_interpet here as we have no idea what implementation
+	// of ISC API is used by current provider. We can test for existance of
+	// fb_interpet and use it if present, but i don't want to complicate code.
+	// So, buffer should be big enough to please old isc_interprete.
+	// Probably in next version we should use fb_interpet only.
+
+	char buff[1024];
 	ISC_STATUS* p = status;
 	const ISC_STATUS* const end = status + ISC_STATUS_LENGTH;
 

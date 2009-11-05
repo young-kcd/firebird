@@ -83,7 +83,7 @@ void InternalProvider::getRemoteError(ISC_STATUS* status, string& err) const
 {
 	err = "";
 
-	char buff[512];
+	char buff[1024];
 	const ISC_STATUS* p = status;
 	const ISC_STATUS* end = status + ISC_STATUS_LENGTH;
 
@@ -209,10 +209,9 @@ bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string&
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role) const
 {
-	const UserId *attUser = m_attachment->att_user;
-
 	if (m_isCurrent)
 	{
+		const UserId* attUser = m_attachment->att_user;
 		return ((user.isEmpty() || user == attUser->usr_user_name) &&
 				pwd.isEmpty() &&
 				(role.isEmpty() || role == attUser->usr_sql_role_name));

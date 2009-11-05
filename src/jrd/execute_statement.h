@@ -34,8 +34,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/ibase.h"
 
-const int MAX_CALLBACKS	= 50;
-
 namespace Jrd {
 
 

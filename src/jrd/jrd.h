@@ -105,6 +105,7 @@ namespace Jrd {
 
 const int QUANTUM			= 100;	// Default quantum
 const int SWEEP_QUANTUM		= 10;	// Make sweeps less disruptive
+const int MAX_CALLBACKS		= 50;
 
 // fwd. decl.
 class thread_db;
@@ -331,6 +332,7 @@ public:
 	Firebird::Mutex att_mutex;				// attachment mutex
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
+	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
 
 	bool locksmith() const;

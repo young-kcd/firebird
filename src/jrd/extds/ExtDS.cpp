@@ -185,6 +185,11 @@ Provider::~Provider()
 Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	const string& user, const string& pwd, const string& role, TraScope tra_scope)
 {
+	const Attachment* attachment = tdbb->getAttachment();
+
+	if (attachment->att_ext_call_depth >= MAX_CALLBACKS)
+		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
+
 	{ // m_mutex scope
 		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 
@@ -194,7 +199,8 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 		for (; conn_ptr < end; conn_ptr++)
 		{
 			Connection* conn = *conn_ptr;
-			if (conn->isSameDatabase(tdbb, dbName, user, pwd, role) &&
+			if (conn->m_boundAtt == attachment &&
+				conn->isSameDatabase(tdbb, dbName, user, pwd, role) &&
 				conn->isAvailable(tdbb, tra_scope))
 			{
 				return conn;
@@ -206,6 +212,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	try
 	{
 		conn->attach(tdbb, dbName, user, pwd, role);
+		conn->m_boundAtt = attachment;
 	}
 	catch (...)
 	{
@@ -227,6 +234,8 @@ void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool /*inPoo
 {
 	{ // m_mutex scope
 		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
+
+		conn.m_boundAtt = NULL;
 
 		size_t pos;
 		if (!m_connections.find(&conn, pos))
@@ -282,6 +291,7 @@ Connection::Connection(Provider& prov) :
 	m_transactions(getPool()),
 	m_statements(getPool()),
 	m_freeStatements(NULL),
+	m_boundAtt(NULL),
 	m_used_stmts(0),
 	m_free_stmts(0),
 	m_deleting(false),
@@ -308,8 +318,11 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 {
 	dpb.reset(isc_dpb_version1);
 
-	const string& attUser = tdbb->getAttachment()->att_user->usr_user_name;
-	const string& attRole = tdbb->getAttachment()->att_user->usr_sql_role_name;
+	const Attachment *attachment = tdbb->getAttachment();
+	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
+
+	const string& attUser = attachment->att_user->usr_user_name;
+	const string& attRole = attachment->att_user->usr_sql_role_name;
 
 	if ((m_provider.getFlags() & prvTrustedAuth) &&
 		(user.isEmpty() || user == attUser) && pwd.isEmpty() &&
@@ -331,7 +344,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 		}
 	}
 
-	CharSet* const cs = INTL_charset_lookup(tdbb, tdbb->getAttachment()->att_charset);
+	CharSet* const cs = INTL_charset_lookup(tdbb, attachment->att_charset);
 	if (cs) {
 		dpb.insertString(isc_dpb_lc_ctype, cs->getName());
 	}
@@ -1470,9 +1483,9 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 	}
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
+ 	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
 											Arg::Str(rem_err) <<
-											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
+ 											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
@@ -1521,17 +1534,24 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 {
 	m_tdbb = tdbb;
 	m_mutex = conn.isConnected() ? &conn.m_mutex : &conn.m_provider.m_mutex;
+	m_saveConnection = NULL;
 
 	if (m_tdbb)
 	{
-		if (m_tdbb->getTransaction()) {
-			m_tdbb->getTransaction()->tra_callback_count++;
+		jrd_tra *transaction = m_tdbb->getTransaction();
+		if (transaction) 
+		{
+			if (transaction->tra_callback_count >= MAX_CALLBACKS)
+				ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
+
+			transaction->tra_callback_count++;
 		}
 
-		if (m_tdbb->getAttachment())
+		Attachment *attachment = m_tdbb->getAttachment();
+		if (attachment)
 		{
-			fb_assert(!m_tdbb->getAttachment()->att_ext_connection);
-			m_tdbb->getAttachment()->att_ext_connection = &conn;
+			m_saveConnection = attachment->att_ext_connection;
+			attachment->att_ext_connection = &conn;
 		}
 
 		m_tdbb->getDatabase()->dbb_sync->unlock();
@@ -1552,12 +1572,14 @@ EngineCallbackGuard::~EngineCallbackGuard()
 	{
 		m_tdbb->getDatabase()->dbb_sync->lock();
 
-		if (m_tdbb->getTransaction()) {
-			m_tdbb->getTransaction()->tra_callback_count--;
+		jrd_tra *transaction = m_tdbb->getTransaction();
+		if (transaction) {
+			transaction->tra_callback_count--;
 		}
 
-		if (m_tdbb->getAttachment()) {
-			m_tdbb->getAttachment()->att_ext_connection = NULL;
+		Attachment *attachment = m_tdbb->getAttachment();
+		if (attachment) {
+			attachment->att_ext_connection = m_saveConnection;
 		}
 	}
 }

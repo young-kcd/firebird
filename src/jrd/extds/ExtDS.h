@@ -147,6 +147,7 @@ class Connection : public Firebird::PermanentStorage
 {
 protected:
 	friend class EngineCallbackGuard;
+	friend class Provider;
 
 	explicit Connection(Provider& prov);
 	virtual ~Connection();
@@ -227,6 +228,8 @@ protected:
 	Firebird::Array<Transaction*> m_transactions;
 	Firebird::Array<Statement*> m_statements;
 	Statement* m_freeStatements;
+
+	const Jrd::Attachment* m_boundAtt;
 
 	static const int MAX_CACHED_STMTS = 16;
 	int	m_used_stmts;
@@ -454,6 +457,7 @@ private:
 
 	Jrd::thread_db* m_tdbb;
 	Firebird::Mutex* m_mutex;
+	Connection* m_saveConnection;
 };
 
 } // namespace EDS
