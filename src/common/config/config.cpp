@@ -487,7 +487,7 @@ bool Config::getLegacyHash()
 
 const char *Config::getGCPolicy()
 {
-	return (const char *) sysConfig().values[KEY_GC_POLICY];
+	return (const char*) sysConfig().values[KEY_GC_POLICY];
 }
 
 bool Config::getRedirection()
@@ -502,7 +502,7 @@ bool Config::getOldColumnNaming()
 
 const char *Config::getAuthMethod()
 {
-	return (const char *) sysConfig().values[KEY_AUTH_METHOD];
+	return (const char*) sysConfig().values[KEY_AUTH_METHOD];
 }
 
 int Config::getDatabaseGrowthIncrement()
@@ -512,7 +512,8 @@ int Config::getDatabaseGrowthIncrement()
 
 int Config::getFileSystemCacheThreshold()
 {
-	return (int) sysConfig().values[KEY_FILESYSTEM_CACHE_THRESHOLD];
+	int rc = (int) sysConfig().values[KEY_FILESYSTEM_CACHE_THRESHOLD];
+	return rc < 0 ? 0 : rc;
 }
 
 bool Config::getRelaxedAliasChecking()
