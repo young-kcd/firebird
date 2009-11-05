@@ -188,7 +188,7 @@ static int perf_format(const P* before, const P* after,
 	*p = 0;
 	const int length = p - buffer;
 	if (buffer_length && (buffer_length -= length) >= 0) {
-		memset(p, ' ', buffer_length);
+		memset(p, ' ', static_cast<size_t>(buffer_length));
 	}
 
 	return length;
