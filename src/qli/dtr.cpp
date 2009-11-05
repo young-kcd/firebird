@@ -55,6 +55,8 @@
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
 #include "../jrd/align.h"
+#include "../common/classes/Switches.h"
+#include "../qli/qliswi.h"
 
 using MsgFormat::SafeArg;
 
@@ -64,11 +66,16 @@ const char* const STARTUP_FILE = "HOME";	// Assume it's Unix
 
 extern TEXT* QLI_prompt;
 
+static int async_quit(const int, const int, void*);
 static void enable_signals();
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
-static int async_quit(const int, const int, void*);
+static void usage(const Switches& switches);
 static bool yes_no(USHORT, const TEXT*);
+
+// the old name new_handler comflicts with std::new_handler for the "new" operator
+typedef void (*new_signal_handler) (int);
+
 
 struct answer_t
 {
@@ -85,7 +92,7 @@ static answer_t answer_table[] =
 };
 
 
-int  CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main( int argc, char **argv)
 {
 /**************************************
  *
@@ -131,6 +138,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	QLI_default_user[0] = 0;
 	QLI_default_password[0] = 0;
 	QLI_charset[0] = 0;
+	bool help_flag = false;
 
 #ifdef DEV_BUILD
 	QLI_hex_output = false;
@@ -138,109 +146,129 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 	SLONG debug_value; // aparently unneeded, see usage below.
 
+	const Switches switches(qli_in_sw_table, FB_NELEM(qli_in_sw_table), false, true);
+
 	const TEXT* const* const arg_end = argv + argc;
 	argv++;
 	while (argv < arg_end)
 	{
-		const TEXT* p = *argv++;
-		if (*p++ != '-')
+		const TEXT* const p = *argv++;
+		if (*p != '-')
 		{
 			banner_flag = false;
 			LEX_pop_line();
-			LEX_push_string(p - 1);
+			LEX_push_string(p);
 			continue;
 		}
-		TEXT c;
-		while (c = *p++)
-			switch (UPPER(c))
+		if (!p[1])
+			continue;
+
+		const Switches::in_sw_tab_t* option = switches.findSwitch(p);
+		const int in_sw = option ? option->in_sw : IN_SW_QLI_0;
+
+		switch (in_sw)
+		{
+		case IN_SW_QLI_APP_SCRIPT:
+			if (argv >= arg_end)
 			{
-			case 'A':
-				if (argv >= arg_end)
-				{
-					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name
-					exit(FINI_ERROR);
-				}
+				ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name
+				exit(FINI_ERROR);
+			}
 
-				application_file = *argv++;
-				break;
+			application_file = *argv++;
+			break;
 
-			case 'B':
-				if (argv < arg_end && **argv != '-')
-					sw_buffers = atoi(*argv++);
-				break;
+		case IN_SW_QLI_BUFFERS:
+			if (argv < arg_end && **argv != '-')
+				sw_buffers = atoi(*argv++);
+			break;
 
-			case 'F':		// fetch password
-				{
-					if (argv >= arg_end || **argv == '-')
-						break;
-					const char* pwd = NULL;
-					if (fb_utils::fetchPassword(*argv++, pwd) != fb_utils::FETCH_PASS_OK)
-						break;
-					fb_utils::copy_terminate(QLI_default_password, pwd, sizeof(QLI_default_password));
-				}
-				break;
-
-			case 'I':
+		case IN_SW_QLI_FETCH_PASSWORD:
+			{
 				if (argv >= arg_end || **argv == '-')
-					startup_file = "";
-				else
-					startup_file = *argv++;
-				break;
+					break;
+				const char* pwd = NULL;
+				if (fb_utils::fetchPassword(*argv++, pwd) != fb_utils::FETCH_PASS_OK)
+					break;
+				fb_utils::copy_terminate(QLI_default_password, pwd, sizeof(QLI_default_password));
+			}
+			break;
+
+		case IN_SW_QLI_INITIAL_SCRIPT:
+			if (argv >= arg_end || **argv == '-')
+				startup_file = "";
+			else
+				startup_file = *argv++;
+			break;
 
 #ifdef TRUSTED_AUTH
-			case 'K':
-				QLI_trusted = true;
-				break;
+		case IN_SW_QLI_TRUSTED_AUTH:
+			QLI_trusted = true;
+			break;
 #endif
 
-			case 'N':
-				banner_flag = false;
-				break;
+		case IN_SW_QLI_NOBANNER:
+			banner_flag = false;
+			break;
 
-			case 'P':
-				if (argv >= arg_end || **argv == '-')
-					break;
-				fb_utils::copy_terminate(QLI_default_password, fb_utils::get_passwd(*argv++),
-					sizeof(QLI_default_password));
+		case IN_SW_QLI_PASSWORD:
+			if (argv >= arg_end || **argv == '-')
 				break;
+			fb_utils::copy_terminate(QLI_default_password, fb_utils::get_passwd(*argv++),
+				sizeof(QLI_default_password));
+			break;
 
-			case 'T':
-				sw_trace = true;
-				break;
+		case IN_SW_QLI_TRACE:
+			sw_trace = true;
+			break;
 
-			case 'U':
-				if (argv >= arg_end || **argv == '-')
-					break;
-				fb_utils::copy_terminate(QLI_default_user, *argv++, sizeof(QLI_default_user));
+		case IN_SW_QLI_USER:
+			if (argv >= arg_end || **argv == '-')
 				break;
+			fb_utils::copy_terminate(QLI_default_user, *argv++, sizeof(QLI_default_user));
+			break;
 
-			case 'V':
-				sw_verify = true;
-				break;
+		case IN_SW_QLI_VERIFY:
+			sw_verify = true;
+			break;
 
-			case 'X':
-				debug_value = 1;
-				isc_set_debug(debug_value);
-				break;
+		case IN_SW_QLI_X:
+			debug_value = 1;
+			isc_set_debug(debug_value);
+			break;
 
-				// This switch's name is arbitrary; since it is an internal
-				// mechanism it can be changed at will
-			case 'Y':
-				QLI_trace = true;
-				break;
+			// This switch's name is arbitrary; since it is an internal
+			// mechanism it can be changed at will
+		case IN_SW_QLI_Y:
+			QLI_trace = true;
+			break;
 
-			case 'Z':
-				version_flag = true;
-				break;
+		case IN_SW_QLI_Z:
+			version_flag = true;
+			break;
 
-			default:
-				ERRQ_msg_put(469, SafeArg() << c);
-				// Msg469 qli: ignoring unknown switch %c
-				break;
-			}
+		case IN_SW_QLI_HELP:
+			help_flag = true;
+			break;
+
+		default:
+			ERRQ_msg_put(529, SafeArg() << p);
+			// Msg469 qli: ignoring unknown switch %c
+			break;
+		}
 	}
 
 	enable_signals();
+
+	if (help_flag)
+	{
+		usage(switches);
+		HELP_fini();
+		MET_shutdown();
+		LEX_fini();
+		ALLQ_fini();
+		return FINI_OK;
+	}
 
 	if (banner_flag)
 		ERRQ_msg_put(24);	// Msg24 Welcome to QLI Query Language Interpreter
@@ -283,6 +311,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		ERRQ_pending();
 		ALLQ_rlpool(temp);
 	}
+
 	HELP_fini();
 	MET_shutdown();
 	LEX_fini();
@@ -300,6 +329,40 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 }
 
 
+#ifdef DEV_BUILD
+void QLI_validate_desc(const dsc* d)
+{
+    fb_assert(d->dsc_dtype > dtype_unknown);
+    fb_assert(d->dsc_dtype < DTYPE_TYPE_MAX);
+    ULONG addr = (ULONG) (U_IPTR) (d->dsc_address);	// safely ignore higher bits even if present
+    USHORT ta = type_alignments[d->dsc_dtype];
+    if (ta > 1)
+		fb_assert((addr & (ta - 1)) == 0);
+}
+#endif
+
+
+static int async_quit(const int reason, const int, void*)
+{
+/**************************************
+ *
+ *	a s y n c _ q u i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Stop whatever we happened to be doing.
+ *
+ **************************************/
+	if (reason == fb_shutrsn_signal)
+	{
+		EXEC_abort();
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
+
+
 static void enable_signals()
 {
 /**************************************
@@ -312,7 +375,6 @@ static void enable_signals()
  *	Enable signals.
  *
  **************************************/
-	typedef void (*new_handler) (int);
 
 #ifdef SIGQUIT
 	signal(SIGQUIT, SIG_IGN);
@@ -321,7 +383,7 @@ static void enable_signals()
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
-	signal(SIGFPE, (new_handler) signal_arith_excp);
+	signal(SIGFPE, (new_signal_handler) signal_arith_excp);
 }
 
 
@@ -578,32 +640,35 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT /*sig*/, USHORT code, USHORT /
 	msg_number = 21;
 #endif
 
-	signal(SIGFPE, (void(*)(int)) signal_arith_excp);
+	signal(SIGFPE, (new_signal_handler) signal_arith_excp);
 
 	IBERROR(msg_number);
 }
 
 
-static int async_quit(const int reason, const int, void*)
+static void usage(const Switches& switches)
 {
 /**************************************
  *
- *	s i g n a l _ q u i t
+ *	u s a g e
  *
  **************************************
  *
  * Functional description
- *	Stop whatever we happened to be doing.
+ *	Print help about command-line arguments.
  *
  **************************************/
-	if (reason == fb_shutrsn_signal)
+	ERRQ_msg_put(513);
+	ERRQ_msg_put(514);
+	ERRQ_msg_put(515);
+	for (const Switches::in_sw_tab_t* p = switches.getTable(); p->in_sw; ++p)
 	{
-		EXEC_abort();
-		return FB_FAILURE;
+		if (p->in_sw_msg)
+			ERRQ_msg_put(p->in_sw_msg);
 	}
-	return FB_SUCCESS;
+	ERRQ_msg_put(527);
+	ERRQ_msg_put(528);
 }
-
 
 static bool yes_no(USHORT number, const TEXT* arg1)
 {
@@ -648,21 +713,10 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 				p++;
 			if (*p == EOF)
 				return true;
-			for (const TEXT* q = response->answer; *p && UPPER(*p) == *q++; p++);
+			for (const TEXT* q = response->answer; *p && UPPER(*p) == *q++; p++)
+				;
 			if (!*p || *p == '\n')
 				return response->value;
 		}
 	}
 }
-
-#ifdef DEV_BUILD
-void QLI_validate_desc(const dsc* d)
-{
-    fb_assert(d->dsc_dtype > dtype_unknown);
-    fb_assert(d->dsc_dtype < DTYPE_TYPE_MAX);
-    ULONG addr = (ULONG) (U_IPTR) (d->dsc_address);	// safely ignore higher bits even if present
-    USHORT ta = type_alignments[d->dsc_dtype];
-    if (ta > 1)
-		fb_assert((addr & (ta - 1)) == 0);
-}
-#endif

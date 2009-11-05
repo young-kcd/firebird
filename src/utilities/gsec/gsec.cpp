@@ -39,6 +39,7 @@
 #include "../jrd/license.h"
 #include "../jrd/constants.h"
 #include "../utilities/gsec/secur_proto.h"
+#include "../common/classes/Switches.h"
 #include "../utilities/gsec/gsecswi.h"
 #include "../common/classes/ClumpletWriter.h"
 
@@ -64,7 +65,7 @@ static void util_output(const SCHAR*, ...);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(Firebird::UtilSvc::ArgvType&, TEXT*, size_t);
-static bool get_switches(Firebird::UtilSvc::ArgvType&, const in_sw_tab_t*, tsec*, bool*);
+static bool get_switches(Firebird::UtilSvc::ArgvType&, const Switches&, tsec*, bool*);
 static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType&, tsec*);
 static void printhelp();
 static void get_security_error(ISC_STATUS*, int);
@@ -502,8 +503,8 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 
 
 static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
-						const in_sw_tab_t* in_sw_table,
-						tsec* tdsec, bool* quitflag)
+						 const Switches& switches,
+						 tsec* tdsec, bool* quitflag)
 {
 /**************************************
  *
@@ -530,7 +531,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 	for (size_t argc = 1; argc < argv.getCount(); ++argc)
 	{
 		const char* string = argv[argc];
-		if (*string == '?' || (string[0] == '-' && string[1] == '?'))
+		if (*string == '?' || strcmp(string, "-?") == 0)
 			user_data->operation = HELP_OPER;
 		else if (*string != '-')
 		{
@@ -583,7 +584,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->gid = atoi(string);
 				user_data->gid_entered = true;
 				break;
-			case IN_SW_GSEC_SYSU:
+			case IN_SW_GSEC_SYSUSER:
 				fb_utils::copy_terminate(user_data->sys_user_name, string, sizeof(user_data->sys_user_name));
 				user_data->sys_user_entered = true;
 				break;
@@ -636,7 +637,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				fb_utils::copy_terminate(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
 				user_data->sql_role_name_entered = true;
 				break;
-			case IN_SW_GSEC_DBA_TRUST_USER:
+			case IN_SW_GSEC_DBA_TRUSTED_USER:
 				tdsec->utilSvc->checkService();
 				fb_utils::copy_terminate(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
 				user_data->dba_trust_user_name_entered = true;
@@ -671,39 +672,9 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 		}
 		else
 		{
-			// iterate through the switch table, looking for matches
-
-			USHORT in_sw = IN_SW_GSEC_0;
-			for (const in_sw_tab_t* in_sw_tab = in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
-			{
-				const TEXT* q = in_sw_tab->in_sw_name;
-				const TEXT* p = string + 1;
-
-				// handle orphaned hyphen case
-
-				if (!*p--)
-					break;
-
-				// compare switch to switch name in table
-
-				for (int l = 0; *p; ++l)
-				{
-					if (!*++p)
-					{
-						if (l >= in_sw_tab->in_sw_min_length)
-							in_sw = in_sw_tab->in_sw;
-						else
-							in_sw = IN_SW_GSEC_AMBIG;
-					}
-					if (UPPER(*p) != *q++)
-						break;
-				}
-
-				// end of input means we got a match.  stop looking
-
-				if (!*p)
-					break;
-			}
+			// leave in_sw = IN_SW_GSEC_AMBIG; out for now
+			const Switches::in_sw_tab_t* rc = switches.findSwitch(string);
+			const USHORT in_sw = rc ? rc->in_sw : IN_SW_GSEC_0;
 
 			// this checks to make sure that the switch is not a duplicate.   if
 			// it is a duplicate, it's an error.   if it's not a duplicate, the
@@ -753,14 +724,14 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->user_name[0] = '\0';
 				tdsec->tsec_interactive = false;
 				break;
-			case IN_SW_GSEC_DBA_TRUST_USER:
-			case IN_SW_GSEC_DBA_TRUST_ROLE:
+			case IN_SW_GSEC_DBA_TRUSTED_USER:
+			case IN_SW_GSEC_DBA_TRUSTED_ROLE:
 				tdsec->utilSvc->checkService();
 				// fall through ...
 			case IN_SW_GSEC_PASSWORD:
 			case IN_SW_GSEC_UID:
 			case IN_SW_GSEC_GID:
-			case IN_SW_GSEC_SYSU:
+			case IN_SW_GSEC_SYSUSER:
 			case IN_SW_GSEC_GROUP:
 			case IN_SW_GSEC_FNAME:
 			case IN_SW_GSEC_MNAME:
@@ -800,7 +771,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->gid_specified = true;
 					user_data->gid = 0;
 					break;
-				case IN_SW_GSEC_SYSU:
+				case IN_SW_GSEC_SYSUSER:
 					if (user_data->sys_user_specified)
 					{
 						err_msg_no = GsecMsg34;
@@ -863,7 +834,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->dba_user_name_specified = true;
 					user_data->dba_user_name[0] = '\0';
 					break;
-				case IN_SW_GSEC_DBA_TRUST_USER:
+				case IN_SW_GSEC_DBA_TRUSTED_USER:
 					tdsec->utilSvc->checkService();
 					if (user_data->dba_trust_user_name_specified)
 					{
@@ -873,7 +844,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->dba_trust_user_name_specified = true;
 					user_data->dba_trust_user_name[0] = '\0';
 					break;
-				case IN_SW_GSEC_DBA_TRUST_ROLE:
+				case IN_SW_GSEC_DBA_TRUSTED_ROLE:
 					tdsec->utilSvc->checkService();
 					user_data->trusted_role = true;
 					break;
@@ -921,7 +892,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				GSEC_diag(GsecMsg40);
 				// gsec - invalid switch specified
 				return false;
-			case IN_SW_GSEC_AMBIG:
+			case IN_SW_GSEC_AMBIG: // Not used for now
 				GSEC_diag(GsecMsg41);
 				// gsec - ambiguous switch specified
 				return false;
@@ -1168,8 +1139,10 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 
 	// Call a subroutine to process the input line.
 
+	const Switches switches(gsec_in_sw_table, FB_NELEM(gsec_in_sw_table), false, true);
+
 	SSHORT ret = 0;
-	if (!get_switches(argv, gsec_in_sw_table, tdsec, &quitflag))
+	if (!get_switches(argv, switches, tdsec, &quitflag))
 	{
 		GSEC_diag(GsecMsg16);
 		// gsec - error in switch specifications
@@ -1177,18 +1150,25 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 	}
 	else if (user_data->operation)
 	{
-		if (user_data->operation == HELP_OPER)
+		switch (user_data->operation)
 		{
+		case HELP_OPER:
 			printhelp();
 			ret = -2;
-		}
-		else if (user_data->operation != DIS_OPER && user_data->operation != QUIT_OPER &&
-				 user_data->operation != MAP_SET_OPER && user_data->operation != MAP_DROP_OPER &&
-				 !user_data->user_name_entered)
-		{
-			GSEC_error(GsecMsg18);
-			// gsec - no user name specified
-			ret = -1;
+			break;
+		case DIS_OPER:
+		case QUIT_OPER:
+		case MAP_SET_OPER:
+		case MAP_DROP_OPER:
+			// nothing
+			break;
+		default:
+			if (!user_data->user_name_entered)
+			{
+				GSEC_error(GsecMsg18); // gsec - no user name specified
+				ret = -1;
+			}
+			break;
 		}
 	}
 

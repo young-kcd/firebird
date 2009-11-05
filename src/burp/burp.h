@@ -77,45 +77,45 @@ enum redirect_vals {
 // Record types in backup file
 
 enum rec_type {
-	rec_burp,			// Restore program attributes
-	rec_database,		// Logical database parameters
+	rec_burp,				// Restore program attributes
+	rec_database,			// Logical database parameters
 	rec_global_field,		// Global field description
-	rec_relation,		// Relation description
-	rec_field,			// Local field description
-	rec_index,			// Index description
-	rec_data,			// Data for relation
-	rec_blob,			// Blob
+	rec_relation,			// Relation description
+	rec_field,				// Local field description
+	rec_index,				// Index description
+	rec_data,				// Data for relation
+	rec_blob,				// Blob
 	rec_relation_data,		// Standalone data header
 	rec_relation_end,		// End of data for relation
-	rec_end,			// End of file
-	rec_view,			// View attributes
+	rec_end,				// End of file
+	rec_view,				// View attributes
 	rec_security_class,		// Security class acl
-	rec_trigger,		// Trigger definition
+	rec_trigger,			// Trigger definition
 	rec_physical_db,		// Physical database parameters
-	rec_function,		// Function description
+	rec_function,			// Function description
 	rec_function_arg,		// Function arguement description
-	rec_function_end,		   // End of function and its args
-	rec_gen_id,				 // From blr_gen_id
-	rec_system_type,			// Type of field
-	rec_filter,			// Filter
+	rec_function_end,		// End of function and its args
+	rec_gen_id,				// From blr_gen_id
+	rec_system_type,		// Type of field
+	rec_filter,				// Filter
 	rec_trigger_message,	// Trigger message texts
 	rec_user_privilege,		// User privilege
-	rec_array,		// 23	// Array blob
+	rec_array,				// Array blob (23)
 	rec_field_dimensions,	// Array field dimensions
-	rec_files,			// files for shadowing
-	rec_generator,		// another format for gen-ids
-	rec_procedure,		// Stored procedure
+	rec_files,				// files for shadowing
+	rec_generator,			// another format for gen-ids
+	rec_procedure,			// Stored procedure
 	rec_procedure_prm,		// Stored procedure parameters
-	rec_procedure_end,		  // End of procedure and its args
-	rec_exception,			  // Exception
+	rec_procedure_end,		// End of procedure and its args
+	rec_exception,			// Exception
 	rec_rel_constraint,		// Relation constraints
 	rec_ref_constraint,		// Referential constraints
 	rec_chk_constraint,		// Check constraints
-	rec_charset,		// Character sets
-	rec_collation,		// Collations
-	rec_sql_roles,		// SQL roles
-	rec_mapping,		// Mapping of security names
-	rec_package			// Package
+	rec_charset,			// Character sets
+	rec_collation,			// Collations
+	rec_sql_roles,			// SQL roles
+	rec_mapping,			// Mapping of security names
+	rec_package				// Package
 };
 
 
@@ -318,7 +318,7 @@ enum att_type {
 	att_field_character_length,	// length of field in characters
 	att_field_character_set,	// Charset id of field
 	att_field_collation_id,	// Collation id of field
-	att_field_precision,	// numeric field precision of RDB$FIELDS
+	att_field_precision,	// numeric field precision of RDB$FIELDS (44)
 
 	// Index attributes
 
@@ -841,7 +841,8 @@ public:
 		  defaultCollations(*getDefaultMemoryPool()),
 		  flag_on_line(true),
 		  uSvc(us),
-		  firstMap(true)
+		  firstMap(true),
+		  verboseInterval(10000)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -1006,6 +1007,7 @@ public:
 	bool flag_on_line;	// indicates whether we will bring the database on-line
 	Firebird::UtilSvc* uSvc;
 	bool firstMap;      // this is the first time we entered get_mapping()
+	ULONG verboseInterval;	// How many records should be backed up or restored before we show this message
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h

@@ -1326,7 +1326,7 @@ Roll back all databases or commit databases individually', NULL, NULL);
 (NULL, 'expand_expression', 'expand.c', NULL, 1, 466, NULL, 'Only fields may be subscripted', NULL, NULL);
 (NULL, 'expand_field', 'expand.c', NULL, 1, 467, NULL, '"@1" is not a field and so may not be subscripted', NULL, NULL);
 (NULL, 'MET_modify_field', 'meta.e', NULL, 1, 468, NULL, 'Data type of field @1 may not be changed to or from BLOB', NULL, NULL);
-(NULL, 'main', 'dtr.c', NULL, 1, 469, NULL, 'qli: ignoring unknown switch -@1', NULL, NULL);
+(NULL, 'main', 'dtr.c', NULL, 1, 469, NULL, 'qli: ignoring unknown switch -@1', NULL, 'obsolete, see 529');
 (NULL, 'LEX_token', 'LEX', NULL, 1, 470, NULL, 'literal string  <MAXSYMLEN> characters or longer', NULL, NULL);
 (NULL, 'show_var', 'show.e', NULL, 1, 471, NULL, 'Variable @1', NULL, NULL);
 (NULL, 'show_var', 'show.e', NULL, 1, 472, NULL, '    Query name:	 @1', NULL, NULL);
@@ -1354,8 +1354,7 @@ Roll back all databases or commit databases individually', NULL, NULL);
 (NULL, 'EVAL_value', 'eval.c', NULL, 1, 500, NULL, 'Enter', NULL, NULL);
 (NULL, 'global', 'format.c', NULL, 1, 501, NULL, 'bad kanji found while formatting output', NULL, NULL);
 (NULL, 'print_more', 'help.e', 'This message should be followed by 1 blank space: "Subtopic? "', 1, 502, NULL, 'Subtopic? ', NULL, NULL);
-(NULL, 'print_topic', 'help.e', 'There should be 1 blank space after the colon: " ... stop: "', 1, 503, NULL, '
-type <cr> for next topic or <EOF> to stop: ', NULL, NULL);
+(NULL, 'print_topic', 'help.e', 'There should be 1 blank space after the colon: " ... stop: "', 1, 503, NULL, '\ntype <cr> for next topic or <EOF> to stop: ', NULL, NULL);
 (NULL, 'mover_error', 'mov.c', NULL, 1, 504, NULL, 'unknown data type @1', NULL, NULL);
 (NULL, 'process_statement', 'dtr.c', 'This messages should be preceded by 4 blank spaces: "    reads ..."', 1, 505, NULL, '    reads = !r writes = !w fetches = !f marks = !m', NULL, NULL);
 (NULL, 'process_statement', 'dtr.c', 'This message should be preceded by 4 blank spaces: "    elapsed ... "', 1, 506, NULL, '    elapsed = !e cpu = !u system = !s mem = !x buffers = !b', NULL, NULL);
@@ -1367,6 +1366,23 @@ type <cr> for next topic or <EOF> to stop: ', NULL, NULL);
 (NULL, 'parse_sql_dtype', 'parse.cpp', NULL, 1, 512, NULL, 'Field length should be greater than zero', NULL, NULL);
 -- Do not change the arguments of the previous QLI messages.
 -- Write the new QLI messages here.
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 513, NULL, 'Usage: qli [options] ["<command>"]', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 514, NULL, '   <command> may be a single qli command or a series of qli commands\n   separated by semicolons', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 515, NULL, 'Valid options are:', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 516, NULL, '   -a(pp_script)       application script <name>', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 517, NULL, '   -b(uffers)          set page buffers <n>', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 518, NULL, '   -f(etch_password)   fetch password from file', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 519, NULL, '   -i(nit_script)      startup script <name>', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 520, NULL, '   -n(o_banner)        do not show the welcome message', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 521, NULL, '   -p(assword)         user''s password', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 522, NULL, '   -tra(ce)            show internal parser''s tokens', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 523, NULL, '   -tru(sted_auth)     use trusted authentication', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 524, NULL, '   -u(ser)             user name', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 525, NULL, '   -v(erify)           echo input', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 526, NULL, '   -z                  show program version', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 527, NULL, '   Options can be abbreviated to the unparenthesized characters', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 528, NULL, 'Start qli without [command] to enter interactive mode', NULL, NULL)
+(NULL, 'main', 'dtr.cpp', NULL, 1, 529, NULL, 'qli: ignoring unknown switch @1', NULL, NULL);
 -- GDEF
 (NULL, 'main', 'DDL.C', NULL, 2, 0, NULL, 'gdef version @1', NULL, NULL);
 (NULL, 'main', 'DDL.C', NULL, 2, 1, NULL, 'gdef: unknown switch @1', NULL, NULL);
@@ -1766,42 +1782,40 @@ for user @4 does not exist', NULL, NULL);
 ('gfix_type_shut', 'ALICE_gfix', 'alice.c', NULL, 3, 19, NULL, 'must specify type of shutdown', NULL, NULL);
 ('gfix_retry', 'ALICE_gfix', 'alice.c', NULL, 3, 20, NULL, 'please retry, specifying an option', NULL, NULL);
 ('gfix_opt', 'ALICE_gfix', 'alice.c', NULL, 3, 21, NULL, 'plausible options are:', NULL, NULL);
-('gfix_qualifiers', 'ALICE_gfix', 'alice.c', NULL, 3, 22, NULL, '
-    qualifiers show the major option in parenthesis', NULL, NULL);
+('gfix_qualifiers', 'ALICE_gfix', 'alice.c', NULL, 3, 22, NULL, '\n    Options can be abbreviated to the unparenthesized characters', NULL, NULL);
 ('gfix_retry_db', 'ALICE_gfix', 'alice.c', NULL, 3, 23, NULL, 'please retry, giving a database name', NULL, NULL);
 ('gfix_summary', 'ALICE_gfix', 'alice.c', NULL, 3, 24, NULL, 'Summary of validation errors', NULL, NULL);
-('gfix_opt_active', 'ALICE_gfix', 'alice.c', NULL, 3, 25, NULL, '	-activate	activate shadow file for database usage', NULL, NULL);
-('gfix_opt_attach', 'ALICE_gfix', 'alice.c', NULL, 3, 26, NULL, '	-attach		shutdown new database attachments', NULL, NULL);
+('gfix_opt_active', 'ALICE_gfix', 'alice.c', NULL, 3, 25, NULL, '   -ac(tivate_shadow)   activate shadow file for database usage', NULL, NULL);
+('gfix_opt_attach', 'ALICE_gfix', 'alice.c', NULL, 3, 26, NULL, '   -at(tach)            shutdown new database attachments', NULL, NULL);
 ('gfix_opt_begin_log', 'ALICE_gfix', 'alice.c', NULL, 3, 27, NULL, '	-begin_log	begin logging for replay utility', NULL, NULL);
-('gfix_opt_buffers', 'ALICE_gfix', 'alice.c', NULL, 3, 28, NULL, '	-buffers	set page buffers <n>', NULL, NULL);
-('gfix_opt_commit', 'ALICE_gfix', 'alice.c', NULL, 3, 29, NULL, '	-commit		commit transaction <tr / all>', NULL, NULL);
-('gfix_opt_cache', 'ALICE_gfix', 'alice.c', NULL, 3, 30, NULL, '	-cache		shutdown cache manager', NULL, NULL);
+('gfix_opt_buffers', 'ALICE_gfix', 'alice.c', NULL, 3, 28, NULL, '   -b(uffers)           set page buffers <n>', NULL, NULL);
+('gfix_opt_commit', 'ALICE_gfix', 'alice.c', NULL, 3, 29, NULL, '   -co(mmit)            commit transaction <tr / all>', NULL, NULL);
+('gfix_opt_cache', 'ALICE_gfix', 'alice.c', NULL, 3, 30, NULL, '   -ca(che)             shutdown cache manager', NULL, NULL);
 ('gfix_opt_disable', 'ALICE_gfix', 'alice.c', NULL, 3, 31, NULL, '	-disable	disable WAL', NULL, NULL);
-('gfix_opt_full', 'ALICE_gfix', 'alice.c', NULL, 3, 32, NULL, '	-full		validate record fragments (-v)', NULL, NULL);
-('gfix_opt_force', 'ALICE_gfix', 'alice.c', NULL, 3, 33, NULL, '	-force		force database shutdown', NULL, NULL);
-('gfix_opt_housekeep', 'ALICE_gfix', 'alice.c', NULL, 3, 34, NULL, '	-housekeeping	set sweep interval <n>', NULL, NULL);
-('gfix_opt_ignore', 'ALICE_gfix', 'alice.c', NULL, 3, 35, NULL, '	-ignore		ignore checksum errors', NULL, NULL);
-('gfix_opt_kill', 'ALICE_gfix', 'alice.c', NULL, 3, 36, NULL, '	-kill		kill all unavailable shadow files', NULL, NULL);
-('gfix_opt_list', 'ALICE_gfix', 'alice.c', NULL, 3, 37, NULL, '	-list		show limbo transactions', NULL, NULL);
-('gfix_opt_mend', 'ALICE_gfix', 'alice.c', NULL, 3, 38, NULL, '	-mend		prepare corrupt database for backup', NULL, NULL);
-('gfix_opt_no_update', 'ALICE_gfix', 'alice.c', NULL, 3, 39, NULL, '	-no_update	read-only validation (-v)', NULL, NULL);
-('gfix_opt_online', 'ALICE_gfix', 'alice.c', NULL, 3, 40, NULL, '	-online		database online <single / multi / normal>', NULL, NULL);
-('gfix_opt_prompt', 'ALICE_gfix', 'alice.c', NULL, 3, 41, NULL, '	-prompt		prompt for commit/rollback (-l)', NULL, NULL);
-('gfix_opt_password', 'ALICE_gfix', 'alice.c', NULL, 3, 42, NULL, '	-password	default password', NULL, NULL);
+('gfix_opt_full', 'ALICE_gfix', 'alice.c', NULL, 3, 32, NULL, '   -fu(ll)              validate record fragments (-v)', NULL, NULL);
+('gfix_opt_force', 'ALICE_gfix', 'alice.c', NULL, 3, 33, NULL, '   -fo(rce_shutdown)    force database shutdown', NULL, NULL);
+('gfix_opt_housekeep', 'ALICE_gfix', 'alice.c', NULL, 3, 34, NULL, '   -h(ousekeeping)      set sweep interval <n>', NULL, NULL);
+('gfix_opt_ignore', 'ALICE_gfix', 'alice.c', NULL, 3, 35, NULL, '   -i(gnore)            ignore checksum errors', NULL, NULL);
+('gfix_opt_kill', 'ALICE_gfix', 'alice.c', NULL, 3, 36, NULL, '   -k(ill_shadow)       kill all unavailable shadow files', NULL, NULL);
+('gfix_opt_list', 'ALICE_gfix', 'alice.c', NULL, 3, 37, NULL, '   -l(ist)              show limbo transactions', NULL, NULL);
+('gfix_opt_mend', 'ALICE_gfix', 'alice.c', NULL, 3, 38, NULL, '   -me(nd)              prepare corrupt database for backup', NULL, NULL);
+('gfix_opt_no_update', 'ALICE_gfix', 'alice.c', NULL, 3, 39, NULL, '   -n(o_update)         read-only validation (-v)', NULL, NULL);
+('gfix_opt_online', 'ALICE_gfix', 'alice.c', NULL, 3, 40, NULL, '   -o(nline)            database online <single / multi / normal>', NULL, NULL);
+('gfix_opt_prompt', 'ALICE_gfix', 'alice.c', NULL, 3, 41, NULL, '   -pr(ompt)            prompt for commit/rollback (-l)', NULL, NULL);
+('gfix_opt_password', 'ALICE_gfix', 'alice.c', NULL, 3, 42, NULL, '   -pa(ssword)          default password', NULL, NULL);
 ('gfix_opt_quit_log', 'ALICE_gfix', 'alice.c', NULL, 3, 43, NULL, '	-quit_log	quit logging for replay utility', NULL, NULL);
-('gfix_opt_rollback', 'ALICE_gfix', 'alice.c', NULL, 3, 44, NULL, '	-rollback	rollback transaction <tr / all>', NULL, NULL);
-('gfix_opt_sweep', 'ALICE_gfix', 'alice.c', NULL, 3, 45, NULL, '	-sweep		force garbage collection', NULL, NULL);
-('gfix_opt_shut', 'ALICE_gfix', 'alice.c', NULL, 3, 46, NULL, '	-shut		shutdown <full / single / multi>', NULL, NULL);
-('gfix_opt_two_phase', 'ALICE_gfix', 'alice.c', NULL, 3, 47, NULL, '	-two_phase	perform automated two-phase recovery', NULL, NULL);
-('gfix_opt_tran', 'ALICE_gfix', 'alice.c', NULL, 3, 48, NULL, '	-tran		shutdown transaction startup', NULL, NULL);
-('gfix_opt_use', 'ALICE_gfix', 'alice.c', NULL, 3, 49, NULL, '	-use		use full or reserve space for versions', NULL, NULL);
-('gfix_opt_user', 'ALICE_gfix', 'alice.c', NULL, 3, 50, NULL, '	-user		default user name', NULL, NULL);
-('gfix_opt_validate', 'ALICE_gfix', 'alice.c', NULL, 3, 51, NULL, '	-validate	validate database structure', NULL, NULL);
-('gfix_opt_write', 'ALICE_gfix', 'alice.c', NULL, 3, 52, NULL, '	-write		write synchronously or asynchronously', NULL, NULL);
-('gfix_opt_x', 'ALICE_gfix', 'alice.c', NULL, 3, 53, NULL, '	-x		set debug on', NULL, NULL);
-('gfix_opt_z', 'ALICE_gfix', 'alice.c', NULL, 3, 54, NULL, '	-z		print software version number', NULL, NULL);
-('gfix_rec_err', 'ALICE_gfix', 'alice.c', NULL, 3, 55, NULL, '
-	Number of record level errors	: @1', NULL, NULL);
+('gfix_opt_rollback', 'ALICE_gfix', 'alice.c', NULL, 3, 44, NULL, '   -r(ollback)          rollback transaction <tr / all>', NULL, NULL);
+('gfix_opt_sweep', 'ALICE_gfix', 'alice.c', NULL, 3, 45, NULL, '   -sw(eep)             force garbage collection', NULL, NULL);
+('gfix_opt_shut', 'ALICE_gfix', 'alice.c', NULL, 3, 46, NULL, '   -sh(utdown)          shutdown <full / single / multi>', NULL, NULL);
+('gfix_opt_two_phase', 'ALICE_gfix', 'alice.c', NULL, 3, 47, NULL, '   -tw(o_phase)         perform automated two-phase recovery', NULL, NULL);
+('gfix_opt_tran', 'ALICE_gfix', 'alice.c', NULL, 3, 48, NULL, '   -tra(nsaction)       shutdown transaction startup', NULL, NULL);
+('gfix_opt_use', 'ALICE_gfix', 'alice.c', NULL, 3, 49, NULL, '   -u(se)               use full or reserve space for versions', NULL, NULL);
+('gfix_opt_user', 'ALICE_gfix', 'alice.c', NULL, 3, 50, NULL, '   -user                default user name', NULL, NULL);
+('gfix_opt_validate', 'ALICE_gfix', 'alice.c', NULL, 3, 51, NULL, '   -v(alidate)          validate database structure', NULL, NULL);
+('gfix_opt_write', 'ALICE_gfix', 'alice.c', NULL, 3, 52, NULL, '   -w(rite)             write synchronously or asynchronously', NULL, NULL);
+('gfix_opt_x', 'ALICE_gfix', 'alice.c', NULL, 3, 53, NULL, '   -x                   set debug on', NULL, NULL);
+('gfix_opt_z', 'ALICE_gfix', 'alice.c', NULL, 3, 54, NULL, '   -z                   print software version number', NULL, NULL);
+('gfix_rec_err', 'ALICE_gfix', 'alice.c', NULL, 3, 55, NULL, '\n	Number of record level errors	: @1', NULL, NULL);
 ('gfix_blob_err', 'ALICE_gfix', 'alice.c', NULL, 3, 56, NULL, '	Number of Blob page errors	: @1', NULL, NULL);
 ('gfix_data_err', 'ALICE_gfix', 'alice.c', NULL, 3, 57, NULL, '	Number of data page errors	: @1', NULL, NULL);
 ('gfix_index_err', 'ALICE_gfix', 'alice.c', NULL, 3, 58, NULL, '	Number of index page errors	: @1', NULL, NULL);
@@ -1856,19 +1870,19 @@ COMMIT WORK;
 ('gfix_trn_was_comm', 'TDR_analyze', 'tdr.c', NULL, 3, 106, NULL, 'Transaction @1 was committed, but prior ones were rolled back.', NULL, NULL);
 ('gfix_trn_was_rback', 'TDR_analyze', 'tdr.c', NULL, 3, 107, NULL, 'Transaction @1 was rolled back, but prior ones were committed.', NULL, NULL);
 ('gfix_trn_unknown', 'get_description', 'met.e', NULL, 3, 108, NULL, 'Transaction description item unknown', NULL, NULL);
-('gfix_opt_mode', 'ALICE_gfix', 'alice.c', NULL, 3, 109, NULL, '	-mode		read_only or read_write', NULL, NULL);
+('gfix_opt_mode', 'ALICE_gfix', 'alice.c', NULL, 3, 109, NULL, '   -mo(de)              read_only or read_write database', NULL, NULL);
 ('gfix_mode_req', 'ALICE_gfix', 'alice.c', NULL, 3, 110, NULL, '"read_only" or "read_write" required', NULL, NULL);
-('gfix_opt_SQL_dialect', 'ALICE_gfix', 'alice.c, enter_messages', NULL, 3, 111, NULL, '	-sql_dialect	set database dialect n', NULL, NULL);
+('gfix_opt_SQL_dialect', 'ALICE_gfix', 'alice.c, enter_messages', NULL, 3, 111, NULL, '   -sq(l_dialect)       set database dialect n', NULL, NULL);
 ('gfix_SQL_dialect', 'ALICE_gfix', 'alice.c', NULL, 3, 112, NULL, 'database SQL dialect must be one of ''@1''', NULL, NULL);
 ('gfix_dialect_req', 'ALICE_gfix', 'alice.c', NULL, 3, 113, NULL, 'dialect number required', NULL, NULL);
 ('gfix_pzval_req', 'ALICE_gfix', 'alice.cpp', NULL, 3, 114, NULL, 'positive or zero numeric value required', NULL, NULL);
 -- Do not change the arguments of the previous GFIX messages.
 -- Write the new GFIX messages here.
-('gfix_opt_trusted', 'ALICE_gfix', 'alice.cpp', NULL, 3, 115, NULL, '	-trusted	use trusted authentication', NULL, NULL);
+('gfix_opt_trusted', 'ALICE_gfix', 'alice.cpp', NULL, 3, 115, NULL, '   -tru(sted)           use trusted authentication', NULL, NULL);
 (NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 116, NULL, 'could not open password file @1, errno @2', NULL, NULL);
 (NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 117, NULL, 'could not read password file @1, errno @2', NULL, NULL);
 (NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 118, NULL, 'empty password file @1', NULL, NULL);
-(NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 119, NULL, '	-fetch_password fetch_password from file', NULL, NULL);
+(NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 119, NULL, '   -fe(tch_password)    fetch password from file', NULL, NULL);
 (NULL, 'alice', 'alice.cpp', NULL, 3, 120, NULL, 'usage: gfix [options] <database>', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
@@ -2220,10 +2234,10 @@ COMMIT WORK;
 (NULL, NULL, 'burp.c', NULL, 12, 57, NULL, 'adding file @1, starting at page @2', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 58, NULL, 'array', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 59, NULL, 'backup', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 60, NULL, '	@1B(ACKUP_DATABASE)    backup database to file', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 60, NULL, '    @1B(ACKUP_DATABASE)    backup database to file', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 61, NULL, '		backup file is compressed', NULL, NULL);
-(NULL, NULL, 'burp.c', NULL, 12, 62, NULL, '	@1D(EVICE)             backup file device type on APOLLO (CT or MT)', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 63, NULL, '	@1M(ETA_DATA)          backup or restore metadata only', NULL, NULL);
+(NULL, NULL, 'burp.c', NULL, 12, 62, NULL, '    @1D(EVICE)             backup file device type on APOLLO (CT or MT)', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 63, NULL, '    @1M(ETA_DATA)          backup or restore metadata only', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 64, NULL, 'blob', NULL, NULL);
 ('gbak_open_bkup_error', NULL, 'burp.c', NULL, 12, 65, NULL, 'cannot open backup file @1', NULL, NULL);
 ('gbak_open_error', NULL, 'burp.c', NULL, 12, 66, NULL, 'cannot open status and error output file @1', NULL, NULL);
@@ -2233,12 +2247,12 @@ COMMIT WORK;
 (NULL, NULL, 'burp.c', NULL, 12, 70, NULL, 'committing secondary files', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 71, NULL, 'creating index @1', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 72, NULL, 'committing data for table @1', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 73, NULL, '	@1C(REATE_DATABASE)    create database from backup file (restore)', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 73, NULL, '    @1C(REATE_DATABASE)    create database from backup file (restore)', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 74, NULL, 'created database @1, page_size @2 bytes', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 75, NULL, 'creating file @1', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 76, NULL, 'creating indexes', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 77, NULL, 'database @1 has a page size of @2 bytes.', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 78, NULL, '	@1I(NACTIVE)           deactivate indexes during restore', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 78, NULL, '    @1I(NACTIVE)           deactivate indexes during restore', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 79, NULL, 'do not understand BLOB INFO item @1', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 80, NULL, 'do not recognize @1 attribute @2 -- continuing', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 81, NULL, 'error accessing BLOB column @1 -- continuing', NULL, NULL);
@@ -2257,23 +2271,23 @@ COMMIT WORK;
 (NULL, NULL, 'burp.c', NULL, 12, 94, NULL, 'trigger @1 is invalid', NULL, NULL);
 (NULL, 'burp_usage', 'burp.c', NULL, 12, 95, NULL, 'legal switches are:', NULL, NULL);
 (NULL, 'add_files', 'restore.epp', NULL, 12, 96, NULL, 'length given for initial file (@1) is less than minimum (@2)', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 97, NULL, '	@1E(XPAND)             no data compression', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 98, NULL, '	@1L(IMBO)              ignore transactions in limbo', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 99, NULL, '	@1O(NE_AT_A_TIME)      restore one table at a time', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 97, NULL, '    @1E(XPAND)             no data compression', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 98, NULL, '    @1L(IMBO)              ignore transactions in limbo', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 99, NULL, '    @1O(NE_AT_A_TIME)      restore one table at a time', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 100, NULL, 'opened file @1', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 101, NULL, '	@1P(AGE_SIZE)          override default page size', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 101, NULL, '    @1P(AGE_SIZE)          override default page size', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 102, NULL, 'page size', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 103, NULL, 'page size specified (@1 bytes) rounded up to @2 bytes', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 104, NULL, '	@1Z                    print version number', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 104, NULL, '    @1Z                    print version number', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 105, NULL, 'privilege', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 106, NULL, '     @1 records ignored', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 107, NULL, '   @1 records restored', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 108, NULL, '@1 records written', NULL, NULL);
-(NULL, NULL, 'burp.c', NULL, 12, 109, NULL, '	@1Y  <path>            redirect/suppress status message output', NULL, NULL);
+(NULL, NULL, 'burp.c', NULL, 12, 109, NULL, '    @1Y  <path>            redirect/suppress status message output', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 110, NULL, 'Reducing the database page size from @1 bytes to @2 bytes', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 111, NULL, 'table', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 112, NULL, '	@1REP(LACE_DATABASE)   replace database from backup file (restore)', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 113, NULL, '	@1V(ERIFY)             report each action taken', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 112, NULL, '    @1REP(LACE_DATABASE)   replace database from backup file (restore)', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 113, NULL, '    @1V(ERIFY)             report each action taken', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 114, NULL, 'restore failed for record in table @1', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 115, NULL, '    restoring column @1', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 116, NULL, '    restoring file @1', NULL, NULL);
@@ -2332,26 +2346,26 @@ COMMIT WORK;
 (NULL, 'BURP_print', 'burp.c', NULL, 12, 169, NULL, 'gbak:', NULL, NULL);
 (NULL, NULL, 'restore.e', NULL, 12, 170, NULL, 'committing metadata for table @1', NULL, NULL);
 (NULL, NULL, 'restore.e', NULL, 12, 171, NULL, 'error committing metadata for table @1', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 172, NULL, '	@1K(ILL)               restore without creating shadows', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 172, NULL, '    @1K(ILL)               restore without creating shadows', NULL, NULL);
 (NULL, 'get_index', 'restore.e', NULL, 12, 173, NULL, 'cannot commit index @1', NULL, NULL);
 (NULL, 'add_files', 'restore.e', NULL, 12, 174, NULL, 'cannot commit files', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 175, NULL, '	@1T(RANSPORTABLE)      transportable backup -- data in XDR format', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 175, NULL, '    @1T(RANSPORTABLE)      transportable backup -- data in XDR format', NULL, NULL);
 (NULL, 'BACKUP_backup', 'backup.e', NULL, 12, 176, NULL, 'closing file, committing, and finishing. @1 bytes written', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 177, NULL, '	@1G(ARBAGE_COLLECT)    inhibit garbage collection', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 178, NULL, '	@1IG(NORE)             ignore bad checksums', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 177, NULL, '    @1G(ARBAGE_COLLECT)    inhibit garbage collection', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 178, NULL, '    @1IG(NORE)             ignore bad checksums', NULL, NULL);
 (NULL, 'put_index', 'backup.e', NULL, 12, 179, NULL, '	column @1 used in index @2 seems to have vanished', NULL, NULL);
 (NULL, 'put_index', 'backup.e', NULL, 12, 180, NULL, 'index @1 omitted because @2 of the expected @3 keys were found', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 181, NULL, '	@1FA(CTOR)             blocking factor', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 181, NULL, '    @1FA(CTOR)             blocking factor', NULL, NULL);
 ('gbak_missing_block_fac', 'main', 'burp.c', NULL, 12, 182, NULL, 'blocking factor parameter missing', NULL, NULL);
 ('gbak_inv_block_fac', 'main', 'burp.c', NULL, 12, 183, NULL, 'expected blocking factor, encountered "@1"', NULL, NULL);
 ('gbak_block_fac_specified', 'main', 'burp.c', NULL, 12, 184, NULL, 'a blocking factor may not be used in conjunction with device CT', NULL, NULL);
 (NULL, 'get_generator', 'RESTORE.E', NULL, 12, 185, NULL, 'restoring generator @1 value: @2', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 186, NULL, '	@1OL(D_DESCRIPTIONS)   save old style metadata descriptions', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 187, NULL, '	@1N(O_VALIDITY)        do not restore database validity conditions', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 186, NULL, '    @1OL(D_DESCRIPTIONS)   save old style metadata descriptions', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 187, NULL, '    @1N(O_VALIDITY)        do not restore database validity conditions', NULL, NULL);
 ('gbak_missing_username', 'main()', 'burp.c', NULL, 12, 188, NULL, 'user name parameter missing', NULL, NULL);
 ('gbak_missing_password', 'main()', 'burp.c', NULL, 12, 189, NULL, 'password parameter missing', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 190, NULL, '	@1PAS(SWORD)           Firebird password', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 191, NULL, '	@1USER                 Firebird user name', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 190, NULL, '    @1PAS(SWORD)           Firebird password', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 191, NULL, '    @1USER                 Firebird user name', NULL, NULL);
 (NULL, 'BACKUP_backup', 'backup.e', NULL, 12, 192, NULL, 'writing stored procedures', NULL, NULL);
 (NULL, 'write_procedures', 'backup.e', NULL, 12, 193, NULL, 'writing stored procedure @1', NULL, NULL);
 (NULL, 'write_procedure_prms', 'backup.e', NULL, 12, 194, NULL, 'writing parameter @1 for stored procedure', NULL, NULL);
@@ -2364,7 +2378,7 @@ COMMIT WORK;
 ('gbak_inv_skipped_bytes', NULL, 'burp.c', NULL, 12, 201, NULL, 'expected number of bytes to be skipped, encountered "@1"', NULL, NULL);
 (NULL, NULL, 'restore.e', NULL, 12, 202, NULL, 'adjusting an invalid decompression length from @1 to @2', NULL, NULL);
 (NULL, NULL, 'restore.e', NULL, 12, 203, NULL, 'skipped @1 bytes after reading a bad attribute @2', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 204, NULL, '	@1S(KIP_BAD_DATA)      skip number of bytes after reading bad data', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 204, NULL, '    @1S(KIP_BAD_DATA)      skip number of bytes after reading bad data', NULL, NULL);
 (NULL, NULL, 'restore.e', NULL, 12, 205, NULL, 'skipped @1 bytes looking for next valid attribute, encountered attribute @2', NULL, NULL);
 (NULL, 'write_rel_constraints', 'backup.e', NULL, 12, 206, NULL, 'writing table constraints', NULL, NULL);
 (NULL, 'write_rel_constraints', 'backup.e', NULL, 12, 207, NULL, 'writing constraint @1', NULL, NULL);
@@ -2405,7 +2419,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'cvt_v3_to_v4_intl', 'restore.e', NULL, 12, 236, NULL, 'Converted V3 sub_type: @1 to character_set_id: @2 and collate_id: @3.', NULL, NULL);
 (NULL, 'cvt_v3_to_v4_intl', 'restore.e', NULL, 12, 237, NULL, 'Converted V3 scale: @1 to character_set_id: @2 and callate_id: @3.', NULL, NULL);
 ('gbak_sysmemex', 'MISC_alloc_memory', 'misc.c', NULL, 12, 238, NULL, 'System memory exhausted', NULL, NULL);
-(NULL, 'main()', 'burp.c', NULL, 12, 239, NULL, '	@1NT                   Non-Transportable backup file format', NULL, NULL);
+(NULL, 'main()', 'burp.c', NULL, 12, 239, NULL, '    @1NT                   Non-Transportable backup file format', NULL, NULL);
 (NULL, 'RESTORE_restore', 'restore.e', NULL, 12, 240, NULL, 'Index "@1" failed to activate because:', NULL, NULL);
 (NULL, 'RESTORE_restore', 'restore.e', NULL, 12, 241, NULL, '  The unique index has duplicate values or NULLs.', NULL, NULL);
 (NULL, 'RESTORE_restore', 'restore.e', NULL, 12, 242, NULL, '  Delete or Update duplicate values or NULLs, and activate index with', NULL, NULL);
@@ -2418,15 +2432,15 @@ ERROR: Backup incomplete', NULL, NULL);
 ('write_role_2', 'write_sql_roles', 'backup.e', NULL, 12, 249, NULL, '    writing SQL role: @1', NULL, NULL);
 ('gbak_restore_role_failed', 'get_sql_roles', 'restore.e', NULL, 12, 250, NULL, 'SQL role', NULL, NULL);
 ('restore_role', 'get_sql_roles', 'restore.e', NULL, 12, 251, NULL, '    restoring SQL role: @1', NULL, NULL);
-('gbak_role_op', 'burp_usage', 'burp.c', NULL, 12, 252, NULL, '        @1RO(LE)               Firebird SQL role', NULL, NULL);
+('gbak_role_op', 'burp_usage', 'burp.c', NULL, 12, 252, NULL, '    @1RO(LE)               Firebird SQL role', NULL, NULL);
 ('gbak_role_op_missing', 'BURP_gbak', 'burp.c', NULL, 12, 253, NULL, 'SQL role parameter missing', NULL, NULL);
-('gbak_convert_ext_tables', 'burp_usage', 'burp.c', NULL, 12, 254, NULL, '        @1CO(NVERT)            backup external files as tables', NULL, NULL);
+('gbak_convert_ext_tables', 'burp_usage', 'burp.c', NULL, 12, 254, NULL, '    @1CO(NVERT)            backup external files as tables', NULL, NULL);
 ('gbak_warning', 'BURP_print_warning', 'burp.c', NULL, 12, 255, NULL, 'gbak: WARNING:', NULL, NULL);
 ('gbak_error', 'BURP_print_status', 'burp.c', NULL, 12, 256, NULL, 'gbak: ERROR:', NULL, NULL);
-('gbak_page_buffers', 'burp_usage', 'burp.c', NULL, 12, 257, NULL, '	@1BU(FFERS)            override page buffers default', NULL, NULL);
+('gbak_page_buffers', 'burp_usage', 'burp.c', NULL, 12, 257, NULL, '    @1BU(FFERS)            override page buffers default', NULL, NULL);
 ('gbak_page_buffers_missing', 'BURP_gbak', 'burp.c', NULL, 12, 258, NULL, 'page buffers parameter missing', NULL, NULL);
 ('gbak_page_buffers_wrong_param', 'BURP_gbak', 'burp.c', NULL, 12, 259, NULL, 'expected page buffers, encountered "@1"', NULL, NULL);
-('gbak_page_buffers_restore', 'BURP_gbak', 'GBAK', NULL, 12, 260, NULL, 'page buffers is allowed only on restore or create', NULL, NULL);
+('gbak_page_buffers_restore', 'BURP_gbak', 'burp.cpp', NULL, 12, 260, NULL, 'page buffers is allowed only on restore or create', NULL, NULL);
 (NULL, 'next_volume', 'mvol.c', NULL, 12, 261, NULL, 'Starting with volume #@1, "@2"', NULL, NULL);
 ('gbak_inv_size', 'open_files', 'burp.c', NULL, 12, 262, NULL, 'size specification either missing or incorrect for file @1', NULL, NULL);
 ('gbak_file_outof_sequence', 'open_files', 'burp.c', NULL, 12, 263, NULL, 'file @1 out of sequence', NULL, NULL);
@@ -2442,16 +2456,16 @@ ERROR: Backup incomplete', NULL, NULL);
 ('gbak_svc_name_missing', 'BURP_gbak', 'burp.c', NULL, 12, 273, NULL, 'service name parameter missing', NULL, NULL);
 ('gbak_not_ownr', 'open_files()', 'burp.c', NULL, 12, 274, NULL, 'Cannot restore over current database, must be SYSDBA or owner of the existing database.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 12, 275, NULL, '', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 276, NULL, '	@1USE_(ALL_SPACE)      do not reserve space for record versions', NULL, NULL);
-(NULL, 'burp_usage', 'burp.c', NULL, 12, 277, NULL, '        @1SE(RVICE)            use services manager', NULL, NULL);
-('gbak_opt_mode', 'burp_usage', 'burp.c', NULL, 12, 278, NULL, '	@1MO(DE) <access>      "read_only" or "read_write" access', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 276, NULL, '    @1USE_(ALL_SPACE)      do not reserve space for record versions', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 277, NULL, '    @1SE(RVICE)            use services manager', NULL, NULL);
+('gbak_opt_mode', 'burp_usage', 'burp.c', NULL, 12, 278, NULL, '    @1MO(DE) <access>      "read_only" or "read_write" access', NULL, NULL);
 ('gbak_mode_req', 'BURP_gbak', 'burp.c', NULL, 12, 279, NULL, '"read_only" or "read_write" required', NULL, NULL);
 (NULL, 'RESTORE_restore', 'restore.e', NULL, 12, 280, NULL, 'setting database to read-only access', NULL, NULL);
 ('gbak_just_data', 'main', 'burp.c', NULL, 12, 281, NULL, 'just data ignore all constraints etc.', NULL, NULL);
 ('gbak_data_only', 'restore', 'restore.e', NULL, 12, 282, NULL, 'restoring data only ignoring foreign key, unique, not null & other constraints', NULL, NULL);
 (NULL, 'BACKUP_backup', 'backup.epp', NULL, 12, 283, NULL, 'closing file, committing, and finishing. @1 bytes written', NULL, NULL);
 (NULL, 'burp_usage', 'burp.c', NULL, 12, 284, NULL, +++
-'	@1R(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used)\n				database from backup file (restore)', NULL, NULL);
+'    @1R(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used)\n				database from backup file (restore)', NULL, NULL);
 ('gbak_activating_idx', 'RESTORE_restore', 'restore.epp', NULL, 12, 285, NULL, '    activating and creating deferred index @1', NULL, NULL);
 (NULL, 'get_chk_constraint', 'restore.epp', NULL, 12, 286, NULL, 'check constraint', NULL, NULL);
 (NULL, 'get_exception', 'restore.epp', NULL, 12, 287, NULL, 'exception', NULL, NULL);
@@ -2461,21 +2475,21 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_procedure_prm', 'restore.epp', NULL, 12, 291, NULL, 'procedure parameter', NULL, NULL);
 (NULL, 'get_ref_constraint', 'restore.epp', NULL, 12, 292, NULL, 'referential constraint', NULL, NULL);
 (NULL, 'get_type', 'restore.epp', NULL, 12, 293, NULL, 'type (in RDB$TYPES)', NULL, NULL);
-(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 294, NULL, '	@1NOD(BTRIGGERS)       do not run database triggers', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 294, NULL, '    @1NOD(BTRIGGERS)       do not run database triggers', NULL, NULL);
 -- Do not change the arguments of the previous GBAK messages.
 -- Write the new GBAK messages here.
-(NULL, NULL, 'burp.cpp', NULL, 12, 295, NULL, '	@1TRU(STED)            use trusted authentication', NULL, NULL);
+(NULL, NULL, 'burp.cpp', NULL, 12, 295, NULL, '    @1TRU(STED)            use trusted authentication', NULL, NULL);
 ('write_map_1', 'BACKUP_backup', 'backup.epp', NULL, 12, 296, NULL, 'writing names mapping', NULL, NULL);
 ('write_map_2', 'write_mapping', 'backup.epp', NULL, 12, 297, NULL, '    writing map for @1', NULL, NULL);
 ('get_map_1', 'get_mapping', 'restore.epp', NULL, 12, 298, NULL, '    restoring map for @1', NULL, NULL);
 ('get_map_2', 'get_mapping', 'restore.epp', NULL, 12, 299, NULL, 'name mapping', NULL, NULL);
 ('get_map_3', 'get_mapping', 'restore.epp', NULL, 12, 300, NULL, 'cannot restore arbitrary mapping', NULL, NULL);
 ('get_map_4', 'get_mapping', 'restore.epp', NULL, 12, 301, NULL, 'restoring names mapping', NULL, NULL);
-(NULL, 'burp_usage' 'burp.cpp', NULL, 12, 302, NULL, '	@1FIX_FSS_D(ATA)       fix malformed UNICODE_FSS data', NULL, NULL);
-(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 303, NULL, '	@1FIX_FSS_M(ETADATA)   fix malformed UNICODE_FSS metadata', NULL, NULL);
+(NULL, 'burp_usage' 'burp.cpp', NULL, 12, 302, NULL, '    @1FIX_FSS_D(ATA)       fix malformed UNICODE_FSS data', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 303, NULL, '    @1FIX_FSS_M(ETADATA)   fix malformed UNICODE_FSS metadata', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 304, NULL, 'Character set parameter missing', NULL, NULL);
 (NULL, 'restore', 'restore.epp', NULL, 12, 305, NULL, 'Character set @1 not found', NULL, NULL);
-(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 306, NULL, '        @1FE(TCH_PASSWORD)     fetch password from file', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 306, NULL, '    @1FE(TCH_PASSWORD)     fetch password from file', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 307, NULL, 'too many passwords provided', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 308, NULL, 'could not open password file @1, errno @2', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 309, NULL, 'could not read password file @1, errno @2', NULL, NULL);
@@ -2495,6 +2509,15 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 323, NULL, 'backup options are:', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 324, NULL, 'restore options are:', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 325, NULL, 'general options are:', NULL, NULL);
+('gbak_missing_interval', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 326, NULL, 'verbose interval value parameter missing', NULL, NULL);
+('gbak_wrong_interval', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 327, NULL, 'verbose interval value cannot be smaller than @1', NULL, NULL);
+(NULL, 'burp_usage' 'burp.cpp', NULL, 12, 328, NULL, '    @1VERBI(NT) <n>        verbose information with explicit interval', NULL, NULL);
+('gbak_verify_verbint', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 329, NULL, 'verify (verbose) and verbint options are mutually exclusive', NULL, NULL);
+('gbak_option_only_restore', 'gbak', 'burp.cpp', NULL, 12, 330, NULL, 'option -@1 is allowed only on restore or create', NULL, NULL);
+('gbak_option_only_backup', 'gbak', 'burp.cpp', NULL, 12, 331, NULL, 'option -@1 is allowed only on backup', NULL, NULL);
+('gbak_option_conflict', 'gbak', 'burp.cpp', NULL, 12, 332, NULL, 'options -@1 and -@2 are mutually exclusive', NULL, NULL);
+('gbak_param_conflict', 'gbak', 'burp.cpp', NULL, 12, 333, NULL, 'parameter for option -@1 was already specified with value "@2"', NULL, NULL);
+('gbak_option_repeated', 'gbak', 'burp.cpp', NULL, 12, 334, NULL, 'option -@1 was already specified', NULL, NULL);
 (NULL, 'write_packages', 'backup.epp', NULL, 12, 335, NULL, 'writing package @1', NULL, NULL);
 (NULL, 'BACKUP_backup', 'backup.epp', NULL, 12, 336, NULL, 'writing packages', NULL, NULL);
 (NULL, 'get_package', 'restore.epp', NULL, 12, 337, NULL, 'restoring package @1', NULL, NULL);
@@ -3069,7 +3092,7 @@ Fetches = !f', NULL, NULL);
 ('NO_DB_WIDE_SECCLASS', 'SHOW_metadata', 'show.epp', NULL, 17, 152, NULL, 'There is no database-wide security class', NULL, NULL);
 ('CANNOT_GET_SRV_VER', 'SHOW_metadata', 'show.epp', NULL, 17, 153, NULL, 'Cannot get server version without database connection', NULL, NULL);
 ('USAGE_NODBTRIGGERS', 'ISQL_main', 'isql.epp', NULL, 17, 154, NULL, '	-nod(btriggers)         do not run database triggers', NULL, NULL);
-('USAGE_TRUSTED', 'ISQL_main', 'isql.epp', NULL, 17, 155, NULL, '	-tr(usted)              use Windows trusted authentication', NULL, NULL);
+('USAGE_TRUSTED', 'ISQL_main', 'isql.epp', NULL, 17, 155, NULL, '	-tr(usted)              use trusted authentication', NULL, NULL);
 ('BULK_PROMPT', 'bulk_insert_hack', 'isql.epp', NULL, 17, 156, NULL, 'BULK> ', NULL, NULL);
 -- Do not change the arguments of the previous ISQL messages.
 -- Write the new ISQL messages here.
@@ -3433,36 +3456,126 @@ Analyzing database pages ...', NULL, NULL);
 ('fbsvcmgr_fp_open', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 48, NULL, 'could not open file @1', NULL, NULL);
 ('fbsvcmgr_fp_read', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 49, NULL, 'could not read file @1', NULL, NULL);
 ('fbsvcmgr_fp_empty', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 50, NULL, 'empty file @1', NULL, NULL);
+(NULL, 'main', 'fbsvcmgr.cpp', NULL, 22, 51, NULL, 'Firebird Services Manager version @1', NULL, NULL)
 -- UTL (messages common for many utilities)
 -- All messages use the new format.
-('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_svc and trusted_role are not supported from command line', NULL, NULL);
+('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_user and trusted_role are not supported from command line', NULL, NULL);
 -- NBACKUP
 -- All messages use the new format.
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 1, NULL, 'ERROR: @1.\n', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 2, NULL, 'Physical Backup Manager    Copyright (C) 2004 Firebird development team', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 3, NULL, '  Original idea is of Sean Leyne <sean@@broadviewsoftware.com>', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 4, NULL, '  Designed and implemented by Nickolay Samofatov <skidder@@bssys.com>', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 5, NULL, '  This work was funded through a grant from BroadView Software, Inc.\n', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 6, NULL, 'Usage: nbackup <options>', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 7, NULL, 'valid options are:', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 8, NULL, '  -L <database>                         Lock database for filesystem copy', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 9, NULL, '  -N <database>                         Unlock previously locked database', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 10, NULL, '  -F <database>                         Fixup database after filesystem copy', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 11, NULL, '  -B <level> <database> [<filename>]    Create incremental backup', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 12, NULL, '  -R <database> [<file0> [<file1>...]]  Restore incremental backup', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 13, NULL, '  -U <user>                             User name', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 14, NULL, '  -P <password>                         Password', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 15, NULL, '  -FE <file>                            Fetch password from file', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 16, NULL, '  -T                                    Do not run database triggers', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 17, NULL, '  -S                                    Print database size in pages after lock', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 18, NULL, '  -Z                                    Print program version', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 19, NULL, 'Notes:', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 20, NULL, '  <database> may specify database alias', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 21, NULL, '  incremental backups of multi-file databases are not supported yet', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 22, NULL, '  "stdout" may be used as a value of <filename> for -B option', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 23, NULL, 'PROBLEM ON "%s".', NULL, NULL)
---(NULL, 'nbackup.cpp', 'usage', NULL, 24, 24, NULL, '', NULL, NULL);
---(NULL, 'nbackup.cpp', 'usage', NULL, 24, 25, NULL, '', NULL, NULL);
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 1, NULL, 'ERROR: ', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 2, NULL, 'Physical Backup Manager    Copyright (C) 2004 Firebird development team', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 3, NULL, '  Original idea is of Sean Leyne <sean@@broadviewsoftware.com>', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 4, NULL, '  Designed and implemented by Nickolay Samofatov <skidder@@bssys.com>', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 5, NULL, '  This work was funded through a grant from BroadView Software, Inc.\n', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 6, NULL, 'Usage: nbackup <options>', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 7, NULL, 'exclusive options are:', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 8, NULL, '  -L(OCK) <database>                     Lock database for filesystem copy', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 9, NULL, '  -UN(LOCK) <database>                   Unlock previously locked database', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 10, NULL, '  -F(IXUP) <database>                    Fixup database after filesystem copy', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 11, NULL, '  -B(ACKUP) <level> <db> [<file>]        Create incremental backup', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 12, NULL, '  -R(ESTORE) <db> [<file0> [<file1>...]] Restore incremental backup', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 13, NULL, '  -U(SER) <user>                         User name', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 14, NULL, '  -P(ASSWORD) <password>                 Password', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 15, NULL, '  -FETCH_PASSWORD <file>                 Fetch password from file', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 16, NULL, '  -NOD(BTRIGGERS)                        Do not run database triggers', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 17, NULL, '  -S(IZE)                                Print database size in pages after lock', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 18, NULL, '  -Z                                     Print program version', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 19, NULL, 'Notes:', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 20, NULL, '  <database> may specify database alias', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 21, NULL, '  incremental backups of multi-file databases are not supported yet', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 22, NULL, '  "stdout" may be used as a value of <filename> for -B option', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 23, NULL, 'PROBLEM ON "@1".', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 24, NULL, 'general options are:', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 25, NULL, 'switches can be abbreviated to the unparenthesized characters', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 26, NULL, '  option -S(IZE) only is valid together with -L(OCK)', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 27, NULL, '  for historical reasons, -N is equivalent to -UN(LOCK)', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 28, NULL, '  and -T is equivalent to -NOD(BTRIGGERS)', NULL, NULL)
+('nbackup_missing_param', 'missingParameterForSwitch', 'nbackup.cpp', NULL, 24, 29, NULL, 'Missing parameter for switch @1', NULL, NULL)
+('nbackup_allowed_switches', 'singleAction', 'nbackup.cpp', NULL, 24, 30, NULL, 'Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified', NULL, NULL)
+('nbackup_unknown_param', 'nbackup', 'nbackup.cpp', NULL, 24, 31, NULL, 'Unrecognized parameter @1', NULL, NULL)
+('nbackup_unknown_switch', 'nbackup', 'nbackup.cpp', NULL, 24, 32, NULL, 'Unknown switch @1', NULL, NULL)
+('nbackup_nofetchpw_svc', 'nbackup', 'nbackup.cpp', NULL, 24, 33, NULL, 'Fetch password can''t be used in service mode', NULL, NULL)
+('nbackup_pwfile_error', 'nbackup', 'nbackup.cpp', NULL, 24, 34, NULL, 'Error working with password file "@1"', NULL, NULL)
+('nbackup_size_with_lock', 'nbackup', 'nbackup.cpp', NULL, 24, 35, NULL, 'Switch -SIZE can be used only with -LOCK', NULL, NULL)
+('nbackup_no_switch', 'nbackup', 'nbackup.cpp', NULL, 24, 36, NULL, 'None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified', NULL, NULL)
+(NULL, 'b_error::raise', 'nbackup.cpp', NULL, 24, 37, NULL, 'Failure: ', NULL, NULL)
+(NULL, 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 38, NULL, 'Enter name of the backup file of level @1 ("." - do not restore further):', NULL, NULL)
+('nbackup_err_read', 'NBackup::read_file', 'nbackup.cpp', NULL, 24, 39, NULL, 'IO error (@1) reading file: @2', NULL, NULL)
+('nbackup_err_write', 'NBackup::write_file', 'nbackup.cpp', NULL, 24, 40, NULL, 'IO error (@1) writing file: @2', NULL, NULL)
+('nbackup_err_seek', 'NBackup::seek_file', 'nbackup.cpp', NULL, 24, 41, NULL, 'IO error (@1) seeking file: @2', NULL, NULL)
+('nbackup_err_opendb', 'NBackup::open_database_(write/scan)', 'nbackup.cpp', NULL, 24, 42, NULL, 'Error (@1) opening database file: @2', NULL, NULL)
+('nbackup_err_fadvice', 'NBackup::open_database_scan', 'nbackup.cpp', NULL, 24, 43, NULL, 'Error (@1) in posix_fadvise(@2) for database @3', NULL, NULL)
+('nbackup_err_createdb', 'NBackup::create_database', 'nbackup.cpp', NULL, 24, 44, NULL, 'Error (@1) creating database file: @2', NULL, NULL)
+('nbackup_err_openbk', 'NBackup::open_backup_scan', 'nbackup.cpp', NULL, 24, 45, NULL, 'Error (@1) opening backup file: @2', NULL, NULL)
+('nbackup_err_createbk', 'NBackup::create_backup', 'nbackup.cpp', NULL, 24, 46, NULL, 'Error (@1) creating backup file: @2', NULL, NULL)
+('nbackup_err_eofdb', 'NBackup::fixup_database', 'nbackup.cpp', NULL, 24, 47, NULL, 'Unexpected end of database file @1', NULL, NULL)
+('nbackup_fixup_wrongstate', 'NBackup::fixup_database', 'nbackup.cpp', NULL, 24, 48, NULL, 'Database @1 is not in state (@2) to be safely fixed up', NULL, NULL)
+('nbackup_err_db', 'NBackup::pr_error', 'nbackup.cpp', NULL, 24, 49, NULL, 'Database error', NULL, NULL)
+('nbackup_userpw_toolong', 'NBackup::attach_database', 'nbackup.cpp', NULL, 24, 50, NULL, 'Username or password is too long', NULL, NULL)
+('nbackup_lostrec_db', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 51, NULL, 'Cannot find record for database "@1" backup level @2 in the backup history', NULL, NULL)
+('nbackup_lostguid_db', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 52, NULL, 'Internal error. History query returned null SCN or GUID', NULL, NULL)
+('nbackup_err_eofhdrdb', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 53, NULL, 'Unexpected end of file when reading header of database file "@1" (stage @2)', NULL, NULL)
+('nbackup_db_notlock', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 54, NULL, 'Internal error. Database file is not locked. Flags are @1', NULL, NULL)
+('nbackup_lostguid_bk', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 55, NULL, 'Internal error. Cannot get backup guid clumplet', NULL, NULL)
+('nbackup_page_changed', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 56, NULL, 'Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)', NULL, NULL)
+('nbackup_dbsize_inconsistent', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 57, NULL, 'Database file size is not a multiple of page size', NULL, NULL)
+('nbackup_failed_lzbk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 58, NULL, 'Level 0 backup is not restored', NULL, NULL)
+('nbackup_err_eofhdrbk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 59, NULL, 'Unexpected end of file when reading header of backup file: @1', NULL, NULL)
+('nbackup_invalid_incbk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 60, NULL, 'Invalid incremental backup file: @1', NULL, NULL)
+('nbackup_unsupvers_incbk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 61, NULL, 'Unsupported version @1 of incremental backup file: @2', NULL, NULL)
+('nbackup_invlevel_incbk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 62, NULL, 'Invalid level @1 of incremental backup file: @2, expected @3', NULL, NULL)
+('nbackup_wrong_orderbk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 63, NULL, 'Wrong order of backup files or invalid incremental backup file detected, file: @1', NULL, NULL)
+('nbackup_err_eofbk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 64, NULL, 'Unexpected end of backup file: @1', NULL, NULL)
+('nbackup_err_copy', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 65, NULL, 'Error (@1) creating database file: @2 via copying from: @3', NULL, NULL)
+('nbackup_err_eofhdr_restdb', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 66, NULL, 'Unexpected end of file when reading header of restored database file (stage @1)', NULL, NULL)
+('nbackup_lostguid_l0bk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 67, NULL, 'Cannot get backup guid clumplet from L0 backup', NULL, NULL)
+(NULL, 'nbackup', 'nbackup.cpp', NULL, 24, 68, NULL, 'Physical Backup Manager version @1', NULL, NULL)
+(NULL, 'restore_database', 'nbackup.cpp', NULL, 24, 69, NULL, 'Enter name of the backup file of level @1 ("." - do not restore further):', NULL, NULL)
+--('nbackup_', '', 'nbackup.cpp', NULL, 24, , NULL, '', NULL, NULL)
+-- FBTRACEMGR
+-- All messages use the new format.
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 2, NULL, 'ERROR: ', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 3, NULL, 'Firebird Trace Manager.', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 4, NULL, 'Usage: fbtracemgr <action> [<parameters>]', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 5, NULL, 'Actions:', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 6, NULL, '  -STA[RT]                              Start trace session', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 7, NULL, '  -STO[P]                               Stop trace session', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 8, NULL, '  -SU[SPEND]                            Suspend trace session', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 9, NULL, '  -R[ESUME]                             Resume trace session', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 10, NULL, '  -L[IST]                               List existing trace sessions', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 11, NULL, '  -Z                                    Show program version', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 12, NULL, 'Action parameters:', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 13, NULL, '  -N[AME]    <string>                   Session name', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 14, NULL, '  -I[D]      <number>                   Session ID', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 15, NULL, '  -C[ONFIG]  <string>                   Trace configuration file name', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 16, NULL, 'Connection parameters:', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 17, NULL, '  -SE[RVICE]  <string>                  Service name', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 18, NULL, '  -U[SER]     <string>                  User name', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 19, NULL, '  -P[ASSWORD] <string>                  Password', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 20, NULL, '  -FE[TCH]    <string>                  Fetch password from file', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 21, NULL, '  -T[RUSTED]  <string>                  Force trusted authentication', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 22, NULL, 'Examples:', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 23, NULL, '  fbtracemgr -SE remote_host:service_mgr -USER SYSDBA -PASS masterkey -LIST', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 24, NULL, '  fbtracemgr -SE service_mgr -START -NAME my_trace -CONFIG my_cfg.txt', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 25, NULL, '  fbtracemgr -SE service_mgr -SUSPEND -ID 2', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 26, NULL, '  fbtracemgr -SE service_mgr -RESUME -ID 2', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 27, NULL, '  fbtracemgr -SE service_mgr -STOP -ID 4', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 28, NULL, 'Notes:', NULL, NULL)
+(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 29, NULL, '  Press CTRL+C to stop interactive trace session', NULL, NULL)
+('trace_conflict_acts', 'usage', 'TraceCmdLine.cpp', NULL, 25, 30, NULL, 'conflicting actions "@1" and "@2" found', NULL, NULL)
+('trace_act_notfound', 'usage', 'TraceCmdLine.cpp', NULL, 25, 31, NULL, 'action switch not found', NULL, NULL)
+('trace_switch_once', 'usage', 'traceCmdLine.cpp', NULL, 25, 32, NULL, 'switch "@1" must be set only once', NULL, NULL)
+('trace_param_val_miss', 'usage', 'TraceCmdLine.cpp', NULL, 25, 33, NULL, 'value for switch "@1" is missing', NULL, NULL)
+('trace_param_invalid', 'usage', 'TraceCmdLine.cpp', NULL, 25, 34, NULL, 'invalid value ("@1") for switch "@2"', NULL, NULL)
+('trace_switch_unknown', 'usage', 'TraceCmdLine.cpp', NULL, 25, 35, NULL, 'unknown switch "@1" encountered', NULL, NULL)
+('trace_switch_svc_only', 'usage', 'TraceCmdLine.cpp', NULL, 25, 36, NULL, 'switch "@1" can be used by service only', NULL, NULL)
+('trace_switch_user_only', 'usage', 'TraceCmdLine.cpp', NULL, 25, 37, NULL, 'switch "@1" can be used by interactive user only', NULL, NULL)
+('trace_switch_param_miss', 'usage', 'TraceCmdLine.cpp', NULL, 25, 38, NULL, 'mandatory parameter "@1" for switch "@2" is missing', NULL, NULL)
+('trace_param_act_notcompat', 'usage', 'TraceCmdLine.cpp', NULL, 25, 39, NULL, 'parameter "@1" is incompatible with action "@2"', NULL, NULL)
+('trace_mandatory_switch_miss', 'usage', 'TraceCmdLine.cpp', NULL, 25, 40, NULL, 'mandatory switch "@1" is missing', NULL, NULL)
+--(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, , NULL, '', NULL, NULL)
+--(NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, , NULL, '', NULL, NULL)
 stop
 
 COMMIT WORK;

@@ -41,8 +41,6 @@
 #include "../jrd/svc.h"
 #include "../jrd/constants.h"
 #include "../jrd/jrd_pwd.h"
-#include "../alice/aliceswi.h"
-#include "../burp/burpswi.h"
 #include "../jrd/ibase.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
@@ -57,9 +55,6 @@
 #include "../jrd/utl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/enc_proto.h"
-#include "../utilities/gsec/gsecswi.h"
-#include "../utilities/gstat/dbaswi.h"
-#include "../utilities/nbackup/nbkswi.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -70,6 +65,15 @@
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/trace/TraceService.h"
+
+// The switches tables. Needed only for utilities that run as service, too.
+#include "../common/classes/Switches.h"
+#include "../alice/aliceswi.h"
+#include "../burp/burpswi.h"
+#include "../utilities/gsec/gsecswi.h"
+#include "../utilities/gstat/dbaswi.h"
+#include "../utilities/nbackup/nbkswi.h"
+#include "../jrd/trace/traceswi.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -2293,8 +2297,9 @@ void Service::finish(USHORT flag)
 void Service::conv_switches(ClumpletReader& spb, string& switches)
 {
 	spb.rewind();
-	if (spb.getClumpTag() < isc_action_min || spb.getClumpTag() > isc_action_max) {
-		return;					/* error - action not defined */
+	const UCHAR test = spb.getClumpTag();
+	if (test < isc_action_min || test >= isc_action_max) {
+		return;					// error - action not defined
 	}
 
 	// convert to string
@@ -2307,9 +2312,9 @@ void Service::conv_switches(ClumpletReader& spb, string& switches)
 }
 
 
-const TEXT* Service::find_switch(int in_spb_sw, const in_sw_tab_t* table)
+const TEXT* Service::find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table)
 {
-	for (const in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
+	for (const Switches::in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
 		if (in_spb_sw == in_sw_tab->in_spb_sw)
 			return in_sw_tab->in_sw_name;
@@ -2566,6 +2571,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			case isc_spb_bkp_factor:
 			case isc_spb_res_buffers:
 			case isc_spb_res_page_size:
+			case isc_spb_verbint:
 				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
 				{
 					return false;
@@ -2747,7 +2753,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 
 bool Service::get_action_svc_bitmask(const ClumpletReader& spb,
-									 const in_sw_tab_t* table,
+									 const Switches::in_sw_tab_t* table,
 									 string& switches)
 {
 	const int opt = spb.getInt();
@@ -2791,7 +2797,7 @@ void Service::get_action_svc_data(const ClumpletReader& spb,
 
 
 bool Service::get_action_svc_parameter(UCHAR action,
-									   const in_sw_tab_t* table,
+									   const Switches::in_sw_tab_t* table,
 									   string& switches)
 {
 	const TEXT* s_ptr = find_switch(action, table);

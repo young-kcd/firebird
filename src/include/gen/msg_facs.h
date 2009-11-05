@@ -48,6 +48,8 @@ static const struct _facilities facilities[] =
 	{21,  "GSTAT     "},
 	{22,  "FBSVCMGR  "},
 	{23,  "UTL       "},
+	{24,  "NBACKUP   "},
+	{25,  "FBTRACEMGR"},
 	{0, NULL}
 };
 

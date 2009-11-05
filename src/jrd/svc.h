@@ -36,6 +36,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/SafeArg.h"
 #include "../common/UtilSvc.h"
+#include "../common/classes/Switches.h"
 
 // forward decl.
 struct serv_entry;
@@ -212,12 +213,13 @@ private:
 	// Convert spb flags to utility switches
 	static void			conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Find spb switch in switch table
-	static const TEXT*	find_switch(int in_spb_sw, const in_sw_tab_t* table);
+	static const TEXT*	find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table);
 	// Loop through the appropriate switch table looking for the text for the given command switch
 	static bool			process_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Get bitmask from within spb buffer, find corresponding switches within specified table,
 	// add them to the command line
-	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb, const in_sw_tab_t* table,
+	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb, 
+									   const Switches::in_sw_tab_t* table,
 									   Firebird::string& sw);
 	// Get string from within spb buffer, add it to the command line
 	static void get_action_svc_string(const Firebird::ClumpletReader& spb, Firebird::string& sw);
@@ -225,7 +227,8 @@ private:
 	static void get_action_svc_data(const Firebird::ClumpletReader& spb, Firebird::string& sw);
 	// Get parameter from within spb buffer, find corresponding switch within specified table,
 	// add it to the command line
-	static bool get_action_svc_parameter(UCHAR tag, const in_sw_tab_t* table, Firebird::string&);
+	static bool get_action_svc_parameter(UCHAR tag, const Switches::in_sw_tab_t* table, 
+										 Firebird::string&);
 	// Create 'SYSDBA needed' error in status vector
 	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);
 	// Does info buffer have enough space for SLONG?

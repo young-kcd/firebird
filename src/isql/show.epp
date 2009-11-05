@@ -48,6 +48,7 @@
 #include "../jrd/intlobj_new.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
+#include "../isql/iutils_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../isql/extra_proto.h"
@@ -359,7 +360,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			value_out = isc_vax_integer(d, length);
 			if (translate)
 			{
-				ISQL_msg_get(NUMBER_PAGES, msg, SafeArg() << value_out);
+				IUTILS_msg_get(NUMBER_PAGES, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
@@ -370,7 +371,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			value_out = isc_vax_integer(d, length);
 			if (translate)
 			{
-				ISQL_msg_get(SWEEP_INTERV, msg, SafeArg() << value_out);
+				IUTILS_msg_get(SWEEP_INTERV, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
@@ -406,7 +407,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			value_out = isc_vax_integer(d, length);
 			if (translate)
 			{
-				ISQL_msg_get(BASE_LEVEL, msg, SafeArg() << value_out);
+				IUTILS_msg_get(BASE_LEVEL, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
@@ -417,7 +418,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 			value_out = isc_vax_integer(d, length);
 			if (translate)
 			{
-				ISQL_msg_get(LIMBO, msg, SafeArg() << value_out);
+				IUTILS_msg_get(LIMBO, msg, SafeArg() << value_out);
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
@@ -644,7 +645,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					first = false;
 
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-						ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
 					else
 						strcpy (SQL_identifier, object);
 
@@ -680,7 +681,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_sql_role:
 				case obj_user: // Users can be machine\user and need quoting
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-						ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
 					}
 					else
 						strcpy (SQL_identifier, PRV.RDB$USER);
@@ -755,7 +756,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					fb_utils::exact_name(PRV.RDB$FIELD_NAME);
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
-						ISQL_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id (PRV.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 						sprintf(col_string, " (%s)", SQL_identifier);
 					}
 					else {
@@ -782,7 +783,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				first = false;
 
 				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
 				else
 					strcpy (SQL_identifier, object);
 
@@ -833,7 +834,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_procedure:
 				case obj_sql_role:
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-						ISQL_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
 					}
 					else
 						strcpy (SQL_identifier, PRV.RDB$USER);
@@ -877,7 +878,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					with_option[0] = '\0';
 
 				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-					ISQL_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
 				}
 				else
 					strcpy (SQL_identifier, object);
@@ -925,7 +926,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				fb_utils::exact_name(PRV.RDB$RELATION_NAME);
 				strcpy (role_name, PRV.RDB$RELATION_NAME);
 				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					ISQL_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id (role_name, SQL_identifier, DBL_QUOTE);
 				else
 					strcpy (SQL_identifier, role_name);
 
@@ -1029,9 +1030,9 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 		const char* grantor = fb_utils::exact_name(PRV.RDB$GRANTOR);
 		if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			role = SQL_identifier;
-			ISQL_copy_SQL_id(PRV.RDB$USER, SQL_identifier2, DBL_QUOTE);
+			IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier2, DBL_QUOTE);
 			user_string = SQL_identifier2;
 		}
 		isqlGlob.printf("GRANT %s TO %s%s%s%s%s", role,
@@ -1110,7 +1111,7 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 			fflush(fp);
 		}
 		else
-			ISQL_printf(fp, buffer);
+			IUTILS_printf(fp, buffer);
 	}
 
 	if (endedWithCr)
@@ -1210,7 +1211,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 	if (!cmd[1] || !*cmd[1])
 	{
 		TEXT msg_string[MSG_LENGTH];
-		ISQL_msg_get(VALID_OPTIONS, msg_string);
+		IUTILS_msg_get(VALID_OPTIONS, msg_string);
 		isqlGlob.printf("%s\n", msg_string);
 		showoptions.showCommands(isqlGlob.Out);
 		return ps_ERR;
@@ -1222,12 +1223,12 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 	if ((!strcmp(cmd[1], "VERSION")) || (!strcmp(cmd[1], "VER")))
 	{
 		TEXT msg_string[MSG_LENGTH];
-		ISQL_msg_get(VERSION, msg_string, SafeArg() << FB_VERSION);
+		IUTILS_msg_get(VERSION, msg_string, SafeArg() << FB_VERSION);
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isqlGlob.printf("Server version:%s", NEWLINE);
 		if (isc_version(&DB, local_fprintf, NULL))
 		{
-			ISQL_msg_get(CANNOT_GET_SRV_VER, msg_string);
+			IUTILS_msg_get(CANNOT_GET_SRV_VER, msg_string);
 			STDERROUT(msg_string);
 		}
 	}
@@ -1357,12 +1358,12 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		else
 		{
 			TEXT msg[MSG_LENGTH];
-			ISQL_msg_get(MSG_TABLES, msg);
+			IUTILS_msg_get(MSG_TABLES, msg);
 			isqlGlob.printf("%s%s", msg, NEWLINE);
 			show_all_tables(1);
-			ISQL_msg_get(MSG_FUNCTIONS, msg);
+			IUTILS_msg_get(MSG_FUNCTIONS, msg);
 			show_functions("", 1, msg);
-			ISQL_msg_get(MSG_COLLATIONS, msg);
+			IUTILS_msg_get(MSG_COLLATIONS, msg);
 			show_collations("", 1, msg, true);
 		}
 		break;
@@ -1694,9 +1695,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 	{
 		TEXT key_string[MSG_LENGTH];
 		if (*cmd[2] == '"')
-			ISQL_msg_get(key, key_string, SafeArg() << lcmd[2]);
+			IUTILS_msg_get(key, key_string, SafeArg() << lcmd[2]);
 		else
-			ISQL_msg_get(key, key_string, SafeArg() << cmd[2]);
+			IUTILS_msg_get(key, key_string, SafeArg() << cmd[2]);
 		STDERROUT(key_string);
 	}
 
@@ -1735,7 +1736,7 @@ static void remove_delimited_double_quotes(TEXT* string)
  *	delimited SQL identifier. Unescape embedded double quotes.
  *
  **************************************/
-	ISQL_remove_and_unescape_quotes(string, DBL_QUOTE);
+	IUTILS_remove_and_unescape_quotes(string, DBL_QUOTE);
 }
 
 
@@ -2184,12 +2185,12 @@ static void show_comment(const char* objtype, char* name1, char* name2,
 	{
 		if (name1)
 		{
-			ISQL_copy_SQL_id (name1, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (name1, SQL_identifier, DBL_QUOTE);
 			name1 = SQL_identifier;
 		}
 		if (name2)
 		{
-			ISQL_copy_SQL_id (name2, SQL_identifier2, DBL_QUOTE);
+			IUTILS_copy_SQL_id (name2, SQL_identifier2, DBL_QUOTE);
 			name2 = SQL_identifier2;
 		}
 	}
@@ -3438,7 +3439,7 @@ static processing_state show_generators(const SCHAR* object)
 			// Get the current id for each generator
 
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
-				ISQL_copy_SQL_id (GEN.RDB$GENERATOR_NAME, gen_name, DBL_QUOTE);
+				IUTILS_copy_SQL_id (GEN.RDB$GENERATOR_NAME, gen_name, DBL_QUOTE);
 			}
 			else { // If we are extracting in dialect 1, identifiers may cause failures.
 				strcpy(gen_name, GEN.RDB$GENERATOR_NAME);
@@ -3999,7 +4000,7 @@ static processing_state show_role(const SCHAR* object)
 				fb_utils::exact_name(PRV.RDB$RELATION_NAME);
 				strcpy(role_name, PRV.RDB$RELATION_NAME);
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					ISQL_copy_SQL_id(role_name, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id(role_name, SQL_identifier, DBL_QUOTE);
 				else
 					strcpy(SQL_identifier, role_name);
 
@@ -4021,7 +4022,7 @@ static processing_state show_role(const SCHAR* object)
 			fb_utils::exact_name(R.RDB$ROLE_NAME);
 			strcpy(role_name, R.RDB$ROLE_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-				ISQL_copy_SQL_id(role_name, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id(role_name, SQL_identifier, DBL_QUOTE);
 			else
 				strcpy(SQL_identifier, role_name);
 
@@ -4457,13 +4458,13 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 
 				if (!REFC.RDB$UPDATE_RULE.NULL)
 				{
-					ISQL_truncate_term (REFC.RDB$UPDATE_RULE, sizeof(REFC.RDB$UPDATE_RULE));
+					IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, sizeof(REFC.RDB$UPDATE_RULE));
 					ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " On Update", false);
 				}
 
 				if (!REFC.RDB$DELETE_RULE.NULL)
 				{
-					ISQL_truncate_term (REFC.RDB$DELETE_RULE, sizeof(REFC.RDB$DELETE_RULE));
+					IUTILS_truncate_term (REFC.RDB$DELETE_RULE, sizeof(REFC.RDB$DELETE_RULE));
 					ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " On Delete", false);
 				}
 
@@ -4808,7 +4809,7 @@ static processing_state show_users()
 				if (rc == OBJECT_NOT_FOUND)
 				{
 					// First time in the loop, print title.
-					ISQL_msg_get(USERS_IN_DB, msg);
+					IUTILS_msg_get(USERS_IN_DB, msg);
 					isqlGlob.printf("%s\n", msg);
 					rc = SKIP; // We found at least one user.
 				}
@@ -4833,7 +4834,7 @@ static processing_state show_users()
 			if (newline)
 				isqlGlob.printf("\n");
 
-			ISQL_msg_get(OUTPUT_TRUNCATED, msg);
+			IUTILS_msg_get(OUTPUT_TRUNCATED, msg);
 			isqlGlob.printf("%s\n", msg);
 			return rc; // If we got some items, we are (partially) successful.
 		}

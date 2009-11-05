@@ -39,6 +39,7 @@
 #include "../dudley/trn_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
+#include "../common/classes/Switches.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -87,7 +88,7 @@ enum in_sw_values
 	IN_SW_GDEF_FETCH_PASS	// fetch password from file
 };
 
-static const in_sw_tab_t gdef_in_sw_table[] =
+static const Switches::in_sw_tab_t gdef_in_sw_table[] =
 {
 	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, false, 0, 0,
 		"\t\textract definition from database"}, 	/* extract DDL from database */
@@ -201,7 +202,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 			in_sw = IN_SW_GDEF_0;
 			const TEXT* q;
-			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
+			for (const Switches::in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
 				q = in_sw_tab->in_sw_name; in_sw_tab++)
 			{
 				const TEXT* p = string + 1;
@@ -319,7 +320,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			if (*string != '?')
 				DDL_msg_put(1, SafeArg() << string);	/* msg 1: gdef: unknown switch %s */
 			DDL_msg_put(2);	/* msg 2: \tlegal switches are: */
-			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
+			for (const Switches::in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
 				in_sw_tab->in_sw; in_sw_tab++)
 			{
 				if (in_sw_tab->in_sw_text) {

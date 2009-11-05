@@ -77,9 +77,6 @@ DATABASE DB = STATIC FILENAME "yachts.lnk" RUNTIME * dbb_file;
 namespace // unnamed, private
 {
 
-// VERBOSE INTERVAL WHEN BACKING RECORDS
-const ULONG BACKUP_VERBOSE_INTERVAL = 20000;
-
 #define PUT_MESSAGE(attrib, attrib2, message) put_message((attrib), (attrib2), (message), sizeof(message))
 #define PUT_TEXT(attribute, text)	put_text ((attribute), (text), sizeof(text))
 #define COPY(source, target)       copy ((source), (target), sizeof(target))
@@ -191,7 +188,7 @@ enum backup_capabilities
 								// Table rdb$packages
 								// Type of rdb$triggers.rdb$trigger_type changed from SMALLINT to BIGINT
 };
-// ASF: Engine that works with ODS11.1 supports access to non-existent system fields.
+// ASF: Engine that works with ODS11.1 and newer supports access to non-existent system fields.
 // Reads returns NULL and writes do nothing.
 
 #ifdef DEBUG
@@ -1894,7 +1891,7 @@ void put_data(burp_rel* relation)
 			break;
 		records++;
 		// Verbose records
-		if ((records % BACKUP_VERBOSE_INTERVAL) == 0)
+		if ((records % tdgbl->verboseInterval) == 0)
 			BURP_verbose(108, SafeArg() << records);
 
 		put(tdgbl, (UCHAR) rec_data);

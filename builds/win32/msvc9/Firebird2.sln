@@ -131,6 +131,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gsec", "gsec.vcproj", "{704
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gsplit", "gsplit.vcproj", "{B7F22B7F-9937-4874-9A8B-6AB4E36E74A5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gstat", "gstat.vcproj", "{7E862973-37C4-4202-80E7-490ED4DEDA14}"
 	ProjectSection(ProjectDependencies) = postProject

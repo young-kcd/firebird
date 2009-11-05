@@ -82,7 +82,7 @@ const int DB_VERSION_DDL10		= 100; // ods10 db, IB6, FB1, FB1.5
 const int DB_VERSION_DDL11		= 110; // ods11 db, FB2
 const int DB_VERSION_DDL11_1	= 111; // ods11.1 db, FB2.1
 const int DB_VERSION_DDL11_2	= 112; // ods11.2 db, FB2.5
-const int DB_VERSION_DDL12_0	= 120; // ods12.0 db, FB3.0
+const int DB_VERSION_DDL12		= 120; // ods12.0 db, FB3.0
 
 const int DB_VERSION_OLDEST_SUPPORTED = DB_VERSION_DDL8;  // IB4.0 is ods8
 
@@ -95,7 +95,6 @@ const int DEFERRED_ACTIVE		= 3;	// RDB$INDEX_INACTIVE setting for Foreign Keys
 										// -bsriram, 11-May-1999      BUG: 10016
 
 
-const int RESTORE_VERBOSE_INTERVAL	= 10000;
 const int burp_msg_fac				= 12;
 
 enum scan_attr_t
@@ -489,6 +488,8 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	// Change ownership of any packages
 	for (burp_pkg* package = tdgbl->packages; package; package = package->pkg_next)
 	{
+		fb_assert(tdgbl->RESTORE_ods >= DB_VERSION_DDL12);
+
 		if (package->pkg_owner[0])
 		{
 			FOR (REQUEST_HANDLE req_handle6)
@@ -521,7 +522,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	{
 		if (procedure->prc_owner[0])
 		{
-			if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12_0)
+			if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
 			{
 				FOR (REQUEST_HANDLE req_handle4)
 					X IN RDB$PROCEDURES
@@ -865,6 +866,7 @@ void check_db_version(BurpGlobals* tdgbl)
  *
  * Functional description
  *	Find the ODS version number of the database.
+ *	Use system_flag to avoid any possibility of ambiguity (someone using the rdb$ prefix).
  *
  **************************************/
 	struct rel_field_t
@@ -878,9 +880,10 @@ void check_db_version(BurpGlobals* tdgbl)
 
 	const rel_field_t relations[] =
 	{
-		{"RDB$TRIGGERS",	0,	DB_VERSION_DDL5}, // IB3.3
-		{"RDB$PROCEDURES",	0,	DB_VERSION_DDL8}, // IB4
-		{"RDB$ROLES",		0,	DB_VERSION_DDL9}, // IB5
+		{"RDB$TRIGGERS",	0,	DB_VERSION_DDL5},	// IB3.3
+		{"RDB$PROCEDURES",	0,	DB_VERSION_DDL8},	// IB4
+		{"RDB$ROLES",		0,	DB_VERSION_DDL9},	// IB5
+		{"RDB$PACKAGES",	0,	DB_VERSION_DDL12},	// FB3
 		{0, 0, 0}
 	};
 
@@ -890,6 +893,7 @@ void check_db_version(BurpGlobals* tdgbl)
 		FOR (REQUEST_HANDLE req_handle)
 			FIRST 1 X IN RDB$RELATIONS
 			WITH X.RDB$RELATION_NAME = rel->rel
+			AND X.RDB$SYSTEM_FLAG = 1
 			tdgbl->RESTORE_ods = rel->ods_version;
 		END_FOR;
 		ON_ERROR
@@ -907,7 +911,7 @@ void check_db_version(BurpGlobals* tdgbl)
 		{"RDB$ROLES",					"RDB$DESCRIPTION",		DB_VERSION_DDL11},		// FB2
 		{"RDB$RELATIONS",				"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1},	// FB2.1
 		{"RDB$PROCEDURE_PARAMETERS",	"RDB$FIELD_NAME",		DB_VERSION_DDL11_2},	// FB2.5
-		{"RDB$PROCEDURES",				"RDB$ENGINE_NAME",		DB_VERSION_DDL12_0},	// FB3.0
+		{"RDB$PROCEDURES",				"RDB$ENGINE_NAME",		DB_VERSION_DDL12},		// FB3.0
 		{0, 0, 0}
 	};
 
@@ -918,6 +922,7 @@ void check_db_version(BurpGlobals* tdgbl)
 			FIRST 1 X2 IN RDB$RELATION_FIELDS
 			WITH X2.RDB$RELATION_NAME = rf->rel
 			AND X2.RDB$FIELD_NAME = rf->fld
+			AND X2.RDB$SYSTEM_FLAG = 1
 			tdgbl->RESTORE_ods = rf->ods_version;
 		END_FOR;
 		ON_ERROR
@@ -2864,7 +2869,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 
 		records++;
 
-		if ((records % RESTORE_VERBOSE_INTERVAL) == 0)
+		if ((records % tdgbl->verboseInterval) == 0)
 			BURP_verbose(107, SafeArg() << records);
 
 		for (field = relation->rel_fields; field; field = field->fld_next)
@@ -3591,7 +3596,7 @@ bool get_function(BurpGlobals* tdgbl)
 
 	bool existFlag = false;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12_0)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 			X IN RDB$FUNCTIONS
@@ -3835,7 +3840,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 		return;
 	}
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12_0)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
 	{
 		// with RDB$FIELD_PRECISION
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
@@ -7381,9 +7386,9 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 		}
 		break;
 
-	default:
-		exists = true;
-		break;
+		default:
+			exists = true;
+			break;
 	}
 
 	if (tdgbl->RESTORE_ods <= DB_VERSION_DDL8)

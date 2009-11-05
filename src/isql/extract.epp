@@ -54,6 +54,7 @@
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
+#include "../isql/iutils_proto.h"
 #include "../jrd/ini.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
@@ -167,7 +168,7 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		if (EXTRACT_list_table(tabname, NULL, true, default_char_set_id))
 		{
 			SCHAR errbuf[MSG_LENGTH];
-			ISQL_msg_get(NOT_FOUND_MSG, errbuf, SafeArg() << tabname);
+			IUTILS_msg_get(NOT_FOUND_MSG, errbuf, SafeArg() << tabname);
 			STDERROUT(errbuf);
 			ret_code = FINI_ERROR;
 		}
@@ -359,9 +360,9 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				if (new_name)
-					ISQL_copy_SQL_id (new_name, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id (new_name, SQL_identifier, DBL_QUOTE);
 				else
-					ISQL_copy_SQL_id (relation_name, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id (relation_name, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf("%s ", SQL_identifier);
 			}
 			else
@@ -371,7 +372,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
-				ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2, SINGLE_QUOTE);
+				IUTILS_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2, SINGLE_QUOTE);
 				isqlGlob.printf("EXTERNAL FILE %s ", SQL_identifier2);
 			}
 			isqlGlob.printf("(");
@@ -383,7 +384,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (fb_utils::exact_name(RFR.RDB$FIELD_NAME), SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (fb_utils::exact_name(RFR.RDB$FIELD_NAME), SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("%s ", SQL_identifier);
 		}
 		else
@@ -407,7 +408,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 				isqlGlob.prints(SQL_identifier);
 			}
 			else
@@ -578,7 +579,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					fb_utils::exact_name(CON.RDB$CONSTRAINT_NAME);
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
-						ISQL_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
 						sprintf (Print_buffer, " CONSTRAINT %s", SQL_identifier);
 					}
 					else
@@ -667,7 +668,7 @@ static bool extract_rel_constraints(const char* relation_name)
 		{
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id (RELC.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
@@ -692,7 +693,7 @@ static bool extract_rel_constraints(const char* relation_name)
 			isqlGlob.printf(" USING %sINDEX", descending_index ? "DESCENDING " : "");
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_copy_SQL_id(IDX.RDB$INDEX_NAME, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id(IDX.RDB$INDEX_NAME, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf(" %s", SQL_identifier);
 			}
 			else
@@ -790,7 +791,7 @@ static void get_procedure_args(const char* proc_name)
 					{
 						fb_utils::exact_name(PRM2.RDB$RELATION_NAME);
 						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-							ISQL_copy_SQL_id(PRM2.RDB$RELATION_NAME, relationName, DBL_QUOTE);
+							IUTILS_copy_SQL_id(PRM2.RDB$RELATION_NAME, relationName, DBL_QUOTE);
 						else
 							strcpy(relationName, PRM2.RDB$RELATION_NAME);
 					}
@@ -799,7 +800,7 @@ static void get_procedure_args(const char* proc_name)
 					{
 						fb_utils::exact_name(PRM2.RDB$FIELD_NAME);
 						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-							ISQL_copy_SQL_id(PRM2.RDB$FIELD_NAME, relationField, DBL_QUOTE);
+							IUTILS_copy_SQL_id(PRM2.RDB$FIELD_NAME, relationField, DBL_QUOTE);
 						else
 							strcpy(relationField, PRM2.RDB$FIELD_NAME);
 					}
@@ -829,7 +830,7 @@ static void get_procedure_args(const char* proc_name)
 			// CVC: Parameter names need check for dialect 3, too.
 
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-				ISQL_copy_SQL_id (PRM.RDB$PARAMETER_NAME, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id (PRM.RDB$PARAMETER_NAME, SQL_identifier, DBL_QUOTE);
 			else
 				strcpy (SQL_identifier, PRM.RDB$PARAMETER_NAME);
 
@@ -849,7 +850,7 @@ static void get_procedure_args(const char* proc_name)
 					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
-						ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+						IUTILS_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 						isqlGlob.prints(SQL_identifier);
 					}
 					else
@@ -1098,7 +1099,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				{
-					ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
+					IUTILS_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
 					isqlGlob.printf("CREATE ROLE %s;%s", SQL_identifier, NEWLINE);
 				}
 				else
@@ -1213,7 +1214,7 @@ static void list_all_procs()
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf(create_procedure_str1, SQL_identifier);
 		}
 		else
@@ -1263,7 +1264,7 @@ static void list_all_procs()
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, SQL_identifier);
 		}
 		else
@@ -1279,7 +1280,7 @@ static void list_all_procs()
 
 	END_FOR
 	ON_ERROR
-		ISQL_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(gds_status));
+		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(gds_status));
 		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
 		ISQL_errmsg(gds_status);
 		return;
@@ -1379,7 +1380,7 @@ static void list_all_triggers()
 			isqlGlob.printf("/* ");
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (TRG.RDB$TRIGGER_NAME, SQL_identifier,  DBL_QUOTE);
+			IUTILS_copy_SQL_id (TRG.RDB$TRIGGER_NAME, SQL_identifier,  DBL_QUOTE);
 		else
 			strcpy (SQL_identifier,  TRG.RDB$TRIGGER_NAME);
 
@@ -1434,8 +1435,8 @@ static void list_all_triggers()
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (TRG.RDB$TRIGGER_NAME, SQL_identifier,  DBL_QUOTE);
-			ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
+			IUTILS_copy_SQL_id (TRG.RDB$TRIGGER_NAME, SQL_identifier,  DBL_QUOTE);
+			IUTILS_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
 		}
 		else
 		{
@@ -1506,7 +1507,7 @@ static void list_check()
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("ALTER TABLE %s ADD %s%s", SQL_identifier, NEWLINE, TAB_AS_SPACES);
 		}
 		else
@@ -1518,7 +1519,7 @@ static void list_check()
 			fb_utils::exact_name(CHK.RDB$CONSTRAINT_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
@@ -1567,14 +1568,14 @@ static void list_charsets()
 
 		fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CS.RDB$CHARACTER_SET_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (CS.RDB$CHARACTER_SET_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy (SQL_identifier, CS.RDB$CHARACTER_SET_NAME);
 		isqlGlob.printf("%s", SQL_identifier);
 
 		fb_utils::exact_name(CS.RDB$DEFAULT_COLLATE_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CS.RDB$DEFAULT_COLLATE_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (CS.RDB$DEFAULT_COLLATE_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy (SQL_identifier, CS.RDB$DEFAULT_COLLATE_NAME);
 		isqlGlob.printf(" SET DEFAULT COLLATION %s", SQL_identifier);
@@ -1625,14 +1626,14 @@ static void list_collations()
 
 		fb_utils::exact_name(CL.RDB$COLLATION_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CL.RDB$COLLATION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (CL.RDB$COLLATION_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy (SQL_identifier, CL.RDB$COLLATION_NAME);
 		isqlGlob.printf("%s", SQL_identifier);
 
 		fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CS.RDB$CHARACTER_SET_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (CS.RDB$CHARACTER_SET_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy (SQL_identifier, CS.RDB$CHARACTER_SET_NAME);
 		isqlGlob.printf(" FOR %s", SQL_identifier);
@@ -1640,7 +1641,7 @@ static void list_collations()
 		if (!CL.RDB$BASE_COLLATION_NAME.NULL)
 		{
 			fb_utils::exact_name(CL.RDB$BASE_COLLATION_NAME);
-			ISQL_copy_SQL_id (CL.RDB$BASE_COLLATION_NAME, SQL_identifier, SINGLE_QUOTE);
+			IUTILS_copy_SQL_id (CL.RDB$BASE_COLLATION_NAME, SQL_identifier, SINGLE_QUOTE);
 			isqlGlob.printf(" FROM EXTERNAL (%s)", SQL_identifier);
 		}
 
@@ -2073,7 +2074,7 @@ static void list_domains(SSHORT default_char_set_id)
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id(FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id(FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("CREATE DOMAIN %s AS ", SQL_identifier);
 		}
 		else
@@ -2248,10 +2249,10 @@ static void list_exception()
 		first = false;
 		fb_utils::exact_name(EXC.RDB$EXCEPTION_NAME);
 
-		ISQL_copy_SQL_id (EXC.RDB$MESSAGE, SQL_identifier2, SINGLE_QUOTE);
+		IUTILS_copy_SQL_id (EXC.RDB$MESSAGE, SQL_identifier2, SINGLE_QUOTE);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (EXC.RDB$EXCEPTION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (EXC.RDB$EXCEPTION_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("CREATE EXCEPTION %s %s%s%s",
 					 SQL_identifier, SQL_identifier2, isqlGlob.global_Term, NEWLINE);
 		}
@@ -2299,15 +2300,15 @@ static void list_filters()
 		}
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id(FIL.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id(FIL.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy(SQL_identifier, FIL.RDB$FUNCTION_NAME);
 
 		isqlGlob.printf("DECLARE FILTER %s INPUT_TYPE %d OUTPUT_TYPE %d%s",
 			SQL_identifier, FIL.RDB$INPUT_SUB_TYPE, FIL.RDB$OUTPUT_SUB_TYPE, NEWLINE);
 
-		ISQL_copy_SQL_id(FIL.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
-		ISQL_copy_SQL_id(FIL.RDB$MODULE_NAME, SQL_identifier2, SINGLE_QUOTE);
+		IUTILS_copy_SQL_id(FIL.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
+		IUTILS_copy_SQL_id(FIL.RDB$MODULE_NAME, SQL_identifier2, SINGLE_QUOTE);
 
 		isqlGlob.printf("%sENTRY_POINT %s MODULE_NAME %s%s%s%s",
 			TAB_AS_SPACES, SQL_identifier, SQL_identifier2,
@@ -2359,7 +2360,7 @@ static void list_foreign()
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (RELC1.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (RELC1.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("ALTER TABLE %s ADD ", SQL_identifier);
 		}
 		else
@@ -2370,10 +2371,10 @@ static void list_foreign()
 		if (!RELC1.RDB$CONSTRAINT_NAME.NULL &&
 			!fb_utils::implicit_integrity(RELC1.RDB$CONSTRAINT_NAME))
 		{
-			ISQL_truncate_term (RELC1.RDB$CONSTRAINT_NAME, strlen(RELC1.RDB$CONSTRAINT_NAME));
+			IUTILS_truncate_term (RELC1.RDB$CONSTRAINT_NAME, strlen(RELC1.RDB$CONSTRAINT_NAME));
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
@@ -2382,7 +2383,7 @@ static void list_foreign()
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (RELC2.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (RELC2.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("FOREIGN KEY (%s) REFERENCES %s ", collist, SQL_identifier);
 		}
 		else
@@ -2397,13 +2398,13 @@ static void list_foreign()
 		// Add the referential actions, if any
 		if (!REFC.RDB$UPDATE_RULE.NULL)
 		{
-			ISQL_truncate_term (REFC.RDB$UPDATE_RULE, strlen(REFC.RDB$UPDATE_RULE));
+			IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, strlen(REFC.RDB$UPDATE_RULE));
 			ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " ON UPDATE", true);
 		}
 
 		if (!REFC.RDB$DELETE_RULE.NULL)
 		{
-			ISQL_truncate_term (REFC.RDB$DELETE_RULE, strlen(REFC.RDB$DELETE_RULE));
+			IUTILS_truncate_term (REFC.RDB$DELETE_RULE, strlen(REFC.RDB$DELETE_RULE));
 			ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " ON DELETE", true);
 		}
 
@@ -2454,7 +2455,7 @@ static void list_functions()
 		}
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id(FUN.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id(FUN.RDB$FUNCTION_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy(SQL_identifier, FUN.RDB$FUNCTION_NAME);
 
@@ -2602,8 +2603,8 @@ static void list_functions()
 		isqlGlob.printf("%s%s%s", NEWLINE, return_buffer, NEWLINE);
 
 		// Print out entrypoint information
-		ISQL_copy_SQL_id(FUN.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
-		ISQL_copy_SQL_id(FUN.RDB$MODULE_NAME, SQL_identifier2, SINGLE_QUOTE);
+		IUTILS_copy_SQL_id(FUN.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
+		IUTILS_copy_SQL_id(FUN.RDB$MODULE_NAME, SQL_identifier2, SINGLE_QUOTE);
 
 		isqlGlob.printf("ENTRY_POINT %s MODULE_NAME %s%s%s%s",
 				 SQL_identifier,
@@ -2652,7 +2653,7 @@ static void list_generators()
 		fb_utils::exact_name(GEN.RDB$GENERATOR_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (GEN.RDB$GENERATOR_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (GEN.RDB$GENERATOR_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy (SQL_identifier, GEN.RDB$GENERATOR_NAME);
 
@@ -2705,8 +2706,8 @@ static void list_index()
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (IDX.RDB$INDEX_NAME,    SQL_identifier,  DBL_QUOTE);
-			ISQL_copy_SQL_id (IDX.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
+			IUTILS_copy_SQL_id (IDX.RDB$INDEX_NAME,    SQL_identifier,  DBL_QUOTE);
+			IUTILS_copy_SQL_id (IDX.RDB$RELATION_NAME, SQL_identifier2, DBL_QUOTE);
 			isqlGlob.printf("CREATE%s%s INDEX %s ON %s",
 					(IDX.RDB$UNIQUE_FLAG ? " UNIQUE" : ""),
 					(IDX.RDB$INDEX_TYPE ? " DESCENDING" : ""),
@@ -2769,7 +2770,7 @@ static void list_views()
 		fb_utils::exact_name(REL.RDB$RELATION_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (REL.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+			IUTILS_copy_SQL_id (REL.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 		else
 			strcpy (SQL_identifier, REL.RDB$RELATION_NAME);
 
@@ -2790,7 +2791,7 @@ static void list_views()
 			fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-				ISQL_copy_SQL_id (RFR.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+				IUTILS_copy_SQL_id (RFR.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 			else
 				strcpy (SQL_identifier, RFR.RDB$FIELD_NAME);
 

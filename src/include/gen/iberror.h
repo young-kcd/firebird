@@ -911,6 +911,14 @@ const ISC_STATUS isc_gbak_not_ownr                    = 336331026L;
 const ISC_STATUS isc_gbak_mode_req                    = 336331031L;
 const ISC_STATUS isc_gbak_just_data                   = 336331033L;
 const ISC_STATUS isc_gbak_data_only                   = 336331034L;
+const ISC_STATUS isc_gbak_missing_interval            = 336331078L;
+const ISC_STATUS isc_gbak_wrong_interval              = 336331079L;
+const ISC_STATUS isc_gbak_verify_verbint              = 336331081L;
+const ISC_STATUS isc_gbak_option_only_restore         = 336331082L;
+const ISC_STATUS isc_gbak_option_only_backup          = 336331083L;
+const ISC_STATUS isc_gbak_option_conflict             = 336331084L;
+const ISC_STATUS isc_gbak_param_conflict              = 336331085L;
+const ISC_STATUS isc_gbak_option_repeated             = 336331086L;
 const ISC_STATUS isc_dsql_too_old_ods                 = 336397205L;
 const ISC_STATUS isc_dsql_table_not_found             = 336397206L;
 const ISC_STATUS isc_dsql_view_not_found              = 336397207L;
@@ -1034,7 +1042,55 @@ const ISC_STATUS isc_fbsvcmgr_fp_open                 = 336986160L;
 const ISC_STATUS isc_fbsvcmgr_fp_read                 = 336986161L;
 const ISC_STATUS isc_fbsvcmgr_fp_empty                = 336986162L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 978;
+const ISC_STATUS isc_nbackup_missing_param            = 337117213L;
+const ISC_STATUS isc_nbackup_allowed_switches         = 337117214L;
+const ISC_STATUS isc_nbackup_unknown_param            = 337117215L;
+const ISC_STATUS isc_nbackup_unknown_switch           = 337117216L;
+const ISC_STATUS isc_nbackup_nofetchpw_svc            = 337117217L;
+const ISC_STATUS isc_nbackup_pwfile_error             = 337117218L;
+const ISC_STATUS isc_nbackup_size_with_lock           = 337117219L;
+const ISC_STATUS isc_nbackup_no_switch                = 337117220L;
+const ISC_STATUS isc_nbackup_err_read                 = 337117223L;
+const ISC_STATUS isc_nbackup_err_write                = 337117224L;
+const ISC_STATUS isc_nbackup_err_seek                 = 337117225L;
+const ISC_STATUS isc_nbackup_err_opendb               = 337117226L;
+const ISC_STATUS isc_nbackup_err_fadvice              = 337117227L;
+const ISC_STATUS isc_nbackup_err_createdb             = 337117228L;
+const ISC_STATUS isc_nbackup_err_openbk               = 337117229L;
+const ISC_STATUS isc_nbackup_err_createbk             = 337117230L;
+const ISC_STATUS isc_nbackup_err_eofdb                = 337117231L;
+const ISC_STATUS isc_nbackup_fixup_wrongstate         = 337117232L;
+const ISC_STATUS isc_nbackup_err_db                   = 337117233L;
+const ISC_STATUS isc_nbackup_userpw_toolong           = 337117234L;
+const ISC_STATUS isc_nbackup_lostrec_db               = 337117235L;
+const ISC_STATUS isc_nbackup_lostguid_db              = 337117236L;
+const ISC_STATUS isc_nbackup_err_eofhdrdb             = 337117237L;
+const ISC_STATUS isc_nbackup_db_notlock               = 337117238L;
+const ISC_STATUS isc_nbackup_lostguid_bk              = 337117239L;
+const ISC_STATUS isc_nbackup_page_changed             = 337117240L;
+const ISC_STATUS isc_nbackup_dbsize_inconsistent      = 337117241L;
+const ISC_STATUS isc_nbackup_failed_lzbk              = 337117242L;
+const ISC_STATUS isc_nbackup_err_eofhdrbk             = 337117243L;
+const ISC_STATUS isc_nbackup_invalid_incbk            = 337117244L;
+const ISC_STATUS isc_nbackup_unsupvers_incbk          = 337117245L;
+const ISC_STATUS isc_nbackup_invlevel_incbk           = 337117246L;
+const ISC_STATUS isc_nbackup_wrong_orderbk            = 337117247L;
+const ISC_STATUS isc_nbackup_err_eofbk                = 337117248L;
+const ISC_STATUS isc_nbackup_err_copy                 = 337117249L;
+const ISC_STATUS isc_nbackup_err_eofhdr_restdb        = 337117250L;
+const ISC_STATUS isc_nbackup_lostguid_l0bk            = 337117251L;
+const ISC_STATUS isc_trace_conflict_acts              = 337182750L;
+const ISC_STATUS isc_trace_act_notfound               = 337182751L;
+const ISC_STATUS isc_trace_switch_once                = 337182752L;
+const ISC_STATUS isc_trace_param_val_miss             = 337182753L;
+const ISC_STATUS isc_trace_param_invalid              = 337182754L;
+const ISC_STATUS isc_trace_switch_unknown             = 337182755L;
+const ISC_STATUS isc_trace_switch_svc_only            = 337182756L;
+const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
+const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
+const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
+const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
+const ISC_STATUS isc_err_max                          = 1034;
 
 #else /* c definitions */
 
@@ -1915,6 +1971,14 @@ const ISC_STATUS isc_err_max                          = 978;
 #define isc_gbak_mode_req                    336331031L
 #define isc_gbak_just_data                   336331033L
 #define isc_gbak_data_only                   336331034L
+#define isc_gbak_missing_interval            336331078L
+#define isc_gbak_wrong_interval              336331079L
+#define isc_gbak_verify_verbint              336331081L
+#define isc_gbak_option_only_restore         336331082L
+#define isc_gbak_option_only_backup          336331083L
+#define isc_gbak_option_conflict             336331084L
+#define isc_gbak_param_conflict              336331085L
+#define isc_gbak_option_repeated             336331086L
 #define isc_dsql_too_old_ods                 336397205L
 #define isc_dsql_table_not_found             336397206L
 #define isc_dsql_view_not_found              336397207L
@@ -2038,7 +2102,55 @@ const ISC_STATUS isc_err_max                          = 978;
 #define isc_fbsvcmgr_fp_read                 336986161L
 #define isc_fbsvcmgr_fp_empty                336986162L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          978
+#define isc_nbackup_missing_param            337117213L
+#define isc_nbackup_allowed_switches         337117214L
+#define isc_nbackup_unknown_param            337117215L
+#define isc_nbackup_unknown_switch           337117216L
+#define isc_nbackup_nofetchpw_svc            337117217L
+#define isc_nbackup_pwfile_error             337117218L
+#define isc_nbackup_size_with_lock           337117219L
+#define isc_nbackup_no_switch                337117220L
+#define isc_nbackup_err_read                 337117223L
+#define isc_nbackup_err_write                337117224L
+#define isc_nbackup_err_seek                 337117225L
+#define isc_nbackup_err_opendb               337117226L
+#define isc_nbackup_err_fadvice              337117227L
+#define isc_nbackup_err_createdb             337117228L
+#define isc_nbackup_err_openbk               337117229L
+#define isc_nbackup_err_createbk             337117230L
+#define isc_nbackup_err_eofdb                337117231L
+#define isc_nbackup_fixup_wrongstate         337117232L
+#define isc_nbackup_err_db                   337117233L
+#define isc_nbackup_userpw_toolong           337117234L
+#define isc_nbackup_lostrec_db               337117235L
+#define isc_nbackup_lostguid_db              337117236L
+#define isc_nbackup_err_eofhdrdb             337117237L
+#define isc_nbackup_db_notlock               337117238L
+#define isc_nbackup_lostguid_bk              337117239L
+#define isc_nbackup_page_changed             337117240L
+#define isc_nbackup_dbsize_inconsistent      337117241L
+#define isc_nbackup_failed_lzbk              337117242L
+#define isc_nbackup_err_eofhdrbk             337117243L
+#define isc_nbackup_invalid_incbk            337117244L
+#define isc_nbackup_unsupvers_incbk          337117245L
+#define isc_nbackup_invlevel_incbk           337117246L
+#define isc_nbackup_wrong_orderbk            337117247L
+#define isc_nbackup_err_eofbk                337117248L
+#define isc_nbackup_err_copy                 337117249L
+#define isc_nbackup_err_eofhdr_restdb        337117250L
+#define isc_nbackup_lostguid_l0bk            337117251L
+#define isc_trace_conflict_acts              337182750L
+#define isc_trace_act_notfound               337182751L
+#define isc_trace_switch_once                337182752L
+#define isc_trace_param_val_miss             337182753L
+#define isc_trace_param_invalid              337182754L
+#define isc_trace_switch_unknown             337182755L
+#define isc_trace_switch_svc_only            337182756L
+#define isc_trace_switch_user_only           337182757L
+#define isc_trace_switch_param_miss          337182758L
+#define isc_trace_param_act_notcompat        337182759L
+#define isc_trace_mandatory_switch_miss      337182760L
+#define isc_err_max                          1034
 
 #endif
 

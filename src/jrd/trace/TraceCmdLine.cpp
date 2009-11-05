@@ -32,140 +32,110 @@
 #include "../../common/StatusArg.h"
 #include "../../common/utils_proto.h"
 #include "../../common/UtilSvc.h"
+#include "../common/classes/Switches.h"
+#include "../../jrd/trace/traceswi.h"
 #include "../../jrd/trace/TraceService.h"
+#include "../common/classes/MsgPrint.h"
 #include "../jrd/license.h"
 
 
-namespace Firebird {
-
-static void usage(UtilSvc* uSvc, const char* message, ...)
+namespace
 {
-	string msg;
-	va_list params;
-	if (message)
+	using namespace Firebird;
+
+	using MsgFormat::SafeArg;
+	const USHORT tracemgr_msg_fac = 25;
+
+	void printMsg(USHORT number, const SafeArg& arg, bool newLine = true)
 	{
-		va_start(params, message);
-		msg.vprintf(message, params);
-		va_end(params);
+		char buffer[256];
+		fb_msg_format(NULL, tracemgr_msg_fac, number, sizeof(buffer), buffer, arg);
+		if (newLine)
+			printf("%s\n", buffer);
+		else
+			printf("%s", buffer);
 	}
 
-	if (uSvc->isService())
+	void printMsg(USHORT number, bool newLine = true)
 	{
-		fb_assert(message != NULL);
-		(Arg::Gds(isc_random) << msg).raise();
+		static const SafeArg dummy;
+		printMsg(number, dummy, newLine);
 	}
 
-	if (message)
-		fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
-
-	fprintf(stderr,
-		"Firebird Trace utility.\n"
-		"Usage: fbtracemgr <action> [<parameters>]\n"
-		"\n"
-		"Actions: \n"
-		"  -STA[RT]                              Start trace session\n"
-		"  -STO[P]                               Stop trace session\n"
-		"  -SU[SPEND]                            Suspend trace session\n"
-		"  -R[ESUME]                             Resume trace session\n"
-		"  -L[IST]                               List existing trace sessions\n"
-		"\n"
-		"Action parameters: \n"
-		"  -N[AME]    <string>                   Session name\n"
-		"  -I[D]      <number>                   Session ID\n"
-		"  -C[ONFIG]  <string>                   Trace configuration file name\n"
-		"\n"
-		"Connection parameters: \n"
-		"  -SE[RVICE]  <string>                  Service name\n"
-		"  -U[SER]     <string>                  User name\n"
-		"  -P[ASSWORD] <string>                  Password\n"
-		"  -FE[TCH]    <string>                  Fetch password from file\n"
-		"  -T[RUSTED]  <string>                  Force trusted authentication\n"
-		"\n"
-		"Examples: \n"
-		"  fbtracemgr -SE remote_host:service_mgr -USER SYSDBA -PASS masterkey -LIST\n"
-		"  fbtracemgr -SE service_mgr -START -NAME my_trace -CONFIG my_cfg.txt\n"
-		"  fbtracemgr -SE service_mgr -SUSPEND -ID 2\n"
-		"  fbtracemgr -SE service_mgr -RESUME -ID 2\n"
-		"  fbtracemgr -SE service_mgr -STOP -ID 4\n"
-		"\n"
-		"Notes:\n"
-		"  Press CTRL+C to stop interactive trace session\n"
-	);
-	exit(FINI_ERROR);
-}
-
-const char switch_char = '-';
-
-static bool switchMatch(const string& sw, const char* target)
-{
-/**************************************
- *
- *	s w i t c h M a t c h
- *
- **************************************
- *
- * Functional description
- *	Returns true if switch matches target
- *
- **************************************/
-	size_t n = strlen(target);
-	if (n < sw.length())
+	bool getMsg(USHORT number, char* buffer, size_t bufsize, const SafeArg& arg)
 	{
-		return false;
+		if (!number || !buffer || bufsize < 10)
+			return false;
+		return fb_msg_format(NULL, tracemgr_msg_fac, number, bufsize, buffer, arg) > 0;
 	}
-	n = sw.length();
-	return memcmp(sw.c_str(), target, n) == 0;
-}
 
-
-static const in_sw_tab_t* findSwitch(const in_sw_tab_t* table, string sw)
-{
-/**************************************
- *
- *	f i n d S w i t c h
- *
- **************************************
- *
- * Functional description
- *	Returns pointer to in_sw_tab entry for current switch
- *	If not a switch, returns 0.
- *
- **************************************/
-	if (sw.isEmpty())
+	void usage(UtilSvc* uSvc, const ISC_STATUS code, const char* msg1 = NULL, const char* msg2 = NULL)
 	{
-		return 0;
-	}
-	if (sw[0] != switch_char)
-	{
-		return 0;
-	}
-	sw.erase(0, 1);
-	sw.upper();
-
-	for (const in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
-	{
-		if ((sw.length() >= in_sw_tab->in_sw_min_length) &&
-			switchMatch(sw, in_sw_tab->in_sw_name))
+		/*
+		string msg;
+		va_list params;
+		if (message)
 		{
-			return in_sw_tab;
+			va_start(params, message);
+			msg.vprintf(message, params);
+			va_end(params);
 		}
-	}
+		*/
 
-	return 0;
+		if (uSvc->isService())
+		{
+			//fb_assert(message != NULL);
+			//(Arg::Gds(isc_random) << msg).raise();
+			fb_assert(code);
+			Arg::Gds gds(code);
+			if (msg1)
+				gds << msg1;
+			if (msg2)
+				gds << msg2;
+			gds.raise();
+		}
+
+		//if (message)
+		//	fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
+		if (code)
+		{
+			printMsg(2, false); // ERROR:
+			USHORT dummy;
+			USHORT number = (USHORT) gds__decode(code, &dummy, &dummy);
+			fb_assert(number);
+			SafeArg safe;
+			if (msg1)
+				safe << msg1;
+			if (msg2)
+				safe << msg2;
+
+			printMsg(number, safe);
+			printf("\n");
+		}
+
+		// If the items aren't contiguous, a scheme like in nbackup.cpp will have to be used.
+		const int mainUsage[] = { 3, 21 };
+		const int examples[] = { 22, 27 };
+		const int notes[] = { 28, 29 };
+
+		for (int i = mainUsage[0]; i <= mainUsage[1]; ++i)
+			printMsg(i);
+
+		printf("\n");
+		for (int i = examples[0]; i <= examples[1]; ++i)
+			printMsg(i);
+
+		printf("\n");
+		for (int i = notes[0]; i <= notes[1]; ++i)
+			printMsg(i);
+
+		exit(FINI_ERROR);
+	}
 }
 
-const char TRACE_ERR_CONFLICT_ACTS[]		= "conflicting actions \"%s\" and \"%s\" found";
-const char TRACE_ERR_ACT_NOTFOUND[]			= "action switch not found";
-const char TRACE_ERR_SWITCH_ONCE[]			= "switch \"%s\" must be set only once";
-const char TRACE_ERR_PARAM_VAL_MISS[]		= "value for switch \"%s\" is missing";
-const char TRACE_ERR_PARAM_INVALID[]		= "invalid value (\"%s\") for switch \"%s\"";
-const char TRACE_ERR_SWITCH_UNKNOWN[]		= "unknown switch \"%s\" encountered";
-const char TRACE_ERR_SWITCH_SVC_ONLY[]		= "switch \"%s\" can be used by service only";
-const char TRACE_ERR_SWITCH_USER_ONLY[]		= "switch \"%s\" can be used by interactive user only";
-const char TRACE_ERR_SWITCH_PARAM_MISS[]	= "mandatory parameter \"%s\" for switch \"%s\" is missing";
-const char TRACE_ERR_PARAM_ACT_NOTCOMPAT[]	= "parameter \"%s\" is incompatible with action \"%s\"";
-const char TRACE_ERR_MANDATORY_SWITCH_MISS[]= "mandatory switch \"%s\" is missing";
 
+namespace Firebird
+{
 
 void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 {
@@ -173,31 +143,32 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 	bool version = false, help = false;
 	// search for "action" switch, set NULL into recognized argv
-	const in_sw_tab_t* action_sw = NULL;
+
+	const Switches actSwitches(trace_action_in_sw_table, FB_NELEM(trace_action_in_sw_table),
+								false, true);
+
+	const Switches::in_sw_tab_t* action_sw = NULL;
 	const char** argv = uSvc->argv.begin();
 	for (++argv; argv < end; argv++)
 	{
-		if (!uSvc->isService())
+		if (!uSvc->isService() && strcmp(argv[0], "-?") == 0)
 		{
-			if (strcmp(argv[0], "-z") == 0 || strcmp(argv[0], "-Z") == 0)
+			help = true;
+			*argv = NULL;
+			break;
+		}
+
+		const Switches::in_sw_tab_t* sw = actSwitches.findSwitch(*argv);
+		if (sw)
+		{
+			if (sw->in_sw == IN_SW_TRACE_VERSION)
 			{
 				version = true;
 				*argv = NULL;
 				continue;
 			}
-			if (strcmp(argv[0], "-?") == 0)
-			{
-				help = true;
-				*argv = NULL;
-				continue;
-			}
-		}
-
-		const in_sw_tab_t* sw = findSwitch(&trace_action_in_sw_table[0], *argv);
-		if (sw)
-		{
 			if (action_sw)
-				usage(uSvc, TRACE_ERR_CONFLICT_ACTS, action_sw->in_sw_name, sw->in_sw_name);
+				usage(uSvc, isc_trace_conflict_acts, action_sw->in_sw_name, sw->in_sw_name);
 			else
 				action_sw = sw;
 
@@ -207,7 +178,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 	if (version)
 	{
-		printf("Firebird Trace utility version %s\n", FB_VERSION);
+		printMsg(1, SafeArg() << FB_VERSION);
 		if (!action_sw)
 			exit(FINI_OK);
 	}
@@ -215,12 +186,14 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 	if (!action_sw)
 	{
 		if (help)
-			usage(uSvc, NULL);
+			usage(uSvc, 0);
 		else
-			usage(uSvc, TRACE_ERR_ACT_NOTFOUND);
+			usage(uSvc, isc_trace_act_notfound);
 	}
 
 	// search for action's parameters, set NULL into recognized argv
+	const Switches optSwitches(trace_option_in_sw_table, FB_NELEM(trace_option_in_sw_table),
+								false, true);
 	TraceSession session(*getDefaultMemoryPool());
 	argv = uSvc->argv.begin();
 	for (++argv; argv < end; argv++)
@@ -228,7 +201,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		if (!*argv)
 			continue;
 
-		const in_sw_tab_t* sw = findSwitch(&trace_option_in_sw_table[0], *argv);
+		const Switches::in_sw_tab_t* sw = optSwitches.findSwitch(*argv);
 		if (!sw)
 			continue;
 
@@ -243,18 +216,18 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				case IN_SW_TRACE_SUSPEND:
 				case IN_SW_TRACE_RESUME:
 				case IN_SW_TRACE_LIST:
-					usage(uSvc, TRACE_ERR_PARAM_ACT_NOTCOMPAT, sw->in_sw_name, action_sw->in_sw_name);
+					usage(uSvc, isc_trace_param_act_notcompat, sw->in_sw_name, action_sw->in_sw_name);
 					break;
 			}
 
 			if (!session.ses_config.empty())
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
 				session.ses_config = *argv;
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		case IN_SW_TRACE_NAME:
@@ -264,18 +237,18 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				case IN_SW_TRACE_SUSPEND:
 				case IN_SW_TRACE_RESUME:
 				case IN_SW_TRACE_LIST:
-					usage(uSvc, TRACE_ERR_PARAM_ACT_NOTCOMPAT, sw->in_sw_name, action_sw->in_sw_name);
+					usage(uSvc, isc_trace_param_act_notcompat, sw->in_sw_name, action_sw->in_sw_name);
 					break;
 			}
 
 			if (!session.ses_name.empty())
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
 				session.ses_name = *argv;
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		case IN_SW_TRACE_ID:
@@ -283,22 +256,22 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 			{
 				case IN_SW_TRACE_START:
 				case IN_SW_TRACE_LIST:
-					usage(uSvc, TRACE_ERR_PARAM_ACT_NOTCOMPAT, sw->in_sw_name, action_sw->in_sw_name);
+					usage(uSvc, isc_trace_param_act_notcompat, sw->in_sw_name, action_sw->in_sw_name);
 					break;
 			}
 
 			if (session.ses_id)
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
 			{
 				session.ses_id = atol(*argv);
 				if (!session.ses_id)
-					usage(uSvc, TRACE_ERR_PARAM_INVALID, *argv, sw->in_sw_name);
+					usage(uSvc, isc_trace_param_invalid, *argv, sw->in_sw_name);
 			}
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		default:
@@ -308,6 +281,8 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 	}
 
 	// search for authentication parameters
+	const Switches authSwitches(trace_auth_in_sw_table, FB_NELEM(trace_auth_in_sw_table),
+								false, true);
 	string svc_name, user, pwd;
 	bool adminRole = false;
 	argv = uSvc->argv.begin();
@@ -316,41 +291,41 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		if (!*argv)
 			continue;
 
-		const in_sw_tab_t* sw = findSwitch(&trace_auth_in_sw_table[0], *argv);
+		const Switches::in_sw_tab_t* sw = authSwitches.findSwitch(*argv);
 		if (!sw) {
-			usage(uSvc, TRACE_ERR_SWITCH_UNKNOWN, *argv);
+			usage(uSvc, isc_trace_switch_unknown, *argv);
 		}
 
 		switch (sw->in_sw)
 		{
 		case IN_SW_TRACE_USERNAME:
 			if (!user.empty())
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
 				user = *argv;
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		case IN_SW_TRACE_PASSWORD:
 			if (!pwd.empty())
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
 				pwd = *argv;
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		case IN_SW_TRACE_FETCH_PWD:
 			if (uSvc->isService())
-				usage(uSvc, TRACE_ERR_SWITCH_USER_ONLY, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_user_only, sw->in_sw_name);
 
 			if (!pwd.empty())
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
@@ -376,33 +351,33 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				}
 			}
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		case IN_SW_TRACE_TRUSTED_AUTH:
 			if (uSvc->isService())
-				usage(uSvc, TRACE_ERR_SWITCH_USER_ONLY, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_user_only, sw->in_sw_name);
 
 			adminRole = true;
 			break;
 
 		case IN_SW_TRACE_TRUSTED_USER:
 			if (!uSvc->isService())
-				usage(uSvc, TRACE_ERR_SWITCH_SVC_ONLY, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_svc_only, sw->in_sw_name);
 
 			if (!user.empty())
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
 				user = *argv;
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		case IN_SW_TRACE_TRUSTED_ROLE:
 			if (!uSvc->isService())
-				usage(uSvc, TRACE_ERR_SWITCH_SVC_ONLY, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_svc_only, sw->in_sw_name);
 
 			adminRole = true;
 			break;
@@ -412,13 +387,13 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				continue;
 
 			if (!svc_name.empty())
-				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
 
 			argv++;
 			if (argv < end)
 				svc_name = *argv;
 			else
-				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
 			break;
 
 		default:
@@ -428,7 +403,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 	// validate missed action's parameters and perform action
 	if (!uSvc->isService() && svc_name.isEmpty()) {
-		usage(uSvc, TRACE_ERR_MANDATORY_SWITCH_MISS, "SERVICE");
+		usage(uSvc, isc_trace_mandatory_switch_miss, "SERVICE");
 	}
 
 	if (!session.ses_id)
@@ -438,7 +413,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 			case IN_SW_TRACE_STOP:
 			case IN_SW_TRACE_SUSPEND:
 			case IN_SW_TRACE_RESUME:
-				usage(uSvc, TRACE_ERR_SWITCH_PARAM_MISS, "ID", action_sw->in_sw_name);
+				usage(uSvc, isc_trace_switch_param_miss, "ID", action_sw->in_sw_name);
 				break;
 		}
 	}
@@ -446,7 +421,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 	if (session.ses_config.empty())
 	{
 		if (action_sw->in_sw == IN_SW_TRACE_START) {
-			usage(uSvc, TRACE_ERR_SWITCH_PARAM_MISS, "CONFIG", action_sw->in_sw_name);
+			usage(uSvc, isc_trace_switch_param_miss, "CONFIG", action_sw->in_sw_name);
 		}
 	}
 

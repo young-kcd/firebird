@@ -47,6 +47,7 @@
 # endif
 #endif
 #include "../burp/spit.h"
+#include "../common/classes/Switches.h"
 #include "../burp/burpswi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -70,7 +71,7 @@ enum gsplit_option
 };
 
 
-static in_sw_tab_t spit_in_sw_table[] =
+const static Switches::in_sw_tab_t spit_in_sw_table[] =
 {
 	{IN_SW_SPIT_SP,	0,	"SPLIT_BK_FILE", 0, 0, 0, false, 0, 0, NULL},
 	{IN_SW_SPIT_JT,	0,	"JOIN_BK_FILE",	 0, 0, 0, false, 0, 0, NULL},
@@ -118,7 +119,7 @@ static int final_read_and_write(FILE_DESC, FILE_DESC, const TEXT*, SLONG, UCHAR*
 static int flush_io_buff(const UCHAR*, SLONG, FILE_DESC, SINT64, SLONG*, bool*);
 static int get_file_name(const SCHAR*, SINT64, b_fil**);
 static int get_file_size(const SCHAR*, const SCHAR *, SINT64*);
-static int get_function_option(const SCHAR*, gsplit_option*, const SCHAR*, const in_sw_tab_t* const);
+static int get_function_option(const SCHAR*, gsplit_option*, const SCHAR*, const Switches&);
 static int gen_multy_bakup_files(b_fil*, FILE_DESC, SLONG);
 static int set_hdr_str(TEXT*, const TEXT*, SLONG, SLONG);
 static int join_multy_bakup_files(b_fil*);
@@ -158,10 +159,7 @@ int main( int argc, char *argv[])
 
 	// Initialize in_sw_table table.
 
-	for (in_sw_tab_t* in_sw_tab = spit_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
-	{
-		in_sw_tab->in_sw_state = false;
-	}
+	const Switches switches(spit_in_sw_table, FB_NELEM(spit_in_sw_table), false, false);
 
 	// validating command line options
 
@@ -176,7 +174,7 @@ int main( int argc, char *argv[])
 		string = *argv;
 		if (*string == '-') {
 			argv++;
-			ret_cd = get_function_option(prog_name, &sw_replace, string, spit_in_sw_table);
+			ret_cd = get_function_option(prog_name, &sw_replace, string, switches);
 			if (ret_cd == FB_FAILURE) {
 				free_file_list(file_list);
 				return FB_FAILURE;
@@ -312,7 +310,7 @@ int main( int argc, char *argv[])
 static int get_function_option(const SCHAR* prog_name,
 							   gsplit_option* sw_replace,
 							   const SCHAR* string,
-							   const in_sw_tab_t* const in_sw_table)
+							   const Switches& switches)
 {
 /********************************************************************
 **
@@ -334,35 +332,21 @@ static int get_function_option(const SCHAR* prog_name,
 	}
 
 	//gsplit_option op_specified = *sw_replace; Commented, where is it used here???
-	const SCHAR* q;
-	const in_sw_tab_t* in_sw_tab;
-	for (in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
+	const Switches::in_sw_tab_t* op = switches.findSwitch(string);
+	if (!op)
 	{
-		SCHAR c;
-		for (const SCHAR* p = string + 1; c = *p++;)
-		{
-			if (UPPER(c) != *q++)
-				break;
-		}
-		if (!c)
-		{
-			if (*sw_replace == IN_SW_SPIT_0) {
-				*sw_replace = (gsplit_option) in_sw_tab->in_sw;
-				return FB_SUCCESS;
-			}
-
-			if (*sw_replace != in_sw_tab->in_sw) {
-				fprintf(stderr, "%s: invalid option '%s', incompatible option\n", prog_name, string);
-				print_clo(prog_name);
-				return FB_FAILURE;
-			}
-
-			break;
-		}						// end of if (!c)
-	}							// end of for loop
-
-	if (!in_sw_tab->in_sw) {
 		fprintf(stderr, "%s: invalid option '%s'\n", prog_name, string);
+		print_clo(prog_name);
+		return FB_FAILURE;
+	}
+
+	if (*sw_replace == IN_SW_SPIT_0) {
+		*sw_replace = (gsplit_option) op->in_sw;
+		return FB_SUCCESS;
+	}
+
+	if (*sw_replace != op->in_sw) {
+		fprintf(stderr, "%s: invalid option '%s', incompatible option\n", prog_name, string);
 		print_clo(prog_name);
 		return FB_FAILURE;
 	}

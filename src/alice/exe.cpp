@@ -40,6 +40,7 @@
 #include "../jrd/common.h"
 #include "../alice/alice.h"
 #include "../alice/alice_proto.h"
+#include "../common/classes/Switches.h"
 #include "../alice/aliceswi.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"

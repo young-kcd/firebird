@@ -55,15 +55,20 @@ struct SvcSwitches
 	UCHAR tagInf;
 };
 
-// Get message from security database
+// Get message from messages database
+
+namespace
+{
+	const int SVCMGR_FACILITY = 22;
+	using MsgFormat::SafeArg;
+}
 
 string getMessage(int n)
 {
 	char buffer[256];
-	const int FACILITY = 22;
-	static const MsgFormat::SafeArg dummy;
+	static const SafeArg dummy;
 
-	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, dummy);
+	fb_msg_format(0, SVCMGR_FACILITY, n, sizeof(buffer), buffer, dummy);
 
 	return string(buffer);
 }
@@ -336,6 +341,7 @@ const SvcSwitches backupOptions[] =
 	{"bkp_non_transportable", putOption, 0, isc_spb_bkp_non_transportable, 0},
 	{"bkp_convert", putOption, 0, isc_spb_bkp_convert, 0},
 	{"bkp_no_triggers", putOption, 0, isc_spb_bkp_no_triggers, 0},
+	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -357,6 +363,7 @@ const SvcSwitches restoreOptions[] =
 	{"res_use_all_space", putOption, 0, isc_spb_res_use_all_space, 0},
 	{"res_fix_fss_data", putStringArgument, 0, isc_spb_res_fix_fss_data, 0},
 	{"res_fix_fss_metadata", putStringArgument, 0, isc_spb_res_fix_fss_metadata, 0},
+	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -540,6 +547,16 @@ void printString(const char*& p, int num)
 void printMessage(int num)
 {
 	printf ("%s\n", getMessage(num).c_str());
+}
+
+void printMessage(USHORT number, const SafeArg& arg, bool newLine = true)
+{
+	char buffer[256];
+	fb_msg_format(NULL, SVCMGR_FACILITY, number, sizeof(buffer), buffer, arg);
+	if (newLine)
+		printf("%s\n", buffer);
+	else
+		printf("%s", buffer);
 }
 
 void printNumeric(const char*& p, int num)
@@ -800,7 +817,7 @@ int main(int ac, char** av)
 
 	if (ac == 2 && (strcmp(av[1], "-z") == 0 || strcmp(av[1], "-Z") == 0))
 	{
-		printf("Firebird services manager version %s\n", FB_VERSION);
+		printMessage(51, SafeArg() << FB_VERSION);
 		return 0;
 	}
 
@@ -838,7 +855,7 @@ int main(int ac, char** av)
 		{
 			if (strcmp(av[0], "-z") == 0 || strcmp(av[0], "-Z") == 0)
 			{
-				printf("Firebird services manager version %s\n", FB_VERSION);
+				printMessage(51, SafeArg() << FB_VERSION);
 				++av;
 			}
 		}

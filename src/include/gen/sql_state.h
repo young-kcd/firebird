@@ -876,6 +876,14 @@ static const struct {
 	{336331031, "00000"}, // 279 gbak_mode_req
 	{336331033, "00000"}, // 281 gbak_just_data
 	{336331034, "00000"}, // 282 gbak_data_only
+	{336331078, "00000"}, // 326 gbak_missing_interval
+	{336331079, "00000"}, // 327 gbak_wrong_interval
+	{336331081, "00000"}, // 329 gbak_verify_verbint
+	{336331082, "00000"}, // 330 gbak_option_only_restore
+	{336331083, "00000"}, // 331 gbak_option_only_backup
+	{336331084, "00000"}, // 332 gbak_option_conflict
+	{336331085, "00000"}, // 333 gbak_param_conflict
+	{336331086, "00000"}, // 334 gbak_option_repeated
 	{336397205, "HY000"}, // 917 dsql_too_old_ods
 	{336397206, "42S02"}, // 918 dsql_table_not_found
 	{336397207, "42S02"}, // 919 dsql_view_not_found
@@ -999,5 +1007,53 @@ static const struct {
 	{336986161, "00000"}, //  49 fbsvcmgr_fp_read
 	{336986162, "00000"}, //  50 fbsvcmgr_fp_empty
 	{337051649, "00000"}, //   1 utl_trusted_switch
+	{337117213, "00000"}, //  29 nbackup_missing_param
+	{337117214, "00000"}, //  30 nbackup_allowed_switches
+	{337117215, "00000"}, //  31 nbackup_unknown_param
+	{337117216, "00000"}, //  32 nbackup_unknown_switch
+	{337117217, "00000"}, //  33 nbackup_nofetchpw_svc
+	{337117218, "00000"}, //  34 nbackup_pwfile_error
+	{337117219, "00000"}, //  35 nbackup_size_with_lock
+	{337117220, "00000"}, //  36 nbackup_no_switch
+	{337117223, "00000"}, //  39 nbackup_err_read
+	{337117224, "00000"}, //  40 nbackup_err_write
+	{337117225, "00000"}, //  41 nbackup_err_seek
+	{337117226, "00000"}, //  42 nbackup_err_opendb
+	{337117227, "00000"}, //  43 nbackup_err_fadvice
+	{337117228, "00000"}, //  44 nbackup_err_createdb
+	{337117229, "00000"}, //  45 nbackup_err_openbk
+	{337117230, "00000"}, //  46 nbackup_err_createbk
+	{337117231, "00000"}, //  47 nbackup_err_eofdb
+	{337117232, "00000"}, //  48 nbackup_fixup_wrongstate
+	{337117233, "00000"}, //  49 nbackup_err_db
+	{337117234, "00000"}, //  50 nbackup_userpw_toolong
+	{337117235, "00000"}, //  51 nbackup_lostrec_db
+	{337117236, "00000"}, //  52 nbackup_lostguid_db
+	{337117237, "00000"}, //  53 nbackup_err_eofhdrdb
+	{337117238, "00000"}, //  54 nbackup_db_notlock
+	{337117239, "00000"}, //  55 nbackup_lostguid_bk
+	{337117240, "00000"}, //  56 nbackup_page_changed
+	{337117241, "00000"}, //  57 nbackup_dbsize_inconsistent
+	{337117242, "00000"}, //  58 nbackup_failed_lzbk
+	{337117243, "00000"}, //  59 nbackup_err_eofhdrbk
+	{337117244, "00000"}, //  60 nbackup_invalid_incbk
+	{337117245, "00000"}, //  61 nbackup_unsupvers_incbk
+	{337117246, "00000"}, //  62 nbackup_invlevel_incbk
+	{337117247, "00000"}, //  63 nbackup_wrong_orderbk
+	{337117248, "00000"}, //  64 nbackup_err_eofbk
+	{337117249, "00000"}, //  65 nbackup_err_copy
+	{337117250, "00000"}, //  66 nbackup_err_eofhdr_restdb
+	{337117251, "00000"}, //  67 nbackup_lostguid_l0bk
+	{337182750, "00000"}, //  30 trace_conflict_acts
+	{337182751, "00000"}, //  31 trace_act_notfound
+	{337182752, "00000"}, //  32 trace_switch_once
+	{337182753, "00000"}, //  33 trace_param_val_miss
+	{337182754, "00000"}, //  34 trace_param_invalid
+	{337182755, "00000"}, //  35 trace_switch_unknown
+	{337182756, "00000"}, //  36 trace_switch_svc_only
+	{337182757, "00000"}, //  37 trace_switch_user_only
+	{337182758, "00000"}, //  38 trace_switch_param_miss
+	{337182759, "00000"}, //  39 trace_param_act_notcompat
+	{337182760, "00000"}, //  40 trace_mandatory_switch_miss
 	{0, NULL}
 };

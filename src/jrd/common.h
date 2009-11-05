@@ -882,24 +882,6 @@ void GDS_breakpoint(int);
 #endif
 
 
-// switch name and state table.  This structure should be used in all
-// command line tools to facilitate parsing options.
-struct in_sw_tab_t
-{
-	int in_sw;
-	int in_spb_sw;
-	const TEXT* in_sw_name;
-	SINT64 in_sw_value;					// alice specific field
-	SINT64 in_sw_requires;				// alice specific field
-	SINT64 in_sw_incompatibilities;		// alice specific field
-	bool in_sw_state;
-	USHORT in_sw_msg;
-	USHORT in_sw_min_length;
-	const TEXT* in_sw_text;
-	int in_sw_optype;					// burp specific field for now.
-	// Some compilers may produce warnings because I only initialized this field in gbak
-};
-
 #ifndef HAVE_WORKING_VFORK
 #define vfork fork
 #endif

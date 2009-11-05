@@ -37,6 +37,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../alice/alice.h"
+#include "../common/classes/Switches.h"
 #include "../alice/aliceswi.h"
 #include "../alice/alice_proto.h"
 #include "../alice/alice_meta.h"
@@ -678,16 +679,16 @@ static SINT64 ask()
 		if (p == response)
 			return ~SINT64(0);
 		*p = 0;
-		ALICE_down_case(response, response, sizeof(response));
-		if (!strcmp(response, "n") || !strcmp(response, "c") || !strcmp(response, "r"))
+		ALICE_upper_case(response, response, sizeof(response));
+		if (!strcmp(response, "N") || !strcmp(response, "C") || !strcmp(response, "R"))
 		{
 			  break;
 		}
 	}
 
-	if (response[0] == 'c')
+	if (response[0] == 'C')
 		switches |= sw_commit;
-	else if (response[0] == 'r')
+	else if (response[0] == 'R')
 		switches |= sw_rollback;
 
 	return switches;

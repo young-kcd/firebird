@@ -45,7 +45,7 @@
  */
 
 
-#include "../jrd/common.h"
+//#include "../jrd/common.h"
 
 
 // Switch handling constants.  Note that IN_SW_COUNT must always be
@@ -143,7 +143,7 @@ struct sw_tab_t
 };
 
 
-static const in_sw_tab_t gpre_in_sw_table[] =
+const static Switches::in_sw_tab_t gpre_in_sw_table[] =
 {
 #ifdef GPRE_ADA
 	{IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, false, 0, 0, "\t\textended ADA program"},

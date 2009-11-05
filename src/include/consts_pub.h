@@ -259,6 +259,7 @@
 #define isc_spb_trusted_auth			  111
 #define isc_spb_process_name              112
 #define isc_spb_trusted_role              113
+#define isc_spb_verbint                   114
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
