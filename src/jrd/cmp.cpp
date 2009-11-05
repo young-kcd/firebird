@@ -3799,7 +3799,20 @@ static jrd_nod* pass1(thread_db* tdbb,
 					new_node->nod_arg[1]->nod_type = nod_null;
 					new_node->nod_arg[2] = node;					// ELSE: RDB$DB_KEY
 
-					node = new_node;
+					// Cast the node to the destination type - CORE-2578.
+
+					node = PAR_make_node(tdbb, e_cast_length);
+					node->nod_type = nod_cast;
+					node->nod_count = 1;
+
+					Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
+					node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
+
+					dsc* desc = &format->fmt_desc[0];
+					CMP_get_desc(tdbb, csb, new_node->nod_arg[2], desc);
+					format->fmt_length = desc->dsc_length;
+
+					node->nod_arg[e_cast_source] = new_node;
 				}
 
 				return node;
