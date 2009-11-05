@@ -1944,7 +1944,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 
 	case nod_value_if:
-		CMP_get_desc(tdbb, csb, node->nod_arg[1], desc);
+		CMP_get_desc(tdbb, csb, node->nod_arg[1]->nod_type != nod_null ? 
+								node->nod_arg[1] : node->nod_arg[2], desc);
 		return;
 
 	case nod_domain_validation:
