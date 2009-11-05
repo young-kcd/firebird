@@ -454,6 +454,7 @@ public:
 	bool	dpb_gbak_attach;
 	bool	dpb_trusted_role;
 	bool	dpb_utf8_filename;
+	ULONG	dpb_ext_call_depth;
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 
 	// here begin compound objects
@@ -956,6 +957,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_next = dbb->dbb_attachments;
+	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
 
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -1968,6 +1970,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_process = options.dpb_remote_process;
+	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
 	attachment->att_next = dbb->dbb_attachments;
 
 	dbb->dbb_attachments = attachment;
@@ -4793,6 +4796,12 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			getPath(rdr, dpb_org_filename);
 			break;
 
+		case isc_dpb_ext_call_depth:
+			dpb_ext_call_depth = (ULONG) rdr.getInt();
+			if (dpb_ext_call_depth >= MAX_CALLBACKS)
+				ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
+			break;
+
 		default:
 			break;
 		}
@@ -5252,6 +5261,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publi
 	att_dsql_cache(*pool),
 	att_udf_pointers(*pool),
 	att_ext_connection(NULL),
+	att_ext_call_depth(0),
 	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
 {
 	att_mutex.enter();

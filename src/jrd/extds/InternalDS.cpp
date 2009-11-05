@@ -83,7 +83,7 @@ void InternalProvider::getRemoteError(ISC_STATUS* status, string& err) const
 {
 	err = "";
 
-	char buff[512];
+	char buff[1024];
 	const ISC_STATUS* p = status;
 	const ISC_STATUS* end = status + ISC_STATUS_LENGTH;
 

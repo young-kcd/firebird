@@ -108,6 +108,7 @@
 #define isc_dpb_trusted_role			  75
 #define isc_dpb_org_filename			  76
 #define isc_dpb_utf8_filename			  77
+#define isc_dpb_ext_call_depth			  78
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
