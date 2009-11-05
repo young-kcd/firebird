@@ -46,11 +46,11 @@ LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sou
 LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources)))) \
 $(FBCONFIG_Objects)
 
-NBACKUP_Other_Sources = jrd/db_alias.cpp common/UtilSvc.cpp $(OS_SPECIFIC_Sources)
+NBACKUP_Other_Sources = jrd/db_alias.cpp $(OS_SPECIFIC_Sources)
 NBACKUP_Files= nbackup.cpp nbackup/nbkMain.cpp
 NBACKUP_Sources = $(addprefix utilities/, $(NBACKUP_Files)) $(NBACKUP_Other_Sources)
 NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sources)))) \
-$(CLUMPLETS_Objects) $(FBCONFIG_Objects)
+$(CLUMPLETS_Objects) $(FBCONFIG_Objects) $(FBUTILSVC_Objects)
 
 
 CREATEDB_Files= create_db.cpp
@@ -68,11 +68,12 @@ $(FBCOMMON_ClientObjects) $(FBCLASSES_ClientObjects)
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp common/utils.cpp \
-$(OS_SPECIFIC_Sources) jrd/isc_file.cpp jrd/isc.cpp jrd/ThreadData.cpp common/UtilSvc.cpp
+$(OS_SPECIFIC_Sources) jrd/isc_file.cpp jrd/isc.cpp jrd/ThreadData.cpp
 
 GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
-GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)))) $(CLUMPLETS_Objects)
+GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)))) \
+$(CLUMPLETS_Objects) $(FBUTILSVC_Objects)
 
 
 FBSVCMGR_Files= fbsvcmgr.cpp
@@ -86,12 +87,12 @@ $(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 FBTRACEMGR_Files= fbtracemgr/traceMgrMain.cpp
 FBTRACEMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
-	common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp common/UtilSvc.cpp \
+	common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp \
 	jrd/trace/TraceCmdLine.cpp jrd/path_utils.cpp
 
 FBTRACEMGR_Sources = $(addprefix utilities/, $(FBTRACEMGR_Files)) $(FBTRACEMGR_Other_Sources)
 FBTRACEMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACEMGR_Sources)))) \
-	$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
+	$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects) $(FBUTILSVC_Objects)
 
 
 FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp

@@ -186,19 +186,6 @@ SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_So
 
 #________________________________________________________________________
 #
-# fbutil
-
-FBUTIL_ClientFiles=
-#FBUTIL_ClientFiles=FirebirdConfig.cpp FirebirdConfigFile.cpp
-FBUTIL_ServerFiles=
-
-FBUTIL_Files = $(FBUTIL_ClientFiles) $(FBUTIL_ServerFiles)
-
-FBUTIL_Sources = $(addprefix fbutil/, $(FBUTIL_Files))
-FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Sources))))
-
-#________________________________________________________________________
-#
 # common/classes
 
 FBCLASSES_ClientFiles=alloc.cpp locks.cpp semaphore.cpp fb_string.cpp timestamp.cpp \
@@ -304,6 +291,37 @@ COMMON_Objects = $(FBCLASSES_Objects) \
 				$(CONFIG_Objects) \
 				$(VULCAN_Objects)
 
+
+#________________________________________________________________________
+#
+
+# These objects are needed for all utilities
+
+FBUTIL_Files = classes/Switches.cpp
+
+FBUTIL_Sources = $(addprefix common/, $(FBUTIL_Files))
+FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Sources))))
+
+
+#________________________________________________________________________
+#
+
+# These objects are needed for all services
+
+FBSVC_Files = UtilSvc.cpp
+
+FBSVC_Sources = $(addprefix common/, $(FBSVC_Files))
+FBSVC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVC_Sources))))
+
+
+#________________________________________________________________________
+#
+
+# These objects are needed for utilities, that can be used as services
+
+FBUTILSVC_Objects = $(FBUTIL_Objects) $(FBSVC_Objects)
+
+
 #________________________________________________________________________
 #
 
@@ -321,13 +339,13 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(INTERFACE_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
-                $(FBUTIL_Objects) \
                 $(CLUMPLETS_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
                 $(ALICE_Objects) \
 				$(NBACKUP_SERVER_Objects) \
 				$(NTRACE_SERVER_Objects) \
+				$(FBUTIL_Objects) \
 				$(UTIL_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 
@@ -362,7 +380,6 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
 
 
 # Not needed since loaded into libfbmemory.a already
-#                $(FBUTIL_Objects) \
 #				$(FBMEMORY_Objects)
 
 #________________________________________________________________________

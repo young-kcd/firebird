@@ -44,11 +44,11 @@ unexport ISC_PASSWORD
 
 
 ISQL_Files = extract.epp isql.epp show.epp Extender.cpp InputDevices.cpp \
-    ColList.cpp OptionsBase.cpp
+    ColList.cpp OptionsBase.cpp iutils.cpp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files))
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
-AllObjects = $(ISQL_Objects)
+AllObjects = $(ISQL_Objects) $(COMMON_Objects) $(FBUTIL_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 
 
@@ -58,8 +58,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 isql_static : $(ISQL_STATIC)
 
-$(ISQL_STATIC):	$(ISQL_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
-	$(STATICEXE_LINK) $(LINK_OPTS) $(ISQL_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LIBEDITLINE) $(LINK_LIBS) $(ICU_LIBS)
+$(ISQL_STATIC):	$(AllObjects) $(LIBFBSTATIC_A) 
+	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIBEDITLINE) $(LINK_LIBS) $(ICU_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets
