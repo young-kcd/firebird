@@ -238,10 +238,10 @@
 # The threshold value that determines whether Firebird will use file system
 # cache or not. File system caching is used if database cache size in pages 
 # (configured explicitly in database header or via DefaultDbCachePages setting)
-# is less than FileSystemCacheTreshold value.
+# is less than FileSystemCacheThreshold value.
 #
-# To use file system cache always set FileSystemCacheTreshold to a large value.
-# To bypass file system cache for all databases set FileSystemCacheTreshold to 
+# To use file system cache always set FileSystemCacheThreshold to a large value.
+# To bypass file system cache for all databases set FileSystemCacheThreshold to 
 # zero.
 # 
 # Type: integer, measured in database pages
