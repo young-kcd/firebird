@@ -113,7 +113,7 @@ bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) thr
 	return append(v->value() + v->firstWarning(), v->length() - v->firstWarning());
 }
 
-bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
+bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const unsigned int count) throw()
 {
 	// CVC: I didn't expect count to be zero but it's, in some calls
 	fb_assert(count >= 0 && count <= ISC_STATUS_LENGTH);
@@ -122,7 +122,7 @@ bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const 
 
 	unsigned int copied = 0;
 
-	for (int i = 0; i < count; )
+	for (unsigned int i = 0; i < count; )
 	{
 		if (from[i] == isc_arg_end)
 		{
@@ -140,7 +140,7 @@ bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const 
 	m_length += copied;
 	m_status_vector[m_length] = isc_arg_end;
 
-	return copied == static_cast<unsigned int>(count);
+	return copied == count;
 }
 
 void StatusVector::ImplStatusVector::shiftLeft(const Base& arg) throw()

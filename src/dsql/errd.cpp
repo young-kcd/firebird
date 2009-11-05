@@ -171,9 +171,9 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 		}
 	}
 
-	if (indx + static_cast<size_t>(v.length()) + 1 < ISC_STATUS_LENGTH)
+	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
 	{
-		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (static_cast<size_t>(v.length()) + 1));
+		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
 		ERR_make_permanent(&status_vector[indx]);
 		return true;
 	}

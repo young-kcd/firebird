@@ -58,8 +58,8 @@ protected:
 		ISC_STATUS getCode() const throw() { return code; }
 
 		virtual const ISC_STATUS* value() const throw() { return NULL; }
-		virtual int length() const throw() { return 0; }
-		virtual int firstWarning() const throw() { return 0; }
+		virtual unsigned int length() const throw() { return 0; }
+		virtual unsigned int firstWarning() const throw() { return 0; }
 		virtual bool hasData() const throw() { return false; }
 		virtual void clear() throw() { }
 		virtual void append(const StatusVector&) throw() { }
@@ -93,16 +93,16 @@ protected:
 	{
 	private:
 		ISC_STATUS_ARRAY m_status_vector;
-		int m_length, m_warning;
+		unsigned int m_length, m_warning;
 
 		bool appendErrors(const ImplBase* const v) throw();
 		bool appendWarnings(const ImplBase* const v) throw();
-		bool append(const ISC_STATUS* const from, const int count) throw();
+		bool append(const ISC_STATUS* const from, const unsigned int count) throw();
 
 	public:
 		virtual const ISC_STATUS* value() const throw() { return m_status_vector; }
-		virtual int length() const throw() { return m_length; }
-		virtual int firstWarning() const throw() { return m_warning; }
+		virtual unsigned int length() const throw() { return m_length; }
+		virtual unsigned int firstWarning() const throw() { return m_warning; }
 		virtual bool hasData() const throw() { return m_length > 0; }
 		virtual void clear() throw();
 		virtual void append(const StatusVector& v) throw();
@@ -129,7 +129,7 @@ public:
 	~StatusVector() { }
 
 	const ISC_STATUS* value() const throw() { return implementation->value(); }
-	int length() const throw() { return implementation->length(); }
+	unsigned int length() const throw() { return implementation->length(); }
 	bool hasData() const throw() { return implementation->hasData(); }
 
 	void clear() throw() { implementation->clear(); }
