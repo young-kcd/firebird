@@ -113,6 +113,7 @@
 #include "../common/config/config.h"
 #include "../jrd/SysFunction.h"
 #include "../common/classes/FpeControl.h"
+#include "../common/classes/Aligner.h"
 
 const int TEMP_LENGTH	= 128;
 
@@ -309,7 +310,8 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 				desc->dsc_length == sizeof(RecordNumber::Packed))
 			{
 				const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
-				RecordNumber::Packed* numbers = reinterpret_cast<RecordNumber::Packed*>(desc->dsc_address);
+				Firebird::Aligner<RecordNumber::Packed> alignedNumbers(desc->dsc_address, desc->dsc_length);
+				const RecordNumber::Packed* numbers = alignedNumbers;
 				RecordNumber rel_dbkey;
 				rel_dbkey.bid_decode(&numbers[id]);
 				// Decrement the value in order to switch back to the zero based numbering
