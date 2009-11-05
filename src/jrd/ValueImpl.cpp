@@ -198,7 +198,7 @@ void ValueImpl::make(const Format* format, unsigned index, UCHAR* msg,
 }
 
 
-const char* FB_CALL ValueImpl::getName(Error* error) const
+const char* FB_CALL ValueImpl::getName(Error* /*error*/) const
 {
 	return name.c_str();
 }
@@ -251,7 +251,7 @@ Value::Type FB_CALL ValueImpl::getType(Error* error) const
 }
 
 
-const char* FB_CALL ValueImpl::getCharSet(Error* error) const
+const char* FB_CALL ValueImpl::getCharSet(Error* /*error*/) const
 {
 	if ((desc.isText() || desc.isBlob()) && charSetName.isEmpty())
 		mover.getClientCharSetName(charSetName);
@@ -260,7 +260,7 @@ const char* FB_CALL ValueImpl::getCharSet(Error* error) const
 }
 
 
-int FB_CALL ValueImpl::getSubType(Error* error) const
+int FB_CALL ValueImpl::getSubType(Error* /*error*/) const
 {
 	if (desc.isBlob())
 		return desc.getBlobSubType();
@@ -288,13 +288,13 @@ int FB_CALL ValueImpl::getPrecision(Error* error) const
 }
 
 
-int FB_CALL ValueImpl::getScale(Error* error) const
+int FB_CALL ValueImpl::getScale(Error* /*error*/) const
 {
 	return desc.dsc_scale;
 }
 
 
-bool FB_CALL ValueImpl::isNullable(Error* error) const
+bool FB_CALL ValueImpl::isNullable(Error* /*error*/) const
 {
 	return nullable;
 }
@@ -476,7 +476,7 @@ void FB_CALL ValueImpl::setDouble(Error* error, double value)
 }
 
 
-const char* FB_CALL ValueImpl::getString(Error* error, uint* strLength, bool* isNull) const
+const char* FB_CALL ValueImpl::getString(Error* /*error*/, uint* strLength, bool* isNull) const
 {
 	return mover.getString(this, &desc, buffer, strLength, isNull);
 }

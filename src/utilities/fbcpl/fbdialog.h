@@ -129,7 +129,7 @@ public:
 
     SERVICE_STATUS service_status;
 
-	int m_Error_Status;				//This is set by the calls to SERVICES_
+	DWORD m_Error_Status;			//This is set by the calls to SERVICES_
 									//and is also set by GetLastError()
 									//It is tested in ShowError to prevent
 									//the same error message being reported.

@@ -32,7 +32,7 @@ using Firebird::uint;
 namespace Jrd {
 
 
-ValuesImpl::IndividualQueue::IndividualQueue(MemoryPool& p, Error* error, ValuesImpl* aValues)
+ValuesImpl::IndividualQueue::IndividualQueue(MemoryPool& p, Error* /*error*/, ValuesImpl* aValues)
 	: PermanentStorage(p),
 	  values(aValues),
 	  valueCount(values->getCount()),
@@ -65,11 +65,11 @@ ValuesImpl::IndividualQueue::~IndividualQueue()
 }
 
 
-void FB_CALL ValuesImpl::IndividualQueue::enqueue(Error* error)
+void FB_CALL ValuesImpl::IndividualQueue::enqueue(Error* /*error*/)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	size_t recordCount = records.getCount();
-	UCHAR* buffer = (enqueuePos < recordCount ?
+	UCHAR* const buffer = (enqueuePos < recordCount ?
 		records[enqueuePos] : FB_NEW(getPool()) UCHAR[recordSize]);
 	UCHAR* nullsBuffer = buffer + nullsStart;
 	uint pos = 0;
@@ -99,7 +99,7 @@ void FB_CALL ValuesImpl::IndividualQueue::enqueue(Error* error)
 }
 
 
-bool FB_CALL ValuesImpl::IndividualQueue::dequeue(Error* error)
+bool FB_CALL ValuesImpl::IndividualQueue::dequeue(Error* /*error*/)
 {
 	if (recordNumber == enqueuePos)
 		return false;
@@ -141,7 +141,7 @@ bool FB_CALL ValuesImpl::IndividualQueue::dequeue(Error* error)
 //---------------------
 
 
-ValuesImpl::MsgQueue::MsgQueue(MemoryPool& p, Error* error, UCHAR* aMsg, unsigned aMsgLength)
+ValuesImpl::MsgQueue::MsgQueue(MemoryPool& p, Error* /*error*/, UCHAR* aMsg, unsigned aMsgLength)
 	: PermanentStorage(p),
 	  msg(aMsg),
 	  msgLength(aMsgLength),
@@ -159,7 +159,7 @@ ValuesImpl::MsgQueue::~MsgQueue()
 }
 
 
-void FB_CALL ValuesImpl::MsgQueue::enqueue(Error* error)
+void FB_CALL ValuesImpl::MsgQueue::enqueue(Error* /*error*/)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	size_t recordCount = records.getCount();
@@ -173,7 +173,7 @@ void FB_CALL ValuesImpl::MsgQueue::enqueue(Error* error)
 }
 
 
-bool FB_CALL ValuesImpl::MsgQueue::dequeue(Error* error)
+bool FB_CALL ValuesImpl::MsgQueue::dequeue(Error* /*error*/)
 {
 	if (recordNumber == enqueuePos)
 		return false;

@@ -654,7 +654,7 @@ static rem_port* alloc_port(rem_port* parent,
 							UCHAR* send_buffer,
 							ULONG send_length,
 							UCHAR* receive_buffer,
-							ULONG receive_length)
+							ULONG /*receive_length*/)
 {
 /**************************************
  *

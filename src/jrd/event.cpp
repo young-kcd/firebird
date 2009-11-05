@@ -1039,7 +1039,7 @@ void EventManager::free_global(frb* block)
 			break;
 	}
 
-	if (offset <= 0 || offset > m_header->evh_length ||
+	if (offset <= 0 || static_cast<ULONG>(offset) > m_header->evh_length ||
 		(prior && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
 	{
 		punt("free_global: bad block");

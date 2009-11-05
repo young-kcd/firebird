@@ -356,7 +356,7 @@ bool prefix_kernel_object_name(char* name, size_t bufsize)
 
 		// if name and prefix can't fit in name's buffer than we must
 		// not overwrite end of name because it contains object type
-		const int move_prefix = (len_name + len_prefix > bufsize) ?
+		const size_t move_prefix = (len_name + len_prefix > bufsize) ?
 			(bufsize - len_name) : len_prefix;
 
 		memmove(name + move_prefix, name, len_name);

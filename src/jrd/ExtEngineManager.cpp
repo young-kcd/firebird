@@ -234,7 +234,7 @@ void FB_CALL ExtEngineManager::AttachmentImpl::dispose(Error* error)
 	context->attachment = NULL;
 }
 
-Handle FB_CALL ExtEngineManager::AttachmentImpl::getHandle(Error* error) const
+Handle FB_CALL ExtEngineManager::AttachmentImpl::getHandle(Error* /*error*/) const
 {
 	return handle;
 }
@@ -264,7 +264,7 @@ ExtEngineManager::TransactionImpl::~TransactionImpl()
 {
 }
 
-Handle FB_CALL ExtEngineManager::TransactionImpl::getHandle(Error* error) const
+Handle FB_CALL ExtEngineManager::TransactionImpl::getHandle(Error* /*error*/) const
 {
 	return handle;
 }
@@ -312,12 +312,12 @@ void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 	transaction = FB_NEW(*internalAttachment->att_pool) TransactionImpl(traHandle);
 }
 
-ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(Firebird::Error* error)
+ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(Firebird::Error* /*error*/)
 {
 	return engine;
 }
 
-Firebird::Attachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachment(Error* error)
+Firebird::Attachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachment(Error* /*error*/)
 {
 	if (!this->attachment)
 	{
@@ -329,7 +329,7 @@ Firebird::Attachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachme
 	return attachment;
 }
 
-Firebird::Transaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransaction(Error* error)
+Firebird::Transaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransaction(Error* /*error*/)
 {
 	return transaction;
 }

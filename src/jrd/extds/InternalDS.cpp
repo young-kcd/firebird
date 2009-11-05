@@ -209,10 +209,9 @@ bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string&
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role) const
 {
-	const UserId *attUser = m_attachment->att_user;
-
 	if (m_isCurrent)
 	{
+		const UserId* attUser = m_attachment->att_user;
 		return ((user.isEmpty() || user == attUser->usr_user_name) &&
 				pwd.isEmpty() &&
 				(role.isEmpty() || role == attUser->usr_sql_role_name));
