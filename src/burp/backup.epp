@@ -3472,7 +3472,7 @@ void write_procedures()
 			put_blr_blob (att_procedure_blr, X.RDB$PROCEDURE_BLR);
 			if (!X.RDB$SECURITY_CLASS.NULL)
 				PUT_TEXT (att_procedure_security_class, X.RDB$SECURITY_CLASS);
-			if (!X.RDB$SECURITY_CLASS.NULL)
+			if (!X.RDB$OWNER_NAME.NULL)
 				PUT_TEXT (att_procedure_owner_name, X.RDB$OWNER_NAME);
 			if (!X.RDB$PROCEDURE_TYPE.NULL)
 				put_numeric (att_procedure_type, X.RDB$PROCEDURE_TYPE);
