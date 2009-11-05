@@ -206,6 +206,10 @@ ULONG DataTypeUtilBase::convertLength(ULONG len, USHORT srcCharSet, USHORT dstCh
 ULONG DataTypeUtilBase::convertLength(const dsc* src, const dsc* dst)
 {
 	fb_assert(dst->isText());
+	if (src->dsc_dtype == dtype_dbkey)
+	{
+		return src->dsc_length;
+	}
 	return convertLength(src->getStringLength(), src->getCharSet(), dst->getCharSet());
 }
 
@@ -228,7 +232,12 @@ void DataTypeUtilBase::makeConcatenate(dsc* result, const dsc* value1, const dsc
 		return;
 	}
 
-	if (value1->isBlob() || value2->isBlob())
+	if (value1->dsc_dtype == dtype_dbkey && value2->dsc_dtype == dtype_dbkey)
+	{
+		result->dsc_dtype = dtype_dbkey;
+		result->dsc_length = value1->dsc_length + value2->dsc_length;
+	}
+	else if (value1->isBlob() || value2->isBlob())
 	{
 		result->dsc_dtype = dtype_blob;
 		result->dsc_length = sizeof(ISC_QUAD);
