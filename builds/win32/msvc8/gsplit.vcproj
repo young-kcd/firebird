@@ -381,6 +381,34 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
+		<Filter
+			Name="COMMON files"
+			>
+			<File
+				RelativePath="..\..\..\src\common\classes\alloc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="JRD files"
+			>
+			<File
+				RelativePath="..\..\..\src\jrd\gds.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\os_utils.cpp"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

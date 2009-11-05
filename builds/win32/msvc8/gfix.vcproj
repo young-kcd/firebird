@@ -336,10 +336,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\alice\tdr.cpp"
 				>
 			</File>
@@ -431,6 +427,14 @@
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
 					/>
 				</FileConfiguration>
+			</File>
+		</Filter>
+		<Filter
+			Name="COMMON files"
+			>
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp"
+				>
 			</File>
 		</Filter>
 	</Files>

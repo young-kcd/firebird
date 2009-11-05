@@ -348,6 +348,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\isql\iutils.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\isql\OptionsBase.cpp"
 				>
 			</File>
@@ -402,7 +406,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\isql\isql_res.h"
+				RelativePath="..\..\..\src\isql\iutils_proto.h"
 				>
 			</File>
 			<File

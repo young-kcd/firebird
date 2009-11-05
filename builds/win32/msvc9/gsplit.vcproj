@@ -383,6 +383,10 @@
 			Name="COMMON files"
 			>
 			<File
+				RelativePath="..\..\..\src\common\classes\alloc.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp"
 				>
 			</File>
@@ -390,10 +394,6 @@
 		<Filter
 			Name="JRD files"
 			>
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp"
 				>

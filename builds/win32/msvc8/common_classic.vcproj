@@ -376,6 +376,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\Switches.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp"
 				>
 			</File>
@@ -457,6 +461,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\fb_string.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\GenericMap.h"
 				>
 			</File>
@@ -478,6 +486,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusHolder.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\Switches.h"
 				>
 			</File>
 			<File
