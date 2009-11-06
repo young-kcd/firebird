@@ -2,6 +2,41 @@
   * v2.5 Release Candidate 1
   **************************
 
+    * Bugfix CORE-2731
+        Recursive EXECUTE STATEMENT works wrong
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2730
+        Bus error when working with DB_KEY on RISC machines
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2729
+        Current connection may be used by EXECUTE STATEMENT instead of creation of a new attachment
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2722
+        Storage of a malformed blob is allowed when copying from a blob with NONE/OCTETS charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2721
+        Issue with SIMILAR TO and UTF-8
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2711
+        Embedded server cannot load ib_util.dll
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2685
+        System triggers on view with check option are not removed
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2660
         COUNT(*) incorrectly returns 0 when a condition of an outer join doesn't match
       Contributor(s):
@@ -157,6 +192,12 @@
         in EXECUTE PROCEDURE parameters without a colon prefix
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2578
+        Select rdb$db_key from a view with more than one table joined results in the conversion error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-2576
         Server may crash parsing wrong or truncated BLR
