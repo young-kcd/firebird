@@ -187,6 +187,11 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Bugfix CORE-2581
+        Infinity should not escape from the engine
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-2579
         Parameters and variables cannot be used as expressions
         in EXECUTE PROCEDURE parameters without a colon prefix
