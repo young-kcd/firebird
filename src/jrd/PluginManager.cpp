@@ -192,7 +192,7 @@ PluginImpl* PluginManager::getPlugin(const string& name)
 
 	if (!module)
 	{
-		ModuleLoader::doctorModuleExtention(plugin->filename);
+		ModuleLoader::doctorModuleExtension(plugin->filename);
 		module = ModuleLoader::loadModule(plugin->filename);
 	}
 

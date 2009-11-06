@@ -101,7 +101,7 @@ namespace
 
 	bool tryLibrary(PathName libName, string& message)
 	{
-		ModuleLoader::doctorModuleExtention(libName);
+		ModuleLoader::doctorModuleExtension(libName);
 
 		ModuleLoader::Module* module = ModuleLoader::loadModule(libName);
 		if (!module)

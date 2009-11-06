@@ -67,7 +67,7 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 	return true;
 }
 
-void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 {
 	Firebird::PathName::size_type pos = name.rfind(".dylib");
 	if (pos != Firebird::PathName::npos && pos == name.length() - 6)

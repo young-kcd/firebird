@@ -460,7 +460,7 @@ bool IntlManager::initialize()
 							ModuleLoader::Module* mod = ModuleLoader::loadModule(filename);
 							if (!mod)
 							{
-								ModuleLoader::doctorModuleExtention(filename);
+								ModuleLoader::doctorModuleExtension(filename);
 								mod = ModuleLoader::loadModule(filename);
 							}
 							if (mod)

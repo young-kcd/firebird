@@ -63,7 +63,7 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 	return true;
 }
 
-void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 {
 	if (name.isEmpty())
 		return;

@@ -543,7 +543,7 @@ void Engine::loadModule(const string& str, PathName* moduleName, string* entryPo
 		ModuleLoader::Module* module = ModuleLoader::loadModule(path);
 		if (!module)
 		{
-			ModuleLoader::doctorModuleExtention(path);
+			ModuleLoader::doctorModuleExtension(path);
 			module = ModuleLoader::loadModule(path);
 		}
 

@@ -167,7 +167,7 @@ bool ModuleLoader::isLoadableModule(const PathName& module)
 	return hMod != 0;
 }
 
-void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 {
 	const PathName::size_type pos = name.rfind(".dll");
 	if (pos != PathName::npos && pos == name.length() - 4)
