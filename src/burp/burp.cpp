@@ -90,6 +90,7 @@ const char switch_char = '-';
 
 const char* const output_suppress	= "SUPPRESS";
 const int burp_msg_fac				= 12;
+const int MIN_VERBOSE_INTERVAL		= 100;
 
 enum gbak_action
 {
@@ -229,8 +230,11 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 				BURP_error(326, true); // verbose interval value parameter missing
 			argv[itr++] = 0;
 			verbint_val = get_number(argv[itr]);
-			if (verbint_val < 100)
-				BURP_error(327, true, SafeArg() << 100); // verbose interval value cannot be smaller than @1
+			if (verbint_val < MIN_VERBOSE_INTERVAL)
+			{
+				// verbose interval value cannot be smaller than @1
+				BURP_error(327, true, SafeArg() << MIN_VERBOSE_INTERVAL);
+			}
 			flag_verbint = true;
 			argv[itr] = 0;
 			break;
@@ -798,8 +802,11 @@ int gbak(Firebird::UtilSvc* uSvc)
 					BURP_error(326, true); // verbose interval parameter missing
 
 				ULONG verbint_val = get_number(argv[itr]);
-				if (verbint_val < 100)
-					BURP_error(327, true, SafeArg() << 100); // verbose interval value cannot be smaller than @1
+				if (verbint_val < MIN_VERBOSE_INTERVAL)
+				{
+					// verbose interval value cannot be smaller than @1
+					BURP_error(327, true, SafeArg() << MIN_VERBOSE_INTERVAL);
+				}
 				tdgbl->verboseInterval = verbint_val;
 				verbint = true;
 			}
