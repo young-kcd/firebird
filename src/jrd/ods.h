@@ -54,6 +54,7 @@
 **   Here the Firebird history begins:
 **   ODS 10.0 is for FB1.0 and ODS 10.1 is for FB1.5.
 **   ODS 11.0 is for FB2.0, ODS11.1 is for FB2.1 and ODS11.2 is for FB2.5.
+**   ODS 12.0 is for FB3.
 **
 ***********************************************************************/
 
@@ -107,10 +108,10 @@ const USHORT ODS_VERSION12	= 12;		// Firebird 3.x features
 
 // Minor versions for ODS 11
 
-const USHORT ODS_CURRENT11_0	= 0;	// Firebird 2.0 features
-const USHORT ODS_CURRENT11_1	= 1;	// Firebird 2.1 features
-const USHORT ODS_CURRENT11_2	= 2;	// Firebird 2.5 features
-const USHORT ODS_CURRENT11		= 2;
+//const USHORT ODS_CURRENT11_0	= 0;	// Firebird 2.0 features
+//const USHORT ODS_CURRENT11_1	= 1;	// Firebird 2.1 features
+//const USHORT ODS_CURRENT11_2	= 2;	// Firebird 2.5 features
+//const USHORT ODS_CURRENT11	= 2;
 
 // Minor versions for ODS 12
 

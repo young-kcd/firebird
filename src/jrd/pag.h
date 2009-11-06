@@ -167,7 +167,8 @@ public:
 		pageNum	= aPageNum;
 	}
 	/*
-	inline PageNumber(const SLONG aPageNum) {
+	inline explicit PageNumber(const SLONG aPageNum)
+	{
 		pageSpaceID = DB_PAGE_SPACE;
 		pageNum	= aPageNum;
 	}
