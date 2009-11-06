@@ -67,7 +67,7 @@ class thread_db;
 class PageSpace : public pool_alloc<type_PageSpace>
 {
 public:
-	PageSpace(USHORT aPageSpaceID)
+	explicit PageSpace(USHORT aPageSpaceID)
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
@@ -112,7 +112,7 @@ private:
 class PageManager : public pool_alloc<type_PageManager>
 {
 public:
-	PageManager(Firebird::MemoryPool& aPool) :
+	explicit PageManager(Firebird::MemoryPool& aPool) :
 		pageSpaces(aPool),
 		pool(aPool)
 	{

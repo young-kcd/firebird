@@ -1333,7 +1333,7 @@ static void walk_generators(thread_db* tdbb, vdr* control)
 				if (VAL_debug_level)
 					fprintf(stdout, "walk_generator: page %d\n", *ptr);
 #endif
-				pointer_page* page = 0;
+				generator_page* page = 0;
 				fetch_page(tdbb, control, *ptr, pag_ids, &window, &page);
 				CCH_RELEASE(tdbb, &window);
 			}
