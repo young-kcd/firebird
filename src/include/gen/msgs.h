@@ -835,7 +835,7 @@ Data source : @4"},		/* 606, eds_statement */
 	{336330793, "expected data attribute"},		/* 808, gbak_exp_data_type */
 	{336330794, "Failed in store_blr_gen_id"},		/* 809, gbak_gen_id_failed */
 	{336330795, "do not recognize record type @1"},		/* 810, gbak_unk_rec_type */
-	{336330796, "Expected backup version 1..9.  Found @1"},		/* 811, gbak_inv_bkup_ver */
+	{336330796, "Expected backup version 1..10.  Found @1"},		/* 811, gbak_inv_bkup_ver */
 	{336330797, "expected backup description record"},		/* 812, gbak_missing_bkup_desc */
 	{336330798, "string truncated"},		/* 813, gbak_string_trunc */
 	{336330799, "warning -- record could not be restored"},		/* 814, gbak_cant_rest_record */

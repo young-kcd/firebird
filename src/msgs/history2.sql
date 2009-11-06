@@ -1251,6 +1251,7 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1242, 'asfernandes', '2009-10-20 12:20:40', 0, 502, 'Cannot use an aggregate function in a WHERE clause, use HAVING instead', NULL, NULL, 'c_pg')
 (1243, 'asfernandes', '2009-10-20 12:21:00', 0, 503, 'Cannot use an aggregate function in a GROUP BY clause', NULL, NULL, 'c_pg')
 (1244, 'asfernandes', '2009-10-20 12:21:20', 0, 506, 'Nested aggregate functions are not allowed', NULL, NULL, 'c_pg')
+(1245, 'cvc', '2009-11-06 08:26:40', 12, 44, 'Expected backup version 1..9.  Found @1', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;

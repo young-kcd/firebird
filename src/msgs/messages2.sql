@@ -2218,7 +2218,7 @@ COMMIT WORK;
 ('gbak_exp_data_type', NULL, 'burp.c', NULL, 12, 41, NULL, 'expected data attribute', NULL, NULL);
 ('gbak_gen_id_failed', NULL, 'burp.c', NULL, 12, 42, NULL, 'Failed in store_blr_gen_id', NULL, NULL);
 ('gbak_unk_rec_type', NULL, 'burp.c', NULL, 12, 43, NULL, 'do not recognize record type @1', NULL, NULL);
-('gbak_inv_bkup_ver', NULL, 'burp.c', NULL, 12, 44, NULL, 'Expected backup version 1..9.  Found @1', NULL, NULL);
+('gbak_inv_bkup_ver', NULL, 'burp.c', NULL, 12, 44, NULL, 'Expected backup version 1..10.  Found @1', NULL, NULL);
 ('gbak_missing_bkup_desc', NULL, 'burp.c', NULL, 12, 45, NULL, 'expected backup description record', NULL, NULL);
 ('gbak_string_trunc', NULL, 'burp.c', NULL, 12, 46, NULL, 'string truncated', NULL, NULL);
 ('gbak_cant_rest_record', NULL, 'burp.c', NULL, 12, 47, NULL, 'warning -- record could not be restored', NULL, NULL);

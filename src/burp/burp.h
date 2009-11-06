@@ -198,10 +198,13 @@ Version 9: FB2.5.
 			but gbak wasn't adjusted accordingly and thus it cannot store reliably text that's
 			longer than 255 bytes.
 			We anyway tried a recovery routine in v2.5 that may be backported.
+
+Version 10: FB3.0.
+			<Please fill in the required information>
 */
 
 // ASF: when change this, change the text of the message gbak_inv_bkup_ver, too.
-const int ATT_BACKUP_FORMAT		= 9;
+const int ATT_BACKUP_FORMAT		= 10;
 
 // format version number for ranges for arrays
 
