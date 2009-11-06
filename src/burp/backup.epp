@@ -469,7 +469,8 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	}
 
 	// now for the new triggers in rdb$triggers
-	if (tdgbl->BCK_capabilities & BCK_ffmptt) {
+	if (tdgbl->BCK_capabilities & BCK_ffmptt)
+	{
 		BURP_verbose(159);
 		// msg 159  writing triggers
 		write_triggers();
@@ -754,7 +755,8 @@ burp_fld* get_fields( burp_rel* relation)
 			// use the fld_flags to mark the field as an array and
 			// to differentiate it from other blobs
 
-			if (Y.RDB$DIMENSIONS) {
+			if (Y.RDB$DIMENSIONS)
+			{
 				field->fld_flags |= FLD_array;
 				field->fld_dimensions = Y.RDB$DIMENSIONS;
 				if (field->fld_dimensions < 0) {
@@ -764,31 +766,36 @@ burp_fld* get_fields( burp_rel* relation)
 				get_ranges (field);
 			}
 
-			if (!X.RDB$NULL_FLAG.NULL) {
+			if (!X.RDB$NULL_FLAG.NULL)
+			{
 				field->fld_null_flag = X.RDB$NULL_FLAG;
 				field->fld_flags |= FLD_null_flag;
 			}
 
-			if (!X.RDB$DEFAULT_VALUE.NULL) {
+			if (!X.RDB$DEFAULT_VALUE.NULL)
+			{
 				blob_id = &X.RDB$DEFAULT_VALUE;
 				if (blob_id->gds_quad_low || blob_id->gds_quad_high) {
 					field->fld_default_value = X.RDB$DEFAULT_VALUE;
 				}
 			}
 
-			if (!X.RDB$DEFAULT_SOURCE.NULL) {
+			if (!X.RDB$DEFAULT_SOURCE.NULL)
+			{
 				blob_id = &X.RDB$DEFAULT_SOURCE;
 				if (blob_id->gds_quad_low || blob_id->gds_quad_high) {
 					field->fld_default_source = X.RDB$DEFAULT_SOURCE;
 				}
 			}
 
-			if (!Y.RDB$CHARACTER_SET_ID.NULL) {
+			if (!Y.RDB$CHARACTER_SET_ID.NULL)
+			{
 				field->fld_character_set_id = Y.RDB$CHARACTER_SET_ID;
 				field->fld_flags |= FLD_charset_flag;
 			}
 
-			if (!X.RDB$COLLATION_ID.NULL) {
+			if (!X.RDB$COLLATION_ID.NULL)
+			{
 				field->fld_collation_id = X.RDB$COLLATION_ID;
 				field->fld_flags |= FLD_collate_flag;
 			}
@@ -801,7 +808,8 @@ burp_fld* get_fields( burp_rel* relation)
 			general_on_error();
 		END_ERROR;
 	}
-	else {
+	else
+	{
 		FOR (REQUEST_HANDLE tdgbl->handles_get_fields_req_handle1)
 			X IN RDB$RELATION_FIELDS CROSS Y IN RDB$FIELDS
 			WITH X.RDB$FIELD_SOURCE = Y.RDB$FIELD_NAME AND
@@ -814,12 +822,14 @@ burp_fld* get_fields( burp_rel* relation)
 			field->fld_length = Y.RDB$FIELD_LENGTH;
 			field->fld_scale = Y.RDB$FIELD_SCALE;
 			field->fld_id = X.RDB$FIELD_ID;
-			if (!X.RDB$DESCRIPTION.NULL) {
+			if (!X.RDB$DESCRIPTION.NULL)
+			{
 				blob_id = &X.RDB$DESCRIPTION;
 				if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 					field->fld_description = X.RDB$DESCRIPTION;
 			}
-			if (!X.RDB$QUERY_HEADER.NULL) {
+			if (!X.RDB$QUERY_HEADER.NULL)
+			{
 				blob_id = &X.RDB$QUERY_HEADER;
 				if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 					field->fld_query_header = X.RDB$QUERY_HEADER;
@@ -886,7 +896,8 @@ burp_fld* get_fields( burp_rel* relation)
 					{
 						field->fld_flags |= FLD_array;
 						field->fld_dimensions = RF.RDB$DIMENSIONS;
-						if (field->fld_dimensions < 0) {
+						if (field->fld_dimensions < 0)
+						{
 							BURP_error_redirect (NULL, 52, SafeArg() << field->fld_name);
 							// msg 52 array dimension for field %s is invalid
 						}
@@ -1453,7 +1464,8 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 	// this is beneficial, but let's do it for the moment instead of inventing
 	// our own chunk size. Note, the number of segments returned by information
 	// call for stream blob is always unreliable, even for zero-length blobs
-	if (blob_type == 1) {
+	if (blob_type == 1)
+	{
 		if (total_length != 0)
 			segments = (total_length + max_segment - 1) / max_segment;
 		else
@@ -3300,7 +3312,8 @@ void write_generators()
 			put(tdgbl, rec_generator);
 			const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
 			SINT64 value = 0;
-			if (!tdgbl->gbl_sw_meta) {
+			if (!tdgbl->gbl_sw_meta)
+			{
 				value = get_gen_id (X.RDB$GENERATOR_NAME, l);
 				put_int64 (att_gen_value_int64, value);
 			}
@@ -3324,7 +3337,8 @@ void write_generators()
 			put(tdgbl, rec_generator);
 			const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
 			SINT64 value = 0;
-			if (!tdgbl->gbl_sw_meta) {
+			if (!tdgbl->gbl_sw_meta)
+			{
 				value = get_gen_id (X.RDB$GENERATOR_NAME, l);
 				put_int64 (att_gen_value_int64, value);
 			}
@@ -3674,7 +3688,8 @@ void write_procedures()
 			general_on_error();
 		END_ERROR;
 	}
-	else {
+	else
+	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$PROCEDURES
 			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1

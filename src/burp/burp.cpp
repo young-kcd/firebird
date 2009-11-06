@@ -473,7 +473,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 	tdgbl->status = tdgbl->status_vector;
 	uSvc->started();
 
-	if (argc <= 1) {
+	if (argc <= 1)
+	{
 		burp_usage(switches);
 		BURP_exit_local(FINI_ERROR, tdgbl);
 	}
@@ -916,7 +917,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 	tdgbl->gbl_sw_files = NULL;
 
 	burp_fil* next_file = NULL;
-	for (file = file_list; file; file = next_file) {
+	for (file = file_list; file; file = next_file)
+	{
 		next_file = file->fil_next;
 		file->fil_next = tdgbl->gbl_sw_files;
 		tdgbl->gbl_sw_files = file;
@@ -1075,7 +1077,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 			BURP_error(3, true, SafeArg() << tdgbl->gbl_sw_page_size);
 			// msg 3 Page size specified (%ld) greater than limit (MAX_PAGE_SIZE bytes)
 		}
-		if (temp != tdgbl->gbl_sw_page_size) {
+		if (temp != tdgbl->gbl_sw_page_size)
+		{
 			BURP_print(103, SafeArg() << tdgbl->gbl_sw_page_size << temp);
 			// msg 103 page size specified (%ld bytes) rounded up to %ld bytes
 			tdgbl->gbl_sw_page_size = temp;
@@ -1243,7 +1246,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 	}
 
 	// Detach from database to release system resources
-	if (tdgbl->db_handle != 0) {
+	if (tdgbl->db_handle != 0)
+	{
 		close_out_transaction(action, &tdgbl->tr_handle);
 		close_out_transaction(action, &tdgbl->global_trans);
 		if (isc_detach_database(tdgbl->status_vector, &tdgbl->db_handle))
@@ -1253,13 +1257,15 @@ int gbak(Firebird::UtilSvc* uSvc)
 	}
 
 	// Close the status output file
-	if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
+	if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL)
+	{
 		fclose(tdgbl->output_file);
 		tdgbl->output_file = NULL;
 	}
 
 	// Free all unfreed memory used by GBAK itself
-	while (tdgbl->head_of_mem_list != NULL) {
+	while (tdgbl->head_of_mem_list != NULL)
+	{
 		UCHAR* mem = tdgbl->head_of_mem_list;
 		tdgbl->head_of_mem_list = *((UCHAR **) tdgbl->head_of_mem_list);
 		gds__free(mem);
@@ -1510,19 +1516,23 @@ void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
  *	to allow redirecting output.
  *
  **************************************/
-	if (status_vector) {
+	if (status_vector)
+	{
 		const ISC_STATUS* vector = status_vector;
 
-		if (flagStuff) {
+		if (flagStuff)
+		{
 			BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 			tdgbl->uSvc->setServiceStatus(vector);
 		}
 
         SCHAR s[1024];
-		if (fb_interpret(s, sizeof(s), &vector)) {
+		if (fb_interpret(s, sizeof(s), &vector))
+		{
 			BURP_msg_partial(256); // msg 256: gbak: ERROR:
 			burp_output("%s\n", s);
-			while (fb_interpret(s, sizeof(s), &vector)) {
+			while (fb_interpret(s, sizeof(s), &vector))
+			{
 				BURP_msg_partial(256); // msg 256: gbak: ERROR:
 				burp_output("    %s\n", s);
 			}
@@ -1552,10 +1562,12 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
 		// print the warning message
 		const ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
-		if (fb_interpret(s, sizeof(s), &vector)) {
+		if (fb_interpret(s, sizeof(s), &vector))
+		{
 			BURP_msg_partial(255); // msg 255: gbak: WARNING:
 			burp_output("%s\n", s);
-			while (fb_interpret(s, sizeof(s), &vector)) {
+			while (fb_interpret(s, sizeof(s), &vector))
+			{
 				BURP_msg_partial(255); // msg 255: gbak: WARNING:
 				burp_output("    %s\n", s);
 			}
@@ -1633,7 +1645,8 @@ static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 			// Even if the restore failed, commit the transaction so that
 			// a partial database is at least recovered.
 			isc_commit_transaction(status_vector, handle);
-			if (status_vector[1]) {
+			if (status_vector[1])
+			{
 				// If we can't commit - have to roll it back, as
 				// we need to close all outstanding transactions before
 				// we can detach from the database.
@@ -1717,7 +1730,8 @@ static gbak_action open_files(const TEXT* file1,
 								  dpb.getBufferLength(),
 								  reinterpret_cast<const char*>(dpb.getBuffer())))
 		{
-			if (sw_replace != IN_SW_BURP_B) {
+			if (sw_replace != IN_SW_BURP_B)
+			{
 				// msg 13 REPLACE specified, but the first file %s is a database
 				BURP_error(13, true, file1);
 				if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
@@ -1725,14 +1739,14 @@ static gbak_action open_files(const TEXT* file1,
 				}
 				return QUIT;
 			}
-			if (tdgbl->gbl_sw_version) {
+			if (tdgbl->gbl_sw_version)
+			{
 				// msg 139 Version(s) for database "%s"
 				BURP_print(139, file1);
 				isc_version(&tdgbl->db_handle, BURP_output_version, (void*) "\t%s\n");
 			}
 			if (sw_verbose)
-				BURP_print(166, file1);
-				// msg 166: readied database %s for backup
+				BURP_print(166, file1); // msg 166: readied database %s for backup
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
 			(status_vector[1] != isc_io_error && status_vector[1] != isc_bad_db_format))
@@ -2001,7 +2015,8 @@ static gbak_action open_files(const TEXT* file1,
 			}
 			tdgbl->action->act_file = tdgbl->gbl_sw_files;
 			tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
-			if ((tdgbl->gbl_sw_files = fil) == NULL) {
+			if ((tdgbl->gbl_sw_files = fil) == NULL)
+			{
 				BURP_error(268, true);
 				// msg 268 database file specification missing
 				return QUIT;
@@ -2041,16 +2056,19 @@ static gbak_action open_files(const TEXT* file1,
 							 dpb.getBufferLength(),
 							 reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
-		if (sw_replace == IN_SW_BURP_C) {
+		if (sw_replace == IN_SW_BURP_C)
+		{
 			if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
 				BURP_print_status(status_vector, true);
 			}
 			BURP_error(14, true, *file2);
 			// msg 14 database %s already exists.  To replace it, use the -R switch
 		}
-		else {
+		else
+		{
 			isc_drop_database(status_vector, &tdgbl->db_handle);
-			if (tdgbl->db_handle) {
+			if (tdgbl->db_handle)
+			{
 				Firebird::makePermanentVector(status_vector);
 				ISC_STATUS_ARRAY status_vector2;
 				if (isc_detach_database(status_vector2, &tdgbl->db_handle)) {
@@ -2066,7 +2084,8 @@ static gbak_action open_files(const TEXT* file1,
 			}
 		}
 	}
-	if (sw_replace == IN_SW_BURP_R && status_vector[1] == isc_adm_task_denied) {
+	if (sw_replace == IN_SW_BURP_R && status_vector[1] == isc_adm_task_denied)
+	{
 		// if we got an error from attach database and we have replace switch set
 		// then look for error from attach returned due to not owner, if we are
 		// not owner then return the error status back up
@@ -2226,7 +2245,8 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
 		{
 			if (isalpha(c))
 			{
-				if (!digit) {
+				if (!digit)
+				{
 					file->fil_size_code = size_e;
 					size = 0;
 					break;
@@ -2248,7 +2268,8 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
 					size = 0;
 					break;
 				}
-				if (*num) {
+				if (*num)
+				{
 					file->fil_size_code = size_e;
 					size = 0;
 				}
