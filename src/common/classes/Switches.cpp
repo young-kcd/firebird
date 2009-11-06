@@ -44,7 +44,9 @@ Switches::Switches(const in_sw_tab_t* table, size_t count, bool copy, bool minLe
 		for (size_t iter = 0; iter < m_count; ++iter)
 			m_table[iter] = m_base[iter];
 	}
+
 	m_opLengths = FB_NEW(*getDefaultMemoryPool()) size_t[m_count];
+
 	for (size_t iter = 0; iter < m_count; ++iter)
 	{
 		if (m_base[iter].in_sw_name)
@@ -152,7 +154,7 @@ Switches::in_sw_tab_t* Switches::findSwitchMod(Firebird::string& sw, bool* inval
 	if (invalidSwitchInd)
 		*invalidSwitchInd = true;
 
-	return 0;
+	return NULL;
 }
 
 const Switches::in_sw_tab_t* Switches::getTable() const
@@ -207,6 +209,7 @@ bool Switches::exists(const int in_sw, const char* const* argv, const int start,
 	fb_assert(rc);
 	const size_t rclen = m_opLengths[pos];
 	fb_assert(rclen);
+
 	for (int itr = start; itr < stop; ++itr)
 	{
 		Firebird::string sw(argv[itr]);
@@ -220,6 +223,7 @@ bool Switches::exists(const int in_sw, const char* const* argv, const int start,
 			return true;
 		}
 	}
+
 	return false;
 }
 
@@ -260,7 +264,7 @@ const Switches::in_sw_tab_t* Switches::findByTag(const int in_sw, size_t* pos, b
 	if (in_sw <= 0)
 		complain("Switches: calling findByTag with an element out of range");
 
-	const in_sw_tab_t* rc = 0;
+	const in_sw_tab_t* rc = NULL;
 	size_t iter = 0;
 	for (const in_sw_tab_t* in_sw_tab = m_table; in_sw_tab->in_sw_name; ++in_sw_tab, ++iter)
 	{
@@ -269,12 +273,12 @@ const Switches::in_sw_tab_t* Switches::findByTag(const int in_sw, size_t* pos, b
 			if (rc)
 			{
 				fb_assert(rejectAmbiguity);
-				complain("Switches: findbyTag found more than one item with the same Tag (key)");
+				complain("Switches: findByTag found more than one item with the same Tag (key)");
 			}
 
 			if (pos)
 				*pos = iter;
-			
+
 			fb_assert(!rc);
 			rc = in_sw_tab;
 			if (!rejectAmbiguity)

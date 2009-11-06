@@ -182,7 +182,7 @@ static const Switches::in_sw_tab_t alice_in_sw_table[] =
 	{IN_SW_ALICE_MEND, isc_spb_rpr_mend_db, "MEND", sw_mend | sw_validate | sw_full,
 		0, ~(sw_no_update | sw_user | sw_password), false, 38, 2, NULL},
 	// msg 38: \t-mend\t\tprepare corrupt database for backup
-	{IN_SW_ALICE_MODE, 0, "mode", sw_mode,
+	{IN_SW_ALICE_MODE, 0, "MODE", sw_mode,
 		0, ~(sw_mode | sw_user | sw_password), false, 109, 2, NULL},
 	// msg 109: \t-mode\t\tread_only or read_write
 	{IN_SW_ALICE_NO_UPDATE, isc_spb_rpr_check_db, "NO_UPDATE", sw_no_update,
@@ -290,4 +290,3 @@ static const char* alice_mode_sw_table[] =
 };
 
 #endif // ALICE_ALICESWI_H
-

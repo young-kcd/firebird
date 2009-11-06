@@ -1539,7 +1539,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 	if (m_tdbb)
 	{
 		jrd_tra *transaction = m_tdbb->getTransaction();
-		if (transaction) 
+		if (transaction)
 		{
 			if (transaction->tra_callback_count >= MAX_CALLBACKS)
 				ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));

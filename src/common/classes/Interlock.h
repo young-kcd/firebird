@@ -13,7 +13,7 @@ extern void membar_wait(void);
 	(cas(target, compare, exchange) == compare)
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
 	(casx((volatile void**)target, (void*)compare, (void*)exchange) == compare)
-#endif
+#endif  // defined(SOLARIS) || defined(hpux)
 
 #ifdef SOLARIS
 #define WAIT_FOR_FLUSH_CACHE membar_wait();
@@ -21,7 +21,7 @@ extern void membar_wait(void);
 #else
 /* I64 hpux currently has mf in the cas asm routines */
 /* (h6icas.s). They should probably be moved here instead */
-#endif
+#endif  // SOLARIS
 
 
 #ifdef AIX_PPC
@@ -49,7 +49,7 @@ void asm_sync(void);
 #define WAIT_FOR_FLUSH_CACHE asm_isync();
 #define FLUSH_CACHE asm_sync();
 }
-#endif
+#endif  // AIX_PPC
 
 #ifdef DARWIN
 #define __DEBUGGING__
@@ -67,7 +67,7 @@ static inline int COMPARE_EXCHANGE_POINTER(void* target, volatile void* compare,
 }
 
 }
-#endif
+#endif // DARWIN
 
 
 #ifdef MVS
@@ -89,7 +89,7 @@ static inline void* casx (volatile void *state, volatile void *compare, void *ex
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
 	(casx(target, compare, exchange) == compare)
 
-#endif
+#endif  // MVS
 
 #ifdef __VMS
 #include <builtins.h>
@@ -105,7 +105,7 @@ extern "C"
     }
 }
 
-#endif
+#endif  // __VMS
 
 #ifdef _WIN32
 #include <windows.h>
@@ -133,7 +133,7 @@ extern "C"
 //#pragma intrinsic(_InterlockedCompareExchange)
 #endif
 
-#endif
+#endif  // _WIN32
 
 #ifndef INTERLOCKED_INCREMENT
 #define INTERLOCKED_INCREMENT(variable)	interlockedIncrement (&variable)
@@ -145,7 +145,7 @@ extern "C"
 	(inline_cas(target, compare, exchange))
 #define COMPARE_EXCHANGE_POINTER(target,compare,exchange)\
 	(inline_cas_pointer((volatile void**)target, (void*)compare, (void*)exchange))
-#endif
+#endif  // defined (__i386) || (__x86_64__)
 
 #ifndef INTERLOCK_TYPE
 #define INTERLOCK_TYPE	int
@@ -177,7 +177,7 @@ inline INTERLOCK_TYPE interlockedIncrement(volatile INTERLOCK_TYPE *ptr)
 		if (COMPARE_EXCHANGE(ptr, oldValue, newValue))
 			return newValue;
 		}
-#endif
+#endif  // ifdef _WIN32
 }
 
 inline INTERLOCK_TYPE interlockedDecrement(volatile INTERLOCK_TYPE *ptr)
@@ -206,7 +206,7 @@ inline INTERLOCK_TYPE interlockedDecrement(volatile INTERLOCK_TYPE *ptr)
 		if (COMPARE_EXCHANGE(ptr, oldValue, newValue))
 			return newValue;
 		}
-#endif
+#endif  // ifdef _WIN32
 }
 
 inline int inline_cas (volatile int *target, int compare, int exchange)
@@ -236,7 +236,6 @@ inline char inline_cas_pointer (volatile void **target, void *compare, void *exc
             : "cc", "memory");
 
     return ret;
-
 #else
 	return NULL;
 #endif

@@ -218,7 +218,7 @@ private:
 	static bool			process_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Get bitmask from within spb buffer, find corresponding switches within specified table,
 	// add them to the command line
-	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb, 
+	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
 									   const Switches::in_sw_tab_t* table,
 									   Firebird::string& sw);
 	// Get string from within spb buffer, add it to the command line
@@ -227,7 +227,7 @@ private:
 	static void get_action_svc_data(const Firebird::ClumpletReader& spb, Firebird::string& sw);
 	// Get parameter from within spb buffer, find corresponding switch within specified table,
 	// add it to the command line
-	static bool get_action_svc_parameter(UCHAR tag, const Switches::in_sw_tab_t* table, 
+	static bool get_action_svc_parameter(UCHAR tag, const Switches::in_sw_tab_t* table,
 										 Firebird::string&);
 	// Create 'SYSDBA needed' error in status vector
 	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);

@@ -427,7 +427,7 @@ static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::st
 		// msg 1: found unknown switch
 	}
 
-	return 0;
+	return NULL;
 }
 
 
@@ -612,8 +612,10 @@ int gbak(Firebird::UtilSvc* uSvc)
 			break;
 		case IN_SW_BURP_MODE:
 			if (tdgbl->gbl_sw_mode)
+			{
 				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name <<
 					(tdgbl->gbl_sw_mode_val ? BURP_SW_MODE_RO : BURP_SW_MODE_RW));
+			}
 			if (++itr >= argc)
 			{
 				BURP_error(279, true);
@@ -770,7 +772,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 				{
 					// Make sure the status file doesn't already exist
 					FILE* tmp_outfile = fopen(redirect, fopen_read_type);
-					if (tmp_outfile) {
+					if (tmp_outfile)
+					{
 						BURP_print(66, redirect);
 						// msg 66 can't open status and error output file %s
 						fclose(tmp_outfile);
@@ -1661,7 +1664,8 @@ static SLONG get_number( const SCHAR* string)
 	SCHAR c;
 	SLONG value = 0;
 
-	for (const SCHAR* p = string; c = *p++;) {
+	for (const SCHAR* p = string; c = *p++;)
+	{
 		if (c < '0' || c > '9')
 			return 0;
 		value *= 10;
@@ -2199,7 +2203,8 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
 	file->fil_size_code = size_n;
 	for (const SCHAR *num = string; c = *num++;)
 	{
-		if (isdigit(c)) {
+		if (isdigit(c))
+		{
 			int val = c - '0';
 			if (size >= overflow)
 			{

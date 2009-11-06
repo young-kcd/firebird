@@ -340,12 +340,14 @@ static int get_function_option(const SCHAR* prog_name,
 		return FB_FAILURE;
 	}
 
-	if (*sw_replace == IN_SW_SPIT_0) {
+	if (*sw_replace == IN_SW_SPIT_0)
+	{
 		*sw_replace = (gsplit_option) op->in_sw;
 		return FB_SUCCESS;
 	}
 
-	if (*sw_replace != op->in_sw) {
+	if (*sw_replace != op->in_sw)
+	{
 		fprintf(stderr, "%s: invalid option '%s', incompatible option\n", prog_name, string);
 		print_clo(prog_name);
 		return FB_FAILURE;

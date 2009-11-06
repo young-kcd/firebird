@@ -7386,9 +7386,9 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 		}
 		break;
 
-		default:
-			exists = true;
-			break;
+	default:
+		exists = true;
+		break;
 	}
 
 	if (tdgbl->RESTORE_ods <= DB_VERSION_DDL8)

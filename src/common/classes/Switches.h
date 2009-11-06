@@ -89,8 +89,8 @@ public:
 	// if it's the one we want (we reduce loop from Nkeys*Nargs to Nkeys+Nargs in the worst case).
 	// It throws system_call_failed if the key is not found or it's negative or zero.
 	bool exists(const int in_sw, const char* const* argv, const int start, const int stop) const;
-	
-	// Returns the switch's default text given the switch's numeric value (tag). 
+
+	// Returns the switch's default text given the switch's numeric value (tag).
 	// (There may be more than one spelling for the same switch.)
 	// Will throw system_call_failed if tag is not found.
 	const char* findNameByTag(const int in_sw) const;

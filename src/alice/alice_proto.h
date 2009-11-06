@@ -40,4 +40,3 @@ void	ALICE_print_status(const ISC_STATUS*);
 void	ALICE_exit(int, AliceGlobals*);
 
 #endif // ALICE_ALICE_PROTO_H
-

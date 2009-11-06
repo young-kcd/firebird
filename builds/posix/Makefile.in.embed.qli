@@ -73,4 +73,3 @@ create_yachts:
 include $(ROOT)/gen/make.shared.targets
 
 -include $(Dependencies)
-
