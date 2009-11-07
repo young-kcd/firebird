@@ -3671,23 +3671,38 @@ bool get_function(BurpGlobals* tdgbl)
 					break;
 
 				case att_function_engine_name:
-					GET_TEXT(X.RDB$ENGINE_NAME);
-					X.RDB$ENGINE_NAME.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$ENGINE_NAME);
+						X.RDB$ENGINE_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
 					break;
 
 				case att_function_package_name:
-					GET_TEXT(X.RDB$PACKAGE_NAME);
-					fb_utils::exact_name(X.RDB$PACKAGE_NAME);
-					X.RDB$PACKAGE_NAME.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$PACKAGE_NAME);
+						fb_utils::exact_name(X.RDB$PACKAGE_NAME);
+						X.RDB$PACKAGE_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
 					break;
 
 				case att_function_private_flag:
-					X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
-					X.RDB$PRIVATE_FLAG.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$PRIVATE_FLAG.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 89);
+					bad_attribute(scan_next_attr, attribute, 89);
 					// msg 89 function
 					break;
 				}
@@ -3789,8 +3804,6 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
  *
  **************************************/
 	att_type	attribute;
-	SSHORT		l;
-	TEXT		temp[GDS_NAME_LEN * 2];
 	scan_attr_t		scan_next_attr;
 
 	if (skip_arguments)
@@ -3838,17 +3851,23 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				break;
 
 			case att_functionarg_package_name:
-				GET_TEXT(buf);
+				if (tdgbl->RESTORE_format >= 10)
+					GET_TEXT(buf);
+				else
+					bad_attribute(scan_next_attr, attribute, 90);
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 90);
+				bad_attribute(scan_next_attr, attribute, 90);
 				// msg 90 function argument
 				break;
 			}
 		}
 		return;
 	}
+
+	SSHORT		l;
+	TEXT		temp[GDS_NAME_LEN * 2];
 
 	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
 	{
@@ -3866,22 +3885,22 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				switch (attribute)
 				{
 				case att_functionarg_name:
-				{
-					SSHORT prefixLen = 0;
-					if (!X.RDB$PACKAGE_NAME.NULL)
 					{
-						prefixLen = strlen(X.RDB$PACKAGE_NAME);
-						memcpy(temp, X.RDB$PACKAGE_NAME, prefixLen);
-						temp[prefixLen++] = '.';
-					}
+						SSHORT prefixLen = 0;
+						if (!X.RDB$PACKAGE_NAME.NULL)
+						{
+							prefixLen = strlen(X.RDB$PACKAGE_NAME);
+							memcpy(temp, X.RDB$PACKAGE_NAME, prefixLen);
+							temp[prefixLen++] = '.';
+						}
 
-					l = GET_TEXT(X.RDB$FUNCTION_NAME);
-					MISC_terminate(X.RDB$FUNCTION_NAME, temp + prefixLen, l,
-						sizeof(temp) - prefixLen);
-					BURP_verbose (119, temp);
-					// msg 119 restoring argument for function %s
+						l = GET_TEXT(X.RDB$FUNCTION_NAME);
+						MISC_terminate(X.RDB$FUNCTION_NAME, temp + prefixLen, l,
+							sizeof(temp) - prefixLen);
+						BURP_verbose (119, temp);
+						// msg 119 restoring argument for function %s
+					}
 					break;
-				}
 
 				case att_functionarg_position:
 					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
@@ -3924,13 +3943,18 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					break;
 
 				case att_functionarg_package_name:
-					l = GET_TEXT(X.RDB$PACKAGE_NAME);
-					X.RDB$PACKAGE_NAME.NULL = FALSE;
-					fb_utils::exact_name(X.RDB$PACKAGE_NAME);
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$PACKAGE_NAME);
+						X.RDB$PACKAGE_NAME.NULL = FALSE;
+						fb_utils::exact_name(X.RDB$PACKAGE_NAME);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 90);
+					bad_attribute(scan_next_attr, attribute, 90);
 					// msg 90 function argument
 					break;
 				}
@@ -5144,6 +5168,9 @@ bool get_package(BurpGlobals* tdgbl)
 	SSHORT len;
 	scan_attr_t scan_next_attr;
 
+	if (tdgbl->RESTORE_format < 10)
+		return false;
+
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	burp_pkg* package = (burp_pkg*) BURP_alloc_zero(sizeof(burp_pkg));
@@ -5362,30 +5389,50 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_engine_name:
-					GET_TEXT(X.RDB$ENGINE_NAME);
-					X.RDB$ENGINE_NAME.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$ENGINE_NAME);
+						X.RDB$ENGINE_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				case att_procedure_entrypoint:
-					GET_TEXT(X.RDB$ENTRYPOINT);
-					X.RDB$ENTRYPOINT.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$ENTRYPOINT);
+						X.RDB$ENTRYPOINT.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				case att_procedure_package_name:
-					GET_TEXT(X.RDB$PACKAGE_NAME);
-					X.RDB$PACKAGE_NAME.NULL = FALSE;
-					strcpy(procedure->prc_package, X.RDB$PACKAGE_NAME);
-					strcpy(package_name, X.RDB$PACKAGE_NAME);
-					fb_utils::exact_name(package_name);
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$PACKAGE_NAME);
+						X.RDB$PACKAGE_NAME.NULL = FALSE;
+						strcpy(procedure->prc_package, X.RDB$PACKAGE_NAME);
+						strcpy(package_name, X.RDB$PACKAGE_NAME);
+						fb_utils::exact_name(package_name);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				case att_procedure_private_flag:
-					X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
-					X.RDB$PRIVATE_FLAG.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$PRIVATE_FLAG.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 290);
+					bad_attribute(scan_next_attr, attribute, 290);
 					// msg 290 procedure
 					break;
 				}
@@ -5632,18 +5679,28 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 
 				// DB_VERSION_DDL11_2
 				case att_procedureprm_field_name:
-					X.RDB$FIELD_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$FIELD_NAME);
+					if (tdgbl->RESTORE_format >= 9)
+					{
+						X.RDB$FIELD_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$FIELD_NAME);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				// DB_VERSION_DDL11_2
 				case att_procedureprm_relation_name:
-					X.RDB$RELATION_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$RELATION_NAME);
+					if (tdgbl->RESTORE_format >= 9)
+					{
+						X.RDB$RELATION_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$RELATION_NAME);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 291);
+					bad_attribute(scan_next_attr, attribute, 291);
 					// msg 291 procedure parameter
 					break;
 				}
@@ -6890,7 +6947,10 @@ bool get_trigger(BurpGlobals* tdgbl)
 					break;
 
 				case att_trig_type2:
-					X.RDB$TRIGGER_TYPE = get_int64(tdgbl);
+					if (tdgbl->RESTORE_format >= 10)
+						X.RDB$TRIGGER_TYPE = get_int64(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
 					break;
 
 				case att_trig_flags:
@@ -6969,17 +7029,27 @@ bool get_trigger(BurpGlobals* tdgbl)
 					break;
 
 				case att_trig_engine_name:
-					GET_TEXT(X.RDB$ENGINE_NAME);
-					X.RDB$ENGINE_NAME.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$ENGINE_NAME);
+						X.RDB$ENGINE_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
 					break;
 
 				case att_trig_entrypoint:
-					GET_TEXT(X.RDB$ENTRYPOINT);
-					X.RDB$ENTRYPOINT.NULL = FALSE;
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$ENTRYPOINT);
+						X.RDB$ENTRYPOINT.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 134);
+					bad_attribute(scan_next_attr, attribute, 134);
 					// msg 134 trigger
 					break;
 				}
@@ -7403,6 +7473,16 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 		break;
 	}
 
+	if (object_type == obj_package_header)
+	{
+		if (tdgbl->RESTORE_format < 10)
+			return false;
+
+		// Discard packages for engine < FB3
+		if (tdgbl->RESTORE_ods < DB_VERSION_DDL12)
+			exists = false;
+	}
+
 	if (tdgbl->RESTORE_ods <= DB_VERSION_DDL8)
 	{
 		// Discard roles for IB4.
@@ -7527,6 +7607,7 @@ bool get_view(BurpGlobals*	tdgbl,
 			case att_view_context_name:
 				GET_TEXT(X.RDB$CONTEXT_NAME);
 				if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2) {
+					// Cannot use MAX_SQL_IDENTIFIER_LEN because this value shouldn't be upgraded.
 					X.RDB$CONTEXT_NAME[31] = 0;
 				}
 				break;
