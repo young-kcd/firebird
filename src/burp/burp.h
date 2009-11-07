@@ -200,7 +200,7 @@ Version 9: FB2.5.
 			We anyway tried a recovery routine in v2.5 that may be backported.
 
 Version 10: FB3.0.
-			<Please fill in the required information>
+			See backup_capabilities in backup.epp.
 */
 
 // ASF: when change this, change the text of the message gbak_inv_bkup_ver, too.
