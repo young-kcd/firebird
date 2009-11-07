@@ -291,11 +291,6 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Improvement CORE-2639
-        Add FIX_FSS_DATA and FIX_FSS_METADATA restore options to the Services API
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
     * Improvement CORE-2638
         Make words, non-reserved according to the SQL specification, non-reserved in our grammar
       Contributor(s):
@@ -334,6 +329,11 @@
         Allow usage of subselects as PSQL expressions
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2439
+        Add FIX_FSS_DATA and FIX_FSS_METADATA restore options to the Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-1687
         Allow bigger cache sizes than 2 GB (16K * 128 K) for 64-bit builds
