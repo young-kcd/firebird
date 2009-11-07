@@ -384,12 +384,14 @@ void MET_update_partners(thread_db* tdbb)
 
 void adjust_dependencies(jrd_prc* procedure)
 {
-	if (procedure->prc_int_use_count == -1) {
-	// Already processed
+	if (procedure->prc_int_use_count == -1)
+	{
+		// Already processed
 		return;
 	}
 	procedure->prc_int_use_count = -1; // Mark as undeletable
-	if (procedure->prc_request) {
+	if (procedure->prc_request)
+	{
 		// Loop over procedures from resource list of prc_request
 		ResourceList& list = procedure->prc_request->req_resources;
 		size_t i;
@@ -400,7 +402,8 @@ void adjust_dependencies(jrd_prc* procedure)
 			if (resource.rsc_type != Resource::rsc_procedure)
 				break;
 			procedure = resource.rsc_prc;
-			if (procedure->prc_int_use_count == procedure->prc_use_count) {
+			if (procedure->prc_int_use_count == procedure->prc_use_count)
+			{
 				// Mark it and all dependent procedures as undeletable
 				adjust_dependencies(procedure);
 			}
@@ -426,7 +429,8 @@ void MET_verify_cache(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 
 	vec<jrd_prc*>* procedures = dbb->dbb_procedures;
-	if (procedures) {
+	if (procedures)
+	{
 		jrd_prc* procedure;
 		vec<jrd_prc*>::iterator	ptr, end;
 
@@ -736,7 +740,8 @@ void MET_activate_shadow(thread_db* tdbb)
 		PIO_expand(X.RDB$FILE_NAME, (USHORT)strlen(X.RDB$FILE_NAME),
 					expanded_name, sizeof(expanded_name));
 
-		if (!strcmp(expanded_name, dbb_file_name)) {
+		if (!strcmp(expanded_name, dbb_file_name))
+		{
 			FOR(REQUEST_HANDLE handle2) Y IN RDB$FILES
 				WITH X.RDB$SHADOW_NUMBER EQ Y.RDB$SHADOW_NUMBER
 				MODIFY Y
@@ -1083,7 +1088,8 @@ void MET_delete_shadow(thread_db* tdbb, USHORT shadow_number)
 
 	CMP_release(tdbb, handle);
 
-	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
+	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
+	{
 		if (shadow->sdw_number == shadow_number) {
 			shadow->sdw_flags |= SDW_shutdown;
 		}
@@ -1221,7 +1227,8 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 				}
 			}
 		}
-		else {
+		else
+		{
 			// Use generic representation of formats with 32-bit offsets
 
 			const USHORT count = blob->blb_length / sizeof(Ods::Descriptor);
@@ -1297,7 +1304,8 @@ bool MET_get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, U
 	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];			/* BASED ON RDB$COLLATION_NAME */
 	UCHAR* p = buffer;
 	UCHAR* period = NULL;
-	for (; name < end_name && p < buffer + sizeof(buffer) - 1; p++, name++) {
+	for (; name < end_name && p < buffer + sizeof(buffer) - 1; p++, name++)
+	{
 		*p = UPPER7(*name);
 		if ((*p == '.') && !period) {
 			period = p;
@@ -1306,7 +1314,8 @@ bool MET_get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, U
 	*p = 0;
 
 /* Is there a period, separating collation name from character set? */
-	if (period) {
+	if (period)
+	{
 		*period = 0;
 		return resolve_charset_and_collation(tdbb, id, period + 1, buffer);
 	}
@@ -1314,7 +1323,8 @@ bool MET_get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, U
 	/* Is it a character set name (implying charset default collation sequence) */
 
 	bool res = resolve_charset_and_collation(tdbb, id, buffer, NULL);
-	if (!res) {
+	if (!res)
+	{
 		/* Is it a collation name (implying implementation-default character set) */
 		res = resolve_charset_and_collation(tdbb, id, NULL, buffer);
 	}
@@ -1557,7 +1567,8 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 /* if any current shadows were not defined in database, mark
    them to be shutdown since they don't exist anymore */
 
-	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
+	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
+	{
 		if (!(shadow->sdw_flags & SDW_found)) {
 			shadow->sdw_flags |= SDW_shutdown;
 		}
@@ -2042,7 +2053,8 @@ int MET_lookup_field(thread_db* tdbb,
 		if (!security_name) {
 			id = X.RDB$FIELD_ID;
 		}
-		else {
+		else
+		{
 			if ((!X.RDB$SECURITY_CLASS.NULL) && (*security_name == X.RDB$SECURITY_CLASS))
 			{
 				id = X.RDB$FIELD_ID;
@@ -2160,7 +2172,8 @@ void MET_lookup_generator_id (thread_db* tdbb, SLONG gen_id, Firebird::MetaName&
 	SET_TDBB (tdbb);
 	Database* dbb  = tdbb->getDatabase();
 
-	if (!gen_id) {
+	if (!gen_id)
+	{
 		name = "RDB$GENERATORS";
 		return;
 	}
@@ -2300,15 +2313,18 @@ bool MET_lookup_partner(thread_db*	tdbb,
 		frgn* references = &relation->rel_foreign_refs;
 		int index_number = 0;
 
-		if (references->frgn_reference_ids) {
+		if (references->frgn_reference_ids)
+		{
 			delete references->frgn_reference_ids;
 			references->frgn_reference_ids = NULL;
 		}
-		if (references->frgn_relations) {
+		if (references->frgn_relations)
+		{
 			delete references->frgn_relations;
 			references->frgn_relations = NULL;
 		}
-		if (references->frgn_indexes) {
+		if (references->frgn_indexes)
+		{
 			delete references->frgn_indexes;
 			references->frgn_indexes = NULL;
 		}
@@ -2367,15 +2383,18 @@ bool MET_lookup_partner(thread_db*	tdbb,
 		prim* dependencies = &relation->rel_primary_dpnds;
 		index_number = 0;
 
-		if (dependencies->prim_reference_ids) {
+		if (dependencies->prim_reference_ids)
+		{
 			delete dependencies->prim_reference_ids;
 			dependencies->prim_reference_ids = NULL;
 		}
-		if (dependencies->prim_relations) {
+		if (dependencies->prim_relations)
+		{
 			delete dependencies->prim_relations;
 			dependencies->prim_relations = NULL;
 		}
-		if (dependencies->prim_indexes) {
+		if (dependencies->prim_indexes)
+		{
 			delete dependencies->prim_indexes;
 			dependencies->prim_indexes = NULL;
 		}
@@ -2520,7 +2539,8 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
 
 /* See if we already know the procedure by name */
 	vec<jrd_prc*>* procedures = dbb->dbb_procedures;
-	if (procedures) {
+	if (procedures)
+	{
 		vec<jrd_prc*>::iterator ptr = procedures->begin();
 		for (const vec<jrd_prc*>::const_iterator end = procedures->end(); ptr < end; ++ptr)
 		{
@@ -2566,9 +2586,11 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
 	if (!REQUEST(irq_l_procedure))
 		REQUEST(irq_l_procedure) = request;
 
-	if (check_procedure) {
+	if (check_procedure)
+	{
 		check_procedure->prc_flags &= ~PRC_check_existence;
-		if (check_procedure != procedure) {
+		if (check_procedure != procedure)
+		{
 			LCK_release(tdbb, check_procedure->prc_existence_lock);
 			check_procedure->prc_flags |= PRC_obsolete;
 		}
@@ -2605,7 +2627,8 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
 		!(procedure->prc_flags & PRC_being_altered) &&
 		(!(procedure->prc_flags & PRC_obsolete) || return_deleted))
 	{
-		if (procedure->prc_flags & PRC_check_existence) {
+		if (procedure->prc_flags & PRC_check_existence)
+		{
 			check_procedure = procedure;
 			LCK_lock(tdbb, check_procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
 		}
@@ -2633,9 +2656,11 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
 	if (!REQUEST(irq_l_proc_id))
 		REQUEST(irq_l_proc_id) = request;
 
-	if (check_procedure) {
+	if (check_procedure)
+	{
 		check_procedure->prc_flags &= ~PRC_check_existence;
-		if (check_procedure != procedure) {
+		if (check_procedure != procedure)
+		{
 			LCK_release(tdbb, check_procedure->prc_existence_lock);
 			check_procedure->prc_flags |= PRC_obsolete;
 		}
@@ -2720,9 +2745,11 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 		REQUEST(irq_l_relation) = request;
 	}
 
-	if (check_relation) {
+	if (check_relation)
+	{
 		check_relation->rel_flags &= ~REL_check_existence;
-		if (check_relation != relation) {
+		if (check_relation != relation)
+		{
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
 			check_relation->rel_flags &= ~REL_check_partners;
@@ -2799,9 +2826,11 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 	if (!REQUEST(irq_l_rel_id))
 		REQUEST(irq_l_rel_id) = request;
 
-	if (check_relation) {
+	if (check_relation)
+	{
 		check_relation->rel_flags &= ~REL_check_existence;
-		if (check_relation != relation) {
+		if (check_relation != relation)
+		{
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
 			check_relation->rel_flags &= ~REL_check_partners;
@@ -3103,7 +3132,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	procedure->prc_id = id;
 	(*vector)[id] = procedure;
 
-	if (!procedure->prc_existence_lock) {
+	if (!procedure->prc_existence_lock)
+	{
 		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
 		procedure->prc_existence_lock = lock;
 		lock->lck_parent = dbb->dbb_lock;
@@ -3348,7 +3378,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				{
 					delete csb;
 
-					if (procedure->prc_request) {
+					if (procedure->prc_request)
+					{
 						CMP_release(tdbb, procedure->prc_request);
 						procedure->prc_request = NULL;
 					}
@@ -3437,7 +3468,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	procedure->prc_flags &= ~PRC_being_scanned;
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		procedure->prc_flags &= ~(PRC_being_scanned | PRC_scanned);
 		if (procedure->prc_existence_lock)
 		{
@@ -3566,7 +3598,8 @@ bool MET_relation_default_class(thread_db* tdbb, const Firebird::MetaName& relat
 		if (!REQUEST (irq_l_relation_defsec))
 			REQUEST (irq_l_relation_defsec) = request;
 
-		if (!REL.RDB$DEFAULT_CLASS.NULL) {
+		if (!REL.RDB$DEFAULT_CLASS.NULL)
+		{
 			if (default_security_class_name == REL.RDB$DEFAULT_CLASS)
 			{
 				found = true;
@@ -3600,12 +3633,14 @@ void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
 		relation->rel_use_count--;
 	}
 
-	if (!relation->rel_use_count) {
+	if (!relation->rel_use_count)
+	{
 		if (relation->rel_flags & REL_blocking) {
 			LCK_re_post(tdbb, relation->rel_existence_lock);
 		}
 
-		if (relation->rel_file) {
+		if (relation->rel_file)
+		{
 			// close external file
 			EXT_fini(relation, true);
 		}
@@ -3633,7 +3668,8 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 		return;
 	}
 
-	if (!procedure) {
+	if (!procedure)
+	{
 	/** If we are in here then dfw.epp/modify_procedure() called us **/
 		if (!(procedure = (*pvector)[id]))
 			return;
@@ -3658,14 +3694,16 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
  * are allocated.  That will not be freed up.
  */
 
-	if (procedure->prc_existence_lock) {
+	if (procedure->prc_existence_lock)
+	{
 		delete procedure->prc_existence_lock;
 		procedure->prc_existence_lock = NULL;
 	}
 
 /* deallocate input param structures */
 	vec<Parameter*>* vector;
-	if ((procedure->prc_inputs) && (vector = procedure->prc_input_fields)) {
+	if ((procedure->prc_inputs) && (vector = procedure->prc_input_fields))
+	{
 		for (int i = 0; i < procedure->prc_inputs; i++)
 		{
 			if ((*vector)[i])
@@ -3680,7 +3718,8 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 
 /* deallocate output param structures */
 
-	if ((procedure->prc_outputs) && (vector = procedure->prc_output_fields)) {
+	if ((procedure->prc_outputs) && (vector = procedure->prc_output_fields))
+	{
 		for (int i = 0; i < procedure->prc_outputs; i++)
 		{
 			if ((*vector)[i])
@@ -3923,7 +3962,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				field_id = n;
 				field = (*vector)[field_id];
 
-				if (field) {
+				if (field)
+				{
 					field->fld_computation = NULL;
 					field->fld_missing_value = NULL;
 					field->fld_default_value = NULL;
@@ -3935,7 +3975,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				break;
 
 			case RSR_field_name:
-				if (field) {
+				if (field)
+				{
 					/* The field exists.  If its name hasn't changed, then
 					   there's no need to copy anything. */
 
@@ -3944,7 +3985,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 					field->fld_name = reinterpret_cast<char*>(p);
 				}
-				else {
+				else
+				{
 					field = FB_NEW(*dbb->dbb_permanent) jrd_fld(*dbb->dbb_permanent);
 					(*vector)[field_id] = field;
 					field->fld_name = reinterpret_cast<char*>(p);
@@ -3965,7 +4007,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				break;
 
 			case RSR_base_field:
-				if (dependencies) {
+				if (dependencies)
+				{
 					csb->csb_g_flags |= csb_get_dependencies;
 					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
 					const Firebird::MetaName depName(REL.RDB$RELATION_NAME);
@@ -4092,7 +4135,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 /* release any triggers in case of a rescan, but not if the rescan
    hapenned while system triggers were being loaded. */
 
-	if (!(relation->rel_flags & REL_sys_trigs_being_loaded)) {
+	if (!(relation->rel_flags & REL_sys_trigs_being_loaded))
+	{
 		/* if we are scanning a system relation during loading the system
 		   triggers, (during parsing its blr actually), we must not release the
 		   existing system triggers; because we have already set the
@@ -4135,7 +4179,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 	relation->rel_current_format = NULL;
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		relation->rel_flags &= ~(REL_being_scanned | REL_scanned);
 		if (dependencies) {
 			relation->rel_flags |= REL_get_dependencies;
@@ -4412,7 +4457,8 @@ static int blocking_ast_relation(void* ast_object)
 		if (relation->rel_use_count) {
 			relation->rel_flags |= REL_blocking;
 		}
-		else {
+		else
+		{
 			relation->rel_flags &= ~REL_blocking;
 			relation->rel_flags |= REL_check_existence;
 			if (relation->rel_existence_lock)
@@ -4823,7 +4869,8 @@ static void par_messages(thread_db* tdbb,
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
 
 	const SSHORT version = csb->csb_blr_reader.getByte();
-	if (version != blr_version4 && version != blr_version5) {
+	if (version != blr_version4 && version != blr_version5)
+	{
 		ERR_post(Arg::Gds(isc_metadata_corrupt) <<
 				 Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
@@ -4870,7 +4917,8 @@ static void par_messages(thread_db* tdbb,
 			blr_length -= diff;
 		}
 
-		if (offset > MAX_FORMAT_SIZE) {
+		if (offset > MAX_FORMAT_SIZE)
+		{
 			ERR_post(Arg::Gds(isc_imp_exc) <<
 					 Arg::Gds(isc_blktoobig));
 		}
