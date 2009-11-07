@@ -4422,10 +4422,7 @@ sql_string
 				IntroducerMark mark;
 				mark.pos = lex.last_token - lex.start;
 				mark.length = lex.ptr - lex.last_token;
-				mark.textLength = str->str_length;
-
-				fb_assert(mark.length - mark.textLength == 2);
-				mark.textPos = mark.pos + 1;
+				mark.str = str;
 
 				introducerMarks.push(mark);
 			}
