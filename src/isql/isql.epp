@@ -1336,6 +1336,7 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 	{
 		fb_utils::exact_name(save_view_name);
 		fb_utils::exact_name(save_base_field);
+		bool found = false;
 		FOR FIRST 1
 			VR IN RDB$VIEW_RELATIONS
 			CROSS NEWRFR IN RDB$RELATION_FIELDS
@@ -1345,6 +1346,7 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 			NEWRFR.RDB$RELATION_NAME = VR.RDB$RELATION_NAME AND
 			NEWRFR.RDB$FIELD_NAME = save_base_field
 
+			found = true;
 			if (NEWRFR.RDB$BASE_FIELD.NULL)
 			{
 				if (NEWRFR.RDB$NULL_FLAG == 1)
@@ -1361,8 +1363,11 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 		ON_ERROR
 			error = true;
 		END_ERROR;
+		if (!found)
+			error = true;
 	}
 
+	// The error shouldn't be masked here. It should be propagated.
 	return null_flag;
 }
 
