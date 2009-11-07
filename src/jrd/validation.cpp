@@ -650,7 +650,7 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 
 
 static RTN corrupt(thread_db*, vdr*, USHORT, const jrd_rel*, ...);
-static FETCH_CODE fetch_page(thread_db*, vdr*, SLONG, USHORT, WIN *, void *);
+static FETCH_CODE fetch_page(thread_db*, vdr*, SLONG, USHORT, WIN*, void*);
 static void garbage_collect(thread_db*, vdr*);
 #ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT, const rhd*);
@@ -804,7 +804,7 @@ static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel
 static FETCH_CODE fetch_page(thread_db* tdbb,
 							 vdr* control,
 							 SLONG page_number,
-							 USHORT type, WIN* window, void *page_pointer)
+							 USHORT type, WIN* window, void* apage_pointer)
 {
 /**************************************
  *
@@ -827,12 +827,12 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 
 	window->win_page = page_number;
 	window->win_flags = 0;
-	*(PAG*) page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
+	pag** page_pointer = reinterpret_cast<pag**>(apage_pointer);
+	*page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
 
-	if ((*(PAG*) page_pointer)->pag_type != type)
+	if ((*page_pointer)->pag_type != type)
 	{
-		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type,
-				(*(PAG*) page_pointer)->pag_type);
+		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type, (*page_pointer)->pag_type);
 		return fetch_type;
 	}
 
@@ -1333,6 +1333,7 @@ static void walk_generators(thread_db* tdbb, vdr* control)
 				if (VAL_debug_level)
 					fprintf(stdout, "walk_generator: page %d\n", *ptr);
 #endif
+				// It doesn't make a difference generator_page or pointer_page because it's not used.
 				generator_page* page = 0;
 				fetch_page(tdbb, control, *ptr, pag_ids, &window, &page);
 				CCH_RELEASE(tdbb, &window);
