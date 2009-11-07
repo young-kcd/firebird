@@ -95,8 +95,7 @@ private:
 	{
 		unsigned pos;
 		unsigned length;
-		unsigned textPos;
-		unsigned textLength;
+		dsql_str* str;
 	};
 
 public:

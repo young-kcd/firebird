@@ -5089,18 +5089,7 @@ sql_string
 				IntroducerMark mark;
 				mark.pos = lex.last_token - lex.start;
 				mark.length = lex.ptr - lex.last_token;
-				mark.textLength = str->str_length;
-
-				if (str->type == dsql_str::TYPE_SIMPLE)
-				{
-					fb_assert(mark.length - mark.textLength == 2);
-					mark.textPos = mark.pos + 1;
-				}
-				else
-				{
-					fb_assert(mark.length - mark.textLength == 5);
-					mark.textPos = mark.pos + 3;
-				}
+				mark.str = str;
 
 				introducerMarks.push(mark);
 			}

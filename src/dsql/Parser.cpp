@@ -21,6 +21,7 @@
  */
 
 #include "firebird.h"
+#include <ctype.h>
 #include "../dsql/Parser.h"
 #include "../jrd/jrd.h"
 
@@ -124,17 +125,20 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 		const char* s = lex.start + mark.pos;
 		buffer.add(pos, s - pos);
 
+		if (!isspace(UCHAR(pos[s - pos - 1])))
+			buffer.add(' ');	// fix _charset'' becoming invalid syntax _charsetX''
+
 		const size_t count = buffer.getCount();
-		const size_t newSize = count + 2 + mark.textLength * 2 + 1;
+		const size_t newSize = count + 2 + mark.str->str_length * 2 + 1;
 		buffer.grow(newSize);
 		char* p = buffer.begin() + count;
 
 		*p++ = 'X';
 		*p++ = '\'';
 
-		const char* s2 = lex.start + mark.textPos;
+		const char* s2 = mark.str->str_data;
 
-		for (const char* end = lex.start + mark.textPos + mark.textLength; s2 < end; ++s2)
+		for (const char* end = s2 + mark.str->str_length; s2 < end; ++s2)
 		{
 			*p++ = HEX_DIGITS[UCHAR(*s2) >> 4];
 			*p++ = HEX_DIGITS[UCHAR(*s2) & 0xF];
