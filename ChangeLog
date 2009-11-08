@@ -1,3 +1,72 @@
+2009-11-08 10:13  robocop
+
+	* firebird2/src/jrd/ini.epp (1.113):
+
+	Style.
+
+2009-11-08 10:12  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.107),
+	lang_helpers/gds_codes.pas (1.106), src/burp/restore.epp (1.186),
+	src/include/gen/codetext.h (1.116), src/include/gen/iberror.h
+	(1.120), src/include/gen/msgs.h (1.147), src/include/gen/sql_code.h
+	(1.122), src/include/gen/sql_state.h (1.52),
+	src/msgs/facilities2.sql (1.83), src/msgs/messages2.sql (1.106),
+	src/msgs/system_errors2.sql (1.68):
+
+	Fix CORE-2740.
+
+2009-11-08 08:50  robocop
+
+	* firebird2/src/burp/restore.epp (1.185):
+
+	Style.
+
+2009-11-07 20:02  asfernandes
+
+	* firebird2/src/dsql/: Parser.cpp (1.10), Parser.h (1.13), parse.y
+	(1.326):
+
+	Fixed CORE-2739 - ASSERT at parse.cpp line 22885
+
+2009-11-07 13:14  robocop
+
+	* firebird2/src/burp/burp.h (1.106):
+
+	Misc.
+
+2009-11-07 12:58  robocop
+
+	* firebird2/src/jrd/met.epp (1.292):
+
+	Style.
+
+2009-11-07 12:57  robocop
+
+	* firebird2/src/burp/restore.epp (1.184):
+
+	Detect invalid values from corrupt backups using previous backup
+	formats.
+
+2009-11-07 10:22  robocop
+
+	* firebird2/src/isql/isql.epp (1.297):
+
+	I'm only preventing isql from hanging. This is just a bit of
+	CORE-2735.
+
+2009-11-07 08:52  robocop
+
+	* firebird2/src/jrd/validation.cpp (1.55):
+
+	Misc.
+
+2009-11-06 19:09  alexpeshkoff
+
+	* firebird2/src/common/classes/Interlock.h (1.6):
+
+	Added license
+
 2009-11-06 12:36  robocop
 
 	* firebird2/src/: burp/burp.h (1.105), include/gen/msgs.h (1.146),
