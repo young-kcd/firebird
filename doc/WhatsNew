@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 1
   **************************
 
+    * Bugfix CORE-2739
+        ASSERT at parse.cpp line 22885
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2731
         Recursive EXECUTE STATEMENT works wrong
       Contributor(s):
