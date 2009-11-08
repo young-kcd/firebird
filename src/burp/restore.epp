@@ -1120,9 +1120,7 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 	// msg 74 created database %s, page_size %ld bytes
 }
 
-void decompress(BurpGlobals*	tdgbl,
-				UCHAR*			buffer,
-				USHORT			length)
+void decompress(BurpGlobals* tdgbl, UCHAR* buffer, USHORT length)
 {
 /**************************************
  *
@@ -1357,10 +1355,7 @@ void general_on_error()
 	BURP_abort ();
 }
 
-bool get_acl(BurpGlobals*	tdgbl,
-			 const TEXT*	owner_nm,
-			 ISC_QUAD*		blob_id,
-			 ISC_QUAD*		new_blob_id)
+bool get_acl(BurpGlobals* tdgbl, const TEXT* owner_nm, ISC_QUAD* blob_id, ISC_QUAD* new_blob_id)
 {
 /**************************************
  *
@@ -5051,9 +5046,7 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 	return true;
 }
 
-void get_misc_blob(BurpGlobals* tdgbl,
-				   ISC_QUAD&	blob_id,
-				   bool			glb_trans)
+void get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
 {
 /**************************************
  *
@@ -6631,9 +6624,7 @@ bool get_security_class(BurpGlobals* tdgbl)
 	return true;
 }
 
-void get_source_blob(BurpGlobals*	tdgbl,
-					 ISC_QUAD&		blob_id,
-					 bool			glb_trans)
+void get_source_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
 {
 /**************************************
  *
@@ -6720,9 +6711,7 @@ void get_source_blob(BurpGlobals*	tdgbl,
 		// msg 23 isc_close_blob failed
 }
 
-USHORT get_text(BurpGlobals* 	tdgbl,
-				TEXT*			text,
-				ULONG			length)
+USHORT get_text(BurpGlobals* tdgbl, TEXT* text, ULONG length)
 {
 /**************************************
  *
@@ -6778,8 +6767,7 @@ USHORT get_text2(BurpGlobals* tdgbl, TEXT* text, ULONG length)
 	return len;
 }
 
-bool get_trigger_old (BurpGlobals*	tdgbl,
-					  burp_rel*		relation)
+bool get_trigger_old (BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
@@ -7570,8 +7558,7 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 	return true;
 }
 
-bool get_view(BurpGlobals*	tdgbl,
-			  burp_rel*		relation)
+bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
@@ -7606,7 +7593,8 @@ bool get_view(BurpGlobals*	tdgbl,
 
 			case att_view_context_name:
 				GET_TEXT(X.RDB$CONTEXT_NAME);
-				if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2) {
+				if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+				{
 					// Cannot use MAX_SQL_IDENTIFIER_LEN because this value shouldn't be upgraded.
 					X.RDB$CONTEXT_NAME[31] = 0;
 				}
@@ -7630,8 +7618,7 @@ bool get_view(BurpGlobals*	tdgbl,
 	return true;
 }
 
-void ignore_array(BurpGlobals*	tdgbl,
-				  burp_rel*		relation)
+void ignore_array(BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
@@ -7781,8 +7768,7 @@ void ignore_blob(BurpGlobals* tdgbl)
 	}
 }
 
-rec_type ignore_data(BurpGlobals*	tdgbl,
-					 burp_rel*		relation)
+rec_type ignore_data(BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
@@ -7846,9 +7832,7 @@ rec_type ignore_data(BurpGlobals*	tdgbl,
 	return record;
 }
 
-void realign(BurpGlobals*		tdgbl,
-			 UCHAR*				buffer,
-			 const burp_rel*	relation)
+void realign(BurpGlobals* tdgbl, UCHAR* buffer, const burp_rel* relation)
 {
 /**************************************
  *
@@ -7904,8 +7888,7 @@ void realign(BurpGlobals*		tdgbl,
 }
 
 #ifdef sparc
-USHORT recompute_length(BurpGlobals*	tdgbl,
-						burp_rel*		relation)
+USHORT recompute_length(BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
@@ -7967,9 +7950,7 @@ USHORT recompute_length(BurpGlobals*	tdgbl,
 }
 #endif
 
-bool restore(BurpGlobals*	tdgbl,
-			 const TEXT*	file_name,
-			 const TEXT*	database_name)
+bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_name)
 {
 /**************************************
  *
@@ -8408,9 +8389,7 @@ bool restore(BurpGlobals*	tdgbl,
 	return true;
 }
 
-void restore_security_class(BurpGlobals*	tdgbl,
-							const TEXT*		owner_nm,
-							const TEXT*		sec_class_nm)
+void restore_security_class(BurpGlobals* tdgbl, const TEXT* owner_nm, const TEXT* sec_class_nm)
 {
 /**************************************
  *
@@ -8453,9 +8432,9 @@ void restore_security_class(BurpGlobals*	tdgbl,
 }
 
 
-USHORT get_view_base_relation_count(BurpGlobals*	tdgbl,
-									const TEXT*		current_view_name,
-									USHORT			depth)
+USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
+									const TEXT* current_view_name,
+									USHORT depth)
 {
 /**************************************
  *
