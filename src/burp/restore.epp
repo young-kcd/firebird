@@ -166,7 +166,7 @@ USHORT	recompute_length(BurpGlobals* tdgbl, burp_rel*);
 #endif
 bool	restore(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 void	restore_security_class(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
-USHORT	get_view_base_relation_count(BurpGlobals* tdgbl, const TEXT*, USHORT);
+USHORT	get_view_base_relation_count(BurpGlobals* tdgbl, const TEXT*, USHORT, bool* error);
 void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT*, SINT64, const ISC_QUAD*);
 void	update_global_field(BurpGlobals* tdgbl);
 void	update_view_dbkey_lengths(BurpGlobals* tdgbl);
@@ -8434,7 +8434,8 @@ void restore_security_class(BurpGlobals* tdgbl, const TEXT* owner_nm, const TEXT
 
 USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
 									const TEXT* current_view_name,
-									USHORT depth)
+									USHORT depth,
+									bool* error)
 {
 /**************************************
  *
@@ -8451,7 +8452,9 @@ USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
  **************************************/
 
 	depth++;
-	if (depth > MAX_UPDATE_DBKEY_RECURSION_DEPTH) {
+	if (depth > MAX_UPDATE_DBKEY_RECURSION_DEPTH)
+	{
+		*error = true;
 		return 0;
 	}
 
@@ -8474,7 +8477,9 @@ USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
 		else
 		{
 			// Call recursive for VIEWS that are referenced in VIEWS
-			result += get_view_base_relation_count(tdgbl, V.RDB$RELATION_NAME, depth);
+			result += get_view_base_relation_count(tdgbl, V.RDB$RELATION_NAME, depth, error);
+			if (*error)
+				break;
 		}
 	END_FOR;
 
@@ -8727,10 +8732,18 @@ void update_view_dbkey_lengths(BurpGlobals* tdgbl)
 		  R.RDB$VIEW_BLR NOT MISSING AND
 		  (R.RDB$SYSTEM_FLAG NE 1 OR R.RDB$SYSTEM_FLAG MISSING)
 
-		const USHORT result = get_view_base_relation_count(tdgbl, R.RDB$RELATION_NAME, 0);
+		bool error = false;
+		const USHORT result = get_view_base_relation_count(tdgbl, R.RDB$RELATION_NAME, 0, &error);
+		fb_utils::exact_name(R.RDB$RELATION_NAME);
+		if (error)
+			BURP_error(339, false, SafeArg() << MAX_UPDATE_DBKEY_RECURSION_DEPTH << R.RDB$RELATION_NAME);
+
+		ULONG res2 = ULONG(result) * 8; // is a constant for DBKEY coded somewhere?
+		if (res2 > USHORT(MAX_SSHORT))
+			BURP_error(340, false, SafeArg() << MAX_SSHORT << R.RDB$RELATION_NAME);
 
 		MODIFY R
-			R.RDB$DBKEY_LENGTH = (result * 8); // is a constant for DBKEY coded somewhere?
+			R.RDB$DBKEY_LENGTH = SSHORT(res2);
 		END_MODIFY;
 		ON_ERROR
 			MISC_release_request_silent(req_handle2);

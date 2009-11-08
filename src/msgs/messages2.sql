@@ -2522,6 +2522,8 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'BACKUP_backup', 'backup.epp', NULL, 12, 336, NULL, 'writing packages', NULL, NULL);
 (NULL, 'get_package', 'restore.epp', NULL, 12, 337, NULL, 'restoring package @1', NULL, NULL);
 (NULL, 'get_package', 'restore.epp', NULL, 12, 338, NULL, 'package', NULL, NULL);
+('gbak_max_dbkey_recursion', 'update_view_dbkey_lengths', 'restore.epp', NULL, 12, 339, NULL, 'dependency depth greater than @1 for view @2', NULL, NULL);
+('gbak_max_dbkey_length', 'update_view_dbkey_lengths', 'restore.epp', NULL, 12, 340, NULL, 'value greater than @1 when calculating length of rdb$db_key for view @2', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

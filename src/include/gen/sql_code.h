@@ -884,6 +884,8 @@ static const struct {
 	{336331084, -901}, /* 332 gbak_option_conflict */
 	{336331085, -901}, /* 333 gbak_param_conflict */
 	{336331086, -901}, /* 334 gbak_option_repeated */
+	{336331091, -901}, /* 339 gbak_max_dbkey_recursion */
+	{336331092, -901}, /* 340 gbak_max_dbkey_length */
 	{336397205, -804}, /* 917 dsql_too_old_ods */
 	{336397206, -607}, /* 918 dsql_table_not_found */
 	{336397207, -607}, /* 919 dsql_view_not_found */

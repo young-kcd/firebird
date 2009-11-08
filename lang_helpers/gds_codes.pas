@@ -896,6 +896,8 @@ const
 	gds_gbak_option_conflict             = 336331084;
 	gds_gbak_param_conflict              = 336331085;
 	gds_gbak_option_repeated             = 336331086;
+	gds_gbak_max_dbkey_recursion         = 336331091;
+	gds_gbak_max_dbkey_length            = 336331092;
 	gds_dsql_too_old_ods                 = 336397205;
 	gds_dsql_table_not_found             = 336397206;
 	gds_dsql_view_not_found              = 336397207;
