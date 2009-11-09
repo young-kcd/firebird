@@ -1616,7 +1616,7 @@ void ISQL_print_validation(FILE* fp,
 
 			while (fb_isspace(*p))
 				p++;
-			if (!strncmp(p, "check", 5) || !strncmp(p, "CHECK", 5))
+			if (!fb_utils::strnicmp(p, "CHECK", 5))
 				issql = true;
 		}
 		if (firsttime)
@@ -3739,7 +3739,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		// Helen on CORE-932. Let's see if we can discover the real db name.
 		size_t db_name_len = MAXPATHLEN - 1;
 		char temp_name[MAXPATHLEN];
-		if (!strncmp(d_name, "/*", 2) || !strcmp(d_name, "--"))
+		if (!strncmp(d_name, "/*", 2) || !strncmp(d_name, "--", 2))
 		{
 			const char* target = d_name[0] == '/' ? "/*" : "--";
 			const char* comment = strstr(statement, target);
