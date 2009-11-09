@@ -3107,6 +3107,10 @@ Fetches = !f', NULL, NULL);
 ('PASS_FILE_READ', 'ISQL_main', 'isql.epp', NULL, 17, 163, NULL, 'could not read password file @1, errno @2', NULL, NULL);
 ('EMPTY_PASS', 'ISQL_main', 'isql.epp', NULL, 17, 164, NULL, 'empty password file @1', NULL, NULL);
 ('HLP_SETROWCOUNT', 'help', 'isql.epp', NULL, 17, 165, NULL, '    SET ROWCOUNT [<n>]     -- limit select stmt to <n> rows, zero is no limit', NULL, NULL);
+('NO_PACKAGE', 'SHOW_metadata', 'show.epp', NULL, 17, 166, NULL, 'There is no package @1 in this database', NULL, NULL)
+('NO_PACKAGES', 'SHOW_metadata', 'show.epp', NULL, 17, 167, NULL, 'There are no packages in this database', NULL, NULL)
+('NO_SCHEMA', 'SHOW_metadata', 'show.epp', NULL, 17, 168, NULL, 'There is no schema @1 in this database', NULL, NULL)
+('NO_SCHEMAS', 'SHOW_metadata', 'show.epp', NULL, 17, 169, NULL, 'There are no schemas in this database', NULL, NULL)
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
@@ -3483,15 +3487,15 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 17, NULL, '  -S(IZE)                                Print database size in pages after lock', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 18, NULL, '  -Z                                     Print program version', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 19, NULL, 'Notes:', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 20, NULL, '  <database> may specify database alias', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 21, NULL, '  incremental backups of multi-file databases are not supported yet', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 22, NULL, '  "stdout" may be used as a value of <filename> for -B option', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 20, NULL, '  <database> may specify database alias.', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 21, NULL, '  Incremental backups of multi-file databases are not supported yet.', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 22, NULL, '  "stdout" may be used as a value of <filename> for -B option.', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 23, NULL, 'PROBLEM ON "@1".', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 24, NULL, 'general options are:', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 25, NULL, 'switches can be abbreviated to the unparenthesized characters', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 26, NULL, '  option -S(IZE) only is valid together with -L(OCK)', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 27, NULL, '  for historical reasons, -N is equivalent to -UN(LOCK)', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 28, NULL, '  and -T is equivalent to -NOD(BTRIGGERS)', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 26, NULL, '  Option -S(IZE) only is valid together with -L(OCK).', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 27, NULL, '  For historical reasons, -N is equivalent to -UN(LOCK)', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 28, NULL, '  and -T is equivalent to -NOD(BTRIGGERS).', NULL, NULL)
 ('nbackup_missing_param', 'missingParameterForSwitch', 'nbackup.cpp', NULL, 24, 29, NULL, 'Missing parameter for switch @1', NULL, NULL)
 ('nbackup_allowed_switches', 'singleAction', 'nbackup.cpp', NULL, 24, 30, NULL, 'Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified', NULL, NULL)
 ('nbackup_unknown_param', 'nbackup', 'nbackup.cpp', NULL, 24, 31, NULL, 'Unrecognized parameter @1', NULL, NULL)
