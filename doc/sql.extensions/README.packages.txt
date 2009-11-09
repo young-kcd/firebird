@@ -60,9 +60,9 @@ Syntax:
         DROP PACKAGE BODY <name>
 
 Objectives:
-    - Make functional dependent code separated in logical modules like programming languages does.
+    - Make functional dependent code separated in logical modules like programming languages do.
 
-      It's well know in programming world that having code grouped in some way (for example in
+      It's well known in programming world that having code grouped in some way (for example in
       namespaces, units or classes) is a good thing. With standard procedures and functions in the
       database this is not possible. It's possible to group them in different scripts files, but
       two problems remain:
@@ -84,8 +84,8 @@ Objectives:
       tables that the package body depends on that object. If you want to, for example, drop that
       object, you first need to remove who depends on it. As who depends on it is a package body,
       you can just drop it even if some other database object depends on this package. When the body
-      is dropped, the header remains, allowing you to create its body again after change it based on
-      the object removal.
+      is dropped, the header remains, allowing you to create its body again after changing it based 
+      on the object removal.
 
     - Facilitate permission management.
 
