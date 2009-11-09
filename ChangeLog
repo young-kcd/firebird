@@ -1,3 +1,15 @@
+2009-11-09 08:23  robocop
+
+	* firebird2/src/isql/isql.epp (1.174.2.4):
+
+	CORE-2741
+
+2009-11-09 07:21  robocop
+
+	* firebird2/src/isql/isql.epp (1.174.2.3):
+
+	Adriano says we shouldn't assume argv[argc] is null.
+
 2009-10-31 21:03  hvlad
 
 	* firebird2/src/dsql/parse.y (1.200.4.6):
