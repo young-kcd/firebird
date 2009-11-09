@@ -5228,7 +5228,15 @@ Worker::~Worker()
 
 bool Worker::wait(int timeout)
 {
-	return m_sem.tryEnter(timeout);
+	if (m_sem.tryEnter(timeout))
+		return true;
+
+	Firebird::MutexLockGuard guard(m_mutex);
+	if (m_sem.tryEnter(0))
+		return true;
+
+	remove();
+	return false; 
 }
 
 void Worker::setState(const bool active)
@@ -5261,7 +5269,7 @@ void Worker::wakeUpAll()
 
 void Worker::remove()
 {
-	if (!m_active) {
+	if (!m_active && (m_next || m_prev || m_idleWorkers == this)) {
 		m_cntIdle--;
 	}
 
