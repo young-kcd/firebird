@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 1
   **************************
 
+    * Bugfix CORE-2742
+        Server may stop responding to a particular client attachment under some conditions
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2739
         ASSERT at parse.cpp line 22885
       Contributor(s):
