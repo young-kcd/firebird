@@ -6646,9 +6646,9 @@ static processing_state parse_arg(int argc,
 		switch_used[su] = false;
 	}
 
-	int i = 1;
-	const char* s = argv[i];
-	while (i < argc) {
+	for (int i = 1; i < argc; ++i)
+	{
+		const char* s = argv[i];
 		// Look at flags to find unique match.  If the flag has an arg,
 		// advance the pointer (and i).  Only change the return value
 		// for extract switch or error.
@@ -6674,7 +6674,8 @@ static processing_state parse_arg(int argc,
 					if (switches[j].argtype != SWARG_NONE)
 					{
 						// make sure swarg_str is really a pointer to argv, not something else !!
-						swarg_str = argv[++i];
+						if (++i < argc)
+							swarg_str = argv[i];
 						if (!swarg_str || !*swarg_str) {
 							ISQL_msg_get(USAGE_NOARG, errbuf, SafeArg() << (s + 1));
 							STDERROUT(errbuf);
@@ -6888,7 +6889,7 @@ static processing_state parse_arg(int argc,
 				STRARGNCPY(isqlGlob.global_Db_name, s, sizeof(isqlGlob.global_Db_name) - 1);
 #ifdef DEV_BUILD
 				// If there is a table name, it follows 
-				if (istable && (s = argv[++i]) && *s)
+				if (istable && (++i < argc) && (s = argv[i]) && *s)
 					STRARGNCPY(tabname, s, WORDLENGTH - 1);
 #endif
 			}
@@ -6897,8 +6898,6 @@ static processing_state parse_arg(int argc,
 		// Quit the loop of interpreting if we got an error
 		if (ret == ps_ERR)
 			break;
-			
-		s = argv[++i];
 	}
 
 	// If not input, then set up first filelist
