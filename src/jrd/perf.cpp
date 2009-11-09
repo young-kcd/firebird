@@ -98,9 +98,13 @@ static int perf_format(const P* before, const P* after,
  *
  **************************************/
 	SCHAR c;
-
 	SLONG buffer_length = buf_len ? *buf_len : 0;
 	SCHAR* p = buffer;
+
+	if (buffer_length < 0)
+	{
+		buffer_length = 0;
+	}
 
 	while ((c = *string++) && c != '$')
 	{
@@ -186,7 +190,7 @@ static int perf_format(const P* before, const P* after,
 	}
 
 	*p = 0;
-	const int length = p - buffer;
+	const int length = static_cast<int>(p - buffer);
 	if (buffer_length && (buffer_length -= length) >= 0) {
 		memset(p, ' ', static_cast<size_t>(buffer_length));
 	}
