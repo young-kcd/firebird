@@ -6637,8 +6637,8 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 				case iqoArgString:
 				case iqoArgInteger:
 					// make sure swarg_str is really a pointer to argv, not something else !!
-					if (i < argc)
-						swarg_str = argv[++i];
+					if (++i < argc)
+						swarg_str = argv[i];
 					if (!swarg_str || !*swarg_str)
 					{
 						IUTILS_msg_get(USAGE_NOARG, errbuf, SafeArg() << s);
