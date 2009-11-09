@@ -1858,7 +1858,7 @@ void ISQL_print_validation(FILE* fp,
 
 			while (fb_isspace(*p))
 				p++;
-			if (!strncmp(p, "check", 5) || !strncmp(p, "CHECK", 5))
+			if (!fb_utils::strnicmp(p, "CHECK", 5))
 				issql = true;
 		}
 		if (firsttime) {
