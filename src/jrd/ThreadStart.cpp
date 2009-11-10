@@ -130,6 +130,9 @@ private:
 	ThreadArgs& operator=(const ThreadArgs&);
 };
 
+#ifdef __cplusplus
+extern "C"
+#endif
 THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 {
 	fb_assert(arg);
