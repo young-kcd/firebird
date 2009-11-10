@@ -124,6 +124,9 @@ static void signal_cleanup(void* arg);
 static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool w_siginfo);
 
+#ifdef __cplusplus
+extern "C"
+#endif
 static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context);
 
 #ifndef SIG_HOLD
