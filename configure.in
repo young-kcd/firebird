@@ -325,6 +325,7 @@ dnl CPU_TYPE=ppc64
     if test "$isa" = "amd64"; then
         libdir=/usr/lib/amd64
     fi
+    CAS_OPTIONS=`pwd`"/src/common/classes/fb_cas_sax.il";
     INSTALL_PREFIX=solaris
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
@@ -348,6 +349,7 @@ dnl CPU_TYPE=ppc64
        *)  MAKEFILE_PREFIX=solaris-64gcc ;
            ICU_PLATFORM=SOLARISGCC ;;
     esac
+    CAS_OPTIONS=`pwd`"/src/common/classes/fb_cas.il";
     INSTALL_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
@@ -946,6 +948,7 @@ AC_COMPILE_IFELSE(
 CXXFLAGS=$pre_tls_cxxflags
 AC_SUBST(TLS_OPTIONS)
 AC_SUBST(ATOMIC_OPTIONS)
+AC_SUBST(CAS_OPTIONS)
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 

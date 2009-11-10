@@ -119,6 +119,10 @@ TLS_OPTIONS=@TLS_OPTIONS@
 # atomic options - set by configure
 ATOMIC_OPTIONS=@ATOMIC_OPTIONS@
 
+# compare and swap options - set by configure
+# needed at least for solaris inline assembly routines
+CAS_OPTIONS=@CAS_OPTIONS@
+
 # Default programs and tools to be used in the build process
 
 SH=			sh -c
