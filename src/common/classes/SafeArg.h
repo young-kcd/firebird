@@ -47,6 +47,10 @@ typedef unsigned _int16 uint16_t;
 */
 #endif
 
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 // Just an emulation of 128-bit numbers for now.
 struct DoubleQuad
 {
