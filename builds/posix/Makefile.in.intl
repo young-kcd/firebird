@@ -52,12 +52,9 @@ INTL_Files1=	ld.cpp       cv_narrow.cpp \
 		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp \
 		cs_icu.cpp     cv_icu.cpp    lc_icu.cpp
 
-
-# INTL_Sources =  $(INTL_Files1)
-INTL_Sources = $(addprefix intl/, $(INTL_Files1))
-
-# SD: add modules that are not in intl subdir
-INTL_Sources += jrd/IntlUtil.cpp jrd/unicode_util.cpp jrd/CharSet.cpp jrd/mod_loader.cpp
+# use INTL_Files2 in prefix file for host-specific additional files
+INTL_Sources= $(addprefix intl/, $(INTL_Files1)) $(INTL_Files2) \
+	jrd/IntlUtil.cpp jrd/unicode_util.cpp jrd/CharSet.cpp jrd/mod_loader.cpp
 
 INTL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTL_Sources))))
 
