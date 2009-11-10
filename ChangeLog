@@ -1,3 +1,9 @@
+2009-11-09 23:23  verbguy
+
+	* firebird2/src/jrd/perf.cpp (1.50):
+
+	check for negative values before casting away. thanks, Alex
+
 2009-11-09 13:40  hvlad
 
 	* firebird2/doc/README.fb_cancel_operation (1.3):
