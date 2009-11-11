@@ -579,6 +579,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> PRIOR
 %token <legacyNode> KW_ABSOLUTE
 %token <legacyNode> KW_RELATIVE
+%token <legacyNode> ACOSH
+%token <legacyNode> ASINH
+%token <legacyNode> ATANH
 
 
 /* precedence declarations for expression evaluation */
@@ -5260,11 +5263,14 @@ system_function_expression
 system_function_std_syntax
 	: ABS
 	| ACOS
+	| ACOSH
 	| ASCII_CHAR
 	| ASCII_VAL
 	| ASIN
+	| ASINH
 	| ATAN
 	| ATAN2
+	| ATANH
 	| BIN_AND
 	| BIN_NOT
 	| BIN_OR
@@ -5805,16 +5811,19 @@ non_reserved_word :
 //	| WHILE
 	| WORK
 	| WRITE				// end of old keywords, that were reserved pre-Firebird.2.5
-	| BODY				// added in FB 3.0
+	| KW_ABSOLUTE		// added in FB 3.0
+	| ACOSH
+	| ASINH
+	| ATANH
+	| BODY
 	| CONTINUE
 	| DDL
 	| ENGINE
 	| NAME
 	| PACKAGE
+	| PRIOR
 	| RDB_GET_CONTEXT
 	| RDB_SET_CONTEXT
-	| PRIOR
-	| KW_ABSOLUTE
 	| KW_RELATIVE
 	;
 
