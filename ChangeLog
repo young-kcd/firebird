@@ -1,3 +1,53 @@
+2009-11-11 11:55  robocop
+
+	* firebird2/src/dsql/: keywords.cpp (1.83), parse.y (1.327):
+
+	Feature CORE-2744: inverse hyperbolic trigonometric functions.
+
+2009-11-10 19:26  verbguy
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.46):
+
+	more Sun Studio extern "C" linkage warnings
+
+	"../src/jrd/os/posix/isc_ipc.cpp", line 186: Warning (Anachronism):
+	Assigning void(*)(int,siginfo*,void*) to extern "C"
+	void(*)(int,siginfo*,void*).  "../src/jrd/os/posix/isc_ipc.cpp",
+	line 196: Warning (Anachronism): The operation "extern "C"
+	void(*)(int,siginfo*,void*) != void(*)(int,siginfo*,void*)" is
+	illegal.
+
+2009-11-10 16:57  verbguy
+
+	* firebird2/src/jrd/ThreadStart.cpp (1.19):
+
+	fix Sun Studio warning - Warning (Anachronism): Formal argument 3
+	of type extern "C" void*(*)(void*) in call to
+	pthread_create(unsigned*, const _pthread_attr*, extern "C"
+	void*(*)(void*), void*) is being passed void*(*)(void*).
+
+2009-11-10 16:53  verbguy
+
+	* firebird2/: src/common/classes/fb_cas.il (1.1),
+	src/common/classes/fb_cas_sax.il (1.1), builds/posix/make.defaults
+	(1.92), builds/posix/prefix.solaris (1.35), configure.in (1.376):
+
+	commit missing Solaris inline assembly routines - SPARC and AMD64
+
+2009-11-10 16:36  verbguy
+
+	* firebird2/builds/posix/: Makefile.in.intl (1.36),
+	prefix.aix_powerpc_xlc (1.11):
+
+	front port fix - international library fails to load on AIX with
+	unresolved symbols. reviewed by Alex
+
+2009-11-10 16:16  verbguy
+
+	* firebird2/src/common/classes/SafeArg.h (1.7):
+
+	fix Sun Studio build - int64_t type name is unknown
+
 2009-11-09 23:23  verbguy
 
 	* firebird2/src/jrd/perf.cpp (1.50):
