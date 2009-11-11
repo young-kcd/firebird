@@ -2277,7 +2277,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 				if ((!rc1 || MOV_get_long(&desc1, 0) == 0) && rc2 && MOV_get_long(&desc2, 0) != 0)
 				{
 					EVL_field(0, new_rpb->rpb_record, f_rfr_rname, &desc1);
-					DFW_post_work(transaction, dfw_check_not_null, &desc1, 0);
+					EVL_field(0, new_rpb->rpb_record, f_rfr_id, &desc2);
+
+					DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc1, 0);
+					Array<int>& ids = DFW_get_ids(work);
+					ids.add(MOV_get_long(&desc2, 0));
 				}
 			}
 			break;

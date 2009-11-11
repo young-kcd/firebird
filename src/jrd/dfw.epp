@@ -176,6 +176,7 @@ public:
 	USHORT			dfw_count;		// count of block posts
 	string			dfw_name;		// name of object
 	MetaName		dfw_package;	// package name
+	SortedArray<int> dfw_ids;		// list of identifiers (or any numbers) needed by an action
 
 public:
 	DeferredWork(MemoryPool& p, DeferredWork*** end,
@@ -184,7 +185,7 @@ public:
 	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL),
 		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
 		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p, name),
-		dfw_package(p, package)
+		dfw_package(p, package), dfw_ids(p)
 	{
 		// make previous element point to us
 		if (dfw_prev)
@@ -581,6 +582,13 @@ void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
 }
 
 
+// Get (by reference) the array of IDs present in a DeferredWork.
+SortedArray<int>& DFW_get_ids(DeferredWork* work)
+{
+	return work->dfw_ids;
+}
+
+
 void DFW_merge_work(jrd_tra* transaction,
 					SLONG old_sav_number,
 					SLONG new_sav_number)
@@ -631,12 +639,17 @@ void DFW_merge_work(jrd_tra* transaction,
 		oldSp->hash.remove(*work); // After ++itr
 		work->dfw_sav_number = new_sav_number;
 
-		if (!newSp->hash.lookup(*work))
-		{
+		DeferredWork* newWork = newSp->hash.lookup(*work);
+
+		if (!newWork)
 			newSp->hash.add(work);
-		}
 		else
 		{
+			SortedArray<int>& workIds = work->dfw_ids;
+
+			for (SortedArray<int>::iterator itr2(workIds.begin()); itr2 != workIds.end(); ++itr2)
+				newWork->dfw_ids.add(*itr2);
+
 			delete work;
 		}
 	}
@@ -1507,31 +1520,14 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 	case 3:
 		try
 		{
+			SortedArray<int>& fields = work->dfw_ids;
+
 			jrd_rel* relation = MET_lookup_relation(tdbb, work->dfw_name);
-			if (relation->rel_view_rse)
+			if (relation->rel_view_rse || fields.isEmpty())
 				break;
 
 			// Protect relation from modification
 			relationLock = protect_relation(tdbb, transaction, relation, releaseRelationLock);
-
-			HalfStaticArray<USHORT, 5> fields;
-			jrd_req* handle = NULL;
-
-			FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-				RFL IN RDB$RELATION_FIELDS
-				WITH RFL.RDB$RELATION_NAME = relation->rel_name.c_str()
-			{
-				int fid = MET_lookup_field(tdbb, relation, RFL.RDB$FIELD_NAME, NULL);
-
-				if (!RFL.RDB$NULL_FLAG.NULL && RFL.RDB$NULL_FLAG &&
-					(*relation->rel_fields)[fid]->fld_not_null)
-				{
-					fields.add(fid);
-				}
-			}
-			END_FOR
-
-			CMP_release(tdbb, handle);
 
 			UCharBuffer blr;
 
@@ -1566,8 +1562,8 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				blr.add(blr_missing);
 				blr.add(blr_fid);
 				blr.add(0);	// stream
-				blr.add(fields[i] & 0xFF);
-				blr.add(fields[i] >> 8);
+				blr.add(USHORT(fields[i]) & 0xFF);
+				blr.add(USHORT(fields[i]) >> 8);
 			}
 
 			blr.add(blr_end);
@@ -1584,8 +1580,8 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				blr.add(blr_missing);
 				blr.add(blr_fid);
 				blr.add(0);	// stream
-				blr.add(fields[i] & 0xFF);
-				blr.add(fields[i] >> 8);
+				blr.add(USHORT(fields[i]) & 0xFF);
+				blr.add(USHORT(fields[i]) >> 8);
 
 				blr.add(blr_literal);
 				blr.add(blr_short);
@@ -1639,15 +1635,21 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 
 			CMP_release(tdbb, request);
 
+			Arg::Gds errs(isc_no_meta_update);
+			bool hasError = false;
+
 			for (size_t i = 0; i < fields.getCount(); ++i)
 			{
 				if (hasRecord[i])
 				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_cannot_make_not_null) <<
-							 Arg::Str((*relation->rel_fields)[fields[i]]->fld_name));
+					hasError = true;
+					errs << Arg::Gds(isc_cannot_make_not_null) <<
+							 Arg::Str((*relation->rel_fields)[fields[i]]->fld_name);
 				}
 			}
+
+			if (hasError)
+				ERR_post(errs);
 
 			if (relationLock && releaseRelationLock)
 				release_protect_lock(tdbb, transaction, relationLock);
