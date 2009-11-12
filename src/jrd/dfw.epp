@@ -648,7 +648,11 @@ void DFW_merge_work(jrd_tra* transaction,
 			SortedArray<int>& workIds = work->dfw_ids;
 
 			for (SortedArray<int>::iterator itr2(workIds.begin()); itr2 != workIds.end(); ++itr2)
-				newWork->dfw_ids.add(*itr2);
+			{
+				int n = *itr2;
+				if (!newWork->dfw_ids.exist(n))
+					newWork->dfw_ids.add(n);
+			}
 
 			delete work;
 		}
