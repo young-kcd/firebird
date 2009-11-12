@@ -1,3 +1,62 @@
+2009-11-12 12:37  robocop
+
+	* firebird2/src/isql/: extract.epp (1.105), show.epp (1.155):
+
+	Correction to package-dependent code.
+
+2009-11-12 08:41  robocop
+
+	* firebird2/src/: isql/isql.epp (1.300), isql/isql.h (1.77),
+	isql/iutils.cpp (1.3), isql/iutils_proto.h (1.2),
+	msgs/facilities2.sql (1.85), msgs/messages2.sql (1.109):
+
+	Fix Mark's rowcount feature to detect errors properly and add the
+	due messages to the db.
+
+2009-11-12 08:17  robocop
+
+	* firebird2/src/isql/: extract.epp (1.104), isql.h (1.76), show.epp
+	(1.154):
+
+	Package support. Work in progress.
+
+2009-11-12 07:35  robocop
+
+	* firebird2/src/dsql/keywords.cpp (1.84):
+
+	Minor adjustments.
+
+2009-11-12 03:04  verbguy
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.47):
+
+	add braces to extern "C" { ... } function declaration. This seems
+	to fix g++ build problem on Linux - thanks Adriano
+
+2009-11-12 02:38  asfernandes
+
+	* firebird2/src/: isql/isql_proto.h (1.30), isql/isqlswi.h (1.2),
+	isql/iutils.cpp (1.2), isql/show.epp (1.153), jrd/cmp.cpp (1.362),
+	jrd/status.cpp (1.20), jrd/status.h (1.11), jrd/svc.cpp (1.288),
+	jrd/validation.cpp (1.56), jrd/extds/ExtDS.cpp (1.48),
+	jrd/trace/TraceCmdLine.cpp (1.18), msgs/messages2.sql (1.108),
+	qli/dtr.cpp (1.77), utilities/nbackup.cpp (1.97):
+
+	Misc
+
+2009-11-12 01:44  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.291):
+
+	Correction
+
+2009-11-11 16:12  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.290), dfw_proto.h (1.23), vio.cpp
+	(1.263):
+
+	Improve efficiency and error reporting of CORE-1180
+
 2009-11-11 11:55  robocop
 
 	* firebird2/src/dsql/: keywords.cpp (1.83), parse.y (1.327):
