@@ -44,7 +44,7 @@
  * type.  So check for 17 or less
  */
 
-void PARSE_STATUS(const ISC_STATUS* status_vector, size_t &length, size_t &warning)
+void PARSE_STATUS(const ISC_STATUS* status_vector, size_t&length, size_t& warning)
 {
 	warning = 0;
 	length = 0;

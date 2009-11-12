@@ -318,7 +318,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 {
 	dpb.reset(isc_dpb_version1);
 
-	const Jrd::Attachment *attachment = tdbb->getAttachment();
+	const Jrd::Attachment* attachment = tdbb->getAttachment();
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
 	const string& attUser = attachment->att_user->usr_user_name;
@@ -1538,7 +1538,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 
 	if (m_tdbb)
 	{
-		jrd_tra *transaction = m_tdbb->getTransaction();
+		jrd_tra* transaction = m_tdbb->getTransaction();
 		if (transaction)
 		{
 			if (transaction->tra_callback_count >= MAX_CALLBACKS)
@@ -1547,7 +1547,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 			transaction->tra_callback_count++;
 		}
 
-		Jrd::Attachment *attachment = m_tdbb->getAttachment();
+		Jrd::Attachment* attachment = m_tdbb->getAttachment();
 		if (attachment)
 		{
 			m_saveConnection = attachment->att_ext_connection;
@@ -1572,12 +1572,12 @@ EngineCallbackGuard::~EngineCallbackGuard()
 	{
 		m_tdbb->getDatabase()->dbb_sync->lock();
 
-		jrd_tra *transaction = m_tdbb->getTransaction();
+		jrd_tra* transaction = m_tdbb->getTransaction();
 		if (transaction) {
 			transaction->tra_callback_count--;
 		}
 
-		Jrd::Attachment *attachment = m_tdbb->getAttachment();
+		Jrd::Attachment* attachment = m_tdbb->getAttachment();
 		if (attachment) {
 			attachment->att_ext_connection = m_saveConnection;
 		}

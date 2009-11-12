@@ -74,7 +74,7 @@ static void usage(const Switches& switches);
 static bool yes_no(USHORT, const TEXT*);
 
 // the old name new_handler comflicts with std::new_handler for the "new" operator
-typedef void (*new_signal_handler) (int);
+typedef void (*new_signal_handler)(int);
 
 
 struct answer_t
@@ -92,7 +92,7 @@ static answer_t answer_table[] =
 };
 
 
-int CLIB_ROUTINE main( int argc, char **argv)
+int CLIB_ROUTINE main(int argc, char** argv)
 {
 /**************************************
  *
@@ -237,8 +237,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			isc_set_debug(debug_value);
 			break;
 
-			// This switch's name is arbitrary; since it is an internal
-			// mechanism it can be changed at will
+		// This switch's name is arbitrary; since it is an internal
+		// mechanism it can be changed at will
 		case IN_SW_QLI_Y:
 			QLI_trace = true;
 			break;

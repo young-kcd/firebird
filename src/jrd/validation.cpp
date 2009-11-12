@@ -1334,7 +1334,7 @@ static void walk_generators(thread_db* tdbb, vdr* control)
 					fprintf(stdout, "walk_generator: page %d\n", *ptr);
 #endif
 				// It doesn't make a difference generator_page or pointer_page because it's not used.
-				generator_page* page = 0;
+				generator_page* page = NULL;
 				fetch_page(tdbb, control, *ptr, pag_ids, &window, &page);
 				CCH_RELEASE(tdbb, &window);
 			}

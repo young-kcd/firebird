@@ -63,4 +63,3 @@ void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
 processing_state ISQL_print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE, int subtype);
 
 #endif // ISQL_ISQL_PROTO_H
-

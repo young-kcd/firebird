@@ -262,4 +262,3 @@ void IUTILS_truncate_term(TEXT* str, USHORT len)
 		--i;
 	str[i + 1] = 0;
 }
-

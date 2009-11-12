@@ -2299,7 +2299,7 @@ void Service::conv_switches(ClumpletReader& spb, string& switches)
 	spb.rewind();
 	const UCHAR test = spb.getClumpTag();
 	if (test < isc_action_min || test >= isc_action_max) {
-		return;					// error - action not defined
+		return;	// error - action not defined
 	}
 
 	// convert to string

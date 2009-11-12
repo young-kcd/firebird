@@ -44,12 +44,12 @@ namespace
 	using namespace Firebird;
 
 	using MsgFormat::SafeArg;
-	const USHORT tracemgr_msg_fac = 25;
+	const USHORT TRACEMGR_MSG_FAC = 25;
 
 	void printMsg(USHORT number, const SafeArg& arg, bool newLine = true)
 	{
 		char buffer[256];
-		fb_msg_format(NULL, tracemgr_msg_fac, number, sizeof(buffer), buffer, arg);
+		fb_msg_format(NULL, TRACEMGR_MSG_FAC, number, sizeof(buffer), buffer, arg);
 		if (newLine)
 			printf("%s\n", buffer);
 		else
@@ -66,7 +66,7 @@ namespace
 	{
 		if (!number || !buffer || bufsize < 10)
 			return false;
-		return fb_msg_format(NULL, tracemgr_msg_fac, number, bufsize, buffer, arg) > 0;
+		return fb_msg_format(NULL, TRACEMGR_MSG_FAC, number, bufsize, buffer, arg) > 0;
 	}
 
 	void usage(UtilSvc* uSvc, const ISC_STATUS code, const char* msg1 = NULL, const char* msg2 = NULL)
@@ -114,19 +114,20 @@ namespace
 		}
 
 		// If the items aren't contiguous, a scheme like in nbackup.cpp will have to be used.
-		const int mainUsage[] = { 3, 21 };
-		const int examples[] = { 22, 27 };
-		const int notes[] = { 28, 29 };
+		// ASF: This is message codes!
+		const int MAIN_USAGE[] = {3, 21};
+		const int EXAMPLES[] = {22, 27};
+		const int NOTES[] = {28, 29};
 
-		for (int i = mainUsage[0]; i <= mainUsage[1]; ++i)
+		for (int i = MAIN_USAGE[0]; i <= MAIN_USAGE[1]; ++i)
 			printMsg(i);
 
 		printf("\n");
-		for (int i = examples[0]; i <= examples[1]; ++i)
+		for (int i = EXAMPLES[0]; i <= EXAMPLES[1]; ++i)
 			printMsg(i);
 
 		printf("\n");
-		for (int i = notes[0]; i <= notes[1]; ++i)
+		for (int i = NOTES[0]; i <= NOTES[1]; ++i)
 			printMsg(i);
 
 		exit(FINI_ERROR);

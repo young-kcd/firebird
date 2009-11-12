@@ -35,6 +35,6 @@
 const int MAX_ERRMSG_LEN	= 128;
 const int MAX_ERRSTR_LEN	= 1024;
 
-void PARSE_STATUS(const ISC_STATUS* status_vector, size_t &length, size_t &warning);
+void PARSE_STATUS(const ISC_STATUS* status_vector, size_t& length, size_t& warning);
 
 #endif // FB_MISC_STATUS_H

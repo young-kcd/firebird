@@ -327,10 +327,12 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	if (res >= 0)
 		return res;
 #endif
+
 	status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
 		Arg::OsError() <<
 		(&file == &dbase ? dbname.c_str() :
 		&file == &backup ? bakname.c_str() : "unknown"));
+
 	return 0; // silence compiler
 }
 
@@ -344,6 +346,7 @@ void NBackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	if (write(file, buffer, bufsize) == (ssize_t) bufsize)
 		return;
 #endif
+
 	status_exception::raise(Arg::Gds(isc_nbackup_err_write) <<
 		Arg::OsError() <<
 		(&file == &dbase ? dbname.c_str() :
@@ -365,6 +368,7 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 	if (lseek(file, pos, SEEK_SET) != (off_t) -1)
 		return;
 #endif
+
 	status_exception::raise(Arg::Gds(isc_nbackup_err_seek) <<
 		Arg::OsError() <<
 		(&file == &dbase ? dbname.c_str() :
@@ -384,6 +388,7 @@ void NBackup::open_database_write()
 	if (dbase >= 0)
 		return;
 #endif
+
 	status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() << dbname.c_str());
 }
 
@@ -451,6 +456,7 @@ void NBackup::create_database()
 	if (dbase >= 0)
 		return;
 #endif
+
 	status_exception::raise(Arg::Gds(isc_nbackup_err_createdb) << Arg::OsError() << dbname.c_str());
 }
 
@@ -475,6 +481,7 @@ void NBackup::open_backup_scan()
 	if (backup >= 0)
 		return;
 #endif
+
 	status_exception::raise(Arg::Gds(isc_nbackup_err_openbk) << Arg::OsError() << bakname.c_str());
 }
 
@@ -501,6 +508,7 @@ void NBackup::create_backup()
 	if (backup >= 0)
 		return;
 #endif
+
 	status_exception::raise(Arg::Gds(isc_nbackup_err_createbk) << Arg::OsError() << bakname.c_str());
 }
 
@@ -537,7 +545,6 @@ void NBackup::fixup_database()
 
 // Print the status, the SQLCODE, and exit.
 // Also, indicate which operation the error occurred on.
-
 void NBackup::pr_error(const ISC_STATUS* status, const char* operation) const
 {
 	if (uSvc->isService())
