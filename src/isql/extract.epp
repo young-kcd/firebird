@@ -67,10 +67,13 @@ using MsgFormat::SafeArg;
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
 
 static bool extract_rel_constraints(const char* relation_name);
-static void get_procedure_args(const char*);
+static void get_procedure_args_ods12(const char*);
+static void get_procedure_args_legacy(const char*);
 static void list_all_grants();
 static processing_state list_all_grants2(bool, const SCHAR*);
 static void list_all_procs();
+static void list_all_procs_ods12();
+static void list_all_procs_legacy();
 static void list_all_tables(LegacyTables flag, SSHORT);
 static void list_all_triggers();
 static void list_check();
@@ -89,7 +92,7 @@ static void list_views();
 
 extern const char* trigger_action(int);
 
-static const char* Procterm = "^";	// TXNN: script use only
+static const char* const Procterm = "^";	// TXNN: script use only
 
 /* Maybe 512 would be really enough as Print_buffer size, but
    as we have PRINT_BUFFER_LENGTH in isql.h, we should use it
@@ -710,7 +713,7 @@ static bool extract_rel_constraints(const char* relation_name)
 }
 
 
-static void get_procedure_args(const char* proc_name)
+static void get_procedure_args_ods12(const char* proc_name)
 {
 /**************************************
  *
@@ -721,6 +724,299 @@ static void get_procedure_args(const char* proc_name)
  * Functional description
  *	This function extracts the procedure parameters and adds it to the
  *	extract file
+ *  Make sure to pass here only the names of procedures that are global.
+ *
+ **************************************/
+	SCHAR char_sets[95];
+
+// query to retrieve the parameters.
+
+
+/* placed the two identical code blocks into one
+   for loop as suggested by Ann H. and Claudio V.
+   FSG 18.Nov.2000
+*/
+
+	//  Parameter types 0 = input
+	//  Parameter types 1 = return
+
+	for (SSHORT ptype = 0; ptype < 2; ptype++)
+	{
+		bool first_time = true;
+
+		FOR PRM IN RDB$PROCEDURE_PARAMETERS CROSS
+			FLD IN RDB$FIELDS WITH
+			PRM.RDB$PROCEDURE_NAME = proc_name AND
+			PRM.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
+			PRM.RDB$PARAMETER_TYPE = ptype AND
+			PRM.RDB$PACKAGE_NAME MISSING
+			SORTED BY PRM.RDB$PARAMETER_NUMBER
+
+			bool prm_collation_id_null = true;
+			SSHORT prm_collation_id = 0;
+
+			bool prm_default_source_null = true;
+			ISC_QUAD prm_default_source;
+
+			bool prm_null_flag_null = true;
+			bool prm_null_flag;
+
+			prm_mech_t prm_mech = prm_mech_normal;
+
+			prm_collation_id_null = PRM.RDB$COLLATION_ID.NULL;
+			prm_collation_id = PRM.RDB$COLLATION_ID;
+
+			prm_default_source_null = PRM.RDB$DEFAULT_SOURCE.NULL;
+			prm_default_source = PRM.RDB$DEFAULT_SOURCE;
+
+			prm_null_flag_null = PRM.RDB$NULL_FLAG.NULL;
+			prm_null_flag = PRM.RDB$NULL_FLAG;
+
+			if (!PRM.RDB$PARAMETER_MECHANISM.NULL)
+				prm_mech = (prm_mech_t) PRM.RDB$PARAMETER_MECHANISM;
+
+			char relationName[BUFFER_LENGTH128] = "";
+			char relationField[BUFFER_LENGTH128] = "";
+
+			if (!PRM.RDB$RELATION_NAME.NULL)
+			{
+				fb_utils::exact_name(PRM.RDB$RELATION_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					IUTILS_copy_SQL_id(PRM.RDB$RELATION_NAME, relationName, DBL_QUOTE);
+				else
+					strcpy(relationName, PRM.RDB$RELATION_NAME);
+			}
+
+			if (!PRM.RDB$FIELD_NAME.NULL)
+			{
+				fb_utils::exact_name(PRM.RDB$FIELD_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					IUTILS_copy_SQL_id(PRM.RDB$FIELD_NAME, relationField, DBL_QUOTE);
+				else
+					strcpy(relationField, PRM.RDB$FIELD_NAME);
+			}
+
+			if (first_time)
+			{
+				first_time = false;
+				if (ptype == 0)
+				{ // this is the input part
+					isqlGlob.printf("(");
+				}
+				else
+				{ // we are in the output part
+					isqlGlob.printf("RETURNS (");
+				}
+			}
+			else
+			{
+				isqlGlob.printf(",%s", NEWLINE);
+			}
+
+			fb_utils::exact_name(PRM.RDB$PARAMETER_NAME);
+
+			// CVC: Parameter names need check for dialect 3, too.
+
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				IUTILS_copy_SQL_id (PRM.RDB$PARAMETER_NAME, SQL_identifier, DBL_QUOTE);
+			else
+				strcpy (SQL_identifier, PRM.RDB$PARAMETER_NAME);
+
+			isqlGlob.printf("%s ", SQL_identifier);
+
+			const bool basedOnColumn = relationName[0] && relationField[0];
+			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
+				basedOnColumn)
+			{
+				if (prm_mech == prm_mech_type_of)
+					isqlGlob.printf("TYPE OF ");
+
+				if (basedOnColumn)
+					isqlGlob.printf("%s.%s", relationName, relationField);
+				else
+				{
+					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+					{
+						IUTILS_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+						isqlGlob.prints(SQL_identifier);
+					}
+					else
+						isqlGlob.prints(FLD.RDB$FIELD_NAME);
+				}
+
+				// International character sets
+				// Print only the collation
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
+					!prm_collation_id_null && prm_collation_id)
+				{
+					char_sets[0] = '\0';
+					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, prm_collation_id, true,
+						!prm_null_flag_null && prm_null_flag, char_sets);
+					if (char_sets[0])
+						isqlGlob.prints(char_sets);
+				}
+				else if (!prm_null_flag_null && prm_null_flag)
+					isqlGlob.printf(" NOT NULL");
+
+				if (ptype == 0) // input, try to extract default and make Vlad happy.
+				{
+					if (!prm_default_source_null)
+					{
+						isqlGlob.printf(" ");
+						SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
+					}
+				}
+			}
+			else
+			{
+				// Get column type name to print
+				for (int i = 0; Column_types[i].type; i++)
+				{
+					if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
+					{
+						bool precision_known = false;
+
+						if (isqlGlob.major_ods >= ODS_VERSION10)
+						{
+							// Handle Integral subtypes NUMERIC and DECIMAL
+							if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
+								(FLD.RDB$FIELD_TYPE == INTEGER) ||
+								(FLD.RDB$FIELD_TYPE == BIGINT))
+							{
+								/* We are ODS >= 10 and could be any Dialect */
+
+								FOR FLD1 IN RDB$FIELDS WITH
+									FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
+
+									if (!FLD1.RDB$FIELD_PRECISION.NULL)
+									{
+										/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+										if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
+											FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+										{
+											sprintf (Print_buffer, "%s(%d, %d)",
+													Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
+													FLD1.RDB$FIELD_PRECISION,
+													-FLD1.RDB$FIELD_SCALE);
+											precision_known = true;
+										}
+									}
+								END_FOR
+								ON_ERROR
+									ISQL_errmsg (isc_status);
+									return;
+								END_ERROR;
+							}
+						}
+						if (!precision_known)
+						{
+							// Take a stab at numerics and decimals
+							if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
+							{
+								sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
+							}
+							else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0))
+							{
+								sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
+							}
+							else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FLD.RDB$FIELD_SCALE < 0))
+							{
+								sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
+							}
+							else
+							{
+								sprintf (Print_buffer, "%s", Column_types[i].type_name);
+							}
+						}
+						isqlGlob.prints(Print_buffer);
+						break;
+					}
+				}
+
+				/* Changed this to return RDB$CHARACTER_LENGTH if available
+				   Fix for Bug #122563
+				   FSG 18.Nov.2000
+				*/
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+				{
+					if (FLD.RDB$CHARACTER_LENGTH.NULL)
+					{
+						isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
+					}
+					else
+					{
+						isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
+					}
+				}
+
+				// Show international character sets and collations
+				if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
+				{
+					char_sets[0] = 0;
+
+					SSHORT collation = 0;
+
+					if (!prm_collation_id_null)
+						collation = prm_collation_id;
+					else if (!FLD.RDB$COLLATION_ID.NULL)
+						collation = FLD.RDB$COLLATION_ID;
+
+					if (FLD.RDB$CHARACTER_SET_ID.NULL)
+						FLD.RDB$CHARACTER_SET_ID = 0;
+
+					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, collation, false,
+						!prm_null_flag_null && prm_null_flag, char_sets);
+					if (char_sets[0])
+						isqlGlob.prints(char_sets);
+				}
+				else if (!prm_null_flag_null && prm_null_flag)
+					isqlGlob.printf(" NOT NULL");
+
+				if (ptype == 0) // input, try to extract default and make Vlad happy.
+				{
+					if (!prm_default_source_null)
+					{
+						isqlGlob.printf(" ");
+						SHOW_print_metadata_text_blob(isqlGlob.Out, &prm_default_source);
+					}
+					else if (!FLD.RDB$DEFAULT_SOURCE.NULL)
+					{
+						isqlGlob.printf(" ");
+						SHOW_print_metadata_text_blob(isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
+					}
+				}
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return;
+		END_ERROR;
+
+		// If there was at least one param, close parens
+
+		if (!first_time)
+		{
+			isqlGlob.printf(")%s", NEWLINE);
+		}
+
+	}						// end for ptype
+	isqlGlob.printf("AS %s", NEWLINE);
+}
+
+
+static void get_procedure_args_legacy(const char* proc_name)
+{
+/**************************************
+ *
+ *	g e t _ p r o c e d u r e _ a r g s
+ *
+ **************************************
+ *
+ * Functional description
+ *	This function extracts the procedure parameters and adds it to the
+ *	extract file
+ *  Make sure to pass here only the names of procedures that are global.
  *
  **************************************/
 	SCHAR char_sets[95];
@@ -762,7 +1058,8 @@ static void get_procedure_args(const char* proc_name)
 			{
 				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
 					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
+						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME AND
+						 PRM2.RDB$PARAMETER_NUMBER EQ PRM.RDB$PARAMETER_NUMBER
 
 					prm_collation_id_null = PRM2.RDB$COLLATION_ID.NULL;
 					prm_collation_id = PRM2.RDB$COLLATION_ID;
@@ -1153,42 +1450,50 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 		SHOW_grant_roles2(terminator, 0, 0, mangle);
 
 
-	// Again for stored procedures, but ignore private procedures inside packages.
-	FOR PRC IN RDB$PROCEDURES
-		WITH (PRC.RDB$SYSTEM_FLAG NE 1 OR PRC.RDB$SYSTEM_FLAG MISSING)
-		SORTED BY PRC.RDB$PROCEDURE_NAME
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+	{
+		// For stored procedures, but ignore procedures inside packages.
+		FOR PRC IN RDB$PROCEDURES
+			WITH (PRC.RDB$SYSTEM_FLAG NE 1 OR PRC.RDB$SYSTEM_FLAG MISSING)
+			AND PRC.RDB$PACKAGE_NAME MISSING
+			SORTED BY PRC.RDB$PROCEDURE_NAME
 
-		bool private_flag = false;
-		if (isqlGlob.major_ods >= ODS_VERSION12)
-		{
-			FOR HIDDEN IN RDB$PROCEDURES
-				WITH HIDDEN.RDB$PROCEDURE_NAME = PRC.RDB$PROCEDURE_NAME
-				AND HIDDEN.RDB$PRIVATE_FLAG = 1
-				private_flag = true;
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(gds_status);
-			    return OBJECT_NOT_FOUND;
-			END_ERROR;
-		}
-
-		if (!private_flag)
-		{
 			// Null terminate name string
 			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 
 			const processing_state rc =
 				SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
-							   first ? banner: 0, mangle);
+								   first ? banner: 0, mangle);
 			if (rc == SKIP)
 				first = false;
-		}
 
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(gds_status);
-		return OBJECT_NOT_FOUND;
-	END_ERROR;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return OBJECT_NOT_FOUND;
+		END_ERROR;
+	}
+	else
+	{
+		FOR PRC IN RDB$PROCEDURES
+			WITH (PRC.RDB$SYSTEM_FLAG NE 1 OR PRC.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY PRC.RDB$PROCEDURE_NAME
+
+			// Null terminate name string
+			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
+
+			const processing_state rc =
+				SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
+								   first ? banner: 0, mangle);
+			if (rc == SKIP)
+				first = false;
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return OBJECT_NOT_FOUND;
+		END_ERROR;
+	}
 
 	if (isqlGlob.major_ods >= ODS_VERSION12)
 	{
@@ -1214,6 +1519,23 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 }
 
 
+static void print_proc_prefix()
+{
+	isqlGlob.printf("COMMIT WORK;%s", NEWLINE);
+	isqlGlob.printf("SET AUTODDL OFF;%s", NEWLINE);
+	isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
+	isqlGlob.printf("%s/* Stored procedures */%s", NEWLINE, NEWLINE);
+}
+
+
+static void print_proc_suffix()
+{
+	isqlGlob.printf("SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
+	isqlGlob.printf("COMMIT WORK %s%s", isqlGlob.global_Term, NEWLINE);
+	isqlGlob.printf("SET AUTODDL ON;%s", NEWLINE);
+}
+
+
 static void list_all_procs()
 {
 /**************************************
@@ -1230,13 +1552,113 @@ static void list_all_procs()
  *	correct form.
  *      Add the parameter names when these procedures are created.
  *
- *	procname -- Name of procedure to investigate
- *
  **************************************/
+
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+		list_all_procs_ods12();
+	else
+		list_all_procs_legacy();
+}
+
+
+static void list_all_procs_ods12()
+{
+	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
+
 	bool header = true;
-	static const char* create_procedure_str1 = "CREATE PROCEDURE %s ";
-	static const char* create_procedure_str2 = "BEGIN EXIT; END %s%s";
-	static const char* create_procedure_str3 = "BEGIN SUSPEND; END %s%s";
+	static const char* const create_procedure	= "CREATE PROCEDURE %s ";
+	static const char* const body_execut_proc	= "BEGIN EXIT; END %s%s";
+	static const char* const body_select_proc	= "BEGIN SUSPEND; END %s%s";
+
+
+	//  First the dummy procedures
+	// create the procedures with their parameters
+
+	FOR PRC IN RDB$PROCEDURES
+		WITH (PRC.RDB$SYSTEM_FLAG NE 1 OR PRC.RDB$SYSTEM_FLAG MISSING)
+		AND PRC.RDB$PACKAGE_NAME MISSING
+		SORTED BY PRC.RDB$PROCEDURE_NAME
+		if (header)
+		{
+			print_proc_prefix();
+			header = false;
+		}
+		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		{
+			IUTILS_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
+			isqlGlob.printf(create_procedure, SQL_identifier);
+		}
+		else
+		{
+			isqlGlob.printf(create_procedure, PRC.RDB$PROCEDURE_NAME);
+		}
+
+		get_procedure_args_ods12(PRC.RDB$PROCEDURE_NAME);
+
+		prc_t proc_type = PRC.RDB$PROCEDURE_TYPE.NULL ? prc_legacy : (prc_t) PRC.RDB$PROCEDURE_TYPE;
+
+		// We'll assume for safety that prc_legacy can be mapped to prc_selectable.
+		if (proc_type == prc_executable)
+			isqlGlob.printf(body_execut_proc, Procterm, NEWLINE);
+		else
+			isqlGlob.printf(body_select_proc, Procterm, NEWLINE);
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
+
+	// This query gets the procedure name and the source.  We then nest a query
+	// to retrieve the parameters. Alter is used, because the procedures are already there
+	TEXT msg[MSG_LENGTH];
+
+	FOR PRC IN RDB$PROCEDURES
+		WITH (PRC.RDB$SYSTEM_FLAG NE 1 OR PRC.RDB$SYSTEM_FLAG MISSING)
+		AND PRC.RDB$PACKAGE_NAME MISSING
+		SORTED BY PRC.RDB$PROCEDURE_NAME
+
+		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
+
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		{
+			IUTILS_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
+			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, SQL_identifier);
+		}
+		else
+			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, PRC.RDB$PROCEDURE_NAME);
+		get_procedure_args_ods12(PRC.RDB$PROCEDURE_NAME);
+
+		// Print the procedure body
+
+		if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
+			SHOW_print_metadata_text_blob (isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE);
+
+		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
+
+	END_FOR
+	ON_ERROR
+		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(gds_status));
+		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
+
+	// Only reset the terminators if there were procs to print
+	if (!header)
+	{
+		print_proc_suffix();
+	}
+}
+
+
+static void list_all_procs_legacy()
+{
+	bool header = true;
+	static const char* const create_procedure	= "CREATE PROCEDURE %s ";
+	static const char* const body_execut_proc	= "BEGIN EXIT; END %s%s";
+	static const char* const body_select_proc	= "BEGIN SUSPEND; END %s%s";
 
 
 	//  First the dummy procedures
@@ -1246,24 +1668,21 @@ static void list_all_procs()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			isqlGlob.printf("COMMIT WORK;%s", NEWLINE);
-			isqlGlob.printf("SET AUTODDL OFF;%s", NEWLINE);
-			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-			isqlGlob.printf("%s/* Stored procedures */%s", NEWLINE, NEWLINE);
+			print_proc_prefix();
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			IUTILS_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
-			isqlGlob.printf(create_procedure_str1, SQL_identifier);
+			isqlGlob.printf(create_procedure, SQL_identifier);
 		}
 		else
 		{
-			isqlGlob.printf(create_procedure_str1, PRC.RDB$PROCEDURE_NAME);
+			isqlGlob.printf(create_procedure, PRC.RDB$PROCEDURE_NAME);
 		}
 
-		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
+		get_procedure_args_legacy (PRC.RDB$PROCEDURE_NAME);
 
 		prc_t proc_type = prc_legacy;
 
@@ -1284,9 +1703,9 @@ static void list_all_procs()
 
 		// We'll assume for safety that prc_legacy can be mapped to prc_selectable.
 		if (proc_type == prc_executable)
-			isqlGlob.printf(create_procedure_str2, Procterm, NEWLINE);
+			isqlGlob.printf(body_execut_proc, Procterm, NEWLINE);
 		else
-			isqlGlob.printf(create_procedure_str3, Procterm, NEWLINE);
+			isqlGlob.printf(body_select_proc, Procterm, NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -1310,7 +1729,7 @@ static void list_all_procs()
 		}
 		else
 			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, PRC.RDB$PROCEDURE_NAME);
-		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
+		get_procedure_args_legacy (PRC.RDB$PROCEDURE_NAME);
 
 		// Print the procedure body
 
@@ -1327,12 +1746,10 @@ static void list_all_procs()
 		return;
 	END_ERROR;
 
-	// Only reset the terminators is there were procs to print
+	// Only reset the terminators if there were procs to print
 	if (!header)
 	{
-		isqlGlob.printf("SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
-		isqlGlob.printf("COMMIT WORK %s%s", isqlGlob.global_Term, NEWLINE);
-		isqlGlob.printf("SET AUTODDL ON;%s", NEWLINE);
+		print_proc_suffix();
 	}
 }
 

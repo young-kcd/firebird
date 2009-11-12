@@ -2414,36 +2414,75 @@ static processing_state show_comments(const commentMode showextract, const char*
 		return ps_ERR;
 	END_ERROR
 
-	FOR PR IN RDB$PROCEDURES
-		WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
-		SORTED BY PR.RDB$PROCEDURE_NAME
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+	{
+		FOR PR IN RDB$PROCEDURES
+			WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
+			AND PR.RDB$PACKAGE_NAME MISSING
+			SORTED BY PR.RDB$PROCEDURE_NAME
 
-		if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
-		{
-			show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
-				showextract, first ? banner : 0);
-			first = false;
-		}
+			if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
+			{
+				show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
+					showextract, first ? banner : 0);
+				first = false;
+			}
 
-		FOR PA IN RDB$PROCEDURE_PARAMETERS
-			WITH PA.RDB$PROCEDURE_NAME = PR.RDB$PROCEDURE_NAME
-			AND PA.RDB$DESCRIPTION NOT MISSING
-			SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
+			FOR PA IN RDB$PROCEDURE_PARAMETERS
+				WITH PA.RDB$PROCEDURE_NAME = PR.RDB$PROCEDURE_NAME
+				AND PA.RDB$PACKAGE_NAME MISSING
+				AND PA.RDB$DESCRIPTION NOT MISSING
+				SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
 
-			show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
-				&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
-			first = false;
+				show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
+					&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
+				first = false;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ps_ERR;
+			END_ERROR
+
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
 			return ps_ERR;
 		END_ERROR
+	}
+	else
+	{
+		FOR PR IN RDB$PROCEDURES
+			WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY PR.RDB$PROCEDURE_NAME
 
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(isc_status);
-		return ps_ERR;
-	END_ERROR
+			if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
+			{
+				show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
+					showextract, first ? banner : 0);
+				first = false;
+			}
+
+			FOR PA IN RDB$PROCEDURE_PARAMETERS
+				WITH PA.RDB$PROCEDURE_NAME = PR.RDB$PROCEDURE_NAME
+				AND PA.RDB$DESCRIPTION NOT MISSING
+				SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
+
+				show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
+					&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
+				first = false;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ps_ERR;
+			END_ERROR
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+	}
+
 
 	FOR TR IN RDB$TRIGGERS
 		WITH TR.RDB$DESCRIPTION NOT MISSING
@@ -3836,68 +3875,98 @@ static processing_state show_proc(const SCHAR* procname)
 		/* This query gets the procedure name  the next query
 		   **   gets all the dependencies if any
 		 */
+
 		bool first_proc = true;
 
-		FOR PRC IN RDB$PROCEDURES
-			SORTED BY PRC.RDB$PROCEDURE_NAME
+		for (int i = 0; i < 2; ++i)
+		{
+			first_proc = true;
 
-			if (first_proc)
-			{
-				isqlGlob.printf(
-						 "Procedure Name                    Invalid Dependency, Type%s", NEWLINE);
-				isqlGlob.printf(
-						 "================================= ======= =====================================%s", NEWLINE);
-				first_proc = false;
-			}
+			FOR PRC IN RDB$PROCEDURES
+				SORTED BY PRC.RDB$PROCEDURE_NAME
 
-			const char* invalid = "        ";
+				if (first_proc)
+				{
+					if (i == 0)
+						isqlGlob.printf("Global procedures:%s", NEWLINE);
+					else
+						isqlGlob.printf("Packaged procedures:%s", NEWLINE);
 
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
-			{
-				FOR PRC2 IN RDB$PROCEDURES
-					WITH PRC2.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME
-					if (!(PRC2.RDB$VALID_BLR.NULL || PRC2.RDB$VALID_BLR))
-						invalid = "   *    ";
-				END_FOR
-			}
-
-			// Strip trailing blanks
-
-			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
-			isqlGlob.printf("%-34s%s", PRC.RDB$PROCEDURE_NAME, invalid);
-
-			bool first_dep = true;
-			FOR DEP IN RDB$DEPENDENCIES WITH
-				PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
-				REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-				SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-
-				fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-				// Get column type name to print
-				if (!first_dep) {
-					isqlGlob.printf("%s%42s", NEWLINE, "");
+					isqlGlob.printf(
+							 "Procedure Name                    Invalid Dependency, Type%s", NEWLINE);
+					isqlGlob.printf(
+							 "================================= ======= =====================================%s", NEWLINE);
+					first_proc = false;
 				}
-				first_dep = false;
-				isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
-						 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+
+				const char* invalid = "        ";
+
+				bool private_flag = false;
+
+				if (isqlGlob.major_ods >= ODS_VERSION12)
+				{
+					FOR PRC2 IN RDB$PROCEDURES
+						WITH PRC2.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME
+						AND PRC2.RDB$PROCEDURE_ID EQ PRC.RDB$PROCEDURE_ID
+
+						private_flag = !PRC2.RDB$PACKAGE_NAME.NULL;
+						if (!(PRC2.RDB$VALID_BLR.NULL || PRC2.RDB$VALID_BLR))
+							invalid = "   *    ";
+					END_FOR
+
+				}
+				else if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+				{
+					FOR PRC2 IN RDB$PROCEDURES
+						WITH PRC2.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME
+
+						if (!(PRC2.RDB$VALID_BLR.NULL || PRC2.RDB$VALID_BLR))
+							invalid = "   *    ";
+					END_FOR
+				}
+
+				if (i == 0 && private_flag || i == 1 && !private_flag)
+					continue;
+
+				// Strip trailing blanks
+
+				fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
+				isqlGlob.printf("%-34s%s", PRC.RDB$PROCEDURE_NAME, invalid);
+
+				bool first_dep = true;
+				FOR DEP IN RDB$DEPENDENCIES WITH
+					PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
+					REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+					SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+
+					fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
+					// Get column type name to print
+					if (!first_dep) {
+						isqlGlob.printf("%s%42s", NEWLINE, "");
+					}
+					first_dep = false;
+					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+							 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg (isc_status);
+					return ps_ERR;
+				END_ERROR;
+				isqlGlob.printf(NEWLINE);
+
 			END_FOR
 			ON_ERROR
-				ISQL_errmsg (isc_status);
+				ISQL_errmsg(isc_status);
 				return ps_ERR;
 			END_ERROR;
-			isqlGlob.printf(NEWLINE);
+		}
 
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg(isc_status);
-			return ps_ERR;
-		END_ERROR;
 		if (first_proc)
 			return OBJECT_NOT_FOUND;
 		return (SKIP);
 	}
 
-// A procedure was named, so print all the info on that procedure
+	// A procedure was named, so print all the info on that procedure
 
 	SCHAR type_name[33];
 	SCHAR lenstring[33] = "";
