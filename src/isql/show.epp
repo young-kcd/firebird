@@ -97,6 +97,7 @@ static processing_state show_generators(const SCHAR*);
 static void show_index(SCHAR*, SCHAR*, const SSHORT, const SSHORT, const SSHORT);
 static processing_state show_indices(const SCHAR* const*);
 static processing_state show_proc(const SCHAR*);
+static processing_state show_packages(const SCHAR* package_name);
 static processing_state show_role(const SCHAR*);
 static processing_state show_secclass(const char* object, const char* opt);
 static processing_state show_table(const SCHAR*, bool);
@@ -549,6 +550,41 @@ static const char* granted_by(char* buffer, const char* grantor)
 }
 
 
+static void set_grantee(int user_type, const char* SQL_identifier, char* user_string)
+{
+	switch (user_type)
+	{
+	case obj_view:
+		sprintf (user_string, "VIEW %s", SQL_identifier);
+		break;
+	case obj_trigger:
+		sprintf (user_string, "TRIGGER %s", SQL_identifier);
+		break;
+	case obj_procedure:
+		sprintf (user_string, "PROCEDURE %s", SQL_identifier);
+		break;
+	case obj_user:
+		if (strcmp(SQL_identifier, "PUBLIC"))
+			sprintf (user_string, "USER %s", SQL_identifier);
+		else
+			strcpy (user_string, SQL_identifier);
+		break;
+	case obj_user_group:
+		sprintf (user_string, "GROUP %s", SQL_identifier);
+		break;
+	case obj_sql_role:
+		sprintf (user_string, "ROLE %s", SQL_identifier);
+		break;
+	case obj_package_header:
+		sprintf(user_string, "PACKAGE %s", SQL_identifier);
+		break;
+	default:
+		strcpy (user_string, SQL_identifier);
+		break;
+	}
+}
+
+
 processing_state SHOW_grants2 (const SCHAR* object,
 				  const SCHAR* terminator,
 				  USHORT obj_type,
@@ -579,6 +615,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME prev_field;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE prev_user_type;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR prev_grantor;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$OBJECT_TYPE prev_object_type;
 	SCHAR buf_grantor[sizeof(prev_grantor) + 20];
 	SCHAR user_string[QUOTEDLENGTH + 20];
 	bool first = true;
@@ -593,6 +630,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	prev_field[0] = '\0';
 	prev_grantor[0] = '\0';
 	prev_user_type = -1;
+	prev_object_type = -1;
 	char priv_string[MAX_PRIV_LIST] = "";
 	char col_string[BUFFER_LENGTH128] = "";
 	char with_option[19] = "";
@@ -604,7 +642,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 		// Find the user specified relation and show its privileges
 
-		FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ object;
+		FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ object
 
 			// This query only finds tables, eliminating owner privileges
 
@@ -614,7 +652,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				REL.RDB$RELATION_NAME EQ object AND
 				PRV.RDB$PRIVILEGE     NE 'M'    AND
 				REL.RDB$OWNER_NAME    NE PRV.RDB$USER
-				SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
+				SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
 
 				fb_utils::exact_name(PRV.RDB$USER);
 
@@ -634,7 +672,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					(!prev_field_null && strcmp (prev_field, PRV.RDB$FIELD_NAME)) ||
 					(prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION) ||
 					(prev_user_type != -1 && prev_user_type != PRV.RDB$USER_TYPE) ||
-					(prev_grantor[0] && strcmp (prev_grantor, PRV.RDB$GRANTOR)))
+					(prev_grantor[0] && strcmp (prev_grantor, PRV.RDB$GRANTOR)) ||
+					(prev_object_type != -1 && prev_object_type != PRV.RDB$OBJECT_TYPE))
 				{
 
 					make_priv_string (priv_flags, priv_string);
@@ -671,6 +710,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				strcpy (prev_field, PRV.RDB$FIELD_NAME);
 				prev_user_type = PRV.RDB$USER_TYPE;
 				strcpy (prev_grantor, PRV.RDB$GRANTOR);
+				prev_object_type = PRV.RDB$OBJECT_TYPE;
 
 				switch (PRV.RDB$USER_TYPE)
 				{
@@ -679,6 +719,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_trigger:
 				case obj_procedure:
 				case obj_sql_role:
+				case obj_package_header:
 				case obj_user: // Users can be machine\user and need quoting
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
@@ -691,33 +732,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					break;
 				}
 
-				switch (PRV.RDB$USER_TYPE)
-				{
-				case obj_view:
-					sprintf (user_string, "VIEW %s", SQL_identifier);
-					break;
-				case obj_trigger:
-					sprintf (user_string, "TRIGGER %s", SQL_identifier);
-					break;
-				case obj_procedure:
-					sprintf (user_string, "PROCEDURE %s", SQL_identifier);
-					break;
-				case obj_user:
-					if (strcmp(SQL_identifier, "PUBLIC"))
-						sprintf (user_string, "USER %s", SQL_identifier);
-					else
-						strcpy (user_string, SQL_identifier);
-					break;
-				case obj_user_group:
-					sprintf (user_string, "GROUP %s", SQL_identifier);
-					break;
-				case obj_sql_role:
-					sprintf (user_string, "ROLE %s", SQL_identifier);
-					break;
-				default:
-					strcpy (user_string, SQL_identifier);
-					break;
-				}
+				set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
 
 				// Only the first character is used for permissions
 
@@ -818,7 +833,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				PRC.RDB$PROCEDURE_NAME EQ object AND
 				PRV.RDB$PRIVILEGE EQ 'X' AND
 				PRC.RDB$OWNER_NAME NE PRV.RDB$USER
-				SORTED BY  PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION;
+				SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
 
 				if (first && optional_msg)
 					isqlGlob.prints(optional_msg);
@@ -833,6 +848,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				case obj_trigger:
 				case obj_procedure:
 				case obj_sql_role:
+				case obj_package_header:
+				case obj_user:
 					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
 					}
@@ -844,33 +861,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					break;
 				}
 
-				switch (PRV.RDB$USER_TYPE)
-				{
-				case obj_view:
-					sprintf (user_string, "VIEW %s", SQL_identifier);
-					break;
-				case obj_trigger:
-					sprintf (user_string, "TRIGGER %s", SQL_identifier);
-					break;
-				case obj_procedure:
-					sprintf (user_string, "PROCEDURE %s", SQL_identifier);
-					break;
-				case obj_user:
-					if (strcmp(SQL_identifier, "PUBLIC"))
-						sprintf (user_string, "USER %s", SQL_identifier);
-					else
-						strcpy (user_string, SQL_identifier);
-					break;
-				case obj_user_group:
-					sprintf (user_string, "GROUP %s", SQL_identifier);
-					break;
-				case obj_sql_role:
-					sprintf (user_string, "ROLE %s", SQL_identifier);
-					break;
-				default:
-					strcpy (user_string, SQL_identifier);
-					break;
-				}
+				set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
 
 				if (PRV.RDB$GRANT_OPTION)
 					strcpy (with_option, " WITH GRANT OPTION");
@@ -886,7 +877,6 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				isqlGlob.printf("GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s%s",
 						 SQL_identifier, user_string, with_option,
 						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
-				first = false;
 
 			END_FOR
 			ON_ERROR
@@ -921,7 +911,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				PRV.RDB$USER_TYPE     EQ obj_user     AND
 				PRV.RDB$RELATION_NAME EQ object       AND
 				PRV.RDB$PRIVILEGE     EQ 'M'
-				SORTED BY  PRV.RDB$USER
+				SORTED BY PRV.RDB$USER
 
 				fb_utils::exact_name(PRV.RDB$RELATION_NAME);
 				strcpy (role_name, PRV.RDB$RELATION_NAME);
@@ -954,6 +944,80 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				return ps_ERR;
 			END_ERROR;
 
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR;
+
+		if (!first)
+			return (SKIP);
+	}
+
+	if (obj_type == obj_package_header || obj_type == 255)
+	{
+		fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
+		if (isqlGlob.major_ods < ODS_VERSION12)
+			return OBJECT_NOT_FOUND;
+
+		FOR FIRST 1 P IN RDB$PACKAGES WITH P.RDB$PACKAGE_NAME EQ object
+			FOR PRV IN RDB$USER_PRIVILEGES CROSS
+				PACK IN RDB$PACKAGES WITH
+				PRV.RDB$OBJECT_TYPE = obj_package_header AND
+				PRV.RDB$RELATION_NAME EQ object AND
+				PACK.RDB$PACKAGE_NAME EQ object AND
+				PRV.RDB$PRIVILEGE EQ 'X' AND
+				PACK.RDB$OWNER_NAME NE PRV.RDB$USER
+				SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+
+				if (first && optional_msg)
+					isqlGlob.prints(optional_msg);
+
+				first = false;
+				fb_utils::exact_name(PRV.RDB$USER);
+
+				switch (PRV.RDB$USER_TYPE)
+				{
+				case obj_relation:
+				case obj_view:
+				case obj_trigger:
+				case obj_procedure:
+				case obj_sql_role:
+				case obj_package_header:
+				case obj_user:
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+						IUTILS_copy_SQL_id (PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+					}
+					else
+						strcpy (SQL_identifier, PRV.RDB$USER);
+					break;
+				default:
+					strcpy (SQL_identifier, PRV.RDB$USER);
+					break;
+				}
+
+				set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+				if (PRV.RDB$GRANT_OPTION)
+					strcpy (with_option, " WITH GRANT OPTION");
+				else
+					with_option[0] = '\0';
+
+				if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
+					IUTILS_copy_SQL_id (object, SQL_identifier, DBL_QUOTE);
+				}
+				else
+					strcpy (SQL_identifier, object);
+
+				isqlGlob.printf("GRANT EXECUTE ON PACKAGE %s TO %s%s%s%s%s",
+						 SQL_identifier, user_string, with_option,
+						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg (isc_status);
+				return ps_ERR;
+			END_ERROR
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
@@ -1146,7 +1210,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 			role, table, view, system, index, domain, exception,
 			filter, function, generator, grant, procedure, trigger,
 			check, database, comment, dependency, collation, security_class,
-			users, wrong
+			users, package, schema, wrong
 		};
 		ShowOptions(const optionsMap* inmap, size_t insize, int wrongval)
 			: OptionsBase(inmap, insize, wrongval)
@@ -1200,7 +1264,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		{ShowOptions::collation, "COLLATIONS", 9},
 		{ShowOptions::security_class, "SECURITY CLASSES", 12},
 		{ShowOptions::security_class, "SECCLASSES", 6},
-		{ShowOptions::users, "USERS", 0}
+		{ShowOptions::users, "USERS", 0},
+		{ShowOptions::package, "PACKAGES", 4},
+		{ShowOptions::schema, "SCHEMAS", 4}
 	};
 
 	const ShowOptions showoptions(options, FB_NELEM(options), ShowOptions::wrong);
@@ -1499,12 +1565,12 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 			}
 			else
 				strcpy(SQL_id_for_grant, cmd[2]);
-			ret = SHOW_grants (SQL_id_for_grant, "", 255);
+			ret = SHOW_grants(SQL_id_for_grant, "", 255);
 		}
 		else
 		{
 			strcpy(SQL_id_for_grant, cmd[2]);
-			ret = EXTRACT_list_grants ("");
+			ret = EXTRACT_list_grants("");
 		}
 
 		if (ret == OBJECT_NOT_FOUND)
@@ -1685,6 +1751,28 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		ret = show_users();
 		if (ret == OBJECT_NOT_FOUND) // It seems impossible, but...
 			key = NO_CONNECTED_USERS;
+		break;
+
+	case ShowOptions::package:
+		if (*cmd[2] == '"')
+		{
+			remove_delimited_double_quotes(lcmd[2]);
+			ret = show_packages(lcmd[2]);
+		}
+		else
+			ret = show_packages(cmd[2]);
+
+		if (ret == OBJECT_NOT_FOUND)
+		{
+			if (*cmd[2])
+				key = NO_PACKAGE;
+			else
+				key = NO_PACKAGES;
+		}
+		break;
+
+	case ShowOptions::schema:
+		return ps_ERR;
 		break;
 
 	default:
@@ -2229,10 +2317,10 @@ static void show_comment(const char* objtype, char* name1, char* name2,
 // When extracting comments, we do the usual escaping to make the script valid.
 static processing_state show_comments(const commentMode showextract, const char* banner)
 {
-// From dsql.h:
-//	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
-//	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
-//	ddl_charset, ddl_collation//, ddl_sec_class
+	// From dsql.h:
+	//	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
+	//	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
+	//	ddl_charset, ddl_collation//, ddl_sec_class
 
 	bool first = true;
 
@@ -2457,6 +2545,23 @@ static processing_state show_comments(const commentMode showextract, const char*
 			SORTED BY RO.RDB$ROLE_NAME
 
 			show_comment("ROLE", RO.RDB$ROLE_NAME, 0, &RO.RDB$DESCRIPTION,
+				showextract, first ? banner : 0);
+			first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR
+	}
+
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+	{
+		FOR PACK IN RDB$PACKAGES
+			WITH PACK.RDB$DESCRIPTION NOT MISSING
+			AND (PACK.RDB$SYSTEM_FLAG EQ 0 OR PACK.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY PACK.RDB$PACKAGE_NAME
+
+			show_comment("PACKAGE", PACK.RDB$PACKAGE_NAME, 0, &PACK.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
 			first = false;
 		END_FOR
@@ -3631,6 +3736,83 @@ static processing_state show_indices(const SCHAR* const* cmd)
 }
 
 
+static processing_state show_packages(const SCHAR* package_name)
+{
+/*************************************
+*
+*	s h o w _ p a c k a g e s
+*
+**************************************
+*
+* Functional description
+*	Show all packages or the named package
+************************************/
+	if (isqlGlob.major_ods < ODS_VERSION12)
+		return OBJECT_NOT_FOUND;
+
+	bool first = true;
+
+	if (!*package_name)
+	{
+		bool odd = true;
+		//  List all package names in columns
+		FOR PACK IN RDB$PACKAGES WITH
+			PACK.RDB$SYSTEM_FLAG NE 1
+			SORTED BY PACK.RDB$PACKAGE_NAME
+
+			first = false;
+			isqlGlob.printf("%38s%s", PACK.RDB$PACKAGE_NAME, (odd ? " " : NEWLINE));
+			odd = !odd;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR;
+		if (!first)
+			isqlGlob.printf(NEWLINE);
+	}
+	else
+	{
+		// List named package
+
+		FOR PACK IN RDB$PACKAGES WITH
+			PACK.RDB$PACKAGE_NAME EQ package_name
+
+			first = false;
+			// Print the name of the package
+			fb_utils::exact_name(PACK.RDB$PACKAGE_NAME);
+			isqlGlob.printf("%-32s", PACK.RDB$PACKAGE_NAME);
+
+			isqlGlob.printf(NEWLINE);
+
+			if (!PACK.RDB$PACKAGE_HEADER_SOURCE.NULL)
+			{
+				isqlGlob.printf("%s%s", "Header source:", NEWLINE);
+				SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_HEADER_SOURCE);
+				isqlGlob.printf(NEWLINE);
+			}
+
+			if (!PACK.RDB$PACKAGE_BODY_SOURCE.NULL)
+			{
+				isqlGlob.printf("%s%s", "Body source:", NEWLINE);
+				SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
+				isqlGlob.printf(NEWLINE);
+			}
+
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			return ps_ERR;
+		END_ERROR;
+	}
+
+	if (first)
+		return (OBJECT_NOT_FOUND);
+
+	return (SKIP);
+}
+
+
 static processing_state show_proc(const SCHAR* procname)
 {
 /**************************************
@@ -3931,6 +4113,9 @@ static processing_state show_proc(const SCHAR* procname)
 
 static processing_state show_role(const SCHAR* object)
 {
+	if (isqlGlob.major_ods < ODS_VERSION9)
+		return OBJECT_NOT_FOUND;
+
 	if (object == NULL)
 	{
 		// show role with no parameters, show all roles

@@ -1073,6 +1073,10 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 					system_flag = true;
 
 				END_FOR
+				ON_ERROR
+					ISQL_errmsg(gds_status);
+				    return OBJECT_NOT_FOUND;
+				END_ERROR;
 			}
 
 			if (! system_flag)
@@ -1149,25 +1153,62 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 		SHOW_grant_roles2(terminator, 0, 0, mangle);
 
 
-	// Again for stored procedures
+	// Again for stored procedures, but ignore private procedures inside packages.
 	FOR PRC IN RDB$PROCEDURES
+		WITH (PRC.RDB$SYSTEM_FLAG NE 1 OR PRC.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 
-		// Null terminate name string
+		bool private_flag = false;
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR HIDDEN IN RDB$PROCEDURES
+				WITH HIDDEN.RDB$PROCEDURE_NAME = PRC.RDB$PROCEDURE_NAME
+				AND HIDDEN.RDB$PRIVATE_FLAG = 1
+				private_flag = true;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(gds_status);
+			    return OBJECT_NOT_FOUND;
+			END_ERROR;
+		}
 
-		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
+		if (!private_flag)
+		{
+			// Null terminate name string
+			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 
-		const processing_state rc =
-			SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
-						   first ? banner: 0, mangle);
-		if (rc == SKIP)
-			first = false;
+			const processing_state rc =
+				SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
+							   first ? banner: 0, mangle);
+			if (rc == SKIP)
+				first = false;
+		}
 
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
 		return OBJECT_NOT_FOUND;
 	END_ERROR;
+
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+	{
+		FOR PACK IN RDB$PACKAGES
+			WITH (PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
+			SORTED BY PACK.RDB$PACKAGE_NAME
+
+			// Null terminate name string
+			fb_utils::exact_name(PACK.RDB$PACKAGE_NAME);
+			const processing_state rc =
+				SHOW_grants2(PACK.RDB$PACKAGE_NAME, terminator, obj_package_header,
+													first ? banner: 0, mangle);
+			if (rc == SKIP)
+				first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(gds_status);
+			return OBJECT_NOT_FOUND;
+		END_ERROR
+	}
 
 	return first_role && first ? OBJECT_NOT_FOUND : SKIP;
 }
