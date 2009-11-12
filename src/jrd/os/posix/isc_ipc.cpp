@@ -125,10 +125,12 @@ static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool w_siginfo);
 
 #ifdef __cplusplus
-extern "C"
+extern "C" {
 #endif
 static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context);
-
+#ifdef __cplusplus
+}
+#endif
 #ifndef SIG_HOLD
 #define SIG_HOLD	SIG_DFL
 #endif
