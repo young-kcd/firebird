@@ -201,6 +201,16 @@ void IUTILS_printf2(FILE* fp, const char* buffer, ...)
 }
 
 
+// I U T I L S _ p u t _ e r r m s g
+// Retrives a message and prints it as an error.
+void IUTILS_put_errmsg(USHORT number, const SafeArg& args)
+{
+	TEXT errbuf[MSG_LENGTH];
+	IUTILS_msg_get(number, errbuf, args);
+	STDERROUT(errbuf);
+}
+
+
 void IUTILS_remove_and_unescape_quotes(TEXT* string, const char quote)
 {
 /**************************************

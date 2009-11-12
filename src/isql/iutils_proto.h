@@ -38,6 +38,7 @@ void	IUTILS_msg_get(USHORT number, USHORT size, TEXT* msg,
 					 const MsgFormat::SafeArg& args = MsgFormat::SafeArg());
 void	IUTILS_printf(FILE*, const char*);
 void	IUTILS_printf2(FILE*, const char*, ...);
+void	IUTILS_put_errmsg(USHORT number, const MsgFormat::SafeArg& args);
 void	IUTILS_remove_and_unescape_quotes(TEXT* string, const char quote);
 void	IUTILS_truncate_term(TEXT*, USHORT);
 

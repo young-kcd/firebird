@@ -201,7 +201,7 @@ const int NO_PROCS					= 88;		// There are no stored procedures in this database
 const int NO_TRIGGERS_ON_REL		= 89;		// There are no triggers on table @1 in this database
 const int NO_REL_OR_TRIGGER			= 90;		// There is no table or trigger @1 in this database
 const int NO_TRIGGERS				= 91;		// There are no triggers in this database
-const int NO_TRIGGER				= 121;      // There is no trigger @1 in this database
+const int NO_TRIGGER				= 121;		// There is no trigger @1 in this database
 const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table @1 in this database
 const int NO_COMMENTS				= 115;		// There are no comments for objects in this database.
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size
@@ -238,14 +238,14 @@ const int NO_DEPENDENCIES			= 147;		// No dependencies for @1 were found
 const int NO_COLLATION				= 148;		// There is no collation @1 in this database
 const int NO_COLLATIONS				= 149;		// There are no collations in this database
 const int MSG_COLLATIONS			= 150;		// Collations:
-const int NO_SECCLASS				= 151;      // There are no security classes for @1
-const int NO_DB_WIDE_SECCLASS		= 152;      // There is no database-wide security class
+const int NO_SECCLASS				= 151;		// There are no security classes for @1
+const int NO_DB_WIDE_SECCLASS		= 152;		// There is no database-wide security class
 const int CANNOT_GET_SRV_VER		= 153;		// Cannot get server version without database connection
 const int BULK_PROMPT				= 156;		// "BULK> "
-const int NO_CONNECTED_USERS		= 157;   	// There are no connected users
-const int USERS_IN_DB				= 158;      // Users in the database
-const int OUTPUT_TRUNCATED			= 159;      // Output was truncated
-const int VALID_OPTIONS             = 160;      // Valid options are:
+const int NO_CONNECTED_USERS		= 157;		// There are no connected users
+const int USERS_IN_DB				= 158;		// Users in the database
+const int OUTPUT_TRUNCATED			= 159;		// Output was truncated
+const int VALID_OPTIONS				= 160;		// Valid options are:
 const int USAGE_FETCH				= 161;		// -f(etch_password)       fetch password from file
 const int PASS_FILE_OPEN			= 162;		// could not open password file @1, errno @2
 const int PASS_FILE_READ			= 163;		// could not read password file @1, errno @2
@@ -254,6 +254,10 @@ const int NO_PACKAGE				= 166;		// There is no package @1 in this database
 const int NO_PACKAGES				= 167;		// There are no packages in this database
 const int NO_SCHEMA					= 168;		// There is no schema @1 in this database
 const int NO_SCHEMAS				= 169;		// There are no schemas in this database
+const int ROWCOUNT_INVALID			= 170;		//Unable to convert @1 to a number for rowcount
+const int ROWCOUNT_OUTOF_RANGE		= 171;		//Value @1 for rowcount is out of range. Max value is @2
+const int ROWCOUNT_NEGATIVE			= 172;		//The value (@1) for rowcount must be zero or greater
+
 
 // Initialize types
 

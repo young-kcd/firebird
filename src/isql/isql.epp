@@ -530,7 +530,7 @@ int ISQL_main(int argc, char* argv[])
 
 	case ps_ERR:
 	    {
-			TEXT helpstring[155];
+			TEXT helpstring[158];
 			IUTILS_msg_get(USAGE, sizeof(helpstring), helpstring);
 			STDERROUT(helpstring);
 			for (int i = 0; i < FB_NELEM(isql_in_sw_table); i++)
@@ -5866,7 +5866,7 @@ static processing_state print_sets()
 	print_set("Print statistics:", Stats);
 	print_set("Echo commands:", Echo);
 	print_set("List format:", List);
-	print_set("List Row Count:", Docount);
+	print_set("Show Row Count:", Docount);
 	//print_set("Row Count:", Docount);   // Changed print to the above to avoid confusion with next one
 	isqlGlob.printf("%-25s%lu%s", "Select rowcount limit:", rowCount, NEWLINE);
 	print_set("Autocommit DDL:", Autocommit);
@@ -6449,41 +6449,44 @@ static processing_state newRowCount(const TEXT* newRowCountStr)
  **************************************
  *
  * Functional description
+ * Sets the new value for the rowcount limit (max rows to be retrieved).
  *
  **************************************/
 
 	char* p;
 
 	errno = 0;
-	const long newRowCount = strtol(newRowCountStr, &p, 0);
-	// I was going to use this one, but "-1" parses as max ulong without error and it would be politer to give an error.
-	//const ULONG newRowCount = strtoul(newRowCountStr, &p, 0);
+	const long newRowCount = strtol(newRowCountStr, &p, 10);
+	// I was going to use this one, but "-1" parses as max ulong without error
+	// and it would be politer to give an error.
+	//const ULONG newRowCount = strtoul(newRowCountStr, &p, 10);
 
-	if (newRowCount < 0)
+	// CVC: I added this block because Windows wasn't working according to Mark's
+	// expectation: it only produces ERANGE. Thus, garbage like
+	// set rowcount abs;  wasn't caught.
+	if (p == newRowCountStr)
 	{
-		isqlGlob.printf("The value (%s) for rowcount must be zero or greater", newRowCountStr);
-		isqlGlob.printf(NEWLINE);
+		IUTILS_put_errmsg(ROWCOUNT_INVALID, SafeArg() << newRowCountStr);
 		return ps_ERR;
 	}
 
-	if (errno)
+	switch (errno)
 	{
-		switch (errno)
-		{
-		case ERANGE:
-			isqlGlob.printf("Unable to convert %s to a number for rowcount ", newRowCountStr);
-			isqlGlob.printf(NEWLINE);
-			break;
-		case EINVAL:
-			isqlGlob.printf("Value %s for rowcount is out of range. Max value is %ld", newRowCountStr, SLONG_MAX);
-			isqlGlob.printf(NEWLINE);
-			break;
-		default:
-			isqlGlob.printf("Unable to process %s as new limit for rowcount", newRowCountStr);
-			isqlGlob.printf(NEWLINE);
-			break;
-		}
+	case 0: // everything correct
+		break;
+	case ERANGE:
+		// Only ERANGE is part of the ANSI standard here.
+		IUTILS_put_errmsg(ROWCOUNT_OUTOF_RANGE, SafeArg() << newRowCountStr << SLONG_MAX);
+		return ps_ERR;
+	default:
+		// EINVAL and the like
+		IUTILS_put_errmsg(ROWCOUNT_INVALID, SafeArg() << newRowCountStr);
+		return ps_ERR;
+	}
 
+	if (newRowCount < 0)
+	{
+		IUTILS_put_errmsg(ROWCOUNT_NEGATIVE, SafeArg() << newRowCountStr);
 		return ps_ERR;
 	}
 
@@ -8582,7 +8585,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		{
 			TEXT rec_count_msg[MSG_LENGTH];
 			IUTILS_msg_get(REC_COUNT, rec_count_msg, SafeArg() << lines);
-			// Records affected: %ld
+			// Records affected: @1
 			isqlGlob.printf("%s%s", rec_count_msg, NEWLINE);
 		}
 	}
