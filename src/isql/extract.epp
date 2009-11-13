@@ -82,12 +82,14 @@ static void list_collations();
 static void list_create_db();
 static void list_domain_table(const SCHAR*, SSHORT);
 static void list_domains(SSHORT);
-static void list_exception();
+static void list_exceptions();
 static void list_filters();
 static void list_foreign();
 static void list_functions();
 static void list_generators();
-static void list_index();
+static void list_indexes();
+static void list_package_bodies();
+static void list_package_headers();
 static void list_views();
 
 extern const char* trigger_action(int);
@@ -185,13 +187,15 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		list_functions();
 		list_generators();
 		list_domains(default_char_set_id);
+		list_package_headers();
 		list_all_tables(flag, default_char_set_id);
-		list_index();
+		list_indexes();
 		list_foreign();
 		list_views();
 		list_check();
-		list_exception();
+		list_exceptions();
 		list_all_procs();
+		list_package_bodies();
 		list_all_triggers();
 		list_all_grants();
 		SHOW_comments(false); // Let's make this an option later.
@@ -1529,7 +1533,7 @@ static void print_proc_prefix()
 
 static void print_proc_suffix()
 {
-	isqlGlob.printf("SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
+	isqlGlob.printf("%sSET TERM %s %s%s", NEWLINE, isqlGlob.global_Term, Procterm, NEWLINE);
 	isqlGlob.printf("COMMIT WORK %s%s", isqlGlob.global_Term, NEWLINE);
 	isqlGlob.printf("SET AUTODDL ON;%s", NEWLINE);
 }
@@ -1654,6 +1658,8 @@ static void list_all_procs_ods12()
 
 static void list_all_procs_legacy()
 {
+	fb_assert(isqlGlob.major_ods < ODS_VERSION12);
+
 	bool header = true;
 	static const char* const create_procedure	= "CREATE PROCEDURE %s ";
 	static const char* const body_execut_proc	= "BEGIN EXIT; END %s%s";
@@ -2680,11 +2686,11 @@ static void list_domains(SSHORT default_char_set_id)
 }
 
 
-static void list_exception()
+static void list_exceptions()
 {
 /**************************************
  *
- *	l i s t _ e x c e p t i o n
+ *	l i s t _ e x c e p t i o n s
  *
  **************************************
  *
@@ -3125,7 +3131,7 @@ static void list_generators()
 }
 
 
-static void list_index()
+static void list_indexes()
 {
 /**************************************
  *
@@ -3200,6 +3206,109 @@ static void list_index()
 }
 
 
+static void list_package_bodies()
+{
+/**************************************
+ *
+ *	l i s t _ p a c k a g e _ b o d i e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create body of packages
+ *	Use a SQL query to get the info and print it.
+ *	Ignore the packages whose body has not been defined yet.
+ *
+ **************************************/
+
+	if (isqlGlob.major_ods < ODS_VERSION12)
+		return;
+
+	FOR PACK IN RDB$PACKAGES WITH
+		(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
+		AND PACK.RDB$PACKAGE_BODY_SOURCE NOT MISSING
+		SORTED BY PACK.RDB$PACKAGE_NAME
+
+		fb_utils::exact_name(PACK.RDB$PACKAGE_NAME);
+
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			IUTILS_copy_SQL_id (PACK.RDB$PACKAGE_NAME, SQL_identifier, DBL_QUOTE);
+		else
+			strcpy (SQL_identifier, PACK.RDB$PACKAGE_NAME);
+
+		fb_utils::exact_name(PACK.RDB$OWNER_NAME);
+
+		isqlGlob.printf("%s/* Package body: %s, Owner: %s */%s",
+				 NEWLINE,
+				 PACK.RDB$PACKAGE_NAME,
+				 PACK.RDB$OWNER_NAME,
+				 NEWLINE);
+		isqlGlob.printf("CREATE PACKAGE BODY %s AS%s", SQL_identifier, NEWLINE);
+
+		SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
+
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
+}
+
+
+static void list_package_headers()
+{
+/**************************************
+ *
+ *	l i s t _ p a c k a g e _ h e a d e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Show header of packages
+ *	Use a SQL query to get the info and print it.
+ *
+ **************************************/
+
+ 	if (isqlGlob.major_ods < ODS_VERSION12)
+ 		return;
+
+	FOR PACK IN RDB$PACKAGES WITH
+		(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
+		SORTED BY PACK.RDB$PACKAGE_NAME
+
+		fb_utils::exact_name(PACK.RDB$PACKAGE_NAME);
+
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			IUTILS_copy_SQL_id (PACK.RDB$PACKAGE_NAME, SQL_identifier, DBL_QUOTE);
+		else
+			strcpy (SQL_identifier, PACK.RDB$PACKAGE_NAME);
+
+		fb_utils::exact_name(PACK.RDB$OWNER_NAME);
+
+		isqlGlob.printf("%s/* Package header: %s, Owner: %s */%s",
+				 NEWLINE,
+				 PACK.RDB$PACKAGE_NAME,
+				 PACK.RDB$OWNER_NAME,
+				 NEWLINE);
+		isqlGlob.printf("CREATE PACKAGE %s AS%s", SQL_identifier, NEWLINE);
+
+		if (!PACK.RDB$PACKAGE_HEADER_SOURCE.NULL)
+			SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_HEADER_SOURCE);
+		else
+			isqlGlob.printf("BEGIN END /* Missing package header info. */");
+
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
+}
+
+
 static void list_views()
 {
 /**************************************
@@ -3209,13 +3318,13 @@ static void list_views()
  **************************************
  *
  * Functional description
- *	Show text of views.
+ *	Create text of views.
  *	Use a SQL query to get the info and print it.
  *	Note: This should also contain check option
  *
  **************************************/
 
-// If this is a view, use print_blob to print the view text
+	// If this is a view, use print_blob to print the view text
 
 	FOR REL IN RDB$RELATIONS WITH
 		(REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
@@ -3223,7 +3332,6 @@ static void list_views()
 		REL.RDB$FLAGS = REL_sql
 		SORTED BY REL.RDB$RELATION_ID
 
-		bool first = true;
 		fb_utils::exact_name(REL.RDB$RELATION_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -3240,6 +3348,7 @@ static void list_views()
 				 NEWLINE);
 		isqlGlob.printf("CREATE VIEW %s (", SQL_identifier);
 
+		bool first = true;
 		// Get column list
 		FOR RFR IN RDB$RELATION_FIELDS WITH
 			RFR.RDB$RELATION_NAME = REL.RDB$RELATION_NAME

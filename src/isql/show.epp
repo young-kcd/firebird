@@ -2803,7 +2803,6 @@ static processing_state show_dependencies(const char* object)
 static processing_state show_dependencies(const char* object, int obj_type)
 {
 	bool missing1 = true;
-	bool target_done = false;
 
 	FOR DEP1 IN RDB$DEPENDENCIES
 		WITH DEP1.RDB$DEPENDED_ON_NAME EQ object AND
@@ -2828,6 +2827,7 @@ static processing_state show_dependencies(const char* object, int obj_type)
 		return ps_ERR;
 	END_ERROR;
 
+	bool target_done = false;
 	if (!missing1)
 	{
 		const char* type_name = Object_types[obj_type];
@@ -2870,7 +2870,6 @@ static processing_state show_dependencies(const char* object, int obj_type)
 		return ps_ERR;
 	END_ERROR;
 
-	bool missing3 = true;
 	bool is_table = false;
 
 	FOR REL IN RDB$RELATIONS
@@ -2884,6 +2883,7 @@ static processing_state show_dependencies(const char* object, int obj_type)
 		return ps_ERR;
 	END_ERROR;
 
+	bool missing3 = true;
 	if (obj_type == obj_relation && is_table || obj_type == obj_view && !is_table)
 	{
 		FOR RFR IN RDB$RELATION_FIELDS
@@ -3796,7 +3796,7 @@ static processing_state show_packages(const SCHAR* package_name)
 		bool odd = true;
 		//  List all package names in columns
 		FOR PACK IN RDB$PACKAGES WITH
-			PACK.RDB$SYSTEM_FLAG NE 1
+			(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
 			SORTED BY PACK.RDB$PACKAGE_NAME
 
 			first = false;
@@ -3830,6 +3830,8 @@ static processing_state show_packages(const SCHAR* package_name)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_HEADER_SOURCE);
 				isqlGlob.printf(NEWLINE);
 			}
+			else
+				isqlGlob.printf("Missing package header source.%s", NEWLINE);
 
 			if (!PACK.RDB$PACKAGE_BODY_SOURCE.NULL)
 			{
