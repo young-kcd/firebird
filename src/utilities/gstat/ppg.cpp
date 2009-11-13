@@ -34,6 +34,7 @@
 #include "../jrd/os/guid.h"
 #include "../jrd/nbak.h"
 #include "../jrd/gds_proto.h"
+#include "../common/classes/DbImplementation.h"
 
 #include "../utilities/gstat/ppg_proto.h"
 
@@ -75,7 +76,10 @@ void PPG_print_header(const header_page* header, SLONG page,
 		uSvc->printf("\tSequence number\t\t%d\n", header->hdr_sequence);
 
 		uSvc->printf("\tNext attachment ID\t%"SLONGFORMAT"\n", header->hdr_attachment_id);
-		uSvc->printf("\tImplementation ID\t%d\n", header->hdr_implementation);
+
+		Firebird::DbImplementation imp(header);
+		uSvc->printf("\tImplementation \tHW=%s %s-endian OS=%s CC=%s\n", 
+							 imp.cpu(), imp.endianess(), imp.os(), imp.cc());
 		uSvc->printf("\tShadow count\t\t%"SLONGFORMAT"\n", header->hdr_shadow_count);
 		uSvc->printf("\tPage buffers\t\t%"ULONGFORMAT"\n", header->hdr_page_buffers);
 	}

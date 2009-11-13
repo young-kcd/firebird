@@ -97,6 +97,7 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/TempSpace.h"
 #include "../jrd/extds/ExtDS.h"
+#include "../common/classes/DbImplementation.h"
 
 using namespace Jrd;
 using namespace Ods;
@@ -111,244 +112,6 @@ inline void err_post_if_database_is_readonly(const Database* dbb)
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(Arg::Gds(isc_read_only_database));
 }
-
-// Class definitions (obsolete platforms are commented out)
-// Class constant name consists of OS platform and CPU architecture.
-//
-// For ports created before Firebird 2.0 release 64-bit and 32-bit
-// sub-architectures of the same CPU should use different classes.
-// For 64-bit ports first created after or as a part of Firebird 2.0
-// release CPU architecture may be the same for both variants.
-
-static const int CLASS_UNKNOWN = 0;
-//static const CLASS_APOLLO_68K = 1;		// Apollo 68K, Dn 10K
-static const int CLASS_SOLARIS_SPARC = 2;	// Sun 68k, Sun Sparc, HP 9000/300, MAC AUX, IMP, DELTA, NeXT, UNIXWARE, DG_X86
-static const int CLASS_SOLARIS_I386 = 3;	// Sun 386i
-//static const CLASS_VMS_VAX = 4;			// VMS/VAX
-//static const CLASS_ULTRIX_VAX = 5;		// Ultrix/VAX
-//static const CLASS_ULTRIX_MIPS = 6;		// Ultrix/MIPS
-static const int CLASS_HPUX_PA = 7;			// HP-UX on PA-RISC (was: HP 900/800 (precision))
-//static const int CLASS_NETWARE_I386 = 8;	// NetWare
-//static const CLASS_MAC_OS = 9;			// MAC-OS
-static const int CLASS_AIX_PPC = 10;		// AIX on PowerPC platform (was: IBM RS/6000)
-//static const CLASS_DG_AVIION = 11;		// DG AViiON
-//static const CLASS_MPE_XL = 12;			// MPE/XL
-//static const int CLASS_IRIX_MIPS = 13;	// Silicon Graphics/IRIS
-//static const int CLASS_CRAY = 14;			// Cray
-//static const int CLASS_TRU64_ALPHA = 15;	// Tru64 Unix running on Alpha (was: Dec OSF/1)
-static const int CLASS_WINDOWS_I386 = 16;	// NT -- post 4.0 (delivered 4.0 as class 8)
-//static const CLASS_OS2 = 17;				// OS/2
-//static const CLASS_WIN16 = 18;			// Windows 16 bit
-static const int CLASS_LINUX_I386 = 19;		// LINUX on Intel series
-static const int CLASS_LINUX_SPARC = 20;	// LINUX on sparc systems
-static const int CLASS_FREEBSD_I386 = 21;	// FreeBSD/i386
-static const int CLASS_NETBSD_I386 = 22;	// NetBSD/i386
-static const int CLASS_DARWIN_PPC = 23;		// Darwin/PowerPC
-static const int CLASS_LINUX_AMD64 = 24;	// LINUX on AMD64 systems
-static const int CLASS_FREEBSD_AMD64 = 25;	// FreeBSD/amd64
-static const int CLASS_WINDOWS_AMD64 = 26;	// Windows/amd64
-static const int CLASS_LINUX_PPC = 27;		// LINUX/PowerPC
-static const int CLASS_DARWIN_I386 = 28;	// Darwin/Intel
-static const int CLASS_LINUX_MIPSEL = 29;	// LINUX/MIPSEL
-static const int CLASS_LINUX_MIPS = 30;		// LINUX/MIPS
-static const int CLASS_DARWIN_X64 = 31;		// Darwin/x64
-static const int CLASS_SOLARIS_AMD64 = 32;	// Solaris/amd64
-static const int CLASS_LINUX_ARM = 33;		// LINUX/ARM
-static const int CLASS_LINUX_IA64 = 34;		// LINUX/IA64
-static const int CLASS_DARWIN_PPC64 = 35;	// Darwin/PowerPC64
-static const int CLASS_LINUX_S390X = 36;	// LINUX/s390x
-static const int CLASS_LINUX_S390 = 37;		// LINUX/s390
-static const int CLASS_LINUX_SH = 38;		// LINUX/SH (little-endian)
-static const int CLASS_LINUX_SHEB = 39;		// LINUX/SH (big-endian)
-
-static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_SHEB;
-
-// ARCHITECTURE COMPATIBILITY CLASSES
-
-// For ODS10 and earlier things which normally define ODS compatibility are:
-//  1) endianness (big-endian/little-endian)
-//  2) alignment (32-bit or 64-bit), matters for record formats
-//  3) pointer size (32-bit or 64-bit), also matters for record formats
-//
-// For ODS11 pointers are not stored in database and alignment is always 64-bit.
-// So the only thing which normally matters for ODS11 is endiannes, but if
-// endianness is wrong we are going to notice it during ODS version check,
-// before architecture compatibility is tested. But we distinguish them here too,
-// for consistency.
-
-enum ArchitectureType {
-	archUnknown,		// Unknown architecture, allow opening database only if CLASS matches exactly
-	archIntel86,		// Little-endian platform with 32-bit pointers and 32-bit alignment (ODS10)
-	archLittleEndian,	// Any little-endian platform with standard layout of data
-	archBigEndian		// Any big-endian platform with standard layout of data
-};
-
-// Note that Sparc, HP and PowerPC disk structures should be compatible in theory,
-// but in practice alignment on these platforms varies and actually depends on the
-// compiler used to produce the build. Yes, some 32-bit RISC builds use 64-bit alignment.
-// This is why we declare all such builds "Unknown" for ODS10.
-
-static const ArchitectureType archMatrix10[CLASS_MAX10 + 1] =
-{
-	archUnknown, // CLASS_UNKNOWN
-	archUnknown, // CLASS_APOLLO_68K
-	archUnknown, // CLASS_SOLARIS_SPARC
-	archIntel86, // CLASS_SOLARIS_I386
-	archUnknown, // CLASS_VMS_VAX
-	archUnknown, // CLASS_ULTRIX_VAX
-	archUnknown, // CLASS_ULTRIX_MIPS
-	archUnknown, // CLASS_HPUX_PA
-	archUnknown, // CLASS_NETWARE_I386
-	archUnknown, // CLASS_MAC_OS
-	archUnknown, // CLASS_AIX_PPC
-	archUnknown, // CLASS_DG_AVIION
-	archUnknown, // CLASS_MPE_XL
-	archUnknown, // CLASS_IRIX_MIPS
-	archUnknown, // CLASS_CRAY
-	archUnknown, // CLASS_TRU64_ALPHA
-	archIntel86, // CLASS_WINDOWS_I386
-	archUnknown, // CLASS_OS2
-	archUnknown, // CLASS_WIN16
-	archIntel86, // CLASS_LINUX_I386
-	archUnknown, // CLASS_LINUX_SPARC
-	archIntel86, // CLASS_FREEBSD_I386
-	archIntel86, // CLASS_NETBSD_I386
-	archUnknown, // CLASS_DARWIN_PPC
-	archUnknown  // CLASS_LINUX_AMD64
-};
-
-static const ArchitectureType archMatrix[CLASS_MAX + 1] =
-{
-	archUnknown,      // CLASS_UNKNOWN
-	archUnknown,      // CLASS_APOLLO_68K
-	archBigEndian,    // CLASS_SOLARIS_SPARC
-	archLittleEndian, // CLASS_SOLARIS_I386
-	archUnknown,      // CLASS_VMS_VAX
-	archUnknown,      // CLASS_ULTRIX_VAX
-	archUnknown, 	  // CLASS_ULTRIX_MIPS
-	archBigEndian,    // CLASS_HPUX_PA
-	archUnknown,      // CLASS_NETWARE_I386
-	archUnknown,      // CLASS_MAC_OS
-	archBigEndian,    // CLASS_AIX_PPC
-	archUnknown,      // CLASS_DG_AVIION
-	archUnknown,      // CLASS_MPE_XL
-	archBigEndian,    // CLASS_IRIX_MIPS
-	archUnknown,      // CLASS_CRAY
-	archBigEndian,    // CLASS_TRU64_ALPHA
-	archLittleEndian, // CLASS_WINDOWS_I386
-	archUnknown,      // CLASS_OS2
-	archUnknown,      // CLASS_WIN16
-	archLittleEndian, // CLASS_LINUX_I386
-	archBigEndian,    // CLASS_LINUX_SPARC
-	archLittleEndian, // CLASS_FREEBSD_I386
-	archLittleEndian, // CLASS_NETBSD_I386
-	archBigEndian,    // CLASS_DARWIN_PPC
-	archLittleEndian, // CLASS_LINUX_AMD64
-	archLittleEndian, // CLASS_FREEBSD_AMD64
-	archLittleEndian, // CLASS_WINDOWS_AMD64
-	archBigEndian,    // CLASS_LINUX_PPC
-	archLittleEndian, // CLASS_DARWIN_I386
-	archLittleEndian, // CLASS_LINUX_MIPSEL
-	archBigEndian,    // CLASS_LINUX_MIPS
-	archLittleEndian, // CLASS_DARWIN_X64
-	archLittleEndian, // CLASS_SOLARIS_AMD64
-	archLittleEndian, // CLASS_LINUX_ARM
-	archLittleEndian, // CLASS_LINUX_IA64
-	archBigEndian,	  // CLASS_DARWIN_PPC64
-	archBigEndian,	  // CLASS_LINUX_S390X
-	archBigEndian,	  // CLASS_LINUX_S390
-	archLittleEndian, // CLASS_LINUX_SH
-	archBigEndian     // CLASS_LINUX_SHEB
-};
-
-#ifdef __sun
-#ifdef __i386
-const SSHORT CLASS		= CLASS_SOLARIS_I386;
-#elif defined (__sparc)
-const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
-#elif defined (__amd64)
-const SSHORT CLASS		= CLASS_SOLARIS_AMD64;
-#else
-#error no support for this hardware on SUN
-#endif
-#endif // __sun
-
-#ifdef HPUX
-const SSHORT CLASS		= CLASS_HPUX_PA;
-#endif
-
-#ifdef AIX_PPC
-const SSHORT CLASS		= CLASS_AIX_PPC;
-#endif
-
-#ifdef WIN_NT
-#if defined(I386)
-const SSHORT CLASS		= CLASS_WINDOWS_I386;
-#elif defined(AMD64)
-const SSHORT CLASS		= CLASS_WINDOWS_AMD64;
-#else
-#error no support on other hardware for Windows
-#endif
-#endif	// WIN_NT
-
-#ifdef LINUX
-#if defined(i386) || defined(i586)
-const SSHORT CLASS		= CLASS_LINUX_I386;
-#elif defined(sparc)
-const SSHORT CLASS		= CLASS_LINUX_SPARC;
-#elif defined(AMD64)
-const SSHORT CLASS		= CLASS_LINUX_AMD64;
-#elif defined(ARM)
-const SSHORT CLASS		= CLASS_LINUX_ARM;
-#elif defined(PPC)
-const SSHORT CLASS		= CLASS_LINUX_PPC;
-#elif defined(MIPSEL)
-const SSHORT CLASS		= CLASS_LINUX_MIPSEL;
-#elif defined(MIPS)
-const SSHORT CLASS		= CLASS_LINUX_MIPS;
-#elif defined(IA64)
-const SSHORT CLASS		= CLASS_LINUX_IA64;
-#elif defined(__s390__)
-# if defined(__s390x__)
-const SSHORT CLASS		= CLASS_LINUX_S390X;
-# else
-const SSHORT CLASS		= CLASS_LINUX_S390;
-# endif	    // defined(__s390x__)
-#elif defined(SH)
-const SSHORT CLASS		= CLASS_LINUX_SH;
-#elif defined(SHEB)
-const SSHORT CLASS		= CLASS_LINUX_SHEB;
-#else
-#error no support on other hardware for Linux
-#endif
-#endif	// LINUX
-
-#ifdef FREEBSD
-#if defined(i386)
-const SSHORT CLASS		= CLASS_FREEBSD_I386;
-#elif defined(AMD64)
-const SSHORT CLASS		= CLASS_FREEBSD_AMD64;
-#else
-#error no support on other hardware for FreeBSD
-#endif
-#endif
-
-#ifdef NETBSD
-const SSHORT CLASS		= CLASS_NETBSD_I386;
-#endif
-
-#ifdef DARWIN
-#if defined(i386)
-const SSHORT CLASS		= CLASS_DARWIN_I386;
-#elif defined(DARWIN64)
-const SSHORT CLASS		= CLASS_DARWIN_X64;
-#elif defined(powerpc)
-const SSHORT CLASS		= CLASS_DARWIN_PPC;
-#elif defined(DARWINPPC64)
-const SSHORT CLASS		= CLASS_DARWIN_PPC64;
-#endif
-#endif  // DARWIN
 
 static const char* const SCRATCH = "fb_table_";
 
@@ -548,9 +311,8 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 
 	header->hdr_ods_version        = ODS_VERSION | ODS_FIREBIRD_FLAG;
-	header->hdr_implementation     = CLASS;
+	DbImplementation::current.store(header);
 	header->hdr_ods_minor          = ODS_CURRENT;
-	header->hdr_ods_minor_original = ODS_CURRENT;
 	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
 		header->hdr_flags |= hdr_SQL_dialect_3;
 #endif
@@ -1101,9 +863,8 @@ void PAG_format_header(thread_db* tdbb)
 	header->hdr_header.pag_type = pag_header;
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_ods_version = ODS_VERSION | ODS_FIREBIRD_FLAG;
-	header->hdr_implementation = CLASS;
+	DbImplementation::current.store(header);
 	header->hdr_ods_minor = ODS_CURRENT;
-	header->hdr_ods_minor_original = ODS_CURRENT;
 	header->hdr_oldest_transaction = 1;
 	header->hdr_bumped_transaction = 1;
 	header->hdr_end = HDR_SIZE;
@@ -1115,8 +876,7 @@ void PAG_format_header(thread_db* tdbb)
 	}
 
 	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
-	dbb->dbb_minor_version = header->hdr_ods_minor;
-	dbb->dbb_minor_original = header->hdr_ods_minor_original;
+	dbb->dbb_minor_original = dbb->dbb_minor_version = header->hdr_ods_minor;
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -1432,16 +1192,9 @@ void PAG_header_init(thread_db* tdbb)
 	// Re-enable and recode the check to avoid BUGCHECK messages when database
 	// is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 
-	if (header->hdr_implementation != CLASS)
+	if (!DbImplementation(header).compatible(DbImplementation::current))
 	{
-		const int classmax = ods_version < ODS_VERSION11 ? CLASS_MAX10 : CLASS_MAX;
-		const ArchitectureType* matrix = ods_version < ODS_VERSION11 ? archMatrix10 : archMatrix;
-		const int hdrImpl = header->hdr_implementation;
-		if (hdrImpl < 0 || hdrImpl > classmax ||
-			matrix[hdrImpl] == archUnknown || matrix[hdrImpl] != matrix[CLASS])
-		{
-			ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
-		}
+		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE || header->hdr_page_size > MAX_PAGE_SIZE)
@@ -1450,8 +1203,7 @@ void PAG_header_init(thread_db* tdbb)
 	}
 
 	dbb->dbb_ods_version = ods_version;
-	dbb->dbb_minor_version = header->hdr_ods_minor;
-	dbb->dbb_minor_original = header->hdr_ods_minor_original;
+	dbb->dbb_minor_original = dbb->dbb_minor_version = header->hdr_ods_minor;
 
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;

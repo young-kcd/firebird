@@ -98,6 +98,14 @@
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
 
+#define FB_OS OsLinux
+
+#ifdef __GNUC__
+#define FB_CC CcGcc
+#else
+#define FB_CC CcIcc
+#endif
+
 // SLONG is a 32-bit integer on 64-bit platforms
 //#if SIZEOF_LONG == 4
 //#define SLONGFORMAT "ld"
@@ -118,7 +126,7 @@
 #define IEEE
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
+#define FB_CPU CpuAmd
 
 // on buggy kernels ERESTARTNOHAND (==514) may be returned instead of EINTR
 // use value '514' instead of ERESTARTNOHAND cause it's not present in std includes
@@ -128,33 +136,33 @@
 #endif
 
 #ifdef PPC
-#define IMPLEMENTATION  isc_info_db_impl_linux_ppc /* 69  next higher unique number, See you later  */
+#define FB_CPU CpuPowerPc
 #endif
 
 #ifdef i386
 #define I386
-#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60 */
+#define FB_CPU CpuIntel
 #endif /* i386 */
 
 #ifdef ARM
-#define IMPLEMENTATION  isc_info_db_impl_linux_arm	// 75
+#define FB_CPU CpuArm
 #endif /* ARM */
 
 #ifdef sparc
-#define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
+#define FB_CPU CpuUltraSparc
 #define RISC_ALIGNMENT
 #endif /* sparc */
 
 #ifdef MIPSEL
-#define IMPLEMENTATION  isc_info_db_impl_linux_mipsel /* 71  */
+#define FB_CPU CpuMipsel
 #endif /* mipsel */
 
 #ifdef MIPS
-#define IMPLEMENTATION  isc_info_db_impl_linux_mips /* 72  */
+#define FB_CPU CpuMips
 #endif /* mips */
 
 #ifdef IA64
-#define IMPLEMENTATION  isc_info_db_impl_linux_ia64	// 76
+#define FB_CPU CpuIa64
 #define RISC_ALIGNMENT
 #endif // IA64
 
@@ -166,19 +174,19 @@
 
 #ifdef __s390__
 #ifdef __s390x__
-#define IMPLEMENTATION  isc_info_db_impl_linux_s390x	// 78
+#define FB_CPU CpuS390x
 #else
-#define IMPLEMENTATION  isc_info_db_impl_linux_s390		// 79
+#define FB_CPU CpuS390
 #endif  // __s390x__
 #endif  // __s390__
 
 #ifdef SH
-#define IMPLEMENTATION  isc_info_db_impl_linux_sh /* 80  */
+#define FB_CPU CpuSh
 #define RISC_ALIGNMENT
 #endif /* sh */
 
 #ifdef SHEB
-#define IMPLEMENTATION  isc_info_db_impl_linux_sheb /* 81  */
+#define FB_CPU CpuSheb
 #define RISC_ALIGNMENT
 #endif /* sheb */
 
@@ -202,25 +210,25 @@
 //#define XLONGFORMAT "lX"
 //#define xLONGFORMAT "lx"
 
-//#define FB_ALIGNMENT       4
-//#define FB_DOUBLE_ALIGN    4
-//#define BSD_UNIX
+#define FB_CC CcGcc
+
 #define UNIX
+#define FB_OS OsDarwin
 #ifdef __ppc__
 #define powerpc
-#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
+#define FB_CPU CpuPowerPc
 #endif
 #ifdef i386
 #define I386
-#define IMPLEMENTATION isc_info_db_impl_darwin_x86 /* 70 */
+#define FB_CPU CpuIntel
 #endif
 #ifdef __x86_64__
 #define DARWIN64
-#define IMPLEMENTATION isc_info_db_impl_darwin_x64 /* 73 */
+#define FB_CPU CpuAmd
 #endif
 #ifdef __ppc64__
 #define DARWINPPC64
-#define IMPLEMENTATION isc_info_db_impl_darwin_ppc64 /* 77 */
+#define FB_CPU CpuPowerPc64
 #endif
 #define IEEE
 #define QUADCONST(n) (n##LL)
@@ -241,23 +249,17 @@
 *****************************************************/
 #ifdef FREEBSD
 
-// EKU: obsolete, replaced by _FILE_OFFSET_BITS
-//#ifndef UNIX_64_BIT_IO
-//#define UNIX_64_BIT_IO
-//#endif
-//
-
-//#define FB_ALIGNMENT     4
-//#define FB_DOUBLE_ALIGN  4
+#define FB_OS OsFreeBsd
+#define FB_CC CcGcc
 
 #define UNIX
 #define IEEE
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_freebsd_amd64 /* 67 */
+#define FB_CPU CpuAmd
 #else
 #define I386
-#define IMPLEMENTATION    isc_info_db_impl_freebsd   /* 61 */
+#define FB_CPU CpuIntel
 #endif
 
 #define QUADFORMAT "ll"
@@ -276,13 +278,14 @@
 *****************************************************/
 #ifdef NETBSD
 
+#define FB_OS OsNetBsd
+#define FB_CC CcGcc
+
 #if defined(__i386__)
-//#define FB_ALIGNMENT     4
-//#define FB_DOUBLE_ALIGN  4
 
 #define IEEE
 #define I386
-#define IMPLEMENTATION        isc_info_db_impl_netbsd /* 62 */
+#define FB_CPU CpuIntel
 
 #define QUADFORMAT "ll"
 #define QUADCONST(n) (n##LL)
@@ -304,6 +307,14 @@
 #ifdef __sun
 
 #ifdef SOLARIS
+
+#define FB_OS OsSolaris
+
+#ifdef __GNUC__
+#define FB_CC CcGcc
+#else
+#define FB_CC CcSunStudio
+#endif
 
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
@@ -348,20 +359,17 @@ extern "C" int remove(const char* path);
 #define IEEE
 
 #ifdef __sparc
-//#define FB_ALIGNMENT       4
-//#define FB_DOUBLE_ALIGN    8
-
-#define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
+#define FB_CPU CpuUltraSparc
 #define RISC_ALIGNMENT
 
-#elif defined (__i386)
-#define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
-
 #elif defined (__amd64)
-#define IMPLEMENTATION  isc_info_db_impl_sun_amd64 /* 74 */
+#define FB_CPU CpuAmd
+
+#elif defined (__i386)
+#define FB_CPU CpuIntel
 
 #else
-#error What is IMPLEMENTATION for this Solaris platform????
+#error What is FB_CPU for this Solaris platform????
 #endif
 
 #endif // __sun
@@ -376,15 +384,12 @@ extern "C" int remove(const char* path);
 #define USE_SHMEM_EXT	// Looks like everyone else can ISC_remap
 
 #define UNIX
-//#define CURSES_KEYPAD
-
-//#define FB_ALIGNMENT       8
-//#define FB_DOUBLE_ALIGN    8
-#define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
 #if defined (__HP_aCC)
-// aCC error, __thread can be used only with C-like structs
-#undef HAVE___THREAD
+#define FB_CC CcAcc
+#undef HAVE___THREAD	// aCC error, __thread can be used only with C-like structs
+#elif define (__GNUC__)
+#define FB_CC CcGcc
 #endif
 
 #define IEEE
@@ -406,37 +411,39 @@ extern "C" int remove(const char* path);
 #define USE_POSIX_THREADS
 #endif
 
+#error Need a way to define CpuHppa or CpuIa64
+#define FB_CPU 
+
 #define RISC_ALIGNMENT
 
 #endif /* HPUX */
 
 
 /*****************************************************
-* IBM AIX RS/6000 and IBM AIX PowerPC
+* IBM AIX PowerPC
 *****************************************************/
 
 #ifdef _AIX						/* IBM AIX */
-#ifndef _POWER					/* IBM RS/6000 */
+
+#define FB_OS OsAix
+#define FB_CC CcXlc
+
+#if SIZEOF_VOID_P == 4
+#define FB_CPU CpuPowerPc
+#endif
+#if SIZEOF_VOID_P == 8
+#define FB_CPU CpuPowerPc64
+#endif
+
 #define AIX
-#define UNIX
-//#define CURSES_KEYPAD
-//*#define FB_ALIGNMENT       4
-#define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
-#define IEEE
-#define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
-#else /* AIX PowerPC */
 #define AIX_PPC
 #define UNIX
-//#define CURSES_KEYPAD
-//#define FB_ALIGNMENT       4
-#define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
+
 #define IEEE
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 
 #define QUADFORMAT "ll"			/* TMC 081700 */
 #define QUADCONST(n) (n##LL)	/* TMC 081700 */
-
-#endif /* IBM PowerPC */
 
 // AIX does not pass autoconf's test for mmap() correctness,
 // but we do not use flag (MAP_FIXED) that fails.
@@ -458,6 +465,9 @@ extern "C" int remove(const char* path);
 #ifdef WIN_NT
 
 #define NO_NFS
+
+#define FB_OS OsWindows
+#define FB_CC CcMsvc		// what about 
 
 #define SYS_ERR		Arg::Windows
 //#define SLONGFORMAT "ld"
@@ -484,12 +494,12 @@ extern "C" int remove(const char* path);
 #endif
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_winnt_amd64 /* 68 */
+#define FB_CPU CpuAmd
 #else
 #ifndef I386
 #define I386
 #endif
-#define IMPLEMENTATION  isc_info_db_impl_isc_winnt_x86 /* 50 */
+#define FB_CPU CpuIntel
 #endif
 
 #define IEEE
@@ -515,6 +525,17 @@ extern "C" int remove(const char* path);
 #endif
 
 #endif /* WIN_NT */
+
+
+#ifndef FB_CPU
+#error Define FB_CPU for your platform
+#endif
+#ifndef FB_OS
+#error Define FB_OS for your platform
+#endif
+#ifndef FB_CC
+#error Define FB_CC for your platform
+#endif
 
 
 /*****************************************************
@@ -569,7 +590,6 @@ extern "C" int remove(const char* path);
 #endif
 
 #ifndef FB_ALIGNMENT
-//#define FB_ALIGNMENT       2
 #error must define FB_ALIGNMENT for your system
 #endif
 
@@ -580,7 +600,6 @@ extern "C" int remove(const char* path);
 #endif
 
 #ifndef FB_DOUBLE_ALIGN
-//#define FB_DOUBLE_ALIGN    4
 #error must define FB_DOUBLE_ALIGN for your system
 #endif
 

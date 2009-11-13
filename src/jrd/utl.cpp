@@ -60,6 +60,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/TempFile.h"
+#include "../common/classes/DbImplementation.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -119,7 +120,7 @@ static const char blob_items[] =
 // gds__version stuff
 
 static const char info[] =
-	{ isc_info_firebird_version, isc_info_implementation, isc_info_end };
+	{ isc_info_firebird_version, isc_info_implementation, fb_info_implementation, isc_info_end };
 
 static const char ods_info[] =
 	{ isc_info_ods_version, isc_info_ods_minor_version, isc_info_end };
@@ -141,93 +142,6 @@ static const TEXT* const impl_class[] =
 	"classic server",			// 12
 	"super server"				// 13
 };
-
-static const TEXT* const impl_implementation[] =
-{
-	NULL,							// 0
-	"Rdb/VMS",						// 1
-	"Rdb/ELN target",				// 2
-	"Rdb/ELN development",			// 3
-	"Rdb/VMS Y",					// 4
-	"Rdb/ELN Y",					// 5
-	"JRI",							// 6
-	"JSV",							// 7
-	NULL,							// 8
-	NULL,							// 9
-	NULL, // "Firebird/apollo",		// 10
-	NULL, // "Firebird/ultrix",		// 11
-	"Firebird/vms",					// 12
-	"Firebird/sun",					// 13
-	NULL, // "Firebird/OS2",		// 14
-	NULL,							// 15
-	NULL,							// 16
-	NULL,							// 17
-	NULL,							// 18
-	NULL,							// 19
-	NULL,							// 20
-	NULL,							// 21
-	NULL,							// 22
-	NULL,							// 23
-	NULL,							// 24
-	NULL, // "Firebird/apollo",		// 25
-	NULL, // "Firebird/ultrix",		// 26
-	"Firebird/vms",					// 27
-	"Firebird/sun",					// 28
-	NULL, // "Firebird/OS2",		// 29
-	"Firebird/sun4",				// 30
-	"Firebird/hpux",				// 31
-	"Firebird/sun386",				// 32
-	"Firebird:ORACLE/vms",			// 33
-	NULL, // "Firebird/mac/aux",	// 34
-	"Firebird/ibm/aix",				// 35
-	NULL, // "Firebird/mips/ultrix",	// 36
-	NULL, // "Firebird/xenix",		// 37
-	NULL, // "Firebird/AViiON",		// 38
-	NULL, // "Firebird/hp/mpexl",	// 39
-	NULL, // "Firebird/hp/ux300",	// 40
-	NULL, // "Firebird/sgi",		// 41
-	"Firebird/sco/unix",			// 42
-	NULL, // "Firebird/Cray",		// 43
-	NULL, // "Firebird/imp",		// 44
-	NULL, // "Firebird/delta",		// 45
-	NULL, // "Firebird/NeXT",		// 46
-	NULL, // "Firebird/DOS",		// 47
-	NULL, // "Firebird/m88k",		// 48
-	NULL, // "Firebird/UNIXWARE",	// 49
-	"Firebird/x86/Windows NT",		// 50
-	NULL, // "Firebird/epson",		// 51
-	NULL, // "Firebird/DEC/OSF",	// 52
-	"Firebird/Alpha/OpenVMS",		// 53
-	NULL, // "Firebird/NetWare",	// 54
-	"Firebird/Windows",				// 55
-	NULL, // "Firebird/NCR3000",	// 56
-	NULL, // "Firebird/PPC/Windows NT", // 57
-	NULL, // "Firebird/DG_X86",		// 58
-	"Firebird/SCO_SV Intel",		// 59 // 5.5 SCO Port
-	"Firebird/linux Intel",			// 60
-	"Firebird/FreeBSD/i386",		// 61
-	"Firebird/NetBSD/i386",			// 62
-	"Firebird/Darwin/PowerPC",		// 63
-	"Firebird/SINIX-Z",				// 64
-	"Firebird/linux Sparc",			// 65
-	"Firebird/linux AMD64",			// 66
-	"Firebird/FreeBSD/amd64",		// 67
-	"Firebird/x86-64/Windows NT",	// 68
-	"Firebird/linux PowerPC",		// 69
-	"Firebird/Darwin/Intel",		// 70
-	"Firebird/linux MIPSEL",		// 71
-	"Firebird/linux MIPS",			// 72
-	"Firebird/Darwin/Intel64",		// 73
-	"Firebird/sun/amd64",			// 74
-	"Firebird/linux ARM",			// 75
-	"Firebird/linux IA64",			// 76
-	"Firebird/Darwin/PowerPC64",	// 77
-	"Firebird/linux s390x",			// 78
-	"Firebird/linux s390",			// 79
-	"Firebird/linux SH",			// 80
-	"Firebird/linux SHEB"			// 81
-};
-
 
 #if (defined SOLARIS ) || (defined __cplusplus)
 extern "C" {
@@ -1078,6 +992,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	ISC_STATUS_ARRAY status_vector;
 	const TEXT* versions = 0;
 	const TEXT* implementations = 0;
+	const UCHAR* dbis = 0;
 	bool redo;
 	do {
 		if (isc_database_info(status_vector, handle, sizeof(info), info,
@@ -1104,6 +1019,14 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 
 			case isc_info_implementation:
 				implementations = (TEXT*) p;
+				break;
+
+			case fb_info_implementation:
+				dbis = p;
+				break;
+
+			case isc_info_error:
+				// old server does not understand fb_info_implementation
 				break;
 
 			case isc_info_truncated:
@@ -1136,18 +1059,39 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	++versions;
 	++implementations;
 
+	UCHAR diCount = 0;
+	if (dbis)
+	{
+		diCount = *dbis++;
+	}
+
 	TEXT s[128];
 
-	while (count-- > 0)
+	UCHAR diCurrent = 0;
+	for (UCHAR level = 0; level < count; ++level)
 	{
 		const USHORT implementation_nr = *implementations++;
 		const USHORT impl_class_nr = *implementations++;
 		const int l = *versions++; // it was UCHAR
 		const TEXT* implementation_string;
-		if (implementation_nr >= FB_NELEM(impl_implementation) ||
-			!(implementation_string = impl_implementation[implementation_nr]))
+		Firebird::string dbi_string;
+		if (dbis && dbis[diCurrent * 6 + 5] == level)
 		{
-			implementation_string = "**unknown**";
+			dbi_string = Firebird::DbImplementation::pick(&dbis[diCurrent * 6]).implementation();
+			implementation_string = dbi_string.c_str();
+			if (++diCurrent >= diCount)
+			{
+				dbis = NULL;
+			}
+		}
+		else
+		{
+			dbi_string = Firebird::DbImplementation::fromBackwardCompatibleByte(implementation_nr).implementation();
+			implementation_string = dbi_string.nullStr();
+			if (!implementation_string)
+			{
+				implementation_string = "**unknown**";
+			}
 		}
 		const TEXT* class_string;
 		if (impl_class_nr >= FB_NELEM(impl_class) || !(class_string = impl_class[impl_class_nr]))
@@ -1193,18 +1137,8 @@ void API_ROUTINE isc_format_implementation(USHORT implementation_nr,
  **************************************/
 	if (ibuflen > 0)
 	{
-		if (implementation_nr >= FB_NELEM(impl_implementation) ||
-			!(impl_implementation[implementation_nr]))
-		{
-			strncpy(ibuf, "**unknown**", ibuflen - 1);
-			ibuf[MIN(11, ibuflen - 1)] = '\0';
-		}
-		else
-		{
-			strncpy(ibuf, impl_implementation[implementation_nr], ibuflen - 1);
-			const int len = strlen(impl_implementation[implementation_nr]);
-			ibuf[MIN(len, ibuflen - 1)] = '\0';
-		}
+		Firebird::string imp = Firebird::DbImplementation::current.implementation();
+		imp.copyTo(ibuf, ibuflen);
 	}
 
 	if (cbuflen > 0)

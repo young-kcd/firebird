@@ -63,6 +63,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/nbak.h"
 #include "../common/StatusArg.h"
+#include "../common/classes/DbImplementation.h"
 
 using namespace Jrd;
 
@@ -384,8 +385,16 @@ void INF_database_info(const UCHAR* items,
 
 		case isc_info_implementation:
 			STUFF(p, 1);		/* Count */
-			STUFF(p, IMPLEMENTATION);
+			STUFF(p, Firebird::DbImplementation::current.backwardCompatibleImplementation());
 			STUFF(p, 1);		/* Class */
+			length = p - buffer;
+			break;
+
+		case fb_info_implementation:
+			STUFF(p, 1);		/* Count */
+			Firebird::DbImplementation::current.stuff(&p);
+			STUFF(p, 1);		/* Class */
+			STUFF(p, 0);		// Current depth of isc_info_implementation stack
 			length = p - buffer;
 			break;
 

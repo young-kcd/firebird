@@ -65,6 +65,7 @@
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/trace/TraceService.h"
+#include "../common/classes/DbImplementation.h"
 
 // The switches tables. Needed only for utilities that run as service, too.
 #include "../common/classes/Switches.h"
@@ -1294,9 +1295,9 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_implementation:
 			/* The server implementation - e.g. Firebird/sun4 */
 			{ // scope
-				char* buf2 = reinterpret_cast<char*>(buffer);
-				isc_format_implementation(IMPLEMENTATION, sizeof(buffer), buf2, 0, 0, NULL);
-				info = INF_put_item(item, strlen(buf2), buffer, info, end);
+				string buf2 = DbImplementation::current.implementation();
+				info = INF_put_item(item, buf2.length(), 
+									reinterpret_cast<const UCHAR*>(buf2.c_str()), info, end);
 				if (!info) {
 					return 0;
 				}
@@ -1715,7 +1716,7 @@ void Service::query(USHORT			send_item_length,
 
 			p = buffer;
 			*p++ = 1;			/* Count */
-			*p++ = IMPLEMENTATION;
+			*p++ = DbImplementation::current.backwardCompatibleImplementation();
 			if (!(info = INF_put_item(item, p - buffer, buffer, info, end)))
 			{
 				return;

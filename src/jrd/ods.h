@@ -387,9 +387,11 @@ struct header_page
 	SLONG hdr_creation_date[2];		// Date/time of creation
 	SLONG hdr_attachment_id;		// Next attachment id
 	SLONG hdr_shadow_count;			// Event count for shadow synchronization
-	SSHORT hdr_implementation;		// Implementation number
+	UCHAR hdr_cpu;					// CPU database was created on
+	UCHAR hdr_os;					// OS database was created under
+	UCHAR hdr_cc;					// Compiler of engine on which database was created
+	UCHAR hdr_compatibility_flags;	// Cross-platform database transfer compatibility flags
 	USHORT hdr_ods_minor;			// Update version of ODS
-	USHORT hdr_ods_minor_original;	// Update version of ODS at creation
 	USHORT hdr_end;					// offset of HDR_end in page
 	ULONG hdr_page_buffers;			// Page buffers for database cache
 	SLONG hdr_bumped_transaction;	// Bumped transaction id for log optimization

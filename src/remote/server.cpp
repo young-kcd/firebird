@@ -67,6 +67,7 @@
 #endif
 #include "../common/classes/FpeControl.h"
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
+#include "../common/classes/DbImplementation.h"
 
 
 struct server_req_t : public Firebird::GlobalStorage
@@ -2826,10 +2827,10 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 			Firebird::string version;
 			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
 			info_db_len = MERGE_database_info(temp_buffer, //temp
-								buffer, stuff->p_info_buffer_length,
-								IMPLEMENTATION, 4, 1,
-								reinterpret_cast<const UCHAR*>(version.c_str()),
-								reinterpret_cast<const UCHAR*>(this->port_host->str_data));
+				buffer, stuff->p_info_buffer_length,
+				Firebird::DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
+				reinterpret_cast<const UCHAR*>(version.c_str()),
+				reinterpret_cast<const UCHAR*>(this->port_host->str_data));
 		}
 		break;
 

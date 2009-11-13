@@ -19,7 +19,8 @@ JRD_ClientFiles = alt.cpp db_alias.cpp dsc.cpp \
 		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
 
-JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) common/cvt.cpp
+JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) \
+		common/cvt.cpp common/classes/DbImplementation.cpp
 
 
 JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \

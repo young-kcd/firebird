@@ -64,6 +64,7 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../auth/trusted/AuthSspi.h"
+#include "../common/classes/DbImplementation.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -901,7 +902,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 			version.printf("%s/%s", GDS_VERSION, port->port_version->str_data);
 
 			MERGE_database_info(temp_buffer, buffer, buffer_length,
-								IMPLEMENTATION, 3, 1,
+								DbImplementation::current.backwardCompatibleImplementation(), 3, 1,
 								reinterpret_cast<const UCHAR*>(version.c_str()),
 								reinterpret_cast<const UCHAR*>(port->port_host->str_data));
 		}

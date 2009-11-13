@@ -82,7 +82,7 @@ $(FBUTILSVC_Objects)
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp jrd/ods.cpp \
-jrd/ThreadData.cpp jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
+jrd/ThreadData.cpp jrd/isc_file.cpp $(OS_SPECIFIC_Sources) common/classes/DbImplementation.cpp
 
 GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)

@@ -125,6 +125,8 @@ enum db_info_types
 	isc_info_db_file_size = 112,
 	fb_info_page_contents = 113,
 
+	fb_info_implementation = 114,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 
