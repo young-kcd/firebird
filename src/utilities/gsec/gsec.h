@@ -101,6 +101,9 @@ struct internal_user_data
 #ifdef TRUSTED_AUTH
 	bool	trusted_auth;					// use trusted authentication
 #endif
+	int		admin;							// the user is admin of security DB
+	bool	admin_entered;					// admin entered flag
+	bool	admin_specified;				// admin specified flag
 
 	// force NULLs in this ugly structure to avoid foolish bugs
 	internal_user_data()
@@ -249,6 +252,8 @@ const USHORT GsecMsg98	= 98;	// changing admins mapping to SYSDBA:\n
 const USHORT GsecMsg99	= 99;	// invalid parameter for -MAPPING, only SET or DROP is accepted
 const USHORT GsecMsg100	= 100;	// -ma(pping) {set|drop}
 const USHORT GsecMsg101 = 101;	// use gsec -? to get help
+const USHORT GsecMsg102 = 102;	// -adm(in) {yes|no}
+const USHORT GsecMsg103	= 103;	// invalid parameter for -ADMIN, only YES or NO is accepted
 
 #endif // UTILITIES_GSEC_H
 

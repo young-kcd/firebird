@@ -3140,8 +3140,8 @@ Fetches = !f', NULL, NULL);
 ('gsec_err_delete', 'exec_line', 'gsec.e', NULL, 18, 23, NULL, 'delete record error', NULL, NULL);
 ('gsec_err_find_del', 'exec_line', 'gsec.e', NULL, 18, 24, NULL, 'find/delete record error', NULL, NULL);
 ('GsecMsg25', 'exec_line', 'gsec.e', NULL, 18, 25, NULL, 'users defined for node', NULL, NULL);
-('GsecMsg26', 'exec.line', 'gsec', NULL, 18, 26, NULL, '     user name                      uid   gid     full name', NULL, NULL);
-('GsecMsg27', 'exec_line', 'gsec.e', NULL, 18, 27, NULL, '------------------------------------------------------------------------------------------', NULL, NULL);
+('GsecMsg26', 'exec.line', 'gsec', NULL, 18, 26, NULL, '     user name                    uid   gid admin     full name', NULL, NULL);
+('GsecMsg27', 'exec_line', 'gsec.e', NULL, 18, 27, NULL, '------------------------------------------------------------------------------------------------', NULL, NULL);
 ('gsec_err_find_disp', 'exec_line', 'gsec.e', NULL, 18, 28, NULL, 'find/display record error', NULL, NULL);
 ('gsec_inv_param', 'get_switches', 'gsec.e', NULL, 18, 29, NULL, 'invalid parameter, no switch defined', NULL, NULL);
 ('gsec_op_specified', 'get_switches', 'gsec.e', NULL, 18, 30, NULL, 'operation already specified', NULL, NULL);
@@ -3218,6 +3218,8 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg99', 'get_switches', 'gsec.cpp', NULL, 18, 99, NULL, 'invalid parameter for -MAPPING, only SET or DROP is accepted', NULL, NULL);
 ('GsecMsg100', 'printhelp', 'gsec.cpp', NULL, 18, 100, NULL, 'mapping {set|drop}', NULL, NULL);
 ('GsecMsg101', 'gsec', 'gsec.cpp', NULL, 18, 101, NULL, 'use gsec -? to get help', NULL, NULL);
+('GsecMsg102', 'gsec', 'gsec.cpp', NULL, 18, 102, NULL, '-admin {yes|no}', NULL, NULL);
+('GsecMsg103', 'gsec', 'gsec.cpp', NULL, 18, 103, NULL, 'invalid parameter for -ADMIN, only YES or NO is accepted', NULL, NULL);
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in

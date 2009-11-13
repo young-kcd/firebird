@@ -643,6 +643,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
 %type <legacyNode> arg_desc arg_desc_list arg_desc_list1 array_element array_range
 %type <legacyNode> array_spec array_type as_opt assignment assignments
+%type <legacyStr>  admin_opt
 
 %type <legacyNode> begin_string begin_trigger between_predicate bit_length_expression
 %type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
@@ -696,6 +697,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> generator_clause grant grant_option granted_by granted_by_text grantee grantee_list
 %type <legacyNode> grantor group_by_item group_by_list group_clause gtt_recreate_clause gtt_scope
 %type <legacyNode> gtt_table_clause
+%type <legacyStr>  grant_admin grant_admin_opt
 
 %type <legacyNode> having_clause
 
@@ -746,6 +748,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> rexception_clause role_admin_option role_clause role_grantee role_grantee_list
 %type <legacyNode> role_name role_name_list rollback rows_clause rtable_clause
 %type <legacyNode> rview_clause
+%type <legacyStr>  revoke_admin
 
 %type <legacyNode> savepoint scroll_opt search_condition searched_case searched_when_clause sec_precision_opt
 %type <legacyNode> sec_shadow_files segment_clause_io segment_length_io select select_expr
@@ -4828,14 +4831,14 @@ table_subquery	: '(' column_select ')'
 
 /* USER control SQL interface */
 
-create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5); }
+create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
+		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
 	;
 
-alter_user_clause : symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5); }
-	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6); }
+alter_user_clause : symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
+		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
+	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
+		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6, $7); }
 	;
 
 drop_user_clause : symbol_user_name
@@ -4867,6 +4870,28 @@ lastname_opt : LASTNAME sql_string
 		{ $$ = $2; }
 	|
 		{ $$ = NULL; }
+	;
+
+admin_opt : revoke_admin
+		{ $$ = $1; }
+	| grant_admin
+		{ $$ = $1; }
+	| 
+		{ $$ = NULL; }
+	;
+
+grant_admin_opt : grant_admin
+		{ $$ = $1; }
+	| 
+		{ $$ = NULL; }
+	;
+
+revoke_admin: REVOKE ADMIN ROLE
+		{ $$ = MAKE_cstring("0"); }
+	;
+
+grant_admin: GRANT ADMIN ROLE
+		{ $$ = MAKE_cstring("1"); }
 	;
 
 /* value types */

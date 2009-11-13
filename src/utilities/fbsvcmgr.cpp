@@ -443,6 +443,7 @@ const SvcSwitches addmodOptions[] =
 	{"sec_lastname", putStringArgument, 0, isc_spb_sec_lastname, 0},
 	{"sec_userid", putNumericArgument, 0, isc_spb_sec_userid, 0},
 	{"sec_groupid", putNumericArgument, 0, isc_spb_sec_groupid, 0},
+	{"sec_admin", putNumericArgument, 0, isc_spb_sec_admin, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -568,7 +569,7 @@ class UserPrint
 {
 public:
 	string login, first, middle, last;
-	int gid, uid;
+	int gid, uid, admin;
 
 private:
 	bool hasData;
@@ -588,7 +589,7 @@ public:
 	void clear()
 	{
 		login = first = middle = last = "";
-		gid = uid = 0;
+		gid = uid = admin = 0;
 	}
 
 	void newUser()
@@ -596,10 +597,12 @@ public:
 		if (!hasData)
 		{
 			hasData = true;
+			printf("%-28.28s %-40.40s %4.4s %4.4s %3.3s\n", "Login",
+				"Full name", "uid", "gid", "adm");
 			return;
 		}
-		printf("%-28.28s %-40.40s %4d %4d\n", login.c_str(),
-			(first + " " + middle + " " + last).c_str(), uid, gid);
+		printf("%-28.28s %-40.40s %4d %4d %3.3s\n", login.c_str(),
+			(first + " " + middle + " " + last).c_str(), uid, gid, admin ? "yes" : "no");
 		clear();
 	}
 };
@@ -747,6 +750,9 @@ bool printInfo(const char* p, UserPrint& up)
 			break;
 		case isc_spb_sec_userid:
 			up.uid = getNumeric(p);
+			break;
+		case isc_spb_sec_admin:
+			up.admin = getNumeric(p);
 			break;
 
 		case isc_info_svc_line:

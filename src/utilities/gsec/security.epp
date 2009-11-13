@@ -42,6 +42,35 @@ DATABASE DB = STATIC FILENAME "security2.fdb";
 
 static Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
 
+static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans, internal_user_data* io_user_data)
+{
+	if (!io_user_data->admin_entered)
+	{
+		return true;
+	}
+
+	Firebird::string sql;
+
+	sql.printf(io_user_data->admin ? "GRANT %s TO %s" : "REVOKE %s FROM %s", 
+			"RDB$ADMIN", io_user_data->user_name);
+	isc_dsql_execute_immediate(isc_status, &DB, &trans, sql.length(), sql.c_str(), 1, NULL);
+
+	if (isc_status[1] && io_user_data->admin == 0)
+	{
+		isc_req_handle request = 0;
+		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) R IN RDB$USER_PRIVILEGES
+				WITH R.RDB$USER EQ io_user_data->user_name 
+				 AND R.RDB$RELATION_NAME EQ 'RDB$ADMIN'
+				 AND R.RDB$PRIVILEGE EQ 'M'
+			sql.printf("REVOKE RDB$ADMIN FROM %s GRANTED BY %s", 
+				io_user_data->user_name, R.RDB$GRANTOR);
+		END_FOR
+		isc_dsql_execute_immediate(isc_status, &DB, &trans, sql.length(), sql.c_str(), 1, NULL);
+	}
+
+	return isc_status[1] == 0;
+}
+
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 						  FB_API_HANDLE DB,
 						  FB_API_HANDLE trans,
@@ -125,6 +154,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 	}
 
 	isc_req_handle request = 0;
+	isc_req_handle request2 = 0;
 
 	switch (io_user_data->operation)
 	{
@@ -202,6 +232,10 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		ON_ERROR
 			ret = GsecMsg19;	// gsec - add record error
 		END_ERROR;
+		if (! grantRevokeAdmin(isc_status, DB, trans, io_user_data))
+		{
+			ret = GsecMsg19;	// gsec - add record error
+		}
 		break;
 
 	case MOD_OPER:
@@ -275,6 +309,10 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		END_ERROR;
 		if (!ret && !found)
 			ret = GsecMsg22;
+		if (! grantRevokeAdmin(isc_status, DB, trans, io_user_data))
+		{
+			ret = GsecMsg21;
+		}
 		break;
 
 	case DEL_OPER:
@@ -301,6 +339,13 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 		if (!ret && !found)
 			ret = GsecMsg22;	// gsec - record not found for user:
+
+		io_user_data->admin = 0;
+		io_user_data->admin_entered = true;
+		if (! grantRevokeAdmin(isc_status, DB, trans, io_user_data))
+		{
+			ret = GsecMsg24;
+		}
 		break;
 
 	case DIS_OPER:
@@ -319,6 +364,13 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				strcpy(io_user_data->first_name, U.FIRST_NAME);
 				strcpy(io_user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(io_user_data->last_name, U.LAST_NAME);
+
+				io_user_data->admin = 0;
+				FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
+						WITH P.RDB$USER EQ U.USER_NAME AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
+					io_user_data->admin = 1;
+				END_FOR
+
 				display_func(callback_arg, io_user_data, !found);
 
 				found = true;
@@ -340,6 +392,13 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				strcpy(io_user_data->first_name, U.FIRST_NAME);
 				strcpy(io_user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(io_user_data->last_name, U.LAST_NAME);
+
+				io_user_data->admin = 0;
+				FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
+						WITH P.RDB$USER EQ U.USER_NAME AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
+					io_user_data->admin = 1;
+				END_FOR
+
 				display_func(callback_arg, io_user_data, !found);
 
 				found = true;
@@ -359,6 +418,18 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 	{
 		ISC_STATUS_ARRAY s;
 		if (isc_release_request(s, &request) != FB_SUCCESS)
+		{
+			if (! ret)
+			{
+				ret = GsecMsg94;	// error releasing request in security database
+			}
+		}
+	}
+
+	if (request2)
+	{
+		ISC_STATUS_ARRAY s;
+		if (isc_release_request(s, &request2) != FB_SUCCESS)
 		{
 			if (! ret)
 			{

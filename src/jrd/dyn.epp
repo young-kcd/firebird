@@ -2373,6 +2373,11 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 					userData->last_name_specified = true;
 				}
 				break;
+
+			case isc_dyn_user_admin:
+				userData->admin = text[0] - '0';
+				userData->admin_entered = true;
+				break;
 			}
 		}
 

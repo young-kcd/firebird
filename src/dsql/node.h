@@ -923,6 +923,7 @@ enum node_args {
 	e_user_first,
 	e_user_middle,
 	e_user_last,
+	e_user_admin,
 	e_user_count,
 
 	e_hidden_var_expr = 0,			// nod_hidden_var
