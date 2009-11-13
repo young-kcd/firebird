@@ -245,9 +245,6 @@ if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
 
 :: grab some missing bits'n'pieces from different parts of the source tree
 ::=========================================================================
-@echo   Copying firebird.conf
-@copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR%\ > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
 @echo   Copying ib_util etc
 copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed.)
