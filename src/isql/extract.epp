@@ -1522,20 +1522,44 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 }
 
 
-static void print_proc_prefix()
+static void print_proc_prefix(int obj_type)
 {
-	isqlGlob.printf("COMMIT WORK;%s", NEWLINE);
-	isqlGlob.printf("SET AUTODDL OFF;%s", NEWLINE);
+	if (obj_type == obj_procedure)
+		isqlGlob.printf("%sCOMMIT WORK%s%s", NEWLINE, isqlGlob.global_Term, NEWLINE);
+
+	if (obj_type != obj_trigger)
+		isqlGlob.printf("SET AUTODDL OFF%s%s", isqlGlob.global_Term, NEWLINE);
+
 	isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-	isqlGlob.printf("%s/* Stored procedures */%s", NEWLINE, NEWLINE);
+
+	const char* legend = NULL;
+	switch (obj_type)
+	{
+	case obj_procedure:
+		legend = "Stored procedures";
+		break;
+	case obj_trigger:
+		legend = "Triggers only will work for SQL triggers";
+		break;
+	case obj_package_header:
+		legend = "Package headers";
+		break;
+	case obj_package_body:
+		legend = "Package bodies";
+		break;
+	}
+	if (legend)
+		isqlGlob.printf("%s/* %s */%s", NEWLINE, legend, NEWLINE);
 }
 
 
-static void print_proc_suffix()
+static void print_proc_suffix(int obj_type)
 {
 	isqlGlob.printf("%sSET TERM %s %s%s", NEWLINE, isqlGlob.global_Term, Procterm, NEWLINE);
-	isqlGlob.printf("COMMIT WORK %s%s", isqlGlob.global_Term, NEWLINE);
-	isqlGlob.printf("SET AUTODDL ON;%s", NEWLINE);
+	isqlGlob.printf("COMMIT WORK%s%s", isqlGlob.global_Term, NEWLINE);
+
+	if (obj_type != obj_trigger)
+		isqlGlob.printf("SET AUTODDL ON%s%s", isqlGlob.global_Term, NEWLINE);
 }
 
 
@@ -1583,7 +1607,7 @@ static void list_all_procs_ods12()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			print_proc_prefix();
+			print_proc_prefix(obj_procedure);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
@@ -1650,9 +1674,7 @@ static void list_all_procs_ods12()
 
 	// Only reset the terminators if there were procs to print
 	if (!header)
-	{
-		print_proc_suffix();
-	}
+		print_proc_suffix(obj_procedure);
 }
 
 
@@ -1673,7 +1695,7 @@ static void list_all_procs_legacy()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			print_proc_prefix();
+			print_proc_prefix(obj_procedure);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
@@ -1753,9 +1775,7 @@ static void list_all_procs_legacy()
 
 	// Only reset the terminators if there were procs to print
 	if (!header)
-	{
-		print_proc_suffix();
-	}
+		print_proc_suffix(obj_procedure);
 }
 
 
@@ -1827,10 +1847,7 @@ static void list_all_triggers()
 
 		if (header)
 		{
-			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-			isqlGlob.printf("%s/* Triggers only will work for SQL triggers */%s",
-					 NEWLINE,
-					 NEWLINE);
+			print_proc_prefix(obj_trigger);
 			header = false;
 		}
 		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
@@ -1931,10 +1948,7 @@ static void list_all_triggers()
 	END_ERROR;
 
 	if (!header)
-	{
-		isqlGlob.printf("COMMIT WORK %s%s", Procterm, NEWLINE);
-		isqlGlob.printf("SET TERM %s %s%s", isqlGlob.global_Term, Procterm, NEWLINE);
-	}
+		print_proc_suffix(obj_trigger);
 }
 
 
@@ -3224,10 +3238,17 @@ static void list_package_bodies()
 	if (isqlGlob.major_ods < ODS_VERSION12)
 		return;
 
+	bool header = true;
 	FOR PACK IN RDB$PACKAGES WITH
 		(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
 		AND PACK.RDB$PACKAGE_BODY_SOURCE NOT MISSING
 		SORTED BY PACK.RDB$PACKAGE_NAME
+
+		if (header)
+		{
+			print_proc_prefix(obj_package_body);
+			header = false;
+		}
 
 		fb_utils::exact_name(PACK.RDB$PACKAGE_NAME);
 
@@ -3247,13 +3268,16 @@ static void list_package_bodies()
 
 		SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
 
-		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+		isqlGlob.printf("%s%s", Procterm, NEWLINE);
 
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
 		return;
 	END_ERROR;
+
+	if (!header)
+		print_proc_suffix(obj_package_body);
 }
 
 
@@ -3274,9 +3298,16 @@ static void list_package_headers()
  	if (isqlGlob.major_ods < ODS_VERSION12)
  		return;
 
+ 	bool header = true;
 	FOR PACK IN RDB$PACKAGES WITH
 		(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY PACK.RDB$PACKAGE_NAME
+
+		if (header)
+		{
+			print_proc_prefix(obj_package_header);
+			header = false;
+		}
 
 		fb_utils::exact_name(PACK.RDB$PACKAGE_NAME);
 
@@ -3299,13 +3330,16 @@ static void list_package_headers()
 		else
 			isqlGlob.printf("BEGIN END /* Missing package header info. */");
 
-		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+		isqlGlob.printf("%s%s", Procterm, NEWLINE);
 
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
 		return;
 	END_ERROR;
+
+	if (!header)
+		print_proc_suffix(obj_package_header);
 }
 
 
