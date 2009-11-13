@@ -723,7 +723,7 @@ static void get_procedure_args_ods12(const char* proc_name)
  *
  * Functional description
  *	This function extracts the procedure parameters and adds it to the
- *	extract file
+ *	extract file.
  *  Make sure to pass here only the names of procedures that are global.
  *
  **************************************/
@@ -1449,7 +1449,6 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 	else
 		SHOW_grant_roles2(terminator, 0, 0, mangle);
 
-
 	if (isqlGlob.major_ods >= ODS_VERSION12)
 	{
 		// For stored procedures, but ignore procedures inside packages.
@@ -1463,7 +1462,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 
 			const processing_state rc =
 				SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
-								   first ? banner: 0, mangle);
+								   first ? banner : 0, mangle);
 			if (rc == SKIP)
 				first = false;
 
@@ -1484,7 +1483,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 
 			const processing_state rc =
 				SHOW_grants2(PRC.RDB$PROCEDURE_NAME, terminator, obj_procedure,
-								   first ? banner: 0, mangle);
+								   first ? banner : 0, mangle);
 			if (rc == SKIP)
 				first = false;
 
@@ -1505,7 +1504,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			fb_utils::exact_name(PACK.RDB$PACKAGE_NAME);
 			const processing_state rc =
 				SHOW_grants2(PACK.RDB$PACKAGE_NAME, terminator, obj_package_header,
-													first ? banner: 0, mangle);
+													first ? banner : 0, mangle);
 			if (rc == SKIP)
 				first = false;
 		END_FOR

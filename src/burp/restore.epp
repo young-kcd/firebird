@@ -3892,8 +3892,9 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						l = GET_TEXT(X.RDB$FUNCTION_NAME);
 						MISC_terminate(X.RDB$FUNCTION_NAME, temp + prefixLen, l,
 							sizeof(temp) - prefixLen);
-						BURP_verbose (119, temp);
+
 						// msg 119 restoring argument for function %s
+						BURP_verbose(119, temp);
 					}
 					break;
 
@@ -8762,5 +8763,3 @@ void update_view_dbkey_lengths(BurpGlobals* tdgbl)
 
 
 } // namespace
-
-

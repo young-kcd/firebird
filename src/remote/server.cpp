@@ -5236,7 +5236,7 @@ bool Worker::wait(int timeout)
 		return true;
 
 	remove();
-	return false; 
+	return false;
 }
 
 void Worker::setState(const bool active)

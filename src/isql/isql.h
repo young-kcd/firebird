@@ -254,9 +254,9 @@ const int NO_PACKAGE				= 166;		// There is no package @1 in this database
 const int NO_PACKAGES				= 167;		// There are no packages in this database
 const int NO_SCHEMA					= 168;		// There is no schema @1 in this database
 const int NO_SCHEMAS				= 169;		// There are no schemas in this database
-const int ROWCOUNT_INVALID			= 170;		//Unable to convert @1 to a number for rowcount
-const int ROWCOUNT_OUTOF_RANGE		= 171;		//Value @1 for rowcount is out of range. Max value is @2
-const int ROWCOUNT_NEGATIVE			= 172;		//The value (@1) for rowcount must be zero or greater
+const int ROWCOUNT_INVALID			= 170;		// Unable to convert @1 to a number for rowcount
+const int ROWCOUNT_OUTOF_RANGE		= 171;		// Value @1 for rowcount is out of range. Max value is @2
+const int ROWCOUNT_NEGATIVE			= 172;		// The value (@1) for rowcount must be zero or greater
 
 
 // Initialize types
