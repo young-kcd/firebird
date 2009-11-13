@@ -328,7 +328,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		END_ERROR;
 	}
 
-// Query to obtain relation detail information
+	// Query to obtain relation detail information
 
 	FOR REL IN RDB$RELATIONS CROSS
 		RFR IN RDB$RELATION_FIELDS CROSS
@@ -733,13 +733,12 @@ static void get_procedure_args_ods12(const char* proc_name)
  **************************************/
 	SCHAR char_sets[95];
 
-// query to retrieve the parameters.
+	// query to retrieve the parameters.
 
 
-/* placed the two identical code blocks into one
-   for loop as suggested by Ann H. and Claudio V.
-   FSG 18.Nov.2000
-*/
+	// placed the two identical code blocks into one
+	// for loop as suggested by Ann H. and Claudio V.
+	// FSG 18.Nov.2000
 
 	//  Parameter types 0 = input
 	//  Parameter types 1 = return
@@ -1025,13 +1024,12 @@ static void get_procedure_args_legacy(const char* proc_name)
  **************************************/
 	SCHAR char_sets[95];
 
-// query to retrieve the parameters.
+	// query to retrieve the parameters.
 
 
-/* placed the two identical code blocks into one
-   for loop as suggested by Ann H. and Claudio V.
-   FSG 18.Nov.2000
-*/
+	// placed the two identical code blocks into one
+	// for loop as suggested by Ann H. and Claudio V.
+	// FSG 18.Nov.2000
 
 	//  Parameter types 0 = input
 	//  Parameter types 1 = return
@@ -2202,7 +2200,7 @@ static void list_create_db()
 		isc_info_end
 	};
 
-// Comment out the create database if no db param was specified
+	// Comment out the create database if no db param was specified
 	bool nodb = false;
 	if (!*isqlGlob.global_Target_db)
 	{
@@ -2243,7 +2241,7 @@ static void list_create_db()
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	}
 
-// List secondary files and shadows as alter db and create shadow in comment
+	// List secondary files and shadows as alter db and create shadow in comment
 
 	bool first = true;
 

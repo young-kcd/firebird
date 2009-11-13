@@ -1936,8 +1936,8 @@ static void show_charsets(const SCHAR* relation_name, const SCHAR* field_name,
 	SSHORT collation = -1, char_set_id = -1;
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
 
-// If there is a relation_name, this is a real column, look up collation
-// in rdb$relation_fields
+	// If there is a relation_name, this is a real column, look up collation
+	// in rdb$relation_fields
 
 	if (relation_name)
 	{
@@ -2123,7 +2123,7 @@ static processing_state show_check(const SCHAR* object)
 
 	if (!*object)
 		return ps_ERR;
-// Query gets the check clauses for triggers stored for check constraints
+	// Query gets the check clauses for triggers stored for check constraints
 
 	FOR TRG IN RDB$TRIGGERS CROSS
 		CHK IN RDB$CHECK_CONSTRAINTS WITH
@@ -2658,7 +2658,7 @@ static void show_db()
 // First print the name of the database
 
 	isqlGlob.printf("Database: %s%s", isqlGlob.global_Db_name, NEWLINE);
-// Get the owner name
+	// Get the owner name
 	FOR REL IN RDB$RELATIONS WITH
 		REL.RDB$RELATION_NAME = "RDB$DATABASE"
 
@@ -2671,7 +2671,7 @@ static void show_db()
 		return;
 	END_ERROR;
 
-// Query for files
+	// Query for files
 
 	FOR FIL IN RDB$FILES SORTED BY FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_SEQUENCE,
 		FIL.RDB$FILE_SEQUENCE
@@ -3304,7 +3304,7 @@ static processing_state show_filters(const SCHAR* object)
  **************************************/
 	bool first = true;
 
-// Show all functions
+	// Show all functions
 	if (!*object)
 	{
 		bool odd = true;
@@ -3329,7 +3329,7 @@ static processing_state show_filters(const SCHAR* object)
 		return OBJECT_NOT_FOUND;
 	}
 
-// We have a filter name, so expand on it
+	// We have a filter name, so expand on it
 	FOR FIL IN RDB$FILTERS WITH
 	   FIL.RDB$FUNCTION_NAME EQ object
 
@@ -3707,7 +3707,7 @@ static processing_state show_indices(const SCHAR* const* cmd)
  **************************************/
 	bool first = true;
 
-// The names stored in the database are all upper case
+	// The names stored in the database are all upper case
 
 	const SCHAR* name = cmd[2];
 
@@ -3870,13 +3870,12 @@ static processing_state show_proc(const SCHAR* procname)
  *
  **************************************/
 
-// If no procedure name was given, just list the procedures
+	// If no procedure name was given, just list the procedures
 
 	if (!procname || !strlen(procname))
 	{
-		/* This query gets the procedure name  the next query
-		   **   gets all the dependencies if any
-		 */
+		// This query gets the procedure name; the next query
+		// gets all the dependencies if any
 
 		bool first_proc = true;
 
@@ -4438,8 +4437,8 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
  **************************************/
 	bool first = true;
 
-// Query to obtain relation information
-// REL.RDB$VIEW_BLR NOT MISSING
+	// Query to obtain relation information
+	// REL.RDB$VIEW_BLR NOT MISSING
 
 	FOR REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ relation_name
