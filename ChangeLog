@@ -1,3 +1,38 @@
+2009-11-13 11:41  robocop
+
+	* firebird2/src/isql/: extract.epp (1.109), show.epp (1.157):
+
+	Align comments.
+
+2009-11-13 10:23  robocop
+
+	* firebird2/src/isql/extract.epp (1.108):
+
+	More package support: corrections.
+
+2009-11-13 09:37  robocop
+
+	* firebird2/src/: isql/extract.epp (1.107), isql/show.epp (1.156),
+	msgs/facilities2.sql (1.86), msgs/history2.sql (1.20),
+	msgs/messages2.sql (1.110):
+
+	Continue package support in isql.
+
+2009-11-13 02:36  asfernandes
+
+	* firebird2/: doc/README.fb_cancel_operation (1.4),
+	src/burp/restore.epp (1.187), src/common/classes/Interlock.h (1.7),
+	src/isql/extract.epp (1.106), src/isql/isql.h (1.78),
+	src/remote/server.cpp (1.268):
+
+	Misc
+
+2009-11-13 01:51  asfernandes
+
+	* firebird2/builds/win32/msvc9/udr_engine.vcproj (1.2):
+
+	Added DllNoEmbedManifest.vsprops to udr_engine of MSVC9
+
 2009-11-12 12:37  robocop
 
 	* firebird2/src/isql/: extract.epp (1.105), show.epp (1.155):
