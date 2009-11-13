@@ -2427,7 +2427,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					break;
 				}
 
-				if (spb.getClumpTag() != isc_spb_sec_username && spb.getClumpTag() != isc_spb_dbname)
+				if (spb.getClumpTag() != isc_spb_sec_username && 
+					spb.getClumpTag() != isc_spb_dbname &&
+					spb.getClumpTag() != isc_spb_sql_role_name)
 				{
 					// unexpected item in service parameter block, expected @1
 					status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));
@@ -2479,6 +2481,14 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				get_action_svc_data(spb, switches);
+				break;
+
+			case isc_spb_sec_admin:
+				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
+				{
+					return false;
+				}
+				switches += (spb.getInt() ? "Yes " : "No ");
 				break;
 
 			case isc_spb_sql_role_name:

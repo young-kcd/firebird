@@ -280,6 +280,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 				return StringSpb;
 			case isc_spb_sec_userid:
 			case isc_spb_sec_groupid:
+			case isc_spb_sec_admin:
 				return IntSpb;
 			}
 			invalid_structure("unknown parameter for security database operation");

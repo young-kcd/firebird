@@ -60,6 +60,7 @@ const int IN_SW_GSEC_TRUSTED_AUTH	= 24;	// Use trusted authentication
 #endif
 const int IN_SW_GSEC_FETCH_PASSWORD	= 25;   // Fetch Password (Database Admin.)
 const int IN_SW_GSEC_MAPPING		= 26;	// Change auto admin mapping
+const int IN_SW_GSEC_ADMIN			= 27;	// Grant/revoke RDB$ADMIN in security database
 
 
 static const struct in_sw_tab_t gsec_in_sw_table [] =
@@ -92,7 +93,8 @@ static const struct in_sw_tab_t gsec_in_sw_table [] =
 	{IN_SW_GSEC_TRUSTED_AUTH,	0,			"TRUSTED",	0, 0, 0, false,	0,	1, NULL},	// Database Admin. Trusted User name
 #endif
 	{IN_SW_GSEC_MAPPING,		0,			"MAPPING",	0, 0, 0, false, 0,	2, NULL},	// Change mapping of domain admins to sysdba in sec. DB
-    {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, false,	0,	0, NULL}		// End of List
+	{IN_SW_GSEC_ADMIN,	isc_spb_sec_admin,	"ADMIN",	0, 0, 0, false, 0,	3, NULL},	// Grant/revoke RDB$ADMIN in security database
+    {IN_SW_GSEC_0,				0,			NULL,		0, 0, 0, false,	0,	0, NULL}	// End of List
 };
 
 static const struct in_sw_tab_t gsec_action_in_sw_table [] =

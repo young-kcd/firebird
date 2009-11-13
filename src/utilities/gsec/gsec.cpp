@@ -161,6 +161,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		databaseName = database_name;
 	}
 
+	Firebird::string sqlRoleName(user_data->sql_role_name_entered ? user_data->sql_role_name : "");
+
 	Firebird::PathName serverName;
 	const bool useServices = !uSvc->isService();
 
@@ -327,6 +329,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 				user_data->database_name_entered = databaseNameEntered;
+				sqlRoleName.copyTo(user_data->sql_role_name, sizeof(user_data->sql_role_name));
+				user_data->sql_role_name_entered = sqlRoleName.hasData();
+				user_data->sql_role_name_specified = user_data->sql_role_name_entered;
+
 				if (ret == 0)
 				{
 					callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
@@ -412,6 +418,7 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
 		tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->last_name);
 		tdsec->utilSvc->putSLong(isc_spb_sec_userid, data->uid);
 		tdsec->utilSvc->putSLong(isc_spb_sec_groupid, data->gid);
+		tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin);
 	}
 	else
 	{
@@ -419,14 +426,14 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
 		{
 			GSEC_print(GsecMsg26);
 			GSEC_print(GsecMsg27);
-			// msg26: "    user name                    uid   gid     full name"
-			// msg27: "-------------------------------------------------------------------------------------------"
+			// msg26: "    user name                    uid   gid admin     full name"
+			// msg27: "-------------------------------------------------------------------------------------------------"
 		}
 
-		util_output("%-*.*s %5d %5d      %s %s %s\n",
+		util_output("%-*.*s %5d %5d %-5.5s     %s %s %s\n",
 					USERNAME_LENGTH, USERNAME_LENGTH, data->user_name,
-					data->uid, data->gid, data->first_name, data->middle_name,
-					data->last_name);
+					data->uid, data->gid, data->admin ? "admin" : "",
+					data->first_name, data->middle_name, data->last_name);
 	}
 }
 
@@ -659,6 +666,27 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 						// gsec - invalid parameter value for -MAPPING, only SET or DROP is accepted
 						return false;
 					}
+				}
+				break;
+			case IN_SW_GSEC_ADMIN:
+				{
+					Firebird::string val(string);
+					val.upper();
+
+					if (val == "YES")
+					{
+						user_data->admin = 1;
+					}
+					else if (val == "NO") {
+						user_data->admin = 0;
+					}
+					else
+					{
+						GSEC_diag(GsecMsg103);
+						// invalid parameter for -ADMIN, only YES or NO is accepted
+						return false;
+					}
+					user_data->admin_entered = true;
 				}
 				break;
 			case IN_SW_GSEC_Z:
@@ -1143,6 +1171,10 @@ static void printhelp()
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg73);
 	// -lname <lastname>
+
+	util_output("%s", "     ");
+	GSEC_print(GsecMsg102);
+	// -adm(in) {yes|no}
 	util_output("\n", NULL);
 }
 

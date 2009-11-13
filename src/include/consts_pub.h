@@ -330,6 +330,7 @@
 #define isc_spb_sec_firstname         10
 #define isc_spb_sec_middlename        11
 #define isc_spb_sec_lastname          12
+#define isc_spb_sec_admin             13
 
 /*******************************************************
  * Parameters for isc_action_svc_(add|remove)_license, *
@@ -887,6 +888,7 @@
 #define isc_dyn_user_first							5
 #define isc_dyn_user_middle							6
 #define isc_dyn_user_last							7
+#define isc_dyn_user_admin							8
 #define isc_user_end								0
 
 /****************************/

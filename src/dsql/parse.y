@@ -4158,14 +4158,14 @@ table_subquery	: '(' column_select ')'
 
 /* USER control SQL interface */
 
-create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5); }
+create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
+		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
 	;
 
-alter_user_clause : symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5); }
-	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6); }
+alter_user_clause : symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
+		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
+	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
+		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6, $7); }
 	;
 
 drop_user_clause : symbol_user_name
@@ -4197,6 +4197,28 @@ lastname_opt : LASTNAME sql_string
 		{ $$ = $2; }
 	|
 		{ $$ = NULL; }
+	;
+
+admin_opt : revoke_admin
+		{ $$ = $1; }
+	| grant_admin
+		{ $$ = $1; }
+	| 
+		{ $$ = NULL; }
+	;
+
+grant_admin_opt : grant_admin
+		{ $$ = $1; }
+	| 
+		{ $$ = NULL; }
+	;
+
+revoke_admin: REVOKE ADMIN ROLE
+		{ $$ = (dsql_nod*) MAKE_cstring("0"); }
+	;
+
+grant_admin: GRANT ADMIN ROLE
+		{ $$ = (dsql_nod*) MAKE_cstring("1"); }
 	;
 
 /* value types */

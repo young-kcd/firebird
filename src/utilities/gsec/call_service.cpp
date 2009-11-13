@@ -271,6 +271,9 @@ static void userInfoToSpb(char*& spb, const internal_user_data& userInfo)
 		stuffSpbByte(spb, isc_spb_sec_groupid);
 		stuffSpbLong(spb, userInfo.gid);
 	}
+	if (userInfo.sql_role_name_entered) {
+		stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
+	}
 	if (userInfo.group_name_entered) {
 		stuffSpb2(spb, isc_spb_sec_groupname, userInfo.group_name);
 	}
@@ -294,6 +297,11 @@ static void userInfoToSpb(char*& spb, const internal_user_data& userInfo)
 	}
 	else if (userInfo.last_name_specified) {
 		stuffSpb2(spb, isc_spb_sec_lastname, "");
+	}
+	if (userInfo.admin_entered)
+	{
+		stuffSpbByte(spb, isc_spb_sec_admin);
+		stuffSpbLong(spb, userInfo.admin);
 	}
 }
 
@@ -345,6 +353,10 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	case DEL_OPER:
 		stuffSpbByte(spb, isc_action_svc_delete_user);
 		stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
+		if (userInfo.sql_role_name_entered) 
+		{
+			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
+		}
 		break;
 
 	case DIS_OPER:
@@ -352,6 +364,10 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		if (userInfo.user_name_entered)
 		{
 			stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
+		}
+		if (userInfo.sql_role_name_entered) 
+		{
+			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
 		}
 		break;
 
@@ -608,6 +624,9 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 				break;
 			case isc_spb_sec_userid:
 				parseLong(p, uData.uid, loop);
+				break;
+			case isc_spb_sec_admin:
+				parseLong(p, uData.admin, loop);
 				break;
 			default:	// give up - treat it as gsec error
 				text = Firebird::string(p - 1, loop + 1);

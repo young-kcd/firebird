@@ -5740,6 +5740,9 @@ static void define_user(CompiledStatement* statement, UCHAR op)
 		case e_user_last:
 			statement->append_cstring(isc_dyn_user_last, ds->str_data);
 			break;
+		case e_user_admin:
+			statement->append_cstring(isc_dyn_user_admin, ds->str_data);
+			break;
 		}
 	}
 
