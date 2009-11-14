@@ -161,7 +161,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		databaseName = database_name;
 	}
 
-	Firebird::string sqlRoleName(user_data->sql_role_name_entered ? user_data->sql_role_name : "");
+	const Firebird::string sqlRoleName(user_data->sql_role_name_entered ? user_data->sql_role_name : "");
 
 	Firebird::PathName serverName;
 	const bool useServices = !uSvc->isService();

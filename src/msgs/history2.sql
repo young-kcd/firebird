@@ -1209,6 +1209,8 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1204, 'cvc', '2009-07-05 09:05:10', 12, 112, '	@1REP(LACE_DATABASE)   replace database from backup file', NULL, NULL, 'c_pg')
 (1205, 'cvc', '2009-07-05 09:06:09', 12, 284, '	@1R(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used)
 				database from backup file', NULL, NULL, 'c_pg')
+(1206, 'alexpeshkoff', '2009-11-13 17:49:10', 18, 26, '     user name                      uid   gid     full name', NULL, NULL, 'c_pg')
+(1207, 'alexpeshkoff', '2009-11-13 17:49:54', 18, 27, '------------------------------------------------------------------------------------------', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;
