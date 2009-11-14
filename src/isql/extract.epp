@@ -2234,7 +2234,7 @@ static void list_create_db()
 
 	if (nodb)
 	{
-		isqlGlob.printf(" */%s", NEWLINE);
+		isqlGlob.printf("%s */%s", isqlGlob.global_Term, NEWLINE);
 	}
 	else
 	{
