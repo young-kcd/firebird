@@ -181,7 +181,7 @@ const int drq_e_gens			= 127;	// erase generators
 const int drq_s_f_class			= 128;	// set the security class name for a field
 const int drq_s_u_class			= 129;	// find a unique security class name for a field
 const int drq_l_difference		= 130;	// Look up a backup difference file
-const int drq_s_difference		= 131;	// Store backup difference file
+const int drq_s_difference		= 131;	// Store backup difference file, DYN_define_difference
 const int drq_d_difference		= 132;	// Delete backup difference file
 const int drq_l_fld_src3		= 133;	// lookup a field source
 const int drq_e_fld_prvs		= 134;	// erase user privileges on relation field
@@ -254,6 +254,7 @@ const int drq_l_pkg_proc_args	= 200;	// lookup packaged procedure arguments
 const int drq_s_pkg_usr_prvs	= 201;	// store package privileges
 const int drq_e_pkg_prv			= 202;	// erase package privileges
 const int drq_m_pkg_prm_defs	= 203;	// modify packaged procedure parameters defaults
-const int drq_MAX				= 204;
+const int drq_s2_difference		= 204;	// Store backup difference file, DYN_mod's change_backup_mode
+const int drq_MAX				= 205;
 
 #endif // JRD_DRQ_H

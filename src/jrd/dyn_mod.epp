@@ -1998,7 +1998,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 
 	if (!found && verb == isc_dyn_begin_backup) {
 		try {
-			request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_s2_difference, DYN_REQUESTS);
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				X IN RDB$FILES
 				X.RDB$FILE_NAME.NULL = TRUE;
@@ -2012,14 +2012,14 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 
 			found = true;
 
-			if (!DYN_REQUEST(drq_s_difference))
+			if (!DYN_REQUEST(drq_s2_difference))
 			{
-				DYN_REQUEST(drq_s_difference) = request;
+				DYN_REQUEST(drq_s2_difference) = request;
 			}
 		}
 		catch (const Exception& ex) {
 			stuff_exception(tdbb->tdbb_status_vector, ex);
-			DYN_rundown_request(request, drq_s_difference);
+			DYN_rundown_request(request, drq_s2_difference);
 			DYN_error_punt(true, 150);
 			/* msg 150: STORE RDB$FILES failed */
 		}
