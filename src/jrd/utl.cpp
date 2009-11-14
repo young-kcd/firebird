@@ -992,7 +992,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	ISC_STATUS_ARRAY status_vector;
 	const TEXT* versions = 0;
 	const TEXT* implementations = 0;
-	const UCHAR* dbis = 0;
+	const UCHAR* dbis = NULL;
 	bool redo;
 	do {
 		if (isc_database_info(status_vector, handle, sizeof(info), info,

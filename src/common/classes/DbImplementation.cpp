@@ -107,7 +107,7 @@ const char* compiler[] = {
 };
 
 // This table lists pre-fb3 imlementation codes
-const UCHAR backwardTable[FB_NELEM(hardware) * FB_NELEM(operatingSystem)] = 
+const UCHAR backwardTable[FB_NELEM(hardware) * FB_NELEM(operatingSystem)] =
 {
 //				Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA
 /* Windows */	50,		68,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
@@ -121,7 +121,7 @@ const UCHAR backwardTable[FB_NELEM(hardware) * FB_NELEM(operatingSystem)] =
 /* NetBSD */	62,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0
 };
 
-const UCHAR backEndianess[FB_NELEM(hardware)] = 
+const UCHAR backEndianess[FB_NELEM(hardware)] =
 {
 //	Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA
 	0,		0,		1,		1,		1,		0,		1,		0,		0,		1,		1,		0,		1,		1,
@@ -153,9 +153,9 @@ const char* DbImplementation::cc() const
 	return GET_ARRAY_ELEMENT(compiler, di_cc);
 }
 
-Firebird::string DbImplementation::implementation() const
+string DbImplementation::implementation() const
 {
-	Firebird::string rc("Firebird/");
+	string rc("Firebird/");
 	rc += os();
 	rc += "/";
 	rc += cpu();
@@ -198,7 +198,7 @@ void DbImplementation::stuff(UCHAR** info) const
 	*info = p;
 }
 
-DbImplementation DbImplementation::pick(const UCHAR *info)
+DbImplementation DbImplementation::pick(const UCHAR* info)
 {
 	//DbImplementation(UCHAR p_cpu, UCHAR p_os, UCHAR p_cc, UCHAR p_flags)
 	return DbImplementation(info[0], info[1], info[2], info[3]);
@@ -231,4 +231,4 @@ UCHAR DbImplementation::backwardCompatibleImplementation() const
 	return backwardTable[USHORT(di_os) * FB_NELEM(hardware) + USHORT(di_cpu)];
 }
 
-} //namespace Firebird
+} // namespace Firebird

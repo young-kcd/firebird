@@ -72,7 +72,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 	const UCHAR* const end = out + out_length;
 
 	UCHAR mergeLevel = 0;
-	for (const UCHAR* getMergeLevel = in; *getMergeLevel != isc_info_end; 
+	for (const UCHAR* getMergeLevel = in; *getMergeLevel != isc_info_end;
 		 getMergeLevel += (3 + gds__vax_integer(getMergeLevel + 1, 2)))
 	{
 		if (*getMergeLevel == isc_info_implementation)

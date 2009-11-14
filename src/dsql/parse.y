@@ -4872,7 +4872,8 @@ lastname_opt : LASTNAME sql_string
 		{ $$ = NULL; }
 	;
 
-admin_opt : revoke_admin
+admin_opt
+	: revoke_admin
 		{ $$ = $1; }
 	| grant_admin
 		{ $$ = $1; }
@@ -4880,17 +4881,20 @@ admin_opt : revoke_admin
 		{ $$ = NULL; }
 	;
 
-grant_admin_opt : grant_admin
+grant_admin_opt
+	: grant_admin
 		{ $$ = $1; }
 	| 
 		{ $$ = NULL; }
 	;
 
-revoke_admin: REVOKE ADMIN ROLE
+revoke_admin
+	: REVOKE ADMIN ROLE
 		{ $$ = MAKE_cstring("0"); }
 	;
 
-grant_admin: GRANT ADMIN ROLE
+grant_admin
+	: GRANT ADMIN ROLE
 		{ $$ = MAKE_cstring("1"); }
 	;
 

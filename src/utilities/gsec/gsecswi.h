@@ -108,4 +108,3 @@ static const struct Switches::in_sw_tab_t gsec_action_in_sw_table [] =
     {IN_SW_GSEC_0,			0,								NULL,		0, 0, 0, false,	0,	0, NULL}	// End of List
 };
 #endif // GSEC_GSECSWI_H
-

@@ -3237,6 +3237,7 @@ static void list_package_bodies()
 		return;
 
 	bool header = true;
+
 	FOR PACK IN RDB$PACKAGES WITH
 		(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
 		AND PACK.RDB$PACKAGE_BODY_SOURCE NOT MISSING
@@ -3253,7 +3254,7 @@ static void list_package_bodies()
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			IUTILS_copy_SQL_id (PACK.RDB$PACKAGE_NAME, SQL_identifier, DBL_QUOTE);
 		else
-			strcpy (SQL_identifier, PACK.RDB$PACKAGE_NAME);
+			strcpy(SQL_identifier, PACK.RDB$PACKAGE_NAME);
 
 		fb_utils::exact_name(PACK.RDB$OWNER_NAME);
 
@@ -3264,7 +3265,7 @@ static void list_package_bodies()
 				 NEWLINE);
 		isqlGlob.printf("CREATE PACKAGE BODY %s AS%s", SQL_identifier, NEWLINE);
 
-		SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
+		SHOW_print_metadata_text_blob(isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
 
 		isqlGlob.printf("%s%s", Procterm, NEWLINE);
 
@@ -3297,6 +3298,7 @@ static void list_package_headers()
  		return;
 
  	bool header = true;
+
 	FOR PACK IN RDB$PACKAGES WITH
 		(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY PACK.RDB$PACKAGE_NAME
@@ -3312,7 +3314,7 @@ static void list_package_headers()
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			IUTILS_copy_SQL_id (PACK.RDB$PACKAGE_NAME, SQL_identifier, DBL_QUOTE);
 		else
-			strcpy (SQL_identifier, PACK.RDB$PACKAGE_NAME);
+			strcpy(SQL_identifier, PACK.RDB$PACKAGE_NAME);
 
 		fb_utils::exact_name(PACK.RDB$OWNER_NAME);
 
@@ -3324,7 +3326,7 @@ static void list_package_headers()
 		isqlGlob.printf("CREATE PACKAGE %s AS%s", SQL_identifier, NEWLINE);
 
 		if (!PACK.RDB$PACKAGE_HEADER_SOURCE.NULL)
-			SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_HEADER_SOURCE);
+			SHOW_print_metadata_text_blob(isqlGlob.Out, &PACK.RDB$PACKAGE_HEADER_SOURCE);
 		else
 			isqlGlob.printf("BEGIN END /* Missing package header info. */");
 
@@ -3381,6 +3383,7 @@ static void list_views()
 		isqlGlob.printf("CREATE VIEW %s (", SQL_identifier);
 
 		bool first = true;
+
 		// Get column list
 		FOR RFR IN RDB$RELATION_FIELDS WITH
 			RFR.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
@@ -3401,6 +3404,7 @@ static void list_views()
 			ISQL_errmsg (gds_status);
 			return;
 		END_ERROR;
+
 		isqlGlob.printf(") AS%s", NEWLINE);
 
 		if (!REL.RDB$VIEW_SOURCE.NULL)

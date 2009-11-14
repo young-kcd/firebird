@@ -1296,7 +1296,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			/* The server implementation - e.g. Firebird/sun4 */
 			{ // scope
 				string buf2 = DbImplementation::current.implementation();
-				info = INF_put_item(item, buf2.length(), 
+				info = INF_put_item(item, buf2.length(),
 									reinterpret_cast<const UCHAR*>(buf2.c_str()), info, end);
 				if (!info) {
 					return 0;
@@ -2433,7 +2433,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					break;
 				}
 
-				if (spb.getClumpTag() != isc_spb_sec_username && 
+				if (spb.getClumpTag() != isc_spb_sec_username &&
 					spb.getClumpTag() != isc_spb_dbname &&
 					spb.getClumpTag() != isc_spb_sql_role_name)
 				{

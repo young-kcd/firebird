@@ -52,12 +52,12 @@ public:
 	const char* os() const;
 	const char* cc() const;
 	const char* endianess() const;
-	Firebird::string implementation() const;
+	string implementation() const;
 
 	bool compatible(const DbImplementation& v);
 	void store(Ods::header_page* h) const;
-	void stuff(UCHAR **info) const;
-	static DbImplementation pick(const UCHAR *info);
+	void stuff(UCHAR** info) const;
+	static DbImplementation pick(const UCHAR* info);
 	UCHAR backwardCompatibleImplementation() const;
 	static DbImplementation fromBackwardCompatibleByte(UCHAR bcImpl);
 
