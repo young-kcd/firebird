@@ -1254,6 +1254,8 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1245, 'cvc', '2009-11-06 08:26:40', 12, 44, 'Expected backup version 1..9.  Found @1', NULL, NULL, 'c_pg')
 (1246, 'cvc', '2009-11-13 05:37:37', 17, 64, '               GENERATOR, GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM,', NULL, NULL, 'c_pg')
 (1247, 'cvc', '2009-11-13 08:37:53', 17, 102, '               TABLE, TRIGGER, VERSION, USERS, VIEW', NULL, NULL, 'c_pg')
+(1248, 'alexpeshkoff', '2009-11-13 17:49:10', 18, 26, '     user name                      uid   gid     full name', NULL, NULL, 'c_pg')
+(1249, 'alexpeshkoff', '2009-11-13 17:49:54', 18, 27, '------------------------------------------------------------------------------------------', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;

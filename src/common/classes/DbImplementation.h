@@ -54,7 +54,7 @@ public:
 	const char* endianess() const;
 	string implementation() const;
 
-	bool compatible(const DbImplementation& v);
+	bool compatible(const DbImplementation& v) const;
 	void store(Ods::header_page* h) const;
 	void stuff(UCHAR** info) const;
 	static DbImplementation pick(const UCHAR* info);

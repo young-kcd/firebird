@@ -175,7 +175,7 @@ const DbImplementation DbImplementation::current(
 		EndianLittle);
 #endif
 
-bool DbImplementation::compatible(const DbImplementation& v)
+bool DbImplementation::compatible(const DbImplementation& v) const
 {
 	return di_flags == v.di_flags;
 }
