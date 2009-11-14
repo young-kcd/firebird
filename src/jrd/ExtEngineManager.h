@@ -238,6 +238,8 @@ private:
 		const Firebird::MetaName& name);
 	EngineAttachmentInfo* getEngineAttachment(thread_db* tdbb,
 		Firebird::ExternalEngine* engine, bool closing = false);
+	void setupAdminCharSet(thread_db* tdbb, Firebird::ExternalEngine* engine,
+		EngineAttachmentInfo* attInfo);
 
 private:
 	typedef Firebird::GenericMap<Firebird::Pair<

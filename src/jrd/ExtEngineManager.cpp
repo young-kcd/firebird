@@ -898,7 +898,6 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 
 				EngineAttachment key(NULL, NULL);
 				AutoPtr<EngineAttachmentInfo> attInfo;
-				ExternalContextImpl* context = NULL;
 
 				try
 				{
@@ -925,23 +924,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 						attInfo->engine = engine;
 						attInfo->context = FB_NEW(getPool()) ExternalContextImpl(tdbb, engine);
 
-						{	// scope
-							ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, CS_UTF8);
-
-							Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
-							engine->open(RaiseError(), attInfo->context, charSetName,
-								MAX_SQL_IDENTIFIER_LEN);
-							charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
-
-							if (!MET_get_char_coll_subtype(tdbb, &attInfo->adminCharSet,
-									reinterpret_cast<const UCHAR*>(charSetName),
-									strlen(charSetName)))
-							{
-								status_exception::raise(Arg::Gds(
-									isc_charset_not_found) <<
-									Arg::Str(charSetName));
-							}
-						}
+						setupAdminCharSet(tdbb, engine, attInfo);
 
 						ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 						engine->openAttachment(LogError(), attInfo->context);
@@ -949,20 +932,18 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 				}
 				catch (...)
 				{
-					if (context)
-						context->releaseTransaction();
 					if (engine)
 						engine->dispose(LogError());
 
 					throw;
 				}
 
-				engines.put(name, engine);
-				enginesAttachments.put(key, attInfo);
-				attInfo.release();
-
-				if (context)
-					context->releaseTransaction();
+				if (engine)
+				{
+					engines.put(name, engine);
+					enginesAttachments.put(key, attInfo);
+					attInfo.release();
+				}
 			}
 		}
 	}
@@ -1006,9 +987,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 			attInfo->engine = engine;
 			attInfo->context = FB_NEW(getPool()) ExternalContextImpl(tdbb, engine);
 
-			EnginesAttachmentsMap::Accessor accessor(&enginesAttachments);
-			accessor.getFirst();
-			attInfo->adminCharSet = accessor.current()->second->adminCharSet;
+			setupAdminCharSet(tdbb, engine, attInfo);
 
 			enginesAttachments.put(key, attInfo);
 
@@ -1028,6 +1007,27 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 	}
 
 	return attInfo;
+}
+
+
+void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, Firebird::ExternalEngine* engine,
+	EngineAttachmentInfo* attInfo)
+{
+	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, CS_UTF8);
+
+	Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
+	engine->open(RaiseError(), attInfo->context, charSetName,
+		MAX_SQL_IDENTIFIER_LEN);
+	charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
+
+	if (!MET_get_char_coll_subtype(tdbb, &attInfo->adminCharSet,
+			reinterpret_cast<const UCHAR*>(charSetName),
+			strlen(charSetName)))
+	{
+		status_exception::raise(
+			Arg::Gds(isc_charset_not_found) <<
+			Arg::Str(charSetName));
+	}
 }
 
 
