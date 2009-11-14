@@ -121,5 +121,4 @@ Notes:
     - UDFs (DECLARE EXTERNAL FUNCTION) are currently not supported inside packages.
 
 Examples:
-    - To come.
-
+    - See examples/package.
