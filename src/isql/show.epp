@@ -2673,8 +2673,8 @@ static void show_db()
 
 	// Query for files
 
-	FOR FIL IN RDB$FILES SORTED BY FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_SEQUENCE,
-		FIL.RDB$FILE_SEQUENCE
+	FOR FIL IN RDB$FILES
+		SORTED BY FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_SEQUENCE
 
 		// reset nulls to zero
 
@@ -2686,8 +2686,8 @@ static void show_db()
 			FIL.RDB$FILE_SEQUENCE = 0;
 		if (FIL.RDB$FILE_START.NULL)
 			FIL.RDB$FILE_START = 0;
-
-		fb_utils::exact_name(FIL.RDB$FILE_NAME);
+		if (!FIL.RDB$FILE_NAME.NULL)
+			fb_utils::exact_name(FIL.RDB$FILE_NAME);
 
 		if (FIL.RDB$FILE_FLAGS == 0)
 		{
@@ -2695,8 +2695,7 @@ static void show_db()
 					 FIL.RDB$FILE_SEQUENCE, FIL.RDB$FILE_NAME,
 					 FIL.RDB$FILE_LENGTH, FIL.RDB$FILE_START, NEWLINE);
 		}
-
-		if (FIL.RDB$FILE_FLAGS & FILE_shadow)
+		else if (FIL.RDB$FILE_FLAGS & FILE_shadow)
 		{
 			if (FIL.RDB$FILE_SEQUENCE) {
 				isqlGlob.printf("%sfile %s ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
@@ -2724,6 +2723,12 @@ static void show_db()
 				isqlGlob.printf("starting %ld", FIL.RDB$FILE_START);
 			}
 			isqlGlob.printf(NEWLINE);
+		}
+		else if ((FIL.RDB$FILE_FLAGS & FILE_difference) && !FIL.RDB$FILE_NAME.NULL)
+		{
+			// This is an explicit name for the difference file typically named <db_name>.delta
+			isqlGlob.printf("Explicit physical backup difference file: \"%s\"%s",
+					FIL.RDB$FILE_NAME, NEWLINE);
 		}
 
 	END_FOR

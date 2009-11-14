@@ -2248,14 +2248,7 @@ static void list_create_db()
 	FOR FIL IN RDB$FILES
 		SORTED BY FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_SEQUENCE
 
-		if (first)
-		{
-			isqlGlob.printf("%s/* Add secondary files in comments %s", NEWLINE, NEWLINE);
-		}
-
-		first = false;
 		// reset nulls to zero
-
 		if (FIL.RDB$FILE_FLAGS.NULL)
 			FIL.RDB$FILE_FLAGS = 0;
 		if (FIL.RDB$FILE_LENGTH.NULL)
@@ -2264,11 +2257,18 @@ static void list_create_db()
 			FIL.RDB$FILE_SEQUENCE = 0;
 		if (FIL.RDB$FILE_START.NULL)
 			FIL.RDB$FILE_START = 0;
-		fb_utils::exact_name(FIL.RDB$FILE_NAME);
+		if (!FIL.RDB$FILE_NAME.NULL)
+			fb_utils::exact_name(FIL.RDB$FILE_NAME);
 
 		// Pure secondary files
 		if (FIL.RDB$FILE_FLAGS == 0)
 		{
+			if (first)
+			{
+				isqlGlob.printf("%s/* Add secondary files in comments %s", NEWLINE, NEWLINE);
+				first = false;
+			}
+
 			isqlGlob.printf("%sALTER DATABASE ADD FILE '%s'", NEWLINE, FIL.RDB$FILE_NAME);
 			if (FIL.RDB$FILE_START)
 			{
@@ -2278,11 +2278,16 @@ static void list_create_db()
 			{
 				isqlGlob.printf(" LENGTH %ld", FIL.RDB$FILE_LENGTH);
 			}
-			isqlGlob.printf(NEWLINE);
+			isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 		}
-
-		if (FIL.RDB$FILE_FLAGS & FILE_shadow)
+		else if (FIL.RDB$FILE_FLAGS & FILE_shadow)
 		{
+			if (first)
+			{
+				isqlGlob.printf("%s/* Add secondary files in comments %s", NEWLINE, NEWLINE);
+				first = false;
+			}
+
 			if (FIL.RDB$FILE_SEQUENCE)
 			{
 				isqlGlob.printf("%sFILE '%s' ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
@@ -2310,7 +2315,19 @@ static void list_create_db()
 			{
 				isqlGlob.printf("STARTING %ld ", FIL.RDB$FILE_START);
 			}
-			isqlGlob.printf(NEWLINE);
+			isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+		}
+		else if ((FIL.RDB$FILE_FLAGS & FILE_difference) && !FIL.RDB$FILE_NAME.NULL)
+		{
+			if (first)
+			{
+				isqlGlob.printf("%s/* Add secondary files in comments %s", NEWLINE, NEWLINE);
+				first = false;
+			}
+
+			// This is an explicit name for the difference file typically named <db_name>.delta
+			isqlGlob.printf("%sALTER DATABASE ADD DIFFERENCE FILE '%s'", NEWLINE, FIL.RDB$FILE_NAME);
+			isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 		}
 
 	END_FOR
@@ -2321,14 +2338,8 @@ static void list_create_db()
 
 	if (!first)
 	{
-		if (nodb)
-		{
-			isqlGlob.printf("%s */%s", NEWLINE, NEWLINE);
-		}
-		else
-		{
-			isqlGlob.printf("%s%s%s", isqlGlob.global_Term, NEWLINE, NEWLINE);
-		}
+		isqlGlob.printf("%s */%s", NEWLINE, NEWLINE);
+		//isqlGlob.printf("%s%s%s", isqlGlob.global_Term, NEWLINE, NEWLINE);
 	}
 }
 
