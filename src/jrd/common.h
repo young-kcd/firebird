@@ -388,7 +388,7 @@ extern "C" int remove(const char* path);
 #if defined (__HP_aCC)
 #define FB_CC CcAcc
 #undef HAVE___THREAD	// aCC error, __thread can be used only with C-like structs
-#elif define (__GNUC__)
+#elif defined (__GNUC__)
 #define FB_CC CcGcc
 #endif
 
@@ -412,7 +412,7 @@ extern "C" int remove(const char* path);
 #endif
 
 #error Need a way to define CpuHppa or CpuIa64
-#define FB_CPU 
+#define FB_CPU
 
 #define RISC_ALIGNMENT
 
@@ -467,7 +467,12 @@ extern "C" int remove(const char* path);
 #define NO_NFS
 
 #define FB_OS OsWindows
-#define FB_CC CcMsvc		// what about 
+
+#ifdef __GNUC__
+#define FB_CC CcGcc
+#elif defined(_MSC_VER)
+#define FB_CC CcMsvc
+#endif
 
 #define SYS_ERR		Arg::Windows
 //#define SLONGFORMAT "ld"
