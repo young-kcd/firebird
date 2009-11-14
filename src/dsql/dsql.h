@@ -147,7 +147,6 @@ public:
 	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
 	USHORT			dbb_ods_version;	// major ODS version number
 	USHORT			dbb_minor_version;	// minor ODS version number
-	Firebird::Mutex dbb_cache_mutex;	// mutex protecting the DSQL metadata cache
 
 	explicit dsql_dbb(MemoryPool& p) :
 		dbb_procedures(p),

@@ -79,20 +79,8 @@ static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0)
 
 #define DSQL_REQUEST(id) dbb->dbb_database->dbb_internal[id]
 
-namespace {
-	class MutexHolder : public Database::CheckoutLockGuard
-	{
-	public:
-		explicit MutexHolder(dsql_req* request)
-			: CheckoutLockGuard(request->req_dbb->dbb_database, request->req_dbb->dbb_cache_mutex)
-		{}
-
-	private:
-		// copying is prohibited
-		MutexHolder(const MutexHolder&);
-		MutexHolder& operator=(const MutexHolder&);
-	};
-
+namespace
+{
 	inline void validateTransaction(const dsql_req* request)
 	{
 		if (!request->req_transaction->checkHandle())
@@ -119,8 +107,6 @@ void METD_drop_charset(dsql_req* request, const MetaName& name)
  *  accessing it.
  *
  **************************************/
-	MutexHolder holder(request);
-
 	// If the symbol wasn't defined, we've got nothing to do
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name.length(), name.c_str(),
 									 SYM_intlsym_charset, 0);
@@ -154,8 +140,6 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
  *  accessing it.
  *
  **************************************/
-	MutexHolder holder(request);
-
 	// If the symbol wasn't defined, we've got nothing to do
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, 0);
 
@@ -191,8 +175,6 @@ void METD_drop_function(dsql_req* request, const dsql_str* name, const MetaName&
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	MutexHolder holder(request);
-
 	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_udf* function;
 
@@ -226,8 +208,6 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name, const MetaName
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	MutexHolder holder(request);
-
 	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_prc* procedure;
 
@@ -258,8 +238,6 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
  *      accessing it.
  *
  **************************************/
-	MutexHolder holder(request);
-
 	// If the symbol wasn't defined, we've got nothing to do
 
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
@@ -291,8 +269,6 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
  *  If it doesn't exist, return NULL.
  *
  **************************************/
-	MutexHolder holder(request);
-
 	thread_db* tdbb = JRD_get_thread_data();
 
 	// Start by seeing if symbol is already defined
@@ -485,8 +461,6 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  *  If it doesn't exist, return NULL.
  *
  **************************************/
-	MutexHolder holder(request);
-
 	thread_db* tdbb = JRD_get_thread_data();
 
 	// Start by seeing if symbol is already defined
@@ -922,8 +896,6 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 	QualifiedName metaName(MetaName(name->str_data, name->str_length),
 		(package ? MetaName(package->str_data, package->str_length) : NULL));
 
-	MutexHolder holder(statement);
-
 	bool maybeUnqualified = statement->req_package.hasData() && metaName.qualifier.isEmpty();
 	if (maybeUnqualified)
 		metaName.qualifier = statement->req_package;
@@ -1192,8 +1164,6 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 	//
 	// I hope for a solution, involving savepoint logic.
 
-	MutexHolder holder(statement);
-
 	bool maybeUnqualified = statement->req_package.hasData() && metaName.qualifier.isEmpty();
 	if (maybeUnqualified)
 		metaName.qualifier = statement->req_package;
@@ -1416,8 +1386,6 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	{
 		return temp;
 	}
-
-	MutexHolder holder(statement);
 
 	// Start by seeing if symbol is already defined
 
