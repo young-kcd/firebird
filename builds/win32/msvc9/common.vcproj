@@ -333,6 +333,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\DbImplementation.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\dllinst.cpp"
 				>
 			</File>
@@ -455,6 +459,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\db_alias.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\DbImplementation.h"
 				>
 			</File>
 			<File
