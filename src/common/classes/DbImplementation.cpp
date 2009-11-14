@@ -164,7 +164,7 @@ string DbImplementation::implementation() const
 
 const char* DbImplementation::endianess() const
 {
-	return di_flags & EndianMask == EndianBig ? "big" : "little";
+	return (di_flags & EndianMask) == EndianBig ? "big" : "little";
 }
 
 const DbImplementation DbImplementation::current(

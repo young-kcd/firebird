@@ -1119,7 +1119,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 }
 
 
-void API_ROUTINE isc_format_implementation(USHORT implementation_nr,
+void API_ROUTINE isc_format_implementation(USHORT /*implementation_nr*/,
 										   USHORT ibuflen, TEXT* ibuf,
 										   USHORT impl_class_nr,
 										   USHORT cbuflen, TEXT* cbuf)
