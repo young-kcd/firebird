@@ -127,9 +127,9 @@ int alice(Firebird::UtilSvc* uSvc)
 
 	try {
 
-//  Perform some special handling when run as a Firebird service.  The
-//  first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-//  by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
+	// Perform some special handling when run as a Firebird service.  The
+	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	tdgbl->ALICE_data.ua_user = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
@@ -139,7 +139,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	tdgbl->ALICE_data.ua_tr_user = NULL;
 	tdgbl->ALICE_data.ua_tr_role = false;
 
-//  Start by parsing switches
+	//  Start by parsing switches
 
 	bool error = false, help = false, version = false;
 	SINT64 flags = 0;
@@ -455,15 +455,15 @@ int alice(Firebird::UtilSvc* uSvc)
 
 	}
 
-//  put this here since to put it above overly complicates the parsing
-//  can't use tbl_requires since it only looks backwards on command line
+	// put this here since to put it above overly complicates the parsing.
+	// can't use tbl_requires since it only looks backwards on command line.
 	if ((flags & sw_shut) && !(flags & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
 		ALICE_error(19);	// msg 19: must specify type of shutdown
 	}
 
-//  catch the case where -z is only command line option
-//  flags is unset since sw_z == 0
+	// catch the case where -z is only command line option.
+	// flags is unset since sw_z == 0
 	if (!flags && !error && version && !tdgbl->ALICE_data.ua_debug)
 	{
 		ALICE_exit(FINI_OK, tdgbl);
