@@ -415,57 +415,6 @@ private:
 };
 
 
-class TraceDynExecute
-{
-public:
-	TraceDynExecute(thread_db* tdbb, size_t ddl_length, const UCHAR* ddl) :
-		m_tdbb(tdbb),
-		m_ddl_length(ddl_length),
-		m_ddl(ddl)
-	{
-		Attachment* attachment = m_tdbb->getAttachment();
-
-		m_need_trace = attachment->att_trace_manager->needs().event_dyn_execute &&
-			m_ddl_length && m_ddl;
-
-		if (!m_need_trace)
-			return;
-
-		m_start_clock = fb_utils::query_performance_counter();
-	}
-
-	void finish(ntrace_result_t result)
-	{
-		if (!m_need_trace)
-			return;
-
-		m_need_trace = false;
-
-		m_start_clock = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
-						 fb_utils::query_performance_frequency();
-
-		TraceConnectionImpl conn(m_tdbb->getAttachment());
-		TraceTransactionImpl tran(m_tdbb->getTransaction());
-		TraceDYNRequestImpl request(m_ddl_length, m_ddl);
-
-		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		trace_mgr->event_dyn_execute(&conn, m_tdbb->getTransaction() ? &tran : NULL, &request,
-			m_start_clock, result);
-	}
-
-	~TraceDynExecute()
-	{
-		finish(res_failed);
-	}
-
-private:
-	bool m_need_trace;
-	thread_db* const m_tdbb;
-	SINT64 m_start_clock;
-	const size_t m_ddl_length;
-	const UCHAR* const m_ddl;
-};
-
 } // namespace Jrd
 
 #endif // JRD_TRACE_JRD_HELPERS_H

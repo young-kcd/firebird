@@ -90,28 +90,6 @@ private:
 };
 
 
-class TraceDYNRequestImpl : public TraceDYNRequest
-{
-public:
-	TraceDYNRequestImpl(size_t length, const unsigned char* ddl) :
-		m_ddl(ddl),
-		m_length(length),
-		m_text(*getDefaultMemoryPool())
-	{}
-
-	virtual const unsigned char* getData()	{ return m_ddl; }
-	virtual size_t getDataLength()	{ return m_length; }
-	virtual const char* getText();
-
-private:
-	static void print_dyn(void* arg, SSHORT offset, const char* line);
-
-	const unsigned char* const m_ddl;
-	const size_t m_length;
-	Firebird::string m_text;
-};
-
-
 class BLRPrinter : public TraceBLRStatement
 {
 public:

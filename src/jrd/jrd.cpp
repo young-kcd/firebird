@@ -2246,7 +2246,6 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 }
 
 
-//// TODO: make this function return unsupported (deprecated) feature error
 ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 					Jrd::Attachment** db_handle,
 					jrd_tra** tra_handle,
@@ -2259,42 +2258,10 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
  *
  **************************************
  *
- * Functional description
+ * This function is deprecated and "removed".
  *
  **************************************/
-	try
-	{
-		ThreadContextHolder tdbb(user_status);
-
-		Jrd::Attachment* const attachment = *db_handle;
-		validateHandle(tdbb, attachment);
-		validateHandle(tdbb, *tra_handle);
-		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-
-		TraceDynExecute trace(tdbb, ddl_length, (UCHAR*) ddl);
-		try
-		{
-			JRD_ddl(tdbb, /*attachment,*/ transaction, ddl_length,
-				reinterpret_cast<const UCHAR*>(ddl), "");
-
-			trace.finish(res_successful);
-		}
-		catch (const Exception& ex)
-		{
-			const ISC_STATUS exc = ex.stuff_exception(user_status);
-			trace.finish(exc == FB_SUCCESS ? res_successful : res_failed);
-
-			return exc;
-		}
-	}
-	catch (const Exception& ex) {
-		return ex.stuff_exception(user_status);
-	}
-
-	return successful_completion(user_status);
+	return Arg::Gds(isc_wish_list).copyTo(user_status);
 }
 
 
