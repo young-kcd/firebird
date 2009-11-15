@@ -385,6 +385,8 @@ extern "C" int remove(const char* path);
 
 #define UNIX
 
+#define FB_OS OsHpux
+
 #if defined (__HP_aCC)
 #define FB_CC CcAcc
 #undef HAVE___THREAD	// aCC error, __thread can be used only with C-like structs

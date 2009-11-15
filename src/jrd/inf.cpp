@@ -384,16 +384,26 @@ void INF_database_info(const UCHAR* items,
 			break;
 
 		case isc_info_implementation:
-			STUFF(p, 1);		/* Count */
-			STUFF(p, Firebird::DbImplementation::current.backwardCompatibleImplementation());
-			STUFF(p, 1);		/* Class */
+			// isc_info_implementation value has first byte, defining the number of
+			// 2-byte sequences, where first byte is implementation code (deprecated 
+			// since firebird 3.0) and second byte is implementation class (see table of classes
+			// in utl.cpp, array impl_class)
+			STUFF(p, 1);		// Count
+			STUFF(p, Firebird::DbImplementation::current.backwardCompatibleImplementation()); //Code
+			STUFF(p, 1);		// Class
 			length = p - buffer;
 			break;
 
 		case fb_info_implementation:
-			STUFF(p, 1);		/* Count */
+			// isc_info_implementation value has first byte, defining the number of
+			// 6-byte sequences, where first bytes 0-3 are implementation codes, defined  
+			// in class DbImplementation, byte 4 is implementation class(see table of classes
+			// in utl.cpp, array impl_class) and byte 5 is current count of 
+			// isc_info_implementation pairs (used to correctly display implementation when
+			// old and new servers are mixed, see isc_version() in utl.cpp)
+			STUFF(p, 1);		// Count
 			Firebird::DbImplementation::current.stuff(&p);
-			STUFF(p, 1);		/* Class */
+			STUFF(p, 1);		// Class
 			STUFF(p, 0);		// Current depth of isc_info_implementation stack
 			length = p - buffer;
 			break;
