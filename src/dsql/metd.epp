@@ -118,7 +118,7 @@ void METD_drop_charset(dsql_req* request, const MetaName& name)
 	}
 
 	// mark other potential candidates as maybe dropped
-	HSHD_set_flag(request->req_dbb, name.c_str(), name.length(), SYM_intlsym_charset, INTLSYM_dropped);
+	//HSHD_set_flag(request->req_dbb, name.c_str(), name.length(), SYM_intlsym_charset, INTLSYM_dropped);
 }
 
 
@@ -150,8 +150,8 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
 	}
 
 	// mark other potential candidates as maybe dropped
-	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length,
-				  SYM_intlsym_collation, INTLSYM_dropped);
+	//HSHD_set_flag(request->req_dbb, name->str_data, name->str_length,
+	//			  SYM_intlsym_collation, INTLSYM_dropped);
 }
 
 
