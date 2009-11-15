@@ -66,6 +66,14 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HA
 			sql.printf("REVOKE RDB$ADMIN FROM %s GRANTED BY %s",
 				io_user_data->user_name, R.RDB$GRANTOR);
 		END_FOR
+		if (request)
+		{
+			ISC_STATUS_ARRAY s;
+			if (isc_release_request(s, &request) != FB_SUCCESS)
+			{
+				return false;
+			}
+		}
 		isc_dsql_execute_immediate(isc_status, &DB, &trans, sql.length(), sql.c_str(), 1, NULL);
 	}
 
@@ -234,7 +242,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		ON_ERROR
 			ret = GsecMsg19;	// gsec - add record error
 		END_ERROR;
-		if (! grantRevokeAdmin(isc_status, DB, trans, io_user_data))
+		if (ret == 0 && !grantRevokeAdmin(isc_status, DB, trans, io_user_data))
 		{
 			ret = GsecMsg19;	// gsec - add record error
 		}
@@ -311,7 +319,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		END_ERROR;
 		if (!ret && !found)
 			ret = GsecMsg22;
-		if (! grantRevokeAdmin(isc_status, DB, trans, io_user_data))
+		if (ret == 0 && !grantRevokeAdmin(isc_status, DB, trans, io_user_data))
 		{
 			ret = GsecMsg21;
 		}
@@ -344,7 +352,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 		io_user_data->admin = 0;
 		io_user_data->admin_entered = true;
-		if (! grantRevokeAdmin(isc_status, DB, trans, io_user_data))
+		if (ret == 0 && ! grantRevokeAdmin(isc_status, DB, trans, io_user_data))
 		{
 			ret = GsecMsg24;
 		}
@@ -369,7 +377,9 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 				io_user_data->admin = 0;
 				FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
-						WITH P.RDB$USER EQ U.USER_NAME AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
+						WITH P.RDB$USER EQ U.USER_NAME
+						 AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
+						 AND P.RDB$PRIVILEGE EQ 'M'
 					io_user_data->admin = 1;
 				END_FOR
 
@@ -397,7 +407,9 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 				io_user_data->admin = 0;
 				FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
-						WITH P.RDB$USER EQ U.USER_NAME AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
+						WITH P.RDB$USER EQ U.USER_NAME
+						 AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
+						 AND P.RDB$PRIVILEGE EQ 'M'
 					io_user_data->admin = 1;
 				END_FOR
 
