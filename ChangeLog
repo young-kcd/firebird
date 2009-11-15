@@ -1,3 +1,16 @@
+2009-11-15 13:43  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.32.2.3):
+
+	Additions for CORE-2748 - thanks to Adriano and Claudio
+
+2009-11-15 10:39  robocop
+
+	* firebird2/builds/win32/msvc9/: instclient.vcproj (1.1.4.3),
+	instreg.vcproj (1.1.4.3), instsvc.vcproj (1.1.4.3):
+
+	Put the correct information for UAC in VC9.
+
 2009-11-14 08:22  robocop
 
 	* firebird2/src/: msgs/history2.sql (1.17.2.1),
