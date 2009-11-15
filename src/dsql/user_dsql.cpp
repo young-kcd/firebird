@@ -1094,7 +1094,8 @@ static void init(FB_API_HANDLE* db_handle)
 	{
 		UDSQL_error = (dsql_err_stblock*) gds__alloc((SLONG) sizeof(dsql_err_stblock));
 		// FREE: by exit cleanup()
-		if (!UDSQL_error) {		// NOMEM:
+		if (!UDSQL_error) {
+			// NOMEM:
 			return;				// Don't set the init_flag
 		}
 		init_flag = true;
@@ -1120,7 +1121,8 @@ static void init(FB_API_HANDLE* db_handle)
 	dbb = (dsql_dbb*) gds__alloc((SLONG) sizeof(dsql_dbb));
 
 	// FREE: by database exit handler cleanup_database()
-	if (!dbb) {					// NOMEM
+	if (!dbb) {
+		// NOMEM
 		return;					// Not a great error handler
 	}
 

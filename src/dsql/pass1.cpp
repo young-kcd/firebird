@@ -741,7 +741,8 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				rel_alias = (dsql_str*) input->nod_arg[e_rpn_alias];
 				couldBeCte = !input->nod_arg[e_rpn_package] && !input->nod_arg[e_rpn_inputs];
 			}
-			else {	// nod_relation_name
+			else {
+				// nod_relation_name
 				rel_name = (dsql_str*) input->nod_arg[e_rln_name];
 				rel_alias = (dsql_str*) input->nod_arg[e_rln_alias];
 			}
