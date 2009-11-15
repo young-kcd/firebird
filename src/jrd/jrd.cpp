@@ -2247,10 +2247,10 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
-					Jrd::Attachment** db_handle,
-					jrd_tra** tra_handle,
-					USHORT ddl_length,
-					const SCHAR* ddl)
+					Jrd::Attachment** /*db_handle*/,
+					jrd_tra** /*tra_handle*/,
+					USHORT /*ddl_length*/,
+					const SCHAR* /*ddl*/)
 {
 /**************************************
  *
