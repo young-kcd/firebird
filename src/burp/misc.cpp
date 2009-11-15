@@ -96,7 +96,8 @@ void MISC_free_burp( void *free)
 		// Scan for this block in the list of blocks
 		for (UCHAR **ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) *ptr)
 		{
-			if (*ptr == (UCHAR *) block) {
+			if (*ptr == (UCHAR *) block)
+			{
 				// Found it - remove it from the list
 				*ptr = *block;
 
@@ -180,14 +181,16 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
  **************************************/
 
 	fb_assert(max_length != 0);
-	if (length) {
+	if (length)
+	{
 		length = MIN(length, max_length - 1);
 		do {
 			*to++ = *from++;
 		} while (--length);
 		*to++ = '\0';
 	}
-	else {
+	else
+	{
 		while (max_length-- && (*to++ = *from++));
 		*--to = '\0';
 	}

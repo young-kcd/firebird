@@ -2783,6 +2783,7 @@ void write_collations()
 	MISC_release_request_silent(req_handle1);
 }
 
+
 void write_database( const TEXT* dbb_file)
 {
 /**************************************
@@ -3834,6 +3835,7 @@ void write_ref_constraints()
 	MISC_release_request_silent(req_handle1);
 }
 
+
 void write_rel_constraints()
 {
 /**************************************
@@ -3873,6 +3875,7 @@ void write_rel_constraints()
 
 	MISC_release_request_silent(req_handle1);
 }
+
 
 void write_relations()
 {
@@ -4096,6 +4099,7 @@ void write_shadow_files()
 	MISC_release_request_silent(req_handle1);
 }
 
+
 void write_sql_roles()
 {
 /**************************************
@@ -4158,6 +4162,7 @@ void write_sql_roles()
 	MISC_release_request_silent(req_handle1);
 }
 
+
 void write_mapping()
 {
 /**************************************
@@ -4200,6 +4205,7 @@ void write_mapping()
 
 	MISC_release_request_silent(req_handle);
 }
+
 
 void write_triggers()
 {
@@ -4399,6 +4405,7 @@ void write_trigger_messages()
 
 	MISC_release_request_silent(req_handle1);
 }
+
 
 void write_types()
 {

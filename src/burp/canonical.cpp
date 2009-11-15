@@ -76,10 +76,7 @@ static xdr_t::xdr_ops burp_ops =
 const int increment = 1024;
 
 
-ULONG CAN_encode_decode(burp_rel* relation,
-						lstring* buffer,
-						UCHAR* data,
-						bool_t direction)
+ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool_t direction)
 {
 /**************************************
  *
@@ -213,11 +210,7 @@ ULONG CAN_encode_decode(burp_rel* relation,
 }
 
 
-ULONG CAN_slice(lstring* buffer,
-				lstring* slice,
-				bool_t direction,
-				//USHORT sdl_length,
-				UCHAR* sdl)
+ULONG CAN_slice(lstring* buffer, lstring* slice, bool_t direction, /*USHORT sdl_length,*/ UCHAR* sdl)
 {
 /**************************************
  *
@@ -463,7 +456,6 @@ static bool_t expand_buffer(XDR* xdrs)
 }
 
 
-
 static bool_t xdr_datum(XDR* xdrs, DSC* desc, UCHAR* buffer)
 {
 /**************************************
@@ -564,6 +556,7 @@ static bool_t xdr_datum(XDR* xdrs, DSC* desc, UCHAR* buffer)
 	return TRUE;
 }
 
+
 static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 {
 /**************************************
@@ -601,7 +594,6 @@ static bool_t xdr_quad(XDR* xdrs, SLONG* ip)
 }
 
 
-
 static int xdr_init(XDR* xdrs, lstring* buffer, enum xdr_op x_op)
 {
 /**************************************
@@ -625,11 +617,7 @@ static int xdr_init(XDR* xdrs, lstring* buffer, enum xdr_op x_op)
 }
 
 
-
-static bool_t xdr_slice(XDR* xdrs,
-						lstring* slice,
-						//USHORT sdl_length,
-						const UCHAR* sdl)
+static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const UCHAR* sdl)
 {
 /**************************************
  *
@@ -692,7 +680,8 @@ static bool_t xdr_slice(XDR* xdrs,
 	const ULONG n = slice->lstr_length / desc->dsc_length;
 	UCHAR* p = slice->lstr_address;
 
-	for (UCHAR* const end = p + n * desc->dsc_length; p < end; p += desc->dsc_length) {
+	for (UCHAR* const end = p + n * desc->dsc_length; p < end; p += desc->dsc_length)
+	{
 		if (!xdr_datum(xdrs, desc, p)) {
 			return FALSE;
 		}

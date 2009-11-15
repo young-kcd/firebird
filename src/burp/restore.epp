@@ -2786,8 +2786,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 	{
 		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
 		if (!tdgbl->gbl_sw_incremental)
-			BURP_error_redirect (status_vector, 27);
-			// msg 27 isc_compile_request failed
+			BURP_error_redirect (status_vector, 27); // msg 27 isc_compile_request failed
 		else
 		{
 			BURP_print_status (status_vector);
@@ -2799,8 +2798,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 	BURP_free (blr_buffer);
 	SSHORT* buffer = NULL;
 
-	BURP_verbose (124, relation->rel_name);
-	// msg 124  restoring data for relation %s
+	BURP_verbose (124, relation->rel_name); // msg 124  restoring data for relation %s
 
 	lstring data;
 	data.lstr_allocated = 0;
@@ -2813,8 +2811,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 	while (true)
 	{
 		if (get(tdgbl) != att_data_length)
-			BURP_error_redirect (NULL, 39);
-			// msg 39 expected record length
+			BURP_error_redirect (NULL, 39); // msg 39 expected record length
 		USHORT l = (USHORT) get_numeric(tdgbl);
 		if (!tdgbl->gbl_sw_transportable && l != length)
 		{
@@ -2854,8 +2851,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 		else
 			p = reinterpret_cast<UCHAR*>(buffer);
 		if (get(tdgbl) != att_data_data)
-			BURP_error_redirect (NULL, 41);
-			// msg 41 expected data attribute
+			BURP_error_redirect (NULL, 41); // msg 41 expected data attribute
 
 		if (tdgbl->gbl_sw_compress)
 			decompress (tdgbl, p, l);
@@ -8495,10 +8491,7 @@ USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
 }
 
 
-void store_blr_gen_id(BurpGlobals*		tdgbl,
-					  const TEXT*		gen_name,	// TEXT GDS_NAME[GDS_NAME_LEN]
-					  SINT64			value,
-					  const ISC_QUAD*	gen_desc)
+void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, const ISC_QUAD* gen_desc)
 {
 /**************************************
  *

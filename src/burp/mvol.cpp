@@ -173,10 +173,7 @@ void MVOL_init(ULONG io_buf_size)
 //
 // Read init record from backup file
 //
-void MVOL_init_read(const char*	file_name,
-					USHORT*		format,
-					int*		cnt,
-					UCHAR**		ptr)
+void MVOL_init_read(const char* file_name, USHORT* format, int* cnt, UCHAR** ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -219,9 +216,7 @@ void MVOL_init_read(const char*	file_name,
 //
 // Write init record to the backup file
 //
-void MVOL_init_write(const char*	file_name,
-					 int*			cnt,
-					 UCHAR**		ptr)
+void MVOL_init_write(const char* file_name, int* cnt, UCHAR** ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -854,7 +849,8 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 	{
 		// We aim to keep our descriptors clean
 
-		if (new_desc != INVALID_HANDLE_VALUE) {
+		if (new_desc != INVALID_HANDLE_VALUE)
+		{
 			close_platf(new_desc);
 			new_desc = INVALID_HANDLE_VALUE;
 		}
@@ -990,8 +986,8 @@ static void prompt_for_name(SCHAR* name, int length)
 				strcpy(name, tdgbl->mvol_old_file);
 				break;
 			}
-			else				// reprompt
-				continue;
+
+			continue; // reprompt
 		}
 
 		// OK, its a file name, strip the carriage return
