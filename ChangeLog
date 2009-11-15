@@ -1,3 +1,105 @@
+2009-11-15 14:09  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.36):
+
+	additions for CORE-2748
+
+2009-11-15 13:21  robocop
+
+	* firebird2/src/dsql/: pass1.cpp (1.470), user_dsql.cpp (1.66):
+
+	Style.
+
+2009-11-15 11:25  robocop
+
+	* firebird2/src/dsql/metd.epp (1.149):
+
+	Comment useless code.
+
+2009-11-15 11:23  robocop
+
+	* firebird2/src/dsql/hsh.cpp (1.48):
+
+	Clean dead code.
+
+2009-11-15 11:18  robocop
+
+	* firebird2/src/dsql/: array.epp (1.47), blob.epp (1.28), errd.cpp
+	(1.57):
+
+	Style.
+
+2009-11-15 10:55  robocop
+
+	* firebird2/src/burp/: backup.epp (1.130), canonical.cpp (1.45),
+	misc.cpp (1.24), mvol.cpp (1.66), restore.epp (1.188), spit.cpp
+	(1.49):
+
+	Style.
+
+2009-11-15 10:42  robocop
+
+	* firebird2/src/alice/: alice.cpp (1.124), tdr.cpp (1.69):
+
+	Style.
+
+2009-11-15 10:39  robocop
+
+	* firebird2/builds/win32/msvc9/: instclient.vcproj (1.4),
+	instreg.vcproj (1.4), instsvc.vcproj (1.4):
+
+	Put the correct information for UAC in VC9.
+
+2009-11-15 10:12  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.573):
+
+	Misc.
+
+2009-11-15 03:00  asfernandes
+
+	* firebird2/builds/posix/Makefile.in.embed.fbudf (1.16):
+
+	Fix symbols not being exported in Linux embedded fbudf
+
+2009-11-15 01:38  asfernandes
+
+	* firebird2/src/jrd/: ibase.h (1.146), jrd.cpp (1.572),
+	trace/TraceJrdHelpers.h (1.7), trace/TraceObjects.cpp (1.17),
+	trace/TraceObjects.h (1.8):
+
+	Fully deprecate isc_ddl.
+
+2009-11-15 00:58  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.193):
+
+	Do not generate not needed blr_derived_expr for view's fields.
+
+2009-11-15 00:40  asfernandes
+
+	* firebird2/src/dsql/: dsql.h (1.159), metd.epp (1.148):
+
+	Remove not needed mutex. There is no sense to lock something per
+	attachment when the attachment is already locked.
+
+2009-11-14 23:21  asfernandes
+
+	* firebird2/src/jrd/: ExtEngineManager.cpp (1.7),
+	ExtEngineManager.h (1.6):
+
+	Fix problem of a random (first) engine being used - seen by Claudio
+	some time ago
+
+2009-11-14 21:17  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.packages.txt (1.5),
+	examples/package/fbout-body.sql (1.1),
+	examples/package/fbout-header.sql (1.1),
+	examples/package/fbout-test.sql (1.1):
+
+	Package example
+
 2009-11-14 11:47  robocop
 
 	* firebird2/src/isql/extract.epp (1.112):
