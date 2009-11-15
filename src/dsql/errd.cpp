@@ -269,7 +269,8 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	size_t warning_count = 0;
 	ISC_STATUS_ARRAY warning_status;
 
-	if (warning_indx) {
+	if (warning_indx)
+	{
 		// copy current warning(s) to a temp buffer
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
 		memcpy(warning_status, &status_vector[warning_indx],

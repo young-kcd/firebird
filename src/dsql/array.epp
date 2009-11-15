@@ -442,12 +442,14 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 		return status[1];
 
 	SSHORT from, to, increment;
-	if (desc->array_desc_flags & array_desc_column_major) {
+	if (desc->array_desc_flags & array_desc_column_major)
+	{
 		from = dimensions - 1;
 		to = -1;
 		increment = -1;
 	}
-	else {
+	else
+	{
 		from = 0;
 		to = dimensions;
 		increment = 1;
@@ -457,11 +459,13 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	for (n = from; n != to; n += increment)
 	{
 		const ISC_ARRAY_BOUND* tail = desc->array_desc_bounds + n;
-		if (tail->array_bound_lower == 1) {
+		if (tail->array_bound_lower == 1)
+		{
 			if (stuff_args(gen, 2, isc_sdl_do1, n))
 				return status[1];
 		}
-		else {
+		else
+		{
 			if (stuff_args(gen, 2, isc_sdl_do2, n))
 				return status[1];
 			if (stuff_literal(gen, (SLONG) tail->array_bound_lower))
@@ -574,7 +578,8 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 
 		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
 		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);
-		if (!new_sdl) {
+		if (!new_sdl)
+		{
 			return error(gen->gen_status, Arg::Gds(isc_misc_interpreted) << Arg::Str("SDL buffer overflow") <<
 										  Arg::Gds(isc_virmemexh));
 		}
@@ -590,7 +595,8 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 
 	va_start(ptr, count);
 
-	for (; count; --count) {
+	for (; count; --count)
+	{
 		c = va_arg(ptr, int);
 		*(gen->gen_sdl)++ = c;
 	}
@@ -648,7 +654,8 @@ static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, const SCHAR* string)
 	if (stuff_sdl(gen, strlen(string)))
 		return status[1];
 
-	while (*string) {
+	while (*string)
+	{
 		if (stuff_sdl(gen, *string++))
 			return status[1];
 	}

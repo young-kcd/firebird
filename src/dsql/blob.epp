@@ -262,7 +262,8 @@ static void copy_exact_name (const UCHAR* from, UCHAR* to, SSHORT bsize)
  **************************************/
 	const UCHAR* const from_end = from + bsize - 1;
 	UCHAR* to2 = to - 1;
-	while (*from && from < from_end) {
+	while (*from && from < from_end)
+	{
 		if (*from != ' ') {
 			to2 = to;
 		}
