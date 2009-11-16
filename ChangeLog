@@ -1,3 +1,9 @@
+2009-11-15 19:53  asfernandes
+
+	* firebird2/src/common/fb_exception.cpp (1.64.2.1):
+
+	Fix typo
+
 2009-11-15 13:43  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/security.epp (1.32.2.3):
