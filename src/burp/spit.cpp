@@ -126,7 +126,7 @@ static int join_multy_bakup_files(b_fil*);
 static void print_clo(const TEXT*);
 static int read_and_write(FILE_DESC, FILE_DESC, /*const TEXT*,*/ SLONG,
 						  SINT64, UCHAR**, bool*, SINT64*, SLONG*);
-static int read_and_write_for_join(FILE_DESC, const TEXT*, UCHAR**, SLONG, SLONG*);
+static int read_and_write_for_join(FILE_DESC, const TEXT*, UCHAR*, SLONG, SLONG*);
 static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT*);
 
 
@@ -919,8 +919,8 @@ static int join_multy_bakup_files( b_fil* file_list)
 
 	// See comment near the beginning of gen_multy_bakup_files() as it
 	// also applies to read_and_write_for_join().
-	//UCHAR* const io_buffer = (UCHAR *) malloc(IO_BUFFER_SIZE);
-	UCHAR* io_buffer = (UCHAR*) malloc(IO_BUFFER_SIZE);
+	UCHAR* const io_buffer = (UCHAR*) malloc(IO_BUFFER_SIZE);
+	//UCHAR* io_buffer = (UCHAR*) malloc(IO_BUFFER_SIZE);
 
 	if (io_buffer == 0)
 	{
@@ -937,7 +937,7 @@ static int join_multy_bakup_files( b_fil* file_list)
 		next_fl = fl_ptr->b_fil_next;
 		const TEXT* file_name = fl_ptr->b_fil_name;
 
-		SLONG ret_cd = read_and_write_for_join(output_fl_desc, file_name, &io_buffer, cnt, &total_int);
+		SLONG ret_cd = read_and_write_for_join(output_fl_desc, file_name, io_buffer, cnt, &total_int);
 
 		if (ret_cd == FB_FAILURE)
 		{
@@ -954,7 +954,7 @@ static int join_multy_bakup_files( b_fil* file_list)
 
 static int read_and_write_for_join(FILE_DESC output_fl_desc,
 								const TEXT* file_name,
-								UCHAR** io_buffer,
+								UCHAR* io_buffer,
 								SLONG cnt,
 								SLONG* total_int)
 {
@@ -983,7 +983,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		return FB_FAILURE;
 	}
 
-	int read_cnt = read(input_fl_desc, *io_buffer, header_rec_len);
+	int read_cnt = read(input_fl_desc, io_buffer, header_rec_len);
 	if (read_cnt != static_cast<int>(header_rec_len))
 	{
 		close(input_fl_desc);
@@ -991,7 +991,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		return FB_FAILURE;
 	}
 
-	const TEXT* char_ptr1 = reinterpret_cast<char*>(*io_buffer);
+	const TEXT* char_ptr1 = reinterpret_cast<char*>(io_buffer);
 	SLONG ret_cd = strncmp(char_ptr1, header_rec_name, sizeof(hdr_rec.name) - 1);
 	if (ret_cd != 0)
 	{
@@ -1004,8 +1004,8 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 	SLONG skip_to_num = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) + sizeof(hdr_rec.text1);
 	SLONG skip_to_total = skip_to_num + sizeof(hdr_rec.num) + sizeof(hdr_rec.text2);
 
-	char_ptr1 = reinterpret_cast<char*>(*io_buffer + skip_to_num);
-	const TEXT* char_ptr2 = reinterpret_cast<char*>(*io_buffer + skip_to_total);
+	char_ptr1 = reinterpret_cast<char*>(io_buffer + skip_to_num);
+	const TEXT* char_ptr2 = reinterpret_cast<char*>(io_buffer + skip_to_total);
 	size_t indx;
 	for (indx = 0; indx < sizeof(hdr_rec.num); indx++)
 	{
@@ -1033,7 +1033,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		return FB_FAILURE;
 	}
 
-	read_cnt = read(input_fl_desc, *io_buffer, IO_BUFFER_SIZE);
+	read_cnt = read(input_fl_desc, io_buffer, IO_BUFFER_SIZE);
 
 
 	while (true)
@@ -1052,7 +1052,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 			break;
 		}
 
-		SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
+		SLONG write_cnt = write(output_fl_desc, io_buffer, read_cnt);
 
 		switch (write_cnt)
 		{
@@ -1065,7 +1065,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 			break;
 		}
 
-		read_cnt = read(input_fl_desc, *io_buffer, IO_BUFFER_SIZE);
+		read_cnt = read(input_fl_desc, io_buffer, IO_BUFFER_SIZE);
 
 	}	// end of while (true) loop
 }
