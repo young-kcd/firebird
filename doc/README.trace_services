@@ -77,7 +77,7 @@ b) Trace all connections of given user to database mydatabase.fdb
    Log executed INSERT, UPDATE and DELETE statements, nested calls to procedures
    and triggers and show corresponding PLAN's and performance statistics.
 
-<database mydatabase.fdb>
+<database %[\\/]mydatabase.fdb>
 	enabled					true
 	include_filter			(.*)(INSERT|UPDATE|DELETE)(.*)
 	log_statement_finish	true
