@@ -1335,7 +1335,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 										  dfw_arg_partner_rel_id);
 					}
 					else
-					{	// can't find partner relation - impossible ?
+					{
+						// can't find partner relation - impossible ?
 						// add empty argument to let DFW know dropping
 						// index was bound with FK
 						DFW_post_work_arg(transaction, work, 0, 0, dfw_arg_partner_rel_id);

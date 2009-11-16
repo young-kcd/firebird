@@ -204,7 +204,8 @@ void xdr_debug_memory(XDR* xdrs,
 						}
 					}
 					else
-					{		// XDR_ENCODE or XDR_DECODE
+					{
+						// XDR_ENCODE or XDR_DECODE
 
 						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
@@ -1123,7 +1124,8 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		}
 	}
 	else
-	{						// XDR_ENCODE or XDR_DECODE
+	{
+		// XDR_ENCODE or XDR_DECODE
 
 		// Allocate an unused slot in the packet tracking vector
 		// to start recording memory allocations for this packet.

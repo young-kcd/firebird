@@ -1277,7 +1277,8 @@ void CCH_fini(thread_db* tdbb)
 			}
 		}
 
-		if (!flush_error) { // wasn't set in the catch => no failure, just exit
+		if (!flush_error) {
+			// wasn't set in the catch => no failure, just exit
 			break;
 		}
 

@@ -1225,7 +1225,8 @@ static void expand_share_name(tstring& share_name)
 		data = (LPBYTE) gds__alloc((SLONG) d_size);
 		// FREE: unknown
 		if (!data)
-		{			// NOMEM:
+		{
+			// NOMEM:
 			RegCloseKey(hkey);
 			return;				// Error not really handled
 		}

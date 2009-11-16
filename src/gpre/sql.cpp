@@ -4522,7 +4522,8 @@ static act* act_update()
 			if (transaction)
 				PAR_error("different transaction for select and update");
 			else
-			{				// does not specify transaction clause in
+			{
+				// does not specify transaction clause in
 				// "update ... where cuurent of cursor" stmt
 				const USHORT trans_nm_len = strlen(request->req_trans);
 				char* newtrans = (SCHAR *) MSC_alloc(trans_nm_len + 1);

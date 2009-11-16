@@ -153,7 +153,8 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 	for (USHORT i = 0; i < iInLen && iOutLen; i++, pInChar++)
 	{
 		if (GEN_HAN(*pInChar, *(pInChar + 1)))
-		{	// general hangul
+		{
+			// general hangul
 			const int idx = GetGenHanNdx(*pInChar, *(pInChar + 1));
 			if (idx >= 0)
 			{
@@ -178,7 +179,8 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 			i++;
 		}
 		else if (SPE_HAN(*pInChar, *(pInChar + 1)))
-		{	// special hangul
+		{
+			// special hangul
 			const int idx = GetSpeHanNdx(*(pInChar + 1));
 			fb_assert(idx >= 0);
 
@@ -193,13 +195,15 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 			i++;
 		}
 		else
-		{					// ascii or rest -> in case with binary collation
+		{
+			// ascii or rest -> in case with binary collation
 
 			*outbuff++ = *pInChar;
 			iOutLen--;
 			fb_assert(KSC1(*pInChar) || (*pInChar < 0x80));
 			if (KSC1(*pInChar))
-			{	// the rest characters of KSC_5601 table
+			{
+				// the rest characters of KSC_5601 table
 				fb_assert(KSC2(*(pInChar + 1)));
 				if (!iOutLen)
 					break;

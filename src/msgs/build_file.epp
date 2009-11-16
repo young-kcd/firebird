@@ -187,7 +187,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 /* check for the locale option  */
 
-	if (!locale) {				// no locale given: do the regular US msgs
+	if (!locale) {
+		// no locale given: do the regular US msgs
 		if (!pathname)
 			do_msgs(filename, NULL, false);
 		else {
@@ -201,7 +202,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		FOR FIRST 1 L IN LOCALES WITH L.LOCALE = locale
 			got_one = true;
 		END_FOR;
-		if (got_one) {			// do only 1 locale
+		if (got_one) {
+			// do only 1 locale
 			strcpy(this_locale, locale);
 			sanitize(locale);
 			if (pathname) {
@@ -355,7 +357,8 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 		strcpy(msg_text, X.TEXT);
 		len = strlen(msg_text);
-		if (locale) {			// want translated output
+		if (locale) {
+			// want translated output
 			// Overwrite English message with translation, if we find one
 			int found_one = 0;
 			FOR Y IN TRANSMSGS WITH Y.FAC_CODE = X.FAC_CODE

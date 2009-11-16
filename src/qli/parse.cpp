@@ -3908,7 +3908,8 @@ static qli_syntax* parse_set()
 			PAR_token();
 			PAR_match(KW_SET);
 			if (value)
-			{		// allow for NO
+			{
+				// allow for NO
 				PAR_match(KW_EQUALS);
 				value = (U_IPTR) parse_name();
 			}

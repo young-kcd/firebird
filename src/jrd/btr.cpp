@@ -6565,7 +6565,8 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 					if (node.length && (node.prefix == 0))
 					{
 						const UCHAR* q = node.data;
-						if (*q > to_segment) {	// hvlad: for desc indexes we must use *q^-1 ?
+						if (*q > to_segment) {
+							// hvlad: for desc indexes we must use *q^-1 ?
 							return false;
 						}
 					}

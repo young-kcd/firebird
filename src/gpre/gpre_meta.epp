@@ -445,7 +445,8 @@ bool MET_get_domain_default(gpre_dbb* database,
 			has_default = true;
 		}
 		else
-		{						// default not found
+		{
+			// default not found
 
 			if (gpreGlob.sw_sql_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;

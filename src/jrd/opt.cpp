@@ -6966,7 +6966,8 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 						//			hence the extra check added (see the line above)
 						idx->idx_runtime_flags |= idx_plan_navigate;
 					}
-					else { // nod_indices
+					else {
+						// nod_indices
 						break;
 					}
 				}

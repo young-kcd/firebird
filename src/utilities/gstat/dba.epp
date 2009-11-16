@@ -1353,7 +1353,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil = fil->fil_next;
 	}
 	else
-	{						// empty list
+	{
+		// empty list
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
 	}
@@ -1534,7 +1535,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil = fil->fil_next;
 	}
 	else
-	{						// empty list
+	{
+		// empty list
 
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;

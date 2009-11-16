@@ -270,7 +270,8 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			}
 		}
 		else
-		{					// (col->IsCompress)
+		{
+			// (col->IsCompress)
 			const bool complete = (USHORT) (i + 1) < iInLen;
 
 			if (complete)

@@ -5078,7 +5078,8 @@ static processing_state get_dialect(const char* const dialect_str,
 					}
 				}
 				else
-				{	// ODS 10 databases
+				{
+					// ODS 10 databases
 					switch (global_dialect_spoken)
 					{
 					case SQL_DIALECT_V5:
@@ -5117,7 +5118,8 @@ static processing_state get_dialect(const char* const dialect_str,
 		}
 	}
 	else
-	{			// handle non numeric invalid "set sql dialect" case
+	{
+		// handle non numeric invalid "set sql dialect" case
 		isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect
 		bad_dialect = true;
 		sprintf(bad_dialect_buf, "%s%s", "invalid SQL dialect ",
@@ -5254,11 +5256,13 @@ static processing_state get_statement(TEXT* const statement,
 			if (Interactive && !Input_file || Echo)
 			{
 				if (state == in_block_comment)
-				{	//  Block comment prompt.
+				{
+					//  Block comment prompt.
 					ISQL_prompt("--> ");
 				}
 				else if (valuable_count == 0)
-				{	// Ignore a series of nothing at the beginning
+				{
+					// Ignore a series of nothing at the beginning
 					ISQL_prompt(statement_prompt);
 				}
 				else
@@ -5378,7 +5382,8 @@ static processing_state get_statement(TEXT* const statement,
 		{
 			valuable_count++;
 			if (valuable_count == 1) // this is the first valuable char in stream
-			{	// ignore all previous crap
+			{
+				// ignore all previous crap
 				p = statement;
 				count = 0;
 				non_comment_pos = 0;
@@ -5601,7 +5606,8 @@ void ISQL_get_version(bool call_by_create_db)
 				}
 			}
 			else
-			{				// ODS 10 databases
+			{
+				// ODS 10 databases
 
 				switch (global_dialect_spoken)
 				{
@@ -8480,7 +8486,8 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		else
 		{
 			if (sqlda->sqld)
-			{ // do not output unnecessary white text
+			{
+				// do not output unnecessary white text
 				isqlGlob.printf(NEWLINE);
 				if (!List && Heading)
 				{

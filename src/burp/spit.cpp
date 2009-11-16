@@ -184,7 +184,8 @@ int main( int argc, char* argv[])
 			}
 		}						// end of processing (*string == '-')
 		else
-		{					// processing function specific command line options
+		{
+			// processing function specific command line options
 
 			switch (sw_replace)
 			{

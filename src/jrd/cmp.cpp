@@ -6266,7 +6266,8 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 		CMP_get_desc(tdbb, csb, assignment->nod_arg[e_asgn_from], &desc2);
 		const USHORT min = MIN(desc->dsc_dtype, desc2.dsc_dtype);
 		const USHORT max = MAX(desc->dsc_dtype, desc2.dsc_dtype);
-		if (!min) {			// eg: dtype_unknown
+		if (!min) {
+			// eg: dtype_unknown
 			*desc = desc2;
 		}
 		else if (max == dtype_blob) {
@@ -6276,7 +6277,8 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 			desc->dsc_sub_type = DataTypeUtil::getResultBlobSubType(desc, &desc2);
 			desc->dsc_flags = 0;
 		}
-		else if (min <= dtype_any_text) {	// either field a text field?
+		else if (min <= dtype_any_text) {
+			// either field a text field?
 			const USHORT len1 = DSC_string_length(desc);
 			const USHORT len2 = DSC_string_length(&desc2);
 			desc->dsc_dtype = dtype_varying;

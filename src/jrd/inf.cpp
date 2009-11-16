@@ -397,7 +397,7 @@ void INF_database_info(const UCHAR* items,
 		case fb_info_implementation:
 			// isc_info_implementation value has first byte, defining the number of
 			// 6-byte sequences, where first bytes 0-3 are implementation codes, defined
-			// in class DbImplementation, byte 4 is implementation class(see table of classes
+			// in class DbImplementation, byte 4 is implementation class (see table of classes
 			// in utl.cpp, array impl_class) and byte 5 is current count of
 			// isc_info_implementation pairs (used to correctly display implementation when
 			// old and new servers are mixed, see isc_version() in utl.cpp)

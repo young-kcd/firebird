@@ -59,7 +59,8 @@ enum {
 
 static void print(const SCHAR **, int, const SCHAR *);
 
-struct VERB {
+struct VERB
+{
 	UCHAR blr;
 	const SCHAR* internal;
 	const SCHAR* internal2;
@@ -246,8 +247,8 @@ int main(int argc, char *argv[])
  *	Spit out a conversion table.
  *
  **************************************/
-	{ // scope
-	for (int blr = 0; blr < FB_NELEM(table); blr++) {
+	for (int blr = 0; blr < FB_NELEM(table); blr++)
+	{
 		table[blr] = NULL;
 		table2[blr] = NULL;
 		lengths[blr] = NULL;
@@ -256,12 +257,13 @@ int main(int argc, char *argv[])
 		types[blr] = NULL;
 		sub_types[blr] = NULL;
 	}
-	} // scope
 
 	int max = 0;
-	for (const VERB* verb = verbs; verb->internal; ++verb) {
+	for (const VERB* verb = verbs; verb->internal; ++verb)
+	{
 		const int blr = verb->blr;
-		if (table[blr]) {
+		if (table[blr])
+		{
 			fprintf(stderr, "BLRTABLE: duplicate blr %d\n", blr);
 			exit(1);
 		}
@@ -298,7 +300,7 @@ int main(int argc, char *argv[])
 }
 
 
-static void print(const SCHAR ** tableL, int max, const SCHAR * fudge)
+static void print(const SCHAR** tableL, int max, const SCHAR* fudge)
 {
 /**************************************
  *
@@ -313,14 +315,16 @@ static void print(const SCHAR ** tableL, int max, const SCHAR * fudge)
 	SCHAR buffer[100];
 	char* s = buffer;
 
-	for (int blr = 0; blr <= max; blr++, tableL++) {
+	for (int blr = 0; blr <= max; blr++, tableL++)
+	{
 		if (*tableL)
 			sprintf(s, "%s%s, ", fudge, *tableL);
 		else
 			sprintf(s, " 0, ");
 		while (*s)
 			s++;
-		if (s > buffer + 50) {
+		if (s > buffer + 50)
+		{
 			printf("\t%s\n/*%3d*/", buffer, blr + 1);
 			s = buffer;
 			*s = 0;

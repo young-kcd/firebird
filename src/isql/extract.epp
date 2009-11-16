@@ -803,11 +803,13 @@ static void get_procedure_args_ods12(const char* proc_name)
 			{
 				first_time = false;
 				if (ptype == 0)
-				{ // this is the input part
+				{
+					// this is the input part
 					isqlGlob.printf("(");
 				}
 				else
-				{ // we are in the output part
+				{
+					// we are in the output part
 					isqlGlob.printf("RETURNS (");
 				}
 			}
@@ -1111,11 +1113,13 @@ static void get_procedure_args_legacy(const char* proc_name)
 			{
 				first_time = false;
 				if (ptype == 0)
-				{ // this is the input part
+				{
+					// this is the input part
 					isqlGlob.printf("(");
 				}
 				else
-				{ // we are in the output part
+				{
+					// we are in the output part
 					isqlGlob.printf("RETURNS (");
 				}
 			}

@@ -128,7 +128,8 @@ UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size, UCHAR* target, siz
 		temp_sdl = (UCHAR*)gds__alloc((SLONG) origin_size);
 		// FREE: apparently never freed, the caller is responsible.
 		if (!temp_sdl)
-		{	// NOMEM: ignore operation
+		{
+			// NOMEM: ignore operation
 			fb_assert_continue(FALSE);	// no real error handling
 			return 0;
 		}

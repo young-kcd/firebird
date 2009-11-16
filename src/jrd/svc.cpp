@@ -1340,7 +1340,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch (const BadAlloc&) {	// NOMEM:
+					catch (const BadAlloc&) {
+						// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
 						// NOMEM: not really handled well
 						l = 0;	// set the length to zero
@@ -1766,7 +1767,8 @@ void Service::query(USHORT			send_item_length,
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch (const BadAlloc&) {	// NOMEM:
+					catch (const BadAlloc&) {
+						// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
 						// NOMEM: not really handled well
 						l = 0;	// set the length to zero

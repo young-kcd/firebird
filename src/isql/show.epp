@@ -3051,7 +3051,8 @@ static processing_state show_domains(const SCHAR* domain_name)
 			isqlGlob.printf(NEWLINE);
 	}
 	else
-	{						// List named domain
+	{
+		// List named domain
 
 		FOR FLD IN RDB$FIELDS WITH
 			FLD.RDB$FIELD_NAME EQ domain_name;
@@ -3590,7 +3591,8 @@ static processing_state show_generators(const SCHAR* object)
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION) {
 				IUTILS_copy_SQL_id (GEN.RDB$GENERATOR_NAME, gen_name, DBL_QUOTE);
 			}
-			else { // If we are extracting in dialect 1, identifiers may cause failures.
+			else {
+				// If we are extracting in dialect 1, identifiers may cause failures.
 				strcpy(gen_name, GEN.RDB$GENERATOR_NAME);
 			}
 

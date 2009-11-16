@@ -2964,7 +2964,8 @@ void DYN_modify_sql_field(Global* gbl,
 				request = NULL;
 			}
 			else //if (sourceIsInternalDomain)
-			{	// The original and new definitions are both base types.
+			{
+				// The original and new definitions are both base types.
 				// b2. Internal domain -> internal domain.
 				// Modify in place, since there cannot be other fields using it.
 
