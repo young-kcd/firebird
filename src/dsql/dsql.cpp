@@ -242,7 +242,8 @@ void DSQL_execute(thread_db* tdbb,
 	// If the request is a SELECT or blob statement then this is an open.
 	// Make sure the cursor is not already open.
 
-	if (reqTypeWithCursor(request->req_type)) {
+	if (reqTypeWithCursor(request->req_type))
+	{
 		if (request->req_flags & REQ_cursor_open)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
@@ -430,15 +431,18 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	if (option & DSQL_drop) {
+	if (option & DSQL_drop)
+	{
 		// Release everything associated with the request
 		release_request(tdbb, request, true);
 	}
-	else if (option & DSQL_unprepare) {
+	else if (option & DSQL_unprepare)
+	{
 		// Release everything but the request itself
 		release_request(tdbb, request, false);
 	}
-	else if (option & DSQL_close) {
+	else if (option & DSQL_close)
+	{
 		// Just close the cursor associated with the request
 		if (!(request->req_flags & REQ_cursor_open))
 		{
@@ -500,7 +504,8 @@ void DSQL_insert(thread_db* tdbb,
 	if (blr_length)
 		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
-	if (request->req_type == REQ_PUT_SEGMENT) {
+	if (request->req_type == REQ_PUT_SEGMENT)
+	{
 		// For put segment, use the user buffer and indicator directly.
 
 		dsql_par* parameter = request->req_blob->blb_segment;
@@ -542,27 +547,31 @@ void DSQL_prepare(thread_db* tdbb,
 
 	dsql_req* const old_request = *req_handle;
 
-	if (!old_request) {
+	if (!old_request)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
 	}
 
 	dsql_dbb* database = old_request->req_dbb;
-	if (!database) {
+	if (!database)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
                   Arg::Gds(isc_bad_req_handle));
 	}
 
 	// check to see if old request has an open cursor
 
-	if (old_request && (old_request->req_flags & REQ_cursor_open)) {
+	if (old_request && (old_request->req_flags & REQ_cursor_open))
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-519) <<
 				  Arg::Gds(isc_dsql_open_cursor_request));
 	}
 
 	dsql_req* request = NULL;
 
-	if (!string) {
+	if (!string)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
 				  // CVC: Nothing will be line 1, column 1 for the user.
@@ -601,7 +610,8 @@ void DSQL_prepare(thread_db* tdbb,
 		USHORT parser_version;
 		if ((dialect / 10) == 0)
 			parser_version = 2;
-		else {
+		else
+		{
 			parser_version = dialect % 10;
 			dialect /= 10;
 		}
@@ -662,9 +672,7 @@ void DSQL_prepare(thread_db* tdbb,
     @param input_cursor
 
  **/
-void DSQL_set_cursor(thread_db* tdbb,
-				     dsql_req* request,
-					 const TEXT* input_cursor)
+void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_cursor)
 {
 	SET_TDBB(tdbb);
 
@@ -697,7 +705,8 @@ void DSQL_set_cursor(thread_db* tdbb,
 	}
 	USHORT length = (USHORT) fb_utils::name_length(cursor.c_str());
 
-	if (length == 0) {
+	if (length == 0)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
 				  Arg::Gds(isc_dsql_cursor_invalid));
@@ -726,7 +735,8 @@ void DSQL_set_cursor(thread_db* tdbb,
 	if (!request->req_cursor) {
 		request->req_cursor = MAKE_symbol(request->req_dbb, cursor.c_str(), length, SYM_cursor, request);
 	}
-	else {
+	else
+	{
 		fb_assert(request->req_cursor != symbol);
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
@@ -895,14 +905,16 @@ static void execute_blob(thread_db* tdbb,
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
 	SSHORT filter = filter_sub_type(blob->blb_to);
-	if (filter) {
+	if (filter)
+	{
 		*p++ = isc_bpb_target_type;
 		*p++ = 2;
 		*p++ = static_cast<UCHAR>(filter);
 		*p++ = filter >> 8;
 	}
 	filter = filter_sub_type(blob->blb_from);
-	if (filter) {
+	if (filter)
+	{
 		*p++ = isc_bpb_source_type;
 		*p++ = 2;
 		*p++ = static_cast<UCHAR>(filter);
@@ -974,7 +986,8 @@ static void execute_immediate(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 
-	if (!string) {
+	if (!string)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
 				  // CVC: Nothing will be line 1, column 1 for the user.
@@ -1016,7 +1029,8 @@ static void execute_immediate(thread_db* tdbb,
 		USHORT parser_version;
 		if ((dialect / 10) == 0)
 			parser_version = 2;
-		else {
+		else
+		{
 			parser_version = dialect % 10;
 			dialect /= 10;
 		}
@@ -1104,12 +1118,12 @@ static void execute_request(thread_db* tdbb,
 
 	case REQ_CREATE_DB:
 	case REQ_DDL:
-	{
-		TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
-		DDL_execute(request);
-		trace.finish(false, res_successful);
-		return;
-	}
+		{
+			TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
+			DDL_execute(request);
+			trace.finish(false, res_successful);
+			return;
+		}
 
 	case REQ_GET_SEGMENT:
 		execute_blob(tdbb, request,
@@ -1179,7 +1193,8 @@ static void execute_request(thread_db* tdbb,
 		if (out_msg_length && out_blr_length) {
 			parse_blr(out_blr_length, out_blr, out_msg_length, message->msg_parameters);
 		}
-		else if (!out_msg_length && isBlock) {
+		else if (!out_msg_length && isBlock)
+		{
 			message = &temp_msg;
 			message->msg_number = 1;
 			message->msg_length = 2;
@@ -1344,7 +1359,8 @@ static bool get_indices(SLONG* explain_length_ptr, const UCHAR** explain_ptr,
 
 		// if this isn't the first index, put out a comma
 
-		if (plan[-1] != '(' && plan[-1] != ' ') {
+		if (plan[-1] != '(' && plan[-1] != ' ')
+		{
 			plan_length -= 2;
 			if (plan_length < 0)
 				return false;
@@ -1494,7 +1510,8 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 				// assume we have run out of room in the buffer, try again with a larger one
 				const size_t new_length = MAX_USHORT;
 				char* const temp = static_cast<char*>(gds__alloc(new_length));
-				if (!temp) {
+				if (!temp)
+				{
 					// NOMEM. Do not attempt one more try
 					i++;
 					break;
@@ -1527,10 +1544,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
     @param buffer
 
  **/
-static USHORT get_request_info(thread_db* tdbb,
-							   dsql_req* request,
-							   SLONG buffer_length,
-							   UCHAR* buffer)
+static USHORT get_request_info(thread_db* tdbb, dsql_req* request, SLONG buffer_length, UCHAR* buffer)
 {
 	if (!request->req_request)	// DDL
 		return 0;
@@ -1650,7 +1664,8 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
 		// for the single relation case, initiate
 		// the relation with a parenthesis
 
-		if (!*parent_join_count) {
+		if (!*parent_join_count)
+		{
 			if (--plan_length < 0)
 				return false;
 			*plan++ = '(';
@@ -1658,7 +1673,8 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
 
 		// if this isn't the first relation, put out a comma
 
-		if (plan[-1] != '(') {
+		if (plan[-1] != '(')
+		{
 			plan_length -= 2;
 			if (plan_length < 0)
 				return false;
@@ -2077,11 +2093,13 @@ static void map_in_out(	dsql_req*		request,
 				if (length > msg_length)
 					break;
 
-				if (!request) {
+				if (!request)
+				{
 					flag = reinterpret_cast<SSHORT*>(dsql_msg_buf + null_offset);
 					*flag = *reinterpret_cast<const SSHORT*>(null_ind->par_desc.dsc_address);
 				}
-				else {
+				else
+				{
 					flag = reinterpret_cast<SSHORT*>(null_ind->par_desc.dsc_address);
 					*flag = *reinterpret_cast<const SSHORT*>(in_dsql_msg_buf + null_offset);
 				}
@@ -2400,7 +2418,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 				  Arg::Gds(isc_wish_list));
 	}
 
-	if (!string) {
+	if (!string)
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
 				  // CVC: Nothing will be line 1, column 1 for the user.
@@ -2415,7 +2434,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	for (const TEXT* p = string + string_length; p-- > string;)
 	{
-		if (*p != ' ') {
+		if (*p != ' ')
+		{
 			if (*p == ';')
 				string_length = p - string;
 			break;
@@ -2567,7 +2587,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	// have the access method compile the statement
 
 #ifdef DSQL_DEBUG
-	if (DSQL_debug & 64) {
+	if (DSQL_debug & 64)
+	{
 		dsql_trace("Resulting BLR code for DSQL:");
 		gds__trace_raw("Statement:\n");
 		gds__trace_raw(string, string_length);
@@ -2579,7 +2600,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 #endif
 
 	// check for warnings
-	if (tdbb->tdbb_status_vector[2] == isc_arg_warning) {
+	if (tdbb->tdbb_status_vector[2] == isc_arg_warning)
+	{
 		// save a status vector
 		memcpy(local_status, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
 	}
@@ -2666,7 +2688,8 @@ static UCHAR* put_item(	UCHAR	item,
 						const UCHAR* const end,
 						const bool copy)
 {
-	if (ptr + length + 3 >= end) {
+	if (ptr + length + 3 >= end)
+	{
 		*ptr = isc_info_truncated;
 		return NULL;
 	}
@@ -2716,7 +2739,8 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 		dsql_req* parent = request->req_parent;
 		for (dsql_req** ptr = &parent->req_offspring; *ptr; ptr = &(*ptr)->req_sibling)
 		{
-			if (*ptr == request) {
+			if (*ptr == request)
+			{
 				*ptr = request->req_sibling;
 				break;
 			}
@@ -2740,12 +2764,14 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	// If request is named, clear it from the hash table
 
-	if (request->req_name) {
+	if (request->req_name)
+	{
 		HSHD_remove(request->req_name);
 		request->req_name = NULL;
 	}
 
-	if (request->req_cursor) {
+	if (request->req_cursor)
+	{
 		HSHD_remove(request->req_cursor);
 		request->req_cursor = NULL;
 	}
@@ -2813,7 +2839,8 @@ static void sql_info(thread_db* tdbb,
 	const UCHAR* const end_items = items + item_length;
 	const UCHAR* const end_info = info + info_length;
 	UCHAR *start_info;
-	if (*items == isc_info_length) {
+	if (*items == isc_info_length)
+	{
 		start_info = info;
 		items++;
 	}
@@ -2836,7 +2863,8 @@ static void sql_info(thread_db* tdbb,
 		case isc_info_sql_select:
 		case isc_info_sql_bind:
 			message = (item == isc_info_sql_select) ? &request->req_receive : &request->req_send;
-			if (info + 1 >= end_info) {
+			if (info + 1 >= end_info)
+			{
 				*info = isc_info_truncated;
 				return;
 			}
@@ -3205,7 +3233,8 @@ static UCHAR* var_info(dsql_msg* message,
 					break;
 
 				case isc_info_sql_field:
-					if (name = param->par_name) {
+					if (name = param->par_name)
+					{
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
 					}
@@ -3214,7 +3243,8 @@ static UCHAR* var_info(dsql_msg* message,
 					break;
 
 				case isc_info_sql_relation:
-					if (name = param->par_rel_name) {
+					if (name = param->par_rel_name)
+					{
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
 					}
@@ -3223,7 +3253,8 @@ static UCHAR* var_info(dsql_msg* message,
 					break;
 
 				case isc_info_sql_owner:
-					if (name = param->par_owner_name) {
+					if (name = param->par_owner_name)
+					{
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
 					}
@@ -3232,7 +3263,8 @@ static UCHAR* var_info(dsql_msg* message,
 					break;
 
 				case isc_info_sql_relation_alias:
-					if (name = param->par_rel_alias) {
+					if (name = param->par_rel_alias)
+					{
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
 					}
@@ -3241,7 +3273,8 @@ static UCHAR* var_info(dsql_msg* message,
 					break;
 
 				case isc_info_sql_alias:
-					if (name = param->par_alias) {
+					if (name = param->par_alias)
+					{
 						length = strlen(name);
 						buffer = reinterpret_cast<const UCHAR*>(name);
 					}
@@ -3260,7 +3293,8 @@ static UCHAR* var_info(dsql_msg* message,
 					return info;
 			}
 
-			if (info + 1 >= end) {
+			if (info + 1 >= end)
+			{
 				*info = isc_info_truncated;
 				return NULL;
 			}

@@ -262,7 +262,8 @@ void DDL_execute(dsql_req* request)
 	thread_db* tdbb = JRD_get_thread_data();
 
 #ifdef DSQL_DEBUG
-	if (DSQL_debug & 4) {
+	if (DSQL_debug & 4)
+	{
 		dsql_trace("Output DYN string for DDL:");
 		PRETTY_print_dyn(request->req_blr_data.begin(), gds__trace_printer, NULL, 0);
 	}
@@ -351,7 +352,8 @@ void DDL_generate(CompiledStatement* statement, dsql_nod* node)
  *
  **************************************/
 
-	if (statement->req_dbb->dbb_read_only) {
+	if (statement->req_dbb->dbb_read_only)
+	{
 		ERRD_post(Arg::Gds(isc_read_only_database));
 		return;
 	}
@@ -568,7 +570,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		}
 	}
 
-	if (field->fld_character_set_id != 0 && !collation_name) {
+	if (field->fld_character_set_id != 0 && !collation_name)
+	{
 		// This field has already been resolved once, and the collation
 		// hasn't changed.  Therefore, no need to do it again.
 		return;
@@ -582,7 +585,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 #endif
 		const dsql_fld* afield = field->fld_next;
 		USHORT bpc = 0;
-		while (afield) {
+		while (afield)
+		{
 			// The first test is redundant.
 			if (afield != field && afield->fld_relation && afield->fld_name == field->fld_name)
 			{
@@ -591,7 +595,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 			}
 			afield = afield->fld_next;
 		}
-		if (afield) {
+		if (afield)
+		{
 			field->fld_character_set_id = afield->fld_character_set_id;
 			bpc = METD_get_charset_bpc (statement, field->fld_character_set_id);
 			field->fld_collation_id = afield->fld_collation_id;
@@ -970,7 +975,7 @@ static void check_one_call (USHORT* repetition_count, SSHORT pos, const TEXT* er
 
 
 static void create_view_triggers(CompiledStatement* statement, dsql_nod* element, dsql_nod* items)
-{								// Fields in the VIEW actually
+{
 /**************************************
  *
  *	c r e a t e _ v i e w _ t r i g g e r s
@@ -1089,7 +1094,8 @@ static void define_computed(CompiledStatement* statement,
 	GEN_expr(statement, input);
 	statement->end_blr();
 
-	if (save_desc.dsc_dtype) {
+	if (save_desc.dsc_dtype)
+	{
 		// restore the field size/type overrides
 		field->fld_dtype  = save_desc.dsc_dtype;
 		field->fld_length = save_desc.dsc_length;
@@ -1102,7 +1108,8 @@ static void define_computed(CompiledStatement* statement,
 		else
 			field->fld_sub_type = save_desc.dsc_sub_type;
 	}
-	else if (field) {
+	else if (field)
+	{
 		// use size calculated
 		field->fld_dtype  = desc.dsc_dtype;
 		field->fld_length = desc.dsc_length;
@@ -2357,7 +2364,8 @@ static void define_relation(CompiledStatement* statement)
 	for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ptr++)
 	{
 		dsql_nod* element = *ptr;
-		switch (element->nod_type) {
+		switch (element->nod_type)
+		{
 		case nod_def_field:
 			define_field(statement, element, position, relation_name, pkcols);
 			++position;
@@ -2541,7 +2549,8 @@ static void define_udf(CompiledStatement* statement)
 	dsql_nod** ret_val_ptr = ptr[e_udf_return_value]->nod_arg;
 
 	dsql_fld* field = (dsql_fld*) ret_val_ptr[0];
-	if (field) {
+	if (field)
+	{
 
 		// CVC: This is case of "returns <type> [by value|reference]"
 		// Some data types can not be returned as value
@@ -2577,7 +2586,8 @@ static void define_udf(CompiledStatement* statement)
 
 		position = 0;
 	}
-	else {
+	else
+	{
 
 		// CVC: This is case of "returns parameter <N>"
 
@@ -2659,7 +2669,8 @@ static void define_udf(CompiledStatement* statement)
 
 			statement->append_number(isc_dyn_def_function_arg, position);
 
-			if (param_node[e_udf_param_type]) {
+			if (param_node[e_udf_param_type])
+			{
 				const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getSlong();
 				statement->append_number(isc_dyn_func_mechanism, arg_mechanism);
 			}
@@ -2795,7 +2806,8 @@ static void define_update_action(CompiledStatement* statement,
 
 			if (and_arg <= 1)
 				and_node->nod_arg[and_arg++] = or_node;
-			else {
+			else
+			{
 				dsql_nod* old_and = and_node;
 				and_node = MAKE_node(nod_and, (int) 2);
 				and_node->nod_arg[0] = old_and;
@@ -3009,7 +3021,8 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 	const dsql_nod* const* ptr = NULL;
 	const dsql_nod* const* end = NULL;
 	const dsql_nod* view_fields = node->nod_arg[e_view_fields];
-	if (view_fields != NULL) {
+	if (view_fields != NULL)
+	{
 		ptr = view_fields->nod_arg;
 		end = ptr + view_fields->nod_count;
 	}
@@ -3274,7 +3287,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 
 static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, dsql_nod* rse,
 	dsql_nod* items)
-{								// The fields in VIEW actually
+{
 /**************************************
  *
  *	d e f i n e _ v i e w _ t r i g g e r
@@ -3346,12 +3359,14 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
 
 		dsql_ctx* sav_context = 0;
 		dsql_ctx* context = 0;
-		if (statement->req_context_number) {
+		if (statement->req_context_number)
+		{
 			// If an alias is specified for the single base table involved,
 			// save and then add the context
 
 			context = statement->req_context->object();
-			if (context->ctx_alias) {
+			if (context->ctx_alias)
+			{
 				MemoryPool& pool = *tdbb->getDefaultPool();
 				sav_context = FB_NEW(pool) dsql_ctx(pool);
 				*sav_context = *context;
@@ -3367,7 +3382,8 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
 		newContext->ctx_flags |= CTX_system;
 		relation_node->nod_arg[e_rln_alias] = temp_alias;
 
-		if (sav_context) {
+		if (sav_context)
+		{
 			sav_context->ctx_context = statement->req_context_number++;
 			context->ctx_scope_level = statement->req_scope_level;
 			statement->req_context->push(sav_context);
@@ -3377,7 +3393,8 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
 
 		dsql_nod* condition;
 
-		if (trig_type == PRE_MODIFY_TRIGGER) {
+		if (trig_type == PRE_MODIFY_TRIGGER)
+		{
 			statement->append_uchar(blr_for);
 			dsql_nod* temp = rse->nod_arg[e_rse_streams];
 			temp->nod_arg[0] = PASS1_node(statement, temp->nod_arg[0]);
@@ -3387,7 +3404,8 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
 			condition = replace_field_names(select_expr->nod_arg[e_qry_where], items,
 											view_fields, false, NEW_CONTEXT);
 		}
-		else if (trig_type == PRE_STORE_TRIGGER) {
+		else if (trig_type == PRE_STORE_TRIGGER)
+		{
 			condition = replace_field_names(select_expr->nod_arg[e_qry_where], items,
 											view_fields, true, NEW_CONTEXT);
 		}
@@ -3460,7 +3478,8 @@ static void delete_exception (CompiledStatement* statement, dsql_nod* node, bool
  **************************************/
 	const dsql_str* string = (dsql_str*) node->nod_arg[0];
 	fb_assert(string);
-	if (node->nod_type == nod_redef_exception || silent_deletion) {
+	if (node->nod_type == nod_redef_exception || silent_deletion)
+	{
 		if (!METD_get_exception(statement, string)) {
 			return;
 		}
@@ -3488,7 +3507,8 @@ static void delete_relation_view (CompiledStatement* statement, dsql_nod* node, 
  **************************************/
 	const dsql_str* string = 0;
 
-	if (node->nod_type == nod_redef_relation) {
+	if (node->nod_type == nod_redef_relation)
+	{
 		dsql_nod* relation_node = node->nod_arg[e_alt_name];
 		fb_assert (relation_node);
 		string = (dsql_str*) relation_node->nod_arg[e_rln_name];
@@ -3508,14 +3528,16 @@ static void delete_relation_view (CompiledStatement* statement, dsql_nod* node, 
 			post_607(Arg::Gds(isc_dsql_table_not_found) << Arg::Str(string->str_data));
 		}
 	}
-	else {
+	else
+	{
 		// node->nod_type == nod_del_view, nod_redef_view
 		if (!relation && !silent_deletion || relation && !(relation->rel_flags & REL_view))
 		{
 			post_607(Arg::Gds(isc_dsql_view_not_found) << Arg::Str(string->str_data));
 		}
 	}
-	if (relation) {
+	if (relation)
+	{
 		statement->append_cstring(isc_dyn_delete_rel, string->str_data);
 		statement->append_uchar(isc_dyn_end);
 	}
@@ -3904,7 +3926,8 @@ static void grant_revoke(CompiledStatement* statement)
 	}
 
 	bool process_grant_role = false;
-	if (privs->nod_arg[0] != NULL) {
+	if (privs->nod_arg[0] != NULL)
+	{
 		if (privs->nod_arg[0]->nod_type == nod_role_name) {
 			process_grant_role = true;
 		}
@@ -4208,7 +4231,8 @@ static void modify_database( CompiledStatement* statement)
 		const dsql_fil* file;
 		const dsql_nod* element = *ptr;
 
-		switch (element->nod_type) {
+		switch (element->nod_type)
+		{
 		case nod_file_desc:
 			file = (dsql_fil*) element->nod_arg[0];
 			statement->append_cstring(isc_dyn_def_file, file->fil_name->str_data);
@@ -4320,7 +4344,8 @@ static void modify_domain( CompiledStatement* statement)
 			}
 
 			statement->end_blr();
-			if ((string = (dsql_str*) element->nod_arg[e_cnstr_source]) != NULL) {
+			if ((string = (dsql_str*) element->nod_arg[e_cnstr_source]) != NULL)
+			{
 				fb_assert(string->str_length <= MAX_USHORT);
 				statement->append_string(isc_dyn_fld_validation_source,
 										 string->str_data, string->str_length);
@@ -4480,7 +4505,8 @@ static void modify_privilege(CompiledStatement* statement,
 
 	SSHORT priv_count = 0;
 	statement->append_ushort(0);
-	for (; *privs; privs++) {
+	for (; *privs; privs++)
+	{
 		priv_count++;
 		statement->append_uchar(*privs);
 	}
@@ -4595,7 +4621,8 @@ static char modify_privileges(CompiledStatement* statement,
 		break;
 	}
 
-	if (*p) {
+	if (*p)
+	{
 		modify_privilege(statement, type, option,
 						 reinterpret_cast<const UCHAR*>(p), table, user, grantor, 0);
 	}
@@ -4933,7 +4960,8 @@ static void put_grantor(CompiledStatement* statement, const dsql_nod* grantor)
  *	Write out grantor for grant / revoke.
  *
  **************************************/
-	if (grantor) {
+	if (grantor)
+	{
 		fb_assert(grantor->nod_type == nod_user_name);
 		const dsql_str* name = (const dsql_str*) grantor->nod_arg[0];
 		statement->append_cstring(isc_dyn_grant_grantor, name->str_data);
@@ -4962,18 +4990,22 @@ static void put_descriptor(CompiledStatement* statement, const dsc* desc)
 	else {
 		statement->append_number(isc_dyn_fld_length, desc->dsc_length);
 	}
-	if (desc->dsc_dtype <= dtype_any_text) {
+	if (desc->dsc_dtype <= dtype_any_text)
+	{
 		statement->append_number(isc_dyn_fld_character_set, DSC_GET_CHARSET(desc));
 		statement->append_number(isc_dyn_fld_collation, DSC_GET_COLLATE(desc));
 	}
-	else if (desc->dsc_dtype == dtype_blob) {
+	else if (desc->dsc_dtype == dtype_blob)
+	{
 		statement->append_number(isc_dyn_fld_sub_type, desc->dsc_sub_type);
-		if (desc->dsc_sub_type == isc_blob_text) {
+		if (desc->dsc_sub_type == isc_blob_text)
+		{
 			statement->append_number(isc_dyn_fld_character_set, desc->dsc_scale);
 			statement->append_number(isc_dyn_fld_collation, desc->dsc_flags >> 8);	// BLOB collation
 		}
 	}
-	else {
+	else
+	{
 		statement->append_number(isc_dyn_fld_sub_type, desc->dsc_sub_type);
 		statement->append_number(isc_dyn_fld_scale, desc->dsc_scale);
 	}
@@ -5050,20 +5082,24 @@ static void put_dtype(CompiledStatement* statement, const dsql_fld* field, bool 
 		if (!use_subtype) {
 			statement->append_uchar(blr_dtypes[field->fld_dtype]);
 		}
-		else if (field->fld_dtype == dtype_varying) {
+		else if (field->fld_dtype == dtype_varying)
+		{
 			statement->append_uchar(blr_varying2);
 			statement->append_ushort(field->fld_ttype);
 		}
-		else if (field->fld_dtype == dtype_cstring) {
+		else if (field->fld_dtype == dtype_cstring)
+		{
 			statement->append_uchar(blr_cstring2);
 			statement->append_ushort(field->fld_ttype);
 		}
-		else if (field->fld_dtype == dtype_blob) {
+		else if (field->fld_dtype == dtype_blob)
+		{
 			statement->append_uchar(blr_blob2);
 			statement->append_ushort(field->fld_sub_type);
 			statement->append_ushort(field->fld_ttype);
 		}
-		else {
+		else
+		{
 			statement->append_uchar(blr_text2);
 			statement->append_ushort(field->fld_ttype);
 		}
@@ -5137,7 +5173,8 @@ static void put_field( CompiledStatement* statement, dsql_fld* field, bool udf_f
 		{
 			statement->append_number(isc_dyn_fld_length, sizeof(ISC_QUAD));
 		}
-		if (field->fld_sub_type == isc_blob_text) {
+		if (field->fld_sub_type == isc_blob_text)
+		{
 			statement->append_number(isc_dyn_fld_character_set, field->fld_character_set_id);
 			statement->append_number(isc_dyn_fld_collation, field->fld_collation_id);
 		}
@@ -5162,7 +5199,8 @@ static void put_field( CompiledStatement* statement, dsql_fld* field, bool udf_f
 		if (!udf_flag)
 			statement->append_number(isc_dyn_fld_collation, field->fld_collation_id);
 	}
-	else {
+	else
+	{
 		statement->append_number(isc_dyn_fld_scale, field->fld_scale);
 		statement->append_number(isc_dyn_fld_length, field->fld_length);
 		if (DTYPE_IS_EXACT(field->fld_dtype))
@@ -5499,9 +5537,7 @@ static void set_statistics( CompiledStatement* statement)
 }
 
 
-static void stuff_default_blr(	CompiledStatement*		statement,
-								const UCHAR*	default_buff,
-								USHORT			buff_size)
+static void stuff_default_blr(CompiledStatement* statement, const UCHAR* default_buff, USHORT buff_size)
 {
 /********************************************
  *
@@ -5585,8 +5621,7 @@ static void stuff_matching_blr(CompiledStatement* statement, const dsql_nod* for
 }
 
 
-static void stuff_trg_firing_cond(CompiledStatement* statement,
-	const dsql_nod* prim_columns)
+static void stuff_trg_firing_cond(CompiledStatement* statement, const dsql_nod* prim_columns)
 {
 /********************************************
  *
@@ -5632,9 +5667,7 @@ static void stuff_trg_firing_cond(CompiledStatement* statement,
 }
 
 
-static void modify_field(CompiledStatement*	statement,
-						 dsql_nod*	element,
-						 const dsql_str*	relation_name)
+static void modify_field(CompiledStatement*	statement, dsql_nod*element, const dsql_str* relation_name)
 {
 /**************************************
  *
@@ -5913,11 +5946,13 @@ void CompiledStatement::append_string(UCHAR verb, const char* string, USHORT len
 {
 	// TMN: Doesn't this look pretty awkward? If we are given
 	// a verb, the length is a ushort, else it's uchar.
-	if (verb) {
+	if (verb)
+	{
 		append_uchar(verb);
 		append_ushort(length);
 	}
-	else {
+	else
+	{
 		fb_assert(length <= MAX_UCHAR);
 		append_uchar(length);
 	}
@@ -5998,7 +6033,8 @@ void CompiledStatement::generate_unnamed_trigger_beginning(bool	on_update_trigge
 	// if prim_key.old_value != prim_key.new value.
 	// Note that the key could consist of multiple columns
 
-	if (on_update_trigger) {
+	if (on_update_trigger)
+	{
 		stuff_trg_firing_cond(this, prim_columns);
 		append_uchars(blr_begin, 2);
 	}

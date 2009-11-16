@@ -242,7 +242,8 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
 
-	if (symbol) {
+	if (symbol)
+	{
 		dsql_rel* relation = (dsql_rel*) symbol->sym_object;
 		relation->rel_flags |= REL_dropped;
 	}
@@ -254,9 +255,7 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 }
 
 
-dsql_intlsym* METD_get_collation(dsql_req* request,
-								 const dsql_str* name,
-								 USHORT charset_id)
+dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT charset_id)
 {
 /**************************************
  *
@@ -376,11 +375,13 @@ USHORT METD_get_col_default(dsql_req* request,
 		if (!DSQL_REQUEST(irq_col_default))
 			DSQL_REQUEST(irq_col_default) = handle;
 
-		if (!RFL.RDB$DEFAULT_VALUE.NULL) {
+		if (!RFL.RDB$DEFAULT_VALUE.NULL)
+		{
 			blob_id = &RFL.RDB$DEFAULT_VALUE;
 			*has_default = true;
 		}
-		else if (!FLD.RDB$DEFAULT_VALUE.NULL) {
+		else if (!FLD.RDB$DEFAULT_VALUE.NULL)
+		{
 			blob_id = &FLD.RDB$DEFAULT_VALUE;
 			*has_default = true;
 		}
@@ -430,7 +431,8 @@ USHORT METD_get_col_default(dsql_req* request,
 			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
 			fb_assert(buffer[1] == blr_literal);
 		}
-		else {
+		else
+		{
 			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
@@ -552,7 +554,8 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 	if (dbb->dbb_charsets_by_id.find(charset_id, pos)) {
 		cs_sym = dbb->dbb_charsets_by_id[pos];
 	}
-	else {
+	else
+	{
 		const MetaName cs_name = METD_get_charset_name(request, charset_id);
 		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
 	}
@@ -771,14 +774,16 @@ USHORT METD_get_domain_default(dsql_req* request,
 			DSQL_REQUEST(irq_domain_2) = handle;
 
 		bid* blob_id;
-		if (!FLD.RDB$DEFAULT_VALUE.NULL) {
+		if (!FLD.RDB$DEFAULT_VALUE.NULL)
+		{
 			blob_id = &FLD.RDB$DEFAULT_VALUE;
 			*has_default = true;
 		}
 		else
 			*has_default = false;
 
-		if (*has_default) {
+		if (*has_default)
+		{
 			blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
 										 sizeof(blr_bpb), blr_bpb, true);
 
@@ -820,7 +825,8 @@ USHORT METD_get_domain_default(dsql_req* request,
 			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
 			fb_assert(buffer[1] == blr_literal);
 		}
-		else {
+		else
+		{
 			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
@@ -972,7 +978,8 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 		if (!DSQL_REQUEST(irq_func_return))
 			DSQL_REQUEST(irq_func_return) = handle2;
 
-		if (X.RDB$ARGUMENT_POSITION == return_arg) {
+		if (X.RDB$ARGUMENT_POSITION == return_arg)
+		{
 			userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
 				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
 			userFunc->udf_scale = X.RDB$FIELD_SCALE;
@@ -994,7 +1001,8 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 				userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
 			}
 		}
-		else {
+		else
+		{
 			DSC d;
 			d.dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
 				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
@@ -1015,7 +1023,8 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 			}
 			d.dsc_address = NULL;
 
-			if (!X.RDB$CHARACTER_SET_ID.NULL) {
+			if (!X.RDB$CHARACTER_SET_ID.NULL)
+			{
 				if (d.dsc_dtype != dtype_blob) {
 					d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
 				}
@@ -1041,7 +1050,8 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 	// cstring & varying.  While a UDF can return CSTRING, we convert it
 	// to VARCHAR for manipulation as CSTRING is not a SQL type.
 
-	if (userFunc->udf_dtype == dtype_cstring) {
+	if (userFunc->udf_dtype == dtype_cstring)
+	{
 		userFunc->udf_dtype = dtype_varying;
 		userFunc->udf_length += sizeof(USHORT);
 		if (userFunc->udf_length > MAX_SSHORT)
@@ -1260,7 +1270,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 			{
 				jrd_req* handle3 = CMP_find_request(tdbb, irq_parameters2, IRQ_REQUESTS);
 
-				MetaName packageName(PR.RDB$PACKAGE_NAME.NULL ? NULL : PR.RDB$PACKAGE_NAME);
+				const MetaName packageName(PR.RDB$PACKAGE_NAME.NULL ? NULL : PR.RDB$PACKAGE_NAME);
 
 				FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
 					PR2 IN RDB$PROCEDURE_PARAMETERS
@@ -1344,7 +1354,8 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 
 		if (type)
 			procedure->prc_out_count = count;
-		else {
+		else
+		{
 			procedure->prc_in_count = count;
 			procedure->prc_def_count = defaults;
 		}
@@ -1437,7 +1448,8 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 		// Allocate from default or permanent pool as appropriate
 
-		if (!X.RDB$RELATION_ID.NULL) {
+		if (!X.RDB$RELATION_ID.NULL)
+		{
 			relation = FB_NEW(pool) dsql_rel(pool);
 			relation->rel_id = X.RDB$RELATION_ID;
 		}
@@ -1447,7 +1459,8 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 		// fill out the relation information
 
-		if (relation) {
+		if (relation)
+		{
 			relation->rel_name = name->str_data;
 			relation->rel_owner = X.RDB$OWNER_NAME;
 			if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
@@ -1495,14 +1508,16 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 		dsql_fld* field = NULL;
 
-		if (!RFR.RDB$FIELD_ID.NULL) {
+		if (!RFR.RDB$FIELD_ID.NULL)
+		{
 			field = FB_NEW(pool) dsql_fld(pool);
 			field->fld_id = RFR.RDB$FIELD_ID;
 		}
 		else if (!DDL_ids(statement))
 			field = FB_NEW(pool) dsql_fld(pool);
 
-		if (field) {
+		if (field)
+		{
 			*ptr = field;
 			ptr = &field->fld_next;
 
@@ -1563,7 +1578,8 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 	// Add relation to front of list
 
-	if (permanent) {
+	if (permanent)
+	{
 		relation->rel_next = dbb->dbb_relations;
 		dbb->dbb_relations = relation;
 
@@ -1933,13 +1949,15 @@ static void free_procedure(dsql_prc* procedure)
 
 	// release the input & output parameter blocks
 
-	for (param = procedure->prc_inputs; param;) {
+	for (param = procedure->prc_inputs; param;)
+	{
 		dsql_fld* temp = param;
 		param = param->fld_next;
 		delete temp;
 	}
 
-	for (param = procedure->prc_outputs; param;) {
+	for (param = procedure->prc_outputs; param;)
+	{
 		dsql_fld* temp = param;
 		param = param->fld_next;
 		delete temp;
