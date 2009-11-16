@@ -1,3 +1,89 @@
+2009-11-16 13:09  asfernandes
+
+	* firebird2/builds/win32/msvc8/: common.vcproj (1.16),
+	common_classic.vcproj (1.17):
+
+	Fix MSVC8 build
+
+2009-11-16 10:49  robocop
+
+	* firebird2/src/jrd/dmp.cpp (1.43):
+
+	Strange C++.
+
+2009-11-16 10:18  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.286), dsql.cpp (1.298), gen.cpp
+	(1.194), make.cpp (1.192), metd.epp (1.150):
+
+	Style.
+
+2009-11-16 10:03  robocop
+
+	* firebird2/src/: common/classes/init.cpp (1.20), gpre/sqe.cpp
+	(1.70), gpre/sql.cpp (1.93), utilities/ibmgr/ibmgr.cpp (1.38):
+
+	Totally misc.
+
+2009-11-16 09:35  robocop
+
+	* firebird2/src/burp/spit.cpp (1.51):
+
+	I don't see the need for a pointer to pointer here.
+
+2009-11-16 09:06  robocop
+
+	* firebird2/lang_helpers/gds_codes.ftn (1.108):
+
+	Misc.
+
+2009-11-16 09:06  robocop
+
+	* firebird2/src/: misc/blrtable.cpp (1.44), misc/codes.epp (1.38),
+	msgs/build_file.epp (1.39):
+
+	Style.
+
+2009-11-16 09:02  robocop
+
+	* firebird2/src/: burp/spit.cpp (1.50), gpre/gpre_meta.epp (1.75),
+	gpre/sql.cpp (1.92), intl/cv_big5.cpp (1.23), intl/cv_gb2312.cpp
+	(1.22), intl/cv_jis.cpp (1.27), intl/cv_ksc.cpp (1.23),
+	intl/kanji.cpp (1.13), intl/lc_ksc.cpp (1.21), intl/lc_narrow.cpp
+	(1.40), isql/extract.epp (1.113), isql/isql.epp (1.301),
+	isql/show.epp (1.159), jrd/blb.cpp (1.213), jrd/btr.cpp (1.263),
+	jrd/cch.cpp (1.245), jrd/cmp.cpp (1.363), jrd/dyn_mod.epp (1.123),
+	jrd/inf.cpp (1.109), jrd/isc_file.cpp (1.143), jrd/opt.cpp (1.368),
+	jrd/sdl.cpp (1.60), jrd/svc.cpp (1.292), jrd/vio.cpp (1.264),
+	msgs/build_file.epp (1.38), qli/parse.cpp (1.56),
+	remote/protocol.cpp (1.97), utilities/gstat/dba.epp (1.121):
+
+	Style.
+
+2009-11-16 02:20  asfernandes
+
+	* firebird2/src/: alice/tdr.cpp (1.70), burp/canonical.cpp (1.46),
+	burp/misc.cpp (1.25), dsql/array.epp (1.48), dsql/blob.epp (1.29),
+	dsql/dsql.h (1.160), dsql/errd.cpp (1.58), dsql/preparse.cpp
+	(1.56), dsql/user_dsql.cpp (1.67), jrd/inf.cpp (1.108), jrd/utl.cpp
+	(1.146), jrd/trace/TraceObjects.cpp (1.18),
+	utilities/gsec/security.epp (1.37):
+
+	Misc
+
+2009-11-15 19:38  asfernandes
+
+	* firebird2/src/common/fb_exception.cpp (1.65):
+
+	Fix typo
+
+2009-11-15 15:04  alexpeshkoff
+
+	* firebird2/src/jrd/: common.h (1.225), inf.cpp (1.107), utl.cpp
+	(1.145):
+
+	Fixed issues noticed by Claudio
+
 2009-11-15 14:09  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/security.epp (1.36):
