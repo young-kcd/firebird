@@ -195,4 +195,3 @@ void MISC_terminate(const TEXT* from, TEXT* to, ULONG length, ULONG max_length)
 		*--to = '\0';
 	}
 }
-

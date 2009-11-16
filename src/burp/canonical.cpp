@@ -689,4 +689,3 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 
 	return TRUE;
 }
-

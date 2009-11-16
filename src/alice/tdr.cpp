@@ -60,9 +60,6 @@ static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, SINT64);
 static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 
 
-
-
-
 //
 // The following routines are shared by the command line gfix and
 // the windows server manager.  These routines should not contain

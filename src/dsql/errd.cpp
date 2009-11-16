@@ -323,4 +323,3 @@ void ERRD_punt(const ISC_STATUS* local)
 
 	status_exception::raise(tdbb->tdbb_status_vector);
 }
-

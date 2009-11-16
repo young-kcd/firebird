@@ -272,7 +272,6 @@ const dsc* TraceSQLStatementImpl::DSQLParamsImpl::getParam(size_t idx)
 }
 
 
-
 /// TraceProcedureImpl::JrdParamsImpl
 
 size_t TraceProcedureImpl::JrdParamsImpl::getCount()

@@ -1026,7 +1026,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 				if (dbis[0] * 6 + 1 > len)
 				{
 					// fb_info_implementation value appears incorrect
-					dbis = 0;
+					dbis = NULL;
 				}
 				break;
 
@@ -1142,7 +1142,7 @@ void API_ROUTINE isc_format_implementation(USHORT impl_nr,
  **************************************/
 	if (ibuflen > 0)
 	{
-		Firebird::string imp = 
+		Firebird::string imp =
 			Firebird::DbImplementation::fromBackwardCompatibleByte(impl_nr).implementation();
 		imp.copyTo(ibuf, ibuflen);
 	}

@@ -1305,4 +1305,3 @@ static bool scompare(const SCHAR* string1, USHORT length1, const SCHAR* string2,
 
 	return true;
 }
-

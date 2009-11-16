@@ -819,4 +819,3 @@ typedef Firebird::SortedArray<const char*,
 #endif
 
 #endif // DSQL_DSQL_H
-

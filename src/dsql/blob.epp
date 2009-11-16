@@ -287,4 +287,3 @@ static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
  **************************************/
 	return v.copyTo(status);
 }
-

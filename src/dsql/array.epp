@@ -662,4 +662,3 @@ static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, const SCHAR* string)
 
 	return FB_SUCCESS;
 }
-

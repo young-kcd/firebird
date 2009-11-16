@@ -539,4 +539,3 @@ static SSHORT get_token(ISC_STATUS* status,
 				   (result == STRING) ? *(temp_stmt - 1) : 0);
 	return FB_FAILURE;
 }
-
