@@ -56,7 +56,7 @@ static void sanitize(TEXT*);
 static SLONG global_file_position;
 static int global_file;
 
-/* keep the LOCALE_PAT names in sync with file_params.h */
+// keep the LOCALE_PAT names in sync with file_params.h
 // CVC: It's #define MSG_FILE_LANG	"intl/%.8s.msg"
 // in jrd/file_params.h, it seems we are already out of sync!
 
@@ -156,7 +156,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 				sw_bad = true;
 			}
 		}
-		if (sw_bad) {
+		if (sw_bad)
+		{
 			printf("Invalid option \"%s\".  Valid options are:\n", p);
 			printf("\t-D\tDatabase name\n");
 			printf("\t-F\tMessage file name\n");
@@ -167,17 +168,19 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		}
 	}
 
-/* Get db_file ready to go */
+	// Get db_file ready to go
 
 	READY db_file AS DB;
 	START_TRANSACTION;
 
-/* make sure the path name ends in a '/' */
+	// make sure the path name ends in a '/'
 
-	if (pathname) {
+	if (pathname)
+	{
 		const size_t len = strlen(pathname);
 		//fb_assert(len + 1 < MAXPATHLEN);
-		if (pathname[len - 1] != path_separator) {
+		if (pathname[len - 1] != path_separator)
+		{
 			pathname[len] = path_separator;
 			pathname[len + 1] = 0;
 		}
@@ -185,28 +188,33 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 	const size_t separator_pos = pathname ? strlen(pathname) : 0;
 
-/* check for the locale option  */
+	// check for the locale option
 
-	if (!locale) {
+	if (!locale)
+	{
 		// no locale given: do the regular US msgs
 		if (!pathname)
 			do_msgs(filename, NULL, false);
-		else {
+		else
+		{
 		    //fb_assert(strlen(pathname) + strlen(filename) < MAXPATHLEN);
 			strcat(pathname, filename);
 			do_msgs(pathname, NULL, false);
 		}
 	}
-	else {
+	else
+	{
 		bool got_one = false;
 		FOR FIRST 1 L IN LOCALES WITH L.LOCALE = locale
 			got_one = true;
 		END_FOR;
-		if (got_one) {
+		if (got_one)
+		{
 			// do only 1 locale
 			strcpy(this_locale, locale);
 			sanitize(locale);
-			if (pathname) {
+			if (pathname)
+			{
 				sprintf(filename, locale_pattern, locale);
 				strcat(pathname, filename);
 				do_msgs(pathname, this_locale, sw_warning);
@@ -214,10 +222,12 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			else
 				do_msgs(filename, this_locale, sw_warning);
 		}
-		else {
+		else
+		{
 			strncpy(this_locale, locale, sizeof(this_locale));
 			ascii_str_to_upper(this_locale);
-			if (!strcmp(this_locale, "ALL")) {
+			if (!strcmp(this_locale, "ALL"))
+			{
 				FOR LC IN LOCALES // do all locales except piglatin
 					WITH LC.LOCALE != 'pg_PG' AND LC.LOCALE != 'piglatin';
 					locale = LC.LOCALE;
@@ -225,19 +235,22 @@ int CLIB_ROUTINE main( int argc, char** argv)
 					printf("build_file: building locale %s", this_locale);
 					sanitize(locale);
 					sprintf(filename, locale_pattern, locale);
-					if (pathname) {
+					if (pathname)
+					{
 						strcat(pathname, filename);
 						printf(" to file %s\n", pathname);
 						do_msgs(pathname, this_locale, sw_warning);
 						pathname[separator_pos] = 0; // for the next iteration.
 					}
-					else {
+					else
+					{
 						printf(" to file %s\n", filename);
 						do_msgs(filename, this_locale, sw_warning);
 					}
 				END_FOR;
 			}
-			else {
+			else
+			{
 				printf("build_file: Unknown locale: %s\n", locale);
 				printf("Valid options are:\n");
 				FOR LO IN LOCALES
@@ -272,7 +285,8 @@ static void ascii_str_to_upper( TEXT* s)
  *
  **************************************/
 
-	while (*s) {
+	while (*s)
+	{
 		*s >= 'a' && *s <= 'z' ? *s &= 0xDF : *s;
 		*s++;
 	}
@@ -324,7 +338,8 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 	// Open output file
 
 	global_file = open(filename, O_WRONLY | O_CREAT | O_BINARY, 0666);
-	if (global_file == -1) {
+	if (global_file == -1)
+	{
 		printf("Can't open %s\n", filename);
 		return FINI_ERROR;
 	}
@@ -357,7 +372,8 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 		strcpy(msg_text, X.TEXT);
 		len = strlen(msg_text);
-		if (locale) {
+		if (locale)
+		{
 			// want translated output
 			// Overwrite English message with translation, if we find one
 			int found_one = 0;
@@ -381,7 +397,8 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 				warning_counter++;
 		}
 
-		if (leaf_node->msgrec_text + len >= end_leaf) {
+		if (leaf_node->msgrec_text + len >= end_leaf)
+		{
 			position = write_bucket((msgnod*) leaf, n);
 			propagate(buckets, nodes, prior_code, position);
 			leaf_node = leaf;
@@ -400,7 +417,8 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 	// Write a high water mark on leaf node
 
-	if (leaf_node->msgrec_text + len >= end_leaf) {
+	if (leaf_node->msgrec_text + len >= end_leaf)
+	{
 		n = (SCHAR *) leaf_node - (SCHAR *) leaf;
 		position = write_bucket((msgnod*) leaf, n);
 		propagate(buckets, nodes, prior_code, position);
@@ -417,7 +435,8 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 	header.msghdr_levels = 1;
 
-	for (msgnod** ptr = nodes, **ptr2 = buckets; *ptr; ptr++, ptr2++) {
+	for (msgnod** ptr = nodes, **ptr2 = buckets; *ptr; ptr++, ptr2++)
+	{
 		msgnod* node = *ptr;
 		node->msgnod_code = ~0;
 		node->msgnod_seek = position;
@@ -428,7 +447,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 	header.msghdr_top_tree = position;
 
-/* Re-write header record and finish */
+	// Re-write header record and finish
 
 	lseek(global_file, LSEEK_OFFSET_CAST 0, 0);
 	write(global_file, &header, sizeof(header));
@@ -436,15 +455,16 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 	global_file = -1;
 
 	if (warning_counter)
+	{
 		printf("build_file: %d messages lack translations in locale %s\n",
 				  warning_counter, locale);
+	}
 
 	return FINI_OK;
 }
 
 
-static void propagate(msgnod** buckets,
-					  msgnod** nodes, ULONG prior_code, ULONG position)
+static void propagate(msgnod** buckets, msgnod** nodes, ULONG prior_code, ULONG position)
 {
 /**************************************
  *
@@ -456,27 +476,29 @@ static void propagate(msgnod** buckets,
  *	Propagate a full bucket upward.
  *
  **************************************/
-/* Make sure current level has been allocated */
 
-	if (!*nodes) {
+	// Make sure current level has been allocated
+
+	if (!*nodes)
+	{
 		*nodes = *buckets = (msgnod*) gds__alloc((SLONG) MSG_BUCKET);
 		nodes[1] = NULL;
 	}
 
-/* Insert into current bucket */
+	// Insert into current bucket
 
 	msgnod* node = (*nodes)++;
 	node->msgnod_code = prior_code;
 	node->msgnod_seek = position;
 
-/* Check for full bucket.  If not, we're done */
+	// Check for full bucket.  If not, we're done
 
 	const msgnod* const end = (msgnod*) ((SCHAR*) *buckets + MSG_BUCKET);
 
 	if (*nodes < end)
 		return;
 
-/* Bucket is full -- write it out, propagate the split, and re-initialize */
+	// Bucket is full -- write it out, propagate the split, and re-initialize
 
 	position = write_bucket(*buckets, MSG_BUCKET);
 	propagate(buckets + 1, nodes + 1, prior_code, position);
@@ -499,14 +521,16 @@ static SLONG write_bucket( const msgnod* bucket, USHORT length)
 	const USHORT padded_length = ROUNDUP(length, sizeof(SLONG));
 	const SLONG position = global_file_position;
 	int n = write(global_file, bucket, length);
-	if (n == -1) {
+	if (n == -1)
+	{
 		fprintf(stderr, "IO error on write()\n");
 		exit(FINI_ERROR);
 	}
 
 	const SLONG zero_bytes = 0;
 	n = write(global_file, &zero_bytes, padded_length - length);
-	if (n == -1) {
+	if (n == -1)
+	{
 		fprintf(stderr, "IO error on write()\n");
 		exit(FINI_ERROR);
 	}
@@ -530,7 +554,8 @@ static void sanitize( TEXT* locale)
  *	  Keep this in sync with gds.cpp
  *
  **************************************/
-	while (*locale) {
+	while (*locale)
+	{
 		if (*locale == '.')
 			*locale = '_';
 		locale++;
