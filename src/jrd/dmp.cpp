@@ -976,7 +976,7 @@ static void dmp_root(const index_root_page* page)
 		fprintf(dbg_file, "\t     keys (field, type): ");
 		const SCHAR* ptr = (SCHAR *) page + desc->irt_desc;
 		for (USHORT j = 0; j < desc->irt_keys; j++) {
-			if (ods11plus) then
+			if (ods11plus)
 				ptr += sizeof(irtd);
 			else
 				ptr += sizeof(irtd_ods10);
