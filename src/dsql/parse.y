@@ -680,7 +680,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> drop_clause drop_user_clause
 %type <legacyStr>  ddl_desc
 
-%type <legacyNode> end_default equals err errors event_argument_opt exception_clause
+%type <legacyNode> end_default err errors event_argument_opt exception_clause
 %type <legacyNode> excp_hndl_statement excp_hndl_statements excp_statement
 %type <legacyNode> exec_function exec_into exec_procedure exec_sql exec_stmt_inputs
 %type <legacyNode> exec_stmt_option exec_stmt_options exec_stmt_options_list exists_predicate
@@ -1455,90 +1455,113 @@ alter_charset_clause
 		}
 	;
 
-/* CREATE DATABASE */
+// CREATE DATABASE
+// ASF: CREATE DATABASE command is divided in three pieces: name, initial options and
+// remote options.
+// Initial options are basic properties of a database and should be handled here and
+// in preparse.cpp.
+// Remote options always comes after initial options, so they don't need to be parsed
+// in preparse.cpp. They are interpreted only in the server, using this grammar.
 
-db_clause	:  db_name db_initial_desc1 db_rem_desc1
-			{ $$ = make_node (nod_def_database, (int) e_cdb_count,
-				 $1, make_list($2), make_list ($3));}
-		;
-
-equals
-	: { $$ = NULL; }
-	| '=' { $$ = NULL; }
+db_clause
+	:  db_name db_initial_desc1 db_rem_desc1
+		{
+			$$ = make_node (nod_def_database, (int) e_cdb_count,
+				 $1, make_list($2), make_list ($3));
+		}
 	;
 
-db_name		: sql_string
-			{ $$ = (dsql_nod*) $1; }
-		;
+equals
+	:
+	| '='
+	;
 
-db_initial_desc1 :
-			{$$ = NULL;}
-		| db_initial_desc
-		;
+db_name
+	: sql_string
+		{ $$ = (dsql_nod*) $1; }
+	;
 
-db_initial_desc : db_initial_option
-		| db_initial_desc db_initial_option
-			{ $$ = make_node (nod_list, 2, $1, $2); }
-		;
+db_initial_desc1
+	:
+		{ $$ = NULL; }
+	| db_initial_desc
+	;
 
-db_initial_option: KW_PAGE_SIZE equals pos_short_integer
-			{ $$ = make_node (nod_page_size, 1, $3);}
-		| LENGTH equals long_integer page_noise
-			{ $$ = make_node (nod_file_length, 1, $3);}
-		| USER sql_string
-			{ $$ = make_node (nod_user_name, 1, $2);}
-		| PASSWORD sql_string
-			{ $$ = make_node (nod_password, 1, $2);}
-		| SET NAMES sql_string
-			{ $$ = make_node (nod_lc_ctype, 1, $3);}
-		;
+db_initial_desc
+	: db_initial_option
+	| db_initial_desc db_initial_option
+		{ $$ = make_node (nod_list, 2, $1, $2); }
+	;
 
-db_rem_desc1	:
-			{$$ = NULL;}
-		| db_rem_desc
-		;
+db_initial_option
+	: KW_PAGE_SIZE equals pos_short_integer
+		{ $$ = make_node (nod_page_size, 1, $3); }
+	| LENGTH equals long_integer page_noise
+		{ $$ = make_node (nod_file_length, 1, $3); }
+	| USER sql_string
+		{ $$ = make_node (nod_user_name, 1, $2); }
+	| PASSWORD sql_string
+		{ $$ = make_node (nod_password, 1, $2); }
+	| SET NAMES sql_string
+		{ $$ = make_node (nod_lc_ctype, 1, $3); }
+	;
 
-db_rem_desc	: db_rem_option
-		| db_rem_desc db_rem_option
-			{ $$ = make_node (nod_list, 2, $1, $2); }
-		;
+db_rem_desc1
+	:
+		{ $$ = NULL; }
+	| db_rem_desc
+	;
 
-db_rem_option   : db_file
-		| DEFAULT CHARACTER SET symbol_character_set_name
-			{ $$ = make_node (nod_dfl_charset, 1, $4);}
-		| DEFAULT CHARACTER SET symbol_character_set_name COLLATION symbol_collation_name
-			{ $$ = make_node (nod_list, 2,
+db_rem_desc
+	: db_rem_option
+	| db_rem_desc db_rem_option
+		{ $$ = make_node (nod_list, 2, $1, $2); }
+	;
+
+db_rem_option
+	: db_file
+	| DEFAULT CHARACTER SET symbol_character_set_name
+		{ $$ = make_node (nod_dfl_charset, 1, $4); }
+	| DEFAULT CHARACTER SET symbol_character_set_name COLLATION symbol_collation_name
+		{
+			$$ = make_node (nod_list, 2,
 				make_node (nod_dfl_charset, 1, $4),
 				make_node (nod_dfl_collate, 1, $6));
-			}
-		| KW_DIFFERENCE KW_FILE sql_string
-			{ $$ = make_node (nod_difference_file, 1, $3); }
-		;
+		}
+	| KW_DIFFERENCE KW_FILE sql_string
+		{ $$ = make_node (nod_difference_file, 1, $3); }
+	;
 
-db_file		: file1 sql_string file_desc1
-			{ lex.g_file->fil_name = $2;
-			  $$ = (dsql_nod*) make_node (nod_file_desc, (int) 1,
-						(dsql_nod*) lex.g_file); }
-		;
+db_file
+	: file1 sql_string file_desc1
+		{
+			lex.g_file->fil_name = $2;
+			$$ = (dsql_nod*) make_node (nod_file_desc, (int) 1,
+				(dsql_nod*) lex.g_file);
+		}
+	;
 
-file1		: KW_FILE
-			{ lex.g_file  = make_file();}
-		;
+file1
+	: KW_FILE
+		{ lex.g_file  = make_file();}
+	;
 
 file_desc1
 	: { $$ = NULL; }
 	| file_desc
 	;
 
-file_desc	: file_clause
-		| file_desc file_clause
-		;
+file_desc
+	: file_clause
+	| file_desc file_clause
+	;
 
-file_clause	: STARTING file_clause_noise long_integer
-			{ lex.g_file->fil_start = (IPTR) $3;}
-		| LENGTH equals long_integer page_noise
-			{ lex.g_file->fil_length = (IPTR) $3;}
-		;
+file_clause
+	: STARTING file_clause_noise long_integer
+		{ lex.g_file->fil_start = (IPTR) $3; }
+	| LENGTH equals long_integer page_noise
+		{ lex.g_file->fil_length = (IPTR) $3; }
+	;
 
 file_clause_noise
 	:

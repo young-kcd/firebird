@@ -64,8 +64,7 @@ struct pp_table
 	SSHORT code;
 };
 
-// This should be kept in sync with the tokens in parse.y for CREATE DATABASE.
-// Currently we are out of sync. Missing: STARTING, DIFFERENCE FILE, DEFAULT CHARACTER
+// This should be kept in sync with the rule db_initial_desc of parse.y for CREATE DATABASE.
 // Should delete SCHEMA in the future.
 static const pp_table pp_symbols[] =
 {
