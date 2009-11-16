@@ -712,7 +712,7 @@ gpre_nod* SQE_list(pfn_SQE_list_cb routine, gpre_req* request, bool aster_ok)
 //		Parse procedure input parameters which are constants or
 //		host variable reference and, perhaps, a missing
 //		flag reference, which may be prefaced by the noiseword,
-//       "INDICATOR".
+//		"INDICATOR".
 //
 
 ref* SQE_parameter(gpre_req* request)
@@ -1239,7 +1239,7 @@ gpre_nod* SQE_value_or_null(gpre_req* request, bool aster_ok, USHORT* paren_coun
 //
 //		Parse host variable reference and, perhaps, a missing
 //		flag reference, which may be prefaced by the noiseword,
-//       "INDICATOR".
+//		"INDICATOR".
 //
 
 gpre_nod* SQE_variable(gpre_req* request, bool /*aster_ok*/, USHORT* /*paren_count*/, bool* /*bool_flag*/)
@@ -2248,7 +2248,7 @@ static gpre_nod* par_not( gpre_req* request, USHORT* paren_count)
 //		Parse NULLIF built-in function.
 //
 //		NULLIF(exp1, exp2) is really just a shortcut for
-//      CASE exp1 WHEN exp2 THEN NULL ELSE exp1 END, so
+//		CASE exp1 WHEN exp2 THEN NULL ELSE exp1 END, so
 //		we generate a nod_case1 node.
 
 static gpre_nod* par_nullif(gpre_req* request)
@@ -3066,7 +3066,7 @@ static gpre_nod* par_stat( gpre_req* request)
 
 //____________________________________________________________
 //
-//       Parse a subscript value.
+//		Parse a subscript value.
 //
 
 static gpre_nod* par_subscript( gpre_req* request)

@@ -55,7 +55,7 @@ const int MAXARGS		= 20;		// max number of args allowed on command line
 const USHORT MAXSTUFF	= 1000;		// longest interactive command line
 
 
-// Codes returned by get_switchesi()
+// Codes returned by get_switches()
 // FB_SUCCESS is defined in common.h
 
 const SSHORT ERR_SYNTAX	= -1;

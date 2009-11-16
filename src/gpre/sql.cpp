@@ -2162,8 +2162,8 @@ static act* act_create_view()
 //____________________________________________________________
 //
 //		Recognize BEGIN/END DECLARE SECTION,
-//     and mark it as a good place to put miscellaneous
-//     global routine stuff.
+//		and mark it as a good place to put miscellaneous
+//		global routine stuff.
 //
 
 static act* act_d_section(act_t type)
@@ -4995,7 +4995,7 @@ static gpre_dbb* dup_dbb(const gpre_dbb* db)
 
 //____________________________________________________________
 //
-//       Report an error with parameter
+//		Report an error with parameter
 //
 
 static void error(const TEXT* format, const TEXT* string2)
@@ -5009,7 +5009,7 @@ static void error(const TEXT* format, const TEXT* string2)
 
 //____________________________________________________________
 //
-//       Extract string from "string" in
+//		Extract string from "string" in
 //		token.
 //
 
@@ -5689,7 +5689,7 @@ static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field)
 //____________________________________________________________
 //
 //		Parse the INTO clause for a dynamic SQL statement.
-//      Nobody uses its returned value currently.
+//		Nobody uses its returned value currently.
 
 static bool par_into( dyn* statement)
 {
