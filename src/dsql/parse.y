@@ -1460,7 +1460,7 @@ alter_charset_clause
 // remote options.
 // Initial options are basic properties of a database and should be handled here and
 // in preparse.cpp.
-// Remote options always comes after initial options, so they don't need to be parsed
+// Remote options always come after initial options, so they don't need to be parsed
 // in preparse.cpp. They are interpreted only in the server, using this grammar.
 
 db_clause

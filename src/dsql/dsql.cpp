@@ -1995,7 +1995,7 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 
 			case isc_info_ods_version:
 				database->dbb_ods_version = gds__vax_integer(data, l);
-				if (database->dbb_ods_version <= 7)
+				if (database->dbb_ods_version < 8)
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 					  Arg::Gds(isc_dsql_too_old_ods) << Arg::Num(8));
