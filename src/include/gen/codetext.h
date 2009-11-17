@@ -691,6 +691,7 @@ static const struct {
 	{"no_trusted_spb", 335544987},
 	{"package_name", 335544988},
 	{"cannot_make_not_null", 335544989},
+	{"feature_deprecated", 335544990},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

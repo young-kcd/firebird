@@ -702,6 +702,7 @@ const
 	gds_no_trusted_spb                   = 335544987;
 	gds_package_name                     = 335544988;
 	gds_cannot_make_not_null             = 335544989;
+	gds_feature_deprecated               = 335544990;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

@@ -2261,7 +2261,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
  * This function is deprecated and "removed".
  *
  **************************************/
-	return Arg::Gds(isc_wish_list).copyTo(user_status);
+	return (Arg::Gds(isc_feature_deprecated) << Arg::Str("isc_ddl")).copyTo(user_status);
 }
 
 

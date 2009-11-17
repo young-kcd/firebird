@@ -777,6 +777,7 @@ Data source : @4', NULL, NULL)
 ('no_trusted_spb', NULL, 'svc.cpp', NULL, 0, 667, NULL, 'Use of TRUSTED switches in spb_command_line is prohibited', NULL, NULL)
 ('package_name', 'check_dependencies', 'dfw.epp', NULL, 0, 668, NULL, 'PACKAGE @1', NULL, NULL);
 ('cannot_make_not_null', 'check_not_null', 'dfw.epp', NULL, 0, 669, NULL, 'Cannot make field @1 NOT NULL because there are NULLs present', NULL, NULL);
+('feature_deprecated', NULL, '', NULL, 0, 670, NULL, 'Feature @1 is deprecated', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
