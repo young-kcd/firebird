@@ -3278,20 +3278,19 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 	}
 	else
 	{
+		UCHAR* ptr;
 		VaryStr<32> temp;
 		USHORT ttype;
-		dsc desc;
 
-		desc.dsc_length = MOV_get_string_ptr(value, &ttype, &desc.dsc_address, &temp, sizeof(temp));
+		dsc desc;
+		desc.dsc_length = MOV_get_string_ptr(value, &ttype, &ptr, &temp, sizeof(temp));
 		desc.dsc_dtype = dtype_text;
-		INTL_ASSIGN_TTYPE(&desc, ttype);
+		desc.dsc_address = NULL;
+		desc.setTextType(ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
-		if (value->isText())
-		{
-			impure->vlu_desc.dsc_length = (textType->*tt_str_to_case)(desc.dsc_length,
-				impure->vlu_desc.dsc_address, desc.dsc_length, impure->vlu_desc.dsc_address);
-		}
+		impure->vlu_desc.dsc_length = (textType->*tt_str_to_case)(desc.dsc_length,
+			ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
 	}
 
 	return &impure->vlu_desc;
