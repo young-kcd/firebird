@@ -1,3 +1,40 @@
+2009-11-17 14:06  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.313):
+
+	Remove an extra memcpy with lower/upper of strings
+
+2009-11-17 11:33  robocop
+
+	* firebird2/src/jrd/nbak.cpp (1.97):
+
+	Style.
+
+2009-11-17 09:18  robocop
+
+	* firebird2/src/dsql/StmtNodes.cpp (1.17):
+
+	Style.
+
+2009-11-17 08:33  robocop
+
+	* firebird2/src/dsql/: dsql.cpp (1.299), parse.y (1.331):
+
+	Misc.
+
+2009-11-16 16:54  asfernandes
+
+	* firebird2/src/dsql/: parse.y (1.330), preparse.cpp (1.57):
+
+	Comments and style
+
+2009-11-16 15:30  hvlad
+
+	* firebird2/: src/utilities/ntrace/fbtrace.conf (1.7),
+	doc/README.trace_services (1.5):
+
+	Correction of example
+
 2009-11-16 13:09  asfernandes
 
 	* firebird2/builds/win32/msvc8/: common.vcproj (1.16),
