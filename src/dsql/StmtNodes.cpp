@@ -475,7 +475,8 @@ void ExecBlockNode::genBlr()
 
 	compiledStatement->append_uchar(blr_begin);
 
-	if (inputs) {
+	if (inputs)
+	{
 		compiledStatement->req_send->msg_parameters =
 			revertParametersOrder(compiledStatement->req_send->msg_parameters, NULL);
 		GEN_port(compiledStatement, compiledStatement->req_send);
@@ -491,7 +492,8 @@ void ExecBlockNode::genBlr()
 		dsql_nod** ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
-			dsql_par* param = MAKE_parameter(compiledStatement->req_receive, true, true, ++position, *ptr);
+			dsql_par* param =
+				MAKE_parameter(compiledStatement->req_receive, true, true, ++position, *ptr);
 			param->par_node = *ptr;
 			MAKE_desc(compiledStatement, &param->par_desc, *ptr, NULL);
 			param->par_desc.dsc_flags |= DSC_nullable;
@@ -509,7 +511,8 @@ void ExecBlockNode::genBlr()
 		revertParametersOrder(compiledStatement->req_receive->msg_parameters, NULL);
 	GEN_port(compiledStatement, compiledStatement->req_receive);
 
-	if (inputs) {
+	if (inputs)
+	{
 		compiledStatement->append_uchar(blr_receive);
 		compiledStatement->append_uchar(0);
 	}
@@ -788,8 +791,7 @@ SavepointNode* SavepointNode::internalDsqlPass()
 			Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			// Token unknown
 			Arg::Gds(isc_token_err) <<
-			Arg::Gds(isc_random) <<
-			Arg::Str(cmd));
+			Arg::Gds(isc_random) << Arg::Str(cmd));
 	}
 
 	compiledStatement->req_type = REQ_SAVEPOINT;
