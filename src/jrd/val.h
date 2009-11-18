@@ -59,6 +59,7 @@ class ArrayField;
 class blb;
 class jrd_req;
 class jrd_tra;
+class PatternMatcher;
 class Symbol;
 
 // Various structures in the impure area
@@ -87,7 +88,9 @@ struct impure_value
 		GDS_TIME vlu_sql_time;
 		GDS_DATE vlu_sql_date;
 		bid vlu_bid;
-		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
+
+		// Pre-compiled invariant object for nod_like and other string functions
+		Jrd::PatternMatcher* vlu_invariant;
 	} vlu_misc;
 
 	void make_long(const SLONG val, const signed char scale = 0);

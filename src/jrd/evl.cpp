@@ -4067,7 +4067,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 				if (!(impure->vlu_flags & VLU_computed))
 				{
-					delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+					delete impure->vlu_misc.vlu_invariant;
 					impure->vlu_flags |= VLU_computed;
 
 					if (node->nod_type == nod_like)
@@ -4084,7 +4084,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				}
 				else
 				{
-					evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+					evaluator = impure->vlu_misc.vlu_invariant;
 					evaluator->reset();
 				}
 			}
@@ -4122,7 +4122,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 				if (!(impure->vlu_flags & VLU_computed))
 				{
-					delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+					delete impure->vlu_misc.vlu_invariant;
 
 					if (node->nod_type == nod_contains)
 					{
@@ -4139,7 +4139,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				}
 				else
 				{
-					evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+					evaluator = impure->vlu_misc.vlu_invariant;
 					evaluator->reset();
 				}
 			}
@@ -4204,7 +4204,7 @@ static bool string_function(thread_db* tdbb,
 			PatternMatcher* evaluator;
 			if (!(impure->vlu_flags & VLU_computed))
 			{
-				delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+				delete impure->vlu_misc.vlu_invariant;
 
 				if (node->nod_type == nod_contains)
 				{
@@ -4221,7 +4221,7 @@ static bool string_function(thread_db* tdbb,
 			}
 			else
 			{
-				evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+				evaluator = impure->vlu_misc.vlu_invariant;
 				evaluator->reset();
 			}
 
@@ -4280,7 +4280,7 @@ static bool string_function(thread_db* tdbb,
 
 			if (!(impure->vlu_flags & VLU_computed))
 			{
-				delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+				delete impure->vlu_misc.vlu_invariant;
 				impure->vlu_flags |= VLU_computed;
 
 				if (node->nod_type == nod_like)
@@ -4296,7 +4296,7 @@ static bool string_function(thread_db* tdbb,
 			}
 			else
 			{
-				evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+				evaluator = impure->vlu_misc.vlu_invariant;
 				evaluator->reset();
 			}
 
