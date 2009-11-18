@@ -1235,11 +1235,17 @@ void PAG_init(thread_db* tdbb)
 	pageMgr.transPerTIP = (dbb->dbb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
 	pageSpace->ppFirst = 1;
 	// dbb_ods_version can be 0 when a new database is being created
-	if ((dbb->dbb_ods_version == 0) || (dbb->dbb_ods_version >= ODS_VERSION10))
+	if ((dbb->dbb_ods_version == 0) || (dbb->dbb_ods_version >= ODS_VERSION12))
 	{
 		pageMgr.gensPerPage =
 			(dbb->dbb_page_size -
 			 OFFSETA(generator_page*, gpg_values)) / sizeof(((generator_page*) NULL)->gpg_values);
+	}
+	else if (dbb->dbb_ods_version >= ODS_VERSION10)
+	{
+		pageMgr.gensPerPage =
+			(dbb->dbb_page_size -
+			 OFFSETA(old_gen_page*, gpg_values)) / sizeof(((old_gen_page*) NULL)->gpg_values);
 	}
 	else
 	{
@@ -1262,7 +1268,7 @@ void PAG_init(thread_db* tdbb)
 	dbb->dbb_max_records = (dbb->dbb_page_size - sizeof(data_page)) /
 		(sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
 
-	// Artifically reduce density of records to test high bits of record number
+	// Artificially reduce density of records to test high bits of record number
 	// dbb->dbb_max_records = 32000;
 
 	// Optimize record numbers for new 64-bit sparse bitmap implementation

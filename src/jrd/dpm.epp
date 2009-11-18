@@ -1229,8 +1229,11 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	 */
 	SINT64* ptr = 0;
 	SLONG* lptr = 0;
-	if (dbb->dbb_ods_version >= ODS_VERSION10) {
+	if (dbb->dbb_ods_version >= ODS_VERSION12) {
 		ptr = ((SINT64 *) (page->gpg_values)) + offset;
+	}
+	else if (dbb->dbb_ods_version >= ODS_VERSION10) {
+		ptr = ((SINT64 *) (((old_gen_page*) page)->gpg_values)) + offset;
 	}
 	else {
 		lptr = ((SLONG *) (((pointer_page*) page)->ppg_page)) + offset;

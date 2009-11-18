@@ -497,7 +497,8 @@ struct tx_inv_page
 
 // Generator Page
 
-struct generator_page
+// For ODS10 and ODS11
+struct old_gen_page
 {
 	pag gpg_header;
 	SLONG gpg_sequence;			// Sequence number
@@ -506,6 +507,14 @@ struct generator_page
 	USHORT gpg_waste3;			// overhead carried for backward compatibility
 	USHORT gpg_waste4;			// overhead carried for backward compatibility
 	USHORT gpg_waste5;			// overhead carried for backward compatibility
+	SINT64 gpg_values[1];		// Generator vector
+};
+
+// For ODS12 and beyond
+struct generator_page
+{
+	pag gpg_header;
+	SLONG gpg_sequence;			// Sequence number
 	SINT64 gpg_values[1];		// Generator vector
 };
 
