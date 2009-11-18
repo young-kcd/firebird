@@ -936,16 +936,6 @@ typedef Firebird::HalfStaticArray<UCHAR, 256> MoveBuffer;
 
 } //namespace Jrd
 
-// Random string block -- as long as impure areas don't have
-// constructors and destructors, the need this varying string
-
-class VaryingString : public pool_alloc_rpt<SCHAR, type_str>
-{
-public:
-	USHORT str_length;
-	UCHAR str_data[2];			// one byte for ALLOC and one for the NULL
-};
-
 // Threading macros
 
 /* Define JRD_get_thread_data off the platform specific version.

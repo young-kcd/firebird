@@ -1207,7 +1207,7 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		}
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTOR);
 
-		if (sizeof(Ods::Descriptor) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11)
+		if (dbb->dbb_ods_version < ODS_VERSION11)
 		{
 			// For ODS10 and earlier read descriptors in their in-memory representation
 			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
@@ -1231,11 +1231,24 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		{
 			// Use generic representation of formats with 32-bit offsets
 
-			const USHORT count = blob->blb_length / sizeof(Ods::Descriptor);
+			HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
+			BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length);
+			unsigned bufferPos = 0;
+			USHORT count;
+
+			if (dbb->dbb_ods_version >= ODS_VERSION12)
+			{
+				count = buffer[0] | (buffer[1] << 8);
+				bufferPos = 2;
+			}
+			else
+				count = buffer.getCount() / sizeof(Ods::Descriptor);
+
 			format = Format::newFormat(*dbb->dbb_permanent, count);
+
 			Firebird::Array<Ods::Descriptor> odsDescs;
-			Ods::Descriptor *odsDesc = odsDescs.getBuffer(count);
-			BLB_get_data(tdbb, blob, (UCHAR*) odsDesc, blob->blb_length);
+			Ods::Descriptor* odsDesc = odsDescs.getBuffer(count);
+			memcpy(odsDesc, buffer.begin() + bufferPos, count * sizeof(Ods::Descriptor));
 
 			for (Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
@@ -1243,6 +1256,40 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 				*desc = *odsDesc;
 				if (odsDesc->dsc_offset)
 					format->fmt_length = odsDesc->dsc_offset + desc->dsc_length;
+			}
+
+			if (dbb->dbb_ods_version >= ODS_VERSION12)
+			{
+				UCHAR* p = buffer.begin() + bufferPos + count * sizeof(Ods::Descriptor);
+				count = p[0] | (p[1] << 8);
+				p += 2;
+
+				while (count-- > 0)
+				{
+					USHORT offset = p[0] | (p[1] << 8);
+					p += 2;
+
+					Ods::Descriptor* odsDflDesc = (Ods::Descriptor*) p;
+					p = (UCHAR*) (odsDflDesc + 1);
+
+					dsc& desc = format->fmt_defaults[offset].vlu_desc;
+					desc = *odsDflDesc;
+
+					if (desc.dsc_dtype == dtype_text)
+					{
+						VaryingString* vluString = FB_NEW_RPT(*dbb->dbb_permanent,
+							desc.dsc_length) VaryingString();
+						vluString->str_length = desc.dsc_length;
+						format->fmt_defaults[offset].vlu_string = vluString;
+						desc.dsc_address = format->fmt_defaults[offset].vlu_string->str_data;
+					}
+					else
+						desc.dsc_address = (UCHAR*) &format->fmt_defaults[offset].vlu_misc;
+
+					memcpy(desc.dsc_address, p, desc.dsc_length);
+
+					p += desc.dsc_length;
+				}
 			}
 		}
 	END_FOR;

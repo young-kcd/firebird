@@ -95,6 +95,7 @@
 #include "../jrd/dpm_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/ext_proto.h"
 #include "../jrd/gds_proto.h"
@@ -113,6 +114,7 @@
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/tra_proto.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/nbak.h"
 #include "../jrd/trig.h"
@@ -4776,6 +4778,21 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 			*desc = tfb->tfb_desc;
 		if (tfb->tfb_flags & TFB_computed)
 			desc->dsc_dtype |= COMPUTED_FLAG;
+
+		format->fmt_defaults[tfb->tfb_id] = tfb->tfb_default;
+		format->fmt_defaults[tfb->tfb_id].vlu_misc = tfb->tfb_default.vlu_misc;
+
+		if (tfb->tfb_default.vlu_string)
+		{
+			fb_assert(format->fmt_defaults[tfb->tfb_id].vlu_desc.dsc_dtype == dtype_text);
+			format->fmt_defaults[tfb->tfb_id].vlu_desc.dsc_address =
+				format->fmt_defaults[tfb->tfb_id].vlu_string->str_data;
+		}
+		else
+		{
+			format->fmt_defaults[tfb->tfb_id].vlu_desc.dsc_address =
+				(UCHAR*) &format->fmt_defaults[tfb->tfb_id].vlu_misc;
+		}
 	}
 
 /* Compute the offsets of the various fields */
@@ -4847,18 +4864,19 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		FMTS.RDB$RELATION_ID = relation->rel_id;
 		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMTS.RDB$DESCRIPTOR);
 
-		if (sizeof(Ods::Descriptor) == sizeof(struct dsc) || dbb->dbb_ods_version < ODS_VERSION11)
+		if (dbb->dbb_ods_version < ODS_VERSION11)
 		{
 			// For ODS10 and earlier put descriptors in their in-memory representation
 			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
 			BLB_put_segment(tdbb, blob, reinterpret_cast<const UCHAR*>(&(format->fmt_desc[0])),
 							(USHORT)(format->fmt_count * sizeof(dsc)));
 		}
-		else {
+		else
+		{
 			// Use generic representation of formats with 32-bit offsets
 
 			Firebird::Array<Ods::Descriptor> odsDescs;
-			Ods::Descriptor *odsDesc = odsDescs.getBuffer(format->fmt_count);
+			Ods::Descriptor* odsDesc = odsDescs.getBuffer(format->fmt_count);
 
 			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
 				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
@@ -4866,8 +4884,47 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 				*odsDesc = *desc;
 			}
 
-			BLB_put_segment(tdbb, blob, (UCHAR*) odsDescs.begin(),
-							odsDescs.getCount() * sizeof(Ods::Descriptor));
+			HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
+
+			if (dbb->dbb_ods_version >= ODS_VERSION12)
+			{
+				buffer.add(UCHAR(format->fmt_count));
+				buffer.add(UCHAR(format->fmt_count >> 8));
+			}
+
+			buffer.add((UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(Ods::Descriptor));
+
+			if (dbb->dbb_ods_version >= ODS_VERSION12)
+			{
+				size_t pos = buffer.getCount();
+				buffer.add(0);
+				buffer.add(0);
+
+				USHORT i = 0, dflCount = 0;
+				for (Format::fmt_defaults_iterator impure = format->fmt_defaults.begin();
+					 impure != format->fmt_defaults.end(); ++impure, ++i)
+				{
+					if (!impure->vlu_desc.isUnknown())
+					{
+						dsc desc = impure->vlu_desc;
+						desc.dsc_address = NULL;
+
+						Ods::Descriptor odsDflDesc = desc;
+
+						buffer.add(UCHAR(i));
+						buffer.add(UCHAR(i >> 8));
+						buffer.add((UCHAR*) &odsDflDesc, sizeof(odsDflDesc));
+						buffer.add(impure->vlu_desc.dsc_address, impure->vlu_desc.dsc_length);
+
+						++dflCount;
+					}
+				}
+
+				buffer[pos] = UCHAR(dflCount);
+				buffer[pos + 1] = UCHAR(dflCount >> 8);
+			}
+
+			BLB_put_segment(tdbb, blob, buffer.begin(), buffer.getCount());
 		}
 		BLB_close(tdbb, blob);
 	END_STORE;
@@ -4995,7 +5052,24 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 								{
 									RFR.RDB$FIELD_ID = REL.RDB$FIELD_ID;
 									RFR.RDB$FIELD_ID.NULL = FALSE;
+
+									bool notNull = (RFR.RDB$NULL_FLAG.NULL ?
+										(FLD.RDB$NULL_FLAG.NULL ? false : (bool) FLD.RDB$NULL_FLAG) :
+										(bool) RFR.RDB$NULL_FLAG);
+
+									if (notNull)
+									{
+										dsc desc;
+										desc.makeText(strlen(REL.RDB$RELATION_NAME), CS_METADATA,
+											(UCHAR*) REL.RDB$RELATION_NAME);
+
+										DeferredWork* work = DFW_post_work(transaction,
+											dfw_check_not_null, &desc, 0);
+										Array<int>& ids = DFW_get_ids(work);
+										ids.add(RFR.RDB$FIELD_ID);
+									}
 								}
+
 								REL.RDB$FIELD_ID++;
 							}
 							if (RFR.RDB$UPDATE_FLAG.NULL)
@@ -5039,12 +5113,18 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 										   fb_utils::name_length(RFR.RDB$BASE_FIELD));
 					}
 					put_summary_blob(tdbb, blob, RSR_missing_value, &FLD.RDB$MISSING_VALUE, transaction);
-					put_summary_blob(tdbb, blob, RSR_default_value,
-								(RFR.RDB$DEFAULT_VALUE.isEmpty() ?
-									&FLD.RDB$DEFAULT_VALUE :
-									&RFR.RDB$DEFAULT_VALUE), transaction);
+
+					bid* defaultValue = RFR.RDB$DEFAULT_VALUE.isEmpty() ?
+						&FLD.RDB$DEFAULT_VALUE : &RFR.RDB$DEFAULT_VALUE;
+
+					put_summary_blob(tdbb, blob, RSR_default_value, defaultValue, transaction);
 					put_summary_blob(tdbb, blob, RSR_validation_blr, &FLD.RDB$VALIDATION_BLR, transaction);
-					if (FLD.RDB$NULL_FLAG || RFR.RDB$NULL_FLAG)
+
+					bool notNull = (RFR.RDB$NULL_FLAG.NULL ?
+						(FLD.RDB$NULL_FLAG.NULL ? false : (bool) FLD.RDB$NULL_FLAG) :
+						(bool) RFR.RDB$NULL_FLAG);
+
+					if (notNull)
 					{
 						put_summary_record(tdbb, blob, RSR_field_not_null,
 											nonnull_validation_blr, sizeof(nonnull_validation_blr));
@@ -5060,6 +5140,67 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					TemporaryField* tfb = FB_NEW(*tdbb->getDefaultPool()) TemporaryField;
 					tfb->tfb_next = stack;
 					stack = tfb;
+
+					memset(&tfb->tfb_default, 0, sizeof(tfb->tfb_default));
+
+					if (notNull && !defaultValue->isEmpty())
+					{
+						Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
+						jrd_req* defaultRequest = NULL;
+						try
+						{
+							jrd_nod* defaultNode = MET_parse_blob(tdbb, relation, defaultValue,
+								NULL, &defaultRequest, false);
+
+							{	// scope
+								AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
+									&thread_db::getRequest, &thread_db::setRequest, defaultRequest);
+
+								defaultRequest->req_timestamp.validate();
+
+								TRA_attach_request(transaction, defaultRequest);
+								dsc* result = EVL_expr(tdbb, defaultNode);
+								TRA_detach_request(defaultRequest);
+
+								if (result)
+								{
+									tfb->tfb_default.vlu_desc = *result;
+
+									if (result->isText() || result->isBlob())
+									{
+										UCHAR* ptr = NULL;
+										MoveBuffer buffer;
+										int len = MOV_make_string2(tdbb, result, CS_NONE, &ptr, buffer, true);
+
+										VaryingString* newString = FB_NEW_RPT(*dbb->dbb_permanent,
+											len) VaryingString();
+										newString->str_length = USHORT(len);
+										memcpy(newString->str_data, ptr, len);
+
+										tfb->tfb_default.vlu_string = newString;
+										tfb->tfb_default.vlu_desc.dsc_dtype = dtype_text;
+										tfb->tfb_default.vlu_desc.dsc_length = USHORT(len);
+										tfb->tfb_default.vlu_desc.dsc_address = newString->str_data;
+									}
+									else
+									{
+										memcpy(&tfb->tfb_default.vlu_misc, result->dsc_address,
+											result->dsc_length);
+										tfb->tfb_default.vlu_desc.dsc_address =
+											(UCHAR*) &tfb->tfb_default.vlu_misc;
+									}
+								}
+							}
+						}
+						catch (const Exception&)
+						{
+							if (defaultRequest)
+								CMP_release(tdbb, defaultRequest);
+							throw;
+						}
+
+						CMP_release(tdbb, defaultRequest);
+					}
 
 					/* for text data types, grab the CHARACTER_SET and
 					   COLLATION to give the type of international text */

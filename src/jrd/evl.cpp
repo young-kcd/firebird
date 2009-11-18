@@ -1247,6 +1247,29 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 		if (record && record->rec_format && relation)
 		{
+			thread_db* tdbb = JRD_get_thread_data();
+			Database* dbb = tdbb->getDatabase();
+
+			if (dbb->dbb_ods_version >= ODS_VERSION12)
+			{
+				while (format &&
+					(id >= format->fmt_defaults.getCount() ||
+					 format->fmt_defaults[id].vlu_desc.isUnknown()))
+				{
+					if (format->fmt_version >= relation->rel_current_format->fmt_version)
+					{
+						format = NULL;
+						break;
+					}
+
+					format = MET_format(tdbb, relation, format->fmt_version + 1);
+				}
+
+				return format && !(*desc = format->fmt_defaults[id].vlu_desc).isUnknown();
+			}
+
+			// Legacy ODS logic
+
 			/* A database sweep does not scan a relation's metadata. However
 			 * the change to substitute a default value for a missing "not null"
 			 * field makes it necessary to reference the field block.

@@ -58,9 +58,10 @@ class TemporaryField : public pool_alloc<type_tfb>
 {
 public:
 	TemporaryField*	tfb_next;		/* next block in chain */
-	USHORT			tfb_id;				/* id of field in relation */
+	USHORT			tfb_id;			/* id of field in relation */
 	USHORT			tfb_flags;
-	DSC				tfb_desc;
+	dsc				tfb_desc;
+	Jrd::impure_value	tfb_default;
 };
 
 // tfb_flags
