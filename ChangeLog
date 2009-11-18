@@ -1,3 +1,34 @@
+2009-11-18 13:01  robocop
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.15), jrd/Database.h (1.44),
+	jrd/DatabaseSnapshot.cpp (1.121), jrd/blb.cpp (1.214), jrd/dfw.epp
+	(1.292), jrd/dpm.epp (1.108), jrd/dyn.epp (1.159), jrd/dyn_def.epp
+	(1.184), jrd/dyn_del.epp (1.84), jrd/dyn_mod.epp (1.124),
+	jrd/inf.cpp (1.110), jrd/ini.epp (1.114), jrd/jrd.cpp (1.575),
+	jrd/met.epp (1.293), jrd/pag.cpp (1.228), jrd/scl.epp (1.111),
+	jrd/validation.cpp (1.57), jrd/vio.cpp (1.265):
+
+	Replace the now obsolete dbb_minor_original by dbb_minor_version.
+
+2009-11-18 12:54  robocop
+
+	* firebird2/src/jrd/: dpm.epp (1.107), ods.h (1.58), pag.cpp
+	(1.227):
+
+	Generators page cleanup, as requested by Ann Harrison.
+
+2009-11-17 15:22  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.109),
+	lang_helpers/gds_codes.pas (1.107), src/include/gen/codetext.h
+	(1.117), src/include/gen/iberror.h (1.121), src/include/gen/msgs.h
+	(1.148), src/include/gen/sql_code.h (1.123),
+	src/include/gen/sql_state.h (1.53), src/jrd/jrd.cpp (1.574),
+	src/msgs/facilities2.sql (1.88), src/msgs/messages2.sql (1.112),
+	src/msgs/system_errors2.sql (1.69):
+
+	Create new message recommended by Claudio
+
 2009-11-17 14:06  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.313):
