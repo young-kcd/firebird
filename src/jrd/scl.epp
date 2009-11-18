@@ -634,7 +634,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT minor_version = dbb->dbb_minor_version;
 
 	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
 	Firebird::string loginName(tempId.usr_user_name);
@@ -652,7 +652,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 
     // CVC: We'll verify the role and wipe it out when it doesn't exist
 
-	if (ENCODE_ODS(major_version, minor_original) >= ODS_9_0) {
+	if (ENCODE_ODS(major_version, minor_version) >= ODS_9_0) {
 
         preODS9 = false;
 
@@ -660,8 +660,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		{
 			if (!create)
 			{
-				jrd_req* request = CMP_find_request(tdbb, irq_get_role_name,
-										   IRQ_REQUESTS);
+				jrd_req* request = CMP_find_request(tdbb, irq_get_role_name, IRQ_REQUESTS);
 
 				FOR(REQUEST_HANDLE request) X IN RDB$ROLES
 					WITH X.RDB$ROLE_NAME EQ login_name

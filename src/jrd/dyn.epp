@@ -290,10 +290,10 @@ bool DYN_is_it_sql_role(Global* gbl,
 	Database* const dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT minor_version = dbb->dbb_minor_version;
 	bool found = false;
 
-	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
+	if (ENCODE_ODS(major_version, minor_version) < ODS_9_0)
 		return found;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
@@ -906,7 +906,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		UCharBuffer bpb;
 
 		Database* dbb = tdbb->getDatabase();
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
 		{
 			const size_t convSize = 15;
 			bpb.resize(convSize);
@@ -1032,7 +1032,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	MetaName grantor = tdbb->getAttachment()->att_user->usr_user_name;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT minor_version = dbb->dbb_minor_version;
 
 	GET_STRING(ptr, privileges);
 	if (!strcmp(privileges, "A")) {
@@ -1116,7 +1116,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			break;
 
 		case isc_dyn_sql_role_name:	// role name in role_name_list
-			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
+			if (ENCODE_ODS(major_version, minor_version) < ODS_9_0) {
                 DYN_error_punt(false, 196);
 			}
 			else
@@ -1252,7 +1252,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 
 		if (grant_role_stmt)
 		{
-			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
+			if (ENCODE_ODS(major_version, minor_version) < ODS_9_0)
 			{
 	            DYN_error_punt(false, 196);
 			}
@@ -1763,7 +1763,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	Database* const dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT minor_version = dbb->dbb_minor_version;
 
 	// Stash away a copy of the revoker's name, in uppercase form
 
@@ -1849,7 +1849,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		    break;
 
 		case isc_dyn_sql_role_name:	// role name in role_name_list
-			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
+			if (ENCODE_ODS(major_version, minor_version) < ODS_9_0) {
                 DYN_error_punt(false, 196);
 			}
 			else

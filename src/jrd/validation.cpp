@@ -1141,9 +1141,8 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	if (VAL_debug_level)
 	{
 		fprintf(stdout,
-				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
-				   dbb->dbb_filename.c_str(), dbb->dbb_ods_version,
-				   dbb->dbb_minor_version, dbb->dbb_minor_original,
+				   "walk_database: %s\nODS: %d.%d\nPage size %d\n",
+				   dbb->dbb_filename.c_str(), dbb->dbb_ods_version, dbb->dbb_minor_version,
 				   dbb->dbb_page_size);
 	}
 #endif

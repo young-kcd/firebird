@@ -328,7 +328,7 @@ public:
 	{
 		using namespace Firebird;
 
-		if (ENCODE_ODS(dbb_ods_version, dbb_minor_original) < encodedVersion)
+		if (ENCODE_ODS(dbb_ods_version, dbb_minor_version) < encodedVersion)
 		{
 			// Feature not supported on ODS version older than %d.%d
 			status_exception::raise(
@@ -383,7 +383,6 @@ public:
 	ULONG dbb_flags;
 	USHORT dbb_ods_version;				// major ODS version number
 	USHORT dbb_minor_version;			// minor ODS version number
-	USHORT dbb_minor_original;			// minor ODS version at creation
 	USHORT dbb_page_size;				// page size
 	USHORT dbb_dp_per_pp;				// data pages per pointer page
 	USHORT dbb_max_records;				// max record per data page

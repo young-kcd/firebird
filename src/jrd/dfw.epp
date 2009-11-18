@@ -2735,10 +2735,10 @@ static bool create_relation(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT minor_version = dbb->dbb_minor_version;
 
 	USHORT local_min_relation_id;
-	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
+	if (ENCODE_ODS(major_version, minor_version) < ODS_9_0)
 		local_min_relation_id = MIN_RELATION_ID;
 	else
 		local_min_relation_id = USER_DEF_REL_INIT_ID;
@@ -5380,7 +5380,7 @@ static bool modify_procedure(thread_db*	tdbb,
 		return true;
 
 	case 5:
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
 		{
 			const DeferredWork* arg = work->findArg(dfw_arg_check_blr);
 			if (arg)
@@ -5483,7 +5483,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 		}
 
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
 		{
 			const DeferredWork* arg = work->findArg(dfw_arg_check_blr);
 			if (arg)

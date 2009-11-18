@@ -409,7 +409,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original);
+	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version);
 
 	// Initialize record buffers
 	RecordBuffer* const dbb_buffer =

@@ -706,7 +706,7 @@ void INF_database_info(const UCHAR* items,
 			   **        under which SQL dialect.
 			   **
 			 */
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_10_0)
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_10_0)
 			{
 				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
 				{

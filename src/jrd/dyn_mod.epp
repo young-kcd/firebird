@@ -2741,7 +2741,7 @@ void DYN_modify_sql_field(Global* gbl,
 			first_request = request;
 			request = NULL;
 
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_2)
 			{
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					PRM IN RDB$PROCEDURE_PARAMETERS
@@ -2896,7 +2896,7 @@ void DYN_modify_sql_field(Global* gbl,
 				CMP_release(tdbb, request);
 				request = NULL;
 
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
+				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_2)
 				{
 					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 						PRM IN RDB$PROCEDURE_PARAMETERS

@@ -876,7 +876,7 @@ void PAG_format_header(thread_db* tdbb)
 	}
 
 	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
-	dbb->dbb_minor_original = dbb->dbb_minor_version = header->hdr_ods_minor;
+	dbb->dbb_minor_version = header->hdr_ods_minor;
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -1203,7 +1203,7 @@ void PAG_header_init(thread_db* tdbb)
 	}
 
 	dbb->dbb_ods_version = ods_version;
-	dbb->dbb_minor_original = dbb->dbb_minor_version = header->hdr_ods_minor;
+	dbb->dbb_minor_version = header->hdr_ods_minor;
 
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;
@@ -1682,12 +1682,12 @@ void PAG_set_db_SQL_dialect(thread_db* tdbb, SSHORT flag)
 	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT minor_version = dbb->dbb_minor_version;
 
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-	if (flag && (ENCODE_ODS(major_version, minor_original) >= ODS_10_0))
+	if (flag && (ENCODE_ODS(major_version, minor_version) >= ODS_10_0))
 	{
 		switch (flag)
 		{
@@ -2019,6 +2019,9 @@ static bool find_type(thread_db* tdbb,
 			return false;
 	}
 }
+
+
+// Class PageSpace starts here
 
 PageSpace::~PageSpace()
 {

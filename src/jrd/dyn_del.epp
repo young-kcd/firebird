@@ -1263,9 +1263,9 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
+	const USHORT minor_version = dbb->dbb_minor_version;
 
-	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
+	if (ENCODE_ODS(major_version, minor_version) < ODS_9_0) {
 		DYN_error(false, 196);
 		ERR_punt();
 		return;	// never reached

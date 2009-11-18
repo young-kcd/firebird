@@ -526,7 +526,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 				status << Arg::Gds(isc_dyn_proc_not_found) << Arg::Str(objName);
 			}
 
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_12_0)
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_12_0)
 				addWhere = "rdb$package_name is null";
 
 			column = "rdb$procedure_name";
@@ -542,7 +542,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			table = "rdb$functions";
 			column = "rdb$function_name";
 
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_12_0)
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_12_0)
 				addWhere = "rdb$package_name is null";
 
 			status << Arg::Gds(isc_dyn_func_not_found) << Arg::Str(objName);
@@ -1892,7 +1892,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 			{
 				bool erase = true;
 
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
+				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_2)
 				{
 					AutoCacheRequest requestHandle3(tdbb, drq_d_gfields4, DYN_REQUESTS);
 
