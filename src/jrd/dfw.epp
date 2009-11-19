@@ -4779,19 +4779,18 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		if (tfb->tfb_flags & TFB_computed)
 			desc->dsc_dtype |= COMPUTED_FLAG;
 
-		format->fmt_defaults[tfb->tfb_id] = tfb->tfb_default;
-		format->fmt_defaults[tfb->tfb_id].vlu_misc = tfb->tfb_default.vlu_misc;
+		impure_value& defRef = format->fmt_defaults[tfb->tfb_id];
+		defRef = tfb->tfb_default;
+		defRef.vlu_misc = tfb->tfb_default.vlu_misc;
 
 		if (tfb->tfb_default.vlu_string)
 		{
-			fb_assert(format->fmt_defaults[tfb->tfb_id].vlu_desc.dsc_dtype == dtype_text);
-			format->fmt_defaults[tfb->tfb_id].vlu_desc.dsc_address =
-				format->fmt_defaults[tfb->tfb_id].vlu_string->str_data;
+			fb_assert(defRef.vlu_desc.dsc_dtype == dtype_text);
+			defRef.vlu_desc.dsc_address = defRef.vlu_string->str_data;
 		}
 		else
 		{
-			format->fmt_defaults[tfb->tfb_id].vlu_desc.dsc_address =
-				(UCHAR*) &format->fmt_defaults[tfb->tfb_id].vlu_misc;
+			defRef.vlu_desc.dsc_address = (UCHAR*) &defRef.vlu_misc;
 		}
 	}
 
@@ -5171,6 +5170,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 										UCHAR* ptr = NULL;
 										MoveBuffer buffer;
 										int len = MOV_make_string2(tdbb, result, CS_NONE, &ptr, buffer, true);
+										fb_assert(ULONG(len) < ULONG(MAX_USHORT));
 
 										VaryingString* newString = FB_NEW_RPT(*dbb->dbb_permanent,
 											len) VaryingString();
