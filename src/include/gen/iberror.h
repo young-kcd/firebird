@@ -922,6 +922,8 @@ const ISC_STATUS isc_gbak_param_conflict              = 336331085L;
 const ISC_STATUS isc_gbak_option_repeated             = 336331086L;
 const ISC_STATUS isc_gbak_max_dbkey_recursion         = 336331091L;
 const ISC_STATUS isc_gbak_max_dbkey_length            = 336331092L;
+const ISC_STATUS isc_gbak_invalid_metadata            = 336331093L;
+const ISC_STATUS isc_gbak_invalid_data                = 336331094L;
 const ISC_STATUS isc_dsql_too_old_ods                 = 336397205L;
 const ISC_STATUS isc_dsql_table_not_found             = 336397206L;
 const ISC_STATUS isc_dsql_view_not_found              = 336397207L;
@@ -1093,7 +1095,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1037;
+const ISC_STATUS isc_err_max                          = 1039;
 
 #else /* c definitions */
 
@@ -1985,6 +1987,8 @@ const ISC_STATUS isc_err_max                          = 1037;
 #define isc_gbak_option_repeated             336331086L
 #define isc_gbak_max_dbkey_recursion         336331091L
 #define isc_gbak_max_dbkey_length            336331092L
+#define isc_gbak_invalid_metadata            336331093L
+#define isc_gbak_invalid_data                336331094L
 #define isc_dsql_too_old_ods                 336397205L
 #define isc_dsql_table_not_found             336397206L
 #define isc_dsql_view_not_found              336397207L
@@ -2156,7 +2160,7 @@ const ISC_STATUS isc_err_max                          = 1037;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1037
+#define isc_err_max                          1039
 
 #endif
 

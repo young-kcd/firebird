@@ -891,176 +891,178 @@ Data source : @4"},		/* 606, eds_statement */
 	{336331086, "option -@1 was already specified"},		/* 864, gbak_option_repeated */
 	{336331091, "dependency depth greater than @1 for view @2"},		/* 865, gbak_max_dbkey_recursion */
 	{336331092, "value greater than @1 when calculating length of rdb$db_key for view @2"},		/* 866, gbak_max_dbkey_length */
-	{336397205, "ODS versions before ODS@1 are not supported"},		/* 867, dsql_too_old_ods */
-	{336397206, "Table @1 does not exist"},		/* 868, dsql_table_not_found */
-	{336397207, "View @1 does not exist"},		/* 869, dsql_view_not_found */
-	{336397208, "At line @1, column @2"},		/* 870, dsql_line_col_error */
-	{336397209, "At unknown line and column"},		/* 871, dsql_unknown_pos */
-	{336397210, "Column @1 cannot be repeated in @2 statement"},		/* 872, dsql_no_dup_name */
-	{336397211, "Too many values (more than @1) in member list to match against"},		/* 873, dsql_too_many_values */
-	{336397212, "Array and BLOB data types not allowed in computed field"},		/* 874, dsql_no_array_computed */
-	{336397213, "Implicit domain name @1 not allowed in user created domain"},		/* 875, dsql_implicit_domain_name */
-	{336397214, "scalar operator used on field @1 which is not an array"},		/* 876, dsql_only_can_subscript_array */
-	{336397215, "cannot sort on more than 255 items"},		/* 877, dsql_max_sort_items */
-	{336397216, "cannot group on more than 255 items"},		/* 878, dsql_max_group_items */
-	{336397217, "Cannot include the same field (@1.@2) twice in the ORDER BY clause with conflicting sorting options"},		/* 879, dsql_conflicting_sort_field */
-	{336397218, "column list from derived table @1 has more columns than the number of items in its SELECT statement"},		/* 880, dsql_derived_table_more_columns */
-	{336397219, "column list from derived table @1 has less columns than the number of items in its SELECT statement"},		/* 881, dsql_derived_table_less_columns */
-	{336397220, "no column name specified for column number @1 in derived table @2"},		/* 882, dsql_derived_field_unnamed */
-	{336397221, "column @1 was specified multiple times for derived table @2"},		/* 883, dsql_derived_field_dup_name */
-	{336397222, "Internal dsql error: alias type expected by pass1_expand_select_node"},		/* 884, dsql_derived_alias_select */
-	{336397223, "Internal dsql error: alias type expected by pass1_field"},		/* 885, dsql_derived_alias_field */
-	{336397224, "Internal dsql error: column position out of range in pass1_union_auto_cast"},		/* 886, dsql_auto_field_bad_pos */
-	{336397225, "Recursive CTE member (@1) can refer itself only in FROM clause"},		/* 887, dsql_cte_wrong_reference */
-	{336397226, "CTE '@1' has cyclic dependencies"},		/* 888, dsql_cte_cycle */
-	{336397227, "Recursive member of CTE can't be member of an outer join"},		/* 889, dsql_cte_outer_join */
-	{336397228, "Recursive member of CTE can't reference itself more than once"},		/* 890, dsql_cte_mult_references */
-	{336397229, "Recursive CTE (@1) must be an UNION"},		/* 891, dsql_cte_not_a_union */
-	{336397230, "CTE '@1' defined non-recursive member after recursive"},		/* 892, dsql_cte_nonrecurs_after_recurs */
-	{336397231, "Recursive member of CTE '@1' has @2 clause"},		/* 893, dsql_cte_wrong_clause */
-	{336397232, "Recursive members of CTE (@1) must be linked with another members via UNION ALL"},		/* 894, dsql_cte_union_all */
-	{336397233, "Non-recursive member is missing in CTE '@1'"},		/* 895, dsql_cte_miss_nonrecursive */
-	{336397234, "WITH clause can't be nested"},		/* 896, dsql_cte_nested_with */
-	{336397235, "column @1 appears more than once in USING clause"},		/* 897, dsql_col_more_than_once_using */
-	{336397236, "feature is not supported in dialect @1"},		/* 898, dsql_unsupp_feature_dialect */
-	{336397237, "CTE \"@1\" is not used in query"},		/* 899, dsql_cte_not_used */
-	{336397238, "column @1 appears more than once in ALTER VIEW"},		/* 900, dsql_col_more_than_once_view */
-	{336397239, "@1 is not supported inside IN AUTONOMOUS TRANSACTION block"},		/* 901, dsql_unsupported_in_auto_trans */
-	{336397240, "Unknown node type @1 in dsql/GEN_expr"},		/* 902, dsql_eval_unknode */
-	{336397241, "Argument for @1 in dialect 1 must be string or numeric"},		/* 903, dsql_agg_wrongarg */
-	{336397242, "Argument for @1 in dialect 3 must be numeric"},		/* 904, dsql_agg2_wrongarg */
-	{336397243, "Strings cannot be added to or subtracted from DATE or TIME types"},		/* 905, dsql_nodateortime_pm_string */
-	{336397244, "Invalid data type for subtraction involving DATE, TIME or TIMESTAMP types"},		/* 906, dsql_invalid_datetime_subtract */
-	{336397245, "Adding two DATE values or two TIME values is not allowed"},		/* 907, dsql_invalid_dateortime_add */
-	{336397246, "DATE value cannot be subtracted from the provided data type"},		/* 908, dsql_invalid_type_minus_date */
-	{336397247, "Strings cannot be added or subtracted in dialect 3"},		/* 909, dsql_nostring_addsub_dial3 */
-	{336397248, "Invalid data type for addition or subtraction in dialect 3"},		/* 910, dsql_invalid_type_addsub_dial3 */
-	{336397249, "Invalid data type for multiplication in dialect 1"},		/* 911, dsql_invalid_type_multip_dial1 */
-	{336397250, "Strings cannot be multiplied in dialect 3"},		/* 912, dsql_nostring_multip_dial3 */
-	{336397251, "Invalid data type for multiplication in dialect 3"},		/* 913, dsql_invalid_type_multip_dial3 */
-	{336397252, "Division in dialect 1 must be between numeric data types"},		/* 914, dsql_mustuse_numeric_div_dial1 */
-	{336397253, "Strings cannot be divided in dialect 3"},		/* 915, dsql_nostring_div_dial3 */
-	{336397254, "Invalid data type for division in dialect 3"},		/* 916, dsql_invalid_type_div_dial3 */
-	{336397255, "Strings cannot be negated (applied the minus operator) in dialect 3"},		/* 917, dsql_nostring_neg_dial3 */
-	{336397256, "Invalid data type for negation (minus operator)"},		/* 918, dsql_invalid_type_neg */
-	{336397257, "Cannot have more than 255 items in DISTINCT list"},		/* 919, dsql_max_distinct_items */
-	{336723983, "unable to open database"},		/* 920, gsec_cant_open_db */
-	{336723984, "error in switch specifications"},		/* 921, gsec_switches_error */
-	{336723985, "no operation specified"},		/* 922, gsec_no_op_spec */
-	{336723986, "no user name specified"},		/* 923, gsec_no_usr_name */
-	{336723987, "add record error"},		/* 924, gsec_err_add */
-	{336723988, "modify record error"},		/* 925, gsec_err_modify */
-	{336723989, "find/modify record error"},		/* 926, gsec_err_find_mod */
-	{336723990, "record not found for user: @1"},		/* 927, gsec_err_rec_not_found */
-	{336723991, "delete record error"},		/* 928, gsec_err_delete */
-	{336723992, "find/delete record error"},		/* 929, gsec_err_find_del */
-	{336723996, "find/display record error"},		/* 930, gsec_err_find_disp */
-	{336723997, "invalid parameter, no switch defined"},		/* 931, gsec_inv_param */
-	{336723998, "operation already specified"},		/* 932, gsec_op_specified */
-	{336723999, "password already specified"},		/* 933, gsec_pw_specified */
-	{336724000, "uid already specified"},		/* 934, gsec_uid_specified */
-	{336724001, "gid already specified"},		/* 935, gsec_gid_specified */
-	{336724002, "project already specified"},		/* 936, gsec_proj_specified */
-	{336724003, "organization already specified"},		/* 937, gsec_org_specified */
-	{336724004, "first name already specified"},		/* 938, gsec_fname_specified */
-	{336724005, "middle name already specified"},		/* 939, gsec_mname_specified */
-	{336724006, "last name already specified"},		/* 940, gsec_lname_specified */
-	{336724008, "invalid switch specified"},		/* 941, gsec_inv_switch */
-	{336724009, "ambiguous switch specified"},		/* 942, gsec_amb_switch */
-	{336724010, "no operation specified for parameters"},		/* 943, gsec_no_op_specified */
-	{336724011, "no parameters allowed for this operation"},		/* 944, gsec_params_not_allowed */
-	{336724012, "incompatible switches specified"},		/* 945, gsec_incompat_switch */
-	{336724044, "Invalid user name (maximum 31 bytes allowed)"},		/* 946, gsec_inv_username */
-	{336724045, "Warning - maximum 8 significant bytes of password used"},		/* 947, gsec_inv_pw_length */
-	{336724046, "database already specified"},		/* 948, gsec_db_specified */
-	{336724047, "database administrator name already specified"},		/* 949, gsec_db_admin_specified */
-	{336724048, "database administrator password already specified"},		/* 950, gsec_db_admin_pw_specified */
-	{336724049, "SQL role name already specified"},		/* 951, gsec_sql_role_specified */
-	{336789504, "The license file does not exist or could not be opened for read"},		/* 952, license_no_file */
-	{336789523, "operation already specified"},		/* 953, license_op_specified */
-	{336789524, "no operation specified"},		/* 954, license_op_missing */
-	{336789525, "invalid switch"},		/* 955, license_inv_switch */
-	{336789526, "invalid switch combination"},		/* 956, license_inv_switch_combo */
-	{336789527, "illegal operation/switch combination"},		/* 957, license_inv_op_combo */
-	{336789528, "ambiguous switch"},		/* 958, license_amb_switch */
-	{336789529, "invalid parameter, no switch specified"},		/* 959, license_inv_parameter */
-	{336789530, "switch does not take any parameter"},		/* 960, license_param_specified */
-	{336789531, "switch requires a parameter"},		/* 961, license_param_req */
-	{336789532, "syntax error in command line"},		/* 962, license_syntx_error */
-	{336789534, "The certificate was not added.  A duplicate ID exists in the license file."},		/* 963, license_dup_id */
-	{336789535, "The certificate was not added.  Invalid certificate ID / Key combination."},		/* 964, license_inv_id_key */
-	{336789536, "The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license."},		/* 965, license_err_remove */
-	{336789537, "An error occurred updating the license file.  Operation cancelled."},		/* 966, license_err_update */
-	{336789538, "The certificate could not be validated based on the information given.  Please recheck the ID and key information."},		/* 967, license_err_convert */
-	{336789539, "Operation failed.  An unknown error occurred."},		/* 968, license_err_unk */
-	{336789540, "Add license operation failed, KEY: @1 ID: @2"},		/* 969, license_svc_err_add */
-	{336789541, "Remove license operation failed, KEY: @1"},		/* 970, license_svc_err_remove */
-	{336789563, "The evaluation license has already been used on this server.  You need to purchase a non-evaluation license."},		/* 971, license_eval_exists */
-	{336920577, "found unknown switch"},		/* 972, gstat_unknown_switch */
-	{336920578, "please retry, giving a database name"},		/* 973, gstat_retry */
-	{336920579, "Wrong ODS version, expected @1, encountered @2"},		/* 974, gstat_wrong_ods */
-	{336920580, "Unexpected end of database file."},		/* 975, gstat_unexpected_eof */
-	{336920605, "Can't open database file @1"},		/* 976, gstat_open_err */
-	{336920606, "Can't read a database page"},		/* 977, gstat_read_err */
-	{336920607, "System memory exhausted"},		/* 978, gstat_sysmemex */
-	{336986113, "Wrong value for access mode"},		/* 979, fbsvcmgr_bad_am */
-	{336986114, "Wrong value for write mode"},		/* 980, fbsvcmgr_bad_wm */
-	{336986115, "Wrong value for reserve space"},		/* 981, fbsvcmgr_bad_rs */
-	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 982, fbsvcmgr_info_err */
-	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 983, fbsvcmgr_query_err */
-	{336986118, "Unknown switch \"@1\""},		/* 984, fbsvcmgr_switch_unknown */
-	{336986159, "Wrong value for shutdown mode"},		/* 985, fbsvcmgr_bad_sm */
-	{336986160, "could not open file @1"},		/* 986, fbsvcmgr_fp_open */
-	{336986161, "could not read file @1"},		/* 987, fbsvcmgr_fp_read */
-	{336986162, "empty file @1"},		/* 988, fbsvcmgr_fp_empty */
-	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 989, utl_trusted_switch */
-	{337117213, "Missing parameter for switch @1"},		/* 990, nbackup_missing_param */
-	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 991, nbackup_allowed_switches */
-	{337117215, "Unrecognized parameter @1"},		/* 992, nbackup_unknown_param */
-	{337117216, "Unknown switch @1"},		/* 993, nbackup_unknown_switch */
-	{337117217, "Fetch password can't be used in service mode"},		/* 994, nbackup_nofetchpw_svc */
-	{337117218, "Error working with password file \"@1\""},		/* 995, nbackup_pwfile_error */
-	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 996, nbackup_size_with_lock */
-	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 997, nbackup_no_switch */
-	{337117223, "IO error (@1) reading file: @2"},		/* 998, nbackup_err_read */
-	{337117224, "IO error (@1) writing file: @2"},		/* 999, nbackup_err_write */
-	{337117225, "IO error (@1) seeking file: @2"},		/* 1000, nbackup_err_seek */
-	{337117226, "Error (@1) opening database file: @2"},		/* 1001, nbackup_err_opendb */
-	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 1002, nbackup_err_fadvice */
-	{337117228, "Error (@1) creating database file: @2"},		/* 1003, nbackup_err_createdb */
-	{337117229, "Error (@1) opening backup file: @2"},		/* 1004, nbackup_err_openbk */
-	{337117230, "Error (@1) creating backup file: @2"},		/* 1005, nbackup_err_createbk */
-	{337117231, "Unexpected end of database file @1"},		/* 1006, nbackup_err_eofdb */
-	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1007, nbackup_fixup_wrongstate */
-	{337117233, "Database error"},		/* 1008, nbackup_err_db */
-	{337117234, "Username or password is too long"},		/* 1009, nbackup_userpw_toolong */
-	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 1010, nbackup_lostrec_db */
-	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 1011, nbackup_lostguid_db */
-	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 1012, nbackup_err_eofhdrdb */
-	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 1013, nbackup_db_notlock */
-	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 1014, nbackup_lostguid_bk */
-	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 1015, nbackup_page_changed */
-	{337117241, "Database file size is not a multiple of page size"},		/* 1016, nbackup_dbsize_inconsistent */
-	{337117242, "Level 0 backup is not restored"},		/* 1017, nbackup_failed_lzbk */
-	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1018, nbackup_err_eofhdrbk */
-	{337117244, "Invalid incremental backup file: @1"},		/* 1019, nbackup_invalid_incbk */
-	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1020, nbackup_unsupvers_incbk */
-	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1021, nbackup_invlevel_incbk */
-	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1022, nbackup_wrong_orderbk */
-	{337117248, "Unexpected end of backup file: @1"},		/* 1023, nbackup_err_eofbk */
-	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1024, nbackup_err_copy */
-	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1025, nbackup_err_eofhdr_restdb */
-	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1026, nbackup_lostguid_l0bk */
-	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1027, trace_conflict_acts */
-	{337182751, "action switch not found"},		/* 1028, trace_act_notfound */
-	{337182752, "switch \"@1\" must be set only once"},		/* 1029, trace_switch_once */
-	{337182753, "value for switch \"@1\" is missing"},		/* 1030, trace_param_val_miss */
-	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1031, trace_param_invalid */
-	{337182755, "unknown switch \"@1\" encountered"},		/* 1032, trace_switch_unknown */
-	{337182756, "switch \"@1\" can be used by service only"},		/* 1033, trace_switch_svc_only */
-	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1034, trace_switch_user_only */
-	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1035, trace_switch_param_miss */
-	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1036, trace_param_act_notcompat */
-	{337182760, "mandatory switch \"@1\" is missing"},		/* 1037, trace_mandatory_switch_miss */
+	{336331093, "Invalid metadata detected. Use -FIX_FSS_METADATA option."},		/* 867, gbak_invalid_metadata */
+	{336331094, "Invalid data detected. Use -FIX_FSS_DATA option."},		/* 868, gbak_invalid_data */
+	{336397205, "ODS versions before ODS@1 are not supported"},		/* 869, dsql_too_old_ods */
+	{336397206, "Table @1 does not exist"},		/* 870, dsql_table_not_found */
+	{336397207, "View @1 does not exist"},		/* 871, dsql_view_not_found */
+	{336397208, "At line @1, column @2"},		/* 872, dsql_line_col_error */
+	{336397209, "At unknown line and column"},		/* 873, dsql_unknown_pos */
+	{336397210, "Column @1 cannot be repeated in @2 statement"},		/* 874, dsql_no_dup_name */
+	{336397211, "Too many values (more than @1) in member list to match against"},		/* 875, dsql_too_many_values */
+	{336397212, "Array and BLOB data types not allowed in computed field"},		/* 876, dsql_no_array_computed */
+	{336397213, "Implicit domain name @1 not allowed in user created domain"},		/* 877, dsql_implicit_domain_name */
+	{336397214, "scalar operator used on field @1 which is not an array"},		/* 878, dsql_only_can_subscript_array */
+	{336397215, "cannot sort on more than 255 items"},		/* 879, dsql_max_sort_items */
+	{336397216, "cannot group on more than 255 items"},		/* 880, dsql_max_group_items */
+	{336397217, "Cannot include the same field (@1.@2) twice in the ORDER BY clause with conflicting sorting options"},		/* 881, dsql_conflicting_sort_field */
+	{336397218, "column list from derived table @1 has more columns than the number of items in its SELECT statement"},		/* 882, dsql_derived_table_more_columns */
+	{336397219, "column list from derived table @1 has less columns than the number of items in its SELECT statement"},		/* 883, dsql_derived_table_less_columns */
+	{336397220, "no column name specified for column number @1 in derived table @2"},		/* 884, dsql_derived_field_unnamed */
+	{336397221, "column @1 was specified multiple times for derived table @2"},		/* 885, dsql_derived_field_dup_name */
+	{336397222, "Internal dsql error: alias type expected by pass1_expand_select_node"},		/* 886, dsql_derived_alias_select */
+	{336397223, "Internal dsql error: alias type expected by pass1_field"},		/* 887, dsql_derived_alias_field */
+	{336397224, "Internal dsql error: column position out of range in pass1_union_auto_cast"},		/* 888, dsql_auto_field_bad_pos */
+	{336397225, "Recursive CTE member (@1) can refer itself only in FROM clause"},		/* 889, dsql_cte_wrong_reference */
+	{336397226, "CTE '@1' has cyclic dependencies"},		/* 890, dsql_cte_cycle */
+	{336397227, "Recursive member of CTE can't be member of an outer join"},		/* 891, dsql_cte_outer_join */
+	{336397228, "Recursive member of CTE can't reference itself more than once"},		/* 892, dsql_cte_mult_references */
+	{336397229, "Recursive CTE (@1) must be an UNION"},		/* 893, dsql_cte_not_a_union */
+	{336397230, "CTE '@1' defined non-recursive member after recursive"},		/* 894, dsql_cte_nonrecurs_after_recurs */
+	{336397231, "Recursive member of CTE '@1' has @2 clause"},		/* 895, dsql_cte_wrong_clause */
+	{336397232, "Recursive members of CTE (@1) must be linked with another members via UNION ALL"},		/* 896, dsql_cte_union_all */
+	{336397233, "Non-recursive member is missing in CTE '@1'"},		/* 897, dsql_cte_miss_nonrecursive */
+	{336397234, "WITH clause can't be nested"},		/* 898, dsql_cte_nested_with */
+	{336397235, "column @1 appears more than once in USING clause"},		/* 899, dsql_col_more_than_once_using */
+	{336397236, "feature is not supported in dialect @1"},		/* 900, dsql_unsupp_feature_dialect */
+	{336397237, "CTE \"@1\" is not used in query"},		/* 901, dsql_cte_not_used */
+	{336397238, "column @1 appears more than once in ALTER VIEW"},		/* 902, dsql_col_more_than_once_view */
+	{336397239, "@1 is not supported inside IN AUTONOMOUS TRANSACTION block"},		/* 903, dsql_unsupported_in_auto_trans */
+	{336397240, "Unknown node type @1 in dsql/GEN_expr"},		/* 904, dsql_eval_unknode */
+	{336397241, "Argument for @1 in dialect 1 must be string or numeric"},		/* 905, dsql_agg_wrongarg */
+	{336397242, "Argument for @1 in dialect 3 must be numeric"},		/* 906, dsql_agg2_wrongarg */
+	{336397243, "Strings cannot be added to or subtracted from DATE or TIME types"},		/* 907, dsql_nodateortime_pm_string */
+	{336397244, "Invalid data type for subtraction involving DATE, TIME or TIMESTAMP types"},		/* 908, dsql_invalid_datetime_subtract */
+	{336397245, "Adding two DATE values or two TIME values is not allowed"},		/* 909, dsql_invalid_dateortime_add */
+	{336397246, "DATE value cannot be subtracted from the provided data type"},		/* 910, dsql_invalid_type_minus_date */
+	{336397247, "Strings cannot be added or subtracted in dialect 3"},		/* 911, dsql_nostring_addsub_dial3 */
+	{336397248, "Invalid data type for addition or subtraction in dialect 3"},		/* 912, dsql_invalid_type_addsub_dial3 */
+	{336397249, "Invalid data type for multiplication in dialect 1"},		/* 913, dsql_invalid_type_multip_dial1 */
+	{336397250, "Strings cannot be multiplied in dialect 3"},		/* 914, dsql_nostring_multip_dial3 */
+	{336397251, "Invalid data type for multiplication in dialect 3"},		/* 915, dsql_invalid_type_multip_dial3 */
+	{336397252, "Division in dialect 1 must be between numeric data types"},		/* 916, dsql_mustuse_numeric_div_dial1 */
+	{336397253, "Strings cannot be divided in dialect 3"},		/* 917, dsql_nostring_div_dial3 */
+	{336397254, "Invalid data type for division in dialect 3"},		/* 918, dsql_invalid_type_div_dial3 */
+	{336397255, "Strings cannot be negated (applied the minus operator) in dialect 3"},		/* 919, dsql_nostring_neg_dial3 */
+	{336397256, "Invalid data type for negation (minus operator)"},		/* 920, dsql_invalid_type_neg */
+	{336397257, "Cannot have more than 255 items in DISTINCT list"},		/* 921, dsql_max_distinct_items */
+	{336723983, "unable to open database"},		/* 922, gsec_cant_open_db */
+	{336723984, "error in switch specifications"},		/* 923, gsec_switches_error */
+	{336723985, "no operation specified"},		/* 924, gsec_no_op_spec */
+	{336723986, "no user name specified"},		/* 925, gsec_no_usr_name */
+	{336723987, "add record error"},		/* 926, gsec_err_add */
+	{336723988, "modify record error"},		/* 927, gsec_err_modify */
+	{336723989, "find/modify record error"},		/* 928, gsec_err_find_mod */
+	{336723990, "record not found for user: @1"},		/* 929, gsec_err_rec_not_found */
+	{336723991, "delete record error"},		/* 930, gsec_err_delete */
+	{336723992, "find/delete record error"},		/* 931, gsec_err_find_del */
+	{336723996, "find/display record error"},		/* 932, gsec_err_find_disp */
+	{336723997, "invalid parameter, no switch defined"},		/* 933, gsec_inv_param */
+	{336723998, "operation already specified"},		/* 934, gsec_op_specified */
+	{336723999, "password already specified"},		/* 935, gsec_pw_specified */
+	{336724000, "uid already specified"},		/* 936, gsec_uid_specified */
+	{336724001, "gid already specified"},		/* 937, gsec_gid_specified */
+	{336724002, "project already specified"},		/* 938, gsec_proj_specified */
+	{336724003, "organization already specified"},		/* 939, gsec_org_specified */
+	{336724004, "first name already specified"},		/* 940, gsec_fname_specified */
+	{336724005, "middle name already specified"},		/* 941, gsec_mname_specified */
+	{336724006, "last name already specified"},		/* 942, gsec_lname_specified */
+	{336724008, "invalid switch specified"},		/* 943, gsec_inv_switch */
+	{336724009, "ambiguous switch specified"},		/* 944, gsec_amb_switch */
+	{336724010, "no operation specified for parameters"},		/* 945, gsec_no_op_specified */
+	{336724011, "no parameters allowed for this operation"},		/* 946, gsec_params_not_allowed */
+	{336724012, "incompatible switches specified"},		/* 947, gsec_incompat_switch */
+	{336724044, "Invalid user name (maximum 31 bytes allowed)"},		/* 948, gsec_inv_username */
+	{336724045, "Warning - maximum 8 significant bytes of password used"},		/* 949, gsec_inv_pw_length */
+	{336724046, "database already specified"},		/* 950, gsec_db_specified */
+	{336724047, "database administrator name already specified"},		/* 951, gsec_db_admin_specified */
+	{336724048, "database administrator password already specified"},		/* 952, gsec_db_admin_pw_specified */
+	{336724049, "SQL role name already specified"},		/* 953, gsec_sql_role_specified */
+	{336789504, "The license file does not exist or could not be opened for read"},		/* 954, license_no_file */
+	{336789523, "operation already specified"},		/* 955, license_op_specified */
+	{336789524, "no operation specified"},		/* 956, license_op_missing */
+	{336789525, "invalid switch"},		/* 957, license_inv_switch */
+	{336789526, "invalid switch combination"},		/* 958, license_inv_switch_combo */
+	{336789527, "illegal operation/switch combination"},		/* 959, license_inv_op_combo */
+	{336789528, "ambiguous switch"},		/* 960, license_amb_switch */
+	{336789529, "invalid parameter, no switch specified"},		/* 961, license_inv_parameter */
+	{336789530, "switch does not take any parameter"},		/* 962, license_param_specified */
+	{336789531, "switch requires a parameter"},		/* 963, license_param_req */
+	{336789532, "syntax error in command line"},		/* 964, license_syntx_error */
+	{336789534, "The certificate was not added.  A duplicate ID exists in the license file."},		/* 965, license_dup_id */
+	{336789535, "The certificate was not added.  Invalid certificate ID / Key combination."},		/* 966, license_inv_id_key */
+	{336789536, "The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license."},		/* 967, license_err_remove */
+	{336789537, "An error occurred updating the license file.  Operation cancelled."},		/* 968, license_err_update */
+	{336789538, "The certificate could not be validated based on the information given.  Please recheck the ID and key information."},		/* 969, license_err_convert */
+	{336789539, "Operation failed.  An unknown error occurred."},		/* 970, license_err_unk */
+	{336789540, "Add license operation failed, KEY: @1 ID: @2"},		/* 971, license_svc_err_add */
+	{336789541, "Remove license operation failed, KEY: @1"},		/* 972, license_svc_err_remove */
+	{336789563, "The evaluation license has already been used on this server.  You need to purchase a non-evaluation license."},		/* 973, license_eval_exists */
+	{336920577, "found unknown switch"},		/* 974, gstat_unknown_switch */
+	{336920578, "please retry, giving a database name"},		/* 975, gstat_retry */
+	{336920579, "Wrong ODS version, expected @1, encountered @2"},		/* 976, gstat_wrong_ods */
+	{336920580, "Unexpected end of database file."},		/* 977, gstat_unexpected_eof */
+	{336920605, "Can't open database file @1"},		/* 978, gstat_open_err */
+	{336920606, "Can't read a database page"},		/* 979, gstat_read_err */
+	{336920607, "System memory exhausted"},		/* 980, gstat_sysmemex */
+	{336986113, "Wrong value for access mode"},		/* 981, fbsvcmgr_bad_am */
+	{336986114, "Wrong value for write mode"},		/* 982, fbsvcmgr_bad_wm */
+	{336986115, "Wrong value for reserve space"},		/* 983, fbsvcmgr_bad_rs */
+	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 984, fbsvcmgr_info_err */
+	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 985, fbsvcmgr_query_err */
+	{336986118, "Unknown switch \"@1\""},		/* 986, fbsvcmgr_switch_unknown */
+	{336986159, "Wrong value for shutdown mode"},		/* 987, fbsvcmgr_bad_sm */
+	{336986160, "could not open file @1"},		/* 988, fbsvcmgr_fp_open */
+	{336986161, "could not read file @1"},		/* 989, fbsvcmgr_fp_read */
+	{336986162, "empty file @1"},		/* 990, fbsvcmgr_fp_empty */
+	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 991, utl_trusted_switch */
+	{337117213, "Missing parameter for switch @1"},		/* 992, nbackup_missing_param */
+	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 993, nbackup_allowed_switches */
+	{337117215, "Unrecognized parameter @1"},		/* 994, nbackup_unknown_param */
+	{337117216, "Unknown switch @1"},		/* 995, nbackup_unknown_switch */
+	{337117217, "Fetch password can't be used in service mode"},		/* 996, nbackup_nofetchpw_svc */
+	{337117218, "Error working with password file \"@1\""},		/* 997, nbackup_pwfile_error */
+	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 998, nbackup_size_with_lock */
+	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 999, nbackup_no_switch */
+	{337117223, "IO error (@1) reading file: @2"},		/* 1000, nbackup_err_read */
+	{337117224, "IO error (@1) writing file: @2"},		/* 1001, nbackup_err_write */
+	{337117225, "IO error (@1) seeking file: @2"},		/* 1002, nbackup_err_seek */
+	{337117226, "Error (@1) opening database file: @2"},		/* 1003, nbackup_err_opendb */
+	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 1004, nbackup_err_fadvice */
+	{337117228, "Error (@1) creating database file: @2"},		/* 1005, nbackup_err_createdb */
+	{337117229, "Error (@1) opening backup file: @2"},		/* 1006, nbackup_err_openbk */
+	{337117230, "Error (@1) creating backup file: @2"},		/* 1007, nbackup_err_createbk */
+	{337117231, "Unexpected end of database file @1"},		/* 1008, nbackup_err_eofdb */
+	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1009, nbackup_fixup_wrongstate */
+	{337117233, "Database error"},		/* 1010, nbackup_err_db */
+	{337117234, "Username or password is too long"},		/* 1011, nbackup_userpw_toolong */
+	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 1012, nbackup_lostrec_db */
+	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 1013, nbackup_lostguid_db */
+	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 1014, nbackup_err_eofhdrdb */
+	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 1015, nbackup_db_notlock */
+	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 1016, nbackup_lostguid_bk */
+	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 1017, nbackup_page_changed */
+	{337117241, "Database file size is not a multiple of page size"},		/* 1018, nbackup_dbsize_inconsistent */
+	{337117242, "Level 0 backup is not restored"},		/* 1019, nbackup_failed_lzbk */
+	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1020, nbackup_err_eofhdrbk */
+	{337117244, "Invalid incremental backup file: @1"},		/* 1021, nbackup_invalid_incbk */
+	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1022, nbackup_unsupvers_incbk */
+	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1023, nbackup_invlevel_incbk */
+	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1024, nbackup_wrong_orderbk */
+	{337117248, "Unexpected end of backup file: @1"},		/* 1025, nbackup_err_eofbk */
+	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1026, nbackup_err_copy */
+	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1027, nbackup_err_eofhdr_restdb */
+	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1028, nbackup_lostguid_l0bk */
+	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1029, trace_conflict_acts */
+	{337182751, "action switch not found"},		/* 1030, trace_act_notfound */
+	{337182752, "switch \"@1\" must be set only once"},		/* 1031, trace_switch_once */
+	{337182753, "value for switch \"@1\" is missing"},		/* 1032, trace_param_val_miss */
+	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1033, trace_param_invalid */
+	{337182755, "unknown switch \"@1\" encountered"},		/* 1034, trace_switch_unknown */
+	{337182756, "switch \"@1\" can be used by service only"},		/* 1035, trace_switch_svc_only */
+	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1036, trace_switch_user_only */
+	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1037, trace_switch_param_miss */
+	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1038, trace_param_act_notcompat */
+	{337182760, "mandatory switch \"@1\" is missing"},		/* 1039, trace_mandatory_switch_miss */
 	{0, NULL}
 };

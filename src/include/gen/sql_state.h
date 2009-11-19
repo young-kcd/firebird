@@ -887,6 +887,8 @@ static const struct {
 	{336331086, "00000"}, // 334 gbak_option_repeated
 	{336331091, "00000"}, // 339 gbak_max_dbkey_recursion
 	{336331092, "00000"}, // 340 gbak_max_dbkey_length
+	{336331093, "00000"}, // 341 gbak_invalid_metadata
+	{336331094, "00000"}, // 342 gbak_invalid_data
 	{336397205, "HY000"}, // 917 dsql_too_old_ods
 	{336397206, "42S02"}, // 918 dsql_table_not_found
 	{336397207, "42S02"}, // 919 dsql_view_not_found

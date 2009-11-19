@@ -877,6 +877,8 @@ COMMIT WORK;
 (-901, '00', '000', 12, 334, 'gbak_option_repeated', NULL, NULL)
 (-901, '00', '000', 12, 339, 'gbak_max_dbkey_recursion', NULL, NULL)
 (-901, '00', '000', 12, 340, 'gbak_max_dbkey_length', NULL, NULL)
+(-901, '00', '000', 12, 341, 'gbak_invalid_metadata', NULL, NULL)
+(-901, '00', '000', 12, 342, 'gbak_invalid_data', NULL, NULL)
 --  SQLERR
 (-804, 'HY', '000', 13, 917, 'dsql_too_old_ods', NULL, NULL)
 (-607, '42', 'S02', 13, 918, 'dsql_table_not_found', NULL, NULL)

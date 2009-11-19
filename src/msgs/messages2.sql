@@ -2525,6 +2525,8 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_package', 'restore.epp', NULL, 12, 338, NULL, 'package', NULL, NULL);
 ('gbak_max_dbkey_recursion', 'update_view_dbkey_lengths', 'restore.epp', NULL, 12, 339, NULL, 'dependency depth greater than @1 for view @2', NULL, NULL);
 ('gbak_max_dbkey_length', 'update_view_dbkey_lengths', 'restore.epp', NULL, 12, 340, NULL, 'value greater than @1 when calculating length of rdb$db_key for view @2', NULL, NULL);
+('gbak_invalid_metadata', 'general_on_error', 'restore.epp', NULL, 12, 341, NULL, 'Invalid metadata detected. Use -FIX_FSS_METADATA option.', NULL, NULL);
+('gbak_invalid_data', 'get_data', 'restore.epp', NULL, 12, 342, NULL, 'Invalid data detected. Use -FIX_FSS_DATA option.', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
