@@ -1,3 +1,64 @@
+2009-11-19 14:21  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.110),
+	lang_helpers/gds_codes.pas (1.108), src/burp/restore.epp (1.189),
+	src/include/gen/codetext.h (1.118), src/include/gen/iberror.h
+	(1.122), src/include/gen/msgs.h (1.149), src/include/gen/sql_code.h
+	(1.124), src/include/gen/sql_state.h (1.54),
+	src/msgs/facilities2.sql (1.89), src/msgs/messages2.sql (1.113),
+	src/msgs/system_errors2.sql (1.70):
+
+	Improvement CORE-2754 - Hint the user about -FIX_FSS_METADATA and
+	-FIX_FSS_DATA when restore fail with malformed string error
+
+2009-11-19 10:54  robocop
+
+	* firebird2/src/jrd/: pag.cpp (1.229), pag_proto.h (1.28):
+
+	Some of the functions here are not used anymore from outside.
+
+2009-11-19 10:52  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.295), met.epp (1.295):
+
+	We align the parentheses with the code.
+
+2009-11-19 10:37  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.471):
+
+	Style.
+
+2009-11-19 10:31  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.294):
+
+	Shortcut.
+
+2009-11-18 19:38  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.28):
+
+	Fixed CORE-2755 - SIMILAR TO works wrongly
+
+2009-11-18 15:31  asfernandes
+
+	* firebird2/src/jrd/: evl.cpp (1.315), val.h (1.45):
+
+	Remove unneeded casts
+
+2009-11-18 15:24  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.293), evl.cpp (1.314), exe.h
+	(1.146), jrd.h (1.275), met.epp (1.294), met.h (1.16), val.h
+	(1.44):
+
+	Fixed related issues: CORE-1518 - Adding a non-null restricted
+	column to a populated table renders the table inconsistent
+	CORE-2696 - "alter table" command can add a field which has "not
+	null" definition CORE-1748 - Unrestorable backup CORE-1355 - Zero
+	display instead of NULL
+
 2009-11-18 13:01  robocop
 
 	* firebird2/src/: dsql/DdlNodes.epp (1.15), jrd/Database.h (1.44),
