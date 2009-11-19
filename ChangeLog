@@ -1,3 +1,9 @@
+2009-11-18 19:58  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.26.2.2):
+
+	Backport fix for CORE-2755 - SIMILAR TO works wrongly
+
 2009-11-16 15:21  hvlad
 
 	* firebird2/: doc/README.trace_services (1.4.2.1),
