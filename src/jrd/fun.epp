@@ -838,7 +838,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
 			length += l;
         END_FOR;
 
-		function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) UserFunction(*dbb->dbb_permanent);
+		function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1u) UserFunction(*dbb->dbb_permanent);
 		function->fun_name = QualifiedName(X.RDB$FUNCTION_NAME,
 			(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME));
 		function->fun_count = count;
@@ -846,7 +846,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
 		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
 		function->fun_type = X.RDB$FUNCTION_TYPE;
 		function->fun_temp_length = length;
-		memcpy(function->fun_rpt, temp, (count + 1) * sizeof(fun_repeat));
+		memcpy(function->fun_rpt, temp, (count + 1u) * sizeof(fun_repeat));
 
 		// Prepare the exception message to be used in case this function ever
 		// causes an exception.  This is done at this time to save us from preparing
@@ -1066,7 +1066,8 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 	blb* blob = BLB_get_array(tdbb, tdbb->getRequest()->req_transaction, (bid*)value->dsc_address,
 							  array_desc);
 
-	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->iad_total_length];
+	fb_assert (array_desc->iad_total_length >= 0) // check before upcasting to size_t
+	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(array_desc->iad_total_length)];
 	BLB_get_data(tdbb, blob, data, array_desc->iad_total_length);
 	const USHORT dimensions = array_desc->iad_dimensions;
 
@@ -1079,7 +1080,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length)
 	{
 		SLONG n = array_desc->iad_count;
-		UCHAR* const temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
+		UCHAR* const temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(to.dsc_length * n)];
 		to.dsc_address = temp;
 		from.dsc_address = data;
 
@@ -1119,7 +1120,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		tail2->sad_lower = tail1->iad_lower;
 	}
 
-	return sizeof(scalar_array_desc) + (dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
+	return static_cast<SLONG>(sizeof(scalar_array_desc) + (dimensions - 1u) * sizeof(scalar_array_desc::sad_repeat));
 }
 
 
@@ -1272,7 +1273,7 @@ static void invoke(thread_db* tdbb,
 					// the string after the first zero octet copied.
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					temp_desc.dsc_length = strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
+					temp_desc.dsc_length = static_cast<USHORT>(strlen(reinterpret_cast<char*>(temp_ptr)) + 1);
 					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
 						udfError = UeMove;
 					break;
@@ -1280,7 +1281,7 @@ static void invoke(thread_db* tdbb,
 				case dtype_varying:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					temp_desc.dsc_length = reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
+					temp_desc.dsc_length = static_cast<USHORT>(reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT));
 					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
 						udfError = UeMove;
 					break;
