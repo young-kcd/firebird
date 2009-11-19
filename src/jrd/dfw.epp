@@ -698,8 +698,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 
-/* If no deferred work or it's all deferred event posting
-   don't bother */
+	/* If no deferred work or it's all deferred event posting don't bother */
 
 	if (!transaction->tra_deferred_job || !(transaction->tra_flags & TRA_deferred_meta))
 	{
@@ -709,13 +708,14 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 	SET_TDBB(tdbb);
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-/* Loop for as long as any of the deferred work routines says that it has
-   more to do.  A deferred work routine should be able to deal with any
-   value of phase, either to say that it wants to be called again in the
-   next phase (by returning true) or that it has nothing more to do in this
-   or later phases (by returning false). By convention, phase 0 has been
-   designated as the cleanup phase. If any non-zero phase punts, then phase 0
-   is executed for all deferred work blocks to cleanup work-in-progress. */
+	/* Loop for as long as any of the deferred work routines says that it has
+	more to do.  A deferred work routine should be able to deal with any
+	value of phase, either to say that it wants to be called again in the
+	next phase (by returning true) or that it has nothing more to do in this
+	or later phases (by returning false). By convention, phase 0 has been
+	designated as the cleanup phase. If any non-zero phase punts, then phase 0
+	is executed for all deferred work blocks to cleanup work-in-progress. */
+
 	bool dump_shadow = false;
 	SSHORT phase = 1;
 	bool more;
@@ -767,9 +767,9 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 
 	} while (more);
 
-/* Remove deferred work blocks so that system transaction and
-   commit retaining transactions don't re-execute them. Leave
-   events to be posted after commit */
+	/* Remove deferred work blocks so that system transaction and
+	commit retaining transactions don't re-execute them. Leave
+	events to be posted after commit */
 
 	for (DeferredWork* itr = transaction->tra_deferred_job->work; itr;)
 	{
@@ -1102,8 +1102,8 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) X IN RDB$FILES
 			WITH X.RDB$FILE_NAME EQ work->dfw_name.c_str()
-				/* First expand the file name This has already been done
-				   ** for shadows in add_shadow ()) */
+			/* First expand the file name This has already been done
+			** for shadows in add_shadow ()) */
 			if (work->dfw_type != dfw_add_shadow)
 			{
 				MODIFY X USING
@@ -1314,8 +1314,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_t
 				add_sequence = SDW_add_file(tdbb, Y.RDB$FILE_NAME, min_page, Y.RDB$SHADOW_NUMBER);
 			}
 
-			/* update the sequence number and bless the file entry as being
-			   good */
+			/* update the sequence number and bless the file entry as being good */
 
 			if (!sequence || (Y.RDB$FILE_START && add_sequence))
 			{
@@ -2761,8 +2760,7 @@ static bool create_relation(thread_db*	tdbb,
 		return true;
 
 	case 3:
-		/* Take a relation lock on rel id -1 before actually
-		   generating a relation id. */
+		/* Take a relation lock on rel id -1 before actually generating a relation id. */
 
 		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock;
 		lock->lck_dbb = dbb;
@@ -2823,8 +2821,7 @@ static bool create_relation(thread_db*	tdbb,
 						Y.RDB$DBKEY_LENGTH = 8;
 					else
 					{
-						/* update the dbkey length to include each of the base
-						   relations */
+						/* update the dbkey length to include each of the base relations */
 
 						handle = NULL;
 						Y.RDB$DBKEY_LENGTH = 0;
@@ -3375,8 +3372,7 @@ static bool delete_field(thread_db*	tdbb,
 	switch (phase)
 	{
 	case 1:
-		/* Look up the field in RFR.  If we can't find the field,
-		   go ahead with the delete. */
+		/* Look up the field in RFR.  If we can't find the field, go ahead with the delete. */
 
 		handle = NULL;
 		field_count = 0;
@@ -3386,7 +3382,7 @@ static bool delete_field(thread_db*	tdbb,
 				REL IN RDB$RELATIONS
 				OVER RDB$RELATION_NAME
 				WITH RFR.RDB$FIELD_SOURCE EQ work->dfw_name.c_str()
-				/* If the rfr field is also being deleted, there's no dependency */
+			/* If the rfr field is also being deleted, there's no dependency */
 			if (!find_depend_in_dfw(tdbb, RFR.RDB$FIELD_NAME, obj_computed, REL.RDB$RELATION_ID,
 									transaction))
 			{
@@ -3779,7 +3775,7 @@ static bool delete_parameter(thread_db*	tdbb,
 	switch (phase)
 	{
 	case 1:
-/* hvlad: temporary disable procedure parameters dependency check
+		/* hvlad: temporary disable procedure parameters dependency check
 		  until proper solution (something like dyn_mod_parameter)
 		  will be implemented. This check never worked properly
 		  so no harm is done
@@ -3792,7 +3788,7 @@ static bool delete_parameter(thread_db*	tdbb,
 			check_dependencies(tdbb, arg->dfw_name.c_str(), work->dfw_name.c_str(),
 							   obj_procedure, transaction);
 		}
-*/
+		*/
 	case 2:
 		return true;
 
@@ -3976,7 +3972,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		FOR(REQUEST_HANDLE request)
 			X IN RDB$VIEW_RELATIONS WITH
 			X.RDB$RELATION_NAME EQ work->dfw_name.c_str()
-				/* If the view is also being deleted, there's no dependency */
+			/* If the view is also being deleted, there's no dependency */
 			if (!find_depend_in_dfw(tdbb, X.RDB$VIEW_NAME, obj_view, 0, transaction))
 			{
 				view_count++;
@@ -4180,7 +4176,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				VFLD.RDB$VIEW_CONTEXT EQ VR.RDB$VIEW_CONTEXT AND
 				VFLD.RDB$RELATION_NAME EQ VR.RDB$VIEW_NAME AND
 				VFLD.RDB$BASE_FIELD EQ work->dfw_name.c_str()
-				/* If the view is also being deleted, there's no dependency */
+			/* If the view is also being deleted, there's no dependency */
 			if (!find_depend_in_dfw(tdbb, VR.RDB$VIEW_NAME, obj_view, 0, transaction))
 			{
 				f = VFLD.RDB$BASE_FIELD;
@@ -4599,7 +4595,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 	MET_verify_cache(tdbb);
 #endif
 
-/* get any dependencies now by parsing the blr */
+	/* get any dependencies now by parsing the blr */
 
 	if (procedure && !blob_id.isEmpty())
 	{
@@ -4673,7 +4669,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	if (!REQUEST(irq_c_trigger))
 		REQUEST(irq_c_trigger) = handle;
 
-/* get any dependencies now by parsing the blr */
+	/* get any dependencies now by parsing the blr */
 
 	if ((relation || (type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB) && !blob_id.isEmpty())
 	{
@@ -4755,7 +4751,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-/* Figure out the highest field id and allocate a format block */
+	/* Figure out the highest field id and allocate a format block */
 
 	USHORT count = 0;
 	for (tfb = stack; tfb; tfb = tfb->tfb_next)
@@ -4764,7 +4760,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	Format* format = Format::newFormat(*dbb->dbb_permanent, count + 1);
 	format->fmt_version = version ? *version : 0;
 
-/* Fill in the format block from the temporary field blocks */
+	/* Fill in the format block from the temporary field blocks */
 
 	for (tfb = stack; tfb; tfb = tfb->tfb_next)
 	{
@@ -4794,7 +4790,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		}
 	}
 
-/* Compute the offsets of the various fields */
+	/* Compute the offsets of the various fields */
 
 	ULONG offset = FLAG_BYTES(count);
 
@@ -4818,7 +4814,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 
 	format->fmt_length = (USHORT)offset;
 
-/* Release the temporary field blocks */
+	/* Release the temporary field blocks */
 
 	while ( (tfb = stack) )
 	{
@@ -4845,13 +4841,13 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		return old_format;
 	}
 
-/* Link the format block into the world */
+	/* Link the format block into the world */
 
 	vec<Format*>* vector = relation->rel_formats =
 		vec<Format*>::newVector(*dbb->dbb_permanent, relation->rel_formats, format->fmt_version + 1);
 	(*vector)[format->fmt_version] = format;
 
-/* Store format in system relation */
+	/* Store format in system relation */
 
 	jrd_req* request = CMP_find_request(tdbb, irq_format3, IRQ_REQUESTS);
 
@@ -6013,9 +6009,9 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		REQUEST(irq_format5) = request_fmtx;
 
 
-/* check constraint triggers.  We're looking for triggers that belong
-   to the table and are system triggers (i.e. system flag in (3, 4, 5))
-   or a user looking trigger that's involved in a check constraint */
+	/* check constraint triggers.  We're looking for triggers that belong
+	to the table and are system triggers (i.e. system flag in (3, 4, 5))
+	or a user looking trigger that's involved in a check constraint */
 
 	request_fmtx = CMP_find_request(tdbb, irq_format6, IRQ_REQUESTS);
 
