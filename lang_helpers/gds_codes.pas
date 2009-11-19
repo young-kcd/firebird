@@ -870,6 +870,8 @@ const
 	gds_gbak_mode_req                    = 336331031;
 	gds_gbak_just_data                   = 336331033;
 	gds_gbak_data_only                   = 336331034;
+	gds_gbak_invalid_metadata            = 336331093;
+	gds_gbak_invalid_data                = 336331094;
 	gds_dsql_too_old_ods                 = 336397205;
 	gds_dsql_table_not_found             = 336397206;
 	gds_dsql_view_not_found              = 336397207;

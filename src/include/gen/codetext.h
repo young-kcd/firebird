@@ -859,6 +859,8 @@ static const struct {
 	{"gbak_mode_req", 336331031},
 	{"gbak_just_data", 336331033},
 	{"gbak_data_only", 336331034},
+	{"gbak_invalid_metadata", 336331093},
+	{"gbak_invalid_data", 336331094},
 	{"dsql_too_old_ods", 336397205},
 	{"dsql_table_not_found", 336397206},
 	{"dsql_view_not_found", 336397207},

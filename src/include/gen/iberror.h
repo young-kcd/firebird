@@ -893,6 +893,8 @@ const ISC_STATUS isc_gbak_not_ownr                    = 336331026L;
 const ISC_STATUS isc_gbak_mode_req                    = 336331031L;
 const ISC_STATUS isc_gbak_just_data                   = 336331033L;
 const ISC_STATUS isc_gbak_data_only                   = 336331034L;
+const ISC_STATUS isc_gbak_invalid_metadata            = 336331093L;
+const ISC_STATUS isc_gbak_invalid_data                = 336331094L;
 const ISC_STATUS isc_dsql_too_old_ods                 = 336397205L;
 const ISC_STATUS isc_dsql_table_not_found             = 336397206L;
 const ISC_STATUS isc_dsql_view_not_found              = 336397207L;
@@ -1016,7 +1018,7 @@ const ISC_STATUS isc_fbsvcmgr_fp_open                 = 336986160L;
 const ISC_STATUS isc_fbsvcmgr_fp_read                 = 336986161L;
 const ISC_STATUS isc_fbsvcmgr_fp_empty                = 336986162L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 960;
+const ISC_STATUS isc_err_max                          = 962;
 
 #else /* c definitions */
 
@@ -1879,6 +1881,8 @@ const ISC_STATUS isc_err_max                          = 960;
 #define isc_gbak_mode_req                    336331031L
 #define isc_gbak_just_data                   336331033L
 #define isc_gbak_data_only                   336331034L
+#define isc_gbak_invalid_metadata            336331093L
+#define isc_gbak_invalid_data                336331094L
 #define isc_dsql_too_old_ods                 336397205L
 #define isc_dsql_table_not_found             336397206L
 #define isc_dsql_view_not_found              336397207L
@@ -2002,7 +2006,7 @@ const ISC_STATUS isc_err_max                          = 960;
 #define isc_fbsvcmgr_fp_read                 336986161L
 #define isc_fbsvcmgr_fp_empty                336986162L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          960
+#define isc_err_max                          962
 
 #endif
 

@@ -2493,6 +2493,8 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 323, NULL, 'backup options are:', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 324, NULL, 'restore options are:', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 325, NULL, 'general options are:', NULL, NULL);
+('gbak_invalid_metadata', 'general_on_error', 'restore.epp', NULL, 12, 341, NULL, 'Invalid metadata detected. Use -FIX_FSS_METADATA option.', NULL, NULL);
+('gbak_invalid_data', 'get_data', 'restore.epp', NULL, 12, 342, NULL, 'Invalid data detected. Use -FIX_FSS_DATA option.', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

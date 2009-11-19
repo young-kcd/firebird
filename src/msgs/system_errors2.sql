@@ -848,6 +848,8 @@ COMMIT WORK;
 (-901, '00', '000', 12, 279, 'gbak_mode_req', NULL, NULL)
 (-901, '00', '000', 12, 281, 'gbak_just_data', NULL, NULL)
 (-901, '00', '000', 12, 282, 'gbak_data_only', NULL, NULL)
+(-901, '00', '000', 12, 341, 'gbak_invalid_metadata', NULL, NULL)
+(-901, '00', '000', 12, 342, 'gbak_invalid_data', NULL, NULL)
 --  SQLERR
 (-804, 'HY', '000', 13, 917, 'dsql_too_old_ods', NULL, NULL)
 (-607, '42', 'S02', 13, 918, 'dsql_table_not_found', NULL, NULL)
