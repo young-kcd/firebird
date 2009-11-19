@@ -99,10 +99,19 @@
 #include "../jrd/extds/ExtDS.h"
 #include "../common/classes/DbImplementation.h"
 
+namespace Ods
+{
+	enum ClumpOper { CLUMP_ADD, CLUMP_REPLACE, CLUMP_REPLACE_ONLY };
+}
+
 using namespace Jrd;
 using namespace Ods;
 using namespace Firebird;
 
+static void add_clump(thread_db* tdbb,
+				   SLONG page_num, USHORT type,
+				   USHORT len, const UCHAR* entry, ClumpOper mode); // bool must_write
+static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID);
 static int blocking_ast_attachment(void*);
 static void find_clump_space(thread_db* tdbb, SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*);
 static bool find_type(thread_db* tdbb, SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**, const UCHAR**);
@@ -119,13 +128,13 @@ static const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB
 
 // CVC: Since nobody checks the result from this function (strange!), I changed
 // bool to void as the return type but left the result returned as comment.
-void PAG_add_clump(thread_db* tdbb,
+static void add_clump(thread_db* tdbb,
 				   SLONG page_num, USHORT type,
 				   USHORT len, const UCHAR* entry, ClumpOper mode) // bool must_write
 {
 /***********************************************
  *
- *	P A G _ a d d _ c l u m p
+ *	a d d _ c l u m p
  *
  ***********************************************
  *
@@ -342,9 +351,9 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 	}
 	else
 	{
-		PAG_add_clump(tdbb, HEADER_PAGE, HDR_file, strlen(file_name),
+		add_clump(tdbb, HEADER_PAGE, HDR_file, strlen(file_name),
 					  reinterpret_cast<const UCHAR*>(file_name), CLUMP_REPLACE); //, true;
-		PAG_add_clump(tdbb, HEADER_PAGE, HDR_last_page, sizeof(SLONG),
+		add_clump(tdbb, HEADER_PAGE, HDR_last_page, sizeof(SLONG),
 					  (UCHAR*) &start, CLUMP_REPLACE); //, true
 	}
 
@@ -426,11 +435,11 @@ bool PAG_add_header_entry(thread_db* tdbb, header_page* header,
 }
 
 
-void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
+static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 {
 /***********************************************
  *
- *	P A G _ a t t a c h _ t e m p _ p a g e s
+ *	a t t a c h _ t e m p _ p a g e s
  *
  ***********************************************
  *
@@ -947,6 +956,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 bool PAG_get_clump(thread_db* tdbb, SLONG page_num, USHORT type, USHORT* inout_len, UCHAR* entry)
 {
 /***********************************************
@@ -999,6 +1009,7 @@ bool PAG_get_clump(thread_db* tdbb, SLONG page_num, USHORT type, USHORT* inout_l
 
 	return true;
 }
+#endif
 
 
 void PAG_header(thread_db* tdbb, bool info)
@@ -1763,7 +1774,7 @@ void PAG_sweep_interval(thread_db* tdbb, SLONG interval)
  **************************************/
 
  	SET_TDBB(tdbb);
-	PAG_add_clump(tdbb, HEADER_PAGE, HDR_sweep_interval, sizeof(SLONG),
+	add_clump(tdbb, HEADER_PAGE, HDR_sweep_interval, sizeof(SLONG),
 				  (UCHAR*) &interval, CLUMP_REPLACE); //, true
 }
 
@@ -2240,7 +2251,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 #endif
 
 	if (!this->findPageSpace(result)) {
-		PAG_attach_temp_pages(tdbb, result);
+		attach_temp_pages(tdbb, result);
 	}
 
 	return result;
