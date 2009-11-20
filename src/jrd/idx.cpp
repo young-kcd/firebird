@@ -277,8 +277,7 @@ void IDX_create_index(thread_db* tdbb,
 	const int nullIndLen = isODS11 && !isDescending && (idx->idx_count == 1) ? 1 : 0;
 	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SINT64));
 
-	const USHORT max_key_size =
-		isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
+	const USHORT max_key_size = isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
 
 	if (key_length >= max_key_size)
 	{
@@ -519,8 +518,7 @@ void IDX_create_index(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
 
-	if ((relation->rel_flags & REL_temp_conn) &&
-		(relation->getPages(tdbb)->rel_instance_id != 0))
+	if ((relation->rel_flags & REL_temp_conn) && (relation->getPages(tdbb)->rel_instance_id != 0))
 	{
 		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, idx->idx_id);
 		if (idx_lock)
@@ -697,10 +695,7 @@ idx_e IDX_erase(thread_db* tdbb, record_param* rpb,
 }
 
 
-void IDX_garbage_collect(thread_db*			tdbb,
-						 record_param*		rpb,
-						 RecordStack& going,
-						 RecordStack& staying)
+void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going, RecordStack& staying)
 {
 /**************************************
  *
