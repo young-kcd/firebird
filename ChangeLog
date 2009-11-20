@@ -1,3 +1,86 @@
+2009-11-20 12:31  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.164):
+
+	Style.
+
+2009-11-20 12:29  robocop
+
+	* firebird2/src/: jrd/dmp.cpp (1.46), jrd/ods.h (1.59),
+	utilities/gstat/ppg.cpp (1.39), utilities/rebuild/rebuild.cpp
+	(1.36):
+
+	Get rid of obsolete field for replay logging.
+
+2009-11-20 11:27  robocop
+
+	* firebird2/src/jrd/dmp.cpp (1.45):
+
+	The same error was corrected many time ago in pag or sdw;
+	fortunately this is debugging file only.
+
+2009-11-20 11:19  robocop
+
+	* firebird2/src/jrd/pag.cpp (1.231):
+
+	These checks are for ODS >= 11.1 (Thanks Dmitry for confirmation.)
+
+2009-11-20 11:12  robocop
+
+	* firebird2/src/jrd/dmp.cpp (1.44):
+
+	Style.
+
+2009-11-20 10:58  robocop
+
+	* firebird2/src/jrd/dyn.epp (1.160):
+
+	Small cleanup.
+
+2009-11-20 10:22  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.297):
+
+	If the functions' params can fit in 100 columns...
+
+2009-11-20 10:19  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.365):
+
+	Comments.
+
+2009-11-20 09:45  robocop
+
+	* firebird2/src/jrd/: pag.cpp (1.230), os/posix/unix.cpp (1.128):
+
+	Enforce the minimum page size we *actually* support.
+
+2009-11-20 08:03  robocop
+
+	* firebird2/src/jrd/: cmp.cpp (1.364), cmp_proto.h (1.38), par.cpp
+	(1.251):
+
+	Style.
+
+2009-11-20 05:53  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.111),
+	lang_helpers/gds_codes.pas (1.109), src/include/gen/codetext.h
+	(1.119), src/include/gen/iberror.h (1.123), src/include/gen/msgs.h
+	(1.150), src/include/gen/sql_code.h (1.125),
+	src/include/gen/sql_state.h (1.55), src/jrd/dfw.epp (1.296),
+	src/msgs/facilities2.sql (1.90), src/msgs/messages2.sql (1.114),
+	src/msgs/system_errors2.sql (1.71):
+
+	Related to CORE-2759 (but doesn't fix it yet).
+
+2009-11-19 20:27  verbguy
+
+	* firebird2/src/jrd/fun.epp (1.135):
+
+	more 64-bit sign extension and truncation warnings. Claudio
+	reviewed already.
+
 2009-11-19 14:21  asfernandes
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.110),
