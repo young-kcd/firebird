@@ -134,7 +134,8 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 #endif
 
 	CompilerScratch* csb;
-	if (!(csb_ptr && (csb = *csb_ptr))) {
+	if (!(csb_ptr && (csb = *csb_ptr)))
+	{
 		size_t count = 5;
 		if (view_csb)
 			count += view_csb->csb_rpt.getCapacity();
@@ -159,7 +160,8 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		t1->csb_relation = relation;
 		t1->csb_stream = (UCHAR) stream;
 	}
-	else if (relation) {
+	else if (relation)
+	{
 		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
 		t1->csb_stream = csb->nextStream();
 		t1->csb_relation = relation;
@@ -175,7 +177,8 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		// be more then just csb_n_stream-numbers that hold data.
 		// Certainly csb_stream (see par_context where the context is retrieved)
 		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
-		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream) {
+		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream)
+		{
 			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
 			t2->csb_stream = ptr->csb_stream;
@@ -553,22 +556,22 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 	if (id < 0)
 		return NULL;
 
-/* If rel_fields is NULL this means that the relation is
- * in a temporary state (partially loaded).  In this case
- * there is nothing we can do but post an error and exit.
- * Note: This will most likely happen if we have a large list
- * of deferred work which can not complete because of some
- * error, and while we are trying to commit, we find
- * that we have a dependency on something later in the list.
- * IF there were no error, then the dependency woyld have
- * been resolved, because we would have fully loaded the
- * relation, but if it can not be loaded, then we have this
- * problem. The only thing that can be done to remedy this
- * problem is to rollback.  This will clear the DeferredWork list and
- * allow the user to remedy the original error.  Note: it would
- * be incorrect for us (the server) to perform the rollback
- * implicitly, because this is a task for the user to do, and
- * should never be decided by the server. This fixes bug 10052 */
+	/* If rel_fields is NULL this means that the relation is
+	 * in a temporary state (partially loaded).  In this case
+	 * there is nothing we can do but post an error and exit.
+	 * Note: This will most likely happen if we have a large list
+	 * of deferred work which can not complete because of some
+	 * error, and while we are trying to commit, we find
+	 * that we have a dependency on something later in the list.
+	 * IF there were no error, then the dependency woyld have
+	 * been resolved, because we would have fully loaded the
+	 * relation, but if it can not be loaded, then we have this
+	 * problem. The only thing that can be done to remedy this
+	 * problem is to rollback.  This will clear the DeferredWork list and
+	 * allow the user to remedy the original error.  Note: it would
+	 * be incorrect for us (the server) to perform the rollback
+	 * implicitly, because this is a task for the user to do, and
+	 * should never be decided by the server. This fixes bug 10052 */
 
 	// CVC: The code for procedures now compiles correctly, but Vlad has
 	// pointed out that we don't have default for output fields, therefore
@@ -734,7 +737,8 @@ SLONG PAR_symbol_to_gdscode(const Firebird::string& name)
  *
  **************************************/
 
-	for (int i = 0; codes[i].code_number; ++i) {
+	for (int i = 0; codes[i].code_number; ++i)
+	{
 		if (name == codes[i].code_string) {
 			return codes[i].code_number;
 		}
@@ -828,7 +832,8 @@ static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	node->nod_type = nod_list;
 	jrd_nod** ptr = node->nod_arg;
 
-	if (count) {
+	if (count)
+	{
 		do {
 			*ptr++ = PAR_parse_node(tdbb, csb, expected);
 		} while (--count);
@@ -1057,7 +1062,8 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 
 	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
 
-	if (tail->csb_flags & csb_used) {
+	if (tail->csb_flags & csb_used)
+	{
 		if (csb->csb_g_flags & csb_reuse_context) {
 			return tail->csb_stream;
 		}
@@ -1101,7 +1107,8 @@ static void par_dependency(thread_db*   tdbb,
 
 	jrd_nod* node = PAR_make_node(tdbb, e_dep_length);
 	node->nod_type = nod_dependency;
-	if (csb->csb_rpt[stream].csb_relation) {
+	if (csb->csb_rpt[stream].csb_relation)
+	{
 		node->nod_arg[e_dep_object] = (jrd_nod*) csb->csb_rpt[stream].csb_relation;
 		// How do I determine reliably this is a view?
 		// At this time, rel_view_rse is still null.
@@ -1110,18 +1117,21 @@ static void par_dependency(thread_db*   tdbb,
 		//else
 			node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
 	}
-	else if (csb->csb_rpt[stream].csb_procedure) {
+	else if (csb->csb_rpt[stream].csb_procedure)
+	{
 		node->nod_arg[e_dep_object] = (jrd_nod*) csb->csb_rpt[stream].csb_procedure;
 		node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_procedure;
 	}
 
-	if (field_name.length() > 0) {
+	if (field_name.length() > 0)
+	{
 		jrd_nod* field_node = PAR_make_node(tdbb, 1);
 		node->nod_arg[e_dep_field] = field_node;
 		field_node->nod_type = nod_literal;
 		field_node->nod_arg[0] = (jrd_nod*) stringDup(*tdbb->getDefaultPool(), field_name.c_str());
 	}
-	else if (id >= 0) {
+	else if (id >= 0)
+	{
 		jrd_nod* field_node = PAR_make_node(tdbb, 1);
 		node->nod_arg[e_dep_field] = field_node;
 		field_node->nod_type = nod_field;
@@ -1255,14 +1265,16 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 	if (!csb->csb_domain_validation.isEmpty() &&
 		(blr_operator == blr_fid || blr_operator == blr_field) && context == 0)
 	{
-		if (blr_operator == blr_fid) {
+		if (blr_operator == blr_fid)
+		{
 #ifdef DEV_BUILD
 			SSHORT id =
 #endif
 				csb->csb_blr_reader.getWord();
 			fb_assert(id == 0);
 		}
-		else {
+		else
+		{
 			Firebird::MetaName name;
 			PAR_name(csb, name);
 		}
@@ -1342,12 +1354,14 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			PAR_name(csb, name);
 			if ((id = MET_lookup_field(tdbb, relation, name.c_str(), 0)) < 0)
 			{
-				if (csb->csb_g_flags & csb_validation) {
+				if (csb->csb_g_flags & csb_validation)
+				{
 					id = 0;
 					flags |= nod_id;
 					is_column = true;
 				}
-				else {
+				else
+				{
 					if (relation->rel_flags & REL_system)
 					{
 						jrd_nod* node = PAR_make_node(tdbb, 0);
@@ -1372,11 +1386,12 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		}
 	}
 
-/* check for dependencies -- if a field name was given,
-   use it because when restoring the database the field
-   id's may not be valid yet */
+	// check for dependencies -- if a field name was given,
+	// use it because when restoring the database the field
+	// id's may not be valid yet
 
-	if (csb->csb_g_flags & csb_get_dependencies) {
+	if (csb->csb_g_flags & csb_get_dependencies)
+	{
 		if (blr_operator == blr_fid)
 			par_dependency(tdbb, csb, stream, id, "");
 		else
@@ -1450,8 +1465,10 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	// Isn't it strange that gbak presence means nothing to this function now?
 	UserFunction* function =
 		FUN_lookup_function(tdbb, name); //, !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
-	if (!function) {
-		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
+	if (!function)
+	{
+		if (tdbb->tdbb_flags & TDBB_prc_being_dropped)
+		{
 			jrd_nod* anode = PAR_make_node(tdbb, e_fun_length);
 			anode->nod_count = 1;
 			anode->nod_arg[e_fun_function] = NULL;
@@ -1464,7 +1481,8 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	}
 
 	UserFunction* homonyms;
-	for (homonyms = function; homonyms; homonyms = homonyms->fun_homonym) {
+	for (homonyms = function; homonyms; homonyms = homonyms->fun_homonym)
+	{
 		if (homonyms->fun_entrypoint || homonyms->fun_external)
 			break;
 	}
@@ -1491,7 +1509,8 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
     /* CVC: I will track ufds only if a proc is not being dropped. */
-    if (csb->csb_g_flags & csb_get_dependencies) {
+    if (csb->csb_g_flags & csb_get_dependencies)
+    {
         jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
         dep_node->nod_type = nod_dependency;
         dep_node->nod_arg [e_dep_object] = (jrd_nod*) function;
@@ -1618,7 +1637,8 @@ static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	SSHORT count = csb->csb_blr_reader.getWord();
 	NodeStack map;
 
-	while (--count >= 0) {
+	while (--count >= 0)
+	{
 		jrd_nod* assignment = PAR_make_node(tdbb, e_asgn_length);
 		assignment->nod_type = nod_assignment;
 		assignment->nod_count = e_asgn_length;
@@ -1773,7 +1793,8 @@ USHORT PAR_name(CompilerScratch* csb, Firebird::MetaName& name)
 
 	// Check for overly long identifiers at BLR parse stage to prevent unwanted
 	// surprises in deeper layers of the engine.
-	if (l > MAX_SQL_IDENTIFIER_LEN) {
+	if (l > MAX_SQL_IDENTIFIER_LEN)
+	{
 		SqlIdentifier st;
 		char* s = st;
 		l = MAX_SQL_IDENTIFIER_LEN;
@@ -1859,7 +1880,8 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 /* a join type indicates a cross of two or more streams */
 
-	if (node_type == blr_join || node_type == blr_merge) {
+	if (node_type == blr_join || node_type == blr_merge)
+	{
 		USHORT count = (USHORT) csb->csb_blr_reader.getByte();
 		jrd_nod* plan = PAR_make_node(tdbb, count);
 		plan->nod_type = (nod_t)(USHORT) blr_table[node_type];
@@ -2181,7 +2203,8 @@ static void par_procedure_parms(thread_db* tdbb,
 		/* --- end of fix --- */
 		if (!mismatch)
 			n = format->fmt_count / 2;
-		else {
+		else
+		{
 			/*  There was a parameter mismatch hence can't depend upon the format's
 			   fmt_count. Use count instead.
 			 */
@@ -2192,11 +2215,13 @@ static void par_procedure_parms(thread_db* tdbb,
 		list->nod_count = n;
 		jrd_nod** ptr = list->nod_arg;
 		USHORT asgn_arg1, asgn_arg2;
-		if (input_flag) {
+		if (input_flag)
+		{
 			asgn_arg1 = e_asgn_from;
 			asgn_arg2 = e_asgn_to;
 		}
-		else {
+		else
+		{
 			asgn_arg1 = e_asgn_to;
 			asgn_arg2 = e_asgn_from;
 		}
@@ -2208,7 +2233,8 @@ static void par_procedure_parms(thread_db* tdbb,
 			asgn->nod_count = count_table[blr_assignment];
 
 			// default value for parameter
-			if ((count <= 0) && input_flag) {
+			if ((count <= 0) && input_flag)
+			{
 				Parameter* parameter = (*procedure->prc_input_fields)[procedure->prc_inputs - n];
 				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
@@ -2266,11 +2292,13 @@ static jrd_nod* par_relation(thread_db* tdbb,
 	case blr_rid2:
 		{
 			const SSHORT id = csb->csb_blr_reader.getWord();
-			if (blr_operator == blr_rid2) {
+			if (blr_operator == blr_rid2)
+			{
 				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 				PAR_name(csb, *alias_string);
 			}
-			if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
+			if (!(relation = MET_lookup_relation_id(tdbb, id, false)))
+			{
 				name.printf("id %d", id);
 				error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name));
 			}
@@ -2279,7 +2307,8 @@ static jrd_nod* par_relation(thread_db* tdbb,
 	case blr_relation:
 	case blr_relation2:
 		PAR_name(csb, name);
-		if (blr_operator == blr_relation2) {
+		if (blr_operator == blr_relation2)
+		{
 			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 			PAR_name(csb, *alias_string);
 		}
@@ -2312,7 +2341,8 @@ static jrd_nod* par_relation(thread_db* tdbb,
 /* generate a stream for the relation reference,
    assuming it is a real reference */
 
-	if (parse_context) {
+	if (parse_context)
+	{
 		SSHORT context;
 		const SSHORT stream = par_context(csb, &context);
 		fb_assert(stream <= MAX_STREAMS);
@@ -2356,7 +2386,8 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 	rse->rse_count = count;
 	jrd_nod** ptr = rse->rse_relation;
 
-	while (--count >= 0) {
+	while (--count >= 0)
+	{
 		// AB: Added TYPE_RSE for derived table support
 		*ptr++ = PAR_parse_node(tdbb, csb, RELATION); // TYPE_RSE);
 		//*ptr++ = PAR_parse_node(tdbb, csb, RELATION);
@@ -2425,7 +2456,8 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				{
 					// Convert right outer joins to left joins to avoid
 					// RIGHT JOIN handling at lower engine levels
-					if (rse->rse_jointype == blr_right) {
+					if (rse->rse_jointype == blr_right)
+					{
 						// Swap sub-streams
 						jrd_nod* temp = rse->rse_relation[0];
 						rse->rse_relation[0] = rse->rse_relation[1];
@@ -2471,7 +2503,8 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 
 	while (--count >= 0)
 	{
-		if (flag) {
+		if (flag)
+		{
 			UCHAR code = csb->csb_blr_reader.getByte();
 			switch (code)
 			{
@@ -2516,7 +2549,8 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 	rse->rse_count = 1;
 	rse->rse_relation[0] = PAR_parse_node(tdbb, csb, RELATION);
 
-	while (true) {
+	while (true)
+	{
 		const UCHAR op = csb->csb_blr_reader.getByte();
 		switch (op)
 		{
@@ -2605,7 +2639,8 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
 
 	NodeStack clauses;
 
-	while (--count >= 0) {
+	while (--count >= 0)
+	{
 		clauses.push(PAR_parse_node(tdbb, csb, TYPE_RSE));
 		clauses.push(par_map(tdbb, csb, map_stream));
 	}
@@ -2633,7 +2668,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	const USHORT blr_offset = csb->csb_blr_reader.getOffset();
 	const SSHORT blr_operator = csb->csb_blr_reader.getByte();
 
-	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table)) {
+	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table))
+	{
         // NS: This error string is correct, please do not mangle it again and again.
 		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
         PAR_syntax_error(csb, "valid BLR code");
@@ -2648,12 +2684,14 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	jrd_nod* node;
 	jrd_nod** arg;
 	USHORT n = length_table[blr_operator];
-	if (n) {
+	if (n)
+	{
 		node = PAR_make_node(tdbb, n);
 		node->nod_count = count_table[blr_operator];
 		arg = node->nod_arg;
 	}
-	else {
+	else
+	{
 		node = NULL;
 		arg = NULL;
 	}
@@ -3274,7 +3312,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			if (n >= format->fmt_count)
 				error(csb, Arg::Gds(isc_badparnum));
-			if (blr_operator != blr_parameter) {
+			if (blr_operator != blr_parameter)
+			{
 				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
 				node->nod_arg[e_arg_flag] = temp;
 				node->nod_count = 1;
@@ -3286,7 +3325,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 				if (n >= format->fmt_count)
 					error(csb, Arg::Gds(isc_badparnum));
 			}
-			if (blr_operator == blr_parameter3) {
+			if (blr_operator == blr_parameter3)
+			{
 				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
 				node->nod_arg[e_arg_indicator] = temp;
 				node->nod_count = 2;
@@ -3309,7 +3349,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		{
 			NodeStack stack;
 
-			while (csb->csb_blr_reader.peekByte() != (UCHAR) blr_end) {
+			while (csb->csb_blr_reader.peekByte() != (UCHAR) blr_end)
+			{
 				if (blr_operator == blr_select && csb->csb_blr_reader.peekByte() != blr_receive)
 					PAR_syntax_error(csb, "blr_receive");
 				stack.push(PAR_parse_node(tdbb, csb, sub_type));

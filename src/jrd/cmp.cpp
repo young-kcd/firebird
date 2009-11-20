@@ -186,7 +186,8 @@ bool CMP_clone_is_active(const jrd_req* request)
 		return true;
 
 	vec<jrd_req*>* vector = request->req_sub_requests;
-	if (vector) {
+	if (vector)
+	{
 		for (vec<jrd_req*>::const_iterator sub_req = vector->begin(), end = vector->end();
 			sub_req < end; ++sub_req)
 		{
@@ -261,7 +262,8 @@ inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, 
  *
  **************************************/
 {
-	if (tvec) {
+	if (tvec)
+	{
 		for (size_t i = 0; i < tvec->getCount(); i++)
 		{
 			Trigger& t = (*tvec)[i];
@@ -297,12 +299,14 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 		list.insert(i, *item);
 
 		// Add externals recursively
-		if (item->exa_action == ExternalAccess::exa_procedure) {
+		if (item->exa_action == ExternalAccess::exa_procedure)
+		{
 			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
 			if (prc && prc->prc_request)
 				build_external_access(tdbb, list, prc->prc_request);
 		}
-		else {
+		else
+		{
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
 
 			if (!relation)
@@ -333,7 +337,8 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 }
 
 
-static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view)
+static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers,
+	jrd_rel* view)
 {
 /**************************************
  *
@@ -420,7 +425,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 
 	for (ExternalAccess* item = external.begin(); item < external.end(); item++)
 	{
-		if (item->exa_action == ExternalAccess::exa_procedure) {
+		if (item->exa_action == ExternalAccess::exa_procedure)
+		{
 			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
 			if (!prc->prc_request)
 				continue;
@@ -445,7 +451,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 				}
 			}
 		}
-		else {
+		else
+		{
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
 			jrd_rel* view = NULL;
 			if (item->exa_view_id)
@@ -541,7 +548,8 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 	if (validate) {
 		jrd_prc* procedure = request->req_procedure;
-		if (procedure) {
+		if (procedure)
+		{
 			const TEXT* prc_sec_name = (procedure->prc_security_name.length() > 0 ?
 				procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(tdbb, prc_sec_name);
@@ -740,14 +748,17 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 	// Request exists and is in use. Look for clones until we find
 	// one that is available.
 
-	for (int n = 1; true; n++) {
-		if (n > MAX_RECURSION) {
+	for (int n = 1; true; n++)
+	{
+		if (n > MAX_RECURSION)
+		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
 			// Msg363 "request depth exceeded. (Recursive definition?)"
 		}
 		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
-		if (!(clone->req_flags & (req_active | req_reserved))) {
+		if (!(clone->req_flags & (req_active | req_reserved)))
+		{
 			clone->req_flags |= req_reserved;
 			return clone;
 		}
@@ -1218,8 +1229,10 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_DATE(desc2.dsc_dtype));
 
-				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2)) {
-					if (node->nod_type == nod_subtract) {
+				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2))
+				{
+					if (node->nod_type == nod_subtract)
+					{
 						// <any date> - <any date>
 
 						/* Legal permutations are:
@@ -1253,21 +1266,24 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							ERR_post(Arg::Gds(isc_expression_eval_err));
 						}
 
-						if (dtype == dtype_sql_date) {
+						if (dtype == dtype_sql_date)
+						{
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = 0;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else if (dtype == dtype_sql_time) {
+						else if (dtype == dtype_sql_time)
+						{
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else {
+						else
+						{
 							fb_assert(dtype == dtype_timestamp);
 							desc->dsc_dtype = DEFAULT_DOUBLE;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
@@ -1276,7 +1292,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							desc->dsc_flags = 0;
 						}
 					}
-					else if (IS_DATE_AND_TIME(desc1, desc2)) {
+					else if (IS_DATE_AND_TIME(desc1, desc2))
+					{
 						// <date> + <time>
 						// <time> + <date>
 						desc->dsc_dtype = dtype_timestamp;
@@ -1285,7 +1302,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 						desc->dsc_sub_type = 0;
 						desc->dsc_flags = 0;
 					}
-					else {
+					else
+					{
 						// <date> + <date>
 						ERR_post(Arg::Gds(isc_expression_eval_err));
 					}
@@ -1303,7 +1321,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 				}
-				else {
+				else
+				{
 					// <non-date> - <date>
 					ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
@@ -1423,7 +1442,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_unknown)) &&
 					(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_unknown)))
 				{
-					if (node->nod_type == nod_subtract2) {
+					if (node->nod_type == nod_subtract2)
+					{
 						// <any date> - <any date>
 
 						/* Legal permutations are:
@@ -1454,21 +1474,24 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							ERR_post(Arg::Gds(isc_expression_eval_err));
 						}
 
-						if (dtype == dtype_sql_date) {
+						if (dtype == dtype_sql_date)
+						{
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = 0;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else if (dtype == dtype_sql_time) {
+						else if (dtype == dtype_sql_time)
+						{
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else {
+						else
+						{
 							fb_assert(dtype == dtype_timestamp || dtype == dtype_unknown);
 							desc->dsc_dtype = DEFAULT_DOUBLE;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
@@ -1477,7 +1500,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							desc->dsc_flags = 0;
 						}
 					}
-					else if (IS_DATE_AND_TIME(desc1, desc2)) {
+					else if (IS_DATE_AND_TIME(desc1, desc2))
+					{
 						// <date> + <time>
 						// <time> + <date>
 						desc->dsc_dtype = dtype_timestamp;
@@ -1486,7 +1510,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 						desc->dsc_sub_type = 0;
 						desc->dsc_flags = 0;
 					}
-					else {
+					else
+					{
 						// <date> + <date>
 						ERR_post(Arg::Gds(isc_expression_eval_err));
 					}
@@ -1505,7 +1530,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 				}
-				else {
+				else
+				{
 					// <non-date> - <date>
 					ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
@@ -1679,7 +1705,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 	case nod_upcase:
 	case nod_lowcase:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob) {
+		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob)
+		{
 			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = ttype_ascii;
@@ -1937,7 +1964,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			if (function) {
 				*desc = function->fun_rpt[function->fun_return_arg].fun_desc;
 			}
-			else {
+			else
+			{
 				/* Note that CMP_get_desc is always called with a pre-allocated DSC, i.e:
 					   DSC desc;
 					   CMP_get_desc (.... &desc);
@@ -2042,7 +2070,8 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 	// for to find an existing block
 
-	for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next) {
+	for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
+	{
 		if (index->idl_id == id) {
 			return index;
 		}
@@ -2286,7 +2315,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	tdbb->setRequest(old_request);
 
 	} // try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		tdbb->setRequest(old_request);
 		ERR_punt();
@@ -2345,10 +2375,7 @@ void CMP_post_access(thread_db* tdbb,
 }
 
 
-void CMP_post_resource(	ResourceList* rsc_ptr,
-						void* obj,
-						enum Resource::rsc_s type,
-						USHORT id)
+void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, USHORT id)
 {
 /**************************************
  *
@@ -2429,7 +2456,8 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	if ((procedure->prc_use_count == 0) &&
 		( (*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] != procedure)) // &procedure->prc_header))
 	{
-		if (procedure->prc_request) {
+		if (procedure->prc_request)
+		{
 			CMP_release(tdbb, procedure->prc_request);
 			procedure->prc_request = NULL;
 		}
@@ -2504,11 +2532,13 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 
 	EXE_unwind(tdbb, request);
 
-	if (request->req_attachment) {
+	if (request->req_attachment)
+	{
 		for (jrd_req** next = &request->req_attachment->att_requests;
 			*next; next = &(*next)->req_request)
 		{
-			if (*next == request) {
+			if (*next == request)
+			{
 				*next = request->req_request;
 #ifdef DEV_BUILD
 				// Once I've seen att_requests == 0x00000014,
@@ -2517,7 +2547,8 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 				// In another one (jrd.cpp/GDS_COMPILE()), it's value is used
 				// right before pointer assignment. So make some use of pointer here
 				// to try to detect false in it earlier ...
-				if (*next) {
+				if (*next)
+				{
 					jrd_req* req = (*next)->req_request;
 					req++;
 				}
@@ -2588,7 +2619,8 @@ void CMP_shutdown_database(thread_db* tdbb)
 				}
 				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
 				{
-					if (index->idl_lock) {
+					if (index->idl_lock)
+					{
 						index->idl_count = 0;
 						LCK_release(tdbb, index->idl_lock);
 					}
@@ -2888,7 +2920,8 @@ static jrd_nod* copy(thread_db* tdbb,
 				field_id = (USHORT)(IPTR) input->nod_arg[e_fld_id];
 			}
 			stream = (USHORT)(IPTR) input->nod_arg[e_fld_stream];
-			if (remap_fld) {
+			if (remap_fld)
+			{
 				jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 				jrd_fld* field = MET_get_field(relation, field_id);
 				if (field->fld_source)
@@ -3290,7 +3323,8 @@ static jrd_nod* copy(thread_db* tdbb,
 
 	// finish off sort
 
-	if (input->nod_type == nod_sort) {
+	if (input->nod_type == nod_sort)
+	{
 		for (jrd_nod** end = arg1 + input->nod_count * 2; arg1 < end; arg1++, arg2++)
 		{
 			*arg2 = *arg1;
@@ -3382,7 +3416,8 @@ static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* r
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
 			const CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 			const jrd_rel* relation = tail->csb_relation;
-			if (relation) {
+			if (relation)
+			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : (view ? view->rel_id : 0),
 								SCL_read, object_table,
@@ -3435,7 +3470,8 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 
 	UCHAR local_map[MAP_LENGTH];
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
-	if (!map) {
+	if (!map)
+	{
 		map = local_map;
 		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR relevant, too?
 		map[0] = (UCHAR) stream;
@@ -3526,7 +3562,8 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 
 	UCHAR local_map[MAP_LENGTH];
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
-	if (!map) {
+	if (!map)
+	{
 		map = local_map;
 		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR still relevant for the bitmap?
 		map[0] = (UCHAR) stream;
@@ -3654,7 +3691,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
 		ptr[1] = CMP_pass1(tdbb, csb, ptr[1]);
-		if (node->nod_count == 3) {
+		if (node->nod_count == 3)
+		{
 			// escape symbol also needs to be taken care of
 			ptr[2] = CMP_pass1(tdbb, csb, ptr[2]);
 		}
@@ -3707,26 +3745,26 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return node;
 
 	case nod_variable:
-	{
-		const USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
-		vec<jrd_nod*>* vector = csb->csb_variables;
-		if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
 		{
-			PAR_syntax_error(csb, "variable identifier");
+			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
+			vec<jrd_nod*>* vector = csb->csb_variables;
+			if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
+			{
+				PAR_syntax_error(csb, "variable identifier");
+			}
 		}
 		break;
-	}
 
 	case nod_init_variable:
-	{
-		const USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
-		vec<jrd_nod*>* vector = csb->csb_variables;
-		if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
 		{
-			PAR_syntax_error(csb, "variable identifier");
+			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
+			vec<jrd_nod*>* vector = csb->csb_variables;
+			if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
+			{
+				PAR_syntax_error(csb, "variable identifier");
+			}
 		}
 		break;
-	}
 
 	case nod_argument:
 		break;
@@ -3814,7 +3852,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			if (tail->csb_flags & csb_modify)
 			{
-				if (!csb->csb_validate_expr) {
+				if (!csb->csb_validate_expr)
+				{
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id :
 										(view ? view->rel_id : 0),
@@ -3860,7 +3899,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 								SCL_read, object_column, field->fld_name, relation->rel_name);
 			}
 
-			if (!(sub = field->fld_computation) && !(sub = field->fld_source)) {
+			if (!(sub = field->fld_computation) && !(sub = field->fld_source))
+			{
 
 				if (!relation->rel_view_rse)
 					break;
@@ -3879,7 +3919,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			// the substitution.
 			// Comment 1994-August-08 David Schnepper
 
-			if (tail->csb_flags & (csb_view_update | csb_trigger)) {
+			if (tail->csb_flags & (csb_view_update | csb_trigger))
+			{
 				// dimitr:	added an extra check for views, because we don't
 				//			want their old/new contexts to be substituted
 				if (relation->rel_view_rse || !field->fld_computation)
@@ -3888,7 +3929,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			UCHAR local_map[MAP_LENGTH];
 			UCHAR* map = tail->csb_map;
-			if (!map) {
+			if (!map)
+			{
 				map = local_map;
 				fb_assert(stream + 2 <= MAX_STREAMS);
 				local_map[0] = (UCHAR) stream;
@@ -3983,7 +4025,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_assignment:
 		{
 			sub = node->nod_arg[e_asgn_from];
-			if (sub->nod_type == nod_field) {
+			if (sub->nod_type == nod_field)
+			{
 				stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
 				jrd_fld* field = MET_get_field(csb->csb_rpt[stream].csb_relation,
 									 		   (USHORT)(IPTR) sub->nod_arg[e_fld_id]);
@@ -4000,7 +4043,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			if (!field) {
 				break;
 			}
-			if (field->fld_missing_value) {
+			if (field->fld_missing_value)
+			{
 				node->nod_arg[e_asgn_missing] = field->fld_missing_value;
 				node->nod_count = 3;
 			}
@@ -4250,14 +4294,14 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return node;
 
 	case nod_dcl_variable:
-	{
-		const USHORT n = (USHORT)(IPTR) node->nod_arg[e_dcl_id];
-		vec<jrd_nod*>* vector = csb->csb_variables =
-			vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
-		fb_assert(!(*vector)[n]);
-		(*vector)[n] = node;
+		{
+			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_dcl_id];
+			vec<jrd_nod*>* vector = csb->csb_variables =
+				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
+			fb_assert(!(*vector)[n]);
+			(*vector)[n] = node;
+		}
 		break;
-	}
 
 	default:
 		break;
@@ -4340,7 +4384,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	jrd_rel* view = NULL;
 	USHORT parent_stream = 0;
 
-	for (;;) {
+	for (;;)
+	{
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		const USHORT stream = new_stream;
 
@@ -4369,7 +4414,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// if we have a view with triggers, let's expand it
 
-		if (relation->rel_view_rse && trigger) {
+		if (relation->rel_view_rse && trigger)
+		{
 
 			new_stream = csb->nextStream();
 			node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) new_stream;
@@ -4385,7 +4431,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			pass1_update(tdbb, csb, relation, trigger, stream, new_stream,
 						 priv, parent, parent_stream);
 
-		if (!source) {
+		if (!source)
+		{
 
 			// no source means we're done
 
@@ -4399,7 +4446,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		UCHAR* map = csb->csb_rpt[stream].csb_map;
 
-		if (trigger) {
+		if (trigger)
+		{
 
 			// set up the new target stream
 
@@ -4415,7 +4463,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			node = view_node;
 		}
-		else {
+		else
+		{
 
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
@@ -4460,8 +4509,10 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 	vec<jrd_fld*>::iterator ptr = fields->begin();
 	for (const vec<jrd_fld*>::const_iterator end = fields->end(); ptr < end; ++ptr, ++id)
 	{
-		if (*ptr) {
-			if (remap) {
+		if (*ptr)
+		{
+			if (remap)
+			{
 				const jrd_fld* field = MET_get_field(relation, id);
 				if (field->fld_source) {
 					new_id = (USHORT)(IPTR) (field->fld_source)->nod_arg[e_fld_id];
@@ -4475,7 +4526,8 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 			}
 			jrd_nod* node = PAR_gen_field(tdbb, new_stream, new_id);
 			CMP_get_desc(tdbb, csb, node, &desc);
-			if (!desc.dsc_address) {
+			if (!desc.dsc_address)
+			{
 				delete node;
 				continue;
 			}
@@ -4522,7 +4574,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	// to support nested views, loop until we hit a table or
 	// a view with user-defined triggers (which means no update)
 
-	for (;;) {
+	for (;;)
+	{
 		USHORT stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 
@@ -4551,7 +4604,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// if we have a view with triggers, let's expand it
 
-		if (relation->rel_view_rse && trigger) {
+		if (relation->rel_view_rse && trigger)
+		{
 
 			node->nod_arg[e_mod_map_view] = pass1_expand_view(tdbb, csb, stream, new_stream, false);
 			node->nod_count = MAX(node->nod_count, (USHORT) e_mod_map_view + 1);
@@ -4562,11 +4616,13 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream,
 									   new_stream, priv, parent, parent_stream);
 
-		if (!source) {
+		if (!source)
+		{
 
 			// no source means we're done
 
-			if (!relation->rel_view_rse) {
+			if (!relation->rel_view_rse)
+			{
 
 				// apply validation constraints
 
@@ -4594,7 +4650,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		map = alloc_map(tdbb, csb, (SSHORT)(IPTR) node->nod_arg[e_mod_new_stream]);
 		source = copy(tdbb, csb, source, map, 0, NULL, false);
 
-		if (trigger) {
+		if (trigger)
+		{
 
 			// set up the new target stream
 
@@ -4615,7 +4672,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			node = view_node;
 		}
-		else {
+		else
+		{
 
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
@@ -4632,9 +4690,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 }
 
 
-static RecordSelExpr* pass1_rse(thread_db* tdbb,
-					 CompilerScratch* csb,
-					 RecordSelExpr* rse)
+static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -4694,7 +4750,8 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 
 	USHORT count = stack.getCount();
 
-	if (count != rse->rse_count) {
+	if (count != rse->rse_count)
+	{
 		RecordSelExpr* new_rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
 		*new_rse = *rse;
 		new_rse->rse_count = count;
@@ -4727,8 +4784,10 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 		rse->rse_skip = CMP_pass1(tdbb, csb, skip);
 	}
 
-	if (boolean) {
-		if (rse->rse_boolean) {
+	if (boolean)
+	{
+		if (rse->rse_boolean)
+		{
 			jrd_nod* additional = PAR_make_node(tdbb, 2);
 			additional->nod_type = nod_and;
 			additional->nod_arg[0] = boolean;
@@ -4815,11 +4874,13 @@ static void pass1_source(thread_db*			tdbb,
 			}
 			// fold in the boolean for this inner join with the one for the parent
 
-			if (sub_rse->rse_boolean) {
+			if (sub_rse->rse_boolean)
+			{
 
 				jrd_nod* node = CMP_pass1(tdbb, csb, sub_rse->rse_boolean);
 
-				if (*boolean) {
+				if (*boolean)
+				{
 					jrd_nod* additional = PAR_make_node(tdbb, 2);
 					additional->nod_type = nod_and;
 					additional->nod_arg[0] = node;
@@ -4845,7 +4906,8 @@ static void pass1_source(thread_db*			tdbb,
 
 	// special case: procedure
 
-	if (source->nod_type == nod_procedure) {
+	if (source->nod_type == nod_procedure)
+	{
 		CMP_pass1(tdbb, csb, source);
 		jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
 		  						(SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
@@ -4856,14 +4918,16 @@ static void pass1_source(thread_db*			tdbb,
 
 	// special case: union
 
-	if (source->nod_type == nod_union) {
+	if (source->nod_type == nod_union)
+	{
 		CMP_pass1(tdbb, csb, source->nod_arg[e_uni_clauses]);
 		return;
 	}
 
 	// special case: group-by/global aggregates
 
-	if (source->nod_type == nod_aggregate) {
+	if (source->nod_type == nod_aggregate)
+	{
 		fb_assert((int) (IPTR) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		CMP_pass1(tdbb, csb, source);
 		return;
@@ -4888,11 +4952,13 @@ static void pass1_source(thread_db*			tdbb,
 
 	// in the case where there is a parent view, find the context name
 
-	if (parent_view) {
+	if (parent_view)
+	{
 		ViewContexts &ctx = parent_view->rel_view_contexts;
 		USHORT key = (USHORT)(IPTR) source->nod_arg[e_rel_context];
 		size_t pos;
-		if (ctx.find(key, pos)) {
+		if (ctx.find(key, pos))
+		{
 			element->csb_alias = FB_NEW(csb->csb_pool)
 				Firebird::string(csb->csb_pool, ctx[pos]->vcx_context_name);
 		}
@@ -4964,7 +5030,8 @@ static void pass1_source(thread_db*			tdbb,
 	// base table(s) instead of the view's context (see bug #8822), so we are ready to context-
 	// recognize them in CMP_pass1() - that is, replace the field nodes with actual field blocks.
 
-	if (view_rse->rse_projection) {
+	if (view_rse->rse_projection)
+	{
 		rse->rse_projection =
 			CMP_pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_projection, map, 0, NULL, false));
 	}
@@ -4972,10 +5039,12 @@ static void pass1_source(thread_db*			tdbb,
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the
 	// boolean on the parent view, if any
 
-	if (view_rse->rse_boolean) {
+	if (view_rse->rse_boolean)
+	{
 		jrd_nod* node =
 			CMP_pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_boolean, map, 0, NULL, false));
-		if (*boolean) {
+		if (*boolean)
+		{
 			// The order of the nodes here is important! The
 			// boolean from the view must appear first so that
 			// it gets expanded first in pass1.
@@ -5026,7 +5095,8 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	// to support nested views, loop until we hit a table or
 	// a view with user-defined triggers (which means no update)
 
-	for (;;) {
+	for (;;)
+	{
 		const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
@@ -5057,11 +5127,13 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		jrd_nod* source =
 			 pass1_update(tdbb, csb, relation, trigger, stream, stream, priv, parent, parent_stream);
 
-		if (!source) {
+		if (!source)
+		{
 
 			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
 
-			if (!relation->rel_view_rse) {
+			if (!relation->rel_view_rse)
+			{
 
 				// apply validation constraints
 
@@ -5079,7 +5151,8 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		UCHAR* map = alloc_map(tdbb, csb, stream);
 
-		if (trigger) {
+		if (trigger)
+		{
 
 			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
 
@@ -5109,7 +5182,8 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			node = view_node;
 		}
-		else {
+		else
+		{
 
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
@@ -5294,7 +5368,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		if (! rse_node) {
 			ERR_post(Arg::Gds(isc_wish_list));
 		}
-		if (!(rse_node->nod_flags & rse_variant)) {
+		if (!(rse_node->nod_flags & rse_variant))
+		{
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
@@ -5307,7 +5382,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_exists:
 	case nod_unique:
 		rse_node = node->nod_arg[e_any_rse];
-		if (!(rse_node->nod_flags & rse_variant)) {
+		if (!(rse_node->nod_flags & rse_variant))
+		{
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
@@ -5366,13 +5442,15 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	// AB: Mark the streams involved with INSERT/UPDATE statements active.
 	// So that the optimizer can use indices for eventually used sub-selects.
-	if (node->nod_type == nod_modify) {
+	if (node->nod_type == nod_modify)
+	{
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 	}
-	else if (node->nod_type == nod_store) {
+	else if (node->nod_type == nod_store)
+	{
 		stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 	}
@@ -5386,13 +5464,15 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	}
 
 	// AB: Remove the previous flags
-	if (node->nod_type == nod_modify) {
+	if (node->nod_type == nod_modify)
+	{
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 	}
-	else if (node->nod_type == nod_store) {
+	else if (node->nod_type == nod_store)
+	{
 		stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 	}
@@ -5487,7 +5567,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			csb->csb_rpt[stream].csb_flags |= csb_update;
 			const Format* format = CMP_format(tdbb, csb, stream);
 			Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
-			for (ULONG id = 0; id < format->fmt_count; ++id, ++desc) {
+			for (ULONG id = 0; id < format->fmt_count; ++id, ++desc)
+			{
 				if (desc->dsc_dtype) {
 					SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
 				}
@@ -5502,8 +5583,10 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		if (node->nod_count > 0)
 		{
 			node->nod_type = nod_asn_list;
-			for (ptr = node->nod_arg; ptr < end; ptr++) {
-				if ((*ptr)->nod_type != nod_assignment) {
+			for (ptr = node->nod_arg; ptr < end; ptr++)
+			{
+				if ((*ptr)->nod_type != nod_assignment)
+				{
 					node->nod_type = nod_list;
 					break;
 				}
@@ -5636,13 +5719,15 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_between:
 	case nod_similar:
 	case nod_sleuth:
-		if (node->nod_count > 2) {
+		if (node->nod_count > 2)
+		{
 			if (node->nod_arg[2]->nod_flags & nod_agg_dbkey) {
 				ERR_post(Arg::Gds(isc_bad_dbkey));
 			}
 			dsc descriptor_c;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_c);
-			if (DTYPE_IS_DATE(descriptor_c.dsc_dtype)) {
+			if (DTYPE_IS_DATE(descriptor_c.dsc_dtype))
+			{
 				node->nod_arg[0]->nod_flags |= nod_date;
 				node->nod_arg[1]->nod_flags |= nod_date;
 			}
@@ -5674,7 +5759,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			else if (DTYPE_IS_DATE(descriptor_b.dsc_dtype))
 				node->nod_arg[0]->nod_flags |= nod_date;
 		}
-		if (node->nod_flags & nod_invariant) {
+		if (node->nod_flags & nod_invariant)
+		{
 			// This may currently happen for nod_like, nod_contains and nod_similar
 			csb->csb_impure += sizeof(impure_value);
 		}
@@ -5715,7 +5801,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	// Bind values of invariant nodes to top-level RSE (if present)
 	if (node->nod_flags & nod_invariant)
 	{
-		if (csb->csb_current_nodes.getCount()) {
+		if (csb->csb_current_nodes.getCount())
+		{
 			// CVC: Nickolay says this rse_node is local. Therefore, renamed to aux_rse_node.
 			jrd_node_base* aux_rse_node = csb->csb_current_nodes[0];
 			fb_assert(aux_rse_node->nod_type == nod_rse);
@@ -5804,7 +5891,8 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 
 	// if the user has submitted a plan for this RecordSelExpr, check it for correctness
 
-	if (rse->rse_plan) {
+	if (rse->rse_plan)
+	{
 		plan_set(csb, rse, rse->rse_plan);
 		plan_check(csb, rse);
 	}
@@ -5880,7 +5968,8 @@ static void plan_check(const CompilerScratch* csb, const RecordSelExpr* rse)
 	const jrd_nod* const* ptr = rse->rse_relation;
 	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		if ((*ptr)->nod_type == nod_relation) {
+		if ((*ptr)->nod_type == nod_relation)
+		{
 			const USHORT stream = (USHORT)(IPTR) (*ptr)->nod_arg[e_rel_stream];
 			if (!(csb->csb_rpt[stream].csb_plan)) {
 				ERR_post(Arg::Gds(isc_no_stream_plan) << Arg::Str(csb->csb_rpt[stream].csb_relation->rel_name));
@@ -5914,7 +6003,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(plan, type_nod);
 
-	if (plan->nod_type == nod_join || plan->nod_type == nod_merge) {
+	if (plan->nod_type == nod_join || plan->nod_type == nod_merge)
+	{
 		for (jrd_nod** ptr = plan->nod_arg, **end = ptr + plan->nod_count; ptr < end; ptr++)
 		{
 			plan_set(csb, rse, *ptr);
@@ -5939,7 +6029,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	// we are interested in by searching the view map */
 	UCHAR* map = 0;
 
-	if (tail->csb_map) {
+	if (tail->csb_map)
+	{
 		const TEXT* p = plan_alias;
 
 		// if the user has specified an alias, skip past it to find the alias
@@ -5958,7 +6049,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 		// loop through potentially a stack of views to find the appropriate base table
 		UCHAR* map_base;
-		while ( (map_base = tail->csb_map) ) {
+		while ( (map_base = tail->csb_map) )
+		{
 			map = map_base;
 			tail = &csb->csb_rpt[*map];
 			view_relation = tail->csb_relation;
@@ -5967,12 +6059,15 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			// the view is on a single table; if it is, fix up the plan
 			// to point to the base relation
 
-			if (view_relation->rel_id == plan_relation->rel_id) {
-				if (!map_base[2]) {
+			if (view_relation->rel_id == plan_relation->rel_id)
+			{
+				if (!map_base[2])
+				{
 					map++;
 					tail = &csb->csb_rpt[*map];
 				}
-				else {
+				else
+				{
 					// view %s has more than one base relation; use aliases to distinguish
 					ERR_post(Arg::Gds(isc_view_alias) << Arg::Str(plan_relation->rel_name));
 				}
@@ -5986,19 +6081,24 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			// for this level), check to make sure there is one and only one
 			// base relation in the table which matches the plan relation
 
-			if (!*p) {
+			if (!*p)
+			{
 				const jrd_rel* duplicate_relation = NULL;
 				UCHAR* duplicate_map = map_base;
 				map = NULL;
-				for (duplicate_map++; *duplicate_map; duplicate_map++) {
+				for (duplicate_map++; *duplicate_map; duplicate_map++)
+				{
 					CompilerScratch::csb_repeat* duplicate_tail = &csb->csb_rpt[*duplicate_map];
 					const jrd_rel* relation = duplicate_tail->csb_relation;
-					if (relation && relation->rel_id == plan_relation->rel_id) {
-						if (duplicate_relation) {
+					if (relation && relation->rel_id == plan_relation->rel_id)
+					{
+						if (duplicate_relation)
+						{
 							// table %s is referenced twice in view; use an alias to distinguish
 							ERR_post(Arg::Gds(isc_duplicate_base_table) << Arg::Str(duplicate_relation->rel_name));
 						}
-						else {
+						else
+						{
 							duplicate_relation = relation;
 							map = duplicate_map;
 							tail = duplicate_tail;
@@ -6012,7 +6112,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			// look through all the base relations for a match
 
 			map = map_base;
-			for (map++; *map; map++) {
+			for (map++; *map; map++)
+			{
 				tail = &csb->csb_rpt[*map];
 				const jrd_rel* relation = tail->csb_relation;
 
@@ -6041,7 +6142,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				p++;
 			}
 
-			if (!*map) {
+			if (!*map)
+			{
 				// table %s is referenced in the plan but not the from list
 				ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 			}
@@ -6049,7 +6151,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 		// fix up the relation node to point to the base relation's stream
 
-		if (!map || !*map) {
+		if (!map || !*map)
+		{
 			// table %s is referenced in the plan but not the from list
 			ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 		}
@@ -6059,7 +6162,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 	// make some validity checks
 
-	if (!tail->csb_relation) {
+	if (!tail->csb_relation)
+	{
 		// table %s is referenced in the plan but not the from list
 		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 	}
@@ -6072,7 +6176,8 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 	// check if we already have a plan for this stream
 
-	if (tail->csb_plan) {
+	if (tail->csb_plan)
+	{
 		// table %s is referenced more than once in plan; use aliases to distinguish
 		ERR_post(Arg::Gds(isc_stream_twice) << Arg::Str(tail->csb_relation->rel_name));
 	}
@@ -6226,8 +6331,7 @@ static void post_trigger_access(CompilerScratch* csb,
 }
 
 
-static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
-						Format** input_format)
+static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Format** input_format)
 {
 /**************************************
  *
@@ -6266,18 +6370,21 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 		CMP_get_desc(tdbb, csb, assignment->nod_arg[e_asgn_from], &desc2);
 		const USHORT min = MIN(desc->dsc_dtype, desc2.dsc_dtype);
 		const USHORT max = MAX(desc->dsc_dtype, desc2.dsc_dtype);
-		if (!min) {
+		if (!min)
+		{
 			// eg: dtype_unknown
 			*desc = desc2;
 		}
-		else if (max == dtype_blob) {
+		else if (max == dtype_blob)
+		{
 			desc->dsc_dtype = dtype_blob;
 			desc->dsc_length = sizeof(ISC_QUAD);
 			desc->dsc_scale = 0;
 			desc->dsc_sub_type = DataTypeUtil::getResultBlobSubType(desc, &desc2);
 			desc->dsc_flags = 0;
 		}
-		else if (min <= dtype_any_text) {
+		else if (min <= dtype_any_text)
+		{
 			// either field a text field?
 			const USHORT len1 = DSC_string_length(desc);
 			const USHORT len2 = DSC_string_length(&desc2);
@@ -6291,24 +6398,28 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 		}
-		else if (DTYPE_IS_DATE(max) && !DTYPE_IS_DATE(min)) {
+		else if (DTYPE_IS_DATE(max) && !DTYPE_IS_DATE(min))
+		{
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length = DSC_convert_to_text_length(max) + sizeof(USHORT);
 			desc->dsc_ttype() = ttype_ascii;
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 		}
-		else if (max != min) {
+		else if (max != min)
+		{
 			// different numeric types: if one is inexact use double,
 			// if both are exact use int64
-			if ((!DTYPE_IS_EXACT(max)) || (!DTYPE_IS_EXACT(min))) {
+			if ((!DTYPE_IS_EXACT(max)) || (!DTYPE_IS_EXACT(min)))
+			{
 				desc->dsc_dtype = DEFAULT_DOUBLE;
 				desc->dsc_length = sizeof(double);
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 			}
-			else {
+			else
+			{
 				desc->dsc_dtype = dtype_int64;
 				desc->dsc_length = sizeof(SINT64);
 				desc->dsc_scale = MIN(desc->dsc_scale, desc2.dsc_scale);
