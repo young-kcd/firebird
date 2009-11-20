@@ -552,7 +552,8 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	// Starting from ODS 11.1 we store in pip_header.reserved number of pages
 	// allocated from this pointer page. There is intention to create dedicated
 	// field at page_inv_page for this purpose in ODS 12.
-	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && dbb->dbb_minor_version >= 1);
+	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && dbb->dbb_minor_version >= 1) ||
+		dbb->dbb_ods_version > ODS_VERSION11;
 
 	// Find an allocation page with something on it
 
@@ -2270,9 +2271,9 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *
  *********************************************/
 	fb_assert(cb);
-
 	const bool isODS11_x =
-		(database->dbb_ods_version == ODS_VERSION11 && database->dbb_minor_version >= 1);
+		(database->dbb_ods_version == ODS_VERSION11 && database->dbb_minor_version >= 1) ||
+		database->dbb_ods_version > ODS_VERSION11;
 	if (!isODS11_x) {
 		return 0;
 	}
