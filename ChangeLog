@@ -1,3 +1,18 @@
+2009-11-19 15:27  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.104.2.1),
+	lang_helpers/gds_codes.pas (1.103.2.1), src/burp/restore.epp
+	(1.177.2.1), src/include/gen/codetext.h (1.113.2.1),
+	src/include/gen/iberror.h (1.117.2.1), src/include/gen/msgs.h
+	(1.143.2.1), src/include/gen/sql_code.h (1.119.2.1),
+	src/include/gen/sql_state.h (1.49.2.1), src/msgs/facilities2.sql
+	(1.79.2.3), src/msgs/messages2.sql (1.102.2.2),
+	src/msgs/system_errors2.sql (1.65.2.1):
+
+	Backport improvement CORE-2754 - Hint the user about
+	-FIX_FSS_METADATA and -FIX_FSS_DATA when restore fail with
+	malformed string error
+
 2009-11-18 19:58  asfernandes
 
 	* firebird2/src/jrd/SimilarToMatcher.h (1.26.2.2):
