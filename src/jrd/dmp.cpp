@@ -695,8 +695,8 @@ static void dmp_header(const header_page* page)
 
 	SLONG number;
 
-	const char* p = (SCHAR *) page->hdr_data;
-	for (const char* const end = p + page->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
+	const UCHAR* p = (UCHAR*) page->hdr_data;
+	for (const UCHAR* const end = p + page->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
 	{
 		switch (*p)
 		{
