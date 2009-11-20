@@ -727,14 +727,15 @@ static void dmp_header(const header_page* page)
 			printf("\tSweep interval: %ld\n", number);
 			break;
 
+		/*
 		case HDR_log_name:
 			printf("\tLog file name: %*s\n", p[1], p + 2);
 			break;
-/*
+
 		case HDR_journal_file:
 			printf("\tJournal file: %*s\n", p[1], p + 2);
 			break;
-*/
+		*/
 		case HDR_password_file_key:
 			printf("\tPassword file key: (can't print)\n");
 			break;

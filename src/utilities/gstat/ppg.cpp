@@ -234,12 +234,13 @@ void PPG_print_header(const header_page* header, SLONG page,
 			uSvc->printf("\tSweep interval:\t\t%ld\n", number);
 			break;
 
+/*
 		case HDR_log_name:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';
 			uSvc->printf("\tReplay logging file:\t\t%s\n", temp);
 			break;
-/*
+
 		case HDR_cache_file:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';

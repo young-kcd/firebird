@@ -1015,11 +1015,11 @@ static void print_db_header( FILE* file, const header_page* header)
 			memcpy(&number, p + 2, sizeof(number));
 			fprintf(file, "\tSweep interval: %ld\n", number);
 			break;
-
+/*
 		case HDR_log_name:
 			fprintf(file, "\tReplay logging file: %*s\n", p[1], p + 2);
 			break;
-/*
+
 		case HDR_journal_file:
 			fprintf(file, "\tJournal file: %*s\n", p[1], p + 2);
 			break;
