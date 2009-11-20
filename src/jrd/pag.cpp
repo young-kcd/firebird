@@ -1208,7 +1208,7 @@ void PAG_header_init(thread_db* tdbb)
 		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 	}
 
-	if (header->hdr_page_size < MIN_PAGE_SIZE || header->hdr_page_size > MAX_PAGE_SIZE)
+	if (header->hdr_page_size < MIN_NEW_PAGE_SIZE || header->hdr_page_size > MAX_PAGE_SIZE)
 	{
 		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 	}
