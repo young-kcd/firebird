@@ -676,6 +676,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 0, 668, 'package_name', NULL, NULL)
 (-901, '22', '006', 0, 669, 'cannot_make_not_null', NULL, NULL)
 (-901, '0A', '000', 0, 670, 'feature_deprecated', NULL, NULL)
+(-901, '00', '000', 0, 671, 'view_name', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

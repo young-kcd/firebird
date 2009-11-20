@@ -691,6 +691,7 @@ static const struct {
 	{335544988, -901}, /* 668 package_name */
 	{335544989, -901}, /* 669 cannot_make_not_null */
 	{335544990, -901}, /* 670 feature_deprecated */
+	{335544991, -901}, /* 671 view_name */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

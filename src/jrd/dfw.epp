@@ -1982,11 +1982,9 @@ static void check_dependencies(thread_db* tdbb,
 		case obj_relation:
 			obj_type = isc_table_name;
 			break;
-		/* Currently we don't get this type due to an internal bug.
 		case obj_view:
 			obj_type = isc_view_name;
 			break;
-		*/
 		case obj_procedure:
 			obj_type = isc_proc_name;
 			break;
@@ -3965,14 +3963,14 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return false;
 
 	case 1:
-		/* check if any views use this as a base relation */
+		// check if any views use this as a base relation
 
 		request = NULL;
 		view_count = 0;
 		FOR(REQUEST_HANDLE request)
 			X IN RDB$VIEW_RELATIONS WITH
 			X.RDB$RELATION_NAME EQ work->dfw_name.c_str()
-			/* If the view is also being deleted, there's no dependency */
+			// If the view is also being deleted, there's no dependency
 			if (!find_depend_in_dfw(tdbb, X.RDB$VIEW_NAME, obj_view, 0, transaction))
 			{
 				view_count++;
@@ -3984,10 +3982,10 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if (view_count)
 		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_no_delete) << /* Msg353: can not delete */
+					 Arg::Gds(isc_no_delete) << // Msg353: can not delete
 					 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
 					 Arg::Gds(isc_dependency) << Arg::Num(view_count));
-					 /* Msg310: there are %ld dependencies */
+					 // Msg310: there are %ld dependencies
 		}
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_relation, transaction);
 		return true;
