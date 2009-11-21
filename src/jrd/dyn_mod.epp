@@ -722,7 +722,7 @@ void DYN_modify_global_field(Global* gbl,
 		orig_dom.dyn_collation = FLD.RDB$COLLATION_ID;
 		orig_dom.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 
-		/* If the original field type is an array, force its blr type to blr_blob */
+		// If the original field type is an array, force its blr type to blr_blob
 		bool has_dimensions = false;
 		if (FLD.RDB$DIMENSIONS != 0)
 		{
@@ -750,7 +750,7 @@ void DYN_modify_global_field(Global* gbl,
 								FLD.RDB$FIELD_NAME.NULL = FALSE;
 								jrd_req* old_request = request;
 								request = NULL;
-								/* CVC: Let's update the dimensions, too. */
+								// CVC: Let's update the dimensions, too.
 								if (has_dimensions)
 								{
 									FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -764,7 +764,7 @@ void DYN_modify_global_field(Global* gbl,
 									CMP_release (tdbb, request);
 									request = NULL;
 								}
-								/* CVC: End modification. */
+								// CVC: End modification.
 								FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 									DOM IN RDB$RELATION_FIELDS
 									WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
@@ -785,13 +785,13 @@ void DYN_modify_global_field(Global* gbl,
 						{
 							DYN_error_punt(false, 204, SafeArg() << orig_dom.dyn_fld_name.c_str() <<
 										   newfld.c_str());
-							/* msg 204: Cannot rename domain %s to %s.  A domain with that name already exists. */
+							// msg 204: Cannot rename domain %s to %s.  A domain with that name already exists.
 						}
 					}
 					else
 					{
 						DYN_error_punt(false, 212);
-						/* msg 212: "Zero length identifiers not allowed" */
+						// msg 212: "Zero length identifiers not allowed"
 					}
 					break;
 				}
@@ -800,9 +800,9 @@ void DYN_modify_global_field(Global* gbl,
 				GET_STRING(ptr, new_dom.dyn_rel_name);
 				break;
 
-			/* CVC: The syntax for DDL alter domain was accepting multiple
-					changes in one command even to the same features, IE two length alterations.
-					This repetitive type change will cause havoc so it should be stopped in the future. */
+			// CVC: The syntax for DDL alter domain was accepting multiple
+			//		changes in one command even to the same features, IE two length alterations.
+			//		This repetitive type change will cause havoc so it should be stopped in the future.
 
 			case isc_dyn_fld_length:
 				fldlen = true;
@@ -939,7 +939,7 @@ void DYN_modify_global_field(Global* gbl,
 				if (single_validate) {
 					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 160);
-					/* msg 160: "Only one constraint allowed for a domain" */
+					// msg 160: "Only one constraint allowed for a domain"
 					break;
 				}
 
@@ -950,7 +950,7 @@ void DYN_modify_global_field(Global* gbl,
 				if (single_validate && (!FLD.RDB$VALIDATION_BLR.NULL)) {
 					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 160);
-					/* msg 160: "Only one constraint allowed for a domain" */
+					// msg 160: "Only one constraint allowed for a domain"
 					break;
 				}
 
@@ -1006,9 +1006,8 @@ void DYN_modify_global_field(Global* gbl,
 				new_dom.dyn_dtype = blr_blob;
 				break;
 
-				/* These should only be defined for BLOB types and should not come through with
-				 * any other types.  Do nothing with them.
-				 */
+				// These should only be defined for BLOB types and should not come through with
+				// any other types.  Do nothing with them.
 
 			case isc_dyn_fld_segment_length:
 				DYN_get_number(ptr);
@@ -1021,9 +1020,8 @@ void DYN_modify_global_field(Global* gbl,
 		}
 
 
-		/* Now that we have all of the information needed, let's check to see if the field type can be modifed.
-		 * Only do this, however, if we are actually modifying the datatype of the domain.
-		 */
+		// Now that we have all of the information needed, let's check to see if the field type can be modifed.
+		// Only do this, however, if we are actually modifying the datatype of the domain.
 
 		if (dtype) {
 			DSC_make_descriptor(&new_dom.dyn_dsc,
@@ -1043,7 +1041,7 @@ void DYN_modify_global_field(Global* gbl,
 				FLD.RDB$FIELD_TYPE = new_dom.dyn_dtype;
 				FLD.RDB$FIELD_TYPE.NULL = FALSE;
 
-				/* If the datatype was changed, update any indexes that involved the domain */
+				// If the datatype was changed, update any indexes that involved the domain
 
 				jrd_req* old_request = request;
 				request = NULL;
@@ -1091,7 +1089,7 @@ void DYN_modify_global_field(Global* gbl,
 			}
 
 			if (fldlen) {
-				/* CVC: Rescue from the wrong field_length with a helper. */
+				// CVC: Rescue from the wrong field_length with a helper.
 				if (new_dom.dyn_dsc.dsc_dtype <= dtype_varying && new_dom.dyn_charbytelen)
 					FLD.RDB$FIELD_LENGTH = new_dom.dyn_charbytelen;
 				else
@@ -1185,7 +1183,7 @@ void DYN_modify_global_field(Global* gbl,
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 87);
-		/* msg 87: "MODIFY RDB$FIELDS failed" */
+		// msg 87: "MODIFY RDB$FIELDS failed"
 	}
 
 	if (found)
@@ -1196,7 +1194,7 @@ void DYN_modify_global_field(Global* gbl,
 	else
 	{
 		DYN_error_punt(false, 89);
-		/* msg 89: "Global field not found" */
+		// msg 89: "Global field not found"
 	}
 }
 
@@ -1258,7 +1256,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 						IDX.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
-					/* For V4 index selectivity can be set only to -1 */
+					// For V4 index selectivity can be set only to -1
 
 				case isc_dyn_idx_statistic:
 					IDX.RDB$STATISTICS = -1.0;
@@ -1290,7 +1288,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 	else
 	{
 		DYN_error_punt(false, 48);
-		/* msg 48: "Index not found" */
+		// msg 48: "Index not found"
 	}
 }
 
@@ -1440,7 +1438,7 @@ void DYN_modify_local_field(Global* gbl,
 				if (new_fld.length() == 0)
 				{
 					DYN_error_punt(false, 212);
-					/* msg 212: "Zero length identifiers not allowed" */
+					// msg 212: "Zero length identifiers not allowed"
 				}
 
 				check_view_dependency(tdbb, gbl, r, f);
@@ -1452,7 +1450,7 @@ void DYN_modify_local_field(Global* gbl,
 				else {
 					DYN_error_punt(false, 205, SafeArg() << f.c_str() << new_fld.c_str() <<
 									r.c_str());
-					/* msg 205: Cannot rename field %s to %s.  A field with that name already exists in table %s. */
+					// msg 205: Cannot rename field %s to %s.  A field with that name already exists in table %s.
 				}
 			}
 
@@ -1500,7 +1498,7 @@ void DYN_modify_local_field(Global* gbl,
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 95);
-		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
+		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
 	}
 
 	if (!found)
@@ -1569,12 +1567,12 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 					if (REL.RDB$EXTERNAL_FILE.NULL) {
 						DYN_rundown_request(request, -1);
 						DYN_error_punt(false, 97);
-						/* msg 97: "add EXTERNAL FILE not allowed" */
+						// msg 97: "add EXTERNAL FILE not allowed"
 					}
 					if (!GET_STRING(ptr, REL.RDB$EXTERNAL_FILE)) {
 						DYN_rundown_request(request, -1);
 						DYN_error_punt(false, 98);
-						/* msg 98: "drop EXTERNAL FILE not allowed" */
+						// msg 98: "drop EXTERNAL FILE not allowed"
 					}
 					break;
 
@@ -1600,7 +1598,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99);
-		/* msg 99: "MODIFY RDB$RELATIONS failed" */
+		// msg 99: "MODIFY RDB$RELATIONS failed"
 	}
 
 	if (found)
@@ -1611,7 +1609,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 	else
 	{
 		DYN_error_punt(false, 101);
-		/* msg 101: "Relation field not found" */
+		// msg 101: "Relation field not found"
 	}
 }
 
@@ -1713,8 +1711,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
 	else if (*(*ptr)++ == isc_dyn_trg_name)
 		GET_STRING(ptr, t);
 	else
-		DYN_error_punt(false, 103);
-	/* msg 103: "TRIGGER NAME expected" */
+		DYN_error_punt(false, 103); // msg 103: "TRIGGER NAME expected"
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGER_MESSAGES
@@ -1752,7 +1749,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 105);
-		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
+		// msg 105: "MODIFY TRIGGER MESSAGE failed"
 	}
 }
 
@@ -1778,7 +1775,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	if (view_name.length() == 0)
 	{
 		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		// msg 212: "Zero length identifiers not allowed"
 	}
 
 	jrd_req* request = NULL;
@@ -1900,7 +1897,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99);
-		/* msg 99: "MODIFY RDB$RELATIONS failed" */
+		// msg 99: "MODIFY RDB$RELATIONS failed"
 	}
 
 	if (found)
@@ -1911,7 +1908,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	else
 	{
 		DYN_error_punt(false, 54, view_name.c_str());
-		/* msg 54: "View %s not found" */
+		// msg 54: "View %s not found"
 	}
 }
 
@@ -1993,7 +1990,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_d_difference);
 		DYN_error_punt(true, 63);
-		/* msg 63: ERASE RDB$FILE failed */
+		// msg 63: ERASE RDB$FILE failed
 	}
 
 	if (!found && verb == isc_dyn_begin_backup) {
@@ -2021,21 +2018,21 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 			stuff_exception(tdbb->tdbb_status_vector, ex);
 			DYN_rundown_request(request, drq_s2_difference);
 			DYN_error_punt(true, 150);
-			/* msg 150: STORE RDB$FILES failed */
+			// msg 150: STORE RDB$FILES failed
 		}
 	}
 
 	if (invalid_state) {
 		DYN_error_punt(false, verb == isc_dyn_begin_backup ? 217 : 218);
-		/* msg 217: "Database is already in the physical backup mode" */
-		/* msg 218: "Database is not in the physical backup mode" */
+		// msg 217: "Database is already in the physical backup mode"
+		// msg 218: "Database is not in the physical backup mode"
 	}
 
 	if (!found)
 	{
 		DYN_error_punt(false, verb == isc_dyn_end_backup ? 218 : 215);
-		/* msg 218: "Database is not in the physical backup mode" */
-		/* msg 215: "Difference file is not defined" */
+		// msg 218: "Database is not in the physical backup mode"
+		// msg 215: "Difference file is not defined"
 	}
 }
 
@@ -2077,22 +2074,20 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	try {
 
-/* Find the position of the last field in the relation */
+	// Find the position of the last field in the relation
 	SLONG max_position = -1;
 	DYN_UTIL_generate_field_position(tdbb, gbl, relation_name, &max_position);
 
-/* if the existing position of the field is less than the new position of
- * the field, subtract 1 to move the fields to their new positions otherwise,
- * increase the value in RDB$FIELD_POSITION by one
- */
+	// If the existing position of the field is less than the new position of
+	// the field, subtract 1 to move the fields to their new positions otherwise,
+	// increase the value in RDB$FIELD_POSITION by one
 
 	bool move_down = false;
 	if (existing_position < new_position)
 		move_down = true;
 
-/* Retrieve the records for the fields which have a position between the
- * existing field position and the new field position
- */
+	// Retrieve the records for the fields which have a position between the
+	// existing field position and the new field position
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS
@@ -2100,13 +2095,11 @@ static void modify_lfield_position(thread_db* tdbb,
 		FLD.RDB$FIELD_POSITION >= MIN(new_position, existing_position) AND
 		FLD.RDB$FIELD_POSITION <= MAX(new_position, existing_position)
 		MODIFY FLD USING
-			/* If the field is the one we want, change the position, otherwise
-			 * increase the value of RDB$FIELD_POSITION
-			 */
+			// If the field is the one we want, change the position, otherwise
+			// increase the value of RDB$FIELD_POSITION
 			if (field_name == FLD.RDB$FIELD_NAME) {
 				if (new_position > max_position)
-					/* This prevents gaps in the position sequence of the
-					 * fields */
+					// This prevents gaps in the position sequence of the fields
 					FLD.RDB$FIELD_POSITION = max_position;
 				else
 					FLD.RDB$FIELD_POSITION = new_position;
@@ -2125,9 +2118,9 @@ static void modify_lfield_position(thread_db* tdbb,
 	CMP_release(tdbb, request);
 	request = NULL;
 
-/* Once the field position has been changed, make sure that there are no
- * duplicate field positions and no gaps in the position sequence (this can
- * not be guaranteed by the query above */
+	// Once the field position has been changed, make sure that there are no
+	// duplicate field positions and no gaps in the position sequence (this can
+	// not be guaranteed by the query above
 
 	USHORT new_pos = 0;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -2147,7 +2140,7 @@ static void modify_lfield_position(thread_db* tdbb,
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 95);
-		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
+		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
 	}
 }
 
@@ -2192,7 +2185,7 @@ static bool check_view_dependency(thread_db* tdbb,
 	if (retval)
 		DYN_error_punt(false, 206, SafeArg() << field_name.c_str() <<
 						relation_name.c_str() << view_name.c_str());
-	/* msg 206: Column %s from table %s is referenced in  %s. */
+		// msg 206: Column %s from table %s is referenced in  %s.
 
 	return retval;
 }
@@ -2231,7 +2224,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 	if (retval)
 		DYN_error_punt(false, 206, SafeArg() << field_name.c_str() <<
 						relation_name.c_str() << dep_name.c_str());
-	/* msg 206: Column %s from table %s is referenced in %s. */
+		// msg 206: Column %s from table %s is referenced in %s.
 
 	return retval;
 }
@@ -2260,12 +2253,12 @@ static void modify_lfield_index(thread_db* tdbb,
 			IDX.RDB$INDEX_NAME EQ IDXS.RDB$INDEX_NAME AND
 			IDX.RDB$RELATION_NAME EQ relation_name.c_str() AND
 			IDXS.RDB$FIELD_NAME EQ field_name.c_str()
-			/* Change the name of the field in the index */
+		// Change the name of the field in the index
 		MODIFY IDXS USING
 			memcpy(IDXS.RDB$FIELD_NAME, new_fld_name.c_str(), sizeof(IDXS.RDB$FIELD_NAME));
 		END_MODIFY;
 
-		/* Set the index name to itself to tell the index to rebuild */
+		// Set the index name to itself to tell the index to rebuild
 		MODIFY IDX USING
 			// This is to fool both gpre and gcc.
 			char* p = IDX.RDB$INDEX_NAME;
@@ -3229,10 +3222,10 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
  **************************************/
 
 
-/* Check to make sure that the old and new types are compatible */
+	// Check to make sure that the old and new types are compatible
 	switch (orig_fld.dyn_dtype)
 	{
-/* CHARACTER types */
+	// CHARACTER types
 	case blr_text:
 	case blr_varying:
 	case blr_cstring:
@@ -3241,8 +3234,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_blob:
 		case blr_blob_id:
 			return isc_dyn_dtype_invalid;
-			/* Cannot change datatype for column %s.
-			   The operation cannot be performed on BLOB, or ARRAY columns. */
+			// Cannot change datatype for column %s.
+			// The operation cannot be performed on BLOB, or ARRAY columns.
 			break;
 
 		case blr_sql_date:
@@ -3255,22 +3248,22 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_double:
 		case blr_float:
 			return isc_dyn_dtype_conv_invalid;
-			/* Cannot convert column %s from character to non-character data. */
+			// Cannot convert column %s from character to non-character data.
 			break;
 
-			/* If the original field is a character field and the new field is a character field,
-			 * is there enough space in the new field? */
+			// If the original field is a character field and the new field is a character field,
+			// is there enough space in the new field?
 		case blr_text:
 		case blr_varying:
 		case blr_cstring:
 			{
-				/* CVC: Because our caller invoked DSC_make_descriptor() on new_fld previously,
-						we should have the added bytes for varchar. For cstring, we are done, since
-						DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor). */
+				// CVC: Because our caller invoked DSC_make_descriptor() on new_fld previously,
+				// we should have the added bytes for varchar. For cstring, we are done, since
+				// DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor).
 
 				const USHORT maxflen = DSC_string_length(&orig_fld.dyn_dsc);
 
-				/* We can have this assertion since this case is for both string fields. */
+				// We can have this assertion since this case is for both string fields.
 				const ULONG new_len = DSC_string_length(&new_fld.dyn_dsc);
 				fb_assert(new_len - maxflen == (ULONG) new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
@@ -3282,18 +3275,18 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 		default:
 			fb_assert(FALSE);
-			return 87;			/* MODIFY RDB$FIELDS FAILED */
+			return 87;			// MODIFY RDB$FIELDS FAILED
 		}
 		break;
 
-/* BLOB and ARRAY types */
+	// BLOB and ARRAY types
 	case blr_blob:
 	case blr_blob_id:
 		return isc_dyn_dtype_invalid;
-		/* Cannot change datatype for column %s.
-		   The operation cannot be performed on BLOB, or ARRAY columns. */
+		// Cannot change datatype for column %s.
+		// The operation cannot be performed on BLOB, or ARRAY columns.
 
-/* DATE types */
+	// DATE types
 	case blr_sql_date:
 	case blr_sql_time:
 	case blr_timestamp:
@@ -3302,23 +3295,23 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_sql_date:
 			if (orig_fld.dyn_dtype == blr_sql_time)
 				return isc_dyn_invalid_dtype_conversion;
-			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			break;
 
 		case blr_sql_time:
 			if (orig_fld.dyn_dtype == blr_sql_date)
 				return isc_dyn_invalid_dtype_conversion;
-			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			break;
 
 		case blr_timestamp:
 			if (orig_fld.dyn_dtype == blr_sql_time)
 				return isc_dyn_invalid_dtype_conversion;
-			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			break;
 
-			/* If the original field is a date field and the new field is a character field,
-			   * is there enough space in the new field? */
+			// If the original field is a date field and the new field is a character field,
+			// is there enough space in the new field?
 		case blr_text:
 		case blr_text2:
 		case blr_varying:
@@ -3339,11 +3332,11 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 		default:
 			return isc_dyn_invalid_dtype_conversion;
-			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 		}
 		break;
 
-/* NUMERIC types */
+	// NUMERIC types
 	case blr_int64:
 	case blr_long:
 	case blr_short:
@@ -3355,17 +3348,17 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_blob:
 		case blr_blob_id:
 			return isc_dyn_dtype_invalid;
-			/* Cannot change datatype for column %s.
-			   The operation cannot be performed on BLOB, or ARRAY columns. */
+			// Cannot change datatype for column %s.
+			// The operation cannot be performed on BLOB, or ARRAY columns.
 
 		case blr_sql_date:
 		case blr_sql_time:
 		case blr_timestamp:
 			return isc_dyn_invalid_dtype_conversion;
-			/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 
-			/* If the original field is a numeric field and the new field is a numeric field,
-			 * is there enough space in the new field (do not allow the base type to decrease) */
+			// If the original field is a numeric field and the new field is a numeric field,
+			// is there enough space in the new field (do not allow the base type to decrease)
 
 		case blr_short:
 			switch (orig_fld.dyn_dtype)
@@ -3375,7 +3368,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 			default:
 				return isc_dyn_invalid_dtype_conversion;
-				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			}
 			break;
 
@@ -3388,7 +3381,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 			default:
 				return isc_dyn_invalid_dtype_conversion;
-				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			}
 			break;
 
@@ -3401,7 +3394,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 			default:
 				return isc_dyn_invalid_dtype_conversion;
-				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			}
 			break;
 
@@ -3415,7 +3408,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 			default:
 				return isc_dyn_invalid_dtype_conversion;
-				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			}
 			break;
 
@@ -3432,12 +3425,12 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 			default:
 				return isc_dyn_invalid_dtype_conversion;
-				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			}
 			break;
 
-			/* If the original field is a numeric field and the new field is a character field,
-			 * is there enough space in the new field? */
+			// If the original field is a numeric field and the new field is a character field,
+			// is there enough space in the new field?
 		case blr_text:
 		case blr_varying:
 		case blr_cstring:
@@ -3454,13 +3447,13 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 		default:
 			fb_assert(FALSE);
-			return 87;			/* MODIFY RDB$FIELDS FAILED */
+			return 87;			// MODIFY RDB$FIELDS FAILED
 		}
 		break;
 
 	default:
 		fb_assert(FALSE);
-		return 87;				/* MODIFY RDB$FIELDS FAILED */
+		return 87;				// MODIFY RDB$FIELDS FAILED
 	}
 	return FB_SUCCESS;
 }
@@ -3520,12 +3513,12 @@ static void modify_err_punt(thread_db* /*tdbb*/,
 	{
 	case isc_dyn_dtype_invalid:
 		DYN_error_punt(false, errorcode, orig_fld_def.dyn_fld_name.c_str());
-		/* Cannot change datatype for column %s.The operation cannot be performed on DATE, BLOB, or ARRAY columns. */
+		// Cannot change datatype for column %s.The operation cannot be performed on DATE, BLOB, or ARRAY columns.
 		break;
 
 	case isc_dyn_dtype_conv_invalid:
 		DYN_error_punt(false, errorcode, orig_fld_def.dyn_fld_name.c_str());
-		/* Cannot convert column %s from character to non-character data. */
+		// Cannot convert column %s from character to non-character data.
 		break;
 
 	case isc_dyn_char_fld_too_small:
@@ -3571,6 +3564,6 @@ static void modify_err_punt(thread_db* /*tdbb*/,
 
 	default:
 		DYN_error_punt(true, 95);
-		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
+		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
 	}
 }
