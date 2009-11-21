@@ -1298,7 +1298,7 @@ shadow_clause
 	: pos_short_integer manual_auto conditional sql_string first_file_length sec_shadow_files
 	 	{
 	 		$$ = make_node (nod_def_shadow, (int) e_shadow_count,
-	 			(dsql_nod*) $1, $2, $3, $4, (dsql_nod*)(IPTR) $5, make_list($6));
+				(dsql_nod*)(IPTR) $1, $2, $3, $4, (dsql_nod*)(IPTR) $5, make_list($6));
 	 	}
 	;
 
