@@ -69,6 +69,7 @@ void DDL_resolve_intl_type(Jrd::CompiledStatement*, Jrd::dsql_fld*, const Jrd::d
 void DDL_resolve_intl_type2(Jrd::CompiledStatement*, Jrd::dsql_fld*, const Jrd::dsql_str*, bool);
 
 void DDL_put_local_variable(Jrd::CompiledStatement*, Jrd::dsql_var*, Jrd::dsql_nod*, const Jrd::dsql_str*);
-void DDL_put_local_variables(Jrd::CompiledStatement*, Jrd::dsql_nod*, SSHORT);
+void DDL_put_local_variables(Jrd::CompiledStatement*, const Jrd::dsql_nod*, SSHORT,
+	Firebird::Array<Jrd::dsql_nod*>& variables);
 
 #endif // DSQL_DDL_PROTO_H

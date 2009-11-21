@@ -298,16 +298,17 @@ void DdlNode::resetContextStack()
 //----------------------
 
 
-TypeClause::TypeClause(dsql_fld* aLegacyField, dsql_str* aLegacyCollate)
+TypeClause::TypeClause(dsql_fld* aLegacyField, const MetaName& aCollate)
 	: legacyField(aLegacyField),
-	  legacyCollate(aLegacyCollate)
+	  collate(aCollate)
 {
 }
 
 
 void TypeClause::resolve(CompiledStatement* compiledStatement)
 {
-	DDL_resolve_intl_type(compiledStatement, legacyField, legacyCollate);
+	DDL_resolve_intl_type(compiledStatement, legacyField,
+		(collate.isEmpty() ? NULL : MAKE_cstring(collate.c_str())));
 
 	type = legacyField->fld_dtype;
 	length = legacyField->fld_length;
@@ -318,7 +319,7 @@ void TypeClause::resolve(CompiledStatement* compiledStatement)
 	charLength = legacyField->fld_character_length;
 	charSetId = legacyField->fld_character_set_id;
 	collationId = legacyField->fld_collation_id;
-	collateSpecified = legacyCollate != NULL;
+	collateSpecified = collate.hasData();
 	textType = legacyField->fld_ttype;
 	fullDomain = legacyField->fld_full_domain;
 	notNull = legacyField->fld_not_nullable;
@@ -341,8 +342,8 @@ void TypeClause::print(string& text) const
 //----------------------
 
 
-ParameterClause::ParameterClause(dsql_fld* field, dsql_str* collate, dsql_nod* dflt)
-	: TypeClause(field, collate),
+ParameterClause::ParameterClause(dsql_fld* field, const MetaName& aCollate, dsql_nod* dflt)
+	: TypeClause(field, aCollate),
 	  name(field->fld_name),
 	  legacyDefault(dflt)
 {
@@ -354,28 +355,6 @@ void ParameterClause::print(string& text) const
 	string s;
 	TypeClause::print(s);
 	text.printf("name: '%s'  %s", name.c_str(), s.c_str());
-}
-
-
-void ParameterClause::fromLegacyParameterList(Array<ParameterClause>& parameters, dsql_nod* list)
-{
-	if (list)
-	{
-		fb_assert(list->nod_type == Dsql::nod_list);
-
-		for (unsigned i = 0; i < list->nod_count; ++i)
-		{
-			dsql_nod* defField = list->nod_arg[i];
-			fb_assert(defField->nod_type == Dsql::nod_def_field);
-
-			dsql_fld* field = (dsql_fld*) defField->nod_arg[e_dfl_field];
-			dsql_str* collate = (dsql_str*) defField->nod_arg[e_dfl_collate];
-			dsql_nod* dflt = defField->nod_arg[e_dfl_default];
-
-			ParameterClause parameter(field, collate, dflt);
-			parameters.add(parameter);
-		}
-	}
 }
 
 
@@ -1092,36 +1071,15 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void ProcedureNode::genReturn()
 {
-	GEN_return(compiledStatement, getCreateAlterNode()->legacyReturns, false);
+	GEN_return(compiledStatement, getCreateAlterNode()->outputVariables, false);
 }
 
 
 dsql_nod* ProcedureNode::resolveVariable(const dsql_str* varName)
 {
 	// try to resolve variable name against input and output parameters and local variables
-
 	CreateAlterProcedureNode* node = getCreateAlterNode();
-	dsql_nod* varNode;
-
-	if (node->legacyParameters)
-	{
-		if (varNode = PASS1_resolve_variable_name(node->legacyParameters, varName))
-			return varNode;
-	}
-
-	if (node->legacyReturns)
-	{
-		if (varNode = PASS1_resolve_variable_name(node->legacyReturns, varName))
-			return varNode;
-	}
-
-	if (node->localDeclList)
-	{
-		if (varNode = PASS1_resolve_variable_name(node->localDeclList, varName))
-			return varNode;
-	}
-
-	return NULL;
+	return PASS1_resolve_variable_name(node->variables, varName);
 }
 
 
@@ -1177,6 +1135,20 @@ Node* CreateAlterProcedureNode::internalDsqlPass()
 	{
 		// insure that variable names do not duplicate parameter names
 
+		SortedArray<MetaName> names;
+
+		for (size_t i = 0; i < parameters.getCount(); ++i)
+		{
+			ParameterClause& parameter = parameters[i];
+			names.add(parameter.name);
+		}
+
+		for (size_t i = 0; i < returns.getCount(); ++i)
+		{
+			ParameterClause& parameter = returns[i];
+			names.add(parameter.name);
+		}
+
 		const dsql_nod* const* ptr = variables->nod_arg;
 		for (const dsql_nod* const* const end = ptr + variables->nod_count; ptr < end; ptr++)
 		{
@@ -1185,46 +1157,13 @@ Node* CreateAlterProcedureNode::internalDsqlPass()
 				const dsql_fld* field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
 				DEV_BLKCHK(field, dsql_type_fld);
 
-				const dsql_nod* parameters = legacyParameters;
-				if (parameters)
+				if (names.exist(field->fld_name))
 				{
-					const dsql_nod* const* ptr2 = parameters->nod_arg;
-					for (const dsql_nod* const* const end2 =
-						 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++)
-					{
-						const dsql_fld* field2 = (dsql_fld*) (*ptr2)->nod_arg[e_dfl_field];
-						DEV_BLKCHK(field2, dsql_type_fld);
-
-						if (field->fld_name == field2->fld_name)
-						{
-							status_exception::raise(
-								Arg::Gds(isc_sqlerr) <<
-								Arg::Num(-901) <<
-								Arg::Gds(isc_dsql_var_conflict) <<
-								Arg::Str(field->fld_name));
-						}
-					}
-				}
-
-				parameters = legacyReturns;
-				if (parameters)
-				{
-					const dsql_nod* const* ptr2 = parameters->nod_arg;
-					for (const dsql_nod* const* const end2 =
-						 ptr2 + parameters->nod_count; ptr2 < end2; ptr2++)
-					{
-						const dsql_fld* field2 = (dsql_fld*) (*ptr2)->nod_arg[e_dfl_field];
-						DEV_BLKCHK(field2, dsql_type_fld);
-
-						if (field->fld_name == field2->fld_name)
-						{
-							status_exception::raise(
-								Arg::Gds(isc_sqlerr) <<
-								Arg::Num(-901) <<
-								Arg::Gds(isc_dsql_var_conflict) <<
-								Arg::Str(field->fld_name));
-						}
-					}
+					status_exception::raise(
+						Arg::Gds(isc_sqlerr) <<
+						Arg::Num(-901) <<
+						Arg::Gds(isc_dsql_var_conflict) <<
+						Arg::Str(field->fld_name));
 				}
 			}
 		}
@@ -1768,8 +1707,8 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 			compiledStatement->append_uchar(blr_short);
 			compiledStatement->append_uchar(0);
 
-			legacyParameters->nod_arg[i] = MAKE_variable(parameter.legacyField,
-				parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0);
+			variables.add(MAKE_variable(parameter.legacyField,
+				parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
 		}
 	}
 
@@ -1791,8 +1730,11 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 			compiledStatement->append_uchar(blr_short);
 			compiledStatement->append_uchar(0);
 
-			legacyReturns->nod_arg[i] = MAKE_variable(parameter.legacyField,
+			dsql_nod* var = MAKE_variable(parameter.legacyField,
 				parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
+
+			variables.add(var);
+			outputVariables.add(var);
 		}
 	}
 
@@ -1825,23 +1767,18 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 		}
 	}
 
-	if (returns.getCount() != 0)
+	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
-		dsql_nod* params = legacyReturns;
-		dsql_nod** ptr = params->nod_arg;
-		for (const dsql_nod* const* const end = ptr + params->nod_count; ptr < end; ptr++)
-		{
-			dsql_nod* parameter = *ptr;
-			dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-			DDL_put_local_variable(compiledStatement, variable, 0, NULL);
-		}
+		dsql_nod* parameter = *i;
+		dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
+		DDL_put_local_variable(compiledStatement, variable, 0, NULL);
 	}
 
 	// ASF: This is here to not change the old logic (proc_flag)
 	// of previous calls to PASS1_node and PASS1_statement.
 	compiledStatement->setPsql(true);
 
-	DDL_put_local_variables(compiledStatement, localDeclList, returns.getCount());
+	DDL_put_local_variables(compiledStatement, localDeclList, returns.getCount(), variables);
 
 	compiledStatement->append_uchar(blr_stall);
 	// put a label before body of procedure,
@@ -1855,7 +1792,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	compiledStatement->req_type = REQ_DDL;
 	compiledStatement->append_uchar(blr_end);
-	GEN_return(compiledStatement, legacyReturns, true);
+	GEN_return(compiledStatement, outputVariables, true);
 
 	compiledStatement->append_uchar(blr_end);
 	compiledStatement->append_uchar(blr_eoc);
@@ -2052,13 +1989,8 @@ void RecreateProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 dsql_nod* TriggerNode::resolveVariable(const dsql_str* varName)
 {
 	// try to resolve variable name against local variables
-
 	CreateAlterTriggerNode* node = getCreateAlterNode();
-
-	if (node->localDeclList)
-		return PASS1_resolve_variable_name(node->localDeclList, varName);
-
-	return NULL;
+	return PASS1_resolve_variable_name(node->variables, varName);
 }
 
 
@@ -2404,7 +2336,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		compiledStatement->setPsql(true);
 
-		DDL_put_local_variables(compiledStatement, localDeclList, 0);
+		DDL_put_local_variables(compiledStatement, localDeclList, 0, variables);
 
 		compiledStatement->req_scope_level++;
 		// dimitr: I see no reason to deny EXIT command in triggers,

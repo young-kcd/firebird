@@ -26,6 +26,7 @@
 #include "../jrd/common.h"
 #include "../jrd/blr.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/DdlNodes.h"
 #include "../common/classes/MetaName.h"
 
 namespace Jrd {
@@ -105,8 +106,10 @@ class ExecBlockNode : public DsqlOnlyStmtNode, public BlockNode
 public:
 	explicit ExecBlockNode(MemoryPool& pool)
 		: DsqlOnlyStmtNode(pool),
+		  returns(pool),
+		  variables(pool),
+		  outputVariables(pool),
 		  legacyParameters(NULL),
-		  legacyReturns(NULL),
 		  localDeclList(NULL),
 		  body(NULL)
 	{
@@ -127,8 +130,10 @@ private:
 	static dsql_par* revertParametersOrder(dsql_par* parameter, dsql_par* prev);
 
 public:
+	Firebird::Array<ParameterClause> returns;
+	Firebird::Array<dsql_nod*> variables;
+	Firebird::Array<dsql_nod*> outputVariables;
 	dsql_nod* legacyParameters;
-	dsql_nod* legacyReturns;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
 };

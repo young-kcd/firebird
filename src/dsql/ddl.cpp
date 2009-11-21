@@ -5271,7 +5271,8 @@ void DDL_put_local_variable( CompiledStatement* statement, dsql_var* variable,
 }
 
 
-void DDL_put_local_variables(CompiledStatement* statement, dsql_nod* parameters, SSHORT locals)
+void DDL_put_local_variables(CompiledStatement* statement, const dsql_nod* parameters,
+	SSHORT locals, Array<dsql_nod*>& variables)
 {
 /**************************************
  *
@@ -5287,7 +5288,7 @@ void DDL_put_local_variables(CompiledStatement* statement, dsql_nod* parameters,
 
 	if (parameters)
 	{
-		dsql_nod** ptr = parameters->nod_arg;
+		dsql_nod* const* ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
@@ -5312,8 +5313,8 @@ void DDL_put_local_variables(CompiledStatement* statement, dsql_nod* parameters,
 				}
 
 				dsql_nod* var_node = MAKE_variable(field, field->fld_name.c_str(), VAR_local, 0, 0, locals);
+				variables.add(var_node);
 
-				*ptr = var_node;
 				dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 				DDL_put_local_variable(statement, variable, parameter,
 					reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));

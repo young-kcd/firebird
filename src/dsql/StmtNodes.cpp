@@ -378,7 +378,7 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 {
 	compiledStatement->blockNode = this;
 
-	if (legacyReturns && legacyReturns->nod_count)
+	if (returns.hasData())
 		compiledStatement->req_type = REQ_SELECT_BLOCK;
 	else
 		compiledStatement->req_type = REQ_EXEC_BLOCK;
@@ -389,13 +389,12 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 	node->compiledStatement = compiledStatement;
 
 	node->legacyParameters = PASS1_node_psql(compiledStatement, legacyParameters, false);
-	node->legacyReturns = legacyReturns;
-
+	node->returns = returns;
 	node->localDeclList = localDeclList;
 	node->body = body;
 
 	const size_t count = node->legacyParameters ? node->legacyParameters->nod_count : 0 +
-		node->legacyReturns ? node->legacyReturns->nod_count : 0 +
+		node->returns.getCount() +
 		node->localDeclList ? node->localDeclList->nod_count : 0;
 
 	if (count)
@@ -403,7 +402,22 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 		StrArray names(*getDefaultMemoryPool(), count);
 
 		PASS1_check_unique_fields_names(names, node->legacyParameters);
-		PASS1_check_unique_fields_names(names, node->legacyReturns);
+
+		// Hand-made PASS1_check_unique_fields_names for array of ParameterClause
+		for (size_t i = 0; i < returns.getCount(); ++i)
+		{
+			ParameterClause& parameter = returns[i];
+
+			size_t pos;
+			if (!names.find(parameter.name.c_str(), pos))
+				names.insert(pos, parameter.name.c_str());
+			else
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+						  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter.name));
+			}
+		}
+
 		PASS1_check_unique_fields_names(names, node->localDeclList);
 	}
 
@@ -413,9 +427,20 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 
 void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
-	text = "ExecBlockNode";
+	text = "ExecBlockNode\n";
+
+	text += "  Returns:\n";
+
+	for (size_t i = 0; i < returns.getCount(); ++i)
+	{
+		const ParameterClause& parameter = returns[i];
+
+		string s;
+		parameter.print(s);
+		text += "    " + s + "\n";
+	}
+
 	nodes.add(legacyParameters);
-	nodes.add(legacyReturns);
 	nodes.add(localDeclList);
 	nodes.add(body);
 }
@@ -429,13 +454,11 @@ void ExecBlockNode::genBlr()
 	compiledStatement->begin_debug();
 
 	USHORT inputs = 0, outputs = 0, locals = 0;
-	dsql_nod* parameters;
 
 	// now do the input parameters
-	if (parameters = legacyParameters)
+	if (legacyParameters)
 	{
-		USHORT position = 0;
-
+		dsql_nod* parameters = legacyParameters;
 		dsql_nod** ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
@@ -446,31 +469,29 @@ void ExecBlockNode::genBlr()
 			DDL_resolve_intl_type(compiledStatement, field,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
 
-			*ptr = MAKE_variable(field, field->fld_name.c_str(), VAR_input, 0,
-								 (USHORT) (2 * position), locals);
+			variables.add(MAKE_variable(field, field->fld_name.c_str(),
+				VAR_input, 0, (USHORT) (2 * inputs), locals));
 			// ASF: do not increment locals here - CORE-2341
-			position++;
+			inputs++;
 		}
-		inputs = position;
 	}
 
+	unsigned returnsPos = variables.getCount();
+
 	// now do the output parameters
-	if (parameters = legacyReturns)
+	for (size_t i = 0; i < returns.getCount(); ++i)
 	{
-		USHORT position = 0;
-		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ++ptr)
-		{
-			dsql_fld* field = (dsql_fld*) (*ptr)->nod_arg[Dsql::e_dfl_field];
+		ParameterClause& parameter = returns[i];
 
-			DDL_resolve_intl_type(compiledStatement, field,
-				reinterpret_cast<const dsql_str*>((*ptr)->nod_arg[Dsql::e_dfl_collate]));
+		parameter.resolve(compiledStatement);
 
-			*ptr = MAKE_variable(field, field->fld_name.c_str(), VAR_output, 1,
-								 (USHORT) (2 * position), locals++);
-			position++;
-		}
-		outputs = position;
+		dsql_nod* var = MAKE_variable(parameter.legacyField,
+			parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * outputs), locals++);
+
+		variables.add(var);
+		outputVariables.add(var);
+
+		++outputs;
 	}
 
 	compiledStatement->append_uchar(blr_begin);
@@ -484,20 +505,13 @@ void ExecBlockNode::genBlr()
 	else
 		compiledStatement->req_send = NULL;
 
-	if (outputs)
+	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
-		USHORT position = 0;
-		parameters = legacyReturns;
-
-		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
-		{
-			dsql_par* param =
-				MAKE_parameter(compiledStatement->req_receive, true, true, ++position, *ptr);
-			param->par_node = *ptr;
-			MAKE_desc(compiledStatement, &param->par_desc, *ptr, NULL);
-			param->par_desc.dsc_flags |= DSC_nullable;
-		}
+		dsql_par* param = MAKE_parameter(compiledStatement->req_receive, true, true,
+			(i - outputVariables.begin()) + 1, *i);
+		param->par_node = *i;
+		MAKE_desc(compiledStatement, &param->par_desc, *i, NULL);
+		param->par_desc.dsc_flags |= DSC_nullable;
 	}
 
 	// Set up parameter to handle EOF
@@ -519,47 +533,38 @@ void ExecBlockNode::genBlr()
 
 	compiledStatement->append_uchar(blr_begin);
 
-	if (parameters = legacyParameters)
+	for (unsigned i = 0; i < returnsPos; ++i)
 	{
-		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
-		{
-			const dsql_nod* parameter = *ptr;
-			const dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-			const dsql_fld* field = variable->var_field;
+		const dsql_nod* parameter = variables[i];
+		const dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
+		const dsql_fld* field = variable->var_field;
 
-			if (field->fld_full_domain || field->fld_not_nullable)
-			{
-				// ASF: Validation of execute block input parameters is different than procedure
-				// parameters, because we can't generate messages using the domains due to the
-				// connection charset influence. So to validate, we cast them and assign to null.
-				compiledStatement->append_uchar(blr_assignment);
-				compiledStatement->append_uchar(blr_cast);
-				DDL_put_field_dtype(compiledStatement, field, true);
-				compiledStatement->append_uchar(blr_parameter2);
-				compiledStatement->append_uchar(0);
-				compiledStatement->append_ushort(variable->var_msg_item);
-				compiledStatement->append_ushort(variable->var_msg_item + 1);
-				compiledStatement->append_uchar(blr_null);
-			}
+		if (field->fld_full_domain || field->fld_not_nullable)
+		{
+			// ASF: Validation of execute block input parameters is different than procedure
+			// parameters, because we can't generate messages using the domains due to the
+			// connection charset influence. So to validate, we cast them and assign to null.
+			compiledStatement->append_uchar(blr_assignment);
+			compiledStatement->append_uchar(blr_cast);
+			DDL_put_field_dtype(compiledStatement, field, true);
+			compiledStatement->append_uchar(blr_parameter2);
+			compiledStatement->append_uchar(0);
+			compiledStatement->append_ushort(variable->var_msg_item);
+			compiledStatement->append_ushort(variable->var_msg_item + 1);
+			compiledStatement->append_uchar(blr_null);
 		}
 	}
 
-	if (outputs)
+	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
-		parameters = legacyReturns;
-		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
-		{
-			dsql_nod* parameter = *ptr;
-			dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-			DDL_put_local_variable(compiledStatement, variable, 0, NULL);
-		}
+		dsql_nod* parameter = *i;
+		dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
+		DDL_put_local_variable(compiledStatement, variable, 0, NULL);
 	}
 
 	compiledStatement->setPsql(true);
 
-	DDL_put_local_variables(compiledStatement, localDeclList, locals);
+	DDL_put_local_variables(compiledStatement, localDeclList, locals, variables);
 
 	compiledStatement->req_loop_level = 0;
 
@@ -578,7 +583,7 @@ void ExecBlockNode::genBlr()
 		compiledStatement->req_type = REQ_EXEC_BLOCK;
 
 	compiledStatement->append_uchar(blr_end);
-	GEN_return(compiledStatement, legacyReturns, true);
+	GEN_return(compiledStatement, outputVariables, true);
 	compiledStatement->append_uchar(blr_end);
 
 	compiledStatement->end_debug();
@@ -587,35 +592,14 @@ void ExecBlockNode::genBlr()
 
 void ExecBlockNode::genReturn()
 {
-	GEN_return(compiledStatement, legacyReturns, false);
+	GEN_return(compiledStatement, outputVariables, false);
 }
 
 
 dsql_nod* ExecBlockNode::resolveVariable(const dsql_str* varName)
 {
 	// try to resolve variable name against input and output parameters and local variables
-
-	dsql_nod* varNode;
-
-	if (localDeclList)
-	{
-		if (varNode = PASS1_resolve_variable_name(localDeclList, varName))
-			return varNode;
-	}
-
-	if (legacyParameters)
-	{
-		if (varNode = PASS1_resolve_variable_name(legacyParameters, varName))
-			return varNode;
-	}
-
-	if (legacyReturns)
-	{
-		if (varNode = PASS1_resolve_variable_name(legacyReturns, varName))
-			return varNode;
-	}
-
-	return NULL;
+	return PASS1_resolve_variable_name(variables, varName);
 }
 
 

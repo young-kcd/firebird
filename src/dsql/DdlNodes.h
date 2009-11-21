@@ -49,7 +49,7 @@ public:
 class TypeClause
 {
 public:
-	explicit TypeClause(dsql_fld* aField, dsql_str* aCollate);
+	explicit TypeClause(dsql_fld* aField, const Firebird::MetaName& aCollate);
 	virtual ~TypeClause() {}
 
 public:
@@ -78,20 +78,17 @@ public:
 
 public:
 	dsql_fld* legacyField;
-	dsql_str* legacyCollate;
+	Firebird::MetaName collate;
 };
 
 
 class ParameterClause : public TypeClause
 {
 public:
-	explicit ParameterClause(dsql_fld* field, dsql_str* collate, dsql_nod* dflt);
+	explicit ParameterClause(dsql_fld* field, const Firebird::MetaName& aCollate, dsql_nod* dflt);
 
 public:
 	void print(Firebird::string& text) const;
-
-public:
-	static void fromLegacyParameterList(Firebird::Array<ParameterClause>& parameters, dsql_nod* list);
 
 public:
 	Firebird::MetaName name;
@@ -150,10 +147,10 @@ class CreateAlterFunctionNode : public DdlNode
 {
 public:
 	explicit CreateAlterFunctionNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName, const TypeClause& aReturnType)
+				const Firebird::MetaName& aName)
 		: DdlNode(pool, sqlText),
 		  name(pool, aName),
-		  returnType(aReturnType),
+		  returnType(NULL, NULL),
 		  create(true),
 		  alter(false),
 		  external(NULL),
@@ -243,8 +240,8 @@ public:
 		  external(NULL),
 		  parameters(pool),
 		  returns(pool),
-		  legacyParameters(NULL),
-		  legacyReturns(NULL),
+		  variables(pool),
+		  outputVariables(pool),
 		  source(pool),
 		  localDeclList(NULL),
 		  body(NULL),
@@ -283,8 +280,8 @@ public:
 	ExternalClause* external;
 	Firebird::Array<ParameterClause> parameters;
 	Firebird::Array<ParameterClause> returns;
-	dsql_nod* legacyParameters;
-	dsql_nod* legacyReturns;
+	Firebird::Array<dsql_nod*> variables;
+	Firebird::Array<dsql_nod*> outputVariables;
 	Firebird::string source;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
@@ -393,6 +390,7 @@ public:
 		  relationName(p),
 		  external(NULL),
 		  source(p),
+		  variables(p),
 		  localDeclList(NULL),
 		  body(NULL),
 		  compiled(false),
@@ -445,6 +443,7 @@ public:
 	TriStateType<int> position;
 	ExternalClause* external;
 	Firebird::string source;
+	Firebird::Array<dsql_nod*> variables;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
 	bool compiled;

@@ -29,7 +29,7 @@ void	GEN_expr(Jrd::CompiledStatement*, Jrd::dsql_nod*);
 void	GEN_hidden_variables(Jrd::CompiledStatement* statement, bool inExpression);
 void	GEN_port(Jrd::CompiledStatement*, Jrd::dsql_msg*);
 void	GEN_request(Jrd::CompiledStatement*, Jrd::dsql_nod*);
-void	GEN_return(Jrd::CompiledStatement*, const Jrd::dsql_nod*, bool);
+void	GEN_return(Jrd::CompiledStatement*, const Firebird::Array<Jrd::dsql_nod*>& variables, bool);
 void	GEN_start_transaction(Jrd::CompiledStatement*, const Jrd::dsql_nod*);
 void	GEN_statement(Jrd::CompiledStatement*, Jrd::dsql_nod*);
 

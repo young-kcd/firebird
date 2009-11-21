@@ -2308,7 +2308,7 @@ static void gen_relation( CompiledStatement* statement, dsql_ctx* context)
     @param eos_flag
 
  **/
-void GEN_return( CompiledStatement* statement, const dsql_nod* parameters, bool eos_flag)
+void GEN_return(CompiledStatement* statement, const Array<dsql_nod*>& variables, bool eos_flag)
 {
 	if (!eos_flag)
 		stuff(statement, blr_begin);
@@ -2318,23 +2318,20 @@ void GEN_return( CompiledStatement* statement, const dsql_nod* parameters, bool 
 	stuff(statement, blr_begin);
 
 	USHORT outputs = 0;
-	if (parameters)
+	for (Array<dsql_nod*>::const_iterator i = variables.begin(); i != variables.end(); ++i)
 	{
-		const dsql_nod* const* ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
-		{
-			outputs++;
-			const dsql_nod* parameter = *ptr;
-			const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-			stuff(statement, blr_assignment);
-			stuff(statement, blr_variable);
-			stuff_word(statement, variable->var_variable_number);
-			stuff(statement, blr_parameter2);
-			stuff(statement, variable->var_msg_number);
-			stuff_word(statement, variable->var_msg_item);
-			stuff_word(statement, variable->var_msg_item + 1);
-		}
+		outputs++;
+		const dsql_nod* parameter = *i;
+		const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
+		stuff(statement, blr_assignment);
+		stuff(statement, blr_variable);
+		stuff_word(statement, variable->var_variable_number);
+		stuff(statement, blr_parameter2);
+		stuff(statement, variable->var_msg_number);
+		stuff_word(statement, variable->var_msg_item);
+		stuff_word(statement, variable->var_msg_item + 1);
 	}
+
 	stuff(statement, blr_assignment);
 	stuff(statement, blr_literal);
 	stuff(statement, blr_short);

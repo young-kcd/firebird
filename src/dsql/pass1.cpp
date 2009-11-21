@@ -9784,14 +9784,11 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	PASS1_resolve_variable_name
 
  **/
-dsql_nod* PASS1_resolve_variable_name(const dsql_nod* var_nodes, const dsql_str* var_name)
+dsql_nod* PASS1_resolve_variable_name(const Array<dsql_nod*>& variables, const dsql_str* var_name)
 {
-	dsql_nod* const* ptr = var_nodes->nod_arg;
-	dsql_nod* const* const end = ptr + var_nodes->nod_count;
-
-	for (; ptr < end; ptr++)
+	for (Array<dsql_nod*>::const_iterator i = variables.begin(); i != variables.end(); ++i)
 	{
-		dsql_nod* var_node = *ptr;
+		dsql_nod* var_node = *i;
 		if (var_node->nod_type == nod_variable)
 		{
 			const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];

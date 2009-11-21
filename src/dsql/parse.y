@@ -626,6 +626,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::dsql_fld* legacyField;
 	TEXT* textPtr;
 	Jrd::ExternalClause* externalClause;
+	Firebird::Array<Jrd::ParameterClause>* parametersClause;
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
 	Jrd::CreateAlterFunctionNode* createAlterFunctionNode;
@@ -635,6 +636,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Firebird::Array<Jrd::CreateAlterPackageNode::Item>* packageItems;
 	Jrd::CreateAlterPackageNode::Item packageItem;
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
+	Jrd::ExecBlockNode* execBlockNode;
 }
 
 %type <legacyNode> access_mode access_type aggregate_function alias_list
@@ -650,7 +652,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> begin_string begin_trigger between_predicate bit_length_expression
 %type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
 %type <legacyNode> blob_subtype_value_io blob_type block_input_params block_parameter
-%type <legacyNode> block_parameters breakleave
+%type <legacyNode> block_proc_parameter block_parameters breakleave
 
 %type <legacyNode> case_abbreviation case_expression case_operand case_result case_specification
 %type <legacyNode> cast_specification char_length_expression character_keyword character_type
@@ -705,10 +707,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> having_clause
 
 %type <legacyNode> in_predicate in_predicate_value
-%type <legacyNode> index_definition index_list init_alter_db input_parameters
-%type <legacyNode> input_proc_parameter input_proc_parameters ins_column_list ins_column_parens
+%type <legacyNode> index_definition index_list init_alter_db
+%type <legacyNode> ins_column_list ins_column_parens
 %type <legacyNode> ins_column_parens_opt insert integer_keyword internal_info
 %type <legacyNode> iso_mode isolation_mode
+%type input_parameters(<parametersClause>) input_proc_parameter(<parametersClause>)
+%type input_proc_parameters(<parametersClause>)
 
 %type <legacyNode> join_condition join_specification join_type joined_table
 
@@ -734,12 +738,13 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> octet_length_expression open_cursor opt_snapshot optional_retain
 %type <legacyNode> optional_savepoint optional_work order_clause order_direction order_item order_list
-%type <legacyNode> output_parameters output_proc_parameters
+%type output_parameters(<parametersClause>) output_proc_parameter(<parametersClause>)
+%type output_proc_parameters(<parametersClause>)
 
 %type <legacyNode> param_mechanism parameter plan_clause
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
 %type <legacyNode> post_event prec_scale predicate primary_constraint privilege
-%type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt proc_parameter
+%type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt
 %type <legacyNode> proc_privileges proc_statement proc_statements
 %type <legacyStr>  passwd_clause passwd_opt
 %type <int32Val>   pos_short_integer precision_opt
@@ -807,7 +812,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <boolVal> release_only_opt
 
 %type <ddlNode> alter_charset_clause
-%type <stmtNode> if_then_else in_autonomous_transaction exec_block
+%type <stmtNode> if_then_else in_autonomous_transaction
+%type <execBlockNode> exec_block
 
 %type <createAlterFunctionNode> alter_function_clause function_clause function_clause_start replace_function_clause
 %type <createAlterProcedureNode> alter_procedure_clause procedure_clause procedure_clause_start replace_procedure_clause
@@ -1870,14 +1876,13 @@ procedure_clause
 	;
 
 procedure_clause_start
-	: symbol_procedure_name input_parameters output_parameters
-		{
-			$$ = FB_NEW(getPool()) CreateAlterProcedureNode(getPool(), compilingText, toName($1));
-			ParameterClause::fromLegacyParameterList($$->parameters, $2);
-			ParameterClause::fromLegacyParameterList($$->returns, $3);
-			$$->legacyParameters = $2;
-			$$->legacyReturns = $3;
-		}
+	: symbol_procedure_name
+			{
+				$$ = FB_NEW(getPool()) CreateAlterProcedureNode(
+					getPool(), compilingText, toName($1));
+			}
+			input_parameters(&$2->parameters) output_parameters(&$2->returns)
+		{ $$ = $2; }
 	;
 
 alter_procedure_clause
@@ -1897,40 +1902,36 @@ replace_procedure_clause
 		}
 	;
 
-input_parameters :	'(' input_proc_parameters ')'
-			{ $$ = make_list ($2); }
-		| '(' ')'
-			{ $$ = NULL; }
-		|
-			{ $$ = NULL; }
-		;
+input_parameters($parameters)
+	:
+	| '(' ')'
+	| '(' input_proc_parameters($parameters) ')'
+	;
 
-output_parameters :	RETURNS '(' output_proc_parameters ')'
-			{ $$ = make_list ($3); }
-		|
-			{ $$ = NULL; }
-		;
+output_parameters($parameters)
+	:
+	| RETURNS '(' output_proc_parameters($parameters) ')'
+	;
 
-input_proc_parameters	: input_proc_parameter
-		| input_proc_parameters ',' input_proc_parameter
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+input_proc_parameters($parameters)
+	: input_proc_parameter($parameters)
+	| input_proc_parameters ',' input_proc_parameter($parameters)
+	;
 
-input_proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
-				default_par_opt
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
-				$1, $4, NULL, $3, NULL, NULL); }
-		;
+input_proc_parameter($parameters)
+	: simple_column_def_name domain_or_non_array_type collate_clause default_par_opt
+		{ $parameters->add(ParameterClause($1, toName($3), $4)); }
+	;
 
-output_proc_parameters	: proc_parameter
-		| output_proc_parameters ',' proc_parameter
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+output_proc_parameters($parameters)
+	: output_proc_parameter
+	| output_proc_parameters ',' output_proc_parameter($parameters)
+	;
 
-proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
-				$1, NULL, NULL, $3, NULL, NULL); }
-		;
+output_proc_parameter($parameters)
+	: simple_column_def_name domain_or_non_array_type collate_clause
+		{ $parameters->add(ParameterClause($1, toName($3), NULL)); }
+	;
 
 default_par_opt	: DEFAULT begin_trigger default_value end_default
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
@@ -1954,14 +1955,14 @@ function_clause
 	;
 
 function_clause_start
-	: symbol_UDF_name input_parameters
-			RETURNS
-				{ $<legacyField>$ = lex.g_field = make_field(NULL); }
+	: symbol_UDF_name
+			{ $$ = FB_NEW(getPool()) CreateAlterFunctionNode(getPool(), compilingText, toName($1)); }
+			input_parameters(&$2->parameters)
+			RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
 			domain_or_non_array_type collate_clause
 		{
-			$$ = FB_NEW(getPool()) CreateAlterFunctionNode(getPool(), compilingText, toName($1),
-				TypeClause($<legacyField>4, (dsql_str*) $6));
-			ParameterClause::fromLegacyParameterList($$->parameters, $2);
+			$$ = $2;
+			$$->returnType = TypeClause($<legacyField>5, toName($7));
 		}
 	;
 
@@ -2574,15 +2575,16 @@ proc_outputs_opt	: RETURNING_VALUES variable_list
 /* EXECUTE BLOCK */
 
 exec_block
-	: EXECUTE BLOCK block_input_params output_parameters AS
+	: EXECUTE BLOCK block_input_params
+			{ $<execBlockNode>$ = FB_NEW(getPool()) ExecBlockNode(getPool()); }
+			output_parameters(&$4->returns) AS
 			local_declaration_list
 			full_proc_block
 		{
-			ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
+			ExecBlockNode* node = $4;
 			node->legacyParameters = $3;
-			node->legacyReturns = $4;
-			node->localDeclList = $6;
-			node->body = $7;
+			node->localDeclList = $7;
+			node->body = $8;
 			$$ = node;
 		}
 	;
@@ -2599,9 +2601,15 @@ block_parameters	: block_parameter
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-block_parameter	: proc_parameter '=' parameter
-			{ $$ = make_node (nod_param_val, e_prm_val_count, $1, $3); }
-		;
+block_parameter
+	: block_proc_parameter '=' parameter
+		{ $$ = make_node (nod_param_val, e_prm_val_count, $1, $3); }
+	;
+
+block_proc_parameter
+	: simple_column_def_name domain_or_non_array_type collate_clause
+		{ $$ = make_node (nod_def_field, (int) e_dfl_count, $1, NULL, NULL, $3, NULL, NULL); }
+	;
 
 /* CREATE VIEW */
 
@@ -6341,6 +6349,9 @@ static void stack_nodes (dsql_nod*	node,
 
 static Firebird::MetaName toName(dsql_nod* node)
 {
+	if (!node)
+		return "";
+
 	dsql_str* str = (dsql_str*) node;
 
 	if (str->str_length > MAX_SQL_IDENTIFIER_LEN)
