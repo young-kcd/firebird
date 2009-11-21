@@ -1,3 +1,50 @@
+2009-11-21 10:24  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.287), preparse.cpp (1.58),
+	user_dsql.cpp (1.68):
+
+	Style.
+
+2009-11-21 08:38  robocop
+
+	* firebird2/src/jrd/: dyn_def.epp (1.185), dyn_del.epp (1.85),
+	dyn_mod.epp (1.125):
+
+	Comments.
+
+2009-11-21 06:20  robocop
+
+	* firebird2/src/jrd/met.epp (1.297):
+
+	Parameters style.
+
+2009-11-21 04:23  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.299), met.epp (1.296):
+
+	Comments.
+
+2009-11-21 04:16  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.334):
+
+	Some needed casts related to previous commit
+
+2009-11-21 02:02  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.333):
+
+	Reduce a number of casts related to NUMBER token. While at it, make
+	the changed rules with a decent format.
+
+2009-11-21 01:10  asfernandes
+
+	* firebird2/src/: dsql/parse.y (1.332), jrd/cmp_proto.h (1.39),
+	jrd/dfw.epp (1.298), jrd/dpm.epp (1.109), jrd/val.h (1.46),
+	jrd/vio.cpp (1.266), msgs/build_file.epp (1.40):
+
+	Misc
+
 2009-11-20 12:31  robocop
 
 	* firebird2/src/jrd/idx.cpp (1.164):
