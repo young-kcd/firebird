@@ -373,7 +373,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> WORK
 %token <legacyNode> WRITE
 
-%token <legacyNode> FLOAT_NUMBER NUMBER NUMERIC SYMBOL
+%token <legacyNode> FLOAT_NUMBER NUMERIC SYMBOL
+%token <int32Val> NUMBER
 
 %token <legacyStr>	STRING
 %token <textPtr>	INTRODUCER
@@ -616,6 +617,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	bool boolVal;
 	int intVal;
 	unsigned uintVal;
+	SLONG int32Val;
 	FB_UINT64 uint64Val;
 	TriStateRawType<unsigned> triUintVal;
 	TriStateRawType<FB_UINT64> triUint64Val;
@@ -689,10 +691,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  end_trigger entry_op external_file
 
 %type <legacyNode> fetch_cursor fetch_opt fetch_scroll_opt file1 file_clause file_desc file_desc1
-%type <legacyNode> filter_clause_io filter_decl_clause first_clause first_file_length
+%type <legacyNode> filter_clause_io filter_decl_clause first_clause
 %type <legacyNode> float_type for_exec_into for_select for_update_clause for_update_list from_clause
 %type <legacyNode> from_list full_proc_block full_proc_block_body function
 %type <legacyStr>  firstname_opt
+%type <int32Val>   first_file_length
 
 %type <legacyNode> generator_clause grant grant_option granted_by granted_by_text grantee grantee_list
 %type <legacyNode> grantor group_by_item group_by_list group_clause gtt_recreate_clause gtt_scope
@@ -713,30 +716,33 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> label_opt length_expression like_predicate limit_clause
 %type <legacyNode> local_declaration local_declaration_item local_declaration_list local_declarations
-%type <legacyNode> lock_clause lock_mode lock_type lock_wait long_integer
+%type <legacyNode> lock_clause lock_mode lock_type lock_wait
 %type <legacyStr>  lastname_opt
+%type <int32Val>   long_integer
 
 %type <legacyNode> manual_auto merge merge_insert_specification merge_update_specification
 %type <legacyNode> merge_when_clause merge_when_matched_clause merge_when_not_matched_clause
 %type <legacyStr>  middlename_opt module_op
 
 %type <legacyNode> named_columns_join named_param named_params_list national_character_keyword
-%type <legacyNode> national_character_type natural_join neg_short_integer
+%type <legacyNode> national_character_type natural_join
 %type <legacyNode> next_value_expression non_aggregate_function non_array_type
-%type <legacyNode> non_charset_simple_type non_reserved_word non_role_grantee_list nonneg_short_integer
+%type <legacyNode> non_charset_simple_type non_reserved_word non_role_grantee_list
 %type <legacyNode> not_named_param not_named_params_list null_constraint null_predicate
 %type <legacyNode> null_value nulls_clause nulls_placement numeric_type numeric_value_function
+%type <int32Val>   neg_short_integer nonneg_short_integer
 
 %type <legacyNode> octet_length_expression open_cursor opt_snapshot optional_retain
 %type <legacyNode> optional_savepoint optional_work order_clause order_direction order_item order_list
 %type <legacyNode> output_parameters output_proc_parameters
 
 %type <legacyNode> param_mechanism parameter plan_clause
-%type <legacyNode> plan_expression plan_item plan_item_list plan_type pos_short_integer
-%type <legacyNode> post_event prec_scale precision_opt predicate primary_constraint privilege
+%type <legacyNode> plan_expression plan_item plan_item_list plan_type
+%type <legacyNode> post_event prec_scale predicate primary_constraint privilege
 %type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt proc_parameter
 %type <legacyNode> proc_privileges proc_statement proc_statements
 %type <legacyStr>  passwd_clause passwd_opt
+%type <int32Val>   pos_short_integer precision_opt
 
 %type <legacyNode> qualified_join quantified_predicate query_spec query_term
 
@@ -753,8 +759,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> savepoint scroll_opt search_condition searched_case searched_when_clause sec_precision_opt
 %type <legacyNode> sec_shadow_files segment_clause_io segment_length_io select select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
-%type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause signed_long_integer
-%type <legacyNode> signed_short_integer similar_predicate simple_case
+%type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause
+%type <legacyNode> similar_predicate simple_case
 %type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_proc_statement simple_table_name
 %type <legacyNode> simple_type simple_when_clause singleton_select singular_predicate skip_clause
 %type <legacyNode> snap_shot some starting_predicate statement stmt_start_column
@@ -768,6 +774,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> symbol_variable_name symbol_view_name system_function_expression
 %type <legacyNode> system_function_special_syntax system_function_std_syntax
 %type <legacyStr>  sql_string
+%type <int32Val>   signed_long_integer signed_short_integer
 
 %type <legacyNode> table_clause table_constraint table_constraint_definition table_element table_elements
 %type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
@@ -778,9 +785,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> trim_specification
 
 %type <legacyNode> u_constant u_numeric_constant udf udf_data_type udf_decl_clause undo_savepoint
-%type <legacyNode> unique_constraint unique_opt unsigned_short_integer update update_column_name
+%type <legacyNode> unique_constraint unique_opt update update_column_name
 %type <legacyNode> update_or_insert update_or_insert_matching_opt update_positioned update_rule
 %type <legacyNode> update_searched user_grantee user_grantee_list
+%type <int32Val>   unsigned_short_integer
 
 %type <legacyNode> valid_symbol_name value value_list value_list_opt var_decl_opt var_declaration_item
 %type <legacyNode> variable variable_list varying_keyword version_mode view_clause
@@ -1065,14 +1073,16 @@ udf_decl_clause
 		}
 	;
 
-udf_data_type	: simple_type
-		| BLOB
-			{ lex.g_field->fld_dtype = dtype_blob; }
-		| CSTRING '(' pos_short_integer ')' charset_clause
-			{
+udf_data_type
+	: simple_type
+	| BLOB
+		{ lex.g_field->fld_dtype = dtype_blob; }
+	| CSTRING '(' pos_short_integer ')' charset_clause
+		{
 			lex.g_field->fld_dtype = dtype_cstring;
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; }
-		;
+			lex.g_field->fld_character_length = (USHORT) $3;
+		}
+	;
 
 arg_desc_list1	:
 		 	{ $$ = NULL; }
@@ -1108,13 +1118,15 @@ return_value1	: return_value
 			{ $$ = $2; }
 		;
 
-return_value	: init_data_type udf_data_type return_mechanism
-			{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count,
-							  $1, $3); }
-		| PARAMETER pos_short_integer
-			{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count,
-				NULL, MAKE_const_slong ((IPTR) $2));}
-		;
+return_value
+	: init_data_type udf_data_type return_mechanism
+		{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count, $1, $3); }
+	| PARAMETER pos_short_integer
+		{
+			$$ = make_node(nod_udf_return_value, (int) e_udf_param_count,
+				NULL, MAKE_const_slong($2));
+		}
+	;
 
 return_mechanism :
 			{ $$ = MAKE_const_slong (FUN_reference); }
@@ -1136,12 +1148,12 @@ filter_decl_clause : symbol_filter_name INPUT_TYPE blob_filter_subtype OUTPUT_TY
 						$1, $3, $5, $7, $9); }
 		;
 
-blob_filter_subtype :	symbol_blob_subtype_name
-				{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
-		|
-						signed_short_integer
-				{ $$ = MAKE_const_slong ((IPTR) $1); }
-		;
+blob_filter_subtype
+	: symbol_blob_subtype_name
+		{ $$ = MAKE_constant((dsql_str*) $1, CONSTANT_STRING); }
+	| signed_short_integer
+		{ $$ = MAKE_const_slong($1); }
+	;
 
 /* CREATE metadata operations */
 
@@ -1276,11 +1288,13 @@ index_definition : column_list
 
 
 /* CREATE SHADOW */
-shadow_clause	: pos_short_integer manual_auto conditional sql_string
-			first_file_length sec_shadow_files
-		 	{ $$ = make_node (nod_def_shadow, (int) e_shadow_count,
-				 $1, $2, $3, $4, $5, make_list ($6)); }
-		;
+shadow_clause
+	: pos_short_integer manual_auto conditional sql_string first_file_length sec_shadow_files
+	 	{
+	 		$$ = make_node (nod_def_shadow, (int) e_shadow_count,
+	 			(dsql_nod*) $1, $2, $3, $4, (dsql_nod*)(IPTR) $5, make_list($6));
+	 	}
+	;
 
 manual_auto	: MANUAL
 			{ $$ = MAKE_const_slong (1); }
@@ -1296,11 +1310,12 @@ conditional	:
 			{ $$ = MAKE_const_slong (1); }
 		;
 
-first_file_length :
-			{ $$ = (dsql_nod*) 0;}
-		| LENGTH equals long_integer page_noise
-			{ $$ = $3; }
-		;
+first_file_length
+	:
+		{ $$ = 0;}
+	| LENGTH equals long_integer page_noise
+		{ $$ = $3; }
+	;
 
 sec_shadow_files :
 		 	{ $$ = NULL; }
@@ -1494,9 +1509,9 @@ db_initial_desc
 
 db_initial_option
 	: KW_PAGE_SIZE equals pos_short_integer
-		{ $$ = make_node(nod_page_size, 1, $3); }
+		{ $$ = make_node(nod_page_size, 1, (dsql_nod*) $3); }
 	| LENGTH equals long_integer page_noise
-		{ $$ = make_node(nod_file_length, 1, $3); }
+		{ $$ = make_node(nod_file_length, 1, (dsql_nod*)(IPTR) $3); }
 	| USER sql_string
 		{ $$ = make_node(nod_user_name, 1, $2); }
 	| PASSWORD sql_string
@@ -1556,9 +1571,9 @@ file_desc
 
 file_clause
 	: STARTING file_clause_noise long_integer
-		{ lex.g_file->fil_start = (IPTR) $3; }
+		{ lex.g_file->fil_start = $3; }
 	| LENGTH equals long_integer page_noise
-		{ lex.g_file->fil_length = (IPTR) $3; }
+		{ lex.g_file->fil_length = $3; }
 	;
 
 file_clause_noise
@@ -2901,7 +2916,7 @@ trigger_type_suffix
 
 trigger_position
 	: POSITION nonneg_short_integer
-		{ $$ = TriStateRawType<int>::val((IPTR) $2); }
+		{ $$ = TriStateRawType<int>::val($2); }
 	|
 		{ $$ = TriStateRawType<int>::empty(); }
 	;
@@ -2986,8 +3001,7 @@ alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
 			MAKE_const_slong ((IPTR) $4)); } */
 		| col_opt simple_column_name POSITION pos_short_integer
-			{ $$ = make_node(nod_mod_field_pos, 2, $2,
-				MAKE_const_slong((IPTR) $4)); }
+			{ $$ = make_node(nod_mod_field_pos, 2, $2, MAKE_const_slong($4)); }
 		| col_opt alter_column_name TO simple_column_name
 			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
 		| col_opt alter_column_name KW_NULL
@@ -3110,16 +3124,20 @@ alter_index_clause	: symbol_index_name ACTIVE
 				{ $$ = make_node (nod_idx_inactive, 1, $1); }
 			;
 
-alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
-			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
-				MAKE_const_slong ((IPTR) $4)); }
-		| symbol_generator_name RESTART WITH NUMBER64BIT
-			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
-				MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)); }
-		| symbol_generator_name RESTART WITH '-' NUMBER64BIT
-			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
-				make_node(nod_negate, 1, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))); }
-		;
+alter_sequence_clause
+	: symbol_generator_name RESTART WITH signed_long_integer
+		{ $$ = make_node(nod_set_generator2, e_gen_id_count, $1, MAKE_const_slong($4)); }
+	| symbol_generator_name RESTART WITH NUMBER64BIT
+		{
+			$$ = make_node(nod_set_generator2, e_gen_id_count,
+				$1, MAKE_constant((dsql_str*) $4, CONSTANT_SINT64));
+		}
+	| symbol_generator_name RESTART WITH '-' NUMBER64BIT
+		{
+			$$ = make_node(nod_set_generator2, e_gen_id_count,
+				$1, make_node(nod_negate, 1, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)));
+		}
+	;
 
 alter_udf_clause
 	: symbol_UDF_name entry_op module_op
@@ -3276,7 +3294,7 @@ drop_clause	: EXCEPTION symbol_exception_name
 		| FUNCTION symbol_UDF_name
 			{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), compilingText, toName($2))); }
 		| SHADOW pos_short_integer
-			{ $$ = make_node (nod_del_shadow, (int) 1, $2); }
+			{ $$ = make_node (nod_del_shadow, (int) 1, (dsql_nod*)(IPTR) $2); }
 		| ROLE symbol_role_name
 			{ $$ = make_node (nod_del_role, (int) 1, $2); }
 		| GENERATOR symbol_generator_name
@@ -3345,23 +3363,20 @@ array_type	: non_charset_simple_type '[' array_spec ']'
 
 array_spec	: array_range
 		| array_spec ',' array_range
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-array_range	: signed_long_integer
-				{ if ((IPTR) $1 < 1)
-			 		$$ = make_node (nod_list, (int) 2,
-					MAKE_const_slong ((IPTR) $1),
-					MAKE_const_slong (1));
-				  else
-			 		$$ = make_node (nod_list, (int) 2,
-			   		MAKE_const_slong (1),
-					MAKE_const_slong ((IPTR) $1) ); }
-		| signed_long_integer ':' signed_long_integer
-				{ $$ = make_node (nod_list, (int) 2,
-			 	MAKE_const_slong ((IPTR) $1),
-				MAKE_const_slong ((IPTR) $3)); }
-		;
+array_range
+	: signed_long_integer
+		{
+			if ($1 < 1)
+		 		$$ = make_node(nod_list, 2, MAKE_const_slong($1), MAKE_const_slong(1));
+			else
+				$$ = make_node(nod_list, 2, MAKE_const_slong(1), MAKE_const_slong($1) );
+		}
+	| signed_long_integer ':' signed_long_integer
+		{ $$ = make_node(nod_list, 2, MAKE_const_slong($1), MAKE_const_slong($3)); }
+	;
 
 simple_type	: non_charset_simple_type
 		| character_type charset_clause
@@ -3440,109 +3455,115 @@ integer_keyword	: INTEGER
 /* allow a blob to be specified with any combination of
    segment length and subtype */
 
-blob_type	: BLOB blob_subtype blob_segsize charset_clause
-			{
+blob_type
+	: BLOB blob_subtype blob_segsize charset_clause
+		{
 			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
-			}
-		| BLOB '(' unsigned_short_integer ')'
-			{
+		}
+	| BLOB '(' unsigned_short_integer ')'
+		{
 			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
-			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
+			lex.g_field->fld_seg_length = (USHORT) $3;
 			lex.g_field->fld_sub_type = 0;
-			}
-		| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
-			{
+		}
+	| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
+		{
 			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
-			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
-			lex.g_field->fld_sub_type = (USHORT)(IPTR) $5;
-			}
-		| BLOB '(' ',' signed_short_integer ')'
-			{
+			lex.g_field->fld_seg_length = (USHORT) $3;
+			lex.g_field->fld_sub_type = (USHORT) $5;
+		}
+	| BLOB '(' ',' signed_short_integer ')'
+		{
 			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			lex.g_field->fld_seg_length = 80;
-			lex.g_field->fld_sub_type = (USHORT)(IPTR) $4;
-			}
-		;
+			lex.g_field->fld_sub_type = (USHORT) $4;
+		}
+	;
 
-blob_segsize	: SEGMENT KW_SIZE unsigned_short_integer
-		  	{
-			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
-		  	}
-		|
-		  	{
+blob_segsize
+	: SEGMENT KW_SIZE unsigned_short_integer
+	  	{
+			lex.g_field->fld_seg_length = (USHORT) $3;
+	  	}
+	|
+	  	{
 			lex.g_field->fld_seg_length = (USHORT) 80;
-		  	}
-		;
+	  	}
+	;
 
-blob_subtype	: SUB_TYPE signed_short_integer
-			{
-			lex.g_field->fld_sub_type = (USHORT)(IPTR) $2;
-			}
-		| SUB_TYPE symbol_blob_subtype_name
-			{
+blob_subtype
+	: SUB_TYPE signed_short_integer
+		{
+			lex.g_field->fld_sub_type = (USHORT) $2;
+		}
+	| SUB_TYPE symbol_blob_subtype_name
+		{
 			lex.g_field->fld_sub_type_name = $2;
-			}
-		|
-			{
+		}
+	|
+		{
 			lex.g_field->fld_sub_type = (USHORT) 0;
-			}
-		;
+		}
+	;
 
 charset_clause
 	: CHARACTER SET symbol_character_set_name
 		{
 			lex.g_field->fld_character_set = $3;
 		}
-	| { $$ = NULL; }
+	|
+		{ $$ = NULL; }
 	;
 
 
 /* character type */
 
 
-national_character_type	: national_character_keyword '(' pos_short_integer ')'
-			{
+national_character_type
+	: national_character_keyword '(' pos_short_integer ')'
+		{
 			lex.g_field->fld_dtype = dtype_text;
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $3;
+			lex.g_field->fld_character_length = (USHORT) $3;
 			lex.g_field->fld_flags |= FLD_national;
 			$$ = NULL;
-			}
-		| national_character_keyword
-			{
+		}
+	| national_character_keyword
+		{
 			lex.g_field->fld_dtype = dtype_text;
 			lex.g_field->fld_character_length = 1;
 			lex.g_field->fld_flags |= FLD_national;
 			$$ = NULL;
-			}
-		| national_character_keyword VARYING '(' pos_short_integer ')'
-			{
+		}
+	| national_character_keyword VARYING '(' pos_short_integer ')'
+		{
 			lex.g_field->fld_dtype = dtype_varying;
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $4;
+			lex.g_field->fld_character_length = (USHORT) $4;
 			lex.g_field->fld_flags |= FLD_national;
 			$$ = NULL;
-			}
-		;
+		}
+	;
 
-character_type	: character_keyword '(' pos_short_integer ')'
-			{
+character_type
+	: character_keyword '(' pos_short_integer ')'
+		{
 			lex.g_field->fld_dtype = dtype_text;
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $3;
-			}
-		| character_keyword
-			{
+			lex.g_field->fld_character_length = (USHORT) $3;
+		}
+	| character_keyword
+		{
 			lex.g_field->fld_dtype = dtype_text;
 			lex.g_field->fld_character_length = 1;
-			}
-		| varying_keyword '(' pos_short_integer ')'
-			{
+		}
+	| varying_keyword '(' pos_short_integer ')'
+		{
 			lex.g_field->fld_dtype = dtype_varying;
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $3;
-			}
-		;
+			lex.g_field->fld_character_length = (USHORT) $3;
+		}
+	;
 
 varying_keyword 	   : VARCHAR
 			   | CHARACTER VARYING
@@ -3585,10 +3606,9 @@ prec_scale	:
 			}
 		| '(' signed_long_integer ')'
 			{
-			if ( ((IPTR) $2 < 1) || ((IPTR) $2 > 18) )
-				yyabandon (-842, isc_precision_err);
-				/* Precision most be between 1 and 18. */
-			if ((IPTR) $2 > 9)
+			if ($2 < 1 || $2 > 18)
+				yyabandon (-842, isc_precision_err);	// Precision most be between 1 and 18.
+			if ($2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
 				   (db_dialect > SQL_DIALECT_V5) ) ||
@@ -3615,7 +3635,7 @@ prec_scale	:
 			}
 			else
 			{
-				if ((IPTR) $2 < 5)
+				if ($2 < 5)
 				{
 					lex.g_field->fld_dtype = dtype_short;
 					lex.g_field->fld_length = sizeof (SSHORT);
@@ -3626,17 +3646,15 @@ prec_scale	:
 					lex.g_field->fld_length = sizeof (SLONG);
 				}
 			}
-			lex.g_field->fld_precision = (USHORT)(IPTR) $2;
+			lex.g_field->fld_precision = (USHORT) $2;
 			}
 		| '(' signed_long_integer ',' signed_long_integer ')'
 			{
-			if ( ((IPTR) $2 < 1) || ((IPTR) $2 > 18) )
-				yyabandon (-842, isc_precision_err);
-				/* Precision should be between 1 and 18 */
-			if (((IPTR) $4 > (IPTR) $2) || ((IPTR) $4 < 0))
-				yyabandon (-842, isc_scale_nogt);
-				/* Scale must be between 0 and precision */
-			if ((IPTR) $2 > 9)
+			if ($2 < 1 || $2 > 18)
+				yyabandon (-842, isc_precision_err);	// Precision should be between 1 and 18
+			if ($4 > $2 || $4 < 0)
+				yyabandon (-842, isc_scale_nogt);	// Scale must be between 0 and precision
+			if ($2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
 				   (db_dialect > SQL_DIALECT_V5) ) ||
@@ -3666,7 +3684,7 @@ prec_scale	:
 			}
 			else
 			{
-				if ((IPTR) $2 < 5)
+				if ($2 < 5)
 				{
 					lex.g_field->fld_dtype = dtype_short;
 					lex.g_field->fld_length = sizeof (SSHORT);
@@ -3677,8 +3695,8 @@ prec_scale	:
 					lex.g_field->fld_length = sizeof (SLONG);
 				}
 			}
-			lex.g_field->fld_precision = (USHORT)(IPTR) $2;
-			lex.g_field->fld_scale = - (SSHORT)(IPTR) $4;
+			lex.g_field->fld_precision = (USHORT) $2;
+			lex.g_field->fld_scale = - (SSHORT) $4;
 			}
 		;
 
@@ -3690,41 +3708,43 @@ decimal_keyword	: DECIMAL
 
 /* floating point type */
 
-float_type	: KW_FLOAT precision_opt
+float_type
+	: KW_FLOAT precision_opt
+		{
+			if ($2 > 7)
 			{
-			if ((IPTR) $2 > 7)
-				{
 				lex.g_field->fld_dtype = dtype_double;
-				lex.g_field->fld_length = sizeof (double);
-				}
+				lex.g_field->fld_length = sizeof(double);
+			}
 			else
-				{
+			{
 				lex.g_field->fld_dtype = dtype_real;
-				lex.g_field->fld_length = sizeof (float);
-				}
+				lex.g_field->fld_length = sizeof(float);
 			}
-		| KW_LONG KW_FLOAT precision_opt
-			{
+		}
+	| KW_LONG KW_FLOAT precision_opt
+		{
 			lex.g_field->fld_dtype = dtype_double;
-			lex.g_field->fld_length = sizeof (double);
-			}
-		| REAL
-			{
+			lex.g_field->fld_length = sizeof(double);
+		}
+	| REAL
+		{
 			lex.g_field->fld_dtype = dtype_real;
-			lex.g_field->fld_length = sizeof (float);
-			}
-		| KW_DOUBLE PRECISION
-			{
+			lex.g_field->fld_length = sizeof(float);
+		}
+	| KW_DOUBLE PRECISION
+		{
 			lex.g_field->fld_dtype = dtype_double;
-			lex.g_field->fld_length = sizeof (double);
-			}
-		;
+			lex.g_field->fld_length = sizeof(double);
+		}
+	;
 
-precision_opt	: '(' nonneg_short_integer ')'
-			{ $$ = $2; }
-		|
-			{ $$ = 0; }
-		;
+precision_opt
+	: '(' nonneg_short_integer ')'
+		{ $$ = $2; }
+	|
+		{ $$ = 0; }
+	;
 
 
 
@@ -3735,16 +3755,20 @@ set		: set_transaction
 		;
 
 
-set_generator	: SET GENERATOR symbol_generator_name TO signed_long_integer
-			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
-				MAKE_const_slong ((IPTR) $5)); }
-		| SET GENERATOR symbol_generator_name TO NUMBER64BIT
-			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
-				MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)); }
-		| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
-			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $3,
-				make_node(nod_negate, 1, MAKE_constant((dsql_str*) $6, CONSTANT_SINT64))); }
-		;
+set_generator
+	: SET GENERATOR symbol_generator_name TO signed_long_integer
+		{ $$ = make_node(nod_set_generator2, e_gen_id_count, $3, MAKE_const_slong($5)); }
+	| SET GENERATOR symbol_generator_name TO NUMBER64BIT
+		{
+			$$ = make_node(nod_set_generator2, e_gen_id_count,
+				$3, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64));
+		}
+	| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
+		{
+			$$ = make_node(nod_set_generator2, e_gen_id_count,
+				$3, make_node(nod_negate, 1, MAKE_constant((dsql_str*) $6, CONSTANT_SINT64)));
+		}
+	;
 
 
 /* transaction statements */
@@ -3891,9 +3915,10 @@ tra_misc_options: NO AUTO UNDO
 			{ $$ = make_flag_node(nod_tra_misc, NOD_RESTART_REQUESTS, 0, NULL); }
 		;
 
-tra_timeout: LOCK TIMEOUT nonneg_short_integer
-			{ $$ = make_node(nod_lock_timeout, 1, MAKE_const_slong ((IPTR) $3)); }
-		;
+tra_timeout
+	: LOCK TIMEOUT nonneg_short_integer
+		{ $$ = make_node(nod_lock_timeout, 1, MAKE_const_slong($3)); }
+	;
 
 tbl_reserve_options: RESERVING restr_list
 			{ $$ = make_node (nod_reserve, 1, make_list ($2)); }
@@ -4109,21 +4134,23 @@ limit_clause	: first_clause skip_clause
 			{ $$ = 0; }
 		;
 
-first_clause	: FIRST long_integer
-			{ $$ = MAKE_const_slong ((IPTR) $2); }
-		| FIRST '(' value ')'
-			{ $$ = $3; }
-		| FIRST parameter
-			{ $$ = $2; }
-		;
+first_clause
+	: FIRST long_integer
+		{ $$ = MAKE_const_slong($2); }
+	| FIRST '(' value ')'
+		{ $$ = $3; }
+	| FIRST parameter
+		{ $$ = $2; }
+	;
 
-skip_clause	: SKIP long_integer
-			{ $$ = MAKE_const_slong ((IPTR) $2); }
-		| SKIP '(' value ')'
-			{ $$ = $3; }
-		| SKIP parameter
-			{ $$ = $2; }
-		;
+skip_clause
+	: SKIP long_integer
+		{ $$ = MAKE_const_slong($2); }
+	| SKIP '(' value ')'
+		{ $$ = $3; }
+	| SKIP parameter
+		{ $$ = $2; }
+	;
 
 distinct_clause	: DISTINCT
 			{ $$ = make_node (nod_flag, 0, NULL); }
@@ -4589,9 +4616,10 @@ blob_subtype_value_io : blob_subtype_io
 		| parameter
 		;
 
-blob_subtype_io	: signed_short_integer
-			{ $$ = MAKE_const_slong ((IPTR) $1); }
-		;
+blob_subtype_io
+	: signed_short_integer
+		{ $$ = MAKE_const_slong($1); }
+	;
 
 segment_clause_io	: MAX_SEGMENT segment_length_io
 			{ $$ = $2; }
@@ -4599,10 +4627,11 @@ segment_clause_io	: MAX_SEGMENT segment_length_io
 			{ $$ = NULL; }
 		;
 
-segment_length_io	: unsigned_short_integer
-			{ $$ = MAKE_const_slong ((IPTR) $1); }
-		| parameter
-		;
+segment_length_io
+	: unsigned_short_integer
+		{ $$ = MAKE_const_slong($1); }
+	| parameter
+	;
 
 
 /* column specifications */
@@ -5022,11 +5051,12 @@ datetime_value_expression : CURRENT_DATE
 			{ $$ = make_node (nod_current_timestamp, 1, $2); }
 		;
 
-sec_precision_opt	: '(' nonneg_short_integer ')'
-			{ $$ = MAKE_const_slong ((IPTR) $2); }
-		|
-			{ $$ = NULL; }
-		;
+sec_precision_opt
+	: '(' nonneg_short_integer ')'
+		{ $$ = MAKE_const_slong($2); }
+	|
+		{ $$ = NULL; }
+	;
 
 array_element   : column_name '[' value_list ']'
 			{ $$ = make_node (nod_array, (int) e_ary_count, $1, make_list ($3)); }
@@ -5051,7 +5081,7 @@ constant	: u_constant
 u_numeric_constant : NUMERIC
 			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
 		| NUMBER
-			{ $$ = MAKE_const_slong ((IPTR) $1); }
+			{ $$ = MAKE_const_slong($1); }
 		| FLOAT_NUMBER
 			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_DOUBLE); }
 		| NUMBER64BIT
@@ -5150,47 +5180,62 @@ sql_string
 		}
 	;
 
-signed_short_integer	:	nonneg_short_integer
-		| '-' neg_short_integer
-			{ $$ = (dsql_nod*) - (IPTR) $2; }
-		;
+signed_short_integer
+	: nonneg_short_integer
+	| '-' neg_short_integer
+		{ $$ = -$2; }
+	;
 
-nonneg_short_integer	: NUMBER
-			{ if ((IPTR) $1 > SHRT_POS_MAX)
-				yyabandon (-842, isc_expec_short);
-				/* Short integer expected */
-			  $$ = $1;}
-		;
+nonneg_short_integer
+	: NUMBER
+		{
+			if ($1 > SHRT_POS_MAX)
+				yyabandon(-842, isc_expec_short);	// Short integer expected
+				
+			$$ = $1;
+		}
+	;
 
-neg_short_integer : NUMBER
-			{ if ((IPTR) $1 > SHRT_NEG_MAX)
-				yyabandon (-842, isc_expec_short);
-				/* Short integer expected */
-			  $$ = $1;}
-		;
+neg_short_integer
+	: NUMBER
+		{
+			if ($1 > SHRT_NEG_MAX)
+				yyabandon(-842, isc_expec_short);	// Short integer expected
 
-pos_short_integer : nonneg_short_integer
-			{ if ((IPTR) $1 == 0)
-				yyabandon (-842, isc_expec_positive);
-				/* Positive number expected */
-			  $$ = $1;}
-		;
+			$$ = $1;
+		}
+	;
 
-unsigned_short_integer : NUMBER
-			{ if ((IPTR) $1 > SHRT_UNSIGNED_MAX)
-				yyabandon (-842, isc_expec_ushort);
-				/* Unsigned short integer expected */
-			  $$ = $1;}
-		;
+pos_short_integer
+	: nonneg_short_integer
+		{
+			if ($1 == 0)
+				yyabandon(-842, isc_expec_positive);	// Positive number expected
+				
+			$$ = $1;
+		}
+	;
 
-signed_long_integer	:	long_integer
-		| '-' long_integer
-			{ $$ = (dsql_nod*) - (IPTR) $2; }
-		;
+unsigned_short_integer
+	: NUMBER
+		{
+			if ($1 > SHRT_UNSIGNED_MAX)
+				yyabandon(-842, isc_expec_ushort);	// Unsigned short integer expected
 
-long_integer	: NUMBER
-			{ $$ = $1;}
-		;
+			$$ = $1;
+		}
+	;
+
+signed_long_integer
+	: long_integer
+	| '-' long_integer
+		{ $$ = -$2; }
+	;
+
+long_integer
+	: NUMBER
+		{ $$ = $1;}
+	;
 
 
 /* functions */
@@ -6793,7 +6838,7 @@ int Parser::yylexAux()
 					}
 				}
 
-				yylval.legacyNode = (dsql_nod*)(long) value;
+				yylval.int32Val = (SLONG) value;
 				return NUMBER;
 			} // integer value
 		}  // if (!hexerror)...
@@ -6908,7 +6953,7 @@ int Parser::yylexAux()
 
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
-					yylval.legacyNode = (dsql_nod*) (IPTR) number;
+					yylval.int32Val = (SLONG) number;
 					//printf ("parse.y %p %d\n", yylval.legacyNode, number);
 					return NUMBER;
 				}
