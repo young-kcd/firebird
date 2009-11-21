@@ -1509,7 +1509,7 @@ db_initial_desc
 
 db_initial_option
 	: KW_PAGE_SIZE equals pos_short_integer
-		{ $$ = make_node(nod_page_size, 1, (dsql_nod*) $3); }
+		{ $$ = make_node(nod_page_size, 1, (dsql_nod*)(IPTR) $3); }
 	| LENGTH equals long_integer page_noise
 		{ $$ = make_node(nod_file_length, 1, (dsql_nod*)(IPTR) $3); }
 	| USER sql_string
@@ -2491,7 +2491,7 @@ errors	: err
 	;
 
 err	: SQLCODE signed_short_integer
-		{ $$ = make_node (nod_sqlcode, 1, $2); }
+		{ $$ = make_node (nod_sqlcode, 1, (dsql_nod*)(IPTR) $2); }
 	| GDSCODE symbol_gdscode_name
 		{ $$ = make_node (nod_gdscode, 1, $2); }
 	| EXCEPTION symbol_exception_name
