@@ -447,7 +447,8 @@ void API_ROUTINE isc_embed_dsql_length(const UCHAR* string, USHORT* length)
 	const UCHAR* p;
 	for (p = string; *p && *p != ';'; p++)
 	{
-		if (classes(*p) & CHR_QUOTE) {
+		if (classes(*p) & CHR_QUOTE)
+		{
 			for (UCHAR prev = 0, quote = *p++; *p == quote || prev == quote;)
 				prev = *p++;
 			p--;
@@ -575,7 +576,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 	{
 		// An error occurred.  Free any newly allocated statement handle.
 
-		if (!statement) {
+		if (!statement)
+		{
 			ISC_STATUS_ARRAY local_status2;
 			isc_dsql_free_statement(local_status2, &stmt_handle, DSQL_drop);
 		}
@@ -663,7 +665,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status, const SCH
 		dsql_stmt* p;
 		for (dsql_stmt** stmt_ptr = &statements; p = *stmt_ptr; stmt_ptr = &p->stmt_next)
 		{
-			if (p == statement) {
+			if (p == statement)
+			{
 				*stmt_ptr = statement->stmt_next;
 				gds__free(statement);
 				break;
@@ -924,7 +927,8 @@ ISC_STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda, int number,
 //
 static void free_all_databases(dsql_dbb*& databasesL)
 {
-	while (databasesL) {
+	while (databasesL)
+	{
 		dsql_dbb* database = databasesL;
 		databasesL = database->dbb_next;
 		gds__free(database);
@@ -933,7 +937,8 @@ static void free_all_databases(dsql_dbb*& databasesL)
 
 static void free_all_statements(dsql_stmt*& statementsL)
 {
-	while (statementsL) {
+	while (statementsL)
+	{
 		dsql_stmt* statement = statementsL;
 		statementsL = statement->stmt_next;
 		gds__free(statement);
@@ -942,7 +947,8 @@ static void free_all_statements(dsql_stmt*& statementsL)
 
 static void free_all_names(dsql_name*& names)
 {
-	while (names) {
+	while (names)
+	{
 		dsql_name* name = names;
 		names = name->name_next;
 		gds__free(name);
@@ -1036,7 +1042,8 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* /*dummy*/)
 //
 static ISC_STATUS error(const Firebird::Exception& ex)
 {
-	if (UDSQL_error->dsql_user_status) {
+	if (UDSQL_error->dsql_user_status)
+	{
 		Firebird::stuff_exception(UDSQL_error->dsql_user_status, ex);
 		return UDSQL_error->dsql_user_status[1];
 	}
@@ -1094,7 +1101,8 @@ static void init(FB_API_HANDLE* db_handle)
 	{
 		UDSQL_error = (dsql_err_stblock*) gds__alloc((SLONG) sizeof(dsql_err_stblock));
 		// FREE: by exit cleanup()
-		if (!UDSQL_error) {
+		if (!UDSQL_error)
+		{
 			// NOMEM:
 			return;				// Don't set the init_flag
 		}
@@ -1111,7 +1119,8 @@ static void init(FB_API_HANDLE* db_handle)
 	{ // scope
 		Firebird::ReadLockGuard guard(global_sync);
 
-		for (dbb = databases; dbb; dbb = dbb->dbb_next) {
+		for (dbb = databases; dbb; dbb = dbb->dbb_next)
+		{
 			if (dbb->dbb_handle == *db_handle) {
 				return;
 			}
@@ -1121,7 +1130,8 @@ static void init(FB_API_HANDLE* db_handle)
 	dbb = (dsql_dbb*) gds__alloc((SLONG) sizeof(dsql_dbb));
 
 	// FREE: by database exit handler cleanup_database()
-	if (!dbb) {
+	if (!dbb)
+	{
 		// NOMEM
 		return;					// Not a great error handler
 	}
@@ -1183,7 +1193,8 @@ static dsql_name* lookup_name(const TEXT* name, dsql_name* list)
 	Firebird::ReadLockGuard guard(global_sync);
 
 	const USHORT l = name_length(name);
-	for (; list; list = list->name_next) {
+	for (; list; list = list->name_next)
+	{
 		if (scompare(name, l, list->name_symbol, list->name_length)) {
 			break;
 		}
@@ -1210,12 +1221,14 @@ static dsql_stmt* lookup_stmt(const TEXT* name, dsql_name* list, name_type type)
 	if (found)
 		return found->name_stmt;
 
-	if (type == NAME_statement) {
+	if (type == NAME_statement)
+	{
 		error_post(Arg::Gds(isc_dsql_error) <<
 				   Arg::Gds(isc_sqlerr) << Arg::Num(-518) <<
 				   Arg::Gds(isc_dsql_request_err));
 	}
-	else {
+	else
+	{
 		error_post(Arg::Gds(isc_dsql_error) <<
 				   Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				   Arg::Gds(isc_dsql_cursor_err) <<

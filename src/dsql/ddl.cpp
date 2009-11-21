@@ -1853,6 +1853,7 @@ static void define_field(CompiledStatement* statement,
 	}
 
 	try {
+
 	const dsql_nod* domain_node = element->nod_arg[e_dfl_domain];
 	if (domain_node)
 	{
@@ -2095,8 +2096,7 @@ static void define_filter(CompiledStatement* statement)
  **************************************/
 	const dsql_nod* filter_node = statement->req_ddl_node;
 	const dsql_nod* const* ptr = filter_node->nod_arg;
-	statement->append_cstring(isc_dyn_def_filter,
-				((dsql_str*) (ptr[e_filter_name]))->str_data);
+	statement->append_cstring(isc_dyn_def_filter, ((dsql_str*) (ptr[e_filter_name]))->str_data);
 	statement->append_number(isc_dyn_filter_in_subtype,
 			   getBlobFilterSubType(statement, ptr[e_filter_in_type]));
 	statement->append_number(isc_dyn_filter_out_subtype,

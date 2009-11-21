@@ -162,7 +162,8 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
 		bool matched;
 		do {
 			const SSHORT result = get_next_token(&stmt, stmt_end, token);
-			if (result == NO_MORE_TOKENS) {
+			if (result == NO_MORE_TOKENS)
+			{
 				*stmt_eaten = true;
 				break;
 			}
@@ -330,7 +331,8 @@ static void generate_error(ISC_STATUS* user_status, const string& token, SSHORT 
 
 	case UNEXPECTED_TOKEN:
 	case TOKEN_TOO_LONG:
-		if (result) {
+		if (result)
+		{
 			err_string.assign(1, (TEXT) result);
 			err_string += token;
 			err_string += (TEXT) result;
@@ -380,7 +382,8 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 		if (c == '/' && s < stmt_end && *s == '*')
 		{
 			s++;
-			while (s < stmt_end) {
+			while (s < stmt_end)
+			{
 				c = *s++;
 				if (c == '*' && s < stmt_end && *s == '/')
 					break;
@@ -431,7 +434,8 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 			token += *s++;
 		}
 		*stmt = s;
-		if (token.length() > MAX_TOKEN_SIZE) {
+		if (token.length() > MAX_TOKEN_SIZE)
+		{
 			// '=' used as then there is no place for null termination
 			token.erase(MAX_TOKEN_SIZE);
 			return TOKEN_TOO_LONG;
@@ -447,7 +451,8 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 		fb_assert(s >= start_of_token);
 		const size_t length = (s - start_of_token);
 		*stmt = s;
-		if (length > MAX_TOKEN_SIZE) {
+		if (length > MAX_TOKEN_SIZE)
+		{
 			token.assign(start_of_token, MAX_TOKEN_SIZE);
 			return TOKEN_TOO_LONG;
 		}
@@ -465,7 +470,8 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 		}
 
 		*stmt = s;
-		if (token.length() > MAX_TOKEN_SIZE) {
+		if (token.length() > MAX_TOKEN_SIZE)
+		{
 			token.erase(MAX_TOKEN_SIZE);
 			return TOKEN_TOO_LONG;
 		}
@@ -523,7 +529,8 @@ static SSHORT get_token(ISC_STATUS* status,
 
 	// Some token was found
 
-	if (result == token_type) {
+	if (result == token_type)
+	{
 		*stmt = temp_stmt;
 		return FB_SUCCESS;
 	}
