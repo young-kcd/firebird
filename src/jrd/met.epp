@@ -2329,10 +2329,7 @@ SLONG MET_lookup_index_name(thread_db* tdbb,
 }
 
 
-bool MET_lookup_partner(thread_db*	tdbb,
-						jrd_rel*	relation,
-						index_desc*	idx,
-						const TEXT* index_name)
+bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, const TEXT* index_name)
 {
 /**************************************
  *
@@ -2645,7 +2642,7 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
 
 
 jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, SSHORT id,
-							bool return_deleted, bool noscan, USHORT flags)
+								 bool return_deleted, bool noscan, USHORT flags)
 {
 /**************************************
  *
@@ -4241,7 +4238,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-void MET_trigger_msg(thread_db* tdbb, Firebird::string& msg, const Firebird::MetaName& name, USHORT number)
+void MET_trigger_msg(thread_db* tdbb, Firebird::string& msg, const Firebird::MetaName& name,
+	USHORT number)
 {
 /**************************************
  *
@@ -4662,8 +4660,8 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 }
 
 
-static void make_relation_scope_name(const TEXT* rel_name,
-	const USHORT rel_flags, Firebird::string& str)
+static void make_relation_scope_name(const TEXT* rel_name, const USHORT rel_flags,
+	Firebird::string& str)
 {
 /**************************************
  *
@@ -4714,8 +4712,8 @@ static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::M
 }
 
 
-static jrd_nod* parse_param_blr(thread_db* tdbb,
-		jrd_prc* procedure, bid* blob_id, CompilerScratch* csb)
+static jrd_nod* parse_param_blr(thread_db* tdbb, jrd_prc* procedure, bid* blob_id,
+	CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -4979,8 +4977,7 @@ static void par_messages(thread_db* tdbb,
 }
 
 
-void MET_release_trigger(thread_db* tdbb, trig_vec** vector_ptr,
-	const Firebird::MetaName& name)
+void MET_release_trigger(thread_db* tdbb, trig_vec** vector_ptr, const Firebird::MetaName& name)
 {
 /***********************************************
  *
