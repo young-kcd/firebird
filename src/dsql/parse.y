@@ -669,7 +669,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> data_type data_type_or_domain datetime_value_expression
 %type <legacyNode> db_alter_clause db_clause db_file db_file_list db_initial_desc db_initial_desc1
-%type <legacyNode> db_initial_option db_name db_rem_desc db_rem_desc1 db_rem_option ddl_subname
+%type <legacyNode> db_initial_option db_rem_desc db_rem_desc1 db_rem_option ddl_subname
 %type <legacyNode> decimal_keyword declare declare_clause
 %type <legacyNode> decode_pairs def_computed default_par_opt default_value delete delete_positioned
 %type <legacyNode> delete_rule delete_searched delimiter_opt derived_column_list derived_table
@@ -678,7 +678,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
 %type <legacyNode> domain_or_non_array_type_name domain_type drop drop_behaviour
 %type <legacyNode> drop_clause drop_user_clause
-%type <legacyStr>  ddl_desc
+%type <legacyStr>  db_name ddl_desc
 
 %type <legacyNode> end_default err errors event_argument_opt exception_clause
 %type <legacyNode> excp_hndl_statement excp_hndl_statements excp_statement
@@ -1464,10 +1464,10 @@ alter_charset_clause
 // in preparse.cpp. They are interpreted only in the server, using this grammar.
 
 db_clause
-	:  db_name db_initial_desc1 db_rem_desc1
+	: db_name db_initial_desc1 db_rem_desc1
 		{
-			$$ = make_node (nod_def_database, (int) e_cdb_count,
-				 $1, make_list($2), make_list ($3));
+			$$ = make_node(nod_def_database, (int) e_cdb_count,
+				$1, make_list($2), make_list($3));
 		}
 	;
 
@@ -1478,7 +1478,6 @@ equals
 
 db_name
 	: sql_string
-		{ $$ = (dsql_nod*) $1; }
 	;
 
 db_initial_desc1
@@ -1490,20 +1489,20 @@ db_initial_desc1
 db_initial_desc
 	: db_initial_option
 	| db_initial_desc db_initial_option
-		{ $$ = make_node (nod_list, 2, $1, $2); }
+		{ $$ = make_node(nod_list, 2, $1, $2); }
 	;
 
 db_initial_option
 	: KW_PAGE_SIZE equals pos_short_integer
-		{ $$ = make_node (nod_page_size, 1, $3); }
+		{ $$ = make_node(nod_page_size, 1, $3); }
 	| LENGTH equals long_integer page_noise
-		{ $$ = make_node (nod_file_length, 1, $3); }
+		{ $$ = make_node(nod_file_length, 1, $3); }
 	| USER sql_string
-		{ $$ = make_node (nod_user_name, 1, $2); }
+		{ $$ = make_node(nod_user_name, 1, $2); }
 	| PASSWORD sql_string
-		{ $$ = make_node (nod_password, 1, $2); }
+		{ $$ = make_node(nod_password, 1, $2); }
 	| SET NAMES sql_string
-		{ $$ = make_node (nod_lc_ctype, 1, $3); }
+		{ $$ = make_node(nod_lc_ctype, 1, $3); }
 	;
 
 db_rem_desc1
@@ -1515,35 +1514,34 @@ db_rem_desc1
 db_rem_desc
 	: db_rem_option
 	| db_rem_desc db_rem_option
-		{ $$ = make_node (nod_list, 2, $1, $2); }
+		{ $$ = make_node(nod_list, 2, $1, $2); }
 	;
 
 db_rem_option
 	: db_file
 	| DEFAULT CHARACTER SET symbol_character_set_name
-		{ $$ = make_node (nod_dfl_charset, 1, $4); }
+		{ $$ = make_node(nod_dfl_charset, 1, $4); }
 	| DEFAULT CHARACTER SET symbol_character_set_name COLLATION symbol_collation_name
 		{
-			$$ = make_node (nod_list, 2,
-				make_node (nod_dfl_charset, 1, $4),
-				make_node (nod_dfl_collate, 1, $6));
+			$$ = make_node(nod_list, 2,
+				make_node(nod_dfl_charset, 1, $4),
+				make_node(nod_dfl_collate, 1, $6));
 		}
 	| KW_DIFFERENCE KW_FILE sql_string
-		{ $$ = make_node (nod_difference_file, 1, $3); }
+		{ $$ = make_node(nod_difference_file, 1, $3); }
 	;
 
 db_file
 	: file1 sql_string file_desc1
 		{
 			lex.g_file->fil_name = $2;
-			$$ = (dsql_nod*) make_node (nod_file_desc, (int) 1,
-				(dsql_nod*) lex.g_file);
+			$$ = make_node(nod_file_desc, (int) 1, (dsql_nod*) lex.g_file);
 		}
 	;
 
 file1
 	: KW_FILE
-		{ lex.g_file  = make_file();}
+		{ lex.g_file = make_file();}
 	;
 
 file_desc1

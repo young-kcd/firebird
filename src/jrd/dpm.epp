@@ -1227,17 +1227,15 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	 *  decided that the V6 engine would only access an ODS-10 database.
 	 *  (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
 	 */
-	SINT64* ptr = 0;
-	SLONG* lptr = 0;
-	if (dbb->dbb_ods_version >= ODS_VERSION12) {
-		ptr = ((SINT64 *) (page->gpg_values)) + offset;
-	}
-	else if (dbb->dbb_ods_version >= ODS_VERSION10) {
-		ptr = ((SINT64 *) (((old_gen_page*) page)->gpg_values)) + offset;
-	}
-	else {
+	SINT64* ptr = NULL;
+	SLONG* lptr = NULL;
+
+	if (dbb->dbb_ods_version >= ODS_VERSION12)
+		ptr = ((SINT64*) (page->gpg_values)) + offset;
+	else if (dbb->dbb_ods_version >= ODS_VERSION10)
+		ptr = ((SINT64*) (((old_gen_page*) page)->gpg_values)) + offset;
+	else
 		lptr = ((SLONG *) (((pointer_page*) page)->ppg_page)) + offset;
-	}
 
 	if (val || initialize)
 	{

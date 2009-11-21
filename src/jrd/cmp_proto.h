@@ -68,4 +68,3 @@ void CMP_shutdown_database(Jrd::thread_db*);
 void CMP_verify_access(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
 
 #endif // JRD_CMP_PROTO_H
-

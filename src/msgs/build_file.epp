@@ -561,4 +561,3 @@ static void sanitize( TEXT* locale)
 		locale++;
 	}
 }
-

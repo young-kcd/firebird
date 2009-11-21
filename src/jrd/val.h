@@ -174,12 +174,12 @@ public:
 
 // Parameter passing mechanism. Also used for returning values, except for scalar_array.
 enum FUN_T {
-		FUN_value,
-		FUN_reference,
-		FUN_descriptor,
-		FUN_blob_struct,
-		FUN_scalar_array,
-		FUN_ref_with_null
+	FUN_value,
+	FUN_reference,
+	FUN_descriptor,
+	FUN_blob_struct,
+	FUN_scalar_array,
+	FUN_ref_with_null
 };
 
 
@@ -263,4 +263,3 @@ public:
 } //namespace Jrd
 
 #endif /* JRD_VAL_H */
-

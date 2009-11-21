@@ -4728,9 +4728,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 			defRef.vlu_desc.dsc_address = defRef.vlu_string->str_data;
 		}
 		else
-		{
 			defRef.vlu_desc.dsc_address = (UCHAR*) &defRef.vlu_misc;
-		}
 	}
 
 	/* Compute the offsets of the various fields */
@@ -5089,44 +5087,43 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 							jrd_nod* defaultNode = MET_parse_blob(tdbb, relation, defaultValue,
 								NULL, &defaultRequest, false);
 
-							{	// scope
-								AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
-									&thread_db::getRequest, &thread_db::setRequest, defaultRequest);
+							// Attention: this is scoped to the end of this "try".
+							AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
+								&thread_db::getRequest, &thread_db::setRequest, defaultRequest);
 
-								defaultRequest->req_timestamp.validate();
+							defaultRequest->req_timestamp.validate();
 
-								TRA_attach_request(transaction, defaultRequest);
-								dsc* result = EVL_expr(tdbb, defaultNode);
-								TRA_detach_request(defaultRequest);
+							TRA_attach_request(transaction, defaultRequest);
+							dsc* result = EVL_expr(tdbb, defaultNode);
+							TRA_detach_request(defaultRequest);
 
-								if (result)
+							if (result)
+							{
+								tfb->tfb_default.vlu_desc = *result;
+
+								if (result->isText() || result->isBlob())
 								{
-									tfb->tfb_default.vlu_desc = *result;
+									UCHAR* ptr = NULL;
+									MoveBuffer buffer;
+									int len = MOV_make_string2(tdbb, result, CS_NONE, &ptr, buffer, true);
+									fb_assert(ULONG(len) < ULONG(MAX_USHORT));
 
-									if (result->isText() || result->isBlob())
-									{
-										UCHAR* ptr = NULL;
-										MoveBuffer buffer;
-										int len = MOV_make_string2(tdbb, result, CS_NONE, &ptr, buffer, true);
-										fb_assert(ULONG(len) < ULONG(MAX_USHORT));
+									VaryingString* newString = FB_NEW_RPT(*dbb->dbb_permanent,
+										len) VaryingString();
+									newString->str_length = USHORT(len);
+									memcpy(newString->str_data, ptr, len);
 
-										VaryingString* newString = FB_NEW_RPT(*dbb->dbb_permanent,
-											len) VaryingString();
-										newString->str_length = USHORT(len);
-										memcpy(newString->str_data, ptr, len);
-
-										tfb->tfb_default.vlu_string = newString;
-										tfb->tfb_default.vlu_desc.dsc_dtype = dtype_text;
-										tfb->tfb_default.vlu_desc.dsc_length = USHORT(len);
-										tfb->tfb_default.vlu_desc.dsc_address = newString->str_data;
-									}
-									else
-									{
-										memcpy(&tfb->tfb_default.vlu_misc, result->dsc_address,
-											result->dsc_length);
-										tfb->tfb_default.vlu_desc.dsc_address =
-											(UCHAR*) &tfb->tfb_default.vlu_misc;
-									}
+									tfb->tfb_default.vlu_string = newString;
+									tfb->tfb_default.vlu_desc.dsc_dtype = dtype_text;
+									tfb->tfb_default.vlu_desc.dsc_length = USHORT(len);
+									tfb->tfb_default.vlu_desc.dsc_address = newString->str_data;
+								}
+								else
+								{
+									memcpy(&tfb->tfb_default.vlu_misc, result->dsc_address,
+										result->dsc_length);
+									tfb->tfb_default.vlu_desc.dsc_address =
+										(UCHAR*) &tfb->tfb_default.vlu_misc;
 								}
 							}
 						}
