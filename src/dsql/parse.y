@@ -6541,17 +6541,25 @@ int Parser::yylexAux()
 			}
 			else if (client_dialect >= SQL_DIALECT_V6)
 			{
-				if ((p - buffer) >= MAX_TOKEN_LEN)
+				if (p - buffer >= MAX_TOKEN_LEN)
 				{
 					if (buffer != string)
 						gds__free (buffer);
-					yyabandon (-104, isc_token_too_long);
+					yyabandon(-104, isc_token_too_long);
 				}
+				else if (p - buffer == 0)
+				{
+					if (buffer != string)
+						gds__free (buffer);
+					yyabandon(-104, isc_dyn_zero_len_id);
+				}
+
 				yylval.legacyNode = (dsql_nod*) MAKE_string(buffer, p - buffer);
 				dsql_str* delimited_id_str = (dsql_str*) yylval.legacyNode;
 				delimited_id_str->type = dsql_str::TYPE_DELIMITED;
 				if (buffer != string)
 					gds__free (buffer);
+
 				return SYMBOL;
 			}
 		}
