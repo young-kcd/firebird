@@ -3519,12 +3519,12 @@ blob_subtype
 	;
 
 charset_clause
-	: CHARACTER SET symbol_character_set_name
+	:
+		{ $$ = NULL; }
+	| CHARACTER SET symbol_character_set_name
 		{
 			lex.g_field->fld_character_set = $3;
 		}
-	|
-		{ $$ = NULL; }
 	;
 
 
@@ -3615,7 +3615,7 @@ prec_scale	:
 		| '(' signed_long_integer ')'
 			{
 			if ($2 < 1 || $2 > 18)
-				yyabandon (-842, isc_precision_err);	// Precision most be between 1 and 18.
+				yyabandon(-842, isc_precision_err);	// Precision must be between 1 and 18.
 			if ($2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
@@ -3748,10 +3748,10 @@ float_type
 	;
 
 precision_opt
-	: '(' nonneg_short_integer ')'
-		{ $$ = $2; }
-	|
+	:
 		{ $$ = 0; }
+	| '(' nonneg_short_integer ')'
+		{ $$ = $2; }
 	;
 
 
@@ -5199,7 +5199,7 @@ nonneg_short_integer
 		{
 			if ($1 > SHRT_POS_MAX)
 				yyabandon(-842, isc_expec_short);	// Short integer expected
-				
+
 			$$ = $1;
 		}
 	;
@@ -5219,7 +5219,7 @@ pos_short_integer
 		{
 			if ($1 == 0)
 				yyabandon(-842, isc_expec_positive);	// Positive number expected
-				
+
 			$$ = $1;
 		}
 	;

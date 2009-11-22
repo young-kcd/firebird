@@ -34,4 +34,3 @@ Jrd::dsql_nod* PASS1_rse(Jrd::CompiledStatement*, Jrd::dsql_nod*, Jrd::dsql_nod*
 Jrd::dsql_nod* PASS1_statement(Jrd::CompiledStatement*, Jrd::dsql_nod*);
 
 #endif // DSQL_PASS1_PROTO_H
-

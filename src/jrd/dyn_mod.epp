@@ -801,8 +801,8 @@ void DYN_modify_global_field(Global* gbl,
 				break;
 
 			// CVC: The syntax for DDL alter domain was accepting multiple
-			//		changes in one command even to the same features, IE two length alterations.
-			//		This repetitive type change will cause havoc so it should be stopped in the future.
+			// changes in one command even to the same features, IE two length alterations.
+			// This repetitive type change will cause havoc so it should be stopped in the future.
 
 			case isc_dyn_fld_length:
 				fldlen = true;
@@ -2099,8 +2099,10 @@ static void modify_lfield_position(thread_db* tdbb,
 			// increase the value of RDB$FIELD_POSITION
 			if (field_name == FLD.RDB$FIELD_NAME) {
 				if (new_position > max_position)
+				{
 					// This prevents gaps in the position sequence of the fields
 					FLD.RDB$FIELD_POSITION = max_position;
+				}
 				else
 					FLD.RDB$FIELD_POSITION = new_position;
 			}
@@ -2183,9 +2185,11 @@ static bool check_view_dependency(thread_db* tdbb,
 	CMP_release(tdbb, request);
 
 	if (retval)
+	{
 		DYN_error_punt(false, 206, SafeArg() << field_name.c_str() <<
 						relation_name.c_str() << view_name.c_str());
 		// msg 206: Column %s from table %s is referenced in  %s.
+	}
 
 	return retval;
 }
@@ -2222,9 +2226,11 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 	CMP_release(tdbb, request);
 
 	if (retval)
+	{
 		DYN_error_punt(false, 206, SafeArg() << field_name.c_str() <<
 						relation_name.c_str() << dep_name.c_str());
 		// msg 206: Column %s from table %s is referenced in %s.
+	}
 
 	return retval;
 }
@@ -3310,8 +3316,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 			break;
 
-			// If the original field is a date field and the new field is a character field,
-			// is there enough space in the new field?
+		// If the original field is a date field and the new field is a character field,
+		// is there enough space in the new field?
 		case blr_text:
 		case blr_text2:
 		case blr_varying:
@@ -3357,8 +3363,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			return isc_dyn_invalid_dtype_conversion;
 			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
 
-			// If the original field is a numeric field and the new field is a numeric field,
-			// is there enough space in the new field (do not allow the base type to decrease)
+		// If the original field is a numeric field and the new field is a numeric field,
+		// is there enough space in the new field (do not allow the base type to decrease)
 
 		case blr_short:
 			switch (orig_fld.dyn_dtype)
@@ -3429,8 +3435,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			}
 			break;
 
-			// If the original field is a numeric field and the new field is a character field,
-			// is there enough space in the new field?
+		// If the original field is a numeric field and the new field is a character field,
+		// is there enough space in the new field?
 		case blr_text:
 		case blr_varying:
 		case blr_cstring:

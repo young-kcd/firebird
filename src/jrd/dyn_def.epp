@@ -2135,31 +2135,24 @@ void DYN_define_index(Global*		gbl,
 							// to an index type in order to compute the length
 							if (!F.RDB$COLLATION_ID.NULL)
 							{
-								length =
-									INTL_key_length(tdbb,
-										INTL_TEXT_TO_INDEX(
-											INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
-																  F.RDB$COLLATION_ID)),
-										GF.RDB$FIELD_LENGTH);
+								length = INTL_key_length(tdbb,
+									INTL_TEXT_TO_INDEX(INTL_CS_COLL_TO_TTYPE(
+										GF.RDB$CHARACTER_SET_ID, F.RDB$COLLATION_ID)),
+									GF.RDB$FIELD_LENGTH);
 							}
 							else if (!GF.RDB$COLLATION_ID.NULL)
 							{
-								length =
-									INTL_key_length(tdbb,
-										INTL_TEXT_TO_INDEX(
-											INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
-												GF.RDB$COLLATION_ID)),
-										GF.RDB$FIELD_LENGTH);
+								length = INTL_key_length(tdbb,
+									INTL_TEXT_TO_INDEX(INTL_CS_COLL_TO_TTYPE(
+										GF.RDB$CHARACTER_SET_ID, GF.RDB$COLLATION_ID)),
+									GF.RDB$FIELD_LENGTH);
 							}
 							else
-							{
 								length = GF.RDB$FIELD_LENGTH;
-							}
 						}
 						else
-						{
 							length = sizeof(double);
-						}
+
 						if (key_length)
 						{
 							key_length += ((length + STUFF_COUNT - 1) / (unsigned) STUFF_COUNT) *
@@ -2175,7 +2168,7 @@ void DYN_define_index(Global*		gbl,
 					break;
 				}
 
-				// for expression indices, store the BLR and the source string
+			// for expression indices, store the BLR and the source string
 
 			case isc_dyn_fld_computed_blr:
 				DYN_put_blr_blob(gbl, ptr, &IDX.RDB$EXPRESSION_BLR);
@@ -2187,7 +2180,7 @@ void DYN_define_index(Global*		gbl,
 				IDX.RDB$EXPRESSION_SOURCE.NULL = FALSE;
 				break;
 
-				// for foreign keys, point to the corresponding relation
+			// for foreign keys, point to the corresponding relation
 
 			case isc_dyn_idx_foreign_key:
 				GET_STRING(ptr, referenced_relation);
@@ -3579,9 +3572,9 @@ void DYN_define_sql_field(Global*		gbl,
 
 				case isc_dyn_fld_collation:
 					// Note: the global field's collation is not set, just
-					//       the local field.  There is no full "domain"
-					//       created for the local field.
-					//       This is the same decision for items like NULL_FLAG
+					// the local field.  There is no full "domain"
+					// created for the local field.
+					// This is the same decision for items like NULL_FLAG
 					RFR.RDB$COLLATION_ID = DYN_get_number(ptr);
 					RFR.RDB$COLLATION_ID.NULL = FALSE;
 					break;

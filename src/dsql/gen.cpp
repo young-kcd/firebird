@@ -2317,10 +2317,8 @@ void GEN_return(CompiledStatement* statement, const Array<dsql_nod*>& variables,
 	stuff(statement, 1);
 	stuff(statement, blr_begin);
 
-	USHORT outputs = 0;
 	for (Array<dsql_nod*>::const_iterator i = variables.begin(); i != variables.end(); ++i)
 	{
-		outputs++;
 		const dsql_nod* parameter = *i;
 		const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
 		stuff(statement, blr_assignment);
@@ -2342,7 +2340,7 @@ void GEN_return(CompiledStatement* statement, const Array<dsql_nod*>& variables,
 		stuff_word(statement, 1);
 	stuff(statement, blr_parameter);
 	stuff(statement, 1);
-	stuff_word(statement, 2 * outputs);
+	stuff_word(statement, USHORT(2 * variables.getCount()));
 	stuff(statement, blr_end);
 	if (!eos_flag)
 	{

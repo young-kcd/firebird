@@ -9789,6 +9789,8 @@ dsql_nod* PASS1_resolve_variable_name(const Array<dsql_nod*>& variables, const d
 	for (Array<dsql_nod*>::const_iterator i = variables.begin(); i != variables.end(); ++i)
 	{
 		dsql_nod* var_node = *i;
+
+		fb_assert(var_node->nod_type == nod_variable);
 		if (var_node->nod_type == nod_variable)
 		{
 			const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
