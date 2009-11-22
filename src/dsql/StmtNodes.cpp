@@ -476,7 +476,7 @@ void ExecBlockNode::genBlr()
 		}
 	}
 
-	unsigned returnsPos = variables.getCount();
+	const unsigned returnsPos = variables.getCount();
 
 	// now do the output parameters
 	for (size_t i = 0; i < returns.getCount(); ++i)
