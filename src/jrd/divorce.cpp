@@ -95,7 +95,7 @@ void divorce_terminal(int mask)
  **************************************/
 	int fid;
 
-/* Close all files other than those explicitly requested to stay open */
+	// Close all files other than those explicitly requested to stay open
 
 	for (fid = 0; fid < NOFILE; fid++)
 	{
@@ -112,15 +112,15 @@ void divorce_terminal(int mask)
 	}
 
 #ifdef SIGTTOU
-	/* ignore all the teminal related signal if define */
+	// ignore all the teminal related signal if define
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN);
 #endif
 
 #ifdef TIOCNOTTY
-/* Perform terminal divorce */
-/* this is in case of BSD systems */
+	// Perform terminal divorce
+	// this is in case of BSD systems
 
 	fid = open("/dev/tty", 2);
 
@@ -131,17 +131,17 @@ void divorce_terminal(int mask)
 #endif
 
 
-/* Finally, get out of the process group */
+	// Finally, get out of the process group
 
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
 	setpgrp();
 #else
 	setpgrp(0, 0);
-#endif /* SETPGRP_VOID */
+#endif // SETPGRP_VOID
 #else
 #ifdef HAVE_SETPGID
 	setpgid(0, 0);
-#endif /* HAVE_SETPGID */
-#endif /* HAVE_SETPGRP */
+#endif // HAVE_SETPGID
+#endif // HAVE_SETPGRP
 }

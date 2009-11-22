@@ -191,7 +191,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	jrd_req* request = tdbb->getRequest();
 	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 
-/* The only nodes that can be assigned to are: argument, field and variable. */
+	// The only nodes that can be assigned to are: argument, field and variable.
 
 	int arg_number;
 
@@ -249,7 +249,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 		return &impure->vlu_desc;
 
 	default:
-		BUGCHECK(229);			/* msg 229 EVL_assign_to: invalid operation */
+		BUGCHECK(229);			// msg 229 EVL_assign_to: invalid operation
 	}
 	return NULL;
 }
@@ -335,7 +335,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 		}
 
 	default:
-		BUGCHECK(230);			/* msg 230 EVL_bitmap: invalid operation */
+		BUGCHECK(230);			// msg 230 EVL_bitmap: invalid operation
 	}
 	return NULL;
 }
@@ -363,8 +363,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-/* Handle and pre-processing possible for various nodes.  This includes
-   evaluating argument and checking NULL flags */
+	// Handle and pre-processing possible for various nodes.  This includes
+	// evaluating argument and checking NULL flags
 
 	jrd_req* request = tdbb->getRequest();
 	jrd_nod** ptr = node->nod_arg;
@@ -389,9 +389,9 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			request->req_flags &= ~req_same_tx_upd;
 			SSHORT force_equal = 0;
 
-			/* Evaluate arguments.  If either is null, result is null, but in
-			   any case, evaluate both, since some expressions may later depend
-			   on mappings which are developed here */
+			// Evaluate arguments.  If either is null, result is null, but in
+			// any case, evaluate both, since some expressions may later depend
+			// on mappings which are developed here
 
 			const jrd_nod* rec_version = *ptr;
 			desc[0] = EVL_expr(tdbb, *ptr++);
@@ -493,10 +493,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			if (node->nod_flags & nod_comparison)
 				comparison = MOV_compare(desc[0], desc[1]);
 
-			/* If we are checking equality of record_version
-			 * and same transaction updated the record,
-			 * force equality.
-			 */
+			// If we are checking equality of record_version
+			// and same transaction updated the record, force equality.
 
 			if (rec_version->nod_type == nod_rec_version && force_equal)
 				comparison = 0;
@@ -521,11 +519,11 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 		value = EVL_boolean(tdbb, *ptr++);
 		break;
 
-	default:   /* Shut up some compiler warnings */
+	default:   // Shut up some compiler warnings
 		break;
 	}
 
-/* Evaluate node */
+	// Evaluate node
 
 	// TODO: Verify and remove this flag once FB1.5beta3 is out.
 	// Default to not eval complete expression (i.e. do short-circuit
@@ -556,7 +554,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			 */
 
-			/* save null state and get other operand */
+			// save null state and get other operand
 
 			const USHORT firstnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
@@ -573,14 +571,14 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			request->req_flags &= ~req_null;
 
 			if ((!value && !firstnull) || (!value2 && !secondnull)) {
-				return false;	/* at least one operand was false */
+				return false;	// at least one operand was false
 			}
 
 			if (value && value2) {
-				return true;	/* both true */
+				return true;	// both true
 			}
 			request->req_flags |= req_null;
-			return false;		/* otherwise, return null */
+			return false;		// otherwise, return null
 		}
 
 	case nod_any:
@@ -594,7 +592,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed) {
-					/* An invariant node has already been computed. */
+					// An invariant node has already been computed.
 
 					if ((node->nod_type == nod_ansi_any) && (*invariant_flags & VLU_null))
 					{
@@ -608,9 +606,9 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			/* for ansi ANY clauses (and ALL's, which are negated ANY's)
-			   the unoptimized boolean expression must be used, since the
-			   processing of these clauses is order dependant (see rse.cpp) */
+			// for ansi ANY clauses (and ALL's, which are negated ANY's)
+			// the unoptimized boolean expression must be used, since the
+			// processing of these clauses is order dependant (see rse.cpp)
 
 			RecordSource* select = (RecordSource*) (node->nod_arg[e_any_rsb]);
 			if (node->nod_type != nod_any)
@@ -633,7 +631,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			if (node->nod_type == nod_any)
 				request->req_flags &= ~req_null;
 
-			/* If this is an invariant node, save the return value. */
+			// If this is an invariant node, save the return value.
 
 			if (node->nod_flags & nod_invariant)
 			{
@@ -711,7 +709,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				return true;
 			}
 
-			/* restore saved NULL state */
+			// restore saved NULL state
 
 			if (flags & req_null) {
 				request->req_flags |= req_null;
@@ -729,7 +727,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed)
 				{
-					/* An invariant node has already been computed. */
+					// An invariant node has already been computed.
 
 					request->req_flags &= ~req_null;
 					return impure->vlu_misc.vlu_short != 0;
@@ -746,7 +744,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			RSE_close(tdbb, urs);
 			request->req_flags &= ~req_null;
 
-			/* If this is an invariant node, save the return value. */
+			// If this is an invariant node, save the return value.
 
 			if (node->nod_flags & nod_invariant)
 			{
@@ -781,7 +779,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 		return EVL_boolean(tdbb, node->nod_arg[e_stmt_expr_expr]);
 
 	default:
-		BUGCHECK(231);			/* msg 231 EVL_boolean: invalid operation */
+		BUGCHECK(231);			// msg 231 EVL_boolean: invalid operation
 	}
 	return false;
 }
@@ -802,7 +800,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	DEV_BLKCHK(node, type_nod);
 
 	if (!node)
-		BUGCHECK(303);			/* msg 303 Invalid expression for evaluation */
+		BUGCHECK(303);			// msg 303 Invalid expression for evaluation
 
 	SET_TDBB(tdbb);
 
@@ -813,8 +811,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	impure_value* const impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	request->req_flags &= ~req_null;
 
-/* Do a preliminary screen for either simple nodes or nodes that
-   are special cased elsewhere */
+	// Do a preliminary screen for either simple nodes or nodes that are special cased elsewhere
 
 	switch (node->nod_type)
 	{
@@ -1187,7 +1184,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		return internal_info(tdbb, values[0], impure);
 
 	default:
-		BUGCHECK(232);		/* msg 232 EVL_expr: invalid operation */
+		BUGCHECK(232);		// msg 232 EVL_expr: invalid operation
 	}
 
 	return NULL;
@@ -1242,8 +1239,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		 * Reference: Bug 10424, 10116
 		 */
 
-		/* rec_format == NULL indicates we're performing a
-		   join-to-null operation for outer joins */
+		// rec_format == NULL indicates we're performing a
+		// join-to-null operation for outer joins
 
 		if (record && record->rec_format && relation)
 		{
@@ -1270,10 +1267,9 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 			// Legacy ODS logic
 
-			/* A database sweep does not scan a relation's metadata. However
-			 * the change to substitute a default value for a missing "not null"
-			 * field makes it necessary to reference the field block.
-			 */
+			// A database sweep does not scan a relation's metadata. However
+			// the change to substitute a default value for a missing "not null"
+			// field makes it necessary to reference the field block.
 			if (!relation->rel_fields)
 			{
 				thread_db* tdbb = NULL;
@@ -1390,7 +1386,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		return false;
 	}
 
-/* If the offset of the field is 0, the field can't possible exist */
+	// If the offset of the field is 0, the field can't possible exist
 
 	if (!desc->dsc_address) {
 		return false;
@@ -1422,7 +1418,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Handle the fixed length data types first.  They're easy. */
+	// Handle the fixed length data types first.  They're easy.
 
 	const dsc from = *desc;
 	value->vlu_desc = *desc;
@@ -1649,13 +1645,13 @@ dsc* EVL_add(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	dsc* const result = &value->vlu_desc;
 
-/* Handle date arithmetic */
+	// Handle date arithmetic
 
 	if (node->nod_flags & nod_date) {
 		return add_datetime(desc, node, value);
 	}
 
-/* Handle floating arithmetic */
+	// Handle floating arithmetic
 
 	if (node->nod_flags & nod_double) {
 		const double d1 = MOV_get_double(desc);
@@ -1674,7 +1670,7 @@ dsc* EVL_add(const dsc* desc, const jrd_nod* node, impure_value* value)
 		return result;
 	}
 
-/* Handle (oh, ugh) quad arithmetic */
+	// Handle (oh, ugh) quad arithmetic
 
 	if (node->nod_flags & nod_quad) {
 		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
@@ -1690,7 +1686,7 @@ dsc* EVL_add(const dsc* desc, const jrd_nod* node, impure_value* value)
 		return result;
 	}
 
-/* Everything else defaults to longword */
+	// Everything else defaults to longword
 
 	// CVC: Maybe we should upgrade the sum to double if it doesn't fit?
 	// This is what was done for multiplicaton in dialect 1.
@@ -1730,13 +1726,13 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	dsc* result = &value->vlu_desc;
 
-/* Handle date arithmetic */
+	// Handle date arithmetic
 
 	if (node->nod_flags & nod_date) {
 		return add_datetime(desc, node, value);
 	}
 
-/* Handle floating arithmetic */
+	// Handle floating arithmetic
 
 	if (node->nod_flags & nod_double) {
 		const double d1 = MOV_get_double(desc);
@@ -1755,7 +1751,7 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 		return result;
 	}
 
-/* Handle (oh, ugh) quad arithmetic */
+	// Handle (oh, ugh) quad arithmetic
 
 	if (node->nod_flags & nod_quad) {
 		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
@@ -1771,7 +1767,7 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 		return result;
 	}
 
-/* Everything else defaults to int64 */
+	// Everything else defaults to int64
 
 	SINT64 i1 = MOV_get_int64(desc, node->nod_scale);
 	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, node->nod_scale);
@@ -1802,7 +1798,7 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 */
 
 	if (node->nod_type == nod_subtract2)
-		i1 ^= MIN_SINT64;		/* invert the sign bit */
+		i1 ^= MIN_SINT64;		// invert the sign bit
 	if (((i1 ^ i2) >= 0) && ((i1 ^ value->vlu_misc.vlu_int64) < 0))
 		ERR_post(Arg::Gds(isc_exception_integer_overflow));
 
@@ -1822,11 +1818,11 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
  *	Vector out to one of the actual datetime addition routines
  *
  **************************************/
-	BYTE dtype;					/* Which addition routine to use? */
+	BYTE dtype;					// Which addition routine to use?
 
 	fb_assert(node->nod_flags & nod_date);
 
-/* Value is the LHS of the operand.  desc is the RHS */
+	// Value is the LHS of the operand.  desc is the RHS
 
 	if ((node->nod_type == nod_add) || (node->nod_type == nod_add2)) {
 		dtype = DSC_add_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
@@ -1844,7 +1840,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 		if (DTYPE_IS_NUMERIC(dtype))
 			dtype = value->vlu_desc.dsc_dtype;
 
-		/* Handle historical <timestamp> = <string> - <value> case */
+		// Handle historical <timestamp> = <string> - <value> case
 		if (!DTYPE_IS_DATE(dtype) &&
 			(DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype) || DTYPE_IS_TEXT(desc->dsc_dtype)))
 		{
@@ -1856,9 +1852,8 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 	{
 	case dtype_timestamp:
 	default:
-		/* This needs to handle a dtype_sql_date + dtype_sql_time */
-		/* For historical reasons prior to V6 - handle any types for
-		   timestamp arithmetic */
+		// This needs to handle a dtype_sql_date + dtype_sql_time
+		// For historical reasons prior to V6 - handle any types for timestamp arithmetic
 		return add_timestamp(desc, node, value);
 
 	case dtype_sql_time:
@@ -1900,7 +1895,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 	fb_assert(value->vlu_desc.dsc_dtype == dtype_sql_date || desc->dsc_dtype == dtype_sql_date);
 
 	SINT64 d1;
-/* Coerce operand1 to a count of days */
+	// Coerce operand1 to a count of days
 	bool op1_is_date = false;
 	if (value->vlu_desc.dsc_dtype == dtype_sql_date) {
 		d1 = *((GDS_DATE *) value->vlu_desc.dsc_address);
@@ -1910,7 +1905,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 		d1 = MOV_get_int64(&value->vlu_desc, 0);
 
 	SINT64 d2;
-/* Coerce operand2 to a count of days */
+	// Coerce operand2 to a count of days
 	bool op2_is_date = false;
 	if (desc->dsc_dtype == dtype_sql_date) {
 		d2 = *((GDS_DATE *) desc->dsc_address);
@@ -1930,7 +1925,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 	fb_assert(op1_is_date || op2_is_date);
 	fb_assert(!(op1_is_date && op2_is_date));
 
-/* Perform the operation */
+	// Perform the operation
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
 		fb_assert(op1_is_date);
@@ -1980,7 +1975,7 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 	fb_assert(value->vlu_desc.dsc_dtype == dtype_sql_time || desc->dsc_dtype == dtype_sql_time);
 
 	SINT64 d1;
-/* Coerce operand1 to a count of seconds */
+	// Coerce operand1 to a count of seconds
 	bool op1_is_time = false;
 	if (value->vlu_desc.dsc_dtype == dtype_sql_time) {
 		d1 = *(GDS_TIME *) value->vlu_desc.dsc_address;
@@ -1991,7 +1986,7 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 		d1 = MOV_get_int64(&value->vlu_desc, ISC_TIME_SECONDS_PRECISION_SCALE);
 
 	SINT64 d2;
-/* Coerce operand2 to a count of seconds */
+	// Coerce operand2 to a count of seconds
 	bool op2_is_time = false;
 	if (desc->dsc_dtype == dtype_sql_time) {
 		d2 = *(GDS_TIME *) desc->dsc_address;
@@ -2005,8 +2000,8 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 		op1_is_time && op2_is_time)
 	{
 		d2 = d1 - d2;
-		/* Overflow cannot occur as the range of supported TIME values
-		   is less than the range of INTEGER */
+		// Overflow cannot occur as the range of supported TIME values
+		// is less than the range of INTEGER
 		value->vlu_misc.vlu_long = d2;
 		result->dsc_dtype = dtype_long;
 		result->dsc_length = sizeof(SLONG);
@@ -2018,7 +2013,7 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 	fb_assert(op1_is_time || op2_is_time);
 	fb_assert(!(op1_is_time && op2_is_time));
 
-/* Perform the operation */
+	// Perform the operation
 
 	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
 		fb_assert(op1_is_time);
@@ -2027,13 +2022,13 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 	else
 		d2 = d1 + d2;
 
-/* Make sure to use modulo 24 hour arithmetic */
+	// Make sure to use modulo 24 hour arithmetic
 
-/* Make the result positive */
+	// Make the result positive
 	while (d2 < 0)
 		d2 += (ISC_TICKS_PER_DAY);
 
-/* And make it in the range of values for a day */
+	// And make it in the range of values for a day
 	d2 %= (ISC_TICKS_PER_DAY);
 
 	fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
@@ -2102,19 +2097,19 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 					Arg::Gds(isc_onlycan_add_datetotime));
 	}
 
-/* For historical reasons (behavior prior to V6),
-   there are times we will do timestamp arithmetic without a
-   timestamp being involved.
-   In such an event we need to convert a text type to a timestamp when
-   we don't already have one.
-   We assume any text string must represent a timestamp value.  */
+	/* For historical reasons (behavior prior to V6),
+	there are times we will do timestamp arithmetic without a
+	timestamp being involved.
+	In such an event we need to convert a text type to a timestamp when
+	we don't already have one.
+	We assume any text string must represent a timestamp value. */
 
-/* If we're subtracting, and the 2nd operand is a timestamp, or
-   something that looks & smells like it could be a timestamp, then
-   we must be doing <timestamp> - <timestamp> subtraction.
-   Notes that this COULD be as strange as <string> - <string>, but
-   because nod_date is set in the nod_flags we know we're supposed
-   to use some form of date arithmetic */
+	/* If we're subtracting, and the 2nd operand is a timestamp, or
+	something that looks & smells like it could be a timestamp, then
+	we must be doing <timestamp> - <timestamp> subtraction.
+	Notes that this COULD be as strange as <string> - <string>, but
+	because nod_date is set in the nod_flags we know we're supposed
+	to use some form of date arithmetic */
 
 	if (((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) &&
 		((desc->dsc_dtype == dtype_timestamp) || DTYPE_IS_TEXT(desc->dsc_dtype)))
@@ -2127,7 +2122,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		   <timestamp> - <timestamp>
 		   in which cases we assume the string represents a timestamp value */
 
-		/* If the first operand couldn't represent a timestamp, bomb out */
+		// If the first operand couldn't represent a timestamp, bomb out
 
 		if (!((value->vlu_desc.dsc_dtype == dtype_timestamp) ||
 			DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
@@ -2175,7 +2170,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 			return result;
 		}
 
-		/* This is dialect 1 subtraction returning double as before */
+		// This is dialect 1 subtraction returning double as before
 		value->vlu_misc.vlu_double = (double) d2 / ((double) ISC_TICKS_PER_DAY);
 		result->dsc_dtype = dtype_double;
 		result->dsc_length = sizeof(double);
@@ -2299,9 +2294,9 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 	jrd_req* request = tdbb->getRequest();
 	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 
-/* Evaluate arguments.  If either is null, result is null, but in
-   any case, evaluate both, since some expressions may later depend
-   on mappings which are developed here */
+	// Evaluate arguments.  If either is null, result is null, but in
+	// any case, evaluate both, since some expressions may later depend
+	// on mappings which are developed here
 
 	const dsc* desc1 = EVL_expr(tdbb, node->nod_arg[0]);
 	const ULONG flags = request->req_flags;
@@ -2309,7 +2304,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 
 	const dsc* desc2 = EVL_expr(tdbb, node->nod_arg[1]);
 
-/* restore saved NULL state */
+	// restore saved NULL state
 
 	if (flags & req_null)
 		request->req_flags |= req_null;
@@ -2327,11 +2322,11 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 
 	switch (node->nod_type)
 	{
-	case nod_add:				/* with dialect-1 semantics */
+	case nod_add:				// with dialect-1 semantics
 	case nod_subtract:
 		return EVL_add(desc2, node, impure);
 
-	case nod_divide:			/* dialect-1 semantics */
+	case nod_divide:			// dialect-1 semantics
 		{
 			const double divisor = MOV_get_double(desc2);
 			if (divisor == 0)
@@ -2351,21 +2346,21 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 			return &impure->vlu_desc;
 		}
 
-	case nod_multiply:			/* dialect-1 semantics */
+	case nod_multiply:			// dialect-1 semantics
 		return multiply(desc2, impure, node);
 
-	case nod_add2:				/* with dialect-3 semantics */
+	case nod_add2:				// with dialect-3 semantics
 	case nod_subtract2:
 		return EVL_add2(desc2, node, impure);
 
-	case nod_multiply2:		/* dialect-3 semantics */
+	case nod_multiply2:		// dialect-3 semantics
 		return multiply2(desc2, impure, node);
 
-	case nod_divide2:			/* dialect-3 semantics */
+	case nod_divide2:			// dialect-3 semantics
 		return divide2(desc2, impure, node);
 
 	default:
-		BUGCHECK(232);			/* msg 232 EVL_expr: invalid operation */
+		BUGCHECK(232);			// msg 232 EVL_expr: invalid operation
 	}
 	return NULL;
 }
@@ -2387,7 +2382,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 
 	DEV_BLKCHK(node, type_nod);
 
-/* value is present; make the conversion */
+	// value is present; make the conversion
 
 	const Format* format = (Format*) node->nod_arg[e_cast_fmt];
 	impure->vlu_desc = format->fmt_desc[0];
@@ -2395,18 +2390,18 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype)) {
 		USHORT length = DSC_string_length(&impure->vlu_desc);
 		if (length <= 0 && value) {
-			/* cast is a subtype cast only */
+			// cast is a subtype cast only
 
 			length = DSC_string_length(value);
 			if (impure->vlu_desc.dsc_dtype == dtype_cstring)
-				length++;		/* for NULL byte */
+				length++;		// for NULL byte
 			else if (impure->vlu_desc.dsc_dtype == dtype_varying)
 				length += sizeof(USHORT);
 			impure->vlu_desc.dsc_length = length;
 		}
 		length = impure->vlu_desc.dsc_length;
 
-		/* Allocate a string block of sufficient size. */
+		// Allocate a string block of sufficient size.
 
 		VaryingString* string = impure->vlu_string;
 		if (string && string->str_length < length) {
@@ -2690,7 +2685,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 	DEV_BLKCHK(node, type_nod);
 
-/* Get started by opening stream */
+	// Get started by opening stream
 
 	jrd_req* request = tdbb->getRequest();
 	dsc* desc = &impure->vlu_desc;
@@ -2698,7 +2693,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	if (node->nod_flags & nod_invariant) {
 		invariant_flags = & impure->vlu_flags;
 		if (*invariant_flags & VLU_computed) {
-			/* An invariant node has already been computed. */
+			// An invariant node has already been computed.
 
 			if (*invariant_flags & VLU_null)
 				request->req_flags |= req_null;
@@ -2776,7 +2771,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			flag = request->req_flags;
 			break;
 
-		case nod_average:			/* total or average with dialect-1 semantics */
+		case nod_average:			// total or average with dialect-1 semantics
 		case nod_total:
 			while (RSE_get_record(tdbb, rsb))
 			{
@@ -2784,10 +2779,10 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 				if (request->req_flags & req_null) {
 					continue;
 				}
-				/* Note: if the field being SUMed or AVERAGEd is short or long,
-				   impure will stay long, and the first EVL_add() will
-				   set the correct scale; if it is approximate numeric,
-				   the first EVL_add() will convert impure to double. */
+				// Note: if the field being SUMed or AVERAGEd is short or long,
+				// impure will stay long, and the first EVL_add() will
+				// set the correct scale; if it is approximate numeric,
+				// the first EVL_add() will convert impure to double.
 				EVL_add(desc, node, impure);
 				count++;
 			}
@@ -2806,26 +2801,26 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			flag = 0;
 			break;
 
-		case nod_average2:			/* average with dialect-3 semantics */
+		case nod_average2:			// average with dialect-3 semantics
 			while (RSE_get_record(tdbb, rsb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null)
 					continue;
-				/* Note: if the field being SUMed or AVERAGEd is exact
-				   numeric, impure will stay int64, and the first EVL_add() will
-				   set the correct scale; if it is approximate numeric,
-				   the first EVL_add() will convert impure to double. */
+				// Note: if the field being SUMed or AVERAGEd is exact
+				// numeric, impure will stay int64, and the first EVL_add() will
+				// set the correct scale; if it is approximate numeric,
+				// the first EVL_add() will convert impure to double.
 				EVL_add(desc, node, impure);
 				count++;
 			}
 			desc = &impure->vlu_desc;
 			if (!count)
 				break;
-			/* We know the sum, but we want the average.  To get it, divide
-			   the sum by the count.  Since count is exact, dividing an int64
-			   sum by count should leave an int64 average, while dividing a
-			   double sum by count should leave a double average. */
+			// We know the sum, but we want the average.  To get it, divide
+			// the sum by the count.  Since count is exact, dividing an int64
+			// sum by count should leave an int64 average, while dividing a
+			// double sum by count should leave a double average.
 			if (dtype_int64 == impure->vlu_desc.dsc_dtype)
 				impure->vlu_misc.vlu_int64 /= count;
 			else
@@ -2834,7 +2829,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			break;
 
 		default:
-			BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
+			BUGCHECK(233);			// msg 233 eval_statistical: invalid operation
 		}
 	}
 	catch (const Firebird::Exception&)
@@ -2854,16 +2849,16 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		throw;
 	}
 
-/* Close stream and return value */
+	// Close stream and return value
 
 	RSE_close(tdbb, rsb);
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 
-/* If this is an invariant node, save the return value.  If the
-   descriptor does not point to the impure area for this node then
-   point this node's descriptor to the correct place; copy the whole
-   structure to be absolutely sure */
+	// If this is an invariant node, save the return value.  If the
+	// descriptor does not point to the impure area for this node then
+	// point this node's descriptor to the correct place; copy the whole
+	// structure to be absolutely sure
 
 	if (node->nod_flags & nod_invariant) {
 		*invariant_flags |= VLU_computed;
@@ -3078,20 +3073,20 @@ static SINT64 get_day_fraction(const dsc* d)
 	result.dsc_length = sizeof(double);
 	result.dsc_address = reinterpret_cast<UCHAR*>(&result_days);
 
-/* Convert the input number to a double */
+	// Convert the input number to a double
 	CVT_move(d, &result);
 
-/* There's likely some loss of precision here due to rounding of number */
+	// There's likely some loss of precision here due to rounding of number
 
-// 08-Apr-2004, Nickolay Samofatov. Loss of precision manifested itself as bad
-// result returned by the following query:
-//
-// select (cast('01.01.2004 10:01:00' as timestamp)
-//   -cast('01.01.2004 10:00:00' as timestamp))
-//   +cast('01.01.2004 10:00:00' as timestamp) from rdb$database
-//
-// Let's use llrint where it is supported and offset number for other platforms
-// in hope that compiler rounding mode doesn't get in.
+	// 08-Apr-2004, Nickolay Samofatov. Loss of precision manifested itself as bad
+	// result returned by the following query:
+	//
+	// select (cast('01.01.2004 10:01:00' as timestamp)
+	//   -cast('01.01.2004 10:00:00' as timestamp))
+	//   +cast('01.01.2004 10:00:00' as timestamp) from rdb$database
+	//
+	// Let's use llrint where it is supported and offset number for other platforms
+	// in hope that compiler rounding mode doesn't get in.
 
 #ifdef HAVE_LLRINT
 	return llrint(result_days * ISC_TICKS_PER_DAY);
@@ -3206,14 +3201,14 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	DEV_BLKCHK(node, type_nod);
 
-/* Initialize descriptor */
+	// Initialize descriptor
 
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	impure->vlu_desc.dsc_dtype = dtype_long;
 	impure->vlu_desc.dsc_length = sizeof(SLONG);
 	impure->vlu_desc.dsc_scale = 0;
 
-/* Evaluate attachment id */
+	// Evaluate attachment id
 
 	jrd_req* request = tdbb->getRequest();
 	const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
@@ -3226,7 +3221,7 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			impure->vlu_misc.vlu_long = 2;
 		else {
 			Lock temp_lock;
-			/* fill out a lock block, zeroing it out first */
+			// fill out a lock block, zeroing it out first
 
 			temp_lock.lck_parent = dbb->dbb_lock;
 			temp_lock.lck_type = LCK_attachment;
@@ -3336,7 +3331,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
  **************************************/
 	DEV_BLKCHK(node, type_nod);
 
-/* Handle floating arithmetic */
+	// Handle floating arithmetic
 
 	if (node->nod_flags & nod_double) {
 		const double d1 = MOV_get_double(desc);
@@ -3354,7 +3349,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 		return &value->vlu_desc;
 	}
 
-/* Handle (oh, ugh) quad arithmetic */
+	// Handle (oh, ugh) quad arithmetic
 
 	if (node->nod_flags & nod_quad) {
 		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
@@ -3369,7 +3364,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 		return &value->vlu_desc;
 	}
 
-/* Everything else defaults to longword */
+	// Everything else defaults to longword
 
 	/* CVC: With so many problems cropping with dialect 1 and multiplication,
 			I decided to close this Pandora box by incurring in INT64 performance
@@ -3408,7 +3403,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 	}
 	else
 	{
-		value->vlu_misc.vlu_long = (SLONG) rc; /* l1 * l2;*/
+		value->vlu_misc.vlu_long = (SLONG) rc; // l1 * l2;
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_long;
 	}
 	//}
@@ -3432,7 +3427,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
  **************************************/
 	DEV_BLKCHK(node, type_nod);
 
-/* Handle floating arithmetic */
+	// Handle floating arithmetic
 
 	if (node->nod_flags & nod_double)
 	{
@@ -3451,7 +3446,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		return &value->vlu_desc;
 	}
 
-/* Handle (oh, ugh) quad arithmetic */
+	// Handle (oh, ugh) quad arithmetic
 
 	if (node->nod_flags & nod_quad)
 	{
@@ -3467,35 +3462,35 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		return &value->vlu_desc;
 	}
 
-/* Everything else defaults to int64 */
+	// Everything else defaults to int64
 
 	const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
 	const SINT64 i1 = MOV_get_int64(desc, node->nod_scale - scale);
 	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, scale);
 
-/*
-   We need to report an overflow if
-       (i1 * i2 < MIN_SINT64) || (i1 * i2 > MAX_SINT64)
-   which is equivalent to
-       (i1 < MIN_SINT64 / i2) || (i1 > MAX_SINT64 / i2)
+	/*
+	We need to report an overflow if
+	   (i1 * i2 < MIN_SINT64) || (i1 * i2 > MAX_SINT64)
+	which is equivalent to
+	   (i1 < MIN_SINT64 / i2) || (i1 > MAX_SINT64 / i2)
 
-   Unfortunately, a trial division to see whether the multiplication will
-   overflow is expensive: fortunately, we only need perform one division and
-   test for one of the two cases, depending on whether the factors have the
-   same or opposite signs.
+	Unfortunately, a trial division to see whether the multiplication will
+	overflow is expensive: fortunately, we only need perform one division and
+	test for one of the two cases, depending on whether the factors have the
+	same or opposite signs.
 
-   Unfortunately, in C it is unspecified which way division rounds
-   when one or both arguments are negative.  (ldiv() is guaranteed to
-   round towards 0, but the standard does not yet require an lldiv()
-   or whatever for 64-bit operands.  This makes the problem messy.
-   We use FB_UINT64s for the checking, thus ensuring that our division rounds
-   down.  This means that we have to check the sign of the product first
-   in order to know whether the maximum abs(i1*i2) is MAX_SINT64 or
-   (MAX_SINT64+1).
+	Unfortunately, in C it is unspecified which way division rounds
+	when one or both arguments are negative.  (ldiv() is guaranteed to
+	round towards 0, but the standard does not yet require an lldiv()
+	or whatever for 64-bit operands.  This makes the problem messy.
+	We use FB_UINT64s for the checking, thus ensuring that our division rounds
+	down.  This means that we have to check the sign of the product first
+	in order to know whether the maximum abs(i1*i2) is MAX_SINT64 or
+	(MAX_SINT64+1).
 
-   Of course, if a factor is 0, the product will also be 0, and we don't
-   need a trial-division to be sure the multiply won't overflow.
- */
+	Of course, if a factor is 0, the product will also be 0, and we don't
+	need a trial-division to be sure the multiply won't overflow.
+	*/
 
 	const FB_UINT64 u1 = (i1 >= 0) ? i1 : -i1;	// abs(i1)
 	const FB_UINT64 u2 = (i2 >= 0) ? i2 : -i2;	// abs(i2)
@@ -3532,7 +3527,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
  **************************************/
 	DEV_BLKCHK(node, type_nod);
 
-/* Handle floating arithmetic */
+	// Handle floating arithmetic
 
 	if (node->nod_flags & nod_double) {
 		const double d2 = MOV_get_double(desc);
@@ -3555,43 +3550,43 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		return &value->vlu_desc;
 	}
 
-/* Everything else defaults to int64 */
+	// Everything else defaults to int64
 
-/*
- * In the SQL standard, the precision and scale of the quotient of exact
- * numeric dividend and divisor are implementation-defined: we have defined
- * the precision as 18 (in other words, an SINT64), and the scale as the
- * sum of the scales of the two operands.  To make this work, we have to
- * multiply by pow(10, -2* (scale of divisor)).
- *
- * To see this, consider the operation n1 / n2, and represent the numbers
- * by ordered pairs (v1, s1) and (v2, s2), representing respectively the
- * integer value and the scale of each operation, so that
- *     n1 = v1 * pow(10, s1), and
- *     n2 = v2 * pow(10, s2)
- * Then the quotient is ...
- *
- *     v1 * pow(10,s1)
- *     ----------------- = (v1/v2) * pow(10, s1-s2)
- *     v2 * pow(10,s2)
- *
- * But we want the scale of the result to be (s1+s2), not (s1-s2)
- * so we need to multiply by 1 in the form
- *         pow(10, -2 * s2) * pow(20, 2 * s2)
- * which, after regrouping, gives us ...
- *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, 2*s2) * pow(10, s1-s2)
- *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, 2*s2 + s1 - s2)
- *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, s1 + s2)
- * or in our ordered-pair notation,
- *      ( v1 * pow(10, -2*s2) / v2, s1 + s2 )
- *
- * To maximize the amount of information in the result, we scale up
- * the dividend as far as we can without causing overflow, then we perform
- * the division, then do any additional required scaling.
- *
- * Who'da thunk that 9th-grade algebra would prove so useful.
- *                                      -- Chris Jewell, December 1998
- */
+	/*
+	 * In the SQL standard, the precision and scale of the quotient of exact
+	 * numeric dividend and divisor are implementation-defined: we have defined
+	 * the precision as 18 (in other words, an SINT64), and the scale as the
+	 * sum of the scales of the two operands.  To make this work, we have to
+	 * multiply by pow(10, -2* (scale of divisor)).
+	 *
+	 * To see this, consider the operation n1 / n2, and represent the numbers
+	 * by ordered pairs (v1, s1) and (v2, s2), representing respectively the
+	 * integer value and the scale of each operation, so that
+	 *     n1 = v1 * pow(10, s1), and
+	 *     n2 = v2 * pow(10, s2)
+	 * Then the quotient is ...
+	 *
+	 *     v1 * pow(10,s1)
+	 *     ----------------- = (v1/v2) * pow(10, s1-s2)
+	 *     v2 * pow(10,s2)
+	 *
+	 * But we want the scale of the result to be (s1+s2), not (s1-s2)
+	 * so we need to multiply by 1 in the form
+	 *         pow(10, -2 * s2) * pow(20, 2 * s2)
+	 * which, after regrouping, gives us ...
+	 *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, 2*s2) * pow(10, s1-s2)
+	 *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, 2*s2 + s1 - s2)
+	 *   =  ((v1 * pow(10, -2*s2))/v2) * pow(10, s1 + s2)
+	 * or in our ordered-pair notation,
+	 *      ( v1 * pow(10, -2*s2) / v2, s1 + s2 )
+	 *
+	 * To maximize the amount of information in the result, we scale up
+	 * the dividend as far as we can without causing overflow, then we perform
+	 * the division, then do any additional required scaling.
+	 *
+	 * Who'da thunk that 9th-grade algebra would prove so useful.
+	 *                                      -- Chris Jewell, December 1998
+	 */
 	SINT64 i2 = MOV_get_int64(desc, desc->dsc_scale);
 	if (i2 == 0)
 	{
@@ -3601,12 +3596,12 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 
 	SINT64 i1 = MOV_get_int64(&value->vlu_desc, node->nod_scale - desc->dsc_scale);
 
-/* MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64. */
+	// MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64.
 	if ((i1 == MIN_SINT64) && (i2 == -1))
 		ERR_post(Arg::Gds(isc_exception_integer_overflow));
 
-/* Scale the dividend by as many of the needed powers of 10 as possible
-   without causing an overflow. */
+	// Scale the dividend by as many of the needed powers of 10 as possible
+	// without causing an overflow.
 	int addl_scale = 2 * desc->dsc_scale;
 	if (i1 >= 0)
 	{
@@ -3625,9 +3620,9 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		}
 	}
 
-/* If we couldn't use up all the additional scaling by multiplying the
-   dividend by 10, but there are trailing zeroes in the divisor, we can
-   get the same effect by dividing the divisor by 10 instead. */
+	// If we couldn't use up all the additional scaling by multiplying the
+	// dividend by 10, but there are trailing zeroes in the divisor, we can
+	// get the same effect by dividing the divisor by 10 instead.
 	while ((addl_scale < 0) && (0 == (i2 % 10))) {
 		i2 /= 10;
 		++addl_scale;
@@ -3639,10 +3634,10 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 	value->vlu_misc.vlu_int64 = i1 / i2;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc.vlu_int64;
 
-/* If we couldn't do all the required scaling beforehand without causing
-   an overflow, do the rest of it now.  If we get an overflow now, then
-   the result is really too big to store in a properly-scaled SINT64,
-   so report the error. For example, MAX_SINT64 / 1.00 overflows. */
+	// If we couldn't do all the required scaling beforehand without causing
+	// an overflow, do the rest of it now.  If we get an overflow now, then
+	// the result is really too big to store in a properly-scaled SINT64,
+	// so report the error. For example, MAX_SINT64 / 1.00 overflows.
 	if (value->vlu_misc.vlu_int64 >= 0)
 	{
 		while ((addl_scale < 0) && (value->vlu_misc.vlu_int64 <= MAX_INT64_LIMIT))
@@ -3756,20 +3751,19 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 	//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
-/* If the current transaction has updated the record, the record version
- * coming in from DSQL will have the original transaction # (or current
- * transaction if the current transaction updated the record in a different
- * request.).  In these cases, mark the request so that the boolean
- * to check equality of record version will be forced to evaluate to true.
- */
+	/* If the current transaction has updated the record, the record version
+	 * coming in from DSQL will have the original transaction # (or current
+	 * transaction if the current transaction updated the record in a different
+	 * request.).  In these cases, mark the request so that the boolean
+	 * to check equality of record version will be forced to evaluate to true.
+	 */
 
 	if (tdbb->getRequest()->req_transaction->tra_number == rpb->rpb_transaction_nr)
 		request->req_flags |= req_same_tx_upd;
 	else
 	{
-		/* If the transaction is a commit retain, check if the record was
-		 * last updated in one of its own prior transactions
-		 */
+		// If the transaction is a commit retain, check if the record was
+		// last updated in one of its own prior transactions
 
 		if (request->req_transaction->tra_commit_sub_trans)
 		{
@@ -3780,7 +3774,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 		}
 	}
 
-/* Initialize descriptor */
+	// Initialize descriptor
 
 	impure->vlu_misc.vlu_long    = rpb->rpb_transaction_nr;
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
@@ -3862,13 +3856,13 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 	DEV_BLKCHK(node, type_nod);
 
-/* Choose interpretation for the operation */
+	// Choose interpretation for the operation
 
  	USHORT ttype;
 	if (desc1->isBlob())
 	{
 		if (desc1->dsc_sub_type == isc_blob_text)
-			ttype = desc1->dsc_blob_ttype();	/* Load blob character set and collation */
+			ttype = desc1->dsc_blob_ttype();	// Load blob character set and collation
 		else
 			ttype = INTL_TTYPE(desc2);
 	}
@@ -3877,35 +3871,35 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 	Collation* obj = INTL_texttype_lookup(tdbb, ttype);
 
-/* Get operator definition string (control string) */
+	// Get operator definition string (control string)
 
 	dsc* desc3 = EVL_expr(tdbb, node->nod_arg[2]);
 
 	UCHAR* p1;
 	MoveBuffer sleuth_str;
 	USHORT l1 = MOV_make_string2(tdbb, desc3, ttype, &p1, sleuth_str);
-/* Get address and length of search string */
+	// Get address and length of search string
 	UCHAR* p2;
 	MoveBuffer match_str;
 	USHORT l2 = MOV_make_string2(tdbb, desc2, ttype, &p2, match_str);
 
-/* Merge search and control strings */
+	// Merge search and control strings
 	UCHAR control[BUFFER_SMALL];
 	SLONG control_length = obj->sleuthMerge(*tdbb->getDefaultPool(), p2, l2, p1, l1, control); //, BUFFER_SMALL);
 
-/* Note: resulting string from sleuthMerge is either USHORT or UCHAR
-   and never Multibyte (see note in EVL_mb_sleuthCheck) */
+	// Note: resulting string from sleuthMerge is either USHORT or UCHAR
+	// and never Multibyte (see note in EVL_mb_sleuthCheck)
 	bool ret_val;
 	MoveBuffer data_str;
 	if (!desc1->isBlob())
 	{
-		/* Source is not a blob, do a simple search */
+		// Source is not a blob, do a simple search
 
 		l1 = MOV_make_string2(tdbb, desc1, ttype, &p1, data_str);
 		ret_val = obj->sleuthCheck(*tdbb->getDefaultPool(), 0, p1, l1, control, control_length);
 	}
 	else {
-		/* Source string is a blob, things get interesting */
+		// Source string is a blob, things get interesting
 
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 							 reinterpret_cast<bid*>(desc1->dsc_address));
@@ -3957,13 +3951,13 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 	if (!desc1->isBlob())
 	{
-		/* Source is not a blob, do a simple search */
+		// Source is not a blob, do a simple search
 
-		/* Get text type of data string */
+		// Get text type of data string
 
 		type1 = INTL_TEXT_TYPE(*desc1);
 
-		/* Get address and length of search string - convert to datatype of data */
+		// Get address and length of search string - convert to datatype of data
 
 		if (!computed_invariant) {
 			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
@@ -3978,14 +3972,14 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		return string_function(tdbb, node, l1, p1, l2, p2, type1, computed_invariant);
 	}
 
-	/* Source string is a blob, things get interesting */
+	// Source string is a blob, things get interesting
 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 
 	if (desc1->dsc_sub_type == isc_blob_text)
-		type1 = desc1->dsc_blob_ttype();	/* pick up character set and collation of blob */
+		type1 = desc1->dsc_blob_ttype();	// pick up character set and collation of blob
 	else
-		type1 = ttype_none;	/* Do byte matching */
+		type1 = ttype_none;	// Do byte matching
 
 	Collation* obj = INTL_texttype_lookup(tdbb, type1);
 	CharSet* charset = obj->getCharSet();
@@ -4010,8 +4004,8 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		buffer.getBuffer(blob->blb_length);		// alloc space to put entire blob in memory
 	}
 
-	/* Performs the string_function on each segment of the blob until
-	   a positive result is obtained */
+	// Performs the string_function on each segment of the blob until
+	// a positive result is obtained
 
 	bool ret_val = false;
 
@@ -4024,9 +4018,9 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			const UCHAR* escape_str = NULL;
 			USHORT escape_length = 0;
 
-			/* ensure 3rd argument (escape char) is in operation text type */
+			// ensure 3rd argument (escape char) is in operation text type
 			if (node->nod_count == 3 && !computed_invariant) {
-				/* Convert ESCAPE to operation character set */
+				// Convert ESCAPE to operation character set
 				DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
 				if (request->req_flags & req_null) {
 					if (node->nod_flags & nod_invariant) {
@@ -4043,7 +4037,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 												&temp3, sizeof(temp3));
 				if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 				{
-					/* If characters left, or null byte character, return error */
+					// If characters left, or null byte character, return error
 					BLB_close(tdbb, blob);
 					ERR_post(Arg::Gds(isc_escape_invalid));
 				}
@@ -4053,7 +4047,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape);
 				if (!escape[0])
 				{
-					/* If or null byte character, return error */
+					// If or null byte character, return error
 					BLB_close(tdbb, blob);
 					ERR_post(Arg::Gds(isc_escape_invalid));
 				}
@@ -4242,9 +4236,9 @@ static bool string_function(thread_db* tdbb,
 		VaryStr<TEMP_LENGTH> temp3;
 		const UCHAR* escape_str = NULL;
 		USHORT escape_length = 0;
-		/* ensure 3rd argument (escape char) is in operation text type */
+		// ensure 3rd argument (escape char) is in operation text type
 		if (node->nod_count == 3 && !computed_invariant) {
-			/* Convert ESCAPE to operation character set */
+			// Convert ESCAPE to operation character set
 			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
 			if (request->req_flags & req_null) {
 				if (node->nod_flags & nod_invariant) {
@@ -4259,7 +4253,7 @@ static bool string_function(thread_db* tdbb,
 											&temp3, sizeof(temp3));
 			if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 			{
-				/* If characters left, or null byte character, return error */
+				// If characters left, or null byte character, return error
 				ERR_post(Arg::Gds(isc_escape_invalid));
 			}
 
@@ -4268,7 +4262,7 @@ static bool string_function(thread_db* tdbb,
 			charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape);
 			if (!escape[0])
 			{
-				/* If or null byte character, return error */
+				// If or null byte character, return error
 				ERR_post(Arg::Gds(isc_escape_invalid));
 			}
 		}
@@ -4639,7 +4633,7 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 		impure->vlu_misc.vlu_long = tdbb->getRequest()->req_trigger_action;
 		break;
 	default:
-		BUGCHECK(232);	/* msg 232 EVL_expr: invalid operation */
+		BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 	}
 	impure->vlu_desc.dsc_address = (UCHAR *) &impure->vlu_misc.vlu_long;
 

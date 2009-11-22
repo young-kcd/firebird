@@ -220,7 +220,7 @@ inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*
 static void stuff_stack_trace(const jrd_req*);
 
 
-/* macro definitions */
+// macro definitions
 
 #if (defined SUPERSERVER) && (defined WIN_NT)
 const int MAX_CLONES	= 750;
@@ -637,12 +637,10 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
-/* I found a core file from my test runs that came from a NULL request -
- * but have no idea what test was running.  Let's bugcheck so we can
- * figure it out
- */
+	// I found a core file from my test runs that came from a NULL request -
+	// but have no idea what test was running.  Let's bugcheck so we can figure it out
 	if (!request)
-		BUGCHECK /* REQUEST */ (167);	/* msg 167 invalid SEND request */
+		BUGCHECK(167);	// msg 167 invalid SEND request
 
 	Database::CheckoutLockGuard guard(dbb, dbb->dbb_exe_clone_mutex);
 
@@ -655,8 +653,8 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		if (request->req_attachment == attachment)
 			count++;
 
-		/* Request exists and is in use.  Search clones for one in use by
-		   this attachment. If not found, return first inactive request. */
+		// Request exists and is in use.  Search clones for one in use by
+		// this attachment. If not found, return first inactive request.
 
 		vec<jrd_req*>* vector = request->req_sub_requests;
 		const USHORT clones = vector ? (vector->count() - 1) : 0;
@@ -888,7 +886,7 @@ void EXE_send(thread_db*		tdbb,
 			}
 			break;
 		default:
-			BUGCHECK(167);			/* msg 167 invalid SEND request */
+			BUGCHECK(167);			// msg 167 invalid SEND request
 		}
 	}
 
@@ -975,11 +973,11 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	if (transaction->tra_flags & TRA_prepared)
 		ERR_post(Arg::Gds(isc_req_no_trans));
 
-/* Post resources to transaction block.  In particular, the interest locks
-   on relations/indices are copied to the transaction, which is very
-   important for (short-lived) dynamically compiled requests.  This will
-   provide transaction stability by preventing a relation from being
-   dropped after it has been referenced from an active transaction. */
+	/* Post resources to transaction block.  In particular, the interest locks
+	on relations/indices are copied to the transaction, which is very
+	important for (short-lived) dynamically compiled requests.  This will
+	provide transaction stability by preventing a relation from being
+	dropped after it has been referenced from an active transaction. */
 
 	TRA_post_resources(tdbb, transaction, request->req_resources);
 
@@ -993,7 +991,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_flags &= ~req_reserved;
 	request->req_operation = jrd_req::req_evaluate;
 
-/* set up to count records affected by request */
+	// set up to count records affected by request
 
 	request->req_flags |= req_count_records;
 	request->req_records_selected = 0;
@@ -1003,7 +1001,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	request->req_records_affected.clear();
 
-/* CVC: set up to count virtual operations on SQL views. */
+	// CVC: set up to count virtual operations on SQL views.
 
 	request->req_view_flags = 0;
 	request->req_top_view_store = NULL;
@@ -1124,7 +1122,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 }
 
 
-/* CVC: Moved to its own routine, originally in store(). */
+// CVC: Moved to its own routine, originally in store().
 static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
 {
 /**************************************
@@ -1142,9 +1140,9 @@ static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
 	Record* record = rpb->rpb_record;
 	const Format* format = record->rec_format;
 
-	SET_TDBB(tdbb); /* Is it necessary? */
+	SET_TDBB(tdbb); // Is it necessary?
 
-/*
+	/*
     Starting from the format, walk through its
     array of descriptors.  If the descriptor has
     no address, its a computed field and we shouldn't
@@ -1152,7 +1150,7 @@ static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
     and see if that field is null by indexing into
     the null flags between the record header and the
     record data.
-*/
+	*/
 
 	for (USHORT n = 0; n < format->fmt_count; n++)
 	{
@@ -1274,9 +1272,9 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	request->req_operation = jrd_req::req_return;
 	RLCK_reserve_relation(tdbb, transaction, relation, true);
 
-/* If the stream was sorted, the various fields in the rpb are
-   probably junk.  Just to make sure that everything is cool,
-   refetch and release the record. */
+	// If the stream was sorted, the various fields in the rpb are
+	// probably junk.  Just to make sure that everything is cool,
+	// refetch and release the record.
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch) {
 		VIO_refetch_record(tdbb, rpb, transaction);
@@ -1286,7 +1284,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (transaction != dbb->dbb_sys_trans)
 		++transaction->tra_save_point->sav_verb_count;
 
-/* Handle pre-operation trigger */
+	// Handle pre-operation trigger
 	PreModifyEraseTriggers(tdbb, &relation->rel_pre_erase, which_trig, rpb, NULL,
 						   jrd_req::req_trigger_delete);
 
@@ -1300,16 +1298,16 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		VIO_erase(tdbb, rpb, transaction);
 	}
 
-/* Handle post operation trigger */
+	// Handle post operation trigger
 	if (relation->rel_post_erase && which_trig != PRE_TRIG)
 	{
 		execute_triggers(tdbb, &relation->rel_post_erase, rpb, NULL, jrd_req::req_trigger_delete,
 			POST_TRIG);
 	}
 
-/* call IDX_erase (which checks constraints) after all post erase triggers
-   have fired. This is required for cascading referential integrity, which
-   can be implemented as post_erase triggers */
+	// call IDX_erase (which checks constraints) after all post erase triggers
+	// have fired. This is required for cascading referential integrity, which
+	// can be implemented as post_erase triggers
 
 	if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 	{
@@ -1323,8 +1321,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		}
 	}
 
-	/* CVC: Increment the counter only if we called VIO/EXT_erase() and
-			we were successful. */
+	// CVC: Increment the counter only if we called VIO/EXT_erase() and
+	// we were successful.
 	if (!(request->req_view_flags & req_first_erase_return)) {
 		request->req_view_flags |= req_first_erase_return;
 		if (relation->rel_view_rse) {
@@ -1372,7 +1370,7 @@ static void execute_looper(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-/* Start a save point */
+	// Start a save point
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
@@ -1385,14 +1383,14 @@ static void execute_looper(thread_db* tdbb,
 
 	EXE_looper(tdbb, request, request->req_next);
 
-/* If any requested modify/delete/insert ops have completed, forget them */
+	// If any requested modify/delete/insert ops have completed, forget them
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
 		if (transaction && (transaction != dbb->dbb_sys_trans) && transaction->tra_save_point &&
 			!transaction->tra_save_point->sav_verb_count)
 		{
-			/* Forget about any undo for this verb */
+			// Forget about any undo for this verb
 
 			VIO_verb_cleanup(tdbb, transaction);
 		}
@@ -1481,7 +1479,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		out_msg = (UCHAR*) FB_ALIGN((U_IPTR) out_msg, FB_DOUBLE_ALIGN);
 	}
 
-/* Catch errors so we can unwind cleanly */
+	// Catch errors so we can unwind cleanly
 
 	try {
 		// Save the old pool
@@ -1500,8 +1498,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 		EXE_receive(tdbb, proc_request, 1, out_msg_length, out_msg);
 
-/* Clean up all savepoints started during execution of the
-   procedure */
+		// Clean up all savepoints started during execution of the procedure
 
 		if (transaction != tdbb->getDatabase()->dbb_sys_trans) {
 			for (const Savepoint* save_point = transaction->tra_save_point;
@@ -2224,20 +2221,19 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					PsqlException* xcp_node = reinterpret_cast<PsqlException*>(node->nod_arg[e_xcp_desc]);
 					if (xcp_node)
 					{
-						/* PsqlException is defined,
-						   so throw an exception */
+						// PsqlException is defined, so throw an exception
 						set_error(tdbb, &xcp_node->xcp_rpt[0], node->nod_arg[e_xcp_msg]);
 					}
 					else if (!request->req_last_xcp.success())
 					{
-						/* PsqlException is undefined, but there was a known exception before,
-						   so re-initiate it */
+						// PsqlException is undefined, but there was a known exception before,
+						// so re-initiate it
 						set_error(tdbb, NULL, NULL);
 					}
 					else
 					{
-						/* PsqlException is undefined and there weren't any exceptions before,
-						   so just do nothing */
+						// PsqlException is undefined and there weren't any exceptions before,
+						// so just do nothing
 						request->req_operation = jrd_req::req_return;
 					}
 				}
@@ -2251,7 +2247,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			switch (request->req_operation)
 			{
 			case jrd_req::req_evaluate:
-				/* Start a save point */
+				// Start a save point
 
 				if (transaction != dbb->dbb_sys_trans)
 					VIO_start_save_point(tdbb, transaction);
@@ -2267,12 +2263,11 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			{
 			case jrd_req::req_evaluate:
 			case jrd_req::req_unwind:
-				/* If any requested modify/delete/insert
-				   ops have completed, forget them */
+				// If any requested modify/delete/insert ops have completed, forget them
 				if (transaction != dbb->dbb_sys_trans) {
-					/* If an error is still pending when the savepoint is
-					   supposed to end, then the application didn't handle the
-					   error and the savepoint should be undone. */
+					// If an error is still pending when the savepoint is
+					// supposed to end, then the application didn't handle the
+					// error and the savepoint should be undone.
 					if (error_pending) {
 						++transaction->tra_save_point->sav_verb_count;
 					}
@@ -2344,9 +2339,9 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (transaction != dbb->dbb_sys_trans)
 					{
 						memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
-						/* Since there occurred an error (req_unwind), undo all savepoints
-						   up to, but not including, the savepoint of this block.  The
-						   savepoint of this block will be dealt with below. */
+						// Since there occurred an error (req_unwind), undo all savepoints
+						// up to, but not including, the savepoint of this block.  The
+						// savepoint of this block will be dealt with below.
 						for (const Savepoint* save_point = transaction->tra_save_point;
 							save_point && count < save_point->sav_number;
 							save_point = transaction->tra_save_point)
@@ -2372,9 +2367,9 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								node = (*ptr)->nod_arg[e_err_action];
 								error_pending = false;
 
-								/* On entering looper old_request etc. are saved.
-								   On recursive calling we will loose the actual old
-								   request for that invocation of looper. Avoid this. */
+								// On entering looper old_request etc. are saved.
+								// On recursive calling we will loose the actual old
+								// request for that invocation of looper. Avoid this.
 
 								{
 									Jrd::ContextPoolHolder contextLooper(tdbb, old_pool);
@@ -2382,10 +2377,9 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 									fb_assert(request->req_caller == old_request);
 									request->req_caller = NULL;
 
-									/* Save the previous state of req_error_handler
-									   bit. We need to restore it later. This is
-									   necessary if the error handler is deeply
-									   nested. */
+									// Save the previous state of req_error_handler
+									// bit. We need to restore it later. This is
+									// necessary if the error handler is deeply nested.
 
 									const ULONG prev_req_error_handler =
 										request->req_flags & req_error_handler;
@@ -2395,17 +2389,17 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 									request->req_flags |= prev_req_error_handler;
 
 									/* Note: Previously the above call
-									   "node = looper (tdbb, request, node);"
-									   never returned back till the node tree
-									   was executed completely. Now that the looper
-									   has changed its behaviour such that it
-									   returns back after handling error. This
-									   makes it necessary that the jmpbuf be reset
-									   so that looper can proceede with the
-									   processing of execution tree. If this is
-									   not done then anymore errors will take the
-									   engine out of looper there by abruptly
-									   terminating the processing. */
+									"node = looper (tdbb, request, node);"
+									never returned back till the node tree
+									was executed completely. Now that the looper
+									has changed its behaviour such that it
+									returns back after handling error. This
+									makes it necessary that the jmpbuf be reset
+									so that looper can proceede with the
+									processing of execution tree. If this is
+									not done then anymore errors will take the
+									engine out of looper there by abruptly
+									terminating the processing. */
 
 									catch_disabled = false;
 									tdbb->setRequest(request);
@@ -2413,8 +2407,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 									request->req_caller = old_request;
 								}
 
-								/* The error is dealt with by the application, cleanup
-								   this block's savepoint. */
+								// The error is dealt with by the application, cleanup
+								// this block's savepoint.
 
 								if (transaction != dbb->dbb_sys_trans)
 								{
@@ -2433,9 +2427,9 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						node = node->nod_parent;
 					}
 
-					/* If the application didn't have an error handler, then
-					   the error will still be pending.  Undo the block by
-					   using its savepoint. */
+					// If the application didn't have an error handler, then
+					// the error will still be pending.  Undo the block by
+					// using its savepoint.
 
 					if (error_pending && transaction != dbb->dbb_sys_trans)
 					{
@@ -2785,7 +2779,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 
 		default:
-			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
+			BUGCHECK(168);		// msg 168 looper: action not yet implemented
 		}
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -2961,9 +2955,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	const SSHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 	record_param* new_rpb = &request->req_rpb[new_stream];
 
-	/* If the stream was sorted, the various fields in the rpb are
-	probably junk.  Just to make sure that everything is cool,
-	refetch and release the record. */
+	// If the stream was sorted, the various fields in the rpb are
+	// probably junk.  Just to make sure that everything is cool,
+	// refetch and release the record.
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
 		VIO_refetch_record(tdbb, org_rpb, transaction);
@@ -2989,8 +2983,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 		if (impure->sta_state == 0)
 		{
-			/* CVC: This call made here to clear the record in each NULL field and
-					varchar field whose tail may contain garbage. */
+			// CVC: This call made here to clear the record in each NULL field and
+			// varchar field whose tail may contain garbage.
 			cleanup_rpb(tdbb, new_rpb);
 
 			if (transaction != dbb->dbb_sys_trans)
@@ -3033,9 +3027,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 					jrd_req::req_trigger_update, POST_TRIG);
 			}
 
-			/* now call IDX_modify_check_constrints after all post modify triggers
-			have fired.  This is required for cascading referential integrity,
-			which can be implemented as post_erase triggers */
+			// now call IDX_modify_check_constrints after all post modify triggers
+			// have fired.  This is required for cascading referential integrity,
+			// which can be implemented as post_erase triggers
 
 			if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 			{
@@ -3055,8 +3049,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				--transaction->tra_save_point->sav_verb_count;
 			}
 
-			/* CVC: Increment the counter only if we called VIO/EXT_modify() and
-					we were successful. */
+			// CVC: Increment the counter only if we called VIO/EXT_modify() and
+			// we were successful.
 			if (!(request->req_view_flags & req_first_modify_return)) {
 				request->req_view_flags |= req_first_modify_return;
 				if (relation->rel_view_rse) {
@@ -3094,10 +3088,10 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	impure->sta_state = 0;
 	RLCK_reserve_relation(tdbb, transaction, relation, true);
 
-/* Fall thru on evaluate to set up for modify before executing sub-statement.
-   This involves finding the appropriate format, making sure a record block
-   exists for the stream and is big enough, and copying fields from the
-   original record to the new record. */
+	// Fall thru on evaluate to set up for modify before executing sub-statement.
+	// This involves finding the appropriate format, making sure a record block
+	// exists for the stream and is big enough, and copying fields from the
+	// original record to the new record.
 
 	const Format* new_format = MET_current(tdbb, new_rpb->rpb_relation);
 	Record* new_record = VIO_record(tdbb, new_rpb, new_format, tdbb->getDefaultPool());
@@ -3118,9 +3112,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	else
 		org_format = org_record->rec_format;
 
-/* Copy the original record to the new record.  If the format hasn't changed,
-   this is a simple move.  If the format has changed, each field must be
-   fetched and moved separately, remembering to set the missing flag. */
+	// Copy the original record to the new record.  If the format hasn't changed,
+	// this is a simple move.  If the format has changed, each field must be
+	// fetched and moved separately, remembering to set the missing flag.
 
 	if (new_format->fmt_version == org_format->fmt_version) {
 		memcpy(new_rpb->rpb_address, org_record->rec_data, new_rpb->rpb_length);
@@ -3131,10 +3125,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 		for (SSHORT i = 0; i < new_format->fmt_count; i++)
 		{
-			/* In order to "map a null to a default" value (in EVL_field()),
-			 * the relation block is referenced.
-			 * Reference: Bug 10116, 10424
-			 */
+			// In order to "map a null to a default" value (in EVL_field()),
+			// the relation block is referenced.
+			// Reference: Bug 10116, 10424
 			CLEAR_NULL(new_record, i);
 			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc))
 			{
@@ -3149,9 +3142,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 						USHORT n = new_desc.dsc_length;
 						memset(p, 0, n);
 					}
-				}				/* if (org_record) */
-			}					/* if (new_record) */
-		}						/* for (fmt_count) */
+				}				// if (org_record)
+			}					// if (new_record)
+		}						// for (fmt_count)
 	}
 
 	new_rpb->rpb_number = org_rpb->rpb_number;
@@ -3222,7 +3215,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 	{
 		DEV_BLKCHK(transaction, type_tra);
 
-		/* Release blobs bound to this request */
+		// Release blobs bound to this request
 
 		if (request->req_blobs.getFirst())
 		{
@@ -3262,7 +3255,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 
 		request->req_blobs.clear();
 
-		/* Release arrays assigned by this request */
+		// Release arrays assigned by this request
 
 		for (ArrayField** array = &transaction->tra_arrays; *array;)
 		{
@@ -3537,12 +3530,12 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			validate(tdbb, node->nod_arg[e_sto_validate]);
 		}
 
-		/* For optimum on-disk record compression, zero all unassigned
-		   fields. In addition, zero the tail of assigned varying fields
-		   so that previous remnants don't defeat compression efficiency. */
+		// For optimum on-disk record compression, zero all unassigned
+		// fields. In addition, zero the tail of assigned varying fields
+		// so that previous remnants don't defeat compression efficiency.
 
-		/* CVC: The code that was here was moved to its own routine: cleanup_rpb()
-				and replaced by the call shown below. */
+		// CVC: The code that was here was moved to its own routine: cleanup_rpb()
+		// and replaced by the call shown below.
 
 		cleanup_rpb(tdbb, rpb);
 
@@ -3573,8 +3566,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				jrd_req::req_trigger_insert, POST_TRIG);
 		}
 
-		/* CVC: Increment the counter only if we called VIO/EXT_store() and
-				we were successful. */
+		// CVC: Increment the counter only if we called VIO/EXT_store() and we were successful.
 		if (!(request->req_view_flags & req_first_store_return)) {
 			request->req_view_flags |= req_first_store_return;
 			if (relation->rel_view_rse) {
@@ -3606,10 +3598,10 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		return node->nod_parent;
 	}
 
-/* Fall thru on evaluate to set up for store before executing sub-statement.
-   This involves finding the appropriate format, making sure a record block
-   exists for the stream and is big enough, and initialize all null flags
-   to "missing." */
+	// Fall thru on evaluate to set up for store before executing sub-statement.
+	// This involves finding the appropriate format, making sure a record block
+	// exists for the stream and is big enough, and initialize all null flags
+	// to "missing."
 
 	const Format* format = MET_current(tdbb, relation);
 	Record* record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
@@ -3618,15 +3610,15 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	rpb->rpb_length = format->fmt_length;
 	rpb->rpb_format_number = format->fmt_version;
 
-	/* CVC: This small block added by Ann Harrison to
-			start with a clean empty buffer and so avoid getting
-			new record buffer with misleading information. Fixes
-			bug with incorrect blob sharing during insertion in
-			a stored procedure. */
+	// CVC: This small block added by Ann Harrison to
+	// start with a clean empty buffer and so avoid getting
+	// new record buffer with misleading information. Fixes
+	// bug with incorrect blob sharing during insertion in
+	// a stored procedure.
 
 	memset(record->rec_data, 0, rpb->rpb_length);
 
-/* Initialize all fields to missing */
+	// Initialize all fields to missing
 
 	SSHORT n = (format->fmt_count + 7) >> 3;
 	if (n) {
@@ -3784,7 +3776,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 		jrd_req* request = tdbb->getRequest();
 		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]) && !(request->req_flags & req_null))
 		{
-			/* Validation error -- report result */
+			// Validation error -- report result
 			const char* value;
 			VaryStr<128> temp;
 

@@ -73,14 +73,14 @@
 /* It turns out to be tricky to write the INT64 versions of those constant in
    a way that will do the right thing on all platforms.  Here we go. */
 
-#define LONG_MAX_int64 ((SINT64) 2147483647)	/* max int64 value of an SLONG */
-#define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	/* min int64 value of an SLONG */
+#define LONG_MAX_int64 ((SINT64) 2147483647)	// max int64 value of an SLONG
+#define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	// min int64 value of an SLONG
 
 #define DIGIT(c)        ((c) >= '0' && (c) <= '9')
 
-/* NOTE: The syntax for the below line may need modification to ensure
- *	 the result of 1 << 62 is a quad
- */
+// NOTE: The syntax for the below line may need modification to ensure
+// the result of 1 << 62 is a quad
+
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
 #define NUMERIC_LIMIT   (INT64_LIMIT)
 
@@ -141,11 +141,11 @@ double CVT_date_to_double(const dsc* desc)
 		}
 	}
 
-/* Instead of returning the calculated double value in the return
-statement, am assigning the value to a local volatile double
-variable and returning that. This is to prevent a specific kind of
-precision error caused on Intel platforms (SCO and Linux) due
-to FPU register being 80 bits long and double being 64 bits long */
+	/* Instead of returning the calculated double value in the return
+	statement, am assigning the value to a local volatile double
+	variable and returning that. This is to prevent a specific kind of
+	precision error caused on Intel platforms (SCO and Linux) due
+	to FPU register being 80 bits long and double being 64 bits long */
 	volatile double retval;
 	retval =
 		date[0] +
@@ -220,13 +220,13 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 		if (DIGIT(*p)) {
 			digit_seen = true;
 
-			/* Before computing the next value, make sure there will be
-			   no overflow. Trying to detect overflow after the fact is
-			   tricky: the value doesn't always become negative after an
-			   overflow!  */
+			// Before computing the next value, make sure there will be
+			// no overflow. Trying to detect overflow after the fact is
+			// tricky: the value doesn't always become negative after an
+			// overflow!
 
 			if (value >= NUMERIC_LIMIT) {
-				/* possibility of an overflow */
+				// possibility of an overflow
 				if (value > NUMERIC_LIMIT)
 					break;
 
@@ -234,8 +234,8 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 					break;
 			}
 
-			/* Force the subtraction to be performed before the addition,
-			   thus preventing a possible signed arithmetic overflow.    */
+			// Force the subtraction to be performed before the addition,
+			// thus preventing a possible signed arithmetic overflow.
 			value = value * 10 + (*p - '0');
 			if (fraction)
 				--local_scale;
@@ -259,18 +259,18 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 	if (!digit_seen)
 		CVT_conversion_error(&desc, ERR_post);
 
-	if ((p < end) ||			/* there is an exponent */
-		((value < 0) && (sign != -1))) /* MAX_SINT64+1 wrapped around */
+	if ((p < end) ||			// there is an exponent
+		((value < 0) && (sign != -1))) // MAX_SINT64+1 wrapped around
 	{
-		/* convert to double */
+		// convert to double
 		*ptr = CVT_get_double(&desc, ERR_post);
 		return dtype_double;
 	}
 
 	*scale = local_scale;
 
-/* The literal has already been converted to a 64-bit integer: return
-   a long if the value fits into a long, else return an int64. */
+	// The literal has already been converted to a 64-bit integer: return
+	// a long if the value fits into a long, else return an int64.
 
 	if ((value <= LONG_MAX_int64) && (value >= 0)) {
 		*(SLONG *) ptr = (SLONG) ((sign == -1) ? -value : value);
@@ -282,10 +282,10 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 		return dtype_long;
 	}
 
-	/* Either MAX_SLONG < value <= MAX_SINT64, or
-	   ((value == MIN_SINT64) && (sign == -1)).
-	   In the first case, the number can be negated, while in the second
-	   negating the value will not change it on a 2s-complement system. */
+	// Either MAX_SLONG < value <= MAX_SINT64, or
+	// (value == MIN_SINT64) && (sign == -1)).
+	// In the first case, the number can be negated, while in the second
+	// negating the value will not change it on a 2s-complement system.
 
 	*(SINT64 *) ptr = ((sign == -1) ? -value : value);
 	return dtype_int64;
@@ -383,9 +383,9 @@ bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charse
 	else
 		charset2 = INTL_TTYPE(to);
 
-	/* The charset[12] can be ttype_dynamic only if we are
-	   outside the engine. Within the engine INTL_charset
-	   would have set it to the ttype of the attachment */
+	// The charset[12] can be ttype_dynamic only if we are
+	// outside the engine. Within the engine INTL_charset
+	// would have set it to the ttype of the attachment
 
 	if ((charset1 != charset2) &&
 		(charset2 != ttype_none) &&

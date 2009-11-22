@@ -66,7 +66,7 @@ static const UCHAR char_tab[128] =
 };
 
 
-/* Miscellaneous filter stuff (should be moved someday) */
+// Miscellaneous filter stuff (should be moved someday)
 
 struct filter_tmp
 {
@@ -77,7 +77,7 @@ struct filter_tmp
 
 const char* const WILD_CARD_UIC = "(*.*)";
 
-/* TXNN: Used on filter of internal data structure to text */
+// TXNN: Used on filter of internal data structure to text
 static const TEXT acl_privs[] = "?CGDRWPIEUTX??";
 
 static const TEXT acl_ids[][16] =
@@ -96,7 +96,7 @@ static const TEXT acl_ids[][16] =
 	"role: "
 };
 
-/* TXNN: Used on filter of internal data structure to text */
+// TXNN: Used on filter of internal data structure to text
 static const TEXT dtypes[DTYPE_TYPE_MAX][36] =
 {
 	"none",
@@ -137,13 +137,13 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 	if (action != isc_blob_filter_open)
 		return string_filter(action, control);
 
-/* Initialize for retrieval */
+	// Initialize for retrieval
 	UCHAR buffer[BUFFER_MEDIUM];
 	const SLONG l = control->ctl_handle->ctl_total_length;
 	UCHAR* const temp = (l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
-/* FREE: at procedure exit */
+	// FREE: at procedure exit
 	UCHAR* p = temp;
-	if (!p)						/* NOMEM: */
+	if (!p)						// NOMEM:
 		return isc_virmemexh;
 
 	USHORT length;
@@ -224,12 +224,12 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 	if (action != isc_blob_filter_open)
 		return string_filter(action, control);
 
-/* Initialize for retrieval */
+	// Initialize for retrieval
 	UCHAR buffer[BUFFER_MEDIUM];
 	const SLONG l = 1 + control->ctl_handle->ctl_total_length;
 	UCHAR* const temp = (l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
-/* FREE: at procedure exit */
-	if (!temp)					/* NOMEM: */
+	// FREE: at procedure exit
+	if (!temp)					// NOMEM:
 		return isc_virmemexh;
 
 	USHORT length;
@@ -263,12 +263,12 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
  *	Get next segment from a record format blob.
  *
  **************************************/
-/* Unless this is a get segment call, just return success */
+	// Unless this is a get segment call, just return success
 
 	if (action != isc_blob_filter_get_segment)
 		return FB_SUCCESS;
 
-/* Try to get next descriptor */
+	// Try to get next descriptor
 	Ods::Descriptor desc;
 	memset(&desc, 0, sizeof(desc));
 
@@ -314,12 +314,12 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 	if (action == isc_blob_filter_close)
 		return string_filter(action, control);
 
-/* Unless this is a get segment call, just return success */
+	// Unless this is a get segment call, just return success
 
 	if (action != isc_blob_filter_get_segment)
 		return FB_SUCCESS;
 
-/* If there is a string filter active, use it first */
+	// If there is a string filter active, use it first
 
 	if (control->ctl_data[0])
 	{
@@ -329,7 +329,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		string_filter(isc_blob_filter_close, control);
 	}
 
-/* Loop thru descriptors looking for one with a data type */
+	// Loop thru descriptors looking for one with a data type
 	UCHAR temp[BUFFER_SMALL];
 	UCHAR* buff = temp;
 	const USHORT buff_len = sizeof(temp);
@@ -415,8 +415,8 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 
 	if (strLen > control->ctl_buffer_length)
 	{
-		/* The string is too long for the caller's buffer.  Save the
-		   entire string for output by the string_filter routine. */
+		// The string is too long for the caller's buffer.  Save the
+		// entire string for output by the string_filter routine.
 
 		string_put(control, line);
 		strLen = 0;
@@ -495,18 +495,18 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		return FB_SUCCESS;
 
 	default:
-		BUGCHECK(289);			/* Unknown blob filter ACTION */
+		BUGCHECK(289);			// Unknown blob filter ACTION
 		return isc_uns_ext;
 	}
 
-/* Drop thru for isc_blob_filter_get_segment. */
+	// Drop thru for isc_blob_filter_get_segment.
 
 	const TEXT* left_over = 0;
 	USHORT left_length = 0;
 	USHORT buffer_used = 0;
 
-/* if there was any data left over from previous get, use as much as
-   user's buffer will hold */
+	// if there was any data left over from previous get, use as much as
+	// user's buffer will hold
 
 	const USHORT length = control->ctl_data[0];
 	if (length)
@@ -514,7 +514,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		buffer_used = MIN(length, control->ctl_buffer_length);
 		memcpy(control->ctl_buffer, (void*) control->ctl_data[1], buffer_used);
 
-		/* remember how much did not get used */
+		// remember how much did not get used
 
 		if (length > buffer_used)
 		{
@@ -528,9 +528,9 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		}
 	}
 
-/* if there was no data left over from previous get or all the data
-   left from previous get was used and there is still more of that segment
-   not read, do a get segment */
+	// if there was no data left over from previous get or all the data
+	// left from previous get was used and there is still more of that segment
+	// not read, do a get segment
 	if ((buffer_used == 0) ||
 		(control->ctl_data[2] && (control->ctl_buffer_length - buffer_used > 0)))
 	{
@@ -552,20 +552,20 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		buffer_used += l;
 	}
 
-/* Search data for unprintable data or EOL */
+	// Search data for unprintable data or EOL
 
 	USHORT l = buffer_used;
 	for (UCHAR* p = control->ctl_buffer; l; p++, --l)
 	{
 		if (*p == (UCHAR) '\n')
 		{
-			/* Found a newline.  First save what comes after the newline. */
+			// Found a newline.  First save what comes after the newline.
 
 			control->ctl_segment_length = p - control->ctl_buffer;
 			control->ctl_data[0] = l - 1;
 
-			/* if control buffer cannot accommodate what needs to be saved, free
-			   the control buffer */
+			// if control buffer cannot accommodate what needs to be saved, free
+			// the control buffer
 
 			if (control->ctl_data[1] && (control->ctl_data[0] > control->ctl_data[3]))
 			{
@@ -574,18 +574,18 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 				control->ctl_data[3] = 0;
 			}
 
-			/* if there is no control buffer allocate one */
+			// if there is no control buffer allocate one
 
 			if (!control->ctl_data[1])
 			{
 				control->ctl_data[1] = (IPTR) gds__alloc((SLONG) control->ctl_buffer_length);
-				/* FREE: above & isc_blob_filter_close in this procedure */
-				if (!control->ctl_data[1])	/* NOMEM: */
+				// FREE: above & isc_blob_filter_close in this procedure
+				if (!control->ctl_data[1])	// NOMEM:
 					return isc_virmemexh;
 				control->ctl_data[3] = control->ctl_buffer_length;
 			}
 
-			/* save data after found newline */
+			// save data after found newline
 
 			memcpy((void*) control->ctl_data[1], p + 1, l - 1);
 
@@ -606,15 +606,15 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 			return FB_SUCCESS;
 		}
 
-		/* replace unprintable characters */
+		// replace unprintable characters
 
 		if (*p >= sizeof(char_tab) || !char_tab[*p])
 			*p = '.';
 	}
 
-/* couldn't find a newline, return what there is, saving what was left
-   in control buffer and setting return status based on existence of
-   left over or whether or not control buffer did not hold end of segment */
+	// couldn't find a newline, return what there is, saving what was left
+	// in control buffer and setting return status based on existence of
+	// left over or whether or not control buffer did not hold end of segment
 
 	control->ctl_segment_length = buffer_used;
 	if (left_over)
@@ -647,20 +647,20 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
  **************************************/
 	struct ctlaux
 	{
-		CsConvert ctlaux_obj1;	/* Intl object that does tx for us */
-		USHORT ctlaux_init_action;	// isc_blob_filter_open or isc_blob_filter_create?
-		BYTE *ctlaux_buffer1;	/* Temporary buffer for transliteration */
-		BlobControl* ctlaux_subfilter;	/* For chaining transliterate filters */
-		ISC_STATUS ctlaux_source_blob_status;	/* marks when source is EOF, etc */
-		USHORT ctlaux_buffer1_len;	/* size of ctlaux_buffer1 in bytes */
-		USHORT ctlaux_expansion_factor;	/* factor for text expand/contraction */
-		USHORT ctlaux_buffer1_unused;	/* unused bytes in ctlaux_buffer1 */
+		CsConvert ctlaux_obj1;				// Intl object that does tx for us
+		USHORT ctlaux_init_action;			// isc_blob_filter_open or isc_blob_filter_create?
+		BYTE *ctlaux_buffer1;				// Temporary buffer for transliteration
+		BlobControl* ctlaux_subfilter;		// For chaining transliterate filters
+		ISC_STATUS ctlaux_source_blob_status;	// marks when source is EOF, etc
+		USHORT ctlaux_buffer1_len;			// size of ctlaux_buffer1 in bytes
+		USHORT ctlaux_expansion_factor;		// factor for text expand/contraction
+		USHORT ctlaux_buffer1_unused;		// unused bytes in ctlaux_buffer1
 	};
 
 	thread_db* tdbb = NULL;
-/* Note: Cannot pass tdbb without API change to user filters */
+	// Note: Cannot pass tdbb without API change to user filters
 
-	const USHORT EXP_SCALE		= 128;		/* to keep expansion non-floating */
+	const USHORT EXP_SCALE		= 128;		// to keep expansion non-floating
 
 	ctlaux* aux = (ctlaux*) control->ctl_data[0];
 
@@ -685,11 +685,11 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		dest_cs = control->ctl_to_sub_type;
 
 		aux = (ctlaux*) gds__alloc((SLONG) sizeof(*aux));
-		/* FREE: on isc_blob_filter_close in this routine */
-		if (!aux)				/* NOMEM: */
+		// FREE: on isc_blob_filter_close in this routine
+		if (!aux)				// NOMEM:
 			return isc_virmemexh;
 #ifdef DEBUG_GDS_ALLOC
-		/* BUG 7907: this is not freed in error cases */
+		// BUG 7907: this is not freed in error cases
 		gds_alloc_flag_unfreed(aux);
 #endif
 		control->ctl_data[0] = (IPTR) aux;
@@ -728,12 +728,12 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				MAX(aux->ctlaux_buffer1_len, (80 * aux->ctlaux_expansion_factor) / EXP_SCALE);
 		}
 		else
-		{					/* isc_blob_filter_create */
-			/* In a create, the source->ctl_max_segment size isn't set (as
-			 * nothing has been written!).  Therefore, take a best guess
-			 * for an appropriate buffer size, allocate that, and re-allocate
-			 * later if we guess wrong.
-			 */
+		{
+			// isc_blob_filter_create
+			// In a create, the source->ctl_max_segment size isn't set (as
+			// nothing has been written!).  Therefore, take a best guess
+			// for an appropriate buffer size, allocate that, and re-allocate
+			// later if we guess wrong.
 			const USHORT tmp = aux->ctlaux_obj1.convertLength(128);
 			aux->ctlaux_expansion_factor = (EXP_SCALE * tmp) / 128;
 
@@ -742,20 +742,19 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			aux->ctlaux_buffer1_len = 80 * aux->ctlaux_expansion_factor / EXP_SCALE;
 		}
 
-		/* Allocate the temporary buffer  - make sure it is big enough for
-		 * either source or destination, and at least 80 bytes in size
-		 */
+		// Allocate the temporary buffer  - make sure it is big enough for
+		// either source or destination, and at least 80 bytes in size
 
 		aux->ctlaux_buffer1_len = MAX(aux->ctlaux_buffer1_len, 80);
 		fb_assert(aux->ctlaux_buffer1_len != 0);
 
 		aux->ctlaux_buffer1 = (BYTE*) gds__alloc((SLONG) aux->ctlaux_buffer1_len);
-		/* FREE: on isc_blob_filter_close in this procedure */
-		if (!aux->ctlaux_buffer1)	/* NOMEM: */
+		// FREE: on isc_blob_filter_close in this procedure
+		if (!aux->ctlaux_buffer1)	// NOMEM:
 			return isc_virmemexh;
 
 #ifdef DEBUG_GDS_ALLOC
-		/* BUG 7907: this is not freed in error cases */
+		// BUG 7907: this is not freed in error cases
 		gds_alloc_flag_unfreed(aux->ctlaux_buffer1);
 #endif
 
@@ -786,7 +785,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		return FB_SUCCESS;
 
 	case isc_blob_filter_get_segment:
-		/* Fall through to handle get_segment below */
+		// Fall through to handle get_segment below
 		break;
 
 	case isc_blob_filter_put_segment:
@@ -807,24 +806,24 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				else
 					p = control->ctl_buffer;
 
-				/* Now convert from the input buffer into the temporary buffer */
+				// Now convert from the input buffer into the temporary buffer
 
-				/* How much space do we need to convert? */
+				// How much space do we need to convert?
 				const ULONG cvt_len = aux->ctlaux_obj1.convertLength(len);
 				result_length = MIN(MAX_USHORT, cvt_len);
 
-				/* Allocate a new buffer if we don't have enough */
+				// Allocate a new buffer if we don't have enough
 				if (result_length > aux->ctlaux_buffer1_len)
 				{
 					gds__free(aux->ctlaux_buffer1);
 					aux->ctlaux_buffer1_len = result_length;
 					aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
-					/* FREE: above & isc_blob_filter_close in this routine */
-					if (!aux->ctlaux_buffer1)	/* NOMEM: */
+					// FREE: above & isc_blob_filter_close in this routine
+					if (!aux->ctlaux_buffer1)	// NOMEM:
 						return isc_virmemexh;
 				}
 
-				/* convert the text */
+				// convert the text
 
 				try
 				{
@@ -840,7 +839,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				if (len > 0 && err_position == 0)
 					return isc_transliteration_failed;
 
-				/* hand the text off to the next stage of the filter */
+				// hand the text off to the next stage of the filter
 
 				status = caller(isc_blob_filter_put_segment, control, result_length,
 								aux->ctlaux_buffer1, NULL);
@@ -853,7 +852,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				if (aux->ctlaux_buffer1_unused != 0)
 					memmove(aux->ctlaux_buffer1, p + err_position, aux->ctlaux_buffer1_unused);
 
-				/* update local control variables for segment length */
+				// update local control variables for segment length
 
 				if (result_length > control->ctl_max_segment)
 					control->ctl_max_segment = result_length;
@@ -875,13 +874,13 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		return FB_SUCCESS;
 
 	default:
-		BUGCHECK(289);			/* Unknown blob filter ACTION */
+		BUGCHECK(289);			// Unknown blob filter ACTION
 		return isc_uns_ext;
 	}
 
-/* Drop thru for isc_blob_filter_get_segment. */
+	// Drop thru for isc_blob_filter_get_segment.
 
-/* Do we already have enough bytes in temp buffer to fill output buffer? */
+	// Do we already have enough bytes in temp buffer to fill output buffer?
 
 	bool can_use_more;
 	USHORT length = aux->ctlaux_buffer1_unused;
@@ -889,25 +888,24 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	{
 		if (control->ctl_buffer_length < (length * aux->ctlaux_expansion_factor / EXP_SCALE))
 		{
-			/* No need to fetch more bytes, we have enough pending */
+			// No need to fetch more bytes, we have enough pending
 			can_use_more = false;
 		}
 		else
 			can_use_more = true;
 
-		/* Always keep a minimal count of bytes in the input buffer,
-		 * to prevent the case of truncated characters.
-		 */
+		// Always keep a minimal count of bytes in the input buffer,
+		// to prevent the case of truncated characters.
 		if (length < 4)
 			can_use_more = true;
 	}
 
-/* Load data into the temporary buffer if,
-   a) we've finished the current segment (no data left in buffer)
-   b) We haven't finished reading the current segment from the
-      source and could use more data for the forthcoming convert
-      (We don't want to blindly keep topping off this buffer if we
-       already have more than we can use) */
+	/* Load data into the temporary buffer if,
+	a) we've finished the current segment (no data left in buffer)
+	b) We haven't finished reading the current segment from the
+		source and could use more data for the forthcoming convert
+		(We don't want to blindly keep topping off this buffer if we
+		already have more than we can use) */
 
 	USHORT bytes_read_from_source = 0;
 
@@ -925,18 +923,18 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 		switch (status)
 		{
-		case isc_segment:		/* source has more segment bytes */
+		case isc_segment:		// source has more segment bytes
 			aux->ctlaux_source_blob_status = status;
 			break;
-		case isc_segstr_eof:	/* source blob is finished */
-			if (length == 0)	/* are we done too? */
+		case isc_segstr_eof:	// source blob is finished
+			if (length == 0)	// are we done too? *
 				return isc_segstr_eof;
 			aux->ctlaux_source_blob_status = FB_SUCCESS;
 			break;
-		case 0:                 /* complete segment in buffer */
+		case 0:                 // complete segment in buffer
 			aux->ctlaux_source_blob_status = FB_SUCCESS;
 			break;
-		default:				/* general error */
+		default:				// general error
 			return status;
 		}
 
@@ -1015,13 +1013,13 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 	if (action != isc_blob_filter_open)
 		return string_filter(action, control);
 
-/* Initialize for retrieval */
+	// Initialize for retrieval
 	UCHAR buffer[BUFFER_MEDIUM];
 	const SLONG l = control->ctl_handle->ctl_total_length;
 	UCHAR* const temp = (l <= (SLONG) sizeof(buffer)) ? buffer : (UCHAR*) gds__alloc((SLONG) l);
 	UCHAR* p = temp;
-/* FREE: at procedure exit */
-	if (!p)						/* NOMEM: */
+	// FREE: at procedure exit
+	if (!p)						// NOMEM:
 		return isc_virmemexh;
 
 	USHORT length;
@@ -1135,15 +1133,16 @@ static void dump_blr(void* arg, SSHORT /*offset*/, const char* line)
 	const size_t data_len = (size_t) control->ctl_data[3];
 	const size_t l = data_len + strlen(line);
 	TEXT* const temp = (l < sizeof(buffer)) ? buffer : (TEXT*) gds__alloc((SLONG) l + 1);
-/* FREE: at procedure exit */
+	// FREE: at procedure exit
 	if (!temp)
-	{				/* NOMEM: */
-		/* No memory left - ignore the padding spaces and put the data */
+	{
+		// NOMEM:
+		// No memory left - ignore the padding spaces and put the data
 		string_put(control, line);
 		return;
 	}
 
-/* Pad out to indent length with spaces */
+	// Pad out to indent length with spaces
 	memset(temp, ' ', data_len);
 	sprintf(temp + data_len, "%s", line);
 	string_put(control, temp);
@@ -1205,7 +1204,7 @@ static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 		return FB_SUCCESS;
 
 	default:
-		BUGCHECK(289);			/* Unknown blob filter ACTION */
+		BUGCHECK(289);			// Unknown blob filter ACTION
 		return isc_uns_ext;
 	}
 }
@@ -1225,11 +1224,12 @@ static void string_put(BlobControl* control, const char* line)
  **************************************/
 	const USHORT len = strlen(line);
 	filter_tmp* string = (filter_tmp*) gds__alloc((SLONG) (sizeof(filter_tmp) + len));
-/* FREE: on isc_blob_filter_close in string_filter() */
+	// FREE: on isc_blob_filter_close in string_filter()
 	if (!string)
-	{				/* NOMEM: */
-		fb_assert(FALSE);			/* out of memory */
-		return;					/* & No error handling at this level */
+	{
+		// NOMEM:
+		fb_assert(FALSE);		// out of memory
+		return;					// & No error handling at this level
 	}
 	string->tmp_next = NULL;
 	string->tmp_length = len;

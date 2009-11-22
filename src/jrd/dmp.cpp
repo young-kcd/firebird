@@ -167,7 +167,7 @@ void DMP_btc_ordered()
  **************************************/
 	Database* dbb = GET_DBB();
 
-/* Pick starting place at leftmost node */
+	// Pick starting place at leftmost node
 
 	fprintf(dbg_file, "\nDirty Page Binary Tree -- Page (Transaction) { Dirty | Clean }\n");
 
@@ -196,8 +196,7 @@ void DMP_btc_ordered()
 				break;
 		}
 
-		/* Decide where to go next.  The options are (right, then down to the left)
-		   or up */
+		// Decide where to go next.  The options are (right, then down to the left) or up
 		i++;
 		if (bdb->bdb_right && max_seen < bdb->bdb_right->bdb_page)
 		{
@@ -779,8 +778,8 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			   page->btr_level,
 			   page->btr_length,
 			   ((PAG) page)->pag_flags);
-/* Compute the number of data pages per pointer page.  Each data page
-   requires a 32 bit pointer and a 2 bit control field. */
+	// Compute the number of data pages per pointer page.  Each data page
+	// requires a 32 bit pointer and a 2 bit control field.
 	const USHORT dp_per_pp =
 			(USHORT)((ULONG) ((page_size - OFFSETA(pointer_page*, ppg_page)) * 8) /
 						(BITS_PER_LONG + 2));
@@ -797,7 +796,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 	{
 		const ULONG number = get_long(node->btn_number);
 
-		/* compute running value */
+		// compute running value
 
 		UCHAR* p = value + node->btn_prefix;
 		const UCHAR* q = node->btn_data;
@@ -813,7 +812,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			*p++ = 0;
 		}
 
-		/* format value as number */
+		// format value as number
 
 		if (dmp_descending || (page->pag_flags & btr_descending))
 			complement_key(value, node->btn_prefix + node->btn_length);
@@ -829,7 +828,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			n = decompress((SCHAR *) value);
 		}
 
-		/* format value as string for printing */
+		// format value as string for printing
 
 		p = print;
 		q = value;
@@ -850,7 +849,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 		}
 		*p = 0;
 
-		/* print formatted node */
+		// print formatted node
 
 		fprintf(dbg_file, "\t+%x Prefix: %d, length: %d, ",
 				   (SCHAR *) node - (SCHAR *) page, node->btn_prefix, node->btn_length);
@@ -945,7 +944,7 @@ static void dmp_pointer(const pointer_page* page)
 	{
 		if (i % 20 == 0)
 		{
-			/* fprintf (dbg_file, "\n\t%d: ", bytes [i / 4]); */
+			// fprintf (dbg_file, "\n\t%d: ", bytes [i / 4]);
 			fprintf(dbg_file, "\n\t");
 		}
 		fprintf(dbg_file, "%ld ", page->ppg_page[i]);
