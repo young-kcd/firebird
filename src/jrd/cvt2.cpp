@@ -305,15 +305,14 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 
 	switch (arg1->dsc_dtype)
 	{
-		SLONG date[2];
-
 	case dtype_timestamp:
 		{
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_timestamp;
-			desc.dsc_length = sizeof(date);
-			desc.dsc_address = (UCHAR *) date;
+			SLONG datetime[2];
+			desc.dsc_length = sizeof(datetime);
+			desc.dsc_address = (UCHAR*) datetime;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -323,8 +322,9 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_sql_time;
-			desc.dsc_length = sizeof(date[0]);
-			desc.dsc_address = (UCHAR *) date;
+			SLONG atime;
+			desc.dsc_length = sizeof(atime);
+			desc.dsc_address = (UCHAR*) &atime;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -334,8 +334,9 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_sql_date;
-			desc.dsc_length = sizeof(date[0]);
-			desc.dsc_address = (UCHAR *) date;
+			SLONG date;
+			desc.dsc_length = sizeof(date);
+			desc.dsc_address = (UCHAR*) &date;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
