@@ -250,7 +250,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			return;
 
 		default:
-			BUGCHECK(166);		/* msg 166 invalid rsb type */
+			BUGCHECK(166);		// msg 166 invalid rsb type
 		}
 	}
 }
@@ -276,8 +276,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb)
 
 	impure->irsb_flags |= irsb_eof;
 
-/* Turn off the flag so that records at a
-   lower level will not be counted. */
+	// Turn off the flag so that records at a lower level will not be counted.
 
 	const bool count = (request->req_flags & req_count_records) != 0;
 	request->req_flags &= ~req_count_records;
@@ -335,7 +334,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb)
 		break;
 	}
 
-/* reset the flag to whatever it was */
+	// reset the flag to whatever it was
 
 	if (count)
 		request->req_flags |= req_count_records;
@@ -396,9 +395,9 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				Database* dbb = tdbb->getDatabase();
 				BufferControl* bcb = dbb->dbb_bcb;
 
-				/* Unless this is the only attachment, limit the cache flushing
-				   effect of large sequential scans on the page working sets of
-				   other attachments. */
+				// Unless this is the only attachment, limit the cache flushing
+				// effect of large sequential scans on the page working sets of
+				// other attachments.
 
 				Jrd::Attachment* attachment = tdbb->getAttachment();
 				if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
@@ -482,7 +481,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				((IRSB) impure)->irsb_count = 0;
 				VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->getDefaultPool());
 
-				/* Initialize the record number of each stream in the union */
+				// Initialize the record number of each stream in the union
 
 				RecordSource** ptr = &rsb->rsb_arg[rsb->rsb_count];
 				for (const RecordSource* const* const end = ptr + (USHORT)(IPTR) *ptr;
@@ -519,9 +518,9 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				impure->irsb_flags &= ~(irsb_first | irsb_in_opened | irsb_join_full);
 				impure->irsb_flags |= irsb_mustread;
 
-				/* Allocate a record block for each union/aggregate/procedure
-				   stream in the right sub-stream.  The block will be needed
-				   if we join to nulls before opening the rsbs */
+				// Allocate a record block for each union/aggregate/procedure
+				// stream in the right sub-stream.  The block will be needed
+				// if we join to nulls before opening the rsbs
 
 				for (RsbStack::iterator stack(*(rsb->rsb_left_rsbs)); stack.hasData(); ++stack)
 				{
@@ -532,7 +531,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			}
 
 		default:
-			BUGCHECK(166);		/* msg 166 invalid rsb type */
+			BUGCHECK(166);		// msg 166 invalid rsb type
 		}
 	}
 }
@@ -553,18 +552,18 @@ static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* do two simultaneous but unrelated things in one loop */
+	// do two simultaneous but unrelated things in one loop
 	irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt;
 	RecordSource** ptr = rsb->rsb_arg;
 	for (const RecordSource* const* const end = ptr + rsb->rsb_count * 2; ptr < end; ptr += 2, tail++)
 	{
-		/* close all the substreams for the sort-merge */
+		// close all the substreams for the sort-merge
 
 		RSE_close(tdbb, *ptr);
 
-		/* Release memory associated with the merge file block
-		   and the sort file block. Also delete the merge file
-		   if one exists. */
+		// Release memory associated with the merge file block
+		// and the sort file block. Also delete the merge file
+		// if one exists.
 
 		merge_file* mfb = &tail->irsb_mrg_file;
 		delete mfb->mfb_space;
@@ -767,8 +766,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 					if (rsb->rsb_left_inner_streams->isEmpty())
 						return false;
 
-					/* We have a full outer join.  Open up the inner stream
-					   one more time. */
+					// We have a full outer join.  Open up the inner stream one more time.
 
 					RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
 					impure->irsb_flags |= irsb_join_full;
@@ -778,8 +776,8 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 				if (rsb->rsb_arg[RSB_LEFT_boolean] &&
 					!EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean]))
 				{
-					/* The boolean pertaining to the left sub-stream is false
-					   so just join sub-stream to a null valued right sub-stream */
+					// The boolean pertaining to the left sub-stream is false
+					// so just join sub-stream to a null valued right sub-stream
 					join_to_nulls(tdbb, rsb->rsb_left_streams);
 					return true;
 				}
@@ -802,24 +800,24 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 			impure->irsb_flags |= irsb_mustread;
 			if (!(impure->irsb_flags & irsb_joined))
 			{
-				/* The current left sub-stream record has not been joined
-				   to anything.  Join it to a null valued right sub-stream */
+				// The current left sub-stream record has not been joined
+				// to anything.  Join it to a null valued right sub-stream
 				join_to_nulls(tdbb, rsb->rsb_left_streams);
 				return true;
 			}
 		}
 	}
 
-/* Continue with a full outer join. */
+	// Continue with a full outer join.
 
 	RecordSource* full = rsb->rsb_arg[RSB_LEFT_inner];
 	full = (full->rsb_type == rsb_boolean) ? full->rsb_next : full;
 
 	if (impure->irsb_flags & irsb_in_opened)
 	{
-		/* The inner stream was opened at some point.  If it doesn't have a
-		   boolean, then all of its records have been returned.  Otherwise,
-		   find the records that haven't been. */
+		// The inner stream was opened at some point.  If it doesn't have a
+		// boolean, then all of its records have been returned.  Otherwise,
+		// find the records that haven't been.
 		bool found;
 		do {
 			if (!RSE_internal_get_record(tdbb, full, NULL))
@@ -931,7 +929,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 	jrd_req* request = tdbb->getRequest();
 	const RecordSource* const* const end = rsb->rsb_arg + rsb->rsb_count * 2;
 
-/* If there is a record group already formed, fetch the next combination */
+	// If there is a record group already formed, fetch the next combination
 
 	if (get_merge_fetch(tdbb, rsb, rsb->rsb_count - 1))
 		return true;
@@ -939,8 +937,8 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 	RecordSource** ptr;
 	irsb_mrg::irsb_mrg_repeat* tail;
 
-/* Assuming we are done with the current value group, advance each
-   stream one record.  If any comes up dry, we're done. */
+	// Assuming we are done with the current value group, advance each
+	// stream one record.  If any comes up dry, we're done.
 	RecordSource** highest_ptr = rsb->rsb_arg;
 
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end; ptr += 2, tail++)
@@ -949,13 +947,13 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
 
-		/* reset equality group record positions */
+		// reset equality group record positions
 
 		tail->irsb_mrg_equal = 0;
 		tail->irsb_mrg_equal_current = 0;
 		tail->irsb_mrg_equal_end = 0;
 
-		/* If there is a record waiting, use it.  Otherwise get another */
+		// If there is a record waiting, use it.  Otherwise get another
 
 		SLONG record = tail->irsb_mrg_last_fetched;
 		if (record >= 0)
@@ -977,7 +975,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 				return false;
 		}
 
-		/* Map data into target records and do comparison */
+		// Map data into target records and do comparison
 
 		map_sort_data(tdbb, request, map, get_merge_data(tdbb, mfb, record));
 		if (ptr != highest_ptr && compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]) < 0)
@@ -986,8 +984,8 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		}
 	}
 
-/* Loop thru the streams advancing each up to the target value.  If any
-   exceeds the target value, start over */
+	// Loop thru the streams advancing each up to the target value.  If any
+	// exceeds the target value, start over
 
 	for (;;)
 	{
@@ -1019,7 +1017,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 	  recycle:;
 	}
 
-/* Finally compute equality group for each stream in sort/merge */
+	// Finally compute equality group for each stream in sort/merge
 
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end; ptr += 2, tail++)
 	{
@@ -1049,10 +1047,10 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
 
-/* Optimize cross product of equivalence groups by ordering the streams
-   from left (outermost) to right (innermost) by descending cardinality
-   of merge blocks. This ordering will vary for each set of equivalence
-   groups and cannot be statically assigned by the optimizer. */
+	// Optimize cross product of equivalence groups by ordering the streams
+	// from left (outermost) to right (innermost) by descending cardinality
+	// of merge blocks. This ordering will vary for each set of equivalence
+	// groups and cannot be statically assigned by the optimizer.
 
 	typedef Firebird::Stack<irsb_mrg::irsb_mrg_repeat*> ImrStack;
 	ImrStack best_tails;
@@ -1247,7 +1245,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-/* check request flags for special processing */
+	// check request flags for special processing
 
 	jrd_req* request = tdbb->getRequest();
 	if (request->req_flags & req_abort)
@@ -1296,7 +1294,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 				{
 					rpb->rpb_number.setValue(bitmap->current());
 #ifdef SUPERSERVER_V2
-					/* Prefetch next set of data pages from bitmap. */
+					// Prefetch next set of data pages from bitmap.
 
 					if (rpb->rpb_number > ((irsb_index*) impure)->irsb_prefetch_number)
 					{
@@ -1354,7 +1352,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 			jrd_nod* column_node = (jrd_nod*) rsb->rsb_any_boolean;
 			if (column_node && (request->req_flags & (req_ansi_all | req_ansi_any)))
 			{
-				/* see if there's a select node to work with */
+				// see if there's a select node to work with
 
 				if (column_node->nod_type == nod_and)
 				{
@@ -1376,7 +1374,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 				{
 					request->req_flags &= ~req_ansi_not;
 
-					/* do NOT ANY */
+					// do NOT ANY
 					/* if the subquery was the empty set
 					   (numTrue + numFalse + numUnknown = 0)
 					   or if all were false
@@ -1389,13 +1387,13 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 					{
 						if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0]))
 						{
-							/* found a TRUE value */
+							// found a TRUE value
 
 							any_true = true;
 							break;
 						}
 
-						/* check for select stream and nulls */
+						// check for select stream and nulls
 
 						if (!select_node)
 						{
@@ -1411,16 +1409,16 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 							// select for ANY/ALL processing
 							const bool select_value = EVL_boolean(tdbb, select_node);
 
-							/* see if any record in select stream */
+							// see if any record in select stream
 
 							if (select_value)
 							{
-								/* see if any nulls */
+								// see if any nulls
 
 								request->req_flags &= ~req_null;
 								EVL_boolean(tdbb, column_node);
 
-								/* see if any record is null */
+								// see if any record is null
 
 								if (request->req_flags & req_null) {
 									any_null = true;
@@ -1442,9 +1440,8 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 				else
 				{
 
-					/* do ANY */
-					/* if the subquery was true for any comparison,
-					   ANY is true */
+					// do ANY
+					// if the subquery was true for any comparison, ANY is true
 
 					result = false;
 					while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb))
@@ -1471,23 +1468,22 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 				{
 					request->req_flags &= ~req_ansi_not;
 
-					/* do NOT ALL */
-					/* if the subquery was false for any comparison,
-					   NOT ALL is true */
+					// do NOT ALL
+					// if the subquery was false for any comparison, NOT ALL is true
 
 					any_false = false;
 					while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb))
 					{
 						request->req_flags &= ~req_null;
 
-						/* look for a FALSE (and not null either) */
+						// look for a FALSE (and not null either)
 
 						if (!EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0]) &&
 							!(request->req_flags & req_null))
 						{
 
-							/* make sure it wasn't FALSE because there's
-							   no select stream record */
+							// make sure it wasn't FALSE because there's
+							// no select stream record
 
 							if (select_node) {
 								request->req_flags &= ~req_null;
@@ -1517,7 +1513,7 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 				else
 				{
 
-					/* do ALL */
+					// do ALL
 					/* if the subquery was the empty set
 					   (numTrue + numFalse + numUnknown = 0)
 					   or if all were true
@@ -1529,12 +1525,12 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 					{
 						request->req_flags &= ~req_null;
 
-						/* look for a FALSE or null */
+						// look for a FALSE or null
 
 						if (!EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0]))
 						{
-							/* make sure it wasn't FALSE because there's
-							   no select stream record */
+							// make sure it wasn't FALSE because there's
+							// no select stream record
 
 							if (select_node) {
 								request->req_flags &= ~req_null;
@@ -1670,9 +1666,9 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 			break;
 		}
 
-		/* in the case of a project which has been mapped to an index,
-		   we need to make sure that we only return a single record for
-		   each of the leftmost records in the join */
+		// in the case of a project which has been mapped to an index,
+		// we need to make sure that we only return a single record for
+		// each of the leftmost records in the join
 
 		if (rsb->rsb_flags & rsb_project)
 		{
@@ -1732,14 +1728,14 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 		break;
 
 	default:
-		BUGCHECK(166);			/* msg 166 invalid rsb type */
+		BUGCHECK(166);			// msg 166 invalid rsb type
 	}
 
-/* Check to see if we need to update the record_count. This record
-   count is used in NAV_get_record and needs to be updated before
-   checking for singularity. Note that in our check for singularity
-   we call get_record which calls NAV_get_record where this count
-   is used. Bug # 8415, 8416 */
+	// Check to see if we need to update the record_count. This record
+	// count is used in NAV_get_record and needs to be updated before
+	// checking for singularity. Note that in our check for singularity
+	// we call get_record which calls NAV_get_record where this count
+	// is used. Bug # 8415, 8416
 
 	if (rsb->rsb_type == rsb_boolean)
 		rsb->rsb_next->rsb_record_count++;
@@ -1781,8 +1777,8 @@ static UCHAR *get_sort(thread_db* tdbb, RecordSource* rsb)
 	jrd_req* request = tdbb->getRequest();
 	irsb_sort* impure = (irsb_sort*) ((UCHAR *) request + rsb->rsb_impure);
 
-/* Get address of record from sort.  If the address if null, we
-   ran out of records.  This is known in the trade as "end of file." */
+	// Get address of record from sort.  If the address if null, we
+	// ran out of records.  This is known in the trade as "end of file."
 
 	ULONG* data = 0;
 	SORT_get(tdbb, impure->irsb_sort_handle, &data);
@@ -1806,7 +1802,7 @@ static bool get_union(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 	SET_TDBB(tdbb);
 	RecordSource** rsb_ptr = rsb->rsb_arg + impure->irsb_count;
 
-/* March thru the sub-streams (tributaries?) looking for a record */
+	// March thru the sub-streams (tributaries?) looking for a record
 
 	while (!RSE_internal_get_record(tdbb, *rsb_ptr, NULL))
 	{
@@ -1818,7 +1814,7 @@ static bool get_union(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 		RSE_open(tdbb, *rsb_ptr);
 	}
 
-/* We've got a record, map it into the target record */
+	// We've got a record, map it into the target record
 
 	jrd_nod* map = (jrd_nod*) rsb_ptr[1];
 
@@ -1919,7 +1915,7 @@ void RSE_invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 				return;
 
 			default:
-				BUGCHECK(166);		/* msg 166 invalid rsb type */
+				BUGCHECK(166);		// msg 166 invalid rsb type
 		}
 	}
 }
@@ -1947,8 +1943,8 @@ static void join_to_nulls(thread_db* tdbb, StreamStack* stream)
 
 		rpb->rpb_number.setValid(false);
 
-		/* Make sure a record block has been allocated.  If there isn't
-		   one, first find the format, then allocate the record block */
+		// Make sure a record block has been allocated.  If there isn't
+		// one, first find the format, then allocate the record block
 
 		Record* record = rpb->rpb_record;
 		if (!record) {
@@ -1993,14 +1989,13 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 		if (node && node->nod_type != nod_field)
 			continue;
 
-		/* if moving a TEXT item into the key portion of
-		   the sort record, then want to sort by
-		   language dependant order */
+		// if moving a TEXT item into the key portion of
+		// the sort record, then want to sort by
+		// language dependant order
 
-		/* in the case below a nod_field is being converted to
-		   a sort key, there is a later nod_field in the item
-		   list that contains the data to send back
-		 */
+		// in the case below a nod_field is being converted to
+		// a sort key, there is a later nod_field in the item
+		// list that contains the data to send back
 		if (IS_INTL_DATA(&item->smb_desc) &&
 			(USHORT)(IPTR) item->smb_desc.dsc_address < map->smb_key_length * sizeof(ULONG))
 		{
@@ -2063,20 +2058,20 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 
 	SET_TDBB(tdbb);
 
-/* do two simultaneous but unrelated things in one loop */
+	// do two simultaneous but unrelated things in one loop
 
 	RecordSource** ptr = rsb->rsb_arg;
 	const RecordSource* const* end = ptr + rsb->rsb_count * 2;
 	for (irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt; ptr < end; ptr += 2, tail++)
 	{
-		/* open all the substreams for the sort-merge */
+		// open all the substreams for the sort-merge
 
 		RSE_open(tdbb, *ptr);
 
 		RecordSource* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 
-		/* Reset equality group record positions */
+		// Reset equality group record positions
 
 		tail->irsb_mrg_equal = -1;
 		tail->irsb_mrg_equal_end = -1;
@@ -2116,7 +2111,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 	jrd_prc* procedure = rsb->rsb_procedure;
 	jrd_req* request = tdbb->getRequest();
 
-/* get rid of any lingering record */
+	// get rid of any lingering record
 
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	delete rpb->rpb_record;
@@ -2148,8 +2143,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 		im = NULL;
 	}
 
-/* req_proc_fetch flag used only when fetching rows, so
-   is set at end of open_procedure (). */
+	// req_proc_fetch flag used only when fetching rows, so is set at end of open_procedure ().
 
 	proc_request->req_flags &= ~req_proc_fetch;
 
@@ -2359,8 +2353,8 @@ static void proc_assignment(thread_db* tdbb,
 		switch (to_desc->dsc_dtype)
 		{
 		case dtype_text:
-			/* YYY - not necessarily the right thing to do */
-			/* YYY for text formats that don't have trailing spaces */
+			// YYY - not necessarily the right thing to do
+			// YYY for text formats that don't have trailing spaces
 			if (l) {
 				const CHARSET_ID chid = DSC_GET_CHARSET(to_desc);
 				/*
@@ -2509,10 +2503,9 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 
 	case rsb_cross:
 		{
-			/* Bug # 72369: singleton-SELECT in Stored Procedure gives wrong
-			 * results when there are more than 2 streams in the cross.
-			 * rsb_cross can have more than 2 rsb_arg's. Go through each one
-			 */
+			// Bug # 72369: singleton-SELECT in Stored Procedure gives wrong
+			// results when there are more than 2 streams in the cross.
+			// rsb_cross can have more than 2 rsb_arg's. Go through each one
 			RecordSource** ptr = rsb->rsb_arg;
 			for (const RecordSource* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
 			{
@@ -2527,7 +2520,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 		break;
 
 	default:
-		BUGCHECK(166);	/* msg 166 invalid rsb type */
+		BUGCHECK(166);	// msg 166 invalid rsb type
 	}
 }
 
@@ -2623,10 +2616,9 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 
 	case rsb_cross:
 		{
-			/* Bug # 72369: singleton-SELECT in Stored Procedure gives wrong
-			 * results when there are more than 2 streams in the cross.
-			 * rsb_cross can have more than 2 rsb_arg's. Go through each one
-			 */
+			// Bug # 72369: singleton-SELECT in Stored Procedure gives wrong
+			// results when there are more than 2 streams in the cross.
+			// rsb_cross can have more than 2 rsb_arg's. Go through each one
 			RecordSource** ptr = rsb->rsb_arg;
 			for (const RecordSource* const* const end = ptr + rsb->rsb_count; ptr < end; ptr++)
 			{
@@ -2635,15 +2627,15 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 		}
 		break;
 
-		/* BUG #8637: left outer join gives internal gds software consistency
-		   check. Added case for rsb_left_cross. */
+		// BUG #8637: left outer join gives internal gds software consistency
+		// check. Added case for rsb_left_cross.
 	case rsb_left_cross:
 		push_rpbs(tdbb, request, rsb->rsb_arg[RSB_LEFT_outer]);
 		push_rpbs(tdbb, request, rsb->rsb_arg[RSB_LEFT_inner]);
 		break;
 
 	default:
-		BUGCHECK(166);	/* msg 166 invalid rsb type */
+		BUGCHECK(166);	// msg 166 invalid rsb type
 	}
 }
 
