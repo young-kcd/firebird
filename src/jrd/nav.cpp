@@ -120,7 +120,8 @@ bool NAV_get_record(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure, record_
 	// the last candidate did not qualify, we know we should return another record no matter
 	// what.
 
-	if (rsb->rsb_record_count != impure->irsb_nav_count) {
+	if (rsb->rsb_record_count != impure->irsb_nav_count)
+	{
 		impure->irsb_flags &= ~irsb_key_changed;
 		impure->irsb_nav_count = rsb->rsb_record_count;
 	}
@@ -663,10 +664,7 @@ static void init_fetch(IRSB_NAV impure)
 }
 
 
-static UCHAR* nav_open(thread_db* tdbb,
-					   RecordSource* rsb,
-					   IRSB_NAV impure,
-					   WIN* window)
+static UCHAR* nav_open(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure, WIN* window)
 {
 /**************************************
  *
@@ -850,4 +848,3 @@ static bool setup_bitmaps(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure)
 
 	return true;
 }
-

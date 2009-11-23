@@ -532,7 +532,8 @@ evh* EventManager::acquire_shmem()
 
 	while (SRQ_EMPTY(m_header->evh_processes))
 	{
-		if (! m_sharedFileCreated) {
+		if (! m_sharedFileCreated)
+		{
 			// Someone is going to delete shared file? Reattach.
 			mutex_state = ISC_mutex_unlock(MUTEX);
 			if (mutex_state)
@@ -547,7 +548,8 @@ evh* EventManager::acquire_shmem()
 				mutex_bugcheck("mutex lock", mutex_state);
 			}
 		}
-		else {
+		else
+		{
 			// complete initialization
 			m_sharedFileCreated = false;
 
@@ -1381,7 +1383,8 @@ int EventManager::validate()
 			else if (offset > next_free)
 				punt("bad free chain");
 		}
-		if (block->frb_header.hdr_type == type_frb) {
+		if (block->frb_header.hdr_type == type_frb)
+		{
 			next_free = ((frb*) block)->frb_next;
 			if (next_free >= m_header->evh_length)
 				punt("bad frb_next");
