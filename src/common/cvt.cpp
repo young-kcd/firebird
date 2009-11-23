@@ -622,8 +622,10 @@ static void string_to_datetime(const dsc* desc,
 					description[i] = SPECIAL;
 
 					while (++p < end)
+					{
 						if (*p != ' ' && *p != '\t' && *p != 0)
 							CVT_conversion_error(desc, err);
+					}
 
 					// fetch the current datetime
 					*date = Firebird::TimeStamp::getCurrentTimeStamp().value();
@@ -1476,117 +1478,117 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
-		{
-			/* If we are within the engine, INTL_convert_string
-			 * will convert the string between character sets
-			 * (or die trying).
-			 * This module, however, can be called from outside
-			 * the engine (for instance, moving values around for
-			 * DSQL).
-			 * In that event, we'll move the values if we think
-			 * they are compatible text types, otherwise fail.
-			 * eg: Simple cases can be handled here (no
-			 * character set conversion).
-			 *
-			 * a charset type binary is compatible with all other types.
-			 * if a charset involved is ttype_dynamic, we must look up
-			 *    the charset of the attachment (only if we are in the
-			 *    engine). If we are outside the engine, the
-			 *    assume that the engine has converted the values
-			 *    previously in the request.
-			 *
-			 * Even within the engine, not calling INTL_convert_string
-			 * unless really required is a good optimization.
-			 */
-
-			CHARSET_ID charset2;
-			if (cb->transliterate(from, to, charset2))
-				return;
-
-			{ // scope
-				USHORT strtype_unused;
-				UCHAR *ptr;
-				length = l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
-				q = ptr;
-			} // end scope
-
-			const USHORT to_size = TEXT_LEN(to);
-			const UCHAR* start = to->dsc_address;
-			UCHAR fill_char = ASCII_SPACE;
-			Jrd::CharSet* toCharset = cb->getToCharset(charset2);
-			ULONG toLength;
-			ULONG fill;
-
-			if (charset2 == ttype_binary)
-				fill_char = 0x00;
-
-			switch (to->dsc_dtype)
 			{
-			case dtype_text:
-				length = MIN(length, to->dsc_length);
-				cb->validateData(toCharset, length, q);
-				toLength = length;
+				/* If we are within the engine, INTL_convert_string
+				 * will convert the string between character sets
+				 * (or die trying).
+				 * This module, however, can be called from outside
+				 * the engine (for instance, moving values around for
+				 * DSQL).
+				 * In that event, we'll move the values if we think
+				 * they are compatible text types, otherwise fail.
+				 * eg: Simple cases can be handled here (no
+				 * character set conversion).
+				 *
+				 * a charset type binary is compatible with all other types.
+				 * if a charset involved is ttype_dynamic, we must look up
+				 *    the charset of the attachment (only if we are in the
+				 *    engine). If we are outside the engine, the
+				 *    assume that the engine has converted the values
+				 *    previously in the request.
+				 *
+				 * Even within the engine, not calling INTL_convert_string
+				 * unless really required is a good optimization.
+				 */
 
-				l -= length;
-				fill = ULONG(to->dsc_length) - length;
+				CHARSET_ID charset2;
+				if (cb->transliterate(from, to, charset2))
+					return;
 
-				CVT_COPY_BUFF(q, p, length);
-				if (fill > 0)
+				{ // scope
+					USHORT strtype_unused;
+					UCHAR *ptr;
+					length = l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
+					q = ptr;
+				} // end scope
+
+				const USHORT to_size = TEXT_LEN(to);
+				const UCHAR* start = to->dsc_address;
+				UCHAR fill_char = ASCII_SPACE;
+				Jrd::CharSet* toCharset = cb->getToCharset(charset2);
+				ULONG toLength;
+				ULONG fill;
+
+				if (charset2 == ttype_binary)
+					fill_char = 0x00;
+
+				switch (to->dsc_dtype)
 				{
-					memset(p, fill_char, fill);
-					p += fill;
-					// Note: above is correct only for narrow
-					// and multi-byte character sets which
-					// use ASCII for the SPACE character.
-				}
-				break;
+				case dtype_text:
+					length = MIN(length, to->dsc_length);
+					cb->validateData(toCharset, length, q);
+					toLength = length;
 
-			case dtype_cstring:
-				// Note: Following is only correct for narrow and
-				// multibyte character sets which use a zero
-				// byte to represent end-of-string
+					l -= length;
+					fill = ULONG(to->dsc_length) - length;
 
-				fb_assert(to->dsc_length > 0)
-				length = MIN(length, ULONG(to->dsc_length - 1));
-				cb->validateData(toCharset, length, q);
-				toLength = length;
-
-				l -= length;
-				CVT_COPY_BUFF(q, p, length);
-				*p = 0;
-				break;
-
-			case dtype_varying:
-				length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
-				cb->validateData(toCharset, length, q);
-				toLength = length;
-
-				l -= length;
-				// TMN: Here we should really have the following fb_assert
-				// fb_assert(length <= MAX_USHORT);
-				((vary*) p)->vary_length = (USHORT) length;
-				start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
-				CVT_COPY_BUFF(q, p, length);
-				break;
-			}
-
-			cb->validateLength(toCharset, toLength, start, to_size);
-
-			if (l)
-			{
-				// Scan the truncated string to ensure only spaces lost
-				// Warning: it is correct only for narrow and multi-byte
-				// character sets which use ASCII or NULL for the SPACE character
-
-				do {
-					if (*q++ != fill_char)
+					CVT_COPY_BUFF(q, p, length);
+					if (fill > 0)
 					{
-						cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+						memset(p, fill_char, fill);
+						p += fill;
+						// Note: above is correct only for narrow
+						// and multi-byte character sets which
+						// use ASCII for the SPACE character.
 					}
-				} while (--l);
+					break;
+
+				case dtype_cstring:
+					// Note: Following is only correct for narrow and
+					// multibyte character sets which use a zero
+					// byte to represent end-of-string
+
+					fb_assert(to->dsc_length > 0)
+					length = MIN(length, ULONG(to->dsc_length - 1));
+					cb->validateData(toCharset, length, q);
+					toLength = length;
+
+					l -= length;
+					CVT_COPY_BUFF(q, p, length);
+					*p = 0;
+					break;
+
+				case dtype_varying:
+					length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
+					cb->validateData(toCharset, length, q);
+					toLength = length;
+
+					l -= length;
+					// TMN: Here we should really have the following fb_assert
+					// fb_assert(length <= MAX_USHORT);
+					((vary*) p)->vary_length = (USHORT) length;
+					start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+					CVT_COPY_BUFF(q, p, length);
+					break;
+				}
+
+				cb->validateLength(toCharset, toLength, start, to_size);
+
+				if (l)
+				{
+					// Scan the truncated string to ensure only spaces lost
+					// Warning: it is correct only for narrow and multi-byte
+					// character sets which use ASCII or NULL for the SPACE character
+
+					do {
+						if (*q++ != fill_char)
+						{
+							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+						}
+					} while (--l);
+				}
 			}
 			return;
-		}
 
 		case dtype_short:
 		case dtype_long:
@@ -1795,8 +1797,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	{
 	case dtype_sql_time:
 		Firebird::TimeStamp::decode_time(*(GDS_TIME *) from->dsc_address,
-										 &times.tm_hour, &times.tm_min, &times.tm_sec,
-										 &fractions);
+										 &times.tm_hour, &times.tm_min, &times.tm_sec, &fractions);
 		break;
 
 	case dtype_sql_date:

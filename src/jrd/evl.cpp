@@ -217,8 +217,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 			   a 3.3 type request (blr_cstring2 instead of blr_cstring) so
 			   convert the charset to the declared charset of the process. */
 
-			INTL_ASSIGN_DSC(&impure->vlu_desc,
-							tdbb->getCharSet(), COLLATE_NONE);
+			INTL_ASSIGN_DSC(&impure->vlu_desc, tdbb->getCharSet(), COLLATE_NONE);
 		}
 		return &impure->vlu_desc;
 
@@ -591,7 +590,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			{
 				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
-				if (*invariant_flags & VLU_computed) {
+				if (*invariant_flags & VLU_computed)
+				{
 					// An invariant node has already been computed.
 
 					if ((node->nod_type == nod_ansi_any) && (*invariant_flags & VLU_null))
@@ -617,7 +617,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				if (node->nod_type == nod_ansi_any) {
 					request->req_flags |= req_ansi_any;
 				}
-				else {
+				else
+				{
 					request->req_flags |= req_ansi_all;
 					// dimitr:	Even if we can evaluate ANY without a residual
 					//			boolean (what I still doubt), it's impossible
@@ -657,7 +658,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 	case nod_missing:
 		EVL_expr(tdbb, *ptr);
-		if (request->req_flags & req_null) {
+		if (request->req_flags & req_null)
+		{
 			value = true;
 			request->req_flags &= ~req_null;
 		}
@@ -704,7 +706,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			}
 
 			const bool value2 = EVL_boolean(tdbb, *ptr);
-			if (value || value2) {
+			if (value || value2)
+			{
 				request->req_flags &= ~req_null;
 				return true;
 			}
@@ -830,7 +833,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		{
 			const dsc* desc;
 
-			if (node->nod_arg[e_arg_flag]) {
+			if (node->nod_arg[e_arg_flag])
+			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_arg_flag]);
 				if (MOV_get_long(desc, 0)) {
 					request->req_flags |= req_null;
@@ -936,19 +940,19 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		}
 
 	case nod_derived_expr:
-	{
-		const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-		const USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
-
-		for (UCHAR i = 0; i < streamCount; ++i)
 		{
-			if (request->req_rpb[streamList[i]].rpb_number.isValid())
-				return EVL_expr(tdbb, node->nod_arg[e_derived_expr_expr]);
-		}
+			const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+			const USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
 
-		request->req_flags |= req_null;
-		return NULL;
-	}
+			for (UCHAR i = 0; i < streamCount; ++i)
+			{
+				if (request->req_rpb[streamList[i]].rpb_number.isValid())
+					return EVL_expr(tdbb, node->nod_arg[e_derived_expr_expr]);
+			}
+
+			request->req_flags |= req_null;
+			return NULL;
+		}
 
 	case nod_function:
 		FUN_evaluate(tdbb, reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
@@ -1128,7 +1132,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	dsc* values[3];
 
-	if (node->nod_count) {
+	if (node->nod_count)
+	{
 		fb_assert(node->nod_count <= 3);
 		dsc** v = values;
 		jrd_nod** ptr = node->nod_arg;
@@ -1394,7 +1399,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 	desc->dsc_address = record->rec_data + (IPTR) desc->dsc_address;
 
-	if (TEST_NULL(record, id)) {
+	if (TEST_NULL(record, id))
+	{
 		desc->dsc_flags |= DSC_null;
 		return false;
 	}
@@ -1653,7 +1659,8 @@ dsc* EVL_add(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double) {
+	if (node->nod_flags & nod_double)
+	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = (node->nod_type == nod_subtract) ? d2 - d1 : d1 + d2;
@@ -1672,7 +1679,8 @@ dsc* EVL_add(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	// Handle (oh, ugh) quad arithmetic
 
-	if (node->nod_flags & nod_quad) {
+	if (node->nod_flags & nod_quad)
+	{
 		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
 		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
 		result->dsc_dtype = dtype_quad;
@@ -1734,7 +1742,8 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double) {
+	if (node->nod_flags & nod_double)
+	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = (node->nod_type == nod_subtract2) ? d2 - d1 : d1 + d2;
@@ -1753,7 +1762,8 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	// Handle (oh, ugh) quad arithmetic
 
-	if (node->nod_flags & nod_quad) {
+	if (node->nod_flags & nod_quad)
+	{
 		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
 		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
 		result->dsc_dtype = dtype_quad;
@@ -1827,7 +1837,8 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 	if ((node->nod_type == nod_add) || (node->nod_type == nod_add2)) {
 		dtype = DSC_add_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
 	}
-	else {
+	else
+	{
 		fb_assert((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2));
 		dtype = DSC_sub_result[value->vlu_desc.dsc_dtype][desc->dsc_dtype];
 
@@ -1897,7 +1908,8 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 	SINT64 d1;
 	// Coerce operand1 to a count of days
 	bool op1_is_date = false;
-	if (value->vlu_desc.dsc_dtype == dtype_sql_date) {
+	if (value->vlu_desc.dsc_dtype == dtype_sql_date)
+	{
 		d1 = *((GDS_DATE *) value->vlu_desc.dsc_address);
 		op1_is_date = true;
 	}
@@ -1907,7 +1919,8 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 	SINT64 d2;
 	// Coerce operand2 to a count of days
 	bool op2_is_date = false;
-	if (desc->dsc_dtype == dtype_sql_date) {
+	if (desc->dsc_dtype == dtype_sql_date)
+	{
 		d2 = *((GDS_DATE *) desc->dsc_address);
 		op2_is_date = true;
 	}
@@ -1927,7 +1940,8 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 
 	// Perform the operation
 
-	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
+	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2))
+	{
 		fb_assert(op1_is_date);
 		d2 = d1 - d2;
 	}
@@ -1977,7 +1991,8 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 	SINT64 d1;
 	// Coerce operand1 to a count of seconds
 	bool op1_is_time = false;
-	if (value->vlu_desc.dsc_dtype == dtype_sql_time) {
+	if (value->vlu_desc.dsc_dtype == dtype_sql_time)
+	{
 		d1 = *(GDS_TIME *) value->vlu_desc.dsc_address;
 		op1_is_time = true;
 		fb_assert(d1 >= 0 && d1 < ISC_TICKS_PER_DAY);
@@ -1988,7 +2003,8 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 	SINT64 d2;
 	// Coerce operand2 to a count of seconds
 	bool op2_is_time = false;
-	if (desc->dsc_dtype == dtype_sql_time) {
+	if (desc->dsc_dtype == dtype_sql_time)
+	{
 		d2 = *(GDS_TIME *) desc->dsc_address;
 		op2_is_time = true;
 		fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
@@ -2015,7 +2031,8 @@ static dsc* add_sql_time(const dsc* desc, const jrd_nod* node, impure_value* val
 
 	// Perform the operation
 
-	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
+	if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2))
+	{
 		fb_assert(op1_is_time);
 		d2 = d1 - d2;
 	}
@@ -2072,7 +2089,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 	// Operand 1 is Value -- Operand 2 is desc
 
-	if (value->vlu_desc.dsc_dtype == dtype_sql_date) {
+	if (value->vlu_desc.dsc_dtype == dtype_sql_date)
+	{
 		// DATE + TIME
 		if ((desc->dsc_dtype == dtype_sql_time) &&
 			((node->nod_type == nod_add) || (node->nod_type == nod_add2)))
@@ -2084,7 +2102,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		ERR_post(Arg::Gds(isc_expression_eval_err) <<
 					Arg::Gds(isc_onlycan_add_timetodate));
 	}
-	else if (desc->dsc_dtype == dtype_sql_date) {
+	else if (desc->dsc_dtype == dtype_sql_date)
+	{
 		// TIME + DATE
 		if ((value->vlu_desc.dsc_dtype == dtype_sql_time) &&
 			((node->nod_type == nod_add) || (node->nod_type == nod_add2)))
@@ -2136,7 +2155,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 		d2 = d1 - d2;
 
-		if (node->nod_type == nod_subtract2) {
+		if (node->nod_type == nod_subtract2)
+		{
 
 			/* multiply by 100,000 so that we can have the result as decimal (18,9)
 			 * We have 10 ^-4; to convert this to 10^-9 we need to multiply by
@@ -2221,11 +2241,13 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 						Arg::Gds(isc_onlyoneop_mustbe_tstamp));
 		}
 
-		if (op1_is_timestamp) {
+		if (op1_is_timestamp)
+		{
 			d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
 			d2 = get_day_fraction(desc);
 		}
-		else {
+		else
+		{
 			fb_assert((node->nod_type == nod_add) || (node->nod_type == nod_add2));
 			fb_assert(op2_is_timestamp);
 			d1 = get_day_fraction(&value->vlu_desc);
@@ -2234,7 +2256,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 		// Perform the operation
 
-		if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) {
+		if ((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2))
+		{
 			fb_assert(op1_is_timestamp);
 			d2 = d1 - d2;
 		}
@@ -2252,7 +2275,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 		// Make sure the TIME portion is non-negative
 
-		if ((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time < 0) {
+		if ((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time < 0)
+		{
 			value->vlu_misc.vlu_timestamp.timestamp_time =
 				((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time) + ISC_TICKS_PER_DAY;
 			value->vlu_misc.vlu_timestamp.timestamp_date -= 1;
@@ -2387,9 +2411,11 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 	const Format* format = (Format*) node->nod_arg[e_cast_fmt];
 	impure->vlu_desc = format->fmt_desc[0];
 	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
-	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype)) {
+	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype))
+	{
 		USHORT length = DSC_string_length(&impure->vlu_desc);
-		if (length <= 0 && value) {
+		if (length <= 0 && value)
+		{
 			// cast is a subtype cast only
 
 			length = DSC_string_length(value);
@@ -2404,12 +2430,14 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 		// Allocate a string block of sufficient size.
 
 		VaryingString* string = impure->vlu_string;
-		if (string && string->str_length < length) {
+		if (string && string->str_length < length)
+		{
 			delete string;
 			string = NULL;
 		}
 
-		if (!string) {
+		if (!string)
+		{
 			string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
 			string->str_length = length;
 		}
@@ -2532,7 +2560,8 @@ static dsc* concatenate(thread_db* tdbb,
 		EVL_make_value(tdbb, &desc, impure);
 		UCHAR* p = impure->vlu_desc.dsc_address;
 
-		if (length1) {
+		if (length1)
+		{
 			memcpy(p, address1, length1);
 			p += length1;
 		}
@@ -2638,11 +2667,13 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 
 	// Format dbkey as vector of relation id, record number
 
-	if (relation->rel_file) {
+	if (relation->rel_file)
+	{
 		impure->vlu_misc.vlu_dbkey[0] = rpb->rpb_b_page;
 		impure->vlu_misc.vlu_dbkey[1] = rpb->rpb_b_line;
 	}
-	else {
+	else
+	{
 		// Initialize first 32 bits of DB_KEY
 		impure->vlu_misc.vlu_dbkey[0] = 0;
 
@@ -2690,9 +2721,11 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	jrd_req* request = tdbb->getRequest();
 	dsc* desc = &impure->vlu_desc;
 
-	if (node->nod_flags & nod_invariant) {
+	if (node->nod_flags & nod_invariant)
+	{
 		invariant_flags = & impure->vlu_flags;
-		if (*invariant_flags & VLU_computed) {
+		if (*invariant_flags & VLU_computed)
+		{
 			// An invariant node has already been computed.
 
 			if (*invariant_flags & VLU_null)
@@ -2703,14 +2736,16 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		}
 	}
 
-	if ((nod_average2 == node->nod_type)) {
+	if ((nod_average2 == node->nod_type))
+	{
 		impure->vlu_misc.vlu_int64 = 0;
 		impure->vlu_desc.dsc_dtype = dtype_int64;
 		impure->vlu_desc.dsc_length = sizeof(SINT64);
 		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_int64;
 		impure->vlu_desc.dsc_scale = 0;
 	}
-	else {
+	else
+	{
 		impure->vlu_misc.vlu_long = 0;
 		impure->vlu_desc.dsc_dtype = dtype_long;
 		impure->vlu_desc.dsc_length = sizeof(SLONG);
@@ -2787,7 +2822,8 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 				count++;
 			}
 			desc = &impure->vlu_desc;
-			if (node->nod_type == nod_total) {
+			if (node->nod_type == nod_total)
+			{
 				flag = 0;
 				break;
 			}
@@ -2860,7 +2896,8 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	// point this node's descriptor to the correct place; copy the whole
 	// structure to be absolutely sure
 
-	if (node->nod_flags & nod_invariant) {
+	if (node->nod_flags & nod_invariant)
+	{
 		*invariant_flags |= VLU_computed;
 		if (request->req_flags & req_null)
 			*invariant_flags |= VLU_null;
@@ -2892,7 +2929,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	jrd_req* request = tdbb->getRequest();
 	// CVC: Borland used special signaling for nulls in outer joins.
-	if (!value || (request->req_flags & req_null)) {
+	if (!value || (request->req_flags & req_null))
+	{
 		request->req_flags |= req_null;
 		impure->vlu_misc.vlu_short = 0;
 		return &impure->vlu_desc;
@@ -3123,11 +3161,13 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	SqlIdentifier relation_name, field_name;
 
 	const dsc* value = EVL_expr(tdbb, node->nod_arg[0]);
-	if (!(request->req_flags & req_null)) {
+	if (!(request->req_flags & req_null))
+	{
 		p1 = relation_name;
 		MOV_get_name(value, p1);
 		value = EVL_expr(tdbb, node->nod_arg[1]);
-		if (!(request->req_flags & req_null)) {
+		if (!(request->req_flags & req_null))
+		{
 			p2 = field_name;
 			MOV_get_name(value, p2);
 		}
@@ -3215,11 +3255,13 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	if (request->req_flags & req_null)
 		impure->vlu_misc.vlu_long = 0;
-	else {
+	else
+	{
 		const SLONG id = MOV_get_long(desc, 0);
 		if (id == PAG_attachment_id(tdbb))
 			impure->vlu_misc.vlu_long = 2;
-		else {
+		else
+		{
 			Lock temp_lock;
 			// fill out a lock block, zeroing it out first
 
@@ -3230,7 +3272,8 @@ static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			temp_lock.lck_key.lck_long = id;
 			temp_lock.lck_dbb = dbb;
 
-			if (LCK_lock(tdbb, &temp_lock, LCK_write, LCK_NO_WAIT)) {
+			if (LCK_lock(tdbb, &temp_lock, LCK_write, LCK_NO_WAIT))
+			{
 				impure->vlu_misc.vlu_long = 1;
 				LCK_release(tdbb, &temp_lock);
 			}
@@ -3333,7 +3376,8 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double) {
+	if (node->nod_flags & nod_double)
+	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = d1 * d2;
@@ -3351,7 +3395,8 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 
 	// Handle (oh, ugh) quad arithmetic
 
-	if (node->nod_flags & nod_quad) {
+	if (node->nod_flags & nod_quad)
+	{
 		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
 		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale - scale);
 		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
@@ -3529,7 +3574,8 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double) {
+	if (node->nod_flags & nod_double)
+	{
 		const double d2 = MOV_get_double(desc);
 		if (d2 == 0.0)
 		{
@@ -3623,7 +3669,8 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 	// If we couldn't use up all the additional scaling by multiplying the
 	// dividend by 10, but there are trailing zeroes in the divisor, we can
 	// get the same effect by dividing the divisor by 10 instead.
-	while ((addl_scale < 0) && (0 == (i2 % 10))) {
+	while ((addl_scale < 0) && (0 == (i2 % 10)))
+	{
 		i2 /= 10;
 		++addl_scale;
 	}
@@ -3898,7 +3945,8 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 		l1 = MOV_make_string2(tdbb, desc1, ttype, &p1, data_str);
 		ret_val = obj->sleuthCheck(*tdbb->getDefaultPool(), 0, p1, l1, control, control_length);
 	}
-	else {
+	else
+	{
 		// Source string is a blob, things get interesting
 
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
@@ -3987,7 +4035,8 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 	// Get address and length of search string - make it string if necessary
 	// but don't transliterate character set if the source blob is binary
 	VaryStr<256> temp2;
-	if (!computed_invariant) {
+	if (!computed_invariant)
+	{
 		if (type1 == ttype_none) {
 			l2 = MOV_get_string(desc2, &p2, &temp2, sizeof(temp2));
 		}
@@ -4019,11 +4068,14 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			USHORT escape_length = 0;
 
 			// ensure 3rd argument (escape char) is in operation text type
-			if (node->nod_count == 3 && !computed_invariant) {
+			if (node->nod_count == 3 && !computed_invariant)
+			{
 				// Convert ESCAPE to operation character set
 				DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
-				if (request->req_flags & req_null) {
-					if (node->nod_flags & nod_invariant) {
+				if (request->req_flags & req_null)
+				{
+					if (node->nod_flags & nod_invariant)
+					{
 						impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 						impure->vlu_flags |= VLU_computed;
 						impure->vlu_flags |= VLU_null;
@@ -4205,8 +4257,9 @@ static bool string_function(thread_db* tdbb,
 					impure->vlu_misc.vlu_invariant = evaluator =
 						obj->createContainsMatcher(*tdbb->getDefaultPool(), p2, l2);
 				}
-				else	// nod_starts
+				else
 				{
+					// nod_starts
 					impure->vlu_misc.vlu_invariant = evaluator =
 						obj->createStartsMatcher(*tdbb->getDefaultPool(), p2, l2);
 				}
@@ -4237,11 +4290,14 @@ static bool string_function(thread_db* tdbb,
 		const UCHAR* escape_str = NULL;
 		USHORT escape_length = 0;
 		// ensure 3rd argument (escape char) is in operation text type
-		if (node->nod_count == 3 && !computed_invariant) {
+		if (node->nod_count == 3 && !computed_invariant)
+		{
 			// Convert ESCAPE to operation character set
 			DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
-			if (request->req_flags & req_null) {
-				if (node->nod_flags & nod_invariant) {
+			if (request->req_flags & req_null)
+			{
+				if (node->nod_flags & nod_invariant)
+				{
 					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 					impure->vlu_flags |= VLU_computed;
 					impure->vlu_flags |= VLU_null;
@@ -4331,7 +4387,8 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	jrd_req* request = tdbb->getRequest();
 	// CVC: Borland used special signaling for nulls in outer joins.
-	if (!value || (request->req_flags & req_null)) {
+	if (!value || (request->req_flags & req_null))
+	{
 		request->req_flags |= req_null;
 		impure->vlu_misc.vlu_long = 0;
 		return &impure->vlu_desc;

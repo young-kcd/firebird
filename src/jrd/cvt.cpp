@@ -170,9 +170,7 @@ void CVT_double_to_date(double real, SLONG fixed[2])
  **************************************/
 
 	fixed[0] = (SLONG) real;
-	fixed[1] =
-		(SLONG) ((real - fixed[0]) * 24. * 60. * 60. *
-				 ISC_TIME_SECONDS_PRECISION);
+	fixed[1] = (SLONG) ((real - fixed[0]) * 24. * 60. * 60. * ISC_TIME_SECONDS_PRECISION);
 }
 
 
@@ -216,8 +214,10 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 
 	const UCHAR* p = string;
 	const UCHAR* const end = p + length;
-	for (; p < end; p++) {
-		if (DIGIT(*p)) {
+	for (; p < end; p++)
+	{
+		if (DIGIT(*p))
+		{
 			digit_seen = true;
 
 			// Before computing the next value, make sure there will be
@@ -225,7 +225,8 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 			// tricky: the value doesn't always become negative after an
 			// overflow!
 
-			if (value >= NUMERIC_LIMIT) {
+			if (value >= NUMERIC_LIMIT)
+			{
 				// possibility of an overflow
 				if (value > NUMERIC_LIMIT)
 					break;
@@ -240,7 +241,8 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 			if (fraction)
 				--local_scale;
 		}
-		else if (*p == '.') {
+		else if (*p == '.')
+		{
 			if (fraction)
 				CVT_conversion_error(&desc, ERR_post);
 			else
@@ -272,12 +274,14 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 	// The literal has already been converted to a 64-bit integer: return
 	// a long if the value fits into a long, else return an int64.
 
-	if ((value <= LONG_MAX_int64) && (value >= 0)) {
+	if ((value <= LONG_MAX_int64) && (value >= 0))
+	{
 		*(SLONG *) ptr = (SLONG) ((sign == -1) ? -value : value);
 		return dtype_long;
 	}
 
-	if ((sign == -1) && (-value == LONG_MIN_int64)) {
+	if ((sign == -1) && (-value == LONG_MIN_int64))
+	{
 		*(SLONG *) ptr = SLONG_MIN;
 		return dtype_long;
 	}
