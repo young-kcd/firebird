@@ -35,10 +35,7 @@
 using namespace Jrd;
 using namespace Firebird;
 
-Lock* RLCK_reserve_relation(thread_db* tdbb,
-							jrd_tra* transaction,
-							jrd_rel* relation,
-							bool write_flag)
+Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool write_flag)
 {
 /**************************************
  *
@@ -99,9 +96,7 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 }
 
 
-Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
-									 jrd_tra* transaction,
-									 jrd_rel* relation)
+Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation)
 {
 /**************************************
  *
