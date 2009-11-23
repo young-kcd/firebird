@@ -1,3 +1,54 @@
+2009-11-23 10:13  robocop
+
+	* firebird2/src/jrd/: sdl.cpp (1.61), shut.cpp (1.73), sqz.cpp
+	(1.36):
+
+	Comments.
+
+2009-11-23 09:35  robocop
+
+	* firebird2/src/jrd/: pcmet.epp (1.63), rse.cpp (1.197):
+
+	Comments.
+
+2009-11-23 08:54  robocop
+
+	* firebird2/src/jrd/rlck.cpp (1.46):
+
+	Style.
+
+2009-11-23 08:36  robocop
+
+	* firebird2/src/jrd/: isc_file.cpp (1.144), isc_sync.cpp (1.224):
+
+	Comments.
+
+2009-11-23 08:31  robocop
+
+	* firebird2/src/jrd/: event.cpp (1.104), intl_builtin.cpp (1.57),
+	isc.cpp (1.101), nav.cpp (1.87):
+
+	Style and comments.
+
+2009-11-23 06:40  robocop
+
+	* firebird2/src/jrd/RuntimeStatistics.cpp (1.19):
+
+	Misc.
+
+2009-11-23 06:39  robocop
+
+	* firebird2/src/jrd/cvt2.cpp (1.74):
+
+	Style.
+
+2009-11-23 06:24  robocop
+
+	* firebird2/src/: common/cvt.cpp (1.42), jrd/cvt.cpp (1.108),
+	jrd/evl.cpp (1.317), jrd/exe.cpp (1.313):
+
+	Style.
+
 2009-11-22 11:08  robocop
 
 	* firebird2/src/dsql/StmtNodes.cpp (1.19):
