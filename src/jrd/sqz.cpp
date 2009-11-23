@@ -48,7 +48,7 @@ USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCH
 
 	if (end - differences > MAX_DIFFERENCES)
 	{
-		BUGCHECK(176);			/* msg 176 bad difference record */
+		BUGCHECK(176);			// msg 176 bad difference record
 	}
 
 	SCHAR* p     = (SCHAR*) record->rec_data;
@@ -61,7 +61,7 @@ USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCH
 		{
 			if (p + l > p_end)
 			{
-				BUGCHECK(177);	/* msg 177 applied differences will not fit in record */
+				BUGCHECK(177);	// msg 177 applied differences will not fit in record
 			}
 			memcpy(p, differences, l);
 			p += l;
@@ -77,7 +77,7 @@ USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCH
 
 	if (length > record->rec_length || differences < end)
 	{
-		BUGCHECK(177);			/* msg 177 applied differences will not fit in record */
+		BUGCHECK(177);			// msg 177 applied differences will not fit in record
 	}
 
 	return length;
@@ -223,7 +223,7 @@ UCHAR* SQZ_decompress(const UCHAR*	input,
 
 			if ((output - len) > output_end)
 			{
-				BUGCHECK(179);	/* msg 179 decompression overran buffer */
+				BUGCHECK(179);	// msg 179 decompression overran buffer
 			}
 			memset(output, c, (-1 * len));
 			output -= len;
@@ -232,7 +232,7 @@ UCHAR* SQZ_decompress(const UCHAR*	input,
 		{
 			if ((output + len) > output_end)
 			{
-				BUGCHECK(179);	/* msg 179 decompression overran buffer */
+				BUGCHECK(179);	// msg 179 decompression overran buffer
 			}
 			memcpy(output, input, len);
 			output += len;
@@ -242,7 +242,7 @@ UCHAR* SQZ_decompress(const UCHAR*	input,
 
 	if (output > output_end)
 	{
-		BUGCHECK(179);			/* msg 179 decompression overran buffer */
+		BUGCHECK(179);			// msg 179 decompression overran buffer
 	}
 
 	return output;
@@ -302,24 +302,24 @@ USHORT SQZ_differences(const SCHAR*	rec1,
  **************************************/
 	SCHAR *p;
 	// SLONG l; Moved to the proper scope. Comment immediately below still applies.
-	/* This "l" could be more than 32K since the Old and New records
-	could be the same for more than 32K characters.
-	MAX record size is currently 64K. Hence it is defined as a SLONG */
+	// This "l" could be more than 32K since the Old and New records
+	// could be the same for more than 32K characters.
+	// MAX record size is currently 64K. Hence it is defined as a SLONG
 
 #define STUFF(val)	if (out < end) *out++ = val; else return 32000;
-/* WHY IS THIS RETURNING 32000 ???
- * It returns a large Positive value to indicate to the caller that we ran out
- * of buffer space in the 'out' argument. Thus we could not create a
- * successful differences record. Now it is upto the caller to check the
- * return value of this function and figure out whether the differences record
- * was created or not. Check prepare_update() (JRD/vio.c) for further
- * information. Of course, the size for a 'differences' record is not expected
- * to go near 32000 in the future. If the case arises where we want to store
- * differences record of 32000 bytes and more, please change the return value
- * above to accomodate a failure value.
- *
- * This was investigated as a part of solving bug 10206, bsriram - 25-Feb-1999.
- */
+	/* WHY IS THIS RETURNING 32000 ???
+	* It returns a large Positive value to indicate to the caller that we ran out
+	* of buffer space in the 'out' argument. Thus we could not create a
+	* successful differences record. Now it is upto the caller to check the
+	* return value of this function and figure out whether the differences record
+	* was created or not. Check prepare_update() (JRD/vio.c) for further
+	* information. Of course, the size for a 'differences' record is not expected
+	* to go near 32000 in the future. If the case arises where we want to store
+	* differences record of 32000 bytes and more, please change the return value
+	* above to accomodate a failure value.
+	*
+	* This was investigated as a part of solving bug 10206, bsriram - 25-Feb-1999.
+	*/
 
 	const SCHAR* const start = out;
 	const SCHAR* const end = out + length;
@@ -332,8 +332,8 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 		{
 			p = out++;
 
-			/* cast this to LONG to take care of OS/2 pointer arithmetic
-			   when rec1 is at the end of a segment, to avoid wrapping around */
+			// cast this to LONG to take care of OS/2 pointer arithmetic
+			// when rec1 is at the end of a segment, to avoid wrapping around
 
 			const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
 			while (rec1 <= yellow && (rec1[0] != rec2[0] || (rec1[1] != rec2[1] && rec1 < yellow)))
@@ -364,8 +364,8 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 	{
 		p = out++;
 
-		/* cast this to LONG to take care of OS/2 pointer arithmetic
-		   when rec1 is at the end of a segment, to avoid wrapping around */
+		// cast this to LONG to take care of OS/2 pointer arithmetic
+		// when rec1 is at the end of a segment, to avoid wrapping around
 
 		const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end2, ((U_IPTR) rec2 + 127));
 		while (rec2 < yellow)
@@ -441,7 +441,7 @@ USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
 	{
 		const SCHAR* start = data;
 
-		/* Find length of non-compressable run */
+		// Find length of non-compressable run
 
 		if ((max = count - 1) > 1)
 		{
@@ -459,7 +459,7 @@ USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
 		}
 		data = start + count;
 
-		/* Non-compressable runs are limited to 127 bytes */
+		// Non-compressable runs are limited to 127 bytes
 
 		while (count)
 		{
@@ -469,7 +469,7 @@ USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
 			*control++ = max;
 		}
 
-		/* Find compressible run.  Compressable runs are limited to 128 bytes */
+		// Find compressible run.  Compressable runs are limited to 128 bytes
 
 		if ((max = MIN(128, end - data)) >= 3)
 		{
