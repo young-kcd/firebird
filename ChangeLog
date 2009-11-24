@@ -1,3 +1,27 @@
+2009-11-24 13:22  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.265):
+
+	Restrict us to ODS11 and ODS12 until the dust settles down.
+
+2009-11-24 12:44  robocop
+
+	* firebird2/src/jrd/: dyn.epp (1.162), svc.cpp (1.293):
+
+	Comments.
+
+2009-11-24 12:42  robocop
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.121), btr.cpp (1.264),
+	cch.cpp (1.246), constants.h (1.68), dfw.epp (1.300), dmp.cpp
+	(1.48), dpm.epp (1.110), dyn.epp (1.161), dyn_def.epp (1.187),
+	dyn_del.epp (1.86), idx.cpp (1.165), inf.cpp (1.111), ini.epp
+	(1.115), jrd.cpp (1.576), met.epp (1.298), nbak.cpp (1.98), ods.cpp
+	(1.3), ods.h (1.60), opt.cpp (1.369), pag.cpp (1.232), rse.cpp
+	(1.198), scl.epp (1.112), validation.cpp (1.58):
+
+	Restrict us to ODS11 and ODS12 until the dust settles down.
+
 2009-11-23 10:13  robocop
 
 	* firebird2/src/jrd/: sdl.cpp (1.61), shut.cpp (1.73), sqz.cpp
