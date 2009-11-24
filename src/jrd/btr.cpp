@@ -3123,7 +3123,8 @@ static SLONG fast_load(thread_db* tdbb,
 		jumpInfo.jumpAreaSize = 0;
 	}
 
-	if (jumpInfo.jumpAreaSize > 0)
+	const bool useJumpInfo = (jumpInfo.jumpAreaSize > 0);
+	if (useJumpInfo)
 	{
 		// If you want to do tests without jump information
 		// set the useJumpInfo boolean to false, but don't
