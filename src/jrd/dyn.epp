@@ -375,11 +375,11 @@ void DYN_execute(Global* gbl,
 		revoke_all(gbl, ptr);
 		break;
 
-/***
+	/***
     case isc_dyn_def_role:
         create_role (gbl, ptr);
 	break;
-***/
+	***/
 
 	case isc_dyn_mod_database:
 		DYN_modify_database(gbl, ptr);

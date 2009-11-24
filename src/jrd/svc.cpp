@@ -582,7 +582,7 @@ void test_cmd(USHORT, SCHAR *, TEXT **);
 #define TEST_CMD NULL
 #endif
 
-/* Service Functions */
+// Service Functions
 #if !defined(BOOT_BUILD)
 #include "../burp/burp_proto.h"
 #include "../alice/alice_proto.h"
@@ -662,7 +662,7 @@ static const serv_entry services[] =
 	{ isc_action_svc_trace_list, "List Trace Sessions", NULL, MAIN_TRACE },
 	{ isc_action_svc_set_mapping, "Set Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
 	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
-/* actions with no names are undocumented */
+	// actions with no names are undocumented
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_set_env, NULL, NULL, TEST_THREAD },
@@ -671,10 +671,9 @@ static const serv_entry services[] =
 	{ 0, NULL, NULL, NULL }
 };
 
-/* The SERVER_CAPABILITIES_FLAG is used to mark architectural
-** differences across servers.  This allows applications like server
-** manager to disable features as necessary.
-*/
+// The SERVER_CAPABILITIES_FLAG is used to mark architectural
+// differences across servers.  This allows applications like server
+// manager to disable features as necessary.
 
 #ifdef SUPERSERVER
 const ULONG SERVER_CAPABILITIES	= REMOTE_HOP_SUPPORT | MULTI_CLIENT_SUPPORT | SERVER_CONFIG_SUPPORT;
@@ -1081,12 +1080,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 	while (items < end_items2 && *items != isc_info_end)
 	{
-		/*
-		   if we attached to the "anonymous" service we allow only following queries:
+		// if we attached to the "anonymous" service we allow only following queries:
 
-		   isc_info_svc_get_config     - called from within remote/ibconfig.cpp
-		   isc_info_svc_dump_pool_info - called from within utilities/print_pool.cpp
-		 */
+		// isc_info_svc_get_config     - called from within remote/ibconfig.cpp
+		// isc_info_svc_dump_pool_info - called from within utilities/print_pool.cpp
 		if (svc_user_flag == SVC_user_none)
 		{
 			switch (*items)
@@ -1115,19 +1112,19 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				*info++ = item;
 				UCHAR* const ptr = JRD_num_attachments(dbbuf, sizeof(dbbuf),
 					JRD_info_dbnames, &num_att, &num_dbs, NULL);
-				/* Move the number of attachments into the info buffer */
+				// Move the number of attachments into the info buffer
 				if (!ck_space_for_numeric(info, end))
 					return 0;
 				*info++ = isc_spb_num_att;
 				ADD_SPB_NUMERIC(info, num_att);
 
-				/* Move the number of databases in use into the info buffer */
+				// Move the number of databases in use into the info buffer
 				if (!ck_space_for_numeric(info, end))
 					return 0;
 				*info++ = isc_spb_num_db;
 				ADD_SPB_NUMERIC(info, num_dbs);
 
-				/* Move db names into the info buffer */
+				// Move db names into the info buffer
 				const UCHAR* ptr2 = ptr;
 				if (ptr2) {
 					USHORT num = (USHORT) gds__vax_integer(ptr2, sizeof(USHORT));
@@ -1177,11 +1174,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				need_admin_privs(status, "isc_info_svc_svr_offline");
 			break;
 
-			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable FIREBIRD,
-			   FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
-			   is not set then default value is returned.
-			 */
+			// The following 3 service commands (or items) stuff the response
+			// buffer 'info' with values of environment variable FIREBIRD,
+			// FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
+			// is not set then default value is returned.
 		case isc_info_svc_get_env:
 		case isc_info_svc_get_env_lock:
 		case isc_info_svc_get_env_msg:
@@ -1233,7 +1229,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			// TODO: iterate through all integer-based config values
 			//		 and return them to the client
 			break;
-/*
+		/*
 		case isc_info_svc_default_config:
 			*info++ = item;
 			if (svc_user_flag & SVC_user_dba) {
@@ -1252,9 +1248,9 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				need_admin_privs(status, "isc_info_svc_set_config");
 			}
 			break;
-*/
+		*/
 		case isc_info_svc_version:
-			/* The version of the service manager */
+			// The version of the service manager
 			if (!ck_space_for_numeric(info, end))
 				return 0;
 			*info++ = item;
@@ -1262,7 +1258,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			break;
 
 		case isc_info_svc_capabilities:
-			/* bitmask defining any specific architectural differences */
+			// bitmask defining any specific architectural differences
 			if (!ck_space_for_numeric(info, end))
 				return 0;
 			*info++ = item;
@@ -1270,7 +1266,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			break;
 
 		case isc_info_svc_running:
-			/* Returns the status of the flag SVC_thd_running */
+			// Returns the status of the flag SVC_thd_running
 			if (!ck_space_for_numeric(info, end))
 				return 0;
 			*info++ = item;
@@ -1282,7 +1278,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			break;
 
 		case isc_info_svc_server_version:
-			/* The version of the server engine */
+			// The version of the server engine
 			{ // scope
 				static const UCHAR* pv = reinterpret_cast<const UCHAR*>(GDS_VERSION);
 				info = INF_put_item(item, strlen(GDS_VERSION), pv, info, end);
@@ -1293,7 +1289,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			break;
 
 		case isc_info_svc_implementation:
-			/* The server implementation - e.g. Firebird/sun4 */
+			// The server implementation - e.g. Firebird/sun4
 			{ // scope
 				string buf2 = DbImplementation::current.implementation();
 				info = INF_put_item(item, buf2.length(),
@@ -1307,7 +1303,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_user_dbpath:
 			if (svc_user_flag & SVC_user_dba)
 			{
-				/* The path to the user security database (security2.fdb) */
+				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
 				SecurityDatabase::getPath(pb);
 
@@ -1402,10 +1398,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 			get(info + 3, end - (info + 5), get_flags, timeout, &length);
 
-			/* If the read timed out, return the data, if any, & a timeout
-			   item.  If the input buffer was not large enough
-			   to store a read to eof, return the data that was read along
-			   with an indication that more is available. */
+			// If the read timed out, return the data, if any, & a timeout
+			// item.  If the input buffer was not large enough
+			// to store a read to eof, return the data that was read along
+			// with an indication that more is available.
 
 			if (!(info = INF_put_item(item, length, info + 3, info, end))) {
 				return 0;
@@ -1569,11 +1565,9 @@ void Service::query(USHORT			send_item_length,
 					return;
 				}
 			}
-			/*
-			 * Can not return error for service v.1 => simply ignore request
-			else
-				need_admin_privs(status, "isc_info_svc_svr_db_info");
-			 */
+			// Can not return error for service v.1 => simply ignore request
+			// else
+			//	need_admin_privs(status, "isc_info_svc_svr_db_info");
 			break;
 
 		case isc_info_svc_svr_online:
@@ -1581,10 +1575,10 @@ void Service::query(USHORT			send_item_length,
 			if (svc_user_flag & SVC_user_dba) {
 				svc_do_shutdown = false;
 				WHY_set_shutdown(false);
-				*info++ = 0;	/* Success */
+				*info++ = 0;	// Success
 			}
 			else
-				*info++ = 2;	/* No user authority */
+				*info++ = 2;	// No user authority
 			break;
 
 		case isc_info_svc_svr_offline:
@@ -1592,17 +1586,16 @@ void Service::query(USHORT			send_item_length,
 			if (svc_user_flag & SVC_user_dba) {
 				svc_do_shutdown = true;
 				WHY_set_shutdown(true);
-				*info++ = 0;	/* Success */
+				*info++ = 0;	// Success
 			}
 			else
-				*info++ = 2;	/* No user authority */
+				*info++ = 2;	// No user authority
 			break;
 
-			/* The following 3 service commands (or items) stuff the response
-			   buffer 'info' with values of environment variable FIREBIRD,
-			   FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
-			   is not set then default value is returned.
-			 */
+			// The following 3 service commands (or items) stuff the response
+			// buffer 'info' with values of environment variable FIREBIRD,
+			// FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
+			// is not set then default value is returned.
 		case isc_info_svc_get_env:
 		case isc_info_svc_get_env_lock:
 		case isc_info_svc_get_env_msg:
@@ -1628,11 +1621,9 @@ void Service::query(USHORT			send_item_length,
 				if (!(info = INF_put_item(item, strlen(PathBuffer), pb, info, end)))
 					return;
 			}
-			/*
-			 * Can not return error for service v.1 => simply ignore request
-			else
-				need_admin_privs(status, "isc_info_svc_get_env");
-			 */
+			// Can not return error for service v.1 => simply ignore request
+			// else
+			//	need_admin_privs(status, "isc_info_svc_get_env");
 			break;
 
 #ifdef SUPERSERVER
@@ -1648,7 +1639,7 @@ void Service::query(USHORT			send_item_length,
 				break;
 			}
 #endif
-/*
+		/*
 		case isc_info_svc_get_config:
 			// TODO: iterate through all integer-based config values
 			//		 and return them to the client
@@ -1677,9 +1668,9 @@ void Service::query(USHORT			send_item_length,
 				need_admin_privs(status, "isc_info_svc_set_config:");
 			 *
 			break;
-*/
+		*/
 		case isc_info_svc_version:
-			/* The version of the service manager */
+			// The version of the service manager
 
 			length = INF_convert(SERVICE_VERSION, buffer);
 			info = INF_put_item(item, length, buffer, info, end);
@@ -1688,7 +1679,7 @@ void Service::query(USHORT			send_item_length,
 			break;
 
 		case isc_info_svc_capabilities:
-			/* bitmask defining any specific architectural differences */
+			// bitmask defining any specific architectural differences
 
 			length = INF_convert(SERVER_CAPABILITIES_FLAG, buffer);
 			info = INF_put_item(item, length, buffer, info, end);
@@ -1698,10 +1689,10 @@ void Service::query(USHORT			send_item_length,
 
 		case isc_info_svc_server_version:
 			{
-				/* The version of the server engine */
+				// The version of the server engine
 
 				p = buffer;
-				*p++ = 1;			/* Count */
+				*p++ = 1;			// Count
 				*p++ = sizeof(GDS_VERSION) - 1;
 				for (const TEXT* gvp = GDS_VERSION; *gvp; p++, gvp++)
 					*p = *gvp;
@@ -1713,10 +1704,10 @@ void Service::query(USHORT			send_item_length,
 			}
 
 		case isc_info_svc_implementation:
-			/* The server implementation - e.g. Firebird/sun4 */
+			// The server implementation - e.g. Firebird/sun4
 
 			p = buffer;
-			*p++ = 1;			/* Count */
+			*p++ = 1;			// Count
 			*p++ = DbImplementation::current.backwardCompatibleImplementation();
 			if (!(info = INF_put_item(item, p - buffer, buffer, info, end)))
 			{
@@ -1728,7 +1719,7 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_user_dbpath:
             if (svc_user_flag & SVC_user_dba)
             {
-				/* The path to the user security database (security2.fdb) */
+				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
 				SecurityDatabase::getPath(pb);
 
@@ -1737,11 +1728,9 @@ void Service::query(USHORT			send_item_length,
 					return;
 				}
 			}
-			/*
-			 * Can not return error for service v.1 => simply ignore request
-			else
-				need_admin_privs(status, "isc_info_svc_user_dbpath");
-			 */
+			// Can not return error for service v.1 => simply ignore request
+			// else
+			//	need_admin_privs(status, "isc_info_svc_user_dbpath");
 			break;
 
 		case isc_info_svc_response:
@@ -1816,10 +1805,10 @@ void Service::query(USHORT			send_item_length,
 			get_flags = (item == isc_info_svc_line) ? GET_LINE : GET_EOF;
 			get(info + 3, end - (info + 4), get_flags, timeout, &length);
 
-			/* If the read timed out, return the data, if any, & a timeout
-			   item.  If the input buffer was not large enough
-			   to store a read to eof, return the data that was read along
-			   with an indication that more is available. */
+			// If the read timed out, return the data, if any, & a timeout
+			// item.  If the input buffer was not large enough
+			// to store a read to eof, return the data that was read along
+			// with an indication that more is available.
 
 			info = INF_put_item(item, length, info + 3, info, end);
 
@@ -1882,7 +1871,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	{
 	ClumpletReader spb(ClumpletReader::SpbStart, spb_data, spb_length);
 
-/* The name of the service is the first element of the buffer */
+	// The name of the service is the first element of the buffer
 	const UCHAR svc_id = spb.getClumpTag();
 	const serv_entry* serv;
 	for (serv = services; serv->serv_action; serv++)
@@ -1896,8 +1885,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	svc_service_run = serv;
 
-/* currently we do not use "anonymous" service for any purposes but
-   isc_service_query() */
+	// currently we do not use "anonymous" service for any purposes but isc_service_query()
 	if (svc_user_flag == SVC_user_none) {
 		status_exception::raise(Arg::Gds(isc_bad_spb_form));
 	}
@@ -1909,9 +1897,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			status_exception::raise(Arg::Gds(isc_svc_in_use) << Arg::Str(serv->serv_name));
 		}
 
-		/* Another service may have been started with this service block.
-		 * If so, we must reset the service flags.
-		 */
+		// Another service may have been started with this service block.
+		// If so, we must reset the service flags.
 		svc_switches.erase();
 		if (!(svc_flags & SVC_detached))
 		{
@@ -1921,21 +1908,19 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	if (!svc_perm_sw.hasData())
 	{
-		/* If svc_perm_sw is not used -- call a command-line parsing utility */
+		// If svc_perm_sw is not used -- call a command-line parsing utility
 		conv_switches(spb, svc_switches);
 	}
 	else
 	{
-		/* Command line options (isc_spb_options) is used.
-		 * Currently the only case in which it might happen is -- gbak utility
-		 * is called with a "-server" switch.
-		 */
+		// Command line options (isc_spb_options) is used.
+		// Currently the only case in which it might happen is -- gbak utility
+		// is called with a "-server" switch.
 		svc_switches = svc_perm_sw;
 	}
 
-/* Only need to add username and password information to those calls which need
- * to make a database connection
- */
+	// Only need to add username and password information to those calls which need
+	// to make a database connection
 	if (svc_id == isc_action_svc_backup ||
 		svc_id == isc_action_svc_restore ||
 		svc_id == isc_action_svc_nbak ||
@@ -1955,7 +1940,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_set_mapping ||
 		svc_id == isc_action_svc_drop_mapping)
 	{
-		/* add the username and password to the end of svc_switches if needed */
+		// add the username and password to the end of svc_switches if needed
 		if (svc_switches.hasData())
 		{
 			if (svc_trusted_login.hasData())
@@ -2248,10 +2233,9 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			head = add_one(head);
 			length--;
 
-			/* If returning a line of information, replace all new line
-			 * characters with a space.  This will ensure that the output is
-			 * consistent when returning a line or to eof
-			 */
+			// If returning a line of information, replace all new line
+			// characters with a space.  This will ensure that the output is
+			// consistent when returning a line or to eof
 			if ((flags & GET_LINE) && ch == '\n')
 			{
 				buffer[(*return_length)++] = ' ';
@@ -2837,11 +2821,10 @@ const char* Service::getServiceName() const
 }
 
 #ifdef DEBUG
-/* The following two functions are temporary stubs and will be
- * removed as the services API takes shape.  They are used to
- * test that the paths for starting services and parsing command-lines
- * are followed correctly.
- */
+// The following two functions are temporary stubs and will be
+// removed as the services API takes shape.  They are used to
+// test that the paths for starting services and parsing command-lines
+// are followed correctly.
 THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM)
 {
 	gds__log("Starting service");
