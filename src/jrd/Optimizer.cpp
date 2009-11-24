@@ -1368,13 +1368,13 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 			if ((ptr[sortPtr->nod_count] && !(idx->idx_flags & idx_descending)) ||
 				(!ptr[sortPtr->nod_count] && (idx->idx_flags & idx_descending)) ||
 				// for ODS11 default nulls placement always may be matched to index
-				(database->dbb_ods_version >= ODS_VERSION11 &&
+				(true &&
 					((reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first &&
 						ptr[sortPtr->nod_count]) ||
 						(reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last &&
 						!ptr[sortPtr->nod_count]))) ||
 				// for ODS10 and earlier indices always placed nulls at the end of dataset
-				(database->dbb_ods_version < ODS_VERSION11 &&
+				(false &&
 					reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first) )
 			{
 				usableIndex = false;

@@ -325,7 +325,8 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb)
 			}
 		}
 
-		if (count) {
+		if (count)
+		{
 			request->req_records_selected++;
 			request->req_records_affected.bumpFetched();
 		}
@@ -431,7 +432,8 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		case rsb_sort:
 			// dimitr:	we can avoid reading and sorting the entire
 			//			record set, if there's actually nothing to return
-			if (first_records) {
+			if (first_records)
+			{
 				open_sort(tdbb, rsb, (irsb_sort*) impure);//,
 					//(first_records < 0) ? 0 : (FB_UINT64) first_records + skip_records);
 			}
@@ -593,7 +595,8 @@ static void close_procedure(thread_db* tdbb, RecordSource* rsb)
 	irsb_procedure* impure = (irsb_procedure*) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
 
-	if (proc_request) {
+	if (proc_request)
+	{
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_flags &= ~req_in_use;
 		impure->irsb_req_handle = 0;
@@ -896,7 +899,8 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
 	SLONG record = tail->irsb_mrg_equal_current;
 	++record;
 
-	if (record > tail->irsb_mrg_equal_end) {
+	if (record > tail->irsb_mrg_equal_end)
+	{
 		if (stream == 0 || !get_merge_fetch(tdbb, rsb, stream - 1))
 			return false;
 		record = tail->irsb_mrg_equal;
@@ -996,7 +1000,8 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 				int result;
 				while ( (result = compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1])) )
 				{
-					if (result < 0) {
+					if (result < 0)
+					{
 						highest_ptr = ptr;
 						goto recycle;
 					}
@@ -1077,7 +1082,8 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 			}
 			merge_file* mfb = &tail2->irsb_mrg_file;
 			ULONG blocks = mfb->mfb_equal_records / mfb->mfb_blocking_factor;
-			if (++blocks > most_blocks) {
+			if (++blocks > most_blocks)
+			{
 				most_blocks = blocks;
 				best_tail = tail2;
 			}
@@ -1097,8 +1103,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 }
 
 
-static SLONG get_merge_record(thread_db* tdbb,
-							  RecordSource* rsb, irsb_mrg::irsb_mrg_repeat * impure)
+static SLONG get_merge_record(thread_db* tdbb, RecordSource* rsb, irsb_mrg::irsb_mrg_repeat* impure)
 {
 /**************************************
  *
@@ -1138,10 +1143,10 @@ static SLONG get_merge_record(thread_db* tdbb,
 }
 
 
-static bool get_procedure(thread_db*			tdbb,
-							 RecordSource*		rsb,
-							 irsb_procedure*	impure,
-							 record_param*		rpb)
+static bool get_procedure(thread_db*		tdbb,
+						  RecordSource*		rsb,
+						  irsb_procedure*	impure,
+						  record_param*		rpb)
 {
 /**************************************
  *
@@ -1172,7 +1177,8 @@ static bool get_procedure(thread_db*			tdbb,
 	USHORT oml = impure->irsb_message->str_length - FB_ALIGNMENT;
 
 	Record* record;
-	if (!rpb->rpb_record) {
+	if (!rpb->rpb_record)
+	{
 		record = rpb->rpb_record =
 			FB_NEW_RPT(*tdbb->getDefaultPool(), rec_format->fmt_length) Record(*tdbb->getDefaultPool());
 		record->rec_format = rec_format;
@@ -1226,9 +1232,7 @@ static bool get_procedure(thread_db*			tdbb,
 }
 
 
-bool RSE_internal_get_record(thread_db*	tdbb,
-							 RecordSource*	rsb,
-							 RecordSource*	parent_rsb)
+bool RSE_internal_get_record(thread_db* tdbb, RecordSource* rsb, RecordSource* parent_rsb)
 {
 /**************************************
  *
@@ -1420,7 +1424,8 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 
 								// see if any record is null
 
-								if (request->req_flags & req_null) {
+								if (request->req_flags & req_null)
+								{
 									any_null = true;
 									break;
 								}
@@ -1446,7 +1451,8 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 					result = false;
 					while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb))
 					{
-						if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0])) {
+						if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0]))
+						{
 							result = true;
 							break;
 						}
@@ -1485,16 +1491,19 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 							// make sure it wasn't FALSE because there's
 							// no select stream record
 
-							if (select_node) {
+							if (select_node)
+							{
 								request->req_flags &= ~req_null;
 								// select for ANY/ALL processing
 								const bool select_value = EVL_boolean(tdbb, select_node);
-								if (select_value) {
+								if (select_value)
+								{
 									any_false = true;
 									break;
 								}
 							}
-							else {
+							else
+							{
 								any_false = true;
 								break;
 							}
@@ -1532,16 +1541,19 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 							// make sure it wasn't FALSE because there's
 							// no select stream record
 
-							if (select_node) {
+							if (select_node)
+							{
 								request->req_flags &= ~req_null;
 								// select for ANY/ALL processing
 								const bool select_value = EVL_boolean(tdbb, select_node);
-								if (select_value) {
+								if (select_value)
+								{
 									any_false = true;
 									break;
 								}
 							}
-							else {
+							else
+							{
 								any_false = true;
 								break;
 							}
@@ -1565,7 +1577,8 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 				result = false;
 				while (RSE_internal_get_record(tdbb, rsb->rsb_next, rsb))
 				{
-					if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0])) {
+					if (EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[0]))
+					{
 						result = true;
 						break;
 					}
@@ -1613,7 +1626,8 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 		{
 			irsb_skip_n* skip = (irsb_skip_n*) impure;
 
-			while (skip->irsb_count > 1) {
+			while (skip->irsb_count > 1)
+			{
 				skip->irsb_count--;
 				if (!RSE_internal_get_record(tdbb, rsb->rsb_next, NULL))
 					return false;
@@ -1653,7 +1667,8 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 		break;
 
 	case rsb_cross:
-		if (impure->irsb_flags & irsb_first) {
+		if (impure->irsb_flags & irsb_first)
+		{
 			for (USHORT i = 0; i < rsb->rsb_count; i++)
 			{
 				RSE_open(tdbb, rsb->rsb_arg[i]);
@@ -1746,7 +1761,8 @@ bool RSE_internal_get_record(thread_db*	tdbb,
 	{
 		push_rpbs(tdbb, request, rsb);
 		impure->irsb_flags |= irsb_checking_singular;
-		if (RSE_internal_get_record(tdbb, rsb, parent_rsb)) {
+		if (RSE_internal_get_record(tdbb, rsb, parent_rsb))
+		{
 			impure->irsb_flags &= ~irsb_checking_singular;
 			ERR_post(Arg::Gds(isc_sing_select_err));
 		}
@@ -1947,7 +1963,8 @@ static void join_to_nulls(thread_db* tdbb, StreamStack* stream)
 		// one, first find the format, then allocate the record block
 
 		Record* record = rpb->rpb_record;
-		if (!record) {
+		if (!record)
+		{
 			const Format* format = rpb->rpb_relation->rel_current_format;
 			if (!format) {
 				format = MET_format(tdbb, rpb->rpb_relation, rpb->rpb_format_number);
@@ -2025,7 +2042,8 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 		}
 		Record* record = rpb->rpb_record;
 
-		if (record && !flag && !record->rec_format) {
+		if (record && !flag && !record->rec_format)
+		{
 			fb_assert(record->rec_fmt_bk);
 			record->rec_format = record->rec_fmt_bk; // restore the format
 		}
@@ -2034,7 +2052,8 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 
 		if (flag)
 			SET_NULL(record, id);
-		else {
+		else
+		{
 			MOV_move(tdbb, &from, &to);
 			CLEAR_NULL(record, id);
 		}
@@ -2138,7 +2157,8 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 		iml = format->fmt_length;
 		im = (UCHAR *) request + in_message->nod_impure;
 	}
-	else {
+	else
+	{
 		iml = 0;
 		im = NULL;
 	}
@@ -2159,7 +2179,8 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 
 		trace.finish(true, res_successful);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		close_procedure(tdbb, rsb);
 		throw;
 	}
@@ -2202,90 +2223,92 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //,
 
 	try {
 
-	// Pump the input stream dry while pushing records into sort. For
-	// each record, map all fields into the sort record. The reverse
-	// mapping is done in get_sort().
+		// Pump the input stream dry while pushing records into sort. For
+		// each record, map all fields into the sort record. The reverse
+		// mapping is done in get_sort().
 
-	dsc to, temp;
+		dsc to, temp;
 
-	while (RSE_internal_get_record(tdbb, rsb->rsb_next, NULL))
-	{
-		records++;
-
-		// "Put" a record to sort. Actually, get the address of a place
-		// to build a record.
-
-		UCHAR* data = 0;
-		SORT_put(tdbb, impure->irsb_sort_handle, reinterpret_cast<ULONG**>(&data));
-
-		// Zero out the sort key. This solve a multitude of problems.
-
-		MOVE_CLEAR(data, (SLONG) map->smb_length);
-
-		// Loop thru all field (keys and hangers on) involved in the sort.
-		// Be careful to null field all unused bytes in the sort key.
-
-		const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
-		for (smb_repeat* item = map->smb_rpt; item < end_item; item++)
+		while (RSE_internal_get_record(tdbb, rsb->rsb_next, NULL))
 		{
-			to = item->smb_desc;
-			to.dsc_address = data + (IPTR) to.dsc_address;
-			bool flag = false;
-			dsc* from = 0;
-			if (item->smb_node)
-			{
-				from = EVL_expr(tdbb, item->smb_node);
-				if (request->req_flags & req_null)
-					flag = true;
-			}
-			else
-			{
-				from = &temp;
-				record_param* rpb = &request->req_rpb[item->smb_stream];
-				if (item->smb_field_id < 0)
-				{
-					switch (item->smb_field_id)
-					{
-					case SMB_TRANS_ID:
-						*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
-						break;
-					case SMB_DBKEY:
-						*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
-						break;
-					case SMB_DBKEY_VALID:
-						*to.dsc_address = (UCHAR) rpb->rpb_number.isValid();
-						break;
-					default:
-						fb_assert(false);
-					}
-					continue;
-				}
-				if (!EVL_field(rpb->rpb_relation, rpb->rpb_record, item->smb_field_id, from))
-				{
-					flag = true;
-				}
-			}
-			*(data + item->smb_flag_offset) = flag ? TRUE : FALSE;
-			if (!flag) {
-				// If moving a TEXT item into the key portion of the sort record,
-				// then want to sort by language dependent order.
+			records++;
 
-				if (IS_INTL_DATA(&item->smb_desc) &&
-					(USHORT)(IPTR) item->smb_desc.dsc_address < map->smb_key_length * sizeof(ULONG))
+			// "Put" a record to sort. Actually, get the address of a place
+			// to build a record.
+
+			UCHAR* data = 0;
+			SORT_put(tdbb, impure->irsb_sort_handle, reinterpret_cast<ULONG**>(&data));
+
+			// Zero out the sort key. This solve a multitude of problems.
+
+			MOVE_CLEAR(data, (SLONG) map->smb_length);
+
+			// Loop thru all field (keys and hangers on) involved in the sort.
+			// Be careful to null field all unused bytes in the sort key.
+
+			const smb_repeat* const end_item = map->smb_rpt + map->smb_count;
+			for (smb_repeat* item = map->smb_rpt; item < end_item; item++)
+			{
+				to = item->smb_desc;
+				to.dsc_address = data + (IPTR) to.dsc_address;
+				bool flag = false;
+				dsc* from = 0;
+				if (item->smb_node)
 				{
-					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc), from, &to,
-						(map->smb_flags & SMB_unique_sort ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
+					from = EVL_expr(tdbb, item->smb_node);
+					if (request->req_flags & req_null)
+						flag = true;
 				}
 				else
-					MOV_move(tdbb, from, &to);
+				{
+					from = &temp;
+					record_param* rpb = &request->req_rpb[item->smb_stream];
+					if (item->smb_field_id < 0)
+					{
+						switch (item->smb_field_id)
+						{
+						case SMB_TRANS_ID:
+							*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
+							break;
+						case SMB_DBKEY:
+							*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
+							break;
+						case SMB_DBKEY_VALID:
+							*to.dsc_address = (UCHAR) rpb->rpb_number.isValid();
+							break;
+						default:
+							fb_assert(false);
+						}
+						continue;
+					}
+					if (!EVL_field(rpb->rpb_relation, rpb->rpb_record, item->smb_field_id, from))
+					{
+						flag = true;
+					}
+				}
+				*(data + item->smb_flag_offset) = flag ? TRUE : FALSE;
+				if (!flag)
+				{
+					// If moving a TEXT item into the key portion of the sort record,
+					// then want to sort by language dependent order.
+
+					if (IS_INTL_DATA(&item->smb_desc) &&
+						(USHORT)(IPTR) item->smb_desc.dsc_address < map->smb_key_length * sizeof(ULONG))
+					{
+						INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc), from, &to,
+							(map->smb_flags & SMB_unique_sort ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
+					}
+					else
+						MOV_move(tdbb, from, &to);
+				}
 			}
 		}
-	}
 
-	SORT_sort(tdbb, impure->irsb_sort_handle);
+		SORT_sort(tdbb, impure->irsb_sort_handle);
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SORT_fini(impure->irsb_sort_handle);
 		impure->irsb_sort_handle = NULL;
@@ -2355,7 +2378,8 @@ static void proc_assignment(thread_db* tdbb,
 		case dtype_text:
 			// YYY - not necessarily the right thing to do
 			// YYY for text formats that don't have trailing spaces
-			if (l) {
+			if (l)
+			{
 				const CHARSET_ID chid = DSC_GET_CHARSET(to_desc);
 				/*
 				CVC: I don't know if we have to check for dynamic-127 charset here.
@@ -2783,7 +2807,8 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  *	the file doesn't exist, by all means, create one.
  *
  **************************************/
-	if (!mfb->mfb_space) {
+	if (!mfb->mfb_space)
+	{
 		MemoryPool& pool = *getDefaultMemoryPool();
 		mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 	}

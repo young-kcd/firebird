@@ -311,10 +311,8 @@ USHORT CCH_checksum(BufferDesc* bdb)
 	// deleted when development on ODS_VERSION10 begins and
 	// NO_CHECKSUM is defined for all platforms.
 
-	if (dbb->dbb_ods_version >= ODS_VERSION9) {
-		return DUMMY_CHECKSUM;
-	}
-#endif
+	return DUMMY_CHECKSUM;
+#else
 	pag* page = bdb->bdb_buffer;
 
 	const ULONG* const end = (ULONG *) ((SCHAR *) page + dbb->dbb_page_size);
@@ -350,7 +348,8 @@ USHORT CCH_checksum(BufferDesc* bdb)
 
 	// Page is all zeros -- invent a checksum
 
-	return 12345;
+	return DUMMY_CHECKSUM;
+#endif
 #endif
 }
 

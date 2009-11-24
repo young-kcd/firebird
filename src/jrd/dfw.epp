@@ -1006,25 +1006,22 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
-	if (dbb->dbb_ods_version >= ODS_VERSION11) {
+	jrd_req* request = CMP_find_request(tdbb, irq_m_index_seg, IRQ_REQUESTS);
 
-		jrd_req* request = CMP_find_request(tdbb, irq_m_index_seg, IRQ_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-			SEG IN RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name
-				SORTED BY SEG.RDB$FIELD_POSITION
-			if (!REQUEST(irq_m_index_seg))
-				REQUEST(irq_m_index_seg) = request;
-			MODIFY SEG USING
-				SEG.RDB$STATISTICS = selectivity[SEG.RDB$FIELD_POSITION];
-			END_MODIFY;
-		END_FOR;
-
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		SEG IN RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name
+			SORTED BY SEG.RDB$FIELD_POSITION
 		if (!REQUEST(irq_m_index_seg))
 			REQUEST(irq_m_index_seg) = request;
-	}
+		MODIFY SEG USING
+			SEG.RDB$STATISTICS = selectivity[SEG.RDB$FIELD_POSITION];
+		END_MODIFY;
+	END_FOR;
 
-	jrd_req* request = CMP_find_request(tdbb, irq_m_index, IRQ_REQUESTS);
+	if (!REQUEST(irq_m_index_seg))
+		REQUEST(irq_m_index_seg) = request;
+
+	request = CMP_find_request(tdbb, irq_m_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name
@@ -1346,9 +1343,6 @@ static bool add_difference(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
-
 	switch (phase)
 	{
 	case 0:
@@ -1391,9 +1385,6 @@ static bool delete_difference(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
-
 	switch (phase)
 	{
 	case 0:
@@ -1434,9 +1425,6 @@ static bool begin_backup(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_tra*)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
-
 	switch (phase)
 	{
 	case 0:
@@ -1466,9 +1454,6 @@ static bool end_backup(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_tra*)
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-
-	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
 
 	switch (phase)
 	{
@@ -2703,14 +2688,8 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_version = dbb->dbb_minor_version;
 
-	USHORT local_min_relation_id;
-	if (ENCODE_ODS(major_version, minor_version) < ODS_9_0)
-		local_min_relation_id = MIN_RELATION_ID;
-	else
-		local_min_relation_id = USER_DEF_REL_INIT_ID;
+	const USHORT local_min_relation_id = USER_DEF_REL_INIT_ID;
 
 	switch (phase)
 	{
@@ -4797,68 +4776,58 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		FMTS.RDB$RELATION_ID = relation->rel_id;
 		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMTS.RDB$DESCRIPTOR);
 
-		if (dbb->dbb_ods_version < ODS_VERSION11)
+		// Use generic representation of formats with 32-bit offsets
+
+		Firebird::Array<Ods::Descriptor> odsDescs;
+		Ods::Descriptor* odsDesc = odsDescs.getBuffer(format->fmt_count);
+
+		for (Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
+			 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
 		{
-			// For ODS10 and earlier put descriptors in their in-memory representation
-			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
-			BLB_put_segment(tdbb, blob, reinterpret_cast<const UCHAR*>(&(format->fmt_desc[0])),
-							(USHORT)(format->fmt_count * sizeof(dsc)));
+			*odsDesc = *desc;
 		}
-		else
+
+		HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
+
+		if (dbb->dbb_ods_version >= ODS_VERSION12)
 		{
-			// Use generic representation of formats with 32-bit offsets
+			buffer.add(UCHAR(format->fmt_count));
+			buffer.add(UCHAR(format->fmt_count >> 8));
+		}
 
-			Firebird::Array<Ods::Descriptor> odsDescs;
-			Ods::Descriptor* odsDesc = odsDescs.getBuffer(format->fmt_count);
+		buffer.add((UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(Ods::Descriptor));
 
-			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
-				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
+		if (dbb->dbb_ods_version >= ODS_VERSION12)
+		{
+			size_t pos = buffer.getCount();
+			buffer.add(0);
+			buffer.add(0);
+
+			USHORT i = 0, dflCount = 0;
+			for (Format::fmt_defaults_iterator impure = format->fmt_defaults.begin();
+				 impure != format->fmt_defaults.end(); ++impure, ++i)
 			{
-				*odsDesc = *desc;
-			}
-
-			HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
-
-			if (dbb->dbb_ods_version >= ODS_VERSION12)
-			{
-				buffer.add(UCHAR(format->fmt_count));
-				buffer.add(UCHAR(format->fmt_count >> 8));
-			}
-
-			buffer.add((UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(Ods::Descriptor));
-
-			if (dbb->dbb_ods_version >= ODS_VERSION12)
-			{
-				size_t pos = buffer.getCount();
-				buffer.add(0);
-				buffer.add(0);
-
-				USHORT i = 0, dflCount = 0;
-				for (Format::fmt_defaults_iterator impure = format->fmt_defaults.begin();
-					 impure != format->fmt_defaults.end(); ++impure, ++i)
+				if (!impure->vlu_desc.isUnknown())
 				{
-					if (!impure->vlu_desc.isUnknown())
-					{
-						dsc desc = impure->vlu_desc;
-						desc.dsc_address = NULL;
+					dsc desc = impure->vlu_desc;
+					desc.dsc_address = NULL;
 
-						Ods::Descriptor odsDflDesc = desc;
+					Ods::Descriptor odsDflDesc = desc;
 
-						buffer.add(UCHAR(i));
-						buffer.add(UCHAR(i >> 8));
-						buffer.add((UCHAR*) &odsDflDesc, sizeof(odsDflDesc));
-						buffer.add(impure->vlu_desc.dsc_address, impure->vlu_desc.dsc_length);
+					buffer.add(UCHAR(i));
+					buffer.add(UCHAR(i >> 8));
+					buffer.add((UCHAR*) &odsDflDesc, sizeof(odsDflDesc));
+					buffer.add(impure->vlu_desc.dsc_address, impure->vlu_desc.dsc_length);
 
-						++dflCount;
-					}
+					++dflCount;
 				}
-
-				buffer[pos] = UCHAR(dflCount);
-				buffer[pos + 1] = UCHAR(dflCount >> 8);
 			}
 
-			BLB_put_segment(tdbb, blob, buffer.begin(), buffer.getCount());
+			buffer[pos] = UCHAR(dflCount);
+			buffer[pos + 1] = UCHAR(dflCount >> 8);
 		}
+
+		BLB_put_segment(tdbb, blob, buffer.begin(), buffer.getCount());
 		BLB_close(tdbb, blob);
 	END_STORE;
 

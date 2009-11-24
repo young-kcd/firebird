@@ -167,7 +167,7 @@ const USHORT ODS_CURRENT_VERSION = ODS_12_0;	// Current ODS version in use which
 												// both major and minor ODS versions!
 
 
-const USHORT USER_REL_INIT_ID_ODS8		= 31;	// ODS < 9 ( <= 8.2)
+//const USHORT USER_REL_INIT_ID_ODS8		= 31;	// ODS < 9 ( <= 8.2)
 const USHORT USER_DEF_REL_INIT_ID		= 128;	// ODS >= 9
 
 
@@ -347,14 +347,10 @@ struct index_root_page
 
 // key descriptor
 
-struct irtd_ods10
+struct irtd
 {
 	USHORT irtd_field;
 	USHORT irtd_itype;
-};
-
-struct irtd : public irtd_ods10
-{
 	float irtd_selectivity;
 };
 

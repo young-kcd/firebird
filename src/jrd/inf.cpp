@@ -692,39 +692,27 @@ void INF_database_info(const UCHAR* items,
 		case isc_info_db_sql_dialect:
 			/*
 			   **
-			   ** there are 3 types of databases:
+			   ** there are 2 types of databases:
 			   **
-			   **   1. a DB that is created before V6.0. This DB only speak SQL
-			   **        dialect 1 and 2.
-			   **
-			   **   2. a non ODS 10 DB is backed up/restored in IB V6.0. Since
+			   **   1. a non ODS 10 DB is backed up/restored in IB V6.0. Since
 			   **        this DB contained some old SQL dialect, therefore it
 			   **        speaks SQL dialect 1, 2, and 3
 			   **
-			   **   3. a DB that is created in V6.0. This DB speak SQL
+			   **   2. a DB that is created in V6.0. This DB speak SQL
 			   **        dialect 1, 2 or 3 depending the DB was created
 			   **        under which SQL dialect.
 			   **
 			 */
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_10_0)
+			if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
 			{
-				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-				{
-					/*
-					   ** DB created in IB V6.0 by client SQL dialect 3
-					 */
-					*p++ = SQL_DIALECT_V6;
-				}
-				else
-				{
-					/*
-					   ** old DB was gbaked in IB V6.0
-					 */
-					*p++ = SQL_DIALECT_V5;
-				}
+				 // DB created in IB V6.0 by client SQL dialect 3
+				*p++ = SQL_DIALECT_V6;
 			}
 			else
-				*p++ = SQL_DIALECT_V5;	/* pre ODS 10 DB */
+			{
+				// old DB was gbaked in IB V6.0
+				*p++ = SQL_DIALECT_V5;
+			}
 
 			length = p - buffer;
 			break;

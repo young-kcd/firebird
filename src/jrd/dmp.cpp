@@ -969,7 +969,6 @@ static void dmp_root(const index_root_page* page)
 			   "INDEX ROOT PAGE\t checksum %d\t generation %ld\n\tRelation: %d, Count: %d\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
 			   page->irt_relation, page->irt_count);
-	const bool ods11plus = (JRD_get_thread_data()->getDatabase()->dbb_ods_version >= ODS_VERSION11);
 	USHORT i = 0;
 	for (const index_root_page::irt_repeat* desc = page->irt_rpt; i < page->irt_count; i++, desc++)
 	{
@@ -979,10 +978,7 @@ static void dmp_root(const index_root_page* page)
 		const SCHAR* ptr = (SCHAR *) page + desc->irt_desc;
 		for (USHORT j = 0; j < desc->irt_keys; j++)
 		{
-			if (ods11plus)
-				ptr += sizeof(irtd);
-			else
-				ptr += sizeof(irtd_ods10);
+			ptr += sizeof(irtd);
 			const irtd* stuff = (irtd*)ptr;
 			fprintf(dbg_file, "(%d, %d),", stuff->irtd_field, stuff->irtd_itype);
 		}

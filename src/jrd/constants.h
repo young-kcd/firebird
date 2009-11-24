@@ -153,7 +153,6 @@ const int MAX_INDEX_SEGMENTS = 16;
 // AB: If the maximum key-size will change, don't forget dyn.h and dba.epp
 // which cannot use these defines.
 const ULONG MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
-const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11
 
 const USHORT SQL_MATCH_1_CHAR		= '_';	/* Not translatable */
 const USHORT SQL_MATCH_ANY_CHARS	= '%';	/* Not translatable */

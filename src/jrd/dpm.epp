@@ -1228,14 +1228,14 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	 *  (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
 	 */
 	SINT64* ptr = NULL;
-	SLONG* lptr = NULL;
 
 	if (dbb->dbb_ods_version >= ODS_VERSION12)
 		ptr = ((SINT64*) (page->gpg_values)) + offset;
-	else if (dbb->dbb_ods_version >= ODS_VERSION10)
-		ptr = ((SINT64*) (((old_gen_page*) page)->gpg_values)) + offset;
 	else
-		lptr = ((SLONG *) (((pointer_page*) page)->ppg_page)) + offset;
+	{
+		fb_assert(dbb->dbb_ods_version == ODS_VERSION11);
+		ptr = ((SINT64*) (((old_gen_page*) page)->gpg_values)) + offset;
+	}
 
 	if (val || initialize)
 	{
@@ -1246,26 +1246,11 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 		}
 		CCH_MARK_SYSTEM(tdbb, &window);
 
-		/* Initialize or increment the quad value in an ODS 10 or later
-		 * generator page, or the long value in ODS <= 9.
-		 * The conditions were commented out 1999-05-14 by ChrisJ, because we
-		 * decided that the V6 engine would only access an ODS-10 database.
-		 * (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
-		 */
-		if (dbb->dbb_ods_version >= ODS_VERSION10)
-		{
-			if (initialize) {
-				*ptr = val;
-			}
-			else {
-				*ptr += val;
-			}
-		}
-		else if (initialize) {
-			*lptr = (SLONG) val;
+		if (initialize) {
+			*ptr = val;
 		}
 		else {
-			*lptr += (SLONG) val;
+			*ptr += val;
 		}
 
 		if (tdbb->getTransaction()) {
@@ -1273,21 +1258,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 		}
 	}
 
-	/*  If we are in ODS >= 10, then we have a pointer to an int64 value in the
-	 *  generator page: if earlier than 10, it's a pointer to a long value.
-	 *  We always want to return an int64, so convert the long value from the
-	 *  old ODS into an int64.
-	 * The conditions were commented out 1999-05-14 by ChrisJ, because we
-	 * decided that the V6 engine would only access an ODS-10 database.
-	 * (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
-	 */
-	SINT64 value;
-	if (dbb->dbb_ods_version >= ODS_VERSION10) {
-		value = *ptr;
-	}
-	else {
-		value = (SINT64) *lptr;
-	}
+	SINT64 value = *ptr;
 
 	CCH_RELEASE(tdbb, &window);
 

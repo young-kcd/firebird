@@ -456,17 +456,8 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 		const irtd* key_descriptor = (irtd*) ptr;
 		idx_desc->idx_field = key_descriptor->irtd_field;
 		idx_desc->idx_itype = key_descriptor->irtd_itype;
-		// dimitr: adjust the ODS stuff accurately
-		if (dbb->dbb_ods_version >= ODS_VERSION11)
-		{
-			idx_desc->idx_selectivity = key_descriptor->irtd_selectivity;
-			ptr += sizeof(irtd);
-		}
-		else
-		{
-			idx_desc->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
-			ptr += sizeof(irtd_ods10);
-		}
+		idx_desc->idx_selectivity = key_descriptor->irtd_selectivity;
+		ptr += sizeof(irtd);
 	}
 	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
 
@@ -626,9 +617,6 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 
 	// Remove ignore_nulls flag for older ODS
 	const Database* dbb = tdbb->getDatabase();
-	if (dbb->dbb_ods_version < ODS_VERSION11) {
-		retrieval->irb_generic &= ~irb_ignore_null_value_key;
-	}
 
 	index_desc idx;
 	RelationPages* relPages = retrieval->irb_relation->getPages(tdbb);
@@ -1269,8 +1257,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	// hvlad: in ODS11 key of descending index can be prefixed with
 	//		  one byte value. See comments in compress
-	const size_t prefix = (idx->idx_flags & idx_descending) &&
-		(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11) ? 1 : 0;
+	const size_t prefix = (idx->idx_flags & idx_descending) ? 1 : 0;
 
 	const Format* format = MET_current(tdbb, relation);
 	index_desc::idx_repeat* tail = idx->idx_rpt;
@@ -1824,11 +1811,7 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 
 	for (int retry = 0; retry < 2; ++retry)
 	{
-		// dimitr: irtd_selectivity member of IRTD is introduced in ODS11
-		if (dbb->dbb_ods_version < ODS_VERSION11)
-			len = idx->idx_count * sizeof(irtd_ods10);
-		else
-			len = idx->idx_count * sizeof(irtd);
+		len = idx->idx_count * sizeof(irtd);
 
 		space = dbb->dbb_page_size;
 		slot = NULL;
@@ -1885,21 +1868,9 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 
 	slot->irt_root = 0;
 
-	if (dbb->dbb_ods_version < ODS_VERSION11)
-	{
-		for (USHORT i = 0; i < idx->idx_count; i++)
-		{
-			irtd_ods10 temp;
-			temp.irtd_field = idx->idx_rpt[i].idx_field;
-			temp.irtd_itype = idx->idx_rpt[i].idx_itype;
-			memcpy(desc, &temp, sizeof(temp));
-			desc += sizeof(temp);
-		}
-	}
-	else {
-		// Exploit the fact idx_repeat structure matches ODS IRTD one
-		memcpy(desc, idx->idx_rpt, len);
-	}
+	// Exploit the fact idx_repeat structure matches ODS IRTD one
+	memcpy(desc, idx->idx_rpt, len);
+
 	CCH_RELEASE(tdbb, &window);
 }
 
@@ -2336,64 +2307,21 @@ static void compress(thread_db* tdbb,
 
 	if (isNull)
 	{
-		// dbb->dbb_ods_version <= ODS_VERSION7 cannot happen, see PAG_header_init()
-		fb_assert(dbb->dbb_ods_version >= ODS_VERSION8);
+		// dbb->dbb_ods_version < ODS_VERSION11 cannot happen, see PAG_header_init()
+		fb_assert(dbb->dbb_ods_version >= ODS_VERSION11);
 
 		UCHAR pad = 0;
 		key->key_flags &= ~key_empty;
 		// AB: NULL should be threated as lowest value possible.
 		//     Therefore don't complement pad when we have an ascending index.
-		if (dbb->dbb_ods_version >= ODS_VERSION11)
+		if (descending)
 		{
-			if (descending)
-			{
-				// DESC NULLs are stored as 1 byte
-				*p++ = pad;
-				key->key_length = (p - key->key_data);
-			}
-			else
-				key->key_length = 0; // ASC NULLs are stored with no data
-
-			return;
-		}
-
-		if (!descending) {
-			pad ^= -1;
-		}
-
-		size_t length;
-		switch (itype)
-		{
-		case idx_numeric:
-			length = sizeof(double);
-			break;
-		case idx_sql_time:
-			length = sizeof(ULONG);
-			break;
-		case idx_sql_date:
-			length = sizeof(SLONG);
-			break;
-		case idx_timestamp2:
-			length = sizeof(SINT64);
-			break;
-		case idx_numeric2:
-			length = INT64_KEY_LENGTH;
-			break;
-		default:
-			length = desc->dsc_length;
-			if (desc->dsc_dtype == dtype_varying) {
-				length -= sizeof(SSHORT);
-			}
-			if (itype >= idx_first_intl_string) {
-				length = INTL_key_length(tdbb, itype, length);
-			}
-			break;
-		}
-		length = (length > sizeof(key->key_data)) ? sizeof(key->key_data) : length;
-		while (length--) {
+			// DESC NULLs are stored as 1 byte
 			*p++ = pad;
+			key->key_length = (p - key->key_data);
 		}
-		key->key_length = (p - key->key_data);
+		else
+			key->key_length = 0; // ASC NULLs are stored with no data
 
 		return;
 	}
@@ -2436,8 +2364,7 @@ static void compress(thread_db* tdbb,
 			if (length > sizeof(key->key_data)) {
 				length = sizeof(key->key_data);
 			}
-			if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) &&
-				((*ptr == desc_end_value_prefix) || (*ptr == desc_end_value_check)))
+			if (descending && ((*ptr == desc_end_value_prefix) || (*ptr == desc_end_value_check)))
 			{
 				*p++ = desc_end_value_prefix;
 				if ((length + 1) > sizeof(key->key_data)) {
@@ -2450,8 +2377,7 @@ static void compress(thread_db* tdbb,
 		else
 		{
 			// Leave key_empty flag, because the string is an empty string
-			if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) &&
-				((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
+			if (descending && ((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
 			{
 				*p++ = desc_end_value_prefix;
 			}
@@ -2714,7 +2640,7 @@ static void compress(thread_db* tdbb,
 
 	// By descending index, check first byte
 	q = key->key_data;
-	if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) && (key->key_length >= 1) &&
+	if (descending && (key->key_length >= 1) &&
 		((*q == desc_end_value_prefix) || (*q == desc_end_value_check)))
 	{
 		p = key->key_data;
@@ -2762,12 +2688,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 	{
 		if (root_idx->irt_root)
 		{
-			USHORT len;
-			if (dbb->dbb_ods_version < ODS_VERSION11)
-				len = root_idx->irt_keys * sizeof(irtd_ods10);
-			else
-				len = root_idx->irt_keys * sizeof(irtd);
-
+			const USHORT len = root_idx->irt_keys * sizeof(irtd);
 			p -= len;
 			memcpy(p, temp + root_idx->irt_desc, len);
 			root_idx->irt_desc = p - (UCHAR*) page;
@@ -3155,15 +3076,11 @@ static SLONG fast_load(thread_db* tdbb,
 	if (idx->idx_flags & idx_descending) {
 		flags |= btr_descending;
 	}
-	if (dbb->dbb_ods_version >= ODS_VERSION11)
-	{
-		flags |= btr_all_record_number;
-		flags |= btr_large_keys;
-	}
+
+	flags |= btr_all_record_number;
+	flags |= btr_large_keys;
 
 	// Jump information initialization
-	// Just set this variable to false to disable jump information inside indices.
-	bool useJumpInfo = (dbb->dbb_ods_version >= ODS_VERSION11);
 
 	typedef Firebird::Array<jumpNodeList*> jumpNodeListContainer;
 	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->getDefaultPool())
@@ -3178,43 +3095,40 @@ static SLONG fast_load(thread_db* tdbb,
 	jumpInfo.jumpAreaSize = 0;
 	jumpInfo.jumpers = 0;
 
-	if (useJumpInfo)
+	// AB: Let's try to determine to size between the jumps to speed up
+	// index search. Of course the size depends on the key_length. The
+	// bigger the key, the less jumps we can make. (Although we must
+	// not forget that mostly the keys are compressed and much smaller
+	// than the maximum possible key!).
+	// These values can easily change without effect on previous created
+	// indices, cause this value is stored on each page.
+	// Remember, the lower the value how more jumpkeys are generated and
+	// how faster jumpkeys are recalculated on insert.
+
+
+	jumpInfo.jumpAreaSize = 512 + ((int)sqrt((float)key_length) * 16);
+	//  key_size  |  jumpAreaSize
+	//  ----------+-----------------
+	//         4  |    544
+	//         8  |    557
+	//        16  |    576
+	//        64  |    640
+	//       128  |    693
+	//       256  |    768
+
+
+	// If our half page_size is smaller as the jump_size then jump_size isn't
+	// needfull at all.
+	if ((dbb->dbb_page_size / 2) < jumpInfo.jumpAreaSize) {
+		jumpInfo.jumpAreaSize = 0;
+	}
+
+	if (jumpInfo.jumpAreaSize > 0)
 	{
-		// AB: Let's try to determine to size between the jumps to speed up
-		// index search. Of course the size depends on the key_length. The
-		// bigger the key, the less jumps we can make. (Although we must
-		// not forget that mostly the keys are compressed and much smaller
-		// than the maximum possible key!).
-		// These values can easily change without effect on previous created
-		// indices, cause this value is stored on each page.
-		// Remember, the lower the value how more jumpkeys are generated and
-		// how faster jumpkeys are recalculated on insert.
-
-
-		jumpInfo.jumpAreaSize = 512 + ((int)sqrt((float)key_length) * 16);
-		//  key_size  |  jumpAreaSize
-		//  ----------+-----------------
-		//         4  |    544
-        //         8  |    557
-		//        16  |    576
-		//        64  |    640
-		//       128  |    693
-		//       256  |    768
-
-
-		// If our half page_size is smaller as the jump_size then jump_size isn't
-		// needfull at all.
-		if ((dbb->dbb_page_size / 2) < jumpInfo.jumpAreaSize) {
-			jumpInfo.jumpAreaSize = 0;
-		}
-		useJumpInfo = (jumpInfo.jumpAreaSize > 0);
-		if (useJumpInfo)
-		{
-			// If you want to do tests without jump information
-			// set the useJumpInfo boolean to false, but don't
-			// disable this flag.
-			flags |= btr_jump_info;
-		}
+		// If you want to do tests without jump information
+		// set the useJumpInfo boolean to false, but don't
+		// disable this flag.
+		flags |= btr_jump_info;
 	}
 
 	WIN* window = 0;
@@ -3225,8 +3139,7 @@ static SLONG fast_load(thread_db* tdbb,
 	const ULONG segments = idx->idx_count;
 
 	// hvlad: look at IDX_create_index for explanations about NULL indicator below
-	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
-	const int nullIndLen = isODS11 && !descending && (idx->idx_count == 1) ? 1 : 0;
+	const int nullIndLen = !descending && (idx->idx_count == 1) ? 1 : 0;
 
 	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
 
@@ -6316,7 +6229,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 			// than 8.2, then we can garbage-collect the page
 			const contents result = remove_node(tdbb, insertion, window);
 
-			if ((result != contents_above_threshold) && (dbb->dbb_ods_version >= ODS_VERSION9))
+			if (result != contents_above_threshold)
 			{
 				return garbage_collect(tdbb, window, parent_number);
 			}
@@ -6907,12 +6820,10 @@ void update_selectivity(index_root_page* root, USHORT id, const SelectivityList&
 	const USHORT idx_count = irt_desc->irt_keys;
 	fb_assert(selectivity.getCount() == idx_count);
 
-	if (dbb->dbb_ods_version >= ODS_VERSION11)
-	{
-		// dimitr: per-segment selectivities exist only for ODS11 and above
-		irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
-		for (int i = 0; i < idx_count; i++, key_descriptor++)
-			key_descriptor->irtd_selectivity = selectivity[i];
-	}
+	// dimitr: per-segment selectivities exist only for ODS11 and above
+	irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
+	for (int i = 0; i < idx_count; i++, key_descriptor++)
+		key_descriptor->irtd_selectivity = selectivity[i];
+
 	irt_desc->irt_stuff.irt_selectivity = selectivity.back();
 }

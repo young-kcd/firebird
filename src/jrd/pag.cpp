@@ -1253,19 +1253,13 @@ void PAG_init(thread_db* tdbb)
 			(dbb->dbb_page_size -
 			 OFFSETA(generator_page*, gpg_values)) / sizeof(((generator_page*) NULL)->gpg_values);
 	}
-	else if (dbb->dbb_ods_version >= ODS_VERSION10)
+	else
 	{
+		fb_assert(dbb->dbb_ods_version == ODS_VERSION11);
 		pageMgr.gensPerPage =
 			(dbb->dbb_page_size -
 			 OFFSETA(old_gen_page*, gpg_values)) / sizeof(((old_gen_page*) NULL)->gpg_values);
 	}
-	else
-	{
-		pageMgr.gensPerPage =
-			(dbb->dbb_page_size -
-			 OFFSETA(pointer_page*, ppg_page)) / sizeof(((pointer_page*) NULL)->ppg_page);
-	}
-
 
 	// Compute the number of data pages per pointer page.  Each data page
 	// requires a 32 bit pointer and a 2 bit control field.
@@ -1289,15 +1283,13 @@ void PAG_init(thread_db* tdbb)
 	// ODS11 it doesn't matter because record numbers are 40-bit.
 	// Benefit is ~1.5 times smaller sparse bitmaps on average and faster bitmap iteration.
 
-	//if (dbb->dbb_ods_version >= ODS_VERSION11)
-	//	dbb->dbb_max_records = FB_ALIGN(dbb->dbb_max_records, 64);
+	//dbb->dbb_max_records = FB_ALIGN(dbb->dbb_max_records, 64);
 
 	// Compute the number of index roots that will fit on an index root page,
 	// assuming that each index has only one key
 
 	dbb->dbb_max_idx = (dbb->dbb_page_size - OFFSETA(index_root_page*, irt_rpt)) /
-		(sizeof(index_root_page::irt_repeat) + (1 * (dbb->dbb_ods_version >= ODS_VERSION11) ?
-			sizeof(irtd) : sizeof(irtd_ods10)));
+		(sizeof(index_root_page::irt_repeat) + sizeof(irtd));
 
 	// Compute prefetch constants from database page size and maximum prefetch
 	// transfer size. Double pages per prefetch request so that cache reader
@@ -1693,13 +1685,10 @@ void PAG_set_db_SQL_dialect(thread_db* tdbb, SSHORT flag)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_version = dbb->dbb_minor_version;
-
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-	if (flag && (ENCODE_ODS(major_version, minor_version) >= ODS_10_0))
+	if (flag)
 	{
 		switch (flag)
 		{

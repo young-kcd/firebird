@@ -633,116 +633,101 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_version = dbb->dbb_minor_version;
 
 	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
 	Firebird::string loginName(tempId.usr_user_name);
 	loginName.upper();
 	const TEXT* login_name = loginName.c_str();
 	Firebird::MetaName role_name;
-    // CVC: Let's clean any role in pre-ODS9 attachments
-    bool preODS9 = true;
-
-/***************************************************************
-**
-** skip reading system relation RDB$ROLES when attaching pre ODS_9_0 database
-**
-****************************************************************/
 
     // CVC: We'll verify the role and wipe it out when it doesn't exist
 
-	if (ENCODE_ODS(major_version, minor_version) >= ODS_9_0) {
-
-        preODS9 = false;
-
-		if (strlen(login_name) != 0)
+	if (strlen(login_name) != 0)
+	{
+		if (!create)
 		{
-			if (!create)
-			{
-				jrd_req* request = CMP_find_request(tdbb, irq_get_role_name, IRQ_REQUESTS);
+			jrd_req* request = CMP_find_request(tdbb, irq_get_role_name, IRQ_REQUESTS);
 
-				FOR(REQUEST_HANDLE request) X IN RDB$ROLES
-					WITH X.RDB$ROLE_NAME EQ login_name
+			FOR(REQUEST_HANDLE request) X IN RDB$ROLES
+				WITH X.RDB$ROLE_NAME EQ login_name
 
-                    if (!REQUEST(irq_get_role_name))
-                        REQUEST(irq_get_role_name) = request;
+                if (!REQUEST(irq_get_role_name))
+                    REQUEST(irq_get_role_name) = request;
 
-					EXE_unwind(tdbb, request);
-					ERR_post(Arg::Gds(isc_login_same_as_role_name) << Arg::Str(login_name));
+				EXE_unwind(tdbb, request);
+				ERR_post(Arg::Gds(isc_login_same_as_role_name) << Arg::Str(login_name));
 
-				END_FOR;
+			END_FOR;
 
-				if (!REQUEST(irq_get_role_name))
-					REQUEST(irq_get_role_name) = request;
-			}
+			if (!REQUEST(irq_get_role_name))
+				REQUEST(irq_get_role_name) = request;
 		}
+	}
 
-        // CVC: If this is ODS>=ODS_9_0 and we aren't creating a db and sql_role was specified,
-        // then verify it against rdb$roles and rdb$user_privileges
+    // CVC: If we aren't creating a db and sql_role was specified,
+    // then verify it against rdb$roles and rdb$user_privileges
 
-        if (!create && sql_role && *sql_role && strcmp(sql_role, NULL_ROLE)) {
-            bool found = false;
+    if (!create && sql_role && *sql_role && strcmp(sql_role, NULL_ROLE)) {
+        bool found = false;
 
-            jrd_req* request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
+        jrd_req* request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
-            // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
-            // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
-            // Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
-            // This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
-            // If you think that an unknown role cannot be granted, think again: someone made sure
-            // in DYN that SYSDBA can do almost anything, including invalid grants.
+        // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
+        // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
+        // Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
+        // This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
+        // If you think that an unknown role cannot be granted, think again: someone made sure
+        // in DYN that SYSDBA can do almost anything, including invalid grants.
 
-            FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
-                CROSS UU IN RDB$USER_PRIVILEGES
-                WITH RR.RDB$ROLE_NAME        EQ sql_role
-                AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
-                AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
-                AND (UU.RDB$USER             EQ login_name
-                     OR UU.RDB$USER          EQ "PUBLIC")
-                AND UU.RDB$USER_TYPE         EQ obj_user
-                AND UU.RDB$PRIVILEGE         EQ "M"
-
-                if (!REQUEST (irq_verify_role_name))
-                    REQUEST (irq_verify_role_name) = request;
-
-                if (!UU.RDB$USER.NULL)
-                    found = true;
-
-            END_FOR;
+        FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
+            CROSS UU IN RDB$USER_PRIVILEGES
+            WITH RR.RDB$ROLE_NAME        EQ sql_role
+            AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
+            AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
+            AND (UU.RDB$USER             EQ login_name
+                 OR UU.RDB$USER          EQ "PUBLIC")
+            AND UU.RDB$USER_TYPE         EQ obj_user
+            AND UU.RDB$PRIVILEGE         EQ "M"
 
             if (!REQUEST (irq_verify_role_name))
                 REQUEST (irq_verify_role_name) = request;
 
-			if (!found && (tempId.usr_flags & USR_trole))
-			{
-	            jrd_req* request = CMP_find_request (tdbb, irq_verify_trusted_role, IRQ_REQUESTS);
+            if (!UU.RDB$USER.NULL)
+                found = true;
 
-	            FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
-        	        WITH RR.RDB$ROLE_NAME  EQ sql_role
-            	    AND RR.RDB$SYSTEM_FLAG NOT MISSING
+        END_FOR;
 
-            	    if (!REQUEST (irq_verify_trusted_role))
-	                    REQUEST (irq_verify_trusted_role) = request;
+        if (!REQUEST (irq_verify_role_name))
+            REQUEST (irq_verify_role_name) = request;
 
-	                if (RR.RDB$SYSTEM_FLAG & ROLE_FLAG_MAY_TRUST)
-	                    found = true;
+		if (!found && (tempId.usr_flags & USR_trole))
+		{
+            jrd_req* request = CMP_find_request (tdbb, irq_verify_trusted_role, IRQ_REQUESTS);
 
-	            END_FOR;
+            FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
+    	        WITH RR.RDB$ROLE_NAME  EQ sql_role
+        	    AND RR.RDB$SYSTEM_FLAG NOT MISSING
 
-	            if (!REQUEST (irq_verify_trusted_role))
-    	            REQUEST (irq_verify_trusted_role) = request;
-			}
+        	    if (!REQUEST (irq_verify_trusted_role))
+                    REQUEST (irq_verify_trusted_role) = request;
 
-            if (!found)
-			{
-                role_name = NULL_ROLE;
-			}
-        }
+                if (RR.RDB$SYSTEM_FLAG & ROLE_FLAG_MAY_TRUST)
+                    found = true;
+
+            END_FOR;
+
+            if (!REQUEST (irq_verify_trusted_role))
+	            REQUEST (irq_verify_trusted_role) = request;
+		}
+
+        if (!found)
+		{
+            role_name = NULL_ROLE;
+		}
     }
 
 	if (sql_role) {
-        if ((!preODS9) && (role_name != NULL_ROLE)) {
+        if (role_name != NULL_ROLE) {
             role_name = sql_role;
         }
 	}

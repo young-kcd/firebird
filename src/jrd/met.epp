@@ -784,7 +784,7 @@ ULONG MET_align(Database* dbb, const dsc* desc, ULONG value)
 		break;
 	}
 
-	alignment = MIN(alignment, dbb->dbb_ods_version >= ODS_VERSION11 ? FORMAT_ALIGNMENT : FB_ALIGNMENT);
+	alignment = MIN(alignment, FORMAT_ALIGNMENT);
 
 	return FB_ALIGN(value, alignment);
 }
@@ -1206,89 +1206,66 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		}
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTOR);
 
-		if (dbb->dbb_ods_version < ODS_VERSION11)
+		// Use generic representation of formats with 32-bit offsets
+
+		HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
+		BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length);
+		unsigned bufferPos = 0;
+		USHORT count;
+
+		if (dbb->dbb_ods_version >= ODS_VERSION12)
 		{
-			// For ODS10 and earlier read descriptors in their in-memory representation
-			// This makes 64-bit and 32-bit ODS10 different for the same architecture.
-
-			const USHORT count = blob->blb_length / sizeof(struct dsc);
-			format = Format::newFormat(*dbb->dbb_permanent, count);
-			BLB_get_data(tdbb, blob, (UCHAR*) &(format->fmt_desc[0]), blob->blb_length);
-
-			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.end() - 1;
-				 desc >= format->fmt_desc.begin();
-				 --desc)
-			{
-	 			if (desc->dsc_address)
-				{
-					format->fmt_length = (IPTR) desc->dsc_address + desc->dsc_length;
-					break;
-				}
-			}
+			count = buffer[0] | (buffer[1] << 8);
+			bufferPos = 2;
 		}
 		else
+			count = buffer.getCount() / sizeof(Ods::Descriptor);
+
+		format = Format::newFormat(*dbb->dbb_permanent, count);
+
+		Firebird::Array<Ods::Descriptor> odsDescs;
+		Ods::Descriptor* odsDesc = odsDescs.getBuffer(count);
+		memcpy(odsDesc, buffer.begin() + bufferPos, count * sizeof(Ods::Descriptor));
+
+		for (Format::fmt_desc_iterator desc = format->fmt_desc.begin();
+			 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
 		{
-			// Use generic representation of formats with 32-bit offsets
+			*desc = *odsDesc;
+			if (odsDesc->dsc_offset)
+				format->fmt_length = odsDesc->dsc_offset + desc->dsc_length;
+		}
 
-			HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
-			BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length);
-			unsigned bufferPos = 0;
-			USHORT count;
+		if (dbb->dbb_ods_version >= ODS_VERSION12)
+		{
+			const UCHAR* p = buffer.begin() + bufferPos + count * sizeof(Ods::Descriptor);
+			count = p[0] | (p[1] << 8);
+			p += 2;
 
-			if (dbb->dbb_ods_version >= ODS_VERSION12)
+			while (count-- > 0)
 			{
-				count = buffer[0] | (buffer[1] << 8);
-				bufferPos = 2;
-			}
-			else
-				count = buffer.getCount() / sizeof(Ods::Descriptor);
-
-			format = Format::newFormat(*dbb->dbb_permanent, count);
-
-			Firebird::Array<Ods::Descriptor> odsDescs;
-			Ods::Descriptor* odsDesc = odsDescs.getBuffer(count);
-			memcpy(odsDesc, buffer.begin() + bufferPos, count * sizeof(Ods::Descriptor));
-
-			for (Format::fmt_desc_iterator desc = format->fmt_desc.begin();
-				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
-			{
-				*desc = *odsDesc;
-				if (odsDesc->dsc_offset)
-					format->fmt_length = odsDesc->dsc_offset + desc->dsc_length;
-			}
-
-			if (dbb->dbb_ods_version >= ODS_VERSION12)
-			{
-				UCHAR* p = buffer.begin() + bufferPos + count * sizeof(Ods::Descriptor);
-				count = p[0] | (p[1] << 8);
+				USHORT offset = p[0] | (p[1] << 8);
 				p += 2;
 
-				while (count-- > 0)
+				const Ods::Descriptor* odsDflDesc = (Ods::Descriptor*) p;
+				p = (UCHAR*) (odsDflDesc + 1);
+
+				dsc& desc = format->fmt_defaults[offset].vlu_desc;
+				desc = *odsDflDesc;
+
+				if (desc.dsc_dtype == dtype_text)
 				{
-					USHORT offset = p[0] | (p[1] << 8);
-					p += 2;
-
-					Ods::Descriptor* odsDflDesc = (Ods::Descriptor*) p;
-					p = (UCHAR*) (odsDflDesc + 1);
-
-					dsc& desc = format->fmt_defaults[offset].vlu_desc;
-					desc = *odsDflDesc;
-
-					if (desc.dsc_dtype == dtype_text)
-					{
-						VaryingString* vluString = FB_NEW_RPT(*dbb->dbb_permanent,
-							desc.dsc_length) VaryingString();
-						vluString->str_length = desc.dsc_length;
-						format->fmt_defaults[offset].vlu_string = vluString;
-						desc.dsc_address = format->fmt_defaults[offset].vlu_string->str_data;
-					}
-					else
-						desc.dsc_address = (UCHAR*) &format->fmt_defaults[offset].vlu_misc;
-
-					memcpy(desc.dsc_address, p, desc.dsc_length);
-
-					p += desc.dsc_length;
+					VaryingString* vluString = FB_NEW_RPT(*dbb->dbb_permanent,
+						desc.dsc_length) VaryingString();
+					vluString->str_length = desc.dsc_length;
+					format->fmt_defaults[offset].vlu_string = vluString;
+					desc.dsc_address = format->fmt_defaults[offset].vlu_string->str_data;
 				}
+				else
+					desc.dsc_address = (UCHAR*) &format->fmt_defaults[offset].vlu_misc;
+
+				memcpy(desc.dsc_address, p, desc.dsc_length);
+
+				p += desc.dsc_length;
 			}
 		}
 	END_FOR;
@@ -1402,60 +1379,38 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 	jrd_req* request = CMP_find_request(tdbb, irq_l_subtype, IRQ_REQUESTS);
 	bool found = false;
 
-	if (dbb->dbb_ods_version >= ODS_VERSION11)
-	{
-		FOR(REQUEST_HANDLE request) FIRST 1
-			CL IN RDB$COLLATIONS CROSS
-			CS IN RDB$CHARACTER_SETS
-			WITH CL.RDB$CHARACTER_SET_ID EQ charset_id AND
-				CL.RDB$COLLATION_ID EQ collation_id AND
-				CS.RDB$CHARACTER_SET_ID EQ CL.RDB$CHARACTER_SET_ID
+	FOR(REQUEST_HANDLE request) FIRST 1
+		CL IN RDB$COLLATIONS CROSS
+		CS IN RDB$CHARACTER_SETS
+		WITH CL.RDB$CHARACTER_SET_ID EQ charset_id AND
+			CL.RDB$COLLATION_ID EQ collation_id AND
+			CS.RDB$CHARACTER_SET_ID EQ CL.RDB$CHARACTER_SET_ID
 
-			found = true;
+		found = true;
 
-			info->charsetName = CS.RDB$CHARACTER_SET_NAME;
-			info->collationName = CL.RDB$COLLATION_NAME;
+		info->charsetName = CS.RDB$CHARACTER_SET_NAME;
+		info->collationName = CL.RDB$COLLATION_NAME;
 
-			if (CL.RDB$BASE_COLLATION_NAME.NULL)
-				info->baseCollationName = info->collationName;
-			else
-				info->baseCollationName = CL.RDB$BASE_COLLATION_NAME;
-
-			if (CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
-				info->specificAttributes.clear();
-			else
-			{
-				blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &CL.RDB$SPECIFIC_ATTRIBUTES);
-				const SLONG length = blob->blb_length;
-
-				// ASF: Here info->specificAttributes is in UNICODE_FSS charset.
-				// It will be converted to the collation charset in intl.cpp
-				BLB_get_data(tdbb, blob, info->specificAttributes.getBuffer(length), length);
-			}
-
-			info->attributes = (USHORT)CL.RDB$COLLATION_ATTRIBUTES;
-			info->ignoreAttributes = CL.RDB$COLLATION_ATTRIBUTES.NULL;
-		END_FOR;
-	}
-	else
-	{
-		FOR(REQUEST_HANDLE request) FIRST 1
-			CL IN RDB$COLLATIONS CROSS
-			CS IN RDB$CHARACTER_SETS
-			WITH CL.RDB$CHARACTER_SET_ID EQ charset_id AND
-				CL.RDB$COLLATION_ID EQ collation_id AND
-				CS.RDB$CHARACTER_SET_ID EQ CL.RDB$CHARACTER_SET_ID
-
-			found = true;
-
-			info->charsetName = CS.RDB$CHARACTER_SET_NAME;
-			info->collationName = CL.RDB$COLLATION_NAME;
+		if (CL.RDB$BASE_COLLATION_NAME.NULL)
 			info->baseCollationName = info->collationName;
+		else
+			info->baseCollationName = CL.RDB$BASE_COLLATION_NAME;
+
+		if (CL.RDB$SPECIFIC_ATTRIBUTES.NULL)
 			info->specificAttributes.clear();
-			info->attributes = 0;
-			info->ignoreAttributes = true;
-		END_FOR;
-	}
+		else
+		{
+			blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &CL.RDB$SPECIFIC_ATTRIBUTES);
+			const SLONG length = blob->blb_length;
+
+			// ASF: Here info->specificAttributes is in UNICODE_FSS charset.
+			// It will be converted to the collation charset in intl.cpp
+			BLB_get_data(tdbb, blob, info->specificAttributes.getBuffer(length), length);
+		}
+
+		info->attributes = (USHORT)CL.RDB$COLLATION_ATTRIBUTES;
+		info->ignoreAttributes = CL.RDB$COLLATION_ATTRIBUTES.NULL;
+	END_FOR;
 
 	if (!REQUEST(irq_l_subtype))
 		REQUEST(irq_l_subtype) = request;
@@ -3556,18 +3511,9 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 		return relation;
 	}
 
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_version = dbb->dbb_minor_version;
-
 	// From ODS 9 onwards, the first 128 relation IDS have been
 	// reserved for system relations
-	USHORT max_sys_rel;
-	if (ENCODE_ODS(major_version, minor_version) < ODS_9_0) {
-		max_sys_rel = USER_REL_INIT_ID_ODS8 - 1;
-	}
-	else {
-		max_sys_rel = USER_DEF_REL_INIT_ID - 1;
-	}
+	const USHORT max_sys_rel = USER_DEF_REL_INIT_ID - 1;
 
 	relation = FB_NEW(*dbb->dbb_permanent) jrd_rel(*dbb->dbb_permanent);
 	(*vector)[id] = relation;

@@ -261,7 +261,6 @@ void IDX_create_index(thread_db* tdbb,
 	primary.rpb_number.setValue(BOF_NUMBER);
 	//primary.getWindow(tdbb).win_flags = secondary.getWindow(tdbb).win_flags = 0; redundant
 
-	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
 	const bool isDescending = (idx->idx_flags & idx_descending);
 	const bool isPrimary = (idx->idx_flags & idx_primary);
 
@@ -274,10 +273,10 @@ void IDX_create_index(thread_db* tdbb,
 	// Note that this is necessary only for single-segment ascending indexes
 	// and only for ODS11 and higher.
 
-	const int nullIndLen = isODS11 && !isDescending && (idx->idx_count == 1) ? 1 : 0;
+	const int nullIndLen = !isDescending && (idx->idx_count == 1) ? 1 : 0;
 	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SINT64));
 
-	const USHORT max_key_size = isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
+	const USHORT max_key_size = MAX_KEY_LIMIT;
 
 	if (key_length >= max_key_size)
 	{

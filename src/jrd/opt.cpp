@@ -117,7 +117,9 @@ static void find_best(thread_db*, OptimizerBlk*, USHORT, USHORT, const UCHAR*,
 	const jrd_nod*, double, double);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
 static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
+#ifdef NOT_USED_OR_REPLACED
 static USHORT find_order(thread_db*, OptimizerBlk*, const UCHAR*, const jrd_nod*);
+#endif
 static void find_rsbs(RecordSource*, StreamStack*, RsbStack*);
 static void find_used_streams(const RecordSource*, UCHAR*);
 static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&,
@@ -3450,64 +3452,20 @@ static void find_index_relationship_streams(thread_db* tdbb,
 		bool indexed_relationship = false;
 		if (opt->opt_conjuncts.getCount())
 		{
-			if (dbb->dbb_ods_version >= ODS_VERSION11)
-			{
-				// Calculate the inversion for this stream.
-				// The returning candidate contains the streams that will be used for
-				// index retrieval. This meant that if some stream is used this stream
-				// depends on already active streams and can not be used in a separate
-				// SORT/MERGE.
-				InversionCandidate* candidate = NULL;
-				OptimizerRetrieval* optimizerRetrieval = FB_NEW(*tdbb->getDefaultPool())
-					OptimizerRetrieval(*tdbb->getDefaultPool(), opt, *stream, false, false, NULL);
-				candidate = optimizerRetrieval->getCost();
-				if (candidate->dependentFromStreams.getCount() >= 1) {
-					indexed_relationship = true;
-				}
-				delete candidate;
-				delete optimizerRetrieval;
+			// Calculate the inversion for this stream.
+			// The returning candidate contains the streams that will be used for
+			// index retrieval. This meant that if some stream is used this stream
+			// depends on already active streams and can not be used in a separate
+			// SORT/MERGE.
+			InversionCandidate* candidate = NULL;
+			OptimizerRetrieval* optimizerRetrieval = FB_NEW(*tdbb->getDefaultPool())
+				OptimizerRetrieval(*tdbb->getDefaultPool(), opt, *stream, false, false, NULL);
+			candidate = optimizerRetrieval->getCost();
+			if (candidate->dependentFromStreams.getCount() >= 1) {
+				indexed_relationship = true;
 			}
-			else
-			{
-				const index_desc* idx = csb_tail->csb_idx->items;
-
-				// Walk through all indexes from this relation
-				for (USHORT i = 0; i < csb_tail->csb_indices; i++, idx++)
-				{
-
-					// Ignore index when not specified in explicit PLAN
-					if (idx->idx_runtime_flags & idx_plan_dont_use) {
-						continue;
-					}
-
-					clear_bounds(opt, idx);
-					const OptimizerBlk::opt_conjunct* const opt_end = opt->opt_conjuncts.end();
-					// Walk through all conjunctions
-					for (const OptimizerBlk::opt_conjunct* tail = opt->opt_conjuncts.begin();
-						tail < opt_end; tail++)
-					{
-						jrd_nod* node = tail->opt_conjunct_node;
-						// Try to match conjunction against index
-						bool activeStreamFound = false;
-						if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-							expression_contains_stream(csb, node, *stream, &activeStreamFound))
-						{
-							if (activeStreamFound) {
-								match_index(tdbb, opt, *stream, node, idx);
-							}
-						}
-					}
-
-					// If first segment could be matched we're able to use a
-					// index that is dependent on the already active streams.
-					OptimizerBlk::opt_segment* segment = opt->opt_segments;
-					if (segment->opt_lower || segment->opt_upper)
-					{
-						indexed_relationship = true;
-						break;
-					}
-				}
-			}
+			delete candidate;
+			delete optimizerRetrieval;
 		}
 
 		if (indexed_relationship) {
@@ -3560,6 +3518,7 @@ static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static USHORT find_order(thread_db* tdbb,
 						 OptimizerBlk* opt,
 						 const UCHAR* streams, const jrd_nod* plan_node)
@@ -3621,6 +3580,7 @@ static USHORT find_order(thread_db* tdbb,
 
 	return opt->opt_best_count;
 }
+#endif
 
 
 static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb_list)
@@ -3863,21 +3823,13 @@ static void form_rivers(thread_db*		tdbb,
 
 	if (temp[0] != 0)
 	{
-		OptimizerInnerJoin* innerJoin = NULL;
-
-		Database* dbb = tdbb->getDatabase();
-		if (dbb->dbb_ods_version >= ODS_VERSION11)
-		{
-			// For ODS11 and higher databases we can use new calculations
-			innerJoin = FB_NEW(*tdbb->getDefaultPool())
-				OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, //river_stack,
-				sort_clause, project_clause, plan_clause);
-		}
+		OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
+			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, //river_stack,
+			sort_clause, project_clause, plan_clause);
 
 		do {
-			count = innerJoin ? innerJoin->findJoinOrder() : find_order(tdbb, opt, temp, plan_node);
-		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-					project_clause));
+			count = innerJoin->findJoinOrder();
+		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause, project_clause));
 
 		delete innerJoin;
 	}
@@ -4324,129 +4276,28 @@ static void gen_join(thread_db*		tdbb,
 		return;
 	}
 
-	if (dbb->dbb_ods_version >= ODS_VERSION11)
+	if (plan_clause && streams[0] > 1)
 	{
-		// For ODS11 and higher databases we can use new calculations
-		if (plan_clause && streams[0] > 1)
-		{
-			// this routine expects a join/merge
-			form_rivers(tdbb, opt, streams, river_stack, sort_clause, project_clause, plan_clause);
-			return;
-		}
-
-		OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
-			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, streams, //river_stack,
-			sort_clause, project_clause, plan_clause);
-
-		stream_array_t temp;
-		memcpy(temp, streams, streams[0] + 1);
-
-		USHORT count;
-		do {
-			count = innerJoin->findJoinOrder();
-		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-					project_clause));
-
-		delete innerJoin;
-		return;
-	}
-
-	// If there is only a single stream, don't bother with a join.
-	if (streams[0] == 1)
-	{
-		River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) River();
-		river->riv_count = 1;
-
-		fb_assert(csb->csb_rpt[streams[1]].csb_relation);
-
-		river->riv_rsb =
-			gen_retrieval(tdbb, opt, streams[1], sort_clause, project_clause, false, false, NULL);
-		river->riv_streams[0] = streams[1];
-		river_stack.push(river);
-		return;
-	}
-
-	// Compute cardinality and indexed relationships for all streams.
-	const UCHAR* const end_stream = streams + 1 + streams[0];
-	for (const UCHAR* stream = streams + 1; stream < end_stream; stream++)
-	{
-		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[*stream];
-		fb_assert(csb_tail);
-		jrd_rel* relation = csb_tail->csb_relation;
-		fb_assert(relation);
-		const Format* format = CMP_format(tdbb, csb, *stream);
-		// if this is an external file, set an arbitrary cardinality;
-		// if a plan was specified, don't bother computing cardinality;
-		// otherwise give a rough estimate based on the number of data
-		// pages times the estimated number of records per page -- note
-		// this is an upper limit since all pages are probably not full
-		// and many of the records on page may be back versions.
-
-		if (plan_clause) {
-			csb_tail->csb_cardinality = 0;
-		}
-		else {
-			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
-		}
-
-		// find indexed relationships from this stream to every other stream
-		OptimizerBlk::opt_stream* tail = opt->opt_streams.begin() + *stream;
-		csb_tail->csb_flags |= csb_active;
-		for (const UCHAR* t2 = streams + 1; t2 < end_stream; t2++)
-		{
-			if (*t2 != *stream)
-			{
-				CompilerScratch::csb_repeat* csb_tail2 = &csb->csb_rpt[*t2];
-				csb_tail2->csb_flags |= csb_active;
-				IndexedRelationship* relationship = indexed_relationship(tdbb, opt, *t2);
-				if (relationship)
-				{
-					relationship->irl_next = tail->opt_relationships;
-					tail->opt_relationships = relationship;
-					relationship->irl_stream = *t2;
-				}
-				csb_tail2->csb_flags &= ~csb_active;
-			}
-		}
-		csb_tail->csb_flags &= ~csb_active;
-
-#ifdef OPT_DEBUG
-		if (opt_debug_flag >= DEBUG_RELATIONSHIPS)
-		{
-			fprintf(opt_debug_file,
-					   "gen_join () -- relationships from stream %2.2d: ",
-					   *stream);
-			for (IndexedRelationship* relationship = tail->opt_relationships;
-			     relationship;
-			     relationship = relationship->irl_next)
-			{
-				fprintf(opt_debug_file, "%2.2d %s ",
-						relationship->irl_stream, (relationship->irl_unique) ? "(unique)" : "");
-			}
-			fprintf(opt_debug_file, "\n");
-		}
-#endif
-	}
-
-	// if the user specified a plan, force a join order;
-	// otherwise try to find one
-	if (plan_clause) {
+		// this routine expects a join/merge
 		form_rivers(tdbb, opt, streams, river_stack, sort_clause, project_clause, plan_clause);
+		return;
 	}
-	else
-	{
-		// copy the streams vector to a temporary space to be used
-		// to form rivers out of streams
-		stream_array_t temp;
-		memcpy(temp, streams, streams[0] + 1);
 
-        USHORT count;
-		do {
-			count = find_order(tdbb, opt, temp, 0);
-		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-					project_clause));
+	OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
+		OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, streams, //river_stack,
+		sort_clause, project_clause, plan_clause);
 
-	}
+	stream_array_t temp;
+	memcpy(temp, streams, streams[0] + 1);
+
+	USHORT count;
+	do {
+		count = innerJoin->findJoinOrder();
+	} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause, project_clause));
+
+	delete innerJoin;
+	return;
+
 }
 
 
@@ -4536,11 +4387,11 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 
 		const IPTR temp = reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]);
 		// for ODS11 default nulls placement always may be matched to index
-		if ((dbb->dbb_ods_version >= ODS_VERSION11 &&
+		if ((true &&
 			((temp == rse_nulls_first && ptr[sort->nod_count]) ||
 			    (temp == rse_nulls_last && !ptr[sort->nod_count]))) ||
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
-			(dbb->dbb_ods_version < ODS_VERSION11 && temp == rse_nulls_first) ||
+			(false && temp == rse_nulls_first) ||
 			(ptr[sort->nod_count] && !(idx->idx_flags & idx_descending)) ||
 			(!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)))
 		{
@@ -4903,11 +4754,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	bool index_used = false;
 	bool full_unique_match = false;
 
-	Database* dbb = tdbb->getDatabase();
-	const bool ods11orHigher = (dbb->dbb_ods_version >= ODS_VERSION11);
-	if (ods11orHigher && !relation->rel_file && !relation->isVirtual())
+	if (!relation->rel_file && !relation->isVirtual())
 	{
-		// For ODS11 and higher databases we can use new calculations
 		OptimizerRetrieval* optimizerRetrieval = FB_NEW(*tdbb->getDefaultPool())
 			OptimizerRetrieval(*tdbb->getDefaultPool(), opt, stream, outer_flag, inner_flag, sort_ptr);
 		InversionCandidate* candidate = optimizerRetrieval->getInversion(&rsb);
@@ -5189,11 +5037,6 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			OPT_computable(csb, node, -1, false, false))
 		{
-			// Don't waste time trying to match OR to available indices
-			// if we already have an excellent match
-			if (!ods11orHigher && (node->nod_type == nod_or) && !full_unique_match) {
-				compose(&inversion, make_inversion(tdbb, opt, node, stream), nod_bit_and);
-			}
 			// If no index is used then leave other nodes alone, because they
 			// could be used for building a SORT/MERGE.
 			if ((inversion && expression_contains_stream(csb, node, stream, NULL)) ||
@@ -5462,20 +5305,11 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		sort_key->skd_length = 1;
 		// Handle nulls placement
 		sort_key->skd_flags = SKD_ascending;
-		if (tdbb->getDatabase()->dbb_ods_version < ODS_VERSION11)
+		// Have SQL-compliant nulls ordering for ODS11+
+		if (((IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
+			(IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_first)
 		{
-			// Put nulls at the tail for ODS10 and earlier
-			if ((IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_first)
-				sort_key->skd_flags |= SKD_descending;
-		}
-		else
-		{
-			// Have SQL-compliant nulls ordering for ODS11+
-			if (((IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
-				(IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_first)
-			{
-				sort_key->skd_flags |= SKD_descending;
-			}
+			sort_key->skd_flags |= SKD_descending;
 		}
 		++sort_key;
 		// Make key for sort key proper
@@ -6723,7 +6557,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 	retrieval->irb_relation = relation;
 
-	if ((dbb->dbb_ods_version < ODS_VERSION11) || (idx->idx_flags & idx_descending))
+	if (idx->idx_flags & idx_descending)
 	{
 		// AB: irb_starting? Why?
 		// Commenting myself. Because we don't know exact length for the field.
