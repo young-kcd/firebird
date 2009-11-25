@@ -194,6 +194,11 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, pool);
 
+		jrd_tra *idx_tran = tdbb->getTransaction();
+		if (!idx_tran) {
+			idx_tran = dbb->dbb_sys_trans;
+		}
+
 		IndexDescAlloc* indices = NULL;
 		// read indices from "base" index root page
 		const USHORT idx_count = BTR_all(tdbb, this, &indices, &rel_pages_base);
@@ -206,8 +211,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 			idx->idx_root = 0;
 			SelectivityList selectivity(*pool);
-			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL,
-							 tdbb->getTransaction(), selectivity);
+			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, idx_tran, selectivity);
 
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_WRITES)
