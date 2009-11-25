@@ -112,6 +112,7 @@ copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
 :: Installers
 @copy %FB_INSTALL_SCRIPTS%\install_super.bat %FB_OUTPUT_DIR%\bin >nul
 @copy %FB_INSTALL_SCRIPTS%\install_classic.bat %FB_OUTPUT_DIR%\bin >nul
+@copy %FB_INSTALL_SCRIPTS%\install_superclassic.bat %FB_OUTPUT_DIR%\bin >nul
 @copy %FB_INSTALL_SCRIPTS%\uninstall.bat %FB_OUTPUT_DIR%\bin >nul
 
 :: MSVC runtime
