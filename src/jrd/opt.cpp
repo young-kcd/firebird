@@ -149,7 +149,9 @@ static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USH
 static void get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
 static void get_inactivities(const CompilerScratch*, ULONG*);
 static jrd_nod* get_unmapped_node(thread_db*, jrd_nod*, jrd_nod*, UCHAR, bool);
+#ifdef NOT_USED_OR_REPLACED
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
+#endif
 static RecordSource* make_cross(thread_db*, OptimizerBlk*, RiverStack&);
 static jrd_nod* make_index_node(thread_db*, jrd_rel*, CompilerScratch*, const index_desc*);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
@@ -3437,7 +3439,7 @@ static void find_index_relationship_streams(thread_db* tdbb,
 
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	CompilerScratch* csb = opt->opt_csb;
 	const UCHAR* end_stream = streams + 1 + streams[0];
@@ -4268,8 +4270,8 @@ static void gen_join(thread_db*		tdbb,
 	DEV_BLKCHK(plan_clause, type_nod);
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->getDatabase();
-	CompilerScratch* csb = opt->opt_csb;
+	//Database* dbb = tdbb->getDatabase();
+	//CompilerScratch* csb = opt->opt_csb;
 
 	if (!streams[0]) {
 		return;
@@ -4325,7 +4327,7 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 	DEV_BLKCHK(alias, type_str);
 	DEV_BLKCHK(*sort_ptr, type_nod);
 
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	// Check sort order against index.  If they don't match, give up and
 	// go home.  Also don't bother if we have a non-unique index.
@@ -6105,6 +6107,7 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* opt, USHORT stream)
 {
 /**************************************
@@ -6178,6 +6181,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 
 	return relationship;
 }
+#endif
 
 
 static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& stack)
@@ -6522,7 +6526,7 @@ static jrd_nod* make_missing(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(relation, type_rel);

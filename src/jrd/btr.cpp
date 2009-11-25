@@ -423,7 +423,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->getDatabase();
+	//const Database* dbb = tdbb->getDatabase();
 
 	if (id >= root->irt_count) {
 		return false;
@@ -616,7 +616,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	SET_TDBB(tdbb);
 
 	// Remove ignore_nulls flag for older ODS
-	const Database* dbb = tdbb->getDatabase();
+	//const Database* dbb = tdbb->getDatabase();
 
 	index_desc idx;
 	RelationPages* relPages = retrieval->irb_relation->getPages(tdbb);
@@ -6192,7 +6192,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->getDatabase();
+	//const Database* dbb = tdbb->getDatabase();
 	index_desc* idx = insertion->iib_descriptor;
 	btree_page* page = (btree_page*) window->win_buffer;
 
@@ -6815,7 +6815,7 @@ void update_selectivity(index_root_page* root, USHORT id, const SelectivityList&
  *	Update selectivity on the index root page.
  *
  **************************************/
-	const Database* dbb = GET_DBB();
+	//const Database* dbb = GET_DBB();
 
 	index_root_page::irt_repeat* irt_desc = &root->irt_rpt[id];
 	const USHORT idx_count = irt_desc->irt_keys;
