@@ -2,6 +2,21 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-2741
+        Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2720
+        Wrong evaluation result with divide and unary plus\minus operations
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2684
+        Error page NNN is of wrong type (expected 7, found N)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2648
         NBackup's delta file ignores the "Forced Writes" database setting
       Contributor(s):
@@ -59,6 +74,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2301
+        select list(xxx, ';') from table into :xxx cause a memory leak
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2084
         Services API security problem
       Contributor(s):
@@ -78,6 +98,12 @@
         Avoid memory consumption of <page size> bytes per every temporary blob
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * New feature CORE-2655
+        Add support for Linux/sh4 (Renesas SH) platform
+      Contributor(s):
+        Nobuhiro Iwamatsu <iwamatsu at nigauri.org>
+        Alex Peshkov <peshkoff at mail.ru>
 
 
   ***************************
