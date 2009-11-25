@@ -1,3 +1,86 @@
+2009-11-25 11:48  hvlad
+
+	* firebird2/src/jrd/Relation.cpp (1.23):
+
+	Fixed bug CORE-2771 : AV at backup of database with GTT
+
+2009-11-25 10:44  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.578), why.cpp (1.269), why_proto.h
+	(1.57):
+
+	Fixed the layering.
+
+2009-11-25 10:34  robocop
+
+	* firebird2/src/jrd/: event.cpp (1.105), evl.cpp (1.319),
+	isc_file.cpp (1.145), extds/ExtDS.cpp (1.49):
+
+	Comments.
+
+2009-11-25 10:16  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.577), perf.cpp (1.51):
+
+	Comments.
+
+2009-11-25 10:10  robocop
+
+	* firebird2/src/jrd/os/win32/: config_root.cpp (1.33), isc_ipc.cpp
+	(1.37):
+
+	Style.
+
+2009-11-25 10:07  robocop
+
+	* firebird2/src/jrd/: par.cpp (1.252), quad.cpp (1.13), why.cpp
+	(1.268), os/posix/isc_ipc.cpp (1.48), os/win32/thd_priority.cpp
+	(1.39):
+
+	Comments.
+
+2009-11-25 09:38  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.215), btn.cpp (1.32), btr.cpp
+	(1.267), cvt.cpp (1.109), dpm.epp (1.111), evl.cpp (1.318), exe.cpp
+	(1.314), gds.cpp (1.321), grant.epp (1.84), intl.cpp (1.134),
+	opt.cpp (1.372):
+
+	Style.
+
+2009-11-25 09:38  robocop
+
+	* firebird2/src/utilities/ntrace/traceplugin.cpp (1.5):
+
+	Warnings.
+
+2009-11-25 09:29  robocop
+
+	* firebird2/src/: include/fb_blk.h (1.22), jrd/jrd.h (1.276):
+
+	Harmless warnings, but anyway...
+
+2009-11-25 05:52  robocop
+
+	* firebird2/src/jrd/: btr.cpp (1.266), opt.cpp (1.371):
+
+	Cleanup.
+
+2009-11-25 05:06  robocop
+
+	* firebird2/src/jrd/: dyn_def.epp (1.188), dyn_del.epp (1.87),
+	dyn_mod.epp (1.127), svc.cpp (1.294), utl.cpp (1.147), vio.cpp
+	(1.267):
+
+	Style.
+
+2009-11-25 04:58  robocop
+
+	* firebird2/src/jrd/: dyn.h (1.47), gds.cpp (1.320), grant.epp
+	(1.83), intl.cpp (1.133), opt.cpp (1.370):
+
+	Comments.
+
 2009-11-24 13:22  robocop
 
 	* firebird2/src/jrd/btr.cpp (1.265):
