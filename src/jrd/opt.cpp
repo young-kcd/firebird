@@ -255,9 +255,7 @@ static const UCHAR sort_dtypes[] =
 typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 
-bool OPT_access_path(const jrd_req* request,
-						UCHAR* buffer,
-						SLONG buffer_length, ULONG* return_length)
+bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length, ULONG* return_length)
 {
 /**************************************
  *
@@ -2057,10 +2055,7 @@ static bool check_for_nod_from(const jrd_nod* node)
 	}
 }
 
-static SLONG decompose(thread_db*		tdbb,
-					   jrd_nod*			boolean_node,
-					   NodeStack&		stack,
-					   CompilerScratch*	csb)
+static SLONG decompose(thread_db* tdbb, jrd_nod* boolean_node, NodeStack& stack, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -4617,8 +4612,7 @@ static RecordSource* gen_procedure(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 }
 
 
-static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt,
-	RecordSource* prior_rsb)
+static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, RecordSource* prior_rsb)
 {
 /**************************************
  *
@@ -5798,8 +5792,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 }
 
 
-static void get_expression_streams(const jrd_nod* node,
-								   Firebird::SortedArray<int>& streams)
+static void get_expression_streams(const jrd_nod* node, Firebird::SortedArray<int>& streams)
 {
 /**************************************
  *
@@ -7338,8 +7331,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 
 
 #ifdef OPT_DEBUG
-static void print_order(const OptimizerBlk* opt,
-						USHORT position, double cardinality, double cost)
+static void print_order(const OptimizerBlk* opt, USHORT position, double cardinality, double cost)
 {
 /**************************************
  *

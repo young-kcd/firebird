@@ -828,11 +828,7 @@ void EXE_receive(thread_db*		tdbb,
 }
 
 
-void EXE_send(thread_db*		tdbb,
-			  jrd_req*		request,
-			  USHORT	msg,
-			  USHORT	length,
-			  const UCHAR*	buffer)
+void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, USHORT length, const UCHAR* buffer)
 {
 /**************************************
  *

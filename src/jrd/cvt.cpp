@@ -174,9 +174,7 @@ void CVT_double_to_date(double real, SLONG fixed[2])
 }
 
 
-UCHAR CVT_get_numeric(const UCHAR* string,
-					  const USHORT length,
-					  SSHORT* scale, double* ptr)
+UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, double* ptr)
 {
 /**************************************
  *

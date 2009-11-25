@@ -35,8 +35,7 @@ namespace BTreeNode {
 
 using namespace Ods;
 
-USHORT computePrefix(const UCHAR* prevString, USHORT prevLength,
-			const UCHAR* string, USHORT length)
+USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, const UCHAR* string, USHORT length)
 {
 /**************************************
  *
@@ -400,8 +399,7 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 }
 
 
-UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
-					UCHAR flags,  btree_exp** expanded_node)
+UCHAR* nextNode(IndexNode* node, UCHAR* pointer, UCHAR flags, btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -578,8 +576,7 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags)
 }
 
 
-UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
-	bool leafNode, bool withData)
+UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags, bool leafNode, bool withData)
 {
 /**************************************
  *

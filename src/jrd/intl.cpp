@@ -575,10 +575,7 @@ CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 }
 
 
-int INTL_compare(thread_db* tdbb,
-				const dsc* pText1,
-				const dsc* pText2,
-				ErrorFunction err)
+int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFunction err)
 {
 /**************************************
  *
@@ -732,9 +729,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 }
 
 
-CsConvert INTL_convert_lookup(thread_db* tdbb,
-								CHARSET_ID to_cs,
-								CHARSET_ID from_cs)
+CsConvert INTL_convert_lookup(thread_db* tdbb, CHARSET_ID to_cs, CHARSET_ID from_cs)
 {
 /**************************************
  *
@@ -1076,8 +1071,7 @@ CharSet* INTL_charset_lookup(thread_db* tdbb, USHORT parm1)
 }
 
 
-Collation* INTL_texttype_lookup(thread_db* tdbb,
-								USHORT parm1)
+Collation* INTL_texttype_lookup(thread_db* tdbb, USHORT parm1)
 {
 /**************************************
  *
@@ -1110,8 +1104,7 @@ Collation* INTL_texttype_lookup(thread_db* tdbb,
 }
 
 
-void INTL_texttype_unload(thread_db* tdbb,
-						  USHORT ttype)
+void INTL_texttype_unload(thread_db* tdbb, USHORT ttype)
 {
 /**************************************
  *
@@ -1157,7 +1150,7 @@ bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 }
 
 
-void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, ULONG length)
+void INTL_pad_spaces(thread_db* tdbb, DSC* type, UCHAR* string, ULONG length)
 {
 /**************************************
  *
@@ -1272,9 +1265,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 }
 
 
-static bool all_spaces(thread_db* tdbb,
-					   CHARSET_ID charset,
-					   const BYTE* ptr, ULONG len, ULONG offset)
+static bool all_spaces(thread_db* tdbb, CHARSET_ID charset, const BYTE* ptr, ULONG len, ULONG offset)
 {
 /**************************************
  *

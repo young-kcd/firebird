@@ -972,9 +972,7 @@ static void safe_strncpy(char* target, const char* source, size_t bs)
 
 // CVC: This special function for ADA has been restored to non-const vector,
 // too, in case its usage was broken.
-void API_ROUTINE gds__interprete_a(SCHAR* s,
-								   SSHORT* length,
-								   ISC_STATUS* vector, SSHORT* offset)
+void API_ROUTINE gds__interprete_a(SCHAR* s, SSHORT* length, ISC_STATUS* vector, SSHORT* offset)
 {
 /**************************************
  *
@@ -1830,10 +1828,7 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 }
 
 
-USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
-								  const UCHAR* bpb,
-								  USHORT* source,
-								  USHORT* target)
+USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length, const UCHAR* bpb, USHORT* source, USHORT* target)
 {
 /**************************************
  *
@@ -2278,7 +2273,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 	strcpy(sqlstate, "HY000"); // error of last resort
 
 	// step #1, maybe we already have a SQLSTATE stuffed in the status vector
-	while ((*s != isc_arg_end) && (!have_sqlstate))
+	while ((*s != isc_arg_end) && !have_sqlstate)
 	{
 		if (*s == isc_arg_sql_state)
 		{

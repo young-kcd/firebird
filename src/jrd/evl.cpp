@@ -2466,10 +2466,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 }
 
 
-static dsc* concatenate(thread_db* tdbb,
-						const dsc* value1,
-						const dsc* value2,
-						impure_value* impure)
+static dsc* concatenate(thread_db* tdbb, const dsc* value1, const dsc* value2, impure_value* impure)
 {
 /**************************************
  *

@@ -206,7 +206,8 @@ static void define_default_class(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (default_class.length() == 0) {
+	if (default_class.length() == 0)
+	{
 		default_class.printf("%s%" SQUADFORMAT, DEFAULT_CLASS,
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), false, 1));
 
@@ -257,7 +258,8 @@ static void finish_security_class(Acl& acl, SecurityClass::flags_t public_priv)
  *	in a wildcard for any public privileges.
  *
  **************************************/
-	if (public_priv) {
+	if (public_priv)
+	{
 		CHECK_AND_MOVE(acl, ACL_id_list);
 		SCL_move_priv(public_priv, acl);
 	}
@@ -552,8 +554,7 @@ static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
 }
 
 
-static void grant_views(Acl& acl,
-						SecurityClass::flags_t privs)
+static void grant_views(Acl& acl, SecurityClass::flags_t privs)
 {
 /**************************************
  *
@@ -707,12 +708,14 @@ static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
 
 		// create a control break on field_name
 
-		if (field_name != PRV.RDB$FIELD_NAME) {
+		if (field_name != PRV.RDB$FIELD_NAME)
+		{
 			// finish off the last field, adding a wildcard at end, giving PUBLIC
 			// all privileges available at the table level as well as those
 			// granted at the field level
 
-			if (field_name.length()) {
+			if (field_name.length())
+			{
 				aggregate_public |= field_public;
 				finish_security_class(field_acl, (field_public | public_priv));
 				save_security_class(tdbb, s_class, field_acl, transaction);
@@ -859,7 +862,8 @@ static void save_security_class(thread_db* tdbb,
 	if (!REQUEST(irq_grant3))
 		REQUEST(irq_grant3) = request;
 
-	if (!found) {
+	if (!found)
+	{
 		request = CMP_find_request(tdbb, irq_grant4, IRQ_REQUESTS);
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)

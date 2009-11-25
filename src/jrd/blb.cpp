@@ -1926,8 +1926,7 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-static ISC_STATUS blob_filter(USHORT	action,
-							  BlobControl*	control)
+static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
 {
 /**************************************
  *
@@ -2145,8 +2144,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 }
 
 
-static void delete_blob_id(thread_db* tdbb,
-						   const bid* blob_id, SLONG prior_page, jrd_rel* relation)
+static void delete_blob_id(thread_db* tdbb, const bid* blob_id, SLONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *

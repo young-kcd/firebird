@@ -897,7 +897,8 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 }
 
 
-void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd::RelationPages* relPages)
+void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
+	Jrd::RelationPages* relPages)
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -1025,8 +1026,7 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 }
 
 
-SSHORT DPM_fetch_back(thread_db* tdbb,
-					  record_param* rpb, USHORT lock, SSHORT latch_wait)
+SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT latch_wait)
 {
 /**************************************
  *
@@ -1266,7 +1266,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 }
 
 
-bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
+bool DPM_get(thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 {
 /**************************************
  *
@@ -1499,10 +1499,7 @@ punt:
 }
 
 
-bool DPM_next(thread_db* tdbb,
-				 record_param* rpb,
-				 USHORT lock_type,
-				 bool onepage)
+bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage)
 {
 /**************************************
  *
@@ -2093,8 +2090,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 }
 
 
-void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
-	const jrd_tra* transaction)
+void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2514,7 +2510,7 @@ static void fragment(thread_db* tdbb,
 }
 
 
-static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN* window)
+static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window)
 {
 /**************************************
  *
@@ -2785,7 +2781,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 }
 
 
-static bool get_header( WIN* window, SSHORT line, record_param* rpb)
+static bool get_header(WIN* window, SSHORT line, record_param* rpb)
 {
 /**************************************
  *
@@ -3023,7 +3019,7 @@ static rhd* locate_space(thread_db* tdbb,
 }
 
 
-static void mark_full( thread_db* tdbb, record_param* rpb)
+static void mark_full(thread_db* tdbb, record_param* rpb)
 {
 /**************************************
  *

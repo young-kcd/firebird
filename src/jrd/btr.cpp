@@ -260,10 +260,7 @@ bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 }
 
 
-USHORT BTR_all(thread_db*		tdbb,
-			   jrd_rel*			relation,
-			   IndexDescAlloc**	csb_idx,
-			   RelationPages* relPages)
+USHORT BTR_all(thread_db* tdbb, jrd_rel* relation, IndexDescAlloc** csb_idx, RelationPages* relPages)
 {
 /**************************************
  *
@@ -6161,9 +6158,7 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
  *	quantify.
  *
  **************************************/
-	fprintf(stderr,
-			   "%20" QUADFORMAT
-			   "d  %4d  %.15e  %6d  ", value, scale, key.d_part, key.s_part);
+	fprintf(stderr, "%20" QUADFORMAT"d  %4d  %.15e  %6d  ", value, scale, key.d_part, key.s_part);
 
 	const UCHAR* p = (UCHAR*) &key;
 	for (int n = 10; n--; n > 0) {
