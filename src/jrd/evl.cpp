@@ -1789,23 +1789,23 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	result->dsc_sub_type = MAX(desc->dsc_sub_type, value->vlu_desc.dsc_sub_type);
 
-/* If the operands of an addition have the same sign, and their sum has
-   the opposite sign, then overflow occurred.  If the two addends have
-   opposite signs, then the result will lie between the two addends, and
-   overflow cannot occur.
-   If this is a subtraction, note that we invert the sign bit, rather than
-   negating the argument, so that subtraction of MIN_SINT64, which is
-   unchanged by negation, will be correctly treated like the addition of
-   a positive number for the purposes of this test.
+	/* If the operands of an addition have the same sign, and their sum has
+	the opposite sign, then overflow occurred.  If the two addends have
+	opposite signs, then the result will lie between the two addends, and
+	overflow cannot occur.
+	If this is a subtraction, note that we invert the sign bit, rather than
+	negating the argument, so that subtraction of MIN_SINT64, which is
+	unchanged by negation, will be correctly treated like the addition of
+	a positive number for the purposes of this test.
 
-   Test cases for a Gedankenexperiment, considering the sign bits of the
-   operands and result after the inversion below:                L  Rt  Sum
+	Test cases for a Gedankenexperiment, considering the sign bits of the
+	operands and result after the inversion below:                L  Rt  Sum
 
 		MIN_SINT64 - MIN_SINT64 ==          0, with no overflow  1   0   0
 	   -MAX_SINT64 - MIN_SINT64 ==          1, with no overflow  1   0   0
 		1          - MIN_SINT64 == overflow                      0   0   1
 	   -1          - MIN_SINT64 == MAX_SINT64, no overflow       1   0   0
-*/
+	*/
 
 	if (node->nod_type == nod_subtract2)
 		i1 ^= MIN_SINT64;		// invert the sign bit
@@ -2199,14 +2199,14 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		return result;
 	}
 
-/* From here we know our result must be a <timestamp>.  The only
-   legal cases are:
+	/* From here we know our result must be a <timestamp>.  The only
+	legal cases are:
 	<timestamp> +/-  <numeric>
 	<numeric>   +    <timestamp>
-   However, the nod_date flag might have been set on any type of
-   nod_add / nod_subtract equation -- so we must detect any invalid
-   operands.   Any <string> value is assumed to be convertable to
-   a timestamp */
+	However, the nod_date flag might have been set on any type of
+	nod_add / nod_subtract equation -- so we must detect any invalid
+	operands.   Any <string> value is assumed to be convertable to
+	a timestamp */
 
 
 	{ // This block solves the goto v/s var initialization error

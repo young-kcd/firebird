@@ -1334,7 +1334,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
 	jrd_nod** jrdVar = params;
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
-/*
+		/*
 		dsc* d = EVL_assign_to(tdbb, *jrdVar);
 		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
@@ -1342,7 +1342,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
 			status_exception::raise(
 				Arg::Gds(isc_exec_sql_invalid_var) << Arg::Num(i + 1) << Arg::Str(m_sql.substr(0, 31)));
 		}
-*/
+		*/
 
 		// build the src descriptor
 		dsc& src = m_outDescs[i * 2];

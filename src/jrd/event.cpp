@@ -627,9 +627,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 		if (header)
 		{
 			free = (frb*) ((UCHAR*) header + old_length);
-/**
-	free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
-**/
+			//free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
 			free->frb_header.hdr_length = m_shmemData.sh_mem_length_mapped - old_length;
 			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;

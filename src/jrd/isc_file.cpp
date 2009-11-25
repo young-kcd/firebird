@@ -84,13 +84,13 @@
 
 const char INET_FLAG = ':';
 
-/* Unix/NFS specific stuff */
+// Unix/NFS specific stuff
 #ifndef NO_NFS
 
 #if defined(HAVE_MNTENT_H)
-#include <mntent.h>	/* get setmntent/endmntent */
+#include <mntent.h>	// get setmntent/endmntent
 #elif defined(HAVE_SYS_MNTTAB_H)
-#include <sys/mnttab.h>	/* get MNTTAB/_PATH_MNTTAB */
+#include <sys/mnttab.h>	// get MNTTAB/_PATH_MNTTAB
 #elif defined(AIX)
 #error ancient versions of AIX that do not provide "<mntent.h>" are not
 #error supported. AIX 5.1+ provides this header.
