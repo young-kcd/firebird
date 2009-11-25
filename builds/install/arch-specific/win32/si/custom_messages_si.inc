@@ -15,6 +15,7 @@ si.UseApplicationTaskMsg=Zaženi server kot &aplikacijo?
 si.TaskGroupDescription=Zaženi server kot:
 si.UseServiceTask=Zaženi kot &servis?
 si.AutoStartTask=Ali zaženem &Firebird server ob vsakem zagonu raèunalnika?
+si.SuperClassicTask="Use SuperClassic?"
 si.CopyFbClientToSysTask=Kopiraj &Firebird klientovo knjižnico v direktorij <system>?
 si.CopyFbClientAsGds32Task=Ali izdelam klientovo knjižnico kot GDS32.DLL za podporo obstojeèim &aplikacijam?
 si.InstallCPLAppletTask="Ali instaliram Control &Panel Applet?"
@@ -69,3 +70,8 @@ si.RunCSWithGuardian=Zaženi Firebird kot klasièni server (z nadzornikom)
 si.RunISQL=Zaženi ukazno vrstico z orodjem Interactive SQL
 si.ReadmeFile=readme.txt
 si.InstallationReadmeFile=instalacija_precitajMe.txt
+
+si.RunCS=Zaženi Firebird kot klasièni server 
+si.RunSC=Zaženi Firebird kot super klasièni server 
+si.RunSS=Zaženi Firebird kot super server 
+

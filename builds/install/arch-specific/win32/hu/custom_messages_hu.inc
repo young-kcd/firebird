@@ -15,6 +15,7 @@ hu.UseApplicationTaskMsg=&Programként
 hu.TaskGroupDescription=A Firebird Adatbázisszerver futtatása:
 hu.UseServiceTask=&Szolgáltatásként
 hu.AutoStartTask=A &Firebird Adatbázisszerver automatikus indítása minden rendszerindításkor
+hu.SuperClassicTask="Use SuperClassic?"
 hu.CopyFbClientToSysTask=Másodpéldány a &Firebird kliens könyvtárról a <system> mappába
 hu.CopyFbClientAsGds32Task=Másodpéldány a kliens könyvtárból, az ö&rökölt programok támogatására (GDS32.DLL)
 hu.InstallCPLAppletTask=Firebird &Vezérlõpult Program telepítése
@@ -52,7 +53,7 @@ hu.PreviousInstallBroken=   (A telepítés hibásnak tûnik a nem megfelelõ verzió-a
 hu.PreviousInstallGood=   (A telepítés hibátlannak tûnik.)
 
 hu.IconReadme=Firebird %1 - Olvass El
-hu.IconUninstall=A Firebird eltávolítása %1 
+hu.IconUninstall=A Firebird eltávolítása %1
 hu.ReleaseNotes= Firebird %1 - Újdonságok (Acrobat Reader programot igényel)
 hu.InstallationGuide= telepítési segédlet. (Acrobat Reader programot igényel)
 hu.BugFixes= hibajavítások. (Acrobat Reader programot igényel)
@@ -70,3 +71,8 @@ hu.RunISQL=A parancssoros Interaktív SQL eszköz futtatása
 
 hu.ReadmeFile=olvass_el.txt
 hu.InstallationReadmeFile=telepitesi_segedlet.txt
+
+hu.RunCS=Hagyományos Szerver futtatása 
+hu.RunSC=Szuper Hagyományos Szerver futtatása 
+hu.RunSS=Szuper Szerver futtatása 
+

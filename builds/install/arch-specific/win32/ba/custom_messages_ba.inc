@@ -15,6 +15,7 @@ ba.UseApplicationTaskMsg=Pokreni kao &Application?
 ba.TaskGroupDescription=Pokreni Firebird server kao:
 ba.UseServiceTask=Pokreni kao &Service?
 ba.AutoStartTask=Pokreni &Firebird automatski uvijek kad upalite raèunar?
+ba.SuperClassicTask="Use SuperClassic?"
 ba.CopyFbClientToSysTask=Kopiraj &Firebird client biblioteku (library) u folder <system>?
 ba.CopyFbClientAsGds32Task=Generiši client biblioteku (library) kao GDS32.DLL za podršku starim-postojeæim (&legacy) programima?
 ba.InstallCPLAppletTask="Instaliraj Control &Panel Applet?"
@@ -71,3 +72,8 @@ ba.RunISQL=Pokreni command-line bazirani Interactive SQL alat
 
 ba.ReadmeFile=ProcitajMe.txt
 ba.InstallationReadmeFile=Instalacija_ProcitajMe.txt
+
+ba.RunCS=Pokreni Firebird Classic server
+ba.RunSC=Pokreni Firebird SuperClassic server
+ba.RunSS=Pokreni Firebird SuperServer
+
