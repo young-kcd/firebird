@@ -1,3 +1,51 @@
+2009-11-25 11:48  hvlad
+
+	* firebird2/src/jrd/Relation.cpp (1.22.2.1):
+
+	Fixed bug CORE-2771 : AV at backup of database with GTT
+
+2009-11-25 10:42  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	ba/custom_messages_ba.inc (1.5.2.1), custom_messages.inc (1.7.2.1),
+	de/custom_messages_de.inc (1.5.2.1), es/custom_messages_es.inc
+	(1.4.2.1), fr/custom_messages_fr.inc (1.5.2.1),
+	hu/custom_messages_hu.inc (1.5.2.1), it/custom_messages_it.inc
+	(1.4.2.1), pl/custom_messages_pl.inc (1.6.2.1),
+	pt/custom_messages_pt.inc (1.6.2.1), si/custom_messages_si.inc
+	(1.5.2.1):
+
+	Add new custom messages and translations for windows installer.
+
+2009-11-25 10:21  paul_reeves
+
+	* firebird2/builds/:
+	install/arch-specific/win32/install_superclassic.bat (1.1.2.1),
+	win32/make_all.bat (1.59.2.1):
+
+	Add script to manually install superclassic service from zip kit
+
+2009-11-24 16:21  paul_reeves
+
+	* firebird2/builds/win32/run_all.bat (1.16.2.1):
+
+	Assign list of kits to build to a variable to simplify debugging of
+	packaging script
+
+2009-11-24 16:19  paul_reeves
+
+	* firebird2/builds/win32/make_examples.bat (1.23.8.1):
+
+	Exit with an appropriate error message if cannot build employee
+	database.  Tidy up whitespace
+
+2009-11-24 16:05  alexpeshkoff
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.28.2.1):
+
+	Fixed untracked bug (was not reported for any public version) -
+	trace did not work with non-3.0 icu version
+
 2009-11-19 15:27  asfernandes
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.104.2.1),
