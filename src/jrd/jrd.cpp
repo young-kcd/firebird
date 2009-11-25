@@ -917,9 +917,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 	}
 
-/* If database to be opened is security database, then only
-   gsec or SecurityDatabase may open it. This protects from use
-   of old gsec to write wrong password hashes into it. */
+	// If database to be opened is security database, then only
+	// gsec or SecurityDatabase may open it. This protects from use
+	// of old gsec to write wrong password hashes into it.
 	if (vdn == VDN_SECURITY && !options.dpb_gsec_attach && !options.dpb_sec_attach)
 	{
 		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("direct") <<
@@ -1191,10 +1191,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 #ifdef SUPERSERVER
-/* Check if another attachment has or is requesting exclusive database access.
-   If this is an implicit attachment for the security (password) database, don't
-   try to get exclusive attachment to avoid a deadlock condition which happens
-   when a client tries to connect to the security database itself. */
+	// Check if another attachment has or is requesting exclusive database access.
+	// If this is an implicit attachment for the security (password) database, don't
+	// try to get exclusive attachment to avoid a deadlock condition which happens
+	// when a client tries to connect to the security database itself.
 
 	if (!options.dpb_sec_attach)
 	{
@@ -1259,12 +1259,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	find_intl_charset(tdbb, attachment, &options);
 
-/*
- * if the attachment is through gbak and this attachment is not by owner
- * or sysdba then return error. This has been added here to allow for the
- * GBAK security feature of only allowing the owner or sysdba to backup a
- * database. smistry 10/5/98
- */
+	// if the attachment is through gbak and this attachment is not by owner
+	// or sysdba then return error. This has been added here to allow for the
+	// GBAK security feature of only allowing the owner or sysdba to backup a
+	// database. smistry 10/5/98
 
 	if ((attachment->att_flags & ATT_gbak_attachment) ||
 		(attachment->att_flags & ATT_gfix_attachment) ||

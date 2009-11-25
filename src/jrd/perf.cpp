@@ -72,7 +72,7 @@ static const SCHAR* report = "elapsed = !e cpu = !u reads = !r writes = !w fetch
 #define TICK	100
 #endif
 
-/* EKU: TICK (sys/param.h) and CLOCKS_PER_SEC (time.h) may both be defined */
+// EKU: TICK (sys/param.h) and CLOCKS_PER_SEC (time.h) may both be defined
 #if !defined(TICK) && defined(CLOCKS_PER_SEC)
 #define TICK ((SLONG)CLOCKS_PER_SEC)
 #endif
@@ -219,16 +219,16 @@ static void perf_get_info(FB_API_HANDLE* handle, P* perf)
 	struct timeval tp;
 #else
 	struct timeb time_buffer;
-#define LARGE_NUMBER 696600000	/* to avoid overflow, get rid of decades) */
+#define LARGE_NUMBER 696600000	// to avoid overflow, get rid of decades)
 #endif
 
-/* If there isn't a database, zero everything out */
+	// If there isn't a database, zero everything out
 
 	if (!*handle) {
 		memset(perf, 0, sizeof(PERF));
 	}
 
-/* Get system times */
+	// Get system time
 
 	times(&perf->perf_times);
 
