@@ -58,7 +58,8 @@ bool getRootFromRegistry(PathName& root)
 	const long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE,
 		NULL, &type, reinterpret_cast<UCHAR*>(buffer), &bufsize);
 	RegCloseKey(hkey);
-	if (RegRC == ERROR_SUCCESS) {
+	if (RegRC == ERROR_SUCCESS)
+	{
 		root = buffer;
 		return true;
 	}

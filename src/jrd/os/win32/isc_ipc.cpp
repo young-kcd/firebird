@@ -59,10 +59,10 @@
 
 // signals may be not defined in MINGW
 #ifndef SIG_SGE
-#define SIG_SGE (void (__cdecl *)(int))3           /* signal gets error */
+#define SIG_SGE (void (__cdecl *)(int))3           // signal gets error
 #endif
 #ifndef SIG_ACK
-#define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
+#define SIG_ACK (void (__cdecl *)(int))4           // acknowledge
 #endif
 
 static int process_id = 0;
@@ -72,8 +72,8 @@ const USHORT MAX_OPN_EVENTS	= 40;
 struct opn_event_t
 {
 	SLONG opn_event_pid;
-	SLONG opn_event_signal;		/* pseudo-signal number */
-	HANDLE opn_event_lhandle;	/* local handle to foreign event */
+	SLONG opn_event_signal;		// pseudo-signal number
+	HANDLE opn_event_lhandle;	// local handle to foreign event
 	ULONG opn_event_age;
 };
 
@@ -97,10 +97,11 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
  *
  **************************************/
 
-/* If we're simply trying to poke ourselves, do so directly. */
+	// If we're simply trying to poke ourselves, do so directly.
 	ISC_signal_init();
 
-	if (pid == process_id) {
+	if (pid == process_id)
+	{
 		SetEvent(object_hndl);
 		return 0;
 	}
@@ -110,26 +111,30 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 
 	opn_event_t* opn_event = opn_events;
 	const opn_event_t* const end_opn_event = opn_event + opn_event_count;
-	for (; opn_event < end_opn_event; opn_event++) {
+	for (; opn_event < end_opn_event; opn_event++)
+	{
 		if (opn_event->opn_event_pid == pid &&
 			opn_event->opn_event_signal == signal_number)
 		{
 			break;
 		}
-		if (opn_event->opn_event_age < oldest_age) {
+		if (opn_event->opn_event_age < oldest_age)
+		{
 			oldest_opn_event = opn_event;
 			oldest_age = opn_event->opn_event_age;
 		}
 	}
 
-	if (opn_event >= end_opn_event) {
+	if (opn_event >= end_opn_event)
+	{
 		HANDLE lhandle = ISC_make_signal(false, false, pid, signal_number);
 		if (!lhandle)
 			return -1;
 
 		if (opn_event_count < MAX_OPN_EVENTS)
 			opn_event_count++;
-		else {
+		else
+		{
 			opn_event = oldest_opn_event;
 			CloseHandle(opn_event->opn_event_lhandle);
 		}
@@ -176,7 +181,8 @@ void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
 
 	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
 
-	if (create_flag) {
+	if (create_flag)
+	{
 		fb_assert(!hEvent);
 		hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
 	}
