@@ -38,11 +38,11 @@ SQUAD QUAD_add(const SQUAD*, const SQUAD*, ErrorFunction err)
  *
  **************************************/
 
-	err(Arg::Gds(isc_badblk));	/* not really badblk, but internal error */
-/* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
+	err(Arg::Gds(isc_badblk));	// not really badblk, but internal error
+	// IBERROR (224); // msg 224 quad word arithmetic not supported
 
 	SQUAD temp = { 0, 0 };
-	return temp;				/* Added to remove compiler warnings */
+	return temp;				// Added to remove compiler warnings
 }
 
 
@@ -84,13 +84,12 @@ SQUAD QUAD_from_double(const double*, ErrorFunction err)
  *
  **************************************/
 
-	err(Arg::Gds(isc_badblk));	/* not really badblk, but internal error */
-/* BUGCHECK (190); *//* msg 190 conversion not supported for */
-	/* specified data types */
+	err(Arg::Gds(isc_badblk));	// not really badblk, but internal error
+	// BUGCHECK (190); // msg 190 conversion not supported for specified data types
 
 	SQUAD temp = { 0, 0 };
 
-	return temp;				/* Added to remove compiler warnings */
+	return temp;				// Added to remove compiler warnings
 }
 
 
@@ -107,11 +106,11 @@ SQUAD QUAD_multiply(const SQUAD*, const SQUAD*, ErrorFunction err)
  *
  **************************************/
 
-	err(Arg::Gds(isc_badblk));	/* not really badblk, but internal error */
-/* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
+	err(Arg::Gds(isc_badblk));	// not really badblk, but internal error
+	// IBERROR (224); // msg 224 quad word arithmetic not supported
 
 	SQUAD temp = { 0, 0 };
-	return temp;				/* Added to remove compiler warnings */
+	return temp;				// Added to remove compiler warnings
 }
 
 
@@ -128,11 +127,11 @@ SQUAD QUAD_negate(const SQUAD*, ErrorFunction err)
  *
  **************************************/
 
-	err(Arg::Gds(isc_badblk));	/* not really badblk, but internal error */
-/* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
+	err(Arg::Gds(isc_badblk));	// not really badblk, but internal error
+	// IBERROR (224); // msg 224 quad word arithmetic not supported
 
 	SQUAD temp = { 0, 0 };
-	return temp;				/* Added to remove compiler warnings */
+	return temp;				// Added to remove compiler warnings
 }
 
 
@@ -149,11 +148,11 @@ SQUAD QUAD_subtract(const SQUAD*, const SQUAD*, ErrorFunction err)
  *
  **************************************/
 
-	err(Arg::Gds(isc_badblk));	/* not really badblk, but internal error */
-/* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
+	err(Arg::Gds(isc_badblk));	// not really badblk, but internal error
+	// IBERROR (224); // msg 224 quad word arithmetic not supported
 
 	SQUAD temp = { 0, 0 };
-	return temp;				/* Added to remove compiler warnings */
+	return temp;				// Added to remove compiler warnings
 }
 
 

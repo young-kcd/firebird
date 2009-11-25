@@ -54,14 +54,14 @@
 #include <stdio.h>
 #include "../jrd/gdsassert.h"
 
-/* includes specific for DSQL */
+// includes specific for DSQL
 
 #include "../dsql/sqlda.h"
 #include "../dsql/sqlda_pub.h"
 #include "../dsql/prepa_proto.h"
 #include "../dsql/utld_proto.h"
 
-/* end DSQL-specific includes */
+// end DSQL-specific includes
 
 #include "../jrd/why_proto.h"
 #include "../common/classes/alloc.h"
@@ -115,7 +115,7 @@
 #endif
 
 #ifdef HAVE_FLOCK
-#include <sys/file.h>			/* for flock() */
+#include <sys/file.h>			// for flock()
 #endif
 
 #ifdef WIN_NT
@@ -157,7 +157,7 @@ static bool disableConnections = false;
 
 typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
-/* Transaction element block */
+// Transaction element block
 
 struct teb
 {
@@ -872,14 +872,11 @@ static bool why_initialized = false;
  * this is the most close code to what we are doing now.
  */
 
-//static const USHORT FPE_RESET_INIT_ONLY		= 0x0;	/* Don't reset FPE after init */
-//static const USHORT FPE_RESET_NEXT_API_CALL	= 0x1;	/* Reset FPE on next gds call */
-static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
+//static const USHORT FPE_RESET_INIT_ONLY		= 0x0;	// Don't reset FPE after init
+//static const USHORT FPE_RESET_NEXT_API_CALL	= 0x1;	// Reset FPE on next gds call
+static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	// Reset FPE on all gds call
 
-/*
- * Global array to store string from the status vector in
- * save_error_string.
- */
+// Global array to store string from the status vector in save_error_string.
 
 const int MAXERRORSTRINGLENGTH	= 250;
 static TEXT glbstr1[MAXERRORSTRINGLENGTH];
@@ -1204,7 +1201,7 @@ const int PROC_PING				= 55;
 
 const int PROC_count			= 56;
 
-/* Define complicated table for multi-subsystem world */
+// Define complicated table for multi-subsystem world
 
 namespace
 {
@@ -1238,7 +1235,7 @@ static PTR entrypoints[PROC_count * SUBSYSTEMS] =
 
 } // extern "C"
 
-/* Information items for two phase commit */
+// Information items for two phase commit
 
 static const UCHAR prepare_tr_info[] =
 {
@@ -1246,7 +1243,7 @@ static const UCHAR prepare_tr_info[] =
 	isc_info_end
 };
 
-/* Information items for DSQL prepare */
+// Information items for DSQL prepare
 
 static const SCHAR sql_prepare_info[] =
 {
@@ -1264,7 +1261,7 @@ static const SCHAR sql_prepare_info[] =
 	isc_info_sql_describe_end
 };
 
-/* Information items for SQL info */
+// Information items for SQL info
 
 static const SCHAR describe_select_info[] =
 {
@@ -1388,8 +1385,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		ptr = status;
 
-/* copy the file name to a temp buffer, since some of the following
-   utilities can modify it */
+		// copy the file name to a temp buffer, since some of the following utilities can modify it
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
 		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
@@ -1995,8 +1991,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		ptr = status;
 
-/* copy the file name to a temp buffer, since some of the following
-   utilities can modify it */
+		// copy the file name to a temp buffer, since some of the following utilities can modify it
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
 		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
@@ -2957,7 +2952,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 
 		bool ret_v3_error = false;
 		if (!stmt_eaten) {
-			/* Check if against < 4.0 database */
+			// Check if against < 4.0 database
 
 			const SCHAR ch = isc_info_base_level;
 			SCHAR buffer[16];
@@ -5019,8 +5014,8 @@ static void check_status_vector(const ISC_STATUS* status)
 		return;
 	}
 
-/* Vector [2] could either end the vector, or start a warning
-   in either case the status vector is a success */
+	// Vector [2] could either end the vector, or start a warning
+	// in either case the status vector is a success
 	if ((s[1] == FB_SUCCESS) && (s[2] != isc_arg_end) && (s[2] != isc_arg_gds) &&
 		(s[2] != isc_arg_warning))
 	{
@@ -5036,8 +5031,8 @@ static void check_status_vector(const ISC_STATUS* status)
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
-			/* The next element must either be 0 (indicating no error) or a
-			 * valid isc error message, let's check */
+			// The next element must either be 0 (indicating no error) or a
+			// valid isc error message, let's check
 			if (*s && (*s & ISC_MASK) != ISC_MASK) {
 				if (code == isc_arg_warning) {
 					SV_MSG("warning code not a valid ISC message");
@@ -5047,8 +5042,8 @@ static void check_status_vector(const ISC_STATUS* status)
 				}
 			}
 
-			/* If the error code is valid, then I better be able to retrieve a
-			 * proper facility code from it ... let's find out */
+			// If the error code is valid, then I better be able to retrieve a
+			// proper facility code from it ... let's find out
 			if (*s && (*s & ISC_MASK) == ISC_MASK) {
 				bool found = false;
 
@@ -5076,7 +5071,7 @@ static void check_status_vector(const ISC_STATUS* status)
 		case isc_arg_string:
 		case isc_arg_sql_state:
 			length = strlen((const char*) *s);
-			/* This check is heuristic, not deterministic */
+			// This check is heuristic, not deterministic
 			if (length > 1024 - 1)
 				SV_MSG("suspect length value");
 			if (*((const UCHAR *) * s) == 0xCB)
@@ -5087,9 +5082,8 @@ static void check_status_vector(const ISC_STATUS* status)
 		case isc_arg_cstring:
 			length = (ULONG) * s;
 			s++;
-			/* This check is heuristic, not deterministic */
-			/* Note: This can never happen anyway, as the length is coming
-			   from a byte value */
+			// This check is heuristic, not deterministic
+			// Note: This can never happen anyway, as the length is coming from a byte value
 			if (length > 1024 - 1)
 				SV_MSG("suspect length value");
 			if (*((const UCHAR *) * s) == 0xCB)
@@ -5268,10 +5262,9 @@ static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda, USH
  **************************************/
 	USHORT n_variables;
 
-/* If dialect / 10 == 0, then it has not been combined with the
-   parser version for a prepare statement.  If it has been combined, then
-   the dialect needs to be pulled out to compare to DIALECT_xsqlda
-*/
+	// If dialect / 10 == 0, then it has not been combined with the
+	// parser version for a prepare statement.  If it has been combined, then
+	// the dialect needs to be pulled out to compare to DIALECT_xsqlda
 
 	USHORT sql_dialect = dialect / 10;
 	if (sql_dialect == 0)
@@ -5512,9 +5505,9 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 	TEXT* const description = (length > sizeof(tdr_buffer)) ?
 		(TEXT *) gds__alloc(length) : tdr_buffer;
 
-/* build a transaction description record containing
-   the host site and database/transaction
-   information for the target databases. */
+	// build a transaction description record containing
+	// the host site and database/transaction
+	// information for the target databases.
 
 	TEXT* p = description;
 	if (!p)
@@ -5529,14 +5522,14 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 	memcpy(p, host, hostlen);
 	p += hostlen;
 
-/* Get database and transaction stuff for each sub-transaction */
+	// Get database and transaction stuff for each sub-transaction
 
 	for (sub = transaction->next; sub; sub = sub->next) {
 		get_database_info(sub, &p);
 		get_transaction_info(status, sub, &p);
 	}
 
-/* So far so good -- prepare each sub-transaction */
+	// So far so good -- prepare each sub-transaction
 
 	length = p - description;
 
@@ -5622,12 +5615,11 @@ static void save_error_string(ISC_STATUS* status)
 			l = (ULONG) * status;
 			if (l < len)
 			{
-				status++;		/* Length is unchanged */
-				/*
-				 * This strncpy should really be a memcpy
-				 */
+				status++;		// Length is unchanged
+
+				// This strncpy should really be a memcpy
 				strncpy(p, reinterpret_cast<char*>(*status), l);
-				*status++ = (ISC_STATUS) p;	/* string in static memory */
+				*status++ = (ISC_STATUS) p;	// string in static memory
 				p += l;
 				len -= l;
 			}
@@ -5644,7 +5636,7 @@ static void save_error_string(ISC_STATUS* status)
 			if (l < len)
 			{
 				strncpy(p, reinterpret_cast<char*>(*status), l);
-				*status++ = (ISC_STATUS) p;	/* string in static memory */
+				*status++ = (ISC_STATUS) p;	// string in static memory
 				p += l;
 				len -= l;
 			}
@@ -5661,7 +5653,7 @@ static void save_error_string(ISC_STATUS* status)
 		case isc_arg_vms:
 		case isc_arg_unix:
 		case isc_arg_win32:
-			status++;			/* Skip parameter */
+			status++;			// Skip parameter
 			break;
 		}
 	}

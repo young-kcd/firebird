@@ -143,8 +143,8 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		csb->csb_g_flags |= flags;
 	}
 
-/* If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
-   the target relation */
+	// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
+	// the target relation
 
 	if (trigger)
 	{
@@ -632,7 +632,7 @@ jrd_nod* PAR_make_list(thread_db* tdbb, NodeStack& stack)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Count the number of nodes */
+	// Count the number of nodes
 	USHORT count = stack.getCount();
 
 	jrd_nod* node = PAR_make_node(tdbb, count);
@@ -770,7 +770,7 @@ static void error(CompilerScratch* csb, const Arg::StatusVector& v)
  **************************************/
 	fb_assert(v.value()[0] == isc_arg_gds);
 
-/* Don't bother to pass tdbb for error handling */
+	// Don't bother to pass tdbb for error handling
 	thread_db* tdbb = JRD_get_thread_data();
 
 	csb->csb_blr_reader.seekBackward(1);
@@ -780,7 +780,7 @@ static void error(CompilerScratch* csb, const Arg::StatusVector& v)
 	p.copyTo(tdbb->tdbb_status_vector);
 	ERR_make_permanent(tdbb->tdbb_status_vector);
 
-/* Give up whatever we were doing and return to the user. */
+	// Give up whatever we were doing and return to the user.
 	ERR_punt();
 }
 
@@ -903,12 +903,11 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* allocate a node to represent the conditions list */
+	// allocate a node to represent the conditions list
 
 	const USHORT code_type = csb->csb_blr_reader.getByte();
 
-	/* don't create PsqlException if blr_raise is used,
-	   just return NULL */
+	// don't create PsqlException if blr_raise is used, just return NULL
 	if (code_type == blr_raise)
 	{
 		return NULL;
@@ -1215,7 +1214,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Fake RecordSelExpr */
+	// Fake RecordSelExpr
 
 	for_node->nod_arg[e_for_re] = PAR_make_node(tdbb, 1 + rse_delta + 2);
 	RecordSelExpr* rse = (RecordSelExpr*) for_node->nod_arg[e_for_re];
@@ -1225,7 +1224,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
 	jrd_nod* relation = PAR_parse_node(tdbb, csb, RELATION);
 	rse->rse_relation[0] = relation;
 
-/* Fake boolean */
+	// Fake boolean
 
 	jrd_nod* node = rse->rse_boolean = PAR_make_node(tdbb, 2);
 	node->nod_type = nod_eql;
@@ -1237,7 +1236,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
 	node->nod_count = 0;
 	node->nod_arg[0] = relation->nod_arg[e_rel_stream];
 
-/* Pick up statement */
+	// Pick up statement
 
 	for_node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, STATEMENT);
 
@@ -1318,7 +1317,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 		const jrd_prc* procedure = tail->csb_procedure;
 
-		/* make sure procedure has been scanned before using it */
+		// make sure procedure has been scanned before using it
 
 		if (procedure && (!(procedure->prc_flags & PRC_scanned) ||
 				(procedure->prc_flags & PRC_being_scanned) ||
@@ -1344,7 +1343,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			if (!relation)
 				error(csb, Arg::Gds(isc_ctxnotdef));
 
-			/* make sure relation has been scanned before using it */
+			// make sure relation has been scanned before using it
 
 			if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
 			{
@@ -1508,7 +1507,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	node->nod_arg[e_fun_function] = (jrd_nod*) function;
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
-    /* CVC: I will track ufds only if a proc is not being dropped. */
+    // CVC: I will track ufds only if a proc is not being dropped.
     if (csb->csb_g_flags & csb_get_dependencies)
     {
         jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
@@ -1580,10 +1579,10 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 		break;
 
 	case dtype_double:
-		/* the double literal could potentially be used for any
-		   numeric literal - the value is passed as if it were a
-		   text string. Convert the numeric string to its binary
-		   value (int64, long or double as appropriate). */
+		// the double literal could potentially be used for any
+		// numeric literal - the value is passed as if it were a
+		// text string. Convert the numeric string to its binary
+		// value (int64, long or double as appropriate).
 		l = csb->csb_blr_reader.getWord();
 		q = csb->csb_blr_reader.getPos();
 		dtype = CVT_get_numeric(q, l, &scale, (double *) p);
@@ -1668,8 +1667,8 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Get message number, register it in the compiler scratch block, and
-   allocate a node to represent the message */
+	// Get message number, register it in the compiler scratch block, and
+	// allocate a node to represent the message
 
 	USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
 	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
@@ -1680,8 +1679,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 	if (n > csb->csb_msg_number)
 		csb->csb_msg_number = n;
 
-/* Get the number of parameters in the message and prepare to fill
-   out the format block */
+	// Get the number of parameters in the message and prepare to fill out the format block
 
 	n = csb->csb_blr_reader.getWord();
 	Format* format = Format::newFormat(*tdbb->getDefaultPool(), n);
@@ -1734,7 +1732,7 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Parse the original and new contexts */
+	// Parse the original and new contexts
 
 	USHORT context = (unsigned int) csb->csb_blr_reader.getByte();
 	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
@@ -1749,8 +1747,7 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 	}
 	context = (unsigned int) csb->csb_blr_reader.getByte();
 
-/* Make sure the compiler scratch block is big enough to hold
-   everything */
+	// Make sure the compiler scratch block is big enough to hold everything
 
 	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, context);
 	tail->csb_stream = (UCHAR) new_stream;
@@ -1759,7 +1756,7 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 	tail = CMP_csb_element(csb, new_stream);
 	tail->csb_relation = csb->csb_rpt[org_stream].csb_relation;
 
-/* Make the node and parse the sub-expression */
+	// Make the node and parse the sub-expression
 
 	jrd_nod* node = PAR_make_node(tdbb, e_mod_length);
 	node->nod_count = 1;
@@ -1878,7 +1875,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	USHORT node_type = (USHORT) csb->csb_blr_reader.getByte();
 
-/* a join type indicates a cross of two or more streams */
+	// a join type indicates a cross of two or more streams
 
 	if (node_type == blr_join || node_type == blr_merge)
 	{
@@ -1891,16 +1888,16 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		return plan;
 	}
 
-/* we have hit a stream; parse the context number and access type */
+	// we have hit a stream; parse the context number and access type
 
 	if (node_type == blr_retrieve)
 	{
 		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (nod_t)(USHORT) blr_table[node_type];
 
-		/* parse the relation name and context--the relation
-		   itself is redundant except in the case of a view,
-		   in which case the base relation (and alias) must be specified */
+		// parse the relation name and context--the relation
+		// itself is redundant except in the case of a view,
+		// in which case the base relation (and alias) must be specified
 
 		USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
 		if (n != blr_relation && n != blr_relation2 && n != blr_rid && n != blr_rid2)
@@ -1908,9 +1905,9 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 			PAR_syntax_error(csb, elements[RELATION]);
 		}
 
-		/* don't have par_relation() parse the context, because
-		   this would add a new context; while this is a reference to
-		   an existing context */
+		// don't have par_relation() parse the context, because
+		// this would add a new context; while this is a reference to
+		// an existing context
 
 		jrd_nod* relation_node = par_relation(tdbb, csb, n, false);
 		plan->nod_arg[e_retrieve_relation] = relation_node;
@@ -1924,7 +1921,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) stream;
 		relation_node->nod_arg[e_rel_context] = (jrd_nod*) (IPTR) n;
 
-		/* Access plan types (sequential is default) */
+		// Access plan types (sequential is default)
 
 		node_type = (USHORT) csb->csb_blr_reader.getByte();
 		USHORT extra_count = 0;
@@ -1940,7 +1937,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					PAR_make_node(tdbb, e_access_type_length);
 				access_type->nod_type = nod_navigational;
 
-				/* pick up the index name and look up the appropriate ids */
+				// pick up the index name and look up the appropriate ids
 
 				PAR_name(csb, name);
 	            /* CVC: We can't do this. Index names are identifiers.
@@ -1965,9 +1962,9 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					}
 				}
 
-				/* save both the relation id and the index id, since
-				   the relation could be a base relation of a view;
-				   save the index name also, for convenience */
+				// save both the relation id and the index id, since
+				// the relation could be a base relation of a view;
+				// save the index name also, for convenience
 
 				access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
 				access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
@@ -2006,7 +2003,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					delete access_type;
 				access_type = temp;
 
-				/* pick up the index names and look up the appropriate ids */
+				// pick up the index names and look up the appropriate ids
 
 				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;)
 				{
@@ -2033,9 +2030,9 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 						}
 					}
 
-					/* save both the relation id and the index id, since
-					   the relation could be a base relation of a view;
-					   save the index name also, for convenience */
+					// save both the relation id and the index id, since
+					// the relation could be a base relation of a view;
+					// save the index name also, for convenience
 
 					*arg++ = (jrd_nod*) (IPTR) relation_id;
 					*arg++ = (jrd_nod*) (IPTR) index_id;
@@ -2063,7 +2060,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	PAR_syntax_error(csb, "plan item");
-	return NULL;			/* Added to remove compiler warning */
+	return NULL;			// Added to remove compiler warning
 }
 
 
@@ -2149,13 +2146,13 @@ static void par_procedure_parms(thread_db* tdbb,
 	bool mismatch = false;
 	SLONG count = csb->csb_blr_reader.getWord();
 
-/** Check to see if the parameter count matches **/
+	// Check to see if the parameter count matches
 	if (input_flag ?
 			(count < (procedure->prc_inputs - procedure->prc_defaults) ||
 				(count > procedure->prc_inputs) ) :
 			(count != procedure->prc_outputs))
 	{
-	/** They don't match...Hmmm...Its OK if we were dropping the procedure **/
+		// They don't match...Hmmm...Its OK if we were dropping the procedure
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 		{
 			error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
@@ -2167,7 +2164,7 @@ static void par_procedure_parms(thread_db* tdbb,
 
 	if (count || input_flag && procedure->prc_defaults)
 	{
-	/** We have a few parameters. Get on with creating the message block **/
+		// We have a few parameters. Get on with creating the message block
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
 			csb->csb_msg_number = n = 2;
@@ -2200,14 +2197,13 @@ static void par_procedure_parms(thread_db* tdbb,
 		Format* fmt_copy = Format::newFormat(*tdbb->getDefaultPool(), format->fmt_count);
 		*fmt_copy = *format;
 		message->nod_arg[e_msg_format] = (jrd_nod*) fmt_copy;
-		/* --- end of fix --- */
+		// --- end of fix ---
 		if (!mismatch)
 			n = format->fmt_count / 2;
 		else
 		{
-			/*  There was a parameter mismatch hence can't depend upon the format's
-			   fmt_count. Use count instead.
-			 */
+			//  There was a parameter mismatch hence can't depend upon the format's
+			// fmt_count. Use count instead.
 			n = count;
 		}
 		jrd_nod* list = *parameter_ptr = PAR_make_node(tdbb, n);
@@ -2278,12 +2274,12 @@ static jrd_nod* par_relation(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-/* Make a relation reference node */
+	// Make a relation reference node
 
 	jrd_nod* node = PAR_make_node(tdbb, e_rel_length);
 	node->nod_count = 0;
 
-/* Find relation either by id or by name */
+	// Find relation either by id or by name
 	jrd_rel* relation = 0;
 	Firebird::string* alias_string = 0;
 	switch (blr_operator)
@@ -2317,7 +2313,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 		break;
 	}
 
-/* if an alias was passed, store with the relation */
+	// if an alias was passed, store with the relation
 
 	if (alias_string)
 	{
@@ -2325,7 +2321,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 			(jrd_nod*) stringDup(*tdbb->getDefaultPool(), alias_string->c_str());
 	}
 
-/* Scan the relation if it hasn't already been scanned for meta data */
+	// Scan the relation if it hasn't already been scanned for meta data
 
 	if ((!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned)) &&
 		((relation->rel_flags & REL_force_scan) || !(csb->csb_g_flags & csb_internal)))
@@ -2338,8 +2334,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 		MET_parse_sys_trigger(tdbb, relation);
 	}
 
-/* generate a stream for the relation reference,
-   assuming it is a real reference */
+	// generate a stream for the relation reference, assuming it is a real reference
 
 	if (parse_context)
 	{
@@ -2449,8 +2444,8 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		default:
 			if (op == (UCHAR) blr_end)
 			{
-				/* An outer join is only allowed when the stream count is 2
-				   and a boolean expression has been supplied */
+				// An outer join is only allowed when the stream count is 2
+				// and a boolean expression has been supplied
 
 				if (!rse->rse_jointype || (rse->rse_count == 2 && rse->rse_boolean))
 				{
@@ -2616,8 +2611,8 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
  **************************************/
 	SET_TDBB(tdbb);
 
-/* Make the node, parse the context number, get a stream assigned,
-   and get the number of sub-RecordSelExpr's. */
+	// Make the node, parse the context number, get a stream assigned,
+	// and get the number of sub-RecordSelExpr's.
 
 	jrd_nod* node = PAR_make_node(tdbb, e_uni_length);
 	node->nod_count = 3;
@@ -2635,7 +2630,7 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
 
 	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
 
-/* Pick up the sub-RecordSelExpr's and maps */
+	// Pick up the sub-RecordSelExpr's and maps
 
 	NodeStack clauses;
 
@@ -2677,9 +2672,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	const SSHORT sub_type = sub_type_table[blr_operator];
 
-/* If there is a length given in the length table, pre-allocate
-   the node and set its count.  This saves an enormous amount of
-   repetitive code. */
+	// If there is a length given in the length table, pre-allocate
+	// the node and set its count.  This saves an enormous amount of repetitive code.
 
 	jrd_nod* node;
 	jrd_nod** arg;
@@ -2698,7 +2692,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	bool set_type = true;
 
-/* Dispatch on operator type. */
+	// Dispatch on operator type.
 
 	switch (blr_operator)
 	{
@@ -2710,7 +2704,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[e_any_rse] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
-		/* Boring operators -- no special handling req'd */
+		// Boring operators -- no special handling req'd
 
 	case blr_value_if:
 	case blr_substring:
@@ -2756,7 +2750,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		/* Fall into ... */
+		// Fall into ...
 
 	case blr_handler:
 	case blr_loop:
@@ -3006,7 +3000,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			node->nod_arg[e_sto_statement2] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
-		/* Comparison operators */
+		// Comparison operators
 
 	case blr_between:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
@@ -3198,9 +3192,9 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			node->nod_arg[e_gen_relation] = (jrd_nod*) (IPTR) tmp;
 			node->nod_arg[e_gen_value] = PAR_parse_node(tdbb, csb, VALUE);
 
-            /* CVC: There're thousand ways to go wrong, but I don't see any value
-               in posting dependencies with set generator since it's DDL, so I will
-               track only gen_id() in both dialects. */
+            // CVC: There're thousand ways to go wrong, but I don't see any value
+            // in posting dependencies with set generator since it's DDL, so I will
+            // track only gen_id() in both dialects.
             if ((blr_operator == blr_gen_id) && (csb->csb_g_flags & csb_get_dependencies))
 			{
                 jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
@@ -3517,14 +3511,13 @@ static void warning(const Arg::StatusVector& v)
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-/* Make sure that the [1] position is 0
-   indicating that no error has occurred */
+	// Make sure that the [1] position is 0 indicating that no error has occurred
 	Arg::Gds p(FB_SUCCESS);
 
-/* Now place your warning messages */
+	// Now place your warning messages
 	p.append(v);
 
-/* Save into tdbb */
+	// Save into tdbb
 	p.copyTo(tdbb->tdbb_status_vector);
 	ERR_make_permanent(tdbb->tdbb_status_vector);
 }

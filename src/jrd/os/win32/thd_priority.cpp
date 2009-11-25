@@ -210,7 +210,7 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 	{
 		if (opMode == Stopping)
 		{
-/*			* It's no use cleaning something when server
+			/* It's no use cleaning something when server
 			* prepares to shutdown. Moreover, in some rare cases
 			* mutex may be already deleted, therefore AV happens.
 			mutex.enter();
@@ -239,9 +239,9 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 				{
 					if (p_flags & THPS_UP)
 					{
-				// 1.	thread exited single thread zone and didn't
-				//		return into it since this &last cycle:
-				//			increase priority
+						// 1.	thread exited single thread zone and didn't
+						//		return into it since this &last cycle:
+						//			increase priority
 						if (! SetThreadPriority(t->handle, highPriority))
 						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
@@ -253,9 +253,10 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 						t->flags |= THPS_BOOSTED;
 						continue;
 					}
-				// 2.	thread exited single thread zone
-				//		and never returned there during this cycle:
-				//			candidate for priority increase
+
+					// 2.	thread exited single thread zone
+					//		and never returned there during this cycle:
+					//			candidate for priority increase
 					t->flags |= THPS_UP;
 					continue;
 				}
