@@ -150,7 +150,8 @@ namespace {
 			spb_remote(false)
 		{
 			const UCHAR p = spb.getBufferTag();
-			if (p != isc_spb_version1 && p != isc_spb_current_version) {
+			if (p != isc_spb_version1 && p != isc_spb_current_version)
+			{
 				ERR_post(Arg::Gds(isc_bad_spb_form) <<
 						 Arg::Gds(isc_wrospbver));
 			}
@@ -434,7 +435,8 @@ void Service::setServiceStatus(const ISC_STATUS* status_vector)
 	}
 }
 
-void Service::setServiceStatus(const USHORT facility, const USHORT errcode, const MsgFormat::SafeArg& args)
+void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
+	const MsgFormat::SafeArg& args)
 {
 	if (checkForShutdown())
 	{
@@ -720,12 +722,14 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		const string svcname(service_name);
 
 		const serv_entry* serv;
-		for (serv = services; serv->serv_name; serv++) {
+		for (serv = services; serv->serv_name; serv++)
+		{
 			if (svcname == serv->serv_name)
 				break;
 		}
 
-		if (!serv->serv_name) {
+		if (!serv->serv_name)
+		{
 			status_exception::raise(Arg::Gds(isc_service_att_err) <<
 									Arg::Gds(isc_svcnotdef) << Arg::Str(svcname));
 		}
@@ -740,7 +744,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		if (!strcmp(serv->serv_name, "anonymous")) {
 			user_flag = SVC_user_none;
 		}
-		else {
+		else
+		{
 			// If we have embedded service connection, let's check for unix OS auth
 			if (!options.spb_trusted_login.hasData() && !options.spb_remote &&
 				!options.spb_user_name.hasData())
@@ -753,9 +758,11 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			if (options.spb_trusted_login.hasData()) {
 				options.spb_user_name = options.spb_trusted_login;
 			}
-			else {
+			else
+			{
 				// If we have embedded service connection, let's check for environment
-				if (!options.spb_remote) {
+				if (!options.spb_remote)
+				{
 					if (!options.spb_user_name.hasData()) {
 						fb_utils::readenv(ISC_USER, options.spb_user_name);
 					}
@@ -764,7 +771,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					}
 				}
 
-				if (!options.spb_user_name.hasData()) {
+				if (!options.spb_user_name.hasData())
+				{
 					// user name and password are required while
 					// attaching to the services manager
 					status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnouser));
@@ -785,7 +793,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 				svc_uses_security_database = true;
 			}
 
-			if (options.spb_user_name.length() > USERNAME_LENGTH) {
+			if (options.spb_user_name.length() > USERNAME_LENGTH)
+			{
 				status_exception::raise(Arg::Gds(isc_long_login) <<
 					Arg::Num(options.spb_user_name.length()) << Arg::Num(USERNAME_LENGTH));
 			}
@@ -1035,10 +1044,12 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			break;
 
 		default:
-			if (items + 2 <= end_items) {
+			if (items + 2 <= end_items)
+			{
 				l = (USHORT) gds__vax_integer(items, 2);
 				items += 2;
-				if (items + l <= end_items) {
+				if (items + l <= end_items)
+				{
 					switch (item)
 					{
 					case isc_info_svc_line:
@@ -1070,7 +1081,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 	UCHAR* start_info;
 
-	if (*items == isc_info_length) {
+	if (*items == isc_info_length)
+	{
 		start_info = info;
 		items++;
 	}
@@ -1126,11 +1138,13 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 				// Move db names into the info buffer
 				const UCHAR* ptr2 = ptr;
-				if (ptr2) {
+				if (ptr2)
+				{
 					USHORT num = (USHORT) gds__vax_integer(ptr2, sizeof(USHORT));
 					fb_assert(num == num_dbs);
 					ptr2 += sizeof(USHORT);
-					for (; num; num--) {
+					for (; num; num--)
+					{
 						length = (USHORT) gds__vax_integer(ptr2, sizeof(USHORT));
 						ptr2 += sizeof(USHORT);
 						if (!(info = INF_put_item(isc_spb_dbname, length, ptr2, info, end)))
@@ -1156,7 +1170,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 		case isc_info_svc_svr_online:
 			*info++ = item;
-			if (svc_user_flag & SVC_user_dba) {
+			if (svc_user_flag & SVC_user_dba)
+			{
 				svc_do_shutdown = false;
 				WHY_set_shutdown(false);
 			}
@@ -1166,7 +1181,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 		case isc_info_svc_svr_offline:
 			*info++ = item;
-			if (svc_user_flag & SVC_user_dba) {
+			if (svc_user_flag & SVC_user_dba)
+			{
 				svc_do_shutdown = true;
 				WHY_set_shutdown(true);
 			}
@@ -1318,7 +1334,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 		case isc_info_svc_response:
 			svc_resp_len = 0;
-			if (info + 4 >= end) {
+			if (info + 4 >= end)
+			{
 				*info++ = isc_info_truncated;
 				break;
 			}
@@ -1329,14 +1346,17 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			length = MIN(end - (info + 5), l);
 			get(info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
-			if (length != l) {
+			if (length != l)
+			{
 				*info++ = isc_info_truncated;
 				l -= length;
-				if (l > svc_resp_buf_len) {
+				if (l > svc_resp_buf_len)
+				{
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch (const BadAlloc&) {
+					catch (const BadAlloc&)
+					{
 						// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
 						// NOMEM: not really handled well
@@ -1378,7 +1398,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_to_eof:
 		case isc_info_svc_limbo_trans:
 		case isc_info_svc_get_users:
-			if (info + 4 >= end) {
+			if (info + 4 >= end)
+			{
 				*info++ = isc_info_truncated;
 				break;
 			}
@@ -1572,7 +1593,8 @@ void Service::query(USHORT			send_item_length,
 
 		case isc_info_svc_svr_online:
 			*info++ = item;
-			if (svc_user_flag & SVC_user_dba) {
+			if (svc_user_flag & SVC_user_dba)
+			{
 				svc_do_shutdown = false;
 				WHY_set_shutdown(false);
 				*info++ = 0;	// Success
@@ -1583,7 +1605,8 @@ void Service::query(USHORT			send_item_length,
 
 		case isc_info_svc_svr_offline:
 			*info++ = item;
-			if (svc_user_flag & SVC_user_dba) {
+			if (svc_user_flag & SVC_user_dba)
+			{
 				svc_do_shutdown = true;
 				WHY_set_shutdown(true);
 				*info++ = 0;	// Success
@@ -1756,7 +1779,8 @@ void Service::query(USHORT			send_item_length,
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch (const BadAlloc&) {
+					catch (const BadAlloc&)
+					{
 						// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
 						// NOMEM: not really handled well
@@ -2457,7 +2481,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 
-				if (spb.getClumpTag() != isc_spb_sec_username) {
+				if (spb.getClumpTag() != isc_spb_sec_username)
+				{
 					// unexpected item in service parameter block, expected @1
 					status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));
 				}
@@ -2775,8 +2800,7 @@ bool Service::get_action_svc_bitmask(const ClumpletReader& spb,
 }
 
 
-void Service::get_action_svc_string(const ClumpletReader& spb,
-									string& switches)
+void Service::get_action_svc_string(const ClumpletReader& spb, string& switches)
 {
 	string s;
 	spb.getString(s);
@@ -2784,8 +2808,7 @@ void Service::get_action_svc_string(const ClumpletReader& spb,
 }
 
 
-void Service::get_action_svc_data(const ClumpletReader& spb,
-								  string& switches)
+void Service::get_action_svc_data(const ClumpletReader& spb, string& switches)
 {
 	string s;
 	s.printf("%"ULONGFORMAT" ", spb.getInt());

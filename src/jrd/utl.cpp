@@ -1701,10 +1701,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 #endif
 
 
-static int dump(ISC_QUAD* blob_id,
-				FB_API_HANDLE database,
-				FB_API_HANDLE transaction,
-				FILE* file)
+static int dump(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction, FILE* file)
 {
 /**************************************
  *
@@ -1850,8 +1847,7 @@ static int edit(ISC_QUAD* blob_id,
 }
 
 
-static int get_ods_version(FB_API_HANDLE* handle,
-						   USHORT* ods_version, USHORT* ods_minor_version)
+static int get_ods_version(FB_API_HANDLE* handle, USHORT* ods_version, USHORT* ods_minor_version)
 {
 /**************************************
  *
@@ -2057,10 +2053,7 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 }
 
 
-static int load(ISC_QUAD* blob_id,
-				FB_API_HANDLE database,
-				FB_API_HANDLE transaction,
-				FILE* file)
+static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction, FILE* file)
 {
 /**************************************
  *
@@ -2148,4 +2141,3 @@ void setLogin(Firebird::ClumpletWriter& dpb)
 		}
 	}
 }
-

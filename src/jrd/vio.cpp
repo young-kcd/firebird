@@ -2090,9 +2090,7 @@ void VIO_init(thread_db* tdbb)
 #endif
 
 
-void VIO_merge_proc_sav_points(thread_db* tdbb,
-							   jrd_tra* transaction,
-							   Savepoint** sav_point_list)
+void VIO_merge_proc_sav_points(thread_db* tdbb, jrd_tra* transaction, Savepoint** sav_point_list)
 {
 /**************************************
  *
@@ -2144,8 +2142,7 @@ void VIO_merge_proc_sav_points(thread_db* tdbb,
 }
 
 
-void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
-				jrd_tra* transaction)
+void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2592,8 +2589,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, Mem
 }
 
 
-void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
-						jrd_tra* transaction)
+void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -3775,9 +3771,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 }
 
 
-static void garbage_collect(thread_db* tdbb,
-							record_param* rpb, SLONG prior_page,
-							RecordStack& staying)
+static void garbage_collect(thread_db* tdbb, record_param* rpb, SLONG prior_page, RecordStack& staying)
 {
 /**************************************
  *
