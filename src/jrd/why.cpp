@@ -346,26 +346,6 @@ namespace
 #endif
 		}
 
-		FB_API_HANDLE getPublicHandle(const void* handle)
-		{
-			if (handle)
-			{
-				MutexLockGuard guard(mtx);
-
-				for (T** itr = arr.begin(); itr < arr.end(); itr++)
-				{
-					T* const member = *itr;
-
-					if (member->handle == handle)
-					{
-						return member->public_handle;
-					}
-				}
-			}
-
-			return 0;
-		}
-
 	private:
 		SortedArray<T*> arr;
 		Mutex mtx;
@@ -5740,23 +5720,6 @@ bool WHY_get_shutdown()
  **************************************/
 
 	return disableConnections;
-}
-
-// dimitr: to be removed in FB 3.0
-FB_API_HANDLE WHY_get_public_attachment_handle(const void* handle)
-{
-/**************************************
- *
- *	W H Y _ g e t _ p u b l i c _ a t t a c h m e n t _ h a n d l e
- *
- **************************************
- *
- * Functional description
- *	Returns public attachment handle for a given private handle.
- *
- **************************************/
-
-	return attachments().getPublicHandle(handle);
 }
 #endif // !SUPERCLIENT
 

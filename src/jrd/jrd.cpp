@@ -6717,7 +6717,7 @@ ISC_STATUS GDS_PING(ISC_STATUS* user_status, Jrd::Attachment** db_handle)
 
 namespace
 {
-	typedef Array<const void*> PingQueue;
+	typedef Array<FB_API_HANDLE> PingQueue;
 
 	THREAD_ENTRY_DECLARE attachmentShutdownThread(THREAD_ENTRY_PARAM arg)
 	{
@@ -6725,7 +6725,7 @@ namespace
 
 		while (!queue->isEmpty())
 		{
-			FB_API_HANDLE public_handle = WHY_get_public_attachment_handle(queue->pop());
+			FB_API_HANDLE public_handle = queue->pop();
 			ISC_STATUS_ARRAY local_status = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
 			fb_ping(local_status, &public_handle);
 		}
@@ -6759,7 +6759,7 @@ void JRD_shutdown_attachments(const Database* dbb)
 		{
 			if (attachment->att_flags & ATT_shutdown)
 			{
-				queue->add(attachment);
+				queue->add(attachment->att_public_handle);
 			}
 		}
 
