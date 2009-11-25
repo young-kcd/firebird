@@ -988,11 +988,11 @@ inline Jrd::thread_db* JRD_get_thread_data()
 	return (Jrd::thread_db*) ThreadData::getSpecific();
 }
 
-inline void CHECK_DBB(const Jrd::Database* dbb)
+inline void CHECK_DBB(const Jrd::Database*)
 {
 }
 
-inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
+inline void CHECK_TDBB(const Jrd::thread_db*)
 {
 }
 

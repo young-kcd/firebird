@@ -170,8 +170,8 @@ public:
 
 private:
     // These operators are off-limits
-	void* operator new(size_t s) { return 0; }
-    void* operator new[](size_t s) { return 0; }
+	void* operator new(size_t) { return 0; }
+    void* operator new[](size_t) { return 0; }
 };
 
 template<typename RPT, BlockType BLOCK_TYPE = type_unknown>
@@ -193,16 +193,16 @@ public:
 
 private:
     // These operations are not supported on static repeat-base objects
-    void* operator new[](size_t s, MemoryPool& p)
+    void* operator new[](size_t /*s*/, MemoryPool& /*p*/)
         { return 0; }
-    void operator delete[](void* mem, MemoryPool& p)
+    void operator delete[](void* /*mem*/, MemoryPool& /*p*/)
         { }
-    void operator delete[](void* mem)
+    void operator delete[](void* /*mem*/)
 		{ }
 
     // These operators are off-limits
-	void* operator new(size_t s) { return 0; }
-    void* operator new[](size_t s) { return 0; }
+	void* operator new(size_t) { return 0; }
+    void* operator new[](size_t) { return 0; }
 };
 
 #endif	// INCLUDE_FB_BLK
