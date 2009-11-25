@@ -321,16 +321,15 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 #endif
 
 
-	/* If there is a boolean, there is some work to be done.  First,
-	decompose the boolean into conjunctions.  Then get descriptions
-	of all indices for all relations in the RecordSelExpr.  This will give
-	us the info necessary to allocate a optimizer block big
-	enough to hold this crud. */
+	// If there is a boolean, there is some work to be done.  First,
+	// decompose the boolean into conjunctions.  Then get descriptions
+	// of all indices for all relations in the RecordSelExpr.  This will give
+	// us the info necessary to allocate a optimizer block big
+	// enough to hold this crud.
 
-
-	/* Do not allocate the index_desc struct. Let BTR_all do the job. The allocated
-	memory will then be in csb->csb_rpt[stream].csb_idx_allocation, which
-	gets cleaned up before this function exits. */
+	// Do not allocate the index_desc struct. Let BTR_all do the job. The allocated
+	// memory will then be in csb->csb_rpt[stream].csb_idx_allocation, which
+	// gets cleaned up before this function exits.
 
 	OptimizerBlk* opt = FB_NEW(*tdbb->getDefaultPool()) OptimizerBlk(tdbb->getDefaultPool());
 	opt->opt_streams.grow(csb->csb_n_stream);

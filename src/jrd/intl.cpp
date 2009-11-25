@@ -598,8 +598,8 @@ int INTL_compare(thread_db* tdbb,
 	fb_assert(INTL_data_or_binary(pText1) || INTL_data_or_binary(pText2));
 	fb_assert(err);
 
-/* normal compare routine from CVT_compare */
-/* trailing spaces in strings are ignored for comparision */
+	// normal compare routine from CVT_compare
+	// trailing spaces in strings are ignored for comparision
 
 	UCHAR* p1;
 	USHORT t1;
@@ -609,10 +609,10 @@ int INTL_compare(thread_db* tdbb,
 	USHORT t2;
 	USHORT length2 = CVT_get_string_ptr(pText2, &t2, &p2, NULL, 0, err);
 
-/* YYY - by SQL II compare_type must be explicit in the
-   SQL statement if there is any doubt */
+	// YYY - by SQL II compare_type must be explicit in the
+	// SQL statement if there is any doubt
 
-	USHORT compare_type = MAX(t1, t2);	/* YYY */
+	USHORT compare_type = MAX(t1, t2);	// YYY
 	UCHAR buffer[MAX_KEY];
 
 	if (t1 != t2)
@@ -623,7 +623,7 @@ int INTL_compare(thread_db* tdbb,
 		{
 			if (compare_type != t2)
 			{
-				/* convert pText2 to pText1's type, if possible */
+				// convert pText2 to pText1's type, if possible
 				/* YYY - should failure to convert really return
 				   an error here?
 				   Support joining a 437 & Latin1 Column, and we
@@ -638,7 +638,7 @@ int INTL_compare(thread_db* tdbb,
 			}
 			else
 			{
-				/* convert pText1 to pText2's type, if possible */
+				// convert pText1 to pText2's type, if possible
 
 				length1 = INTL_convert_bytes(tdbb, cs2, buffer, sizeof(buffer), cs1, p1, length1, err);
 				p1 = buffer;
@@ -694,7 +694,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 	if (dest_type == CS_BINARY || dest_type == CS_NONE ||
 		src_type == CS_BINARY || src_type == CS_NONE)
 	{
-		/* See if we just need a length estimate */
+		// See if we just need a length estimate
 		if (dest_ptr == NULL)
 			return (src_len);
 
@@ -712,7 +712,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 				*dest_ptr++ = *src_ptr++;
 			} while (--len);
 
-		/* See if only space characters are remaining */
+		// See if only space characters are remaining
 		len = src_len - MIN(dest_len, src_len);
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
@@ -721,8 +721,8 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 	}
 	else if (src_len)
 	{
-		/* character sets are known to be different */
-		/* Do we know an object from cs1 to cs2? */
+		// character sets are known to be different
+		// Do we know an object from cs1 to cs2?
 
 		CsConvert cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
 		return cs_obj.convert(src_len, src_ptr, dest_len, dest_ptr, NULL, true);
@@ -756,7 +756,7 @@ CsConvert INTL_convert_lookup(thread_db* tdbb,
 	if (to_cs == CS_dynamic)
 		to_cs = tdbb->getCharSet();
 
-/* Should from_cs == to_cs? be handled better? YYY */
+	// Should from_cs == to_cs? be handled better? YYY
 
 	fb_assert(from_cs != CS_dynamic);
 	fb_assert(to_cs != CS_dynamic);
@@ -786,11 +786,11 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
  *
  **************************************/
 
-/* Note: This function is called from outside the engine as
-   well as inside - we likely can't get rid of JRD_get_thread_data here */
+	// Note: This function is called from outside the engine as
+	// well as inside - we likely can't get rid of JRD_get_thread_data here
 	thread_db* tdbb = JRD_get_thread_data();
-	if (tdbb == NULL)			/* are we in the Engine? */
-		return (1);				/* no, then can't access intl gah */
+	if (tdbb == NULL)			// are we in the Engine?
+		return (1);				// no, then can't access intl gah
 
 	fb_assert(to != NULL);
 	fb_assert(from != NULL);
@@ -802,7 +802,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	UCHAR* p = to->dsc_address;
 	const UCHAR* start = p;
 
-/* Must convert dtype(cstring,text,vary) and ttype(ascii,binary,..intl..) */
+	// Must convert dtype(cstring,text,vary) and ttype(ascii,binary,..intl..)
 
 	UCHAR* from_ptr;
 	USHORT from_type;
@@ -824,12 +824,12 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			to_fill = to_size - to_len;
-			from_fill = 0;		/* Convert_bytes handles source truncation */
+			from_fill = 0;		// Convert_bytes handles source truncation
 			p += to_len;
 		}
 		else
 		{
-			/* binary string can always be converted TO by byte-copy */
+			// binary string can always be converted TO by byte-copy
 
 			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
@@ -857,11 +857,11 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			to->dsc_address[to_len] = 0;
-			from_fill = 0;		/* Convert_bytes handles source truncation */
+			from_fill = 0;		// Convert_bytes handles source truncation
 		}
 		else
 		{
-			/* binary string can always be converted TO by byte-copy */
+			// binary string can always be converted TO by byte-copy
 
 			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
@@ -888,11 +888,11 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 										to_size, from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			((vary*) to->dsc_address)->vary_length = to_len;
-			from_fill = 0;		/* Convert_bytes handles source truncation */
+			from_fill = 0;		// Convert_bytes handles source truncation
 		}
 		else
 		{
-			/* binary string can always be converted TO by byte-copy */
+			// binary string can always be converted TO by byte-copy
 			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
 				err(Arg::Gds(isc_malformed_string));
@@ -913,7 +913,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 	if (toCharSet->isMultiByte() &&
 		!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
-		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
+		toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
 		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
 		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
@@ -921,7 +921,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 	if (from_fill)
 	{
-		/* Make sure remaining characters on From string are spaces */
+		// Make sure remaining characters on From string are spaces
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
@@ -1037,7 +1037,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 		key_length = obj->key_length(iLength);
 	}
 
-/* Validity checks on the computed key_length */
+	// Validity checks on the computed key_length
 
 	if (key_length > MAX_KEY)
 		key_length = MAX_KEY;
@@ -1234,7 +1234,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 		break;
 	}
 
-/* Make a string into the proper type of text */
+	// Make a string into the proper type of text
 
 	MoveBuffer temp;
 	UCHAR* src;
@@ -1252,7 +1252,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	case ttype_none:
 		while (len-- && destLen-- > 0)
 			*dest++ = *src++;
-		/* strip off ending pad characters */
+		// strip off ending pad characters
 		while (dest > pByte->dsc_address)
 		{
 			if (*(dest - 1) == pad_char)
@@ -1295,13 +1295,11 @@ static bool all_spaces(thread_db* tdbb,
 
 	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
-/*
- * We are assuming offset points to the first byte which was not
- * consumed in a conversion.  And that offset is pointing
- * to a character boundary
- */
+	// We are assuming offset points to the first byte which was not
+	// consumed in a conversion.  And that offset is pointing
+	// to a character boundary
 
-// Single-octet character sets are optimized here
+	// Single-octet character sets are optimized here
 
 	if (obj->getSpaceLength() == 1)
 	{
@@ -1394,7 +1392,7 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len
 
 	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
-/* Single-octet character sets are optimized here */
+	// Single-octet character sets are optimized here
 	if (obj->getSpaceLength() == 1)
 	{
 		const BYTE* const end = &ptr[len];
@@ -1412,9 +1410,8 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len
 			while (ptr < end && space < end_space) {
 				*ptr++ = *space++;
 			}
-			/* This fb_assert is checking that we didn't have a buffer-end
-			 * in the middle of a space character
-			 */
+			// This fb_assert is checking that we didn't have a buffer-end
+			// in the middle of a space character
 			fb_assert(!(ptr == end) || (space == end_space));
 		}
 	}

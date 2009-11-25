@@ -27,9 +27,9 @@
 #include "../common/classes/MsgPrint.h"
 
 const char* const ALL_PRIVILEGES = "SIUDR";
-		/* all applicable grant/revoke privileges */
+		// all applicable grant/revoke privileges
 const char* const ALL_PROC_PRIVILEGES = "X";
-		/* all applicable grant/revoke privileges for a procedure */
+		// all applicable grant/revoke privileges for a procedure
 const int DYN_MSG_FAC		= 8;
 const int STUFF_COUNT		= 4; // Is this the same value defined in ods.h???
 const int TEXT_BLOB_LENGTH	= 512;
