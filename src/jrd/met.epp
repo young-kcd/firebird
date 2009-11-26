@@ -1201,9 +1201,8 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 			X.RDB$FORMAT EQ number
 
 		if (!REQUEST(irq_r_format))
-		{
 			REQUEST(irq_r_format) = request;
-		}
+
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTOR);
 
 		// Use generic representation of formats with 32-bit offsets
@@ -1270,13 +1269,11 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		}
 	END_FOR;
 
-	if (!REQUEST(irq_r_format)) {
+	if (!REQUEST(irq_r_format))
 		REQUEST(irq_r_format) = request;
-	}
 
-	if (!format) {
+	if (!format)
 		format = Format::newFormat(*dbb->dbb_permanent);
-	}
 
 	format->fmt_version = number;
 

@@ -1016,4 +1016,3 @@ static IPTR* stuff(IPTR value, sdl_arg* arg)
 
 	return arg->sdl_arg_next - 1;
 }
-

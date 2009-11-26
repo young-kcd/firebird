@@ -1190,10 +1190,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				need_admin_privs(status, "isc_info_svc_svr_offline");
 			break;
 
-			// The following 3 service commands (or items) stuff the response
-			// buffer 'info' with values of environment variable FIREBIRD,
-			// FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
-			// is not set then default value is returned.
+		// The following 3 service commands (or items) stuff the response
+		// buffer 'info' with values of environment variable FIREBIRD,
+		// FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
+		// is not set then default value is returned.
 		case isc_info_svc_get_env:
 		case isc_info_svc_get_env_lock:
 		case isc_info_svc_get_env_msg:
@@ -1615,10 +1615,10 @@ void Service::query(USHORT			send_item_length,
 				*info++ = 2;	// No user authority
 			break;
 
-			// The following 3 service commands (or items) stuff the response
-			// buffer 'info' with values of environment variable FIREBIRD,
-			// FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
-			// is not set then default value is returned.
+		// The following 3 service commands (or items) stuff the response
+		// buffer 'info' with values of environment variable FIREBIRD,
+		// FIREBIRD_LOCK or FIREBIRD_MSG. If the environment variable
+		// is not set then default value is returned.
 		case isc_info_svc_get_env:
 		case isc_info_svc_get_env_lock:
 		case isc_info_svc_get_env_msg:

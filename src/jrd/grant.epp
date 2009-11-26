@@ -1135,4 +1135,3 @@ static bool check_string(const UCHAR* acl, const Firebird::MetaName& name)
 
 	return (*string && *string != ' ') ? true : false;
 }
-

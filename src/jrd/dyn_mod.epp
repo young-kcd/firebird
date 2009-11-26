@@ -273,6 +273,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 			MODIFY DBB USING
 				UCHAR verb;
 				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
 					switch (verb)
 					{
 					case isc_dyn_security_class:
@@ -328,6 +329,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 						--(*ptr);
 						DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, NULL);
 					}
+				}
 			END_MODIFY;
 		END_FOR;
 
@@ -1267,6 +1269,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 			MODIFY IDX USING
 				UCHAR verb;
 				while ((verb = *(*ptr)++) != isc_dyn_end)
+				{
 					switch (verb)
 					{
 					case isc_dyn_idx_unique:
@@ -1296,6 +1299,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 					default:
 						DYN_unsupported_verb();
 					}
+				}
 			END_MODIFY;
 		END_FOR;
 
@@ -2030,10 +2034,8 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 
 		END_FOR;
 
-		if (!DYN_REQUEST(drq_d_difference)) {
+		if (!DYN_REQUEST(drq_d_difference))
 			DYN_REQUEST(drq_d_difference) = request;
-		}
-
 	}
 	catch (const Exception& ex)
 	{

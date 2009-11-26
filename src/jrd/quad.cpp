@@ -154,5 +154,3 @@ SQUAD QUAD_subtract(const SQUAD*, const SQUAD*, ErrorFunction err)
 	SQUAD temp = { 0, 0 };
 	return temp;				// Added to remove compiler warnings
 }
-
-

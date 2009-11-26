@@ -2377,7 +2377,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 	case nod_subtract2:
 		return EVL_add2(desc2, node, impure);
 
-	case nod_multiply2:		// dialect-3 semantics
+	case nod_multiply2:			// dialect-3 semantics
 		return multiply2(desc2, impure, node);
 
 	case nod_divide2:			// dialect-3 semantics

@@ -322,8 +322,8 @@ void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
 
 	bool found = false;
 
-	try {
-
+	try
+	{
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$EXCEPTIONS
@@ -390,8 +390,8 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName f;
 	GET_STRING(ptr, f);
 
-	try {
-
+	try
+	{
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FILTERS WITH X.RDB$FUNCTION_NAME = f.c_str()
@@ -447,7 +447,8 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
 	Firebird::MetaName t;
     GET_STRING(ptr, t);
 
-	try {
+	try
+	{
         request = CMP_find_request(tdbb, drq_e_gens, DYN_REQUESTS);
 
         found = false;
@@ -512,7 +513,8 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 
 	bool found = false;
 
-	try {
+	try
+	{
 		GET_STRING(ptr, f);
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -570,7 +572,6 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 		END_FOR
 		if (!DYN_REQUEST(drq_l_prp_src))
 			DYN_REQUEST(drq_l_prp_src) = request;
-
 	} // try
 	catch (const Firebird::Exception& ex)
 	{
@@ -622,7 +623,8 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 	bool found = false;
 	bool is_expression = false;
 
-	try {
+	try
+	{
 		GET_STRING(ptr, idx_name);
 
 		found = false;
@@ -642,7 +644,6 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 		END_FOR;
 		if (!DYN_REQUEST(drq_e_indices))
 			DYN_REQUEST(drq_e_indices) = request;
-
 	} //try
 	catch (const Firebird::Exception& ex)
 	{
@@ -1258,8 +1259,8 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = NULL;
 	bool found = false;
 
-	try {
-
+	try
+	{
 		Firebird::MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
 		user.upper7();
 
@@ -1322,10 +1323,8 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 
 			END_FOR;
 
-			if (!DYN_REQUEST(drq_del_role_1)) {
+			if (!DYN_REQUEST(drq_del_role_1))
 				DYN_REQUEST(drq_del_role_1) = request;
-			}
-
 		}
 		else
 		{
@@ -1415,8 +1414,8 @@ void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_shadow, DYN_REQUESTS);
 
-	try {
-
+	try
+	{
 		const int shadow_number = DYN_get_number(ptr);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FIL IN RDB$FILES WITH FIL.RDB$SHADOW_NUMBER EQ shadow_number
@@ -1467,8 +1466,8 @@ static bool delete_constraint_records(Global*	gbl,
 
 	bool found = false;
 
-	try {
-
+	try
+	{
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			RC IN RDB$RELATION_CONSTRAINTS
@@ -1484,7 +1483,6 @@ static bool delete_constraint_records(Global*	gbl,
 
 		if (!DYN_REQUEST(drq_e_rel_con))
 			DYN_REQUEST(drq_e_rel_con) = request;
-
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -1518,8 +1516,8 @@ static bool delete_dimension_records(Global* gbl, const Firebird::MetaName& fiel
 
 	bool found = false;
 
-	try {
-
+	try
+	{
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ field_name.c_str()
@@ -1588,8 +1586,8 @@ static void delete_f_key_constraint(thread_db*	tdbb,
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_const, DYN_REQUESTS);
 
-	try {
-
+	try
+	{
 		bool found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			RC IN RDB$RELATION_CONSTRAINTS
@@ -1685,8 +1683,8 @@ static bool delete_index_segment_records(Global* gbl, const Firebird::MetaName& 
 
 	bool found = false;
 
-	try {
-
+	try
+	{
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			I_S IN RDB$INDEX_SEGMENTS WITH I_S.RDB$INDEX_NAME EQ index_name.c_str()
@@ -1734,8 +1732,8 @@ bool DYN_delete_security_class2(jrd_tra* transaction, const Firebird::MetaName& 
 
 	bool found = false;
 
-	try {
-
+	try
+	{
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			SC IN RDB$SECURITY_CLASSES
 				WITH SC.RDB$SECURITY_CLASS EQ security_class.c_str()
@@ -1751,7 +1749,6 @@ bool DYN_delete_security_class2(jrd_tra* transaction, const Firebird::MetaName& 
 		if (!DYN_REQUEST(drq_e_class)) {
 			DYN_REQUEST(drq_e_class) = request;
 		}
-
 	}
 	catch (const Firebird::Exception& ex)
 	{

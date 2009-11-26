@@ -4292,8 +4292,8 @@ static void gen_join(thread_db*		tdbb,
 	} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause, project_clause));
 
 	delete innerJoin;
-	return;
 
+	return;
 }
 
 
@@ -5301,8 +5301,8 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		// Handle nulls placement
 		sort_key->skd_flags = SKD_ascending;
 		// Have SQL-compliant nulls ordering for ODS11+
-		if (((IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
-			(IPTR)*(node_ptr + sort->nod_count * 2) == rse_nulls_first)
+		if (((IPTR) *(node_ptr + sort->nod_count * 2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
+			(IPTR) *(node_ptr + sort->nod_count * 2) == rse_nulls_first)
 		{
 			sort_key->skd_flags |= SKD_descending;
 		}

@@ -392,4 +392,3 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 		}
 	}
 }
-

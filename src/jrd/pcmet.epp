@@ -314,4 +314,3 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	index_block->idb_expression_request = idx->idx_expression_request;
 	memcpy(&index_block->idb_expression_desc, &idx->idx_expression_desc, sizeof(struct dsc));
 }
-
