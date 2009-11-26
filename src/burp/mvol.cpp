@@ -1184,7 +1184,6 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			if (init_flag)
 			{
 				*format = temp;
-				printf("format = %d\n", temp);
 			}
 			break;
 
