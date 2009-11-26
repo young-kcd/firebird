@@ -1,3 +1,26 @@
+2009-11-26 14:47  alexpeshkoff
+
+	* firebird2/src/burp/mvol.cpp (1.68):
+
+	removed accidentially committed debugging
+
+2009-11-26 14:40  alexpeshkoff
+
+	* firebird2/src/burp/mvol.cpp (1.67):
+
+	misc
+
+2009-11-26 01:20  asfernandes
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.122), Relation.cpp (1.24),
+	dyn.h (1.48), dyn_def.epp (1.189), dyn_del.epp (1.88), dyn_mod.epp
+	(1.128), evl.cpp (1.320), grant.epp (1.85), met.epp (1.299), ods.h
+	(1.61), opt.cpp (1.373), pcmet.epp (1.64), quad.cpp (1.14), sdl.cpp
+	(1.62), svc.cpp (1.295), os/posix/isc_ipc.cpp (1.49),
+	os/win32/isc_ipc.cpp (1.38):
+
+	Misc
+
 2009-11-25 11:48  hvlad
 
 	* firebird2/src/jrd/Relation.cpp (1.23):
