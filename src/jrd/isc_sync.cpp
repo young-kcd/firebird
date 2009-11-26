@@ -169,7 +169,6 @@ static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
 
-static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
 static void		longjmp_sig_handler(int);
 static GlobalPtr<Mutex> openFdInit;
 
@@ -2883,6 +2882,17 @@ int ISC_mutex_unlock(struct mtx* mutex)
 
 #else // not USE_SYS5SEMAPHORE
 
+#if (defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)) && defined(LINUX)
+// glibc in linux does not conform to the posix standard. When there is no RT kernel,
+// ENOTSUP is returned not by pthread_mutexattr_setprotocol(), but by
+// pthread_mutex_init(). Here is a hack to deal with this broken error reporting.
+#define BUGGY_LINUX_MUTEX
+#endif
+
+#ifdef BUGGY_LINUX_MUTEX
+static volatile bool staticBugFlag = false;
+#endif
+
 int ISC_mutex_init(struct mtx* mutex)
 {
 /**************************************
@@ -2895,11 +2905,7 @@ int ISC_mutex_init(struct mtx* mutex)
  *	Initialize a mutex.
  *
  **************************************/
-#if defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)
-// glibc in linux does not conform to the posix standard. When there is no RT kernel,
-// ENOTSUP is returned not by pthread_mutexattr_setprotocol(), but by
-// pthread_mutex_init(). Here is a hack to deal with this broken error reporting.
-  static volatile bool staticBugFlag = false;
+#ifdef BUGGY_LINUX_MUTEX
   do
   {
 	bool bugFlag = staticBugFlag;
@@ -2915,22 +2921,30 @@ int ISC_mutex_init(struct mtx* mutex)
 #endif
 
 #ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+#ifdef BUGGY_LINUX_MUTEX
 	if (!bugFlag)
 	{
+#endif
 		int protocolRc = pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
 		if (protocolRc && (protocolRc != ENOTSUP))
 		{
 			iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) <<
 				"pthread_mutexattr_setprotocol" << Arg::Unix(protocolRc)).value());
 		}
+#ifdef BUGGY_LINUX_MUTEX
 	}
+#endif
 #endif
 
 #ifdef USE_ROBUST_MUTEX
+#ifdef BUGGY_LINUX_MUTEX
 	if (!bugFlag)
 	{
+#endif
 		LOG_PTHREAD_ERROR(pthread_mutexattr_setrobust_np(&mattr, PTHREAD_MUTEX_ROBUST_NP));
+#ifdef BUGGY_LINUX_MUTEX
 	}
+#endif
 #endif
 
 	memset(mutex->mtx_mutex, 0, sizeof(pthread_mutex_t));
@@ -2938,7 +2952,7 @@ int ISC_mutex_init(struct mtx* mutex)
 	int state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
 
 	if (state
-#if defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)
+#ifdef BUGGY_LINUX_MUTEX
 		&& (state != ENOTSUP || bugFlag)
 #endif
 			 )
@@ -2949,7 +2963,7 @@ int ISC_mutex_init(struct mtx* mutex)
 
 	LOG_PTHREAD_ERROR(pthread_mutexattr_destroy(&mattr));
 
-#if defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)
+#ifdef BUGGY_LINUX_MUTEX
 	if (state == ENOTSUP && !bugFlag)
 	{
 		staticBugFlag = true;
@@ -3630,6 +3644,8 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 
 #ifdef UNIX
+static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
+
 void ISC_sync_signals_set(void* arg)
 {
 /**************************************
