@@ -415,6 +415,23 @@ void INF_database_info(const UCHAR* items,
 			 * ods_version represents what the database 'knows'
 			 * base_level represents what the server 'knows'
 			 */
+			// Comment moved from DSQL where the item is no longer used, to not lose the history:
+			// This flag indicates the version level of the engine
+			// itself, so we can tell what capabilities the engine
+			// code itself (as opposed to the on-disk structure).
+			// Apparently the base level up to now indicated the major
+			// version number, but for 4.1 the base level is being
+			// incremented, so the base level indicates an engine version
+			// as follows:
+			// 1 == v1.x
+			// 2 == v2.x
+			// 3 == v3.x
+			// 4 == v4.0 only
+			// 5 == v4.1. (v5, too?)
+			// 6 == v6, FB1, FB1.5, FB2, FB2.5
+			// Note: this info item is so old it apparently uses an
+			// archaic format, not a standard vax integer format.
+
 			STUFF(p, 1);		/* Count */
 			/* IB_MAJOR_VER is defined as a character string */
 			STUFF(p, DBSERVER_BASE_LEVEL);	/* base level of current version */
