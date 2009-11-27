@@ -409,12 +409,12 @@ void INF_database_info(const UCHAR* items,
 			break;
 
 		case isc_info_base_level:
-			/* info_base_level is used by the client to represent
-			 * what the server is capable of.  It is equivalent to the
-			 * ods version of a database.  For example,
-			 * ods_version represents what the database 'knows'
-			 * base_level represents what the server 'knows'
-			 */
+			// info_base_level is used by the client to represent
+			// what the server is capable of.  It is equivalent to the
+			// ods version of a database.  For example,
+			// ods_version represents what the database 'knows'
+			// base_level represents what the server 'knows'
+			//
 			// Comment moved from DSQL where the item is no longer used, to not lose the history:
 			// This flag indicates the version level of the engine
 			// itself, so we can tell what capabilities the engine
@@ -432,9 +432,9 @@ void INF_database_info(const UCHAR* items,
 			// Note: this info item is so old it apparently uses an
 			// archaic format, not a standard vax integer format.
 
-			STUFF(p, 1);		/* Count */
-			/* IB_MAJOR_VER is defined as a character string */
-			STUFF(p, DBSERVER_BASE_LEVEL);	/* base level of current version */
+			STUFF(p, 1);		// Count
+			// IB_MAJOR_VER is defined as a character string
+			STUFF(p, DBSERVER_BASE_LEVEL);	// base level of current version
 			length = p - buffer;
 			break;
 
