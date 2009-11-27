@@ -1257,10 +1257,7 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 }
 
 
-static bool internal_enqueue(thread_db* tdbb,
-							Lock* lock,
-							USHORT level,
-							SSHORT wait, bool convert_flg)
+static bool internal_enqueue(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait, bool convert_flg)
 {
 /**************************************
  *
