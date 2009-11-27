@@ -952,27 +952,27 @@ static void prompt_for_name(SCHAR* name, int length)
 		if (strlen(tdgbl->mvol_old_file) > 0)
 		{
 			BURP_msg_get(225, msg, SafeArg() << (tdgbl->mvol_volume_count - 1) << tdgbl->mvol_old_file);
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 			BURP_msg_get(226, msg);
 			// \tPress return to reopen that file, or type a new\n\tname
 			// followed by return to open a different file.\n
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 		}
 		else	// First volume
 		{
 			BURP_msg_get(227, msg);
 			// Type a file name to open and hit return
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 		}
 		BURP_msg_get(228, msg);	// "  Name: "
-		fprintf(term_out, msg);
+		fprintf(term_out, "%s", msg);
 
 		fflush(term_out);
 		if (fgets(name, length, term_in) == NULL)
 		{
 			BURP_msg_get(229, msg);
 			// \n\nERROR: Backup incomplete\n
-			fprintf(term_out, msg);
+			fprintf(term_out, "%s", msg);
 			BURP_exit_local(FINI_ERROR, tdgbl);
 		}
 
@@ -1136,7 +1136,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(230, msg, SafeArg() << tdgbl->gbl_backup_start_time << buffer);
 				// Expected backup start time %s, found %s\n
-				printf(msg);
+				printf("%s", msg);
 				return false;
 			}
 			break;
@@ -1170,7 +1170,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(231, msg, SafeArg() << tdgbl->gbl_database_file_name << buffer);
 				// Expected backup database %s, found %s\n
-				printf(msg);
+				printf("%s", msg);
 				return false;
 			}
 			if (init_flag)
@@ -1201,7 +1201,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(232, msg, SafeArg() << tdgbl->mvol_volume_count << temp);
 				// Expected volume number %d, found volume %d\n
-				printf(msg);
+				printf("%s", msg);
 				return false;
 			}
 			break;
