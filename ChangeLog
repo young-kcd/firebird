@@ -1,3 +1,25 @@
+2009-11-27 14:27  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.283.2.1), Relation.h (1.12.2.1),
+	met.epp (1.288.2.1):
+
+	An attempt to fix CORE-2766: page 0 is of wrong type (expected 6,
+	found 1).  Mutex is used just to wait on a event with allowed
+	recursive execution.
+
+2009-11-26 17:03  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.221.2.1):
+
+	Make it build on gcc/solaris/sparc again
+
+2009-11-26 16:56  alexpeshkoff
+
+	* firebird2/src/jrd/dyn_del.epp (1.82.2.1):
+
+	Backported fix for CORE-2768: ALTERING OR DROPPING PROCEDURE which
+	has type of domain parameter leads to attempt to delete that domain
+
 2009-11-25 11:48  hvlad
 
 	* firebird2/src/jrd/Relation.cpp (1.22.2.1):
