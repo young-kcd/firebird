@@ -1088,9 +1088,11 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		return NULL;
 	}
 
+	const int timeout = Config::getConnectionTimeout() * 1000;
+
 	// waiting for XNET connect lock to release
 
-	if (WaitForSingleObject(xnet_connect_mutex, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0)
+	if (WaitForSingleObject(xnet_connect_mutex, timeout) != WAIT_OBJECT_0)
 	{
 		connect_fini();
 		XNET_UNLOCK();
@@ -1109,7 +1111,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 
 	// waiting for server response
 
-	if (WaitForSingleObject(xnet_response_event, XNET_CONNECT_TIMEOUT) != WAIT_OBJECT_0)
+	if (WaitForSingleObject(xnet_response_event, timeout) != WAIT_OBJECT_0)
 	{
 		ReleaseMutex(xnet_connect_mutex);
 		connect_fini();

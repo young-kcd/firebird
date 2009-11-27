@@ -37,9 +37,6 @@
 #define FILE_ID	HANDLE
 #endif
 
-// Client connect timeout (ms)
-const DWORD XNET_CONNECT_TIMEOUT	= 10000;
-
 // Receive wait timeout (ms)
 const DWORD XNET_RECV_WAIT_TIMEOUT	= 10000;
 
