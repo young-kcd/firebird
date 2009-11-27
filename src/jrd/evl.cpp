@@ -1250,7 +1250,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		if (record && record->rec_format && relation)
 		{
 			thread_db* tdbb = JRD_get_thread_data();
-			Database* dbb = tdbb->getDatabase();
+			//Database* dbb = tdbb->getDatabase();
 
 			while (format &&
 				(id >= format->fmt_defaults.getCount() ||

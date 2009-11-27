@@ -2432,7 +2432,7 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	dyn_fld orig_fld, new_fld, dom_fld;
 

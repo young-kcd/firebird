@@ -892,8 +892,6 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	const UCHAR* const end = p + length;
 
 	try {
-		Database* dbb = tdbb->getDatabase();
-
 		UCharBuffer bpb;
 		const size_t convSize = 15;
 		bpb.resize(convSize);
@@ -957,7 +955,7 @@ void DYN_rundown_request(jrd_req* handle, SSHORT id)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb  = tdbb->getDatabase();
+	Database* dbb = tdbb->getDatabase();
 
 	if (!handle) {
 		return;

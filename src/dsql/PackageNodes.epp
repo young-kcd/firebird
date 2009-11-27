@@ -425,7 +425,7 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	fb_assert(create || alter);
 
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	//dbb->checkOdsForDsql(ODS_12_0);
 
@@ -597,7 +597,7 @@ void DropPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	//dbb->checkOdsForDsql(ODS_12_0);
@@ -833,7 +833,7 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 
 void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	//dbb->checkOdsForDsql(ODS_12_0);
@@ -1014,7 +1014,7 @@ void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	//dbb->checkOdsForDsql(ODS_12_0);

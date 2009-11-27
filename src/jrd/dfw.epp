@@ -4718,7 +4718,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		}
 		if (desc2->dsc_dtype)
 		{
-			offset = MET_align(dbb, &(*desc2), offset);
+			offset = MET_align(&(*desc2), offset);
 			desc2->dsc_address = (UCHAR *) (IPTR) offset;
 			offset += desc2->dsc_length;
 		}

@@ -301,9 +301,7 @@ USHORT CCH_checksum(BufferDesc* bdb)
  **************************************/
 #ifdef NO_CHECKSUM
 	return DUMMY_CHECKSUM;
-#else
-	Database* dbb = bdb->bdb_dbb;
-#ifdef WIN_NT
+#elif defined(WIN_NT)
 	// ODS_VERSION8 for NT was shipped before page checksums
 	// were disabled on other platforms. Continue to compute
 	// checksums for ODS_VERSION8 databases but eliminate them
@@ -313,6 +311,7 @@ USHORT CCH_checksum(BufferDesc* bdb)
 
 	return DUMMY_CHECKSUM;
 #else
+	Database* dbb = bdb->bdb_dbb;
 	pag* page = bdb->bdb_buffer;
 
 	const ULONG* const end = (ULONG *) ((SCHAR *) page + dbb->dbb_page_size);
@@ -349,7 +348,6 @@ USHORT CCH_checksum(BufferDesc* bdb)
 	// Page is all zeros -- invent a checksum
 
 	return DUMMY_CHECKSUM;
-#endif
 #endif
 }
 

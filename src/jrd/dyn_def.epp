@@ -2939,6 +2939,8 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 		REL.RDB$EXTERNAL_FILE.NULL = TRUE;
 		REL.RDB$FLAGS = 0;
 		REL.RDB$FLAGS.NULL = FALSE;
+		REL.RDB$RELATION_TYPE.NULL = FALSE;
+
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -3024,6 +3026,9 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 			}
 		} // while
 
+		// The relation type cannot be determined definitely inside the above loop,
+		// because there are many DYN codes that affect it.
+		REL.RDB$RELATION_TYPE = rel_type;
 
 		SSHORT old_id = id;
 		id = drq_l_rel_info2;
@@ -3086,19 +3091,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 
 	if (!DYN_REQUEST(drq_s_rels))
 		DYN_REQUEST(drq_s_rels) = request;
-
-	jrd_req* sub_request = NULL;
-
-	FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ relation_name.c_str()
-
-		MODIFY REL USING
-			REL.RDB$RELATION_TYPE = rel_type;
-			REL.RDB$RELATION_TYPE.NULL = FALSE;
-		END_MODIFY;
-	END_FOR;
-
-	CMP_release(tdbb, sub_request);
 
 	if (sql_prot)
 	{
@@ -3888,6 +3880,17 @@ void DYN_define_trigger(Global*						gbl,
 		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
 			ERR_post(Arg::Gds(isc_adm_task_denied));
 
+		X.RDB$VALID_BLR = TRUE;
+		X.RDB$VALID_BLR.NULL = FALSE;
+
+		if (debug_info_ptr)
+		{
+			X.RDB$DEBUG_INFO.NULL = FALSE;
+			DYN_put_blr_blob(gbl, &debug_info_ptr, &X.RDB$DEBUG_INFO);
+		}
+		else
+			X.RDB$DEBUG_INFO.NULL = TRUE;
+
 		b_ending_store = true;
 
 		// the END_STORE_SPECIAL adds the foll. lines of code to the END_STORE
@@ -3905,23 +3908,6 @@ void DYN_define_trigger(Global*						gbl,
 	if (!DYN_REQUEST(drq_s_triggers)) {
 		DYN_REQUEST(drq_s_triggers) = request;
 	}
-
-	jrd_req* sub_request = NULL;
-
-	FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-		TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ t.c_str()
-
-		MODIFY TRG USING
-			TRG.RDB$VALID_BLR = TRUE;
-			TRG.RDB$VALID_BLR.NULL = FALSE;
-
-			TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
-			if (debug_info_ptr)
-				DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
-		END_MODIFY;
-	END_FOR;
-
-	CMP_release(tdbb, sub_request);
 
 	}
 	catch (const Firebird::Exception& ex)
