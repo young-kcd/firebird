@@ -4382,12 +4382,8 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		}
 
 		const IPTR temp = reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]);
-		// for ODS11 default nulls placement always may be matched to index
-		if ((true &&
-			((temp == rse_nulls_first && ptr[sort->nod_count]) ||
-			    (temp == rse_nulls_last && !ptr[sort->nod_count]))) ||
-			// for ODS10 and earlier indices always placed nulls at the end of dataset
-			(false && temp == rse_nulls_first) ||
+		if ((temp == rse_nulls_first && ptr[sort->nod_count]) ||
+			(temp == rse_nulls_last && !ptr[sort->nod_count]) ||
 			(ptr[sort->nod_count] && !(idx->idx_flags & idx_descending)) ||
 			(!ptr[sort->nod_count] && (idx->idx_flags & idx_descending)))
 		{
