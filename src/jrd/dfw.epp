@@ -3696,8 +3696,12 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR, transaction->getLockWait());
 		}
 
-		relation->rel_flags &= ~REL_deleting;
-		relation->rel_flags &= ~REL_check_existence;
+		if (relation->rel_flags & REL_deleting)
+		{
+			relation->rel_flags &= ~REL_deleting;
+			relation->rel_drop_mutex.leave();
+		}
+
 		return false;
 
 	case 1:
@@ -3764,7 +3768,18 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 		}
 
-		relation->rel_flags |= REL_check_existence;
+		fb_assert(!relation->rel_use_count);
+
+		// Flag relation delete in progress so that active sweep or
+		// garbage collector threads working on relation can skip over it
+
+		relation->rel_flags |= REL_deleting;
+
+		{ // scope
+			Database::Checkout dcoHolder(dbb);
+			relation->rel_drop_mutex.enter();
+		}
+
 		return true;
 
 	case 3:
@@ -3775,11 +3790,6 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if (!relation) {
 			return false;
 		}
-
-		/* Flag relation delete in progress so that active sweep or
-		   garbage collector threads working on relation can skip over it. */
-
-		relation->rel_flags |= REL_deleting;
 
 		/* The sweep and garbage collector threads have no more than
 		   a single record latency in responding to the flagged relation
@@ -3854,7 +3864,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		// Mark relation in the cache as dropped
 		relation->rel_flags |= REL_deleted;
 		relation->rel_flags &= ~REL_deleting;
-		relation->rel_flags &= ~REL_check_existence;
+		relation->rel_drop_mutex.leave();
 
 		// Release relation triggers
 		MET_release_triggers(tdbb, &relation->rel_pre_store);

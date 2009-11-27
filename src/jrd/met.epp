@@ -2587,27 +2587,36 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ++ptr)
 	{
 		jrd_rel* relation = *ptr;
-		if (relation && !(relation->rel_flags & REL_deleted))
+
+		if (relation)
 		{
-			/* dimitr: for non-system relations we should also check
-					   REL_scanned and REL_being_scanned flags. Look
-					   at MET_lookup_procedure for example. */
-			if (!(relation->rel_flags & REL_system) &&
-				(!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned)))
+			if (relation->rel_flags & REL_deleting)
 			{
-				continue;
+				Database::CheckoutLockGuard guard(dbb, relation->rel_drop_mutex);
 			}
 
-			if (relation->rel_name == name)
+			if (!(relation->rel_flags & REL_deleted))
 			{
-				if (relation->rel_flags & REL_check_existence)
+				/* dimitr: for non-system relations we should also check
+						   REL_scanned and REL_being_scanned flags. Look
+						   at MET_lookup_procedure for example. */
+				if (!(relation->rel_flags & REL_system) &&
+					(!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned)))
 				{
-					check_relation = relation;
-					LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
-					break;
+					continue;
 				}
 
-				return relation;
+				if (relation->rel_name == name)
+				{
+					if (relation->rel_flags & REL_check_existence)
+					{
+						check_relation = relation;
+						LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
+						break;
+					}
+
+					return relation;
+				}
 			}
 		}
 	}
@@ -2679,6 +2688,11 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 	vec<jrd_rel*>* vector = dbb->dbb_relations;
 	if (vector && (id < (SLONG) vector->count()) && (relation = (*vector)[id]))
 	{
+		if (relation->rel_flags & REL_deleting)
+		{
+			Database::CheckoutLockGuard guard(dbb, relation->rel_drop_mutex);
+		}
+	
 		if (relation->rel_flags & REL_deleted)
 		{
 			return return_deleted ? relation : NULL;
