@@ -1055,23 +1055,21 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			break;
 
 		case isc_dyn_grant_user:
+			GET_STRING(ptr, user);
+			// This test may become obsolete as we now allow explicit ROLE keyword.
+			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
 			{
-				GET_STRING(ptr, user);
-				// This test may become obsolete as we now allow explicit ROLE keyword.
-				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb))
+				user_type = obj_sql_role;
+				if (user == NULL_ROLE)
 				{
-					user_type = obj_sql_role;
-					if (user == NULL_ROLE)
-					{
-						DYN_error_punt(false, 195, user.c_str());
-						// msg 195: keyword NONE could not be used as SQL role name.
-					}
+					DYN_error_punt(false, 195, user.c_str());
+					// msg 195: keyword NONE could not be used as SQL role name.
 				}
-				else
-				{
-					user_type = obj_user;
-					user.upper7();
-				}
+			}
+			else
+			{
+				user_type = obj_user;
+				user.upper7();
 			}
 			break;
 

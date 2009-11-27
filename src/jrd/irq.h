@@ -116,7 +116,7 @@ enum irq_type_t
 
 	irq_l_subtype,			// lookup subtype (charset/collation)
 	irq_c_relation2,		// create new relation
-	irq_r_type,				// lookup relation type
+	//irq_r_type,			// lookup relation type
 	irq_p_type,				// lookup procedure type
 	irq_prc_validate,		// procedure blr validate
 	irq_trg_validate,		// trigger blr validate
@@ -126,7 +126,7 @@ enum irq_type_t
 	irq_m_fields4,			// process a modification of RDB$FIELDS for procedures (TYPE OF COLUMN)
 	irq_m_fields5,			// process a modification of RDB$FIELDS for triggers (TYPE OF COLUMN)
 	irq_m_fields6,			// process a modification of RDB$FIELDS for packaged procedures (TYPE OF COLUMN)
-	irq_r_params2,			// scan procedure parameters (ODS 11.1)
+	//irq_r_params2,		// scan procedure parameters (ODS 11.1)
 	irq_l_colls,			// lookup collations
 	irq_l_relfield,			// lookup a relation field
 	irq_verify_trusted_role, // ensure trusted role exists
@@ -142,7 +142,7 @@ enum irq_type_t
     irq_func_return,		// DSQL/METD: lookup a function's return argument
     irq_procedure,			// DSQL/METD: lookup a stored procedure
     irq_parameters,			// DSQL/METD: lookup a procedure's parameters
-    irq_parameters2,		// DSQL/METD: lookup a procedure's parameters (ODS 11.1)
+    //irq_parameters2,		// DSQL/METD: lookup a procedure's parameters (ODS 11.1)
     irq_collation,			// DSQL/METD: lookup a collation name
     irq_charset,			// DSQL/METD: lookup a character set
     irq_trigger,			// DSQL/METD: lookup a trigger

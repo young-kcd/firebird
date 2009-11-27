@@ -39,7 +39,7 @@
 // from ODS 8 up to the latest.  If this macro is undefined, the engine
 // only opens a database of the current ODS major version.
 
-#define ODS_8_TO_CURRENT
+//#define ODS_8_TO_CURRENT
 
 /**********************************************************************
 **
@@ -443,16 +443,6 @@ const USHORT hdr_shutdown_multi		= 0x80;
 const USHORT hdr_shutdown_full		= 0x1000;
 const USHORT hdr_shutdown_single	= 0x1080;
 
-/*
-struct sfd
-{
-	SLONG sfd_min_page;			// Minimum page number
-	SLONG sfd_max_page;			// Maximum page number
-	UCHAR sfd_index;			// Sequence of secondary file
-	UCHAR sfd_file[1];			// Given file name
-};
-typedef sfd SFD;
-*/
 
 // Page Inventory Page
 
@@ -492,21 +482,8 @@ struct tx_inv_page
 
 
 // Generator Page
-
-// For ODS10 and ODS11
-struct old_gen_page
-{
-	pag gpg_header;
-	SLONG gpg_sequence;			// Sequence number
-	SLONG gpg_waste1;			// overhead carried for backward compatibility
-	USHORT gpg_waste2;			// overhead carried for backward compatibility
-	USHORT gpg_waste3;			// overhead carried for backward compatibility
-	USHORT gpg_waste4;			// overhead carried for backward compatibility
-	USHORT gpg_waste5;			// overhead carried for backward compatibility
-	SINT64 gpg_values[1];		// Generator vector
-};
-
 // For ODS12 and beyond
+
 struct generator_page
 {
 	pag gpg_header;
@@ -517,7 +494,8 @@ struct generator_page
 
 // Record header
 
-struct rhd {
+struct rhd
+{
 	SLONG rhd_transaction;		// transaction id
 	SLONG rhd_b_page;			// back pointer
 	USHORT rhd_b_line;			// back line

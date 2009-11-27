@@ -759,7 +759,7 @@ void MET_activate_shadow(thread_db* tdbb)
 }
 
 
-ULONG MET_align(Database* dbb, const dsc* desc, ULONG value)
+ULONG MET_align(const dsc* desc, ULONG value)
 {
 /**************************************
  *
@@ -3207,30 +3207,10 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					REQUEST(irq_r_params) = request2;
 				}
 
-				SSHORT pa_collation_id_null = true;
-				SSHORT pa_collation_id = 0;
-				SSHORT pa_default_value_null = true;
-				bid pa_default_value;
-
-				jrd_req* request3 = CMP_find_request(tdbb, irq_r_params2, IRQ_REQUESTS);
-
-				FOR (REQUEST_HANDLE request3)
-					PA2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PA2.RDB$PROCEDURE_NAME EQ PA.RDB$PROCEDURE_NAME AND
-						 PA2.RDB$PARAMETER_NAME EQ PA.RDB$PARAMETER_NAME AND
-						 PA2.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
-
-					if (!REQUEST(irq_r_params2))
-						REQUEST(irq_r_params2) = request3;
-
-					pa_collation_id_null = PA2.RDB$COLLATION_ID.NULL;
-					pa_collation_id = PA2.RDB$COLLATION_ID;
-					pa_default_value_null = PA2.RDB$DEFAULT_VALUE.NULL;
-					pa_default_value = PA2.RDB$DEFAULT_VALUE;
-				END_FOR
-
-				if (!REQUEST(irq_r_params2))
-					REQUEST(irq_r_params2) = request3;
+				const SSHORT pa_collation_id_null = PA.RDB$COLLATION_ID.NULL;
+				const SSHORT pa_collation_id = PA.RDB$COLLATION_ID;
+				const SSHORT pa_default_value_null = PA.RDB$DEFAULT_VALUE.NULL;
+				bid pa_default_value = PA.RDB$DEFAULT_VALUE;
 
 				if (PA.RDB$PARAMETER_TYPE) {
 					paramVector = procedure->prc_output_fields;
@@ -3263,6 +3243,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					procedure->prc_defaults++;
 					Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+					// CVC: It seems we need another try/catch block here.
 
 					if (!pa_default_value_null)
 					{
@@ -3300,7 +3281,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					if (parameter)
 					{
 						*desc = parameter->prm_desc;
-						length = MET_align(dbb, &(*desc), length);
+						length = MET_align(&(*desc), length);
 						desc->dsc_address = (UCHAR *) (IPTR) length;
 						length += desc->dsc_length;
 					}
@@ -3309,11 +3290,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			}
 
 			prc_t prc_type = prc_legacy;
-			bool external = !P.RDB$ENGINE_NAME.NULL;	// ODS_12_0
+			const bool external = !P.RDB$ENGINE_NAME.NULL;	// ODS_12_0
 
 			MemoryPool* csb_pool = dbb->createPool();
 
-			{
+			{ // scope
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 				CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
@@ -3384,7 +3365,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					}
 				}
 				delete csb;
-			}
+			} // scope
 
 			if (external)
 			{
@@ -3884,6 +3865,32 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 			EXT_file(relation, REL.RDB$EXTERNAL_FILE); //, &REL.RDB$EXTERNAL_DESCRIPTION);
 		}
 
+		if (!REL.RDB$RELATION_TYPE.NULL)
+		{
+			switch (REL.RDB$RELATION_TYPE)
+			{
+				case rel_persistent:
+					break;
+				case rel_external:
+					fb_assert(relation->rel_file);
+					break;
+				case rel_view:
+					fb_assert(relation->rel_view_rse);
+					break;
+				case rel_virtual:
+					relation->rel_flags |= REL_virtual;
+					break;
+				case rel_global_temp_preserve:
+					relation->rel_flags |= REL_temp_conn;
+					break;
+				case rel_global_temp_delete:
+					relation->rel_flags |= REL_temp_tran;
+					break;
+				default:
+					fb_assert(false);
+			}
+		}
+
 		// Pick up field specific stuff
 
 		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &REL.RDB$RUNTIME);
@@ -4038,55 +4045,18 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		}
 		BLB_close(tdbb, blob);
 		blob = 0;
+
 		if (field && field->fld_security_name.length() == 0 && !REL.RDB$DEFAULT_CLASS.NULL)
 		{
 			field->fld_security_name = REL.RDB$DEFAULT_CLASS;
 		}
+
 	END_FOR;
 
 	if (!REQUEST(irq_r_fields))
 		REQUEST(irq_r_fields) = request;
 
 	delete csb;
-
-	jrd_req* sub_request = CMP_find_request(tdbb, irq_r_type, IRQ_REQUESTS);
-
-	FOR(REQUEST_HANDLE sub_request)
-		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ relation->rel_id
-
-		if (!REQUEST(irq_r_type))
-			REQUEST(irq_r_type) = sub_request;
-
-		if (!REL.RDB$RELATION_TYPE.NULL)
-		{
-			switch (REL.RDB$RELATION_TYPE)
-			{
-				case rel_persistent:
-					break;
-				case rel_external:
-					fb_assert(relation->rel_file);
-					break;
-				case rel_view:
-					fb_assert(relation->rel_view_rse);
-					break;
-				case rel_virtual:
-					relation->rel_flags |= REL_virtual;
-					break;
-				case rel_global_temp_preserve:
-					relation->rel_flags |= REL_temp_conn;
-					break;
-				case rel_global_temp_delete:
-					relation->rel_flags |= REL_temp_tran;
-					break;
-				default:
-					fb_assert(false);
-			}
-		}
-
-	END_FOR;
-
-	if (!REQUEST(irq_r_type))
-		REQUEST(irq_r_type) = sub_request;
 
 	// release any triggers in case of a rescan, but not if the rescan
 	// hapenned while system triggers were being loaded.

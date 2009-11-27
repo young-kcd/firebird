@@ -66,7 +66,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 const int FB_MAX_ACL_SIZE	= 4096;
 
 
-static void add_index_set(Database*, bool, USHORT, USHORT);
+static void add_index_set(Database*);
 static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
 		const TEXT*, const UCHAR*, const SSHORT);
 static void store_generator(thread_db*, const gen*, jrd_req**);
@@ -333,11 +333,13 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
-		if (string2.length()) {
+		if (string2.length())
+		{
 			PAD (string2.c_str(), X.RDB$CHARACTER_SET_NAME);
 			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 		}
-		else {
+		else
+		{
 			PAD (DEFAULT_DB_CHARACTER_SET_NAME, X.RDB$CHARACTER_SET_NAME);
 			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 		}
@@ -367,7 +369,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	handle1 = NULL;
 
 	// Create indices for system relations
-	add_index_set(dbb, false, 0, 0);
+	add_index_set(dbb);
 
 	// Create parameter types
 
@@ -443,8 +445,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	// store trigger messages to go with triggers
 
 	handle1 = NULL;
-	for (const trigger_msg* message = trigger_messages; message->trigmsg_name;
-		++message)
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
 	{
 		store_message(tdbb, message, &handle1);
 	}
@@ -662,10 +663,7 @@ void INI_init2(thread_db* tdbb)
 }
 
 
-static void add_index_set(Database*	dbb,
-						  bool		update_ods,
-						  USHORT	major_version,
-						  USHORT	minor_version)
+static void add_index_set(Database*	dbb)
 {
 /**************************************
  *
@@ -690,17 +688,6 @@ static void add_index_set(Database*	dbb,
 	{
 		const ini_idx_t* index = &indices[n];
 
-		// For minor ODS updates, only add indices newer than on-disk ODS
-		if (update_ods &&
-			((index->ini_idx_version_flag <= ENCODE_ODS(major_version, minor_version)) ||
-				(index->ini_idx_version_flag > ODS_CURRENT_VERSION) ||
-			 	(((USHORT) DECODE_ODS_MAJOR(index->ini_idx_version_flag)) != major_version)))
-		{
-			// The DECODE_ODS_MAJOR() is used (in this case) to instruct the server
-			// to perform updates for minor ODS versions only within a major ODS
-			continue;
-		}
-
 		STORE(REQUEST_HANDLE handle1) X IN RDB$INDICES
 			jrd_rel* relation = MET_relation(tdbb, index->ini_idx_relid);
 			PAD(relation->rel_name.c_str(), X.RDB$RELATION_NAME);
@@ -708,7 +695,8 @@ static void add_index_set(Database*	dbb,
 			PAD(string.c_str(), X.RDB$INDEX_NAME);
 			X.RDB$UNIQUE_FLAG = index->ini_idx_flags & idx_unique;
 			X.RDB$SEGMENT_COUNT = index->ini_idx_segment_count;
-			if (index->ini_idx_flags & idx_descending) {
+			if (index->ini_idx_flags & idx_descending)
+			{
 				X.RDB$INDEX_TYPE.NULL = FALSE;
 				X.RDB$INDEX_TYPE = 1;
 			}
