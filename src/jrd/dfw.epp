@@ -385,7 +385,7 @@ static bool drop_package_header(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
-/* ---------------------------------------------------------------- */
+// ----------------------------------------------------------------
 
 static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	jrd_tra* transaction);

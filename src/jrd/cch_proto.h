@@ -64,7 +64,7 @@ void		CCH_flush_ast(Jrd::thread_db*);
 bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
 					 ISC_STATUS*, USHORT, const bool);
 
-/* macros for dealing with cache pages */
+// macros for dealing with cache pages
 
 inline Ods::pag* CCH_FETCH(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
 {
@@ -164,14 +164,14 @@ inline void CCH_PREFETCH(Jrd::thread_db* tdbb, SLONG * pages, SSHORT count)
 //#define CCH_MARK_MUST_WRITE(tdbb, window)                 CCH_mark_must_write (tdbb, window)
 //#define CCH_PREFETCH(tdbb, pages, count)            CCH_prefetch (tdbb, pages, count)
 
-/* Flush flags */
+// Flush flags
 
-const USHORT FLUSH_ALL		= 1;		/* flush all dirty buffers in cache */
-const USHORT FLUSH_RLSE		= 2;		/* release page locks after flush */
-const USHORT FLUSH_TRAN		= 4;		/* flush transaction dirty buffers from dirty btree */
-const USHORT FLUSH_SWEEP	= 8;		/* flush dirty buffers from garbage collection */
-const USHORT FLUSH_SYSTEM	= 16;		/* flush system transaction only from dirty btree */
+const USHORT FLUSH_ALL		= 1;		// flush all dirty buffers in cache
+const USHORT FLUSH_RLSE		= 2;		// release page locks after flush
+const USHORT FLUSH_TRAN		= 4;		// flush transaction dirty buffers from dirty btree
+const USHORT FLUSH_SWEEP	= 8;		// flush dirty buffers from garbage collection
+const USHORT FLUSH_SYSTEM	= 16;		// flush system transaction only from dirty btree
 const USHORT FLUSH_FINI		= (FLUSH_ALL | FLUSH_RLSE);
 
-#endif /* JRD_CCH_PROTO_H */
+#endif // JRD_CCH_PROTO_H
 

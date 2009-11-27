@@ -40,8 +40,7 @@
 
 namespace Jrd {
 
-/* Page control block -- used by PAG to keep track of critical
-   constants */
+// Page control block -- used by PAG to keep track of critical constants
 /**
 class PageControl : public pool_alloc<type_pgc>
 {
@@ -277,4 +276,4 @@ const PageNumber LOG_PAGE_NUMBER(DB_PAGE_SPACE, LOG_PAGE);
 
 } //namespace Jrd
 
-#endif /* JRD_PAG_H */
+#endif // JRD_PAG_H

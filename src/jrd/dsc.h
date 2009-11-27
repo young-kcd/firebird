@@ -32,7 +32,7 @@
 #include "../jrd/ods.h"
 #include "../intl/charsets.h"
 
-/* Data type information */
+// Data type information
 
 inline bool DTYPE_IS_TEXT(UCHAR d)
 {
@@ -44,19 +44,19 @@ inline bool DTYPE_IS_DATE(UCHAR t)
 	return t >= dtype_sql_date && t <= dtype_timestamp;
 }
 
-/* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
+// DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs.
 inline bool DTYPE_IS_BLOB(UCHAR d)
 {
 	return d == dtype_blob || d == dtype_array;
 }
 
-/* DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs. */
+// DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs.
 inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d)
 {
 	return d == dtype_blob || d == dtype_quad || d == dtype_array;
 }
 
-/* Exact numeric? */
+// Exact numeric?
 inline bool DTYPE_IS_EXACT(UCHAR d)
 {
 	return d == dtype_int64 || d == dtype_long || d == dtype_short;
@@ -72,7 +72,7 @@ inline bool DTYPE_IS_NUMERIC(UCHAR d)
 	return (d >= dtype_byte && d <= dtype_d_float) || d  == dtype_int64;
 }
 
-/* Descriptor format */
+// Descriptor format
 
 typedef struct dsc
 {
@@ -350,7 +350,7 @@ struct alt_dsc
 {
 	SLONG dsc_combined_type;
 	SSHORT dsc_sub_type;
-	USHORT dsc_flags;			/* Not currently used */
+	USHORT dsc_flags;			// Not currently used
 };
 
 inline bool DSC_EQUIV(const dsc* d1, const dsc* d2, bool check_collate)
@@ -373,12 +373,12 @@ inline bool DSC_EQUIV(const dsc* d1, const dsc* d2, bool check_collate)
 	return false;
 }
 
-/* In DSC_*_result tables, DTYPE_CANNOT means that the two operands
-   cannot participate together in the requested operation. */
+// In DSC_*_result tables, DTYPE_CANNOT means that the two operands
+// cannot participate together in the requested operation.
 
 const UCHAR DTYPE_CANNOT	= 127;
 
-/* Historical alias definition */
+// Historical alias definition
 const UCHAR dtype_date		= dtype_timestamp;
 
 const UCHAR dtype_aligned	= dtype_varying;
@@ -386,8 +386,7 @@ const UCHAR dtype_any_text	= dtype_varying;
 const UCHAR dtype_min_comp	= dtype_packed;
 const UCHAR dtype_max_comp	= dtype_d_float;
 
-/* NOTE: For types <= dtype_any_text the dsc_sub_type field defines
-   the text type */
+// NOTE: For types <= dtype_any_text the dsc_sub_type field defines the text type
 
 inline USHORT TEXT_LEN(const dsc* desc)
 {
@@ -398,26 +397,26 @@ inline USHORT TEXT_LEN(const dsc* desc)
 }
 
 
-/* Text Sub types, distinct from character sets & collations */
+// Text Sub types, distinct from character sets & collations
 
-const SSHORT dsc_text_type_none		= 0;	/* Normal text */
-const SSHORT dsc_text_type_fixed	= 1;	/* strings can contain null bytes */
-const SSHORT dsc_text_type_ascii	= 2;	/* string contains only ASCII characters */
-const SSHORT dsc_text_type_metadata	= 3;	/* string represents system metadata */
+const SSHORT dsc_text_type_none		= 0;	// Normal text
+const SSHORT dsc_text_type_fixed	= 1;	// strings can contain null bytes
+const SSHORT dsc_text_type_ascii	= 2;	// string contains only ASCII characters
+const SSHORT dsc_text_type_metadata	= 3;	// string represents system metadata
 
 
-/* Exact numeric subtypes: with ODS >= 10, these apply when dtype
-   is short, long, or quad. */
+// Exact numeric subtypes: with ODS >= 10, these apply when dtype
+// is short, long, or quad.
 
-const SSHORT dsc_num_type_none		= 0;	/* defined as SMALLINT or INTEGER */
-const SSHORT dsc_num_type_numeric	= 1;	/* defined as NUMERIC(n,m)        */
-const SSHORT dsc_num_type_decimal	= 2;	/* defined as DECIMAL(n,m)        */
+const SSHORT dsc_num_type_none		= 0;	// defined as SMALLINT or INTEGER
+const SSHORT dsc_num_type_numeric	= 1;	// defined as NUMERIC(n,m)
+const SSHORT dsc_num_type_decimal	= 2;	// defined as DECIMAL(n,m)
 
-/* Date type information */
+// Date type information
 
 inline SCHAR NUMERIC_SCALE(const dsc desc)
 {
 	return ((DTYPE_IS_TEXT(desc.dsc_dtype)) ? 0 : desc.dsc_scale);
 }
 
-#endif /* JRD_DSC_H */
+#endif // JRD_DSC_H

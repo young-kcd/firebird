@@ -213,8 +213,8 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 #define EXCEPTION_MESSAGE "The user defined function: \t%s\n\t   referencing entrypoint: \t%s\n\t                in module: \t%s\n\tcaused the fatal exception:"
 
-/* Blob passing structure */
-/* Updated definitions from the static functions shown below */
+// Blob passing structure
+// Updated definitions from the static functions shown below
 
 struct udf_blob
 {

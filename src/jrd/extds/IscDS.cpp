@@ -1106,7 +1106,7 @@ void ISC_EXPORT IscProvider::isc_event_counts(ISC_ULONG *,
 	return;
 }
 
-/* 17 May 2001 - IscProvider::isc_expand_dpb is DEPRECATED */
+// 17 May 2001 - IscProvider::isc_expand_dpb is DEPRECATED
 void ISC_EXPORT_VARARG IscProvider::isc_expand_dpb(char * *,
 								  short *, ...)
 {

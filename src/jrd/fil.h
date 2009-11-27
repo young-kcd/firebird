@@ -31,30 +31,30 @@
 #ifndef JRD_FIL_H
 #define JRD_FIL_H
 
-/* Defined the directory list structures. */
+// Defined the directory list structures.
 
-/* Temporary workfile directory list. */
+// Temporary workfile directory list.
 
 struct dir_list
 {
 	SLONG dls_header;           // Never referenced directly.
 	dir_list* dls_next;
-	ULONG dls_size;				/* Maximum size in the directory */
-	ULONG dls_inuse;			/* Occupied space in the directory */
-	TEXT dls_directory[2];		/* Directory name */
+	ULONG dls_size;				// Maximum size in the directory
+	ULONG dls_inuse;			// Occupied space in the directory
+	TEXT dls_directory[2];		// Directory name
 };
 
 struct mutexed_dir_list
 {
-	dir_list* mdls_dls;			/* Pointer to the directory list */
-	Firebird::Mutex mdls_mutex;	/* Mutex for directory list. Must
-								   be locked before list operations */
+	dir_list* mdls_dls;			// Pointer to the directory list
+	Firebird::Mutex mdls_mutex;	// Mutex for directory list. Must
+								// be locked before list operations
 	mutexed_dir_list()
 		: mdls_dls(NULL)
 	{}
 };
 
-/* external function directory list */
+// external function directory list
 /* OBSOLETE.
 struct function_dir_list
 {
@@ -63,7 +63,7 @@ struct function_dir_list
 };
 */
 
-/* external file directory list */
+// external file directory list
 /* OBSOLETE
 struct extfile_dir_list
 {

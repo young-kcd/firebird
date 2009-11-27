@@ -58,7 +58,7 @@ static const char* const PORT_FILE		= "fb_port_%d";
 #define DARWIN_FRAMEWORK_ID	"com.firebirdsql.Firebird"
 #endif
 
-/* keep MSG_FILE_LANG in sync with build_file.epp */
+// keep MSG_FILE_LANG in sync with build_file.epp
 #ifdef WIN_NT
 static const char* const WORKFILE	= "c:\\temp\\";
 static const char MSG_FILE_LANG[]	= "intl\\%.10s.msg";
@@ -73,4 +73,4 @@ static const char* const MSG_FILE	= "firebird.msg";
 // Keep in sync with MSG_FILE_LANG
 const int LOCALE_MAX	= 10;
 
-#endif /* JRD_FILE_PARAMS_H */
+#endif // JRD_FILE_PARAMS_H

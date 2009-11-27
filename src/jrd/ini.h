@@ -37,7 +37,7 @@
 // names.h
 //******************************
 
-/* Define name ids */
+// Define name ids
 
 #define NAME(name, id) id,
 
@@ -47,7 +47,7 @@ nam_MAX};
 
 #undef NAME
 
-/* Define name strings */
+// Define name strings
 
 #define NAME(name, id) name,
 
@@ -64,7 +64,7 @@ static const TEXT* const names[] =
 const USHORT BLOB_SIZE		= 8;
 const USHORT TIMESTAMP_SIZE	= 8;
 
-/* Pick up global ids */
+// Pick up global ids
 
 
 #define FIELD(type, name, dtype, length, sub_type, dflt_blr)	type,
@@ -75,7 +75,7 @@ gfld_MAX};
 
 typedef gflds GFLDS;
 
-/* Pick up actual global fields */
+// Pick up actual global fields
 
 #ifndef GPRE
 #define FIELD(type, name, dtype, length, sub_type, dflt_blr)	\
@@ -106,7 +106,7 @@ static const struct gfld gfields[] = {
 // relations.h
 //******************************
 
-/* Pick up relation ids */
+// Pick up relation ids
 
 #define RELATION(name, id, ods, type) id,
 #define FIELD(symbol, name, id, update, ods)
@@ -120,7 +120,7 @@ rel_MAX};
 
 typedef rids RIDS;
 
-/* Pick up relations themselves */
+// Pick up relations themselves
 
 #define RELATION(name, id, ods, type)	(int) name, (int) id, ods, type,
 #define FIELD(symbol, name, id, update, ods)\
@@ -153,7 +153,7 @@ static const int relfields[] =
 // types.h
 //******************************
 
-/* obtain field types */
+// obtain field types
 
 struct rtyp {
 	const TEXT* rtyp_name;

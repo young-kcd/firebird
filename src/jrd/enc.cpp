@@ -80,7 +80,7 @@
  * IEEE Spectrum, vol. 16, pp. 32-39, July 1979.
  */
 
-/* =====  Configuration ==================== */
+// =====  Configuration ====================
 
 /*
  * define "MUST_ALIGN" if your compiler cannot load/store
@@ -95,12 +95,12 @@
 #endif
 #endif
 
-/* compile with "-DSTATIC=int" when profiling */
+// compile with "-DSTATIC=int" when profiling
 #ifndef STATIC
 #define	STATIC	static
 #endif
 
-/* ==================================== */
+// ====================================
 
 /*
  * Cipher-block representation (Bob Baldwin):
@@ -220,7 +220,7 @@ union C_block
 {
 	unsigned char b[8];
 	struct {
-		/* long is often faster than a 32-bit bit field */
+		// long is often faster than a 32-bit bit field
 		SLONG i0;
 		SLONG i1;
 	} b32;
@@ -243,9 +243,9 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 		rslt = (cvt.b32.i0 & 0x3f3f3f3fL) << 2;	\
 	}
 
-/*
- * These macros may someday permit efficient use of 64-bit integers.
- */
+
+// These macros may someday permit efficient use of 64-bit integers.
+
 #define	ZERO(d, d0, d1)					d0 = 0, d1 = 0
 #define	LOAD(d, d0, d1, bl)				d0 = (bl).b32.i0, d1 = (bl).b32.i1
 #define	LOADREG(d, d0, d1, s, s0, s1)	d0 = s0, d1 = s1
@@ -253,7 +253,7 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 #define	STORE(s, s0, s1, bl)			(bl).b32.i0 = s0, (bl).b32.i1 = s1
 #define	DCL_BLOCK(d, d0, d1)			SLONG d0, d1
 
-	/* "small data" */
+// "small data"
 #define	LGCHUNKBITS	2
 #define	CHUNKBITS	(1<<LGCHUNKBITS)
 #define	PERM6464(d, d0, d1, cpp, p)				\
@@ -284,10 +284,11 @@ STATIC void permute(const unsigned char* cp, C_block* out, const C_block* p, int
 	STORE(D, D0, D1, *out);
 }
 
-/* =====  (mostly) Standard DES Tables ==================== */
+// =====  (mostly) Standard DES Tables ====================
 
 static const unsigned char IP[] =
-{	/* initial permutation */
+{
+	// initial permutation
 	58, 50, 42, 34, 26, 18, 10, 2,
 	60, 52, 44, 36, 28, 20, 12, 4,
 	62, 54, 46, 38, 30, 22, 14, 6,
@@ -298,10 +299,11 @@ static const unsigned char IP[] =
 	63, 55, 47, 39, 31, 23, 15, 7,
 };
 
-/* The final permutation is the inverse of IP - no table is necessary */
+// The final permutation is the inverse of IP - no table is necessary
 
 static const unsigned char ExpandTr[] =
-{	/* expansion operation */
+{
+	// expansion operation
 	32, 1, 2, 3, 4, 5,
 	4, 5, 6, 7, 8, 9,
 	8, 9, 10, 11, 12, 13,
@@ -313,7 +315,8 @@ static const unsigned char ExpandTr[] =
 };
 
 static const unsigned char PC1[] =
-{	/* permuted choice table 1 */
+{
+	// permuted choice table 1
 	57, 49, 41, 33, 25, 17, 9,
 	1, 58, 50, 42, 34, 26, 18,
 	10, 2, 59, 51, 43, 35, 27,
@@ -326,13 +329,15 @@ static const unsigned char PC1[] =
 };
 
 static const unsigned char Rotates[] =
-{	/* PC1 rotation schedule */
+{
+	// PC1 rotation schedule
 	1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1,
 };
 
-/* note: each "row" of PC2 is left-padded with bits that make it invertible */
+// note: each "row" of PC2 is left-padded with bits that make it invertible
 static const unsigned char PC2[] =
-{	/* permuted choice table 2 */
+{
+	// permuted choice table 2
 	9, 18, 14, 17, 11, 24, 1, 5,
 	22, 25, 3, 28, 15, 6, 21, 10,
 	35, 38, 23, 19, 12, 4, 26, 8,
@@ -345,43 +350,44 @@ static const unsigned char PC2[] =
 };
 
 static const unsigned char S[8][64] =
-{	/* 48->32 bit substitution tables */
-	/* S[1]         */
+{
+	// 48->32 bit substitution tables
+	// S[1]
 	{14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
 	0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
 	4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0,
 	15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13},
-	/* S[2]         */
+	// S[2]
 	{15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10,
 	3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5,
 	0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15,
 	13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9},
-	/* S[3]         */
+	// S[3]
 	{10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8,
 	13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1,
 	13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7,
 	1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12},
-	/* S[4]         */
+	// S[4]
 	{7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15,
 	13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9,
 	10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4,
 	3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14},
-	/* S[5]         */
+	// S[5]
 	{2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9,
 	14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6,
 	4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14,
 	11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3},
-	/* S[6]         */
+	// S[6]
 	{12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11,
 	10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8,
 	9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6,
 	4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13},
-	/* S[7]         */
+	// S[7]
 	{4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1,
 	13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6,
 	1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2,
 	6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12},
-	/* S[8]         */
+	// S[8]
 	{13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7,
 	1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2,
 	7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8,
@@ -389,7 +395,8 @@ static const unsigned char S[8][64] =
 };
 
 static const unsigned char P32Tr[] =
-{	/* 32-bit permutation function */
+{
+	// 32-bit permutation function
 	16, 7, 20, 21,
 	29, 12, 28, 17,
 	1, 15, 23, 26,
@@ -401,7 +408,8 @@ static const unsigned char P32Tr[] =
 };
 
 static const unsigned char CIFP[] =
-{	/* compressed/interleaved permutation */
+{
+	// compressed/interleaved permutation
 	1, 2, 3, 4, 17, 18, 19, 20,
 	5, 6, 7, 8, 21, 22, 23, 24,
 	9, 10, 11, 12, 25, 26, 27, 28,
@@ -413,36 +421,36 @@ static const unsigned char CIFP[] =
 	45, 46, 47, 48, 61, 62, 63, 64,
 };
 
-static const unsigned char itoa64[] =	/* 0..63 => ascii-64 */
+static const unsigned char itoa64[] =	// 0..63 => ascii-64
 	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 
-/* =====  Tables that are initialized at run time  ==================== */
+// =====  Tables that are initialized at run time  ====================
 
 
-static unsigned char a64toi[128];	/* ascii-64 => 0..63 */
+static unsigned char a64toi[128];	// ascii-64 => 0..63
 
-/* Initial key schedule permutation */
+// Initial key schedule permutation
 static C_block PC1ROT[64 / CHUNKBITS][1 << CHUNKBITS];
 
-/* Subsequent key schedule rotation permutations */
+// Subsequent key schedule rotation permutations
 static C_block PC2ROT[2][64 / CHUNKBITS][1 << CHUNKBITS];
 
-/* Initial permutation/expansion table */
+// Initial permutation/expansion table
 static C_block IE3264[32 / CHUNKBITS][1 << CHUNKBITS];
 
-/* Table that combines the S, P, and E operations.  */
+// Table that combines the S, P, and E operations.
 static SLONG SPE[2][8][64];
 
-/* compressed/interleaved => final permutation table */
+// compressed/interleaved => final permutation table
 static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
 
 
-/* ==================================== */
+// ====================================
 
 static Firebird::GlobalPtr<Firebird::Mutex> cryptMutex;
 
-static C_block constdatablock;	/* encryption constant */
+static C_block constdatablock;	// encryption constant
 const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
 #define _PASSWORD_EFMT1 '#'
 /*
@@ -467,7 +475,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 			key++;
 		keyblock.b[i] = t;
 	}
-	if (des_setkey(keyblock.b))	/* also initializes "a64toi" */
+	if (des_setkey(keyblock.b))	// also initializes "a64toi"
 	{
 		buf[0] = 0;
 		return;
@@ -477,9 +485,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	switch (*setting)
 	{
 	case _PASSWORD_EFMT1:
-		/*
-		 * Involve the rest of the password 8 characters at a time.
-		 */
+		// Involve the rest of the password 8 characters at a time.
 		while (*key)
 		{
 			if (des_cipher(&keyblock, &keyblock, 0L, 1))
@@ -502,7 +508,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 
 		*encp++ = *setting++;
 
-		/* get iteration count */
+		// get iteration count
 		num_iter = 0;
 		for (SLONG i = 4; --i >= 0;)
 		{
@@ -537,10 +543,9 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 		return;
 	}
 
-	/*
-	 * Encode the 64 cipher bits as 11 ascii characters.
-	 */
-	/* i = ((SLONG)((rsltblock.b[0]<<8) | rsltblock.b[1])<<8) | rsltblock.b[2]; */
+	// Encode the 64 cipher bits as 11 ascii characters.
+
+	// i = ((SLONG)((rsltblock.b[0]<<8) | rsltblock.b[1])<<8) | rsltblock.b[2];
 	SLONG i;
 
 	ULONG a = rsltblock.b[0];
@@ -560,7 +565,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	encp[0] = itoa64[i];
 	encp += 4;
 
-	/* i = ((SLONG)((rsltblock.b[3]<<8) | rsltblock.b[4])<<8) | rsltblock.b[5]; */
+	// i = ((SLONG)((rsltblock.b[3]<<8) | rsltblock.b[4])<<8) | rsltblock.b[5];
 	a = rsltblock.b[3];
 	a = a << 8;
 	b = rsltblock.b[4];
@@ -578,7 +583,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	encp[0] = itoa64[i];
 	encp += 4;
 
-/*	i = ((SLONG)((rsltblock.b[6])<<8) | rsltblock.b[7])<<2; */
+	// i = ((SLONG)((rsltblock.b[6])<<8) | rsltblock.b[7])<<2;
 	a = rsltblock.b[6];
 	a = a << 8;
 	b = rsltblock.b[7];
@@ -598,15 +603,14 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 
 
 
-/*
- * The Key Schedule, filled in by des_setkey() or setkey().
- */
+// The Key Schedule, filled in by des_setkey() or setkey().
+
 #define	KS_SIZE	16
 static C_block KS[KS_SIZE];
 
-/*
- * Set up the key schedule from the key.
- */
+
+// Set up the key schedule from the key.
+
 static int des_setkey(unsigned char* key)
 {
 	DCL_BLOCK(K, K0, K1);
@@ -642,12 +646,12 @@ static int des_setkey(unsigned char* key)
  */
 static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 {
-	/* variables that we want in registers, most important first */
+	// variables that we want in registers, most important first
 	SLONG L1;
 	C_block B;
 
 	SLONG L0 = salt;
-	TO_SIX_BIT(salt, L0);		/* convert to 4*(6+2) format */
+	TO_SIX_BIT(salt, L0);		// convert to 4*(6+2) format
 
 #define	SALT salt
 
@@ -668,24 +672,26 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 	LOADREG(R, R0, R1, L, L0, L1);
 	L0 &= 0x55555555L;
 	L1 &= 0x55555555L;
-	L0 = (L0 << 1) | L1;		/* L0 is the even-numbered input bits */
+	L0 = (L0 << 1) | L1;		// L0 is the even-numbered input bits
 	R0 &= 0xaaaaaaaaL;
 	R1 = (R1 >> 1) & 0x55555555L;
-	L1 = R0 | R1;				/* L1 is the odd-numbered input bits */
+	L1 = R0 | R1;				// L1 is the odd-numbered input bits
 	STORE(L, L0, L1, B);
-	PERM3264(L, L0, L1, B.b, (const C_block*) IE3264);	/* even bits */
-	PERM3264(R, R0, R1, B.b + 4, (const C_block *) IE3264);	/* odd bits */
+	PERM3264(L, L0, L1, B.b, (const C_block*) IE3264);	// even bits
+	PERM3264(R, R0, R1, B.b + 4, (const C_block *) IE3264);	// odd bits
 
 	const C_block *kp;
 	int ks_inc;
 
 	if (num_iter >= 0)
-	{		/* encryption */
+	{
+		// encryption
 		kp = &KS[0];
 		ks_inc = sizeof(*kp);
 	}
 	else
-	{						/* decryption */
+	{
+		// decryption
 		num_iter = -num_iter;
 		kp = &KS[KS_SIZE - 1];
 		ks_inc = -(int) sizeof(*kp);
@@ -698,7 +704,7 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 		do {
 
 #define	SPTAB(t, i)	(*(SLONG *)((unsigned char *)t + i * (sizeof(SLONG) / 4)))
-			/* use this if "k" is allocated to a register ... */
+			// use this if "k" is allocated to a register ...
 #define	DOXOR(x, y, i)	k = B.b[i]; x ^= SPTAB(SPE[0][i], k); y ^= SPTAB(SPE[1][i], k);
 
 #define	CRUNCH(p0, p1, q0, q1)	\
@@ -722,7 +728,7 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 		kp = (C_block *) ((char *) kp - (ks_inc * KS_SIZE));
 
 
-		/* swap L and R */
+		// swap L and R
 		L0 ^= R0;
 		L1 ^= R1;
 		R0 ^= L0;
@@ -731,7 +737,7 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 		L1 ^= R1;
 	}
 
-	/* store the encrypted (or decrypted) result */
+	// store the encrypted (or decrypted) result
 	L0 = ((L0 >> 3) & 0x0f0f0f0fL) | ((L1 << 1) & 0xf0f0f0f0L);
 	L1 = ((R0 >> 3) & 0x0f0f0f0fL) | ((R1 << 1) & 0xf0f0f0f0L);
 	STORE(L, L0, L1, B);
@@ -760,17 +766,15 @@ static int des_cipher(const C_block* in, C_block* out, SLONG salt, int num_iter)
 STATIC void init_des()
 {
 	SLONG k;
-	static unsigned char perm[64];	/* "static" for speed */
+	static unsigned char perm[64];	// "static" for speed
 
-	/*
-	 * table that converts chars "./0-9A-Za-z"to integers 0-63.
-	 */
+	// table that converts chars "./0-9A-Za-z"to integers 0-63.
+
 	for (int i = 0; i < 64; i++)
 		a64toi[itoa64[i]] = i;
 
-	/*
-	 * PC1ROT - bit reverse, then PC1, then Rotate, then PC2.
-	 */
+	// PC1ROT - bit reverse, then PC1, then Rotate, then PC2.
+
 	for (int i = 0; i < 64; i++)
 		perm[i] = 0;
 
@@ -792,9 +796,8 @@ STATIC void init_des()
 	}
 	init_perm(PC1ROT, perm, 8);
 
-	/*
-	 * PC2ROT - PC2 inverse, then Rotate (once or twice), then PC2.
-	 */
+	// PC2ROT - PC2 inverse, then Rotate (once or twice), then PC2.
+
 	for (int j = 0; j < 2; j++)
 	{
 		unsigned char pc2inv[64];
@@ -820,9 +823,8 @@ STATIC void init_des()
 		init_perm(PC2ROT[j], perm, 8);
 	}
 
-	/*
-	 * Bit reverse, then initial permutation, then expansion.
-	 */
+	// Bit reverse, then initial permutation, then expansion.
+
 	for (int i = 0; i < 8; i++)
 	{
 		for (int j = 0; j < 8; j++)
@@ -843,9 +845,8 @@ STATIC void init_des()
 	}
 	init_perm(IE3264, perm, 8);
 
-	/*
-	 * Compression, then final permutation, then bit reverse.
-	 */
+	// Compression, then final permutation, then bit reverse.
+
 	for (int i = 0; i < 64; i++)
 	{
 		k = IP[CIFP[i] - 1];
@@ -859,10 +860,9 @@ STATIC void init_des()
 	}
 	init_perm(CF6464, perm, 8);
 
-	/*
-	 * SPE table
-	 */
-	static unsigned char tmp32[32];	/* "static" for speed */
+	// SPE table
+
+	static unsigned char tmp32[32];	// "static" for speed
 
 	for (int i = 0; i < 48; i++)
 		perm[i] = P32Tr[ExpandTr[i] - 1];
@@ -917,14 +917,16 @@ init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 		  const unsigned char p[64], int chars_out)
 {
 	for (int k = 0; k < chars_out * 8; k++)
-	{	/* each output bit position */
-		int l = p[k] - 1;			/* where this bit comes from */
+	{
+		// each output bit position
+		int l = p[k] - 1;			// where this bit comes from
 		if (l < 0)
-			continue;			/* output bit is always 0 */
-		const int i = l >> LGCHUNKBITS;	/* which chunk this bit comes from */
-		l = 1 << (l & (CHUNKBITS - 1));	/* mask for this bit */
+			continue;			// output bit is always 0
+		const int i = l >> LGCHUNKBITS;	// which chunk this bit comes from
+		l = 1 << (l & (CHUNKBITS - 1));	// mask for this bit
 		for (int j = 0; j < (1 << CHUNKBITS); j++)
-		{	/* each chunk value */
+		{
+			// each chunk value
 			if ((j & l) != 0)
 				perm[i][j].b[k >> 3] |= 1 << (k & 07);
 		}

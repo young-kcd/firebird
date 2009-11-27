@@ -183,12 +183,12 @@ enum FUN_T {
 };
 
 
-/* Function definition block */
+// Function definition block
 
 struct fun_repeat
 {
-	DSC fun_desc;			/* Datatype info */
-	FUN_T fun_mechanism;	/* Passing mechanism */
+	DSC fun_desc;			// Datatype info
+	FUN_T fun_mechanism;	// Passing mechanism
 };
 
 
@@ -196,15 +196,15 @@ class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 {
 public:
 	Firebird::QualifiedName fun_name;		// Function name
-	Firebird::string fun_exception_message;	/* message containing the exception error message */
-	UserFunction*	fun_homonym;	/* Homonym functions */
-	Symbol*		fun_symbol;			/* Symbol block */
-	int (*fun_entrypoint) ();		/* Function entrypoint */
-	USHORT		fun_count;			/* Number of arguments (including return) */
-	USHORT		fun_args;			/* Number of input arguments */
-	USHORT		fun_return_arg;		/* Return argument */
-	USHORT		fun_type;			/* Type of function */
-	ULONG		fun_temp_length;	/* Temporary space required */
+	Firebird::string fun_exception_message;	// message containing the exception error message
+	UserFunction*	fun_homonym;	// Homonym functions
+	Symbol*		fun_symbol;			// Symbol block
+	int (*fun_entrypoint) ();		// Function entrypoint
+	USHORT		fun_count;			// Number of arguments (including return)
+	USHORT		fun_args;			// Number of input arguments
+	USHORT		fun_return_arg;		// Return argument
+	USHORT		fun_type;			// Type of function
+	ULONG		fun_temp_length;	// Temporary space required
 	Jrd::ExtEngineManager::Function* fun_external;
 	fun_repeat fun_rpt[1];
 
@@ -221,10 +221,10 @@ public:
 //#define FUN_value	0
 //#define FUN_boolean	1
 
-/* Blob passing structure */
+// Blob passing structure
 // CVC: Moved to fun.epp where it belongs.
 
-/* Scalar array descriptor, "external side" seen by UDF's */
+// Scalar array descriptor, "external side" seen by UDF's
 
 struct scalar_array_desc
 {
@@ -247,19 +247,19 @@ struct scalar_array_desc
 class ArrayField : public pool_alloc_rpt<Ods::InternalArrayDesc::iad_repeat, type_arr>
 {
 public:
-	UCHAR*				arr_data;			/* Data block, if allocated */
-	blb*				arr_blob;			/* Blob for data access */
-	jrd_tra*			arr_transaction;	/* Parent transaction block */
-	ArrayField*			arr_next;			/* Next array in transaction */
-	jrd_req*			arr_request;		/* request */
-	SLONG				arr_effective_length;	/* Length of array instance */
-	USHORT				arr_desc_length;	/* Length of array descriptor */
+	UCHAR*				arr_data;			// Data block, if allocated
+	blb*				arr_blob;			// Blob for data access
+	jrd_tra*			arr_transaction;	// Parent transaction block
+	ArrayField*			arr_next;			// Next array in transaction
+	jrd_req*			arr_request;		// request
+	SLONG				arr_effective_length;	// Length of array instance
+	USHORT				arr_desc_length;	// Length of array descriptor
 	ULONG				arr_temp_id;		// Temporary ID for open array inside the transaction
 
 	// Keep this field last as it is C-style open array !
-	Ods::InternalArrayDesc	arr_desc;		/* Array descriptor. ! */
+	Ods::InternalArrayDesc	arr_desc;		// Array descriptor. !
 };
 
 } //namespace Jrd
 
-#endif /* JRD_VAL_H */
+#endif // JRD_VAL_H

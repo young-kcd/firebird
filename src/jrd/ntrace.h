@@ -33,13 +33,13 @@
 // to define SINT64
 #include "../jrd/common.h"
 
-/* Version of API, used for version fields in TracePlugin structure */
+// Version of API, used for version fields in TracePlugin structure
 #define NTRACE_VERSION 2
 
 // plugin entry point
 static const char* const NTRACE_ATTACH = "trace_create";
 
-/* Database objects*/
+// Database objects
 
 struct PerformanceInfo;
 
@@ -179,23 +179,23 @@ public:
 };
 
 
-/* Plugin-specific argument. Passed by the engine to each hook */
+// Plugin-specific argument. Passed by the engine to each hook
 typedef void* ntrace_object_t;
 
-/* Structure version*/
+// Structure version
 typedef int ntrace_version_t;
 
-/* Boolean type */
+// Boolean type
 typedef int ntrace_boolean_t;
 
-/* Performance counter */
+// Performance counter
 typedef SINT64 ntrace_counter_t;
 
-/* Used for arrays with binary data */
+// Used for arrays with binary data
 typedef unsigned char ntrace_byte_t;
 
 
-/* Event completion: 0 - successful, 1 - unsuccessful, 2 - unauthorized access */
+// Event completion: 0 - successful, 1 - unsuccessful, 2 - unauthorized access
 enum ntrace_result_t
 {
 	res_successful		= 0,
@@ -212,7 +212,7 @@ enum ntrace_trigger_type_t
 
 const int DBB_max_rel_count = 8; // must be the same as DBB_max_count from jrd.h
 
-/* Performance counters for entire database */
+// Performance counters for entire database
 
 enum {
 	DBB_fetches_count = 0,
@@ -222,39 +222,39 @@ enum {
 	DBB_max_dbb_count
 };
 
-/* Performance counters for individual table */
+// Performance counters for individual table
 struct TraceCounts
 {
-	ntrace_relation_t	trc_relation_id; /* Relation ID */
-	const char*			trc_relation_name; /* Relation name */
-	const ntrace_counter_t*	trc_counters; /* Pointer to allow easy addition of new counters */
+	ntrace_relation_t	trc_relation_id;	// Relation ID
+	const char*			trc_relation_name;	// Relation name
+	const ntrace_counter_t*	trc_counters;	// Pointer to allow easy addition of new counters
 };
 
-/* Performance statistics for operation */
+// Performance statistics for operation
 struct PerformanceInfo
 {
-	ntrace_counter_t pin_time;		/* Total operation time in milliseconds */
-	ntrace_counter_t* pin_counters;	/* Pointer to allow easy addition of new counters */
+	ntrace_counter_t pin_time;		// Total operation time in milliseconds
+	ntrace_counter_t* pin_counters;	// Pointer to allow easy addition of new counters
 
-	size_t pin_count;				/* Number of relations involved in analysis */
-	struct TraceCounts* pin_tables; /* Pointer to array with table stats */
+	size_t pin_count;				// Number of relations involved in analysis
+	struct TraceCounts* pin_tables; // Pointer to array with table stats
 
 	ntrace_counter_t pin_records_fetched;	// records fetched from statement/procedure
 };
 
-/* Get error string for hook failure that happened */
+// Get error string for hook failure that happened
 typedef const char* (*ntrace_get_error_t)(const struct TracePlugin* tpl_plugin);
 
-/* Finalize plugin interface for this particular database */
+// Finalize plugin interface for this particular database
 typedef ntrace_boolean_t (*ntrace_shutdown_t)(const struct TracePlugin* tpl_plugin);
 
-/* Create/close attachment */
+// Create/close attachment
 typedef ntrace_boolean_t (*ntrace_event_attach_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result);
 typedef ntrace_boolean_t (*ntrace_event_detach_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, ntrace_boolean_t drop_db);
 
-/* Start/end transaction */
+// Start/end transaction
 typedef ntrace_boolean_t (*ntrace_event_transaction_start_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
@@ -262,11 +262,11 @@ typedef ntrace_boolean_t (*ntrace_event_transaction_end_t)(const struct TracePlu
 	TraceConnection* connection, TraceTransaction* transaction,
 	ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
 
-/* Assignment to context variables */
+// Assignment to context variables
 typedef ntrace_boolean_t (*ntrace_event_set_context_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable);
 
-/* Stored procedure and triggers executing */
+// Stored procedure and triggers executing
 typedef	ntrace_boolean_t (*ntrace_event_proc_execute_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 	bool started, ntrace_result_t proc_result);
@@ -275,7 +275,7 @@ typedef ntrace_boolean_t (*ntrace_event_trigger_execute_t)(const struct TracePlu
 	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 	bool started, ntrace_result_t trig_result);
 
-/* DSQL statement lifecycle */
+// DSQL statement lifecycle
 typedef ntrace_boolean_t (*ntrace_event_dsql_prepare_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
@@ -285,7 +285,7 @@ typedef ntrace_boolean_t (*ntrace_event_dsql_execute_t)(const struct TracePlugin
 	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 	bool started, ntrace_result_t req_result);
 
-/* BLR requests */
+// BLR requests
 typedef ntrace_boolean_t (*ntrace_event_blr_compile_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
@@ -293,13 +293,13 @@ typedef ntrace_boolean_t (*ntrace_event_blr_execute_t)(const struct TracePlugin*
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_result_t req_result);
 
-/* DYN requests */
+// DYN requests
 typedef ntrace_boolean_t (*ntrace_event_dyn_execute_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceDYNRequest* request, ntrace_counter_t time_millis,
 	ntrace_result_t req_result);
 
-/* Using the services */
+// Using the services
 typedef ntrace_boolean_t (*ntrace_event_service_attach_t)(const struct TracePlugin* tpl_plugin,
 	TraceService* service, ntrace_result_t att_result);
 typedef ntrace_boolean_t (*ntrace_event_service_start_t)(const struct TracePlugin* tpl_plugin,
@@ -313,22 +313,22 @@ typedef ntrace_boolean_t (*ntrace_event_service_detach_t)(const struct TracePlug
 	TraceService* service, ntrace_result_t detach_result);
 
 
-/* API of trace plugin. Used to deliver notifications for each database */
+// API of trace plugin. Used to deliver notifications for each database
 struct TracePlugin
 {
-	/* API version */
+	// API version
 	ntrace_version_t tpl_version;
-	/* Driver-specific object pointer */
+	// Driver-specific object pointer
 	ntrace_object_t tpl_object;
 
-	/* Destroy plugin. Called when database is closed by the engine */
+	// Destroy plugin. Called when database is closed by the engine
 	ntrace_shutdown_t tpl_shutdown;
 
-	/* Function to return error string for hook failure */
+	// Function to return error string for hook failure
 	ntrace_get_error_t tpl_get_error;
 
 
-	/* Events supported */
+	// Events supported
 	ntrace_event_attach_t tpl_event_attach;
 	ntrace_event_detach_t tpl_event_detach;
 	ntrace_event_transaction_start_t tpl_event_transaction_start;
@@ -351,12 +351,12 @@ struct TracePlugin
 	ntrace_event_service_query_t tpl_event_service_query;
 	ntrace_event_service_detach_t tpl_event_service_detach;
 
-	/* Some space for future extension of Trace API interface,
-       must be zero-initialized by the plugin */
+	// Some space for future extension of Trace API interface,
+    // must be zero-initialized by the plugin
 	void* reserved_for_interface[24];
 
-	/* Some space which may be freely used by Trace API driver.
-       If driver needs more space it may allocate and return larger TracePlugin structure. */
+	// Some space which may be freely used by Trace API driver.
+	// If driver needs more space it may allocate and return larger TracePlugin structure.
 	void* reserved_for_driver[1];
 };
 
@@ -383,7 +383,7 @@ public:
 	virtual ~TraceInitInfo() { }
 };
 
-/* Trace API plugin entrypoint type */
+// Trace API plugin entrypoint type
 typedef ntrace_boolean_t (*ntrace_attach_t)(const TraceInitInfo* initInfo, const TracePlugin** plugin);
 
 #endif	// FIREBIRD_NTRACE_H

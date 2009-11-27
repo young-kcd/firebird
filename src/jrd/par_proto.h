@@ -34,7 +34,7 @@ namespace Jrd {
 	class DmlNode;
 }
 
-/* blr type classes */
+// blr type classes
 
 const int OTHER			= 0;
 const int STATEMENT		= 1;
