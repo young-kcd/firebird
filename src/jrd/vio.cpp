@@ -2714,13 +2714,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				work = DFW_post_work(transaction, dfw_create_procedure, &desc, id, package_name);
 
 				bool check_blr = true;
-
-				if (ENCODE_ODS(tdbb->getDatabase()->dbb_ods_version,
-						tdbb->getDatabase()->dbb_minor_version) >= ODS_11_1)
-				{
-					if (EVL_field(0, rpb->rpb_record, f_prc_valid_blr, &desc2))
-						check_blr = MOV_get_long(&desc2, 0) != 0;
-				}
+				if (EVL_field(0, rpb->rpb_record, f_prc_valid_blr, &desc2))
+					check_blr = MOV_get_long(&desc2, 0) != 0;
 
 				if (check_blr)
 					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);

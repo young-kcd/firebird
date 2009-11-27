@@ -652,38 +652,8 @@ void INI_init2(thread_db* tdbb)
 			{
 				if (n-- > 0)
 				{
-					// In ODS 12.0, RDB$TRIGGER_TYPE was changed from SHORTINT to BIGINT
-					if (fld[RFLD_F_NAME] == nam_trg_type && major_version < ODS_12_0)
-					{
-						desc->dsc_dtype = dtype_short;
-						desc->dsc_length = sizeof(SSHORT);
-					}
-
-					format->fmt_length = (USHORT)MET_align(dbb, &(*desc), format->fmt_length);
+					format->fmt_length = (USHORT) MET_align(dbb, &(*desc), format->fmt_length);
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
-
-					// In ODS prior to 11.2 all varchar columns were actually
-					// two bytes shorter than defined in fields.h
-					if (desc->dsc_dtype == dtype_varying &&
-						ENCODE_ODS(major_version, minor_version) < ODS_11_2)
-					{
-						desc->dsc_length -= sizeof(USHORT);
-					}
-
-					// In ODS11.2 length of RDB$CONTEXT_NAME was enlarged from 31 to 255 bytes
-					if ((fld[RFLD_F_NAME] == nam_context) &&
-						ENCODE_ODS(major_version, minor_version) < ODS_11_2)
-					{
-						desc->dsc_length = 31;
-					}
-					else if (fld[RFLD_F_NAME] == nam_entry &&
-						ENCODE_ODS(major_version, minor_version) < ODS_12_0)
-					{
-						// In ODS12.0 length of RDB$EXTERNAL_NAME are enlarged from
-						// 31 to 255 bytes
-						desc->dsc_length = 31;
-					}
-
 					format->fmt_length += desc->dsc_length;
 				}
 			}

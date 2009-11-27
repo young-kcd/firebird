@@ -1995,32 +1995,16 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 
 			case isc_info_ods_version:
 				database->dbb_ods_version = gds__vax_integer(data, l);
-				if (database->dbb_ods_version < 8)
+				if (database->dbb_ods_version < 12)
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_too_old_ods) << Arg::Num(8));
+					  Arg::Gds(isc_dsql_too_old_ods) << Arg::Num(12));
 				}
 				break;
 
 			case isc_info_ods_minor_version:
 				database->dbb_minor_version = gds__vax_integer(data, l);
 				break;
-
-			// This flag indicates the version level of the engine
-			// itself, so we can tell what capabilities the engine
-			// code itself (as opposed to the on-disk structure).
-			// Apparently the base level up to now indicated the major
-			// version number, but for 4.1 the base level is being
-			// incremented, so the base level indicates an engine version
-			// as follows:
-			// 1 == v1.x
-			// 2 == v2.x
-			// 3 == v3.x
-			// 4 == v4.0 only
-			// 5 == v4.1. (v5, too?)
-			// 6 == v6, FB1
-			// Note: this info item is so old it apparently uses an
-			// archaic format, not a standard vax integer format.
 
 			case isc_info_db_read_only:
 				fb_assert(l == 1);

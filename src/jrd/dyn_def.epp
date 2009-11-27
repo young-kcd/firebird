@@ -3002,12 +3002,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 				break;
 
 			case isc_dyn_rel_temporary:
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) < ODS_11_1)
-				{
-					// msg 248: "Feature ''@1'' is not supported in ODS @2.@3"
-					DYN_error_punt(false, 248, SafeArg() << "GLOBAL TEMPORARY TABLE" <<
-						dbb->dbb_ods_version << dbb->dbb_minor_version);
-				}
 				switch (DYN_get_number(ptr))
 				{
 					case isc_dyn_rel_temp_global_preserve:
@@ -3028,7 +3022,8 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 				MetaTmp(REL.RDB$RELATION_NAME)
 					DYN_execute(gbl, ptr, &tmp, &field_name, NULL, NULL, NULL);
 			}
-		}
+		} // while
+
 
 		SSHORT old_id = id;
 		id = drq_l_rel_info2;
@@ -3092,21 +3087,18 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 	if (!DYN_REQUEST(drq_s_rels))
 		DYN_REQUEST(drq_s_rels) = request;
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-	{
-		jrd_req* sub_request = NULL;
+	jrd_req* sub_request = NULL;
 
-		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ relation_name.c_str()
+	FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
+		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ relation_name.c_str()
 
-			MODIFY REL USING
-				REL.RDB$RELATION_TYPE = rel_type;
-				REL.RDB$RELATION_TYPE.NULL = FALSE;
-			END_MODIFY;
-		END_FOR;
+		MODIFY REL USING
+			REL.RDB$RELATION_TYPE = rel_type;
+			REL.RDB$RELATION_TYPE.NULL = FALSE;
+		END_MODIFY;
+	END_FOR;
 
-		CMP_release(tdbb, sub_request);
-	}
+	CMP_release(tdbb, sub_request);
 
 	if (sql_prot)
 	{
@@ -3914,25 +3906,22 @@ void DYN_define_trigger(Global*						gbl,
 		DYN_REQUEST(drq_s_triggers) = request;
 	}
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-	{
-		jrd_req* sub_request = NULL;
+	jrd_req* sub_request = NULL;
 
-		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-			TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ t.c_str()
+	FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
+		TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ t.c_str()
 
-			MODIFY TRG USING
-				TRG.RDB$VALID_BLR = TRUE;
-				TRG.RDB$VALID_BLR.NULL = FALSE;
+		MODIFY TRG USING
+			TRG.RDB$VALID_BLR = TRUE;
+			TRG.RDB$VALID_BLR.NULL = FALSE;
 
-				TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
-				if (debug_info_ptr)
-					DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
-			END_MODIFY;
-		END_FOR;
+			TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
+			if (debug_info_ptr)
+				DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
+		END_MODIFY;
+	END_FOR;
 
-		CMP_release(tdbb, sub_request);
-	}
+	CMP_release(tdbb, sub_request);
 
 	}
 	catch (const Firebird::Exception& ex)
@@ -4102,10 +4091,6 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 				case isc_dyn_view_context_name:
 					GET_STRING(ptr, VRL.RDB$CONTEXT_NAME);
 					VRL.RDB$CONTEXT_NAME.NULL = FALSE;
-
-					if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) < ODS_11_2) {
-						VRL.RDB$CONTEXT_NAME[31] = 0;
-					}
 					break;
 
 				default:
@@ -4263,30 +4248,24 @@ static rel_t get_relation_type(thread_db* tdbb, Global* gbl, const Firebird::Met
 {
 	Database* dbb = tdbb->getDatabase();
 
-	const USHORT major_version  = dbb->dbb_ods_version;
-	const USHORT minor_version = dbb->dbb_minor_version;
-
 	rel_t rel_type = rel_persistent;
 
-	if (ENCODE_ODS(major_version, minor_version) >= ODS_11_1)
-	{
-		jrd_req* request = CMP_find_request(tdbb, drq_l_rel_type, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_type, DYN_REQUESTS);
 
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			REL IN RDB$RELATIONS
-			WITH REL.RDB$RELATION_NAME EQ rel_name.c_str()
-			  AND REL.RDB$RELATION_TYPE NOT MISSING
-
-			if (!DYN_REQUEST(drq_l_rel_type))
-				DYN_REQUEST(drq_l_rel_type) = request;
-
-			rel_type = (rel_t) REL.RDB$RELATION_TYPE;
-
-		END_FOR;
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		REL IN RDB$RELATIONS
+		WITH REL.RDB$RELATION_NAME EQ rel_name.c_str()
+		  AND REL.RDB$RELATION_TYPE NOT MISSING
 
 		if (!DYN_REQUEST(drq_l_rel_type))
 			DYN_REQUEST(drq_l_rel_type) = request;
-	}
+
+		rel_type = (rel_t) REL.RDB$RELATION_TYPE;
+
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_l_rel_type))
+		DYN_REQUEST(drq_l_rel_type) = request;
 
 	return rel_type;
 }

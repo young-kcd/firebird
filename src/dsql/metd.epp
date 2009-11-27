@@ -1237,11 +1237,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 
 	for (int type = 0; type < 2; type++)
 	{
-		dsql_fld** ptr;
-		if (type)
-			ptr = &procedure->prc_outputs;
-		else
-			ptr = &procedure->prc_inputs;
+		dsql_fld** const ptr = type ? &procedure->prc_outputs : &procedure->prc_inputs;
 
 		SSHORT count = 0, defaults = 0;
 
@@ -1266,37 +1262,34 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 			SSHORT pr_null_flag;
 			bool pr_type_of = false;
 
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-			{
-				jrd_req* handle3 = CMP_find_request(tdbb, irq_parameters2, IRQ_REQUESTS);
+			jrd_req* handle3 = CMP_find_request(tdbb, irq_parameters2, IRQ_REQUESTS);
 
-				const MetaName packageName(PR.RDB$PACKAGE_NAME.NULL ? NULL : PR.RDB$PACKAGE_NAME);
+			const MetaName packageName(PR.RDB$PACKAGE_NAME.NULL ? NULL : PR.RDB$PACKAGE_NAME);
 
-				FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
-					PR2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
-						 PR2.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '') AND
-						 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
-
-					if (!DSQL_REQUEST(irq_parameters2))
-						DSQL_REQUEST(irq_parameters2) = handle3;
-
-					pr_collation_id_null = PR2.RDB$COLLATION_ID.NULL;
-					pr_collation_id = PR2.RDB$COLLATION_ID;
-
-					pr_default_value_null = PR2.RDB$DEFAULT_VALUE.NULL;
-
-					pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
-					pr_null_flag = PR2.RDB$NULL_FLAG;
-
-					if (!PR2.RDB$PARAMETER_MECHANISM.NULL && PR2.RDB$PARAMETER_MECHANISM == prm_mech_type_of)
-						pr_type_of = true;
-
-				END_FOR
+			FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
+				PR2 IN RDB$PROCEDURE_PARAMETERS
+				WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
+					 PR2.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '') AND
+					 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
 
 				if (!DSQL_REQUEST(irq_parameters2))
 					DSQL_REQUEST(irq_parameters2) = handle3;
-			}
+
+				pr_collation_id_null = PR2.RDB$COLLATION_ID.NULL;
+				pr_collation_id = PR2.RDB$COLLATION_ID;
+
+				pr_default_value_null = PR2.RDB$DEFAULT_VALUE.NULL;
+
+				pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
+				pr_null_flag = PR2.RDB$NULL_FLAG;
+
+				if (!PR2.RDB$PARAMETER_MECHANISM.NULL && PR2.RDB$PARAMETER_MECHANISM == prm_mech_type_of)
+					pr_type_of = true;
+
+			END_FOR
+
+			if (!DSQL_REQUEST(irq_parameters2))
+				DSQL_REQUEST(irq_parameters2) = handle3;
 
 			count++;
 			// allocate the field block

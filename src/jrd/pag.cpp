@@ -552,8 +552,6 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	// Starting from ODS 11.1 we store in pip_header.reserved number of pages
 	// allocated from this pointer page. There is intention to create dedicated
 	// field at page_inv_page for this purpose in ODS 12.
-	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && dbb->dbb_minor_version >= 1) ||
-		dbb->dbb_ods_version > ODS_VERSION11;
 
 	// Find an allocation page with something on it
 
@@ -586,9 +584,6 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 						new_page = CCH_fake(tdbb, window, 0);	// don't wait on latch
 						if (new_page)
 						{
-							if (!isODS11_x)
-								break;
-
 							BackupManager::StateReadGuard stateGuard(tdbb);
 							const bool nbak_stalled =
 								dbb->dbb_backup_manager->getState() == nbak_state_stalled;
@@ -1247,19 +1242,10 @@ void PAG_init(thread_db* tdbb)
 	pageMgr.transPerTIP = (dbb->dbb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
 	pageSpace->ppFirst = 1;
 	// dbb_ods_version can be 0 when a new database is being created
-	if ((dbb->dbb_ods_version == 0) || (dbb->dbb_ods_version >= ODS_VERSION12))
-	{
-		pageMgr.gensPerPage =
-			(dbb->dbb_page_size -
-			 OFFSETA(generator_page*, gpg_values)) / sizeof(((generator_page*) NULL)->gpg_values);
-	}
-	else
-	{
-		fb_assert(dbb->dbb_ods_version == ODS_VERSION11);
-		pageMgr.gensPerPage =
-			(dbb->dbb_page_size -
-			 OFFSETA(old_gen_page*, gpg_values)) / sizeof(((old_gen_page*) NULL)->gpg_values);
-	}
+	fb_assert((dbb->dbb_ods_version == 0) || (dbb->dbb_ods_version >= ODS_VERSION12));
+	pageMgr.gensPerPage =
+		(dbb->dbb_page_size -
+			OFFSETA(generator_page*, gpg_values)) / sizeof(((generator_page*) NULL)->gpg_values);
 
 	// Compute the number of data pages per pointer page.  Each data page
 	// requires a 32 bit pointer and a 2 bit control field.
@@ -2260,12 +2246,6 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *
  *********************************************/
 	fb_assert(cb);
-	const bool isODS11_x =
-		(database->dbb_ods_version == ODS_VERSION11 && database->dbb_minor_version >= 1) ||
-		database->dbb_ods_version > ODS_VERSION11;
-	if (!isODS11_x) {
-		return 0;
-	}
 
 	Firebird::Array<BYTE> temp;
 	page_inv_page* pip = (Ods::page_inv_page*) // can't reinterpret_cast<> here

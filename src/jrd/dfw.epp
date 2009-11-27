@@ -2142,8 +2142,6 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	const bool have_gtt = (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1);
-
 	bool is_create = true;
 	dfw_task_routine task_routine = NULL;
 
@@ -2171,45 +2169,42 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		more = (*task_routine)(tdbb, phase, work, transaction);
 	}
 
-	if (have_gtt)
+	bool gtt_preserve = false;
+	jrd_rel* relation = NULL;
+
+	if (is_create)
 	{
-		bool gtt_preserve = false;
-		jrd_rel* relation = NULL;
+		jrd_req* request = NULL;
 
-		if (is_create)
-		{
-			jrd_req* request = NULL;
+		FOR(REQUEST_HANDLE request)
+			IDX IN RDB$INDICES CROSS
+			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
+				IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+			gtt_preserve = (REL.RDB$RELATION_TYPE == rel_global_temp_preserve);
+			relation = MET_lookup_relation(tdbb, REL.RDB$RELATION_NAME);
+		END_FOR;
 
-			FOR(REQUEST_HANDLE request)
-				IDX IN RDB$INDICES CROSS
-				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
-					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
-				gtt_preserve = (REL.RDB$RELATION_TYPE == rel_global_temp_preserve);
-				relation = MET_lookup_relation(tdbb, REL.RDB$RELATION_NAME);
-			END_FOR;
+		CMP_release(tdbb, request);
+	}
+	else
+	{
+		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
+		gtt_preserve = (relation) && (relation->rel_flags & REL_temp_conn);
+	}
 
-			CMP_release(tdbb, request);
-		}
-		else
-		{
-			relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
-			gtt_preserve = (relation) && (relation->rel_flags & REL_temp_conn);
-		}
-
-		if (gtt_preserve && relation)
-		{
-			tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
-			try {
-				if (relation->getPages(tdbb, -1, false)) {
-					more2 = (*task_routine) (tdbb, phase, work, transaction);
-				}
-				tdbb->tdbb_flags |= TDBB_use_db_page_space;
+	if (gtt_preserve && relation)
+	{
+		tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
+		try {
+			if (relation->getPages(tdbb, -1, false)) {
+				more2 = (*task_routine) (tdbb, phase, work, transaction);
 			}
-			catch (...)
-			{
-				tdbb->tdbb_flags |= TDBB_use_db_page_space;
-				throw;
-			}
+			tdbb->tdbb_flags |= TDBB_use_db_page_space;
+		}
+		catch (...)
+		{
+			tdbb->tdbb_flags |= TDBB_use_db_page_space;
+			throw;
 		}
 	}
 
@@ -4789,43 +4784,37 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 
 		HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
 
-		if (dbb->dbb_ods_version >= ODS_VERSION12)
-		{
-			buffer.add(UCHAR(format->fmt_count));
-			buffer.add(UCHAR(format->fmt_count >> 8));
-		}
+		buffer.add(UCHAR(format->fmt_count));
+		buffer.add(UCHAR(format->fmt_count >> 8));
 
 		buffer.add((UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(Ods::Descriptor));
 
-		if (dbb->dbb_ods_version >= ODS_VERSION12)
+		const size_t pos = buffer.getCount();
+		buffer.add(0);
+		buffer.add(0);
+
+		USHORT i = 0, dflCount = 0;
+		for (Format::fmt_defaults_iterator impure = format->fmt_defaults.begin();
+			 impure != format->fmt_defaults.end(); ++impure, ++i)
 		{
-			size_t pos = buffer.getCount();
-			buffer.add(0);
-			buffer.add(0);
-
-			USHORT i = 0, dflCount = 0;
-			for (Format::fmt_defaults_iterator impure = format->fmt_defaults.begin();
-				 impure != format->fmt_defaults.end(); ++impure, ++i)
+			if (!impure->vlu_desc.isUnknown())
 			{
-				if (!impure->vlu_desc.isUnknown())
-				{
-					dsc desc = impure->vlu_desc;
-					desc.dsc_address = NULL;
+				dsc desc = impure->vlu_desc;
+				desc.dsc_address = NULL;
 
-					Ods::Descriptor odsDflDesc = desc;
+				Ods::Descriptor odsDflDesc = desc;
 
-					buffer.add(UCHAR(i));
-					buffer.add(UCHAR(i >> 8));
-					buffer.add((UCHAR*) &odsDflDesc, sizeof(odsDflDesc));
-					buffer.add(impure->vlu_desc.dsc_address, impure->vlu_desc.dsc_length);
+				buffer.add(UCHAR(i));
+				buffer.add(UCHAR(i >> 8));
+				buffer.add((UCHAR*) &odsDflDesc, sizeof(odsDflDesc));
+				buffer.add(impure->vlu_desc.dsc_address, impure->vlu_desc.dsc_length);
 
-					++dflCount;
-				}
+				++dflCount;
 			}
-
-			buffer[pos] = UCHAR(dflCount);
-			buffer[pos + 1] = UCHAR(dflCount >> 8);
 		}
+
+		buffer[pos] = UCHAR(dflCount);
+		buffer[pos + 1] = UCHAR(dflCount >> 8);
 
 		BLB_put_segment(tdbb, blob, buffer.begin(), buffer.getCount());
 		BLB_close(tdbb, blob);
@@ -5419,8 +5408,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 		return true;
 
 	case 5:
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-		{
+		{ // scope
 			const DeferredWork* arg = work->findArg(dfw_arg_check_blr);
 			if (arg)
 			{
@@ -5460,7 +5448,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 				if (!REQUEST(irq_prc_validate))
 					REQUEST(irq_prc_validate) = request;
 			}
-		}
+		} // scope
 		break;
 	}
 
@@ -5521,8 +5509,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			}
 		}
 
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-		{
+		{ // scope
 			const DeferredWork* arg = work->findArg(dfw_arg_check_blr);
 			if (arg)
 			{
@@ -5595,7 +5582,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				if (!REQUEST(irq_trg_validate))
 					REQUEST(irq_trg_validate) = request;
 			}
-		}
+		} // scope
 		break;
 	}
 

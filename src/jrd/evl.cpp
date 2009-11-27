@@ -1252,134 +1252,21 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			thread_db* tdbb = JRD_get_thread_data();
 			Database* dbb = tdbb->getDatabase();
 
-			if (dbb->dbb_ods_version >= ODS_VERSION12)
+			while (format &&
+				(id >= format->fmt_defaults.getCount() ||
+				 format->fmt_defaults[id].vlu_desc.isUnknown()))
 			{
-				while (format &&
-					(id >= format->fmt_defaults.getCount() ||
-					 format->fmt_defaults[id].vlu_desc.isUnknown()))
+				if (format->fmt_version >= relation->rel_current_format->fmt_version)
 				{
-					if (format->fmt_version >= relation->rel_current_format->fmt_version)
-					{
-						format = NULL;
-						break;
-					}
-
-					format = MET_format(tdbb, relation, format->fmt_version + 1);
+					format = NULL;
+					break;
 				}
 
-				return format && !(*desc = format->fmt_defaults[id].vlu_desc).isUnknown();
+				format = MET_format(tdbb, relation, format->fmt_version + 1);
 			}
 
-			// Legacy ODS logic
+			return format && !(*desc = format->fmt_defaults[id].vlu_desc).isUnknown();
 
-			// A database sweep does not scan a relation's metadata. However
-			// the change to substitute a default value for a missing "not null"
-			// field makes it necessary to reference the field block.
-			if (!relation->rel_fields)
-			{
-				thread_db* tdbb = NULL;
-
-				SET_TDBB(tdbb);
-				MET_scan_relation(tdbb, relation);
-			}
-
-			// CVC: With a corrupt db, the engine crashed doing backup.
-			jrd_fld* temp_field = NULL;
-			if (id < relation->rel_fields->count())
-				temp_field = (*relation->rel_fields)[id];
-
-			if (temp_field && temp_field->fld_default_value && temp_field->fld_not_null)
-			{
-				const nod_t temp_nod_type = temp_field->fld_default_value->nod_type;
-
-				switch (temp_nod_type)
-				{
-				case nod_user_name:
-					{
-						desc->dsc_dtype = dtype_text;
-						desc->dsc_sub_type = 0;
-						desc->dsc_scale = 0;
-						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
-						Firebird::MetaName& owner_name = relation->rel_owner_name;
-						desc->dsc_address = (UCHAR*) owner_name.c_str(); // throwing away const.
-						desc->dsc_length = owner_name.length();
-					}
-					break;
-				case nod_current_role:
-					{
-						// CVC: Revisiting the current_role to fill default values:
-						// If the current user is the same as the table creator,
-						// return the current role for that user, otherwise return NONE.
-						desc->dsc_dtype = dtype_text;
-						desc->dsc_sub_type = 0;
-						desc->dsc_scale = 0;
-						INTL_ASSIGN_TTYPE(desc, ttype_metadata);
-						thread_db* tdbb = NULL;
-						SET_TDBB(tdbb);
-						const char* rc_role = 0;
-						const UserId* att_user = tdbb->getAttachment()->att_user;
-						const char* cur_user = att_user ? att_user->usr_user_name.c_str() : 0;
-						if (cur_user && relation->rel_owner_name == cur_user)
-							rc_role = att_user->usr_sql_role_name.c_str();
-						else
-							rc_role = NULL_ROLE;
-
-						desc->dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(rc_role));
-						desc->dsc_length = strlen(rc_role);
-					}
-					break;
-				case nod_current_date:
-				case nod_current_time:
-				case nod_current_timestamp:
-					{
-						static const GDS_TIMESTAMP temp_timestamp = { 0, 0 };
-						desc->dsc_dtype = dtype_timestamp;
-						desc->dsc_scale = 0;
-						desc->dsc_flags = 0;
-						desc->dsc_address =
-							reinterpret_cast<UCHAR*>(const_cast<ISC_TIMESTAMP*>(&temp_timestamp));
-						desc->dsc_length = sizeof(temp_timestamp);
-					}
-					break;
-				case nod_internal_info:
-					{
-						static const SLONG temp_long = 0;
-						desc->dsc_dtype = dtype_long;
-						desc->dsc_scale = 0;
-						desc->dsc_flags = 0;
-						desc->dsc_address = (UCHAR*) const_cast<SLONG*>(&temp_long);
-						desc->dsc_length = sizeof(temp_long);
-					}
-					break;
-				default:
-					{
-						const Literal* default_literal =
-							reinterpret_cast<Literal*>(temp_field->fld_default_value);
-
-						if (default_literal->nod_type == nod_null)
-						{
-							ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(temp_field->fld_name) <<
-																Arg::Str(NULL_STRING_MARK));
-						}
-
-						fb_assert(default_literal->nod_type == nod_literal);
-
-						const dsc* default_desc = &default_literal->lit_desc;
-						// CVC: This could be a bitwise copy in one line
-						/*
-						desc->dsc_dtype    = default_desc->dsc_dtype;
-						desc->dsc_scale    = default_desc->dsc_scale;
-						desc->dsc_length   = default_desc->dsc_length;
-						desc->dsc_sub_type = default_desc->dsc_sub_type;
-						desc->dsc_flags    = default_desc->dsc_flags;
-						desc->dsc_address  = default_desc->dsc_address;
-						*/
-						*desc = *default_desc;
-					}
-				}
-
-				return true;
-			}
 		}
 
 		desc->dsc_dtype = dtype_text;
@@ -1387,7 +1274,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_ttype() = ttype_ascii;
-		desc->dsc_address = (UCHAR *) " ";
+		desc->dsc_address = (UCHAR*) " ";
 		return false;
 	}
 

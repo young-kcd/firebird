@@ -2796,21 +2796,18 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
 			first_request = request;
 			request = NULL;
 
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_2)
-			{
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-					PRM IN RDB$PROCEDURE_PARAMETERS
-					WITH PRM.RDB$RELATION_NAME = relation_name->c_str() AND
-						 PRM.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				PRM IN RDB$PROCEDURE_PARAMETERS
+				WITH PRM.RDB$RELATION_NAME = relation_name->c_str() AND
+					 PRM.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
 
-					MODIFY PRM USING
-						strcpy(PRM.RDB$FIELD_SOURCE, dom_fld.dyn_fld_source.c_str());
-					END_MODIFY;
-				END_FOR;
+				MODIFY PRM USING
+					strcpy(PRM.RDB$FIELD_SOURCE, dom_fld.dyn_fld_source.c_str());
+				END_MODIFY;
+			END_FOR;
 
-				CMP_release(tdbb, request);
-				request = NULL;
-			}
+			CMP_release(tdbb, request);
+			request = NULL;
 		}
 		else
 		{
@@ -2959,21 +2956,18 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
 				CMP_release(tdbb, request);
 				request = NULL;
 
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_2)
-				{
-					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-						PRM IN RDB$PROCEDURE_PARAMETERS
-						WITH PRM.RDB$RELATION_NAME = relation_name->c_str() AND
-							 PRM.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
+				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+					PRM IN RDB$PROCEDURE_PARAMETERS
+					WITH PRM.RDB$RELATION_NAME = relation_name->c_str() AND
+						 PRM.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
 
-						MODIFY PRM USING
-							strcpy(PRM.RDB$FIELD_SOURCE, new_fld.dyn_fld_source.c_str());
-						END_MODIFY;
-					END_FOR;
+					MODIFY PRM USING
+						strcpy(PRM.RDB$FIELD_SOURCE, new_fld.dyn_fld_source.c_str());
+					END_MODIFY;
+				END_FOR;
 
-					CMP_release(tdbb, request);
-					request = NULL;
-				}
+				CMP_release(tdbb, request);
+				request = NULL;
 			}
 			else if (changeDefault)
 			{

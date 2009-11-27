@@ -1227,15 +1227,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	 *  decided that the V6 engine would only access an ODS-10 database.
 	 *  (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
 	 */
-	SINT64* ptr = NULL;
-
-	if (dbb->dbb_ods_version >= ODS_VERSION12)
-		ptr = ((SINT64*) (page->gpg_values)) + offset;
-	else
-	{
-		fb_assert(dbb->dbb_ods_version == ODS_VERSION11);
-		ptr = ((SINT64*) (((old_gen_page*) page)->gpg_values)) + offset;
-	}
+	SINT64* const ptr = ((SINT64*) (page->gpg_values)) + offset;
 
 	if (val || initialize)
 	{
@@ -1426,8 +1418,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		blob->blb_max_segment = header->blh_max_segment;
 		blob->blb_level = header->blh_level;
 		blob->blb_sub_type = header->blh_sub_type;
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-			blob->blb_charset = header->blh_charset;
+		blob->blb_charset = header->blh_charset;
 
 		// Unless this is the only attachment, don't allow the sequential scan
 		// of very large blobs to flush pages used by other attachments.
@@ -2018,8 +2009,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	header->blh_length = blob->blb_length;
 	header->blh_level = blob->blb_level;
 	header->blh_sub_type = blob->blb_sub_type;
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
-		header->blh_charset = blob->blb_charset;
+	header->blh_charset = blob->blb_charset;
 
 	if (length)
 		memcpy(header->blh_page, q, length);

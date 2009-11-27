@@ -447,7 +447,7 @@ void CommentOnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->tra_attachment;
-	Database* dbb = attachment->att_database;
+	//Database* dbb = attachment->att_database;
 
 	string table;
 	string column;
@@ -505,9 +505,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 				status << Arg::Gds(isc_dyn_proc_not_found) << Arg::Str(objName);
 			}
 
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_12_0)
-				addWhere = "rdb$package_name is null";
-
+			addWhere = "rdb$package_name is null";
 			column = "rdb$procedure_name";
 			break;
 
@@ -520,10 +518,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		case ddl_udf:
 			table = "rdb$functions";
 			column = "rdb$function_name";
-
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_12_0)
-				addWhere = "rdb$package_name is null";
-
+			addWhere = "rdb$package_name is null";
 			status << Arg::Gds(isc_dyn_func_not_found) << Arg::Str(objName);
 			break;
 
@@ -570,7 +565,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			break;
 
 		case ddl_package:
-			dbb->checkOdsForDsql(ODS_12_0);
+			//dbb->checkOdsForDsql(ODS_12_0);
 
 			table = "rdb$packages";
 			column = "rdb$package_name";
@@ -698,13 +693,13 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	if (package.isEmpty())
 		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_FUNCTION, metaName);
 
-	dbb->checkOdsForDsql(ODS_12_0);
+	//dbb->checkOdsForDsql(ODS_12_0);
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_funcs2, DYN_REQUESTS);
 
@@ -779,7 +774,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 
 bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 	bool modified = false;
 
@@ -793,7 +788,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 		if (package.isEmpty())
 			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION, metaName);
 
-		dbb->checkOdsForDsql(ODS_12_0);
+		//dbb->checkOdsForDsql(ODS_12_0);
 
 		MODIFY FUN
 			FUN.RDB$MODULE_NAME.NULL = TRUE;
@@ -1341,7 +1336,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transacti
 bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 	bool secondPass, bool runTriggers)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_prcs2, DYN_REQUESTS);
@@ -1388,7 +1383,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 
 			if (external)
 			{
-				dbb->checkOdsForDsql(ODS_12_0);
+				//dbb->checkOdsForDsql(ODS_12_0);
 
 				if (secondPass)
 				{
@@ -1469,7 +1464,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 {
 	checkEmptyName(parameter.name);
 
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_s_prms4, DYN_REQUESTS);
 
 	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -1503,14 +1498,14 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 		PRM.RDB$PARAMETER_MECHANISM =
 			(USHORT) (parameter.fullDomain ? prm_mech_normal : prm_mech_type_of);
 
-		if (parameter.notNull)
-			dbb->checkOdsForDsql(ODS_11_1);
+		//if (parameter.notNull)
+		//	dbb->checkOdsForDsql(ODS_11_1);
 
 		PRM.RDB$NULL_FLAG.NULL = !parameter.notNull;
 		PRM.RDB$NULL_FLAG = parameter.notNull;
 
-		if (parameter.typeOfTable.hasData())
-			dbb->checkOdsForDsql(ODS_11_2);
+		//if (parameter.typeOfTable.hasData())
+		//	dbb->checkOdsForDsql(ODS_11_2);
 
 		PRM.RDB$RELATION_NAME.NULL = parameter.typeOfTable.isEmpty();
 		PRM.RDB$FIELD_NAME.NULL = PRM.RDB$RELATION_NAME.NULL || parameter.typeOfName.isEmpty();
@@ -1809,7 +1804,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& procedureName, const Firebird::MetaName& packageName)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_e_prms2, DYN_REQUESTS);
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -1830,8 +1825,8 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 			{
 				bool erase = true;
 
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_2)
-				{
+				// Can this loop be merged with the previous?
+				{ // scope
 					AutoCacheRequest requestHandle3(tdbb, drq_d_gfields4, DYN_REQUESTS);
 
 					FOR (REQUEST_HANDLE requestHandle3 TRANSACTION_HANDLE transaction)
@@ -1845,7 +1840,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 							erase = false;
 					}
 					END_FOR
-				}
+				} // end scope
 
 				if (erase)
 					ERASE FLD;
@@ -2111,13 +2106,13 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, metaName);
 
-	if (type.specified && (type.value & unsigned(TRIGGER_TYPE_MASK)) == unsigned(TRIGGER_TYPE_DDL))
-		dbb->checkOdsForDsql(ODS_12_0);
+	//if (type.specified && (type.value & unsigned(TRIGGER_TYPE_MASK)) == unsigned(TRIGGER_TYPE_DDL))
+	//	dbb->checkOdsForDsql(ODS_12_0);
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_triggers2, DYN_REQUESTS);
 
@@ -2147,7 +2142,7 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction, bool runTriggers)
 {
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	MetaName metaName(nameInMetaCharSet(tdbb, name));
 	bool modified = false;
 
@@ -2168,8 +2163,8 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 				Arg::Gds(isc_dsql_db_trigger_type_cant_change));
 		}
 
-		if (type.specified && (type.value & unsigned(TRIGGER_TYPE_MASK)) == unsigned(TRIGGER_TYPE_DDL))
-			dbb->checkOdsForDsql(ODS_12_0);
+		//if (type.specified && (type.value & unsigned(TRIGGER_TYPE_MASK)) == unsigned(TRIGGER_TYPE_DDL))
+		//	dbb->checkOdsForDsql(ODS_12_0);
 
 		if (!TRG.RDB$SYSTEM_FLAG.NULL)
 		{
@@ -2218,7 +2213,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 
 			if (external)
 			{
-				dbb->checkOdsForDsql(ODS_12_0);
+				//dbb->checkOdsForDsql(ODS_12_0);
 
 				// ODS_12_0
 				TRG.RDB$ENGINE_NAME.NULL = FALSE;

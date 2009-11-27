@@ -462,7 +462,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 
 	if (field->fld_type_of_name.hasData())
 	{
-		statement->req_dbb->dbb_database->checkOdsForDsql(ODS_11_1);
+		//statement->req_dbb->dbb_database->checkOdsForDsql(ODS_11_1);
 
 		if (field->fld_type_of_table)
 		{

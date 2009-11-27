@@ -409,27 +409,16 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version);
-
 	// Initialize record buffers
-	RecordBuffer* const dbb_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_database) : NULL;
-	RecordBuffer* const att_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_attachments) : NULL;
-	RecordBuffer* const tra_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_transactions) : NULL;
-	RecordBuffer* const stmt_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_statements) : NULL;
-	RecordBuffer* const call_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_calls) : NULL;
-	RecordBuffer* const io_stat_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_io_stats) : NULL;
-	RecordBuffer* const rec_stat_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
-	RecordBuffer* const ctx_var_buffer =
-		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
-	RecordBuffer* const mem_usage_buffer =
-		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_mem_usage) : NULL;
+	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
+	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
+	RecordBuffer* const tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
+	RecordBuffer* const stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
+	RecordBuffer* const call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
+	RecordBuffer* const io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
+	RecordBuffer* const rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
+	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
+	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
 
 	// Release our own lock
 	LCK_release(tdbb, dbb->dbb_monitor_lock);

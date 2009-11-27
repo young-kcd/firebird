@@ -1389,7 +1389,7 @@ blb* BLB_open2(thread_db* tdbb,
 
 	UCharBuffer new_bpb;
 
-	if (external_call && ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
+	if (external_call)
 	{
 		if (!from_type_specified)
 			from = blob->blb_sub_type;

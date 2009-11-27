@@ -1534,7 +1534,7 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 
 	fb_assert(idx != NULL);
 	fb_assert(key != NULL);
-	fb_assert(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11)
+	fb_assert(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION12)
 
 	key->key_flags = key_all_nulls;
 
@@ -2304,8 +2304,8 @@ static void compress(thread_db* tdbb,
 
 	if (isNull)
 	{
-		// dbb->dbb_ods_version < ODS_VERSION11 cannot happen, see PAG_header_init()
-		fb_assert(dbb->dbb_ods_version >= ODS_VERSION11);
+		// dbb->dbb_ods_version < ODS_VERSION12 cannot happen, see PAG_header_init()
+		fb_assert(dbb->dbb_ods_version >= ODS_VERSION12);
 
 		UCHAR pad = 0;
 		key->key_flags &= ~key_empty;

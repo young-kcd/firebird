@@ -716,9 +716,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 
 			parameter->par_desc.dsc_length += adjust;
 		}
-		else if (ENCODE_ODS(statement->req_dbb->dbb_ods_version,
-					statement->req_dbb->dbb_minor_version) >= ODS_11_1 &&
-			parameter->par_desc.dsc_dtype == dtype_blob &&
+		else if (parameter->par_desc.dsc_dtype == dtype_blob &&
 			parameter->par_desc.dsc_sub_type == isc_blob_text &&
 			tdbb->getCharSet() != CS_NONE && tdbb->getCharSet() != CS_BINARY)
 		{
