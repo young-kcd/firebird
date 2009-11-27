@@ -1,3 +1,10 @@
+2009-11-27 11:04  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.70.4.10), xnet.h (1.12.4.1):
+
+	Fixed CORE-2769: Make XNET_CONNECT_TIMEOUT in xnet.h user
+	configurable.
+
 2009-11-09 08:23  robocop
 
 	* firebird2/src/isql/isql.epp (1.174.2.4):
