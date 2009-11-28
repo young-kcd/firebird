@@ -134,7 +134,6 @@ using namespace Firebird;
 static bool all_spaces(thread_db*, CHARSET_ID, const BYTE*, ULONG, ULONG);
 static int blocking_ast_collation(void* ast_object);
 static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, ULONG);
-static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info);
 static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
 
 static GlobalPtr<Mutex> createCollationMtx;
@@ -175,6 +174,9 @@ public:
 	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype);
 
 private:
+	static bool lookupInternalCharSet(USHORT id, SubtypeInfo* info);
+
+private:
 	Firebird::Array<Collation*> charset_collations;
 	CharSet* cs;
 };
@@ -202,7 +204,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
  *      <never>         - if error
  *
  **************************************/
-	CharSetContainer *cs = NULL;
+	CharSetContainer* cs = NULL;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -221,10 +223,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	{
 		SubtypeInfo info;
 
-		if (id == CS_UTF16)
-			info.charsetName = "UTF16";
-
-		if ((id == CS_UTF16) || MET_get_char_coll_subtype_info(tdbb, id, &info))
+		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
 			dbb->dbb_charsets[id] = cs =
 				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
@@ -234,6 +233,48 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	}
 
 	return cs;
+}
+
+bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
+{
+	if (id == CS_UTF16)
+	{
+		info->charsetName = "UTF16";
+		return true;
+	}
+	else if (id > ttype_last_internal)
+		return false;
+
+	// ASF: This linear lookup appears slow, but it should be cached per database so should not
+	// cause performance problem.
+	for (const IntlManager::CharSetDefinition* csDef = IntlManager::defaultCharSets;
+		 csDef->name; ++csDef)
+	{
+		if (csDef->id != id)
+			continue;
+
+		for (const IntlManager::CollationDefinition* colDef = IntlManager::defaultCollations;
+			 colDef->name; ++colDef)
+		{
+			if (colDef->charSetId == id && colDef->collationId == 0)
+			{
+				info->charsetName = csDef->name;
+				info->collationName = csDef->name;
+				info->attributes = colDef->attributes;
+				info->ignoreAttributes = false;
+
+				if (colDef->specificAttributes)
+				{
+					info->specificAttributes.push((const UCHAR*) colDef->specificAttributes,
+						strlen(colDef->specificAttributes));
+				}
+
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
@@ -261,15 +302,18 @@ Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
 	return lock;
 }
 
-CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info) :
-	charset_collations(p),
-	cs(NULL)
+CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info)
+	: charset_collations(p),
+	  cs(NULL)
 {
 	charset* csL = FB_NEW(p) charset;
 	memset(csL, 0, sizeof(charset));
 
-	if (lookup_charset(csL, info) && (csL->charset_flags & CHARSET_ASCII_BASED))
+	if (IntlManager::lookupCharSet(info->charsetName.c_str(), csL) &&
+		(csL->charset_flags & CHARSET_ASCII_BASED))
+	{
 		this->cs = CharSet::createInstance(p, cs_id, csL);
+	}
 	else
 	{
 		delete csL;
@@ -444,12 +488,6 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 
 		delete lock;
 	}
-}
-
-
-static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info)
-{
-	return IntlManager::lookupCharSet(info->charsetName.c_str(), cs);
 }
 
 

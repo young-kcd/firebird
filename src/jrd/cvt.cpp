@@ -405,8 +405,7 @@ bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charse
 
 CharSet* EngineCallbacks::getToCharset(CHARSET_ID charSetId)
 {
-	return charSetId == ttype_dynamic || charSetId == CS_METADATA ? NULL :	// UNICODE_FSS_HACK
-		   INTL_charset_lookup(NULL, charSetId);
+	return INTL_charset_lookup(NULL, charSetId);
 }
 
 
