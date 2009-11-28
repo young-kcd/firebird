@@ -1,3 +1,9 @@
+2009-11-28 13:36  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.70.4.11):
+
+	Make the timeout static.
+
 2009-11-27 11:04  dimitr
 
 	* firebird2/src/remote/: xnet.cpp (1.70.4.10), xnet.h (1.12.4.1):
