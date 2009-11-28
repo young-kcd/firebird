@@ -32,6 +32,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "gen/ids.h"
+#include "../jrd/intl.h"
 #include "../jrd/tra.h"
 #include "../jrd/trig.h"
 #include "../jrd/intl.h"
@@ -581,7 +582,17 @@ void INI_init(thread_db* tdbb)
 				desc->dsc_length += sizeof(USHORT);
 			}
 			desc->dsc_dtype = gfield->gfld_dtype;
-			desc->dsc_sub_type = gfield->gfld_sub_type;
+
+			if (desc->isText())
+			{
+				if (gfield->gfld_sub_type & dsc_text_type_metadata)
+					desc->dsc_sub_type = CS_METADATA;
+				else
+					desc->dsc_sub_type = CS_NONE;
+			}
+			else
+				desc->dsc_sub_type = gfield->gfld_sub_type;
+
 			if (desc->dsc_dtype == dtype_blob && desc->dsc_sub_type == isc_blob_text)
 				desc->dsc_scale = CS_METADATA;	// blob charset
 
@@ -936,6 +947,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		X.RDB$COLLATION_ID.NULL = TRUE;
 		X.RDB$SEGMENT_LENGTH.NULL = TRUE;
+		X.RDB$CHARACTER_LENGTH.NULL = TRUE;
 		if (gfield->gfld_dflt_blr)
 		{
 			blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &X.RDB$DEFAULT_VALUE);
@@ -1011,6 +1023,8 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 				X.RDB$COLLATION_ID = COLLATE_NONE;
 				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
+				X.RDB$CHARACTER_LENGTH.NULL = FALSE;
+				X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH / METADATA_BYTES_PER_CHAR;
 				break;
 			case dsc_text_type_ascii:
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;

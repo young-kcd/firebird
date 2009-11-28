@@ -105,7 +105,7 @@ static const UCHAR who_blr[] =
 	blr_version5,
 	blr_begin,
 	blr_message, 0, 1, 0,
-	blr_cstring2, 3, 0, 32, 0,
+	blr_cstring2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_SIZE),
 	blr_begin,
 	blr_send, 0,
 	blr_begin,

@@ -54,12 +54,18 @@
 
 const ULONG MAX_COLUMN_SIZE	= 32767;	// Bytes
 
+// Metadata constants
+
+const unsigned METADATA_IDENTIFIER_CHAR_LEN	= 31;
+const unsigned METADATA_BYTES_PER_CHAR		= 1;	// UNICODE_FSS_HACK
+
 // Misc constant values
 
-const unsigned int USERNAME_LENGTH	= 31;	// Characters; beware that USER_NAME_LEN = 133 in gsec.h
+// Characters; beware that USER_NAME_LEN = 133 in gsec.h
+const unsigned int USERNAME_LENGTH	= METADATA_IDENTIFIER_CHAR_LEN * METADATA_BYTES_PER_CHAR;
 
-const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
-const size_t MAX_SQL_IDENTIFIER_LEN = MAX_SQL_IDENTIFIER_SIZE - 1;
+const size_t MAX_SQL_IDENTIFIER_LEN = METADATA_IDENTIFIER_CHAR_LEN * METADATA_BYTES_PER_CHAR;
+const size_t MAX_SQL_IDENTIFIER_SIZE = MAX_SQL_IDENTIFIER_LEN + 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
 const char* const NULL_STRING_MARK = "*** null ***";

@@ -33,6 +33,8 @@
 #ifndef JRD_BLR_H
 #define JRD_BLR_H
 
+#define BLR_WORD(x)	UCHAR(x), UCHAR((x) >> 8)
+
 /*  WARNING: if you add a new BLR representing a data type, and the value
  *           is greater than the numerically greatest value which now
  *           represents a data type, you must change the define for

@@ -403,10 +403,10 @@ bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charse
 }
 
 
-CharSet* EngineCallbacks::getToCharset(CHARSET_ID charset2)
+CharSet* EngineCallbacks::getToCharset(CHARSET_ID charSetId)
 {
-	return charset2 == ttype_dynamic || charset2 == CS_METADATA ? NULL :
-		   INTL_charset_lookup(NULL, charset2);
+	return charSetId == ttype_dynamic || charSetId == CS_METADATA ? NULL :	// UNICODE_FSS_HACK
+		   INTL_charset_lookup(NULL, charSetId);
 }
 
 

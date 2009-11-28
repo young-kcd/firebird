@@ -1326,7 +1326,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_flags = 0;
 		desc->dsc_ttype() = ttype_metadata;
 		desc->dsc_length =
-			USERNAME_LENGTH * METD_get_charset_bpc(statement, ttype_metadata) + sizeof(USHORT);
+			(USERNAME_LENGTH / METADATA_BYTES_PER_CHAR) *
+			METD_get_charset_bpc(statement, ttype_metadata) + sizeof(USHORT);
 		return;
 
 	case nod_internal_info:
@@ -1597,6 +1598,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		node->nod_desc.dsc_flags |= DSC_nullable;
 	}
 
+	// UNICODE_FSS_HACK
 	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
 	if ((field->fld_flags & FLD_system) && node->nod_desc.dsc_dtype <= dtype_varying &&
 		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
