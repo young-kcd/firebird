@@ -1489,13 +1489,11 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	desc->dsc_sub_type = field->fld_sub_type;
 	desc->dsc_length = field->fld_length;
 	desc->dsc_flags = (field->fld_flags & FLD_nullable) ? DSC_nullable : 0;
-	if (desc->dsc_dtype <= dtype_any_text) {
-		INTL_ASSIGN_DSC(desc, field->fld_character_set_id, field->fld_collation_id);
-	}
-	else if (desc->dsc_dtype == dtype_blob)
+
+	if (desc->isText() || desc->isBlob())
 	{
-		desc->dsc_scale = static_cast<SCHAR>(field->fld_character_set_id);
-		desc->dsc_flags |= field->fld_collation_id << 8;
+		desc->setTextType(INTL_CS_COLL_TO_TTYPE(
+			field->fld_character_set_id, field->fld_collation_id));
 	}
 }
 

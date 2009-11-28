@@ -1230,10 +1230,8 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, jrd_req** han
 
 	// indicate that the relation format needs revising
 	dsc desc;
-	desc.dsc_dtype = dtype_text;
-	INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
-	desc.dsc_address = (UCHAR*) names[trigger->trg_relation];
-	desc.dsc_length = strlen((char*)desc.dsc_address);
+	desc.makeText(strlen(names[trigger->trg_relation]), CS_METADATA,
+		(UCHAR*) names[trigger->trg_relation]);
 	DFW_post_system_work(tdbb, dfw_update_format, &desc, 0);
 
 	// store the trigger

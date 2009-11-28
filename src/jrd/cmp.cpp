@@ -6390,7 +6390,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, For
 			// pick the max text type, so any transparent casts from ints are
 			// not left in ASCII format, but converted to the richer text format
 
-			INTL_ASSIGN_TTYPE(desc, MAX(INTL_TEXT_TYPE(*desc), INTL_TEXT_TYPE(desc2)));
+			desc->setTextType(MAX(INTL_TEXT_TYPE(*desc), INTL_TEXT_TYPE(desc2)));
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 		}

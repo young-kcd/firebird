@@ -1938,8 +1938,8 @@ USHORT CVT_make_string(const dsc*          desc,
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
-	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
+	temp_desc.setTextType(to_interp);
 	CVT_move(desc, &temp_desc, err);
 	*address = temp->vary_string;
 
@@ -2281,8 +2281,8 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
-	INTL_ASSIGN_TTYPE(&temp_desc, ttype_ascii);
 	temp_desc.dsc_dtype = dtype_varying;
+	temp_desc.setTextType(ttype_ascii);
 	CVT_move(desc, &temp_desc, err);
 	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
 	*ttype = INTL_TTYPE(&temp_desc);

@@ -926,13 +926,13 @@ bool DSC_make_descriptor(DSC* desc,
 	{
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
-		INTL_ASSIGN_DSC(desc, charset, collation);
+		desc->setTextType(INTL_CS_COLL_TO_TTYPE(charset, collation));
 		break;
 
 	case blr_varying:
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_length += sizeof(USHORT);
-		INTL_ASSIGN_DSC(desc, charset, collation);
+		desc->setTextType(INTL_CS_COLL_TO_TTYPE(charset, collation));
 		break;
 
 	case blr_short:
@@ -994,7 +994,7 @@ bool DSC_make_descriptor(DSC* desc,
 
 	case blr_cstring:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_DSC(desc, charset, collation);
+		desc->setTextType(INTL_CS_COLL_TO_TTYPE(charset, collation));
 		break;
 
 	default:

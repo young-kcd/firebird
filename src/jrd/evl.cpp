@@ -217,7 +217,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 			   a 3.3 type request (blr_cstring2 instead of blr_cstring) so
 			   convert the charset to the declared charset of the process. */
 
-			INTL_ASSIGN_DSC(&impure->vlu_desc, tdbb->getCharSet(), COLLATE_NONE);
+			impure->vlu_desc.setTextType(tdbb->getCharSet());
 		}
 		return &impure->vlu_desc;
 
@@ -1026,7 +1026,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_dtype = dtype_text;
 			impure->vlu_desc.dsc_sub_type = 0;
 			impure->vlu_desc.dsc_scale = 0;
-			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
+			impure->vlu_desc.setTextType(ttype_metadata);
 			const char* cur_user = 0;
 			if (tdbb->getAttachment()->att_user)
 			{
@@ -1046,7 +1046,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_dtype = dtype_text;
 			impure->vlu_desc.dsc_sub_type = 0;
 			impure->vlu_desc.dsc_scale = 0;
-			INTL_ASSIGN_TTYPE(&impure->vlu_desc, ttype_metadata);
+			impure->vlu_desc.setTextType(ttype_metadata);
 			const char* cur_role = 0;
 			if (tdbb->getAttachment()->att_user)
 			{
@@ -1392,7 +1392,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	else
 	{
 		value->vlu_desc.dsc_dtype = dtype_text;
-		INTL_ASSIGN_TTYPE(&value->vlu_desc, ttype);
+		value->vlu_desc.setTextType(ttype);
 	}
 
 	if (address && length && target != address)
@@ -4516,12 +4516,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	else
 	{
 		dsc desc;
-		desc.dsc_dtype = dtype_text;
-		desc.dsc_sub_type = 0;
-		desc.dsc_scale = 0;
-		desc.dsc_length = valueLength;
-		desc.dsc_address = NULL;
-		INTL_ASSIGN_TTYPE(&desc, ttype);
+		desc.makeText(valueLength, ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
 		impure->vlu_desc.dsc_length = cs->substring(valueLength, valueAddress,

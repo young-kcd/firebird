@@ -708,7 +708,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 			const USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
 			const USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
 
-			INTL_ASSIGN_TTYPE(&parameter->par_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
+			parameter->par_desc.setTextType(INTL_CS_COLL_TO_TTYPE(toCharSet,
 				(fromCharSet == toCharSet ? INTL_GET_COLLATE(&parameter->par_desc) : 0)));
 
 			parameter->par_desc.dsc_length =

@@ -70,12 +70,6 @@
 
 #define	COLLATE_NONE			0	// No special collation, use codepoint order
 
-#define INTL_ASSIGN_DSC(dsc, cs, coll)   \
-	{ (dsc)->dsc_sub_type = (SSHORT) ((coll) << 8 | (cs)); }
-
-#define INTL_COPY_DSC(dest, src) \
-	{ (dest)->dsc_sub_type = (src)->dsc_sub_type; }
-
 #define INTL_GET_TTYPE(dsc)   \
 	  ((dsc)->dsc_sub_type)
 
@@ -86,7 +80,6 @@
 // Define tests for international data
 
 #define	INTL_TTYPE(desc)		((desc)->dsc_ttype())
-#define	INTL_ASSIGN_TTYPE(desc, value) 	((desc)->dsc_ttype() = (SSHORT)(value))
 
 #define INTERNAL_TTYPE(d)	(((USHORT)((d)->dsc_ttype())) <= ttype_last_internal)
 
@@ -153,7 +146,7 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
 #define INTL_INDEX_TYPE(desc)	INTL_TEXT_TO_INDEX (INTL_RES_TTYPE (desc))
 
 // Maps a Character_set_id & collation_id to a text_type (driver ID)
-#define INTL_CS_COLL_TO_TTYPE(cs, coll)	((USHORT)((coll) << 8 | ((cs) & 0x00FF)))
+#define INTL_CS_COLL_TO_TTYPE(cs, coll)	((USHORT) ((coll) << 8 | ((cs) & 0x00FF)))
 
 #define TTYPE_TO_CHARSET(tt)    ((USHORT)((tt) & 0x00FF))
 #define TTYPE_TO_COLLATION(tt)  ((USHORT)((tt) >> 8))

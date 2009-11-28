@@ -885,35 +885,35 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 	{
 	case blr_text2:
 		desc->dsc_dtype = dtype_text;
-		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
+		desc->setTextType(get_word(sdl));
 		break;
 
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
-		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
+		desc->setTextType(ttype_dynamic);
 		desc->dsc_flags |= DSC_no_subtype;
 		break;
 
 	case blr_cstring2:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
+		desc->setTextType(get_word(sdl));
 		break;
 
 	case blr_cstring:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
+		desc->setTextType(ttype_dynamic);
 		desc->dsc_flags |= DSC_no_subtype;
 		break;
 
 	case blr_varying2:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
+		desc->setTextType(get_word(sdl));
 		desc->dsc_length = sizeof(USHORT);
 		break;
 
 	case blr_varying:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
+		desc->setTextType(ttype_dynamic);
 		desc->dsc_length = sizeof(USHORT);
 		desc->dsc_flags |= DSC_no_subtype;
 		break;

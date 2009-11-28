@@ -3817,7 +3817,7 @@ static dsql_nod* pass1_constant( CompiledStatement* statement, dsql_nod* input)
 			resolved = resolved_collation;
 		}
 
-		INTL_ASSIGN_TTYPE(&constant->nod_desc, resolved->intlsym_ttype);
+		constant->nod_desc.setTextType(resolved->intlsym_ttype);
 	}
 	else
 	{
@@ -10529,7 +10529,7 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 								const USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
 								const USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
 
-								INTL_ASSIGN_TTYPE(&in_node->nod_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
+								in_node->nod_desc.setTextType(INTL_CS_COLL_TO_TTYPE(toCharSet,
 									(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
 
 								in_node->nod_desc.dsc_length =

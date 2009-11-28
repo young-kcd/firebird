@@ -244,6 +244,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 	desc->dsc_flags = 0;
 
 	const USHORT dtype = csb->csb_blr_reader.getByte();
+	USHORT textType;
 
 	switch (dtype)
 	{
@@ -254,42 +255,36 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		break;
 
 	case blr_text:
-		desc->dsc_dtype = dtype_text;
+		desc->makeText(csb->csb_blr_reader.getWord(), ttype_dynamic);
 		desc->dsc_flags |= DSC_no_subtype;
-		desc->dsc_length = csb->csb_blr_reader.getWord();
-		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
 		break;
 
 	case blr_cstring:
 		desc->dsc_dtype = dtype_cstring;
 		desc->dsc_flags |= DSC_no_subtype;
 		desc->dsc_length = csb->csb_blr_reader.getWord();
-		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
+		desc->setTextType(ttype_dynamic);
 		break;
 
 	case blr_varying:
-		desc->dsc_dtype = dtype_varying;
+		desc->makeVarying(csb->csb_blr_reader.getWord(), ttype_dynamic);
 		desc->dsc_flags |= DSC_no_subtype;
-		desc->dsc_length = csb->csb_blr_reader.getWord() + sizeof(USHORT);
-		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
 		break;
 
 	case blr_text2:
-		desc->dsc_dtype = dtype_text;
-		INTL_ASSIGN_TTYPE(desc, csb->csb_blr_reader.getWord());
-		desc->dsc_length = csb->csb_blr_reader.getWord();
+		textType = csb->csb_blr_reader.getWord();
+		desc->makeText(csb->csb_blr_reader.getWord(), textType);
 		break;
 
 	case blr_cstring2:
 		desc->dsc_dtype = dtype_cstring;
-		INTL_ASSIGN_TTYPE(desc, csb->csb_blr_reader.getWord());
+		desc->setTextType(csb->csb_blr_reader.getWord());
 		desc->dsc_length = csb->csb_blr_reader.getWord();
 		break;
 
 	case blr_varying2:
-		desc->dsc_dtype = dtype_varying;
-		INTL_ASSIGN_TTYPE(desc, csb->csb_blr_reader.getWord());
-		desc->dsc_length = csb->csb_blr_reader.getWord() + sizeof(USHORT);
+		textType = csb->csb_blr_reader.getWord();
+		desc->makeVarying(csb->csb_blr_reader.getWord(), textType);
 		break;
 
 	case blr_short:
@@ -390,7 +385,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 					case dtype_cstring:
 					case dtype_text:
 					case dtype_varying:
-						INTL_ASSIGN_TTYPE(desc, ttype);
+						desc->setTextType(ttype);
 						break;
 
 					case dtype_blob:
@@ -451,7 +446,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 					case dtype_cstring:
 					case dtype_text:
 					case dtype_varying:
-						INTL_ASSIGN_TTYPE(desc, ttype);
+						desc->setTextType(ttype);
 						break;
 
 					case dtype_blob:

@@ -727,8 +727,8 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 	temp_desc.dsc_length = temp.getCapacity();
 	temp_desc.dsc_address = temp.getBuffer(temp_desc.dsc_length);
 	vary* vtmp = reinterpret_cast<vary*>(temp_desc.dsc_address);
-	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
+	temp_desc.setTextType(to_interp);
 	CVT_move(desc, &temp_desc);
 	*address = reinterpret_cast<UCHAR*>(vtmp->vary_string);
 
