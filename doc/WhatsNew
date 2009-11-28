@@ -1,4 +1,44 @@
   **************************
+  * v2.5 Release Candidate 2
+  **************************
+
+    * Bugfix CORE-2771
+        Server crashes while backing up a database with GTT 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2768
+        ALTERING OR DROPPING PROCEDURE which has type of domain parameter leads to attempt to delete that domain
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2766
+        Error "page 0 is of wrong type (expected 6, found 1)" is thrown while accessing a non-corrupted table
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2755
+        SIMILAR TO works wrongly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2741
+        Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Improvement CORE-2769
+        Make XNET_CONNECT_TIMEOUT in xnet.h user configurable
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-2754
+        Hint the user about -FIX_FSS_METADATA and -FIX_FSS_DATA when restore fail with malformed string error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
+  **************************
   * v2.5 Release Candidate 1
   **************************
 
