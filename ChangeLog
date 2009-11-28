@@ -1,3 +1,96 @@
+2009-11-28 13:53  dimitr
+
+	* firebird2/src/jrd/: Relation.h (1.13), dfw.epp (1.304), met.epp
+	(1.303):
+
+	An attempt to fix CORE-2766: page 0 is of wrong type (expected 6,
+	found 1).  Mutex is used just to wait on a event with allowed
+	recursive execution.
+
+2009-11-28 13:41  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.147), xnet.h (1.24):
+
+	Fixed CORE-2769: Make XNET_CONNECT_TIMEOUT in xnet.h user
+	configurable.
+
+2009-11-28 09:56  robocop
+
+	* firebird2/src/jrd/: nbak.cpp (1.99), pag.cpp (1.235), pag_proto.h
+	(1.30):
+
+	Cleanup.
+
+2009-11-28 09:04  robocop
+
+	* firebird2/src/: jrd/cch.cpp (1.248), jrd/dmp.cpp (1.49),
+	jrd/jrd.cpp (1.579), jrd/ods.h (1.63), jrd/pag.cpp (1.234),
+	jrd/pag.h (1.27), jrd/pag_proto.h (1.29), jrd/validation.cpp
+	(1.59), utilities/gstat/ppg.cpp (1.40),
+	utilities/rebuild/rebuild.cpp (1.37):
+
+	- Eliminate the LOG page.  - Eliminate the useless bumped
+	transaction - Close the gaps in flags related to indices (btr_* in
+	ods.h) - Close the gaps in header page clumplets types (HDR_* in
+	ods.h) - Close the gaps in header page flags (hdr_* in ods.h)
+	Please do a full rebuild.
+
+2009-11-28 08:38  robocop
+
+	* firebird2/src/jrd/tra.h (1.107):
+
+	Eliminating gaps in flags.
+
+2009-11-28 08:38  robocop
+
+	* firebird2/src/jrd/rse.h (1.69):
+
+	Cleanup and eliminating gaps in flags.
+
+2009-11-28 08:37  robocop
+
+	* firebird2/src/jrd/btn.h (1.25):
+
+	Comments and style.
+
+2009-11-28 08:36  robocop
+
+	* firebird2/src/jrd/: blb.h (1.37), sort.h (1.46):
+
+	Comments, cleanup and eliminating gaps in flags.
+
+2009-11-28 08:29  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.217), cch.h (1.53), flags.h (1.9),
+	req.h (1.102):
+
+	Cleanup.
+
+2009-11-28 02:44  asfernandes
+
+	* firebird2/src/: include/memory_routines.h (1.18), jrd/blb.h
+	(1.36), jrd/blob_filter.h (1.21), jrd/cch_proto.h (1.35),
+	jrd/dyn_def.epp (1.192), jrd/evl.cpp (1.323), jrd/ext.h (1.19),
+	jrd/fil.h (1.21), jrd/ini.epp (1.119), jrd/met.epp (1.302),
+	jrd/obj.h (1.10), jrd/scl.h (1.30), jrd/sdw.h (1.13),
+	jrd/svc_undoc.h (1.7), jrd/extds/IscDS.h (1.19), msgs/load.epp
+	(1.15), utilities/ntrace/TraceConfiguration.cpp (1.17):
+
+	Misc
+
+2009-11-27 18:00  alexpeshkoff
+
+	* firebird2/src/jrd/trig.h (1.31):
+
+	Fixed CORE-2765: Use of RDB$ADMIN role does not provide SYSDBA
+	rights in GRANT/REVOKE
+
+2009-11-27 15:39  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.374):
+
+	Clean it per Claudio request
+
 2009-11-27 09:34  robocop
 
 	* firebird2/src/jrd/: ThreadStart.h (1.7), blb.h (1.35),
