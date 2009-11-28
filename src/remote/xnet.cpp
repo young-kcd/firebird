@@ -1132,9 +1132,11 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		temp << Arg::Gds(isc_net_read_err);
 		DWORD err = 0;
 
+		static const int timeout = Config::getConnectionTimeout() * 1000;
+
 		// waiting for XNET connect lock to release
 
-		err = WaitForSingleObject(xnet_connect_mutex, XNET_CONNECT_TIMEOUT);
+		err = WaitForSingleObject(xnet_connect_mutex, timeout);
 		if (err != WAIT_OBJECT_0)
 		{
 			connect_fini();
@@ -1157,7 +1159,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 
 		// waiting for server response
 
-		err = WaitForSingleObject(xnet_response_event, XNET_CONNECT_TIMEOUT);
+		err = WaitForSingleObject(xnet_response_event, timeout);
 		if (err != WAIT_OBJECT_0)
 		{
 			ReleaseMutex(xnet_connect_mutex);
