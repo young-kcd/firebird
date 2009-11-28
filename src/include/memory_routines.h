@@ -48,8 +48,6 @@ inline void copy_fromptr(T& to, const void* from)
 }
 
 
-
-
 inline USHORT get_short(const UCHAR* p)
 {
 /**************************************

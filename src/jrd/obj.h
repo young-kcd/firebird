@@ -52,4 +52,3 @@ const int obj_package_body		= 19;
 const int obj_type_MAX			= 20;
 
 #endif // JRD_OBJ_H
-

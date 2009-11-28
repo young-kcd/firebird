@@ -333,7 +333,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
-		if (string2.length())
+		if (string2.hasData())
 		{
 			PAD (string2.c_str(), X.RDB$CHARACTER_SET_NAME);
 			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;

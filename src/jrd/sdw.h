@@ -61,4 +61,3 @@ const USHORT SDW_IGNORE	= (SDW_shutdown | SDW_delete);
 } //namespace Jrd
 
 #endif // JRD_SDW_H
-

@@ -121,7 +121,7 @@ void TraceCfgReader::readConfig()
 
 	UCharBuffer collAttributesBuffer;
 	IntlUtil::getDefaultCollationAttributes(collAttributesBuffer, cs);
-	
+
 	texttype tt;
 	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
 		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");

@@ -2941,7 +2941,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 		REL.RDB$FLAGS.NULL = FALSE;
 		REL.RDB$RELATION_TYPE.NULL = FALSE;
 
-
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{

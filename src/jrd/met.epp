@@ -3203,9 +3203,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					 PA.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
 
 	            if (!REQUEST(irq_r_params))
-				{
 					REQUEST(irq_r_params) = request2;
-				}
 
 				const SSHORT pa_collation_id_null = PA.RDB$COLLATION_ID.NULL;
 				const SSHORT pa_collation_id = PA.RDB$COLLATION_ID;
@@ -3261,9 +3259,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			END_FOR;
 
-			if (!REQUEST(irq_r_params)) {
+			if (!REQUEST(irq_r_params))
 				REQUEST(irq_r_params) = request2;
-			}
 
 			if ((paramVector = procedure->prc_output_fields) && (*paramVector)[0])
 			{
@@ -3305,9 +3302,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					WITH PT.RDB$PROCEDURE_ID EQ procedure->prc_id
 
 					if (!REQUEST(irq_p_type))
-					{
 						REQUEST(irq_p_type) = request4;
-					}
 
 					if (!PT.RDB$PROCEDURE_TYPE.NULL)
 						prc_type = (prc_t) PT.RDB$PROCEDURE_TYPE;
@@ -3317,9 +3312,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 				END_FOR;
 
-				if (!REQUEST(irq_p_type)) {
+				if (!REQUEST(irq_p_type))
 					REQUEST(irq_p_type) = request4;
-				}
 
 				procedure->prc_type = prc_type;
 

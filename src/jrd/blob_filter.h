@@ -112,4 +112,3 @@ static const char* const EXCEPTION_MESSAGE = "The blob filter: \t\t%s\n"
 } //namespace Jrd
 
 #endif // JRD_BLF_H
-

@@ -93,4 +93,3 @@ const int isc_info_svc_dump_pool_info	= 77;
 //#define isc_spb_lck_stats		0x08
 
 #endif	// SVC_UNDOC_H
-

@@ -82,4 +82,3 @@ struct irsb_ext
 } //namespace Jrd
 
 #endif // JRD_EXT_H
-

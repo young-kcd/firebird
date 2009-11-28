@@ -34,7 +34,6 @@ struct stuff
 
 static const stuff a_stuff[] =
 {
-
 		ITEM(blr_text, BLR, DTYPE)
 		ITEM(blr_short, BLR, DTYPE)
 		ITEM(blr_long, BLR, DTYPE)
@@ -525,4 +524,3 @@ int main( int argc, char **argv)
 	FINISH;
 	return FINI_OK;
 }
-

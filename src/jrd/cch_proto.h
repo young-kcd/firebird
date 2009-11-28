@@ -174,4 +174,3 @@ const USHORT FLUSH_SYSTEM	= 16;		// flush system transaction only from dirty btr
 const USHORT FLUSH_FINI		= (FLUSH_ALL | FLUSH_RLSE);
 
 #endif // JRD_CCH_PROTO_H
-

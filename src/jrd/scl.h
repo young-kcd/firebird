@@ -151,4 +151,3 @@ const char* const object_package	= "PACKAGE";
 } //namespace Jrd
 
 #endif // JRD_SCL_H
-
