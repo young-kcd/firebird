@@ -294,8 +294,6 @@ blb* BLB_create2(thread_db* tdbb,
 		blob->blb_pg_space_id = DB_PAGE_SPACE;
 	}
 
-	//blob->blb_source_interp = from_charset;
-	//blob->blb_target_interp = to_charset;
 	blob->blb_sub_type = to;
 
 	bool filter_required = false;

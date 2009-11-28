@@ -111,6 +111,7 @@ const USHORT rpb_fragment	= 4;
 const USHORT rpb_incomplete	= 8;
 const USHORT rpb_blob		= 16;
 const USHORT rpb_delta		= 32;		// prior version is a differences record
+// rpb_large = 64 is missing
 const USHORT rpb_damaged	= 128;		// record is busted
 const USHORT rpb_gc_active	= 256;		// garbage collecting dead record version
 const USHORT rpb_uk_modified= 512;		// record key field values are changed
@@ -228,16 +229,10 @@ public:
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
 	ExternalAccessList req_external;	// Access to procedures/triggers to be checked
 	AccessItemList req_access;			// Access items to be checked
-	//vec<jrd_nod*>*	req_variables;	// Vector of variables, if any CVC: UNUSED
 	ResourceList req_resources;			// Resources (relations and indices)
 	jrd_nod*	req_message;			// Current message for send/receive
 	jrd_prc*	req_procedure;			// procedure, if any
 	Firebird::MetaName	req_trg_name;	// name of request (trigger), if any
-	//USHORT		req_length;			// message length for send/receive
-	//USHORT		req_nmsgs;			// number of message types
-	//USHORT		req_mmsg;			// highest message type
-	//USHORT		req_msend;			// longest send message
-	//USHORT		req_mreceive;		// longest receive message
 
 	ULONG		req_records_selected;	// count of records selected by request (meeting selection criteria)
 	ULONG		req_records_inserted;	// count of records inserted by request
