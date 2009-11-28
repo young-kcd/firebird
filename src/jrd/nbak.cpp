@@ -704,7 +704,7 @@ void BackupManager::setDifference(thread_db* tdbb, const char* filename)
 	}
 	else
 	{
-		PAG_delete_clump_entry(tdbb, HEADER_PAGE, Ods::HDR_difference_file);
+		PAG_delete_clump_entry(tdbb, Ods::HDR_difference_file);
 		generateFilename();
 	}
 }

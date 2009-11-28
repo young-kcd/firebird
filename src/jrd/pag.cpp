@@ -108,9 +108,7 @@ using namespace Jrd;
 using namespace Ods;
 using namespace Firebird;
 
-static void add_clump(thread_db* tdbb,
-				   SLONG page_num, USHORT type,
-				   USHORT len, const UCHAR* entry, ClumpOper mode); // bool must_write
+static void add_clump(thread_db* tdbb, USHORT type, USHORT len, const UCHAR* entry, ClumpOper mode);
 static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID);
 static int blocking_ast_attachment(void*);
 static void find_clump_space(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, const UCHAR*);
@@ -128,9 +126,7 @@ static const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB
 
 // CVC: Since nobody checks the result from this function (strange!), I changed
 // bool to void as the return type but left the result returned as comment.
-static void add_clump(thread_db* tdbb,
-				   SLONG page_num, USHORT type,
-				   USHORT len, const UCHAR* entry, ClumpOper mode) // bool must_write
+static void add_clump(thread_db* tdbb, USHORT type, USHORT len, const UCHAR* entry, ClumpOper mode)
 {
 /***********************************************
  *
@@ -155,10 +151,7 @@ static void add_clump(thread_db* tdbb,
 
 	err_post_if_database_is_readonly(dbb);
 
-	if (page_num != HEADER_PAGE)
-		ERR_post(Arg::Gds(isc_page_type_err));
-
-	WIN window(DB_PAGE_SPACE, page_num);
+	WIN window(DB_PAGE_SPACE, HEADER_PAGE);
 	pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	header_page* header = (header_page*) page;
 	USHORT* end_addr = &header->hdr_end;
@@ -219,7 +212,7 @@ static void add_clump(thread_db* tdbb,
 
 		// refetch the page
 
-		window.win_page = page_num;
+		window.win_page = HEADER_PAGE;
 		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		header = (header_page*) page;
 		end_addr = &header->hdr_end;
@@ -331,10 +324,9 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 	}
 	else
 	{
-		add_clump(tdbb, HEADER_PAGE, HDR_file, strlen(file_name),
-					  reinterpret_cast<const UCHAR*>(file_name), CLUMP_REPLACE); //, true;
-		add_clump(tdbb, HEADER_PAGE, HDR_last_page, sizeof(SLONG),
-					  (UCHAR*) &start, CLUMP_REPLACE); //, true
+		add_clump(tdbb, HDR_file, strlen(file_name),
+					  reinterpret_cast<const UCHAR*>(file_name), CLUMP_REPLACE);
+		add_clump(tdbb, HDR_last_page, sizeof(SLONG), (UCHAR*) &start, CLUMP_REPLACE);
 	}
 
 	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
@@ -759,7 +751,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 }
 
 
-bool PAG_delete_clump_entry(thread_db* tdbb, SLONG page_num, USHORT type)
+bool PAG_delete_clump_entry(thread_db* tdbb, USHORT type)
 {
 /***********************************************
  *
@@ -777,10 +769,7 @@ bool PAG_delete_clump_entry(thread_db* tdbb, SLONG page_num, USHORT type)
 
 	err_post_if_database_is_readonly(dbb);
 
-	if (page_num != HEADER_PAGE)
-		ERR_post(Arg::Gds(isc_page_type_err));
-
-	WIN window(DB_PAGE_SPACE, page_num);
+	WIN window(DB_PAGE_SPACE, HEADER_PAGE);
 
 	pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
@@ -1034,7 +1023,7 @@ void PAG_header(thread_db* tdbb, bool info)
 										  Arg::Str(attachment->att_filename));
 	}
 
-	const bool useFSCache = dbb->dbb_bcb->bcb_count < Config::getFileSystemCacheThreshold();
+	const bool useFSCache = dbb->dbb_bcb->bcb_count < ULONG(Config::getFileSystemCacheThreshold());
 
 	if ((header->hdr_flags & hdr_force_write) || !useFSCache)
 	{
@@ -1691,8 +1680,7 @@ void PAG_sweep_interval(thread_db* tdbb, SLONG interval)
  **************************************/
 
  	SET_TDBB(tdbb);
-	add_clump(tdbb, HEADER_PAGE, HDR_sweep_interval, sizeof(SLONG),
-				  (UCHAR*) &interval, CLUMP_REPLACE); //, true
+	add_clump(tdbb, HDR_sweep_interval, sizeof(SLONG), (UCHAR*) &interval, CLUMP_REPLACE);
 }
 
 
