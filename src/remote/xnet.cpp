@@ -1108,7 +1108,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 	}
 
-	const int timeout = Config::getConnectionTimeout() * 1000;
+	static const int timeout = Config::getConnectionTimeout() * 1000;
 
 	// waiting for XNET connect lock to release
 
