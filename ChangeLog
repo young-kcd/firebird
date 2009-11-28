@@ -1,3 +1,22 @@
+2009-11-28 14:10  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.4):
+
+	Update.
+
+2009-11-28 14:07  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.7):
+
+	Update.
+
+2009-11-28 13:41  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.144.2.1), xnet.h (1.23.2.1):
+
+	Fixed CORE-2769: Make XNET_CONNECT_TIMEOUT in xnet.h user
+	configurable.
+
 2009-11-27 14:27  dimitr
 
 	* firebird2/src/jrd/: dfw.epp (1.283.2.1), Relation.h (1.12.2.1),
