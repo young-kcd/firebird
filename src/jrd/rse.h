@@ -251,20 +251,6 @@ struct irsb_virtual
 	RecordBuffer* irsb_record_buffer;
 };
 
-/* CVC: Unused as of Nov-2005.
-struct irsb_sim
-{
-	ULONG irsb_flags;
-	USHORT irsb_sim_rid;				// next relation id
-	USHORT irsb_sim_fid;				// next field id
-	jrd_req *irsb_sim_req1;				// request handle #1
-	jrd_req *irsb_sim_req2;				// request handle #2
-};
-
-const ULONG irsb_sim_alias = 32;		// duplicate relation but w/o user name
-const ULONG irsb_sim_eos = 64;			// encountered end of stream
-const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
-*/
 
 // impure area format for navigational rsb type,
 // which holds information used to get back to
@@ -336,8 +322,7 @@ const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
 // bits for the smb_flags field
 
 const USHORT SMB_project = 1;		// sort is really a project
-//const USHORT SMB_tag = 2;			// beast is a tag sort. What is this?
-const USHORT SMB_unique_sort = 4;	// sorts using unique key - for distinct and group by
+const USHORT SMB_unique_sort = 2;	// sorts using unique key - for distinct and group by
 
 
 // Blocks used to compute optimal join order:
@@ -443,7 +428,7 @@ const USHORT opt_conjunct_matched = 2;		// conjunct matches an index segment
 class River : public pool_alloc_rpt<SCHAR, type_riv>
 {
 public:
-	RecordSource* riv_rsb;				// record source block for river
+	RecordSource* riv_rsb;		// record source block for river
 	USHORT riv_number;			// temporary number for river
 	UCHAR riv_count;			// count of streams
 	UCHAR riv_streams[1];		// actual streams
