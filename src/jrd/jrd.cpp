@@ -2110,7 +2110,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	dbb->dbb_backup_manager->dbCreating = true;
 	PAG_format_header(tdbb);
 	INI_init2(tdbb);
-	PAG_format_log(tdbb);
 	PAG_format_pip(tdbb, *pageSpace);
 
 	if (options.dpb_set_page_buffers)

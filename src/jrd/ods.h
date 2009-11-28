@@ -183,13 +183,13 @@ const SCHAR pag_root			= 6;		// Index root page
 const SCHAR pag_index			= 7;		// Index (B-tree) page
 const SCHAR pag_blob			= 8;		// Blob data page
 const SCHAR pag_ids				= 9;		// Gen-ids
-const SCHAR pag_log				= 10;		// Write ahead log information DEPRECATED
-const SCHAR pag_max				= 10;		// Max page type
+const SCHAR pag_max				= 9;		// Max page type
 
 // Pre-defined page numbers
 
 const SLONG HEADER_PAGE		= 0;
-const SLONG LOG_PAGE		= 2;
+const SLONG PIP_PAGE		= 1;
+
 
 // Page size limits
 
@@ -294,11 +294,10 @@ struct IndexJumpInfo
 
 // pag_flags
 const UCHAR btr_dont_gc				= 1;	// Don't garbage-collect this page
-//const UCHAR btr_not_propagated	= 2;	// page is not propagated upward
-const UCHAR btr_descending			= 8;	// Page/bucket is part of a descending index
-const UCHAR btr_all_record_number	= 16;	// Non-leaf-nodes will contain record number information
-const UCHAR btr_large_keys			= 32;	// AB: 2003-index-structure enhancement
-const UCHAR btr_jump_info			= 64;	// AB: 2003-index-structure enhancement
+const UCHAR btr_descending			= 2;	// Page/bucket is part of a descending index
+const UCHAR btr_all_record_number	= 4;	// Non-leaf-nodes will contain record number information
+const UCHAR btr_large_keys			= 8;	// AB: 2003-index-structure enhancement
+const UCHAR btr_jump_info			= 16;	// AB: 2003-index-structure enhancement
 
 const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
 
@@ -390,7 +389,6 @@ struct header_page
 	USHORT hdr_ods_minor;			// Update version of ODS
 	USHORT hdr_end;					// offset of HDR_end in page
 	ULONG hdr_page_buffers;			// Page buffers for database cache
-	SLONG hdr_bumped_transaction;	// Bumped transaction id for log optimization
 	SLONG hdr_oldest_snapshot;		// Oldest snapshot of active transactions
 	SLONG hdr_backup_pages; 		// The amount of pages in files locked for backup
 	SLONG hdr_misc[3];				// Stuff to be named later
@@ -407,32 +405,22 @@ struct header_page
 
 const UCHAR HDR_end					= 0;
 const UCHAR HDR_root_file_name		= 1;	// Original name of root file
-//const UCHAR HDR_journal_server	= 2;	// Name of journal server
-const UCHAR HDR_file				= 3;	// Secondary file
-const UCHAR HDR_last_page			= 4;	// Last logical page number of file
-//const UCHAR HDR_unlicensed		= 5;	// Count of unlicensed activity
-const UCHAR HDR_sweep_interval		= 6;	// Transactions between sweeps
-//const UCHAR HDR_log_name			= 7;	// replay log name
-//const UCHAR HDR_journal_file		= 8;	// Intermediate journal file
-const UCHAR HDR_password_file_key	= 9;	// Key to compare to password db
-//const UCHAR HDR_backup_info		= 10;	// WAL backup information
-//const UCHAR HDR_cache_file		= 11;	// Shared cache file
-const UCHAR HDR_difference_file		= 12;	// Delta file that is used during backup lock
-const UCHAR HDR_backup_guid			= 13;	// UID generated on each switch into backup mode
-const UCHAR HDR_max					= 14;	// Maximum HDR_clump value
+const UCHAR HDR_file				= 2;	// Secondary file
+const UCHAR HDR_last_page			= 3;	// Last logical page number of file
+const UCHAR HDR_sweep_interval		= 4;	// Transactions between sweeps
+const UCHAR HDR_password_file_key	= 5;	// Key to compare to password db
+const UCHAR HDR_difference_file		= 6;	// Delta file that is used during backup lock
+const UCHAR HDR_backup_guid			= 7;	// UID generated on each switch into backup mode
+const UCHAR HDR_max					= 8;	// Maximum HDR_clump value
 
 // Header page flags
 
 const USHORT hdr_active_shadow		= 0x1;		// 1    file is an active shadow file
 const USHORT hdr_force_write		= 0x2;		// 2    database is forced write
-//const USHORT hdr_short_journal	= 0x4;		// 4    short-term journalling
-//const USHORT hdr_long_journal		= 0x8;		// 8    long-term journalling
-const USHORT hdr_no_checksums		= 0x10;		// 16   don't calculate checksums
-const USHORT hdr_no_reserve			= 0x20;		// 32   don't reserve space for versions
-//const USHORT hdr_disable_cache	= 0x40;		// 64   disable using shared cache file
-//const USHORT hdr_shutdown			= 0x80;		// 128  database is shutdown
-const USHORT hdr_SQL_dialect_3		= 0x100;	// 256  database SQL dialect 3
-const USHORT hdr_read_only			= 0x200;	// 512  Database in ReadOnly. If not set, DB is RW
+const USHORT hdr_no_checksums		= 0x4;		// 4   don't calculate checksums
+const USHORT hdr_no_reserve			= 0x8;		// 8   don't reserve space for versions
+const USHORT hdr_SQL_dialect_3		= 0x10;		// 16  database SQL dialect 3
+const USHORT hdr_read_only			= 0x20;		// 32  Database in ReadOnly. If not set, DB is RW
 // backup status mask - see bit values in nbak.h
 const USHORT hdr_backup_mask		= 0xC00;
 const USHORT hdr_shutdown_mask		= 0x1080;
@@ -543,6 +531,8 @@ struct blh
 #define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
 // rhd_flags, rhdf_flags and blh_flags
 
+// record_param flags in req.h must be an exact replica of ODS record header flags
+
 const USHORT rhd_deleted		= 1;		// record is logically deleted
 const USHORT rhd_chain			= 2;		// record is an old version
 const USHORT rhd_fragment		= 4;		// record is a fragment
@@ -556,53 +546,6 @@ const USHORT rhd_gc_active		= 256;		// garbage collecting dead record version
 const USHORT rhd_uk_modified	= 512;		// record key field values are changed
 
 
-// Log page
-
-struct ctrl_pt
-{
-	SLONG cp_seqno;
-	SLONG cp_offset;
-	SLONG cp_p_offset;
-	SSHORT cp_fn_length;
-};
-
-struct log_info_page
-{
-	pag log_header;
-	SLONG log_flags;			// flags, OBSOLETE
-	ctrl_pt log_cp_1;			// control point 1
-	ctrl_pt log_cp_2;			// control point 2
-	ctrl_pt log_file;			// current file
-	SLONG log_next_page;		// Next log page
-	SLONG log_mod_tip;			// tip of modify transaction
-	SLONG log_mod_tid;			// transaction id of modify process
-	SLONG log_creation_date[2];	// Date/time of log creation
-	SLONG log_free[4];			// some extra space for later use
-	USHORT log_end;				// similar to hdr_end
-	UCHAR log_data[1];
-};
-
-#define LIP_SIZE	OFFSETA (Ods::log_info_page*, log_data)
-
-// additions for write ahead log, almost obsolete.
-
-//const int CTRL_FILE_LEN			= 255;	// Pre allocated size of file name
-//const USHORT CLUMP_ADD			= 0;
-//const USHORT CLUMP_REPLACE		= 1;
-//const USHORT CLUMP_REPLACE_ONLY	= 2;
-
-// Log Clumplet types
-
-const UCHAR LOG_end				= HDR_end;
-//const int LOG_ctrl_file1		= 1;	// file name of 2nd last control pt
-//const int LOG_ctrl_file2		= 2;	// file name of last ctrl pt
-//const int LOG_logfile			= 3;	// Primary WAL file name
-//const int LOG_backup_info		= 4;	// Journal backup directory
-//const int LOG_chkpt_len		= 5;	// checkpoint length
-//const int LOG_num_bufs		= 6;	// Number of log buffers
-//const int LOG_bufsize			= 7;	// Buffer size
-//const int LOG_grp_cmt_wait	= 8;	// Group commit wait time
-//const int LOG_max				= 8;	// Maximum LOG_clump value
 
 // This (not exact) copy of class DSC is used to store descriptors on disk.
 // Hopefully its binary layout is common for 32/64 bit CPUs.

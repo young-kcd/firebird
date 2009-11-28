@@ -113,8 +113,8 @@ static void add_clump(thread_db* tdbb,
 				   USHORT len, const UCHAR* entry, ClumpOper mode); // bool must_write
 static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID);
 static int blocking_ast_attachment(void*);
-static void find_clump_space(thread_db* tdbb, SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*);
-static bool find_type(thread_db* tdbb, SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**, const UCHAR**);
+static void find_clump_space(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, const UCHAR*);
+static bool find_type(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, UCHAR**, const UCHAR**);
 
 inline void err_post_if_database_is_readonly(const Database* dbb)
 {
@@ -155,30 +155,19 @@ static void add_clump(thread_db* tdbb,
 
 	err_post_if_database_is_readonly(dbb);
 
-	pag* page;
-	header_page* header = 0;
-	log_info_page* logp = 0;
-	USHORT* end_addr;
+	if (page_num != HEADER_PAGE)
+		ERR_post(Arg::Gds(isc_page_type_err));
+
 	WIN window(DB_PAGE_SPACE, page_num);
-	if (page_num == HEADER_PAGE)
-	{
-		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-		header = (header_page*) page;
-		end_addr = &header->hdr_end;
-	}
-	else
-	{
-		page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
-		logp = (log_info_page*) page;
-		end_addr = &logp->log_end;
-	}
+	pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	header_page* header = (header_page*) page;
+	USHORT* end_addr = &header->hdr_end;
 
 	UCHAR* entry_p;
 	const UCHAR* clump_end;
 	while (mode != CLUMP_ADD)
 	{
-		const bool found =
-			find_type(tdbb, page_num, &window, &page, LCK_write, type, &entry_p, &clump_end);
+		const bool found = find_type(tdbb, &window, &page, LCK_write, type, &entry_p, &clump_end);
 
 		// If we did'nt find it and it is REPLACE_ONLY, return
 
@@ -231,24 +220,15 @@ static void add_clump(thread_db* tdbb,
 		// refetch the page
 
 		window.win_page = page_num;
-		if (page_num == HEADER_PAGE)
-		{
-			page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-			header = (header_page*) page;
-			end_addr = &header->hdr_end;
-		}
-		else
-		{
-			page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
-			logp = (log_info_page*) page;
-			end_addr = &logp->log_end;
-		}
+		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		header = (header_page*) page;
+		end_addr = &header->hdr_end;
 		break;
 	}
 
 	// Add the entry
 
-	find_clump_space(tdbb, page_num, &window, &page, type, len, entry);
+	find_clump_space(tdbb, &window, &page, type, len, entry);
 
 	CCH_RELEASE(tdbb, &window);
 	return; // true;
@@ -797,36 +777,24 @@ bool PAG_delete_clump_entry(thread_db* tdbb, SLONG page_num, USHORT type)
 
 	err_post_if_database_is_readonly(dbb);
 
+	if (page_num != HEADER_PAGE)
+		ERR_post(Arg::Gds(isc_page_type_err));
+
 	WIN window(DB_PAGE_SPACE, page_num);
 
-	pag* page;
-	if (page_num == HEADER_PAGE)
-		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-	else
-		page = CCH_FETCH(tdbb, &window, LCK_write, pag_log);
+	pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 	UCHAR* entry_p;
 	const UCHAR* clump_end;
-	if (!find_type(tdbb, page_num, &window, &page, LCK_write, type, &entry_p, &clump_end))
+	if (!find_type(tdbb, &window, &page, LCK_write, type, &entry_p, &clump_end))
 	{
 		CCH_RELEASE(tdbb, &window);
 		return false;
 	}
 	CCH_MARK(tdbb, &window);
 
-	header_page* header = 0;
-	log_info_page* logp = 0;
-	USHORT* end_addr;
-	if (page_num == HEADER_PAGE)
-	{
-		header = (header_page*) page;
-		end_addr = &header->hdr_end;
-	}
-	else
-	{
-		logp = (log_info_page*) page;
-		end_addr = &logp->log_end;
-	}
+	header_page* header = (header_page*) page;
+	USHORT* end_addr = &header->hdr_end;
 
 	*end_addr -= (2 + entry_p[1]);
 
@@ -871,7 +839,6 @@ void PAG_format_header(thread_db* tdbb)
 	DbImplementation::current.store(header);
 	header->hdr_ods_minor = ODS_CURRENT;
 	header->hdr_oldest_transaction = 1;
-	header->hdr_bumped_transaction = 1;
 	header->hdr_end = HDR_SIZE;
 	header->hdr_data[0] = HDR_end;
 	header->hdr_flags |= hdr_force_write;
@@ -882,31 +849,6 @@ void PAG_format_header(thread_db* tdbb)
 
 	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
-
-	CCH_RELEASE(tdbb, &window);
-}
-
-
-// CVC: This function is mostly obsolete. Ann requested to keep it and the code that calls it.
-// We won't read the log, anyway.
-void PAG_format_log(thread_db* tdbb)
-{
-/***********************************************
- *
- *	P A G _ f o r m a t _ l o g
- *
- ***********************************************
- *
- * Functional description
- *	Initialize log page.
- *	Set all parameters to 0
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	WIN window(LOG_PAGE_NUMBER);
-	log_info_page* logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
-	logp->log_header.pag_type = pag_log;
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -932,7 +874,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 
 	// Initialize Page Inventory Page
 
-	WIN window(pageSpace.pageSpaceID, 1);
+	WIN window(pageSpace.pageSpaceID, PIP_PAGE);
 	pageSpace.ppFirst = 1;
 	page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
 
@@ -974,15 +916,14 @@ bool PAG_get_clump(thread_db* tdbb, SLONG page_num, USHORT type, USHORT* inout_l
 
 	WIN window(DB_PAGE_SPACE, page_num);
 
-	pag* page;
-	if (page_num == HEADER_PAGE)
-		page = CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-	else
-		page = CCH_FETCH(tdbb, &window, LCK_read, pag_log);
+	if (page_num != HEADER_PAGE)
+		ERR_post(Arg::Gds(isc_page_type_err));
+
+	pag* page = CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 
 	UCHAR* entry_p;
 	const UCHAR* dummy;
-	if (!find_type(tdbb, page_num, &window, &page, LCK_read, type, &entry_p, &dummy))
+	if (!find_type(tdbb, &window, &page, LCK_read, type, &entry_p, &dummy))
 	{
 		CCH_RELEASE(tdbb, &window);
 		*inout_len = 0;
@@ -1785,7 +1726,6 @@ static int blocking_ast_attachment(void* ast_object)
 
 
 static void find_clump_space(thread_db* tdbb,
-							 SLONG page_num,
 							 WIN* window,
 							 PAG* ppage,
 							 USHORT type,
@@ -1810,30 +1750,14 @@ static void find_clump_space(thread_db* tdbb,
 
 	pag* page = *ppage;
 	header_page* header = 0; // used after the loop
-	log_info_page* logp = 0; // used after the loop
 
 	while (true)
 	{
-		SLONG next_page, free_space;
-		USHORT* end_addr;
-		UCHAR* p;
-
-		if (page_num == HEADER_PAGE)
-		{
-			header = (header_page*) page;
-			next_page = header->hdr_next_page;
-			free_space = dbb->dbb_page_size - header->hdr_end;
-			end_addr = &header->hdr_end;
-			p = (UCHAR*) header + header->hdr_end;
-		}
-		else
-		{
-			logp = (log_info_page*) page;
-			next_page = logp->log_next_page;
-			free_space = dbb->dbb_page_size - logp->log_end;
-			end_addr = &logp->log_end;
-			p = (UCHAR*) logp + logp->log_end;
-		}
+		header = (header_page*) page;
+		const SLONG next_page = header->hdr_next_page;
+		const SLONG free_space = dbb->dbb_page_size - header->hdr_end;
+		USHORT* const end_addr = &header->hdr_end;
+		UCHAR* p = (UCHAR*) header + header->hdr_end;
 
 		if (free_space > (2 + len))
 		{
@@ -1864,10 +1788,7 @@ static void find_clump_space(thread_db* tdbb,
 
 		// Follow chain of header pages
 
-		if (page_num == HEADER_PAGE)
-			*ppage = page = CCH_HANDOFF(tdbb, window, next_page, LCK_write, pag_header);
-		else
-			*ppage = page = CCH_HANDOFF(tdbb, window, next_page, LCK_write, pag_log);
+		*ppage = page = CCH_HANDOFF(tdbb, window, next_page, LCK_write, pag_header);
 	}
 
 	WIN new_window(DB_PAGE_SPACE, -1);
@@ -1879,32 +1800,14 @@ static void find_clump_space(thread_db* tdbb,
 	//	CCH_MARK(tdbb, &new_window);
 
 
-	header_page* new_header = 0;
-	log_info_page* new_logp = 0;
-	SLONG next_page;
-	USHORT* end_addr;
-	UCHAR* p;
-	if (page_num == HEADER_PAGE)
-	{
-		new_header = (header_page*) new_page;
-		new_header->hdr_header.pag_type = pag_header;
-		new_header->hdr_end = HDR_SIZE;
-		new_header->hdr_page_size = dbb->dbb_page_size;
-		new_header->hdr_data[0] = HDR_end;
-		next_page = new_window.win_page.getPageNum();
-		end_addr = &new_header->hdr_end;
-		p = new_header->hdr_data;
-	}
-	else
-	{
-		new_logp = (log_info_page*) new_page;
-		new_logp->log_header.pag_type = pag_log;
-		new_logp->log_data[0] = LOG_end;
-		new_logp->log_end = LIP_SIZE;
-		next_page = new_window.win_page.getPageNum();
-		end_addr = &new_logp->log_end;
-		p = new_logp->log_data;
-	}
+	header_page* const new_header = (header_page*) new_page;
+	new_header->hdr_header.pag_type = pag_header;
+	new_header->hdr_end = HDR_SIZE;
+	new_header->hdr_page_size = dbb->dbb_page_size;
+	new_header->hdr_data[0] = HDR_end;
+	const SLONG next_page = new_window.win_page.getPageNum();
+	USHORT* const end_addr = &new_header->hdr_end;
+	UCHAR* p = new_header->hdr_data;
 
 	fb_assert(type <= MAX_UCHAR);
 	fb_assert(len <= MAX_UCHAR);
@@ -1926,15 +1829,11 @@ static void find_clump_space(thread_db* tdbb,
 
 	CCH_MARK(tdbb, window);
 
-	if (page_num == HEADER_PAGE)
-		header->hdr_next_page = next_page;
-	else
-		logp->log_next_page = next_page;
+	header->hdr_next_page = next_page;
 }
 
 
 static bool find_type(thread_db* tdbb,
-					  SLONG page_num,
 					  WIN* window,
 					  PAG* ppage,
 					  USHORT lock,
@@ -1960,22 +1859,9 @@ static bool find_type(thread_db* tdbb,
 
 	while (true)
 	{
-		header_page* header = 0;
-		log_info_page* logp = 0;
-		UCHAR* p;
-		SLONG next_page;
-		if (page_num == HEADER_PAGE)
-		{
-			header = (header_page*) (*ppage);
-			p = header->hdr_data;
-			next_page = header->hdr_next_page;
-		}
-		else
-		{
-			logp = (log_info_page*) (*ppage);
-			p = logp->log_data;
-			next_page = logp->log_next_page;
-		}
+		header_page* header = (header_page*) (*ppage);
+		UCHAR* p = header->hdr_data;
+		const SLONG next_page = header->hdr_next_page;
 
 		UCHAR* q = 0;
 		for (; (*p != HDR_end); p += 2 + p[1])
@@ -1994,14 +1880,7 @@ static bool find_type(thread_db* tdbb,
 		// Follow chain of pages
 
 		if (next_page)
-		{
-			if (page_num == HEADER_PAGE) {
-				*ppage = CCH_HANDOFF(tdbb, window, next_page, lock, pag_header);
-			}
-			else {
-				*ppage = CCH_HANDOFF(tdbb, window, next_page, lock, pag_log);
-			}
-		}
+			*ppage = CCH_HANDOFF(tdbb, window, next_page, lock, pag_header);
 		else
 			return false;
 	}

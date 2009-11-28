@@ -148,7 +148,7 @@ IV. PHASES OF VALIDATION
          define pag_index         7    // Index (B-tree) page
          define pag_blob          8    // Blob data page
          define pag_ids           9    // Gen-ids
-         define pag_log           10   // Write ahead log page: 4.0 only
+         define pag_log           10   // OBSOLETE. Write ahead log page: 4.0 only
 
       2. Checksum
 
@@ -662,7 +662,6 @@ static RTN walk_data_page(thread_db*, vdr*, jrd_rel*, SLONG, SLONG);
 static void walk_generators(thread_db*, vdr*);
 static void walk_header(thread_db*, vdr*, SLONG);
 static RTN walk_index(thread_db*, vdr*, jrd_rel*, index_root_page&, USHORT);
-static void walk_log(thread_db*, vdr*);
 static void walk_pip(thread_db*, vdr*);
 static RTN walk_pointer_page(thread_db*, vdr*, jrd_rel*, int);
 static RTN walk_record(thread_db*, vdr*, jrd_rel*, rhd*, USHORT, SLONG, bool);
@@ -1154,7 +1153,6 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	control->vdr_max_transaction = page->hdr_next_transaction;
 
 	walk_header(tdbb, control, page->hdr_next_page);
-	walk_log(tdbb, control);
 	walk_pip(tdbb, control);
 	walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
@@ -1729,32 +1727,6 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	}
 
 	return rtn_ok;
-}
-
-static void walk_log(thread_db* tdbb, vdr* control)
-{
-/**************************************
- *
- *	w a l k _ l o g
- *
- **************************************
- *
- * Functional description
- *	Walk the log and overflow pages
- *
- **************************************/
-	log_info_page* page = 0;
-	SLONG page_num = LOG_PAGE;
-
-	SET_TDBB(tdbb);
-
-	while (page_num)
-	{
-		WIN window(DB_PAGE_SPACE, -1);
-		fetch_page(tdbb, control, page_num, pag_log, &window, &page);
-		page_num = page->log_next_page;
-		CCH_RELEASE(tdbb, &window);
-	}
 }
 
 static void walk_pip(thread_db* tdbb, vdr* control)

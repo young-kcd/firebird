@@ -307,9 +307,9 @@ void DMP_fetched_page(const pag* page, ULONG number, ULONG sequence, USHORT page
 		fprintf(dbg_file, "GEN-IDS PAGE\n");
 		break;
 
-	case pag_log:
-		fprintf(dbg_file, "WRITE-AHEAD LOG INFO PAGE\n");
-		break;
+	//case pag_log:
+	//	fprintf(dbg_file, "WRITE-AHEAD LOG INFO PAGE\n");
+	//	break;
 
 	default:
 		fprintf(dbg_file, "*** Page %ld (type %d) is undefined ***", number, page->pag_type);
@@ -675,10 +675,9 @@ static void dmp_header(const header_page* page)
 			   time.tm_hour, time.tm_min, time.tm_sec);
 
 	fprintf(dbg_file,
-			   "\tOldest trans %ld, oldest_active %ld, oldest_snapshot %ld, next trans %ld, bumped trans %ld\n",
+			   "\tOldest trans %ld, oldest_active %ld, oldest_snapshot %ld, next trans %ld\n",
 			   page->hdr_oldest_transaction, page->hdr_oldest_active,
-			   page->hdr_oldest_snapshot, page->hdr_next_transaction,
-			   page->hdr_bumped_transaction);
+			   page->hdr_oldest_snapshot, page->hdr_next_transaction);
 
 	fprintf(dbg_file,
 			   "\tfile sequence # %d, flags %d, attachment %ld\n",

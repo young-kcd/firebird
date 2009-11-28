@@ -72,13 +72,12 @@ void PPG_print_header(const header_page* header, SLONG page,
 		uSvc->printf("\tOldest active\t\t%"SLONGFORMAT"\n", header->hdr_oldest_active);
 		uSvc->printf("\tOldest snapshot\t\t%"SLONGFORMAT"\n", header->hdr_oldest_snapshot);
 		uSvc->printf("\tNext transaction\t%"SLONGFORMAT"\n", header->hdr_next_transaction);
-		uSvc->printf("\tBumped transaction\t%"SLONGFORMAT"\n", header->hdr_bumped_transaction);
 		uSvc->printf("\tSequence number\t\t%d\n", header->hdr_sequence);
 
 		uSvc->printf("\tNext attachment ID\t%"SLONGFORMAT"\n", header->hdr_attachment_id);
 
 		Firebird::DbImplementation imp(header);
-		uSvc->printf("\tImplementation \tHW=%s %s-endian OS=%s CC=%s\n",
+		uSvc->printf("\tImplementation\t\tHW=%s %s-endian OS=%s CC=%s\n",
 							 imp.cpu(), imp.endianess(), imp.os(), imp.cc());
 		uSvc->printf("\tShadow count\t\t%"SLONGFORMAT"\n", header->hdr_shadow_count);
 		uSvc->printf("\tPage buffers\t\t%"ULONGFORMAT"\n", header->hdr_page_buffers);

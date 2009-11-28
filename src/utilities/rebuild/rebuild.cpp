@@ -978,7 +978,6 @@ static void print_db_header( FILE* file, const header_page* header)
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
 	fprintf(file, "    Cache buffers\t\t%ld\n", header->hdr_cache_buffers);
-	fprintf(file, "    Bumped transaction\t\t%ld\n", header->hdr_bumped_transaction);
 
 	fprintf(file, "\n    Variable header data:\n");
 

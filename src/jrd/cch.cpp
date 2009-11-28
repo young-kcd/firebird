@@ -1932,7 +1932,7 @@ void CCH_must_write(WIN* window)
 
 void CCH_precedence(thread_db* tdbb, WIN* window, SLONG pageNum)
 {
-	const USHORT pageSpaceID = pageNum > LOG_PAGE ?
+	const USHORT pageSpaceID = pageNum > PIP_PAGE ?
 		window->win_page.getPageSpaceID() : DB_PAGE_SPACE;
 
 	CCH_precedence(tdbb, window, PageNumber(pageSpaceID, pageNum));

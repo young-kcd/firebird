@@ -272,7 +272,6 @@ private:
 
 const PageNumber ZERO_PAGE_NUMBER(0, 0);
 const PageNumber HEADER_PAGE_NUMBER(DB_PAGE_SPACE, HEADER_PAGE);
-const PageNumber LOG_PAGE_NUMBER(DB_PAGE_SPACE, LOG_PAGE);
 
 } //namespace Jrd
 
