@@ -1960,46 +1960,6 @@ C --
       PARAMETER (GDS__gsec_db_admin_pw_specified       = 336724048)
       INTEGER*4 GDS__gsec_sql_role_specified         
       PARAMETER (GDS__gsec_sql_role_specified          = 336724049)
-      INTEGER*4 GDS__license_no_file                 
-      PARAMETER (GDS__license_no_file                  = 336789504)
-      INTEGER*4 GDS__license_op_specified            
-      PARAMETER (GDS__license_op_specified             = 336789523)
-      INTEGER*4 GDS__license_op_missing              
-      PARAMETER (GDS__license_op_missing               = 336789524)
-      INTEGER*4 GDS__license_inv_switch              
-      PARAMETER (GDS__license_inv_switch               = 336789525)
-      INTEGER*4 GDS__license_inv_switch_combo        
-      PARAMETER (GDS__license_inv_switch_combo         = 336789526)
-      INTEGER*4 GDS__license_inv_op_combo            
-      PARAMETER (GDS__license_inv_op_combo             = 336789527)
-      INTEGER*4 GDS__license_amb_switch              
-      PARAMETER (GDS__license_amb_switch               = 336789528)
-      INTEGER*4 GDS__license_inv_parameter           
-      PARAMETER (GDS__license_inv_parameter            = 336789529)
-      INTEGER*4 GDS__license_param_specified         
-      PARAMETER (GDS__license_param_specified          = 336789530)
-      INTEGER*4 GDS__license_param_req               
-      PARAMETER (GDS__license_param_req                = 336789531)
-      INTEGER*4 GDS__license_syntx_error             
-      PARAMETER (GDS__license_syntx_error              = 336789532)
-      INTEGER*4 GDS__license_dup_id                  
-      PARAMETER (GDS__license_dup_id                   = 336789534)
-      INTEGER*4 GDS__license_inv_id_key              
-      PARAMETER (GDS__license_inv_id_key               = 336789535)
-      INTEGER*4 GDS__license_err_remove              
-      PARAMETER (GDS__license_err_remove               = 336789536)
-      INTEGER*4 GDS__license_err_update              
-      PARAMETER (GDS__license_err_update               = 336789537)
-      INTEGER*4 GDS__license_err_convert             
-      PARAMETER (GDS__license_err_convert              = 336789538)
-      INTEGER*4 GDS__license_err_unk                 
-      PARAMETER (GDS__license_err_unk                  = 336789539)
-      INTEGER*4 GDS__license_svc_err_add             
-      PARAMETER (GDS__license_svc_err_add              = 336789540)
-      INTEGER*4 GDS__license_svc_err_remove          
-      PARAMETER (GDS__license_svc_err_remove           = 336789541)
-      INTEGER*4 GDS__license_eval_exists             
-      PARAMETER (GDS__license_eval_exists              = 336789563)
       INTEGER*4 GDS__gstat_unknown_switch            
       PARAMETER (GDS__gstat_unknown_switch             = 336920577)
       INTEGER*4 GDS__gstat_retry                     

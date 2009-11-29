@@ -1010,26 +1010,6 @@ const ISC_STATUS isc_gsec_db_specified                = 336724046L;
 const ISC_STATUS isc_gsec_db_admin_specified          = 336724047L;
 const ISC_STATUS isc_gsec_db_admin_pw_specified       = 336724048L;
 const ISC_STATUS isc_gsec_sql_role_specified          = 336724049L;
-const ISC_STATUS isc_license_no_file                  = 336789504L;
-const ISC_STATUS isc_license_op_specified             = 336789523L;
-const ISC_STATUS isc_license_op_missing               = 336789524L;
-const ISC_STATUS isc_license_inv_switch               = 336789525L;
-const ISC_STATUS isc_license_inv_switch_combo         = 336789526L;
-const ISC_STATUS isc_license_inv_op_combo             = 336789527L;
-const ISC_STATUS isc_license_amb_switch               = 336789528L;
-const ISC_STATUS isc_license_inv_parameter            = 336789529L;
-const ISC_STATUS isc_license_param_specified          = 336789530L;
-const ISC_STATUS isc_license_param_req                = 336789531L;
-const ISC_STATUS isc_license_syntx_error              = 336789532L;
-const ISC_STATUS isc_license_dup_id                   = 336789534L;
-const ISC_STATUS isc_license_inv_id_key               = 336789535L;
-const ISC_STATUS isc_license_err_remove               = 336789536L;
-const ISC_STATUS isc_license_err_update               = 336789537L;
-const ISC_STATUS isc_license_err_convert              = 336789538L;
-const ISC_STATUS isc_license_err_unk                  = 336789539L;
-const ISC_STATUS isc_license_svc_err_add              = 336789540L;
-const ISC_STATUS isc_license_svc_err_remove           = 336789541L;
-const ISC_STATUS isc_license_eval_exists              = 336789563L;
 const ISC_STATUS isc_gstat_unknown_switch             = 336920577L;
 const ISC_STATUS isc_gstat_retry                      = 336920578L;
 const ISC_STATUS isc_gstat_wrong_ods                  = 336920579L;
@@ -1096,7 +1076,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1040;
+const ISC_STATUS isc_err_max                          = 1020;
 
 #else /* c definitions */
 
@@ -2076,26 +2056,6 @@ const ISC_STATUS isc_err_max                          = 1040;
 #define isc_gsec_db_admin_specified          336724047L
 #define isc_gsec_db_admin_pw_specified       336724048L
 #define isc_gsec_sql_role_specified          336724049L
-#define isc_license_no_file                  336789504L
-#define isc_license_op_specified             336789523L
-#define isc_license_op_missing               336789524L
-#define isc_license_inv_switch               336789525L
-#define isc_license_inv_switch_combo         336789526L
-#define isc_license_inv_op_combo             336789527L
-#define isc_license_amb_switch               336789528L
-#define isc_license_inv_parameter            336789529L
-#define isc_license_param_specified          336789530L
-#define isc_license_param_req                336789531L
-#define isc_license_syntx_error              336789532L
-#define isc_license_dup_id                   336789534L
-#define isc_license_inv_id_key               336789535L
-#define isc_license_err_remove               336789536L
-#define isc_license_err_update               336789537L
-#define isc_license_err_convert              336789538L
-#define isc_license_err_unk                  336789539L
-#define isc_license_svc_err_add              336789540L
-#define isc_license_svc_err_remove           336789541L
-#define isc_license_eval_exists              336789563L
 #define isc_gstat_unknown_switch             336920577L
 #define isc_gstat_retry                      336920578L
 #define isc_gstat_wrong_ods                  336920579L
@@ -2162,7 +2122,7 @@ const ISC_STATUS isc_err_max                          = 1040;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1040
+#define isc_err_max                          1020
 
 #endif
 

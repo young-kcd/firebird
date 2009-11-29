@@ -44,7 +44,6 @@ static const struct _facilities facilities[] =
 	{12,  "GBAK      "},
 	{13,  "SQLERR    "},
 	{18,  "GSEC      "},
-	{19,  "LICENSE   "},
 	{21,  "GSTAT     "},
 	{22,  "FBSVCMGR  "},
 	{23,  "UTL       "},

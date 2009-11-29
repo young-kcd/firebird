@@ -975,26 +975,6 @@ static const struct {
 	{336724047, "00000"}, //  79 gsec_db_admin_specified
 	{336724048, "00000"}, //  80 gsec_db_admin_pw_specified
 	{336724049, "00000"}, //  81 gsec_sql_role_specified
-	{336789504, "00000"}, //   0 license_no_file
-	{336789523, "00000"}, //  19 license_op_specified
-	{336789524, "00000"}, //  20 license_op_missing
-	{336789525, "00000"}, //  21 license_inv_switch
-	{336789526, "00000"}, //  22 license_inv_switch_combo
-	{336789527, "00000"}, //  23 license_inv_op_combo
-	{336789528, "00000"}, //  24 license_amb_switch
-	{336789529, "00000"}, //  25 license_inv_parameter
-	{336789530, "00000"}, //  26 license_param_specified
-	{336789531, "00000"}, //  27 license_param_req
-	{336789532, "00000"}, //  28 license_syntx_error
-	{336789534, "00000"}, //  30 license_dup_id
-	{336789535, "00000"}, //  31 license_inv_id_key
-	{336789536, "00000"}, //  32 license_err_remove
-	{336789537, "00000"}, //  33 license_err_update
-	{336789538, "00000"}, //  34 license_err_convert
-	{336789539, "00000"}, //  35 license_err_unk
-	{336789540, "00000"}, //  36 license_svc_err_add
-	{336789541, "00000"}, //  37 license_svc_err_remove
-	{336789563, "00000"}, //  59 license_eval_exists
 	{336920577, "00000"}, //   1 gstat_unknown_switch
 	{336920578, "00000"}, //   2 gstat_retry
 	{336920579, "00000"}, //   3 gstat_wrong_ods

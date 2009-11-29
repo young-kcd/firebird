@@ -979,91 +979,71 @@ Data source : @4"},		/* 606, eds_statement */
 	{336724047, "database administrator name already specified"},		/* 952, gsec_db_admin_specified */
 	{336724048, "database administrator password already specified"},		/* 953, gsec_db_admin_pw_specified */
 	{336724049, "SQL role name already specified"},		/* 954, gsec_sql_role_specified */
-	{336789504, "The license file does not exist or could not be opened for read"},		/* 955, license_no_file */
-	{336789523, "operation already specified"},		/* 956, license_op_specified */
-	{336789524, "no operation specified"},		/* 957, license_op_missing */
-	{336789525, "invalid switch"},		/* 958, license_inv_switch */
-	{336789526, "invalid switch combination"},		/* 959, license_inv_switch_combo */
-	{336789527, "illegal operation/switch combination"},		/* 960, license_inv_op_combo */
-	{336789528, "ambiguous switch"},		/* 961, license_amb_switch */
-	{336789529, "invalid parameter, no switch specified"},		/* 962, license_inv_parameter */
-	{336789530, "switch does not take any parameter"},		/* 963, license_param_specified */
-	{336789531, "switch requires a parameter"},		/* 964, license_param_req */
-	{336789532, "syntax error in command line"},		/* 965, license_syntx_error */
-	{336789534, "The certificate was not added.  A duplicate ID exists in the license file."},		/* 966, license_dup_id */
-	{336789535, "The certificate was not added.  Invalid certificate ID / Key combination."},		/* 967, license_inv_id_key */
-	{336789536, "The certificate was not removed.  The key does not exist or corresponds to a temporary evaluation license."},		/* 968, license_err_remove */
-	{336789537, "An error occurred updating the license file.  Operation cancelled."},		/* 969, license_err_update */
-	{336789538, "The certificate could not be validated based on the information given.  Please recheck the ID and key information."},		/* 970, license_err_convert */
-	{336789539, "Operation failed.  An unknown error occurred."},		/* 971, license_err_unk */
-	{336789540, "Add license operation failed, KEY: @1 ID: @2"},		/* 972, license_svc_err_add */
-	{336789541, "Remove license operation failed, KEY: @1"},		/* 973, license_svc_err_remove */
-	{336789563, "The evaluation license has already been used on this server.  You need to purchase a non-evaluation license."},		/* 974, license_eval_exists */
-	{336920577, "found unknown switch"},		/* 975, gstat_unknown_switch */
-	{336920578, "please retry, giving a database name"},		/* 976, gstat_retry */
-	{336920579, "Wrong ODS version, expected @1, encountered @2"},		/* 977, gstat_wrong_ods */
-	{336920580, "Unexpected end of database file."},		/* 978, gstat_unexpected_eof */
-	{336920605, "Can't open database file @1"},		/* 979, gstat_open_err */
-	{336920606, "Can't read a database page"},		/* 980, gstat_read_err */
-	{336920607, "System memory exhausted"},		/* 981, gstat_sysmemex */
-	{336986113, "Wrong value for access mode"},		/* 982, fbsvcmgr_bad_am */
-	{336986114, "Wrong value for write mode"},		/* 983, fbsvcmgr_bad_wm */
-	{336986115, "Wrong value for reserve space"},		/* 984, fbsvcmgr_bad_rs */
-	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 985, fbsvcmgr_info_err */
-	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 986, fbsvcmgr_query_err */
-	{336986118, "Unknown switch \"@1\""},		/* 987, fbsvcmgr_switch_unknown */
-	{336986159, "Wrong value for shutdown mode"},		/* 988, fbsvcmgr_bad_sm */
-	{336986160, "could not open file @1"},		/* 989, fbsvcmgr_fp_open */
-	{336986161, "could not read file @1"},		/* 990, fbsvcmgr_fp_read */
-	{336986162, "empty file @1"},		/* 991, fbsvcmgr_fp_empty */
-	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 992, utl_trusted_switch */
-	{337117213, "Missing parameter for switch @1"},		/* 993, nbackup_missing_param */
-	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 994, nbackup_allowed_switches */
-	{337117215, "Unrecognized parameter @1"},		/* 995, nbackup_unknown_param */
-	{337117216, "Unknown switch @1"},		/* 996, nbackup_unknown_switch */
-	{337117217, "Fetch password can't be used in service mode"},		/* 997, nbackup_nofetchpw_svc */
-	{337117218, "Error working with password file \"@1\""},		/* 998, nbackup_pwfile_error */
-	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 999, nbackup_size_with_lock */
-	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 1000, nbackup_no_switch */
-	{337117223, "IO error (@1) reading file: @2"},		/* 1001, nbackup_err_read */
-	{337117224, "IO error (@1) writing file: @2"},		/* 1002, nbackup_err_write */
-	{337117225, "IO error (@1) seeking file: @2"},		/* 1003, nbackup_err_seek */
-	{337117226, "Error (@1) opening database file: @2"},		/* 1004, nbackup_err_opendb */
-	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 1005, nbackup_err_fadvice */
-	{337117228, "Error (@1) creating database file: @2"},		/* 1006, nbackup_err_createdb */
-	{337117229, "Error (@1) opening backup file: @2"},		/* 1007, nbackup_err_openbk */
-	{337117230, "Error (@1) creating backup file: @2"},		/* 1008, nbackup_err_createbk */
-	{337117231, "Unexpected end of database file @1"},		/* 1009, nbackup_err_eofdb */
-	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1010, nbackup_fixup_wrongstate */
-	{337117233, "Database error"},		/* 1011, nbackup_err_db */
-	{337117234, "Username or password is too long"},		/* 1012, nbackup_userpw_toolong */
-	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 1013, nbackup_lostrec_db */
-	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 1014, nbackup_lostguid_db */
-	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 1015, nbackup_err_eofhdrdb */
-	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 1016, nbackup_db_notlock */
-	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 1017, nbackup_lostguid_bk */
-	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 1018, nbackup_page_changed */
-	{337117241, "Database file size is not a multiple of page size"},		/* 1019, nbackup_dbsize_inconsistent */
-	{337117242, "Level 0 backup is not restored"},		/* 1020, nbackup_failed_lzbk */
-	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1021, nbackup_err_eofhdrbk */
-	{337117244, "Invalid incremental backup file: @1"},		/* 1022, nbackup_invalid_incbk */
-	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1023, nbackup_unsupvers_incbk */
-	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1024, nbackup_invlevel_incbk */
-	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1025, nbackup_wrong_orderbk */
-	{337117248, "Unexpected end of backup file: @1"},		/* 1026, nbackup_err_eofbk */
-	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1027, nbackup_err_copy */
-	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1028, nbackup_err_eofhdr_restdb */
-	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1029, nbackup_lostguid_l0bk */
-	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1030, trace_conflict_acts */
-	{337182751, "action switch not found"},		/* 1031, trace_act_notfound */
-	{337182752, "switch \"@1\" must be set only once"},		/* 1032, trace_switch_once */
-	{337182753, "value for switch \"@1\" is missing"},		/* 1033, trace_param_val_miss */
-	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1034, trace_param_invalid */
-	{337182755, "unknown switch \"@1\" encountered"},		/* 1035, trace_switch_unknown */
-	{337182756, "switch \"@1\" can be used by service only"},		/* 1036, trace_switch_svc_only */
-	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1037, trace_switch_user_only */
-	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1038, trace_switch_param_miss */
-	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1039, trace_param_act_notcompat */
-	{337182760, "mandatory switch \"@1\" is missing"},		/* 1040, trace_mandatory_switch_miss */
+	{336920577, "found unknown switch"},		/* 955, gstat_unknown_switch */
+	{336920578, "please retry, giving a database name"},		/* 956, gstat_retry */
+	{336920579, "Wrong ODS version, expected @1, encountered @2"},		/* 957, gstat_wrong_ods */
+	{336920580, "Unexpected end of database file."},		/* 958, gstat_unexpected_eof */
+	{336920605, "Can't open database file @1"},		/* 959, gstat_open_err */
+	{336920606, "Can't read a database page"},		/* 960, gstat_read_err */
+	{336920607, "System memory exhausted"},		/* 961, gstat_sysmemex */
+	{336986113, "Wrong value for access mode"},		/* 962, fbsvcmgr_bad_am */
+	{336986114, "Wrong value for write mode"},		/* 963, fbsvcmgr_bad_wm */
+	{336986115, "Wrong value for reserve space"},		/* 964, fbsvcmgr_bad_rs */
+	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 965, fbsvcmgr_info_err */
+	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 966, fbsvcmgr_query_err */
+	{336986118, "Unknown switch \"@1\""},		/* 967, fbsvcmgr_switch_unknown */
+	{336986159, "Wrong value for shutdown mode"},		/* 968, fbsvcmgr_bad_sm */
+	{336986160, "could not open file @1"},		/* 969, fbsvcmgr_fp_open */
+	{336986161, "could not read file @1"},		/* 970, fbsvcmgr_fp_read */
+	{336986162, "empty file @1"},		/* 971, fbsvcmgr_fp_empty */
+	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 972, utl_trusted_switch */
+	{337117213, "Missing parameter for switch @1"},		/* 973, nbackup_missing_param */
+	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 974, nbackup_allowed_switches */
+	{337117215, "Unrecognized parameter @1"},		/* 975, nbackup_unknown_param */
+	{337117216, "Unknown switch @1"},		/* 976, nbackup_unknown_switch */
+	{337117217, "Fetch password can't be used in service mode"},		/* 977, nbackup_nofetchpw_svc */
+	{337117218, "Error working with password file \"@1\""},		/* 978, nbackup_pwfile_error */
+	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 979, nbackup_size_with_lock */
+	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 980, nbackup_no_switch */
+	{337117223, "IO error (@1) reading file: @2"},		/* 981, nbackup_err_read */
+	{337117224, "IO error (@1) writing file: @2"},		/* 982, nbackup_err_write */
+	{337117225, "IO error (@1) seeking file: @2"},		/* 983, nbackup_err_seek */
+	{337117226, "Error (@1) opening database file: @2"},		/* 984, nbackup_err_opendb */
+	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 985, nbackup_err_fadvice */
+	{337117228, "Error (@1) creating database file: @2"},		/* 986, nbackup_err_createdb */
+	{337117229, "Error (@1) opening backup file: @2"},		/* 987, nbackup_err_openbk */
+	{337117230, "Error (@1) creating backup file: @2"},		/* 988, nbackup_err_createbk */
+	{337117231, "Unexpected end of database file @1"},		/* 989, nbackup_err_eofdb */
+	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 990, nbackup_fixup_wrongstate */
+	{337117233, "Database error"},		/* 991, nbackup_err_db */
+	{337117234, "Username or password is too long"},		/* 992, nbackup_userpw_toolong */
+	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 993, nbackup_lostrec_db */
+	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 994, nbackup_lostguid_db */
+	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 995, nbackup_err_eofhdrdb */
+	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 996, nbackup_db_notlock */
+	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 997, nbackup_lostguid_bk */
+	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 998, nbackup_page_changed */
+	{337117241, "Database file size is not a multiple of page size"},		/* 999, nbackup_dbsize_inconsistent */
+	{337117242, "Level 0 backup is not restored"},		/* 1000, nbackup_failed_lzbk */
+	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1001, nbackup_err_eofhdrbk */
+	{337117244, "Invalid incremental backup file: @1"},		/* 1002, nbackup_invalid_incbk */
+	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1003, nbackup_unsupvers_incbk */
+	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1004, nbackup_invlevel_incbk */
+	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1005, nbackup_wrong_orderbk */
+	{337117248, "Unexpected end of backup file: @1"},		/* 1006, nbackup_err_eofbk */
+	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1007, nbackup_err_copy */
+	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1008, nbackup_err_eofhdr_restdb */
+	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1009, nbackup_lostguid_l0bk */
+	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1010, trace_conflict_acts */
+	{337182751, "action switch not found"},		/* 1011, trace_act_notfound */
+	{337182752, "switch \"@1\" must be set only once"},		/* 1012, trace_switch_once */
+	{337182753, "value for switch \"@1\" is missing"},		/* 1013, trace_param_val_miss */
+	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1014, trace_param_invalid */
+	{337182755, "unknown switch \"@1\" encountered"},		/* 1015, trace_switch_unknown */
+	{337182756, "switch \"@1\" can be used by service only"},		/* 1016, trace_switch_svc_only */
+	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1017, trace_switch_user_only */
+	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1018, trace_switch_param_miss */
+	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1019, trace_param_act_notcompat */
+	{337182760, "mandatory switch \"@1\" is missing"},		/* 1020, trace_mandatory_switch_miss */
 	{0, NULL}
 };

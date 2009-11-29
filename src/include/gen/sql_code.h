@@ -975,26 +975,6 @@ static const struct {
 	{336724047, -901}, /*  79 gsec_db_admin_specified */
 	{336724048, -901}, /*  80 gsec_db_admin_pw_specified */
 	{336724049, -901}, /*  81 gsec_sql_role_specified */
-	{336789504, -901}, /*   0 license_no_file */
-	{336789523, -901}, /*  19 license_op_specified */
-	{336789524, -901}, /*  20 license_op_missing */
-	{336789525, -901}, /*  21 license_inv_switch */
-	{336789526, -901}, /*  22 license_inv_switch_combo */
-	{336789527, -901}, /*  23 license_inv_op_combo */
-	{336789528, -901}, /*  24 license_amb_switch */
-	{336789529, -901}, /*  25 license_inv_parameter */
-	{336789530, -901}, /*  26 license_param_specified */
-	{336789531, -901}, /*  27 license_param_req */
-	{336789532, -901}, /*  28 license_syntx_error */
-	{336789534, -901}, /*  30 license_dup_id */
-	{336789535, -901}, /*  31 license_inv_id_key */
-	{336789536, -901}, /*  32 license_err_remove */
-	{336789537, -901}, /*  33 license_err_update */
-	{336789538, -901}, /*  34 license_err_convert */
-	{336789539, -901}, /*  35 license_err_unk */
-	{336789540, -901}, /*  36 license_svc_err_add */
-	{336789541, -901}, /*  37 license_svc_err_remove */
-	{336789563, -901}, /*  59 license_eval_exists */
 	{336920577, -901}, /*   1 gstat_unknown_switch */
 	{336920578, -901}, /*   2 gstat_retry */
 	{336920579, -901}, /*   3 gstat_wrong_ods */
