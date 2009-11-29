@@ -1,3 +1,9 @@
+2009-11-28 23:26  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.283.2.2):
+
+	Fixed bug in my recent commit.
+
 2009-11-28 14:10  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.10.2.4):
