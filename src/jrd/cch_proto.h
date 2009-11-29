@@ -76,11 +76,6 @@ inline Ods::pag* CCH_FETCH_NO_SHADOW(Jrd::thread_db* tdbb, Jrd::win* window, USH
 	return CCH_fetch (tdbb, window, lock_type, page_type, 1, false, false);
 }
 
-inline Ods::pag* CCH_FETCH_NO_CHECKSUM(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
-{
-	return CCH_fetch (tdbb, window, lock_type, page_type, 1, true, false);
-}
-
 inline Ods::pag* CCH_FETCH_MERGE(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
 {
 	return CCH_fetch (tdbb, window, lock_type, page_type, 1, true, true);

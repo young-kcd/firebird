@@ -486,7 +486,7 @@ void SDW_dump_pages(thread_db* tdbb)
 				// checksum errors on this type of page, don't check for checksum when the
 				// page type is 0
 
-				CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_read, pag_undefined);
+				CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
 				if (!CCH_write_all_shadows(tdbb, shadow, window.win_bdb,
 										   tdbb->tdbb_status_vector, 1, false))
 				{

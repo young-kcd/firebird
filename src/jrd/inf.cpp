@@ -803,7 +803,7 @@ void INF_database_info(const UCHAR* items,
 
 				win window(PageNumber(DB_PAGE_SPACE, page_num));
 
-				Ods::pag* page = CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_WAIT, pag_undefined);
+				Ods::pag* page = CCH_FETCH(tdbb, &window, LCK_WAIT, pag_undefined);
 				info = INF_put_item(item, dbb->dbb_page_size, reinterpret_cast<UCHAR*>(page), info, end);
 				CCH_RELEASE_TAIL(tdbb, &window);
 
