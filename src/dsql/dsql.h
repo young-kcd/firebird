@@ -119,24 +119,22 @@ public:
 
 // blocks used to cache metadata
 
-//! Database Block
-typedef Firebird::SortedArray
-	<
-		dsql_intlsym*,
-		Firebird::EmptyStorage<dsql_intlsym*>,
-		SSHORT,
-		dsql_intlsym,
-		Firebird::DefaultComparator<SSHORT>
-	> IntlSymArray;
-
+// Database Block
 class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
-	class dsql_rel* dbb_relations;		// known relations in database
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, class dsql_rel*> > > dbb_relations;			// known relations in database
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::QualifiedName, class dsql_prc*> > > dbb_procedures;	// known procedures in database
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::QualifiedName, class dsql_udf*> > > dbb_functions;	// known functions in database
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, class dsql_intlsym*> > > dbb_charsets;		// known charsets in database
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, class dsql_intlsym*> > > dbb_collations;	// known collations in database
+	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<
+		SSHORT, dsql_intlsym*> > > dbb_charsets_by_id;	// charsets sorted by charset_id
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
 	Database*		dbb_database;
 	Attachment*		dbb_attachment;
@@ -144,15 +142,17 @@ public:
 	bool			dbb_no_charset;
 	bool			dbb_read_only;
 	USHORT			dbb_db_SQL_dialect;
-	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
 	USHORT			dbb_ods_version;	// major ODS version number
 	USHORT			dbb_minor_version;	// minor ODS version number
 
-	explicit dsql_dbb(MemoryPool& p) :
-		dbb_procedures(p),
-		dbb_functions(p),
-		dbb_pool(p),
-		dbb_charsets_by_id(p, 16)
+	explicit dsql_dbb(MemoryPool& p)
+		: dbb_relations(p),
+		  dbb_procedures(p),
+		  dbb_functions(p),
+		  dbb_charsets(p),
+		  dbb_collations(p),
+		  dbb_charsets_by_id(p),
+		  dbb_pool(p)
 	{}
 
 	~dsql_dbb();
@@ -178,8 +178,6 @@ public:
 	{
 	}
 
-	dsql_rel*	rel_next;			// Next relation in database
-	dsql_sym*	rel_symbol;			// Hash symbol for relation
 	class dsql_fld*	rel_fields;		// Field block
 	//dsql_rel*	rel_base_relation;	// base relation for an updatable view
 	Firebird::MetaName rel_name;	// Name of relation
@@ -339,22 +337,21 @@ public:
 // (either collation or character set name)
 
 //! International symbol
-class dsql_intlsym : public pool_alloc_rpt<SCHAR, dsql_type_intlsym>
+class dsql_intlsym : public pool_alloc<dsql_type_intlsym>
 {
 public:
-	dsql_sym*	intlsym_symbol;		// Hash symbol for intlsym
+	explicit dsql_intlsym(MemoryPool& p)
+		: intlsym_name(p)
+	{
+	}
+
+	Firebird::MetaName intlsym_name;
 	USHORT		intlsym_type;		// what type of name
 	USHORT		intlsym_flags;
 	SSHORT		intlsym_ttype;		// id of implementation
 	SSHORT		intlsym_charset_id;
 	SSHORT		intlsym_collate_id;
 	USHORT		intlsym_bytes_per_char;
-	TEXT		intlsym_name[2];
-
-	static SSHORT generate(const void*, const dsql_intlsym* Item)
-	{
-		return Item->intlsym_charset_id;
-	}
 };
 
 // values used in intlsym_flags

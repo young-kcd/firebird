@@ -73,9 +73,6 @@ static const UCHAR blr_bpb[] =
 
 static void convert_dtype(dsql_fld*, SSHORT);
 static void free_relation(dsql_rel*);
-static void insert_symbol(dsql_sym*);
-static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, const SYM_TYPE, USHORT = 0);
-static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0);
 
 #define DSQL_REQUEST(id) dbb->dbb_database->dbb_internal[id]
 
@@ -91,7 +88,7 @@ namespace
 }
 
 
-void METD_drop_charset(dsql_req* request, const MetaName& name)
+void METD_drop_charset(dsql_req* request, const MetaName& metaName)
 {
 /**************************************
  *
@@ -107,18 +104,16 @@ void METD_drop_charset(dsql_req* request, const MetaName& name)
  *  accessing it.
  *
  **************************************/
-	// If the symbol wasn't defined, we've got nothing to do
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name.length(), name.c_str(),
-									 SYM_intlsym_charset, 0);
+	thread_db* tdbb = JRD_get_thread_data();
+	dsql_intlsym* charSet;
 
-	if (symbol)
+	if (request->req_dbb->dbb_charsets.get(metaName, charSet))
 	{
-		dsql_intlsym* intlsym = (dsql_intlsym*) symbol->sym_object;
-		intlsym->intlsym_flags |= INTLSYM_dropped;
+		MET_dsql_cache_use(tdbb, SYM_intlsym_charset, metaName);
+		charSet->intlsym_flags |= INTLSYM_dropped;
+		request->req_dbb->dbb_charsets.remove(metaName);
+		request->req_dbb->dbb_charsets_by_id.remove(charSet->intlsym_charset_id);
 	}
-
-	// mark other potential candidates as maybe dropped
-	//HSHD_set_flag(request->req_dbb, name.c_str(), name.length(), SYM_intlsym_charset, INTLSYM_dropped);
 }
 
 
@@ -140,18 +135,17 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
  *  accessing it.
  *
  **************************************/
-	// If the symbol wasn't defined, we've got nothing to do
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, 0);
+	thread_db* tdbb = JRD_get_thread_data();
 
-	if (symbol)
+	MetaName metaName(name->str_data, name->str_length);
+	dsql_intlsym* collation;
+
+	if (request->req_dbb->dbb_collations.get(metaName, collation))
 	{
-		dsql_intlsym* intlsym = (dsql_intlsym*) symbol->sym_object;
-		intlsym->intlsym_flags |= INTLSYM_dropped;
+		MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName);
+		collation->intlsym_flags |= INTLSYM_dropped;
+		request->req_dbb->dbb_collations.remove(metaName);
 	}
-
-	// mark other potential candidates as maybe dropped
-	//HSHD_set_flag(request->req_dbb, name->str_data, name->str_length,
-	//			  SYM_intlsym_collation, INTLSYM_dropped);
 }
 
 
@@ -238,20 +232,17 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
  *      accessing it.
  *
  **************************************/
-	// If the symbol wasn't defined, we've got nothing to do
+	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
+	MetaName metaName(name->str_data, name->str_length);
+	dsql_rel* relation;
 
-	if (symbol)
+	if (request->req_dbb->dbb_relations.get(metaName, relation))
 	{
-		dsql_rel* relation = (dsql_rel*) symbol->sym_object;
+		MET_dsql_cache_use(tdbb, SYM_relation, metaName);
 		relation->rel_flags |= REL_dropped;
+		request->req_dbb->dbb_relations.remove(metaName);
 	}
-
-	// mark other potential candidates as maybe dropped
-
-	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_relation, REL_dropped);
-
 }
 
 
@@ -270,18 +261,25 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	dsql_dbb* dbb = request->req_dbb;
+	MetaName metaName(name->str_data, name->str_length);
+
 	// Start by seeing if symbol is already defined
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, charset_id);
-	if (symbol)
-		return (dsql_intlsym*) symbol->sym_object;
+	dsql_intlsym* symbol;
+	if (dbb->dbb_collations.get(metaName, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped))
+	{
+		if (MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName))
+			symbol->intlsym_flags |= INTLSYM_dropped;
+		else
+			return symbol;
+	}
 
 	// Now see if it is in the database
 
 	validateTransaction(request);
 
-	dsql_dbb* dbb = request->req_dbb;
-	dsql_intlsym* iname = NULL;
+	symbol = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_collation, IRQ_REQUESTS);
 
@@ -294,14 +292,14 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT
 		if (!DSQL_REQUEST(irq_collation))
 			DSQL_REQUEST(irq_collation) = handle;
 
-		iname = FB_NEW_RPT(dbb->dbb_pool, name->str_length) dsql_intlsym;
-		strcpy(iname->intlsym_name, name->str_data);
-		iname->intlsym_flags = 0;
-		iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
-		iname->intlsym_collate_id = X.RDB$COLLATION_ID;
-		iname->intlsym_ttype =
-			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id, iname->intlsym_collate_id);
-		iname->intlsym_bytes_per_char =
+		symbol = FB_NEW(dbb->dbb_pool) dsql_intlsym(dbb->dbb_pool);
+		symbol->intlsym_name = metaName;
+		symbol->intlsym_flags = 0;
+		symbol->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
+		symbol->intlsym_collate_id = X.RDB$COLLATION_ID;
+		symbol->intlsym_ttype =
+			INTL_CS_COLL_TO_TTYPE(symbol->intlsym_charset_id, symbol->intlsym_collate_id);
+		symbol->intlsym_bytes_per_char =
 			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 
 	END_FOR
@@ -309,20 +307,13 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT
 	if (!DSQL_REQUEST(irq_collation))
 		DSQL_REQUEST(irq_collation) = handle;
 
-	if (!iname)
+	if (!symbol)
 		return NULL;
 
-	// Store in the symbol table
+	dbb->dbb_collations.put(metaName, symbol);
+	MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName);
 
-	symbol = iname->intlsym_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-	symbol->sym_object = iname;
-	symbol->sym_string = iname->intlsym_name;
-	symbol->sym_length = name->str_length;
-	symbol->sym_type = SYM_intlsym_collation;
-	symbol->sym_dbb = dbb;
-	insert_symbol(symbol);
-
-	return iname;
+	return symbol;
 }
 
 
@@ -465,18 +456,25 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	dsql_dbb* dbb = request->req_dbb;
+	MetaName metaName(name, length);
+
 	// Start by seeing if symbol is already defined
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, length, name, SYM_intlsym_charset);
-	if (symbol)
-		return (dsql_intlsym*) symbol->sym_object;
+	dsql_intlsym* symbol;
+	if (dbb->dbb_charsets.get(metaName, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped))
+	{
+		if (MET_dsql_cache_use(tdbb, SYM_intlsym_charset, metaName))
+			symbol->intlsym_flags |= INTLSYM_dropped;
+		else
+			return symbol;
+	}
 
 	// Now see if it is in the database
 
 	validateTransaction(request);
 
-	dsql_dbb* dbb = request->req_dbb;
-	dsql_intlsym* iname = NULL;
+	symbol = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_charset, IRQ_REQUESTS);
 
@@ -492,14 +490,14 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 		if (!DSQL_REQUEST(irq_charset))
 			DSQL_REQUEST(irq_charset) = handle;
 
-		iname = FB_NEW_RPT(dbb->dbb_pool, length) dsql_intlsym;
-		strcpy(iname->intlsym_name, name);
-		iname->intlsym_flags = 0;
-		iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
-		iname->intlsym_collate_id = X.RDB$COLLATION_ID;
-		iname->intlsym_ttype =
-			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id, iname->intlsym_collate_id);
-		iname->intlsym_bytes_per_char =
+		symbol = FB_NEW(dbb->dbb_pool) dsql_intlsym(dbb->dbb_pool);
+		symbol->intlsym_name = metaName;
+		symbol->intlsym_flags = 0;
+		symbol->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
+		symbol->intlsym_collate_id = X.RDB$COLLATION_ID;
+		symbol->intlsym_ttype =
+			INTL_CS_COLL_TO_TTYPE(symbol->intlsym_charset_id, symbol->intlsym_collate_id);
+		symbol->intlsym_bytes_per_char =
 			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 
 	END_FOR
@@ -507,22 +505,14 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	if (!DSQL_REQUEST(irq_charset))
 		DSQL_REQUEST(irq_charset) = handle;
 
-	if (!iname)
+	if (!symbol)
 		return NULL;
 
-	// Store in the symbol table
+	dbb->dbb_charsets.put(metaName, symbol);
+	dbb->dbb_charsets_by_id.put(symbol->intlsym_charset_id, symbol);
+	MET_dsql_cache_use(tdbb, SYM_intlsym_charset, metaName);
 
-	symbol = iname->intlsym_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-	symbol->sym_object = iname;
-	symbol->sym_string = iname->intlsym_name;
-	symbol->sym_length = length;
-	symbol->sym_type = SYM_intlsym_charset;
-	symbol->sym_dbb = dbb;
-	insert_symbol(symbol);
-
-	dbb->dbb_charsets_by_id.add(iname);
-
-	return iname;
+	return symbol;
 }
 
 
@@ -549,20 +539,16 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 	if (charset_id == CS_dynamic)
 		charset_id = tdbb->getCharSet();
 
-	dsql_intlsym* cs_sym = 0;
-	size_t pos = 0;
-	if (dbb->dbb_charsets_by_id.find(charset_id, pos)) {
-		cs_sym = dbb->dbb_charsets_by_id[pos];
-	}
-	else
+	dsql_intlsym* symbol = NULL;
+	if (!dbb->dbb_charsets_by_id.get(charset_id, symbol))
 	{
 		const MetaName cs_name = METD_get_charset_name(request, charset_id);
-		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
+		symbol = METD_get_charset(request, cs_name.length(), cs_name.c_str());
 	}
 
-	fb_assert(cs_sym);
+	fb_assert(symbol);
 
-	return cs_sym ? cs_sym->intlsym_bytes_per_char : 0;
+	return symbol ? symbol->intlsym_bytes_per_char : 0;
 }
 
 
@@ -588,11 +574,9 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
     if (charset_id == CS_dynamic)
 		charset_id = tdbb->getCharSet();
 
-	size_t pos = 0;
-	if (dbb->dbb_charsets_by_id.find(charset_id, pos))
-	{
-		return dbb->dbb_charsets_by_id[pos]->intlsym_name;
-	}
+	dsql_intlsym* sym = NULL;
+	if (dbb->dbb_charsets_by_id.get(charset_id, sym))
+		return sym->intlsym_name;
 
 	validateTransaction(request);
 
@@ -1357,6 +1341,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_dbb* dbb = statement->req_dbb;
+	MetaName metaName(name->str_data, name->str_length);
 
 	// See if the relation is the one currently being defined in this statement
 
@@ -1368,9 +1353,13 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 	// Start by seeing if symbol is already defined
 
-	dsql_sym* symbol = lookup_symbol(statement->req_dbb, name, SYM_relation);
-	if (symbol)
-		return (dsql_rel*) symbol->sym_object;
+	if (dbb->dbb_relations.get(metaName, temp) && !(temp->rel_flags & REL_dropped))
+	{
+		if (MET_dsql_cache_use(tdbb, SYM_relation, metaName))
+			temp->rel_flags |= REL_dropped;
+		else
+			return temp;
+	}
 
 	// If the relation id or any of the field ids have not yet been assigned,
 	// and this is a type of statement which does not use ids, prepare a
@@ -1538,32 +1527,21 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	if (!DSQL_REQUEST(irq_fields))
 		DSQL_REQUEST(irq_fields) = handle3;
 
-	if ((symbol = lookup_symbol(statement->req_dbb, name, SYM_relation)))
+	if (dbb->dbb_relations.get(metaName, temp) && !(temp->rel_flags & REL_dropped))
 	{
 		free_relation(relation);
-		return (dsql_rel*) symbol->sym_object;
+		return temp;
 	}
 
-	// Add relation to front of list
+	// Add relation to the list
 
 	if (permanent)
 	{
-		relation->rel_next = dbb->dbb_relations;
-		dbb->dbb_relations = relation;
-
-		// store in the symbol table unless the relation is not yet committed
-
-		symbol = relation->rel_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-		symbol->sym_object = relation;
-		symbol->sym_string = relation->rel_name.c_str();
-		symbol->sym_length = relation->rel_name.length();
-		symbol->sym_type = SYM_relation;
-		symbol->sym_dbb = dbb;
-		insert_symbol(symbol);
+		dbb->dbb_relations.put(relation->rel_name, relation);
+		MET_dsql_cache_use(tdbb, SYM_relation, relation->rel_name);
 	}
-	else {
+	else
 		relation->rel_flags |= REL_new_relation;
-	}
 
 	return relation;
 }
@@ -1963,118 +1941,4 @@ static void free_relation(dsql_rel* relation)
 	// release the relation & symbol blocks
 
 	delete relation;
-}
-
-
-static void insert_symbol(dsql_sym* symbol)
-{
-/**************************************
- *
- *  i n s e r t _ s y m b o l
- *
- **************************************
- *
- * Functional description
- *  Insert a symbol in the hash table and
- *  inform the engine that we're using it.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	HSHD_insert(symbol);
-
-	MET_dsql_cache_use(tdbb, symbol->sym_type, symbol->sym_string);
-}
-
-
-static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
-	const SYM_TYPE type, USHORT charset_id)
-{
-/**************************************
- *
- *  l o o k u p _ s y m b o l
- *
- **************************************
- *
- * Functional description
- *  Lookup a symbol in the hash table and
- *  inform the engine that we're using it.
- *  The engine may inform that the symbol
- *  is obsolete, in this case mark it as
- *  dropped and return NULL.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	dsql_intlsym* intlSym = NULL;
-	dsql_rel* relation = NULL;
-
-	dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
-
-	for (; symbol; symbol = symbol->sym_homonym)
-	{
-		if (symbol->sym_type == type)
-		{
-			if (type == SYM_intlsym_charset && (intlSym = (dsql_intlsym*) symbol->sym_object) &&
-				!(intlSym->intlsym_flags & INTLSYM_dropped))
-			{
-				break;
-			}
-			else if (type == SYM_intlsym_collation &&
-				(intlSym = (dsql_intlsym*) symbol->sym_object) &&
-				!(intlSym->intlsym_flags & INTLSYM_dropped) &&
-				(charset_id == 0 || intlSym->intlsym_charset_id == charset_id))
-			{
-				break;
-			}
-			else if (type == SYM_relation && (relation = (dsql_rel*) symbol->sym_object) &&
-				!(relation->rel_flags & REL_dropped))
-			{
-				break;
-			}
-		}
-	}
-
-	if (symbol)
-	{
-		bool obsolete = MET_dsql_cache_use(tdbb, type, name);
-
-		if (obsolete)
-		{
-			switch (type)
-			{
-				case SYM_intlsym_charset:
-				case SYM_intlsym_collation:
-					intlSym->intlsym_flags |= INTLSYM_dropped;
-					break;
-
-				case SYM_relation:
-					relation->rel_flags |= REL_dropped;
-					break;
-
-				default:
-					return symbol;
-			}
-
-			symbol = NULL;
-		}
-	}
-
-	return symbol;
-}
-
-
-static dsql_sym* lookup_symbol(dsql_dbb* dbb, const dsql_str* name, SYM_TYPE type, USHORT charset_id)
-{
-/**************************************
- *
- *  l o o k u p _ s y m b o l
- *
- **************************************
- *
- * Functional description
- *  Wrapper for the above function.
- *
- **************************************/
-	return lookup_symbol(dbb, name->str_length, name->str_data, type, charset_id);
 }
