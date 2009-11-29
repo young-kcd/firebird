@@ -1,3 +1,77 @@
+2009-11-29 09:35  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.112),
+	lang_helpers/gds_codes.pas (1.110), src/include/gen/codetext.h
+	(1.120), src/include/gen/iberror.h (1.124),
+	src/include/gen/msg_facs.h (1.19), src/include/gen/msgs.h (1.151),
+	src/include/gen/sql_code.h (1.126), src/include/gen/sql_state.h
+	(1.56), src/msgs/facilities2.sql (1.91), src/msgs/messages2.sql
+	(1.115), src/msgs/system_errors2.sql (1.72):
+
+	- Firebird does not use runtime licences.  - Client for DOS has not
+	been seen for more time than I care to count.
+
+2009-11-29 08:14  robocop
+
+	* firebird2/src/jrd/: cch_proto.h (1.37), inf.cpp (1.114), sdw.cpp
+	(1.96):
+
+	CCH_FETCH_NO_CHECKSUM becomes synonym for CCH_FETCH.
+
+2009-11-29 08:09  robocop
+
+	* firebird2/src/jrd/: cch.cpp (1.249), cch_proto.h (1.36), common.h
+	(1.226), pag.cpp (1.236), sdw.cpp (1.95):
+
+	Make checksum deterministic in all platforms (it was already in
+	Windows and UNIX).
+
+2009-11-29 04:44  asfernandes
+
+	* firebird2/src/dsql/: dsql.h (1.161), metd.epp (1.153):
+
+	Initial cleanup to DSQL metadata cache to follow with some fixes
+
+2009-11-28 23:26  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.305):
+
+	Fixed bug in my recent commit.
+
+2009-11-28 20:39  asfernandes
+
+	* firebird2/src/: common/cvt.cpp (1.43), dsql/gen.cpp (1.198),
+	dsql/make.cpp (1.194), dsql/pass1.cpp (1.474), jrd/cmp.cpp (1.366),
+	jrd/cvt2.cpp (1.75), jrd/dsc.cpp (1.42), jrd/evl.cpp (1.324),
+	jrd/ini.epp (1.121), jrd/intl.h (1.23), jrd/met.epp (1.304),
+	jrd/par.cpp (1.253), jrd/sdl.cpp (1.63):
+
+	Cleanup
+
+2009-11-28 19:08  asfernandes
+
+	* firebird2/src/jrd/: cvt.cpp (1.111), intl.cpp (1.135):
+
+	Lookup internal charsets without database lookup. This is necessary
+	to validate length of UTF-8 strings if we change the metadata
+	charset.
+
+2009-11-28 17:39  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.193), jrd/blr.h (1.48),
+	jrd/constants.h (1.70), jrd/cvt.cpp (1.110), jrd/dyn_def.epp
+	(1.193), jrd/ini.epp (1.120), jrd/pwd.cpp (1.80), jrd/trig.h
+	(1.32):
+
+	Some changes aiming a future replacement of the metadata character
+	set
+
+2009-11-28 15:32  asfernandes
+
+	* firebird2/src/jrd/intlnames.h (1.32):
+
+	Cleanup
+
 2009-11-28 13:53  dimitr
 
 	* firebird2/src/jrd/: Relation.h (1.13), dfw.epp (1.304), met.epp
