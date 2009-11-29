@@ -549,7 +549,6 @@ extern "C" int remove(const char* path);
  * UNIX
 *****************************************************/
 #ifdef UNIX
-#define NO_CHECKSUM
 #define SYS_ERR		Arg::Unix
 #endif /* UNIX */
 

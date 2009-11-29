@@ -287,7 +287,7 @@ const int PRE_UNKNOWN		= -2;
 const int DUMMY_CHECKSUM	= 12345;
 
 
-USHORT CCH_checksum(BufferDesc* bdb)
+USHORT CCH_checksum()
 {
 /**************************************
  *
@@ -299,56 +299,7 @@ USHORT CCH_checksum(BufferDesc* bdb)
  *	Compute the checksum of a page.
  *
  **************************************/
-#ifdef NO_CHECKSUM
 	return DUMMY_CHECKSUM;
-#elif defined(WIN_NT)
-	// ODS_VERSION8 for NT was shipped before page checksums
-	// were disabled on other platforms. Continue to compute
-	// checksums for ODS_VERSION8 databases but eliminate them
-	// for ODS_VERSION9 databases. The following code can be
-	// deleted when development on ODS_VERSION10 begins and
-	// NO_CHECKSUM is defined for all platforms.
-
-	return DUMMY_CHECKSUM;
-#else
-	Database* dbb = bdb->bdb_dbb;
-	pag* page = bdb->bdb_buffer;
-
-	const ULONG* const end = (ULONG *) ((SCHAR *) page + dbb->dbb_page_size);
-	const USHORT old_checksum = page->pag_checksum;
-	page->pag_checksum = 0;
-	const ULONG* p = (ULONG *) page;
-	ULONG checksum = 0;
-
-	do {
-		checksum += *p++;
-		checksum += *p++;
-		checksum += *p++;
-		checksum += *p++;
-		checksum += *p++;
-		checksum += *p++;
-		checksum += *p++;
-		checksum += *p++;
-	} while (p < end);
-
-	page->pag_checksum = old_checksum;
-
-	if (checksum) {
-		return (USHORT) checksum;
-	}
-
-	// If the page is all zeros, return an artificial checksum
-
-	for (p = (ULONG *) page; p < end;)
-	{
-		if (*p++)
-			return (USHORT) checksum;
-	}
-
-	// Page is all zeros -- invent a checksum
-
-	return DUMMY_CHECKSUM;
-#endif
 }
 
 
@@ -754,8 +705,8 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 }
 
 
-pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT checksum,
-	SSHORT latch_wait, const bool read_shadow, const bool merge_flag)
+pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT latch_wait,
+	const bool read_shadow, const bool merge_flag)
 {
 /**************************************
  *
@@ -792,7 +743,7 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
 	{
 	case 1:
 		CCH_TRACE(("FE %d:%06d", window->win_page.getPageSpaceID(), window->win_page.getPageNum()));
-		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow, merge_flag);	// must read page from disk
+		CCH_FETCH_PAGE(tdbb, window, read_shadow, merge_flag);	// must read page from disk
 		break;
 	case -2:
 	case -1:
@@ -934,7 +885,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	return lock_result;
 }
 
-void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const bool read_shadow, const bool merge_flag)
+void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow, const bool merge_flag)
 {
 /**************************************
  *
@@ -1082,21 +1033,6 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 			}
 		}
 	}
-
-#ifndef NO_CHECKSUM
-	if ((compute_checksum == 1 || (compute_checksum == 2 && page->pag_type)) &&
-		page->pag_checksum != CCH_checksum(bdb) && !(dbb->dbb_flags & DBB_damaged))
-	{
-		ERR_build_status(status,
-						 Arg::Gds(isc_db_corrupt) << Arg::Str("") <<	// why isn't the db name used here?
-						 Arg::Gds(isc_bad_checksum) <<
-						 Arg::Gds(isc_badpage) << Arg::Num(bdb->bdb_page.getPageNum()));
-		// We should invalidate this bad buffer.
-
-		PAGE_LOCK_RELEASE(bdb->bdb_lock);
-		CCH_unwind(tdbb, true);
-	}
-#endif // NO_CHECKSUM
 
 	bdb->bdb_flags &= ~(BDB_not_valid | BDB_read_pending);
 	window->win_buffer = bdb->bdb_buffer;
@@ -1641,7 +1577,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 		CCH_RELEASE(tdbb, &temp);
 
 	if (must_read) {
-		CCH_FETCH_PAGE(tdbb, window, 1, true, false);
+		CCH_FETCH_PAGE(tdbb, window, true, false);
 	}
 
 	BufferDesc* bdb = window->win_bdb;
@@ -2465,7 +2401,7 @@ bool CCH_validate(WIN* window)
 	}
 
 	pag* page = window->win_buffer;
-	const USHORT sum = CCH_checksum(bdb);
+	const USHORT sum = CCH_checksum();
 
 	if (sum == page->pag_checksum) {
 		return true;
@@ -2516,7 +2452,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 	{
 		page = bdb->bdb_buffer;
 		if (checksum) {
-			page->pag_checksum = CCH_checksum(bdb);
+			page->pag_checksum = CCH_checksum();
 		}
 	}
 
@@ -2565,7 +2501,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 			}
 
 			header->hdr_flags |= hdr_active_shadow;
-			header->hdr_header.pag_checksum = CCH_checksum(bdb);
+			header->hdr_header.pag_checksum = CCH_checksum();
 		}
 
 		// This condition makes sure that PIO_write is performed in case of
@@ -5799,7 +5735,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 			if (next_buffer != reinterpret_cast<char*>(page)) {
 				memcpy(page, next_buffer, (ULONG) dbb->dbb_page_size);
 			}
-			if (page->pag_checksum == CCH_checksum(*next_bdb))
+			if (page->pag_checksum == CCH_checksum())
 			{
 				(*next_bdb)->bdb_flags &= ~(BDB_read_pending | BDB_not_valid);
 				(*next_bdb)->bdb_flags |= BDB_prefetch;
@@ -6503,7 +6439,7 @@ static bool write_page(thread_db* tdbb,
 		if (bdb->bdb_page.getPageNum() >= 0)
 		{
 			fb_assert(backup_state != nbak_state_unknown);
-			page->pag_checksum = CCH_checksum(bdb);
+			page->pag_checksum = CCH_checksum();
 
 #ifdef NBAK_DEBUG
 			// We cannot call normal trace functions here as they are signal-unsafe

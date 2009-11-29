@@ -205,7 +205,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		temp_bdb.bdb_page = next->fil_min_page;
 		temp_bdb.bdb_dbb = dbb;
 		temp_bdb.bdb_buffer = (PAG) header;
-		header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
+		header->hdr_header.pag_checksum = CCH_checksum();
 		if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 		{
 			delete[] spare_buffer;
@@ -251,7 +251,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 								 reinterpret_cast<const UCHAR*>(&start));
 			file->fil_fudge = 0;
 			temp_bdb.bdb_page = file->fil_min_page;
-			header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
+			header->hdr_header.pag_checksum = CCH_checksum();
 			if (!PIO_write(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 			{
 				delete[] spare_buffer;
