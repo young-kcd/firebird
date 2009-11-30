@@ -74,6 +74,9 @@ Start user trace session :
 		isc_spb_trc_cfg  : trace session configuration, string, mandatory
 
 	output
+		text message with status of operation :
+			- Trace session ID NNN started
+			- Can not start trace session. There is no trace plugins loaded
 		contents of trace session in text format
 
 
