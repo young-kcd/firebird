@@ -950,8 +950,6 @@ static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
 
 void Service::detach()
 {
-	ThreadIdHolder holdId(svc_thread_strings);
-
 	// save it cause after call to finish() we can't access class members any more
 	const bool localDoShutdown = svc_do_shutdown;
 
