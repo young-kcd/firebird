@@ -63,7 +63,8 @@ AR_OPT_CHECK=false
 
 case "$target" in
   i*86-*-darwin*)
-    MAKEFILE_PREFIX=darwin_i386
+dnl    MAKEFILE_PREFIX=darwin_i386
+    MAKEFILE_PREFIX=darwin_x86_64
     MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
     INSTALL_PREFIX=darwin
@@ -72,7 +73,7 @@ case "$target" in
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
-dnl CPU_TYPE=x86_64
+    CPU_TYPE=x86_64
     ;;
 
   powerpc-*-darwin*)
