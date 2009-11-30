@@ -253,8 +253,11 @@ public:
 		CheckoutLockGuard(Database* dbb, Firebird::Mutex& m)
 			: mutex(m)
 		{
-			Checkout dcoHolder(dbb);
-			mutex.enter();
+			if (!mutex.tryEnter())
+			{
+				Checkout dcoHolder(dbb);
+				mutex.enter();
+			}
 		}
 
 		~CheckoutLockGuard()

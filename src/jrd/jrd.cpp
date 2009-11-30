@@ -174,6 +174,9 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, Jrd::Attachment* const attachment)
 	{
+		if (attachment == tdbb->getAttachment())
+			return;
+
 		if (!attachment->checkHandle() || !attachment->att_database->checkHandle())
 		{
 			status_exception::raise(Arg::Gds(isc_bad_db_handle));
