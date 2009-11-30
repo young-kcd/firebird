@@ -307,6 +307,7 @@ copyFiles() {
 	#conf
     cp $BuiltFBDir/firebird.conf ${TargetDir}@FB_CONFDIR@
     cp $BuiltFBDir/aliases.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuiltFBDir/fbtrace.conf ${TargetDir}@FB_CONFDIR@
 
 	chown root:root ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf
