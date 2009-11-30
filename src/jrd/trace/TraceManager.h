@@ -59,6 +59,9 @@ public:
 	static ConfigStorage* getStorage()
 	{ return storageInstance.getStorage(); }
 
+	static size_t pluginsCount()
+	{ return modules->getCount(); }
+
 	void event_attach(TraceConnection* connection, bool create_db,
 		ntrace_result_t att_result);
 
