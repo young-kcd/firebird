@@ -405,7 +405,8 @@ bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charse
 
 CharSet* EngineCallbacks::getToCharset(CHARSET_ID charSetId)
 {
-	return INTL_charset_lookup(NULL, charSetId);
+	thread_db* tdbb = JRD_get_thread_data();
+	return INTL_charset_lookup(tdbb, charSetId);
 }
 
 
