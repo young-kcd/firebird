@@ -1190,6 +1190,7 @@ dnl common files for all posix hosts
 AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf.in
 gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
 gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
+gen/install/misc/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
 gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
 gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
 gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
