@@ -23,7 +23,8 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v5.2.3
+;   This script has been designed to work with Inno Setup v5.3.5
+;   (Note: This is the classic version, not the new unicode version.)
 ;   It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
 ;
@@ -246,6 +247,7 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 AppVersion={#MyAppVerString}
+VersionInfoVersion={#MyAppVerString}
 
 SourceDir=..\..\..\..\
 OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}{#FilenameSuffix}
@@ -362,6 +364,7 @@ Name: UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComp
 Name: UseApplicationTask; Description: {cm:UseApplicationTaskMsg}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseServiceTask; Description: {cm:UseServiceTask}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
+Name: SuperClassicTask; Description: {cm:SuperClassicTask}; Components: ServerComponent\ClassicServerComponent; MinVersion: 4,4; Flags: unchecked; Check: ConfigureFirebird;
 ;Allow user to not install cpl applet
 Name: InstallCPLAppletTask; Description: {cm:InstallCPLAppletTask}; Components: ServerComponent\SuperServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
 ;Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComponent; MinVersion: 4,4
@@ -394,7 +397,7 @@ Filename: {app}\bin\instsvc.exe; Parameters: "remove "; StatusMsg: {cm:instsvcSe
 Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall runascurrentuser; Tasks: UseServiceTask; Check: StartEngine
 ;If 'start as application' requested
-Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
+Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: {code:StartAppParams|' -a '}; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
 ;This is a preliminary test of jumping to a landing page. In practice, we are going to need to know the users language and the version number they have installed.
 Filename: "{#MyAppURL}/afterinstall"; Description: "After installation - What Next?"; Flags: postinstall shellexec skipifsilent; Components: ServerComponent DevAdminComponent;
@@ -415,9 +418,10 @@ Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 ; - except that this seems to be broken. Bah!
 ;Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; Valuetype: none; ValueName: 'Firebird'; ValueData: ''; flags: deletevalue; Check: IsNotAutoStartApp;
 [Icons]
-Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\ClassicServerComponent; Comment: Run Firebird classic server
-Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
-Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
+Name: {group}\Firebird Classic Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: {code:StartAppParams|' -a '}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallClassicServerIcon; IconIndex: 0; Components: ServerComponent\ClassicServerComponent; Comment: {cm:RunCS}
+Name: {group}\Firebird SuperClassic Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: {code:StartAppParams|' -a '}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallSuperClassicIcon; IconIndex: 0; Components: ServerComponent\ClassicServerComponent; Comment: {cm:RunSC}
+Name: {group}\Firebird SuperServer; Filename: {app}\bin\fbserver.exe; Parameters: {code:StartAppParams|' -a '}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallSuperServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: {cm:RunSSNoGuardian}
+Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: {code:StartAppParams|' -a '}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: {cm:RunSSWithGuardian}
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 #ifdef FB25_FULL_DOCS
@@ -499,7 +503,7 @@ Source: {#WOW64Dir}\bin\instclient.exe; DestDir: {app}\WOW64; Components: Client
 Source: {#FilesDir}\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
-#if PlatformTarget =="Win32"
+#if PlatformTarget == "Win32"
 Source: {#FilesDir}\bin\fbrmclib.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 #endif
 
@@ -670,6 +674,9 @@ Var
                                 // user config files - firebird.conf, firebird.log,
                                 // aliases.conf, fbtrace.conf and the security database.
 
+//  UseSuperClassic: Boolean;     // /UseSuperClassic can be passed on the command-line
+                                
+
 #ifdef setuplogging
   OkToCopyLog : Boolean;        // Set when installation is complete.
 #endif
@@ -833,6 +840,10 @@ begin
 
   if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
+    
+// To be completed after RC1
+//  if pos('USESUPERCLASSIC', Uppercase(CommandLine)) > 0 then
+//    UseSuperClassic := True;
 
   // Check if a server is running - we cannot continue if it is.
   if FirebirdDefaultServerRunning then begin
@@ -957,6 +968,9 @@ begin
   else
     SvcParams := SvcParams + ServerType;
 
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('SuperClassicTask') then
+    SvcParams := ' -multithreaded ';
+
   InstanceName := ' -n DefaultInstance'
 
   SvcParams := SvcParams + InstanceName;
@@ -981,7 +995,7 @@ begin
       result := true;
 end;
 
-function InstallServerIcon(): Boolean;
+function InstallSuperServerIcon(): Boolean;
 begin
   result := false;
   if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
@@ -989,20 +1003,40 @@ begin
       result := true;
 end;
 
+function InstallSuperClassicIcon(): Boolean;
+begin
+  result := false;
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
+    if IsTaskSelected('SuperClassicTask') then
+      result := true;
+end;
+
+function InstallClassicServerIcon(): Boolean;
+begin
+  result := false;
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
+    if NOT IsTaskSelected('SuperClassicTask') then
+      result := true;
+end;
+
+
+
 function StartApp(Default: String): String;
 begin
-  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then begin
-    Result := GetAppPath+'\bin\fbguard.exe';
-    if ClassicInstallChosen then
-      Result := Result + ' -c';
-    end
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then
+    Result := GetAppPath+'\bin\fbguard.exe'
   else
     if ClassicInstallChosen then
       Result := GetAppPath+'\bin\fb_inet_server.exe'
     else
       Result := GetAppPath+'\bin\fbserver.exe';
+end;
 
-
+function StartAppParams(Default: String): String;
+begin
+  Result := ' -a ';
+  if IsTaskSelected('SuperClassicTask') then
+    Result := Result + ' -m ';
 end;
 
 function IsNotAutoStartApp: boolean;
@@ -1011,7 +1045,7 @@ begin
   result := true;
   if ( IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
     ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then
-  result := false;
+    result := false;
 end;
 
 
@@ -1091,7 +1125,7 @@ begin
       //so that the server or guardian starts evertime they login.
       if (IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
               ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then begin
-        AppStr := StartApp('')+' -a';
+        AppStr := StartApp('') + StartAppParams(' -a ');
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
 
