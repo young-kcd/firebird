@@ -58,7 +58,7 @@ service manager and dedicated CS process.
 
 
 	There is new specialized standalone utility to work with trace services : 
-fbtracemgr. It have the following command line switches :
+fbtracemgr. It has the following command line switches :
 
 Action switches :
   -STA[RT]                              Start trace session
