@@ -1,3 +1,67 @@
+2009-11-30 13:43  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.297):
+
+	CORE-2728 - we anyway do not receive errors from service in
+	svc_status when detaching
+
+2009-11-30 13:10  alexpeshkoff
+
+	* firebird2/src/: common/fb_exception.cpp (1.66), common/thd.cpp
+	(1.11), common/thd.h (1.4), include/fb_exception.h (1.43),
+	jrd/svc.cpp (1.296), jrd/svc.h (1.83):
+
+	Fixed CORE-2728: Access Violation when trying to add an user that
+	already exists
+
+2009-11-30 12:59  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.18):
+
+	Add trace plugin for Darwin
+
+2009-11-30 10:47  robocop
+
+	* firebird2/builds/win32/make_all.bat (1.61):
+
+	Copy the new conf file.
+
+2009-11-30 10:23  hvlad
+
+	* firebird2/src/jrd/: Database.h (1.45), jrd.cpp (1.580):
+
+	Improve performance a bit.
+
+2009-11-30 10:21  robocop
+
+	* firebird2/src/jrd/trace/TraceService.cpp (1.16):
+
+	Misc.
+
+2009-11-30 10:17  robocop
+
+	* firebird2/doc/: README.services_extension (1.10),
+	README.trace_services (1.7):
+
+	Misc.
+
+2009-11-30 10:13  hvlad
+
+	* firebird2/src/jrd/trace/: TraceManager.h (1.8), TraceService.cpp
+	(1.15):
+
+	Implement improvements CORE-2773 : Let "Start trace session"
+	service report ID of newly created trace session and CORE-2774 :
+	Let "Start trace session" service report if there was no trace
+	plugin's loaded by the engine
+
+2009-11-30 10:11  hvlad
+
+	* firebird2/doc/: README.services_extension (1.9),
+	README.trace_services (1.6):
+
+	Update documentation
+
 2009-11-29 09:35  robocop
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.112),
