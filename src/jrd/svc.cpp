@@ -125,6 +125,24 @@ const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
 namespace {
 
+	// Thread ID holder (may be generic, but needed only here now)
+	class ThreadIdHolder
+	{
+	public:
+		ThreadIdHolder(Jrd::Service::StatusStringsHelper& p) : strHelper(&p)
+		{
+			MutexLockGuard guard(strHelper->mtx);
+			strHelper->workerThread = getThreadId();
+		}
+		~ThreadIdHolder()
+		{
+			MutexLockGuard guard(strHelper->mtx);
+			strHelper->workerThread = 0;
+		}
+	private:
+		Jrd::Service::StatusStringsHelper* strHelper;
+	};
+
 	// Option block for service parameter block
 	struct Options
 	{
@@ -418,6 +436,21 @@ void Service::putBytes(const UCHAR* bytes, size_t len)
 	enqueue(bytes, len);
 }
 
+void Service::makePermanentStatusVector() throw()
+{
+	// This mutex avoids modification of workerThread
+	MutexLockGuard guard(svc_thread_strings.mtx);
+
+	if (svc_thread_strings.workerThread)
+	{
+		makePermanentVector(svc_status, svc_thread_strings.workerThread);
+	}
+	else
+	{
+		makePermanentVector(svc_status);
+	}
+}
+
 void Service::setServiceStatus(const ISC_STATUS* status_vector)
 {
 	if (checkForShutdown())
@@ -431,7 +464,7 @@ void Service::setServiceStatus(const ISC_STATUS* status_vector)
 		Arg::StatusVector passed(status_vector);
 		svc.append(passed);
 		svc.copyTo(svc_status);
-		makePermanentVector(svc_status);
+		makePermanentStatusVector();
 	}
 }
 
@@ -531,7 +564,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
 		}
 	}
 
-	makePermanentVector(svc_status);
+	makePermanentStatusVector();
 }
 
 void Service::hidePasswd(ArgvType&, int)
@@ -702,6 +735,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 {
 	svc_trace_manager = NULL;
 	memset(svc_status, 0, sizeof svc_status);
+	ThreadIdHolder holdId(svc_thread_strings);
 
 	{	// scope
 		// Account service block in global array
@@ -916,6 +950,8 @@ static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
 
 void Service::detach()
 {
+	ThreadIdHolder holdId(svc_thread_strings);
+
 	// save it cause after call to finish() we can't access class members any more
 	const bool localDoShutdown = svc_do_shutdown;
 
@@ -1026,6 +1062,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	UCHAR item;
 	UCHAR buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
+
+	ThreadIdHolder holdId(svc_thread_strings);
 
 	// Setup the status vector
 	Arg::StatusVector status;
@@ -1891,6 +1929,8 @@ void Service::query(USHORT			send_item_length,
 
 void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
+	ThreadIdHolder holdId(svc_thread_strings);
+
 	try
 	{
 	ClumpletReader spb(ClumpletReader::SpbStart, spb_data, spb_length);
