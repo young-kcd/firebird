@@ -1,4 +1,4 @@
-Firebird Database Server 2.5 Beta 2
+Firebird Database Server 2.5 Release Candidate One
 ==================================================
 
 This document is a guide to installing this package of
@@ -59,7 +59,7 @@ Other Known installation problems
 ---------------------------------
 
 o It is only possible to use the binary installer
-  to install the default instance of Firebird 2.1. If
+  to install the default instance of Firebird 2.5. If
   you wish to install additional, named instances you
   should manually install them with the zipped install
   image.
@@ -111,11 +111,12 @@ o If Firebird is running as an application (instead of
   uninstall the uninstall will complete with errors.
   You will have to delete the remnants by hand.
 
-o Uninstallation leaves four files in the install
+o Uninstallation leaves five files in the install
   directory:
 
   - aliases.conf
   - firebird.conf
+  - fbtrace.conf
   - firebird.log
   - security2.fdb
 
