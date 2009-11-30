@@ -35,7 +35,7 @@ void	THD_sleep(ULONG);
 void	THD_yield();
 
 // thread ID
-FB_THREAD_ID getThreadId();
+FB_THREAD_ID getThreadId() throw();
 
 class ThreadCleanup
 {

@@ -29,7 +29,7 @@ private:
 		FB_THREAD_ID thread;
 
 	public:
-		ThreadBuffer() : buffer_ptr(buffer), thread(getThreadId()) { }
+		ThreadBuffer(FB_THREAD_ID thr) : buffer_ptr(buffer), thread(thr) { }
 
 		const char* alloc(const char* string, size_t& length)
 		{
@@ -54,10 +54,8 @@ private:
 			return new_string;
 		}
 
-		bool thisThread()
+		bool thisThread(FB_THREAD_ID currTID)
 		{
-			const FB_THREAD_ID currTID = getThreadId();
-
 #ifdef WIN_NT
 			if (thread != currTID)
 			{
@@ -98,13 +96,13 @@ public:
 	}
 
 private:
-	size_t position()
+	size_t position(FB_THREAD_ID thr)
 	{
 		// mutex should be locked when this function is called
 
 		for (size_t i = 0; i < processBuffer.getCount(); ++i)
 		{
-			if (processBuffer[i]->thisThread())
+			if (processBuffer[i]->thisThread(thr))
 			{
 				return i;
 			}
@@ -113,17 +111,17 @@ private:
 		return processBuffer.getCount();
 	}
 
-	ThreadBuffer* getThreadBuffer()
+	ThreadBuffer* getThreadBuffer(FB_THREAD_ID thr)
 	{
 		Firebird::MutexLockGuard guard(mutex);
 
-		size_t p = position();
+		size_t p = position(thr);
 		if (p < processBuffer.getCount())
 		{
 			return processBuffer[p];
 		}
 
-		ThreadBuffer* b = new ThreadBuffer;
+		ThreadBuffer* b = new ThreadBuffer(thr);
 		processBuffer.add(b);
 		return b;
 	}
@@ -132,7 +130,7 @@ private:
 	{
 		Firebird::MutexLockGuard guard(mutex);
 
-		size_t p = position();
+		size_t p = position(getThreadId());
 		if (p >= processBuffer.getCount())
 		{
 			return;
@@ -148,10 +146,10 @@ private:
 	}
 
 public:
-	const char* alloc(const char* s, size_t& len)
+	const char* alloc(const char* s, size_t& len, FB_THREAD_ID thr = getThreadId())
 	{
 		ThreadCleanup::add(cleanupAllStrings, this);
-		return getThreadBuffer()->alloc(s, len);
+		return getThreadBuffer(thr)->alloc(s, len);
 	}
 };
 
@@ -161,9 +159,11 @@ Firebird::GlobalPtr<StringsBuffer> allStrings;
 
 namespace Firebird {
 
+// Before using thr parameter, make sure that thread is not going to work with
+// this functions itself.
 // CVC: Do not let "perm" be incremented before "trans", because it may lead to serious memory errors,
 // since several places in our code blindly pass the same vector twice.
-void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
+void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID thr) throw()
 {
 	try
 	{
@@ -179,7 +179,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
 				{
 					size_t len = *perm++ = *trans++;
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len));
+					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
 					//perm[-2] = len; redundant
 				}
 				break;
@@ -189,7 +189,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
 				{
 					const char* temp = reinterpret_cast<char*>(*trans++);
 					size_t len = strlen(temp);
-					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len));
+					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
 				}
 				break;
 			default:
@@ -216,9 +216,9 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
 	}
 }
 
-void makePermanentVector(ISC_STATUS* v) throw()
+void makePermanentVector(ISC_STATUS* v, FB_THREAD_ID thr) throw()
 {
-	makePermanentVector(v, v);
+	makePermanentVector(v, v, thr);
 }
 
 // ********************************* Exception *******************************

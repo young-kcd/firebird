@@ -230,6 +230,8 @@ private:
 	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);
 	// Does info buffer have enough space for SLONG?
 	static bool ck_space_for_numeric(UCHAR*& info, const UCHAR* const end);
+	// Make status vector permamnent, if one present in worker thread's space
+	void makePermanentStatusVector() throw();
 
 private:
 	ISC_STATUS_ARRAY svc_status;		// status vector for running service
@@ -265,6 +267,15 @@ private:
 	SLONG				svc_remote_pid;
 
 	TraceManager*		svc_trace_manager;
+
+public:
+	struct StatusStringsHelper
+	{
+		FB_THREAD_ID workerThread;
+		Firebird::Mutex mtx;
+	};
+private:
+	StatusStringsHelper	svc_thread_strings;
 };
 
 } //namespace Jrd

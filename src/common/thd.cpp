@@ -61,7 +61,7 @@
 #include <pthread.h>
 #endif
 
-FB_THREAD_ID getThreadId()
+FB_THREAD_ID getThreadId() throw()
 {
 /**************************************
  *
