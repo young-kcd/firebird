@@ -85,7 +85,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 {
 	if (!TraceManager::pluginsCount())
 	{
-		m_svc.printf("Can not start trace session. There is no trace plugins loaded\n");
+		m_svc.printf("Can not start trace session. There are no trace plugins loaded\n");
 		return;
 	}
 	

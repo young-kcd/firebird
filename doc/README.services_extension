@@ -76,7 +76,7 @@ Start user trace session :
 	output
 		text message with status of operation :
 			- Trace session ID NNN started
-			- Can not start trace session. There is no trace plugins loaded
+			- Can not start trace session. There are no trace plugins loaded
 		contents of trace session in text format
 
 
