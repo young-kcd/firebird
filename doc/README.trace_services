@@ -57,20 +57,45 @@ CS this is not the case as user trace session can't live without connection with
 service manager and dedicated CS process.
 
 
+	There is new specialized standalone utility to work with trace services : 
+fbtracemgr. It have the following command line switches :
+
+Action switches :
+  -STA[RT]                              Start trace session
+  -STO[P]                               Stop trace session
+  -SU[SPEND]                            Suspend trace session
+  -R[ESUME]                             Resume trace session
+  -L[IST]                               List existing trace sessions
+
+Action parameters switches :
+  -N[AME]    <string>                   Session name
+  -I[D]      <number>                   Session ID
+  -C[ONFIG]  <string>                   Trace configuration file name
+
+Connection parameters switches :
+  -SE[RVICE]  <string>                  Service name
+  -U[SER]     <string>                  User name
+  -P[ASSWORD] <string>                  Password
+  -FE[TCH]    <string>                  Fetch password from file
+  -T[RUSTED]  <string>                  Force trusted authentication
+
+Also, it prints usage screen if run without parameters.
+
+
 	Examples
 	
-	Sample configuration files for user trace sessions:
+I. Sample configuration files for user trace sessions:
 	
 a) Trace prepare, free and execution of all statements within connection 12345
 
 <database>
 	enabled			true
-	connection_id	12345
+	connection_id		12345
 	log_statement_prepare	true
-	log_statement_free		true
-	log_statement_start		true
+	log_statement_free	true
+	log_statement_start	true
 	log_statement_finish	true
-	time_threshold	0
+	time_threshold		0
 </database>
 
 b) Trace all connections of given user to database mydatabase.fdb
@@ -78,44 +103,56 @@ b) Trace all connections of given user to database mydatabase.fdb
    and triggers and show corresponding PLAN's and performance statistics.
 
 <database %[\\/]mydatabase.fdb>
-	enabled					true
-	include_filter			(.*)(INSERT|UPDATE|DELETE)(.*)
+	enabled			true
+	include_filter		(%)(INSERT|UPDATE|DELETE)(%)
 	log_statement_finish	true
 	log_procedure_finish	true
-	log_trigger_finish		true
-	print_plan				true
-	print_perf				true
-	time_threshold			0
+	log_trigger_finish	true
+	print_plan		true
+	print_perf		true
+	time_threshold		0
 </database>
 	
+c) Trace connections and transactions in all databases except of security database
 
-	So far there is no specialized standalone utility to work with trace services.
-Therefore examples below uses more general utility fbsvcmgr.
+<database>
+	enabled			true
+	log_connections		true
+	log_transactions	true
+</database>
+
+<database security2.fdb>
+	enabled			false
+</database>
+
+
+
+II. Working with fbtracemgr :
 
 a) Start user trace named "My trace" using configuration file fbtrace.conf and read
    its output on the screen :
 
-	fbsvcmgr service_mgr action_trace_start trc_name "My trace" trc_cfg fbtrace.conf
+	fbtracemgr -se service_mgr -start -name "My trace" -config fbtrace.conf
 	
-	To stop this trace session press Ctrl+C at fbsvcmgr console window. Or, in
-another console : list sessions and look for interesting session ID (b) and stop
-it using this found ID (e).
+	To stop this trace session press Ctrl+C at fbtracemgr console window. Or, in
+another console : list sessions and look for interesting session ID (b) and stop it 
+using this found ID (e).
 
 b) List trace sesions
 
-	fbsvcmgr service_mgr action_trace_list
+	fbtracemgr -se service_mgr -list
 	
 c) Suspend trace sesson with ID 1
 
-	fbsvcmgr service_mgr action_trace_suspend trc_id 1
+	fbtracemgr -se service_mgr -suspend -id 1
 	
 d) Resume trace sesson with ID 1
 
-	fbsvcmgr service_mgr action_trace_resume trc_id 1
+	fbtracemgr -se service_mgr -resume -id 1
 	
 e) Stop trace sesson with ID 1
 
-	fbsvcmgr service_mgr action_trace_stop trc_id 1
+	fbtracemgr -se service_mgr -stop -id 1
 	
 
 
