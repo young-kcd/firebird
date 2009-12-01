@@ -1,3 +1,33 @@
+2009-12-01 13:04  alexpeshkoff
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.35.2.2):
+
+	Backported fix for CORE-2779: User list header is displayed at the
+	end of each returning data call to fbsvcmgr
+
+2009-12-01 12:50  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.565.2.3), svc.cpp (1.285.2.4),
+	svc.h (1.79.2.2):
+
+	Backported fix for CORE-2778: SegFault in services when using same
+	handle in different threads
+
+2009-12-01 06:28  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.64.2.3), jrd/svc.cpp
+	(1.285.2.3):
+
+	Misc.
+
+2009-11-30 15:07  alexpeshkoff
+
+	* firebird2/: configure.in (1.368.2.6),
+	builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+	(1.1.4.1):
+
+	Bacported fix for CORE-2775: Linux packages miss fbtrace.conf
+
 2009-11-30 14:05  alexpeshkoff
 
 	* firebird2/src/: common/fb_exception.cpp (1.64.2.2),
