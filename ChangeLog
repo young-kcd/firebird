@@ -1,3 +1,57 @@
+2009-12-01 13:32  robocop
+
+	* firebird2/src/jrd/scl.epp (1.113):
+
+	Style.
+
+2009-12-01 13:01  alexpeshkoff
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.38):
+
+	Fixed CORE-2779: User list header is displayed at the end of each
+	returning data call to fbsvcmgr
+
+2009-12-01 12:45  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.581), svc.cpp (1.299), svc.h
+	(1.84):
+
+	Fixed CORE-2778: SegFault in services when using same handle in
+	different threads
+
+2009-12-01 11:28  robocop
+
+	* firebird2/src/jrd/intl.cpp (1.136):
+
+	Misc.
+
+2009-12-01 11:23  robocop
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.93):
+
+	CORE-2484 Thanks to Bill Oliver.
+
+2009-12-01 06:35  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.67), jrd/svc.cpp
+	(1.298):
+
+	Misc.
+
+2009-11-30 16:18  asfernandes
+
+	* firebird2/src/jrd/cvt.cpp (1.112):
+
+	Pass a real tdbb instead of a bogus NULL
+
+2009-11-30 15:06  alexpeshkoff
+
+	* firebird2/: configure.in (1.377),
+	builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+	(1.3):
+
+	Fixed CORE-2775: Linux packages miss fbtrace.conf
+
 2009-11-30 13:43  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.297):
