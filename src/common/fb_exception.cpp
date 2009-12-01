@@ -29,7 +29,7 @@ private:
 		FB_THREAD_ID thread;
 
 	public:
-		ThreadBuffer(FB_THREAD_ID thr) : buffer_ptr(buffer), thread(thr) { }
+		explicit ThreadBuffer(FB_THREAD_ID thr) : buffer_ptr(buffer), thread(thr) { }
 
 		const char* alloc(const char* string, size_t& length)
 		{

@@ -129,7 +129,7 @@ namespace {
 	class ThreadIdHolder
 	{
 	public:
-		ThreadIdHolder(Jrd::Service::StatusStringsHelper& p) : strHelper(&p)
+		explicit ThreadIdHolder(Jrd::Service::StatusStringsHelper& p) : strHelper(&p)
 		{
 			MutexLockGuard guard(strHelper->mtx);
 			strHelper->workerThread = getThreadId();
