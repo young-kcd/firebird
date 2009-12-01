@@ -555,10 +555,10 @@ public:
 	int gid, uid, admin;
 
 private:
-	bool hasData;
+	int hasData;
 
 public:
-	UserPrint() : hasData(false)
+	UserPrint() : hasData(0)
 	{
 		clear();
 	}
@@ -577,13 +577,18 @@ public:
 
 	void newUser()
 	{
-		if (!hasData)
+		if (hasData == 0)
 		{
-			hasData = true;
-			printf("%-28.28s %-40.40s %4.4s %4.4s %3.3s\n", "Login",
-				"Full name", "uid", "gid", "adm");
+			hasData = 1;
 			return;
 		}
+		if (hasData == 1)
+		{
+			printf("%-28.28s %-40.40s %4.4s %4.4s %3.3s\n", "Login",
+				"Full name", "uid", "gid", "adm");
+			hasData = 2;
+		}
+
 		printf("%-28.28s %-40.40s %4d %4d %3.3s\n", login.c_str(),
 			(first + " " + middle + " " + last).c_str(), uid, gid, admin ? "yes" : "no");
 		clear();
