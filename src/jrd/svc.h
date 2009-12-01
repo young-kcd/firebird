@@ -181,6 +181,8 @@ private:
 	// Service must have private destructor, called from finish
 	// when both (server and client) threads are finished
 	~Service();
+	// Find current service in global services list
+	bool	locateInAllServices(size_t* posPtr = NULL);
 	// Detach self from global services list
 	void	removeFromAllServices();
 	// The only service, implemented internally
@@ -276,6 +278,21 @@ public:
 	};
 private:
 	StatusStringsHelper	svc_thread_strings;
+
+	//Service existence guard
+	class ExistenceGuard
+	{
+	public:
+		ExistenceGuard(Service* svc);
+		~ExistenceGuard();
+		void release();
+	private:
+		Service* svc;
+		bool locked;
+	};
+	friend class ExistenceGuard;
+	Firebird::Mutex		svc_existence_lock;
+	ExistenceGuard*		svc_current_guard;
 };
 
 } //namespace Jrd
