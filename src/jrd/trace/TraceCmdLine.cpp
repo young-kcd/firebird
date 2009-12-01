@@ -251,7 +251,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 				session.ses_config = *argv;
 			else
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
@@ -272,7 +272,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 				session.ses_name = *argv;
 			else
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
@@ -291,7 +291,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 			{
 				session.ses_id = atol(*argv);
 				if (!session.ses_id)
@@ -328,7 +328,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 				user = *argv;
 			else
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
@@ -339,7 +339,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 				pwd = *argv;
 			else
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
@@ -353,7 +353,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 			{
 				const PathName fileName(*argv);
 				const char *s = NULL;
@@ -394,7 +394,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 				user = *argv;
 			else
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
@@ -415,7 +415,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
 
 			argv++;
-			if (argv < end)
+			if (argv < end && *argv)
 				svc_name = *argv;
 			else
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
