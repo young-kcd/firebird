@@ -242,7 +242,8 @@ bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
 		info->charsetName = "UTF16";
 		return true;
 	}
-	else if (id > ttype_last_internal)
+
+	if (id > ttype_last_internal)
 		return false;
 
 	// ASF: This linear lookup appears slow, but it should be cached per database so should not
