@@ -32,13 +32,13 @@
 // DATABASE_PARAMS, SERVICE_PARAMS
 
 
+STR_PARAMETER(include_filter, "")
+STR_PARAMETER(exclude_filter, "")
 PATH_PARAMETER(log_filename, "")
 BOOL_PARAMETER(enabled, false)
 UINT_PARAMETER(max_log_size, 0)
 
 #ifdef DATABASE_PARAMS
-STR_PARAMETER(include_filter, "")
-STR_PARAMETER(exclude_filter, "")
 BOOL_PARAMETER(log_connections, false)
 UINT_PARAMETER(connection_id, 0)
 BOOL_PARAMETER(log_transactions, false)

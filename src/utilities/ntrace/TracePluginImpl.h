@@ -118,6 +118,7 @@ public:
 	{
 		ntrace_service_t id;
 		Firebird::string* description;
+		bool enabled;
 
 		// Deallocate memory used by objects hanging off this structure
 		void deallocate_references()
@@ -185,6 +186,8 @@ private:
 	void register_sql_statement(TraceSQLStatement* statement);
 	void register_blr_statement(TraceBLRStatement* statement);
 	void register_service(TraceService* service);
+	
+	bool checkServiceFilter(TraceService* service, bool started);
 
 	// Write message to text log file
 	void logRecord(const char* action);
