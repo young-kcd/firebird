@@ -271,11 +271,11 @@ namespace {
 	};
 
 	// Generic mutex to synchronize services
-	GlobalPtr<Mutex> svc_mutex;
+	GlobalPtr<Mutex> globalServicesMutex;
 
 	// All that we need to shutdown service threads when shutdown in progress
 	typedef Array<Jrd::Service*> AllServices;
-	GlobalPtr<AllServices> allServices;	// protected by svc_mutex
+	GlobalPtr<AllServices> allServices;	// protected by globalServicesMutex
 	volatile bool svcShutdown = false;
 
 	void put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
@@ -301,6 +301,46 @@ namespace {
 
 
 using namespace Jrd;
+
+Service::ExistenceGuard::ExistenceGuard(Service* s)
+	: svc(s), locked(false)
+{
+	MutexLockGuard guard(globalServicesMutex);
+
+	if (! svc->locateInAllServices())
+	{
+		// Service is so old that it's even missing in allSevrices array
+		Arg::Gds(isc_bad_svc_handle).raise();
+	}
+	
+	if (svc->svc_flags & SVC_detached)
+	{
+		// Service was already detached
+		Arg::Gds(isc_bad_svc_handle).raise();
+	}
+
+	// Appears we have correct handle, lock it to make sure service exists
+	// for our lifetime
+	svc->svc_existence_lock.enter();
+	fb_assert(!svc->svc_current_guard);
+	svc->svc_current_guard = this;
+	locked = true;
+}
+
+Service::ExistenceGuard::~ExistenceGuard()
+{
+	release();
+}
+
+void Service::ExistenceGuard::release()
+{
+	if (locked)
+	{
+		locked = false;
+		svc->svc_current_guard = NULL;
+		svc->svc_existence_lock.leave();
+	}
+}
 
 void Service::parseSwitches()
 {
@@ -388,7 +428,7 @@ void Service::started()
 {
 	if (!(svc_flags & SVC_evnt_fired))
 	{
-		MutexLockGuard guard(svc_mutex);
+		MutexLockGuard guard(globalServicesMutex);
 		svc_flags |= SVC_evnt_fired;
 		svcStart.release();
 	}
@@ -731,7 +771,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
-	svc_remote_pid(0)
+	svc_remote_pid(0), svc_current_guard(NULL)
 {
 	svc_trace_manager = NULL;
 	memset(svc_status, 0, sizeof svc_status);
@@ -739,7 +779,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 	{	// scope
 		// Account service block in global array
-		MutexLockGuard guard(svc_mutex);
+		MutexLockGuard guard(globalServicesMutex);
 		checkForShutdown();
 		allServices->add(this);
 	}
@@ -950,6 +990,8 @@ static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
 
 void Service::detach()
 {
+	ExistenceGuard guard(this);
+
 	// save it cause after call to finish() we can't access class members any more
 	const bool localDoShutdown = svc_do_shutdown;
 
@@ -978,30 +1020,53 @@ Service::~Service()
 
 	delete svc_trace_manager;
 	svc_trace_manager = NULL;
+
+	if (svc_current_guard)
+	{
+		svc_current_guard->release();
+	}
 }
 
 
 void Service::removeFromAllServices()
 {
-	MutexLockGuard guard(svc_mutex);
-	AllServices& all(allServices);
+	MutexLockGuard guard(globalServicesMutex);
 
-	for (unsigned int pos = 0; pos < all.getCount(); ++pos)
+	size_t pos;
+	if (locateInAllServices(&pos))
 	{
-		if (all[pos] == this)
-		{
-			all.remove(pos);
-			return;
-		}
+		allServices->remove(pos);
+		return;
 	}
 
 	fb_assert(false);
 }
 
 
+bool Service::locateInAllServices(size_t* posPtr)
+{
+	MutexLockGuard guard(globalServicesMutex);
+	AllServices& all(allServices);
+
+	for (size_t pos = 0; pos < all.getCount(); ++pos)
+	{
+		if (all[pos] == this)
+		{
+			if (posPtr)
+			{
+				*posPtr = pos;
+			}
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
 ULONG Service::totalCount()
 {
-	MutexLockGuard guard(svc_mutex);
+	MutexLockGuard guard(globalServicesMutex);
 	return allServices->getCount();
 }
 
@@ -1010,7 +1075,7 @@ bool Service::checkForShutdown()
 {
 	if (svcShutdown)
 	{
-		MutexLockGuard guard(svc_mutex);
+		MutexLockGuard guard(globalServicesMutex);
 
 		if (svc_flags & SVC_shutdown)
 		{
@@ -1030,16 +1095,16 @@ void Service::shutdownServices()
 {
 	svcShutdown = true;
 
-	MutexLockGuard guard(svc_mutex);
+	MutexLockGuard guard(globalServicesMutex);
 	AllServices& all(allServices);
 
 	for (unsigned int pos = 0; pos < all.getCount(); )
 	{
 		if (all[pos]->svc_flags & SVC_thd_running)
 		{
-			svc_mutex->leave();
+			globalServicesMutex->leave();
 			THD_sleep(1);
-			svc_mutex->enter();
+			globalServicesMutex->enter();
 			pos = 0;
 			continue;
 		}
@@ -1057,6 +1122,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 						   USHORT buffer_length,
 						   UCHAR* info)
 {
+	ExistenceGuard guard(this);
+
 	UCHAR item;
 	UCHAR buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
@@ -1545,6 +1612,8 @@ void Service::query(USHORT			send_item_length,
 					USHORT			buffer_length,
 					UCHAR*			info)
 {
+	ExistenceGuard guard(this);
+
 	UCHAR item, *p;
 	UCHAR buffer[256];
 	USHORT l, length, version, get_flags;
@@ -1927,6 +1996,8 @@ void Service::query(USHORT			send_item_length,
 
 void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
+	ExistenceGuard guard(this);
+
 	ThreadIdHolder holdId(svc_thread_strings);
 
 	try
@@ -1952,8 +2023,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		status_exception::raise(Arg::Gds(isc_bad_spb_form));
 	}
 
-	{ // scope for locked svc_mutex
-		MutexLockGuard guard(svc_mutex);
+	{ // scope for locked globalServicesMutex
+		MutexLockGuard guard(globalServicesMutex);
 
 		if (svc_flags & SVC_thd_running) {
 			status_exception::raise(Arg::Gds(isc_svc_in_use) << Arg::Str(serv->serv_name));
@@ -2059,7 +2130,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	if (serv->serv_thd)
 	{
 		{	// scope
-			MutexLockGuard guard(svc_mutex);
+			MutexLockGuard guard(globalServicesMutex);
 			svc_flags &= ~SVC_evnt_fired;
 			svc_flags |= SVC_thd_running;
 		}
@@ -2258,7 +2329,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 	*return_length = 0;
 
 	{	// scope
-		MutexLockGuard guard(svc_mutex);
+		MutexLockGuard guard(globalServicesMutex);
 		svc_flags &= ~SVC_timeout;
 	}
 
@@ -2282,7 +2353,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 #endif
 		if (timeout && elapsed_time >= timeout)
 		{
-			MutexLockGuard guard(svc_mutex);
+			MutexLockGuard guard(globalServicesMutex);
 			svc_flags |= SVC_timeout;
 			break;
 		}
@@ -2323,7 +2394,7 @@ void Service::finish(USHORT flag)
 {
 	if (flag == SVC_finished || flag == SVC_detached)
 	{
-		MutexLockGuard guard(svc_mutex);
+		MutexLockGuard guard(globalServicesMutex);
 
 		svc_flags |= flag;
 		if (! (svc_flags & SVC_thd_running))

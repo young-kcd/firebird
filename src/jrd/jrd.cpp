@@ -223,8 +223,10 @@ namespace
 
 	inline void validateHandle(Service* service)
 	{
-		if (!service->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_svc_handle));
+		if (service && service->checkHandle())
+			return;
+
+		status_exception::raise(Arg::Gds(isc_bad_svc_handle));
 	}
 
 	class AttachmentHolder
