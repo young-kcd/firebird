@@ -1636,7 +1636,7 @@ bool TracePluginImpl::checkServiceFilter(TraceService* service, bool started)
 {
 	ReadLockGuard lock(servicesLock);
 
-	ServiceData *data = NULL;
+	ServiceData* data = NULL;
 	ServicesTree::Accessor accessor(&services);
 	if (accessor.locate(service->getServiceID()))
 		data = &accessor.current();

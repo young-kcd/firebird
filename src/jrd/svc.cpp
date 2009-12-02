@@ -129,16 +129,19 @@ namespace {
 	class ThreadIdHolder
 	{
 	public:
-		explicit ThreadIdHolder(Jrd::Service::StatusStringsHelper& p) : strHelper(&p)
+		explicit ThreadIdHolder(Jrd::Service::StatusStringsHelper& p)
+			: strHelper(&p)
 		{
 			MutexLockGuard guard(strHelper->mtx);
 			strHelper->workerThread = getThreadId();
 		}
+
 		~ThreadIdHolder()
 		{
 			MutexLockGuard guard(strHelper->mtx);
 			strHelper->workerThread = 0;
 		}
+
 	private:
 		Jrd::Service::StatusStringsHelper* strHelper;
 	};
@@ -309,10 +312,10 @@ Service::ExistenceGuard::ExistenceGuard(Service* s)
 
 	if (! svc->locateInAllServices())
 	{
-		// Service is so old that it's even missing in allSevrices array
+		// Service is so old that it's even missing in allServices array
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
-	
+
 	if (svc->svc_flags & SVC_detached)
 	{
 		// Service was already detached

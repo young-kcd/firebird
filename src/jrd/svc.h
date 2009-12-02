@@ -279,6 +279,7 @@ public:
 		FB_THREAD_ID workerThread;
 		Firebird::Mutex mtx;
 	};
+
 private:
 	StatusStringsHelper	svc_thread_strings;
 
@@ -289,11 +290,14 @@ private:
 		ExistenceGuard(Service* svc);
 		~ExistenceGuard();
 		void release();
+
 	private:
 		Service* svc;
 		bool locked;
 	};
+
 	friend class ExistenceGuard;
+
 	Firebird::Mutex		svc_existence_lock;
 	ExistenceGuard*		svc_current_guard;
 };

@@ -235,6 +235,8 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	return cs;
 }
 
+
+// Lookup a system character set without looking in the database.
 bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
 {
 	if (id == CS_UTF16)
@@ -260,7 +262,7 @@ bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
 			if (colDef->charSetId == id && colDef->collationId == 0)
 			{
 				info->charsetName = csDef->name;
-				info->collationName = csDef->name;
+				info->collationName = colDef->name;
 				info->attributes = colDef->attributes;
 				info->ignoreAttributes = false;
 
@@ -277,6 +279,7 @@ bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
 
 	return false;
 }
+
 
 Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
 {
