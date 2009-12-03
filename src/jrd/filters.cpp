@@ -793,6 +793,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		{
 			USHORT len = control->ctl_buffer_length;
 			Firebird::HalfStaticArray<BYTE, BUFFER_MEDIUM> buffer;
+			bool first = true;
 			BYTE* p;
 
 			while (len || aux->ctlaux_buffer1_unused)
@@ -838,7 +839,16 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				}
 
 				if (len > 0 && err_position == 0)
-					return isc_transliteration_failed;
+				{
+					if (first)
+						return isc_transliteration_failed;
+					else
+					{
+						// That bytes should be written in the next put or rejected in
+						// close - CORE-2785.
+						break;
+					}
+				}
 
 				/* hand the text off to the next stage of the filter */
 
@@ -862,6 +872,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				control->ctl_number_segments++;
 
 				len = 0;
+				first = false;
 			}
 
 			return FB_SUCCESS;
