@@ -115,7 +115,7 @@ void DYN_delete_collation(Global* gbl, const UCHAR** ptr)
 			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 				DDL_TRIGGER_DROP_COLLATION, collName, gbl->sqlText);
 
-			if (!COLL.RDB$SYSTEM_FLAG.NULL && COLL.RDB$SYSTEM_FLAG == 1)
+			if (COLL.RDB$SYSTEM_FLAG == 1)
 			{
 				DYN_rundown_request(request, -1);
 				DYN_error_punt(false, 237);

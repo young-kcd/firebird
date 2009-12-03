@@ -713,7 +713,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 
             FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
     	        WITH RR.RDB$ROLE_NAME  EQ sql_role
-        	    AND RR.RDB$SYSTEM_FLAG NOT MISSING
+        	    AND RR.RDB$SYSTEM_FLAG > 0
 
         	    if (!REQUEST (irq_verify_trusted_role))
                     REQUEST (irq_verify_trusted_role) = request;
@@ -782,11 +782,8 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		FOR(REQUEST_HANDLE handle2) R IN RDB$ROLES
 			WITH R.RDB$ROLE_NAME EQ role_name.c_str()
 
-			if (!R.RDB$SYSTEM_FLAG.NULL)
-			{
-				if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
-					user->usr_flags |= USR_dba;
-			}
+			if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
+				user->usr_flags |= USR_dba;
 		END_FOR;
 		CMP_release(tdbb, handle2);
 	}

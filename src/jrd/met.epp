@@ -3164,7 +3164,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				END_FOR
 			}
 
-			if (P.RDB$SYSTEM_FLAG.NULL || !P.RDB$SYSTEM_FLAG)
+			if (!P.RDB$SYSTEM_FLAG)
 			{
 				procedure->prc_flags &= ~PRC_system;
 			}

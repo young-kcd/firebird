@@ -714,7 +714,7 @@ static void add_index_set(Database*	dbb)
 			else {
 				X.RDB$INDEX_TYPE.NULL = TRUE;
 			}
-			X.RDB$SYSTEM_FLAG = 1;
+			X.RDB$SYSTEM_FLAG = RDB_system;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$INDEX_INACTIVE = 0;
 
@@ -1069,11 +1069,9 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			break;
 		}
 
-		// For the next ODS change, when we'll have not NULL sys fields
-		/*
+		// Acknowledge not NULL sys fields
 		X.RDB$NULL_FLAG.NULL = FALSE;
-		X.RDB$NULL_FLAG = gfield->gfld_null_flag;
-		*/
+		X.RDB$NULL_FLAG = !gfield->gfld_nullable;
 
 	END_STORE;
 }

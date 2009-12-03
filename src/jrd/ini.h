@@ -67,7 +67,7 @@ const USHORT TIMESTAMP_SIZE	= 8;
 // Pick up global ids
 
 
-#define FIELD(type, name, dtype, length, sub_type, dflt_blr)	type,
+#define FIELD(type, name, dtype, length, sub_type, dflt_blr, nullable)	type,
 enum gflds {
 #include "../jrd/fields.h"
 gfld_MAX};
@@ -78,27 +78,28 @@ typedef gflds GFLDS;
 // Pick up actual global fields
 
 #ifndef GPRE
-#define FIELD(type, name, dtype, length, sub_type, dflt_blr)	\
-	{ (int) type, (int) name, dtype, length, sub_type, dflt_blr, sizeof(dflt_blr) },
+#define FIELD(type, name, dtype, length, sub_type, dflt_blr, nullable)	\
+	{ (int) type, (int) name, dtype, length, sub_type, dflt_blr, sizeof(dflt_blr), nullable },
 #else
-#define FIELD(type, name, dtype, length, sub_type, dflt_blr)	\
-	{ (int) type, (int) name, dtype, length, sub_type, NULL, 0 },
+#define FIELD(type, name, dtype, length, sub_type, dflt_blr, nullable)	\
+	{ (int) type, (int) name, dtype, length, sub_type, NULL, 0, true },
 #endif
 
 struct gfld
 {
-	int gfld_type;
-	int gfld_name;
-	UCHAR gfld_dtype;
-	USHORT gfld_length;
-	UCHAR gfld_sub_type;	// mismatch; dsc2.h uses SSHORT.
-	const UCHAR *gfld_dflt_blr;
-	USHORT gfld_dflt_len;
+	int				gfld_type;
+	int				gfld_name;
+	UCHAR			gfld_dtype;
+	USHORT			gfld_length;
+	SSHORT			gfld_sub_type;
+	const UCHAR*	gfld_dflt_blr;
+	USHORT			gfld_dflt_len;
+	bool			gfld_nullable;
 };
 
 static const struct gfld gfields[] = {
 #include "../jrd/fields.h"
-	{ 0, 0, dtype_unknown, 0, 0, NULL, 0 }
+	{ 0, 0, dtype_unknown, 0, 0, NULL, 0, false }
 };
 #undef FIELD
 
