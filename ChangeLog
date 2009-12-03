@@ -1,3 +1,10 @@
+2009-12-03 04:33  robocop
+
+	* firebird2/src/: jrd/svc.cpp (1.285.2.5), jrd/svc.h (1.79.2.3),
+	utilities/ntrace/fbtrace.conf (1.6.2.3):
+
+	Misc.
+
 2009-12-01 15:32  hvlad
 
 	* firebird2/src/jrd/trace/TraceCmdLine.cpp (1.16.2.1):
