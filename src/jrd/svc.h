@@ -283,7 +283,7 @@ private:
 	class ExistenceGuard
 	{
 	public:
-		ExistenceGuard(Service* svc);
+		explicit ExistenceGuard(Service* svc);
 		~ExistenceGuard();
 		void release();
 	private:

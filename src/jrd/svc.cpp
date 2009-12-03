@@ -303,7 +303,7 @@ Service::ExistenceGuard::ExistenceGuard(Service* s)
 
 	if (! svc->locateInAllServices())
 	{
-		// Service is so old that it's even missing in allSevrices array
+		// Service is so old that it's even missing in allServices array
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
 	
