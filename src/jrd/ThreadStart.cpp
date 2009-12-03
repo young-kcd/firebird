@@ -150,10 +150,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg,
-						int priority_arg,
-						void* thd_id)
+void ThreadStart::start(ThreadEntryPoint* routine, void* arg, int priority_arg, void* thd_id)
 {
 /**************************************
  *
@@ -240,10 +237,7 @@ void THD_wait_for_completion(ThreadHandle& thread)
 
 #ifdef WIN_NT
 #define START_THREAD
-void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg,
-						int priority_arg,
-						void* thd_id)
+void ThreadStart::start(ThreadEntryPoint* routine, void* arg, int priority_arg, void* thd_id)
 {
 /**************************************
  *
@@ -324,10 +318,7 @@ void THD_wait_for_completion(ThreadHandle& handle)
 
 
 #ifndef START_THREAD
-void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg,
-						int priority_arg,
-						void* thd_id)
+void ThreadStart::start(ThreadEntryPoint* routine, void* arg, int priority_arg, void* thd_id)
 {
 /**************************************
  *
