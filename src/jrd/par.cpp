@@ -79,7 +79,7 @@ static const TEXT elements[][14] =
 static NodeParseFunc blr_parsers[256] = {NULL};
 
 
-static void error(CompilerScratch* csb, const Arg::StatusVector& v);
+static void error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError = true);
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
 static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_cast(thread_db*, CompilerScratch*);
@@ -751,7 +751,7 @@ void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 }
 
 
-static void error(CompilerScratch* csb, const Arg::StatusVector& v)
+static void error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError)
 {
 /**************************************
  *
@@ -768,11 +768,17 @@ static void error(CompilerScratch* csb, const Arg::StatusVector& v)
 	// Don't bother to pass tdbb for error handling
 	thread_db* tdbb = JRD_get_thread_data();
 
-	csb->csb_blr_reader.seekBackward(1);
-	Arg::Gds p(isc_invalid_blr);
-	p << Arg::Num(csb->csb_blr_reader.getOffset());
-	p.append(v);
-	p.copyTo(tdbb->tdbb_status_vector);
+	if (isSyntaxError)
+	{
+		csb->csb_blr_reader.seekBackward(1);
+		Arg::Gds p(isc_invalid_blr);
+		p << Arg::Num(csb->csb_blr_reader.getOffset());
+		p.append(v);
+		p.copyTo(tdbb->tdbb_status_vector);
+	}
+	else
+		v.copyTo(tdbb->tdbb_status_vector);
+
 	ERR_make_permanent(tdbb->tdbb_status_vector);
 
 	// Give up whatever we were doing and return to the user.
@@ -2291,7 +2297,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 			if (!(relation = MET_lookup_relation_id(tdbb, id, false)))
 			{
 				name.printf("id %d", id);
-				error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name));
+				error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
 			}
 		}
 		break;
@@ -2304,7 +2310,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 			PAR_name(csb, *alias_string);
 		}
 		if (!(relation = MET_lookup_relation(tdbb, name)))
-			error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name));
+			error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
 		break;
 	}
 
