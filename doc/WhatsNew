@@ -2,6 +2,31 @@
   * v2.5 Release Candidate 2
   **************************
 
+    * Bugfix CORE-2785
+        BLOB transliteration problem in a specific case
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2781
+        Access violation in fbtracemgr when command line switches set wrongly
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2779
+        User list header is displayed at the end of each returning data call to fbsvcmgr
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2778
+        Segmentation fault in services when using the same handle in different threads
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2775
+        Linux packages miss fbtrace.conf
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2771
         Server crashes while backing up a database with GTT 
       Contributor(s):
@@ -17,6 +42,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2765
+        Use of the RDB$ADMIN role does not provide SYSDBA rights in GRANT/REVOKE
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2755
         SIMILAR TO works wrongly
       Contributor(s):
@@ -27,10 +57,25 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Improvement CORE-2774
+        Let "Start trace session" service report if there were no trace plugins loaded by the engine
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2773
+        Let "Start trace session" service report ID of newly created trace session
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Improvement CORE-2769
         Make XNET_CONNECT_TIMEOUT in xnet.h user configurable
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-2767
+        Add ability to the trace plugin to configure traced services events on per-service name basis
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-2754
         Hint the user about -FIX_FSS_METADATA and -FIX_FSS_DATA when restore fail with malformed string error
