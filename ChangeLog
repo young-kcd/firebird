@@ -1,3 +1,33 @@
+2009-12-04 12:44  hvlad
+
+	* firebird2/src/remote/server.cpp (1.264.2.2):
+
+	Fixed bug CORE-2670 : FB 2.5 freezes during data pump operations
+
+2009-12-04 10:07  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.8):
+
+	Update.
+
+2009-12-04 10:00  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.5):
+
+	Update.
+
+2009-12-04 08:56  robocop
+
+	* firebird2/src/jrd/filters.cpp (1.77.2.2):
+
+	Misc.
+
+2009-12-03 18:58  asfernandes
+
+	* firebird2/src/jrd/filters.cpp (1.77.2.1):
+
+	Fixed CORE-2785 - Transliteration error with COMMENT statement
+
 2009-12-03 04:33  robocop
 
 	* firebird2/src/: jrd/svc.cpp (1.285.2.5), jrd/svc.h (1.79.2.3),
