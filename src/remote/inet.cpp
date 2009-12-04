@@ -3035,10 +3035,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 
 	if (!n)
 	{
-		if (inetErrNo)
-			inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
-		else
-			port->port_state = rem_port::BROKEN;
+		port->port_state = rem_port::BROKEN;
 		return false;
 	}
 
