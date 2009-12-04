@@ -515,7 +515,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			// Catch arrays after printing the type
 
 			if (!FLD.RDB$DIMENSIONS.NULL)
-				ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
+				ISQL_array_dimensions(FLD.RDB$FIELD_NAME);
 
 			if (FLD.RDB$FIELD_TYPE == BLOB)
 			{
@@ -2466,12 +2466,14 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 			}
 			isqlGlob.printf(" SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 		}
-
 		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
 			// Length for chars
 			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 		}
+
+		if (!FLD.RDB$DIMENSIONS.NULL)
+			ISQL_array_dimensions(FLD.RDB$FIELD_NAME);
 
 		/* Bug 8261: do not show the collation information just yet!  If you
 		   do, then the domain syntax when printed is not correct */
@@ -2490,9 +2492,6 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
-
-		if (!FLD.RDB$DIMENSIONS.NULL)
-			ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
 
 		if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 		{
@@ -2648,12 +2647,14 @@ static void list_domains(SSHORT default_char_set_id)
 			}
 			isqlGlob.printf(" SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 		}
-
 		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
 			// Length for chars
 			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 		}
+
+		if (!FLD.RDB$DIMENSIONS.NULL)
+			ISQL_array_dimensions(FLD.RDB$FIELD_NAME);
 
 		/* Bug 8261: do not show the collation information just yet!  If you
 		   do, then the domain syntax when printed is not correct */
@@ -2671,9 +2672,6 @@ static void list_domains(SSHORT default_char_set_id)
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
-
-		if (!FLD.RDB$DIMENSIONS.NULL)
-			ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
 
 		if (!FLD.RDB$DEFAULT_SOURCE.NULL)
 		{
