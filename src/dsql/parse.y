@@ -97,9 +97,8 @@
 #include "../jrd/intlobj_new.h"
 #include "../common/StatusArg.h"
 
-/* since UNIX isn't standard, we have to define
-   stuff which is in <limits.h> (which isn't available
-   on all UNIXes... */
+// since UNIX isn't standard, we have to define
+// stuff which is in <limits.h> (which isn't available on all UNIXes...
 
 const long SHRT_POS_MAX			= 32767;
 const long SHRT_UNSIGNED_MAX	= 65535;
@@ -112,11 +111,11 @@ const int UNSIGNED	= 2;
 //const int MIN_CACHE_BUFFERS	= 250;
 //const int DEF_CACHE_BUFFERS	= 1000;
 
-/* Fix 69th procedure problem - solution from Oleg Loa */
+// Fix 69th procedure problem - solution from Oleg Loa
 #define YYSTACKSIZE	2048
 #define YYMAXDEPTH	2048
 
-/* Make bison allocate static stack */
+// Make bison allocate static stack
 #define YYINITDEPTH 2048
 
 // Using this option causes build problems on Win32 with bison 1.28
@@ -130,7 +129,7 @@ const int UNSIGNED	= 2;
 #define YYMALLOC gds__alloc
 #define YYFREE gds__free
 
-static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; /* NTX: placeholder */
+static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; // NTX: placeholder
 
 inline unsigned trigger_type_suffix(const unsigned slot1, const unsigned slot2, const unsigned slot3)
 {
@@ -175,12 +174,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %}
 
 
-/* token declarations */
+// token declarations
 
-/* Tokens are organized chronologically by date added.
-   See dsql/keywords.cpp for a list organized alphabetically */
+// Tokens are organized chronologically by date added.
+// See dsql/keywords.cpp for a list organized alphabetically
 
-/* Tokens in v4.0 -- not separated into v3 and v4 tokens */
+// Tokens in v4.0 -- not separated into v3 and v4 tokens
 
 %token <legacyNode> ACTIVE
 %token <legacyNode> ADD
@@ -379,16 +378,16 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyStr>	STRING
 %token <textPtr>	INTRODUCER
 
-/* New tokens added v5.0 */
+// New tokens added v5.0
 
 %token <legacyNode> ACTION
 %token <legacyNode> ADMIN
 %token <legacyNode> CASCADE
-%token <legacyNode> FREE_IT			/* ISC SQL extension */
+%token <legacyNode> FREE_IT			// ISC SQL extension
 %token <legacyNode> RESTRICT
 %token <legacyNode> ROLE
 
-/* New tokens added v6.0 */
+// New tokens added v6.0
 
 %token <legacyNode> COLUMN
 %token <legacyNode> KW_TYPE
@@ -399,19 +398,19 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> HOUR
 %token <legacyNode> MINUTE
 %token <legacyNode> SECOND
-%token <legacyNode> WEEKDAY			/* ISC SQL extension */
-%token <legacyNode> YEARDAY			/* ISC SQL extension */
+%token <legacyNode> WEEKDAY			// ISC SQL extension
+%token <legacyNode> YEARDAY			// ISC SQL extension
 %token <legacyNode> TIME
 %token <legacyNode> TIMESTAMP
 %token <legacyNode> CURRENT_DATE
 %token <legacyNode> CURRENT_TIME
 %token <legacyNode> CURRENT_TIMESTAMP
 
-/* special aggregate token types returned by lex in v6.0 */
+// special aggregate token types returned by lex in v6.0
 
 %token <legacyNode> NUMBER64BIT SCALEDINT
 
-/* CVC: Special Firebird additions. */
+// CVC: Special Firebird additions.
 
 %token <legacyNode> CURRENT_USER
 %token <legacyNode> CURRENT_ROLE
@@ -422,7 +421,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> FIRST
 %token <legacyNode> SKIP
 
-/* tokens added for Firebird 1.5 */
+// tokens added for Firebird 1.5
 
 %token <legacyNode> CURRENT_CONNECTION
 %token <legacyNode> CURRENT_TRANSACTION
@@ -443,7 +442,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> UPDATING
 %token <legacyNode> DELETING
 
-/* tokens added for Firebird 2.0 */
+// tokens added for Firebird 2.0
 
 %token <legacyNode> BACKUP
 %token <legacyNode> KW_DIFFERENCE
@@ -476,7 +475,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> REQUESTS
 %token <legacyNode> TIMEOUT
 
-/* tokens added for Firebird 2.1 */
+// tokens added for Firebird 2.1
 
 %token <legacyNode> ABS
 %token <legacyNode> ACCENT
@@ -585,7 +584,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> ATANH
 
 
-/* precedence declarations for expression evaluation */
+// precedence declarations for expression evaluation
 
 %left	OR
 %left	AND
@@ -597,7 +596,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %left	CONCATENATE
 %left	COLLATE
 
-/* Fix the dangling IF-THEN-ELSE problem */
+// Fix the dangling IF-THEN-ELSE problem
 %nonassoc THEN
 %nonassoc ELSE
 
@@ -834,7 +833,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %%
 
-/* list of possible statements */
+// list of possible statements
 
 top		: statement
 			{ DSQL_parse = $1; }
@@ -870,7 +869,7 @@ statement	: alter
 		;
 
 
-/* GRANT statement */
+// GRANT statement
 
 grant	: GRANT privileges ON table_noise simple_table_name
 			TO non_role_grantee_list grant_option granted_by
@@ -960,7 +959,7 @@ simple_proc_name
 	;
 
 
-/* REVOKE statement */
+// REVOKE statement
 
 revoke	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
 			FROM non_role_grantee_list granted_by
@@ -1025,8 +1024,8 @@ user_grantee_list : user_grantee
 			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
 		;
 
-/* CVC: In the future we can deprecate the first implicit form since we'll support
-explicit grant/revoke for both USER and ROLE keywords & object types. */
+// CVC: In the future we can deprecate the first implicit form since we'll support
+// explicit grant/revoke for both USER and ROLE keywords & object types.
 
 user_grantee	: symbol_user_name
 		{ $$ = make_node (nod_user_name, (int) 1, $1); }
@@ -1057,7 +1056,7 @@ role_grantee   : symbol_user_name
 		;
 
 
-/* DECLARE operations */
+// DECLARE operations
 
 declare		: DECLARE declare_clause
 			{ $$ = $2;}
@@ -1110,7 +1109,7 @@ arg_desc	: init_data_type udf_data_type param_mechanism
 		;
 
 param_mechanism :
-			{ $$ = NULL; } /* Beware: ddl.cpp converts this to mean FUN_reference. */
+			{ $$ = NULL; } // Beware: ddl.cpp converts this to mean FUN_reference.
 		| BY KW_DESCRIPTOR
 			{ $$ = MAKE_const_slong (FUN_descriptor); }
 		| BY SCALAR_ARRAY
@@ -1142,7 +1141,7 @@ return_mechanism :
 			{ $$ = MAKE_const_slong (FUN_descriptor); }
 		| FREE_IT
 			{ $$ = MAKE_const_slong (-1 * FUN_reference); }
-										 /* FUN_refrence with FREE_IT is -ve */
+										 // FUN_refrence with FREE_IT is -ve
 		| BY KW_DESCRIPTOR FREE_IT
 			{ $$ = MAKE_const_slong (-1 * FUN_descriptor); }
 		;
@@ -1161,7 +1160,7 @@ blob_filter_subtype
 		{ $$ = MAKE_const_slong($1); }
 	;
 
-/* CREATE metadata operations */
+// CREATE metadata operations
 
 create	 	: CREATE create_clause
 			{ $$ = $2; }
@@ -1254,7 +1253,7 @@ replace_clause
 	;
 
 
-/* CREATE EXCEPTION */
+// CREATE EXCEPTION
 
 exception_clause	: symbol_exception_name sql_string
 			{ $$ = make_node (nod_def_exception, (int) e_xcp_count,
@@ -1277,7 +1276,7 @@ alter_exception_clause	: symbol_exception_name sql_string
 		;
 
 
-/* CREATE INDEX */
+// CREATE INDEX
 
 unique_opt	: UNIQUE
 			{ $$ = make_node (nod_unique, 0, NULL); }
@@ -1293,7 +1292,7 @@ index_definition : column_list
 		;
 
 
-/* CREATE SHADOW */
+// CREATE SHADOW
 shadow_clause
 	: pos_short_integer manual_auto conditional sql_string first_file_length sec_shadow_files
 	 	{
@@ -1334,7 +1333,7 @@ db_file_list	: db_file
 		;
 
 
-/* CREATE DOMAIN */
+// CREATE DOMAIN
 
 domain_clause	: column_def_name
 		as_opt
@@ -1394,21 +1393,21 @@ check_constraint	: CHECK begin_trigger '(' search_condition ')' end_trigger
 		;
 
 
-/* CREATE SEQUENCE/GENERATOR */
+// CREATE SEQUENCE/GENERATOR
 
 generator_clause : symbol_generator_name
 			{ $$ = make_node (nod_def_generator, (int) e_gen_count, $1); }
 		 ;
 
 
-/* CREATE ROLE */
+// CREATE ROLE
 
 role_clause : symbol_role_name
 			{ $$ = make_node (nod_def_role, (int) 1, $1); }
 		;
 
 
-/* CREATE COLLATION */
+// CREATE COLLATION
 
 collation_clause : symbol_collation_name FOR symbol_character_set_name
 		collation_sequence_definition
@@ -1595,7 +1594,7 @@ page_noise
 	;
 
 
-/* CREATE TABLE */
+// CREATE TABLE
 
 table_clause	: simple_table_name external_file '(' table_elements ')'
 			{ $$ = make_flag_node (nod_def_relation, NOD_PERMANENT_TABLE,
@@ -1644,7 +1643,7 @@ table_element	: column_def
 
 
 
-/* column definition */
+// column definition
 
 column_def	: column_def_name data_type_or_domain domain_default_opt
 			column_constraint_clause collate_clause
@@ -1658,9 +1657,7 @@ column_def	: column_def_name data_type_or_domain domain_default_opt
 					$1, NULL, NULL, NULL, NULL, $2); }
 		;
 
-/* value does allow parens around it, but there is a problem getting the
- * source text
- */
+// value does allow parens around it, but there is a problem getting the source text.
 
 def_computed	: computed_clause '(' begin_trigger value end_trigger ')'
 			{
@@ -1775,7 +1772,7 @@ column_constraint : null_constraint
 
 
 
-/* table constraints */
+// table constraints
 
 table_constraint_definition : constraint_name_opt table_constraint
 		   { $$ = make_node (nod_rel_constraint, (int) 2, $1, $2);}
@@ -1829,7 +1826,7 @@ referential_trigger_action:
 		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $2, $1); }
 		| update_rule delete_rule
 		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, $2);}
-		| /* empty */
+		| // empty
 		  { $$ = NULL;}
 		;
 
@@ -1855,7 +1852,7 @@ referential_action: CASCADE
 		;
 
 
-/* PROCEDURE */
+// PROCEDURE
 
 
 procedure_clause
@@ -2547,7 +2544,7 @@ fetch_scroll_opt
 	;
 
 
-/* EXECUTE PROCEDURE */
+// EXECUTE PROCEDURE
 
 exec_procedure
 	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_outputs_opt
@@ -2572,7 +2569,7 @@ proc_outputs_opt	: RETURNING_VALUES variable_list
 			{ $$ = NULL; }
 		;
 
-/* EXECUTE BLOCK */
+// EXECUTE BLOCK
 
 exec_block
 	: EXECUTE BLOCK block_input_params
@@ -2611,7 +2608,7 @@ block_proc_parameter
 		{ $$ = make_node (nod_def_field, (int) e_dfl_count, $1, NULL, NULL, $3, NULL, NULL); }
 	;
 
-/* CREATE VIEW */
+// CREATE VIEW
 
 view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 															check_opt end_trigger
@@ -2639,7 +2636,7 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_ex
  		;
 
 
-/* these rules will capture the input string for storage in metadata */
+// these rules will capture the input string for storage in metadata
 
 begin_string	:
 			{ lex.beginnings.push(lex_position()); }
@@ -2683,7 +2680,7 @@ check_opt	: WITH CHECK OPTION
 
 
 
-/* CREATE TRIGGER */
+// CREATE TRIGGER
 
 trigger_clause
 	: symbol_trigger_name
@@ -2929,7 +2926,7 @@ trigger_position
 		{ $$ = TriStateRawType<int>::empty(); }
 	;
 
-/* ALTER statement */
+// ALTER statement
 
 alter	: ALTER alter_clause
 			{ $$ = $2; }
@@ -3004,7 +3001,7 @@ alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = $2; }
 		| ADD table_constraint_definition
 			{ $$ = $2; }
-/* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example.
+		/* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example
 		| col_opt simple_column_name POSITION nonneg_short_integer
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
 			MAKE_const_slong ((IPTR) $4)); } */
@@ -3043,12 +3040,12 @@ alter_column_name  : keyword_or_column
 						NULL, $1); }
 	   ;
 
-/* below are reserved words that could be used as column identifiers
-   in the previous versions */
+// below are reserved words that could be used as column identifiers
+// in the previous versions
 
 keyword_or_column	: valid_symbol_name
-		| ADMIN					/* added in IB 5.0 */
-		| COLUMN				/* added in IB 6.0 */
+		| ADMIN					// added in IB 5.0
+		| COLUMN				// added in IB 6.0
 		| EXTRACT
 		| YEAR
 		| MONTH
@@ -3061,17 +3058,17 @@ keyword_or_column	: valid_symbol_name
 		| CURRENT_DATE
 		| CURRENT_TIME
 		| CURRENT_TIMESTAMP
-		| CURRENT_USER			/* added in FB 1.0 */
+		| CURRENT_USER			// added in FB 1.0
 		| CURRENT_ROLE
 		| RECREATE
-		| CURRENT_CONNECTION	/* added in FB 1.5 */
+		| CURRENT_CONNECTION	// added in FB 1.5
 		| CURRENT_TRANSACTION
 		| BIGINT
 		| CASE
 		| RELEASE
 		| ROW_COUNT
 		| SAVEPOINT
-		| OPEN					/* added in FB 2.0 */
+		| OPEN					// added in FB 2.0
 		| CLOSE
 		| FETCH
 		| ROWS
@@ -3087,15 +3084,15 @@ keyword_or_column	: valid_symbol_name
 		| OCTET_LENGTH
 		| TRAILING
 		| TRIM
-		| CONNECT				/* added in FB 2.1 */
+		| CONNECT				// added in FB 2.1
 		| DISCONNECT
 		| GLOBAL
 		| INSENSITIVE
 		| RECURSIVE
 		| SENSITIVE
 		| START
-		| SIMILAR				/* added in FB 2.5 */
-		| OVER					/* added in FB 3.0 */
+		| SIMILAR				// added in FB 2.5
+		| OVER					// added in FB 3.0
 		| SCROLL
 		;
 
@@ -3191,7 +3188,7 @@ module_op	: MODULE_NAME sql_string
 		;
 
 
-/* ALTER DATABASE */
+// ALTER DATABASE
 
 init_alter_db	:
 			{ $$ = NULL; }
@@ -3215,7 +3212,7 @@ db_alter_clause : ADD db_file_list
 		;
 
 
-/* ALTER TRIGGER */
+// ALTER TRIGGER
 
 alter_trigger_clause
 	: symbol_trigger_name
@@ -3275,7 +3272,7 @@ trigger_type_opt	// we do not allow alter database triggers, hence we do not use
 	;
 
 
-/* DROP metadata operations */
+// DROP metadata operations
 
 drop		: DROP drop_clause
 			{ $$ = $2; }
@@ -3320,7 +3317,7 @@ drop_clause	: EXCEPTION symbol_exception_name
 		;
 
 
-/* these are the allowable datatypes */
+// these are the allowable datatypes
 
 data_type	: non_array_type
 		| array_type
@@ -3421,7 +3418,7 @@ non_charset_simple_type	: national_character_type
 			stmt_ambiguous = true;
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
-				/* Post warning saying that DATE is equivalent to TIMESTAMP */
+				// Post warning saying that DATE is equivalent to TIMESTAMP
 				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(301) <<
 								  Arg::Warning(isc_dtype_renamed));
 				lex.g_field->fld_dtype = dtype_timestamp;
@@ -3460,8 +3457,7 @@ integer_keyword	: INTEGER
 		;
 
 
-/* allow a blob to be specified with any combination of
-   segment length and subtype */
+// allow a blob to be specified with any combination of segment length and subtype
 
 blob_type
 	: BLOB blob_subtype blob_segsize charset_clause
@@ -3528,7 +3524,7 @@ charset_clause
 	;
 
 
-/* character type */
+// character type
 
 
 national_character_type
@@ -3589,7 +3585,7 @@ national_character_keyword : NCHAR
 
 
 
-/* numeric type */
+// numeric type
 
 numeric_type	: KW_NUMERIC prec_scale
 						{
@@ -3685,7 +3681,7 @@ prec_scale	:
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
 						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
 					}
-					/* client_dialect >= SQL_DIALECT_V6 */
+					// client_dialect >= SQL_DIALECT_V6
 					lex.g_field->fld_dtype = dtype_int64;
 					lex.g_field->fld_length = sizeof (SINT64);
 				}
@@ -3714,7 +3710,7 @@ decimal_keyword	: DECIMAL
 
 
 
-/* floating point type */
+// floating point type
 
 float_type
 	: KW_FLOAT precision_opt
@@ -3756,7 +3752,7 @@ precision_opt
 
 
 
-/* SET statements */
+// SET statements
 set		: set_transaction
 		| set_generator
 		| set_statistics
@@ -3779,7 +3775,7 @@ set_generator
 	;
 
 
-/* transaction statements */
+// transaction statements
 
 savepoint	: set_savepoint
 		| release_savepoint
@@ -4052,7 +4048,7 @@ ddl_desc
 	;
 
 
-/* SELECT statement */
+// SELECT statement
 
 select		: select_expr for_update_clause lock_clause
 			{ $$ = make_node (nod_select, (int) e_select_count, $1, $2, $3); }
@@ -4077,7 +4073,7 @@ lock_clause : WITH LOCK
 		;
 
 
-/* SELECT expression */
+// SELECT expression
 
 select_expr	: with_clause select_expr_body order_clause rows_clause
 				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
@@ -4187,7 +4183,7 @@ as_noise
 	| AS
 	;
 
-/* FROM clause */
+// FROM clause
 
 from_clause
 	: FROM from_list
@@ -4309,7 +4305,7 @@ outer_noise
 	;
 
 
-/* other clauses in the select expression */
+// other clauses in the select expression
 
 group_clause	: GROUP BY group_by_list
 			{ $$ = make_list ($3); }
@@ -4322,8 +4318,8 @@ group_by_list	: group_by_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-/* Except aggregate-functions are all expressions supported in group_by_item,
-   they are caught inside pass1.cpp */
+// Except aggregate-functions are all expressions supported in group_by_item,
+// they are caught inside pass1.cpp
 group_by_item : value
 		;
 
@@ -4340,7 +4336,7 @@ where_clause	: WHERE search_condition
 		;
 
 
-/* PLAN clause to specify an access plan for a query */
+// PLAN clause to specify an access plan for a query
 
 plan_clause	: PLAN plan_expression
 			{ $$ = $2; }
@@ -4359,9 +4355,9 @@ plan_type	: JOIN
 		| MERGE
 			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
 
-		/* for now the SORT operator is a no-op; it does not
-		   change the place where a sort happens, but is just intended
-		   to read the output from a SET PLAN */
+		// for now the SORT operator is a no-op; it does not
+		// change the place where a sort happens, but is just intended
+		// to read the output from a SET PLAN
 		| SORT
 			{ $$ = 0; }
 		|
@@ -4402,7 +4398,7 @@ extra_indices_opt	: INDEX '(' index_list ')'
 			{ $$ = 0; }
 		;
 
-/* ORDER BY clause */
+// ORDER BY clause
 
 order_clause	: ORDER BY order_list
 			{ $$ = make_list ($3); }
@@ -4439,13 +4435,13 @@ nulls_placement : FIRST
 			{ $$ = MAKE_const_slong(NOD_NULLS_LAST); }
 		;
 
-/* ROWS clause */
+// ROWS clause
 
 rows_clause	: ROWS value
-			/* equivalent to FIRST value */
+			// equivalent to FIRST value
 			{ $$ = make_node (nod_rows, (int) e_rows_count, NULL, $2); }
 		| ROWS value TO value
-			/* equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1) */
+			// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
 			{ $$ = make_node (nod_rows, (int) e_rows_count,
 				make_node (nod_subtract, 2, $2,
 					MAKE_const_slong (1)),
@@ -4457,8 +4453,8 @@ rows_clause	: ROWS value
 		;
 
 
-/* INSERT statement */
-/* IBO hack: replace column_parens_opt by ins_column_parens_opt. */
+// INSERT statement
+// IBO hack: replace column_parens_opt by ins_column_parens_opt.
 insert		: INSERT INTO simple_table_name ins_column_parens_opt
 				VALUES '(' value_list ')' returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count,
@@ -4472,7 +4468,7 @@ insert		: INSERT INTO simple_table_name ins_column_parens_opt
 		;
 
 
-/* MERGE statement */
+// MERGE statement
 merge
 	:	MERGE INTO table_name USING table_reference ON search_condition
 			merge_when_clause
@@ -4513,7 +4509,7 @@ merge_insert_specification
 	;
 
 
-/* DELETE statement */
+// DELETE statement
 
 delete		: delete_searched
 		| delete_positioned
@@ -4531,7 +4527,7 @@ delete_positioned : KW_DELETE FROM table_name cursor_clause
 		;
 
 
-/* UPDATE statement */
+// UPDATE statement
 
 update		: update_searched
 		| update_positioned
@@ -4549,7 +4545,7 @@ update_positioned : UPDATE table_name SET assignments cursor_clause
 		;
 
 
-/* UPDATE OR INSERT statement */
+// UPDATE OR INSERT statement
 
 update_or_insert
 	:	UPDATE OR INSERT INTO simple_table_name ins_column_parens_opt
@@ -4585,7 +4581,7 @@ cursor_clause	: WHERE CURRENT OF symbol_cursor_name
 		;
 
 
-/* Assignments */
+// Assignments
 
 assignments	: assignment
 		| assignments ',' assignment
@@ -4604,7 +4600,7 @@ exec_function
 	;
 
 
-/* BLOB get and put */
+// BLOB get and put
 
 blob_io			: READ BLOB simple_column_name FROM simple_table_name filter_clause_io segment_clause_io
 			{ $$ = make_node (nod_get_segment, (int) e_blb_count, $3, $5, $6, $7); }
@@ -4642,7 +4638,7 @@ segment_length_io
 	;
 
 
-/* column specifications */
+// column specifications
 
 column_parens_opt : column_parens
 		|
@@ -4658,7 +4654,7 @@ column_list	: simple_column_name
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-/* begin IBO hack */
+// begin IBO hack
 ins_column_parens_opt : ins_column_parens
 		|
 			{ $$ = NULL; }
@@ -4672,7 +4668,7 @@ ins_column_list	: update_column_name
 		| ins_column_list ',' update_column_name
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
-/* end IBO hack */
+// end IBO hack
 
 column_name	 : simple_column_name
 		| symbol_table_alias_name '.' symbol_column_name
@@ -4689,14 +4685,14 @@ simple_column_name : symbol_column_name
 		;
 
 update_column_name : simple_column_name
-/* CVC: This option should be deprecated! The only allowed syntax should be
-Update...set column = expr, without qualifier for the column. */
+// CVC: This option should be deprecated! The only allowed syntax should be
+// Update...set column = expr, without qualifier for the column.
 		| symbol_table_alias_name '.' symbol_column_name
 			{ $$ = make_node (nod_field_name, (int) e_fln_count,
 							$1, $3); }
 		;
 
-/* boolean expressions */
+// boolean expressions
 
 search_condition : predicate
 		| search_condition OR search_condition
@@ -4725,7 +4721,7 @@ predicate : comparison_predicate
 		;
 
 
-/* comparisons */
+// comparisons
 
 comparison_predicate : value '=' value
 			{ $$ = make_node (nod_eql, 2, $1, $3); }
@@ -4745,7 +4741,7 @@ comparison_predicate : value '=' value
 			{ $$ = make_node (nod_neq, 2, $1, $3); }
 		;
 
-/* quantified comparisons */
+// quantified comparisons
 
 quantified_predicate : value '=' ALL '(' column_select ')'
 		{ $$ = make_node (nod_eql_all, 2, $1, $5); }
@@ -4786,7 +4782,7 @@ some	: SOME
 	;
 
 
-/* other predicates */
+// other predicates
 
 distinct_predicate : value IS DISTINCT FROM value
 		{ $$ = make_node (nod_not, 1, make_node (nod_equiv, 2, $1, $5)); }
@@ -4876,7 +4872,7 @@ trigger_action_predicate	: INSERTING
 						MAKE_const_slong (3)); }
 	;
 
-/* set values */
+// set values
 
 in_predicate_value	: table_subquery
 	| '(' value_list ')'
@@ -4887,7 +4883,7 @@ table_subquery	: '(' column_select ')'
 			{ $$ = $2; }
 		;
 
-/* USER control SQL interface */
+// USER control SQL interface
 
 create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
 		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
@@ -4935,14 +4931,14 @@ admin_opt
 		{ $$ = $1; }
 	| grant_admin
 		{ $$ = $1; }
-	| 
+	|
 		{ $$ = NULL; }
 	;
 
 grant_admin_opt
 	: grant_admin
 		{ $$ = $1; }
-	| 
+	|
 		{ $$ = NULL; }
 	;
 
@@ -4956,7 +4952,7 @@ grant_admin
 		{ $$ = MAKE_cstring("1"); }
 	;
 
-/* value types */
+// value types
 
 value	: column_name
 		| array_element
@@ -5246,7 +5242,7 @@ long_integer
 	;
 
 
-/* functions */
+// functions
 
 function
 	: aggregate_function
@@ -5466,9 +5462,9 @@ string_value_function	:  substring_function
 		;
 
 substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
-			/* SQL spec requires numbering to start with 1,
-			   hence we decrement the first parameter to make it
-			   compatible with the engine's implementation */
+			// SQL spec requires numbering to start with 1,
+			// hence we decrement the first parameter to make it
+			// compatible with the engine's implementation
 			{ $$ = make_node (nod_substr, (int) e_substr_count, $3,
 				make_node (nod_subtract, 2, $5,
 					MAKE_const_slong (1)), $6); }
@@ -5515,7 +5511,7 @@ cast_specification	: CAST '(' value AS data_type_descriptor ')'
 			{ $$ = make_node (nod_cast, (int) e_cast_count, $5, $3); }
 		;
 
-/* case expressions */
+// case expressions
 
 case_expression	: case_abbreviation
 		| case_specification
@@ -5580,7 +5576,7 @@ decode_pairs
 		{ $$ = make_node(nod_list, 2, $1, make_node(nod_list, 2, $3, $5)); }
 	;
 
-/* next value expression */
+// next value expression
 
 next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
 			{
@@ -5638,7 +5634,7 @@ null_value	: KW_NULL
 		;
 
 
-/* Performs special mapping of keywords into symbols */
+// Performs special mapping of keywords into symbols
 
 symbol_UDF_call_name	: SYMBOL
 	;
@@ -5722,13 +5718,13 @@ symbol_package_name
 	: valid_symbol_name
 	;
 
-/* symbols */
+// symbols
 
 valid_symbol_name	: SYMBOL
 	| non_reserved_word
 	;
 
-/* list of non-reserved words */
+// list of non-reserved words
 
 non_reserved_word :
 	ACTION					// added in IB 5.0/
@@ -6238,8 +6234,7 @@ static bool short_int(dsql_nod* string,
 		}
 	}
 
-	/* there are 5 or fewer digits, it's value may still be greater
-	 * than 32767... */
+	// there are 5 or fewer digits, it's value may still be greater than 32767...
 
 	SCHAR buf[10];
 	buf[0] = ((dsql_str*) string)->str_data[0];
@@ -6307,7 +6302,7 @@ static void stack_nodes (dsql_nod*	node,
 			next_node->nod_arg[1]->nod_type != nod_list)
 	{
 
-		/* pattern was found so reverse the links and go to next node */
+		// pattern was found so reverse the links and go to next node
 
 		dsql_nod* save_link = next_node->nod_arg[0];
 		next_node->nod_arg[0] = curr_node;
@@ -6316,17 +6311,17 @@ static void stack_nodes (dsql_nod*	node,
 		end_chain = curr_node;
 	}
 
-	/* see if any chain was found */
+	// see if any chain was found
 
 	if (end_chain)
 	{
 
-		/* first, handle the rest of the nodes */
-		/* note that next_node still points to the first non-pattern node */
+		// first, handle the rest of the nodes
+		// note that next_node still points to the first non-pattern node
 
 		stack_nodes (next_node, stack);
 
-		/* stack the non-list nodes and reverse the chain on the way back */
+		// stack the non-list nodes and reverse the chain on the way back
 
 		curr_node = end_chain;
 		while (true)
@@ -6386,7 +6381,7 @@ int Parser::yylexAux()
 	char string[MAX_TOKEN_LEN];
 	SSHORT c;
 
-	/* Find end of white space and skip comments */
+	// Find end of white space and skip comments
 
 	for (;;)
 	{
@@ -6395,7 +6390,7 @@ int Parser::yylexAux()
 
 		c = *lex.ptr++;
 
-		/* Process comments */
+		// Process comments
 
 		if (c == '\n') {
 			lex.lines++;
@@ -6405,13 +6400,13 @@ int Parser::yylexAux()
 
 		if (c == '-' && lex.ptr < lex.end && *lex.ptr == '-')
 		{
-			/* single-line */
+			// single-line
 
 			lex.ptr++;
 			while (lex.ptr < lex.end) {
 				if ((c = *lex.ptr++) == '\n') {
 					lex.lines++;
-					lex.line_start = lex.ptr /* + 1*/; /* CVC: +1 left out. */
+					lex.line_start = lex.ptr; // + 1; // CVC: +1 left out.
 					break;
 				}
 			}
@@ -6421,7 +6416,7 @@ int Parser::yylexAux()
 		}
 		else if (c == '/' && lex.ptr < lex.end && *lex.ptr == '*')
 		{
-			/* multi-line */
+			// multi-line
 
 			const TEXT& start_block = lex.ptr[-1];
 			lex.ptr++;
@@ -6432,7 +6427,7 @@ int Parser::yylexAux()
 				}
 				if (c == '\n') {
 					lex.lines++;
-					lex.line_start = lex.ptr /* + 1*/; /* CVC: +1 left out. */
+					lex.line_start = lex.ptr; // + 1; // CVC: +1 left out.
 
 				}
 			}
@@ -6454,15 +6449,14 @@ int Parser::yylexAux()
 			break;
 	}
 
-	/* Depending on tok_class of token, parse token */
+	// Depending on tok_class of token, parse token
 
 	lex.last_token = lex.ptr - 1;
 
 	if (tok_class & CHR_INTRODUCER)
 	{
-		/* The Introducer (_) is skipped, all other idents are copied
-		 * to become the name of the character set
-		 */
+		// The Introducer (_) is skipped, all other idents are copied
+		// to become the name of the character set.
 		char* p = string;
 		for (; lex.ptr < lex.end && classes(*lex.ptr) & CHR_IDENT; lex.ptr++)
 		{
@@ -6474,15 +6468,15 @@ int Parser::yylexAux()
 		check_bound(p, string);
 		*p = 0;
 
-		/* make a string value to hold the name, the name
-		 * is resolved in pass1_constant */
+		// make a string value to hold the name, the name
+		// is resolved in pass1_constant
 
 		yylval.textPtr = MAKE_string(string, p - string)->str_data;
 
 		return INTRODUCER;
 	}
 
-	/* parse a quoted string, being sure to look for double quotes */
+	// parse a quoted string, being sure to look for double quotes
 
 	if (tok_class & CHR_QUOTE)
 	{
@@ -6504,14 +6498,14 @@ int Parser::yylexAux()
 				lex.lines++;
 				lex.line_start = lex.ptr + 1;
 			}
-			/* *lex.ptr is quote - if next != quote we're at the end */
+			// *lex.ptr is quote - if next != quote we're at the end
 			if ((*lex.ptr == c) && ((++lex.ptr == lex.end) || (*lex.ptr != c)))
 				break;
 			if (p > buffer_end)
 			{
 				char* const new_buffer = (char*) gds__alloc (2 * buffer_len);
-			/* FREE: at outer block */
-				if (!new_buffer)		/* NOMEM: */
+				// FREE: at outer block
+				if (!new_buffer)		// NOMEM:
 				{
 					if (buffer != string)
 						gds__free (buffer);
@@ -6529,10 +6523,11 @@ int Parser::yylexAux()
 		}
 		if (c == '"')
 		{
-			stmt_ambiguous = true; /* string delimited by double quotes could be
-					**   either a string constant or a SQL delimited
-					**   identifier, therefore marks the SQL
-					**   statement as ambiguous  */
+			stmt_ambiguous = true;
+			// string delimited by double quotes could be
+			// either a string constant or a SQL delimited
+			// identifier, therefore marks the SQL statement as ambiguous
+
 			if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 			{
 				if (buffer != string)
@@ -6873,14 +6868,14 @@ int Parser::yylexAux()
 	if ((tok_class & CHR_DIGIT) ||
 		((c == '.') && (lex.ptr < lex.end) && (classes(*lex.ptr) & CHR_DIGIT)))
 	{
-		/* The following variables are used to recognize kinds of numbers. */
+		// The following variables are used to recognize kinds of numbers.
 
-		bool have_error	 = false;	/* syntax error or value too large */
-		bool have_digit	 = false;	/* we've seen a digit			  */
-		bool have_decimal   = false;	/* we've seen a '.'				*/
-		bool have_exp	   = false;	/* digit ... [eE]				  */
-		bool have_exp_sign  = false; /* digit ... [eE] {+-]			 */
-		bool have_exp_digit = false; /* digit ... [eE] ... digit		*/
+		bool have_error	 = false;	// syntax error or value too large
+		bool have_digit	 = false;	// we've seen a digit
+		bool have_decimal   = false;	// we've seen a '.'
+		bool have_exp	   = false;	// digit ... [eE]
+		bool have_exp_sign  = false; // digit ... [eE] {+-]
+		bool have_exp_digit = false; // digit ... [eE] ... digit
 		FB_UINT64 number		= 0;
 		FB_UINT64 limit_by_10	= MAX_SINT64 / 10;
 
@@ -6888,27 +6883,25 @@ int Parser::yylexAux()
 		{
 			c = *lex.ptr;
 			if (have_exp_digit && (! (classes(c) & CHR_DIGIT)))
-				/* First non-digit after exponent and digit terminates
-				 the token. */
+				// First non-digit after exponent and digit terminates the token.
 				break;
 			else if (have_exp_sign && (! (classes(c) & CHR_DIGIT)))
 			{
-				/* only digits can be accepted after "1E-" */
+				// only digits can be accepted after "1E-"
 				have_error = true;
 				break;
 			}
 			else if (have_exp)
 			{
-				/* We've seen e or E, but nothing beyond that. */
+				// We've seen e or E, but nothing beyond that.
 				if ( ('-' == c) || ('+' == c) )
 					have_exp_sign = true;
 				else if ( classes(c) & CHR_DIGIT )
-					/* We have a digit: we haven't seen a sign yet,
-					but it's too late now. */
+					// We have a digit: we haven't seen a sign yet, but it's too late now.
 					have_exp_digit = have_exp_sign  = true;
 				else
 				{
-					/* end of the token */
+					// end of the token
 					have_error = true;
 					break;
 				}
@@ -6925,14 +6918,13 @@ int Parser::yylexAux()
 			}
 			else if (classes(c) & CHR_DIGIT)
 			{
-				/* Before computing the next value, make sure there will be
-				   no overflow.  */
+				// Before computing the next value, make sure there will be no overflow.
 
 				have_digit = true;
 
 				if (number >= limit_by_10)
 				{
-				/* possibility of an overflow */
+					// possibility of an overflow
 					if ((number > limit_by_10) || (c > '8'))
 					{
 						have_error = true;
@@ -6944,12 +6936,12 @@ int Parser::yylexAux()
 			else if ( (('E' == c) || ('e' == c)) && have_digit )
 				have_exp = true;
 			else
-				/* Unexpected character: this is the end of the number. */
+				// Unexpected character: this is the end of the number.
 				break;
 		}
 
-		/* We're done scanning the characters: now return the right kind
-		   of number token, if any fits the bill. */
+		// We're done scanning the characters: now return the right kind
+		// of number token, if any fits the bill.
 
 		if (!have_error)
 		{
@@ -6967,8 +6959,8 @@ int Parser::yylexAux()
 			else if (!have_exp)
 			{
 
-				/* We should return some kind (scaled-) integer type
-				   except perhaps in dialect 1. */
+				// We should return some kind (scaled-) integer type
+				// except perhaps in dialect 1.
 
 				if (!have_decimal && (number <= MAX_SLONG))
 				{
@@ -7010,21 +7002,20 @@ int Parser::yylexAux()
 					else
 						return NUMBER64BIT;
 				}
-			} /* else if (!have_exp) */
-		} /* if (!have_error) */
+			} // else if (!have_exp)
+		} // if (!have_error)
 
-		/* we got some kind of error or overflow, so don't recognize this
-		 * as a number: just pass it through to the next part of the lexer.
-		 */
+		// we got some kind of error or overflow, so don't recognize this
+		// as a number: just pass it through to the next part of the lexer.
 	}
 
-	/* Restore the status quo ante, before we started our unsuccessful
-	   attempt to recognize a number. */
+	// Restore the status quo ante, before we started our unsuccessful
+	// attempt to recognize a number.
 	lex.ptr = lex.last_token;
-	c   = *lex.ptr++;
-	/* We never touched tok_class, so it doesn't need to be restored. */
+	c = *lex.ptr++;
+	// We never touched tok_class, so it doesn't need to be restored.
 
-	/* end of number-recognition code */
+	// end of number-recognition code
 
 
 	if (tok_class & CHR_LETTER)
@@ -7057,7 +7048,7 @@ int Parser::yylexAux()
 		return SYMBOL;
 	}
 
-	/* Must be punctuation -- test for double character punctuation */
+	// Must be punctuation -- test for double character punctuation
 
 	if (lex.last_token + 1 < lex.end)
 	{
@@ -7070,7 +7061,7 @@ int Parser::yylexAux()
 		}
 	}
 
-	/* Single character punctuation are simply passed on */
+	// Single character punctuation are simply passed on
 
 	return (UCHAR) c;
 }
@@ -7099,17 +7090,17 @@ void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&
 	if (yychar < 1)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  /* Unexpected end of command */
+				  // Unexpected end of command
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) <<
 													Arg::Num(lex.last_token - line_start + 1));
 	}
 	else
 	{
 		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  /* Token unknown - line %d, column %d */
+				  // Token unknown - line %d, column %d
 				  Arg::Gds(isc_dsql_token_unk_err) << Arg::Num(lines) <<
-				  									  Arg::Num(lex.last_token - line_start + 1) << /*CVC: +1*/
-				  /* Show the token */
+				  									  Arg::Num(lex.last_token - line_start + 1) << // CVC: +1
+				  // Show the token
 				  Arg::Gds(isc_random) << Arg::Str(string(lex.last_token, lex.ptr - lex.last_token)));
 	}
 }
