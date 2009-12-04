@@ -1,3 +1,16 @@
+2009-12-04 08:56  robocop
+
+	* firebird2/src/jrd/filters.cpp (1.56.8.4):
+
+	Misc.
+
+2009-12-03 19:05  asfernandes
+
+	* firebird2/src/jrd/filters.cpp (1.56.8.3):
+
+	Backported fix for CORE-2785 - Transliteration error with COMMENT
+	statement
+
 2009-11-28 13:36  dimitr
 
 	* firebird2/src/remote/xnet.cpp (1.95.2.4):
