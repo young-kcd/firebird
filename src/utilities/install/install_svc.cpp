@@ -352,7 +352,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	switch (sw_command)
 	{
 		case COMMAND_INSTALL:
-			/* First, lets do the guardian, if it has been specified */
+			// First, lets do the guardian, if it has been specified
 			if (sw_guardian)
 			{
 				status = SERVICES_install(manager,
@@ -383,11 +383,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					printf("Service \"%s\" successfully created.\n", guard_display_name.c_str());
 				}
 
-				/* Set sw_startup to manual in preparation for install the service */
+				// Set sw_startup to manual in preparation for install the service
 				sw_startup = STARTUP_DEMAND;
 			}
 
-			/* do the install of the server */
+			// do the install of the server
 			status = SERVICES_install(manager,
 									  remote_service_name.c_str(),
 									  remote_display_name.c_str(),
@@ -471,7 +471,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			break;
 
 		case COMMAND_START:
-			/* Test for use of the guardian. If so, start the guardian else start the server */
+			// Test for use of the guardian. If so, start the guardian else start the server
 			service = OpenService(manager, guard_service_name.c_str(), SERVICE_START);
 			if (service)
 			{
@@ -500,7 +500,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			break;
 
 		case COMMAND_STOP:
-			/* Test for use of the guardian. If so, stop the guardian else stop the server */
+			// Test for use of the guardian. If so, stop the guardian else stop the server
 			service = OpenService(manager, guard_service_name.c_str(), SERVICE_STOP);
 			if (service)
 			{

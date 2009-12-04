@@ -453,10 +453,10 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 							FOR FLD1 IN RDB$FIELDS WITH
 								FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
 
-								/* We are ODS >= 10 and could be any Dialect */
+								// We are ODS >= 10 and could be any Dialect
 								if (!FLD1.RDB$FIELD_PRECISION.NULL)
 								{
-									/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+									// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 									{
@@ -889,14 +889,14 @@ static void get_procedure_args_ods12(const char* proc_name)
 								(FLD.RDB$FIELD_TYPE == INTEGER) ||
 								(FLD.RDB$FIELD_TYPE == BIGINT))
 							{
-								/* We are ODS >= 10 and could be any Dialect */
+								// We are ODS >= 10 and could be any Dialect
 
 								FOR FLD1 IN RDB$FIELDS WITH
 									FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
 
 									if (!FLD1.RDB$FIELD_PRECISION.NULL)
 									{
-										/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+										// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 										if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 											FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 										{
@@ -939,10 +939,9 @@ static void get_procedure_args_ods12(const char* proc_name)
 					}
 				}
 
-				/* Changed this to return RDB$CHARACTER_LENGTH if available
-				   Fix for Bug #122563
-				   FSG 18.Nov.2000
-				*/
+				// Changed this to return RDB$CHARACTER_LENGTH if available
+				// Fix for Bug #122563
+				//   FSG 18.Nov.2000
 				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 				{
 					if (FLD.RDB$CHARACTER_LENGTH.NULL)
@@ -1199,14 +1198,14 @@ static void get_procedure_args_legacy(const char* proc_name)
 								(FLD.RDB$FIELD_TYPE == INTEGER) ||
 								(FLD.RDB$FIELD_TYPE == BIGINT))
 							{
-								/* We are ODS >= 10 and could be any Dialect */
+								// We are ODS >= 10 and could be any Dialect
 
 								FOR FLD1 IN RDB$FIELDS WITH
 									FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
 
 									if (!FLD1.RDB$FIELD_PRECISION.NULL)
 									{
-										/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+										// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 										if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 											FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 										{
@@ -1249,10 +1248,9 @@ static void get_procedure_args_legacy(const char* proc_name)
 					}
 				}
 
-				/* Changed this to return RDB$CHARACTER_LENGTH if available
-				   Fix for Bug #122563
-				   FSG 18.Nov.2000
-				*/
+				// Changed this to return RDB$CHARACTER_LENGTH if available
+				//   Fix for Bug #122563
+				//   FSG 18.Nov.2000
 				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 				{
 					if (FLD.RDB$CHARACTER_LENGTH.NULL)
@@ -1797,8 +1795,8 @@ static void list_all_tables(LegacyTables flag, SSHORT default_char_set_id)
  *
  **************************************/
 
-/* This version of cursor gets only sql tables identified by security class
-   and misses views, getting only null view_source */
+	// This version of cursor gets only sql tables identified by security class
+	// and misses views, getting only null view_source
 
 	FOR REL IN RDB$RELATIONS WITH
 		(REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
@@ -2401,13 +2399,13 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
 						(FLD.RDB$FIELD_TYPE == BIGINT))
 					{
-						/* We are ODS >= 10 and could be any Dialect */
+						// We are ODS >= 10 and could be any Dialect
 
 						FOR FLD1 IN RDB$FIELDS WITH
 							FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
 							if (!FLD1.RDB$FIELD_PRECISION.NULL)
 							{
-								/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+								// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 								if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 									FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 								{
@@ -2475,11 +2473,10 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 		if (!FLD.RDB$DIMENSIONS.NULL)
 			ISQL_array_dimensions(FLD.RDB$FIELD_NAME);
 
-		/* Bug 8261: do not show the collation information just yet!  If you
-		   do, then the domain syntax when printed is not correct */
+		// Bug 8261: do not show the collation information just yet!  If you
+		// do, then the domain syntax when printed is not correct.
 
-		/* since the character set is part of the field type, display that
-		   information now. */
+		// Since the character set is part of the field type, display that information now.
 		if (!FLD.RDB$CHARACTER_SET_ID.NULL)
 		{
 
@@ -2582,13 +2579,13 @@ static void list_domains(SSHORT default_char_set_id)
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
 						(FLD.RDB$FIELD_TYPE == BIGINT))
 					{
-						/* We are ODS >= 10 and could be any Dialect */
+						// We are ODS >= 10 and could be any Dialect
 						FOR FLD1 IN RDB$FIELDS WITH
 							FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
 
 							if (!FLD1.RDB$FIELD_PRECISION.NULL)
 							{
-								/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+								// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 								if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 									FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 								{
@@ -2656,11 +2653,10 @@ static void list_domains(SSHORT default_char_set_id)
 		if (!FLD.RDB$DIMENSIONS.NULL)
 			ISQL_array_dimensions(FLD.RDB$FIELD_NAME);
 
-		/* Bug 8261: do not show the collation information just yet!  If you
-		   do, then the domain syntax when printed is not correct */
+		// Bug 8261: do not show the collation information just yet!  If you
+		// do, then the domain syntax when printed is not correct.
 
-		/* since the character set is part of the field type, display that
-		   information now. */
+		// Since the character set is part of the field type, display that information now.
 		if (!FLD.RDB$CHARACTER_SET_ID.NULL)
 		{
 			char_sets[0] = 0;
@@ -2825,9 +2821,8 @@ static void list_foreign()
  **************************************/
 	SCHAR collist[BUFFER_LENGTH512 * 2];
 
-/* Static queries for obtaining foreign constraints, where RELC1 is the
-   foreign key constraints, RELC2 is the primary key lookup and REFC
-   is the join table */
+	// Static queries for obtaining foreign constraints, where RELC1 is the
+	// foreign key constraints, RELC2 is the primary key lookup and REFC is the join table
 
 	FOR RELC1 IN RDB$RELATION_CONSTRAINTS CROSS
 		RELC2 IN RDB$RELATION_CONSTRAINTS CROSS
@@ -2854,8 +2849,8 @@ static void list_foreign()
 		else
 			isqlGlob.printf("ALTER TABLE %s ADD ", RELC1.RDB$RELATION_NAME);
 
-		/* If the name of the constraint is not INTEG..., print it.
-	      INTEG_... are internally generated names. */
+		// If the name of the constraint is not INTEG..., print it.
+	    // INTEG_... are internally generated names.
 		if (!RELC1.RDB$CONSTRAINT_NAME.NULL &&
 			!fb_utils::implicit_integrity(RELC1.RDB$CONSTRAINT_NAME))
 		{
@@ -2999,10 +2994,10 @@ static void list_functions()
 						FNA1.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
 						FNA1.RDB$ARGUMENT_POSITION EQ FNA.RDB$ARGUMENT_POSITION
 
-						/* We are ODS >= 10 and could be any Dialect */
+						// We are ODS >= 10 and could be any Dialect
 						if (!FNA1.RDB$FIELD_PRECISION.NULL)
 						{
-							/* We are Dialect >=3 since FIELD_PRECISION is non-NULL */
+							// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 							if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
 								FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 							{
@@ -3018,7 +3013,7 @@ static void list_functions()
 						ISQL_errmsg (isc_status);
 						return;
 					END_ERROR;
-				} /* if isqlGlob.major_ods >= ods_version10 && */
+				} // if isqlGlob.major_ods >= ods_version10 &&
 
 				if (!precision_known)
 				{

@@ -186,7 +186,7 @@ static const struct
 	{ 0, NULL}
 };
 
-/* strlen of each element above, + strlen(", ") for separators */
+// strlen of each element above, + strlen(", ") for separators
 
 const int MAX_PRIV_LIST = (6 + 2 + 7 + 2 + 6 + 2 + 6 + 2 + 6 + 2 + 10 + 1);
 
@@ -1982,7 +1982,7 @@ static void show_charsets(const SCHAR* relation_name, const SCHAR* field_name,
 		END_ERROR;
 	}
 
-	TEXT char_sets[86];			/* CHARACTER SET <name31> COLLATE <name31> */
+	TEXT char_sets[86];			// CHARACTER SET <name31> COLLATE <name31>
 	char_sets[0] = 0;
 	if ((char_set_id != default_char_set_id) || collation)
 	{
@@ -2086,7 +2086,7 @@ static void show_proc_charsets(const SCHAR* procedure_name, const SCHAR* paramet
 		END_ERROR;
 	}
 
-	TEXT char_sets[86];			/* CHARACTER SET <name31> COLLATE <name31> */
+	TEXT char_sets[86];			// CHARACTER SET <name31> COLLATE <name31>
 	char_sets[0] = 0;
 	if ((char_set_id != default_char_set_id) || collation)
 	{
@@ -2655,7 +2655,7 @@ static void show_db()
  *
  **************************************/
 
-// First print the name of the database
+	// First print the name of the database
 
 	isqlGlob.printf("Database: %s%s", isqlGlob.global_Db_name, NEWLINE);
 	// Get the owner name
@@ -3087,11 +3087,10 @@ static processing_state show_domains(const SCHAR* domain_name)
 						{
 							FOR FLD1 IN RDB$FIELDS WITH
 								FLD1.RDB$FIELD_NAME EQ domain_name;
-								/* We are ODS >= 10 and could be any Dialect */
+								// We are ODS >= 10 and could be any Dialect
 								if (!FLD1.RDB$FIELD_PRECISION.NULL)
 								{
-									/* We are Dialect >=3 since FIELD_PRECISION
-									   is non-NULL */
+									// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 									{
@@ -3474,11 +3473,10 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 						FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
 						FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION
 
-						/* We are ODS >= 10 */
+						// We are ODS >= 10
 						if (!FNA1.RDB$FIELD_PRECISION.NULL)
 						{
-							/* We are Dialect >=3 since FIELD_PRECISION is
-							   non-NULL */
+							// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 							if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
 								FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 							{
@@ -3603,11 +3601,10 @@ static processing_state show_generators(const SCHAR* object)
 			sqlda.sqln = 1;
 			sqlda.version = SQLDA_VERSION1;
 
-			/* If the user has set his client dialect to 1, we take that to
-			   mean that he wants to see just the lower 32 bits of the
-			   generator, as in V5.  Otherwise, we show him the whole 64-bit
-			   value.
-			*/
+			// If the user has set his client dialect to 1, we take that to
+			// mean that he wants to see just the lower 32 bits of the
+			// generator, as in V5.  Otherwise, we show him the whole 64-bit value.
+
 			if (isc_dsql_prepare (isc_status, &gds_trans, &stmt, 0, query,
 								  isqlGlob.SQL_dialect, &sqlda))
 			{
@@ -4023,11 +4020,10 @@ static processing_state show_proc(const SCHAR* procname)
 						{
 							FOR FLD1 IN RDB$FIELDS
 								WITH FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-								/* We are ODS >= 10 and could be any Dialect */
+								// We are ODS >= 10 and could be any Dialect
 								if (!FLD1.RDB$FIELD_PRECISION.NULL)
 								{
-									/* We are Dialect >=3 since FIELD_PRECISION is
-									   non-NULL */
+									// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 									{
@@ -4065,9 +4061,9 @@ static processing_state show_proc(const SCHAR* procname)
 					}
 					break;
 				}
-			/* Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
-			   FSG 19.Nov.2000
-			*/
+
+			// Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
+			//   FSG 19.Nov.2000
 			if (((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
 				!FLD.RDB$CHARACTER_LENGTH.NULL)
 			{
@@ -4468,15 +4464,15 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 	if (first)
 		return (OBJECT_NOT_FOUND);
 
-/*
-*FOR RFR IN RDB$RELATION_FIELDS CROSS
-	REL IN RDB$RELATIONS CROSS
-	FLD IN RDB$FIELDS WITH
-	RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
-	RFR.RDB$RELATION_NAME EQ relation_name AND
-	REL.RDB$RELATION_NAME EQ RFR.RDB$RELATION_NAME
-	SORTED BY RFR.RDB$FIELD_POSITION, RFR.RDB$FIELD_NAME
-*/
+	/*
+	FOR RFR IN RDB$RELATION_FIELDS CROSS
+		REL IN RDB$RELATIONS CROSS
+		FLD IN RDB$FIELDS WITH
+		RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
+		RFR.RDB$RELATION_NAME EQ relation_name AND
+		REL.RDB$RELATION_NAME EQ RFR.RDB$RELATION_NAME
+		SORTED BY RFR.RDB$FIELD_POSITION, RFR.RDB$FIELD_NAME
+	*/
 
 	FOR RFR IN RDB$RELATION_FIELDS CROSS
 		FLD IN RDB$FIELDS WITH
@@ -4537,11 +4533,10 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 						FOR FLD1 IN RDB$FIELDS WITH
 							FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
 
-							/* We are ODS >= 10 and could be any Dialect */
+							// We are ODS >= 10 and could be any Dialect
 							if (!FLD1.RDB$FIELD_PRECISION.NULL)
 							{
-								/* We are Dialect >=3 since FIELD_PRECISION is
-								   non-NULL */
+								// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 								if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
 									FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 								{

@@ -258,7 +258,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 		return (*err_handler) (errnum, "StartService", NULL);
 	}
 
-	/* Wait for the service to actually start before returning. */
+	// Wait for the service to actually start before returning.
 	SERVICE_STATUS service_status;
 
 	do
@@ -309,7 +309,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 		return (*err_handler) (errnum, "ControlService", NULL);
 	}
 
-	/* Wait for the service to actually stop before returning. */
+	// Wait for the service to actually stop before returning.
 	do
 	{
 		if (!QueryServiceStatus(service, &service_status))
@@ -367,7 +367,7 @@ USHORT SERVICES_status (const char* service_name)
 	{
 		case SERVICE_RUNNING : status = FB_SERVICE_STATUS_RUNNING; break;
 		case SERVICE_STOPPED : status = FB_SERVICE_STATUS_STOPPED; break;
-		case SERVICE_START_PENDING :	/* fall over the next case */
+		case SERVICE_START_PENDING :	// fall over the next case
 		case SERVICE_STOP_PENDING : status = FB_SERVICE_STATUS_PENDING; break;
 	}
 

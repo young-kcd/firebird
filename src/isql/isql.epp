@@ -5715,11 +5715,11 @@ void ISQL_get_version(bool call_by_create_db)
 		return;
 	}
 
-	/* If the remote server did not respond to our request for
-   "dialects spoken", then we can assume it can only speak
-   the V5 dialect.  We automatically change the connection
-   dialect to that spoken by the server.  Otherwise the
-   current dialect is set to whatever the user requested. */
+	// If the remote server did not respond to our request for
+	// "dialects spoken", then we can assume it can only speak
+	// the V5 dialect.  We automatically change the connection
+	// dialect to that spoken by the server.  Otherwise the
+	// current dialect is set to whatever the user requested.
 
 	if (global_dialect_spoken == 0)
 		isqlGlob.SQL_dialect = SQL_DIALECT_V5;
@@ -6063,12 +6063,11 @@ static processing_state newdb(TEXT* dbname,
 	if (!dbname || !*dbname)
 		return ps_ERR;
 
-	/*
-	 * Since the dbname is set already, in the case where a database is specified
-	 * on the command line, we need to save it so ISQL_disconnect does not NULL it
-	 * out.  We will restore it after the disconnect.  The save_database buffer
-	 * will also be used to translate dbname to the proper character set.
-	*/
+	// Since the dbname is set already, in the case where a database is specified
+	// on the command line, we need to save it so ISQL_disconnect does not NULL it
+	// out.  We will restore it after the disconnect.  The save_database buffer
+	// will also be used to translate dbname to the proper character set.
+
 	const size_t len = chop_at(dbname, MAXPATHLEN);
 	SCHAR* save_database = (SCHAR*) ISQL_ALLOC(len + 1);
 	if (!save_database)
@@ -6095,14 +6094,13 @@ static processing_state newdb(TEXT* dbname,
 	strip_quotes(usr, local_usr);
 	strip_quotes(psw, local_psw);
 
-	/* if local user is not specified, see if global options are
-	   specified - don't let a global role setting carry forward if a
-	   specific local user was specified
-
-	   Special handling for SQL Roles:
-	 *	 V5  client -- strip the quotes
-	 *	 V6  client -- pass the role name as it is
-	 */
+	// if local user is not specified, see if global options are
+	// specified - don't let a global role setting carry forward if a
+	// specific local user was specified
+	//
+	// Special handling for SQL Roles:
+	//	 V5  client -- strip the quotes
+	//	 V6  client -- pass the role name as it is
 
 	if (sql_role_nm)
 	{
