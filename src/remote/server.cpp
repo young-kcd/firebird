@@ -5255,7 +5255,9 @@ bool Worker::wakeUp()
 	Firebird::MutexLockGuard guard(m_mutex);
 	if (m_idleWorkers)
 	{
-		m_idleWorkers->m_sem.release();
+		Worker* idle = m_idleWorkers;
+		idle->setState(true);
+		idle->m_sem.release();
 		return true;
 	}
 	return (m_cntAll >= MAX_THREADS);
