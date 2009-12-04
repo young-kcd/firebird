@@ -845,12 +845,10 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			{
 				if (first)
 					return isc_transliteration_failed;
-				else
-				{
-					// That bytes should be written in the next put or rejected in
-					// close - CORE-2785.
-					break;
-				}
+					
+				// Those bytes should be written in the next put or rejected in
+				// close - CORE-2785.
+				break;
 			}
 	
 			/* hand the text off to the next stage of the filter */
