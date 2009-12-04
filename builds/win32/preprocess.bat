@@ -78,7 +78,6 @@ goto :EOF
 @for %%i in (array, blob) do @call :PREPROCESS dsql %%i
 @for %%i in (metd) do @call :PREPROCESS dsql %%i -gds_cxx -cxx
 @for %%i in (DdlNodes, PackageNodes) do @call :PREPROCESS dsql %%i -gds_cxx
-@for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i -gds_cxx
 @for %%i in (codes) do @call :PREPROCESS misc %%i

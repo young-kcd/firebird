@@ -4,28 +4,28 @@
 # version 2.1 of the License, or (at your option) any later version.
 # You may obtain a copy of the Licence at
 # http://www.gnu.org/licences/lgpl.html
-# 
+#
 # As a special exception this file can also be included in modules
-# with other source code as long as that source code has been 
-# released under an Open Source Initiative certificed licence.  
-# More information about OSI certification can be found at: 
-# http://www.opensource.org 
-# 
+# with other source code as long as that source code has been
+# released under an Open Source Initiative certificed licence.
+# More information about OSI certification can be found at:
+# http://www.opensource.org
+#
 # This module is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public Licence for more details.
-# 
-# This module was created by members of the firebird development 
-# team.  All individual contributions remain the Copyright (C) of 
-# those individuals and all rights are reserved.  Contributors to 
-# this file are either listed below or can be obtained from a CVS 
+#
+# This module was created by members of the firebird development
+# team.  All individual contributions remain the Copyright (C) of
+# those individuals and all rights are reserved.  Contributors to
+# this file are either listed below or can be obtained from a CVS
 # history command.
 #
 #  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
 #
 #  Contributor(s):
-# 
+#
 #
 #
 
@@ -111,8 +111,8 @@ CPU_OPTION = -j$(CPU)
 #
 # John Belardo ~ July 2001
 #
-# In the tradition of makefiles, they have evolved even further.  But most of 
-# the above is still applies.  There now tends to be a Makefile for each 
+# In the tradition of makefiles, they have evolved even further.  But most of
+# the above is still applies.  There now tends to be a Makefile for each
 # target rather than the more traditional Makefile per directory model.
 # This was needed to enable super to build corrently.  But it also allowed
 # some of the boot build process to be done simpler as well.
@@ -124,14 +124,14 @@ CPU_OPTION = -j$(CPU)
 
 #__________________________________________________________________________
 #
-# This is the main target for the make.  The targets are 
+# This is the main target for the make.  The targets are
 # firebird_embedded and firebird_server.  Or as they used to be known
 # firebird_classic and firebird_super.
 
 # (The  .PHONY: stuff just means it's a fake target, and make wont go searching
-#  for a real file or directory - but there are a lot of them here 
+#  for a real file or directory - but there are a lot of them here
 # MOD 28-July-2002)
-.PHONY: all firebird firebird_boot firebird_basic 
+.PHONY: all firebird firebird_boot firebird_basic
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
 .PHONY: firebird_super firebird_classic btyacc_binary
 .PHONY: fbtrace
@@ -139,7 +139,7 @@ CPU_OPTION = -j$(CPU)
 
 # The main targets are firebird_embedded or firebird_server
 # or their older names _classic or _super.
-# The following target is expanded by autoconf process to 
+# The following target is expanded by autoconf process to
 # either _classic or _super.
 
 
@@ -151,16 +151,16 @@ firebird_super firebird_server: firebird_basic super_targets fbtrace
 
 
 
-# In building embedded/server version some targets are common, mainly the 
+# In building embedded/server version some targets are common, mainly the
 # boot kit, security2.fdb database and messages files.  Boot builds a number of
-# static programs gpre_static gbak_static isql_static though an involved 
+# static programs gpre_static gbak_static isql_static though an involved
 # process.  These are used to compile the rest of the source, as it saves
 # some complications particularly for super in needing to start the server
 # that you are currently building. MOD 28-July-2002
 
 firebird_basic: btyacc_binary external_libraries firebird_boot basic_targets
 
-firebird_boot: updateBuildNum boot_phase1 boot_phase2 
+firebird_boot: updateBuildNum boot_phase1 boot_phase2
 
 
 
@@ -182,11 +182,11 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 	$(SRC_ROOT)/misc/writeBuildNum.sh createMakeVersion $@
 
 
-# 
-# Libraries that come from outside the project but are built 
-# as part of the project are included here.  Currently IBM ICU and 
+#
+# Libraries that come from outside the project but are built
+# as part of the project are included here.  Currently IBM ICU and
 # editline are the only externals libraries we have included.
-# 
+#
 
 external_libraries:
 ifeq ($(STD_ICU),false)
@@ -200,7 +200,7 @@ endif
 
 btyacc_binary: $(BTYACC)
 
-$(BTYACC): 
+$(BTYACC):
 	$(MAKE) -C $(ROOT)/extern/btyacc
 
 #---------------------------------------------------------------------------
@@ -249,7 +249,7 @@ gpre_static:
 #  for another day). We still don't have the security database stuff.
 #
 # Phase2 is complete with the building of an security2.fdb user store database
-# in order to do that isql and gdef tools need to be built without security
+# in order to do that isql tool needs to be built without security
 # to do that a special alt_boot.o is inserted into the shared library.
 # Again once security2.fdb is built then were not too worried about the
 # components (in fact some of them have to be rebuilt again to incorperate
@@ -278,7 +278,7 @@ ref_databases : $(GBAK_STATIC)
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
 
 
-security2.fdb: gdef isql 		# build the security database
+security2.fdb: isql 		# build the security database
 	$(MAKE) -C utilities $@
 
 
@@ -293,7 +293,7 @@ security2.fdb: gdef isql 		# build the security database
 #  for another day). We still don't have the security database stuff.
 #
 # Notes:
-# mainly we need gdef and isql to be able to build security2.fdb.  I wonder
+# mainly we need isql to be able to build security2.fdb.  I wonder
 # if we could reduce the tricky dependancy by restoring the security2.fdb
 # database earlier, then perhaps we could build the jrdlib in one step and
 # include the security bits and pieces.
@@ -323,7 +323,7 @@ plugins:                # plugins
 	$(MAKE) -f $(GEN_ROOT)/Makefile.plugins
 
                        # distribution header include files
-includes:	include_generic 
+includes:	include_generic
 
                        # examples still need a good makefile to ship with them
 examples_cp:
@@ -332,11 +332,11 @@ examples_cp:
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
 
-.PHONY: libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql 
+.PHONY: libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql
 .PHONY: embed_gpre embed_util
 
 classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql \
-	embed_gpre libfbclient embed_util embed_gdef embed_qli embed_fbudf $(PLAT_CLASSIC_POST_TARGET)
+	embed_gpre libfbclient embed_util embed_qli embed_fbudf $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.libfbembed $@
@@ -360,10 +360,7 @@ embed_gpre:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.gpre
 
 embed_util:
-	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.util	
-
-embed_gdef:
-	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.gdef
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.util
 
 embed_qli:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.qli
@@ -373,11 +370,11 @@ embed_fbudf:
 
 #_ Firebird Server Targets (super and super client)__________________________
 
-.PHONY: fbserver 
+.PHONY: fbserver
 .PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util client_fbudf
 
 super_targets: $(PLAT_SUPER_PRE_TARGET) fbserver libfbclient client_gfix client_gbak client_gsec\
-			client_isql client_gpre client_util client_fbudf client_gdef client_qli $(PLAT_SUPER_POST_TRAGET) 
+			client_isql client_gpre client_util client_fbudf client_qli $(PLAT_SUPER_POST_TRAGET)
 
 fbserver:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.fbserver $@
@@ -401,16 +398,13 @@ client_isql:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.isql
 
 client_util:
-	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.util	
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.util
 
 client_fbudf:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.fbudf
 
-# Not sure we need this target in super - problems with WAL includes
+# Not sure we need this target in super
 # MOD 04-Oct-2002
-
-client_gdef:
-	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.gdef
 
 client_qli:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.qli
@@ -444,7 +438,7 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 # All these files are #includes in ibase.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
-IBASE_ExtraFiles = include/types_pub.h include/consts_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
+IBASE_ExtraFiles = include/types_pub.h include/consts_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
 MAKE_HEADER_Src = $(addprefix $(SRC_ROOT)/, misc/makeHeader.cpp)
 MAKE_HEADER_Bin = ./makeHeader
@@ -502,7 +496,7 @@ $(SrcTarFile) :
 
 
 #___________________________________________________________________________
-# 
+#
 .PHONY: clean clean_objects clean_dependancies clean_extern_objects clean_build \
 		clean_gpre_gen clean_icu clean_dbs clean_examples clean_makefiles \
 		clean_editline clean_all
@@ -536,7 +530,7 @@ clean_dbs:
 # The examples are a bit different, since the makefile is included in the directory
 # and not in the gen directory, deleting it means, make clean; make doesnt work correctly
 # so the code below deletes all the other stuff but not the Makefile.examples MOD Nov-2007
- 
+
 clean_examples:
 	$(RM) `find $(GEN_ROOT)/examples/ -type f ! -name 'Make*'`
 
@@ -554,7 +548,7 @@ clean_extern_objects:
 	$(RM) `find $(ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler
-# since when .o and other files are deleted the dependant 
+# since when .o and other files are deleted the dependant
 # targets need to be recalculated
 # MOD 10-July-2002
 
@@ -569,7 +563,7 @@ clean_build:
 	$(RM) `find $(GEN_ROOT)/firebird \( -type f -o -type l \) -print`
 #	$(RM) $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 
-# 
+#
 clean_makefiles:
 	$(RM) $(GEN_ROOT)/Make*
 	$(RM) $(GEN_ROOT)/make*
@@ -587,4 +581,4 @@ clean_yacc_gen:
 
 #___________________________________________________________________________
 # Extra platform specific targets
-@POSTFIX_INCLUDE@ 
+@POSTFIX_INCLUDE@

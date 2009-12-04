@@ -8,25 +8,25 @@
 #   "GPL"), in which case the provisions of the GPL are applicable
 #   instead of those above. You may obtain a copy of the Licence at
 #   http://www.gnu.org/copyleft/gpl.html
-# 
+#
 #   This program is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   Relevant for more details.
-# 
+#
 #   This file was created by members of the firebird development team.
 #   All individual contributions remain the Copyright (C) of those
 #   individuals.  Contributors to this file are either listed here or
 #   can be obtained from a CVS history command.
-# 
+#
 #   All rights reserved.
 #
 #   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-# 
+#
 #   Contributor(s):
-# 
-# 
-# 
+#
+#
+#
 
 
 #_____________________________________________________________________________
@@ -35,7 +35,7 @@
 
 # This file contains default values that are used by the build process do not
 # change these here, but override them in the platform specific file
-# prefix.xxx where xxx is the platform name using the form SH := bash 
+# prefix.xxx where xxx is the platform name using the form SH := bash
 # see the readme file with the Makefile.in files for more details.
 
 #_____________________________________________________________________________
@@ -196,7 +196,7 @@ BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 # The shared library name for the embedded (or classic) library
 # SD: This name is also hard-coded in builds/install/.../linux/classic scripts.
 #     Scold me, but I don't want library names to be in configure.in
-# 
+#
 
 SharedLibraryName=libfbembed.${SHRLIB_EXT}.${FirebirdVersion}
 SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}.${MinorVer}
@@ -307,7 +307,7 @@ LINK_EMBED = $(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) $(LI
  $(call LIB_LINK_SONAME,$(SharedLibrarySoName)) $(call LIB_LINK_RPATH,lib)
 LINK_EMBED_LIBS = -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
 
-# From utilities 
+# From utilities
 CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
 GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
 FBSVCMGR	= $(BIN)/fbsvcmgr$(EXEC_EXT)
@@ -364,8 +364,6 @@ fr_FR_MSG       = $(FIREBIRD)/fr_FR.msg
 de_DE_MSG       = $(FIREBIRD)/de_DE.msg
 ja_JP_MSG       = $(FIREBIRD)/ja_JP.msg
 
-# From gdef
-GDEF			= $(BIN)/gdef$(EXEC_EXT)
 
 #Platform Manager
 #For want of a better suggestion we may as well default to posix
