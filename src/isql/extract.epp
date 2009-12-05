@@ -779,7 +779,7 @@ static void get_procedure_args_ods12(const char* proc_name)
 					isqlGlob.printf("TYPE OF ");
 
 				if (basedOnColumn)
-					isqlGlob.printf("%s.%s", relationName, relationField);
+					isqlGlob.printf("COLUMN %s.%s", relationName, relationField);
 				else
 				{
 					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
