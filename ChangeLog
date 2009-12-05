@@ -1,3 +1,36 @@
+2009-12-05 13:51  robocop
+
+	* firebird2/src/isql/extract.epp (1.118):
+
+	CORE-2792: Bad extraction syntax for procedure's parameter based on
+	table's field
+
+2009-12-05 13:39  robocop
+
+	* firebird2/src/isql/: extract.epp (1.117), isql.epp (1.303),
+	isql.h (1.79), isql_proto.h (1.31), show.epp (1.161):
+
+	isql: collapse a lot of copy/paste into a single function.
+
+2009-12-05 06:24  robocop
+
+	* firebird2/src/isql/extract.epp (1.116):
+
+	CORE-800: Easy metadata extract improvements
+
+2009-12-05 02:08  asfernandes
+
+	* firebird2/configure.in (1.378):
+
+	Fix Linux build
+
+2009-12-04 17:00  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.301):
+
+	frontported change from 2.5 - issue with too many records in log
+	file
+
 2009-12-04 12:44  hvlad
 
 	* firebird2/src/remote/server.cpp (1.270):
