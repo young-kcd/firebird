@@ -82,6 +82,7 @@ static void list_collations();
 static void list_create_db();
 static void list_domain_table(const SCHAR*, SSHORT);
 static void list_domains(SSHORT);
+static void listDomainConstraints();
 static void list_exceptions();
 static void list_filters();
 static void list_foreign();
@@ -196,6 +197,7 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		list_exceptions();
 		list_all_procs();
 		list_package_bodies();
+		listDomainConstraints();
 		list_all_triggers();
 		list_all_grants();
 		SHOW_comments(false); // Let's make this an option later.
@@ -2674,11 +2676,7 @@ static void list_domains(SSHORT default_char_set_id)
 			isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$DEFAULT_SOURCE);
 		}
-		if (!FLD.RDB$VALIDATION_SOURCE.NULL)
-		{
-			isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
-			ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
-		}
+		// Validation moved to listDomainConstraints().
 		if (FLD.RDB$NULL_FLAG == 1)
 			isqlGlob.printf(" NOT NULL");
 
@@ -2697,6 +2695,43 @@ static void list_domains(SSHORT default_char_set_id)
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
+
+		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(gds_status);
+		return;
+	END_ERROR;
+}
+
+
+static void listDomainConstraints()
+{
+	bool first = true;
+
+	FOR FLD IN RDB$FIELDS WITH
+		FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
+		AND FLD.RDB$SYSTEM_FLAG NE 1
+		AND FLD.RDB$VALIDATION_SOURCE NOT MISSING
+		SORTED BY FLD.RDB$FIELD_NAME
+
+		if (first)
+		{
+			isqlGlob.printf("%s/* Domain constraints */%s", NEWLINE, NEWLINE);
+			first = false;
+		}
+		fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+
+		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+		{
+			IUTILS_copy_SQL_id(FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+			isqlGlob.printf("ALTER DOMAIN %s ADD CONSTRAINT", SQL_identifier);
+		}
+		else
+			isqlGlob.printf("ALTER DOMAIN %s ADD CONSTRAINT", FLD.RDB$FIELD_NAME);
+
+		isqlGlob.printf("%s%s ", NEWLINE, TAB_AS_SPACES);
+		ISQL_print_validation (isqlGlob.Out, &FLD.RDB$VALIDATION_SOURCE, false, gds_trans);
 
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
