@@ -40,10 +40,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-
-#include "../lock/lock.h"
 #include "../lock/lock_proto.h"
-
 #include "../jrd/ThreadStart.h"
 #include "../jrd/jrd.h"
 #include "gen/iberror.h"
