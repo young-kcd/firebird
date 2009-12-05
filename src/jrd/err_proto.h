@@ -54,7 +54,6 @@ void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
 void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT, const TEXT* = NULL);
 void	ERR_error(int);
-void	ERR_error_msg(const TEXT*);
 void	ERR_post(const Firebird::Arg::StatusVector& v);
 void	ERR_post_nothrow(const Firebird::Arg::StatusVector& v);
 void	ERR_punt();

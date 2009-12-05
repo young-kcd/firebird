@@ -149,13 +149,11 @@ void JRD_rollback_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_rollback_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
 	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level);
-void JRD_start_multiple(Jrd::thread_db* tdbb, Jrd::jrd_tra** tra_handle, USHORT count,
-	Jrd::teb* vector, FB_API_HANDLE public_handle = 0);
 void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level);
 void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
-	USHORT dbginfo_length, const UCHAR* dbginfo);
+	USHORT dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest);
 bool JRD_verify_database_access(const Firebird::PathName&);
 void JRD_shutdown_attachments(const Jrd::Database* dbb);
 

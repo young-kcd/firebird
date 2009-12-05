@@ -554,17 +554,16 @@ namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK, VDN_SECURITY};
 }
 static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
-static ISC_STATUS	unwindAttach(const Exception& ex,
-								 ISC_STATUS* userStatus,
-								 thread_db* tdbb,
-								 Jrd::Attachment* attachment,
-								 Database* dbb);
+static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, ISC_STATUS* userStatus,
+	Jrd::Attachment* attachment, Database* dbb);
 #ifdef WIN_NT
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
 #endif
 
 static Database*	init(thread_db*, const PathName&, bool);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
+static void		start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
+	USHORT count, TEB* vector, FB_API_HANDLE public_handle = 0);
 static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		detachLocksFromAttachment(Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
@@ -674,6 +673,100 @@ static ISC_STATUS successful_completion(ISC_STATUS* status, ISC_STATUS return_co
 	}
 
 	return return_code;
+}
+
+
+// Stuff exception transliterated to the client charset.
+ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, ISC_STATUS* vector) throw()
+{
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	USHORT charSet;
+
+	if (!attachment || (charSet = attachment->att_client_charset) == CS_METADATA ||
+		charSet == CS_NONE)
+	{
+		return ex.stuff_exception(vector);
+	}
+
+	ISC_STATUS* vectorStart = vector;
+	Array<UCHAR*> buffers;
+
+	try
+	{
+		ex.stuff_exception(vector);
+
+		bool cont = true;
+
+		while (cont)
+		{
+			const ISC_STATUS type = *vector++;
+
+			switch (type)
+			{
+			case isc_arg_end:
+				cont = false;
+				break;
+			case isc_arg_cstring:
+				{
+					size_t len = *vector;
+					const UCHAR* str = reinterpret_cast<UCHAR*>(vector[1]);
+					try
+					{
+						UCHAR* p = new UCHAR[len + 1];
+						buffers.add(p);
+						len = INTL_convert_bytes(tdbb, charSet, p, len, CS_METADATA, str, len, ERR_post);
+						p[len] = '\0';
+						str = p;
+					}
+					catch (const Exception&)
+					{
+					}
+					*vector++ = (ISC_STATUS) len;
+					*vector++ = (ISC_STATUS)(IPTR) str;
+				}
+				break;
+			case isc_arg_string:
+			case isc_arg_interpreted:
+			case isc_arg_sql_state:
+				{
+					const UCHAR* str = reinterpret_cast<UCHAR*>(*vector);
+					size_t len = strlen((const char*) str);
+					try
+					{
+						UCHAR* p = new UCHAR[len + 1];
+						buffers.add(p);
+						len = INTL_convert_bytes(tdbb, charSet, p, len, CS_METADATA, str, len, ERR_post);
+						p[len] = '\0';
+						str = p;
+					}
+					catch (const Exception&)
+					{
+					}
+					*vector++ = (ISC_STATUS)(IPTR) str;
+				}
+				break;
+			default:
+				++vector;
+				break;
+			}
+		}
+	}
+	catch (...)
+	{
+		vector = vectorStart;
+		*vector++ = isc_arg_gds;
+		*vector++ = isc_random;
+		*vector++ = isc_arg_string;
+		*vector++ = (ISC_STATUS)(IPTR) "Unexpected exception in transliterationException()";
+		*vector++ = isc_arg_end;
+	}
+
+	makePermanentVector(vectorStart);
+
+	for (Array<UCHAR*>::iterator i = buffers.begin(); i != buffers.end(); ++i)
+		delete [] *i;
+
+	return vectorStart[1];
 }
 
 
@@ -1441,7 +1534,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	*handle = attachment;
 	attachment->att_mutex.leave();
-
 	}	// try
 	catch (const Exception& ex)
 	{
@@ -1450,7 +1542,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 			filename, options, false, no_priv);
 
-		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
+		return unwindAttach(tdbb, ex, user_status, attachment, dbb);
 	}
 
 	siHolder.clear();
@@ -1484,9 +1576,16 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		INF_blob_info(blob, items2, item_length, buffer2, buffer_length);
+		try
+		{
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			INF_blob_info(blob, items2, item_length, buffer2, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1518,8 +1617,15 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		BLB_cancel(tdbb, blob);
-		*blob_handle = NULL;
+		try
+		{
+			BLB_cancel(tdbb, blob);
+			*blob_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1550,11 +1656,18 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS* user_status, Jrd::Attachment** handle, 
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		Database* const dbb = tdbb->getDatabase();
-
-		if (dbb->dbb_event_mgr)
+		try
 		{
-			dbb->dbb_event_mgr->cancelEvents(*id);
+			Database* const dbb = tdbb->getDatabase();
+
+			if (dbb->dbb_event_mgr)
+			{
+				dbb->dbb_event_mgr->cancelEvents(*id);
+			}
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -1586,32 +1699,39 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Jrd::Attachment** handle
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb, false);
 
-		switch (option)
+		try
 		{
-		case fb_cancel_disable:
-			attachment->att_flags |= ATT_cancel_disable;
-			attachment->att_flags &= ~ATT_cancel_raise;
-			break;
-
-		case fb_cancel_enable:
-			if (attachment->att_flags & ATT_cancel_disable)
+			switch (option)
 			{
-				// avoid leaving ATT_cancel_raise set when cleaning ATT_cancel_disable
-				// to avoid unexpected CANCEL (though it should not be set, but...)
-				attachment->att_flags &= ~(ATT_cancel_disable | ATT_cancel_raise);
-			}
-			break;
+			case fb_cancel_disable:
+				attachment->att_flags |= ATT_cancel_disable;
+				attachment->att_flags &= ~ATT_cancel_raise;
+				break;
 
-		case fb_cancel_raise:
-			if (!(attachment->att_flags & ATT_cancel_disable))
-			{
-				attachment->att_flags |= ATT_cancel_raise;
-				attachment->cancelExternalConnection(tdbb);
-			}
-			break;
+			case fb_cancel_enable:
+				if (attachment->att_flags & ATT_cancel_disable)
+				{
+					// avoid leaving ATT_cancel_raise set when cleaning ATT_cancel_disable
+					// to avoid unexpected CANCEL (though it should not be set, but...)
+					attachment->att_flags &= ~(ATT_cancel_disable | ATT_cancel_raise);
+				}
+				break;
 
-		default:
-			fb_assert(false);
+			case fb_cancel_raise:
+				if (!(attachment->att_flags & ATT_cancel_disable))
+				{
+					attachment->att_flags |= ATT_cancel_raise;
+					attachment->cancelExternalConnection(tdbb);
+				}
+				break;
+
+			default:
+				fb_assert(false);
+			}
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -1644,8 +1764,15 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		BLB_close(tdbb, blob);
-		*blob_handle = NULL;
+		try
+		{
+			BLB_close(tdbb, blob);
+			*blob_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1676,7 +1803,14 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, jrd_tra** tra_handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_commit_transaction(tdbb, tra_handle);
+		try
+		{
+			JRD_commit_transaction(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1707,7 +1841,14 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_commit_retaining(tdbb, tra_handle);
+		try
+		{
+			JRD_commit_retaining(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1742,23 +1883,30 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		TraceBlrCompile trace(tdbb, blr_length, (UCHAR*) blr);
 		try
 		{
-			JRD_compile(tdbb, attachment, req_handle,
-						(USHORT) blr_length, reinterpret_cast<const UCHAR*>(blr),
-						RefStrPtr(), 0, NULL);
+			TraceBlrCompile trace(tdbb, blr_length, (UCHAR*) blr);
+			try
+			{
+				JRD_compile(tdbb, attachment, req_handle,
+							(USHORT) blr_length, reinterpret_cast<const UCHAR*>(blr),
+							RefStrPtr(), 0, NULL, false);
 
-			fb_assert(*req_handle);
-			trace.finish(*req_handle, res_successful);
+				fb_assert(*req_handle);
+				trace.finish(*req_handle, res_successful);
+			}
+			catch (const Exception& ex)
+			{
+				const ISC_LONG exc = transliterateException(tdbb, ex, user_status);
+				const bool no_priv = (exc == isc_no_priv);
+				trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
+
+				return exc;
+			}
 		}
 		catch (const Exception& ex)
 		{
-			const ISC_LONG exc = ex.stuff_exception(user_status);
-			const bool no_priv = (exc == isc_no_priv);
-			trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
-
-			return exc;
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -1802,9 +1950,15 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-
-		*blob_handle = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
+		try
+		{
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			*blob_handle = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2193,7 +2347,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 			filename, options, true, no_priv);
 
-		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
+		return unwindAttach(tdbb, ex, user_status, attachment, dbb);
 	}
 
 	siHolder.clear();
@@ -2227,9 +2381,16 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		INF_database_info(items2, item_length, buffer2, buffer_length);
+		try
+		{
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			INF_database_info(items2, item_length, buffer2, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2284,31 +2445,38 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Jrd::Attachment** handle)
 			{ // holder scope
 				DatabaseContextHolder dbbHolder(tdbb);
 
-				if (attachment->att_in_use)
-				{
-					//// TODO: localize
-					status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Attachment in use"));
-				}
-
-				Database* dbb = tdbb->getDatabase();
-
-				// if this is the last attachment, mark dbb as not in use
-				if (dbb->dbb_attachments == attachment && !attachment->att_next &&
-					!(dbb->dbb_flags & DBB_being_opened))
-				{
-					dbb->dbb_flags |= DBB_not_in_use;
-				}
-
 				try
 				{
-					// Purge attachment, don't rollback open transactions
-					attachment->att_flags |= ATT_cancel_disable;
-					purge_attachment(tdbb, attachment, false);
+					if (attachment->att_in_use)
+					{
+						//// TODO: localize
+						status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Attachment in use"));
+					}
+
+					Database* dbb = tdbb->getDatabase();
+
+					// if this is the last attachment, mark dbb as not in use
+					if (dbb->dbb_attachments == attachment && !attachment->att_next &&
+						!(dbb->dbb_flags & DBB_being_opened))
+					{
+						dbb->dbb_flags |= DBB_not_in_use;
+					}
+
+					try
+					{
+						// Purge attachment, don't rollback open transactions
+						attachment->att_flags |= ATT_cancel_disable;
+						purge_attachment(tdbb, attachment, false);
+					}
+					catch (const Exception&)
+					{
+						dbb->dbb_flags &= ~DBB_not_in_use;
+						throw;
+					}
 				}
-				catch (const Exception&)
+				catch (const Exception& ex)
 				{
-					dbb->dbb_flags &= ~DBB_not_in_use;
-					throw;
+					return transliterateException(tdbb, ex, user_status);
 				}
 			}
 		}
@@ -2348,101 +2516,108 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Jrd::Attachment** handle)
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
 
-		if (attachment->att_in_use)
+		try
 		{
-			//// TODO: localize
-			status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Attachment in use"));
-		}
-
-		Database* const dbb = tdbb->getDatabase();
-
-		const PathName& file_name = attachment->att_filename;
-
-		if (!attachment->locksmith())
-		{
-			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
-											  Arg::Str("database") <<
-											  Arg::Str(file_name));
-		}
-
-		if (attachment->att_flags & ATT_shutdown)
-		{
-			if (dbb->dbb_ast_flags & DBB_shutdown)
+			if (attachment->att_in_use)
 			{
-				ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+				//// TODO: localize
+				status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Attachment in use"));
 			}
-			else
+
+			Database* const dbb = tdbb->getDatabase();
+
+			const PathName& file_name = attachment->att_filename;
+
+			if (!attachment->locksmith())
 			{
-				ERR_post(Arg::Gds(isc_att_shutdown));
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
+												  Arg::Str("database") <<
+												  Arg::Str(file_name));
+			}
+
+			if (attachment->att_flags & ATT_shutdown)
+			{
+				if (dbb->dbb_ast_flags & DBB_shutdown)
+				{
+					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+				}
+				else
+				{
+					ERR_post(Arg::Gds(isc_att_shutdown));
+				}
+			}
+
+			if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+			{
+				ERR_post(Arg::Gds(isc_lock_timeout) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
+			}
+
+			// Check if same process has more attachments
+
+			if (dbb->dbb_attachments && dbb->dbb_attachments->att_next)
+			{
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+			}
+
+			dbb->dbb_extManager.closeAttachment(tdbb, attachment);
+
+			// Forced release of all transactions
+			purge_transactions(tdbb, attachment, true, attachment->att_flags);
+
+			attachment->att_flags |= ATT_cancel_disable;
+
+			// Here we have database locked in exclusive mode.
+			// Just mark the header page with an 0 ods version so that no other
+			// process can attach to this database once we release our exclusive
+			// lock and start dropping files.
+
+	   		WIN window(HEADER_PAGE_NUMBER);
+			Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+			CCH_MARK_MUST_WRITE(tdbb, &window);
+			header->hdr_ods_version = 0;
+			CCH_RELEASE(tdbb, &window);
+
+			// This point on database is useless
+			// mark the dbb unusable
+
+			dbb->dbb_flags |= DBB_not_in_use;
+			*handle = NULL;
+
+			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			const jrd_file* file = pageSpace->file;
+			const Shadow* shadow = dbb->dbb_shadow;
+
+			// Notify Trace API manager about successful drop of database
+			if (attachment->att_trace_manager->needs().event_detach)
+			{
+				TraceConnectionImpl conn(attachment);
+				attachment->att_trace_manager->event_detach(&conn, true);
+			}
+
+			// Unlink attachment from database
+			release_attachment(tdbb, attachment);
+
+			shutdown_database(dbb, false);
+
+			// drop the files here
+			bool err = drop_files(file);
+			for (; shadow; shadow = shadow->sdw_next)
+			{
+				err = err || drop_files(shadow->sdw_file);
+			}
+
+			tdbb->setDatabase(NULL);
+			Database::destroy(dbb);
+
+			if (err) {
+				ERR_build_status(user_status, Arg::Gds(isc_drdb_completed_with_errs));
 			}
 		}
-
-		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
+		catch (const Exception& ex)
 		{
-			ERR_post(Arg::Gds(isc_lock_timeout) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
-		}
-
-		// Check if same process has more attachments
-
-		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
-		}
-
-		dbb->dbb_extManager.closeAttachment(tdbb, attachment);
-
-		// Forced release of all transactions
-		purge_transactions(tdbb, attachment, true, attachment->att_flags);
-
-		attachment->att_flags |= ATT_cancel_disable;
-
-		// Here we have database locked in exclusive mode.
-		// Just mark the header page with an 0 ods version so that no other
-		// process can attach to this database once we release our exclusive
-		// lock and start dropping files.
-
-   		WIN window(HEADER_PAGE_NUMBER);
-		Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-		CCH_MARK_MUST_WRITE(tdbb, &window);
-		header->hdr_ods_version = 0;
-		CCH_RELEASE(tdbb, &window);
-
-		// This point on database is useless
-		// mark the dbb unusable
-
-		dbb->dbb_flags |= DBB_not_in_use;
-		*handle = NULL;
-
-		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		const jrd_file* file = pageSpace->file;
-		const Shadow* shadow = dbb->dbb_shadow;
-
-		// Notify Trace API manager about successful drop of database
-		if (attachment->att_trace_manager->needs().event_detach)
-		{
-			TraceConnectionImpl conn(attachment);
-			attachment->att_trace_manager->event_detach(&conn, true);
-		}
-
-		// Unlink attachment from database
-		release_attachment(tdbb, attachment);
-
-		shutdown_database(dbb, false);
-
-		// drop the files here
-		bool err = drop_files(file);
-		for (; shadow; shadow = shadow->sdw_next)
-		{
-			err = err || drop_files(shadow->sdw_file);
-		}
-
-		tdbb->setDatabase(NULL);
-		Database::destroy(dbb);
-
-		if (err) {
-			ERR_build_status(user_status, Arg::Gds(isc_drdb_completed_with_errs));
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -2479,13 +2654,20 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
+		try
+		{
+			*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
 
-		if (blob->blb_flags & BLB_eof) {
-			status_exception::raise(Arg::Gds(isc_segstr_eof));
+			if (blob->blb_flags & BLB_eof) {
+				status_exception::raise(Arg::Gds(isc_segstr_eof));
+			}
+			else if (blob->blb_fragment_size) {
+				status_exception::raise(Arg::Gds(isc_segment));
+			}
 		}
-		else if (blob->blb_fragment_size) {
-			status_exception::raise(Arg::Gds(isc_segment));
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -2528,17 +2710,24 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+		try
+		{
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		if (!array_id->gds_quad_low && !array_id->gds_quad_high)
-		{
-			MOVE_CLEAR(slice, slice_length);
-			*return_length = 0;
+			if (!array_id->gds_quad_low && !array_id->gds_quad_high)
+			{
+				MOVE_CLEAR(slice, slice_length);
+				*return_length = 0;
+			}
+			else
+			{
+				*return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+											   sdl, param_length, param, slice_length, slice);
+			}
 		}
-		else
+		catch (const Exception& ex)
 		{
-			*return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
-										   sdl, param_length, param, slice_length, slice);
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -2582,9 +2771,15 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-
-		*blob_handle = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
+		try
+		{
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+			*blob_handle = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2617,7 +2812,14 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status, jrd_tra** tra_handle, USHORT len
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		prepare(tdbb, transaction, length, msg);
+		try
+		{
+			prepare(tdbb, transaction, length, msg);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2652,7 +2854,14 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		BLB_put_segment(tdbb, blob, buffer, buffer_length);
+		try
+		{
+			BLB_put_segment(tdbb, blob, buffer, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2693,10 +2902,17 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+		try
+		{
+			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
-					  sdl, param_length, param, slice_length, slice);
+			BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+						  sdl, param_length, param, slice_length, slice);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2734,20 +2950,27 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		Database* const dbb = tdbb->getDatabase();
-		Lock* const lock = dbb->dbb_lock;
-
-		EventManager::init(dbb);
-
-		if (!attachment->att_event_session)
+		try
 		{
-			attachment->att_event_session = dbb->dbb_event_mgr->createSession();
-		}
+			Database* const dbb = tdbb->getDatabase();
+			Lock* const lock = dbb->dbb_lock;
 
-		*id = dbb->dbb_event_mgr->queEvents(attachment->att_event_session,
-											lock->lck_length, (const TEXT*) &lock->lck_key,
-											length, items,
-											ast, arg);
+			EventManager::init(dbb);
+
+			if (!attachment->att_event_session)
+			{
+				attachment->att_event_session = dbb->dbb_event_mgr->createSession();
+			}
+
+			*id = dbb->dbb_event_mgr->queEvents(attachment->att_event_session,
+												lock->lck_length, (const TEXT*) &lock->lck_key,
+												length, items,
+												ast, arg);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2785,7 +3008,14 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level);
+		try
+		{
+			JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2826,7 +3056,14 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		*tra_handle = TRA_reconnect(tdbb, id, length);
+		try
+		{
+			*tra_handle = TRA_reconnect(tdbb, id, length);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2858,8 +3095,15 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		CMP_release(tdbb, request);
-		*req_handle = NULL;
+		try
+		{
+			CMP_release(tdbb, request);
+			*req_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2897,11 +3141,18 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		// I can't change the GDS_REQUEST_INFO's signature, so I do the casts here.
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		SLONG buffer_length2 = (ULONG)(USHORT) buffer_length;
-		JRD_request_info(tdbb, request, level, item_length, items2, buffer_length2, buffer2);
+		try
+		{
+			// I can't change the GDS_REQUEST_INFO's signature, so I do the casts here.
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			SLONG buffer_length2 = (ULONG)(USHORT) buffer_length;
+			JRD_request_info(tdbb, request, level, item_length, items2, buffer_length2, buffer2);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2932,7 +3183,14 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_rollback_retaining(tdbb, tra_handle);
+		try
+		{
+			JRD_rollback_retaining(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2963,7 +3221,14 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, jrd_tra** tra_handle)
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_rollback_transaction(tdbb, tra_handle);
+		try
+		{
+			JRD_rollback_transaction(tdbb, tra_handle);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -2999,7 +3264,14 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		*result = BLB_lseek(blob, mode, offset);
+		try
+		{
+			*result = BLB_lseek(blob, mode, offset);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3037,16 +3309,23 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		verify_request_synchronization(request, level);
-
-		EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
-
-		check_autocommit(request, tdbb);
-
-		if (request->req_flags & req_warning)
+		try
 		{
-			request->req_flags &= ~req_warning;
-			ERR_punt();
+			verify_request_synchronization(request, level);
+
+			EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
+
+			check_autocommit(request, tdbb);
+
+			if (request->req_flags & req_warning)
+			{
+				request->req_flags &= ~req_warning;
+				ERR_punt();
+			}
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -3276,24 +3555,31 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
-
-		TraceBlrExecute trace(tdbb, request);
 		try
 		{
-			JRD_start_and_send(tdbb, request, transaction, msg_type,
-								msg_length, reinterpret_cast<UCHAR*>(msg), level);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-			// Notify Trace API about blr execution
-			trace.finish(res_successful);
+			TraceBlrExecute trace(tdbb, request);
+			try
+			{
+				JRD_start_and_send(tdbb, request, transaction, msg_type,
+									msg_length, reinterpret_cast<UCHAR*>(msg), level);
+
+				// Notify Trace API about blr execution
+				trace.finish(res_successful);
+			}
+			catch (const Exception& ex)
+			{
+				const ISC_LONG exc = transliterateException(tdbb, ex, user_status);
+				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+				trace.finish(no_priv ? res_unauthorized : res_failed);
+
+				return exc;
+			}
 		}
 		catch (const Exception& ex)
 		{
-			const ISC_LONG exc = ex.stuff_exception(user_status);
-			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-			trace.finish(no_priv ? res_unauthorized : res_failed);
-
-			return exc;
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -3328,21 +3614,28 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status, jrd_req** req_handle, jrd_tra** tr
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
-
-		TraceBlrExecute trace(tdbb, request);
 		try
 		{
-			JRD_start(tdbb, request, transaction, level);
-			trace.finish(res_successful);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
+
+			TraceBlrExecute trace(tdbb, request);
+			try
+			{
+				JRD_start(tdbb, request, transaction, level);
+				trace.finish(res_successful);
+			}
+			catch (const Exception& ex)
+			{
+				const ISC_LONG exc = transliterateException(tdbb, ex, user_status);
+				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+				trace.finish(no_priv ? res_unauthorized : res_failed);
+
+				return exc;
+			}
 		}
 		catch (const Exception& ex)
 		{
-			const ISC_LONG exc = stuff_exception(user_status, ex);
-			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-			trace.finish(no_priv ? res_unauthorized : res_failed);
-
-			return exc;
+			return transliterateException(tdbb, ex, user_status);
 		}
 	}
 	catch (const Exception& ex)
@@ -3426,7 +3719,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status, FB_API_HANDLE public_hand
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		JRD_start_multiple(tdbb, tra_handle, count, vector, public_handle);
+		start_multiple(tdbb, true, tra_handle, count, vector, public_handle);
 	}
 	catch (const Exception& ex)
 	{
@@ -3475,7 +3768,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_h
 
 		ThreadContextHolder tdbb(user_status);
 
-		JRD_start_multiple(tdbb, tra_handle, count, tebs.begin(), public_handle);
+		start_multiple(tdbb, true, tra_handle, count, tebs.begin(), public_handle);
 	}
 	catch (const Exception& ex)
 	{
@@ -3516,99 +3809,106 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		Database* const dbb = tdbb->getDatabase();
-
-		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
-
-		jrd_nod* in_message = NULL;
-		jrd_nod* out_message = NULL;
-
-		jrd_req* request = NULL;
-		MemoryPool* new_pool = dbb->createPool();
-
 		try
 		{
-			Jrd::ContextPoolHolder context(tdbb, new_pool);
+			Database* const dbb = tdbb->getDatabase();
 
-			CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
-				blr_length, false);
+			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-			request = CMP_make_request(tdbb, csb, false);
-			CMP_verify_access(tdbb, request);
+			jrd_nod* in_message = NULL;
+			jrd_nod* out_message = NULL;
 
-			jrd_nod* node;
-			for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
+			jrd_req* request = NULL;
+			MemoryPool* new_pool = dbb->createPool();
+
+			try
 			{
-				if ( (node = csb->csb_rpt[i].csb_message) )
+				Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+				CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
+					blr_length, false);
+
+				request = CMP_make_request(tdbb, csb, false);
+				CMP_verify_access(tdbb, request);
+
+				jrd_nod* node;
+				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-					if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
+					if ( (node = csb->csb_rpt[i].csb_message) )
 					{
-						in_message = node;
-					}
-					else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
-					{
-						out_message = node;
+						if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
+						{
+							in_message = node;
+						}
+						else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
+						{
+							out_message = node;
+						}
 					}
 				}
 			}
-		}
-		catch (const Exception&)
-		{
-			if (request)
-				CMP_release(tdbb, request);
-			else
-				dbb->deletePool(new_pool);
-
-			throw;
-		}
-
-		request->req_attachment = attachment;
-
-		USHORT len;
-		if (in_msg_length)
-		{
-			if (in_message)
+			catch (const Exception&)
 			{
-				const Format* format = (Format*) in_message->nod_arg[e_msg_format];
+				if (request)
+					CMP_release(tdbb, request);
+				else
+					dbb->deletePool(new_pool);
+
+				throw;
+			}
+
+			request->req_attachment = attachment;
+
+			USHORT len;
+			if (in_msg_length)
+			{
+				if (in_message)
+				{
+					const Format* format = (Format*) in_message->nod_arg[e_msg_format];
+					len = format->fmt_length;
+				}
+				else {
+					len = 0;
+				}
+
+				if (in_msg_length != len)
+				{
+					ERR_post(Arg::Gds(isc_port_len) << Arg::Num(in_msg_length) <<
+													   Arg::Num(len));
+				}
+
+				memcpy((SCHAR*) request + in_message->nod_impure, in_msg, in_msg_length);
+			}
+
+			EXE_start(tdbb, request, transaction);
+
+			if (out_message)
+			{
+				const Format* format = (Format*) out_message->nod_arg[e_msg_format];
 				len = format->fmt_length;
 			}
 			else {
 				len = 0;
 			}
 
-			if (in_msg_length != len)
+			if (out_msg_length != len)
 			{
-				ERR_post(Arg::Gds(isc_port_len) << Arg::Num(in_msg_length) <<
+				ERR_post(Arg::Gds(isc_port_len) << Arg::Num(out_msg_length) <<
 												   Arg::Num(len));
 			}
 
-			memcpy((SCHAR*) request + in_message->nod_impure, in_msg, in_msg_length);
+			if (out_msg_length) {
+				memcpy(out_msg, (SCHAR*) request + out_message->nod_impure, out_msg_length);
+			}
+
+			check_autocommit(request, tdbb);
+
+			CMP_release(tdbb, request);
 		}
-
-		EXE_start(tdbb, request, transaction);
-
-		if (out_message)
+		catch (const Exception& ex)
 		{
-			const Format* format = (Format*) out_message->nod_arg[e_msg_format];
-			len = format->fmt_length;
+			return transliterateException(tdbb, ex, user_status);
 		}
-		else {
-			len = 0;
-		}
-
-		if (out_msg_length != len)
-		{
-			ERR_post(Arg::Gds(isc_port_len) << Arg::Num(out_msg_length) <<
-											   Arg::Num(len));
-		}
-
-		if (out_msg_length) {
-			memcpy(out_msg, (SCHAR*) request + out_message->nod_impure, out_msg_length);
-		}
-
-		check_autocommit(request, tdbb);
-
-		CMP_release(tdbb, request);
 	}
 	catch (const Exception& ex)
 	{
@@ -3645,9 +3945,16 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
-		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		INF_transaction_info(transaction, items2, item_length, buffer2, buffer_length);
+		try
+		{
+			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+			INF_transaction_info(transaction, items2, item_length, buffer2, buffer_length);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3680,7 +3987,14 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, jrd_req** req_handle, SSHORT leve
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_unwind_request(tdbb, request, level);
+		try
+		{
+			JRD_unwind_request(tdbb, request, level);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3708,7 +4022,14 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status, Jrd::Attachment** db_handl
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		*stmt_handle = DSQL_allocate_statement(tdbb, attachment);
+		try
+		{
+			*stmt_handle = DSQL_allocate_statement(tdbb, attachment);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3740,11 +4061,18 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_execute(tdbb, tra_handle, statement,
-					 in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
-					 in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
-					 out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
-					 /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+		try
+		{
+			DSQL_execute(tdbb, tra_handle, statement,
+						 in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
+						 in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
+						 out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
+						 /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3777,12 +4105,18 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_execute_immediate(tdbb, attachment, tra_handle,
-							   length, string, dialect,
-							   in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
-							   /*in_msg_type,*/ in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
-							   out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
-							   /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+		try
+		{
+			DSQL_execute_immediate(tdbb, attachment, tra_handle, length, string, dialect,
+				in_blr_length, reinterpret_cast<const UCHAR*>(in_blr), /*in_msg_type,*/
+				in_msg_length, reinterpret_cast<const UCHAR*>(in_msg), out_blr_length,
+				reinterpret_cast<UCHAR*>(out_blr), /*out_msg_type,*/ out_msg_length,
+				reinterpret_cast<UCHAR*>(out_msg), false);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3809,8 +4143,16 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-						/*msg_type,*/ msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf));
+		try
+		{
+			return_code = DSQL_fetch(tdbb, statement, blr_length,
+				reinterpret_cast<const UCHAR*>(blr), /*msg_type,*/ msg_length,
+				reinterpret_cast<UCHAR*>(dsql_msg_buf));
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3832,10 +4174,17 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, dsql_req** stmt_handle, USHORT
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_free_statement(tdbb, statement, option);
+		try
+		{
+			DSQL_free_statement(tdbb, statement, option);
 
-		if (option & DSQL_drop)
-			*stmt_handle = NULL;
+			if (option & DSQL_drop)
+				*stmt_handle = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3860,8 +4209,15 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_insert(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-					/*msg_type,*/ msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
+		try
+		{
+			DSQL_insert(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
+						/*msg_type,*/ msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3892,9 +4248,16 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_prepare(tdbb, *tra_handle, stmt_handle, length, string, dialect,
-					 item_length, reinterpret_cast<const UCHAR*>(items),
-					 buffer_length, reinterpret_cast<UCHAR*>(buffer));
+		try
+		{
+			DSQL_prepare(tdbb, *tra_handle, stmt_handle, length, string, dialect,
+						 item_length, reinterpret_cast<const UCHAR*>(items),
+						 buffer_length, reinterpret_cast<UCHAR*>(buffer), false);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3919,7 +4282,14 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_set_cursor(tdbb, statement, cursor); //, type);
+		try
+		{
+			DSQL_set_cursor(tdbb, statement, cursor); //, type);
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3944,9 +4314,16 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_sql_info(tdbb, statement,
-					  item_length, reinterpret_cast<const UCHAR*>(items),
-					  info_length, reinterpret_cast<UCHAR*>(info));
+		try
+		{
+			DSQL_sql_info(tdbb, statement,
+						  item_length, reinterpret_cast<const UCHAR*>(items),
+						  info_length, reinterpret_cast<UCHAR*>(info));
+		}
+		catch (const Exception& ex)
+		{
+			return transliterateException(tdbb, ex, user_status);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -5247,7 +5624,13 @@ Jrd::Attachment::~Attachment()
 PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, MemoryPool& pool,
 	jrd_tra* transaction, const string& text)
 {
-	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text);
+	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text, true);
+}
+
+PreparedStatement* Jrd::Attachment::prepareUserStatement(thread_db* tdbb, MemoryPool& pool,
+	jrd_tra* transaction, const string& text)
+{
+	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text, false);
 }
 
 void Jrd::Attachment::cancelExternalConnection(thread_db* tdbb)
@@ -6112,13 +6495,10 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 }
 
-static ISC_STATUS unwindAttach(const Exception& ex,
-							   ISC_STATUS* userStatus,
-							   thread_db* tdbb,
-							   Jrd::Attachment* attachment,
-							   Database* dbb)
+static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, ISC_STATUS* userStatus,
+	Jrd::Attachment* attachment, Database* dbb)
 {
-	ex.stuff_exception(userStatus);
+	transliterateException(tdbb, ex, userStatus);
 
 	if (engineShuttingDown)
 	{
@@ -6467,12 +6847,12 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 }
 
 
-void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB* vector,
-	FB_API_HANDLE public_handle)
+static void start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
+	USHORT count, TEB* vector, FB_API_HANDLE public_handle)
 {
 /**************************************
  *
- *	J R D _ s t a r t _ m u l t i p l e
+ *	s t a r t _ m u l t i p l e
  *
  **************************************
  *
@@ -6509,22 +6889,34 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 				check_database(tdbb);
 			}
 
-			if (v->teb_tpb_length < 0 || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
+			try
 			{
-				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+				if (v->teb_tpb_length < 0 || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
+					status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+
+				jrd_tra* transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
+				transaction->tra_public_handle = public_handle;
+
+				transaction->tra_sibling = prior;
+				prior = transaction;
+
+				// Will this work for multiple databases transaction? - I suppose it will.
+				*tra_handle = transaction;
+
+				// run ON TRANSACTION START triggers
+				EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
 			}
-
-			jrd_tra* transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
-			transaction->tra_public_handle = public_handle;
-
-			transaction->tra_sibling = prior;
-			prior = transaction;
-
-			// Will this work for multiple databases transaction? - I suppose it will.
-			*tra_handle = transaction;
-
-			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
+			catch (const Exception& ex)
+			{
+				if (transliterate)
+				{
+					ISC_STATUS_ARRAY tempStatus;
+					transliterateException(tdbb, ex, tempStatus);
+					status_exception::raise(tempStatus);
+				}
+				else
+					throw;
+			}
 		}
 	}
 	catch (const Exception&)
@@ -6581,7 +6973,7 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, SSHORT count,
 
 	va_end(ptr);
 
-	JRD_start_multiple(tdbb, transaction, count, tebs.begin());
+	start_multiple(tdbb, false, transaction, count, tebs.begin());
 }
 
 
@@ -6612,7 +7004,8 @@ void JRD_compile(thread_db* tdbb,
 				 ULONG blr_length,
 				 const UCHAR* blr,
 				 RefStrPtr ref_str,
-				 USHORT dbginfo_length, const UCHAR* dbginfo)
+				 USHORT dbginfo_length, const UCHAR* dbginfo,
+				 bool isInternalRequest)
 {
 /**************************************
  *
@@ -6627,7 +7020,7 @@ void JRD_compile(thread_db* tdbb,
 	if (*req_handle)
 		status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
-	jrd_req* request = CMP_compile2(tdbb, blr, blr_length, false, dbginfo_length, dbginfo);
+	jrd_req* request = CMP_compile2(tdbb, blr, blr_length, isInternalRequest, dbginfo_length, dbginfo);
 
 	request->req_attachment = attachment;
 	request->req_request = attachment->att_requests;

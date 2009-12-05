@@ -47,7 +47,7 @@ friend class ResultSet;
 
 public:
 	PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& aPool, Attachment* attachment,
-		jrd_tra* transaction, const Firebird::string& text);
+		jrd_tra* transaction, const Firebird::string& text, bool isInternalRequest);
 	~PreparedStatement();
 
 public:

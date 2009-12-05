@@ -118,7 +118,7 @@ void DdlNode::checkEmptyName(const MetaName& name)
 
 MetaName DdlNode::nameInMetaCharSet(thread_db* tdbb, const MetaName& name)
 {
-	const CHARSET_ID charSet = tdbb->getCharSet();
+	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
 	if (charSet == CS_METADATA || charSet == CS_NONE)
 		return name;
 
@@ -133,7 +133,7 @@ MetaName DdlNode::nameInMetaCharSet(thread_db* tdbb, const MetaName& name)
 
 MetaName DdlNode::nameInUserCharSet(thread_db* tdbb, const MetaName& name)
 {
-	const CHARSET_ID charSet = tdbb->getCharSet();
+	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
 	if (charSet == CS_METADATA || charSet == CS_NONE)
 		return name;
 
@@ -143,6 +143,34 @@ MetaName DdlNode::nameInUserCharSet(thread_db* tdbb, const MetaName& name)
 	buffer[len] = '\0';
 
 	return MetaName((const char*) buffer);
+}
+
+
+string DdlNode::stringInMetaCharSet(thread_db* tdbb, const string& str)
+{
+	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
+	if (charSet == CS_METADATA || charSet == CS_NONE)
+		return str;
+
+	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length() * sizeof(ULONG));
+	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer.begin(), buffer.getCapacity(),
+		charSet, (const BYTE*) str.c_str(), str.length(), ERR_post);
+
+	return string((char*) buffer.begin(), len);
+}
+
+
+string DdlNode::stringInUserCharSet(thread_db* tdbb, const string& str)
+{
+	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
+	if (charSet == CS_METADATA || charSet == CS_NONE)
+		return str;
+
+	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length());
+	ULONG len = INTL_convert_bytes(tdbb, charSet, buffer.begin(), buffer.getCapacity(),
+		CS_METADATA, (const BYTE*) str.c_str(), str.length(), ERR_post);
+
+	return string((char*) buffer.begin(), len);
 }
 
 
@@ -379,7 +407,6 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		MET_dsql_cache_release(tdbb, SYM_intlsym_charset, charSet);
 	}
 
-	const MetaName metaName(nameInMetaCharSet(tdbb, charSet));
 	bool charSetFound = false;
 	bool collationFound = false;
 
@@ -387,18 +414,18 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle1 TRANSACTION_HANDLE transaction)
 		CS IN RDB$CHARACTER_SETS
-		WITH CS.RDB$CHARACTER_SET_NAME EQ metaName.c_str()
+		WITH CS.RDB$CHARACTER_SET_NAME EQ charSet.c_str()
 	{
 		charSetFound = true;
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_CHARACTER_SET, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_CHARACTER_SET, charSet);
 
 		AutoCacheRequest requestHandle2(tdbb, drq_l_collation, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
 			COLL IN RDB$COLLATIONS
 			WITH COLL.RDB$CHARACTER_SET_ID EQ CS.RDB$CHARACTER_SET_ID AND
-				COLL.RDB$COLLATION_NAME EQ nameInMetaCharSet(tdbb, defaultCollation).c_str()
+				COLL.RDB$COLLATION_NAME EQ defaultCollation.c_str()
 		{
 			collationFound = true;
 		}
@@ -408,7 +435,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			MODIFY CS
 				CS.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
-				strcpy(CS.RDB$DEFAULT_COLLATE_NAME, nameInMetaCharSet(tdbb, defaultCollation).c_str());
+				strcpy(CS.RDB$DEFAULT_COLLATE_NAME, defaultCollation.c_str());
 			END_MODIFY
 		}
 	}
@@ -423,7 +450,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 																	 Arg::Str(charSet));
 	}
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_CHARACTER_SET, metaName);
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_CHARACTER_SET, charSet);
 }
 
 
@@ -593,15 +620,15 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		if (addWhere.hasData())
 			sqlStmt += " and " + addWhere;
 
-		AutoPtr<PreparedStatement> ps(attachment->prepareStatement(tdbb, *tdbb->getDefaultPool(),
-			transaction, sqlStmt));
+		AutoPtr<PreparedStatement> ps(attachment->prepareStatement(tdbb,
+			*tdbb->getDefaultPool(), transaction, sqlStmt));
 
 		int n = 0;
 
 		if (text.isEmpty())
 			++n;
 		else
-			ps->setString(tdbb, ++n, text);
+			ps->setString(tdbb, ++n, stringInMetaCharSet(tdbb, text));
 
 		if (column.hasData())
 		{
@@ -693,11 +720,8 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
-
 	if (package.isEmpty())
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_FUNCTION, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_FUNCTION, name);
 
 	//dbb->checkOdsForDsql(ODS_12_0);
 
@@ -716,12 +740,12 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 		FUN.RDB$SYSTEM_FLAG = 0;
 
 		FUN.RDB$FUNCTION_NAME.NULL = FALSE;
-		strcpy(FUN.RDB$FUNCTION_NAME, metaName.c_str());
+		strcpy(FUN.RDB$FUNCTION_NAME, name.c_str());
 
 		if (external)
 		{
 			FUN.RDB$ENGINE_NAME.NULL = FALSE;
-			strcpy(FUN.RDB$ENGINE_NAME, nameInMetaCharSet(tdbb, external->engine).c_str());
+			strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
 
 			if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
 			{
@@ -749,7 +773,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 		if (package.hasData())
 		{
 			FUN.RDB$PACKAGE_NAME.NULL = FALSE;
-			strcpy(FUN.RDB$PACKAGE_NAME, nameInMetaCharSet(tdbb, package).c_str());
+			strcpy(FUN.RDB$PACKAGE_NAME, package.c_str());
 
 			FUN.RDB$PRIVATE_FLAG.NULL = FALSE;	// ODS_12_0
 			FUN.RDB$PRIVATE_FLAG = privateScope;
@@ -768,25 +792,23 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 	}
 
 	if (package.isEmpty())
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_FUNCTION, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_FUNCTION, name);
 }
 
 
 bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
 	bool modified = false;
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_funcs2, DYN_REQUESTS);
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		FUN IN RDB$FUNCTIONS
-		WITH FUN.RDB$FUNCTION_NAME EQ metaName.c_str() AND
-			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(nameInMetaCharSet(tdbb, package).c_str(), '')
+		WITH FUN.RDB$FUNCTION_NAME EQ name.c_str() AND
+			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (package.isEmpty())
-			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION, metaName);
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION, name);
 
 		//dbb->checkOdsForDsql(ODS_12_0);
 
@@ -796,7 +818,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 			if (external)
 			{
 				FUN.RDB$ENGINE_NAME.NULL = FALSE;
-				strcpy(FUN.RDB$ENGINE_NAME, nameInMetaCharSet(tdbb, external->engine).c_str());
+				strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
 
 				if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
 				{
@@ -842,8 +864,8 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			ARG IN RDB$FUNCTION_ARGUMENTS
-			WITH ARG.RDB$FUNCTION_NAME EQ metaName.c_str() AND
-				 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(nameInMetaCharSet(tdbb, package).c_str(), '')
+			WITH ARG.RDB$FUNCTION_NAME EQ name.c_str() AND
+				 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 		{
 			ERASE ARG;
 		}
@@ -860,7 +882,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 		}
 
 		if (package.isEmpty())
-			executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_FUNCTION, metaName);
+			executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_FUNCTION, name);
 	}
 
 	return modified;
@@ -909,12 +931,12 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 		ARG.RDB$PACKAGE_NAME.NULL = TRUE;	// ODS_12_0
 
 		ARG.RDB$FUNCTION_NAME.NULL = FALSE;
-		strcpy(ARG.RDB$FUNCTION_NAME, nameInMetaCharSet(tdbb, name).c_str());
+		strcpy(ARG.RDB$FUNCTION_NAME, name.c_str());
 
 		if (package.hasData())
 		{
 			ARG.RDB$PACKAGE_NAME.NULL = FALSE;
-			strcpy(ARG.RDB$PACKAGE_NAME, nameInMetaCharSet(tdbb, package).c_str());
+			strcpy(ARG.RDB$PACKAGE_NAME, package.c_str());
 		}
 
 		ARG.RDB$ARGUMENT_POSITION.NULL = FALSE;
@@ -1000,8 +1022,6 @@ void DropFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
-
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 	bool found = false;
@@ -1010,8 +1030,8 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		FUN IN RDB$FUNCTIONS
-		WITH FUN.RDB$FUNCTION_NAME EQ metaName.c_str() AND
-			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(nameInMetaCharSet(tdbb, package).c_str(), '')
+		WITH FUN.RDB$FUNCTION_NAME EQ name.c_str() AND
+			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (!FUN.RDB$SYSTEM_FLAG.NULL && FUN.RDB$SYSTEM_FLAG)
 		{
@@ -1022,7 +1042,7 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		}
 
 		if (package.isEmpty())
-			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_FUNCTION, metaName);
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_FUNCTION, name);
 
 		ERASE FUN;
 
@@ -1042,15 +1062,15 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		ARG IN RDB$FUNCTION_ARGUMENTS
-		WITH ARG.RDB$FUNCTION_NAME EQ metaName.c_str() AND
-			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(nameInMetaCharSet(tdbb, package).c_str(), '')
+		WITH ARG.RDB$FUNCTION_NAME EQ name.c_str() AND
+			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		ERASE ARG;
 	}
 	END_FOR
 
 	if (found && package.isEmpty())
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_FUNCTION, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_FUNCTION, name);
 
 	savePoint.release();	// everything is ok
 
@@ -1225,9 +1245,8 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (package.isEmpty())
 	{
-		MetaName metaName(nameInMetaCharSet(tdbb, name));
 		executeDdlTrigger(tdbb, transaction, DTW_AFTER,
-			(altered ? DDL_TRIGGER_ALTER_PROCEDURE : DDL_TRIGGER_CREATE_PROCEDURE), metaName);
+			(altered ? DDL_TRIGGER_ALTER_PROCEDURE : DDL_TRIGGER_CREATE_PROCEDURE), name);
 	}
 
 	savePoint.release();	// everything is ok
@@ -1245,13 +1264,12 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = tdbb->getAttachment();
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
 	if (package.isEmpty())
 	{
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PROCEDURE, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PROCEDURE, name);
 
-		DYN_UTIL_check_unique_name(tdbb, transaction, metaName, obj_procedure);
+		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_procedure);
 	}
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_prcs2, DYN_REQUESTS);
@@ -1273,12 +1291,12 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transacti
 			{
 				P.RDB$PROCEDURE_ID = id;
 				P.RDB$SYSTEM_FLAG = 0;
-				strcpy(P.RDB$PROCEDURE_NAME, metaName.c_str());
+				strcpy(P.RDB$PROCEDURE_NAME, name.c_str());
 
 				if (package.hasData())
 				{
 					P.RDB$PACKAGE_NAME.NULL = FALSE;
-					strcpy(P.RDB$PACKAGE_NAME, nameInMetaCharSet(tdbb, package).c_str());
+					strcpy(P.RDB$PACKAGE_NAME, package.c_str());
 
 					P.RDB$PRIVATE_FLAG.NULL = FALSE;
 					P.RDB$PRIVATE_FLAG = privateScope;
@@ -1318,7 +1336,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transacti
 			STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 				X IN RDB$USER_PRIVILEGES
 			{
-				strcpy(X.RDB$RELATION_NAME, metaName.c_str());
+				strcpy(X.RDB$RELATION_NAME, name.c_str());
 				strcpy(X.RDB$USER, attachment->att_user->usr_user_name.c_str());
 				X.RDB$USER_TYPE = obj_user;
 				X.RDB$OBJECT_TYPE = obj_procedure;
@@ -1336,16 +1354,13 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transacti
 bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 	bool secondPass, bool runTriggers)
 {
-	//Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
-
 	AutoCacheRequest requestHandle(tdbb, drq_m_prcs2, DYN_REQUESTS);
 	bool modified = false;
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		P IN RDB$PROCEDURES
-		WITH P.RDB$PROCEDURE_NAME EQ metaName.c_str() AND
-			 P.RDB$PACKAGE_NAME EQUIV NULLIF(nameInMetaCharSet(tdbb, package).c_str(), '')
+		WITH P.RDB$PROCEDURE_NAME EQ name.c_str() AND
+			 P.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (!P.RDB$SYSTEM_FLAG.NULL && P.RDB$SYSTEM_FLAG)
 		{
@@ -1356,7 +1371,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 		}
 
 		if (!secondPass && runTriggers && package.isEmpty())
-			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_PROCEDURE, metaName);
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_PROCEDURE, name);
 
 		MODIFY P
 			if (secondPass)
@@ -1395,7 +1410,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 				{
 					// ODS_12_0
 					P.RDB$ENGINE_NAME.NULL = FALSE;
-					strcpy(P.RDB$ENGINE_NAME, nameInMetaCharSet(tdbb, external->engine).c_str());
+					strcpy(P.RDB$ENGINE_NAME, external->engine.c_str());
 
 					// ODS_12_0
 					if (external->name.length() >= sizeof(P.RDB$ENTRYPOINT))
@@ -1471,15 +1486,15 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 		PRM IN RDB$PROCEDURE_PARAMETERS
 	{
 		PRM.RDB$PARAMETER_NAME.NULL = FALSE;
-		strcpy(PRM.RDB$PARAMETER_NAME, nameInMetaCharSet(tdbb, parameter.name).c_str());
+		strcpy(PRM.RDB$PARAMETER_NAME, parameter.name.c_str());
 
 		PRM.RDB$PROCEDURE_NAME.NULL = FALSE;
-		strcpy(PRM.RDB$PROCEDURE_NAME, nameInMetaCharSet(tdbb, name).c_str());
+		strcpy(PRM.RDB$PROCEDURE_NAME, name.c_str());
 
 		if (package.hasData())
 		{
 			PRM.RDB$PACKAGE_NAME.NULL = FALSE;
-			strcpy(PRM.RDB$PACKAGE_NAME, nameInMetaCharSet(tdbb, package).c_str());
+			strcpy(PRM.RDB$PACKAGE_NAME, package.c_str());
 		}
 		else
 			PRM.RDB$PACKAGE_NAME.NULL = TRUE;
@@ -1515,7 +1530,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 		if (PRM.RDB$RELATION_NAME.NULL)
 		{
 			if (parameter.typeOfName.hasData())
-				strcpy(PRM.RDB$FIELD_SOURCE, nameInMetaCharSet(tdbb, parameter.typeOfName).c_str());
+				strcpy(PRM.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
 			else
 			{
 				AutoCacheRequest requestHandle2(tdbb, drq_s_prm_src2, DYN_REQUESTS);
@@ -1609,9 +1624,9 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 		}
 		else
 		{
-			strcpy(PRM.RDB$RELATION_NAME, nameInMetaCharSet(tdbb, parameter.typeOfTable).c_str());
-			strcpy(PRM.RDB$FIELD_NAME, nameInMetaCharSet(tdbb, parameter.typeOfName).c_str());
-			strcpy(PRM.RDB$FIELD_SOURCE, nameInMetaCharSet(tdbb, parameter.fieldSource).c_str());
+			strcpy(PRM.RDB$RELATION_NAME, parameter.typeOfTable.c_str());
+			strcpy(PRM.RDB$FIELD_NAME, parameter.typeOfName.c_str());
+			strcpy(PRM.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
 		}
 
 		// ASF: If we used a collate with a domain or table.column type, write it
@@ -1695,7 +1710,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 		{
 			ParameterClause& parameter = parameters[i];
 			compiledStatement->put_debug_argument(fb_dbg_arg_input, i,
-				nameInMetaCharSet(tdbb, parameter.name).c_str());
+				parameter.name.c_str());
 			putType(parameter, true);
 
 			// add slot for null flag (parameter2)
@@ -1718,7 +1733,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 		{
 			ParameterClause& parameter = returns[i];
 			compiledStatement->put_debug_argument(fb_dbg_arg_output, i,
-				nameInMetaCharSet(tdbb, parameter.name).c_str());
+				parameter.name.c_str());
 			putType(parameter, true);
 
 			// add slot for null flag (parameter2)
@@ -1809,8 +1824,8 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRM IN RDB$PROCEDURE_PARAMETERS
-		WITH PRM.RDB$PROCEDURE_NAME EQ nameInMetaCharSet(tdbb, procedureName).c_str() AND
-			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(nameInMetaCharSet(tdbb, packageName).c_str(), '')
+		WITH PRM.RDB$PROCEDURE_NAME EQ procedureName.c_str() AND
+			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
 	{
 		// get rid of parameters in rdb$fields
 		if (!PRM.RDB$FIELD_SOURCE.NULL)
@@ -1833,7 +1848,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 						PRM2 IN RDB$PROCEDURE_PARAMETERS
 						WITH PRM2.RDB$PROCEDURE_NAME = PRM.RDB$PROCEDURE_NAME AND
 							 PRM2.RDB$PACKAGE_NAME EQUIV
-							 	NULLIF(nameInMetaCharSet(tdbb, packageName).c_str(), '') AND
+							 	NULLIF(packageName.c_str(), '') AND
 							 PRM2.RDB$PARAMETER_NAME = PRM.RDB$PARAMETER_NAME
 					{
 						if (!PRM2.RDB$RELATION_NAME.NULL && !PRM2.RDB$FIELD_NAME.NULL)
@@ -1872,20 +1887,18 @@ Node* DropProcedureNode::internalDsqlPass()
 
 void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
-
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 	bool found = false;
 
-	dropParameters(tdbb, transaction, metaName, package);
+	dropParameters(tdbb, transaction, name, package);
 
 	AutoCacheRequest requestHandle(tdbb, drq_e_prcs2, DYN_REQUESTS);
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRC IN RDB$PROCEDURES
-		WITH PRC.RDB$PROCEDURE_NAME EQ metaName.c_str() AND
-			 PRC.RDB$PACKAGE_NAME EQUIV NULLIF(nameInMetaCharSet(tdbb, package).c_str(), '')
+		WITH PRC.RDB$PROCEDURE_NAME EQ name.c_str() AND
+			 PRC.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (!PRC.RDB$SYSTEM_FLAG.NULL && PRC.RDB$SYSTEM_FLAG)
 		{
@@ -1896,7 +1909,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		}
 
 		if (package.isEmpty())
-			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PROCEDURE, metaName);
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PROCEDURE, name);
 
 		ERASE PRC;
 
@@ -1920,7 +1933,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		requestHandle.reset(tdbb, drq_e_prc_prvs2, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ metaName.c_str()
+			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
 				AND PRIV.RDB$OBJECT_TYPE = obj_procedure
 		{
 			ERASE PRIV;
@@ -1930,7 +1943,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		requestHandle.reset(tdbb, drq_e_prc_prv2, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ metaName.c_str()
+			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name.c_str()
 				AND PRIV.RDB$USER_TYPE = obj_procedure
 		{
 			ERASE PRIV;
@@ -1939,7 +1952,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	if (found && package.isEmpty())
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PROCEDURE, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PROCEDURE, name);
 
 	savePoint.release();	// everything is ok
 
@@ -2059,7 +2072,7 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			TRG IN RDB$TRIGGERS
-			WITH TRG.RDB$TRIGGER_NAME EQ nameInMetaCharSet(tdbb, name).c_str()
+			WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
 		{
 			if (!type.specified && !TRG.RDB$TRIGGER_TYPE.NULL)
 				type = TRG.RDB$TRIGGER_TYPE;
@@ -2106,10 +2119,7 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
-
-	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, metaName);
+	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, name);
 
 	//if (type.specified && (type.value & unsigned(TRIGGER_TYPE_MASK)) == unsigned(TRIGGER_TYPE_DDL))
 	//	dbb->checkOdsForDsql(ODS_12_0);
@@ -2121,10 +2131,10 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 	{
 		TRG.RDB$SYSTEM_FLAG = 0;
 		TRG.RDB$FLAGS = TRG_sql;	// ASF: For FK triggers, TRG_ignore_perm will also be needed.
-		strcpy(TRG.RDB$TRIGGER_NAME, metaName.c_str());
+		strcpy(TRG.RDB$TRIGGER_NAME, name.c_str());
 
 		TRG.RDB$RELATION_NAME.NULL = relationName.isEmpty();
-		strcpy(TRG.RDB$RELATION_NAME, nameInMetaCharSet(tdbb, relationName).c_str());
+		strcpy(TRG.RDB$RELATION_NAME, relationName.c_str());
 
 		fb_assert(type.specified);
 		TRG.RDB$TRIGGER_TYPE = type.value;
@@ -2136,14 +2146,12 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 	executeAlter(tdbb, transaction, false);
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_TRIGGER, metaName);
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_TRIGGER, name);
 }
 
 
 bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction, bool runTriggers)
 {
-	//Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
 	bool modified = false;
 
 	// ASF: Unregistered bug (2.0, 2.1, 2.5, 3.0): CREATE OR ALTER TRIGGER accepts different table
@@ -2153,7 +2161,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		TRG IN RDB$TRIGGERS
-		WITH TRG.RDB$TRIGGER_NAME EQ metaName.c_str()
+		WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
 	{
 		if (type.specified && type.value != (FB_UINT64) TRG.RDB$TRIGGER_TYPE &&
 			((create && relationName.isEmpty()) || TRG.RDB$RELATION_NAME.NULL))
@@ -2189,7 +2197,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 		}
 
 		if (runTriggers)
-			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TRIGGER, metaName);
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TRIGGER, name);
 
 		MODIFY TRG
 			if (body || external)
@@ -2217,7 +2225,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 
 				// ODS_12_0
 				TRG.RDB$ENGINE_NAME.NULL = FALSE;
-				strcpy(TRG.RDB$ENGINE_NAME, nameInMetaCharSet(tdbb, external->engine).c_str());
+				strcpy(TRG.RDB$ENGINE_NAME, external->engine.c_str());
 
 				// ODS_12_0
 				if (external->name.length() >= sizeof(TRG.RDB$ENTRYPOINT))
@@ -2258,7 +2266,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 
 	if (modified && runTriggers)
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TRIGGER, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TRIGGER, name);
 
 	return modified;
 }
@@ -2384,8 +2392,6 @@ Node* DropTriggerNode::internalDsqlPass()
 
 void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
-
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -2395,9 +2401,9 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		X IN RDB$TRIGGERS
-		WITH X.RDB$TRIGGER_NAME EQ metaName.c_str()
+		WITH X.RDB$TRIGGER_NAME EQ name.c_str()
 	{
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_TRIGGER, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_TRIGGER, name);
 
 		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
 			status_exception::raise(Arg::Gds(isc_adm_task_denied));
@@ -2420,7 +2426,7 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		TM IN RDB$TRIGGER_MESSAGES
-		WITH TM.RDB$TRIGGER_NAME EQ metaName.c_str()
+		WITH TM.RDB$TRIGGER_NAME EQ name.c_str()
 	{
 		ERASE TM;
 	}
@@ -2430,7 +2436,7 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
-		WITH PRIV.RDB$USER EQ metaName.c_str() AND
+		WITH PRIV.RDB$USER EQ name.c_str() AND
 			 PRIV.RDB$USER_TYPE = obj_trigger
 	{
 		ERASE PRIV;
@@ -2471,7 +2477,7 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	if (found)
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_TRIGGER, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_TRIGGER, name);
 
 	savePoint.release();	// everything is ok
 }

@@ -83,7 +83,7 @@ static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, c
 static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
 							  USHORT, const TEXT*, USHORT,
 							  USHORT, const UCHAR*, /*USHORT,*/ USHORT, const UCHAR*,
-							  USHORT, UCHAR*, /*USHORT,*/ USHORT, UCHAR*);
+							  USHORT, UCHAR*, /*USHORT,*/ USHORT, UCHAR*, bool);
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
 	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(const dsql_nod*);
@@ -93,7 +93,7 @@ static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHOR
 static dsql_dbb*	init(Jrd::Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
-static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
+static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, ULONG, UCHAR*);
@@ -316,12 +316,14 @@ void DSQL_execute_immediate(thread_db* tdbb,
 							USHORT in_blr_length, const UCHAR* in_blr,
 							USHORT in_msg_length, const UCHAR* in_msg,
 							USHORT out_blr_length, UCHAR* out_blr,
-							USHORT out_msg_length, UCHAR* out_msg)
+							USHORT out_msg_length, UCHAR* out_msg,
+							bool isInternalRequest)
 {
 	execute_immediate(tdbb, attachment, tra_handle, length,
 		string, dialect,
 		in_blr_length, in_blr, in_msg_length, in_msg,
-		out_blr_length, out_blr, out_msg_length, out_msg);
+		out_blr_length, out_blr, out_msg_length, out_msg,
+		isInternalRequest);
 }
 
 
@@ -541,7 +543,8 @@ void DSQL_prepare(thread_db* tdbb,
 				  dsql_req** req_handle,
 				  USHORT length, const TEXT* string, USHORT dialect,
 				  USHORT item_length, const UCHAR* items,
-				  USHORT buffer_length, UCHAR* buffer)
+				  USHORT buffer_length, UCHAR* buffer,
+				  bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
 
@@ -624,7 +627,8 @@ void DSQL_prepare(thread_db* tdbb,
 		// Because that's the client's allocated statement handle and we
 		// don't want to trash the context in it -- 2001-Oct-27 Ann Harrison
 
-		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version);
+		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version,
+			isInternalRequest);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
@@ -982,7 +986,8 @@ static void execute_immediate(thread_db* tdbb,
 							  USHORT in_blr_length, const UCHAR* in_blr,
 							  USHORT in_msg_length, const UCHAR* in_msg,
 							  USHORT out_blr_length, UCHAR* out_blr,
-							  USHORT out_msg_length, UCHAR* out_msg)
+							  USHORT out_msg_length, UCHAR* out_msg,
+							  bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
 
@@ -1035,7 +1040,8 @@ static void execute_immediate(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version);
+		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version,
+			isInternalRequest);
 
 		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
@@ -2389,7 +2395,8 @@ static USHORT parse_blr(USHORT blr_length,
 static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
 				   USHORT string_length,
 				   const TEXT* string,
-				   USHORT client_dialect, USHORT parser_version)
+				   USHORT client_dialect, USHORT parser_version,
+				   bool isInternalRequest)
 {
 	ISC_STATUS_ARRAY local_status;
 	MOVE_CLEAR(local_status, sizeof(local_status));
@@ -2601,7 +2608,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 					statement->req_blr_data.begin(),
 					statement->req_sql_text,
 					statement->req_debug_data.getCount(),
-					statement->req_debug_data.begin());
+					statement->req_debug_data.begin(),
+					isInternalRequest);
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -3072,6 +3080,8 @@ static UCHAR* var_info(dsql_msg* message,
 	if (!message || !message->msg_index)
 		return info;
 
+	thread_db* tdbb = JRD_get_thread_data();
+
 	Firebird::HalfStaticArray<const dsql_par*, 16> parameters;
 
 	for (const dsql_par* param = message->msg_parameters; param; param = param->par_next)
@@ -3183,9 +3193,10 @@ static UCHAR* var_info(dsql_msg* message,
 			for (const UCHAR* describe = items; describe < end_describe;)
 			{
 				USHORT length;
-				const TEXT* name;
+				string name;
 				const UCHAR* buffer = buf;
 				UCHAR item = *describe++;
+
 				switch (item)
 				{
 				case isc_info_sql_sqlda_seq:
@@ -3217,50 +3228,55 @@ static UCHAR* var_info(dsql_msg* message,
 					break;
 
 				case isc_info_sql_field:
-					if (name = param->par_name)
+					if (param->par_name)
 					{
-						length = strlen(name);
-						buffer = reinterpret_cast<const UCHAR*>(name);
+						name = DdlNode::stringInUserCharSet(tdbb, param->par_name);
+						length = name.length();
+						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
 					else
 						length = 0;
 					break;
 
 				case isc_info_sql_relation:
-					if (name = param->par_rel_name)
+					if (param->par_rel_name)
 					{
-						length = strlen(name);
-						buffer = reinterpret_cast<const UCHAR*>(name);
+						name = DdlNode::stringInUserCharSet(tdbb, param->par_rel_name);
+						length = name.length();
+						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
 					else
 						length = 0;
 					break;
 
 				case isc_info_sql_owner:
-					if (name = param->par_owner_name)
+					if (param->par_owner_name)
 					{
-						length = strlen(name);
-						buffer = reinterpret_cast<const UCHAR*>(name);
+						name = DdlNode::stringInUserCharSet(tdbb, param->par_owner_name);
+						length = name.length();
+						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
 					else
 						length = 0;
 					break;
 
 				case isc_info_sql_relation_alias:
-					if (name = param->par_rel_alias)
+					if (param->par_rel_alias)
 					{
-						length = strlen(name);
-						buffer = reinterpret_cast<const UCHAR*>(name);
+						name = DdlNode::stringInUserCharSet(tdbb, param->par_rel_alias);
+						length = name.length();
+						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
 					else
 						length = 0;
 					break;
 
 				case isc_info_sql_alias:
-					if (name = param->par_alias)
+					if (param->par_alias)
 					{
-						length = strlen(name);
-						buffer = reinterpret_cast<const UCHAR*>(name);
+						name = DdlNode::stringInUserCharSet(tdbb, param->par_alias);
+						length = name.length();
+						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
 					else
 						length = 0;

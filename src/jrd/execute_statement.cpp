@@ -32,10 +32,12 @@
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc.h"
+#include "../jrd/intl.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/execute_statement.h"
 #include "../dsql/dsql.h"
 #include "../common/classes/auto.h"
@@ -67,7 +69,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 
 	try
 	{
-		AutoPtr<PreparedStatement> stmt(attachment->prepareStatement(
+		AutoPtr<PreparedStatement> stmt(attachment->prepareUserStatement(
 			tdbb, *tdbb->getDefaultPool(), transaction, sqlStatementText));
 
 		// Other requests appear to be incorrect in this context
@@ -78,8 +80,21 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 
 		if (!((1 << stmt->getRequest()->req_type) & requests))
 		{
+			UCharBuffer dst;
+
+			if (attachment->att_charset == CS_METADATA || attachment->att_charset == CS_NONE)
+				dst.push((const UCHAR*) sqlStatementText.c_str(), sqlStatementText.length());
+			else
+			{
+				CsConvert conversor(INTL_charset_lookup(tdbb, attachment->att_charset)->getStruct(),
+					INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());
+				conversor.convert(sqlStatementText.length(),
+					(const UCHAR*) sqlStatementText.c_str(), dst);
+			}
+
 			ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(-902) <<
-					 Arg::Gds(isc_exec_sql_invalid_req) << Arg::Str(sqlStatementText));
+					 Arg::Gds(isc_exec_sql_invalid_req) <<
+					 Arg::Str(string((const char*) dst.begin(), dst.getCount())));
 		}
 
 		stmt->execute(tdbb, transaction);
@@ -120,14 +135,28 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 
 	try
 	{
-		stmt = attachment->prepareStatement(tdbb, *tdbb->getDefaultPool(), transaction, sqlText);
+		stmt = attachment->prepareUserStatement(tdbb, *tdbb->getDefaultPool(),
+			transaction, sqlText);
 
 		if (stmt->getResultCount() == 0)
 		{
 			delete stmt;
 			stmt = NULL;
 
-			ERR_post(Arg::Gds(isc_exec_sql_invalid_req) << Arg::Str(startOfSqlOperator));
+			UCharBuffer dst;
+
+			if (attachment->att_charset == CS_METADATA || attachment->att_charset == CS_NONE)
+				dst.push((const UCHAR*) startOfSqlOperator, strlen(startOfSqlOperator));
+			else
+			{
+				CsConvert conversor(INTL_charset_lookup(tdbb, attachment->att_charset)->getStruct(),
+					INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());
+				conversor.convert(strlen(startOfSqlOperator),
+					(const UCHAR*) startOfSqlOperator, dst);
+			}
+
+			ERR_post(Arg::Gds(isc_exec_sql_invalid_req) <<
+					 Arg::Str(string((const char*) dst.begin(), dst.getCount())));
 		}
 
 		if (stmt->getResultCount() != varCount)

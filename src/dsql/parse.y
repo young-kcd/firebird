@@ -6549,8 +6549,12 @@ int Parser::yylexAux()
 					yyabandon(-104, isc_dyn_zero_len_id);
 				}
 
-				yylval.legacyNode = (dsql_nod*) MAKE_string(buffer, p - buffer);
-				dsql_str* delimited_id_str = (dsql_str*) yylval.legacyNode;
+				thread_db* tdbb = JRD_get_thread_data();
+				MetaName name(DdlNode::nameInMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
+
+				yylval.legacyStr = MAKE_string(name.c_str(), name.length());
+
+				dsql_str* delimited_id_str = yylval.legacyStr;
 				delimited_id_str->type = dsql_str::TYPE_DELIMITED;
 				if (buffer != string)
 					gds__free (buffer);

@@ -5928,15 +5928,7 @@ void CompiledStatement::append_cstring(UCHAR verb, const char* string)
 //
 void CompiledStatement::append_meta_string(const char* string)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-
-	UCharBuffer nameBuffer;
-
-	CsConvert cv(INTL_charset_lookup(tdbb, CS_dynamic)->getStruct(),
-		INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());
-	cv.convert(strlen(string), (const UCHAR*) string, nameBuffer);
-
-	append_string(0, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());
+	append_string(0, string, strlen(string));
 }
 
 

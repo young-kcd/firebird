@@ -81,7 +81,7 @@ $(OBJ)/dsql/StmtNodes.o:	$(SRC_ROOT)/include/gen/blrtable.h
 
 # Special cases for building cpp from epp
 $(OBJ)/dsql/metd.cpp: $(SRC_ROOT)/dsql/metd.epp
-	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) -cxx $< $@
+	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
 
 $(OBJ)/dsql/DdlNodes.cpp: $(SRC_ROOT)/dsql/DdlNodes.epp
 	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@

@@ -23,6 +23,7 @@
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/ResultSet.h"
 #include "../jrd/align.h"
+#include "../jrd/intl.h"
 #include "../jrd/jrd.h"
 #include "../jrd/dsc.h"
 #include "../jrd/req.h"
@@ -52,7 +53,8 @@ namespace Jrd {
 
 
 PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
-			Attachment* attachment, jrd_tra* transaction, const string& text)
+			Attachment* attachment, jrd_tra* transaction, const string& text,
+			bool isInternalRequest)
 	: PermanentStorage(pool),
 	  inValues(pool),
 	  outValues(pool),
@@ -62,6 +64,9 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 	  outMessage(pool),
 	  resultSet(NULL)
 {
+	AutoSetRestore<SSHORT> autoAttCharset(&attachment->att_charset,
+		(isInternalRequest ? CS_METADATA : attachment->att_charset));
+
 	request = DSQL_allocate_statement(tdbb, attachment);
 	try
 	{
@@ -69,7 +74,7 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 		const int dialect = dbb.dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
 		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
-			0, NULL, 0, NULL);
+			0, NULL, 0, NULL, isInternalRequest);
 
 		if (request->req_send)
 			parseDsqlMessage(request->req_send, inValues, inBlr, inMessage);

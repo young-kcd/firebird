@@ -33,7 +33,7 @@ const int STUFF_COUNT		= 4; // Is this the same value defined in ods.h???
 const int TEXT_BLOB_LENGTH	= 512;
 
 
-#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), true)
+#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), false)
 #define GET_BYTES(from, to)		DYN_get_string ((const TEXT**)from, to, sizeof(to), false)
 
 namespace Jrd {

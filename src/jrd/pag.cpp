@@ -257,8 +257,10 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 	// Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(file_name))
 	{
+		string fileName(file_name);
+		ISC_systemToUtf8(fileName);
 		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") <<
-													 Arg::Str(file_name));
+													 Arg::Str(fileName));
 	}
 
 	// Create the file.  If the sequence number comes back zero, it didn't work, so punt
@@ -1343,8 +1345,10 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 		file_name[file_length] = 0;
 		if (!JRD_verify_database_access(file_name))
 		{
+			string fileName(file_name);
+			ISC_systemToUtf8(fileName);
 			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") <<
-														 Arg::Str(file_name));
+														 Arg::Str(fileName));
 		}
 
 		file->fil_next = PIO_open(dbb, file_name, file_name, false);

@@ -223,7 +223,7 @@ namespace
 			FUN IN RDB$FUNCTIONS
 			WITH FUN.RDB$PACKAGE_NAME EQ metaName.c_str()
 		{
-			Signature function(DdlNode::nameInUserCharSet(tdbb, FUN.RDB$FUNCTION_NAME));
+			Signature function(FUN.RDB$FUNCTION_NAME);
 			function.defined = !FUN.RDB$ENTRYPOINT.NULL;
 
 			if (details)
@@ -268,7 +268,7 @@ namespace
 			PRC IN RDB$PROCEDURES
 			WITH PRC.RDB$PACKAGE_NAME EQ metaName.c_str()
 		{
-			Signature procedure(DdlNode::nameInUserCharSet(tdbb, PRC.RDB$PROCEDURE_NAME));
+			Signature procedure(PRC.RDB$PROCEDURE_NAME);
 			procedure.defined = !PRC.RDB$PROCEDURE_BLR.NULL || !PRC.RDB$ENTRYPOINT.NULL;
 
 			if (details)
@@ -283,16 +283,15 @@ namespace
 					ParameterInfo parameter(*getDefaultMemoryPool());
 					parameter.type = PRM.RDB$PARAMETER_TYPE;
 					parameter.number = PRM.RDB$PARAMETER_NUMBER;
-					parameter.name = DdlNode::nameInUserCharSet(tdbb, PRM.RDB$PARAMETER_NAME);
-					parameter.fieldSource = DdlNode::nameInUserCharSet(tdbb, PRM.RDB$FIELD_SOURCE);
+					parameter.name = PRM.RDB$PARAMETER_NAME;
+					parameter.fieldSource = PRM.RDB$FIELD_SOURCE;
 
 					if (!PRM.RDB$FIELD_NAME.NULL)
-						parameter.fieldName = DdlNode::nameInUserCharSet(tdbb, PRM.RDB$FIELD_NAME);
+						parameter.fieldName = PRM.RDB$FIELD_NAME;
 
 					if (!PRM.RDB$RELATION_NAME.NULL)
 					{
-						parameter.relationName = DdlNode::nameInUserCharSet(tdbb,
-							PRM.RDB$RELATION_NAME);
+						parameter.relationName = PRM.RDB$RELATION_NAME;
 					}
 
 					if (!PRM.RDB$COLLATION_ID.NULL)
@@ -476,9 +475,8 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = tdbb->getAttachment();
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
 
-	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE, metaName);
+	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE, name);
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_pkg, DYN_REQUESTS);
 
@@ -486,7 +484,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 		PKG IN RDB$PACKAGES USING
 	{
 		PKG.RDB$PACKAGE_NAME.NULL = FALSE;
-		strcpy(PKG.RDB$PACKAGE_NAME, metaName.c_str());
+		strcpy(PKG.RDB$PACKAGE_NAME, name.c_str());
 
 		PKG.RDB$SYSTEM_FLAG.NULL = FALSE;
 		PKG.RDB$SYSTEM_FLAG = 0;
@@ -506,7 +504,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 		STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			X IN RDB$USER_PRIVILEGES
 		{
-			strcpy(X.RDB$RELATION_NAME, metaName.c_str());
+			strcpy(X.RDB$RELATION_NAME, name.c_str());
 			strcpy(X.RDB$USER, attachment->att_user->usr_user_name.c_str());
 			X.RDB$USER_TYPE = obj_user;
 			X.RDB$OBJECT_TYPE = obj_package_header;
@@ -518,28 +516,26 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 	owner = attachment->att_user->usr_user_name;
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE, metaName);
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE, name);
 }
 
 
 bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
-
 	AutoCacheRequest requestHandle(tdbb, drq_m_pkg, DYN_REQUESTS);
 	bool modified = false;
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PKG IN RDB$PACKAGES
-		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
 	{
 		modified = true;
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_PACKAGE, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_PACKAGE, name);
 
 		SortedObjectsArray<Signature> existingFuncs(getPool());
 		SortedObjectsArray<Signature> existingProcs(getPool());
-		collectPackagedItems(tdbb, transaction, metaName, existingFuncs, existingProcs, false);
+		collectPackagedItems(tdbb, transaction, name, existingFuncs, existingProcs, false);
 
 		for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
 			 i != existingFuncs.end(); ++i)
@@ -577,7 +573,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 	END_FOR
 
 	if (modified)
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, name);
 
 	return modified;
 }
@@ -597,11 +593,6 @@ void DropPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
-	MetaName metaName(nameInMetaCharSet(tdbb, name));
-
-	//dbb->checkOdsForDsql(ODS_12_0);
-
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -610,11 +601,11 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PKG IN RDB$PACKAGES
-		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
 	{
 		found = true;
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE, name);
 
 		ERASE PKG;
 
@@ -622,8 +613,8 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			DYN_delete_security_class2(transaction, PKG.RDB$SECURITY_CLASS);
 
 		dsc desc;
-		desc.makeText(metaName.length(), ttype_metadata,
-			(UCHAR*) const_cast<char*>(metaName.c_str()));	// safe const_cast
+		desc.makeText(name.length(), ttype_metadata,
+			(UCHAR*) const_cast<char*>(name.c_str()));	// safe const_cast
 		DFW_post_work(transaction, dfw_drop_package_header, &desc, 0);
 	}
 	END_FOR
@@ -641,7 +632,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	SortedObjectsArray<Signature> existingFuncs(getPool());
 	SortedObjectsArray<Signature> existingProcs(getPool());
-	collectPackagedItems(tdbb, transaction, metaName, existingFuncs, existingProcs, false);
+	collectPackagedItems(tdbb, transaction, name, existingFuncs, existingProcs, false);
 
 	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
 		 i != existingFuncs.end(); ++i)
@@ -665,16 +656,16 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
-		WITH (PRIV.RDB$RELATION_NAME EQ metaName.c_str() AND
+		WITH (PRIV.RDB$RELATION_NAME EQ name.c_str() AND
 				PRIV.RDB$OBJECT_TYPE = obj_package_header) OR
-			 (PRIV.RDB$USER EQ metaName.c_str() AND PRIV.RDB$USER_TYPE = obj_package_header)
+			 (PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_package_header)
 	{
 		ERASE PRIV;
 	}
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE, name);
 
 	savePoint.release();	// everything is ok
 }
@@ -833,11 +824,6 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 
 void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
-
-	//dbb->checkOdsForDsql(ODS_12_0);
-
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -846,9 +832,9 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PKG IN RDB$PACKAGES
-		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
 	{
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE_BODY, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
 
 		MODIFY PKG
 			storeTextBlob(tdbb, transaction, &PKG.RDB$PACKAGE_BODY_SOURCE, source);
@@ -883,7 +869,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			continue;
 
 		if (arrays[i] == items)
-			collectPackagedItems(tdbb, transaction, metaName, existingFuncs, existingProcs, true);
+			collectPackagedItems(tdbb, transaction, name, existingFuncs, existingProcs, true);
 
 		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
 		{
@@ -903,7 +889,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	SortedObjectsArray<Signature> newFuncs(getPool());
 	SortedObjectsArray<Signature> newProcs(getPool());
-	collectPackagedItems(tdbb, transaction, metaName, newFuncs, newProcs, true);
+	collectPackagedItems(tdbb, transaction, name, newFuncs, newProcs, true);
 
 	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
 		 i != existingFuncs.end(); ++i)
@@ -967,7 +953,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRM IN RDB$PROCEDURE_PARAMETERS
-		WITH PRM.RDB$PACKAGE_NAME EQ metaName.c_str()
+		WITH PRM.RDB$PACKAGE_NAME EQ name.c_str()
 	{
 		size_t pos;
 		if (existingProcs.find(Signature(getPool(), MetaName(PRM.RDB$PROCEDURE_NAME)), pos))
@@ -994,7 +980,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 	END_FOR
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE_BODY, metaName);
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
 
 	savePoint.release();	// everything is ok
 }
@@ -1014,11 +1000,6 @@ void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Database* dbb = tdbb->getDatabase();
-	const MetaName metaName(nameInMetaCharSet(tdbb, name));
-
-	//dbb->checkOdsForDsql(ODS_12_0);
-
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -1027,18 +1008,18 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PKG IN RDB$PACKAGES
-		WITH PKG.RDB$PACKAGE_NAME EQ metaName.c_str()
+		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
 	{
 		found = true;
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE_BODY, metaName);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE_BODY, name);
 
 		MODIFY PKG
 			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
 
 			dsc desc;
-			desc.makeText(metaName.length(), ttype_metadata,
-				(UCHAR*) const_cast<char*>(metaName.c_str()));	// safe const_cast
+			desc.makeText(name.length(), ttype_metadata,
+				(UCHAR*) const_cast<char*>(name.c_str()));	// safe const_cast
 			DFW_post_work(transaction, dfw_drop_package_body, &desc, 0);
 		END_MODIFY
 	}
@@ -1059,11 +1040,11 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		FUN IN RDB$FUNCTIONS
-		WITH FUN.RDB$PACKAGE_NAME EQ metaName.c_str()
+		WITH FUN.RDB$PACKAGE_NAME EQ name.c_str()
 	{
 		if (!FUN.RDB$PRIVATE_FLAG.NULL && FUN.RDB$PRIVATE_FLAG != 0)
 		{
-			DropFunctionNode dropNode(getPool(), "", nameInUserCharSet(tdbb, FUN.RDB$FUNCTION_NAME));
+			DropFunctionNode dropNode(getPool(), "", FUN.RDB$FUNCTION_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(compiledStatement);
 			dropNode.execute(tdbb, transaction);
@@ -1083,11 +1064,11 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRC IN RDB$PROCEDURES
-		WITH PRC.RDB$PACKAGE_NAME EQ metaName.c_str()
+		WITH PRC.RDB$PACKAGE_NAME EQ name.c_str()
 	{
 		if (!PRC.RDB$PRIVATE_FLAG.NULL && PRC.RDB$PRIVATE_FLAG != 0)
 		{
-			DropProcedureNode dropNode(getPool(), "", nameInUserCharSet(tdbb, PRC.RDB$PROCEDURE_NAME));
+			DropProcedureNode dropNode(getPool(), "", PRC.RDB$PROCEDURE_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(compiledStatement);
 			dropNode.execute(tdbb, transaction);
@@ -1105,7 +1086,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 	END_FOR
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE_BODY, metaName);
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE_BODY, name);
 
 	savePoint.release();	// everything is ok
 }

@@ -370,6 +370,8 @@ public:
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
+	PreparedStatement* prepareUserStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+		jrd_tra* transaction, const Firebird::string& text);
 
 	void cancelExternalConnection(thread_db* tdbb);
 

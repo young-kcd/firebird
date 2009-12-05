@@ -213,25 +213,6 @@ void ERR_error(int number)
 }
 
 
-void ERR_error_msg(const TEXT* msg)
-{
-/**************************************
- *
- *	E R R _ e r r o r _ m s g
- *
- **************************************
- *
- * Functional description
- *	Post a user-level error.  This is a temporary mechanism
- *	that will eventually disappear.
- *
- **************************************/
-
-	DEBUG;
-	ERR_post(Arg::Gds(isc_random) << Arg::Str(msg));
-}
-
-
 void ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
