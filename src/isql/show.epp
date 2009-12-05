@@ -62,6 +62,7 @@
 #include <ctype.h>
 #endif
 
+using Firebird::string;
 using MsgFormat::SafeArg;
 
 
@@ -247,14 +248,13 @@ inline int TRIGGER_ACTION_SUFFIX(int value, int slot)
 	return ((value + 1) >> (slot * 2 - 1)) & 3;
 }
 
-const char* trigger_action(int type)
+const string SHOW_trigger_action(SINT64 type)
 {
-	static char buffer[256];
-
 	switch (type & TRIGGER_TYPE_MASK)
 	{
 	case TRIGGER_TYPE_DML:
 		{
+			char buffer[256];
 			int prefix = TRIGGER_ACTION_PREFIX(type);
 			strcpy(buffer, Trigger_prefix_types[prefix]);
 			int suffix = TRIGGER_ACTION_SUFFIX(type, 1);
@@ -270,17 +270,41 @@ const char* trigger_action(int type)
 				strcat(buffer, " OR ");
 				strcat(buffer, Trigger_suffix_types[suffix]);
 			}
+			return buffer;
 		}
-		break;
-	case TRIGGER_TYPE_DB:
-		sprintf(buffer, "ON %s", Db_trigger_types[type & ~TRIGGER_TYPE_DB]);
-		break;
-	default:
-		buffer[0] = '\0';
-		fb_assert(false);
-	}
 
-	return buffer;
+	case TRIGGER_TYPE_DB:
+		return string("ON ") + Db_trigger_types[type & ~TRIGGER_TYPE_DB];
+
+	case TRIGGER_TYPE_DDL:
+		{
+			bool first = true;
+			string buffer = Trigger_prefix_types[type & 1];
+
+			for (SINT64 pos = 1; pos < 64; ++pos)
+			{
+				if (((1LL << pos) & TRIGGER_TYPE_MASK) || (type & (1LL << pos)) == 0)
+					continue;
+
+				if (first)
+					first = false;
+				else
+					buffer += " OR";
+
+				buffer += " ";
+
+				if (pos < FB_NELEM(DDL_TRIGGER_ACTION_NAMES))
+					buffer += DDL_TRIGGER_ACTION_NAMES[pos];
+				else
+					buffer += "<unknown>";
+			}
+			return buffer;
+		}
+
+	default:
+		fb_assert(false);
+		return "";
+	}
 }
 
 
@@ -4767,7 +4791,7 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 		isqlGlob.printf("%s, Sequence: %d, Type: %s, %s%s",
 				 TRG.RDB$TRIGGER_NAME,
 				 TRG.RDB$TRIGGER_SEQUENCE,
-				 trigger_action (TRG.RDB$TRIGGER_TYPE),
+				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(),
 				 (TRG.RDB$TRIGGER_INACTIVE ? "Inactive" : "Active"),
 				 NEWLINE);
 

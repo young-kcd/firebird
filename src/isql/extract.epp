@@ -93,8 +93,6 @@ static void list_package_bodies();
 static void list_package_headers();
 static void list_views();
 
-extern const char* trigger_action(int);
-
 static const char* const Procterm = "^";	// TXNN: script use only
 
 /* Maybe 512 would be really enough as Print_buffer size, but
@@ -1687,7 +1685,7 @@ static void list_all_triggers()
 		isqlGlob.printf("CREATE TRIGGER %s %s%s %s POSITION %d %s",
 				 SQL_identifier, NEWLINE,
 				 (TRG.RDB$TRIGGER_INACTIVE ? "INACTIVE" : "ACTIVE"),
-				 trigger_action (TRG.RDB$TRIGGER_TYPE), TRG.RDB$TRIGGER_SEQUENCE,
+				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(), TRG.RDB$TRIGGER_SEQUENCE,
 				 NEWLINE);
 
 		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
@@ -1747,7 +1745,7 @@ static void list_all_triggers()
 		isqlGlob.printf("CREATE TRIGGER %s FOR %s %s%s %s POSITION %d %s",
 				 SQL_identifier, SQL_identifier2, NEWLINE,
 				 (TRG.RDB$TRIGGER_INACTIVE ? "INACTIVE" : "ACTIVE"),
-				 trigger_action (TRG.RDB$TRIGGER_TYPE), TRG.RDB$TRIGGER_SEQUENCE,
+				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(), TRG.RDB$TRIGGER_SEQUENCE,
 				 NEWLINE);
 
 		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
