@@ -1,3 +1,24 @@
+2009-12-05 13:52  robocop
+
+	* firebird2/src/isql/extract.epp (1.102.2.1):
+
+	Backport CORE-2792: Bad extraction syntax for procedure's parameter
+	based on table's field
+
+2009-12-04 18:48  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/os_utils.cpp (1.7.4.1):
+
+	Fixed an issue, detected during 2.5.0.RC1 QA - bad message when
+	user had no rights to access /tmp/firebird
+
+2009-12-04 16:15  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.298.2.2):
+
+	Fixed an issue, detected during 2.5.0.RC1 QA - a lot of same
+	messages in the log
+
 2009-12-04 12:44  hvlad
 
 	* firebird2/src/remote/server.cpp (1.264.2.2):
