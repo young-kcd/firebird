@@ -1359,7 +1359,6 @@ gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
 gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
 gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix
-gen/Makefile.client.gdef:${MAKE_SRC_DIR}/Makefile.in.client.gdef
 gen/Makefile.client.qli:${MAKE_SRC_DIR}/Makefile.in.client.qli
 gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
 gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
@@ -1378,7 +1377,6 @@ gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
 gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
 gen/Makefile.embed.gbak:${MAKE_SRC_DIR}/Makefile.in.embed.gbak
 gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
-gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 gen/Makefile.fbtrace:${MAKE_SRC_DIR}/Makefile.in.fbtrace
