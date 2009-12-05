@@ -263,7 +263,7 @@ const int ROWCOUNT_NEGATIVE			= 172;		// The value (@1) for rowcount must be zer
 
 struct sqltypes
 {
-	SSHORT type;
+	int type;
 	SCHAR type_name[WORDLENGTH];
 };
 

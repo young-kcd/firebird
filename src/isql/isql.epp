@@ -1560,6 +1560,83 @@ bool ISQL_is_domain(const TEXT* field_name)
 #endif
 
 
+// Print the numeric type as accurately as possible, depending on the ODS.
+// If it isn't numeric/decimal or is another non-numeric data type, print only the type.
+bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldScale)
+{
+	// Look through types array
+	int i = 0;
+	while (Column_types[i].type && fieldType != Column_types[i].type)
+		++i;
+
+	fb_assert(Column_types[i].type != 0);
+	if (Column_types[i].type == 0)
+	{
+		isqlGlob.printf("Unknown data type %d for field name %s%s", fieldType, fieldName, NEWLINE);
+		return false;
+	}
+
+	bool precision_known = false;
+
+	if (isqlGlob.major_ods >= ODS_VERSION10 &&
+		(fieldType == SMALLINT || fieldType == INTEGER || fieldType == BIGINT))
+	{
+		// Handle Integral subtypes NUMERIC and DECIMAL
+		// We are ODS >= 10 and could be any Dialect
+		FOR FLD1 IN RDB$FIELDS WITH
+			FLD1.RDB$FIELD_NAME EQ fieldName
+			AND FLD1.RDB$FIELD_PRECISION NOT MISSING
+
+			// We are Dialect >=3 since FIELD_PRECISION is non-NULL
+			if (FLD1.RDB$FIELD_SUB_TYPE > 0 && FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
+			{
+				isqlGlob.printf("%s(%d, %d)",
+						 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
+						 FLD1.RDB$FIELD_PRECISION,
+						 -FLD1.RDB$FIELD_SCALE);
+				precision_known = true;
+			}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg (isc_status);
+			return false;
+		END_ERROR;
+	}
+
+	if (!precision_known)
+	{
+		if (fieldScale < 0)
+		{
+			// Take a stab at numerics and decimals
+			switch (fieldType)
+			{
+			case SMALLINT:
+				isqlGlob.printf("NUMERIC(4, %d)", -fieldScale);
+				break;
+			case INTEGER:
+				isqlGlob.printf("NUMERIC(9, %d)", -fieldScale);
+				break;
+			case DOUBLE_PRECISION:
+				isqlGlob.printf("NUMERIC(15, %d)", -fieldScale);
+				break;
+			default:
+				// BIGINT can't happen there because it would have an explicit field_precision
+				// and then would be caught by the previous if().
+				fb_assert(fieldType != BIGINT);
+				isqlGlob.printf("%s", Column_types[i].type_name);
+			}
+		}
+		else
+		{
+			// This is a non-numeric data type
+			isqlGlob.printf("%s", Column_types[i].type_name);
+		}
+	}
+
+	return true;
+}
+
+
 void ISQL_print_validation(FILE* fp,
 						   ISC_QUAD* blobid,
 						   bool isComputedField,

@@ -3067,72 +3067,11 @@ static processing_state show_domains(const SCHAR* domain_name)
 			{
 				isqlGlob.printf("ARRAY OF ");
 				ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
-				isqlGlob.printf("%s                                ",
-						 NEWLINE);
+				isqlGlob.printf("%s                                ", NEWLINE);
 			}
 
-			// Look through types array
-
-			for (int i = 0; Column_types[i].type; i++)
-				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
-				{
-					bool precision_known = false;
-
-					if (isqlGlob.major_ods >= ODS_VERSION10)
-					{
-						// Handle Integral subtypes NUMERIC and DECIMAL
-						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-							(FLD.RDB$FIELD_TYPE == INTEGER) ||
-							(FLD.RDB$FIELD_TYPE == BIGINT))
-						{
-							FOR FLD1 IN RDB$FIELDS WITH
-								FLD1.RDB$FIELD_NAME EQ domain_name;
-								// We are ODS >= 10 and could be any Dialect
-								if (!FLD1.RDB$FIELD_PRECISION.NULL)
-								{
-									// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-									{
-										sprintf (Print_buffer, "%s(%d, %d)",
-												 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-												 FLD1.RDB$FIELD_PRECISION,
-												 -FLD1.RDB$FIELD_SCALE);
-										precision_known = true;
-									}
-								}
-							END_FOR
-							ON_ERROR
-								ISQL_errmsg (isc_status);
-								return ps_ERR;
-							END_ERROR;
-						}
-					}
-
-					if (!precision_known)
-					{
-						// Take a stab at numerics and decimals
-						if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
-						{
-							sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
-						}
-						else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0))
-						{
-							sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
-						}
-						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FLD.RDB$FIELD_SCALE < 0))
-						{
-							sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
-						}
-						else {
-							sprintf (Print_buffer, "%s", Column_types[i].type_name);
-						}
-					}
-
-					isqlGlob.prints(Print_buffer);
-
-					break;
-				}
+			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+				return ps_ERR;
 
 			// Length for CHARs
 			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
@@ -3464,6 +3403,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 				bool precision_known = false;
 
 				// Handle Integral subtypes NUMERIC and DECIMAL
+				// We are ODS >= 10
 				if ( (isqlGlob.major_ods >= ODS_VERSION10) &&
 					 ((FNA.RDB$FIELD_TYPE == SMALLINT) ||
 					  (FNA.RDB$FIELD_TYPE == INTEGER) ||
@@ -3472,20 +3412,17 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 					FOR FNA1 IN RDB$FUNCTION_ARGUMENTS WITH
 						FNA1.RDB$FUNCTION_NAME = FNA.RDB$FUNCTION_NAME AND
 						FNA1.RDB$ARGUMENT_POSITION = FNA.RDB$ARGUMENT_POSITION
+						AND FNA1.RDB$FIELD_PRECISION NOT MISSING
 
-						// We are ODS >= 10
-						if (!FNA1.RDB$FIELD_PRECISION.NULL)
+						// We are Dialect >=3 since FIELD_PRECISION is non-NULL
+						if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
+							FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
 						{
-							// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-							if (FNA1.RDB$FIELD_SUB_TYPE > 0 &&
-								FNA1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-							{
-								sprintf (Print_buffer, "%s(%d, %d)",
-										 Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
-										 FNA1.RDB$FIELD_PRECISION,
-										 -FNA1.RDB$FIELD_SCALE);
-								precision_known = true;
-							}
+							isqlGlob.printf("%s(%d, %d)",
+									 Integral_subtypes[FNA1.RDB$FIELD_SUB_TYPE],
+									 FNA1.RDB$FIELD_PRECISION,
+									 -FNA1.RDB$FIELD_SCALE);
+							precision_known = true;
 						}
 					END_FOR
 					ON_ERROR
@@ -3499,22 +3436,21 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 					// Take a stab at numerics and decimals
 					if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-						sprintf (Print_buffer, "NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
+						isqlGlob.printf("NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
 					}
 					else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-						sprintf (Print_buffer, "NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
+						isqlGlob.printf("NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
 					}
 					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-						sprintf (Print_buffer, "NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
+						isqlGlob.printf("NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
 					}
 					else
 					{
-						sprintf (Print_buffer, "%s", Column_types[i].type_name);
+						isqlGlob.printf("%s", Column_types[i].type_name);
 					}
 				}
-				isqlGlob.prints(Print_buffer);
 				break;
 			}
 
@@ -3973,8 +3909,6 @@ static processing_state show_proc(const SCHAR* procname)
 
 	// A procedure was named, so print all the info on that procedure
 
-	SCHAR type_name[33];
-	SCHAR lenstring[33] = "";
 	bool first = true;
 
 	FOR PRC IN RDB$PROCEDURES WITH
@@ -4002,79 +3936,6 @@ static processing_state show_proc(const SCHAR* procname)
 				first_param = false;
 			}
 			fb_utils::exact_name(PRM.RDB$PARAMETER_NAME);
-			// Get column type name to print
-			// Look through types array
-
-			for (int i = 0; Column_types[i].type; i++)
-				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
-				{
-					bool precision_known = false;
-
-					if (isqlGlob.major_ods >= ODS_VERSION10)
-					{
-						// Handle Integral subtypes NUMERIC and DECIMAL
-
-						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-							(FLD.RDB$FIELD_TYPE == INTEGER) ||
-							(FLD.RDB$FIELD_TYPE == BIGINT))
-						{
-							FOR FLD1 IN RDB$FIELDS
-								WITH FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-								// We are ODS >= 10 and could be any Dialect
-								if (!FLD1.RDB$FIELD_PRECISION.NULL)
-								{
-									// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-									if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-										FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-									{
-										sprintf (type_name, "%s(%d, %d)",
-												 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-												 FLD1.RDB$FIELD_PRECISION,
-												 -FLD1.RDB$FIELD_SCALE);
-										precision_known = true;
-									}
-								}
-							END_FOR
-							ON_ERROR
-								ISQL_errmsg (isc_status);
-								return ps_ERR;
-							END_ERROR;
-						} // if field_type ...
-					} // if isqlGlob.major_ods ...
-
-					if (!precision_known)
-					{
-						// Take a stab at numerics and decimals
-						if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0)) {
-							sprintf (type_name, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
-						}
-						else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0)) {
-							sprintf (type_name, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
-						}
-						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FLD.RDB$FIELD_SCALE < 0))
-						{
-							sprintf (type_name, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
-						}
-						else {
-							strcpy(type_name, Column_types[i].type_name);
-						}
-					}
-					break;
-				}
-
-			// Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
-			//   FSG 19.Nov.2000
-			if (((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
-				!FLD.RDB$CHARACTER_LENGTH.NULL)
-			{
-				sprintf (lenstring, "(%d)", FLD.RDB$CHARACTER_LENGTH);
-			}
-			else
-			{
-				// CVC: the original programmer initialized it only once,
-				// outside the loop, so it may contain garbage from previous iteration.
-				strcpy(lenstring, "");
-			}
 
 			isqlGlob.printf("%-33s %s ", PRM.RDB$PARAMETER_NAME,
 					 (PRM.RDB$PARAMETER_TYPE ? "OUTPUT" : "INPUT"));
@@ -4140,7 +4001,16 @@ static processing_state show_proc(const SCHAR* procname)
 				}
 			}
 
-			isqlGlob.printf("%s%s", type_name, lenstring);
+			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+				return ps_ERR;
+
+			// Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
+			//   FSG 19.Nov.2000
+			if (((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+				!FLD.RDB$CHARACTER_LENGTH.NULL)
+			{
+				isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
+			}
 
 			// Show international character sets and collations
 
@@ -4515,68 +4385,8 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 			continue;
 		}
 
-		// Look through types array
-
-		for (int i = 0; Column_types[i].type; i++)
-		{
-			if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
-			{
-				bool precision_known = false;
-
-				if (isqlGlob.major_ods >= ODS_VERSION10)
-				{
-					// Handle Integral subtypes NUMERIC and DECIMAL
-					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
-						(FLD.RDB$FIELD_TYPE == INTEGER) ||
-						(FLD.RDB$FIELD_TYPE == BIGINT))
-					{
-						FOR FLD1 IN RDB$FIELDS WITH
-							FLD1.RDB$FIELD_NAME EQ FLD.RDB$FIELD_NAME
-
-							// We are ODS >= 10 and could be any Dialect
-							if (!FLD1.RDB$FIELD_PRECISION.NULL)
-							{
-								// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-								if (FLD1.RDB$FIELD_SUB_TYPE > 0 &&
-									FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-								{
-									sprintf (Print_buffer, "%s(%d, %d)",
-											 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-											 FLD1.RDB$FIELD_PRECISION,
-											 -FLD1.RDB$FIELD_SCALE);
-									precision_known = true;
-								}
-							}
-						END_FOR
-						ON_ERROR
-							ISQL_errmsg (isc_status);
-							return ps_ERR;
-						END_ERROR;
-					}
-				}
-
-				if (!precision_known)
-				{
-					// Take a stab at numerics and decimals
-					if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0)) {
-						sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
-					}
-					else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0)) {
-						sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
-					}
-					else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-							 (FLD.RDB$FIELD_SCALE < 0))
-					{
-						sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
-					}
-					else {
-						sprintf (Print_buffer, "%s", Column_types[i].type_name);
-					}
-				}
-				isqlGlob.prints(Print_buffer);
-				break;
-			}
-		}
+		if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+			return ps_ERR;
 
 		if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
 			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
