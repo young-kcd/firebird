@@ -202,7 +202,9 @@ LockManager::LockManager(const Firebird::string& id)
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
 	if (g_lmMap->put(m_dbId, this))
+	{
 		fb_assert(false);
+	}
 }
 
 
