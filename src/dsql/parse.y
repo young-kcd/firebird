@@ -111,23 +111,10 @@ const int UNSIGNED	= 2;
 //const int MIN_CACHE_BUFFERS	= 250;
 //const int DEF_CACHE_BUFFERS	= 1000;
 
-// Fix 69th procedure problem - solution from Oleg Loa
-#define YYSTACKSIZE	2048
-#define YYMAXDEPTH	2048
-
-// Make bison allocate static stack
-#define YYINITDEPTH 2048
-
-// Using this option causes build problems on Win32 with bison 1.28
-//#define YYSTACK_USE_ALLOCA 1
-
 #define YYSTYPE YYSTYPE
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
 #endif
-
-#define YYMALLOC gds__alloc
-#define YYFREE gds__free
 
 static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; // NTX: placeholder
 
