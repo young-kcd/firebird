@@ -327,6 +327,7 @@ public:
 		return TypedHandle<type_dbb>::checkHandle();
 	}
 
+	/* CVC: Nobody's using this actively now.
 	void checkOdsForDsql(USHORT encodedVersion)
 	{
 		using namespace Firebird;
@@ -340,6 +341,7 @@ public:
 				Arg::Num(DECODE_ODS_MINOR(encodedVersion)));
 		}
 	}
+	*/
 
 	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive
 
