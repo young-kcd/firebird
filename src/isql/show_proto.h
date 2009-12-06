@@ -38,4 +38,3 @@ void	SHOW_read_owner();
 const Firebird::string SHOW_trigger_action(SINT64);
 
 #endif // ISQL_SHOW_PROTO_H
-

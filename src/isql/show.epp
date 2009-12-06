@@ -4030,7 +4030,7 @@ static processing_state show_proc(const SCHAR* procname)
 
 			// Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
 			//   FSG 19.Nov.2000
-			if (((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
 				!FLD.RDB$CHARACTER_LENGTH.NULL)
 			{
 				isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);

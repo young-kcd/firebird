@@ -1766,7 +1766,7 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		}
 	}
 
-	//// TODO: Need access to transliterate here to convert p to UTF8.
+	//// TODO: Need access to transliterate here to convert p to metadata charset.
 	err(Arg::Gds(isc_convert_error) << p);
 }
 

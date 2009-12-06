@@ -537,7 +537,7 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 		break;
 
 	default:
-		if(message == s_uTaskbarRestart)
+		if (message == s_uTaskbarRestart)
 			addTaskBarIcons(hInstance, hWnd, bInTaskBar);
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}

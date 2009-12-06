@@ -268,4 +268,3 @@ static USHORT report_status(DWORD state, DWORD exit_code, DWORD checkpoint, DWOR
 
 	return ret;
 }
-
