@@ -671,7 +671,7 @@ namespace {
 		FileLock initLock(status, fd_init, FileLock::OPENED);
 		if (!initLock.exclusive())
 		{
-			iscLogStatus("freeSem5 failed to lock init file", status);
+			iscLogStatus("freeSem5 failed to lock init file", status.value());
 			return;
 		}
 
@@ -696,7 +696,7 @@ int Sys5Semaphore::getId()
 		}
 		else
 		{
-			iscLogStatus("create_semaphores failed:", status);
+			iscLogStatus("create_semaphores failed:", status.value());
 		}
 	}
 
@@ -919,7 +919,8 @@ SLONG ISC_event_clear(event_t* event)
 	arg.val = 1;
 	if (semctl(event->getId(), event->semNum, SETVAL, arg) < 0)
 	{
-		iscLogStatus("event_clear()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		iscLogStatus("event_clear()",
+			(Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
 	}
 
 	return (event->event_count + 1);
@@ -970,7 +971,8 @@ int ISC_event_init(event_t* event)
 	arg.val = 0;
 	if (semctl(event->getId(), event->semNum, SETVAL, arg) < 0)
 	{
-		iscLogStatus("event_init()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		iscLogStatus("event_init()",
+			(Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
 		return FB_FAILURE;
 	}
 
@@ -1096,7 +1098,8 @@ int isPthreadError(int rc, const char* function)
 {
 	if (rc == 0)
 		return 0;
-	iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) << Arg::Str(function) << Arg::Unix(rc)).value());
+	iscLogStatus("Pthread Error",
+		(Arg::Gds(isc_sys_request) << Arg::Str(function) << Arg::Unix(rc)).value());
 	return rc;
 }
 }
@@ -2760,7 +2763,8 @@ int ISC_mutex_init(struct mtx* mutex)
 	int state = semctl(mutex->getId(), mutex->semNum, SETVAL, arg);
 	if (state == -1)
 	{
-		iscLogStatus("ISC_mutex_init()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		iscLogStatus("ISC_mutex_init()",
+			(Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
 		return FB_FAILURE;
 	}
 
@@ -3701,7 +3705,7 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 	FileLock initLock(statusVector, fd_init, FileLock::OPENED);
 	if (!initLock.exclusive())
 	{
-		iscLogStatus("ISC_unmap_file failed to lock init file", statusVector);
+		iscLogStatus("ISC_unmap_file failed to lock init file", statusVector.value());
 	}
 	else
 	{
