@@ -85,6 +85,11 @@ void StatusVector::ImplStatusVector::clear() throw()
 	m_status_vector[0] = isc_arg_end;
 }
 
+void StatusVector::ImplStatusVector::makePermanent() throw()
+{
+	makePermanentVector(m_status_vector);
+}
+
 void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
 {
 	ImplStatusVector newVector(getKind(), getCode());

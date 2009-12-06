@@ -84,11 +84,11 @@ DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 	string name;
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
-	ISC_STATUS_ARRAY statusVector;
+	Arg::StatusVector statusVector;
 	base = (Header*) ISC_map_file(statusVector, name.c_str(), init, this, DEFAULT_SIZE, &handle);
 	if (!base)
 	{
-		iscLogStatus("Cannot initialize the shared memory region", statusVector);
+		iscLogStatus("Cannot initialize the shared memory region", statusVector.value());
 		status_exception::raise(statusVector);
 	}
 
@@ -109,7 +109,7 @@ DatabaseSnapshot::SharedData::~SharedData()
 	ISC_mutex_fini(&base->mutex);
 #endif
 
-	ISC_STATUS_ARRAY statusVector;
+	Arg::StatusVector statusVector;
 	ISC_unmap_file(statusVector, &handle);
 }
 
@@ -124,7 +124,7 @@ void DatabaseSnapshot::SharedData::acquire()
 	if (base->allocated > handle.sh_mem_length_mapped)
 	{
 #if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_STATUS_ARRAY statusVector;
+		Arg::StatusVector statusVector;
 		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false);
 		if (!base)
 		{
@@ -276,7 +276,7 @@ void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_STATUS_ARRAY statusVector;
+		Arg::StatusVector statusVector;
 		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
 		if (!base)
 		{

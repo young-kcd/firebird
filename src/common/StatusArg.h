@@ -62,6 +62,7 @@ protected:
 		virtual unsigned int firstWarning() const throw() { return 0; }
 		virtual bool hasData() const throw() { return false; }
 		virtual void clear() throw() { }
+		virtual void makePermanent() throw() { }
 		virtual void append(const StatusVector&) throw() { }
 		virtual ISC_STATUS copyTo(ISC_STATUS*) const throw() { return 0; }
 
@@ -105,6 +106,7 @@ protected:
 		virtual unsigned int firstWarning() const throw() { return m_warning; }
 		virtual bool hasData() const throw() { return m_length > 0; }
 		virtual void clear() throw();
+		virtual void makePermanent() throw();
 		virtual void append(const StatusVector& v) throw();
 		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
 		virtual void shiftLeft(const Base& arg) throw();
@@ -131,8 +133,10 @@ public:
 	const ISC_STATUS* value() const throw() { return implementation->value(); }
 	unsigned int length() const throw() { return implementation->length(); }
 	bool hasData() const throw() { return implementation->hasData(); }
+	bool isEmpty() const throw() { return !implementation->hasData(); }
 
 	void clear() throw() { implementation->clear(); }
+	void makePermanent() throw() { implementation->makePermanent(); }
 	void append(const StatusVector& v) throw() { implementation->append(v); }
 	void raise() const;
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }

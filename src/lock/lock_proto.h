@@ -34,6 +34,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/array.h"
+#include "../common/StatusArg.h"
 #include "../jrd/ThreadStart.h"
 #include "../jrd/isc.h"
 
@@ -308,7 +309,7 @@ namespace Firebird {
 
 namespace Jrd {
 
-class thread_db;
+class Database;
 
 class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
@@ -322,16 +323,16 @@ class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 public:
 	static LockManager* create(const Firebird::string&);
 
-	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
-	void shutdownOwner(thread_db*, SRQ_PTR*);
+	bool initializeOwner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
+	void shutdownOwner(Database*, SRQ_PTR*);
 
-	SLONG enqueue(thread_db*, SRQ_PTR, SRQ_PTR, const USHORT, const UCHAR*, const USHORT, UCHAR,
-				  lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
-	bool convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
-	UCHAR downgrade(thread_db*, const SRQ_PTR);
+	SLONG enqueue(Database*, Firebird::Arg::StatusVector&, SRQ_PTR, SRQ_PTR, const USHORT,
+		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
+	bool convert(Database*, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
+	UCHAR downgrade(Database*, Firebird::Arg::StatusVector&, const SRQ_PTR);
 	bool dequeue(const SRQ_PTR);
 
-	void repost(thread_db*, lock_ast_t, void*, SRQ_PTR);
+	void repost(Database*, lock_ast_t, void*, SRQ_PTR);
 
 	SLONG queryData(SRQ_PTR, const USHORT, const USHORT);
 	SLONG readData(SRQ_PTR);
@@ -348,16 +349,16 @@ private:
 	}
 
 	void acquire_shmem(SRQ_PTR);
-	UCHAR* alloc(USHORT, ISC_STATUS*);
-	lbl* alloc_lock(USHORT, ISC_STATUS*);
-	void blocking_action(thread_db*, SRQ_PTR, SRQ_PTR);
+	UCHAR* alloc(USHORT, Firebird::Arg::StatusVector*);
+	lbl* alloc_lock(USHORT, Firebird::Arg::StatusVector&);
+	void blocking_action(Database*, SRQ_PTR, SRQ_PTR);
 	void blocking_action_thread();
-	void bug(ISC_STATUS*, const TEXT*);
+	void bug(Firebird::Arg::StatusVector*, const TEXT*);
 #ifdef DEV_BUILD
 	void bug_assert(const TEXT*, ULONG);
 #endif
-	bool create_owner(ISC_STATUS*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
-	bool create_process(ISC_STATUS*);
+	bool create_owner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
+	bool create_process(Firebird::Arg::StatusVector&);
 	void deadlock_clear();
 	lrq* deadlock_scan(own*, lrq*);
 	lrq* deadlock_walk(lrq*, bool*);
@@ -367,15 +368,16 @@ private:
 	lbl* find_lock(SRQ_PTR, USHORT, const UCHAR*, USHORT, USHORT*);
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
-	SRQ_PTR grant_or_que(thread_db*, lrq*, lbl*, SSHORT);
+	SRQ_PTR grant_or_que(Database*, lrq*, lbl*, SSHORT);
 	void init_owner_block(own*, UCHAR, LOCK_OWNER_T);
 	void initialize(sh_mem*, bool);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
-	bool internal_convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
+	bool internal_convert(Database* database, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT,
+		lock_ast_t, void*);
 	void internal_dequeue(SRQ_PTR);
 	static USHORT lock_state(const lbl*);
-	void post_blockage(thread_db*, lrq*, lbl*);
+	void post_blockage(Database*, lrq*, lbl*);
 	void post_history(USHORT, SRQ_PTR, SRQ_PTR, SRQ_PTR, bool);
 	void post_pending(lbl*);
 	void post_wakeup(own*);
@@ -387,7 +389,7 @@ private:
 	void release_shmem(SRQ_PTR);
 	void release_mutex();
 	void release_request(lrq*);
-	bool signal_owner(thread_db*, own*, SRQ_PTR);
+	bool signal_owner(Database*, own*, SRQ_PTR);
 //#define VALIDATE_LOCK_TABLE
 #ifdef VALIDATE_LOCK_TABLE
 	void validate_history(const SRQ_PTR history_header);
@@ -398,9 +400,9 @@ private:
 	void validate_request(const SRQ_PTR, USHORT, USHORT);
 	void validate_shb(const SRQ_PTR);
 #endif
-	USHORT wait_for_request(thread_db*, lrq*, SSHORT);
-	bool attach_shared_file(ISC_STATUS* status);
-	void detach_shared_file(ISC_STATUS* status);
+	USHORT wait_for_request(Database*, lrq*, SSHORT);
+	bool attach_shared_file(Firebird::Arg::StatusVector&);
+	void detach_shared_file(Firebird::Arg::StatusVector&);
 	void get_shared_file_name(Firebird::PathName&, ULONG extend = 0) const;
 
 	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)

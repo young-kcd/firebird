@@ -110,12 +110,12 @@ ConfigStorage::ConfigStorage()
 	filename.printf(TRACE_FILE); // TODO: it must be per engine instance
 #endif
 
-	ISC_STATUS_ARRAY status;
-	ISC_map_file(status, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
+	Arg::StatusVector statusVector;
+	ISC_map_file(statusVector, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
 	if (!m_base)
 	{
-		iscLogStatus("ConfigStorage: Cannot initialize the shared memory region", status);
-		status_exception::raise(status);
+		iscLogStatus("ConfigStorage: Cannot initialize the shared memory region", statusVector.value());
+		statusVector.raise();
 	}
 
 	fb_assert(m_base->version == 1);
@@ -140,8 +140,8 @@ ConfigStorage::~ConfigStorage()
 		}
 	}
 
-	ISC_STATUS_ARRAY status;
-	ISC_unmap_file(status, &m_handle);
+	Arg::StatusVector statusVector;
+	ISC_unmap_file(statusVector, &m_handle);
 }
 
 void ConfigStorage::checkMutex(const TEXT* string, int state)

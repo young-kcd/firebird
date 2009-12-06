@@ -66,10 +66,12 @@
 
 #define SRQ_BASE                  ((UCHAR*) m_header)
 
+using namespace Firebird;
+
 namespace Jrd {
 
-Firebird::GlobalPtr<EventManager::DbEventMgrMap> EventManager::g_emMap;
-Firebird::GlobalPtr<Firebird::Mutex> EventManager::g_mapMutex;
+GlobalPtr<EventManager::DbEventMgrMap> EventManager::g_emMap;
+GlobalPtr<Mutex> EventManager::g_mapMutex;
 
 
 void EventManager::init(Database* dbb)
@@ -118,7 +120,7 @@ EventManager::~EventManager()
 	m_exiting = true;
 	const SLONG process_offset = m_processOffset;
 
-	ISC_STATUS_ARRAY local_status;
+	Arg::StatusVector localStatus;
 
 	if (m_process)
 	{
@@ -128,7 +130,7 @@ EventManager::~EventManager()
 		m_cleanupSemaphore.tryEnter(5);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_unmap_object(local_status, /*&m_shmemData,*/ (UCHAR**) &m_process, sizeof(prb));
+		ISC_unmap_object(localStatus, /*&m_shmemData,*/ (UCHAR**) &m_process, sizeof(prb));
 #else
 		m_process = NULL;
 #endif
@@ -164,14 +166,14 @@ void EventManager::attach_shared_file()
 	Firebird::PathName name;
 	get_shared_file_name(name);
 
-	ISC_STATUS_ARRAY local_status;
-	if (!(m_header = (evh*) ISC_map_file(local_status,
+	Arg::StatusVector localStatus;
+	if (!(m_header = (evh*) ISC_map_file(localStatus,
 										 name.c_str(),
 										 init_shmem, this,
 										 Config::getEventMemSize(),
 										 &m_shmemData)))
 	{
-		Firebird::status_exception::raise(local_status);
+		localStatus.raise();
 	}
 
 	fb_assert(m_header->evh_version == EVENT_VERSION);
@@ -180,11 +182,11 @@ void EventManager::attach_shared_file()
 
 void EventManager::detach_shared_file()
 {
-	ISC_STATUS_ARRAY local_status;
+	Arg::StatusVector localStatus;
 	if (m_header)
 	{
 		ISC_mutex_fini(MUTEX);
-		ISC_unmap_file(local_status, &m_shmemData);
+		ISC_unmap_file(localStatus, &m_shmemData);
 		m_header = NULL;
 	}
 }
@@ -567,8 +569,8 @@ evh* EventManager::acquire_shmem()
 		evh* header = NULL;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_STATUS_ARRAY local_status;
-		header = (evh*) ISC_remap_file(local_status, &m_shmemData, length, false);
+		Arg::StatusVector localStatus;
+		header = (evh*) ISC_remap_file(localStatus, &m_shmemData, length, false);
 #endif
 		if (!header)
 		{
@@ -621,8 +623,8 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 		evh* header = NULL;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_STATUS_ARRAY local_status;
-		header = (evh*) ISC_remap_file(local_status, &m_shmemData, ev_length, true);
+		Arg::StatusVector localStatus;
+		header = (evh*) ISC_remap_file(localStatus, &m_shmemData, ev_length, true);
 #endif
 		if (header)
 		{
@@ -692,13 +694,13 @@ void EventManager::create_process()
 	m_processOffset = SRQ_REL_PTR(process);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-	ISC_STATUS_ARRAY local_status;
-	m_process = (prb*) ISC_map_object(local_status, &m_shmemData, m_processOffset, sizeof(prb));
+	Arg::StatusVector localStatus;
+	m_process = (prb*) ISC_map_object(localStatus, &m_shmemData, m_processOffset, sizeof(prb));
 
 	if (!m_process)
 	{
 		release_shmem();
-		Firebird::status_exception::raise(local_status);
+		localStatus.raise();
 	}
 #else
 	m_process = process;
