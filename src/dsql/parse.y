@@ -6537,7 +6537,8 @@ int Parser::yylexAux()
 				}
 
 				thread_db* tdbb = JRD_get_thread_data();
-				MetaName name(DdlNode::nameInMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
+				Attachment* attachment = tdbb->getAttachment();
+				MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
 
 				yylval.legacyStr = MAKE_string(name.c_str(), name.length());
 

@@ -5628,11 +5628,106 @@ PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, MemoryPool
 	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text, true);
 }
 
+
 PreparedStatement* Jrd::Attachment::prepareUserStatement(thread_db* tdbb, MemoryPool& pool,
 	jrd_tra* transaction, const string& text)
 {
 	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text, false);
 }
+
+
+MetaName Jrd::Attachment::nameToMetaCharSet(thread_db* tdbb, const MetaName& name)
+{
+	if (att_charset == CS_METADATA || att_charset == CS_NONE)
+		return name;
+
+	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
+	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer, MAX_SQL_IDENTIFIER_LEN,
+		att_charset, (const BYTE*) name.c_str(), name.length(), ERR_post);
+	buffer[len] = '\0';
+
+	return MetaName((const char*) buffer);
+}
+
+
+MetaName Jrd::Attachment::nameToUserCharSet(thread_db* tdbb, const MetaName& name)
+{
+	if (att_charset == CS_METADATA || att_charset == CS_NONE)
+		return name;
+
+	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
+	ULONG len = INTL_convert_bytes(tdbb, att_charset, buffer, MAX_SQL_IDENTIFIER_LEN,
+		CS_METADATA, (const BYTE*) name.c_str(), name.length(), ERR_post);
+	buffer[len] = '\0';
+
+	return MetaName((const char*) buffer);
+}
+
+
+string Jrd::Attachment::stringToMetaCharSet(thread_db* tdbb, const string& str)
+{
+	if (att_charset == CS_METADATA || att_charset == CS_NONE)
+		return str;
+
+	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length() * sizeof(ULONG));
+	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer.begin(), buffer.getCapacity(),
+		att_charset, (const BYTE*) str.c_str(), str.length(), ERR_post);
+
+	return string((char*) buffer.begin(), len);
+}
+
+
+string Jrd::Attachment::stringToUserCharSet(thread_db* tdbb, const string& str)
+{
+	if (att_charset == CS_METADATA || att_charset == CS_NONE)
+		return str;
+
+	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length() * sizeof(ULONG));
+	ULONG len = INTL_convert_bytes(tdbb, att_charset, buffer.begin(), buffer.getCapacity(),
+		CS_METADATA, (const BYTE*) str.c_str(), str.length(), ERR_post);
+
+	return string((char*) buffer.begin(), len);
+}
+
+
+void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
+	bid* blobId, const string& text)
+{
+	UCharBuffer bpb;
+	BLB_gen_bpb(isc_blob_text, isc_blob_text, att_charset, CS_METADATA, bpb);
+
+	blb* blob = BLB_create2(tdbb, transaction, blobId, bpb.getCount(), bpb.begin());
+	try
+	{
+		BLB_put_data(tdbb, blob, (const UCHAR*) text.c_str(), text.length());
+	}
+	catch (const Exception&)
+	{
+		BLB_close(tdbb, blob);
+		throw;
+	}
+
+	BLB_close(tdbb, blob);
+}
+
+
+void Jrd::Attachment::storeBlob(thread_db* tdbb, jrd_tra* transaction,
+	bid* blobId, const UCHAR* data, unsigned length)
+{
+	blb* blob = BLB_create2(tdbb, transaction, blobId, 0, NULL);
+	try
+	{
+		BLB_put_data(tdbb, blob, data, length);
+	}
+	catch (const Exception&)
+	{
+		BLB_close(tdbb, blob);
+		throw;
+	}
+
+	BLB_close(tdbb, blob);
+}
+
 
 void Jrd::Attachment::cancelExternalConnection(thread_db* tdbb)
 {

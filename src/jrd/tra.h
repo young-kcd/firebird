@@ -208,6 +208,11 @@ public:
 		}
 	}
 
+	Attachment* getAttachment()
+	{
+		return tra_attachment;
+	}
+
 	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
 	SLONG tra_number;					// transaction number

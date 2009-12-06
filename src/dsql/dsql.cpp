@@ -3081,6 +3081,7 @@ static UCHAR* var_info(dsql_msg* message,
 		return info;
 
 	thread_db* tdbb = JRD_get_thread_data();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	Firebird::HalfStaticArray<const dsql_par*, 16> parameters;
 
@@ -3230,7 +3231,7 @@ static UCHAR* var_info(dsql_msg* message,
 				case isc_info_sql_field:
 					if (param->par_name)
 					{
-						name = DdlNode::stringInUserCharSet(tdbb, param->par_name);
+						name = attachment->stringToUserCharSet(tdbb, param->par_name);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3241,7 +3242,7 @@ static UCHAR* var_info(dsql_msg* message,
 				case isc_info_sql_relation:
 					if (param->par_rel_name)
 					{
-						name = DdlNode::stringInUserCharSet(tdbb, param->par_rel_name);
+						name = attachment->stringToUserCharSet(tdbb, param->par_rel_name);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3252,7 +3253,7 @@ static UCHAR* var_info(dsql_msg* message,
 				case isc_info_sql_owner:
 					if (param->par_owner_name)
 					{
-						name = DdlNode::stringInUserCharSet(tdbb, param->par_owner_name);
+						name = attachment->stringToUserCharSet(tdbb, param->par_owner_name);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3263,7 +3264,7 @@ static UCHAR* var_info(dsql_msg* message,
 				case isc_info_sql_relation_alias:
 					if (param->par_rel_alias)
 					{
-						name = DdlNode::stringInUserCharSet(tdbb, param->par_rel_alias);
+						name = attachment->stringToUserCharSet(tdbb, param->par_rel_alias);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3274,7 +3275,7 @@ static UCHAR* var_info(dsql_msg* message,
 				case isc_info_sql_alias:
 					if (param->par_alias)
 					{
-						name = DdlNode::stringInUserCharSet(tdbb, param->par_alias);
+						name = attachment->stringToUserCharSet(tdbb, param->par_alias);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}

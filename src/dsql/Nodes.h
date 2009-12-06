@@ -89,14 +89,6 @@ public:
 
 public:
 	static void checkEmptyName(const Firebird::MetaName& name);
-	static Firebird::MetaName nameInMetaCharSet(thread_db* tdbb, const Firebird::MetaName& name);
-	static Firebird::MetaName nameInUserCharSet(thread_db* tdbb, const Firebird::MetaName& name);
-	static Firebird::string stringInMetaCharSet(thread_db* tdbb, const Firebird::string& str);
-	static Firebird::string stringInUserCharSet(thread_db* tdbb, const Firebird::string& str);
-	static void storeTextBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
-		const Firebird::string& text);
-	static void storeBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
-		const UCHAR* data, unsigned length);
 
 protected:
 	void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,

@@ -291,31 +291,6 @@ public:
 		}
 	}
 
-/*	Attachment()
-	:	att_database(0),
-		att_next(0),
-		att_blocking(0),
-		att_user(0),
-		att_transactions(0),
-		att_dbkey_trans(0),
-		att_requests(0),
-		att_active_sorts(0),
-		att_id_lock(0),
-		att_attachment_id(0),
-		att_lock_owner_handle(0),
-		att_event_session(0),
-		att_security_class(0),
-		att_security_classes(0),
-		att_flags(0),
-		att_charset(0),
-		att_long_locks(0),
-		att_compatibility_table(0),
-		att_val_errors(0),
-		att_working_directory(0)
-	{
-		att_counts[0] = 0;
-	}*/
-
 	MemoryPool* const att_pool;					// Memory pool
 	Firebird::MemoryStats att_memory_stats;
 
@@ -372,6 +347,16 @@ public:
 		jrd_tra* transaction, const Firebird::string& text);
 	PreparedStatement* prepareUserStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
+
+	Firebird::MetaName nameToMetaCharSet(thread_db* tdbb, const Firebird::MetaName& name);
+	Firebird::MetaName nameToUserCharSet(thread_db* tdbb, const Firebird::MetaName& name);
+	Firebird::string stringToMetaCharSet(thread_db* tdbb, const Firebird::string& str);
+	Firebird::string stringToUserCharSet(thread_db* tdbb, const Firebird::string& str);
+
+	void storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
+		const Firebird::string& text);
+	void storeBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
+		const UCHAR* data, unsigned length);
 
 	void cancelExternalConnection(thread_db* tdbb);
 

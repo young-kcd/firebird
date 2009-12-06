@@ -474,7 +474,7 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = transaction->getAttachment();
 
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE, name);
 
@@ -493,7 +493,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 		strcpy(PKG.RDB$OWNER_NAME, attachment->att_user->usr_user_name.c_str());
 
 		PKG.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
-		storeTextBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE, source);
+		attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE, source);
 	}
 	END_STORE
 
@@ -522,6 +522,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
+	Attachment* attachment = transaction->getAttachment();
 	AutoCacheRequest requestHandle(tdbb, drq_m_pkg, DYN_REQUESTS);
 	bool modified = false;
 
@@ -563,7 +564,8 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 
 		MODIFY PKG
 			PKG.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
-			storeTextBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE, getSqlText());
+			attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE,
+				getSqlText());
 
 			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
 		END_MODIFY
@@ -824,6 +826,8 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 
 void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
+	Attachment* attachment = transaction->getAttachment();
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -837,7 +841,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
 
 		MODIFY PKG
-			storeTextBlob(tdbb, transaction, &PKG.RDB$PACKAGE_BODY_SOURCE, source);
+			attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_BODY_SOURCE, source);
 		END_MODIFY
 
 		modified = true;

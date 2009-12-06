@@ -116,105 +116,6 @@ void DdlNode::checkEmptyName(const MetaName& name)
 }
 
 
-MetaName DdlNode::nameInMetaCharSet(thread_db* tdbb, const MetaName& name)
-{
-	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
-	if (charSet == CS_METADATA || charSet == CS_NONE)
-		return name;
-
-	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
-	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer, MAX_SQL_IDENTIFIER_LEN,
-		charSet, (const BYTE*) name.c_str(), name.length(), ERR_post);
-	buffer[len] = '\0';
-
-	return MetaName((const char*) buffer);
-}
-
-
-MetaName DdlNode::nameInUserCharSet(thread_db* tdbb, const MetaName& name)
-{
-	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
-	if (charSet == CS_METADATA || charSet == CS_NONE)
-		return name;
-
-	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];
-	ULONG len = INTL_convert_bytes(tdbb, charSet, buffer, MAX_SQL_IDENTIFIER_LEN,
-		CS_METADATA, (const BYTE*) name.c_str(), name.length(), ERR_post);
-	buffer[len] = '\0';
-
-	return MetaName((const char*) buffer);
-}
-
-
-string DdlNode::stringInMetaCharSet(thread_db* tdbb, const string& str)
-{
-	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
-	if (charSet == CS_METADATA || charSet == CS_NONE)
-		return str;
-
-	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length() * sizeof(ULONG));
-	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer.begin(), buffer.getCapacity(),
-		charSet, (const BYTE*) str.c_str(), str.length(), ERR_post);
-
-	return string((char*) buffer.begin(), len);
-}
-
-
-string DdlNode::stringInUserCharSet(thread_db* tdbb, const string& str)
-{
-	const CHARSET_ID charSet = tdbb->getAttachment()->att_charset;
-	if (charSet == CS_METADATA || charSet == CS_NONE)
-		return str;
-
-	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length() * sizeof(ULONG));
-	ULONG len = INTL_convert_bytes(tdbb, charSet, buffer.begin(), buffer.getCapacity(),
-		CS_METADATA, (const BYTE*) str.c_str(), str.length(), ERR_post);
-
-	return string((char*) buffer.begin(), len);
-}
-
-
-void DdlNode::storeTextBlob(thread_db* tdbb, jrd_tra* transaction,
-	bid* blobId, const string& text)
-{
-	Attachment* attachment = tdbb->getAttachment();
-
-	UCharBuffer bpb;
-	BLB_gen_bpb(isc_blob_text, isc_blob_text, attachment->att_charset, CS_METADATA, bpb);
-
-	blb* blob = BLB_create2(tdbb, transaction, blobId, bpb.getCount(), bpb.begin());
-	try
-	{
-		BLB_put_data(tdbb, blob, (const UCHAR*) text.c_str(), text.length());
-	}
-	catch (const Exception&)
-	{
-		BLB_close(tdbb, blob);
-		throw;
-	}
-
-	BLB_close(tdbb, blob);
-}
-
-
-void DdlNode::storeBlob(thread_db* tdbb, jrd_tra* transaction,
-	bid* blobId, const UCHAR* data, unsigned length)
-{
-	blb* blob = BLB_create2(tdbb, transaction, blobId, 0, NULL);
-	try
-	{
-		BLB_put_data(tdbb, blob, data, length);
-	}
-	catch (const Exception&)
-	{
-		BLB_close(tdbb, blob);
-		throw;
-	}
-
-	BLB_close(tdbb, blob);
-}
-
-
 void DdlNode::putType(const TypeClause& type, bool useSubType)
 {
 #ifdef DEV_BUILD
@@ -628,7 +529,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		if (text.isEmpty())
 			++n;
 		else
-			ps->setString(tdbb, ++n, stringInMetaCharSet(tdbb, text));
+			ps->setString(tdbb, ++n, attachment->stringToMetaCharSet(tdbb, text));
 
 		if (column.hasData())
 		{
@@ -720,6 +621,8 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
+	Attachment* attachment = transaction->getAttachment();
+
 	if (package.isEmpty())
 		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_FUNCTION, name);
 
@@ -765,7 +668,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 
 		FUN.RDB$FUNCTION_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 		if (!FUN.RDB$FUNCTION_SOURCE.NULL)
-			storeTextBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
+			attachment->storeMetaDataBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
 
 		FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
 		FUN.RDB$RETURN_ARGUMENT = 0;
@@ -798,6 +701,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 
 bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 {
+	Attachment* attachment = transaction->getAttachment();
 	bool modified = false;
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_funcs2, DYN_REQUESTS);
@@ -838,7 +742,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 
 			FUN.RDB$FUNCTION_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 			if (!FUN.RDB$FUNCTION_SOURCE.NULL)
-				storeTextBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
+				attachment->storeMetaDataBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
 
 			FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
 			FUN.RDB$RETURN_ARGUMENT = 0;
@@ -1263,7 +1167,7 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = transaction->getAttachment();
 
 	if (package.isEmpty())
 	{
@@ -1354,6 +1258,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, jrd_tra* transacti
 bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 	bool secondPass, bool runTriggers)
 {
+	Attachment* attachment = transaction->getAttachment();
 	AutoCacheRequest requestHandle(tdbb, drq_m_prcs2, DYN_REQUESTS);
 	bool modified = false;
 
@@ -1393,7 +1298,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 
 				P.RDB$PROCEDURE_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 				if (!P.RDB$PROCEDURE_SOURCE.NULL)
-					storeTextBlob(tdbb, transaction, &P.RDB$PROCEDURE_SOURCE, source);
+					attachment->storeMetaDataBlob(tdbb, transaction, &P.RDB$PROCEDURE_SOURCE, source);
 			}
 
 			if (external)
@@ -1429,12 +1334,12 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 				if (secondPass)
 				{
 					P.RDB$PROCEDURE_BLR.NULL = FALSE;
-					storeBlob(tdbb, transaction, &P.RDB$PROCEDURE_BLR,
+					attachment->storeBlob(tdbb, transaction, &P.RDB$PROCEDURE_BLR,
 						compiledStatement->req_blr_data.begin(),
 						compiledStatement->req_blr_data.getCount());
 
 					P.RDB$DEBUG_INFO.NULL = FALSE;
-					storeBlob(tdbb, transaction, &P.RDB$DEBUG_INFO,
+					attachment->storeBlob(tdbb, transaction, &P.RDB$DEBUG_INFO,
 						compiledStatement->req_debug_data.begin(),
 						compiledStatement->req_debug_data.getCount());
 
@@ -1477,6 +1382,8 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transaction,
 	USHORT type, unsigned pos, const ParameterClause& parameter)
 {
+	Attachment* attachment = transaction->getAttachment();
+
 	checkEmptyName(parameter.name);
 
 	//Database* dbb = tdbb->getDatabase();
@@ -1649,7 +1556,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 			dsql_str* defaultString =
 				(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
 			string defaultSource = string(defaultString->str_data, defaultString->str_length);
-			storeTextBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE, defaultSource);
+			attachment->storeMetaDataBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE, defaultSource);
 
 			compiledStatement->req_blr_data.clear();
 
@@ -1662,7 +1569,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 
 			compiledStatement->append_uchar(blr_eoc);
 
-			storeBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
+			attachment->storeBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
 				compiledStatement->req_blr_data.begin(),
 				compiledStatement->req_blr_data.getCount());
 		}
@@ -2054,7 +1961,7 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	checkEmptyName(name);
 
-	Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = transaction->getAttachment();
 
 	if (relationName.isEmpty() && !attachment->locksmith())
 		status_exception::raise(Arg::Gds(isc_adm_task_denied));
@@ -2150,6 +2057,7 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction, bool runTriggers)
 {
+	Attachment* attachment = transaction->getAttachment();
 	bool modified = false;
 
 	// ASF: Unregistered bug (2.0, 2.1, 2.5, 3.0): CREATE OR ALTER TRIGGER accepts different table
@@ -2239,13 +2147,13 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 			else if (body)
 			{
 				TRG.RDB$TRIGGER_BLR.NULL = FALSE;
-				storeBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
+				attachment->storeBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
 					compiledStatement->req_blr_data.begin(),
 					compiledStatement->req_blr_data.getCount());
 
 				// ODS_11_1
 				TRG.RDB$DEBUG_INFO.NULL = FALSE;
-				storeBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
+				attachment->storeBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
 					compiledStatement->req_debug_data.begin(),
 					compiledStatement->req_debug_data.getCount());
 			}
@@ -2253,7 +2161,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 			if (source.hasData())
 			{
 				TRG.RDB$TRIGGER_SOURCE.NULL = FALSE;
-				storeTextBlob(tdbb, transaction, &TRG.RDB$TRIGGER_SOURCE, source);
+				attachment->storeMetaDataBlob(tdbb, transaction, &TRG.RDB$TRIGGER_SOURCE, source);
 			}
 
 			TRG.RDB$VALID_BLR = TRUE;	// ODS_11_1
@@ -2403,7 +2311,7 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_TRIGGER, name);
 
-		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
+		if (X.RDB$RELATION_NAME.NULL && !transaction->getAttachment()->locksmith())
 			status_exception::raise(Arg::Gds(isc_adm_task_denied));
 
 		relationName = X.RDB$RELATION_NAME;
