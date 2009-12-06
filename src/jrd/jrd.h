@@ -105,9 +105,9 @@ namespace EDS {
 
 namespace Jrd {
 
-const int QUANTUM			= 100;	// Default quantum
-const int SWEEP_QUANTUM		= 10;	// Make sweeps less disruptive
-const int MAX_CALLBACKS		= 50;
+const int QUANTUM				= 100;	// Default quantum
+const int SWEEP_QUANTUM			= 10;	// Make sweeps less disruptive
+const unsigned MAX_CALLBACKS	= 50;
 
 // fwd. decl.
 class thread_db;
