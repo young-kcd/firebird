@@ -1709,8 +1709,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
-			compiledStatement->put_debug_argument(fb_dbg_arg_input, i,
-				parameter.name.c_str());
+			compiledStatement->put_debug_argument(fb_dbg_arg_input, i, parameter.name.c_str());
 			putType(parameter, true);
 
 			// add slot for null flag (parameter2)
@@ -1732,8 +1731,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 		for (unsigned i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause& parameter = returns[i];
-			compiledStatement->put_debug_argument(fb_dbg_arg_output, i,
-				parameter.name.c_str());
+			compiledStatement->put_debug_argument(fb_dbg_arg_output, i, parameter.name.c_str());
 			putType(parameter, true);
 
 			// add slot for null flag (parameter2)

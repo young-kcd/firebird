@@ -688,7 +688,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, ISC_STAT
 		return ex.stuff_exception(vector);
 	}
 
-	ISC_STATUS* vectorStart = vector;
+	ISC_STATUS* const vectorStart = vector;
 	Array<UCHAR*> buffers;
 
 	try
