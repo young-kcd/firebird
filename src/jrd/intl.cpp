@@ -131,7 +131,7 @@ using namespace Firebird;
 			 ((x)->dsc_dtype == dtype_cstring))
 
 
-static bool all_spaces(thread_db*, CHARSET_ID, const BYTE*, ULONG, ULONG);
+static bool allSpaces(CharSet*, const BYTE*, ULONG, ULONG);
 static int blocking_ast_collation(void* ast_object);
 static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, ULONG);
 static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
@@ -747,14 +747,16 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 		ULONG len = MIN(dest_len, src_len);
 		if (len)
+		{
 			do {
 				*dest_ptr++ = *src_ptr++;
 			} while (--len);
+		}
 
 		// See if only space characters are remaining
 		len = src_len - MIN(dest_len, src_len);
-		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
-			return (dest_ptr - start_dest_ptr);
+		if (len == 0 || allSpaces(INTL_charset_lookup(tdbb, src_type), src_ptr, len, 0))
+			return dest_ptr - start_dest_ptr;
 
 		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
@@ -959,7 +961,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	if (from_fill)
 	{
 		// Make sure remaining characters on From string are spaces
-		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
+		if (!allSpaces(INTL_charset_lookup(tdbb, from_cs), q, from_fill, 0))
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
 
@@ -1307,7 +1309,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 }
 
 
-static bool all_spaces(thread_db* tdbb, CHARSET_ID charset, const BYTE* ptr, ULONG len, ULONG offset)
+static bool allSpaces(CharSet* charSet, const BYTE* ptr, ULONG len, ULONG offset)
 {
 /**************************************
  *
@@ -1322,11 +1324,7 @@ static bool all_spaces(thread_db* tdbb, CHARSET_ID charset, const BYTE* ptr, ULO
  *      (0x20 for Ascii, 0x0020 for Unicode, 0x20 for SJIS, but must watch for
  *      0x??20, which is NOT a space.
  **************************************/
-	SET_TDBB(tdbb);
-
 	fb_assert(ptr != NULL);
-
-	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
 	// We are assuming offset points to the first byte which was not
 	// consumed in a conversion.  And that offset is pointing
@@ -1334,13 +1332,13 @@ static bool all_spaces(thread_db* tdbb, CHARSET_ID charset, const BYTE* ptr, ULO
 
 	// Single-octet character sets are optimized here
 
-	if (obj->getSpaceLength() == 1)
+	if (charSet->getSpaceLength() == 1)
 	{
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
 		while (p < end)
 		{
-			if (*p++ != *obj->getSpace())
+			if (*p++ != *charSet->getSpace())
 				return false;
 		}
 	}
@@ -1348,11 +1346,11 @@ static bool all_spaces(thread_db* tdbb, CHARSET_ID charset, const BYTE* ptr, ULO
 	{
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
-		const unsigned char* space = obj->getSpace();
-		const unsigned char* const end_space = &space[obj->getSpaceLength()];
+		const unsigned char* space = charSet->getSpace();
+		const unsigned char* const end_space = &space[charSet->getSpaceLength()];
 		while (p < end)
 		{
-			space = obj->getSpace();
+			space = charSet->getSpace();
 			while (p < end && space < end_space)
 			{
 				if (*p++ != *space++)
