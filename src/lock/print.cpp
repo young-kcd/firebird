@@ -448,7 +448,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		exit(FINI_OK);
 	}
 
-	ISC_STATUS_ARRAY status_vector;
+	Firebird::Arg::StatusVector statusVector;
 	sh_mem shmem_data;
 
 	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > buffer;
@@ -456,13 +456,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (db_file)
 	{
-		LOCK_header = (lhb*) ISC_map_file(status_vector, filename.c_str(),
+		LOCK_header = (lhb*) ISC_map_file(statusVector, filename.c_str(),
 										  prt_lock_init, NULL, 0, &shmem_data);
 
 		if (!LOCK_header)
 		{
 			FPRINTF(outfile, "Unable to access lock table.\n");
-			gds__print_status(status_vector);
+			gds__print_status(statusVector.value());
 			exit(FINI_OK);
 		}
 
@@ -507,7 +507,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			Firebird::PathName extName;
 			sh_mem extData;
 			extName.printf("%s.ext%d", filename.c_str(), extent);
-			UCHAR* ext = (UCHAR*) ISC_map_file(status_vector, extName.c_str(),
+			UCHAR* ext = (UCHAR*) ISC_map_file(statusVector, extName.c_str(),
 											   prt_lock_init, NULL, 0, &extData);
 			if (! ext)
 			{
@@ -515,7 +515,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				exit(FINI_OK);
 			}
 			memcpy(((UCHAR*) buffer) + extent * extentSize, ext, extentSize);
-			ISC_unmap_file(status_vector, &extData);
+			ISC_unmap_file(statusVector, &extData);
 		}
 
 		LOCK_header = (lhb*)(UCHAR*) buffer;
@@ -523,7 +523,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		if (LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
 		{
 			const ULONG length = LOCK_header->lhb_length;
-			LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false);
+			LOCK_header = (lhb*) ISC_remap_file(statusVector, &shmem_data, length, false);
 		}
 #endif
 
@@ -799,7 +799,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (db_file)
 	{
-		ISC_unmap_file(status_vector, &shmem_data);
+		ISC_unmap_file(statusVector, &shmem_data);
 	}
 
 	return FINI_OK;
