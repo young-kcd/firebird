@@ -706,10 +706,12 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, ISC_STAT
 			case isc_arg_end:
 				cont = false;
 				break;
+
 			case isc_arg_cstring:
 				{
 					size_t len = *vector;
 					const UCHAR* str = reinterpret_cast<UCHAR*>(vector[1]);
+
 					try
 					{
 						UCHAR* p = new UCHAR[len + 1];
@@ -721,16 +723,18 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, ISC_STAT
 					catch (const Exception&)
 					{
 					}
+
 					*vector++ = (ISC_STATUS) len;
 					*vector++ = (ISC_STATUS)(IPTR) str;
 				}
 				break;
+
 			case isc_arg_string:
 			case isc_arg_interpreted:
-			case isc_arg_sql_state:
 				{
 					const UCHAR* str = reinterpret_cast<UCHAR*>(*vector);
 					size_t len = strlen((const char*) str);
+
 					try
 					{
 						UCHAR* p = new UCHAR[len + 1];
@@ -742,9 +746,11 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, ISC_STAT
 					catch (const Exception&)
 					{
 					}
+
 					*vector++ = (ISC_STATUS)(IPTR) str;
 				}
 				break;
+
 			default:
 				++vector;
 				break;
@@ -753,12 +759,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, ISC_STAT
 	}
 	catch (...)
 	{
-		vector = vectorStart;
-		*vector++ = isc_arg_gds;
-		*vector++ = isc_random;
-		*vector++ = isc_arg_string;
-		*vector++ = (ISC_STATUS)(IPTR) "Unexpected exception in transliterationException()";
-		*vector++ = isc_arg_end;
+		return ex.stuff_exception(vectorStart);
 	}
 
 	makePermanentVector(vectorStart);
