@@ -166,7 +166,7 @@ string DdlNode::stringInUserCharSet(thread_db* tdbb, const string& str)
 	if (charSet == CS_METADATA || charSet == CS_NONE)
 		return str;
 
-	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length());
+	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length() * sizeof(ULONG));
 	ULONG len = INTL_convert_bytes(tdbb, charSet, buffer.begin(), buffer.getCapacity(),
 		CS_METADATA, (const BYTE*) str.c_str(), str.length(), ERR_post);
 
