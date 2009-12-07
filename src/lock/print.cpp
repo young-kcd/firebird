@@ -837,10 +837,7 @@ static void prt_lock_activity(OUTFILE outfile,
 		FPRINTF(outfile, "  dblop/s  rellop/s pagelop/s tranlop/s relxlop/s idxxlop/s misclop/s ");
 
 	if (flag & SW_I_WAIT)
-	{
-		FPRINTF(outfile, "   wait/s  reject/s timeout/s blckast/s  dirsig/s  indsig/s ");
-		FPRINTF(outfile, " wakeup/s dlkscan/s deadlck/s avlckwait(msec)");
-	}
+		FPRINTF(outfile, "   wait/s  reject/s timeout/s blckast/s  wakeup/s dlkscan/s deadlck/s ");
 
 	FPRINTF(outfile, "\n");
 
