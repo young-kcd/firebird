@@ -1,3 +1,88 @@
+2009-12-07 11:44  dimitr
+
+	* firebird2/src/jrd/: btn.cpp (1.33), btn.h (1.26):
+
+	Cleanup. Page numbers are not expected to be 64-bit in the
+	foreseeable future.
+
+2009-12-07 10:47  dimitr
+
+	* firebird2/src/lock/print.cpp (1.97):
+
+	Implemented CORE-1906: Allow interactive arguments (seconds and
+	intervals) of fb_lock_print to be 32-bit integers.
+
+2009-12-07 09:54  robocop
+
+	* firebird2/src/: burp/backup.epp (1.131), msgs/facilities2.sql
+	(1.92), msgs/messages2.sql (1.116):
+
+	Put an indication in case of string truncation when backing up.
+
+2009-12-07 09:53  robocop
+
+	* firebird2/src/jrd/SysFunction.cpp (1.84):
+
+	Misc.
+
+2009-12-07 06:32  robocop
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.23), jrd/jrd.cpp (1.587),
+	jrd/jrd.h (1.280):
+
+	Make clearer that we are working with binary, untranslatable blobs.
+
+2009-12-07 06:30  robocop
+
+	* firebird2/src/jrd/: dyn.epp (1.166), dyn.h (1.50), dyn_mod.epp
+	(1.131):
+
+	After Adriano's changes, DYN_get_string does not transliterate
+	anymore, therefore I'm cleaning the code (macros GET_STRING and
+	GET_BYTES retained for readability, although they are the same
+	now).
+
+2009-12-07 06:28  robocop
+
+	* firebird2/src/dsql/parse.y (1.343):
+
+	I find it more readable now (following our style at 100 columns).
+
+2009-12-06 20:22  asfernandes
+
+	* firebird2/src/jrd/intl.cpp (1.138):
+
+	Misc
+
+2009-12-06 20:11  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.22), dsql/Nodes.h (1.10),
+	dsql/PackageNodes.epp (1.12), dsql/dsql.cpp (1.302), dsql/parse.y
+	(1.342), jrd/jrd.cpp (1.586), jrd/jrd.h (1.279), jrd/tra.h (1.108):
+
+	Move and rename methods
+
+2009-12-06 15:13  asfernandes
+
+	* firebird2/src/jrd/jrd.h (1.278):
+
+	Warning
+
+2009-12-06 15:13  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.585):
+
+	No need to convert sql_state and fallback to original exception
+	logic in "catch (...)" to preserve status vector - things noticed
+	by Claudio
+
+2009-12-06 14:51  asfernandes
+
+	* firebird2/src/dsql/DdlNodes.epp (1.21):
+
+	Fix possible problem with the transliteration buffer size - thanks
+	to Claudio
+
 2009-12-06 12:27  robocop
 
 	* firebird2/src/lock/lock.cpp (1.210):
