@@ -606,7 +606,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool transliterate)
+USHORT DYN_get_string(const UCHAR** ptr, TEXT* field, size_t size)
 {
 /**************************************
  *
@@ -621,42 +621,25 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
  *	Strings need enough space for null pad.
  *
  **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= ((USHORT) *p++) << 8;
 
-	HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
-	USHORT l = length;
-
-	if (l)
-	{
-		if (length >= size) {
-			DYN_error_punt(false, 159); // msg 159: Name longer than database field size
-		}
-
-		TEXT* p2 = (transliterate ? temp.getBuffer(length) : field);
-
-		do {
-			*p2++ = *p++;
-		} while (--l);
+	if (length >= size) {
+		DYN_error_punt(false, 159); // msg 159: Name longer than database field size
 	}
 
-	*ptr = p;
-
-	if (transliterate)
-	{
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) field, size - 1,
-			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
-	}
-
+	memcpy(field, p, length);
 	field[length] = 0;
+	p += length;
+
+	*ptr = p;
 
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, MetaName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const UCHAR** ptr, MetaName& field, size_t)
 {
 /**************************************
  *
@@ -669,35 +652,25 @@ USHORT DYN_get_string(const TEXT** ptr, MetaName& field, size_t, bool transliter
  *	If destination field size is too small, punt.
  *
  **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= ((USHORT) *p++) << 8;
 
 	if (length > MAX_SQL_IDENTIFIER_LEN)
 	{
 		DYN_error_punt(false, 159);
 		// msg 159: Name longer than database field size
 	}
-	field.assign(p, length);
+	field.assign(reinterpret_cast<const char*>(p), length);
 	p += length;
 
 	*ptr = p;
-
-	if (transliterate)
-	{
-		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
-
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
-		field.assign(temp, length);
-	}
 
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, string& field, size_t, bool transliterate)
+USHORT DYN_get_string(const UCHAR** ptr, string& field, size_t)
 {
 /**************************************
  *
@@ -710,35 +683,25 @@ USHORT DYN_get_string(const TEXT** ptr, string& field, size_t, bool transliterat
  *	If destination field size is too small, punt.
  *
  **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= ((USHORT) *p++) << 8;
 
 	if (length > MAX_SQL_IDENTIFIER_LEN)
 	{
 		DYN_error_punt(false, 159);
 		// msg 159: Name longer than database field size
 	}
-	field.assign(p, length);
+	field.assign(reinterpret_cast<const char*>(p), length);
 	p += length;
 
 	*ptr = p;
-
-	if (transliterate)
-	{
-		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
-
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
-		field.assign(temp, length);
-	}
 
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, PathName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const UCHAR** ptr, PathName& field, size_t)
 {
 /**************************************
  *
@@ -751,36 +714,20 @@ USHORT DYN_get_string(const TEXT** ptr, PathName& field, size_t, bool transliter
  *	of string.
  *
  **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= ((USHORT) *p++) << 8;
 
-	field.assign(p, length);
+	field.assign(reinterpret_cast<const char*>(p), length);
 	p += length;
 
 	*ptr = p;
-
-	if (transliterate)
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-		PathName temp;
-
-		temp.reserve(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, (BYTE*) temp.begin(), temp.capacity(),
-			ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post);
-		field.assign(temp.c_str(), length);
-	}
 
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, UCharBuffer& array, size_t, bool transliterate)
+USHORT DYN_get_string(const UCHAR** ptr, UCharBuffer& array, size_t)
 {
 /**************************************
  *
@@ -793,29 +740,11 @@ USHORT DYN_get_string(const TEXT** ptr, UCharBuffer& array, size_t, bool transli
  *	of string.
  *
  **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= ((USHORT) *p++) << 8;
 
-	if (transliterate)
-	{
-		UCharBuffer temp;
-		memcpy(temp.getBuffer(length), p, length);
-
-		thread_db* tdbb = JRD_get_thread_data();
-
-		array.resize(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, temp.begin(), length, ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, array.begin(), array.getCapacity(),
-			ttype_dynamic, temp.begin(), length, ERR_post);
-		array.resize(length);
-	}
-	else
-		memcpy(array.getBuffer(length), p, length);
+	memcpy(array.getBuffer(length), p, length);
 
 	p += length;
 	*ptr = p;

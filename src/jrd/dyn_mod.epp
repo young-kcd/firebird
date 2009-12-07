@@ -698,7 +698,7 @@ void DYN_modify_global_field(Global* gbl,
 	bqryname = bqryhdr = bedtstr = bmissingval = false;
 	bfldvald = bfldvaldsrc = bfielddesc = bdelvald = bdeldflt = bflddftval = bflddfltsrc = false;
 
-	const TEXT *qryname, *edtstr;
+	const UCHAR *qryname, *edtstr;
 	const UCHAR *qryhdr, *missingval, *fldvald, *fldvaldsrc, *fielddesc, *flddftval, *flddfltsrc;
 
 	GET_STRING(ptr, orig_dom.dyn_fld_name);
@@ -921,7 +921,7 @@ void DYN_modify_global_field(Global* gbl,
 				break;
 
 			case isc_dyn_fld_query_name:
-				qryname = (TEXT*) * ptr;
+				qryname =  *ptr;
 				bqryname = true;
 				DYN_skip_attribute(ptr);
 				break;
@@ -933,7 +933,7 @@ void DYN_modify_global_field(Global* gbl,
 				break;
 
 			case isc_dyn_fld_edit_string:
-				edtstr = (TEXT*) * ptr;
+				edtstr = *ptr;
 				bedtstr = true;
 				DYN_skip_attribute(ptr);
 				break;
