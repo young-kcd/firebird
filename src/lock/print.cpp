@@ -87,7 +87,7 @@ struct waitque
 	SRQ_PTR waitque_entry[30];
 };
 
-static void prt_lock_activity(OUTFILE, const lhb*, USHORT, USHORT, USHORT);
+static void prt_lock_activity(OUTFILE, const lhb*, USHORT, ULONG, ULONG);
 static void prt_lock_init(void*, sh_mem*, bool);
 static void prt_history(OUTFILE, const lhb*, SRQ_PTR, const SCHAR*);
 static void prt_lock(OUTFILE, const lhb*, lbl*, USHORT);
@@ -231,8 +231,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	USHORT sw_interactive;
 	// Those variables should be signed to accept negative values from atoi
 	SSHORT sw_series;
-	SSHORT sw_intervals;
-	SSHORT sw_seconds;
+	SLONG sw_intervals;
+	SLONG sw_seconds;
 	sw_series = sw_interactive = sw_intervals = sw_seconds = 0;
 	const TEXT* lock_file = NULL;
 	const TEXT* db_file = NULL;
@@ -325,7 +325,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 						sw_intervals = atoi(*argv++);
 						--argc;
 					}
-					if (!(sw_seconds > 0) || (sw_intervals < 0))
+					if (sw_seconds <= 0 || sw_intervals < 0)
 					{
 						FPRINTF(outfile, "Please specify 2 positive values for option -i\n");
 						exit(FINI_OK);
@@ -667,8 +667,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if (sw_interactive)
 	{
 		sw_html_format = false;
-		prt_lock_activity(outfile, LOCK_header, sw_interactive, (USHORT) sw_seconds,
-						  (USHORT) sw_intervals);
+		prt_lock_activity(outfile, LOCK_header, sw_interactive,
+						  (ULONG) sw_seconds, (ULONG) sw_intervals);
 		exit(FINI_OK);
 	}
 
@@ -808,7 +808,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 static void prt_lock_activity(OUTFILE outfile,
 							  const lhb* header,
-							  USHORT flag, USHORT seconds, USHORT intervals)
+							  USHORT flag,
+							  ULONG seconds,
+							  ULONG intervals)
 {
 /**************************************
  *
@@ -844,14 +846,17 @@ static void prt_lock_activity(OUTFILE outfile,
 
 	lhb base = *header;
 	lhb prior = *header;
+
 	if (intervals == 0)
+	{
 		memset(&base, 0, sizeof(base));
+	}
 
 	for (ULONG i = 0; i < intervals; i++)
 	{
 		fflush(outfile);
 #ifdef WIN_NT
-		Sleep((DWORD) seconds * 1000);
+		Sleep(seconds * 1000);
 #else
 		sleep(seconds);
 #endif
@@ -955,7 +960,8 @@ static void prt_lock_activity(OUTFILE outfile,
 		FPRINTF(outfile, "\n");
 	}
 
-	ULONG factor = seconds * intervals;
+	FB_UINT64 factor = seconds * intervals;
+
 	if (factor < 1)
 		factor = 1;
 
@@ -964,14 +970,14 @@ static void prt_lock_activity(OUTFILE outfile,
 	{
 		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" %9"UQUADFORMAT" ",
-				(header->lhb_acquires - base.lhb_acquires) / (factor),
+				(header->lhb_acquires - base.lhb_acquires) / factor,
 				(header->lhb_acquire_blocks -
-				 base.lhb_acquire_blocks) / (factor),
+				 base.lhb_acquire_blocks) / factor,
 				(header->lhb_acquires - base.lhb_acquires) ?
 				 	(100 * (header->lhb_acquire_blocks - base.lhb_acquire_blocks)) /
 						(header->lhb_acquires - base.lhb_acquires) : 0,
-				(header->lhb_acquire_retries - base.lhb_acquire_retries) / (factor),
-				(header->lhb_retry_success - base.lhb_retry_success) / (factor));
+				(header->lhb_acquire_retries - base.lhb_acquire_retries) / factor,
+				(header->lhb_retry_success - base.lhb_retry_success) / factor);
 	}
 
 	if (flag & SW_I_OPERATION)
@@ -979,13 +985,13 @@ static void prt_lock_activity(OUTFILE outfile,
 		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"
 				UQUADFORMAT" ",
-				(header->lhb_enqs - base.lhb_enqs) / (factor),
-				(header->lhb_converts - base.lhb_converts) / (factor),
-				(header->lhb_downgrades - base.lhb_downgrades) / (factor),
-				(header->lhb_deqs - base.lhb_deqs) / (factor),
-				(header->lhb_read_data - base.lhb_read_data) / (factor),
-				(header->lhb_write_data - base.lhb_write_data) / (factor),
-				(header->lhb_query_data - base.lhb_query_data) / (factor));
+				(header->lhb_enqs - base.lhb_enqs) / factor,
+				(header->lhb_converts - base.lhb_converts) / factor,
+				(header->lhb_downgrades - base.lhb_downgrades) / factor,
+				(header->lhb_deqs - base.lhb_deqs) / factor,
+				(header->lhb_read_data - base.lhb_read_data) / factor,
+				(header->lhb_write_data - base.lhb_write_data) / factor,
+				(header->lhb_query_data - base.lhb_query_data) / factor);
 	}
 
 	if (flag & SW_I_TYPE)
@@ -994,18 +1000,18 @@ static void prt_lock_activity(OUTFILE outfile,
 				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" ",
 				(header->lhb_operations[Jrd::LCK_database] -
-				 	base.lhb_operations[Jrd::LCK_database]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_database]) / factor,
 				(header->lhb_operations[Jrd::LCK_relation] -
-				 	base.lhb_operations[Jrd::LCK_relation]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_relation]) / factor,
 				(header->lhb_operations[Jrd::LCK_bdb] -
-				 	base.lhb_operations[Jrd::LCK_bdb]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_bdb]) / factor,
 				(header->lhb_operations[Jrd::LCK_tra] -
-				 	base.lhb_operations[Jrd::LCK_tra]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_tra]) / factor,
 				(header->lhb_operations[Jrd::LCK_rel_exist] -
-				 	base.lhb_operations[Jrd::LCK_rel_exist]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_rel_exist]) / factor,
 				(header->lhb_operations[Jrd::LCK_idx_exist] -
-				 	base.lhb_operations[Jrd::LCK_idx_exist]) / (factor),
-				(header->lhb_operations[0] - base.lhb_operations[0]) / (factor));
+				 	base.lhb_operations[Jrd::LCK_idx_exist]) / factor,
+				(header->lhb_operations[0] - base.lhb_operations[0]) / factor);
 	}
 
 	if (flag & SW_I_WAIT)
@@ -1013,13 +1019,13 @@ static void prt_lock_activity(OUTFILE outfile,
 		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" ",
-				(header->lhb_waits - base.lhb_waits) / (factor),
-				(header->lhb_denies - base.lhb_denies) / (factor),
-				(header->lhb_timeouts - base.lhb_timeouts) / (factor),
-				(header->lhb_blocks - base.lhb_blocks) / (factor),
-				(header->lhb_wakeups - base.lhb_wakeups) / (factor),
-				(header->lhb_scans - base.lhb_scans) / (factor),
-				(header->lhb_deadlocks - base.lhb_deadlocks) / (factor));
+				(header->lhb_waits - base.lhb_waits) / factor,
+				(header->lhb_denies - base.lhb_denies) / factor,
+				(header->lhb_timeouts - base.lhb_timeouts) / factor,
+				(header->lhb_blocks - base.lhb_blocks) / factor,
+				(header->lhb_wakeups - base.lhb_wakeups) / factor,
+				(header->lhb_scans - base.lhb_scans) / factor,
+				(header->lhb_deadlocks - base.lhb_deadlocks) / factor);
 	}
 
 	FPRINTF(outfile, "\n");
