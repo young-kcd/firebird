@@ -3272,6 +3272,7 @@ dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 				memcpy(p2 -= size, p1, size);
 			}
 
+			fb_assert(p2 == buffer2.begin());
 			p = p2;
 		}
 		else
@@ -3320,6 +3321,7 @@ dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 				fb_assert(read == true);
 				memcpy(p2 -= size, p1, size);
 			}
+			fb_assert(p2 == impure->vlu_desc.dsc_address);
 		}
 		else
 		{
