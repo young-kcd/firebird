@@ -355,7 +355,7 @@ public:
 
 	void storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
 		const Firebird::string& text);
-	void storeBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
+	void storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
 		const UCHAR* data, unsigned length);
 
 	void cancelExternalConnection(thread_db* tdbb);

@@ -1334,12 +1334,12 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 				if (secondPass)
 				{
 					P.RDB$PROCEDURE_BLR.NULL = FALSE;
-					attachment->storeBlob(tdbb, transaction, &P.RDB$PROCEDURE_BLR,
+					attachment->storeBinaryBlob(tdbb, transaction, &P.RDB$PROCEDURE_BLR,
 						compiledStatement->req_blr_data.begin(),
 						compiledStatement->req_blr_data.getCount());
 
 					P.RDB$DEBUG_INFO.NULL = FALSE;
-					attachment->storeBlob(tdbb, transaction, &P.RDB$DEBUG_INFO,
+					attachment->storeBinaryBlob(tdbb, transaction, &P.RDB$DEBUG_INFO,
 						compiledStatement->req_debug_data.begin(),
 						compiledStatement->req_debug_data.getCount());
 
@@ -1569,7 +1569,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 
 			compiledStatement->append_uchar(blr_eoc);
 
-			attachment->storeBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
+			attachment->storeBinaryBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
 				compiledStatement->req_blr_data.begin(),
 				compiledStatement->req_blr_data.getCount());
 		}
@@ -2147,13 +2147,13 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 			else if (body)
 			{
 				TRG.RDB$TRIGGER_BLR.NULL = FALSE;
-				attachment->storeBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
+				attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
 					compiledStatement->req_blr_data.begin(),
 					compiledStatement->req_blr_data.getCount());
 
 				// ODS_11_1
 				TRG.RDB$DEBUG_INFO.NULL = FALSE;
-				attachment->storeBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
+				attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
 					compiledStatement->req_debug_data.begin(),
 					compiledStatement->req_debug_data.getCount());
 			}

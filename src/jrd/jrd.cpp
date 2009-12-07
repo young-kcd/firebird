@@ -5690,6 +5690,7 @@ string Jrd::Attachment::stringToUserCharSet(thread_db* tdbb, const string& str)
 }
 
 
+// We store in CS_METADATA.
 void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 	bid* blobId, const string& text)
 {
@@ -5711,7 +5712,8 @@ void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 }
 
 
-void Jrd::Attachment::storeBlob(thread_db* tdbb, jrd_tra* transaction,
+// We store raw stuff; don't attempt to translate.
+void Jrd::Attachment::storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction,
 	bid* blobId, const UCHAR* data, unsigned length)
 {
 	blb* blob = BLB_create2(tdbb, transaction, blobId, 0, NULL);
