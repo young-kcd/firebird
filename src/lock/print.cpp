@@ -971,8 +971,7 @@ static void prt_lock_activity(OUTFILE outfile,
 		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" %9"UQUADFORMAT" ",
 				(header->lhb_acquires - base.lhb_acquires) / factor,
-				(header->lhb_acquire_blocks -
-				 base.lhb_acquire_blocks) / factor,
+				(header->lhb_acquire_blocks - base.lhb_acquire_blocks) / factor,
 				(header->lhb_acquires - base.lhb_acquires) ?
 				 	(100 * (header->lhb_acquire_blocks - base.lhb_acquire_blocks)) /
 						(header->lhb_acquires - base.lhb_acquires) : 0,

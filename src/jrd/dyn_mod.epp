@@ -921,7 +921,7 @@ void DYN_modify_global_field(Global* gbl,
 				break;
 
 			case isc_dyn_fld_query_name:
-				qryname =  *ptr;
+				qryname = *ptr;
 				bqryname = true;
 				DYN_skip_attribute(ptr);
 				break;

@@ -118,4 +118,3 @@ USHORT	DYN_skip_attribute(const UCHAR**);
 void	DYN_unsupported_verb();
 
 #endif // JRD_DYN_H
-
