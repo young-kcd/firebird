@@ -3158,17 +3158,20 @@ alter_db	: db_alter_clause
 				{ $$ = make_node (nod_list, (int) 2, $1, $2); }
 		;
 
-db_alter_clause : ADD db_file_list
-			{ $$ = $2; }
-		| ADD KW_DIFFERENCE KW_FILE sql_string
-			{ $$ = make_node (nod_difference_file, (int) 1, $4); }
-		| DROP KW_DIFFERENCE KW_FILE
-			{ $$ = make_node (nod_drop_difference, (int) 0, NULL); }
-		| BEGIN BACKUP
-			{ $$ = make_node (nod_begin_backup, (int) 0, NULL); }
-		| END BACKUP
-			{ $$ = make_node (nod_end_backup, (int) 0, NULL); }
-		;
+db_alter_clause
+	: ADD db_file_list
+		{ $$ = $2; }
+	| ADD KW_DIFFERENCE KW_FILE sql_string
+		{ $$ = make_node(nod_difference_file, (int) 1, $4); }
+	| DROP KW_DIFFERENCE KW_FILE
+		{ $$ = make_node(nod_drop_difference, (int) 0, NULL); }
+	| BEGIN BACKUP
+		{ $$ = make_node(nod_begin_backup, (int) 0, NULL); }
+	| END BACKUP
+		{ $$ = make_node(nod_end_backup, (int) 0, NULL); }
+	| SET DEFAULT CHARACTER SET symbol_character_set_name
+		{ $$ = make_node(nod_dfl_charset, 1, $5); }
+	;
 
 
 // ALTER TRIGGER

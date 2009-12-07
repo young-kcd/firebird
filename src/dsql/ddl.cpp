@@ -4254,6 +4254,10 @@ static void modify_database( CompiledStatement* statement)
 		case nod_end_backup:
 			statement->append_uchar(isc_dyn_end_backup);
 			break;
+		case nod_dfl_charset:
+			statement->append_cstring(isc_dyn_fld_character_set_name,
+				((dsql_str*) element->nod_arg[0])->str_data);
+			break;
 		default:
 			break;
 		}

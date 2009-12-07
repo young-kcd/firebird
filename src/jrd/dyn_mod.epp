@@ -305,6 +305,9 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 						break;
 
 					case isc_dyn_fld_character_set_name:
+						if (!tdbb->getAttachment()->locksmith())
+							ERR_post(Arg::Gds(isc_adm_task_denied));
+
 						if (GET_STRING(ptr, DBB.RDB$CHARACTER_SET_NAME))
 							DBB.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 						else
