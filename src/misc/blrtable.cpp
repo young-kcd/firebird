@@ -59,8 +59,7 @@ enum {
 
 static void print(const SCHAR **, int, const SCHAR *);
 
-struct VERB
-{
+struct VERB {
 	UCHAR blr;
 	const SCHAR* internal;
 	const SCHAR* internal2;
@@ -78,7 +77,7 @@ static const VERB verbs[] =
 	PAIR(nod_for, blr_fetch, e_for_length, 3, STATEMENT, STATEMENT),
 	PAIR(nod_for, blr_for, e_for_length, 3, STATEMENT, STATEMENT),
 	PAIR(nod_handler, blr_handler, 1, 1, STATEMENT, OTHER),
-	PAIR(nod_class_node_jrd, blr_if, 1, 0, STATEMENT, STATEMENT),
+	PAIR(nod_if, blr_if, e_if_length, 3, STATEMENT, STATEMENT),
 	PAIR(nod_label, blr_label, e_lbl_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_leave, blr_leave, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_list, blr_begin, 0, 0, STATEMENT, STATEMENT),
@@ -86,14 +85,14 @@ static const VERB verbs[] =
 	PAIR(nod_message, blr_message, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_modify, blr_modify, 0, 0, STATEMENT, STATEMENT),
 	PAIR(nod_modify, blr_modify2, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_class_node_jrd, blr_user_savepoint, 1, 0, STATEMENT, OTHER),
+	PAIR(nod_user_savepoint, blr_user_savepoint, e_sav_length, 0, STATEMENT, OTHER),
 	PAIR(nod_receive, blr_receive, e_send_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_select, blr_select, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_class_node_jrd, blr_send, 1, 0, STATEMENT, STATEMENT),
+	PAIR(nod_send, blr_send, e_send_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_store, blr_store, e_sto_length, e_sto_length - 1, STATEMENT, STATEMENT),
 	PAIR(nod_store, blr_store2, e_sto_length, e_sto_length - 1, STATEMENT, STATEMENT),
-	PAIR(nod_class_node_jrd, blr_post, 1, 0, STATEMENT, VALUE),
-	PAIR(nod_class_node_jrd, blr_post_arg, 1, 0, STATEMENT, VALUE),
+	PAIR(nod_post, blr_post, 2, 1, STATEMENT, VALUE),
+	PAIR(nod_post, blr_post_arg, 2, 2, STATEMENT, VALUE),
 	PAIR(nod_exec_sql, blr_exec_sql, 1, 1, STATEMENT, VALUE),
 	PAIR(nod_exec_into, blr_exec_into, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_exec_stmt, blr_exec_stmt, 0, 0, STATEMENT, OTHER),
@@ -165,6 +164,9 @@ static const VERB verbs[] =
 	PAIR(nod_not, blr_not, 1, 1, TYPE_BOOL, TYPE_BOOL),
 	PAIR(nod_rse, blr_rse, 0, 0, TYPE_RSE, OTHER),
 
+	// nodes for SCROLLABLE_CURSORS
+	PAIR(nod_seek, blr_seek, e_seek_length, 2, STATEMENT, VALUE),
+
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
 	PAIR(nod_union, blr_recurse, 0, 0, RELATION, OTHER),
@@ -222,11 +224,6 @@ static const VERB verbs[] =
 	PAIR(nod_similar, blr_similar, 3, 3, TYPE_BOOL, VALUE),
 	PAIR(nod_stmt_expr, blr_stmt_expr, e_stmt_expr_length, 2, VALUE, OTHER),
 	PAIR(nod_derived_expr, blr_derived_expr, e_derived_expr_length, e_derived_expr_count, VALUE, VALUE),
-	PAIR(nod_procedure, blr_procedure2, e_prc_length, 2, RELATION, OTHER),
-	PAIR(nod_exec_proc, blr_exec_proc2, e_esp_length, 4, STATEMENT, OTHER),
-	PAIR(nod_function, blr_function2, 0, 0, VALUE, VALUE),
-	PAIR(nod_aggregate, blr_window, e_agg_length, 0, RELATION, OTHER),
-	PAIR(nod_continue_loop, blr_continue_loop, 1, 0, STATEMENT, OTHER),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 
@@ -247,8 +244,8 @@ int main(int argc, char *argv[])
  *	Spit out a conversion table.
  *
  **************************************/
-	for (int blr = 0; blr < FB_NELEM(table); blr++)
-	{
+	{ // scope
+	for (int blr = 0; blr < FB_NELEM(table); blr++) {
 		table[blr] = NULL;
 		table2[blr] = NULL;
 		lengths[blr] = NULL;
@@ -257,13 +254,12 @@ int main(int argc, char *argv[])
 		types[blr] = NULL;
 		sub_types[blr] = NULL;
 	}
+	} // scope
 
 	int max = 0;
-	for (const VERB* verb = verbs; verb->internal; ++verb)
-	{
+	for (const VERB* verb = verbs; verb->internal; ++verb) {
 		const int blr = verb->blr;
-		if (table[blr])
-		{
+		if (table[blr]) {
 			fprintf(stderr, "BLRTABLE: duplicate blr %d\n", blr);
 			exit(1);
 		}
@@ -300,7 +296,7 @@ int main(int argc, char *argv[])
 }
 
 
-static void print(const SCHAR** tableL, int max, const SCHAR* fudge)
+static void print(const SCHAR ** tableL, int max, const SCHAR * fudge)
 {
 /**************************************
  *
@@ -315,16 +311,14 @@ static void print(const SCHAR** tableL, int max, const SCHAR* fudge)
 	SCHAR buffer[100];
 	char* s = buffer;
 
-	for (int blr = 0; blr <= max; blr++, tableL++)
-	{
+	for (int blr = 0; blr <= max; blr++, tableL++) {
 		if (*tableL)
 			sprintf(s, "%s%s, ", fudge, *tableL);
 		else
 			sprintf(s, " 0, ");
 		while (*s)
 			s++;
-		if (s > buffer + 50)
-		{
+		if (s > buffer + 50) {
 			printf("\t%s\n/*%3d*/", buffer, blr + 1);
 			s = buffer;
 			*s = 0;

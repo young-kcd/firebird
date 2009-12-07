@@ -194,9 +194,14 @@ ISC_STATUS	API_ROUTINE isc_add_user(ISC_STATUS*, const USER_SEC_DATA*);
 ISC_STATUS	API_ROUTINE isc_delete_user(ISC_STATUS*, const USER_SEC_DATA*);
 ISC_STATUS	API_ROUTINE isc_modify_user(ISC_STATUS*, const USER_SEC_DATA*);
 
-// unsupported private API call - added to prevent application startup problems
+// unsupported private API call(s) - added to prevent application startup problems
 struct dsc;
 void		API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR);
+enum ast_t
+{
+    AST_dummy
+};
+void 		API_ROUTINE SCH_ast(enum ast_t);
 
 } // extern "C"
 

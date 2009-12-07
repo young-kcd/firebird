@@ -62,13 +62,13 @@ struct SubtypeInfo
 };
 
 void		MET_activate_shadow(Jrd::thread_db*);
-ULONG		MET_align(const dsc*, ULONG);
+ULONG		MET_align(Jrd::Database* dbb, const dsc*, ULONG);
 Jrd::DeferredWork*	MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
 Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, int, Jrd::jrd_tra*);
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);
-bool		MET_dsql_cache_use(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name, const Firebird::MetaName& package = "");
-void		MET_dsql_cache_release(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name, const Firebird::MetaName& package = "");
+bool		MET_dsql_cache_use(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name);
+void		MET_dsql_cache_release(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name);
 void		MET_error(const TEXT*, ...);
 Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 bool		MET_get_char_coll_subtype(Jrd::thread_db*, USHORT*, const UCHAR*, USHORT);
@@ -80,11 +80,10 @@ Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_db_triggers(Jrd::thread_db*, int);
-void		MET_load_ddl_triggers(Jrd::thread_db* tdbb);
 void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, Jrd::trig_vec**);
 void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Firebird::MetaName& constraint, const Firebird::MetaName& index_name);
 void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Firebird::MetaName&, Firebird::MetaName&, const Firebird::MetaName&);
-void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Firebird::MetaName&, /* OUT */ Firebird::string*);
+void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Firebird::MetaName&, /* OUT */ TEXT*, size_t);
 SLONG		MET_lookup_exception_number(Jrd::thread_db*, const Firebird::MetaName&);
 int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, const Firebird::MetaName*);
 Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);
@@ -93,7 +92,7 @@ void		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Firebird::MetaName&);
 void		MET_lookup_index(Jrd::thread_db*, Firebird::MetaName&, const Firebird::MetaName&, USHORT);
 SLONG		MET_lookup_index_name(Jrd::thread_db*, const Firebird::MetaName&, SLONG*, SSHORT*);
 bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::index_desc*, const TEXT*);
-Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, const Firebird::QualifiedName&, bool);
+Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, const Firebird::MetaName&, bool);
 Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, SSHORT, bool, bool, USHORT);
 Jrd::jrd_rel*	MET_lookup_relation(Jrd::thread_db*, const Firebird::MetaName&);
 Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);

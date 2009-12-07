@@ -23,50 +23,23 @@
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/ResultSet.h"
 #include "../jrd/align.h"
-#include "../jrd/intl.h"
 #include "../jrd/jrd.h"
 #include "../jrd/dsc.h"
-#include "../jrd/req.h"
 #include "../dsql/dsql.h"
-#include "../common/classes/auto.h"
 #include "../dsql/sqlda_pub.h"
 #include "../dsql/dsql_proto.h"
-#include "../jrd/mov_proto.h"
-
-using namespace Firebird;
-
-
-namespace
-{
-	class ParamCmp
-	{
-	public:
-		static int greaterThan(const Jrd::dsql_par* p1, const Jrd::dsql_par* p2)
-		{
-			return p1->par_index > p2->par_index;
-		}
-	};
-}
-
 
 namespace Jrd {
 
 
-PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
-			Attachment* attachment, jrd_tra* transaction, const string& text,
-			bool isInternalRequest)
-	: PermanentStorage(pool),
-	  inValues(pool),
-	  outValues(pool),
-	  inBlr(pool),
-	  outBlr(pool),
-	  inMessage(pool),
-	  outMessage(pool),
+PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+			Attachment* attachment, jrd_tra* transaction, const Firebird::string& text)
+	: Firebird::PermanentStorage(pool),
+	  values(pool),
+	  blr(pool),
+	  message(pool),
 	  resultSet(NULL)
 {
-	AutoSetRestore<SSHORT> autoAttCharset(&attachment->att_charset,
-		(isInternalRequest ? CS_METADATA : attachment->att_charset));
-
 	request = DSQL_allocate_statement(tdbb, attachment);
 	try
 	{
@@ -74,15 +47,13 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 		const int dialect = dbb.dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
 		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
-			0, NULL, 0, NULL, isInternalRequest);
+			0, NULL, 0, NULL);
 
-		if (request->req_send)
-			parseDsqlMessage(request->req_send, inValues, inBlr, inMessage);
-
-		if (request->req_receive)
-			parseDsqlMessage(request->req_receive, outValues, outBlr, outMessage);
+		if (request->req_receive) {
+			parseDsqlMessage(request->req_receive, values, blr, message);
+		}
 	}
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		DSQL_free_statement(tdbb, request, DSQL_drop);
 		throw;
@@ -101,27 +72,10 @@ PreparedStatement::~PreparedStatement()
 }
 
 
-void PreparedStatement::setDesc(thread_db* tdbb, int param, const dsc& value)
-{
-	// Setup tdbb info necessary for blobs.
-	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&getRequest()->req_request->req_transaction,
-		tdbb->getTransaction());
-
-	MOV_move(tdbb, const_cast<dsc*>(&value), &inValues[(param - 1) * 2]);
-
-	const dsc* desc = &inValues[(param - 1) * 2 + 1];
-	fb_assert(desc->dsc_dtype == dtype_short);
-	*reinterpret_cast<SSHORT*>(desc->dsc_address) = 0;
-}
-
-
 void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	fb_assert(resultSet == NULL);
-	DSQL_execute(tdbb, &transaction, request, inBlr.getCount(), inBlr.begin(), 0,
-		inMessage.getCount(), inMessage.begin(), 0, NULL, /*0,*/ 0, NULL);
+	DSQL_execute(tdbb, &transaction, request, 0, NULL, 0, 0, NULL, 0, NULL, /*0,*/ 0, NULL);
 }
 
 
@@ -134,37 +88,33 @@ ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction
 
 int PreparedStatement::getResultCount() const
 {
-	return outValues.getCount() / 2;
+	return values.getCount() / 2;
 }
 
 
-int PreparedStatement::getUpdateCount() const
+void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values,
+	Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg)
 {
-	return request->req_request->req_records_updated;
-}
-
-
-void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
-	UCharBuffer& blr, UCharBuffer& msg)
-{
-	// hvlad: Parameters in dsqlMsg->msg_parameters almost always linked in descending
+	// Parameters in dsqlMsg->msg_parameters almost always linked in descending
 	// order by par_index. The only known exception is EXECUTE BLOCK statement.
 	// To generate correct BLR we must walk params in ascending par_index order.
 	// So store all params in array in an ascending par_index order despite of
 	// order in linked list.
-	// ASF: Input parameters don't come necessarily in ascending or descending order,
-	// so I changed the code to use a SortedArray.
 
-	SortedArray<
-		const dsql_par*,
-		EmptyStorage<const dsql_par*>, const dsql_par*,
-		DefaultKeyValue<const dsql_par*>,
-		ParamCmp> params;
-
+	Firebird::HalfStaticArray<const dsql_par*, 16> params;
+	USHORT first_index = 0;
 	for (const dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next)
 	{
 		if (par->par_index)
-			params.add(par);
+		{
+			if (!first_index)
+				first_index = par->par_index;
+
+			if (first_index > par->par_index)
+				params.insert(0, par);
+			else
+				params.add(par);
+		}
 	}
 
 	size_t msgLength = 0;
@@ -233,8 +183,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 	blr.add(blr_end);
 }
 
-
-void PreparedStatement::generateBlr(const dsc* desc, UCharBuffer& blr)
+void PreparedStatement::generateBlr(const dsc* desc, Firebird::UCharBuffer& blr)
 {
 	USHORT length = 0;
 

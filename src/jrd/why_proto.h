@@ -74,8 +74,17 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS*, FB_API_HANDLE*,
 												 const SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS*, FB_API_HANDLE*, USHORT, const XSQLDA*);
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE isc_dsql_fetch2(ISC_STATUS*, FB_API_HANDLE*, USHORT,
+										  XSQLDA*, USHORT, SLONG);
+#endif
 ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 										   SCHAR*, USHORT, USHORT, SCHAR*);
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE isc_dsql_fetch2_m(ISC_STATUS*, FB_API_HANDLE*, USHORT,
+											SCHAR*, USHORT, USHORT, SCHAR*,
+											USHORT, SLONG);
+#endif
 ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS*, FB_API_HANDLE*, USHORT);
 ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS*, FB_API_HANDLE*, USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS*, FB_API_HANDLE*, USHORT,
@@ -99,6 +108,11 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 //ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FB_API_HANDLE*, SLONG*,
 //										 USHORT, const UCHAR*,
 //										FPTR_EVENT_CALLBACK, void*);
+//#ifdef SCROLLABLE_CURSORS
+//ISC_STATUS API_ROUTINE isc_receive2(ISC_STATUS*, FB_API_HANDLE*, USHORT,
+//									   USHORT, SCHAR*, SSHORT, USHORT,
+//									   ULONG);
+//#endif
 //ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS*, FB_API_HANDLE*);
 //ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS*,
 //													   FB_API_HANDLE*, SSHORT,
@@ -177,6 +191,11 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS*, FB_API_HANDLE*, SLONG*, USHOR
 ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS*, FB_API_HANDLE*, USHORT, USHORT,
 									SCHAR*, SSHORT);
 
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE isc_receive2(ISC_STATUS*, FB_API_HANDLE*, USHORT, USHORT, SCHAR*,
+									SSHORT, USHORT, ULONG);
+#endif
+
 ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 												SSHORT, const UCHAR*);
 
@@ -252,6 +271,8 @@ int API_ROUTINE gds__enable_subsystem(TEXT*);
 
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
+
+FB_API_HANDLE WHY_get_public_attachment_handle(const void*);
 
 bool WHY_set_shutdown(bool);
 bool WHY_get_shutdown();

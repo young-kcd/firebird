@@ -185,7 +185,7 @@ Provider::~Provider()
 Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	const string& user, const string& pwd, const string& role, TraScope tra_scope)
 {
-	const Jrd::Attachment* attachment = tdbb->getAttachment();
+	const Attachment* attachment = tdbb->getAttachment();
 
 	if (attachment->att_ext_call_depth >= MAX_CALLBACKS)
 		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
@@ -318,7 +318,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 {
 	dpb.reset(isc_dpb_version1);
 
-	const Jrd::Attachment* attachment = tdbb->getAttachment();
+	const Attachment *attachment = tdbb->getAttachment();
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
 	const string& attUser = attachment->att_user->usr_user_name;
@@ -1334,7 +1334,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
 	jrd_nod** jrdVar = params;
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
-		/*
+/*
 		dsc* d = EVL_assign_to(tdbb, *jrdVar);
 		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
@@ -1342,7 +1342,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
 			status_exception::raise(
 				Arg::Gds(isc_exec_sql_invalid_var) << Arg::Num(i + 1) << Arg::Str(m_sql.substr(0, 31)));
 		}
-		*/
+*/
 
 		// build the src descriptor
 		dsc& src = m_outDescs[i * 2];
@@ -1483,9 +1483,9 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 	}
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
+ 	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
 											Arg::Str(rem_err) <<
-											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
+ 											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
@@ -1538,8 +1538,8 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 
 	if (m_tdbb)
 	{
-		jrd_tra* transaction = m_tdbb->getTransaction();
-		if (transaction)
+		jrd_tra *transaction = m_tdbb->getTransaction();
+		if (transaction) 
 		{
 			if (transaction->tra_callback_count >= MAX_CALLBACKS)
 				ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
@@ -1547,7 +1547,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 			transaction->tra_callback_count++;
 		}
 
-		Jrd::Attachment* attachment = m_tdbb->getAttachment();
+		Attachment *attachment = m_tdbb->getAttachment();
 		if (attachment)
 		{
 			m_saveConnection = attachment->att_ext_connection;
@@ -1572,12 +1572,12 @@ EngineCallbackGuard::~EngineCallbackGuard()
 	{
 		m_tdbb->getDatabase()->dbb_sync->lock();
 
-		jrd_tra* transaction = m_tdbb->getTransaction();
+		jrd_tra *transaction = m_tdbb->getTransaction();
 		if (transaction) {
 			transaction->tra_callback_count--;
 		}
 
-		Jrd::Attachment* attachment = m_tdbb->getAttachment();
+		Attachment *attachment = m_tdbb->getAttachment();
 		if (attachment) {
 			attachment->att_ext_connection = m_saveConnection;
 		}

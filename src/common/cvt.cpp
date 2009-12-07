@@ -51,7 +51,6 @@
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/FpeControl.h"
 #include "../jrd/dsc_proto.h"
-#include "../common/utils_proto.h"
 
 
 #ifdef HAVE_SYS_TYPES_H
@@ -213,25 +212,18 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	int chars_printed;			// number of characters printed
 	if ((dtype_double == from->dsc_dtype) && (from->dsc_scale < 0))
-	{
-		chars_printed = fb_utils::snprintf(temp, sizeof(temp), "%- #*.*f", width, -from->dsc_scale, d);
-		if (chars_printed <= 0 || chars_printed > width)
-			chars_printed = -1;
-	}
+		chars_printed = sprintf(temp, "%- #*.*f", width, -from->dsc_scale, d);
 	else
-		chars_printed = -1;
+		chars_printed = LONG_MAX_int;	// sure to be greater than to_len
 
 	// If it's not an old-style numeric, or the f-format was too long for the
 	// destination, try g-format with the maximum precision which makes sense
 	// for the input type: if it fits, we're done.
 
-	if (chars_printed == -1)
+	if (chars_printed > width)
 	{
-		char temp2[50];
 		const char num_format[] = "%- #*.*g";
-		chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
-		if (chars_printed <= 0 || chars_printed >= sizeof(temp2))
-			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+		chars_printed = sprintf(temp, num_format, width, precision, d);
 
 		// If the full-precision result is too wide for the destination,
 		// reduce the precision and try again.
@@ -245,9 +237,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 			if (precision < 2)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
-			chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
-			if (chars_printed <= 0 || chars_printed >= sizeof(temp2))
-				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			chars_printed = sprintf(temp, num_format, width, precision, d);
 
 			// It's possible that reducing the precision caused sprintf to switch
 			// from f-format to e-format, and that the output is still too long
@@ -259,16 +249,9 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 				precision -= (chars_printed - width);
 				if (precision < 2)
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-				// Note: we use here temp2 with sizeof(temp) because temp2 is bigger than temp.
-				// The check should be chars_printed > width because it's our last chance to
-				// fit into "width" else we should throw error.
-				chars_printed = fb_utils::snprintf(temp2, sizeof(temp), num_format, width, precision, d);
-				if (chars_printed <= 0 || chars_printed > width)
-					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			    chars_printed = sprintf(temp, num_format, width, precision, d);
 			}
 		}
-
-		memcpy(temp, temp2, sizeof(temp));
 	}
 	fb_assert(chars_printed <= width);
 
@@ -293,7 +276,6 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	}
 	else
 	{
-		fb_assert(chars_printed > 0);
 		if (!temp[0])
 			temp[1] = 0;
 		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp) + 1;
@@ -622,10 +604,8 @@ static void string_to_datetime(const dsc* desc,
 					description[i] = SPECIAL;
 
 					while (++p < end)
-					{
 						if (*p != ' ' && *p != '\t' && *p != 0)
 							CVT_conversion_error(desc, err);
-					}
 
 					// fetch the current datetime
 					*date = Firebird::TimeStamp::getCurrentTimeStamp().value();
@@ -1478,117 +1458,117 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
+		{
+			/* If we are within the engine, INTL_convert_string
+			 * will convert the string between character sets
+			 * (or die trying).
+			 * This module, however, can be called from outside
+			 * the engine (for instance, moving values around for
+			 * DSQL).
+			 * In that event, we'll move the values if we think
+			 * they are compatible text types, otherwise fail.
+			 * eg: Simple cases can be handled here (no
+			 * character set conversion).
+			 *
+			 * a charset type binary is compatible with all other types.
+			 * if a charset involved is ttype_dynamic, we must look up
+			 *    the charset of the attachment (only if we are in the
+			 *    engine). If we are outside the engine, the
+			 *    assume that the engine has converted the values
+			 *    previously in the request.
+			 *
+			 * Even within the engine, not calling INTL_convert_string
+			 * unless really required is a good optimization.
+			 */
+
+			CHARSET_ID charset2;
+			if (cb->transliterate(from, to, charset2))
+				return;
+
+			{ // scope
+				USHORT strtype_unused;
+				UCHAR *ptr;
+				length = l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
+				q = ptr;
+			} // end scope
+
+			const USHORT to_size = TEXT_LEN(to);
+			const UCHAR* start = to->dsc_address;
+			UCHAR fill_char = ASCII_SPACE;
+			Jrd::CharSet* toCharset = cb->getToCharset(charset2);
+			ULONG toLength;
+			ULONG fill;
+
+			if (charset2 == ttype_binary)
+				fill_char = 0x00;
+
+			switch (to->dsc_dtype)
 			{
-				/* If we are within the engine, INTL_convert_string
-				 * will convert the string between character sets
-				 * (or die trying).
-				 * This module, however, can be called from outside
-				 * the engine (for instance, moving values around for
-				 * DSQL).
-				 * In that event, we'll move the values if we think
-				 * they are compatible text types, otherwise fail.
-				 * eg: Simple cases can be handled here (no
-				 * character set conversion).
-				 *
-				 * a charset type binary is compatible with all other types.
-				 * if a charset involved is ttype_dynamic, we must look up
-				 *    the charset of the attachment (only if we are in the
-				 *    engine). If we are outside the engine, the
-				 *    assume that the engine has converted the values
-				 *    previously in the request.
-				 *
-				 * Even within the engine, not calling INTL_convert_string
-				 * unless really required is a good optimization.
-				 */
+			case dtype_text:
+				length = MIN(length, to->dsc_length);
+				cb->validateData(toCharset, length, q);
+				toLength = length;
 
-				CHARSET_ID charset2;
-				if (cb->transliterate(from, to, charset2))
-					return;
+				l -= length;
+				fill = ULONG(to->dsc_length) - length;
 
-				{ // scope
-					USHORT strtype_unused;
-					UCHAR *ptr;
-					length = l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
-					q = ptr;
-				} // end scope
-
-				const USHORT to_size = TEXT_LEN(to);
-				const UCHAR* start = to->dsc_address;
-				UCHAR fill_char = ASCII_SPACE;
-				Jrd::CharSet* toCharset = cb->getToCharset(charset2);
-				ULONG toLength;
-				ULONG fill;
-
-				if (charset2 == ttype_binary)
-					fill_char = 0x00;
-
-				switch (to->dsc_dtype)
+				CVT_COPY_BUFF(q, p, length);
+				if (fill > 0)
 				{
-				case dtype_text:
-					length = MIN(length, to->dsc_length);
-					cb->validateData(toCharset, length, q);
-					toLength = length;
+					memset(p, fill_char, fill);
+					p += fill;
+					// Note: above is correct only for narrow
+					// and multi-byte character sets which
+					// use ASCII for the SPACE character.
+				}
+				break;
 
-					l -= length;
-					fill = ULONG(to->dsc_length) - length;
+			case dtype_cstring:
+				// Note: Following is only correct for narrow and
+				// multibyte character sets which use a zero
+				// byte to represent end-of-string
 
-					CVT_COPY_BUFF(q, p, length);
-					if (fill > 0)
+				fb_assert(to->dsc_length > 0)
+				length = MIN(length, ULONG(to->dsc_length - 1));
+				cb->validateData(toCharset, length, q);
+				toLength = length;
+
+				l -= length;
+				CVT_COPY_BUFF(q, p, length);
+				*p = 0;
+				break;
+
+			case dtype_varying:
+				length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
+				cb->validateData(toCharset, length, q);
+				toLength = length;
+
+				l -= length;
+				// TMN: Here we should really have the following fb_assert
+				// fb_assert(length <= MAX_USHORT);
+				((vary*) p)->vary_length = (USHORT) length;
+				start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+				CVT_COPY_BUFF(q, p, length);
+				break;
+			}
+
+			cb->validateLength(toCharset, toLength, start, to_size);
+
+			if (l)
+			{
+				// Scan the truncated string to ensure only spaces lost
+				// Warning: it is correct only for narrow and multi-byte
+				// character sets which use ASCII or NULL for the SPACE character
+
+				do {
+					if (*q++ != fill_char)
 					{
-						memset(p, fill_char, fill);
-						p += fill;
-						// Note: above is correct only for narrow
-						// and multi-byte character sets which
-						// use ASCII for the SPACE character.
+						cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 					}
-					break;
-
-				case dtype_cstring:
-					// Note: Following is only correct for narrow and
-					// multibyte character sets which use a zero
-					// byte to represent end-of-string
-
-					fb_assert(to->dsc_length > 0)
-					length = MIN(length, ULONG(to->dsc_length - 1));
-					cb->validateData(toCharset, length, q);
-					toLength = length;
-
-					l -= length;
-					CVT_COPY_BUFF(q, p, length);
-					*p = 0;
-					break;
-
-				case dtype_varying:
-					length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
-					cb->validateData(toCharset, length, q);
-					toLength = length;
-
-					l -= length;
-					// TMN: Here we should really have the following fb_assert
-					// fb_assert(length <= MAX_USHORT);
-					((vary*) p)->vary_length = (USHORT) length;
-					start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
-					CVT_COPY_BUFF(q, p, length);
-					break;
-				}
-
-				cb->validateLength(toCharset, toLength, start, to_size);
-
-				if (l)
-				{
-					// Scan the truncated string to ensure only spaces lost
-					// Warning: it is correct only for narrow and multi-byte
-					// character sets which use ASCII or NULL for the SPACE character
-
-					do {
-						if (*q++ != fill_char)
-						{
-							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
-						}
-					} while (--l);
-				}
+				} while (--l);
 			}
 			return;
+		}
 
 		case dtype_short:
 		case dtype_long:
@@ -1641,7 +1621,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		// TMN: Here we should really have the following fb_assert
 		// fb_assert(l <= MAX_SSHORT);
 		*(SSHORT *) p = (SSHORT) l;
-		if (*(SSHORT *) p != SLONG(l))
+		if (*(SSHORT *) p != l)
 			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 		return;
 
@@ -1766,7 +1746,6 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		}
 	}
 
-	//// TODO: Need access to transliterate here to convert p to metadata charset.
 	err(Arg::Gds(isc_convert_error) << p);
 }
 
@@ -1798,7 +1777,8 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	{
 	case dtype_sql_time:
 		Firebird::TimeStamp::decode_time(*(GDS_TIME *) from->dsc_address,
-										 &times.tm_hour, &times.tm_min, &times.tm_sec, &fractions);
+										 &times.tm_hour, &times.tm_min, &times.tm_sec,
+										 &fractions);
 		break;
 
 	case dtype_sql_date:
@@ -1939,8 +1919,8 @@ USHORT CVT_make_string(const dsc*          desc,
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
+	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
-	temp_desc.setTextType(to_interp);
 	CVT_move(desc, &temp_desc, err);
 	*address = temp->vary_string;
 
@@ -2282,8 +2262,8 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
+	INTL_ASSIGN_TTYPE(&temp_desc, ttype_ascii);
 	temp_desc.dsc_dtype = dtype_varying;
-	temp_desc.setTextType(ttype_ascii);
 	CVT_move(desc, &temp_desc, err);
 	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
 	*ttype = INTL_TTYPE(&temp_desc);

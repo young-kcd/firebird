@@ -42,13 +42,13 @@ include     $(ROOT)/gen/make.shared.variables
 GBAKSTATIC_Files = backup.epp  restore.epp \
 			burp.cpp canonical.cpp misc.cpp mvol.cpp burpMain.cpp
 
-GBAK_Other_Sources = 
+GBAK_Other_Sources = common/UtilSvc.cpp
 GBAK_Other_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Other_Sources))))
 
 GBAKSTATIC_Sources = $(addprefix burp/, $(GBAKSTATIC_Files))
 GBAKSTATIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAKSTATIC_Sources))))
 
-AllObjects = $(GBAKSTATIC_Objects) $(GBAK_Other_Objects) $(COMMON_Objects) $(FBUTILSVC_Objects)
+AllObjects = $(GBAKSTATIC_Objects) $(GBAK_Other_Objects) $(COMMON_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 
 

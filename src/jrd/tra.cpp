@@ -286,8 +286,7 @@ void TRA_cleanup(thread_db* tdbb)
 
 	// First, make damn sure there are no outstanding transactions
 
-	for (Jrd::Attachment* attachment = dbb->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		if (attachment->att_transactions)
 			return;
@@ -780,8 +779,8 @@ void TRA_invalidate(Database* database, ULONG mask)
  *	modified a page that couldn't be written.
  *
  **************************************/
-	for (Jrd::Attachment* attachment = database->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	for (Attachment* attachment = database->dbb_attachments; attachment;
+		attachment = attachment->att_next)
 	{
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
 			transaction = transaction->tra_next)
@@ -1034,7 +1033,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	// Cannot work on limbo transactions for ReadOnly database
 	if (dbb->dbb_flags & DBB_read_only)
@@ -1103,7 +1102,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!transaction->tra_outer)
 	{
@@ -1474,7 +1473,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 }
 
 
-void TRA_shutdown_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
+void TRA_shutdown_attachment(thread_db* tdbb, Attachment* attachment)
 {
 /**************************************
  *
@@ -1594,7 +1593,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
@@ -1648,7 +1647,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
@@ -1977,7 +1976,7 @@ static int blocking_ast_transaction(void* ast_object)
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
-		Jrd::Attachment* att = transaction->tra_cancel_lock->lck_attachment;
+		Attachment* att = transaction->tra_cancel_lock->lck_attachment;
 		tdbb->setAttachment(att);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
@@ -2499,7 +2498,7 @@ static void link_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	transaction->tra_next = attachment->att_transactions;
 	attachment->att_transactions = transaction;
 }
@@ -3258,7 +3257,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
 	Lock* lock = create_transaction_lock(tdbb, temp);

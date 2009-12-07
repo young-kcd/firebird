@@ -67,7 +67,7 @@
 #endif
 #include "../common/classes/FpeControl.h"
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
-#include "../common/classes/DbImplementation.h"
+#include "../jrd/scroll_cursors.h"
 
 
 struct server_req_t : public Firebird::GlobalStorage
@@ -236,6 +236,10 @@ static void		cancel_operation(rem_port*, USHORT);
 static bool		check_request(Rrq*, USHORT, USHORT);
 static USHORT	check_statement_type(Rsr*);
 
+#ifdef SCROLLABLE_CURSORS
+static RMessage*	dump_cache(Rrq::rrq_repeat*);
+#endif
+
 static bool		get_next_msg_no(Rrq*, USHORT, USHORT*);
 static Rtr*		make_transaction(Rdb*, FB_API_HANDLE);
 static bool		process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_port** result);
@@ -245,6 +249,10 @@ static void		release_request(Rrq*);
 static void		release_statement(Rsr**);
 static void		release_sql_request(Rsr*);
 static void		release_transaction(Rtr*);
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage*	scroll_cache(Rrq::rrq_repeat*, USHORT *, ULONG *);
+#endif
 
 static void		send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode);
 static void		server_ast(void*, USHORT, const UCHAR*);
@@ -827,9 +835,13 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			 protocol->p_cnct_version == PROTOCOL_VERSION9 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION12) &&
+			 protocol->p_cnct_version == PROTOCOL_VERSION12
+#ifdef SCROLLABLE_CURSORS
+			 || protocol->p_cnct_version == PROTOCOL_SCROLLABLE_CURSORS
+#endif
+			) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
-			  protocol->p_cnct_architecture == ARCHITECTURE) &&
+			 protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
 		{
 			accepted = true;
@@ -1566,6 +1578,9 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	{
 		next = message->msg_next;
 		message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+		message->msg_prior = message;
+#endif
 
 		Rrq::rrq_repeat* tail = &requestL->rrq_rpt[message->msg_number];
 		tail->rrq_message = message;
@@ -1810,6 +1825,37 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 
 	this->send_response(sendL, 0, 0, status_vector, false);
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage* dump_cache( Rrq::rrq_repeat* tail)
+{
+/**************************************
+ *
+ *	d u m p _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *	We have encountered a situation where what's in
+ *	cache is not useful, so empty the cache in
+ *	preparation for refilling it.
+ *
+ **************************************/
+	RMessage* message = tail->rrq_xdr;
+	while (true)
+	{
+		message->msg_address = NULL;
+		message = message->msg_next;
+		if (message == tail->rrq_xdr)
+			break;
+	}
+
+	tail->rrq_message = message;
+
+	return message;
+}
+#endif
 
 
 ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
@@ -2827,10 +2873,10 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 			Firebird::string version;
 			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
 			info_db_len = MERGE_database_info(temp_buffer, //temp
-				buffer, stuff->p_info_buffer_length,
-				Firebird::DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
-				reinterpret_cast<const UCHAR*>(version.c_str()),
-				reinterpret_cast<const UCHAR*>(this->port_host->str_data));
+								buffer, stuff->p_info_buffer_length,
+								IMPLEMENTATION, 4, 1,
+								reinterpret_cast<const UCHAR*>(version.c_str()),
+								reinterpret_cast<const UCHAR*>(this->port_host->str_data));
 		}
 		break;
 
@@ -3842,6 +3888,30 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	sendL->p_data.p_data_incarnation = level;
 	sendL->p_data.p_data_messages = 1;
 
+#ifdef SCROLLABLE_CURSORS
+	// check the direction and offset for possible redirection; if the user
+	// scrolls in a direction other than we were going or an offset other
+	// than 1, then we need to resynchronize:
+	// if the direction is the same as the lookahead cache, scroll forward
+	// through the cache to see if we find the record; otherwise scroll the
+	// next layer down backward by an amount equal to the number of records
+	// in the cache, plus the amount asked for by the next level up
+
+	USHORT direction;
+	ULONG offset;
+	if (this->port_protocol < PROTOCOL_SCROLLABLE_CURSORS)
+	{
+		direction = blr_forward;
+		offset = 1;
+	}
+	else
+	{
+		direction = data->p_data_direction;
+		offset = data->p_data_offset;
+		tail->rrq_xdr = scroll_cache(tail, &direction, &offset);
+	}
+#endif
+
 	// Check to see if any messages are already sitting around
 
 	RMessage* message = 0;
@@ -3864,11 +3934,55 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 				return res;
 			}
 
+#ifdef SCROLLABLE_CURSORS
+			isc_receive2(status_vector, &requestL->rrq_handle, msg_number,
+						 format->fmt_length, message->msg_buffer, level, direction, offset);
+#else
 			isc_receive(status_vector, &requestL->rrq_handle, msg_number,
 						format->fmt_length, message->msg_buffer, level);
-
+#endif
 			if (status_vector[1])
 				return this->send_response(sendL, 0, 0, status_vector, false);
+
+#ifdef SCROLLABLE_CURSORS
+			// set the appropriate flags according to the way we just scrolled
+			// the next layer down, and calculate the offset from the beginning
+			// of the result set
+
+			switch (direction)
+			{
+			case blr_forward:
+				tail->rrq_flags &= ~Rrq::BACKWARD;
+				tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
+				break;
+
+			case blr_backward:
+				tail->rrq_flags |= Rrq::BACKWARD;
+				tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
+				break;
+
+			case blr_bof_forward:
+				tail->rrq_flags &= ~Rrq::BACKWARD;
+				tail->rrq_flags &= ~Rrq::ABSOLUTE_BACKWARD;
+				tail->rrq_absolute = offset;
+				direction = blr_forward;
+				break;
+
+			case blr_eof_backward:
+				tail->rrq_flags |= Rrq::BACKWARD;
+				tail->rrq_flags |= Rrq::ABSOLUTE_BACKWARD;
+				tail->rrq_absolute = offset;
+				direction = blr_backward;
+				break;
+			}
+
+			message->msg_absolute = tail->rrq_absolute;
+
+			// if we have already scrolled to the location indicated,
+			// then we just want to continue one by one in that direction
+
+			offset = 1;
+#endif
 
 			message->msg_address = message->msg_buffer;
 		}
@@ -3921,10 +4035,13 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		if (message->msg_address)
 		{
 			if (!prior)
+#ifdef SCROLLABLE_CURSORS
+				prior = message->msg_prior;
+#else
 				prior = tail->rrq_xdr;
-
-			while (prior->msg_next != message)
-				prior = prior->msg_next;
+				while (prior->msg_next != message)
+					prior = prior->msg_next;
+#endif
 
 			// allocate a new message block and put it in the cache
 
@@ -3934,6 +4051,9 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 #endif
 			message->msg_number = prior->msg_number;
 			message->msg_next = prior->msg_next;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = prior;
+#endif
 
 			prior->msg_next = message;
 			prior = message;
@@ -3957,6 +4077,24 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			}
 			break;
 		}
+
+#ifdef SCROLLABLE_CURSORS
+		// if we have already scrolled to the location indicated,
+		// then we just want to continue on in that direction
+
+		switch (direction)
+		{
+		case blr_forward:
+			tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
+			break;
+
+		case blr_backward:
+			tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
+			break;
+		}
+
+		message->msg_absolute = tail->rrq_absolute;
+#endif
 
 		message->msg_address = message->msg_buffer;
 		message = message->msg_next;
@@ -4127,6 +4265,127 @@ static void release_transaction( Rtr* transaction)
 #endif
 	delete transaction;
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage* scroll_cache(Rrq::rrq_repeat* tail, USHORT* direction, ULONG* offset)
+{
+/**************************************
+ *
+ *	s c r o l l _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ * Try to fetch the requested record from cache, if possible.  This algorithm depends
+ * on all scrollable cursors being INSENSITIVE to database changes, so that absolute
+ * record numbers within the result set will remain constant.
+ *
+ *  1.  BOF Forward or EOF Backward:  Retain the record number of the offset from the
+ *      beginning or end of the result set.  If we can figure out the relative offset
+ *      from the absolute, then scroll to it.  If it's in cache, great, otherwise dump
+ *      the cache and have the server scroll the correct number of records.
+ *
+ *  2.  Forward or Backward:  Try to scroll the desired offset in cache.  If we
+ *      scroll off the end of the cache, dump the cache and ask the server for a
+ *      packetful of records.
+ *
+ *  This routine differs from the corresponding routine on the client in that
+ *  we are using only a lookahead cache.  There is no point in caching records backward,
+ *  in that the client already has them and would not request them from us.
+ *
+ **************************************/
+
+	// if we are to continue in the current direction, set direction to
+	// the last direction scrolled; then depending on the direction asked
+	// for, save the last direction asked for by the next layer above
+
+	if (*direction == blr_continue)
+	{
+		if (tail->rrq_flags & Rrq::LAST_BACKWARD)
+			*direction = blr_backward;
+		else
+			*direction = blr_forward;
+	}
+
+	if (*direction == blr_forward || *direction == blr_bof_forward)
+		tail->rrq_flags &= ~Rrq::LAST_BACKWARD;
+	else
+		tail->rrq_flags |= Rrq::LAST_BACKWARD;
+
+	// set to the first message; if it has no record, this means the cache is
+	// empty and there is no point in trying to find the record here
+
+	RMessage* message = tail->rrq_xdr;
+	if (!message->msg_address)
+		return message;
+
+	// if we are scrolling from BOF and the cache was started from EOF (or vice-versa),
+	// the cache is unusable.
+
+	if ((*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)) ||
+		(*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
+	{
+		return dump_cache(tail);
+	}
+
+	// if we are going to an absolute position, see if we can find that position
+	// in cache, otherwise change to a relative seek from our former position
+
+	if (*direction == blr_bof_forward || *direction == blr_eof_backward)
+	{
+		// If offset is before our current position, just dump the cache because
+		// the server cache is purely a lookahead cache--we don't bother to cache
+		// back records because the client will cache those records, making it
+		// unlikely the client would be asking us for a record which is in our cache.
+
+		if (*offset < message->msg_absolute)
+			return dump_cache(tail);
+
+		// convert the absolute to relative, and prepare to scroll forward to look for the record
+
+		*offset -= message->msg_absolute;
+		if (*direction == blr_bof_forward)
+			*direction = blr_forward;
+		else
+			*direction = blr_backward;
+	}
+
+	if ((*direction == blr_forward && (tail->rrq_flags & Rrq::BACKWARD)) ||
+		(*direction == blr_backward && !(tail->rrq_flags & Rrq::BACKWARD)))
+	{
+		// lookahead cache was in opposite direction from the scroll direction,
+		// so increase the scroll amount by the amount we looked ahead, then
+		// dump the cache
+
+		for (message = tail->rrq_xdr; message->msg_address;)
+		{
+			(*offset)++;
+			message = message->msg_next;
+			if (message == tail->rrq_message)
+				break;
+		}
+
+		return dump_cache(tail);
+	}
+
+	// lookahead cache is in same direction we want to scroll, so scroll
+	// forward through the cache, decrementing the offset
+
+	for (message = tail->rrq_xdr; message->msg_address;)
+	{
+		if (*offset == 1)
+			break;
+		(*offset)--;
+		message = message->msg_next;
+		if (message == tail->rrq_message)
+			break;
+	}
+
+	return message;
+}
+#endif
 
 
 ISC_STATUS rem_port::seek_blob(P_SEEK* seek, PACKET* sendL)
@@ -5237,7 +5496,7 @@ bool Worker::wait(int timeout)
 		return true;
 
 	remove();
-	return false;
+	return false; 
 }
 
 void Worker::setState(const bool active)
@@ -5255,9 +5514,7 @@ bool Worker::wakeUp()
 	Firebird::MutexLockGuard guard(m_mutex);
 	if (m_idleWorkers)
 	{
-		Worker* idle = m_idleWorkers;
-		idle->setState(true);
-		idle->m_sem.release();
+		m_idleWorkers->m_sem.release();
 		return true;
 	}
 	return (m_cntAll >= MAX_THREADS);

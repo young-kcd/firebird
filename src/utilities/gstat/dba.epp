@@ -333,7 +333,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 	bool sw_relation = false;
 	bool sw_nocreation = false;
 
-	const Switches switches(dba_in_sw_table, FB_NELEM(dba_in_sw_table), false, true);
 	const char* name = NULL;
 
 	const TEXT* const* const end = argv + argc;
@@ -353,20 +352,32 @@ int gstat(Firebird::UtilSvc* uSvc)
 			continue;
 		}
 
-		const Switches::in_sw_tab_t* in_sw_tab = switches.findSwitch(str);
-		if (!in_sw_tab)
+		if (!str[1])
+			str = "-*NONE*";
+		const in_sw_tab_t* in_sw_tab;
+		const TEXT* q;
+		for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
-			if (!str[1])
-				str = "-*NONE*";
-			dba_print(20, SafeArg() << (str + 1));	// msg 20: unknown switch "%s"
-			print_help();
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg() << (str + 1));
-			dba_error(1);	// msg 1: found unknown switch
-			break; // redundant
+			TEXT c;
+			for (const TEXT* p = str + 1; c = *p++;)
+			{
+				if (UPPER(c) != *q++)
+					break;
+			}
+			if (!c && strlen(str + 1) >= in_sw_tab->in_sw_min_length)
+			{
+				break;
+			}
 		}
 
 		switch (in_sw_tab->in_sw)
 		{
+		case IN_SW_DBA_0:
+			dba_print(20, SafeArg() << (str + 1));	// msg 20: unknown switch "%s"
+			print_help();
+			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg() << (str + 1));
+			dba_error(1);	// msg 1: found unknown switch
+			break;
 		case IN_SW_DBA_HELP:
 			print_help();
 			dba_exit(FINI_OK, tddba);
@@ -392,12 +403,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 				}
 			}
 			break;
-		case IN_SW_DBA_TRUSTED_USER:
+		case IN_SW_DBA_TRUSTEDUSER:
 			uSvc->checkService();
 			if (argv < end)
 				fb_utils::copy_terminate(tr_user, *argv++, sizeof(tr_buff));
 			break;
-		case IN_SW_DBA_TRUSTED_ROLE:
+		case IN_SW_DBA_TRUSTEDROLE:
 			uSvc->checkService();
 			trusted_role = true;
 			break;
@@ -1353,8 +1364,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil = fil->fil_next;
 	}
 	else
-	{
-		// empty list
+	{						// empty list
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
 	}
@@ -1535,8 +1545,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil = fil->fil_next;
 	}
 	else
-	{
-		// empty list
+	{						// empty list
 
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
@@ -1702,7 +1711,7 @@ static void print_help()
 {
 	dba_print(39);	// msg 39: usage:   gstat [options] <database> or gstat <database> [options]
 	dba_print(21);	// msg 21: Available switches:
-	for (const Switches::in_sw_tab_t* in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
+	for (const in_sw_tab_t* in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
 	{
 		if (in_sw_tab->in_sw_msg)
 			dba_print(in_sw_tab->in_sw_msg);

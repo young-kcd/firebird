@@ -182,8 +182,7 @@ void BackupManager::openDelta()
 
 void BackupManager::closeDelta()
 {
-	if (diff_file)
-	{
+	if (diff_file) {
 		PIO_close(diff_file);
 		diff_file = NULL;
 	}
@@ -209,8 +208,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		Ods::header_page* header = (Ods::header_page*) window.win_buffer;
 
 		// Check state
-		if (backup_state != nbak_state_normal)
-		{
+		if (backup_state != nbak_state_normal) {
 			NBAK_TRACE(("end backup - invalid state %d", backup_state));
 			return;
 		}
@@ -231,21 +229,17 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		if (diff_file && geteuid() == 0)
 		{
 			struct stat st;
-			PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			while (fstat(pageSpace->file->fil_desc, &st) != 0)
-			{
+			while (fstat(database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file->fil_desc, &st) != 0) {
 				if (errno != EINTR) {
 					Firebird::system_call_failed::raise("fstat");
 				}
 			}
-			while (fchown(diff_file->fil_desc, st.st_uid, st.st_gid) != 0)
-			{
+			while (fchown(diff_file->fil_desc, st.st_uid, st.st_gid) != 0) {
 				if (errno != EINTR) {
 					Firebird::system_call_failed::raise("fchown");
 				}
 			}
-			while (fchmod(diff_file->fil_desc, st.st_mode) != 0)
-			{
+			while (fchmod(diff_file->fil_desc, st.st_mode) != 0) {
 				if (errno != EINTR) {
 					Firebird::system_call_failed::raise("fchmod");
 				}
@@ -341,8 +335,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 	GlobalRWLock endLock(tdbb, *database->dbb_permanent, LCK_backup_end,
 		LCK_OWNER_attachment, false);
 
-	if (!endLock.lockWrite(tdbb, LCK_NO_WAIT))
-	{
+	if (!endLock.lockWrite(tdbb, LCK_NO_WAIT)) {
 		// Someboby holds write lock on LCK_backup_end. We need not to do end_backup
 		return;
 	}
@@ -395,8 +388,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
 		NBAK_TRACE(("Setting state %d in header page is over", backup_state));
 	}
-	catch (const Firebird::Exception&)
-	{
+	catch (const Firebird::Exception&) {
 		NBAK_TRACE( ("invalidate state E2") );
 		backup_state = nbak_state_unknown;
 		endLock.unlockWrite(tdbb);
@@ -421,15 +413,13 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		NBAK_TRACE(("Merge. Alloc table is actualized."));
 		AllocItemTree::Accessor all(alloc_table);
 
-		if (all.getFirst())
-		{
+		if (all.getFirst()) {
 			do {
 				WIN window2(DB_PAGE_SPACE, all.current().db_page);
 				NBAK_TRACE(("Merge page %d, diff=%d", all.current().db_page, all.current().diff_page));
 				Ods::pag* page = CCH_FETCH_MERGE(tdbb, &window2, LCK_write, pag_undefined);
 				NBAK_TRACE(("Merge: page %d is fetched", all.current().db_page));
-				if (page->pag_scn != current_scn)
-				{
+				if (page->pag_scn != current_scn) {
 					CCH_MARK(tdbb, &window2);
 					NBAK_TRACE(("Merge: page %d is marked", all.current().db_page));
 				}
@@ -441,8 +431,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		CCH_flush(tdbb, FLUSH_ALL, 0);
 		NBAK_TRACE(("Merging is over. Database unlocked"));
 	}
-	catch (const Firebird::Exception&)
-	{
+	catch (const Firebird::Exception&) {
 		endLock.unlockWrite(tdbb);
 		throw;
 	}
@@ -483,8 +472,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		NBAK_TRACE(("backup is over"));
 		endLock.unlockWrite(tdbb);
 	}
-	catch (const Firebird::Exception&)
-	{
+	catch (const Firebird::Exception&) {
 		NBAK_TRACE( ("invalidate state E3") );
 		backup_state = nbak_state_unknown;
 		endLock.unlockWrite(tdbb);
@@ -537,8 +525,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 				break;	// We finished reading allocation table
 		}
 	}
-	catch (const Firebird::Exception& ex)
-	{
+	catch (const Firebird::Exception& ex) {
 		// Handle out of memory error, etc
 		delete alloc_table;
 		Firebird::stuff_exception(status_vector, ex);
@@ -585,8 +572,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	}
 
 	const bool alloc_page_full = alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 2;
-	if (alloc_page_full)
-	{
+	if (alloc_page_full) {
 		// Pointer page is full. Its time to create new one.
 		temp_bdb.bdb_page = last_allocated_page + 2;
 		temp_bdb.bdb_dbb = database;
@@ -609,8 +595,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	try {
 		alloc_table->add(AllocItem(db_page, last_allocated_page));
 	}
-	catch (const Firebird::Exception& ex)
-	{
+	catch (const Firebird::Exception& ex) {
 		// Handle out of memory error
 		delete alloc_table;
 		alloc_table = NULL;
@@ -619,8 +604,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 		return 0;
 	}
 	// Adjust buffer and counters if we allocated new alloc page earlier
-	if (alloc_page_full)
-	{
+	if (alloc_page_full) {
 		last_allocated_page++;
 		memset(alloc_buffer, 0, database->dbb_page_size);
 		return last_allocated_page - 1;
@@ -690,8 +674,7 @@ void BackupManager::setDifference(thread_db* tdbb, const char* filename)
 {
 	SET_TDBB(tdbb);
 
-	if (filename)
-	{
+	if (filename) {
 		WIN window(HEADER_PAGE_NUMBER);
 		Ods::header_page* header =
 			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
@@ -702,9 +685,8 @@ void BackupManager::setDifference(thread_db* tdbb, const char* filename)
 		diff_name = filename;
 		explicit_diff_name = true;
 	}
-	else
-	{
-		PAG_delete_clump_entry(tdbb, Ods::HDR_difference_file);
+	else {
+		PAG_delete_clump_entry(tdbb, HEADER_PAGE, Ods::HDR_difference_file);
 		generateFilename();
 	}
 }
@@ -715,8 +697,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	// We cannot use CCH for this because of likely recursion.
 	NBAK_TRACE(("actualizeState: current_state=%i", backup_state));
 
-	if (dbCreating)
-	{
+	if (dbCreating) {
 		backup_state = nbak_state_normal;
 		return true;
 	}
@@ -737,24 +718,22 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	jrd_file* file = pageSpace->file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status))
 	{
-		if (!CCH_rollover_to_shadow(tdbb, database, file, false))
-		{
+		if (!CCH_rollover_to_shadow(tdbb, database, file, false)) {
 			NBAK_TRACE(("Shadow change error"));
 			return false;
 		}
 		if (file != pageSpace->file)
 			file = pageSpace->file;
-		else
-		{
-			if (retryCount++ == 3)
-			{
+		else {
+			if (retryCount++ == 3) {
 				NBAK_TRACE(("IO error"));
 				return false;
 			}
 		}
 	}
 
-	const int new_backup_state = header->hdr_flags & Ods::hdr_backup_mask;
+	const int new_backup_state = (database->dbb_ods_version >= ODS_VERSION11) ?
+		header->hdr_flags & Ods::hdr_backup_mask : nbak_state_normal;
 	NBAK_TRACE(("backup state read from header is %d", new_backup_state));
 	// Check is we missed lock/unlock cycle and need to invalidate
 	// our allocation table and file handle
@@ -764,8 +743,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	// Read difference file name from header clumplets
 	explicit_diff_name = false;
 	const UCHAR* p = header->hdr_data;
-	while (true)
-	{
+	while (true) {
 		switch (*p)
 		{
 		case Ods::HDR_backup_guid:
@@ -783,8 +761,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	if (new_backup_state == nbak_state_normal || missed_cycle)
 	{
 		// Page allocation table cache is no longer valid.
-		if (alloc_table)
-		{
+		if (alloc_table) {
 			NBAK_TRACE(("Dropping alloc table"));
 			delete alloc_table;
 			alloc_table = NULL;

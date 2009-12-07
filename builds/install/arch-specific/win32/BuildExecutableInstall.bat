@@ -207,9 +207,9 @@ set FBBUILD_FB_CUR_VER=%FBBUILD_FB25_CUR_VER%
 :: Now set some version strings of our legacy releases.
 :: This helps us copy the correct documentation,
 :: as well as set up the correct shortcuts
-set FBBUILD_FB15_CUR_VER=1.5.5
+set FBBUILD_FB15_CUR_VER=1.5.6
 set FBBUILD_FB20_CUR_VER=2.0.5
-set FBBUILD_FB21_CUR_VER=2.1.2
+set FBBUILD_FB21_CUR_VER=2.1.3
 
 ::End of SED_MAGIC
 ::----------------
@@ -245,9 +245,6 @@ if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
 
 :: grab some missing bits'n'pieces from different parts of the source tree
 ::=========================================================================
-@echo   Copying firebird.conf
-@copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR%\ > nul
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR COPY of firebird.conf failed with errorlevel %ERRORLEVEL% ) & (goto :EOF))
 
 @echo   Copying ib_util etc
 copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed.)
@@ -685,6 +682,22 @@ if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @goto :EOF
 
 
+:DO_MD5SUMS
+::=========
+:: Generate the md5sum checksum file
+::==================================
+if NOT DEFINED GNU_TOOLCHAIN (
+  call :WARNING GNU_TOOLCHAIN variable not defined. Cannot generate md5 sums.
+  @goto :EOF
+)
+@echo Generating md5sums for Firebird-%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%
+
+%GNU_TOOLCHAIN%\md5sum.exe %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_PRODUCT_VER_STRING%?%FBBUILD_PACKAGE_NUMBER%*.* > %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.md5sum
+
+::---------------
+@goto :EOF
+
+
 :HELP
 ::===
 @echo.
@@ -856,6 +869,9 @@ if %FBBUILD_ISX_PACK% EQU 1 (
 @(@call :ISX_PACK ) || (@echo Error calling ISX_PACK & @goto :EOF)
 @echo.
 )
+
+@(@call :DO_MD5SUMS ) || (@echo Error calling DO_MD5SUMS & @goto :EOF)
+
 
 @echo.
 @echo Completed building installation kit(s)

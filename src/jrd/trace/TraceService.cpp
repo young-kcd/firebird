@@ -83,12 +83,6 @@ void TraceSvcJrd::setAttachInfo(const string& /*service_name*/, const string& us
 
 void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 {
-	if (!TraceManager::pluginsCount())
-	{
-		m_svc.printf("Can not start trace session. There are no trace plugins loaded\n");
-		return;
-	}
-
 	ConfigStorage* storage = TraceManager::getStorage();
 
 	{	// scope
@@ -117,7 +111,6 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 	}
 
 	m_svc.started();
-	m_svc.printf("Trace session ID %ld started\n", session.ses_id);
 
 	if (interactive)
 	{
@@ -126,6 +119,9 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 			StorageGuard guard(storage);
 			storage->removeSession(session.ses_id);
 		}
+	}
+	else {
+		m_svc.printf("Trace session ID %ld started\n", session.ses_id);
 	}
 }
 

@@ -30,11 +30,6 @@
 #include <string.h>
 #endif
 
-#include "../dsql/Nodes.h"
-#include "../dsql/DdlNodes.h"
-#include "../dsql/PackageNodes.h"
-#include "../dsql/StmtNodes.h"
-#include "../common/classes/TriState.h"
 #include "dsql.tab.h"
 #include "keywords.h"
 
@@ -59,10 +54,8 @@ static const TOK tokens[] =
 	{GEQ, ">=", 1, false},
 	{BIND_PARAM, ":=", 2, false},
 	{ABS, "ABS", 2, false},
-	{KW_ABSOLUTE, "ABSOLUTE", 2, true},
 	{ACCENT, "ACCENT", 2, true},
 	{ACOS, "ACOS", 2, false},
-	{ACOSH, "ACOSH", 2, false},
 	{ACTION, "ACTION", 1, true},
 	{ACTIVE, "ACTIVE", 1, false},
 	{ADD, "ADD", 1, false},
@@ -79,11 +72,9 @@ static const TOK tokens[] =
 	{ASCII_CHAR, "ASCII_CHAR", 2, false},
 	{ASCII_VAL, "ASCII_VAL", 2, false},
 	{ASIN, "ASIN", 2, false},
-	{ASINH, "ASINH", 2, false},
 	{AT, "AT", 1, false},
 	{ATAN, "ATAN", 2, false},
 	{ATAN2, "ATAN2", 2, false},
-	{ATANH, "ATANH", 2, false},
 	{AUTO, "AUTO", 1, false},
 	{AUTONOMOUS, "AUTONOMOUS", 2, false},
 	{AVG, "AVG", 1, false},
@@ -101,7 +92,6 @@ static const TOK tokens[] =
 	{BIT_LENGTH, "BIT_LENGTH", 2, false},
 	{BLOB, "BLOB", 1, false},
 	{BLOCK, "BLOCK", 2, true},
-	{BODY, "BODY", 2, true},
 	{BOTH, "BOTH", 2, false},
 	{KW_BREAK, "BREAK", 2, true},
 	{BY, "BY", 1, false},
@@ -131,7 +121,6 @@ static const TOK tokens[] =
 	{CONNECT, "CONNECT", 2, false},
 	{CONSTRAINT, "CONSTRAINT", 1, false},
 	{CONTAINING, "CONTAINING", 1, false},
-	{CONTINUE, "CONTINUE", 2, true},
 	{COS, "COS", 2, false},
 	{COSH, "COSH", 2, false},
 	{COT, "COT", 2, false},
@@ -154,7 +143,6 @@ static const TOK tokens[] =
 	{DATEADD, "DATEADD", 2, false},
 	{DATEDIFF, "DATEDIFF", 2, false},
 	{DAY, "DAY", 2, false},
-	{DDL, "DDL", 2, false},
 	{KW_DEC, "DEC", 1, false},
 	{DECIMAL, "DECIMAL", 1, false},
 	{DECLARE, "DECLARE", 1, false},
@@ -174,7 +162,6 @@ static const TOK tokens[] =
 	{DROP, "DROP", 1, false},
 	{ELSE, "ELSE", 1, false},
 	{END, "END", 1, false},
-	{ENGINE, "ENGINE", 2, true},
 	{ENTRY_POINT, "ENTRY_POINT", 1, false},
 	{ESCAPE, "ESCAPE", 1, false},
 	{EXCEPTION, "EXCEPTION", 1, false},
@@ -260,7 +247,6 @@ static const TOK tokens[] =
 	{MOD, "MOD", 2, false},
 	{MODULE_NAME, "MODULE_NAME", 1, false},
 	{MONTH, "MONTH", 2, false},
-	{NAME, "NAME", 2, true},
 	{NAMES, "NAMES", 1, false},
 	{NATIONAL, "NATIONAL", 1, false},
 	{NATURAL, "NATURAL", 1, false},
@@ -283,10 +269,8 @@ static const TOK tokens[] =
 	{OS_NAME, "OS_NAME", 2, false},
 	{OUTER, "OUTER", 1, false},
 	{OUTPUT_TYPE, "OUTPUT_TYPE", 1, false},
-	{OVER, "OVER", 2, false},
 	{OVERFLOW, "OVERFLOW", 1, false},
 	{OVERLAY, "OVERLAY", 2, false},
-	{PACKAGE, "PACKAGE", 2, true},
 	{PAD, "PAD", 2, true},
 	{PAGE, "PAGE", 1, false},
 	{PAGES, "PAGES", 1, false},
@@ -302,21 +286,17 @@ static const TOK tokens[] =
 	{PRECISION, "PRECISION", 1, false},
 	{PRESERVE, "PRESERVE", 2, true},
 	{PRIMARY, "PRIMARY", 1, false},
-	{PRIOR, "PRIOR", 2, true},
 	{PRIVILEGES, "PRIVILEGES", 1, false},
 	{PROCEDURE, "PROCEDURE", 1, false},
 	{PROTECTED, "PROTECTED", 1, false},
 	{RAND, "RAND", 2, false},
 	{DB_KEY, "RDB$DB_KEY", 1, false},
-	{RDB_GET_CONTEXT, "RDB$GET_CONTEXT", 2, true},
-	{RDB_SET_CONTEXT, "RDB$SET_CONTEXT", 2, true},
 	{READ, "READ", 1, false},
 	{REAL, "REAL", 1, false},
 	{VERSION, "RECORD_VERSION", 1, false},
 	{RECREATE, "RECREATE", 2, false},
 	{RECURSIVE, "RECURSIVE", 2, false},
 	{REFERENCES, "REFERENCES", 1, false},
-	{KW_RELATIVE, "RELATIVE", 2, true},
 	{RELEASE, "RELEASE", 2, false},
 	{REPLACE, "REPLACE", 2, false},
 	{REQUESTS, "REQUESTS", 2, true},
@@ -340,7 +320,6 @@ static const TOK tokens[] =
 	{SAVEPOINT, "SAVEPOINT", 2, false},
 	{SCALAR_ARRAY, "SCALAR_ARRAY", 2, true},
 	{DATABASE, "SCHEMA", 1, false},	// Alias of DATABASE
-	{SCROLL, "SCROLL", 2, false},
 	{SECOND, "SECOND", 2, false},
 	{SEGMENT, "SEGMENT", 1, false},
 	{SELECT, "SELECT", 1, false},

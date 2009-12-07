@@ -125,8 +125,6 @@ enum db_info_types
 	isc_info_db_file_size = 112,
 	fb_info_page_contents = 113,
 
-	fb_info_implementation = 114,
-
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 
@@ -311,7 +309,6 @@ enum info_db_provider
 #define isc_info_rsb_skip		22
 #define isc_info_rsb_virt_sequential	23
 #define isc_info_rsb_recursive	24
-#define isc_info_rsb_window		25
 
 /**********************/
 /* Bitmap expressions */

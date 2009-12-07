@@ -99,6 +99,16 @@ const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
 
 const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
 
+#ifdef SCROLLABLE_CURSORS
+This Protocol includes support for scrollable cursors
+and is purposely being undefined so that changes can be made
+to the remote protocol version to support new features without the 'fear' that
+they will be turned off once SCROLLABLE_CURSORS is turned on.
+
+#error PROTOCOL_SCROLLABLE_CURSORS	this needs to be defined
+
+#endif
+
 // Architecture types
 
 enum P_ARCH
@@ -455,6 +465,10 @@ typedef struct p_data
     OBJCT	p_data_transaction;		// Transaction object id
     USHORT	p_data_message_number;	// Message number in request
     USHORT	p_data_messages;		// Number of messages
+#ifdef SCROLLABLE_CURSORS
+    USHORT	p_data_direction;		// direction to scroll before returning records
+    ULONG	p_data_offset;			// offset to scroll before returning records
+#endif
 } P_DATA;
 
 // Execute stored procedure block

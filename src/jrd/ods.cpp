@@ -32,18 +32,13 @@ bool isSupported(USHORT majorVersion, USHORT minorVersion)
 	const bool isFirebird = (majorVersion & ODS_FIREBIRD_FLAG);
 	majorVersion &= ~ODS_FIREBIRD_FLAG;
 
-	if (!isFirebird)
-		return false;
-
 #ifdef ODS_8_TO_CURRENT
-	// Obsolete: Support InterBase major ODS numbers from 8 to 10
-	/*
+	// Support InterBase major ODS numbers from 8 to 10
 	if (!isFirebird)
 	{
 		return (majorVersion >= ODS_VERSION8 &&
 				majorVersion <= ODS_VERSION10);
 	}
-	*/
 
 	// This is for future ODS versions
 	if (majorVersion > ODS_VERSION10 &&

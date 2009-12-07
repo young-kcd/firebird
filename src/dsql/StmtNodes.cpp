@@ -21,25 +21,18 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../dsql/StmtNodes.h"
-#include "../dsql/node.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blr.h"
 #include "../jrd/exe.h"
 #include "../jrd/tra.h"
 #include "../jrd/cmp_proto.h"
-#include "../jrd/dfw_proto.h"
-#include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/tra_proto.h"
-#include "../dsql/ddl_proto.h"
 #include "../jrd/vio_proto.h"
-#include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
-#include "../dsql/make_proto.h"
 #include "../dsql/pass1_proto.h"
 
-using namespace Firebird;
 using namespace Jrd;
 
 #include "gen/blrtable.h"
@@ -72,107 +65,11 @@ DmlNode* DmlNode::pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
 //--------------------
 
 
-static RegisterNode<IfNode> regIfNode(blr_if);
+RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode(blr_auto_trans);
 
 
-DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
-{
-	IfNode* node = FB_NEW(pool) IfNode(pool);
-
-	node->condition = PAR_parse_node(tdbb, csb, TYPE_BOOL);
-	node->trueAction = PAR_parse_node(tdbb, csb, STATEMENT);
-	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_end)
-		csb->csb_blr_reader.getByte(); // skip blr_end
-	else
-		node->falseAction = PAR_parse_node(tdbb, csb, STATEMENT);
-
-	return node;
-}
-
-
-IfNode* IfNode::internalDsqlPass()
-{
-	IfNode* node = FB_NEW(getPool()) IfNode(getPool());
-	node->compiledStatement = compiledStatement;
-	node->dsqlCondition = PASS1_node(compiledStatement, dsqlCondition);
-	node->dsqlTrueAction = PASS1_statement(compiledStatement, dsqlTrueAction);
-	node->dsqlFalseAction = PASS1_statement(compiledStatement, dsqlFalseAction);
-
-	return node;
-}
-
-
-void IfNode::print(string& text, Array<dsql_nod*>& nodes) const
-{
-	text = "IfNode";
-	nodes.add(dsqlCondition);
-	nodes.add(dsqlTrueAction);
-	if (dsqlFalseAction)
-		nodes.add(dsqlFalseAction);
-}
-
-
-void IfNode::genBlr()
-{
-	stuff(compiledStatement, blr_if);
-	GEN_expr(compiledStatement, dsqlCondition);
-	GEN_statement(compiledStatement, dsqlTrueAction);
-	if (dsqlFalseAction)
-		GEN_statement(compiledStatement, dsqlFalseAction);
-	else
-		stuff(compiledStatement, blr_end);
-}
-
-
-IfNode* IfNode::pass1(thread_db* tdbb, CompilerScratch* csb)
-{
-	condition = CMP_pass1(tdbb, csb, condition);
-	trueAction = CMP_pass1(tdbb, csb, trueAction);
-	falseAction = CMP_pass1(tdbb, csb, falseAction);
-	return this;
-}
-
-
-IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
-{
-	condition = CMP_pass2(tdbb, csb, condition, node);
-	trueAction = CMP_pass2(tdbb, csb, trueAction, node);
-	falseAction = CMP_pass2(tdbb, csb, falseAction, node);
-	return this;
-}
-
-
-jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request)
-{
-	if (request->req_operation == jrd_req::req_evaluate)
-	{
-		if (EVL_boolean(tdbb, condition))
-		{
-			request->req_operation = jrd_req::req_evaluate;
-			return trueAction;
-		}
-
-		if (falseAction)
-		{
-			request->req_operation = jrd_req::req_evaluate;
-			return falseAction;
-		}
-
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return node->nod_parent;
-}
-
-
-//--------------------
-
-
-static RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode(blr_auto_trans);
-
-
-DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
-	UCHAR /*blrOp*/)
+DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool,
+		CompilerScratch* csb)
 {
 	InAutonomousTransactionNode* node = FB_NEW(pool) InAutonomousTransactionNode(pool);
 
@@ -185,7 +82,7 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, C
 }
 
 
-InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
+InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass()
 {
 	const bool autoTrans = compiledStatement->req_flags & REQ_in_auto_trans_block;
 	compiledStatement->req_flags |= REQ_in_auto_trans_block;
@@ -201,9 +98,10 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
 }
 
 
-void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& nodes) const
+void InAutonomousTransactionNode::print(Firebird::string& text,
+	Firebird::Array<dsql_nod*>& nodes) const
 {
-	text = "InAutonomousTransactionNode";
+	text = "in autonomous transaction";
 	nodes.add(dsqlAction);
 }
 
@@ -278,14 +176,14 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		}
 
 		{ // scope
-			AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+			Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 			TRA_commit(tdbb, transaction, false);
 		} // end scope
 		break;
 
 	case jrd_req::req_unwind:
-		if (request->req_flags & (req_leave | req_continue_loop))
+		if (request->req_flags & req_leave)
 		{
 			try
 			{
@@ -303,13 +201,13 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 					VIO_verb_cleanup(tdbb, transaction);
 				}
 
-				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 				TRA_commit(tdbb, transaction, false);
 			}
 			catch (...)
 			{
-				request->req_flags &= ~(req_leave | req_continue_loop);
+				request->req_flags &= ~req_leave;
 				throw;
 			}
 		}
@@ -325,7 +223,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 					EXE_execute_db_triggers(tdbb, transaction,
 											jrd_req::req_trigger_trans_rollback);
 				}
-				catch (const Exception&)
+				catch (const Firebird::Exception&)
 				{
 					if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
 					{
@@ -336,7 +234,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 
 			try
 			{
-				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 
 				// undo all savepoints up to our one
@@ -350,7 +248,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 
 				TRA_rollback(tdbb, transaction, false, false);
 			}
-			catch (const Exception&)
+			catch (const Firebird::Exception&)
 			{
 				if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
 				{
@@ -368,645 +266,6 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 	tdbb->setTransaction(request->req_transaction);
 
 	return node->nod_parent;
-}
-
-
-//--------------------
-
-
-ExecBlockNode* ExecBlockNode::internalDsqlPass()
-{
-	compiledStatement->blockNode = this;
-
-	if (returns.hasData())
-		compiledStatement->req_type = REQ_SELECT_BLOCK;
-	else
-		compiledStatement->req_type = REQ_EXEC_BLOCK;
-
-	compiledStatement->req_flags |= REQ_block;
-
-	ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
-	node->compiledStatement = compiledStatement;
-
-	node->legacyParameters = PASS1_node_psql(compiledStatement, legacyParameters, false);
-	node->returns = returns;
-	node->localDeclList = localDeclList;
-	node->body = body;
-
-	const size_t count = node->legacyParameters ? node->legacyParameters->nod_count : 0 +
-		node->returns.getCount() +
-		node->localDeclList ? node->localDeclList->nod_count : 0;
-
-	if (count)
-	{
-		StrArray names(*getDefaultMemoryPool(), count);
-
-		PASS1_check_unique_fields_names(names, node->legacyParameters);
-
-		// Hand-made PASS1_check_unique_fields_names for array of ParameterClause
-		for (size_t i = 0; i < returns.getCount(); ++i)
-		{
-			ParameterClause& parameter = returns[i];
-
-			size_t pos;
-			if (!names.find(parameter.name.c_str(), pos))
-				names.insert(pos, parameter.name.c_str());
-			else
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-						  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter.name));
-			}
-		}
-
-		PASS1_check_unique_fields_names(names, node->localDeclList);
-	}
-
-	return node;
-}
-
-
-void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
-{
-	text = "ExecBlockNode\n";
-
-	text += "  Returns:\n";
-
-	for (size_t i = 0; i < returns.getCount(); ++i)
-	{
-		const ParameterClause& parameter = returns[i];
-
-		string s;
-		parameter.print(s);
-		text += "    " + s + "\n";
-	}
-
-	nodes.add(legacyParameters);
-	nodes.add(localDeclList);
-	nodes.add(body);
-}
-
-
-void ExecBlockNode::genBlr()
-{
-	// Update blockNode, because we have a reference to the original unprocessed node.
-	compiledStatement->blockNode = this;
-
-	compiledStatement->begin_debug();
-
-	USHORT inputs = 0, outputs = 0, locals = 0;
-
-	// now do the input parameters
-	if (legacyParameters)
-	{
-		dsql_nod* parameters = legacyParameters;
-		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
-		{
-			dsql_nod* parameter = (*ptr)->nod_arg[Dsql::e_prm_val_fld];
-			dsql_fld* field = (dsql_fld*) parameter->nod_arg[Dsql::e_dfl_field];
-			// parameter = (*ptr)->nod_arg[Dsql::e_prm_val_val]; USELESS
-
-			DDL_resolve_intl_type(compiledStatement, field,
-				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
-
-			variables.add(MAKE_variable(field, field->fld_name.c_str(),
-				VAR_input, 0, (USHORT) (2 * inputs), locals));
-			// ASF: do not increment locals here - CORE-2341
-			inputs++;
-		}
-	}
-
-	const unsigned returnsPos = variables.getCount();
-
-	// now do the output parameters
-	for (size_t i = 0; i < returns.getCount(); ++i)
-	{
-		ParameterClause& parameter = returns[i];
-
-		parameter.resolve(compiledStatement);
-
-		dsql_nod* var = MAKE_variable(parameter.legacyField,
-			parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * outputs), locals++);
-
-		variables.add(var);
-		outputVariables.add(var);
-
-		++outputs;
-	}
-
-	compiledStatement->append_uchar(blr_begin);
-
-	if (inputs)
-	{
-		compiledStatement->req_send->msg_parameters =
-			revertParametersOrder(compiledStatement->req_send->msg_parameters, NULL);
-		GEN_port(compiledStatement, compiledStatement->req_send);
-	}
-	else
-		compiledStatement->req_send = NULL;
-
-	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
-	{
-		dsql_par* param = MAKE_parameter(compiledStatement->req_receive, true, true,
-			(i - outputVariables.begin()) + 1, *i);
-		param->par_node = *i;
-		MAKE_desc(compiledStatement, &param->par_desc, *i, NULL);
-		param->par_desc.dsc_flags |= DSC_nullable;
-	}
-
-	// Set up parameter to handle EOF
-	dsql_par* param = MAKE_parameter(compiledStatement->req_receive, false, false, 0, NULL);
-	compiledStatement->req_eof = param;
-	param->par_desc.dsc_dtype = dtype_short;
-	param->par_desc.dsc_scale = 0;
-	param->par_desc.dsc_length = sizeof(SSHORT);
-
-	compiledStatement->req_receive->msg_parameters =
-		revertParametersOrder(compiledStatement->req_receive->msg_parameters, NULL);
-	GEN_port(compiledStatement, compiledStatement->req_receive);
-
-	if (inputs)
-	{
-		compiledStatement->append_uchar(blr_receive);
-		compiledStatement->append_uchar(0);
-	}
-
-	compiledStatement->append_uchar(blr_begin);
-
-	for (unsigned i = 0; i < returnsPos; ++i)
-	{
-		const dsql_nod* parameter = variables[i];
-		const dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		const dsql_fld* field = variable->var_field;
-
-		if (field->fld_full_domain || field->fld_not_nullable)
-		{
-			// ASF: Validation of execute block input parameters is different than procedure
-			// parameters, because we can't generate messages using the domains due to the
-			// connection charset influence. So to validate, we cast them and assign to null.
-			compiledStatement->append_uchar(blr_assignment);
-			compiledStatement->append_uchar(blr_cast);
-			DDL_put_field_dtype(compiledStatement, field, true);
-			compiledStatement->append_uchar(blr_parameter2);
-			compiledStatement->append_uchar(0);
-			compiledStatement->append_ushort(variable->var_msg_item);
-			compiledStatement->append_ushort(variable->var_msg_item + 1);
-			compiledStatement->append_uchar(blr_null);
-		}
-	}
-
-	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
-	{
-		dsql_nod* parameter = *i;
-		dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		DDL_put_local_variable(compiledStatement, variable, 0, NULL);
-	}
-
-	compiledStatement->setPsql(true);
-
-	DDL_put_local_variables(compiledStatement, localDeclList, locals, variables);
-
-	compiledStatement->req_loop_level = 0;
-
-	dsql_nod* stmtNode = PASS1_statement(compiledStatement, body);
-	GEN_hidden_variables(compiledStatement, false);
-
-	compiledStatement->append_uchar(blr_stall);
-	// Put a label before body of procedure, so that
-	// any exit statement can get out
-	compiledStatement->append_uchar(blr_label);
-	compiledStatement->append_uchar(0);
-	GEN_statement(compiledStatement, stmtNode);
-	if (outputs)
-		compiledStatement->req_type = REQ_SELECT_BLOCK;
-	else
-		compiledStatement->req_type = REQ_EXEC_BLOCK;
-
-	compiledStatement->append_uchar(blr_end);
-	GEN_return(compiledStatement, outputVariables, true);
-	compiledStatement->append_uchar(blr_end);
-
-	compiledStatement->end_debug();
-}
-
-
-void ExecBlockNode::genReturn()
-{
-	GEN_return(compiledStatement, outputVariables, false);
-}
-
-
-dsql_nod* ExecBlockNode::resolveVariable(const dsql_str* varName)
-{
-	// try to resolve variable name against input and output parameters and local variables
-	return PASS1_resolve_variable_name(variables, varName);
-}
-
-
-// Revert parameters order for EXECUTE BLOCK statement
-dsql_par* ExecBlockNode::revertParametersOrder(dsql_par* parameter, dsql_par* prev)
-{
-	dsql_par* result;
-
-	if (parameter->par_next)
-		result = revertParametersOrder(parameter->par_next, parameter);
-	else
-		result = parameter;
-
-	parameter->par_next = prev;
-
-	return result;
-}
-
-
-//--------------------
-
-
-void ExitNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text = "ExitNode";
-}
-
-
-void ExitNode::genBlr()
-{
-	stuff(compiledStatement, blr_leave);
-	stuff(compiledStatement, 0);
-}
-
-
-//--------------------
-
-
-static RegisterNode<PostEventNode> regPostEventNode1(blr_post);
-static RegisterNode<PostEventNode> regPostEventNode2(blr_post_arg);
-
-
-DmlNode* PostEventNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
-{
-	PostEventNode* node = FB_NEW(pool) PostEventNode(pool);
-
-	node->event = PAR_parse_node(tdbb, csb, VALUE);
-	if (blrOp == blr_post_arg)
-		node->argument = PAR_parse_node(tdbb, csb, VALUE);
-
-	return node;
-}
-
-
-PostEventNode* PostEventNode::internalDsqlPass()
-{
-	PostEventNode* node = FB_NEW(getPool()) PostEventNode(getPool());
-	node->compiledStatement = compiledStatement;
-
-	node->dsqlEvent = PASS1_node(compiledStatement, dsqlEvent);
-	node->dsqlArgument = PASS1_node(compiledStatement, dsqlArgument);
-
-	return node;
-}
-
-
-void PostEventNode::print(string& text, Array<dsql_nod*>& nodes) const
-{
-	text = "PostEventNode";
-	nodes.add(dsqlEvent);
-	if (dsqlArgument)
-		nodes.add(dsqlArgument);
-}
-
-
-void PostEventNode::genBlr()
-{
-	if (dsqlArgument)
-	{
-		stuff(compiledStatement, blr_post_arg);
-		GEN_expr(compiledStatement, dsqlEvent);
-		GEN_expr(compiledStatement, dsqlArgument);
-	}
-	else
-	{
-		stuff(compiledStatement, blr_post);
-		GEN_expr(compiledStatement, dsqlEvent);
-	}
-}
-
-
-PostEventNode* PostEventNode::pass1(thread_db* tdbb, CompilerScratch* csb)
-{
-	event = CMP_pass1(tdbb, csb, event);
-	argument = CMP_pass1(tdbb, csb, argument);
-	return this;
-}
-
-
-PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
-{
-	event = CMP_pass2(tdbb, csb, event, node);
-	argument = CMP_pass2(tdbb, csb, argument, node);
-	return this;
-}
-
-
-jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request)
-{
-	jrd_tra* transaction = request->req_transaction;
-
-	DeferredWork* work = DFW_post_work(transaction, dfw_post_event, EVL_expr(tdbb, event), 0);
-	if (argument)
-		DFW_post_work_arg(transaction, work, EVL_expr(tdbb, argument), 0);
-
-	// For an autocommit transaction, events can be posted without any updates.
-
-	if (transaction->tra_flags & TRA_autocommit)
-		transaction->tra_flags |= TRA_perform_autocommit;
-
-	if (request->req_operation == jrd_req::req_evaluate)
-		request->req_operation = jrd_req::req_return;
-
-	return node->nod_parent;
-}
-
-
-//--------------------
-
-
-static RegisterNode<SavepointNode> regSavepointNode(blr_user_savepoint);
-
-
-DmlNode* SavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
-{
-	SavepointNode* node = FB_NEW(pool) SavepointNode(pool);
-
-	node->command = (Command) csb->csb_blr_reader.getByte();
-	PAR_name(csb, node->name);
-
-	return node;
-}
-
-
-SavepointNode* SavepointNode::internalDsqlPass()
-{
-	// ASF: It should never enter in this IF, because the grammar does not allow it.
-	if (compiledStatement->req_flags & REQ_block) // blocks, procedures and triggers
-	{
-		const char* cmd = NULL;
-
-		switch (command)
-		{
-		//case CMD_NOTHING:
-		case CMD_SET:
-			cmd = "SAVEPOINT";
-			break;
-		case CMD_RELEASE:
-			cmd = "RELEASE";
-			break;
-		case CMD_RELEASE_ONLY:
-			cmd = "RELEASE ONLY";
-			break;
-		case CMD_ROLLBACK:
-			cmd = "ROLLBACK";
-			break;
-		default:
-			cmd = "UNKNOWN";
-			fb_assert(false);
-		}
-
-		ERRD_post(
-			Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			// Token unknown
-			Arg::Gds(isc_token_err) <<
-			Arg::Gds(isc_random) << Arg::Str(cmd));
-	}
-
-	compiledStatement->req_type = REQ_SAVEPOINT;
-
-	return this;
-}
-
-
-void SavepointNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text = "SavepointNode";
-}
-
-
-void SavepointNode::genBlr()
-{
-	stuff(compiledStatement, blr_user_savepoint);
-	stuff(compiledStatement, (UCHAR) command);
-	stuff_cstring(compiledStatement, name.c_str());
-}
-
-
-SavepointNode* SavepointNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
-
-SavepointNode* SavepointNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
-
-jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request)
-{
-	Database* dbb = request->req_attachment->att_database;
-	jrd_tra* transaction = request->req_transaction;
-
-	if (request->req_operation == jrd_req::req_evaluate && transaction != dbb->dbb_sys_trans)
-	{
-		// Skip the savepoint created by EXE_start
-		Savepoint* savepoint = transaction->tra_save_point->sav_next;
-		Savepoint* previous = transaction->tra_save_point;
-
-		// Find savepoint
-		bool found = false;
-		while (true)
-		{
-			if (!savepoint || !(savepoint->sav_flags & SAV_user))
-				break;
-
-			if (!strcmp(name.c_str(), savepoint->sav_name))
-			{
-				found = true;
-				break;
-			}
-
-			previous = savepoint;
-			savepoint = savepoint->sav_next;
-		}
-
-		if (!found && command != CMD_SET)
-			ERR_post(Arg::Gds(isc_invalid_savepoint) << Arg::Str(name));
-
-		switch (command)
-		{
-			case CMD_SET:
-				// Release the savepoint
-				if (found)
-				{
-					Savepoint* const current = transaction->tra_save_point;
-					transaction->tra_save_point = savepoint;
-					EXE_verb_cleanup(tdbb, transaction);
-					previous->sav_next = transaction->tra_save_point;
-					transaction->tra_save_point = current;
-				}
-
-				// Use the savepoint created by EXE_start
-				transaction->tra_save_point->sav_flags |= SAV_user;
-				strcpy(transaction->tra_save_point->sav_name, name.c_str());
-				break;
-
-			case CMD_RELEASE_ONLY:
-			{
-				// Release the savepoint
-				Savepoint* const current = transaction->tra_save_point;
-				transaction->tra_save_point = savepoint;
-				EXE_verb_cleanup(tdbb, transaction);
-				previous->sav_next = transaction->tra_save_point;
-				transaction->tra_save_point = current;
-				break;
-			}
-
-			case CMD_RELEASE:
-			{
-				const SLONG sav_number = savepoint->sav_number;
-
-				// Release the savepoint and all subsequent ones
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
-				{
-					EXE_verb_cleanup(tdbb, transaction);
-				}
-
-				// Restore the savepoint initially created by EXE_start
-				VIO_start_save_point(tdbb, transaction);
-				break;
-			}
-
-			case CMD_ROLLBACK:
-			{
-				const SLONG sav_number = savepoint->sav_number;
-
-				// Undo the savepoint
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
-				{
-					transaction->tra_save_point->sav_verb_count++;
-					EXE_verb_cleanup(tdbb, transaction);
-				}
-
-				// Now set the savepoint again to allow to return to it later
-				VIO_start_save_point(tdbb, transaction);
-				transaction->tra_save_point->sav_flags |= SAV_user;
-				strcpy(transaction->tra_save_point->sav_name, name.c_str());
-				break;
-			}
-
-			default:
-				BUGCHECK(232);
-				break;
-		}
-	}
-
-	request->req_operation = jrd_req::req_return;
-
-	return node->nod_parent;
-}
-
-
-//--------------------
-
-
-static RegisterNode<SuspendNode> regSuspendNode(blr_send);
-
-
-DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
-{
-	SuspendNode* node = FB_NEW(pool) SuspendNode(pool);
-
-	USHORT n = csb->csb_blr_reader.getByte();
-	node->message = csb->csb_rpt[n].csb_message;
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
-
-	return node;
-}
-
-
-SuspendNode* SuspendNode::internalDsqlPass()
-{
-	if (compiledStatement->req_flags & REQ_trigger)	// triggers only
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Token unknown
-				  Arg::Gds(isc_token_err) <<
-				  Arg::Gds(isc_random) << Arg::Str("SUSPEND"));
-	}
-
-	if (compiledStatement->req_flags & REQ_in_auto_trans_block)	// autonomous transaction
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
-	}
-
-	compiledStatement->req_flags |= REQ_selectable;
-
-	blockNode = compiledStatement->blockNode;
-
-	return this;
-}
-
-
-void SuspendNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text = "SuspendNode";
-}
-
-
-void SuspendNode::genBlr()
-{
-	if (blockNode)
-		blockNode->genReturn();
-}
-
-
-SuspendNode* SuspendNode::pass1(thread_db* tdbb, CompilerScratch* csb)
-{
-	statement = CMP_pass1(tdbb, csb, statement);
-	return this;
-}
-
-
-SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
-{
-	statement = CMP_pass2(tdbb, csb, statement, node);
-	return this;
-}
-
-
-// Execute a SEND statement.
-jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request)
-{
-	switch (request->req_operation)
-	{
-	case jrd_req::req_evaluate:
-		return statement;
-
-	case jrd_req::req_return:
-		request->req_operation = jrd_req::req_send;
-		request->req_message = message;
-		request->req_flags |= req_stall;
-		return node;
-
-	case jrd_req::req_proceed:
-		request->req_operation = jrd_req::req_return;
-		return node->nod_parent;
-
-	default:
-		return node->nod_parent;
-	}
 }
 
 

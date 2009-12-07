@@ -50,7 +50,7 @@ C --
      + GDS_ARG_VMS          = 6,   { VAX/VMS status code (long) }
      + GDS_ARG_UNIX         = 7,   { UNIX error code }
      + GDS_ARG_DOMAIN       = 8,   { Apollo/Domain error code }
-     + GDS_ARG_DOS          = 9)   { MSDOS/OS2 error code }
+     + GDS_ARG_DOS	         = 9)   { Apollo/Domain error code }
 
       INTEGER*4 GDS__arith_except                    
       PARAMETER (GDS__arith_except                     = 335544321)
@@ -1386,14 +1386,6 @@ C --
       PARAMETER (GDS__eds_expl_tran_ctrl               = 335544986)
       INTEGER*4 GDS__no_trusted_spb                  
       PARAMETER (GDS__no_trusted_spb                   = 335544987)
-      INTEGER*4 GDS__package_name                    
-      PARAMETER (GDS__package_name                     = 335544988)
-      INTEGER*4 GDS__cannot_make_not_null            
-      PARAMETER (GDS__cannot_make_not_null             = 335544989)
-      INTEGER*4 GDS__feature_deprecated              
-      PARAMETER (GDS__feature_deprecated               = 335544990)
-      INTEGER*4 GDS__view_name                       
-      PARAMETER (GDS__view_name                        = 335544991)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1508,36 +1500,8 @@ C --
       PARAMETER (GDS__dsql_incompatible_trigger_type   = 336003102)
       INTEGER*4 GDS__dsql_db_trigger_type_cant_change
       PARAMETER (GDS__dsql_db_trigger_type_cant_change = 336003103)
-      INTEGER*4 GDS__dyn_filter_not_found            
-      PARAMETER (GDS__dyn_filter_not_found             = 336068645)
-      INTEGER*4 GDS__dyn_func_not_found              
-      PARAMETER (GDS__dyn_func_not_found               = 336068649)
-      INTEGER*4 GDS__dyn_index_not_found             
-      PARAMETER (GDS__dyn_index_not_found              = 336068656)
-      INTEGER*4 GDS__dyn_view_not_found              
-      PARAMETER (GDS__dyn_view_not_found               = 336068662)
-      INTEGER*4 GDS__dyn_domain_not_found            
-      PARAMETER (GDS__dyn_domain_not_found             = 336068697)
-      INTEGER*4 GDS__dyn_cant_modify_auto_trig       
-      PARAMETER (GDS__dyn_cant_modify_auto_trig        = 336068717)
       INTEGER*4 GDS__dyn_dup_table                   
       PARAMETER (GDS__dyn_dup_table                    = 336068740)
-      INTEGER*4 GDS__dyn_proc_not_found              
-      PARAMETER (GDS__dyn_proc_not_found               = 336068748)
-      INTEGER*4 GDS__dyn_exception_not_found         
-      PARAMETER (GDS__dyn_exception_not_found          = 336068752)
-      INTEGER*4 GDS__dyn_proc_param_not_found        
-      PARAMETER (GDS__dyn_proc_param_not_found         = 336068754)
-      INTEGER*4 GDS__dyn_trig_not_found              
-      PARAMETER (GDS__dyn_trig_not_found               = 336068755)
-      INTEGER*4 GDS__dyn_charset_not_found           
-      PARAMETER (GDS__dyn_charset_not_found            = 336068759)
-      INTEGER*4 GDS__dyn_collation_not_found         
-      PARAMETER (GDS__dyn_collation_not_found          = 336068760)
-      INTEGER*4 GDS__dyn_role_not_found              
-      PARAMETER (GDS__dyn_role_not_found               = 336068763)
-      INTEGER*4 GDS__dyn_name_longer                 
-      PARAMETER (GDS__dyn_name_longer                  = 336068767)
       INTEGER*4 GDS__dyn_column_does_not_exist       
       PARAMETER (GDS__dyn_column_does_not_exist        = 336068784)
       INTEGER*4 GDS__dyn_role_does_not_exist         
@@ -1574,16 +1538,12 @@ C --
       PARAMETER (GDS__dyn_dtype_conv_invalid           = 336068818)
       INTEGER*4 GDS__dyn_zero_len_id                 
       PARAMETER (GDS__dyn_zero_len_id                  = 336068820)
-      INTEGER*4 GDS__dyn_gen_not_found               
-      PARAMETER (GDS__dyn_gen_not_found                = 336068822)
       INTEGER*4 GDS__max_coll_per_charset            
       PARAMETER (GDS__max_coll_per_charset             = 336068829)
       INTEGER*4 GDS__invalid_coll_attr               
       PARAMETER (GDS__invalid_coll_attr                = 336068830)
       INTEGER*4 GDS__dyn_wrong_gtt_scope             
       PARAMETER (GDS__dyn_wrong_gtt_scope              = 336068840)
-      INTEGER*4 GDS__dyn_table_not_found             
-      PARAMETER (GDS__dyn_table_not_found              = 336068849)
       INTEGER*4 GDS__dyn_scale_too_big               
       PARAMETER (GDS__dyn_scale_too_big                = 336068852)
       INTEGER*4 GDS__dyn_precision_too_small         
@@ -1766,30 +1726,6 @@ C --
       PARAMETER (GDS__gbak_just_data                   = 336331033)
       INTEGER*4 GDS__gbak_data_only                  
       PARAMETER (GDS__gbak_data_only                   = 336331034)
-      INTEGER*4 GDS__gbak_missing_interval           
-      PARAMETER (GDS__gbak_missing_interval            = 336331078)
-      INTEGER*4 GDS__gbak_wrong_interval             
-      PARAMETER (GDS__gbak_wrong_interval              = 336331079)
-      INTEGER*4 GDS__gbak_verify_verbint             
-      PARAMETER (GDS__gbak_verify_verbint              = 336331081)
-      INTEGER*4 GDS__gbak_option_only_restore        
-      PARAMETER (GDS__gbak_option_only_restore         = 336331082)
-      INTEGER*4 GDS__gbak_option_only_backup         
-      PARAMETER (GDS__gbak_option_only_backup          = 336331083)
-      INTEGER*4 GDS__gbak_option_conflict            
-      PARAMETER (GDS__gbak_option_conflict             = 336331084)
-      INTEGER*4 GDS__gbak_param_conflict             
-      PARAMETER (GDS__gbak_param_conflict              = 336331085)
-      INTEGER*4 GDS__gbak_option_repeated            
-      PARAMETER (GDS__gbak_option_repeated             = 336331086)
-      INTEGER*4 GDS__gbak_max_dbkey_recursion        
-      PARAMETER (GDS__gbak_max_dbkey_recursion         = 336331091)
-      INTEGER*4 GDS__gbak_max_dbkey_length           
-      PARAMETER (GDS__gbak_max_dbkey_length            = 336331092)
-      INTEGER*4 GDS__gbak_invalid_metadata           
-      PARAMETER (GDS__gbak_invalid_metadata            = 336331093)
-      INTEGER*4 GDS__gbak_invalid_data               
-      PARAMETER (GDS__gbak_invalid_data                = 336331094)
       INTEGER*4 GDS__dsql_too_old_ods                
       PARAMETER (GDS__dsql_too_old_ods                 = 336397205)
       INTEGER*4 GDS__dsql_table_not_found            
@@ -1960,6 +1896,46 @@ C --
       PARAMETER (GDS__gsec_db_admin_pw_specified       = 336724048)
       INTEGER*4 GDS__gsec_sql_role_specified         
       PARAMETER (GDS__gsec_sql_role_specified          = 336724049)
+      INTEGER*4 GDS__license_no_file                 
+      PARAMETER (GDS__license_no_file                  = 336789504)
+      INTEGER*4 GDS__license_op_specified            
+      PARAMETER (GDS__license_op_specified             = 336789523)
+      INTEGER*4 GDS__license_op_missing              
+      PARAMETER (GDS__license_op_missing               = 336789524)
+      INTEGER*4 GDS__license_inv_switch              
+      PARAMETER (GDS__license_inv_switch               = 336789525)
+      INTEGER*4 GDS__license_inv_switch_combo        
+      PARAMETER (GDS__license_inv_switch_combo         = 336789526)
+      INTEGER*4 GDS__license_inv_op_combo            
+      PARAMETER (GDS__license_inv_op_combo             = 336789527)
+      INTEGER*4 GDS__license_amb_switch              
+      PARAMETER (GDS__license_amb_switch               = 336789528)
+      INTEGER*4 GDS__license_inv_parameter           
+      PARAMETER (GDS__license_inv_parameter            = 336789529)
+      INTEGER*4 GDS__license_param_specified         
+      PARAMETER (GDS__license_param_specified          = 336789530)
+      INTEGER*4 GDS__license_param_req               
+      PARAMETER (GDS__license_param_req                = 336789531)
+      INTEGER*4 GDS__license_syntx_error             
+      PARAMETER (GDS__license_syntx_error              = 336789532)
+      INTEGER*4 GDS__license_dup_id                  
+      PARAMETER (GDS__license_dup_id                   = 336789534)
+      INTEGER*4 GDS__license_inv_id_key              
+      PARAMETER (GDS__license_inv_id_key               = 336789535)
+      INTEGER*4 GDS__license_err_remove              
+      PARAMETER (GDS__license_err_remove               = 336789536)
+      INTEGER*4 GDS__license_err_update              
+      PARAMETER (GDS__license_err_update               = 336789537)
+      INTEGER*4 GDS__license_err_convert             
+      PARAMETER (GDS__license_err_convert              = 336789538)
+      INTEGER*4 GDS__license_err_unk                 
+      PARAMETER (GDS__license_err_unk                  = 336789539)
+      INTEGER*4 GDS__license_svc_err_add             
+      PARAMETER (GDS__license_svc_err_add              = 336789540)
+      INTEGER*4 GDS__license_svc_err_remove          
+      PARAMETER (GDS__license_svc_err_remove           = 336789541)
+      INTEGER*4 GDS__license_eval_exists             
+      PARAMETER (GDS__license_eval_exists              = 336789563)
       INTEGER*4 GDS__gstat_unknown_switch            
       PARAMETER (GDS__gstat_unknown_switch             = 336920577)
       INTEGER*4 GDS__gstat_retry                     
@@ -1996,99 +1972,3 @@ C --
       PARAMETER (GDS__fbsvcmgr_fp_empty                = 336986162)
       INTEGER*4 GDS__utl_trusted_switch              
       PARAMETER (GDS__utl_trusted_switch               = 337051649)
-      INTEGER*4 GDS__nbackup_missing_param           
-      PARAMETER (GDS__nbackup_missing_param            = 337117213)
-      INTEGER*4 GDS__nbackup_allowed_switches        
-      PARAMETER (GDS__nbackup_allowed_switches         = 337117214)
-      INTEGER*4 GDS__nbackup_unknown_param           
-      PARAMETER (GDS__nbackup_unknown_param            = 337117215)
-      INTEGER*4 GDS__nbackup_unknown_switch          
-      PARAMETER (GDS__nbackup_unknown_switch           = 337117216)
-      INTEGER*4 GDS__nbackup_nofetchpw_svc           
-      PARAMETER (GDS__nbackup_nofetchpw_svc            = 337117217)
-      INTEGER*4 GDS__nbackup_pwfile_error            
-      PARAMETER (GDS__nbackup_pwfile_error             = 337117218)
-      INTEGER*4 GDS__nbackup_size_with_lock          
-      PARAMETER (GDS__nbackup_size_with_lock           = 337117219)
-      INTEGER*4 GDS__nbackup_no_switch               
-      PARAMETER (GDS__nbackup_no_switch                = 337117220)
-      INTEGER*4 GDS__nbackup_err_read                
-      PARAMETER (GDS__nbackup_err_read                 = 337117223)
-      INTEGER*4 GDS__nbackup_err_write               
-      PARAMETER (GDS__nbackup_err_write                = 337117224)
-      INTEGER*4 GDS__nbackup_err_seek                
-      PARAMETER (GDS__nbackup_err_seek                 = 337117225)
-      INTEGER*4 GDS__nbackup_err_opendb              
-      PARAMETER (GDS__nbackup_err_opendb               = 337117226)
-      INTEGER*4 GDS__nbackup_err_fadvice             
-      PARAMETER (GDS__nbackup_err_fadvice              = 337117227)
-      INTEGER*4 GDS__nbackup_err_createdb            
-      PARAMETER (GDS__nbackup_err_createdb             = 337117228)
-      INTEGER*4 GDS__nbackup_err_openbk              
-      PARAMETER (GDS__nbackup_err_openbk               = 337117229)
-      INTEGER*4 GDS__nbackup_err_createbk            
-      PARAMETER (GDS__nbackup_err_createbk             = 337117230)
-      INTEGER*4 GDS__nbackup_err_eofdb               
-      PARAMETER (GDS__nbackup_err_eofdb                = 337117231)
-      INTEGER*4 GDS__nbackup_fixup_wrongstate        
-      PARAMETER (GDS__nbackup_fixup_wrongstate         = 337117232)
-      INTEGER*4 GDS__nbackup_err_db                  
-      PARAMETER (GDS__nbackup_err_db                   = 337117233)
-      INTEGER*4 GDS__nbackup_userpw_toolong          
-      PARAMETER (GDS__nbackup_userpw_toolong           = 337117234)
-      INTEGER*4 GDS__nbackup_lostrec_db              
-      PARAMETER (GDS__nbackup_lostrec_db               = 337117235)
-      INTEGER*4 GDS__nbackup_lostguid_db             
-      PARAMETER (GDS__nbackup_lostguid_db              = 337117236)
-      INTEGER*4 GDS__nbackup_err_eofhdrdb            
-      PARAMETER (GDS__nbackup_err_eofhdrdb             = 337117237)
-      INTEGER*4 GDS__nbackup_db_notlock              
-      PARAMETER (GDS__nbackup_db_notlock               = 337117238)
-      INTEGER*4 GDS__nbackup_lostguid_bk             
-      PARAMETER (GDS__nbackup_lostguid_bk              = 337117239)
-      INTEGER*4 GDS__nbackup_page_changed            
-      PARAMETER (GDS__nbackup_page_changed             = 337117240)
-      INTEGER*4 GDS__nbackup_dbsize_inconsistent     
-      PARAMETER (GDS__nbackup_dbsize_inconsistent      = 337117241)
-      INTEGER*4 GDS__nbackup_failed_lzbk             
-      PARAMETER (GDS__nbackup_failed_lzbk              = 337117242)
-      INTEGER*4 GDS__nbackup_err_eofhdrbk            
-      PARAMETER (GDS__nbackup_err_eofhdrbk             = 337117243)
-      INTEGER*4 GDS__nbackup_invalid_incbk           
-      PARAMETER (GDS__nbackup_invalid_incbk            = 337117244)
-      INTEGER*4 GDS__nbackup_unsupvers_incbk         
-      PARAMETER (GDS__nbackup_unsupvers_incbk          = 337117245)
-      INTEGER*4 GDS__nbackup_invlevel_incbk          
-      PARAMETER (GDS__nbackup_invlevel_incbk           = 337117246)
-      INTEGER*4 GDS__nbackup_wrong_orderbk           
-      PARAMETER (GDS__nbackup_wrong_orderbk            = 337117247)
-      INTEGER*4 GDS__nbackup_err_eofbk               
-      PARAMETER (GDS__nbackup_err_eofbk                = 337117248)
-      INTEGER*4 GDS__nbackup_err_copy                
-      PARAMETER (GDS__nbackup_err_copy                 = 337117249)
-      INTEGER*4 GDS__nbackup_err_eofhdr_restdb       
-      PARAMETER (GDS__nbackup_err_eofhdr_restdb        = 337117250)
-      INTEGER*4 GDS__nbackup_lostguid_l0bk           
-      PARAMETER (GDS__nbackup_lostguid_l0bk            = 337117251)
-      INTEGER*4 GDS__trace_conflict_acts             
-      PARAMETER (GDS__trace_conflict_acts              = 337182750)
-      INTEGER*4 GDS__trace_act_notfound              
-      PARAMETER (GDS__trace_act_notfound               = 337182751)
-      INTEGER*4 GDS__trace_switch_once               
-      PARAMETER (GDS__trace_switch_once                = 337182752)
-      INTEGER*4 GDS__trace_param_val_miss            
-      PARAMETER (GDS__trace_param_val_miss             = 337182753)
-      INTEGER*4 GDS__trace_param_invalid             
-      PARAMETER (GDS__trace_param_invalid              = 337182754)
-      INTEGER*4 GDS__trace_switch_unknown            
-      PARAMETER (GDS__trace_switch_unknown             = 337182755)
-      INTEGER*4 GDS__trace_switch_svc_only           
-      PARAMETER (GDS__trace_switch_svc_only            = 337182756)
-      INTEGER*4 GDS__trace_switch_user_only          
-      PARAMETER (GDS__trace_switch_user_only           = 337182757)
-      INTEGER*4 GDS__trace_switch_param_miss         
-      PARAMETER (GDS__trace_switch_param_miss          = 337182758)
-      INTEGER*4 GDS__trace_param_act_notcompat       
-      PARAMETER (GDS__trace_param_act_notcompat        = 337182759)
-      INTEGER*4 GDS__trace_mandatory_switch_miss     
-      PARAMETER (GDS__trace_mandatory_switch_miss      = 337182760)

@@ -233,13 +233,21 @@ public:
 struct RMessage : public Firebird::GlobalStorage
 {
 	RMessage*	msg_next;			// Next available message
+#ifdef SCROLLABLE_CURSORS
+	RMessage*	msg_prior;			// Next available message
+	ULONG		msg_absolute; 		// Absolute record number in cursor result set
+#endif
 	USHORT		msg_number;			// Message number
 	UCHAR*		msg_address;		// Address of message
 	UCharArrayAutoPtr msg_buffer;	// Allocated message
 
 public:
 	explicit RMessage(size_t rpt) :
-		msg_next(0), msg_number(0), msg_address(0), msg_buffer(FB_NEW(getPool()) UCHAR[rpt])
+		msg_next(0),
+#ifdef SCROLLABLE_CURSORS
+		msg_prior(0), msg_absolute(0),
+#endif
+		msg_number(0), msg_address(0), msg_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		memset(msg_buffer, 0, rpt);
 	}
@@ -281,6 +289,11 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 		rem_fmt*	rrq_format;		// format for this message
 		RMessage*	rrq_message; 	// beginning or end of cache, depending on whether it is client or server
 		RMessage*	rrq_xdr;		// point at which cache is read or written by xdr
+#ifdef SCROLLABLE_CURSORS
+		RMessage*	rrq_last;		// last message returned
+		ULONG		rrq_absolute;	// current offset in result set for record being read into cache
+		USHORT		rrq_flags;
+#endif
 		USHORT		rrq_msgs_waiting;	// count of full rrq_messages
 		USHORT		rrq_rows_pending;	// How many rows in waiting
 		USHORT		rrq_reorder_level;	// Reorder when rows_pending < this level
@@ -288,6 +301,15 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 
 	};
 	Firebird::Array<rrq_repeat> rrq_rpt;
+
+public:
+#ifdef SCROLLABLE_CURSORS
+	enum {
+		BACKWARD = 1,			// the cache was created in the backward direction
+		ABSOLUTE_BACKWARD = 2,	// rrq_absolute is measured from the end of the stream
+		LAST_BACKWARD = 4		// last time, the next level up asked for us to scroll in the backward direction
+	};
+#endif
 
 public:
 	explicit Rrq(size_t rpt) :

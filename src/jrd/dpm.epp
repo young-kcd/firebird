@@ -897,8 +897,7 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 }
 
 
-void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
-	Jrd::RelationPages* relPages)
+void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd::RelationPages* relPages)
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -1026,7 +1025,8 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 }
 
 
-SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT latch_wait)
+SSHORT DPM_fetch_back(thread_db* tdbb,
+					  record_param* rpb, USHORT lock, SSHORT latch_wait)
 {
 /**************************************
  *
@@ -1227,7 +1227,14 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	 *  decided that the V6 engine would only access an ODS-10 database.
 	 *  (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
 	 */
-	SINT64* const ptr = ((SINT64*) (page->gpg_values)) + offset;
+	SINT64* ptr = 0;
+	SLONG* lptr = 0;
+	if (dbb->dbb_ods_version >= ODS_VERSION10) {
+		ptr = ((SINT64 *) (page->gpg_values)) + offset;
+	}
+	else {
+		lptr = ((SLONG *) (((pointer_page*) page)->ppg_page)) + offset;
+	}
 
 	if (val || initialize)
 	{
@@ -1238,11 +1245,26 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 		}
 		CCH_MARK_SYSTEM(tdbb, &window);
 
-		if (initialize) {
-			*ptr = val;
+		/* Initialize or increment the quad value in an ODS 10 or later
+		 * generator page, or the long value in ODS <= 9.
+		 * The conditions were commented out 1999-05-14 by ChrisJ, because we
+		 * decided that the V6 engine would only access an ODS-10 database.
+		 * (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
+		 */
+		if (dbb->dbb_ods_version >= ODS_VERSION10)
+		{
+			if (initialize) {
+				*ptr = val;
+			}
+			else {
+				*ptr += val;
+			}
+		}
+		else if (initialize) {
+			*lptr = (SLONG) val;
 		}
 		else {
-			*ptr += val;
+			*lptr += (SLONG) val;
 		}
 
 		if (tdbb->getTransaction()) {
@@ -1250,7 +1272,21 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 		}
 	}
 
-	SINT64 value = *ptr;
+	/*  If we are in ODS >= 10, then we have a pointer to an int64 value in the
+	 *  generator page: if earlier than 10, it's a pointer to a long value.
+	 *  We always want to return an int64, so convert the long value from the
+	 *  old ODS into an int64.
+	 * The conditions were commented out 1999-05-14 by ChrisJ, because we
+	 * decided that the V6 engine would only access an ODS-10 database.
+	 * (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
+	 */
+	SINT64 value;
+	if (dbb->dbb_ods_version >= ODS_VERSION10) {
+		value = *ptr;
+	}
+	else {
+		value = (SINT64) *lptr;
+	}
 
 	CCH_RELEASE(tdbb, &window);
 
@@ -1258,7 +1294,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 }
 
 
-bool DPM_get(thread_db* tdbb, record_param* rpb, SSHORT lock_type)
+bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 {
 /**************************************
  *
@@ -1418,12 +1454,13 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		blob->blb_max_segment = header->blh_max_segment;
 		blob->blb_level = header->blh_level;
 		blob->blb_sub_type = header->blh_sub_type;
-		blob->blb_charset = header->blh_charset;
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+			blob->blb_charset = header->blh_charset;
 
 		// Unless this is the only attachment, don't allow the sequential scan
 		// of very large blobs to flush pages used by other attachments.
 
-		Jrd::Attachment* attachment = tdbb->getAttachment();
+		Attachment* attachment = tdbb->getAttachment();
 		if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 		{
 			// If the blob has more pages than the page buffer cache then mark
@@ -1490,7 +1527,13 @@ punt:
 }
 
 
-bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage)
+bool DPM_next(thread_db* tdbb,
+				 record_param* rpb,
+				 USHORT lock_type,
+#ifdef SCROLLABLE_CURSORS
+				 bool backwards,
+#endif
+				 bool onepage)
 {
 /**************************************
  *
@@ -1527,7 +1570,40 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 
 	// Find starting point
 
-	rpb->rpb_number.increment();
+#ifdef SCROLLABLE_CURSORS
+	if (backwards)
+	{
+		if (rpb->rpb_number.isEmpty())
+			return false;
+
+		if (!rpb->rpb_number.isBof()) {
+			rpb->rpb_number.decrement();
+		}
+		else
+		{
+			/*  if the stream was just opened, assume we want to start
+			at the end of the stream, so compute the last theoretically
+			possible rpb_number and go down from there.
+			For now, we must force a scan to make sure that we get
+			the last pointer page: this should be changed to use
+			a coordination mechanism (probably using a shared lock)
+			to keep apprised of when a pointer page gets added */
+
+			DPM_scan_pages(tdbb);
+			const vcl* vector = relPages->rel_pages;
+			if (!vector) {
+				return false;
+			}
+			const size_t pp_sequence = vector->count();
+			rpb->rpb_number.setValue(
+				((SINT64) pp_sequence) * dbb->dbb_dp_per_pp * dbb->dbb_max_records - 1);
+		}
+	}
+	else
+#endif
+	{
+		rpb->rpb_number.increment();
+	}
 
 	SSHORT slot, line;
 	USHORT pp_sequence;
@@ -1549,6 +1625,12 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 				BUGCHECK(249);	// msg 249 pointer page vanished from DPM_next
 		}
 
+#ifdef SCROLLABLE_CURSORS
+		if (backwards && slot >= ppage->ppg_count) {
+			slot = ppage->ppg_count - 1;
+		}
+#endif
+
 		for (; slot >= 0 && slot < ppage->ppg_count;)
 		{
 			const SLONG page_number = ppage->ppg_page[slot];
@@ -1558,7 +1640,11 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 				// Perform sequential prefetch of relation's data pages.
 				// This may need more work for scrollable cursors.
 
+#ifdef SCROLLABLE_CURSORS
+				if (!onepage && !line && !backwards)
+#else
 				if (!onepage && !line)
+#endif
 				{
 					if (!(slot % dbb->dbb_prefetch_sequence))
 					{
@@ -1583,7 +1669,19 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 				const data_page* dpage = (data_page*) CCH_HANDOFF(tdbb, window,
 									page_number, lock_type, pag_data);
 
-				for (; line >= 0 && line < dpage->dpg_count; ++line)
+#ifdef SCROLLABLE_CURSORS
+				if (backwards && line >= dpage->dpg_count) {
+					line = dpage->dpg_count - 1;
+				}
+#endif
+
+				for (; line >= 0 && line < dpage->dpg_count;
+#ifdef SCROLLABLE_CURSORS
+					backwards ? line-- : line++
+#else
+					++line
+#endif
+					)
 				{
 					if (get_header(window, line, rpb) &&
 						!(rpb->rpb_flags & (rpb_blob | rpb_chained | rpb_fragment)))
@@ -1627,14 +1725,35 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 				return false;
 			}
 
-			slot++;
-			line = 0;
+#ifdef SCROLLABLE_CURSORS
+			if (backwards)
+			{
+				slot--;
+				line = dbb->dbb_max_records - 1;
+			}
+			else
+#endif
+			{
+				slot++;
+				line = 0;
+			}
 		}
 
 		const UCHAR flags = ppage->ppg_header.pag_flags;
-		pp_sequence++;
-		slot = 0;
-		line = 0;
+#ifdef SCROLLABLE_CURSORS
+		if (backwards)
+		{
+			pp_sequence--;
+			slot = ppage->ppg_count - 1;
+			line = dbb->dbb_max_records - 1;
+		}
+		else
+#endif
+		{
+			pp_sequence++;
+			slot = 0;
+			line = 0;
+		}
 
 		if (window->win_flags & WIN_large_scan) {
 			CCH_RELEASE_TAIL(tdbb, window);
@@ -2009,7 +2128,8 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	header->blh_length = blob->blb_length;
 	header->blh_level = blob->blb_level;
 	header->blh_sub_type = blob->blb_sub_type;
-	header->blh_charset = blob->blb_charset;
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		header->blh_charset = blob->blb_charset;
 
 	if (length)
 		memcpy(header->blh_page, q, length);
@@ -2080,7 +2200,8 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 }
 
 
-void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd_tra* transaction)
+void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
+	const jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2500,7 +2621,7 @@ static void fragment(thread_db* tdbb,
 }
 
 
-static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window)
+static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN* window)
 {
 /**************************************
  *
@@ -2771,7 +2892,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 }
 
 
-static bool get_header(WIN* window, SSHORT line, record_param* rpb)
+static bool get_header( WIN* window, SSHORT line, record_param* rpb)
 {
 /**************************************
  *
@@ -2909,7 +3030,6 @@ static rhd* locate_space(thread_db* tdbb,
 
 	PagesArray lowPages;
 	SLONG dp_primary = 0;
-
 	if (type == DPM_secondary)
 	{
 		USHORT pp_sequence;
@@ -3009,7 +3129,7 @@ static rhd* locate_space(thread_db* tdbb,
 }
 
 
-static void mark_full(thread_db* tdbb, record_param* rpb)
+static void mark_full( thread_db* tdbb, record_param* rpb)
 {
 /**************************************
  *

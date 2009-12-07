@@ -37,7 +37,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../alice/alice.h"
-#include "../common/classes/Switches.h"
 #include "../alice/aliceswi.h"
 #include "../alice/alice_proto.h"
 #include "../alice/alice_meta.h"
@@ -57,7 +56,12 @@ static void reattach_databases(tdr*);
 static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, SINT64);
 
 
+//const char* const NEWLINE = "\n";
+
 static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
+
+
+
 
 
 //
@@ -76,13 +80,14 @@ static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 
 USHORT TDR_analyze(const tdr* trans)
 {
+	USHORT advice = TRA_none;
+
 	if (trans == NULL)
 		return TRA_none;
 
 	// if the tdr for the first transaction is missing,
 	// we can assume it was committed
 
-	USHORT advice = TRA_none;
 	USHORT state = trans->tdr_state;
 	if (state == TRA_none)
 		state = TRA_commit;
@@ -183,7 +188,8 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	if (tdgbl->ALICE_data.ua_debug)
-		ALICE_print(68, SafeArg() << pathname); // msg 68: ATTACH_DATABASE: attempted attach of %s
+		ALICE_print(68, SafeArg() << pathname);
+		// msg 68: ATTACH_DATABASE: attempted attach of %s
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertTag(isc_dpb_no_garbage_collect);
@@ -672,16 +678,16 @@ static SINT64 ask()
 		if (p == response)
 			return ~SINT64(0);
 		*p = 0;
-		ALICE_upper_case(response, response, sizeof(response));
-		if (!strcmp(response, "N") || !strcmp(response, "C") || !strcmp(response, "R"))
+		ALICE_down_case(response, response, sizeof(response));
+		if (!strcmp(response, "n") || !strcmp(response, "c") || !strcmp(response, "r"))
 		{
 			  break;
 		}
 	}
 
-	if (response[0] == 'C')
+	if (response[0] == 'c')
 		switches |= sw_commit;
-	else if (response[0] == 'R')
+	else if (response[0] == 'r')
 		switches |= sw_rollback;
 
 	return switches;

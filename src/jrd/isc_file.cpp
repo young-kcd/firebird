@@ -84,13 +84,13 @@
 
 const char INET_FLAG = ':';
 
-// Unix/NFS specific stuff
+/* Unix/NFS specific stuff */
 #ifndef NO_NFS
 
 #if defined(HAVE_MNTENT_H)
-#include <mntent.h>	// get setmntent/endmntent
+#include <mntent.h>	/* get setmntent/endmntent */
 #elif defined(HAVE_SYS_MNTTAB_H)
-#include <sys/mnttab.h>	// get MNTTAB/_PATH_MNTTAB
+#include <sys/mnttab.h>	/* get MNTTAB/_PATH_MNTTAB */
 #elif defined(AIX)
 #error ancient versions of AIX that do not provide "<mntent.h>" are not
 #error supported. AIX 5.1+ provides this header.
@@ -171,11 +171,11 @@ namespace {
 		bool ok() const { return this->mnt_cnt > 0; }
 #else
 		bool ok() const { return mtab.ok(); }
-#endif // DARWIN
+#endif /*DARWIN*/
 		bool get();
-		tstring node,  // remote server name
-			mount, // local mount point
-			path;  // path on remote server
+		tstring node,  /* remote server name */
+			mount, /* local mount point */
+			path;  /* path on remote server */
 	};
 #endif //NO_NFS
 } // anonymous namespace
@@ -269,13 +269,13 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		}
 	}
 
-	/* If the longest mount point was a local one, max_path is empty.
-	Return false, leaving node_name empty and expanded_filename as is.
+/* If the longest mount point was a local one, max_path is empty.
+   Return false, leaving node_name empty and expanded_filename as is.
 
-	If the longest mount point is from a remote node, max_path
-	contains the root of the file's path as it is known on the
-	remote node.  Return true, loading node_name with the remote
-	node name and expanded_filename with the remote file name. */
+   If the longest mount point is from a remote node, max_path
+   contains the root of the file's path as it is known on the
+   remote node.  Return true, loading node_name with the remote
+   node name and expanded_filename with the remote file name. */
 
 	bool flag = !max_path.isEmpty();
 	if (flag)
@@ -325,8 +325,8 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
 	node_name = "\\\\";
 	node_name += expanded_name.substr(2, p - 2);
 
-	// If this is a loopback, substitute "." for the host name.  Otherwise,
-	// the CreateFile on the pipe will fail.
+/* If this is a loopback, substitute "." for the host name.  Otherwise,
+   the CreateFile on the pipe will fail. */
 	TEXT localhost[MAXHOSTLEN];
 	ISC_get_host(localhost, sizeof(localhost));
 	if (node_name.substr(2, npos) == localhost)
@@ -355,7 +355,7 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
  *
  **************************************/
 
-	// Scan file name looking for separator character
+/* Scan file name looking for separator character */
 
 	node_name.erase();
 	const size p = file_name.find(INET_FLAG);
@@ -365,8 +365,8 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 	node_name = file_name.substr(0, p);
 
 #ifdef WIN_NT
-	// For Windows NT, insure that a single character node name does
-	// not conflict with an existing drive letter.
+/* For Windows NT, insure that a single character node name does
+   not conflict with an existing drive letter. */
 
 	if (p == 1)
 	{
@@ -431,7 +431,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
  *
  **************************************/
 
-	// Always check for an explicit TCP node name
+/* Always check for an explicit TCP node name */
 
 	if (ISC_analyze_tcp(file_name, host_name))
 	{
@@ -440,7 +440,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 #ifndef NO_NFS
 	if (implicit_flag)
 	{
-		// Check for a file on an NFS mounted device
+		/* Check for a file on an NFS mounted device */
 
 		if (ISC_analyze_nfs(file_name, host_name))
 		{
@@ -450,7 +450,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 #endif
 
 #if defined(WIN_NT)
-	// Check for an explicit named pipe node name
+/* Check for an explicit named pipe node name */
 
 	if (ISC_analyze_pclan(file_name, host_name))
 	{
@@ -459,8 +459,9 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 
 	if (implicit_flag)
 	{
-		// Check for a file on a shared drive.  First try to expand
-		// the path.  Then check the expanded path for a TCP or named pipe.
+		/* Check for a file on a shared drive.  First try to expand
+		   the path.  Then check the expanded path for a TCP or
+		   named pipe. */
 
 		ISC_expand_share(file_name);
 		if (ISC_analyze_tcp(file_name, host_name))
@@ -889,10 +890,10 @@ void ISC_expand_share(tstring& file_name)
  *	information.
  *
  **************************************/
-	// see NT reference for WNetEnumResource for the following constants
+// see NT reference for WNetEnumResource for the following constants
 	DWORD nument = 0xffffffff, bufSize = 16384;
 
-	// Look for a drive letter and make sure that it corresponds to a remote disk
+// Look for a drive letter and make sure that it corresponds to a remote disk
 	const size p = file_name.find(':');
 	if (p != 1)
 	{
@@ -917,8 +918,8 @@ void ISC_expand_share(tstring& file_name)
 		return;
 	}
 	LPNETRESOURCE resources = (LPNETRESOURCE) gds__alloc((SLONG) bufSize);
-	// FREE: in this routine
-	if (!resources)				// NOMEM: don't expand the filename
+/* FREE: in this routine */
+	if (!resources)				/* NOMEM: don't expand the filename */
 	{
 		return;
 	}
@@ -928,8 +929,8 @@ void ISC_expand_share(tstring& file_name)
 	{
 		gds__free(resources);
 		resources = (LPNETRESOURCE) gds__alloc((SLONG) bufSize);
-		// FREE: in this routine
-		if (!resources)			// NOMEM: don't expand the filename
+		/* FREE: in this routine */
+		if (!resources)			/* NOMEM: don't expand the filename */
 		{
 			return;
 		}
@@ -943,14 +944,15 @@ void ISC_expand_share(tstring& file_name)
 		i++;
 		res++;
 	}
-	if (i != nument)			// i.e. we found the drive in the resources list
+	if (i != nument)			/* i.e. we found the drive in the resources list */
 	{
 		share_name_from_resource(file_name, res);
 	}
 
 	WNetCloseEnum(handle);
 
-	// Win95 doesn't seem to return shared drives, so the following has been added...
+/* Win95 doesn't seem to return shared drives, so the following
+   has been added... */
 
 	if (i == nument)
 	{
@@ -961,7 +963,7 @@ void ISC_expand_share(tstring& file_name)
 		{
 			gds__free(resources);
 			resources = (LPNETRESOURCE) gds__alloc((SLONG) bufSize);
-			if (!resources)		// NOMEM: don't expand the filename
+			if (!resources)		/* NOMEM: don't expand the filename */
 			{
 				return;
 			}
@@ -999,14 +1001,15 @@ int ISC_strip_extension(TEXT* file_name)
  *
  **************************************/
 
-	// Set p to point to the starting part of the actual file name (sans directory name)
+/* Set p to point to the starting part of the actual file name
+   (sans directory name) */
 
 	TEXT* p = strrchr(file_name, '/');
 	TEXT* q = strrchr(file_name, '\\');
 
 	if (p || q)
 	{
-		// Get the maximum of the two
+		/* Get the maximum of the two */
 
 		if (q > p)
 			p = q;
@@ -1014,11 +1017,11 @@ int ISC_strip_extension(TEXT* file_name)
 	else
 		p = file_name;
 
-	// Now search for the first dot in the actual file name
+/* Now search for the first dot in the actual file name */
 
 	q = strchr(p, '.');
 	if (q)
-		*q = '\0';				// Truncate the extension including the dot
+		*q = '\0';				/* Truncate the extension including the dot */
 
 	return strlen(file_name);
 }
@@ -1222,8 +1225,7 @@ static void expand_share_name(tstring& share_name)
 		data = (LPBYTE) gds__alloc((SLONG) d_size);
 		// FREE: unknown
 		if (!data)
-		{
-			// NOMEM:
+		{			// NOMEM:
 			RegCloseKey(hkey);
 			return;				// Error not really handled
 		}
@@ -1288,7 +1290,7 @@ namespace {
 #ifndef NO_NFS
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
-#if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) // SYSV stylish
+#if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) /* SYSV stylish */
 bool Mnt::get()
 {
 /**************************************
@@ -1306,14 +1308,15 @@ bool Mnt::get()
  **************************************/
 	struct mnttab *mptr, mnttab;
 
-	// Start by finding a mount point.
+/* Start by finding a mount point. */
 
 	TEXT* p = buffer;
 
 	mptr = &mnttab;
 	if (getmntent(file, mptr) == 0)
 	{
-		// Include non-NFS (local) mounts - some may be longer than NFS mount points
+		/* Include non-NFS (local) mounts - some may be longer than
+		   NFS mount points */
 
 		mount->mnt_node = p;
 		const TEXT* q = mptr->mnt_special;
@@ -1392,8 +1395,8 @@ bool Mnt::get()
  *
  **************************************/
 
-	//  This code is tested on Solaris 2.6 IA
-	TEXT device[128], mount_point[128], type[16], opts[256], ftime[128];
+ /* This code is tested on Solaris 2.6 IA */
+ TEXT device[128], mount_point[128], type[16], opts[256], ftime[128];
 
 	const int n = fscanf(mtab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts, ftime);
 	const char* start = device;
@@ -1465,18 +1468,18 @@ bool Mnt::get()
  *
  **************************************/
 
-	/* Solaris uses this because:
+/* Solaris uses this because:
 	Since we had to substitute an alternative for the stdio supplied
 	with Solaris, we cannot use the getmntent() library call which
 	wants a Solaris stdio FILE* as an argument, so we parse the text-
 	type /etc/mnttab file ourselves.     - from FB1
 
 	This will still apply with SFIO on FB2.  nmcc Dec2002
-	*/
+*/
 
 	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16];
 
-	// Start by finding a mount point.
+/* Start by finding a mount point. */
 
 	TEXT* p = buffer;
 
@@ -1490,7 +1493,8 @@ bool Mnt::get()
 #endif
 			break;
 
-		// Include non-NFS (local) mounts - some may be longer than NFS mount points
+		/* Include non-NFS (local) mounts - some may be longer than
+		   NFS mount points */
 
 		/****
 		if (strcmp (type, "nfs"))
@@ -1591,7 +1595,7 @@ static void share_name_from_resource(tstring& file_name, LPNETRESOURCE resource)
 		// we're guessing that it might be an NFS shared drive
 
 		iter q = expanded_name.end() - 1;
-		if (*q == '\\' || *q == '/')	// chop off any trailing \ or /
+		if (*q == '\\' || *q == '/')	/* chop off any trailing \ or / */
 		{
 			expanded_name.erase(q);
 		}
@@ -1633,7 +1637,7 @@ static void share_name_from_unc(tstring& file_name, LPREMOTE_NAME_INFO unc_remot
  **************************************/
 	tstring expanded_name = unc_remote->lpConnectionName;
 
-	// bracket the share name with "!" characters
+	/* bracket the share name with "!" characters */
 	size p = expanded_name.find('\\', 2);
 	expanded_name.insert(++p, 1, '!');
 	p = expanded_name.find('\\', p + 1);
@@ -1643,10 +1647,10 @@ static void share_name_from_unc(tstring& file_name, LPREMOTE_NAME_INFO unc_remot
 	}
 	expanded_name += '!';
 
-	// add rest of file name
+	/* add rest of file name */
 	file_name.replace(0, 2, expanded_name);
 }
-#endif // WIN_NT
+#endif /* WIN_NT */
 
 
 // Converts a string from the system charset to UTF-8.

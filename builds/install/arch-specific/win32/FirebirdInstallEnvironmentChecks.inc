@@ -724,7 +724,7 @@ SharedFileArray[22].Filename := ExpandConstant('{app}')+'\bin\msvcrt.dll';
 SharedFileArray[23].Filename := ExpandConstant('{app}')+'\bin\msvcr{#msvc_version}0.dll';
 SharedFileArray[24].Filename := ExpandConstant('{app}')+'\bin\msvcp{#msvc_version}0.dll';
 
-SharedFileArray[25].Filename := ExpandConstant('{app}')+'\bin\fbintl.dll';
+SharedFileArray[25].Filename := ExpandConstant('{app}')+'\intl\fbintl.dll';
 
 SharedFileArray[26].Filename := ExpandConstant('{app}')+'\UDF\ib_udf.dll';
 SharedFileArray[27].Filename := ExpandConstant('{app}')+'\UDF\fbudf.dll';

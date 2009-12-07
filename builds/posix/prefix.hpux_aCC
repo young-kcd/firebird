@@ -66,14 +66,14 @@ COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -D_HP_ATOMIC_INLINE \
 
 ifeq ($(shell uname -m),ia64)
 # ...for IA-64
-PROD_FLAGS= +O2 +Onolimit +Ofltacc=strict +Ofenvaccess \
+PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Ofltacc=strict +Ofenvaccess \
 	$(COMMON_FLAGS)
 DEV_FLAGS= -g -z -DLIBC_CALLS_NEW \
 	$(COMMON_FLAGS)
 else
 # ...for PA-RISC
 # PA-RISC requires old version of aCC, 3.85, with different flags
-PROD_FLAGS= +O2 +Onolimit +Olibcalls +Onomoveflops \
+PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Olibcalls +Onomoveflops \
 	$(COMMON_FLAGS)
 DEV_FLAGS= -g -z \
 	$(COMMON_FLAGS)

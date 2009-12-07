@@ -33,7 +33,6 @@
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
 #include "../jrd/RecordNumber.h"
-#include "../jrd/ExtEngineManager.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
@@ -111,7 +110,6 @@ const USHORT rpb_fragment	= 4;
 const USHORT rpb_incomplete	= 8;
 const USHORT rpb_blob		= 16;
 const USHORT rpb_delta		= 32;		// prior version is a differences record
-// rpb_large = 64 is missing
 const USHORT rpb_damaged	= 128;		// record is busted
 const USHORT rpb_gc_active	= 256;		// garbage collecting dead record version
 const USHORT rpb_uk_modified= 512;		// record key field values are changed
@@ -203,7 +201,7 @@ public:
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
 		req_exec_sta(*pool), req_ext_stmt(NULL), req_invariants(*pool),
-		req_charset(CS_dynamic), req_blr(*pool), req_domain_validation(NULL),
+		req_blr(*pool), req_domain_validation(NULL),
 		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool),
 		req_sorts(*pool)
 	{}
@@ -229,10 +227,19 @@ public:
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
 	ExternalAccessList req_external;	// Access to procedures/triggers to be checked
 	AccessItemList req_access;			// Access items to be checked
+	//vec<jrd_nod*>*	req_variables;	// Vector of variables, if any CVC: UNUSED
 	ResourceList req_resources;			// Resources (relations and indices)
 	jrd_nod*	req_message;			// Current message for send/receive
+#ifdef SCROLLABLE_CURSORS
+	jrd_nod*	req_async_message;		// Asynchronous message (used in scrolling)
+#endif
 	jrd_prc*	req_procedure;			// procedure, if any
 	Firebird::MetaName	req_trg_name;	// name of request (trigger), if any
+	//USHORT		req_length;			// message length for send/receive
+	//USHORT		req_nmsgs;			// number of message types
+	//USHORT		req_mmsg;			// highest message type
+	//USHORT		req_msend;			// longest send message
+	//USHORT		req_mreceive;		// longest receive message
 
 	ULONG		req_records_selected;	// count of records selected by request (meeting selection criteria)
 	ULONG		req_records_inserted;	// count of records inserted by request
@@ -258,7 +265,6 @@ public:
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
 	Firebird::TimeStamp	req_timestamp;	// Start time of request
-	SSHORT req_charset;					// Client charset for this request
 	Firebird::RefStrPtr req_sql_text;	// SQL text
 	Firebird::Array<UCHAR> req_blr;		// BLR for non-SQL query
 
@@ -275,14 +281,10 @@ public:
 	MapFieldInfo	req_map_field_info;		// Map field name to field info
 	MapItemInfo		req_map_item_info;		// Map item to item info
 	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
-	ExtEngineManager::ResultSet* resultSet;	// external procedure result set
-	ValuesImpl* inputParams;				// external procedure input values
-	ValuesImpl* outputParams;				// external procedure output values
 	SortOwner		req_sorts;
 
 	enum req_ta {
-		// Order should be maintained because the numbers are stored in BLR
-		// and should be in sync with ExternalTrigger::Action.
+		// order should be maintained because the numbers are stored in BLR
 		req_trigger_insert			= 1,
 		req_trigger_update			= 2,
 		req_trigger_delete			= 3,
@@ -290,8 +292,7 @@ public:
 		req_trigger_disconnect		= 5,
 		req_trigger_trans_start		= 6,
 		req_trigger_trans_commit	= 7,
-		req_trigger_trans_rollback	= 8,
-		req_trigger_ddl				= 9
+		req_trigger_trans_rollback	= 8
 	} req_trigger_action;			// action that caused trigger to fire
 
 	enum req_s {
@@ -330,24 +331,27 @@ const size_t REQ_SIZE = sizeof(jrd_req) - sizeof(jrd_req::blk_repeat_type);
 const ULONG req_active			= 0x1L;
 const ULONG req_stall			= 0x2L;
 const ULONG req_leave			= 0x4L;
-const ULONG req_null			= 0x8L;
-const ULONG req_abort			= 0x10L;
-const ULONG req_internal		= 0x20L;
-const ULONG req_warning			= 0x40L;
-const ULONG req_in_use			= 0x80L;
-const ULONG req_sys_trigger		= 0x100L;		// request is a system trigger
-const ULONG req_count_records	= 0x200L;		// count records accessed
-const ULONG req_proc_fetch		= 0x400L;		// Fetch from procedure in progress
-const ULONG req_ansi_any		= 0x800L;		// Request is processing ANSI ANY
-const ULONG req_same_tx_upd		= 0x1000L;		// record was updated by same transaction
-const ULONG req_ansi_all		= 0x2000L;		// Request is processing ANSI ANY
-const ULONG req_ansi_not		= 0x4000L;		// Request is processing ANSI ANY
-const ULONG req_reserved		= 0x8000L;		// Request reserved for client
-const ULONG req_ignore_perm		= 0x10000L;		// ignore permissions checks
-const ULONG req_fetch_required	= 0x20000L;		// need to fetch next record
-const ULONG req_error_handler	= 0x40000L;		// looper is called to handle error
-const ULONG req_blr_version4	= 0x80000L;		// Request is of blr_version4
-const ULONG req_continue_loop	= 0x100000L;	// PSQL continue statement
+#ifdef SCROLLABLE_CURSORS
+const ULONG req_async_processing= 0x8L;
+#endif
+const ULONG req_null			= 0x10L;
+//const ULONG req_broken			= 0x20L;
+const ULONG req_abort			= 0x40L;
+const ULONG req_internal		= 0x80L;
+const ULONG req_warning			= 0x100L;
+const ULONG req_in_use			= 0x200L;
+const ULONG req_sys_trigger		= 0x400L;		// request is a system trigger
+const ULONG req_count_records	= 0x800L;		// count records accessed
+const ULONG req_proc_fetch		= 0x1000L;		// Fetch from procedure in progress
+const ULONG req_ansi_any		= 0x2000L;		// Request is processing ANSI ANY
+const ULONG req_same_tx_upd		= 0x4000L;		// record was updated by same transaction
+const ULONG req_ansi_all		= 0x8000L;		// Request is processing ANSI ANY
+const ULONG req_ansi_not		= 0x10000L;		// Request is processing ANSI ANY
+const ULONG req_reserved		= 0x20000L;		// Request reserved for client
+const ULONG req_ignore_perm		= 0x40000L;		// ignore permissions checks
+const ULONG req_fetch_required	= 0x80000L;		// need to fetch next record
+const ULONG req_error_handler	= 0x100000L;	// looper is called to handle error
+const ULONG req_blr_version4	= 0x200000L;	// Request is of blr_version4
 
 // Mask for flags preserved in a clone of a request
 const ULONG REQ_FLAGS_CLONE_MASK = (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);

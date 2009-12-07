@@ -64,8 +64,7 @@ const int id_views			= 8;		// All views
 const int id_trigger		= 9;		// Trigger name
 const int id_procedure		= 10;		// Procedure name
 const int id_sql_role		= 11;		// SQL role
-const int id_package		= 12;		// Package name
-const int id_max			= 13;
+const int id_max			= 12;
 
 /* Format of access control list:
 

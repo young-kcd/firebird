@@ -58,12 +58,12 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	m_fileHandle = -1;
 	m_reader = reader;
 
-	Arg::StatusVector statusVector;
-	ISC_map_file(statusVector, fileName.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
+	ISC_STATUS_ARRAY status;
+	ISC_map_file(status, fileName.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
 	if (!m_base)
 	{
-		iscLogStatus("TraceLog: cannot initialize the shared memory region", statusVector.value());
-		statusVector.raise();
+		iscLogStatus("TraceLog: cannot initialize the shared memory region", status);
+		status_exception::raise(status);
 	}
 
 	char dir[MAXPATHLEN];
@@ -97,8 +97,8 @@ TraceLog::~TraceLog()
 
 	const bool readerDone = (m_base->readFileNum == MAX_FILE_NUM);
 
-	Arg::StatusVector statusVector;
-	ISC_unmap_file(statusVector, &m_handle);
+	ISC_STATUS_ARRAY status;
+	ISC_unmap_file(status, &m_handle);
 
 	if (m_reader || readerDone) {
 		unlink(m_baseFileName.c_str());

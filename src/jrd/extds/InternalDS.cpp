@@ -63,7 +63,7 @@ static RegisterInternalProvider reg;
 
 // InternalProvider
 
-void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
+void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Attachment* att)
 {
 	if (m_connections.getCount() == 0)
 		return;
@@ -119,7 +119,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbName.isEmpty() || dbName == dbb->dbb_database_name.c_str());
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	if ((user.isEmpty() || user == attachment->att_user->usr_user_name) &&
 		pwd.isEmpty() &&
 		(role.isEmpty() || role == attachment->att_user->usr_sql_role_name))
@@ -137,7 +137,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 
 		{
 			EngineCallbackGuard guard(tdbb, *this);
-			jrd8_attach_database(status, 0, m_dbName.c_str(), &m_attachment,
+			jrd8_attach_database(status, m_dbName.c_str(), &m_attachment,
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
 		if (status[1]) {
@@ -162,7 +162,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 		ISC_STATUS_ARRAY status = {0};
 
 		{	// scope
-			Jrd::Attachment* att = m_attachment;
+			Attachment* att = m_attachment;
 			m_attachment = NULL;
 
 			EngineCallbackGuard guard(tdbb, *this);
@@ -247,10 +247,10 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 	}
 	else
 	{
-		Jrd::Attachment* att = m_IntConnection.getJrdAtt();
+		Attachment* att = m_IntConnection.getJrdAtt();
 
 		EngineCallbackGuard guard(tdbb, *this);
-		jrd8_start_transaction(status, 0, &m_transaction, 1, &att,	//// FIXME: public_handle
+		jrd8_start_transaction(status, &m_transaction, 1, &att,
 			tpb.getBufferLength(), tpb.getBuffer());
 	}
 }
@@ -328,7 +328,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	m_inBlr.clear();
 	m_outBlr.clear();
 
-	Jrd::Attachment* att = m_intConnection.getJrdAtt();
+	Attachment* att = m_intConnection.getJrdAtt();
 	jrd_tra* tran = getIntTransaction()->getJrdTran();
 
 	ISC_STATUS_ARRAY status = {0};
@@ -346,31 +346,13 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 
-		CallerName save_caller_name(tran->tra_caller_name);
-
-		if (m_callerPrivileges)
-		{
-			jrd_req* request = tdbb->getRequest();
-			CallerName callerName;
-
-			if (request && request->req_trg_name.hasData())
-				tran->tra_caller_name = CallerName(obj_trigger, request->req_trg_name);
-			else if (request && request->req_procedure &&
-				request->req_procedure->prc_name.identifier.hasData())
-			{
-				if (request->req_procedure->prc_name.qualifier.isEmpty())
-					tran->tra_caller_name = CallerName(obj_procedure, request->req_procedure->prc_name.identifier);
-				else
-					tran->tra_caller_name = CallerName(obj_package_header, request->req_procedure->prc_name.qualifier);
-			}
-			else
-				tran->tra_caller_name = CallerName();
-		}
+		jrd_req* const save_caller = tran->tra_callback_caller;
+		tran->tra_callback_caller = m_callerPrivileges ? tdbb->getRequest() : NULL;
 
 		jrd8_prepare(status, &tran, &m_request, sql.length(), sql.c_str(),
 			m_connection.getSqlDialect(), 0, NULL, 0, NULL);
 
-		tran->tra_caller_name = save_caller_name;
+		tran->tra_callback_caller = save_caller;
 	}
 	if (status[1]) {
 		raise(status, tdbb, "jrd8_prepare", &sql);
@@ -551,7 +533,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Jrd::Attachment* att = m_connection.getJrdAtt();
+	Attachment* att = m_connection.getJrdAtt();
 	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
 	memcpy(&m_blob_id, desc.dsc_address, sizeof(m_blob_id));
 
@@ -576,7 +558,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Jrd::Attachment* att = m_connection.getJrdAtt();
+	Attachment* att = m_connection.getJrdAtt();
 	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
 	m_blob_id.clear();
 

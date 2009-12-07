@@ -803,7 +803,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		icu->ucModule = ModuleLoader::loadModule(filename);
 		if (!icu->ucModule)
 		{
-			ModuleLoader::doctorModuleExtension(filename);
+			ModuleLoader::doctorModuleExtention(filename);
 			icu->ucModule = ModuleLoader::loadModule(filename);
 		}
 
@@ -818,7 +818,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		icu->inModule = ModuleLoader::loadModule(filename);
 		if (!icu->inModule)
 		{
-			ModuleLoader::doctorModuleExtension(filename);
+			ModuleLoader::doctorModuleExtention(filename);
 			icu->inModule = ModuleLoader::loadModule(filename);
 		}
 

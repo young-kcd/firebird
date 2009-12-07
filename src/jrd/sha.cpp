@@ -1,10 +1,10 @@
-// NIST Secure Hash Algorithm
-// heavily modified by Uwe Hollerbach <uh@alumni.caltech edu>
-// from Peter C. Gutmann's implementation as found in
-// Applied Cryptography by Bruce Schneier
-// This code is in the public domain
+/* NIST Secure Hash Algorithm */
+/* heavily modified by Uwe Hollerbach <uh@alumni.caltech edu> */
+/* from Peter C. Gutmann's implementation as found in */
+/* Applied Cryptography by Bruce Schneier */
+/* This code is in the public domain */
 
-// Adapted and added to firebird cvs tree - A.Peshkov, 2004
+// Adopted and added to firebird cvs tree - A.Peshkov, 2004
 
 #ifndef SHA_H
 #define SHA_H
@@ -18,19 +18,19 @@
 namespace
 {
 
-// Useful defines & typedefs
-typedef unsigned char BYTE;	// 8-bit quantity
-typedef unsigned long LONG;	// 32-or-more-bit quantity
+/* Useful defines & typedefs */
+typedef unsigned char BYTE;	/* 8-bit quantity */
+typedef unsigned long LONG;	/* 32-or-more-bit quantity */
 
 #define SHA_BLOCKSIZE		64
 #define SHA_DIGESTSIZE		20
 
 struct SHA_INFO
 {
-	LONG digest[5];				// message digest
-	LONG count_lo, count_hi;	// 64-bit bit count
-	BYTE data[SHA_BLOCKSIZE];	// SHA data buffer
-	int local;					// unprocessed amount in data
+	LONG digest[5];			/* message digest */
+	LONG count_lo, count_hi;	/* 64-bit bit count */
+	BYTE data[SHA_BLOCKSIZE];	/* SHA data buffer */
+	int local;			/* unprocessed amount in data */
 };
 
 void sha_init(SHA_INFO *);
@@ -55,7 +55,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 #  endif
 #endif
 
-#endif // SHA_H
+#endif /* SHA_H */
 
 
 
@@ -73,14 +73,14 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
  *
  */
 
-// UNRAVEL should be fastest & biggest
-// UNROLL_LOOPS should be just as big, but slightly slower
-// both undefined should be smallest and slowest
+/* UNRAVEL should be fastest & biggest */
+/* UNROLL_LOOPS should be just as big, but slightly slower */
+/* both undefined should be smallest and slowest */
 
 #define UNRAVEL
-// #define UNROLL_LOOPS
+/* #define UNROLL_LOOPS */
 
-// SHA f()-functions
+/* SHA f()-functions */
 
 #define f1(x, y, z)	((x & y) | (~x & z))
 #define f2(x, y, z)	(x ^ y ^ z)
@@ -88,28 +88,28 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 #define f4(x, y, z)	(x ^ y ^ z)
 
 
-// SHA constants
+/* SHA constants */
 
 #define CONST1		0x5a827999L
 #define CONST2		0x6ed9eba1L
 #define CONST3		0x8f1bbcdcL
 #define CONST4		0xca62c1d6L
 
-// truncate to 32 bits -- should be a null op on 32-bit machines
+/* truncate to 32 bits -- should be a null op on 32-bit machines */
 
 #define T32(x)	((x) & 0xffffffffL)
 
-// 32-bit rotate
+/* 32-bit rotate */
 
 #define R32(x, n)	T32(((x << n) | (x >> (32 - n))))
 
-// the generic case, for when the overall rotation is not unraveled
+/* the generic case, for when the overall rotation is not unraveled */
 
 #define FG(n)	\
 	T = T32(R32(A, 5) + f##n(B, C, D) + E + *WP++ + CONST##n);	\
 	E = D; D = C; C = R32(B, 30); B = A; A = T
 
-// specific cases, for when the overall rotation is unraveled
+/* specific cases, for when the overall rotation is unraveled */
 
 #define FA(n)	\
 	T = T32(R32(A, 5) + f##n(B, C, D) + E + *WP++ + CONST##n); B = R32(B, 30)
@@ -130,7 +130,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 	A = T32(R32(B, 5) + f##n(C, D, E) + T + *WP++ + CONST##n); C = R32(C, 30)
 
 
-// do SHA transformation
+/* do SHA transformation */
 
 static void sha_transform(SHA_INFO *sha_info)
 {
@@ -156,7 +156,7 @@ nether regions of the anatomy...
 		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
 			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
 	}
-#endif // SHA_BYTE_ORDER == 1234
+#endif /* SHA_BYTE_ORDER == 1234 */
 
 #if (SHA_BYTE_ORDER == 4321)
 #define SWAP_DONE
@@ -166,7 +166,7 @@ nether regions of the anatomy...
 		dp += 4;
 		W[i] = T32(T);
 	}
-#endif // SHA_BYTE_ORDER == 4321
+#endif /* SHA_BYTE_ORDER == 4321 */
 
 #if (SHA_BYTE_ORDER == 12345678)
 #define SWAP_DONE
@@ -180,7 +180,7 @@ nether regions of the anatomy...
 		W[i + 1] = ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
 			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
 	}
-#endif // SHA_BYTE_ORDER == 12345678
+#endif /* SHA_BYTE_ORDER == 12345678 */
 
 #if (SHA_BYTE_ORDER == 87654321)
 #define SWAP_DONE
@@ -191,18 +191,18 @@ nether regions of the anatomy...
 		W[i] = T32(T >> 32);
 		W[i + 1] = T32(T);
 	}
-#endif // SHA_BYTE_ORDER == 87654321
+#endif /* SHA_BYTE_ORDER == 87654321 */
 
 #ifndef SWAP_DONE
 #error Unknown byte order -- you need to add code here
-#endif // SWAP_DONE
+#endif /* SWAP_DONE */
 
 	for (i = 16; i < 80; ++i)
 	{
 		W[i] = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
 #if (SHA_VERSION == 1)
 		W[i] = R32(W[i], 1);
-#endif // SHA_VERSION
+#endif /* SHA_VERSION */
 	}
 	LONG A = sha_info->digest[0];
 	LONG B = sha_info->digest[1];
@@ -225,7 +225,7 @@ nether regions of the anatomy...
 	sha_info->digest[2] = T32(sha_info->digest[2] + A);
 	sha_info->digest[3] = T32(sha_info->digest[3] + B);
 	sha_info->digest[4] = T32(sha_info->digest[4] + C);
-#else // !UNRAVEL
+#else /* !UNRAVEL */
 #ifdef UNROLL_LOOPS
 	FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1);
 	FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1); FG(1);
@@ -235,21 +235,21 @@ nether regions of the anatomy...
 	FG(3); FG(3); FG(3); FG(3); FG(3); FG(3); FG(3); FG(3); FG(3); FG(3);
 	FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4);
 	FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4); FG(4);
-#else // !UNROLL_LOOPS
+#else /* !UNROLL_LOOPS */
 	for (i =  0; i < 20; ++i) { FG(1); }
 	for (i = 20; i < 40; ++i) { FG(2); }
 	for (i = 40; i < 60; ++i) { FG(3); }
 	for (i = 60; i < 80; ++i) { FG(4); }
-#endif // !UNROLL_LOOPS
+#endif /* !UNROLL_LOOPS */
 	sha_info->digest[0] = T32(sha_info->digest[0] + A);
 	sha_info->digest[1] = T32(sha_info->digest[1] + B);
 	sha_info->digest[2] = T32(sha_info->digest[2] + C);
 	sha_info->digest[3] = T32(sha_info->digest[3] + D);
 	sha_info->digest[4] = T32(sha_info->digest[4] + E);
-#endif // !UNRAVEL
+#endif /* !UNRAVEL */
 }
 
-// initialize the SHA digest
+/* initialize the SHA digest */
 
 void sha_init(SHA_INFO *sha_info)
 {
@@ -263,7 +263,7 @@ void sha_init(SHA_INFO *sha_info)
 	sha_info->local = 0;
 }
 
-// update the SHA digest
+/* update the SHA digest */
 
 void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 {
@@ -301,7 +301,7 @@ void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 	sha_info->local = count;
 }
 
-// finish computing the SHA digest
+/* finish computing the SHA digest */
 
 void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
 {

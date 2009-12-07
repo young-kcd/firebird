@@ -280,8 +280,8 @@ void HSHD_remove(dsql_sym* symbol)
 
  HSHD_set_flag
 
-    @brief      Set a flag in all similar objects in a chain.
-       This is used primarily to mark relations
+    @brief      Set a flag in all similar objects in a chain.   This
+       is used primarily to mark relations, procedures and functions
        as deleted.   The object must have the same name and
        type, but not the same database, and must belong to
        some database.   Later access to such an object by
@@ -307,10 +307,20 @@ void HSHD_set_flag(const void* database,
 				   SSHORT flag)
 {
 	// as of now, there's no work to do if there is no database or if
-	// the type is not a relation
+	// the type is not a relation, procedure or function
 
-	if (!database || type != SYM_relation)
+	if (!database)
 		return;
+
+	switch (type)
+	{
+	case SYM_relation:
+	case SYM_procedure:
+	case SYM_udf:
+		break;
+	default:
+		return;
+	}
 
 	const USHORT h = hash(string, length);
 
@@ -329,12 +339,33 @@ void HSHD_set_flag(const void* database,
 				{
 					// the homonym is of the correct type
 
-					// the next check is for the same relation ID,
-					// which indicates that it MAY be the same relation
-					fb_assert(type == SYM_relation);
+					// the next check is for the same relation or procedure ID,
+					// which indicates that it MAY be the same relation or
+					// procedure
 
-					dsql_rel* sym_rel = (dsql_rel*) homonym->sym_object;
-					sym_rel->rel_flags |= flag;
+					switch (type)
+					{
+					case SYM_relation:
+						{
+							dsql_rel* sym_rel = (dsql_rel*) homonym->sym_object;
+							sym_rel->rel_flags |= flag;
+							break;
+						}
+
+					case SYM_procedure:
+						{
+							dsql_prc* sym_prc = (dsql_prc*) homonym->sym_object;
+							sym_prc->prc_flags |= flag;
+							break;
+						}
+
+					case SYM_udf:
+						{
+							dsql_udf* sym_udf = (dsql_udf*) homonym->sym_object;
+							sym_udf->udf_flags |= flag;
+							break;
+						}
+					}
 				}
 			}
 		}

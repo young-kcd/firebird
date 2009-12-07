@@ -63,7 +63,6 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/nbak.h"
 #include "../common/StatusArg.h"
-#include "../common/classes/DbImplementation.h"
 
 using namespace Jrd;
 
@@ -384,57 +383,27 @@ void INF_database_info(const UCHAR* items,
 			break;
 
 		case isc_info_implementation:
-			// isc_info_implementation value has first byte, defining the number of
-			// 2-byte sequences, where first byte is implementation code (deprecated
-			// since firebird 3.0) and second byte is implementation class (see table of classes
-			// in utl.cpp, array impl_class)
-			STUFF(p, 1);		// Count
-			STUFF(p, Firebird::DbImplementation::current.backwardCompatibleImplementation()); //Code
-			STUFF(p, 1);		// Class
-			length = p - buffer;
-			break;
-
-		case fb_info_implementation:
-			// isc_info_implementation value has first byte, defining the number of
-			// 6-byte sequences, where first bytes 0-3 are implementation codes, defined
-			// in class DbImplementation, byte 4 is implementation class (see table of classes
-			// in utl.cpp, array impl_class) and byte 5 is current count of
-			// isc_info_implementation pairs (used to correctly display implementation when
-			// old and new servers are mixed, see isc_version() in utl.cpp)
-			STUFF(p, 1);		// Count
-			Firebird::DbImplementation::current.stuff(&p);
-			STUFF(p, 1);		// Class
-			STUFF(p, 0);		// Current depth of isc_info_implementation stack
+			STUFF(p, 1);		/* Count */
+			STUFF(p, IMPLEMENTATION);
+			STUFF(p, 1);		/* Class */
 			length = p - buffer;
 			break;
 
 		case isc_info_base_level:
-			// info_base_level is used by the client to represent
-			// what the server is capable of.  It is equivalent to the
-			// ods version of a database.  For example,
-			// ods_version represents what the database 'knows'
-			// base_level represents what the server 'knows'
-			//
-			// Comment moved from DSQL where the item is no longer used, to not lose the history:
-			// This flag indicates the version level of the engine
-			// itself, so we can tell what capabilities the engine
-			// code itself (as opposed to the on-disk structure).
-			// Apparently the base level up to now indicated the major
-			// version number, but for 4.1 the base level is being
-			// incremented, so the base level indicates an engine version
-			// as follows:
-			// 1 == v1.x
-			// 2 == v2.x
-			// 3 == v3.x
-			// 4 == v4.0 only
-			// 5 == v4.1. (v5, too?)
-			// 6 == v6, FB1, FB1.5, FB2, FB2.5
-			// Note: this info item is so old it apparently uses an
-			// archaic format, not a standard vax integer format.
-
-			STUFF(p, 1);		// Count
-			// IB_MAJOR_VER is defined as a character string
-			STUFF(p, DBSERVER_BASE_LEVEL);	// base level of current version
+			/* info_base_level is used by the client to represent
+			 * what the server is capable of.  It is equivalent to the
+			 * ods version of a database.  For example,
+			 * ods_version represents what the database 'knows'
+			 * base_level represents what the server 'knows'
+			 */
+			STUFF(p, 1);		/* Count */
+#ifdef SCROLLABLE_CURSORS
+			UPDATE WITH VERSION OF SERVER SUPPORTING
+				SCROLLABLE CURSORS STUFF(p, 5);	/* base level of scrollable cursors */
+#else
+			/* IB_MAJOR_VER is defined as a character string */
+			STUFF(p, DBSERVER_BASE_LEVEL);	/* base level of current version */
+#endif
 			length = p - buffer;
 			break;
 
@@ -709,27 +678,39 @@ void INF_database_info(const UCHAR* items,
 		case isc_info_db_sql_dialect:
 			/*
 			   **
-			   ** there are 2 types of databases:
+			   ** there are 3 types of databases:
 			   **
-			   **   1. a non ODS 10 DB is backed up/restored in IB V6.0. Since
+			   **   1. a DB that is created before V6.0. This DB only speak SQL
+			   **        dialect 1 and 2.
+			   **
+			   **   2. a non ODS 10 DB is backed up/restored in IB V6.0. Since
 			   **        this DB contained some old SQL dialect, therefore it
 			   **        speaks SQL dialect 1, 2, and 3
 			   **
-			   **   2. a DB that is created in V6.0. This DB speak SQL
+			   **   3. a DB that is created in V6.0. This DB speak SQL
 			   **        dialect 1, 2 or 3 depending the DB was created
 			   **        under which SQL dialect.
 			   **
 			 */
-			if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_10_0)
 			{
-				 // DB created in IB V6.0 by client SQL dialect 3
-				*p++ = SQL_DIALECT_V6;
+				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+				{
+					/*
+					   ** DB created in IB V6.0 by client SQL dialect 3
+					 */
+					*p++ = SQL_DIALECT_V6;
+				}
+				else
+				{
+					/*
+					   ** old DB was gbaked in IB V6.0
+					 */
+					*p++ = SQL_DIALECT_V5;
+				}
 			}
 			else
-			{
-				// old DB was gbaked in IB V6.0
-				*p++ = SQL_DIALECT_V5;
-			}
+				*p++ = SQL_DIALECT_V5;	/* pre ODS 10 DB */
 
 			length = p - buffer;
 			break;
@@ -803,7 +784,7 @@ void INF_database_info(const UCHAR* items,
 
 				win window(PageNumber(DB_PAGE_SPACE, page_num));
 
-				Ods::pag* page = CCH_FETCH(tdbb, &window, LCK_WAIT, pag_undefined);
+				Ods::pag* page = CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_WAIT, pag_undefined);
 				info = INF_put_item(item, dbb->dbb_page_size, reinterpret_cast<UCHAR*>(page), info, end);
 				CCH_RELEASE_TAIL(tdbb, &window);
 

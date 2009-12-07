@@ -49,7 +49,7 @@
 
 using namespace Jrd;
 
-// Given pointer a field in the block, find the block
+/* Given pointer a field in the block, find the block */
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
 
 
@@ -96,7 +96,7 @@ static int prt_fields(const SCHAR*, const int*);
 static int prt_que(const SCHAR*, const que*);
 static int rsb_pretty(const RecordSource*, int);
 
-// Pick up node names
+/* Pick up node names */
 
 #define NODE(type, name, keyword) "name",
 
@@ -106,7 +106,7 @@ static const TEXT* node_names[] = {
 };
 #undef NODE
 
-// rsb types
+/* rsb types */
 
 static const TEXT* rsb_names[] =
 {
@@ -122,8 +122,8 @@ static const TEXT* rsb_names[] =
 	"sort",
 	"union",
 	"aggregate",
-	"ext_sequential",			// External sequential access
-	"ext_indexed",				// External indexed access
+	"ext_sequential",			/* External sequential access */
+	"ext_indexed",				/* External indexed access */
 	"ext_dbkey",
 	"navigation",
 	"bit_sieve",
@@ -432,7 +432,8 @@ int DBG_block(BLK block)
 	/*
 	if (block->blk_type <= (SCHAR) type_MIN || block->blk_type >= (SCHAR) type_MAX)
 	{
-		fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block, block->blk_type);
+		fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block,
+				   block->blk_type);
 		return FALSE;
 	}
 	*/
@@ -528,7 +529,7 @@ int DBG_block(BLK block)
 		}
 		fprintf(dbg_file, "\n");
 		break;
-    default:    // Shut up compiler warnings
+    default:    /* Shut up compiler warnings */
 		break;
 	}
 
@@ -1030,7 +1031,7 @@ int DBG_memory()
 
 	fprintf(dbg_file, "MEMORY UTILIZATION for database\n\n");
 
-	// walk through all the pools in the database
+/* walk through all the pools in the database */
 
 	perm_pool_mem = 0;
 	req_pool_mem = 0;

@@ -3,24 +3,24 @@
 # This file is used both to rebuild the header file and to set the
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.26798 2009-12-07 09:47:01 dimitr Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.25898.2.3 2009-11-09 09:53:27 dimitr Exp $"
 
-BuildType=T
-MajorVer=3
-MinorVer=0
+BuildType=V
+MajorVer=2
+MinorVer=5
 RevNo=0
-BuildNum=26625
+BuildNum=25784
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
 # Normal builds
-SuffixKind="Unstable"
+SuffixKind="Release Candidate 1"
 SuffixVer=""
-BuildSuffix="Firebird 3.0 $SuffixKind $SuffixVer"
+BuildSuffix="Firebird 2.5 $SuffixKind $SuffixVer"
 FIREBIRD_PACKAGE_VERSION=$SuffixKind$SuffixVer
 PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum"
 else
 # Special builds (daily snapshots, etc)
-BuildSuffix="Firebird 3.0 $SPECIAL_BUILD_SUFFIX"
+BuildSuffix="Firebird 2.5 $SPECIAL_BUILD_SUFFIX"
 FIREBIRD_PACKAGE_VERSION=$SPECIAL_BUILD_SUFFIX
 PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum-$SPECIAL_BUILD_SUFFIX"
 fi
@@ -69,7 +69,7 @@ eof
     Result=$?
     if [ $Result -lt 0 ]
        then
-         echo "error comparing $tempfile and $headerFile"
+         echo "error compareing $tempfile and $headerFile"
     elif [ $Result -gt 0 ]
       then
       echo "updating header file $headerFile"
@@ -94,7 +94,7 @@ cat >$1 <<eof
 MajorVer = $MajorVer
 MinorVer = $MinorVer
 RevNo = $RevNo
-BuildNum=26625
+BuildNum = $BuildNum
 BuildType = $BuildType
 BuildSuffix = $BuildSuffix
 

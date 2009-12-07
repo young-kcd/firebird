@@ -34,7 +34,6 @@ namespace Jrd {
 struct dsc;
 struct SubtypeInfo;
 
-void		INTL_adjust_text_descriptor(Jrd::thread_db* tdbb, dsc* desc);
 CHARSET_ID	INTL_charset(Jrd::thread_db*, USHORT);
 int			INTL_compare(Jrd::thread_db*, const dsc*, const dsc*, ErrorFunction);
 ULONG		INTL_convert_bytes(Jrd::thread_db*, CHARSET_ID, UCHAR*, ULONG, CHARSET_ID,

@@ -287,7 +287,7 @@ const int PRE_UNKNOWN		= -2;
 const int DUMMY_CHECKSUM	= 12345;
 
 
-USHORT CCH_checksum()
+USHORT CCH_checksum(BufferDesc* bdb)
 {
 /**************************************
  *
@@ -299,7 +299,59 @@ USHORT CCH_checksum()
  *	Compute the checksum of a page.
  *
  **************************************/
+#ifdef NO_CHECKSUM
 	return DUMMY_CHECKSUM;
+#else
+	Database* dbb = bdb->bdb_dbb;
+#ifdef WIN_NT
+	// ODS_VERSION8 for NT was shipped before page checksums
+	// were disabled on other platforms. Continue to compute
+	// checksums for ODS_VERSION8 databases but eliminate them
+	// for ODS_VERSION9 databases. The following code can be
+	// deleted when development on ODS_VERSION10 begins and
+	// NO_CHECKSUM is defined for all platforms.
+
+	if (dbb->dbb_ods_version >= ODS_VERSION9) {
+		return DUMMY_CHECKSUM;
+	}
+#endif
+	pag* page = bdb->bdb_buffer;
+
+	const ULONG* const end = (ULONG *) ((SCHAR *) page + dbb->dbb_page_size);
+	const USHORT old_checksum = page->pag_checksum;
+	page->pag_checksum = 0;
+	const ULONG* p = (ULONG *) page;
+	ULONG checksum = 0;
+
+	do {
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+	} while (p < end);
+
+	page->pag_checksum = old_checksum;
+
+	if (checksum) {
+		return (USHORT) checksum;
+	}
+
+	// If the page is all zeros, return an artificial checksum
+
+	for (p = (ULONG *) page; p < end;)
+	{
+		if (*p++)
+			return (USHORT) checksum;
+	}
+
+	// Page is all zeros -- invent a checksum
+
+	return 12345;
+#endif
 }
 
 
@@ -479,7 +531,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	if (attachment->att_flags & ATT_exclusive) {
 		return true;
 	}
@@ -494,7 +546,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	if (level != LCK_none)
 	{
-		for (Jrd::Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
+		for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
 		{
 			if (*ptr == attachment)
 			{
@@ -646,7 +698,7 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 		SDW_get_shadows(tdbb);
 	}
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!attachment->backupStateReadLock(tdbb, latch_wait))
 		return NULL;
@@ -705,8 +757,8 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 }
 
 
-pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT latch_wait,
-	const bool read_shadow, const bool merge_flag)
+pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT checksum,
+	SSHORT latch_wait, const bool read_shadow, const bool merge_flag)
 {
 /**************************************
  *
@@ -743,7 +795,7 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
 	{
 	case 1:
 		CCH_TRACE(("FE %d:%06d", window->win_page.getPageSpaceID(), window->win_page.getPageNum()));
-		CCH_FETCH_PAGE(tdbb, window, read_shadow, merge_flag);	// must read page from disk
+		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow, merge_flag);	// must read page from disk
 		break;
 	case -2:
 	case -1:
@@ -847,7 +899,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	}
 
 	// Look for the page in the cache.
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!attachment->backupStateReadLock(tdbb, wait))
 		return -2;
@@ -885,7 +937,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	return lock_result;
 }
 
-void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow, const bool merge_flag)
+void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const bool read_shadow, const bool merge_flag)
 {
 /**************************************
  *
@@ -1033,6 +1085,21 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow, const 
 			}
 		}
 	}
+
+#ifndef NO_CHECKSUM
+	if ((compute_checksum == 1 || (compute_checksum == 2 && page->pag_type)) &&
+		page->pag_checksum != CCH_checksum(bdb) && !(dbb->dbb_flags & DBB_damaged))
+	{
+		ERR_build_status(status,
+						 Arg::Gds(isc_db_corrupt) << Arg::Str("") <<	// why isn't the db name used here?
+						 Arg::Gds(isc_bad_checksum) <<
+						 Arg::Gds(isc_badpage) << Arg::Num(bdb->bdb_page.getPageNum()));
+		// We should invalidate this bad buffer.
+
+		PAGE_LOCK_RELEASE(bdb->bdb_lock);
+		CCH_unwind(tdbb, true);
+	}
+#endif // NO_CHECKSUM
 
 	bdb->bdb_flags &= ~(BDB_not_valid | BDB_read_pending);
 	window->win_buffer = bdb->bdb_buffer;
@@ -1210,8 +1277,7 @@ void CCH_fini(thread_db* tdbb)
 			}
 		}
 
-		if (!flush_error) {
-			// wasn't set in the catch => no failure, just exit
+		if (!flush_error) { // wasn't set in the catch => no failure, just exit
 			break;
 		}
 
@@ -1577,7 +1643,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 		CCH_RELEASE(tdbb, &temp);
 
 	if (must_read) {
-		CCH_FETCH_PAGE(tdbb, window, true, false);
+		CCH_FETCH_PAGE(tdbb, window, 1, true, false);
 	}
 
 	BufferDesc* bdb = window->win_bdb;
@@ -1868,7 +1934,7 @@ void CCH_must_write(WIN* window)
 
 void CCH_precedence(thread_db* tdbb, WIN* window, SLONG pageNum)
 {
-	const USHORT pageSpaceID = pageNum > PIP_PAGE ?
+	const USHORT pageSpaceID = pageNum > LOG_PAGE ?
 		window->win_page.getPageSpaceID() : DB_PAGE_SPACE;
 
 	CCH_precedence(tdbb, window, PageNumber(pageSpaceID, pageNum));
@@ -2218,7 +2284,7 @@ void CCH_release_exclusive(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	dbb->dbb_flags &= ~DBB_exclusive;
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	if (attachment) {
 		attachment->att_flags &= ~ATT_exclusive;
 	}
@@ -2401,7 +2467,7 @@ bool CCH_validate(WIN* window)
 	}
 
 	pag* page = window->win_buffer;
-	const USHORT sum = CCH_checksum();
+	const USHORT sum = CCH_checksum(bdb);
 
 	if (sum == page->pag_checksum) {
 		return true;
@@ -2452,7 +2518,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 	{
 		page = bdb->bdb_buffer;
 		if (checksum) {
-			page->pag_checksum = CCH_checksum();
+			page->pag_checksum = CCH_checksum(bdb);
 		}
 	}
 
@@ -2501,7 +2567,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 			}
 
 			header->hdr_flags |= hdr_active_shadow;
-			header->hdr_header.pag_checksum = CCH_checksum();
+			header->hdr_header.pag_checksum = CCH_checksum(bdb);
 		}
 
 		// This condition makes sure that PIO_write is performed in case of
@@ -3935,7 +4001,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 	// Dummy attachment needed for lock owner identification.
 	tdbb->setDatabase(dbb);
-	Jrd::Attachment* const attachment = Attachment::create(dbb);
+	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
@@ -4053,7 +4119,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
-	Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
+	Attachment::destroy(attachment);	// no need saving warning error strings here
 	tdbb->setAttachment(NULL);
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	dbb->dbb_reader_fini.post();
@@ -4097,7 +4163,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	// Dummy attachment needed for lock owner identification.
 
 	tdbb->setDatabase(dbb);
-	Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, 0);
+	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
@@ -4213,7 +4279,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
+		Attachment::destroy(attachment);	// no need saving warning error strings here
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		// Notify the finalization caller that we're finishing.
@@ -5087,14 +5153,13 @@ static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const U
  *
  **************************************/
 	const struct que* base = &bdb->bdb_lower;
-	for (const struct que* que_inst = base->que_forward; que_inst != base;
-		 que_inst = que_inst->que_forward)
+	for (const struct que* que_inst = base->que_forward; que_inst != base; que_inst = que_inst->que_forward)
 	{
 		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
 		if (precedence->pre_flags & PRE_cleared)
 			continue;
 
-		BufferDesc* low = precedence->pre_low;
+		BufferDesc *low = precedence->pre_low;
 		if (low->bdb_prec_walk_mark == mark)
 			continue;
 
@@ -5735,7 +5800,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 			if (next_buffer != reinterpret_cast<char*>(page)) {
 				memcpy(page, next_buffer, (ULONG) dbb->dbb_page_size);
 			}
-			if (page->pag_checksum == CCH_checksum())
+			if (page->pag_checksum == CCH_checksum(*next_bdb))
 			{
 				(*next_bdb)->bdb_flags &= ~(BDB_read_pending | BDB_not_valid);
 				(*next_bdb)->bdb_flags |= BDB_prefetch;
@@ -6439,7 +6504,7 @@ static bool write_page(thread_db* tdbb,
 		if (bdb->bdb_page.getPageNum() >= 0)
 		{
 			fb_assert(backup_state != nbak_state_unknown);
-			page->pag_checksum = CCH_checksum();
+			page->pag_checksum = CCH_checksum(bdb);
 
 #ifdef NBAK_DEBUG
 			// We cannot call normal trace functions here as they are signal-unsafe
@@ -6604,3 +6669,5 @@ static void clear_dirty_flag(thread_db* tdbb, BufferDesc* bdb)
 		tdbb->getDatabase()->dbb_backup_manager->unlockDirtyPage(tdbb);
 	}
 }
+
+

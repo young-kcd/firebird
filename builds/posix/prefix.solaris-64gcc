@@ -20,7 +20,7 @@ COMMON_GCC_FLAGS=  -MMD -fPIC -m64   -D__sparcv9   -mptr64 -mstack-bias -mno-v8p
 DEBUG_GCC_FLAGS=  -gstabs+ -g3 -Wall -Wno-switch -Wcast-align
 #switch to dbx accoding SF gdb 64 bits mailfunction
 
-PROD_GCC_FLAGS= -mcpu=ultrasparc -mtune=ultrasparc -O3
+PROD_GCC_FLAGS= -mcpu=ultrasparc -mtune=ultrasparc -O3 -DNDEBUG
 
 # compile flags for SUNWspro/Forte compiler - untested nmcc dec2002
 COMMON_FORTE_FLAGS= -Xt -xstrconst -mt -K PIC

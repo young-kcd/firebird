@@ -41,7 +41,6 @@
 #include "../../jrd/RuntimeStatistics.h"
 #include "../../jrd/trace/TraceSession.h"
 
-//// TODO: DDL triggers, packages and external procedures and functions support
 namespace Jrd {
 
 class Database;
@@ -87,6 +86,28 @@ public:
 private:
 	const jrd_tra* const m_tran;
 	PerformanceInfo* const m_perf;
+};
+
+
+class TraceDYNRequestImpl : public TraceDYNRequest
+{
+public:
+	TraceDYNRequestImpl(size_t length, const unsigned char* ddl) :
+		m_ddl(ddl),
+		m_length(length),
+		m_text(*getDefaultMemoryPool())
+	{}
+
+	virtual const unsigned char* getData()	{ return m_ddl; }
+	virtual size_t getDataLength()	{ return m_length; }
+	virtual const char* getText();
+
+private:
+	static void print_dyn(void* arg, SSHORT offset, const char* line);
+
+	const unsigned char* const m_ddl;
+	const size_t m_length;
+	Firebird::string m_text;
 };
 
 
@@ -232,7 +253,7 @@ public:
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
 	{}
 
-	virtual const char* getProcName()	{ return m_request->req_procedure->prc_name.identifier.c_str(); }
+	virtual const char* getProcName()	{ return m_request->req_procedure->prc_name.c_str(); }
 	virtual TraceParams* getInputs()	{ return &m_inputs; }
 	virtual PerformanceInfo* getPerf()	{ return m_perf; };
 

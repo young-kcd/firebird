@@ -77,7 +77,7 @@ static HANDLE server_process_handle = 0;
 static void server_shutdown(rem_port* port);
 #endif
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
-static void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
+static bool make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
 static bool server_init(ISC_STATUS*, USHORT);
 static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
@@ -262,6 +262,10 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+#endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
@@ -654,7 +658,7 @@ static rem_port* alloc_port(rem_port* parent,
 							UCHAR* send_buffer,
 							ULONG send_length,
 							UCHAR* receive_buffer,
-							ULONG /*receive_length*/)
+							ULONG receive_length)
 {
 /**************************************
  *
@@ -1132,11 +1136,9 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		temp << Arg::Gds(isc_net_read_err);
 		DWORD err = 0;
 
-		static const int timeout = Config::getConnectionTimeout() * 1000;
-
 		// waiting for XNET connect lock to release
 
-		err = WaitForSingleObject(xnet_connect_mutex, timeout);
+		err = WaitForSingleObject(xnet_connect_mutex, XNET_CONNECT_TIMEOUT);
 		if (err != WAIT_OBJECT_0)
 		{
 			connect_fini();
@@ -1159,7 +1161,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 
 		// waiting for server response
 
-		err = WaitForSingleObject(xnet_response_event, timeout);
+		err = WaitForSingleObject(xnet_response_event, XNET_CONNECT_TIMEOUT);
 		if (err != WAIT_OBJECT_0)
 		{
 			ReleaseMutex(xnet_connect_mutex);
@@ -2211,7 +2213,7 @@ void release_all()
 /********************** ONLY SERVER CODE FROM HERE *********************/
 /***********************************************************************/
 
-static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
+static bool make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
 {
 /**************************************
  *
@@ -2250,6 +2252,8 @@ static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CAD
 			CloseHandle(*map_handle);
 		throw;
 	}
+
+	return true;
 }
 
 
@@ -2268,7 +2272,8 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 	FILE_ID map_handle = 0;
 	CADDR_T map_address = 0;
 
-	make_map(map_number, timestamp, &map_handle, &map_address);
+	if (!make_map(map_number, timestamp, &map_handle, &map_address))
+		return NULL;
 
 	// allocate XPM structure and initialize it
 

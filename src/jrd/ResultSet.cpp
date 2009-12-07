@@ -37,7 +37,8 @@ ResultSet::ResultSet(thread_db* tdbb, PreparedStatement* aStmt, jrd_tra* aTransa
 	  transaction(aTransaction),
 	  firstFetchDone(false)
 {
-	stmt->execute(tdbb, transaction);
+	DSQL_execute(tdbb, &transaction, stmt->request, 0, NULL, 0, 0, NULL, 0, NULL, /*0,*/ 0, NULL);
+
 	stmt->resultSet = this;
 }
 
@@ -61,10 +62,10 @@ bool ResultSet::fetch(thread_db* tdbb)
 	if (stmt->request->req_type == REQ_EXEC_PROCEDURE && firstFetchDone)
 		return false;
 
-	memset(stmt->outMessage.begin(), 0, stmt->outMessage.getCount());
+	memset(stmt->message.begin(), 0, stmt->message.getCount());
 
-	ISC_STATUS status = DSQL_fetch(tdbb, stmt->request, stmt->outBlr.getCount(), stmt->outBlr.begin(),
-		/*0,*/ stmt->outMessage.getCount(), stmt->outMessage.begin());
+	ISC_STATUS status = DSQL_fetch(tdbb, stmt->request, stmt->blr.getCount(), stmt->blr.begin(),
+		/*0,*/ stmt->message.getCount(), stmt->message.begin());
 
 	if (status == 100)
 		return false;
@@ -77,7 +78,7 @@ bool ResultSet::fetch(thread_db* tdbb)
 
 bool ResultSet::isNull(int param) const
 {
-	const dsc* desc = &stmt->outValues[(param - 1) * 2 + 1];
+	const dsc* desc = &stmt->values[(param - 1) * 2 + 1];
 	fb_assert(desc->dsc_dtype == dtype_short);
 
 	return *reinterpret_cast<SSHORT*>(desc->dsc_address) != 0;
@@ -86,7 +87,7 @@ bool ResultSet::isNull(int param) const
 
 dsc& ResultSet::getDesc(int param)
 {
-	return stmt->outValues[(param - 1) * 2];
+	return stmt->values[(param - 1) * 2];
 }
 
 

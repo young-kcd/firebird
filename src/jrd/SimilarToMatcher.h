@@ -464,7 +464,6 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseExpr(int* flagp)
 		nodes.push(Node(opRef));
 		nodes.back().branchNum = thisBranchNum;
 
-		nodes[start].ref = nodes.getCount() - start;
 	}
 
 	nodes[start].ref = 0;

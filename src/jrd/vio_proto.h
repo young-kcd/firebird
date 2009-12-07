@@ -57,7 +57,11 @@ void	VIO_merge_proc_sav_points(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::Savepoint**)
 bool	VIO_writelock(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*);
 void	VIO_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, /*Jrd::RecordSource*,*/ Jrd::jrd_tra*,
-						   MemoryPool*, bool);
+						   MemoryPool*,
+#ifdef SCROLLABLE_CURSORS
+						   bool,
+#endif
+						   bool);
 Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*, MemoryPool*);
 void	VIO_refetch_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
@@ -66,24 +70,5 @@ bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
 IPTR	VIO_savepoint_large(const Jrd::Savepoint*, IPTR);
 
-namespace Jrd
-{
-	// Starts a savepoint and rollback it in destructor if release() is not called.
-	class AutoSavePoint
-	{
-	public:
-		AutoSavePoint(thread_db* tdbb, jrd_tra* aTransaction);
-		~AutoSavePoint();
-
-		void release()
-		{
-			released = true;
-		}
-
-	private:
-		jrd_tra* transaction;
-		bool released;
-	};
-}
-
 #endif // JRD_VIO_PROTO_H
+

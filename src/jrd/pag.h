@@ -40,7 +40,8 @@
 
 namespace Jrd {
 
-// Page control block -- used by PAG to keep track of critical constants
+/* Page control block -- used by PAG to keep track of critical
+   constants */
 /**
 class PageControl : public pool_alloc<type_pgc>
 {
@@ -66,7 +67,7 @@ class thread_db;
 class PageSpace : public pool_alloc<type_PageSpace>
 {
 public:
-	explicit PageSpace(USHORT aPageSpaceID)
+	PageSpace(USHORT aPageSpaceID)
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
@@ -111,7 +112,7 @@ private:
 class PageManager : public pool_alloc<type_PageManager>
 {
 public:
-	explicit PageManager(Firebird::MemoryPool& aPool) :
+	PageManager(Firebird::MemoryPool& aPool) :
 		pageSpaces(aPool),
 		pool(aPool)
 	{
@@ -166,8 +167,7 @@ public:
 		pageNum	= aPageNum;
 	}
 	/*
-	inline explicit PageNumber(const SLONG aPageNum)
-	{
+	inline PageNumber(const SLONG aPageNum) {
 		pageSpaceID = DB_PAGE_SPACE;
 		pageNum	= aPageNum;
 	}
@@ -272,7 +272,8 @@ private:
 
 const PageNumber ZERO_PAGE_NUMBER(0, 0);
 const PageNumber HEADER_PAGE_NUMBER(DB_PAGE_SPACE, HEADER_PAGE);
+const PageNumber LOG_PAGE_NUMBER(DB_PAGE_SPACE, LOG_PAGE);
 
 } //namespace Jrd
 
-#endif // JRD_PAG_H
+#endif /* JRD_PAG_H */

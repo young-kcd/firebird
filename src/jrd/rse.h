@@ -37,7 +37,6 @@
 #include "../jrd/lls.h"
 #include "../jrd/sbm.h"
 
-#include "../jrd/ExtEngineManager.h"
 #include "../jrd/RecordBuffer.h"
 
 struct dsc;
@@ -53,7 +52,6 @@ struct sort_context;
 class CompilerScratch;
 class jrd_prc;
 class Format;
-class RecordStream;
 class VaryingStr;
 class BtrPageGCLock;
 
@@ -70,13 +68,14 @@ enum rsb_t
 	rsb_sequential,						// natural scan access
 	rsb_sort,							// sort
 	rsb_union,							// union
+	rsb_aggregate,						// aggregation
 	rsb_ext_sequential,					// external sequential access
 	rsb_ext_indexed,					// external indexed access
 	rsb_ext_dbkey,						// external DB_KEY access
 	rsb_navigate,						// navigational walk on an index
 	rsb_left_cross,						// left outer join as a nested loop
 	rsb_procedure,						// stored procedure
-	rsb_record_stream,					// RecordStream class
+	rsb_virt_sequential,				// sequential access to a virtual table
 	rsb_recursive_union					// Recursive union
 };
 
@@ -112,7 +111,6 @@ public:
 	StreamStack*	rsb_left_streams;
 	RsbStack*		rsb_left_rsbs;
 	VarInvariantArray *rsb_invariants; /* Invariant nodes bound to top-level RSB */
-	RecordStream*	rsb_record_stream;
 
 	RecordSource* rsb_arg[1];
 };
@@ -120,10 +118,11 @@ public:
 // bits for the rsb_flags field
 
 const USHORT rsb_singular = 1;			// singleton select, expect 0 or 1 records
-const USHORT rsb_scrollable = 2;		// scrollable cursor
-const USHORT rsb_project = 4;			// projection on this stream is requested
-const USHORT rsb_writelock = 8;			// records should be locked for writing
-const USHORT rsb_recursive = 16;		// this rsb is a sub_rsb of recursive rsb
+//const USHORT rsb_stream_type = 2;		// rsb is for stream type request, PC_ENGINE
+const USHORT rsb_descending = 4;		// an ascending index is being used for a descending sort or vice versa
+const USHORT rsb_project = 8;			// projection on this stream is requested
+const USHORT rsb_writelock = 16;		// records should be locked for writing
+const USHORT rsb_recursive = 32;		// this rsb is a sub_rsb of recursive rsb
 
 // special argument positions within the RecordSource
 
@@ -251,6 +250,20 @@ struct irsb_virtual
 	RecordBuffer* irsb_record_buffer;
 };
 
+/* CVC: Unused as of Nov-2005.
+struct irsb_sim
+{
+	ULONG irsb_flags;
+	USHORT irsb_sim_rid;				// next relation id
+	USHORT irsb_sim_fid;				// next field id
+	jrd_req *irsb_sim_req1;				// request handle #1
+	jrd_req *irsb_sim_req2;				// request handle #2
+};
+
+const ULONG irsb_sim_alias = 32;		// duplicate relation but w/o user name
+const ULONG irsb_sim_eos = 64;			// encountered end of stream
+const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
+*/
 
 // impure area format for navigational rsb type,
 // which holds information used to get back to
@@ -282,12 +295,23 @@ const ULONG irsb_first = 1;
 const ULONG irsb_joined = 2;				// set in left join when current record has been joined to something
 const ULONG irsb_mustread = 4;				// set in left join when must read a record from left stream
 const ULONG irsb_open = 8;					// indicated rsb is open
-const ULONG irsb_in_opened = 16;			// set in outer join when inner stream has been opened
-const ULONG irsb_join_full = 32;			// set in full join when left join has completed
-const ULONG irsb_checking_singular = 64;	// fetching to verify singleton select
-const ULONG irsb_singular_processed = 128;	// singleton stream already delivered one record
-const ULONG irsb_key_changed = 256;			// key has changed since record last returned from rsb
-const ULONG irsb_eof = 512;					// rsb is at end of stream
+#ifdef SCROLLABLE_CURSORS
+const ULONG irsb_backwards = 16;			// backwards navigation has been performed on this stream
+#endif
+const ULONG irsb_in_opened = 32;			// set in outer join when inner stream has been opened
+const ULONG irsb_join_full = 64;			// set in full join when left join has completed
+const ULONG irsb_checking_singular = 128;	// fetching to verify singleton select
+const ULONG irsb_singular_processed = 256;	// singleton stream already delivered one record
+#ifdef SCROLLABLE_CURSORS
+const ULONG irsb_last_backwards = 512;		// rsb was last scrolled in the backward direction
+const ULONG irsb_bof = 1024;				// rsb is at beginning of stream
+const ULONG irsb_eof = 2048;				// rsb is at end of stream
+#endif
+const ULONG irsb_key_changed = 4096;		// key has changed since record last returned from rsb
+// The below flag duplicates the one from the disabled SCROLLABLE_CURSORS
+// implementation, but it's used slightly differently (at the top RSB levels).
+// To be renamed if the SCROLLABLE_CURSORS code will ever be enabled.
+const ULONG irsb_eof = 8192;				// rsb is at end of stream
 
 
 // Sort map block
@@ -322,7 +346,8 @@ const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
 // bits for the smb_flags field
 
 const USHORT SMB_project = 1;		// sort is really a project
-const USHORT SMB_unique_sort = 2;	// sorts using unique key - for distinct and group by
+//const USHORT SMB_tag = 2;			// beast is a tag sort. What is this?
+const USHORT SMB_unique_sort = 4;	// sorts using unique key - for distinct and group by
 
 
 // Blocks used to compute optimal join order:
@@ -428,12 +453,29 @@ const USHORT opt_conjunct_matched = 2;		// conjunct matches an index segment
 class River : public pool_alloc_rpt<SCHAR, type_riv>
 {
 public:
-	RecordSource* riv_rsb;		// record source block for river
+	RecordSource* riv_rsb;				// record source block for river
 	USHORT riv_number;			// temporary number for river
 	UCHAR riv_count;			// count of streams
 	UCHAR riv_streams[1];		// actual streams
 };
 
+
+// types for navigating through a stream
+
+enum rse_get_mode
+{
+	RSE_get_forward
+#ifdef SCROLLABLE_CURSORS
+	,
+	RSE_get_backward,
+	RSE_get_current,
+	RSE_get_first,
+	RSE_get_last,
+	RSE_get_next
+#endif
+};
+
 } //namespace Jrd
 
 #endif // JRD_RSE_H
+

@@ -441,6 +441,10 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, MAX_PTYPE, 4)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
+#endif
 	};
 
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);

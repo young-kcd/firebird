@@ -55,20 +55,15 @@ struct SvcSwitches
 	UCHAR tagInf;
 };
 
-// Get message from messages database
-
-namespace
-{
-	const int SVCMGR_FACILITY = 22;
-	using MsgFormat::SafeArg;
-}
+// Get message from security database
 
 string getMessage(int n)
 {
 	char buffer[256];
-	static const SafeArg dummy;
+	const int FACILITY = 22;
+	static const MsgFormat::SafeArg dummy;
 
-	fb_msg_format(0, SVCMGR_FACILITY, n, sizeof(buffer), buffer, dummy);
+	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, dummy);
 
 	return string(buffer);
 }
@@ -341,7 +336,6 @@ const SvcSwitches backupOptions[] =
 	{"bkp_non_transportable", putOption, 0, isc_spb_bkp_non_transportable, 0},
 	{"bkp_convert", putOption, 0, isc_spb_bkp_convert, 0},
 	{"bkp_no_triggers", putOption, 0, isc_spb_bkp_no_triggers, 0},
-	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -363,7 +357,6 @@ const SvcSwitches restoreOptions[] =
 	{"res_use_all_space", putOption, 0, isc_spb_res_use_all_space, 0},
 	{"res_fix_fss_data", putStringArgument, 0, isc_spb_res_fix_fss_data, 0},
 	{"res_fix_fss_metadata", putStringArgument, 0, isc_spb_res_fix_fss_metadata, 0},
-	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -550,16 +543,6 @@ void printMessage(int num)
 	printf ("%s\n", getMessage(num).c_str());
 }
 
-void printMessage(USHORT number, const SafeArg& arg, bool newLine = true)
-{
-	char buffer[256];
-	fb_msg_format(NULL, SVCMGR_FACILITY, number, sizeof(buffer), buffer, arg);
-	if (newLine)
-		printf("%s\n", buffer);
-	else
-		printf("%s", buffer);
-}
-
 void printNumeric(const char*& p, int num)
 {
 	printf ("%s: %d\n", getMessage(num).c_str(), getNumeric(p));
@@ -572,10 +555,10 @@ public:
 	int gid, uid, admin;
 
 private:
-	int hasData;
+	bool hasData;
 
 public:
-	UserPrint() : hasData(0)
+	UserPrint() : hasData(false)
 	{
 		clear();
 	}
@@ -594,18 +577,13 @@ public:
 
 	void newUser()
 	{
-		if (hasData == 0)
+		if (!hasData)
 		{
-			hasData = 1;
-			return;
-		}
-		if (hasData == 1)
-		{
+			hasData = true;
 			printf("%-28.28s %-40.40s %4.4s %4.4s %3.3s\n", "Login",
 				"Full name", "uid", "gid", "adm");
-			hasData = 2;
+			return;
 		}
-
 		printf("%-28.28s %-40.40s %4d %4d %3.3s\n", login.c_str(),
 			(first + " " + middle + " " + last).c_str(), uid, gid, admin ? "yes" : "no");
 		clear();
@@ -828,7 +806,7 @@ int main(int ac, char** av)
 
 	if (ac == 2 && (strcmp(av[1], "-z") == 0 || strcmp(av[1], "-Z") == 0))
 	{
-		printMessage(51, SafeArg() << FB_VERSION);
+		printf("Firebird services manager version %s\n", FB_VERSION);
 		return 0;
 	}
 
@@ -866,7 +844,7 @@ int main(int ac, char** av)
 		{
 			if (strcmp(av[0], "-z") == 0 || strcmp(av[0], "-Z") == 0)
 			{
-				printMessage(51, SafeArg() << FB_VERSION);
+				printf("Firebird services manager version %s\n", FB_VERSION);
 				++av;
 			}
 		}

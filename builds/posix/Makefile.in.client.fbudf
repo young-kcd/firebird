@@ -54,7 +54,7 @@ CLASSES_Files = timestamp.cpp
 CLASSES_Sources = $(addprefix common/classes/, $(CLASSES_Files))
 CLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLASSES_Sources))))
 
-AllObjects = $(FBUDF_Objects) $(FBUTILSVC_Objects) $(CLASSES_Objects)
+AllObjects = $(FBUDF_Objects) $(FBUTIL_Objects) $(CLASSES_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 

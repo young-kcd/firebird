@@ -15,6 +15,7 @@ pt.UseApplicationTaskMsg=Executar como &Aplicação?
 pt.TaskGroupDescription=Executar o servidor Firebird como:
 pt.UseServiceTask=Executar como um &Serviço?
 pt.AutoStartTask=Iniciar o &Firebird automaticamente de cada vez que o sistema arranca?
+pt.SuperClassicTask="Use SuperClassic?"
 pt.CopyFbClientToSysTask=Copiar a biblioteca do cliente &Firebird para a pasta de <system>?
 pt.CopyFbClientAsGds32Task=Criar a biblioteca cliente como GDS32.DLL para "retro-compatibilidade"?
 pt.InstallCPLAppletTask="Instalar a aplicação do &Painel de Controlo?"
@@ -70,3 +71,8 @@ pt.RunISQL=Executar a ferramenta de linha-de-comandos SQL Interactivo
 
 pt.ReadmeFile=leia-me.txt
 pt.InstallationReadmeFile=instalação_leia-me.txt
+
+pt.RunCS=Executar o Servidor Firebird Classic
+pt.RunSC=Executar o Servidor Firebird SuperClassic
+pt.RunSS=Executar o Servidor Firebird Super
+

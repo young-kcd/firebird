@@ -24,50 +24,9 @@
 #define DSQL_STMT_NODES_H
 
 #include "../jrd/common.h"
-#include "../jrd/blr.h"
 #include "../dsql/Nodes.h"
-#include "../dsql/DdlNodes.h"
-#include "../common/classes/MetaName.h"
 
 namespace Jrd {
-
-
-class IfNode : public StmtNode
-{
-public:
-	explicit IfNode(MemoryPool& pool, CompiledStatement* aCompiledStatement = NULL)
-		: StmtNode(pool),
-		  dsqlCondition(NULL),
-		  dsqlTrueAction(NULL),
-		  dsqlFalseAction(NULL),
-		  condition(NULL),
-		  trueAction(NULL),
-		  falseAction(NULL)
-	{
-		compiledStatement = aCompiledStatement;
-	}
-
-public:
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
-
-protected:
-	virtual IfNode* internalDsqlPass();
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void genBlr();
-	virtual IfNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual IfNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
-
-public:
-	dsql_nod* dsqlCondition;
-	dsql_nod* dsqlTrueAction;
-	dsql_nod* dsqlFalseAction;
-	jrd_nod* condition;
-	jrd_nod* trueAction;
-	jrd_nod* falseAction;
-};
 
 
 class InAutonomousTransactionNode : public StmtNode
@@ -82,10 +41,10 @@ public:
 	}
 
 public:
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb);
 
 protected:
-	virtual InAutonomousTransactionNode* internalDsqlPass();
+	virtual InAutonomousTransactionNode* dsqlPass();
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
@@ -98,161 +57,6 @@ public:
 	dsql_nod* dsqlAction;
 	jrd_nod* action;
 	SLONG savNumberOffset;
-};
-
-
-class ExecBlockNode : public DsqlOnlyStmtNode, public BlockNode
-{
-public:
-	explicit ExecBlockNode(MemoryPool& pool)
-		: DsqlOnlyStmtNode(pool),
-		  returns(pool),
-		  variables(pool),
-		  outputVariables(pool),
-		  legacyParameters(NULL),
-		  localDeclList(NULL),
-		  body(NULL)
-	{
-	}
-
-protected:
-	virtual ExecBlockNode* internalDsqlPass();
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void genBlr();
-
-public:
-	virtual void genReturn();
-	virtual dsql_nod* resolveVariable(const dsql_str* varName);
-
-private:
-	static dsql_par* revertParametersOrder(dsql_par* parameter, dsql_par* prev);
-
-public:
-	Firebird::Array<ParameterClause> returns;
-	Firebird::Array<dsql_nod*> variables;
-	Firebird::Array<dsql_nod*> outputVariables;
-	dsql_nod* legacyParameters;
-	dsql_nod* localDeclList;
-	dsql_nod* body;
-};
-
-
-class ExitNode : public DsqlOnlyStmtNode
-{
-public:
-	explicit ExitNode(MemoryPool& pool)
-		: DsqlOnlyStmtNode(pool)
-	{
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void genBlr();
-};
-
-
-class PostEventNode : public StmtNode
-{
-public:
-	explicit PostEventNode(MemoryPool& pool)
-		: StmtNode(pool),
-		  dsqlEvent(NULL),
-		  dsqlArgument(NULL),
-		  event(NULL),
-		  argument(NULL)
-	{
-	}
-
-public:
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
-
-protected:
-	virtual PostEventNode* internalDsqlPass();
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void genBlr();
-	virtual PostEventNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual PostEventNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
-
-public:
-	dsql_nod* dsqlEvent;
-	dsql_nod* dsqlArgument;
-	jrd_nod* event;
-	jrd_nod* argument;
-};
-
-
-class SavepointNode : public StmtNode
-{
-public:
-	enum Command
-	{
-		CMD_NOTHING = -1,
-		CMD_SET = blr_savepoint_set,
-		CMD_RELEASE = blr_savepoint_release,
-		CMD_RELEASE_ONLY = blr_savepoint_release_single,
-		CMD_ROLLBACK = blr_savepoint_undo
-	};
-
-public:
-	explicit SavepointNode(MemoryPool& pool)
-		: StmtNode(pool),
-		  command(CMD_NOTHING),
-		  name(pool)
-	{
-	}
-
-public:
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
-
-protected:
-	virtual SavepointNode* internalDsqlPass();
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void genBlr();
-	virtual SavepointNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual SavepointNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
-
-public:
-	Command command;
-	Firebird::MetaName name;
-};
-
-
-class SuspendNode : public StmtNode
-{
-public:
-	explicit SuspendNode(MemoryPool& pool)
-		: StmtNode(pool),
-		  blockNode(NULL),
-		  message(NULL),
-		  statement(NULL)
-	{
-	}
-
-public:
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
-
-protected:
-	virtual SuspendNode* internalDsqlPass();
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void genBlr();
-	virtual SuspendNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual SuspendNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
-
-public:
-	BlockNode* blockNode;
-	jrd_nod* message;
-	jrd_nod* statement;
 };
 
 

@@ -35,7 +35,6 @@
 #include <new>
 #include "fb_types.h"
 #include "../common/StatusArg.h"
-#include "../common/thd.h"
 
 namespace Firebird {
 
@@ -145,8 +144,8 @@ public:
 ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex) throw();
 
 // Put status vector strings into strings buffer
-void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID thr = getThreadId()) throw();
-void makePermanentVector(ISC_STATUS* v, FB_THREAD_ID thr = getThreadId()) throw();
+void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw();
+void makePermanentVector(ISC_STATUS* v) throw();
 
 }	// namespace Firebird
 

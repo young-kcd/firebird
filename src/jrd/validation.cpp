@@ -148,7 +148,7 @@ IV. PHASES OF VALIDATION
          define pag_index         7    // Index (B-tree) page
          define pag_blob          8    // Blob data page
          define pag_ids           9    // Gen-ids
-         define pag_log           10   // OBSOLETE. Write ahead log page: 4.0 only
+         define pag_log           10   // Write ahead log page: 4.0 only
 
       2. Checksum
 
@@ -650,7 +650,7 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 
 
 static RTN corrupt(thread_db*, vdr*, USHORT, const jrd_rel*, ...);
-static FETCH_CODE fetch_page(thread_db*, vdr*, SLONG, USHORT, WIN*, void*);
+static FETCH_CODE fetch_page(thread_db*, vdr*, SLONG, USHORT, WIN *, void *);
 static void garbage_collect(thread_db*, vdr*);
 #ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT, const rhd*);
@@ -662,6 +662,7 @@ static RTN walk_data_page(thread_db*, vdr*, jrd_rel*, SLONG, SLONG);
 static void walk_generators(thread_db*, vdr*);
 static void walk_header(thread_db*, vdr*, SLONG);
 static RTN walk_index(thread_db*, vdr*, jrd_rel*, index_root_page&, USHORT);
+static void walk_log(thread_db*, vdr*);
 static void walk_pip(thread_db*, vdr*);
 static RTN walk_pointer_page(thread_db*, vdr*, jrd_rel*, int);
 static RTN walk_record(thread_db*, vdr*, jrd_rel*, rhd*, USHORT, SLONG, bool);
@@ -803,7 +804,7 @@ static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel
 static FETCH_CODE fetch_page(thread_db* tdbb,
 							 vdr* control,
 							 SLONG page_number,
-							 USHORT type, WIN* window, void* apage_pointer)
+							 USHORT type, WIN* window, void *page_pointer)
 {
 /**************************************
  *
@@ -826,12 +827,12 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 
 	window->win_page = page_number;
 	window->win_flags = 0;
-	pag** page_pointer = reinterpret_cast<pag**>(apage_pointer);
-	*page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
+	*(PAG*) page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
 
-	if ((*page_pointer)->pag_type != type)
+	if ((*(PAG*) page_pointer)->pag_type != type)
 	{
-		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type, (*page_pointer)->pag_type);
+		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type,
+				(*(PAG*) page_pointer)->pag_type);
 		return fetch_type;
 	}
 
@@ -940,6 +941,7 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 	// Dump verbose output of all the pages fetched
 	if (VAL_debug_level >= 2)
 	{
+		// We are assuming RSE_get_forward
 		if (control->vdr_page_bitmap->getFirst())
 		{
 			do {
@@ -1140,8 +1142,9 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	if (VAL_debug_level)
 	{
 		fprintf(stdout,
-				   "walk_database: %s\nODS: %d.%d\nPage size %d\n",
-				   dbb->dbb_filename.c_str(), dbb->dbb_ods_version, dbb->dbb_minor_version,
+				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
+				   dbb->dbb_filename.c_str(), dbb->dbb_ods_version,
+				   dbb->dbb_minor_version, dbb->dbb_minor_original,
 				   dbb->dbb_page_size);
 	}
 #endif
@@ -1153,6 +1156,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	control->vdr_max_transaction = page->hdr_next_transaction;
 
 	walk_header(tdbb, control, page->hdr_next_page);
+	walk_log(tdbb, control);
 	walk_pip(tdbb, control);
 	walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
@@ -1330,8 +1334,7 @@ static void walk_generators(thread_db* tdbb, vdr* control)
 				if (VAL_debug_level)
 					fprintf(stdout, "walk_generator: page %d\n", *ptr);
 #endif
-				// It doesn't make a difference generator_page or pointer_page because it's not used.
-				generator_page* page = NULL;
+				pointer_page* page = 0;
 				fetch_page(tdbb, control, *ptr, pag_ids, &window, &page);
 				CCH_RELEASE(tdbb, &window);
 			}
@@ -1399,7 +1402,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	const bool unique = (root_page.irt_rpt[id].irt_flags & (irt_unique | idx_primary));
 
 	temporary_key nullKey, *null_key = 0;
-	if (unique)
+	if (unique && tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11)
 	{
 		const bool isExpression = root_page.irt_rpt[id].irt_flags & irt_expression;
 		if (isExpression)
@@ -1727,6 +1730,32 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	}
 
 	return rtn_ok;
+}
+
+static void walk_log(thread_db* tdbb, vdr* control)
+{
+/**************************************
+ *
+ *	w a l k _ l o g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Walk the log and overflow pages
+ *
+ **************************************/
+	log_info_page* page = 0;
+	SLONG page_num = LOG_PAGE;
+
+	SET_TDBB(tdbb);
+
+	while (page_num)
+	{
+		WIN window(DB_PAGE_SPACE, -1);
+		fetch_page(tdbb, control, page_num, pag_log, &window, &page);
+		page_num = page->log_next_page;
+		CCH_RELEASE(tdbb, &window);
+	}
 }
 
 static void walk_pip(thread_db* tdbb, vdr* control)

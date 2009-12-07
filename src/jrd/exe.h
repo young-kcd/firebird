@@ -124,7 +124,6 @@ const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
 const int nod_invariant		= 128;		// node is recognized as being invariant
 const int nod_recurse		= 256;		// union node is a recursive union
 const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
-const int nod_window		= 1024;		// aggregate for window function
 
 // Special RecordSelExpr node
 
@@ -134,6 +133,9 @@ public:
 	USHORT		rse_count;
 	USHORT		rse_jointype;		// inner, left, full
 	bool		rse_writelock;
+#ifdef SCROLLABLE_CURSORS
+	RecordSource*	rse_rsb;
+#endif
 	jrd_nod*	rse_first;
 	jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
@@ -142,13 +144,17 @@ public:
 	jrd_nod*	rse_aggregate;	// singleton aggregate for optimizing to index
 	jrd_nod*	rse_plan;		// user-specified access plan
 	VarInvariantArray *rse_invariants; // Invariant nodes bound to top-level RSE
+#ifdef SCROLLABLE_CURSORS
+	jrd_nod*	rse_async_message;	// asynchronous message to send for scrolling
+#endif
 	jrd_nod*	rse_relation[1];
 };
 
 
-const int rse_scrollable	= 1;	// flags RSE as a scrollable cursor
-const int rse_singular		= 2;	// flags RSE as a singleton select
-const int rse_variant		= 4;	// flags RSE as variant (not invariant?)
+// First one is obsolete: was used for PC_ENGINE
+//const int rse_stream	= 1;	// flags RecordSelExpr-type node as a blr_stream type
+const int rse_singular	= 2;	// flags RecordSelExpr-type node as from a singleton select
+const int rse_variant	= 4;	// flags RecordSelExpr as variant (not invariant?)
 
 // Number of nodes may fit into nod_arg of normal node to get to rse_relation
 const size_t rse_delta = (sizeof(RecordSelExpr) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
@@ -190,6 +196,74 @@ public:
 };
 
 const size_t asb_delta	= ((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jrd_nod**));
+
+
+// Various structures in the impure area
+
+struct impure_state
+{
+	SSHORT sta_state;
+};
+
+struct impure_value
+{
+	dsc vlu_desc;
+	USHORT vlu_flags; // Computed/invariant flags
+	VaryingString* vlu_string;
+	union
+	{
+		UCHAR vlu_uchar;
+		SSHORT vlu_short;
+		SLONG vlu_long;
+		SINT64 vlu_int64;
+		SQUAD vlu_quad;
+		SLONG vlu_dbkey[2];
+		float vlu_float;
+		double vlu_double;
+		GDS_TIMESTAMP vlu_timestamp;
+		GDS_TIME vlu_sql_time;
+		GDS_DATE vlu_sql_date;
+		bid vlu_bid;
+		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
+	} vlu_misc;
+
+	void make_long(const SLONG val, const signed char scale = 0);
+	void make_int64(const SINT64 val, const signed char scale = 0);
+
+};
+
+// Do not use these methods where dsc_sub_type is not explicitly set to zero.
+inline void impure_value::make_long(const SLONG val, const signed char scale)
+{
+	this->vlu_misc.vlu_long = val;
+	this->vlu_desc.dsc_dtype = dtype_long;
+	this->vlu_desc.dsc_length = sizeof(SLONG);
+	this->vlu_desc.dsc_scale = scale;
+	this->vlu_desc.dsc_sub_type = 0;
+	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_long);
+}
+
+inline void impure_value::make_int64(const SINT64 val, const signed char scale)
+{
+	this->vlu_misc.vlu_int64 = val;
+	this->vlu_desc.dsc_dtype = dtype_int64;
+	this->vlu_desc.dsc_length = sizeof(SINT64);
+	this->vlu_desc.dsc_scale = scale;
+	this->vlu_desc.dsc_sub_type = 0;
+	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_int64);
+}
+
+
+struct impure_value_ex : public impure_value
+{
+	SLONG vlux_count;
+	blb* vlu_blob;
+};
+
+
+const int VLU_computed	= 1;	// An invariant sub-query has been computed
+const int VLU_null		= 2;	// An invariant sub-query computed to null
+const int VLU_checked	= 4;	// Constraint already checked in first read or assignment to argument/variable
 
 // Inversion (i.e. nod_index) impure area
 
@@ -247,6 +321,10 @@ const int e_erase_stream	= 2;
 const int e_erase_rsb		= 3;
 const int e_erase_length	= 4;
 
+const int e_sav_operation	= 0;
+const int e_sav_name		= 1;
+const int e_sav_length		= 2;
+
 const int e_mod_statement	= 0;
 const int e_mod_statement2	= 1;
 const int e_mod_sub_mod		= 2;
@@ -284,6 +362,11 @@ const int e_lbl_length		= 2;
 const int e_any_rse			= 0;
 const int e_any_rsb			= 1;
 const int e_any_length		= 2;
+
+const int e_if_boolean		= 0;
+const int e_if_true			= 1;
+const int e_if_false		= 2;
+const int e_if_length		= 3;
 
 const int e_val_boolean		= 0;
 const int e_val_value		= 1;
@@ -385,6 +468,15 @@ const int e_cast_fmt		= 1;
 const int e_cast_iteminfo	= 2;
 const int e_cast_length		= 3;
 
+
+// CVC: These belong to SCROLLABLE_CURSORS, but I can't mark them with the macro
+// because e_seek_length is used in blrtable.h.
+const int e_seek_offset		= 0;	// for seeking through a stream
+const int e_seek_direction	= 1;
+const int e_seek_rse		= 2;
+const int e_seek_length		= 3;
+
+
 // This is for the plan node
 const int e_retrieve_relation		= 0;
 const int e_retrieve_access_type	= 1;
@@ -412,12 +504,11 @@ const int e_dcl_cursor_number	= 2;
 const int e_dcl_cursor_rsb		= 3;
 const int e_dcl_cursor_length	= 4;
 
-const int e_cursor_stmt_op			= 0;
-const int e_cursor_stmt_number		= 1;
-const int e_cursor_stmt_scroll_op	= 2;
-const int e_cursor_stmt_scroll_val	= 3;
-const int e_cursor_stmt_into		= 4;
-const int e_cursor_stmt_length		= 5;
+const int e_cursor_stmt_op		= 0;
+const int e_cursor_stmt_number	= 1;
+const int e_cursor_stmt_seek	= 2;
+const int e_cursor_stmt_into	= 3;
+const int e_cursor_stmt_length	= 4;
 
 const int e_strlen_value	= 0;
 const int e_strlen_type		= 1;
@@ -479,12 +570,6 @@ const int e_derived_expr_stream_count	= 1;
 const int e_derived_expr_stream_list	= 2;
 const int e_derived_expr_count			= 1;
 const int e_derived_expr_length			= 3;
-
-// index (in nod_list) for external procedure blr
-const int e_extproc_input_message	= 0;
-const int e_extproc_output_message	= 1;
-const int e_extproc_input_assign	= 2;
-const int e_extproc_output_assign	= 3;
 
 // Request resources
 
@@ -725,14 +810,15 @@ public:
 	:	/*csb_node(0),
 		csb_variables(0),
 		csb_dependencies(0),
+#ifdef SCROLLABLE_CURSORS
+		csb_current_rse(0),
+		csb_async_message(0),
+#endif
 		csb_count(0),
 		csb_n_stream(0),
 		csb_msg_number(0),
 		csb_impure(0),
 		csb_g_flags(0),*/
-#ifdef CMP_DEBUG
-		csb_dump(p),
-#endif
 		csb_external(p),
 		csb_access(p),
 		csb_resources(p),
@@ -763,23 +849,6 @@ public:
 		return csb_n_stream++;
 	}
 
-#ifdef CMP_DEBUG
-	void dump(const char* format, ...)
-	{
-		va_list params;
-		va_start(params, format);
-
-		Firebird::string s;
-		s.vprintf(format, params);
-
-		va_end(params);
-
-		csb_dump += s;
-	}
-
-	Firebird::string csb_dump;
-#endif
-
 	BlrReader		csb_blr_reader;
 	jrd_nod*		csb_node;
 	ExternalAccessList csb_external;			// Access to outside procedures/triggers to be checked
@@ -792,6 +861,12 @@ public:
 	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	// RecordSelExpr's and other invariant
 												// candidates within whose scope we are
+#ifdef SCROLLABLE_CURSORS
+	RecordSelExpr*	csb_current_rse;			// this holds the RecordSelExpr currently being processed;
+												// unlike the current_rses stack, it references any
+												// expanded view RecordSelExpr
+	jrd_nod*		csb_async_message;			// asynchronous message to send to request
+#endif
 	USHORT			csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number
 	SLONG			csb_impure;					// Next offset into impure area
@@ -824,7 +899,7 @@ public:
 			csb_message(0),
 			csb_format(0),
 			csb_fields(0),
-			csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
+			csb_cardinality(0.0f),	// TMN: Non-natural cardinality?!
 			csb_plan(0),
 			csb_map(0),
 			csb_rsb_ptr(0)

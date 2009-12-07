@@ -56,7 +56,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[] =
 	blr_long, 0,
 	blr_long, 0,
 	blr_short, 0,
-	blr_text, BLR_WORD(MAX_PASSWORD_LENGTH + 2),
+	blr_text, UCHAR(MAX_PASSWORD_LENGTH + 2), 0,
 	blr_message, 0, 1, 0,
 	blr_cstring, 129, 0,
 	blr_receive, 0,

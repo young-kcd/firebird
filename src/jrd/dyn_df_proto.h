@@ -37,7 +37,9 @@ void DYN_define_global_field(Jrd::Global*, const UCHAR**, const Firebird::MetaNa
 void DYN_define_index(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, UCHAR,
 					  Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, UCHAR*);
 void DYN_define_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
-void DYN_define_relation(Jrd::Global*, const UCHAR**, bool view);
+void DYN_define_parameter(Jrd::Global*, const UCHAR**, Firebird::MetaName*);
+void DYN_define_procedure(Jrd::Global*, const UCHAR**);
+void DYN_define_relation(Jrd::Global*, const UCHAR**);
 void DYN_define_role(Jrd::Global*, const UCHAR**);
 void DYN_define_security_class(Jrd::Global*, const UCHAR**);
 void DYN_define_shadow(Jrd::Global*, const UCHAR**);

@@ -43,7 +43,6 @@
 
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
-#include "../jrd/obj.h"
 
 namespace EDS {
 class Transaction;
@@ -96,38 +95,6 @@ struct BlobIndex
 typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexTree;
 
 // Transaction block
-
-struct CallerName
-{
-	CallerName(int aType, const Firebird::MetaName& aName)
-		: type(aType),
-		  name(aName)
-	{
-	}
-
-	CallerName()
-		: type(obj_type_MAX)
-	{
-	}
-
-	CallerName(const CallerName& o)
-		: type(o.type),
-		  name(o.name)
-	{
-	}
-
-	void operator =(const CallerName& o)
-	{
-		if (&o != this)
-		{
-			type = o.type;
-			name = o.name;
-		}
-	}
-
-	int type;
-	Firebird::MetaName name;
-};
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
@@ -208,12 +175,6 @@ public:
 		}
 	}
 
-	Attachment* getAttachment()
-	{
-		return tra_attachment;
-	}
-
-	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
 	SLONG tra_number;					// transaction number
 	SLONG tra_top;						// highest transaction in snapshot
@@ -248,9 +209,8 @@ public:
 	DatabaseSnapshot* tra_db_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
-	bool tra_in_use;					// transaction in use (can't be committed or rolled back)
 	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
-	CallerName tra_caller_name;			// caller object name
+	jrd_req* tra_callback_caller;		// caller request for execute statement
 	Firebird::Array<UCHAR> tra_transactions;
 	SortOwner tra_sorts;
 
@@ -310,24 +270,30 @@ const SLONG TRA_system_transaction = 0;
 
 // Flag definitions for tra_flags.
 
-const ULONG TRA_system				= 1L;		// system transaction
-const ULONG TRA_prepared			= 2L;		// transaction is in limbo
-const ULONG TRA_reconnected			= 4L;		// reconnect in progress
-const ULONG TRA_degree3				= 8L;		// serializeable transaction
-const ULONG TRA_write				= 16L;		// transaction has written
-const ULONG TRA_readonly			= 32L;		// transaction is readonly
-const ULONG TRA_prepare2			= 64L;		// transaction has updated RDB$TRANSACTIONS
-const ULONG TRA_ignore_limbo		= 128L;		// ignore transactions in limbo
-const ULONG TRA_invalidated 		= 256L;		// transaction invalidated by failed write
-const ULONG TRA_deferred_meta 		= 512L;		// deferred meta work posted
-const ULONG TRA_read_committed		= 1024L;	// can see latest committed records
-const ULONG TRA_autocommit			= 2048L;	// autocommits all updates
-const ULONG TRA_perform_autocommit	= 4096L;	// indicates autocommit is necessary
-const ULONG TRA_rec_version			= 8192L;	// don't wait for uncommitted versions
-const ULONG TRA_restart_requests	= 16384L;	// restart all requests in attachment
-const ULONG TRA_no_auto_undo		= 32768L;	// don't start a savepoint in TRA_start
-const ULONG TRA_cancel_request		= 65536L;	// cancel active request, if any
-const ULONG TRA_precommitted		= 131072L;	// transaction committed at startup
+const ULONG TRA_system			= 1L;			// system transaction
+//const ULONG TRA_update		= 2L;			// update is permitted
+const ULONG TRA_prepared		= 4L;			// transaction is in limbo
+const ULONG TRA_reconnected		= 8L;			// reconnect in progress
+//const ULONG TRA_reserving		= 16L;			// relations explicityly locked
+const ULONG TRA_degree3			= 32L;			// serializeable transaction
+//const ULONG TRA_committing	= 64L;			// commit in progress
+const ULONG TRA_write			= 128L;			// transaction has written
+const ULONG TRA_readonly		= 256L;			// transaction is readonly
+//const ULONG TRA_nowait		= 512L;			// don't wait on relations, give up
+const ULONG TRA_prepare2		= 1024L;		// transaction has updated RDB$TRANSACTIONS
+const ULONG TRA_ignore_limbo	= 2048L;		// ignore transactions in limbo
+const ULONG TRA_invalidated 	= 4096L;		// transaction invalidated by failed write
+const ULONG TRA_deferred_meta 	= 8192L;		// deferred meta work posted
+//const ULONG TRA_add_log		= 16384L;		// write ahead log file was added
+//const ULONG TRA_delete_log	= 32768L;		// write ahead log file was deleted
+const ULONG TRA_read_committed	= 65536L;		// can see latest committed records
+const ULONG TRA_autocommit		= 131072L;		// autocommits all updates
+const ULONG TRA_perform_autocommit	= 262144L;	// indicates autocommit is necessary
+const ULONG TRA_rec_version			= 524288L;	// don't wait for uncommitted versions
+const ULONG TRA_restart_requests	= 1048576L;	// restart all requests in attachment
+const ULONG TRA_no_auto_undo		= 2097152L;	// don't start a savepoint in TRA_start
+const ULONG TRA_cancel_request		= 4194304L;	// cancel active request, if any
+const ULONG TRA_precommitted		= 8388608L;	// transaction committed at startup
 
 const int TRA_MASK				= 3;
 //const int TRA_BITS_PER_TRANS	= 2;
@@ -430,9 +396,6 @@ enum dfw_t {
 	dfw_begin_backup,
 	dfw_end_backup,
 	dfw_user_management,
-	dfw_drop_package_header,
-	dfw_drop_package_body,
-	dfw_check_not_null,
 
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory

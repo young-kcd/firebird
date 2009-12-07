@@ -72,7 +72,7 @@ static const SCHAR* report = "elapsed = !e cpu = !u reads = !r writes = !w fetch
 #define TICK	100
 #endif
 
-// EKU: TICK (sys/param.h) and CLOCKS_PER_SEC (time.h) may both be defined
+/* EKU: TICK (sys/param.h) and CLOCKS_PER_SEC (time.h) may both be defined */
 #if !defined(TICK) && defined(CLOCKS_PER_SEC)
 #define TICK ((SLONG)CLOCKS_PER_SEC)
 #endif
@@ -98,13 +98,9 @@ static int perf_format(const P* before, const P* after,
  *
  **************************************/
 	SCHAR c;
+
 	SLONG buffer_length = buf_len ? *buf_len : 0;
 	SCHAR* p = buffer;
-
-	if (buffer_length < 0)
-	{
-		buffer_length = 0;
-	}
 
 	while ((c = *string++) && c != '$')
 	{
@@ -190,9 +186,9 @@ static int perf_format(const P* before, const P* after,
 	}
 
 	*p = 0;
-	const int length = static_cast<int>(p - buffer);
+	const int length = p - buffer;
 	if (buffer_length && (buffer_length -= length) >= 0) {
-		memset(p, ' ', static_cast<size_t>(buffer_length));
+		memset(p, ' ', buffer_length);
 	}
 
 	return length;
@@ -219,16 +215,16 @@ static void perf_get_info(FB_API_HANDLE* handle, P* perf)
 	struct timeval tp;
 #else
 	struct timeb time_buffer;
-#define LARGE_NUMBER 696600000	// to avoid overflow, get rid of decades)
+#define LARGE_NUMBER 696600000	/* to avoid overflow, get rid of decades) */
 #endif
 
-	// If there isn't a database, zero everything out
+/* If there isn't a database, zero everything out */
 
 	if (!*handle) {
 		memset(perf, 0, sizeof(PERF));
 	}
 
-	// Get system time
+/* Get system times */
 
 	times(&perf->perf_times);
 

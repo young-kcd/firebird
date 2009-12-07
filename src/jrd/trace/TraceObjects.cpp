@@ -147,6 +147,26 @@ ntrace_tra_isolation_t TraceTransactionImpl::getIsolation()
 }
 
 
+/// TraceDYNRequestImpl
+
+const char* TraceDYNRequestImpl::getText()
+{
+	if (m_text.empty() && m_length) {
+		PRETTY_print_dyn((UCHAR*) m_ddl, print_dyn, this, 0);
+	}
+	return m_text.c_str();
+}
+
+void TraceDYNRequestImpl::print_dyn(void* arg, SSHORT offset, const char* line)
+{
+	TraceDYNRequestImpl *dyn = (TraceDYNRequestImpl*) arg;
+
+	string temp;
+	temp.printf("%4d %s\n", offset, line);
+	dyn->m_text.append(temp);
+}
+
+
 /// BLRPrinter
 
 const char* BLRPrinter::getText()
@@ -270,6 +290,7 @@ const dsc* TraceSQLStatementImpl::DSQLParamsImpl::getParam(size_t idx)
 
 	return NULL;
 }
+
 
 
 /// TraceProcedureImpl::JrdParamsImpl

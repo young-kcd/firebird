@@ -58,11 +58,10 @@ protected:
 		ISC_STATUS getCode() const throw() { return code; }
 
 		virtual const ISC_STATUS* value() const throw() { return NULL; }
-		virtual unsigned int length() const throw() { return 0; }
-		virtual unsigned int firstWarning() const throw() { return 0; }
+		virtual int length() const throw() { return 0; }
+		virtual int firstWarning() const throw() { return 0; }
 		virtual bool hasData() const throw() { return false; }
 		virtual void clear() throw() { }
-		virtual void makePermanent() throw() { }
 		virtual void append(const StatusVector&) throw() { }
 		virtual ISC_STATUS copyTo(ISC_STATUS*) const throw() { return 0; }
 
@@ -94,19 +93,18 @@ protected:
 	{
 	private:
 		ISC_STATUS_ARRAY m_status_vector;
-		unsigned int m_length, m_warning;
+		int m_length, m_warning;
 
 		bool appendErrors(const ImplBase* const v) throw();
 		bool appendWarnings(const ImplBase* const v) throw();
-		bool append(const ISC_STATUS* const from, const unsigned int count) throw();
+		bool append(const ISC_STATUS* const from, const int count) throw();
 
 	public:
 		virtual const ISC_STATUS* value() const throw() { return m_status_vector; }
-		virtual unsigned int length() const throw() { return m_length; }
-		virtual unsigned int firstWarning() const throw() { return m_warning; }
+		virtual int length() const throw() { return m_length; }
+		virtual int firstWarning() const throw() { return m_warning; }
 		virtual bool hasData() const throw() { return m_length > 0; }
 		virtual void clear() throw();
-		virtual void makePermanent() throw();
 		virtual void append(const StatusVector& v) throw();
 		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
 		virtual void shiftLeft(const Base& arg) throw();
@@ -131,12 +129,10 @@ public:
 	~StatusVector() { }
 
 	const ISC_STATUS* value() const throw() { return implementation->value(); }
-	unsigned int length() const throw() { return implementation->length(); }
+	int length() const throw() { return implementation->length(); }
 	bool hasData() const throw() { return implementation->hasData(); }
-	bool isEmpty() const throw() { return !implementation->hasData(); }
 
 	void clear() throw() { implementation->clear(); }
-	void makePermanent() throw() { implementation->makePermanent(); }
 	void append(const StatusVector& v) throw() { implementation->append(v); }
 	void raise() const;
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }

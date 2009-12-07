@@ -210,8 +210,6 @@ public:
 	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key
 	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys
 
-	Firebird::Mutex rel_drop_mutex;
-
 	bool isSystem() const;
 	bool isTemporary() const;
 	bool isVirtual() const;

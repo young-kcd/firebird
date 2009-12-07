@@ -87,7 +87,7 @@ using namespace NAMESPACE;
 // Comment this definition to build without priority scheduler
 //	OR:
 // Uncomment this definition to build with priority scheduler
-//#define THREAD_PSCHED
+#define THREAD_PSCHED
 #endif
 
 #if defined(WIN_NT)

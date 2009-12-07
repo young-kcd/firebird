@@ -240,7 +240,6 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_res_buffers:
 			case isc_spb_res_page_size:
 			case isc_spb_options:
-			case isc_spb_verbint:
 				return IntSpb;
 			case isc_spb_verbose:
 				return SingleTpb;

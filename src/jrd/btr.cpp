@@ -260,7 +260,10 @@ bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 }
 
 
-USHORT BTR_all(thread_db* tdbb, jrd_rel* relation, IndexDescAlloc** csb_idx, RelationPages* relPages)
+USHORT BTR_all(thread_db*		tdbb,
+			   jrd_rel*			relation,
+			   IndexDescAlloc**	csb_idx,
+			   RelationPages* relPages)
 {
 /**************************************
  *
@@ -420,7 +423,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
  **************************************/
 
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->getDatabase();
+	const Database* dbb = tdbb->getDatabase();
 
 	if (id >= root->irt_count) {
 		return false;
@@ -453,8 +456,17 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 		const irtd* key_descriptor = (irtd*) ptr;
 		idx_desc->idx_field = key_descriptor->irtd_field;
 		idx_desc->idx_itype = key_descriptor->irtd_itype;
-		idx_desc->idx_selectivity = key_descriptor->irtd_selectivity;
-		ptr += sizeof(irtd);
+		// dimitr: adjust the ODS stuff accurately
+		if (dbb->dbb_ods_version >= ODS_VERSION11)
+		{
+			idx_desc->idx_selectivity = key_descriptor->irtd_selectivity;
+			ptr += sizeof(irtd);
+		}
+		else
+		{
+			idx_desc->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
+			ptr += sizeof(irtd_ods10);
+		}
 	}
 	idx->idx_selectivity = irt_desc->irt_stuff.irt_selectivity;
 
@@ -613,7 +625,10 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	SET_TDBB(tdbb);
 
 	// Remove ignore_nulls flag for older ODS
-	//const Database* dbb = tdbb->getDatabase();
+	const Database* dbb = tdbb->getDatabase();
+	if (dbb->dbb_ods_version < ODS_VERSION11) {
+		retrieval->irb_generic &= ~irb_ignore_null_value_key;
+	}
 
 	index_desc idx;
 	RelationPages* relPages = retrieval->irb_relation->getPages(tdbb);
@@ -623,7 +638,11 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	lower.key_length = 0;
 	upper.key_flags = 0;
 	upper.key_length = 0;
-	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper);
+	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper
+#ifdef SCROLLABLE_CURSORS
+							, false
+#endif
+							);
 
 	const bool descending = (idx.idx_flags & idx_descending);
 	bool skipLowerKey = (retrieval->irb_generic & irb_exclude_lower);
@@ -793,7 +812,12 @@ btree_page* BTR_find_page(thread_db* tdbb,
 						  WIN* window,
 						  index_desc* idx,
 						  temporary_key* lower,
-						  temporary_key* upper)
+						  temporary_key* upper
+#ifdef SCROLLABLE_CURSORS
+						  ,
+						  const bool backwards
+#endif
+						  )
 {
 /**************************************
  *
@@ -866,8 +890,13 @@ btree_page* BTR_find_page(thread_db* tdbb,
 	const bool ignoreNulls = ((idx->idx_count == 1) && !(idx->idx_flags & idx_descending) &&
 		(retrieval->irb_generic & irb_ignore_null_value_key) && !(retrieval->irb_lower_count));
 
+#ifdef SCROLLABLE_CURSORS
+	const bool firstData =
+		((!backwards && retrieval->irb_lower_count) || (!backwards && ignoreNulls) ||
+			(backwards && retrieval->irb_upper_count));
+#else
 	const bool firstData = (retrieval->irb_lower_count || ignoreNulls);
-
+#endif
 	if (firstData)
 	{
 		// Make a temporary key with length 1 and zero byte, this will return
@@ -881,7 +910,12 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		{
 			while (true)
 			{
+#ifdef SCROLLABLE_CURSORS
+				const temporary_key* tkey =
+					backwards ? upper : (ignoreNulls ? &firstNotNullKey : lower);
+#else
 				const temporary_key* tkey = ignoreNulls ? &firstNotNullKey : lower;
+#endif
 				const SLONG number = find_page(page, tkey, idx->idx_flags,
 					NO_VALUE, (retrieval->irb_generic & (irb_starting | irb_partial)));
 				if (number != END_BUCKET)
@@ -901,13 +935,36 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		{
 			UCHAR* pointer;
 			const UCHAR* const endPointer = (UCHAR*) page + page->btr_length;
-			pointer = BTreeNode::getPointerFirstNode(page);
+#ifdef SCROLLABLE_CURSORS
+			if (backwards) {
+				pointer = BTR_last_node(page, NAV_expand_index(window, 0), 0);
+			}
+			else
+#endif
+			{
+				pointer = BTreeNode::getPointerFirstNode(page);
+			}
+
 			pointer = BTreeNode::readNode(&node, pointer, page->btr_header.pag_flags, false);
 			// Check if pointer is still valid
 			if (pointer > endPointer) {
 				BUGCHECK(204);	// msg 204 index inconsistent
 			}
 			page = (btree_page*) CCH_HANDOFF(tdbb, window, node.pageNumber, LCK_read, pag_index);
+
+			// make sure that we are actually on the last page on this
+			// level when scanning in the backward direction
+#ifdef SCROLLABLE_CURSORS
+			if (backwards)
+			{
+				while (page->btr_sibling)
+				{
+					page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
+													 LCK_read, pag_index);
+				}
+			}
+#endif
+
 		}
 	}
 
@@ -1254,7 +1311,8 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	// hvlad: in ODS11 key of descending index can be prefixed with
 	//		  one byte value. See comments in compress
-	const size_t prefix = (idx->idx_flags & idx_descending) ? 1 : 0;
+	const size_t prefix = (idx->idx_flags & idx_descending) &&
+		(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11) ? 1 : 0;
 
 	const Format* format = MET_current(tdbb, relation);
 	index_desc::idx_repeat* tail = idx->idx_rpt;
@@ -1352,6 +1410,109 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	return key_length;
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+UCHAR* BTR_last_node(btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node)
+{
+/**************************************
+ *
+ *	B T R _ l a s t _ n o d e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find the last node on a page.  Used when walking
+ *	down the right side of an index tree.
+ *
+ **************************************/
+
+	// the last expanded node is always at the end of the page
+	// minus the size of a btree_exp, since there is always an extra
+	// btree_exp node with zero-length tail at the end of the page
+	btree_exp* enode = (btree_exp*) ((UCHAR*)expanded_page + expanded_page->exp_length - BTX_SIZE);
+
+	// starting at the end of the page, find the
+	// first node that is not an end marker
+	UCHAR* pointer = ((UCHAR*)page + page->btr_length);
+	const UCHAR flags = page->btr_header.pag_flags;
+	IndexNode node;
+	while (true)
+	{
+		pointer = BTreeNode::previousNode(/*&node,*/ pointer, /*flags,*/ &enode);
+		if (!node.isEndBucket && !node.isEndLevel)
+		{
+			if (expanded_node) {
+				*expanded_node = enode;
+			}
+			return node.nodePointer;
+		}
+	}
+}
+#endif
+
+
+#ifdef SCROLLABLE_CURSORS
+btree_page* BTR_left_handoff(thread_db* tdbb, WIN* window, btree_page* page, SSHORT lock_level)
+{
+/**************************************
+ *
+ *	B T R _ l e f t _ h a n d o f f
+ *
+ **************************************
+ *
+ * Functional description
+ *	Handoff a btree page to the left.  This is more difficult than a
+ *	right handoff because we have to traverse pages without handing
+ *	off locks.  (A lock handoff to the left while someone was handing
+ *	off to the right could result in deadlock.)
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	const Database* dbb = tdbb->getDatabase();
+	CHECK_DBB(dbb);
+
+	const PageNumber original_page(window->win_page);
+	const SLONG left_sibling = page->btr_left_sibling;
+
+	CCH_RELEASE(tdbb, window);
+	window->win_page = left_sibling;
+	page = (btree_page*) CCH_FETCH(tdbb, window, lock_level, pag_index);
+
+	SLONG sibling = page->btr_sibling;
+	if (sibling == original_page) {
+		return page;
+	}
+
+	// Since we are not handing off pages, a page could split before we get to it.
+	// To detect this case, fetch the left sibling pointer and then handoff right
+	// sibling pointers until we reach the page to the left of the page passed
+	// to us.
+
+	while (sibling != original_page)
+	{
+		page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling, lock_level, pag_index);
+		sibling = page->btr_sibling;
+	}
+	WIN fix_win(original_page);
+	btree_page* fix_page = (btree_page*) CCH_FETCH(tdbb, &fix_win, LCK_write, pag_index);
+
+	// if someone else already fixed it, just return
+	if (fix_page->btr_left_sibling == window->win_page)
+	{
+		CCH_RELEASE(tdbb, &fix_win);
+		return page;
+	}
+
+	CCH_MARK(tdbb, &fix_win);
+	fix_page->btr_left_sibling = window->win_page;
+
+	CCH_RELEASE(tdbb, &fix_win);
+
+	return page;
+}
+#endif
 
 
 USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buffer,
@@ -1534,7 +1695,7 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 
 	fb_assert(idx != NULL);
 	fb_assert(key != NULL);
-	fb_assert(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION12)
+	fb_assert(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION11)
 
 	key->key_flags = key_all_nulls;
 
@@ -1808,7 +1969,11 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 
 	for (int retry = 0; retry < 2; ++retry)
 	{
-		len = idx->idx_count * sizeof(irtd);
+		// dimitr: irtd_selectivity member of IRTD is introduced in ODS11
+		if (dbb->dbb_ods_version < ODS_VERSION11)
+			len = idx->idx_count * sizeof(irtd_ods10);
+		else
+			len = idx->idx_count * sizeof(irtd);
 
 		space = dbb->dbb_page_size;
 		slot = NULL;
@@ -1865,9 +2030,21 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 
 	slot->irt_root = 0;
 
-	// Exploit the fact idx_repeat structure matches ODS IRTD one
-	memcpy(desc, idx->idx_rpt, len);
-
+	if (dbb->dbb_ods_version < ODS_VERSION11)
+	{
+		for (USHORT i = 0; i < idx->idx_count; i++)
+		{
+			irtd_ods10 temp;
+			temp.irtd_field = idx->idx_rpt[i].idx_field;
+			temp.irtd_itype = idx->idx_rpt[i].idx_itype;
+			memcpy(desc, &temp, sizeof(temp));
+			desc += sizeof(temp);
+		}
+	}
+	else {
+		// Exploit the fact idx_repeat structure matches ODS IRTD one
+		memcpy(desc, idx->idx_rpt, len);
+	}
 	CCH_RELEASE(tdbb, &window);
 }
 
@@ -2304,21 +2481,64 @@ static void compress(thread_db* tdbb,
 
 	if (isNull)
 	{
-		// dbb->dbb_ods_version < ODS_VERSION12 cannot happen, see PAG_header_init()
-		fb_assert(dbb->dbb_ods_version >= ODS_VERSION12);
+		// dbb->dbb_ods_version <= ODS_VERSION7 cannot happen, see PAG_header_init()
+		fb_assert(dbb->dbb_ods_version >= ODS_VERSION8);
 
 		UCHAR pad = 0;
 		key->key_flags &= ~key_empty;
 		// AB: NULL should be threated as lowest value possible.
 		//     Therefore don't complement pad when we have an ascending index.
-		if (descending)
+		if (dbb->dbb_ods_version >= ODS_VERSION11)
 		{
-			// DESC NULLs are stored as 1 byte
-			*p++ = pad;
-			key->key_length = (p - key->key_data);
+			if (descending)
+			{
+				// DESC NULLs are stored as 1 byte
+				*p++ = pad;
+				key->key_length = (p - key->key_data);
+			}
+			else
+				key->key_length = 0; // ASC NULLs are stored with no data
+
+			return;
 		}
-		else
-			key->key_length = 0; // ASC NULLs are stored with no data
+
+		if (!descending) {
+			pad ^= -1;
+		}
+
+		size_t length;
+		switch (itype)
+		{
+		case idx_numeric:
+			length = sizeof(double);
+			break;
+		case idx_sql_time:
+			length = sizeof(ULONG);
+			break;
+		case idx_sql_date:
+			length = sizeof(SLONG);
+			break;
+		case idx_timestamp2:
+			length = sizeof(SINT64);
+			break;
+		case idx_numeric2:
+			length = INT64_KEY_LENGTH;
+			break;
+		default:
+			length = desc->dsc_length;
+			if (desc->dsc_dtype == dtype_varying) {
+				length -= sizeof(SSHORT);
+			}
+			if (itype >= idx_first_intl_string) {
+				length = INTL_key_length(tdbb, itype, length);
+			}
+			break;
+		}
+		length = (length > sizeof(key->key_data)) ? sizeof(key->key_data) : length;
+		while (length--) {
+			*p++ = pad;
+		}
+		key->key_length = (p - key->key_data);
 
 		return;
 	}
@@ -2361,7 +2581,8 @@ static void compress(thread_db* tdbb,
 			if (length > sizeof(key->key_data)) {
 				length = sizeof(key->key_data);
 			}
-			if (descending && ((*ptr == desc_end_value_prefix) || (*ptr == desc_end_value_check)))
+			if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) &&
+				((*ptr == desc_end_value_prefix) || (*ptr == desc_end_value_check)))
 			{
 				*p++ = desc_end_value_prefix;
 				if ((length + 1) > sizeof(key->key_data)) {
@@ -2374,7 +2595,8 @@ static void compress(thread_db* tdbb,
 		else
 		{
 			// Leave key_empty flag, because the string is an empty string
-			if (descending && ((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
+			if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) &&
+				((pad == desc_end_value_prefix) || (pad == desc_end_value_check)))
 			{
 				*p++ = desc_end_value_prefix;
 			}
@@ -2637,7 +2859,7 @@ static void compress(thread_db* tdbb,
 
 	// By descending index, check first byte
 	q = key->key_data;
-	if (descending && (key->key_length >= 1) &&
+	if (descending && (dbb->dbb_ods_version >= ODS_VERSION11) && (key->key_length >= 1) &&
 		((*q == desc_end_value_prefix) || (*q == desc_end_value_check)))
 	{
 		p = key->key_data;
@@ -2685,7 +2907,12 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 	{
 		if (root_idx->irt_root)
 		{
-			const USHORT len = root_idx->irt_keys * sizeof(irtd);
+			USHORT len;
+			if (dbb->dbb_ods_version < ODS_VERSION11)
+				len = root_idx->irt_keys * sizeof(irtd_ods10);
+			else
+				len = root_idx->irt_keys * sizeof(irtd);
+
 			p -= len;
 			memcpy(p, temp + root_idx->irt_desc, len);
 			root_idx->irt_desc = p - (UCHAR*) page;
@@ -3073,11 +3300,15 @@ static SLONG fast_load(thread_db* tdbb,
 	if (idx->idx_flags & idx_descending) {
 		flags |= btr_descending;
 	}
-
-	flags |= btr_all_record_number;
-	flags |= btr_large_keys;
+	if (dbb->dbb_ods_version >= ODS_VERSION11)
+	{
+		flags |= btr_all_record_number;
+		flags |= btr_large_keys;
+	}
 
 	// Jump information initialization
+	// Just set this variable to false to disable jump information inside indices.
+	bool useJumpInfo = (dbb->dbb_ods_version >= ODS_VERSION11);
 
 	typedef Firebird::Array<jumpNodeList*> jumpNodeListContainer;
 	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->getDefaultPool())
@@ -3092,41 +3323,43 @@ static SLONG fast_load(thread_db* tdbb,
 	jumpInfo.jumpAreaSize = 0;
 	jumpInfo.jumpers = 0;
 
-	// AB: Let's try to determine to size between the jumps to speed up
-	// index search. Of course the size depends on the key_length. The
-	// bigger the key, the less jumps we can make. (Although we must
-	// not forget that mostly the keys are compressed and much smaller
-	// than the maximum possible key!).
-	// These values can easily change without effect on previous created
-	// indices, cause this value is stored on each page.
-	// Remember, the lower the value how more jumpkeys are generated and
-	// how faster jumpkeys are recalculated on insert.
-
-
-	jumpInfo.jumpAreaSize = 512 + ((int)sqrt((float)key_length) * 16);
-	//  key_size  |  jumpAreaSize
-	//  ----------+-----------------
-	//         4  |    544
-	//         8  |    557
-	//        16  |    576
-	//        64  |    640
-	//       128  |    693
-	//       256  |    768
-
-
-	// If our half page_size is smaller as the jump_size then jump_size isn't
-	// needfull at all.
-	if ((dbb->dbb_page_size / 2) < jumpInfo.jumpAreaSize) {
-		jumpInfo.jumpAreaSize = 0;
-	}
-
-	const bool useJumpInfo = (jumpInfo.jumpAreaSize > 0);
 	if (useJumpInfo)
 	{
-		// If you want to do tests without jump information
-		// set the useJumpInfo boolean to false, but don't
-		// disable this flag.
-		flags |= btr_jump_info;
+		// AB: Let's try to determine to size between the jumps to speed up
+		// index search. Of course the size depends on the key_length. The
+		// bigger the key, the less jumps we can make. (Although we must
+		// not forget that mostly the keys are compressed and much smaller
+		// than the maximum possible key!).
+		// These values can easily change without effect on previous created
+		// indices, cause this value is stored on each page.
+		// Remember, the lower the value how more jumpkeys are generated and
+		// how faster jumpkeys are recalculated on insert.
+
+
+		jumpInfo.jumpAreaSize = 512 + ((int)sqrt((float)key_length) * 16);
+		//  key_size  |  jumpAreaSize
+		//  ----------+-----------------
+		//         4  |    544
+        //         8  |    557
+		//        16  |    576
+		//        64  |    640
+		//       128  |    693
+		//       256  |    768
+
+
+		// If our half page_size is smaller as the jump_size then jump_size isn't
+		// needfull at all.
+		if ((dbb->dbb_page_size / 2) < jumpInfo.jumpAreaSize) {
+			jumpInfo.jumpAreaSize = 0;
+		}
+		useJumpInfo = (jumpInfo.jumpAreaSize > 0);
+		if (useJumpInfo)
+		{
+			// If you want to do tests without jump information
+			// set the useJumpInfo boolean to false, but don't
+			// disable this flag.
+			flags |= btr_jump_info;
+		}
 	}
 
 	WIN* window = 0;
@@ -3137,7 +3370,8 @@ static SLONG fast_load(thread_db* tdbb,
 	const ULONG segments = idx->idx_count;
 
 	// hvlad: look at IDX_create_index for explanations about NULL indicator below
-	const int nullIndLen = !descending && (idx->idx_count == 1) ? 1 : 0;
+	const bool isODS11 = (dbb->dbb_ods_version >= ODS_VERSION11);
+	const int nullIndLen = isODS11 && !descending && (idx->idx_count == 1) ? 1 : 0;
 
 	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
 
@@ -3212,7 +3446,11 @@ static SLONG fast_load(thread_db* tdbb,
 			// Get the next record in sorted order.
 
 			UCHAR* record;
-			SORT_get(tdbb, sort_handle, reinterpret_cast<ULONG**>(&record));
+			SORT_get(tdbb, sort_handle, reinterpret_cast<ULONG**>(&record)
+#ifdef SCROLLABLE_CURSORS
+				 , RSE_get_forward
+#endif
+			);
 
 			if (!record) {
 				break;
@@ -4817,15 +5055,16 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 	// left sibling
 	WIN left_window(pageSpaceID, left_number);
 	btree_page* left_page = (btree_page*) CCH_FETCH(tdbb, &left_window, LCK_write, pag_undefined);
-	if (left_page->btr_header.pag_type != pag_index ||
-		left_page->btr_relation != relation_number ||
-		left_page->btr_id != UCHAR(index_id % 256) ||
-		left_page->btr_level != index_level)
+	if ((left_page->btr_header.pag_type != pag_index) ||
+		(left_page->btr_relation != relation_number) ||
+		(left_page->btr_id != (UCHAR)(index_id % 256)) ||
+		(left_page->btr_level != index_level))
 	{
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, &left_window);
 		return contents_above_threshold;
 	}
+
 
 	while (left_page->btr_sibling != window->win_page.getPageNum())
 	{
@@ -6158,7 +6397,9 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
  *	quantify.
  *
  **************************************/
-	fprintf(stderr, "%20" QUADFORMAT"d  %4d  %.15e  %6d  ", value, scale, key.d_part, key.s_part);
+	fprintf(stderr,
+			   "%20" QUADFORMAT
+			   "d  %4d  %.15e  %6d  ", value, scale, key.d_part, key.s_part);
 
 	const UCHAR* p = (UCHAR*) &key;
 	for (int n = 10; n--; n > 0) {
@@ -6187,7 +6428,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
  **************************************/
 
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->getDatabase();
+	const Database* dbb = tdbb->getDatabase();
 	index_desc* idx = insertion->iib_descriptor;
 	btree_page* page = (btree_page*) window->win_buffer;
 
@@ -6225,7 +6466,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 			// than 8.2, then we can garbage-collect the page
 			const contents result = remove_node(tdbb, insertion, window);
 
-			if (result != contents_above_threshold)
+			if ((result != contents_above_threshold) && (dbb->dbb_ods_version >= ODS_VERSION9))
 			{
 				return garbage_collect(tdbb, window, parent_number);
 			}
@@ -6474,8 +6715,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 					if (node.length && (node.prefix == 0))
 					{
 						const UCHAR* q = node.data;
-						if (*q > to_segment) {
-							// hvlad: for desc indexes we must use *q^-1 ?
+						if (*q > to_segment) {	// hvlad: for desc indexes we must use *q^-1 ?
 							return false;
 						}
 					}
@@ -6810,16 +7050,18 @@ void update_selectivity(index_root_page* root, USHORT id, const SelectivityList&
  *	Update selectivity on the index root page.
  *
  **************************************/
-	//const Database* dbb = GET_DBB();
+	const Database* dbb = GET_DBB();
 
 	index_root_page::irt_repeat* irt_desc = &root->irt_rpt[id];
 	const USHORT idx_count = irt_desc->irt_keys;
 	fb_assert(selectivity.getCount() == idx_count);
 
-	// dimitr: per-segment selectivities exist only for ODS11 and above
-	irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
-	for (int i = 0; i < idx_count; i++, key_descriptor++)
-		key_descriptor->irtd_selectivity = selectivity[i];
-
+	if (dbb->dbb_ods_version >= ODS_VERSION11)
+	{
+		// dimitr: per-segment selectivities exist only for ODS11 and above
+		irtd* key_descriptor = (irtd*) ((UCHAR*) root + irt_desc->irt_desc);
+		for (int i = 0; i < idx_count; i++, key_descriptor++)
+			key_descriptor->irtd_selectivity = selectivity[i];
+	}
 	irt_desc->irt_stuff.irt_selectivity = selectivity.back();
 }

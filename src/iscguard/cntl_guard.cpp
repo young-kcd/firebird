@@ -36,8 +36,7 @@
 #include <windows.h>
 #endif
 
-struct thread
-{
+struct thread {
 	thread* thread_next;
 	HANDLE thread_handle;
 };
@@ -84,7 +83,8 @@ void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
  * Functional description
  *
  **************************************/
-	service_handle = RegisterServiceCtrlHandler(service_name->c_str(), control_thread);
+	service_handle =
+		RegisterServiceCtrlHandler(service_name->c_str(), control_thread);
 	if (!service_handle)
 		return;
 
@@ -117,8 +117,10 @@ void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
 	// and thus can only process one request at the time.
 	SERVICE_STATUS status_info;
 	SC_HANDLE hScManager = 0, hService = 0;
-	hScManager = OpenSCManager(NULL, NULL, GENERIC_READ);
-	hService = OpenService(hScManager, remote_name->c_str(), GENERIC_READ | GENERIC_EXECUTE);
+	hScManager =
+		OpenSCManager(NULL, NULL, GENERIC_READ);
+	hService = OpenService(hScManager, remote_name->c_str(),
+		GENERIC_READ | GENERIC_EXECUTE);
 	ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
 	CloseServiceHandle(hScManager);
 	CloseServiceHandle(hService);
@@ -147,7 +149,11 @@ void CNTL_shutdown_service(const TEXT* message)
 	{
 		strings[0] = buffer;
 		strings[1] = message;
-		ReportEvent(event_source, EVENTLOG_ERROR_TYPE, 0, 0, NULL, 2, 0, strings, NULL);
+		ReportEvent(event_source,
+					EVENTLOG_ERROR_TYPE,
+					0,
+					0,
+					NULL, 2, 0, strings, NULL);
 		DeregisterEventSource(event_source);
 	}
 
@@ -187,15 +193,18 @@ void CNTL_stop_service() //const TEXT* service) // unused param
 		// return error
 		int error = GetLastError();
 		gds__log("open services error %d", error);
+		return;
 	}
 	else
 	{
 		SERVICE_STATUS status_info;
-		if (!ControlService(service_handleL, SERVICE_CONTROL_STOP, &status_info))
+		if (!ControlService
+			(service_handleL, SERVICE_CONTROL_STOP, &status_info))
 		{
 			// return error
 			const int error = GetLastError();
 			gds__log("Control services error %d", error);
+			return;
 		}
 	}
 }
@@ -249,7 +258,8 @@ static USHORT report_status(DWORD state, DWORD exit_code, DWORD checkpoint, DWOR
  **************************************/
 	SERVICE_STATUS status;
 
-	status.dwServiceType = (SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
+	status.dwServiceType =
+		(SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
 	status.dwServiceSpecificExitCode = 0;
 
 	if (state == SERVICE_START_PENDING)
@@ -268,3 +278,4 @@ static USHORT report_status(DWORD state, DWORD exit_code, DWORD checkpoint, DWOR
 
 	return ret;
 }
+

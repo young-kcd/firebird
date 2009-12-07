@@ -19,28 +19,26 @@ JRD_ClientFiles = alt.cpp db_alias.cpp dsc.cpp \
 		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
 
-JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) \
-		common/cvt.cpp common/classes/DbImplementation.cpp
+JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) common/cvt.cpp
 
 
 JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
-        grant.epp ini.epp met.epp pcmet.epp scl.epp AggregateRsb.cpp \
-        CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp WindowRsb.cpp RecordBuffer.cpp \
+        grant.epp ini.epp met.epp pcmet.epp scl.epp \
+        CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
         blb.cpp btn.cpp btr.cpp builtin.cpp \
 		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
 		DataTypeUtil.cpp dfw.cpp UserManagement.cpp divorce.cpp \
-		err.cpp event.cpp ErrorImpl.cpp evl.cpp exe.cpp ext.cpp \
-		execute_statement.cpp ExtEngineManager.cpp filters.cpp flu.cpp \
+		err.cpp event.cpp evl.cpp exe.cpp ext.cpp \
+		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
 		IntlUtil.cpp isc_sync.cpp \
 		jrd.cpp Database.cpp lck.cpp \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		ods.cpp PluginManager.cpp pwd.cpp PreparedStatement.cpp RandomGenerator.cpp \
+		ods.cpp pwd.cpp PreparedStatement.cpp RandomGenerator.cpp \
 		Relation.cpp ResultSet.cpp rlck.cpp rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
-		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp \
-		ValueImpl.cpp ValuesImpl.cpp vio.cpp \
+		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
 		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) TextType.cpp \
 		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
 		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp \
@@ -73,7 +71,7 @@ DSQL_ClientFiles = array.epp blob.epp \
 DSQL_ServerFiles=	metd.epp \
                 ddl.cpp dsql.cpp errd.cpp gen.cpp hsh.cpp make.cpp \
 	            movd.cpp parse.cpp Parser.cpp pass1.cpp misc_func.cpp \
-	            DdlNodes.epp PackageNodes.epp StmtNodes.cpp
+	            DdlNodes.epp StmtNodes.cpp
 
 
 DSQL_Files = $(DSQL_ClientFiles) $(DSQL_ServerFiles)
@@ -187,6 +185,19 @@ SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_So
 
 #________________________________________________________________________
 #
+# fbutil
+
+FBUTIL_ClientFiles=
+#FBUTIL_ClientFiles=FirebirdConfig.cpp FirebirdConfigFile.cpp
+FBUTIL_ServerFiles=
+
+FBUTIL_Files = $(FBUTIL_ClientFiles) $(FBUTIL_ServerFiles)
+
+FBUTIL_Sources = $(addprefix fbutil/, $(FBUTIL_Files))
+FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Sources))))
+
+#________________________________________________________________________
+#
 # common/classes
 
 FBCLASSES_ClientFiles=alloc.cpp locks.cpp semaphore.cpp fb_string.cpp timestamp.cpp \
@@ -292,37 +303,6 @@ COMMON_Objects = $(FBCLASSES_Objects) \
 				$(CONFIG_Objects) \
 				$(VULCAN_Objects)
 
-
-#________________________________________________________________________
-#
-
-# These objects are needed for all utilities
-
-FBUTIL_Files = classes/Switches.cpp
-
-FBUTIL_Sources = $(addprefix common/, $(FBUTIL_Files))
-FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Sources))))
-
-
-#________________________________________________________________________
-#
-
-# These objects are needed for all services
-
-FBSVC_Files = UtilSvc.cpp
-
-FBSVC_Sources = $(addprefix common/, $(FBSVC_Files))
-FBSVC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVC_Sources))))
-
-
-#________________________________________________________________________
-#
-
-# These objects are needed for utilities, that can be used as services
-
-FBUTILSVC_Objects = $(FBUTIL_Objects) $(FBSVC_Objects)
-
-
 #________________________________________________________________________
 #
 
@@ -340,13 +320,13 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(INTERFACE_Objects) \
                 $(GPRELIB_Objects) \
                 $(SECURITY_Objects) \
+                $(FBUTIL_Objects) \
                 $(CLUMPLETS_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
                 $(ALICE_Objects) \
 				$(NBACKUP_SERVER_Objects) \
 				$(NTRACE_SERVER_Objects) \
-				$(FBUTIL_Objects) \
 				$(UTIL_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 
@@ -381,6 +361,7 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
 
 
 # Not needed since loaded into libfbmemory.a already
+#                $(FBUTIL_Objects) \
 #				$(FBMEMORY_Objects)
 
 #________________________________________________________________________

@@ -18,7 +18,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -48,21 +47,13 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-RecordSource* VirtualTable::create(thread_db* tdbb, OptimizerBlk* opt, SSHORT stream)
+void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
 {
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = opt->opt_csb;
-	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	irsb_virtual* impure = (irsb_virtual*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
 
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
-	rsb->rsb_type = rsb_record_stream;
-	rsb->rsb_stream = stream;
-	rsb->rsb_relation = csb_tail->csb_relation;
-	rsb->rsb_impure = CMP_impure(csb, sizeof(irsb_virtual));
-	rsb->rsb_record_stream = FB_NEW(*tdbb->getDefaultPool()) VirtualTable(rsb);
-
-	return rsb;
+	impure->irsb_record_buffer = NULL;
 }
 
 
@@ -116,36 +107,39 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 }
 
 
-void VirtualTable::modify(thread_db* /*tdbb*/, record_param* /*org_rpb*/, record_param* /*new_rpb*/)
-{
-	ERR_post(Arg::Gds(isc_read_only));
-}
-
-
-void VirtualTable::store(thread_db* /*tdbb*/, record_param* /*rpb*/)
-{
-	ERR_post(Arg::Gds(isc_read_only));
-}
-
-
-unsigned VirtualTable::dump(UCHAR* buffer, unsigned bufferLen)
-{
-	UCHAR* bufferStart = buffer;
-
-	if (bufferLen > 0)
-		*buffer++ = isc_info_rsb_virt_sequential;
-
-	return buffer - bufferStart;
-}
-
-
-void VirtualTable::open(thread_db* tdbb, jrd_req* request)
+bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 {
 	SET_TDBB(tdbb);
 
+	jrd_req* request = tdbb->getRequest();
+
+	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
+	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
+
+	if (!impure->irsb_record_buffer)
+		return false;
+
+	rpb->rpb_number.increment();
+
+	return impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(), rpb->rpb_record);
+}
+
+
+void VirtualTable::modify(thread_db*, record_param* /*org_rpb*/, record_param* /*new_rpb*/)
+{
+	ERR_post(Arg::Gds(isc_read_only));
+}
+
+
+void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
+{
+	SET_TDBB(tdbb);
+
+	jrd_req* request = tdbb->getRequest();
+
 	jrd_rel* const relation = rsb->rsb_relation;
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
-	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR*) request + rsb->rsb_impure);
+	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
 
 	const Record* const record = rpb->rpb_record;
 	const Format* format = NULL;
@@ -165,33 +159,24 @@ void VirtualTable::open(thread_db* tdbb, jrd_req* request)
 }
 
 
-void VirtualTable::close(thread_db* tdbb)
+Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SSHORT stream)
 {
 	SET_TDBB(tdbb);
 
-	irsb_virtual* impure = (irsb_virtual*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
+	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 
-	impure->irsb_record_buffer = NULL;
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
+	rsb->rsb_type = rsb_virt_sequential;
+	rsb->rsb_stream = stream;
+	rsb->rsb_relation = csb_tail->csb_relation;
+	rsb->rsb_impure = CMP_impure(csb, sizeof(irsb_virtual));
+
+	return rsb;
 }
 
 
-bool VirtualTable::get(thread_db* tdbb, jrd_req* request)
+void VirtualTable::store(thread_db*, record_param*)
 {
-	SET_TDBB(tdbb);
-
-	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
-	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR*) request + rsb->rsb_impure);
-
-	if (!impure->irsb_record_buffer)
-		return false;
-
-	rpb->rpb_number.increment();
-
-	return impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(), rpb->rpb_record);
-}
-
-
-void VirtualTable::markRecursive()
-{
-	// Do nothing.
+	ERR_post(Arg::Gds(isc_read_only));
 }

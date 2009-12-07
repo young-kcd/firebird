@@ -26,6 +26,7 @@
 // File functions
 
 #include "firebird.h"
+#include "gen/iberror.h"
 #include "../jrd/common.h"
 
 #include "../common/classes/init.h"
@@ -133,7 +134,9 @@ void createLockDirectory(const char* pathname)
 		{
 			continue;
 		}
-		Firebird::system_call_failed::raise("mkdir");
+		Firebird::string msg;
+		msg.printf("Can't access lock files' directory %s", pathname);
+		(Firebird::Arg::Gds(isc_random) << msg).raise();
 	}
 
 #ifndef SUPERSERVER

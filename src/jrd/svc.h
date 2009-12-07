@@ -36,7 +36,6 @@
 #include "../common/classes/array.h"
 #include "../common/classes/SafeArg.h"
 #include "../common/UtilSvc.h"
-#include "../common/classes/Switches.h"
 
 // forward decl.
 struct serv_entry;
@@ -53,32 +52,32 @@ const ULONG SERVICE_VERSION			= 2;
 
 const int SVC_STDOUT_BUFFER_SIZE	= 1024;
 
-// Flag of capabilities supported by the server
-//const ULONG WAL_SUPPORT				= 0x1L;		// Write Ahead Log
-const ULONG MULTI_CLIENT_SUPPORT		= 0x2L;		// SuperServer model (vs. multi-inet)
-const ULONG REMOTE_HOP_SUPPORT			= 0x4L;		// Server can connect to other server
-//const ULONG NO_SVR_STATS_SUPPORT		= 0x8L;		// Does not support statistics
+/* Flag of capabilities supported by the server */
+//const ULONG WAL_SUPPORT					= 0x1L;	// Write Ahead Log
+const ULONG MULTI_CLIENT_SUPPORT		= 0x2L;	/* SuperServer model (vs. multi-inet) */
+const ULONG REMOTE_HOP_SUPPORT			= 0x4L;	/* Server can connect to other server */
+//const ULONG NO_SVR_STATS_SUPPORT		= 0x8L;	// Does not support statistics
 
-//const ULONG NO_DB_STATS_SUPPORT		= 0x10L;	// Does not support statistics
+//const ULONG NO_DB_STATS_SUPPORT			= 0x10L;	// Does not support statistics
 // Really the 16 bit LIBS here?
 //const ULONG LOCAL_ENGINE_SUPPORT		= 0x20L;	// The local 16 bit engine
-//const ULONG NO_FORCED_WRITE_SUPPORT	= 0x40L;	// Can not configure sync writes
-//const ULONG NO_SHUTDOWN_SUPPORT		= 0x80L;	// Can not shutdown/restart databases
-const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	// Can not shutdown server
-const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	// Can configure server
-const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	// Can pass quoted filenames in
+//const ULONG NO_FORCED_WRITE_SUPPORT		= 0x40L;	// Can not configure sync writes
+//const ULONG NO_SHUTDOWN_SUPPORT			= 0x80L;	// Can not shutdown/restart databases
+const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	/* Can not shutdown server */
+const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	/* Can configure server */
+const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	/* Can pass quoted filenames in */
 
-// Range definitions for service actions.  Any action outside of
-// this range is not supported
+/* Range definitions for service actions.  Any action outside of
+   this range is not supported */
 const USHORT isc_action_min				= 1;
 const USHORT isc_action_max				= isc_action_svc_last;
 
-// Range definitions for service actions.  Any action outside of
-// this range is not supported
+/* Range definitions for service actions.  Any action outside of
+   this range is not supported */
 //define isc_info_min                  50
 //define isc_info_max                  67
 
-// Bitmask values for the svc_flags variable
+/* Bitmask values for the svc_flags variable */
 const int SVC_shutdown		= 0x1;
 const int SVC_timeout		= 0x2;
 //const int SVC_forked		= 0x4;
@@ -182,8 +181,6 @@ private:
 	// Service must have private destructor, called from finish
 	// when both (server and client) threads are finished
 	~Service();
-	// Find current service in global services list
-	bool	locateInAllServices(size_t* posPtr = NULL);
 	// Detach self from global services list
 	void	removeFromAllServices();
 	// The only service, implemented internally
@@ -215,13 +212,12 @@ private:
 	// Convert spb flags to utility switches
 	static void			conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Find spb switch in switch table
-	static const TEXT*	find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table);
+	static const TEXT*	find_switch(int in_spb_sw, const in_sw_tab_t* table);
 	// Loop through the appropriate switch table looking for the text for the given command switch
 	static bool			process_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Get bitmask from within spb buffer, find corresponding switches within specified table,
 	// add them to the command line
-	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
-									   const Switches::in_sw_tab_t* table,
+	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb, const in_sw_tab_t* table,
 									   Firebird::string& sw);
 	// Get string from within spb buffer, add it to the command line
 	static void get_action_svc_string(const Firebird::ClumpletReader& spb, Firebird::string& sw);
@@ -229,14 +225,11 @@ private:
 	static void get_action_svc_data(const Firebird::ClumpletReader& spb, Firebird::string& sw);
 	// Get parameter from within spb buffer, find corresponding switch within specified table,
 	// add it to the command line
-	static bool get_action_svc_parameter(UCHAR tag, const Switches::in_sw_tab_t* table,
-										 Firebird::string&);
+	static bool get_action_svc_parameter(UCHAR tag, const in_sw_tab_t* table, Firebird::string&);
 	// Create 'SYSDBA needed' error in status vector
 	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);
 	// Does info buffer have enough space for SLONG?
 	static bool ck_space_for_numeric(UCHAR*& info, const UCHAR* const end);
-	// Make status vector permamnent, if one present in worker thread's space
-	void makePermanentStatusVector() throw();
 
 private:
 	ISC_STATUS_ARRAY svc_status;		// status vector for running service
@@ -272,34 +265,6 @@ private:
 	SLONG				svc_remote_pid;
 
 	TraceManager*		svc_trace_manager;
-
-public:
-	struct StatusStringsHelper
-	{
-		FB_THREAD_ID workerThread;
-		Firebird::Mutex mtx;
-	};
-
-private:
-	StatusStringsHelper	svc_thread_strings;
-
-	//Service existence guard
-	class ExistenceGuard
-	{
-	public:
-		explicit ExistenceGuard(Service* svc);
-		~ExistenceGuard();
-		void release();
-
-	private:
-		Service* svc;
-		bool locked;
-	};
-
-	friend class ExistenceGuard;
-
-	Firebird::Mutex		svc_existence_lock;
-	ExistenceGuard*		svc_current_guard;
 };
 
 } //namespace Jrd

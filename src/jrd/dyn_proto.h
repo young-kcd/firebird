@@ -30,8 +30,7 @@ namespace Jrd
 	class jrd_tra;
 }
 
-void	DYN_ddl(/*Jrd::Attachment*,*/ Jrd::jrd_tra*, USHORT, const UCHAR*,
-	const Firebird::string& sqlText);
+void	DYN_ddl(/*Jrd::Attachment*,*/ Jrd::jrd_tra*, USHORT, const UCHAR*);
 
 #endif // JRD_DYN_PROTO_H
 

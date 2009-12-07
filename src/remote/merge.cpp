@@ -27,7 +27,6 @@
 #include "../remote/remote.h"
 #include "../remote/merge_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../common/classes/DbImplementation.h"
 
 inline void PUT_WORD(UCHAR*& ptr, USHORT value)
 {
@@ -62,7 +61,6 @@ USHORT MERGE_database_info(const UCHAR* in,
  * Functional description
  *	Merge server / remote interface / Y-valve information into
  *	database block.  Return the actual length of the packet.
- *	See also jrd/utl.cpp for decoding of this block.
  *
  **************************************/
 	SSHORT l;
@@ -70,17 +68,6 @@ USHORT MERGE_database_info(const UCHAR* in,
 
 	UCHAR* start = out;
 	const UCHAR* const end = out + out_length;
-
-	UCHAR mergeLevel = 0;
-	for (const UCHAR* getMergeLevel = in; *getMergeLevel != isc_info_end;
-		 getMergeLevel += (3 + gds__vax_integer(getMergeLevel + 1, 2)))
-	{
-		if (*getMergeLevel == isc_info_implementation)
-		{
-			mergeLevel = getMergeLevel[3];
-			break;
-		}
-	}
 
 	for (;;)
 		switch (*out++ = *in++)
@@ -114,14 +101,6 @@ USHORT MERGE_database_info(const UCHAR* in,
 				return 0;
 			PUT(out, (UCHAR) impl);
 			PUT(out, (UCHAR) class_);
-			break;
-
-		case fb_info_implementation:
-			if (merge_setup(&in, &out, end, 6))
-				return 0;
-			Firebird::DbImplementation::current.stuff(&out);
-			PUT(out, (UCHAR) class_);
-			PUT(out, mergeLevel);
 			break;
 
 		case isc_info_base_level:

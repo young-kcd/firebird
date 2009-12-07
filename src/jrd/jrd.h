@@ -52,8 +52,6 @@
 #include "../jrd/sbm.h"
 #include "../jrd/scl.h"
 
-#include "../jrd/ExtEngineManager.h"
-
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
 //#define VIO_DEBUG				// remove this for production build
@@ -105,9 +103,9 @@ namespace EDS {
 
 namespace Jrd {
 
-const int QUANTUM				= 100;	// Default quantum
-const int SWEEP_QUANTUM			= 10;	// Make sweeps less disruptive
-const unsigned MAX_CALLBACKS	= 50;
+const int QUANTUM			= 100;	// Default quantum
+const int SWEEP_QUANTUM		= 10;	// Make sweeps less disruptive
+const int MAX_CALLBACKS		= 50;
 
 // fwd. decl.
 class thread_db;
@@ -150,25 +148,15 @@ public:
 	jrd_req*	request;					// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
-	FB_UINT64	type;						// Trigger type
+	UCHAR		type;						// Trigger type
 	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
 	jrd_rel*	relation;					// Trigger parent relation
 	Firebird::MetaName	name;				// Trigger name
-	Firebird::MetaName	engine;				// External engine name
-	Firebird::string	entryPoint;			// External trigger entrypoint
-	Firebird::string	extBody;			// External trigger body
-	ExtEngineManager::Trigger* extTrigger;	// External trigger
-
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
 
 	explicit Trigger(MemoryPool& p)
-		: blr(p),
-		  name(p),
-		  engine(p),
-		  entryPoint(p),
-		  extBody(p),
-		  extTrigger(NULL)
+		: blr(p), name(p)
 	{
 		dbg_blob_id.clear();
 	}
@@ -240,34 +228,19 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 	Firebird::string, DSqlCacheItem> > > DSqlCache;
 
 
-struct DdlTriggerContext
-{
-	DdlTriggerContext()
-		: ddlEvent(*getDefaultMemoryPool()),
-		  objectName(*getDefaultMemoryPool()),
-		  sqlText(*getDefaultMemoryPool())
-	{
-	}
-
-	Firebird::string ddlEvent;
-	Firebird::MetaName objectName;
-	Firebird::string sqlText;
-};
-
-
 //
 // the attachment block; one is created for each attachment to a database
 //
 class Attachment : public pool_alloc<type_att>, public Firebird::PublicHandle
 {
 public:
-	static Attachment* create(Database* dbb, FB_API_HANDLE publicHandle)
+	static Attachment* create(Database* dbb)
 	{
 		MemoryPool* const pool = dbb->createPool();
 
 		try
 		{
-			Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb, publicHandle);
+			Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb);
 			pool->setStatsGroup(attachment->att_memory_stats);
 			return attachment;
 		}
@@ -291,11 +264,35 @@ public:
 		}
 	}
 
+/*	Attachment()
+	:	att_database(0),
+		att_next(0),
+		att_blocking(0),
+		att_user(0),
+		att_transactions(0),
+		att_dbkey_trans(0),
+		att_requests(0),
+		att_active_sorts(0),
+		att_id_lock(0),
+		att_attachment_id(0),
+		att_lock_owner_handle(0),
+		att_event_session(0),
+		att_security_class(0),
+		att_security_classes(0),
+		att_flags(0),
+		att_charset(0),
+		att_long_locks(0),
+		att_compatibility_table(0),
+		att_val_errors(0),
+		att_working_directory(0)
+	{
+		att_counts[0] = 0;
+	}*/
+
 	MemoryPool* const att_pool;					// Memory pool
 	Firebird::MemoryStats att_memory_stats;
 
 	Database*	att_database;				// Parent database block
-	FB_API_HANDLE att_public_handle;		// Public handle
 	Attachment*	att_next;					// Next attachment to database
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
@@ -313,8 +310,7 @@ public:
 	vcl*		att_counts[DBB_max_count];
 	RuntimeStatistics	att_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment
-	SSHORT		att_client_charset;			// user's charset specified in dpb
-	SSHORT		att_charset;				// current (client or external) attachment charset
+	SSHORT		att_charset;				// user's charset specified in dpb
 	Lock*		att_long_locks;				// outstanding two phased locks
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
@@ -322,7 +318,6 @@ public:
 	Firebird::PathName	att_filename;			// alias used to attach the database
 	const Firebird::TimeStamp	att_timestamp;	// Connection date and time
 	Firebird::StringMap att_context_vars;	// Context variables for the connection
-	Firebird::Stack<DdlTriggerContext> ddlTriggersContext;	// Context variables for DDL trigger event
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
 	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
 	SLONG att_remote_pid;					// Process id of remote client
@@ -335,7 +330,6 @@ public:
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	Firebird::Mutex att_mutex;				// attachment mutex
-	bool att_in_use;						// attachment in use (can't be detached or dropped)
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
@@ -345,18 +339,6 @@ public:
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
-	PreparedStatement* prepareUserStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
-		jrd_tra* transaction, const Firebird::string& text);
-
-	Firebird::MetaName nameToMetaCharSet(thread_db* tdbb, const Firebird::MetaName& name);
-	Firebird::MetaName nameToUserCharSet(thread_db* tdbb, const Firebird::MetaName& name);
-	Firebird::string stringToMetaCharSet(thread_db* tdbb, const Firebird::string& str);
-	Firebird::string stringToUserCharSet(thread_db* tdbb, const Firebird::string& str);
-
-	void storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
-		const Firebird::string& text);
-	void storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
-		const UCHAR* data, unsigned length);
 
 	void cancelExternalConnection(thread_db* tdbb);
 
@@ -376,7 +358,7 @@ public:
 	}
 
 private:
-	Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle);
+	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
 };
 
@@ -443,9 +425,8 @@ public:
 											// (it will usually be 0)
 	Lock* prc_existence_lock;				// existence lock, if any
 	Firebird::MetaName prc_security_name;	// security class name for procedure
-	Firebird::QualifiedName prc_name;		// name
+	Firebird::MetaName prc_name;			// ascic name
 	USHORT prc_alter_count;					// No. of times the procedure was altered
-	ExtEngineManager::Procedure* prc_external;
 
 public:
 	explicit jrd_prc(MemoryPool& p)
@@ -480,17 +461,11 @@ public:
 	USHORT		prm_number;
 	dsc			prm_desc;
 	jrd_nod*	prm_default_value;
-	bool		prm_nullable;
-	prm_mech_t	prm_mechanism;
 	Firebird::MetaName prm_name;			// asciiz name
-	Firebird::MetaName prm_field_source;
-
-public:
+//public:
 	explicit Parameter(MemoryPool& p)
-		: prm_name(p),
-		  prm_field_source(p)
-	{
-	}
+		: prm_name(p)
+	{ }
 };
 
 // Index block to cache index information
@@ -777,8 +752,6 @@ public:
 
 	void setRequest(jrd_req* val);
 
-	SSHORT getCharSet() const;
-
 	void bumpStats(const RuntimeStatistics::StatType index)
 	{
 		reqStat->bumpValue(index);
@@ -923,6 +896,16 @@ typedef Firebird::HalfStaticArray<UCHAR, 256> MoveBuffer;
 
 } //namespace Jrd
 
+// Random string block -- as long as impure areas don't have
+// constructors and destructors, the need this varying string
+
+class VaryingString : public pool_alloc_rpt<SCHAR, type_str>
+{
+public:
+	USHORT str_length;
+	UCHAR str_data[2];			// one byte for ALLOC and one for the NULL
+};
+
 // Threading macros
 
 /* Define JRD_get_thread_data off the platform specific version.
@@ -975,11 +958,11 @@ inline Jrd::thread_db* JRD_get_thread_data()
 	return (Jrd::thread_db*) ThreadData::getSpecific();
 }
 
-inline void CHECK_DBB(const Jrd::Database*)
+inline void CHECK_DBB(const Jrd::Database* dbb)
 {
 }
 
-inline void CHECK_TDBB(const Jrd::thread_db*)
+inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
 {
 }
 

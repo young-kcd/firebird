@@ -35,6 +35,7 @@ FBRunUser=firebird
 
 makeFbDir() {
 	mDir=${1}
+	mode=${2}
 	if [ ! -d $mDir ]; then
 		rm -rf $mDir
 		mkdir $mDir

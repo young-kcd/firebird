@@ -34,9 +34,8 @@ namespace Jrd {
 }
 
 void RSE_close(Jrd::thread_db*, Jrd::RecordSource*);
-bool RSE_get_record(Jrd::thread_db*, Jrd::RecordSource*);
-bool RSE_internal_get_record(Jrd::thread_db*, Jrd::RecordSource*, Jrd::RecordSource*);
-void RSE_invalidate_child_rpbs(Jrd::thread_db*, Jrd::RecordSource*);
+bool RSE_get_record(Jrd::thread_db*, Jrd::RecordSource*, Jrd::rse_get_mode);
 void RSE_open(Jrd::thread_db*, Jrd::RecordSource*);
 
 #endif // JRD_RSE_PROTO_H
+

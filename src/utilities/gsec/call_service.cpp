@@ -353,7 +353,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	case DEL_OPER:
 		stuffSpbByte(spb, isc_action_svc_delete_user);
 		stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
-		if (userInfo.sql_role_name_entered)
+		if (userInfo.sql_role_name_entered) 
 		{
 			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
 		}
@@ -365,7 +365,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		{
 			stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
 		}
-		if (userInfo.sql_role_name_entered)
+		if (userInfo.sql_role_name_entered) 
 		{
 			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
 		}

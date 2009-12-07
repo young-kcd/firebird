@@ -294,6 +294,8 @@ blb* BLB_create2(thread_db* tdbb,
 		blob->blb_pg_space_id = DB_PAGE_SPACE;
 	}
 
+	//blob->blb_source_interp = from_charset;
+	//blob->blb_target_interp = to_charset;
 	blob->blb_sub_type = to;
 
 	bool filter_required = false;
@@ -307,16 +309,16 @@ blb* BLB_create2(thread_db* tdbb,
 			filter_required = true;
 		}
 	}
-	else if (to == isc_blob_text && from_charset != to_charset)
+	else if (to == isc_blob_text && (from_charset != to_charset))
 	{
 		if (from_charset == CS_dynamic)
-			from_charset = tdbb->getCharSet();
+			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
-			to_charset = tdbb->getCharSet();
+			to_charset = tdbb->getAttachment()->att_charset;
 
-		if (to_charset != CS_NONE && from_charset != CS_NONE &&
-			to_charset != CS_BINARY && from_charset != CS_BINARY &&
-			from_charset != to_charset)
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
+			(from_charset != to_charset))
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
@@ -791,8 +793,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 
 	// If this is a stream blob, fake fragment unless we're at the end
 
-	if (!SEGMENTED(blob)) {
-		// stream blob
+	if (!SEGMENTED(blob)) { // stream blob
 		blob->blb_fragment_size = (blob->blb_seek == blob->blb_length) ? 0 : 1;
 	}
 
@@ -1387,7 +1388,7 @@ blb* BLB_open2(thread_db* tdbb,
 
 	UCharBuffer new_bpb;
 
-	if (external_call)
+	if (external_call && ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 	{
 		if (!from_type_specified)
 			from = blob->blb_sub_type;
@@ -1414,16 +1415,16 @@ blb* BLB_open2(thread_db* tdbb,
 		filter = find_filter(tdbb, from, to);
 		filter_required = true;
 	}
-	else if (to == isc_blob_text && from_charset != to_charset)
+	else if (to == isc_blob_text && (from_charset != to_charset))
 	{
 		if (from_charset == CS_dynamic)
-			from_charset = tdbb->getCharSet();
+			from_charset = tdbb->getAttachment()->att_charset;
 		if (to_charset == CS_dynamic)
-			to_charset = tdbb->getCharSet();
+			to_charset = tdbb->getAttachment()->att_charset;
 
-		if (to_charset != CS_NONE && from_charset != CS_NONE &&
-			to_charset != CS_BINARY && from_charset != CS_BINARY &&
-			from_charset != to_charset)
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
+			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
+			(from_charset != to_charset))
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
@@ -1924,7 +1925,8 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
+static ISC_STATUS blob_filter(USHORT	action,
+							  BlobControl*	control)
 {
 /**************************************
  *
@@ -2142,7 +2144,8 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 }
 
 
-static void delete_blob_id(thread_db* tdbb, const bid* blob_id, SLONG prior_page, jrd_rel* relation)
+static void delete_blob_id(thread_db* tdbb,
+						   const bid* blob_id, SLONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *

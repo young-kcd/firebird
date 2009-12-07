@@ -335,7 +335,7 @@ private:
 	static SINT64 getGlobalId(int);
 
 	static void putDatabase(const Database*, Writer&, int);
-	static bool putAttachment(thread_db*, const Attachment*, Writer&, int);
+	static bool putAttachment(const Attachment*, Writer&, int);
 	static void putTransaction(const jrd_tra*, Writer&, int);
 	static void putRequest(const jrd_req*, Writer&, int);
 	static void putCall(const jrd_req*, Writer&, int);

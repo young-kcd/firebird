@@ -45,12 +45,12 @@ struct btree_exp
 const int BTX_SIZE				= 2;
 
 // Flags (3-bits) used for index node
-const int BTN_NORMAL_FLAG					= 0;
-const int BTN_END_LEVEL_FLAG				= 1;
-const int BTN_END_BUCKET_FLAG				= 2;
+const int BTN_NORMAL_FLAG		= 0;
+const int BTN_END_LEVEL_FLAG	= 1;
+const int BTN_END_BUCKET_FLAG	= 2;
 const int BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG	= 3;
-const int BTN_ZERO_LENGTH_FLAG				= 4;
-const int BTN_ONE_LENGTH_FLAG				= 5;
+const int BTN_ZERO_LENGTH_FLAG	= 4;
+const int BTN_ONE_LENGTH_FLAG	= 5;
 //const int BTN_ZERO_PREFIX_ONE_LENGTH_FLAG	= 6;
 //const int BTN_GET_MORE_FLAGS	= 7;
 
@@ -87,7 +87,16 @@ namespace BTreeNode {
 
 	bool keyEquality(USHORT length, const UCHAR* data, const Ods::IndexNode* indexNode);
 
-	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, UCHAR flags, btree_exp** expanded_node);
+#ifdef SCROLLABLE_CURSORS
+	UCHAR* lastNode(Ods::btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node);
+#endif
+
+	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer,
+				UCHAR flags, btree_exp** expanded_node);
+#ifdef SCROLLABLE_CURSORS
+	UCHAR* previousNode(/*Ods::IndexNode* node,*/ UCHAR* pointer,
+				/*UCHAR flags,*/ btree_exp** expanded_node);
+#endif
 
 	//void quad_put(SLONG value, UCHAR *data);
 
@@ -109,8 +118,7 @@ namespace BTreeNode {
 
 } // namespace BTreeNode
 
-inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
-	bool leafNode)
+inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags, bool leafNode)
 {
 /**************************************
  *

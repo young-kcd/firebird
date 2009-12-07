@@ -139,8 +139,13 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 
 	IntlUtil::initUtf8Charset(&cs);
 
+	string collAttributes("ICU-VERSION=");
+	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	IntlUtil::setupIcuAttributes(&cs, collAttributes, "", collAttributes);
+
 	UCharBuffer collAttributesBuffer;
-	IntlUtil::getDefaultCollationAttributes(collAttributesBuffer, cs);
+	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
+		collAttributes.length());
 
 	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
 		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
@@ -411,7 +416,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 
 void TracePluginImpl::logRecordServ(const char* action, TraceService* service)
 {
-	const ntrace_service_t svc_id = service->getServiceID();
+	//const ntrace_service_t svc_id = service->getServiceID(); // Unused
 	bool reg = false;
 
 	while (true)
@@ -421,7 +426,7 @@ void TracePluginImpl::logRecordServ(const char* action, TraceService* service)
 			ReadLockGuard lock(servicesLock);
 
 			ServicesTree::Accessor accessor(&services);
-			if (accessor.locate(svc_id))
+			if (accessor.locate(service->getServiceID()))
 			{
 				record.insert(0, *accessor.current().description);
 				break;
@@ -431,7 +436,7 @@ void TracePluginImpl::logRecordServ(const char* action, TraceService* service)
 		if (reg)
 		{
 			string temp;
-			temp.printf("\tService %p, <unknown, bug?>" NEWLINE, svc_id);
+			temp.printf("\tService %p, <unknown, bug?>" NEWLINE, service->getServiceID());
 			record.insert(0, temp);
 			break;
 		}
@@ -1622,7 +1627,6 @@ void TracePluginImpl::register_service(TraceService* service)
 	serv_data.description->printf("\t%s, (Service %p, %s, %s%s)" NEWLINE,
 		service->getServiceMgr(), serv_data.id,
 		username.c_str(), remote_address.c_str(), remote_process.c_str());
-	serv_data.enabled = true;
 
 	// Adjust the list of services
 	{
@@ -1630,45 +1634,6 @@ void TracePluginImpl::register_service(TraceService* service)
 		services.add(serv_data);
 	}
 }
-
-
-bool TracePluginImpl::checkServiceFilter(TraceService* service, bool started)
-{
-	ReadLockGuard lock(servicesLock);
-
-	ServiceData* data = NULL;
-	ServicesTree::Accessor accessor(&services);
-	if (accessor.locate(service->getServiceID()))
-		data = &accessor.current();
-
-	if (data && !started)
-		return data->enabled;
-
-	const char* svcName = service->getServiceName();
-	const int svcNameLen = strlen(svcName);
-	bool enabled = true;
-
-	if (config.include_filter.hasData())
-	{
-		include_matcher->reset();
-		include_matcher->process((const UCHAR*) svcName, svcNameLen);
-		enabled = include_matcher->result();
-	}
-
-	if (enabled && config.exclude_filter.hasData())
-	{
-		exclude_matcher->reset();
-		exclude_matcher->process((const UCHAR*) svcName, svcNameLen);
-		enabled = !exclude_matcher->result();
-	}
-
-	if (data) {
-		data->enabled = enabled;
-	}
-
-	return enabled;
-}
-
 
 void TracePluginImpl::log_event_service_attach(TraceService* service,
 	ntrace_result_t att_result)
@@ -1701,9 +1666,6 @@ void TracePluginImpl::log_event_service_start(TraceService* service,
 {
 	if (config.log_services)
 	{
-		if (!checkServiceFilter(service, true))
-			return;
-
 		const char* event_type;
 		switch (start_result)
 		{
@@ -1755,9 +1717,6 @@ void TracePluginImpl::log_event_service_query(TraceService* service,
 {
 	if (config.log_services && config.log_service_query)
 	{
-		if (!checkServiceFilter(service, false))
-			return;
-
 		const char* tmp = service->getServiceName();
 		if (tmp && *tmp) {
 			record.printf("\t\"%s\"" NEWLINE, tmp);

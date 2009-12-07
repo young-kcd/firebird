@@ -40,7 +40,7 @@ template <typename What>
 class SimpleDelete
 {
 public:
-	static void clear(What* ptr)
+	static void clear(What *ptr)
 	{
 		delete ptr;
 	}

@@ -28,51 +28,51 @@
 
 namespace Jrd {
 
-// External file access block
+/* External file access block */
 
 class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 {
 public:
 #ifdef VMS
-	Format*	ext_format;			// External format
+	Format*	ext_format;			/* External format */
 #endif
-	//UCHAR*	ext_stuff;		// Random stuff
-	USHORT	ext_flags;			// Misc and cruddy flags
+	//UCHAR*	ext_stuff;			// Random stuff
+	USHORT	ext_flags;			/* Misc and cruddy flags */
 	USHORT	ext_tra_cnt;		// How many transactions used the file
 #ifdef VMS
-	int		ext_ifi;			// Internal file identifier
-	int		ext_isi;			// Internal stream (default)
+	int		ext_ifi;			/* Internal file identifier */
+	int		ext_isi;			/* Internal stream (default) */
 #else
-	FILE*	ext_ifi;			// Internal file identifier
+	FILE*	ext_ifi;			/* Internal file identifier */
 	//int*	ext_isi;			// Internal stream (default)
 #endif
 	//USHORT	ext_record_length;	// Record length
 #ifdef VMS
-	USHORT	ext_file_type;		// File type
+	USHORT	ext_file_type;		/* File type */
 
-	USHORT	ext_index_count;	// Number of indices
-	UCHAR*	ext_indices;		// Index descriptions
-	UCHAR	ext_dbkey[8];		// DBKEY
+	USHORT	ext_index_count;	/* Number of indices */
+	UCHAR*	ext_indices;		/* Index descriptions */
+	UCHAR	ext_dbkey[8];		/* DBKEY */
 #endif
 	char	ext_filename[1];
 };
 
-//const int EXT_opened		= 1;	// File has been opened
-const int EXT_eof			= 2;	// Positioned at EOF
-const int EXT_readonly		= 4;	// File could only be opened for read
+//const int EXT_opened	= 1;	// File has been opened
+const int EXT_eof		= 2;	/* Positioned at EOF */
+const int EXT_readonly	= 4;	/* File could only be opened for read */
 const int EXT_last_read		= 8;	// last operation was read
 const int EXT_last_write	= 16;	// last operation was write
 
 #ifdef VMS
 struct irsb_ext
 {
-	USHORT irsb_flags;			// flags (a whole word!)
-	UCHAR irsb_ext_dbkey[8];	// DBKEY
+	USHORT irsb_flags;			/* flags (a whole word!) */
+	UCHAR irsb_ext_dbkey[8];	/* DBKEY */
 };
 #endif
 
 
-// Overload record parameter block with external file stuff
+/* Overload record parameter block with external file stuff */
 
 #ifdef VMS
 #define rpb_ext_isi	rpb_f_page
@@ -82,3 +82,4 @@ struct irsb_ext
 } //namespace Jrd
 
 #endif // JRD_EXT_H
+

@@ -18,7 +18,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_VIRTUAL_TABLE_H
@@ -26,64 +25,20 @@
 
 namespace Jrd {
 
+// To be refactored to a class
 
-class RecordStream	//// TODO: create RecordStream.h
-{
-public:
-	explicit RecordStream(RecordSource* aRsb)
-		: rsb(aRsb)
-	{
-	}
+namespace VirtualTable {
 
-	virtual ~RecordStream()
-	{
-	}
+void close(Jrd::thread_db*, Jrd::RecordSource*);
+void erase(Jrd::thread_db*, Jrd::record_param*);
+void fini(Jrd::jrd_rel*);
+bool get(Jrd::thread_db*, Jrd::RecordSource*);
+void modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
+void open(Jrd::thread_db*, Jrd::RecordSource*);
+Jrd::RecordSource* optimize(Jrd::thread_db*, Jrd::OptimizerBlk*, SSHORT);
+void store(Jrd::thread_db*, Jrd::record_param*);
 
-public:
-	virtual void findRsbs(StreamStack* streamList, RsbStack* /*rsbList*/)
-	{
-		streamList->push(rsb->rsb_stream);
-	}
-
-	virtual void invalidate(thread_db* /*tdbb*/, record_param* rpb)
-	{
-		rpb->rpb_number.setValid(false);
-	}
-
-public:
-	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen) = 0;
-	virtual void open(thread_db* tdbb, jrd_req* request) = 0;
-	virtual void close(thread_db* tdbb) = 0;
-	virtual bool get(thread_db* tdbb, jrd_req* request) = 0;
-	virtual void markRecursive() = 0;
-
-protected:
-	RecordSource* rsb;
-};
-
-
-class VirtualTable : public RecordStream
-{
-private:
-	explicit VirtualTable(RecordSource* aRsb)
-		: RecordStream(aRsb)
-	{
-	}
-
-public:
-	static RecordSource* create(thread_db*, OptimizerBlk*, SSHORT);
-	static void erase(thread_db*, record_param*);
-	static void modify(thread_db*, record_param*, record_param*);
-	static void store(thread_db*, record_param*);
-
-public:
-	virtual unsigned dump(UCHAR* buffer, unsigned bufferLen);
-	virtual void open(thread_db* tdbb, jrd_req* request);
-	virtual void close(thread_db* tdbb);
-	virtual bool get(thread_db* tdbb, jrd_req* request);
-	virtual void markRecursive();
-};
-
+} // namespace VirtualTable
 
 } // namespace Jrd
 
