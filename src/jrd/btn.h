@@ -211,31 +211,6 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 						{
 							tmp = *localPointer++;
 							number |= (tmp & 0x0F) << 28;
-/*
-	Change number to 64-bit type and enable this for 64-bit support
-
-							number |= (*tmp & 0x7F) << 28;
-							if (tmp >= 128)
-							{
-								tmp = *localPointer++;
-								number |= (*tmp & 0x7F) << 35;
-								if (tmp >= 128)
-								{
-									tmp = *localPointer++;
-									number |= (*tmp & 0x7F) << 42;
-									if (tmp >= 128)
-									{
-										tmp = *localPointer++;
-										number |= (*tmp & 0x7F) << 49;
-										if (tmp >= 128)
-										{
-											tmp = *localPointer++;
-											number |= (*tmp & 0x7F) << 56; // We get 63 bits at this point!
-										}
-									}
-								}
-							}
-*/
 						}
 					}
 				}

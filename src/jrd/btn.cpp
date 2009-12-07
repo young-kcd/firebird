@@ -764,46 +764,6 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags, bool lea
 							tmp = (number & 0x0F);
 							number >>= 7; //35
 							*pagePointer++ = tmp;
-/*
-	Change number to 64-bit type and enable this for 64-bit support
-							tmp = (number & 0x7F);
-							number >>= 7; //35
-							if (number > 0) {
-								tmp |= 0x80;
-							}
-							*pagePointer++ = tmp;
-							if (number > 0)
-							{
-								tmp = (number & 0x7F);
-								number >>= 7; //42
-								if (number > 0) {
-									tmp |= 0x80;
-								}
-								*pagePointer++ = tmp;
-								if (number > 0)
-								{
-									tmp = (number & 0x7F);
-									number >>= 7; //49
-									if (number > 0) {
-										tmp |= 0x80;
-									}
-									*pagePointer++ = tmp;
-									if (number > 0)
-									{
-										tmp = (number & 0x7F);
-										number >>= 7; //56
-										if (number > 0) {
-											tmp |= 0x80;
-										}
-										*pagePointer++ = tmp;
-										if (number > 0) {
-											tmp = (number & 0x7F);
-											*pagePointer++ = tmp;
-										}
-									}
-								}
-							}
-*/
 						}
 					}
 				}
