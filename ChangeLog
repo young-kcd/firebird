@@ -1,3 +1,21 @@
+2009-12-07 11:33  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.565.2.4):
+
+	Fixed issue detected by QA - non-members of group 'firebird' cannot
+	access remote server
+
+2009-12-07 09:46  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/misc/:
+	firebird.init.d.debian.in (1.15.2.1), firebird.init.d.generic.in
+	(1.11.2.1), firebird.init.d.mandrake.in (1.18.2.1),
+	firebird.init.d.slackware.in (1.8.2.1), firebird.init.d.suse.in
+	(1.12.2.1):
+
+	Fixed once more issue detected by QA - all scripts except gentoo's
+	were not setting correct access rights on /tmp/firebird
+
 2009-12-05 13:52  robocop
 
 	* firebird2/src/isql/extract.epp (1.102.2.1):
