@@ -1,3 +1,10 @@
+2009-12-07 17:17  dimitr
+
+	* firebird2/src/lock/print.cpp (1.95.2.1):
+
+	Fixed the interactive lock print header for waits. It was showing
+	non-supported columns.
+
 2009-12-07 11:33  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.565.2.4):
