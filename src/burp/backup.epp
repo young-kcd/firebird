@@ -1367,7 +1367,7 @@ void put_asciz( const att_type attribute, const TEXT* string)
 	// We can't honor operating systems that allow longer file names.
 	if (l >= MAX_FILE_NAME_SIZE)
 	{
-		BURP_print(343, SafeArg() << int(attribute) << 'put_asciz()' << (MAX_FILE_NAME_SIZE - 1));
+		BURP_print(343, SafeArg() << int(attribute) << "put_asciz()" << (MAX_FILE_NAME_SIZE - 1));
 		// msg 343: text for attribute @1 is too large in @2, truncating to @3 bytes
 		l = MAX_FILE_NAME_SIZE - 1;
 	}
@@ -2582,7 +2582,7 @@ int put_text( att_type attribute, const TEXT* text, SSHORT size_len)
 	fb_assert(l <= MAX_UCHAR);
 	if (l > MAX_UCHAR)
 	{
-		BURP_print(343, SafeArg() << int(attribute) << 'put_text()' << MAX_UCHAR);
+		BURP_print(343, SafeArg() << int(attribute) << "put_text()" << MAX_UCHAR);
 		// msg 343: text for attribute @1 is too large in @2, truncating to @3 bytes
 		l = MAX_UCHAR;
 	}
