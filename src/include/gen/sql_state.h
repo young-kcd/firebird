@@ -692,6 +692,7 @@ static const struct {
 	{335544989, "22006"}, // 669 cannot_make_not_null
 	{335544990, "0A000"}, // 670 feature_deprecated
 	{335544991, "00000"}, // 671 view_name
+	{335544992, "08006"}, // 672 lock_dir_access
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

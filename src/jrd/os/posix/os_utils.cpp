@@ -26,6 +26,7 @@
 // File functions
 
 #include "firebird.h"
+#include "gen/iberror.h"
 #include "../jrd/common.h"
 
 #include "../common/classes/init.h"
@@ -58,35 +59,37 @@
 #include <pwd.h>
 #endif
 
+using namespace Firebird;
+
 namespace os_utils
 {
 
-static Firebird::GlobalPtr<Firebird::Mutex> grMutex;
+static GlobalPtr<Mutex> grMutex;
 
 // Return user group id if user group name found, otherwise return 0.
 SLONG get_user_group_id(const TEXT* user_group_name)
 {
-	Firebird::MutexLockGuard guard(grMutex);
+	MutexLockGuard guard(grMutex);
 
 	const struct group* user_group = getgrnam(user_group_name);
 	return user_group ? user_group->gr_gid : 0;
 }
 
-static Firebird::GlobalPtr<Firebird::Mutex> pwMutex;
+static GlobalPtr<Mutex> pwMutex;
 
 // Return user id if user found, otherwise return -1.
 SLONG get_user_id(const TEXT* user_name)
 {
-	Firebird::MutexLockGuard guard(pwMutex);
+	MutexLockGuard guard(pwMutex);
 
 	const struct passwd* user = getpwnam(user_name);
 	return user ? user->pw_uid : -1;
 }
 
 // Fills the buffer with home directory if user found
-bool get_user_home(int user_id, Firebird::PathName& homeDir)
+bool get_user_home(int user_id, PathName& homeDir)
 {
-	Firebird::MutexLockGuard guard(pwMutex);
+	MutexLockGuard guard(pwMutex);
 
 	const struct passwd* user = getpwuid(user_id);
 	if (user)
@@ -114,7 +117,7 @@ void createLockDirectory(const char* pathname)
 				{
 					continue;
 				}
-				Firebird::system_call_failed::raise("stat");
+				system_call_failed::raise("stat");
 			}
 
 			if (S_ISDIR(st.st_mode))
@@ -123,7 +126,7 @@ void createLockDirectory(const char* pathname)
 			}
 
 			// not exactly original meaning, but very close to it
-			Firebird::system_call_failed::raise("access", ENOTDIR);
+			system_call_failed::raise("access", ENOTDIR);
 		}
 	} while (SYSCALL_INTERRUPTED(errno));
 
@@ -133,7 +136,7 @@ void createLockDirectory(const char* pathname)
 		{
 			continue;
 		}
-		Firebird::system_call_failed::raise("mkdir");
+		(Arg::Gds(isc_lock_dir_access) << pathname).raise();
 	}
 
 #ifndef SUPERSERVER
