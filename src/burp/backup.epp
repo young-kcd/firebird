@@ -2578,7 +2578,7 @@ int put_text( att_type attribute, const TEXT* text, SSHORT size_len)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	const SSHORT l = (SSHORT) MISC_symbol_length(text, (ULONG) size_len);
+	SSHORT l = (SSHORT) MISC_symbol_length(text, (ULONG) size_len);
 	fb_assert(l <= MAX_UCHAR);
 	if (l > MAX_UCHAR)
 	{
