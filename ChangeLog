@@ -1,3 +1,25 @@
+2009-12-07 19:26  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.291), dsql/parse.y (1.344),
+	jrd/dyn_mod.epp (1.133):
+
+	Feature CORE-2777 - Make possible to alter the default database
+	character set without manual update of system table
+
+2009-12-07 17:22  dimitr
+
+	* firebird2/src/lock/print.cpp (1.99):
+
+	Fixed the interactive lock print header for waits. It was showing
+	non-supported columns.
+
+2009-12-07 16:55  asfernandes
+
+	* firebird2/src/: jrd/dyn.h (1.51), jrd/dyn_mod.epp (1.132),
+	lock/print.cpp (1.98):
+
+	Misc
+
 2009-12-07 11:44  dimitr
 
 	* firebird2/src/jrd/: btn.cpp (1.33), btn.h (1.26):
