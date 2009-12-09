@@ -25,8 +25,8 @@ JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) \
 
 JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
-        grant.epp ini.epp met.epp pcmet.epp scl.epp AggregateRsb.cpp \
-        CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp WindowRsb.cpp RecordBuffer.cpp \
+        grant.epp ini.epp met.epp pcmet.epp scl.epp \
+        CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
         blb.cpp btn.cpp btr.cpp builtin.cpp \
 		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
 		DataTypeUtil.cpp dfw.cpp UserManagement.cpp divorce.cpp \
@@ -35,9 +35,9 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
 		IntlUtil.cpp isc_sync.cpp \
 		jrd.cpp Database.cpp lck.cpp \
-		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
+		mov.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
 		ods.cpp PluginManager.cpp pwd.cpp PreparedStatement.cpp RandomGenerator.cpp \
-		Relation.cpp ResultSet.cpp rlck.cpp rpb_chain.cpp rse.cpp \
+		Relation.cpp ResultSet.cpp rlck.cpp rpb_chain.cpp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
 		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp \
 		ValueImpl.cpp ValuesImpl.cpp vio.cpp \
@@ -45,7 +45,15 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
 		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp \
 		trace/TraceConfigStorage.cpp trace/TraceLog.cpp \
-		trace/TraceManager.cpp trace/TraceObjects.cpp
+		trace/TraceManager.cpp trace/TraceObjects.cpp \
+		recsrc/AggregatedStream.cpp recsrc/BitmapTableScan.cpp \
+		recsrc/BufferredStream.cpp recsrc/Cursor.cpp recsrc/ExternalTableScan.cpp \
+		recsrc/FilteredStream.cpp recsrc/FirstRowsStream.cpp recsrc/FullOuterJoin.cpp \
+		recsrc/FullTableScan.cpp recsrc/IndexTableScan.cpp recsrc/LockedStream.cpp \
+		recsrc/MergeJoin.cpp recsrc/NestedLoopJoin.cpp recsrc/ProcedureScan.cpp \
+		recsrc/RecordSource.cpp recsrc/RecursiveStream.cpp recsrc/SingularStream.cpp \
+		recsrc/SkipRowsStream.cpp recsrc/SortedStream.cpp recsrc/Union.cpp \
+		recsrc/VirtualTableScan.cpp recsrc/WindowedStream.cpp
 
 JRD_ServerSources = $(addprefix jrd/, $(JRD_ServerFiles))
 JRD_ServerSources += gpre/pretty.cpp
