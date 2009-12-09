@@ -15,132 +15,122 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
-#include "../jrd/ini.h"
-#include "../jrd/rse.h"
-#include "../jrd/exe_proto.h"
-#include "../jrd/opt_proto.h"
-#include "../jrd/rse_proto.h"
+#include "../jrd/btr.h"
+#include "../jrd/intl.h"
 #include "../jrd/blb_proto.h"
+#include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/vio_proto.h"
-#include "../jrd/AggregateRsb.h"
 
-using namespace Jrd;
+#include "RecordSource.h"
+
 using namespace Firebird;
+using namespace Jrd;
 
+// ------------------------
+// Data access: aggregation
+// ------------------------
 
-static bool rejectDuplicate(const UCHAR*, const UCHAR*, void*);
-
-
-// Callback routine used by sort/project to reject duplicate values.
-// Particularly dumb routine -- always returns true;
-static bool rejectDuplicate(const UCHAR* /*data1*/, const UCHAR* /*data2*/, void* /*userArg*/)
+AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* aggregate, RecordSource* next)
+	: RecordStream(csb, stream), m_aggregate(aggregate), m_next(next)
 {
+	fb_assert(m_next && m_aggregate);
+
+	m_impure = CMP_impure(csb, sizeof(Impure));
+}
+
+void AggregatedStream::open(thread_db* tdbb)
+{
+	jrd_req* const request = tdbb->getRequest();
+	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+
+	impure->irsb_flags = irsb_open;
+
+	impure->irsb_count = 3;
+	VIO_record(tdbb, &request->req_rpb[m_stream], m_format, tdbb->getDefaultPool());
+}
+
+void AggregatedStream::close(thread_db* tdbb)
+{
+	jrd_req* const request = tdbb->getRequest();
+
+	invalidateRecords(request);
+
+	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+
+	if (impure->irsb_flags & irsb_open)
+	{
+		impure->irsb_flags &= ~irsb_open;
+
+		m_next->close(tdbb);
+	}
+}
+
+bool AggregatedStream::getRecord(thread_db* tdbb)
+{
+	jrd_req* const request = tdbb->getRequest();
+	record_param* const rpb = &request->req_rpb[m_stream];
+	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+
+	if (!(impure->irsb_flags & irsb_open))
+	{
+		rpb->rpb_number.setValid(false);
+		return false;
+	}
+
+	impure->irsb_count = evaluateGroup(tdbb, impure->irsb_count);
+
+	if (!impure->irsb_count)
+	{
+		rpb->rpb_number.setValid(false);
+		return false;
+	}
+
+	rpb->rpb_number.setValid(true);
 	return true;
 }
 
-
-AggregateRsb::AggregateRsb(RecordSource* aRsb, jrd_nod* aAggNode)
-	: RecordStream(aRsb),
-	  aggNode(aAggNode),
-	  next(rsb->rsb_next)
+bool AggregatedStream::refetchRecord(thread_db* tdbb)
 {
+	return m_next->refetchRecord(tdbb);
 }
 
-
-RecordSource* AggregateRsb::create(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node,
-	NodeStack& deliverStack, RecordSelExpr* rse)
+bool AggregatedStream::lockRecord(thread_db* tdbb)
 {
-	SET_TDBB(tdbb);
-
-	CompilerScratch* csb = opt->opt_csb;
-
-	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
-	rsb->rsb_type = rsb_record_stream;
-	rsb->rsb_stream = (UCHAR) (IPTR) node->nod_arg[e_agg_stream];
-	rsb->rsb_format = csb->csb_rpt[rsb->rsb_stream].csb_format;
-	rsb->rsb_next = OPT_compile(tdbb, csb, rse, &deliverStack);
-	rsb->rsb_impure = CMP_impure(csb, sizeof(irsb));
-	rsb->rsb_record_stream = FB_NEW(*tdbb->getDefaultPool()) AggregateRsb(rsb, node);
-
-	return rsb;
+	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
+	return false; // compiler silencer
 }
 
-
-void AggregateRsb::findRsbs(StreamStack* streamList, RsbStack* rsbList)
+void AggregatedStream::dump(thread_db* tdbb, UCharBuffer& buffer)
 {
-	RecordStream::findRsbs(streamList, rsbList);
+	buffer.add(isc_info_rsb_begin);
 
-	if (rsbList)
-		rsbList->push(rsb);
+	buffer.add(isc_info_rsb_type);
+	buffer.add(isc_info_rsb_aggregate);
+
+	m_next->dump(tdbb, buffer);
+
+	buffer.add(isc_info_rsb_end);
 }
 
-
-void AggregateRsb::invalidate(thread_db* tdbb, record_param* rpb)
+void AggregatedStream::markRecursive()
 {
-	RecordStream::invalidate(tdbb, rpb);
-	RSE_invalidate_child_rpbs(tdbb, next);
+	m_next->markRecursive();
 }
 
-
-unsigned AggregateRsb::dump(UCHAR* buffer, unsigned bufferLen)
+void AggregatedStream::invalidateRecords(jrd_req* request)
 {
-	UCHAR* bufferStart = buffer;
-
-	if (bufferLen > 0)
-		*buffer++ = isc_info_rsb_aggregate;
-
-	return buffer - bufferStart;
+	m_next->invalidateRecords(request);
 }
-
-
-void AggregateRsb::open(thread_db* tdbb, jrd_req* request)
-{
-	SET_TDBB(tdbb);
-
-	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
-	irsb* impure = (irsb*) ((UCHAR*) request + rsb->rsb_impure);
-
-	impure->irsb_count = 3;
-
-	VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->getDefaultPool());
-}
-
-
-void AggregateRsb::close(thread_db* tdbb)
-{
-	SET_TDBB(tdbb);
-
-	RSE_close(tdbb, next);
-}
-
-
-bool AggregateRsb::get(thread_db* tdbb, jrd_req* request)
-{
-	SET_TDBB(tdbb);
-
-	irsb* impure = (irsb*) ((UCHAR*) request + rsb->rsb_impure);
-
-	if ((impure->irsb_count = evlGroup(tdbb, request, impure->irsb_count)))
-		return true;
-
-	return false;
-}
-
-
-void AggregateRsb::markRecursive()
-{
-	OPT_mark_rsb_recursive(next);
-}
-
 
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state
 // variable. The values of the state are:
@@ -149,9 +139,9 @@ void AggregateRsb::markRecursive()
 // 1  Values are pending from a prior fetch
 // 2  We encountered EOF from the last attempted fetch
 // 0  We processed everything now process (EOF)
-USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
+USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 {
-	SET_TDBB(tdbb);
+	jrd_req* const request = tdbb->getRequest();
 
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
@@ -159,8 +149,8 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 	impure_value vtemp;
 	vtemp.vlu_string = NULL;
 
-	jrd_nod* const map = aggNode->nod_arg[e_agg_map];
-	jrd_nod* const group = aggNode->nod_arg[e_agg_group];
+	jrd_nod* const map = m_aggregate->nod_arg[e_agg_map];
+	jrd_nod* const group = m_aggregate->nod_arg[e_agg_group];
 
 	jrd_nod** ptr;
 	const jrd_nod* const* end;
@@ -168,7 +158,9 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 	// if we found the last record last time, we're all done
 
 	if (state == 2)
+	{
 		return 0;
+	}
 
 	try
 	{
@@ -266,12 +258,12 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 
 		if (state == 0 || state == 3)
 		{
-			RSE_open(tdbb, next);
-			if (!RSE_get_record(tdbb, next))
+			m_next->open(tdbb);
+			if (!m_next->getRecord(tdbb))
 			{
 				if (group)
 				{
-					finiDistinct(request, aggNode);
+					finiDistinct(request);
 					return 0;
 				}
 				state = 2;
@@ -508,7 +500,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 			if (state == 2)
 				break;
 
-			if (!RSE_get_record(tdbb, next))
+			if (!m_next->getRecord(tdbb))
 				state = 2;
 		}
 
@@ -558,7 +550,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 					from->nod_type == nod_agg_total_distinct2 ||
 					from->nod_type == nod_agg_list_distinct)
 				{
-					computeDistinct(tdbb, request, from);
+					computeDistinct(tdbb, from);
 				}
 
 				if (!impure->vlux_count)
@@ -572,7 +564,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 			case nod_agg_count2:
 			case nod_agg_count_distinct:
 				if (from->nod_type == nod_agg_count_distinct)
-					computeDistinct(tdbb, request, from);
+					computeDistinct(tdbb, from);
 
 				if (!impure->vlu_desc.dsc_dtype)
 					SET_NULL(record, id);
@@ -584,7 +576,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 				break;
 
 			case nod_agg_average_distinct:
-				computeDistinct(tdbb, request, from);
+				computeDistinct(tdbb, from);
 				// fall through
 
 			case nod_agg_average:
@@ -604,7 +596,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 				break;
 
 			case nod_agg_average_distinct2:
-				computeDistinct(tdbb, request, from);
+				computeDistinct(tdbb, from);
 				// fall through
 
 			case nod_agg_average2:
@@ -642,11 +634,10 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 			}
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Exception&)
 	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		finiDistinct(request, aggNode);
-		ERR_punt();
+		finiDistinct(request);
+		throw;
 	}
 
 	return state;
@@ -654,7 +645,7 @@ USHORT AggregateRsb::evlGroup(thread_db* tdbb, jrd_req* request, USHORT state)
 
 
 // Initialize a sort for distinct aggregate.
-void AggregateRsb::initDistinct(jrd_req* request, const jrd_nod* node)
+void AggregatedStream::initDistinct(jrd_req* request, const jrd_nod* node)
 {
 	DEV_BLKCHK(node, type_nod);
 
@@ -672,13 +663,10 @@ void AggregateRsb::initDistinct(jrd_req* request, const jrd_nod* node)
 		ROUNDUP_LONG(asb->asb_length), (asb->asb_intl ? 2 : 1), 1, sortKey, rejectDuplicate, 0);
 }
 
-
-// Sort/project the values and compute the aggregate.
-void AggregateRsb::computeDistinct(thread_db* tdbb, jrd_req* request, jrd_nod* node)
+// Sort/project the values and compute the aggregate
+void AggregatedStream::computeDistinct(thread_db* tdbb, jrd_nod* node)
 {
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
+	jrd_req* const request = tdbb->getRequest();
 
 	const size_t asbIndex = (node->nod_type == nod_agg_list_distinct) ? 2 : 1;
 	AggregateSort* asb = (AggregateSort*) node->nod_arg[asbIndex];
@@ -773,33 +761,30 @@ void AggregateRsb::computeDistinct(thread_db* tdbb, jrd_req* request, jrd_nod* n
 	}
 }
 
-
-// Finalize a sort for distinct aggregate.
-void AggregateRsb::finiDistinct(jrd_req* request, const jrd_nod* const node)
+// Finalize a sort for distinct aggregate
+void AggregatedStream::finiDistinct(jrd_req* request)
 {
-	DEV_BLKCHK(node, type_nod);
-
-	jrd_nod* map = node->nod_arg[e_agg_map];
+	jrd_nod* const map = m_aggregate->nod_arg[e_agg_map];
 
 	jrd_nod** ptr;
 	const jrd_nod* const* end;
 
 	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 	{
-		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+		const jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
 
 		switch (from->nod_type)
 		{
-		case nod_agg_count_distinct:
-		case nod_agg_total_distinct:
-		case nod_agg_average_distinct:
-		case nod_agg_average_distinct2:
-		case nod_agg_total_distinct2:
-		case nod_agg_list_distinct:
+			case nod_agg_count_distinct:
+			case nod_agg_total_distinct:
+			case nod_agg_average_distinct:
+			case nod_agg_average_distinct2:
+			case nod_agg_total_distinct2:
+			case nod_agg_list_distinct:
 			{
 				const size_t asbIndex = (from->nod_type == nod_agg_list_distinct) ? 2 : 1;
-				const AggregateSort* asb = (AggregateSort*) from->nod_arg[asbIndex];
-				impure_agg_sort* asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
+				const AggregateSort* const asb = (AggregateSort*) from->nod_arg[asbIndex];
+				impure_agg_sort* const asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
 				SORT_fini(asbImpure->iasb_sort_handle);
 				asbImpure->iasb_sort_handle = NULL;
 			}

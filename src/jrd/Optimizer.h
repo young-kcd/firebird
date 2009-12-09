@@ -70,14 +70,14 @@ class jrd_nod;
 struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
+class IndexTableScan;
 
 bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
 bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
 bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
-VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
+Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
-USHORT OPT_nav_rsb_size(RecordSource*, USHORT, USHORT);
 
 inline int STREAM_INDEX(const jrd_nod* node)
 {
@@ -178,14 +178,14 @@ public:
 	~OptimizerRetrieval();
 
 	InversionCandidate* getCost();
-	InversionCandidate* getInversion(RecordSource** rsb);
+	InversionCandidate* getInversion(IndexTableScan** rsb);
 
 protected:
 	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
 	void findDependentFromStreams(const jrd_nod* node, SortedStreamList* streamList) const;
-	VaryingString* getAlias();
-	InversionCandidate* generateInversion(RecordSource** rsb);
-	RecordSource* generateNavigation();
+	const Firebird::string& getAlias();
+	InversionCandidate* generateInversion(IndexTableScan** rsb);
+	IndexTableScan* generateNavigation();
 	void getInversionCandidates(InversionCandidateList* inversions,
 		IndexScratchList* indexScratches, USHORT scope) const;
 	jrd_nod* makeIndexNode(const index_desc* idx) const;
@@ -206,7 +206,7 @@ private:
 	MemoryPool& pool;
 	thread_db* tdbb;
 	SSHORT stream;
-	VaryingString* alias;
+	Firebird::string alias;
 	jrd_nod** sort;
 	jrd_rel* relation;
 	CompilerScratch* csb;
@@ -256,7 +256,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-		/*RiverStack& river_stack,*/ jrd_nod** sort_clause, jrd_nod** project_clause, jrd_nod* plan_clause);
+					   jrd_nod** sort_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();
@@ -283,7 +283,6 @@ private:
 	MemoryPool& pool;
 	thread_db* tdbb;
 	jrd_nod** sort;
-	jrd_nod** project;
 	jrd_nod* plan;
 	CompilerScratch* csb;
 	Database* database;

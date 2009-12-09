@@ -420,7 +420,7 @@ without specifying a character set.', NULL);
 ('dsql_domain_not_found', 'ddl.c', 'DSQL', NULL, 0, 321, NULL, 'Specified domain or source column @1 does not exist', NULL, NULL);
 ('index_unused', 'check_indices', 'opt.c', NULL, 0, 322, NULL, 'index @1 cannot be used in the specified plan', NULL, NULL);
 ('dsql_self_join', 'dsql pass1_relation_alias', 'pass1.c', NULL, 0, 323, NULL, 'the table @1 is referenced twice; use aliases to differentiate', NULL, NULL);
-('stream_bof', 'seek', 'exe.c', NULL, 0, 324, NULL, 'illegal operation when at beginning of stream', NULL, NULL);
+('stream_bof', 'seek', 'exe.c', NULL, 0, 324, NULL, 'attempt to fetch before the first record in a record stream', NULL, NULL);
 ('stream_crack', 'mark_crack', 'exe.c', NULL, 0, 325, NULL, 'the current position is on a crack', NULL, NULL);
 ('db_or_file_exists', 'PREPARSE_execute', 'dsql preparse.c', NULL, 0, 326, NULL, 'database or file exists', NULL, NULL);
 ('invalid_operator', 'pars', 'par.c', NULL, 0, 327, NULL, 'invalid comparison operator for find operation', NULL, NULL);
@@ -780,6 +780,7 @@ Data source : @4', NULL, NULL)
 ('feature_deprecated', NULL, '', NULL, 0, 670, NULL, 'Feature @1 is deprecated', NULL, NULL);
 ('view_name', 'check_dependencies', 'dfw.epp', NULL, 0, 671, NULL, 'VIEW @1', NULL, NULL);
 ('lock_dir_access', 'createLockDirectory', 'os_utils.cpp', NULL, 0, 672, NULL, 'Can not access lock files directory @1', NULL, NULL);
+('invalid_fetch_option', NULL, 'Cursor.cpp', NULL, 0, 673, NULL, 'Fetch option @1 is invalid for a non-scrollable cursor', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

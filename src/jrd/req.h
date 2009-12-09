@@ -54,6 +54,7 @@ template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
 class RecordSource;
+class Cursor;
 class thread_db;
 
 // record parameter block
@@ -87,8 +88,6 @@ struct record_param
 	USHORT rpb_flags;				// record ODS flags replica
 	USHORT rpb_stream_flags;		// stream flags
 	SSHORT rpb_org_scans;			// relation scan count at stream open
-
-	FB_UINT64 rpb_ext_pos;			// position in external file
 
 	inline WIN& getWindow(thread_db* tdbb)
 	{
@@ -202,7 +201,7 @@ public:
 	:	req_pool(pool), req_memory_stats(parent_stats),
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
-		req_exec_sta(*pool), req_ext_stmt(NULL), req_invariants(*pool),
+		req_exec_sta(*pool), req_ext_stmt(NULL), req_cursors(*pool), req_invariants(*pool),
 		req_charset(CS_dynamic), req_blr(*pool), req_domain_validation(NULL),
 		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool),
 		req_sorts(*pool)
@@ -249,10 +248,10 @@ public:
 
 	jrd_nod*	req_top_node;			// top of execution tree
 	jrd_nod*	req_next;				// next node for execution
-	Firebird::Array<RecordSource*> req_fors;	// Vector of for loops, if any
+	Firebird::Array<Cursor*> req_fors;	// Vector of for loops, if any
 	Firebird::Array<jrd_nod*>	req_exec_sta;	// Array of exec_into nodes
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
-	vec<RecordSource*>* 		req_cursors;	// Vector of named cursors, if any
+	Firebird::Array<Cursor*>	req_cursors;	// Vector of named cursors, if any
 	Firebird::Array<jrd_nod*>	req_invariants;	// Vector of invariant nodes, if any
 	USHORT		req_label;				// label for leave
 	ULONG		req_flags;				// misc request flags
@@ -338,16 +337,13 @@ const ULONG req_in_use			= 0x80L;
 const ULONG req_sys_trigger		= 0x100L;		// request is a system trigger
 const ULONG req_count_records	= 0x200L;		// count records accessed
 const ULONG req_proc_fetch		= 0x400L;		// Fetch from procedure in progress
-const ULONG req_ansi_any		= 0x800L;		// Request is processing ANSI ANY
-const ULONG req_same_tx_upd		= 0x1000L;		// record was updated by same transaction
-const ULONG req_ansi_all		= 0x2000L;		// Request is processing ANSI ANY
-const ULONG req_ansi_not		= 0x4000L;		// Request is processing ANSI ANY
-const ULONG req_reserved		= 0x8000L;		// Request reserved for client
-const ULONG req_ignore_perm		= 0x10000L;		// ignore permissions checks
-const ULONG req_fetch_required	= 0x20000L;		// need to fetch next record
-const ULONG req_error_handler	= 0x40000L;		// looper is called to handle error
-const ULONG req_blr_version4	= 0x80000L;		// Request is of blr_version4
-const ULONG req_continue_loop	= 0x100000L;	// PSQL continue statement
+const ULONG req_same_tx_upd		= 0x800L;		// record was updated by same transaction
+const ULONG req_reserved		= 0x1000L;		// Request reserved for client
+const ULONG req_ignore_perm		= 0x2000L;		// ignore permissions checks
+const ULONG req_fetch_required	= 0x4000L;		// need to fetch next record
+const ULONG req_error_handler	= 0x8000L;		// looper is called to handle error
+const ULONG req_blr_version4	= 0x10000L;		// Request is of blr_version4
+const ULONG req_continue_loop	= 0x20000L;		// PSQL continue statement
 
 // Mask for flags preserved in a clone of a request
 const ULONG REQ_FLAGS_CLONE_MASK = (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);

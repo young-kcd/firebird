@@ -58,7 +58,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/nav_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/pcmet_proto.h"

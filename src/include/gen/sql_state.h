@@ -74,7 +74,7 @@ static const struct {
 	{335544371, "HY000"}, //  51 segstr_no_write
 	{335544372, "HY000"}, //  52 segstr_wrong_db
 	{335544373, "HY000"}, //  53 sys_request
-	{335544374, "HY000"}, //  54 stream_eof
+	{335544374, "HY109"}, //  54 stream_eof
 	{335544375, "08001"}, //  55 unavailable
 	{335544376, "HY000"}, //  56 unres_rel
 	{335544377, "HY000"}, //  57 uns_ext
@@ -344,7 +344,7 @@ static const struct {
 	{335544641, "42000"}, // 321 dsql_domain_not_found
 	{335544642, "42000"}, // 322 index_unused
 	{335544643, "42000"}, // 323 dsql_self_join
-	{335544644, "HY000"}, // 324 stream_bof
+	{335544644, "HY109"}, // 324 stream_bof
 	{335544645, "HY000"}, // 325 stream_crack
 	{335544646, "HY000"}, // 326 db_or_file_exists
 	{335544647, "42000"}, // 327 invalid_operator
@@ -693,6 +693,7 @@ static const struct {
 	{335544990, "0A000"}, // 670 feature_deprecated
 	{335544991, "00000"}, // 671 view_name
 	{335544992, "08006"}, // 672 lock_dir_access
+	{335544993, "HY106"}, // 673 invalid_fetch_option
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

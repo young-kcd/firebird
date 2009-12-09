@@ -81,6 +81,7 @@ class Collation;
 struct index_desc;
 struct IndexDescAlloc;
 class Format;
+class Cursor;
 
 // NOTE: The definition of structures RecordSelExpr and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
@@ -125,6 +126,7 @@ const int nod_invariant		= 128;		// node is recognized as being invariant
 const int nod_recurse		= 256;		// union node is a recursive union
 const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
 const int nod_window		= 1024;		// aggregate for window function
+const int nod_ansi_not		= 2048;		// ANY/ALL predicate is prefixed with a NOT one
 
 // Special RecordSelExpr node
 
@@ -133,7 +135,6 @@ class RecordSelExpr : public jrd_node_base
 public:
 	USHORT		rse_count;
 	USHORT		rse_jointype;		// inner, left, full
-	bool		rse_writelock;
 	jrd_nod*	rse_first;
 	jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
@@ -146,9 +147,10 @@ public:
 };
 
 
-const int rse_scrollable	= 1;	// flags RSE as a scrollable cursor
-const int rse_singular		= 2;	// flags RSE as a singleton select
-const int rse_variant		= 4;	// flags RSE as variant (not invariant?)
+const int rse_variant		= 1;	// variant (not invariant?)
+const int rse_singular		= 2;	// singleton select
+const int rse_writelock		= 4;	// locked for write
+const int rse_scrollable	= 8;	// scrollable cursor
 
 // Number of nodes may fit into nod_arg of normal node to get to rse_relation
 const size_t rse_delta = (sizeof(RecordSelExpr) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
@@ -787,7 +789,7 @@ public:
 	vec<jrd_nod*>*	csb_variables;				// Vector of variables, if any
 	ResourceList	csb_resources;				// Resources (relations and indexes)
 	NodeStack		csb_dependencies;			// objects this request depends upon
-	Firebird::Array<RecordSource*> csb_fors;	// stack of fors
+	Firebird::Array<Cursor*> csb_fors;			// stack of fors
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	// RecordSelExpr's and other invariant

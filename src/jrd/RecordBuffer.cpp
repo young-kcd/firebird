@@ -38,23 +38,13 @@ RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
 
 	record = FB_NEW_RPT(pool, length) Record(pool);
 	record->rec_format = format;
-	record->rec_length = length;
+	record->rec_length = (USHORT) length;
 }
 
 RecordBuffer::~RecordBuffer()
 {
 	delete record;
 	delete space;
-}
-
-size_t RecordBuffer::getCount() const
-{
-	return count;
-}
-
-Record* RecordBuffer::getTempRecord() const
-{
-	return record;
 }
 
 offset_t RecordBuffer::store(const Record* new_record)

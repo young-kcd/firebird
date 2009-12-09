@@ -74,7 +74,7 @@ static const struct {
 	{335544371, -817}, /*  51 segstr_no_write */
 	{335544372, -901}, /*  52 segstr_wrong_db */
 	{335544373, -902}, /*  53 sys_request */
-	{335544374,  100}, /*  54 stream_eof */
+	{335544374, -596}, /*  54 stream_eof */
 	{335544375, -904}, /*  55 unavailable */
 	{335544376, -901}, /*  56 unres_rel */
 	{335544377, -901}, /*  57 uns_ext */
@@ -693,6 +693,7 @@ static const struct {
 	{335544990, -901}, /* 670 feature_deprecated */
 	{335544991, -901}, /* 671 view_name */
 	{335544992, -904}, /* 672 lock_dir_access */
+	{335544993, -901}, /* 673 invalid_fetch_option */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

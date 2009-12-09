@@ -2453,7 +2453,6 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 bool VIO_next_record(thread_db* tdbb,
 					 record_param* rpb,
-					 //RecordSource* rsb,
 					 jrd_tra* transaction,
 					 MemoryPool* pool,
 					 bool onepage)
@@ -2937,7 +2936,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 					relation->rel_garbage->clear();
 				}
 #endif
-				while (VIO_next_record(tdbb, &rpb, /*NULL,*/ transaction, 0, false))
+				while (VIO_next_record(tdbb, &rpb, transaction, 0, false))
 				{
 					CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 					if (relation->rel_flags & REL_deleting) {
@@ -3246,7 +3245,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jrd_tra* transaction)
+bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -3296,79 +3295,52 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 	}
 
 	record_param temp;
-	// Repeat as many times as underlying record modifies
-	while (true)
+
+	if (org_rpb->rpb_transaction_nr == transaction->tra_number)
 	{
-
-		// Refetch and release the record if it is needed
-		if (org_rpb->rpb_stream_flags & RPB_s_refetch)
-		{
-			// const SLONG tid_fetch = org_rpb->rpb_transaction_nr;
-			if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
-				(!VIO_chase_record_version(tdbb, org_rpb, transaction, tdbb->getDefaultPool(), true)))
-			{
-				return false;
-			}
-			VIO_data(tdbb, org_rpb, tdbb->getRequest()->req_pool);
-
-			org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
-
-			// Make sure refetched record still fulfills search condition
-			RecordSource* r = rsb;
-			while (r && r->rsb_type != rsb_boolean)
-				r = r->rsb_next;
-			if (r && !EVL_boolean(tdbb, (jrd_nod*) r->rsb_arg[0]))
-				return false;
-		}
-
-		// jrd_rel* relation = org_rpb->rpb_relation;
-
-
-		if (org_rpb->rpb_transaction_nr == transaction->tra_number) {
-			// We already own this record. No writelock required
-			return true;
-		}
-
-		PageStack stack;
-		switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, 0,
-					stack, true))
-		{
-			case PREPARE_CONFLICT:
-				org_rpb->rpb_stream_flags |= RPB_s_refetch;
-				continue;
-			case PREPARE_LOCKERR:
-				// We got some kind of locking error (deadlock, timeout or lock_conflict)
-				// Error details should be stuffed into status vector at this point
-				ERR_punt();
-			case PREPARE_DELETE:
-				return false;
-		}
-
-		// Old record was restored and re-fetched for write.  Now replace it.
-
-		org_rpb->rpb_transaction_nr = transaction->tra_number;
-		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
-		org_rpb->rpb_b_page = temp.rpb_page;
-		org_rpb->rpb_b_line = temp.rpb_line;
-		org_rpb->rpb_address = org_record->rec_data;
-		org_rpb->rpb_length = org_record->rec_format->fmt_length;
-		org_rpb->rpb_flags |= rpb_delta;
-
-		replace_record(tdbb, org_rpb, &stack, transaction);
-
-		if (!(transaction->tra_flags & TRA_system) && transaction->tra_save_point)
-		{
-			verb_post(tdbb, transaction, org_rpb, 0, /*0,*/ false, false);
-		}
-
-		// for an autocommit transaction, mark a commit as necessary
-
-		if (transaction->tra_flags & TRA_autocommit) {
-			transaction->tra_flags |= TRA_perform_autocommit;
-		}
-
+		// We already own this record, thus no writelock is required
 		return true;
 	}
+
+	PageStack stack;
+	switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, 0,
+						   stack, true))
+	{
+		case PREPARE_CONFLICT:
+			org_rpb->rpb_stream_flags |= RPB_s_refetch;
+			return false;
+		case PREPARE_LOCKERR:
+			// We got some kind of locking error (deadlock, timeout or lock_conflict)
+			// Error details should be stuffed into status vector at this point
+			ERR_punt();
+		case PREPARE_DELETE:
+			return false;
+	}
+
+	// Old record was restored and re-fetched for write.  Now replace it.
+
+	org_rpb->rpb_transaction_nr = transaction->tra_number;
+	org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
+	org_rpb->rpb_b_page = temp.rpb_page;
+	org_rpb->rpb_b_line = temp.rpb_line;
+	org_rpb->rpb_address = org_record->rec_data;
+	org_rpb->rpb_length = org_record->rec_format->fmt_length;
+	org_rpb->rpb_flags |= rpb_delta;
+
+	replace_record(tdbb, org_rpb, &stack, transaction);
+
+	if (!(transaction->tra_flags & TRA_system) && transaction->tra_save_point)
+	{
+		verb_post(tdbb, transaction, org_rpb, 0, /*0,*/ false, false);
+	}
+
+	// for an autocommit transaction, mark a commit as necessary
+
+	if (transaction->tra_flags & TRA_autocommit) {
+		transaction->tra_flags |= TRA_perform_autocommit;
+	}
+
+	return true;
 }
 
 
@@ -4058,7 +4030,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 							// Attempt to garbage collect all records on the data page.
 
-							while (VIO_next_record(tdbb, &rpb, /*NULL,*/ transaction, NULL, true))
+							while (VIO_next_record(tdbb, &rpb, transaction, NULL, true))
 							{
 								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 

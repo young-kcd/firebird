@@ -44,14 +44,5 @@ bool OPT_access_path(const Jrd::jrd_req*, UCHAR*, SLONG, ULONG*);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
 							   Jrd::RecordSelExpr*, Jrd::NodeStack*);
 
-// Begin only exported for VMS
-Jrd::jrd_nod* OPT_make_dbkey(Jrd::OptimizerBlk*, Jrd::jrd_nod*,
-								  USHORT);
-Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, Jrd::OptimizerBlk*, Jrd::jrd_rel*,
-								  Jrd::index_desc*);
-void OPT_mark_rsb_recursive(Jrd::RecordSource* rsb);
-int OPT_match_index(Jrd::OptimizerBlk*, USHORT, Jrd::index_desc*);
-// End only exported for VMS
-
 #endif // JRD_OPT_PROTO_H
 

@@ -36,6 +36,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ods.h"
 #include "../jrd/Optimizer.h"
+#include "../jrd/recsrc/RecordSource.h"
 
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
@@ -643,8 +644,8 @@ jrd_nod* OPT_make_binary_node(nod_t type, jrd_nod* arg1, jrd_nod* arg2, bool fla
 }
 
 
-VaryingString* OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
-				const CompilerScratch::csb_repeat* base_tail)
+Firebird::string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
+								const CompilerScratch::csb_repeat* base_tail)
 {
 /**************************************
  *
@@ -661,82 +662,31 @@ VaryingString* OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
 	SET_TDBB(tdbb);
-	if (!base_tail->csb_view && !base_tail->csb_alias)
-		return NULL;
 
-	const CompilerScratch::csb_repeat* csb_tail;
-	// calculate the length of the alias by going up through
-	// the view stack to find the lengths of all aliases;
-	// adjust for spaces and a null terminator
-	USHORT alias_length = 0;
-	for (csb_tail = base_tail; true; csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
+	Firebird::string alias;
+
+	if (base_tail->csb_view || base_tail->csb_alias || base_tail->csb_relation)
 	{
-		if (csb_tail->csb_alias)
-			alias_length += csb_tail->csb_alias->length();
-		else {
-			alias_length += (csb_tail->csb_relation ? csb_tail->csb_relation->rel_name.length() : 0);
-		}
-		alias_length++;
-		if (!csb_tail->csb_view)
-			break;
-	}
-
-	// allocate a string block to hold the concatenated alias
-	VaryingString* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), alias_length) VaryingString();
-	alias->str_length = alias_length - 1;
-	// now concatenate the individual aliases into the string block,
-	// beginning at the end and copying back to the beginning
-	TEXT* p = (TEXT *) alias->str_data + alias->str_length;
-	*p-- = 0;
-	for (csb_tail = base_tail; true; csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
-	{
-		const TEXT* q;
-		if (csb_tail->csb_alias)
-			q = (TEXT *) csb_tail->csb_alias->c_str();
-		else
+		for (const CompilerScratch::csb_repeat* csb_tail = base_tail; ;
+			csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
 		{
-			q = (csb_tail->csb_relation && csb_tail->csb_relation->rel_name.length() ?
-				csb_tail->csb_relation->rel_name.c_str() : NULL);
-		}
-		// go to the end of the alias and copy it backwards
-		if (q)
-		{
-			for (alias_length = 0; *q; alias_length++)
-				q++;
-			while (alias_length--)
-				*p-- = *--q;
-		}
+			if (csb_tail->csb_alias)
+			{
+				alias += *csb_tail->csb_alias;
+			}
+			else if (csb_tail->csb_relation)
+			{
+				alias += Firebird::string(csb_tail->csb_relation->rel_name.c_str());
+			}
 
-		if (!csb_tail->csb_view)
-			break;
-		*p-- = ' ';
+			if (!csb_tail->csb_view)
+				break;
+
+			alias += ' ';
+		}
 	}
 
 	return alias;
-}
-
-
-USHORT OPT_nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
-{
-/**************************************
- *
- *	n a v _ r s b _ s i z e
- *
- **************************************
- *
- * Functional description
- *	Calculate the size of a navigational rsb.
- *
- **************************************/
-	DEV_BLKCHK(rsb, type_rsb);
-	size += sizeof(struct irsb_nav) + 2 * key_length;
-	size = FB_ALIGN(size, FB_ALIGNMENT);
-	// make room for an idx structure to describe the index
-	// that was used to generate this rsb
-	if (rsb->rsb_type == rsb_navigate)
-		rsb->rsb_arg[RSB_NAV_idx_offset] = (RecordSource*) (IPTR) size;
-	size += sizeof(index_desc);
-	return size;
 }
 
 
@@ -908,7 +858,7 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
 OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 									   SSHORT streamNumber, bool outer,
 									   bool inner, jrd_nod** sortNode) :
-	pool(p), indexScratches(p), inversionCandidates(p)
+	pool(p), alias(p), indexScratches(p), inversionCandidates(p)
 {
 /**************************************
  *
@@ -921,7 +871,6 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
  **************************************/
 	tdbb = NULL;
 	createIndexScanNodes = false;
-	alias = NULL;
 	setConjunctionsMatched = false;
 
 	SET_TDBB(tdbb);
@@ -1151,7 +1100,7 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 	return;
 }
 
-VaryingString* OptimizerRetrieval::getAlias()
+const Firebird::string& OptimizerRetrieval::getAlias()
 {
 /**************************************
  *
@@ -1162,7 +1111,7 @@ VaryingString* OptimizerRetrieval::getAlias()
  * Functional description
  *
  **************************************/
-	if (!alias)
+	if (alias.isEmpty())
 	{
 		const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[this->stream];
 		alias = OPT_make_alias(tdbb, csb, csb_tail);
@@ -1170,7 +1119,7 @@ VaryingString* OptimizerRetrieval::getAlias()
 	return alias;
 }
 
-InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
+InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 {
 /**************************************
  *
@@ -1291,7 +1240,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	return invCandidate;
 }
 
-RecordSource* OptimizerRetrieval::generateNavigation()
+IndexTableScan* OptimizerRetrieval::generateNavigation()
 {
 /**************************************
  *
@@ -1420,20 +1369,10 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 		// a navigational rsb for it.
 		*sort = NULL;
 		idx->idx_runtime_flags |= idx_navigate;
-		//return gen_nav_rsb(tdbb, opt, stream, relation, alias, idx);
 
-		USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
-		RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_NAV_count) RecordSource();
-		rsb->rsb_type = rsb_navigate;
-		rsb->rsb_relation = relation;
-		rsb->rsb_stream = (UCHAR) stream;
-		rsb->rsb_alias = getAlias();
-		rsb->rsb_arg[RSB_NAV_index] = (RecordSource*) makeIndexScanNode(&indexScratches[i]);
-		rsb->rsb_arg[RSB_NAV_key_length] = (RecordSource*) (IPTR) key_length;
-
-		const USHORT size = OPT_nav_rsb_size(rsb, key_length, 0);
-		rsb->rsb_impure = CMP_impure(optimizer->opt_csb, size);
-		return rsb;
+		jrd_nod* const index_node = makeIndexScanNode(&indexScratches[i]);
+		const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
+		return FB_NEW(*tdbb->getDefaultPool()) IndexTableScan(optimizer->opt_csb, getAlias(), stream, index_node, key_length);
 	}
 
 	return NULL;
@@ -1471,7 +1410,7 @@ InversionCandidate* OptimizerRetrieval::getCost()
 	return invCandidate;
 }
 
-InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
+InversionCandidate* OptimizerRetrieval::getInversion(IndexTableScan** rsb)
 {
 /**************************************
  *
@@ -1669,7 +1608,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					findDependentFromStreams(invCandidate->matches[k],
 											 &invCandidate->dependentFromStreams);
 				}
-				invCandidate->dependencies = invCandidate->dependentFromStreams.getCount();
+				invCandidate->dependencies = (int) invCandidate->dependentFromStreams.getCount();
 				inversions->add(invCandidate);
 			}
 		}
@@ -2893,8 +2832,7 @@ bool InnerJoinStreamInfo::independent() const
 
 
 OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-		/*RiverStack& river_stack,*/ jrd_nod** sort_clause,
-		jrd_nod** project_clause, jrd_nod* plan_clause) :
+									   jrd_nod** sort_clause, jrd_nod* plan_clause) :
 	pool(p), innerStreams(p)
 {
 /**************************************
@@ -2912,7 +2850,6 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const U
 	this->optimizer = opt;
 	this->csb = this->optimizer->opt_csb;
 	this->sort = sort_clause;
-	this->project = project_clause;
 	this->plan = plan_clause;
 	this->remainingStreams = 0;
 
@@ -3004,7 +2941,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		innerStreams[i]->baseCost = candidate->cost;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
-		innerStreams[i]->baseConjunctionMatches = candidate->matches.getCount();
+		innerStreams[i]->baseConjunctionMatches = (int) candidate->matches.getCount();
 		delete candidate;
 		delete optimizerRetrieval;
 

@@ -2426,7 +2426,9 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			{
 				const USHORT jointype = (USHORT) csb->csb_blr_reader.getByte();
 				rse->rse_jointype = jointype;
-				if (jointype != blr_inner && jointype != blr_left && jointype != blr_right &&
+				if (jointype != blr_inner &&
+					jointype != blr_left &&
+					jointype != blr_right &&
 					jointype != blr_full)
 				{
 					PAR_syntax_error(csb, "join type clause");
@@ -2439,7 +2441,7 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			break;
 
 		case blr_writelock:
-			rse->rse_writelock = true;
+			rse->nod_flags |= rse_writelock;
 			break;
 
 		default:

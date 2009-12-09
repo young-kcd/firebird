@@ -446,10 +446,6 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, true);
 
-	// Check in with external file system
-
-	EXT_trans_commit(transaction);
-
 #ifdef GARBAGE_THREAD
 	// Flush pages if transaction logically modified data
 
@@ -987,10 +983,6 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 		transaction->tra_flags |= TRA_prepare2;
 	}
 
-	// Check in with external file system
-
-	EXT_trans_prepare(transaction);
-
 	// Perform any meta data work deferred
 
 	DFW_perform_work(tdbb, transaction);
@@ -1255,10 +1247,6 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, retaining_flag, false /*force_flag ?*/);
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
-
-	// Check in with external file system
-
-	EXT_trans_rollback(transaction);
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, false);
@@ -3513,10 +3501,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		// Why nobody checks the result? Changed the function to return nothing.
 		start_sweeper(tdbb, dbb);
 	}
-
-	// Check in with external file system
-
-	EXT_trans_start(trans);
 
 	// Start a 'transaction-level' savepoint, unless this is the
 	// system transaction, or unless the transactions doesn't want

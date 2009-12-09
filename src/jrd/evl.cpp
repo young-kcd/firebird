@@ -103,7 +103,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/rlck_proto.h"
-#include "../jrd/rse_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/gds_proto.h"
@@ -113,6 +112,8 @@
 #include "../common/config/config.h"
 #include "../jrd/SysFunction.h"
 #include "../common/classes/FpeControl.h"
+#include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/recsrc/Cursor.h"
 #include "../common/classes/Aligner.h"
 
 const int TEMP_LENGTH	= 128;
@@ -511,10 +512,6 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 		break;
 
 	case nod_not:
-		if ((*ptr)->nod_type == nod_ansi_any || (*ptr)->nod_type == nod_ansi_all)
-		{
-			request->req_flags |= req_ansi_not;
-		}
 		value = EVL_boolean(tdbb, *ptr++);
 		break;
 
@@ -610,27 +607,24 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			// the unoptimized boolean expression must be used, since the
 			// processing of these clauses is order dependant (see rse.cpp)
 
-			RecordSource* select = (RecordSource*) (node->nod_arg[e_any_rsb]);
+			Cursor* const select = (Cursor*) (node->nod_arg[e_any_rsb]);
 			if (node->nod_type != nod_any)
 			{
-				select->rsb_any_boolean = ((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
-				if (node->nod_type == nod_ansi_any) {
-					request->req_flags |= req_ansi_any;
-				}
-				else
-				{
-					request->req_flags |= req_ansi_all;
-					// dimitr:	Even if we can evaluate ANY without a residual
-					//			boolean (what I still doubt), it's impossible
-					//			for ALL. Hence this assertion.
-					fb_assert(select->rsb_type == rsb_boolean);
-				}
+				const bool ansiAny = (node->nod_type == nod_ansi_any);
+				const bool ansiNot = (node->nod_flags & nod_ansi_not);
+				FilteredStream* const filter = (FilteredStream*) select->getAccessPath();
+				filter->setAnyBoolean(((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean,
+									  ansiAny, ansiNot);
 			}
-			RSE_open(tdbb, select);
-			value = RSE_get_record(tdbb, select);
-			RSE_close(tdbb, select);
+
+			select->open(tdbb);
+			value = select->fetchNext(tdbb);
+			select->close(tdbb);
+
 			if (node->nod_type == nod_any)
+			{
 				request->req_flags &= ~req_null;
+			}
 
 			// If this is an invariant node, save the return value.
 
@@ -737,14 +731,14 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			RecordSource* urs = reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]);
-			RSE_open(tdbb, urs);
-			value = RSE_get_record(tdbb, urs);
+			Cursor* const urs = reinterpret_cast<Cursor*>(node->nod_arg[e_any_rsb]);
+			urs->open(tdbb);
+			value = urs->fetchNext(tdbb);
 			if (value)
 			{
-				value = !RSE_get_record(tdbb, urs);
+				value = !urs->fetchNext(tdbb);
 			}
-			RSE_close(tdbb, urs);
+			urs->close(tdbb);
 			request->req_flags &= ~req_null;
 
 			// If this is an invariant node, save the return value.
@@ -2549,25 +2543,17 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 
 	// Format dbkey as vector of relation id, record number
 
-	if (relation->rel_file)
-	{
-		impure->vlu_misc.vlu_dbkey[0] = rpb->rpb_b_page;
-		impure->vlu_misc.vlu_dbkey[1] = rpb->rpb_b_line;
-	}
-	else
-	{
-		// Initialize first 32 bits of DB_KEY
-		impure->vlu_misc.vlu_dbkey[0] = 0;
+	// Initialize first 32 bits of DB_KEY
+	impure->vlu_misc.vlu_dbkey[0] = 0;
 
-		// Now, put relation ID into first 16 bits of DB_KEY
-		// We do not assign it as SLONG because of big-endian machines.
-		*(USHORT*)impure->vlu_misc.vlu_dbkey = relation->rel_id;
+	// Now, put relation ID into first 16 bits of DB_KEY
+	// We do not assign it as SLONG because of big-endian machines.
+	*(USHORT*)impure->vlu_misc.vlu_dbkey = relation->rel_id;
 
-		// Encode 40-bit record number. Before that, increment the value
-		// because users expect the numbering to start with one.
-		RecordNumber temp(rpb->rpb_number.getValue() + 1);
-		temp.bid_encode(reinterpret_cast<RecordNumber::Packed*>(impure->vlu_misc.vlu_dbkey));
-	}
+	// Encode 40-bit record number. Before that, increment the value
+	// because users expect the numbering to start with one.
+	RecordNumber temp(rpb->rpb_number.getValue() + 1);
+	temp.bid_encode(reinterpret_cast<RecordNumber::Packed*>(impure->vlu_misc.vlu_dbkey));
 
 	// Initialize descriptor
 
@@ -2634,8 +2620,8 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
 	}
 
-	RecordSource* rsb = (RecordSource*) node->nod_arg[e_stat_rsb];
-	RSE_open(tdbb, rsb);
+	Cursor* const rsb = (Cursor*) node->nod_arg[e_stat_rsb];
+	rsb->open(tdbb);
 
 	SLONG count = 0;
 	ULONG flag = req_null;
@@ -2649,7 +2635,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		{
 		case nod_count:
 			flag = 0;
-			while (RSE_get_record(tdbb, rsb))
+			while (rsb->fetchNext(tdbb))
 			{
 				++impure->vlu_misc.vlu_long;
 			}
@@ -2657,7 +2643,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 		case nod_min:
 		case nod_max:
-			while (RSE_get_record(tdbb, rsb))
+			while (rsb->fetchNext(tdbb))
 			{
 				dsc* value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null) {
@@ -2674,7 +2660,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			break;
 
 		case nod_from:
-			if (RSE_get_record(tdbb, rsb))
+			if (rsb->fetchNext(tdbb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			}
@@ -2690,7 +2676,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 		case nod_average:			// total or average with dialect-1 semantics
 		case nod_total:
-			while (RSE_get_record(tdbb, rsb))
+			while (rsb->fetchNext(tdbb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null) {
@@ -2720,7 +2706,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			break;
 
 		case nod_average2:			// average with dialect-3 semantics
-			while (RSE_get_record(tdbb, rsb))
+			while (rsb->fetchNext(tdbb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null)
@@ -2756,7 +2742,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		// ignore any error during it to keep original
 		try
 		{
-			RSE_close(tdbb, rsb);
+			rsb->close(tdbb);
 			request->req_flags &= ~req_null;
 			request->req_flags |= flag;
 		}
@@ -2769,7 +2755,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 	// Close stream and return value
 
-	RSE_close(tdbb, rsb);
+	rsb->close(tdbb);
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 

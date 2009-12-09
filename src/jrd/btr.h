@@ -129,10 +129,7 @@ const int idx_plan_dont_use	= 1;	// index is not mentioned in user-specified acc
 const int idx_plan_navigate	= 2;	// plan specifies index to be used for ordering
 const int idx_used 			= 4;	// index was in fact selected for retrieval
 const int idx_navigate		= 8;	// index was in fact selected for navigation
-const int idx_plan_missing	= 16;	// index mentioned in missing clause
-const int idx_plan_starts	= 32;	// index mentioned in starts clause
-const int idx_used_with_and	= 64;	// marker used in procedure sort_indices
-const int idx_marker		= 128;	// marker used in procedure sort_indices
+const int idx_marker		= 16;	// marker used in procedure sort_indices
 
 // Index insertion block -- parameter block for index insertions
 

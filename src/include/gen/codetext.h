@@ -694,6 +694,7 @@ static const struct {
 	{"feature_deprecated", 335544990},
 	{"view_name", 335544991},
 	{"lock_dir_access", 335544992},
+	{"invalid_fetch_option", 335544993},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

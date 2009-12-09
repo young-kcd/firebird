@@ -95,7 +95,6 @@
 #include "../jrd/par_proto.h"
 #include "../jrd/rlck_proto.h"
 
-#include "../jrd/rse_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/isc_s_proto.h"
@@ -109,6 +108,8 @@
 
 #include "../dsql/Nodes.h"
 #include "../jrd/ValuesImpl.h"
+#include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/recsrc/Cursor.h"
 
 
 using namespace Jrd;
@@ -1076,11 +1077,10 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				tdbb->setRequest(request);
 				tdbb->setTransaction(request->req_transaction);
 
-				RecordSource** ptr = request->req_fors.begin();
-				for (const RecordSource* const* const end = request->req_fors.end(); ptr < end; ptr++)
+				for (Cursor* const* ptr = request->req_fors.begin();
+					ptr < request->req_fors.end(); ptr++)
 				{
-					if (*ptr)
-						RSE_close(tdbb, *ptr);
+					(*ptr)->close(tdbb);
 				}
 
 				for (size_t i = 0; i < request->req_exec_sta.getCount(); ++i)
@@ -1090,7 +1090,8 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 					impure->close(tdbb);
 				}
 
-				while (request->req_ext_stmt) {
+				while (request->req_ext_stmt)
+				{
 					request->req_ext_stmt->close(tdbb);
 				}
 			}
@@ -2118,43 +2119,46 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 
 		case nod_for:
-			switch (request->req_operation)
 			{
-			case jrd_req::req_evaluate:
-				RSE_open(tdbb, (RecordSource*) node->nod_arg[e_for_rsb]);
-				request->req_records_affected.clear();
-			case jrd_req::req_return:
-				if (node->nod_arg[e_for_stall])
+				Cursor* const rsb = (Cursor*) node->nod_arg[e_for_rsb];
+				switch (request->req_operation)
 				{
-					node = node->nod_arg[e_for_stall];
-					break;
-				}
-			case jrd_req::req_sync:
-				if (RSE_get_record(tdbb, (RecordSource*) node->nod_arg[e_for_rsb]))
-				{
-					node = node->nod_arg[e_for_statement];
-					request->req_operation = jrd_req::req_evaluate;
-					break;
-				}
-				request->req_operation = jrd_req::req_return;
+				case jrd_req::req_evaluate:
+					rsb->open(tdbb);
+					request->req_records_affected.clear();
+				case jrd_req::req_return:
+					if (node->nod_arg[e_for_stall])
+					{
+						node = node->nod_arg[e_for_stall];
+						break;
+					}
+				case jrd_req::req_sync:
+					if (rsb->fetchNext(tdbb))
+					{
+						node = node->nod_arg[e_for_statement];
+						request->req_operation = jrd_req::req_evaluate;
+						break;
+					}
+					request->req_operation = jrd_req::req_return;
 
-			case jrd_req::req_unwind:
-			{
-				jrd_nod* parent = node->nod_parent;
-				if (parent && parent->nod_type == nod_label &&
-					(request->req_label == (USHORT)(IPTR) parent->nod_arg[e_lbl_label]) &&
-					(request->req_flags & req_continue_loop))
+				case jrd_req::req_unwind:
 				{
-					request->req_flags &= ~req_continue_loop;
-					request->req_operation = jrd_req::req_sync;
-					break;
+					jrd_nod* parent = node->nod_parent;
+					if (parent && parent->nod_type == nod_label &&
+						(request->req_label == (USHORT)(IPTR) parent->nod_arg[e_lbl_label]) &&
+						(request->req_flags & req_continue_loop))
+					{
+						request->req_flags &= ~req_continue_loop;
+						request->req_operation = jrd_req::req_sync;
+						break;
+					}
+					// fall into
 				}
-				// fall into
-			}
 
-			default:
-				RSE_close(tdbb, (RecordSource*) node->nod_arg[e_for_rsb]);
-				node = node->nod_parent;
+				default:
+					rsb->close(tdbb);
+					node = node->nod_parent;
+				}
 			}
 			break;
 
@@ -2162,11 +2166,13 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
 				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_dcl_cursor_number];
-				// set up the cursors vector
-				request->req_cursors = vec<RecordSource*>::newVector(*request->req_pool,
-					request->req_cursors, number + 1);
-				// store RecordSource in the vector
-				(*request->req_cursors)[number] = (RecordSource*) node->nod_arg[e_dcl_cursor_rsb];
+				// set up the cursors array...
+				if (number >= request->req_cursors.getCount())
+				{
+					request->req_cursors.grow(number + 1);
+				}
+				// and store cursor there
+				request->req_cursors[number] = (Cursor*) node->nod_arg[e_dcl_cursor_rsb];
 				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
@@ -2176,59 +2182,87 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			{
 				const UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
 				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
-				// get RecordSource and the impure area
-				fb_assert(request->req_cursors && number < request->req_cursors->count());
-				RecordSource* rsb = (*request->req_cursors)[number];
-				IRSB impure = (IRSB) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
+				fb_assert(number < request->req_cursors.getCount());
+				Cursor* const rsb = request->req_cursors[number];
+				bool fetched = false;
+
 				switch (op)
 				{
 				case blr_cursor_open:
 					if (request->req_operation == jrd_req::req_evaluate)
 					{
-						// check cursor state
-						if (impure->irsb_flags & irsb_open) {
-							ERR_post(Arg::Gds(isc_cursor_already_open));
-						}
-						// open cursor
-						RSE_open(tdbb, rsb);
+						rsb->open(tdbb);
 						request->req_operation = jrd_req::req_return;
 					}
 					node = node->nod_parent;
 					break;
+
 				case blr_cursor_close:
 					if (request->req_operation == jrd_req::req_evaluate)
 					{
-						// check cursor state
-						if (!(impure->irsb_flags & irsb_open)) {
-							ERR_post(Arg::Gds(isc_cursor_not_open));
-						}
-						// close cursor
-						RSE_close(tdbb, rsb);
+						rsb->close(tdbb);
 						request->req_operation = jrd_req::req_return;
 					}
 					node = node->nod_parent;
 					break;
+
 				case blr_cursor_fetch:
 				case blr_cursor_fetch_scroll:
 					switch (request->req_operation)
 					{
 					case jrd_req::req_evaluate:
-						// check cursor state
-						if (!(impure->irsb_flags & irsb_open)) {
-							ERR_post(Arg::Gds(isc_cursor_not_open));
-						}
-						if (impure->irsb_flags & irsb_eof) {
-							ERR_post(Arg::Gds(isc_stream_eof));
-						}
 						request->req_records_affected.clear();
-						// fetch one record
-						if (RSE_get_record(tdbb, rsb))
+
+						if (op == blr_cursor_fetch)
+						{
+							fetched = rsb->fetchNext(tdbb);
+						}
+						else
+						{
+							fb_assert(op == blr_cursor_fetch_scroll);
+
+							dsc* desc = EVL_expr(tdbb, node->nod_arg[e_cursor_stmt_scroll_op]);
+							fb_assert(!(request->req_flags & req_null));
+							const SLONG fetch_op = MOV_get_long(desc, 0);
+
+							desc = EVL_expr(tdbb, node->nod_arg[e_cursor_stmt_scroll_val]);
+							const bool unknown = !desc || (request->req_flags & req_null);
+							const SINT64 offset = unknown ? 0 : MOV_get_int64(desc, 0);
+
+							switch (fetch_op)
+							{
+								case blr_scroll_forward:
+									fetched = rsb->fetchNext(tdbb);
+									break;
+								case blr_scroll_backward:
+									fetched = rsb->fetchPrior(tdbb);
+									break;
+								case blr_scroll_bof:
+									fetched = rsb->fetchFirst(tdbb);
+									break;
+								case blr_scroll_eof:
+									fetched = rsb->fetchLast(tdbb);
+									break;
+								case blr_scroll_absolute:
+									fetched = unknown ? false : rsb->fetchAbsolute(tdbb, offset);
+									break;
+								case blr_scroll_relative:
+									fetched = unknown ? false : rsb->fetchRelative(tdbb, offset);
+									break;
+								default:
+									fb_assert(false);
+							}
+						}
+
+						if (fetched)
 						{
 							node = node->nod_arg[e_cursor_stmt_into];
 							request->req_operation = jrd_req::req_evaluate;
 							break;
 						}
+
 						request->req_operation = jrd_req::req_return;
+
 					default:
 						node = node->nod_parent;
 					}
@@ -2882,13 +2916,12 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	if (in_node->nod_type != nod_stmt_expr && !node)
 	{
 		// Close active cursors
-		if (request->req_cursors)
+		for (Cursor* const* ptr = request->req_cursors.begin();
+			ptr < request->req_cursors.end(); ++ptr)
 		{
-			for (vec<RecordSource*>::iterator ptr = request->req_cursors->begin(),
-				end = request->req_cursors->end(); ptr < end; ++ptr)
+			if (*ptr)
 			{
-				if (*ptr)
-					RSE_close(tdbb, *ptr);
+				(*ptr)->close(tdbb);
 			}
 		}
 

@@ -92,6 +92,8 @@
 #include "../common/utils_proto.h"
 #include "../dsql/Nodes.h"
 #include "../jrd/ValuesImpl.h"
+#include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/recsrc/Cursor.h"
 
 using Firebird::AutoSetRestore;
 
@@ -151,7 +153,7 @@ static jrd_nod* pass2_validation(thread_db*, CompilerScratch*, const Item&);
 static void plan_check(const CompilerScratch*, const RecordSelExpr*);
 static void plan_set(CompilerScratch*, RecordSelExpr*, jrd_nod*);
 static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
-static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
+static Cursor* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
@@ -3064,7 +3066,6 @@ static jrd_nod* copy(thread_db* tdbb,
 				*arg2 = copy(tdbb, csb, *arg1, remap, field_id, message, remap_fld);
 			}
 			new_rse->rse_jointype = old_rse->rse_jointype;
-			new_rse->rse_writelock = old_rse->rse_writelock;
 			new_rse->rse_first =
 				copy(tdbb, csb, old_rse->rse_first, remap, field_id, message, remap_fld);
 			new_rse->rse_skip =
@@ -3294,6 +3295,33 @@ static jrd_nod* copy(thread_db* tdbb,
 
 			return node;
 		}
+		break;
+
+	case nod_dcl_cursor:
+		node = PAR_make_node(tdbb, e_dcl_cursor_length);
+		node->nod_count = input->nod_count;
+		node->nod_flags = input->nod_flags;
+		node->nod_type = input->nod_type;
+		node->nod_arg[e_dcl_cursor_rse] =
+			copy(tdbb, csb, input->nod_arg[e_dcl_cursor_rse], remap, field_id, message, remap_fld);
+		node->nod_arg[e_dcl_cursor_refs] =
+			copy(tdbb, csb, input->nod_arg[e_dcl_cursor_refs], remap, field_id, message, remap_fld);
+		node->nod_arg[e_dcl_cursor_number] = input->nod_arg[e_dcl_cursor_number];
+		break;
+
+	case nod_cursor_stmt:
+		node = PAR_make_node(tdbb, e_cursor_stmt_length);
+		node->nod_count = input->nod_count;
+		node->nod_flags = input->nod_flags;
+		node->nod_type = input->nod_type;
+		node->nod_arg[e_cursor_stmt_op] = input->nod_arg[e_cursor_stmt_op];
+		node->nod_arg[e_cursor_stmt_number] = input->nod_arg[e_cursor_stmt_number];
+		node->nod_arg[e_cursor_stmt_scroll_op] =
+			copy(tdbb, csb, input->nod_arg[e_cursor_stmt_scroll_op], remap, field_id, message, remap_fld);
+		node->nod_arg[e_cursor_stmt_scroll_val] =
+			copy(tdbb, csb, input->nod_arg[e_cursor_stmt_scroll_val], remap, field_id, message, remap_fld);
+		node->nod_arg[e_cursor_stmt_into] =
+			copy(tdbb, csb, input->nod_arg[e_cursor_stmt_into], remap, field_id, message, remap_fld);
 		break;
 
 	default:
@@ -3613,7 +3641,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 // operating assumption for now.
 static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
-	if (csb->csb_current_nodes.getCount())
+	if (csb->csb_current_nodes.hasData())
 	{
 		for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1;
 			 i_node >= csb->csb_current_nodes.begin(); i_node--)
@@ -3626,7 +3654,9 @@ static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 				rse->nod_flags |= rse_variant;
 			}
 			else
+			{
 				(*i_node)->nod_flags &= ~nod_invariant;
+			}
 		}
 	}
 }
@@ -4242,6 +4272,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		sub = node->nod_arg[0];
 		if (sub->nod_type == nod_ansi_any)
 			sub->nod_flags |= nod_deoptimize;
+		if (sub->nod_type == nod_ansi_any || sub->nod_type == nod_ansi_all)
+			sub->nod_flags |= nod_ansi_not;
 		break;
 
 	case nod_ansi_all:
@@ -4732,7 +4764,6 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 	jrd_nod* first = rse->rse_first;
 	jrd_nod* skip = rse->rse_skip;
 	jrd_nod* plan = rse->rse_plan;
-	const bool writelock = rse->rse_writelock;
 
 	// zip thru RecordSelExpr expanding views and inner joins
 	jrd_nod** arg = rse->rse_relation;
@@ -4751,6 +4782,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 		RecordSelExpr* new_rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
 		*new_rse = *rse;
 		new_rse->rse_count = count;
+		new_rse->nod_flags = rse->nod_flags;
 		rse = new_rse;
 
 		// AB: Because we've build an new RecordSelExpr, we must put this one in the stack
@@ -4806,8 +4838,6 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 	if (plan) {
 		rse->rse_plan = plan;
 	}
-
-	rse->rse_writelock = writelock;
 
 	// we are no longer in the scope of this RecordSelExpr
 
@@ -5327,8 +5357,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	USHORT stream;
 
 	DEBUG;
-	RecordSource** rsb_ptr = 0;
 	jrd_nod* rse_node = NULL;
+	Cursor** cursor_ptr = NULL;
 
 	switch (node->nod_type)
 	{
@@ -5340,12 +5370,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	case nod_for:
 		rse_node = node->nod_arg[e_for_re];
-		rsb_ptr = (RecordSource**) & node->nod_arg[e_for_rsb];
+		cursor_ptr = (Cursor**) & node->nod_arg[e_for_rsb];
 		break;
 
 	case nod_dcl_cursor:
 		rse_node = node->nod_arg[e_dcl_cursor_rse];
-		rsb_ptr = (RecordSource**) & node->nod_arg[e_dcl_cursor_rsb];
+		cursor_ptr = (Cursor**) & node->nod_arg[e_dcl_cursor_rsb];
 		break;
 
 	case nod_cursor_stmt:
@@ -5369,7 +5399,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (RecordSource**) &node->nod_arg[e_stat_rsb];
+		cursor_ptr = (Cursor**) &node->nod_arg[e_stat_rsb];
 		break;
 
 	case nod_ansi_all:
@@ -5383,7 +5413,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (RecordSource**) &node->nod_arg[e_any_rsb];
+		cursor_ptr = (Cursor**) &node->nod_arg[e_any_rsb];
 		break;
 
 	case nod_like:
@@ -5797,23 +5827,27 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	// Bind values of invariant nodes to top-level RSE (if present)
 	if (node->nod_flags & nod_invariant)
 	{
-		if (csb->csb_current_nodes.getCount())
+		if (csb->csb_current_nodes.hasData())
 		{
-			// CVC: Nickolay says this rse_node is local. Therefore, renamed to aux_rse_node.
-			jrd_node_base* aux_rse_node = csb->csb_current_nodes[0];
-			fb_assert(aux_rse_node->nod_type == nod_rse);
-			RecordSelExpr* top_rse = static_cast<RecordSelExpr*>(aux_rse_node);
+			jrd_node_base* top_rse_node = csb->csb_current_nodes[0];
+			fb_assert(top_rse_node->nod_type == nod_rse);
+			RecordSelExpr* const top_rse = static_cast<RecordSelExpr*>(top_rse_node);
+
 			if (!top_rse->rse_invariants)
-				top_rse->rse_invariants =
-					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
+			{
+				top_rse->rse_invariants = FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
+			}
+
 			top_rse->rse_invariants->add(node->nod_impure);
 		}
 	}
 
 	// finish up processing of record selection expressions
 
-	if (rse_node) {
-		*rsb_ptr = post_rse(tdbb, csb, (RecordSelExpr*) rse_node);
+	if (rse_node)
+	{
+		fb_assert(cursor_ptr);
+		*cursor_ptr = post_rse(tdbb, csb, (RecordSelExpr*) rse_node);
 	}
 
 	return node;
@@ -6229,7 +6263,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 }
 
 
-static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
+static Cursor* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -6246,14 +6280,29 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 
+	bool scrollable = false;
+
 	RecordSource* rsb = OPT_compile(tdbb, csb, rse, NULL);
 
-	if (rse->nod_flags & rse_singular) {
-		rsb->rsb_flags |= rsb_singular;
+	if (rse->nod_flags & rse_singular)
+	{
+		rsb = FB_NEW(*tdbb->getDefaultPool()) SingularStream(csb, rsb);
 	}
 
-	if (rse->nod_flags & rse_scrollable) {
-		rsb->rsb_flags |= rsb_scrollable;
+	if (rse->nod_flags & rse_writelock)
+	{
+		for (USHORT i = 0; i < csb->csb_n_stream; i++)
+		{
+			csb->csb_rpt[i].csb_flags |= csb_update;
+		}
+
+		rsb = FB_NEW(*tdbb->getDefaultPool()) LockedStream(csb, rsb);
+	}
+
+	if (rse->nod_flags & rse_scrollable)
+	{
+		scrollable = true;
+		rsb = FB_NEW(*tdbb->getDefaultPool()) BufferedStream(csb, rsb);
 	}
 
 	// mark all the substreams as inactive
@@ -6274,9 +6323,11 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 		}
 	}
 
-	csb->csb_fors.push(rsb);
+	Cursor* const cursor =
+		FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants, scrollable);
 
-	return rsb;
+	csb->csb_fors.push(cursor);
+	return cursor;
 }
 
 
