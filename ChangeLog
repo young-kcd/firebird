@@ -1,3 +1,41 @@
+2009-12-08 16:02  alexpeshkoff
+
+	* firebird2/:
+	builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+	(1.16),
+	builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
+	(1.12),
+	builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+	(1.19),
+	builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
+	(1.9),
+	builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+	(1.13), lang_helpers/gds_codes.ftn (1.113),
+	lang_helpers/gds_codes.pas (1.111), src/include/gen/codetext.h
+	(1.121), src/include/gen/iberror.h (1.125), src/include/gen/msgs.h
+	(1.152), src/include/gen/sql_code.h (1.127),
+	src/include/gen/sql_state.h (1.57), src/jrd/jrd.cpp (1.588),
+	src/jrd/os/posix/os_utils.cpp (1.8), src/msgs/facilities2.sql
+	(1.93), src/msgs/messages2.sql (1.117), src/msgs/system_errors2.sql
+	(1.73):
+
+	Frontported fixed of bugs, found during 2.5.0.RC1 QA - incorrect
+	message when lockdir is not accessible; broken yValve behavior when
+	lockdir is not accessible; bad access rights on lockdir in init.d
+	startup scripts
+
+2009-12-08 15:28  asfernandes
+
+	* firebird2/src/burp/backup.epp (1.133):
+
+	Corrections
+
+2009-12-08 15:24  alexpeshkoff
+
+	* firebird2/src/burp/backup.epp (1.132):
+
+	fixed compile error
+
 2009-12-07 19:26  asfernandes
 
 	* firebird2/src/: dsql/ddl.cpp (1.291), dsql/parse.y (1.344),
