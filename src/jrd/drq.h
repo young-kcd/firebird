@@ -255,6 +255,7 @@ const int drq_s_pkg_usr_prvs	= 201;	// store package privileges
 const int drq_e_pkg_prv			= 202;	// erase package privileges
 const int drq_m_pkg_prm_defs	= 203;	// modify packaged procedure parameters defaults
 const int drq_s2_difference		= 204;	// Store backup difference file, DYN_mod's change_backup_mode
-const int drq_MAX				= 205;
+const int drq_l_relation		= 205;	// lookup relation before erase
+const int drq_MAX				= 206;
 
 #endif // JRD_DRQ_H

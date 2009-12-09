@@ -940,8 +940,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 		GET_STRING(ptr, relation_name);
 
 	jrd_req* req2 = 0;
-	jrd_req* request = CMP_find_request(tdbb, drq_e_relation, DYN_REQUESTS);
-	USHORT id = drq_e_relation;
+	jrd_req* request = CMP_find_request(tdbb, drq_l_relation, DYN_REQUESTS);
+	USHORT id = drq_l_relation;
 
 	bool found = false;
 	bool view = false;
@@ -950,27 +950,17 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ relation_name.c_str()
-        if (!DYN_REQUEST(drq_e_relation))
-            DYN_REQUEST(drq_e_relation) = request;
+        if (!DYN_REQUEST(drq_l_relation))
+            DYN_REQUEST(drq_l_relation) = request;
 
 		view = !R.RDB$VIEW_BLR.NULL;
 
 		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 			(view ? DDL_TRIGGER_DROP_VIEW : DDL_TRIGGER_DROP_TABLE), relation_name, gbl->sqlText);
-
-		ERASE R;
-
-		if (!R.RDB$SECURITY_CLASS.NULL &&
-			!strncmp(R.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
-		{
-			DYN_delete_security_class2(gbl->gbl_transaction, R.RDB$SECURITY_CLASS);
-		}
-
-		found = true;
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_e_relation))
-		DYN_REQUEST(drq_e_relation) = request;
+	if (!DYN_REQUEST(drq_l_relation))
+		DYN_REQUEST(drq_l_relation) = request;
 
 	request = CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
 	id = drq_e_rel_con2;
@@ -1084,6 +1074,25 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 
 	request = CMP_find_request(tdbb, drq_e_relation, DYN_REQUESTS);
 	id = drq_e_relation;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ relation_name.c_str()
+        if (!DYN_REQUEST(drq_e_relation))
+            DYN_REQUEST(drq_e_relation) = request;
+
+		ERASE R;
+
+		if (!R.RDB$SECURITY_CLASS.NULL &&
+			!strncmp(R.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		{
+			DYN_delete_security_class2(gbl->gbl_transaction, R.RDB$SECURITY_CLASS);
+		}
+
+		found = true;
+	END_FOR;
+
+	if (!DYN_REQUEST(drq_e_relation))
+		DYN_REQUEST(drq_e_relation) = request;
 
 	if (!found) {
 		goto dyn_punt_61;
@@ -1202,6 +1211,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 			case drq_e_view_rels:
 				number = 59;
 				break;
+			case drq_l_relation:
 			case drq_e_relation:
 				number = 60;
 				break;
