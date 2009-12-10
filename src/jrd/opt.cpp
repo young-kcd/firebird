@@ -2564,9 +2564,10 @@ static bool form_river(thread_db*		tdbb,
 		return false;
 	}
 
-	bool used = false;
 	for (const UCHAR* t2 = stream; t2 < end_stream; t2++)
 	{
+		bool used = false;
+
 		for (OptimizerBlk::opt_stream* tail = opt->opt_streams.begin(); tail < opt_end; tail++)
 		{
 			if (*t2 == tail->opt_best_stream)
