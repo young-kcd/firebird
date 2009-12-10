@@ -273,7 +273,7 @@ static dsql_nod* pass1_savepoint(const dsql_req*, dsql_nod*);
 
 static bool pass1_relproc_is_recursive(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_join_is_recursive(dsql_req*, dsql_nod*&);
-static bool pass1_rse_is_recursive(dsql_req*, dsql_nod*);
+static dsql_nod* pass1_rse_is_recursive(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_recursive_cte(dsql_req*, dsql_nod*, bool);
 static dsql_nod* process_returning(dsql_req*, dsql_nod*, bool);
 
@@ -4311,23 +4311,30 @@ static dsql_nod* pass1_join_is_recursive(dsql_req* request, dsql_nod*& input)
     @param input
 
  **/
-static bool pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
+static dsql_nod* pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
 {
 	fb_assert(input->nod_type == nod_query_spec);
 
-	dsql_nod* table_list = input->nod_arg[e_qry_from];
-	dsql_nod** table = table_list->nod_arg;
-	dsql_nod** end = table_list->nod_arg + table_list->nod_count;
+	dsql_nod* result = MAKE_node(nod_query_spec, e_qry_count);
+	memcpy(result->nod_arg, input->nod_arg, e_qry_count * sizeof (dsql_nod*));
+
+	dsql_nod* src_tables = input->nod_arg[e_qry_from];
+	dsql_nod* dst_tables = MAKE_node(nod_list, src_tables->nod_count);
+	result->nod_arg[e_qry_from] = dst_tables;
+
+	dsql_nod** p_dst_table = dst_tables->nod_arg;
+	dsql_nod** p_src_table = src_tables->nod_arg;
+	dsql_nod** end = src_tables->nod_arg + src_tables->nod_count;
 	
 	bool found = false;
-	for (dsql_nod** prev = table; table < end; table++)
+	for (dsql_nod** prev = p_dst_table; p_src_table < end; p_src_table++, p_dst_table++)
 	{
-		*prev++ = *table;
-		switch ((*table)->nod_type)
+		*prev++ = *p_dst_table = *p_src_table;
+		switch ((*p_dst_table)->nod_type)
 		{
 			case nod_rel_proc_name:
 			case nod_relation_name:
-				if (pass1_relproc_is_recursive(request, *table))
+				if (pass1_relproc_is_recursive(request, *p_dst_table))
 				{
 					if (found) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
@@ -4337,13 +4344,17 @@ static bool pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
 					found = true;
 
 					prev--;
-					table_list->nod_count--;
+					dst_tables->nod_count--;
 				}
 			break;
 
 			case nod_join:
 			{
-				dsql_nod* joinBool = pass1_join_is_recursive(request, *table);
+					*p_dst_table = MAKE_node(nod_join, e_join_count);
+					memcpy((*p_dst_table)->nod_arg, (*p_src_table)->nod_arg, 
+						e_join_count * sizeof (dsql_nod*));
+
+				dsql_nod* joinBool = pass1_join_is_recursive(request, *p_dst_table);
 				if (joinBool)
 				{
 					if (found) {
@@ -4353,8 +4364,8 @@ static bool pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
 					}
 					found = true;
 
-					input->nod_arg[e_qry_where] = 
-						compose(input->nod_arg[e_qry_where], joinBool, nod_and);
+					result->nod_arg[e_qry_where] = 
+						compose(result->nod_arg[e_qry_where], joinBool, nod_and);
 				}
 			}
 			break;
@@ -4367,7 +4378,7 @@ static bool pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
 		}
 	}
 
-	return found;
+	return found ? result : NULL;
 }
 
 
@@ -4380,9 +4391,23 @@ static bool pass1_rse_is_recursive(dsql_req* request, dsql_nod* input)
 		If it is recursive return new derived table which is an union of 
 		union of anchor (non-recursive) queries and union of recursive 
 		queries. Check recursive queries to satisfy various criterias. 
-		Note that our parser is right-to-left therefore recursive members
-		will be first in union's list 
+		Note that our parser is right-to-left therefore nested list linked 
+		as first node in parent list and second node is always query spec.
 
+		For example, if we have 4 CTE's where first two is non-recursive
+	and last two is recursive :
+
+				list							  union
+			  [0]	[1]						   [0]		[1]
+			list	cte3		===>		anchor		recursive
+		  [0]	[1]						 [0]	[1]		[0]		[1]
+		list	cte3					cte1	cte2	cte3	cte4
+	  [0]	[1]
+	cte1	cte2
+
+		Also, we should not change layout of original parse tree to allow it to
+	be parsed again if needed. Therefore recursive part is built using newly 
+	allocated list nodes.
 
     @param request
     @param input
@@ -4405,6 +4430,10 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 	// split queries list on two parts: anchor and recursive
 	dsql_nod* anchor_rse = 0, *recursive_rse = 0;
 	dsql_nod* qry = query;
+
+	dsql_nod* new_query = MAKE_node(nod_list, 2);
+	new_query->nod_flags = query->nod_flags;
+	dsql_nod* new_qry = new_query;
 	while (true)
 	{
 		dsql_nod* rse = 0;
@@ -4413,7 +4442,8 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 		else
 			rse = qry;
 
-		if (pass1_rse_is_recursive(request, rse)) // rse is recursive
+		dsql_nod* new_rse = pass1_rse_is_recursive(request, rse);
+		if (new_rse) // rse is recursive
 		{
 			if (anchor_rse)
 			{
@@ -4422,21 +4452,21 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_end);
 			}
-			if (rse->nod_arg[e_qry_distinct]) {
+			if (new_rse->nod_arg[e_qry_distinct]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "DISTINCT",
 					isc_arg_end);
 			}
-			if (rse->nod_arg[e_qry_group]) {
+			if (new_rse->nod_arg[e_qry_group]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "GROUP BY",
 					isc_arg_end);
 			}
-			if (rse->nod_arg[e_qry_having]) {
+			if (new_rse->nod_arg[e_qry_having]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
@@ -4446,26 +4476,48 @@ static dsql_nod* pass1_recursive_cte(dsql_req* request, dsql_nod* input, bool pr
 			// hvlad: we need also forbid any aggregate function here
 			// but for now i have no idea how to do it simple
 
-			if ((qry->nod_type == nod_list) && !(qry->nod_flags & NOD_UNION_ALL)) {
+			if ((new_qry->nod_type == nod_list) && !(new_qry->nod_flags & NOD_UNION_ALL)) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_union_all, // Recursive members of CTE (%s) must be linked with another members via UNION ALL
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_end);
 			}
 			if (!recursive_rse) {
-				recursive_rse = qry;
+				recursive_rse = new_qry;
 			}
-			rse->nod_flags |= NOD_SELECT_EXPR_RECURSIVE;
+			new_rse->nod_flags |= NOD_SELECT_EXPR_RECURSIVE;
+
+			if (qry->nod_type == nod_list)
+				new_qry->nod_arg[1] = new_rse;
+			else
+				new_qry->nod_arg[0] = new_rse;
 		}
-		else if (!anchor_rse)
+		else
 		{
-			anchor_rse = qry;
+			if (qry->nod_type == nod_list)
+				new_qry->nod_arg[1] = rse;
+			else
+				new_qry->nod_arg[0] = rse;
+
+			if (!anchor_rse) {
+				if (qry->nod_type == nod_list)
+					anchor_rse = new_qry;
+				else
+					anchor_rse = rse;
+			}
 		}
 
-		if (qry->nod_type == nod_list)
-			qry = qry->nod_arg[0];
-		else
+		if (qry->nod_type != nod_list)
 			break;
+
+		qry = qry->nod_arg[0];
+
+		if (qry->nod_type == nod_list)
+		{
+			new_qry->nod_arg[0] = MAKE_node(nod_list, 2);
+			new_qry = new_qry->nod_arg[0];
+			new_qry->nod_flags = qry->nod_flags;
+		}
 	}
 
 	if (!recursive_rse) {
