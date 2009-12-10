@@ -3082,11 +3082,15 @@ static jrd_nod* copy(thread_db* tdbb,
 			new_stream = csb->nextStream();
 			node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;
+			node->nod_arg[e_prc_context] = input->nod_arg[e_prc_context];
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
+			node->nod_arg[e_prc_view] = input->nod_arg[e_prc_view];
 			CompilerScratch::csb_repeat* element = CMP_csb_element(csb, new_stream);
 			// SKIDDER: Maybe we need to check if we really found a procedure?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
 			  (SSHORT)(IPTR) node->nod_arg[e_prc_procedure], false, false, 0);
+			element->csb_view = (jrd_rel*) node->nod_arg[e_prc_view];
+			element->csb_view_stream = remap[0];
 
 			csb->csb_rpt[new_stream].csb_flags |= csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
 
@@ -4769,10 +4773,31 @@ static void pass1_source(thread_db*			tdbb,
 
 	if (source->nod_type == nod_procedure) {
 		CMP_pass1(tdbb, csb, source);
-		jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
-		  						(SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
+		jrd_prc* const procedure =
+			MET_lookup_procedure_id(tdbb, (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
 		post_procedure_access(tdbb, csb, procedure);
 		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->prc_id);
+
+		jrd_rel* const parent_view = csb->csb_view;
+		const USHORT view_stream = csb->csb_view_stream;
+		source->nod_arg[e_prc_view] = (jrd_nod*) parent_view;
+
+		const USHORT stream = (USHORT)(IPTR) source->nod_arg[e_prc_stream];
+		CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
+		element->csb_view = parent_view;
+		fb_assert(view_stream <= MAX_STREAMS);
+		element->csb_view_stream = (UCHAR) view_stream;
+
+		if (parent_view)
+		{
+			ViewContexts& ctx = parent_view->rel_view_contexts;
+			const USHORT key = (USHORT)(IPTR) source->nod_arg[e_prc_context];
+			size_t pos;
+			if (ctx.find(key, pos)) {
+				element->csb_alias = FB_NEW(csb->csb_pool)
+					Firebird::string(csb->csb_pool, ctx[pos]->vcx_context_name);
+			}
+		}
 		return;
 	}
 
@@ -4803,7 +4828,7 @@ static void pass1_source(thread_db*			tdbb,
 	source->nod_arg[e_rel_view] = (jrd_nod*) parent_view;
 
 	const USHORT stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
-	CompilerScratch::csb_repeat* element = CMP_csb_element(csb, stream);
+	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
 	element->csb_view = parent_view;
 	fb_assert(view_stream <= MAX_STREAMS);
 	element->csb_view_stream = (UCHAR) view_stream;
@@ -4811,8 +4836,8 @@ static void pass1_source(thread_db*			tdbb,
 	// in the case where there is a parent view, find the context name
 
 	if (parent_view) {
-		ViewContexts &ctx = parent_view->rel_view_contexts;
-		USHORT key = (USHORT)(IPTR) source->nod_arg[e_rel_context];
+		ViewContexts& ctx = parent_view->rel_view_contexts;
+		const USHORT key = (USHORT)(IPTR) source->nod_arg[e_rel_context];
 		size_t pos;
 		if (ctx.find(key, pos)) {
 			element->csb_alias = FB_NEW(csb->csb_pool)

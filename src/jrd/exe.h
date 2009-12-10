@@ -406,7 +406,9 @@ const int e_prc_inputs		= 0;
 const int e_prc_in_msg		= 1;
 const int e_prc_stream		= 2;
 const int e_prc_procedure	= 3;
-const int e_prc_length		= 4;
+const int e_prc_view		= 4;
+const int e_prc_context		= 5;
+const int e_prc_length		= 6;
 
 // Function expression
 

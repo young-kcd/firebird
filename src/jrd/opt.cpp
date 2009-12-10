@@ -2456,7 +2456,7 @@ static bool dump_rsb(const jrd_req* request,
 	const UCHAR* name = NULL;
 
 	const VaryingString* alias = rsb->rsb_alias;
-	if (alias)
+	if (alias && rsb->rsb_type != rsb_procedure)
 	{
 		length = alias->str_length;
 		name = alias->str_data;
@@ -2558,7 +2558,15 @@ static bool dump_rsb(const jrd_req* request,
 
 		if (request->req_procedure || procedure->prc_request->req_fors.getCount() == 0)
 		{
-			const Firebird::MetaName& n = procedure->prc_name;
+			Firebird::MetaName n;
+			if (rsb->rsb_alias)
+			{
+				n.assign((char*) rsb->rsb_alias->str_data, rsb->rsb_alias->str_length);
+			}
+			else
+			{
+				n = procedure->prc_name;
+			}
 			const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
 			if (charset != CS_METADATA && charset != CS_NONE)
 			{
@@ -4799,12 +4807,15 @@ static RecordSource* gen_procedure(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch* const csb = opt->opt_csb;
 	jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
 		(SSHORT)(IPTR)node->nod_arg[e_prc_procedure], false, false, 0);
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_PRC_count) RecordSource();
 	rsb->rsb_type = rsb_procedure;
-	rsb->rsb_stream = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
+	const UCHAR stream = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
+	rsb->rsb_stream = stream;
+	CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[stream];
+	rsb->rsb_alias = OPT_make_alias(tdbb, csb, csb_tail);
 	rsb->rsb_procedure = procedure;
 	rsb->rsb_format = procedure->prc_format;
 	rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb_procedure));
