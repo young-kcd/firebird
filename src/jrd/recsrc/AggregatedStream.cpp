@@ -56,7 +56,7 @@ void AggregatedStream::open(thread_db* tdbb)
 
 	impure->irsb_flags = irsb_open;
 
-	impure->irsb_count = 3;
+	impure->state = STATE_GROUPING;
 	VIO_record(tdbb, &request->req_rpb[m_stream], m_format, tdbb->getDefaultPool());
 }
 
@@ -88,9 +88,9 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	impure->irsb_count = evaluateGroup(tdbb, impure->irsb_count);
+	impure->state = evaluateGroup(tdbb, impure->state);
 
-	if (!impure->irsb_count)
+	if (impure->state == STATE_PROCESS_EOF)
 	{
 		rpb->rpb_number.setValid(false);
 		return false;
@@ -134,13 +134,8 @@ void AggregatedStream::invalidateRecords(jrd_req* request)
 }
 
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state
-// variable. The values of the state are:
-//
-// 3  Entering EVL group before fetching the first record.
-// 1  Values are pending from a prior fetch
-// 2  We encountered EOF from the last attempted fetch
-// 0  We processed everything now process (EOF)
-USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
+// variable.
+AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, AggregatedStream::State state)
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -158,9 +153,9 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 
 	// if we found the last record last time, we're all done
 
-	if (state == 2)
+	if (state == STATE_EOF_FOUND)
 	{
-		return 0;
+		return STATE_PROCESS_EOF;
 	}
 
 	try
@@ -184,8 +179,10 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 				impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_double;
 				impure->vlu_misc.vlu_double = 0;
 				if (from->nod_type == nod_agg_average_distinct)
+				{
 					// Initialize a sort to reject duplicate values
 					initDistinct(request, from);
+				}
 				break;
 
 			case nod_agg_average2:
@@ -195,16 +192,20 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 				// convert the descriptor to double.
 				impure->make_int64(0, from->nod_scale);
 				if (from->nod_type == nod_agg_average_distinct2)
+				{
 					// Initialize a sort to reject duplicate values
 					initDistinct(request, from);
+				}
 				break;
 
 			case nod_agg_total:
 			case nod_agg_total_distinct:
 				impure->make_long(0);
 				if (from->nod_type == nod_agg_total_distinct)
+				{
 					// Initialize a sort to reject duplicate values
 					initDistinct(request, from);
+				}
 				break;
 
 			case nod_agg_total2:
@@ -214,8 +215,10 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 				// convert the descriptor to double.
 				impure->make_int64(0, from->nod_scale);
 				if (from->nod_type == nod_agg_total_distinct2)
+				{
 					// Initialize a sort to reject duplicate values
 					initDistinct(request, from);
+				}
 				break;
 
 			case nod_agg_min:
@@ -230,8 +233,10 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 			case nod_agg_count_distinct:
 				impure->make_long(0);
 				if (from->nod_type == nod_agg_count_distinct)
+				{
 					// Initialize a sort to reject duplicate values
 					initDistinct(request, from);
+				}
 				break;
 
 			case nod_agg_list:
@@ -242,8 +247,10 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 				impure->vlu_desc.dsc_dtype = 0;
 
 				if (from->nod_type == nod_agg_list_distinct)
+				{
 					// Initialize a sort to reject duplicate values
 					initDistinct(request, from);
+				}
 				break;
 
 			case nod_literal:	// pjpg 20001124
@@ -257,7 +264,7 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 
 		// If there isn't a record pending, open the stream and get one
 
-		if (state == 0 || state == 3)
+		if (state == STATE_PROCESS_EOF || state == STATE_GROUPING)
 		{
 			m_next->open(tdbb);
 			if (!m_next->getRecord(tdbb))
@@ -265,9 +272,9 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 				if (group)
 				{
 					finiDistinct(request);
-					return 0;
+					return STATE_PROCESS_EOF;
 				}
-				state = 2;
+				state = STATE_EOF_FOUND;
 			}
 		}
 
@@ -291,9 +298,9 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 
 		bool first = true;
 
-		while (state != 2)
+		while (state != STATE_EOF_FOUND)
 		{
-			state = 1;
+			state = STATE_PENDING;
 
 			if (first)
 				first = false;
@@ -354,7 +361,7 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 						// then the first record is the EOF
 
 						if (from->nod_type == nod_agg_max_indexed || from->nod_type == nod_agg_min_indexed)
-							state = 2;
+							state = STATE_EOF_FOUND;
 
 						++impure->vlux_count;
 						if (!impure->vlu_desc.dsc_dtype)
@@ -498,11 +505,11 @@ USHORT AggregatedStream::evaluateGroup(thread_db* tdbb, USHORT state)
 				}
 			}
 
-			if (state == 2)
+			if (state == STATE_EOF_FOUND)
 				break;
 
 			if (!m_next->getRecord(tdbb))
-				state = 2;
+				state = STATE_EOF_FOUND;
 		}
 
 		break_out:

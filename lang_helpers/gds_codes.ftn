@@ -1396,6 +1396,8 @@ C --
       PARAMETER (GDS__view_name                        = 335544991)
       INTEGER*4 GDS__lock_dir_access                 
       PARAMETER (GDS__lock_dir_access                  = 335544992)
+      INTEGER*4 GDS__invalid_fetch_option            
+      PARAMETER (GDS__invalid_fetch_option             = 335544993)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

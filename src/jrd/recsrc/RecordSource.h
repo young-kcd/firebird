@@ -95,8 +95,10 @@ namespace Jrd
 			: m_impure(0), m_recursive(false)
 		{}
 
-		static void dumpName(thread_db* tdbb, const Firebird::string& name, Firebird::UCharBuffer& buffer);
-		static void dumpInversion(thread_db* tdbb, const jrd_nod* inversion, Firebird::UCharBuffer& buffer);
+		static void dumpName(thread_db* tdbb, const Firebird::string& name,
+			Firebird::UCharBuffer& buffer);
+		static void dumpInversion(thread_db* tdbb, const jrd_nod* inversion,
+			Firebird::UCharBuffer& buffer);
 
 		static void saveRecord(thread_db* tdbb, record_param* rpb);
 		static void restoreRecord(thread_db* tdbb, record_param* rpb);
@@ -161,7 +163,8 @@ namespace Jrd
 		};
 
 	public:
-		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream, jrd_nod* inversion);
+		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+			jrd_nod* inversion);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -194,7 +197,8 @@ namespace Jrd
 		};
 
 	public:
-		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream, jrd_nod* index, USHORT keyLength);
+		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+			jrd_nod* index, USHORT keyLength);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -216,7 +220,8 @@ namespace Jrd
 		UCHAR* getPosition(thread_db* tdbb, win* window, btree_exp**);
 		UCHAR* openStream(thread_db* tdbb, win* window);
 		void setPage(thread_db* tdbb, win* window);
-		void setPosition(thread_db* tdbb, record_param*, win* window, const UCHAR*, btree_exp*, const UCHAR*, USHORT);
+		void setPosition(thread_db* tdbb, record_param*, win* window, const UCHAR*, btree_exp*,
+			const UCHAR*, USHORT);
 		bool setupBitmaps(thread_db* tdbb);
 
 		const Firebird::string m_name;
@@ -281,7 +286,8 @@ namespace Jrd
 		};
 
 	public:
-		ProcedureScan(CompilerScratch* csb, UCHAR stream, jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message);
+		ProcedureScan(CompilerScratch* csb, UCHAR stream, jrd_prc* procedure, jrd_nod* inputs,
+			jrd_nod* message);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -447,17 +453,8 @@ namespace Jrd
 			fb_assert(!m_anyBoolean);
 			m_anyBoolean = anyBoolean;
 
-			if (ansiAny)
-			{
-				m_ansiAny = true;
-				m_ansiAll = false;
-			}
-			else
-			{
-				m_ansiAny = false;
-				m_ansiAll = true;
-			}
-
+			m_ansiAny = ansiAny;
+			m_ansiAll = !ansiAny;
 			m_ansiNot = ansiNot;
 		}
 
@@ -521,9 +518,17 @@ namespace Jrd
 
 	class AggregatedStream : public RecordStream
 	{
+		enum State
+		{
+			STATE_PROCESS_EOF,	// We processed everything now process (EOF)
+			STATE_PENDING,		// Values are pending from a prior fetch
+			STATE_EOF_FOUND,	// We encountered EOF from the last attempted fetch
+			STATE_GROUPING		// Entering EVL group before fetching the first record
+		};
+
 		struct Impure : public RecordSource::Impure
 		{
-			USHORT irsb_count;
+			State state;
 		};
 
 	public:
@@ -547,7 +552,7 @@ namespace Jrd
 		}
 
 	private:
-		USHORT evaluateGroup(thread_db* tdbb, USHORT state);
+		State evaluateGroup(thread_db* tdbb, State state);
 		void initDistinct(jrd_req* request, const jrd_nod* node);
 		void computeDistinct(thread_db* tdbb, jrd_nod* node);
 		void finiDistinct(jrd_req* request);
@@ -559,7 +564,8 @@ namespace Jrd
 	class WindowedStream : public RecordStream
 	{
 	public:
-		WindowedStream(CompilerScratch* csb, UCHAR stream, AggregatedStream* aggregate, RecordSource* next);
+		WindowedStream(CompilerScratch* csb, UCHAR stream, AggregatedStream* aggregate,
+			RecordSource* next);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);

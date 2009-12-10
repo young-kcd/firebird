@@ -49,7 +49,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 	streams[0] = 0;
 	m_next->findUsedStreams(streams);
 
-	Firebird::Array<dsc> fields;
+	Array<dsc> fields;
 
 	for (size_t i = 1; i <= streams[0]; i++)
 	{
@@ -66,8 +66,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 				const dsc* const desc = &format->fmt_desc[id];
 				m_map.add(FieldMap(stream, id));
 				fields.add(*desc);
-			}
-			while (accessor.getNext());
+			} while (accessor.getNext());
 		}
 	}
 

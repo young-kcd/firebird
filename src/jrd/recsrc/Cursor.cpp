@@ -58,7 +58,7 @@ void Cursor::open(thread_db* tdbb)
 	{
 		for (const SLONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
 		{
-			impure_value* const invariant_impure = (impure_value*) ((SCHAR *) request + *iter);
+			impure_value* const invariant_impure = (impure_value*) ((SCHAR*) request + *iter);
 			invariant_impure->vlu_flags = 0;
 		}
 	}
@@ -122,6 +122,7 @@ bool Cursor::fetchNext(thread_db* tdbb)
 	request->req_records_selected++;
 	request->req_records_affected.bumpFetched();
 	impure->irsb_state = POSITIONED;
+
 	return true;
 }
 
@@ -165,6 +166,7 @@ bool Cursor::fetchPrior(thread_db* tdbb)
 	request->req_records_selected++;
 	request->req_records_affected.bumpFetched();
 	impure->irsb_state = POSITIONED;
+
 	return true;
 }
 
@@ -226,6 +228,7 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset)
 	request->req_records_selected++;
 	request->req_records_affected.bumpFetched();
 	impure->irsb_state = POSITIONED;
+
 	return true;
 }
 
@@ -272,5 +275,6 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
 	request->req_records_selected++;
 	request->req_records_affected.bumpFetched();
 	impure->irsb_state = POSITIONED;
+
 	return true;
 }

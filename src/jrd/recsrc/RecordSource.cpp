@@ -189,8 +189,8 @@ bool RecordStream::refetchRecord(thread_db* tdbb)
 
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch)
 	{
-		if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
-			(!VIO_chase_record_version(tdbb, org_rpb, transaction, tdbb->getDefaultPool(), true)))
+		if (!DPM_get(tdbb, org_rpb, LCK_read) ||
+			!VIO_chase_record_version(tdbb, org_rpb, transaction, tdbb->getDefaultPool(), true))
 		{
 			return false;
 		}

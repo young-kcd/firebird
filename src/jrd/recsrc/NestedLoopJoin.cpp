@@ -36,7 +36,7 @@ using namespace Jrd;
 // ------------------------------
 
 NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource* const* args)
-	: m_args(csb->csb_pool), m_boolean(NULL), m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
+	: m_outerJoin(false), m_semiJoin(false), m_antiJoin(false), m_args(csb->csb_pool), m_boolean(NULL)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
@@ -50,8 +50,8 @@ NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource*
 
 NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
 							   jrd_nod* boolean, bool semiJoin, bool antiJoin)
-	: m_args(csb->csb_pool), m_boolean(boolean),
-	  m_outerJoin(true), m_semiJoin(semiJoin), m_antiJoin(antiJoin)
+	: m_outerJoin(true), m_semiJoin(semiJoin), m_antiJoin(antiJoin), m_args(csb->csb_pool),
+	  m_boolean(boolean)
 {
 	fb_assert(outer && inner);
 

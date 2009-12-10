@@ -35,7 +35,8 @@ using namespace Jrd;
 // Data access: Bitmap (DBKEY) driven table scan
 // ---------------------------------------------
 
-BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, UCHAR stream, jrd_nod* inversion)
+BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, UCHAR stream,
+			jrd_nod* inversion)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_inversion(inversion)
 {
 	fb_assert(m_inversion);
@@ -90,7 +91,9 @@ bool BitmapTableScan::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	RecordBitmap** pbitmap = impure->irsb_bitmap, *bitmap;
+	RecordBitmap** pbitmap = impure->irsb_bitmap;
+	RecordBitmap* bitmap;
+
 	if (!pbitmap || !(bitmap = *pbitmap))
 	{
 		rpb->rpb_number.setValid(false);

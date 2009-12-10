@@ -46,7 +46,8 @@ namespace Jrd
 		};
 
 	public:
-		Cursor(CompilerScratch* csb, RecordSource* rsb, const VarInvariantArray* invariants, bool scrollable);
+		Cursor(CompilerScratch* csb, RecordSource* rsb, const VarInvariantArray* invariants,
+			bool scrollable);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
