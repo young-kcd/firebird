@@ -2548,7 +2548,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 
 	// Now, put relation ID into first 16 bits of DB_KEY
 	// We do not assign it as SLONG because of big-endian machines.
-	*(USHORT*)impure->vlu_misc.vlu_dbkey = relation->rel_id;
+	*(USHORT*) impure->vlu_misc.vlu_dbkey = relation->rel_id;
 
 	// Encode 40-bit record number. Before that, increment the value
 	// because users expect the numbering to start with one.
@@ -2604,7 +2604,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		}
 	}
 
-	if ((nod_average2 == node->nod_type))
+	if (nod_average2 == node->nod_type)
 	{
 		impure->vlu_misc.vlu_int64 = 0;
 		impure->vlu_desc.dsc_dtype = dtype_int64;

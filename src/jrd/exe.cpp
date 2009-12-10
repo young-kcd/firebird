@@ -1078,7 +1078,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				tdbb->setTransaction(request->req_transaction);
 
 				for (Cursor* const* ptr = request->req_fors.begin();
-					ptr < request->req_fors.end(); ptr++)
+					 ptr < request->req_fors.end(); ptr++)
 				{
 					(*ptr)->close(tdbb);
 				}
@@ -2121,6 +2121,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_for:
 			{
 				Cursor* const rsb = (Cursor*) node->nod_arg[e_for_rsb];
+
 				switch (request->req_operation)
 				{
 				case jrd_req::req_evaluate:
@@ -2917,7 +2918,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	{
 		// Close active cursors
 		for (Cursor* const* ptr = request->req_cursors.begin();
-			ptr < request->req_cursors.end(); ++ptr)
+			 ptr < request->req_cursors.end(); ++ptr)
 		{
 			if (*ptr)
 			{

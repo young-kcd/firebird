@@ -40,8 +40,9 @@ using namespace Jrd;
 // Data access: aggregation
 // ------------------------
 
-AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* aggregate, RecordSource* next)
-	: RecordStream(csb, stream), m_aggregate(aggregate), m_next(next)
+AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* aggregate,
+			RecordSource* next)
+	: RecordStream(csb, stream), m_next(next), m_aggregate(aggregate)
 {
 	fb_assert(m_next && m_aggregate);
 

@@ -48,4 +48,3 @@ void EXT_tra_attach(Jrd::ExternalFile*, Jrd::jrd_tra*);
 void EXT_tra_detach(Jrd::ExternalFile*, Jrd::jrd_tra*);
 
 #endif // JRD_EXT_PROTO_H
-

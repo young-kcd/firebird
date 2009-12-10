@@ -45,4 +45,3 @@ Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
 							   Jrd::RecordSelExpr*, Jrd::NodeStack*);
 
 #endif // JRD_OPT_PROTO_H
-

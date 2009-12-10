@@ -838,7 +838,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		// Assign the sort node back if it wasn't used by the index navigation
 		if (saved_sort_node && !sort_can_be_used)
 		{
-
 			sort = saved_sort_node;
 		}
 
@@ -2543,7 +2542,7 @@ static bool form_river(thread_db*		tdbb,
 	}
 
 	for (OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
-		tail < opt_end; tail++, stream++, ptr++)
+		 tail < opt_end; tail++, stream++, ptr++)
 	{
 		*stream = (UCHAR) tail->opt_best_stream;
 		*ptr = gen_retrieval(tdbb, opt, *stream, sort_clause, false, false, NULL);
@@ -4405,7 +4404,7 @@ jrd_nod* make_dbkey(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* boolean, USHORT
 	dbkey->nod_count = 1;
 	dbkey->nod_type = nod_bit_dbkey;
 	dbkey->nod_arg[0] = value;
-	dbkey->nod_arg[1] = (jrd_nod*) (IPTR) n;
+	dbkey->nod_arg[1] = (jrd_nod*)(IPTR) n;
 	dbkey->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
 
 	return dbkey;
@@ -5170,7 +5169,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
  ***************************************************
  *
  * Functional Description:
- *    SortedStream indices based on there selectivity.
+ *    Sort SortedStream indices based on there selectivity.
  *    Lowest selectivy as first, highest as last.
  *
  ***************************************************/

@@ -5370,12 +5370,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	case nod_for:
 		rse_node = node->nod_arg[e_for_re];
-		cursor_ptr = (Cursor**) & node->nod_arg[e_for_rsb];
+		cursor_ptr = (Cursor**) &node->nod_arg[e_for_rsb];
 		break;
 
 	case nod_dcl_cursor:
 		rse_node = node->nod_arg[e_dcl_cursor_rse];
-		cursor_ptr = (Cursor**) & node->nod_arg[e_dcl_cursor_rsb];
+		cursor_ptr = (Cursor**) &node->nod_arg[e_dcl_cursor_rsb];
 		break;
 
 	case nod_cursor_stmt:
@@ -5835,7 +5835,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 			if (!top_rse->rse_invariants)
 			{
-				top_rse->rse_invariants = FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
+				top_rse->rse_invariants = FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(
+					*tdbb->getDefaultPool());
 			}
 
 			top_rse->rse_invariants->add(node->nod_impure);

@@ -41,12 +41,14 @@ using namespace Jrd;
 // Data access: index driven table scan
 // ------------------------------------
 
-IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR stream, jrd_nod* index, USHORT length)
-	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_inversion(NULL), m_index(index), m_length(length), m_offset(0)
+IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR stream,
+			jrd_nod* index, USHORT length)
+	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_index(index), m_inversion(NULL),
+	  m_length(length), m_offset(0)
 {
 	fb_assert(m_index);
 
-	USHORT size = sizeof(struct Impure) + 2 * m_length;
+	USHORT size = sizeof(Impure) + 2 * m_length;
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	m_offset = size;
 	size += sizeof(index_desc);

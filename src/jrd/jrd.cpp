@@ -947,7 +947,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 
 		// Check to see if the database is truly local
-		if (ISC_check_if_remote(expanded_name, true)) 
+		if (ISC_check_if_remote(expanded_name, true))
 		{
 			return handle_error(user_status, isc_unavailable);
 		}
