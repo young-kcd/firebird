@@ -2222,9 +2222,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						{
 							fb_assert(op == blr_cursor_fetch_scroll);
 
-							dsc* desc = EVL_expr(tdbb, node->nod_arg[e_cursor_stmt_scroll_op]);
-							fb_assert(!(request->req_flags & req_null));
-							const SLONG fetch_op = MOV_get_long(desc, 0);
+							const SLONG fetch_op = (IPTR) node->nod_arg[e_cursor_stmt_scroll_op];
 
 							desc = EVL_expr(tdbb, node->nod_arg[e_cursor_stmt_scroll_val]);
 							const bool unknown = !desc || (request->req_flags & req_null);

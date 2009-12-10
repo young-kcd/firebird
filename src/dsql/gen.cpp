@@ -1268,7 +1268,7 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 			// scrolling
 			if (scroll)
 			{
-				GEN_expr(statement, scroll->nod_arg[0]);
+				stuff(statement, scroll->nod_arg[0]->getSlong());
 				if (scroll->nod_arg[1])
 				{
 					GEN_expr(statement, scroll->nod_arg[1]);

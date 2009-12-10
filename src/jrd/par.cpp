@@ -3096,7 +3096,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		case blr_cursor_close:
 			break;
 		case blr_cursor_fetch_scroll:
-			node->nod_arg[e_cursor_stmt_scroll_op] = PAR_parse_node(tdbb, csb, VALUE);
+			node->nod_arg[e_cursor_stmt_scroll_op] = (jrd_nod*)(IPTR) csb->csb_blr_reader.getByte();
 			node->nod_arg[e_cursor_stmt_scroll_val] = PAR_parse_node(tdbb, csb, VALUE);
 			// FALL INTO
 		case blr_cursor_fetch:

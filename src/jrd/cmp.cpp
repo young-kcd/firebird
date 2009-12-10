@@ -3316,8 +3316,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_cursor_stmt_op] = input->nod_arg[e_cursor_stmt_op];
 		node->nod_arg[e_cursor_stmt_number] = input->nod_arg[e_cursor_stmt_number];
-		node->nod_arg[e_cursor_stmt_scroll_op] =
-			copy(tdbb, csb, input->nod_arg[e_cursor_stmt_scroll_op], remap, field_id, message, remap_fld);
+		node->nod_arg[e_cursor_stmt_scroll_op] = input->nod_arg[e_cursor_stmt_scroll_op];
 		node->nod_arg[e_cursor_stmt_scroll_val] =
 			copy(tdbb, csb, input->nod_arg[e_cursor_stmt_scroll_val], remap, field_id, message, remap_fld);
 		node->nod_arg[e_cursor_stmt_into] =
@@ -4106,7 +4105,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node);
 
 	case nod_cursor_stmt:
-		node->nod_arg[e_cursor_stmt_scroll_op] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_op]);
 		node->nod_arg[e_cursor_stmt_scroll_val] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val]);
 		node->nod_arg[e_cursor_stmt_into] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
 		break;
@@ -5379,7 +5377,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 
 	case nod_cursor_stmt:
-		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_op], node);
 		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val], node);
 		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
 		break;
