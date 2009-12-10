@@ -1,3 +1,208 @@
+2009-12-10 14:46  asfernandes
+
+	* firebird2/: builds/posix/make.shared.variables (1.118),
+	builds/win32/msvc8/engine.vcproj (1.39),
+	builds/win32/msvc8/engine_classic.vcproj (1.40),
+	builds/win32/msvc8/engine_embed.vcproj (1.37),
+	builds/win32/msvc9/engine.vcproj (1.10),
+	builds/win32/msvc9/engine_classic.vcproj (1.10),
+	builds/win32/msvc9/engine_embed.vcproj (1.10),
+	src/jrd/recsrc/BufferedStream.cpp (1.1),
+	src/jrd/recsrc/BufferredStream.cpp (1.3):
+
+	Rename file to match class name
+
+2009-12-10 13:45  dimitr
+
+	* firebird2/src/jrd/recsrc/FirstRowsStream.cpp (1.2):
+
+	Misc.
+
+2009-12-10 13:16  asfernandes
+
+	* firebird2/src/jrd/recsrc/: FullOuterJoin.cpp (1.2),
+	FullTableScan.cpp (1.2), IndexTableScan.cpp (1.3), LockedStream.cpp
+	(1.2), MergeJoin.cpp (1.2), NestedLoopJoin.cpp (1.3),
+	ProcedureScan.cpp (1.2), SkipRowsStream.cpp (1.2), Union.cpp (1.2):
+
+	Misc
+
+2009-12-10 11:13  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.377):
+
+	Corrected the logic. Thanks to Adriano.
+
+2009-12-10 08:24  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.115),
+	lang_helpers/gds_codes.pas (1.113), src/burp/burp.h (1.107),
+	src/burp/restore.epp (1.190), src/include/gen/codetext.h (1.123),
+	src/include/gen/iberror.h (1.127), src/include/gen/msgs.h (1.154),
+	src/include/gen/sql_code.h (1.129), src/include/gen/sql_state.h
+	(1.59), src/msgs/facilities2.sql (1.95), src/msgs/messages2.sql
+	(1.119), src/msgs/system_errors2.sql (1.75):
+
+	Do not hardcode anymore the backup versions allowed.
+
+2009-12-10 06:20  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.319):
+
+	Fixed the build.
+
+2009-12-10 06:09  dimitr
+
+	* firebird2/src/: dsql/gen.cpp (1.199), jrd/cmp.cpp (1.369),
+	jrd/exe.cpp (1.318), jrd/par.cpp (1.256):
+
+	Simplified the code, thanks to Adriano.
+
+2009-12-10 02:32  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.114),
+	lang_helpers/gds_codes.pas (1.112),
+	src/jrd/recsrc/AggregatedStream.cpp (1.3),
+	src/jrd/recsrc/BitmapTableScan.cpp (1.2),
+	src/jrd/recsrc/BufferredStream.cpp (1.2), src/jrd/recsrc/Cursor.cpp
+	(1.2), src/jrd/recsrc/Cursor.h (1.2),
+	src/jrd/recsrc/NestedLoopJoin.cpp (1.2),
+	src/jrd/recsrc/RecordSource.cpp (1.2),
+	src/jrd/recsrc/RecordSource.h (1.2):
+
+	Misc / Constant for aggregate state
+
+2009-12-10 01:29  asfernandes
+
+	* firebird2/src/jrd/recsrc/WindowedStream.cpp (1.2):
+
+	Fix window functions
+
+2009-12-10 01:02  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.368), evl.cpp (1.326), exe.cpp
+	(1.317), ext_proto.h (1.21), jrd.cpp (1.589), opt.cpp (1.376),
+	opt_proto.h (1.19), recsrc/AggregatedStream.cpp (1.2),
+	recsrc/IndexTableScan.cpp (1.2):
+
+	Misc / warnings
+
+2009-12-10 00:06  hvlad
+
+	* firebird2/src/dsql/pass1.cpp (1.475):
+
+	Fixed bug CORE-2783 : AV using recursive query as subquery in
+	SELECT list and ORDER'ing by them
+
+2009-12-10 00:05  hvlad
+
+	* firebird2/builds/win32/msvc8/: engine.vcproj (1.38),
+	engine_classic.vcproj (1.39), engine_embed.vcproj (1.36):
+
+	Fix MSVC8 build - follow recent MSVC9 changes
+
+2009-12-09 21:55  asfernandes
+
+	* firebird2/: configure.in (1.379),
+	builds/posix/make.shared.variables (1.117):
+
+	Make it build in Linux
+
+2009-12-09 19:45  dimitr
+
+	* firebird2/: src/jrd/AggregateRsb.cpp (1.4),
+	src/jrd/AggregateRsb.h (1.2), src/jrd/WindowRsb.cpp (1.8),
+	src/jrd/WindowRsb.h (1.6), src/jrd/nav.cpp (1.88),
+	src/jrd/nav_proto.h (1.21), src/jrd/rse.cpp (1.199),
+	src/jrd/rse_proto.h (1.20), builds/win32/msvc9/engine.vcproj (1.9),
+	builds/win32/msvc9/engine_classic.vcproj (1.9),
+	builds/win32/msvc9/engine_embed.vcproj (1.9):
+
+	Refactored the whole RSB stuff into classes. They're inside the
+	/recsrc sub-directory now.  Fixed the layering for WITH LOCK and
+	(partially) ANY/ALL predicates.  Cleaned up the outdated code that
+	never worked (mapping DISTINCT to an index, some VMS remainings).
+	Wiped out a lot of the pre-ODS11 optimizer logic. Some minor
+	adjustments there.  Re-implemented the full outer join from
+	scratch. This resolves CORE-2678 (full outer join cannot use
+	available indices).  Resolved CORE-2796: DB_KEY is always zero for
+	external tables.  Implemented the core part of the scrollable PSQL
+	cursors. Implementation is still incomplete, but ready for testing.
+	 Some other changes I don't recall at the moment ;-)
+
+	WARNING! The engine may be unstable. Please email me about any
+	issues found.
+
+2009-12-09 19:40  dimitr
+
+	* firebird2/src/include/gen/: codetext.h (1.122), iberror.h
+	(1.126), msgs.h (1.153), sql_code.h (1.128), sql_state.h (1.58):
+
+	Refactored the whole RSB stuff into classes. They're inside the
+	/recsrc sub-directory now.  Fixed the layering for WITH LOCK and
+	(partially) ANY/ALL predicates.  Cleaned up the outdated code that
+	never worked (mapping DISTINCT to an index, some VMS remainings).
+	Wiped out a lot of the pre-ODS11 optimizer logic. Some minor
+	adjustments there.  Re-implemented the full outer join from
+	scratch. This resolves CORE-2678 (full outer join cannot use
+	available indices).  Resolved CORE-2796: DB_KEY is always zero for
+	external tables.  Implemented the core part of the scrollable PSQL
+	cursors. Implementation is still incomplete, but ready for testing.
+	 Some other changes I don't recall at the moment ;-)
+
+	WARNING! The engine may be unstable. Please email me about any
+	issues found.
+
+2009-12-09 19:34  dimitr
+
+	* firebird2/src/: jrd/Optimizer.cpp (1.123), jrd/Optimizer.h
+	(1.36), jrd/RecordBuffer.cpp (1.9), jrd/RecordBuffer.h (1.6),
+	jrd/VirtualTable.cpp (1.20), jrd/VirtualTable.h (1.10), jrd/btr.cpp
+	(1.269), jrd/btr.h (1.55), jrd/cmp.cpp (1.367), jrd/evl.cpp
+	(1.325), jrd/exe.cpp (1.316), jrd/exe.h (1.147), jrd/ext.cpp
+	(1.96), jrd/ext.h (1.20), jrd/ext_proto.h (1.20), jrd/inf_pub.h
+	(1.36), jrd/opt.cpp (1.375), jrd/opt_proto.h (1.18), jrd/par.cpp
+	(1.255), jrd/req.h (1.103), jrd/rse.h (1.70), jrd/tra.cpp (1.214),
+	jrd/vio.cpp (1.269), jrd/vio_proto.h (1.38),
+	jrd/recsrc/AggregatedStream.cpp (1.1),
+	jrd/recsrc/BitmapTableScan.cpp (1.1),
+	jrd/recsrc/BufferredStream.cpp (1.1), jrd/recsrc/Cursor.cpp (1.1),
+	jrd/recsrc/Cursor.h (1.1), jrd/recsrc/ExternalTableScan.cpp (1.1),
+	jrd/recsrc/FilteredStream.cpp (1.1), jrd/recsrc/FirstRowsStream.cpp
+	(1.1), jrd/recsrc/FullOuterJoin.cpp (1.1),
+	jrd/recsrc/FullTableScan.cpp (1.1), jrd/recsrc/IndexTableScan.cpp
+	(1.1), jrd/recsrc/LockedStream.cpp (1.1), jrd/recsrc/MergeJoin.cpp
+	(1.1), jrd/recsrc/NestedLoopJoin.cpp (1.1),
+	jrd/recsrc/ProcedureScan.cpp (1.1), jrd/recsrc/RecordSource.cpp
+	(1.1), jrd/recsrc/RecordSource.h (1.1),
+	jrd/recsrc/RecursiveStream.cpp (1.1), jrd/recsrc/SingularStream.cpp
+	(1.1), jrd/recsrc/SkipRowsStream.cpp (1.1),
+	jrd/recsrc/SortedStream.cpp (1.1), jrd/recsrc/Union.cpp (1.1),
+	jrd/recsrc/VirtualTableScan.cpp (1.1),
+	jrd/recsrc/WindowedStream.cpp (1.1), msgs/facilities2.sql (1.94),
+	msgs/messages2.sql (1.118), msgs/system_errors2.sql (1.74):
+
+	Refactored the whole RSB stuff into classes. They're inside the
+	/recsrc sub-directory now.  Fixed the layering for WITH LOCK and
+	(partially) ANY/ALL predicates.  Cleaned up the outdated code that
+	never worked (mapping DISTINCT to an index, some VMS remainings).
+	Wiped out a lot of the pre-ODS11 optimizer logic. Some minor
+	adjustments there.  Re-implemented the full outer join from
+	scratch. This resolves CORE-2678 (full outer join cannot use
+	available indices).  Resolved CORE-2796: DB_KEY is always zero for
+	external tables.  Implemented the core part of the scrollable PSQL
+	cursors. Implementation is still incomplete, but ready for testing.
+	 Some other changes I don't recall at the moment ;-)
+
+	WARNING! The engine may be unstable. Please email me about any
+	issues found.
+
+2009-12-09 15:54  asfernandes
+
+	* firebird2/src/jrd/: drq.h (1.34), dyn_del.epp (1.90):
+
+	Fix assertion error in VIO, reported by Dmitry
+
 2009-12-08 16:02  alexpeshkoff
 
 	* firebird2/:
