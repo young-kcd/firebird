@@ -892,6 +892,7 @@ static const struct {
 	{336331092, -901}, /* 340 gbak_max_dbkey_length */
 	{336331093, -901}, /* 341 gbak_invalid_metadata */
 	{336331094, -901}, /* 342 gbak_invalid_data */
+	{336331096, -901}, /* 344 gbak_inv_bkup_ver2 */
 	{336397205, -804}, /* 917 dsql_too_old_ods */
 	{336397206, -607}, /* 918 dsql_table_not_found */
 	{336397207, -607}, /* 919 dsql_view_not_found */

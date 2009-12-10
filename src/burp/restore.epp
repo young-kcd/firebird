@@ -7993,8 +7993,8 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 
 	if (tdgbl->RESTORE_format < 1 || tdgbl->RESTORE_format > ATT_BACKUP_FORMAT)
 	{
-		BURP_error(44, true, SafeArg() << tdgbl->RESTORE_format);
-		// msg 44 Expected backup version 1..8.  Found %ld
+		BURP_error(344, true, SafeArg() << tdgbl->RESTORE_format << 1 << ATT_BACKUP_FORMAT);
+		// msg 44 Expected backup version @2..@3.  Found @1
 	}
 
 	create_database(tdgbl, database_name);

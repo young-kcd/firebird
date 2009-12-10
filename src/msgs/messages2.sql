@@ -2222,7 +2222,7 @@ COMMIT WORK;
 ('gbak_exp_data_type', NULL, 'burp.c', NULL, 12, 41, NULL, 'expected data attribute', NULL, NULL);
 ('gbak_gen_id_failed', NULL, 'burp.c', NULL, 12, 42, NULL, 'Failed in store_blr_gen_id', NULL, NULL);
 ('gbak_unk_rec_type', NULL, 'burp.c', NULL, 12, 43, NULL, 'do not recognize record type @1', NULL, NULL);
-('gbak_inv_bkup_ver', NULL, 'burp.c', NULL, 12, 44, NULL, 'Expected backup version 1..10.  Found @1', NULL, NULL);
+('gbak_inv_bkup_ver', NULL, 'burp.c', 'obsolete', 12, 44, NULL, 'Expected backup version 1..10.  Found @1', NULL, NULL);
 ('gbak_missing_bkup_desc', NULL, 'burp.c', NULL, 12, 45, NULL, 'expected backup description record', NULL, NULL);
 ('gbak_string_trunc', NULL, 'burp.c', NULL, 12, 46, NULL, 'string truncated', NULL, NULL);
 ('gbak_cant_rest_record', NULL, 'burp.c', NULL, 12, 47, NULL, 'warning -- record could not be restored', NULL, NULL);
@@ -2531,6 +2531,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('gbak_invalid_metadata', 'general_on_error', 'restore.epp', NULL, 12, 341, NULL, 'Invalid metadata detected. Use -FIX_FSS_METADATA option.', NULL, NULL);
 ('gbak_invalid_data', 'get_data', 'restore.epp', NULL, 12, 342, NULL, 'Invalid data detected. Use -FIX_FSS_DATA option.', NULL, NULL);
 (NULL, 'put_asciz', 'backup.epp', NULL, 12, 343, NULL, 'text for attribute @1 is too large in @2, truncating to @3 bytes', NULL, NULL);
+('gbak_inv_bkup_ver2', 'restore.epp', 'burp.cpp', 'do not change the param order', 12, 344, NULL, 'Expected backup version @2..@3.  Found @1', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

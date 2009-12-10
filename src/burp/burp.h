@@ -203,7 +203,6 @@ Version 10: FB3.0.
 			See backup_capabilities in backup.epp.
 */
 
-// ASF: when change this, change the text of the message gbak_inv_bkup_ver, too.
 const int ATT_BACKUP_FORMAT		= 10;
 
 // format version number for ranges for arrays

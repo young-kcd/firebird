@@ -893,6 +893,7 @@ static const struct {
 	{"gbak_max_dbkey_length", 336331092},
 	{"gbak_invalid_metadata", 336331093},
 	{"gbak_invalid_data", 336331094},
+	{"gbak_inv_bkup_ver2", 336331096},
 	{"dsql_too_old_ods", 336397205},
 	{"dsql_table_not_found", 336397206},
 	{"dsql_view_not_found", 336397207},
