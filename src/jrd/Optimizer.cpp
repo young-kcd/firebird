@@ -667,22 +667,33 @@ Firebird::string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
 
 	if (base_tail->csb_view || base_tail->csb_alias)
 	{
+		Firebird::ObjectsArray<Firebird::string> alias_list;
+
 		for (const CompilerScratch::csb_repeat* csb_tail = base_tail; ;
 			csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
 		{
 			if (csb_tail->csb_alias)
 			{
-				alias += *csb_tail->csb_alias;
+				alias_list.push(*csb_tail->csb_alias);
 			}
 			else if (csb_tail->csb_relation)
 			{
-				alias += Firebird::string(csb_tail->csb_relation->rel_name.c_str());
+				alias_list.push(csb_tail->csb_relation->rel_name.c_str());
 			}
 
 			if (!csb_tail->csb_view)
 				break;
 
-			alias += ' ';
+		}
+
+		while (alias_list.getCount())
+		{
+			alias += alias_list.pop();
+
+			if (alias_list.getCount())
+			{
+				alias += ' ';
+			}
 		}
 	}
 	else if (base_tail->csb_relation)
