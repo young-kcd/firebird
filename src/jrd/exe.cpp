@@ -2224,7 +2224,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 							const SLONG fetch_op = (IPTR) node->nod_arg[e_cursor_stmt_scroll_op];
 
-							desc = EVL_expr(tdbb, node->nod_arg[e_cursor_stmt_scroll_val]);
+							const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_cursor_stmt_scroll_val]);
 							const bool unknown = !desc || (request->req_flags & req_null);
 							const SINT64 offset = unknown ? 0 : MOV_get_int64(desc, 0);
 
