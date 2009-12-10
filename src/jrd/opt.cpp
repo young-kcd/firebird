@@ -3840,6 +3840,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		return false;
 
 	HalfStaticArray<SortedStream*, OPT_STATIC_ITEMS> sorts;
+	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> keys;
 
 	stream_cnt = 0;
 	// AB: Get the lowest river position from the rivers that are merged.
@@ -3847,7 +3848,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	USHORT lowestRiverPosition = 0;
 	for (RiverStack::iterator stack3(org_rivers); stack3.hasData(); ++stack3)
 	{
-		River* river1 = stack3.object();
+		River* const river1 = stack3.object();
 		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number))) {
 			continue;
 		}
@@ -3855,7 +3856,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			lowestRiverPosition = river1->riv_number;
 		}
 		stream_cnt += river1->riv_count;
-		jrd_nod* sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_classes.getCount() * 3) jrd_nod();
+		jrd_nod* const sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_classes.getCount() * 3) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = (USHORT) selected_classes.getCount();
 		jrd_nod*** selected_class;
@@ -3868,11 +3869,14 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		}
 
 		sorts.add(gen_sort(tdbb, opt, &river1->riv_count, NULL, river1->riv_rsb, sort, false));
+		keys.add(sort);
 	}
 
+	fb_assert(sorts.getCount() == keys.getCount());
+
 	// Build a merge stream
-	MergeJoin* const merge_rsb =
-		FB_NEW(*tdbb->getDefaultPool()) MergeJoin(opt->opt_csb, sorts.getCount(), sorts.begin());
+	MergeJoin* const merge_rsb = FB_NEW(*tdbb->getDefaultPool())
+		MergeJoin(opt->opt_csb, sorts.getCount(), sorts.begin(), keys.begin());
 
 	// Finally, merge selected rivers into a single river, and rebuild
 	// original river stack.

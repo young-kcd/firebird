@@ -38,17 +38,20 @@ static const char* const SCRATCH = "fb_merge_";
 // Data access: merge join
 // -----------------------
 
-MergeJoin::MergeJoin(CompilerScratch* csb, size_t count, SortedStream* const* args)
-	: m_args(csb->csb_pool)
+MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
+					 SortedStream* const* args, jrd_nod* const* keys)
+	: m_args(csb->csb_pool), m_keys(csb->csb_pool)
 {
 	m_impure = CMP_impure(csb, (USHORT) (sizeof(struct Impure) +
 		count * sizeof(Impure::irsb_mrg_repeat)));
 
 	m_args.resize(count);
+	m_keys.resize(count);
 
 	for (size_t i = 0; i < count; i++)
 	{
 		m_args[i] = args[i];
+		m_keys[i] = keys[i];
 	}
 }
 
@@ -141,11 +144,13 @@ bool MergeJoin::getRecord(thread_db* tdbb)
 	// Assuming we are done with the current value group, advance each
 	// stream one record. If any comes up dry, we're done.
 	SortedStream** highest_ptr = m_args.begin();
+	size_t highest_index = 0;
 
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
 		SortedStream** const ptr = &m_args[i];
 		SortedStream* const sort_rsb = *ptr;
+		jrd_nod* const sort_key = m_keys[i];
 		Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
 		MergeFile* const mfb = &tail->irsb_mrg_file;
@@ -185,9 +190,10 @@ bool MergeJoin::getRecord(thread_db* tdbb)
 		// map data into target records and do comparison
 
 		sort_rsb->mapData(tdbb, request, getData(tdbb, mfb, record));
-		if (ptr != highest_ptr && compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]) < 0)
+		if (ptr != highest_ptr && compare(tdbb, m_keys[highest_index], sort_key) < 0)
 		{
 			highest_ptr = ptr;
+			highest_index = i;
 		}
 	}
 
@@ -201,20 +207,22 @@ bool MergeJoin::getRecord(thread_db* tdbb)
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			SortedStream** const ptr = &m_args[i];
+			SortedStream* const sort_rsb = *ptr;
+			jrd_nod* const sort_key = m_keys[i];
 			Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
 			if (highest_ptr != ptr)
 			{
 				int result;
-				while ( (result = compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1])) )
+				while ( (result = compare(tdbb, m_keys[highest_index], sort_key)) )
 				{
 					if (result < 0)
 					{
 						highest_ptr = ptr;
+						highest_index = i;
 						recycle = true;
 						break;
 					}
-					SortedStream* const sort_rsb = *ptr;
 					MergeFile* const mfb = &tail->irsb_mrg_file;
 					mfb->mfb_current_block = 0;
 					mfb->mfb_equal_records = 0;
@@ -422,6 +430,9 @@ void MergeJoin::restoreRecords(thread_db* tdbb)
 int MergeJoin::compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 {
 	jrd_req* const request = tdbb->getRequest();
+
+	fb_assert(node1 && node1->nod_type == nod_sort);
+	fb_assert(node2 && node2->nod_type == nod_sort);
 
 	jrd_nod* const* ptr1 = node1->nod_arg;
 	jrd_nod* const* ptr2 = node2->nod_arg;
