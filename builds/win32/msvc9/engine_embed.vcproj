@@ -719,7 +719,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\jrd\recsrc\BufferredStream.cpp"
+					RelativePath="..\..\..\src\jrd\recsrc\BufferedStream.cpp"
 					>
 				</File>
 				<File

@@ -47,7 +47,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		trace/TraceConfigStorage.cpp trace/TraceLog.cpp \
 		trace/TraceManager.cpp trace/TraceObjects.cpp \
 		recsrc/AggregatedStream.cpp recsrc/BitmapTableScan.cpp \
-		recsrc/BufferredStream.cpp recsrc/Cursor.cpp recsrc/ExternalTableScan.cpp \
+		recsrc/BufferedStream.cpp recsrc/Cursor.cpp recsrc/ExternalTableScan.cpp \
 		recsrc/FilteredStream.cpp recsrc/FirstRowsStream.cpp recsrc/FullOuterJoin.cpp \
 		recsrc/FullTableScan.cpp recsrc/IndexTableScan.cpp recsrc/LockedStream.cpp \
 		recsrc/MergeJoin.cpp recsrc/NestedLoopJoin.cpp recsrc/ProcedureScan.cpp \
