@@ -2113,9 +2113,11 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	node->nod_count = count_table[blr_procedure];
 	node->nod_arg[e_prc_procedure] = (jrd_nod*) (IPTR) procedure->prc_id;
 
-	const USHORT stream = par_context(csb, 0);
+	SSHORT context;
+	const SSHORT stream = par_context(csb, &context);
 	node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) stream;
 	csb->csb_rpt[stream].csb_procedure = procedure;
+	node->nod_arg[e_prc_context] = (jrd_nod*) (IPTR) context;
 
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_prc_in_msg],
 						&node->nod_arg[e_prc_inputs], true);

@@ -3130,9 +3130,12 @@ static ProcedureScan* gen_procedure(thread_db* tdbb, OptimizerBlk* opt, jrd_nod*
 	jrd_prc* const procedure =
 		MET_lookup_procedure_id(tdbb, (SSHORT)(IPTR)node->nod_arg[e_prc_procedure], false, false, 0);
 
+	CompilerScratch* const csb = opt->opt_csb;
 	const UCHAR stream = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
+	CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[stream];
+	const string alias = OPT_make_alias(tdbb, csb, csb_tail);
 
-	return FB_NEW(*tdbb->getDefaultPool()) ProcedureScan(opt->opt_csb, stream, procedure,
+	return FB_NEW(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, procedure,
 														 node->nod_arg[e_prc_inputs],
 														 node->nod_arg[e_prc_in_msg]);
 }
