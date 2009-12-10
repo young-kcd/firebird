@@ -85,7 +85,7 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	if (m_aggregate->getRecord(tdbb))
+	if (m_next->getRecord(tdbb))
 	{
 		jrd_nod* const node = m_aggregate->getAggregate();
 		jrd_nod* const map = node->nod_arg[e_agg_map];
@@ -130,12 +130,12 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 
 bool WindowedStream::refetchRecord(thread_db* tdbb)
 {
-	return m_aggregate->refetchRecord(tdbb);
+	return m_next->refetchRecord(tdbb);
 }
 
 bool WindowedStream::lockRecord(thread_db* tdbb)
 {
-	return m_aggregate->lockRecord(tdbb);
+	return m_next->lockRecord(tdbb);
 }
 
 void WindowedStream::dump(thread_db* tdbb, UCharBuffer& buffer)
