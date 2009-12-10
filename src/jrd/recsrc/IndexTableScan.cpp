@@ -199,8 +199,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 		// skip this record if:
 		// 1) there is an inversion tree for this index and this record
 		//    is not in the bitmap for the inversion, or
-		// 2) the record has already been visited, or
-		// 3) this is a projection and the new node is the same as the last
+		// 2) the record has already been visited
 
 		if ((m_inversion &&
 			 (!impure->irsb_nav_bitmap ||
