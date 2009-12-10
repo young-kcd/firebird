@@ -37,10 +37,10 @@ using namespace Jrd;
 // Data access: procedure scan
 // ---------------------------
 
-ProcedureScan::ProcedureScan(CompilerScratch* csb, UCHAR stream, jrd_prc* procedure,
-			jrd_nod* inputs, jrd_nod* message)
-	: RecordStream(csb, stream, procedure->prc_format), m_procedure(procedure), m_inputs(inputs),
-	  m_message(message)
+ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+							 jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message)
+	: RecordStream(csb, stream, procedure->prc_format), m_name(csb->csb_pool, name),
+	  m_procedure(procedure), m_inputs(inputs), m_message(message)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
@@ -233,7 +233,7 @@ void ProcedureScan::dump(thread_db* tdbb, UCharBuffer& buffer)
 	buffer.add(isc_info_rsb_begin);
 
 	buffer.add(isc_info_rsb_relation);
-	dumpName(tdbb, m_procedure->prc_name.toString(), buffer);
+	dumpName(tdbb, m_name, buffer);
 
 	buffer.add(isc_info_rsb_type);
 	buffer.add(isc_info_rsb_sequential);

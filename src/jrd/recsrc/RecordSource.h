@@ -286,8 +286,8 @@ namespace Jrd
 		};
 
 	public:
-		ProcedureScan(CompilerScratch* csb, UCHAR stream, jrd_prc* procedure, jrd_nod* inputs,
-			jrd_nod* message);
+		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
+					  jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -302,6 +302,7 @@ namespace Jrd
 		void assignParams(thread_db* tdbb, const dsc* from_desc, const dsc* flag_desc,
 						  const UCHAR* msg, const dsc* to_desc, SSHORT to_id, Record* record);
 
+		const Firebird::string m_name;
 		jrd_prc* const m_procedure;
 		jrd_nod* const m_inputs;
 		jrd_nod* const m_message;
@@ -724,7 +725,8 @@ namespace Jrd
 		static const size_t MERGE_BLOCK_SIZE = 65536;
 
 	public:
-		MergeJoin(CompilerScratch* csb, size_t count, SortedStream* const* args);
+		MergeJoin(CompilerScratch* csb, size_t count,
+				  SortedStream* const* args, jrd_nod* const* keys);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -750,6 +752,7 @@ namespace Jrd
 		bool fetchRecord(thread_db* tdbb, size_t index);
 
 		Firebird::Array<SortedStream*> m_args;
+		Firebird::Array<jrd_nod*> m_keys;
 	};
 
 	class Union : public RecordStream
