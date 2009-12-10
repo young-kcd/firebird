@@ -80,6 +80,11 @@ void Cursor::close(thread_db* tdbb)
 
 bool Cursor::fetchNext(thread_db* tdbb)
 {
+	if (!reschedule(tdbb))
+	{
+		return false;
+	}
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 
@@ -128,14 +133,19 @@ bool Cursor::fetchNext(thread_db* tdbb)
 
 bool Cursor::fetchPrior(thread_db* tdbb)
 {
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
 	if (!m_scrollable)
 	{
 		// error: invalid fetch direction
 		status_exception::raise(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("PRIOR"));
 	}
+
+	if (!reschedule(tdbb))
+	{
+		return false;
+	}
+
+	jrd_req* const request = tdbb->getRequest();
+	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 
 	if (!impure->irsb_active)
 	{
@@ -200,6 +210,11 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset)
 		status_exception::raise(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("ABSOLUTE"));
 	}
 
+	if (!reschedule(tdbb))
+	{
+		return false;
+	}
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 
@@ -240,6 +255,11 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
 		status_exception::raise(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("RELATIVE"));
 	}
 
+	if (!reschedule(tdbb))
+	{
+		return false;
+	}
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 
@@ -275,6 +295,28 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
 	request->req_records_selected++;
 	request->req_records_affected.bumpFetched();
 	impure->irsb_state = POSITIONED;
+
+	return true;
+}
+
+bool Cursor::reschedule(thread_db* tdbb)
+{
+	if (--tdbb->tdbb_quantum < 0)
+	{
+		JRD_reschedule(tdbb, 0, true);
+	}
+
+	jrd_req* const request = tdbb->getRequest();
+
+	if (request->req_flags & req_abort)
+	{
+		return false;
+	}
+
+	if (!request->req_transaction)
+	{
+		return false;
+	}
 
 	return true;
 }

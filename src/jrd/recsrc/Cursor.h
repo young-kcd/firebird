@@ -65,6 +65,8 @@ namespace Jrd
 		}
 
 	private:
+		bool reschedule(thread_db* tdbb);
+
 		ULONG m_impure;
 		RecordSource* const m_top;
 		const VarInvariantArray* const m_invariants;
