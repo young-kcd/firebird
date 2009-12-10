@@ -556,7 +556,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, win* window)
 
 	// Find the starting leaf page
 	IndexRetrieval* const retrieval = (IndexRetrieval*) m_index->nod_arg[e_idx_retrieval];
-	index_desc* const idx = (index_desc*) ((SCHAR *) impure + m_offset);
+	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
 	temporary_key lower, upper;
 	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper);
 	setPage(tdbb, window);
@@ -617,7 +617,8 @@ void IndexTableScan::setPage(thread_db* tdbb, win* window)
 		{
 			if (!impure->irsb_nav_btr_gc_lock)
 			{
-				impure->irsb_nav_btr_gc_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) BtrPageGCLock(tdbb);
+				impure->irsb_nav_btr_gc_lock =
+					FB_NEW_RPT(*tdbb->getDefaultPool(), 0) BtrPageGCLock(tdbb);
 			}
 
 			impure->irsb_nav_btr_gc_lock->disablePageGC(tdbb, window->win_page);

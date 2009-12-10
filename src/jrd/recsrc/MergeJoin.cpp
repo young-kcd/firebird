@@ -41,7 +41,8 @@ static const char* const SCRATCH = "fb_merge_";
 MergeJoin::MergeJoin(CompilerScratch* csb, size_t count, SortedStream* const* args)
 	: m_args(csb->csb_pool)
 {
-	m_impure = CMP_impure(csb, (USHORT) (sizeof(struct Impure) + count * sizeof(Impure::irsb_mrg_repeat)));
+	m_impure = CMP_impure(csb, (USHORT) (sizeof(struct Impure) +
+		count * sizeof(Impure::irsb_mrg_repeat)));
 
 	m_args.resize(count);
 
@@ -287,7 +288,8 @@ bool MergeJoin::getRecord(thread_db* tdbb)
 				mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 			}
 
-			SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block, mfb->mfb_block_data, mfb->mfb_block_size);
+			SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
+				mfb->mfb_block_data, mfb->mfb_block_size);
 		}
 	}
 
@@ -470,7 +472,8 @@ UCHAR* MergeJoin::getData(thread_db* tdbb, MergeFile* mfb, SLONG record)
 	const ULONG merge_block = record / mfb->mfb_blocking_factor;
 	if (merge_block != mfb->mfb_current_block)
 	{
-		SORT_read_block(mfb->mfb_space, mfb->mfb_block_size * merge_block, mfb->mfb_block_data, mfb->mfb_block_size);
+		SORT_read_block(mfb->mfb_space, mfb->mfb_block_size * merge_block,
+			mfb->mfb_block_data, mfb->mfb_block_size);
 		mfb->mfb_current_block = merge_block;
 	}
 
@@ -504,7 +507,8 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index)
 			mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 		}
 
-		SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block, mfb->mfb_block_data, mfb->mfb_block_size);
+		SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
+			mfb->mfb_block_data, mfb->mfb_block_size);
 		mfb->mfb_current_block = merge_block;
 	}
 
@@ -546,4 +550,3 @@ bool MergeJoin::fetchRecord(thread_db* tdbb, size_t index)
 
 	return true;
 }
-

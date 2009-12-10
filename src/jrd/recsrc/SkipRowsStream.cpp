@@ -103,12 +103,7 @@ bool SkipRowsStream::getRecord(thread_db* tdbb)
 
 	impure->irsb_count--;
 
-	if (m_next->getRecord(tdbb))
-	{
-		return true;
-	}
-
-	return false;
+	return m_next->getRecord(tdbb);
 }
 
 bool SkipRowsStream::refetchRecord(thread_db* tdbb)

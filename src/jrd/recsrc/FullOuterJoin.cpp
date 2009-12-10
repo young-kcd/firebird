@@ -101,12 +101,7 @@ bool FullOuterJoin::getRecord(thread_db* tdbb)
 		m_arg2->open(tdbb);
 	}
 
-	if (m_arg2->getRecord(tdbb))
-	{
-		return true;
-	}
-
-	return false;
+	return m_arg2->getRecord(tdbb);
 }
 
 bool FullOuterJoin::refetchRecord(thread_db* tdbb)

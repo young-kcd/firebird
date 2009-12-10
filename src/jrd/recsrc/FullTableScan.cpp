@@ -96,7 +96,7 @@ void FullTableScan::close(thread_db* tdbb)
 		impure->irsb_flags &= ~irsb_open;
 
 		record_param* const rpb = &request->req_rpb[m_stream];
-		if (rpb->getWindow(tdbb).win_flags & WIN_large_scan &&
+		if ((rpb->getWindow(tdbb).win_flags & WIN_large_scan) &&
 			rpb->rpb_relation->rel_scan_count)
 		{
 			rpb->rpb_relation->rel_scan_count--;

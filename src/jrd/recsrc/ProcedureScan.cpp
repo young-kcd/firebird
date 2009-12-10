@@ -37,8 +37,10 @@ using namespace Jrd;
 // Data access: procedure scan
 // ---------------------------
 
-ProcedureScan::ProcedureScan(CompilerScratch* csb, UCHAR stream, jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message)
-	: RecordStream(csb, stream, procedure->prc_format), m_procedure(procedure), m_inputs(inputs), m_message(message)
+ProcedureScan::ProcedureScan(CompilerScratch* csb, UCHAR stream, jrd_prc* procedure,
+			jrd_nod* inputs, jrd_nod* message)
+	: RecordStream(csb, stream, procedure->prc_format), m_procedure(procedure), m_inputs(inputs),
+	  m_message(message)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
@@ -314,13 +316,16 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 		switch (desc1.dsc_dtype)
 		{
 		case dtype_short:
-			*reinterpret_cast<SSHORT*>(desc2.dsc_address) = *reinterpret_cast<SSHORT*>(desc1.dsc_address);
+			*reinterpret_cast<SSHORT*>(desc2.dsc_address) =
+				*reinterpret_cast<SSHORT*>(desc1.dsc_address);
 			break;
 		case dtype_long:
-			*reinterpret_cast<SLONG*>(desc2.dsc_address) = *reinterpret_cast<SLONG*>(desc1.dsc_address);
+			*reinterpret_cast<SLONG*>(desc2.dsc_address) =
+				*reinterpret_cast<SLONG*>(desc1.dsc_address);
 			break;
 		case dtype_int64:
-			*reinterpret_cast<SINT64*>(desc2.dsc_address) = *reinterpret_cast<SINT64*>(desc1.dsc_address);
+			*reinterpret_cast<SINT64*>(desc2.dsc_address) =
+				*reinterpret_cast<SINT64*>(desc1.dsc_address);
 			break;
 		default:
 			memcpy(desc2.dsc_address, desc1.dsc_address, desc1.dsc_length);
