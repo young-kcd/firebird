@@ -7975,10 +7975,12 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		fb_assert(input->nod_count > 1);
 
 		if (update_lock)
+		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
+		}
 
 		return pass1_union(statement, input, order, rows, flags);
 	}
@@ -8310,15 +8312,6 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 	if ((rse->nod_arg[e_rse_items] && aggregate_found(statement, rse->nod_arg[e_rse_items], true)) ||
 		sortWindow)
 	{
-		// Don't allow WITH LOCK
-		if (update_lock)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
-		}
-
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
 		parent_context->ctx_context = statement->req_context_number++;
 		parent_context->ctx_scope_level = statement->req_scope_level;
@@ -8329,6 +8322,12 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		parent_rse = target_rse = MAKE_node(nod_rse, e_rse_count);
 		parent_rse->nod_arg[e_rse_streams] = list = MAKE_node(nod_list, 1);
 		list->nod_arg[0] = window;
+
+		if (rse->nod_arg[e_rse_lock])
+		{
+			parent_rse->nod_arg[e_rse_lock] = rse->nod_arg[e_rse_lock];
+			rse->nod_arg[e_rse_lock] = NULL;
+		}
 
 		if (rse->nod_arg[e_rse_first])
 		{
