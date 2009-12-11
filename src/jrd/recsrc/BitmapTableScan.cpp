@@ -100,8 +100,6 @@ bool BitmapTableScan::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	bool result = false;
-
 	if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext())
 	{
 		do
