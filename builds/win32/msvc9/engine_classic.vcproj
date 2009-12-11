@@ -771,10 +771,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\jrd\recsrc\RecordSource.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\src\jrd\recsrc\RecursiveStream.cpp"
 					>
 				</File>
