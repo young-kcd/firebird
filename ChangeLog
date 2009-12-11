@@ -1,3 +1,10 @@
+2009-12-10 16:46  hvlad
+
+	* firebird2/src/dsql/pass1.cpp (1.348.2.9):
+
+	Backport fix for bug CORE-2783 : AV using recursive query as
+	subquery in SELECT list and ORDER'ing by them
+
 2009-12-04 08:56  robocop
 
 	* firebird2/src/jrd/filters.cpp (1.56.8.4):
