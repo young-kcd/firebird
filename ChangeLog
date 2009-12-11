@@ -1,3 +1,64 @@
+2009-12-11 08:01  dimitr
+
+	* firebird2/builds/win32/msvc9/: engine.vcproj (1.11),
+	engine_classic.vcproj (1.11), engine_embed.vcproj (1.11):
+
+	Misc.
+
+2009-12-10 21:09  dimitr
+
+	* firebird2/src/jrd/recsrc/IndexTableScan.cpp (1.4):
+
+	Misc.
+
+2009-12-10 17:26  dimitr
+
+	* firebird2/src/jrd/recsrc/: Cursor.cpp (1.3), Cursor.h (1.3):
+
+	Restored the code from rse.cpp that was forgotten during
+	refactoring.
+
+2009-12-10 16:50  dimitr
+
+	* firebird2/src/jrd/recsrc/BufferedStream.cpp (1.2):
+
+	Boundary check.
+
+2009-12-10 16:27  dimitr
+
+	* firebird2/src/jrd/recsrc/: ProcedureScan.cpp (1.3),
+	RecordSource.h (1.3):
+
+	Forgotten changes from a few prior commits.
+
+2009-12-10 16:25  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.379), recsrc/MergeJoin.cpp (1.3):
+
+	Fixed the merge join algorithm. Thanks to Adriano.
+
+2009-12-10 16:03  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.125):
+
+	Fixed the plan output (reversed order of view sub-elements) in HEAD
+	(also broken by my yesterday's commit).
+
+2009-12-10 15:48  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.124):
+
+	Fixed the plan output (table names) in HEAD (broken by my
+	yesterday's commit).
+
+2009-12-10 15:47  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.370), exe.h (1.148), opt.cpp
+	(1.378), par.cpp (1.257):
+
+	Fixed (hopefully) CORE-2798: Incomplete plan output (lack of view
+	names) when selecting from views containing procedures inside.
+
 2009-12-10 14:46  asfernandes
 
 	* firebird2/: builds/posix/make.shared.variables (1.118),
