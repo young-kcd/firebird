@@ -223,18 +223,12 @@ void RecordStream::markRecursive()
 	m_recursive = true;
 }
 
-void RecordStream::findUsedStreams(UCHAR* streams)
+void RecordStream::findUsedStreams(StreamsArray& streams)
 {
-	for (UCHAR i = 1; i <= streams[0]; i++)
-	{
-		if (m_stream == streams[i])
-		{
-			return;
-		}
-	}
+	if (streams.exist(m_stream))
+		return;
 
-	fb_assert(streams[0] < MAX_STREAMS);
-	streams[++streams[0]] = m_stream;
+	streams.add(m_stream);
 }
 
 void RecordStream::invalidateRecords(jrd_req* request)

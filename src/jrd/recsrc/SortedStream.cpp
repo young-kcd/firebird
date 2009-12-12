@@ -129,7 +129,7 @@ void SortedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SortedStream::findUsedStreams(UCHAR* streams)
+void SortedStream::findUsedStreams(StreamsArray& streams)
 {
 	m_next->findUsedStreams(streams);
 }

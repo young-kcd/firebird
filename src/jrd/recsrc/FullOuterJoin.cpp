@@ -137,7 +137,7 @@ void FullOuterJoin::markRecursive()
 	m_arg2->markRecursive();
 }
 
-void FullOuterJoin::findUsedStreams(UCHAR* streams)
+void FullOuterJoin::findUsedStreams(StreamsArray& streams)
 {
 	m_arg1->findUsedStreams(streams);
 	m_arg2->findUsedStreams(streams);

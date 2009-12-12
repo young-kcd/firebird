@@ -122,7 +122,7 @@ void LockedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void LockedStream::findUsedStreams(UCHAR* streams)
+void LockedStream::findUsedStreams(StreamsArray& streams)
 {
 	m_next->findUsedStreams(streams);
 }

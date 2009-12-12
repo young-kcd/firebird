@@ -121,7 +121,7 @@ void FilteredStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void FilteredStream::findUsedStreams(UCHAR* streams)
+void FilteredStream::findUsedStreams(StreamsArray& streams)
 {
 	m_next->findUsedStreams(streams);
 }

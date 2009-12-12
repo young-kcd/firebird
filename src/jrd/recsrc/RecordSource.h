@@ -50,6 +50,8 @@ namespace Jrd
 	struct temporary_key;
 	struct win;
 
+	typedef Firebird::HalfStaticArray<USHORT, MAX_STREAMS> StreamsArray;
+
 	// Abstract base class
 
 	class RecordSource
@@ -67,7 +69,7 @@ namespace Jrd
 		virtual void markRecursive() = 0;
 		virtual void invalidateRecords(jrd_req* request) = 0;
 
-		virtual void findUsedStreams(UCHAR* streams) = 0;
+		virtual void findUsedStreams(StreamsArray& streams) = 0;
 		virtual void nullRecords(thread_db* tdbb) = 0;
 		virtual void saveRecords(thread_db* tdbb) = 0;
 		virtual void restoreRecords(thread_db* tdbb) = 0;
@@ -124,7 +126,7 @@ namespace Jrd
 		virtual void markRecursive();
 		virtual void invalidateRecords(jrd_req* request);
 
-		virtual void findUsedStreams(UCHAR* streams);
+		virtual void findUsedStreams(StreamsArray& streams);
 		virtual void nullRecords(thread_db* tdbb);
 		virtual void saveRecords(thread_db* tdbb);
 		virtual void restoreRecords(thread_db* tdbb);
@@ -326,7 +328,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -352,7 +354,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -383,7 +385,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -415,7 +417,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -442,7 +444,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -490,7 +492,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -615,7 +617,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -651,7 +653,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -683,7 +685,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -738,7 +740,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
-		void findUsedStreams(UCHAR* streams);
+		void findUsedStreams(StreamsArray& streams);
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
@@ -780,7 +782,7 @@ namespace Jrd
 	private:
 		Firebird::Array<RecordSource*> m_args;
 		Firebird::Array<jrd_nod*> m_maps;
-		Firebird::Array<UCHAR> m_streams;
+		StreamsArray m_streams;
 	};
 
 	class RecursiveStream : public RecordStream
@@ -822,7 +824,7 @@ namespace Jrd
 		RecordSource* const m_inner;
 		jrd_nod* const m_rootMap;
 		jrd_nod* const m_innerMap;
-		Firebird::Array<UCHAR> m_innerStreams;
+		StreamsArray m_innerStreams;
 		size_t m_impureSize;
 	};
 

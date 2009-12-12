@@ -287,7 +287,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
  *	set of record source blocks (rsb's).
  *
  **************************************/
-	stream_array_t streams, beds, local_streams, outer_streams, sub_streams, key_streams;
+	stream_array_t streams, beds, local_streams, key_streams;
+	StreamsArray outerStreams, subStreams;
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
@@ -319,7 +320,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 	opt->opt_csb = csb;
 
-	beds[0] = streams[0] = key_streams[0] = outer_streams[0] = sub_streams[0] = 0;
+	beds[0] = streams[0] = key_streams[0] = 0;
 	NodeStack conjunct_stack;
 	RiverStack rivers_stack;
 	SLONG conjunct_count = 0;
@@ -446,9 +447,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				// For an INNER JOIN mark previous generated RecordSource's as active.
 				if (rse->rse_jointype == blr_left)
 				{
-					for (SSHORT i = 1; i <= outer_streams[0]; i++) {
-						csb->csb_rpt[outer_streams[i]].csb_flags |= csb_active;
-					}
+					for (StreamsArray::iterator i = outerStreams.begin(); i != outerStreams.end(); ++i)
+						csb->csb_rpt[*i].csb_flags |= csb_active;
 				}
 
 				//const NodeStack::iterator stackSavepoint(conjunct_stack);
@@ -501,9 +501,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 				if (rse->rse_jointype == blr_left)
 				{
-					for (SSHORT i = 1; i <= outer_streams[0]; i++) {
-						csb->csb_rpt[outer_streams[i]].csb_flags &= ~csb_active;
-					}
+					for (StreamsArray::iterator i = outerStreams.begin(); i != outerStreams.end(); ++i)
+						csb->csb_rpt[*i].csb_flags &= ~csb_active;
 				}
 			}
 			else {
@@ -527,10 +526,10 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			if (rse->rse_jointype == blr_inner ||
 			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation) == 0))
 			{
-				rsb->findUsedStreams(sub_streams);
+				rsb->findUsedStreams(subStreams);
 				// Save also the outer streams
 				if (rse->rse_jointype == blr_left)
-					rsb->findUsedStreams(outer_streams);
+					rsb->findUsedStreams(outerStreams);
 			}
 			set_made_river(opt, river);
 			set_inactive(opt, river);
@@ -551,10 +550,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		*p++ = (UCHAR) stream;
 
 		if (rse->rse_jointype == blr_left)
-		{
-			fb_assert(outer_streams[0] < MAX_STREAMS && outer_streams[0] < MAX_UCHAR);
-			outer_streams[++outer_streams[0]] = stream;
-		}
+			outerStreams.add(stream);
 
 		// if we have seen any booleans or sort fields, we may be able to
 		// use an index to optimize them; retrieve the current format of
@@ -719,9 +715,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	// AB: Mark the previous used streams (sub-RecordSelExpr's) as active
-	for (USHORT i = 1; i <= sub_streams[0]; i++) {
-		csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;
-	}
+	for (StreamsArray::iterator i = subStreams.begin(); i != subStreams.end(); ++i)
+		csb->csb_rpt[*i].csb_flags |= csb_active;
 
 	// outer joins require some extra processing
 	if (rse->rse_jointype != blr_inner) {
@@ -746,9 +741,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
 			// as active, because a SORT/MERGE could reset the flags
-			for (USHORT i = 1; i <= sub_streams[0]; i++) {
-				csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;
-			}
+			for (StreamsArray::iterator i = subStreams.begin(); i != subStreams.end(); ++i)
+				csb->csb_rpt[*i].csb_flags |= csb_active;
 		}
 
 		fb_assert(streams[0] != 1 || csb->csb_rpt[streams[1]].csb_relation != 0);

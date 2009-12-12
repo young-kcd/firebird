@@ -247,7 +247,7 @@ void NestedLoopJoin::markRecursive()
 	}
 }
 
-void NestedLoopJoin::findUsedStreams(UCHAR* streams)
+void NestedLoopJoin::findUsedStreams(StreamsArray& streams)
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{

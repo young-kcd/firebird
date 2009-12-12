@@ -129,7 +129,7 @@ void FirstRowsStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void FirstRowsStream::findUsedStreams(UCHAR* streams)
+void FirstRowsStream::findUsedStreams(StreamsArray& streams)
 {
 	m_next->findUsedStreams(streams);
 }

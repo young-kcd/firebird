@@ -133,7 +133,7 @@ void SkipRowsStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SkipRowsStream::findUsedStreams(UCHAR* streams)
+void SkipRowsStream::findUsedStreams(StreamsArray& streams)
 {
 	m_next->findUsedStreams(streams);
 }

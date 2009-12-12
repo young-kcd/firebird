@@ -387,7 +387,7 @@ void MergeJoin::markRecursive()
 	}
 }
 
-void MergeJoin::findUsedStreams(UCHAR* streams)
+void MergeJoin::findUsedStreams(StreamsArray& streams)
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{

@@ -45,15 +45,14 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
-	UCHAR streams[MAX_STREAMS];
-	streams[0] = 0;
+	StreamsArray streams;
 	m_next->findUsedStreams(streams);
 
 	Array<dsc> fields;
 
-	for (size_t i = 1; i <= streams[0]; i++)
+	for (StreamsArray::iterator i = streams.begin(); i != streams.end(); ++i)
 	{
-		const UCHAR stream = streams[i];
+		const UCHAR stream = *i;
 		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 
 		UInt32Bitmap::Accessor accessor(csb->csb_rpt[stream].csb_fields);
@@ -231,7 +230,7 @@ void BufferedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void BufferedStream::findUsedStreams(UCHAR* streams)
+void BufferedStream::findUsedStreams(StreamsArray& streams)
 {
 	m_next->findUsedStreams(streams);
 }
