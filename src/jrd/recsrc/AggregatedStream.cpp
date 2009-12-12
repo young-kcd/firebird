@@ -367,17 +367,10 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 						if (!impure->vlu_desc.dsc_dtype)
 						{
 							EVL_make_value(tdbb, desc, impure);
-							// It was reinterpret_cast<impure_value*>(&impure->vlu_desc));
-							// but vlu_desc is the first member of impure_value and impure_value_ex
-							// derives from impure_value and impure_value doesn't derive from anything
-							// and it doesn't contain virtuals.
-							// Thus, &impure_value_ex->vlu_desc == &impure_value->vlu_desc == &impure_value_ex
-							// Delete this comment or restore the original code
-							// when this reasoning has been validated, please.
 							break;
 						}
 
-						const SLONG result = MOV_compare(desc, reinterpret_cast<dsc*>(impure));
+						const SLONG result = MOV_compare(desc, &impure->vlu_desc);
 
 						if ((result > 0 &&
 								(from->nod_type == nod_agg_max || from->nod_type == nod_agg_max_indexed)) ||
