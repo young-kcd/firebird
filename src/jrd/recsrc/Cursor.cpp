@@ -101,7 +101,11 @@ bool Cursor::fetchNext(thread_db* tdbb)
 	}
 	else if (impure->irsb_state == BOS)
 	{
-		impure->irsb_position = MAX_UINT64;
+		impure->irsb_position = 0;
+	}
+	else
+	{
+		impure->irsb_position++;
 	}
 
 	if (!m_scrollable)
@@ -115,7 +119,7 @@ bool Cursor::fetchNext(thread_db* tdbb)
 	else
 	{
 		BufferedStream* const buffer = (BufferedStream*) m_top;
-		buffer->locate(request, ++impure->irsb_position);
+		buffer->locate(request, impure->irsb_position);
 
 		if (!buffer->getRecord(tdbb))
 		{
@@ -162,10 +166,14 @@ bool Cursor::fetchPrior(thread_db* tdbb)
 	}
 	else if (impure->irsb_state == EOS)
 	{
-		impure->irsb_position = buffer->getCount(request);
+		impure->irsb_position = buffer->getCount(request) - 1;
+	}
+	else
+	{
+		impure->irsb_position--;
 	}
 
-	buffer->locate(request, --impure->irsb_position);
+	buffer->locate(request, impure->irsb_position);
 
 	if (!buffer->getRecord(tdbb))
 	{
