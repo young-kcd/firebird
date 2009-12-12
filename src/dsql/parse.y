@@ -1899,7 +1899,7 @@ output_proc_parameter($parameters)
 
 default_par_opt	: DEFAULT begin_trigger default_value end_default
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
-		| '=' begin_trigger default_value end_trigger
+		| '=' begin_trigger default_value end_default
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
 		|
 			{ $$ = NULL; }
