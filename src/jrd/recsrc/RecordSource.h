@@ -487,7 +487,7 @@ namespace Jrd
 		static const SSHORT ID_TRANS 		= -3;	// transaction id of record
 
 		// Sort map block
-		class SortMap : public pool_alloc<type_smb>
+		class SortMap : public Firebird::PermanentStorage
 		{
 		public:
 			struct Item
@@ -507,7 +507,8 @@ namespace Jrd
 			};
 
 			SortMap(MemoryPool& p)
-				: keyItems(p),
+				: PermanentStorage(p),
+				  keyItems(p),
 				  items(p)
 			{
 			}

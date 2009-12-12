@@ -30,7 +30,6 @@ enum BlockType
 	type_tfb,
 	type_str,
 	type_dcc,
-	type_smb,
 	type_blb,
 	type_irb,
 	type_scl,
