@@ -1613,7 +1613,7 @@ proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
 
 default_par_opt	: DEFAULT begin_trigger default_value end_default
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
-		| '=' begin_trigger default_value end_trigger
+		| '=' begin_trigger default_value end_default
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
 		|
 			{ $$ = NULL; }
