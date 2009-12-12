@@ -3456,6 +3456,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
 
 		if (accessor.getFirst())
+		{
 			do {
 				const ULONG id = accessor.current();
 				items++;
@@ -3480,35 +3481,31 @@ static SortedStream* gen_sort(thread_db* tdbb,
 					}
 				}
 			} while (accessor.getNext());
+		}
 	}
 
 	if (items > MAX_USHORT)
 		ERR_post(Arg::Gds(isc_imp_exc));
 
-	// Now that we know the number of items, allocate a sort map block.  Allocate
-	// it sufficiently large that there is room for a sort key descriptor on the end.
-
-	const ULONG count = items +
-		(sizeof(sort_key_def) * 2 * sort->nod_count + sizeof(smb_repeat) - 1) / sizeof(smb_repeat);
-	SortMap* map = FB_NEW_RPT(*tdbb->getDefaultPool(), count) SortMap();
-
-	map->smb_keys = sort->nod_count * 2;
-	map->smb_count = (USHORT) items;
+	// Now that we know the number of items, allocate a sort map block.
+	SortedStream::SortMap* map = FB_NEW(*tdbb->getDefaultPool()) SortedStream::SortMap(
+		*tdbb->getDefaultPool());
 
 	if (project_flag)
-		map->smb_flags |= SMB_project;
+		map->flags |= SortedStream::FLAG_PROJECT;
 
 	if (sort->nod_flags & nod_unique_sort)
-		map->smb_flags |= SMB_unique_sort;
+		map->flags |= SortedStream::FLAG_UNIQUE;
 
     ULONG map_length = 0;
 
 	// Loop thru sort keys building sort keys.  Actually, to handle null values
 	// correctly, two sort keys are made for each field, one for the null flag
 	// and one for field itself.
-	smb_repeat* map_item = map->smb_rpt;
-	sort_key_def* sort_key = (sort_key_def*) & map->smb_rpt[items];
-	map->smb_key_desc = sort_key;
+
+	SortedStream::SortMap::Item* map_item = map->items.getBuffer((USHORT) items);
+	sort_key_def* sort_key = map->keyItems.getBuffer(2 * sort->nod_count);
+
 	for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++, map_item++)
 	{
 		// Pick up sort key expression.
@@ -3540,7 +3537,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 #ifndef WORDS_BIGENDIAN
 		map_length = ROUNDUP(map_length, sizeof(SLONG));
 #endif
-		sort_key->skd_offset = map_item->smb_flag_offset = (USHORT) map_length++;
+		sort_key->skd_offset = map_item->flagOffset = (USHORT) map_length++;
 		sort_key->skd_dtype = SKD_text;
 		sort_key->skd_length = 1;
 		// Handle nulls placement
@@ -3575,19 +3572,20 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		}
 		sort_key->skd_length = desc->dsc_length;
 		++sort_key;
-		map_item->smb_node = node;
-		map_item->smb_desc = *desc;
-		map_item->smb_desc.dsc_address = (UCHAR *) (IPTR) map_length;
+		map_item->clear();
+		map_item->node = node;
+		map_item->desc = *desc;
+		map_item->desc.dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
 		if (node->nod_type == nod_field)
 		{
-			map_item->smb_stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-			map_item->smb_field_id = (USHORT)(IPTR) node->nod_arg[e_fld_id];
+			map_item->stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
+			map_item->fieldId = (USHORT)(IPTR) node->nod_arg[e_fld_id];
 		}
 	}
 
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
-	map->smb_key_length = (USHORT) map_length >> SHIFTLONG;
+	map->keyLength = (USHORT) map_length >> SHIFTLONG;
 	USHORT flag_offset = (USHORT) map_length;
 	map_length += items - sort->nod_count;
 	// Now go back and process all to fields involved with the sort.  If the
@@ -3603,11 +3601,12 @@ static SortedStream* gen_sort(thread_db* tdbb,
 			IBERROR(157);		// msg 157 cannot sort on a field that does not exist
 		if (desc->dsc_dtype >= dtype_aligned)
 			map_length = FB_ALIGN(map_length, type_alignments[desc->dsc_dtype]);
-		map_item->smb_field_id = (SSHORT) id;
-		map_item->smb_stream = stream;
-		map_item->smb_flag_offset = flag_offset++;
-		map_item->smb_desc = *desc;
-		map_item->smb_desc.dsc_address = (UCHAR *)(IPTR) map_length;
+		map_item->clear();
+		map_item->fieldId = (SSHORT) id;
+		map_item->stream = stream;
+		map_item->flagOffset = flag_offset++;
+		map_item->desc = *desc;
+		map_item->desc.dsc_address = (UCHAR *)(IPTR) map_length;
 		map_length += desc->dsc_length;
 		map_item++;
 	}
@@ -3617,9 +3616,10 @@ static SortedStream* gen_sort(thread_db* tdbb,
 	map_length = ROUNDUP(map_length, sizeof(SINT64));
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
 	{
-		map_item->smb_field_id = SMB_DBKEY;
-		map_item->smb_stream = *ptr;
-		dsc* desc = &map_item->smb_desc;
+		map_item->clear();
+		map_item->fieldId = SortedStream::ID_DBKEY;
+		map_item->stream = *ptr;
+		dsc* desc = &map_item->desc;
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_address = (UCHAR *)(IPTR) map_length;
@@ -3630,9 +3630,10 @@ static SortedStream* gen_sort(thread_db* tdbb,
 
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
 	{
-		map_item->smb_field_id = SMB_TRANS_ID;
-		map_item->smb_stream = *ptr;
-		dsc* desc = &map_item->smb_desc;
+		map_item->clear();
+		map_item->fieldId = SortedStream::ID_TRANS;
+		map_item->stream = *ptr;
+		dsc* desc = &map_item->desc;
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_address = (UCHAR *)(IPTR) map_length;
@@ -3646,9 +3647,10 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		map_length = ROUNDUP(map_length, sizeof(SINT64));
 		for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
 		{
-			map_item->smb_field_id = SMB_DBKEY;
-			map_item->smb_stream = *ptr;
-			dsc* desc = &map_item->smb_desc;
+			map_item->clear();
+			map_item->fieldId = SortedStream::ID_DBKEY;
+			map_item->stream = *ptr;
+			dsc* desc = &map_item->desc;
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
 			desc->dsc_address = (UCHAR *)(IPTR) map_length;
@@ -3657,9 +3659,10 @@ static SortedStream* gen_sort(thread_db* tdbb,
 
 		for (ptr = &dbkey_streams[1]; ptr <= end_ptrL; ptr++, map_item++)
 		{
-			map_item->smb_field_id = SMB_DBKEY_VALID;
-			map_item->smb_stream = *ptr;
-			dsc* desc = &map_item->smb_desc;
+			map_item->clear();
+			map_item->fieldId = SortedStream::ID_DBKEY_VALID;
+			map_item->stream = *ptr;
+			dsc* desc = &map_item->desc;
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = CS_BINARY;
 			desc->dsc_length = 1;
@@ -3670,9 +3673,10 @@ static SortedStream* gen_sort(thread_db* tdbb,
 
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
 	{
-		map_item->smb_field_id = SMB_DBKEY_VALID;
-		map_item->smb_stream = *ptr;
-		dsc* desc = &map_item->smb_desc;
+		map_item->clear();
+		map_item->fieldId = SortedStream::ID_DBKEY_VALID;
+		map_item->stream = *ptr;
+		dsc* desc = &map_item->desc;
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = CS_BINARY;
 		desc->dsc_length = 1;
@@ -3680,12 +3684,15 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		map_length += desc->dsc_length;
 	}
 
+	fb_assert(map_item - map->items.begin() == (USHORT) items);
+	fb_assert(sort_key - map->keyItems.begin() == sort->nod_count * 2);
+
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 
 	// Make fields to store varying and cstring length.
 
 	const sort_key_def* const end_key = sort_key;
-	for (sort_key = map->smb_key_desc; sort_key < end_key; sort_key++)
+	for (sort_key = map->keyItems.begin(); sort_key < end_key; sort_key++)
 	{
 		fb_assert(sort_key->skd_dtype != 0);
 		if (sort_key->skd_dtype == SKD_varying || sort_key->skd_dtype == SKD_cstring)
@@ -3701,7 +3708,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		// Msg438: sort record size of %ld bytes is too big
 	}
 
-	map->smb_length = (USHORT) map_length;
+	map->length = (USHORT) map_length;
 
 	// That was most unpleasant.  Never the less, it's done (except for the debugging).
 	// All that remains is to build the record source block for the sort.

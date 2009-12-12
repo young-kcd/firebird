@@ -166,8 +166,9 @@ sort_context* SortedStream::init(thread_db* tdbb)
 
 	sort_context* handle =
 		SORT_init(tdbb->getDatabase(), &request->req_sorts,
-				  m_map->smb_length, m_map->smb_keys, m_map->smb_keys, m_map->smb_key_desc,
-				  ((m_map->smb_flags & SMB_project) ? rejectDuplicate : NULL), 0);
+				  m_map->length, m_map->keyItems.getCount(), m_map->keyItems.getCount(),
+				  m_map->keyItems.begin(),
+				  ((m_map->flags & FLAG_PROJECT) ? rejectDuplicate : NULL), 0);
 
 	try
 	{
@@ -189,22 +190,22 @@ sort_context* SortedStream::init(thread_db* tdbb)
 
 			// Zero out the sort key. This solve a multitude of problems.
 
-			memset(data, 0, m_map->smb_length);
+			memset(data, 0, m_map->length);
 
 			// Loop thru all field (keys and hangers on) involved in the sort.
 			// Be careful to null field all unused bytes in the sort key.
 
-			const smb_repeat* const end_item = m_map->smb_rpt + m_map->smb_count;
-			for (smb_repeat* item = m_map->smb_rpt; item < end_item; item++)
+			const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
+			for (SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 			{
-				to = item->smb_desc;
+				to = item->desc;
 				to.dsc_address = data + (IPTR) to.dsc_address;
 				bool flag = false;
 				dsc* from = 0;
 
-				if (item->smb_node)
+				if (item->node)
 				{
-					from = EVL_expr(tdbb, item->smb_node);
+					from = EVL_expr(tdbb, item->node);
 					if (request->req_flags & req_null)
 						flag = true;
 				}
@@ -212,19 +213,19 @@ sort_context* SortedStream::init(thread_db* tdbb)
 				{
 					from = &temp;
 
-					record_param* const rpb = &request->req_rpb[item->smb_stream];
+					record_param* const rpb = &request->req_rpb[item->stream];
 
-					if (item->smb_field_id < 0)
+					if (item->fieldId < 0)
 					{
-						switch (item->smb_field_id)
+						switch (item->fieldId)
 						{
-						case SMB_TRANS_ID:
+						case ID_TRANS:
 							*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
 							break;
-						case SMB_DBKEY:
+						case ID_DBKEY:
 							*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
 							break;
-						case SMB_DBKEY_VALID:
+						case ID_DBKEY_VALID:
 							*to.dsc_address = (UCHAR) rpb->rpb_number.isValid();
 							break;
 						default:
@@ -233,24 +234,24 @@ sort_context* SortedStream::init(thread_db* tdbb)
 						continue;
 					}
 
-					if (!EVL_field(rpb->rpb_relation, rpb->rpb_record, item->smb_field_id, from))
+					if (!EVL_field(rpb->rpb_relation, rpb->rpb_record, item->fieldId, from))
 					{
 						flag = true;
 					}
 				}
 
-				*(data + item->smb_flag_offset) = flag ? TRUE : FALSE;
+				*(data + item->flagOffset) = flag ? TRUE : FALSE;
 
 				if (!flag)
 				{
 					// If moving a TEXT item into the key portion of the sort record,
 					// then want to sort by language dependent order.
 
-					if (IS_INTL_DATA(&item->smb_desc) &&
-						(USHORT)(IPTR) item->smb_desc.dsc_address < m_map->smb_key_length * sizeof(ULONG))
+					if (IS_INTL_DATA(&item->desc) &&
+						(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength * sizeof(ULONG))
 					{
-						INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc), from, &to,
-							(m_map->smb_flags & SMB_unique_sort ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
+						INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->desc), from, &to,
+							(m_map->flags & FLAG_UNIQUE ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
 					}
 					else
 					{
@@ -276,16 +277,16 @@ sort_context* SortedStream::init(thread_db* tdbb)
 	{
 		SSHORT stream = -1;
 
-		const smb_repeat* const end_item = m_map->smb_rpt + m_map->smb_count;
-		for (smb_repeat* item = m_map->smb_rpt; item < end_item; item++)
+		const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
+		for (SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 		{
-			if (item->smb_node && item->smb_node->nod_type != nod_field)
+			if (item->node && item->node->nod_type != nod_field)
 				continue;
 
-			if (item->smb_stream == stream)
+			if (item->stream == stream)
 				continue;
 
-			stream = item->smb_stream;
+			stream = item->stream;
 			record_param* const rpb = &request->req_rpb[stream];
 
 			if (rpb->rpb_relation)
@@ -313,14 +314,14 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data)
 {
 	dsc from, to;
 
-	const smb_repeat* const end_item = m_map->smb_rpt + m_map->smb_count;
+	const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
 
-	for (smb_repeat* item = m_map->smb_rpt; item < end_item; item++)
+	for (SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 	{
-		const UCHAR flag = *(data + item->smb_flag_offset);
-		from = item->smb_desc;
+		const UCHAR flag = *(data + item->flagOffset);
+		from = item->desc;
 		from.dsc_address = data + (IPTR) from.dsc_address;
-		jrd_nod* const node = item->smb_node;
+		jrd_nod* const node = item->node;
 
 		if (node && node->nod_type != nod_field)
 			continue;
@@ -332,32 +333,33 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data)
 		// a sort key, there is a later nod_field in the item
 		// list that contains the data to send back
 
-		if (IS_INTL_DATA(&item->smb_desc) &&
-			(USHORT)(IPTR) item->smb_desc.dsc_address < m_map->smb_key_length * sizeof(ULONG))
+		if (IS_INTL_DATA(&item->desc) &&
+			(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength * sizeof(ULONG))
 		{
 			continue;
 		}
 
-		record_param* const rpb = &request->req_rpb[item->smb_stream];
+		record_param* const rpb = &request->req_rpb[item->stream];
 
-		const SSHORT id = item->smb_field_id;
+		const SSHORT id = item->fieldId;
 
 		if (id < 0)
 		{
 			switch (id)
 			{
-			case SMB_TRANS_ID:
+			case ID_TRANS:
 				rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
 				break;
-			case SMB_DBKEY:
+			case ID_DBKEY:
 				rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));
 				break;
-			case SMB_DBKEY_VALID:
+			case ID_DBKEY_VALID:
 				rpb->rpb_number.setValid(*from.dsc_address != 0);
 				break;
 			default:
 				fb_assert(false);
 			}
+
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}

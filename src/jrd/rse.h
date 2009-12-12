@@ -51,41 +51,6 @@ class CompilerScratch;
 // Array which stores relative pointers to impure areas of invariant nodes
 typedef Firebird::SortedArray<SLONG> VarInvariantArray;
 
-// Sort map block
-
-struct smb_repeat
-{
-	DSC smb_desc;				// relative descriptor
-	USHORT smb_flag_offset;		// offset of missing flag
-	USHORT smb_stream;			// stream for field id
-	SSHORT smb_field_id;		// id for field (-1 if dbkey)
-	jrd_nod*	smb_node;		// expression node
-};
-
-class SortMap : public pool_alloc_rpt<smb_repeat, type_smb>
-{
-public:
-	USHORT smb_keys;			// number of keys
-	USHORT smb_count;			// total number of fields
-	USHORT smb_length;			// sort record length
-	USHORT smb_key_length;		// key length in longwords
-	sort_key_def* smb_key_desc;	// address of key descriptors
-	USHORT smb_flags;			// misc sort flags
-    smb_repeat smb_rpt[1];
-};
-
-// values for smb_field_id
-
-const SSHORT SMB_DBKEY = -1;		// dbkey value
-const SSHORT SMB_DBKEY_VALID = -2;	// dbkey valid flag
-const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
-
-// bits for the smb_flags field
-
-const USHORT SMB_project = 1;		// sort is really a project
-const USHORT SMB_unique_sort = 2;	// sorts using unique key - for distinct and group by
-
-
 // Blocks used to compute optimal join order:
 // indexed relationships block (IRL) holds
 // information about potential join orders
@@ -97,8 +62,6 @@ public:
 	USHORT					irl_stream;		// stream reachable by relation
 	bool					irl_unique;		// is this stream reachable by unique index?
 };
-
-
 
 // Must be less then MAX_SSHORT. Not used for static arrays.
 const int MAX_CONJUNCTS	= 32000;

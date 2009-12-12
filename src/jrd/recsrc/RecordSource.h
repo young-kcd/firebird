@@ -478,6 +478,47 @@ namespace Jrd
 		};
 
 	public:
+		static const USHORT FLAG_PROJECT = 0x1;	// sort is really a project
+		static const USHORT FLAG_UNIQUE  = 0x2;	// sorts using unique key - for distinct and group by
+
+		// Special values for SortMap::Item::fieldId.
+		static const SSHORT ID_DBKEY		= -1;	// dbkey value
+		static const SSHORT ID_DBKEY_VALID	= -2;	// dbkey valid flag
+		static const SSHORT ID_TRANS 		= -3;	// transaction id of record
+
+		// Sort map block
+		class SortMap : public pool_alloc<type_smb>
+		{
+		public:
+			struct Item
+			{
+				void clear()
+				{
+					desc.clear();
+					flagOffset = stream = fieldId = 0;
+					node = NULL;
+				}
+
+				dsc desc;			// relative descriptor
+				USHORT flagOffset;	// offset of missing flag
+				USHORT stream;		// stream for field id
+				SSHORT fieldId;		// id for field (or ID constants)
+				jrd_nod* node;		// expression node
+			};
+
+			SortMap(MemoryPool& p)
+				: keyItems(p),
+				  items(p)
+			{
+			}
+
+			USHORT length;			// sort record length
+			USHORT keyLength;		// key length in longwords
+			USHORT flags;			// misc sort flags
+			Firebird::Array<sort_key_def> keyItems;	// address of key descriptors
+			Firebird::Array<Item> items;
+		};
+
 		SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* map);
 
 		void open(thread_db* tdbb);
@@ -499,12 +540,12 @@ namespace Jrd
 
 		USHORT getLength() const
 		{
-			return m_map->smb_length;
+			return m_map->length;
 		}
 
 		USHORT getKeyLength() const
 		{
-			return m_map->smb_key_length;
+			return m_map->keyLength;
 		}
 
 		UCHAR* getData(thread_db* tdbb);
