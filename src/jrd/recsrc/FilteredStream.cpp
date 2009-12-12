@@ -36,7 +36,8 @@ using namespace Jrd;
 // ------------------------------------
 
 FilteredStream::FilteredStream(CompilerScratch* csb, RecordSource* next, jrd_nod* boolean)
-	: m_next(next), m_boolean(boolean), m_ansiAny(false), m_ansiAll(false), m_ansiNot(false)
+	: m_next(next), m_boolean(boolean), m_anyBoolean(NULL),
+	  m_ansiAny(false), m_ansiAll(false), m_ansiNot(false)
 {
 	fb_assert(m_next && m_boolean);
 
