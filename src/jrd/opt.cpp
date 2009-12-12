@@ -409,8 +409,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		case nod_aggregate:
 			{
-				fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-				fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_UCHAR);
+				fb_assert((int)(IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
+				fb_assert((int)(IPTR) node->nod_arg[e_agg_stream] <= MAX_UCHAR);
 
 				NodeStack::const_iterator stack_end;
 				if (parent_stack) {
@@ -2632,13 +2632,13 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 		}
 		// 10-Aug-2004. Nickolay Samofatov
 		// Unneeded nulls seem to be skipped somehow.
-		aggregate->nod_arg[2] = (jrd_nod*) (IPTR) rse_nulls_default;
+		aggregate->nod_arg[2] = (jrd_nod*)(IPTR) rse_nulls_default;
 		rse->rse_aggregate = aggregate;
 	}
 
 	RecordSource* const next_rsb = OPT_compile(tdbb, csb, rse, &deliverStack);
 
-	const UCHAR stream = (UCHAR) (IPTR) node->nod_arg[e_agg_stream];
+	const UCHAR stream = (UCHAR)(IPTR) node->nod_arg[e_agg_stream];
 	fb_assert(stream <= MAX_STREAMS);
 	fb_assert(stream <= MAX_UCHAR);
 
@@ -3606,7 +3606,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		map_item->stream = stream;
 		map_item->flagOffset = flag_offset++;
 		map_item->desc = *desc;
-		map_item->desc.dsc_address = (UCHAR *)(IPTR) map_length;
+		map_item->desc.dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
 		map_item++;
 	}
@@ -3622,7 +3622,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		dsc* desc = &map_item->desc;
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_length = sizeof(SINT64);
-		desc->dsc_address = (UCHAR *)(IPTR) map_length;
+		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
 	}
 
@@ -3636,7 +3636,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		dsc* desc = &map_item->desc;
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_address = (UCHAR *)(IPTR) map_length;
+		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
 	}
 
@@ -3653,7 +3653,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 			dsc* desc = &map_item->desc;
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
-			desc->dsc_address = (UCHAR *)(IPTR) map_length;
+			desc->dsc_address = (UCHAR*)(IPTR) map_length;
 			map_length += desc->dsc_length;
 		}
 
@@ -3666,7 +3666,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = CS_BINARY;
 			desc->dsc_length = 1;
-			desc->dsc_address = (UCHAR *)(IPTR) map_length;
+			desc->dsc_address = (UCHAR*)(IPTR) map_length;
 			map_length += desc->dsc_length;
 		}
 	}
@@ -3680,7 +3680,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = CS_BINARY;
 		desc->dsc_length = 1;
-		desc->dsc_address = (UCHAR *)(IPTR) map_length;
+		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
 	}
 
@@ -3865,7 +3865,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			selected_class < selected_classes.end(); selected_class++)
 		{
 			ptr[sort->nod_count] = (jrd_nod*) FALSE; // Ascending sort
-			ptr[sort->nod_count * 2] = (jrd_nod*) (IPTR) rse_nulls_default; // Default nulls placement
+			ptr[sort->nod_count * 2] = (jrd_nod*)(IPTR) rse_nulls_default; // Default nulls placement
 			*ptr++ = (*selected_class)[river1->riv_number];
 		}
 
