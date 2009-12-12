@@ -157,7 +157,7 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb)
 			}
 			else
 			{
-				while (inner->getRecord(tdbb))
+				if (inner->getRecord(tdbb))
 				{
 					impure->irsb_flags |= irsb_joined;
 					return true;
