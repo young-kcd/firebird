@@ -30,7 +30,7 @@
 #define CLASSES_FPE_CONTROL_H
 
 #include <math.h>
-#if defined(WIN_NT)
+#if defined(_MSC_VER)
 #include <float.h>
 #else
 #include <fenv.h>
@@ -78,7 +78,7 @@ public:
 		}
 	}
 
-#if defined(WIN_NT)
+#if defined(_MSC_VER)
 	static void maskAll() throw()
 	{
 		_clearfp(); // always call _clearfp() before setting control word
@@ -201,19 +201,19 @@ private:
 
 
 // getting a portable isinf() is harder than you would expect
+#ifndef isinf
 #ifdef WIN_NT
 inline bool isinf(double x)
 {
 	return (!_finite (x) && !isnan(x));
 }
 #else
-#ifndef isinf
 template <typename F>
 inline bool isinf(F x)
 {
 	return !isnan(x) && isnan(x - x);
 }
-#endif // isinf
 #endif // WIN_NT
+#endif // isinf
 
 #endif //CLASSES_FPE_CONTROL_H
