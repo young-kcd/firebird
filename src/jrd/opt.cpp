@@ -92,18 +92,9 @@ using namespace Firebird;
 #endif
 
 static bool augment_stack(jrd_nod*, NodeStack&);
-#ifdef NOT_USED_OR_REPLACED
-static FB_UINT64 calculate_priority_level(const OptimizerBlk*, const index_desc*);
-#endif
 static void check_indices(const CompilerScratch::csb_repeat*);
-#ifdef NOT_USED_OR_REPLACED
-static bool check_relationship(const OptimizerBlk*, USHORT, USHORT);
-#endif
 static void check_sorts(RecordSelExpr*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
-#ifdef NOT_USED_OR_REPLACED
-static void clear_bounds(OptimizerBlk*, const index_desc*);
-#endif
 static jrd_nod* compose(jrd_nod**, jrd_nod*, nod_t);
 static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
@@ -142,11 +133,6 @@ static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
-#ifdef NOT_USED_OR_REPLACED
-#ifdef OPT_DEBUG
-static void print_order(const OptimizerBlk*, USHORT, double, double);
-#endif
-#endif
 static USHORT river_count(USHORT, jrd_nod**);
 static bool river_reference(const River*, const jrd_nod*, bool* field_found = NULL);
 static bool search_stack(const jrd_nod*, const NodeStack&);
@@ -984,60 +970,6 @@ static bool augment_stack(jrd_nod* node, NodeStack& stack)
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-static FB_UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_desc* idx)
-{
-/**************************************
- *
- *	c a l c u l a t e _ p r i o r i t y _ l e v e l
- *
- **************************************
- *
- * Functional description
- *	Return an calculated value based on
- *	how nodes where matched on the index.
- *	Before calling this function the
- *	match_index function must be called first!
- *
- **************************************/
-	if (opt->opt_segments[0].opt_lower || opt->opt_segments[0].opt_upper)
-	{
-
-		// Count how many fields can be used in this index and
-		// count the maximum equals that matches at the begin.
-		USHORT idx_eql_count = 0;
-		USHORT idx_field_count = 0;
-		const OptimizerBlk::opt_segment* idx_tail = opt->opt_segments;
-		const OptimizerBlk::opt_segment* const idx_end = idx_tail + idx->idx_count;
-		for (; idx_tail < idx_end && (idx_tail->opt_lower || idx_tail->opt_upper); idx_tail++)
-		{
-			idx_field_count++;
-			const jrd_nod* node = idx_tail->opt_match;
-			if (node->nod_type == nod_eql) {
-				idx_eql_count++;
-			}
-			else {
-				break;
-			}
-		}
-
-		// Note: dbb->dbb_max_idx = 1022 for the largest supported page of 16K and
-		//						    62 for the smallest page of 1K
-		const FB_UINT64 max_idx = JRD_get_thread_data()->getDatabase()->dbb_max_idx + 1;
-		FB_UINT64 unique_prefix = 0;
-		if ((idx->idx_flags & idx_unique) && (idx_eql_count == idx->idx_count)) {
-			unique_prefix = (max_idx - idx->idx_count) * max_idx * max_idx * max_idx;
-		}
-		// Calculate our priority level.
-		return unique_prefix + ((idx_eql_count * max_idx * max_idx) +
-			(idx_field_count * max_idx) + (max_idx - idx->idx_count));
-	}
-
-	return LOWEST_PRIORITY_LEVEL;
-}
-#endif
-
-
 static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 {
 /**************************************
@@ -1100,40 +1032,6 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 		++idx;
 	}
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-static bool check_relationship(const OptimizerBlk* opt, USHORT position, USHORT stream)
-{
-/**************************************
- *
- *	c h e c k _ r e l a t i o n s h i p
- *
- **************************************
- *
- * Functional description
- *	Check for a potential indexed relationship.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-
-	const OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
-	for (const OptimizerBlk::opt_stream* const end = tail + position; tail < end; tail++)
-	{
-		const USHORT n = tail->opt_stream_number;
-		for (const IndexedRelationship* relationship = opt->opt_streams[n].opt_relationships;
-		     relationship;
-		     relationship = relationship->irl_next)
-		{
-			if (stream == relationship->irl_stream) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-#endif
 
 
 static void check_sorts(RecordSelExpr* rse)
@@ -1432,34 +1330,6 @@ static void class_mask(USHORT count, jrd_nod** eq_class, ULONG* mask)
 		}
 	}
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-static void clear_bounds(OptimizerBlk* opt, const index_desc* idx)
-{
-/**************************************
- *
- *	c l e a r _ b o u n d s
- *
- **************************************
- *
- * Functional description
- *	Clear upper and lower value slots before matching booleans to
- *	indices.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-
-	const OptimizerBlk::opt_segment* const opt_end = &opt->opt_segments[idx->idx_count];
-
-	for (OptimizerBlk::opt_segment* tail = opt->opt_segments; tail < opt_end; tail++)
-	{
-		tail->opt_lower = NULL;
-		tail->opt_upper = NULL;
-		tail->opt_match = NULL;
-	}
-}
-#endif
 
 
 static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, nod_t node_type)
@@ -4832,33 +4702,6 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 	literal->lit_desc.dsc_length = q - literal->lit_desc.dsc_address;
 	return node;
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-#ifdef OPT_DEBUG
-static void print_order(const OptimizerBlk* opt, USHORT position, double cardinality, double cost)
-{
-/**************************************
- *
- *	p r i n t _ o r d e r
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	fprintf(opt_debug_file, "print_order() -- position %2.2d: ", position);
-	const OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
-	for (const OptimizerBlk::opt_stream* const order_end = opt->opt_streams.begin() + position;
-		tail < order_end; tail++)
-	{
-		fprintf(opt_debug_file, "stream %2.2d, ", tail->opt_stream_number);
-	}
-	fprintf(opt_debug_file, "\n\t\t\tcardinality: %g\tcost: %g\n", cardinality, cost);
-}
-#endif
-#endif
 
 
 static USHORT river_count(USHORT count, jrd_nod** eq_class)
