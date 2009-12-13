@@ -150,8 +150,6 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
 
-	bool result;
-
 	// For ANY and ALL clauses (ALL is handled as a negated ANY),
 	// we must first detect them, and then make sure that the returned
 	// results are correct. This mainly entails making sure that
@@ -200,7 +198,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb)
 
 			bool any_null = false;	// some records true for ANY/ALL
 			bool any_true = false;	// some records true for ANY/ALL
-			
+
 			while (m_next->getRecord(tdbb))
 			{
 				if (EVL_boolean(tdbb, m_boolean))
@@ -250,47 +248,34 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb)
 
 			request->req_flags &= ~req_null;
 
-			if (any_null || any_true)
-			{
-				return true;
-			}
-
-			return false;
+			return any_null || any_true;
 		}
-		else
+
+		// do ANY
+		// if the subquery was true for any comparison, ANY is true
+
+		bool result = false;
+		while (m_next->getRecord(tdbb))
 		{
-			// do ANY
-			// if the subquery was true for any comparison, ANY is true
-
-			result = false;
-			while (m_next->getRecord(tdbb))
+			if (EVL_boolean(tdbb, m_boolean))
 			{
-				if (EVL_boolean(tdbb, m_boolean))
-				{
-					result = true;
-					break;
-				}
+				result = true;
+				break;
 			}
-			request->req_flags &= ~req_null;
-
-			if (result)
-			{
-				return true;
-			}
-
-			return false;
 		}
-	}
-	else if (column_node && m_ansiAll)
-	{
-		bool any_false;	// some records false for ANY/ALL
+		request->req_flags &= ~req_null;
 
+		return result;
+	}
+
+	if (column_node && m_ansiAll)
+	{
 		if (m_ansiNot)
 		{
 			// do NOT ALL
 			// if the subquery was false for any comparison, NOT ALL is true
 
-			any_false = false;
+			bool any_false = false;	// some records false for ANY/ALL
 			while (m_next->getRecord(tdbb))
 			{
 				request->req_flags &= ~req_null;
@@ -323,92 +308,72 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb)
 
 			request->req_flags &= ~req_null;
 
-			if (any_false)
-			{
-				return false;
-			}
-
-			return true;
+			return !any_false;
 		}
-		else
+
+		// do ALL
+		// if the subquery was the empty set
+		// (numTrue + numFalse + numUnknown = 0)
+		// or if all were true
+		// (numFalse + numUnknown = 0),
+		// ALL is true
+
+		bool any_false = false;	// some records false for ANY/ALL
+		while (m_next->getRecord(tdbb))
 		{
-			// do ALL
-			// if the subquery was the empty set
-			// (numTrue + numFalse + numUnknown = 0)
-			// or if all were true
-			// (numFalse + numUnknown = 0),
-			// ALL is true
+			request->req_flags &= ~req_null;
 
-			any_false = false;
-			while (m_next->getRecord(tdbb))
+			// look for a FALSE or null
+
+			if (!EVL_boolean(tdbb, m_boolean))
 			{
-				request->req_flags &= ~req_null;
+				// make sure it wasn't FALSE because there's no select stream record
 
-				// look for a FALSE or null
-
-				if (!EVL_boolean(tdbb, m_boolean))
+				if (select_node)
 				{
-					// make sure it wasn't FALSE because there's no select stream record
+					request->req_flags &= ~req_null;
 
-					if (select_node)
-					{
-						request->req_flags &= ~req_null;
-
-						// select for ANY/ALL processing
-						const bool select_value = EVL_boolean(tdbb, select_node);
-						if (select_value)
-						{
-							any_false = true;
-							break;
-						}
-					}
-					else
+					// select for ANY/ALL processing
+					const bool select_value = EVL_boolean(tdbb, select_node);
+					if (select_value)
 					{
 						any_false = true;
 						break;
 					}
 				}
+				else
+				{
+					any_false = true;
+					break;
+				}
 			}
-
-			request->req_flags &= ~req_null;
-
-			if (any_false)
-			{
-				return false;
-			}
-
-			return true;
 		}
+
+		request->req_flags &= ~req_null;
+
+		return !any_false;
 	}
-	else
+
+	bool nullFlag = false;
+	bool result = false;
+	while (m_next->getRecord(tdbb))
 	{
-		bool nullFlag = false;
-
-		result = false;
-		while (m_next->getRecord(tdbb))
+		if (EVL_boolean(tdbb, m_boolean))
 		{
-			if (EVL_boolean(tdbb, m_boolean))
-			{
-				result = true;
-				break;
-			}
-
-			if (request->req_flags & req_null)
-			{
-				nullFlag = true;
-			}
+			result = true;
+			break;
 		}
 
-		if (nullFlag)
+		if (request->req_flags & req_null)
 		{
-			request->req_flags |= req_null;
+			nullFlag = true;
 		}
-
-		if (result)
-		{
-			return true;
-		}
-
-		return false;
 	}
+
+	if (nullFlag)
+	{
+		request->req_flags |= req_null;
+	}
+
+	return result;
 }
