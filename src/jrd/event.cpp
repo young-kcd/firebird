@@ -130,7 +130,7 @@ EventManager::~EventManager()
 		m_cleanupSemaphore.tryEnter(5);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_unmap_object(localStatus, /*&m_shmemData,*/ (UCHAR**) &m_process, sizeof(prb));
+		ISC_unmap_object(localStatus, (UCHAR**) &m_process, sizeof(prb));
 #else
 		m_process = NULL;
 #endif

@@ -55,7 +55,7 @@ void	ISC_mutex_fini(struct mtx*);
 
 #if defined HAVE_MMAP || defined WIN_NT
 UCHAR*	ISC_map_object(Firebird::Arg::StatusVector&, sh_mem*, ULONG, ULONG);
-void	ISC_unmap_object(Firebird::Arg::StatusVector&, /*sh_mem*,*/ UCHAR**, ULONG);
+void	ISC_unmap_object(Firebird::Arg::StatusVector&, UCHAR**, ULONG);
 #endif
 
 #ifdef UNIX

@@ -556,7 +556,8 @@ namespace {
 		{
 			MutexLockGuard guard(mutex);
 			int n = getByAddress((UCHAR*) s);
-			if (n >= 0) {
+			if (n >= 0)
+			{
 				IPC_TRACE(("-rem SF with %p %p\n", sharedFiles[n].from, sharedFiles[n].to));
 				sharedFiles.remove(n);
 			}
@@ -1013,9 +1014,7 @@ int ISC_event_post(event_t* event)
 }
 
 
-int ISC_event_wait(event_t*	event,
-				   SLONG	value,
-				   const SLONG	micro_seconds)
+int ISC_event_wait(event_t* event, SLONG value, const SLONG micro_seconds)
 {
 /**************************************
  *
@@ -1214,9 +1213,7 @@ int ISC_event_post(event_t* event)
 }
 
 
-int ISC_event_wait(event_t* event,
-				   const SLONG value,
-				   const SLONG micro_seconds)
+int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
 {
 /**************************************
  *
@@ -1389,9 +1386,7 @@ int ISC_event_post(event_t* event)
 }
 
 
-int ISC_event_wait(event_t* event,
-				   const SLONG value,
-				   const SLONG micro_seconds)
+int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
 {
 /**************************************
  *
@@ -2019,10 +2014,12 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	// is complete.  That way potential race conditions are avoided.
 
 #ifndef HAVE_FLOCK
-	if (lockf(fd, F_LOCK, 0)) {
+	if (lockf(fd, F_LOCK, 0))
+	{
 		error(statusVector, "lockf", errno);
 #else
-	if (flock(fd, LOCK_EX)) {
+	if (flock(fd, LOCK_EX))
+	{
 		error(statusVector, "flock", errno);
 #endif
 		fclose(fp);
@@ -2605,10 +2602,7 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 }
 
 
-void ISC_unmap_object(Arg::StatusVector& statusVector,
-					  //sh_mem* shmem_data,
-					  UCHAR** object_pointer,
-					  ULONG object_length)
+void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG object_length)
 {
 /**************************************
  *
@@ -2702,10 +2696,7 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 }
 
 
-void ISC_unmap_object(Arg::StatusVector& statusVector,
-					  //sh_mem* shmem_data,
-					  UCHAR** object_pointer,
-					  ULONG /*object_length*/)
+void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG /*object_length*/)
 {
 /**************************************
  *

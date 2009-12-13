@@ -229,7 +229,7 @@ LockManager::~LockManager()
 #endif
 
 #if defined HAVE_MMAP || defined WIN_NT
-		ISC_unmap_object(localStatus, /*&m_shmem,*/ (UCHAR**) &m_process, sizeof(prc));
+		ISC_unmap_object(localStatus, (UCHAR**) &m_process, sizeof(prc));
 #else
 		m_process = NULL;
 #endif

@@ -117,7 +117,7 @@ static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverS
 static ProcedureScan* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
-static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, //jrd_rel*,
+static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT,
 	const string&, jrd_nod*);
 static SkipRowsStream*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static SortedStream* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
@@ -3200,7 +3200,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		rsb = nav_rsb;
 	}
 
-	return gen_rsb(tdbb, opt, rsb, inversion, stream, /*relation,*/ alias, opt_boolean);
+	return gen_rsb(tdbb, opt, rsb, inversion, stream, alias, opt_boolean);
 }
 
 
@@ -3209,7 +3209,6 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 							 RecordSource* rsb,
 							 jrd_nod* inversion,
 							 SSHORT stream,
-							 //jrd_rel* relation,
 							 const string& alias,
 							 jrd_nod* boolean)
 {

@@ -89,8 +89,7 @@ IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #define PAGE_LOCK_RELEASE(lock)
 #define PAGE_LOCK_ASSERT(lock)
 #define PAGE_LOCK_RE_POST(lock)
-#define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof(BufferDesc) + \
-			 (int) dbb->dbb_page_size)
+#define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof(BufferDesc) + (int) dbb->dbb_page_size)
 #else
 #define PAGE_LOCK_RELEASE(lock)			LCK_release (tdbb, lock)
 #define PAGE_LOCK_ASSERT(lock)			LCK_assert (tdbb, lock)
@@ -137,8 +136,9 @@ static void release_bdb(thread_db*, BufferDesc*, const bool, const bool, const b
 static void unmark(thread_db*, WIN*);
 static bool writeable(BufferDesc*);
 static bool is_writeable(BufferDesc*, const ULONG);
-static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS* const, const bool);
-static bool write_page(thread_db*, BufferDesc*, /*const bool,*/ ISC_STATUS* const, const bool);
+static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS* const,
+	const bool);
+static bool write_page(thread_db*, BufferDesc*, ISC_STATUS* const, const bool);
 static void set_diff_page(thread_db*, BufferDesc*);
 static void set_dirty_flag(thread_db*, BufferDesc*);
 static void clear_dirty_flag(thread_db*, BufferDesc*);
@@ -1913,7 +1913,7 @@ void CCH_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 
 
 #ifdef CACHE_READER
-void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
+void CCH_prefetch(thread_db* tdbb, SLONG* pages, SSHORT count)
 {
 /**************************************
  *
@@ -4545,7 +4545,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 	// Everything is clear to write this buffer.  Do so and reduce the lock
 
-	if (invalid || !write_page(tdbb, bdb, /*false,*/ tdbb->tdbb_status_vector, true))
+	if (invalid || !write_page(tdbb, bdb, tdbb->tdbb_status_vector, true))
 	{
 		bdb->bdb_flags |= BDB_not_valid;
 		clear_dirty_flag(tdbb, bdb);
@@ -6354,7 +6354,7 @@ static int write_buffer(thread_db* tdbb,
 	if ((bdb->bdb_flags & BDB_dirty || (write_thru && bdb->bdb_flags & BDB_db_dirty)) &&
 		!(bdb->bdb_flags & BDB_marked))
 	{
-		if ( (result = write_page(tdbb, bdb, /*write_thru,*/ status, false)) ) {
+		if ( (result = write_page(tdbb, bdb, status, false)) ) {
 			clear_precedence(tdbb, bdb);
 		}
 	}
@@ -6378,11 +6378,7 @@ static int write_buffer(thread_db* tdbb,
 }
 
 
-static bool write_page(thread_db* tdbb,
-					   BufferDesc* bdb,
-					   //const bool write_thru,
-					   ISC_STATUS* const status,
-					   const bool inAst)
+static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const status, const bool inAst)
 {
 /**************************************
  *

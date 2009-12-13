@@ -101,7 +101,7 @@ static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	USHORT irrelevant_field, bool void_update_is_relevant = false);
 static void garbage_collect(thread_db*, record_param*, SLONG, RecordStack&);
-static void garbage_collect_idx(thread_db*, record_param*, /*record_param*,*/ Record*, Record*);
+static void garbage_collect_idx(thread_db*, record_param*, Record*, Record*);
 #ifdef GARBAGE_THREAD
 static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 #endif
@@ -124,8 +124,7 @@ static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
 static void set_system_flag(thread_db*, record_param*, USHORT, SSHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
-static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, //record_param*,
-					  const bool, const bool);
+static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, const bool, const bool);
 
 // Pick up relation ids
 #include "../jrd/ini.h"
@@ -1536,7 +1535,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	if (!(transaction->tra_flags & TRA_system) &&
 		transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
 	{
-		verb_post(tdbb, transaction, rpb, 0, /*0,*/ same_tx, false);
+		verb_post(tdbb, transaction, rpb, 0, same_tx, false);
 	}
 
 	VIO_bump_count(tdbb, DBB_delete_count, relation);
@@ -1813,7 +1812,6 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 
 
 bool VIO_get_current(thread_db* tdbb,
-					//record_param* old_rpb,
 					record_param* rpb,
 					jrd_tra* transaction,
 					MemoryPool* pool,
@@ -2398,7 +2396,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		if (!(transaction->tra_flags & TRA_system) &&
 			transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
 		{
-			verb_post(tdbb, transaction, org_rpb, org_rpb->rpb_undo, /*new_rpb,*/ false, false);
+			verb_post(tdbb, transaction, org_rpb, org_rpb->rpb_undo, false, false);
 		}
 		return;
 	}
@@ -2431,7 +2429,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	if (!(transaction->tra_flags & TRA_system) &&
 		transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
 	{
-		verb_post(tdbb, transaction, org_rpb, 0, /*0,*/ false, false);
+		verb_post(tdbb, transaction, org_rpb, 0, false, false);
 	}
 
 	// for an autocommit transaction, mark a commit as necessary
@@ -2871,7 +2869,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	if (!(transaction->tra_flags & TRA_system) &&
 		transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
 	{
-		verb_post(tdbb, transaction, rpb, 0, /*0,*/ false, false);
+		verb_post(tdbb, transaction, rpb, 0, false, false);
 	}
 
 	// for an autocommit transaction, mark a commit as necessary
@@ -3151,7 +3149,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									}
 									update_in_place(tdbb, transaction, &rpb, &new_rpb);
 									if (!(transaction->tra_flags & TRA_system)) {
-										garbage_collect_idx(tdbb, &rpb, /*&new_rpb,*/ NULL, NULL);
+										garbage_collect_idx(tdbb, &rpb, NULL, NULL);
 									}
 									rpb.rpb_record = dead_record;
 								}
@@ -3169,7 +3167,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 							if (!action->vct_undo ||
 								!action->vct_undo->locate(Firebird::locEqual, rpb.rpb_number.getValue()))
 							{
-								verb_post(tdbb, transaction, &rpb, 0, /*0,*/ false, false);
+								verb_post(tdbb, transaction, &rpb, 0, false, false);
 							}
 							else
 							{
@@ -3191,10 +3189,10 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									new_rpb.rpb_record = record;
 									new_rpb.rpb_address = record->rec_data;
 									new_rpb.rpb_length = record->rec_length;
-									verb_post(tdbb, transaction, &rpb, record, /*&new_rpb,*/ same_tx, new_ver);
+									verb_post(tdbb, transaction, &rpb, record, same_tx, new_ver);
 								}
 								else if (same_tx) {
-									verb_post(tdbb, transaction, &rpb, 0, /*0,*/ true, new_ver);
+									verb_post(tdbb, transaction, &rpb, 0, true, new_ver);
 								}
 							}
 						} while (accessor.getNext());
@@ -3331,7 +3329,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	if (!(transaction->tra_flags & TRA_system) && transaction->tra_save_point)
 	{
-		verb_post(tdbb, transaction, org_rpb, 0, /*0,*/ false, false);
+		verb_post(tdbb, transaction, org_rpb, 0, false, false);
 	}
 
 	// for an autocommit transaction, mark a commit as necessary
@@ -3807,7 +3805,7 @@ static void garbage_collect(thread_db* tdbb, record_param* rpb, SLONG prior_page
 
 
 static void garbage_collect_idx(thread_db* tdbb,
-								record_param* org_rpb, //record_param* new_rpb,
+								record_param* org_rpb,
 								Record* old_data, Record* staying_data)
 {
 /**************************************
@@ -5110,7 +5108,6 @@ static void verb_post(thread_db* tdbb,
 					  jrd_tra* transaction,
 					  record_param* rpb,
 					  Record* old_data,
-					  //record_param* new_rpb,
 					  const bool same_tx, const bool new_ver)
 {
 /**************************************
@@ -5209,7 +5206,7 @@ static void verb_post(thread_db* tdbb,
 		{
 			// The passed old_data will not be used.  Thus, garbage collect.
 
-			garbage_collect_idx(tdbb, rpb, /*new_rpb,*/ old_data, undo);
+			garbage_collect_idx(tdbb, rpb, old_data, undo);
 		}
 	}
 	else if (old_data)
@@ -5224,7 +5221,7 @@ static void verb_post(thread_db* tdbb,
 			undo = action->vct_undo->current().setupRecord(transaction);
 		}
 
-		garbage_collect_idx(tdbb, rpb, /*new_rpb,*/ old_data, undo);
+		garbage_collect_idx(tdbb, rpb, old_data, undo);
 	}
 }
 
