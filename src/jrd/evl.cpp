@@ -603,19 +603,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			// for ansi ANY clauses (and ALL's, which are negated ANY's)
-			// the unoptimized boolean expression must be used, since the
-			// processing of these clauses is order dependant (see rse.cpp)
-
-			Cursor* const select = (Cursor*) (node->nod_arg[e_any_rsb]);
-			if (node->nod_type != nod_any)
-			{
-				const bool ansiAny = (node->nod_type == nod_ansi_any);
-				const bool ansiNot = (node->nod_flags & nod_ansi_not);
-				FilteredStream* const filter = (FilteredStream*) select->getAccessPath();
-				filter->setAnyBoolean(((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean,
-									  ansiAny, ansiNot);
-			}
+			Cursor* const select = (Cursor*) node->nod_arg[e_any_rsb];
 
 			select->open(tdbb);
 			value = select->fetchNext(tdbb);

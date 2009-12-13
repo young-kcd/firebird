@@ -5383,7 +5383,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	USHORT stream;
 
 	DEBUG;
-	jrd_nod* rse_node = NULL;
+	RecordSelExpr* rse_node = NULL;
 	Cursor** cursor_ptr = NULL;
 
 	switch (node->nod_type)
@@ -5395,12 +5395,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		return pass2_union(tdbb, csb, node);
 
 	case nod_for:
-		rse_node = node->nod_arg[e_for_re];
+		rse_node = (RecordSelExpr*) node->nod_arg[e_for_re];
 		cursor_ptr = (Cursor**) &node->nod_arg[e_for_rsb];
 		break;
 
 	case nod_dcl_cursor:
-		rse_node = node->nod_arg[e_dcl_cursor_rse];
+		rse_node = (RecordSelExpr*) node->nod_arg[e_dcl_cursor_rse];
 		cursor_ptr = (Cursor**) &node->nod_arg[e_dcl_cursor_rsb];
 		break;
 
@@ -5415,8 +5415,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_average:
 	case nod_total:
 	case nod_from:
-		rse_node = node->nod_arg[e_stat_rse];
-		if (! rse_node) {
+		rse_node = (RecordSelExpr*) node->nod_arg[e_stat_rse];
+		if (!rse_node) {
 			ERR_post(Arg::Gds(isc_wish_list));
 		}
 		if (!(rse_node->nod_flags & rse_variant))
@@ -5432,7 +5432,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_any:
 	case nod_exists:
 	case nod_unique:
-		rse_node = node->nod_arg[e_any_rse];
+		rse_node = (RecordSelExpr*) node->nod_arg[e_any_rse];
 		if (!(rse_node->nod_flags & rse_variant))
 		{
 			node->nod_flags |= nod_invariant;
@@ -5485,8 +5485,9 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 	}
 
-	if (rse_node) {
-		pass2_rse(tdbb, csb, (RecordSelExpr*) rse_node);
+	if (rse_node)
+	{
+		pass2_rse(tdbb, csb, rse_node);
 	}
 
 	// handle sub-expressions here
@@ -5872,8 +5873,22 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	if (rse_node)
 	{
+		Cursor* const cursor = post_rse(tdbb, csb, rse_node);
+
+		// for ansi ANY clauses (and ALL's, which are negated ANY's)
+		// the unoptimized boolean expression must be used, since the
+		// processing of these clauses is order dependant (see FilteredStream.cpp)
+
+		if (node->nod_type == nod_ansi_any || node->nod_type == nod_ansi_all)
+		{
+			const bool ansiAny = (node->nod_type == nod_ansi_any);
+			const bool ansiNot = (node->nod_flags & nod_ansi_not);
+			FilteredStream* const filter = (FilteredStream*) cursor->getAccessPath();
+			filter->setAnyBoolean(rse_node->rse_boolean, ansiAny, ansiNot);
+		}
+
 		fb_assert(cursor_ptr);
-		*cursor_ptr = post_rse(tdbb, csb, (RecordSelExpr*) rse_node);
+		*cursor_ptr = cursor;
 	}
 
 	return node;
