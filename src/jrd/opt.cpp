@@ -92,12 +92,18 @@ using namespace Firebird;
 #endif
 
 static bool augment_stack(jrd_nod*, NodeStack&);
+#ifdef NOT_USED_OR_REPLACED
 static FB_UINT64 calculate_priority_level(const OptimizerBlk*, const index_desc*);
+#endif
 static void check_indices(const CompilerScratch::csb_repeat*);
+#ifdef NOT_USED_OR_REPLACED
 static bool check_relationship(const OptimizerBlk*, USHORT, USHORT);
+#endif
 static void check_sorts(RecordSelExpr*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
+#ifdef NOT_USED_OR_REPLACED
 static void clear_bounds(OptimizerBlk*, const index_desc*);
+#endif
 static jrd_nod* compose(jrd_nod**, jrd_nod*, nod_t);
 static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
@@ -120,7 +126,7 @@ static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverS
 static ProcedureScan* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
-static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, jrd_rel*,
+static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT, //jrd_rel*,
 	const string&, jrd_nod*);
 static SkipRowsStream*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static SortedStream* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
@@ -136,8 +142,10 @@ static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
+#ifdef NOT_USED_OR_REPLACED
 #ifdef OPT_DEBUG
 static void print_order(const OptimizerBlk*, USHORT, double, double);
+#endif
 #endif
 static USHORT river_count(USHORT, jrd_nod**);
 static bool river_reference(const River*, const jrd_nod*, bool* field_found = NULL);
@@ -245,8 +253,6 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
 
 	if (!buffer || buffer_length < 0 || !return_length)
 		return false;
-
-	const UCHAR* const begin = buffer;
 
 	// loop through all RSEs in the request, and describe the rsb tree for that rsb
 
@@ -978,6 +984,7 @@ static bool augment_stack(jrd_nod* node, NodeStack& stack)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static FB_UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_desc* idx)
 {
 /**************************************
@@ -1028,6 +1035,7 @@ static FB_UINT64 calculate_priority_level(const OptimizerBlk* opt, const index_d
 
 	return LOWEST_PRIORITY_LEVEL;
 }
+#endif
 
 
 static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
@@ -1094,6 +1102,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static bool check_relationship(const OptimizerBlk* opt, USHORT position, USHORT stream)
 {
 /**************************************
@@ -1124,6 +1133,7 @@ static bool check_relationship(const OptimizerBlk* opt, USHORT position, USHORT 
 
 	return false;
 }
+#endif
 
 
 static void check_sorts(RecordSelExpr* rse)
@@ -1424,6 +1434,7 @@ static void class_mask(USHORT count, jrd_nod** eq_class, ULONG* mask)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static void clear_bounds(OptimizerBlk* opt, const index_desc* idx)
 {
 /**************************************
@@ -1448,6 +1459,7 @@ static void clear_bounds(OptimizerBlk* opt, const index_desc* idx)
 		tail->opt_match = NULL;
 	}
 }
+#endif
 
 
 static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, nod_t node_type)
@@ -3318,7 +3330,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		rsb = nav_rsb;
 	}
 
-	return gen_rsb(tdbb, opt, rsb, inversion, stream, relation, alias, opt_boolean);
+	return gen_rsb(tdbb, opt, rsb, inversion, stream, /*relation,*/ alias, opt_boolean);
 }
 
 
@@ -3327,7 +3339,7 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 							 RecordSource* rsb,
 							 jrd_nod* inversion,
 							 SSHORT stream,
-							 jrd_rel* relation,
+							 //jrd_rel* relation,
 							 const string& alias,
 							 jrd_nod* boolean)
 {
@@ -4822,7 +4834,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 }
 
 
-
+#ifdef NOT_USED_OR_REPLACED
 #ifdef OPT_DEBUG
 static void print_order(const OptimizerBlk* opt, USHORT position, double cardinality, double cost)
 {
@@ -4845,6 +4857,7 @@ static void print_order(const OptimizerBlk* opt, USHORT position, double cardina
 	}
 	fprintf(opt_debug_file, "\n\t\t\tcardinality: %g\tcost: %g\n", cardinality, cost);
 }
+#endif
 #endif
 
 
