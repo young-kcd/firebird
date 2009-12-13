@@ -59,7 +59,7 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR s
 
 void IndexTableScan::open(thread_db* tdbb)
 {
-	Database* const dbb = tdbb->getDatabase();
+	//Database* const dbb = tdbb->getDatabase();
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 
