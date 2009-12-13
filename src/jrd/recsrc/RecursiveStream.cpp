@@ -261,7 +261,7 @@ void RecursiveStream::dump(thread_db* tdbb, UCharBuffer& buffer)
 	buffer.add(isc_info_rsb_begin);
 
 	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_left_cross);
+	buffer.add(isc_info_rsb_recursive);
 
 	buffer.add(2);
 	m_root->dump(tdbb, buffer);
