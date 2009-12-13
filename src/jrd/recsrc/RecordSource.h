@@ -50,7 +50,7 @@ namespace Jrd
 	struct temporary_key;
 	struct win;
 
-	typedef Firebird::HalfStaticArray<USHORT, MAX_STREAMS> StreamsArray;
+	typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
 
 	// Abstract base class
 
