@@ -161,7 +161,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb)
 	// NULL, this must also be returned as NULL.
 	// (Note that normally, an AND of a NULL and a FALSE would be FALSE, not NULL).
 
-	// This all depends on evl.c putting the unoptimized expression
+	// This all depends on evl.cpp putting the unoptimized expression
 	// in the rsb. The unoptimized expression always has the
 	// select expression on the left, and the column comparison
 	// on the right.
@@ -189,9 +189,6 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb)
 
 	if (column_node && m_ansiAny)
 	{
-		bool any_null;	// some records null for ANY/ALL
-		bool any_true;	// some records true for ANY/ALL
-
 		if (m_ansiNot)
 		{
 			// do NOT ANY
@@ -201,8 +198,9 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb)
 			// (numTrue + numUnknown = 0),
 			// NOT ANY is true
 
-			any_null = false;
-			any_true = false;
+			bool any_null = false;	// some records true for ANY/ALL
+			bool any_true = false;	// some records true for ANY/ALL
+			
 			while (m_next->getRecord(tdbb))
 			{
 				if (EVL_boolean(tdbb, m_boolean))

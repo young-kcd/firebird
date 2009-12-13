@@ -1395,7 +1395,8 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 
 		jrd_nod* const index_node = makeIndexScanNode(&indexScratches[i]);
 		const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
-		return FB_NEW(*tdbb->getDefaultPool()) IndexTableScan(optimizer->opt_csb, getAlias(), stream, index_node, key_length);
+		return FB_NEW(*tdbb->getDefaultPool())
+				IndexTableScan(optimizer->opt_csb, getAlias(), stream, index_node, key_length);
 	}
 
 	return NULL;

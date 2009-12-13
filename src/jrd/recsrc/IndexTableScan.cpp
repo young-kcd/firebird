@@ -48,10 +48,11 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR s
 {
 	fb_assert(m_index);
 
-	USHORT size = sizeof(Impure) + 2 * m_length;
+	size_t size = sizeof(Impure) + 2u * static_cast<size_t>(m_length);
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	m_offset = size;
 	size += sizeof(index_desc);
+	fb_assert(size < size_t(MAX_USHORT));
 
 	m_impure = CMP_impure(csb, size);
 }
@@ -331,7 +332,7 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 
 		if (idx->idx_count > 1)
 		{
-			// If we search for NULLs at the begin then we're done if the first
+			// If we search for NULLs at the beginning then we're done if the first
 			// segment isn't the first one possible (0 for ASC, 255 for DESC).
 			if (length2 == 0)
 			{

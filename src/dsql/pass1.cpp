@@ -4626,7 +4626,8 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 			else
 				new_qry->nod_arg[0] = rse;
 
-			if (!anchor_rse) {
+			if (!anchor_rse)
+			{
 				if (qry->nod_type == nod_list)
 					anchor_rse = new_qry;
 				else

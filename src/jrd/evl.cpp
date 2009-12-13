@@ -604,7 +604,6 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			}
 
 			Cursor* const select = (Cursor*) node->nod_arg[e_any_rsb];
-
 			select->open(tdbb);
 			value = select->fetchNext(tdbb);
 			select->close(tdbb);

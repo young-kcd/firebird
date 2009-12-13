@@ -506,7 +506,7 @@ namespace Jrd
 				jrd_nod* node;		// expression node
 			};
 
-			SortMap(MemoryPool& p)
+			explicit SortMap(MemoryPool& p)
 				: PermanentStorage(p),
 				  keyItems(p),
 				  items(p)

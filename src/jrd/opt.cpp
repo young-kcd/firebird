@@ -3243,7 +3243,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else
 	{
 		// Persistent table
-		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream, outer_flag, inner_flag, sort_ptr);
+		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(),
+												opt, stream, outer_flag, inner_flag, sort_ptr);
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion(&nav_rsb));
 
 		if (candidate && candidate->inversion)
@@ -3488,8 +3489,8 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_imp_exc));
 
 	// Now that we know the number of items, allocate a sort map block.
-	SortedStream::SortMap* map = FB_NEW(*tdbb->getDefaultPool()) SortedStream::SortMap(
-		*tdbb->getDefaultPool());
+	SortedStream::SortMap* map =
+		FB_NEW(*tdbb->getDefaultPool()) SortedStream::SortMap(*tdbb->getDefaultPool());
 
 	if (project_flag)
 		map->flags |= SortedStream::FLAG_PROJECT;
@@ -4019,10 +4020,12 @@ static RecordSource* gen_union(thread_db* tdbb,
 		// hvlad: save size of inner impure area and context of mapped record
 		// for recursive processing later
 		const UCHAR map_stream = (UCHAR)(IPTR) union_node->nod_arg[e_uni_map_stream];
-		return FB_NEW(*tdbb->getDefaultPool()) RecursiveStream(csb, stream, map_stream, rsbs[0], rsbs[1], maps[0], maps[1], nstreams, streams, base_impure);
+		return FB_NEW(*tdbb->getDefaultPool()) RecursiveStream(csb, stream, map_stream,
+									rsbs[0], rsbs[1], maps[0], maps[1], nstreams, streams, base_impure);
 	}
 
-	return FB_NEW(*tdbb->getDefaultPool()) Union(csb, stream, count / 2, rsbs.begin(), maps.begin(), nstreams, streams);
+	return FB_NEW(*tdbb->getDefaultPool())
+					Union(csb, stream, count / 2, rsbs.begin(), maps.begin(), nstreams, streams);
 }
 
 
@@ -4373,7 +4376,6 @@ jrd_nod* make_dbkey(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* boolean, USHORT
 
 	jrd_nod* dbkey = boolean->nod_arg[0];
 	jrd_nod* value = boolean->nod_arg[1];
-	SLONG n = 0;
 
 	if (dbkey->nod_type != nod_dbkey && dbkey->nod_type != nod_concatenate)
 	{
@@ -4394,6 +4396,7 @@ jrd_nod* make_dbkey(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* boolean, USHORT
 
 	// If this is a concatenation, find an appropriate dbkey
 
+	SLONG n = 0;
 	if (dbkey->nod_type == nod_concatenate)
 	{
 		dbkey = find_dbkey(dbkey, stream, &n);

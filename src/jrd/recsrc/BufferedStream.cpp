@@ -55,7 +55,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 		const UCHAR stream = *i;
 		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 
-		UInt32Bitmap::Accessor accessor(csb->csb_rpt[stream].csb_fields);
+		UInt32Bitmap::Accessor accessor(tail->csb_fields);
 
 		if (accessor.getFirst())
 		{

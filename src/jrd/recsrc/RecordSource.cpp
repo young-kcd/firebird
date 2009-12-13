@@ -146,7 +146,7 @@ void RecordSource::restoreRecord(thread_db* tdbb, record_param* rpb)
 			const USHORT size = rec_copy->rec_length;
 			if (size > record->rec_length)
 			{
-				// hvlad: saved copy of record have longer format, reallocate
+				// hvlad: saved copy of record has longer format, reallocate
 				// given record to make enough space for saved data
 				record = VIO_record(tdbb, rpb, rec_copy->rec_format, pool);
 			}

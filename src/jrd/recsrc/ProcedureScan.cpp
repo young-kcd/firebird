@@ -61,7 +61,7 @@ void ProcedureScan::open(thread_db* tdbb)
 	rpb->rpb_record = NULL;
 
 	USHORT iml;
-	UCHAR* im;
+	const UCHAR* im;
 
 	jrd_req* const proc_request = EXE_find_request(tdbb, m_procedure->prc_request, false);
 	impure->irsb_req_handle = proc_request;

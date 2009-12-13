@@ -42,8 +42,9 @@ MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
 					 SortedStream* const* args, jrd_nod* const* keys)
 	: m_args(csb->csb_pool), m_keys(csb->csb_pool)
 {
-	m_impure = CMP_impure(csb, (USHORT) (sizeof(struct Impure) +
-		count * sizeof(Impure::irsb_mrg_repeat)));
+	size_t size = sizeof(struct Impure) + count * sizeof(Impure::irsb_mrg_repeat);
+	fb_assert(size < size_t(MAX_USHORT));
+	m_impure = CMP_impure(csb, (USHORT) size);
 
 	m_args.resize(count);
 	m_keys.resize(count);

@@ -97,7 +97,7 @@ bool SortedStream::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	mapData(tdbb, request, reinterpret_cast<UCHAR*>(data));
+	mapData(tdbb, request, data);
 
 	return true;
 }
@@ -188,7 +188,7 @@ sort_context* SortedStream::init(thread_db* tdbb)
 			UCHAR* data = NULL;
 			SORT_put(tdbb, handle, reinterpret_cast<ULONG**>(&data));
 
-			// Zero out the sort key. This solve a multitude of problems.
+			// Zero out the sort key. This solves a multitude of problems.
 
 			memset(data, 0, m_map->length);
 
@@ -270,7 +270,7 @@ sort_context* SortedStream::init(thread_db* tdbb)
 	}
 
 	// For the sake of prudence, set all record parameter blocks to contain
-	// the most recent format. This is will guarentee that all fields mapped
+	// the most recent format. This will guarentee that all fields mapped
 	// back to records by get_sort() have homes in the target record.
 
 	if (records)
