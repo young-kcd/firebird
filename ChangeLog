@@ -1,3 +1,10 @@
+2009-12-12 18:22  hvlad
+
+	* firebird2/src/dsql/parse.y (1.311.2.4):
+
+	Backport fix for bug CORE-2797 : Problem with default value of SP
+	parameter
+
 2009-12-10 16:35  hvlad
 
 	* firebird2/src/dsql/pass1.cpp (1.458.2.1):
