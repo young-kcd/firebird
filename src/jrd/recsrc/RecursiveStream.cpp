@@ -44,7 +44,7 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapSt
 							     size_t baseImpure)
 	: RecordStream(csb, stream),
 	  m_mapStream(mapStream),
-	  m_root(m_root), m_inner(inner),
+	  m_root(root), m_inner(inner),
 	  m_rootMap(rootMap), m_innerMap(innerMap),
 	  m_innerStreams(csb->csb_pool)
 {
