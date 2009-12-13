@@ -231,6 +231,9 @@ bool ProcedureScan::lockRecord(thread_db* tdbb)
 void ProcedureScan::dump(thread_db* tdbb, UCharBuffer& buffer)
 {
 	buffer.add(isc_info_rsb_begin);
+	buffer.add(isc_info_rsb_procedure);
+
+	buffer.add(isc_info_rsb_begin);
 
 	buffer.add(isc_info_rsb_relation);
 	dumpName(tdbb, m_name, buffer);
@@ -238,6 +241,7 @@ void ProcedureScan::dump(thread_db* tdbb, UCharBuffer& buffer)
 	buffer.add(isc_info_rsb_type);
 	buffer.add(isc_info_rsb_sequential);
 
+	buffer.add(isc_info_rsb_end);
 	buffer.add(isc_info_rsb_end);
 }
 
