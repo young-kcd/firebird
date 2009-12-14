@@ -807,6 +807,21 @@ namespace
 			T::destroy(h);
 		}
 	}
+
+	template <typename T>
+	void destroyNoThrow(RefPtr<T> h) throw()
+	{
+		// This form of destroy is used in catch handlers,
+		// when we already have probably more interesting status to return.
+		try
+		{
+			if (h)
+			{
+				T::destroy(h);
+			}
+		}
+		catch(const Exception&) { }
+	}
 }
 
 #ifdef DEV_BUILD
@@ -1482,7 +1497,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DETACH, n) (temp, &handle);
 		}
-		destroy(attachment);
+		destroyNoThrow(attachment);
 
   		e.stuff_exception(status);
 	}
@@ -2065,7 +2080,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			CALL(PROC_DROP_DATABASE, n) (temp, &handle);
 		}
 
-		destroy(attachment);
+		destroyNoThrow(attachment);
 	}
 
 	return status[1];
@@ -4425,8 +4440,8 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		if (handle)
 		{
 			CALL(PROC_SERVICE_DETACH, n) (temp, &handle);
+			destroyNoThrow(service);
 			*public_handle = 0;
-			destroy(service);
 		}
 	}
 
@@ -4714,7 +4729,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 
 		if (transaction)
 		{
-			destroy(transaction);
+			destroyNoThrow(transaction);
 		}
 	}
 
