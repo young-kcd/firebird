@@ -3782,8 +3782,8 @@ static RecordSource* gen_union(thread_db* tdbb,
 									rsbs[0], rsbs[1], maps[0], maps[1], nstreams, streams, base_impure);
 	}
 
-	return FB_NEW(*tdbb->getDefaultPool())
-					Union(csb, stream, count / 2, rsbs.begin(), maps.begin(), nstreams, streams);
+	return FB_NEW(*tdbb->getDefaultPool()) Union(csb, stream, count / 2, rsbs.begin(),
+		maps.begin(), nstreams, streams);
 }
 
 

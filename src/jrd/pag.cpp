@@ -521,7 +521,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	UCHAR* bytes = 0;
 	UCHAR bit = 0;
 
-	pag* new_page = 0; // NULL before the search for a new page.
+	pag* new_page = NULL; // NULL before the search for a new page.
 
 	// Find an allocation page with something on it
 

@@ -4442,7 +4442,7 @@ static dsql_nod* pass1_rse_is_recursive(CompiledStatement* statement, dsql_nod* 
 	fb_assert(input->nod_type == nod_query_spec);
 
 	dsql_nod* result = MAKE_node(nod_query_spec, e_qry_count);
-	memcpy(result->nod_arg, input->nod_arg, e_qry_count * sizeof (dsql_nod*));
+	memcpy(result->nod_arg, input->nod_arg, e_qry_count * sizeof(dsql_nod*));
 
 	dsql_nod* src_tables = input->nod_arg[e_qry_from];
 	dsql_nod* dst_tables = MAKE_node(nod_list, src_tables->nod_count);
@@ -4456,13 +4456,14 @@ static dsql_nod* pass1_rse_is_recursive(CompiledStatement* statement, dsql_nod* 
 	for (dsql_nod** prev = p_dst_table; p_src_table < end; p_src_table++, p_dst_table++)
 	{
 		*prev++ = *p_dst_table = *p_src_table;
+
 		switch ((*p_dst_table)->nod_type)
 		{
 			case nod_rel_proc_name:
 			case nod_relation_name:
 				if (pass1_relproc_is_recursive(statement, *p_dst_table))
 				{
-					if (found) 
+					if (found)
 					{
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 								  // Recursive member of CTE can't reference itself more than once
@@ -4478,8 +4479,8 @@ static dsql_nod* pass1_rse_is_recursive(CompiledStatement* statement, dsql_nod* 
 			case nod_join:
 				{
 					*p_dst_table = MAKE_node(nod_join, e_join_count);
-					memcpy((*p_dst_table)->nod_arg, (*p_src_table)->nod_arg, 
-						e_join_count * sizeof (dsql_nod*));
+					memcpy((*p_dst_table)->nod_arg, (*p_src_table)->nod_arg,
+						e_join_count * sizeof(dsql_nod*));
 
 					dsql_nod* joinBool = pass1_join_is_recursive(statement, *p_dst_table);
 					if (joinBool)
@@ -4519,11 +4520,11 @@ static dsql_nod* pass1_rse_is_recursive(CompiledStatement* statement, dsql_nod* 
 		If it is recursive return new derived table which is an union of
 		union of anchor (non-recursive) queries and union of recursive
 		queries. Check recursive queries to satisfy various criterias.
-		Note that our parser is right-to-left therefore nested list linked 
+		Note that our parser is right-to-left therefore nested list linked
 		as first node in parent list and second node is always query spec.
 
 		For example, if we have 4 CTE's where first two is non-recursive
-	and last two is recursive :
+		and last two is recursive :
 
 				list							  union
 			  [0]	[1]						   [0]		[1]
@@ -4534,7 +4535,7 @@ static dsql_nod* pass1_rse_is_recursive(CompiledStatement* statement, dsql_nod* 
 	cte1	cte2
 
 		Also, we should not change layout of original parse tree to allow it to
-	be parsed again if needed. Therefore recursive part is built using newly 
+	be parsed again if needed. Therefore recursive part is built using newly
 	allocated list nodes.
 
     @param statement
@@ -4578,21 +4579,21 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 						  // CTE '%s' defined non-recursive member after recursive
 						  Arg::Gds(isc_dsql_cte_nonrecurs_after_recurs) << Arg::Str(cte_alias->str_data));
 			}
-			if (new_rse->nod_arg[e_qry_distinct]) 
+			if (new_rse->nod_arg[e_qry_distinct])
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  // Recursive member of CTE '%s' has %s clause
 						  Arg::Gds(isc_dsql_cte_wrong_clause) << Arg::Str(cte_alias->str_data) <<
 																 Arg::Str("DISTINCT"));
 			}
-			if (new_rse->nod_arg[e_qry_group]) 
+			if (new_rse->nod_arg[e_qry_group])
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  // Recursive member of CTE '%s' has %s clause
 						  Arg::Gds(isc_dsql_cte_wrong_clause) << Arg::Str(cte_alias->str_data) <<
 																 Arg::Str("GROUP BY"));
 			}
-			if (new_rse->nod_arg[e_qry_having]) 
+			if (new_rse->nod_arg[e_qry_having])
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  // Recursive member of CTE '%s' has %s clause
@@ -4602,13 +4603,13 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 			// hvlad: we need also forbid any aggregate function here
 			// but for now i have no idea how to do it simple
 
-			if ((new_qry->nod_type == nod_list) && !(new_qry->nod_flags & NOD_UNION_ALL)) 
+			if ((new_qry->nod_type == nod_list) && !(new_qry->nod_flags & NOD_UNION_ALL))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  // Recursive members of CTE (%s) must be linked with another members via UNION ALL
 						  Arg::Gds(isc_dsql_cte_union_all) << Arg::Str(cte_alias->str_data));
 			}
-			if (!recursive_rse) 
+			if (!recursive_rse)
 			{
 				recursive_rse = new_qry;
 			}

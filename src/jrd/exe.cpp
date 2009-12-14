@@ -2250,6 +2250,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 									break;
 								default:
 									fb_assert(false);
+									fetched = false;
 							}
 						}
 

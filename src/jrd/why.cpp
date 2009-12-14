@@ -820,7 +820,7 @@ namespace
 				T::destroy(h);
 			}
 		}
-		catch(const Exception&) { }
+		catch (const Exception&) { }
 	}
 }
 

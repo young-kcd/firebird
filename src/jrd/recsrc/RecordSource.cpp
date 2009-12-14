@@ -225,10 +225,8 @@ void RecordStream::markRecursive()
 
 void RecordStream::findUsedStreams(StreamsArray& streams)
 {
-	if (streams.exist(m_stream))
-		return;
-
-	streams.add(m_stream);
+	if (!streams.exist(m_stream))
+		streams.add(m_stream);
 }
 
 void RecordStream::invalidateRecords(jrd_req* request)

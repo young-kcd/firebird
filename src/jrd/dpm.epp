@@ -2962,8 +2962,8 @@ static rhd* locate_space(thread_db* tdbb,
 				continue;
 
 			//if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
-			UCHAR mask = PPG_DP_BIT_MASK(slot, ppg_dp_full);
-			const UCHAR *byte = &PPG_DP_BITS_BYTE(bits, slot);
+			//UCHAR mask = PPG_DP_BIT_MASK(slot, ppg_dp_full);
+			const UCHAR* byte = &PPG_DP_BITS_BYTE(bits, slot);
 
 			if (dp_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_full))
 			{
@@ -3090,9 +3090,9 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	CCH_precedence(tdbb, &pp_window, rpb->getWindow(tdbb).win_page);
 	CCH_MARK(tdbb, &pp_window);
 
-//	UCHAR bit = 1 << ((slot & 3) << 1);
-//	UCHAR* byte = (UCHAR *) (&ppage->ppg_page[dbb->dbb_dp_per_pp]) + (slot >> 2);
-	UCHAR* byte = &PPG_DP_BITS_BYTE((UCHAR *) &ppage->ppg_page[dbb->dbb_dp_per_pp], slot);
+	//UCHAR bit = 1 << ((slot & 3) << 1);
+	//UCHAR* byte = (UCHAR *) (&ppage->ppg_page[dbb->dbb_dp_per_pp]) + (slot >> 2);
+	UCHAR* byte = &PPG_DP_BITS_BYTE((UCHAR*) &ppage->ppg_page[dbb->dbb_dp_per_pp], slot);
 
 	UCHAR bit = PPG_DP_BIT_MASK(slot, ppg_dp_full);
 	if (flags & dpg_full)
@@ -3109,7 +3109,7 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 
 	// Next, handle the "large object" bit
 
-	// bit <<= 1;
+	//bit <<= 1;
 	bit = PPG_DP_BIT_MASK(slot, ppg_dp_large);
 	if (flags & dpg_large) {
 		*byte |= bit;

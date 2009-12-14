@@ -111,7 +111,7 @@ int TraceLog::openFile(int fileNum)
 	PathName fileName;
 	fileName.printf("%s.%07ld", m_baseFileName.c_str(), fileNum);
 
-	int file = os_utils::openCreateSharedFile(fileName.c_str(), 
+	int file = os_utils::openCreateSharedFile(fileName.c_str(),
 #ifdef WIN_NT
 		O_BINARY | O_SEQUENTIAL | _O_SHORT_LIVED);
 #else

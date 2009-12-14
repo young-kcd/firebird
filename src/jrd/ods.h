@@ -459,7 +459,7 @@ struct pointer_page
 // pag_flags
 const UCHAR ppg_eof		= 1;	// Last pointer page in relation
 
-// After array of physical page numbers (ppg_page) there is also array of bit 
+// After array of physical page numbers (ppg_page) there is also array of bit
 // flags per every data page. These flags describes state of corresponding data
 // page. Definitions below used to deal with these bits.
 const int PPG_DP_BITS_NUM	= 4;		// Number of additional flag bits per data page
