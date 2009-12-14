@@ -63,10 +63,24 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 				const USHORT id = (USHORT) accessor.current();
 				const Format* const format = tail->csb_format; // CMP_format(tdbb, csb, stream);
 				const dsc* const desc = &format->fmt_desc[id];
-				m_map.add(FieldMap(stream, id));
+				m_map.add(FieldMap(FieldMap::REGULAR_FIELD, stream, id));
 				fields.add(*desc);
 			} while (accessor.getNext());
 		}
+
+		dsc desc;
+
+		desc.makeLong(0);
+		m_map.add(FieldMap(FieldMap::TRANSACTION_ID, stream, 0));
+		fields.add(desc);
+
+		desc.makeInt64(0);
+		m_map.add(FieldMap(FieldMap::DBKEY_NUMBER, stream, 0));
+		fields.add(desc);
+
+		desc.makeText(1, CS_BINARY);
+		m_map.add(FieldMap(FieldMap::DBKEY_VALID, stream, 0));
+		fields.add(desc);
 	}
 
 	const size_t count = fields.getCount();
@@ -76,7 +90,10 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 	for (size_t i = 0; i < count; i++)
 	{
 		dsc& desc = m_format->fmt_desc[i] = fields[i];
-		offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
+		if (desc.dsc_dtype >= dtype_aligned)
+		{
+			offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
+		}
 		desc.dsc_address = (UCHAR *)(IPTR) offset;
 		offset += desc.dsc_length;
 	}
@@ -110,22 +127,46 @@ void BufferedStream::open(thread_db* tdbb)
 		// Assign the non-null fields
 		for (size_t i = 0; i < m_map.getCount(); i++)
 		{
-			const FieldMap map = m_map[i];
+			const FieldMap& map = m_map[i];
 
 			record_param* const rpb = &request->req_rpb[map.map_stream];
-			Record* const record = rpb->rpb_record;
 
-			dsc from;
-			if (EVL_field(NULL, record, map.map_id, &from))
+			dsc to;
+			EVL_field(NULL, buffer_record, (USHORT) i, &to);
+
+			switch (map.map_type)
 			{
-				dsc to;
-				EVL_field(NULL, buffer_record, (USHORT) i, &to);
-				MOV_move(tdbb, &from, &to);
-				CLEAR_NULL(buffer_record, i);
-			}
-			else
-			{
-				SET_NULL(buffer_record, i);
+			case FieldMap::REGULAR_FIELD:
+				{
+					Record* const record = rpb->rpb_record;
+
+					dsc from;
+					if (EVL_field(NULL, record, map.map_id, &from))
+					{
+						MOV_move(tdbb, &from, &to);
+						CLEAR_NULL(buffer_record, i);
+					}
+					else
+					{
+						SET_NULL(buffer_record, i);
+					}
+				}
+				break;
+
+			case FieldMap::TRANSACTION_ID:
+				*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
+				break;
+
+			case FieldMap::DBKEY_NUMBER:
+				*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
+				break;
+
+			case FieldMap::DBKEY_VALID:
+				*to.dsc_address = (UCHAR) rpb->rpb_number.isValid();
+				break;
+
+			default:
+				fb_assert(false);
 			}
 		}
 
@@ -174,29 +215,51 @@ bool BufferedStream::getRecord(thread_db* tdbb)
 	// Assign fields back to their original streams
 	for (size_t i = 0; i < m_map.getCount(); i++)
 	{
-		const FieldMap map = m_map[i];
+		const FieldMap& map = m_map[i];
 
 		record_param* const rpb = &request->req_rpb[map.map_stream];
 		rpb->rpb_stream_flags |= RPB_s_refetch;
 		Record* const record = rpb->rpb_record;
 
-		if (record && !record->rec_format)
+		dsc from;
+		if (!EVL_field(NULL, buffer_record, (USHORT) i, &from))
 		{
-			fb_assert(record->rec_fmt_bk);
-			record->rec_format = record->rec_fmt_bk;
+			fb_assert(map.map_type == FieldMap::REGULAR_FIELD);
+			SET_NULL(record, map.map_id);
+			continue;
 		}
 
-		dsc from;
-		if (EVL_field(NULL, buffer_record, (USHORT) i, &from))
+		switch (map.map_type)
 		{
-			dsc to;
-			EVL_field(NULL, record, map.map_id, &to);
-			MOV_move(tdbb, &from, &to);
-			CLEAR_NULL(record, map.map_id);
-		}
-		else
-		{
-			SET_NULL(record, map.map_id);
+		case FieldMap::REGULAR_FIELD:
+			{
+				if (record && !record->rec_format)
+				{
+					fb_assert(record->rec_fmt_bk);
+					record->rec_format = record->rec_fmt_bk;
+				}
+
+				dsc to;
+				EVL_field(NULL, record, map.map_id, &to);
+				MOV_move(tdbb, &from, &to);
+				CLEAR_NULL(record, map.map_id);
+			}
+			break;
+
+		case FieldMap::TRANSACTION_ID:
+			rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
+			break;
+
+		case FieldMap::DBKEY_NUMBER:
+			rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));
+			break;
+
+		case FieldMap::DBKEY_VALID:
+			rpb->rpb_number.setValid(*from.dsc_address != 0);
+			break;
+
+		default:
+			fb_assert(false);
 		}
 	}
 

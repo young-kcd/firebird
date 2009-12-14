@@ -630,10 +630,20 @@ namespace Jrd
 	{
 		struct FieldMap
 		{
-			FieldMap() : map_stream(0), map_id(0) {}
-			FieldMap(USHORT stream, ULONG id) : map_stream(stream), map_id(id) {}
+			static const UCHAR REGULAR_FIELD = 1;
+			static const UCHAR TRANSACTION_ID = 2;
+			static const UCHAR DBKEY_NUMBER = 3;
+			static const UCHAR DBKEY_VALID = 4;
 
-			USHORT map_stream;
+			FieldMap() : map_type(0), map_stream(0), map_id(0)
+			{}
+
+			FieldMap(UCHAR type, UCHAR stream, ULONG id)
+				: map_type(type), map_stream(stream), map_id(id)
+			{}
+
+			UCHAR map_type;
+			UCHAR map_stream;
 			USHORT map_id;
 		};
 
