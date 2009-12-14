@@ -222,7 +222,8 @@
 
 #define blr_cast		(unsigned char)131
 
-// unused codes: 132..133
+#define blr_pid2			(unsigned char)132
+#define blr_procedure2		(unsigned char)133
 
 #define blr_start_savepoint	(unsigned char)134
 #define blr_end_savepoint	(unsigned char)135
@@ -380,7 +381,7 @@
 
 // FB 3.0 specific BLR
 
-#define blr_procedure2				(unsigned char) 192
+#define blr_procedure3				(unsigned char) 192
 #define blr_exec_proc2				(unsigned char) 193
 #define blr_function2				(unsigned char) 194
 
@@ -388,5 +389,6 @@
 #define blr_partition_by			(unsigned char) 196
 
 #define blr_continue_loop			(unsigned char) 197
+#define blr_procedure4				(unsigned char) 198
 
 #endif // JRD_BLR_H

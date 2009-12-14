@@ -2234,23 +2234,19 @@ static void gen_relation( CompiledStatement* statement, dsql_ctx* context)
 	{
 		if (DDL_ids(statement))
 		{
-			if (context->ctx_alias)
-				stuff(statement, blr_rid2);
-			else
-				stuff(statement, blr_rid);
+			stuff(statement, context->ctx_alias ? blr_rid2 : blr_rid);
 			stuff_word(statement, relation->rel_id);
 		}
 		else
 		{
-			if (context->ctx_alias)
-				stuff(statement, blr_relation2);
-			else
-				stuff(statement, blr_relation);
+			stuff(statement, context->ctx_alias ? blr_relation2 : blr_relation);
 			stuff_meta_string(statement, relation->rel_name.c_str());
 		}
 
 		if (context->ctx_alias)
+		{
 			stuff_meta_string(statement, context->ctx_alias);
+		}
 
 		stuff_context(statement, context);
 	}
@@ -2258,23 +2254,29 @@ static void gen_relation( CompiledStatement* statement, dsql_ctx* context)
 	{
 		if (DDL_ids(statement))
 		{
-			stuff(statement, blr_pid);
+			stuff(statement, context->ctx_alias ? blr_pid2 : blr_pid);
 			stuff_word(statement, procedure->prc_id);
 		}
 		else
 		{
 			if (procedure->prc_name.qualifier.hasData())
 			{
-				stuff(statement, blr_procedure2);
+				stuff(statement, context->ctx_alias ? blr_procedure4 : blr_procedure3);
 				stuff_meta_string(statement, procedure->prc_name.qualifier.c_str());
 				stuff_meta_string(statement, procedure->prc_name.identifier.c_str());
 			}
 			else
 			{
-				stuff(statement, blr_procedure);
+				stuff(statement, context->ctx_alias ? blr_procedure2 : blr_procedure);
 				stuff_meta_string(statement, procedure->prc_name.identifier.c_str());
 			}
 		}
+
+		if (context->ctx_alias)
+		{
+			stuff_meta_string(statement, context->ctx_alias);
+		}
+
 		stuff_context(statement, context);
 
 		dsql_nod* inputs = context->ctx_proc_inputs;

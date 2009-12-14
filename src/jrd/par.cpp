@@ -1157,25 +1157,25 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	SET_TDBB(tdbb);
 
 	jrd_prc* procedure = NULL;
+	QualifiedName name;
+
+	if (blr_operator == blr_exec_pid)
 	{
-		QualifiedName name;
+		const USHORT pid = csb->csb_blr_reader.getWord();
+		if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
+			name.identifier.printf("id %d", pid);
+	}
+	else
+	{
+		if (blr_operator == blr_exec_proc2)
+			PAR_name(csb, name.qualifier);
+		PAR_name(csb, name.identifier);
+		procedure = MET_lookup_procedure(tdbb, name, false);
+	}
 
-		if (blr_operator == blr_exec_pid)
-		{
-			const USHORT pid = csb->csb_blr_reader.getWord();
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-				name.identifier.printf("id %d", pid);
-		}
-		else
-		{
-			if (blr_operator == blr_exec_proc2)
-				PAR_name(csb, name.qualifier);
-			PAR_name(csb, name.identifier);
-			procedure = MET_lookup_procedure(tdbb, name, false);
-		}
-
-		if (!procedure)
-			error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
+	if (!procedure)
+	{
+		error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
 	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_esp_length);
@@ -2077,30 +2077,61 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
  *	Parse an procedural view reference.
  *
  **************************************/
-	jrd_prc* procedure;
-
 	SET_TDBB(tdbb);
 
+	jrd_prc* procedure = NULL;
+	Firebird::string* alias_string = NULL;
+	QualifiedName name;
+
+	switch (blr_operator)
 	{
-		QualifiedName name;
-
-		if (blr_operator == blr_procedure || blr_operator == blr_procedure2)
-		{
-			if (blr_operator == blr_procedure2)
-				PAR_name(csb, name.qualifier);
-
-			PAR_name(csb, name.identifier);
-			procedure = MET_lookup_procedure(tdbb, name, false);
-		}
-		else
+	case blr_pid:
+	case blr_pid2:
 		{
 			const SSHORT pid = csb->csb_blr_reader.getWord();
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-				name.identifier.printf("id %d", pid);
-		}
 
-		if (!procedure)
-			error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
+			if (blr_operator == blr_pid2)
+			{
+				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
+				PAR_name(csb, *alias_string);
+			}
+
+			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
+			{
+				name.identifier.printf("id %d", pid);
+			}
+		}
+		break;
+
+	case blr_procedure:
+	case blr_procedure2:
+	case blr_procedure3:
+	case blr_procedure4:
+		{
+			if (blr_operator == blr_procedure3 || blr_operator == blr_procedure4)
+			{
+				PAR_name(csb, name.qualifier);
+			}
+
+			PAR_name(csb, name.identifier);
+
+			if (blr_operator == blr_procedure2 || blr_operator == blr_procedure4)
+			{
+				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
+				PAR_name(csb, *alias_string);
+			}
+
+			procedure = MET_lookup_procedure(tdbb, name, false);
+		}
+		break;
+
+	default:
+		fb_assert(false);
+	}
+
+	if (!procedure)
+	{
+		error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
 	}
 
 	if (procedure->prc_type == prc_executable)
@@ -2108,7 +2139,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 		error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(procedure->prc_name.toString()));
 	}
 
-	jrd_nod* node = PAR_make_node(tdbb, e_prc_length);
+	jrd_nod* const node = PAR_make_node(tdbb, e_prc_length);
 	node->nod_type = nod_procedure;
 	node->nod_count = count_table[blr_procedure];
 	node->nod_arg[e_prc_procedure] = (jrd_nod*) (IPTR) procedure->prc_id;
@@ -2116,14 +2147,18 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	SSHORT context;
 	const SSHORT stream = par_context(csb, &context);
 	node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) stream;
-	csb->csb_rpt[stream].csb_procedure = procedure;
 	node->nod_arg[e_prc_context] = (jrd_nod*) (IPTR) context;
+
+	csb->csb_rpt[stream].csb_procedure = procedure;
+	csb->csb_rpt[stream].csb_alias = alias_string;
 
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_prc_in_msg],
 						&node->nod_arg[e_prc_inputs], true);
 
 	if (csb->csb_g_flags & csb_get_dependencies)
+	{
 		par_dependency(tdbb, csb, stream, (SSHORT) -1, "");
+	}
 
 	return node;
 }
@@ -2273,55 +2308,68 @@ static jrd_nod* par_relation(thread_db* tdbb,
  *	Parse a relation reference.
  *
  **************************************/
-	Firebird::MetaName name;
-
 	SET_TDBB(tdbb);
 
-	// Make a relation reference node
-
-	jrd_nod* node = PAR_make_node(tdbb, e_rel_length);
-	node->nod_count = 0;
-
 	// Find relation either by id or by name
-	jrd_rel* relation = 0;
-	Firebird::string* alias_string = 0;
+	jrd_rel* relation = NULL;
+	Firebird::string* alias_string = NULL;
+	Firebird::MetaName name;
+
 	switch (blr_operator)
 	{
 	case blr_rid:
 	case blr_rid2:
 		{
 			const SSHORT id = csb->csb_blr_reader.getWord();
+
 			if (blr_operator == blr_rid2)
 			{
 				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
 				PAR_name(csb, *alias_string);
 			}
+
 			if (!(relation = MET_lookup_relation_id(tdbb, id, false)))
 			{
 				name.printf("id %d", id);
-				error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
 			}
 		}
 		break;
+
 	case blr_relation:
 	case blr_relation2:
-		PAR_name(csb, name);
-		if (blr_operator == blr_relation2)
 		{
-			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-			PAR_name(csb, *alias_string);
+			PAR_name(csb, name);
+
+			if (blr_operator == blr_relation2)
+			{
+				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
+				PAR_name(csb, *alias_string);
+			}
+
+			relation = MET_lookup_relation(tdbb, name);
 		}
-		if (!(relation = MET_lookup_relation(tdbb, name)))
-			error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
 		break;
+
+	default:
+		fb_assert(false);
 	}
+
+	if (!relation)
+	{
+		error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
+	}
+
+	// Make a relation reference node
+
+	jrd_nod* const node = PAR_make_node(tdbb, e_rel_length);
+	node->nod_count = 0;
 
 	// if an alias was passed, store with the relation
 
 	if (alias_string)
 	{
 		node->nod_arg[e_rel_alias] =
-			(jrd_nod*) stringDup(*tdbb->getDefaultPool(), alias_string->c_str());
+			(jrd_nod*) stringDup(*tdbb->getDefaultPool(), *alias_string);
 	}
 
 	// Scan the relation if it hasn't already been scanned for meta data
@@ -2351,7 +2399,9 @@ static jrd_nod* par_relation(thread_db* tdbb,
 		csb->csb_rpt[stream].csb_alias = alias_string;
 
 		if (csb->csb_g_flags & csb_get_dependencies)
+		{
 			par_dependency(tdbb, csb, stream, (SSHORT) -1, "");
+		}
 	}
 	else
 	{
@@ -3038,12 +3088,17 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_exec_proc2:
 	case blr_exec_pid:
 		node = par_exec_proc(tdbb, csb, blr_operator);
+		set_type = false;
 		break;
 
 	case blr_pid:
+	case blr_pid2:
 	case blr_procedure:
 	case blr_procedure2:
+	case blr_procedure3:
+	case blr_procedure4:
 		node = par_procedure(tdbb, csb, blr_operator);
+		set_type = false;
 		break;
 
 	case blr_function:
