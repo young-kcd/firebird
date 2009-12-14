@@ -181,6 +181,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		{
 			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
 			t2->csb_relation = ptr->csb_relation;
+			t2->csb_procedure = ptr->csb_procedure;
 			t2->csb_stream = ptr->csb_stream;
 			t2->csb_flags = ptr->csb_flags & csb_used;
 		}
