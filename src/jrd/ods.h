@@ -188,7 +188,7 @@ const SCHAR pag_max				= 9;		// Max page type
 // Pre-defined page numbers
 
 const SLONG HEADER_PAGE		= 0;
-const SLONG PIP_PAGE		= 1;
+const SLONG FIRST_PIP_PAGE	= 1;
 
 
 // Page size limits
@@ -206,11 +206,10 @@ struct pag
 {
 	SCHAR pag_type;
 	UCHAR pag_flags;
-	USHORT pag_checksum;
+	USHORT pag_reserved;		// not used but anyway present because of alignment rules
 	ULONG pag_generation;
-	// We renamed pag_seqno for SCN number usage to avoid major ODS version bump
-	ULONG pag_scn;			// WAL seqno of last update, now used by nbackup
-	ULONG reserved;			// Was used for WAL
+	ULONG pag_scn;
+	ULONG pag_pageno;			// for validation
 };
 
 typedef pag* PAG;
@@ -322,6 +321,7 @@ struct data_page
 const UCHAR dpg_orphan	= 1;		// Data page is NOT in pointer page
 const UCHAR dpg_full	= 2;		// Pointer page is marked FULL
 const UCHAR dpg_large	= 4;		// Large object is on page
+const UCHAR dpg_swept	= 8;		// Sweep have nothing to do on this page
 
 
 // Index root page
@@ -417,7 +417,7 @@ const UCHAR HDR_max					= 8;	// Maximum HDR_clump value
 
 const USHORT hdr_active_shadow		= 0x1;		// 1    file is an active shadow file
 const USHORT hdr_force_write		= 0x2;		// 2    database is forced write
-const USHORT hdr_no_checksums		= 0x4;		// 4   don't calculate checksums
+// const USHORT hdr_no_checksums	= 0x4;		// 4   don't calculate checksums, not used since ODS 12
 const USHORT hdr_no_reserve			= 0x8;		// 8   don't reserve space for versions
 const USHORT hdr_SQL_dialect_3		= 0x10;		// 16  database SQL dialect 3
 const USHORT hdr_read_only			= 0x20;		// 32  Database in ReadOnly. If not set, DB is RW
@@ -438,6 +438,7 @@ struct page_inv_page
 {
 	pag pip_header;
 	SLONG pip_min;				// Lowest (possible) free page
+	SLONG pip_used;				// Number of pages allocated from this PIP page
 	UCHAR pip_bits[1];
 };
 
@@ -452,12 +453,28 @@ struct pointer_page
 	USHORT ppg_count;			// Number of slots active
 	USHORT ppg_relation;		// Relation id
 	USHORT ppg_min_space;		// Lowest slot with space available
-	USHORT ppg_max_space;		// Highest slot with space available
 	SLONG ppg_page[1];			// Data page vector
 };
 
 // pag_flags
 const UCHAR ppg_eof		= 1;	// Last pointer page in relation
+
+// After array of physical page numbers (ppg_page) there is also array of bit 
+// flags per every data page. These flags describes state of corresponding data
+// page. Definitions below used to deal with these bits.
+const int PPG_DP_BITS_NUM	= 4;		// Number of additional flag bits per data page
+
+const UCHAR ppg_dp_full		= 1;		// Data page is FULL
+const UCHAR ppg_dp_large	= 2;		// Large object is on data page
+const UCHAR ppg_dp_swept	= 4;		// Sweep have nothing to do on data page
+const UCHAR ppg_dp_reserved	= 8;		// not used currently
+
+#define PPG_DP_BIT_MASK(slot, bit)		((bit) << (((slot) & 1) << 2))
+#define PPG_DP_BITS_BYTE(bits, slot)	((bits)[(slot) >> 1])
+
+#define PPG_DP_BIT_TEST(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) & PPG_DP_BIT_MASK((slot), (bit)))
+#define PPG_DP_BIT_SET(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) |= PPG_DP_BIT_MASK((slot), (bit)))
+#define PPG_DP_BIT_CLEAR(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) &= ~PPG_DP_BIT_MASK((slot), (bit)))
 
 // Transaction Inventory Page
 

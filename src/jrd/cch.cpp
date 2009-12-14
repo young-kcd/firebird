@@ -284,24 +284,6 @@ const int PRE_SEARCH_LIMIT	= 256;
 const int PRE_EXISTS		= -1;
 const int PRE_UNKNOWN		= -2;
 
-const int DUMMY_CHECKSUM	= 12345;
-
-
-USHORT CCH_checksum()
-{
-/**************************************
- *
- *	C C H _ c h e c k s u m
- *
- **************************************
- *
- * Functional description
- *	Compute the checksum of a page.
- *
- **************************************/
-	return DUMMY_CHECKSUM;
-}
-
 
 int CCH_down_grade_dbb(void* ast_object)
 {
@@ -997,7 +979,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow, const 
 		if (merge_flag)
 			bdb->bdb_flags |= BDB_merge;
 
-		if ((page->pag_checksum == 0) && !merge_flag)
+		if ((page->pag_type == 0) && !merge_flag)
 		{
 			// We encountered a page which was allocated, but never written to the
 			// difference file. In this case we try to read the page from database. With
@@ -1868,7 +1850,7 @@ void CCH_must_write(WIN* window)
 
 void CCH_precedence(thread_db* tdbb, WIN* window, SLONG pageNum)
 {
-	const USHORT pageSpaceID = pageNum > PIP_PAGE ?
+	const USHORT pageSpaceID = pageNum > FIRST_PIP_PAGE ?
 		window->win_page.getPageSpaceID() : DB_PAGE_SPACE;
 
 	CCH_precedence(tdbb, window, PageNumber(pageSpaceID, pageNum));
@@ -2400,14 +2382,7 @@ bool CCH_validate(WIN* window)
 		return true;
 	}
 
-	pag* page = window->win_buffer;
-	const USHORT sum = CCH_checksum();
-
-	if (sum == page->pag_checksum) {
-		return true;
-	}
-
-	return false;
+	return (bdb->bdb_buffer->pag_pageno == bdb->bdb_page.getPageNum());
 }
 
 
@@ -2448,13 +2423,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		old_buffer = bdb->bdb_buffer;
 		bdb->bdb_buffer = page;
 	}
-	else
-	{
-		page = bdb->bdb_buffer;
-		if (checksum) {
-			page->pag_checksum = CCH_checksum();
-		}
-	}
+	bdb->bdb_buffer->pag_pageno = bdb->bdb_page.getPageNum();
 
 	for (; sdw; sdw = sdw->sdw_next)
 	{
@@ -2501,7 +2470,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 			}
 
 			header->hdr_flags |= hdr_active_shadow;
-			header->hdr_header.pag_checksum = CCH_checksum();
+			header->hdr_header.pag_pageno = bdb->bdb_page.getPageNum();
 		}
 
 		// This condition makes sure that PIO_write is performed in case of
@@ -5735,7 +5704,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 			if (next_buffer != reinterpret_cast<char*>(page)) {
 				memcpy(page, next_buffer, (ULONG) dbb->dbb_page_size);
 			}
-			if (page->pag_checksum == CCH_checksum())
+			if (page->pag_checksum == CCH_checksum(*next_bdb))
 			{
 				(*next_bdb)->bdb_flags &= ~(BDB_read_pending | BDB_not_valid);
 				(*next_bdb)->bdb_flags |= BDB_prefetch;
@@ -6435,7 +6404,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 		if (bdb->bdb_page.getPageNum() >= 0)
 		{
 			fb_assert(backup_state != nbak_state_unknown);
-			page->pag_checksum = CCH_checksum();
+			page->pag_pageno = bdb->bdb_page.getPageNum();
 
 #ifdef NBAK_DEBUG
 			// We cannot call normal trace functions here as they are signal-unsafe
@@ -6512,7 +6481,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
 				}
 				if (dbb->dbb_shadow && !isTempPage) {
-					result = CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
+					result = CCH_write_all_shadows(tdbb, 0, bdb, status, 1, inAst);
 				}
 			}
 		}

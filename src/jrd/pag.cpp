@@ -301,7 +301,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 		header->hdr_flags |= hdr_SQL_dialect_3;
 #endif
 
-	header->hdr_header.pag_checksum = CCH_checksum();
+	header->hdr_header.pag_pageno = window.win_page.getPageNum();
 	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	next->fil_fudge = 1;
@@ -331,7 +331,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 		add_clump(tdbb, HDR_last_page, sizeof(SLONG), (UCHAR*) &start, CLUMP_REPLACE);
 	}
 
-	header->hdr_header.pag_checksum = CCH_checksum();
+	header->hdr_header.pag_pageno = window.win_page.getPageNum();
 	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	if (file->fil_min_page)
@@ -523,10 +523,6 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 	pag* new_page = 0; // NULL before the search for a new page.
 
-	// Starting from ODS 11.1 we store in pip_header.reserved number of pages
-	// allocated from this pointer page. There is intention to create dedicated
-	// field at page_inv_page for this purpose in ODS 12.
-
 	// Find an allocation page with something on it
 
 	SLONG relative_bit = -1;
@@ -564,9 +560,9 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 							USHORT next_init_pages = 1;
 							// ensure there are space on disk for faked page
-							if (relative_bit + 1 > pip_page->pip_header.reserved)
+							if (relative_bit + 1 > pip_page->pip_used)
 							{
-								fb_assert(relative_bit == pip_page->pip_header.reserved);
+								fb_assert(relative_bit == pip_page->pip_used);
 
 								USHORT init_pages = 0;
 								if (!nbak_stalled)
@@ -578,11 +574,11 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 											MIN_EXTEND_BYTES / dbb->dbb_page_size;
 
 										init_pages = sequence ?
-											64 : MIN(pip_page->pip_header.reserved / 16, 64);
+											64 : MIN(pip_page->pip_used / 16, 64);
 
 										// don't touch pages belongs to the next PIP
 										init_pages = MIN(init_pages,
-											pageMgr.pagesPerPIP - pip_page->pip_header.reserved);
+											pageMgr.pagesPerPIP - pip_page->pip_used);
 
 										if (init_pages < minExtendPages)
 											init_pages = 1;
@@ -592,14 +588,14 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 									ISC_STATUS_ARRAY status;
 									const ULONG start = sequence * pageMgr.pagesPerPIP +
-										pip_page->pip_header.reserved;
+										pip_page->pip_used;
 
 									init_pages = PIO_init_data(dbb, pageSpace->file, status,
 										start, init_pages);
 								}
 
 								if (init_pages) {
-									pip_page->pip_header.reserved += init_pages;
+									pip_page->pip_used += init_pages;
 								}
 								else
 								{
@@ -610,7 +606,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									try
 									{
 										CCH_RELEASE(tdbb, window);
-										pip_page->pip_header.reserved = relative_bit + 1;
+										pip_page->pip_used = relative_bit + 1;
 									}
 									catch (Firebird::status_exception)
 									{
@@ -634,7 +630,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 							if (!(dbb->dbb_flags & DBB_no_reserve) && !nbak_stalled)
 							{
 								const ULONG initialized =
-									sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
+									sequence * pageMgr.pagesPerPIP + pip_page->pip_used;
 
 								// At this point we ensure database has at least "initialized" pages
 								// allocated. To avoid file growth by few pages when all this space
@@ -865,13 +861,13 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 
 	// Initialize Page Inventory Page
 
-	WIN window(pageSpace.pageSpaceID, PIP_PAGE);
-	pageSpace.ppFirst = 1;
+	WIN window(pageSpace.pageSpaceID, FIRST_PIP_PAGE);
+	pageSpace.ppFirst = FIRST_PIP_PAGE;
 	page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
 
 	pages->pip_header.pag_type = pag_pages;
-	pages->pip_min = 4;
-	pages->pip_header.reserved = pages->pip_min - 1;
+	pages->pip_used = pageSpace.ppFirst + 1;
+	pages->pip_min = pages->pip_used;
 	UCHAR* p = pages->pip_bits;
 	int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 
@@ -879,7 +875,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 		*p++ = 0xff;
 	}
 
-	pages->pip_bits[0] &= ~(1 | 2 | 4);
+	pages->pip_bits[0] &= ~(1 | 2);
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -1183,7 +1179,7 @@ void PAG_init(thread_db* tdbb)
 	// requires a 32 bit pointer and a 2 bit control field.
 
 	dbb->dbb_dp_per_pp =
-		(dbb->dbb_page_size - OFFSETA(pointer_page*, ppg_page)) * 8 / (BITS_PER_LONG + 2);
+		(dbb->dbb_page_size - OFFSETA(pointer_page*, ppg_page)) * 8 / (BITS_PER_LONG + PPG_DP_BITS_NUM);
 
 	// Compute the number of records that can fit on a page using the
 	// size of the record index (dpb_repeat) and a record header.  This
@@ -2132,13 +2128,13 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 	{
 		cb->newPage(pageNo, &pip->pip_header);
 		fb_assert(pip->pip_header.pag_type == pag_pages);
-		if (pip->pip_header.reserved == pagesPerPip)
+		if (pip->pip_used == pagesPerPip)
 		{
 			// this is not last page, continue search
 			continue;
 		}
 
-		return pip->pip_header.reserved + pageNo + (sequence ? 1 : -1);
+		return pip->pip_used + pageNo + (sequence ? 1 : -1);
 	}
 
 	// compiler warnings silencer

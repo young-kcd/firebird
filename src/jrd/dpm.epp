@@ -928,7 +928,9 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
 			if (!*page) {
 				continue;
 			}
-			if (flags[i >> 2] & (2 << ((i & 3) << 1)))
+
+			// if (flags[i >> 2] & (2 << ((i & 3) << 1)))
+			if (PPG_DP_BIT_TEST(flags, i, ppg_dp_large))
 			{
 				data_window.win_page = *page;
 				data_page* dpage = (data_page*) CCH_FETCH(tdbb, &data_window, LCK_write, pag_data);
@@ -2642,7 +2644,8 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window)
 	ppage->ppg_min_space = MIN(ppage->ppg_min_space, slot);
 	ppage->ppg_count = MAX(ppage->ppg_count, slot + 1);
 	UCHAR* bits = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
-	bits[slot >> 2] &= ~(1 << ((slot & 3) << 1));
+	// bits[slot >> 2] &= ~(1 << ((slot & 3) << 1));
+	PPG_DP_BIT_CLEAR(bits, slot, ppg_dp_full);
 	if (relPages->rel_data_pages) {
 		++relPages->rel_data_pages;
 	}
@@ -2958,7 +2961,11 @@ static rhd* locate_space(thread_db* tdbb,
 			if (type == DPM_secondary && lowPages.exist(dp_number))
 				continue;
 
-			if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
+			//if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
+			UCHAR mask = PPG_DP_BIT_MASK(slot, ppg_dp_full);
+			const UCHAR *byte = &PPG_DP_BITS_BYTE(bits, slot);
+
+			if (dp_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_full))
 			{
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
@@ -3083,9 +3090,11 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	CCH_precedence(tdbb, &pp_window, rpb->getWindow(tdbb).win_page);
 	CCH_MARK(tdbb, &pp_window);
 
-	UCHAR bit = 1 << ((slot & 3) << 1);
-	UCHAR* byte = (UCHAR *) (&ppage->ppg_page[dbb->dbb_dp_per_pp]) + (slot >> 2);
+//	UCHAR bit = 1 << ((slot & 3) << 1);
+//	UCHAR* byte = (UCHAR *) (&ppage->ppg_page[dbb->dbb_dp_per_pp]) + (slot >> 2);
+	UCHAR* byte = &PPG_DP_BITS_BYTE((UCHAR *) &ppage->ppg_page[dbb->dbb_dp_per_pp], slot);
 
+	UCHAR bit = PPG_DP_BIT_MASK(slot, ppg_dp_full);
 	if (flags & dpg_full)
 	{
 		*byte |= bit;
@@ -3100,8 +3109,8 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 
 	// Next, handle the "large object" bit
 
-	bit <<= 1;
-
+	// bit <<= 1;
+	bit = PPG_DP_BIT_MASK(slot, ppg_dp_large);
 	if (flags & dpg_large) {
 		*byte |= bit;
 	}

@@ -48,6 +48,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../utilities/nbackup/nbk_proto.h"
 #include "../jrd/license.h"
+#include "../jrd/ods_proto.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/Switches.h"
 #include "../utilities/nbackup/nbkswi.h"
@@ -825,6 +826,17 @@ void NBackup::backup_database(int level, const PathName& fname)
 				FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));
 		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
 			status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(1));
+
+		if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
+		{
+			const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
+			status_exception::raise(Arg::Gds(isc_wrong_ods) << Arg::Str(database.c_str()) <<
+									Arg::Num(ods_version) <<
+									Arg::Num(header->hdr_ods_minor) <<
+									Arg::Num(ODS_VERSION) <<
+									Arg::Num(ODS_CURRENT));
+		}
+
 		if ((header->hdr_flags & Ods::hdr_backup_mask) != Jrd::nbak_state_stalled)
 			status_exception::raise(Arg::Gds(isc_nbackup_db_notlock) << Arg::Num(header->hdr_flags));
 
@@ -881,7 +893,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		}
 
 		ULONG curPage = 0;
-		ULONG lastPage = 1; // first PIP must be at page number 1
+		ULONG lastPage = FIRST_PIP_PAGE;
 		const ULONG pagesPerPIP =
 			(header->hdr_page_size - OFFSETA(Ods::page_inv_page*, pip_bits)) * 8;
 
@@ -919,16 +931,17 @@ void NBackup::backup_database(int level, const PathName& fname)
 				// Starting from ODS 11.1 we can expand file but never use some last
 				// pages in it. There are no need to backup this empty pages. More,
 				// we can't be sure its not used pages have right SCN assigned.
-				// How many pages are really used we know from pip_header.reserved
+				// How many pages are really used we know from page_inv_page::pip_used
 				// where stored number of pages allocated from this pointer page.
 				if (page_buff->pag_type == pag_pages)
 				{
-					if (lastPage == 1)
-						lastPage = page_buff->reserved - 1;
+					Ods::page_inv_page* pip = (Ods::page_inv_page*) page_buff;
+					if (lastPage == FIRST_PIP_PAGE)
+						lastPage = pip->pip_used - 1;
 					else
-						lastPage += page_buff->reserved;
+						lastPage += pip->pip_used;
 
-					if (page_buff->reserved < pagesPerPIP)
+					if (pip->pip_used < pagesPerPIP)
 						lastPage++;
 				}
 				else

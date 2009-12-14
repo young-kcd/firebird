@@ -63,7 +63,7 @@ void PPG_print_header(const header_page* header, SLONG page,
 	if (page == HEADER_PAGE)
 	{
 		uSvc->printf("\tFlags\t\t\t%d\n", header->hdr_header.pag_flags);
-		uSvc->printf("\tChecksum\t\t%d\n", header->hdr_header.pag_checksum);
+		//uSvc->printf("\tChecksum\t\t%d\n", header->hdr_header.pag_checksum);
 		uSvc->printf("\tGeneration\t\t%"ULONGFORMAT"\n", header->hdr_header.pag_generation);
 		uSvc->printf("\tPage size\t\t%d\n", header->hdr_page_size);
 		uSvc->printf("\tODS version\t\t%d.%d\n",
