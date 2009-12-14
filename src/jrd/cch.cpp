@@ -2387,7 +2387,7 @@ bool CCH_validate(WIN* window)
 
 
 bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
-	ISC_STATUS* status, USHORT checksum, const bool inAst)
+	ISC_STATUS* status, const bool inAst)
 {
 /**************************************
  *
@@ -6481,7 +6481,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
 				}
 				if (dbb->dbb_shadow && !isTempPage) {
-					result = CCH_write_all_shadows(tdbb, 0, bdb, status, 1, inAst);
+					result = CCH_write_all_shadows(tdbb, 0, bdb, status, inAst);
 				}
 			}
 		}
