@@ -40,6 +40,8 @@ Union::Union(CompilerScratch* csb, UCHAR stream,
 	: RecordStream(csb, stream), m_args(csb->csb_pool), m_maps(csb->csb_pool),
 	  m_streams(csb->csb_pool)
 {
+	fb_assert(argCount);
+
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
 	m_args.resize(argCount);
