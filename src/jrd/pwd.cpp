@@ -329,7 +329,7 @@ void SecurityDatabase::prepare()
 	// Attach as SYSDBA
 	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
 
-	isc_db_handle tempHandle;
+	isc_db_handle tempHandle = 0;
 	isc_attach_database(status, 0, user_info_name, &tempHandle,
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
 	checkStatus("isc_attach_database", isc_psw_attach);
