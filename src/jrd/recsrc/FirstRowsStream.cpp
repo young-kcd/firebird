@@ -50,7 +50,7 @@ void FirstRowsStream::open(thread_db* tdbb)
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 
-	impure->irsb_flags = irsb_open;
+	impure->irsb_flags = 0;
 
 	const dsc* desc = EVL_expr(tdbb, m_value);
 	const SINT64 value = (desc && !(request->req_flags & req_null)) ? MOV_get_int64(desc, 0) : 0;
@@ -60,9 +60,12 @@ void FirstRowsStream::open(thread_db* tdbb)
 		status_exception::raise(Arg::Gds(isc_bad_limit_param));
 	}
 
-	impure->irsb_count = value;
-
-	m_next->open(tdbb);
+	if (value)
+	{
+		impure->irsb_flags = irsb_open;
+		impure->irsb_count = value;
+		m_next->open(tdbb);
+	}
 }
 
 void FirstRowsStream::close(thread_db* tdbb)
