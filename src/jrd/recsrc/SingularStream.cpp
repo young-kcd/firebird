@@ -87,7 +87,7 @@ bool SingularStream::getRecord(thread_db* tdbb)
 
 		if (m_next->getRecord(tdbb))
 		{
-			ERR_post(Arg::Gds(isc_sing_select_err));
+			status_exception::raise(Arg::Gds(isc_sing_select_err));
 		}
 
 		restoreRecords(tdbb);
