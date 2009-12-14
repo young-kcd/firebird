@@ -4838,7 +4838,7 @@ static void make_comment(CompiledStatement* statement)
 	}
 	const dsql_str* obj_desc = (dsql_str*) node->nod_arg[e_comment_string];
 	if (obj_desc)
-		statement->append_string(isc_dyn_description, obj_desc->str_data, obj_desc->str_length);
+		statement->append_user_string(isc_dyn_description, obj_desc);
 	else
 		statement->append_string(isc_dyn_description, NULL, 0);
 
@@ -6835,6 +6835,37 @@ void CompiledStatement::append_meta_string(const char* string)
 	cv.convert(strlen(string), (const UCHAR*) string, nameBuffer);
 
 	append_string(0, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());
+}
+
+
+// Write out a string in user (or metadata) connection charset with one byte of length.
+// This routine exists to support strings (with optional introducer) in DDL commands.
+void CompiledStatement::append_user_string(UCHAR verb, const dsql_str* str)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+
+	UCharBuffer buffer;
+	const char* p = str->str_data;
+	ULONG len = str->str_length;
+
+	if (str->str_charset)
+	{
+		dsql_intlsym* charSet = METD_get_charset(this, strlen(str->str_charset),
+			str->str_charset);
+		if (charSet)
+		{
+			USHORT targetCharSet = attachment->att_charset == CS_NONE ?
+				CS_METADATA : attachment->att_charset;
+			CsConvert cv(INTL_charset_lookup(tdbb, charSet->intlsym_charset_id)->getStruct(),
+				INTL_charset_lookup(tdbb, targetCharSet)->getStruct());
+			cv.convert(len, (const UCHAR*) p, buffer);
+			p = (char*) buffer.begin();
+			len = MIN(MAX_USHORT, buffer.getCount());
+		}
+	}
+
+	append_string(verb, p, len);
 }
 
 

@@ -483,6 +483,7 @@ public:
 
 	void		append_cstring(UCHAR verb, const char* string);
 	void		append_meta_string(const char* string);
+	void		append_user_string(UCHAR verb, const dsql_str* str);
 	void        append_raw_string(const char* string, USHORT len);
 	void        append_raw_string(const UCHAR* string, USHORT len);
 	void		append_string(UCHAR verb, const char* string, USHORT len);
