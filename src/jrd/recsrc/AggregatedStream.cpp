@@ -561,14 +561,18 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				}
 				// If vlux_count is non-zero, we need to fall through.
 
-			case nod_agg_count_distinct:
-				computeDistinct(tdbb, from);
-				// fall through
-
 			case nod_agg_count:
 			case nod_agg_count2:
+			case nod_agg_count_distinct:
+				if (from->nod_type == nod_agg_count_distinct)
+				{
+					computeDistinct(tdbb, from);
+				}
+
 				if (!impure->vlu_desc.dsc_dtype)
+				{
 					SET_NULL(record, id);
+				}
 				else
 				{
 					MOV_move(tdbb, &impure->vlu_desc, EVL_assign_to(tdbb, field));
