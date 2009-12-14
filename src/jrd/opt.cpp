@@ -109,17 +109,12 @@ static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
 static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&, jrd_nod**, jrd_nod*);
 static bool form_river(thread_db*, OptimizerBlk*, USHORT, const UCHAR*, UCHAR*, RiverStack&, jrd_nod**);
 static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
-static FilteredStream* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
-static FirstRowsStream* gen_first(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&, jrd_nod**, jrd_nod*);
 static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverStack&, jrd_nod**);
 static ProcedureScan* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
-static RecordSource* gen_rsb(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*, SSHORT,
-	const string&, jrd_nod*);
-static SkipRowsStream*	gen_skip (thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static SortedStream* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
 					  RecordSource*, jrd_nod*, bool);
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
@@ -879,14 +874,13 @@ RecordSource* OPT_compile(thread_db*		tdbb,
     // appear in the rsb list AFTER the first.  Since the gen_first and gen_skip
     // functions add their nodes at the beginning of the rsb list we MUST call
     // gen_skip before gen_first.
-    //
 
     if (rse->rse_skip) {
-        rsb = gen_skip(tdbb, opt, rsb, rse->rse_skip);
+		rsb = FB_NEW(*tdbb->getDefaultPool()) SkipRowsStream(csb, rsb, rse->rse_skip);
 	}
 
 	if (rse->rse_first) {
-		rsb = gen_first(tdbb, opt, rsb, rse->rse_first);
+		rsb = FB_NEW(*tdbb->getDefaultPool()) FirstRowsStream(csb, rsb, rse->rse_first);
 	}
 
 	// release memory allocated for index descriptions
@@ -2197,7 +2191,7 @@ static void find_index_relationship_streams(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	//Database* dbb = tdbb->getDatabase();
 
-	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch* const csb = opt->opt_csb;
 	const UCHAR* end_stream = streams + 1 + streams[0];
 	for (const UCHAR* stream = streams + 1; stream < end_stream; stream++)
 	{
@@ -2390,7 +2384,7 @@ static bool form_river(thread_db*		tdbb,
 
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch* const csb = opt->opt_csb;
 
 	// Allocate a river block and move the best order into it.
 	River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), count) River();
@@ -2480,7 +2474,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
-	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch* const csb = opt->opt_csb;
 	RecordSelExpr* rse = (RecordSelExpr*) node->nod_arg[e_agg_rse];
 	rse->rse_sorted = node->nod_arg[e_agg_group];
 	jrd_nod* map = node->nod_arg[e_agg_map];
@@ -2630,33 +2624,10 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 
 	if (node->nod_flags & nod_window)
 	{
-		return FB_NEW(*tdbb->getDefaultPool()) WindowedStream(opt->opt_csb, stream, rsb, next_rsb);
+		return FB_NEW(*tdbb->getDefaultPool()) WindowedStream(csb, stream, rsb, next_rsb);
 	}
 
 	return rsb;
-}
-
-
-static FilteredStream* gen_boolean(thread_db* tdbb, OptimizerBlk* opt,
-	RecordSource* prior_rsb, jrd_nod* node)
-{
-/**************************************
- *
- *	g e n _ b o o l e a n
- *
- **************************************
- *
- * Functional description
- *	Compile and optimize a record selection expression into a
- *	set of record source blocks (rsb's).
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(node, type_nod);
-	DEV_BLKCHK(prior_rsb, type_rsb);
-	SET_TDBB(tdbb);
-
-	return FB_NEW(*tdbb->getDefaultPool()) FilteredStream(opt->opt_csb, prior_rsb, node);
 }
 
 
@@ -2738,35 +2709,6 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 			deliverStack->push(deliverNode);
 		}
 	}
-}
-
-
-static FirstRowsStream* gen_first(thread_db* tdbb, OptimizerBlk* opt,
-	RecordSource* prior_rsb, jrd_nod* node)
-
-{
-/**************************************
- *
- *	g e n _ f i r s t
- *
- **************************************
- *
- * Functional description
- *	Compile and optimize a record selection expression into a
- *	set of record source blocks (rsb's).
- *
- *
- *      NOTE: The rsb_first node MUST appear in the rsb list before the
- *          rsb_skip node.  The calling code MUST call gen_first after
- *          gen_skip.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(prior_rsb, type_rsb);
-	DEV_BLKCHK(node, type_nod);
-	SET_TDBB(tdbb);
-
-	return FB_NEW(*tdbb->getDefaultPool()) FirstRowsStream(opt->opt_csb, prior_rsb, node);
 }
 
 
@@ -3049,11 +2991,8 @@ static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, Re
 		}
 	}
 
-	if (!boolean) {
-		return prior_rsb;
-	}
-
-	return gen_boolean(tdbb, opt, prior_rsb, boolean);
+	return boolean ? FB_NEW(*tdbb->getDefaultPool())
+		FilteredStream(opt->opt_csb, prior_rsb, boolean) : prior_rsb;
 }
 
 
@@ -3159,7 +3098,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	// booleans.  When one is found, roll it into a final boolean and mark
 	// it used. If a computable boolean didn't match against an index then
 	// mark the stream to denote unmatched booleans.
-	jrd_nod* opt_boolean = NULL;
+	jrd_nod* boolean = NULL;
 	opt_end = opt->opt_conjuncts.begin() + (inner_flag ? opt->opt_base_missing_conjuncts : opt->opt_conjuncts.getCount());
 	tail = opt->opt_conjuncts.begin();
 	if (outer_flag)
@@ -3182,7 +3121,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			if ((inversion && expression_contains_stream(csb, node, stream, NULL)) ||
 				(!inversion && OPT_computable(csb, node, stream, false, true)))
 			{
-				compose(&opt_boolean, node, nod_and);
+				compose(&boolean, node, nod_and);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 
 				if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched))
@@ -3200,41 +3139,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		rsb = nav_rsb;
 	}
 
-	return gen_rsb(tdbb, opt, rsb, inversion, stream, alias, opt_boolean);
-}
-
-
-static RecordSource* gen_rsb(thread_db* tdbb,
-							 OptimizerBlk* opt,
-							 RecordSource* rsb,
-							 jrd_nod* inversion,
-							 SSHORT stream,
-							 const string& alias,
-							 jrd_nod* boolean)
-{
-/**************************************
- *
- *	g e n _ r s b
- *
- **************************************
- *
- * Functional description
- *	Generate a record source block to handle either a sort or a project.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(rsb, type_rsb);
-	DEV_BLKCHK(inversion, type_nod);
-	DEV_BLKCHK(relation, type_rel);
-	DEV_BLKCHK(alias, type_str);
-	DEV_BLKCHK(boolean, type_nod);
-
-	SET_TDBB(tdbb);
-
 	if (!rsb)
 	{
-		CompilerScratch* const csb = opt->opt_csb;
-
 		if (inversion)
 		{
 			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
@@ -3250,39 +3156,7 @@ static RecordSource* gen_rsb(thread_db* tdbb,
 		}
 	}
 
-	if (boolean)
-	{
-		rsb = gen_boolean(tdbb, opt, rsb, boolean);
-	}
-
-	return rsb;
-}
-
-
-static SkipRowsStream* gen_skip(thread_db* tdbb, OptimizerBlk* opt,
-	RecordSource* prior_rsb, jrd_nod* node)
-{
-/**************************************
- *
- *	g e n _ s k i p
- *
- **************************************
- *
- * Functional description
- *	Compile and optimize a record selection expression into a
- *	set of record source blocks (rsb's).
- *
- *      NOTE: The rsb_skip node MUST appear in the rsb list after the
- *          rsb_first node.  The calling code MUST call gen_skip before
- *          gen_first.
- *
- **************************************/
-    DEV_BLKCHK (opt, type_opt);
-    DEV_BLKCHK (prior_rsb, type_rsb);
-    DEV_BLKCHK (node, type_nod);
-    SET_TDBB (tdbb);
-
-	return FB_NEW(*tdbb->getDefaultPool()) SkipRowsStream(opt->opt_csb, prior_rsb, node);
+	return boolean ? FB_NEW(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, boolean) : rsb;
 }
 
 
@@ -3806,21 +3680,24 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		}
 
 		set_active(opt, river1);
-		jrd_nod* node = NULL;
+		jrd_nod* boolean = NULL;
 		for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
 		{
-			jrd_nod* node1 = tail->opt_conjunct_node;
+			jrd_nod* const node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				OPT_computable(opt->opt_csb, node1, -1, false, false))
+				OPT_computable(opt->opt_csb, node, -1, false, false))
 			{
-				compose(&node, node1, nod_and);
+				compose(&boolean, node, nod_and);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 			}
 		}
 
-		if (node) {
-			river1->riv_rsb = gen_boolean(tdbb, opt, river1->riv_rsb, node);
+		if (boolean)
+		{
+			river1->riv_rsb = FB_NEW(*tdbb->getDefaultPool())
+				FilteredStream(opt->opt_csb, river1->riv_rsb, boolean);
 		}
+
 		set_inactive(opt, river1);
 
 		for (stream_nr = 0, fv = flag_vector; stream_nr < opt->opt_csb->csb_n_stream; stream_nr++)
