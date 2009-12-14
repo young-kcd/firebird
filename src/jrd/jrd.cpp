@@ -5650,14 +5650,20 @@ MetaName Jrd::Attachment::nameToUserCharSet(thread_db* tdbb, const MetaName& nam
 }
 
 
-string Jrd::Attachment::stringToMetaCharSet(thread_db* tdbb, const string& str)
+string Jrd::Attachment::stringToMetaCharSet(thread_db* tdbb, const string& str,
+	const char* charSet)
 {
-	if (att_charset == CS_METADATA || att_charset == CS_NONE)
+	USHORT charSetId = att_charset;
+
+	if (charSet)
+		MET_get_char_coll_subtype(tdbb, &charSetId, (const UCHAR*) charSet, strlen(charSet));
+
+	if (charSetId == CS_METADATA || charSetId == CS_NONE)
 		return str;
 
 	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer(str.length() * sizeof(ULONG));
 	ULONG len = INTL_convert_bytes(tdbb, CS_METADATA, buffer.begin(), buffer.getCapacity(),
-		att_charset, (const BYTE*) str.c_str(), str.length(), ERR_post);
+		charSetId, (const BYTE*) str.c_str(), str.length(), ERR_post);
 
 	return string((char*) buffer.begin(), len);
 }

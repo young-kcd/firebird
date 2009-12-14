@@ -529,7 +529,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		if (text.isEmpty())
 			++n;
 		else
-			ps->setString(tdbb, ++n, attachment->stringToMetaCharSet(tdbb, text));
+			ps->setString(tdbb, ++n, attachment->stringToMetaCharSet(tdbb, text, textCharSet));
 
 		if (column.hasData())
 		{

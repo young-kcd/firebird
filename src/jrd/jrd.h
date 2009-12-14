@@ -350,7 +350,8 @@ public:
 
 	Firebird::MetaName nameToMetaCharSet(thread_db* tdbb, const Firebird::MetaName& name);
 	Firebird::MetaName nameToUserCharSet(thread_db* tdbb, const Firebird::MetaName& name);
-	Firebird::string stringToMetaCharSet(thread_db* tdbb, const Firebird::string& str);
+	Firebird::string stringToMetaCharSet(thread_db* tdbb, const Firebird::string& str,
+		const char* charSet = NULL);
 	Firebird::string stringToUserCharSet(thread_db* tdbb, const Firebird::string& str);
 
 	void storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
