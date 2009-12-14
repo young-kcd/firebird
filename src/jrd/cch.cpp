@@ -5704,7 +5704,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 			if (next_buffer != reinterpret_cast<char*>(page)) {
 				memcpy(page, next_buffer, (ULONG) dbb->dbb_page_size);
 			}
-			if (page->pag_checksum == CCH_checksum(*next_bdb))
+			if (page->pag_pageno == (*next_bdb)->bdb_page.getPageNum())
 			{
 				(*next_bdb)->bdb_flags &= ~(BDB_read_pending | BDB_not_valid);
 				(*next_bdb)->bdb_flags |= BDB_prefetch;
