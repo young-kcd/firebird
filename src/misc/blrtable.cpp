@@ -222,9 +222,6 @@ static const VERB verbs[] =
 	PAIR(nod_similar, blr_similar, 3, 3, TYPE_BOOL, VALUE),
 	PAIR(nod_stmt_expr, blr_stmt_expr, e_stmt_expr_length, 2, VALUE, OTHER),
 	PAIR(nod_derived_expr, blr_derived_expr, e_derived_expr_length, e_derived_expr_count, VALUE, VALUE),
-	PAIR(nod_procedure, blr_procedure2, e_prc_length, 2, RELATION, OTHER),
-	PAIR(nod_exec_proc, blr_exec_proc2, e_esp_length, 4, STATEMENT, OTHER),
-	PAIR(nod_function, blr_function2, 0, 0, VALUE, VALUE),
 	PAIR(nod_aggregate, blr_window, e_agg_length, 0, RELATION, OTHER),
 	PAIR(nod_continue_loop, blr_continue_loop, 1, 0, STATEMENT, OTHER),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
