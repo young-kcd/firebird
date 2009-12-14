@@ -41,6 +41,7 @@
 #include "../../jrd/isc_proto.h"
 #include "../../jrd/isc_s_proto.h"
 #include "../../jrd/os/path_utils.h"
+#include "../../jrd/os/os_utils.h"
 #include "../../jrd/trace/TraceLog.h"
 
 using namespace Firebird;
@@ -110,14 +111,12 @@ int TraceLog::openFile(int fileNum)
 	PathName fileName;
 	fileName.printf("%s.%07ld", m_baseFileName.c_str(), fileNum);
 
-	const int oflag = O_CREAT | O_RDWR
+	int file = os_utils::openCreateSharedFile(fileName.c_str(), 
 #ifdef WIN_NT
-		| O_BINARY | O_SEQUENTIAL | _O_SHORT_LIVED
+		O_BINARY | O_SEQUENTIAL | _O_SHORT_LIVED);
+#else
+		0);
 #endif
-		;
-	const int pflag = S_IREAD | S_IWRITE;
-
-	int file = open(fileName.c_str(), oflag, pflag);
 
 	return file;
 }
