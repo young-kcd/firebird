@@ -152,7 +152,7 @@ void createLockDirectory(const char* pathname)
 }
 
 // open (or create if missing) and set appropriate access rights
-int openCreateShmemFile(const char* pathname, int flags)
+int openCreateSharedFile(const char* pathname, int flags)
 {
 	int fd;
 	do {

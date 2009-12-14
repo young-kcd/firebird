@@ -200,7 +200,7 @@ void ConfigStorage::checkFile()
 
 		PathName filename = TempFile::create("fb_trace_", dir);
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
-		m_cfg_file = os_utils::openCreateShmemFile(cfg_file_name, O_BINARY);
+		m_cfg_file = os_utils::openCreateSharedFile(cfg_file_name, O_BINARY);
 	}
 	else
 	{
