@@ -1734,9 +1734,9 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 			if (i < indexScratch->upperCount) {
 				*upper++ = segment[i]->upperValue;
 			}
-		}
-		if (segment[i]->scanType == segmentScanEquivalent) {
-			ignoreNullsOnScan = false;
+			if (segment[i]->scanType == segmentScanEquivalent) {
+				ignoreNullsOnScan = false;
+			}
 		}
 	}
 
