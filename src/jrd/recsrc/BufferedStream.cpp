@@ -177,6 +177,7 @@ bool BufferedStream::getRecord(thread_db* tdbb)
 		const FieldMap map = m_map[i];
 
 		record_param* const rpb = &request->req_rpb[map.map_stream];
+		rpb->rpb_stream_flags |= RPB_s_refetch;
 		Record* const record = rpb->rpb_record;
 
 		if (record && !record->rec_format)
