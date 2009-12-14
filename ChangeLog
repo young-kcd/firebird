@@ -1,3 +1,16 @@
+2009-12-14 14:07  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.458.2.2):
+
+	Misc.
+
+2009-12-14 13:31  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.246.2.2):
+
+	Fixed CORE-2806: Views based on procedures can't be created if the
+	proc's output fields participate in an expression.
+
 2009-12-12 18:22  hvlad
 
 	* firebird2/src/dsql/parse.y (1.311.2.4):
