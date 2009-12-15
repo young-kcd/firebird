@@ -60,7 +60,6 @@ class blb;
 class jrd_req;
 class jrd_tra;
 class PatternMatcher;
-class Symbol;
 
 // Various structures in the impure area
 
@@ -197,8 +196,6 @@ class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 public:
 	Firebird::QualifiedName fun_name;		// Function name
 	Firebird::string fun_exception_message;	// message containing the exception error message
-	UserFunction*	fun_homonym;	// Homonym functions
-	Symbol*		fun_symbol;			// Symbol block
 	int (*fun_entrypoint) ();		// Function entrypoint
 	USHORT		fun_count;			// Number of arguments (including return)
 	USHORT		fun_args;			// Number of input arguments

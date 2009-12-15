@@ -126,7 +126,6 @@ class ViewContext;
 class IndexBlock;
 class IndexLock;
 class ArrayField;
-class Symbol;
 struct sort_context;
 class RecordSelExpr;
 class vcl;

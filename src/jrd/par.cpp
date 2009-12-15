@@ -1481,14 +1481,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 		error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
-	UserFunction* homonyms;
-	for (homonyms = function; homonyms; homonyms = homonyms->fun_homonym)
-	{
-		if (homonyms->fun_entrypoint || homonyms->fun_external)
-			break;
-	}
-
-	if (!homonyms)
+	if (!function->fun_entrypoint && !function->fun_external)
 	{
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{

@@ -788,7 +788,6 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
 		return function;
 
 	fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
-	UserFunction* prior = NULL;
 
 	jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
 	jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
@@ -854,7 +853,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
 		function->fun_exception_message.printf(EXCEPTION_MESSAGE, name.toString().c_str(),
 			X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
- 		if (!X.RDB$ENGINE_NAME.NULL)	// ODS_12_0
+ 		if (!X.RDB$ENGINE_NAME.NULL)
  		{
 			HalfStaticArray<char, 512> body;
 
@@ -888,19 +887,8 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
  			}
 		}
 
-		// ASF: All the places handling fun_homonym is something that doesn't work really.
-		// Our current system table rdb$function_arguments doesn't support overloaded
-		// functions as it has a rdb$function_name column instead of an ID.
-		if (prior)
-		{
-			function->fun_homonym = prior->fun_homonym;
-			prior->fun_homonym = function;
-		}
-		else
-		{
-			prior = function;
-			dbb->dbb_functions.put(name, function);
-		}
+		dbb->dbb_functions.put(name, function);
+
 	END_FOR;
 
 	if (!REQUEST(irq_l_functions))
@@ -908,63 +896,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
 	if (!REQUEST(irq_l_args))
 		REQUEST(irq_l_args) = request_arg;
 
-	return prior;
-}
-
-
-UserFunction* FUN_resolve(thread_db* tdbb, CompilerScratch* csb, UserFunction* function, jrd_nod* args)
-{
-/**************************************
- *
- *	F U N _ r e s o l v e
- *
- **************************************
- *
- * Functional description
- *	Resolve instance of potentially overloaded function.
- *
- **************************************/
-	DSC arg;
-
-	SET_TDBB(tdbb);
-
-	UserFunction* best = NULL;
-	int best_score = 0;
-	const jrd_nod* const* const end = args->nod_arg + args->nod_count;
-
-	for (; function; function = function->fun_homonym)
-	{
-		if ((function->fun_entrypoint || function->fun_external) && function->fun_args == args->nod_count)
-		{
-			int score = 0;
-			jrd_nod** ptr;
-			const fun_repeat* tail;
-
-			for (ptr = args->nod_arg, tail = function->fun_rpt + 1; ptr < end; ptr++, tail++)
-			{
-				CMP_get_desc(tdbb, csb, *ptr, &arg);
-				if (tail->fun_mechanism == FUN_descriptor)
-					score += 10;
-				else if (tail->fun_desc.dsc_dtype == dtype_blob || arg.dsc_dtype == dtype_blob)
-				{
-					score = 0;
-					break;
-				}
-				else if (tail->fun_desc.dsc_dtype >= arg.dsc_dtype)
-					score += 10 - (arg.dsc_dtype - tail->fun_desc.dsc_dtype);
-				else
-					score += 1;
-			}
-
-			if (!best || score > best_score)
-			{
-				best_score = score;
-				best = function;
-			}
-		}
-	}
-
-	return best;
+	return function;
 }
 
 

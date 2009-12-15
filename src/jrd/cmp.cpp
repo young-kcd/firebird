@@ -5724,19 +5724,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	case nod_function:
 		{
-			// For gbak attachments, there is no need to resolve the UDF function
-			// Also if we are dropping a procedure don't bother resolving the
-			// UDF that the procedure invokes.
-			if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment) &&
-				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
-			{
-				jrd_nod* value = node->nod_arg[e_fun_args];
-				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
-				node->nod_arg[e_fun_function] = (jrd_nod*) FUN_resolve(tdbb, csb, function, value);
-				if (!node->nod_arg[e_fun_function]) {
-					ERR_post(Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name.toString()));
-				}
-			}
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 			csb->csb_impure += sizeof(impure_value);
