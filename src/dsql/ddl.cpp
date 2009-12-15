@@ -6865,6 +6865,7 @@ void CompiledStatement::append_user_string(UCHAR verb, const dsql_str* str)
 		}
 	}
 
+	fb_assert(verb);
 	append_string(verb, p, len);
 }
 
