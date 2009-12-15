@@ -104,9 +104,9 @@ inline const UCHAR* put_block(BurpGlobals* tdgbl, const UCHAR* p, ULONG n)
 
 
 void compress(const UCHAR*, ULONG);
-int copy(const TEXT *, TEXT *, ULONG);
+int copy(const TEXT*, TEXT*, ULONG);
 burp_fld* get_fields(burp_rel*);
-SINT64 get_gen_id(const TEXT *, SSHORT);
+SINT64 get_gen_id(const TEXT*, SSHORT);
 void get_ranges(burp_fld*);
 void put_array(burp_fld*, burp_rel*, ISC_QUAD*);
 void put_asciz(const att_type, const TEXT*);
@@ -119,7 +119,7 @@ void put_numeric(att_type, SLONG);
 void put_int64( att_type attribute, SINT64 value);
 void put_relation(burp_rel*);
 bool put_source_blob(att_type, att_type, ISC_QUAD&);
-int put_text(att_type, const TEXT *, SSHORT);
+int put_text(att_type, const TEXT*, SSHORT);
 void set_capabilities();
 void write_character_sets();
 void write_check_constraints();
@@ -415,7 +415,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	// Write relations
 
 	BURP_verbose(154);
-	// msg 154 writing relations
+	// msg 154 writing tables
 
 	write_relations();
 
@@ -2398,7 +2398,26 @@ void put_relation( burp_rel* relation)
 
 	if (relation->rel_flags & REL_view)
 	{
-		if (tdgbl->BCK_capabilities & BCK_context_name)
+		if (tdgbl->BCK_capabilities & BCK_ods_12)
+		{
+			FOR (REQUEST_HANDLE tdgbl->handles_put_relation_req_handle1)
+				X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ relation->rel_name
+				put(tdgbl, rec_view);
+				PUT_TEXT (att_view_relation_name, X.RDB$RELATION_NAME);
+				put_numeric (att_view_context_id, X.RDB$VIEW_CONTEXT);
+				// Will need PUT_MESSAGE if this field grows to more than 255 bytes.
+				PUT_TEXT (att_view_context_name, X.RDB$CONTEXT_NAME);
+				if (!X.RDB$CONTEXT_TYPE.NULL)
+					put_numeric(att_view_context_type, X.RDB$CONTEXT_TYPE);
+				if (!X.RDB$PACKAGE_NAME.NULL)
+					PUT_TEXT(att_view_context_package, X.RDB$PACKAGE_NAME);
+				put(tdgbl, att_end);
+			END_FOR
+			ON_ERROR
+				general_on_error();
+			END_ERROR;
+		}
+		else if (tdgbl->BCK_capabilities & BCK_context_name)
 		{
 			FOR (REQUEST_HANDLE tdgbl->handles_put_relation_req_handle1)
 				X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ relation->rel_name
@@ -2615,7 +2634,7 @@ void set_capabilities()
 
 	FB_API_HANDLE req = 0;
 
-	// Look for desireable fields in system relations
+	// Look for desirable fields in system relations
 
 	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation; rel_field_table++)
 	{
@@ -3923,7 +3942,7 @@ void write_relations()
 			const SSHORT l = PUT_TEXT (att_relation_name, X.RDB$RELATION_NAME);
 			MISC_terminate (X.RDB$RELATION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (153, temp);
-			// msg 153 writing relation %.*s
+			// msg 153 writing table %.*s
 
 			// RDB$VIEW_BLR must be the first blob field in the backup file.
 			// RESTORE.EPP makes this assumption in get_relation().
@@ -3980,7 +3999,7 @@ void write_relations()
 			const SSHORT l = PUT_TEXT(att_relation_name, X.RDB$RELATION_NAME);
 			MISC_terminate (X.RDB$RELATION_NAME, temp, l, sizeof(temp));
 			BURP_verbose (153, temp);
-			// msg 153 writing relation %.*s
+			// msg 153 writing table %.*s
 
 			// RDB$VIEW_BLR must be the first blob field in the backup file.
 			// RESTORE.EPP makes this assumption in get_relation().

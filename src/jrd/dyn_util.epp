@@ -618,6 +618,12 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 	for the view's name/context/field and are loading this value in the last parameter,
 	that can be used against rdb$fields' rdb$field_name. */
 
+	// TODO: make the callers check the boolean result or we'll have to throw instead of
+	// returning false from here.
+	// I had to check VRL.RDB$CONTEXT_TYPE MISSING because if I make this field not null,
+	// gpre's view creation (and probably qli) won't work.
+	// Apparently, given ddl.cpp's logic CtxTypeExpression can't happen but I wanted to be cautious.
+
 	bool found = false;
 
 	try {
@@ -628,6 +634,9 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 				WITH VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
 				VRL.RDB$VIEW_CONTEXT EQ context AND
+				(VRL.RDB$CONTEXT_TYPE MISSING OR
+					VRL.RDB$CONTEXT_TYPE BETWEEN CtxTypeExpression AND CtxTypeView) AND
+				VRL.RDB$PACKAGE_NAME MISSING AND
 				RFR.RDB$FIELD_NAME EQ local_name
 
 			if (!DYN_REQUEST(drq_l_fld_src2)) {
@@ -650,9 +659,12 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 				VRL IN RDB$VIEW_RELATIONS CROSS
 					PPR IN RDB$PROCEDURE_PARAMETERS
 					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
-					PPR.RDB$PACKAGE_NAME MISSING AND	// ASF: not sure about this
+					PPR.RDB$PACKAGE_NAME MISSING AND
 					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
 					VRL.RDB$VIEW_CONTEXT EQ context AND
+					(VRL.RDB$CONTEXT_TYPE MISSING OR VRL.RDB$CONTEXT_TYPE EQ CtxTypeExpression OR
+						VRL.RDB$CONTEXT_TYPE EQ CtxTypeSimpleProc) AND
+					VRL.RDB$PACKAGE_NAME MISSING AND
 					PPR.RDB$PARAMETER_NAME EQ local_name
 
 				if (!DYN_REQUEST(drq_l_fld_src3)) {
@@ -665,6 +677,36 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 			END_FOR;
 			if (!DYN_REQUEST(drq_l_fld_src3)) {
 				DYN_REQUEST(drq_l_fld_src3) = request;
+			}
+		}
+
+		if (!found)
+		{
+			request = CMP_find_request(tdbb, drq_l_fld_src4, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				VRL IN RDB$VIEW_RELATIONS CROSS
+					PPR IN RDB$PROCEDURE_PARAMETERS
+					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
+					//PPR.RDB$PACKAGE_NAME NOT MISSING AND redundant
+					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
+					VRL.RDB$VIEW_CONTEXT EQ context AND
+					(VRL.RDB$CONTEXT_TYPE MISSING OR VRL.RDB$CONTEXT_TYPE EQ CtxTypeExpression OR
+						VRL.RDB$CONTEXT_TYPE EQ CtxTypePackagedProc) AND
+					//VRL.RDB$PACKAGE_NAME NOT MISSING redundant
+					PPR.RDB$PACKAGE_NAME EQ VRL.RDB$PACKAGE_NAME AND
+					PPR.RDB$PARAMETER_NAME EQ local_name
+
+				if (!DYN_REQUEST(drq_l_fld_src4)) {
+					DYN_REQUEST(drq_l_fld_src4) = request;
+				}
+
+				found = true;
+				fb_utils::exact_name_limit(PPR.RDB$FIELD_SOURCE, sizeof(PPR.RDB$FIELD_SOURCE));
+				strcpy(output_field_name, PPR.RDB$FIELD_SOURCE);
+			END_FOR;
+			if (!DYN_REQUEST(drq_l_fld_src4)) {
+				DYN_REQUEST(drq_l_fld_src4) = request;
 			}
 		}
 	}

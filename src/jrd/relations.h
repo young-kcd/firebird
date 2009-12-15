@@ -147,6 +147,8 @@ RELATION(nam_v_relations, rel_vrel, ODS_8_0, rel_persistent)
 	FIELD(f_vrl_rname, nam_r_name, fld_r_name, 1, ODS_8_0)
 	FIELD(f_vrl_context, nam_v_context, fld_context, 1, ODS_8_0)
 	FIELD(f_vrl_cname, nam_context, fld_ctx_name, 1, ODS_8_0)
+	FIELD(f_vrl_context_type, nam_ctx_type, fld_context, 1, ODS_12_0)
+	FIELD(f_vrl_pkg_name, nam_pkg_name, fld_pkg_name, 1, ODS_12_0)
 END_RELATION
 
 // Relation 8 (RDB$FORMATS)

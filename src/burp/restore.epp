@@ -7591,43 +7591,110 @@ bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	STORE (TRANSACTION_HANDLE local_trans
-			REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
-		X IN RDB$VIEW_RELATIONS
-		strcpy (X.RDB$VIEW_NAME, relation->rel_name);
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
+			X IN RDB$VIEW_RELATIONS
 
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			strcpy (X.RDB$VIEW_NAME, relation->rel_name);
+			X.RDB$CONTEXT_TYPE.NULL = TRUE;
+			X.RDB$PACKAGE_NAME.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_view_relation_name:
-				GET_TEXT(X.RDB$RELATION_NAME);
-				break;
-
-			case att_view_context_name:
-				GET_TEXT(X.RDB$CONTEXT_NAME);
-				if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+				switch (attribute)
 				{
-					// Cannot use MAX_SQL_IDENTIFIER_LEN because this value shouldn't be upgraded.
-					X.RDB$CONTEXT_NAME[31] = 0;
+				case att_view_relation_name:
+					GET_TEXT(X.RDB$RELATION_NAME);
+					break;
+
+				case att_view_context_name:
+					GET_TEXT(X.RDB$CONTEXT_NAME);
+					if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+					{
+						// Cannot use MAX_SQL_IDENTIFIER_LEN because this value shouldn't be upgraded.
+						X.RDB$CONTEXT_NAME[31] = 0;
+					}
+					break;
+
+				case att_view_context_id:
+					X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_view_context_type:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$CONTEXT_TYPE = (USHORT) get_numeric(tdgbl);
+						X.RDB$CONTEXT_TYPE.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 140);
+					break;
+
+				case att_view_context_package:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$PACKAGE_NAME);
+						X.RDB$PACKAGE_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 140);
+					break;
+
+				default:
+					bad_attribute(scan_next_attr, attribute, 140);
+					// msg 140 view
+					break;
 				}
-				break;
-
-			case att_view_context_id:
-				X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
-				break;
-
-			default:
-				bad_attribute (scan_next_attr, attribute, 140);
-				// msg 140 view
-				break;
 			}
-		}
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
+			X IN RDB$VIEW_RELATIONS
+
+			strcpy (X.RDB$VIEW_NAME, relation->rel_name);
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_view_relation_name:
+					GET_TEXT(X.RDB$RELATION_NAME);
+					break;
+
+				case att_view_context_name:
+					GET_TEXT(X.RDB$CONTEXT_NAME);
+					if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+					{
+						// Cannot use MAX_SQL_IDENTIFIER_LEN because this value shouldn't be upgraded.
+						X.RDB$CONTEXT_NAME[31] = 0;
+					}
+					break;
+
+				case att_view_context_id:
+					X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
+					break;
+
+				default:
+					bad_attribute (scan_next_attr, attribute, 140);
+					// msg 140 view
+					break;
+				}
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	return true;
 }

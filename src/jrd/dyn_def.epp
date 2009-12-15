@@ -4062,6 +4062,8 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 			GET_STRING(ptr, VRL.RDB$RELATION_NAME);
 			VRL.RDB$CONTEXT_NAME.NULL = TRUE;
 			VRL.RDB$VIEW_CONTEXT.NULL = TRUE;
+			VRL.RDB$CONTEXT_TYPE.NULL = TRUE;
+			VRL.RDB$PACKAGE_NAME.NULL = TRUE;
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -4076,6 +4078,16 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 				case isc_dyn_view_context_name:
 					GET_STRING(ptr, VRL.RDB$CONTEXT_NAME);
 					VRL.RDB$CONTEXT_NAME.NULL = FALSE;
+					break;
+
+				case isc_dyn_view_context_type:
+					VRL.RDB$CONTEXT_TYPE = DYN_get_number(ptr);
+					VRL.RDB$CONTEXT_TYPE.NULL = FALSE;
+					break;
+
+				case isc_dyn_pkg_name:
+					GET_STRING(ptr, VRL.RDB$PACKAGE_NAME);
+					VRL.RDB$PACKAGE_NAME.NULL = FALSE;
 					break;
 
 				default:

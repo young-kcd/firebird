@@ -144,6 +144,13 @@ enum fb_sysflag {
 	fb_sysflag_view_check = 5
 };
 
+enum fb_viewContextType {
+	CtxTypeExpression,
+	CtxTypeRelation,
+	CtxTypeView,
+	CtxTypeSimpleProc,
+	CtxTypePackagedProc
+};
 
 // UDF Arguments are numbered from 0 to MAX_UDF_ARGUMENTS --
 // argument 0 is reserved for the return-type of the UDF

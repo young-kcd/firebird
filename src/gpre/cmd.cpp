@@ -1771,6 +1771,10 @@ static bool create_view(gpre_req* request, act* action)
 		put_numeric(request, isc_dyn_view_context, context->ctx_internal);
 		if (context->ctx_symbol)
 			put_symbol(request, isc_dyn_view_context_name, context->ctx_symbol);
+		//if (context->ctx_type)
+		//	put_numeric(request, isc_dyn_view_context_type, context->ctx_type);
+		//if (context->ctx_package)
+		//	put_symbol(request, isc_dyn_pkg_name, context->ctx_package);
 		request->add_end();
 	}
 
@@ -1819,6 +1823,7 @@ static bool create_view(gpre_req* request, act* action)
 			put_symbol(request, isc_dyn_def_local_fld, symbol);
 			put_symbol(request, isc_dyn_fld_base_fld, fld->fld_symbol);
 			put_numeric(request, isc_dyn_view_context, context->ctx_internal);
+			// ??? context_type, package???
 		}
 		else
 		{

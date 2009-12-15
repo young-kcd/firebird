@@ -605,6 +605,7 @@
 #define isc_dyn_view_relation             45
 #define isc_dyn_view_context              46
 #define isc_dyn_view_context_name         47
+#define isc_dyn_view_context_type         48
 
 /**********************/
 /* Generic attributes */

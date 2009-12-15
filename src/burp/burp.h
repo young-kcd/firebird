@@ -354,6 +354,8 @@ enum att_type {
 	att_view_relation_name = SERIES + 7,
 	att_view_context_id,
 	att_view_context_name,
+	att_view_context_type,
+	att_view_context_package,
 
 	// Security class attributes
 

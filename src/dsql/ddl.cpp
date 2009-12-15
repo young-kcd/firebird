@@ -3010,6 +3010,27 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			const char* str = context->ctx_alias ? context->ctx_alias : name.c_str();
 			const USHORT len = context->ctx_alias ? strlen(str) : name.length();
 			statement->append_string(isc_dyn_view_context_name, str, len);
+
+			SSHORT ctxType = CtxTypeExpression;
+			if (relation)
+			{
+				if (!(relation->rel_flags & REL_view))
+					ctxType = CtxTypeRelation;
+				else
+					ctxType = CtxTypeView;
+			}
+			else //if (procedure)
+			{
+				if (procedure->prc_name.qualifier.hasData())
+				{
+					ctxType = CtxTypePackagedProc;
+					statement->append_string(isc_dyn_pkg_name, procedure->prc_name.qualifier);
+				}
+				else
+					ctxType = CtxTypeSimpleProc;
+			}
+			statement->append_number(isc_dyn_view_context_type, ctxType);
+
 			statement->append_uchar(isc_dyn_end);
 		}
 	}
@@ -3158,6 +3179,8 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			}
 		}
 
+		// CVC: Not sure if something should be done now that isc_dyn_view_context is used here,
+		// but if alter view is going to work, maybe we need here the context type and package, too.
 		if (field)
 		{
 			if (rel_field)	// modifying a view
