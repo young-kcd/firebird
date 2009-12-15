@@ -1,3 +1,61 @@
+2009-12-15 13:25  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.372), dbt.cpp (1.46), fun.epp
+	(1.137), fun_proto.h (1.20), jrd.h (1.282), par.cpp (1.260), val.h
+	(1.48):
+
+	Cleanup.
+
+2009-12-15 00:55  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.478), jrd/dpm.epp (1.114),
+	jrd/exe.cpp (1.320), jrd/ods.h (1.65), jrd/opt.cpp (1.388),
+	jrd/pag.cpp (1.239), jrd/why.cpp (1.271), jrd/os/os_utils.h (1.5),
+	jrd/recsrc/RecordSource.cpp (1.5), jrd/trace/TraceLog.cpp (1.17):
+
+	Misc
+
+2009-12-14 17:43  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.127):
+
+	Misc.
+
+2009-12-14 17:01  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.387):
+
+	Simplification.
+
+2009-12-14 16:16  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.24), dsql/DdlNodes.h (1.4),
+	dsql/parse.y (1.346), jrd/jrd.cpp (1.590), jrd/jrd.h (1.281):
+
+	Front-port fix for CORE-2804 - Problems with COMMENT ON and strings
+	using introducer (charset)
+
+2009-12-14 15:29  dimitr
+
+	* firebird2/src/jrd/recsrc/FirstRowsStream.cpp (1.4):
+
+	Optimization: avoid reading the underlying streams in the case of
+	"FIRST 0".
+
+2009-12-14 15:26  alexpeshkoff
+
+	* firebird2/src/jrd/: isc_sync.cpp (1.229), os/os_utils.h (1.4),
+	os/posix/os_utils.cpp (1.9), os/win32/os_utils.cpp (1.12),
+	trace/TraceConfigStorage.cpp (1.32), trace/TraceLog.cpp (1.16):
+
+	Fixed CORE-2807: Problem with tracing on linux
+
+2009-12-14 14:55  alexpeshkoff
+
+	* firebird2/src/jrd/pwd.cpp (1.82):
+
+	Fixed bug in my last commit - init handle
+
 2009-12-14 13:56  dimitr
 
 	* firebird2/src/jrd/recsrc/: BufferedStream.cpp (1.6),
