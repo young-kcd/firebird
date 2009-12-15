@@ -74,6 +74,8 @@ namespace Jrd
 		virtual void saveRecords(thread_db* tdbb) = 0;
 		virtual void restoreRecords(thread_db* tdbb) = 0;
 
+		virtual ~RecordSource();
+
 	protected:
 		// Generic impure block
 		struct Impure

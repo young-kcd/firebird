@@ -170,6 +170,8 @@ void RecordSource::restoreRecord(thread_db* tdbb, record_param* rpb)
 	}
 }
 
+RecordSource::~RecordSource() { }
+
 
 // RecordStream class
 // ------------------
