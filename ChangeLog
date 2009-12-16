@@ -1,3 +1,124 @@
+2009-12-16 14:40  alexpeshkoff
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.48),
+	include/consts_pub.h (1.41), jrd/svc.cpp (1.302),
+	utilities/fbsvcmgr.cpp (1.41), utilities/gsec/call_service.cpp
+	(1.30), utilities/gsec/gsecswi.h (1.22):
+
+	Some more changes suggested by Claudio
+
+2009-12-16 14:10  alexpeshkoff
+
+	* firebird2/src/extlib/ib_util.cpp (1.8):
+
+	Make libib_util usable with old server versions
+
+2009-12-16 13:34  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.client.gsec (1.17),
+	builds/posix/Makefile.in.embed.util (1.59),
+	builds/posix/make.shared.variables (1.120),
+	src/utilities/fbsvcmgr.cpp (1.40),
+	src/utilities/gsec/call_service.cpp (1.29),
+	src/utilities/gsec/checkVersion.cpp (1.2),
+	src/utilities/gsec/checkVersion.h (1.2):
+
+	It was bad idea to try to make fbsvcmgr more intellectual than it
+	should be - rolled back part of my changes
+
+2009-12-16 12:45  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/: checkVersion.cpp (1.1),
+	checkVersion.h (1.1):
+
+	Fixed an issue with gsec compatibility with previous versions
+
+2009-12-16 12:25  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.client.gsec (1.16),
+	builds/posix/Makefile.in.embed.util (1.58),
+	builds/posix/make.shared.variables (1.119),
+	src/common/classes/ClumpletReader.cpp (1.47),
+	src/include/consts_pub.h (1.40), src/jrd/svc.cpp (1.301),
+	src/utilities/fbsvcmgr.cpp (1.39),
+	src/utilities/gsec/call_service.cpp (1.28),
+	src/utilities/gsec/gsec.cpp (1.121), src/utilities/gsec/gsec.h
+	(1.43), src/utilities/gsec/gsecswi.h (1.21),
+	src/utilities/gsec/security.epp (1.38):
+
+	Fixed an issue with gsec compatibility with previous versions
+
+2009-12-16 12:19  alexpeshkoff
+
+	* firebird2/src/include/gen/ids.h (1.39):
+
+	Forgotten file?
+
+2009-12-16 11:58  robocop
+
+	* firebird2/src/: burp/backup.epp (1.136), burp/restore.epp
+	(1.192), msgs/facilities2.sql (1.97), msgs/messages2.sql (1.121):
+
+	Distinguish between table and view in verbose mode.
+
+2009-12-16 10:34  robocop
+
+	* firebird2/src/dsql/: DdlNodes.epp (1.25), dsql.h (1.162):
+
+	I'll put this code to test when I find a suitable syntax to push
+	comments.
+
+2009-12-16 10:31  robocop
+
+	* firebird2/src/jrd/opt.cpp (1.389):
+
+	Warning.
+
+2009-12-16 09:12  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.116),
+	lang_helpers/gds_codes.pas (1.114), src/include/gen/codetext.h
+	(1.124), src/include/gen/iberror.h (1.128), src/include/gen/msgs.h
+	(1.155), src/include/gen/sql_code.h (1.130),
+	src/include/gen/sql_state.h (1.60), src/msgs/facilities2.sql
+	(1.96), src/msgs/messages2.sql (1.120), src/msgs/system_errors2.sql
+	(1.76):
+
+	Localization: one needed message and two messages to be used.
+
+2009-12-16 09:06  robocop
+
+	* firebird2/src/: isql/isql.epp (1.304), jrd/dpm.epp (1.115),
+	jrd/ods.h (1.66), dsql/pass1.cpp (1.479):
+
+	Misc.
+
+2009-12-16 09:05  robocop
+
+	* firebird2/src/burp/backup.epp (1.135):
+
+	Correction.
+
+2009-12-15 15:08  robocop
+
+	* firebird2/src/: burp/backup.epp (1.134), burp/burp.h (1.108),
+	burp/restore.epp (1.191), dsql/ddl.cpp (1.292), gpre/cmd.cpp
+	(1.62), include/consts_pub.h (1.39), jrd/constants.h (1.71),
+	jrd/drq.h (1.35), jrd/dyn_def.epp (1.194), jrd/dyn_util.epp (1.69),
+	jrd/names.h (1.22), jrd/relations.h (1.32):
+
+	Make views know exactly what type of source their fields have:
+	include a type of context and a package name in rdb$view_relations.
+	Debugged with a small script.  To be reviewed & completed by
+	Adriano.  Full rebuild, please.
+
+2009-12-15 14:55  alexpeshkoff
+
+	* firebird2/src/jrd/recsrc/: RecordSource.cpp (1.6), RecordSource.h
+	(1.12):
+
+	fixed gcc warnings
+
 2009-12-15 13:25  dimitr
 
 	* firebird2/src/jrd/: cmp.cpp (1.372), dbt.cpp (1.46), fun.epp
