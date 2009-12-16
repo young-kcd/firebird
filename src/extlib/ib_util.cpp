@@ -36,5 +36,5 @@ extern "C" void FB_DLL_EXPORT ib_util_init(void* (*aAllocFunc)(long))
 
 extern "C" VoidPtr FB_DLL_EXPORT ib_util_malloc(long size)
 {
-	return allocFunc ? allocFunc(size) : NULL;
+	return allocFunc ? allocFunc(size) : malloc(size);
 }
