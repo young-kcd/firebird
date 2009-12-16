@@ -2398,7 +2398,7 @@ void put_relation( burp_rel* relation)
 
 	if (relation->rel_flags & REL_view)
 	{
-		if (tdgbl->BCK_capabilities & BCK_ods_12)
+		if (tdgbl->BCK_capabilities & BCK_ods12_0)
 		{
 			FOR (REQUEST_HANDLE tdgbl->handles_put_relation_req_handle1)
 				X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ relation->rel_name
