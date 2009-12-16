@@ -2171,6 +2171,9 @@ COMMIT WORK;
 ('dyn_dup_exception', 'DYN_define_exception', 'dyn_def.epp', NULL, 8, 253, NULL, 'Exception @1 already exists', NULL, NULL);
 ('dyn_dup_generator', 'DYN_define_generator', 'dyn_def.epp', NULL, 8, 254, NULL, 'Generator @1 already exists', NULL, NULL);
 (NULL, 'revoke_all', 'dyn.epp', NULL, 8, 255, NULL, 'ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL', NULL, NULL);
+('dyn_package_not_found', 'CommentOnNode::execute', 'DdlNodes.epp', NULL, 8, 256, NULL, 'Package @1 not found', NULL, NULL);
+('dyn_packproc_not_found', 'CommentOnNode::execute', 'DdlNodes.epp', NULL, 8, 257, NULL, 'Procedure @1 in package @2 not found', NULL, NULL);
+('dyn_packfunc_not_found', 'CommentOnNode::execute', 'DdlNodes.epp', NULL, 8, 258, NULL, 'Function @1 in package @2 not found', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

@@ -796,6 +796,9 @@ static const struct {
 	{336068857, -829}, /* 249 dyn_cannot_addrem_computed */
 	{336068858, -901}, /* 250 dyn_no_empty_pw */
 	{336068859, -901}, /* 251 dyn_dup_index */
+	{336068864, -901}, /* 256 dyn_package_not_found */
+	{336068865, -901}, /* 257 dyn_packproc_not_found */
+	{336068866, -901}, /* 258 dyn_packfunc_not_found */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

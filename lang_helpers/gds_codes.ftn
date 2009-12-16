@@ -1602,6 +1602,12 @@ C --
       PARAMETER (GDS__dyn_no_empty_pw                  = 336068858)
       INTEGER*4 GDS__dyn_dup_index                   
       PARAMETER (GDS__dyn_dup_index                    = 336068859)
+      INTEGER*4 GDS__dyn_package_not_found           
+      PARAMETER (GDS__dyn_package_not_found            = 336068864)
+      INTEGER*4 GDS__dyn_packproc_not_found          
+      PARAMETER (GDS__dyn_packproc_not_found           = 336068865)
+      INTEGER*4 GDS__dyn_packfunc_not_found          
+      PARAMETER (GDS__dyn_packfunc_not_found           = 336068866)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

@@ -808,6 +808,9 @@ const
 	gds_dyn_cannot_addrem_computed       = 336068857;
 	gds_dyn_no_empty_pw                  = 336068858;
 	gds_dyn_dup_index                    = 336068859;
+	gds_dyn_package_not_found            = 336068864;
+	gds_dyn_packproc_not_found           = 336068865;
+	gds_dyn_packfunc_not_found           = 336068866;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;

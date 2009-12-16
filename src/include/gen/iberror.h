@@ -831,6 +831,9 @@ const ISC_STATUS isc_dyn_ods_not_supp_feature         = 336068856L;
 const ISC_STATUS isc_dyn_cannot_addrem_computed       = 336068857L;
 const ISC_STATUS isc_dyn_no_empty_pw                  = 336068858L;
 const ISC_STATUS isc_dyn_dup_index                    = 336068859L;
+const ISC_STATUS isc_dyn_package_not_found            = 336068864L;
+const ISC_STATUS isc_dyn_packproc_not_found           = 336068865L;
+const ISC_STATUS isc_dyn_packfunc_not_found           = 336068866L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -1079,7 +1082,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1023;
+const ISC_STATUS isc_err_max                          = 1026;
 
 #else /* c definitions */
 
@@ -1880,6 +1883,9 @@ const ISC_STATUS isc_err_max                          = 1023;
 #define isc_dyn_cannot_addrem_computed       336068857L
 #define isc_dyn_no_empty_pw                  336068858L
 #define isc_dyn_dup_index                    336068859L
+#define isc_dyn_package_not_found            336068864L
+#define isc_dyn_packproc_not_found           336068865L
+#define isc_dyn_packfunc_not_found           336068866L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2128,7 +2134,7 @@ const ISC_STATUS isc_err_max                          = 1023;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1023
+#define isc_err_max                          1026
 
 #endif
 
