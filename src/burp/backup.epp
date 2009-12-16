@@ -3941,8 +3941,10 @@ void write_relations()
 			put(tdgbl, rec_relation);
 			const SSHORT l = PUT_TEXT (att_relation_name, X.RDB$RELATION_NAME);
 			MISC_terminate (X.RDB$RELATION_NAME, temp, l, sizeof(temp));
-			BURP_verbose (153, temp);
-			// msg 153 writing table %.*s
+			if (X.RDB$VIEW_BLR.NULL)
+				BURP_verbose(153, temp); // msg 153 writing table @1
+			else
+				BURP_verbose(345, temp); // msg 345 writing view @1
 
 			// RDB$VIEW_BLR must be the first blob field in the backup file.
 			// RESTORE.EPP makes this assumption in get_relation().

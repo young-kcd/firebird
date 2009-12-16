@@ -2348,7 +2348,7 @@ COMMIT WORK;
 (NULL, NULL, 'burp.c', NULL, 12, 164, NULL, 'writing id generators', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 165, NULL, '    writing generator @1 value @2', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 166, NULL, 'readied database @1 for backup', NULL, NULL);
-(NULL, NULL, 'burp.c', NULL, 12, 167, NULL, 'restoring table @1', NULL, NULL);
+(NULL, 'get_relation', 'restore.epp', NULL, 12, 167, NULL, 'restoring table @1', NULL, NULL);
 (NULL, NULL, 'burp.c', NULL, 12, 168, NULL, 'type', NULL, NULL);
 (NULL, 'BURP_print', 'burp.c', NULL, 12, 169, NULL, 'gbak:', NULL, NULL);
 (NULL, NULL, 'restore.e', NULL, 12, 170, NULL, 'committing metadata for table @1', NULL, NULL);
@@ -2535,6 +2535,8 @@ ERROR: Backup incomplete', NULL, NULL);
 ('gbak_invalid_data', 'get_data', 'restore.epp', NULL, 12, 342, NULL, 'Invalid data detected. Use -FIX_FSS_DATA option.', NULL, NULL);
 (NULL, 'put_asciz', 'backup.epp', NULL, 12, 343, NULL, 'text for attribute @1 is too large in @2, truncating to @3 bytes', NULL, NULL);
 ('gbak_inv_bkup_ver2', 'restore.epp', 'burp.cpp', 'do not change the param order', 12, 344, NULL, 'Expected backup version @2..@3.  Found @1', NULL, NULL);
+(NULL, 'write_relations', 'backup.epp', NULL, 12, 345, NULL, '    writing view @1', NULL, NULL);
+(NULL, 'get_relation', 'restore.epp', NULL, 12, 346, NULL, '    table @1 is a view', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
