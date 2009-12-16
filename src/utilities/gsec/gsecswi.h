@@ -106,7 +106,7 @@ static const struct in_sw_tab_t gsec_action_in_sw_table [] =
     {IN_SW_GSEC_DIS,		isc_action_svc_display_user, "OLD_DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) without admin info
     {IN_SW_GSEC_MAPPING,	isc_action_svc_set_mapping,		"MAP SET",	0, 0, 0, false,	0,	2, NULL},	// map admins
     {IN_SW_GSEC_MAPPING,	isc_action_svc_drop_mapping,	"MAP DROP",	0, 0, 0, false,	0,	2, NULL},	// map admins
-	{IN_SW_GSEC_DIS_ADM,	isc_action_svc_display_user_a,	"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) with admin info
+	{IN_SW_GSEC_DIS_ADM,	isc_action_svc_display_user_adm,"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) with admin info
     {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, false,	0,	0, NULL}		// End of List
 };
 #endif // GSEC_GSECSWI_H
