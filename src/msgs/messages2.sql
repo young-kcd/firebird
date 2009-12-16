@@ -3366,7 +3366,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 21, NULL, '  Incremental backups of multi-file databases are not supported yet.', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 22, NULL, '  "stdout" may be used as a value of <filename> for -B option.', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 23, NULL, 'PROBLEM ON "@1".', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 24, NULL, 'general options are:', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 24, NULL, '  -D(IRECT)                              Use direct I/O when scanning database', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 25, NULL, 'switches can be abbreviated to the unparenthesized characters', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 26, NULL, '  Option -S(IZE) only is valid together with -L(OCK).', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 27, NULL, '  For historical reasons, -N is equivalent to -UN(LOCK)', NULL, NULL)
@@ -3412,6 +3412,7 @@ Analyzing database pages ...', NULL, NULL);
 ('nbackup_lostguid_l0bk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 67, NULL, 'Cannot get backup guid clumplet from L0 backup', NULL, NULL)
 (NULL, 'nbackup', 'nbackup.cpp', NULL, 24, 68, NULL, 'Physical Backup Manager version @1', NULL, NULL)
 (NULL, 'restore_database', 'nbackup.cpp', NULL, 24, 69, NULL, 'Enter name of the backup file of level @1 ("." - do not restore further):', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 70, NULL, 'general options are:', NULL, NULL)
 --('nbackup_', '', 'nbackup.cpp', NULL, 24, , NULL, '', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.

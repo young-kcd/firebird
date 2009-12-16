@@ -47,12 +47,14 @@ const int IN_SW_NBK_VERSION			= 11;
 const int IN_SW_NBK_TRUSTED_USER	= 12;
 const int IN_SW_NBK_TRUSTED_ROLE	= 13;
 const int IN_SW_NBK_HELP			= 14;
+const int IN_SW_NBK_DIRECT			= 15;
 
 
-static const struct Switches::in_sw_tab_t nbackup_in_sw_table [] =
+static const struct Switches::in_sw_tab_t nbackup_option_in_sw_table [] =
 {
-	{IN_SW_NBK_NODBTRIG,	isc_spb_nbk_no_triggers,	"T",	0, 0, 0, false,	0,	1, NULL},
-	{IN_SW_NBK_0,			0,							NULL,	0, 0, 0, false,	0,	0, NULL}	// End of List
+	{IN_SW_NBK_NODBTRIG,	isc_spb_nbk_no_triggers,	"T",		0, 0, 0, false,	0,	1, NULL},
+	{IN_SW_NBK_DIRECT,		isc_spb_nbk_direct,			"DIRECT",	0, 0, 0, false, 0,  1, NULL},
+	{IN_SW_NBK_0,			0,							NULL,		0, 0, 0, false,	0,	0, NULL}	// End of List
 };
 
 enum NbakOptionType { nboGeneral, nboExclusive };
@@ -65,11 +67,12 @@ static const struct Switches::in_sw_tab_t nbackup_action_in_sw_table [] =
 	{IN_SW_NBK_FIXUP,		0,						"FIXUP",			0, 0, 0, false,	10,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_BACKUP,		isc_action_svc_nbak,	"BACKUP",			0, 0, 0, false,	11,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_RESTORE,		isc_action_svc_nrest,	"RESTORE",			0, 0, 0, false,	12,	1,	NULL, nboExclusive},
+	{IN_SW_NBK_DIRECT,		0,						"DIRECT",			0, 0, 0, false, 24,	1,	NULL, nboExclusive},
+	{IN_SW_NBK_SIZE,		0,						"SIZE",				0, 0, 0, false,	17,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_NODBTRIG,	0,						"T",				0, 0, 0, false,	0,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_NODBTRIG,	0,						"NODBTRIGGERS",		0, 0, 0, false,	16,	3,	NULL, nboGeneral},
 	{IN_SW_NBK_USER_NAME,	0,						"USER",				0, 0, 0, false,	13,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_PASSWORD,	0,						"PASSWORD",			0, 0, 0, false,	14,	1,	NULL, nboGeneral},
-	{IN_SW_NBK_SIZE,		0,						"SIZE",				0, 0, 0, false,	17,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_FETCH,		0,						"FETCH_PASSWORD",	0, 0, 0, false,	15,	2,	NULL, nboGeneral},
 	{IN_SW_NBK_VERSION, 	0,						"Z",				0, 0, 0, false,	18,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_TRUSTED_USER,	0,				TRUSTED_USER_SWITCH,	0, 0, 0, false,	0,	TRUSTED_USER_SWITCH_LEN,	NULL, nboGeneral},

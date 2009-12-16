@@ -2501,7 +2501,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				break;
 
 			case isc_spb_options:
-				if (!get_action_svc_bitmask(spb, nbackup_in_sw_table, switches))
+				if (!get_action_svc_bitmask(spb, nbackup_option_in_sw_table, switches))
 				{
 					return false;
 				}

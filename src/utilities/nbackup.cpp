@@ -156,7 +156,7 @@ namespace
 				printMsg(p->in_sw_msg);
 		}
 
-		printMsg(24); // general options are:
+		printMsg(70); // general options are:
 		for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
 		{
 			if (p->in_sw_msg && p->in_sw_optype == nboGeneral)
@@ -248,10 +248,10 @@ class NBackup
 public:
 	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username,
 			const string& _password, bool _run_db_triggers, const string& _trustedUser,
-			bool _trustedRole)
+			bool _trustedRole, bool _direct_io)
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
 		username(_username), password(_password), trustedUser(_trustedUser),
-		run_db_triggers(_run_db_triggers), trustedRole(_trustedRole),
+		run_db_triggers(_run_db_triggers), trustedRole(_trustedRole), direct_io(_direct_io),
 		dbase(0), backup(0), db_size_pages(0), m_silent(false)
 	{
 		// Recognition of local prefix allows to work with
@@ -283,7 +283,7 @@ private:
 
 	PathName database;
 	string username, password, trustedUser;
-	bool run_db_triggers, trustedRole;
+	bool run_db_triggers, trustedRole, direct_io;
 
 	PathName dbname; // Database file name
 	PathName bakname;
@@ -425,9 +425,12 @@ void NBackup::open_database_scan()
 #define O_DIRECT 0
 #endif // O_DIRECT
 
-	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
+	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
 	if (dbase < 0)
-		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() << dbname.c_str());
+	{
+		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() << 
+								dbname.c_str());
+	}
 
 	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
@@ -435,11 +438,14 @@ void NBackup::open_database_scan()
 		status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) << Arg::Num(rc) <<
 								"SEQUENTIAL" << dbname.c_str());
 	}
-	rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
-	if (rc)
+	if (direct_io)
 	{
-		status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) << Arg::Num(rc) <<
-								"NOREUSE" << dbname.c_str());
+		rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
+		if (rc)
+		{
+			status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) << Arg::Num(rc) <<
+									"NOREUSE" << dbname.c_str());
+		}
 	}
 
 #endif // WIN_NT
@@ -1264,6 +1270,7 @@ void nbackup(UtilSvc* uSvc)
 	string username, password;
 	PathName database, filename;
 	bool run_db_triggers = true;
+	bool direct_io = false;
 	NBackup::BackupFiles backup_files;
 	int level;
 	bool print_size = false, version = false;
@@ -1320,6 +1327,10 @@ void nbackup(UtilSvc* uSvc)
 
 		case IN_SW_NBK_NODBTRIG:
 			run_db_triggers = false;
+			break;
+
+		case IN_SW_NBK_DIRECT:
+			direct_io = true;
 			break;
 
 		case IN_SW_NBK_FIXUP:
@@ -1442,7 +1453,7 @@ void nbackup(UtilSvc* uSvc)
 	if (print_size && (op != nbLock))
 		usage(uSvc, isc_nbackup_size_with_lock);
 
-	NBackup nbk(uSvc, database, username, password, run_db_triggers, trustedUser, trustedRole);
+	NBackup nbk(uSvc, database, username, password, run_db_triggers, trustedUser, trustedRole, direct_io);
 	switch (op)
 	{
 		case nbNone:
