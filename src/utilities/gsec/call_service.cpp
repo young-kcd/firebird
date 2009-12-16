@@ -24,6 +24,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../utilities/gsec/call_service.h"
+#include "../utilities/gsec/checkVersion.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -329,8 +330,11 @@ void callRemoteServiceManager(ISC_STATUS* status,
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
-	if (userInfo.operation != DIS_OPER && userInfo.operation != MAP_SET_OPER &&
-		userInfo.operation != MAP_DROP_OPER && !userInfo.user_name_entered)
+	if (userInfo.operation != DIS_OPER && 
+		userInfo.operation != OLD_DIS_OPER && 
+		userInfo.operation != MAP_SET_OPER &&
+		userInfo.operation != MAP_DROP_OPER && 
+		!userInfo.user_name_entered)
 	{
 	    status[0] = isc_arg_gds;
 	    status[1] = isc_gsec_switches_error;
@@ -360,7 +364,12 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		break;
 
 	case DIS_OPER:
-		stuffSpbByte(spb, isc_action_svc_display_user);
+	case OLD_DIS_OPER:
+		{
+			char usersDisplayTag = 0;
+			checkServerUsersVersion(handle, usersDisplayTag);
+			stuffSpbByte(spb, usersDisplayTag);
+		}
 		if (userInfo.user_name_entered)
 		{
 			stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
@@ -407,7 +416,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	ISC_STATUS* local_status = status[1] ? temp_status : status;
 	memset(local_status, 0, sizeof(ISC_STATUS_ARRAY));
 
-	if (userInfo.operation == DIS_OPER)
+	if (userInfo.operation == DIS_OPER || userInfo.operation == OLD_DIS_OPER)
 	{
 		const char request[] = {isc_info_svc_get_users};
 		int startQuery = 0;

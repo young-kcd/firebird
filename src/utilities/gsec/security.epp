@@ -362,6 +362,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		break;
 
 	case DIS_OPER:
+	case OLD_DIS_OPER:
 		// gets either the desired record, or all records, and displays them
 
 		found = false;

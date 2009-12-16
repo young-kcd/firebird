@@ -45,6 +45,7 @@ const int HELP_OPER		= 6;
 //const int VERSION_OPER	= 7;
 const int MAP_SET_OPER	= 8;
 const int MAP_DROP_OPER	= 9;
+const int OLD_DIS_OPER	= 10;
 
 const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;

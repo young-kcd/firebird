@@ -61,6 +61,7 @@ const int IN_SW_GSEC_TRUSTED_AUTH		= 24;	// Use trusted authentication
 const int IN_SW_GSEC_FETCH_PASSWORD		= 25;   // Fetch Password (Database Admin.)
 const int IN_SW_GSEC_MAPPING			= 26;	// Change auto admin mapping
 const int IN_SW_GSEC_ADMIN				= 27;	// Grant/revoke RDB$ADMIN in security database
+const int IN_SW_GSEC_DIS_ADM			= 28;	// display user(s) with admin info
 
 static const struct Switches::in_sw_tab_t gsec_in_sw_table [] =
 {
@@ -74,7 +75,8 @@ static const struct Switches::in_sw_tab_t gsec_in_sw_table [] =
     {IN_SW_GSEC_MNAME,				isc_spb_sec_middlename,	"MNAME",	0, 0, 0, false,	0,	2, NULL},	// user's middle name/initial
     {IN_SW_GSEC_LNAME,				isc_spb_sec_lastname,	"LNAME",	0, 0, 0, false,	0,	1, NULL},	// user's last name
     {IN_SW_GSEC_DEL,				0,						"DELETE",	0, 0, 0, false,	0,	2, NULL},	// delete user
-    {IN_SW_GSEC_DIS,				0,						"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s)
+	{IN_SW_GSEC_DIS,				0,					"OLD_DISPLAY",	0, 0, 0, false, 0, 10, NULL},   // Display user(s) without admin info
+    {IN_SW_GSEC_DIS_ADM,			0,						"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) with admin info
     {IN_SW_GSEC_MOD,				0,						"MODIFY",	0, 0, 0, false,	0,	2, NULL},	// modify user
     {IN_SW_GSEC_QUIT,				0,						"QUIT",		0, 0, 0, false,	0,	1, NULL},	// exit command line interface
     {IN_SW_GSEC_HELP,				0,						"HELP",		0, 0, 0, false,	0,	1, NULL},	// print help
@@ -102,9 +104,10 @@ static const struct Switches::in_sw_tab_t gsec_action_in_sw_table [] =
     {IN_SW_GSEC_ADD,		isc_action_svc_add_user,		"ADD",		0, 0, 0, false,	0,	1, NULL},	// add user
     {IN_SW_GSEC_DEL,		isc_action_svc_delete_user,		"DELETE",	0, 0, 0, false,	0,	2, NULL},	// delete user
     {IN_SW_GSEC_MOD,		isc_action_svc_modify_user,		"MODIFY",	0, 0, 0, false,	0,	2, NULL},	// modify user
-    {IN_SW_GSEC_DIS,		isc_action_svc_display_user,	"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s)
+    {IN_SW_GSEC_DIS,		isc_action_svc_display_user, "OLD_DISPLAY",	0, 0, 0, false,	0, 10, NULL},	// display user(s) without admin
     {IN_SW_GSEC_MAPPING,	isc_action_svc_set_mapping,		"MAP SET",	0, 0, 0, false,	0,	2, NULL},	// map admins
     {IN_SW_GSEC_MAPPING,	isc_action_svc_drop_mapping,	"MAP DROP",	0, 0, 0, false,	0,	2, NULL},	// map admins
+    {IN_SW_GSEC_DIS_ADM,	isc_action_svc_display_user_a,	"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) with admin
     {IN_SW_GSEC_0,			0,								NULL,		0, 0, 0, false,	0,	0, NULL}	// End of List
 };
 #endif // GSEC_GSECSWI_H

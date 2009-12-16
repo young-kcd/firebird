@@ -39,6 +39,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 #include "../jrd/license.h"
+#include "../utilities/gsec/checkVersion.h"
 
 using namespace Firebird;
 
@@ -887,6 +888,17 @@ int main(int ac, char** av)
 
 		if (spbStart.getBufferLength() > 0)
 		{
+			if (spbStart.find(isc_action_svc_display_user))
+			{
+				char usersDisplayTag = 0;
+				checkServerUsersVersion(svc_handle, usersDisplayTag);
+				if (usersDisplayTag != isc_action_svc_display_user)
+				{
+					spbStart.deleteClumplet();
+					spbStart.insertTag(usersDisplayTag);
+				}
+			}
+
 			if (isc_service_start(status, &svc_handle, 0,
 					static_cast<USHORT>(spbStart.getBufferLength()),
 					reinterpret_cast<const char*>(spbStart.getBuffer())))

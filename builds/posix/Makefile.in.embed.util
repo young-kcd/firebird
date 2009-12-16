@@ -75,7 +75,7 @@ common/config/dir_list.cpp \
 jrd/ThreadData.cpp \
 $(OS_SPECIFIC_Sources)
 
-GSEC_Files =  gsec.cpp security.cpp call_service.cpp gsecMain.cpp
+GSEC_Files =  gsec.cpp security.cpp call_service.cpp gsecMain.cpp checkVersion.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources)))) \
 $(FBUTILSVC_Objects)
@@ -92,7 +92,8 @@ $(FBUTILSVC_Objects)
 
 FBSVCMGR_Files= fbsvcmgr.cpp
 FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
-common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp jrd/path_utils.cpp
+common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp jrd/path_utils.cpp \
+utilities/gsec/checkVersion.cpp
 
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \

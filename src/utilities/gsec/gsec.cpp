@@ -271,7 +271,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 			// since the number of users may exceed the service buffer.  This
 			// will cause the service to wait for the client to request data.  However,
 			// if the server is not signaled, then the client can never request anything.
-			if (user_data->operation == DIS_OPER)
+			if (user_data->operation == DIS_OPER || user_data->operation == OLD_DIS_OPER)
 				uSvc->started();
 			if (! useServices)
 			{
@@ -419,7 +419,10 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
 		tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->last_name);
 		tdsec->utilSvc->putSLong(isc_spb_sec_userid, data->uid);
 		tdsec->utilSvc->putSLong(isc_spb_sec_groupid, data->gid);
-		tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin);
+		if (data->operation == DIS_OPER)
+		{
+			tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin);
+		}
 	}
 	else
 	{
@@ -552,6 +555,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			case IN_SW_GSEC_ADD:
 			case IN_SW_GSEC_DEL:
 			case IN_SW_GSEC_DIS:
+			case IN_SW_GSEC_DIS_ADM:
 			case IN_SW_GSEC_MOD:
 				quote = ' ';
 				for (l = 0; l < MAX_SQL_IDENTIFIER_SIZE && string[l] && string[l] != quote; )
@@ -717,6 +721,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			case IN_SW_GSEC_ADD:
 			case IN_SW_GSEC_DEL:
 			case IN_SW_GSEC_DIS:
+			case IN_SW_GSEC_DIS_ADM:
 			case IN_SW_GSEC_MOD:
 			case IN_SW_GSEC_QUIT:
 			case IN_SW_GSEC_HELP:
@@ -735,8 +740,11 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				case IN_SW_GSEC_DEL:
 					user_data->operation = DEL_OPER;
 					break;
-				case IN_SW_GSEC_DIS:
+				case IN_SW_GSEC_DIS_ADM:
 					user_data->operation = DIS_OPER;
+					break;
+				case IN_SW_GSEC_DIS:
+					user_data->operation = OLD_DIS_OPER;
 					break;
 				case IN_SW_GSEC_MOD:
 					user_data->operation = MOD_OPER;
@@ -948,6 +956,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				break;
 			case DEL_OPER:
 			case DIS_OPER:
+			case OLD_DIS_OPER:
 			case QUIT_OPER:
 			case HELP_OPER:
 				GSEC_error(GsecMsg43);
@@ -1188,6 +1197,7 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 			printhelp();
 			ret = -2;
 			break;
+		case OLD_DIS_OPER:
 		case DIS_OPER:
 		case QUIT_OPER:
 		case MAP_SET_OPER:
