@@ -335,10 +335,10 @@ void callRemoteServiceManager(ISC_STATUS* status,
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
-	if (userInfo.operation != DIS_OPER && 
-		userInfo.operation != OLD_DIS_OPER && 
+	if (userInfo.operation != DIS_OPER &&
+		userInfo.operation != OLD_DIS_OPER &&
 		userInfo.operation != MAP_SET_OPER &&
-		userInfo.operation != MAP_DROP_OPER && 
+		userInfo.operation != MAP_DROP_OPER &&
 		!userInfo.user_name_entered)
 	{
 	    status[0] = isc_arg_gds;
@@ -689,8 +689,8 @@ static void checkServerUsersVersion(isc_svc_handle svc_handle, char& server_user
 		{
 		case isc_info_svc_server_version:
 			{
-				unsigned short length = (unsigned short) isc_vax_integer (p, sizeof(unsigned short));
-				p += sizeof (unsigned short);
+				USHORT length = (USHORT) isc_vax_integer(p, sizeof(USHORT));
+				p += sizeof(length);
 				version.assign(p, length);
 				p += length;
 			}

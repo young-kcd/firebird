@@ -428,7 +428,7 @@ void NBackup::open_database_scan()
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
 	if (dbase < 0)
 	{
-		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() << 
+		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() <<
 								dbname.c_str());
 	}
 

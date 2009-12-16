@@ -2551,7 +2551,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 
-				if (spb.isEof() && (svc_action == isc_action_svc_display_user || 
+				if (spb.isEof() && (svc_action == isc_action_svc_display_user ||
 									svc_action == isc_action_svc_display_user_adm))
 				{
 					// in case of "display all users" the spb buffer contains

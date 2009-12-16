@@ -3011,25 +3011,25 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			const USHORT len = context->ctx_alias ? strlen(str) : name.length();
 			statement->append_string(isc_dyn_view_context_name, str, len);
 
-			SSHORT ctxType = CtxTypeExpression;
+			ViewContextType ctxType = VCT_EXPRESSION;
 			if (relation)
 			{
 				if (!(relation->rel_flags & REL_view))
-					ctxType = CtxTypeRelation;
+					ctxType = VCT_TABLE;
 				else
-					ctxType = CtxTypeView;
+					ctxType = VCT_VIEW;
 			}
 			else //if (procedure)
 			{
 				if (procedure->prc_name.qualifier.hasData())
 				{
-					ctxType = CtxTypePackagedProc;
+					ctxType = VCT_PACKAGED_PROC;
 					statement->append_string(isc_dyn_pkg_name, procedure->prc_name.qualifier);
 				}
 				else
-					ctxType = CtxTypeSimpleProc;
+					ctxType = VCT_SIMPLE_PROC;
 			}
-			statement->append_number(isc_dyn_view_context_type, ctxType);
+			statement->append_number(isc_dyn_view_context_type, (SSHORT) ctxType);
 
 			statement->append_uchar(isc_dyn_end);
 		}

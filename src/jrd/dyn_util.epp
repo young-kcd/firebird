@@ -621,8 +621,8 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 	// TODO: make the callers check the boolean result or we'll have to throw instead of
 	// returning false from here.
 	// I had to check VRL.RDB$CONTEXT_TYPE MISSING because if I make this field not null,
-	// gpre's view creation (and probably qli) won't work.
-	// Apparently, given ddl.cpp's logic CtxTypeExpression can't happen but I wanted to be cautious.
+	// restore from previous ODS won't work.
+	// Apparently, given ddl.cpp's logic VCT_EXPRESSION can't happen but I wanted to be cautious.
 
 	bool found = false;
 
@@ -635,7 +635,7 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 				WITH VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
 				VRL.RDB$VIEW_CONTEXT EQ context AND
 				(VRL.RDB$CONTEXT_TYPE MISSING OR
-					VRL.RDB$CONTEXT_TYPE BETWEEN CtxTypeExpression AND CtxTypeView) AND
+					VRL.RDB$CONTEXT_TYPE BETWEEN VCT_EXPRESSION AND VCT_VIEW) AND
 				VRL.RDB$PACKAGE_NAME MISSING AND
 				RFR.RDB$FIELD_NAME EQ local_name
 
@@ -662,8 +662,8 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 					PPR.RDB$PACKAGE_NAME MISSING AND
 					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
 					VRL.RDB$VIEW_CONTEXT EQ context AND
-					(VRL.RDB$CONTEXT_TYPE MISSING OR VRL.RDB$CONTEXT_TYPE EQ CtxTypeExpression OR
-						VRL.RDB$CONTEXT_TYPE EQ CtxTypeSimpleProc) AND
+					(VRL.RDB$CONTEXT_TYPE MISSING OR VRL.RDB$CONTEXT_TYPE EQ VCT_EXPRESSION OR
+						VRL.RDB$CONTEXT_TYPE EQ VCT_SIMPLE_PROC) AND
 					VRL.RDB$PACKAGE_NAME MISSING AND
 					PPR.RDB$PARAMETER_NAME EQ local_name
 
@@ -691,8 +691,8 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 					//PPR.RDB$PACKAGE_NAME NOT MISSING AND redundant
 					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
 					VRL.RDB$VIEW_CONTEXT EQ context AND
-					(VRL.RDB$CONTEXT_TYPE MISSING OR VRL.RDB$CONTEXT_TYPE EQ CtxTypeExpression OR
-						VRL.RDB$CONTEXT_TYPE EQ CtxTypePackagedProc) AND
+					(VRL.RDB$CONTEXT_TYPE MISSING OR VRL.RDB$CONTEXT_TYPE EQ VCT_EXPRESSION OR
+						VRL.RDB$CONTEXT_TYPE EQ VCT_PACKAGED_PROC) AND
 					//VRL.RDB$PACKAGE_NAME NOT MISSING redundant
 					PPR.RDB$PACKAGE_NAME EQ VRL.RDB$PACKAGE_NAME AND
 					PPR.RDB$PARAMETER_NAME EQ local_name
