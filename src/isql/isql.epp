@@ -1350,7 +1350,7 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 			if (NEWRFR.RDB$BASE_FIELD.NULL)
 			{
 				if (NEWRFR.RDB$NULL_FLAG == 1)
-				null_flag = false;
+					null_flag = false;
 				done = true;
 			}
 			else

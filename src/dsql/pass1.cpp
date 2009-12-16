@@ -4559,9 +4559,8 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 	dsql_nod* anchor_rse = 0, *recursive_rse = 0;
 	dsql_nod* qry = query;
 
-	dsql_nod* new_query = MAKE_node(nod_list, 2);
-	new_query->nod_flags = query->nod_flags;
-	dsql_nod* new_qry = new_query;
+	dsql_nod* new_qry = MAKE_node(nod_list, 2);
+	new_qry->nod_flags = query->nod_flags;
 	while (true)
 	{
 		dsql_nod* rse = 0;

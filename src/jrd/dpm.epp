@@ -2963,7 +2963,7 @@ static rhd* locate_space(thread_db* tdbb,
 
 			//if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
 			//UCHAR mask = PPG_DP_BIT_MASK(slot, ppg_dp_full);
-			const UCHAR* byte = &PPG_DP_BITS_BYTE(bits, slot);
+			//const UCHAR* byte = &PPG_DP_BITS_BYTE(bits, slot);
 
 			if (dp_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_full))
 			{
