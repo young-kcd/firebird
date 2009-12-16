@@ -292,7 +292,8 @@
 #define isc_action_svc_trace_list     26	// List existing sessions
 #define isc_action_svc_set_mapping    27	// Set auto admins mapping in security database
 #define isc_action_svc_drop_mapping   28	// Drop auto admins mapping in security database
-#define isc_action_svc_last			  29	// keep it last !
+#define isc_action_svc_display_user_a 29	// Displays user(s) from security database with admin info
+#define isc_action_svc_last			  30	// keep it last !
 
 /*****************************
  * Service information items *

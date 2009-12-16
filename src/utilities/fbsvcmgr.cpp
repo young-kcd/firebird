@@ -479,6 +479,7 @@ const SvcSwitches actionSwitch[] =
 	{"action_db_stats", putSingleTag, statisticsOptions, isc_action_svc_db_stats, isc_info_svc_line},
 	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_to_eof},
 	{"action_display_user", putSingleTag, dispdelOptions, isc_action_svc_display_user, isc_info_svc_get_users},
+	{"action_display_user_a", putSingleTag, dispdelOptions, isc_action_svc_display_user_a, isc_info_svc_get_users},
 	{"action_add_user", putSingleTag, addmodOptions, isc_action_svc_add_user, 0},
 	{"action_delete_user", putSingleTag, dispdelOptions, isc_action_svc_delete_user, 0},
 	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
