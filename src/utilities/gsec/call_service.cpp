@@ -715,7 +715,7 @@ static void checkServerUsersVersion(isc_svc_handle svc_handle, char& server_user
 			double f = atof(version.c_str());
 			if (f > 2.45)	// need 2.5, but take into an account it's float
 			{
-				server_users = isc_action_svc_display_user_a;
+				server_users = isc_action_svc_display_user_adm;
 			}
 			return;
 		}

@@ -104,10 +104,10 @@ static const struct Switches::in_sw_tab_t gsec_action_in_sw_table [] =
     {IN_SW_GSEC_ADD,		isc_action_svc_add_user,		"ADD",		0, 0, 0, false,	0,	1, NULL},	// add user
     {IN_SW_GSEC_DEL,		isc_action_svc_delete_user,		"DELETE",	0, 0, 0, false,	0,	2, NULL},	// delete user
     {IN_SW_GSEC_MOD,		isc_action_svc_modify_user,		"MODIFY",	0, 0, 0, false,	0,	2, NULL},	// modify user
-    {IN_SW_GSEC_DIS,		isc_action_svc_display_user, "OLD_DISPLAY",	0, 0, 0, false,	0, 10, NULL},	// display user(s) without admin
+    {IN_SW_GSEC_DIS,		isc_action_svc_display_user, "OLD_DISPLAY",	0, 0, 0, false,	0, 11, NULL},	// display user(s) without admin
     {IN_SW_GSEC_MAPPING,	isc_action_svc_set_mapping,		"MAP SET",	0, 0, 0, false,	0,	2, NULL},	// map admins
     {IN_SW_GSEC_MAPPING,	isc_action_svc_drop_mapping,	"MAP DROP",	0, 0, 0, false,	0,	2, NULL},	// map admins
-    {IN_SW_GSEC_DIS_ADM,	isc_action_svc_display_user_a,	"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) with admin
+    {IN_SW_GSEC_DIS_ADM,	isc_action_svc_display_user_adm,"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) with admin
     {IN_SW_GSEC_0,			0,								NULL,		0, 0, 0, false,	0,	0, NULL}	// End of List
 };
 #endif // GSEC_GSECSWI_H

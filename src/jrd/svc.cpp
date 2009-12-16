@@ -740,7 +740,7 @@ static const serv_entry services[] =
 	{ isc_action_svc_trace_list, "List Trace Sessions", NULL, MAIN_TRACE },
 	{ isc_action_svc_set_mapping, "Set Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
 	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
-	{ isc_action_svc_display_user_a, "Display User with Admin Info", NULL, MAIN_GSEC },
+	{ isc_action_svc_display_user_adm, "Display User with Admin Info", NULL, MAIN_GSEC },
 	// actions with no names are undocumented
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
@@ -2067,7 +2067,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_delete_user ||
 		svc_id == isc_action_svc_modify_user ||
 		svc_id == isc_action_svc_display_user ||
-		svc_id == isc_action_svc_display_user_a ||
+		svc_id == isc_action_svc_display_user_adm ||
 		svc_id == isc_action_svc_db_stats ||
 		svc_id == isc_action_svc_properties ||
 		svc_id == isc_action_svc_trace_start ||
@@ -2543,7 +2543,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 		case isc_action_svc_delete_user:
 		case isc_action_svc_display_user:
-		case isc_action_svc_display_user_a:
+		case isc_action_svc_display_user_adm:
 			if (!found)
 			{
 				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
@@ -2552,7 +2552,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				}
 
 				if (spb.isEof() && (svc_action == isc_action_svc_display_user || 
-									svc_action == isc_action_svc_display_user_a))
+									svc_action == isc_action_svc_display_user_adm))
 				{
 					// in case of "display all users" the spb buffer contains
 					// nothing but isc_action_svc_display_user or isc_spb_dbname
