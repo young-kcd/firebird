@@ -42,12 +42,14 @@ const int IN_SW_NBK_NODBTRIG		= 6;
 //const int IN_SW_NBK_USER_NAME		= 7;
 //const int IN_SW_NBK_PASSWORD		= 8;
 //const int IN_SW_NBK_SIZE			= 9;
+const int IN_SW_NBK_DIRECT			= 10;
 
 // taking into an account that this is used only by services, describe only interesting switches
 
 static const struct in_sw_tab_t nbackup_in_sw_table [] =
 {
     {IN_SW_NBK_NODBTRIG,	isc_spb_nbk_no_triggers,	"T",	0, 0, 0, false,	0,	1, NULL},
+    {IN_SW_NBK_DIRECT,		isc_spb_nbk_direct,			"D",	0, 0, 0, false,	0,	1, NULL},
     {IN_SW_NBK_0,		0,				NULL,		0, 0, 0, false,	0,	0, NULL}		// End of List
 };
 

@@ -135,6 +135,7 @@ namespace
 		printMsg(15);
 		printMsg(16);
 		printMsg(17);
+		printMsg(24);
 		printMsg(18);
 		printMsg(19);
 		printMsg(20);
@@ -258,10 +259,10 @@ class NBackup
 public:
 	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username,
 			const string& _password, bool _run_db_triggers, const string& _trustedUser,
-			bool _trustedRole)
+			bool _trustedRole, bool _direct_io)
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
 		username(_username), password(_password), trustedUser(_trustedUser),
-		run_db_triggers(_run_db_triggers), trustedRole(_trustedRole),
+		run_db_triggers(_run_db_triggers), trustedRole(_trustedRole), direct_io(_direct_io),
 		dbase(0), backup(0), db_size_pages(0)
 	{
 		// Recognition of local prefix allows to work with
@@ -293,7 +294,7 @@ private:
 
 	PathName database;
 	string username, password, trustedUser;
-	bool run_db_triggers, trustedRole;
+	bool run_db_triggers, trustedRole, direct_io;
 
 	PathName dbname; // Database file name
 	PathName bakname;
@@ -445,16 +446,19 @@ void NBackup::open_database_scan()
 #define O_DIRECT 0
 #endif // O_DIRECT
 
-	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
+	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
 	if (dbase < 0)
 		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());
 
 	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(SEQUENTIAL) for %s", rc, dbname.c_str());
-	rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
-	if (rc)
-		b_error::raise(uSvc, "Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
+	if (direct_io)
+	{
+		rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
+		if (rc)
+			b_error::raise(uSvc, "Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
+	}
 
 #endif // WIN_NT
 }
@@ -1202,6 +1206,7 @@ void nbackup(UtilSvc* uSvc)
 	string username, password;
 	PathName database, filename;
 	bool run_db_triggers = true;
+	bool direct_io = false;
 	NBackup::BackupFiles backup_files;
 	int level;
 	bool print_size = false, version = false;
@@ -1253,6 +1258,10 @@ void nbackup(UtilSvc* uSvc)
 
 		case 'T':
 			run_db_triggers = false;
+			break;
+
+		case 'D':
+			direct_io = true;
 			break;
 
 		case 'F':
@@ -1377,7 +1386,7 @@ void nbackup(UtilSvc* uSvc)
 	if (print_size && (op != nbLock))
 		usage(uSvc, "Switch -S can be used only with -L");
 
-	NBackup nbk(uSvc, database, username, password, run_db_triggers, trustedUser, trustedRole);
+	NBackup nbk(uSvc, database, username, password, run_db_triggers, trustedUser, trustedRole, direct_io);
 	switch (op)
 	{
 		case nbNone:

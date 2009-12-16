@@ -35,7 +35,7 @@ set bulk_insert INSERT INTO FACILITIES (LAST_CHANGE, FACILITY, FAC_CODE, MAX_NUM
 ('2008-09-16 01:10:30', 'FBSVCMGR', 22, 52)
 ('2007-12-21 19:03:07', 'UTL', 23, 2)
 -- Reserved 24-69 by CVC for FB3
-('2009-07-19 07:42:54', 'NBACKUP', 24, 70)
+('2009-12-16 19:27:50', 'NBACKUP', 24, 71)
 -- Reserved facility 25 for FBTRACEMGR 1-40 by CVC for FB3
 stop
 
