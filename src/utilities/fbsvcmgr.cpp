@@ -39,7 +39,6 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 #include "../jrd/license.h"
-#include "../utilities/gsec/checkVersion.h"
 
 using namespace Firebird;
 
@@ -487,6 +486,7 @@ const SvcSwitches actionSwitch[] =
 	{"action_db_stats", putSingleTag, statisticsOptions, isc_action_svc_db_stats, isc_info_svc_line},
 	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_to_eof},
 	{"action_display_user", putSingleTag, dispdelOptions, isc_action_svc_display_user, isc_info_svc_get_users},
+	{"action_display_user_a", putSingleTag, dispdelOptions, isc_action_svc_display_user_a, isc_info_svc_get_users},
 	{"action_add_user", putSingleTag, addmodOptions, isc_action_svc_add_user, 0},
 	{"action_delete_user", putSingleTag, dispdelOptions, isc_action_svc_delete_user, 0},
 	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
@@ -888,17 +888,6 @@ int main(int ac, char** av)
 
 		if (spbStart.getBufferLength() > 0)
 		{
-			if (spbStart.find(isc_action_svc_display_user))
-			{
-				char usersDisplayTag = 0;
-				checkServerUsersVersion(svc_handle, usersDisplayTag);
-				if (usersDisplayTag != isc_action_svc_display_user)
-				{
-					spbStart.deleteClumplet();
-					spbStart.insertTag(usersDisplayTag);
-				}
-			}
-
 			if (isc_service_start(status, &svc_handle, 0,
 					static_cast<USHORT>(spbStart.getBufferLength()),
 					reinterpret_cast<const char*>(spbStart.getBuffer())))

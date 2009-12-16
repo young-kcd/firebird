@@ -24,9 +24,12 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../utilities/gsec/call_service.h"
-#include "../utilities/gsec/checkVersion.h"
+#include "../common/classes/ClumpletWriter.h"
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
+
+using namespace Firebird;
 
 const size_t SERVICE_SIZE = 256;
 const size_t SERVER_PART = 200;
@@ -132,6 +135,8 @@ static void stuffSpb2(char*& spb, char param, const TEXT* value)
 	spb += l;
 }
 
+
+static void checkServerUsersVersion(isc_svc_handle svc_handle, char& server_users);
 
 /**
 
@@ -650,4 +655,69 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 	}
 	fb_assert(loop == 0);
 	return 0;
+}
+
+static void checkServerUsersVersion(isc_svc_handle svc_handle, char& server_users)
+{
+	if (server_users)
+	{
+		return;
+	}
+
+	// use safe old value
+	server_users = isc_action_svc_display_user;
+
+	// query service
+	ClumpletWriter spbItems(ClumpletWriter::SpbStart, 8);
+	spbItems.insertTag(isc_info_svc_server_version);
+	ISC_STATUS_ARRAY status;
+	char results[1024];
+	if (isc_service_query(status, &svc_handle, 0, 0, 0,
+						  static_cast<USHORT>(spbItems.getBufferLength()),
+						  reinterpret_cast<const char*>(spbItems.getBuffer()),
+						  sizeof(results), results))
+	{
+		return;
+	}
+
+	// parse results
+	const char* p = results;
+	string version;
+	while (*p != isc_info_end)
+	{
+		switch (*p++)
+		{
+		case isc_info_svc_server_version:
+			{
+				unsigned short length = (unsigned short) isc_vax_integer (p, sizeof(unsigned short));
+				p += sizeof (unsigned short);
+				version.assign(p, length);
+				p += length;
+			}
+			break;
+		default:
+			return;
+		}
+	}
+
+	// parse version
+	size_t pos = version.find('-');
+	if (pos == string::npos)
+	{
+		return;
+	}
+	version.erase(0, pos);
+	for (pos = 0; pos < version.length(); ++pos)
+	{
+		if (isdigit(version[pos]))
+		{
+			version.erase(0, pos);
+			double f = atof(version.c_str());
+			if (f > 2.45)	// need 2.5, but take into an account it's float
+			{
+				server_users = isc_action_svc_display_user_a;
+			}
+			return;
+		}
+	}
 }

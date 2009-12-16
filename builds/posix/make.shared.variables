@@ -177,7 +177,7 @@ NTRACE_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE
 #
 # utilities
 
-SECURITY_ClientFiles_gsec = call_service.cpp checkVersion.cpp
+SECURITY_ClientFiles_gsec = call_service.cpp
 
 SECURITY_ServerFiles_gsec:= security.cpp gsec.cpp 
 SECURITY_ServerFiles_gstat:= dba.epp ppg.cpp 
