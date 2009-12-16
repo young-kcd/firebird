@@ -335,15 +335,13 @@ const ULONG req_internal		= 0x20L;
 const ULONG req_warning			= 0x40L;
 const ULONG req_in_use			= 0x80L;
 const ULONG req_sys_trigger		= 0x100L;		// request is a system trigger
-const ULONG req_count_records	= 0x200L;		// count records accessed
-const ULONG req_proc_fetch		= 0x400L;		// Fetch from procedure in progress
-const ULONG req_same_tx_upd		= 0x800L;		// record was updated by same transaction
-const ULONG req_reserved		= 0x1000L;		// Request reserved for client
-const ULONG req_ignore_perm		= 0x2000L;		// ignore permissions checks
-const ULONG req_fetch_required	= 0x4000L;		// need to fetch next record
-const ULONG req_error_handler	= 0x8000L;		// looper is called to handle error
-const ULONG req_blr_version4	= 0x10000L;		// Request is of blr_version4
-const ULONG req_continue_loop	= 0x20000L;		// PSQL continue statement
+const ULONG req_proc_fetch		= 0x200L;		// Fetch from procedure in progress
+const ULONG req_same_tx_upd		= 0x400L;		// record was updated by same transaction
+const ULONG req_reserved		= 0x800L;		// Request reserved for client
+const ULONG req_ignore_perm		= 0x1000L;		// ignore permissions checks
+const ULONG req_error_handler	= 0x2000L;		// looper is called to handle error
+const ULONG req_blr_version4	= 0x4000L;		// Request is of blr_version4
+const ULONG req_continue_loop	= 0x8000L;		// PSQL continue statement
 
 // Mask for flags preserved in a clone of a request
 const ULONG REQ_FLAGS_CLONE_MASK = (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);

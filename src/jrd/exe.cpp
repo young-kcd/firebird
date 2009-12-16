@@ -995,7 +995,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	// set up to count records affected by request
 
-	request->req_flags |= req_count_records;
 	request->req_records_selected = 0;
 	request->req_records_updated = 0;
 	request->req_records_inserted = 0;
