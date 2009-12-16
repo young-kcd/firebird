@@ -494,13 +494,23 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 		case ddl_package:
 			//dbb->checkOdsForDsql(ODS_12_0);
-
 			table = "rdb$packages";
 			column = "rdb$package_name";
+			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objName);
+			break;
 
-			//// TODO: localize
-			status << Arg::Gds(isc_random) << Arg::Str("Package not found") <<
-				Arg::Gds(isc_random) << Arg::Str(objName);
+		case ddl_packaged_procedure:
+			table = "rdb$procedures";
+			column = "rdb$package_name";
+			subColumn = "rdb$procedure_name";
+			status << Arg::Gds(isc_dyn_packproc_not_found) << Arg::Str(subName) << Arg::Str(objName);
+			break;
+
+		case ddl_packaged_udf:
+			table = "rdb$functions";
+			column = "rdb$package_name";
+			subColumn = "rdb$function_name";
+			status << Arg::Gds(isc_dyn_packfunc_not_found) << Arg::Str(subName) << Arg::Str(objName);
 			break;
 	}
 

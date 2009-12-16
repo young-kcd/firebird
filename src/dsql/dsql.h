@@ -789,7 +789,8 @@ enum
 {
 	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
 	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
-	ddl_charset, ddl_collation, ddl_package//, ddl_sec_class
+	ddl_charset, ddl_collation, ddl_package, ddl_packaged_procedure, ddl_packaged_udf
+	//, ddl_sec_class
 };
 
 class CStrCmp
