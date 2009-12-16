@@ -246,7 +246,7 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
 
 	const size_t length = infoBuffer.getCount();
 
-	if (length > buffer_length)
+	if (length > static_cast<ULONG>(buffer_length))
 	{
 		*return_length = 0;
 		return false;
