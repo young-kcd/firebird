@@ -148,6 +148,8 @@
 	const USHORT  f_vrl_rname = 1;
 	const USHORT  f_vrl_context = 2;
 	const USHORT  f_vrl_cname = 3;
+	const USHORT  f_vrl_context_type = 4;
+	const USHORT  f_vrl_pkg_name = 5;
 
 
 // Relation 8 (RDB$FORMATS)
