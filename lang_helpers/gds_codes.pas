@@ -994,4 +994,5 @@ const
 	gds_fbsvcmgr_fp_open                 = 336986160;
 	gds_fbsvcmgr_fp_read                 = 336986161;
 	gds_fbsvcmgr_fp_empty                = 336986162;
+	gds_fbsvcmgr_bad_arg                 = 336986164;
 	gds_utl_trusted_switch               = 337051649;

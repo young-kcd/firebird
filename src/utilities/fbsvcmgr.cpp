@@ -291,7 +291,7 @@ bool populateSpbFromSwitches(char**& av, ClumpletWriter& spb,
 				}
 				return true;
 			}
-			return false;
+			(Arg::Gds(isc_fbsvcmgr_bad_arg) << av[-1]).raise();
 		}
 	}
 

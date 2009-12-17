@@ -3431,6 +3431,8 @@ Analyzing database pages ...', NULL, NULL);
 ('fbsvcmgr_fp_open', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 48, NULL, 'could not open file @1', NULL, NULL);
 ('fbsvcmgr_fp_read', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 49, NULL, 'could not read file @1', NULL, NULL);
 ('fbsvcmgr_fp_empty', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 50, NULL, 'empty file @1', NULL, NULL);
+-- (NULL, 'main', 'fbsvcmgr.cpp', NULL, 22, 51, NULL, 'Firebird Services Manager version @1', NULL, NULL)
+('fbsvcmgr_bad_arg', 'populateSpbFromSwitches', 'fbsvcmgr.cpp', NULL, 22, 52, NULL, 'Invalid or missing parameter for switch @1', NULL, NULL)
 -- UTL (messages common for many utilities)
 -- All messages use the new format.
 ('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_svc and trusted_role are not supported from command line', NULL, NULL);

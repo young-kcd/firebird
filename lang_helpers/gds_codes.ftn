@@ -1974,5 +1974,7 @@ C --
       PARAMETER (GDS__fbsvcmgr_fp_read                 = 336986161)
       INTEGER*4 GDS__fbsvcmgr_fp_empty               
       PARAMETER (GDS__fbsvcmgr_fp_empty                = 336986162)
+      INTEGER*4 GDS__fbsvcmgr_bad_arg                
+      PARAMETER (GDS__fbsvcmgr_bad_arg                 = 336986164)
       INTEGER*4 GDS__utl_trusted_switch              
       PARAMETER (GDS__utl_trusted_switch               = 337051649)

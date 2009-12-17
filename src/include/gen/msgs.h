@@ -986,6 +986,7 @@ Data source : @4"},		/* 606, eds_statement */
 	{336986160, "could not open file @1"},		/* 959, fbsvcmgr_fp_open */
 	{336986161, "could not read file @1"},		/* 960, fbsvcmgr_fp_read */
 	{336986162, "empty file @1"},		/* 961, fbsvcmgr_fp_empty */
-	{337051649, "Switches trusted_svc and trusted_role are not supported from command line"},		/* 962, utl_trusted_switch */
+	{336986164, "Invalid or missing parameter for switch @1"},		/* 962, fbsvcmgr_bad_arg */
+	{337051649, "Switches trusted_svc and trusted_role are not supported from command line"},		/* 963, utl_trusted_switch */
 	{0, NULL}
 };

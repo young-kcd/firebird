@@ -983,6 +983,7 @@ static const struct {
 	{"fbsvcmgr_fp_open", 336986160},
 	{"fbsvcmgr_fp_read", 336986161},
 	{"fbsvcmgr_fp_empty", 336986162},
+	{"fbsvcmgr_bad_arg", 336986164},
 	{"utl_trusted_switch", 337051649},
 	{NULL, 0}
 };
