@@ -2942,6 +2942,7 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					VRL IN RDB$VIEW_RELATIONS CROSS
 						PREL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
+						VRL.RDB$PACKAGE_NAME MISSING AND
 						VRL.RDB$VIEW_NAME EQ relation_name.c_str()
 					if (!DYN_REQUEST(drq_l_view_rels))
 						DYN_REQUEST(drq_l_view_rels) = request;

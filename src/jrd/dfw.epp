@@ -2764,17 +2764,22 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 					else
 					{
 						// update the dbkey length to include each of the base relations
+						Y.RDB$DBKEY_LENGTH = 0;
 
 						handle = NULL;
-						Y.RDB$DBKEY_LENGTH = 0;
+
 						FOR(REQUEST_HANDLE handle)
 							Z IN RDB$VIEW_RELATIONS CROSS
-								R IN RDB$RELATIONS OVER RDB$RELATION_NAME
-								WITH Z.RDB$VIEW_NAME = work->dfw_name.c_str()
-
+							R IN RDB$RELATIONS OVER RDB$RELATION_NAME
+							WITH Z.RDB$VIEW_NAME = work->dfw_name.c_str() AND
+								 (Z.RDB$CONTEXT_TYPE MISSING OR
+								  (Z.RDB$CONTEXT_TYPE <> VCT_SIMPLE_PROC AND
+								   Z.RDB$CONTEXT_TYPE <> VCT_PACKAGED_PROC))
+						{
 							Y.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
+						}
+						END_FOR
 
-						END_FOR;
 						CMP_release(tdbb, handle);
 					}
 				END_MODIFY
@@ -4121,11 +4126,13 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 		CMP_release(tdbb, handle);
 
 		if (field_count)
+		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_no_delete) <<	// Msg353: can not delete
 					 Arg::Gds(isc_field_name) << Arg::Str(f) <<
 					 Arg::Gds(isc_dependency) << Arg::Num(field_count));
 					 // Msg310: there are %ld dependencies
+		}
 
 		// now check if there are any dependencies generated through the blr
 		// that defines the relation

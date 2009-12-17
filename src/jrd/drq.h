@@ -50,7 +50,7 @@
 #define DYN_REQUEST(drt) dbb->dbb_dyn_req[drt]
 
 const int drq_l_prot_mask		= 0;	// lookup protection mask
-const int drq_l_fld_src4		= 1;	// lookup a field source
+///const int drq_l_fld_src4		= 1;	// lookup a field source
 const int drq_s_rel_con			= 2;	// store relation constraints
 const int drq_s_chk_con			= 3;	// store check constraints
 const int drq_s_ref_con			= 4;	// store ref constraints

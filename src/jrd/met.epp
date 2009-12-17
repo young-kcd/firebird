@@ -4518,7 +4518,8 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 
 		ViewContext* view_context = FB_NEW(*dbb->dbb_permanent)
 			ViewContext(*dbb->dbb_permanent,
-				V.RDB$CONTEXT_NAME, V.RDB$RELATION_NAME, V.RDB$VIEW_CONTEXT);
+				V.RDB$CONTEXT_NAME, V.RDB$RELATION_NAME, V.RDB$VIEW_CONTEXT,
+				(V.RDB$CONTEXT_TYPE.NULL ? VCT_TABLE : ViewContextType(V.RDB$CONTEXT_TYPE)));
 
 		view->rel_view_contexts.add(view_context);
 
