@@ -75,7 +75,7 @@ static const struct in_sw_tab_t gsec_in_sw_table [] =
     {IN_SW_GSEC_MNAME,		isc_spb_sec_middlename,		"MNAME",	0, 0, 0, false,	0,	2, NULL},	// user's middle name/initial
     {IN_SW_GSEC_LNAME,		isc_spb_sec_lastname,		"LNAME",	0, 0, 0, false,	0,	1, NULL},	// user's last name
     {IN_SW_GSEC_DEL,		0,				"DELETE",	0, 0, 0, false,	0,	2, NULL},	// delete user
-    {IN_SW_GSEC_DIS,		0,			"OLD_DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s)
+    {IN_SW_GSEC_DIS,		0,			"OLD_DISPLAY",	0, 0, 0, false,	0, 11, NULL},	// display user(s)
     {IN_SW_GSEC_DIS_ADM,	0,				"DISPLAY",	0, 0, 0, false,	0,	2, NULL},	// display user(s) with admin info
     {IN_SW_GSEC_MOD,		0,				"MODIFY",	0, 0, 0, false,	0,	2, NULL},	// modify user
     {IN_SW_GSEC_QUIT,		0,				"QUIT",		0, 0, 0, false,	0,	1, NULL},	// exit command line interface
