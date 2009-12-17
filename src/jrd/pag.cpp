@@ -531,7 +531,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	for (sequence = pageSpace->pipHighWater; true; sequence++)
 	{
 		pip_window.win_page = (sequence == 0) ?
-			pageSpace->ppFirst : sequence * dbb->dbb_page_manager.pagesPerPIP - 1;
+			pageSpace->pipFirst : sequence * dbb->dbb_page_manager.pagesPerPIP - 1;
 		page_inv_page* pip_page = (page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 
 		pipMin = MAX_SLONG;
@@ -862,11 +862,11 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 	// Initialize Page Inventory Page
 
 	WIN window(pageSpace.pageSpaceID, FIRST_PIP_PAGE);
-	pageSpace.ppFirst = FIRST_PIP_PAGE;
+	pageSpace.pipFirst = FIRST_PIP_PAGE;
 	page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
 
 	pages->pip_header.pag_type = pag_pages;
-	pages->pip_used = pageSpace.ppFirst + 1;
+	pages->pip_used = pageSpace.pipFirst + 1;
 	pages->pip_min = pages->pip_used;
 	UCHAR* p = pages->pip_bits;
 	int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
@@ -1168,7 +1168,7 @@ void PAG_init(thread_db* tdbb)
 	pageMgr.bytesBitPIP = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 	pageMgr.pagesPerPIP = pageMgr.bytesBitPIP * 8;
 	pageMgr.transPerTIP = (dbb->dbb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
-	pageSpace->ppFirst = 1;
+	pageSpace->pipFirst = 1;
 	// dbb_ods_version can be 0 when a new database is being created
 	fb_assert((dbb->dbb_ods_version == 0) || (dbb->dbb_ods_version >= ODS_VERSION12));
 	pageMgr.gensPerPage =
@@ -1398,7 +1398,7 @@ SLONG PAG_last_page(thread_db* tdbb)
 	USHORT sequence;
 	for (sequence = 0; true; ++sequence)
 	{
-		window.win_page = (!sequence) ? pageSpace->ppFirst : sequence * pages_per_pip - 1;
+		window.win_page = (!sequence) ? pageSpace->pipFirst : sequence * pages_per_pip - 1;
 		const page_inv_page* page = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pages);
 		const UCHAR* bits = page->pip_bits + (pages_per_pip >> 3) - 1;
 		while (*bits == (UCHAR) - 1)
@@ -1448,7 +1448,7 @@ void PAG_release_page(thread_db* tdbb, const PageNumber& number, const PageNumbe
 	const SLONG relative_bit = number.getPageNum() % pageMgr.pagesPerPIP;
 
 	WIN pip_window(number.getPageSpaceID(), (sequence == 0) ?
-		pageSpace->ppFirst : sequence * pageMgr.pagesPerPIP - 1);
+		pageSpace->pipFirst : sequence * pageMgr.pagesPerPIP - 1);
 
 	page_inv_page* pages = (page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 	CCH_precedence(tdbb, &pip_window, prior_page);
@@ -2121,7 +2121,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 
-	ULONG pageNo = pageSpace->ppFirst;
+	ULONG pageNo = pageSpace->pipFirst;
 	const ULONG pagesPerPip = database->dbb_page_manager.pagesPerPIP;
 
 	for (ULONG sequence = 0; true; pageNo = (pagesPerPip * ++sequence) - 1)

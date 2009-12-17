@@ -892,7 +892,7 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 
 	for (SLONG sequence = 0, number = 0; number < control->vdr_max_page; sequence++)
 	{
-		const SLONG page_number = sequence ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
+		const SLONG page_number = sequence ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->pipFirst;
 		page_inv_page* page = 0;
 		fetch_page(tdbb, 0, page_number, pag_pages, &window, &page);
 		UCHAR* p = page->pip_bits;
@@ -1754,7 +1754,7 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 	for (USHORT sequence = 0; true; sequence++)
 	{
 		const SLONG page_number =
-			sequence ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
+			sequence ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->pipFirst;
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			fprintf(stdout, "walk_pip: page %d\n", page_number);

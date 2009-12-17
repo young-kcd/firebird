@@ -70,7 +70,7 @@ public:
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
-		ppFirst = 0;
+		pipFirst = 0;
 		file = 0;
 		maxPageNumber = 0;
 	}
@@ -79,7 +79,7 @@ public:
 
 	USHORT pageSpaceID;
 	SLONG pipHighWater;		// Lowest PIP with space
-	SLONG ppFirst;			// First pointer page
+	SLONG pipFirst;			// First pointer page
 
 	jrd_file*	file;
 
