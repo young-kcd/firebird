@@ -50,7 +50,7 @@
 #define DYN_REQUEST(drt) dbb->dbb_dyn_req[drt]
 
 const int drq_l_prot_mask		= 0;	// lookup protection mask
-const int drq_l_user_name		= 1;	// lookup user name
+const int drq_l_fld_src4		= 1;	// lookup a field source
 const int drq_s_rel_con			= 2;	// store relation constraints
 const int drq_s_chk_con			= 3;	// store check constraints
 const int drq_s_ref_con			= 4;	// store ref constraints
@@ -256,7 +256,6 @@ const int drq_e_pkg_prv			= 202;	// erase package privileges
 const int drq_m_pkg_prm_defs	= 203;	// modify packaged procedure parameters defaults
 const int drq_s2_difference		= 204;	// Store backup difference file, DYN_mod's change_backup_mode
 const int drq_l_relation		= 205;	// lookup relation before erase
-const int drq_l_fld_src4		= 206;	// lookup a field source
-const int drq_MAX				= 207;
+const int drq_MAX				= 206;
 
 #endif // JRD_DRQ_H
