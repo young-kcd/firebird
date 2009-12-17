@@ -46,4 +46,3 @@ void DYN_define_view_relation(Jrd::Global*, const UCHAR**, const Firebird::MetaN
 void DYN_define_difference(Jrd::Global*, const UCHAR**);
 
 #endif // JRD_DYN_DF_PROTO_H
-

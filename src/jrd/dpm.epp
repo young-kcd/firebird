@@ -1554,7 +1554,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 		for (; slot >= 0 && slot < ppage->ppg_count;)
 		{
 			const SLONG page_number = ppage->ppg_page[slot];
-			const UCHAR* bits = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
+			const UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 			if (page_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary))
 			{
 #ifdef SUPERSERVER_V2
@@ -2971,7 +2971,7 @@ static rhd* locate_space(thread_db* tdbb,
 			const bool dp_is_secondary = PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary);
 			//if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
 			if (dp_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_full) &&
-				(type == DPM_primary && !dp_is_secondary || type != DPM_primary && dp_is_secondary))
+				((type == DPM_primary && !dp_is_secondary) || (type != DPM_primary && dp_is_secondary)))
 			{
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
@@ -3240,7 +3240,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	// What's left fits on a page.  Luckily, we don't have to store it ourselves.
 
 	size = SQZ_length((SCHAR*) rpb->rpb_address, in - (SCHAR*) rpb->rpb_address, dcc);
-	rhdf* header = (rhdf*)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack, NULL, type);
+	rhdf* header = (rhdf*) locate_space(tdbb, rpb, (SSHORT) (RHDF_SIZE + size), stack, NULL, type);
 
 	header->rhdf_flags = rhd_incomplete | rhd_large | rpb->rpb_flags;
 	header->rhdf_transaction = rpb->rpb_transaction_nr;

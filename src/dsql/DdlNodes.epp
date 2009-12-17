@@ -343,8 +343,10 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	END_FOR
 
 	if (!charSetFound)
+	{
 		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
 								Arg::Gds(isc_charset_not_found) << Arg::Str(charSet));
+	}
 
 	if (!collationFound)
 	{
@@ -1583,9 +1585,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 {
 	if (invalid)
-	{
 		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_proc) << name);
-	}
 
 	if (compiled)
 		return;
@@ -2176,9 +2176,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 {
 	if (invalid)
-	{
 		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_trig) << name);
-	}
 
 	if (compiled)
 		return;

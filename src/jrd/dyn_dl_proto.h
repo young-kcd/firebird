@@ -39,4 +39,3 @@ bool	DYN_delete_security_class2(Jrd::jrd_tra* transaction, const Firebird::MetaN
 void	DYN_delete_shadow(Jrd::Global*, const UCHAR**);
 
 #endif // JRD_DYN_DL_PROTO_H
-
