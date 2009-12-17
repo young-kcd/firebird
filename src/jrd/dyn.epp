@@ -410,14 +410,6 @@ void DYN_execute(Global* gbl,
 		DYN_delete_relation(gbl, ptr, relation_name);
 		break;
 
-	case isc_dyn_def_security_class:
-		DYN_define_security_class(gbl, ptr);
-		break;
-
-	case isc_dyn_delete_security_class:
-		DYN_delete_security_class(gbl, ptr);
-		break;
-
 	case isc_dyn_def_exception:
 		DYN_define_exception(gbl, ptr);
 		break;
@@ -476,14 +468,6 @@ void DYN_execute(Global* gbl,
 
 	case isc_dyn_def_trigger:
 		DYN_define_trigger(gbl, ptr, relation_name, NULL, false);
-		break;
-
-	case isc_dyn_def_trigger_msg:
-		DYN_define_trigger_msg(gbl, ptr, trigger_name);
-		break;
-
-	case isc_dyn_mod_trigger_msg:
-		DYN_modify_trigger_msg(gbl, ptr, trigger_name);
 		break;
 
 	case isc_dyn_def_global_fld:

@@ -99,26 +99,6 @@ const int FOR_KEY_DEL_NONE	= 0x80;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-
-static const UCHAR who_blr[] =
-{
-	blr_version5,
-	blr_begin,
-	blr_message, 0, 1, 0,
-	blr_cstring2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_SIZE),
-	blr_begin,
-	blr_send, 0,
-	blr_begin,
-	blr_assignment,
-	blr_user_name,
-	blr_parameter, 0, 0, 0,
-	blr_end,
-	blr_end,
-	blr_end,
-	blr_eoc
-};
-
-
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
 
 static rel_t get_relation_type(thread_db*, Global*, const Firebird::MetaName&);
@@ -147,9 +127,6 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName charsetName;
 
 	GET_STRING(ptr, collation_name);
-
-	if (!collation_name.length())
-		DYN_error_punt(false, 212); // msg 212: "Zero length identifiers not allowed"
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_COLLATION, collation_name, gbl->sqlText);
@@ -421,11 +398,6 @@ void DYN_define_constraint(Global*		gbl,
 	if (constraint_name.length() == 0)
 	{
 		DYN_UTIL_generate_constraint_name(tdbb, gbl, constraint_name);
-	}
-	if (constraint_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
 	}
 
 	jrd_req* request = NULL;
@@ -909,12 +881,6 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 
 	GET_STRING(ptr, exception_name);
 
-	if (exception_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
-
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_EXCEPTION, exception_name, gbl->sqlText);
 
@@ -1245,9 +1211,6 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName filter_name;
 	GET_STRING(ptr, filter_name);
 
-	if (filter_name.isEmpty())
-		DYN_error_punt(false, 212);	// msg 212: "Zero length identifiers not allowed"
-
 	jrd_req* request = CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
 
 	bool b_ending_store = false;
@@ -1333,12 +1296,6 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 
 	Firebird::MetaName function_name;
 	GET_STRING(ptr, function_name);
-
-	if (function_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_FUNCTION, function_name, gbl->sqlText);
@@ -1559,12 +1516,6 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName generator_name;
 	GET_STRING(ptr, generator_name);
 
-	if (generator_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
-
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_SEQUENCE, generator_name, gbl->sqlText);
 
@@ -1674,11 +1625,6 @@ void DYN_define_global_field(Global*		gbl,
 	if (global_field_name.length() == 0)
 	{
 		DYN_UTIL_generate_field_name(tdbb, gbl, global_field_name);
-	}
-	if (global_field_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
 	}
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
@@ -1955,11 +1901,6 @@ void DYN_define_index(Global*		gbl,
 	{
 		DYN_UTIL_generate_index_name(tdbb, gbl, index_name, index_type);
 	}
-	if (index_name.isEmpty())
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_INDEX, index_name, gbl->sqlText);
@@ -2156,11 +2097,6 @@ void DYN_define_index(Global*		gbl,
 
 			case isc_dyn_idx_foreign_key:
 				GET_STRING(ptr, referenced_relation);
-				if (referenced_relation.isEmpty())
-				{
-					DYN_error_punt(false, 212);
-					// msg 212: "Zero length identifiers not allowed"
-				}
 				break;
 
 			case isc_dyn_idx_ref_column:
@@ -2541,12 +2477,6 @@ void DYN_define_local_field(Global*		gbl,
 	Firebird::MetaName local_field_name;
 	GET_STRING(ptr, local_field_name);
 
-	if (local_field_name.isEmpty())
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
-
 	jrd_req* request = NULL;
 	SSHORT id = -1;
 
@@ -2877,12 +2807,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	GET_STRING(ptr, relation_name);
-
-	if (relation_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		(view ? DDL_TRIGGER_CREATE_VIEW : DDL_TRIGGER_CREATE_TABLE), relation_name, gbl->sqlText);
@@ -3228,70 +3152,6 @@ do_error_punt_9:
 }
 
 
-void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ d e f i n e _ s e c u r i t y _ c l a s s
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement.
- *
- **************************************/
-
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-	jrd_req* request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
-
-	bool b_ending_store = false;
-
-	try {
-
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			SC IN RDB$SECURITY_CLASSES
-			GET_STRING(ptr, SC.RDB$SECURITY_CLASS);
-			SC.RDB$ACL.NULL = TRUE;
-			SC.RDB$DESCRIPTION.NULL = TRUE;
-
-			UCHAR verb;
-			while ((verb = *(*ptr)++) != isc_dyn_end)
-			{
-				switch (verb)
-				{
-				case isc_dyn_scl_acl:
-					DYN_put_blr_blob(gbl, ptr, &SC.RDB$ACL);
-					SC.RDB$ACL.NULL = FALSE;
-					break;
-
-				default:
-					DYN_unsupported_verb();
-				}
-			}
-
-			b_ending_store = true;
-
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_classes)) {
-			DYN_REQUEST(drq_s_classes) = request;
-		}
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (b_ending_store)
-		{
-			DYN_rundown_request(request, drq_s_classes);
-			DYN_error_punt(true, 27);
-			// msg 27: "STORE RDB$RELATIONS failed"
-		}
-		throw;
-	}
-}
-
-
 void DYN_define_sql_field(Global*		gbl,
 						  const UCHAR**	ptr,
 						  const Firebird::MetaName*		relation_name,
@@ -3317,12 +3177,6 @@ void DYN_define_sql_field(Global*		gbl,
 
 	Firebird::MetaName sql_field_name;
 	GET_STRING(ptr, sql_field_name);
-
-	if (sql_field_name.isEmpty())
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
@@ -3701,19 +3555,10 @@ void DYN_define_trigger(Global*						gbl,
 
 	GET_STRING(ptr, t);
 	if (t.length() == 0)
-	{
 		DYN_UTIL_generate_trigger_name(tdbb, gbl, t);
-	}
 
-	if (t.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
-
-	if (trigger_name) {
+	if (trigger_name)
 		*trigger_name = t;
-	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
 
@@ -3882,83 +3727,6 @@ void DYN_define_trigger(Global*						gbl,
 }
 
 
-void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const Firebird::MetaName* trigger_name)
-{
-/**************************************
- *
- *	D Y N _ d e f i n e _ t r i g g e r _ m s g
- *
- **************************************
- *
- * Functional description
- *	Define a trigger message.
- *
- **************************************/
-
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
-
-	bool b_ending_store = false;
-
-	try {
-
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$TRIGGER_MESSAGES
-			X.RDB$MESSAGE_NUMBER = DYN_get_number(ptr);
-			X.RDB$MESSAGE.NULL = TRUE;
-			if (trigger_name)
-			{
-				strcpy(X.RDB$TRIGGER_NAME, trigger_name->c_str());
-				X.RDB$TRIGGER_NAME.NULL = FALSE;
-			}
-			else {
-				X.RDB$TRIGGER_NAME.NULL = TRUE;
-			}
-
-			UCHAR verb;
-			while ((verb = *(*ptr)++) != isc_dyn_end)
-			{
-				switch (verb)
-				{
-				case isc_dyn_trg_name:
-					GET_STRING(ptr, X.RDB$TRIGGER_NAME);
-					X.RDB$TRIGGER_NAME.NULL = FALSE;
-					break;
-
-				case isc_dyn_trg_msg:
-					GET_STRING(ptr, X.RDB$MESSAGE);
-					X.RDB$MESSAGE.NULL = FALSE;
-					break;
-
-				default:
-					DYN_unsupported_verb();
-				}
-			}
-
-			b_ending_store = true;
-
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_trg_msgs)) {
-			DYN_REQUEST(drq_s_trg_msgs) = request;
-		}
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (b_ending_store)
-		{
-			DYN_rundown_request(request, drq_s_trg_msgs);
-			DYN_error_punt(true, 33);
-			// msg 33: "DEFINE TRIGGER MESSAGE failed"
-		}
-		throw;
-	}
-}
-
-
 void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaName* view)
 {
 /**************************************
@@ -3976,11 +3744,6 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 	Database* dbb = tdbb->getDatabase();
 
 	fb_assert(view);
-	if (view->isEmpty())
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
 	SSHORT id = drq_s_view_rels;

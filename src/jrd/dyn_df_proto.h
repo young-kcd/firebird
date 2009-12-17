@@ -39,11 +39,9 @@ void DYN_define_index(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, UC
 void DYN_define_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
 void DYN_define_relation(Jrd::Global*, const UCHAR**, bool view);
 void DYN_define_role(Jrd::Global*, const UCHAR**);
-void DYN_define_security_class(Jrd::Global*, const UCHAR**);
 void DYN_define_shadow(Jrd::Global*, const UCHAR**);
 void DYN_define_sql_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
 void DYN_define_trigger(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, const bool);
-void DYN_define_trigger_msg(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void DYN_define_view_relation(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void DYN_define_difference(Jrd::Global*, const UCHAR**);
 

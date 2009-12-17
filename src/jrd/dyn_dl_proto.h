@@ -35,7 +35,6 @@ void	DYN_delete_index(Jrd::Global*, const UCHAR**);
 void	DYN_delete_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void	DYN_delete_relation(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void	DYN_delete_role(Jrd::Global*, const UCHAR**);
-void	DYN_delete_security_class(Jrd::Global*, const UCHAR**);
 bool	DYN_delete_security_class2(Jrd::jrd_tra* transaction, const Firebird::MetaName& security_class);
 void	DYN_delete_shadow(Jrd::Global*, const UCHAR**);
 

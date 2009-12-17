@@ -81,15 +81,9 @@ using namespace Firebird;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-//const int MAX_CHARS_SHORT	= 6;		// 2**16  = 5 chars + sign
-//const int MAX_CHARS_LONG	= 11;		// 2**32  = 10 chars + sign
-//const int MAX_CHARS_INT64	= 20;		// 2**64  = 19 chars + sign
-//const int MAX_CHARS_DOUBLE	= 22;	// 15 digits + 2 signs + E + decimal + 3 digit exp
-//const int MAX_CHARS_FLOAT	= 13;		// 7 digits + 2 signs + E + decimal + 2 digit exp
-
 static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
-static void change_backup_mode(Global*, UCHAR verb);
 
+static void change_backup_mode(Global*, UCHAR verb);
 static void modify_lfield_position(thread_db*, Global*, const MetaName&, const MetaName&,
 	USHORT, USHORT);
 static bool check_view_dependency(thread_db*, Global*, const MetaName&, const MetaName&);
@@ -468,58 +462,53 @@ void DYN_modify_global_field(Global* gbl,
 				{
 					MetaName newfld;
 
-					if (GET_STRING(ptr, newfld))
+					GET_STRING(ptr, newfld);
+
+					if (!domain_exists(tdbb, gbl, newfld))
 					{
-						if (!domain_exists(tdbb, gbl, newfld))
-						{
-							MODIFY FLD USING
-								strcpy(FLD.RDB$FIELD_NAME, newfld.c_str());
-								FLD.RDB$FIELD_NAME.NULL = FALSE;
-								jrd_req* old_request = request;
-								request = NULL;
-								// CVC: Let's update the dimensions, too.
-								if (has_dimensions)
-								{
-									FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-										DIM_DOM IN RDB$FIELD_DIMENSIONS
-										WITH DIM_DOM.RDB$FIELD_NAME EQ orig_dom.dyn_fld_name.c_str()
-										MODIFY DIM_DOM USING
-											strcpy (DIM_DOM.RDB$FIELD_NAME, newfld.c_str());
-											DIM_DOM.RDB$FIELD_NAME.NULL = FALSE;
-										END_MODIFY;
-									END_FOR;
-									CMP_release (tdbb, request);
-									request = NULL;
-								}
-								// CVC: End modification.
-								FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-									DOM IN RDB$RELATION_FIELDS
-									WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
-									MODIFY DOM USING
-										strcpy(DOM.RDB$FIELD_SOURCE, newfld.c_str());
-										DOM.RDB$FIELD_SOURCE.NULL = FALSE;
+						MODIFY FLD USING
+							strcpy(FLD.RDB$FIELD_NAME, newfld.c_str());
+							FLD.RDB$FIELD_NAME.NULL = FALSE;
+							jrd_req* old_request = request;
+							request = NULL;
+							// CVC: Let's update the dimensions, too.
+							if (has_dimensions)
+							{
+								FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+									DIM_DOM IN RDB$FIELD_DIMENSIONS
+									WITH DIM_DOM.RDB$FIELD_NAME EQ orig_dom.dyn_fld_name.c_str()
+									MODIFY DIM_DOM USING
+										strcpy (DIM_DOM.RDB$FIELD_NAME, newfld.c_str());
+										DIM_DOM.RDB$FIELD_NAME.NULL = FALSE;
 									END_MODIFY;
-									modify_lfield_index(tdbb, gbl,
-														DOM.RDB$RELATION_NAME,
-														DOM.RDB$FIELD_NAME,
-														DOM.RDB$FIELD_NAME);
 								END_FOR;
-								CMP_release(tdbb, request);
-								request = old_request;
-							END_MODIFY;
-						}
-						else
-						{
-							DYN_error_punt(false, 204, SafeArg() << orig_dom.dyn_fld_name.c_str() <<
-										   newfld.c_str());
-							// msg 204: Cannot rename domain %s to %s.  A domain with that name already exists.
-						}
+								CMP_release (tdbb, request);
+								request = NULL;
+							}
+							// CVC: End modification.
+							FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+								DOM IN RDB$RELATION_FIELDS
+								WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
+								MODIFY DOM USING
+									strcpy(DOM.RDB$FIELD_SOURCE, newfld.c_str());
+									DOM.RDB$FIELD_SOURCE.NULL = FALSE;
+								END_MODIFY;
+								modify_lfield_index(tdbb, gbl,
+													DOM.RDB$RELATION_NAME,
+													DOM.RDB$FIELD_NAME,
+													DOM.RDB$FIELD_NAME);
+							END_FOR;
+							CMP_release(tdbb, request);
+							request = old_request;
+						END_MODIFY;
 					}
 					else
 					{
-						DYN_error_punt(false, 212);
-						// msg 212: "Zero length identifiers not allowed"
+						DYN_error_punt(false, 204, SafeArg() << orig_dom.dyn_fld_name.c_str() <<
+									   newfld.c_str());
+						// msg 204: Cannot rename domain %s to %s.  A domain with that name already exists.
 					}
+
 					break;
 				}
 
@@ -1160,11 +1149,6 @@ void DYN_modify_local_field(Global* gbl, const UCHAR** ptr, const MetaName* rela
 			{
 				MetaName new_fld;
 				GET_STRING(&new_name, new_fld);
-				if (new_fld.length() == 0)
-				{
-					DYN_error_punt(false, 212);
-					// msg 212: "Zero length identifiers not allowed"
-				}
 
 				check_view_dependency(tdbb, gbl, r, f);
 				check_sptrig_dependency(tdbb, gbl, r, f);
@@ -1334,77 +1318,6 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_name)
-{
-/**************************************
- *
- *	D Y N _ m o d i f y _ t r i g g e r _ m s g
- *
- **************************************
- *
- * Functional description
- *	Modify a trigger message.
- *
- **************************************/
-	MetaName t;
-
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
-
-	try {
-
-		const int number = DYN_get_number(ptr);
-		if (trigger_name)
-			t = *trigger_name;
-		else if (*(*ptr)++ == isc_dyn_trg_name)
-			GET_STRING(ptr, t);
-		else
-			DYN_error_punt(false, 103); // msg 103: "TRIGGER NAME expected"
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$TRIGGER_MESSAGES
-				WITH X.RDB$MESSAGE_NUMBER EQ number AND X.RDB$TRIGGER_NAME EQ t.c_str()
-
-			if (!DYN_REQUEST(drq_m_trg_msg))
-				DYN_REQUEST(drq_m_trg_msg) = request;
-
-			MODIFY X
-				UCHAR verb;
-				while ((verb = *(*ptr)++) != isc_dyn_end)
-					switch (verb)
-					{
-					case isc_dyn_trg_msg_number:
-						X.RDB$MESSAGE_NUMBER = DYN_get_number(ptr);
-						X.RDB$MESSAGE_NUMBER.NULL = FALSE;
-						break;
-
-					case isc_dyn_trg_msg:
-						GET_STRING(ptr, X.RDB$MESSAGE);
-						X.RDB$MESSAGE.NULL = FALSE;
-						break;
-
-					default:
-						DYN_unsupported_verb();
-					}
-			END_MODIFY;
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_m_trg_msg))
-			DYN_REQUEST(drq_m_trg_msg) = request;
-
-	}
-	catch (const Exception& ex)
-	{
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 105);
-		// msg 105: "MODIFY TRIGGER MESSAGE failed"
-	}
-}
-
-
 void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -1422,12 +1335,6 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 	MetaName view_name;
 	GET_STRING(ptr, view_name);
-
-	if (view_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
 
 	jrd_req* request = NULL;
 	bool found = false;
@@ -2012,7 +1919,6 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	//Database* dbb = tdbb->getDatabase();
 
 	dyn_fld orig_fld, new_fld, dom_fld;
 

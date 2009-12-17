@@ -1371,37 +1371,6 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-void DYN_delete_security_class( Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ d e l e t e _ s e c u r i t y _ c l a s s
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement that
- *	deletes a security class.
- *
- **************************************/
-	Firebird::MetaName security_class;
-
-	GET_STRING(ptr, security_class);
-
-	if (!DYN_delete_security_class2(gbl->gbl_transaction, security_class))
-	{
-		DYN_error_punt(false, 75);
-		// msg 75: "Security class not found"
-	}
-
-	while (*(*ptr)++ != isc_dyn_end)
-	{
-		--(*ptr);
-		DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, NULL);
-	}
-}
-
-
 void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
