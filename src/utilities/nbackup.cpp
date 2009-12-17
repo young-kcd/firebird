@@ -135,7 +135,7 @@ namespace
 		printMsg(15);
 		printMsg(16);
 		printMsg(17);
-		printMsg(24);
+		printMsg(70);
 		printMsg(18);
 		printMsg(19);
 		printMsg(20);

@@ -3459,8 +3459,8 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'nbackup.cpp', 'usage', NULL, 24, 21, NULL, '  incremental backups of multi-file databases are not supported yet', NULL, NULL)
 (NULL, 'nbackup.cpp', 'usage', NULL, 24, 22, NULL, '  "stdout" may be used as a value of <filename> for -B option', NULL, NULL)
 (NULL, 'nbackup.cpp', 'usage', NULL, 24, 23, NULL, 'PROBLEM ON "%s".', NULL, NULL)
-(NULL, 'nbackup.cpp', 'usage', NULL, 24, 24, NULL, '  -D                                    Use direct I/O when scanning database', NULL, NULL)
---(NULL, 'nbackup.cpp', 'usage', NULL, 24, 25, NULL, '', NULL, NULL);
+(NULL, 'nbackup.cpp', 'usage', NULL, 24, 70, NULL, '  -D                                    Use direct I/O when scanning database', NULL, NULL)
+--(NULL, 'nbackup.cpp', 'usage', NULL, 24, 71, NULL, '', NULL, NULL);
 stop
 
 COMMIT WORK;
