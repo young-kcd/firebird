@@ -3941,17 +3941,17 @@ comment
 	: COMMENT ON ddl_type0 IS ddl_desc
 		{
 			$$ = makeClassNode(FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
-				"", "", ($5 ? toString($5) : ""), $5->str_charset));
+				"", "", ($5 ? toString($5) : ""), ($5 ? $5->str_charset : NULL)));
 		}
 	| COMMENT ON ddl_type1 symbol_ddl_name IS ddl_desc
 		{
 			$$ = makeClassNode(FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
-				toName($4), "", ($6 ? toString($6) : ""), $6->str_charset));
+				toName($4), "", ($6 ? toString($6) : ""), ($6 ? $6->str_charset : NULL)));
 		}
 	| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
 		{
 			$$ = makeClassNode(FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
-				toName($4), toName($5), ($7 ? toString($7) : ""), $7->str_charset));
+				toName($4), toName($5), ($7 ? toString($7) : ""), ($7 ? $7->str_charset : NULL)));
 		}
 	;
 
