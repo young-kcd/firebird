@@ -1,3 +1,9 @@
+2009-12-17 09:05  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.348.2.10):
+
+	Misc.
+
 2009-12-10 16:46  hvlad
 
 	* firebird2/src/dsql/pass1.cpp (1.348.2.9):
