@@ -1,3 +1,104 @@
+2009-12-17 11:50  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.117),
+	lang_helpers/gds_codes.pas (1.115), src/dsql/DdlNodes.epp (1.26),
+	src/dsql/dsql.h (1.163), src/include/gen/codetext.h (1.125),
+	src/include/gen/iberror.h (1.129), src/include/gen/msgs.h (1.156),
+	src/include/gen/sql_code.h (1.131), src/include/gen/sql_state.h
+	(1.61), src/msgs/facilities2.sql (1.100), src/msgs/messages2.sql
+	(1.123), src/msgs/system_errors2.sql (1.77):
+
+	Make more error messages non-hardcoded.
+
+2009-12-17 11:45  robocop
+
+	* firebird2/src/utilities/: nbackup.cpp (1.102), nbackup/nbkswi.h
+	(1.8):
+
+	Correction.
+
+2009-12-17 11:44  robocop
+
+	* firebird2/src/utilities/gsec/gsecswi.h (1.23):
+
+	Misc.
+
+2009-12-17 11:25  hvlad
+
+	* firebird2/src/jrd/: pag.cpp (1.240), pag.h (1.28), validation.cpp
+	(1.60):
+
+	Misc : rename PageSpace::ppFirst to pipFirst
+
+2009-12-17 10:50  hvlad
+
+	* firebird2/src/jrd/: dpm.epp (1.116), ods.h (1.67):
+
+	ODS change : implement dpg_secondary flag.  Other : make table scan
+	skip secondary data pages, propagate record type to the
+	store_big_record to allow record head be stored at the primary
+	record page.
+
+2009-12-17 10:04  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.261):
+
+	Restored the validation that was formerly related to FUN_resolve()
+	which has been cleaned up.
+
+2009-12-17 02:36  asfernandes
+
+	* firebird2/src/jrd/: drq.h (1.38), dyn.epp (1.168), dyn_def.epp
+	(1.197), dyn_del.epp (1.91), dyn_df_proto.h (1.15), dyn_dl_proto.h
+	(1.11), dyn_mod.epp (1.135):
+
+	Cleanup
+
+2009-12-17 01:43  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.347):
+
+	Fix COMMENT ON ... IS NULL
+
+2009-12-17 01:38  asfernandes
+
+	* firebird2/src/jrd/: drq.h (1.37), dyn.epp (1.167), dyn_def.epp
+	(1.196), dyn_md_proto.h (1.12), dyn_mod.epp (1.134):
+
+	Cleanup
+
+2009-12-17 01:07  asfernandes
+
+	* firebird2/src/jrd/: drq.h (1.36), dyn_def.epp (1.195):
+
+	Cleanup
+
+2009-12-16 22:51  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.293), jrd/constants.h (1.72),
+	jrd/dyn_util.epp (1.70), jrd/fun_proto.h (1.21), jrd/svc.cpp
+	(1.304), jrd/recsrc/RecordSource.cpp (1.7), msgs/facilities2.sql
+	(1.99), utilities/nbackup.cpp (1.101),
+	utilities/gsec/call_service.cpp (1.31), utilities/nbackup/nbkswi.h
+	(1.7):
+
+	Misc
+
+2009-12-16 19:35  dimitr
+
+	* firebird2/src/jrd/: exe.cpp (1.321), req.h (1.104):
+
+	Cleanup.
+
+2009-12-16 18:28  alexpeshkoff
+
+	* firebird2/src/: include/consts_pub.h (1.42), jrd/svc.cpp (1.303),
+	msgs/facilities2.sql (1.98), msgs/messages2.sql (1.122),
+	utilities/fbsvcmgr.cpp (1.42), utilities/nbackup.cpp (1.100),
+	utilities/nbackup/nbkswi.h (1.6):
+
+	Added switch to nbackup, controlling direct access to database file
+
 2009-12-16 14:40  alexpeshkoff
 
 	* firebird2/src/: common/classes/ClumpletReader.cpp (1.48),
