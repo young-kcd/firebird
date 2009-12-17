@@ -797,8 +797,12 @@ static const struct {
 	{336068858, "42000"}, // 250 dyn_no_empty_pw
 	{336068859, "42S11"}, // 251 dyn_dup_index
 	{336068864, "42000"}, // 256 dyn_package_not_found
-	{336068865, "42000"}, // 257 dyn_packproc_not_found
-	{336068866, "42000"}, // 258 dyn_packfunc_not_found
+	{336068865, "42000"}, // 257 dyn_schema_not_found
+	{336068866, "HY000"}, // 258 dyn_cannot_mod_sysproc
+	{336068867, "HY000"}, // 259 dyn_cannot_mod_systrig
+	{336068868, "HY000"}, // 260 dyn_cannot_mod_sysfunc
+	{336068869, "HY000"}, // 261 dyn_invalid_ddl_proc
+	{336068870, "HY000"}, // 262 dyn_invalid_ddl_trig
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig

@@ -343,11 +343,13 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	END_FOR
 
 	if (!charSetFound)
-		status_exception::raise(Arg::Gds(isc_charset_not_found) << Arg::Str(charSet));
+		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+								Arg::Gds(isc_charset_not_found) << Arg::Str(charSet));
 
 	if (!collationFound)
 	{
-		status_exception::raise(Arg::Gds(isc_collation_not_found) << Arg::Str(defaultCollation) <<
+		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+								Arg::Gds(isc_collation_not_found) << Arg::Str(defaultCollation) <<
 																	 Arg::Str(charSet));
 	}
 
@@ -499,18 +501,10 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objName);
 			break;
 
-		case ddl_packaged_procedure:
-			table = "rdb$procedures";
-			column = "rdb$package_name";
-			subColumn = "rdb$procedure_name";
-			status << Arg::Gds(isc_dyn_packproc_not_found) << Arg::Str(subName) << Arg::Str(objName);
-			break;
-
-		case ddl_packaged_udf:
-			table = "rdb$functions";
-			column = "rdb$package_name";
-			subColumn = "rdb$function_name";
-			status << Arg::Gds(isc_dyn_packfunc_not_found) << Arg::Str(subName) << Arg::Str(objName);
+		case ddl_schema:
+			table = "rdb$schemas";
+			column = "rdb$schema_name";
+			status << Arg::Gds(isc_dyn_schema_not_found) << Arg::Str(objName);
 			break;
 	}
 
@@ -612,8 +606,7 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			{
 				status_exception::raise(
 					Arg::Gds(isc_no_meta_update) <<
-					Arg::Gds(isc_dyn_func_not_found) <<
-					Arg::Str(name));
+					Arg::Gds(isc_dyn_func_not_found) << Arg::Str(name));
 			}
 		}
 
@@ -721,6 +714,12 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 		WITH FUN.RDB$FUNCTION_NAME EQ name.c_str() AND
 			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
+		if (!FUN.RDB$SYSTEM_FLAG.NULL && FUN.RDB$SYSTEM_FLAG)
+		{
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+									Arg::Gds(isc_dyn_cannot_mod_sysfunc) << FUN.RDB$FUNCTION_NAME);
+		}
+
 		if (package.isEmpty())
 			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION, name);
 
@@ -949,10 +948,8 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		if (!FUN.RDB$SYSTEM_FLAG.NULL && FUN.RDB$SYSTEM_FLAG)
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("Cannot ALTER or DROP a system function"));
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+									Arg::Gds(isc_dyn_cannot_mod_sysfunc) << FUN.RDB$FUNCTION_NAME);
 		}
 
 		if (package.isEmpty())
@@ -968,8 +965,7 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		status_exception::raise(
 			Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_dyn_func_not_found) <<
-			Arg::Str(name));
+			Arg::Gds(isc_dyn_func_not_found) << Arg::Str(name));
 	}
 
 	requestHandle.reset(tdbb, drq_e_func_args, DYN_REQUESTS);
@@ -1091,8 +1087,7 @@ Node* CreateAlterProcedureNode::internalDsqlPass()
 					status_exception::raise(
 						Arg::Gds(isc_sqlerr) <<
 						Arg::Num(-901) <<
-						Arg::Gds(isc_dsql_var_conflict) <<
-						Arg::Str(field->fld_name));
+						Arg::Gds(isc_dsql_var_conflict) << Arg::Str(field->fld_name));
 				}
 			}
 		}
@@ -1145,8 +1140,7 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			{
 				status_exception::raise(
 					Arg::Gds(isc_no_meta_update) <<
-					Arg::Gds(isc_dyn_proc_not_found) <<
-					Arg::Str(name));
+					Arg::Gds(isc_dyn_proc_not_found) << Arg::Str(name));
 			}
 		}
 	}
@@ -1279,10 +1273,8 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 	{
 		if (!P.RDB$SYSTEM_FLAG.NULL && P.RDB$SYSTEM_FLAG)
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("Cannot ALTER or DROP a system object"));
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+									Arg::Gds(isc_dyn_cannot_mod_sysproc) << P.RDB$PROCEDURE_NAME);
 		}
 
 		if (!secondPass && runTriggers && package.isEmpty())
@@ -1592,8 +1584,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 {
 	if (invalid)
 	{
-		//// TODO: localize
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Invalid DDL statement"));
+		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_proc) << name);
 	}
 
 	if (compiled)
@@ -1817,10 +1808,8 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		if (!PRC.RDB$SYSTEM_FLAG.NULL && PRC.RDB$SYSTEM_FLAG)
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("Cannot ALTER or DROP a system object"));
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+									Arg::Gds(isc_dyn_cannot_mod_sysproc) << PRC.RDB$PROCEDURE_NAME);
 		}
 
 		if (package.isEmpty())
@@ -1839,8 +1828,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		status_exception::raise(
 			Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_dyn_proc_not_found) <<
-			Arg::Str(name));
+			Arg::Gds(isc_dyn_proc_not_found) << Arg::Str(name));
 	}
 
 	if (package.isEmpty())
@@ -2003,8 +1991,7 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			status_exception::raise(
 				Arg::Gds(isc_no_meta_update) <<
-				Arg::Gds(isc_dyn_trig_not_found) <<
-				Arg::Str(name));
+				Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(name));
 		}
 	}
 
@@ -2020,8 +2007,7 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			{
 				status_exception::raise(
 					Arg::Gds(isc_no_meta_update) <<
-					Arg::Gds(isc_dyn_trig_not_found) <<
-					Arg::Str(name));
+					Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(name));
 			}
 		}
 	}
@@ -2097,14 +2083,13 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 				case fb_sysflag_check_constraint:
 				case fb_sysflag_referential_constraint:
 				case fb_sysflag_view_check:
-					status_exception::raise(Arg::Gds(isc_dyn_cant_modify_auto_trig));
+					status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+											Arg::Gds(isc_dyn_cant_modify_auto_trig));
 					break;
 
 				case fb_sysflag_system:
-					//// TODO: localize
-					status_exception::raise(
-						Arg::Gds(isc_random) <<
-						Arg::Str("Cannot ALTER or DROP a system object"));
+					status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+											Arg::Gds(isc_dyn_cannot_mod_systrig) << TRG.RDB$TRIGGER_NAME);
 					break;
 
 				default:
@@ -2192,8 +2177,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 {
 	if (invalid)
 	{
-		//// TODO: localize
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Invalid DDL statement"));
+		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_trig) << name);
 	}
 
 	if (compiled)
@@ -2319,10 +2303,31 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		X IN RDB$TRIGGERS
 		WITH X.RDB$TRIGGER_NAME EQ name.c_str()
 	{
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_TRIGGER, name);
+		if (!X.RDB$SYSTEM_FLAG.NULL)
+		{
+			switch (X.RDB$SYSTEM_FLAG)
+			{
+				case fb_sysflag_check_constraint:
+				case fb_sysflag_referential_constraint:
+				case fb_sysflag_view_check:
+					status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+											Arg::Gds(isc_dyn_cant_modify_auto_trig));
+					break;
+
+				case fb_sysflag_system:
+					status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+											Arg::Gds(isc_dyn_cannot_mod_systrig) << X.RDB$TRIGGER_NAME);
+					break;
+
+				default:
+					break;
+			}
+		}
 
 		if (X.RDB$RELATION_NAME.NULL && !transaction->getAttachment()->locksmith())
 			status_exception::raise(Arg::Gds(isc_adm_task_denied));
+
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_TRIGGER, name);
 
 		relationName = X.RDB$RELATION_NAME;
 		ERASE X;
@@ -2334,8 +2339,7 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		status_exception::raise(
 			Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_dyn_trig_not_found) <<
-			Arg::Str(name));
+			Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(name));
 	}
 
 	requestHandle.reset(tdbb, drq_e_trg_msgs3, DYN_REQUESTS);

@@ -1604,10 +1604,18 @@ C --
       PARAMETER (GDS__dyn_dup_index                    = 336068859)
       INTEGER*4 GDS__dyn_package_not_found           
       PARAMETER (GDS__dyn_package_not_found            = 336068864)
-      INTEGER*4 GDS__dyn_packproc_not_found          
-      PARAMETER (GDS__dyn_packproc_not_found           = 336068865)
-      INTEGER*4 GDS__dyn_packfunc_not_found          
-      PARAMETER (GDS__dyn_packfunc_not_found           = 336068866)
+      INTEGER*4 GDS__dyn_schema_not_found            
+      PARAMETER (GDS__dyn_schema_not_found             = 336068865)
+      INTEGER*4 GDS__dyn_cannot_mod_sysproc          
+      PARAMETER (GDS__dyn_cannot_mod_sysproc           = 336068866)
+      INTEGER*4 GDS__dyn_cannot_mod_systrig          
+      PARAMETER (GDS__dyn_cannot_mod_systrig           = 336068867)
+      INTEGER*4 GDS__dyn_cannot_mod_sysfunc          
+      PARAMETER (GDS__dyn_cannot_mod_sysfunc           = 336068868)
+      INTEGER*4 GDS__dyn_invalid_ddl_proc            
+      PARAMETER (GDS__dyn_invalid_ddl_proc             = 336068869)
+      INTEGER*4 GDS__dyn_invalid_ddl_trig            
+      PARAMETER (GDS__dyn_invalid_ddl_trig             = 336068870)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

@@ -2172,8 +2172,12 @@ COMMIT WORK;
 ('dyn_dup_generator', 'DYN_define_generator', 'dyn_def.epp', NULL, 8, 254, NULL, 'Generator @1 already exists', NULL, NULL);
 (NULL, 'revoke_all', 'dyn.epp', NULL, 8, 255, NULL, 'ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL', NULL, NULL);
 ('dyn_package_not_found', 'CommentOnNode::execute', 'DdlNodes.epp', NULL, 8, 256, NULL, 'Package @1 not found', NULL, NULL);
-('dyn_packproc_not_found', 'CommentOnNode::execute', 'DdlNodes.epp', NULL, 8, 257, NULL, 'Procedure @1 in package @2 not found', NULL, NULL);
-('dyn_packfunc_not_found', 'CommentOnNode::execute', 'DdlNodes.epp', NULL, 8, 258, NULL, 'Function @1 in package @2 not found', NULL, NULL);
+('dyn_schema_not_found', 'CommentOnNode::execute', 'DdlNodes.epp', NULL, 8, 257, NULL, 'Schema @1 not found', NULL, NULL);
+('dyn_cannot_mod_sysproc', NULL, 'DdlNodes.epp', NULL, 8, 258, NULL, 'Cannot ALTER or DROP system procedure @1', NULL, NULL);
+('dyn_cannot_mod_systrig', NULL, 'DdlNodes.epp', NULL, 8, 259, NULL, 'Cannot ALTER or DROP system trigger @1', NULL, NULL);
+('dyn_cannot_mod_sysfunc', NULL, 'DdlNodes.epp', NULL, 8, 260, NULL, 'Cannot ALTER or DROP system function @1', NULL, NULL);
+('dyn_invalid_ddl_proc', 'CreateAlterProcedureNode::compile', 'DdlNodes.epp', NULL, 8, 261, NULL, 'Invalid DDL statement for procedure @1', NULL, NULL);
+('dyn_invalid_ddl_trig', 'CreateAlterTriggerNode::compile', 'DdlNodes.epp', NULL, 8, 262, NULL, 'Invalid DDL statement for trigger @1', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
@@ -3366,7 +3370,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 21, NULL, '  Incremental backups of multi-file databases are not supported yet.', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 22, NULL, '  "stdout" may be used as a value of <filename> for -B option.', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 23, NULL, 'PROBLEM ON "@1".', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 24, NULL, '  -D(IRECT)                              Use direct I/O when scanning database', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 24, NULL, 'general options are:', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 25, NULL, 'switches can be abbreviated to the unparenthesized characters', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 26, NULL, '  Option -S(IZE) only is valid together with -L(OCK).', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 27, NULL, '  For historical reasons, -N is equivalent to -UN(LOCK)', NULL, NULL)
@@ -3412,7 +3416,7 @@ Analyzing database pages ...', NULL, NULL);
 ('nbackup_lostguid_l0bk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 67, NULL, 'Cannot get backup guid clumplet from L0 backup', NULL, NULL)
 (NULL, 'nbackup', 'nbackup.cpp', NULL, 24, 68, NULL, 'Physical Backup Manager version @1', NULL, NULL)
 (NULL, 'restore_database', 'nbackup.cpp', NULL, 24, 69, NULL, 'Enter name of the backup file of level @1 ("." - do not restore further):', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 70, NULL, 'general options are:', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 70, NULL, '  -D(IRECT)                              Use direct I/O when scanning database', NULL, NULL)
 --('nbackup_', '', 'nbackup.cpp', NULL, 24, , NULL, '', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
