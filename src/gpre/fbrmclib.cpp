@@ -213,7 +213,7 @@ static void ClearShortPool()
 {
 	for (int i = 0; i < MAX_PARAMS; i++)
 	{
-		if (shortPoolInitialized && intPool[i])
+		if (shortPoolInitialized && shortPool[i])
 			free(shortPool[i]);
 		shortPool[i] = NULL;
 	}
