@@ -605,9 +605,14 @@ void Service::hidePasswd(ArgvType&, int)
 	// no action
 }
 
-ISC_STATUS* Service::getStatus()
+const ISC_STATUS* Service::getStatus()
 {
 	return svc_status;
+}
+
+void Service::initStatus()
+{
+	fb_utils::init_status(svc_status);
 }
 
 void Service::checkService()
@@ -2213,7 +2218,7 @@ void Service::readFbLog()
 	}
 	catch (const Firebird::Exception& e)
 	{
-		e.stuff_exception(getStatus());
+		e.stuff_exception(svc_status);
 	}
 
 	if (file)

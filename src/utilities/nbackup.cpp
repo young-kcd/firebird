@@ -1186,7 +1186,10 @@ THREAD_ENTRY_DECLARE NBACKUP_main(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Exception& e)
 	{
-		e.stuff_exception(uSvc->getStatus());
+		ISC_STATUS_ARRAY status;
+		e.stuff_exception(status);
+		uSvc->initStatus();
+		uSvc->setServiceStatus(status);
 		exit_code = FB_FAILURE;
 	}
 

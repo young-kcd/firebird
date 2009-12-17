@@ -103,7 +103,10 @@ THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		e.stuff_exception(uSvc->getStatus());
+		ISC_STATUS_ARRAY status;
+		e.stuff_exception(status);
+		uSvc->initStatus();
+		uSvc->setServiceStatus(status);
 		exit_code = FB_FAILURE;
 	}
 
@@ -590,8 +593,9 @@ int alice(Firebird::UtilSvc* uSvc)
 #endif
 
 	if ((exit_code != FINI_OK) && uSvc->isService())
-    {
-        memcpy(uSvc->getStatus(), tdgbl->status, sizeof (ISC_STATUS_ARRAY));
+	{
+		uSvc->initStatus();
+		uSvc->setServiceStatus(tdgbl->status);
 	}
 
 	return exit_code;

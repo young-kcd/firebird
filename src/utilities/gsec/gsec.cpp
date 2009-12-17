@@ -100,7 +100,10 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		e.stuff_exception(uSvc->getStatus());
+		ISC_STATUS_ARRAY status;
+		e.stuff_exception(status);
+		uSvc->initStatus();
+		uSvc->setServiceStatus(status);
 		exit_code = FB_FAILURE;
 	}
 
@@ -381,11 +384,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		tdsec->tsec_throw = false;
 
 		GSEC_print_status(status);
-		if (uSvc->getStatus())
-		{
-			fb_utils::init_status(uSvc->getStatus());
-			uSvc->setServiceStatus(status);
-		}
+		uSvc->initStatus();
+		uSvc->setServiceStatus(status);
 
 		exit_code = FINI_ERROR;
 	}

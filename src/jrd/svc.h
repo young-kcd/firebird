@@ -118,7 +118,9 @@ public:		// utilities interface with service
 	// no-op for services
 	virtual void hidePasswd(ArgvType&, int);
 	// return service status
-    virtual ISC_STATUS* getStatus();
+    virtual const ISC_STATUS* getStatus();
+	// reset service status
+	virtual void initStatus();
 	// no-op for services
 	virtual void checkService();
 	// add address path (taken from spb) to dpb if present

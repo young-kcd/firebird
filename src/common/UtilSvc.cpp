@@ -110,9 +110,10 @@ public:
 	virtual void putBytes(const UCHAR*, size_t) { }
 	virtual void setServiceStatus(const ISC_STATUS*) { }
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
-    virtual ISC_STATUS* getStatus() { return 0; }
+    virtual const ISC_STATUS* getStatus() { return 0; }
 	virtual void getAddressPath(ClumpletWriter&) { }
 	virtual bool finished() { return m_finished; };
+	virtual void initStatus() { }
 
 private:
 	bool m_finished;
