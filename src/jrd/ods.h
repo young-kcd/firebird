@@ -322,6 +322,7 @@ const UCHAR dpg_orphan	= 1;		// Data page is NOT in pointer page
 const UCHAR dpg_full	= 2;		// Pointer page is marked FULL
 const UCHAR dpg_large	= 4;		// Large object is on page
 const UCHAR dpg_swept	= 8;		// Sweep has nothing to do on this page
+const UCHAR dpg_secondary	= 16;	// Primary record versions not stored on this page
 
 
 // Index root page
@@ -467,7 +468,9 @@ const int PPG_DP_BITS_NUM	= 4;		// Number of additional flag bits per data page
 const UCHAR ppg_dp_full		= 1;		// Data page is FULL
 const UCHAR ppg_dp_large	= 2;		// Large object is on data page
 const UCHAR ppg_dp_swept	= 4;		// Sweep has nothing to do on data page
-const UCHAR ppg_dp_reserved	= 8;		// not used currently
+const UCHAR ppg_dp_secondary = 8;		// Primary record versions not stored on data page
+
+const UCHAR PPG_DP_ALL_BITS	= (1 << PPG_DP_BITS_NUM) - 1;
 
 #define PPG_DP_BIT_MASK(slot, bit)		((bit) << (((slot) & 1) << 2))
 #define PPG_DP_BITS_BYTE(bits, slot)	((bits)[(slot) >> 1])
