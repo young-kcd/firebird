@@ -278,6 +278,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 		case isc_deadlock:
 		case isc_lock_conflict:
 		case isc_lock_timeout:
+			statusVector.copyTo(tdbb->tdbb_status_vector);
 			return false;
 		case isc_lockmanerr:
 			dbb->dbb_flags |= DBB_bugcheck;
@@ -519,7 +520,10 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 	if (!dbb->dbb_lock_mgr->initializeOwner(statusVector, owner_id, owner_type, owner_handle_ptr))
 	{
 		if (statusVector.value()[1] == isc_lockmanerr)
+		{
+			statusVector.copyTo(tdbb->tdbb_status_vector);
 			tdbb->getDatabase()->dbb_flags |= DBB_bugcheck;
+		}
 
 		statusVector.raise();
 	}
@@ -559,6 +563,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 		case isc_deadlock:
 		case isc_lock_conflict:
 		case isc_lock_timeout:
+			statusVector.copyTo(tdbb->tdbb_status_vector);
 			return false;
 		case isc_lockmanerr:
 			dbb->dbb_flags |= DBB_bugcheck;
