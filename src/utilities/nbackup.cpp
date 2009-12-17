@@ -156,7 +156,7 @@ namespace
 				printMsg(p->in_sw_msg);
 		}
 
-		printMsg(70); // general options are:
+		printMsg(24); // general options are:
 		for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
 		{
 			if (p->in_sw_msg && p->in_sw_optype == nboGeneral)
