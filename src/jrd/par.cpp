@@ -1502,7 +1502,13 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	node->nod_arg[e_fun_function] = (jrd_nod*) function;
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
-    // CVC: I will track ufds only if a proc is not being dropped.
+	// Check to see if the argument count matches
+	if (node->nod_arg[e_fun_args]->nod_count != function->fun_args)
+	{
+		error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name.toString()));
+	}
+
+	// CVC: I will track ufds only if a proc is not being dropped.
     if (csb->csb_g_flags & csb_get_dependencies)
     {
         jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
