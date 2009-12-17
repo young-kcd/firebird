@@ -6821,9 +6821,7 @@ void CompiledStatement::append_cstring(UCHAR verb, const char* string)
 }
 
 
-//
 // Write out a string in metadata charset with one byte of length.
-//
 void CompiledStatement::append_meta_string(const char* string)
 {
 	thread_db* tdbb = JRD_get_thread_data();
@@ -6838,7 +6836,7 @@ void CompiledStatement::append_meta_string(const char* string)
 }
 
 
-// Write out a string in user (or metadata) connection charset with one byte of length.
+// Write out a string in user (or metadata) connection charset.
 // This routine exists to support strings (with optional introducer) in DDL commands.
 void CompiledStatement::append_user_string(UCHAR verb, const dsql_str* str)
 {
