@@ -1206,12 +1206,18 @@ void nbackup(UtilSvc* uSvc)
 	string username, password;
 	PathName database, filename;
 	bool run_db_triggers = true;
-	bool direct_io = false;
+	bool direct_io = 
+#ifdef WIN_NT
+		true;
+#else
+		false;
+#endif
 	NBackup::BackupFiles backup_files;
 	int level;
 	bool print_size = false, version = false;
 	string trustedUser;
 	bool trustedRole = false;
+	string onOff;
 
 	// Read global command line parameters
 	for (int itr = 1; itr < argc; ++itr)
@@ -1261,7 +1267,17 @@ void nbackup(UtilSvc* uSvc)
 			break;
 
 		case 'D':
-			direct_io = true;
+			if (++itr >= argc)
+				missing_parameter_for_switch(uSvc, argv[itr - 1]);
+
+			onOff = argv[itr];
+			onOff.upper();
+			if (onOff == "ON")
+				direct_io = true;
+			else if (onOff == "OFF")
+				direct_io = false;
+			else
+				usage(uSvc, "Wrong parameter %s for switch -D, need ON or OFF", onOff.c_str());
 			break;
 
 		case 'F':
