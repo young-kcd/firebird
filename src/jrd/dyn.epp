@@ -434,10 +434,6 @@ void DYN_execute(Global* gbl,
 		DYN_define_filter(gbl, ptr);
 		break;
 
-	case isc_dyn_mod_filter:
-		DYN_modify_filter(gbl, ptr);
-		break;
-
 	case isc_dyn_delete_filter:
 		DYN_delete_filter(gbl, ptr);
 		break;
@@ -458,20 +454,12 @@ void DYN_execute(Global* gbl,
 		DYN_define_generator(gbl, ptr);
 		break;
 
-	case isc_dyn_mod_generator:
-		DYN_modify_generator(gbl, ptr);
-		break;
-
 	case isc_dyn_delete_generator:
 		DYN_delete_generator(gbl, ptr);
 		break;
 
 	case isc_dyn_def_sql_role:
 		DYN_define_role(gbl, ptr);
-		break;
-
-	case isc_dyn_mod_sql_role:
-		DYN_modify_role(gbl, ptr);
 		break;
 
 	case isc_dyn_del_sql_role:
@@ -560,14 +548,6 @@ void DYN_execute(Global* gbl,
 
 	case isc_dyn_delete_dimensions:
 		DYN_delete_dimensions(gbl, ptr); // relation_name, field_name);
-		break;
-
-	case isc_dyn_mod_charset:
-		DYN_modify_charset(gbl, ptr);
-		break;
-
-	case isc_dyn_mod_collation:
-		DYN_modify_collation(gbl, ptr);
 		break;
 
 	case isc_dyn_mapping:

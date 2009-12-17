@@ -1290,11 +1290,6 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 					X.RDB$ENTRYPOINT.NULL = FALSE;
 					break;
 
-				case isc_dyn_description:
-					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					break;
-
 				default:
 					DYN_unsupported_verb();
 				}
@@ -1392,11 +1387,6 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 				case isc_dyn_func_entry_point:
 					GET_STRING(ptr, X.RDB$ENTRYPOINT);
 					X.RDB$ENTRYPOINT.NULL = FALSE;
-					break;
-
-				case isc_dyn_description:
-					DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
-					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
 
 				default:
@@ -1880,11 +1870,6 @@ void DYN_define_global_field(Global*		gbl,
 				FLD.RDB$EDIT_STRING.NULL = FALSE;
 				break;
 
-			case isc_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &FLD.RDB$DESCRIPTION);
-				FLD.RDB$DESCRIPTION.NULL = FALSE;
-				break;
-
 			case isc_dyn_fld_dimensions:
 				if (has_default)
 				{
@@ -2184,11 +2169,6 @@ void DYN_define_index(Global*		gbl,
 					GET_STRING(ptr, str2);
 					referred_cols++;
 				}
-				break;
-
-			case isc_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &IDX.RDB$DESCRIPTION);
-				IDX.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
 			case isc_dyn_foreign_key_delete:
@@ -2673,11 +2653,6 @@ void DYN_define_local_field(Global*		gbl,
 				RFR.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
-			case isc_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &RFR.RDB$DESCRIPTION);
-				RFR.RDB$DESCRIPTION.NULL = FALSE;
-				break;
-
 			case isc_dyn_fld_computed_blr:
 				DYN_UTIL_generate_field_name(tdbb, gbl, RFR.RDB$FIELD_SOURCE);
 				blr = *ptr;
@@ -2959,11 +2934,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 				REL.RDB$VIEW_BLR.NULL = FALSE;
 				rel_type = rel_view;
 				DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR);
-				break;
-
-			case isc_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &REL.RDB$DESCRIPTION);
-				REL.RDB$DESCRIPTION.NULL = FALSE;
 				break;
 
 			case isc_dyn_view_source:
@@ -3293,11 +3263,6 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
 				case isc_dyn_scl_acl:
 					DYN_put_blr_blob(gbl, ptr, &SC.RDB$ACL);
 					SC.RDB$ACL.NULL = FALSE;
-					break;
-
-				case isc_dyn_description:
-					DYN_put_text_blob(gbl, ptr, &SC.RDB$DESCRIPTION);
-					SC.RDB$DESCRIPTION.NULL = FALSE;
 					break;
 
 				default:
@@ -3839,11 +3804,6 @@ void DYN_define_trigger(Global*						gbl,
 					break;
 				}
 
-			case isc_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION);
-				X.RDB$DESCRIPTION.NULL = FALSE;
-				break;
-
 			case isc_dyn_system_flag:
 				X.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
 				X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -4027,34 +3987,8 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 
 	bool b_ending_store = false;
 
-	try {
-		// The below code has been added for ALTER VIEW support,
-		// but implementation was definitely wrong,
-		// so it's commented our till the better times
-
-		/*
-		const SSHORT old_id = id;
-		jrd_req* old_request = request;
-
-		request = CMP_find_request(tdbb, drq_e_view_rels, DYN_REQUESTS);
-		id = drq_e_view_rels;
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			VRL IN RDB$VIEW_RELATIONS WITH VRL.RDB$VIEW_NAME EQ view->c_str()
-
-			if (!DYN_REQUEST(drq_e_view_rels))
-				DYN_REQUEST(drq_e_view_rels) = request;
-
-			ERASE VRL;
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_e_view_rels))
-			DYN_REQUEST(drq_e_view_rels) = request;
-
-		request = old_request;
-		id = old_id;
-		*/
-
+	try
+	{
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VRL IN RDB$VIEW_RELATIONS
 			strcpy(VRL.RDB$VIEW_NAME, view->c_str());
@@ -4113,11 +4047,6 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 			{
 				DYN_error_punt(true, 34);
 				// msg 34: "STORE RDB$VIEW_RELATIONS failed"
-			}
-			else if (id == drq_e_view_rels)
-			{
-				DYN_error_punt(true, 59);
-				// msg 59: "ERASE RDB$VIEW_RELATIONS failed"
 			}
 		}
 		throw;
