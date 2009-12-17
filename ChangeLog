@@ -1,8 +1,77 @@
+2009-12-17 14:10  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.104.2.2),
+	lang_helpers/gds_codes.pas (1.103.2.2), src/include/gen/codetext.h
+	(1.113.2.2), src/include/gen/iberror.h (1.117.2.2),
+	src/include/gen/msgs.h (1.143.2.2), src/include/gen/sql_code.h
+	(1.119.2.2), src/include/gen/sql_state.h (1.49.2.2),
+	src/msgs/facilities2.sql (1.79.2.5), src/msgs/messages2.sql
+	(1.102.2.6), src/msgs/system_errors2.sql (1.65.2.2),
+	src/utilities/fbsvcmgr.cpp (1.35.2.7):
+
+	Detect missing/invalid parameter in fbsvcmgr
+
+2009-12-17 13:32  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.122.2.1), burp/burp.cpp
+	(1.175.2.1), common/UtilSvc.cpp (1.15.2.1), common/UtilSvc.h
+	(1.14.2.1), jrd/jrd.cpp (1.565.2.5), jrd/svc.cpp (1.285.2.9),
+	jrd/svc.h (1.79.2.4), jrd/trace/TraceService.cpp (1.14.2.3),
+	utilities/nbackup.cpp (1.95.2.4), utilities/gsec/gsec.cpp
+	(1.117.2.4), utilities/gstat/dba.epp (1.119.2.1):
+
+	Fixed delivery of status vector from service thread
+
+2009-12-17 12:00  alexpeshkoff
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.44.2.4),
+	include/consts_pub.h (1.33.2.6), jrd/svc.cpp (1.285.2.8),
+	msgs/messages2.sql (1.102.2.5), utilities/fbsvcmgr.cpp (1.35.2.6),
+	utilities/nbackup.cpp (1.95.2.3):
+
+	Add On/Off parameter to switch -D(irect)
+
+2009-12-17 10:20  robocop
+
+	* firebird2/src/: msgs/messages2.sql (1.102.2.4),
+	utilities/nbackup.cpp (1.95.2.2):
+
+	Correction (some message ranges were marked as reserved to not
+	conflict with FB3)
+
+2009-12-17 10:18  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsecswi.h (1.17.2.5):
+
+	gsecswi.h
+
+2009-12-17 02:46  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.283.2.4):
+
+	Remove wrong comment part, seen by Claudio
+
+2009-12-16 18:28  alexpeshkoff
+
+	* firebird2/src/: include/consts_pub.h (1.33.2.5),
+	msgs/facilities2.sql (1.79.2.4), msgs/messages2.sql (1.102.2.3),
+	utilities/fbsvcmgr.cpp (1.35.2.5), utilities/nbackup.cpp
+	(1.95.2.1), utilities/nbackup/nbkswi.h (1.4.2.1):
+
+	Added switch to nbackup, controlling direct access to database file
+
+2009-12-16 14:57  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsecswi.h (1.17.2.4):
+
+	correct switch length
+
 2009-12-16 14:49  alexpeshkoff
 
-	* firebird2/src/: jrd/svc.cpp (1.285.2.7), utilities/fbsvcmgr.cpp
-	(1.35.2.4), utilities/gsec/call_service.cpp (1.25.2.3),
-	utilities/gsec/gsecswi.h (1.17.2.3):
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.44.2.3),
+	include/consts_pub.h (1.33.2.4), jrd/svc.cpp (1.285.2.7),
+	utilities/fbsvcmgr.cpp (1.35.2.4), utilities/gsec/call_service.cpp
+	(1.25.2.3), utilities/gsec/gsecswi.h (1.17.2.3):
 
 	Some more changes suggested by Claudio
 
