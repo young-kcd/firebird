@@ -40,7 +40,6 @@ enum irq_type_t
 	irq_format2,			// make a new format for a record
 	irq_format3,			// make a new format for a record
 	irq_r_format,			// read a format
-	//irq_r_relation,		// pick up view definition
 	irq_c_index,			// create index
 	irq_c_index_m,			// create index - modify ID.NULL
 	irq_m_fields,			// process a modification of RDB$FIELDS
@@ -61,7 +60,6 @@ enum irq_type_t
 	irq_format4,			// make a new format for a record
 	irq_s_trans,			// store RDB$TRANSACTIONS
 	irq_m_trans,			// erase RDB$TRANSACTIONS
-	//irq_e_trans,			// store RDB$TRANSACTIONS
 	irq_revoke1,			// check revokee for residual privileges
 	irq_revoke2,			// recursive revoke
 	irq_grant5,				// check for "PUBLIC" in processing grant options
@@ -71,7 +69,6 @@ enum irq_type_t
 	irq_d_deps,				// delete RDB$DEPENDENCIES
 	irq_r_fld_dim,			// read RDB$FIELD_DIMENSIONS
 	irq_r_gen_id,			// read RDB$GENERATORS, lookup by name.
-	//irq_s_gen_id,			// store RDB$GENERATORS
 	irq_ch_f_dpd,			// check object field dependencies
 	irq_ch_dpd,				// check object dependencies
 	irq_ch_cmp_dpd,			// check computed field dependencies
@@ -116,7 +113,6 @@ enum irq_type_t
 
 	irq_l_subtype,			// lookup subtype (charset/collation)
 	irq_c_relation2,		// create new relation
-	//irq_r_type,			// lookup relation type
 	irq_p_type,				// lookup procedure type
 	irq_prc_validate,		// procedure blr validate
 	irq_trg_validate,		// trigger blr validate
@@ -126,31 +122,28 @@ enum irq_type_t
 	irq_m_fields4,			// process a modification of RDB$FIELDS for procedures (TYPE OF COLUMN)
 	irq_m_fields5,			// process a modification of RDB$FIELDS for triggers (TYPE OF COLUMN)
 	irq_m_fields6,			// process a modification of RDB$FIELDS for packaged procedures (TYPE OF COLUMN)
-	//irq_r_params2,		// scan procedure parameters (ODS 11.1)
 	irq_l_colls,			// lookup collations
 	irq_l_relfield,			// lookup a relation field
 	irq_verify_trusted_role, // ensure trusted role exists
 
-    irq_relation,			// DSQL/METD: lookup a relation
-    irq_fields,				// DSQL/METD: lookup a relation's fields
-    //irq_dimensions,		// lookup a field's dimensions
-    irq_primary_key,		// DSQL/METD: lookup a primary key
-    irq_view,				// DSQL/METD: lookup a view's base relations
-    irq_view_base,			// DSQL/METD: lookup a view's base relations
-    irq_view_base_flds,		// DSQL/METD: lookup a view's base fields
-    irq_function,			// DSQL/METD: lookup a user defined function
-    irq_func_return,		// DSQL/METD: lookup a function's return argument
-    irq_procedure,			// DSQL/METD: lookup a stored procedure
-    irq_parameters,			// DSQL/METD: lookup a procedure's parameters
-    //irq_parameters2,		// DSQL/METD: lookup a procedure's parameters (ODS 11.1)
-    irq_collation,			// DSQL/METD: lookup a collation name
-    irq_charset,			// DSQL/METD: lookup a character set
-    irq_trigger,			// DSQL/METD: lookup a trigger
-    irq_domain,				// DSQL/METD: lookup a domain
-    irq_type,				// DSQL/METD: lookup a symbolic name in RDB$TYPES
-    irq_col_default,		// DSQL/METD: lookup default for a column
-    irq_domain_2,			// DSQL/METD: lookup a domain
-    irq_exception,			// DSQL/METD: lookup an exception
+	irq_relation,			// DSQL/METD: lookup a relation
+	irq_fields,				// DSQL/METD: lookup a relation's fields
+	irq_primary_key,		// DSQL/METD: lookup a primary key
+	irq_view,				// DSQL/METD: lookup a view's base relations
+	irq_view_base,			// DSQL/METD: lookup a view's base relations
+	irq_view_base_flds,		// DSQL/METD: lookup a view's base fields
+	irq_function,			// DSQL/METD: lookup a user defined function
+	irq_func_return,		// DSQL/METD: lookup a function's return argument
+	irq_procedure,			// DSQL/METD: lookup a stored procedure
+	irq_parameters,			// DSQL/METD: lookup a procedure's parameters
+	irq_collation,			// DSQL/METD: lookup a collation name
+	irq_charset,			// DSQL/METD: lookup a character set
+	irq_trigger,			// DSQL/METD: lookup a trigger
+	irq_domain,				// DSQL/METD: lookup a domain
+	irq_type,				// DSQL/METD: lookup a symbolic name in RDB$TYPES
+	irq_col_default,		// DSQL/METD: lookup default for a column
+	irq_domain_2,			// DSQL/METD: lookup a domain
+	irq_exception,			// DSQL/METD: lookup an exception
 	irq_cs_name,			// DSQL/METD: lookup a charset name
 	irq_default_cs,			// DSQL/METD: lookup the default charset
 	irq_rel_ids,			// DSQL/METD: check relation/field ids
