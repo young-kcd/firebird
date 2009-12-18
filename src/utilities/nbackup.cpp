@@ -89,6 +89,7 @@ void usage()
 		"  -P <password>                         Password\n"
 		"  -T                                    Do not run database triggers\n"
 		"  -S                                    Print database size in pages after lock\n"
+		"  -D [ON | OFF]                         Use or not direct I/O when scanning database\n"
 		"Notes:\n"
 		"  <database> may specify database alias\n"
 		"  incremental backups of multi-file databases are not supported yet\n"
@@ -192,7 +193,8 @@ struct inc_header {
 
 class nbackup {
 public:
-	nbackup(const char* _database, const char* _username, const char* _password, bool _run_db_triggers)
+	nbackup(const char* _database, const char* _username, const char* _password, 
+		bool _run_db_triggers, bool _direct_io)
 	{
 		if (_username)
 			username = _username;
@@ -202,6 +204,7 @@ public:
 			
 		database = _database;
 		run_db_triggers = _run_db_triggers;
+		direct_io = _direct_io;
 
 		dbase = 0;
 		backup = 0;
@@ -232,7 +235,7 @@ private:
 	Firebird::PathName database;
 	Firebird::string username;
 	Firebird::string password;
-	bool run_db_triggers;
+	bool run_db_triggers, direct_io;
 
 	Firebird::PathName dbname; // Database file name
 	Firebird::PathName bakname;
@@ -368,16 +371,19 @@ void nbackup::open_database_scan()
 #ifndef O_DIRECT
 #define O_DIRECT 0
 #endif // O_DIRECT
-	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
+	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
   	if (dbase < 0)
   		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());
 #ifdef HAVE_POSIX_FADVISE
 	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
 		b_error::raise("Error (%d) in posix_fadvise(SEQUENTIAL) for %s", rc, dbname.c_str());
-	rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
-	if (rc)
-		b_error::raise("Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
+	if (direct_io)
+	{
+		rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
+		if (rc)
+			b_error::raise("Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
+	}
 #endif //HAVE_POSIX_FADVISE
 #endif //WIN_NT
 }
@@ -1062,10 +1068,17 @@ int main( int argc, char *argv[] )
 	const char *username = NULL, *password = NULL, *database = NULL, 
 		*filename = NULL;
 	bool run_db_triggers = true;
+	bool direct_io = 
+#ifdef WIN_NT
+		true;
+#else
+		false;
+#endif
 	const char* const* backup_files = NULL;
 	int level;
 	int filecount;
 	bool print_size = false;
+	Firebird::string onOff;
 
 	try {
 		// Read global command line parameters
@@ -1093,6 +1106,23 @@ int main( int argc, char *argv[] )
 
 			case 'T':
 				run_db_triggers = false;
+				break;
+
+			case 'D':
+				if (++argp >= end)
+					missing_parameter_for_switch(argp[-1]);
+
+				onOff = *argp;
+				onOff.upper();
+				if (onOff == "ON")
+					direct_io = true;
+				else if (onOff == "OFF")
+					direct_io = false;
+				else
+				{
+					fprintf(stderr, "Wrong parameter %s for switch -D, need ON or OFF", onOff.c_str());
+					usage();
+				}
 				break;
 
 			case 'F':
@@ -1184,23 +1214,23 @@ int main( int argc, char *argv[] )
 				break;
 
 			case nbLock:
-				nbackup(database, username, password, run_db_triggers).lock_database(print_size);
+				nbackup(database, username, password, run_db_triggers, direct_io).lock_database(print_size);
 				break;
 
 			case nbUnlock:
-				nbackup(database, username, password, run_db_triggers).unlock_database();
+				nbackup(database, username, password, run_db_triggers, direct_io).unlock_database();
 				break;
 
 			case nbFixup:
-				nbackup(database, username, password, run_db_triggers).fixup_database();
+				nbackup(database, username, password, run_db_triggers, direct_io).fixup_database();
 				break;
 
 			case nbBackup:
-				nbackup(database, username, password, run_db_triggers).backup_database(level, filename);
+				nbackup(database, username, password, run_db_triggers, direct_io).backup_database(level, filename);
 				break;
 
 			case nbRestore:
-				nbackup(database, username, password, run_db_triggers).restore_database(filecount, backup_files);
+				nbackup(database, username, password, run_db_triggers, direct_io).restore_database(filecount, backup_files);
 				break;
 		}
 	}
