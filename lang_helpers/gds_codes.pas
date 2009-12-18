@@ -1057,6 +1057,7 @@ const
 	gds_nbackup_err_copy                 = 337117249;
 	gds_nbackup_err_eofhdr_restdb        = 337117250;
 	gds_nbackup_lostguid_l0bk            = 337117251;
+	gds_nbackup_switchd_parameter        = 337117255;
 	gds_trace_conflict_acts              = 337182750;
 	gds_trace_act_notfound               = 337182751;
 	gds_trace_switch_once                = 337182752;

@@ -501,8 +501,8 @@
 
 #define isc_spb_nbk_level			5
 #define isc_spb_nbk_file			6
+#define isc_spb_nbk_direct			7
 #define isc_spb_nbk_no_triggers		0x01
-#define isc_spb_nbk_direct			0x02
 
 /***************************************
  * Parameters for isc_action_svc_trace *

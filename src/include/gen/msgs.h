@@ -1049,16 +1049,17 @@ Data source : @4"},		/* 606, eds_statement */
 	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1022, nbackup_err_copy */
 	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1023, nbackup_err_eofhdr_restdb */
 	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1024, nbackup_lostguid_l0bk */
-	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1025, trace_conflict_acts */
-	{337182751, "action switch not found"},		/* 1026, trace_act_notfound */
-	{337182752, "switch \"@1\" must be set only once"},		/* 1027, trace_switch_once */
-	{337182753, "value for switch \"@1\" is missing"},		/* 1028, trace_param_val_miss */
-	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1029, trace_param_invalid */
-	{337182755, "unknown switch \"@1\" encountered"},		/* 1030, trace_switch_unknown */
-	{337182756, "switch \"@1\" can be used by service only"},		/* 1031, trace_switch_svc_only */
-	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1032, trace_switch_user_only */
-	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1033, trace_switch_param_miss */
-	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1034, trace_param_act_notcompat */
-	{337182760, "mandatory switch \"@1\" is missing"},		/* 1035, trace_mandatory_switch_miss */
+	{337117255, "Wrong parameter %s for switch -D, need ON or OFF"},		/* 1025, nbackup_switchd_parameter */
+	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1026, trace_conflict_acts */
+	{337182751, "action switch not found"},		/* 1027, trace_act_notfound */
+	{337182752, "switch \"@1\" must be set only once"},		/* 1028, trace_switch_once */
+	{337182753, "value for switch \"@1\" is missing"},		/* 1029, trace_param_val_miss */
+	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1030, trace_param_invalid */
+	{337182755, "unknown switch \"@1\" encountered"},		/* 1031, trace_switch_unknown */
+	{337182756, "switch \"@1\" can be used by service only"},		/* 1032, trace_switch_svc_only */
+	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1033, trace_switch_user_only */
+	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1034, trace_switch_param_miss */
+	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1035, trace_param_act_notcompat */
+	{337182760, "mandatory switch \"@1\" is missing"},		/* 1036, trace_mandatory_switch_miss */
 	{0, NULL}
 };

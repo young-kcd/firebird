@@ -1276,12 +1276,18 @@ void nbackup(UtilSvc* uSvc)
 	string username, password;
 	PathName database, filename;
 	bool run_db_triggers = true;
-	bool direct_io = false;
+	bool direct_io = 
+#ifdef WIN_NT
+		true;
+#else
+		false;
+#endif
 	NBackup::BackupFiles backup_files;
 	int level;
 	bool print_size = false, version = false;
 	string trustedUser;
 	bool trustedRole = false;
+	string onOff;
 
 	const Switches switches(nbackup_action_in_sw_table, FB_NELEM(nbackup_action_in_sw_table),
 							false, true);
@@ -1336,7 +1342,17 @@ void nbackup(UtilSvc* uSvc)
 			break;
 
 		case IN_SW_NBK_DIRECT:
-			direct_io = true;
+ 			if (++itr >= argc)
+ 				missingParameterForSwitch(uSvc, argv[itr - 1]);
+ 
+ 			onOff = argv[itr];
+ 			onOff.upper();
+ 			if (onOff == "ON")
+ 				direct_io = true;
+ 			else if (onOff == "OFF")
+ 				direct_io = false;
+ 			else
+ 				usage(uSvc, isc_nbackup_switchd_parameter, onOff.c_str());
 			break;
 
 		case IN_SW_NBK_FIXUP:

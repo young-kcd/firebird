@@ -1045,6 +1045,7 @@ static const struct {
 	{337117249, -901}, /*  65 nbackup_err_copy */
 	{337117250, -901}, /*  66 nbackup_err_eofhdr_restdb */
 	{337117251, -901}, /*  67 nbackup_lostguid_l0bk */
+	{337117255, -901}, /*  71 nbackup_switchd_parameter */
 	{337182750, -901}, /*  30 trace_conflict_acts */
 	{337182751, -901}, /*  31 trace_act_notfound */
 	{337182752, -901}, /*  32 trace_switch_once */

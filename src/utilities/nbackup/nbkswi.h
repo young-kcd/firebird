@@ -50,7 +50,7 @@ const int IN_SW_NBK_HELP			= 14;
 const int IN_SW_NBK_DIRECT			= 15;
 
 
-static const struct Switches::in_sw_tab_t nbackup_option_in_sw_table [] =
+static const struct Switches::in_sw_tab_t nbackup_in_sw_table [] =
 {
 	{IN_SW_NBK_NODBTRIG,	isc_spb_nbk_no_triggers,	"T",		0, 0, 0, false,	0,	1, NULL},
 	{IN_SW_NBK_DIRECT,		isc_spb_nbk_direct,			"DIRECT",	0, 0, 0, false, 0,  1, NULL},

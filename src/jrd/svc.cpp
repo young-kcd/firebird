@@ -2506,11 +2506,18 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				break;
 
 			case isc_spb_options:
-				if (!get_action_svc_bitmask(spb, nbackup_option_in_sw_table, switches))
+				if (!get_action_svc_bitmask(spb, nbackup_in_sw_table, switches))
 				{
 					return false;
 				}
 				break;
+
+			case isc_spb_nbk_direct:
+				if (!get_action_svc_parameter(spb.getClumpTag(), nbackup_in_sw_table, switches))
+				{
+					return false;
+				}
+				get_action_svc_string(spb, switches);
 			}
 			break;
 
