@@ -102,6 +102,39 @@ void missing_parameter_for_switch(const char* sw) {
 	usage();
 } 
 
+// HPUX has non-posix-conformant method to return error codes from posix_fadvise().
+// Instead of error code, directly returned by function (like specified by posix),
+// -1 is returned in case of error and errno is set. Luckily, we can easily detect it runtime.
+// May be sometimes this function should be moved to os_util namespace.
+
+namespace {
+#ifdef HAVE_POSIX_FADVISE
+	int fb_fadvise(int fd, off_t offset, size_t len, int advice)
+	{
+		int rc = posix_fadvise(fd, offset, len, advice);
+
+		if (rc < 0)
+		{
+			rc = errno;
+		}
+		if (rc == ENOTTY ||		// posix_fadvise is not supported by underlying file system
+			rc == ENOSYS)		// hint is not supported by the underlying file object
+		{
+			rc = 0;				// ignore such errors
+		}
+
+		return rc;
+	}
+#else // HAVE_POSIX_FADVISE
+#define POSIX_FADV_SEQUENTIAL 0
+#define POSIX_FADV_NOREUSE 0
+	int fb_fadvise(int, off_t, size_t, int)
+	{
+		return 0;
+	}
+#endif // HAVE_POSIX_FADVISE
+}
+
 class b_error : public Firebird::LongJump
 {
 public:
@@ -339,10 +372,10 @@ void nbackup::open_database_scan()
   	if (dbase < 0)
   		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());
 #ifdef HAVE_POSIX_FADVISE
-	int rc = posix_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
+	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
 		b_error::raise("Error (%d) in posix_fadvise(SEQUENTIAL) for %s", rc, dbname.c_str());
-	rc = posix_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
+	rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
 	if (rc)
 		b_error::raise("Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
 #endif //HAVE_POSIX_FADVISE
