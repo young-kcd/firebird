@@ -1,3 +1,16 @@
+2009-12-18 14:24  alexpeshkoff
+
+	* firebird2/src/utilities/nbackup.cpp (1.63.2.10):
+
+	Backported -D switch
+
+2009-12-18 13:13  alexpeshkoff
+
+	* firebird2/src/utilities/nbackup.cpp (1.63.2.9):
+
+	Backported - ignore errors, when request is not supported by
+	underlying file system / file object
+
 2009-12-17 09:05  robocop
 
 	* firebird2/src/dsql/pass1.cpp (1.348.2.10):
