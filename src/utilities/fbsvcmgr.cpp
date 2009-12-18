@@ -792,13 +792,77 @@ bool printInfo(const char* p, UserPrint& up)
 	return ret;
 }
 
+// print known switches help
+
+struct TypeText
+{
+	PopulateFunction* populate;
+	const char* text;
+} typeText[] = {
+	{ putStringArgument, "string value" },
+	{ putFileArgument, "file name" },
+	{ putFileFromArgument, "file name" },
+	{ putAccessMode, "prp_am_readonly | prp_am_readwrite" },
+	{ putWriteMode, "prp_wm_async | prp_wm_sync" },
+	{ putReserveSpace, "prp_res_use_full | prp_res" },
+	{ putShutdownMode, "prp_sm_normal | prp_sm_multi | prp_sm_single | prp_sm_full" },
+	{ putNumericArgument, "numeric value" },
+	{ putOption, NULL },
+	{ putSingleTag, NULL },
+	{ NULL, NULL }
+};
+
+void printHelp(unsigned int offset, const SvcSwitches* sw)
+{
+	for (; sw->name; ++sw)
+	{
+		TypeText* tt = typeText;
+		for (; tt->populate; ++tt)
+		{
+			if (sw->populate == tt->populate)
+			{
+				for (unsigned int n = 0; n < offset; ++n)
+					putchar(' ');
+
+				printf("%s", sw->name);
+				if (tt->text)
+					printf(" [%s]", tt->text);
+				if (sw->options)
+					putchar(':');
+				putchar('\n');
+
+				if (sw->options)
+					printHelp(offset + 4, sw->options);
+				break;
+			}
+		}
+
+		fb_assert(tt->populate);
+	}
+}
+				
 // short usage from firebird.msg
 
-void usage()
+void usage(bool listSwitches)
 {
 	for (int i = 19; i <= 33; ++i)
 	{
 		printf("%s\n", getMessage(i).c_str());
+	}
+	if (! listSwitches)
+	{
+		printf("%s\n", getMessage(53).c_str());
+	}
+	else
+	{
+		printf("\n%s\n", getMessage(54).c_str());
+		printHelp(0, attSwitch);
+
+		printf("\n%s\n", getMessage(55).c_str());
+		printHelp(0, infSwitch);
+
+		printf("\n%s\n", getMessage(56).c_str());
+		printHelp(0, actionSwitch);
 	}
 }
 
@@ -824,7 +888,7 @@ int main(int ac, char** av)
 {
 	if (ac < 2 || (ac == 2 && strcmp(av[1], "-?") == 0))
 	{
-		usage();
+		usage(ac == 2);
 		return 1;
 	}
 
