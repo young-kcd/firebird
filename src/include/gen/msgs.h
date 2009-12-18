@@ -807,253 +807,258 @@ Data source : @4"},		/* 606, eds_statement */
 	{336068868, "Cannot ALTER or DROP system function @1"},		/* 780, dyn_cannot_mod_sysfunc */
 	{336068869, "Invalid DDL statement for procedure @1"},		/* 781, dyn_invalid_ddl_proc */
 	{336068870, "Invalid DDL statement for trigger @1"},		/* 782, dyn_invalid_ddl_trig */
-	{336330753, "found unknown switch"},		/* 783, gbak_unknown_switch */
-	{336330754, "page size parameter missing"},		/* 784, gbak_page_size_missing */
-	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* 785, gbak_page_size_toobig */
-	{336330756, "redirect location for output is not specified"},		/* 786, gbak_redir_ouput_missing */
-	{336330757, "conflicting switches for backup/restore"},		/* 787, gbak_switches_conflict */
-	{336330758, "device type @1 not known"},		/* 788, gbak_unknown_device */
-	{336330759, "protection is not there yet"},		/* 789, gbak_no_protection */
-	{336330760, "page size is allowed only on restore or create"},		/* 790, gbak_page_size_not_allowed */
-	{336330761, "multiple sources or destinations specified"},		/* 791, gbak_multi_source_dest */
-	{336330762, "requires both input and output filenames"},		/* 792, gbak_filename_missing */
-	{336330763, "input and output have the same name.  Disallowed."},		/* 793, gbak_dup_inout_names */
-	{336330764, "expected page size, encountered \"@1\""},		/* 794, gbak_inv_page_size */
-	{336330765, "REPLACE specified, but the first file @1 is a database"},		/* 795, gbak_db_specified */
-	{336330766, "database @1 already exists.  To replace it, use the -REP switch"},		/* 796, gbak_db_exists */
-	{336330767, "device type not specified"},		/* 797, gbak_unk_device */
-	{336330772, "gds_$blob_info failed"},		/* 798, gbak_blob_info_failed */
-	{336330773, "do not understand BLOB INFO item @1"},		/* 799, gbak_unk_blob_item */
-	{336330774, "gds_$get_segment failed"},		/* 800, gbak_get_seg_failed */
-	{336330775, "gds_$close_blob failed"},		/* 801, gbak_close_blob_failed */
-	{336330776, "gds_$open_blob failed"},		/* 802, gbak_open_blob_failed */
-	{336330777, "Failed in put_blr_gen_id"},		/* 803, gbak_put_blr_gen_id_failed */
-	{336330778, "data type @1 not understood"},		/* 804, gbak_unk_type */
-	{336330779, "gds_$compile_request failed"},		/* 805, gbak_comp_req_failed */
-	{336330780, "gds_$start_request failed"},		/* 806, gbak_start_req_failed */
-	{336330781, "gds_$receive failed"},		/* 807, gbak_rec_failed */
-	{336330782, "gds_$release_request failed"},		/* 808, gbak_rel_req_failed */
-	{336330783, "gds_$database_info failed"},		/* 809, gbak_db_info_failed */
-	{336330784, "Expected database description record"},		/* 810, gbak_no_db_desc */
-	{336330785, "failed to create database @1"},		/* 811, gbak_db_create_failed */
-	{336330786, "RESTORE: decompression length error"},		/* 812, gbak_decomp_len_error */
-	{336330787, "cannot find table @1"},		/* 813, gbak_tbl_missing */
-	{336330788, "Cannot find column for BLOB"},		/* 814, gbak_blob_col_missing */
-	{336330789, "gds_$create_blob failed"},		/* 815, gbak_create_blob_failed */
-	{336330790, "gds_$put_segment failed"},		/* 816, gbak_put_seg_failed */
-	{336330791, "expected record length"},		/* 817, gbak_rec_len_exp */
-	{336330792, "wrong length record, expected @1 encountered @2"},		/* 818, gbak_inv_rec_len */
-	{336330793, "expected data attribute"},		/* 819, gbak_exp_data_type */
-	{336330794, "Failed in store_blr_gen_id"},		/* 820, gbak_gen_id_failed */
-	{336330795, "do not recognize record type @1"},		/* 821, gbak_unk_rec_type */
-	{336330796, "Expected backup version 1..10.  Found @1"},		/* 822, gbak_inv_bkup_ver */
-	{336330797, "expected backup description record"},		/* 823, gbak_missing_bkup_desc */
-	{336330798, "string truncated"},		/* 824, gbak_string_trunc */
-	{336330799, "warning -- record could not be restored"},		/* 825, gbak_cant_rest_record */
-	{336330800, "gds_$send failed"},		/* 826, gbak_send_failed */
-	{336330801, "no table name for data"},		/* 827, gbak_no_tbl_name */
-	{336330802, "unexpected end of file on backup file"},		/* 828, gbak_unexp_eof */
-	{336330803, "database format @1 is too old to restore to"},		/* 829, gbak_db_format_too_old */
-	{336330804, "array dimension for column @1 is invalid"},		/* 830, gbak_inv_array_dim */
-	{336330807, "Expected XDR record length"},		/* 831, gbak_xdr_len_expected */
-	{336330817, "cannot open backup file @1"},		/* 832, gbak_open_bkup_error */
-	{336330818, "cannot open status and error output file @1"},		/* 833, gbak_open_error */
-	{336330934, "blocking factor parameter missing"},		/* 834, gbak_missing_block_fac */
-	{336330935, "expected blocking factor, encountered \"@1\""},		/* 835, gbak_inv_block_fac */
-	{336330936, "a blocking factor may not be used in conjunction with device CT"},		/* 836, gbak_block_fac_specified */
-	{336330940, "user name parameter missing"},		/* 837, gbak_missing_username */
-	{336330941, "password parameter missing"},		/* 838, gbak_missing_password */
-	{336330952, " missing parameter for the number of bytes to be skipped"},		/* 839, gbak_missing_skipped_bytes */
-	{336330953, "expected number of bytes to be skipped, encountered \"@1\""},		/* 840, gbak_inv_skipped_bytes */
-	{336330965, "character set"},		/* 841, gbak_err_restore_charset */
-	{336330967, "collation"},		/* 842, gbak_err_restore_collation */
-	{336330972, "Unexpected I/O error while reading from backup file"},		/* 843, gbak_read_error */
-	{336330973, "Unexpected I/O error while writing to backup file"},		/* 844, gbak_write_error */
-	{336330985, "could not drop database @1 (database might be in use)"},		/* 845, gbak_db_in_use */
-	{336330990, "System memory exhausted"},		/* 846, gbak_sysmemex */
-	{336331002, "SQL role"},		/* 847, gbak_restore_role_failed */
-	{336331005, "SQL role parameter missing"},		/* 848, gbak_role_op_missing */
-	{336331010, "page buffers parameter missing"},		/* 849, gbak_page_buffers_missing */
-	{336331011, "expected page buffers, encountered \"@1\""},		/* 850, gbak_page_buffers_wrong_param */
-	{336331012, "page buffers is allowed only on restore or create"},		/* 851, gbak_page_buffers_restore */
-	{336331014, "size specification either missing or incorrect for file @1"},		/* 852, gbak_inv_size */
-	{336331015, "file @1 out of sequence"},		/* 853, gbak_file_outof_sequence */
-	{336331016, "can't join -- one of the files missing"},		/* 854, gbak_join_file_missing */
-	{336331017, " standard input is not supported when using join operation"},		/* 855, gbak_stdin_not_supptd */
-	{336331018, "standard output is not supported when using split operation"},		/* 856, gbak_stdout_not_supptd */
-	{336331019, "backup file @1 might be corrupt"},		/* 857, gbak_bkup_corrupt */
-	{336331020, "database file specification missing"},		/* 858, gbak_unk_db_file_spec */
-	{336331021, "can't write a header record to file @1"},		/* 859, gbak_hdr_write_failed */
-	{336331022, "free disk space exhausted"},		/* 860, gbak_disk_space_ex */
-	{336331023, "file size given (@1) is less than minimum allowed (@2)"},		/* 861, gbak_size_lt_min */
-	{336331025, "service name parameter missing"},		/* 862, gbak_svc_name_missing */
-	{336331026, "Cannot restore over current database, must be SYSDBA or owner of the existing database."},		/* 863, gbak_not_ownr */
-	{336331031, "\"read_only\" or \"read_write\" required"},		/* 864, gbak_mode_req */
-	{336331033, "just data ignore all constraints etc."},		/* 865, gbak_just_data */
-	{336331034, "restoring data only ignoring foreign key, unique, not null & other constraints"},		/* 866, gbak_data_only */
-	{336331078, "verbose interval value parameter missing"},		/* 867, gbak_missing_interval */
-	{336331079, "verbose interval value cannot be smaller than @1"},		/* 868, gbak_wrong_interval */
-	{336331081, "verify (verbose) and verbint options are mutually exclusive"},		/* 869, gbak_verify_verbint */
-	{336331082, "option -@1 is allowed only on restore or create"},		/* 870, gbak_option_only_restore */
-	{336331083, "option -@1 is allowed only on backup"},		/* 871, gbak_option_only_backup */
-	{336331084, "options -@1 and -@2 are mutually exclusive"},		/* 872, gbak_option_conflict */
-	{336331085, "parameter for option -@1 was already specified with value \"@2\""},		/* 873, gbak_param_conflict */
-	{336331086, "option -@1 was already specified"},		/* 874, gbak_option_repeated */
-	{336331091, "dependency depth greater than @1 for view @2"},		/* 875, gbak_max_dbkey_recursion */
-	{336331092, "value greater than @1 when calculating length of rdb$db_key for view @2"},		/* 876, gbak_max_dbkey_length */
-	{336331093, "Invalid metadata detected. Use -FIX_FSS_METADATA option."},		/* 877, gbak_invalid_metadata */
-	{336331094, "Invalid data detected. Use -FIX_FSS_DATA option."},		/* 878, gbak_invalid_data */
-	{336331096, "Expected backup version @2..@3.  Found @1"},		/* 879, gbak_inv_bkup_ver2 */
-	{336397205, "ODS versions before ODS@1 are not supported"},		/* 880, dsql_too_old_ods */
-	{336397206, "Table @1 does not exist"},		/* 881, dsql_table_not_found */
-	{336397207, "View @1 does not exist"},		/* 882, dsql_view_not_found */
-	{336397208, "At line @1, column @2"},		/* 883, dsql_line_col_error */
-	{336397209, "At unknown line and column"},		/* 884, dsql_unknown_pos */
-	{336397210, "Column @1 cannot be repeated in @2 statement"},		/* 885, dsql_no_dup_name */
-	{336397211, "Too many values (more than @1) in member list to match against"},		/* 886, dsql_too_many_values */
-	{336397212, "Array and BLOB data types not allowed in computed field"},		/* 887, dsql_no_array_computed */
-	{336397213, "Implicit domain name @1 not allowed in user created domain"},		/* 888, dsql_implicit_domain_name */
-	{336397214, "scalar operator used on field @1 which is not an array"},		/* 889, dsql_only_can_subscript_array */
-	{336397215, "cannot sort on more than 255 items"},		/* 890, dsql_max_sort_items */
-	{336397216, "cannot group on more than 255 items"},		/* 891, dsql_max_group_items */
-	{336397217, "Cannot include the same field (@1.@2) twice in the ORDER BY clause with conflicting sorting options"},		/* 892, dsql_conflicting_sort_field */
-	{336397218, "column list from derived table @1 has more columns than the number of items in its SELECT statement"},		/* 893, dsql_derived_table_more_columns */
-	{336397219, "column list from derived table @1 has less columns than the number of items in its SELECT statement"},		/* 894, dsql_derived_table_less_columns */
-	{336397220, "no column name specified for column number @1 in derived table @2"},		/* 895, dsql_derived_field_unnamed */
-	{336397221, "column @1 was specified multiple times for derived table @2"},		/* 896, dsql_derived_field_dup_name */
-	{336397222, "Internal dsql error: alias type expected by pass1_expand_select_node"},		/* 897, dsql_derived_alias_select */
-	{336397223, "Internal dsql error: alias type expected by pass1_field"},		/* 898, dsql_derived_alias_field */
-	{336397224, "Internal dsql error: column position out of range in pass1_union_auto_cast"},		/* 899, dsql_auto_field_bad_pos */
-	{336397225, "Recursive CTE member (@1) can refer itself only in FROM clause"},		/* 900, dsql_cte_wrong_reference */
-	{336397226, "CTE '@1' has cyclic dependencies"},		/* 901, dsql_cte_cycle */
-	{336397227, "Recursive member of CTE can't be member of an outer join"},		/* 902, dsql_cte_outer_join */
-	{336397228, "Recursive member of CTE can't reference itself more than once"},		/* 903, dsql_cte_mult_references */
-	{336397229, "Recursive CTE (@1) must be an UNION"},		/* 904, dsql_cte_not_a_union */
-	{336397230, "CTE '@1' defined non-recursive member after recursive"},		/* 905, dsql_cte_nonrecurs_after_recurs */
-	{336397231, "Recursive member of CTE '@1' has @2 clause"},		/* 906, dsql_cte_wrong_clause */
-	{336397232, "Recursive members of CTE (@1) must be linked with another members via UNION ALL"},		/* 907, dsql_cte_union_all */
-	{336397233, "Non-recursive member is missing in CTE '@1'"},		/* 908, dsql_cte_miss_nonrecursive */
-	{336397234, "WITH clause can't be nested"},		/* 909, dsql_cte_nested_with */
-	{336397235, "column @1 appears more than once in USING clause"},		/* 910, dsql_col_more_than_once_using */
-	{336397236, "feature is not supported in dialect @1"},		/* 911, dsql_unsupp_feature_dialect */
-	{336397237, "CTE \"@1\" is not used in query"},		/* 912, dsql_cte_not_used */
-	{336397238, "column @1 appears more than once in ALTER VIEW"},		/* 913, dsql_col_more_than_once_view */
-	{336397239, "@1 is not supported inside IN AUTONOMOUS TRANSACTION block"},		/* 914, dsql_unsupported_in_auto_trans */
-	{336397240, "Unknown node type @1 in dsql/GEN_expr"},		/* 915, dsql_eval_unknode */
-	{336397241, "Argument for @1 in dialect 1 must be string or numeric"},		/* 916, dsql_agg_wrongarg */
-	{336397242, "Argument for @1 in dialect 3 must be numeric"},		/* 917, dsql_agg2_wrongarg */
-	{336397243, "Strings cannot be added to or subtracted from DATE or TIME types"},		/* 918, dsql_nodateortime_pm_string */
-	{336397244, "Invalid data type for subtraction involving DATE, TIME or TIMESTAMP types"},		/* 919, dsql_invalid_datetime_subtract */
-	{336397245, "Adding two DATE values or two TIME values is not allowed"},		/* 920, dsql_invalid_dateortime_add */
-	{336397246, "DATE value cannot be subtracted from the provided data type"},		/* 921, dsql_invalid_type_minus_date */
-	{336397247, "Strings cannot be added or subtracted in dialect 3"},		/* 922, dsql_nostring_addsub_dial3 */
-	{336397248, "Invalid data type for addition or subtraction in dialect 3"},		/* 923, dsql_invalid_type_addsub_dial3 */
-	{336397249, "Invalid data type for multiplication in dialect 1"},		/* 924, dsql_invalid_type_multip_dial1 */
-	{336397250, "Strings cannot be multiplied in dialect 3"},		/* 925, dsql_nostring_multip_dial3 */
-	{336397251, "Invalid data type for multiplication in dialect 3"},		/* 926, dsql_invalid_type_multip_dial3 */
-	{336397252, "Division in dialect 1 must be between numeric data types"},		/* 927, dsql_mustuse_numeric_div_dial1 */
-	{336397253, "Strings cannot be divided in dialect 3"},		/* 928, dsql_nostring_div_dial3 */
-	{336397254, "Invalid data type for division in dialect 3"},		/* 929, dsql_invalid_type_div_dial3 */
-	{336397255, "Strings cannot be negated (applied the minus operator) in dialect 3"},		/* 930, dsql_nostring_neg_dial3 */
-	{336397256, "Invalid data type for negation (minus operator)"},		/* 931, dsql_invalid_type_neg */
-	{336397257, "Cannot have more than 255 items in DISTINCT list"},		/* 932, dsql_max_distinct_items */
-	{336723983, "unable to open database"},		/* 933, gsec_cant_open_db */
-	{336723984, "error in switch specifications"},		/* 934, gsec_switches_error */
-	{336723985, "no operation specified"},		/* 935, gsec_no_op_spec */
-	{336723986, "no user name specified"},		/* 936, gsec_no_usr_name */
-	{336723987, "add record error"},		/* 937, gsec_err_add */
-	{336723988, "modify record error"},		/* 938, gsec_err_modify */
-	{336723989, "find/modify record error"},		/* 939, gsec_err_find_mod */
-	{336723990, "record not found for user: @1"},		/* 940, gsec_err_rec_not_found */
-	{336723991, "delete record error"},		/* 941, gsec_err_delete */
-	{336723992, "find/delete record error"},		/* 942, gsec_err_find_del */
-	{336723996, "find/display record error"},		/* 943, gsec_err_find_disp */
-	{336723997, "invalid parameter, no switch defined"},		/* 944, gsec_inv_param */
-	{336723998, "operation already specified"},		/* 945, gsec_op_specified */
-	{336723999, "password already specified"},		/* 946, gsec_pw_specified */
-	{336724000, "uid already specified"},		/* 947, gsec_uid_specified */
-	{336724001, "gid already specified"},		/* 948, gsec_gid_specified */
-	{336724002, "project already specified"},		/* 949, gsec_proj_specified */
-	{336724003, "organization already specified"},		/* 950, gsec_org_specified */
-	{336724004, "first name already specified"},		/* 951, gsec_fname_specified */
-	{336724005, "middle name already specified"},		/* 952, gsec_mname_specified */
-	{336724006, "last name already specified"},		/* 953, gsec_lname_specified */
-	{336724008, "invalid switch specified"},		/* 954, gsec_inv_switch */
-	{336724009, "ambiguous switch specified"},		/* 955, gsec_amb_switch */
-	{336724010, "no operation specified for parameters"},		/* 956, gsec_no_op_specified */
-	{336724011, "no parameters allowed for this operation"},		/* 957, gsec_params_not_allowed */
-	{336724012, "incompatible switches specified"},		/* 958, gsec_incompat_switch */
-	{336724044, "Invalid user name (maximum 31 bytes allowed)"},		/* 959, gsec_inv_username */
-	{336724045, "Warning - maximum 8 significant bytes of password used"},		/* 960, gsec_inv_pw_length */
-	{336724046, "database already specified"},		/* 961, gsec_db_specified */
-	{336724047, "database administrator name already specified"},		/* 962, gsec_db_admin_specified */
-	{336724048, "database administrator password already specified"},		/* 963, gsec_db_admin_pw_specified */
-	{336724049, "SQL role name already specified"},		/* 964, gsec_sql_role_specified */
-	{336920577, "found unknown switch"},		/* 965, gstat_unknown_switch */
-	{336920578, "please retry, giving a database name"},		/* 966, gstat_retry */
-	{336920579, "Wrong ODS version, expected @1, encountered @2"},		/* 967, gstat_wrong_ods */
-	{336920580, "Unexpected end of database file."},		/* 968, gstat_unexpected_eof */
-	{336920605, "Can't open database file @1"},		/* 969, gstat_open_err */
-	{336920606, "Can't read a database page"},		/* 970, gstat_read_err */
-	{336920607, "System memory exhausted"},		/* 971, gstat_sysmemex */
-	{336986113, "Wrong value for access mode"},		/* 972, fbsvcmgr_bad_am */
-	{336986114, "Wrong value for write mode"},		/* 973, fbsvcmgr_bad_wm */
-	{336986115, "Wrong value for reserve space"},		/* 974, fbsvcmgr_bad_rs */
-	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 975, fbsvcmgr_info_err */
-	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 976, fbsvcmgr_query_err */
-	{336986118, "Unknown switch \"@1\""},		/* 977, fbsvcmgr_switch_unknown */
-	{336986159, "Wrong value for shutdown mode"},		/* 978, fbsvcmgr_bad_sm */
-	{336986160, "could not open file @1"},		/* 979, fbsvcmgr_fp_open */
-	{336986161, "could not read file @1"},		/* 980, fbsvcmgr_fp_read */
-	{336986162, "empty file @1"},		/* 981, fbsvcmgr_fp_empty */
-	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 982, utl_trusted_switch */
-	{337117213, "Missing parameter for switch @1"},		/* 983, nbackup_missing_param */
-	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 984, nbackup_allowed_switches */
-	{337117215, "Unrecognized parameter @1"},		/* 985, nbackup_unknown_param */
-	{337117216, "Unknown switch @1"},		/* 986, nbackup_unknown_switch */
-	{337117217, "Fetch password can't be used in service mode"},		/* 987, nbackup_nofetchpw_svc */
-	{337117218, "Error working with password file \"@1\""},		/* 988, nbackup_pwfile_error */
-	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 989, nbackup_size_with_lock */
-	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 990, nbackup_no_switch */
-	{337117223, "IO error (@1) reading file: @2"},		/* 991, nbackup_err_read */
-	{337117224, "IO error (@1) writing file: @2"},		/* 992, nbackup_err_write */
-	{337117225, "IO error (@1) seeking file: @2"},		/* 993, nbackup_err_seek */
-	{337117226, "Error (@1) opening database file: @2"},		/* 994, nbackup_err_opendb */
-	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 995, nbackup_err_fadvice */
-	{337117228, "Error (@1) creating database file: @2"},		/* 996, nbackup_err_createdb */
-	{337117229, "Error (@1) opening backup file: @2"},		/* 997, nbackup_err_openbk */
-	{337117230, "Error (@1) creating backup file: @2"},		/* 998, nbackup_err_createbk */
-	{337117231, "Unexpected end of database file @1"},		/* 999, nbackup_err_eofdb */
-	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1000, nbackup_fixup_wrongstate */
-	{337117233, "Database error"},		/* 1001, nbackup_err_db */
-	{337117234, "Username or password is too long"},		/* 1002, nbackup_userpw_toolong */
-	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 1003, nbackup_lostrec_db */
-	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 1004, nbackup_lostguid_db */
-	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 1005, nbackup_err_eofhdrdb */
-	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 1006, nbackup_db_notlock */
-	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 1007, nbackup_lostguid_bk */
-	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 1008, nbackup_page_changed */
-	{337117241, "Database file size is not a multiple of page size"},		/* 1009, nbackup_dbsize_inconsistent */
-	{337117242, "Level 0 backup is not restored"},		/* 1010, nbackup_failed_lzbk */
-	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1011, nbackup_err_eofhdrbk */
-	{337117244, "Invalid incremental backup file: @1"},		/* 1012, nbackup_invalid_incbk */
-	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1013, nbackup_unsupvers_incbk */
-	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1014, nbackup_invlevel_incbk */
-	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1015, nbackup_wrong_orderbk */
-	{337117248, "Unexpected end of backup file: @1"},		/* 1016, nbackup_err_eofbk */
-	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1017, nbackup_err_copy */
-	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1018, nbackup_err_eofhdr_restdb */
-	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1019, nbackup_lostguid_l0bk */
-	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1020, trace_conflict_acts */
-	{337182751, "action switch not found"},		/* 1021, trace_act_notfound */
-	{337182752, "switch \"@1\" must be set only once"},		/* 1022, trace_switch_once */
-	{337182753, "value for switch \"@1\" is missing"},		/* 1023, trace_param_val_miss */
-	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1024, trace_param_invalid */
-	{337182755, "unknown switch \"@1\" encountered"},		/* 1025, trace_switch_unknown */
-	{337182756, "switch \"@1\" can be used by service only"},		/* 1026, trace_switch_svc_only */
-	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1027, trace_switch_user_only */
-	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1028, trace_switch_param_miss */
-	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1029, trace_param_act_notcompat */
-	{337182760, "mandatory switch \"@1\" is missing"},		/* 1030, trace_mandatory_switch_miss */
+	{336068871, "Function @1 has not been defined on the package body @2"},		/* 783, dyn_funcnotdef_package */
+	{336068872, "Procedure @1 has not been defined on the package body @2"},		/* 784, dyn_procnotdef_package */
+	{336068873, "Function @1 has a signature mismatch on package body @2"},		/* 785, dyn_funcsignat_package */
+	{336068874, "Procedure @1 has a signature mismatch on package body @2"},		/* 786, dyn_procsignat_package */
+	{336068875, "Default values for parameters are allowed only in declaration of packaged procedure @1.@2"},		/* 787, dyn_defvaldecl_package */
+	{336330753, "found unknown switch"},		/* 788, gbak_unknown_switch */
+	{336330754, "page size parameter missing"},		/* 789, gbak_page_size_missing */
+	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* 790, gbak_page_size_toobig */
+	{336330756, "redirect location for output is not specified"},		/* 791, gbak_redir_ouput_missing */
+	{336330757, "conflicting switches for backup/restore"},		/* 792, gbak_switches_conflict */
+	{336330758, "device type @1 not known"},		/* 793, gbak_unknown_device */
+	{336330759, "protection is not there yet"},		/* 794, gbak_no_protection */
+	{336330760, "page size is allowed only on restore or create"},		/* 795, gbak_page_size_not_allowed */
+	{336330761, "multiple sources or destinations specified"},		/* 796, gbak_multi_source_dest */
+	{336330762, "requires both input and output filenames"},		/* 797, gbak_filename_missing */
+	{336330763, "input and output have the same name.  Disallowed."},		/* 798, gbak_dup_inout_names */
+	{336330764, "expected page size, encountered \"@1\""},		/* 799, gbak_inv_page_size */
+	{336330765, "REPLACE specified, but the first file @1 is a database"},		/* 800, gbak_db_specified */
+	{336330766, "database @1 already exists.  To replace it, use the -REP switch"},		/* 801, gbak_db_exists */
+	{336330767, "device type not specified"},		/* 802, gbak_unk_device */
+	{336330772, "gds_$blob_info failed"},		/* 803, gbak_blob_info_failed */
+	{336330773, "do not understand BLOB INFO item @1"},		/* 804, gbak_unk_blob_item */
+	{336330774, "gds_$get_segment failed"},		/* 805, gbak_get_seg_failed */
+	{336330775, "gds_$close_blob failed"},		/* 806, gbak_close_blob_failed */
+	{336330776, "gds_$open_blob failed"},		/* 807, gbak_open_blob_failed */
+	{336330777, "Failed in put_blr_gen_id"},		/* 808, gbak_put_blr_gen_id_failed */
+	{336330778, "data type @1 not understood"},		/* 809, gbak_unk_type */
+	{336330779, "gds_$compile_request failed"},		/* 810, gbak_comp_req_failed */
+	{336330780, "gds_$start_request failed"},		/* 811, gbak_start_req_failed */
+	{336330781, "gds_$receive failed"},		/* 812, gbak_rec_failed */
+	{336330782, "gds_$release_request failed"},		/* 813, gbak_rel_req_failed */
+	{336330783, "gds_$database_info failed"},		/* 814, gbak_db_info_failed */
+	{336330784, "Expected database description record"},		/* 815, gbak_no_db_desc */
+	{336330785, "failed to create database @1"},		/* 816, gbak_db_create_failed */
+	{336330786, "RESTORE: decompression length error"},		/* 817, gbak_decomp_len_error */
+	{336330787, "cannot find table @1"},		/* 818, gbak_tbl_missing */
+	{336330788, "Cannot find column for BLOB"},		/* 819, gbak_blob_col_missing */
+	{336330789, "gds_$create_blob failed"},		/* 820, gbak_create_blob_failed */
+	{336330790, "gds_$put_segment failed"},		/* 821, gbak_put_seg_failed */
+	{336330791, "expected record length"},		/* 822, gbak_rec_len_exp */
+	{336330792, "wrong length record, expected @1 encountered @2"},		/* 823, gbak_inv_rec_len */
+	{336330793, "expected data attribute"},		/* 824, gbak_exp_data_type */
+	{336330794, "Failed in store_blr_gen_id"},		/* 825, gbak_gen_id_failed */
+	{336330795, "do not recognize record type @1"},		/* 826, gbak_unk_rec_type */
+	{336330796, "Expected backup version 1..10.  Found @1"},		/* 827, gbak_inv_bkup_ver */
+	{336330797, "expected backup description record"},		/* 828, gbak_missing_bkup_desc */
+	{336330798, "string truncated"},		/* 829, gbak_string_trunc */
+	{336330799, "warning -- record could not be restored"},		/* 830, gbak_cant_rest_record */
+	{336330800, "gds_$send failed"},		/* 831, gbak_send_failed */
+	{336330801, "no table name for data"},		/* 832, gbak_no_tbl_name */
+	{336330802, "unexpected end of file on backup file"},		/* 833, gbak_unexp_eof */
+	{336330803, "database format @1 is too old to restore to"},		/* 834, gbak_db_format_too_old */
+	{336330804, "array dimension for column @1 is invalid"},		/* 835, gbak_inv_array_dim */
+	{336330807, "Expected XDR record length"},		/* 836, gbak_xdr_len_expected */
+	{336330817, "cannot open backup file @1"},		/* 837, gbak_open_bkup_error */
+	{336330818, "cannot open status and error output file @1"},		/* 838, gbak_open_error */
+	{336330934, "blocking factor parameter missing"},		/* 839, gbak_missing_block_fac */
+	{336330935, "expected blocking factor, encountered \"@1\""},		/* 840, gbak_inv_block_fac */
+	{336330936, "a blocking factor may not be used in conjunction with device CT"},		/* 841, gbak_block_fac_specified */
+	{336330940, "user name parameter missing"},		/* 842, gbak_missing_username */
+	{336330941, "password parameter missing"},		/* 843, gbak_missing_password */
+	{336330952, " missing parameter for the number of bytes to be skipped"},		/* 844, gbak_missing_skipped_bytes */
+	{336330953, "expected number of bytes to be skipped, encountered \"@1\""},		/* 845, gbak_inv_skipped_bytes */
+	{336330965, "character set"},		/* 846, gbak_err_restore_charset */
+	{336330967, "collation"},		/* 847, gbak_err_restore_collation */
+	{336330972, "Unexpected I/O error while reading from backup file"},		/* 848, gbak_read_error */
+	{336330973, "Unexpected I/O error while writing to backup file"},		/* 849, gbak_write_error */
+	{336330985, "could not drop database @1 (database might be in use)"},		/* 850, gbak_db_in_use */
+	{336330990, "System memory exhausted"},		/* 851, gbak_sysmemex */
+	{336331002, "SQL role"},		/* 852, gbak_restore_role_failed */
+	{336331005, "SQL role parameter missing"},		/* 853, gbak_role_op_missing */
+	{336331010, "page buffers parameter missing"},		/* 854, gbak_page_buffers_missing */
+	{336331011, "expected page buffers, encountered \"@1\""},		/* 855, gbak_page_buffers_wrong_param */
+	{336331012, "page buffers is allowed only on restore or create"},		/* 856, gbak_page_buffers_restore */
+	{336331014, "size specification either missing or incorrect for file @1"},		/* 857, gbak_inv_size */
+	{336331015, "file @1 out of sequence"},		/* 858, gbak_file_outof_sequence */
+	{336331016, "can't join -- one of the files missing"},		/* 859, gbak_join_file_missing */
+	{336331017, " standard input is not supported when using join operation"},		/* 860, gbak_stdin_not_supptd */
+	{336331018, "standard output is not supported when using split operation"},		/* 861, gbak_stdout_not_supptd */
+	{336331019, "backup file @1 might be corrupt"},		/* 862, gbak_bkup_corrupt */
+	{336331020, "database file specification missing"},		/* 863, gbak_unk_db_file_spec */
+	{336331021, "can't write a header record to file @1"},		/* 864, gbak_hdr_write_failed */
+	{336331022, "free disk space exhausted"},		/* 865, gbak_disk_space_ex */
+	{336331023, "file size given (@1) is less than minimum allowed (@2)"},		/* 866, gbak_size_lt_min */
+	{336331025, "service name parameter missing"},		/* 867, gbak_svc_name_missing */
+	{336331026, "Cannot restore over current database, must be SYSDBA or owner of the existing database."},		/* 868, gbak_not_ownr */
+	{336331031, "\"read_only\" or \"read_write\" required"},		/* 869, gbak_mode_req */
+	{336331033, "just data ignore all constraints etc."},		/* 870, gbak_just_data */
+	{336331034, "restoring data only ignoring foreign key, unique, not null & other constraints"},		/* 871, gbak_data_only */
+	{336331078, "verbose interval value parameter missing"},		/* 872, gbak_missing_interval */
+	{336331079, "verbose interval value cannot be smaller than @1"},		/* 873, gbak_wrong_interval */
+	{336331081, "verify (verbose) and verbint options are mutually exclusive"},		/* 874, gbak_verify_verbint */
+	{336331082, "option -@1 is allowed only on restore or create"},		/* 875, gbak_option_only_restore */
+	{336331083, "option -@1 is allowed only on backup"},		/* 876, gbak_option_only_backup */
+	{336331084, "options -@1 and -@2 are mutually exclusive"},		/* 877, gbak_option_conflict */
+	{336331085, "parameter for option -@1 was already specified with value \"@2\""},		/* 878, gbak_param_conflict */
+	{336331086, "option -@1 was already specified"},		/* 879, gbak_option_repeated */
+	{336331091, "dependency depth greater than @1 for view @2"},		/* 880, gbak_max_dbkey_recursion */
+	{336331092, "value greater than @1 when calculating length of rdb$db_key for view @2"},		/* 881, gbak_max_dbkey_length */
+	{336331093, "Invalid metadata detected. Use -FIX_FSS_METADATA option."},		/* 882, gbak_invalid_metadata */
+	{336331094, "Invalid data detected. Use -FIX_FSS_DATA option."},		/* 883, gbak_invalid_data */
+	{336331096, "Expected backup version @2..@3.  Found @1"},		/* 884, gbak_inv_bkup_ver2 */
+	{336397205, "ODS versions before ODS@1 are not supported"},		/* 885, dsql_too_old_ods */
+	{336397206, "Table @1 does not exist"},		/* 886, dsql_table_not_found */
+	{336397207, "View @1 does not exist"},		/* 887, dsql_view_not_found */
+	{336397208, "At line @1, column @2"},		/* 888, dsql_line_col_error */
+	{336397209, "At unknown line and column"},		/* 889, dsql_unknown_pos */
+	{336397210, "Column @1 cannot be repeated in @2 statement"},		/* 890, dsql_no_dup_name */
+	{336397211, "Too many values (more than @1) in member list to match against"},		/* 891, dsql_too_many_values */
+	{336397212, "Array and BLOB data types not allowed in computed field"},		/* 892, dsql_no_array_computed */
+	{336397213, "Implicit domain name @1 not allowed in user created domain"},		/* 893, dsql_implicit_domain_name */
+	{336397214, "scalar operator used on field @1 which is not an array"},		/* 894, dsql_only_can_subscript_array */
+	{336397215, "cannot sort on more than 255 items"},		/* 895, dsql_max_sort_items */
+	{336397216, "cannot group on more than 255 items"},		/* 896, dsql_max_group_items */
+	{336397217, "Cannot include the same field (@1.@2) twice in the ORDER BY clause with conflicting sorting options"},		/* 897, dsql_conflicting_sort_field */
+	{336397218, "column list from derived table @1 has more columns than the number of items in its SELECT statement"},		/* 898, dsql_derived_table_more_columns */
+	{336397219, "column list from derived table @1 has less columns than the number of items in its SELECT statement"},		/* 899, dsql_derived_table_less_columns */
+	{336397220, "no column name specified for column number @1 in derived table @2"},		/* 900, dsql_derived_field_unnamed */
+	{336397221, "column @1 was specified multiple times for derived table @2"},		/* 901, dsql_derived_field_dup_name */
+	{336397222, "Internal dsql error: alias type expected by pass1_expand_select_node"},		/* 902, dsql_derived_alias_select */
+	{336397223, "Internal dsql error: alias type expected by pass1_field"},		/* 903, dsql_derived_alias_field */
+	{336397224, "Internal dsql error: column position out of range in pass1_union_auto_cast"},		/* 904, dsql_auto_field_bad_pos */
+	{336397225, "Recursive CTE member (@1) can refer itself only in FROM clause"},		/* 905, dsql_cte_wrong_reference */
+	{336397226, "CTE '@1' has cyclic dependencies"},		/* 906, dsql_cte_cycle */
+	{336397227, "Recursive member of CTE can't be member of an outer join"},		/* 907, dsql_cte_outer_join */
+	{336397228, "Recursive member of CTE can't reference itself more than once"},		/* 908, dsql_cte_mult_references */
+	{336397229, "Recursive CTE (@1) must be an UNION"},		/* 909, dsql_cte_not_a_union */
+	{336397230, "CTE '@1' defined non-recursive member after recursive"},		/* 910, dsql_cte_nonrecurs_after_recurs */
+	{336397231, "Recursive member of CTE '@1' has @2 clause"},		/* 911, dsql_cte_wrong_clause */
+	{336397232, "Recursive members of CTE (@1) must be linked with another members via UNION ALL"},		/* 912, dsql_cte_union_all */
+	{336397233, "Non-recursive member is missing in CTE '@1'"},		/* 913, dsql_cte_miss_nonrecursive */
+	{336397234, "WITH clause can't be nested"},		/* 914, dsql_cte_nested_with */
+	{336397235, "column @1 appears more than once in USING clause"},		/* 915, dsql_col_more_than_once_using */
+	{336397236, "feature is not supported in dialect @1"},		/* 916, dsql_unsupp_feature_dialect */
+	{336397237, "CTE \"@1\" is not used in query"},		/* 917, dsql_cte_not_used */
+	{336397238, "column @1 appears more than once in ALTER VIEW"},		/* 918, dsql_col_more_than_once_view */
+	{336397239, "@1 is not supported inside IN AUTONOMOUS TRANSACTION block"},		/* 919, dsql_unsupported_in_auto_trans */
+	{336397240, "Unknown node type @1 in dsql/GEN_expr"},		/* 920, dsql_eval_unknode */
+	{336397241, "Argument for @1 in dialect 1 must be string or numeric"},		/* 921, dsql_agg_wrongarg */
+	{336397242, "Argument for @1 in dialect 3 must be numeric"},		/* 922, dsql_agg2_wrongarg */
+	{336397243, "Strings cannot be added to or subtracted from DATE or TIME types"},		/* 923, dsql_nodateortime_pm_string */
+	{336397244, "Invalid data type for subtraction involving DATE, TIME or TIMESTAMP types"},		/* 924, dsql_invalid_datetime_subtract */
+	{336397245, "Adding two DATE values or two TIME values is not allowed"},		/* 925, dsql_invalid_dateortime_add */
+	{336397246, "DATE value cannot be subtracted from the provided data type"},		/* 926, dsql_invalid_type_minus_date */
+	{336397247, "Strings cannot be added or subtracted in dialect 3"},		/* 927, dsql_nostring_addsub_dial3 */
+	{336397248, "Invalid data type for addition or subtraction in dialect 3"},		/* 928, dsql_invalid_type_addsub_dial3 */
+	{336397249, "Invalid data type for multiplication in dialect 1"},		/* 929, dsql_invalid_type_multip_dial1 */
+	{336397250, "Strings cannot be multiplied in dialect 3"},		/* 930, dsql_nostring_multip_dial3 */
+	{336397251, "Invalid data type for multiplication in dialect 3"},		/* 931, dsql_invalid_type_multip_dial3 */
+	{336397252, "Division in dialect 1 must be between numeric data types"},		/* 932, dsql_mustuse_numeric_div_dial1 */
+	{336397253, "Strings cannot be divided in dialect 3"},		/* 933, dsql_nostring_div_dial3 */
+	{336397254, "Invalid data type for division in dialect 3"},		/* 934, dsql_invalid_type_div_dial3 */
+	{336397255, "Strings cannot be negated (applied the minus operator) in dialect 3"},		/* 935, dsql_nostring_neg_dial3 */
+	{336397256, "Invalid data type for negation (minus operator)"},		/* 936, dsql_invalid_type_neg */
+	{336397257, "Cannot have more than 255 items in DISTINCT list"},		/* 937, dsql_max_distinct_items */
+	{336723983, "unable to open database"},		/* 938, gsec_cant_open_db */
+	{336723984, "error in switch specifications"},		/* 939, gsec_switches_error */
+	{336723985, "no operation specified"},		/* 940, gsec_no_op_spec */
+	{336723986, "no user name specified"},		/* 941, gsec_no_usr_name */
+	{336723987, "add record error"},		/* 942, gsec_err_add */
+	{336723988, "modify record error"},		/* 943, gsec_err_modify */
+	{336723989, "find/modify record error"},		/* 944, gsec_err_find_mod */
+	{336723990, "record not found for user: @1"},		/* 945, gsec_err_rec_not_found */
+	{336723991, "delete record error"},		/* 946, gsec_err_delete */
+	{336723992, "find/delete record error"},		/* 947, gsec_err_find_del */
+	{336723996, "find/display record error"},		/* 948, gsec_err_find_disp */
+	{336723997, "invalid parameter, no switch defined"},		/* 949, gsec_inv_param */
+	{336723998, "operation already specified"},		/* 950, gsec_op_specified */
+	{336723999, "password already specified"},		/* 951, gsec_pw_specified */
+	{336724000, "uid already specified"},		/* 952, gsec_uid_specified */
+	{336724001, "gid already specified"},		/* 953, gsec_gid_specified */
+	{336724002, "project already specified"},		/* 954, gsec_proj_specified */
+	{336724003, "organization already specified"},		/* 955, gsec_org_specified */
+	{336724004, "first name already specified"},		/* 956, gsec_fname_specified */
+	{336724005, "middle name already specified"},		/* 957, gsec_mname_specified */
+	{336724006, "last name already specified"},		/* 958, gsec_lname_specified */
+	{336724008, "invalid switch specified"},		/* 959, gsec_inv_switch */
+	{336724009, "ambiguous switch specified"},		/* 960, gsec_amb_switch */
+	{336724010, "no operation specified for parameters"},		/* 961, gsec_no_op_specified */
+	{336724011, "no parameters allowed for this operation"},		/* 962, gsec_params_not_allowed */
+	{336724012, "incompatible switches specified"},		/* 963, gsec_incompat_switch */
+	{336724044, "Invalid user name (maximum 31 bytes allowed)"},		/* 964, gsec_inv_username */
+	{336724045, "Warning - maximum 8 significant bytes of password used"},		/* 965, gsec_inv_pw_length */
+	{336724046, "database already specified"},		/* 966, gsec_db_specified */
+	{336724047, "database administrator name already specified"},		/* 967, gsec_db_admin_specified */
+	{336724048, "database administrator password already specified"},		/* 968, gsec_db_admin_pw_specified */
+	{336724049, "SQL role name already specified"},		/* 969, gsec_sql_role_specified */
+	{336920577, "found unknown switch"},		/* 970, gstat_unknown_switch */
+	{336920578, "please retry, giving a database name"},		/* 971, gstat_retry */
+	{336920579, "Wrong ODS version, expected @1, encountered @2"},		/* 972, gstat_wrong_ods */
+	{336920580, "Unexpected end of database file."},		/* 973, gstat_unexpected_eof */
+	{336920605, "Can't open database file @1"},		/* 974, gstat_open_err */
+	{336920606, "Can't read a database page"},		/* 975, gstat_read_err */
+	{336920607, "System memory exhausted"},		/* 976, gstat_sysmemex */
+	{336986113, "Wrong value for access mode"},		/* 977, fbsvcmgr_bad_am */
+	{336986114, "Wrong value for write mode"},		/* 978, fbsvcmgr_bad_wm */
+	{336986115, "Wrong value for reserve space"},		/* 979, fbsvcmgr_bad_rs */
+	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 980, fbsvcmgr_info_err */
+	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 981, fbsvcmgr_query_err */
+	{336986118, "Unknown switch \"@1\""},		/* 982, fbsvcmgr_switch_unknown */
+	{336986159, "Wrong value for shutdown mode"},		/* 983, fbsvcmgr_bad_sm */
+	{336986160, "could not open file @1"},		/* 984, fbsvcmgr_fp_open */
+	{336986161, "could not read file @1"},		/* 985, fbsvcmgr_fp_read */
+	{336986162, "empty file @1"},		/* 986, fbsvcmgr_fp_empty */
+	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 987, utl_trusted_switch */
+	{337117213, "Missing parameter for switch @1"},		/* 988, nbackup_missing_param */
+	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 989, nbackup_allowed_switches */
+	{337117215, "Unrecognized parameter @1"},		/* 990, nbackup_unknown_param */
+	{337117216, "Unknown switch @1"},		/* 991, nbackup_unknown_switch */
+	{337117217, "Fetch password can't be used in service mode"},		/* 992, nbackup_nofetchpw_svc */
+	{337117218, "Error working with password file \"@1\""},		/* 993, nbackup_pwfile_error */
+	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 994, nbackup_size_with_lock */
+	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 995, nbackup_no_switch */
+	{337117223, "IO error (@1) reading file: @2"},		/* 996, nbackup_err_read */
+	{337117224, "IO error (@1) writing file: @2"},		/* 997, nbackup_err_write */
+	{337117225, "IO error (@1) seeking file: @2"},		/* 998, nbackup_err_seek */
+	{337117226, "Error (@1) opening database file: @2"},		/* 999, nbackup_err_opendb */
+	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 1000, nbackup_err_fadvice */
+	{337117228, "Error (@1) creating database file: @2"},		/* 1001, nbackup_err_createdb */
+	{337117229, "Error (@1) opening backup file: @2"},		/* 1002, nbackup_err_openbk */
+	{337117230, "Error (@1) creating backup file: @2"},		/* 1003, nbackup_err_createbk */
+	{337117231, "Unexpected end of database file @1"},		/* 1004, nbackup_err_eofdb */
+	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1005, nbackup_fixup_wrongstate */
+	{337117233, "Database error"},		/* 1006, nbackup_err_db */
+	{337117234, "Username or password is too long"},		/* 1007, nbackup_userpw_toolong */
+	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 1008, nbackup_lostrec_db */
+	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 1009, nbackup_lostguid_db */
+	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 1010, nbackup_err_eofhdrdb */
+	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 1011, nbackup_db_notlock */
+	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 1012, nbackup_lostguid_bk */
+	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 1013, nbackup_page_changed */
+	{337117241, "Database file size is not a multiple of page size"},		/* 1014, nbackup_dbsize_inconsistent */
+	{337117242, "Level 0 backup is not restored"},		/* 1015, nbackup_failed_lzbk */
+	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1016, nbackup_err_eofhdrbk */
+	{337117244, "Invalid incremental backup file: @1"},		/* 1017, nbackup_invalid_incbk */
+	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1018, nbackup_unsupvers_incbk */
+	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1019, nbackup_invlevel_incbk */
+	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1020, nbackup_wrong_orderbk */
+	{337117248, "Unexpected end of backup file: @1"},		/* 1021, nbackup_err_eofbk */
+	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1022, nbackup_err_copy */
+	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1023, nbackup_err_eofhdr_restdb */
+	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1024, nbackup_lostguid_l0bk */
+	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1025, trace_conflict_acts */
+	{337182751, "action switch not found"},		/* 1026, trace_act_notfound */
+	{337182752, "switch \"@1\" must be set only once"},		/* 1027, trace_switch_once */
+	{337182753, "value for switch \"@1\" is missing"},		/* 1028, trace_param_val_miss */
+	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1029, trace_param_invalid */
+	{337182755, "unknown switch \"@1\" encountered"},		/* 1030, trace_switch_unknown */
+	{337182756, "switch \"@1\" can be used by service only"},		/* 1031, trace_switch_svc_only */
+	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1032, trace_switch_user_only */
+	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1033, trace_switch_param_miss */
+	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1034, trace_param_act_notcompat */
+	{337182760, "mandatory switch \"@1\" is missing"},		/* 1035, trace_mandatory_switch_miss */
 	{0, NULL}
 };

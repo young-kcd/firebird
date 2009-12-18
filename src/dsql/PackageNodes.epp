@@ -439,13 +439,9 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 				executeCreate(tdbb, transaction);
 			else
 			{
-				//// TODO: localize
 				status_exception::raise(
 					Arg::Gds(isc_no_meta_update) <<
-					Arg::Gds(isc_random) <<
-					Arg::Str("Package not found") <<
-					Arg::Gds(isc_random) <<
-					Arg::Str(name));
+					Arg::Gds(isc_dyn_package_not_found) << Arg::Str(name));
 			}
 		}
 	}
@@ -623,13 +619,9 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (!found && !silent)
 	{
-		//// TODO: localize
 		status_exception::raise(
 			Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_random) <<
-			Arg::Str("Package not found") <<
-			Arg::Gds(isc_random) <<
-			Arg::Str(name));
+			Arg::Gds(isc_dyn_package_not_found) << Arg::Str(name));
 	}
 
 	SortedObjectsArray<Signature> existingFuncs(getPool());
@@ -852,13 +844,9 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (!modified)
 	{
-		//// TODO: localize
 		status_exception::raise(
 			Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_random) <<
-			Arg::Str("Package not found") <<
-			Arg::Gds(isc_random) <<
-			Arg::Str(name));
+			Arg::Gds(isc_dyn_package_not_found) << Arg::Str(name));
 	}
 
 	SortedObjectsArray<Signature> existingFuncs(getPool());
@@ -903,17 +891,13 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 		if (!found || !newFuncs[pos].defined)
 		{
-			//// TODO: localize
 			status_exception::raise(
-				Arg::Gds(isc_random) << Arg::Str(string("Function ") + i->name.c_str() +
-					" has not been defined on the package body " + name.c_str()));
+				Arg::Gds(isc_dyn_funcnotdef_package) << i->name.c_str() << name.c_str());
 		}
 		else if (newFuncs[pos] != *i)
 		{
-			//// TODO: localize
 			status_exception::raise(
-				Arg::Gds(isc_random) << Arg::Str(string("Function ") + i->name.c_str() +
-					" signature mismatch on package body " + name.c_str()));
+				Arg::Gds(isc_dyn_funcsignat_package) << i->name.c_str() << name.c_str());
 		}
 	}
 
@@ -925,17 +909,13 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 		if (!found || !newProcs[pos].defined)
 		{
-			//// TODO: localize
 			status_exception::raise(
-				Arg::Gds(isc_random) << Arg::Str(string("Procedure ") + i->name.c_str() +
-					" has not been defined on the package body " + name.c_str()));
+				Arg::Gds(isc_dyn_procnotdef_package) << i->name.c_str() << name.c_str());
 		}
 		else if (newProcs[pos] != *i)
 		{
-			//// TODO: localize
 			status_exception::raise(
-				Arg::Gds(isc_random) << Arg::Str(string("Procedure ") + i->name.c_str() +
-					" signature mismatch on package body " + name.c_str()));
+				Arg::Gds(isc_dyn_procsignat_package) << i->name.c_str() << name.c_str());
 		}
 
 		for (SortedObjectsArray<ParameterInfo>::iterator j = newProcs[pos].parameters.begin();
@@ -943,10 +923,8 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			if (!j->defaultSource.isEmpty() || !j->defaultValue.isEmpty())
 			{
-				//// TODO: localize
 				status_exception::raise(
-					Arg::Gds(isc_random) << Arg::Str("Default values for parameters are "
-						"allowed only in declaration of packaged procedure"));
+					Arg::Gds(isc_dyn_defvaldecl_package) << name.c_str() << i->name.c_str());
 			}
 		}
 	}
@@ -1031,13 +1009,9 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (!found)
 	{
-		//// TODO: localize
 		status_exception::raise(
 			Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_random) <<
-			Arg::Str("Package not found") <<
-			Arg::Gds(isc_random) <<
-			Arg::Str(name));
+			Arg::Gds(isc_dyn_package_not_found) << Arg::Str(name));
 	}
 
 	requestHandle.reset(tdbb, drq_m_pkg_fun, DYN_REQUESTS);

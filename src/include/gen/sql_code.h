@@ -803,6 +803,11 @@ static const struct {
 	{336068868, -607}, /* 260 dyn_cannot_mod_sysfunc */
 	{336068869, -607}, /* 261 dyn_invalid_ddl_proc */
 	{336068870, -607}, /* 262 dyn_invalid_ddl_trig */
+	{336068871, -901}, /* 263 dyn_funcnotdef_package */
+	{336068872, -901}, /* 264 dyn_procnotdef_package */
+	{336068873, -901}, /* 265 dyn_funcsignat_package */
+	{336068874, -901}, /* 266 dyn_procsignat_package */
+	{336068875, -901}, /* 267 dyn_defvaldecl_package */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

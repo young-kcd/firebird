@@ -1616,6 +1616,16 @@ C --
       PARAMETER (GDS__dyn_invalid_ddl_proc             = 336068869)
       INTEGER*4 GDS__dyn_invalid_ddl_trig            
       PARAMETER (GDS__dyn_invalid_ddl_trig             = 336068870)
+      INTEGER*4 GDS__dyn_funcnotdef_package          
+      PARAMETER (GDS__dyn_funcnotdef_package           = 336068871)
+      INTEGER*4 GDS__dyn_procnotdef_package          
+      PARAMETER (GDS__dyn_procnotdef_package           = 336068872)
+      INTEGER*4 GDS__dyn_funcsignat_package          
+      PARAMETER (GDS__dyn_funcsignat_package           = 336068873)
+      INTEGER*4 GDS__dyn_procsignat_package          
+      PARAMETER (GDS__dyn_procsignat_package           = 336068874)
+      INTEGER*4 GDS__dyn_defvaldecl_package          
+      PARAMETER (GDS__dyn_defvaldecl_package           = 336068875)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

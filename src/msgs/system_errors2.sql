@@ -791,6 +791,11 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-607, 'HY', '000', 8, 260, 'dyn_cannot_mod_sysfunc', NULL, NULL)
 (-607, 'HY', '000', 8, 261, 'dyn_invalid_ddl_proc', NULL, NULL)
 (-607, 'HY', '000', 8, 262, 'dyn_invalid_ddl_trig' NULL, NULL)
+(-901, '42', '000', 8, 263, 'dyn_funcnotdef_package', NULL, NULL)
+(-901, '42', '000', 8, 264, 'dyn_procnotdef_package', NULL, NULL)
+(-901, '42', '000', 8, 265, 'dyn_funcsignat_package', NULL, NULL)
+(-901, '42', '000', 8, 266, 'dyn_procsignat_package', NULL, NULL)
+(-901, '42', '000', 8, 267, 'dyn_defvaldecl_package', NULL, NULL)
 --  GBAK
 (-901, '00', '000', 12, 1, 'gbak_unknown_switch', NULL, NULL)
 (-901, '00', '000', 12, 2, 'gbak_page_size_missing', NULL, NULL)
