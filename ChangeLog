@@ -1,3 +1,9 @@
+2009-12-18 11:21  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.117.2.3):
+
+	Fixed unregistered bug: ALTER VIEW drops permissions
+
 2009-12-17 14:10  alexpeshkoff
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.104.2.2),
