@@ -1242,7 +1242,10 @@ THREAD_ENTRY_DECLARE NBACKUP_main(THREAD_ENTRY_PARAM arg)
 			const ISC_STATUS* s = e.value();
 			isc_print_status(s);
 		}
-		e.stuff_exception(uSvc->getStatus());
+ 		ISC_STATUS_ARRAY status;
+ 		e.stuff_exception(status);
+ 		uSvc->initStatus();
+ 		uSvc->setServiceStatus(status);
 		exit_code = FB_FAILURE;
 	}
 	catch (const Exception& e)
@@ -1250,7 +1253,10 @@ THREAD_ENTRY_DECLARE NBACKUP_main(THREAD_ENTRY_PARAM arg)
 		if (!uSvc->isService())
 			printf("%s\n", e.what());
 
-		e.stuff_exception(uSvc->getStatus());
+ 		ISC_STATUS_ARRAY status;
+ 		e.stuff_exception(status);
+ 		uSvc->initStatus();
+ 		uSvc->setServiceStatus(status);
 		exit_code = FB_FAILURE;
 	}
 

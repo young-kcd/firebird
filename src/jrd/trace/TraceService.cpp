@@ -342,7 +342,10 @@ THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Exception& e)
 	{
-		e.stuff_exception(svc->getStatus());
+		ISC_STATUS_ARRAY status;
+		e.stuff_exception(status);
+		svc->initStatus();
+		svc->setServiceStatus(status);
 		exit_code = FB_FAILURE;
 	}
 
