@@ -1,3 +1,89 @@
+2009-12-18 13:42  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.125), burp/burp.cpp (1.180),
+	common/UtilSvc.cpp (1.16), common/UtilSvc.h (1.15), jrd/jrd.cpp
+	(1.591), jrd/svc.cpp (1.305), jrd/svc.h (1.87),
+	jrd/trace/TraceService.cpp (1.18), utilities/nbackup.cpp (1.103),
+	utilities/gsec/gsec.cpp (1.122), utilities/gstat/dba.epp (1.122):
+
+	Frontported - fixed delivery of status vector from service thread
+
+2009-12-18 13:01  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.118),
+	lang_helpers/gds_codes.pas (1.116), src/dsql/PackageNodes.epp
+	(1.13), src/include/gen/codetext.h (1.126),
+	src/include/gen/iberror.h (1.130), src/include/gen/msgs.h (1.157),
+	src/include/gen/sql_code.h (1.132), src/include/gen/sql_state.h
+	(1.62), src/msgs/facilities2.sql (1.102), src/msgs/messages2.sql
+	(1.124), src/msgs/system_errors2.sql (1.78):
+
+	Move more hardcoded messages to the msg db.
+
+2009-12-18 11:26  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.136):
+
+	Fixed unregistered bug: ALTER VIEW drops permissions
+
+2009-12-18 08:46  robocop
+
+	* firebird2/src/jrd/: drq.h (1.41), irq.h (1.21):
+
+	Cleanup.
+
+2009-12-18 08:16  robocop
+
+	* firebird2/src/jrd/: drq.h (1.40), dyn_util.epp (1.72):
+
+	When the two loops were joined, the value for rdb$context_type was
+	different and this part was ignored, therefore a bug was introduced
+	where views based on packaged procedures can't find their base
+	fields.  Since adjusting the two conditions in the same loop was
+	cumbersome and the condition I needed to add made the statement a
+	mess, I preferred to have two loops again. Better a tad of
+	redundancy but with readable and correct code.
+
+2009-12-18 00:59  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.27), jrd/dpm.epp (1.117),
+	jrd/dyn_def.epp (1.200), jrd/dyn_df_proto.h (1.16),
+	jrd/dyn_dl_proto.h (1.12), jrd/dyn_md_proto.h (1.13):
+
+	Misc
+
+2009-12-18 00:57  asfernandes
+
+	* firebird2/src/msgs/facilities2.sql (1.101):
+
+	I insist again, we're in December (and counting from 1) :)
+
+2009-12-18 00:25  asfernandes
+
+	* firebird2/src/jrd/: dyn_def.epp (1.199), ini.epp (1.123):
+
+	Cleanup
+
+2009-12-17 22:55  sboyd
+
+	* firebird2/src/gpre/fbrmclib.cpp (1.19):
+
+	Fixed a memory leak.
+
+2009-12-17 20:29  hvlad
+
+	* firebird2/src/jrd/lck.cpp (1.109):
+
+	Caller should know reason why LM denied its request
+
+2009-12-17 16:07  asfernandes
+
+	* firebird2/src/: dsql/metd.epp (1.154), jrd/Relation.h (1.14),
+	jrd/dfw.epp (1.307), jrd/drq.h (1.39), jrd/dyn_def.epp (1.198),
+	jrd/dyn_util.epp (1.71), jrd/met.epp (1.307), jrd/tra.cpp (1.215):
+
+	Work in progress on RDB$VIEW_RELATIONS
+
 2009-12-17 11:50  robocop
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.117),
