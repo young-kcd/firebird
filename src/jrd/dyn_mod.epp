@@ -1361,7 +1361,6 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 			REL.RDB$SYSTEM_FLAG.NULL = FALSE;
 			REL.RDB$VIEW_BLR.NULL = TRUE;
 			REL.RDB$VIEW_SOURCE.NULL = TRUE;
-			REL.RDB$SECURITY_CLASS.NULL = TRUE;
 
 			jrd_req* request2 = NULL;
 
