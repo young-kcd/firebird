@@ -1011,55 +1011,56 @@ Data source : @4"},		/* 606, eds_statement */
 	{336986160, "could not open file @1"},		/* 984, fbsvcmgr_fp_open */
 	{336986161, "could not read file @1"},		/* 985, fbsvcmgr_fp_read */
 	{336986162, "empty file @1"},		/* 986, fbsvcmgr_fp_empty */
-	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 987, utl_trusted_switch */
-	{337117213, "Missing parameter for switch @1"},		/* 988, nbackup_missing_param */
-	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 989, nbackup_allowed_switches */
-	{337117215, "Unrecognized parameter @1"},		/* 990, nbackup_unknown_param */
-	{337117216, "Unknown switch @1"},		/* 991, nbackup_unknown_switch */
-	{337117217, "Fetch password can't be used in service mode"},		/* 992, nbackup_nofetchpw_svc */
-	{337117218, "Error working with password file \"@1\""},		/* 993, nbackup_pwfile_error */
-	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 994, nbackup_size_with_lock */
-	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 995, nbackup_no_switch */
-	{337117223, "IO error (@1) reading file: @2"},		/* 996, nbackup_err_read */
-	{337117224, "IO error (@1) writing file: @2"},		/* 997, nbackup_err_write */
-	{337117225, "IO error (@1) seeking file: @2"},		/* 998, nbackup_err_seek */
-	{337117226, "Error (@1) opening database file: @2"},		/* 999, nbackup_err_opendb */
-	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 1000, nbackup_err_fadvice */
-	{337117228, "Error (@1) creating database file: @2"},		/* 1001, nbackup_err_createdb */
-	{337117229, "Error (@1) opening backup file: @2"},		/* 1002, nbackup_err_openbk */
-	{337117230, "Error (@1) creating backup file: @2"},		/* 1003, nbackup_err_createbk */
-	{337117231, "Unexpected end of database file @1"},		/* 1004, nbackup_err_eofdb */
-	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1005, nbackup_fixup_wrongstate */
-	{337117233, "Database error"},		/* 1006, nbackup_err_db */
-	{337117234, "Username or password is too long"},		/* 1007, nbackup_userpw_toolong */
-	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 1008, nbackup_lostrec_db */
-	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 1009, nbackup_lostguid_db */
-	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 1010, nbackup_err_eofhdrdb */
-	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 1011, nbackup_db_notlock */
-	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 1012, nbackup_lostguid_bk */
-	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 1013, nbackup_page_changed */
-	{337117241, "Database file size is not a multiple of page size"},		/* 1014, nbackup_dbsize_inconsistent */
-	{337117242, "Level 0 backup is not restored"},		/* 1015, nbackup_failed_lzbk */
-	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1016, nbackup_err_eofhdrbk */
-	{337117244, "Invalid incremental backup file: @1"},		/* 1017, nbackup_invalid_incbk */
-	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1018, nbackup_unsupvers_incbk */
-	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1019, nbackup_invlevel_incbk */
-	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1020, nbackup_wrong_orderbk */
-	{337117248, "Unexpected end of backup file: @1"},		/* 1021, nbackup_err_eofbk */
-	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1022, nbackup_err_copy */
-	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1023, nbackup_err_eofhdr_restdb */
-	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1024, nbackup_lostguid_l0bk */
-	{337117255, "Wrong parameter %s for switch -D, need ON or OFF"},		/* 1025, nbackup_switchd_parameter */
-	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1026, trace_conflict_acts */
-	{337182751, "action switch not found"},		/* 1027, trace_act_notfound */
-	{337182752, "switch \"@1\" must be set only once"},		/* 1028, trace_switch_once */
-	{337182753, "value for switch \"@1\" is missing"},		/* 1029, trace_param_val_miss */
-	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1030, trace_param_invalid */
-	{337182755, "unknown switch \"@1\" encountered"},		/* 1031, trace_switch_unknown */
-	{337182756, "switch \"@1\" can be used by service only"},		/* 1032, trace_switch_svc_only */
-	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1033, trace_switch_user_only */
-	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1034, trace_switch_param_miss */
-	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1035, trace_param_act_notcompat */
-	{337182760, "mandatory switch \"@1\" is missing"},		/* 1036, trace_mandatory_switch_miss */
+	{336986164, "Invalid or missing parameter for switch @1"},		/* 987, fbsvcmgr_bad_arg */
+	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* 988, utl_trusted_switch */
+	{337117213, "Missing parameter for switch @1"},		/* 989, nbackup_missing_param */
+	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* 990, nbackup_allowed_switches */
+	{337117215, "Unrecognized parameter @1"},		/* 991, nbackup_unknown_param */
+	{337117216, "Unknown switch @1"},		/* 992, nbackup_unknown_switch */
+	{337117217, "Fetch password can't be used in service mode"},		/* 993, nbackup_nofetchpw_svc */
+	{337117218, "Error working with password file \"@1\""},		/* 994, nbackup_pwfile_error */
+	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 995, nbackup_size_with_lock */
+	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 996, nbackup_no_switch */
+	{337117223, "IO error (@1) reading file: @2"},		/* 997, nbackup_err_read */
+	{337117224, "IO error (@1) writing file: @2"},		/* 998, nbackup_err_write */
+	{337117225, "IO error (@1) seeking file: @2"},		/* 999, nbackup_err_seek */
+	{337117226, "Error (@1) opening database file: @2"},		/* 1000, nbackup_err_opendb */
+	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 1001, nbackup_err_fadvice */
+	{337117228, "Error (@1) creating database file: @2"},		/* 1002, nbackup_err_createdb */
+	{337117229, "Error (@1) opening backup file: @2"},		/* 1003, nbackup_err_openbk */
+	{337117230, "Error (@1) creating backup file: @2"},		/* 1004, nbackup_err_createbk */
+	{337117231, "Unexpected end of database file @1"},		/* 1005, nbackup_err_eofdb */
+	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1006, nbackup_fixup_wrongstate */
+	{337117233, "Database error"},		/* 1007, nbackup_err_db */
+	{337117234, "Username or password is too long"},		/* 1008, nbackup_userpw_toolong */
+	{337117235, "Cannot find record for database \"@1\" backup level @2 in the backup history"},		/* 1009, nbackup_lostrec_db */
+	{337117236, "Internal error. History query returned null SCN or GUID"},		/* 1010, nbackup_lostguid_db */
+	{337117237, "Unexpected end of file when reading header of database file \"@1\" (stage @2)"},		/* 1011, nbackup_err_eofhdrdb */
+	{337117238, "Internal error. Database file is not locked. Flags are @1"},		/* 1012, nbackup_db_notlock */
+	{337117239, "Internal error. Cannot get backup guid clumplet"},		/* 1013, nbackup_lostguid_bk */
+	{337117240, "Internal error. Database page @1 had been changed during backup (page SCN=@2, backup SCN=@3)"},		/* 1014, nbackup_page_changed */
+	{337117241, "Database file size is not a multiple of page size"},		/* 1015, nbackup_dbsize_inconsistent */
+	{337117242, "Level 0 backup is not restored"},		/* 1016, nbackup_failed_lzbk */
+	{337117243, "Unexpected end of file when reading header of backup file: @1"},		/* 1017, nbackup_err_eofhdrbk */
+	{337117244, "Invalid incremental backup file: @1"},		/* 1018, nbackup_invalid_incbk */
+	{337117245, "Unsupported version @1 of incremental backup file: @2"},		/* 1019, nbackup_unsupvers_incbk */
+	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1020, nbackup_invlevel_incbk */
+	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1021, nbackup_wrong_orderbk */
+	{337117248, "Unexpected end of backup file: @1"},		/* 1022, nbackup_err_eofbk */
+	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1023, nbackup_err_copy */
+	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1024, nbackup_err_eofhdr_restdb */
+	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1025, nbackup_lostguid_l0bk */
+	{337117255, "Wrong parameter %s for switch -D, need ON or OFF"},		/* 1026, nbackup_switchd_parameter */
+	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1027, trace_conflict_acts */
+	{337182751, "action switch not found"},		/* 1028, trace_act_notfound */
+	{337182752, "switch \"@1\" must be set only once"},		/* 1029, trace_switch_once */
+	{337182753, "value for switch \"@1\" is missing"},		/* 1030, trace_param_val_miss */
+	{337182754, "invalid value (\"@1\") for switch \"@2\""},		/* 1031, trace_param_invalid */
+	{337182755, "unknown switch \"@1\" encountered"},		/* 1032, trace_switch_unknown */
+	{337182756, "switch \"@1\" can be used by service only"},		/* 1033, trace_switch_svc_only */
+	{337182757, "switch \"@1\" can be used by interactive user only"},		/* 1034, trace_switch_user_only */
+	{337182758, "mandatory parameter \"@1\" for switch \"@2\" is missing"},		/* 1035, trace_switch_param_miss */
+	{337182759, "parameter \"@1\" is incompatible with action \"@2\""},		/* 1036, trace_param_act_notcompat */
+	{337182760, "mandatory switch \"@1\" is missing"},		/* 1037, trace_mandatory_switch_miss */
 	{0, NULL}
 };
