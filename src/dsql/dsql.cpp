@@ -666,7 +666,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 /**
 
- 	DSQL_set_cursor_name
+	DSQL_set_cursor
 
     @brief	Set a cursor name for a dynamic request
 
@@ -2752,14 +2752,6 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	{
 		TraceSQLStatementImpl stmt(request, NULL);
 		TraceManager::event_dsql_free(att, &stmt, DSQL_drop);
-	}
-
-	// If request is named, clear it from the hash table
-
-	if (request->req_name)
-	{
-		HSHD_remove(request->req_name);
-		request->req_name = NULL;
 	}
 
 	if (request->req_cursor)

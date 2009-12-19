@@ -387,36 +387,38 @@ public:
 	{
 	}
 
-	dsql_req*	req_parent;		// Source request, if cursor update
-	dsql_req*	req_sibling;	// Next sibling request, if cursor update
-	dsql_req*	req_offspring;	// Cursor update requests
 	MemoryPool&	req_pool;
 
-	dsql_sym* req_name;			// Name of request
-	dsql_sym* req_cursor;		// Cursor symbol, if any
+	dsql_req* req_parent;		// Source request, if cursor update
+	dsql_req* req_sibling;		// Next sibling request, if cursor update
+	dsql_req* req_offspring;	// Cursor update requests
+
 	dsql_dbb* req_dbb;			// DSQL attachment
 	jrd_tra* req_transaction;	// JRD transaction
 	dsql_nod* req_ddl_node;		// Store metadata request
-	BlockNode* blockNode;
 	dsql_blb* req_blob;			// Blob info for blob requests
-	jrd_req*	req_request;	// JRD request
-	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
+	jrd_req* req_request;		// JRD request
 	dsql_msg* req_send;			// Message to be sent to start request
 	dsql_msg* req_receive;		// Per record message to be received
-	dsql_msg* req_async;		// Message for sending scrolling information
 	dsql_par* req_eof;			// End of file parameter
 	dsql_par* req_dbkey;		// Database key for current of
 	dsql_par* req_rec_version;	// Record Version for current of
 	dsql_par* req_parent_rec_version;	// parent record version
 	dsql_par* req_parent_dbkey;	// Parent database key for current of
-	ULONG	req_inserts;		// records processed in request
-	ULONG	req_deletes;
-	ULONG	req_updates;
-	ULONG	req_selects;
 	REQ_TYPE req_type;			// Type of request
-	ULONG	req_flags;			// generic flag
+	ULONG req_flags;			// generic flag
 
+	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
 	Firebird::RefStrPtr req_sql_text;
+
+	// Execution state
+
+	dsql_sym* req_cursor;		// Cursor symbol, if any
+
+	ULONG req_inserts;		// records processed in request
+	ULONG req_deletes;
+	ULONG req_updates;
+	ULONG req_selects;
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;		// Number of clock ticks spent while fetching rows for this request since we reported it last time
@@ -576,6 +578,7 @@ public:
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
 	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
 	USHORT req_recursive_ctx_id;		// id of recursive union stream context
+	BlockNode* blockNode;
 
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
