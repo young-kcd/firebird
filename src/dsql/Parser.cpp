@@ -160,5 +160,4 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 	buffer.add(pos, start + length - pos);
 
 	dest = string(buffer.begin(), MIN(string::max_length(), buffer.getCount()));
-printf("--> %s\n", dest.c_str());
 }

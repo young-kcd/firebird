@@ -6846,21 +6846,26 @@ void CompiledStatement::append_user_string(UCHAR verb, const dsql_str* str)
 	UCharBuffer buffer;
 	const char* p = str->str_data;
 	ULONG len = str->str_length;
+	const char* charSetName = str->str_charset;
 
-	if (str->str_charset)
+	if (charSetName)
 	{
-		dsql_intlsym* charSet = METD_get_charset(this, strlen(str->str_charset),
-			str->str_charset);
-		if (charSet)
+		dsql_intlsym* charSet = METD_get_charset(this, strlen(charSetName), charSetName);
+
+		if (!charSet)
 		{
-			USHORT targetCharSet = attachment->att_charset == CS_NONE ?
-				CS_METADATA : attachment->att_charset;
-			CsConvert cv(INTL_charset_lookup(tdbb, charSet->intlsym_charset_id)->getStruct(),
-				INTL_charset_lookup(tdbb, targetCharSet)->getStruct());
-			cv.convert(len, (const UCHAR*) p, buffer);
-			p = (char*) buffer.begin();
-			len = MIN(MAX_USHORT, buffer.getCount());
+			// specified character set not found
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+                      Arg::Gds(isc_charset_not_found) << Arg::Str(charSetName));
 		}
+
+		USHORT targetCharSet = attachment->att_charset == CS_NONE ?
+			CS_METADATA : attachment->att_charset;
+		CsConvert cv(INTL_charset_lookup(tdbb, charSet->intlsym_charset_id)->getStruct(),
+			INTL_charset_lookup(tdbb, targetCharSet)->getStruct());
+		cv.convert(len, (const UCHAR*) p, buffer);
+		p = (char*) buffer.begin();
+		len = MIN(MAX_USHORT, buffer.getCount());
 	}
 
 	fb_assert(verb);
