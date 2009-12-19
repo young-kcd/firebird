@@ -383,7 +383,8 @@ class dsql_req : public pool_alloc<dsql_type_req>
 public:
 	explicit dsql_req(MemoryPool& p)
 		: req_pool(p),
-		  req_blr_data(p)
+		  req_blr_data(p),
+		  req_msg_buffers(p)
 	{
 	}
 
@@ -413,7 +414,10 @@ public:
 
 	// Execution state
 
-	dsql_sym* req_cursor;		// Cursor symbol, if any
+	Firebird::Array<UCHAR*>	req_msg_buffers;
+
+	dsql_sym* req_cursor;	// Cursor symbol, if any
+	blb* req_blb;			// JRD blob
 
 	ULONG req_inserts;		// records processed in request
 	ULONG req_deletes;
@@ -633,12 +637,10 @@ enum req_flags_vals {
 	REQ_in_auto_trans_block	= 0x04000
 };
 
-//! Blob
+// Blob
 class dsql_blb : public pool_alloc<dsql_type_blb>
 {
 public:
-	// blb_field is currently assigned in one place and never used
-	//dsql_nod*	blb_field;			// Related blob field
 	dsql_par*	blb_blob_id;		// Parameter to hold blob id
 	dsql_par*	blb_segment;		// Parameter for segments
 	dsql_nod*	blb_from;
@@ -646,7 +648,6 @@ public:
 	dsql_msg*	blb_open_in_msg;	// Input message to open cursor
 	dsql_msg*	blb_open_out_msg;	// Output message from open cursor
 	dsql_msg*	blb_segment_msg;	// Segment message
-	blb*		blb_blob;			// JRD blob
 };
 
 //! Transaction block
@@ -746,8 +747,8 @@ public:
 	dsql_msg(MemoryPool& p)
 		: PermanentStorage(p),
 		  msg_parameters(p),
-		  msg_buffer(NULL),
 		  msg_number(0),
+		  msg_buffer_number(0),
 		  msg_length(0),
 		  msg_parameter(0),
 		  msg_index(0)
@@ -755,8 +756,8 @@ public:
 	}
 
 	Firebird::Array<dsql_par*> msg_parameters;	// Parameter list
-	UCHAR*		msg_buffer;		// Message buffer
 	USHORT		msg_number;		// Message number
+	USHORT		msg_buffer_number;	// Message buffer number (used instead of msg_number for blob msgs)
 	USHORT		msg_length;		// Message length
 	USHORT		msg_parameter;	// Next parameter number
 	USHORT		msg_index;		// Next index into SQLDA

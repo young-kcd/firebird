@@ -767,16 +767,15 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 
 	// Allocate buffer for message
 	const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
-	message->msg_buffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
-	message->msg_buffer = (UCHAR*) FB_ALIGN((U_IPTR) message->msg_buffer, FB_DOUBLE_ALIGN);
 
-	// Relocate parameter descriptors to point direction into message buffer
+	message->msg_buffer_number = statement->req_msg_buffers.getCount();
+	statement->req_msg_buffers.grow(message->msg_buffer_number + 1);
 
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
-	{
-		dsql_par* parameter = message->msg_parameters[i];
-		parameter->par_desc.dsc_address = message->msg_buffer + (IPTR) parameter->par_desc.dsc_address;
-	}
+	UCHAR*& msgBuffer = statement->req_msg_buffers[message->msg_buffer_number];
+	fb_assert(!msgBuffer);
+
+	msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+	msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
 }
 
 

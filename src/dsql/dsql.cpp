@@ -86,12 +86,13 @@ static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
 							  USHORT, UCHAR*, /*USHORT,*/ USHORT, UCHAR*, bool);
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
 	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
-static SSHORT	filter_sub_type(const dsql_nod*);
+static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
 static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Jrd::Attachment*);
-static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
+static void		map_in_out(dsql_req*, bool, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*,
+	const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, Array<dsql_par*>&);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
@@ -383,24 +384,28 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		USHORT* ret_length = (USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
 		UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
-		*ret_length = BLB_get_segment(tdbb, request->req_blob->blb_blob,
+		*ret_length = BLB_get_segment(tdbb, request->req_blb,
 			buffer, parameter->par_user_desc.dsc_length);
 
-		if (request->req_blob->blb_blob->blb_flags & BLB_eof)
+		if (request->req_blb->blb_flags & BLB_eof)
 			return 100;
 
-		if (request->req_blob->blb_blob->blb_fragment_size)
+		if (request->req_blb->blb_fragment_size)
 			return 101;
 
 		return 0;
 	}
 
+	UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
+
 	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-		message->msg_buffer, 0);
+		msgBuffer, 0);
 
 	const dsql_par* const eof = request->req_eof;
 
-	const bool eof_reached = eof && !*((USHORT*) eof->par_desc.dsc_address);
+	dsc eofDesc = eof->par_desc;
+	eofDesc.dsc_address = msgBuffer + IPTR(eofDesc.dsc_address);
+	const bool eof_reached = eof && !*((USHORT*) eofDesc.dsc_address);
 
 	if (eof_reached)
 	{
@@ -408,7 +413,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		return 100;
 	}
 
-	map_in_out(NULL, message, 0, blr, msg_length, dsql_msg_buf);
+	map_in_out(request, true, message, 0, blr, msg_length, dsql_msg_buf);
 
 	trace.fetch(false, res_successful);
 	return FB_SUCCESS;
@@ -513,8 +518,7 @@ void DSQL_insert(thread_db* tdbb,
 		dsql_par* parameter = request->req_blob->blb_segment;
 		const UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
-		BLB_put_segment(tdbb, request->req_blob->blb_blob, buffer,
-			parameter->par_user_desc.dsc_length);
+		BLB_put_segment(tdbb, request->req_blb, buffer, parameter->par_user_desc.dsc_length);
 	}
 }
 
@@ -800,8 +804,8 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 		{
 			if (request->req_type == REQ_GET_SEGMENT || request->req_type == REQ_PUT_SEGMENT)
 			{
-				BLB_close(tdbb, request->req_blob->blb_blob);
-				request->req_blob->blb_blob = NULL;
+				BLB_close(tdbb, request->req_blb);
+				request->req_blb = NULL;
 			}
 			else
 			{
@@ -904,11 +908,12 @@ static void execute_blob(thread_db* tdbb,
 	UCHAR bpb[24];
 
 	dsql_blb* blob = request->req_blob;
-	map_in_out(request, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
+	map_in_out(request, false, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length,
+		NULL, in_msg);
 
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
-	SSHORT filter = filter_sub_type(blob->blb_to);
+	SSHORT filter = filter_sub_type(request, blob->blb_to);
 	if (filter)
 	{
 		*p++ = isc_bpb_target_type;
@@ -916,7 +921,7 @@ static void execute_blob(thread_db* tdbb,
 		*p++ = static_cast<UCHAR>(filter);
 		*p++ = filter >> 8;
 	}
-	filter = filter_sub_type(blob->blb_from);
+	filter = filter_sub_type(request, blob->blb_from);
 	if (filter)
 	{
 		*p++ = isc_bpb_source_type;
@@ -932,26 +937,35 @@ static void execute_blob(thread_db* tdbb,
 	dsql_par* parameter = blob->blb_blob_id;
 	const dsql_par* null = parameter->par_null;
 
+	UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+
+	dsc desc = parameter->par_desc;
+	desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+
+	bid* blob_id = (bid*) desc.dsc_address;
+
 	if (request->req_type == REQ_GET_SEGMENT)
 	{
-		bid* blob_id = (bid*) parameter->par_desc.dsc_address;
-		if (null && *((SSHORT *) null->par_desc.dsc_address) < 0) {
-			memset(blob_id, 0, sizeof(bid));
+		if (null)
+		{
+			desc = null->par_desc;
+			desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+
+			if (*((SSHORT*) desc.dsc_address) < 0)
+				memset(blob_id, 0, sizeof(bid));
 		}
 
-		request->req_blob->blb_blob =
-			BLB_open2(tdbb, request->req_transaction, blob_id, bpb_length, bpb, true);
+		request->req_blb = BLB_open2(tdbb, request->req_transaction, blob_id, bpb_length, bpb, true);
 	}
 	else
 	{
 		request->req_request = NULL;
-		bid* blob_id = (bid*) parameter->par_desc.dsc_address;
 		memset(blob_id, 0, sizeof(bid));
 
-		request->req_blob->blb_blob =
-			BLB_create2(tdbb, request->req_transaction, blob_id, bpb_length, bpb);
+		request->req_blb = BLB_create2(tdbb, request->req_transaction, blob_id, bpb_length, bpb);
 
-		map_in_out(NULL, blob->blb_open_out_msg, out_blr_length, out_blr, out_msg_length, out_msg);
+		map_in_out(request, true, blob->blb_open_out_msg, out_blr_length, out_blr,
+			out_msg_length, out_msg);
 	}
 }
 
@@ -1167,7 +1181,7 @@ static void execute_request(thread_db* tdbb,
 
 	dsql_msg* message = request->req_send;
 	if (message)
-		map_in_out(request, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
+		map_in_out(request, false, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
 
 	// we need to map_in_out before tracing of execution start to let trace
 	// manager know statement parameters values
@@ -1177,9 +1191,9 @@ static void execute_request(thread_db* tdbb,
 		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
 	else
 	{
+		UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
 		JRD_start_and_send(tdbb, request->req_request, request->req_transaction, message->msg_number,
-						   message->msg_length, message->msg_buffer,
-						   0);
+						   message->msg_length, msgBuffer, 0);
 	}
 
 	// REQ_EXEC_BLOCK has no outputs so there are no out_msg
@@ -1196,6 +1210,8 @@ static void execute_request(thread_db* tdbb,
 		// Insure that the blr for the message is parsed, regardless of
 		// whether anything is found by the call to receive.
 
+		UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
+
 		if (out_msg_length && out_blr_length) {
 			parse_blr(out_blr_length, out_blr, out_msg_length, message->msg_parameters);
 		}
@@ -1204,14 +1220,14 @@ static void execute_request(thread_db* tdbb,
 			message = &temp_msg;
 			message->msg_number = 1;
 			message->msg_length = 2;
-			message->msg_buffer = (UCHAR*) FB_ALIGN((U_IPTR) temp_buffer, FB_DOUBLE_ALIGN);
+			msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) temp_buffer, FB_DOUBLE_ALIGN);
 		}
 
 		JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-			message->msg_buffer, 0);
+			msgBuffer, 0);
 
 		if (out_msg_length)
-			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
+			map_in_out(request, true, message, 0, out_blr, out_msg_length, out_msg);
 
 		// if this is a singleton select, make sure there's in fact one record
 
@@ -1300,20 +1316,30 @@ static void execute_request(thread_db* tdbb,
     @param node
 
  **/
-static SSHORT filter_sub_type(const dsql_nod* node)
+static SSHORT filter_sub_type(dsql_req* request, const dsql_nod* node)
 {
 	if (node->nod_type == nod_constant)
 		return (SSHORT) node->getSlong();
 
 	const dsql_par* parameter = (dsql_par*) node->nod_arg[e_par_parameter];
 	const dsql_par* null = parameter->par_null;
+	dsc desc;
+
+	UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+
 	if (null)
 	{
-		if (*((SSHORT *) null->par_desc.dsc_address))
+		desc = null->par_desc;
+		desc.dsc_address = msgBuffer + IPTR(null->par_desc.dsc_address);
+
+		if (*((SSHORT*) desc.dsc_address))
 			return 0;
 	}
 
-	return *((SSHORT *) parameter->par_desc.dsc_address);
+	desc = parameter->par_desc;
+	desc.dsc_address = msgBuffer + IPTR(parameter->par_desc.dsc_address);
+
+	return *((SSHORT*) desc.dsc_address);
 }
 
 
@@ -2046,18 +2072,10 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
     @param in_dsql_msg_buf
 
  **/
-static void map_in_out(	dsql_req*		request,
-						dsql_msg*		message,
-						USHORT	blr_length,
-						const UCHAR*	blr,
-						USHORT	msg_length,
-						UCHAR*	dsql_msg_buf,
-						const UCHAR* in_dsql_msg_buf)
+static void map_in_out(dsql_req* request, bool toExternal, dsql_msg* message, USHORT blr_length,
+	const UCHAR* blr, USHORT msg_length, UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf)
 {
 	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
-
-	// When mapping data from the external world, request will be non-NULL.
-	// When mapping data from an internal message, request will be NULL.
 
 	bool err = false;
 
@@ -2078,6 +2096,8 @@ static void map_in_out(	dsql_req*		request,
 				break;
 			}
 
+			UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+
 			SSHORT* flag = NULL;
 			dsql_par* const null_ind = parameter->par_null;
 			if (null_ind != NULL)
@@ -2090,25 +2110,31 @@ static void map_in_out(	dsql_req*		request,
 					break;
 				}
 
-				if (!request)
+				dsc nullDesc = null_ind->par_desc;
+				nullDesc.dsc_address = msgBuffer + IPTR(nullDesc.dsc_address);
+
+				if (toExternal)
 				{
 					flag = reinterpret_cast<SSHORT*>(dsql_msg_buf + null_offset);
-					*flag = *reinterpret_cast<const SSHORT*>(null_ind->par_desc.dsc_address);
+					*flag = *reinterpret_cast<const SSHORT*>(nullDesc.dsc_address);
 				}
 				else
 				{
-					flag = reinterpret_cast<SSHORT*>(null_ind->par_desc.dsc_address);
+					flag = reinterpret_cast<SSHORT*>(nullDesc.dsc_address);
 					*flag = *reinterpret_cast<const SSHORT*>(in_dsql_msg_buf + null_offset);
 				}
 			}
 
-			if (!request)
+			dsc parDesc = parameter->par_desc;
+			parDesc.dsc_address = msgBuffer + IPTR(parDesc.dsc_address);
+
+			if (toExternal)
 			{
 				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 
 				if (!flag || *flag >= 0)
 				{
-					MOVD_move(&parameter->par_desc, &desc);
+					MOVD_move(&parDesc, &desc);
 				}
 				else
 				{
@@ -2117,16 +2143,16 @@ static void map_in_out(	dsql_req*		request,
 			}
 			else if (!flag || *flag >= 0)
 			{
-				if (!(parameter->par_desc.dsc_flags & DSC_null))
+				if (!(parDesc.dsc_flags & DSC_null))
 				{
 					// Safe cast because desc is used as source only.
 					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-					MOVD_move(&desc, &parameter->par_desc);
+					MOVD_move(&desc, &parDesc);
 				}
 			}
 			else
 			{
-				memset(parameter->par_desc.dsc_address, 0, parameter->par_desc.dsc_length);
+				memset(parDesc.dsc_address, 0, parDesc.dsc_length);
 			}
 
 			count--;
@@ -2145,27 +2171,58 @@ static void map_in_out(	dsql_req*		request,
 	dsql_par* parameter;
 
 	dsql_par* dbkey;
-	if (request && ((dbkey = request->req_parent_dbkey) != NULL) &&
-		((parameter = request->req_dbkey) != NULL))
+	if (!toExternal && (dbkey = request->req_parent_dbkey) && (parameter = request->req_dbkey))
 	{
-		MOVD_move(&dbkey->par_desc, &parameter->par_desc);
+		UCHAR* parentMsgBuffer = request->req_parent ?
+			request->req_parent->req_msg_buffers[dbkey->par_message->msg_buffer_number] : NULL;
+		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+
+		fb_assert(parentMsgBuffer);
+
+		dsc parentDesc = dbkey->par_desc;
+		parentDesc.dsc_address = parentMsgBuffer + IPTR(parentDesc.dsc_address);
+
+		dsc desc = parameter->par_desc;
+		desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+
+		MOVD_move(&parentDesc, &desc);
+
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)
 		{
-			SSHORT* flag = (SSHORT *) null_ind->par_desc.dsc_address;
+			desc = null_ind->par_desc;
+			desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+
+			SSHORT* flag = (SSHORT*) desc.dsc_address;
 			*flag = 0;
 		}
 	}
 
 	dsql_par* rec_version;
-	if (request && ((rec_version = request->req_parent_rec_version) != NULL) &&
-		((parameter = request->req_rec_version) != NULL))
+	if (!toExternal && (rec_version = request->req_parent_rec_version) &&
+		(parameter = request->req_rec_version))
 	{
-		MOVD_move(&rec_version->par_desc, &parameter->par_desc);
+		UCHAR* parentMsgBuffer = request->req_parent ?
+			request->req_parent->req_msg_buffers[rec_version->par_message->msg_buffer_number] : NULL;
+		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+
+		fb_assert(parentMsgBuffer);
+
+		dsc parentDesc = rec_version->par_desc;
+		parentDesc.dsc_address = parentMsgBuffer + IPTR(parentDesc.dsc_address);
+
+		dsc desc = parameter->par_desc;
+		desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+
+		MOVD_move(&parentDesc, &desc);
+
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)
 		{
-			SSHORT* flag = (SSHORT *) null_ind->par_desc.dsc_address;
+			desc = null_ind->par_desc;
+			desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+
+			SSHORT* flag = (SSHORT*) desc.dsc_address;
 			*flag = 0;
 		}
 	}
