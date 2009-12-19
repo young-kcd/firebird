@@ -149,7 +149,8 @@ public:
 		m_stmt(stmt),
 		m_perf(perf),
 		m_plan(NULL),
-		m_inputs(*getDefaultMemoryPool(), m_stmt->req_send ? m_stmt->req_send->msg_parameters : NULL)
+		m_inputs(*getDefaultMemoryPool(),
+			m_stmt->req_send ? &m_stmt->req_send->msg_parameters : NULL)
 	{}
 
 	~TraceSQLStatementImpl();
@@ -164,7 +165,7 @@ private:
 	class DSQLParamsImpl : public TraceParams
 	{
 	public:
-		DSQLParamsImpl(Firebird::MemoryPool &pool, dsql_par* params) :
+		DSQLParamsImpl(Firebird::MemoryPool &pool, Firebird::Array<dsql_par*>* params) :
 			m_params(params),
 			m_descs(pool)
 		{}
@@ -175,7 +176,7 @@ private:
 	private:
 		void fillParams();
 
-		dsql_par* m_params;
+		Firebird::Array<dsql_par*>* m_params;
 		Firebird::HalfStaticArray<dsc, 16> m_descs;
 	};
 

@@ -2698,9 +2698,12 @@ static dsql_par* find_dbkey(const CompiledStatement* statement, const dsql_nod* 
 	dsql_par* candidate = NULL;
 	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
 	DEV_BLKCHK(rel_name, dsql_type_str);
-	for (dsql_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+
+	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
+		dsql_par* parameter = message->msg_parameters[i];
 		DEV_BLKCHK(parameter, dsql_type_par);
+
 		const dsql_ctx* context = parameter->par_dbkey_ctx;
 		if (context)
 		{
@@ -2715,6 +2718,7 @@ static dsql_par* find_dbkey(const CompiledStatement* statement, const dsql_nod* 
 			}
 		}
 	}
+
 	return candidate;
 }
 
@@ -2739,9 +2743,12 @@ static dsql_par* find_record_version(const CompiledStatement* statement, const d
 	dsql_par* candidate = NULL;
 	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
 	DEV_BLKCHK(rel_name, dsql_type_str);
-	for (dsql_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+
+	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
+		dsql_par* parameter = message->msg_parameters[i];
 		DEV_BLKCHK(parameter, dsql_type_par);
+
 		const dsql_ctx* context = parameter->par_rec_version_ctx;
 		if (context)
 		{
@@ -2756,6 +2763,7 @@ static dsql_par* find_record_version(const CompiledStatement* statement, const d
 			}
 		}
 	}
+
 	return candidate;
 }
 
@@ -3591,7 +3599,7 @@ static void pass1_blob( CompiledStatement* statement, dsql_nod* input)
 	statement->req_blob = blob;
 	//blob->blb_field = field;
 	blob->blb_open_in_msg = statement->req_send;
-	blob->blb_open_out_msg = FB_NEW(*tdbb->getDefaultPool()) dsql_msg;
+	blob->blb_open_out_msg = FB_NEW(*tdbb->getDefaultPool()) dsql_msg(*tdbb->getDefaultPool());
 	blob->blb_segment_msg = statement->req_receive;
 
 	// Create a parameter for the blob segment
@@ -3636,8 +3644,10 @@ static void pass1_blob( CompiledStatement* statement, dsql_nod* input)
 		blob->blb_to = MAKE_const_slong(0);
 	}
 
-	for (parameter = blob->blb_open_in_msg->msg_parameters; parameter; parameter = parameter->par_next)
+	for (size_t i = 0; i < blob->blb_open_in_msg->msg_parameters.getCount(); ++i)
 	{
+		dsql_par* parameter = blob->blb_open_in_msg->msg_parameters[i];
+
 		if (parameter->par_index > ((input->nod_type == nod_get_segment) ? 1 : 0))
 		{
 			parameter->par_desc.dsc_dtype = dtype_short;

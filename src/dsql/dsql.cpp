@@ -92,7 +92,7 @@ static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
 static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Jrd::Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
-static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
+static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, Array<dsql_par*>&);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
 static void		release_request(thread_db*, dsql_req*, bool);
@@ -1190,8 +1190,8 @@ static void execute_request(thread_db* tdbb,
 	message = request->req_receive;
 	if ((out_msg_length && message) || isBlock)
 	{
-		char temp_buffer[FB_DOUBLE_ALIGN * 2];
-		dsql_msg temp_msg;
+		UCHAR temp_buffer[FB_DOUBLE_ALIGN * 2];
+		dsql_msg temp_msg(*getDefaultMemoryPool());
 
 		// Insure that the blr for the message is parsed, regardless of
 		// whether anything is found by the call to receive.
@@ -2059,20 +2059,24 @@ static void map_in_out(	dsql_req*		request,
 	// When mapping data from the external world, request will be non-NULL.
 	// When mapping data from an internal message, request will be NULL.
 
-	dsql_par* parameter;
+	bool err = false;
 
-	for (parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
+		dsql_par* parameter = message->msg_parameters[i];
+
 		if (parameter->par_index)
 		{
 			 // Make sure the message given to us is long enough
 
 			dsc desc = parameter->par_user_desc;
 			USHORT length = (IPTR) desc.dsc_address + desc.dsc_length;
-			if (length > msg_length)
+
+			if (length > msg_length || !desc.dsc_dtype)
+			{
+				err = true;
 				break;
-			if (!desc.dsc_dtype)
-				break;
+			}
 
 			SSHORT* flag = NULL;
 			dsql_par* const null_ind = parameter->par_null;
@@ -2081,7 +2085,10 @@ static void map_in_out(	dsql_req*		request,
 				const USHORT null_offset = (IPTR) null_ind->par_user_desc.dsc_address;
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
+				{
+					err = true;
 					break;
+				}
 
 				if (!request)
 				{
@@ -2129,11 +2136,13 @@ static void map_in_out(	dsql_req*		request,
 	// If we got here because the loop was exited early or if part of the
 	// message given to us hasn't been used, complain.
 
-	if (parameter || count)
+	if (err || count)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err));
 	}
+
+	dsql_par* parameter;
 
 	dsql_par* dbkey;
 	if (request && ((dbkey = request->req_parent_dbkey) != NULL) &&
@@ -2176,13 +2185,15 @@ static void map_in_out(	dsql_req*		request,
     @param parameters
 
  **/
-static USHORT parse_blr(USHORT blr_length,
-						const UCHAR* blr, const USHORT msg_length, dsql_par* parameters_list)
+static USHORT parse_blr(USHORT blr_length, const UCHAR* blr, const USHORT msg_length,
+	Array<dsql_par*>& parameters_list)
 {
-	Firebird::HalfStaticArray<dsql_par*, 16> parameters;
+	HalfStaticArray<dsql_par*, 16> parameters;
 
-	for (dsql_par* param = parameters_list; param; param = param->par_next)
+	for (size_t i = 0; i < parameters_list.getCount(); ++i)
 	{
+		dsql_par* param = parameters_list[i];
+
 		if (param->par_index)
 		{
 			if (param->par_index > parameters.getCount())
@@ -2493,8 +2504,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	// allocate the send and receive messages
 
-	statement->req_send = FB_NEW(pool) dsql_msg;
-	dsql_msg* message = FB_NEW(pool) dsql_msg;
+	statement->req_send = FB_NEW(pool) dsql_msg(pool);
+	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
 	statement->req_receive = message;
 	message->msg_number = 1;
 
@@ -3075,10 +3086,12 @@ static UCHAR* var_info(dsql_msg* message,
 	thread_db* tdbb = JRD_get_thread_data();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	Firebird::HalfStaticArray<const dsql_par*, 16> parameters;
+	HalfStaticArray<const dsql_par*, 16> parameters;
 
-	for (const dsql_par* param = message->msg_parameters; param; param = param->par_next)
+	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
+		const dsql_par* param = message->msg_parameters[i];
+
 		if (param->par_index)
 		{
 			if (param->par_index > parameters.getCount())

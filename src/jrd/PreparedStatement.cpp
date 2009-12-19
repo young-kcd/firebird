@@ -161,8 +161,9 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 	SortedArray<const dsql_par*, EmptyStorage<const dsql_par*>, const dsql_par*,
 		DefaultKeyValue<const dsql_par*>, ParamCmp> params;
 
-	for (const dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next)
+	for (size_t i = 0; i < dsqlMsg->msg_parameters.getCount(); ++i)
 	{
+		dsql_par* par = dsqlMsg->msg_parameters[i];
 		if (par->par_index)
 			params.add(par);
 	}

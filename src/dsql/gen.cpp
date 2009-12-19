@@ -682,13 +682,13 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 		stuff_word(statement, message->msg_parameter);
 //	}
 
-    dsql_par* parameter;
-
 	ULONG offset = 0;
-	USHORT number = 0;
-	for (parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+
+	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
-		parameter->par_parameter = number++;
+		dsql_par* parameter = message->msg_parameters[i];
+
+		parameter->par_parameter = (USHORT) i;
 
 		const USHORT fromCharSet = parameter->par_desc.getCharSet();
 		const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
@@ -727,6 +727,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 		// For older clients - generate an error should they try and
 		// access data types which did not exist in the older dialect
 		if (statement->req_client_dialect <= SQL_DIALECT_V5)
+		{
 			switch (parameter->par_desc.dsc_dtype)
 			{
 				// In V6.0 - older clients, which we distinguish by
@@ -745,14 +746,14 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 					// No special action for other data types
 					break;
 			}
+		}
 
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
 		parameter->par_desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += parameter->par_desc.dsc_length;
-//		if (statement->req_blr_string)
-			GEN_descriptor(statement, &parameter->par_desc, false);
+		GEN_descriptor(statement, &parameter->par_desc, false);
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
@@ -765,14 +766,15 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 	message->msg_length = (USHORT) offset;
 
 	// Allocate buffer for message
-	const ULONG new_len = message->msg_length + FB_DOUBLE_ALIGN - 1;
-	dsql_str* buffer = FB_NEW_RPT(*tdbb->getDefaultPool(), new_len) dsql_str;
-	message->msg_buffer = (UCHAR*) FB_ALIGN((U_IPTR) buffer->str_data, FB_DOUBLE_ALIGN);
+	const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
+	message->msg_buffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+	message->msg_buffer = (UCHAR*) FB_ALIGN((U_IPTR) message->msg_buffer, FB_DOUBLE_ALIGN);
 
 	// Relocate parameter descriptors to point direction into message buffer
 
-	for (parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
+		dsql_par* parameter = message->msg_parameters[i];
 		parameter->par_desc.dsc_address = message->msg_buffer + (IPTR) parameter->par_desc.dsc_address;
 	}
 }
@@ -2604,8 +2606,10 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 	gen_constant(statement, &constant_desc, USE_VALUE);
 	gen_parameter(statement, statement->req_eof);
 
-	for (dsql_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
+		dsql_par* parameter = message->msg_parameters[i];
+
 		if (parameter->par_node)
 		{
 			stuff(statement, blr_assignment);

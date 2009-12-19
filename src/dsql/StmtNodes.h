@@ -127,7 +127,7 @@ public:
 	virtual dsql_nod* resolveVariable(const dsql_str* varName);
 
 private:
-	static dsql_par* revertParametersOrder(dsql_par* parameter, dsql_par* prev);
+	static void revertParametersOrder(Firebird::Array<dsql_par*>& parameters);
 
 public:
 	Firebird::Array<ParameterClause> returns;

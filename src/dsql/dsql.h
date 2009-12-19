@@ -670,7 +670,7 @@ public:
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
-	explicit dsql_ctx(MemoryPool &p)
+	explicit dsql_ctx(MemoryPool& p)
 		: ctx_main_derived_contexts(p),
 		  ctx_childs_derived_table(p),
 	      ctx_imp_join(p)
@@ -739,11 +739,22 @@ public:
 	USHORT		map_position;		// Position in map
 };
 
-//! Message block used in communicating with a running request
-class dsql_msg : public pool_alloc<dsql_type_msg>
+// Message block used in communicating with a running request
+class dsql_msg : public Firebird::PermanentStorage
 {
 public:
-	dsql_par*	msg_parameters;	// Parameter list
+	dsql_msg(MemoryPool& p)
+		: PermanentStorage(p),
+		  msg_parameters(p),
+		  msg_buffer(NULL),
+		  msg_number(0),
+		  msg_length(0),
+		  msg_parameter(0),
+		  msg_index(0)
+	{
+	}
+
+	Firebird::Array<dsql_par*> msg_parameters;	// Parameter list
 	UCHAR*		msg_buffer;		// Message buffer
 	USHORT		msg_number;		// Message number
 	USHORT		msg_length;		// Message length
@@ -751,12 +762,11 @@ public:
 	USHORT		msg_index;		// Next index into SQLDA
 };
 
-//! Parameter block used to describe a parameter of a message
+// Parameter block used to describe a parameter of a message
 class dsql_par : public pool_alloc<dsql_type_par>
 {
 public:
 	dsql_msg*	par_message;		// Parent message
-	dsql_par*	par_next;			// Next parameter in linked list
 	dsql_par*	par_null;			// Null parameter, if used
 	dsql_nod*	par_node;			// Associated value node, if any
 	dsql_ctx*	par_dbkey_ctx;		// Context of internally requested dbkey
@@ -766,8 +776,8 @@ public:
 	const TEXT*	par_owner_name;		// Owner name, if any
 	const TEXT*	par_rel_alias;		// Relation alias, if any
 	const TEXT*	par_alias;			// Alias, if any
-	DSC			par_desc;			// Field data type
-	DSC			par_user_desc;		// SQLDA data type
+	dsc			par_desc;			// Field data type
+	dsc			par_user_desc;		// SQLDA data type
 	USHORT		par_parameter;		// BLR parameter number
 	USHORT		par_index;			// Index into SQLDA, if appropriate
 };

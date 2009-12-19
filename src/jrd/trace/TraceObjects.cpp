@@ -225,8 +225,10 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 		return;
 
 	USHORT first_index = 0;
-	for (const dsql_par* parameter = m_params; parameter; parameter = parameter->par_next)
+	for (size_t i = 0 ; i < m_params->getCount(); ++i)
 	{
+		dsql_par* parameter = (*m_params)[i];
+
 		if (parameter->par_index)
 		{
 			if (!first_index)

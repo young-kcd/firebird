@@ -498,8 +498,7 @@ void ExecBlockNode::genBlr()
 
 	if (inputs)
 	{
-		compiledStatement->req_send->msg_parameters =
-			revertParametersOrder(compiledStatement->req_send->msg_parameters, NULL);
+		revertParametersOrder(compiledStatement->req_send->msg_parameters);
 		GEN_port(compiledStatement, compiledStatement->req_send);
 	}
 	else
@@ -521,8 +520,7 @@ void ExecBlockNode::genBlr()
 	param->par_desc.dsc_scale = 0;
 	param->par_desc.dsc_length = sizeof(SSHORT);
 
-	compiledStatement->req_receive->msg_parameters =
-		revertParametersOrder(compiledStatement->req_receive->msg_parameters, NULL);
+	revertParametersOrder(compiledStatement->req_receive->msg_parameters);
 	GEN_port(compiledStatement, compiledStatement->req_receive);
 
 	if (inputs)
@@ -604,18 +602,19 @@ dsql_nod* ExecBlockNode::resolveVariable(const dsql_str* varName)
 
 
 // Revert parameters order for EXECUTE BLOCK statement
-dsql_par* ExecBlockNode::revertParametersOrder(dsql_par* parameter, dsql_par* prev)
+void ExecBlockNode::revertParametersOrder(Array<dsql_par*>& parameters)
 {
-	dsql_par* result;
+	int start = 0;
+	int end = int(parameters.getCount()) - 1;
 
-	if (parameter->par_next)
-		result = revertParametersOrder(parameter->par_next, parameter);
-	else
-		result = parameter;
-
-	parameter->par_next = prev;
-
-	return result;
+	while (start < end)
+	{
+		dsql_par* temp = parameters[start];
+		parameters[start] = parameters[end];
+		parameters[end] = temp;
+		++start;
+		--end;
+	}
 }
 
 
