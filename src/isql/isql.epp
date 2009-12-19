@@ -8343,7 +8343,8 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			statement_type == isc_info_sql_stmt_update ||
 			statement_type == isc_info_sql_stmt_delete ||
 			statement_type == isc_info_sql_stmt_exec_procedure ||
-			statement_type == isc_info_sql_stmt_select_for_upd;
+			statement_type == isc_info_sql_stmt_select_for_upd ||
+			statement_type == isc_info_sql_stmt_get_segment;
 
 		if (print_sqlda_input(can_have_input_parameters) == ps_ERR)
 			return ps_ERR;
