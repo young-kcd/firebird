@@ -1,3 +1,16 @@
+2009-12-19 02:55  asfernandes
+
+	* firebird2/src/dsql/: Parser.cpp (1.8.2.3), ddl.cpp (1.283.2.5):
+
+	Care about non-existing charset as seen by Claudio
+
+2009-12-19 02:45  asfernandes
+
+	* firebird2/src/dsql/: Parser.cpp (1.8.2.2), Parser.h (1.11.2.2),
+	parse.y (1.311.2.5):
+
+	Backported fix for unregistered bug: Query string crashes 2.5RC1
+
 2009-12-18 11:21  asfernandes
 
 	* firebird2/src/jrd/dyn_mod.epp (1.117.2.3):
