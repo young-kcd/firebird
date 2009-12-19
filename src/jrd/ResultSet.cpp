@@ -75,8 +75,10 @@ bool ResultSet::fetch(thread_db* tdbb)
 }
 
 
-bool ResultSet::isNull(int param) const
+bool ResultSet::isNull(unsigned param) const
 {
+	fb_assert(param > 0);
+
 	const dsc* desc = &stmt->outValues[(param - 1) * 2 + 1];
 	fb_assert(desc->dsc_dtype == dtype_short);
 
@@ -84,8 +86,9 @@ bool ResultSet::isNull(int param) const
 }
 
 
-dsc& ResultSet::getDesc(int param)
+dsc& ResultSet::getDesc(unsigned param)
 {
+	fb_assert(param > 0);
 	return stmt->outValues[(param - 1) * 2];
 }
 

@@ -545,9 +545,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 				ps->setString(tdbb, ++n, subName);
 		}
 
-		ps->execute(tdbb, transaction);
-
-		if (ps->getUpdateCount() == 0)
+		if (ps->executeUpdate(tdbb, transaction) == 0)
 			status_exception::raise(status);
 	}
 }

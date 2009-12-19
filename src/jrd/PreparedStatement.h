@@ -51,17 +51,21 @@ public:
 	~PreparedStatement();
 
 public:
-	void setDesc(thread_db* tdbb, int param, const dsc& value);
+	void setDesc(thread_db* tdbb, unsigned param, const dsc& value);
 
-	void setNull(int param)
+	void setNull(unsigned param)
 	{
+		fb_assert(param > 0);
+
 		const dsc* desc = &inValues[(param - 1) * 2 + 1];
 		fb_assert(desc->dsc_dtype == dtype_short);
 		*reinterpret_cast<SSHORT*>(desc->dsc_address) = -1;
 	}
 
-	void setString(thread_db* tdbb, int param, const Firebird::AbstractString& value)
+	void setString(thread_db* tdbb, unsigned param, const Firebird::AbstractString& value)
 	{
+		fb_assert(param > 0);
+
 		dsc desc;
 		desc.makeText((USHORT) value.length(), inValues[(param - 1) * 2].getTextType(),
 			(UCHAR*) value.c_str());
@@ -69,8 +73,10 @@ public:
 		setDesc(tdbb, param, desc);
 	}
 
-	void setString(thread_db* tdbb, int param, const Firebird::MetaName& value)
+	void setString(thread_db* tdbb, unsigned param, const Firebird::MetaName& value)
 	{
+		fb_assert(param > 0);
+
 		dsc desc;
 		desc.makeText((USHORT) value.length(), inValues[(param - 1) * 2].getTextType(),
 			(UCHAR*) value.c_str());
@@ -80,9 +86,9 @@ public:
 
 	void execute(thread_db* tdbb, jrd_tra* transaction);
 	ResultSet* executeQuery(thread_db* tdbb, jrd_tra* transaction);
+	unsigned executeUpdate(thread_db* tdbb, jrd_tra* transaction);
 
 	int getResultCount() const;
-	int getUpdateCount() const;
 
 	dsql_req* getRequest()
 	{

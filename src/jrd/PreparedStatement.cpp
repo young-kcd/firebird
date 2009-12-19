@@ -101,8 +101,10 @@ PreparedStatement::~PreparedStatement()
 }
 
 
-void PreparedStatement::setDesc(thread_db* tdbb, int param, const dsc& value)
+void PreparedStatement::setDesc(thread_db* tdbb, unsigned param, const dsc& value)
 {
+	fb_assert(param > 0);
+
 	// Setup tdbb info necessary for blobs.
 	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
 		tdbb, &thread_db::getRequest, &thread_db::setRequest, getRequest()->req_request);
@@ -132,15 +134,16 @@ ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction
 }
 
 
-int PreparedStatement::getResultCount() const
+unsigned PreparedStatement::executeUpdate(thread_db* tdbb, jrd_tra* transaction)
 {
-	return outValues.getCount() / 2;
+	execute(tdbb, transaction);
+	return request->req_request->req_records_updated;
 }
 
 
-int PreparedStatement::getUpdateCount() const
+int PreparedStatement::getResultCount() const
 {
-	return request->req_request->req_records_updated;
+	return outValues.getCount() / 2;
 }
 
 
@@ -155,11 +158,8 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 	// ASF: Input parameters don't come necessarily in ascending or descending order,
 	// so I changed the code to use a SortedArray.
 
-	SortedArray<
-		const dsql_par*,
-		EmptyStorage<const dsql_par*>, const dsql_par*,
-		DefaultKeyValue<const dsql_par*>,
-		ParamCmp> params;
+	SortedArray<const dsql_par*, EmptyStorage<const dsql_par*>, const dsql_par*,
+		DefaultKeyValue<const dsql_par*>, ParamCmp> params;
 
 	for (const dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next)
 	{
@@ -168,12 +168,13 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 	}
 
 	size_t msgLength = 0;
-	int paramCount = params.getCount();
-	int i = 0;
+	size_t paramCount = params.getCount();
+	size_t i;
 
-	for (; i < paramCount; i++)
+	for (i = 0; i < paramCount; ++i)
 	{
 		const dsql_par* par = params[i];
+
 #ifdef DEV_BUILD
 		// Verify that par_index is in ascending order
 		if (i < paramCount - 1)
@@ -181,9 +182,12 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 			fb_assert(par->par_index < params[i + 1]->par_index);
 		}
 #endif
+
 		if (type_alignments[par->par_desc.dsc_dtype])
 			msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
 		msgLength += par->par_desc.dsc_length;
+
+		// NULL flag
 		msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
 		msgLength += sizeof(SSHORT);
 	}
@@ -203,7 +207,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 	msgLength = 0;
 	dsc* value = values.begin();
 
-	for (i = 0; i < paramCount / 2; i++)
+	for (i = 0; i < paramCount / 2; ++i)
 	{
 		const dsql_par* par = params[i];
 
@@ -214,7 +218,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 		msgLength += par->par_desc.dsc_length;
 
 		generateBlr(value, blr);
-		value++;
+		++value;
 
 		// Calculate the NULL indicator offset
 		if (type_alignments[dtype_short])
@@ -227,7 +231,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 
 		// Generate BLR for the NULL indicator
 		generateBlr(value, blr);
-		value++;
+		++value;
 	}
 
 	blr.add(blr_end);

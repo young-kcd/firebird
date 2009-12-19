@@ -73,7 +73,9 @@ namespace Jrd
 	struct bid;
 
 	class BlockNode;
+	class dsql_blb;
 	class dsql_ctx;
+	class dsql_msg;
 	class dsql_str;
 	class dsql_nod;
 	class dsql_intlsym;
@@ -364,7 +366,7 @@ enum intlsym_flags_vals {
 // Forward declaration.
 class dsql_par;
 
-//! Request information
+// Request information
 enum REQ_TYPE
 {
 	REQ_SELECT, REQ_SELECT_UPD, REQ_INSERT, REQ_DELETE, REQ_UPDATE,
@@ -396,20 +398,17 @@ public:
 	jrd_tra* req_transaction;	// JRD transaction
 	dsql_nod* req_ddl_node;		// Store metadata request
 	BlockNode* blockNode;
-	class dsql_blb* req_blob;	// Blob info for blob requests
+	dsql_blb* req_blob;			// Blob info for blob requests
 	jrd_req*	req_request;	// JRD request
-	//dsql_str*	req_blr_string;	// String block during BLR generation
 	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
-	class dsql_msg* req_send;		// Message to be sent to start request
-	class dsql_msg* req_receive;	// Per record message to be received
-	class dsql_msg* req_async;		// Message for sending scrolling information
+	dsql_msg* req_send;			// Message to be sent to start request
+	dsql_msg* req_receive;		// Per record message to be received
+	dsql_msg* req_async;		// Message for sending scrolling information
 	dsql_par* req_eof;			// End of file parameter
 	dsql_par* req_dbkey;		// Database key for current of
 	dsql_par* req_rec_version;	// Record Version for current of
 	dsql_par* req_parent_rec_version;	// parent record version
 	dsql_par* req_parent_dbkey;	// Parent database key for current of
-	//BLOB_PTR* req_blr;		// Running blr address
-	//BLOB_PTR* req_blr_yellow;	// Threshold for upping blr buffer size
 	ULONG	req_inserts;		// records processed in request
 	ULONG	req_deletes;
 	ULONG	req_updates;

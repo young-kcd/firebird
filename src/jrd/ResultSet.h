@@ -43,8 +43,8 @@ public:
 
 public:
 	bool fetch(thread_db* tdbb);
-	bool isNull(int param) const;
-	dsc& getDesc(int param);
+	bool isNull(unsigned param) const;
+	dsc& getDesc(unsigned param);
 
 private:
 	PreparedStatement* stmt;
