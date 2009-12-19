@@ -4441,12 +4441,10 @@ sql_string
 			str->str_charset = (TEXT*) $1;
 			if (str->type == dsql_str::TYPE_SIMPLE)
 			{
-				IntroducerMark mark;
-				mark.pos = lex.last_token - lex.start;
-				mark.length = lex.ptr - lex.last_token;
-				mark.str = str;
-
-				introducerMarks.push(mark);
+				StrMark* mark = strMarks.get(str);
+				fb_assert(mark);
+				if (mark)
+					mark->introduced = true;
 			}
 			$$ = $2;
 		}
@@ -5686,6 +5684,9 @@ int Parser::yylexAux()
 
 	if (tok_class & CHR_QUOTE)
 	{
+		StrMark mark;
+		mark.pos = lex.last_token - lex.start;
+
 		char* buffer = string;
 		size_t buffer_len = sizeof (string);
 		const char* buffer_end = buffer + buffer_len - 1;
@@ -5758,6 +5759,11 @@ int Parser::yylexAux()
 		yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 		if (buffer != string)
 			gds__free (buffer);
+
+		mark.length = lex.ptr - lex.last_token;
+		mark.str = (dsql_str*) yylval;
+		strMarks.put(mark.str, mark);
+
 		return STRING;
 	}
 

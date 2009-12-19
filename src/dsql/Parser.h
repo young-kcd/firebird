@@ -87,8 +87,22 @@ private:
 		USHORT param_number;
 	};
 
-	struct IntroducerMark
+	struct StrMark
 	{
+		StrMark()
+			: introduced(false),
+			  pos(0),
+			  length(0),
+			  str(NULL)
+		{
+		}
+
+		bool operator >(const StrMark& o) const
+		{
+			return pos > o.pos;
+		}
+
+		bool introduced;
 		unsigned pos;
 		unsigned length;
 		dsql_str* str;
@@ -151,7 +165,7 @@ private:
 	USHORT parser_version;
 
 	Firebird::string transformedString;
-	Firebird::Array<IntroducerMark> introducerMarks;
+	Firebird::GenericMap<Firebird::NonPooled<dsql_str*, StrMark> > strMarks;
 	bool stmt_ambiguous;
 	YYSTYPE DSQL_parse;
 
