@@ -37,7 +37,7 @@ Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHOR
 	  db_dialect(aDbDialect),
 	  parser_version(aParserVersion),
 	  transformedString(pool),
-	  introducerMarks(pool),
+	  strMarks(pool),
 	  stmt_ambiguous(false)
 {
 	yyps = 0;
@@ -112,15 +112,22 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 	HalfStaticArray<char, 256> buffer;
 	const char* pos = start;
 
-	for (size_t i = 0; i < introducerMarks.getCount(); ++i)
+	// We need only the "introduced" strings, in the bounds of "start" and "length" and in "pos"
+	// order. Let collect them.
+
+	SortedArray<StrMark> introducedMarks;
+
+	GenericMap<NonPooled<dsql_str*, StrMark> >::ConstAccessor accessor(&strMarks);
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		const IntroducerMark& mark = introducerMarks[i];
+		const StrMark& mark = accessor.current()->second;
+		if (mark.introduced && mark.pos >= fromBegin && mark.pos < fromBegin + length)
+			introducedMarks.add(mark);
+	}
 
-		if (mark.pos < fromBegin)
-			continue;
-
-		if (mark.pos >= fromBegin + length)
-			break;
+	for (size_t i = 0; i < introducedMarks.getCount(); ++i)
+	{
+		const StrMark& mark = introducedMarks[i];
 
 		const char* s = lex.start + mark.pos;
 		buffer.add(pos, s - pos);

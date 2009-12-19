@@ -5131,12 +5131,10 @@ sql_string
 			str->str_charset = $1;
 			if (str->type == dsql_str::TYPE_SIMPLE || str->type == dsql_str::TYPE_ALTERNATE)
 			{
-				IntroducerMark mark;
-				mark.pos = lex.last_token - lex.start;
-				mark.length = lex.ptr - lex.last_token;
-				mark.str = str;
-
-				introducerMarks.push(mark);
+				StrMark* mark = strMarks.get(str);
+				fb_assert(mark);
+				if (mark)
+					mark->introduced = true;
 			}
 			$$ = str;
 		}
@@ -6432,6 +6430,9 @@ int Parser::yylexAux()
 
 	if (tok_class & CHR_QUOTE)
 	{
+		StrMark mark;
+		mark.pos = lex.last_token - lex.start;
+
 		char* buffer = string;
 		size_t buffer_len = sizeof (string);
 		const char* buffer_end = buffer + buffer_len - 1;
@@ -6519,6 +6520,11 @@ int Parser::yylexAux()
 		yylval.legacyStr = MAKE_string(buffer, p - buffer);
 		if (buffer != string)
 			gds__free (buffer);
+
+		mark.length = lex.ptr - lex.last_token;
+		mark.str = yylval.legacyStr;
+		strMarks.put(mark.str, mark);
+
 		return STRING;
 	}
 
@@ -6655,6 +6661,9 @@ int Parser::yylexAux()
 
 	if ((c == 'q' || c == 'Q') && lex.ptr + 3 < lex.end && *lex.ptr == '\'')
 	{
+		StrMark mark;
+		mark.pos = lex.last_token - lex.start;
+
 		char endChar = *++lex.ptr;
 		switch (endChar)
 		{
@@ -6679,6 +6688,11 @@ int Parser::yylexAux()
 				yylval.legacyStr = MAKE_string(lex.last_token + 3, lex.ptr - lex.last_token - 4);
 				yylval.legacyStr->type = dsql_str::TYPE_ALTERNATE;
 				lex.ptr++;
+
+				mark.length = lex.ptr - lex.last_token;
+				mark.str = yylval.legacyStr;
+				strMarks.put(mark.str, mark);
+
 				return STRING;
 			}
 		}
