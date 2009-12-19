@@ -1256,6 +1256,8 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1247, 'cvc', '2009-11-13 08:37:53', 17, 102, '               TABLE, TRIGGER, VERSION, USERS, VIEW', NULL, NULL, 'c_pg')
 (1248, 'alexpeshkoff', '2009-11-13 17:49:10', 18, 26, '     user name                      uid   gid     full name', NULL, NULL, 'c_pg')
 (1249, 'alexpeshkoff', '2009-11-13 17:49:54', 18, 27, '------------------------------------------------------------------------------------------', NULL, NULL, 'c_pg')
+(1250, 'cvc', '2009-12-18 09:21:40', 12, 68, '    committing metadata', NULL, NULL, 'c_pg')
+(1251, 'cvc', '2009-12-18 08:21:50', 12, 196, 'restoring parameter @1 for stored procedure', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;
