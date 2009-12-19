@@ -1,3 +1,97 @@
+2009-12-19 14:03  hvlad
+
+	* firebird2/src/dsql/StmtNodes.cpp (1.20):
+
+	Fixed AV
+
+2009-12-19 13:50  robocop
+
+	* firebird2/src/msgs/: transmsgs.de_DE.sql (1.4),
+	transmsgs.fr_FR.sql (1.4):
+
+	Delete obsolete files.
+
+2009-12-19 13:48  robocop
+
+	* firebird2/src/msgs/: facilities2.sql (1.109), messages2.sql
+	(1.131), transmsgs.de_DE2.sql (1.6), transmsgs.fr_FR2.sql (1.5):
+
+	GDEF is dead. In practice, it was dead in 1994 since Borland didn't
+	provide a binary for it in IB4.
+
+2009-12-19 10:16  robocop
+
+	* firebird2/src/: msgs/facilities2.sql (1.108), msgs/messages2.sql
+	(1.130), utilities/nbackup.cpp (1.105), utilities/nbackup/nbkswi.h
+	(1.10):
+
+	Trying to reflect better what nbackup options do.
+
+2009-12-19 10:02  robocop
+
+	* firebird2/src/: msgs/messages2.sql (1.129), include/gen/msgs.h
+	(1.160):
+
+	Correction (worked thanks to legacy-aware code).
+
+2009-12-19 05:11  robocop
+
+	* firebird2/src/msgs/: facilities2.sql (1.107), history2.sql
+	(1.22), messages2.sql (1.128):
+
+	Fixing the indentation of two gbak messages.
+
+2009-12-19 03:08  asfernandes
+
+	* firebird2/src/msgs/facilities2.sql (1.106):
+
+	It's 2009 - thanks to Alex :)
+
+2009-12-19 02:32  asfernandes
+
+	* firebird2/src/dsql/: Parser.cpp (1.11), Parser.h (1.14), parse.y
+	(1.348):
+
+	Fixed unregistered bug: Query string crashes 2.5RC1
+
+2009-12-18 17:33  alexpeshkoff
+
+	* firebird2/src/: msgs/facilities2.sql (1.105), msgs/messages2.sql
+	(1.127), utilities/fbsvcmgr.cpp (1.45):
+
+	Enhanced fbsvcmgr usage print - list all known switches if -? is
+	specified
+
+2009-12-18 15:15  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.120),
+	lang_helpers/gds_codes.pas (1.118), src/include/gen/codetext.h
+	(1.128), src/include/gen/iberror.h (1.132), src/include/gen/msgs.h
+	(1.159), src/include/gen/sql_code.h (1.134),
+	src/include/gen/sql_state.h (1.64), src/msgs/facilities2.sql
+	(1.104), src/msgs/messages2.sql (1.126),
+	src/msgs/system_errors2.sql (1.80), src/utilities/fbsvcmgr.cpp
+	(1.44):
+
+	Frontported detection of missing/invalid parameter in fbsvcmgr
+
+2009-12-18 15:06  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.119),
+	lang_helpers/gds_codes.pas (1.117),
+	src/common/classes/ClumpletReader.cpp (1.49),
+	src/include/consts_pub.h (1.43), src/include/gen/codetext.h
+	(1.127), src/include/gen/iberror.h (1.131), src/include/gen/msgs.h
+	(1.158), src/include/gen/sql_code.h (1.133),
+	src/include/gen/sql_state.h (1.63), src/jrd/svc.cpp (1.306),
+	src/msgs/facilities2.sql (1.103), src/msgs/messages2.sql (1.125),
+	src/msgs/system_errors2.sql (1.79), src/utilities/fbsvcmgr.cpp
+	(1.43), src/utilities/nbackup.cpp (1.104),
+	src/utilities/nbackup/nbkswi.h (1.9):
+
+	Frontported changes to make -Direct switch of nbackup accept on/off
+	parameter
+
 2009-12-18 13:42  alexpeshkoff
 
 	* firebird2/src/: alice/alice.cpp (1.125), burp/burp.cpp (1.180),
