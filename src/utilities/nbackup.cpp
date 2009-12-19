@@ -156,6 +156,13 @@ namespace
 				printMsg(p->in_sw_msg);
 		}
 
+		printMsg(72); // special options are:
+		for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
+		{
+			if (p->in_sw_msg && p->in_sw_optype == nboSpecial)
+				printMsg(p->in_sw_msg);
+		}
+
 		printMsg(24); // general options are:
 		for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
 		{
@@ -1276,7 +1283,7 @@ void nbackup(UtilSvc* uSvc)
 	string username, password;
 	PathName database, filename;
 	bool run_db_triggers = true;
-	bool direct_io = 
+	bool direct_io =
 #ifdef WIN_NT
 		true;
 #else
@@ -1344,7 +1351,7 @@ void nbackup(UtilSvc* uSvc)
 		case IN_SW_NBK_DIRECT:
  			if (++itr >= argc)
  				missingParameterForSwitch(uSvc, argv[itr - 1]);
- 
+
  			onOff = argv[itr];
  			onOff.upper();
  			if (onOff == "ON")

@@ -3426,9 +3426,9 @@ Analyzing database pages ...', NULL, NULL);
 ('nbackup_lostguid_l0bk', 'NBackup::restore_database', 'nbackup.cpp', NULL, 24, 67, NULL, 'Cannot get backup guid clumplet from L0 backup', NULL, NULL)
 (NULL, 'nbackup', 'nbackup.cpp', NULL, 24, 68, NULL, 'Physical Backup Manager version @1', NULL, NULL)
 (NULL, 'restore_database', 'nbackup.cpp', NULL, 24, 69, NULL, 'Enter name of the backup file of level @1 ("." - do not restore further):', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 70, NULL, '  -D(IRECT) [ON | OFF]                   Use or not direct I/O when scanning database', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 70, NULL, '  -D(IRECT) [ON | OFF]                   Use or not direct I/O when backing up database', NULL, NULL)
 ('nbackup_switchd_parameter', 'main', 'nbackup.cpp', NULL, 24, 71, NULL, 'Wrong parameter @1 for switch -D, need ON or OFF', NULL, NULL)
---('nbackup_', '', 'nbackup.cpp', NULL, 24, , NULL, '', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 72, NULL, 'special options are:', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)
