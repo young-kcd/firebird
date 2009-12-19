@@ -384,7 +384,8 @@ public:
 	explicit dsql_req(MemoryPool& p)
 		: req_pool(p),
 		  req_blr_data(p),
-		  req_msg_buffers(p)
+		  req_msg_buffers(p),
+		  req_user_descs(p)
 	{
 	}
 
@@ -418,6 +419,8 @@ public:
 
 	dsql_sym* req_cursor;	// Cursor symbol, if any
 	blb* req_blb;			// JRD blob
+
+	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
 
 	ULONG req_inserts;		// records processed in request
 	ULONG req_deletes;
@@ -778,7 +781,6 @@ public:
 	const TEXT*	par_rel_alias;		// Relation alias, if any
 	const TEXT*	par_alias;			// Alias, if any
 	dsc			par_desc;			// Field data type
-	dsc			par_user_desc;		// SQLDA data type
 	USHORT		par_parameter;		// BLR parameter number
 	USHORT		par_index;			// Index into SQLDA, if appropriate
 };

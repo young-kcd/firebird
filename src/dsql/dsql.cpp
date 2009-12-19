@@ -91,9 +91,9 @@ static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
 static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Jrd::Attachment*);
-static void		map_in_out(dsql_req*, bool, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*,
+static void		map_in_out(dsql_req*, bool, const dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*,
 	const UCHAR* = 0);
-static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, Array<dsql_par*>&);
+static USHORT	parse_blr(dsql_req*, USHORT, const UCHAR*, const USHORT, const Array<dsql_par*>&);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
 static void		release_request(thread_db*, dsql_req*, bool);
@@ -372,7 +372,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	// whether anything is found by the call to receive.
 
 	if (blr_length) {
-		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
+		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 	}
 
 	if (request->req_type == REQ_GET_SEGMENT)
@@ -381,11 +381,19 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 		dsql_par* parameter = request->req_blob->blb_segment;
 		dsql_par* null = parameter->par_null;
-		USHORT* ret_length = (USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
-		UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
-		*ret_length = BLB_get_segment(tdbb, request->req_blb,
-			buffer, parameter->par_user_desc.dsc_length);
+		dsc userDesc;
+		if (!request->req_user_descs.get(parameter, userDesc))
+			userDesc.clear();
+
+		dsc userNullDesc;
+		if (!request->req_user_descs.get(null, userNullDesc))
+			userNullDesc.clear();
+
+		USHORT* ret_length = (USHORT *) (dsql_msg_buf + (IPTR) userNullDesc.dsc_address);
+		UCHAR* buffer = dsql_msg_buf + (IPTR) userDesc.dsc_address;
+
+		*ret_length = BLB_get_segment(tdbb, request->req_blb, buffer, userDesc.dsc_length);
 
 		if (request->req_blb->blb_flags & BLB_eof)
 			return 100;
@@ -509,16 +517,20 @@ void DSQL_insert(thread_db* tdbb,
 	// whether anything is found by the call to receive.
 
 	if (blr_length)
-		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
+		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 
 	if (request->req_type == REQ_PUT_SEGMENT)
 	{
 		// For put segment, use the user buffer and indicator directly.
 
 		dsql_par* parameter = request->req_blob->blb_segment;
-		const UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
-		BLB_put_segment(tdbb, request->req_blb, buffer, parameter->par_user_desc.dsc_length);
+		dsc userDesc;
+		if (!request->req_user_descs.get(parameter, userDesc))
+			userDesc.clear();
+
+		const UCHAR* buffer = dsql_msg_buf + (IPTR) userDesc.dsc_address;
+		BLB_put_segment(tdbb, request->req_blb, buffer, userDesc.dsc_length);
 	}
 }
 
@@ -1213,7 +1225,7 @@ static void execute_request(thread_db* tdbb,
 		UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
 
 		if (out_msg_length && out_blr_length) {
-			parse_blr(out_blr_length, out_blr, out_msg_length, message->msg_parameters);
+			parse_blr(request, out_blr_length, out_blr, out_msg_length, message->msg_parameters);
 		}
 		else if (!out_msg_length && isBlock)
 		{
@@ -2072,10 +2084,11 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
     @param in_dsql_msg_buf
 
  **/
-static void map_in_out(dsql_req* request, bool toExternal, dsql_msg* message, USHORT blr_length,
-	const UCHAR* blr, USHORT msg_length, UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf)
+static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* message,
+	USHORT blr_length, const UCHAR* blr, USHORT msg_length, UCHAR* dsql_msg_buf,
+	const UCHAR* in_dsql_msg_buf)
 {
-	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
+	USHORT count = parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 
 	bool err = false;
 
@@ -2087,7 +2100,10 @@ static void map_in_out(dsql_req* request, bool toExternal, dsql_msg* message, US
 		{
 			 // Make sure the message given to us is long enough
 
-			dsc desc = parameter->par_user_desc;
+			dsc desc;
+			if (!request->req_user_descs.get(parameter, desc))
+				desc.clear();
+
 			USHORT length = (IPTR) desc.dsc_address + desc.dsc_length;
 
 			if (length > msg_length || !desc.dsc_dtype)
@@ -2102,7 +2118,11 @@ static void map_in_out(dsql_req* request, bool toExternal, dsql_msg* message, US
 			dsql_par* const null_ind = parameter->par_null;
 			if (null_ind != NULL)
 			{
-				const USHORT null_offset = (IPTR) null_ind->par_user_desc.dsc_address;
+				dsc userNullDesc;
+				if (!request->req_user_descs.get(null_ind, userNullDesc))
+					userNullDesc.clear();
+
+				const USHORT null_offset = (IPTR) userNullDesc.dsc_address;
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 				{
@@ -2242,10 +2262,10 @@ static void map_in_out(dsql_req* request, bool toExternal, dsql_msg* message, US
     @param parameters
 
  **/
-static USHORT parse_blr(USHORT blr_length, const UCHAR* blr, const USHORT msg_length,
-	Array<dsql_par*>& parameters_list)
+static USHORT parse_blr(dsql_req* request, USHORT blr_length, const UCHAR* blr,
+	const USHORT msg_length, const Array<dsql_par*>& parameters_list)
 {
-	HalfStaticArray<dsql_par*, 16> parameters;
+	HalfStaticArray<const dsql_par*, 16> parameters;
 
 	for (size_t i = 0; i < parameters_list.getCount(); ++i)
 	{
@@ -2411,10 +2431,8 @@ static USHORT parse_blr(USHORT blr_length, const UCHAR* blr, const USHORT msg_le
 		USHORT null_offset = offset;
 		offset += sizeof(SSHORT);
 
-		dsql_par* const parameter = parameters[index - 1];
+		const dsql_par* const parameter = parameters[index - 1];
 		fb_assert(parameter);
-
-		parameter->par_user_desc = desc;
 
 		// ASF: Older than 2.5 engine hasn't validating strings in DSQL. After this has been
 		// implemented in 2.5, selecting a NONE column with UTF-8 attachment charset started
@@ -2422,16 +2440,21 @@ static USHORT parse_blr(USHORT blr_length, const UCHAR* blr, const USHORT msg_le
 		// blr_text/blr_varying (i.e. with the connection charset). I'm reseting the charset
 		// here at the server as a way to make older (and not yet changed) client work
 		// correctly.
-		if (parameter->par_user_desc.isText())
-			parameter->par_user_desc.setTextType(ttype_none);
+		if (desc.isText())
+			desc.setTextType(ttype_none);
+
+		request->req_user_descs.put(parameter, desc);
 
 		dsql_par* null = parameter->par_null;
 		if (null)
 		{
-			null->par_user_desc.dsc_dtype = dtype_short;
-			null->par_user_desc.dsc_scale = 0;
-			null->par_user_desc.dsc_length = sizeof(SSHORT);
-			null->par_user_desc.dsc_address = (UCHAR*)(IPTR) null_offset;
+			desc.clear();
+			desc.dsc_dtype = dtype_short;
+			desc.dsc_scale = 0;
+			desc.dsc_length = sizeof(SSHORT);
+			desc.dsc_address = (UCHAR*)(IPTR) null_offset;
+
+			request->req_user_descs.put(null, desc);
 		}
 	}
 
