@@ -1050,7 +1050,7 @@ Data source : @4"},		/* 606, eds_statement */
 	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1023, nbackup_err_copy */
 	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1024, nbackup_err_eofhdr_restdb */
 	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1025, nbackup_lostguid_l0bk */
-	{337117255, "Wrong parameter %s for switch -D, need ON or OFF"},		/* 1026, nbackup_switchd_parameter */
+	{337117255, "Wrong parameter @1 for switch -D, need ON or OFF"},		/* 1026, nbackup_switchd_parameter */
 	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* 1027, trace_conflict_acts */
 	{337182751, "action switch not found"},		/* 1028, trace_act_notfound */
 	{337182752, "switch \"@1\" must be set only once"},		/* 1029, trace_switch_once */
