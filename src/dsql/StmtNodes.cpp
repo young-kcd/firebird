@@ -393,9 +393,9 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 	node->localDeclList = localDeclList;
 	node->body = body;
 
-	const size_t count = node->legacyParameters ? node->legacyParameters->nod_count : 0 +
+	const size_t count = (node->legacyParameters ? node->legacyParameters->nod_count : 0) +
 		node->returns.getCount() +
-		node->localDeclList ? node->localDeclList->nod_count : 0;
+		(node->localDeclList ? node->localDeclList->nod_count : 0);
 
 	if (count)
 	{
