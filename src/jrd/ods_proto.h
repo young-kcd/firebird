@@ -26,6 +26,17 @@
 namespace Ods {
 
 	bool isSupported(USHORT, USHORT);
-}
+
+	size_t bytesBitPIP(size_t page_size);
+	size_t pagesPerPIP(size_t page_size);
+	size_t pagesPerSCN(size_t page_size);
+	size_t maxPagesPerSCN(size_t page_size);
+	size_t transPerTIP(size_t page_size);
+	size_t gensPerPage(size_t page_size);
+	size_t dataPagesPerPP(size_t page_size);
+	size_t maxRecsPerDP(size_t page_size);
+	size_t maxIndices(size_t page_size);
+
+} // namespace 
 
 #endif //ODS_PROTO_H

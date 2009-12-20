@@ -62,6 +62,7 @@ void	PAG_set_no_reserve(Jrd::thread_db* tdbb, bool);
 void	PAG_set_db_readonly(Jrd::thread_db* tdbb, bool);
 void	PAG_set_db_SQL_dialect(Jrd::thread_db* tdbb, SSHORT);
 void	PAG_set_page_buffers(Jrd::thread_db* tdbb, ULONG);
+void	PAG_set_page_scn(Jrd::thread_db* tdbb, Jrd::win* window);
 void	PAG_sweep_interval(Jrd::thread_db* tdbb, SLONG);
 
 namespace Jrd {

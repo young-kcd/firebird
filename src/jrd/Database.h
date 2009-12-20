@@ -478,7 +478,7 @@ public:
 private:
 	explicit Database(MemoryPool* p)
 	:	dbb_sync(FB_NEW(*getDefaultMemoryPool()) Sync),
-		dbb_page_manager(*p),
+		dbb_page_manager(this, *p),
 		dbb_modules(*p),
 		dbb_extManager(*p),
 		dbb_filename(*p),

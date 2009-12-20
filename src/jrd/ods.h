@@ -183,13 +183,14 @@ const SCHAR pag_root			= 6;		// Index root page
 const SCHAR pag_index			= 7;		// Index (B-tree) page
 const SCHAR pag_blob			= 8;		// Blob data page
 const SCHAR pag_ids				= 9;		// Gen-ids
-const SCHAR pag_max				= 9;		// Max page type
+const SCHAR pag_scns			= 10;		// SCN's inventory page
+const SCHAR pag_max				= 10;		// Max page type
 
 // Pre-defined page numbers
 
 const SLONG HEADER_PAGE		= 0;
 const SLONG FIRST_PIP_PAGE	= 1;
-
+const SLONG FIRST_SCNS_PAGE	= 2;
 
 // Page size limits
 
@@ -444,6 +445,45 @@ struct page_inv_page
 };
 
 
+// SCN's Page
+
+struct scns_page
+{
+	pag scn_header;
+	ULONG scn_sequence;			// Sequence number in page space
+	ULONG scn_pages[1];			// SCN's vector
+};
+
+// Important note !
+// pagesPerPIP value must be multiply of pagesPerSCN value !
+//
+// Nth PIP page number is : pagesPerPIP * N - 1
+// Nth SCN page number is : pagesPerSCN * N
+// Numbers of first PIP and SCN pages (N = 0) is fixed and not interesting here.
+//
+// Generally speaking it is possible that exists N and M that
+//   pagesPerSCN * N == pagesPerPIP * M - 1,
+// i.e. we can't guarantee that some SCN page will not have the same number as 
+// some PIP page. We can implement checks for this case and put corresponding 
+// SCN page at the next position but it will complicate code a lot.
+//
+// The much more easy solution is to make pagesPerPIP multiply of pagesPerSCN. 
+// The fact that page_inv_page::pip_bits array is LONG aligned and occupy less
+// size (in bytes) than scns_page::scn_pages array allow us to use very simple
+// formula for pagesPerSCN : pagesPerSCN = pagesPerPIP / BITS_PER_LONG.
+// Please, consider above when changing page_inv_page or scns_page definition.
+//
+// Table below show numbers for different page sizes using current (ODS12)
+// definitions of page_inv_page and scns_page
+//
+// PageSize  pagesPerPIP  maxPagesPerSCN    pagesPerSCN
+//     4096        32576            1019           1018    
+//     8192        65344            2043           2042    
+//    16384       130880            4091           4090    
+//    32768       261952            8187           8186    
+//    65536       524096           16379          16378   
+
+
 // Pointer Page
 
 struct pointer_page
@@ -478,6 +518,7 @@ const UCHAR PPG_DP_ALL_BITS	= (1 << PPG_DP_BITS_NUM) - 1;
 #define PPG_DP_BIT_TEST(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) & PPG_DP_BIT_MASK((slot), (bit)))
 #define PPG_DP_BIT_SET(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) |= PPG_DP_BIT_MASK((slot), (bit)))
 #define PPG_DP_BIT_CLEAR(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) &= ~PPG_DP_BIT_MASK((slot), (bit)))
+
 
 // Transaction Inventory Page
 

@@ -62,16 +62,19 @@ const USHORT TEMP_PAGE_SPACE	= 256;
 class jrd_file;
 class Database;
 class thread_db;
+class PageManager;
 
 class PageSpace : public pool_alloc<type_PageSpace>
 {
 public:
-	explicit PageSpace(USHORT aPageSpaceID)
+	explicit PageSpace(Database *aDbb, USHORT aPageSpaceID)
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
 		pipFirst = 0;
+		scnFirst = 0;
 		file = 0;
+		dbb = aDbb;
 		maxPageNumber = 0;
 	}
 
@@ -80,6 +83,7 @@ public:
 	USHORT pageSpaceID;
 	SLONG pipHighWater;		// Lowest PIP with space
 	SLONG pipFirst;			// First pointer page
+	SLONG scnFirst;			// First SCN's page
 
 	jrd_file*	file;
 
@@ -94,24 +98,34 @@ public:
 	}
 
 	// how many pages allocated
-	ULONG actAlloc(const USHORT pageSize);
+	ULONG actAlloc();
 	static ULONG actAlloc(const Database* dbb);
 
 	// number of last allocated page
-	ULONG maxAlloc(const USHORT pageSize);
+	ULONG maxAlloc();
 	static ULONG maxAlloc(const Database* dbb);
+
+	// number of last used page
+	ULONG lastUsedPage();
+	static ULONG lastUsedPage(const Database* dbb);
 
 	// extend page space
 	bool extend(thread_db*, const ULONG);
 
+	// get SCN's page number
+	ULONG getSCNPageNum(ULONG sequence);
+	static ULONG getSCNPageNum(const Database* dbb, ULONG sequence);
+
 private:
 	ULONG	maxPageNumber;
+	Database *dbb;
 };
 
 class PageManager : public pool_alloc<type_PageManager>
 {
 public:
-	explicit PageManager(Firebird::MemoryPool& aPool) :
+	explicit PageManager(Database *aDbb, Firebird::MemoryPool& aPool) :
+		dbb(aDbb),
 		pageSpaces(aPool),
 		pool(aPool)
 	{
@@ -119,6 +133,7 @@ public:
 		bytesBitPIP = 0;
 		transPerTIP = 0;
 		gensPerPage = 0;
+		pagesPerSCN = 0;
 
 		dbPageSpace = addPageSpace(DB_PAGE_SPACE);
 		// addPageSpace(TEMP_PAGE_SPACE);
@@ -147,12 +162,14 @@ public:
 	ULONG bytesBitPIP;			// Number of bytes of bit in PIP
 	SLONG transPerTIP;			// Transactions per TIP
 	ULONG gensPerPage;			// Generators per generator page
+	ULONG pagesPerSCN;			// Slots per SCN's page
 	PageSpace* dbPageSpace;		// database page space
 
 private:
 	typedef Firebird::SortedArray<PageSpace*, Firebird::EmptyStorage<PageSpace*>,
 		USHORT, PageSpace> PageSpaceArray;
 
+	Database *dbb;
 	PageSpaceArray pageSpaces;
 	Firebird::MemoryPool& pool;
 };

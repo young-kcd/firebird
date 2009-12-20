@@ -617,7 +617,9 @@ void INF_database_info(const UCHAR* items,
 						  (*err_att->att_val_errors)[VAL_PAG_CHECKSUM_ERR] +
 						  (*err_att->att_val_errors)[VAL_PAG_DOUBLE_ALLOC] +
 						  (*err_att->att_val_errors)[VAL_PAG_IN_USE] +
-						  (*err_att->att_val_errors)[VAL_PAG_ORPHAN];
+						  (*err_att->att_val_errors)[VAL_PAG_ORPHAN] +
+						  (*err_att->att_val_errors)[VAL_SCNS_PAGE_INCONSISTENT] +
+						  (*err_att->att_val_errors)[VAL_PAG_WRONG_SCN];
 			}
 			else
 				err_val = 0;

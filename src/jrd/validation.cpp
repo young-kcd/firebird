@@ -645,7 +645,9 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 	"Relation has %ld orphan backversions (%ld in use)",
 	"Index %d is corrupt (missing entries)",
 	"Index %d has orphan child page at page %ld",
-	"Index %d has a circular reference at page %ld"
+	"Index %d has a circular reference at page %ld",	// 25
+	"SCN's page %ld (sequence %ld) inconsistent",
+	"Page %d have SCN %d while at SCN's page is %d"
 };
 
 
@@ -667,6 +669,7 @@ static RTN walk_pointer_page(thread_db*, vdr*, jrd_rel*, int);
 static RTN walk_record(thread_db*, vdr*, jrd_rel*, rhd*, USHORT, SLONG, bool);
 static RTN walk_relation(thread_db*, vdr*, jrd_rel*);
 static RTN walk_root(thread_db*, vdr*, jrd_rel*);
+static RTN walk_scns(thread_db*, vdr*);
 static RTN walk_tip(thread_db*, vdr*, SLONG);
 
 
@@ -724,6 +727,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 		}
 
 		tdbb->tdbb_flags |= TDBB_sweeper;
+
 		walk_database(tdbb, &control);
 		if (control.vdr_errors)
 			control.vdr_flags &= ~vdr_update;
@@ -829,7 +833,7 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	pag** page_pointer = reinterpret_cast<pag**>(apage_pointer);
 	*page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
 
-	if ((*page_pointer)->pag_type != type)
+	if ((*page_pointer)->pag_type != type && type != pag_undefined)
 	{
 		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type, (*page_pointer)->pag_type);
 		return fetch_type;
@@ -854,13 +858,50 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	// event we don't report double allocation.  If the page is truely
 	// double allocated (to more than one relation) we'll find it
 	// when the on-page relation id doesn't match
+	// We also don't test SCN's pages here. If it double allocated this
+	// will be detected when wrong page reference will be fetched with
+	// non pag_scns type.
 
-	if ((type != pag_data) && PageBitmap::test(control->vdr_page_bitmap, page_number))
+	if ((type != pag_data) && (type != pag_scns) && 
+		PageBitmap::test(control->vdr_page_bitmap, page_number))
 	{
 		corrupt(tdbb, control, VAL_PAG_DOUBLE_ALLOC, 0, page_number);
 		return fetch_duplicate;
 	}
 
+	// Check SCN's page
+	if (page_number)
+	{
+		PageManager &pageMgr = dbb->dbb_page_manager;
+		const ULONG scn_seq = page_number / pageMgr.pagesPerSCN;
+		const ULONG scn_slot = page_number % pageMgr.pagesPerSCN;
+		const ULONG scn_page_num = PageSpace::getSCNPageNum(dbb, scn_seq);
+		const ULONG page_scn = (*page_pointer)->pag_scn;
+		
+		WIN scns_window(DB_PAGE_SPACE, scn_page_num);
+		scns_page *scns = (scns_page*) *page_pointer;
+		
+		if (scn_page_num != page_number) {
+			fetch_page(tdbb, control, scn_page_num, pag_scns, &scns_window, &scns);
+		}
+
+		if (scns->scn_pages[scn_slot] != page_scn) 
+		{
+			corrupt(tdbb, 0, VAL_PAG_WRONG_SCN, 0, page_number, page_scn, scns->scn_pages[scn_slot]);
+
+			if (control->vdr_flags & vdr_update)
+			{
+				WIN *win = (scn_page_num == page_number) ? window : &scns_window;
+				CCH_MARK(tdbb, win);
+
+				scns->scn_pages[scn_slot] = page_scn;
+			}
+		}
+
+		if (scn_page_num != page_number) {
+			CCH_RELEASE(tdbb, &scns_window);
+		}
+	}
 
 	PBM_SET(tdbb->getDefaultPool(), &control->vdr_page_bitmap, page_number);
 
@@ -1154,6 +1195,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
 
 	walk_header(tdbb, control, page->hdr_next_page);
 	walk_pip(tdbb, control);
+	walk_scns(tdbb, control);
 	walk_tip(tdbb, control, page->hdr_next_transaction);
 	walk_generators(tdbb, control);
 
@@ -2188,6 +2230,56 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 			corrupt(tdbb, control, VAL_TIP_CONFUSED, 0, sequence);
 		}
 		CCH_RELEASE(tdbb, &window);
+	}
+
+	return rtn_ok;
+}
+
+static RTN walk_scns(thread_db* tdbb, vdr* control)
+{
+/**************************************
+ *
+ *	w a l k _ s c n s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Walk SCN inventory pages.
+ *
+ *  Don't check scn_pages array - its checked when other pages are fetched.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+	CHECK_DBB(dbb);
+
+	PageManager &pageMgr = dbb->dbb_page_manager;
+	PageSpace *pageSpace = pageMgr.findPageSpace(DB_PAGE_SPACE);
+
+	const ULONG lastPage = pageSpace->lastUsedPage();
+	const ULONG cntSCNs = lastPage / pageMgr.pagesPerSCN + 1;
+
+	ULONG pageNum = 0;
+	ULONG currSCN = 0;
+	for (ULONG sequence = 0; sequence < cntSCNs; sequence++)
+	{
+		const ULONG scnPage = pageSpace->getSCNPageNum(sequence);
+		WIN scnWindow(pageSpace->pageSpaceID, scnPage);
+		scns_page *scns = NULL;
+		fetch_page(tdbb, control, scnPage, pag_scns, &scnWindow, &scns);
+
+		if (scns->scn_sequence != sequence) 
+		{
+			corrupt(tdbb, control, VAL_SCNS_PAGE_INCONSISTENT, 0, scnPage, sequence);
+
+			if (control->vdr_flags & vdr_update)
+			{
+				CCH_MARK(tdbb, &scnWindow);
+				scns->scn_sequence = sequence;
+			}
+		}
+
+		CCH_RELEASE(tdbb, &scnWindow);
 	}
 
 	return rtn_ok;

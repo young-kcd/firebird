@@ -734,6 +734,7 @@ void NBackup::unlock_database()
 
 void NBackup::backup_database(int level, const PathName& fname)
 {
+
 	bool database_locked = false;
 	// We set this flag when backup file is in inconsistent state
 	bool delete_backup = false;
@@ -741,6 +742,11 @@ void NBackup::backup_database(int level, const PathName& fname)
 	char prev_guid[GUID_BUFF_SIZE] = "";
 	Ods::pag* page_buff = NULL;
 	attach_database();
+	ULONG page_writes = 0, page_reads = 0;
+
+	time_t start = time(NULL);
+	const struct tm *today = localtime(&start);
+
 	try {
 		// Look for SCN and GUID of previous-level backup in history table
 		if (level)
@@ -796,9 +802,6 @@ void NBackup::backup_database(int level, const PathName& fname)
 		get_database_size();
 		detach_database();
 
-		time_t _time = time(NULL);
-		const struct tm *today = localtime(&_time);
-
 		if (fname.hasData())
 			bakname = fname;
 		else
@@ -835,8 +838,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 		char unaligned_header_buffer[SECTOR_ALIGNMENT * 2];
 
 		Ods::header_page *header =
-			reinterpret_cast<Ods::header_page*>(
-				FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));
+			reinterpret_cast<Ods::header_page*>(FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));
+
 		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
 			status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(1));
 
@@ -865,6 +868,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		if (read_file(dbase, page_buff, header->hdr_page_size) != header->hdr_page_size)
 			status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(2));
 		--db_size;
+		page_reads++;
 
 		FB_GUID backup_guid;
 		bool guid_found = false;
@@ -907,8 +911,17 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 		ULONG curPage = 0;
 		ULONG lastPage = FIRST_PIP_PAGE;
-		const ULONG pagesPerPIP =
-			(header->hdr_page_size - OFFSETA(Ods::page_inv_page*, pip_bits)) * 8;
+		const ULONG pagesPerPIP = Ods::pagesPerPIP(header->hdr_page_size);
+
+		int scnsSlot = 0;
+		const ULONG pagesPerSCN = Ods::pagesPerSCN(header->hdr_page_size);
+
+		Array<UCHAR> unaligned_scns_buffer;
+		Ods::scns_page *scns = NULL, *scns_buf = NULL;
+		{ // scope
+			UCHAR* buf = unaligned_scns_buffer.getBuffer(header->hdr_page_size + SECTOR_ALIGNMENT);
+			scns_buf = reinterpret_cast<Ods::scns_page*>(FB_ALIGN((IPTR) buf, SECTOR_ALIGNMENT));
+		}
 
 		while (true)
 		{
@@ -923,21 +936,72 @@ void NBackup::backup_database(int level, const PathName& fname)
 				{
 					write_file(backup, &curPage, sizeof(curPage));
 					write_file(backup, page_buff, header->hdr_page_size);
+
+					page_writes++;
 				}
 			}
 			else
+			{
 				write_file(backup, page_buff, header->hdr_page_size);
+				page_writes++;
+			}
 
 			if ((db_size_pages != 0) && (db_size == 0))
 				break;
 
+			if (level)
+			{
+				fb_assert(scnsSlot < pagesPerSCN);
+				fb_assert(scns && scns->scn_sequence * pagesPerSCN + scnsSlot == curPage ||
+						 !scns && curPage % pagesPerSCN == scnsSlot);
+
+				ULONG nextSCN = scns ? (scns->scn_sequence + 1) * pagesPerSCN : FIRST_SCNS_PAGE;
+
+				while (true)
+				{
+					curPage++;
+					scnsSlot++;
+					if (!scns || scns->scn_pages[scnsSlot] > prev_scn || 
+						scnsSlot == pagesPerSCN ||
+						curPage == nextSCN ||
+						curPage == lastPage)
+					{
+						seek_file(dbase, (SINT64) curPage * header->hdr_page_size);
+						break;
+					}
+				}
+
+				if (scnsSlot == pagesPerSCN)
+				{
+					scnsSlot = 0;
+					scns = NULL;
+				}
+
+				fb_assert(scnsSlot < pagesPerSCN);
+				fb_assert(scns && scns->scn_sequence * pagesPerSCN + scnsSlot == curPage ||
+						 !scns && curPage % pagesPerSCN == scnsSlot);
+			}
+			else
+				curPage++;
+
+
 			const size_t bytesDone = read_file(dbase, page_buff, header->hdr_page_size);
 			--db_size;
+			page_reads++;
 			if (bytesDone == 0)
 				break;
 			if (bytesDone != header->hdr_page_size)
 				status_exception::raise(Arg::Gds(isc_nbackup_dbsize_inconsistent));
-			curPage++;
+
+			if (level && page_buff->pag_type == pag_scns)
+			{
+				fb_assert(scnsSlot == 0 || scnsSlot == FIRST_SCNS_PAGE);
+
+				// pick up next SCN's page
+				memcpy(scns_buf, page_buff, header->hdr_page_size);
+				scns = scns_buf;
+			}
+
 
 			if (curPage == lastPage)
 			{
@@ -1044,6 +1108,11 @@ void NBackup::backup_database(int level, const PathName& fname)
 		attach_database();
 	internal_unlock_database();
 	detach_database();
+
+	time_t finish = time(NULL);
+	double elapsed = difftime(finish, start);
+	uSvc->printf("time elapsed\t%.0f sec \npage reads\t%u \npage writes\t%u\n", 
+		elapsed, page_reads, page_writes);
 }
 
 void NBackup::restore_database(const BackupFiles& files)

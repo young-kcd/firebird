@@ -1810,13 +1810,13 @@ void CCH_mark(thread_db* tdbb, WIN* window, USHORT mark_system, USHORT must_writ
 	bdb->bdb_flags |= BDB_db_dirty;
 #endif
 
-	bdb->bdb_flags |= BDB_marked;
 	set_dirty_flag(tdbb, bdb);
 
 	if (must_write || dbb->dbb_backup_manager->databaseFlushInProgress())
 		bdb->bdb_flags |= BDB_must_write;
 
 	set_diff_page(tdbb, bdb);
+	bdb->bdb_flags |= BDB_marked;
 }
 
 
@@ -1986,7 +1986,15 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 	if (bdb->bdb_page != HEADER_PAGE_NUMBER)
 	{
 		// SCN of header page is adjusted in nbak.cpp
-		bdb->bdb_buffer->pag_scn = bm->getCurrentSCN(); // Set SCN for the page
+		if (bdb->bdb_buffer->pag_scn != bm->getCurrentSCN())
+		{
+			bdb->bdb_buffer->pag_scn = bm->getCurrentSCN(); // Set SCN for the page
+
+			win window(bdb->bdb_page);
+			window.win_bdb = bdb;
+			window.win_buffer = bdb->bdb_buffer;
+			PAG_set_page_scn(tdbb, &window);
+		}
 	}
 
 	const int backup_state = bm->getState();

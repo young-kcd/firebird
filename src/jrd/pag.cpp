@@ -663,6 +663,27 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 		pipMin++;
 	pip_page->pip_min = pipMin;
 
+	// Check if we need new SCN page. 
+	// SCN pages allocated at every pagesPerSCN pages in database.
+	if (!pageSpace->isTemporary())
+	{
+		const ULONG scn_page = window->win_page.getPageNum();
+		const ULONG scn_slot = scn_page % pageMgr.pagesPerSCN;
+		if (scn_slot == 0)
+		{
+			scns_page* page = (scns_page*) window->win_buffer;
+			page->scn_header.pag_type = pag_scns;
+			page->scn_sequence = scn_page / pageMgr.pagesPerSCN;
+
+			CCH_must_write(window);
+			CCH_RELEASE(tdbb, window);
+			CCH_must_write(&pip_window);
+			CCH_RELEASE(tdbb, &pip_window);
+
+			return PAG_allocate(tdbb, window);
+		}
+	}
+
 	if (relative_bit != pageMgr.pagesPerPIP - 1)
 	{
 		CCH_RELEASE(tdbb, &pip_window);
@@ -859,25 +880,45 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	// Initialize Page Inventory Page
+	// Initialize first SCN's Page
+	pageSpace.scnFirst = 0;
+	if (!pageSpace.isTemporary())
+	{
+		pageSpace.scnFirst = FIRST_SCNS_PAGE;
 
-	WIN window(pageSpace.pageSpaceID, FIRST_PIP_PAGE);
-	pageSpace.pipFirst = FIRST_PIP_PAGE;
-	page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
+		WIN window(pageSpace.pageSpaceID, pageSpace.scnFirst);
+		scns_page* page = (scns_page*) CCH_fake(tdbb, &window, 1);
 
-	pages->pip_header.pag_type = pag_pages;
-	pages->pip_used = pageSpace.pipFirst + 1;
-	pages->pip_min = pages->pip_used;
-	UCHAR* p = pages->pip_bits;
-	int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
+		page->scn_header.pag_type = pag_scns;
+		page->scn_sequence = 0;
 
-	while (i--) {
-		*p++ = 0xff;
+		CCH_RELEASE(tdbb, &window);
 	}
 
-	pages->pip_bits[0] &= ~(1 | 2);
+	// Initialize Page Inventory Page
+	{
+		pageSpace.pipFirst = FIRST_PIP_PAGE;
 
-	CCH_RELEASE(tdbb, &window);
+		WIN window(pageSpace.pageSpaceID, pageSpace.pipFirst);
+		page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
+	
+		pages->pip_header.pag_type = pag_pages;
+		pages->pip_used = (pageSpace.scnFirst ? pageSpace.scnFirst : pageSpace.pipFirst) + 1;
+		pages->pip_min = pages->pip_used;
+		UCHAR* p = pages->pip_bits;
+		int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
+	
+		while (i--) {
+			*p++ = 0xff;
+		}
+
+		pages->pip_bits[0] &= ~(1 | 2);
+		if (pageSpace.scnFirst) {
+			pages->pip_bits[0] &= ~(1 << pageSpace.scnFirst);
+		}
+
+		CCH_RELEASE(tdbb, &window);
+	}
 }
 
 
@@ -1165,45 +1206,21 @@ void PAG_init(thread_db* tdbb)
 	PageSpace* pageSpace = pageMgr.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 
-	pageMgr.bytesBitPIP = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
-	pageMgr.pagesPerPIP = pageMgr.bytesBitPIP * 8;
-	pageMgr.transPerTIP = (dbb->dbb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
-	pageSpace->pipFirst = 1;
+	pageMgr.bytesBitPIP = Ods::bytesBitPIP(dbb->dbb_page_size);
+	pageMgr.pagesPerPIP = Ods::pagesPerPIP(dbb->dbb_page_size);
+	pageMgr.pagesPerSCN = Ods::pagesPerSCN(dbb->dbb_page_size);
+	pageSpace->pipFirst = FIRST_PIP_PAGE;
+	pageSpace->scnFirst = FIRST_SCNS_PAGE;
+
+	pageMgr.transPerTIP = Ods::transPerTIP(dbb->dbb_page_size);
+
 	// dbb_ods_version can be 0 when a new database is being created
 	fb_assert((dbb->dbb_ods_version == 0) || (dbb->dbb_ods_version >= ODS_VERSION12));
-	pageMgr.gensPerPage =
-		(dbb->dbb_page_size -
-			OFFSETA(generator_page*, gpg_values)) / sizeof(((generator_page*) NULL)->gpg_values);
+	pageMgr.gensPerPage = Ods::gensPerPage(dbb->dbb_page_size);
 
-	// Compute the number of data pages per pointer page.  Each data page
-	// requires a 32 bit pointer and a 2 bit control field.
-
-	dbb->dbb_dp_per_pp =
-		(dbb->dbb_page_size - OFFSETA(pointer_page*, ppg_page)) * 8 / (BITS_PER_LONG + PPG_DP_BITS_NUM);
-
-	// Compute the number of records that can fit on a page using the
-	// size of the record index (dpb_repeat) and a record header.  This
-	// gives an artificially high number, reducing the density of db_keys.
-
-	dbb->dbb_max_records = (dbb->dbb_page_size - sizeof(data_page)) /
-		(sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
-
-	// Artificially reduce density of records to test high bits of record number
-	// dbb->dbb_max_records = 32000;
-
-	// Optimize record numbers for new 64-bit sparse bitmap implementation
-	// We need to measure if it is beneficial from performance point of view.
-	// Price is slightly reduced density of record numbers, but for
-	// ODS11 it doesn't matter because record numbers are 40-bit.
-	// Benefit is ~1.5 times smaller sparse bitmaps on average and faster bitmap iteration.
-
-	//dbb->dbb_max_records = FB_ALIGN(dbb->dbb_max_records, 64);
-
-	// Compute the number of index roots that will fit on an index root page,
-	// assuming that each index has only one key
-
-	dbb->dbb_max_idx = (dbb->dbb_page_size - OFFSETA(index_root_page*, irt_rpt)) /
-		(sizeof(index_root_page::irt_repeat) + sizeof(irtd));
+	dbb->dbb_dp_per_pp = Ods::dataPagesPerPP(dbb->dbb_page_size);
+	dbb->dbb_max_records = Ods::maxRecsPerDP(dbb->dbb_page_size);
+	dbb->dbb_max_idx = Ods::maxIndices(dbb->dbb_page_size);
 
 	// Compute prefetch constants from database page size and maximum prefetch
 	// transfer size. Double pages per prefetch request so that cache reader
@@ -1892,7 +1909,7 @@ PageSpace::~PageSpace()
 	}
 }
 
-ULONG PageSpace::actAlloc(const USHORT pageSize)
+ULONG PageSpace::actAlloc()
 {
 /**************************************
  *
@@ -1903,6 +1920,7 @@ ULONG PageSpace::actAlloc(const USHORT pageSize)
 
 	// Traverse the linked list of files and add up the
 	// number of pages in each file
+	const USHORT pageSize = dbb->dbb_page_size;
 	ULONG tot_pages = 0;
 	for (const jrd_file* f = file; f != NULL; f = f->fil_next) {
 		tot_pages += PIO_get_number_of_pages(f, pageSize);
@@ -1914,10 +1932,10 @@ ULONG PageSpace::actAlloc(const USHORT pageSize)
 ULONG PageSpace::actAlloc(const Database* dbb)
 {
 	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	return pgSpace->actAlloc(dbb->dbb_page_size);
+	return pgSpace->actAlloc();
 }
 
-ULONG PageSpace::maxAlloc(const USHORT pageSize)
+ULONG PageSpace::maxAlloc()
 {
 /**************************************
  *
@@ -1925,6 +1943,7 @@ ULONG PageSpace::maxAlloc(const USHORT pageSize)
  *	Compute last physically allocated page of database.
  *
  **************************************/
+	const USHORT pageSize = dbb->dbb_page_size;
 	const jrd_file* f = file;
 	while (f->fil_next) {
 		f = f->fil_next;
@@ -1941,7 +1960,68 @@ ULONG PageSpace::maxAlloc(const USHORT pageSize)
 ULONG PageSpace::maxAlloc(const Database* dbb)
 {
 	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	return pgSpace->maxAlloc(dbb->dbb_page_size);
+	return pgSpace->maxAlloc();
+}
+
+ULONG PageSpace::lastUsedPage()
+{
+	PageManager &pageMgr = dbb->dbb_page_manager;
+	ULONG pipLast = (maxAlloc() / pageMgr.pagesPerPIP) * pageMgr.pagesPerPIP;
+
+	pipLast = pipLast ? pipLast - 1 : pipFirst;
+	win window(pageSpaceID, pipLast);
+
+	thread_db *tdbb = JRD_get_thread_data();
+	
+	do 
+	{
+		pag *page = CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
+		if (page->pag_type == pag_pages)
+			break;
+
+		CCH_RELEASE(tdbb, &window);
+		
+		if (pipLast > pageMgr.pagesPerPIP)
+			pipLast -= pageMgr.pagesPerPIP;
+		else if (pipLast == pipFirst)
+			return 0;	// can't find PIP page !
+		else
+			pipLast = pipFirst;
+
+		window.win_page = pipLast;
+	}
+	while (pipLast > pipFirst);
+	
+	page_inv_page *pip = (page_inv_page*) window.win_buffer;
+
+	int last_bit = pip->pip_used;
+	int byte_num = last_bit / 8;
+	UCHAR mask = 1 << (last_bit % 8);
+	while ((last_bit >= 0) && (pip->pip_bits[byte_num] & mask))
+	{
+		if (mask == 1)
+		{
+			mask = 0x80;
+			byte_num--;
+		}
+		else
+			mask >>= 1;
+
+		last_bit--;
+	}
+	
+	CCH_RELEASE(tdbb, &window);
+	
+	if (pipLast == pipFirst)
+		return last_bit + 1;
+	else
+		return last_bit + pipLast + 1;
+}
+
+ULONG PageSpace::lastUsedPage(const Database* dbb)
+{
+	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	return pgSpace->lastUsedPage();
 }
 
 bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
@@ -1962,9 +2042,9 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
 		return true;
 
-	Database* dbb = tdbb->getDatabase();
+	fb_assert(dbb == tdbb->getDatabase())
 
-	if (pageNum >= maxAlloc(dbb->dbb_page_size))
+	if (pageNum >= maxAlloc())
 	{
 		const ULONG minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
 		const ULONG maxExtendPages = MAX_EXTEND_BYTES / dbb->dbb_page_size;
@@ -2002,12 +2082,36 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 	return true;
 }
 
+ULONG PageSpace::getSCNPageNum(ULONG sequence)
+{
+/**************************************
+ *
+ * Functional description
+ *	Return the physical number of the Nth SCN page
+ *
+ *	SCN pages allocated at every pagesPerSCN pages in database and should 
+ *	not be the same as PIP page (which allocated at every pagesPerPIP pages). 
+ *  First SCN page number is fixed as FIRST_SCN_PAGE.
+ *
+ **************************************/
+	if (!sequence) {
+		return scnFirst;
+	}
+	return sequence * dbb->dbb_page_manager.pagesPerSCN;
+}
+
+ULONG PageSpace::getSCNPageNum(const Database* dbb, ULONG sequence)
+{
+	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	return pgSpace->getSCNPageNum(sequence);
+}
+
 PageSpace* PageManager::addPageSpace(const USHORT pageSpaceID)
 {
 	PageSpace* newPageSpace = findPageSpace(pageSpaceID);
 	if (!newPageSpace)
 	{
-		newPageSpace = FB_NEW(pool) PageSpace(pageSpaceID);
+		newPageSpace = FB_NEW(pool) PageSpace(dbb, pageSpaceID);
 		pageSpaces.add(newPageSpace);
 	}
 
@@ -2140,3 +2244,67 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 	// compiler warnings silencer
 	return 0;
 }
+
+void PAG_set_page_scn(thread_db* tdbb, win* window)
+{
+	Database *dbb = tdbb->getDatabase();
+	if (dbb->dbb_ods_version < ODS_VERSION12)
+		return;
+
+	PageManager &pageMgr = dbb->dbb_page_manager;
+	PageSpace *pageSpace = pageMgr.findPageSpace(window->win_page.getPageSpaceID());
+
+	if (pageSpace->isTemporary())
+		return;
+
+	const ULONG curr_scn = window->win_buffer->pag_scn;
+	const ULONG page_num = window->win_page.getPageNum();
+	const ULONG scn_seq = page_num / pageMgr.pagesPerSCN;
+	const ULONG scn_slot = page_num % pageMgr.pagesPerSCN;
+
+	const ULONG scn_page = pageSpace->getSCNPageNum(scn_seq);
+
+	if (scn_page == page_num)
+	{
+		scns_page* page = (scns_page*) window->win_buffer;
+		page->scn_pages[scn_slot] = curr_scn;
+		return;
+	}
+
+	win scn_window(pageSpace->pageSpaceID, scn_page);
+	
+	scns_page* page = (scns_page*) CCH_FETCH(tdbb, &scn_window, LCK_write, pag_scns);
+	CCH_MARK(tdbb, &scn_window);
+	page->scn_pages[scn_slot] = curr_scn;
+	CCH_RELEASE(tdbb, &scn_window);
+
+	CCH_precedence(tdbb, window, scn_page);
+}
+
+
+#ifdef DEBUG
+namespace {
+
+// This checks should better be placed at ods.h but we can't use fb_assert() there.
+// See also comments in ods.h near the scns_page definition.
+
+class CheckODS
+{
+public:
+	CheckODS()
+	{
+		for (size_t page_size = MIN_PAGE_SIZE; page_size <= MAX_PAGE_SIZE; page_size *= 2)
+		{
+			size_t pagesPerPIP = Ods::pagesPerPIP(page_size);
+			size_t pagesPerSCN = Ods::pagesPerSCN(page_size);
+			size_t maxPagesPerSCN = Ods::maxPagesPerSCN(page_size);
+
+			fb_assert((pagesPerPIP % pagesPerSCN) == 0);
+			fb_assert(pagesPerSCN <= maxPagesPerSCN);
+		}
+	}
+};
+
+static CheckODS doCheck;
+}
+#endif // DEBUG
