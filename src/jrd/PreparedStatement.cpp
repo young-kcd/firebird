@@ -76,7 +76,7 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
 			0, NULL, 0, NULL, isInternalRequest);
 
-		DsqlCompiledStatement* statement = request->getStatement();
+		const DsqlCompiledStatement* statement = request->getStatement();
 
 		if (statement->sendMsg)
 			parseDsqlMessage(statement->sendMsg, inValues, inBlr, inMessage);

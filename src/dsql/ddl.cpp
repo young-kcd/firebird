@@ -261,7 +261,7 @@ void DDL_execute(dsql_req* request)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	DsqlCompiledStatement* statement = request->getStatement();
+	const DsqlCompiledStatement* statement = request->getStatement();
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 4)

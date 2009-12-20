@@ -376,7 +376,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		raise(status, tdbb, "jrd8_prepare", &sql);
 	}
 
-	DsqlCompiledStatement* statement = m_request->getStatement();
+	const DsqlCompiledStatement* statement = m_request->getStatement();
 
 	if (statement->sendMsg) {
 		try {
