@@ -78,7 +78,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 			(1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE) |
 			(1 << REQ_EXEC_BLOCK);
 
-		if (!((1 << stmt->getRequest()->req_type) & requests))
+		if (!((1 << stmt->getRequest()->getStatement()->type) & requests))
 		{
 			UCharBuffer dst;
 

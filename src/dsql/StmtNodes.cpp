@@ -93,10 +93,10 @@ DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, 
 IfNode* IfNode::internalDsqlPass()
 {
 	IfNode* node = FB_NEW(getPool()) IfNode(getPool());
-	node->compiledStatement = compiledStatement;
-	node->dsqlCondition = PASS1_node(compiledStatement, dsqlCondition);
-	node->dsqlTrueAction = PASS1_statement(compiledStatement, dsqlTrueAction);
-	node->dsqlFalseAction = PASS1_statement(compiledStatement, dsqlFalseAction);
+	node->dsqlScratch = dsqlScratch;
+	node->dsqlCondition = PASS1_node(dsqlScratch, dsqlCondition);
+	node->dsqlTrueAction = PASS1_statement(dsqlScratch, dsqlTrueAction);
+	node->dsqlFalseAction = PASS1_statement(dsqlScratch, dsqlFalseAction);
 
 	return node;
 }
@@ -114,13 +114,15 @@ void IfNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void IfNode::genBlr()
 {
-	stuff(compiledStatement, blr_if);
-	GEN_expr(compiledStatement, dsqlCondition);
-	GEN_statement(compiledStatement, dsqlTrueAction);
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	stuff(statement, blr_if);
+	GEN_expr(dsqlScratch, dsqlCondition);
+	GEN_statement(dsqlScratch, dsqlTrueAction);
 	if (dsqlFalseAction)
-		GEN_statement(compiledStatement, dsqlFalseAction);
+		GEN_statement(dsqlScratch, dsqlFalseAction);
 	else
-		stuff(compiledStatement, blr_end);
+		stuff(statement, blr_end);
 }
 
 
@@ -187,15 +189,17 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, C
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
 {
-	const bool autoTrans = compiledStatement->req_flags & REQ_in_auto_trans_block;
-	compiledStatement->req_flags |= REQ_in_auto_trans_block;
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	const bool autoTrans = statement->flags & REQ_in_auto_trans_block;
+	statement->flags |= REQ_in_auto_trans_block;
 
 	InAutonomousTransactionNode* node = FB_NEW(getPool()) InAutonomousTransactionNode(getPool());
-	node->compiledStatement = compiledStatement;
-	node->dsqlAction = PASS1_statement(compiledStatement, dsqlAction);
+	node->dsqlScratch = dsqlScratch;
+	node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
 
 	if (!autoTrans)
-		compiledStatement->req_flags &= ~REQ_in_auto_trans_block;
+		statement->flags &= ~REQ_in_auto_trans_block;
 
 	return node;
 }
@@ -210,9 +214,11 @@ void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& nodes) c
 
 void InAutonomousTransactionNode::genBlr()
 {
-	stuff(compiledStatement, blr_auto_trans);
-	stuff(compiledStatement, 0);	// to extend syntax in the future
-	GEN_statement(compiledStatement, dsqlAction);
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	stuff(statement, blr_auto_trans);
+	stuff(statement, 0);	// to extend syntax in the future
+	GEN_statement(dsqlScratch, dsqlAction);
 }
 
 
@@ -376,19 +382,21 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 
 ExecBlockNode* ExecBlockNode::internalDsqlPass()
 {
-	compiledStatement->blockNode = this;
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	statement->blockNode = this;
 
 	if (returns.hasData())
-		compiledStatement->req_type = REQ_SELECT_BLOCK;
+		statement->type = REQ_SELECT_BLOCK;
 	else
-		compiledStatement->req_type = REQ_EXEC_BLOCK;
+		statement->type = REQ_EXEC_BLOCK;
 
-	compiledStatement->req_flags |= REQ_block;
+	statement->flags |= REQ_block;
 
 	ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
-	node->compiledStatement = compiledStatement;
+	node->dsqlScratch = dsqlScratch;
 
-	node->legacyParameters = PASS1_node_psql(compiledStatement, legacyParameters, false);
+	node->legacyParameters = PASS1_node_psql(dsqlScratch, legacyParameters, false);
 	node->returns = returns;
 	node->localDeclList = localDeclList;
 	node->body = body;
@@ -448,10 +456,12 @@ void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void ExecBlockNode::genBlr()
 {
-	// Update blockNode, because we have a reference to the original unprocessed node.
-	compiledStatement->blockNode = this;
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	compiledStatement->begin_debug();
+	// Update blockNode, because we have a reference to the original unprocessed node.
+	statement->blockNode = this;
+
+	statement->begin_debug();
 
 	USHORT inputs = 0, outputs = 0, locals = 0;
 
@@ -466,7 +476,7 @@ void ExecBlockNode::genBlr()
 			dsql_fld* field = (dsql_fld*) parameter->nod_arg[Dsql::e_dfl_field];
 			// parameter = (*ptr)->nod_arg[Dsql::e_prm_val_val]; USELESS
 
-			DDL_resolve_intl_type(compiledStatement, field,
+			DDL_resolve_intl_type(dsqlScratch, field,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
 
 			variables.add(MAKE_variable(field, field->fld_name.c_str(),
@@ -483,7 +493,7 @@ void ExecBlockNode::genBlr()
 	{
 		ParameterClause& parameter = returns[i];
 
-		parameter.resolve(compiledStatement);
+		parameter.resolve(dsqlScratch);
 
 		dsql_nod* var = MAKE_variable(parameter.legacyField,
 			parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * outputs), locals++);
@@ -494,42 +504,42 @@ void ExecBlockNode::genBlr()
 		++outputs;
 	}
 
-	compiledStatement->append_uchar(blr_begin);
+	statement->append_uchar(blr_begin);
 
 	if (inputs)
 	{
-		revertParametersOrder(compiledStatement->req_send->msg_parameters);
-		GEN_port(compiledStatement, compiledStatement->req_send);
+		revertParametersOrder(statement->sendMsg->msg_parameters);
+		GEN_port(dsqlScratch, statement->sendMsg);
 	}
 	else
-		compiledStatement->req_send = NULL;
+		statement->sendMsg = NULL;
 
 	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
-		dsql_par* param = MAKE_parameter(compiledStatement->req_receive, true, true,
+		dsql_par* param = MAKE_parameter(statement->receiveMsg, true, true,
 			(i - outputVariables.begin()) + 1, *i);
 		param->par_node = *i;
-		MAKE_desc(compiledStatement, &param->par_desc, *i, NULL);
+		MAKE_desc(dsqlScratch, &param->par_desc, *i, NULL);
 		param->par_desc.dsc_flags |= DSC_nullable;
 	}
 
 	// Set up parameter to handle EOF
-	dsql_par* param = MAKE_parameter(compiledStatement->req_receive, false, false, 0, NULL);
-	compiledStatement->req_eof = param;
+	dsql_par* param = MAKE_parameter(statement->receiveMsg, false, false, 0, NULL);
+	statement->eof = param;
 	param->par_desc.dsc_dtype = dtype_short;
 	param->par_desc.dsc_scale = 0;
 	param->par_desc.dsc_length = sizeof(SSHORT);
 
-	revertParametersOrder(compiledStatement->req_receive->msg_parameters);
-	GEN_port(compiledStatement, compiledStatement->req_receive);
+	revertParametersOrder(statement->receiveMsg->msg_parameters);
+	GEN_port(dsqlScratch, statement->receiveMsg);
 
 	if (inputs)
 	{
-		compiledStatement->append_uchar(blr_receive);
-		compiledStatement->append_uchar(0);
+		statement->append_uchar(blr_receive);
+		statement->append_uchar(0);
 	}
 
-	compiledStatement->append_uchar(blr_begin);
+	statement->append_uchar(blr_begin);
 
 	for (unsigned i = 0; i < returnsPos; ++i)
 	{
@@ -542,14 +552,14 @@ void ExecBlockNode::genBlr()
 			// ASF: Validation of execute block input parameters is different than procedure
 			// parameters, because we can't generate messages using the domains due to the
 			// connection charset influence. So to validate, we cast them and assign to null.
-			compiledStatement->append_uchar(blr_assignment);
-			compiledStatement->append_uchar(blr_cast);
-			DDL_put_field_dtype(compiledStatement, field, true);
-			compiledStatement->append_uchar(blr_parameter2);
-			compiledStatement->append_uchar(0);
-			compiledStatement->append_ushort(variable->var_msg_item);
-			compiledStatement->append_ushort(variable->var_msg_item + 1);
-			compiledStatement->append_uchar(blr_null);
+			statement->append_uchar(blr_assignment);
+			statement->append_uchar(blr_cast);
+			DDL_put_field_dtype(dsqlScratch, field, true);
+			statement->append_uchar(blr_parameter2);
+			statement->append_uchar(0);
+			statement->append_ushort(variable->var_msg_item);
+			statement->append_ushort(variable->var_msg_item + 1);
+			statement->append_uchar(blr_null);
 		}
 	}
 
@@ -557,40 +567,40 @@ void ExecBlockNode::genBlr()
 	{
 		dsql_nod* parameter = *i;
 		dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		DDL_put_local_variable(compiledStatement, variable, 0, NULL);
+		DDL_put_local_variable(dsqlScratch, variable, 0, NULL);
 	}
 
-	compiledStatement->setPsql(true);
+	dsqlScratch->setPsql(true);
 
-	DDL_put_local_variables(compiledStatement, localDeclList, locals, variables);
+	DDL_put_local_variables(dsqlScratch, localDeclList, locals, variables);
 
-	compiledStatement->req_loop_level = 0;
+	dsqlScratch->loopLevel = 0;
 
-	dsql_nod* stmtNode = PASS1_statement(compiledStatement, body);
-	GEN_hidden_variables(compiledStatement, false);
+	dsql_nod* stmtNode = PASS1_statement(dsqlScratch, body);
+	GEN_hidden_variables(dsqlScratch, false);
 
-	compiledStatement->append_uchar(blr_stall);
+	statement->append_uchar(blr_stall);
 	// Put a label before body of procedure, so that
 	// any exit statement can get out
-	compiledStatement->append_uchar(blr_label);
-	compiledStatement->append_uchar(0);
-	GEN_statement(compiledStatement, stmtNode);
+	statement->append_uchar(blr_label);
+	statement->append_uchar(0);
+	GEN_statement(dsqlScratch, stmtNode);
 	if (outputs)
-		compiledStatement->req_type = REQ_SELECT_BLOCK;
+		statement->type = REQ_SELECT_BLOCK;
 	else
-		compiledStatement->req_type = REQ_EXEC_BLOCK;
+		statement->type = REQ_EXEC_BLOCK;
 
-	compiledStatement->append_uchar(blr_end);
-	GEN_return(compiledStatement, outputVariables, true);
-	compiledStatement->append_uchar(blr_end);
+	statement->append_uchar(blr_end);
+	GEN_return(dsqlScratch, outputVariables, true);
+	statement->append_uchar(blr_end);
 
-	compiledStatement->end_debug();
+	statement->end_debug();
 }
 
 
 void ExecBlockNode::genReturn()
 {
-	GEN_return(compiledStatement, outputVariables, false);
+	GEN_return(dsqlScratch, outputVariables, false);
 }
 
 
@@ -629,8 +639,9 @@ void ExitNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void ExitNode::genBlr()
 {
-	stuff(compiledStatement, blr_leave);
-	stuff(compiledStatement, 0);
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	stuff(statement, blr_leave);
+	stuff(statement, 0);
 }
 
 
@@ -656,10 +667,10 @@ DmlNode* PostEventNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 PostEventNode* PostEventNode::internalDsqlPass()
 {
 	PostEventNode* node = FB_NEW(getPool()) PostEventNode(getPool());
-	node->compiledStatement = compiledStatement;
+	node->dsqlScratch = dsqlScratch;
 
-	node->dsqlEvent = PASS1_node(compiledStatement, dsqlEvent);
-	node->dsqlArgument = PASS1_node(compiledStatement, dsqlArgument);
+	node->dsqlEvent = PASS1_node(dsqlScratch, dsqlEvent);
+	node->dsqlArgument = PASS1_node(dsqlScratch, dsqlArgument);
 
 	return node;
 }
@@ -676,16 +687,18 @@ void PostEventNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void PostEventNode::genBlr()
 {
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
 	if (dsqlArgument)
 	{
-		stuff(compiledStatement, blr_post_arg);
-		GEN_expr(compiledStatement, dsqlEvent);
-		GEN_expr(compiledStatement, dsqlArgument);
+		stuff(statement, blr_post_arg);
+		GEN_expr(dsqlScratch, dsqlEvent);
+		GEN_expr(dsqlScratch, dsqlArgument);
 	}
 	else
 	{
-		stuff(compiledStatement, blr_post);
-		GEN_expr(compiledStatement, dsqlEvent);
+		stuff(statement, blr_post);
+		GEN_expr(dsqlScratch, dsqlEvent);
 	}
 }
 
@@ -745,8 +758,10 @@ DmlNode* SavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScr
 
 SavepointNode* SavepointNode::internalDsqlPass()
 {
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
 	// ASF: It should never enter in this IF, because the grammar does not allow it.
-	if (compiledStatement->req_flags & REQ_block) // blocks, procedures and triggers
+	if (statement->flags & REQ_block) // blocks, procedures and triggers
 	{
 		const char* cmd = NULL;
 
@@ -777,7 +792,7 @@ SavepointNode* SavepointNode::internalDsqlPass()
 			Arg::Gds(isc_random) << Arg::Str(cmd));
 	}
 
-	compiledStatement->req_type = REQ_SAVEPOINT;
+	statement->type = REQ_SAVEPOINT;
 
 	return this;
 }
@@ -791,9 +806,10 @@ void SavepointNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void SavepointNode::genBlr()
 {
-	stuff(compiledStatement, blr_user_savepoint);
-	stuff(compiledStatement, (UCHAR) command);
-	stuff_cstring(compiledStatement, name.c_str());
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	stuff(statement, blr_user_savepoint);
+	stuff(statement, (UCHAR) command);
+	stuff_cstring(statement, name.c_str());
 }
 
 
@@ -936,7 +952,9 @@ DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 SuspendNode* SuspendNode::internalDsqlPass()
 {
-	if (compiledStatement->req_flags & REQ_trigger)	// triggers only
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	if (statement->flags & REQ_trigger)	// triggers only
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Token unknown
@@ -944,15 +962,15 @@ SuspendNode* SuspendNode::internalDsqlPass()
 				  Arg::Gds(isc_random) << Arg::Str("SUSPEND"));
 	}
 
-	if (compiledStatement->req_flags & REQ_in_auto_trans_block)	// autonomous transaction
+	if (statement->flags & REQ_in_auto_trans_block)	// autonomous transaction
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
 	}
 
-	compiledStatement->req_flags |= REQ_selectable;
+	statement->flags |= REQ_selectable;
 
-	blockNode = compiledStatement->blockNode;
+	blockNode = statement->blockNode;
 
 	return this;
 }

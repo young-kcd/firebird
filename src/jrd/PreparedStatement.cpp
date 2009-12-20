@@ -76,11 +76,13 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
 			0, NULL, 0, NULL, isInternalRequest);
 
-		if (request->req_send)
-			parseDsqlMessage(request->req_send, inValues, inBlr, inMessage);
+		DsqlCompiledStatement* statement = request->getStatement();
 
-		if (request->req_receive)
-			parseDsqlMessage(request->req_receive, outValues, outBlr, outMessage);
+		if (statement->sendMsg)
+			parseDsqlMessage(statement->sendMsg, inValues, inBlr, inMessage);
+
+		if (statement->receiveMsg)
+			parseDsqlMessage(statement->receiveMsg, outValues, outBlr, outMessage);
 	}
 	catch (const Exception&)
 	{
@@ -129,7 +131,7 @@ void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 
 ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction)
 {
-	fb_assert(resultSet == NULL && request->req_receive);
+	fb_assert(resultSet == NULL && request->getStatement()->receiveMsg);
 	return FB_NEW(getPool()) ResultSet(tdbb, this, transaction);
 }
 

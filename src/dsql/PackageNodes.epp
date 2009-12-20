@@ -33,7 +33,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../dsql/make_proto.h"
-#include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../common/StatusArg.h"
 
@@ -376,19 +375,19 @@ void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) co
 }
 
 
-Node* CreateAlterPackageNode::internalDsqlPass()
+DdlNode* CreateAlterPackageNode::internalDsqlPass()
 {
 	source.ltrim("\n\r\t ");
 
 	// items
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
-		CompiledStatement* itemStatement = FB_NEW(getPool()) CompiledStatement(getPool());
-		itemStatement->req_dbb = compiledStatement->req_dbb;
-		itemStatement->req_transaction = compiledStatement->req_transaction;
-		itemStatement->req_client_dialect = compiledStatement->req_client_dialect;
-		itemStatement->req_package = name;
-		itemStatement->req_ddl_node = MAKE_node(nod_class_node, 1);
+		DsqlCompiledStatement* itemStatement = FB_NEW(getPool()) DsqlCompiledStatement(getPool());
+		DsqlCompilerScratch* itemScratch = FB_NEW(getPool()) DsqlCompilerScratch(getPool(),
+			dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
+		itemScratch->clientDialect = dsqlScratch->clientDialect;
+		itemScratch->package = name;
+		itemStatement->ddlNode = MAKE_node(nod_class_node, 1);
 
 		switch ((*items)[i].type)
 		{
@@ -398,8 +397,8 @@ Node* CreateAlterPackageNode::internalDsqlPass()
 					functionNames.add(fun->name);
 					fun->alter = true;
 					fun->package = name;
-					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) fun;
-					fun->dsqlPass(itemStatement);
+					itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) fun;
+					fun->dsqlPass(itemScratch);
 				}
 				break;
 
@@ -409,8 +408,8 @@ Node* CreateAlterPackageNode::internalDsqlPass()
 					procedureNames.add(proc->name);
 					proc->alter = true;
 					proc->package = name;
-					itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) proc;
-					proc->dsqlPass(itemStatement);
+					itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) proc;
+					proc->dsqlPass(itemScratch);
 				}
 				break;
 		}
@@ -541,7 +540,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 			{
 				DropFunctionNode dropNode(getPool(), "", i->name);
 				dropNode.package = name;
-				dropNode.dsqlPass(compiledStatement);
+				dropNode.dsqlPass(dsqlScratch);
 				dropNode.execute(tdbb, transaction);
 			}
 		}
@@ -553,7 +552,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 			{
 				DropProcedureNode dropNode(getPool(), "", i->name);
 				dropNode.package = name;
-				dropNode.dsqlPass(compiledStatement);
+				dropNode.dsqlPass(dsqlScratch);
 				dropNode.execute(tdbb, transaction);
 			}
 		}
@@ -633,7 +632,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		DropFunctionNode dropNode(getPool(), "", i->name);
 		dropNode.package = name;
-		dropNode.dsqlPass(compiledStatement);
+		dropNode.dsqlPass(dsqlScratch);
 		dropNode.execute(tdbb, transaction);
 	}
 
@@ -642,7 +641,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		DropProcedureNode dropNode(getPool(), "", i->name);
 		dropNode.package = name;
-		dropNode.dsqlPass(compiledStatement);
+		dropNode.dsqlPass(dsqlScratch);
 		dropNode.execute(tdbb, transaction);
 	}
 
@@ -674,10 +673,10 @@ void RecreatePackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 
-Node* RecreatePackageNode::internalDsqlPass()
+DdlNode* RecreatePackageNode::internalDsqlPass()
 {
-	dropNode.dsqlPass(compiledStatement);
-	createNode->dsqlPass(compiledStatement);
+	dropNode.dsqlPass(dsqlScratch);
+	createNode->dsqlPass(dsqlScratch);
 	return DdlNode::internalDsqlPass();
 }
 
@@ -758,7 +757,7 @@ void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) con
 }
 
 
-Node* CreatePackageBodyNode::internalDsqlPass()
+DdlNode* CreatePackageBodyNode::internalDsqlPass()
 {
 	source.ltrim("\n\r\t ");
 
@@ -772,12 +771,12 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 
 		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
 		{
-			CompiledStatement* itemStatement = FB_NEW(getPool()) CompiledStatement(getPool());
-			itemStatement->req_dbb = compiledStatement->req_dbb;
-			itemStatement->req_transaction = compiledStatement->req_transaction;
-			itemStatement->req_client_dialect = compiledStatement->req_client_dialect;
-			itemStatement->req_package = name;
-			itemStatement->req_ddl_node = MAKE_node(nod_class_node, 1);
+			DsqlCompiledStatement* itemStatement = FB_NEW(getPool()) DsqlCompiledStatement(getPool());
+			DsqlCompilerScratch* itemScratch = FB_NEW(getPool()) DsqlCompilerScratch(getPool(),
+				dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
+			itemScratch->clientDialect = dsqlScratch->clientDialect;
+			itemScratch->package = name;
+			itemStatement->ddlNode = MAKE_node(nod_class_node, 1);
 
 			switch ((*arrays[i])[j].type)
 			{
@@ -790,8 +789,8 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 							fun->alter = true;
 						else
 							fun->privateScope = true;
-						itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) fun;
-						fun->dsqlPass(itemStatement);
+						itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) fun;
+						fun->dsqlPass(itemScratch);
 					}
 					break;
 
@@ -804,8 +803,8 @@ Node* CreatePackageBodyNode::internalDsqlPass()
 							proc->alter = true;
 						else
 							proc->privateScope = true;
-						itemStatement->req_ddl_node->nod_arg[0] = (dsql_nod*) proc;
-						proc->dsqlPass(itemStatement);
+						itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) proc;
+						proc->dsqlPass(itemScratch);
 					}
 					break;
 			}
@@ -1024,7 +1023,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			DropFunctionNode dropNode(getPool(), "", FUN.RDB$FUNCTION_NAME);
 			dropNode.package = name;
-			dropNode.dsqlPass(compiledStatement);
+			dropNode.dsqlPass(dsqlScratch);
 			dropNode.execute(tdbb, transaction);
 		}
 		else
@@ -1048,7 +1047,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			DropProcedureNode dropNode(getPool(), "", PRC.RDB$PROCEDURE_NAME);
 			dropNode.package = name;
-			dropNode.dsqlPass(compiledStatement);
+			dropNode.dsqlPass(dsqlScratch);
 			dropNode.execute(tdbb, transaction);
 		}
 		else
@@ -1079,10 +1078,10 @@ void RecreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) c
 }
 
 
-Node* RecreatePackageBodyNode::internalDsqlPass()
+DdlNode* RecreatePackageBodyNode::internalDsqlPass()
 {
-	dropNode.dsqlPass(compiledStatement);
-	createNode->dsqlPass(compiledStatement);
+	dropNode.dsqlPass(dsqlScratch);
+	createNode->dsqlPass(dsqlScratch);
 	return DdlNode::internalDsqlPass();
 }
 

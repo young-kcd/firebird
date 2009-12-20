@@ -37,7 +37,7 @@ class Node : public Firebird::PermanentStorage
 public:
 	explicit Node(MemoryPool& pool)
 		: PermanentStorage(pool),
-		  compiledStatement(NULL)
+		  dsqlScratch(NULL)
 	{
 	}
 
@@ -46,9 +46,9 @@ public:
 	}
 
 public:
-	Node* dsqlPass(CompiledStatement* aCompiledStatement)
+	Node* dsqlPass(DsqlCompilerScratch* aDsqlScratch)
 	{
-		compiledStatement = aCompiledStatement;
+		dsqlScratch = aDsqlScratch;
 		return internalDsqlPass();
 	}
 
@@ -62,7 +62,7 @@ protected:
 	}
 
 protected:
-	CompiledStatement* compiledStatement;
+	DsqlCompilerScratch* dsqlScratch;
 };
 
 
@@ -87,9 +87,6 @@ public:
 		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName,
 		const Firebird::string& sqlText);
 
-public:
-	static void checkEmptyName(const Firebird::MetaName& name);
-
 protected:
 	void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName);
@@ -97,9 +94,9 @@ protected:
 	void resetContextStack();
 
 protected:
-	virtual Node* internalDsqlPass()
+	virtual DdlNode* internalDsqlPass()
 	{
-		compiledStatement->req_type = REQ_DDL;
+		dsqlScratch->getStatement()->type = REQ_DDL;
 		return this;
 	}
 

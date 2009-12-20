@@ -35,7 +35,7 @@ namespace Jrd {
 class IfNode : public StmtNode
 {
 public:
-	explicit IfNode(MemoryPool& pool, CompiledStatement* aCompiledStatement = NULL)
+	explicit IfNode(MemoryPool& pool, DsqlCompilerScratch* aDsqlScratch = NULL)
 		: StmtNode(pool),
 		  dsqlCondition(NULL),
 		  dsqlTrueAction(NULL),
@@ -44,7 +44,7 @@ public:
 		  trueAction(NULL),
 		  falseAction(NULL)
 	{
-		compiledStatement = aCompiledStatement;
+		dsqlScratch = aDsqlScratch;
 	}
 
 public:

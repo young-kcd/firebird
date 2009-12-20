@@ -96,14 +96,15 @@ static void		map_in_out(dsql_req*, bool, const dsql_msg*, USHORT, const UCHAR*, 
 static USHORT	parse_blr(dsql_req*, USHORT, const UCHAR*, const USHORT, const Array<dsql_par*>&);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
+static void		release_statement(DsqlCompiledStatement* statement);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, ULONG, UCHAR*);
 static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
 
-static inline bool reqTypeWithCursor(REQ_TYPE req_type)
+static inline bool reqTypeWithCursor(REQ_TYPE type)
 {
-	switch (req_type)
+	switch (type)
 	{
 	case REQ_SELECT:
 	case REQ_SELECT_BLOCK:
@@ -182,7 +183,8 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
 	// allocate the request block
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	dsql_req* const request = FB_NEW(pool) dsql_req(pool);
+	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
+	dsql_req* const request = FB_NEW(pool) dsql_req(statement);
 	request->req_dbb = database;
 
 	return request;
@@ -222,19 +224,19 @@ void DSQL_execute(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	if (request->req_flags & REQ_orphan)
+	if (request->getStatement()->flags & REQ_orphan)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
 	}
 
 	if ((SSHORT) in_msg_type == -1) {
-		request->req_type = REQ_EMBED_SELECT;
+		request->getStatement()->type = REQ_EMBED_SELECT;
 	}
 
 	// Only allow NULL trans_handle if we're starting a transaction
 
-	if (!*tra_handle && request->req_type != REQ_START_TRANS)
+	if (!*tra_handle && request->getStatement()->type != REQ_START_TRANS)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_bad_trans_handle));
@@ -243,9 +245,9 @@ void DSQL_execute(thread_db* tdbb,
 	// If the request is a SELECT or blob statement then this is an open.
 	// Make sure the cursor is not already open.
 
-	if (reqTypeWithCursor(request->req_type))
+	if (reqTypeWithCursor(request->getStatement()->type))
 	{
-		if (request->req_flags & REQ_cursor_open)
+		if (request->getStatement()->flags & REQ_cursor_open)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 					  Arg::Gds(isc_dsql_cursor_open_err));
@@ -254,14 +256,14 @@ void DSQL_execute(thread_db* tdbb,
 
 	// A select with a non zero output length is a singleton select
 	bool singleton;
-	if (request->req_type == REQ_SELECT && out_msg_length != 0) {
+	if (request->getStatement()->type == REQ_SELECT && out_msg_length != 0) {
 		singleton = true;
 	}
 	else {
 		singleton = false;
 	}
 
-	if (request->req_type != REQ_EMBED_SELECT)
+	if (request->getStatement()->type != REQ_EMBED_SELECT)
 	{
 		execute_request(tdbb, request, tra_handle,
 						in_blr_length, in_blr, in_msg_length, in_msg,
@@ -279,9 +281,9 @@ void DSQL_execute(thread_db* tdbb,
 	// a singleton SELECT.  In that event, we don't add the cursor
 	// to the list of open cursors (it's not really open).
 
-	if (reqTypeWithCursor(request->req_type) && !singleton)
+	if (reqTypeWithCursor(request->getStatement()->type) && !singleton)
 	{
-		request->req_flags |= REQ_cursor_open;
+		request->getStatement()->flags |= REQ_cursor_open;
 		TRA_link_cursor(request->req_transaction, request);
 	}
 }
@@ -355,14 +357,14 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
 	// if the cursor isn't open, we've got a problem
-	if (!(request->req_flags & REQ_cursor_open))
+	if (!(request->getStatement()->flags & REQ_cursor_open))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
 				  Arg::Gds(isc_dsql_cursor_not_open));
 	}
 
-	dsql_msg* message = (dsql_msg*) request->req_receive;
+	dsql_msg* message = (dsql_msg*) request->getStatement()->receiveMsg;
 
 	// Set up things for tracing this call
 	Jrd::Attachment* att = request->req_dbb->dbb_attachment;
@@ -375,11 +377,11 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 	}
 
-	if (request->req_type == REQ_GET_SEGMENT)
+	if (request->getStatement()->type == REQ_GET_SEGMENT)
 	{
 		// For get segment, use the user buffer and indicator directly.
 
-		dsql_par* parameter = request->req_blob->blb_segment;
+		dsql_par* parameter = request->getStatement()->blob->blb_segment;
 		dsql_par* null = parameter->par_null;
 
 		dsc userDesc;
@@ -409,7 +411,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
 		msgBuffer, 0);
 
-	const dsql_par* const eof = request->req_eof;
+	const dsql_par* const eof = request->getStatement()->eof;
 
 	dsc eofDesc = eof->par_desc;
 	eofDesc.dsc_address = msgBuffer + IPTR(eofDesc.dsc_address);
@@ -459,7 +461,7 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 	else if (option & DSQL_close)
 	{
 		// Just close the cursor associated with the request
-		if (!(request->req_flags & REQ_cursor_open))
+		if (!(request->getStatement()->flags & REQ_cursor_open))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-501) <<
 					  Arg::Gds(isc_dsql_cursor_close_err));
@@ -493,7 +495,7 @@ void DSQL_insert(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	if (request->req_flags & REQ_orphan)
+	if (request->getStatement()->flags & REQ_orphan)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
@@ -501,9 +503,9 @@ void DSQL_insert(thread_db* tdbb,
 
 	// if the cursor isn't open, we've got a problem
 
-	if (request->req_type == REQ_PUT_SEGMENT)
+	if (request->getStatement()->type == REQ_PUT_SEGMENT)
 	{
-		if (!(request->req_flags & REQ_cursor_open))
+		if (!(request->getStatement()->flags & REQ_cursor_open))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 					  Arg::Gds(isc_dsql_cursor_err) <<
@@ -511,7 +513,7 @@ void DSQL_insert(thread_db* tdbb,
 		}
 	}
 
-	dsql_msg* message = (dsql_msg*) request->req_receive;
+	dsql_msg* message = (dsql_msg*) request->getStatement()->receiveMsg;
 
 	// Insure that the blr for the message is parsed, regardless of
 	// whether anything is found by the call to receive.
@@ -519,11 +521,11 @@ void DSQL_insert(thread_db* tdbb,
 	if (blr_length)
 		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 
-	if (request->req_type == REQ_PUT_SEGMENT)
+	if (request->getStatement()->type == REQ_PUT_SEGMENT)
 	{
 		// For put segment, use the user buffer and indicator directly.
 
-		dsql_par* parameter = request->req_blob->blb_segment;
+		dsql_par* parameter = request->getStatement()->blob->blb_segment;
 
 		dsc userDesc;
 		if (!request->req_user_descs.get(parameter, userDesc))
@@ -581,7 +583,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 	// check to see if old request has an open cursor
 
-	if (old_request && (old_request->req_flags & REQ_cursor_open))
+	if (old_request && (old_request->getStatement()->flags & REQ_cursor_open))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-519) <<
 				  Arg::Gds(isc_dsql_open_cursor_request));
@@ -648,13 +650,13 @@ void DSQL_prepare(thread_db* tdbb,
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
-		if (request->req_type == REQ_CREATE_DB)
+		if (request->getStatement()->type == REQ_CREATE_DB)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-530) <<
 					  Arg::Gds(isc_dsql_crdb_prepare_err));
 		}
 
-		request->req_flags |= REQ_prepared;
+		request->getStatement()->flags |= REQ_prepared;
 
 		// Now that we know that the new request exists, zap the old one.
 
@@ -814,7 +816,8 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 		ThreadStatusGuard status_vector(tdbb);
 		try
 		{
-			if (request->req_type == REQ_GET_SEGMENT || request->req_type == REQ_PUT_SEGMENT)
+			if (request->getStatement()->type == REQ_GET_SEGMENT ||
+				request->getStatement()->type == REQ_PUT_SEGMENT)
 			{
 				BLB_close(tdbb, request->req_blb);
 				request->req_blb = NULL;
@@ -843,7 +846,7 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 		}
 	}
 
-	request->req_flags &= ~REQ_cursor_open;
+	request->getStatement()->flags &= ~REQ_cursor_open;
 	TRA_unlink_cursor(request->req_transaction, request);
 }
 
@@ -919,7 +922,7 @@ static void execute_blob(thread_db* tdbb,
 {
 	UCHAR bpb[24];
 
-	dsql_blb* blob = request->req_blob;
+	dsql_blb* blob = request->getStatement()->blob;
 	map_in_out(request, false, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length,
 		NULL, in_msg);
 
@@ -956,7 +959,7 @@ static void execute_blob(thread_db* tdbb,
 
 	bid* blob_id = (bid*) desc.dsc_address;
 
-	if (request->req_type == REQ_GET_SEGMENT)
+	if (request->getStatement()->type == REQ_GET_SEGMENT)
 	{
 		if (null)
 		{
@@ -1122,11 +1125,11 @@ static void execute_request(thread_db* tdbb,
 {
 	request->req_transaction = *tra_handle;
 
-	switch (request->req_type)
+	switch (request->getStatement()->type)
 	{
 	case REQ_START_TRANS:
 		JRD_start_transaction(tdbb, &request->req_transaction, 1, &request->req_dbb->dbb_attachment,
-							  request->req_blr_data.getCount(), request->req_blr_data.begin());
+			request->getStatement()->blrData.getCount(), request->getStatement()->blrData.begin());
 		*tra_handle = request->req_transaction;
 		return;
 
@@ -1191,7 +1194,7 @@ static void execute_request(thread_db* tdbb,
 
 	// If there is no data required, just start the request
 
-	dsql_msg* message = request->req_send;
+	dsql_msg* message = request->getStatement()->sendMsg;
 	if (message)
 		map_in_out(request, false, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
 
@@ -1211,9 +1214,9 @@ static void execute_request(thread_db* tdbb,
 	// REQ_EXEC_BLOCK has no outputs so there are no out_msg
 	// supplied from client side, but REQ_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
-	const bool isBlock = (request->req_type == REQ_EXEC_BLOCK);
+	const bool isBlock = (request->getStatement()->type == REQ_EXEC_BLOCK);
 
-	message = request->req_receive;
+	message = request->getStatement()->receiveMsg;
 	if ((out_msg_length && message) || isBlock)
 	{
 		UCHAR temp_buffer[FB_DOUBLE_ALIGN * 2];
@@ -1290,7 +1293,7 @@ static void execute_request(thread_db* tdbb,
 	}
 
 	UCHAR buffer[20]; // Not used after retrieved
-	if (request->req_type == REQ_UPDATE_CURSOR)
+	if (request->getStatement()->type == REQ_UPDATE_CURSOR)
 	{
 		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
 
@@ -1301,7 +1304,7 @@ static void execute_request(thread_db* tdbb,
 					  Arg::Gds(isc_update_conflict));
 		}
 	}
-	else if (request->req_type == REQ_DELETE_CURSOR)
+	else if (request->getStatement()->type == REQ_DELETE_CURSOR)
 	{
 		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
 
@@ -1313,7 +1316,7 @@ static void execute_request(thread_db* tdbb,
 		}
 	}
 
-	const bool have_cursor = reqTypeWithCursor(request->req_type) && !singleton;
+	const bool have_cursor = reqTypeWithCursor(request->getStatement()->type) && !singleton;
 	trace.finish(have_cursor, res_successful);
 }
 
@@ -2188,13 +2191,14 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				  Arg::Gds(isc_dsql_sqlda_err));
 	}
 
+	DsqlCompiledStatement* statement = request->getStatement();
 	dsql_par* parameter;
 
 	dsql_par* dbkey;
-	if (!toExternal && (dbkey = request->req_parent_dbkey) && (parameter = request->req_dbkey))
+	if (!toExternal && (dbkey = statement->parentDbkey) && (parameter = statement->dbkey))
 	{
-		UCHAR* parentMsgBuffer = request->req_parent ?
-			request->req_parent->req_msg_buffers[dbkey->par_message->msg_buffer_number] : NULL;
+		UCHAR* parentMsgBuffer = statement->parentRequest ?
+			statement->parentRequest->req_msg_buffers[dbkey->par_message->msg_buffer_number] : NULL;
 		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 		fb_assert(parentMsgBuffer);
@@ -2219,11 +2223,11 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 	}
 
 	dsql_par* rec_version;
-	if (!toExternal && (rec_version = request->req_parent_rec_version) &&
-		(parameter = request->req_rec_version))
+	if (!toExternal && (rec_version = statement->parentRecVersion) &&
+		(parameter = statement->recVersion))
 	{
-		UCHAR* parentMsgBuffer = request->req_parent ?
-			request->req_parent->req_msg_buffers[rec_version->par_message->msg_buffer_number] : NULL;
+		UCHAR* parentMsgBuffer = statement->parentRequest ?
+			statement->parentRequest->req_msg_buffers[rec_version->par_message->msg_buffer_number] : NULL;
 		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 		fb_assert(parentMsgBuffer);
@@ -2527,22 +2531,27 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	// allocate the statement block, then prepare the statement
 
 	Jrd::ContextPoolHolder context(tdbb, database->createPool());
-
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	CompiledStatement* statement = FB_NEW(pool) CompiledStatement(pool);
-	statement->req_dbb = database;
-	statement->req_transaction = transaction;
-	statement->req_client_dialect = client_dialect;
-	statement->req_traced = true;
 
-	trace.setStatement(statement);
+	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
+	DsqlCompilerScratch* scratch = FB_NEW(pool) DsqlCompilerScratch(pool, database,
+		transaction, statement);
+	scratch->clientDialect = client_dialect;
+
+	dsql_req* request = FB_NEW(statement->getPool()) dsql_req(statement);
+	request->req_dbb = database;
+	request->req_transaction = transaction;
+
+	request->req_traced = true;
+	trace.setStatement(request);
 
 	try {
 
 	// Parse the SQL statement.  If it croaks, return
 
-	Parser parser(*tdbb->getDefaultPool(), client_dialect, statement->req_dbb->dbb_db_SQL_dialect,
-		parser_version, string, string_length, tdbb->getAttachment()->att_charset);
+	Parser parser(*tdbb->getDefaultPool(), client_dialect,
+		scratch->getAttachment()->dbb_db_SQL_dialect, parser_version, string, string_length,
+		tdbb->getAttachment()->att_charset);
 
 	dsql_nod* node = parser.parse();
 	Firebird::string transformedText = parser.getTransformedString();
@@ -2570,7 +2579,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		}
 	}
 
-	statement->req_sql_text = FB_NEW(pool) RefString(pool, transformedText);
+	statement->sqlText = FB_NEW(pool) RefString(pool, transformedText);
 
 	if (!node)
 	{
@@ -2584,24 +2593,24 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	// allocate the send and receive messages
 
-	statement->req_send = FB_NEW(pool) dsql_msg(pool);
+	statement->sendMsg = FB_NEW(pool) dsql_msg(pool);
 	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
-	statement->req_receive = message;
+	statement->receiveMsg = message;
 	message->msg_number = 1;
 
-	statement->req_type = REQ_SELECT;
-	statement->req_flags &= ~REQ_cursor_open;
+	statement->type = REQ_SELECT;
+	statement->flags &= ~REQ_cursor_open;
 
 	// No work is done during pass1 for set transaction - like
 	// checking for valid table names.  This is because that will
 	// require a valid transaction handle.
 	// Error will be caught at execute time.
 
-	node = PASS1_statement(statement, node);
+	node = PASS1_statement(scratch, node);
 	if (!node)
-		return statement;
+		return request;
 
-	switch (statement->req_type)
+	switch (statement->type)
 	{
 	case REQ_COMMIT:
 	case REQ_COMMIT_RETAIN:
@@ -2610,60 +2619,94 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	case REQ_GET_SEGMENT:
 	case REQ_PUT_SEGMENT:
 	case REQ_START_TRANS:
-		statement->req_traced = false;
+		request->req_traced = false;
 		break;
 	default:
-		statement->req_traced = true;
+		request->req_traced = true;
 	}
 
 	// stop here for statements not requiring code generation
 
-	if (statement->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
-		statement->req_dbb->dbb_db_SQL_dialect != client_dialect)
+	if (statement->type == REQ_DDL && parser.isStmtAmbiguous() &&
+		scratch->getAttachment()->dbb_db_SQL_dialect != client_dialect)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
-				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(statement->req_dbb->dbb_db_SQL_dialect));
+				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
+				  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
 	}
 
-	switch (statement->req_type)
+	switch (statement->type)
 	{
-	case REQ_COMMIT:
-	case REQ_COMMIT_RETAIN:
-	case REQ_ROLLBACK:
-	case REQ_ROLLBACK_RETAIN:
-		return statement;
-
-	// Work on blob segment statements
-	case REQ_GET_SEGMENT:
-	case REQ_PUT_SEGMENT:
-		GEN_port(statement, statement->req_blob->blb_open_in_msg);
-		GEN_port(statement, statement->req_blob->blb_open_out_msg);
-		GEN_port(statement, statement->req_blob->blb_segment_msg);
-		return statement;
-
-	// Generate BLR, DDL or TPB for statement
-	// Start transactions takes parameters via a parameter block.
-	// The statement blr string is used for that
-	case REQ_START_TRANS:
-		GEN_start_transaction(statement, node);
-		return statement;
+		// Work on blob segment statements
+		case REQ_GET_SEGMENT:
+		case REQ_PUT_SEGMENT:
+			GEN_port(scratch, statement->blob->blb_open_in_msg);
+			GEN_port(scratch, statement->blob->blb_open_out_msg);
+			GEN_port(scratch, statement->blob->blb_segment_msg);
+			break;
 	}
 
-	if (client_dialect > SQL_DIALECT_V5)
-		statement->req_flags |= REQ_blr_version5;
-	else
-		statement->req_flags |= REQ_blr_version4;
+	switch (statement->type)
+	{
+		case REQ_COMMIT:
+		case REQ_COMMIT_RETAIN:
+		case REQ_ROLLBACK:
+		case REQ_ROLLBACK_RETAIN:
+			return request;
 
-	GEN_request(statement, node);
-	const ULONG length = (ULONG) statement->req_blr_data.getCount();
+		case REQ_START_TRANS:
+			GEN_start_transaction(scratch, node);
+			return request;
+
+		default:
+			if (client_dialect > SQL_DIALECT_V5)
+				statement->flags |= REQ_blr_version5;
+			else
+				statement->flags |= REQ_blr_version4;
+
+			GEN_request(request, scratch, node);
+			// fall into
+
+		case REQ_GET_SEGMENT:
+		case REQ_PUT_SEGMENT:
+			{
+				// Create the messages buffers
+				for (size_t i = 0; i < scratch->ports.getCount(); ++i)
+				{
+					dsql_msg* message = scratch->ports[i];
+
+					// Allocate buffer for message
+					const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
+
+					message->msg_buffer_number = request->req_msg_buffers.getCount();
+					request->req_msg_buffers.grow(message->msg_buffer_number + 1);
+
+					UCHAR*& msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
+					fb_assert(!msgBuffer);
+
+					msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+					msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) msgBuffer, FB_DOUBLE_ALIGN);
+				}
+				break;
+			}
+	}
+
+	switch (statement->type)
+	{
+		case REQ_GET_SEGMENT:
+		case REQ_PUT_SEGMENT:
+			return request;
+	}
+
+	const ULONG length = (ULONG) statement->blrData.getCount();
 
 	// stop here for ddl statements
 
-	if (statement->req_type == REQ_CREATE_DB || statement->req_type == REQ_DDL)
+	if (statement->type == REQ_CREATE_DB || statement->type == REQ_DDL)
 	{
 		// Notify Trace API manager about new DDL request cooked.
 		trace.prepare(res_successful);
-		return statement;
+		return request;
 	}
 
 	// have the access method compile the statement
@@ -2675,8 +2718,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		gds__trace_raw("Statement:\n");
 		gds__trace_raw(string, string_length);
 		gds__trace_raw("\nBLR:\n");
-		fb_print_blr(statement->req_blr_data.begin(),
-			(ULONG) statement->req_blr_data.getCount(),
+		fb_print_blr(statement->blrData.begin(),
+			(ULONG) statement->blrData.getCount(),
 			gds__trace_printer, 0, 0);
 	}
 #endif
@@ -2693,13 +2736,13 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	try
 	{
 		JRD_compile(tdbb,
-					statement->req_dbb->dbb_attachment,
-					&statement->req_request,
+					scratch->getAttachment()->dbb_attachment,
+					&request->req_request,
 					length,
-					statement->req_blr_data.begin(),
-					statement->req_sql_text,
-					statement->req_debug_data.getCount(),
-					statement->req_debug_data.begin(),
+					statement->blrData.begin(),
+					statement->sqlText,
+					statement->debugData.getCount(),
+					statement->debugData.begin(),
 					isInternalRequest);
 	}
 	catch (const Firebird::Exception&)
@@ -2727,7 +2770,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	}
 
 	// free blr memory
-	statement->req_blr_data.free();
+	statement->blrData.free();
 
 	if (status)
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
@@ -2735,13 +2778,13 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	// Notify Trace API manager about new request cooked.
 	trace.prepare(res_successful);
 
-	return statement;
+	return request;
 
 	}
 	catch (const Firebird::Exception&)
 	{
 		trace.prepare(res_failed);
-		release_request(tdbb, statement, true);
+		release_request(tdbb, request, true);
 		throw;
 	}
 }
@@ -2789,6 +2832,25 @@ static UCHAR* put_item(	UCHAR	item,
 }
 
 
+// Release a compiled statement.
+static void release_statement(DsqlCompiledStatement* statement)
+{
+	if (statement->parentRequest)
+	{
+		dsql_req* parent = statement->parentRequest;
+
+		size_t pos;
+		if (parent->cursors.find(statement, pos))
+			parent->cursors.remove(pos);
+
+		statement->parentRequest = NULL;
+	}
+
+	statement->sqlText = NULL;
+	statement->blrData.free();	// free blr memory
+}
+
+
 /**
 
  	release_request
@@ -2804,36 +2866,27 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 {
 	SET_TDBB(tdbb);
 
-	// If request is parent, orphan the children and
-	// release a portion of their requests
+	// If request is parent, orphan the children and release a portion of their requests
 
-	for (dsql_req* child = request->req_offspring; child; child = child->req_sibling)
+	for (size_t i = 0; i < request->cursors.getCount(); ++i)
 	{
-		child->req_flags |= REQ_orphan;
-		child->req_parent = NULL;
-		Jrd::ContextPoolHolder context(tdbb, &child->req_pool);
-		release_request(tdbb, child, false);
+		DsqlCompiledStatement* child = request->cursors[i];
+		child->flags |= REQ_orphan;
+		child->parentRequest = NULL;
+
+		Jrd::ContextPoolHolder context(tdbb, &child->getPool());
+		release_statement(child);
 	}
 
 	// For requests that are linked to a parent, unlink it
 
-	if (request->req_parent)
-	{
-		dsql_req* parent = request->req_parent;
-		for (dsql_req** ptr = &parent->req_offspring; *ptr; ptr = &(*ptr)->req_sibling)
-		{
-			if (*ptr == request)
-			{
-				*ptr = request->req_sibling;
-				break;
-			}
-		}
-		request->req_parent = NULL;
-	}
+	DsqlCompiledStatement* statement = request->getStatement();
+
+	release_statement(statement);
 
 	// If the request had an open cursor, close it
 
-	if (request->req_flags & REQ_cursor_open) {
+	if (statement->flags & REQ_cursor_open) {
 		close_cursor(tdbb, request);
 	}
 
@@ -2867,17 +2920,10 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 		}
 	}
 
-	request->req_sql_text = NULL;
-
-	// free blr memory
-	request->req_blr_data.free();
-
 	// Release the entire request if explicitly asked for
 
 	if (drop)
-	{
 		request->req_dbb->deletePool(&request->req_pool);
-	}
 }
 
 
@@ -2937,7 +2983,7 @@ static void sql_info(thread_db* tdbb,
 		{
 		case isc_info_sql_select:
 		case isc_info_sql_bind:
-			message = (item == isc_info_sql_select) ? &request->req_receive : &request->req_send;
+			message = (item == isc_info_sql_select) ? &request->getStatement()->receiveMsg : &request->getStatement()->sendMsg;
 			if (info + 1 >= end_info)
 			{
 				*info = isc_info_truncated;
@@ -2946,7 +2992,7 @@ static void sql_info(thread_db* tdbb,
 			*info++ = item;
 			break;
 		case isc_info_sql_stmt_type:
-			switch (request->req_type)
+			switch (request->getStatement()->type)
 			{
 			case REQ_SELECT:
 			case REQ_EMBED_SELECT:
@@ -3018,7 +3064,7 @@ static void sql_info(thread_db* tdbb,
 			items += length;
 			break;
 		case isc_info_sql_batch_fetch:
-			if (request->req_flags & REQ_no_batch)
+			if (request->getStatement()->flags & REQ_no_batch)
 				number = 0;
 			else
 				number = 1;
@@ -3102,7 +3148,7 @@ static void sql_info(thread_db* tdbb,
 				}
 
 				info = var_info(*message, items, end_describe, info, end_info, first_index,
-					message == &request->req_send);
+					message == &request->getStatement()->sendMsg);
 				if (!info) {
 					return;
 				}

@@ -149,8 +149,8 @@ public:
 		m_stmt(stmt),
 		m_perf(perf),
 		m_plan(NULL),
-		m_inputs(*getDefaultMemoryPool(),
-			m_stmt->req_send ? &m_stmt->req_send->msg_parameters : NULL)
+		m_inputs(*getDefaultMemoryPool(), m_stmt->getStatement()->sendMsg ?
+			&m_stmt->getStatement()->sendMsg->msg_parameters : NULL)
 	{}
 
 	~TraceSQLStatementImpl();

@@ -376,9 +376,11 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		raise(status, tdbb, "jrd8_prepare", &sql);
 	}
 
-	if (m_request->req_send) {
+	DsqlCompiledStatement* statement = m_request->getStatement();
+
+	if (statement->sendMsg) {
 		try {
-			PreparedStatement::parseDsqlMessage(m_request->req_send, m_inDescs, m_inBlr, m_in_buffer);
+			PreparedStatement::parseDsqlMessage(statement->sendMsg, m_inDescs, m_inBlr, m_in_buffer);
 			m_inputs = m_inDescs.getCount() / 2;
 		}
 		catch (const Exception&) {
@@ -389,9 +391,9 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_inputs = 0;
 	}
 
-	if (m_request->req_receive) {
+	if (statement->receiveMsg) {
 		try {
-			PreparedStatement::parseDsqlMessage(m_request->req_receive, m_outDescs, m_outBlr, m_out_buffer);
+			PreparedStatement::parseDsqlMessage(statement->receiveMsg, m_outDescs, m_outBlr, m_out_buffer);
 			m_outputs = m_outDescs.getCount() / 2;
 		}
 		catch (const Exception&) {
@@ -403,7 +405,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	m_stmt_selectable = false;
-	switch (m_request->req_type)
+	switch (statement->type)
 	{
 	case REQ_SELECT:
 	case REQ_SELECT_UPD:

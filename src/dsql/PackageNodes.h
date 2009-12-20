@@ -84,7 +84,7 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
-	virtual Node* internalDsqlPass();
+	virtual DdlNode* internalDsqlPass();
 
 private:
 	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
@@ -142,7 +142,7 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
-	virtual Node* internalDsqlPass();
+	virtual DdlNode* internalDsqlPass();
 
 private:
 	CreateAlterPackageNode* createNode;
@@ -169,7 +169,7 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
-	virtual Node* internalDsqlPass();
+	virtual DdlNode* internalDsqlPass();
 
 public:
 	Firebird::MetaName name;
@@ -217,7 +217,7 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
-	virtual Node* internalDsqlPass();
+	virtual DdlNode* internalDsqlPass();
 
 private:
 	CreatePackageBodyNode* createNode;

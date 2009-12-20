@@ -51,6 +51,38 @@ public:
 	~PreparedStatement();
 
 public:
+	// Escape a metadata name accordingly to SQL rules.
+	static Firebird::string escapeName(const Firebird::MetaName& s)
+	{
+		Firebird::string ret;
+
+		for (const char* p = s.begin(); p != s.end(); ++p)
+		{
+			ret += *p;
+			if (*p == '\"')
+				ret += '\"';
+		}
+
+		return ret;
+	}
+
+
+	// Escape a string accordingly to SQL rules.
+	template <typename T> static Firebird::string escapeString(const T& s)
+	{
+		Firebird::string ret;
+
+		for (const char* p = s.begin(); p != s.end(); ++p)
+		{
+			ret += *p;
+			if (*p == '\'')
+				ret += '\'';
+		}
+
+		return ret;
+	}
+
+public:
 	void setDesc(thread_db* tdbb, unsigned param, const dsc& value);
 
 	void setNull(unsigned param)

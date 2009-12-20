@@ -213,6 +213,11 @@ public:
 		return tra_attachment;
 	}
 
+	dsql_dbb* getDsqlAttachment()
+	{
+		return tra_attachment->att_dsql_instance;
+	}
+
 	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
 	SLONG tra_number;					// transaction number

@@ -72,6 +72,7 @@
 #include "../common/utils_proto.h"
 #include "../dsql/DdlNodes.h"
 #include "../dsql/metd_proto.h"
+#include "../jrd/PreparedStatement.h"
 
 using MsgFormat::SafeArg;
 
@@ -114,6 +115,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	jrd_req* request = NULL;
 
@@ -180,9 +182,14 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 
 							if (!DBB.RDB$CHARACTER_SET_NAME.NULL)
 							{
-								AlterCharSetNode node(*tdbb->getDefaultPool(), "",
-									DBB.RDB$CHARACTER_SET_NAME, collation);
-								node.execute(tdbb, gbl->gbl_transaction);
+								string sql;
+								sql.printf("alter character set \"%s\" set default collation \"%s\"",
+									PreparedStatement::escapeName(DBB.RDB$CHARACTER_SET_NAME).c_str(),
+									PreparedStatement::escapeName(collation).c_str());
+
+								AutoPtr<PreparedStatement> ps(attachment->prepareStatement(tdbb,
+									*tdbb->getDefaultPool(), gbl->gbl_transaction, sql));
+								ps->execute(tdbb, gbl->gbl_transaction);
 							}
 						}
 						break;

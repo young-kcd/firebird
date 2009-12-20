@@ -78,9 +78,9 @@ static void free_relation(dsql_rel*);
 
 namespace
 {
-	inline void validateTransaction(const dsql_req* request)
+	inline void validateTransaction(const jrd_tra* transaction)
 	{
-		if (!request->req_transaction->checkHandle())
+		if (!transaction->checkHandle())
 		{
 			ERR_post(Arg::Gds(isc_bad_trans_handle));
 		}
@@ -88,7 +88,7 @@ namespace
 }
 
 
-void METD_drop_charset(dsql_req* request, const MetaName& metaName)
+void METD_drop_charset(jrd_tra* transaction, const MetaName& metaName)
 {
 /**************************************
  *
@@ -105,19 +105,20 @@ void METD_drop_charset(dsql_req* request, const MetaName& metaName)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	dsql_intlsym* charSet;
 
-	if (request->req_dbb->dbb_charsets.get(metaName, charSet))
+	if (dbb->dbb_charsets.get(metaName, charSet))
 	{
 		MET_dsql_cache_use(tdbb, SYM_intlsym_charset, metaName);
 		charSet->intlsym_flags |= INTLSYM_dropped;
-		request->req_dbb->dbb_charsets.remove(metaName);
-		request->req_dbb->dbb_charsets_by_id.remove(charSet->intlsym_charset_id);
+		dbb->dbb_charsets.remove(metaName);
+		dbb->dbb_charsets_by_id.remove(charSet->intlsym_charset_id);
 	}
 }
 
 
-void METD_drop_collation(dsql_req* request, const dsql_str* name)
+void METD_drop_collation(jrd_tra* transaction, const dsql_str* name)
 {
 /**************************************
  *
@@ -136,20 +137,21 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	MetaName metaName(name->str_data, name->str_length);
 	dsql_intlsym* collation;
 
-	if (request->req_dbb->dbb_collations.get(metaName, collation))
+	if (dbb->dbb_collations.get(metaName, collation))
 	{
 		MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName);
 		collation->intlsym_flags |= INTLSYM_dropped;
-		request->req_dbb->dbb_collations.remove(metaName);
+		dbb->dbb_collations.remove(metaName);
 	}
 }
 
 
-void METD_drop_function(dsql_req* request, const dsql_str* name, const MetaName& packageName)
+void METD_drop_function(jrd_tra* transaction, const dsql_str* name, const MetaName& packageName)
 {
 /**************************************
  *
@@ -168,21 +170,22 @@ void METD_drop_function(dsql_req* request, const dsql_str* name, const MetaName&
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_udf* function;
 
-	if (request->req_dbb->dbb_functions.get(metaName, function))
+	if (dbb->dbb_functions.get(metaName, function))
 	{
 		MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.qualifier);
 		function->udf_flags |= UDF_dropped;
-		request->req_dbb->dbb_functions.remove(metaName);
+		dbb->dbb_functions.remove(metaName);
 	}
 
 }
 
 
-void METD_drop_procedure(dsql_req* request, const dsql_str* name, const MetaName& packageName)
+void METD_drop_procedure(jrd_tra* transaction, const dsql_str* name, const MetaName& packageName)
 {
 /**************************************
  *
@@ -201,20 +204,21 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name, const MetaName
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_prc* procedure;
 
-	if (request->req_dbb->dbb_procedures.get(metaName, procedure))
+	if (dbb->dbb_procedures.get(metaName, procedure))
 	{
 		MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.qualifier);
 		procedure->prc_flags |= PRC_dropped;
-		request->req_dbb->dbb_procedures.remove(metaName);
+		dbb->dbb_procedures.remove(metaName);
 	}
 }
 
 
-void METD_drop_relation(dsql_req* request, const dsql_str* name)
+void METD_drop_relation(jrd_tra* transaction, const dsql_str* name)
 {
 /**************************************
  *
@@ -233,20 +237,21 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	MetaName metaName(name->str_data, name->str_length);
 	dsql_rel* relation;
 
-	if (request->req_dbb->dbb_relations.get(metaName, relation))
+	if (dbb->dbb_relations.get(metaName, relation))
 	{
 		MET_dsql_cache_use(tdbb, SYM_relation, metaName);
 		relation->rel_flags |= REL_dropped;
-		request->req_dbb->dbb_relations.remove(metaName);
+		dbb->dbb_relations.remove(metaName);
 	}
 }
 
 
-dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT charset_id)
+dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USHORT charset_id)
 {
 /**************************************
  *
@@ -261,7 +266,9 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = request->req_dbb;
+	validateTransaction(transaction);
+
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	MetaName metaName(name->str_data, name->str_length);
 
 	// Start by seeing if symbol is already defined
@@ -277,13 +284,11 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT
 
 	// Now see if it is in the database
 
-	validateTransaction(request);
-
 	symbol = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_collation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		WITH X.RDB$COLLATION_NAME EQ name->str_data AND
@@ -317,12 +322,8 @@ dsql_intlsym* METD_get_collation(dsql_req* request, const dsql_str* name, USHORT
 }
 
 
-USHORT METD_get_col_default(dsql_req* request,
-							const char* for_rel_name,
-							const char* for_col_name,
-							bool* has_default,
-							UCHAR* buffer,
-							USHORT buff_length)
+USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
+	const char* for_col_name, bool* has_default, UCHAR* buffer, USHORT buff_length)
 {
 /*************************************************************
  *
@@ -343,10 +344,9 @@ USHORT METD_get_col_default(dsql_req* request,
  **************************************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(transaction);
 
-	dsql_dbb* dbb = request->req_dbb;
-
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bid* blob_id;
 
 	USHORT result = 0;
@@ -356,7 +356,7 @@ USHORT METD_get_col_default(dsql_req* request,
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_col_default, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		RFL IN RDB$RELATION_FIELDS CROSS
 		FLD IN RDB$FIELDS WITH
 		RFL.RDB$RELATION_NAME EQ for_rel_name AND
@@ -381,8 +381,7 @@ USHORT METD_get_col_default(dsql_req* request,
 
 		if (*has_default)
 		{
-			blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
-									sizeof(blr_bpb), blr_bpb, true);
+			blob_handle = BLB_open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assuming here that the buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
@@ -424,7 +423,7 @@ USHORT METD_get_col_default(dsql_req* request,
 		}
 		else
 		{
-			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
+			if (dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
 				buffer[0] = blr_version4;
@@ -441,7 +440,7 @@ USHORT METD_get_col_default(dsql_req* request,
 }
 
 
-dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name) // UTF-8
+dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* name) // UTF-8
 {
 /**************************************
  *
@@ -456,7 +455,9 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = request->req_dbb;
+	validateTransaction(transaction);
+
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	MetaName metaName(name, length);
 
 	// Start by seeing if symbol is already defined
@@ -472,13 +473,11 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 	// Now see if it is in the database
 
-	validateTransaction(request);
-
 	symbol = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_charset, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		CROSS Z IN RDB$TYPES
@@ -516,7 +515,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 }
 
 
-USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
+USHORT METD_get_charset_bpc(jrd_tra* transaction, SSHORT charset_id)
 {
 /**************************************
  *
@@ -534,7 +533,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	if (charset_id == CS_dynamic)
 		charset_id = tdbb->getCharSet();
@@ -542,8 +541,8 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 	dsql_intlsym* symbol = NULL;
 	if (!dbb->dbb_charsets_by_id.get(charset_id, symbol))
 	{
-		const MetaName cs_name = METD_get_charset_name(request, charset_id);
-		symbol = METD_get_charset(request, cs_name.length(), cs_name.c_str());
+		const MetaName cs_name = METD_get_charset_name(transaction, charset_id);
+		symbol = METD_get_charset(transaction, cs_name.length(), cs_name.c_str());
 	}
 
 	fb_assert(symbol);
@@ -552,7 +551,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 }
 
 
-MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
+MetaName METD_get_charset_name(jrd_tra* transaction, SSHORT charset_id)
 {
 /**************************************
  *
@@ -569,7 +568,9 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-    dsql_dbb* dbb = request->req_dbb;
+	validateTransaction(transaction);
+
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
     if (charset_id == CS_dynamic)
 		charset_id = tdbb->getCharSet();
@@ -578,13 +579,11 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 	if (dbb->dbb_charsets_by_id.get(charset_id, sym))
 		return sym->intlsym_name;
 
-	validateTransaction(request);
-
 	MetaName name;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_cs_name, IRQ_REQUESTS);
 
-	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		Y IN RDB$CHARACTER_SETS
 		WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
 
@@ -599,13 +598,13 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 		DSQL_REQUEST(irq_cs_name) = handle;
 
 	// put new charset into hash table if needed
-	METD_get_charset(request, name.length(), name.c_str());
+	METD_get_charset(transaction, name.length(), name.c_str());
 
 	return name;
 }
 
 
-dsql_str* METD_get_default_charset(dsql_req* request)
+dsql_str* METD_get_default_charset(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -619,7 +618,9 @@ dsql_str* METD_get_default_charset(dsql_req* request)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = request->req_dbb;
+	validateTransaction(transaction);
+
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	if (dbb->dbb_no_charset)
 		return NULL;
 
@@ -628,11 +629,9 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 
 	// Now see if it is in the database
 
-	validateTransaction(request);
-
 	jrd_req* handle = CMP_find_request(tdbb, irq_default_cs, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		FIRST 1 DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING;
 
@@ -659,7 +658,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 }
 
 
-bool METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UTF-8
+bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) // UTF-8
 {
 /**************************************
  *
@@ -673,15 +672,15 @@ bool METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UT
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(transaction);
 
 	bool found = false;
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name
 
 		if (!DSQL_REQUEST(irq_domain))
@@ -724,11 +723,8 @@ bool METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UT
 }
 
 
-USHORT METD_get_domain_default(dsql_req* request,
-							   const TEXT* domain_name,
-							   bool* has_default,
-							   UCHAR* buffer,
-							   USHORT buff_length)
+USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bool* has_default,
+	UCHAR* buffer, USHORT buff_length)
 {
 /*************************************************************
  *
@@ -742,16 +738,16 @@ USHORT METD_get_domain_default(dsql_req* request,
  **************************************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(transaction);
 
 	*has_default = false;
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	USHORT result = 0;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain_2, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
 
 		if (!DSQL_REQUEST(irq_domain_2))
@@ -768,8 +764,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 		if (*has_default)
 		{
-			blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
-										 sizeof(blr_bpb), blr_bpb, true);
+			blb* blob_handle = BLB_open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assume buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
@@ -811,7 +806,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 		}
 		else
 		{
-			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
+			if (dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
 				buffer[0] = blr_version4;
@@ -828,7 +823,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 }
 
 
-bool METD_get_exception(dsql_req* request, const dsql_str* name)
+bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
 {
 /**************************************
  *
@@ -842,14 +837,14 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(transaction);
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool found = false;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_exception, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$EXCEPTIONS WITH
 		X.RDB$EXCEPTION_NAME EQ name->str_data;
 
@@ -867,8 +862,8 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
 }
 
 
-dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
-	const dsql_str* package)
+dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
+	const dsql_str* name, const dsql_str* package)
 {
 /**************************************
  *
@@ -882,20 +877,23 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	dsql_dbb* dbb = statement->req_dbb;
+
+	validateTransaction(transaction);
+
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	QualifiedName metaName(MetaName(name->str_data, name->str_length),
 		(package ? MetaName(package->str_data, package->str_length) : NULL));
 
-	bool maybeUnqualified = statement->req_package.hasData() && metaName.qualifier.isEmpty();
+	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.qualifier.isEmpty();
 	if (maybeUnqualified)
-		metaName.qualifier = statement->req_package;
+		metaName.qualifier = dsqlScratch->package;
 
 	// Start by seeing if symbol is already defined
 
 	dsql_udf* userFunc = NULL;
 	if (dbb->dbb_functions.get(metaName, userFunc))
 	{
-		if (userFunc->udf_private && metaName.qualifier != statement->req_package)
+		if (userFunc->udf_private && metaName.qualifier != dsqlScratch->package)
 			return NULL;
 
 		if (MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.qualifier))
@@ -906,15 +904,13 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 
 	// Now see if it is in the database
 
-	validateTransaction(statement);
-
 	USHORT return_arg = 0;
 
 	while (!userFunc)
 	{
 		jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$FUNCTIONS WITH
 			X.RDB$FUNCTION_NAME EQ name->str_data AND
 			X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
@@ -953,7 +949,7 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_func_return, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
 		X.RDB$FUNCTION_NAME EQ name->str_data AND
 		X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
@@ -1046,7 +1042,7 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 
 	dbb->dbb_functions.put(userFunc->udf_name, userFunc);
 
-	if (userFunc->udf_private && metaName.qualifier != statement->req_package)
+	if (userFunc->udf_private && metaName.qualifier != dsqlScratch->package)
 		return NULL;
 
 	MET_dsql_cache_use(tdbb, SYM_udf, userFunc->udf_name.identifier, userFunc->udf_name.qualifier);
@@ -1055,7 +1051,7 @@ dsql_udf* METD_get_function(CompiledStatement* statement, const dsql_str* name,
 }
 
 
-dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
+dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_name)
 {
 /**************************************
  *
@@ -1071,15 +1067,15 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(transaction);
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	DsqlNodStack stack;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_primary_key, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$INDICES CROSS
 		Y IN RDB$INDEX_SEGMENTS
 		OVER RDB$INDEX_NAME CROSS
@@ -1103,8 +1099,8 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 }
 
 
-dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
-	const dsql_str* package)
+dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
+	const dsql_str* name, const dsql_str* package)
 {
 /**************************************
  *
@@ -1120,12 +1116,14 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = statement->req_dbb;
+	validateTransaction(transaction);
+
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	QualifiedName metaName(MetaName(name->str_data, name->str_length),
 		(package ? MetaName(package->str_data, package->str_length) : ""));
 
 	// ASF: I've removed the code where we verify if the procedure being looked up is the one being
-	// defined (statement->req_procedure). This code is totally incorrect, not considering
+	// defined (dsqlScratch->procedure). This code is totally incorrect, not considering
 	// transactions and savepoints, hence being incompatible with packages).
 	// Example (with autocommit off):
 	//
@@ -1158,16 +1156,16 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 	//
 	// I hope for a solution, involving savepoint logic.
 
-	bool maybeUnqualified = statement->req_package.hasData() && metaName.qualifier.isEmpty();
+	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.qualifier.isEmpty();
 	if (maybeUnqualified)
-		metaName.qualifier = statement->req_package;
+		metaName.qualifier = dsqlScratch->package;
 
 	// Start by seeing if symbol is already defined
 
 	dsql_prc* procedure = NULL;
 	if (dbb->dbb_procedures.get(metaName, procedure))
 	{
-		if (procedure->prc_private && metaName.qualifier != statement->req_package)
+		if (procedure->prc_private && metaName.qualifier != dsqlScratch->package)
 			return NULL;
 
 		if (MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.qualifier))
@@ -1178,13 +1176,11 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 
 	// now see if it is in the database
 
-	validateTransaction(statement);
-
 	while (!procedure)
 	{
 		jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$PROCEDURES
 			WITH X.RDB$PROCEDURE_NAME EQ name->str_data AND
 				 X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
@@ -1227,7 +1223,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 
 		jrd_req* handle2 = CMP_find_request(tdbb, irq_parameters, IRQ_REQUESTS);
 
-		FOR (REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
+		FOR (REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 			PR IN RDB$PROCEDURE_PARAMETERS
 			CROSS FLD IN RDB$FIELDS
 			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE AND
@@ -1315,7 +1311,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 
 	dbb->dbb_procedures.put(procedure->prc_name, procedure);
 
-	if (procedure->prc_private && metaName.qualifier != statement->req_package)
+	if (procedure->prc_private && metaName.qualifier != dsqlScratch->package)
 		return NULL;
 
 	MET_dsql_cache_use(tdbb, SYM_procedure, procedure->prc_name.identifier,
@@ -1325,7 +1321,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name,
 }
 
 
-dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
+dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch, const dsql_str* name)
 {
 /**************************************
  *
@@ -1340,12 +1336,14 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = statement->req_dbb;
+	validateTransaction(transaction);
+
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	MetaName metaName(name->str_data, name->str_length);
 
 	// See if the relation is the one currently being defined in this statement
 
-	dsql_rel* temp = statement->req_relation;
+	dsql_rel* temp = dsqlScratch->relation;
 	if (temp != NULL && temp->rel_name == name->str_data)
 	{
 		return temp;
@@ -1365,13 +1363,11 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	// and this is a type of statement which does not use ids, prepare a
 	// temporary relation block to provide information without caching it
 
-	validateTransaction(statement);
-
 	bool permanent = true;
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_rel_ids, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 		REL IN RDB$RELATIONS
 		CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 		WITH REL.RDB$RELATION_NAME EQ name->str_data
@@ -1395,7 +1391,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_relation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_relation))
@@ -1410,7 +1406,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 			relation = FB_NEW(pool) dsql_rel(pool);
 			relation->rel_id = X.RDB$RELATION_ID;
 		}
-		else if (!DDL_ids(statement)) {
+		else if (!DDL_ids(dsqlScratch)) {
 			relation = FB_NEW(pool) dsql_rel(pool);
 		}
 
@@ -1446,7 +1442,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 	jrd_req* handle3 = CMP_find_request(tdbb, irq_fields, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
+	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE transaction)
 		FLX IN RDB$FIELDS CROSS
 		RFR IN RDB$RELATION_FIELDS
 		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
@@ -1470,7 +1466,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 			field = FB_NEW(pool) dsql_fld(pool);
 			field->fld_id = RFR.RDB$FIELD_ID;
 		}
-		else if (!DDL_ids(statement))
+		else if (!DDL_ids(dsqlScratch))
 			field = FB_NEW(pool) dsql_fld(pool);
 
 		if (field)
@@ -1547,7 +1543,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 }
 
 
-bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relation, USHORT* trig_type)
+bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** relation, USHORT* trig_type)
 {
 /**************************************
  *
@@ -1561,9 +1557,9 @@ bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relati
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(transaction);
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	bool found = false;
 
@@ -1572,7 +1568,7 @@ bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relati
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_trigger, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_trigger))
@@ -1599,7 +1595,7 @@ bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relati
 }
 
 
-bool METD_get_type(dsql_req* request, const dsql_str* name, const char* field, SSHORT* value)
+bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field, SSHORT* value)
 {
 /**************************************
  *
@@ -1613,14 +1609,14 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, const char* field, S
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(transaction);
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool found = false;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_type, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name->str_data;
 
@@ -1639,9 +1635,8 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, const char* field, S
 }
 
 
-dsql_rel* METD_get_view_base(CompiledStatement* statement,
-							 const char* view_name, // UTF-8
-							 MetaNamePairMap& fields)
+dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
+	const char* view_name, MetaNamePairMap& fields)
 {
 /**************************************
  *
@@ -1660,11 +1655,11 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(statement);
+	validateTransaction(transaction);
 
 	dsql_rel* relation = NULL;
 
-	dsql_dbb* dbb = statement->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool first = true;
 	bool cont = true;
 	MetaNamePairMap previousAux;
@@ -1675,7 +1670,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 	{
 		jrd_req* handle1 = CMP_find_request(tdbb, irq_view_base, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$VIEW_RELATIONS
 			WITH X.RDB$VIEW_NAME EQ view_name
 
@@ -1695,7 +1690,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			fb_utils::exact_name(X.RDB$RELATION_NAME);
 
 			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(statement, relation_name);
+			relation = METD_get_relation(transaction, dsqlScratch, relation_name);
 			delete relation_name;
 
 			Array<MetaName> ambiguities;
@@ -1709,7 +1704,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 
 			jrd_req* handle2 = CMP_find_request(tdbb, irq_view_base_flds, IRQ_REQUESTS);
 
-			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
+			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 				RFL IN RDB$RELATION_FIELDS
 				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
 
@@ -1783,9 +1778,8 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 }
 
 
-dsql_rel* METD_get_view_relation(CompiledStatement* statement,
-								const char* view_name,         // UTF-8
-								const char* relation_or_alias) // UTF-8
+dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
+	const char* view_name, const char* relation_or_alias)
 {
 /**************************************
  *
@@ -1801,15 +1795,15 @@ dsql_rel* METD_get_view_relation(CompiledStatement* statement,
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(statement);
+	validateTransaction(transaction);
 
 	dsql_rel* relation = NULL;
 
-	dsql_dbb* dbb = statement->req_dbb;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_view, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE statement->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name
 
 		if (!DSQL_REQUEST(irq_view))
@@ -1822,15 +1816,16 @@ dsql_rel* METD_get_view_relation(CompiledStatement* statement,
 			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
 			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(statement, relation_name);
+			relation = METD_get_relation(transaction, dsqlScratch, relation_name);
 			delete relation_name;
 			return relation;
 		}
 
-		relation = METD_get_view_relation(statement, X.RDB$RELATION_NAME, relation_or_alias);
-		if (relation) {
+		relation = METD_get_view_relation(transaction, dsqlScratch, X.RDB$RELATION_NAME,
+			relation_or_alias);
+
+		if (relation)
 			return relation;
-		}
 
 	END_FOR
 

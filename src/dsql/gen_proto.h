@@ -24,23 +24,23 @@
 #ifndef DSQL_GEN_PROTO_H
 #define DSQL_GEN_PROTO_H
 
-void	GEN_descriptor(Jrd::CompiledStatement* statement, const dsc* desc, bool texttype);
-void	GEN_expr(Jrd::CompiledStatement*, Jrd::dsql_nod*);
-void	GEN_hidden_variables(Jrd::CompiledStatement* statement, bool inExpression);
-void	GEN_port(Jrd::CompiledStatement*, Jrd::dsql_msg*);
-void	GEN_request(Jrd::CompiledStatement*, Jrd::dsql_nod*);
-void	GEN_return(Jrd::CompiledStatement*, const Firebird::Array<Jrd::dsql_nod*>& variables, bool);
-void	GEN_start_transaction(Jrd::CompiledStatement*, const Jrd::dsql_nod*);
-void	GEN_statement(Jrd::CompiledStatement*, Jrd::dsql_nod*);
+void	GEN_descriptor(Jrd::DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool texttype);
+void	GEN_expr(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
+void	GEN_hidden_variables(Jrd::DsqlCompilerScratch* dsqlScratch, bool inExpression);
+void	GEN_port(Jrd::DsqlCompilerScratch*, Jrd::dsql_msg*);
+void	GEN_request(Jrd::dsql_req*, Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
+void	GEN_return(Jrd::DsqlCompilerScratch*, const Firebird::Array<Jrd::dsql_nod*>& variables, bool);
+void	GEN_start_transaction(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
+void	GEN_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 
 // CVC: I think this can be replaced by statement->append_uchar(byte) in the calling code.
-inline void stuff(Jrd::CompiledStatement* statement, const UCHAR byte)
+inline void stuff(Jrd::DsqlCompiledStatement* statement, const UCHAR byte)
 {
-	statement->req_blr_data.add(byte);
+	statement->blrData.add(byte);
 }
 
 // Write out a string with one byte of length.
-inline void stuff_string(Jrd::CompiledStatement* statement, const char* string, int len)
+inline void stuff_string(Jrd::DsqlCompiledStatement* statement, const char* string, int len)
 {
 	fb_assert(len >= 0 && len <= 255);
 	// CVC: Maybe the Release version should truncate "len" to 255?
@@ -50,7 +50,7 @@ inline void stuff_string(Jrd::CompiledStatement* statement, const char* string, 
 }
 
 // Write out a string with one byte of length.
-inline void stuff_cstring(Jrd::CompiledStatement* statement, const char* string)
+inline void stuff_cstring(Jrd::DsqlCompiledStatement* statement, const char* string)
 {
 	stuff_string(statement, string, strlen(string));
 }
