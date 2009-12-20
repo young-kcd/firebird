@@ -747,7 +747,7 @@ public:
 class dsql_msg : public Firebird::PermanentStorage
 {
 public:
-	dsql_msg(MemoryPool& p)
+	explicit dsql_msg(MemoryPool& p)
 		: PermanentStorage(p),
 		  msg_parameters(p),
 		  msg_number(0),

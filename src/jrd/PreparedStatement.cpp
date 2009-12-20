@@ -170,9 +170,8 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 
 	size_t msgLength = 0;
 	size_t paramCount = params.getCount();
-	size_t i;
 
-	for (i = 0; i < paramCount; ++i)
+	for (size_t i = 0; i < paramCount; ++i)
 	{
 		const dsql_par* par = params[i];
 
@@ -208,7 +207,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
 	msgLength = 0;
 	dsc* value = values.begin();
 
-	for (i = 0; i < paramCount / 2; ++i)
+	for (size_t i = 0; i < paramCount / 2; ++i)
 	{
 		const dsql_par* par = params[i];
 
