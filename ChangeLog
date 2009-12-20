@@ -1,3 +1,59 @@
+2009-12-20 10:19  robocop
+
+	* firebird2/src/: dsql/dsql.h (1.169), jrd/PreparedStatement.cpp
+	(1.20):
+
+	Misc.
+
+2009-12-19 23:52  asfernandes
+
+	* firebird2/src/dsql/: dsql.cpp (1.306), dsql.h (1.168):
+
+	Push more state out of dsql_parameter
+
+2009-12-19 22:20  asfernandes
+
+	* firebird2/src/dsql/: dsql.cpp (1.305), dsql.h (1.167), gen.cpp
+	(1.202):
+
+	Separating run state from compiled statements
+
+2009-12-19 22:13  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.305):
+
+	READ BLOB command has one input parameter...
+
+2009-12-19 19:50  asfernandes
+
+	* firebird2/src/: dsql/StmtNodes.cpp (1.21), dsql/StmtNodes.h
+	(1.12), dsql/dsql.cpp (1.304), dsql/dsql.h (1.166), dsql/gen.cpp
+	(1.201), dsql/make.cpp (1.195), dsql/pass1.cpp (1.480),
+	include/fb_blk.h (1.26), jrd/PreparedStatement.cpp (1.19),
+	jrd/trace/TraceObjects.cpp (1.19), jrd/trace/TraceObjects.h (1.9):
+
+	Replaced linked list of dsql parameters by array
+
+2009-12-19 16:39  asfernandes
+
+	* firebird2/src/dsql/: dsql.cpp (1.303), dsql.h (1.165):
+
+	Misc
+
+2009-12-19 16:06  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.592):
+
+	Detect charset not found
+
+2009-12-19 16:00  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.28), dsql/dsql.h (1.164),
+	jrd/PreparedStatement.cpp (1.18), jrd/PreparedStatement.h (1.10),
+	jrd/ResultSet.cpp (1.7), jrd/ResultSet.h (1.5):
+
+	Changed parameters to unsigned; Misc
+
 2009-12-19 14:03  hvlad
 
 	* firebird2/src/dsql/StmtNodes.cpp (1.20):
