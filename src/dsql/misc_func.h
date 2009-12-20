@@ -31,13 +31,14 @@ private:
 	struct InfoAttr
 	{
 		const char* alias_name;
-		unsigned short req_mask;
+		unsigned req_mask;
 	};
+
 	static const InfoAttr attr_array[max_internal_id];
+
 public:
 	static const char* getAlias(internal_info_id);
-	static USHORT getMask(internal_info_id);
+	static unsigned getMask(internal_info_id);
 };
 
 #endif // DSQL_MISC_FUNC_H
-

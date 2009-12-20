@@ -784,34 +784,34 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	DsqlCompiledStatement* dsqlScratch = scratch->getStatement();
+	DsqlCompiledStatement* statement = scratch->getStatement();
 
-	if (dsqlScratch->type == REQ_CREATE_DB || dsqlScratch->type == REQ_DDL)
+	if (statement->type == REQ_CREATE_DB || statement->type == REQ_DDL)
 	{
 		DDL_generate(scratch, node);
 		return;
 	}
 
-	if (dsqlScratch->flags & REQ_blr_version4)
-		stuff(dsqlScratch, blr_version4);
+	if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+		stuff(statement, blr_version4);
 	else
-		stuff(dsqlScratch, blr_version5);
+		stuff(statement, blr_version5);
 
-	if (dsqlScratch->type == REQ_SAVEPOINT)
+	if (statement->type == REQ_SAVEPOINT)
 	{
-		// Do not generate BEGIN..END block around savepoint dsqlScratch
+		// Do not generate BEGIN..END block around savepoint statement
 		// to avoid breaking of savepoint logic
-		dsqlScratch->sendMsg = NULL;
-		dsqlScratch->receiveMsg = NULL;
+		statement->sendMsg = NULL;
+		statement->receiveMsg = NULL;
 		GEN_statement(scratch, node);
 	}
 	else
 	{
-		stuff(dsqlScratch, blr_begin);
+		stuff(statement, blr_begin);
 
 		GEN_hidden_variables(scratch, false);
 
-		switch (dsqlScratch->type)
+		switch (statement->type)
 		{
 		case REQ_SELECT:
 		case REQ_SELECT_UPD:
@@ -824,27 +824,27 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 			break;
 		default:
 			{
-				dsql_msg* message = dsqlScratch->sendMsg;
+				dsql_msg* message = statement->sendMsg;
 				if (!message->msg_parameter)
-					dsqlScratch->sendMsg = NULL;
+					statement->sendMsg = NULL;
 				else
 				{
 					GEN_port(scratch, message);
-					stuff(dsqlScratch, blr_receive);
-					stuff(dsqlScratch, message->msg_number);
+					stuff(statement, blr_receive);
+					stuff(statement, message->msg_number);
 				}
-				message = dsqlScratch->receiveMsg;
+				message = statement->receiveMsg;
 				if (!message->msg_parameter)
-					dsqlScratch->receiveMsg = NULL;
+					statement->receiveMsg = NULL;
 				else
 					GEN_port(scratch, message);
 				GEN_statement(scratch, node);
 			}
 		}
-		stuff(dsqlScratch, blr_end);
+		stuff(statement, blr_end);
 	}
 
-	stuff(dsqlScratch, blr_eoc);
+	stuff(statement, blr_eoc);
 }
 
 
@@ -2732,7 +2732,7 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 {
 	dsql_nod* rse = NULL;
 	const dsql_msg* message = NULL;
-	bool send_before_for = !(dsqlScratch->getStatement()->flags & REQ_dsql_upd_or_ins);
+	bool send_before_for = !(dsqlScratch->flags & DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT);
 
 	switch (node->nod_type)
 	{

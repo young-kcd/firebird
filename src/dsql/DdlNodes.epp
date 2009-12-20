@@ -1032,7 +1032,7 @@ DdlNode* CreateAlterProcedureNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	statement->blockNode = this;
-	statement->flags |= (REQ_block | REQ_procedure);
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE);
 
 	const dsql_nod* variables = localDeclList;
 	if (variables)
@@ -1326,8 +1326,9 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 
 					// ODS_11_1
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
-					P.RDB$PROCEDURE_TYPE = (USHORT) (statement->flags & REQ_selectable ?
-						prc_selectable : prc_executable);
+					P.RDB$PROCEDURE_TYPE = (USHORT)
+						(statement->flags & DsqlCompiledStatement::FLAG_SELECTABLE ?
+							prc_selectable : prc_executable);
 				}
 			}
 		END_MODIFY
@@ -1541,7 +1542,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 
 			statement->blrData.clear();
 
-			if (statement->flags & REQ_blr_version4)
+			if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 				statement->append_uchar(blr_version4);
 			else
 				statement->append_uchar(blr_version5);
@@ -1579,7 +1580,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 	statement->begin_debug();
 	statement->blrData.clear();
 
-	if (statement->flags & REQ_blr_version4)
+	if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 		statement->append_uchar(blr_version4);
 	else
 		statement->append_uchar(blr_version5);
@@ -1765,7 +1766,7 @@ void DropProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 DdlNode* DropProcedureNode::internalDsqlPass()
 {
-	dsqlScratch->getStatement()->flags |= (REQ_block | REQ_procedure);
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE);
 	return DdlNode::internalDsqlPass();
 }
 
@@ -1912,7 +1913,8 @@ DdlNode* CreateAlterTriggerNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	statement->blockNode = this;
-	statement->flags |= (REQ_block | REQ_procedure | REQ_trigger);
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE |
+		DsqlCompilerScratch::FLAG_TRIGGER);
 
 	if (type.specified)
 	{
@@ -2211,7 +2213,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		// generate the trigger blr
 
-		if (statement->flags & REQ_blr_version4)
+		if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 			statement->append_uchar(blr_version4);
 		else
 			statement->append_uchar(blr_version5);
@@ -2265,7 +2267,8 @@ void DropTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 DdlNode* DropTriggerNode::internalDsqlPass()
 {
-	dsqlScratch->getStatement()->flags |= (REQ_block | REQ_procedure | REQ_trigger);
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE |
+		DsqlCompilerScratch::FLAG_TRIGGER);
 	return DdlNode::internalDsqlPass();
 }
 

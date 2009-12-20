@@ -382,6 +382,13 @@ enum REQ_TYPE
 class DsqlCompiledStatement : public Firebird::PermanentStorage
 {
 public:
+	static const unsigned FLAG_ORPHAN		= 0x01;
+	static const unsigned FLAG_NO_BATCH		= 0x02;
+	static const unsigned FLAG_BLR_VERSION4	= 0x04;
+	static const unsigned FLAG_BLR_VERSION5	= 0x08;
+	static const unsigned FLAG_SELECTABLE	= 0x10;
+
+public:
 	DsqlCompiledStatement(MemoryPool& p)
 		: PermanentStorage(p),
 		  blrData(p),
@@ -476,6 +483,9 @@ public:
 class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
+	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
+
+public:
 	explicit dsql_req(DsqlCompiledStatement* aStatement)
 		: req_pool(aStatement->getPool()),
 		  statement(aStatement),
@@ -510,6 +520,8 @@ public:
 	jrd_tra* req_transaction;	// JRD transaction
 	jrd_req* req_request;		// JRD request
 
+	unsigned req_flags;			// flags
+
 	Firebird::Array<UCHAR*>	req_msg_buffers;
 	dsql_sym* req_cursor;	// Cursor symbol, if any
 	blb* req_blb;			// JRD blob
@@ -540,12 +552,23 @@ protected:
 class DsqlCompilerScratch : public Firebird::PermanentStorage
 {
 public:
+	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x01;
+	static const unsigned FLAG_RETURNING_INTO		= 0x02;
+	static const unsigned FLAG_METADATA_SAVED		= 0x04;
+	static const unsigned FLAG_PROCEDURE			= 0x08;
+	static const unsigned FLAG_TRIGGER				= 0x10;
+	static const unsigned FLAG_BLOCK				= 0x20;
+	static const unsigned FLAG_RECURSIVE_CTE		= 0x40;
+	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x80;
+
+public:
 	explicit DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
 				DsqlCompiledStatement* aStatement)
 		: PermanentStorage(p),
 		  dbb(aDbb),
 		  transaction(aTransaction),
 		  statement(aStatement),
+		  flags(0),
 		  ports(p),
 		  relation(NULL),
 		  procedure(NULL),
@@ -656,6 +679,7 @@ private:
 	DsqlCompiledStatement* statement;	// Compiled statement
 
 public:
+	unsigned flags;						// flags
 	Firebird::Array<dsql_msg*> ports;	// Port messages
 	dsql_rel* relation;					// relation created by this request (for DDL)
 	dsql_prc* procedure;				// procedure created by this request (for DDL)
@@ -719,25 +743,6 @@ private:
 	const bool oldValue;
 };
 
-
-// values used in flags
-enum flags_vals {
-	REQ_cursor_open			= 0x00001,
-	REQ_save_metadata		= 0x00002,
-	REQ_prepared			= 0x00004, // Set in DSQL_prepare but never checked
-	REQ_procedure			= 0x00008,
-	REQ_trigger				= 0x00010,
-	REQ_orphan				= 0x00020,
-	REQ_no_batch			= 0x00040,
-	REQ_blr_version4		= 0x00080,
-	REQ_blr_version5		= 0x00100,
-	REQ_block				= 0x00200,
-	REQ_selectable			= 0x00400,
-	REQ_CTE_recursive		= 0x00800,
-	REQ_dsql_upd_or_ins		= 0x01000,
-	REQ_returning_into		= 0x02000,
-	REQ_in_auto_trans_block	= 0x04000
-};
 
 // Blob
 class dsql_blb : public pool_alloc<dsql_type_blb>

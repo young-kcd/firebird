@@ -5576,10 +5576,10 @@ static void save_relation(DsqlCompilerScratch* dsqlScratch, const dsql_str* rela
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	if (statement->flags & REQ_save_metadata)
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_METADATA_SAVED)
 		return;
 
-	statement->flags |= REQ_save_metadata;
+	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_METADATA_SAVED;
 
 	const dsql_nod* ddl_node = statement->ddlNode;
 	dsql_rel* relation;
@@ -5952,7 +5952,7 @@ void DsqlCompiledStatement::begin_blr(UCHAR verb)
 
 	// put in a place marker for the size of the blr, since it is unknown
 	append_ushort(0);
-	append_uchar((flags & REQ_blr_version4) ? blr_version4 : blr_version5);
+	append_uchar((flags & FLAG_BLR_VERSION4) ? blr_version4 : blr_version5);
 }
 
 

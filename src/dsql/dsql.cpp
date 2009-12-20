@@ -224,7 +224,7 @@ void DSQL_execute(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	if (request->getStatement()->flags & REQ_orphan)
+	if (request->getStatement()->flags & DsqlCompiledStatement::FLAG_ORPHAN)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
@@ -247,7 +247,7 @@ void DSQL_execute(thread_db* tdbb,
 
 	if (reqTypeWithCursor(request->getStatement()->type))
 	{
-		if (request->getStatement()->flags & REQ_cursor_open)
+		if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 					  Arg::Gds(isc_dsql_cursor_open_err));
@@ -283,7 +283,7 @@ void DSQL_execute(thread_db* tdbb,
 
 	if (reqTypeWithCursor(request->getStatement()->type) && !singleton)
 	{
-		request->getStatement()->flags |= REQ_cursor_open;
+		request->req_flags |= dsql_req::FLAG_OPENED_CURSOR;
 		TRA_link_cursor(request->req_transaction, request);
 	}
 }
@@ -357,7 +357,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
 	// if the cursor isn't open, we've got a problem
-	if (!(request->getStatement()->flags & REQ_cursor_open))
+	if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
@@ -461,7 +461,7 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 	else if (option & DSQL_close)
 	{
 		// Just close the cursor associated with the request
-		if (!(request->getStatement()->flags & REQ_cursor_open))
+		if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-501) <<
 					  Arg::Gds(isc_dsql_cursor_close_err));
@@ -495,7 +495,7 @@ void DSQL_insert(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	if (request->getStatement()->flags & REQ_orphan)
+	if (request->getStatement()->flags & DsqlCompiledStatement::FLAG_ORPHAN)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
@@ -505,7 +505,7 @@ void DSQL_insert(thread_db* tdbb,
 
 	if (request->getStatement()->type == REQ_PUT_SEGMENT)
 	{
-		if (!(request->getStatement()->flags & REQ_cursor_open))
+		if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 					  Arg::Gds(isc_dsql_cursor_err) <<
@@ -583,7 +583,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 	// check to see if old request has an open cursor
 
-	if (old_request && (old_request->getStatement()->flags & REQ_cursor_open))
+	if (old_request && (old_request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-519) <<
 				  Arg::Gds(isc_dsql_open_cursor_request));
@@ -655,8 +655,6 @@ void DSQL_prepare(thread_db* tdbb,
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-530) <<
 					  Arg::Gds(isc_dsql_crdb_prepare_err));
 		}
-
-		request->getStatement()->flags |= REQ_prepared;
 
 		// Now that we know that the new request exists, zap the old one.
 
@@ -846,7 +844,7 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 		}
 	}
 
-	request->getStatement()->flags &= ~REQ_cursor_open;
+	request->req_flags &= ~dsql_req::FLAG_OPENED_CURSOR;
 	TRA_unlink_cursor(request->req_transaction, request);
 }
 
@@ -2599,7 +2597,6 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	message->msg_number = 1;
 
 	statement->type = REQ_SELECT;
-	statement->flags &= ~REQ_cursor_open;
 
 	// No work is done during pass1 for set transaction - like
 	// checking for valid table names.  This is because that will
@@ -2660,9 +2657,9 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 		default:
 			if (client_dialect > SQL_DIALECT_V5)
-				statement->flags |= REQ_blr_version5;
+				statement->flags |= DsqlCompiledStatement::FLAG_BLR_VERSION5;
 			else
-				statement->flags |= REQ_blr_version4;
+				statement->flags |= DsqlCompiledStatement::FLAG_BLR_VERSION4;
 
 			GEN_request(request, scratch, node);
 			// fall into
@@ -2871,7 +2868,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	for (size_t i = 0; i < request->cursors.getCount(); ++i)
 	{
 		DsqlCompiledStatement* child = request->cursors[i];
-		child->flags |= REQ_orphan;
+		child->flags |= DsqlCompiledStatement::FLAG_ORPHAN;
 		child->parentRequest = NULL;
 
 		Jrd::ContextPoolHolder context(tdbb, &child->getPool());
@@ -2886,7 +2883,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	// If the request had an open cursor, close it
 
-	if (statement->flags & REQ_cursor_open) {
+	if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR) {
 		close_cursor(tdbb, request);
 	}
 
@@ -3064,7 +3061,7 @@ static void sql_info(thread_db* tdbb,
 			items += length;
 			break;
 		case isc_info_sql_batch_fetch:
-			if (request->getStatement()->flags & REQ_no_batch)
+			if (request->getStatement()->flags & DsqlCompiledStatement::FLAG_NO_BATCH)
 				number = 0;
 			else
 				number = 1;

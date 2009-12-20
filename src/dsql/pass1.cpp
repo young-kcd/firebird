@@ -497,7 +497,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 			count = context->ctx_proc_inputs->nod_count;
 		}
 
-		if (!(dsqlScratch->getStatement()->flags & REQ_procedure))
+		if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_PROCEDURE))
 		{
 			if (count > procedure->prc_in_count ||
 				count < procedure->prc_in_count - procedure->prc_def_count)
@@ -767,7 +767,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			{
 				cte->nod_flags |= NOD_DT_CTE_USED;
 
-				if ((dsqlScratch->getStatement()->flags & REQ_CTE_recursive) &&
+				if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RECURSIVE_CTE) &&
 					 dsqlScratch->currCtes.hasData() &&
 					 (dsqlScratch->currCtes.object() == cte))
 				{
@@ -1059,8 +1059,8 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		{
 			const internal_info_id id =
 				*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
-			USHORT req_mask = InternalInfo::getMask(id);
-			if (req_mask && !(dsqlScratch->getStatement()->flags & req_mask))
+			unsigned req_mask = InternalInfo::getMask(id);
+			if (req_mask && !(dsqlScratch->flags & req_mask))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Token unknown
@@ -1758,7 +1758,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			if (input->nod_arg[e_select_update])
 			{
 				dsqlScratch->getStatement()->type = REQ_SELECT_UPD;
-				dsqlScratch->getStatement()->flags |= REQ_no_batch;
+				dsqlScratch->getStatement()->flags |= DsqlCompiledStatement::FLAG_NO_BATCH;
 				break;
 			}
 
@@ -1768,10 +1768,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			// savepoint for open cursor.
 
 			if (node->nod_arg[e_rse_sort] || node->nod_arg[e_rse_reduced])
-			{
-				dsqlScratch->getStatement()->flags &= ~REQ_no_batch;
-			}
-
+				dsqlScratch->getStatement()->flags &= ~DsqlCompiledStatement::FLAG_NO_BATCH;
 		}
 		break;
 
@@ -1851,7 +1848,8 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_cursor_open:
 	case nod_cursor_close:
 	case nod_cursor_fetch:
-		if (dsqlScratch->getStatement()->flags & REQ_in_auto_trans_block)	// autonomous transaction
+		// Verify if we're in an autonomous transaction.
+		if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK)
 		{
 			const char* stmt = NULL;
 
@@ -7804,9 +7802,9 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 
 	dsql_nod* const source = PASS1_node_psql(dsqlScratch, input->nod_arg[e_ret_source], false);
 
-	dsqlScratch->getStatement()->flags |= REQ_returning_into;
+	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_RETURNING_INTO;
 	dsql_nod* const target = PASS1_node(dsqlScratch, input->nod_arg[e_ret_target]);
-	dsqlScratch->getStatement()->flags &= ~REQ_returning_into;
+	dsqlScratch->flags &= ~DsqlCompilerScratch::FLAG_RETURNING_INTO;
 
 	if (!dsqlScratch->isPsql() && target)
 	{
@@ -9601,7 +9599,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	if (!dsqlScratch->isPsql())
-		dsqlScratch->getStatement()->flags |= REQ_dsql_upd_or_ins;
+		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
 
 	const dsql_str* relation_name = (dsql_str*) input->nod_arg[e_upi_relation]->nod_arg[e_rpn_name];
 	const dsql_str* base_name = relation_name;
@@ -9824,10 +9822,10 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	eql->nod_arg[0]->nod_arg[e_internal_info] = MAKE_const_slong(internal_rows_affected);
 	eql->nod_arg[1] = MAKE_const_slong(0);
 
-	const ULONG save_flags = dsqlScratch->getStatement()->flags;
-	dsqlScratch->getStatement()->flags |= REQ_block;	// to compile ROW_COUNT
+	const ULONG save_flags = dsqlScratch->flags;
+	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_BLOCK;	// to compile ROW_COUNT
 	eql = PASS1_node(dsqlScratch, eql);
-	dsqlScratch->getStatement()->flags = save_flags;
+	dsqlScratch->flags = save_flags;
 
 	// if (ROW_COUNT = 0) then INSERT
 	IfNode* ifNod = FB_NEW(dsqlScratch->getStatement()->getPool()) IfNode(
@@ -9901,7 +9899,7 @@ static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	{
 		if (input->nod_arg[e_fln_context])
 		{
-			if (dsqlScratch->getStatement()->flags & REQ_trigger) // triggers only
+			if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_TRIGGER) // triggers only
 				return pass1_field(dsqlScratch, input, false, NULL);
 
 			field_unknown(0, 0, input);
@@ -10430,8 +10428,11 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 	DEV_BLKCHK(qualifier, dsql_type_str);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
-	if ((dsqlScratch->getStatement()->flags & REQ_returning_into) && (context->ctx_flags & CTX_returning))
+	if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RETURNING_INTO) &&
+		(context->ctx_flags & CTX_returning))
+	{
 		return NULL;
+	}
 
 	dsql_rel* relation = context->ctx_relation;
 	dsql_prc* procedure = context->ctx_procedure;
@@ -10888,7 +10889,7 @@ void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 	}
 
 	if (with->nod_flags & NOD_UNION_RECURSIVE)
-		getStatement()->flags |= REQ_CTE_recursive;
+		flags |= DsqlCompilerScratch::FLAG_RECURSIVE_CTE;
 
 	const dsql_nod* list = with->nod_arg[0];
 	const dsql_nod* const* end = list->nod_arg + list->nod_count;
@@ -10930,7 +10931,7 @@ dsql_nod* DsqlCompilerScratch::findCTE(const dsql_str* name)
 
 void DsqlCompilerScratch::clearCTEs()
 {
-	getStatement()->flags &= ~REQ_CTE_recursive;
+	flags &= ~DsqlCompilerScratch::FLAG_RECURSIVE_CTE;
 	ctes.clear();
 	cteAliases.clear();
 }

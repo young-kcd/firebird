@@ -191,15 +191,15 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	const bool autoTrans = statement->flags & REQ_in_auto_trans_block;
-	statement->flags |= REQ_in_auto_trans_block;
+	const bool autoTrans = dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
+	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 
 	InAutonomousTransactionNode* node = FB_NEW(getPool()) InAutonomousTransactionNode(getPool());
 	node->dsqlScratch = dsqlScratch;
 	node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
 
 	if (!autoTrans)
-		statement->flags &= ~REQ_in_auto_trans_block;
+		dsqlScratch->flags &= ~DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 
 	return node;
 }
@@ -391,7 +391,7 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 	else
 		statement->type = REQ_EXEC_BLOCK;
 
-	statement->flags |= REQ_block;
+	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_BLOCK;
 
 	ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
 	node->dsqlScratch = dsqlScratch;
@@ -761,7 +761,7 @@ SavepointNode* SavepointNode::internalDsqlPass()
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	// ASF: It should never enter in this IF, because the grammar does not allow it.
-	if (statement->flags & REQ_block) // blocks, procedures and triggers
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_BLOCK) // blocks, procedures and triggers
 	{
 		const char* cmd = NULL;
 
@@ -954,7 +954,7 @@ SuspendNode* SuspendNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	if (statement->flags & REQ_trigger)	// triggers only
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_TRIGGER)	// triggers only
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Token unknown
@@ -962,13 +962,13 @@ SuspendNode* SuspendNode::internalDsqlPass()
 				  Arg::Gds(isc_random) << Arg::Str("SUSPEND"));
 	}
 
-	if (statement->flags & REQ_in_auto_trans_block)	// autonomous transaction
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK)	// autonomous transaction
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
 	}
 
-	statement->flags |= REQ_selectable;
+	statement->flags |= DsqlCompiledStatement::FLAG_SELECTABLE;
 
 	blockNode = statement->blockNode;
 
