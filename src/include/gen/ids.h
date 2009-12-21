@@ -71,6 +71,8 @@
 	const USHORT  f_fld_coll_id = 25;
 	const USHORT  f_fld_charset_id = 26;
 	const USHORT  f_fld_precision = 27;
+	const USHORT  f_fld_class = 28;
+	const USHORT  f_fld_owner = 29;
 
 
 // Relation 3 (RDB$INDEX_SEGMENTS)
@@ -227,6 +229,14 @@
 	const USHORT  f_fun_pkg_name = 9;
 	const USHORT  f_fun_private_flag = 10;
 	const USHORT  f_fun_source = 11;
+	const USHORT  f_fun_id = 12;
+	const USHORT  f_fun_blr = 13;
+	const USHORT  f_fun_valid_blr = 14;
+	const USHORT  f_fun_debug_info = 15;
+	const USHORT  f_fun_class = 16;
+	const USHORT  f_fun_owner = 17;
+	const USHORT  f_fun_legacy_flag = 18;
+	const USHORT  f_fun_variant_flag = 19;
 
 
 // Relation 15 (RDB$FUNCTION_ARGUMENTS)
@@ -242,6 +252,15 @@
 	const USHORT  f_arg_precision = 8;
 	const USHORT  f_arg_char_length = 9;
 	const USHORT  f_arg_pkg_name = 10;
+	const USHORT  f_arg_name = 11;
+	const USHORT  f_arg_sname = 12;
+	const USHORT  f_arg_default = 13;
+	const USHORT  f_arg_dsource = 14;
+	const USHORT  f_arg_coll_id = 15;
+	const USHORT  f_arg_null_flag = 16;
+	const USHORT  f_arg_mech2 = 17;
+	const USHORT  f_arg_fname = 18;
+	const USHORT  f_arg_rname = 19;
 
 
 // Relation 16 (RDB$FILTERS)
@@ -288,6 +307,8 @@
 	const USHORT  f_gen_id = 1;
 	const USHORT  f_gen_sys_flag = 2;
 	const USHORT  f_gen_desc = 3;
+	const USHORT  f_gen_class = 4;
+	const USHORT  f_gen_owner = 5;
 
 
 // Relation 21 (RDB$FIELD_DIMENSIONS)
@@ -385,6 +406,8 @@
 	const USHORT  f_cs_desc = 6;
 	const USHORT  f_cs_fun_name = 7;
 	const USHORT  f_cs_bytes_char = 8;
+	const USHORT  f_cs_class = 9;
+	const USHORT  f_cs_owner = 10;
 
 
 // Relation 29 (RDB$COLLATIONS)
@@ -398,6 +421,8 @@
 	const USHORT  f_coll_fun_name = 6;
 	const USHORT  f_coll_base_collation_name = 7;
 	const USHORT  f_coll_specific_attr = 8;
+	const USHORT  f_coll_class = 9;
+	const USHORT  f_coll_owner = 10;
 
 
 // Relation 30 (RDB$EXCEPTIONS)
@@ -407,6 +432,8 @@
 	const USHORT  f_xcp_msg = 2;
 	const USHORT  f_xcp_desc = 3;
 	const USHORT  f_xcp_sys_flag = 4;
+	const USHORT  f_xcp_class = 5;
+	const USHORT  f_xcp_owner = 6;
 
 
 // Relation 31 (RDB$ROLES)

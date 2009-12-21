@@ -159,3 +159,8 @@
 	FIELD(fld_engine_name	, nam_engine_name	, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
 
 	FIELD(fld_pkg_name		, nam_pkg_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
+
+	FIELD(fld_fun_id		, nam_fun_id		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
+	FIELD(fld_fun_blr		, nam_fun_blr		, dtype_blob	, BLOB_SIZE					, isc_blob_blr				, NULL		, true)
+	FIELD(fld_arg_name		, nam_arg_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
+	FIELD(fld_arg_mechanism	, nam_arg_mechanism	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
