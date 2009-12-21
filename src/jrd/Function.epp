@@ -1,0 +1,632 @@
+/*
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ */
+
+#include "firebird.h"
+#include "../jrd/common.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/flags.h"
+#include "../jrd/ibase.h"
+#include "../jrd/jrd.h"
+#include "../jrd/val.h"
+#include "../jrd/irq.h"
+#include "../jrd/tra.h"
+#include "../jrd/lck.h"
+#include "../jrd/req.h"
+#include "../jrd/exe.h"
+#include "../jrd/blb.h"
+#include "../jrd/met.h"
+#include "../jrd/blb_proto.h"
+#include "../jrd/cmp_proto.h"
+#include "../jrd/dsc_proto.h"
+#include "../jrd/exe_proto.h"
+#include "../jrd/flu_proto.h"
+#include "../jrd/fun_proto.h"
+#include "../jrd/lck_proto.h"
+#include "../jrd/met_proto.h"
+#include "../jrd/par_proto.h"
+#include "../jrd/vio_proto.h"
+#include "../jrd/thread_proto.h"
+#include "../common/utils_proto.h"
+#include "../jrd/DebugInterface.h"
+
+#include "../jrd/Function.h"
+
+using namespace Firebird;
+using namespace Jrd;
+
+DATABASE DB = FILENAME "ODS.RDB";
+
+const char* const Function::EXCEPTION_MESSAGE = "The user defined function: \t%s\n\t   referencing entrypoint: \t%s\n\t                in module: \t%s\n\tcaused the fatal exception:";
+
+Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags)
+{
+	Database* const dbb = tdbb->getDatabase();
+	Function* check_function = NULL;
+
+	Function* function = (id < dbb->dbb_functions.getCount()) ?
+		function = dbb->dbb_functions[id] : NULL;
+
+	if (function && function->fun_id == id &&
+		!(function->fun_flags & FUN_being_scanned) &&
+		((function->fun_flags & FUN_scanned) || noscan) &&
+		!(function->fun_flags & FUN_being_altered) &&
+		(!(function->fun_flags & FUN_obsolete) || return_deleted))
+	{
+		if (!(function->fun_flags & FUN_check_existence))
+		{
+			return function;
+		}
+
+		check_function = function;
+		LCK_lock(tdbb, check_function->fun_existence_lock, LCK_SR, LCK_WAIT);
+	}
+
+	// We need to look up the function in RDB$FUNCTIONS
+
+	function = NULL;
+
+	jrd_req* request = CMP_find_request(tdbb, irq_l_fun_id, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		X IN RDB$FUNCTIONS WITH X.RDB$FUNCTION_ID EQ id
+
+		if (!REQUEST(irq_l_fun_id))
+			REQUEST(irq_l_fun_id) = request;
+
+		function = loadMetadata(tdbb, X.RDB$FUNCTION_ID, noscan, flags);
+
+	END_FOR;
+
+	if (!REQUEST(irq_l_fun_id))
+		REQUEST(irq_l_fun_id) = request;
+
+	if (check_function)
+	{
+		check_function->fun_flags &= ~FUN_check_existence;
+		if (check_function != function)
+		{
+			LCK_release(tdbb, check_function->fun_existence_lock);
+			check_function->fun_flags |= PRC_obsolete;
+		}
+	}
+
+	return function;
+}
+
+Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool noscan)
+{
+	Database* const dbb = tdbb->getDatabase();
+
+	Function* check_function = NULL;
+
+	// See if we already know the function by name
+
+	for (Function** iter = dbb->dbb_functions.begin(); iter < dbb->dbb_functions.end(); ++iter)
+	{
+		Function* const function = *iter;
+
+		if (function && !(function->fun_flags & FUN_obsolete) &&
+			((function->fun_flags & FUN_scanned) || noscan) &&
+			!(function->fun_flags & FUN_being_scanned) &&
+			!(function->fun_flags & FUN_being_altered))
+		{
+			if (function->fun_name == name)
+			{
+				if (function->fun_flags & FUN_check_existence)
+				{
+					check_function = function;
+					LCK_lock(tdbb, check_function->fun_existence_lock, LCK_SR, LCK_WAIT);
+					break;
+				}
+
+				return function;
+			}
+		}
+	}
+
+	// We need to look up the function in RDB$FUNCTIONS
+
+	Function* function = NULL;
+
+	jrd_req* request = CMP_find_request(tdbb, irq_l_fun_name, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		X IN RDB$FUNCTIONS
+		WITH X.RDB$FUNCTION_NAME EQ name.identifier.c_str() AND
+			 X.RDB$PACKAGE_NAME EQUIV NULLIF(name.qualifier.c_str(), '')
+
+		if (!REQUEST(irq_l_fun_name))
+			REQUEST(irq_l_fun_name) = request;
+
+		function = loadMetadata(tdbb, X.RDB$FUNCTION_ID, noscan, 0);
+
+	END_FOR;
+
+	if (!REQUEST(irq_l_fun_name))
+		REQUEST(irq_l_fun_name) = request;
+
+	if (check_function)
+	{
+		check_function->fun_flags &= ~FUN_check_existence;
+		if (check_function != function)
+		{
+			LCK_release(tdbb, check_function->fun_existence_lock);
+			check_function->fun_flags |= FUN_obsolete;
+		}
+	}
+
+	return function;
+}
+
+Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
+{
+	Database* const dbb = tdbb->getDatabase();
+
+	if (id >= dbb->dbb_functions.getCount())
+	{
+		dbb->dbb_functions.grow(id + 1);
+	}
+
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
+
+	Function* function = dbb->dbb_functions[id];
+
+	if (function && !(function->fun_flags & FUN_obsolete))
+	{
+		// Make sure FUN_being_scanned and FUN_scanned are not set at the same time
+		fb_assert(!(function->fun_flags & FUN_being_scanned) || !(function->fun_flags & FUN_scanned));
+
+		if ((function->fun_flags & FUN_being_scanned) || (function->fun_flags & FUN_scanned))
+		{
+			return function;
+		}
+	}
+	
+	if (!function)
+	{
+		function = FB_NEW(*dbb->dbb_permanent) Function(*dbb->dbb_permanent);
+	}
+
+	try
+	{
+	function->fun_flags |= (FUN_being_scanned | flags);
+	function->fun_flags &= ~FUN_obsolete;
+
+	function->fun_id = id;
+	dbb->dbb_functions[id] = function;
+
+	if (!function->fun_existence_lock)
+	{
+		Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+		function->fun_existence_lock = lock;
+		lock->lck_parent = dbb->dbb_lock;
+		lock->lck_dbb = dbb;
+		lock->lck_key.lck_long = function->fun_id;
+		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_type = LCK_fun_exist;
+		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+		lock->lck_object = function;
+		lock->lck_ast = blockingAst;
+	}
+
+	LCK_lock(tdbb, function->fun_existence_lock, LCK_SR, LCK_WAIT);
+
+	if (!noscan)
+	{
+		// CVC: Where is this set to false? I made it const to draw attention here.
+		const bool valid_blr = true;
+
+		jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
+
+		fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
+
+		FOR(REQUEST_HANDLE request_fun)
+			X IN RDB$FUNCTIONS
+			WITH X.RDB$FUNCTION_ID EQ id
+
+			if (!REQUEST(irq_l_functions))
+				REQUEST(irq_l_functions) = request_fun;
+
+			function->fun_name = QualifiedName(X.RDB$FUNCTION_NAME,
+				(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME));
+
+			if (!X.RDB$SECURITY_CLASS.NULL)
+			{
+				function->fun_security_name = X.RDB$SECURITY_CLASS;
+			}
+			else if (!X.RDB$PACKAGE_NAME.NULL)
+			{
+				AutoCacheRequest requestHandle(tdbb, irq_l_procedure_pkg_class, IRQ_REQUESTS);
+
+				FOR (REQUEST_HANDLE requestHandle)
+					PKG IN RDB$PACKAGES
+					WITH PKG.RDB$PACKAGE_NAME EQ X.RDB$PACKAGE_NAME
+
+					if (!PKG.RDB$SECURITY_CLASS.NULL)
+					{
+						function->fun_security_name = PKG.RDB$SECURITY_CLASS;
+					}
+
+				END_FOR
+			}
+
+			size_t count = 0, inputs = 0;
+			memset(temp, 0, sizeof(temp));
+			ULONG length = 0;
+
+			jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
+
+			FOR(REQUEST_HANDLE request_arg)
+				Y IN RDB$FUNCTION_ARGUMENTS
+				WITH Y.RDB$FUNCTION_NAME EQ function->fun_name.identifier.c_str() AND
+					 Y.RDB$PACKAGE_NAME EQUIV NULLIF(function->fun_name.qualifier.c_str(), '')
+				SORTED BY Y.RDB$ARGUMENT_POSITION
+
+				if (!REQUEST(irq_l_args))
+					REQUEST(irq_l_args) = request_arg;
+
+				if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
+					inputs++;
+
+				fun_repeat* const tail = temp + Y.RDB$ARGUMENT_POSITION;
+				tail->fun_mechanism = (FUN_T) Y.RDB$MECHANISM;
+
+				Parameter* const parameter = FB_NEW(*dbb->dbb_permanent) Parameter(*dbb->dbb_permanent);
+				tail->fun_parameter = parameter;
+				parameter->prm_number = Y.RDB$ARGUMENT_POSITION;
+				parameter->prm_name = Y.RDB$ARGUMENT_NAME.NULL ? "" : Y.RDB$ARGUMENT_NAME;
+				parameter->prm_nullable = Y.RDB$NULL_FLAG.NULL || Y.RDB$NULL_FLAG == 0;
+				parameter->prm_mechanism = Y.RDB$ARGUMENT_MECHANISM.NULL ?
+					prm_mech_normal : (prm_mech_t) Y.RDB$ARGUMENT_MECHANISM;
+
+				const SSHORT collation_id_null = Y.RDB$COLLATION_ID.NULL;
+				const SSHORT collation_id = Y.RDB$COLLATION_ID;
+
+				if (!Y.RDB$FIELD_SOURCE.NULL)
+				{
+					parameter->prm_field_source = Y.RDB$FIELD_SOURCE;
+
+					jrd_req* request_arg_fld = CMP_find_request(tdbb, irq_l_arg_fld, IRQ_REQUESTS);
+
+					FOR(REQUEST_HANDLE request_arg_fld)
+						F IN RDB$FIELDS
+						WITH F.RDB$FIELD_NAME = Y.RDB$FIELD_SOURCE
+
+						if (!REQUEST(irq_l_arg_fld))
+							REQUEST(irq_l_arg_fld) = request_arg_fld;
+
+						DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
+											F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
+											F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
+											(collation_id_null ? F.RDB$COLLATION_ID : collation_id));
+
+					END_FOR
+
+					if (!REQUEST(irq_l_arg_fld))
+						REQUEST(irq_l_arg_fld) = request_arg_fld;
+				}
+				else
+				{
+					DSC_make_descriptor(&parameter->prm_desc, Y.RDB$FIELD_TYPE,
+										Y.RDB$FIELD_SCALE, Y.RDB$FIELD_LENGTH,
+										Y.RDB$FIELD_SUB_TYPE, Y.RDB$CHARACTER_SET_ID,
+										(collation_id_null ? 0 : collation_id));
+				}
+
+				if (tail->fun_parameter->prm_desc.dsc_dtype == dtype_cstring)
+					tail->fun_parameter->prm_desc.dsc_length++;
+
+				length += (tail->fun_parameter->prm_desc.dsc_dtype == dtype_blob) ?
+					sizeof(udf_blob) : FB_ALIGN(tail->fun_parameter->prm_desc.dsc_length, FB_DOUBLE_ALIGN);
+
+				count = MAX(count, Y.RDB$ARGUMENT_POSITION);
+			END_FOR;
+
+			if (!REQUEST(irq_l_args))
+				REQUEST(irq_l_args) = request_arg;
+
+			function->fun_inputs = inputs;
+			function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
+			function->fun_temp_length = length;
+			function->fun_args.resize(count);
+			memcpy(function->fun_args.begin(), temp, function->fun_args.getCount() * sizeof(fun_repeat));
+
+			// Prepare the exception message to be used in case this function ever
+			// causes an exception.  This is done at this time to save us from preparing
+			// (thus allocating) this message every time the function is called.
+			function->fun_exception_message.printf(EXCEPTION_MESSAGE, function->fun_name.toString().c_str(),
+				X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
+
+ 			if (!X.RDB$LEGACY_FLAG.NULL)
+ 			{
+				function->fun_legacy = (X.RDB$LEGACY_FLAG != 0);
+			}
+
+ 			if (!X.RDB$INVARIANT_FLAG.NULL)
+ 			{
+				function->fun_invariant = (X.RDB$INVARIANT_FLAG != 0);
+			}
+
+ 			if (!X.RDB$ENGINE_NAME.NULL)
+ 			{
+ 				fb_assert(!function->fun_legacy);
+
+ 				function->fun_entrypoint = NULL;
+ 				function->fun_request = NULL;
+
+				HalfStaticArray<UCHAR, 512> body;
+
+				if (!X.RDB$FUNCTION_SOURCE.NULL)
+				{
+					blb* const blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$FUNCTION_SOURCE);
+					const ULONG len = BLB_get_data(tdbb, blob,
+						body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
+					body[MIN(blob->blb_length, len)] = 0;
+				}
+				else
+				{
+					body.getBuffer(1)[0] = 0;
+				}
+
+ 				function->fun_external = dbb->dbb_extManager.makeFunction(
+ 					tdbb, function, X.RDB$ENGINE_NAME,
+ 					(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
+ 			}
+ 			else if (!X.RDB$FUNCTION_BLR.NULL)
+ 			{
+ 				fb_assert(!function->fun_legacy);
+
+ 				function->fun_external = NULL;
+  				function->fun_entrypoint = NULL;
+
+				MemoryPool* const csb_pool = dbb->createPool();
+				Jrd::ContextPoolHolder context(tdbb, csb_pool);
+				CompilerScratch* const csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+
+				if (!X.RDB$DEBUG_INFO.NULL)
+				{
+					DBG_parse_debug_info(tdbb, &X.RDB$DEBUG_INFO, csb->csb_dbg_info);
+				}
+
+				try
+				{
+					function->parseBlr(tdbb, &X.RDB$FUNCTION_BLR, csb);
+				}
+				catch (const Exception&)
+				{
+					delete csb;
+
+					if (function->fun_request)
+					{
+						CMP_release(tdbb, function->fun_request);
+						function->fun_request = NULL;
+					}
+					else
+					{
+						dbb->deletePool(csb_pool);
+					}
+
+					const string name = function->fun_name.toString();
+					status_exception::raise(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name));
+				}
+
+				function->fun_request->req_function = function;
+
+				delete csb;
+ 			}
+ 			else
+  			{
+ 				fb_assert(function->fun_legacy);
+
+ 				function->fun_external = NULL;
+ 				function->fun_request = NULL;
+
+  				function->fun_entrypoint =
+ 					Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
+
+ 				// Could not find a function with given MODULE, ENTRYPOINT.
+ 				// Try the list of internally implemented functions.
+ 				if (!function->fun_entrypoint)
+ 				{
+ 					function->fun_entrypoint =
+ 						BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
+ 				}
+			}
+
+		END_FOR;
+
+		if (!REQUEST(irq_l_functions))
+			REQUEST(irq_l_functions) = request_fun;
+	}
+
+	// Make sure that it is really being scanned
+	fb_assert(function->fun_flags & FUN_being_scanned);
+
+	function->fun_flags &= ~FUN_being_scanned;
+
+	}	// try
+	catch (const Exception&)
+	{
+		function->fun_flags &= ~(FUN_being_scanned | FUN_scanned);
+
+		if (function->fun_existence_lock)
+		{
+			LCK_release(tdbb, function->fun_existence_lock);
+			function->fun_existence_lock = NULL;
+		}
+
+		throw;
+	}
+
+	return function;
+}
+
+int Function::blockingAst(void* ast_object)
+{
+	Function* const function = static_cast<Function*>(ast_object);
+
+	try
+	{
+		Database* const dbb = function->fun_existence_lock->lck_dbb;
+
+		Database::SyncGuard dsGuard(dbb, true);
+
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(function->fun_existence_lock->lck_attachment);
+
+		Jrd::ContextPoolHolder context(tdbb, 0);
+
+		if (function->fun_existence_lock)
+		{
+			LCK_release(tdbb, function->fun_existence_lock);
+		}
+
+		function->fun_flags |= FUN_obsolete;
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
+	return 0;
+}
+
+void Function::remove(thread_db* tdbb)
+{
+	Database* const dbb = tdbb->getDatabase();
+
+	if (fun_existence_lock)
+	{
+		LCK_release(tdbb, fun_existence_lock);
+		delete fun_existence_lock;
+		fun_existence_lock = NULL;
+	}
+
+	if (!(fun_flags & FUN_being_altered) && !fun_use_count)
+	{
+		delete this;
+	}
+	else
+	{
+		fun_name = QualifiedName();
+		fun_security_name = "";
+		fun_id = 0;
+	}
+}
+
+void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
+{
+	Database* const dbb = tdbb->getDatabase();
+
+	Firebird::UCharBuffer tmp;
+
+	blb* const blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
+	const SLONG length = blob->blb_length + 10;
+	UCHAR* const temp = tmp.getBuffer(length);
+	const ULONG realLen = BLB_get_data(tdbb, blob, temp, length);
+	fb_assert(realLen >= ULONG(length) - 10 && realLen <= ULONG(MAX_USHORT));
+	tmp.resize(realLen);
+
+//	par_messages(tdbb, tmp.begin(), (ULONG) tmp.getCount(), procedure, csb);
+
+	PAR_blr(tdbb, NULL, tmp.begin(), (ULONG) tmp.getCount(), NULL, &csb,
+			&fun_request, false, 0);
+}
+
+void Function::addRef()
+{
+	fun_use_count++;
+}
+
+void Function::release(thread_db* tdbb)
+{
+	if (fun_use_count)
+	{
+		fun_use_count--;
+
+		Database* const dbb = tdbb->getDatabase();
+		if (fun_use_count == 0 && dbb->dbb_functions[fun_id] != this)
+		{
+			if (fun_request)
+			{
+				CMP_release(tdbb, fun_request);
+				fun_request = NULL;
+			}
+			fun_flags &= ~PRC_being_altered;
+			remove(tdbb);
+		}
+	}
+}
+
+void Function::releaseLocks(thread_db* tdbb)
+{
+	if (fun_existence_lock)
+	{
+		LCK_release(tdbb, fun_existence_lock);
+		fun_flags |= FUN_check_existence;
+		fun_use_count = 0;
+	}
+}
+
+dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
+{
+	fun_repeat*	const return_ptr = &fun_args[fun_return_arg];
+	value->vlu_desc = return_ptr->fun_parameter->prm_desc;
+
+	// If the return data type is any of the string types,
+	// allocate space to hold value
+
+	if (value->vlu_desc.dsc_dtype <= dtype_varying)
+	{
+		const USHORT ret_length = value->vlu_desc.dsc_length;
+		VaryingString* string = value->vlu_string;
+		if (string && string->str_length < ret_length)
+		{
+			delete string;
+			string = NULL;
+		}
+		if (!string)
+		{
+			string = FB_NEW_RPT(*tdbb->getDefaultPool(), ret_length) VaryingString;
+			string->str_length = ret_length;
+			value->vlu_string = string;
+		}
+		value->vlu_desc.dsc_address = string->str_data;
+	}
+	else
+	{
+		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc;
+	}
+
+	if (fun_entrypoint)
+	{
+		FUN_evaluate(tdbb, this, args, value);
+	}
+	else if (fun_external)
+	{
+ 		fun_external->execute(tdbb, args, value);
+	}
+	else
+	{
+		fb_assert(fun_request);
+
+		// TODO
+	}
+
+	return &value->vlu_desc;
+}
