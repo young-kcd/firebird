@@ -66,7 +66,7 @@ goto :EOF
 @for %%i in (array, blob) do @call :PREPROCESS dsql %%i
 @for %%i in (metd, DdlNodes, PackageNodes) do @call :PREPROCESS dsql %%i -gds_cxx
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
-@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i -gds_cxx
+@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl, function) do @call :PREPROCESS jrd %%i -gds_cxx
 @for %%i in (stats) do @call :PREPROCESS utilities %%i
 @goto :EOF
 
@@ -79,7 +79,7 @@ goto :EOF
 @for %%i in (metd) do @call :PREPROCESS dsql %%i -gds_cxx
 @for %%i in (DdlNodes, PackageNodes) do @call :PREPROCESS dsql %%i -gds_cxx
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
-@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i -gds_cxx
+@for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl, function) do @call :PREPROCESS jrd %%i -gds_cxx
 @for %%i in (codes) do @call :PREPROCESS misc %%i
 @for %%i in (build_file) do @call :PREPROCESS msgs %%i
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
