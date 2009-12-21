@@ -193,11 +193,9 @@ enum drq_type_t
 	drq_e_prms2,
 	drq_s_triggers2,
 	drq_m_trigger2,
-	drq_d_gfields3,
-	drq_d_gfields4,
 	drq_e_prcs2,
-	drq_e_prc_prvs2,
-	drq_e_prc_prv2,
+	drq_e_prc_prvs,
+	drq_e_prc_prv,
 	drq_e_trg_msgs3,
 	drq_e_trigger3,
 	drq_e_trg_prv2,
@@ -231,8 +229,6 @@ enum drq_type_t
 	drq_s_fld_src,			// store field source
 	drq_e_prm_gfld,			// erase parameter source
 	drq_e_prm_gfld2,		// erase parameter source
-	drq_e_prc_prvs,			// erase procedure privileges
-	drq_e_prc_prv,			// erase procedure privileges
 
 	drq_MAX
 };
