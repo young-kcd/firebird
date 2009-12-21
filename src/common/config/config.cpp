@@ -100,7 +100,6 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
-	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
@@ -411,11 +410,6 @@ int Config::getMaxUnflushedWriteTime()
 int Config::getProcessPriorityLevel()
 {
 	return (int) sysConfig().values[KEY_PROCESS_PRIORITY_LEVEL];
-}
-
-bool Config::getCompleteBooleanEvaluation()
-{
-	return (bool) sysConfig().values[KEY_COMPLETE_BOOLEAN_EVALUATION];
 }
 
 int Config::getRemoteAuxPort()

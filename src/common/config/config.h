@@ -99,26 +99,25 @@ class Config
 		KEY_MAX_UNFLUSHED_WRITES,					// 24
 		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 25
 		KEY_PROCESS_PRIORITY_LEVEL,					// 26
-		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 27
-		KEY_REMOTE_AUX_PORT,						// 28
-		KEY_REMOTE_BIND_ADDRESS,					// 29
-		KEY_EXTERNAL_FILE_ACCESS,					// 30
-		KEY_DATABASE_ACCESS,						// 31
-		KEY_UDF_ACCESS,								// 32
-		KEY_TEMP_DIRECTORIES,						// 33
- 		KEY_BUGCHECK_ABORT,							// 34
-		KEY_LEGACY_HASH,							// 35
-		KEY_GC_POLICY,								// 36
-		KEY_REDIRECTION,							// 37
-		KEY_OLD_COLUMN_NAMING,						// 38
-		KEY_AUTH_METHOD,							// 39
-		KEY_DATABASE_GROWTH_INCREMENT,				// 40
-		KEY_FILESYSTEM_CACHE_THRESHOLD,				// 41
-		KEY_RELAXED_ALIAS_CHECKING,					// 42
-		KEY_OLD_SET_CLAUSE_SEMANTICS,				// 43
-		KEY_TRACE_CONFIG,							// 44
-		KEY_MAX_TRACELOG_SIZE,						// 45
-		KEY_FILESYSTEM_CACHE_SIZE					// 46
+		KEY_REMOTE_AUX_PORT,						// 27
+		KEY_REMOTE_BIND_ADDRESS,					// 28
+		KEY_EXTERNAL_FILE_ACCESS,					// 29
+		KEY_DATABASE_ACCESS,						// 30
+		KEY_UDF_ACCESS,								// 31
+		KEY_TEMP_DIRECTORIES,						// 32
+ 		KEY_BUGCHECK_ABORT,							// 33
+		KEY_LEGACY_HASH,							// 34
+		KEY_GC_POLICY,								// 35
+		KEY_REDIRECTION,							// 36
+		KEY_OLD_COLUMN_NAMING,						// 37
+		KEY_AUTH_METHOD,							// 38
+		KEY_DATABASE_GROWTH_INCREMENT,				// 39
+		KEY_FILESYSTEM_CACHE_THRESHOLD,				// 40
+		KEY_RELAXED_ALIAS_CHECKING,					// 41
+		KEY_OLD_SET_CLAUSE_SEMANTICS,				// 42
+		KEY_TRACE_CONFIG,							// 43
+		KEY_MAX_TRACELOG_SIZE,						// 44
+		KEY_FILESYSTEM_CACHE_SIZE					// 45
 	};
 
 public:
@@ -215,9 +214,6 @@ public:
 
 	// Process priority level
 	static int getProcessPriorityLevel();
-
-	// Complete boolean evaluation
-	static bool getCompleteBooleanEvaluation();
 
 	// Port for event processing
 	static int getRemoteAuxPort();

@@ -521,12 +521,6 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 	// Evaluate node
 
-	// TODO: Verify and remove this flag once FB1.5beta3 is out.
-	// Default to not eval complete expression (i.e. do short-circuit
-	// optimizied evaluation). Both to get possible early warnings from
-	// users, and to default to the faster of the two options.
-	static bool bEvalCompleteExpression = Config::getCompleteBooleanEvaluation();
-
 	switch (node->nod_type)
 	{
 	case nod_and:
@@ -555,7 +549,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			const USHORT firstnull = request->req_flags & req_null;
 			request->req_flags &= ~req_null;
 
-			if (!bEvalCompleteExpression && !value && !firstnull)
+			if (!value && !firstnull)
 			{
 				// First term is FALSE, why the whole expression is false.
 				// NULL flag is already turned off a few lines above.
@@ -679,7 +673,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			const ULONG flags = request->req_flags;
 			request->req_flags &= ~req_null;
 
-			if (!bEvalCompleteExpression && value)
+			if (value)
 			{
 				// First term is TRUE, why the whole expression is true.
 				// NULL flag is already turned off a few lines above.
