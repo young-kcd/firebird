@@ -94,7 +94,8 @@ static dsql_dbb*	init(Jrd::Attachment*);
 static void		map_in_out(dsql_req*, bool, const dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*,
 	const UCHAR* = 0);
 static USHORT	parse_blr(dsql_req*, USHORT, const UCHAR*, const USHORT, const Array<dsql_par*>&);
-static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
+static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
+static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
 static void		release_statement(DsqlCompiledStatement* statement);
 static void		release_request(thread_db*, dsql_req*, bool);
@@ -641,7 +642,7 @@ void DSQL_prepare(thread_db* tdbb,
 		// Because that's the client's allocated statement handle and we
 		// don't want to trash the context in it -- 2001-Oct-27 Ann Harrison
 
-		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version,
+		request = prepareRequest(tdbb, database, transaction, length, string, dialect, parser_version,
 			isInternalRequest);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
@@ -1063,7 +1064,7 @@ static void execute_immediate(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version,
+		request = prepareRequest(tdbb, database, *tra_handle, length, string, dialect, parser_version,
 			isInternalRequest);
 
 		Jrd::ContextPoolHolder context(tdbb, &request->getPool());
@@ -2465,26 +2466,22 @@ static USHORT parse_blr(dsql_req* request, USHORT blr_length, const UCHAR* blr,
 }
 
 
-/**
+// Prepare a request for execution. Return SQL status code.
+// Note: caller is responsible for pool handling.
+static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
+	USHORT stringLength, const TEXT* string, USHORT clientDialect, USHORT parserVersion,
+	bool isInternalRequest)
+{
+	return prepareStatement(tdbb, database, transaction, stringLength, string, clientDialect,
+		parserVersion, isInternalRequest);
+}
 
- 	prepare
 
-    @brief	Prepare a statement for execution.  Return SQL status
- 	code.  Note: caller is responsible for pool handling.
-
-
-    @param request
-    @param string_length
-    @param string
-    @param client_dialect
-    @param parser_version
-
- **/
-static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-				   USHORT string_length,
-				   const TEXT* string,
-				   USHORT client_dialect, USHORT parser_version,
-				   bool isInternalRequest)
+// Prepare a statement for execution. Return SQL status code.
+// Note: caller is responsible for pool handling.
+static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
+	USHORT string_length, const TEXT* string, USHORT client_dialect, USHORT parser_version,
+	bool isInternalRequest)
 {
 	ISC_STATUS_ARRAY local_status;
 	MOVE_CLEAR(local_status, sizeof(local_status));
