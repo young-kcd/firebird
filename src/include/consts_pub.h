@@ -626,6 +626,7 @@
 #define isc_dyn_sql_object                196
 #define isc_dyn_fld_character_set_name    174
 #define isc_dyn_pkg_name                  247
+#define isc_dyn_fun_name                  251
 
 /********************************/
 /* Relation specific attributes */
@@ -727,6 +728,7 @@
 #define isc_dyn_grant_role                218
 #define isc_dyn_grant_grantor			  245
 #define isc_dyn_grant_package             248
+#define isc_dyn_grant_func                252
 
 #define isc_dyn_fld_null                  249
 
@@ -904,7 +906,7 @@
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
-#define isc_dyn_last_dyn_value            251
+#define isc_dyn_last_dyn_value            253
 
 /******************************************/
 /* Array slice description language (SDL) */

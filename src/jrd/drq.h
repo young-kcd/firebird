@@ -221,6 +221,18 @@ enum drq_type_t
 	drq_s2_difference,		// Store backup difference file, DYN_mod's change_backup_mode
 	drq_l_relation,			// lookup relation before erase
 	drq_l_fld_src4,			// lookup a field source
+	drq_l_fun_name,			// lookup function name
+	drq_g_nxt_fun_id,		// lookup next function ID
+	drq_s_fun_usr_prvs,		// store user privileges for a function
+	drq_e_arg_gfld,			// erase argument's global field
+	drq_e_arg_gfld2,		// erase argument's global field
+	drq_e_fun_prvs,			// erase function privileges
+	drq_e_fun_prv,			// erase function privileges
+	drq_s_fld_src,			// store field source
+	drq_e_prm_gfld,			// erase parameter source
+	drq_e_prm_gfld2,		// erase parameter source
+	drq_e_prc_prvs,			// erase procedure privileges
+	drq_e_prc_prv,			// erase procedure privileges
 
 	drq_MAX
 };

@@ -214,6 +214,22 @@ void DYN_UTIL_check_unique_name(thread_db* tdbb, jrd_tra* transaction,
 				DYN_REQUEST(drq_l_gen_name) = request;
 			break;
 
+		case obj_udf:
+			request = CMP_find_request(tdbb, drq_l_fun_name, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				EFUN IN RDB$FUNCTIONS WITH EFUN.RDB$FUNCTION_NAME EQ object_name.c_str()
+
+				if (!DYN_REQUEST(drq_l_fun_name))
+					DYN_REQUEST(drq_l_fun_name) = request;
+
+				error_code = 268;
+			END_FOR;
+
+			if (!DYN_REQUEST(drq_l_fun_name))
+				DYN_REQUEST(drq_l_fun_name) = request;
+			break;
+
 		default:
 			fb_assert(false);
 		}

@@ -933,6 +933,11 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, object);
 			break;
 
+		case isc_dyn_fun_name:
+			obj_type = obj_udf;
+			GET_STRING(ptr, object);
+			break;
+
 		case isc_dyn_pkg_name:
 			obj_type = obj_package_header;
 			GET_STRING(ptr, object);
@@ -1005,6 +1010,11 @@ static void grant( Global* gbl, const UCHAR** ptr)
 
 		case isc_dyn_grant_proc:
 			user_type = obj_procedure;
+			GET_STRING(ptr, user);
+			break;
+
+		case isc_dyn_grant_func:
+			user_type = obj_udf;
 			GET_STRING(ptr, user);
 			break;
 
@@ -1653,6 +1663,11 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, object);
 			break;
 
+		case isc_dyn_fun_name:
+			obj_type = obj_udf;
+			GET_STRING(ptr, object);
+			break;
+
 		case isc_dyn_pkg_name:
 			obj_type = obj_package_header;
 			GET_STRING(ptr, object);
@@ -1725,6 +1740,11 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 
 		case isc_dyn_grant_proc:
 			user_type = obj_procedure;
+			GET_STRING(ptr, user);
+			break;
+
+		case isc_dyn_grant_func:
+			user_type = obj_udf;
 			GET_STRING(ptr, user);
 			break;
 
