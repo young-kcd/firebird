@@ -1398,6 +1398,8 @@ C --
       PARAMETER (GDS__lock_dir_access                  = 335544992)
       INTEGER*4 GDS__invalid_fetch_option            
       PARAMETER (GDS__invalid_fetch_option             = 335544993)
+      INTEGER*4 GDS__bad_fun_BLR                     
+      PARAMETER (GDS__bad_fun_BLR                      = 335544994)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -24,7 +24,7 @@ JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) \
 
 
 JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
-        dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
+        dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp Function.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
         CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
         blb.cpp btn.cpp btr.cpp builtin.cpp \

@@ -52,15 +52,15 @@ using namespace Jrd;
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-const char* const Function::EXCEPTION_MESSAGE = "The user defined function: \t%s\n\t   referencing entrypoint: \t%s\n\t                in module: \t%s\n\tcaused the fatal exception:";
+const char* const Function::EXCEPTION_MESSAGE = "The user defined function: \t%s\n\t   referencing"
+	" entrypoint: \t%s\n\t                in module: \t%s\n\tcaused the fatal exception:";
 
 Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags)
 {
 	Database* const dbb = tdbb->getDatabase();
 	Function* check_function = NULL;
 
-	Function* function = (id < dbb->dbb_functions.getCount()) ?
-		function = dbb->dbb_functions[id] : NULL;
+	Function* function = (id < dbb->dbb_functions.getCount()) ? dbb->dbb_functions[id] : NULL;
 
 	if (function && function->fun_id == id &&
 		!(function->fun_flags & FUN_being_scanned) &&
@@ -335,7 +335,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				length += (tail->fun_parameter->prm_desc.dsc_dtype == dtype_blob) ?
 					sizeof(udf_blob) : FB_ALIGN(tail->fun_parameter->prm_desc.dsc_length, FB_DOUBLE_ALIGN);
 
-				count = MAX(count, Y.RDB$ARGUMENT_POSITION);
+				count = MAX(count, size_t(Y.RDB$ARGUMENT_POSITION));
 			END_FOR;
 
 			if (!REQUEST(irq_l_args))

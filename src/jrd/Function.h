@@ -82,11 +82,11 @@ namespace Jrd
 		USHORT fun_alter_count;					// number of times function was altered
 		jrd_req* fun_request;					// compiled function request
 
+		Firebird::string fun_exception_message;	// message containing the exception error message
+
 		bool fun_legacy;
 		bool fun_invariant;
 		ExtEngineManager::Function* fun_external;
-
-		Firebird::string fun_exception_message;	// message containing the exception error message
 	};
 
 	const USHORT FUN_scanned			= 1;	// Field expressions scanned

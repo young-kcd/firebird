@@ -183,8 +183,8 @@ public:
 		  variables(pool),
 		  outputVariables(pool),
 		  localDeclList(NULL),
-		  body(NULL),
 		  source(pool),
+		  body(NULL),
 		  compiled(false),
 		  invalid(false),
 		  package(pool),
@@ -224,8 +224,8 @@ public:
 	TypeClause returnType;
 	Firebird::Array<dsql_nod*> variables;
 	Firebird::Array<dsql_nod*> outputVariables;
-	Firebird::string source;
 	dsql_nod* localDeclList;
+	Firebird::string source;
 	dsql_nod* body;
 	bool compiled;
 	bool invalid;
