@@ -259,7 +259,7 @@ public:
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
 		username(_username), password(_password), trustedUser(_trustedUser),
 		run_db_triggers(_run_db_triggers), trustedRole(_trustedRole), direct_io(_direct_io),
-		dbase(0), backup(0), db_size_pages(0), m_silent(false)
+		dbase(0), backup(0), db_size_pages(0), m_silent(false), m_printed(false)
 	{
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
@@ -281,6 +281,11 @@ public:
 	void backup_database(int level, const PathName& fname);
 	void restore_database(const BackupFiles& files);
 
+	bool printed()
+	{
+		return m_printed;
+	}
+
 private:
 	UtilSvc* uSvc;
 
@@ -297,14 +302,15 @@ private:
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
 	ULONG db_size_pages;	// In pages
-	bool m_silent; // are we already handling an exception?
+	bool m_silent;		// are we already handling an exception?
+	bool m_printed;		// pr_error() was called to print status vector
 
 	// IO functions
 	size_t read_file(FILE_HANDLE &file, void *buffer, size_t bufsize);
 	void write_file(FILE_HANDLE &file, void *buffer, size_t bufsize);
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
 
-	void pr_error(const ISC_STATUS* status, const char* operation) const;
+	void pr_error(const ISC_STATUS* status, const char* operation);
 
 	void internal_lock_database();
 	void get_database_size();
@@ -337,9 +343,9 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 #endif
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
-		Arg::OsError() <<
 		(&file == &dbase ? dbname.c_str() :
-		&file == &backup ? bakname.c_str() : "unknown"));
+		&file == &backup ? bakname.c_str() : "unknown") <<
+		Arg::OsError());
 
 	return 0; // silence compiler
 }
@@ -356,9 +362,9 @@ void NBackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 #endif
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_write) <<
-		Arg::OsError() <<
 		(&file == &dbase ? dbname.c_str() :
-		&file == &backup ? bakname.c_str() : "unknown"));
+		&file == &backup ? bakname.c_str() : "unknown") <<
+		Arg::OsError());
 }
 
 void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
@@ -378,9 +384,9 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 #endif
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_seek) <<
-		Arg::OsError() <<
 		(&file == &dbase ? dbname.c_str() :
-		&file == &backup ? bakname.c_str() : "unknown"));
+		&file == &backup ? bakname.c_str() : "unknown") <<
+		Arg::OsError());
 }
 
 void NBackup::open_database_write()
@@ -397,7 +403,7 @@ void NBackup::open_database_write()
 		return;
 #endif
 
-	status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() << dbname.c_str());
+	status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << dbname.c_str() << Arg::OsError());
 }
 
 void NBackup::open_database_scan()
@@ -416,7 +422,7 @@ void NBackup::open_database_scan()
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_NO_BUFFERING,
 		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
-		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() << dbname.c_str());
+		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << dbname.c_str() << Arg::OsError());
 
 #else // WIN_NT
 
@@ -435,23 +441,22 @@ void NBackup::open_database_scan()
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
 	if (dbase < 0)
 	{
-		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << Arg::OsError() <<
-								dbname.c_str());
+		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << dbname.c_str() << Arg::OsError());
 	}
 
 	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
 	{
-		status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) << Arg::Num(rc) <<
-								"SEQUENTIAL" << dbname.c_str());
+		status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) <<
+								"SEQUENTIAL" << dbname.c_str() << Arg::Unix(rc));
 	}
 	if (direct_io)
 	{
 		rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
 		if (rc)
 		{
-			status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) << Arg::Num(rc) <<
-									"NOREUSE" << dbname.c_str());
+			status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) <<
+									"NOREUSE" << dbname.c_str() << Arg::Unix(rc));
 		}
 	}
 
@@ -471,7 +476,7 @@ void NBackup::create_database()
 		return;
 #endif
 
-	status_exception::raise(Arg::Gds(isc_nbackup_err_createdb) << Arg::OsError() << dbname.c_str());
+	status_exception::raise(Arg::Gds(isc_nbackup_err_createdb) << dbname.c_str() << Arg::OsError());
 }
 
 void NBackup::close_database()
@@ -496,7 +501,7 @@ void NBackup::open_backup_scan()
 		return;
 #endif
 
-	status_exception::raise(Arg::Gds(isc_nbackup_err_openbk) << Arg::OsError() << bakname.c_str());
+	status_exception::raise(Arg::Gds(isc_nbackup_err_openbk) << bakname.c_str() << Arg::OsError());
 }
 
 void NBackup::create_backup()
@@ -523,7 +528,7 @@ void NBackup::create_backup()
 		return;
 #endif
 
-	status_exception::raise(Arg::Gds(isc_nbackup_err_createbk) << Arg::OsError() << bakname.c_str());
+	status_exception::raise(Arg::Gds(isc_nbackup_err_createbk) << bakname.c_str() << Arg::OsError());
 }
 
 void NBackup::close_backup()
@@ -559,19 +564,18 @@ void NBackup::fixup_database()
 
 // Print the status, the SQLCODE, and exit.
 // Also, indicate which operation the error occurred on.
-void NBackup::pr_error(const ISC_STATUS* status, const char* operation) const
+void NBackup::pr_error(const ISC_STATUS* status, const char* operation)
 {
 	if (uSvc->isService())
 		status_exception::raise(status);
 
 	printf("[\n");
 	printMsg(23, SafeArg() << operation); // PROBLEM ON "%s".
-
 	isc_print_status(status);
-
 	printf("SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
-
 	printf("]\n");
+
+	m_printed = true;
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_db));
 }
@@ -1235,8 +1239,8 @@ void NBackup::restore_database(const BackupFiles& files)
 #ifdef WIN_NT
 				if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE))
 				{
-					status_exception::raise(Arg::Gds(isc_nbackup_err_copy) << Arg::OsError() <<
-						dbname.c_str() << bakname.c_str());
+					status_exception::raise(Arg::Gds(isc_nbackup_err_copy) <<
+						dbname.c_str() << bakname.c_str() << Arg::OsError());
 				}
 				delete_database = true; // database is possibly broken
 				open_database_write();
@@ -1552,30 +1556,44 @@ void nbackup(UtilSvc* uSvc)
 		usage(uSvc, isc_nbackup_size_with_lock);
 
 	NBackup nbk(uSvc, database, username, password, run_db_triggers, trustedUser, trustedRole, direct_io);
-	switch (op)
+	try
 	{
-		case nbNone:
-			usage(uSvc, isc_nbackup_no_switch);
-			break;
+		switch (op)
+		{
+			case nbNone:
+				usage(uSvc, isc_nbackup_no_switch);
+				break;
 
-		case nbLock:
-			nbk.lock_database(print_size);
-			break;
+			case nbLock:
+				nbk.lock_database(print_size);
+				break;
 
-		case nbUnlock:
-			nbk.unlock_database();
-			break;
+			case nbUnlock:
+				nbk.unlock_database();
+				break;
 
-		case nbFixup:
-			nbk.fixup_database();
-			break;
+			case nbFixup:
+				nbk.fixup_database();
+				break;
 
-		case nbBackup:
-			nbk.backup_database(level, filename);
-			break;
+			case nbBackup:
+				nbk.backup_database(level, filename);
+				break;
 
-		case nbRestore:
-			nbk.restore_database(backup_files);
-			break;
+			case nbRestore:
+				nbk.restore_database(backup_files);
+				break;
+		}
+	}
+	catch (const Exception& e)
+	{
+		if ((!uSvc->isService()) && (!nbk.printed()))
+		{
+			ISC_STATUS_ARRAY status;
+			e.stuff_exception(status);
+			isc_print_status(status);
+		}
+
+		throw;
 	}
 }

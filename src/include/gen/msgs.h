@@ -1021,14 +1021,14 @@ Data source : @4"},		/* 606, eds_statement */
 	{337117218, "Error working with password file \"@1\""},		/* 994, nbackup_pwfile_error */
 	{337117219, "Switch -SIZE can be used only with -LOCK"},		/* 995, nbackup_size_with_lock */
 	{337117220, "None of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE specified"},		/* 996, nbackup_no_switch */
-	{337117223, "IO error (@1) reading file: @2"},		/* 997, nbackup_err_read */
-	{337117224, "IO error (@1) writing file: @2"},		/* 998, nbackup_err_write */
-	{337117225, "IO error (@1) seeking file: @2"},		/* 999, nbackup_err_seek */
-	{337117226, "Error (@1) opening database file: @2"},		/* 1000, nbackup_err_opendb */
-	{337117227, "Error (@1) in posix_fadvise(@2) for database @3"},		/* 1001, nbackup_err_fadvice */
-	{337117228, "Error (@1) creating database file: @2"},		/* 1002, nbackup_err_createdb */
-	{337117229, "Error (@1) opening backup file: @2"},		/* 1003, nbackup_err_openbk */
-	{337117230, "Error (@1) creating backup file: @2"},		/* 1004, nbackup_err_createbk */
+	{337117223, "IO error reading file: @1"},		/* 997, nbackup_err_read */
+	{337117224, "IO error writing file: @1"},		/* 998, nbackup_err_write */
+	{337117225, "IO error seeking file: @1"},		/* 999, nbackup_err_seek */
+	{337117226, "Error opening database file: @1"},		/* 1000, nbackup_err_opendb */
+	{337117227, "Error in posix_fadvise(@1) for database @2"},		/* 1001, nbackup_err_fadvice */
+	{337117228, "Error creating database file: @1"},		/* 1002, nbackup_err_createdb */
+	{337117229, "Error opening backup file: @1"},		/* 1003, nbackup_err_openbk */
+	{337117230, "Error creating backup file: @1"},		/* 1004, nbackup_err_createbk */
 	{337117231, "Unexpected end of database file @1"},		/* 1005, nbackup_err_eofdb */
 	{337117232, "Database @1 is not in state (@2) to be safely fixed up"},		/* 1006, nbackup_fixup_wrongstate */
 	{337117233, "Database error"},		/* 1007, nbackup_err_db */
@@ -1047,7 +1047,7 @@ Data source : @4"},		/* 606, eds_statement */
 	{337117246, "Invalid level @1 of incremental backup file: @2, expected @3"},		/* 1020, nbackup_invlevel_incbk */
 	{337117247, "Wrong order of backup files or invalid incremental backup file detected, file: @1"},		/* 1021, nbackup_wrong_orderbk */
 	{337117248, "Unexpected end of backup file: @1"},		/* 1022, nbackup_err_eofbk */
-	{337117249, "Error (@1) creating database file: @2 via copying from: @3"},		/* 1023, nbackup_err_copy */
+	{337117249, "Error creating database file: @1 via copying from: @2"},		/* 1023, nbackup_err_copy */
 	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* 1024, nbackup_err_eofhdr_restdb */
 	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* 1025, nbackup_lostguid_l0bk */
 	{337117255, "Wrong parameter @1 for switch -D, need ON or OFF"},		/* 1026, nbackup_switchd_parameter */
