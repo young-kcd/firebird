@@ -455,8 +455,7 @@ public:
 	vcl*		dbb_pc_transactions;	// active precommitted transactions
 	BackupManager*	dbb_backup_manager;	// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; // creation date
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::QualifiedName, UserFunction*> > > dbb_functions;	// User defined functions
+	Firebird::Array<Function*> dbb_functions;	// User defined functions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, USHORT> > > dbb_charset_ids;	// Character set ids
 

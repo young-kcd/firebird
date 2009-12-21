@@ -171,53 +171,6 @@ public:
 };
 
 
-// Parameter passing mechanism. Also used for returning values, except for scalar_array.
-enum FUN_T {
-	FUN_value,
-	FUN_reference,
-	FUN_descriptor,
-	FUN_blob_struct,
-	FUN_scalar_array,
-	FUN_ref_with_null
-};
-
-
-// Function definition block
-
-struct fun_repeat
-{
-	DSC fun_desc;			// Datatype info
-	FUN_T fun_mechanism;	// Passing mechanism
-};
-
-
-class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
-{
-public:
-	Firebird::QualifiedName fun_name;		// Function name
-	Firebird::string fun_exception_message;	// message containing the exception error message
-	int (*fun_entrypoint) ();		// Function entrypoint
-	USHORT		fun_count;			// Number of arguments (including return)
-	USHORT		fun_args;			// Number of input arguments
-	USHORT		fun_return_arg;		// Return argument
-	USHORT		fun_type;			// Type of function
-	ULONG		fun_temp_length;	// Temporary space required
-	Jrd::ExtEngineManager::Function* fun_external;
-	fun_repeat fun_rpt[1];
-
-public:
-	explicit UserFunction(MemoryPool& p)
-		: fun_name(p),
-		  fun_exception_message(p)
-	{
-	}
-};
-
-// Those two defines seems an intention to do something that wasn't completed.
-// UDfs that return values like now or boolean Udfs. See rdb$functions.rdb$function_type.
-//#define FUN_value	0
-//#define FUN_boolean	1
-
 // Blob passing structure
 // CVC: Moved to fun.epp where it belongs.
 
@@ -255,6 +208,32 @@ public:
 
 	// Keep this field last as it is C-style open array !
 	Ods::InternalArrayDesc	arr_desc;		// Array descriptor. !
+};
+
+// Parameter passing mechanism for UDFs.
+// Also used for returning values, except for scalar_array.
+
+enum FUN_T
+{
+	FUN_value,
+	FUN_reference,
+	FUN_descriptor,
+	FUN_blob_struct,
+	FUN_scalar_array,
+	FUN_ref_with_null
+};
+
+// Blob passing structure
+
+struct udf_blob
+{
+	SSHORT (*blob_get_segment) (blb*, UCHAR*, USHORT, USHORT*);
+	void* blob_handle;
+	SLONG blob_number_segments;
+	SLONG blob_max_segment;
+	SLONG blob_total_length;
+	void (*blob_put_segment) (blb*, const UCHAR*, USHORT);
+	SLONG (*blob_seek) (blb*, USHORT, SLONG);
 };
 
 } //namespace Jrd

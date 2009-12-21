@@ -49,6 +49,7 @@
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/Function.h"
 
 #include "../common/utils_proto.h"
 
@@ -1132,6 +1133,14 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 
 		record.storeString(f_mon_call_name, request->req_procedure->prc_name.identifier);
 		record.storeInteger(f_mon_call_type, obj_procedure);
+	}
+	else if (request->req_function)
+	{
+		if (request->req_function->fun_name.qualifier.hasData())
+			record.storeString(f_mon_call_pkg_name, request->req_function->fun_name.qualifier);
+
+		record.storeString(f_mon_call_name, request->req_function->fun_name.identifier);
+		record.storeInteger(f_mon_call_type, obj_udf);
 	}
 	else if (!request->req_trg_name.isEmpty())
 	{

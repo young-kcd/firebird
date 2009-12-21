@@ -231,6 +231,7 @@ public:
 	ResourceList req_resources;			// Resources (relations and indices)
 	jrd_nod*	req_message;			// Current message for send/receive
 	jrd_prc*	req_procedure;			// procedure, if any
+	Function*	req_function;			// function, if any
 	Firebird::MetaName	req_trg_name;	// name of request (trigger), if any
 
 	ULONG		req_records_selected;	// count of records selected by request (meeting selection criteria)

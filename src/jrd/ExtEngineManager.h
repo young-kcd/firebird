@@ -44,7 +44,7 @@ class Attachment;
 class Database;
 class Format;
 class Trigger;
-class UserFunction;
+class Function;
 class ValueImpl;
 class ValuesImpl;
 struct impure_value;
@@ -127,7 +127,7 @@ public:
 		Function(thread_db* tdbb, ExtEngineManager* aExtManager,
 			Firebird::ExternalEngine* aEngine,
 			Firebird::ExternalFunction* aFunction,
-			const UserFunction* aUdf);
+			const Jrd::Function* aUdf);
 		~Function();
 
 		void execute(thread_db* tdbb, jrd_nod* args, impure_value* impure);
@@ -136,7 +136,7 @@ public:
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;
 		Firebird::ExternalFunction* function;
-		const UserFunction* udf;
+		const Jrd::Function* udf;
 		Database* database;
 	};
 
@@ -221,7 +221,7 @@ public:
 public:
 	void closeAttachment(thread_db* tdbb, Attachment* attachment);
 
-	Function* makeFunction(thread_db* tdbb, const UserFunction* udf,
+	Function* makeFunction(thread_db* tdbb, const Jrd::Function* udf,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body);
 	Procedure* makeProcedure(thread_db* tdbb, const jrd_prc* prc,

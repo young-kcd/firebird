@@ -64,6 +64,7 @@
 #include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/FpeControl.h"
+#include "../jrd/Function.h"
 
 #ifdef WIN_NT
 #define LIBNAME "ib_util"
@@ -211,23 +212,6 @@ T CALL_UDF(Database* dbb, int (*entrypoint)(), UDF_ARG* args)
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-#define EXCEPTION_MESSAGE "The user defined function: \t%s\n\t   referencing entrypoint: \t%s\n\t                in module: \t%s\n\tcaused the fatal exception:"
-
-// Blob passing structure
-// Updated definitions from the static functions shown below
-
-struct udf_blob
-{
-	SSHORT (*blob_get_segment) (blb*, UCHAR*, USHORT, USHORT*);
-	void* blob_handle;
-	SLONG blob_number_segments;
-	SLONG blob_max_segment;
-	SLONG blob_total_length;
-	void (*blob_put_segment) (blb*, const UCHAR*, USHORT);
-	SLONG (*blob_seek) (blb*, USHORT, SLONG);
-};
-
-
 class OwnedBlobStack : public Stack<blb*>
 {
 public:
@@ -304,7 +288,7 @@ static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
 static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
 static void invoke(thread_db* tdbb,
-				   UserFunction* function,
+				   Function* function,
 				   fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
@@ -314,7 +298,7 @@ static void invoke(thread_db* tdbb,
 static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to);
 
 
-void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure_value* value)
+void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -336,48 +320,19 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 
 	SET_TDBB(tdbb);
 
-	fun_repeat*	return_ptr = function->fun_rpt + function->fun_return_arg;
-	value->vlu_desc = return_ptr->fun_desc;
-	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
-
-	UCharStack array_stack;
+	fun_repeat*	return_ptr = &function->fun_args[function->fun_return_arg];
 
 	jrd_req* request = tdbb->getRequest();
 	// CVC: restoring the null flag seems like a Borland hack to try to
 	// patch a bug with null handling. There's no evident reason to restore it
 	// because EVL_expr() resets it every time it's called.	Kept it for now.
-	const bool null_flag	= ((request->req_flags & req_null) == req_null);
+	const bool null_flag = ((request->req_flags & req_null) == req_null);
+
+	UCharStack array_stack;
 
 	// Trap any potential errors
 
 	try {
-
-	// If the return data type is any of the string types,
-	// allocate space to hold value
-
-	if (value->vlu_desc.dsc_dtype <= dtype_varying)
-	{
-		const USHORT ret_length = value->vlu_desc.dsc_length;
-		VaryingString* string = value->vlu_string;
-		if (string && string->str_length < ret_length)
-		{
-			delete string;
-			string = NULL;
-		}
-		if (!string)
-		{
-			string = FB_NEW_RPT(*tdbb->getDefaultPool(), ret_length) VaryingString;
-			string->str_length = ret_length;
-			value->vlu_string = string;
-		}
-		value->vlu_desc.dsc_address = string->str_data;
-	}
-
-	if (function->fun_external)
- 	{
- 		function->fun_external->execute(tdbb, node, value);
- 		return;
- 	}
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	HalfStaticArray<UCHAR, 800> temp;
@@ -403,8 +358,8 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	double  d;
 
 	// Process arguments
-	const fun_repeat* const end = function->fun_rpt + 1 + function->fun_count;
-	for (fun_repeat* tail = function->fun_rpt + 1; tail < end; ++tail)
+	const fun_repeat* const end = function->fun_args.end();
+	for (fun_repeat* tail = function->fun_args.begin() + 1; tail < end; ++tail)
 	{
 		DSC* input;
 		if (tail == return_ptr)
@@ -441,7 +396,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 			continue;
 		}
 
-		temp_desc = tail->fun_desc;
+		temp_desc = tail->fun_parameter->prm_desc;
 		temp_desc.dsc_address = temp_ptr;
 		// CVC: There's a theoretical possibility of overflowing "length" here.
 		USHORT length = FB_ALIGN(temp_desc.dsc_length, FB_DOUBLE_ALIGN);
@@ -459,7 +414,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 				continue;
 			}
 
-			if (tail->fun_desc.dsc_dtype == dtype_blob)
+			if (tail->fun_parameter->prm_desc.dsc_dtype == dtype_blob)
 			{
 				length = sizeof(udf_blob);
 			}
@@ -470,7 +425,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 			{
 				// Probably for arrays and blobs it's better to preserve the
 				// current behavior that sends a zeroed memory chunk.
-				switch (tail->fun_desc.dsc_dtype)
+				switch (tail->fun_parameter->prm_desc.dsc_dtype)
 				{
 				case dtype_quad:
 				case dtype_array:
@@ -491,11 +446,11 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 		{
 			SLONG l;
 			SLONG* lp;
-			switch (tail->fun_desc.dsc_dtype)
+			switch (tail->fun_parameter->prm_desc.dsc_dtype)
 			{
 			case dtype_short:
 				{
-					const SSHORT s = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
+					const SSHORT s = MOV_get_long(input, (SSHORT) tail->fun_parameter->prm_desc.dsc_scale);
 					if (tail->fun_mechanism == FUN_value)
 					{
 						// For (apparent) portability reasons, SHORT by value
@@ -514,7 +469,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 				break;
 
 			case dtype_long:
-				l = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
+				l = MOV_get_long(input, (SSHORT) tail->fun_parameter->prm_desc.dsc_scale);
 				if (tail->fun_mechanism == FUN_value)
 				{
 					*arg_ptr++ = (UDF_ARG)(IPTR)l;
@@ -549,7 +504,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 			case dtype_int64:
 				{
 					SINT64* pi64;
-					const SINT64 i64 = MOV_get_int64(input, (SSHORT) tail->fun_desc.dsc_scale);
+					const SINT64 i64 = MOV_get_int64(input, (SSHORT) tail->fun_parameter->prm_desc.dsc_scale);
 
 					if (tail->fun_mechanism == FUN_value)
 					{
@@ -768,138 +723,6 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 }
 
 
-UserFunction* FUN_lookup_function(thread_db* tdbb, const QualifiedName& name)
-{
-/**************************************
- *
- *	F U N _ l o o k u p _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Lookup function by name.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	UserFunction* function = NULL;
-	if (dbb->dbb_functions.get(name, function))
-		return function;
-
-	fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
-
-	jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
-	jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
-
-	FOR(REQUEST_HANDLE request_fun)
-		X IN RDB$FUNCTIONS
-		WITH X.RDB$FUNCTION_NAME EQ name.identifier.c_str() AND
-			 X.RDB$PACKAGE_NAME EQUIV NULLIF(name.qualifier.c_str(), '')
-
-		if (!REQUEST(irq_l_functions))
-			REQUEST(irq_l_functions) = request_fun;
-
-		USHORT count = 0;
-		USHORT args = 0;
-
-		MOVE_CLEAR(temp, (SLONG) sizeof(temp));
-		ULONG length = 0;
-
-		FOR(REQUEST_HANDLE request_arg)
-			Y IN RDB$FUNCTION_ARGUMENTS
-			WITH Y.RDB$FUNCTION_NAME EQ X.RDB$FUNCTION_NAME AND
-				 Y.RDB$PACKAGE_NAME EQUIV NULLIF(name.qualifier.c_str(), '')
-			SORTED BY Y.RDB$ARGUMENT_POSITION
-
-			if (!REQUEST(irq_l_args))
-				REQUEST(irq_l_args) = request_arg;
-
-			fun_repeat* tail = temp + Y.RDB$ARGUMENT_POSITION;
-			tail->fun_mechanism = (FUN_T) Y.RDB$MECHANISM;
-			count = MAX(count, Y.RDB$ARGUMENT_POSITION);
-			DSC_make_descriptor(&tail->fun_desc, Y.RDB$FIELD_TYPE,
-								Y.RDB$FIELD_SCALE, Y.RDB$FIELD_LENGTH,
-								Y.RDB$FIELD_SUB_TYPE, Y.RDB$CHARACTER_SET_ID,
-								0);
-
-			if (tail->fun_desc.dsc_dtype == dtype_cstring)
-				tail->fun_desc.dsc_length++;
-
-			if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
-				++args;
-
-			USHORT l = FB_ALIGN(tail->fun_desc.dsc_length, FB_DOUBLE_ALIGN);
-
-			if (tail->fun_desc.dsc_dtype == dtype_blob)
-				l = sizeof(udf_blob);
-
-			length += l;
-        END_FOR;
-
-		function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1u) UserFunction(*dbb->dbb_permanent);
-		function->fun_name = QualifiedName(X.RDB$FUNCTION_NAME,
-			(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME));
-		function->fun_count = count;
-		function->fun_args = args;
-		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
-		function->fun_type = X.RDB$FUNCTION_TYPE;
-		function->fun_temp_length = length;
-		memcpy(function->fun_rpt, temp, (count + 1u) * sizeof(fun_repeat));
-
-		// Prepare the exception message to be used in case this function ever
-		// causes an exception.  This is done at this time to save us from preparing
-		// (thus allocating) this message every time the function is called.
-		function->fun_exception_message.printf(EXCEPTION_MESSAGE, name.toString().c_str(),
-			X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
-
- 		if (!X.RDB$ENGINE_NAME.NULL)
- 		{
-			HalfStaticArray<char, 512> body;
-
-			if (!X.RDB$FUNCTION_SOURCE.NULL)
-			{
-				blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$FUNCTION_SOURCE);
-				ULONG len = BLB_get_data(tdbb, blob,
-					(UCHAR*) body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
-				body.begin()[MIN(blob->blb_length, len)] = '\0';
-			}
-			else
-				body.getBuffer(1)[0] = '\0';
-
- 			function->fun_entrypoint = NULL;
- 			function->fun_external = dbb->dbb_extManager.makeFunction(
- 				tdbb, function, X.RDB$ENGINE_NAME,
- 				(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), body.begin());
- 		}
- 		else
-  		{
- 			function->fun_external = NULL;
-  			function->fun_entrypoint =
- 				Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
-
- 			// Could not find a function with given MODULE, ENTRYPOINT.
- 			// Try the list of internally implemented functions.
- 			if (!function->fun_entrypoint)
- 			{
- 				function->fun_entrypoint =
- 					BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
- 			}
-		}
-
-		dbb->dbb_functions.put(name, function);
-
-	END_FOR;
-
-	if (!REQUEST(irq_l_functions))
-		REQUEST(irq_l_functions) = request_fun;
-	if (!REQUEST(irq_l_args))
-		REQUEST(irq_l_args) = request_arg;
-
-	return function;
-}
-
-
 static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
 {
 /**************************************
@@ -1005,7 +828,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 	// Convert array, if necessary
 
-	dsc to = arg->fun_desc;
+	dsc to = arg->fun_parameter->prm_desc;
 	dsc from = array_desc->iad_rpt[0].iad_desc;
 
 	if (to.dsc_dtype != from.dsc_dtype ||
@@ -1039,7 +862,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 	// Fill out the scalar array descriptor
 
 	stack.push(data);
-	scalar_desc->sad_desc = arg->fun_desc;
+	scalar_desc->sad_desc = arg->fun_parameter->prm_desc;
 	scalar_desc->sad_desc.dsc_address = data;
 	scalar_desc->sad_dimensions = dimensions;
 
@@ -1057,7 +880,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 
 static void invoke(thread_db* tdbb,
-				   UserFunction* function,
+				   Function* function,
 				   fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,

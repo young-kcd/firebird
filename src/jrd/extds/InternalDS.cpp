@@ -39,6 +39,7 @@
 #include "../mov_proto.h"
 #include "../mov_proto.h"
 #include "../PreparedStatement.h"
+#include "../Function.h"
 
 #include "InternalDS.h"
 
@@ -362,6 +363,14 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 					tran->tra_caller_name = CallerName(obj_procedure, request->req_procedure->prc_name.identifier);
 				else
 					tran->tra_caller_name = CallerName(obj_package_header, request->req_procedure->prc_name.qualifier);
+			}
+			else if (request && request->req_function &&
+				request->req_function->fun_name.identifier.hasData())
+			{
+				if (request->req_function->fun_name.qualifier.isEmpty())
+					tran->tra_caller_name = CallerName(obj_udf, request->req_function->fun_name.identifier);
+				else
+					tran->tra_caller_name = CallerName(obj_package_header, request->req_function->fun_name.qualifier);
 			}
 			else
 				tran->tra_caller_name = CallerName();

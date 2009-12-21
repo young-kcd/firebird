@@ -2650,8 +2650,6 @@ static bool create_procedure(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 			if (!procedure) {
 				return false;
 			}
-			// Never used.
-			procedure->prc_flags |= PRC_create;
 		}
 		break;
 	}

@@ -499,14 +499,16 @@ struct Resource
 		rsc_relation,
 		rsc_procedure,
 		rsc_index,
-		rsc_collation
+		rsc_collation,
+		rsc_function
 	};
 
 	enum rsc_s	rsc_type;
-	USHORT		rsc_id;		// Id of the resource
-	jrd_rel*	rsc_rel;	// Relation block
-	jrd_prc*	rsc_prc;	// Procedure block
-	Collation*	rsc_coll;	// Collation block
+	USHORT		rsc_id;			// Id of the resource
+	jrd_rel*	rsc_rel;		// Relation block
+	jrd_prc*	rsc_prc;		// Procedure block
+	Collation*	rsc_coll;		// Collation block
+	Function*	rsc_fun;		// Function block
 
 	static bool greaterThan(const Resource& i1, const Resource& i2)
 	{
@@ -586,23 +588,29 @@ struct ExternalAccess
 	enum exa_act
 	{
 		exa_procedure,
+		exa_function,
 		exa_insert,
 		exa_update,
 		exa_delete
 	};
 	exa_act exa_action;
 	USHORT exa_prc_id;
+	USHORT exa_fun_id;
 	USHORT exa_rel_id;
 	USHORT exa_view_id;
 
 	// Procedure
-	ExternalAccess(USHORT prc_id) :
-		exa_action(exa_procedure), exa_prc_id(prc_id), exa_rel_id(0), exa_view_id(0)
+	ExternalAccess(exa_act action, USHORT id) :
+		exa_action(action),
+		exa_prc_id(action == exa_procedure ? id : 0),
+		exa_fun_id(action == exa_function ? id : 0),
+		exa_rel_id(0), exa_view_id(0)
 	{ }
 
 	// Trigger
 	ExternalAccess(exa_act action, USHORT rel_id, USHORT view_id) :
-		exa_action(action), exa_prc_id(0), exa_rel_id(rel_id), exa_view_id(view_id)
+		exa_action(action), exa_prc_id(0), exa_fun_id(0),
+		exa_rel_id(rel_id), exa_view_id(view_id)
 	{ }
 
 	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2)
@@ -611,6 +619,8 @@ struct ExternalAccess
 			return i1.exa_action > i2.exa_action;
 		if (i1.exa_prc_id != i2.exa_prc_id)
 			return i1.exa_prc_id > i2.exa_prc_id;
+		if (i1.exa_fun_id != i2.exa_fun_id)
+			return i1.exa_fun_id > i2.exa_fun_id;
 		if (i1.exa_rel_id != i2.exa_rel_id)
 			return i1.exa_rel_id > i2.exa_rel_id;
 		if (i1.exa_view_id != i2.exa_view_id)

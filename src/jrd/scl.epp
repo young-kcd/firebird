@@ -73,9 +73,9 @@ static bool check_number(const UCHAR*, USHORT);
 static bool check_user_group(thread_db* tdbb, const UCHAR*, USHORT);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
 static SecurityClass::flags_t compute_access(thread_db* tdbb, const SecurityClass*,
-	const jrd_rel*,	const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&);
+	const jrd_rel*,	SLONG, const Firebird::MetaName&);
 static SecurityClass::flags_t walk_acl(thread_db* tdbb, const Acl&, const jrd_rel*,
-	const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&);
+	SLONG, const Firebird::MetaName&);
 
 static inline void check_and_move(UCHAR from, Acl& to)
 {
@@ -109,9 +109,8 @@ static const P_NAMES p_names[] =
 void SCL_check_access(thread_db* tdbb,
 					  const SecurityClass* s_class,
 					  SLONG view_id,
-					  const Firebird::MetaName& trg_name,
-					  const Firebird::MetaName& prc_name,
-					  const Firebird::MetaName& pkg_name,
+					  SLONG obj_type,
+					  const Firebird::MetaName& obj_name,
 					  SecurityClass::flags_t mask,
 					  const TEXT* type,
 					  const char* name)
@@ -170,8 +169,8 @@ void SCL_check_access(thread_db* tdbb,
 		if (view_id) {
 			view = MET_lookup_relation_id(tdbb, view_id, false);
 		}
-		if ((view || trg_name.hasData() || prc_name.hasData() || pkg_name.hasData()) &&
-			 (compute_access(tdbb, s_class, view, trg_name, prc_name, pkg_name) & mask))
+		if ((view || obj_name.hasData()) &&
+			 (compute_access(tdbb, s_class, view, obj_type, obj_name) & mask))
 		{
 			return;
 		}
@@ -204,9 +203,8 @@ void SCL_check_access(thread_db* tdbb,
 void SCL_check_access(thread_db* tdbb,
 					  const SecurityClass* s_class,
 					  SLONG view_id,
-					  const Firebird::MetaName& trg_name,
-					  const Firebird::MetaName& prc_name,
-					  const Firebird::MetaName& pkg_name,
+					  SLONG obj_type,
+					  const Firebird::MetaName& obj_name,
 					  SecurityClass::flags_t mask,
 					  const TEXT* type,
 					  const Firebird::MetaName& name,
@@ -234,8 +232,8 @@ void SCL_check_access(thread_db* tdbb,
 		fullFieldName += name.c_str();
 	}
 
-	SCL_check_access(tdbb, s_class, view_id, trg_name, prc_name, pkg_name, mask, type,
-		fullFieldName.c_str());
+	SCL_check_access(tdbb, s_class, view_id, obj_type, obj_name, mask, type,
+					 fullFieldName.c_str());
 }
 
 
@@ -322,7 +320,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		return;
 	}
 
-	SCL_check_access(tdbb, s_class, 0, NULL, NULL, NULL, mask, object_table, reln_name);
+	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, object_table, reln_name);
 
 	request = NULL;
 
@@ -352,12 +350,12 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 	        if (!RF.RDB$SECURITY_CLASS.NULL)
 	        {
 				s_class = SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS);
-				SCL_check_access(tdbb, s_class, 0, NULL, NULL, NULL, mask, object_column, fullFieldName);
+				SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, object_column, fullFieldName);
 			}
 			else
 			{
-				SCL_check_access(tdbb, default_s_class, 0, NULL, NULL, NULL, mask, object_column,
-					fullFieldName);
+				SCL_check_access(tdbb, default_s_class, 0, 0, NULL, mask, object_column,
+								 fullFieldName);
 			}
 
 		END_FOR;
@@ -414,7 +412,7 @@ void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 	if (!REQUEST(irq_pkg_security))
 		REQUEST(irq_pkg_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, NULL, NULL, name, mask, object_package, name);
+	SCL_check_access(tdbb, s_class, 0, id_package, name, mask, object_package, name);
 }
 
 
@@ -459,7 +457,52 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, NULL, name, NULL, mask, object_procedure, name);
+	SCL_check_access(tdbb, s_class, 0, id_procedure, name, mask, object_procedure, name);
+}
+
+
+void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t mask)
+{
+/**************************************
+ *
+ *	S C L _ c h e c k _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Given a function name, check for a set of privileges.  The
+ *	function in question may or may not have been created, let alone
+ *	scanned.  This is used exclusively for meta-data operations.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	// Get the name in CSTRING format, ending on NULL or SPACE
+	fb_assert(dsc_name->dsc_dtype == dtype_text);
+	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
+							dsc_name->dsc_length);
+
+	Database* dbb = tdbb->getDatabase();
+	const SecurityClass* s_class = NULL;
+
+	jrd_req* request = CMP_find_request(tdbb, irq_f_security, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		SFUN IN RDB$FUNCTIONS
+		WITH SFUN.RDB$FUNCTION_NAME EQ name.c_str() AND
+			 SFUN.RDB$PACKAGE_NAME MISSING
+
+        if (!REQUEST(irq_f_security))
+			REQUEST(irq_f_security) = request;
+
+		if (!SFUN.RDB$SECURITY_CLASS.NULL)
+			s_class = SCL_get_class(tdbb, SFUN.RDB$SECURITY_CLASS);
+	END_FOR;
+
+	if (!REQUEST(irq_f_security))
+		REQUEST(irq_f_security) = request;
+
+	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, object_procedure, name);
 }
 
 
@@ -503,7 +546,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, NULL, NULL, NULL, mask, object_table, name);
+	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, object_table, name);
 }
 
 
@@ -551,7 +594,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 	MemoryPool& pool = *attachment->att_pool;
 
 	SecurityClass* const s_class = FB_NEW(pool) SecurityClass(pool, string);
-	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL, NULL);
+	s_class->scl_flags = compute_access(tdbb, s_class, NULL, 0, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
@@ -844,7 +887,7 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 		return NULL;
 	}
 
-	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL, NULL);
+	s_class->scl_flags = compute_access(tdbb, s_class, NULL, 0, NULL);
 
 	if (s_class->scl_flags & SCL_exists) {
 		return s_class;
@@ -1034,9 +1077,8 @@ static bool check_string(const UCHAR* acl, const Firebird::MetaName& string)
 static SecurityClass::flags_t compute_access(thread_db* tdbb,
 											 const SecurityClass* s_class,
 											 const jrd_rel* view,
-											 const Firebird::MetaName& trg_name,
-											 const Firebird::MetaName& prc_name,
-											 const Firebird::MetaName& pkg_name)
+											 SLONG obj_type,
+											 const Firebird::MetaName& obj_name)
 {
 /**************************************
  *
@@ -1090,7 +1132,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 
 		if (acl.getCount() > 0)
 		{
-			privileges |= walk_acl(tdbb, acl, view, trg_name, prc_name, pkg_name);
+			privileges |= walk_acl(tdbb, acl, view, obj_type, obj_name);
 		}
 	END_FOR;
 
@@ -1104,9 +1146,8 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 									   const Acl& acl,
 									   const jrd_rel* view,
-									   const Firebird::MetaName& trg_name,
-									   const Firebird::MetaName& prc_name,
-									   const Firebird::MetaName& pkg_name)
+									   SLONG obj_type,
+									   const Firebird::MetaName& obj_name)
 {
 /**************************************
  *
@@ -1228,17 +1269,10 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					break;
 
 				case id_package:
-					if (check_string(a, pkg_name))
-						hit = false;
-					break;
-
 				case id_procedure:
-					if (check_string(a, prc_name))
-						hit = false;
-					break;
-
 				case id_trigger:
-					if (check_string(a, trg_name))
+				case id_function:
+					if (c == obj_type && check_string(a, obj_name))
 					{
 						hit = false;
 					}

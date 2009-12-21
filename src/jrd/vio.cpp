@@ -1284,7 +1284,19 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_funs:
-			EVL_field (0, rpb->rpb_record, f_fun_name, &desc);
+			EVL_field(0, rpb->rpb_record, f_fun_name, &desc);
+
+			if (EVL_field(0, rpb->rpb_record, f_fun_pkg_name, &desc2))
+			{
+				MOV_get_metadata_str(&desc2, package_name, sizeof(package_name));
+				SCL_check_package(tdbb, &desc2, SCL_delete);
+			}
+			else
+			{
+				package_name[0] = '\0';
+				SCL_check_function(tdbb, &desc, SCL_delete);
+			}
+
 			DFW_post_work(transaction, dfw_delete_udf, &desc, 0);
 			break;
 
@@ -1356,6 +1368,20 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			}
 			EVL_field(0, rpb->rpb_record, f_rfr_sname, &desc2);
 			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
+			break;
+
+		case rel_args:
+			if (EVL_field(0, rpb->rpb_record, f_arg_pkg_name, &desc2))
+			{
+				MOV_get_metadata_str(&desc2, package_name, sizeof(package_name));
+				SCL_check_package(tdbb, &desc2, SCL_control);
+			}
+			else
+			{
+				EVL_field(0, rpb->rpb_record, f_arg_fun_name, &desc);
+				package_name[0] = '\0';
+				SCL_check_function(tdbb, &desc, SCL_control);
+			}
 			break;
 
 		case rel_prc_prms:
@@ -2243,6 +2269,30 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 				}
 
 				check_class(tdbb, transaction, org_rpb, new_rpb, f_prc_class);
+
+				EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
+				const USHORT id = MOV_get_long(&desc2, 0);
+				DFW_post_work(transaction, dfw_modify_procedure, &desc1, id, package_name);
+			} // scope
+			break;
+
+		case rel_funs:
+			EVL_field(0, org_rpb->rpb_record, f_fun_name, &desc1);
+
+			{ // scope
+				SqlIdentifier package_name;
+				if (EVL_field(0, org_rpb->rpb_record, f_fun_pkg_name, &desc2))
+				{
+					MOV_get_metadata_str(&desc2, package_name, sizeof(package_name));
+					SCL_check_package(tdbb, &desc2, SCL_protect);
+				}
+				else
+				{
+					package_name[0] = '\0';
+					SCL_check_function(tdbb, &desc1, SCL_protect);
+				}
+
+				check_class(tdbb, transaction, org_rpb, new_rpb, f_fun_class);
 
 				EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
 				const USHORT id = MOV_get_long(&desc2, 0);
@@ -3373,7 +3423,7 @@ static void check_rel_field_class(thread_db* tdbb,
 		// he may have access to relation as whole.
 		try
 		{
-			SCL_check_access(tdbb, s_class, 0, NULL, NULL, NULL, flags, "", "");
+			SCL_check_access(tdbb, s_class, 0, 0, NULL, flags, "", "");
 		}
 		catch (const Firebird::Exception&)
 		{
@@ -3415,7 +3465,7 @@ static void check_class(thread_db* tdbb,
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	SCL_check_access(tdbb, attachment->att_security_class, 0, NULL, NULL, NULL, SCL_protect,
+	SCL_check_access(tdbb, attachment->att_security_class, 0, 0, NULL, SCL_protect,
 					 "DATABASE", NULL);
 	DFW_post_work(transaction, dfw_compute_security, &desc2, 0);
 }
@@ -3438,7 +3488,7 @@ static void check_control(thread_db* tdbb)
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	SCL_check_access(tdbb, attachment->att_security_class, 0, NULL, NULL, NULL, SCL_control,
+	SCL_check_access(tdbb, attachment->att_security_class, 0, 0, NULL, SCL_control,
 					 "DATABASE", NULL);
 }
 

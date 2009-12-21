@@ -39,7 +39,6 @@ public:
 };
 
 
-void FUN_evaluate(Jrd::thread_db*, Jrd::UserFunction*, Jrd::jrd_nod*, Jrd::impure_value*);
-Jrd::UserFunction* FUN_lookup_function(Jrd::thread_db*, const Firebird::QualifiedName&);
+void FUN_evaluate(Jrd::thread_db*, Jrd::Function*, Jrd::jrd_nod*, Jrd::impure_value*);
 
 #endif // JRD_FUN_PROTO_H

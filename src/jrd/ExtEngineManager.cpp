@@ -44,6 +44,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/Function.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
@@ -375,7 +376,7 @@ static InitInstance<GenericMap<Pair<Full<MetaName, string> > > > enginesModules;
 
 ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtManager,
 		ExternalEngine* aEngine, Firebird::ExternalFunction* aFunction,
-		const UserFunction* aUdf)
+		const Jrd::Function* aUdf)
 	: extManager(aExtManager),
 	  engine(aEngine),
 	  function(aFunction),
@@ -411,7 +412,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 
 		for (int i = 0; i < args->nod_count; ++i)
 		{
-			impureArgsPtr->vlu_desc = udf->fun_rpt[i + 1].fun_desc;
+			impureArgsPtr->vlu_desc = udf->fun_args[i + 1].fun_parameter->prm_desc;
 
 			if (impureArgsPtr->vlu_desc.isText())
 			{
@@ -747,7 +748,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* /*attachment
 }
 
 
-ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, const UserFunction* udf,
+ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, const Jrd::Function* udf,
 	const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 	const Firebird::string& body)
 {

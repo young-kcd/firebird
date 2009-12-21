@@ -115,6 +115,7 @@
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../common/classes/Aligner.h"
+#include "../jrd/Function.h"
 
 const int TEMP_LENGTH	= 128;
 
@@ -930,9 +931,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		}
 
 	case nod_function:
-		FUN_evaluate(tdbb, reinterpret_cast<UserFunction*>(node->nod_arg[e_fun_function]),
-				     node->nod_arg[e_fun_args], impure);
-		return &impure->vlu_desc;
+		{
+			Function* const function = reinterpret_cast<Function*>(node->nod_arg[e_fun_function]);
+			return function->execute(tdbb, node->nod_arg[e_fun_args], impure);
+		}
 
 	case nod_sys_function:
 		{

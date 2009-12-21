@@ -429,7 +429,6 @@ public:
 	USHORT prc_inputs;
 	USHORT prc_defaults;
 	USHORT prc_outputs;
-	//jrd_nod*	prc_input_msg;				// It's set once by met.epp and never used.
 	jrd_nod*	prc_output_msg;
 	Format*		prc_input_fmt;
 	Format*		prc_output_fmt;
@@ -458,17 +457,14 @@ public:
 // prc_flags
 
 const USHORT PRC_scanned			= 1;	// Field expressions scanned
-const USHORT PRC_system				= 2;	// Set in met.epp, never tested.
-const USHORT PRC_obsolete			= 4;	// Procedure known gonzo
-const USHORT PRC_being_scanned		= 8;	// New procedure needs dependencies during scan
-//const USHORT PRC_blocking			= 16;	// Blocking someone from dropping procedure
-const USHORT PRC_create				= 32;	// Newly created. Set in met.epp, never tested or disabled.
-const USHORT PRC_being_altered		= 64;	// Procedure is getting altered
+const USHORT PRC_obsolete			= 2;	// Procedure known gonzo
+const USHORT PRC_being_scanned		= 4;	// New procedure needs dependencies during scan
+const USHORT PRC_being_altered		= 8;	// Procedure is getting altered
 									// This flag is used to make sure that MET_remove_procedure
 									// does not delete and remove procedure block from cache
 									// so dfw.epp:modify_procedure() can flip procedure body without
 									// invalidating procedure pointers from other parts of metadata cache
-const USHORT PRC_check_existence	= 128;	// Existence lock released
+const USHORT PRC_check_existence	= 16;	// Existence lock released
 
 const USHORT MAX_PROC_ALTER			= 64;	// No. of times an in-cache procedure can be altered
 

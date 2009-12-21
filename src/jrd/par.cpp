@@ -64,6 +64,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/BlrReader.h"
+#include "../jrd/Function.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -1463,9 +1464,8 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 		return node;
 	}
 
-	// Isn't it strange that gbak presence means nothing to this function now?
-	UserFunction* function =
-		FUN_lookup_function(tdbb, name); //, !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
+	Function* const function = Function::lookup(tdbb, name, false);
+
 	if (!function)
 	{
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped)
@@ -1481,7 +1481,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 		error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
-	if (!function->fun_entrypoint && !function->fun_external)
+	if (!function->fun_entrypoint && !function->fun_external && !function->fun_request)
 	{
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
@@ -1503,15 +1503,15 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
 	// Check to see if the argument count matches
-	if (node->nod_arg[e_fun_args]->nod_count != function->fun_args)
+	if (node->nod_arg[e_fun_args]->nod_count != function->fun_inputs)
 	{
 		error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name.toString()));
 	}
 
-	// CVC: I will track ufds only if a proc is not being dropped.
+    // CVC: I will track ufds only if a proc is not being dropped.
     if (csb->csb_g_flags & csb_get_dependencies)
     {
-        jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+        jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
         dep_node->nod_type = nod_dependency;
         dep_node->nod_arg [e_dep_object] = (jrd_nod*) function;
         dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_udf;

@@ -110,6 +110,7 @@
 #include "../jrd/ValuesImpl.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
+#include "../jrd/Function.h"
 
 
 using namespace Jrd;
@@ -751,7 +752,9 @@ void EXE_receive(thread_db*		tdbb,
 	const bool external = request->req_procedure && request->req_procedure->prc_external;
 
 	if (external)
+	{
 		execute_looper(tdbb, request, transaction, jrd_req::req_sync);
+	}
 	else
 	{
 		if (request->req_message->nod_type == nod_stall)
@@ -1820,6 +1823,11 @@ static void stuff_stack_trace(const jrd_req* request)
 		{
 			name = "At procedure '";
 			name += req->req_procedure->prc_name.toString().c_str();
+		}
+		else if (req->req_function)
+		{
+			name = "At function '";
+			name += req->req_function->fun_name.toString().c_str();
 		}
 
 		if (! name.isEmpty())

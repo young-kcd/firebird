@@ -74,6 +74,7 @@
 #include "../common/StatusArg.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
+#include "../jrd/Function.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -1148,6 +1149,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			break;
 		case Resource::rsc_collation:
 			rsc->rsc_coll->decUseCount(tdbb);
+			break;
+		case Resource::rsc_function:
+			rsc->rsc_fun->release(tdbb);
 			break;
 		default:
 			fb_assert(false);
