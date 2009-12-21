@@ -781,6 +781,7 @@ Data source : @4', NULL, NULL)
 ('view_name', 'check_dependencies', 'dfw.epp', NULL, 0, 671, NULL, 'VIEW @1', NULL, NULL);
 ('lock_dir_access', 'createLockDirectory', 'os_utils.cpp', NULL, 0, 672, NULL, 'Can not access lock files directory @1', NULL, NULL);
 ('invalid_fetch_option', NULL, 'Cursor.cpp', NULL, 0, 673, NULL, 'Fetch option @1 is invalid for a non-scrollable cursor', NULL, NULL);
+('bad_fun_BLR', 'loadMetadata', 'Function.epp', NULL, 0, 674, NULL, 'Error while parsing function @1''s BLR', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1806,6 +1807,7 @@ COMMIT WORK;
 ('dyn_funcsignat_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 265, NULL, 'Function @1 has a signature mismatch on package body @2', NULL, NULL);
 ('dyn_procsignat_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 266, NULL, 'Procedure @1 has a signature mismatch on package body @2', NULL, NULL);
 ('dyn_defvaldecl_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 267, NULL, 'Default values for parameters are allowed only in declaration of packaged procedure @1.@2', NULL, NULL);
+('dyn_dup_function', 'DYN_define_function', 'dyn_def.epp', NULL, 8, 268, NULL, 'Function @1 already exists', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
