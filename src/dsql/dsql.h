@@ -371,7 +371,7 @@ enum REQ_TYPE
 {
 	REQ_SELECT, REQ_SELECT_UPD, REQ_INSERT, REQ_DELETE, REQ_UPDATE,
 	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
-	REQ_COMMIT, REQ_ROLLBACK, REQ_CREATE_DB, REQ_DDL, REQ_EMBED_SELECT,
+	REQ_COMMIT, REQ_ROLLBACK, REQ_CREATE_DB, REQ_DDL,
 	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
 	REQ_COMMIT_RETAIN, REQ_ROLLBACK_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT,
 	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK
@@ -484,6 +484,7 @@ class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
 	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
+	static const unsigned FLAG_EMBEDDED			= 0x02;
 
 public:
 	explicit dsql_req(DsqlCompiledStatement* aStatement)
@@ -496,14 +497,14 @@ public:
 	}
 
 public:
+	MemoryPool& getPool()
+	{
+		return req_pool;
+	}
+
 	jrd_tra* getTransaction()
 	{
 		return req_transaction;
-	}
-
-	DsqlCompiledStatement* getStatement()
-	{
-		return statement;
 	}
 
 	const DsqlCompiledStatement* getStatement() const
@@ -511,9 +512,11 @@ public:
 		return statement;
 	}
 
-public:
+private:
 	MemoryPool&	req_pool;
-	DsqlCompiledStatement* statement;
+	const DsqlCompiledStatement* statement;
+
+public:
 	Firebird::Array<DsqlCompiledStatement*> cursors;	// Cursor update statements
 
 	dsql_dbb* req_dbb;			// DSQL attachment

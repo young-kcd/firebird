@@ -815,7 +815,6 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 		{
 		case REQ_SELECT:
 		case REQ_SELECT_UPD:
-		case REQ_EMBED_SELECT:
 			gen_select(scratch, node);
 			break;
 		case REQ_EXEC_BLOCK:

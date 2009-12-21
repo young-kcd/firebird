@@ -109,7 +109,6 @@ static inline bool reqTypeWithCursor(REQ_TYPE type)
 	case REQ_SELECT:
 	case REQ_SELECT_BLOCK:
 	case REQ_SELECT_UPD:
-	case REQ_EMBED_SELECT:
 	case REQ_GET_SEGMENT:
 	case REQ_PUT_SEGMENT:
 		return true;
@@ -222,21 +221,22 @@ void DSQL_execute(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
-	if (request->getStatement()->flags & DsqlCompiledStatement::FLAG_ORPHAN)
+	const DsqlCompiledStatement* statement = request->getStatement();
+
+	if (statement->flags & DsqlCompiledStatement::FLAG_ORPHAN)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
 	}
 
-	if ((SSHORT) in_msg_type == -1) {
-		request->getStatement()->type = REQ_EMBED_SELECT;
-	}
+	if ((SSHORT) in_msg_type == -1)
+		request->req_flags |= dsql_req::FLAG_EMBEDDED;
 
 	// Only allow NULL trans_handle if we're starting a transaction
 
-	if (!*tra_handle && request->getStatement()->type != REQ_START_TRANS)
+	if (!*tra_handle && statement->type != REQ_START_TRANS)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_bad_trans_handle));
@@ -245,7 +245,7 @@ void DSQL_execute(thread_db* tdbb,
 	// If the request is a SELECT or blob statement then this is an open.
 	// Make sure the cursor is not already open.
 
-	if (reqTypeWithCursor(request->getStatement()->type))
+	if (reqTypeWithCursor(statement->type))
 	{
 		if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
 		{
@@ -256,14 +256,12 @@ void DSQL_execute(thread_db* tdbb,
 
 	// A select with a non zero output length is a singleton select
 	bool singleton;
-	if (request->getStatement()->type == REQ_SELECT && out_msg_length != 0) {
+	if (statement->type == REQ_SELECT && out_msg_length != 0)
 		singleton = true;
-	}
-	else {
+	else
 		singleton = false;
-	}
 
-	if (request->getStatement()->type != REQ_EMBED_SELECT)
+	if (!(request->req_flags & dsql_req::FLAG_EMBEDDED))
 	{
 		execute_request(tdbb, request, tra_handle,
 						in_blr_length, in_blr, in_msg_length, in_msg,
@@ -271,9 +269,7 @@ void DSQL_execute(thread_db* tdbb,
 						singleton);
 	}
 	else
-	{
 		request->req_transaction = *tra_handle;
-	}
 
 	// If the output message length is zero on a REQ_SELECT then we must
 	// be doing an OPEN cursor operation.
@@ -281,7 +277,7 @@ void DSQL_execute(thread_db* tdbb,
 	// a singleton SELECT.  In that event, we don't add the cursor
 	// to the list of open cursors (it's not really open).
 
-	if (reqTypeWithCursor(request->getStatement()->type) && !singleton)
+	if (reqTypeWithCursor(statement->type) && !singleton)
 	{
 		request->req_flags |= dsql_req::FLAG_OPENED_CURSOR;
 		TRA_link_cursor(request->req_transaction, request);
@@ -354,7 +350,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 	// if the cursor isn't open, we've got a problem
 	if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
@@ -446,7 +442,7 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 	if (option & DSQL_drop)
 	{
@@ -493,7 +489,7 @@ void DSQL_insert(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 	if (request->getStatement()->flags & DsqlCompiledStatement::FLAG_ORPHAN)
 	{
@@ -659,20 +655,20 @@ void DSQL_prepare(thread_db* tdbb,
 		// Now that we know that the new request exists, zap the old one.
 
 		{
-			Jrd::ContextPoolHolder context(tdbb, &old_request->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, &old_request->getPool());
 			release_request(tdbb, old_request, true);
 		}
 
 		*req_handle = request;
 
-		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+		Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 		sql_info(tdbb, request, item_length, items, buffer_length, buffer);
 	}
 	catch (const Firebird::Exception&)
 	{
 		if (request)
 		{
-			Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 			release_request(tdbb, request, true);
 		}
 		throw;
@@ -696,7 +692,7 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 	const size_t MAX_CURSOR_LENGTH = 132 - 1;
 	Firebird::string cursor = input_cursor;
@@ -787,7 +783,7 @@ void DSQL_sql_info(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 	sql_info(tdbb, request, item_length, items, info_length, info);
 }
@@ -1070,7 +1066,7 @@ static void execute_immediate(thread_db* tdbb,
 		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version,
 			isInternalRequest);
 
-		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+		Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 		execute_request(tdbb, request, tra_handle,
 						in_blr_length, in_blr, in_msg_length, in_msg,
@@ -1083,7 +1079,7 @@ static void execute_immediate(thread_db* tdbb,
 	{
 		if (request)
 		{
-			Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 			release_request(tdbb, request, true);
 		}
 		throw;
@@ -1172,7 +1168,6 @@ static void execute_request(thread_db* tdbb,
 
 	case REQ_SELECT:
 	case REQ_SELECT_UPD:
-	case REQ_EMBED_SELECT:
 	case REQ_INSERT:
 	case REQ_UPDATE:
 	case REQ_UPDATE_CURSOR:
@@ -2189,7 +2184,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				  Arg::Gds(isc_dsql_sqlda_err));
 	}
 
-	DsqlCompiledStatement* statement = request->getStatement();
+	const DsqlCompiledStatement* statement = request->getStatement();
 	dsql_par* parameter;
 
 	dsql_par* dbkey;
@@ -2877,9 +2872,9 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	// For requests that are linked to a parent, unlink it
 
-	DsqlCompiledStatement* statement = request->getStatement();
+	const DsqlCompiledStatement* statement = request->getStatement();
 
-	release_statement(statement);
+	release_statement(const_cast<DsqlCompiledStatement*>(statement));
 
 	// If the request had an open cursor, close it
 
@@ -2920,7 +2915,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	// Release the entire request if explicitly asked for
 
 	if (drop)
-		request->req_dbb->deletePool(&request->req_pool);
+		request->req_dbb->deletePool(&request->getPool());
 }
 
 
@@ -2968,7 +2963,7 @@ static void sql_info(thread_db* tdbb,
 
 	// CVC: Is it the idea that this pointer remains with its previous value
 	// in the loop or should it be made NULL in each iteration?
-	dsql_msg** message = NULL;
+	dsql_msg* const* message = NULL;
 	USHORT first_index = 0;
 
 	while (items < end_items && *items != isc_info_end)
@@ -2980,7 +2975,8 @@ static void sql_info(thread_db* tdbb,
 		{
 		case isc_info_sql_select:
 		case isc_info_sql_bind:
-			message = (item == isc_info_sql_select) ? &request->getStatement()->receiveMsg : &request->getStatement()->sendMsg;
+			message = (item == isc_info_sql_select) ?
+				&request->getStatement()->receiveMsg : &request->getStatement()->sendMsg;
 			if (info + 1 >= end_info)
 			{
 				*info = isc_info_truncated;
@@ -2992,7 +2988,6 @@ static void sql_info(thread_db* tdbb,
 			switch (request->getStatement()->type)
 			{
 			case REQ_SELECT:
-			case REQ_EMBED_SELECT:
 				number = isc_info_sql_stmt_select;
 				break;
 			case REQ_SELECT_UPD:

@@ -409,7 +409,6 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	{
 	case REQ_SELECT:
 	case REQ_SELECT_UPD:
-	case REQ_EMBED_SELECT:
 	case REQ_SELECT_BLOCK:
 		m_stmt_selectable = true;
 		break;
