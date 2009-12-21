@@ -941,12 +941,6 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 		}
 	}
 
-	// Note: The following two requests differ in the fields which are
-	// new since ODS7 (DBB_v3 flag).  One of the two requests
-	// here will be cached in dbb_internal[ird_func_return],
-	// the one that is appropriate for the database we are
-	// working against.
-
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_func_return, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
@@ -958,67 +952,148 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 		if (!DSQL_REQUEST(irq_func_return))
 			DSQL_REQUEST(irq_func_return) = handle2;
 
-		if (X.RDB$ARGUMENT_POSITION == return_arg)
+		if (!X.RDB$FIELD_SOURCE.NULL)
 		{
-			userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-			userFunc->udf_scale = X.RDB$FIELD_SCALE;
+			jrd_req* handle3 = CMP_find_request(tdbb, irq_func_ret_fld, IRQ_REQUESTS);
 
-			if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-				userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-			}
-			else {
-				userFunc->udf_sub_type = 0;
-			}
-			// CVC: We are overcoming a bug in ddl.c:put_field()
-			// when any field is defined: the length is not given for blobs.
-			if (X.RDB$FIELD_TYPE == blr_blob)
-				userFunc->udf_length = sizeof(ISC_QUAD);
-			else
-				userFunc->udf_length = X.RDB$FIELD_LENGTH;
+			FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE transaction)
+				F IN RDB$FIELDS WITH
+				F.RDB$FIELD_NAME EQ X.RDB$FIELD_SOURCE
 
-			if (!X.RDB$CHARACTER_SET_ID.NULL) {
-				userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
-			}
+				if (!DSQL_REQUEST(irq_func_ret_fld))
+					DSQL_REQUEST(irq_func_ret_fld) = handle3;
+
+				if (X.RDB$ARGUMENT_POSITION == return_arg)
+				{
+					userFunc->udf_dtype = (F.RDB$FIELD_TYPE != blr_blob) ?
+						gds_cvt_blr_dtype[F.RDB$FIELD_TYPE] : dtype_blob;
+					userFunc->udf_scale = F.RDB$FIELD_SCALE;
+
+					if (!F.RDB$FIELD_SUB_TYPE.NULL) {
+						userFunc->udf_sub_type = F.RDB$FIELD_SUB_TYPE;
+					}
+					else {
+						userFunc->udf_sub_type = 0;
+					}
+					// CVC: We are overcoming a bug in ddl.c:put_field()
+					// when any field is defined: the length is not given for blobs.
+					if (F.RDB$FIELD_TYPE == blr_blob)
+						userFunc->udf_length = sizeof(ISC_QUAD);
+					else
+						userFunc->udf_length = F.RDB$FIELD_LENGTH;
+
+					if (!F.RDB$CHARACTER_SET_ID.NULL) {
+						userFunc->udf_character_set_id = F.RDB$CHARACTER_SET_ID;
+					}
+				}
+				else
+				{
+					DSC d;
+					d.dsc_dtype = (F.RDB$FIELD_TYPE != blr_blob) ?
+						gds_cvt_blr_dtype[F.RDB$FIELD_TYPE] : dtype_blob;
+					// dimitr: adjust the UDF arguments for CSTRING
+					if (d.dsc_dtype == dtype_cstring) {
+						d.dsc_dtype = dtype_text;
+					}
+					d.dsc_scale = F.RDB$FIELD_SCALE;
+					if (!F.RDB$FIELD_SUB_TYPE.NULL) {
+						d.dsc_sub_type = F.RDB$FIELD_SUB_TYPE;
+					}
+					else {
+						d.dsc_sub_type = 0;
+					}
+					d.dsc_length = F.RDB$FIELD_LENGTH;
+					if (d.dsc_dtype == dtype_varying) {
+						d.dsc_length += sizeof(USHORT);
+					}
+					d.dsc_address = NULL;
+
+					if (!F.RDB$CHARACTER_SET_ID.NULL)
+					{
+						if (d.dsc_dtype != dtype_blob) {
+							d.dsc_ttype() = F.RDB$CHARACTER_SET_ID;
+						}
+						else {
+							d.dsc_scale = F.RDB$CHARACTER_SET_ID;
+						}
+					}
+
+					if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
+					{
+						d.dsc_flags = DSC_nullable;
+					}
+
+					userFunc->udf_arguments.add(d);
+				}
+			END_FOR
+
+			if (!DSQL_REQUEST(irq_func_ret_fld))
+				DSQL_REQUEST(irq_func_ret_fld) = handle3;
 		}
 		else
 		{
-			DSC d;
-			d.dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-			// dimitr: adjust the UDF arguments for CSTRING
-			if (d.dsc_dtype == dtype_cstring) {
-				d.dsc_dtype = dtype_text;
-			}
-			d.dsc_scale = X.RDB$FIELD_SCALE;
-			if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-				d.dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
-			}
-			else {
-				d.dsc_sub_type = 0;
-			}
-			d.dsc_length = X.RDB$FIELD_LENGTH;
-			if (d.dsc_dtype == dtype_varying) {
-				d.dsc_length += sizeof(USHORT);
-			}
-			d.dsc_address = NULL;
-
-			if (!X.RDB$CHARACTER_SET_ID.NULL)
+			if (X.RDB$ARGUMENT_POSITION == return_arg)
 			{
-				if (d.dsc_dtype != dtype_blob) {
-					d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
+				userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+					gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+				userFunc->udf_scale = X.RDB$FIELD_SCALE;
+
+				if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+					userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
 				}
 				else {
-					d.dsc_scale = X.RDB$CHARACTER_SET_ID;
+					userFunc->udf_sub_type = 0;
+				}
+				// CVC: We are overcoming a bug in ddl.c:put_field()
+				// when any field is defined: the length is not given for blobs.
+				if (X.RDB$FIELD_TYPE == blr_blob)
+					userFunc->udf_length = sizeof(ISC_QUAD);
+				else
+					userFunc->udf_length = X.RDB$FIELD_LENGTH;
+
+				if (!X.RDB$CHARACTER_SET_ID.NULL) {
+					userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
 				}
 			}
-
-			if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
+			else
 			{
-				d.dsc_flags = DSC_nullable;
-			}
+				DSC d;
+				d.dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+					gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+				// dimitr: adjust the UDF arguments for CSTRING
+				if (d.dsc_dtype == dtype_cstring) {
+					d.dsc_dtype = dtype_text;
+				}
+				d.dsc_scale = X.RDB$FIELD_SCALE;
+				if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+					d.dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
+				}
+				else {
+					d.dsc_sub_type = 0;
+				}
+				d.dsc_length = X.RDB$FIELD_LENGTH;
+				if (d.dsc_dtype == dtype_varying) {
+					d.dsc_length += sizeof(USHORT);
+				}
+				d.dsc_address = NULL;
 
-			userFunc->udf_arguments.add(d);
+				if (!X.RDB$CHARACTER_SET_ID.NULL)
+				{
+					if (d.dsc_dtype != dtype_blob) {
+						d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
+					}
+					else {
+						d.dsc_scale = X.RDB$CHARACTER_SET_ID;
+					}
+				}
+
+				if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
+				{
+					d.dsc_flags = DSC_nullable;
+				}
+
+				userFunc->udf_arguments.add(d);
+			}
 		}
 
 	END_FOR
