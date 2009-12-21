@@ -81,7 +81,7 @@ static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_relation(DsqlCompilerScratch*, dsql_ctx*);
 static void gen_rse(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_select(dsql_req*, DsqlCompilerScratch*, dsql_nod*);
+static void gen_select(DsqlCompilerScratch*, dsql_nod*);
 static void gen_simple_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_sort(DsqlCompilerScratch*, dsql_nod*);
 static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
@@ -816,7 +816,7 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 		case REQ_SELECT:
 		case REQ_SELECT_UPD:
 		case REQ_EMBED_SELECT:
-			gen_select(request, scratch, node);
+			gen_select(scratch, node);
 			break;
 		case REQ_EXEC_BLOCK:
 		case REQ_SELECT_BLOCK:
@@ -2493,26 +2493,28 @@ static void gen_searched_case( DsqlCompilerScratch* dsqlScratch, const dsql_nod*
     @param rse
 
  **/
-static void gen_select(dsql_req* request, DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
+static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 {
 	dsql_ctx* context;
 
 	fb_assert(rse->nod_type == nod_rse);
+
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	// Set up parameter for things in the select list
 	const dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
-		dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->receiveMsg, true, true, 0, *ptr);
+		dsql_par* parameter = MAKE_parameter(statement->receiveMsg, true, true, 0, *ptr);
 		parameter->par_node = *ptr;
 		MAKE_desc(dsqlScratch, &parameter->par_desc, *ptr, NULL);
 	}
 
 	// Set up parameter to handle EOF
 
-	dsql_par* parameter_eof = MAKE_parameter(dsqlScratch->getStatement()->receiveMsg, false, false, 0, NULL);
-	dsqlScratch->getStatement()->eof = parameter_eof;
+	dsql_par* parameter_eof = MAKE_parameter(statement->receiveMsg, false, false, 0, NULL);
+	statement->eof = parameter_eof;
 	parameter_eof->par_desc.dsc_dtype = dtype_short;
 	parameter_eof->par_desc.dsc_scale = 0;
 	parameter_eof->par_desc.dsc_length = sizeof(SSHORT);
@@ -2534,7 +2536,8 @@ static void gen_select(dsql_req* request, DsqlCompilerScratch* dsqlScratch, dsql
 				if (relation)
 				{
 					// Set up dbkey
-					dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->receiveMsg, false, false, 0, NULL);
+					dsql_par* parameter = MAKE_parameter(statement->receiveMsg, false,
+						false, 0, NULL);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
@@ -2542,7 +2545,7 @@ static void gen_select(dsql_req* request, DsqlCompilerScratch* dsqlScratch, dsql
 
 					// Set up record version - for post v33 databases
 
-					parameter = MAKE_parameter(dsqlScratch->getStatement()->receiveMsg, false, false, 0, NULL);
+					parameter = MAKE_parameter(statement->receiveMsg, false, false, 0, NULL);
 					parameter->par_rec_version_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
@@ -2554,32 +2557,32 @@ static void gen_select(dsql_req* request, DsqlCompilerScratch* dsqlScratch, dsql
 
 	// Generate definitions for the messages
 
-	GEN_port(dsqlScratch, dsqlScratch->getStatement()->receiveMsg);
-	dsql_msg* message = dsqlScratch->getStatement()->sendMsg;
+	GEN_port(dsqlScratch, statement->receiveMsg);
+	dsql_msg* message = statement->sendMsg;
 	if (message->msg_parameter)
 		GEN_port(dsqlScratch, message);
 	else
-		dsqlScratch->getStatement()->sendMsg = NULL;
+		statement->sendMsg = NULL;
 
 	// If there is a send message, build a RECEIVE
 
-	if ((message = dsqlScratch->getStatement()->sendMsg) != NULL)
+	if ((message = statement->sendMsg) != NULL)
 	{
-		stuff(dsqlScratch->getStatement(), blr_receive);
-		stuff(dsqlScratch->getStatement(), message->msg_number);
+		stuff(statement, blr_receive);
+		stuff(statement, message->msg_number);
 	}
 
 	// Generate FOR loop
 
-	message = dsqlScratch->getStatement()->receiveMsg;
+	message = statement->receiveMsg;
 
-	stuff(dsqlScratch->getStatement(), blr_for);
-	stuff(dsqlScratch->getStatement(), blr_stall);
+	stuff(statement, blr_for);
+	stuff(statement, blr_stall);
 	gen_rse(dsqlScratch, rse);
 
-	stuff(dsqlScratch->getStatement(), blr_send);
-	stuff(dsqlScratch->getStatement(), message->msg_number);
-	stuff(dsqlScratch->getStatement(), blr_begin);
+	stuff(statement, blr_send);
+	stuff(statement, message->msg_number);
+	stuff(statement, blr_begin);
 
 	// Build body of FOR loop
 
@@ -2594,10 +2597,10 @@ static void gen_select(dsql_req* request, DsqlCompilerScratch* dsqlScratch, dsql
 
 	// Add invalid usage here
 
-	stuff(dsqlScratch->getStatement(), blr_assignment);
+	stuff(statement, blr_assignment);
 	constant = 1;
 	gen_constant(dsqlScratch, &constant_desc, USE_VALUE);
-	gen_parameter(dsqlScratch, dsqlScratch->getStatement()->eof);
+	gen_parameter(dsqlScratch, statement->eof);
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
@@ -2605,33 +2608,33 @@ static void gen_select(dsql_req* request, DsqlCompilerScratch* dsqlScratch, dsql
 
 		if (parameter->par_node)
 		{
-			stuff(dsqlScratch->getStatement(), blr_assignment);
+			stuff(statement, blr_assignment);
 			GEN_expr(dsqlScratch, parameter->par_node);
 			gen_parameter(dsqlScratch, parameter);
 		}
 		if (context = parameter->par_dbkey_ctx)
 		{
-			stuff(dsqlScratch->getStatement(), blr_assignment);
-			stuff(dsqlScratch->getStatement(), blr_dbkey);
-			stuff_context(dsqlScratch->getStatement(), context);
+			stuff(statement, blr_assignment);
+			stuff(statement, blr_dbkey);
+			stuff_context(statement, context);
 			gen_parameter(dsqlScratch, parameter);
 		}
 		if (context = parameter->par_rec_version_ctx)
 		{
-			stuff(dsqlScratch->getStatement(), blr_assignment);
-			stuff(dsqlScratch->getStatement(), blr_record_version);
-			stuff_context(dsqlScratch->getStatement(), context);
+			stuff(statement, blr_assignment);
+			stuff(statement, blr_record_version);
+			stuff_context(statement, context);
 			gen_parameter(dsqlScratch, parameter);
 		}
 	}
 
-	stuff(dsqlScratch->getStatement(), blr_end);
-	stuff(dsqlScratch->getStatement(), blr_send);
-	stuff(dsqlScratch->getStatement(), message->msg_number);
-	stuff(dsqlScratch->getStatement(), blr_assignment);
+	stuff(statement, blr_end);
+	stuff(statement, blr_send);
+	stuff(statement, message->msg_number);
+	stuff(statement, blr_assignment);
 	constant = 0;
 	gen_constant(dsqlScratch, &constant_desc, USE_VALUE);
-	gen_parameter(dsqlScratch, dsqlScratch->getStatement()->eof);
+	gen_parameter(dsqlScratch, statement->eof);
 }
 
 
