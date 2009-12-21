@@ -377,35 +377,6 @@ void DDL_generate(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 bool DDL_ids(const DsqlCompilerScratch* scratch)
 {
 	return !scratch->getStatement()->ddlNode;
-/*
-	const dsql_nod* ddl_node = request->getStatement()->ddlNode;
-
-	if (!ddl_node) {
-		return true;
-	}
-
-	switch (ddl_node->nod_type)
-	{
-		case nod_def_constraint:
-		case nod_def_computed:
-		case nod_def_view:
-		case nod_redef_view:
-		case nod_mod_view:
-		case nod_replace_view:
-		case nod_def_trigger:
-		case nod_redef_trigger:
-		case nod_mod_trigger:
-		case nod_replace_trigger:
-		case nod_def_procedure:
-		case nod_redef_procedure:
-		case nod_mod_procedure:
-		case nod_replace_procedure:
-			return false;
-
-		default:
-			return true;
-	}
-*/
 }
 
 
@@ -4514,6 +4485,10 @@ static void put_user_grant(DsqlCompilerScratch* dsqlScratch, const dsql_nod* use
 		statement->append_cstring(isc_dyn_grant_proc, name->str_data);
 		break;
 
+	case nod_func_obj:
+		statement->append_cstring(isc_dyn_grant_func, name->str_data);
+		break;
+
 	case nod_trig_obj:
 		statement->append_cstring(isc_dyn_grant_trig, name->str_data);
 		break;
@@ -4585,6 +4560,8 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 	const dsql_str* name = (dsql_str*) table->nod_arg[0];
 	if (table->nod_type == nod_procedure_name)
 		statement->append_cstring(isc_dyn_prc_name, name->str_data);
+	else if (table->nod_type == nod_function_name)
+		statement->append_cstring(isc_dyn_fun_name, name->str_data);
 	else if (table->nod_type == nod_package_name)
 		statement->append_cstring(isc_dyn_pkg_name, name->str_data);
 	else
@@ -5346,7 +5323,10 @@ void DDL_put_local_variable( DsqlCompilerScratch* dsqlScratch, dsql_var* variabl
 		statement->append_ushort(variable->var_variable_number);
 	}
 
-	statement->put_debug_variable(variable->var_variable_number, variable->var_name);
+	if (variable->var_name[0])
+	{
+		statement->put_debug_variable(variable->var_variable_number, variable->var_name);
+	}
 
 	++dsqlScratch->hiddenVarsNumber;
 }

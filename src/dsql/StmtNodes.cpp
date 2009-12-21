@@ -954,7 +954,7 @@ SuspendNode* SuspendNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_TRIGGER)	// triggers only
+	if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_PROCEDURE))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Token unknown
@@ -1024,6 +1024,58 @@ jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request)
 	default:
 		return node->nod_parent;
 	}
+}
+
+
+//--------------------
+
+
+ReturnNode* ReturnNode::internalDsqlPass()
+{
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+
+	if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_FUNCTION))
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Token unknown
+				  Arg::Gds(isc_token_err) <<
+				  Arg::Gds(isc_random) << Arg::Str("RETURN"));
+	}
+
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK)	// autonomous transaction
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("RETURN"));
+	}
+
+	ReturnNode* node = FB_NEW(getPool()) ReturnNode(getPool());
+	node->dsqlScratch = dsqlScratch;
+	node->blockNode = statement->blockNode;
+	node->value = PASS1_node(dsqlScratch, value);
+
+	return node;
+}
+
+
+void ReturnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text = "ReturnNode";
+}
+
+
+void ReturnNode::genBlr()
+{
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+
+	statement->append_uchar(blr_assignment);
+	GEN_expr(dsqlScratch, value);
+	statement->append_uchar(blr_variable);
+	statement->append_ushort(0);
+
+	blockNode->genReturn();
+
+	statement->append_uchar(blr_leave);
+	statement->append_uchar(0);
 }
 
 

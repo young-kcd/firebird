@@ -337,7 +337,9 @@ enum nod_t
 	nod_package_obj,
 	nod_window,
 	nod_mod_field_null_flag,
-	nod_continue
+	nod_continue,
+	nod_func_obj,
+	nod_function_name
 };
 
 /* enumerations of the arguments to a node, offsets

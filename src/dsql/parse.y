@@ -569,7 +569,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> ACOSH
 %token <legacyNode> ASINH
 %token <legacyNode> ATANH
-
+%token <legacyNode> RETURN
+%token <legacyNode> DETERMINISTIC
 
 // precedence declarations for expression evaluation
 
@@ -663,7 +664,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> decimal_keyword declare declare_clause
 %type <legacyNode> decode_pairs def_computed default_par_opt default_value delete delete_positioned
 %type <legacyNode> delete_rule delete_searched delimiter_opt derived_column_list derived_table
-%type <legacyNode> distinct_clause distinct_predicate domain_clause domain_constraint
+%type <legacyNode> deterministic_opt distinct_clause distinct_predicate domain_clause domain_constraint
 %type <legacyNode> domain_constraint_clause domain_constraint_def domain_constraint_list
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
 %type <legacyNode> domain_or_non_array_type_name domain_type drop drop_behaviour
@@ -675,7 +676,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> exec_function exec_into exec_procedure exec_sql exec_stmt_inputs
 %type <legacyNode> exec_stmt_option exec_stmt_options exec_stmt_options_list exists_predicate
 %type <legacyNode> ext_datasrc ext_privs ext_pwd ext_role ext_tran ext_user extra_indices_opt
-%type <legacyNode> extract_expression
+%type <legacyNode> extract_expression execute_privilege
 %type <legacyStr>  end_trigger entry_op external_file
 
 %type <legacyNode> fetch_cursor fetch_opt fetch_scroll_opt file1 file_clause file_desc file_desc1
@@ -731,7 +732,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
 %type <legacyNode> post_event prec_scale predicate primary_constraint privilege
 %type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt
-%type <legacyNode> proc_privileges proc_statement proc_statements
+%type <legacyNode> proc_statement proc_statements
 %type <legacyStr>  passwd_clause passwd_opt
 %type <int32Val>   pos_short_integer precision_opt
 
@@ -751,7 +752,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> sec_shadow_files segment_clause_io segment_length_io select select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
 %type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause
-%type <legacyNode> similar_predicate simple_case
+%type <legacyNode> similar_predicate simple_case simple_UDF_name
 %type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_proc_statement simple_table_name
 %type <legacyNode> simple_type simple_when_clause singleton_select singular_predicate skip_clause
 %type <legacyNode> snap_shot some starting_predicate statement stmt_start_column
@@ -860,11 +861,17 @@ statement	: alter
 
 grant	: GRANT privileges ON table_noise simple_table_name
 			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count, $2, $5, make_list($7), $8, $9); }
-		| GRANT proc_privileges ON PROCEDURE simple_proc_name
+			{ $$ = make_node (nod_grant, (int) e_grant_count,
+					$2, $5, make_list($7), $8, $9); }
+		| GRANT execute_privilege ON PROCEDURE simple_proc_name
 			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count, $2, $5, make_list($7), $8, $9); }
-		| GRANT proc_privileges ON PACKAGE simple_package_name
+			{ $$ = make_node (nod_grant, (int) e_grant_count,
+					$2, $5, make_list($7), $8, $9); }
+		| GRANT execute_privilege ON FUNCTION simple_UDF_name
+			TO non_role_grantee_list grant_option granted_by
+			{ $$ = make_node (nod_grant, (int) e_grant_count,
+					$2, $5, make_list($7), $8, $9); }
+		| GRANT execute_privilege ON PACKAGE simple_package_name
 			TO non_role_grantee_list grant_option granted_by
 			{ $$ = make_node (nod_grant, (int) e_grant_count, $2, $5, make_list($7), $8, $9); }
 		| GRANT role_name_list TO role_grantee_list role_admin_option granted_by
@@ -890,7 +897,7 @@ privilege_list	: privilege
 			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
 		;
 
-proc_privileges	: EXECUTE
+execute_privilege	: EXECUTE
 			{ $$ = make_list (make_node (nod_execute, (int) 0, NULL)); }
 		;
 
@@ -942,16 +949,27 @@ simple_proc_name
 		{ $$ = make_node(nod_procedure_name, (int) 1, $1); }
 	;
 
+simple_UDF_name
+	: symbol_UDF_name
+		{ $$ = make_node(nod_function_name, (int) 1, $1); }
+	;
+
 
 // REVOKE statement
 
 revoke	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
 			FROM non_role_grantee_list granted_by
-			{ $$ = make_node (nod_revoke, (int) e_grant_count, $3, $6, make_list($8), $2, $9); }
-		| REVOKE rev_grant_option proc_privileges ON PROCEDURE simple_proc_name
+			{ $$ = make_node (nod_revoke, (int) e_grant_count,
+					$3, $6, make_list($8), $2, $9); }
+		| REVOKE rev_grant_option execute_privilege ON PROCEDURE simple_proc_name
 			FROM non_role_grantee_list granted_by
-			{ $$ = make_node (nod_revoke, (int) e_grant_count, $3, $6, make_list($8), $2, $9); }
-		| REVOKE rev_grant_option proc_privileges ON PACKAGE simple_package_name
+			{ $$ = make_node (nod_revoke, (int) e_grant_count,
+					$3, $6, make_list($8), $2, $9); }
+		| REVOKE rev_grant_option execute_privilege ON FUNCTION simple_UDF_name
+			FROM non_role_grantee_list granted_by
+			{ $$ = make_node (nod_revoke, (int) e_grant_count,
+					$3, $6, make_list($8), $2, $9); }
+		| REVOKE rev_grant_option execute_privilege ON PACKAGE simple_package_name
 			FROM non_role_grantee_list granted_by
 			{ $$ = make_node (nod_revoke, (int) e_grant_count, $3, $6, make_list($8), $2, $9); }
 		| REVOKE rev_admin_option role_name_list FROM role_grantee_list granted_by
@@ -990,6 +1008,8 @@ grantee_list	: grantee
 grantee
 	: PROCEDURE symbol_procedure_name
 		{ $$ = make_node (nod_proc_obj, (int) 1, $2); }
+	| FUNCTION symbol_UDF_name
+		{ $$ = make_node (nod_func_obj, (int) 1, $2); }
 	| PACKAGE symbol_package_name
 		{ $$ = make_node (nod_package_obj, (int) 1, $2); }
 	| TRIGGER symbol_trigger_name
@@ -1189,6 +1209,8 @@ recreate 	: RECREATE recreate_clause
 recreate_clause
 	: PROCEDURE procedure_clause
 		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateProcedureNode(getPool(), compilingText, $2)); }
+	| FUNCTION function_clause
+		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateFunctionNode(getPool(), compilingText, $2)); }
 	| TABLE rtable_clause
 		{ $$ = $2; }
 	| GLOBAL TEMPORARY TABLE gtt_recreate_clause
@@ -1909,7 +1931,14 @@ default_par_opt	: DEFAULT begin_trigger default_value end_default
 // FUNCTION
 
 function_clause
-	: function_clause_start external_clause external_body_clause_opt
+	: function_clause_start AS begin_string local_declaration_list full_proc_block end_trigger
+		{
+			$$ = $1;
+			$$->source = toString($6);
+			$$->localDeclList = $4;
+			$$->body = $5;
+		}
+	| function_clause_start external_clause external_body_clause_opt
 		{
 			$$ = $1;
 			$$->external = $2;
@@ -1923,11 +1952,21 @@ function_clause_start
 			{ $$ = FB_NEW(getPool()) CreateAlterFunctionNode(getPool(), compilingText, toName($1)); }
 			input_parameters(&$2->parameters)
 			RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
-			domain_or_non_array_type collate_clause
+			domain_or_non_array_type collate_clause deterministic_opt
 		{
 			$$ = $2;
 			$$->returnType = TypeClause($<legacyField>5, toName($7));
+			$$->invariant = ($8 != NULL);
 		}
+	;
+
+deterministic_opt
+	: DETERMINISTIC
+		{ $$ = make_node (nod_flag, 0, NULL); }
+	| NOT DETERMINISTIC
+		{ $$ = NULL; }
+	|
+		{ $$ = NULL; }
 	;
 
 external_clause
@@ -2198,6 +2237,8 @@ simple_proc_statement	: assignment
 			{ $$ = makeClassNode(FB_NEW(getPool()) SuspendNode(getPool())); }
 		| EXIT
 			{ $$ = makeClassNode(FB_NEW(getPool()) ExitNode(getPool())); }
+		| RETURN value
+			{ $$ = makeClassNode(FB_NEW(getPool()) ReturnNode(getPool(), $2)); }
 		;
 
 complex_proc_statement
@@ -3052,6 +3093,8 @@ keyword_or_column	: valid_symbol_name
 		| SIMILAR				// added in FB 2.5
 		| OVER					// added in FB 3.0
 		| SCROLL
+		| RETURN
+		| DETERMINISTIC
 		;
 
 col_opt	: ALTER

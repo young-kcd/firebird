@@ -325,8 +325,6 @@ class dsql_var : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
 	dsql_fld*	var_field;		// Field on which variable is based
-	//USHORT	var_flags;			// Reserved
-	//dsql_var_type	var_type;	// Too cumbersome to compile the right data type.
 	int		var_type;			// Input, output or local var.
 	USHORT	var_msg_number;		// Message number containing variable
 	USHORT	var_msg_item;		// Item number in message
@@ -563,6 +561,7 @@ public:
 	static const unsigned FLAG_BLOCK				= 0x20;
 	static const unsigned FLAG_RECURSIVE_CTE		= 0x40;
 	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x80;
+	static const unsigned FLAG_FUNCTION				= 0x100;
 
 public:
 	explicit DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
@@ -759,15 +758,6 @@ public:
 	dsql_msg*	blb_open_out_msg;	// Output message from open cursor
 	dsql_msg*	blb_segment_msg;	// Segment message
 };
-
-//! Transaction block
-/* UNUSED
-class dsql_tra : public pool_alloc<dsql_type_tra>
-{
-public:
-	dsql_tra* tra_next;		// Next open transaction
-};
-*/
 
 //! Implicit (NATURAL and USING) joins
 class ImplicitJoin : public pool_alloc<dsql_type_imp_join>

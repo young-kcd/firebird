@@ -165,6 +165,7 @@ static const TOK tokens[] =
 	{DESC, "DESC", 1, false},	// Alias of DESCENDING
 	{DESC, "DESCENDING", 1, false},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2, true},
+	{DETERMINISTIC, "DETERMINISTIC", 2, false},
 	{KW_DIFFERENCE, "DIFFERENCE", 2, true},
 	{DISCONNECT, "DISCONNECT", 2, false},
 	{DISTINCT, "DISTINCT", 1, false},
@@ -325,6 +326,7 @@ static const TOK tokens[] =
 	{RESTART, "RESTART", 2, true},
 	{RESTRICT, "RESTRICT", 1, true},
 	{RETAIN, "RETAIN", 1, false},
+	{RETURN, "RETURN", 1, false},
 	{RETURNING, "RETURNING", 2, true},
 	{RETURNING_VALUES, "RETURNING_VALUES", 1, false},
 	{RETURNS, "RETURNS", 1, false},

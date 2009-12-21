@@ -24,6 +24,8 @@
 #define DSQL_DDL_NODES_H
 
 #include "../jrd/common.h"
+#include "../dsql/node.h"
+#include "../dsql/make_proto.h"
 #include "../dsql/Nodes.h"
 #include "../common/classes/array.h"
 #include "../common/classes/TriState.h"
@@ -145,22 +147,56 @@ private:
 };
 
 
-class CreateAlterFunctionNode : public DdlNode
+class CreateAlterFunctionNode;
+
+
+class FunctionNode : public DdlNode, public BlockNode
+{
+public:
+	explicit FunctionNode(MemoryPool& p, const Firebird::string& sqlText)
+		: DdlNode(p, sqlText)
+	{
+	}
+
+public:
+	virtual void genReturn();
+	virtual dsql_nod* resolveVariable(const dsql_str* varName);
+
+protected:
+	virtual CreateAlterFunctionNode* getCreateAlterNode() = 0;
+};
+
+
+class CreateAlterFunctionNode : public FunctionNode
 {
 public:
 	explicit CreateAlterFunctionNode(MemoryPool& pool, const Firebird::string& sqlText,
 				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+		: FunctionNode(pool, sqlText),
 		  name(pool, aName),
-		  returnType(NULL, NULL),
 		  create(true),
 		  alter(false),
 		  external(NULL),
+		  invariant(false),
 		  parameters(pool),
+		  returnType(NULL, NULL),
+		  variables(pool),
+		  outputVariables(pool),
+		  localDeclList(NULL),
+		  body(NULL),
+		  source(pool),
+		  compiled(false),
+		  invalid(false),
 		  package(pool),
-		  privateScope(false),
-		  source(pool)
+		  packageOwner(pool),
+		  privateScope(false)
 	{
+	}
+
+protected:
+	virtual CreateAlterFunctionNode* getCreateAlterNode()
+	{
+		return this;
 	}
 
 public:
@@ -172,21 +208,30 @@ protected:
 
 private:
 	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
-	bool executeAlter(thread_db* tdbb, jrd_tra* transaction);
+	bool executeAlter(thread_db* tdbb, jrd_tra* transaction, bool secondPass, bool runTriggers);
 
 	void storeArgument(thread_db* tdbb, jrd_tra* transaction,
-		unsigned pos, const TypeClause& parameter, dsql_nod* legacyDefault);
+		unsigned pos, const ParameterClause& parameter);
+	void compile(thread_db* tdbb, jrd_tra* transaction);
 
 public:
 	Firebird::MetaName name;
-	TypeClause returnType;
 	bool create;
 	bool alter;
 	ExternalClause* external;
+	bool invariant;
 	Firebird::Array<ParameterClause> parameters;
-	Firebird::MetaName package;
-	bool privateScope;
+	TypeClause returnType;
+	Firebird::Array<dsql_nod*> variables;
+	Firebird::Array<dsql_nod*> outputVariables;
 	Firebird::string source;
+	dsql_nod* localDeclList;
+	dsql_nod* body;
+	bool compiled;
+	bool invalid;
+	Firebird::MetaName package;
+	Firebird::string packageOwner;
+	bool privateScope;
 };
 
 
@@ -203,13 +248,51 @@ public:
 	}
 
 public:
+	static void dropArguments(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& functionName, const Firebird::MetaName& packageName);
+
+public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual DdlNode* internalDsqlPass();
 
 public:
 	Firebird::MetaName name;
 	bool silent;
 	Firebird::MetaName package;
+};
+
+
+class RecreateFunctionNode : public FunctionNode
+{
+public:
+	explicit RecreateFunctionNode(MemoryPool& p, const Firebird::string& sqlText,
+				CreateAlterFunctionNode* aCreateNode)
+		: FunctionNode(p, sqlText),
+		  createNode(aCreateNode),
+		  dropNode(p, sqlText, createNode->name)
+	{
+		dropNode.silent = true;
+	}
+
+protected:
+	virtual CreateAlterFunctionNode* getCreateAlterNode()
+	{
+		return createNode;
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual DdlNode* internalDsqlPass();
+
+private:
+	CreateAlterFunctionNode* createNode;
+	DropFunctionNode dropNode;
 };
 
 

@@ -201,6 +201,103 @@ void DdlNode::resetContextStack()
 }
 
 
+Firebird::MetaName DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction,
+											 const TypeClause& parameter)
+{
+	Firebird::MetaName name;
+
+	AutoCacheRequest requestHandle(tdbb, drq_s_fld_src, DYN_REQUESTS);
+
+	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		FLD IN RDB$FIELDS
+	{
+		FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+		FLD.RDB$FIELD_SCALE.NULL = TRUE;
+		FLD.RDB$CHARACTER_SET_ID.NULL = TRUE;
+		FLD.RDB$FIELD_LENGTH.NULL = TRUE;
+		FLD.RDB$CHARACTER_LENGTH.NULL = TRUE;
+		FLD.RDB$FIELD_PRECISION.NULL = TRUE;
+		FLD.RDB$COLLATION_ID.NULL = TRUE;
+		FLD.RDB$SEGMENT_LENGTH.NULL = TRUE;
+
+		FLD.RDB$SYSTEM_FLAG = 0;
+
+		DYN_UTIL_generate_field_name(tdbb, NULL, name);
+		strcpy(FLD.RDB$FIELD_NAME, name.c_str());
+
+		if (parameter.type == dtype_blob)
+		{
+			FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+			FLD.RDB$FIELD_SUB_TYPE = parameter.subType;
+
+			FLD.RDB$FIELD_SCALE.NULL = FALSE;
+			FLD.RDB$FIELD_SCALE = 0;
+
+			if (parameter.subType == isc_blob_text)
+			{
+				FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
+				FLD.RDB$CHARACTER_SET_ID = parameter.charSetId;
+
+				FLD.RDB$COLLATION_ID.NULL = !parameter.collateSpecified;
+				FLD.RDB$COLLATION_ID = parameter.collationId;
+			}
+
+			if (parameter.segLength != 0)
+			{
+				FLD.RDB$SEGMENT_LENGTH.NULL = FALSE;
+				FLD.RDB$SEGMENT_LENGTH = parameter.segLength;
+			}
+		}
+		else if (parameter.type <= dtype_any_text)
+		{
+			FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+			FLD.RDB$FIELD_SUB_TYPE = parameter.subType;
+
+			FLD.RDB$FIELD_SCALE.NULL = FALSE;
+			FLD.RDB$FIELD_SCALE = 0;
+
+			FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+
+			if (parameter.type == dtype_varying)
+			{
+				fb_assert(parameter.length <= MAX_SSHORT);
+				FLD.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
+			}
+			else
+				FLD.RDB$FIELD_LENGTH = parameter.length;
+
+			FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
+			FLD.RDB$CHARACTER_LENGTH = parameter.charLength;
+
+			FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
+			FLD.RDB$CHARACTER_SET_ID = parameter.charSetId;
+
+			FLD.RDB$COLLATION_ID.NULL = !parameter.collateSpecified;
+			FLD.RDB$COLLATION_ID = parameter.collationId;
+		}
+		else
+		{
+			FLD.RDB$FIELD_SCALE.NULL = FALSE;
+			FLD.RDB$FIELD_SCALE = parameter.scale;
+
+			if (DTYPE_IS_EXACT(parameter.type))
+			{
+				FLD.RDB$FIELD_PRECISION.NULL = FALSE;
+				FLD.RDB$FIELD_PRECISION = parameter.precision;
+
+				FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+				FLD.RDB$FIELD_SUB_TYPE = parameter.subType;
+			}
+		}
+
+		FLD.RDB$FIELD_TYPE = blr_dtypes[parameter.type];
+	}
+	END_STORE
+
+	return name;
+}
+
+
 //----------------------
 
 
@@ -353,7 +450,6 @@ void CommentOnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->tra_attachment;
-	//Database* dbb = attachment->att_database;
 
 	string table;
 	string column;
@@ -471,7 +567,6 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			break;
 
 		case ddl_package:
-			//dbb->checkOdsForDsql(ODS_12_0);
 			table = "rdb$packages";
 			column = "rdb$package_name";
 			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objName);
@@ -528,6 +623,23 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
+void FunctionNode::genReturn()
+{
+	GEN_return(dsqlScratch, getCreateAlterNode()->outputVariables, false);
+}
+
+
+dsql_nod* FunctionNode::resolveVariable(const dsql_str* varName)
+{
+	// try to resolve variable name against input and output parameters and local variables
+	CreateAlterFunctionNode* node = getCreateAlterNode();
+	return PASS1_resolve_variable_name(node->variables, varName);
+}
+
+
+//----------------------
+
+
 void CreateAlterFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
@@ -558,6 +670,57 @@ void CreateAlterFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) c
 
 DdlNode* CreateAlterFunctionNode::internalDsqlPass()
 {
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+	statement->blockNode = this;
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_FUNCTION);
+
+	const dsql_nod* variables = localDeclList;
+	if (variables)
+	{
+		// insure that variable names do not duplicate parameter names
+
+		SortedArray<MetaName> names;
+
+		for (size_t i = 0; i < parameters.getCount(); ++i)
+		{
+			ParameterClause& parameter = parameters[i];
+			names.add(parameter.name);
+		}
+
+		const dsql_nod* const* ptr = variables->nod_arg;
+		for (const dsql_nod* const* const end = ptr + variables->nod_count; ptr < end; ptr++)
+		{
+			if ((*ptr)->nod_type == nod_def_field)
+			{
+				const dsql_fld* field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
+				DEV_BLKCHK(field, dsql_type_fld);
+
+				if (names.exist(field->fld_name))
+				{
+					status_exception::raise(
+						Arg::Gds(isc_sqlerr) <<
+						Arg::Num(-901) <<
+						Arg::Gds(isc_dsql_var_conflict) <<
+						Arg::Str(field->fld_name));
+				}
+			}
+		}
+	}
+
+	source.ltrim("\n\r\t ");
+
+	// compile default expressions
+	for (unsigned i = 0; i < parameters.getCount(); ++i)
+	{
+		ParameterClause& parameter = parameters[i];
+
+		if (parameter.legacyDefault)
+		{
+			parameter.legacyDefault->nod_arg[e_dft_default] =
+				PASS1_node(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+		}
+	}
+
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 		parameters[i].resolve(dsqlScratch);
 
@@ -573,13 +736,21 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
+	bool altered = false;
 
+	// first pass
 	if (alter)
 	{
-		if (!executeAlter(tdbb, transaction))
+		if (executeAlter(tdbb, transaction, false, true))
+		{
+			altered = true;
+		}
+		else
 		{
 			if (create)	// create or alter
+			{
 				executeCreate(tdbb, transaction);
+			}
 			else
 			{
 				status_exception::raise(
@@ -587,16 +758,32 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 					Arg::Gds(isc_dyn_func_not_found) << Arg::Str(name));
 			}
 		}
+	}
+	else
+	{
+		executeCreate(tdbb, transaction);
+	}
+
+	compile(tdbb, transaction);
+
+	executeAlter(tdbb, transaction, true, false);	// second pass
+
+	if (package.isEmpty())
+	{
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER,
+			(altered ? DDL_TRIGGER_ALTER_FUNCTION : DDL_TRIGGER_CREATE_FUNCTION), name);
+	}
+
+	savePoint.release();	// everything is ok
+
+	if (alter)
+	{
 
 		// Update DSQL cache
 		AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
 		METD_drop_function(transaction, str, package);
 		MET_dsql_cache_release(tdbb, SYM_udf, str->str_data, package);
 	}
-	else
-		executeCreate(tdbb, transaction);
-
-	savePoint.release();	// everything is ok
 }
 
 
@@ -607,82 +794,102 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 	if (package.isEmpty())
 		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_FUNCTION, name);
 
-	//dbb->checkOdsForDsql(ODS_12_0);
-
 	AutoCacheRequest requestHandle(tdbb, drq_s_funcs2, DYN_REQUESTS);
 
-	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		FUN IN RDB$FUNCTIONS
+	int faults = 0;
+
+	while (true)
 	{
-		FUN.RDB$FUNCTION_TYPE.NULL = TRUE;
-		FUN.RDB$QUERY_NAME.NULL = TRUE;
-		FUN.RDB$DESCRIPTION.NULL = TRUE;
-		FUN.RDB$MODULE_NAME.NULL = TRUE;
-		FUN.RDB$PACKAGE_NAME.NULL = TRUE;	// ODS_12_0
-
-		FUN.RDB$SYSTEM_FLAG.NULL = FALSE;
-		FUN.RDB$SYSTEM_FLAG = 0;
-
-		FUN.RDB$FUNCTION_NAME.NULL = FALSE;
-		strcpy(FUN.RDB$FUNCTION_NAME, name.c_str());
-
-		if (external)
+		try
 		{
-			FUN.RDB$ENGINE_NAME.NULL = FALSE;
-			strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
+			SINT64 id = DYN_UTIL_gen_unique_id(tdbb, drq_g_nxt_fun_id, "RDB$FUNCTIONS");
+			id %= (MAX_SSHORT + 1);
 
-			if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
+			if (!id)
+				continue;
+
+			STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+				FUN IN RDB$FUNCTIONS
 			{
-				status_exception::raise(
-					Arg::Gds(isc_arith_except) <<
-					Arg::Gds(isc_string_truncation));
+				FUN.RDB$FUNCTION_ID = id;
+				FUN.RDB$SYSTEM_FLAG = 0;
+				strcpy(FUN.RDB$FUNCTION_NAME, name.c_str());
+
+				FUN.RDB$LEGACY_FLAG.NULL = FALSE;
+				FUN.RDB$LEGACY_FLAG = 0;
+
+				FUN.RDB$INVARIANT_FLAG.NULL = FALSE;
+				FUN.RDB$INVARIANT_FLAG = invariant ? TRUE : FALSE;
+
+				FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
+				FUN.RDB$RETURN_ARGUMENT = 0;
+
+				if (package.hasData())
+				{
+					FUN.RDB$PACKAGE_NAME.NULL = FALSE;
+					strcpy(FUN.RDB$PACKAGE_NAME, package.c_str());
+
+					FUN.RDB$PRIVATE_FLAG.NULL = FALSE;
+					FUN.RDB$PRIVATE_FLAG = privateScope;
+
+					FUN.RDB$OWNER_NAME.NULL = FALSE;
+					strcpy(FUN.RDB$OWNER_NAME, packageOwner.c_str());
+				}
+				else
+				{
+					FUN.RDB$PACKAGE_NAME.NULL = TRUE;
+					FUN.RDB$PRIVATE_FLAG.NULL = TRUE;
+
+					FUN.RDB$OWNER_NAME.NULL = FALSE;
+					strcpy(FUN.RDB$OWNER_NAME, attachment->att_user->usr_user_name.c_str());
+				}
 			}
-
-			FUN.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
-			strcpy(FUN.RDB$ENTRYPOINT, external->name.c_str());
+			END_STORE
+		
+			break;
 		}
-		else
+		catch (const Firebird::status_exception& ex)
 		{
-			FUN.RDB$ENGINE_NAME.NULL = TRUE;
-			FUN.RDB$ENTRYPOINT.NULL = TRUE;
+			if (ex.value()[1] != isc_no_dup)
+				throw;
+
+			if (++faults > MAX_SSHORT)
+				throw;
+
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
-
-		FUN.RDB$FUNCTION_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
-		if (!FUN.RDB$FUNCTION_SOURCE.NULL)
-			attachment->storeMetaDataBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
-
-		FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
-		FUN.RDB$RETURN_ARGUMENT = 0;
-
-		if (package.hasData())
-		{
-			FUN.RDB$PACKAGE_NAME.NULL = FALSE;
-			strcpy(FUN.RDB$PACKAGE_NAME, package.c_str());
-
-			FUN.RDB$PRIVATE_FLAG.NULL = FALSE;	// ODS_12_0
-			FUN.RDB$PRIVATE_FLAG = privateScope;
-		}
-		else
-			FUN.RDB$PRIVATE_FLAG.NULL = TRUE;
-	}
-	END_STORE
-
-	storeArgument(tdbb, transaction, 0, returnType, NULL);
-
-	for (unsigned i = 0; i < parameters.getCount(); ++i)
-	{
-		ParameterClause& parameter = parameters[i];
-		storeArgument(tdbb, transaction, i + 1, parameter, parameter.legacyDefault);
 	}
 
 	if (package.isEmpty())
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_FUNCTION, name);
+	{
+		for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++)
+		{
+			requestHandle.reset(tdbb, drq_s_fun_usr_prvs, DYN_REQUESTS);
+
+			STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+				X IN RDB$USER_PRIVILEGES
+			{
+				strcpy(X.RDB$RELATION_NAME, name.c_str());
+				strcpy(X.RDB$USER, attachment->att_user->usr_user_name.c_str());
+				X.RDB$USER_TYPE = obj_user;
+				X.RDB$OBJECT_TYPE = obj_udf;
+				X.RDB$PRIVILEGE[0] = *p;
+				X.RDB$PRIVILEGE[1] = 0;
+			}
+			END_STORE
+		}
+	}
+
+	executeAlter(tdbb, transaction, false, false);
 }
 
 
-bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
+bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
+	bool secondPass, bool runTriggers)
 {
 	Attachment* attachment = transaction->getAttachment();
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
 	bool modified = false;
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_funcs2, DYN_REQUESTS);
@@ -694,45 +901,68 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 	{
 		if (!FUN.RDB$SYSTEM_FLAG.NULL && FUN.RDB$SYSTEM_FLAG)
 		{
-			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
-									Arg::Gds(isc_dyn_cannot_mod_sysfunc) << FUN.RDB$FUNCTION_NAME);
+			//// TODO: localize
+			status_exception::raise(
+				Arg::Gds(isc_random) <<
+				Arg::Str("Cannot ALTER or DROP a system object"));
 		}
 
-		if (package.isEmpty())
+		if (!secondPass && runTriggers && package.isEmpty())
 			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION, name);
 
-		//dbb->checkOdsForDsql(ODS_12_0);
-
 		MODIFY FUN
-			FUN.RDB$MODULE_NAME.NULL = TRUE;
-
-			if (external)
+			if (secondPass)
 			{
-				FUN.RDB$ENGINE_NAME.NULL = FALSE;
-				strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
-
-				if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
-				{
-					status_exception::raise(
-						Arg::Gds(isc_arith_except) <<
-						Arg::Gds(isc_string_truncation));
-				}
-
-				FUN.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
-				strcpy(FUN.RDB$ENTRYPOINT, external->name.c_str());
+				FUN.RDB$FUNCTION_BLR.NULL = TRUE;
+				FUN.RDB$DEBUG_INFO.NULL = TRUE;
 			}
 			else
 			{
 				FUN.RDB$ENGINE_NAME.NULL = TRUE;
 				FUN.RDB$ENTRYPOINT.NULL = TRUE;
+				FUN.RDB$FUNCTION_SOURCE.NULL = TRUE;
+
+				FUN.RDB$VALID_BLR.NULL = FALSE;
+				FUN.RDB$VALID_BLR = TRUE;
+
+				FUN.RDB$FUNCTION_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
+				if (!FUN.RDB$FUNCTION_SOURCE.NULL)
+					attachment->storeMetaDataBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
 			}
 
-			FUN.RDB$FUNCTION_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
-			if (!FUN.RDB$FUNCTION_SOURCE.NULL)
-				attachment->storeMetaDataBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
+			if (external)
+			{
+				if (!secondPass)
+				{
+					FUN.RDB$ENGINE_NAME.NULL = FALSE;
+					strcpy(FUN.RDB$ENGINE_NAME, external->engine.c_str());
 
-			FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
-			FUN.RDB$RETURN_ARGUMENT = 0;
+					if (external->name.length() >= sizeof(FUN.RDB$ENTRYPOINT))
+					{
+						status_exception::raise(
+							Arg::Gds(isc_arith_except) <<
+							Arg::Gds(isc_string_truncation));
+					}
+
+					FUN.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
+					strcpy(FUN.RDB$ENTRYPOINT, external->name.c_str());
+				}
+			}
+			else if (body)
+			{
+				if (secondPass)
+				{
+					FUN.RDB$FUNCTION_BLR.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &FUN.RDB$FUNCTION_BLR,
+						statement->blrData.begin(),
+						statement->blrData.getCount());
+
+					FUN.RDB$DEBUG_INFO.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &FUN.RDB$DEBUG_INFO,
+						statement->debugData.begin(),
+						statement->debugData.getCount());
+				}
+			}
 
 			if (package.hasData())
 			{
@@ -740,40 +970,31 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 				FUN.RDB$PRIVATE_FLAG = privateScope;
 			}
 			else
+			{
 				FUN.RDB$PRIVATE_FLAG.NULL = TRUE;
+			}
 		END_MODIFY
 
 		modified = true;
 	}
 	END_FOR
 
-	if (modified)
+	if (!secondPass && modified)
 	{
-		// delete all old parameters and return
-
-		requestHandle.reset(tdbb, drq_e_func_args2, DYN_REQUESTS);
-
-		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			ARG IN RDB$FUNCTION_ARGUMENTS
-			WITH ARG.RDB$FUNCTION_NAME EQ name.c_str() AND
-				 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
-		{
-			ERASE ARG;
-		}
-		END_FOR
+		// delete all old arguments
+		DropFunctionNode::dropArguments(tdbb, transaction, name, package);
 
 		// and insert the new ones
 
-		storeArgument(tdbb, transaction, 0, returnType, NULL);
+		ParameterClause returnParameter(returnType.legacyField, returnType.collate, NULL);
+		returnParameter.resolve(dsqlScratch);
+		storeArgument(tdbb, transaction, 0, returnParameter);
 
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
-			storeArgument(tdbb, transaction, i + 1, parameter, parameter.legacyDefault);
+			storeArgument(tdbb, transaction, i + 1, parameter);
 		}
-
-		if (package.isEmpty())
-			executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_FUNCTION, name);
 	}
 
 	return modified;
@@ -781,48 +1002,24 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 
 
 void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transaction,
-	unsigned pos, const TypeClause& parameter, dsql_nod* legacyDefault)
+	unsigned pos, const ParameterClause& parameter)
 {
-	// current limitations caused by rdb$functions structure
-
-	if (parameter.typeOfName.hasData())
-	{
-		status_exception::raise(
-			Arg::Gds(isc_wish_list) <<
-			Arg::Gds(isc_random) <<
-			Arg::Str("TYPE OF in function parameters or return value"));
-	}
-
-	if (parameter.collateSpecified)
-	{
-		status_exception::raise(
-			Arg::Gds(isc_wish_list) <<
-			Arg::Gds(isc_random) <<
-			Arg::Str("COLLATE in function parameters or return value"));
-	}
-
-	if (legacyDefault)
-	{
-		status_exception::raise(
-			Arg::Gds(isc_wish_list) <<
-			Arg::Gds(isc_random) <<
-			Arg::Str("DEFAULT in function parameters"));
-	}
+	Attachment* attachment = transaction->getAttachment();
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_func_args2, DYN_REQUESTS);
 
 	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		ARG IN RDB$FUNCTION_ARGUMENTS
 	{
-		ARG.RDB$FIELD_SCALE.NULL = TRUE;
-		ARG.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-		ARG.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		ARG.RDB$FIELD_PRECISION.NULL = TRUE;
-		ARG.RDB$CHARACTER_LENGTH.NULL = TRUE;
-		ARG.RDB$PACKAGE_NAME.NULL = TRUE;	// ODS_12_0
-
 		ARG.RDB$FUNCTION_NAME.NULL = FALSE;
 		strcpy(ARG.RDB$FUNCTION_NAME, name.c_str());
+
+		if (parameter.name.hasData())
+		{
+			ARG.RDB$ARGUMENT_NAME.NULL = FALSE;
+			strcpy(ARG.RDB$ARGUMENT_NAME, parameter.name.c_str());
+		}
 
 		if (package.hasData())
 		{
@@ -833,73 +1030,352 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 		ARG.RDB$ARGUMENT_POSITION.NULL = FALSE;
 		ARG.RDB$ARGUMENT_POSITION = pos;
 
-		ARG.RDB$MECHANISM.NULL = FALSE;
-		ARG.RDB$MECHANISM = FUN_value;
+		ARG.RDB$ARGUMENT_MECHANISM.NULL = TRUE;
+		ARG.RDB$NULL_FLAG.NULL = TRUE;
+		ARG.RDB$RELATION_NAME.NULL = TRUE;
+		ARG.RDB$FIELD_NAME.NULL = TRUE;
+		ARG.RDB$FIELD_SOURCE.NULL = TRUE;
+		ARG.RDB$DEFAULT_VALUE.NULL = TRUE;
+		ARG.RDB$DEFAULT_SOURCE.NULL = TRUE;
 
-		ARG.RDB$FIELD_TYPE.NULL = FALSE;
-		ARG.RDB$FIELD_TYPE = blr_dtypes[parameter.type];
+		ARG.RDB$MECHANISM.NULL = TRUE;
+		ARG.RDB$FIELD_TYPE.NULL = TRUE;
+		ARG.RDB$FIELD_LENGTH.NULL = TRUE;
+		ARG.RDB$FIELD_PRECISION.NULL = TRUE;
+		ARG.RDB$FIELD_SCALE.NULL = TRUE;
+		ARG.RDB$CHARACTER_SET_ID.NULL = TRUE;
+		ARG.RDB$COLLATION_ID.NULL = TRUE;
 
-		ARG.RDB$FIELD_LENGTH.NULL = FALSE;
-		ARG.RDB$FIELD_LENGTH = parameter.length;
-
-		if (parameter.type == dtype_blob)
+		if (pos != 0) // input parameters are stored as domains
 		{
-			ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-			ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
+			ARG.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
+			ARG.RDB$ARGUMENT_MECHANISM =
+				(USHORT) (parameter.fullDomain ? prm_mech_normal : prm_mech_type_of);
 
-			ARG.RDB$FIELD_SCALE.NULL = FALSE;
-			ARG.RDB$FIELD_SCALE = 0;
-
-			if (parameter.subType == isc_blob_text)
+			if (parameter.notNull)
 			{
-				ARG.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				ARG.RDB$CHARACTER_SET_ID = parameter.charSetId;
+				ARG.RDB$NULL_FLAG.NULL = FALSE;
+				ARG.RDB$NULL_FLAG = TRUE;
 			}
-		}
-		else if (parameter.type <= dtype_any_text)
-		{
-			ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-			ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
 
-			ARG.RDB$FIELD_SCALE.NULL = FALSE;
-			ARG.RDB$FIELD_SCALE = 0;
+			ARG.RDB$FIELD_SOURCE.NULL = FALSE;
 
-			ARG.RDB$FIELD_LENGTH.NULL = FALSE;
-
-			if (parameter.type == dtype_varying)
+			if (parameter.typeOfTable.isEmpty())
 			{
-				fb_assert(parameter.length <= MAX_SSHORT);
-				ARG.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
+				if (parameter.typeOfName.hasData())
+				{
+					strcpy(ARG.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
+				}
+				else
+				{
+					const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
+					strcpy(ARG.RDB$FIELD_SOURCE, fieldName.c_str());
+				}
 			}
 			else
-				ARG.RDB$FIELD_LENGTH = parameter.length;
-
-			ARG.RDB$CHARACTER_LENGTH.NULL = FALSE;
-			ARG.RDB$CHARACTER_LENGTH = parameter.charLength;
-
-			ARG.RDB$CHARACTER_SET_ID.NULL = FALSE;
-			ARG.RDB$CHARACTER_SET_ID = parameter.charSetId;
-		}
-		else
-		{
-			ARG.RDB$FIELD_SCALE.NULL = FALSE;
-			ARG.RDB$FIELD_SCALE = parameter.scale;
-
-			if (DTYPE_IS_EXACT(parameter.type))
 			{
-				ARG.RDB$FIELD_PRECISION.NULL = FALSE;
-				ARG.RDB$FIELD_PRECISION = parameter.precision;
+				ARG.RDB$RELATION_NAME.NULL = FALSE;
+				ARG.RDB$FIELD_NAME.NULL = FALSE;
+				strcpy(ARG.RDB$RELATION_NAME, parameter.typeOfTable.c_str());
+				strcpy(ARG.RDB$FIELD_NAME, parameter.typeOfName.c_str());
+				strcpy(ARG.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
+			}
 
+			// ASF: If we used a collate with a domain or table.column type, write it
+			//		into RDB$FUNCTION_ARGUMENTS.
+
+			if (parameter.collateSpecified && parameter.typeOfName.hasData())
+			{
+				ARG.RDB$COLLATION_ID.NULL = FALSE;
+				ARG.RDB$COLLATION_ID = parameter.collationId;
+			}
+
+			// ASF: I moved this block to write defaults on RDB$FUNCTION_ARGUMENTS.
+			//		It was writing in RDB$FIELDS, but that would require special support
+			//		for packaged procedures signature verification. 
+
+			if (parameter.legacyDefault)
+			{
+				ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
+				ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
+
+				dsql_str* defaultString =
+					(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
+				string defaultSource = string(defaultString->str_data, defaultString->str_length);
+				attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE, defaultSource);
+
+				statement->blrData.clear();
+
+				if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+					statement->append_uchar(blr_version4);
+				else
+					statement->append_uchar(blr_version5);
+
+				GEN_expr(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+
+				statement->append_uchar(blr_eoc);
+
+				attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
+					statement->blrData.begin(),
+					statement->blrData.getCount());
+			}
+		}
+		else // output parameter is stored inline
+		{
+			ARG.RDB$MECHANISM.NULL = FALSE;
+			ARG.RDB$MECHANISM = FUN_value;
+
+			if (parameter.type == dtype_blob)
+			{
 				ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
+
+				ARG.RDB$FIELD_SCALE.NULL = FALSE;
+				ARG.RDB$FIELD_SCALE = 0;
+
+				ARG.RDB$FIELD_LENGTH.NULL = FALSE;
+				ARG.RDB$FIELD_LENGTH = sizeof(ISC_QUAD);
+
+				if (parameter.subType == isc_blob_text)
+				{
+					ARG.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					ARG.RDB$CHARACTER_SET_ID = parameter.charSetId;
+
+					if (parameter.collateSpecified)
+					{
+						ARG.RDB$COLLATION_ID.NULL = FALSE;
+						ARG.RDB$COLLATION_ID = parameter.collationId;
+					}
+				}
 			}
+			else if (parameter.type <= dtype_any_text)
+			{
+				ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+				ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
+
+				ARG.RDB$FIELD_SCALE.NULL = FALSE;
+				ARG.RDB$FIELD_SCALE = 0;
+
+				ARG.RDB$FIELD_LENGTH.NULL = FALSE;
+
+				if (parameter.type == dtype_varying)
+				{
+					fb_assert(parameter.length <= MAX_SSHORT);
+					ARG.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
+				}
+				else
+				{
+					ARG.RDB$FIELD_LENGTH = parameter.length;
+				}
+
+				ARG.RDB$CHARACTER_LENGTH.NULL = FALSE;
+				ARG.RDB$CHARACTER_LENGTH = parameter.charLength;
+
+				ARG.RDB$CHARACTER_SET_ID.NULL = FALSE;
+				ARG.RDB$CHARACTER_SET_ID = parameter.charSetId;
+
+				if (parameter.collateSpecified)
+				{
+					ARG.RDB$COLLATION_ID.NULL = FALSE;
+					ARG.RDB$COLLATION_ID = parameter.collationId;
+				}
+			}
+			else
+			{
+				ARG.RDB$FIELD_SCALE.NULL = FALSE;
+				ARG.RDB$FIELD_SCALE = parameter.scale;
+
+				ARG.RDB$FIELD_LENGTH.NULL = FALSE;
+				ARG.RDB$FIELD_LENGTH = parameter.length;
+
+				if (DTYPE_IS_EXACT(parameter.type))
+				{
+					ARG.RDB$FIELD_PRECISION.NULL = FALSE;
+					ARG.RDB$FIELD_PRECISION = parameter.precision;
+
+					ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+					ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
+				}
+			}
+
+			ARG.RDB$FIELD_TYPE.NULL = FALSE;
+			ARG.RDB$FIELD_TYPE = blr_dtypes[parameter.type];
 		}
 	}
 	END_STORE
 }
 
 
-//----------------------
+void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* transaction)
+{
+	if (invalid)
+	{
+		//// TODO: localize
+		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Invalid DDL statement"));
+	}
+
+	if (compiled)
+		return;
+
+	compiled = true;
+	invalid = true;
+
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	if (body)
+	{
+		statement->begin_debug();
+		statement->blrData.clear();
+
+		if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+			statement->append_uchar(blr_version4);
+		else
+			statement->append_uchar(blr_version5);
+
+		statement->append_uchar(blr_begin);
+
+		if (parameters.getCount() != 0)
+		{
+			statement->append_uchar(blr_message);
+			statement->append_uchar(0);
+			statement->append_ushort(2 * parameters.getCount());
+
+			for (unsigned i = 0; i < parameters.getCount(); ++i)
+			{
+				ParameterClause& parameter = parameters[i];
+				statement->put_debug_argument(fb_dbg_arg_input, i,
+					parameter.name.c_str());
+				putType(parameter, true);
+
+				// add slot for null flag (parameter2)
+				statement->append_uchar(blr_short);
+				statement->append_uchar(0);
+
+				variables.add(MAKE_variable(parameter.legacyField,
+					parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
+			}
+		}
+
+		statement->append_uchar(blr_message);
+		statement->append_uchar(1);
+		statement->append_ushort(2);
+
+		statement->put_debug_argument(fb_dbg_arg_output, 0, "");
+		putType(returnType, true);
+
+		// add slot for null flag (parameter2)
+		statement->append_uchar(blr_short);
+		statement->append_uchar(0);
+
+		dsql_nod* const var = MAKE_variable(returnType.legacyField, "", VAR_output, 1, 0, 0);
+		variables.add(var);
+		outputVariables.add(var);
+
+		if (parameters.getCount() != 0)
+		{
+			statement->append_uchar(blr_receive);
+			statement->append_uchar(0);
+		}
+
+		statement->append_uchar(blr_begin);
+
+		for (unsigned i = 0; i < parameters.getCount(); ++i)
+		{
+			ParameterClause& parameter = parameters[i];
+
+			if (parameter.fullDomain || parameter.notNull)
+			{
+				// ASF: To validate input parameters we need only to read its value.
+				// Assigning it to null is an easy way to do this.
+				statement->append_uchar(blr_assignment);
+				statement->append_uchar(blr_parameter2);
+				statement->append_uchar(0);	// input
+				statement->append_ushort(i * 2);
+				statement->append_ushort(i * 2 + 1);
+				statement->append_uchar(blr_null);
+			}
+		}
+
+		dsql_var* const variable = (dsql_var*) outputVariables[0]->nod_arg[Dsql::e_var_variable];
+		DDL_put_local_variable(dsqlScratch, variable, 0, NULL);
+
+		// ASF: This is here to not change the old logic (proc_flag)
+		// of previous calls to PASS1_node and PASS1_statement.
+		dsqlScratch->setPsql(true);
+
+		DDL_put_local_variables(dsqlScratch, localDeclList, 1, variables);
+
+		statement->append_uchar(blr_stall);
+		// put a label before body of procedure,
+		// so that any EXIT statement can get out
+		statement->append_uchar(blr_label);
+		statement->append_uchar(0);
+		dsqlScratch->loopLevel = 0;
+		dsqlScratch->cursorNumber = 0;
+
+		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
+
+		statement->type = REQ_DDL;
+		statement->append_uchar(blr_end);
+		GEN_return(dsqlScratch, outputVariables, false);
+
+		statement->append_uchar(blr_end);
+		statement->append_uchar(blr_eoc);
+
+		statement->end_debug();
+	}
+
+	invalid = false;
+}
+
+
+void DropFunctionNode::dropArguments(thread_db* tdbb, jrd_tra* transaction,
+	const Firebird::MetaName& functionName, const Firebird::MetaName& packageName)
+{
+	Database* const dbb = tdbb->getDatabase();
+	AutoCacheRequest requestHandle(tdbb, drq_e_func_args, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		ARG IN RDB$FUNCTION_ARGUMENTS
+		WITH ARG.RDB$FUNCTION_NAME EQ functionName.c_str() AND
+			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
+	{
+		// get rid of arguments in rdb$fields
+		if (!ARG.RDB$FIELD_SOURCE.NULL)
+		{
+			AutoCacheRequest requestHandle2(tdbb, drq_e_arg_gfld, DYN_REQUESTS);
+
+			FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
+				FLD IN RDB$FIELDS
+				WITH FLD.RDB$FIELD_NAME EQ ARG.RDB$FIELD_SOURCE AND
+					 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX
+			{
+				bool erase = true;
+
+				AutoCacheRequest requestHandle3(tdbb, drq_e_arg_gfld2, DYN_REQUESTS);
+
+				FOR (REQUEST_HANDLE requestHandle3 TRANSACTION_HANDLE transaction)
+					ARG2 IN RDB$FUNCTION_ARGUMENTS
+					WITH ARG2.RDB$FUNCTION_NAME = ARG.RDB$FUNCTION_NAME AND
+						 ARG2.RDB$PACKAGE_NAME EQUIV
+					 		NULLIF(packageName.c_str(), '') AND
+						 ARG2.RDB$ARGUMENT_NAME = ARG.RDB$ARGUMENT_NAME
+				{
+					if (!ARG2.RDB$RELATION_NAME.NULL && !ARG2.RDB$FIELD_NAME.NULL)
+						erase = false;
+				}
+				END_FOR
+
+				if (erase)
+					ERASE FLD;
+			}
+			END_FOR
+		}
+
+		ERASE ARG;
+	}
+	END_FOR
+}
 
 
 void DropFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
@@ -911,11 +1387,20 @@ void DropFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 
+DdlNode* DropFunctionNode::internalDsqlPass()
+{
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_FUNCTION);
+	return DdlNode::internalDsqlPass();
+}
+
+
 void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 	bool found = false;
+
+	dropArguments(tdbb, transaction, name, package);
 
 	AutoCacheRequest requestHandle(tdbb, drq_e_funcs, DYN_REQUESTS);
 
@@ -935,6 +1420,9 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 		ERASE FUN;
 
+		if (!FUN.RDB$SECURITY_CLASS.NULL)
+			DYN_delete_security_class2(transaction, FUN.RDB$SECURITY_CLASS);
+
 		found = true;
 	}
 	END_FOR
@@ -946,16 +1434,28 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			Arg::Gds(isc_dyn_func_not_found) << Arg::Str(name));
 	}
 
-	requestHandle.reset(tdbb, drq_e_func_args, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		ARG IN RDB$FUNCTION_ARGUMENTS
-		WITH ARG.RDB$FUNCTION_NAME EQ name.c_str() AND
-			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
+	if (package.isEmpty())
 	{
-		ERASE ARG;
+		requestHandle.reset(tdbb, drq_e_fun_prvs, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
+				AND PRIV.RDB$OBJECT_TYPE = obj_udf
+		{
+			ERASE PRIV;
+		}
+		END_FOR
+
+		requestHandle.reset(tdbb, drq_e_fun_prv, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name.c_str()
+				AND PRIV.RDB$USER_TYPE = obj_udf
+		{
+			ERASE PRIV;
+		}
+		END_FOR
 	}
-	END_FOR
 
 	if (found && package.isEmpty())
 		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_FUNCTION, name);
@@ -966,6 +1466,35 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
 	METD_drop_function(transaction, str, package);
 	MET_dsql_cache_release(tdbb, SYM_udf, str->str_data, package);
+}
+
+
+//----------------------
+
+
+void RecreateFunctionNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("RecreateFunctionNode\n");
+}
+
+
+DdlNode* RecreateFunctionNode::internalDsqlPass()
+{
+	createNode->dsqlPass(dsqlScratch);
+	dropNode.dsqlPass(dsqlScratch);
+	return DdlNode::internalDsqlPass();
+}
+
+
+void RecreateFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	dropNode.execute(tdbb, transaction);
+	createNode->execute(tdbb, transaction);
+
+	savePoint.release();	// everything is ok
 }
 
 
@@ -1275,7 +1804,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 				P.RDB$ENTRYPOINT.NULL = TRUE;
 				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
 
-				P.RDB$VALID_BLR = TRUE;	// ODS_11_1
+				P.RDB$VALID_BLR = TRUE;
 
 				P.RDB$PROCEDURE_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 				if (!P.RDB$PROCEDURE_SOURCE.NULL)
@@ -1284,21 +1813,16 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 
 			if (external)
 			{
-				//dbb->checkOdsForDsql(ODS_12_0);
-
 				if (secondPass)
 				{
-					// ODS_11_1
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
 					P.RDB$PROCEDURE_TYPE = (USHORT) prc_selectable;
 				}
 				else
 				{
-					// ODS_12_0
 					P.RDB$ENGINE_NAME.NULL = FALSE;
 					strcpy(P.RDB$ENGINE_NAME, external->engine.c_str());
 
-					// ODS_12_0
 					if (external->name.length() >= sizeof(P.RDB$ENTRYPOINT))
 					{
 						status_exception::raise(
@@ -1324,7 +1848,6 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 						statement->debugData.begin(),
 						statement->debugData.getCount());
 
-					// ODS_11_1
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
 					P.RDB$PROCEDURE_TYPE = (USHORT)
 						(statement->flags & DsqlCompiledStatement::FLAG_SELECTABLE ?
@@ -1366,7 +1889,6 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 {
 	Attachment* attachment = transaction->getAttachment();
 
-	//Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_s_prms4, DYN_REQUESTS);
 
 	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -1395,19 +1917,12 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 		PRM.RDB$PARAMETER_TYPE.NULL = FALSE;
 		PRM.RDB$PARAMETER_TYPE = type;
 
-		// ODS_11_1
 		PRM.RDB$PARAMETER_MECHANISM.NULL = FALSE;
 		PRM.RDB$PARAMETER_MECHANISM =
 			(USHORT) (parameter.fullDomain ? prm_mech_normal : prm_mech_type_of);
 
-		//if (parameter.notNull)
-		//	dbb->checkOdsForDsql(ODS_11_1);
-
 		PRM.RDB$NULL_FLAG.NULL = !parameter.notNull;
 		PRM.RDB$NULL_FLAG = parameter.notNull;
-
-		//if (parameter.typeOfTable.hasData())
-		//	dbb->checkOdsForDsql(ODS_11_2);
 
 		PRM.RDB$RELATION_NAME.NULL = parameter.typeOfTable.isEmpty();
 		PRM.RDB$FIELD_NAME.NULL = PRM.RDB$RELATION_NAME.NULL || parameter.typeOfName.isEmpty();
@@ -1417,96 +1932,13 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 		if (PRM.RDB$RELATION_NAME.NULL)
 		{
 			if (parameter.typeOfName.hasData())
+			{
 				strcpy(PRM.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
+			}
 			else
 			{
-				AutoCacheRequest requestHandle2(tdbb, drq_s_prm_src2, DYN_REQUESTS);
-
-				STORE (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
-					PS IN RDB$FIELDS
-				{
-					PS.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-					PS.RDB$FIELD_SCALE.NULL = TRUE;
-					PS.RDB$CHARACTER_SET_ID.NULL = TRUE;
-					PS.RDB$FIELD_LENGTH.NULL = TRUE;
-					PS.RDB$CHARACTER_LENGTH.NULL = TRUE;
-					PS.RDB$FIELD_PRECISION.NULL = TRUE;
-					PS.RDB$COLLATION_ID.NULL = TRUE;
-					PS.RDB$SEGMENT_LENGTH.NULL = TRUE;
-
-					PS.RDB$SYSTEM_FLAG = 0;
-
-					DYN_UTIL_generate_field_name(tdbb, NULL, PS.RDB$FIELD_NAME);
-					strcpy(PRM.RDB$FIELD_SOURCE, PS.RDB$FIELD_NAME);
-
-					if (parameter.type == dtype_blob)
-					{
-						PS.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-						PS.RDB$FIELD_SUB_TYPE = parameter.subType;
-
-						PS.RDB$FIELD_SCALE.NULL = FALSE;
-						PS.RDB$FIELD_SCALE = 0;
-
-						if (parameter.subType == isc_blob_text)
-						{
-							PS.RDB$CHARACTER_SET_ID.NULL = FALSE;
-							PS.RDB$CHARACTER_SET_ID = parameter.charSetId;
-
-							PS.RDB$COLLATION_ID.NULL = !parameter.collateSpecified;
-							PS.RDB$COLLATION_ID = parameter.collationId;
-						}
-
-						if (parameter.segLength != 0)
-						{
-							PS.RDB$SEGMENT_LENGTH.NULL = FALSE;
-							PS.RDB$SEGMENT_LENGTH = parameter.segLength;
-						}
-					}
-					else if (parameter.type <= dtype_any_text)
-					{
-						PS.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-						PS.RDB$FIELD_SUB_TYPE = parameter.subType;
-
-						PS.RDB$FIELD_SCALE.NULL = FALSE;
-						PS.RDB$FIELD_SCALE = 0;
-
-						PS.RDB$FIELD_LENGTH.NULL = FALSE;
-
-						if (parameter.type == dtype_varying)
-						{
-							fb_assert(parameter.length <= MAX_SSHORT);
-							PS.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
-						}
-						else
-							PS.RDB$FIELD_LENGTH = parameter.length;
-
-						PS.RDB$CHARACTER_LENGTH.NULL = FALSE;
-						PS.RDB$CHARACTER_LENGTH = parameter.charLength;
-
-						PS.RDB$CHARACTER_SET_ID.NULL = FALSE;
-						PS.RDB$CHARACTER_SET_ID = parameter.charSetId;
-
-						PS.RDB$COLLATION_ID.NULL = !parameter.collateSpecified;
-						PS.RDB$COLLATION_ID = parameter.collationId;
-					}
-					else
-					{
-						PS.RDB$FIELD_SCALE.NULL = FALSE;
-						PS.RDB$FIELD_SCALE = parameter.scale;
-
-						if (DTYPE_IS_EXACT(parameter.type))
-						{
-							PS.RDB$FIELD_PRECISION.NULL = FALSE;
-							PS.RDB$FIELD_PRECISION = parameter.precision;
-
-							PS.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-							PS.RDB$FIELD_SUB_TYPE = parameter.subType;
-						}
-					}
-
-					PS.RDB$FIELD_TYPE = blr_dtypes[parameter.type];
-				}
-				END_STORE
+				const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
+				strcpy(PRM.RDB$FIELD_SOURCE, fieldName.c_str());
 			}
 		}
 		else
@@ -1626,7 +2058,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 			statement->append_uchar(blr_short);
 			statement->append_uchar(0);
 
-			dsql_nod* var = MAKE_variable(parameter.legacyField,
+			dsql_nod* const var = MAKE_variable(parameter.legacyField,
 				parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
 
 			variables.add(var);
@@ -1666,7 +2098,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
 		dsql_nod* parameter = *i;
-		dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
+		dsql_var* const variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
 		DDL_put_local_variable(dsqlScratch, variable, 0, NULL);
 	}
 
@@ -1705,7 +2137,6 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& procedureName, const Firebird::MetaName& packageName)
 {
-	//Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_e_prms2, DYN_REQUESTS);
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -1716,7 +2147,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 		// get rid of parameters in rdb$fields
 		if (!PRM.RDB$FIELD_SOURCE.NULL)
 		{
-			AutoCacheRequest requestHandle2(tdbb, drq_d_gfields3, DYN_REQUESTS);
+			AutoCacheRequest requestHandle2(tdbb, drq_e_prm_gfld, DYN_REQUESTS);
 
 			FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
 				FLD IN RDB$FIELDS
@@ -1728,7 +2159,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 
 				// Can this loop be merged with the previous?
 				{ // scope
-					AutoCacheRequest requestHandle3(tdbb, drq_d_gfields4, DYN_REQUESTS);
+					AutoCacheRequest requestHandle3(tdbb, drq_e_prm_gfld2, DYN_REQUESTS);
 
 					FOR (REQUEST_HANDLE requestHandle3 TRANSACTION_HANDLE transaction)
 						PRM2 IN RDB$PROCEDURE_PARAMETERS
@@ -1813,7 +2244,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (package.isEmpty())
 	{
-		requestHandle.reset(tdbb, drq_e_prc_prvs2, DYN_REQUESTS);
+		requestHandle.reset(tdbb, drq_e_prc_prvs, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
@@ -1823,7 +2254,7 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		}
 		END_FOR
 
-		requestHandle.reset(tdbb, drq_e_prc_prv2, DYN_REQUESTS);
+		requestHandle.reset(tdbb, drq_e_prc_prv, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name.c_str()
@@ -1913,8 +2344,7 @@ DdlNode* CreateAlterTriggerNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	statement->blockNode = this;
-	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE |
-		DsqlCompilerScratch::FLAG_TRIGGER);
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_TRIGGER);
 
 	if (type.specified)
 	{
@@ -2002,9 +2432,6 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 {
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, name);
 
-	//if (type.specified && (type.value & unsigned(TRIGGER_TYPE_MASK)) == unsigned(TRIGGER_TYPE_DDL))
-	//	dbb->checkOdsForDsql(ODS_12_0);
-
 	AutoCacheRequest requestHandle(tdbb, drq_s_triggers2, DYN_REQUESTS);
 
 	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -2053,9 +2480,6 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 				Arg::Gds(isc_dsql_db_trigger_type_cant_change));
 		}
 
-		//if (type.specified && (type.value & unsigned(TRIGGER_TYPE_MASK)) == unsigned(TRIGGER_TYPE_DDL))
-		//	dbb->checkOdsForDsql(ODS_12_0);
-
 		if (!TRG.RDB$SYSTEM_FLAG.NULL)
 		{
 			switch (TRG.RDB$SYSTEM_FLAG)
@@ -2102,13 +2526,9 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 
 			if (external)
 			{
-				//dbb->checkOdsForDsql(ODS_12_0);
-
-				// ODS_12_0
 				TRG.RDB$ENGINE_NAME.NULL = FALSE;
 				strcpy(TRG.RDB$ENGINE_NAME, external->engine.c_str());
 
-				// ODS_12_0
 				if (external->name.length() >= sizeof(TRG.RDB$ENTRYPOINT))
 				{
 					status_exception::raise(
@@ -2128,7 +2548,6 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 					statement->blrData.begin(),
 					statement->blrData.getCount());
 
-				// ODS_11_1
 				TRG.RDB$DEBUG_INFO.NULL = FALSE;
 				attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
 					statement->debugData.begin(),
@@ -2141,7 +2560,7 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 				attachment->storeMetaDataBlob(tdbb, transaction, &TRG.RDB$TRIGGER_SOURCE, source);
 			}
 
-			TRG.RDB$VALID_BLR = TRUE;	// ODS_11_1
+			TRG.RDB$VALID_BLR = TRUE;
 		END_MODIFY
 
 		modified = true;
@@ -2267,8 +2686,7 @@ void DropTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 DdlNode* DropTriggerNode::internalDsqlPass()
 {
-	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE |
-		DsqlCompilerScratch::FLAG_TRIGGER);
+	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_TRIGGER);
 	return DdlNode::internalDsqlPass();
 }
 

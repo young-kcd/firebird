@@ -11534,6 +11534,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_proc_obj:
 		verb = "proc_obj";
 		break;
+	case nod_func_obj:
+		verb = "func_obj";
+		break;
 	case nod_trig_obj:
 		verb = "trig_obj";
 		break;

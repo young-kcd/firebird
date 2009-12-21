@@ -256,6 +256,27 @@ public:
 };
 
 
+class ReturnNode : public DsqlOnlyStmtNode
+{
+public:
+	explicit ReturnNode(MemoryPool& pool, dsql_nod* val = NULL)
+		: DsqlOnlyStmtNode(pool), value(val)
+	{
+	}
+
+protected:
+	virtual ReturnNode* internalDsqlPass();
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void genBlr();
+
+public:
+	BlockNode* blockNode;
+	dsql_nod* value;
+};
+
+
 } // namespace
 
 #endif // DSQL_STMT_NODES_H
