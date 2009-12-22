@@ -197,7 +197,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			return function;
 		}
 	}
-	
+
 	if (!function)
 	{
 		function = FB_NEW(*dbb->dbb_permanent) Function(*dbb->dbb_permanent);

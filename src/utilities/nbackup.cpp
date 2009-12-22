@@ -965,7 +965,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 				{
 					curPage++;
 					scnsSlot++;
-					if (!scns || scns->scn_pages[scnsSlot] > prev_scn || 
+					if (!scns || scns->scn_pages[scnsSlot] > prev_scn ||
 						scnsSlot == pagesPerSCN ||
 						curPage == nextSCN ||
 						curPage == lastPage)
@@ -1115,7 +1115,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 	time_t finish = time(NULL);
 	double elapsed = difftime(finish, start);
-	uSvc->printf("time elapsed\t%.0f sec \npage reads\t%u \npage writes\t%u\n", 
+	uSvc->printf("time elapsed\t%.0f sec \npage reads\t%u \npage writes\t%u\n",
 		elapsed, page_reads, page_writes);
 }
 

@@ -663,7 +663,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 		pipMin++;
 	pip_page->pip_min = pipMin;
 
-	// Check if we need new SCN page. 
+	// Check if we need new SCN page.
 	// SCN pages allocated at every pagesPerSCN pages in database.
 	if (!pageSpace->isTemporary())
 	{
@@ -901,13 +901,13 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 
 		WIN window(pageSpace.pageSpaceID, pageSpace.pipFirst);
 		page_inv_page* pages = (page_inv_page*) CCH_fake(tdbb, &window, 1);
-	
+
 		pages->pip_header.pag_type = pag_pages;
 		pages->pip_used = (pageSpace.scnFirst ? pageSpace.scnFirst : pageSpace.pipFirst) + 1;
 		pages->pip_min = pages->pip_used;
 		UCHAR* p = pages->pip_bits;
 		int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
-	
+
 		while (i--) {
 			*p++ = 0xff;
 		}
@@ -1972,15 +1972,15 @@ ULONG PageSpace::lastUsedPage()
 	win window(pageSpaceID, pipLast);
 
 	thread_db *tdbb = JRD_get_thread_data();
-	
-	do 
+
+	do
 	{
 		pag *page = CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
 		if (page->pag_type == pag_pages)
 			break;
 
 		CCH_RELEASE(tdbb, &window);
-		
+
 		if (pipLast > pageMgr.pagesPerPIP)
 			pipLast -= pageMgr.pagesPerPIP;
 		else if (pipLast == pipFirst)
@@ -1991,7 +1991,7 @@ ULONG PageSpace::lastUsedPage()
 		window.win_page = pipLast;
 	}
 	while (pipLast > pipFirst);
-	
+
 	page_inv_page *pip = (page_inv_page*) window.win_buffer;
 
 	int last_bit = pip->pip_used;
@@ -2009,9 +2009,9 @@ ULONG PageSpace::lastUsedPage()
 
 		last_bit--;
 	}
-	
+
 	CCH_RELEASE(tdbb, &window);
-	
+
 	if (pipLast == pipFirst)
 		return last_bit + 1;
 	else
@@ -2089,8 +2089,8 @@ ULONG PageSpace::getSCNPageNum(ULONG sequence)
  * Functional description
  *	Return the physical number of the Nth SCN page
  *
- *	SCN pages allocated at every pagesPerSCN pages in database and should 
- *	not be the same as PIP page (which allocated at every pagesPerPIP pages). 
+ *	SCN pages allocated at every pagesPerSCN pages in database and should
+ *	not be the same as PIP page (which allocated at every pagesPerPIP pages).
  *  First SCN page number is fixed as FIRST_SCN_PAGE.
  *
  **************************************/
@@ -2272,7 +2272,7 @@ void PAG_set_page_scn(thread_db* tdbb, win* window)
 	}
 
 	win scn_window(pageSpace->pageSpaceID, scn_page);
-	
+
 	scns_page* page = (scns_page*) CCH_FETCH(tdbb, &scn_window, LCK_write, pag_scns);
 	CCH_MARK(tdbb, &scn_window);
 	page->scn_pages[scn_slot] = curr_scn;

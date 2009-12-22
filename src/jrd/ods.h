@@ -463,11 +463,11 @@ struct scns_page
 //
 // Generally speaking it is possible that exists N and M that
 //   pagesPerSCN * N == pagesPerPIP * M - 1,
-// i.e. we can't guarantee that some SCN page will not have the same number as 
-// some PIP page. We can implement checks for this case and put corresponding 
+// i.e. we can't guarantee that some SCN page will not have the same number as
+// some PIP page. We can implement checks for this case and put corresponding
 // SCN page at the next position but it will complicate code a lot.
 //
-// The much more easy solution is to make pagesPerPIP multiply of pagesPerSCN. 
+// The much more easy solution is to make pagesPerPIP multiply of pagesPerSCN.
 // The fact that page_inv_page::pip_bits array is LONG aligned and occupy less
 // size (in bytes) than scns_page::scn_pages array allow us to use very simple
 // formula for pagesPerSCN : pagesPerSCN = pagesPerPIP / BITS_PER_LONG.
@@ -477,11 +477,11 @@ struct scns_page
 // definitions of page_inv_page and scns_page
 //
 // PageSize  pagesPerPIP  maxPagesPerSCN    pagesPerSCN
-//     4096        32576            1019           1018    
-//     8192        65344            2043           2042    
-//    16384       130880            4091           4090    
-//    32768       261952            8187           8186    
-//    65536       524096           16379          16378   
+//     4096        32576            1019           1018
+//     8192        65344            2043           2042
+//    16384       130880            4091           4090
+//    32768       261952            8187           8186
+//    65536       524096           16379          16378
 
 
 // Pointer Page

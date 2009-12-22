@@ -538,7 +538,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 
  	PASS1_node
 
-    @brief	Compile a parsed dsqlScratch into something more interesting.
+    @brief	Compile a parsed statement into something more interesting.
 
 
     @param dsqlScratch
@@ -1220,7 +1220,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
  	PASS1_rse
 
     @brief	Compile a record selection expression,
- 	bumping up the dsqlScratch scope level
+ 	bumping up the statement scope level
  	everytime an rse is seen.  The scope
  	level controls parsing of aliases.
 
@@ -1250,7 +1250,7 @@ dsql_nod* PASS1_rse(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod*
 
  	PASS1_statement
 
-    @brief	Compile a parsed dsqlScratch into something more interesting.
+    @brief	Compile a parsed statement into something more interesting.
 
 
     @param dsqlScratch
@@ -2539,7 +2539,7 @@ static dsql_nod* explode_outputs( DsqlCompilerScratch* dsqlScratch, const dsql_p
 
  	field_appears_once
 
-    @brief	Check that a field is named only once in INSERT or UPDATE dsqlScratchs.
+    @brief	Check that a field is named only once in INSERT or UPDATE statements.
 
 
     @param fields
@@ -2592,7 +2592,7 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 
  	field_duplication
 
-    @brief	Report a field duplication error in INSERT or UPDATE dsqlScratchs.
+    @brief	Report a field duplication error in INSERT or UPDATE statements.
 
 
     @param qualifier_name
@@ -2685,7 +2685,7 @@ static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 
  	find_dbkey
 
-    @brief	Find dbkey for named relation in dsqlScratch's saved dbkeys.
+    @brief	Find dbkey for named relation in statement's saved dbkeys.
 
 
     @param dsqlScratch
@@ -2730,7 +2730,7 @@ static dsql_par* find_dbkey(const dsql_req* request, const dsql_nod* relation_na
 
  	find_record_version
 
-    @brief	Find record version for relation in dsqlScratch's saved record version
+    @brief	Find record version for relation in statement's saved record version
 
 
     @param dsqlScratch
@@ -2929,7 +2929,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 
 				// If we come here then this Field is used inside a
 				// aggregate-function. The ctx_scope_level gives the
-				// info how deep the context is inside the dsqlScratch.
+				// info how deep the context is inside the statement.
 
 				// If the context-scope-level from this field is
 				// lower or the same as the scope-level from the
@@ -3452,7 +3452,7 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore
 
  	nullify_returning
 
-    @brief	Create a compound dsqlScratch to initialize returning parameters.
+    @brief	Create a compound statement to initialize returning parameters.
 
     @param input
 
@@ -3517,7 +3517,7 @@ static dsql_nod* nullify_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* i
 
  	pass1_any
 
-    @brief	Compile a parsed dsqlScratch into something more interesting.
+    @brief	Compile a parsed statement into something more interesting.
 
 
     @param dsqlScratch
@@ -4227,7 +4227,7 @@ static dsql_nod* pass1_dbkey( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
  	pass1_delete
 
-    @brief	Process DELETE dsqlScratch.
+    @brief	Process DELETE statement.
 
 
     @param dsqlScratch
@@ -5328,7 +5328,7 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
        ill-formed by nature but making that code generation more orthodox is not a
        priority. Typically, they only check a field against a contant. The problem
        appears when they check a field against a subselect, for example. For now,
-       allow the user to write ambiguous subselects in check() dsqlScratchs.
+       allow the user to write ambiguous subselects in check() statements.
        Claudio Valderrama - 2001.1.29.
     */
 
@@ -6342,7 +6342,7 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 
  	pass1_insert
 
-    @brief	Process INSERT dsqlScratch.
+    @brief	Process INSERT statement.
 
 
     @param dsqlScratch
@@ -7103,7 +7103,7 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 /**
  	pass1_merge
 
-    @brief	Process MERGE dsqlScratch.
+    @brief	Process MERGE statement.
 
 
     @param dsqlScratch
@@ -9344,7 +9344,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc, SSHORT posit
 
  	pass1_update
 
-    @brief	Process UPDATE dsqlScratch.
+    @brief	Process UPDATE statement.
 
 
     @param dsqlScratch
@@ -9586,7 +9586,7 @@ static dsql_nod* pass1_update(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 
  	pass1_update_or_insert
 
-    @brief	Process UPDATE OR INSERT dsqlScratch.
+    @brief	Process UPDATE OR INSERT statement.
 
 
     @param dsqlScratch
@@ -9793,7 +9793,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 
 		// And we create an already processed RETURNING, because
 		// nod_returning creates parameters and they're already
-		// created by the INSERT dsqlScratch.
+		// created by the INSERT statement.
 		dsql_nod* update_ret = update->nod_arg[e_upd_return] =
 			MAKE_node(nod_list, store_ret->nod_count);
 
@@ -10771,8 +10771,8 @@ static void set_parameters_name( dsql_nod* list_node, const dsql_nod* rel_node)
 	@brief      Setup parameter parameter name.
 	This function was added as a part of array data type
 	support for InterClient. It is	called when either
-	"insert" or "update" dsqlScratchs are parsed. If the
-	dsqlScratchs have input parameters, than the parameter
+	"insert" or "update" statements are parsed. If the
+	statements have input parameters, than the parameter
 	is assigned the name of the field it is being inserted
 	(or updated). The same goes to the name of a relation.
 	The names are assigned to the parameter only if the
@@ -10854,7 +10854,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
  pass1_savepoint
 
     @brief      Add savepoint pair of nodes
-				to dsqlScratch having error handlers.
+				to statement having error handlers.
 
 
     @param dsqlScratch

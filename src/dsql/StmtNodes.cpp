@@ -954,7 +954,7 @@ SuspendNode* SuspendNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_PROCEDURE))
+	if (dsqlScratch->flags & (DsqlCompilerScratch::FLAG_TRIGGER | DsqlCompilerScratch::FLAG_FUNCTION))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Token unknown
@@ -1057,9 +1057,10 @@ ReturnNode* ReturnNode::internalDsqlPass()
 }
 
 
-void ReturnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+void ReturnNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "ReturnNode";
+	nodes.add(value);
 }
 
 

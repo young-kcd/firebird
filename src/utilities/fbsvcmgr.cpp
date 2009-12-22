@@ -840,7 +840,7 @@ void printHelp(unsigned int offset, const SvcSwitches* sw)
 		fb_assert(tt->populate);
 	}
 }
-				
+
 // short usage from firebird.msg
 
 void usage(bool listSwitches)

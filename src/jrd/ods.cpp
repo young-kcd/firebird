@@ -97,7 +97,7 @@ size_t transPerTIP(size_t page_size)
 
 size_t gensPerPage(size_t page_size)
 {
-	return (page_size - OFFSETA(generator_page*, gpg_values)) / 
+	return (page_size - OFFSETA(generator_page*, gpg_values)) /
 		sizeof(((generator_page*) NULL)->gpg_values);
 }
 
@@ -115,7 +115,7 @@ size_t maxRecsPerDP(size_t page_size)
 	// size of the record index (dpb_repeat) and a record header.  This
 	// gives an artificially high number, reducing the density of db_keys.
 
-	size_t max_records = 
+	size_t max_records =
 		(page_size - sizeof(data_page)) / (sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
 
 	// Artificially reduce density of records to test high bits of record number
@@ -137,7 +137,7 @@ size_t maxIndices(size_t page_size)
 	// Compute the number of index roots that will fit on an index root page,
 	// assuming that each index has only one key
 
-	return (page_size - OFFSETA(index_root_page*, irt_rpt)) / 
+	return (page_size - OFFSETA(index_root_page*, irt_rpt)) /
 		(sizeof(index_root_page::irt_repeat) + sizeof(irtd));
 }
 

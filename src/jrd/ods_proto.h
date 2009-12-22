@@ -37,6 +37,6 @@ namespace Ods {
 	size_t maxRecsPerDP(size_t page_size);
 	size_t maxIndices(size_t page_size);
 
-} // namespace 
+} // namespace
 
 #endif //ODS_PROTO_H

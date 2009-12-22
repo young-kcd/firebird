@@ -1125,6 +1125,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 	{
 		record.storeGlobalId(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
 	}
+
 	// object name/type
 	if (request->req_procedure)
 	{
@@ -1152,6 +1153,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 		// we should never be here...
 		fb_assert(false);
 	}
+
 	// timestamp
 	record.storeTimestamp(f_mon_call_timestamp, request->req_timestamp);
 	// source line/column

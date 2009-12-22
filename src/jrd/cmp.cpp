@@ -603,7 +603,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 		if (procedure)
 		{
-			const TEXT* sec_name = (procedure->prc_security_name.length() > 0 ?
+			const TEXT* sec_name = (procedure->prc_security_name.hasData() ?
 				procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(tdbb, sec_name);
 
@@ -623,7 +623,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 		if (function)
 		{
-			const TEXT* sec_name = (function->fun_security_name.length() > 0 ?
+			const TEXT* sec_name = (function->fun_security_name.hasData() ?
 				function->fun_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(tdbb, sec_name);
 
@@ -2736,8 +2736,7 @@ void CMP_shutdown_database(thread_db* tdbb)
 
 	// release all function existence locks that might have been taken
 
-	for (Function** iter = dbb->dbb_functions.begin();
-		iter < dbb->dbb_functions.end(); ++iter)
+	for (Function** iter = dbb->dbb_functions.begin(); iter < dbb->dbb_functions.end(); ++iter)
 	{
 		Function* const function = *iter;
 

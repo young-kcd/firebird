@@ -553,14 +553,14 @@ protected:
 class DsqlCompilerScratch : public Firebird::PermanentStorage
 {
 public:
-	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x01;
-	static const unsigned FLAG_RETURNING_INTO		= 0x02;
-	static const unsigned FLAG_METADATA_SAVED		= 0x04;
-	static const unsigned FLAG_PROCEDURE			= 0x08;
-	static const unsigned FLAG_TRIGGER				= 0x10;
-	static const unsigned FLAG_BLOCK				= 0x20;
-	static const unsigned FLAG_RECURSIVE_CTE		= 0x40;
-	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x80;
+	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x001;
+	static const unsigned FLAG_RETURNING_INTO		= 0x002;
+	static const unsigned FLAG_METADATA_SAVED		= 0x004;
+	static const unsigned FLAG_PROCEDURE			= 0x008;
+	static const unsigned FLAG_TRIGGER				= 0x010;
+	static const unsigned FLAG_BLOCK				= 0x020;
+	static const unsigned FLAG_RECURSIVE_CTE		= 0x040;
+	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x080;
 	static const unsigned FLAG_FUNCTION				= 0x100;
 
 public:

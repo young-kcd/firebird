@@ -2963,6 +2963,8 @@ static void sql_info(thread_db* tdbb,
 	dsql_msg* const* message = NULL;
 	USHORT first_index = 0;
 
+	const DsqlCompiledStatement* statement = request->getStatement();
+
 	while (items < end_items && *items != isc_info_end)
 	{
 		ULONG length;
@@ -2973,7 +2975,7 @@ static void sql_info(thread_db* tdbb,
 		case isc_info_sql_select:
 		case isc_info_sql_bind:
 			message = (item == isc_info_sql_select) ?
-				&request->getStatement()->receiveMsg : &request->getStatement()->sendMsg;
+				&statement->receiveMsg : &statement->sendMsg;
 			if (info + 1 >= end_info)
 			{
 				*info = isc_info_truncated;
@@ -2982,7 +2984,7 @@ static void sql_info(thread_db* tdbb,
 			*info++ = item;
 			break;
 		case isc_info_sql_stmt_type:
-			switch (request->getStatement()->type)
+			switch (statement->type)
 			{
 			case REQ_SELECT:
 				number = isc_info_sql_stmt_select;
@@ -3053,7 +3055,7 @@ static void sql_info(thread_db* tdbb,
 			items += length;
 			break;
 		case isc_info_sql_batch_fetch:
-			if (request->getStatement()->flags & DsqlCompiledStatement::FLAG_NO_BATCH)
+			if (statement->flags & DsqlCompiledStatement::FLAG_NO_BATCH)
 				number = 0;
 			else
 				number = 1;
@@ -3137,7 +3139,7 @@ static void sql_info(thread_db* tdbb,
 				}
 
 				info = var_info(*message, items, end_describe, info, end_info, first_index,
-					message == &request->getStatement()->sendMsg);
+					message == &statement->sendMsg);
 				if (!info) {
 					return;
 				}

@@ -975,7 +975,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 					else {
 						userFunc->udf_sub_type = 0;
 					}
-					// CVC: We are overcoming a bug in ddl.c:put_field()
+					// CVC: We are overcoming a bug in ddl.cpp:put_field()
 					// when any field is defined: the length is not given for blobs.
 					if (F.RDB$FIELD_TYPE == blr_blob)
 						userFunc->udf_length = sizeof(ISC_QUAD);

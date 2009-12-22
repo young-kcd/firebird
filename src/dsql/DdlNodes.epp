@@ -631,7 +631,7 @@ void FunctionNode::genReturn()
 
 dsql_nod* FunctionNode::resolveVariable(const dsql_str* varName)
 {
-	// try to resolve variable name against input and output parameters and local variables
+	// try to resolve variable name against parameters and local variables
 	CreateAlterFunctionNode* node = getCreateAlterNode();
 	return PASS1_resolve_variable_name(node->variables, varName);
 }
@@ -845,7 +845,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 				}
 			}
 			END_STORE
-		
+
 			break;
 		}
 		catch (const Firebird::status_exception& ex)
@@ -901,10 +901,9 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 	{
 		if (!FUN.RDB$SYSTEM_FLAG.NULL && FUN.RDB$SYSTEM_FLAG)
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("Cannot ALTER or DROP a system object"));
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+									Arg::Gds(isc_dyn_cannot_mod_sysfunc) <<
+									FUN.RDB$FUNCTION_NAME);
 		}
 
 		if (!secondPass && runTriggers && package.isEmpty())
@@ -1020,6 +1019,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 			ARG.RDB$ARGUMENT_NAME.NULL = FALSE;
 			strcpy(ARG.RDB$ARGUMENT_NAME, parameter.name.c_str());
 		}
+		else
+			ARG.RDB$ARGUMENT_NAME.NULL = TRUE;
 
 		if (package.hasData())
 		{
@@ -1092,7 +1093,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 
 			// ASF: I moved this block to write defaults on RDB$FUNCTION_ARGUMENTS.
 			//		It was writing in RDB$FIELDS, but that would require special support
-			//		for packaged procedures signature verification. 
+			//		for packaged functions signature verification.
 
 			if (parameter.legacyDefault)
 			{

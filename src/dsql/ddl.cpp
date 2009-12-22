@@ -5323,7 +5323,7 @@ void DDL_put_local_variable( DsqlCompilerScratch* dsqlScratch, dsql_var* variabl
 		statement->append_ushort(variable->var_variable_number);
 	}
 
-	if (variable->var_name[0])
+	if (variable->var_name[0])	// Not a function return value
 	{
 		statement->put_debug_variable(variable->var_variable_number, variable->var_name);
 	}

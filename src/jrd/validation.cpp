@@ -862,7 +862,7 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	// will be detected when wrong page reference will be fetched with
 	// non pag_scns type.
 
-	if ((type != pag_data) && (type != pag_scns) && 
+	if ((type != pag_data) && (type != pag_scns) &&
 		PageBitmap::test(control->vdr_page_bitmap, page_number))
 	{
 		corrupt(tdbb, control, VAL_PAG_DOUBLE_ALLOC, 0, page_number);
@@ -877,15 +877,15 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 		const ULONG scn_slot = page_number % pageMgr.pagesPerSCN;
 		const ULONG scn_page_num = PageSpace::getSCNPageNum(dbb, scn_seq);
 		const ULONG page_scn = (*page_pointer)->pag_scn;
-		
+
 		WIN scns_window(DB_PAGE_SPACE, scn_page_num);
 		scns_page *scns = (scns_page*) *page_pointer;
-		
+
 		if (scn_page_num != page_number) {
 			fetch_page(tdbb, control, scn_page_num, pag_scns, &scns_window, &scns);
 		}
 
-		if (scns->scn_pages[scn_slot] != page_scn) 
+		if (scns->scn_pages[scn_slot] != page_scn)
 		{
 			corrupt(tdbb, 0, VAL_PAG_WRONG_SCN, 0, page_number, page_scn, scns->scn_pages[scn_slot]);
 
@@ -2268,7 +2268,7 @@ static RTN walk_scns(thread_db* tdbb, vdr* control)
 		scns_page *scns = NULL;
 		fetch_page(tdbb, control, scnPage, pag_scns, &scnWindow, &scns);
 
-		if (scns->scn_sequence != sequence) 
+		if (scns->scn_sequence != sequence)
 		{
 			corrupt(tdbb, control, VAL_SCNS_PAGE_INCONSISTENT, 0, scnPage, sequence);
 

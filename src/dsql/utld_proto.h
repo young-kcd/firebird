@@ -70,4 +70,3 @@ namespace Jrd {
 
 
 #endif //  DSQL_UTLD_PROTO_H
-
