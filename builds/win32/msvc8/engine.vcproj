@@ -424,6 +424,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\Function.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp"
 				>
 			</File>
