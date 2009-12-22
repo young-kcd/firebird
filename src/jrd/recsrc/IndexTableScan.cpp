@@ -159,7 +159,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 		btree_exp* expanded_node = expanded_next;
 		if (pointer)
 		{
-			BTreeNode::readNode(&node, pointer, flags, true);
+			BTreeNode::readNode(&node, pointer, true);
 			number = node.recordNumber;
 		}
 
@@ -429,7 +429,7 @@ bool IndexTableScan::findSavedNode(thread_db* tdbb, win* window, UCHAR** return_
 		const UCHAR* const endPointer = ((UCHAR*) page + page->btr_length);
 		while (pointer < endPointer)
 		{
-			pointer = BTreeNode::readNode(&node, pointer, flags, true);
+			pointer = BTreeNode::readNode(&node, pointer, true);
 
 			if (node.isEndLevel)
 			{
@@ -590,7 +590,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, win* window)
 		}
 
 		Ods::IndexNode node;
-		BTreeNode::readNode(&node, pointer, page->btr_header.pag_flags, true);
+		BTreeNode::readNode(&node, pointer, true);
 
 		impure->irsb_nav_length = node.prefix + node.length;
 		return pointer;

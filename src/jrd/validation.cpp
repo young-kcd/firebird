@@ -1493,10 +1493,6 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		flags = page->btr_header.pag_flags;
 		const bool leafPage = (page->btr_level == 0);
 		const bool useJumpInfo = (flags & btr_jump_info);
-		const bool useAllRecordNumbers = (flags & btr_all_record_number);
-
-		if (!useAllRecordNumbers)
-			nullKeyHandled = true;
 
 		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256))
 		{
@@ -1537,7 +1533,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				else
 				{
 					// Check if jump node has same length as data node prefix.
-					BTreeNode::readNode(&checknode, (UCHAR*)page + jumpNode.offset, flags, leafPage);
+					BTreeNode::readNode(&checknode, (UCHAR*)page + jumpNode.offset, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 								id + 1, next, page->btr_level, __FILE__, __LINE__);
@@ -1549,15 +1545,15 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 
 		// go through all the nodes on the page and check for validity
 		pointer = BTreeNode::getPointerFirstNode(page);
-		if (useAllRecordNumbers && firstNode) {
-			BTreeNode::readNode(&lastNode, pointer, flags, leafPage);
+		if (firstNode) {
+			BTreeNode::readNode(&lastNode, pointer, leafPage);
 		}
 
 		const UCHAR* const endPointer = ((UCHAR *) page + page->btr_length);
 		while (pointer < endPointer)
 		{
 
-			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
+			pointer = BTreeNode::readNode(&node, pointer, leafPage);
 			if (pointer > endPointer) {
 				break;
 			}
@@ -1593,8 +1589,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				nullKeyNode = false;
 			}
 
-			if (useAllRecordNumbers && (node.recordNumber.getValue() >= 0) && !firstNode &&
-				!node.isEndLevel)
+			if ((node.recordNumber.getValue() >= 0) && !firstNode && !node.isEndLevel)
 			{
 				// If this node is equal to the previous one and it's
 				// not a MARKER, record number should be same or higher.
@@ -1654,7 +1649,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				UCHAR* downPointer = BTreeNode::getPointerFirstNode(down_page);
 
 				IndexNode downNode;
-				downPointer = BTreeNode::readNode(&downNode, downPointer, flags, downLeafPage);
+				downPointer = BTreeNode::readNode(&downNode, downPointer, downLeafPage);
 
 				p = downNode.data;
 				q = key.key_data;
@@ -1675,7 +1670,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				// the level and it isn't a MARKER.
 				// Also don't check on primary/unique keys, because duplicates aren't
 				// sorted on recordnumber, except for NULL keys.
-				if (useAllRecordNumbers && down_page->btr_left_sibling &&
+				if (down_page->btr_left_sibling &&
 					!(downNode.isEndBucket || downNode.isEndLevel) && (!unique || nullKeyNode))
 				{
 					// Check record number if key is equal with node on
@@ -1696,7 +1691,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 
-				BTreeNode::readNode(&downNode, pointer, flags, leafPage);
+				BTreeNode::readNode(&downNode, pointer, leafPage);
 				const SLONG next_number = downNode.pageNumber;
 
 				if (!(downNode.isEndBucket || downNode.isEndLevel) &&
@@ -1726,7 +1721,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			if (page->btr_level)
 			{
 				IndexNode newPageNode;
-				BTreeNode::readNode(&newPageNode, BTreeNode::getPointerFirstNode(page), flags, false);
+				BTreeNode::readNode(&newPageNode, BTreeNode::getPointerFirstNode(page), false);
 				down = newPageNode.pageNumber;
 			}
 			else {

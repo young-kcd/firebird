@@ -295,11 +295,9 @@ struct IndexJumpInfo
 // pag_flags
 const UCHAR btr_dont_gc				= 1;	// Don't garbage-collect this page
 const UCHAR btr_descending			= 2;	// Page/bucket is part of a descending index
-const UCHAR btr_all_record_number	= 4;	// Non-leaf-nodes will contain record number information
-const UCHAR btr_large_keys			= 8;	// AB: 2003-index-structure enhancement
 const UCHAR btr_jump_info			= 16;	// AB: 2003-index-structure enhancement
 
-const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
+const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_jump_info);
 
 // Data Page
 
