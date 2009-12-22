@@ -384,7 +384,7 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	statement->blockNode = this;
+	statement->setBlockNode(this);
 
 	if (returns.hasData())
 		statement->type = REQ_SELECT_BLOCK;
@@ -459,7 +459,7 @@ void ExecBlockNode::genBlr()
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	// Update blockNode, because we have a reference to the original unprocessed node.
-	statement->blockNode = this;
+	statement->setBlockNode(this);
 
 	statement->begin_debug();
 
@@ -508,15 +508,15 @@ void ExecBlockNode::genBlr()
 
 	if (inputs)
 	{
-		revertParametersOrder(statement->sendMsg->msg_parameters);
-		GEN_port(dsqlScratch, statement->sendMsg);
+		revertParametersOrder(statement->getSendMsg()->msg_parameters);
+		GEN_port(dsqlScratch, statement->getSendMsg());
 	}
 	else
-		statement->sendMsg = NULL;
+		statement->setSendMsg(NULL);
 
 	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
-		dsql_par* param = MAKE_parameter(statement->receiveMsg, true, true,
+		dsql_par* param = MAKE_parameter(statement->getReceiveMsg(), true, true,
 			(i - outputVariables.begin()) + 1, *i);
 		param->par_node = *i;
 		MAKE_desc(dsqlScratch, &param->par_desc, *i, NULL);
@@ -524,14 +524,14 @@ void ExecBlockNode::genBlr()
 	}
 
 	// Set up parameter to handle EOF
-	dsql_par* param = MAKE_parameter(statement->receiveMsg, false, false, 0, NULL);
-	statement->eof = param;
+	dsql_par* param = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
+	statement->setEof(param);
 	param->par_desc.dsc_dtype = dtype_short;
 	param->par_desc.dsc_scale = 0;
 	param->par_desc.dsc_length = sizeof(SSHORT);
 
-	revertParametersOrder(statement->receiveMsg->msg_parameters);
-	GEN_port(dsqlScratch, statement->receiveMsg);
+	revertParametersOrder(statement->getReceiveMsg()->msg_parameters);
+	GEN_port(dsqlScratch, statement->getReceiveMsg());
 
 	if (inputs)
 	{
@@ -970,7 +970,7 @@ SuspendNode* SuspendNode::internalDsqlPass()
 
 	statement->flags |= DsqlCompiledStatement::FLAG_SELECTABLE;
 
-	blockNode = statement->blockNode;
+	blockNode = statement->getBlockNode();
 
 	return this;
 }
@@ -1050,7 +1050,7 @@ ReturnNode* ReturnNode::internalDsqlPass()
 
 	ReturnNode* node = FB_NEW(getPool()) ReturnNode(getPool());
 	node->dsqlScratch = dsqlScratch;
-	node->blockNode = statement->blockNode;
+	node->blockNode = statement->getBlockNode();
 	node->value = PASS1_node(dsqlScratch, value);
 
 	return node;

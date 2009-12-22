@@ -829,7 +829,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			node->nod_count = 0;
 			dsql_msg* tempMsg = input->nod_arg[e_par_parameter] ?
 						(dsql_msg*) ((dsql_par*) input->nod_arg[e_par_parameter])->par_message :
-						dsqlScratch->getStatement()->sendMsg;
+						dsqlScratch->getStatement()->getSendMsg();
 
 			dsql_par* tempPar =
 				MAKE_parameter(tempMsg, true, true, (USHORT)(IPTR) input->nod_arg[e_par_index], NULL);
@@ -1042,7 +1042,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_dom_value:
 		{
 			const dsql_nod* const ddl_node = (dsqlScratch->getStatement()->type == REQ_DDL) ?
-				dsqlScratch->getStatement()->ddlNode : NULL;
+				dsqlScratch->getStatement()->getDdlNode() : NULL;
 
 			if (!ddl_node ||
 				!(ddl_node->nod_type == nod_def_domain || ddl_node->nod_type == nod_mod_domain))
@@ -2522,7 +2522,8 @@ static dsql_nod* explode_outputs( DsqlCompilerScratch* dsqlScratch, const dsql_p
 		dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
 		*ptr = p_node;
 		p_node->nod_count = 0;
-		dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->receiveMsg, true, true, 0, NULL);
+		dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(),
+			true, true, 0, NULL);
 		p_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 		p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		MAKE_desc_from_field(&parameter->par_desc, field);
@@ -2697,7 +2698,7 @@ static dsql_par* find_dbkey(const dsql_req* request, const dsql_nod* relation_na
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
-	dsql_msg* message = request->getStatement()->receiveMsg;
+	const dsql_msg* message = request->getStatement()->getReceiveMsg();
 	dsql_par* candidate = NULL;
 	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
 	DEV_BLKCHK(rel_name, dsql_type_str);
@@ -2742,7 +2743,7 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
-	dsql_msg* message = request->getStatement()->receiveMsg;
+	const dsql_msg* message = request->getStatement()->getReceiveMsg();
 	dsql_par* candidate = NULL;
 	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
 	DEV_BLKCHK(rel_name, dsql_type_str);
@@ -3599,11 +3600,11 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	dsqlScratch->getStatement()->type = (input->nod_type == nod_get_segment) ? REQ_GET_SEGMENT : REQ_PUT_SEGMENT;
 
 	dsql_blb* blob = FB_NEW(*tdbb->getDefaultPool()) dsql_blb;
-	dsqlScratch->getStatement()->blob = blob;
+	dsqlScratch->getStatement()->setBlob(blob);
 	//blob->blb_field = field;
-	blob->blb_open_in_msg = dsqlScratch->getStatement()->sendMsg;
+	blob->blb_open_in_msg = dsqlScratch->getStatement()->getSendMsg();
 	blob->blb_open_out_msg = FB_NEW(*tdbb->getDefaultPool()) dsql_msg(*tdbb->getDefaultPool());
-	blob->blb_segment_msg = dsqlScratch->getStatement()->receiveMsg;
+	blob->blb_segment_msg = dsqlScratch->getStatement()->getReceiveMsg();
 
 	// Create a parameter for the blob segment
 
@@ -4073,9 +4074,9 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 				  Arg::Gds(isc_dsql_cursor_update_err) << Arg::Str(string->str_data));
 	}
 
-	dsqlScratch->getStatement()->parentRequest = parent;
-	dsqlScratch->getStatement()->parentDbkey = source;
-	dsqlScratch->getStatement()->parentRecVersion = rv_source;
+	dsqlScratch->getStatement()->setParentRequest(parent);
+	dsqlScratch->getStatement()->setParentDbKey(source);
+	dsqlScratch->getStatement()->setParentRecVersion(rv_source);
 	parent->cursors.add(dsqlScratch->getStatement());
 
 	// Build record selection expression
@@ -4092,8 +4093,9 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 
 	node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 	temp->nod_count = 0;
-	dsql_par* parameter = dsqlScratch->getStatement()->dbkey =
-		MAKE_parameter(dsqlScratch->getStatement()->sendMsg, false, false, 0, NULL);
+	dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
+		false, false, 0, NULL);
+	dsqlScratch->getStatement()->setDbKey(parameter);
 	temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 	parameter->par_desc = source->par_desc;
@@ -4106,8 +4108,9 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 		temp->nod_arg[0] = relation_node;
 		node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
 		temp->nod_count = 0;
-		parameter = dsqlScratch->getStatement()->recVersion =
-			MAKE_parameter(dsqlScratch->getStatement()->sendMsg, false, false, 0, NULL);
+		parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
+			false, false, 0, NULL);
+		dsqlScratch->getStatement()->setRecVersion(parameter);
 		temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 		temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		parameter->par_desc = rv_source->par_desc;
@@ -5257,7 +5260,7 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	// to be able to work.
 	bool is_check_constraint = false;
 	{ // scope block
-		const dsql_nod* ddl_node = dsqlScratch->getStatement()->ddlNode;
+		const dsql_nod* ddl_node = dsqlScratch->getStatement()->getDdlNode();
 		if (ddl_node && ddl_node->nod_type == nod_def_constraint) {
 			is_check_constraint = true;
 		}
@@ -7861,7 +7864,8 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 		dsql_nod** ptr = node->nod_arg;
 		for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; src++, ptr++)
 		{
-			dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->receiveMsg, true, true, 0, *src);
+			dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(),
+				true, true, 0, *src);
 			parameter->par_node = *src;
 			MAKE_desc(dsqlScratch, &parameter->par_desc, *src, NULL);
 			parameter->par_desc.dsc_flags |= DSC_nullable;
@@ -9911,9 +9915,9 @@ static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 	DEV_BLKCHK(var_name, dsql_type_str);
 
-	if (dsqlScratch->getStatement()->blockNode)	// Are we processing a PSQL block?
+	if (dsqlScratch->getStatement()->getBlockNode())	// Are we processing a PSQL block?
 	{
-		dsql_nod* var_node = dsqlScratch->getStatement()->blockNode->resolveVariable(var_name);
+		dsql_nod* var_node = dsqlScratch->getStatement()->getBlockNode()->resolveVariable(var_name);
 		if (var_node)
 			return var_node;
 	}
@@ -10625,7 +10629,7 @@ static bool set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_no
 
 				if (!parameter)
 				{
-					parameter = MAKE_parameter(dsqlScratch->getStatement()->sendMsg, true, true,
+					parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(), true, true,
 											   (USHORT)(IPTR) in_node->nod_arg[e_par_index], NULL);
 					in_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 					in_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;

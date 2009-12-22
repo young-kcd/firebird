@@ -78,11 +78,11 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
-		if (statement->sendMsg)
-			parseDsqlMessage(statement->sendMsg, inValues, inBlr, inMessage);
+		if (statement->getSendMsg())
+			parseDsqlMessage(statement->getSendMsg(), inValues, inBlr, inMessage);
 
-		if (statement->receiveMsg)
-			parseDsqlMessage(statement->receiveMsg, outValues, outBlr, outMessage);
+		if (statement->getReceiveMsg())
+			parseDsqlMessage(statement->getReceiveMsg(), outValues, outBlr, outMessage);
 	}
 	catch (const Exception&)
 	{
@@ -131,7 +131,7 @@ void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 
 ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction)
 {
-	fb_assert(resultSet == NULL && request->getStatement()->receiveMsg);
+	fb_assert(resultSet == NULL && request->getStatement()->getReceiveMsg());
 	return FB_NEW(getPool()) ResultSet(tdbb, this, transaction);
 }
 
@@ -149,7 +149,7 @@ int PreparedStatement::getResultCount() const
 }
 
 
-void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Array<dsc>& values,
+void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& values,
 	UCharBuffer& blr, UCharBuffer& msg)
 {
 	// hvlad: Parameters in dsqlMsg->msg_parameters almost always linked in descending

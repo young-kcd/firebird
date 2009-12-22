@@ -267,7 +267,7 @@ void DDL_execute(dsql_req* request)
 	if (DSQL_debug & 4)
 	{
 		dsql_trace("Output DYN string for DDL:");
-		PRETTY_print_dyn(statement->blrData.begin(), gds__trace_printer, NULL, 0);
+		PRETTY_print_dyn(statement->getBlrData().begin(), gds__trace_printer, NULL, 0);
 	}
 #endif
 
@@ -277,13 +277,13 @@ void DDL_execute(dsql_req* request)
 	SYM_TYPE sym_type;
 	const dsql_nod* relation_node;
 
-	const NOD_TYPE type = statement->ddlNode->nod_type;
+	const NOD_TYPE type = statement->getDdlNode()->nod_type;
 
 	switch (type)
 	{
 		case nod_mod_relation:
 		case nod_redef_relation:
-			relation_node = statement->ddlNode->nod_arg[e_alt_name];
+			relation_node = statement->getDdlNode()->nod_arg[e_alt_name];
 			string = (dsql_str*) relation_node->nod_arg[e_rln_name];
 			// fall into
 		case nod_mod_view:
@@ -292,14 +292,14 @@ void DDL_execute(dsql_req* request)
 		case nod_del_relation:
 		case nod_del_view:
 			if (!string)
-				string = (dsql_str*) statement->ddlNode->nod_arg[e_alt_name];
+				string = (dsql_str*) statement->getDdlNode()->nod_arg[e_alt_name];
 			sym_type = SYM_relation;
 			METD_drop_relation(request->getTransaction(), string);
 			break;
 
 		case nod_del_collation:
 			// for delete, get rid of the cached collation metadata
-			string = (dsql_str*) statement->ddlNode->nod_arg[e_del_coll_name];
+			string = (dsql_str*) statement->getDdlNode()->nod_arg[e_del_coll_name];
 			sym_type = SYM_intlsym_collation;
 			METD_drop_collation(request->getTransaction(), string);
 			break;
@@ -307,7 +307,7 @@ void DDL_execute(dsql_req* request)
 		case nod_del_udf:
 		case nod_mod_udf:
 			// Signal UDF for obsolescence
-			string = (dsql_str*) statement->ddlNode->nod_arg[e_udf_name];
+			string = (dsql_str*) statement->getDdlNode()->nod_arg[e_udf_name];
 			sym_type = SYM_udf;
 			METD_drop_function(request->getTransaction(), string, "");
 			break;
@@ -322,7 +322,7 @@ void DDL_execute(dsql_req* request)
 		{	// scope
 			AutoSavePoint savePoint(tdbb, request->req_transaction);
 
-			reinterpret_cast<DdlNode*>(statement->ddlNode->nod_arg[0])->execute(tdbb,
+			reinterpret_cast<DdlNode*>(statement->getDdlNode()->nod_arg[0])->execute(tdbb,
 				request->req_transaction);
 
 			savePoint.release();	// everything is ok
@@ -333,7 +333,7 @@ void DDL_execute(dsql_req* request)
 	else
 	{
 		JRD_ddl(tdbb, /*request->getAttachment()->dbb_attachment,*/ request->req_transaction,
-			statement->blrData.getCount(), statement->blrData.begin(),
+			statement->getBlrData().getCount(), statement->getBlrData().begin(),
 			*statement->sqlText);
 	}
 }
@@ -376,7 +376,7 @@ void DDL_generate(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 //
 bool DDL_ids(const DsqlCompilerScratch* scratch)
 {
-	return !scratch->getStatement()->ddlNode;
+	return !scratch->getStatement()->getDdlNode();
 }
 
 
@@ -895,7 +895,7 @@ static void check_constraint(DsqlCompilerScratch* dsqlScratch,
  *
  **************************************/
 
-	dsql_nod* ddl_node = dsqlScratch->getStatement()->ddlNode;
+	dsql_nod* ddl_node = dsqlScratch->getStatement()->getDdlNode();
 
 	if (!element->nod_arg[e_cnstr_table]) {
 		element->nod_arg[e_cnstr_table] = ddl_node->nod_arg[e_drl_name];
@@ -966,7 +966,7 @@ static void create_view_triggers(DsqlCompilerScratch* dsqlScratch, dsql_nod* ele
  *
  **************************************/
 
-	dsql_nod* ddl_node = dsqlScratch->getStatement()->ddlNode;
+	dsql_nod* ddl_node = dsqlScratch->getStatement()->getDdlNode();
 
 	if (!element->nod_arg[e_cnstr_table]) {
 		element->nod_arg[e_cnstr_table] = ddl_node->nod_arg[e_drl_name];
@@ -1025,8 +1025,8 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
  **************************************/
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* const saved_ddl_node = statement->ddlNode;
-	statement->ddlNode = node;
+	dsql_nod* const saved_ddl_node = statement->getDdlNode();
+	statement->setDdlNode(node);
 
 	// Get the table node & set up correct context
 	reset_context_stack(dsqlScratch);
@@ -1103,7 +1103,7 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 	}
 
 	statement->type = REQ_DDL;
-	statement->ddlNode = saved_ddl_node;
+	statement->setDdlNode(saved_ddl_node);
 	reset_context_stack(dsqlScratch);
 
 	// generate the source text
@@ -1131,9 +1131,9 @@ static void define_constraint_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod
 	// that generating of BLR will be appropriate for trigger
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* const saved_ddl_node = statement->ddlNode;
+	dsql_nod* const saved_ddl_node = statement->getDdlNode();
 
-	statement->ddlNode = node;
+	statement->setDdlNode(node);
 
 	if (node->nod_type != nod_def_constraint)
 	{
@@ -1232,7 +1232,7 @@ static void define_constraint_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod
 	// is a data definition statement; also reset the ddl node
 
 	statement->type = REQ_DDL;
-	statement->ddlNode = saved_ddl_node;
+	statement->setDdlNode(saved_ddl_node);
 	reset_context_stack(dsqlScratch);
 }
 
@@ -1256,7 +1256,7 @@ static void define_database(DsqlCompilerScratch* dsqlScratch)
 	SLONG start = 0;
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->ddlNode;
+	const dsql_nod* ddl_node = statement->getDdlNode();
 
 	statement->append_uchar(isc_dyn_mod_database);
 
@@ -1459,7 +1459,7 @@ static void define_set_default_trg(	DsqlCompilerScratch* dsqlScratch,
 	UCHAR default_val[BLOB_BUFFER_SIZE];
 	USHORT num_fields = 0;
 	const dsql_nod* const* for_key_flds = for_columns->nod_arg;
-	const dsql_nod* ddl_node = statement->ddlNode;
+	const dsql_nod* ddl_node = statement->getDdlNode();
 
 	do {
 		// for every column in the foreign key ....
@@ -1653,7 +1653,7 @@ static void define_domain(DsqlCompilerScratch* dsqlScratch)
  **************************************/
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* element = statement->ddlNode;
+	dsql_nod* element = statement->getDdlNode();
 	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dom_name];
 
 	if (fb_utils::implicit_domain(field->fld_name.c_str()))
@@ -1769,7 +1769,7 @@ static void define_exception( DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
  *
  **************************************/
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->ddlNode;
+	const dsql_nod* ddl_node = statement->getDdlNode();
 	const dsql_str* name = (dsql_str*) ddl_node->nod_arg[e_xcp_name];
 
 	switch (op)
@@ -1879,7 +1879,7 @@ static void define_field(DsqlCompilerScratch* dsqlScratch,
 		{
 			field->fld_flags |= FLD_computed;
 			dsql_nod* computed_node = element->nod_arg[e_dfl_computed];
-			define_computed(dsqlScratch, statement->ddlNode->nod_arg[e_drl_name], field,
+			define_computed(dsqlScratch, statement->getDdlNode()->nod_arg[e_drl_name], field,
 				computed_node);
 		}
 
@@ -1919,9 +1919,9 @@ static void define_field(DsqlCompilerScratch* dsqlScratch,
 	//			everywhere in the column constraint definition.	A better
 	//			solution would be a special class which handles all append_*
 	//			operations for BLR/DYN (we could store constraints in the
-	//			separate object and then merge them into statement->blrData), but
+	//			separate object and then merge them into statement->getBlrData()), but
 	//			this is for another day.
-	const size_t end = statement->blrData.getCount();
+	const size_t end = statement->getBlrData().getCount();
 	statement->append_uchar(isc_dyn_end);
 
 	// check for constraints
@@ -2003,7 +2003,7 @@ static void define_field(DsqlCompilerScratch* dsqlScratch,
 	if (not_null_flag)
 	{
 		// dimitr: insert a not null item right before column's isc_dyn_end
-		statement->blrData.insert(end, isc_dyn_fld_not_null);
+		statement->getBlrData().insert(end, isc_dyn_fld_not_null);
 	}
 	else if (pkcols)
 	{
@@ -2013,7 +2013,7 @@ static void define_field(DsqlCompilerScratch* dsqlScratch,
 			const dsql_str* pkfield_name = (dsql_str*) pkcols->nod_arg[i]->nod_arg[e_fln_name];
 			if (field->fld_name == pkfield_name->str_data)
 			{
-				statement->blrData.insert(end, isc_dyn_fld_not_null);
+				statement->getBlrData().insert(end, isc_dyn_fld_not_null);
 				break;
 			}
 		}
@@ -2079,7 +2079,7 @@ static void define_filter(DsqlCompilerScratch* dsqlScratch)
  *
  **************************************/
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* filter_node = statement->ddlNode;
+	const dsql_nod* filter_node = statement->getDdlNode();
 	const dsql_nod* const* ptr = filter_node->nod_arg;
 
 	statement->append_cstring(isc_dyn_def_filter, ((dsql_str*) (ptr[e_filter_name]))->str_data);
@@ -2111,12 +2111,12 @@ static void define_collation(DsqlCompilerScratch* dsqlScratch)
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	const dsql_str* coll_name = (dsql_str*) statement->ddlNode->nod_arg[e_def_coll_name];
-	const dsql_str* coll_for = (dsql_str*) statement->ddlNode->nod_arg[e_def_coll_for];
-	const dsql_nod* coll_from = statement->ddlNode->nod_arg[e_def_coll_from];
-	const dsql_nod* coll_attributes = statement->ddlNode->nod_arg[e_def_coll_attributes];
+	const dsql_str* coll_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_def_coll_name];
+	const dsql_str* coll_for = (dsql_str*) statement->getDdlNode()->nod_arg[e_def_coll_for];
+	const dsql_nod* coll_from = statement->getDdlNode()->nod_arg[e_def_coll_from];
+	const dsql_nod* coll_attributes = statement->getDdlNode()->nod_arg[e_def_coll_attributes];
 	const dsql_nod* coll_specific_attributes =
-		PASS1_node(dsqlScratch, statement->ddlNode->nod_arg[e_def_coll_specific_attributes]);
+		PASS1_node(dsqlScratch, statement->getDdlNode()->nod_arg[e_def_coll_specific_attributes]);
 
 	const dsql_intlsym* resolved_charset =
 		METD_get_charset(dsqlScratch->getTransaction(), (USHORT) strlen(coll_for->str_data),
@@ -2209,7 +2209,7 @@ static void define_generator(DsqlCompilerScratch* dsqlScratch)
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	const dsql_str* gen_name = (dsql_str*) statement->ddlNode->nod_arg[e_gen_name];
+	const dsql_str* gen_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_gen_name];
 	statement->append_cstring(isc_dyn_def_generator, gen_name->str_data);
 	statement->append_uchar(isc_dyn_end);
 }
@@ -2231,7 +2231,7 @@ static void define_index(DsqlCompilerScratch* dsqlScratch)
 
 	statement->append_uchar(isc_dyn_begin);
 
-	const dsql_nod* ddl_node = statement->ddlNode;
+	const dsql_nod* ddl_node = statement->getDdlNode();
 	dsql_nod* relation_node = (dsql_nod*) ddl_node->nod_arg[e_idx_table];
 	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
 	dsql_nod* field_list = ddl_node->nod_arg[e_idx_fields];
@@ -2317,7 +2317,7 @@ static void define_relation(DsqlCompilerScratch* dsqlScratch)
 	thread_db* tdbb = JRD_get_thread_data(); // not used
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->ddlNode;
+	dsql_nod* ddl_node = statement->getDdlNode();
 
 	const dsql_nod* relation_node = ddl_node->nod_arg[e_drl_name];
 	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
@@ -2385,7 +2385,7 @@ static void define_relation(DsqlCompilerScratch* dsqlScratch)
 static void define_role(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_str* gen_name = (dsql_str*) statement->ddlNode->nod_arg[e_gen_name];
+	const dsql_str* gen_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_gen_name];
 
 	statement->append_cstring(isc_dyn_def_sql_role, gen_name->str_data);
 	statement->append_uchar(isc_dyn_end);
@@ -2466,7 +2466,7 @@ static void define_set_null_trg(DsqlCompilerScratch* dsqlScratch,
 static void define_shadow(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* shadow_node = statement->ddlNode;
+	const dsql_nod* shadow_node = statement->getDdlNode();
 	const dsql_nod* const* ptr   = shadow_node->nod_arg;
 
 	if (!ptr[e_shadow_number])
@@ -2528,7 +2528,7 @@ static void define_udf(DsqlCompilerScratch* dsqlScratch)
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	SSHORT position, blob_position = -1;
 
-	dsql_nod* udf_node = statement->ddlNode;
+	dsql_nod* udf_node = statement->getDdlNode();
 	dsql_nod* arguments = udf_node->nod_arg[e_udf_args];
 	dsql_nod** ptr = udf_node->nod_arg;
 	const char* udf_name = ((dsql_str*) (ptr[e_udf_name]))->str_data;
@@ -2704,7 +2704,7 @@ static void define_update_action(DsqlCompilerScratch* dsqlScratch,
  *	base relation.
  *
  **************************************/
-	dsql_nod* ddl_node = dsqlScratch->getStatement()->ddlNode;
+	dsql_nod* ddl_node = dsqlScratch->getStatement()->getDdlNode();
 
 	// check whether this is an updatable view definition
 
@@ -2913,7 +2913,7 @@ static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 	thread_db* tdbb = JRD_get_thread_data(); // not used
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* node = statement->ddlNode;
+	dsql_nod* node = statement->getDdlNode();
 	const dsql_str* view_name = (dsql_str*) node->nod_arg[e_view_name];
 	const dsql_rel* view_relation = NULL;
 
@@ -3322,7 +3322,7 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 	thread_db* tdbb = JRD_get_thread_data();
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* const saved_ddl_node = statement->ddlNode;
+	dsql_nod* const saved_ddl_node = statement->getDdlNode();
 
 	dsql_nod* select_expr = saved_ddl_node->nod_arg[e_view_select];
 	select_expr = select_expr->nod_arg[e_sel_query_spec];
@@ -3331,7 +3331,7 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 	// make the "define trigger" node the current statement ddl node so
 	// that generating of BLR will be appropriate for trigger
 
-	statement->ddlNode = node;
+	statement->setDdlNode(node);
 
 	dsql_nod* relation_node = NULL;
 
@@ -3461,7 +3461,7 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 	// is a data definition statement; also reset the ddl node
 
 	statement->type = REQ_DDL;
-	statement->ddlNode = saved_ddl_node;
+	statement->setDdlNode(saved_ddl_node);
 	reset_context_stack(dsqlScratch);
 }
 
@@ -3480,7 +3480,7 @@ static void delete_collation(DsqlCompilerScratch* dsqlScratch)
  **************************************/
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_str* coll_name = (dsql_str*) statement->ddlNode->nod_arg[e_del_coll_name];
+	const dsql_str* coll_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_del_coll_name];
 	statement->append_cstring(isc_dyn_del_collation, coll_name->str_data);
 	statement->append_uchar(isc_dyn_end);
 }
@@ -3729,7 +3729,7 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	const dsql_str* string;
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	statement->ddlNode = node;
+	statement->setDdlNode(node);
 
 	switch (node->nod_type)
 	{
@@ -3934,7 +3934,7 @@ static void grant_revoke(DsqlCompilerScratch* dsqlScratch)
 
 	SSHORT option = 0; // no grant/admin option
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->ddlNode;
+	dsql_nod* ddl_node = statement->getDdlNode();
 	const dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
 	const dsql_nod* table = ddl_node->nod_arg[e_grant_table];
 
@@ -4089,7 +4089,7 @@ static void make_index_trg_ref_int(	DsqlCompilerScratch*    dsqlScratch,
 	// in this case the foreign key table
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node         = statement->ddlNode;
+	dsql_nod* ddl_node         = statement->getDdlNode();
 	dsql_nod* for_rel_node     = ddl_node->nod_arg[e_drl_name];
 	const dsql_str* for_rel_name_str = (dsql_str*) for_rel_node->nod_arg[e_rln_name];
 
@@ -4226,7 +4226,7 @@ static void modify_database( DsqlCompilerScratch* dsqlScratch)
  *
  **************************************/
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->ddlNode;
+	const dsql_nod* ddl_node = statement->getDdlNode();
 
 	statement->append_uchar(isc_dyn_mod_database);
 	// statement->append_number(isc_dyn_rel_sql_protection, 1);
@@ -4313,7 +4313,7 @@ static void modify_domain( DsqlCompilerScratch* dsqlScratch)
 	// cases.
 	USHORT repetition_count[6];
 
-	dsql_nod* ddl_node = statement->ddlNode;
+	dsql_nod* ddl_node = statement->getDdlNode();
 
 	dsql_nod* domain_node = ddl_node->nod_arg[e_alt_dom_name];
 	const dsql_str* domain_name = (dsql_str*) domain_node->nod_arg[e_fln_name];
@@ -4429,7 +4429,7 @@ static void modify_index( DsqlCompilerScratch* dsqlScratch)
  *
  **************************************/
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->ddlNode;
+	dsql_nod* ddl_node = statement->getDdlNode();
 
 	dsql_nod* index_node = ddl_node->nod_arg[e_alt_index];
 	const dsql_str* index_name = (dsql_str*) index_node->nod_arg[e_alt_idx_name];
@@ -4549,7 +4549,7 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 		statement->append_uchar(*privs);
 	}
 
-	UCHAR* dynsave = statement->blrData.end();
+	UCHAR* dynsave = statement->getBlrData().end();
 	for (SSHORT i = priv_count + 2; i; i--) {
 		--dynsave;
 	}
@@ -4687,7 +4687,7 @@ static void modify_relation(DsqlCompilerScratch* dsqlScratch)
 	thread_db* tdbb = JRD_get_thread_data(); // not used
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->ddlNode;
+	dsql_nod* ddl_node = statement->getDdlNode();
 
 	dsql_nod* relation_node = ddl_node->nod_arg[e_alt_name];
 	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
@@ -4833,7 +4833,7 @@ static void modify_udf(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	const dsql_nod* node = statement->ddlNode;
+	const dsql_nod* node = statement->getDdlNode();
 	fb_assert(node->nod_type == nod_mod_udf);
 	const dsql_str* obj_name = (dsql_str*) node->nod_arg[e_mod_udf_name];
 
@@ -4868,7 +4868,7 @@ static void modify_map(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	const dsql_nod* node = statement->ddlNode;
+	const dsql_nod* node = statement->getDdlNode();
 	fb_assert(node->nod_type == nod_mod_role);
 
 	const dsql_str* ds = (dsql_str*) node->nod_arg[e_mod_role_os_name];
@@ -4895,7 +4895,7 @@ static void define_user(DsqlCompilerScratch* dsqlScratch, UCHAR op)
 
 	statement->append_uchar(isc_dyn_user);
 
-	const dsql_nod* node = statement->ddlNode;
+	const dsql_nod* node = statement->getDdlNode();
 	int argCount = 0;
 
 	for (int i = 0; i < node->nod_count; ++i)
@@ -5561,7 +5561,7 @@ static void save_relation(DsqlCompilerScratch* dsqlScratch, const dsql_str* rela
 
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_METADATA_SAVED;
 
-	const dsql_nod* ddl_node = statement->ddlNode;
+	const dsql_nod* ddl_node = statement->getDdlNode();
 	dsql_rel* relation;
 
 	if (ddl_node->nod_type == nod_mod_relation)
@@ -5594,7 +5594,7 @@ static void set_statistics(DsqlCompilerScratch* dsqlScratch)
  *
  **************************************/
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->ddlNode;
+	const dsql_nod* ddl_node = statement->getDdlNode();
 	const dsql_str* index_name = (dsql_str*) ddl_node->nod_arg[e_stat_name];
 	statement->append_cstring(isc_dyn_mod_idx, index_name->str_data);
 	statement->append_uchar(isc_dyn_idx_statistic);
@@ -5776,7 +5776,7 @@ static void modify_field(DsqlCompilerScratch* dsqlScratch, dsql_nod*element, con
 		{
 			reset_context_stack(dsqlScratch);
 
-			PASS1_make_context(dsqlScratch, statement->ddlNode->nod_arg[e_alt_name]);
+			PASS1_make_context(dsqlScratch, statement->getDdlNode()->nod_arg[e_alt_name]);
 
 			dsql_str* computedSrc = (dsql_str*) computedNod->nod_arg[e_cmp_text];
 			fb_assert(computedSrc->str_length <= MAX_USHORT);

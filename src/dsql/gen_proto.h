@@ -36,7 +36,7 @@ void	GEN_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 // CVC: I think this can be replaced by statement->append_uchar(byte) in the calling code.
 inline void stuff(Jrd::DsqlCompiledStatement* statement, const UCHAR byte)
 {
-	statement->blrData.add(byte);
+	statement->getBlrData().add(byte);
 }
 
 // Write out a string with one byte of length.

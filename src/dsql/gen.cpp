@@ -801,8 +801,8 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 	{
 		// Do not generate BEGIN..END block around savepoint statement
 		// to avoid breaking of savepoint logic
-		statement->sendMsg = NULL;
-		statement->receiveMsg = NULL;
+		statement->setSendMsg(NULL);
+		statement->setReceiveMsg(NULL);
 		GEN_statement(scratch, node);
 	}
 	else
@@ -823,18 +823,18 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 			break;
 		default:
 			{
-				dsql_msg* message = statement->sendMsg;
+				dsql_msg* message = statement->getSendMsg();
 				if (!message->msg_parameter)
-					statement->sendMsg = NULL;
+					statement->setSendMsg(NULL);
 				else
 				{
 					GEN_port(scratch, message);
 					stuff(statement, blr_receive);
 					stuff(statement, message->msg_number);
 				}
-				message = statement->receiveMsg;
+				message = statement->getReceiveMsg();
 				if (!message->msg_parameter)
-					statement->receiveMsg = NULL;
+					statement->setReceiveMsg(NULL);
 				else
 					GEN_port(scratch, message);
 				GEN_statement(scratch, node);
@@ -2505,15 +2505,15 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
-		dsql_par* parameter = MAKE_parameter(statement->receiveMsg, true, true, 0, *ptr);
+		dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), true, true, 0, *ptr);
 		parameter->par_node = *ptr;
 		MAKE_desc(dsqlScratch, &parameter->par_desc, *ptr, NULL);
 	}
 
 	// Set up parameter to handle EOF
 
-	dsql_par* parameter_eof = MAKE_parameter(statement->receiveMsg, false, false, 0, NULL);
-	statement->eof = parameter_eof;
+	dsql_par* parameter_eof = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
+	statement->setEof(parameter_eof);
 	parameter_eof->par_desc.dsc_dtype = dtype_short;
 	parameter_eof->par_desc.dsc_scale = 0;
 	parameter_eof->par_desc.dsc_length = sizeof(SSHORT);
@@ -2535,7 +2535,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 				if (relation)
 				{
 					// Set up dbkey
-					dsql_par* parameter = MAKE_parameter(statement->receiveMsg, false,
+					dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), false,
 						false, 0, NULL);
 					parameter->par_dbkey_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
@@ -2544,7 +2544,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 					// Set up record version - for post v33 databases
 
-					parameter = MAKE_parameter(statement->receiveMsg, false, false, 0, NULL);
+					parameter = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
 					parameter->par_rec_version_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
@@ -2556,16 +2556,16 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	// Generate definitions for the messages
 
-	GEN_port(dsqlScratch, statement->receiveMsg);
-	dsql_msg* message = statement->sendMsg;
+	GEN_port(dsqlScratch, statement->getReceiveMsg());
+	dsql_msg* message = statement->getSendMsg();
 	if (message->msg_parameter)
 		GEN_port(dsqlScratch, message);
 	else
-		statement->sendMsg = NULL;
+		statement->setSendMsg(NULL);
 
 	// If there is a send message, build a RECEIVE
 
-	if ((message = statement->sendMsg) != NULL)
+	if ((message = statement->getSendMsg()) != NULL)
 	{
 		stuff(statement, blr_receive);
 		stuff(statement, message->msg_number);
@@ -2573,7 +2573,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	// Generate FOR loop
 
-	message = statement->receiveMsg;
+	message = statement->getReceiveMsg();
 
 	stuff(statement, blr_for);
 	stuff(statement, blr_stall);
@@ -2599,7 +2599,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	stuff(statement, blr_assignment);
 	constant = 1;
 	gen_constant(dsqlScratch, &constant_desc, USE_VALUE);
-	gen_parameter(dsqlScratch, statement->eof);
+	gen_parameter(dsqlScratch, statement->getEof());
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
@@ -2633,7 +2633,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	stuff(statement, blr_assignment);
 	constant = 0;
 	gen_constant(dsqlScratch, &constant_desc, USE_VALUE);
-	gen_parameter(dsqlScratch, statement->eof);
+	gen_parameter(dsqlScratch, statement->getEof());
 }
 
 
@@ -2754,7 +2754,7 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 
 	if (dsqlScratch->getStatement()->type == REQ_EXEC_PROCEDURE && send_before_for)
 	{
-		if ((message = dsqlScratch->getStatement()->receiveMsg))
+		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
 		{
 			stuff(dsqlScratch->getStatement(), blr_send);
 			stuff(dsqlScratch->getStatement(), message->msg_number);
@@ -2769,7 +2769,7 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 
 	if (dsqlScratch->getStatement()->type == REQ_EXEC_PROCEDURE)
 	{
-		if ((message = dsqlScratch->getStatement()->receiveMsg))
+		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
 		{
 			stuff(dsqlScratch->getStatement(), blr_begin);
 

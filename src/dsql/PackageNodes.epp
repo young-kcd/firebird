@@ -387,7 +387,7 @@ DdlNode* CreateAlterPackageNode::internalDsqlPass()
 			dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
 		itemScratch->package = name;
-		itemStatement->ddlNode = MAKE_node(nod_class_node, 1);
+		itemStatement->setDdlNode(MAKE_node(nod_class_node, 1));
 
 		switch ((*items)[i].type)
 		{
@@ -397,7 +397,7 @@ DdlNode* CreateAlterPackageNode::internalDsqlPass()
 					functionNames.add(fun->name);
 					fun->alter = true;
 					fun->package = name;
-					itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) fun;
+					itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) fun;
 					fun->dsqlPass(itemScratch);
 				}
 				break;
@@ -408,7 +408,7 @@ DdlNode* CreateAlterPackageNode::internalDsqlPass()
 					procedureNames.add(proc->name);
 					proc->alter = true;
 					proc->package = name;
-					itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) proc;
+					itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) proc;
 					proc->dsqlPass(itemScratch);
 				}
 				break;
@@ -776,7 +776,7 @@ DdlNode* CreatePackageBodyNode::internalDsqlPass()
 				dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
 			itemScratch->clientDialect = dsqlScratch->clientDialect;
 			itemScratch->package = name;
-			itemStatement->ddlNode = MAKE_node(nod_class_node, 1);
+			itemStatement->setDdlNode(MAKE_node(nod_class_node, 1));
 
 			switch ((*arrays[i])[j].type)
 			{
@@ -789,7 +789,7 @@ DdlNode* CreatePackageBodyNode::internalDsqlPass()
 							fun->alter = true;
 						else
 							fun->privateScope = true;
-						itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) fun;
+						itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) fun;
 						fun->dsqlPass(itemScratch);
 					}
 					break;
@@ -803,7 +803,7 @@ DdlNode* CreatePackageBodyNode::internalDsqlPass()
 							proc->alter = true;
 						else
 							proc->privateScope = true;
-						itemStatement->ddlNode->nod_arg[0] = (dsql_nod*) proc;
+						itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) proc;
 						proc->dsqlPass(itemScratch);
 					}
 					break;

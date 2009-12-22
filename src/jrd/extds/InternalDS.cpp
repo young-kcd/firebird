@@ -387,9 +387,10 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	const DsqlCompiledStatement* statement = m_request->getStatement();
 
-	if (statement->sendMsg) {
+	if (statement->getSendMsg()) {
 		try {
-			PreparedStatement::parseDsqlMessage(statement->sendMsg, m_inDescs, m_inBlr, m_in_buffer);
+			PreparedStatement::parseDsqlMessage(statement->getSendMsg(), m_inDescs,
+				m_inBlr, m_in_buffer);
 			m_inputs = m_inDescs.getCount() / 2;
 		}
 		catch (const Exception&) {
@@ -400,9 +401,10 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_inputs = 0;
 	}
 
-	if (statement->receiveMsg) {
+	if (statement->getReceiveMsg()) {
 		try {
-			PreparedStatement::parseDsqlMessage(statement->receiveMsg, m_outDescs, m_outBlr, m_out_buffer);
+			PreparedStatement::parseDsqlMessage(statement->getReceiveMsg(), m_outDescs,
+				m_outBlr, m_out_buffer);
 			m_outputs = m_outDescs.getCount() / 2;
 		}
 		catch (const Exception&) {

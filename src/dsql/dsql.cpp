@@ -100,7 +100,7 @@ static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* c
 static void		release_statement(DsqlCompiledStatement* statement);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, ULONG, UCHAR*);
-static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
+static UCHAR*	var_info(const dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
 
 static inline bool reqTypeWithCursor(REQ_TYPE type)
@@ -361,7 +361,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 				  Arg::Gds(isc_dsql_cursor_not_open));
 	}
 
-	dsql_msg* message = (dsql_msg*) request->getStatement()->receiveMsg;
+	dsql_msg* message = (dsql_msg*) request->getStatement()->getReceiveMsg();
 
 	// Set up things for tracing this call
 	Jrd::Attachment* att = request->req_dbb->dbb_attachment;
@@ -378,8 +378,8 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	{
 		// For get segment, use the user buffer and indicator directly.
 
-		dsql_par* parameter = request->getStatement()->blob->blb_segment;
-		dsql_par* null = parameter->par_null;
+		const dsql_par* parameter = request->getStatement()->getBlob()->blb_segment;
+		const dsql_par* null = parameter->par_null;
 
 		dsc userDesc;
 		if (!request->req_user_descs.get(parameter, userDesc))
@@ -408,7 +408,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
 		msgBuffer, 0);
 
-	const dsql_par* const eof = request->getStatement()->eof;
+	const dsql_par* const eof = request->getStatement()->getEof();
 
 	dsc eofDesc = eof->par_desc;
 	eofDesc.dsc_address = msgBuffer + IPTR(eofDesc.dsc_address);
@@ -510,7 +510,7 @@ void DSQL_insert(thread_db* tdbb,
 		}
 	}
 
-	dsql_msg* message = (dsql_msg*) request->getStatement()->receiveMsg;
+	dsql_msg* message = (dsql_msg*) request->getStatement()->getReceiveMsg();
 
 	// Insure that the blr for the message is parsed, regardless of
 	// whether anything is found by the call to receive.
@@ -522,7 +522,7 @@ void DSQL_insert(thread_db* tdbb,
 	{
 		// For put segment, use the user buffer and indicator directly.
 
-		dsql_par* parameter = request->getStatement()->blob->blb_segment;
+		const dsql_par* parameter = request->getStatement()->getBlob()->blb_segment;
 
 		dsc userDesc;
 		if (!request->req_user_descs.get(parameter, userDesc))
@@ -917,7 +917,7 @@ static void execute_blob(thread_db* tdbb,
 {
 	UCHAR bpb[24];
 
-	dsql_blb* blob = request->getStatement()->blob;
+	const dsql_blb* blob = request->getStatement()->getBlob();
 	map_in_out(request, false, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length,
 		NULL, in_msg);
 
@@ -1124,7 +1124,8 @@ static void execute_request(thread_db* tdbb,
 	{
 	case REQ_START_TRANS:
 		JRD_start_transaction(tdbb, &request->req_transaction, 1, &request->req_dbb->dbb_attachment,
-			request->getStatement()->blrData.getCount(), request->getStatement()->blrData.begin());
+			request->getStatement()->getBlrData().getCount(),
+			request->getStatement()->getBlrData().begin());
 		*tra_handle = request->req_transaction;
 		return;
 
@@ -1188,7 +1189,7 @@ static void execute_request(thread_db* tdbb,
 
 	// If there is no data required, just start the request
 
-	dsql_msg* message = request->getStatement()->sendMsg;
+	const dsql_msg* message = request->getStatement()->getSendMsg();
 	if (message)
 		map_in_out(request, false, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
 
@@ -1210,7 +1211,7 @@ static void execute_request(thread_db* tdbb,
 	// 2-byte message for EOS synchronization
 	const bool isBlock = (request->getStatement()->type == REQ_EXEC_BLOCK);
 
-	message = request->getStatement()->receiveMsg;
+	message = request->getStatement()->getReceiveMsg();
 	if ((out_msg_length && message) || isBlock)
 	{
 		UCHAR temp_buffer[FB_DOUBLE_ALIGN * 2];
@@ -1227,8 +1228,8 @@ static void execute_request(thread_db* tdbb,
 		else if (!out_msg_length && isBlock)
 		{
 			message = &temp_msg;
-			message->msg_number = 1;
-			message->msg_length = 2;
+			temp_msg.msg_number = 1;
+			temp_msg.msg_length = 2;
 			msgBuffer = (UCHAR*) FB_ALIGN((U_IPTR) temp_buffer, FB_DOUBLE_ALIGN);
 		}
 
@@ -2186,13 +2187,14 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 	}
 
 	const DsqlCompiledStatement* statement = request->getStatement();
-	dsql_par* parameter;
+	const dsql_par* parameter;
 
-	dsql_par* dbkey;
-	if (!toExternal && (dbkey = statement->parentDbkey) && (parameter = statement->dbkey))
+	const dsql_par* dbkey;
+	if (!toExternal && (dbkey = statement->getParentDbKey()) &&
+		(parameter = statement->getDbKey()))
 	{
-		UCHAR* parentMsgBuffer = statement->parentRequest ?
-			statement->parentRequest->req_msg_buffers[dbkey->par_message->msg_buffer_number] : NULL;
+		UCHAR* parentMsgBuffer = statement->getParentRequest() ?
+			statement->getParentRequest()->req_msg_buffers[dbkey->par_message->msg_buffer_number] : NULL;
 		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 		fb_assert(parentMsgBuffer);
@@ -2216,12 +2218,13 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 		}
 	}
 
-	dsql_par* rec_version;
-	if (!toExternal && (rec_version = statement->parentRecVersion) &&
-		(parameter = statement->recVersion))
+	const dsql_par* rec_version;
+	if (!toExternal && (rec_version = statement->getParentRecVersion()) &&
+		(parameter = statement->getRecVersion()))
 	{
-		UCHAR* parentMsgBuffer = statement->parentRequest ?
-			statement->parentRequest->req_msg_buffers[rec_version->par_message->msg_buffer_number] : NULL;
+		UCHAR* parentMsgBuffer = statement->getParentRequest() ?
+			statement->getParentRequest()->req_msg_buffers[rec_version->par_message->msg_buffer_number] :
+			NULL;
 		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 		fb_assert(parentMsgBuffer);
@@ -2583,9 +2586,9 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	// allocate the send and receive messages
 
-	statement->sendMsg = FB_NEW(pool) dsql_msg(pool);
+	statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
 	dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
-	statement->receiveMsg = message;
+	statement->setReceiveMsg(message);
 	message->msg_number = 1;
 
 	statement->type = REQ_SELECT;
@@ -2629,9 +2632,9 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		// Work on blob segment statements
 		case REQ_GET_SEGMENT:
 		case REQ_PUT_SEGMENT:
-			GEN_port(scratch, statement->blob->blb_open_in_msg);
-			GEN_port(scratch, statement->blob->blb_open_out_msg);
-			GEN_port(scratch, statement->blob->blb_segment_msg);
+			GEN_port(scratch, statement->getBlob()->blb_open_in_msg);
+			GEN_port(scratch, statement->getBlob()->blb_open_out_msg);
+			GEN_port(scratch, statement->getBlob()->blb_segment_msg);
 			break;
 	}
 
@@ -2687,7 +2690,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			return request;
 	}
 
-	const ULONG length = (ULONG) statement->blrData.getCount();
+	const ULONG length = (ULONG) statement->getBlrData().getCount();
 
 	// stop here for ddl statements
 
@@ -2707,8 +2710,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		gds__trace_raw("Statement:\n");
 		gds__trace_raw(string, string_length);
 		gds__trace_raw("\nBLR:\n");
-		fb_print_blr(statement->blrData.begin(),
-			(ULONG) statement->blrData.getCount(),
+		fb_print_blr(statement->getBlrData().begin(),
+			(ULONG) statement->getBlrData().getCount(),
 			gds__trace_printer, 0, 0);
 	}
 #endif
@@ -2728,10 +2731,10 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 					scratch->getAttachment()->dbb_attachment,
 					&request->req_request,
 					length,
-					statement->blrData.begin(),
+					statement->getBlrData().begin(),
 					statement->sqlText,
-					statement->debugData.getCount(),
-					statement->debugData.begin(),
+					statement->getDebugData().getCount(),
+					statement->getDebugData().begin(),
 					isInternalRequest);
 	}
 	catch (const Firebird::Exception&)
@@ -2759,7 +2762,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	}
 
 	// free blr memory
-	statement->blrData.free();
+	statement->getBlrData().free();
 
 	if (status)
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
@@ -2824,19 +2827,19 @@ static UCHAR* put_item(	UCHAR	item,
 // Release a compiled statement.
 static void release_statement(DsqlCompiledStatement* statement)
 {
-	if (statement->parentRequest)
+	if (statement->getParentRequest())
 	{
-		dsql_req* parent = statement->parentRequest;
+		dsql_req* parent = statement->getParentRequest();
 
 		size_t pos;
 		if (parent->cursors.find(statement, pos))
 			parent->cursors.remove(pos);
 
-		statement->parentRequest = NULL;
+		statement->setParentRequest(NULL);
 	}
 
 	statement->sqlText = NULL;
-	statement->blrData.free();	// free blr memory
+	statement->getBlrData().free();	// free blr memory
 }
 
 
@@ -2861,7 +2864,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	{
 		DsqlCompiledStatement* child = request->cursors[i];
 		child->flags |= DsqlCompiledStatement::FLAG_ORPHAN;
-		child->parentRequest = NULL;
+		child->setParentRequest(NULL);
 
 		Jrd::ContextPoolHolder context(tdbb, &child->getPool());
 		release_statement(child);
@@ -2960,7 +2963,8 @@ static void sql_info(thread_db* tdbb,
 
 	// CVC: Is it the idea that this pointer remains with its previous value
 	// in the loop or should it be made NULL in each iteration?
-	dsql_msg* const* message = NULL;
+	const dsql_msg* message = NULL;
+	bool messageFound = false;
 	USHORT first_index = 0;
 
 	const DsqlCompiledStatement* statement = request->getStatement();
@@ -2975,7 +2979,8 @@ static void sql_info(thread_db* tdbb,
 		case isc_info_sql_select:
 		case isc_info_sql_bind:
 			message = (item == isc_info_sql_select) ?
-				&statement->receiveMsg : &statement->sendMsg;
+				statement->getReceiveMsg() : statement->getSendMsg();
+			messageFound = true;
 			if (info + 1 >= end_info)
 			{
 				*info = isc_info_truncated;
@@ -3120,9 +3125,9 @@ static void sql_info(thread_db* tdbb,
 			break;
 		case isc_info_sql_num_variables:
 		case isc_info_sql_describe_vars:
-			if (message)
+			if (messageFound)
 			{
-				number = (*message) ? (*message)->msg_index : 0;
+				number = message ? message->msg_index : 0;
 				length = convert((SLONG) number, buffer);
 				if (!(info = put_item(item, length, buffer, info, end_info))) {
 					return;
@@ -3138,8 +3143,8 @@ static void sql_info(thread_db* tdbb,
 					end_describe++;
 				}
 
-				info = var_info(*message, items, end_describe, info, end_info, first_index,
-					message == &statement->sendMsg);
+				info = var_info(message, items, end_describe, info, end_info, first_index,
+					message == statement->getSendMsg());
 				if (!info) {
 					return;
 				}
@@ -3189,7 +3194,7 @@ static void sql_info(thread_db* tdbb,
     @param first_index
 
  **/
-static UCHAR* var_info(dsql_msg* message,
+static UCHAR* var_info(const dsql_msg* message,
 					   const UCHAR* items,
 					   const UCHAR* const end_describe,
 					   UCHAR* info,

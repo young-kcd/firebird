@@ -389,30 +389,76 @@ public:
 public:
 	DsqlCompiledStatement(MemoryPool& p)
 		: PermanentStorage(p),
-		  blrData(p),
-		  debugData(p),
 		  type(REQ_SELECT),
-		  blockNode(NULL),
-		  ddlNode(NULL),
 		  baseOffset(0),
 		  flags(0),
+		  blrData(p),
+		  debugData(p),
+		  blockNode(NULL),
+		  ddlNode(NULL),
 		  blob(NULL),
 		  sendMsg(NULL),
 		  receiveMsg(NULL),
 		  eof(NULL),
-		  dbkey(NULL),
+		  dbKey(NULL),
 		  recVersion(NULL),
 		  parentRecVersion(NULL),
-		  parentDbkey(NULL),
+		  parentDbKey(NULL),
 		  parentRequest(NULL)
 	{
 	}
 
 public:
-	MemoryPool& getPool()
-	{
-		return PermanentStorage::getPool();
-	}
+	MemoryPool& getPool() { return PermanentStorage::getPool(); }
+
+	Firebird::HalfStaticArray<UCHAR, 1024>& getBlrData() { return blrData; }
+	const Firebird::HalfStaticArray<UCHAR, 1024>& getBlrData() const { return blrData; }
+
+	Firebird::HalfStaticArray<UCHAR, 128>& getDebugData() { return debugData; }
+	const Firebird::HalfStaticArray<UCHAR, 128>& getDebugData() const { return debugData; }
+
+	BlockNode* getBlockNode() { return blockNode; }
+	const BlockNode* getBlockNode() const { return blockNode; }
+	void setBlockNode(BlockNode* value) { blockNode = value; }
+
+	dsql_nod* getDdlNode() { return ddlNode; }
+	const dsql_nod* getDdlNode() const { return ddlNode; }
+	void setDdlNode(dsql_nod* value) { ddlNode = value; }
+
+	dsql_blb* getBlob() { return blob; }
+	const dsql_blb* getBlob() const { return blob; }
+	void setBlob(dsql_blb* value) { blob = value; }
+
+	dsql_msg* getSendMsg() { return sendMsg; }
+	const dsql_msg* getSendMsg() const { return sendMsg; }
+	void setSendMsg(dsql_msg* value) { sendMsg = value; }
+
+	dsql_msg* getReceiveMsg() { return receiveMsg; }
+	const dsql_msg* getReceiveMsg() const { return receiveMsg; }
+	void setReceiveMsg(dsql_msg* value) { receiveMsg = value; }
+
+	dsql_par* getEof() { return eof; }
+	const dsql_par* getEof() const { return eof; }
+	void setEof(dsql_par* value) { eof = value; }
+
+	dsql_par* getDbKey() { return dbKey; }
+	const dsql_par* getDbKey() const { return dbKey; }
+	void setDbKey(dsql_par* value) { dbKey = value; }
+
+	dsql_par* getRecVersion() { return recVersion; }
+	const dsql_par* getRecVersion() const { return recVersion; }
+	void setRecVersion(dsql_par* value) { recVersion = value; }
+
+	dsql_par* getParentRecVersion() { return parentRecVersion; }
+	const dsql_par* getParentRecVersion() const { return parentRecVersion; }
+	void setParentRecVersion(dsql_par* value) { parentRecVersion = value; }
+
+	dsql_par* getParentDbKey() { return parentDbKey; }
+	const dsql_par* getParentDbKey() const { return parentDbKey; }
+	void setParentDbKey(dsql_par* value) { parentDbKey = value; }
+
+	dsql_req* getParentRequest() const { return parentRequest; }
+	void setParentRequest(dsql_req* value) { parentRequest = value; }
 
 public:
 	void append_uchar(UCHAR byte)
@@ -458,22 +504,24 @@ public:
 	void append_debug_info();
 
 public:
-	Firebird::RefStrPtr sqlText;
-	Firebird::HalfStaticArray<BLOB_PTR, 1024> blrData;
-	Firebird::HalfStaticArray<BLOB_PTR, 128> debugData;
 	REQ_TYPE type;				// Type of request
-	BlockNode* blockNode;		// Defining block
-	dsql_nod* ddlNode;			// Store metadata request
 	ULONG baseOffset;			// place to go back and stuff in blr length
 	ULONG flags;				// generic flag
+	Firebird::RefStrPtr sqlText;
+
+private:
+	Firebird::HalfStaticArray<UCHAR, 1024> blrData;
+	Firebird::HalfStaticArray<UCHAR, 128> debugData;
+	BlockNode* blockNode;		// Defining block
+	dsql_nod* ddlNode;			// Store metadata request
 	dsql_blb* blob;				// Blob info for blob requests
 	dsql_msg* sendMsg;			// Message to be sent to start request
 	dsql_msg* receiveMsg;		// Per record message to be received
 	dsql_par* eof;				// End of file parameter
-	dsql_par* dbkey;			// Database key for current of
+	dsql_par* dbKey;			// Database key for current of
 	dsql_par* recVersion;		// Record Version for current of
 	dsql_par* parentRecVersion;	// parent record version
-	dsql_par* parentDbkey;		// Parent database key for current of
+	dsql_par* parentDbKey;		// Parent database key for current of
 	dsql_req* parentRequest;	// Source request, if cursor update
 };
 
