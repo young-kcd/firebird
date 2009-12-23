@@ -65,8 +65,6 @@ bool isSupported(USHORT majorVersion, USHORT minorVersion)
 	return false;
 }
 
-
-
 size_t bytesBitPIP(size_t page_size)
 {
 	return page_size - OFFSETA(page_inv_page*, pip_bits);

@@ -1965,17 +1965,17 @@ ULONG PageSpace::maxAlloc(const Database* dbb)
 
 ULONG PageSpace::lastUsedPage()
 {
-	PageManager &pageMgr = dbb->dbb_page_manager;
+	PageManager& pageMgr = dbb->dbb_page_manager;
 	ULONG pipLast = (maxAlloc() / pageMgr.pagesPerPIP) * pageMgr.pagesPerPIP;
 
 	pipLast = pipLast ? pipLast - 1 : pipFirst;
 	win window(pageSpaceID, pipLast);
 
-	thread_db *tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	do
 	{
-		pag *page = CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
+		pag* page = CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
 		if (page->pag_type == pag_pages)
 			break;
 
@@ -1992,12 +1992,12 @@ ULONG PageSpace::lastUsedPage()
 	}
 	while (pipLast > pipFirst);
 
-	page_inv_page *pip = (page_inv_page*) window.win_buffer;
+	page_inv_page* pip = (page_inv_page*) window.win_buffer;
 
 	int last_bit = pip->pip_used;
 	int byte_num = last_bit / 8;
 	UCHAR mask = 1 << (last_bit % 8);
-	while ((last_bit >= 0) && (pip->pip_bits[byte_num] & mask))
+	while (last_bit >= 0 && (pip->pip_bits[byte_num] & mask))
 	{
 		if (mask == 1)
 		{
@@ -2247,12 +2247,12 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 
 void PAG_set_page_scn(thread_db* tdbb, win* window)
 {
-	Database *dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->getDatabase();
 	if (dbb->dbb_ods_version < ODS_VERSION12)
 		return;
 
-	PageManager &pageMgr = dbb->dbb_page_manager;
-	PageSpace *pageSpace = pageMgr.findPageSpace(window->win_page.getPageSpaceID());
+	PageManager& pageMgr = dbb->dbb_page_manager;
+	PageSpace* pageSpace = pageMgr.findPageSpace(window->win_page.getPageSpaceID());
 
 	if (pageSpace->isTemporary())
 		return;
@@ -2283,28 +2283,28 @@ void PAG_set_page_scn(thread_db* tdbb, win* window)
 
 
 #ifdef DEBUG
-namespace {
-
-// This checks should better be placed at ods.h but we can't use fb_assert() there.
-// See also comments in ods.h near the scns_page definition.
-
-class CheckODS
+namespace
 {
-public:
-	CheckODS()
+	// This checks should better be placed at ods.h but we can't use fb_assert() there.
+	// See also comments in ods.h near the scns_page definition.
+
+	class CheckODS
 	{
-		for (size_t page_size = MIN_PAGE_SIZE; page_size <= MAX_PAGE_SIZE; page_size *= 2)
+	public:
+		CheckODS()
 		{
-			size_t pagesPerPIP = Ods::pagesPerPIP(page_size);
-			size_t pagesPerSCN = Ods::pagesPerSCN(page_size);
-			size_t maxPagesPerSCN = Ods::maxPagesPerSCN(page_size);
+			for (size_t page_size = MIN_PAGE_SIZE; page_size <= MAX_PAGE_SIZE; page_size *= 2)
+			{
+				size_t pagesPerPIP = Ods::pagesPerPIP(page_size);
+				size_t pagesPerSCN = Ods::pagesPerSCN(page_size);
+				size_t maxPagesPerSCN = Ods::maxPagesPerSCN(page_size);
 
-			fb_assert((pagesPerPIP % pagesPerSCN) == 0);
-			fb_assert(pagesPerSCN <= maxPagesPerSCN);
+				fb_assert((pagesPerPIP % pagesPerSCN) == 0);
+				fb_assert(pagesPerSCN <= maxPagesPerSCN);
+			}
 		}
-	}
-};
+	};
 
-static CheckODS doCheck;
+	static CheckODS doCheck;
 }
 #endif // DEBUG

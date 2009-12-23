@@ -79,4 +79,3 @@ void SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
 
 
 #endif // JRD_SCL_PROTO_H
-

@@ -525,7 +525,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	// Get the name in CSTRING format, ending on NULL or SPACE
 	fb_assert(dsc_name->dsc_dtype == dtype_text);
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
-							dsc_name->dsc_length);
+								  dsc_name->dsc_length);
 
 	Database* dbb = tdbb->getDatabase();
 

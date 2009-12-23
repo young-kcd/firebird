@@ -67,7 +67,7 @@ class PageManager;
 class PageSpace : public pool_alloc<type_PageSpace>
 {
 public:
-	explicit PageSpace(Database *aDbb, USHORT aPageSpaceID)
+	explicit PageSpace(Database* aDbb, USHORT aPageSpaceID)
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
@@ -118,13 +118,13 @@ public:
 
 private:
 	ULONG	maxPageNumber;
-	Database *dbb;
+	Database* dbb;
 };
 
 class PageManager : public pool_alloc<type_PageManager>
 {
 public:
-	explicit PageManager(Database *aDbb, Firebird::MemoryPool& aPool) :
+	explicit PageManager(Database* aDbb, Firebird::MemoryPool& aPool) :
 		dbb(aDbb),
 		pageSpaces(aPool),
 		pool(aPool)
@@ -169,7 +169,7 @@ private:
 	typedef Firebird::SortedArray<PageSpace*, Firebird::EmptyStorage<PageSpace*>,
 		USHORT, PageSpace> PageSpaceArray;
 
-	Database *dbb;
+	Database* dbb;
 	PageSpaceArray pageSpaces;
 	Firebird::MemoryPool& pool;
 };
