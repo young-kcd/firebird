@@ -857,12 +857,12 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	// sometimes will fetch the same page more than once.  In that
 	// event we don't report double allocation.  If the page is truely
 	// double allocated (to more than one relation) we'll find it
-	// when the on-page relation id doesn't match
+	// when the on-page relation id doesn't match.
 	// We also don't test SCN's pages here. If it double allocated this
 	// will be detected when wrong page reference will be fetched with
 	// non pag_scns type.
 
-	if ((type != pag_data) && (type != pag_scns) &&
+	if (type != pag_data && type != pag_scns &&
 		PageBitmap::test(control->vdr_page_bitmap, page_number))
 	{
 		corrupt(tdbb, control, VAL_PAG_DOUBLE_ALLOC, 0, page_number);
@@ -872,14 +872,14 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	// Check SCN's page
 	if (page_number)
 	{
-		PageManager &pageMgr = dbb->dbb_page_manager;
+		PageManager& pageMgr = dbb->dbb_page_manager;
 		const ULONG scn_seq = page_number / pageMgr.pagesPerSCN;
 		const ULONG scn_slot = page_number % pageMgr.pagesPerSCN;
 		const ULONG scn_page_num = PageSpace::getSCNPageNum(dbb, scn_seq);
 		const ULONG page_scn = (*page_pointer)->pag_scn;
 
 		WIN scns_window(DB_PAGE_SPACE, scn_page_num);
-		scns_page *scns = (scns_page*) *page_pointer;
+		scns_page* scns = (scns_page*) *page_pointer;
 
 		if (scn_page_num != page_number) {
 			fetch_page(tdbb, control, scn_page_num, pag_scns, &scns_window, &scns);
@@ -891,7 +891,7 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 
 			if (control->vdr_flags & vdr_update)
 			{
-				WIN *win = (scn_page_num == page_number) ? window : &scns_window;
+				WIN* win = (scn_page_num == page_number) ? window : &scns_window;
 				CCH_MARK(tdbb, win);
 
 				scns->scn_pages[scn_slot] = page_scn;
@@ -1533,7 +1533,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				else
 				{
 					// Check if jump node has same length as data node prefix.
-					BTreeNode::readNode(&checknode, (UCHAR*)page + jumpNode.offset, leafPage);
+					BTreeNode::readNode(&checknode, (UCHAR*) page + jumpNode.offset, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 								id + 1, next, page->btr_level, __FILE__, __LINE__);
@@ -1589,7 +1589,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				nullKeyNode = false;
 			}
 
-			if ((node.recordNumber.getValue() >= 0) && !firstNode && !node.isEndLevel)
+			if (node.recordNumber.getValue() >= 0 && !firstNode && !node.isEndLevel)
 			{
 				// If this node is equal to the previous one and it's
 				// not a MARKER, record number should be same or higher.
@@ -2248,8 +2248,8 @@ static RTN walk_scns(thread_db* tdbb, vdr* control)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	PageManager &pageMgr = dbb->dbb_page_manager;
-	PageSpace *pageSpace = pageMgr.findPageSpace(DB_PAGE_SPACE);
+	PageManager& pageMgr = dbb->dbb_page_manager;
+	PageSpace* pageSpace = pageMgr.findPageSpace(DB_PAGE_SPACE);
 
 	const ULONG lastPage = pageSpace->lastUsedPage();
 	const ULONG cntSCNs = lastPage / pageMgr.pagesPerSCN + 1;
@@ -2260,7 +2260,7 @@ static RTN walk_scns(thread_db* tdbb, vdr* control)
 	{
 		const ULONG scnPage = pageSpace->getSCNPageNum(sequence);
 		WIN scnWindow(pageSpace->pageSpaceID, scnPage);
-		scns_page *scns = NULL;
+		scns_page* scns = NULL;
 		fetch_page(tdbb, control, scnPage, pag_scns, &scnWindow, &scns);
 
 		if (scns->scn_sequence != sequence)

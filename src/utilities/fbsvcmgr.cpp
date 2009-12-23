@@ -849,6 +849,7 @@ void usage(bool listSwitches)
 	{
 		printf("%s\n", getMessage(i).c_str());
 	}
+
 	if (! listSwitches)
 	{
 		printf("%s\n", getMessage(53).c_str());

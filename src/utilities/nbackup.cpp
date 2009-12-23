@@ -344,7 +344,7 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
 		(&file == &dbase ? dbname.c_str() :
-		&file == &backup ? bakname.c_str() : "unknown") <<
+			&file == &backup ? bakname.c_str() : "unknown") <<
 		Arg::OsError());
 
 	return 0; // silence compiler
@@ -363,7 +363,7 @@ void NBackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_write) <<
 		(&file == &dbase ? dbname.c_str() :
-		&file == &backup ? bakname.c_str() : "unknown") <<
+			&file == &backup ? bakname.c_str() : "unknown") <<
 		Arg::OsError());
 }
 
@@ -385,7 +385,7 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_seek) <<
 		(&file == &dbase ? dbname.c_str() :
-		&file == &backup ? bakname.c_str() : "unknown") <<
+			&file == &backup ? bakname.c_str() : "unknown") <<
 		Arg::OsError());
 }
 
@@ -738,7 +738,6 @@ void NBackup::unlock_database()
 
 void NBackup::backup_database(int level, const PathName& fname)
 {
-
 	bool database_locked = false;
 	// We set this flag when backup file is in inconsistent state
 	bool delete_backup = false;
@@ -749,7 +748,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 	ULONG page_writes = 0, page_reads = 0;
 
 	time_t start = time(NULL);
-	const struct tm *today = localtime(&start);
+	const struct tm* today = localtime(&start);
 
 	try {
 		// Look for SCN and GUID of previous-level backup in history table
@@ -841,8 +840,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 		// Read database header
 		char unaligned_header_buffer[SECTOR_ALIGNMENT * 2];
 
-		Ods::header_page *header =
-			reinterpret_cast<Ods::header_page*>(FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));
+		Ods::header_page *header = reinterpret_cast<Ods::header_page*>(
+			FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));
 
 		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
 			status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(1));
@@ -921,7 +920,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		const ULONG pagesPerSCN = Ods::pagesPerSCN(header->hdr_page_size);
 
 		Array<UCHAR> unaligned_scns_buffer;
-		Ods::scns_page *scns = NULL, *scns_buf = NULL;
+		Ods::scns_page* scns = NULL, *scns_buf = NULL;
 		{ // scope
 			UCHAR* buf = unaligned_scns_buffer.getBuffer(header->hdr_page_size + SECTOR_ALIGNMENT);
 			scns_buf = reinterpret_cast<Ods::scns_page*>(FB_ALIGN((IPTR) buf, SECTOR_ALIGNMENT));
@@ -1587,7 +1586,7 @@ void nbackup(UtilSvc* uSvc)
 	}
 	catch (const Exception& e)
 	{
-		if ((!uSvc->isService()) && (!nbk.printed()))
+		if (!uSvc->isService() && !nbk.printed())
 		{
 			ISC_STATUS_ARRAY status;
 			e.stuff_exception(status);
