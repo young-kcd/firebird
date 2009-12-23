@@ -74,11 +74,15 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 
 		// Other requests appear to be incorrect in this context
 		const long requests =
-			(1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE) |
-			(1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE) |
-			(1 << REQ_EXEC_BLOCK);
+			(1 << DsqlCompiledStatement::TYPE_INSERT) |
+			(1 << DsqlCompiledStatement::TYPE_DELETE) |
+			(1 << DsqlCompiledStatement::TYPE_UPDATE) |
+			(1 << DsqlCompiledStatement::TYPE_DDL) |
+			(1 << DsqlCompiledStatement::TYPE_SET_GENERATOR) |
+			(1 << DsqlCompiledStatement::TYPE_EXEC_PROCEDURE) |
+			(1 << DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
-		if (!((1 << stmt->getRequest()->getStatement()->type) & requests))
+		if (!((1 << stmt->getRequest()->getStatement()->getType()) & requests))
 		{
 			UCharBuffer dst;
 

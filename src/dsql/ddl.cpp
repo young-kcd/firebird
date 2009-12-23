@@ -334,7 +334,7 @@ void DDL_execute(dsql_req* request)
 	{
 		JRD_ddl(tdbb, /*request->getAttachment()->dbb_attachment,*/ request->req_transaction,
 			statement->getBlrData().getCount(), statement->getBlrData().begin(),
-			*statement->sqlText);
+			*statement->getSqlText());
 	}
 }
 
@@ -1102,7 +1102,7 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 			field->fld_sub_type = desc.dsc_sub_type;
 	}
 
-	statement->type = REQ_DDL;
+	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->setDdlNode(saved_ddl_node);
 	reset_context_stack(dsqlScratch);
 
@@ -1231,7 +1231,7 @@ static void define_constraint_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod
 	// the trigger actions, so reset it to reflect the fact that this
 	// is a data definition statement; also reset the ddl node
 
-	statement->type = REQ_DDL;
+	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->setDdlNode(saved_ddl_node);
 	reset_context_stack(dsqlScratch);
 }
@@ -3460,7 +3460,7 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 	// the trigger actions, so reset it to reflect the fact that this
 	// is a data definition statement; also reset the ddl node
 
-	statement->type = REQ_DDL;
+	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->setDdlNode(saved_ddl_node);
 	reset_context_stack(dsqlScratch);
 }
@@ -6142,7 +6142,7 @@ void DsqlCompiledStatement::put_debug_src_info(USHORT line, USHORT col)
 	ULONG offset = (blrData.getCount() - baseOffset);
 
 	// for DDL statements we store BLR's length at the first 2 bytes
-	if ((type == REQ_DDL || ddlNode) && !blockNode)
+	if ((type == DsqlCompiledStatement::TYPE_DDL || ddlNode) && !blockNode)
 		offset -= 2;
 
 	debugData.add(offset);

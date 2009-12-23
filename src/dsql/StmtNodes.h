@@ -58,7 +58,7 @@ public:
 	virtual void genBlr();
 	virtual IfNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual IfNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	dsql_nod* dsqlCondition;
@@ -92,7 +92,7 @@ public:
 	virtual void genBlr();
 	virtual InAutonomousTransactionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual InAutonomousTransactionNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	dsql_nod* dsqlAction;
@@ -176,7 +176,7 @@ public:
 	virtual void genBlr();
 	virtual PostEventNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual PostEventNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	dsql_nod* dsqlEvent;
@@ -217,7 +217,7 @@ public:
 	virtual void genBlr();
 	virtual SavepointNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SavepointNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	Command command;
@@ -247,7 +247,7 @@ public:
 	virtual void genBlr();
 	virtual SuspendNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SuspendNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request);
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	BlockNode* blockNode;

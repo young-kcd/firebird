@@ -416,36 +416,37 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	m_stmt_selectable = false;
-	switch (statement->type)
+
+	switch (statement->getType())
 	{
-	case REQ_SELECT:
-	case REQ_SELECT_UPD:
-	case REQ_SELECT_BLOCK:
+	case DsqlCompiledStatement::TYPE_SELECT:
+	case DsqlCompiledStatement::TYPE_SELECT_UPD:
+	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 		m_stmt_selectable = true;
 		break;
 
-	case REQ_START_TRANS:
-	case REQ_COMMIT:
-	case REQ_ROLLBACK:
-	case REQ_COMMIT_RETAIN:
-	case REQ_ROLLBACK_RETAIN:
-	case REQ_CREATE_DB:
+	case DsqlCompiledStatement::TYPE_START_TRANS:
+	case DsqlCompiledStatement::TYPE_COMMIT:
+	case DsqlCompiledStatement::TYPE_ROLLBACK:
+	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
+	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
+	case DsqlCompiledStatement::TYPE_CREATE_DB:
 		ERR_build_status(status, Arg::Gds(isc_eds_expl_tran_ctrl));
 		raise(status, tdbb, "jrd8_prepare", &sql);
 		break;
 
-	case REQ_INSERT:
-	case REQ_DELETE:
-	case REQ_UPDATE:
-	case REQ_UPDATE_CURSOR:
-	case REQ_DELETE_CURSOR:
-	case REQ_DDL:
-	case REQ_GET_SEGMENT:
-	case REQ_PUT_SEGMENT:
-	case REQ_EXEC_PROCEDURE:
-	case REQ_SET_GENERATOR:
-	case REQ_SAVEPOINT:
-	case REQ_EXEC_BLOCK:
+	case DsqlCompiledStatement::TYPE_INSERT:
+	case DsqlCompiledStatement::TYPE_DELETE:
+	case DsqlCompiledStatement::TYPE_UPDATE:
+	case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
+	case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
+	case DsqlCompiledStatement::TYPE_DDL:
+	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
+	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
+	case DsqlCompiledStatement::TYPE_EXEC_PROCEDURE:
+	case DsqlCompiledStatement::TYPE_SET_GENERATOR:
+	case DsqlCompiledStatement::TYPE_SAVEPOINT:
+	case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
 		break;
 	}
 }

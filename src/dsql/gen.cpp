@@ -786,18 +786,19 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 
 	DsqlCompiledStatement* statement = scratch->getStatement();
 
-	if (statement->type == REQ_CREATE_DB || statement->type == REQ_DDL)
+	if (statement->getType() == DsqlCompiledStatement::TYPE_CREATE_DB ||
+		statement->getType() == DsqlCompiledStatement::TYPE_DDL)
 	{
 		DDL_generate(scratch, node);
 		return;
 	}
 
-	if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+	if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 		stuff(statement, blr_version4);
 	else
 		stuff(statement, blr_version5);
 
-	if (statement->type == REQ_SAVEPOINT)
+	if (statement->getType() == DsqlCompiledStatement::TYPE_SAVEPOINT)
 	{
 		// Do not generate BEGIN..END block around savepoint statement
 		// to avoid breaking of savepoint logic
@@ -811,14 +812,14 @@ void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node
 
 		GEN_hidden_variables(scratch, false);
 
-		switch (statement->type)
+		switch (statement->getType())
 		{
-		case REQ_SELECT:
-		case REQ_SELECT_UPD:
+		case DsqlCompiledStatement::TYPE_SELECT:
+		case DsqlCompiledStatement::TYPE_SELECT_UPD:
 			gen_select(scratch, node);
 			break;
-		case REQ_EXEC_BLOCK:
-		case REQ_SELECT_BLOCK:
+		case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
+		case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 			GEN_statement(scratch, node);
 			break;
 		default:
@@ -2522,6 +2523,8 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	list = rse->nod_arg[e_rse_streams];
 
+	GenericMap<NonPooled<dsql_par*, dsql_ctx*> > paramContexts(*getDefaultMemoryPool());
+
 	if (!rse->nod_arg[e_rse_reduced])
 	{
 		dsql_nod* const* ptr2 = list->nod_arg;
@@ -2537,7 +2540,10 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 					// Set up dbkey
 					dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), false,
 						false, 0, NULL);
-					parameter->par_dbkey_ctx = context;
+
+					parameter->par_context_relname = relation->rel_name;
+					paramContexts.put(parameter, context);
+
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
 					parameter->par_desc.dsc_length = relation->rel_dbkey_length;
@@ -2545,7 +2551,6 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 					// Set up record version - for post v33 databases
 
 					parameter = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
-					parameter->par_rec_version_ctx = context;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
 					parameter->par_desc.dsc_length = relation->rel_dbkey_length / 2;
@@ -2611,15 +2616,14 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 			GEN_expr(dsqlScratch, parameter->par_node);
 			gen_parameter(dsqlScratch, parameter);
 		}
-		if (context = parameter->par_dbkey_ctx)
+
+		if (paramContexts.get(parameter, context))
 		{
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_dbkey);
 			stuff_context(statement, context);
 			gen_parameter(dsqlScratch, parameter);
-		}
-		if (context = parameter->par_rec_version_ctx)
-		{
+
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_record_version);
 			stuff_context(statement, context);
@@ -2752,7 +2756,8 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		break;
 	}
 
-	if (dsqlScratch->getStatement()->type == REQ_EXEC_PROCEDURE && send_before_for)
+	if (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE &&
+		send_before_for)
 	{
 		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
 		{
@@ -2767,7 +2772,7 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		GEN_expr(dsqlScratch, rse);
 	}
 
-	if (dsqlScratch->getStatement()->type == REQ_EXEC_PROCEDURE)
+	if (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE)
 	{
 		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
 		{

@@ -51,15 +51,18 @@ ResultSet::~ResultSet()
 
 	stmt->resultSet = NULL;
 
-	if (stmt->request->getStatement()->type != REQ_EXEC_PROCEDURE)
+	if (stmt->request->getStatement()->getType() != DsqlCompiledStatement::TYPE_EXEC_PROCEDURE)
 		DSQL_free_statement(tdbb, stmt->request, DSQL_close);
 }
 
 
 bool ResultSet::fetch(thread_db* tdbb)
 {
-	if (stmt->request->getStatement()->type == REQ_EXEC_PROCEDURE && firstFetchDone)
+	if (stmt->request->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE &&
+		firstFetchDone)
+	{
 		return false;
+	}
 
 	memset(stmt->outMessage.begin(), 0, stmt->outMessage.getCount());
 

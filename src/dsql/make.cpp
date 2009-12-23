@@ -1722,7 +1722,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_par* parameter = FB_NEW(*tdbb->getDefaultPool()) dsql_par;
+	dsql_par* parameter = FB_NEW(*tdbb->getDefaultPool()) dsql_par(*tdbb->getDefaultPool());
 	parameter->par_message = message;
 	message->msg_parameters.insert(0, parameter);
 	parameter->par_parameter = message->msg_parameter++;

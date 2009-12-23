@@ -60,7 +60,6 @@ enum BlockType
 	type_PageManager,
 
 	dsql_type_ctx,
-	dsql_type_par,
 	dsql_type_map,
 	dsql_type_req,
 	dsql_type_dbb,

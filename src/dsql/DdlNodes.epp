@@ -1107,7 +1107,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 
 				statement->getBlrData().clear();
 
-				if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+				if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 					statement->append_uchar(blr_version4);
 				else
 					statement->append_uchar(blr_version5);
@@ -1228,7 +1228,7 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* transaction)
 		statement->begin_debug();
 		statement->getBlrData().clear();
 
-		if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+		if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 			statement->append_uchar(blr_version4);
 		else
 			statement->append_uchar(blr_version5);
@@ -1316,7 +1316,7 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* transaction)
 
 		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
 
-		statement->type = REQ_DDL;
+		statement->setType(DsqlCompiledStatement::TYPE_DDL);
 		statement->append_uchar(blr_end);
 		GEN_return(dsqlScratch, outputVariables, false);
 
@@ -1851,7 +1851,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
 					P.RDB$PROCEDURE_TYPE = (USHORT)
-						(statement->flags & DsqlCompiledStatement::FLAG_SELECTABLE ?
+						(statement->getFlags() & DsqlCompiledStatement::FLAG_SELECTABLE ?
 							prc_selectable : prc_executable);
 				}
 			}
@@ -1975,7 +1975,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 
 			statement->getBlrData().clear();
 
-			if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+			if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 				statement->append_uchar(blr_version4);
 			else
 				statement->append_uchar(blr_version5);
@@ -2013,7 +2013,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 	statement->begin_debug();
 	statement->getBlrData().clear();
 
-	if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+	if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 		statement->append_uchar(blr_version4);
 	else
 		statement->append_uchar(blr_version5);
@@ -2119,7 +2119,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
 
-	statement->type = REQ_DDL;
+	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->append_uchar(blr_end);
 	GEN_return(dsqlScratch, outputVariables, true);
 
@@ -2633,7 +2633,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		// generate the trigger blr
 
-		if (statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+		if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
 			statement->append_uchar(blr_version4);
 		else
 			statement->append_uchar(blr_version5);
@@ -2666,7 +2666,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		// The statement type may have been set incorrectly when parsing
 		// the trigger actions, so reset it to reflect the fact that this
 		// is a data definition statement; also reset the ddl node.
-		statement->type = REQ_DDL;
+		statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	}
 
 	invalid = false;

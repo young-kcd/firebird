@@ -76,6 +76,7 @@ namespace Jrd
 	class dsql_blb;
 	class dsql_ctx;
 	class dsql_msg;
+	class dsql_par;
 	class dsql_str;
 	class dsql_nod;
 	class dsql_intlsym;
@@ -361,25 +362,19 @@ enum intlsym_flags_vals {
 };
 
 
-// Forward declaration.
-class dsql_par;
-
-// Request information
-enum REQ_TYPE
-{
-	REQ_SELECT, REQ_SELECT_UPD, REQ_INSERT, REQ_DELETE, REQ_UPDATE,
-	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
-	REQ_COMMIT, REQ_ROLLBACK, REQ_CREATE_DB, REQ_DDL,
-	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
-	REQ_COMMIT_RETAIN, REQ_ROLLBACK_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT,
-	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK
-};
-
-
 // Compiled statement - shared by multiple requests.
 class DsqlCompiledStatement : public Firebird::PermanentStorage
 {
 public:
+	enum Type	// statement type
+	{
+		TYPE_SELECT, TYPE_SELECT_UPD, TYPE_INSERT, TYPE_DELETE, TYPE_UPDATE, TYPE_UPDATE_CURSOR,
+		TYPE_DELETE_CURSOR, TYPE_COMMIT, TYPE_ROLLBACK, TYPE_CREATE_DB, TYPE_DDL, TYPE_START_TRANS,
+		TYPE_GET_SEGMENT, TYPE_PUT_SEGMENT, TYPE_EXEC_PROCEDURE, TYPE_COMMIT_RETAIN,
+		TYPE_ROLLBACK_RETAIN, TYPE_SET_GENERATOR, TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK
+	};
+
+	// Statement flags.
 	static const unsigned FLAG_ORPHAN		= 0x01;
 	static const unsigned FLAG_NO_BATCH		= 0x02;
 	static const unsigned FLAG_BLR_VERSION4	= 0x04;
@@ -389,7 +384,7 @@ public:
 public:
 	DsqlCompiledStatement(MemoryPool& p)
 		: PermanentStorage(p),
-		  type(REQ_SELECT),
+		  type(TYPE_SELECT),
 		  baseOffset(0),
 		  flags(0),
 		  blrData(p),
@@ -410,6 +405,19 @@ public:
 
 public:
 	MemoryPool& getPool() { return PermanentStorage::getPool(); }
+
+	Type getType() const { return type; }
+	void setType(Type value) { type = value; }
+
+	ULONG getBaseOffset() const { return baseOffset; }
+	void setBaseOffset(ULONG value) { baseOffset = value; }
+
+	ULONG getFlags() const { return flags; }
+	void setFlags(ULONG value) { flags = value; }
+
+	Firebird::RefStrPtr& getSqlText() { return sqlText; }
+	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
+	void setSqlText(Firebird::RefString* value) { sqlText = value; }
 
 	Firebird::HalfStaticArray<UCHAR, 1024>& getBlrData() { return blrData; }
 	const Firebird::HalfStaticArray<UCHAR, 1024>& getBlrData() const { return blrData; }
@@ -503,18 +511,16 @@ public:
 	void put_debug_argument(UCHAR, USHORT, const TEXT*);
 	void append_debug_info();
 
-public:
-	REQ_TYPE type;				// Type of request
+private:
+	Type type;					// Type of statement
 	ULONG baseOffset;			// place to go back and stuff in blr length
 	ULONG flags;				// generic flag
 	Firebird::RefStrPtr sqlText;
-
-private:
 	Firebird::HalfStaticArray<UCHAR, 1024> blrData;
 	Firebird::HalfStaticArray<UCHAR, 128> debugData;
 	BlockNode* blockNode;		// Defining block
-	dsql_nod* ddlNode;			// Store metadata request
-	dsql_blb* blob;				// Blob info for blob requests
+	dsql_nod* ddlNode;			// Store metadata statement
+	dsql_blb* blob;				// Blob info for blob statements
 	dsql_msg* sendMsg;			// Message to be sent to start request
 	dsql_msg* receiveMsg;		// Per record message to be received
 	dsql_par* eof;				// End of file parameter
@@ -910,14 +916,30 @@ public:
 };
 
 // Parameter block used to describe a parameter of a message
-class dsql_par : public pool_alloc<dsql_type_par>
+class dsql_par : public Firebird::PermanentStorage
 {
 public:
+	explicit dsql_par(MemoryPool& p)
+		: PermanentStorage(p),
+		  par_message(NULL),
+		  par_null(NULL),
+		  par_node(NULL),
+		  par_context_relname(p),
+		  par_name(NULL),
+		  par_rel_name(NULL),
+		  par_owner_name(NULL),
+		  par_rel_alias(NULL),
+		  par_alias(NULL),
+		  par_parameter(0),
+		  par_index(0)
+	{
+		par_desc.clear();
+	}
+
 	dsql_msg*	par_message;		// Parent message
 	dsql_par*	par_null;			// Null parameter, if used
 	dsql_nod*	par_node;			// Associated value node, if any
-	dsql_ctx*	par_dbkey_ctx;		// Context of internally requested dbkey
-	dsql_ctx*	par_rec_version_ctx;	// Context of internally requested record version
+	Firebird::MetaName	par_context_relname;	// Context of internally requested
 	const TEXT*	par_name;			// Parameter name, if any
 	const TEXT*	par_rel_name;		// Relation name, if any
 	const TEXT*	par_owner_name;		// Owner name, if any

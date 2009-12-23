@@ -1041,7 +1041,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	case nod_dom_value:
 		{
-			const dsql_nod* const ddl_node = (dsqlScratch->getStatement()->type == REQ_DDL) ?
+			const dsql_nod* const ddl_node = (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_DDL) ?
 				dsqlScratch->getStatement()->getDdlNode() : NULL;
 
 			if (!ddl_node ||
@@ -1059,8 +1059,8 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		{
 			const internal_info_id id =
 				*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
-			unsigned req_mask = InternalInfo::getMask(id);
-			if (req_mask && !(dsqlScratch->flags & req_mask))
+			unsigned scratchMask = InternalInfo::getMask(id);
+			if (scratchMask && !(dsqlScratch->flags & scratchMask))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Token unknown
@@ -1281,7 +1281,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	switch (input->nod_type)
 	{
 	case nod_def_database:
-		dsqlScratch->getStatement()->type = REQ_CREATE_DB;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_CREATE_DB);
 		return input;
 
 	case nod_def_relation:
@@ -1326,7 +1326,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_del_user:
 	case nod_def_collation:
 	case nod_del_collation:
-		dsqlScratch->getStatement()->type = REQ_DDL;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		return input;
 
 	case nod_class_node:
@@ -1349,20 +1349,20 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		if ((input->nod_arg[e_commit_retain]) &&
 			(input->nod_arg[e_commit_retain]->nod_type == nod_retain))
 		{
-			dsqlScratch->getStatement()->type = REQ_COMMIT_RETAIN;
+			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_COMMIT_RETAIN);
 		}
 		else
-			dsqlScratch->getStatement()->type = REQ_COMMIT;
+			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_COMMIT);
 		return input;
 
 	case nod_rollback:
 		if ((input->nod_arg[e_rollback_retain]) &&
 			(input->nod_arg[e_rollback_retain]->nod_type == nod_retain))
 		{
-			dsqlScratch->getStatement()->type = REQ_ROLLBACK_RETAIN;
+			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN);
 		}
 		else
-			dsqlScratch->getStatement()->type = REQ_ROLLBACK;
+			dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_ROLLBACK);
 		return input;
 
 	case nod_delete:
@@ -1389,7 +1389,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			if (!dsqlScratch->isPsql())
 			{
 				dsqlScratch->procedure = procedure;
-				dsqlScratch->getStatement()->type = REQ_EXEC_PROCEDURE;
+				dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
 			}
 
 			node = MAKE_node(input->nod_type, input->nod_count);
@@ -1757,8 +1757,9 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 			if (input->nod_arg[e_select_update])
 			{
-				dsqlScratch->getStatement()->type = REQ_SELECT_UPD;
-				dsqlScratch->getStatement()->flags |= DsqlCompiledStatement::FLAG_NO_BATCH;
+				dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SELECT_UPD);
+				dsqlScratch->getStatement()->setFlags(dsqlScratch->getStatement()->getFlags() |
+					DsqlCompiledStatement::FLAG_NO_BATCH);
 				break;
 			}
 
@@ -1768,12 +1769,15 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			// savepoint for open cursor.
 
 			if (node->nod_arg[e_rse_sort] || node->nod_arg[e_rse_reduced])
-				dsqlScratch->getStatement()->flags &= ~DsqlCompiledStatement::FLAG_NO_BATCH;
+			{
+				dsqlScratch->getStatement()->setFlags(dsqlScratch->getStatement()->getFlags() &
+					~DsqlCompiledStatement::FLAG_NO_BATCH);
+			}
 		}
 		break;
 
 	case nod_trans:
-		dsqlScratch->getStatement()->type = REQ_START_TRANS;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_START_TRANS);
 		return input;
 
 	case nod_update:
@@ -1808,14 +1812,14 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = MAKE_node(input->nod_type, e_gen_id_count);
 		node->nod_arg[e_gen_id_value] = PASS1_node(dsqlScratch, input->nod_arg[e_gen_id_value]);
 		node->nod_arg[e_gen_id_name] = input->nod_arg[e_gen_id_name];
-		dsqlScratch->getStatement()->type = REQ_SET_GENERATOR;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_GENERATOR);
 		break;
 
 	case nod_set_generator2:
 		node = MAKE_node(input->nod_type, e_gen_id_count);
 		node->nod_arg[e_gen_id_value] = PASS1_node(dsqlScratch, input->nod_arg[e_gen_id_value]);
 		node->nod_arg[e_gen_id_name] = input->nod_arg[e_gen_id_name];
-		dsqlScratch->getStatement()->type = REQ_SET_GENERATOR;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_GENERATOR);
 		break;
 
 	case nod_union:
@@ -2706,20 +2710,14 @@ static dsql_par* find_dbkey(const dsql_req* request, const dsql_nod* relation_na
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
-		DEV_BLKCHK(parameter, dsql_type_par);
 
-		const dsql_ctx* context = parameter->par_dbkey_ctx;
-		if (context)
+		if (parameter->par_context_relname.hasData() &&
+			parameter->par_context_relname == rel_name->str_data)
 		{
-			DEV_BLKCHK(context, dsql_type_ctx);
-			const dsql_rel* relation = context->ctx_relation;
-			if (relation->rel_name == rel_name->str_data)
-			{
-				if (candidate)
-					return NULL;
+			if (candidate)
+				return NULL;
 
-				candidate = parameter;
-			}
+			candidate = parameter;
 		}
 	}
 
@@ -2751,20 +2749,14 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
-		DEV_BLKCHK(parameter, dsql_type_par);
 
-		const dsql_ctx* context = parameter->par_rec_version_ctx;
-		if (context)
+		if (parameter->par_context_relname.hasData() &&
+			parameter->par_context_relname == rel_name->str_data)
 		{
-			DEV_BLKCHK(context, dsql_type_ctx);
-			const dsql_rel* relation = context->ctx_relation;
-			if (relation->rel_name == rel_name->str_data)
-			{
-				if (candidate)
-					return NULL;
+			if (candidate)
+				return NULL;
 
-				candidate = parameter;
-			}
+			candidate = parameter;
 		}
 	}
 
@@ -3597,7 +3589,8 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				  Arg::Gds(isc_dsql_blob_err));
 	}
 
-	dsqlScratch->getStatement()->type = (input->nod_type == nod_get_segment) ? REQ_GET_SEGMENT : REQ_PUT_SEGMENT;
+	dsqlScratch->getStatement()->setType((input->nod_type == nod_get_segment) ?
+		DsqlCompiledStatement::TYPE_GET_SEGMENT : DsqlCompiledStatement::TYPE_PUT_SEGMENT);
 
 	dsql_blb* blob = FB_NEW(*tdbb->getDefaultPool()) dsql_blb;
 	dsqlScratch->getStatement()->setBlob(blob);
@@ -4066,8 +4059,8 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	dsql_par* rv_source = find_record_version(parent, relation_name);
 
 	dsql_par* source;
-	if (parent->getStatement()->type != REQ_SELECT_UPD || !(source = find_dbkey(parent, relation_name)) ||
-		!rv_source)
+	if (parent->getStatement()->getType() != DsqlCompiledStatement::TYPE_SELECT_UPD ||
+		!(source = find_dbkey(parent, relation_name)) || !rv_source)
 	{
 		// cursor is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
@@ -4252,7 +4245,8 @@ static dsql_nod* pass1_delete( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 		return anode;
 	}
 
-	dsqlScratch->getStatement()->type = cursor ? REQ_DELETE_CURSOR : REQ_DELETE;
+	dsqlScratch->getStatement()->setType(
+		cursor ? DsqlCompiledStatement::TYPE_DELETE_CURSOR : DsqlCompiledStatement::TYPE_DELETE);
 	dsql_nod* node = MAKE_node(nod_erase, e_era_count);
 
 	// Generate record selection expression
@@ -4734,7 +4728,7 @@ static dsql_nod* process_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* i
 		node = PASS1_node_psql(dsqlScratch, input, false);
 
 	if (input && !dsqlScratch->isPsql())
-		dsqlScratch->getStatement()->type = REQ_EXEC_PROCEDURE;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
 
 	return node;
 }
@@ -6357,7 +6351,7 @@ static dsql_nod* pass1_insert( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	dsqlScratch->getStatement()->type = REQ_INSERT;
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 	dsql_nod* node = MAKE_node(nod_store, e_sto_count);
 
 	// Process SELECT expression, if present
@@ -7279,7 +7273,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	for_select->nod_arg[e_flp_action]->nod_arg[0] = (dsql_nod*) action;
 
 	// describe it as an INSERT
-	dsqlScratch->getStatement()->type = REQ_INSERT;
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 
 	// and return the whole FOR SELECT
 	return for_select;
@@ -7884,7 +7878,7 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 
 	if (!dsqlScratch->isPsql())
 	{
-		dsqlScratch->getStatement()->type = REQ_EXEC_PROCEDURE;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
 	}
 
 	return node;
@@ -9438,7 +9432,8 @@ static dsql_nod* pass1_update(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		return anode;
 	}
 
-	dsqlScratch->getStatement()->type = cursor ? REQ_UPDATE_CURSOR : REQ_UPDATE;
+	dsqlScratch->getStatement()->setType(
+		cursor ? DsqlCompiledStatement::TYPE_UPDATE_CURSOR : DsqlCompiledStatement::TYPE_UPDATE);
 
 	dsql_nod* node = MAKE_node(nod_modify, e_mod_count);
 	node->nod_arg[e_mod_update] = PASS1_node_psql(dsqlScratch, relation, false);
@@ -9845,9 +9840,9 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	list->nod_arg[2] = MAKE_node(nod_class_node, 1);
 	list->nod_arg[2]->nod_arg[0] = (dsql_nod*) ifNod;
 
-	// if RETURNING is present, type is already REQ_EXEC_PROCEDURE
+	// if RETURNING is present, type is already DsqlCompiledStatement::TYPE_EXEC_PROCEDURE
 	if (!input->nod_arg[e_upi_return])
-		dsqlScratch->getStatement()->type = REQ_INSERT;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 
 	return list;
 }
@@ -10635,7 +10630,6 @@ static bool set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_no
 					in_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 				}
 
-				DEV_BLKCHK(parameter, dsql_type_par);
 				parameter->par_desc = in_node->nod_desc;
 				parameter->par_node = in_node;
 
@@ -10808,7 +10802,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 	case nod_parameter:
 		{
 			dsql_par* parameter = (dsql_par*) par_node->nod_arg[e_par_parameter];
-			DEV_BLKCHK(parameter, dsql_type_par);
 			const dsql_fld* field = (dsql_fld*) fld_node->nod_arg[e_fld_field];
 			DEV_BLKCHK(field, dsql_type_fld);
 			parameter->par_name = field->fld_name.c_str();

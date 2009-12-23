@@ -103,15 +103,15 @@ static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, ULONG, UCHAR*
 static UCHAR*	var_info(const dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
 
-static inline bool reqTypeWithCursor(REQ_TYPE type)
+static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 {
 	switch (type)
 	{
-	case REQ_SELECT:
-	case REQ_SELECT_BLOCK:
-	case REQ_SELECT_UPD:
-	case REQ_GET_SEGMENT:
-	case REQ_PUT_SEGMENT:
+	case DsqlCompiledStatement::TYPE_SELECT:
+	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
+	case DsqlCompiledStatement::TYPE_SELECT_UPD:
+	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
+	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
 		return true;
 	}
 
@@ -226,7 +226,7 @@ void DSQL_execute(thread_db* tdbb,
 
 	const DsqlCompiledStatement* statement = request->getStatement();
 
-	if (statement->flags & DsqlCompiledStatement::FLAG_ORPHAN)
+	if (statement->getFlags() & DsqlCompiledStatement::FLAG_ORPHAN)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
@@ -237,7 +237,7 @@ void DSQL_execute(thread_db* tdbb,
 
 	// Only allow NULL trans_handle if we're starting a transaction
 
-	if (!*tra_handle && statement->type != REQ_START_TRANS)
+	if (!*tra_handle && statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_bad_trans_handle));
@@ -246,7 +246,7 @@ void DSQL_execute(thread_db* tdbb,
 	// If the request is a SELECT or blob statement then this is an open.
 	// Make sure the cursor is not already open.
 
-	if (reqTypeWithCursor(statement->type))
+	if (reqTypeWithCursor(statement->getType()))
 	{
 		if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
 		{
@@ -257,7 +257,7 @@ void DSQL_execute(thread_db* tdbb,
 
 	// A select with a non zero output length is a singleton select
 	bool singleton;
-	if (statement->type == REQ_SELECT && out_msg_length != 0)
+	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT && out_msg_length != 0)
 		singleton = true;
 	else
 		singleton = false;
@@ -272,13 +272,13 @@ void DSQL_execute(thread_db* tdbb,
 	else
 		request->req_transaction = *tra_handle;
 
-	// If the output message length is zero on a REQ_SELECT then we must
+	// If the output message length is zero on a DsqlCompiledStatement::TYPE_SELECT then we must
 	// be doing an OPEN cursor operation.
 	// If we do have an output message length, then we're doing
 	// a singleton SELECT.  In that event, we don't add the cursor
 	// to the list of open cursors (it's not really open).
 
-	if (reqTypeWithCursor(statement->type) && !singleton)
+	if (reqTypeWithCursor(statement->getType()) && !singleton)
 	{
 		request->req_flags |= dsql_req::FLAG_OPENED_CURSOR;
 		TRA_link_cursor(request->req_transaction, request);
@@ -374,7 +374,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 	}
 
-	if (request->getStatement()->type == REQ_GET_SEGMENT)
+	if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_GET_SEGMENT)
 	{
 		// For get segment, use the user buffer and indicator directly.
 
@@ -492,7 +492,7 @@ void DSQL_insert(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
-	if (request->getStatement()->flags & DsqlCompiledStatement::FLAG_ORPHAN)
+	if (request->getStatement()->getFlags() & DsqlCompiledStatement::FLAG_ORPHAN)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
@@ -500,7 +500,7 @@ void DSQL_insert(thread_db* tdbb,
 
 	// if the cursor isn't open, we've got a problem
 
-	if (request->getStatement()->type == REQ_PUT_SEGMENT)
+	if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_PUT_SEGMENT)
 	{
 		if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
 		{
@@ -518,7 +518,7 @@ void DSQL_insert(thread_db* tdbb,
 	if (blr_length)
 		parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 
-	if (request->getStatement()->type == REQ_PUT_SEGMENT)
+	if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_PUT_SEGMENT)
 	{
 		// For put segment, use the user buffer and indicator directly.
 
@@ -647,7 +647,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
-		if (request->getStatement()->type == REQ_CREATE_DB)
+		if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_CREATE_DB)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-530) <<
 					  Arg::Gds(isc_dsql_crdb_prepare_err));
@@ -811,8 +811,8 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 		ThreadStatusGuard status_vector(tdbb);
 		try
 		{
-			if (request->getStatement()->type == REQ_GET_SEGMENT ||
-				request->getStatement()->type == REQ_PUT_SEGMENT)
+			if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_GET_SEGMENT ||
+				request->getStatement()->getType() == DsqlCompiledStatement::TYPE_PUT_SEGMENT)
 			{
 				BLB_close(tdbb, request->req_blb);
 				request->req_blb = NULL;
@@ -954,7 +954,7 @@ static void execute_blob(thread_db* tdbb,
 
 	bid* blob_id = (bid*) desc.dsc_address;
 
-	if (request->getStatement()->type == REQ_GET_SEGMENT)
+	if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_GET_SEGMENT)
 	{
 		if (null)
 		{
@@ -1120,35 +1120,35 @@ static void execute_request(thread_db* tdbb,
 {
 	request->req_transaction = *tra_handle;
 
-	switch (request->getStatement()->type)
+	switch (request->getStatement()->getType())
 	{
-	case REQ_START_TRANS:
+	case DsqlCompiledStatement::TYPE_START_TRANS:
 		JRD_start_transaction(tdbb, &request->req_transaction, 1, &request->req_dbb->dbb_attachment,
 			request->getStatement()->getBlrData().getCount(),
 			request->getStatement()->getBlrData().begin());
 		*tra_handle = request->req_transaction;
 		return;
 
-	case REQ_COMMIT:
+	case DsqlCompiledStatement::TYPE_COMMIT:
 		JRD_commit_transaction(tdbb, &request->req_transaction);
 		*tra_handle = NULL;
 		return;
 
-	case REQ_COMMIT_RETAIN:
+	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
 		JRD_commit_retaining(tdbb, &request->req_transaction);
 		return;
 
-	case REQ_ROLLBACK:
+	case DsqlCompiledStatement::TYPE_ROLLBACK:
 		JRD_rollback_transaction(tdbb, &request->req_transaction);
 		*tra_handle = NULL;
 		return;
 
-	case REQ_ROLLBACK_RETAIN:
+	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
 		JRD_rollback_retaining(tdbb, &request->req_transaction);
 		return;
 
-	case REQ_CREATE_DB:
-	case REQ_DDL:
+	case DsqlCompiledStatement::TYPE_CREATE_DB:
+	case DsqlCompiledStatement::TYPE_DDL:
 		{
 			TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
 			DDL_execute(request);
@@ -1156,30 +1156,30 @@ static void execute_request(thread_db* tdbb,
 			return;
 		}
 
-	case REQ_GET_SEGMENT:
+	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
 		execute_blob(tdbb, request,
 					 in_blr_length, in_blr, in_msg_length, in_msg,
 					 out_blr_length, out_blr, out_msg_length, out_msg);
 		return;
 
-	case REQ_PUT_SEGMENT:
+	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
 		execute_blob(tdbb, request,
 					 in_blr_length, in_blr, in_msg_length, in_msg,
 					 out_blr_length, out_blr, out_msg_length, out_msg);
 		return;
 
-	case REQ_SELECT:
-	case REQ_SELECT_UPD:
-	case REQ_INSERT:
-	case REQ_UPDATE:
-	case REQ_UPDATE_CURSOR:
-	case REQ_DELETE:
-	case REQ_DELETE_CURSOR:
-	case REQ_EXEC_PROCEDURE:
-	case REQ_SET_GENERATOR:
-	case REQ_SAVEPOINT:
-	case REQ_EXEC_BLOCK:
-	case REQ_SELECT_BLOCK:
+	case DsqlCompiledStatement::TYPE_SELECT:
+	case DsqlCompiledStatement::TYPE_SELECT_UPD:
+	case DsqlCompiledStatement::TYPE_INSERT:
+	case DsqlCompiledStatement::TYPE_UPDATE:
+	case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
+	case DsqlCompiledStatement::TYPE_DELETE:
+	case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
+	case DsqlCompiledStatement::TYPE_EXEC_PROCEDURE:
+	case DsqlCompiledStatement::TYPE_SET_GENERATOR:
+	case DsqlCompiledStatement::TYPE_SAVEPOINT:
+	case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
+	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 		break;
 
 	default:
@@ -1206,10 +1206,10 @@ static void execute_request(thread_db* tdbb,
 						   message->msg_length, msgBuffer, 0);
 	}
 
-	// REQ_EXEC_BLOCK has no outputs so there are no out_msg
-	// supplied from client side, but REQ_EXEC_BLOCK requires
+	// DsqlCompiledStatement::TYPE_EXEC_BLOCK has no outputs so there are no out_msg
+	// supplied from client side, but DsqlCompiledStatement::TYPE_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
-	const bool isBlock = (request->getStatement()->type == REQ_EXEC_BLOCK);
+	const bool isBlock = (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
 	message = request->getStatement()->getReceiveMsg();
 	if ((out_msg_length && message) || isBlock)
@@ -1288,7 +1288,7 @@ static void execute_request(thread_db* tdbb,
 	}
 
 	UCHAR buffer[20]; // Not used after retrieved
-	if (request->getStatement()->type == REQ_UPDATE_CURSOR)
+	if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_UPDATE_CURSOR)
 	{
 		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
 
@@ -1299,7 +1299,7 @@ static void execute_request(thread_db* tdbb,
 					  Arg::Gds(isc_update_conflict));
 		}
 	}
-	else if (request->getStatement()->type == REQ_DELETE_CURSOR)
+	else if (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_DELETE_CURSOR)
 	{
 		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
 
@@ -1311,7 +1311,7 @@ static void execute_request(thread_db* tdbb,
 		}
 	}
 
-	const bool have_cursor = reqTypeWithCursor(request->getStatement()->type) && !singleton;
+	const bool have_cursor = reqTypeWithCursor(request->getStatement()->getType()) && !singleton;
 	trace.finish(have_cursor, res_successful);
 }
 
@@ -2572,7 +2572,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		}
 	}
 
-	statement->sqlText = FB_NEW(pool) RefString(pool, transformedText);
+	statement->setSqlText(FB_NEW(pool) RefString(pool, transformedText));
 
 	if (!node)
 	{
@@ -2591,7 +2591,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	statement->setReceiveMsg(message);
 	message->msg_number = 1;
 
-	statement->type = REQ_SELECT;
+	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
 
 	// No work is done during pass1 for set transaction - like
 	// checking for valid table names.  This is because that will
@@ -2602,15 +2602,15 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	if (!node)
 		return request;
 
-	switch (statement->type)
+	switch (statement->getType())
 	{
-	case REQ_COMMIT:
-	case REQ_COMMIT_RETAIN:
-	case REQ_ROLLBACK:
-	case REQ_ROLLBACK_RETAIN:
-	case REQ_GET_SEGMENT:
-	case REQ_PUT_SEGMENT:
-	case REQ_START_TRANS:
+	case DsqlCompiledStatement::TYPE_COMMIT:
+	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
+	case DsqlCompiledStatement::TYPE_ROLLBACK:
+	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
+	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
+	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
+	case DsqlCompiledStatement::TYPE_START_TRANS:
 		request->req_traced = false;
 		break;
 	default:
@@ -2619,7 +2619,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	// stop here for statements not requiring code generation
 
-	if (statement->type == REQ_DDL && parser.isStmtAmbiguous() &&
+	if (statement->getType() == DsqlCompiledStatement::TYPE_DDL && parser.isStmtAmbiguous() &&
 		scratch->getAttachment()->dbb_db_SQL_dialect != client_dialect)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
@@ -2627,40 +2627,40 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 				  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
 	}
 
-	switch (statement->type)
+	switch (statement->getType())
 	{
 		// Work on blob segment statements
-		case REQ_GET_SEGMENT:
-		case REQ_PUT_SEGMENT:
+		case DsqlCompiledStatement::TYPE_GET_SEGMENT:
+		case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
 			GEN_port(scratch, statement->getBlob()->blb_open_in_msg);
 			GEN_port(scratch, statement->getBlob()->blb_open_out_msg);
 			GEN_port(scratch, statement->getBlob()->blb_segment_msg);
 			break;
 	}
 
-	switch (statement->type)
+	switch (statement->getType())
 	{
-		case REQ_COMMIT:
-		case REQ_COMMIT_RETAIN:
-		case REQ_ROLLBACK:
-		case REQ_ROLLBACK_RETAIN:
+		case DsqlCompiledStatement::TYPE_COMMIT:
+		case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
+		case DsqlCompiledStatement::TYPE_ROLLBACK:
+		case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
 			return request;
 
-		case REQ_START_TRANS:
+		case DsqlCompiledStatement::TYPE_START_TRANS:
 			GEN_start_transaction(scratch, node);
 			return request;
 
 		default:
 			if (client_dialect > SQL_DIALECT_V5)
-				statement->flags |= DsqlCompiledStatement::FLAG_BLR_VERSION5;
+				statement->setFlags(statement->getFlags() | DsqlCompiledStatement::FLAG_BLR_VERSION5);
 			else
-				statement->flags |= DsqlCompiledStatement::FLAG_BLR_VERSION4;
+				statement->setFlags(statement->getFlags() | DsqlCompiledStatement::FLAG_BLR_VERSION4);
 
 			GEN_request(request, scratch, node);
 			// fall into
 
-		case REQ_GET_SEGMENT:
-		case REQ_PUT_SEGMENT:
+		case DsqlCompiledStatement::TYPE_GET_SEGMENT:
+		case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
 			{
 				// Create the messages buffers
 				for (size_t i = 0; i < scratch->ports.getCount(); ++i)
@@ -2683,10 +2683,10 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			}
 	}
 
-	switch (statement->type)
+	switch (statement->getType())
 	{
-		case REQ_GET_SEGMENT:
-		case REQ_PUT_SEGMENT:
+		case DsqlCompiledStatement::TYPE_GET_SEGMENT:
+		case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
 			return request;
 	}
 
@@ -2694,7 +2694,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	// stop here for ddl statements
 
-	if (statement->type == REQ_CREATE_DB || statement->type == REQ_DDL)
+	if (statement->getType() == DsqlCompiledStatement::TYPE_CREATE_DB ||
+		statement->getType() == DsqlCompiledStatement::TYPE_DDL)
 	{
 		// Notify Trace API manager about new DDL request cooked.
 		trace.prepare(res_successful);
@@ -2732,7 +2733,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 					&request->req_request,
 					length,
 					statement->getBlrData().begin(),
-					statement->sqlText,
+					statement->getSqlText(),
 					statement->getDebugData().getCount(),
 					statement->getDebugData().begin(),
 					isInternalRequest);
@@ -2838,7 +2839,7 @@ static void release_statement(DsqlCompiledStatement* statement)
 		statement->setParentRequest(NULL);
 	}
 
-	statement->sqlText = NULL;
+	statement->setSqlText(NULL);
 	statement->getBlrData().free();	// free blr memory
 }
 
@@ -2863,7 +2864,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	for (size_t i = 0; i < request->cursors.getCount(); ++i)
 	{
 		DsqlCompiledStatement* child = request->cursors[i];
-		child->flags |= DsqlCompiledStatement::FLAG_ORPHAN;
+		child->setFlags(child->getFlags() | DsqlCompiledStatement::FLAG_ORPHAN);
 		child->setParentRequest(NULL);
 
 		Jrd::ContextPoolHolder context(tdbb, &child->getPool());
@@ -2989,59 +2990,59 @@ static void sql_info(thread_db* tdbb,
 			*info++ = item;
 			break;
 		case isc_info_sql_stmt_type:
-			switch (statement->type)
+			switch (statement->getType())
 			{
-			case REQ_SELECT:
+			case DsqlCompiledStatement::TYPE_SELECT:
 				number = isc_info_sql_stmt_select;
 				break;
-			case REQ_SELECT_UPD:
+			case DsqlCompiledStatement::TYPE_SELECT_UPD:
 				number = isc_info_sql_stmt_select_for_upd;
 				break;
-			case REQ_CREATE_DB:
-			case REQ_DDL:
+			case DsqlCompiledStatement::TYPE_CREATE_DB:
+			case DsqlCompiledStatement::TYPE_DDL:
 				number = isc_info_sql_stmt_ddl;
 				break;
-			case REQ_GET_SEGMENT:
+			case DsqlCompiledStatement::TYPE_GET_SEGMENT:
 				number = isc_info_sql_stmt_get_segment;
 				break;
-			case REQ_PUT_SEGMENT:
+			case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
 				number = isc_info_sql_stmt_put_segment;
 				break;
-			case REQ_COMMIT:
-			case REQ_COMMIT_RETAIN:
+			case DsqlCompiledStatement::TYPE_COMMIT:
+			case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
 				number = isc_info_sql_stmt_commit;
 				break;
-			case REQ_ROLLBACK:
-			case REQ_ROLLBACK_RETAIN:
+			case DsqlCompiledStatement::TYPE_ROLLBACK:
+			case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
 				number = isc_info_sql_stmt_rollback;
 				break;
-			case REQ_START_TRANS:
+			case DsqlCompiledStatement::TYPE_START_TRANS:
 				number = isc_info_sql_stmt_start_trans;
 				break;
-			case REQ_INSERT:
+			case DsqlCompiledStatement::TYPE_INSERT:
 				number = isc_info_sql_stmt_insert;
 				break;
-			case REQ_UPDATE:
-			case REQ_UPDATE_CURSOR:
+			case DsqlCompiledStatement::TYPE_UPDATE:
+			case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
 				number = isc_info_sql_stmt_update;
 				break;
-			case REQ_DELETE:
-			case REQ_DELETE_CURSOR:
+			case DsqlCompiledStatement::TYPE_DELETE:
+			case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
 				number = isc_info_sql_stmt_delete;
 				break;
-			case REQ_EXEC_PROCEDURE:
+			case DsqlCompiledStatement::TYPE_EXEC_PROCEDURE:
 				number = isc_info_sql_stmt_exec_procedure;
 				break;
-			case REQ_SET_GENERATOR:
+			case DsqlCompiledStatement::TYPE_SET_GENERATOR:
 				number = isc_info_sql_stmt_set_generator;
 				break;
-			case REQ_SAVEPOINT:
+			case DsqlCompiledStatement::TYPE_SAVEPOINT:
 				number = isc_info_sql_stmt_savepoint;
 				break;
-			case REQ_EXEC_BLOCK:
+			case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
 				number = isc_info_sql_stmt_exec_procedure;
 				break;
-			case REQ_SELECT_BLOCK:
+			case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 				number = isc_info_sql_stmt_select;
 				break;
 			default:
@@ -3060,7 +3061,7 @@ static void sql_info(thread_db* tdbb,
 			items += length;
 			break;
 		case isc_info_sql_batch_fetch:
-			if (statement->flags & DsqlCompiledStatement::FLAG_NO_BATCH)
+			if (statement->getFlags() & DsqlCompiledStatement::FLAG_NO_BATCH)
 				number = 0;
 			else
 				number = 1;

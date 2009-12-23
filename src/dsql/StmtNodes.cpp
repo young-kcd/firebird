@@ -144,7 +144,7 @@ IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request)
+jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -237,7 +237,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 }
 
 
-jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
+jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	SLONG* savNumber = (SLONG*) ((char*) request + savNumberOffset);
 
@@ -387,9 +387,9 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 	statement->setBlockNode(this);
 
 	if (returns.hasData())
-		statement->type = REQ_SELECT_BLOCK;
+		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
 	else
-		statement->type = REQ_EXEC_BLOCK;
+		statement->setType(DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_BLOCK;
 
@@ -586,9 +586,9 @@ void ExecBlockNode::genBlr()
 	statement->append_uchar(0);
 	GEN_statement(dsqlScratch, stmtNode);
 	if (outputs)
-		statement->type = REQ_SELECT_BLOCK;
+		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
 	else
-		statement->type = REQ_EXEC_BLOCK;
+		statement->setType(DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
 	statement->append_uchar(blr_end);
 	GEN_return(dsqlScratch, outputVariables, true);
@@ -719,7 +719,7 @@ PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request)
+jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	jrd_tra* transaction = request->req_transaction;
 
@@ -792,7 +792,7 @@ SavepointNode* SavepointNode::internalDsqlPass()
 			Arg::Gds(isc_random) << Arg::Str(cmd));
 	}
 
-	statement->type = REQ_SAVEPOINT;
+	statement->setType(DsqlCompiledStatement::TYPE_SAVEPOINT);
 
 	return this;
 }
@@ -825,7 +825,7 @@ SavepointNode* SavepointNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*
 }
 
 
-jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request)
+jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	Database* dbb = request->req_attachment->att_database;
 	jrd_tra* transaction = request->req_transaction;
@@ -968,7 +968,7 @@ SuspendNode* SuspendNode::internalDsqlPass()
 				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
 	}
 
-	statement->flags |= DsqlCompiledStatement::FLAG_SELECTABLE;
+	statement->setFlags(statement->getFlags() | DsqlCompiledStatement::FLAG_SELECTABLE);
 
 	blockNode = statement->getBlockNode();
 
@@ -1004,7 +1004,7 @@ SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 
 // Execute a SEND statement.
-jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request)
+jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	switch (request->req_operation)
 	{

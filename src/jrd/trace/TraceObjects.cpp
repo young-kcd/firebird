@@ -184,7 +184,7 @@ int TraceSQLStatementImpl::getStmtID()
 
 const char* TraceSQLStatementImpl::getText()
 {
-	return m_stmt->getStatement()->sqlText->c_str();
+	return m_stmt->getStatement()->getSqlText()->c_str();
 }
 
 const char* TraceSQLStatementImpl::getPlan()

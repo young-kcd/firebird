@@ -98,7 +98,7 @@ protected:
 protected:
 	virtual DdlNode* internalDsqlPass()
 	{
-		dsqlScratch->getStatement()->type = REQ_DDL;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		return this;
 	}
 
@@ -126,7 +126,7 @@ public:
 	virtual void genBlr() = 0;
 	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) = 0;
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
 
 protected:
 	jrd_nod* node;
@@ -168,7 +168,7 @@ public:
 	}
 
 
-	jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/)
+	jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;
