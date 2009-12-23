@@ -1066,16 +1066,16 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	// next level.
 	IndexNode node;
 	BTreeNode::setNode(&node, 0, 0, RecordNumber(0), window.win_page.getPageNum());
-	pointer = BTreeNode::writeNode(&node, pointer, flags, false);
+	pointer = BTreeNode::writeNode(&node, pointer, false);
 
 	// Move in the split node
 	BTreeNode::setNode(&node, 0, key.key_length, recordNumber, split_page);
 	node.data = key.key_data;
-	pointer = BTreeNode::writeNode(&node, pointer, flags, false);
+	pointer = BTreeNode::writeNode(&node, pointer, false);
 
 	// mark end of level
 	BTreeNode::setEndLevel(&node); //, false);
-	pointer = BTreeNode::writeNode(&node, pointer, flags, false);
+	pointer = BTreeNode::writeNode(&node, pointer, false);
 
 	// Calculate length of bucket
 	new_bucket->btr_length = pointer - (UCHAR*)new_bucket;
@@ -1712,7 +1712,6 @@ void BTR_remove(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 		// get the page number of the child, and check to make sure
 		// the page still has only one node on it
 		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
-		const UCHAR flags = page->btr_header.pag_flags;
 		IndexNode pageNode;
 		pointer = BTreeNode::readNode(&pageNode, pointer, false);
 
@@ -2778,7 +2777,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 	nextNode.prefix = newNextPrefix;
 	nextNode.length = newNextLength;
 	nextNode.data = tempData;
-	pointer = BTreeNode::writeNode(&nextNode, pointer, flags, leafPage);
+	pointer = BTreeNode::writeNode(&nextNode, pointer, leafPage);
 	// below this point tempData contents is not used anymore and buffer may be reused
 
 	// Compute length of rest of bucket and move it down.
@@ -2825,7 +2824,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 		IndexJumpNode jumpNode, delJumpNode;
 		while (n)
 		{
-			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
 			// Jump nodes pointing to the deleted node are removed.
 			if ((jumpNode.offset < offsetDeletePoint) || (jumpNode.offset > offsetNextPoint))
 			{
@@ -2877,15 +2876,13 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 		// Write jump nodes.
 		IndexJumpNode* walkJumpNode = jumpNodes->begin();
 		for (size_t i = 0; i < jumpNodes->getCount(); i++) {
-			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer);
 		}
 		jumpNodes->clear();
 	}
 
 	// check to see if the page is now empty
 	pointer = BTreeNode::getPointerFirstNode(page);
-	//bool leafPage = (page->btr_level == 0);
-	//const UCHAR flags = page->pag_flags;
 	IndexNode node;
 	pointer = BTreeNode::readNode(&node, pointer, leafPage);
 	if (node.isEndBucket || node.isEndLevel) {
@@ -3234,13 +3231,13 @@ static SLONG fast_load(thread_db* tdbb,
 			// If the length of the new node will cause us to overflow the bucket,
 			// form a new bucket.
 			if (bucket->btr_length + totalJumpSize[0] +
-				BTreeNode::getNodeSize(&newNode, flags) > lp_fill_limit)
+				BTreeNode::getNodeSize(&newNode) > lp_fill_limit)
 			{
 				// mark the end of the previous page
 				const RecordNumber lastRecordNumber = previousNode.recordNumber;
 				BTreeNode::readNode(&previousNode, previousNode.nodePointer, true);
 				BTreeNode::setEndBucket(&previousNode); //, true);
-				pointer = BTreeNode::writeNode(&previousNode, previousNode.nodePointer, flags, true, false);
+				pointer = BTreeNode::writeNode(&previousNode, previousNode.nodePointer, true, false);
 				bucket->btr_length = pointer - (UCHAR*)bucket;
 
 				if (useJumpInfo && totalJumpSize[0])
@@ -3268,7 +3265,7 @@ static SLONG fast_load(thread_db* tdbb,
 					{
 						// Update offset position first.
 						walkJumpNode[i].offset += totalJumpSize[0];
-						pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+						pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer);
 					}
 					bucket->btr_length += totalJumpSize[0];
 				}
@@ -3311,7 +3308,7 @@ static SLONG fast_load(thread_db* tdbb,
 				IndexNode splitNode;
 				BTreeNode::setNode(&splitNode, 0, key->key_length, lastRecordNumber);
 				splitNode.data = key->key_data;
-				pointer = BTreeNode::writeNode(&splitNode, pointer, flags, true);
+				pointer = BTreeNode::writeNode(&splitNode, pointer, true);
 				previousNode = splitNode;
 
 				// save the page number of the previous page and release it
@@ -3347,7 +3344,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 			// Insert the new node in the current bucket
 			bucket->btr_prefix_total += prefix;
-			pointer = BTreeNode::writeNode(&newNode, pointer, flags, true);
+			pointer = BTreeNode::writeNode(&newNode, pointer, true);
 			previousNode = newNode;
 
 			// if we have a compound-index calculate duplicates per segment.
@@ -3451,7 +3448,7 @@ static SLONG fast_load(thread_db* tdbb,
 					jumpKey->keyLength, key->key_data, newNode.prefix);
 				jumpNode.length = newNode.prefix - jumpNode.prefix;
 
-				const USHORT jumpNodeSize = BTreeNode::getJumpNodeSize(&jumpNode, flags);
+				const USHORT jumpNodeSize = BTreeNode::getJumpNodeSize(&jumpNode);
 				// Ensure the new jumpnode fits in the bucket
 				if (bucket->btr_length + totalJumpSize[0] + jumpNodeSize < lp_fill_limit)
 				{
@@ -3514,7 +3511,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 					// First record-number of level must be zero
 					BTreeNode::setNode(&levelNode[level], 0, 0, RecordNumber(0), split_pages[level - 1]);
-					levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, flags, false);
+					levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, false);
 					bucket->btr_length = levelPointer - (UCHAR*) bucket;
 					key->key_length = 0;
 
@@ -3547,15 +3544,14 @@ static SLONG fast_load(thread_db* tdbb,
 				// See if the new node fits in the current bucket.
 				// If not, split the bucket.
 				if (bucket->btr_length + totalJumpSize[level] +
-					BTreeNode::getNodeSize(&levelNode[level], flags, false) > pp_fill_limit)
+					BTreeNode::getNodeSize(&levelNode[level], false) > pp_fill_limit)
 				{
 					// mark the end of the page; note that the end_bucket marker must
 					// contain info about the first node on the next page
 					const SLONG lastPageNumber = tempNode.pageNumber;
 					BTreeNode::readNode(&tempNode, tempNode.nodePointer, false);
 					BTreeNode::setEndBucket(&tempNode); //, false);
-					levelPointer = BTreeNode::writeNode(&tempNode, tempNode.nodePointer, flags,
-														false, false);
+					levelPointer = BTreeNode::writeNode(&tempNode, tempNode.nodePointer, false, false);
 					bucket->btr_length = levelPointer - (UCHAR*)bucket;
 
 					if (useJumpInfo && totalJumpSize[level])
@@ -3583,8 +3579,7 @@ static SLONG fast_load(thread_db* tdbb,
 						{
 							// Update offset position first.
 							walkJumpNode[i].offset += totalJumpSize[level];
-							levelPointer = BTreeNode::writeJumpNode(&walkJumpNode[i],
-								levelPointer, flags);
+							levelPointer = BTreeNode::writeJumpNode(&walkJumpNode[i], levelPointer);
 						}
 						bucket->btr_length += totalJumpSize[level];
 					}
@@ -3627,7 +3622,7 @@ static SLONG fast_load(thread_db* tdbb,
 					BTreeNode::setNode(&splitNode, 0, key->key_length,
 									   tempNode.recordNumber, lastPageNumber);
 					splitNode.data = key->key_data;
-					levelPointer = BTreeNode::writeNode(&splitNode, levelPointer, flags, false);
+					levelPointer = BTreeNode::writeNode(&splitNode, levelPointer, false);
 					tempNode = splitNode;
 
 					// indicate to propagate the page we just split from
@@ -3661,7 +3656,7 @@ static SLONG fast_load(thread_db* tdbb,
 
 				// Now propagate up the lower-level bucket by storing a "pointer" to it.
 				bucket->btr_prefix_total += prefix;
-				levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, flags, false);
+				levelPointer = BTreeNode::writeNode(&levelNode[level], levelPointer, false);
 
 				// Update the length of the page.
 				bucket->btr_length = levelPointer - (UCHAR*) bucket;
@@ -3679,7 +3674,7 @@ static SLONG fast_load(thread_db* tdbb,
 															   levelNode[level].prefix);
 					jumpNode.length = levelNode[level].prefix - jumpNode.prefix;
 
-					const USHORT jumpNodeSize = BTreeNode::getJumpNodeSize(&jumpNode, flags);
+					const USHORT jumpNodeSize = BTreeNode::getJumpNodeSize(&jumpNode);
 					// Ensure the new jumpnode fits in the bucket
 					if (bucket->btr_length + totalJumpSize[level] + jumpNodeSize < pp_fill_limit)
 					{
@@ -3719,7 +3714,7 @@ static SLONG fast_load(thread_db* tdbb,
 			// store the end of level marker
 			pointer = (UCHAR*)bucket + bucket->btr_length;
 			BTreeNode::setEndLevel(&levelNode[level]); //, leafPage);
-			pointer = BTreeNode::writeNode(&levelNode[level], pointer, flags, leafPage);
+			pointer = BTreeNode::writeNode(&levelNode[level], pointer, leafPage);
 
 			// and update the final page length
 			bucket->btr_length = pointer - (UCHAR*)bucket;
@@ -3753,7 +3748,7 @@ static SLONG fast_load(thread_db* tdbb,
 				{
 					// Update offset position first.
 					walkJumpNode[i].offset += totalJumpSize[level];
-					pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+					pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer);
 				}
 
 				bucket->btr_length += totalJumpSize[level];
@@ -4085,7 +4080,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 		USHORT testPrefix = 0;
 		while (n)
 		{
-			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
 			BTreeNode::readNode(&node, (UCHAR*)bucket + jumpNode.offset, leafPage);
 
 			// jumpKey will hold complete data off referenced node
@@ -4126,7 +4121,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 								prefix = jumpNode.length + jumpNode.prefix;
 
 								prevJumpNode = jumpNode;
-								pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+								pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
 								BTreeNode::readNode(&node, (UCHAR*)bucket + jumpNode.offset,
 													leafPage);
 
@@ -4192,7 +4187,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 								prefix = jumpNode.length + jumpNode.prefix;
 
 								prevJumpNode = jumpNode;
-								pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+								pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
 								BTreeNode::readNode(&node, (UCHAR*)bucket +
 													jumpNode.offset, leafPage);
 
@@ -4664,7 +4659,7 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 		IndexJumpNode jumpNode;
 		while (n)
 		{
-			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
 			BTreeNode::readNode(&leftNode, (UCHAR*)left_page + jumpNode.offset, leafPage);
 
 			if (!(leftNode.isEndBucket || leftNode.isEndLevel))
@@ -4762,7 +4757,7 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 		BTreeNode::setNode(&leftNode, prefix, gcNode.length - prefix, gcNode.recordNumber,
 						   gcNode.pageNumber, gcNode.isEndBucket, gcNode.isEndLevel);
 		leftNode.data = gcNode.data + prefix;
-		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, flags2, leafPage);
+		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, leafPage);
 
 		// Update page-size.
 		newBucket->btr_length = (leftPointer - (UCHAR*)newBucket);
@@ -4858,7 +4853,7 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 		{
 			// Update offset to real position with new jump nodes.
 			walkJumpNode[i].offset += jumpersNewSize;
-			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags2);
+			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer);
 			delete[] walkJumpNode[i].data;
 		}
 		// Copy data.
@@ -4939,7 +4934,7 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 		BTreeNode::setNode(&leftNode, prefix, gcNode.length - prefix, gcNode.recordNumber,
 						   gcNode.pageNumber, gcNode.isEndBucket, gcNode.isEndLevel);
 		leftNode.data = gcNode.data + prefix;
-		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, flags, leafPage);
+		leftPointer = BTreeNode::writeNode(&leftNode, leftPointer, leafPage);
 
 		// copy over the remainder of the page to be garbage-collected
 		const USHORT l = gc_page->btr_length - (gcPointer - (UCHAR*)(gc_page));
@@ -5121,7 +5116,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 			}
 			// Set new position for generating jumpnode
 			newAreaPosition += jumpInfo.jumpAreaSize;
-			*jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+			*jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode);
 		}
 	}
 }
@@ -5276,7 +5271,7 @@ static SLONG insert_node(thread_db* tdbb,
 	}
 
 	const USHORT beforeInsertOriginalSize =
-		BTreeNode::getNodeSize(&beforeInsertNode, flags, leafPage);
+		BTreeNode::getNodeSize(&beforeInsertNode, leafPage);
 	const USHORT orginalPrefix = beforeInsertNode.prefix;
 
 	// Update the values for the next node after our new node.
@@ -5287,7 +5282,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 	beforeInsertNode.prefix = newPrefix;
 	beforeInsertNode.length = newLength;
-	const USHORT beforeInsertSize = BTreeNode::getNodeSize(&beforeInsertNode, flags, leafPage);
+	const USHORT beforeInsertSize = BTreeNode::getNodeSize(&beforeInsertNode, leafPage);
 
 	// Set values for our new node.
 	IndexNode newNode;
@@ -5298,7 +5293,7 @@ static SLONG insert_node(thread_db* tdbb,
 	}
 
 	// Compute the delta between current and new page.
-	const USHORT delta = BTreeNode::getNodeSize(&newNode, flags, leafPage) +
+	const USHORT delta = BTreeNode::getNodeSize(&newNode, leafPage) +
 		beforeInsertSize - beforeInsertOriginalSize;
 
 	// Copy data up to insert point to scratch page.
@@ -5309,12 +5304,12 @@ static SLONG insert_node(thread_db* tdbb,
 	// Set pointer of new node to right place.
 	pointer = ((UCHAR*)newBucket + nodeOffset);
 	// Insert the new node.
-	pointer = BTreeNode::writeNode(&newNode, pointer, flags, leafPage);
+	pointer = BTreeNode::writeNode(&newNode, pointer, leafPage);
 	newBucket->btr_prefix_total += prefix - orginalPrefix;
 
 	// Recompress and rebuild the next node.
 	beforeInsertNode.data = tempData;
-	pointer = BTreeNode::writeNode(&beforeInsertNode, pointer, flags, leafPage);
+	pointer = BTreeNode::writeNode(&beforeInsertNode, pointer, leafPage);
 	newBucket->btr_prefix_total += newPrefix;
 	beforeInsertNode.data = 0;
 
@@ -5367,7 +5362,7 @@ static SLONG insert_node(thread_db* tdbb,
 		IndexJumpNode jumpNode;
 		while (n)
 		{
-			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
+			pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
 			if (jumpNode.offset == nodeOffset)
 			{
 				fragmentedOffset = true;
@@ -5444,7 +5439,7 @@ static SLONG insert_node(thread_db* tdbb,
 			{
 				// Update offset to real position with new jump nodes.
 				walkJumpNode[i].offset += jumpersNewSize - jumpersOriginalSize;
-				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer);
 				if (fragmentedOffset) {
 					delete[] walkJumpNode[i].data;
 				}
@@ -5490,8 +5485,8 @@ static SLONG insert_node(thread_db* tdbb,
 		splitpoint = BTreeNode::readNode(&node, newNode.nodePointer, leafPage);
 		IndexNode dummyNode = newNode;
 		BTreeNode::setEndBucket(&dummyNode); //, leafPage);
-		const USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, flags, leafPage) -
-			BTreeNode::getNodeSize(&newNode, flags, leafPage);
+		const USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, leafPage) -
+			BTreeNode::getNodeSize(&newNode, leafPage);
 		if (endOfPage && ((splitpoint + jumpersNewSize - jumpersOriginalSize) <=
 			(UCHAR*) newBucket + dbb->dbb_page_size - deltaSize))
 		{
@@ -5560,10 +5555,10 @@ static SLONG insert_node(thread_db* tdbb,
 			{
 				// The jump node where the split is done isn't included anymore!
 				if (index < splitJumpNodeIndex) {
-					jumpersNewSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i], flags);
+					jumpersNewSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i]);
 				}
 				else if (index > splitJumpNodeIndex) {
-					jumpersSplitSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i], flags);
+					jumpersSplitSize += BTreeNode::getJumpNodeSize(&walkJumpNode[i]);
 				}
 			}
 		}
@@ -5574,8 +5569,8 @@ static SLONG insert_node(thread_db* tdbb,
 		splitpoint = BTreeNode::readNode(&newNode, newNode.nodePointer, leafPage);
 		IndexNode dummyNode = newNode;
 		BTreeNode::setEndBucket(&dummyNode); //, leafPage);
-		const USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, flags, leafPage) -
-			BTreeNode::getNodeSize(&newNode, flags, leafPage);
+		const USHORT deltaSize = BTreeNode::getNodeSize(&dummyNode, leafPage) -
+			BTreeNode::getNodeSize(&newNode, leafPage);
 		if (endOfPage && ((UCHAR*)splitpoint <= (UCHAR*)newBucket + dbb->dbb_page_size - deltaSize))
 		{
 			midpoint = splitpoint;
@@ -5626,7 +5621,7 @@ static SLONG insert_node(thread_db* tdbb,
 	// Return first record number on split page to caller.
 	newNode.data = new_key->key_data;
 	*new_record_number = newNode.recordNumber;
-	const USHORT firstSplitNodeSize = BTreeNode::getNodeSize(&newNode, flags, leafPage);
+	const USHORT firstSplitNodeSize = BTreeNode::getNodeSize(&newNode, leafPage);
 
 	// Format the first node on the overflow page
 	if (useJumpInfo)
@@ -5655,7 +5650,7 @@ static SLONG insert_node(thread_db* tdbb,
 					// Update offset to correct position.
 					walkJumpNode[i].offset = walkJumpNode[i].offset - splitOffset +
 						splitJumpInfo.firstNodeOffset + firstSplitNodeSize;
-					pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+					pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer);
 				}
 			}
 		}
@@ -5665,7 +5660,7 @@ static SLONG insert_node(thread_db* tdbb,
 		pointer = BTreeNode::getPointerFirstNode(split);
 	}
 
-	pointer = BTreeNode::writeNode(&newNode, pointer, flags, leafPage);
+	pointer = BTreeNode::writeNode(&newNode, pointer, leafPage);
 
 	// Copy down the remaining data from scratch page.
 	const USHORT l = newBucket->btr_length - (splitpoint - (UCHAR*)newBucket);
@@ -5690,7 +5685,7 @@ static SLONG insert_node(thread_db* tdbb,
 	// contain info about the first node on the next page. So we don't
 	// overwrite the existing data.
 	BTreeNode::setEndBucket(&node); //, leafPage);
-	pointer = BTreeNode::writeNode(&node, node.nodePointer, flags, leafPage, false);
+	pointer = BTreeNode::writeNode(&node, node.nodePointer, leafPage, false);
 	newBucket->btr_length = pointer - (UCHAR*)newBucket;
 
 	if (useJumpInfo)
@@ -5714,7 +5709,7 @@ static SLONG insert_node(thread_db* tdbb,
 			{
 				// Update offset to correct position.
 				walkJumpNode[i].offset = walkJumpNode[i].offset + jumpersNewSize - jumpersOriginalSize;
-				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
+				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer);
 			}
 		}
 		pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;

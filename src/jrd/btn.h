@@ -81,24 +81,23 @@ namespace BTreeNode {
 	SLONG findPageInDuplicates(const Ods::btree_page* page, UCHAR* pointer,
 				SLONG previousNumber, RecordNumber findRecordNumber);
 
-	USHORT getJumpNodeSize(const Ods::IndexJumpNode* jumpNode, UCHAR flags);
-	USHORT getNodeSize(const Ods::IndexNode* indexNode, UCHAR flags, bool leafNode = true);
+	USHORT getJumpNodeSize(const Ods::IndexJumpNode* jumpNode);
+	USHORT getNodeSize(const Ods::IndexNode* indexNode, bool leafNode = true);
 	UCHAR* getPointerFirstNode(Ods::btree_page* page, Ods::IndexJumpInfo* jumpInfo = NULL);
 
 	bool keyEquality(USHORT length, const UCHAR* data, const Ods::IndexNode* indexNode);
 
-	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, UCHAR flags, btree_exp** expanded_node);
+	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, btree_exp** expanded_node);
 
 	//void quad_put(SLONG value, UCHAR *data);
 
 	UCHAR* readJumpInfo(Ods::IndexJumpInfo* jumpInfo, UCHAR* pagePointer);
-	UCHAR* readJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags);
+	UCHAR* readJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer);
 	inline UCHAR* readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, bool leafNode);
 
 	UCHAR* writeJumpInfo(Ods::btree_page* page, const Ods::IndexJumpInfo* jumpInfo);
-	UCHAR* writeJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags);
-	UCHAR* writeNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
-		bool leafNode, bool withData = true);
+	UCHAR* writeJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer);
+	UCHAR* writeNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool withData = true);
 
 	void setEndBucket(Ods::IndexNode* indexNode); //, bool leafNode = true);
 	void setEndLevel(Ods::IndexNode* indexNode); //, bool leafNode = true);

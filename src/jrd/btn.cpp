@@ -81,8 +81,6 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
  *
  **************************************/
 	const bool leafPage = (page->btr_level == 0);
-	const UCHAR flags = page->btr_header.pag_flags;
-	//const UCHAR* endPointer = (UCHAR*)page + page->btr_length;
 
 	IndexNode node, previousNode;
 	pointer = readNode(&node, pointer, leafPage);
@@ -131,7 +129,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 }
 
 
-USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, UCHAR flags)
+USHORT getJumpNodeSize(const IndexJumpNode* jumpNode)
 {
 /**************************************
  *
@@ -180,7 +178,7 @@ USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, UCHAR flags)
 }
 
 
-USHORT getNodeSize(const IndexNode* indexNode, UCHAR flags, bool leafNode)
+USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
 {
 /**************************************
  *
@@ -368,7 +366,7 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 }
 
 
-UCHAR* nextNode(IndexNode* node, UCHAR* pointer, UCHAR flags, btree_exp** expanded_node)
+UCHAR* nextNode(IndexNode* node, UCHAR* pointer, btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -418,7 +416,7 @@ UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
 }
 
 
-UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags)
+UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
 {
 /**************************************
  *
@@ -483,7 +481,7 @@ UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
 }
 
 
-UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags)
+UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer)
 {
 /**************************************
  *
@@ -534,7 +532,7 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags)
 }
 
 
-UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags, bool leafNode, bool withData)
+UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, bool leafNode, bool withData)
 {
 /**************************************
  *
@@ -562,7 +560,7 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags, bool lea
 		// First move data so we can't override it.
 		// For older structure node was always the same, but length
 		// from new structure depends on the values.
-		const USHORT offset = getNodeSize(indexNode, flags, leafNode) - indexNode->length;
+		const USHORT offset = getNodeSize(indexNode, leafNode) - indexNode->length;
 		pagePointer += offset; // set pointer to right position
 		memmove(pagePointer, indexNode->data, indexNode->length);
 		pagePointer -= offset; // restore pointer to original position

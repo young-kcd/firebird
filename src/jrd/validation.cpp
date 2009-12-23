@@ -1521,8 +1521,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			IndexJumpNode jumpNode;
 			while (n)
 			{
-				pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
-				jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+				pointer = BTreeNode::readJumpNode(&jumpNode, pointer);
+				jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode);
 				// Check if jump node offset is inside page.
 				if ((jumpNode.offset < jumpInfo.firstNodeOffset) ||
 					(jumpNode.offset > page->btr_length))
