@@ -4557,15 +4557,23 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 	*dynsave++ = (UCHAR) priv_count;
 	*dynsave = (UCHAR) (priv_count >> 8);
 
+	UCHAR dynVerb = 0;
+	switch (table->nod_type)
+	{
+	case nod_procedure_name:
+		dynVerb = isc_dyn_prc_name;
+		break;
+	case nod_function_name:
+		dynVerb = isc_dyn_fun_name;
+		break;
+	case nod_package_name:
+		dynVerb = isc_dyn_pkg_name;
+		break;
+	default:
+		dynVerb = isc_dyn_rel_name;
+	}
 	const dsql_str* name = (dsql_str*) table->nod_arg[0];
-	if (table->nod_type == nod_procedure_name)
-		statement->append_cstring(isc_dyn_prc_name, name->str_data);
-	else if (table->nod_type == nod_function_name)
-		statement->append_cstring(isc_dyn_fun_name, name->str_data);
-	else if (table->nod_type == nod_package_name)
-		statement->append_cstring(isc_dyn_pkg_name, name->str_data);
-	else
-		statement->append_cstring(isc_dyn_rel_name, name->str_data);
+	statement->append_cstring(dynVerb, name->str_data);
 
 	put_user_grant(dsqlScratch, user);
 
@@ -6116,7 +6124,7 @@ void DsqlCompiledStatement::generate_unnamed_trigger_beginning(bool	on_update_tr
 	append_uchar(blr_begin);
 }
 
-void DsqlCompiledStatement::begin_debug()
+void DsqlCompiledStatement::beginDebug()
 {
 	fb_assert(!debugData.getCount());
 
@@ -6124,7 +6132,7 @@ void DsqlCompiledStatement::begin_debug()
 	debugData.add(1);
 }
 
-void DsqlCompiledStatement::end_debug()
+void DsqlCompiledStatement::endDebug()
 {
 	debugData.add(fb_dbg_end);
 }
@@ -6186,7 +6194,7 @@ void DsqlCompiledStatement::put_debug_argument(UCHAR type, USHORT number, const 
 
 void DsqlCompiledStatement::append_debug_info()
 {
-	end_debug();
+	endDebug();
 
 	const size_t len = blrData.getCount() + debugData.getCount();
 	if (len + 4 < MAX_USHORT)

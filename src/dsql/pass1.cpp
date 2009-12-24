@@ -1041,8 +1041,9 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	case nod_dom_value:
 		{
-			const dsql_nod* const ddl_node = (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_DDL) ?
-				dsqlScratch->getStatement()->getDdlNode() : NULL;
+			const dsql_nod* const ddl_node =
+				(dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_DDL) ?
+					dsqlScratch->getStatement()->getDdlNode() : NULL;
 
 			if (!ddl_node ||
 				!(ddl_node->nod_type == nod_def_domain || ddl_node->nod_type == nod_mod_domain))
@@ -11321,6 +11322,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_package_name:
 		verb = "package name";
 		break;
+	case nod_function_name:
+		verb = "function_name";
+		break;
 	case nod_put_segment:
 		verb = "put segment";
 		break;
@@ -12029,7 +12033,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 
 	case nod_mod_field_null_flag:
-		verb = "nod_mod_field_null_flag";
+		verb = "mod_field_null_flag";
 		break;
 
 	default:

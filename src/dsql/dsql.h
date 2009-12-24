@@ -382,7 +382,7 @@ public:
 	static const unsigned FLAG_SELECTABLE	= 0x10;
 
 public:
-	DsqlCompiledStatement(MemoryPool& p)
+	explicit DsqlCompiledStatement(MemoryPool& p)
 		: PermanentStorage(p),
 		  type(TYPE_SELECT),
 		  baseOffset(0),
@@ -504,8 +504,8 @@ public:
 	void generate_unnamed_trigger_beginning(bool on_update_trigger, const char*	prim_rel_name,
 		const dsql_nod* prim_columns, const char* for_rel_name, const dsql_nod* for_columns);
 
-	void begin_debug();
-	void end_debug();
+	void beginDebug();
+	void endDebug();
 	void put_debug_src_info(USHORT, USHORT);
 	void put_debug_variable(USHORT, const TEXT*);
 	void put_debug_argument(UCHAR, USHORT, const TEXT*);

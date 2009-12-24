@@ -780,7 +780,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
     @param node
 
  **/
-void GEN_request(dsql_req* request, DsqlCompilerScratch* scratch, dsql_nod* node)
+void GEN_request(dsql_req* /*request*/, DsqlCompilerScratch* scratch, dsql_nod* node)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 

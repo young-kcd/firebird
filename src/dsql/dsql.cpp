@@ -2624,7 +2624,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
 				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
-				  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
+					  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
 	}
 
 	switch (statement->getType())

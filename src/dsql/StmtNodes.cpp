@@ -189,7 +189,7 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, C
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	//DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	const bool autoTrans = dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
@@ -461,7 +461,7 @@ void ExecBlockNode::genBlr()
 	// Update blockNode, because we have a reference to the original unprocessed node.
 	statement->setBlockNode(this);
 
-	statement->begin_debug();
+	statement->beginDebug();
 
 	USHORT inputs = 0, outputs = 0, locals = 0;
 
@@ -594,7 +594,7 @@ void ExecBlockNode::genBlr()
 	GEN_return(dsqlScratch, outputVariables, true);
 	statement->append_uchar(blr_end);
 
-	statement->end_debug();
+	statement->endDebug();
 }
 
 
