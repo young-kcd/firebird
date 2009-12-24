@@ -2323,6 +2323,9 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 
 	for (size_t i = 0; i < ctx.getCount(); ++i)
 	{
+		if (!ctx[i]->vcx_is_relation)
+			continue;
+
 		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i]->vcx_relation_name);
 		if (!base_rel)
 		{

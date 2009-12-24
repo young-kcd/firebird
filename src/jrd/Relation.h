@@ -35,10 +35,12 @@ class ViewContext
 {
 public:
 	explicit ViewContext(MemoryPool& p, const TEXT* context_name,
-						 const TEXT* relation_name, USHORT context) :
+						 const TEXT* relation_name, USHORT context,
+						 bool is_relation) :
 		vcx_context_name(p, context_name, strlen(context_name)),
 		vcx_relation_name(relation_name),
-		vcx_context(context)
+		vcx_context(context),
+		vcx_is_relation(is_relation)
 	{
 	}
 
@@ -50,6 +52,7 @@ public:
 	const Firebird::string	vcx_context_name;
 	const Firebird::MetaName	vcx_relation_name;
 	const USHORT	vcx_context;
+	const bool		vcx_is_relation;
 };
 
 typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>,
