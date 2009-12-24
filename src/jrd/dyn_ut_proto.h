@@ -25,6 +25,11 @@
 #ifndef JRD_DYN_UT_PROTO_H
 #define JRD_DYN_UT_PROTO_H
 
+namespace Jrd
+{
+	class Global;
+}
+
 void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::Global*,
 			const Firebird::MetaName&, const Firebird::MetaName&);
 bool	DYN_UTIL_find_field_source(Jrd::thread_db* tdbb, Jrd::Global* gbl,
