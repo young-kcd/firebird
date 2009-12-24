@@ -120,6 +120,7 @@
 #include "../jrd/trig.h"
 #include "../jrd/IntlManager.h"
 #include "../jrd/UserManagement.h"
+#include "../jrd/Function.h"
 #include "../common/utils_proto.h"
 
 #include "../common/classes/Hash.h"
@@ -367,7 +368,9 @@ static bool delete_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool delete_udf(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool delete_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool modify_function(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -397,6 +400,7 @@ static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
+static void get_function_dependencies(DeferredWork*, bool, jrd_tra*);
 static void get_procedure_dependencies(DeferredWork*, bool, jrd_tra*);
 static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
@@ -463,7 +467,9 @@ static const deferred_task task_table[] =
 	{ dfw_delete_exception, delete_exception },
 	{ dfw_delete_generator, delete_generator },
 	{ dfw_modify_generator, modify_generator },
-	{ dfw_delete_udf, delete_udf },
+	{ dfw_create_function, create_function },
+	{ dfw_delete_function, delete_function },
+	{ dfw_modify_function, modify_function },
 	{ dfw_add_difference, add_difference },
 	{ dfw_delete_difference, delete_difference },
 	{ dfw_begin_backup, begin_backup },
@@ -2216,6 +2222,44 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 }
 
 
+static bool create_function(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	c r e a t e _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create a new function.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+	case 1:
+	case 2:
+		return true;
+
+	case 3:
+		{
+			const bool compile = !work->findArg(dfw_arg_check_blr);
+			get_function_dependencies(work, compile, transaction);
+
+			if (!Function::lookup(tdbb, QualifiedName(work->dfw_name, work->dfw_package), compile))
+			{
+				return false;
+			}
+		}
+		break;
+	}
+
+	return false;
+}
+
+
 static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
@@ -3182,42 +3226,6 @@ static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 }
 
 
-static bool delete_udf(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	d e l e t e _ u d f
- *
- **************************************
- *
- * Functional description
- *	Check if it is allowable to delete
- *	an udf, and if so, clean up after it.
- * CVC: This function was modelled after delete_exception.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	switch (phase)
-	{
-		case 0:
-			return false;
-		case 1:
-			check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_udf, transaction);
-			return true;
-		case 2:
-			return true;
-		case 3:
-			return true;
-		case 4:
-			break;
-	}
-
-	return false;
-}
-
-
 static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
@@ -3491,6 +3499,138 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
 	LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 	LCK_release(tdbb, relation->rel_partners_lock);
 	relation->rel_flags |= REL_check_partners;
+}
+
+
+static bool delete_function(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	d e l e t e _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check if it is allowed to delete
+ *	a function, and if so, clean up after it.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	Database* const dbb = tdbb->getDatabase();
+
+	Function* function = NULL;
+
+	switch (phase)
+	{
+	case 0:
+		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
+		if (!function)
+		{
+			return false;
+		}
+
+		if (function->fun_existence_lock)
+		{
+			LCK_convert(tdbb, function->fun_existence_lock, LCK_SR, transaction->getLockWait());
+		}
+		return false;
+
+	case 1:
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, work->dfw_package.c_str(),
+						   obj_udf, transaction);
+		return true;
+
+	case 2:
+		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
+		if (!function)
+		{
+			return false;
+		}
+
+		if (function->fun_existence_lock)
+		{
+			if (!LCK_convert(tdbb, function->fun_existence_lock, LCK_EX, transaction->getLockWait()))
+			{
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+			}
+		}
+
+		// If we are in a multi-client server, someone else may have marked
+		// function obsolete. Unmark and we will remark it later.
+
+		function->fun_flags &= ~FUN_obsolete;
+		return true;
+
+	case 3:
+		return true;
+
+	case 4:
+		{
+			function = Function::lookup(tdbb, work->dfw_id, true, true, 0);
+			if (!function)
+			{
+				return false;
+			}
+
+			const QualifiedName name(work->dfw_name, work->dfw_package);
+
+			// Do not allow to drop function used by user requests
+			if (function->isUsed())
+			{
+				/*
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+				*/
+				gds__log("Deleting function %s which is currently in use by active user requests",
+						 name.toString().c_str());
+
+				if (work->dfw_package.isEmpty())
+				{
+					MET_delete_dependencies(tdbb, work->dfw_name, obj_udf, transaction);
+				}
+
+				if (function->fun_existence_lock)
+				{
+					LCK_release(tdbb, function->fun_existence_lock);
+				}
+
+				dbb->dbb_functions[function->fun_id] = NULL;
+				return false;
+			}
+
+			const USHORT old_flags = function->fun_flags;
+			function->fun_flags |= FUN_obsolete;
+			if (function->fun_request)
+			{
+				if (CMP_clone_is_active(function->fun_request))
+				{
+					function->fun_flags = old_flags;
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+				}
+
+				CMP_release(tdbb, function->fun_request);
+				function->fun_request = NULL;
+			}
+
+			// delete dependency lists
+
+			if (work->dfw_package.isEmpty())
+			{
+				MET_delete_dependencies(tdbb, work->dfw_name, obj_udf, transaction);
+			}
+
+			if (function->fun_existence_lock)
+			{
+				LCK_release(tdbb, function->fun_existence_lock);
+			}
+		}
+		break;
+	}	// switch
+
+	return false;
 }
 
 
@@ -4337,6 +4477,9 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 	case obj_package_body:
 		dfw_type = dfw_drop_package_body;
 		break;
+	case obj_udf:
+		dfw_type = dfw_delete_function;
+		break;
 	default:
 		fb_assert(false);
 		break;
@@ -4346,18 +4489,21 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 	for (const DeferredWork* work = transaction->tra_deferred_job->work; work; work = work->getNext())
 	{
 		if ((work->dfw_type == dfw_type ||
-			(work->dfw_type == dfw_modify_procedure && dfw_type == dfw_delete_procedure)) &&
+			(work->dfw_type == dfw_modify_procedure && dfw_type == dfw_delete_procedure) ||
+			(work->dfw_type == dfw_modify_function && dfw_type == dfw_delete_function)) &&
 			work->dfw_name == object_name && work->dfw_package.isEmpty() &&
 			(!rel_id || rel_id == work->dfw_id))
 		{
-			if (work->dfw_type == dfw_modify_procedure)
+			if (work->dfw_type == dfw_modify_procedure || work->dfw_type == dfw_modify_function)
 			{
 				// Don't consider that procedure is in DFW if we are only checking the BLR
 				if (!work->findArg(dfw_arg_check_blr))
 					return true;
 			}
 			else
+			{
 				return true;
+			}
 		}
 
 		if (work->dfw_type == dfw_type && dfw_type == dfw_delete_expression_index)
@@ -4481,6 +4627,83 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name, Ods::Interna
 	desc->iad_length = IAD_LEN(MAX(desc->iad_struct_count, desc->iad_dimensions));
 	desc->iad_element_length = desc->iad_rpt[0].iad_desc.dsc_length;
 	desc->iad_total_length = desc->iad_element_length * desc->iad_count;
+}
+
+
+static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	g e t _ f u n c t i o n _ d e p e n d e n c i e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get relations and fields on which this
+ *	function depends, either when it's being
+ *	created or when it's modified.
+ *
+ **************************************/
+	thread_db* const tdbb = JRD_get_thread_data();
+	Database* const dbb = tdbb->getDatabase();
+
+	if (compile)
+	{
+		compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
+	}
+
+	bool found = false;
+	bid blob_id;
+	blob_id.clear();
+
+	jrd_req* handle = CMP_find_request(tdbb, irq_c_fun_dpd, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE handle)
+		X IN RDB$FUNCTIONS WITH
+			X.RDB$FUNCTION_NAME EQ work->dfw_name.c_str() AND
+			X.RDB$PACKAGE_NAME EQUIV NULLIF(work->dfw_package.c_str(), '')
+
+		if (!REQUEST(irq_c_fun_dpd))
+			REQUEST(irq_c_fun_dpd) = handle;
+
+		blob_id = X.RDB$FUNCTION_BLR;
+
+		if (Function::lookup(tdbb, QualifiedName(work->dfw_name, work->dfw_package), !compile))
+		{
+			found = true;
+		}
+
+	END_FOR;
+
+	if (!REQUEST(irq_c_fun_dpd))
+		REQUEST(irq_c_fun_dpd) = handle;
+
+	// get any dependencies now by parsing the blr
+
+	if (found && !blob_id.isEmpty())
+	{
+		jrd_req* request = NULL;
+
+		MemoryPool* const new_pool = dbb->createPool();
+		Jrd::ContextPoolHolder context(tdbb, new_pool);
+
+		Firebird::MetaName depName(work->dfw_package.isEmpty() ?
+			work->dfw_name : work->dfw_package);
+
+		MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
+							 NULL, depName,
+							 (work->dfw_package.isEmpty() ? obj_udf : obj_package_body),
+							 0, transaction);
+
+		if (request)
+		{
+			CMP_release(tdbb, request);
+		}
+		else
+		{
+			dbb->deletePool(new_pool);
+		}
+	}
 }
 
 
@@ -5272,6 +5495,205 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		relation->rel_flags &= ~REL_scanned;
 		DFW_post_work(transaction, dfw_scan_relation, NULL, relation->rel_id);
 
+		break;
+	}
+
+	return false;
+}
+
+
+static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	m o d i f y _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Perform required actions when modifying function.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	Database* const dbb = tdbb->getDatabase();
+
+	const QualifiedName name(work->dfw_name, work->dfw_package);
+
+	Function* function = NULL;
+
+	switch (phase)
+	{
+	case 0:
+	{
+		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
+		if (!function)
+		{
+			return false;
+		}
+
+		if (function->fun_existence_lock)
+		{
+			LCK_convert(tdbb, function->fun_existence_lock, LCK_SR, transaction->getLockWait());
+		}
+		return false;
+	}
+	case 1:
+		return true;
+
+	case 2:
+		return true;
+
+	case 3:
+		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
+		if (!function)
+		{
+			return false;
+		}
+
+		if (function->fun_existence_lock)
+		{
+			// Let function be deleted if only this transaction is using it
+
+			if (!LCK_convert(tdbb, function->fun_existence_lock, LCK_EX, transaction->getLockWait()))
+			{
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+			}
+		}
+
+		// If we are in a multi-client server, someone else may have marked
+		// function obsolete. Unmark and we will remark it later.
+
+		function->fun_flags &= ~FUN_obsolete;
+		return true;
+
+	case 4:
+		function = Function::lookup(tdbb, work->dfw_id, false, true, 0);
+		if (!function)
+		{
+			return false;
+		}
+
+		{ // guard scope
+			Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
+
+			// Do not allow to modify function used by user requests
+			if (function->isUsed())
+			{
+				/*
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+				*/
+				gds__log("Modifying function %s which is currently in use by active user requests",
+						 name.toString().c_str());
+
+				const USHORT alter_count = function->incrementAlterCount();
+
+				if (function->fun_existence_lock)
+				{
+					LCK_release(tdbb, function->fun_existence_lock);
+				}
+
+				dbb->dbb_functions[function->fun_id] = NULL;
+
+				if (!(function = Function::lookup(tdbb, work->dfw_id, false,
+												  true, FUN_being_altered)))
+				{
+					return false;
+				}
+
+				function->fun_alter_count = alter_count;
+			}
+
+			function->fun_flags |= FUN_being_altered;
+
+			if (function->fun_request)
+			{
+				if (CMP_clone_is_active(function->fun_request))
+				{
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+				}
+
+				// release the request
+
+				CMP_release(tdbb, function->fun_request);
+				function->fun_request = NULL;
+			}
+
+			// delete dependency lists
+
+			if (work->dfw_package.isEmpty())
+			{
+				MET_delete_dependencies(tdbb, work->dfw_name, obj_udf, transaction);
+			}
+
+			// The function has just been scanned by Function::lookup()
+			// and its FUN_scanned flag is set. We are going to reread it
+			// from file (create all new dependencies) and do not want this
+			// flag to be set. That is why we do not add FUN_obsolete and
+			// FUN_being_altered flags, we set only these two flags.
+
+			function->fun_flags = (FUN_obsolete | FUN_being_altered);
+
+			if (function->fun_existence_lock)
+			{
+				LCK_release(tdbb, function->fun_existence_lock);
+			}
+
+			// remove function from cache
+
+			function->remove(tdbb);
+
+			// Now handle the new definition
+			const bool compile = !work->findArg(dfw_arg_check_blr);
+			get_function_dependencies(work, compile, transaction);
+
+			function->fun_flags &= ~(FUN_obsolete | FUN_being_altered);
+		}
+		return true;
+
+	case 5:
+		if (work->findArg(dfw_arg_check_blr))
+		{
+			jrd_req* request = CMP_find_request(tdbb, irq_fun_validate, IRQ_REQUESTS);
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				FUN IN RDB$FUNCTIONS WITH
+					FUN.RDB$FUNCTION_ID EQ work->dfw_id
+
+				if (!REQUEST(irq_fun_validate))
+					REQUEST(irq_fun_validate) = request;
+
+				bool valid_blr = false;
+
+				MemoryPool* const csb_pool = dbb->createPool();
+				Jrd::ContextPoolHolder context(tdbb, csb_pool);
+				CompilerScratch* const csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+
+				try
+				{
+					function->parseBlr(tdbb, &FUN.RDB$FUNCTION_BLR, csb);
+					valid_blr = true;
+				}
+				catch (const Firebird::Exception&)
+				{
+					fb_utils::init_status(tdbb->tdbb_status_vector);
+				}
+
+				dbb->deletePool(csb_pool);
+
+				MODIFY FUN USING
+					FUN.RDB$VALID_BLR = valid_blr ? TRUE : FALSE;
+					FUN.RDB$VALID_BLR.NULL = FALSE;
+				END_MODIFY;
+
+			END_FOR;
+
+			if (!REQUEST(irq_fun_validate))
+				REQUEST(irq_fun_validate) = request;
+		}
 		break;
 	}
 

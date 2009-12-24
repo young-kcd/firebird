@@ -34,7 +34,7 @@ namespace Jrd
 
 	class Function : public pool_alloc<type_fun>
 	{
-		static const USHORT MAX_ALTER = 64;	// Number of times an in-cache function can be altered
+		static const USHORT MAX_ALTER_COUNT = 64;	// Number of times an in-cache function can be altered
 		static const char* const EXCEPTION_MESSAGE;
 
 	public:
@@ -49,17 +49,18 @@ namespace Jrd
 			return (fun_use_count != 0);
 		}
 
-		void releaseLocks(thread_db* tdbb);
+		USHORT incrementAlterCount();
+
 		dsc* execute(thread_db* tdbb, jrd_nod* args, impure_value* value);
+		void releaseLocks(thread_db* tdbb);
+		void remove(thread_db* tdbb);
+		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);
 
 	private:
 		explicit Function(MemoryPool& p)
 			: fun_name(p), fun_security_name(p), fun_args(p), fun_exception_message(p),
 			  fun_legacy(true), fun_invariant(false)
 		{}
-
-		void remove(thread_db* tdbb);
-		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);
 
 		static Function* loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
 		static int blockingAst(void*);

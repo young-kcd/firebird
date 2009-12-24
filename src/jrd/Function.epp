@@ -630,3 +630,15 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 
 	return &value->vlu_desc;
 }
+
+USHORT Function::incrementAlterCount()
+{
+	if (fun_alter_count == Function::MAX_ALTER_COUNT)
+	{
+		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_udf_name) << Arg::Str(fun_name.toString()) <<
+				 Arg::Gds(isc_version_err));
+	}
+	
+	return ++fun_alter_count;
+}

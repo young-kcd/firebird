@@ -155,6 +155,8 @@ enum irq_type_t
 	irq_f_security,			// verify security for function
 	irq_l_arg_fld,			// lookup argument's domain
 	irq_func_ret_fld,		// lookup argument's domain
+	irq_fun_validate,		// function blr validate
+	irq_c_fun_dpd,			// get function dependencies
 
 	irq_MAX
 };

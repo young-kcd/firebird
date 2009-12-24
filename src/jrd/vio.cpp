@@ -1297,7 +1297,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				SCL_check_function(tdbb, &desc, SCL_delete);
 			}
 
-			DFW_post_work(transaction, dfw_delete_udf, &desc, 0);
+			DFW_post_work(transaction, dfw_delete_function, &desc, 0);
 			break;
 
 		case rel_indices:
@@ -2296,7 +2296,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 				EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
 				const USHORT id = MOV_get_long(&desc2, 0);
-				DFW_post_work(transaction, dfw_modify_procedure, &desc1, id, package_name);
+				DFW_post_work(transaction, dfw_modify_function, &desc1, id, package_name);
 			} // scope
 			break;
 
@@ -2768,6 +2768,29 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);
 			} // scope
 			set_system_flag(tdbb, rpb, f_prc_sys_flag, 0);
+			break;
+
+		case rel_funs:
+			EVL_field(0, rpb->rpb_record, f_fun_name, &desc);
+			{ // scope
+				SqlIdentifier package_name;
+				if (EVL_field(0, rpb->rpb_record, f_fun_pkg_name, &desc2))
+					MOV_get_metadata_str(&desc2, package_name, sizeof(package_name));
+				else
+					package_name[0] = '\0';
+
+				EVL_field(0, rpb->rpb_record, f_fun_id, &desc2);
+				const USHORT id = MOV_get_long(&desc2, 0);
+				work = DFW_post_work(transaction, dfw_create_function, &desc, id, package_name);
+
+				bool check_blr = true;
+				if (EVL_field(0, rpb->rpb_record, f_fun_valid_blr, &desc2))
+					check_blr = MOV_get_long(&desc2, 0) != 0;
+
+				if (check_blr)
+					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);
+			} // scope
+			set_system_flag(tdbb, rpb, f_fun_sys_flag, 0);
 			break;
 
 		case rel_indices:
