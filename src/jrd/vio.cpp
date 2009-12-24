@@ -86,6 +86,7 @@
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/dyn_ut_proto.h"
 #include "../common/StatusArg.h"
 
 using namespace Jrd;
@@ -122,7 +123,8 @@ static int prepare_update(thread_db*, jrd_tra*, SLONG, record_param*,
 static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
-static void set_system_flag(thread_db*, record_param*, USHORT, SSHORT);
+static SSHORT set_metadata_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
+static void set_system_flag(thread_db*, Record*, USHORT, SSHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, const bool, const bool);
 
@@ -2740,11 +2742,11 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 			DFW_post_work(transaction, dfw_create_relation, &desc, 0);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(tdbb, rpb, f_rel_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_rel_sys_flag, 0);
 			break;
 
 		case rel_packages:
-			set_system_flag(tdbb, rpb, f_pkg_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_pkg_sys_flag, 0);
 			break;
 
 		case rel_procedures:
@@ -2767,7 +2769,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				if (check_blr)
 					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);
 			} // scope
-			set_system_flag(tdbb, rpb, f_prc_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_prc_sys_flag, 0);
 			break;
 
 		case rel_funs:
@@ -2779,8 +2781,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				else
 					package_name[0] = '\0';
 
-				EVL_field(0, rpb->rpb_record, f_fun_id, &desc2);
-				const USHORT id = MOV_get_long(&desc2, 0);
+				const USHORT id =
+					set_metadata_id(tdbb, rpb->rpb_record, f_fun_id, drq_g_nxt_fun_id, "RDB$FUNCTIONS");
 				work = DFW_post_work(transaction, dfw_create_function, &desc, id, package_name);
 
 				bool check_blr = true;
@@ -2790,7 +2792,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				if (check_blr)
 					DFW_post_work_arg(transaction, work, NULL, 0, dfw_arg_check_blr);
 			} // scope
-			set_system_flag(tdbb, rpb, f_fun_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_fun_sys_flag, 0);
 			break;
 
 		case rel_indices:
@@ -2811,7 +2813,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 			SCL_check_relation(tdbb, &desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
-			set_system_flag(tdbb, rpb, f_rfr_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_rfr_sys_flag, 0);
 			break;
 
 		case rel_classes:
@@ -2823,7 +2825,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			check_control(tdbb);
 			EVL_field(0, rpb->rpb_record, f_fld_name, &desc);
 			DFW_post_work(transaction, dfw_create_field, &desc, 0);
-			set_system_flag(tdbb, rpb, f_fld_sys_flag, 0);
+			set_system_flag(tdbb, rpb->rpb_record, f_fld_sys_flag, 0);
 			break;
 
 		case rel_files:
@@ -5012,8 +5014,36 @@ static void replace_record(thread_db*		tdbb,
 }
 
 
+static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, drq_type_t dyn_id, const char* name)
+{
+/**************************************
+ *
+ *	s e t _ m e t a d a t a _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Assign the auto generated ID to a particular field
+ *  and return it to the caller.
+ *
+ **************************************/
+	dsc desc1;
 
-static void set_system_flag(thread_db* tdbb, record_param* rpb, USHORT field_id, SSHORT flag)
+	if (EVL_field(0, record, field_id, &desc1))
+	{
+		return MOV_get_long(&desc1, 0);
+	}
+
+	SSHORT value = (SSHORT) DYN_UTIL_gen_unique_id(tdbb, dyn_id, name);
+	dsc desc2;
+	desc2.makeShort(0, &value);
+	MOV_move(tdbb, &desc2, &desc1);
+	CLEAR_NULL(record, field_id);
+	return value;
+}
+
+
+static void set_system_flag(thread_db* tdbb, Record* record, USHORT field_id, SSHORT flag)
 {
 /**************************************
  *
@@ -5027,7 +5057,6 @@ static void set_system_flag(thread_db* tdbb, record_param* rpb, USHORT field_id,
  **************************************/
 	dsc desc1;
 
-	Record* record = rpb->rpb_record;
 	if (EVL_field(0, record, field_id, &desc1)) {
 		return;
 	}
