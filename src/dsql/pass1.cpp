@@ -1759,8 +1759,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			if (input->nod_arg[e_select_update])
 			{
 				dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SELECT_UPD);
-				dsqlScratch->getStatement()->setFlags(dsqlScratch->getStatement()->getFlags() |
-					DsqlCompiledStatement::FLAG_NO_BATCH);
+				dsqlScratch->getStatement()->addFlags(DsqlCompiledStatement::FLAG_NO_BATCH);
 				break;
 			}
 

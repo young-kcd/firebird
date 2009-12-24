@@ -968,7 +968,7 @@ SuspendNode* SuspendNode::internalDsqlPass()
 				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("SUSPEND"));
 	}
 
-	statement->setFlags(statement->getFlags() | DsqlCompiledStatement::FLAG_SELECTABLE);
+	statement->addFlags(DsqlCompiledStatement::FLAG_SELECTABLE);
 
 	blockNode = statement->getBlockNode();
 

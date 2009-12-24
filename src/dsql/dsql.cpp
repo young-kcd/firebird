@@ -2652,9 +2652,9 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		default:
 			if (client_dialect > SQL_DIALECT_V5)
-				statement->setFlags(statement->getFlags() | DsqlCompiledStatement::FLAG_BLR_VERSION5);
+				statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION5);
 			else
-				statement->setFlags(statement->getFlags() | DsqlCompiledStatement::FLAG_BLR_VERSION4);
+				statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
 
 			GEN_request(request, scratch, node);
 			// fall into
@@ -2864,7 +2864,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	for (size_t i = 0; i < request->cursors.getCount(); ++i)
 	{
 		DsqlCompiledStatement* child = request->cursors[i];
-		child->setFlags(child->getFlags() | DsqlCompiledStatement::FLAG_ORPHAN);
+		child->addFlags(DsqlCompiledStatement::FLAG_ORPHAN);
 		child->setParentRequest(NULL);
 
 		Jrd::ContextPoolHolder context(tdbb, &child->getPool());

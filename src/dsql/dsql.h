@@ -414,6 +414,7 @@ public:
 
 	ULONG getFlags() const { return flags; }
 	void setFlags(ULONG value) { flags = value; }
+	void addFlags(ULONG value) { flags |= value; }
 
 	Firebird::RefStrPtr& getSqlText() { return sqlText; }
 	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
