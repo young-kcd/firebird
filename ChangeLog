@@ -1,3 +1,61 @@
+2009-12-24 13:56  robocop
+
+	* firebird2/src/dsql/: StmtNodes.cpp (1.29), dsql.cpp (1.315),
+	dsql.h (1.178), pass1.cpp (1.488):
+
+	Shortcut.
+
+2009-12-24 13:02  dimitr
+
+	* firebird2/src/dsql/DdlNodes.epp (1.37):
+
+	Corrections.
+
+2009-12-24 12:49  robocop
+
+	* firebird2/src/utilities/nbackup.cpp (1.110):
+
+	I copied this code from another place, but I'm not sure how to
+	proceed in case of errors.
+
+2009-12-24 12:48  robocop
+
+	* firebird2/src/jrd/: Function.epp (1.4), btr.cpp (1.272), cmp.cpp
+	(1.375), dpm.epp (1.118), met.epp (1.309), ods.h (1.71), pag.cpp
+	(1.244), validation.cpp (1.66):
+
+	Misc and cleanup.
+
+2009-12-24 11:42  robocop
+
+	* firebird2/src/dsql/: DdlNodes.epp (1.36), ddl.cpp (1.301),
+	dsql.cpp (1.314), dsql.h (1.177), gen.cpp (1.209), StmtNodes.cpp
+	(1.28), pass1.cpp (1.487):
+
+	Misc.
+
+2009-12-24 11:32  dimitr
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.35), jrd/dyn_util.epp
+	(1.74):
+
+	Corrections.
+
+2009-12-23 22:43  asfernandes
+
+	* firebird2/src/: jrd/validation.cpp (1.65),
+	msgs/system_errors2.sql (1.82), utilities/fbsvcmgr.cpp (1.48),
+	utilities/nbackup.cpp (1.109):
+
+	Misc
+
+2009-12-23 15:19  dimitr
+
+	* firebird2/src/jrd/: btn.cpp (1.35), btn.h (1.28), btr.cpp
+	(1.271), validation.cpp (1.64), recsrc/IndexTableScan.cpp (1.8):
+
+	Cleanup.
+
 2009-12-23 02:19  asfernandes
 
 	* firebird2/src/jrd/: ods.cpp (1.6), pag.cpp (1.243), pag.h (1.30),
