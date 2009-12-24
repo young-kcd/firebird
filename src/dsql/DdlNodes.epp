@@ -778,7 +778,6 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (alter)
 	{
-
 		// Update DSQL cache
 		AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
 		METD_drop_function(transaction, str, package);
@@ -792,8 +791,12 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 	Attachment* attachment = transaction->getAttachment();
 
 	if (package.isEmpty())
+	{
 		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_FUNCTION, name);
 
+		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_udf);
+	}
+	
 	AutoCacheRequest requestHandle(tdbb, drq_s_funcs2, DYN_REQUESTS);
 
 	int faults = 0;

@@ -218,7 +218,9 @@ void DYN_UTIL_check_unique_name(thread_db* tdbb, jrd_tra* transaction,
 			request = CMP_find_request(tdbb, drq_l_fun_name, DYN_REQUESTS);
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-				EFUN IN RDB$FUNCTIONS WITH EFUN.RDB$FUNCTION_NAME EQ object_name.c_str()
+				EFUN IN RDB$FUNCTIONS
+				WITH EFUN.RDB$FUNCTION_NAME EQ object_name.c_str() AND
+					 EFUN.RDB$PACKAGE_NAME MISSING
 
 				if (!DYN_REQUEST(drq_l_fun_name))
 					DYN_REQUEST(drq_l_fun_name) = request;
