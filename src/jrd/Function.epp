@@ -102,7 +102,7 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 		if (check_function != function)
 		{
 			LCK_release(tdbb, check_function->fun_existence_lock);
-			check_function->fun_flags |= PRC_obsolete;
+			check_function->fun_flags |= FUN_obsolete;
 		}
 	}
 
@@ -230,7 +230,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	if (!noscan)
 	{
 		// CVC: Where is this set to false? I made it const to draw attention here.
-		const bool valid_blr = true;
+		//const bool valid_blr = true;
 
 		jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
 
@@ -353,22 +353,22 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->fun_exception_message.printf(EXCEPTION_MESSAGE, function->fun_name.toString().c_str(),
 				X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
- 			if (!X.RDB$LEGACY_FLAG.NULL)
- 			{
+			if (!X.RDB$LEGACY_FLAG.NULL)
+			{
 				function->fun_legacy = (X.RDB$LEGACY_FLAG != 0);
 			}
 
- 			if (!X.RDB$INVARIANT_FLAG.NULL)
- 			{
+			if (!X.RDB$INVARIANT_FLAG.NULL)
+			{
 				function->fun_invariant = (X.RDB$INVARIANT_FLAG != 0);
 			}
 
- 			if (!X.RDB$ENGINE_NAME.NULL)
- 			{
- 				fb_assert(!function->fun_legacy);
+			if (!X.RDB$ENGINE_NAME.NULL)
+			{
+				fb_assert(!function->fun_legacy);
 
- 				function->fun_entrypoint = NULL;
- 				function->fun_request = NULL;
+				function->fun_entrypoint = NULL;
+				function->fun_request = NULL;
 
 				HalfStaticArray<UCHAR, 512> body;
 
@@ -384,16 +384,16 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					body.getBuffer(1)[0] = 0;
 				}
 
- 				function->fun_external = dbb->dbb_extManager.makeFunction(
- 					tdbb, function, X.RDB$ENGINE_NAME,
- 					(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
- 			}
- 			else if (!X.RDB$FUNCTION_BLR.NULL)
- 			{
- 				fb_assert(!function->fun_legacy);
+				function->fun_external = dbb->dbb_extManager.makeFunction(
+					tdbb, function, X.RDB$ENGINE_NAME,
+					(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
+			}
+			else if (!X.RDB$FUNCTION_BLR.NULL)
+			{
+				fb_assert(!function->fun_legacy);
 
- 				function->fun_external = NULL;
-  				function->fun_entrypoint = NULL;
+				function->fun_external = NULL;
+				function->fun_entrypoint = NULL;
 
 				MemoryPool* const csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
@@ -429,24 +429,24 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				function->fun_request->req_function = function;
 
 				delete csb;
- 			}
- 			else
-  			{
- 				fb_assert(function->fun_legacy);
+			}
+			else
+			{
+				fb_assert(function->fun_legacy);
 
- 				function->fun_external = NULL;
- 				function->fun_request = NULL;
+				function->fun_external = NULL;
+				function->fun_request = NULL;
 
-  				function->fun_entrypoint =
- 					Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
+				function->fun_entrypoint =
+					Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
 
- 				// Could not find a function with given MODULE, ENTRYPOINT.
- 				// Try the list of internally implemented functions.
- 				if (!function->fun_entrypoint)
- 				{
- 					function->fun_entrypoint =
- 						BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
- 				}
+				// Could not find a function with given MODULE, ENTRYPOINT.
+				// Try the list of internally implemented functions.
+				if (!function->fun_entrypoint)
+				{
+					function->fun_entrypoint =
+						BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
+				}
 			}
 
 		END_FOR;
@@ -508,7 +508,7 @@ int Function::blockingAst(void* ast_object)
 
 void Function::remove(thread_db* tdbb)
 {
-	Database* const dbb = tdbb->getDatabase();
+	//Database* const dbb = tdbb->getDatabase();
 
 	if (fun_existence_lock)
 	{
@@ -567,7 +567,7 @@ void Function::release(thread_db* tdbb)
 				CMP_release(tdbb, fun_request);
 				fun_request = NULL;
 			}
-			fun_flags &= ~PRC_being_altered;
+			fun_flags &= ~FUN_being_altered;
 			remove(tdbb);
 		}
 	}
@@ -619,7 +619,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 	}
 	else if (fun_external)
 	{
- 		fun_external->execute(tdbb, args, value);
+		fun_external->execute(tdbb, args, value);
 	}
 	else
 	{

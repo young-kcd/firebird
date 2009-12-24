@@ -293,7 +293,7 @@ struct IndexJumpInfo
 };
 
 // pag_flags
-const UCHAR btr_dont_gc				= 1;	// Don't garbage-collect this page
+//const UCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page
 const UCHAR btr_descending			= 2;	// Page/bucket is part of a descending index
 const UCHAR btr_jump_info			= 16;	// AB: 2003-index-structure enhancement
 
@@ -320,8 +320,9 @@ struct data_page
 const UCHAR dpg_orphan	= 1;		// Data page is NOT in pointer page
 const UCHAR dpg_full	= 2;		// Pointer page is marked FULL
 const UCHAR dpg_large	= 4;		// Large object is on page
-const UCHAR dpg_swept	= 8;		// Sweep has nothing to do on this page
+//const UCHAR dpg_swept	= 8;		// Sweep has nothing to do on this page
 const UCHAR dpg_secondary	= 16;	// Primary record versions not stored on this page
+									// Set in dpm.epp's extend_relation() but never tested.
 
 
 // Index root page
@@ -354,12 +355,12 @@ struct irtd
 };
 
 // irtd_itype
-const USHORT irt_unique		= 1;
-const USHORT irt_descending	= 2;
+const USHORT irt_unique		= 1; // Tested in validation.cpp's walk_index but never set!
+//const USHORT irt_descending	= 2;
 const USHORT irt_in_progress= 4;
-const USHORT irt_foreign	= 8;
-const USHORT irt_primary	= 16;
-const USHORT irt_expression	= 32;
+//const USHORT irt_foreign	= 8;
+//const USHORT irt_primary	= 16;
+const USHORT irt_expression	= 32; // Tested, disabled and restored in validation.cpp but never set originally
 
 const int STUFF_COUNT		= 4;
 const SLONG END_LEVEL		= -1;
@@ -505,7 +506,7 @@ const int PPG_DP_BITS_NUM	= 4;		// Number of additional flag bits per data page
 
 const UCHAR ppg_dp_full		= 1;		// Data page is FULL
 const UCHAR ppg_dp_large	= 2;		// Large object is on data page
-const UCHAR ppg_dp_swept	= 4;		// Sweep has nothing to do on data page
+//const UCHAR ppg_dp_swept	= 4;		// Sweep has nothing to do on data page
 const UCHAR ppg_dp_secondary = 8;		// Primary record versions not stored on data page
 
 const UCHAR PPG_DP_ALL_BITS	= (1 << PPG_DP_BITS_NUM) - 1;
@@ -599,10 +600,11 @@ const USHORT rhd_incomplete		= 8;		// record is incomplete
 const USHORT rhd_blob			= 16;		// isn't a record but a blob
 const USHORT rhd_stream_blob	= 32;		// blob is a stream mode blob
 const USHORT rhd_delta			= 32;		// prior version is differences only
+											// Tested in validation.cpp's walk_chain but never set
 const USHORT rhd_large			= 64;		// object is large
 const USHORT rhd_damaged		= 128;		// object is known to be damaged
 const USHORT rhd_gc_active		= 256;		// garbage collecting dead record version
-const USHORT rhd_uk_modified	= 512;		// record key field values are changed
+//const USHORT rhd_uk_modified	= 512;		// record key field values are changed
 
 
 

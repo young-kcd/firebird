@@ -1965,7 +1965,7 @@ ULONG PageSpace::maxAlloc(const Database* dbb)
 
 ULONG PageSpace::lastUsedPage()
 {
-	PageManager& pageMgr = dbb->dbb_page_manager;
+	const PageManager& pageMgr = dbb->dbb_page_manager;
 	ULONG pipLast = (maxAlloc() / pageMgr.pagesPerPIP) * pageMgr.pagesPerPIP;
 
 	pipLast = pipLast ? pipLast - 1 : pipFirst;
@@ -1989,8 +1989,7 @@ ULONG PageSpace::lastUsedPage()
 			pipLast = pipFirst;
 
 		window.win_page = pipLast;
-	}
-	while (pipLast > pipFirst);
+	} while (pipLast > pipFirst);
 
 	page_inv_page* pip = (page_inv_page*) window.win_buffer;
 
@@ -2003,6 +2002,7 @@ ULONG PageSpace::lastUsedPage()
 		{
 			mask = 0x80;
 			byte_num--;
+			//fb_assert(byte_num > -1); ???
 		}
 		else
 			mask >>= 1;
@@ -2014,8 +2014,8 @@ ULONG PageSpace::lastUsedPage()
 
 	if (pipLast == pipFirst)
 		return last_bit + 1;
-	else
-		return last_bit + pipLast + 1;
+
+	return last_bit + pipLast + 1;
 }
 
 ULONG PageSpace::lastUsedPage(const Database* dbb)
@@ -2248,8 +2248,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 void PAG_set_page_scn(thread_db* tdbb, win* window)
 {
 	Database* dbb = tdbb->getDatabase();
-	if (dbb->dbb_ods_version < ODS_VERSION12)
-		return;
+	fb_assert(dbb->dbb_ods_version >= ODS_VERSION12);
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
 	PageSpace* pageSpace = pageMgr.findPageSpace(window->win_page.getPageSpaceID());

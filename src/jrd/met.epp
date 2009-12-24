@@ -4813,7 +4813,8 @@ static void par_messages(thread_db* tdbb,
 
 		if (offset > MAX_FORMAT_SIZE)
 		{
-			ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+			ERR_post(Arg::Gds(isc_imp_exc) <<
+					 Arg::Gds(isc_blktoobig));
 		}
 
 		format->fmt_length = (USHORT) offset;

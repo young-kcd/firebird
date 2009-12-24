@@ -203,7 +203,7 @@ static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 static contents remove_node(thread_db*, index_insertion*, WIN*);
 static contents remove_leaf_node(thread_db*, index_insertion*, WIN*);
 static bool scan(thread_db*, UCHAR*, RecordBitmap**, RecordBitmap*, index_desc*,
-				 IndexRetrieval*, USHORT, temporary_key*, const SCHAR,
+				 IndexRetrieval*, USHORT, temporary_key*,
 				 bool&, const temporary_key&);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
 static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temporary_key&,
@@ -692,11 +692,10 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 		skipLowerKey = false;
 	}
 
-	const UCHAR flags = page->btr_header.pag_flags;
 	// if there is an upper bound, scan the index pages looking for it
 	if (retrieval->irb_upper_count)
 	{
-		while (scan(tdbb, pointer, bitmap, bitmap_and, &idx, retrieval, prefix, &upper, flags,
+		while (scan(tdbb, pointer, bitmap, bitmap_and, &idx, retrieval, prefix, &upper,
 					skipLowerKey, lower))
 		{
 			page = (btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read, pag_index);
@@ -4266,7 +4265,6 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
  *
  **************************************/
 
-	const UCHAR flags = bucket->btr_header.pag_flags;
 	const bool leafPage = (bucket->btr_level == 0);
 	bool firstPass = true;
 	const bool descending = (idx_flags & idx_descending);
@@ -4511,7 +4509,6 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 	IndexNode parentNode;
 	while (true)
 	{
-		const UCHAR flags = parent_page->btr_header.pag_flags;
 		parentPointer = BTreeNode::readNode(&parentNode, parentPointer, false);
 		if (parentNode.isEndBucket)
 		{
@@ -4692,7 +4689,6 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 
 	// see if there's enough space on the left page to move all the nodes to it
 	// and leave some extra space for expansion (at least one key length)
-	const UCHAR gcFlags = gc_page->btr_header.pag_flags;
 	UCHAR* gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 	IndexNode gcNode;
 	BTreeNode::readNode(&gcNode, gcPointer, leafPage);
@@ -4740,7 +4736,6 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 
 		// Update leftPointer to scratch page.
 		leftPointer = (UCHAR*) newBucket + (leftPointer - (UCHAR*) left_page) - jumpersOriginalSize;
-		const UCHAR flags2 = newBucket->btr_header.pag_flags;
 		gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 		//
 		BTreeNode::readNode(&leftNode, leftPointer, leafPage);
@@ -5042,7 +5037,6 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 
 	IndexJumpInfo jumpInfo;
 	BTreeNode::getPointerFirstNode(page, &jumpInfo);
-	const UCHAR flags = page->btr_header.pag_flags;
 	const bool leafPage = (page->btr_level == 0);
 
 	*jumpersSize = 0;
@@ -5957,7 +5951,6 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	}
 
 	// Make sure first node looks ok
-	const UCHAR flags = page->btr_header.pag_flags;
 	IndexNode node;
 	pointer = BTreeNode::readNode(&node, pointer, true);
 	if (prefix > node.prefix || key->key_length != node.length + node.prefix)
@@ -6072,7 +6065,7 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 
 static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordBitmap* bitmap_and,
 				 index_desc* idx, IndexRetrieval* retrieval, USHORT prefix,
-				 temporary_key* key, const SCHAR page_flags,
+				 temporary_key* key,
 				 bool& skipLowerKey, const temporary_key& lowerKey)
 {
 /**************************************

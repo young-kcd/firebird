@@ -537,21 +537,22 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 
 		if (useCallerPrivs)
 		{
-			if (transaction->tra_caller_name.type == obj_trigger)
+			switch (transaction->tra_caller_name.type)
 			{
+			case obj_trigger:
 				objType = id_trigger;
-			}
-			else if (transaction->tra_caller_name.type == obj_procedure)
-			{
+				break;
+			case obj_procedure:
 				objType = id_procedure;
-			}
-			else if (transaction->tra_caller_name.type == obj_udf)
-			{
+				break;
+			case obj_udf:
 				objType = id_function;
-			}
-			else if (transaction->tra_caller_name.type == obj_package_header)
-			{
+				break;
+			case obj_package_header:
 				objType = id_package;
+				break;
+			default:
+				fb_assert(false);
 			}
 
 			objName = transaction->tra_caller_name.name;

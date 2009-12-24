@@ -647,7 +647,7 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 	"Index %d has orphan child page at page %ld",
 	"Index %d has a circular reference at page %ld",	// 25
 	"SCN's page %ld (sequence %ld) inconsistent",
-	"Page %d have SCN %d while at SCN's page is %d"
+	"Page %d has SCN %d while at SCN's page is %d"
 };
 
 
@@ -872,7 +872,7 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	// Check SCN's page
 	if (page_number)
 	{
-		PageManager& pageMgr = dbb->dbb_page_manager;
+		const PageManager& pageMgr = dbb->dbb_page_manager;
 		const ULONG scn_seq = page_number / pageMgr.pagesPerSCN;
 		const ULONG scn_slot = page_number % pageMgr.pagesPerSCN;
 		const ULONG scn_page_num = PageSpace::getSCNPageNum(dbb, scn_seq);
@@ -2254,8 +2254,8 @@ static RTN walk_scns(thread_db* tdbb, vdr* control)
 	const ULONG lastPage = pageSpace->lastUsedPage();
 	const ULONG cntSCNs = lastPage / pageMgr.pagesPerSCN + 1;
 
-	ULONG pageNum = 0;
-	ULONG currSCN = 0;
+	//ULONG pageNum = 0;
+	//ULONG currSCN = 0;
 	for (ULONG sequence = 0; sequence < cntSCNs; sequence++)
 	{
 		const ULONG scnPage = pageSpace->getSCNPageNum(sequence);

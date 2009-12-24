@@ -2637,7 +2637,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, USH
 	dpage->dpg_header.pag_type = pag_data;
 	relPages->rel_data_space = pp_sequence;
 	if (type != DPM_primary) {
-		dpage->dpg_header.pag_flags |= dpg_secondary;
+		dpage->dpg_header.pag_flags |= dpg_secondary; // Who checks it?
 	}
 
 	CCH_RELEASE(tdbb, window);
