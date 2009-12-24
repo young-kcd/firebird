@@ -748,7 +748,22 @@ void NBackup::backup_database(int level, const PathName& fname)
 	ULONG page_writes = 0, page_reads = 0;
 
 	time_t start = time(NULL);
-	const struct tm* today = localtime(&start);
+	struct tm today;
+#ifdef HAVE_LOCALTIME_R
+	if (!localtime_r(&start, &today))
+	{
+		// What to do here?
+	}
+#else
+	{ //scope
+		struct tm* times = localtime(&start);
+		if (!times)
+		{
+			// What do to here?
+		}
+		today = *times;
+	} //
+#endif
 
 	try {
 		// Look for SCN and GUID of previous-level backup in history table
@@ -813,8 +828,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 			PathName begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
 			bakname.printf("%s-%d-%04d%02d%02d-%02d%02d.nbk", fil.c_str(), level,
-				today->tm_year + 1900, today->tm_mon + 1, today->tm_mday,
-				today->tm_hour, today->tm_min);
+				today.tm_year + 1900, today.tm_mon + 1, today.tm_mday,
+				today.tm_hour, today.tm_min);
 			if (!uSvc->isService())
 				printf("%s", bakname.c_str()); // Print out generated filename for script processing
 		}
