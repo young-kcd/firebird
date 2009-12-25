@@ -975,6 +975,90 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 	if (!REQUEST(irq_m_fields5))
 		REQUEST(irq_m_fields5) = request;
 
+	request = CMP_find_request(tdbb, irq_m_fields7, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		DEP IN RDB$DEPENDENCIES CROSS
+		FUN IN RDB$FUNCTIONS
+			WITH DEP.RDB$DEPENDED_ON_NAME EQ field_source->dsc_address AND
+				 DEP.RDB$DEPENDED_ON_TYPE EQ obj_field AND
+				 DEP.RDB$DEPENDENT_TYPE EQ obj_udf AND
+				 DEP.RDB$DEPENDENT_NAME EQ FUN.RDB$FUNCTION_NAME AND
+				 FUN.RDB$PACKAGE_NAME MISSING
+
+		if (!REQUEST(irq_m_fields7))
+			REQUEST(irq_m_fields7) = request;
+
+		Firebird::MetaName name(FUN.RDB$FUNCTION_NAME);
+
+		dsc desc;
+		desc.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
+
+		DeferredWork* dw2 =
+			DFW_post_work(transaction, dfw_modify_function, &desc, FUN.RDB$FUNCTION_ID);
+		DFW_post_work_arg(transaction, dw2, NULL, 0, dfw_arg_check_blr);
+	END_FOR;
+
+	if (!REQUEST(irq_m_fields7))
+		REQUEST(irq_m_fields7) = request;
+
+	request = CMP_find_request(tdbb, irq_m_fields8, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		RFL IN RDB$RELATION_FIELDS CROSS
+		DEP IN RDB$DEPENDENCIES CROSS
+		FUN IN RDB$FUNCTIONS
+			WITH RFL.RDB$FIELD_SOURCE EQ field_source->dsc_address AND
+				 DEP.RDB$DEPENDED_ON_NAME EQ RFL.RDB$RELATION_NAME AND
+				 DEP.RDB$FIELD_NAME EQ RFL.RDB$FIELD_NAME AND
+				 DEP.RDB$DEPENDED_ON_TYPE EQ obj_relation AND
+				 DEP.RDB$DEPENDENT_TYPE EQ obj_udf AND
+				 DEP.RDB$DEPENDENT_NAME EQ FUN.RDB$FUNCTION_NAME AND
+				 FUN.RDB$PACKAGE_NAME MISSING
+
+		if (!REQUEST(irq_m_fields8))
+			REQUEST(irq_m_fields8) = request;
+
+		Firebird::MetaName name(FUN.RDB$FUNCTION_NAME);
+
+		dsc desc;
+		desc.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
+
+		DeferredWork* dw2 =
+			DFW_post_work(transaction, dfw_modify_function, &desc, FUN.RDB$FUNCTION_ID);
+		DFW_post_work_arg(transaction, dw2, NULL, 0, dfw_arg_check_blr);
+	END_FOR;
+
+	if (!REQUEST(irq_m_fields8))
+		REQUEST(irq_m_fields8) = request;
+
+	request = CMP_find_request(tdbb, irq_m_fields9, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		DEP IN RDB$DEPENDENCIES CROSS
+		FUN IN RDB$FUNCTIONS
+			WITH DEP.RDB$DEPENDED_ON_NAME EQ field_source->dsc_address AND
+				 DEP.RDB$DEPENDED_ON_TYPE EQ obj_field AND
+				 (DEP.RDB$DEPENDENT_TYPE EQ obj_package_header OR
+				 	DEP.RDB$DEPENDENT_TYPE EQ obj_package_body) AND
+				 DEP.RDB$DEPENDENT_NAME EQ FUN.RDB$PACKAGE_NAME
+
+		if (!REQUEST(irq_m_fields9))
+			REQUEST(irq_m_fields9) = request;
+
+		Firebird::MetaName name(FUN.RDB$FUNCTION_NAME);
+
+		dsc desc;
+		desc.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
+
+		DeferredWork* dw2 = DFW_post_work(transaction, dfw_modify_function, &desc,
+			FUN.RDB$FUNCTION_ID, FUN.RDB$PACKAGE_NAME);
+		DFW_post_work_arg(transaction, dw2, NULL, 0, dfw_arg_check_blr);
+	END_FOR;
+
+	if (!REQUEST(irq_m_fields9))
+		REQUEST(irq_m_fields9) = request;
+
 	return dw;
 }
 
