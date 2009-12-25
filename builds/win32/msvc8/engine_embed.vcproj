@@ -275,6 +275,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Attachment.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\blb.cpp"
 				>
 			</File>
@@ -774,10 +778,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\jrd\recsrc\RecordSource.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\src\jrd\recsrc\RecursiveStream.cpp"
 					>
 				</File>
@@ -816,6 +816,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\align.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\Attachment.h"
 				>
 			</File>
 			<File
@@ -1372,6 +1376,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\RecordBuffer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\recsrc\RecordSource.h"
 				>
 			</File>
 			<File
