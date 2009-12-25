@@ -31,14 +31,17 @@
 #include "../jrd/exe.h"
 #include "../jrd/blb.h"
 #include "../jrd/met.h"
+#include "../jrd/align.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"
+#include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/fun_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/thread_proto.h"
@@ -340,10 +343,10 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			if (!REQUEST(irq_l_args))
 				REQUEST(irq_l_args) = request_arg;
 
-			function->fun_inputs = inputs;
+			function->fun_inputs = (USHORT) inputs;
 			function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
 			function->fun_temp_length = length;
-			function->fun_args.resize(count);
+			function->fun_args.resize(count + 1);
 			memcpy(function->fun_args.begin(), temp, function->fun_args.getCount() * sizeof(fun_repeat));
 
 			// Prepare the exception message to be used in case this function ever
@@ -569,8 +572,6 @@ void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 	fb_assert(realLen >= ULONG(length) - 10 && realLen <= ULONG(MAX_USHORT));
 	tmp.resize(realLen);
 
-//	par_messages(tdbb, tmp.begin(), (ULONG) tmp.getCount(), procedure, csb);
-
 	PAR_blr(tdbb, NULL, tmp.begin(), (ULONG) tmp.getCount(), NULL, &csb,
 			&fun_request, false, 0);
 }
@@ -652,7 +653,118 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 	{
 		fb_assert(fun_request);
 
-		// TODO
+		Database* const dbb = tdbb->getDatabase();
+		jrd_req* const request = tdbb->getRequest();
+
+		USHORT in_msg_length = 0;
+
+		Firebird::UCharBuffer in_buffer;
+
+		for (unsigned i = 0, j = 0; i < args->nod_count; i++, j++)
+		{
+			if (j == fun_return_arg)
+			{
+				j++;
+			}
+
+			dsc arg_desc = fun_args[j].fun_parameter->prm_desc;
+
+			if (arg_desc.dsc_dtype >= dtype_aligned)
+			{
+				in_msg_length = FB_ALIGN(in_msg_length, type_alignments[arg_desc.dsc_dtype]);
+			}
+			const USHORT arg_offset = in_msg_length;
+			in_msg_length += arg_desc.dsc_length;
+
+			in_msg_length = FB_ALIGN(in_msg_length, sizeof(SSHORT));
+			const USHORT null_offset = in_msg_length;
+			in_msg_length += sizeof(SSHORT);
+
+			in_buffer.grow(in_msg_length);
+
+			dsc* const src_desc = EVL_expr(tdbb, args->nod_arg[i]);
+			if (src_desc && !(request->req_flags & req_null))
+			{
+				arg_desc.dsc_address = in_buffer.begin() + arg_offset;
+				MOV_move(tdbb, src_desc, &arg_desc);
+			}
+			else
+			{
+				UCHAR* const null_ptr = in_buffer.begin() + null_offset;
+				*reinterpret_cast<SSHORT*>(null_ptr) = TRUE;
+			}
+		}
+
+		UCHAR* const in_msg = in_msg_length ? in_buffer.begin() : NULL;
+
+		dsc ret_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
+		USHORT out_msg_length = ret_desc.dsc_length;
+		out_msg_length = FB_ALIGN(out_msg_length, sizeof(SSHORT));
+		const USHORT null_offset = out_msg_length;
+		out_msg_length += sizeof(SSHORT);
+
+		Firebird::UCharBuffer out_buffer;
+		UCHAR* const out_msg = out_buffer.getBuffer(out_msg_length);
+		ret_desc.dsc_address = out_msg;
+
+		jrd_req* const new_request = EXE_find_request(tdbb, fun_request, false);
+
+		try
+		{
+			// Save the old pool
+			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
+
+			jrd_tra* const transaction = request->req_transaction;
+			const SLONG save_point_number = transaction->tra_save_point ?
+				transaction->tra_save_point->sav_number : 0;
+
+			new_request->req_timestamp = request->req_timestamp;
+
+			EXE_start(tdbb, new_request, transaction);
+
+			if (in_msg)
+			{
+				EXE_send(tdbb, new_request, 0, in_msg_length, in_msg);
+			}
+
+			EXE_receive(tdbb, new_request, 1, out_msg_length, out_msg);
+
+			// Clean up all savepoints started during execution of the function
+
+			if (transaction != dbb->dbb_sys_trans)
+			{
+				for (const Savepoint* save_point = transaction->tra_save_point;
+					 save_point && save_point_number < save_point->sav_number;
+					 save_point = transaction->tra_save_point)
+				{
+					VIO_verb_cleanup(tdbb, transaction);
+				}
+			}
+		}
+		catch (const Firebird::Exception&)
+		{
+			tdbb->setRequest(request);
+			EXE_unwind(tdbb, new_request);
+			new_request->req_attachment = NULL;
+			new_request->req_flags &= ~req_in_use;
+			throw;
+		}
+
+		tdbb->setRequest(request);
+		EXE_unwind(tdbb, new_request);
+		new_request->req_attachment = NULL;
+		new_request->req_flags &= ~req_in_use;
+
+		UCHAR* const null_ptr = out_msg + null_offset;
+		if (*reinterpret_cast<SSHORT*>(null_ptr))
+		{
+			request->req_flags |= req_null;
+		}
+		else
+		{
+			request->req_flags &= ~req_null;
+			MOV_move(tdbb, &ret_desc, &value->vlu_desc);
+		}
 	}
 
 	return &value->vlu_desc;
