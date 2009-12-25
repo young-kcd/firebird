@@ -5014,7 +5014,8 @@ static void replace_record(thread_db*		tdbb,
 }
 
 
-static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, drq_type_t dyn_id, const char* name)
+static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, drq_type_t dyn_id,
+	const char* name)
 {
 /**************************************
  *

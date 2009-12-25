@@ -5553,7 +5553,7 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 		if (function->fun_existence_lock)
 		{
-			// Let function be deleted if only this transaction is using it
+			// Let function be modified if only this transaction is using it
 
 			if (!LCK_convert(tdbb, function->fun_existence_lock, LCK_EX, transaction->getLockWait()))
 			{
