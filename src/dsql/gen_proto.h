@@ -29,7 +29,7 @@ void	GEN_expr(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 void	GEN_hidden_variables(Jrd::DsqlCompilerScratch* dsqlScratch, bool inExpression);
 void	GEN_port(Jrd::DsqlCompilerScratch*, Jrd::dsql_msg*);
 void	GEN_request(Jrd::dsql_req*, Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
-void	GEN_return(Jrd::DsqlCompilerScratch*, const Firebird::Array<Jrd::dsql_nod*>& variables, bool);
+void	GEN_return(Jrd::DsqlCompilerScratch*, const Firebird::Array<Jrd::dsql_nod*>& variables, bool, bool);
 void	GEN_start_transaction(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
 void	GEN_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 

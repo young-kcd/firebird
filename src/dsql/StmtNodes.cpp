@@ -591,7 +591,7 @@ void ExecBlockNode::genBlr()
 		statement->setType(DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
 	statement->append_uchar(blr_end);
-	GEN_return(dsqlScratch, outputVariables, true);
+	GEN_return(dsqlScratch, outputVariables, true, true);
 	statement->append_uchar(blr_end);
 
 	statement->endDebug();
@@ -600,7 +600,7 @@ void ExecBlockNode::genBlr()
 
 void ExecBlockNode::genReturn()
 {
-	GEN_return(dsqlScratch, outputVariables, false);
+	GEN_return(dsqlScratch, outputVariables, true, false);
 }
 
 

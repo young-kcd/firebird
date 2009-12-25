@@ -625,7 +625,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void FunctionNode::genReturn()
 {
-	GEN_return(dsqlScratch, getCreateAlterNode()->outputVariables, false);
+	GEN_return(dsqlScratch, getCreateAlterNode()->outputVariables, false, false);
 }
 
 
@@ -1262,7 +1262,7 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		statement->append_uchar(blr_message);
 		statement->append_uchar(1);
-		statement->append_ushort(3);
+		statement->append_ushort(2);
 
 		statement->put_debug_argument(fb_dbg_arg_output, 0, "");
 		putType(returnType, true);
@@ -1274,10 +1274,6 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		dsql_nod* const var = MAKE_variable(returnType.legacyField, "", VAR_output, 1, 0, 0);
 		variables.add(var);
 		outputVariables.add(var);
-
-		// add slot for EOS
-		statement->append_uchar(blr_short);
-		statement->append_uchar(0);
 
 		if (parameters.getCount() != 0)
 		{
@@ -1325,7 +1321,7 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		statement->setType(DsqlCompiledStatement::TYPE_DDL);
 		statement->append_uchar(blr_end);
-		GEN_return(dsqlScratch, outputVariables, true);
+		GEN_return(dsqlScratch, outputVariables, false, false);
 
 		statement->append_uchar(blr_end);
 		statement->append_uchar(blr_eoc);
@@ -1511,7 +1507,7 @@ void RecreateFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 void ProcedureNode::genReturn()
 {
-	GEN_return(dsqlScratch, getCreateAlterNode()->outputVariables, false);
+	GEN_return(dsqlScratch, getCreateAlterNode()->outputVariables, true, false);
 }
 
 
@@ -2127,7 +2123,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->append_uchar(blr_end);
-	GEN_return(dsqlScratch, outputVariables, true);
+	GEN_return(dsqlScratch, outputVariables, true, true);
 
 	statement->append_uchar(blr_end);
 	statement->append_uchar(blr_eoc);
