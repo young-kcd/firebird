@@ -35,6 +35,8 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../common/StatusArg.h"
+#include "../jrd/Attachment.h"
+
 
 using namespace Firebird;
 

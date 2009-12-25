@@ -65,6 +65,8 @@
 #include "../jrd/SysFunction.h"
 #include "../jrd/BlrReader.h"
 #include "../jrd/Function.h"
+#include "../jrd/Attachment.h"
+
 
 using namespace Jrd;
 using namespace Firebird;

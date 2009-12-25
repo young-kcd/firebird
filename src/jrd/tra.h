@@ -44,6 +44,7 @@
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
 #include "../jrd/obj.h"
+#include "../jrd/Attachment.h"
 
 namespace EDS {
 class Transaction;

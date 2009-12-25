@@ -95,6 +95,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intlobj_new.h"
+#include "../jrd/Attachment.h"
 #include "../common/StatusArg.h"
 
 // since UNIX isn't standard, we have to define

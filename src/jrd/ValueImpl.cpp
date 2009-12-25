@@ -27,6 +27,7 @@
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/Attachment.h"
 
 using namespace Firebird;
 using Firebird::uint;

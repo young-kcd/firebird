@@ -65,6 +65,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/FpeControl.h"
 #include "../jrd/Function.h"
+#include "../jrd/Attachment.h"
 
 #ifdef WIN_NT
 #define LIBNAME "ib_util"

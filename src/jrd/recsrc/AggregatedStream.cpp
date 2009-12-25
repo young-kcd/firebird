@@ -30,6 +30,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/sort_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/Attachment.h"
 
 #include "RecordSource.h"
 

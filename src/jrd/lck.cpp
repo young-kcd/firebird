@@ -38,6 +38,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../lock/lock_proto.h"
+#include "../jrd/Attachment.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

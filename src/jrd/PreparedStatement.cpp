@@ -32,6 +32,7 @@
 #include "../dsql/sqlda_pub.h"
 #include "../dsql/dsql_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/Attachment.h"
 
 using namespace Firebird;
 
