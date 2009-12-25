@@ -449,6 +449,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				}
 			}
 
+			function->fun_flags |= FUN_scanned;
+
 		END_FOR;
 
 		if (!REQUEST(irq_l_functions))
