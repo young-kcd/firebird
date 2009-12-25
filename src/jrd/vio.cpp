@@ -87,6 +87,7 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/dyn_ut_proto.h"
+#include "../jrd/Function.h"
 #include "../common/StatusArg.h"
 
 using namespace Jrd;
@@ -1299,7 +1300,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				SCL_check_function(tdbb, &desc, SCL_delete);
 			}
 
-			DFW_post_work(transaction, dfw_delete_function, &desc, 0);
+			EVL_field(0, rpb->rpb_record, f_fun_id, &desc2);
+			id = MOV_get_long(&desc2, 0);
+
+			DFW_post_work(transaction, dfw_delete_function, &desc, id, package_name);
+			Function::lookup(tdbb, id, false, true, 0);
 			break;
 
 		case rel_indices:
