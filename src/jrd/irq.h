@@ -157,6 +157,7 @@ enum irq_type_t
 	irq_func_ret_fld,		// lookup argument's domain
 	irq_fun_validate,		// function blr validate
 	irq_c_fun_dpd,			// get function dependencies
+	irq_grant11,			// process grant option (functions)
 
 	irq_MAX
 };

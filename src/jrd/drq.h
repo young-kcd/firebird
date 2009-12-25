@@ -229,6 +229,7 @@ enum drq_type_t
 	drq_s_fld_src,			// store field source
 	drq_e_prm_gfld,			// erase parameter source
 	drq_e_prm_gfld2,		// erase parameter source
+	drq_g_nxt_sec_id,		// lookup next security class ID
 
 	drq_MAX
 };

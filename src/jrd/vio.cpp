@@ -125,6 +125,7 @@ static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, USHORT);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
 static SSHORT set_metadata_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
+static void set_security_class(thread_db*, Record*, USHORT);
 static void set_system_flag(thread_db*, Record*, USHORT, SSHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, const bool, const bool);
@@ -2790,6 +2791,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					set_metadata_id(tdbb, rpb->rpb_record, f_fun_id, drq_g_nxt_fun_id, "RDB$FUNCTIONS");
 				work = DFW_post_work(transaction, dfw_create_function, &desc, id, package_name);
 
+				set_security_class(tdbb, rpb->rpb_record, f_fun_class);
+
 				bool check_blr = true;
 				if (EVL_field(0, rpb->rpb_record, f_fun_valid_blr, &desc2))
 					check_blr = MOV_get_long(&desc2, 0) != 0;
@@ -5046,6 +5049,33 @@ static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, 
 	MOV_move(tdbb, &desc2, &desc1);
 	CLEAR_NULL(record, field_id);
 	return value;
+}
+
+
+static void set_security_class(thread_db* tdbb, Record* record, USHORT field_id)
+{
+/**************************************
+ *
+ *	s e t _ s e c u r i t y _ c l a s s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Generate the security class name.
+ *
+ **************************************/
+	dsc desc1;
+
+	if (!EVL_field(0, record, field_id, &desc1))
+	{
+		const SINT64 value = DYN_UTIL_gen_unique_id(tdbb, drq_g_nxt_sec_id, SQL_SECCLASS_GENERATOR);
+		Firebird::MetaName name;
+		name.printf("%s%d", SQL_SECCLASS_PREFIX, value);
+		dsc desc2;
+		desc2.makeText(name.length(), CS_ASCII, (UCHAR*) name.c_str());
+		MOV_move(tdbb, &desc2, &desc1);
+		CLEAR_NULL(record, field_id);
+	}
 }
 
 

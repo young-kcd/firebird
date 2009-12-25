@@ -125,9 +125,17 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 	Acl acl, default_acl;
 
 	CHECK_AND_MOVE(acl, ACL_version);
-	grant_user(acl, owner, obj_user,
-			   (id == obj_procedure || id == obj_package_header ?
-					SCL_execute | OWNER_PRIVS : OWNER_PRIVS));
+	
+	SecurityClass::flags_t priv = OWNER_PRIVS;
+
+	if (id == obj_procedure ||
+		id == obj_udf ||
+		id == obj_package_header)
+	{
+		priv |= SCL_execute;
+	}
+
+	grant_user(acl, owner, obj_user, priv);
 
 	// Pick up any relation-level privileges
 
@@ -374,26 +382,51 @@ static void get_object_info(thread_db* tdbb,
 		if (!REQUEST(irq_grant10))
 			REQUEST(irq_grant10) = request;
 	}
-	else
+	else if (obj_type == obj_procedure)
 	{
 		jrd_req* request = CMP_find_request(tdbb, irq_grant9, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
-			REL IN RDB$PROCEDURES WITH
-				REL.RDB$PROCEDURE_NAME EQ object_name AND
-				REL.RDB$PACKAGE_NAME MISSING
+			PRC IN RDB$PROCEDURES WITH
+				PRC.RDB$PROCEDURE_NAME EQ object_name AND
+				PRC.RDB$PACKAGE_NAME MISSING
 
             if (!REQUEST(irq_grant9))
 				REQUEST(irq_grant9) = request;
 
-			s_class = REL.RDB$SECURITY_CLASS;
+			s_class = PRC.RDB$SECURITY_CLASS;
 			default_class = "";
-			owner = REL.RDB$OWNER_NAME;
+			owner = PRC.RDB$OWNER_NAME;
 			view = false;
 		END_FOR;
 
 		if (!REQUEST(irq_grant9))
 			REQUEST(irq_grant9) = request;
+	}
+	else if (obj_type == obj_udf)
+	{
+		jrd_req* request = CMP_find_request(tdbb, irq_grant11, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			FUN IN RDB$FUNCTIONS WITH
+				FUN.RDB$FUNCTION_NAME EQ object_name AND
+				FUN.RDB$PACKAGE_NAME MISSING
+
+            if (!REQUEST(irq_grant11))
+				REQUEST(irq_grant11) = request;
+
+			s_class = FUN.RDB$SECURITY_CLASS;
+			default_class = "";
+			owner = FUN.RDB$OWNER_NAME;
+			view = false;
+		END_FOR;
+
+		if (!REQUEST(irq_grant11))
+			REQUEST(irq_grant11) = request;
+	}
+	else
+	{
+		fb_assert(false);
 	}
 }
 
@@ -501,6 +534,10 @@ static void grant_user(Acl& acl,
 
 	case obj_procedure:
 		CHECK_AND_MOVE(acl, id_procedure);
+		break;
+
+	case obj_udf:
+		CHECK_AND_MOVE(acl, id_function);
 		break;
 
 	case obj_trigger:
@@ -980,6 +1017,13 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
 
 				case id_procedure:
 					if (user_type != obj_procedure)
+						hit = false;
+					if (check_string(a, user))
+						hit = false;
+					break;
+
+				case id_function:
+					if (user_type != obj_udf)
 						hit = false;
 					if (check_string(a, user))
 						hit = false;
