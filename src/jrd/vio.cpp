@@ -2296,7 +2296,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 				check_class(tdbb, transaction, org_rpb, new_rpb, f_fun_class);
 
-				EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
+				EVL_field(0, org_rpb->rpb_record, f_fun_id, &desc2);
 				const USHORT id = MOV_get_long(&desc2, 0);
 				DFW_post_work(transaction, dfw_modify_function, &desc1, id, package_name);
 			} // scope
