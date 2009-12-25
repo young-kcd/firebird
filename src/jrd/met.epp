@@ -3116,8 +3116,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 	if (!noscan)
 	{
-		// CVC: Where is this set to false? I made it const to draw attention here.
-		const bool valid_blr = true;
+		bool valid_blr = true;
 
 		jrd_req* request = CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
 
@@ -3351,6 +3350,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin());	// ODS_12_0
 			}
 
+			if (P.RDB$VALID_BLR.NULL || P.RDB$VALID_BLR == FALSE)
+			{
+				valid_blr = false;
+			}
+
 		END_FOR;
 
 		if (!REQUEST(irq_r_procedure)) {
@@ -3359,7 +3363,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 		procedure->prc_flags |= PRC_scanned;
 
-		// CVC: This condition is always false because valid_blr is always true.
 		if (!(dbb->dbb_flags & DBB_read_only) && !valid_blr)
 		{
 			// if the BLR was marked as invalid but the procedure was compiled,

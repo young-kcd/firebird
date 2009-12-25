@@ -229,8 +229,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 	if (!noscan)
 	{
-		// CVC: Where is this set to false? I made it const to draw attention here.
-		//const bool valid_blr = true;
+		bool valid_blr = true;
 
 		jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
 
@@ -449,12 +448,36 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				}
 			}
 
+			if (X.RDB$VALID_BLR.NULL || X.RDB$VALID_BLR == FALSE)
+			{
+				valid_blr = false;
+			}
+
 			function->fun_flags |= FUN_scanned;
 
 		END_FOR;
 
 		if (!REQUEST(irq_l_functions))
 			REQUEST(irq_l_functions) = request_fun;
+
+		if (!(dbb->dbb_flags & DBB_read_only) && !valid_blr)
+		{
+			// if the BLR was marked as invalid but the function was compiled,
+			// mark the BLR as valid
+
+			jrd_req* request_set_valid = NULL;
+
+			FOR(REQUEST_HANDLE request_set_valid)
+				F IN RDB$FUNCTIONS WITH F.RDB$FUNCTION_ID EQ function->fun_id
+
+				MODIFY F USING
+					F.RDB$VALID_BLR = TRUE;
+					F.RDB$VALID_BLR.NULL = FALSE;
+				END_MODIFY;
+			END_FOR;
+
+			CMP_release(tdbb, request_set_valid);
+		}
 	}
 
 	// Make sure that it is really being scanned
