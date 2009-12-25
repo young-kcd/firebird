@@ -71,7 +71,7 @@ const SSHORT ACT_PROMPT	= 2;
 
 static void copy_str_upper(TEXT*, const TEXT*);
 static bool get_line(int*, SCHAR**, TEXT*);
-static SSHORT get_switches(int argc, TEXT** argv, const in_sw_tab_t* in_sw_table,
+static SSHORT get_switches(int argc, TEXT** argv, const Switches::in_sw_tab_t* in_sw_table,
 						   ibmgr_data_t* ibmgr_data, bool* quitflag, bool zapPasswd);
 static SSHORT parse_cmd_line(int, TEXT**, bool);
 static void print_config();
@@ -303,7 +303,7 @@ static bool get_line( int *argc, SCHAR** argv, TEXT* stuff)
 
 static SSHORT get_switches(int argc,
 						   TEXT** argv,
-						   const in_sw_tab_t* in_sw_table,
+						   const Switches::in_sw_tab_t* in_sw_table,
 						   ibmgr_data_t* ibmgr_data, bool * quitflag, bool zapPasswd)
 {
 /**************************************
@@ -441,7 +441,7 @@ static SSHORT get_switches(int argc,
 			// iterate through the switch table, looking for matches
 			USHORT in_sw = IN_SW_IBMGR_0;
 			const TEXT* q;
-			for (const in_sw_tab_t* in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
+			for (const Switches::in_sw_tab_t* in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
 			{
 				const TEXT* p = string + 1;
 
