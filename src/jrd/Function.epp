@@ -556,7 +556,7 @@ void Function::remove(thread_db* tdbb)
 
 void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 {
-	fb_assert(!blob_id.isEmpty());
+	fb_assert(blob_id && !blob_id->isEmpty());
 
 	Database* const dbb = tdbb->getDatabase();
 
