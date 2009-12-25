@@ -1,3 +1,10 @@
+2009-12-24 15:43  asfernandes
+
+	* firebird2/src/jrd/: Relation.h (1.12.2.2), met.epp (1.288.2.2),
+	tra.cpp (1.212.2.1):
+
+	Fix problem with table reservation and views based in procedures
+
 2009-12-21 01:50  asfernandes
 
 	* firebird2/src/isql/isql.epp (1.291.2.3):
