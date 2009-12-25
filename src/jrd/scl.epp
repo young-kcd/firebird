@@ -502,7 +502,7 @@ void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	if (!REQUEST(irq_f_security))
 		REQUEST(irq_f_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, object_procedure, name);
+	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, object_function, name);
 }
 
 
