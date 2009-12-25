@@ -601,19 +601,7 @@ void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 {
 	fb_assert(blob_id && !blob_id->isEmpty());
 
-	Database* const dbb = tdbb->getDatabase();
-
-	Firebird::UCharBuffer tmp;
-
-	blb* const blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	const SLONG length = blob->blb_length + 10;
-	UCHAR* const temp = tmp.getBuffer(length);
-	const ULONG realLen = BLB_get_data(tdbb, blob, temp, length);
-	fb_assert(realLen >= ULONG(length) - 10 && realLen <= ULONG(MAX_USHORT));
-	tmp.resize(realLen);
-
-	PAR_blr(tdbb, NULL, tmp.begin(), (ULONG) tmp.getCount(), NULL, &csb,
-			&fun_request, false, 0);
+	MET_parse_blob(tdbb, NULL, blob_id, &csb, &fun_request, false);
 }
 
 void Function::addRef()
