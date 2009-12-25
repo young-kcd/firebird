@@ -125,7 +125,7 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 	Acl acl, default_acl;
 
 	CHECK_AND_MOVE(acl, ACL_version);
-	
+
 	SecurityClass::flags_t priv = OWNER_PRIVS;
 
 	if (id == obj_procedure ||

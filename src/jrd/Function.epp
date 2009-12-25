@@ -302,7 +302,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				const SSHORT collation_id_null = Y.RDB$COLLATION_ID.NULL;
 				const SSHORT collation_id = Y.RDB$COLLATION_ID;
-				
+
 				SSHORT default_value_null = Y.RDB$DEFAULT_VALUE.NULL;
 				bid default_value = Y.RDB$DEFAULT_VALUE;
 
@@ -806,6 +806,6 @@ USHORT Function::incrementAlterCount()
 				 Arg::Gds(isc_udf_name) << Arg::Str(fun_name.toString()) <<
 				 Arg::Gds(isc_version_err));
 	}
-	
+
 	return ++fun_alter_count;
 }

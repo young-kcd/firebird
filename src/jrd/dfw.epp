@@ -4496,7 +4496,7 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 		{
 			if (work->dfw_type == dfw_modify_procedure || work->dfw_type == dfw_modify_function)
 			{
-				// Don't consider that procedure is in DFW if we are only checking the BLR
+				// Don't consider that routine is in DFW if we are only checking the BLR
 				if (!work->findArg(dfw_arg_check_blr))
 					return true;
 			}

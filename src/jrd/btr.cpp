@@ -6122,7 +6122,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 
 	IndexNode node;
 	pointer = BTreeNode::readNode(&node, pointer, true);
-	const UCHAR* p = 0;
+	const UCHAR* p = NULL;
 	while (true)
 	{
 

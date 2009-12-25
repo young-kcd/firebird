@@ -192,11 +192,17 @@ public:
 private:
 	// These operations are not supported on static repeat-base objects
 	void* operator new[](size_t /*s*/, MemoryPool& /*p*/)
-		{ return 0; }
+	{
+		return 0;
+	}
+
 	void operator delete[](void* /*mem*/, MemoryPool& /*p*/)
-		{ }
+	{
+	}
+
 	void operator delete[](void* /*mem*/)
-		{ }
+	{
+	}
 
 	// These operators are off-limits
 	void* operator new(size_t) { return 0; }

@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "firebird.h"
 #include "../jrd/Attachment.h"
 #include "../jrd/Database.h"
@@ -65,6 +64,7 @@ Jrd::Attachment* Jrd::Attachment::create(Database* dbb, FB_API_HANDLE publicHand
 	}
 }
 
+
 // static method
 void Jrd::Attachment::destroy(Attachment* const attachment)
 {
@@ -92,11 +92,13 @@ bool Jrd::Attachment::backupStateWriteLock(thread_db* tdbb, SSHORT wait)
 	return false;
 }
 
+
 void Jrd::Attachment::backupStateWriteUnLock(thread_db* tdbb)
 {
 	if (--att_backup_state_counter == 0)
 		att_database->dbb_backup_manager->unlockStateWrite(tdbb);
 }
+
 
 bool Jrd::Attachment::backupStateReadLock(thread_db* tdbb, SSHORT wait)
 {
@@ -110,33 +112,35 @@ bool Jrd::Attachment::backupStateReadLock(thread_db* tdbb, SSHORT wait)
 	return false;
 }
 
+
 void Jrd::Attachment::backupStateReadUnLock(thread_db* tdbb)
 {
 	if (--att_backup_state_counter == 0)
 		att_database->dbb_backup_manager->unlockStateRead(tdbb);
 }
 
+
 Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle)
-:	att_pool(pool),
-	att_memory_stats(&dbb->dbb_memory_stats),
-	att_database(dbb),
-	att_public_handle(publicHandle),
-	att_lock_owner_id(Database::getLockOwnerId()),
-	att_backup_state_counter(0),
-	att_stats(*pool),
-	att_working_directory(*pool),
-	att_filename(*pool),
-	att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
-	att_context_vars(*pool),
-	ddlTriggersContext(*pool),
-	att_network_protocol(*pool),
-	att_remote_address(*pool),
-	att_remote_process(*pool),
-	att_dsql_cache(*pool),
-	att_udf_pointers(*pool),
-	att_ext_connection(NULL),
-	att_ext_call_depth(0),
-	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
+	: att_pool(pool),
+	  att_memory_stats(&dbb->dbb_memory_stats),
+	  att_database(dbb),
+	  att_public_handle(publicHandle),
+	  att_lock_owner_id(Database::getLockOwnerId()),
+	  att_backup_state_counter(0),
+	  att_stats(*pool),
+	  att_working_directory(*pool),
+	  att_filename(*pool),
+	  att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
+	  att_context_vars(*pool),
+	  ddlTriggersContext(*pool),
+	  att_network_protocol(*pool),
+	  att_remote_address(*pool),
+	  att_remote_process(*pool),
+	  att_dsql_cache(*pool),
+	  att_udf_pointers(*pool),
+	  att_ext_connection(NULL),
+	  att_ext_call_depth(0),
+	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
 {
 	att_mutex.enter();
 }
@@ -308,4 +312,3 @@ void Jrd::Attachment::detachLocksFromAttachment()
 	}
 	att_long_locks = NULL;
 }
-

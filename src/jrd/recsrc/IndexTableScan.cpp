@@ -153,7 +153,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 	while (true)
 	{
 		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
-		
+
 		UCHAR* pointer = nextPointer;
 		btree_exp* expanded_node = expanded_next;
 		if (pointer)

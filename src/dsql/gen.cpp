@@ -2334,10 +2334,7 @@ void GEN_return(DsqlCompilerScratch* dsqlScratch, const Array<dsql_nod*>& variab
 		stuff(dsqlScratch->getStatement(), blr_literal);
 		stuff(dsqlScratch->getStatement(), blr_short);
 		stuff(dsqlScratch->getStatement(), 0);
-		if (eos_flag)
-			stuff_word(dsqlScratch->getStatement(), 0);
-		else
-			stuff_word(dsqlScratch->getStatement(), 1);
+		stuff_word(dsqlScratch->getStatement(), (eos_flag ? 0 : 1));
 		stuff(dsqlScratch->getStatement(), blr_parameter);
 		stuff(dsqlScratch->getStatement(), 1);
 		stuff_word(dsqlScratch->getStatement(), USHORT(2 * variables.getCount()));

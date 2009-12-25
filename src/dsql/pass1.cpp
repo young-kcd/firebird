@@ -3589,7 +3589,7 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				  Arg::Gds(isc_dsql_blob_err));
 	}
 
-	dsqlScratch->getStatement()->setType((input->nod_type == nod_get_segment) ?
+	dsqlScratch->getStatement()->setType(input->nod_type == nod_get_segment ?
 		DsqlCompiledStatement::TYPE_GET_SEGMENT : DsqlCompiledStatement::TYPE_PUT_SEGMENT);
 
 	dsql_blb* blob = FB_NEW(*tdbb->getDefaultPool()) dsql_blb;

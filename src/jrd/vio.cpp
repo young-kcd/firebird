@@ -3052,6 +3052,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 		}
 		ERR_punt();
 	}
+
 	return true;
 }
 

@@ -951,20 +951,6 @@ public:
 	USHORT		par_index;			// Index into SQLDA, if appropriate
 };
 
-/*! \var unsigned DSQL_debug
-    \brief Debug level
-
-    0       No output
-    1       Display output tree in PASS1_statment
-    2       Display input tree in PASS1_statment
-    4       Display ddl BLR
-    8       Display BLR
-    16      Display PASS1_rse input tree
-    32      Display SQL input string
-    64      Display BLR in dsql/prepare
-    > 256   Display yacc parser output level = DSQL_level>>8
-*/
-
 // CVC: Enumeration used for the COMMENT command.
 enum
 {
@@ -991,7 +977,19 @@ typedef Firebird::SortedArray<const char*,
 
 } // namespace
 
-// macros for error generation
+/*! \var unsigned DSQL_debug
+    \brief Debug level
+
+    0       No output
+    1       Display output tree in PASS1_statment
+    2       Display input tree in PASS1_statment
+    4       Display ddl BLR
+    8       Display BLR
+    16      Display PASS1_rse input tree
+    32      Display SQL input string
+    64      Display BLR in dsql/prepare
+    > 256   Display yacc parser output level = DSQL_level>>8
+*/
 
 #ifdef DSQL_DEBUG
 	extern unsigned DSQL_debug;

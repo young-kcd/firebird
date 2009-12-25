@@ -272,7 +272,7 @@ void DSQL_execute(thread_db* tdbb,
 	else
 		request->req_transaction = *tra_handle;
 
-	// If the output message length is zero on a DsqlCompiledStatement::TYPE_SELECT then we must
+	// If the output message length is zero on a TYPE_SELECT then we must
 	// be doing an OPEN cursor operation.
 	// If we do have an output message length, then we're doing
 	// a singleton SELECT.  In that event, we don't add the cursor
@@ -1206,8 +1206,8 @@ static void execute_request(thread_db* tdbb,
 						   message->msg_length, msgBuffer, 0);
 	}
 
-	// DsqlCompiledStatement::TYPE_EXEC_BLOCK has no outputs so there are no out_msg
-	// supplied from client side, but DsqlCompiledStatement::TYPE_EXEC_BLOCK requires
+	// TYPE_EXEC_BLOCK has no outputs so there are no out_msg
+	// supplied from client side, but TYPE_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
 	const bool isBlock = (request->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 

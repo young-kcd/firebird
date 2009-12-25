@@ -52,4 +52,3 @@ void	DYN_UTIL_copy_domain(Jrd::thread_db*, Jrd::Global* gbl,
 			const Firebird::MetaName&, const Firebird::MetaName&);
 
 #endif // JRD_DYN_UT_PROTO_H
-

@@ -795,7 +795,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, jrd_tra* transactio
 
 		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_udf);
 	}
-	
+
 	AutoCacheRequest requestHandle(tdbb, drq_s_funcs2, DYN_REQUESTS);
 
 	int faults = 0;
@@ -1336,7 +1336,6 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 void DropFunctionNode::dropArguments(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& functionName, const Firebird::MetaName& packageName)
 {
-	//Database* const dbb = tdbb->getDatabase();
 	AutoCacheRequest requestHandle(tdbb, drq_e_func_args, DYN_REQUESTS);
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)

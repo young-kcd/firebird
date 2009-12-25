@@ -189,8 +189,6 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, C
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
 {
-	//DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	const bool autoTrans = dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 
