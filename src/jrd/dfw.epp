@@ -5661,7 +5661,7 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 				FUN IN RDB$FUNCTIONS WITH
-					FUN.RDB$FUNCTION_ID EQ work->dfw_id
+					FUN.RDB$FUNCTION_ID EQ work->dfw_id AND FUN.RDB$FUNCTION_BLR NOT MISSING
 
 				if (!REQUEST(irq_fun_validate))
 					REQUEST(irq_fun_validate) = request;
