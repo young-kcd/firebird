@@ -268,9 +268,12 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				END_FOR
 			}
 
-			size_t count = 0, inputs = 0;
+			size_t count = 0;
 			memset(temp, 0, sizeof(temp));
 			ULONG length = 0;
+
+			function->fun_inputs = 0;
+			function->fun_defaults = 0;
 
 			jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
 
@@ -284,7 +287,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					REQUEST(irq_l_args) = request_arg;
 
 				if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
-					inputs++;
+					function->fun_inputs++;
 
 				fun_repeat* const tail = temp + Y.RDB$ARGUMENT_POSITION;
 				tail->fun_mechanism = (FUN_T) Y.RDB$MECHANISM;
@@ -299,6 +302,9 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				const SSHORT collation_id_null = Y.RDB$COLLATION_ID.NULL;
 				const SSHORT collation_id = Y.RDB$COLLATION_ID;
+				
+				SSHORT default_value_null = Y.RDB$DEFAULT_VALUE.NULL;
+				bid default_value = Y.RDB$DEFAULT_VALUE;
 
 				if (!Y.RDB$FIELD_SOURCE.NULL)
 				{
@@ -318,6 +324,12 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 											F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
 											(collation_id_null ? F.RDB$COLLATION_ID : collation_id));
 
+						if (default_value_null && fb_utils::implicit_domain(F.RDB$FIELD_NAME))
+						{
+							default_value_null = F.RDB$DEFAULT_VALUE.NULL;
+							default_value = F.RDB$DEFAULT_VALUE;
+						}
+
 					END_FOR
 
 					if (!REQUEST(irq_l_arg_fld))
@@ -329,6 +341,39 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 										Y.RDB$FIELD_SCALE, Y.RDB$FIELD_LENGTH,
 										Y.RDB$FIELD_SUB_TYPE, Y.RDB$CHARACTER_SET_ID,
 										(collation_id_null ? 0 : collation_id));
+				}
+
+				if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT && !default_value_null)
+				{
+					function->fun_defaults++;
+
+					MemoryPool* const csb_pool = dbb->createPool();
+					Jrd::ContextPoolHolder context(tdbb, csb_pool);
+					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+					jrd_req* request = NULL;
+
+					try
+					{
+						parameter->prm_default_value =
+							MET_parse_blob(tdbb, NULL, &default_value, &csb, &request, false);
+					}
+					catch (const Exception&)
+					{
+						delete csb;
+
+						if (request)
+						{
+							CMP_release(tdbb, request);
+						}
+						else
+						{
+							dbb->deletePool(csb_pool);
+						}
+
+						throw; // an explicit error message would be better
+					}
+
+					delete csb;
 				}
 
 				if (tail->fun_parameter->prm_desc.dsc_dtype == dtype_cstring)
@@ -343,7 +388,6 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			if (!REQUEST(irq_l_args))
 				REQUEST(irq_l_args) = request_arg;
 
-			function->fun_inputs = (USHORT) inputs;
 			function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
 			function->fun_temp_length = length;
 			function->fun_args.resize(count + 1);
@@ -548,6 +592,7 @@ void Function::remove(thread_db* tdbb)
 	{
 		fun_name = QualifiedName();
 		fun_security_name = "";
+		fun_defaults = 0;
 		fun_id = 0;
 	}
 }
@@ -647,6 +692,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 	else
 	{
 		fb_assert(fun_request);
+		fb_assert(!fun_return_arg);
 
 		Database* const dbb = tdbb->getDatabase();
 		jrd_req* const request = tdbb->getRequest();
@@ -655,14 +701,10 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 
 		Firebird::UCharBuffer in_buffer;
 
-		for (unsigned i = 0, j = 0; i < args->nod_count; i++, j++)
+		for (unsigned i = 1; i < fun_args.getCount(); i++)
 		{
-			if (j == fun_return_arg)
-			{
-				j++;
-			}
-
-			dsc arg_desc = fun_args[j].fun_parameter->prm_desc;
+			Parameter* const parameter = fun_args[i].fun_parameter;
+			dsc arg_desc = parameter->prm_desc;
 
 			if (arg_desc.dsc_dtype >= dtype_aligned)
 			{
@@ -677,7 +719,10 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 
 			in_buffer.grow(in_msg_length);
 
-			dsc* const src_desc = EVL_expr(tdbb, args->nod_arg[i]);
+			jrd_nod* const node = (i - 1 < args->nod_count) ?
+				args->nod_arg[i - 1] : parameter->prm_default_value;
+
+			dsc* const src_desc = EVL_expr(tdbb, node);
 			if (src_desc && !(request->req_flags & req_null))
 			{
 				arg_desc.dsc_address = in_buffer.begin() + arg_offset;

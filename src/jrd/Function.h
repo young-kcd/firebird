@@ -72,6 +72,7 @@ namespace Jrd
 
 		int (*fun_entrypoint)();				// function entrypoint
 		USHORT fun_inputs;						// input arguments
+		USHORT fun_defaults;					// default input arguments
 		USHORT fun_return_arg;					// return argument
 		ULONG fun_temp_length;					// temporary space required
 

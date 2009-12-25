@@ -1505,7 +1505,8 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 
 	// Check to see if the argument count matches
-	if (node->nod_arg[e_fun_args]->nod_count != function->fun_inputs)
+	if (node->nod_arg[e_fun_args]->nod_count < function->fun_inputs - function->fun_defaults ||
+		node->nod_arg[e_fun_args]->nod_count > function->fun_inputs)
 	{
 		error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name.toString()));
 	}
