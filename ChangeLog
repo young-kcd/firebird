@@ -1,3 +1,55 @@
+2009-12-26 14:24  robocop
+
+	* firebird2/src/: include/gen/ids.h (1.41), jrd/names.h (1.24),
+	jrd/relations.h (1.34):
+
+	More appropriate name.
+
+2009-12-26 14:23  robocop
+
+	* firebird2/src/jrd/Function.epp (1.15):
+
+	Check.
+
+2009-12-26 14:22  robocop
+
+	* firebird2/src/jrd/met.epp (1.312):
+
+	Totally misc.
+
+2009-12-26 03:21  asfernandes
+
+	* firebird2/src/dsql/: dsql.h (1.180), gen.cpp (1.212), pass1.cpp
+	(1.490):
+
+	Fix problem of mixing dbkey and record version on the same internal
+	parameter
+
+2009-12-25 20:29  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.39), dsql/StmtNodes.cpp
+	(1.31), dsql/dsql.cpp (1.316), dsql/dsql.h (1.179), dsql/gen.cpp
+	(1.211), dsql/pass1.cpp (1.489), include/fb_blk.h (1.29),
+	jrd/Attachment.cpp (1.2), jrd/Function.epp (1.14), jrd/btr.cpp
+	(1.273), jrd/dfw.epp (1.312), jrd/dyn_ut_proto.h (1.20),
+	jrd/grant.epp (1.87), jrd/vio.cpp (1.278),
+	jrd/recsrc/IndexTableScan.cpp (1.9):
+
+	Misc
+
+2009-12-25 16:37  dimitr
+
+	* firebird2/src/jrd/Function.epp (1.13):
+
+	Misc.
+
+2009-12-25 15:37  dimitr
+
+	* firebird2/src/jrd/: Function.epp (1.12), Function.h (1.4),
+	par.cpp (1.264):
+
+	PSQL functions (support for default parameters).
+
 2009-12-25 14:30  dimitr
 
 	* firebird2/src/jrd/: irq.h (1.25), met.epp (1.311):
