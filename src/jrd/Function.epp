@@ -685,7 +685,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 		Database* const dbb = tdbb->getDatabase();
 		jrd_req* const request = tdbb->getRequest();
 
-		USHORT in_msg_length = 0;
+		ULONG in_msg_length = 0;
 
 		Firebird::UCharBuffer in_buffer;
 
@@ -704,6 +704,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value)
 			in_msg_length = FB_ALIGN(in_msg_length, sizeof(SSHORT));
 			const USHORT null_offset = in_msg_length;
 			in_msg_length += sizeof(SSHORT);
+			fb_assert(in_msg_length < ULONG(MAX_USHORT));
 
 			in_buffer.grow(in_msg_length);
 
