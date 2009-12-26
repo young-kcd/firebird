@@ -94,6 +94,16 @@ public:
 		*reinterpret_cast<SSHORT*>(desc->dsc_address) = -1;
 	}
 
+	void setInt(thread_db* tdbb, unsigned param, int value)
+	{
+		fb_assert(param > 0);
+
+		dsc desc;
+		desc.makeLong(0, &value);
+
+		setDesc(tdbb, param, desc);
+	}
+
 	void setString(thread_db* tdbb, unsigned param, const Firebird::AbstractString& value)
 	{
 		fb_assert(param > 0);

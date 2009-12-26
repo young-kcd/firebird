@@ -58,6 +58,7 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/inf_proto.h"
+#include "../jrd/ini_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/tra_proto.h"
@@ -2007,6 +2008,8 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 		database->dbb_attachment = attachment;
 		database->dbb_database = attachment->att_database;
 		attachment->att_dsql_instance = database;
+
+		INI_init3(tdbb, database);
 
 		UCHAR buffer[BUFFER_TINY];
 

@@ -40,6 +40,7 @@
 #include "../jrd/ini.h"
 #include "../jrd/idx.h"
 #include "../jrd/gdsassert.h"
+#include "../dsql/dsql.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -56,6 +57,7 @@
 #include "../jrd/acl.h"
 #include "../jrd/irq.h"
 #include "../jrd/IntlManager.h"
+#include "../jrd/PreparedStatement.h"
 #include "../jrd/constants.h"
 
 
@@ -281,73 +283,58 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 			;
 	}
 
+	jrd_tra* transaction = dbb->dbb_sys_trans;
+
 	// Store RELATIONS and RELATION_FIELDS
 
+	Firebird::string sql("insert into rdb$relations (rdb$relation_id, rdb$relation_name, "
+		"rdb$field_id, rdb$format, rdb$system_flag, rdb$dbkey_length, rdb$owner_name, "
+		"rdb$relation_type) values (?, ?, ?, 0, ?, 8, ?, ?)");
+	Firebird::AutoPtr<PreparedStatement> ps(tdbb->getAttachment()->prepareStatement(tdbb,
+		*tdbb->getDefaultPool(), transaction, sql));
+
 	jrd_req* handle1 = NULL;
-	jrd_req* handle2 = NULL;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
 			const int* pFld    = fld;
 			const int* pRelFld = relfld;
-			store_relation_field(tdbb, pFld, pRelFld, n, &handle2);
+			store_relation_field(tdbb, pFld, pRelFld, n, &handle1);
 			n++;
 		}
 
-		STORE(REQUEST_HANDLE handle1) X IN RDB$RELATIONS
-			X.RDB$RELATION_ID = relfld[RFLD_R_ID];
-			PAD(names[relfld[RFLD_R_NAME]], X.RDB$RELATION_NAME);
-			X.RDB$FIELD_ID = n;
-			X.RDB$FORMAT = 0;
-			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$DBKEY_LENGTH = 8;
-			X.RDB$OWNER_NAME.NULL = TRUE;
-			X.RDB$RELATION_TYPE = relfld[RFLD_R_TYPE];
+		unsigned col = 0;
+		ps->setInt(tdbb, ++col, relfld[RFLD_R_ID]);
+		ps->setString(tdbb, ++col, names[relfld[RFLD_R_NAME]]);
+		ps->setInt(tdbb, ++col, n);
+		ps->setInt(tdbb, ++col, RDB_system);
+		++col;
+		if (string.hasData())
+			ps->setString(tdbb, col, string);
+		ps->setInt(tdbb, ++col, relfld[RFLD_R_TYPE]);
 
-			if (string.length())
-			{
-				PAD(string.c_str(), X.RDB$OWNER_NAME);
-				X.RDB$OWNER_NAME.NULL = FALSE;
-			}
-
-		END_STORE;
+		ps->execute(tdbb, transaction);
 	}
 
 	CMP_release(tdbb, handle1);
-	CMP_release(tdbb, handle2);
-	handle1 = handle2 = NULL;
+	handle1 = NULL;
 
 	// Store global FIELDS
 
 	for (const gfld* gfield = gfields; gfield->gfld_name; gfield++)
-	{
 		store_global_field(tdbb, gfield, &handle1);
-	}
 
 	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
 	// Store DATABASE record
-
-	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
-		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
-		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
-		if (string2.hasData())
-		{
-			PAD (string2.c_str(), X.RDB$CHARACTER_SET_NAME);
-			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
-		}
-		else
-		{
-			PAD (DEFAULT_DB_CHARACTER_SET_NAME, X.RDB$CHARACTER_SET_NAME);
-			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
-		}
-	END_STORE
-
-	CMP_release(tdbb, handle1);
-	handle1 = NULL;
+	sql = "insert into rdb$database (rdb$relation_id, rdb$character_set_name) values (?, ?)";
+	ps.reset(tdbb->getAttachment()->prepareStatement(tdbb,
+		*tdbb->getDefaultPool(), transaction, sql));
+	ps->setInt(tdbb, 1, USER_DEF_REL_INIT_ID);
+	ps->setString(tdbb, 2, (string2.hasData() ? string2 : DEFAULT_DB_CHARACTER_SET_NAME));
+	ps->execute(tdbb, transaction);
 
 	// Store ADMIN_ROLE record
 
@@ -668,6 +655,135 @@ void INI_init2(thread_db* tdbb)
 					format->fmt_length += desc->dsc_length;
 				}
 			}
+		}
+	}
+}
+
+
+// Load system objects into DSQL metadata cache.
+void INI_init3(thread_db* tdbb, dsql_dbb* database)
+{
+	SET_TDBB(tdbb);
+
+	Database* const dbb = tdbb->getDatabase();
+	const USHORT majorVersion = dbb->dbb_ods_version;
+	const USHORT minorVersion = dbb->dbb_minor_version;
+	const int* fld;
+
+	// Load relation and fields.
+
+	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	{
+		if (relfld[RFLD_R_ODS] > ENCODE_ODS(majorVersion, minorVersion))
+			continue;
+
+		dsql_rel* relation = FB_NEW(database->dbb_pool) dsql_rel(database->dbb_pool);
+
+		relation->rel_id = relfld[RFLD_R_ID];
+		relation->rel_name = names[relfld[RFLD_R_NAME]];
+		relation->rel_owner = SYSDBA_USER_NAME;
+		relation->rel_dbkey_length = 8;
+
+		dsql_fld** ptr = &relation->rel_fields;
+		int n = 0;
+
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+		{
+			if (ENCODE_ODS(majorVersion, minorVersion) < fld[RFLD_F_ODS])
+				continue;
+
+			dsql_fld* field = FB_NEW(database->dbb_pool) dsql_fld(database->dbb_pool);
+			field->fld_id = n++;
+
+			*ptr = field;
+			ptr = &field->fld_next;
+
+			// get field information
+
+			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
+
+			field->fld_name = names[fld[RFLD_F_NAME]];
+			field->fld_source = names[gfield->gfld_name];
+			field->fld_length = gfield->gfld_length;
+			field->fld_scale = 0;
+			field->fld_sub_type = gfield->gfld_sub_type;
+			field->fld_relation = relation;
+
+			field->fld_dtype = gfield->gfld_dtype;
+
+			if (field->fld_dtype == dtype_varying)
+				field->fld_length += sizeof(USHORT);
+			else if (field->fld_dtype == dtype_blob)
+			{
+				field->fld_seg_length = 80;
+				if (gfield->gfld_sub_type == isc_blob_text)
+					field->fld_character_set_id = CS_METADATA;
+			}
+
+			if (DTYPE_IS_TEXT(gfield->gfld_dtype))
+			{
+				switch (gfield->gfld_sub_type)
+				{
+					case dsc_text_type_metadata:
+						field->fld_character_set_id = CS_METADATA;
+						break;
+					case dsc_text_type_ascii:
+						field->fld_character_set_id = CS_ASCII;
+						break;
+					case dsc_text_type_fixed:
+						field->fld_character_set_id = CS_BINARY;
+						break;
+				}
+			}
+
+			if (gfield->gfld_nullable)
+				field->fld_flags |= FLD_nullable;
+
+			field->fld_flags |= FLD_system;
+		}
+
+		database->dbb_relations.put(relation->rel_name, relation);
+		MET_dsql_cache_use(tdbb, SYM_relation, relation->rel_name);
+	}
+
+	// Load internal character sets and collations, necessary for engine operation.
+
+	for (const IntlManager::CharSetDefinition* csDef = IntlManager::defaultCharSets;
+		 csDef->name; ++csDef)
+	{
+		if (csDef->id > ttype_last_internal)
+			continue;
+
+		dsql_intlsym* csSymbol = FB_NEW(database->dbb_pool) dsql_intlsym(database->dbb_pool);
+		csSymbol->intlsym_name = csDef->name;
+		csSymbol->intlsym_flags = 0;
+		csSymbol->intlsym_charset_id = csDef->id;
+		csSymbol->intlsym_collate_id = 0;
+		csSymbol->intlsym_ttype =
+			INTL_CS_COLL_TO_TTYPE(csSymbol->intlsym_charset_id, csSymbol->intlsym_collate_id);
+		csSymbol->intlsym_bytes_per_char = csDef->maxBytes;
+
+		database->dbb_charsets.put(csDef->name, csSymbol);
+		database->dbb_charsets_by_id.put(csSymbol->intlsym_charset_id, csSymbol);
+		MET_dsql_cache_use(tdbb, SYM_intlsym_charset, csDef->name);
+
+		for (const IntlManager::CollationDefinition* colDef = IntlManager::defaultCollations;
+			 colDef->name; ++colDef)
+		{
+			if (colDef->charSetId != csDef->id)
+				continue;
+
+			dsql_intlsym* colSymbol = FB_NEW(database->dbb_pool) dsql_intlsym(database->dbb_pool);
+			colSymbol->intlsym_name = colDef->name;
+			colSymbol->intlsym_flags = 0;
+			colSymbol->intlsym_charset_id = csDef->id;
+			colSymbol->intlsym_collate_id = colDef->collationId;
+			colSymbol->intlsym_ttype =
+				INTL_CS_COLL_TO_TTYPE(colSymbol->intlsym_charset_id, colSymbol->intlsym_collate_id);
+			colSymbol->intlsym_bytes_per_char = csDef->maxBytes;
+
+			database->dbb_collations.put(colDef->name, colSymbol);
+			MET_dsql_cache_use(tdbb, SYM_intlsym_collation, colDef->name);
 		}
 	}
 }
