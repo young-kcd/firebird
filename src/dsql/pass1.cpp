@@ -2711,8 +2711,8 @@ static dsql_par* find_dbkey(const dsql_req* request, const dsql_nod* relation_na
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 
-		if (parameter->par_context_relname.hasData() &&
-			parameter->par_context_relname == rel_name->str_data)
+		if (parameter->par_dbkey_relname.hasData() &&
+			parameter->par_dbkey_relname == rel_name->str_data)
 		{
 			if (candidate)
 				return NULL;
@@ -2750,8 +2750,8 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 
-		if (parameter->par_context_relname.hasData() &&
-			parameter->par_context_relname == rel_name->str_data)
+		if (parameter->par_rec_version_relname.hasData() &&
+			parameter->par_rec_version_relname == rel_name->str_data)
 		{
 			if (candidate)
 				return NULL;

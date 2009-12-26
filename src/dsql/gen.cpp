@@ -2546,7 +2546,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 					dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), false,
 						false, 0, NULL);
 
-					parameter->par_context_relname = relation->rel_name;
+					parameter->par_dbkey_relname = relation->rel_name;
 					paramContexts.put(parameter, context);
 
 					parameter->par_desc.dsc_dtype = dtype_text;
@@ -2556,6 +2556,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 					// Set up record version - for post v33 databases
 
 					parameter = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
+					parameter->par_rec_version_relname = relation->rel_name;
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
 					parameter->par_desc.dsc_length = relation->rel_dbkey_length / 2;
@@ -2622,13 +2623,16 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 			gen_parameter(dsqlScratch, parameter);
 		}
 
-		if (paramContexts.get(parameter, context))
+		if (parameter->par_dbkey_relname.hasData() && paramContexts.get(parameter, context))
 		{
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_dbkey);
 			stuff_context(statement, context);
 			gen_parameter(dsqlScratch, parameter);
+		}
 
+		if (parameter->par_rec_version_relname.hasData() && paramContexts.get(parameter, context))
+		{
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_record_version);
 			stuff_context(statement, context);

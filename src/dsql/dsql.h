@@ -925,7 +925,8 @@ public:
 		  par_message(NULL),
 		  par_null(NULL),
 		  par_node(NULL),
-		  par_context_relname(p),
+		  par_dbkey_relname(p),
+		  par_rec_version_relname(p),
 		  par_name(NULL),
 		  par_rel_name(NULL),
 		  par_owner_name(NULL),
@@ -940,7 +941,8 @@ public:
 	dsql_msg*	par_message;		// Parent message
 	dsql_par*	par_null;			// Null parameter, if used
 	dsql_nod*	par_node;			// Associated value node, if any
-	Firebird::MetaName	par_context_relname;	// Context of internally requested
+	Firebird::MetaName par_dbkey_relname;	// Context of internally requested dbkey
+	Firebird::MetaName par_rec_version_relname;	// Context of internally requested rec. version
 	const TEXT*	par_name;			// Parameter name, if any
 	const TEXT*	par_rel_name;		// Relation name, if any
 	const TEXT*	par_owner_name;		// Owner name, if any
