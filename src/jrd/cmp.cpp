@@ -302,14 +302,14 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 		if (item->exa_action == ExternalAccess::exa_procedure)
 		{
 			jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
-			if (procedure && procedure->prc_request)
-				build_external_access(tdbb, list, procedure->prc_request);
+			if (procedure && procedure->getRequest())
+				build_external_access(tdbb, list, procedure->getRequest());
 		}
 		else if (item->exa_action == ExternalAccess::exa_function)
 		{
 			Function* const function = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
-			if (function && function->fun_request)
-				build_external_access(tdbb, list, function->fun_request);
+			if (function && function->getRequest())
+				build_external_access(tdbb, list, function->getRequest());
 		}
 		else
 		{
@@ -431,61 +431,18 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 
 	for (ExternalAccess* item = external.begin(); item < external.end(); item++)
 	{
+		const Routine* routine = NULL;
+		int aclType;
+
 		if (item->exa_action == ExternalAccess::exa_procedure)
 		{
-			jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
-			if (!procedure->prc_request)
-				continue;
-
-			for (const AccessItem* access = procedure->prc_request->req_access.begin();
-				 access < procedure->prc_request->req_access.end();
-				 access++)
-			{
-				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-
-				if (procedure->prc_name.qualifier.isEmpty())
-				{
-					SCL_check_access(tdbb, sec_class, access->acc_view_id,
-						id_procedure, procedure->prc_name.identifier,
-						access->acc_mask, access->acc_type,
-						access->acc_name, access->acc_r_name);
-				}
-				else
-				{
-					SCL_check_access(tdbb, sec_class, access->acc_view_id,
-						id_package, procedure->prc_name.qualifier,
-						access->acc_mask, access->acc_type,
-						access->acc_name, access->acc_r_name);
-				}
-			}
+			routine = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			aclType = id_procedure;
 		}
 		else if (item->exa_action == ExternalAccess::exa_function)
 		{
-			Function* const function = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
-			if (!function->fun_request)
-				continue;
-
-			for (const AccessItem* access = function->fun_request->req_access.begin();
-				 access < function->fun_request->req_access.end();
-				 access++)
-			{
-				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-
-				if (function->fun_name.qualifier.isEmpty())
-				{
-					SCL_check_access(tdbb, sec_class, access->acc_view_id,
-						id_function, function->fun_name.identifier,
-						access->acc_mask, access->acc_type,
-						access->acc_name, access->acc_r_name);
-				}
-				else
-				{
-					SCL_check_access(tdbb, sec_class, access->acc_view_id,
-						id_package, function->fun_name.qualifier,
-						access->acc_mask, access->acc_type,
-						access->acc_name, access->acc_r_name);
-				}
-			}
+			routine = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
+			aclType = id_function;
 		}
 		else
 		{
@@ -513,6 +470,32 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 				break;
 			default:
 				fb_assert(false);
+			}
+
+			continue;
+		}
+
+		if (!routine->getRequest())
+			continue;
+
+		for (const AccessItem* access = routine->getRequest()->req_access.begin();
+			 access < routine->getRequest()->req_access.end();
+			 access++)
+		{
+			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+
+			if (routine->getName().qualifier.isEmpty())
+			{
+				SCL_check_access(tdbb, sec_class, access->acc_view_id, aclType,
+					routine->getName().identifier, access->acc_mask, access->acc_type,
+					access->acc_name, access->acc_r_name);
+			}
+			else
+			{
+				SCL_check_access(tdbb, sec_class, access->acc_view_id,
+					id_package, routine->getName().qualifier,
+					access->acc_mask, access->acc_type,
+					access->acc_name, access->acc_r_name);
 			}
 		}
 	}
@@ -604,19 +587,18 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 		if (procedure)
 		{
-			const TEXT* sec_name = (procedure->prc_security_name.hasData() ?
-				procedure->prc_security_name.c_str() : NULL);
+			const TEXT* sec_name = procedure->getSecurityName().nullStr();
 			const SecurityClass* sec_class = SCL_get_class(tdbb, sec_name);
 
-			if (procedure->prc_name.qualifier.isEmpty())
+			if (procedure->getName().qualifier.isEmpty())
 			{
 				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_procedure, procedure->prc_name.identifier);
+								 object_procedure, procedure->getName().identifier);
 			}
 			else
 			{
 				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_package, procedure->prc_name.qualifier);
+								 object_package, procedure->getName().qualifier);
 			}
 		}
 
@@ -624,19 +606,18 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 		if (function)
 		{
-			const TEXT* sec_name = (function->fun_security_name.hasData() ?
-				function->fun_security_name.c_str() : NULL);
+			const TEXT* sec_name = function->getSecurityName().nullStr();
 			const SecurityClass* sec_class = SCL_get_class(tdbb, sec_name);
 
-			if (procedure->prc_name.qualifier.isEmpty())
+			if (procedure->getName().qualifier.isEmpty())
 			{
 				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_function, function->fun_name.identifier);
+								 object_function, function->getName().identifier);
 			}
 			else
 			{
 				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_package, function->fun_name.qualifier);
+								 object_package, function->getName().qualifier);
 			}
 		}
 
@@ -733,7 +714,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 					i, s.csb_view_stream,
 					(s.csb_alias ? s.csb_alias->c_str() : ""),
 					(s.csb_relation ? s.csb_relation->rel_name.c_str() : ""),
-					(s.csb_procedure ? s.csb_procedure->prc_name.c_str() : ""),
+					(s.csb_procedure ? s.csb_procedure->getName().c_str() : ""),
 					(s.csb_view ? s.csb_view->rel_name.c_str() : ""));
 			}
 
@@ -2332,7 +2313,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 					char buffer[256];
 					sprintf(buffer,
 							"Called from CMP_make_request():\n\t Incrementing use count of %s\n",
-							procedure->prc_name->toString().c_str());
+							procedure->getName()->toString().c_str());
 					JRD_print_procedure_info(tdbb, buffer);
 				}
 #endif
@@ -2507,8 +2488,6 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
  *	decrement the procedure's use count
  *
  *********************************************/
-	DEV_BLKCHK(procedure, type_prc);
-
 	// Actually, it's possible for procedures to have intermixed dependencies, so
 	// this routine can be called for the procedure which is being freed itself.
 	// Hence we should just silently ignore such a situation.
@@ -2526,7 +2505,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 		char buffer[256];
 		sprintf(buffer,
 				"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
-				procedure->prc_name->toString().c_str());
+				procedure->getName()->toString().c_str());
 		JRD_print_procedure_info(tdbb, buffer);
 	}
 #endif
@@ -2536,15 +2515,15 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	// The procedure will be different than in dbb_procedures only if it is a
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
-		( (*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] != procedure))
+		( (*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] != procedure))
 	{
-		if (procedure->prc_request)
+		if (procedure->getRequest())
 		{
-			CMP_release(tdbb, procedure->prc_request);
-			procedure->prc_request = NULL;
+			CMP_release(tdbb, procedure->getRequest());
+			procedure->setRequest(NULL);
 		}
 		procedure->prc_flags &= ~PRC_being_altered;
-		MET_remove_procedure(tdbb, procedure->prc_id, procedure);
+		MET_remove_procedure(tdbb, procedure->getId(), procedure);
 	}
 }
 
@@ -4192,7 +4171,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// Post access to procedure
 		post_procedure_access(tdbb, csb, procedure);
 		CMP_post_resource(&csb->csb_resources, procedure,
-						  Resource::rsc_procedure, procedure->prc_id);
+						  Resource::rsc_procedure, procedure->getId());
 		break;
 
 	case nod_function:
@@ -4201,21 +4180,20 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
 			{
-				const TEXT* sec_name =
-					(function->fun_security_name.length() > 0 ? function->fun_security_name.c_str() : NULL);
+				const TEXT* sec_name = function->getSecurityName().nullStr();
 
-				if (function->fun_name.qualifier.isEmpty())
+				if (function->getName().qualifier.isEmpty())
 				{
 					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, object_function,
-									function->fun_name.identifier.c_str());
+									function->getName().identifier.c_str());
 				}
 				else
 				{
 					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, object_package,
-									function->fun_name.qualifier.c_str());
+									function->getName().qualifier.c_str());
 				}
 
-				ExternalAccess temp(ExternalAccess::exa_function, function->fun_id);
+				ExternalAccess temp(ExternalAccess::exa_function, function->getId());
 				size_t idx;
 				if (!csb->csb_external.find(temp, idx))
 				{
@@ -4224,7 +4202,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			}
 
 			CMP_post_resource(&csb->csb_resources, function,
-							  Resource::rsc_function, function->fun_id);
+							  Resource::rsc_function, function->getId());
 		}
 		break;
 
@@ -5072,7 +5050,7 @@ static void pass1_source(thread_db*			tdbb,
 		jrd_prc* const procedure =
 			MET_lookup_procedure_id(tdbb, (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
 		post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->prc_id);
+		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
 
 		jrd_rel* const parent_view = csb->csb_view;
 		const USHORT view_stream = csb->csb_view_stream;
@@ -6393,30 +6371,28 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(procedure, type_prc);
 
 	// allow all access to internal requests
 
 	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
 		return;
 
-	const TEXT* prc_sec_name =
-		(procedure->prc_security_name.length() > 0 ? procedure->prc_security_name.c_str() : NULL);
+	const TEXT* prc_sec_name = procedure->getSecurityName().nullStr();
 
 	// this request must have EXECUTE permission on the stored procedure
-	if (procedure->prc_name.qualifier.isEmpty())
+	if (procedure->getName().qualifier.isEmpty())
 	{
 		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
-						procedure->prc_name.identifier.c_str());
+						procedure->getName().identifier.c_str());
 	}
 	else
 	{
 		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_package,
-						procedure->prc_name.qualifier.c_str());
+						procedure->getName().qualifier.c_str());
 	}
 
 	// Add the procedure to list of external objects accessed
-	ExternalAccess temp(ExternalAccess::exa_procedure, procedure->prc_id);
+	ExternalAccess temp(ExternalAccess::exa_procedure, procedure->getId());
 	size_t idx;
 	if (!csb->csb_external.find(temp, idx))
 		csb->csb_external.insert(idx, temp);

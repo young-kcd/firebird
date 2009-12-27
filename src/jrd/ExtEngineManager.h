@@ -151,7 +151,7 @@ public:
 			const jrd_prc* aPrc);
 		~Procedure();
 
-		ResultSet* open(thread_db* tdbb, ValuesImpl* inputParams, ValuesImpl* outputParams);
+		ResultSet* open(thread_db* tdbb, ValuesImpl* inputParams, ValuesImpl* outputParams) const;
 
 	private:
 		ExtEngineManager* extManager;
@@ -167,13 +167,13 @@ public:
 	{
 	public:
 		ResultSet(thread_db* tdbb, ValuesImpl* inputParams, ValuesImpl* outputParams,
-			Procedure* aProcedure);
+			const Procedure* aProcedure);
 		~ResultSet();
 
 		bool fetch(thread_db* tdbb);
 
 	private:
-		Procedure* procedure;
+		const Procedure* procedure;
 		Database* database;
 		bool firstFetch;
 		EngineAttachmentInfo* attInfo;

@@ -1412,11 +1412,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			if ((procedure = MET_lookup_procedure(tdbb,
 					QualifiedName(procedure_name, package_name), true)))
 			{
-				work = DFW_post_work(transaction, dfw_delete_prm, &desc2, procedure->prc_id,
+				work = DFW_post_work(transaction, dfw_delete_prm, &desc2, procedure->getId(),
 					package_name);
 
 				// procedure name to track parameter dependencies
-				DFW_post_work_arg(transaction, work, &desc, procedure->prc_id, dfw_arg_proc_name);
+				DFW_post_work_arg(transaction, work, &desc, procedure->getId(), dfw_arg_proc_name);
 			}
 			EVL_field(0, rpb->rpb_record, f_prm_sname, &desc2);
 			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);

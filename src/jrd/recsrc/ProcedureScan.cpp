@@ -63,7 +63,7 @@ void ProcedureScan::open(thread_db* tdbb)
 	USHORT iml;
 	const UCHAR* im;
 
-	jrd_req* const proc_request = EXE_find_request(tdbb, m_procedure->prc_request, false);
+	jrd_req* const proc_request = EXE_find_request(tdbb, m_procedure->getRequest(), false);
 	impure->irsb_req_handle = proc_request;
 
 	if (m_inputs)

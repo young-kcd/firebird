@@ -749,7 +749,7 @@ void EXE_receive(thread_db*		tdbb,
 	try
 	{
 
-	const bool external = request->req_procedure && request->req_procedure->prc_external;
+	const bool external = request->req_procedure && request->req_procedure->getExternal();
 
 	if (external)
 	{
@@ -861,7 +861,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, USHORT length, cons
 	node = request->req_message;
 
 	jrd_tra* transaction = request->req_transaction;
-	const bool external = request->req_procedure && request->req_procedure->prc_external;
+	const bool external = request->req_procedure && request->req_procedure->getExternal();
 
 	if (external)
 	{
@@ -1453,7 +1453,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		}
 	}
 
-	jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
+	const jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 
 	USHORT in_msg_length = 0;
 	UCHAR* in_msg = NULL;
@@ -1476,7 +1476,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		out_msg = (UCHAR*) request + out_message->nod_impure;
 	}
 
-	jrd_req* proc_request = EXE_find_request(tdbb, procedure->prc_request, false);
+	jrd_req* proc_request = EXE_find_request(tdbb, procedure->getRequest(), false);
 
 	// trace procedure execution start
 	TraceProcExecute trace(tdbb, proc_request, request, node->nod_arg[e_esp_inputs]);
@@ -1822,12 +1822,12 @@ static void stuff_stack_trace(const jrd_req* request)
 		else if (req->req_procedure)
 		{
 			name = "At procedure '";
-			name += req->req_procedure->prc_name.toString().c_str();
+			name += req->req_procedure->getName().toString().c_str();
 		}
 		else if (req->req_function)
 		{
 			name = "At function '";
-			name += req->req_function->fun_name.toString().c_str();
+			name += req->req_function->getName().toString().c_str();
 		}
 
 		if (! name.isEmpty())
@@ -1922,12 +1922,12 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	// Execute stuff until we drop
 
-	bool runExternal = request->req_procedure && request->req_procedure->prc_external;
+	bool runExternal = request->req_procedure && request->req_procedure->getExternal();
 
 	while (runExternal || (node && !(request->req_flags & req_stall)))
 	{
 	try {
-		if (request->req_procedure && request->req_procedure->prc_external)
+		if (request->req_procedure && request->req_procedure->getExternal())
 		{
 			if (runExternal)
 				runExternal = false;
@@ -1966,12 +1966,12 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						const Format* format = (Format*) inMsgNode->nod_arg[e_msg_format];
 
 						// clear the flags from the input message
-						USHORT* impure_flags = (USHORT*) ((UCHAR *) request +
+						USHORT* impure_flags = (USHORT*) ((UCHAR*) request +
 							(IPTR) request->req_message->nod_arg[e_msg_impure_flags]);
 						memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
 
 						// clear the flags from the output message
-						impure_flags = (USHORT*) ((UCHAR *) request +
+						impure_flags = (USHORT*) ((UCHAR*) request +
 							(IPTR) outMsgNode->nod_arg[e_msg_impure_flags]);
 						memset(impure_flags, 0, sizeof(USHORT) * outFormat->fmt_count);
 
@@ -1985,18 +1985,18 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 							request->inputParams = FB_NEW(*request->req_pool) ValuesImpl(
 								*request->req_pool, format, inMsg,
-								*request->req_procedure->prc_input_fields);
+								request->req_procedure->prc_input_fields);
 						}
 
 						if (!request->outputParams)
 						{
 							request->outputParams = FB_NEW(*request->req_pool) ValuesImpl(
 								*request->req_pool, outFormat, outMsg,
-								*request->req_procedure->prc_output_fields);
+								request->req_procedure->prc_output_fields);
 							request->outputParams->setNull();
 						}
 
-						request->resultSet = request->req_procedure->prc_external->open(tdbb,
+						request->resultSet = request->req_procedure->getExternal()->open(tdbb,
 							request->inputParams, request->outputParams);
 					}
 

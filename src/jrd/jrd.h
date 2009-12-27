@@ -51,7 +51,7 @@
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/scl.h"
-
+#include "../jrd/Routine.h"
 #include "../jrd/ExtEngineManager.h"
 
 #ifdef DEV_BUILD
@@ -217,41 +217,53 @@ const int VAL_PAG_WRONG_SCN				= 27;
 const int VAL_MAX_ERROR					= 28;
 
 
-
-
 // Procedure block
 
-class jrd_prc : public pool_alloc<type_prc>
+class jrd_prc : public Routine
 {
 public:
-	USHORT prc_id;
 	USHORT prc_flags;
-	USHORT prc_inputs;
 	USHORT prc_defaults;
-	USHORT prc_outputs;
 	jrd_nod*	prc_output_msg;
 	Format*		prc_input_fmt;
 	Format*		prc_output_fmt;
 	Format*		prc_format;
-	vec<Parameter*>*	prc_input_fields;	// vector of field blocks
-	vec<Parameter*>*	prc_output_fields;	// vector of field blocks
+	Firebird::Array<Parameter*> prc_input_fields;	// array of field blocks
+	Firebird::Array<Parameter*> prc_output_fields;	// array of field blocks
 	prc_t		prc_type;					// procedure type
-	jrd_req*	prc_request;				// compiled procedure request
 	USHORT prc_use_count;					// requests compiled with procedure
 	SSHORT prc_int_use_count;				// number of procedures compiled with procedure, set and
 											// used internally in the MET_clear_cache procedure
 											// no code should rely on value of this field
 											// (it will usually be 0)
 	Lock* prc_existence_lock;				// existence lock, if any
-	Firebird::MetaName prc_security_name;	// security class name for procedure
-	Firebird::QualifiedName prc_name;		// name
 	USHORT prc_alter_count;					// No. of times the procedure was altered
+
+	const ExtEngineManager::Procedure* getExternal() const { return prc_external; }
+	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
+
+private:
 	ExtEngineManager::Procedure* prc_external;
 
 public:
 	explicit jrd_prc(MemoryPool& p)
-		: prc_security_name(p), prc_name(p)
-	{}
+		: Routine(p),
+		  prc_flags(0),
+		  prc_defaults(0),
+		  prc_output_msg(NULL),
+		  prc_input_fmt(NULL),
+		  prc_output_fmt(NULL),
+		  prc_format(NULL),
+		  prc_input_fields(p),
+		  prc_output_fields(p),
+		  prc_type(prc_legacy),
+		  prc_use_count(0),
+		  prc_int_use_count(0),
+		  prc_existence_lock(NULL),
+		  prc_alter_count(0),
+		  prc_external(NULL)
+	{
+	}
 };
 
 // prc_flags

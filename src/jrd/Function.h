@@ -20,6 +20,7 @@
 #ifndef JRD_FUNCTION_H
 #define JRD_FUNCTION_H
 
+#include "../jrd/Routine.h"
 #include "../common/classes/array.h"
 #include "../jrd/dsc.h"
 #include "../jrd/val.h"
@@ -32,7 +33,7 @@ namespace Jrd
 		FUN_T fun_mechanism;		// passing mechanism
 	};
 
-	class Function : public pool_alloc<type_fun>
+	class Function : public Routine
 	{
 		static const USHORT MAX_ALTER_COUNT = 64;	// Number of times an in-cache function can be altered
 		static const char* const EXCEPTION_MESSAGE;
@@ -58,18 +59,28 @@ namespace Jrd
 
 	private:
 		explicit Function(MemoryPool& p)
-			: fun_name(p), fun_security_name(p), fun_args(p), fun_exception_message(p),
-			  fun_legacy(true), fun_invariant(false)
-		{}
+			: Routine(p),
+			  fun_entrypoint(NULL),
+			  fun_inputs(0),
+			  fun_defaults(0),
+			  fun_return_arg(0),
+			  fun_temp_length(0),
+			  fun_args(p),
+			  fun_flags(0),
+			  fun_use_count(0),
+			  fun_existence_lock(NULL),
+			  fun_alter_count(0),
+			  fun_exception_message(p),
+			  fun_legacy(true),
+			  fun_invariant(false),
+			  fun_external(NULL)
+		{
+		}
 
 		static Function* loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
 		static int blockingAst(void*);
 
 	public:
-		USHORT fun_id;							// function ID
-		Firebird::QualifiedName fun_name;		// function name
-		Firebird::MetaName fun_security_name;	// security class name
-
 		int (*fun_entrypoint)();				// function entrypoint
 		USHORT fun_inputs;						// input arguments
 		USHORT fun_defaults;					// default input arguments
@@ -82,7 +93,6 @@ namespace Jrd
 		USHORT fun_use_count;					// requests compiled with function
 		Lock* fun_existence_lock;				// existence lock, if any
 		USHORT fun_alter_count;					// number of times function was altered
-		jrd_req* fun_request;					// compiled function request
 
 		Firebird::string fun_exception_message;	// message containing the exception error message
 

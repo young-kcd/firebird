@@ -3596,23 +3596,23 @@ static bool delete_function(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 					LCK_release(tdbb, function->fun_existence_lock);
 				}
 
-				dbb->dbb_functions[function->fun_id] = NULL;
+				dbb->dbb_functions[function->getId()] = NULL;
 				return false;
 			}
 
 			const USHORT old_flags = function->fun_flags;
 			function->fun_flags |= FUN_obsolete;
-			if (function->fun_request)
+			if (function->getRequest())
 			{
-				if (CMP_clone_is_active(function->fun_request))
+				if (CMP_clone_is_active(function->getRequest()))
 				{
 					function->fun_flags = old_flags;
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
 				}
 
-				CMP_release(tdbb, function->fun_request);
-				function->fun_request = NULL;
+				CMP_release(tdbb, function->getRequest());
+				function->setRequest(NULL);
 			}
 
 			// delete dependency lists
@@ -3955,23 +3955,23 @@ static bool delete_procedure(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 				if (procedure->prc_existence_lock) {
 					LCK_release(tdbb, procedure->prc_existence_lock);
 				}
-				(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
+				(*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] = NULL;
 				return false;
 			}
 
 			old_flags = procedure->prc_flags;
 			procedure->prc_flags |= PRC_obsolete;
-			if (procedure->prc_request)
+			if (procedure->getRequest())
 			{
-				if (CMP_clone_is_active(procedure->prc_request))
+				if (CMP_clone_is_active(procedure->getRequest()))
 				{
 					procedure->prc_flags = old_flags;
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
 				}
 
-				CMP_release(tdbb, procedure->prc_request);
-				procedure->prc_request = 0;
+				CMP_release(tdbb, procedure->getRequest());
+				procedure->setRequest(NULL);
 			}
 
 			// delete dependency lists
@@ -5595,7 +5595,7 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 					LCK_release(tdbb, function->fun_existence_lock);
 				}
 
-				dbb->dbb_functions[function->fun_id] = NULL;
+				dbb->dbb_functions[function->getId()] = NULL;
 
 				if (!(function = Function::lookup(tdbb, work->dfw_id, false,
 												  true, FUN_being_altered)))
@@ -5608,9 +5608,9 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 			function->fun_flags |= FUN_being_altered;
 
-			if (function->fun_request)
+			if (function->getRequest())
 			{
-				if (CMP_clone_is_active(function->fun_request))
+				if (CMP_clone_is_active(function->getRequest()))
 				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
@@ -5618,8 +5618,8 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 				// release the request
 
-				CMP_release(tdbb, function->fun_request);
-				function->fun_request = NULL;
+				CMP_release(tdbb, function->getRequest());
+				function->setRequest(NULL);
 			}
 
 			// delete dependency lists
@@ -5794,7 +5794,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 				if (procedure->prc_existence_lock) {
 					LCK_release(tdbb, procedure->prc_existence_lock);
 				}
-				(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
+				(*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] = NULL;
 
 				if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false,
 														  true, PRC_being_altered)))
@@ -5805,9 +5805,9 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 			}
 
 			procedure->prc_flags |= PRC_being_altered;
-			if (procedure->prc_request)
+			if (procedure->getRequest())
 			{
-				if (CMP_clone_is_active(procedure->prc_request))
+				if (CMP_clone_is_active(procedure->getRequest()))
 				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
@@ -5815,8 +5815,8 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 
 				// release the request
 
-				CMP_release(tdbb, procedure->prc_request);
-				procedure->prc_request = 0;
+				CMP_release(tdbb, procedure->getRequest());
+				procedure->setRequest(0);
 			}
 
 			// delete dependency lists

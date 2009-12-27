@@ -802,12 +802,10 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
  *	Look for named field in procedure output fields.
  *
  **************************************/
-	vec<Parameter*>* list = procedure->prc_output_fields;
-	if (!list)
-		return -1;
+	const Array<Parameter*>& list = procedure->prc_output_fields;
 
-	vec<Parameter*>::const_iterator ptr = list->begin();
-	for (const vec<Parameter*>::const_iterator end = list->end(); ptr < end; ++ptr)
+	Array<Parameter*>::const_iterator ptr = list.begin();
+	for (const vec<Parameter*>::const_iterator end = list.end(); ptr < end; ++ptr)
 	{
 		const Parameter* param = *ptr;
 		if (name == param->prm_name)
@@ -1328,7 +1326,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 				(procedure->prc_flags & PRC_being_scanned) ||
 				(procedure->prc_flags & PRC_being_altered)))
 		{
-			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->prc_id, false, 0);
+			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->getId(), false, 0);
 			if (scan_proc != procedure)
 				procedure = NULL;
 		}
@@ -1339,7 +1337,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			if ((id = find_proc_field(procedure, name)) == -1)
 			{
 				error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) <<
-													   Arg::Str(procedure->prc_name.toString()));
+													   Arg::Str(procedure->getName().toString()));
 			}
 		}
 		else
@@ -1483,7 +1481,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 		error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
-	if (!function->fun_entrypoint && !function->fun_external && !function->fun_request)
+	if (!function->fun_entrypoint && !function->fun_external && !function->getRequest())
 	{
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
@@ -1508,7 +1506,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	if (node->nod_arg[e_fun_args]->nod_count < function->fun_inputs - function->fun_defaults ||
 		node->nod_arg[e_fun_args]->nod_count > function->fun_inputs)
 	{
-		error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name.toString()));
+		error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->getName().toString()));
 	}
 
     // CVC: I will track ufds only if a proc is not being dropped.
@@ -2139,18 +2137,18 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 
 	if (procedure->prc_type == prc_executable)
 	{
-		error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(procedure->prc_name.toString()));
+		error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(procedure->getName().toString()));
 	}
 
 	jrd_nod* const node = PAR_make_node(tdbb, e_prc_length);
 	node->nod_type = nod_procedure;
 	node->nod_count = count_table[blr_procedure];
-	node->nod_arg[e_prc_procedure] = (jrd_nod*) (IPTR) procedure->prc_id;
+	node->nod_arg[e_prc_procedure] = (jrd_nod*)(IPTR) procedure->getId();
 
 	SSHORT context;
 	const SSHORT stream = par_context(csb, &context);
-	node->nod_arg[e_prc_stream] = (jrd_nod*) (IPTR) stream;
-	node->nod_arg[e_prc_context] = (jrd_nod*) (IPTR) context;
+	node->nod_arg[e_prc_stream] = (jrd_nod*)(IPTR) stream;
+	node->nod_arg[e_prc_context] = (jrd_nod*)(IPTR) context;
 
 	csb->csb_rpt[stream].csb_procedure = procedure;
 	csb->csb_rpt[stream].csb_alias = alias_string;
@@ -2189,15 +2187,15 @@ static void par_procedure_parms(thread_db* tdbb,
 
 	// Check to see if the parameter count matches
 	if (input_flag ?
-			(count < (procedure->prc_inputs - procedure->prc_defaults) ||
-				(count > procedure->prc_inputs) ) :
-			(count != procedure->prc_outputs))
+			(count < (SLONG(procedure->prc_input_fields.getCount()) - procedure->prc_defaults) ||
+				(count > SLONG(procedure->prc_input_fields.getCount())) ) :
+			(count != SLONG(procedure->prc_output_fields.getCount())))
 	{
 		// They don't match...Hmmm...Its OK if we were dropping the procedure
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 		{
 			error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
-							Arg::Str(procedure->prc_name.toString()));
+							Arg::Str(procedure->getName().toString()));
 		}
 		else
 			mismatch = true;
@@ -2272,7 +2270,8 @@ static void par_procedure_parms(thread_db* tdbb,
 			// default value for parameter
 			if ((count <= 0) && input_flag)
 			{
-				Parameter* parameter = (*procedure->prc_input_fields)[procedure->prc_inputs - n];
+				Parameter* parameter = procedure->prc_input_fields[
+					procedure->prc_input_fields.getCount() - n];
 				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
 			else {
@@ -2290,10 +2289,12 @@ static void par_procedure_parms(thread_db* tdbb,
 			prm_f->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
 		}
 	}
-	else if ((input_flag ? procedure->prc_inputs : procedure->prc_outputs) && !mismatch)
+	else if ((input_flag ?
+			procedure->prc_input_fields.getCount() : procedure->prc_output_fields.getCount()) &&
+		!mismatch)
 	{
 		error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
-						Arg::Str(procedure->prc_name.toString()));
+						Arg::Str(procedure->getName().toString()));
 	}
 }
 

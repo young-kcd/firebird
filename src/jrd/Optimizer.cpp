@@ -702,7 +702,7 @@ Firebird::string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
 	}
 	else if (base_tail->csb_procedure)
 	{
-		alias = base_tail->csb_procedure->prc_name.toString();
+		alias = base_tail->csb_procedure->getName().toString();
 	}
 	else
 	{

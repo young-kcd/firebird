@@ -65,7 +65,7 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 
 	Function* function = (id < dbb->dbb_functions.getCount()) ? dbb->dbb_functions[id] : NULL;
 
-	if (function && function->fun_id == id &&
+	if (function && function->getId() == id &&
 		!(function->fun_flags & FUN_being_scanned) &&
 		((function->fun_flags & FUN_scanned) || noscan) &&
 		!(function->fun_flags & FUN_being_altered) &&
@@ -129,7 +129,7 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 			!(function->fun_flags & FUN_being_scanned) &&
 			!(function->fun_flags & FUN_being_altered))
 		{
-			if (function->fun_name == name)
+			if (function->getName() == name)
 			{
 				if (function->fun_flags & FUN_check_existence)
 				{
@@ -211,7 +211,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	function->fun_flags |= (FUN_being_scanned | flags);
 	function->fun_flags &= ~FUN_obsolete;
 
-	function->fun_id = id;
+	function->setId(id);
 	dbb->dbb_functions[id] = function;
 
 	if (!function->fun_existence_lock)
@@ -220,7 +220,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 		function->fun_existence_lock = lock;
 		lock->lck_parent = dbb->dbb_lock;
 		lock->lck_dbb = dbb;
-		lock->lck_key.lck_long = function->fun_id;
+		lock->lck_key.lck_long = function->getId();
 		lock->lck_length = sizeof(lock->lck_key.lck_long);
 		lock->lck_type = LCK_fun_exist;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -245,12 +245,12 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			if (!REQUEST(irq_l_functions))
 				REQUEST(irq_l_functions) = request_fun;
 
-			function->fun_name = QualifiedName(X.RDB$FUNCTION_NAME,
-				(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME));
+			function->setName(QualifiedName(X.RDB$FUNCTION_NAME,
+				(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)));
 
 			if (!X.RDB$SECURITY_CLASS.NULL)
 			{
-				function->fun_security_name = X.RDB$SECURITY_CLASS;
+				function->setSecurityName(X.RDB$SECURITY_CLASS);
 			}
 			else if (!X.RDB$PACKAGE_NAME.NULL)
 			{
@@ -262,7 +262,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 					if (!PKG.RDB$SECURITY_CLASS.NULL)
 					{
-						function->fun_security_name = PKG.RDB$SECURITY_CLASS;
+						function->setSecurityName(PKG.RDB$SECURITY_CLASS);
 					}
 
 				END_FOR
@@ -279,8 +279,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 			FOR(REQUEST_HANDLE request_arg)
 				Y IN RDB$FUNCTION_ARGUMENTS
-				WITH Y.RDB$FUNCTION_NAME EQ function->fun_name.identifier.c_str() AND
-					 Y.RDB$PACKAGE_NAME EQUIV NULLIF(function->fun_name.qualifier.c_str(), '')
+				WITH Y.RDB$FUNCTION_NAME EQ function->getName().identifier.c_str() AND
+					 Y.RDB$PACKAGE_NAME EQUIV NULLIF(function->getName().qualifier.c_str(), '')
 				SORTED BY Y.RDB$ARGUMENT_POSITION
 
 				if (!REQUEST(irq_l_args))
@@ -396,8 +396,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			// Prepare the exception message to be used in case this function ever
 			// causes an exception.  This is done at this time to save us from preparing
 			// (thus allocating) this message every time the function is called.
-			function->fun_exception_message.printf(EXCEPTION_MESSAGE, function->fun_name.toString().c_str(),
-				X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
+			function->fun_exception_message.printf(EXCEPTION_MESSAGE,
+				function->getName().toString().c_str(), X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
 			if (!X.RDB$LEGACY_FLAG.NULL)
 			{
@@ -414,7 +414,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				fb_assert(!function->fun_legacy);
 
 				function->fun_entrypoint = NULL;
-				function->fun_request = NULL;
+				function->setRequest(NULL);
 
 				HalfStaticArray<UCHAR, 512> body;
 
@@ -458,21 +458,21 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				{
 					delete csb;
 
-					if (function->fun_request)
+					if (function->getRequest())
 					{
-						CMP_release(tdbb, function->fun_request);
-						function->fun_request = NULL;
+						CMP_release(tdbb, function->getRequest());
+						function->setRequest(NULL);
 					}
 					else
 					{
 						dbb->deletePool(csb_pool);
 					}
 
-					const string name = function->fun_name.toString();
+					const string name = function->getName().toString();
 					status_exception::raise(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name));
 				}
 
-				function->fun_request->req_function = function;
+				function->getRequest()->req_function = function;
 
 				delete csb;
 			}
@@ -481,7 +481,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				fb_assert(function->fun_legacy);
 
 				function->fun_external = NULL;
-				function->fun_request = NULL;
+				function->setRequest(NULL);
 
 				function->fun_entrypoint =
 					Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
@@ -515,7 +515,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			jrd_req* request_set_valid = NULL;
 
 			FOR(REQUEST_HANDLE request_set_valid)
-				F IN RDB$FUNCTIONS WITH F.RDB$FUNCTION_ID EQ function->fun_id
+				F IN RDB$FUNCTIONS WITH F.RDB$FUNCTION_ID EQ function->getId()
 
 				MODIFY F USING
 					F.RDB$VALID_BLR = TRUE;
@@ -590,10 +590,10 @@ void Function::remove(thread_db* tdbb)
 	}
 	else
 	{
-		fun_name = QualifiedName();
-		fun_security_name = "";
+		setName(QualifiedName());
+		setSecurityName("");
 		fun_defaults = 0;
-		fun_id = 0;
+		setId(0);
 	}
 }
 
@@ -601,7 +601,9 @@ void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 {
 	fb_assert(blob_id && !blob_id->isEmpty());
 
-	MET_parse_blob(tdbb, NULL, blob_id, &csb, &fun_request, false);
+	jrd_req* request = getRequest();
+	MET_parse_blob(tdbb, NULL, blob_id, &csb, &request, false);
+	setRequest(request);
 }
 
 void Function::addRef()
@@ -616,12 +618,12 @@ void Function::release(thread_db* tdbb)
 		fun_use_count--;
 
 		Database* const dbb = tdbb->getDatabase();
-		if (fun_use_count == 0 && dbb->dbb_functions[fun_id] != this)
+		if (fun_use_count == 0 && dbb->dbb_functions[getId()] != this)
 		{
-			if (fun_request)
+			if (getRequest())
 			{
-				CMP_release(tdbb, fun_request);
-				fun_request = NULL;
+				CMP_release(tdbb, getRequest());
+				setRequest(NULL);
 			}
 			fun_flags &= ~FUN_being_altered;
 			remove(tdbb);
@@ -679,7 +681,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 	}
 	else
 	{
-		fb_assert(fun_request);
+		fb_assert(getRequest());
 		fb_assert(!fun_return_arg);
 
 		Database* const dbb = tdbb->getDatabase();
@@ -736,7 +738,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		UCHAR* const out_msg = out_buffer.getBuffer(out_msg_length);
 		ret_desc.dsc_address = out_msg;
 
-		jrd_req* const new_request = EXE_find_request(tdbb, fun_request, false);
+		jrd_req* const new_request = EXE_find_request(tdbb, getRequest(), false);
 
 		try
 		{
@@ -804,7 +806,7 @@ USHORT Function::incrementAlterCount()
 	if (fun_alter_count == Function::MAX_ALTER_COUNT)
 	{
 		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_udf_name) << Arg::Str(fun_name.toString()) <<
+				 Arg::Gds(isc_udf_name) << Arg::Str(getName().toString()) <<
 				 Arg::Gds(isc_version_err));
 	}
 
