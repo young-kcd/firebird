@@ -2557,6 +2557,8 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 					parameter = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
 					parameter->par_rec_version_relname = relation->rel_name;
+					paramContexts.put(parameter, context);
+
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
 					parameter->par_desc.dsc_length = relation->rel_dbkey_length / 2;
