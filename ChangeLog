@@ -1,3 +1,12 @@
+2009-12-26 23:06  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.317), jrd/PreparedStatement.h
+	(1.13), jrd/ini.epp (1.126), jrd/ini_proto.h (1.15):
+
+	Transform two GDML STORE statements that run on database creation
+	time to DSQL statements and preload DSQL cache objects to make that
+	possible
+
 2009-12-26 14:24  robocop
 
 	* firebird2/src/: include/gen/ids.h (1.41), jrd/names.h (1.24),
