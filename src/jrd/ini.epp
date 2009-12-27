@@ -661,7 +661,7 @@ void INI_init2(thread_db* tdbb)
 
 
 // Load system objects into DSQL metadata cache.
-void INI_init3(thread_db* tdbb, dsql_dbb* database)
+void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 {
 	SET_TDBB(tdbb);
 

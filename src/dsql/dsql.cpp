@@ -2009,7 +2009,7 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 		database->dbb_database = attachment->att_database;
 		attachment->att_dsql_instance = database;
 
-		INI_init3(tdbb, database);
+		INI_init_dsql(tdbb, database);
 
 		UCHAR buffer[BUFFER_TINY];
 
