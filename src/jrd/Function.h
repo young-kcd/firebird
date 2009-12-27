@@ -51,7 +51,7 @@ namespace Jrd
 
 		USHORT incrementAlterCount();
 
-		dsc* execute(thread_db* tdbb, jrd_nod* args, impure_value* value);
+		dsc* execute(thread_db* tdbb, jrd_nod* args, impure_value* value) const;
 		void releaseLocks(thread_db* tdbb);
 		void remove(thread_db* tdbb);
 		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);

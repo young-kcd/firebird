@@ -932,7 +932,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	case nod_function:
 		{
-			Function* const function = reinterpret_cast<Function*>(node->nod_arg[e_fun_function]);
+			const Function* function = reinterpret_cast<Function*>(node->nod_arg[e_fun_function]);
 			return function->execute(tdbb, node->nod_arg[e_fun_args], impure);
 		}
 

@@ -287,10 +287,10 @@ enum UdfError
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
-static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
+static SLONG get_scalar_array(const fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
 static void invoke(thread_db* tdbb,
-				   Function* function,
-				   fun_repeat* return_ptr,
+				   const Function* function,
+				   const fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
@@ -299,7 +299,7 @@ static void invoke(thread_db* tdbb,
 static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to);
 
 
-void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_value* value)
+void FUN_evaluate(thread_db* tdbb, const Function* function, jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -321,7 +321,7 @@ void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_val
 
 	SET_TDBB(tdbb);
 
-	fun_repeat*	return_ptr = &function->fun_args[function->fun_return_arg];
+	const fun_repeat* return_ptr = &function->fun_args[function->fun_return_arg];
 
 	jrd_req* request = tdbb->getRequest();
 	// CVC: restoring the null flag seems like a Borland hack to try to
@@ -356,11 +356,11 @@ void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_val
 	udf_blob* return_blob_struct = 0;
 
 	DSC temp_desc;
-	double  d;
+	double d;
 
 	// Process arguments
 	const fun_repeat* const end = function->fun_args.end();
-	for (fun_repeat* tail = function->fun_args.begin() + 1; tail < end; ++tail)
+	for (const fun_repeat* tail = function->fun_args.begin() + 1; tail < end; ++tail)
 	{
 		DSC* input;
 		if (tail == return_ptr)
@@ -464,7 +464,7 @@ void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_val
 						continue;
 					}
 
-					SSHORT* sp = (SSHORT *) temp_ptr;
+					SSHORT* sp = (SSHORT*) temp_ptr;
 					*sp = s;
 				}
 				break;
@@ -473,7 +473,7 @@ void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_val
 				l = MOV_get_long(input, (SSHORT) tail->fun_parameter->prm_desc.dsc_scale);
 				if (tail->fun_mechanism == FUN_value)
 				{
-					*arg_ptr++ = (UDF_ARG)(IPTR)l;
+					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
 				}
 				lp = (SLONG *) temp_ptr;
@@ -509,12 +509,12 @@ void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_val
 
 					if (tail->fun_mechanism == FUN_value)
 					{
-						pi64 = (SINT64 *) arg_ptr;
+						pi64 = (SINT64*) arg_ptr;
 						*pi64++ = i64;
 						arg_ptr = reinterpret_cast<UDF_ARG*>(pi64);
 						continue;
 					}
-					pi64 = (SINT64 *) temp_ptr;
+					pi64 = (SINT64*) temp_ptr;
 					*pi64 = i64;
 				}
 				break;
@@ -545,12 +545,12 @@ void FUN_evaluate(thread_db* tdbb, Function* function, jrd_nod* node, impure_val
 				double* dp;
 				if (tail->fun_mechanism == FUN_value)
 				{
-					dp = (double *) arg_ptr;
+					dp = (double*) arg_ptr;
 					*dp++ = d;
 					arg_ptr = reinterpret_cast<UDF_ARG*>(dp);
 					continue;
 				}
-				dp = (double *) temp_ptr;
+				dp = (double*) temp_ptr;
 				*dp = d;
 				break;
 
@@ -796,7 +796,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 }
 
 
-static SLONG get_scalar_array(fun_repeat*	arg,
+static SLONG get_scalar_array(const fun_repeat* arg,
 							  DSC*	value,
 							  scalar_array_desc*	scalar_desc,
 							  UCharStack&	stack)
@@ -881,8 +881,8 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 
 static void invoke(thread_db* tdbb,
-				   Function* function,
-				   fun_repeat* return_ptr,
+				   const Function* function,
+				   const fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
