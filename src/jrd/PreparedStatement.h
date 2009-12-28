@@ -97,9 +97,10 @@ public:
 	void setInt(thread_db* tdbb, unsigned param, int value)
 	{
 		fb_assert(param > 0);
+		SLONG val2 = value;
 
 		dsc desc;
-		desc.makeLong(0, &value);
+		desc.makeLong(0, &val2);
 
 		setDesc(tdbb, param, desc);
 	}
