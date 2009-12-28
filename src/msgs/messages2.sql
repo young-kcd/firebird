@@ -2919,6 +2919,10 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 43, NULL, 'option -t accepts several table names only if used after <database>', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 44, NULL, 'table "@1" not found', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 45, NULL, 'use gstat -? to get help', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 46, NULL, '    Primary pages: @1, full pages: @2, swept pages: @3', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 47, NULL, '    Big record pages: @1', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 48, NULL, '    Blobs: @1, total length: @2, blob pages: @3', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 49, NULL, '        Level 0: @1, Level 1: @2, Level 2: @3', NULL, NULL);
 -- FBSVCMGR
 -- All messages use the new format.
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);
