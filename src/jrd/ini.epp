@@ -267,7 +267,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	Firebird::MetaName string2(charset ? charset : "");
 	string2.upper7();
 
-	int n;
+	SLONG n;
 	const int* fld;
 
 	// Make sure relations exist already

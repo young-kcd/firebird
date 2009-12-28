@@ -94,13 +94,12 @@ public:
 		*reinterpret_cast<SSHORT*>(desc->dsc_address) = -1;
 	}
 
-	void setInt(thread_db* tdbb, unsigned param, int value)
+	void setInt(thread_db* tdbb, unsigned param, SLONG value)
 	{
 		fb_assert(param > 0);
-		SLONG val2 = value;
 
 		dsc desc;
-		desc.makeLong(0, &val2);
+		desc.makeLong(0, &value);
 
 		setDesc(tdbb, param, desc);
 	}
