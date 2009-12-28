@@ -225,7 +225,7 @@ namespace
 			WITH FUN.RDB$PACKAGE_NAME EQ metaName.c_str()
 		{
 			Signature function(FUN.RDB$FUNCTION_NAME);
-			function.defined = !FUN.RDB$ENTRYPOINT.NULL;
+			function.defined = !FUN.RDB$ENTRYPOINT.NULL || !FUN.RDB$FUNCTION_BLR.NULL;
 
 			if (details)
 			{
@@ -1034,6 +1034,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 				FUN.RDB$MODULE_NAME.NULL = TRUE;
 				FUN.RDB$ENGINE_NAME.NULL = TRUE;
 				FUN.RDB$ENTRYPOINT.NULL = TRUE;
+				FUN.RDB$FUNCTION_BLR.NULL = TRUE;
 			END_MODIFY
 		}
 	}

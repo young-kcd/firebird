@@ -3855,7 +3855,7 @@ static processing_state show_proc(const SCHAR* procname)
 					if (i == 0)
 						isqlGlob.printf("Global procedures:%s", NEWLINE);
 					else
-						isqlGlob.printf("Packaged procedures:%s", NEWLINE);
+						isqlGlob.printf("%sPackaged procedures:%s", NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
 							 "Procedure Name                    Invalid Dependency, Type%s", NEWLINE);

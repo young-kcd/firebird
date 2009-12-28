@@ -478,21 +478,26 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			}
 			else
 			{
-				fb_assert(function->fun_legacy);
-
 				function->fun_external = NULL;
 				function->setRequest(NULL);
 
-				function->fun_entrypoint =
-					Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
-
-				// Could not find a function with given MODULE, ENTRYPOINT.
-				// Try the list of internally implemented functions.
-				if (!function->fun_entrypoint)
+				if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
 				{
+					fb_assert(function->fun_legacy);
+
 					function->fun_entrypoint =
-						BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
+						Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
+
+					// Could not find a function with given MODULE, ENTRYPOINT.
+					// Try the list of internally implemented functions.
+					if (!function->fun_entrypoint)
+					{
+						function->fun_entrypoint =
+							BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
+					}
 				}
+				else
+					function->fun_entrypoint = NULL;
 			}
 
 			if (X.RDB$VALID_BLR.NULL || X.RDB$VALID_BLR == FALSE)
