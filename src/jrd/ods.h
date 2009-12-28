@@ -190,7 +190,7 @@ const SCHAR pag_max				= 10;		// Max page type
 
 const SLONG HEADER_PAGE		= 0;
 const SLONG FIRST_PIP_PAGE	= 1;
-const SLONG FIRST_SCNS_PAGE	= 2;
+const SLONG FIRST_SCN_PAGE	= 2;
 
 // Page size limits
 
@@ -320,7 +320,7 @@ struct data_page
 const UCHAR dpg_orphan	= 1;		// Data page is NOT in pointer page
 const UCHAR dpg_full	= 2;		// Pointer page is marked FULL
 const UCHAR dpg_large	= 4;		// Large object is on page
-//const UCHAR dpg_swept	= 8;		// Sweep has nothing to do on this page
+const UCHAR dpg_swept	= 8;		// Sweep has nothing to do on this page
 const UCHAR dpg_secondary	= 16;	// Primary record versions not stored on this page
 									// Set in dpm.epp's extend_relation() but never tested.
 
@@ -506,7 +506,7 @@ const int PPG_DP_BITS_NUM	= 4;		// Number of additional flag bits per data page
 
 const UCHAR ppg_dp_full		= 1;		// Data page is FULL
 const UCHAR ppg_dp_large	= 2;		// Large object is on data page
-//const UCHAR ppg_dp_swept	= 4;		// Sweep has nothing to do on data page
+const UCHAR ppg_dp_swept	= 4;		// Sweep has nothing to do on data page
 const UCHAR ppg_dp_secondary = 8;		// Primary record versions not stored on data page
 
 const UCHAR PPG_DP_ALL_BITS	= (1 << PPG_DP_BITS_NUM) - 1;

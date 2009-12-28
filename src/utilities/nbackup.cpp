@@ -973,7 +973,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 				fb_assert(scns && scns->scn_sequence * pagesPerSCN + scnsSlot == curPage ||
 						 !scns && curPage % pagesPerSCN == scnsSlot);
 
-				ULONG nextSCN = scns ? (scns->scn_sequence + 1) * pagesPerSCN : FIRST_SCNS_PAGE;
+				ULONG nextSCN = scns ? (scns->scn_sequence + 1) * pagesPerSCN : FIRST_SCN_PAGE;
 
 				while (true)
 				{
@@ -1013,7 +1013,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 			if (level && page_buff->pag_type == pag_scns)
 			{
-				fb_assert(scnsSlot == 0 || scnsSlot == FIRST_SCNS_PAGE);
+				fb_assert(scnsSlot == 0 || scnsSlot == FIRST_SCN_PAGE);
 
 				// pick up next SCN's page
 				memcpy(scns_buf, page_buff, header->hdr_page_size);

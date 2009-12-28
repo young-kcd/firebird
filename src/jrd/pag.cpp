@@ -884,7 +884,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 	pageSpace.scnFirst = 0;
 	if (!pageSpace.isTemporary())
 	{
-		pageSpace.scnFirst = FIRST_SCNS_PAGE;
+		pageSpace.scnFirst = FIRST_SCN_PAGE;
 
 		WIN window(pageSpace.pageSpaceID, pageSpace.scnFirst);
 		scns_page* page = (scns_page*) CCH_fake(tdbb, &window, 1);
@@ -1210,7 +1210,7 @@ void PAG_init(thread_db* tdbb)
 	pageMgr.pagesPerPIP = Ods::pagesPerPIP(dbb->dbb_page_size);
 	pageMgr.pagesPerSCN = Ods::pagesPerSCN(dbb->dbb_page_size);
 	pageSpace->pipFirst = FIRST_PIP_PAGE;
-	pageSpace->scnFirst = FIRST_SCNS_PAGE;
+	pageSpace->scnFirst = FIRST_SCN_PAGE;
 
 	pageMgr.transPerTIP = Ods::transPerTIP(dbb->dbb_page_size);
 
