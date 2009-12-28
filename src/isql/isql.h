@@ -138,7 +138,7 @@ const int HLP_SET					= 30;		// \tSET -- Display current options \n
 const int HLP_SETAUTO				= 31;		// \tSET AUTOcommit  -- toggle autocommit of DDL statments\n
 const int HLP_SETBLOB				= 32;		// \tSET BLOBdisplay [ALL|N]-- Display blobs of type N\n\t SET BLOB turns off blob display\n
 const int HLP_SETCOUNT				= 33;		// \tSET COUNT  -- toggle count of selected rows on/off \n
-const int HLP_SETROWCOUNT			= 165;		// \tSET ROWCOUNT [N] -- limits the number of rows returned, zero is no limit \n
+const int HLP_SETMAXROWS			= 165;		// \tSET MAXROWS [N] -- limits the number of rows returned, zero is no limit \n
 const int HLP_SETECHO				= 34;		// \tSET ECHO  -- toggle command echo on/off \n
 const int HLP_SETSTAT				= 35;		// \tSET STATs -- toggles performance statistics display\n
 const int HLP_SETTERM				= 36;		// \tSET TERM <string> -- changes termination character\n
@@ -254,9 +254,9 @@ const int NO_PACKAGE				= 166;		// There is no package @1 in this database
 const int NO_PACKAGES				= 167;		// There are no packages in this database
 const int NO_SCHEMA					= 168;		// There is no schema @1 in this database
 const int NO_SCHEMAS				= 169;		// There are no schemas in this database
-const int ROWCOUNT_INVALID			= 170;		// Unable to convert @1 to a number for rowcount
-const int ROWCOUNT_OUTOF_RANGE		= 171;		// Value @1 for rowcount is out of range. Max value is @2
-const int ROWCOUNT_NEGATIVE			= 172;		// The value (@1) for rowcount must be zero or greater
+const int MAXROWS_INVALID			= 170;		// Unable to convert @1 to a number for MAXWROWS option
+const int MAXROWS_OUTOF_RANGE		= 171;		// Value @1 for MAXROWS is out of range. Max value is @2
+const int MAXROWS_NEGATIVE			= 172;		// The value (@1) for MAXROWS must be zero or greater
 
 
 // Initialize types

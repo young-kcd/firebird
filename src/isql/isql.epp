@@ -249,7 +249,7 @@ static processing_state newdb(TEXT*, const TEXT*, const TEXT*, int, const TEXT*,
 static processing_state newinput(const TEXT*);
 static processing_state newoutput(const TEXT*);
 static processing_state newsize(const TEXT*, const TEXT*);
-static processing_state newRowCount(const TEXT* newRowCountStr);
+static processing_state newMaxRows(const TEXT* newMaxRowsStr);
 static processing_state newtrans(const TEXT*);
 static processing_state parse_arg(int, SCHAR**, SCHAR*); //, FILE**);
 #ifdef DEV_BUILD
@@ -322,7 +322,7 @@ static bool Warnings = true; // Print warnings
 static int Doblob = 1;		// Default to printing only text types
 static bool List = false;
 static bool Docount = false;
-static size_t rowCount = 0;
+static size_t maxRows = 0;
 static bool Plan = false;
 static bool Planonly = false;
 static bool Heading = true;
@@ -4875,7 +4875,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			sqlda_display,
 //#endif
 			sql, warning, generator, statistics, heading, bail,
-			bulk_insert, rowcount, wrong
+			bulk_insert, maxrows, wrong
 		};
 		SetOptions(const optionsMap* inmap, size_t insize, int wrongval)
 			: OptionsBase(inmap, insize, wrongval)
@@ -4908,7 +4908,8 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::heading, "HEADING", 0},
 		{SetOptions::bail, "BAIL", 0},
 		{SetOptions::bulk_insert, "BULK_INSERT", 0},
-		{SetOptions::rowcount, "ROWCOUNT", 0},
+		{SetOptions::maxrows, "ROWCOUNT", 0}, // legacy, oompatible with FB2.5
+		{SetOptions::maxrows, "MAXROWS", 0},
 	};
 
 	// Display current set options
@@ -5050,8 +5051,8 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			ret = ps_ERR;
 		break;
 
-	case SetOptions::rowcount:
-		ret = newRowCount((*lparms[2]) ? lparms[2] : "0");
+	case SetOptions::maxrows:
+		ret = newMaxRows((*lparms[2]) ? lparms[2] : "0");
 		break;
 
 	default:
@@ -5951,7 +5952,7 @@ static processing_state print_sets()
 	print_set("List format:", List);
 	print_set("Show Row Count:", Docount);
 	//print_set("Row Count:", Docount);   // Changed print to the above to avoid confusion with next one
-	isqlGlob.printf("%-25s%lu%s", "Select rowcount limit:", rowCount, NEWLINE);
+	isqlGlob.printf("%-25s%lu%s", "Select maxrows limit:", maxRows, NEWLINE);
 	print_set("Autocommit DDL:", Autocommit);
 	print_set("Access Plan:", Plan);
 	print_set("Access Plan only:", Planonly);
@@ -6043,7 +6044,7 @@ static processing_state help(const TEXT* what)
 		HLP_SETBLOB,			//	SET BLOB [ALL|<n>]		-- display BLOBS of subtype <n> or ALL
 		HLP_SETBLOB2,			//	SET BLOB				-- turn off BLOB display
 		HLP_SETCOUNT,			//	SET COUNT				-- toggle count of selected rows on/off
-		HLP_SETROWCOUNT,		//	SET ROWCOUNT [<n>]		-- toggle limit of selected rows to <n>, zero is no limit
+		HLP_SETMAXROWS,			//	SET MAXROWS [<n>]		-- toggle limit of selected rows to <n>, zero is no limit
 		HLP_SETECHO,			//	SET ECHO				-- toggle command echo on/off
 		HLP_SETHEADING,			//  SET HEADING 	        -- toggle column titles display on/off
 		HLP_SETLIST,			//	SET LIST				-- toggle column or table display format
@@ -6521,33 +6522,33 @@ static processing_state newsize(const TEXT* colname, const TEXT* sizestr)
 	return SKIP;
 }
 
-static processing_state newRowCount(const TEXT* newRowCountStr)
+static processing_state newMaxRows(const TEXT* newMaxRowsStr)
 {
 /**************************************
  *
- *	newRowCount
+ *	newMaxRows
  *
  **************************************
  *
  * Functional description
- * Sets the new value for the rowcount limit (max rows to be retrieved).
+ * Sets the new value for the maxRows limit (max rows to be retrieved).
  *
  **************************************/
 
 	char* p;
 
 	errno = 0;
-	const long newRowCount = strtol(newRowCountStr, &p, 10);
+	const long newMaxRows = strtol(newMaxRowsStr, &p, 10);
 	// I was going to use this one, but "-1" parses as max ulong without error
 	// and it would be politer to give an error.
-	//const ULONG newRowCount = strtoul(newRowCountStr, &p, 10);
+	//const ULONG newMaxRows = strtoul(newMaxRowsStr, &p, 10);
 
 	// CVC: I added this block because Windows wasn't working according to Mark's
 	// expectation: it only produces ERANGE. Thus, garbage like
-	// set rowcount abs;  wasn't caught.
-	if (p == newRowCountStr)
+	// set maxrows abs;  wasn't caught.
+	if (p == newMaxRowsStr)
 	{
-		IUTILS_put_errmsg(ROWCOUNT_INVALID, SafeArg() << newRowCountStr);
+		IUTILS_put_errmsg(MAXROWS_INVALID, SafeArg() << newMaxRowsStr);
 		return ps_ERR;
 	}
 
@@ -6557,21 +6558,21 @@ static processing_state newRowCount(const TEXT* newRowCountStr)
 		break;
 	case ERANGE:
 		// Only ERANGE is part of the ANSI standard here.
-		IUTILS_put_errmsg(ROWCOUNT_OUTOF_RANGE, SafeArg() << newRowCountStr << SLONG_MAX);
+		IUTILS_put_errmsg(MAXROWS_OUTOF_RANGE, SafeArg() << newMaxRowsStr << SLONG_MAX);
 		return ps_ERR;
 	default:
 		// EINVAL and the like
-		IUTILS_put_errmsg(ROWCOUNT_INVALID, SafeArg() << newRowCountStr);
+		IUTILS_put_errmsg(MAXROWS_INVALID, SafeArg() << newMaxRowsStr);
 		return ps_ERR;
 	}
 
-	if (newRowCount < 0)
+	if (newMaxRows < 0)
 	{
-		IUTILS_put_errmsg(ROWCOUNT_NEGATIVE, SafeArg() << newRowCountStr);
+		IUTILS_put_errmsg(MAXROWS_NEGATIVE, SafeArg() << newMaxRowsStr);
 		return ps_ERR;
 	}
 
-	rowCount = newRowCount;
+	maxRows = newMaxRows;
 	return SKIP;
 }
 
@@ -8600,8 +8601,8 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		for (lines = 0; !Interrupt_flag && !Abort_flag; ++lines)
 		{
 
-			// Check if exceeded rowCount value
-			if (rowCount != 0 && lines >= rowCount)
+			// Check if exceeded maxRows value
+			if (maxRows != 0 && lines >= maxRows)
 				break;
 
 			// Fetch the current cursor

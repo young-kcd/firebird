@@ -2753,14 +2753,14 @@ Fetches = !f', NULL, NULL);
 ('PASS_FILE_OPEN', 'ISQL_main', 'isql.epp', NULL, 17, 162, NULL, 'could not open password file @1, errno @2', NULL, NULL);
 ('PASS_FILE_READ', 'ISQL_main', 'isql.epp', NULL, 17, 163, NULL, 'could not read password file @1, errno @2', NULL, NULL);
 ('EMPTY_PASS', 'ISQL_main', 'isql.epp', NULL, 17, 164, NULL, 'empty password file @1', NULL, NULL);
-('HLP_SETROWCOUNT', 'help', 'isql.epp', NULL, 17, 165, NULL, '    SET ROWCOUNT [<n>]     -- limit select stmt to <n> rows, zero is no limit', NULL, NULL);
+('HLP_SETMAXROWS', 'help', 'isql.epp', NULL, 17, 165, NULL, '    SET MAXROWS [<n>]      -- limit select stmt to <n> rows, zero is no limit', NULL, NULL);
 ('NO_PACKAGE', 'SHOW_metadata', 'show.epp', NULL, 17, 166, NULL, 'There is no package @1 in this database', NULL, NULL)
 ('NO_PACKAGES', 'SHOW_metadata', 'show.epp', NULL, 17, 167, NULL, 'There are no packages in this database', NULL, NULL)
 ('NO_SCHEMA', 'SHOW_metadata', 'show.epp', NULL, 17, 168, NULL, 'There is no schema @1 in this database', NULL, NULL)
 ('NO_SCHEMAS', 'SHOW_metadata', 'show.epp', NULL, 17, 169, NULL, 'There are no schemas in this database', NULL, NULL)
-('ROWCOUNT_INVALID', 'newRowCount', 'isql.epp', NULL, 17, 170, NULL, 'Unable to convert @1 to a number for rowcount', NULL, NULL)
-('ROWCOUNT_OUTOF_RANGE', 'newRowCount', 'isql.epp', NULL, 17, 171, NULL, 'Value @1 for rowcount is out of range. Max value is @2', NULL, NULL)
-('ROWCOUNT_NEGATIVE', 'newRowCount', 'isql.epp', NULL, 17, 172, NULL, 'The value (@1) for rowcount must be zero or greater', NULL, NULL)
+('MAXROWS_INVALID', 'newRowCount', 'isql.epp', NULL, 17, 170, NULL, 'Unable to convert @1 to a number for MAXROWS option', NULL, NULL)
+('MAXROWS_OUTOF_RANGE', 'newRowCount', 'isql.epp', NULL, 17, 171, NULL, 'Value @1 for MAXROWS is out of range. Max value is @2', NULL, NULL)
+('MAXROWS_NEGATIVE', 'newRowCount', 'isql.epp', NULL, 17, 172, NULL, 'The value (@1) for MAXROWS must be zero or greater', NULL, NULL)
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
