@@ -1,3 +1,113 @@
+2009-12-28 14:25  dimitr
+
+	* firebird2/: src/dsql/make.cpp (1.199),
+	src/common/config/config.cpp (1.106), src/common/config/config.h
+	(1.59), builds/install/misc/firebird.conf.in (1.6):
+
+	Cleanup the deprecated configuration stuff.
+
+2009-12-28 12:59  robocop
+
+	* firebird2/src/isql/isql.epp (1.307):
+
+	Prevent isql from creating a db when we want to create a schema or
+	worse, that it drops a db when we want to drop a schema. Of course,
+	in the new ODS 12. Probably the change should be backported to
+	avoid disasters with FB2.5 isql working with FB3.0 server.
+
+2009-12-28 12:54  robocop
+
+	* firebird2/src/: isql/isql.epp (1.306), isql/isql.h (1.80),
+	msgs/facilities2.sql (1.112), msgs/messages2.sql (1.135):
+
+	Change this confusing ROWCOUNT feature to MAXROWS (there's also
+	COUNT) but the old name is accepted for compatibility with FB2.5.
+
+2009-12-28 12:46  robocop
+
+	* firebird2/src/: jrd/dpm.epp (1.120), jrd/met.epp (1.314),
+	jrd/par.cpp (1.266), utilities/gstat/dba.epp (1.125):
+
+	Misc.
+
+2009-12-28 11:21  asfernandes
+
+	* firebird2/src/jrd/: PreparedStatement.h (1.15), ini.epp (1.128):
+
+	Misc
+
+2009-12-28 10:34  hvlad
+
+	* firebird2/src/: msgs/facilities2.sql (1.111), msgs/messages2.sql
+	(1.134), utilities/gstat/dba.epp (1.124):
+
+	More detailed statistics : fragments, big records and blobs info
+	are now available when records analisys is performed.
+
+2009-12-28 10:11  hvlad
+
+	* firebird2/src/jrd/dpm.epp (1.119):
+
+	Swept flag implementation.  A little optimisation of mark_full() -
+	don't call it if not necessary, don't mark PP if its flags already
+	matched to DP flags.
+
+2009-12-28 10:08  hvlad
+
+	* firebird2/src/: jrd/ods.h (1.72), jrd/pag.cpp (1.245),
+	utilities/nbackup.cpp (1.111):
+
+	Better name for FIRST_SCN_PAGE constant
+
+2009-12-28 08:44  robocop
+
+	* firebird2/src/jrd/PreparedStatement.h (1.14):
+
+	Temporary measure to compile until Adriano finds a better way.
+
+2009-12-28 02:06  asfernandes
+
+	* firebird2/src/: dsql/PackageNodes.epp (1.17), isql/show.epp
+	(1.164), jrd/Function.epp (1.18):
+
+	Make packaged functions work
+
+2009-12-27 23:05  asfernandes
+
+	* firebird2/src/: include/fb_blk.h (1.30), jrd/DatabaseSnapshot.cpp
+	(1.126), jrd/ExtEngineManager.cpp (1.9), jrd/ExtEngineManager.h
+	(1.8), jrd/Function.epp (1.17), jrd/Function.h (1.6),
+	jrd/Optimizer.cpp (1.128), jrd/Routine.h (1.1), jrd/ValuesImpl.h
+	(1.7), jrd/cmp.cpp (1.376), jrd/dfw.epp (1.313), jrd/evl.cpp
+	(1.332), jrd/exe.cpp (1.324), jrd/fun.epp (1.141), jrd/fun_proto.h
+	(1.24), jrd/jrd.h (1.286), jrd/met.epp (1.313), jrd/par.cpp
+	(1.265), jrd/vio.cpp (1.279), jrd/extds/InternalDS.cpp (1.39),
+	jrd/recsrc/ProcedureScan.cpp (1.6), jrd/trace/TraceObjects.h
+	(1.12):
+
+	1) Make procedures and functions member of the same hierarchy
+	(Routine class) 2) Some completion for external functions
+
+2009-12-27 20:05  asfernandes
+
+	* firebird2/src/jrd/: Function.epp (1.16), Function.h (1.5),
+	evl.cpp (1.331), fun.epp (1.140), fun_proto.h (1.23):
+
+	Consts
+
+2009-12-27 17:49  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.318), jrd/ini.epp (1.127),
+	jrd/ini_proto.h (1.16):
+
+	Misc
+
+2009-12-27 17:49  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.213):
+
+	Fix another problem in cursor handling changes
+
 2009-12-26 23:06  asfernandes
 
 	* firebird2/src/: dsql/dsql.cpp (1.317), jrd/PreparedStatement.h
