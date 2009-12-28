@@ -145,11 +145,9 @@ enum fb_sysflag {
 };
 
 enum ViewContextType {
-	VCT_EXPRESSION,
 	VCT_TABLE,
 	VCT_VIEW,
-	VCT_SIMPLE_PROC,
-	VCT_PACKAGED_PROC
+	VCT_PROCEDURE
 };
 
 // UDF Arguments are numbered from 0 to MAX_UDF_ARGUMENTS --

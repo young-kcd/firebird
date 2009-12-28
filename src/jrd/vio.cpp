@@ -2902,6 +2902,19 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			} // scope
 			break;
 
+		case rel_vrel:
+			// If RDB$CONTEXT_TYPE is NULL, ask DFW to populate it.
+			if (!EVL_field(0, rpb->rpb_record, f_vrl_context_type, &desc))
+			{
+				if (EVL_field(0, rpb->rpb_record, f_vrl_vname, &desc) &&
+					EVL_field(0, rpb->rpb_record, f_vrl_context, &desc2))
+				{
+					const USHORT id = MOV_get_long(&desc2, 0);
+					DFW_post_work(transaction, dfw_store_view_context_type, &desc, id);
+				}
+			}
+			break;
+
 		default:    // Shut up compiler warnings
 			break;
 		}

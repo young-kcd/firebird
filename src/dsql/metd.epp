@@ -1753,8 +1753,7 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 				DSQL_REQUEST(irq_view_base) = handle1;
 
 			// return NULL if there is more than one context
-			if (X.RDB$VIEW_CONTEXT != 1 || X.RDB$CONTEXT_TYPE == VCT_SIMPLE_PROC ||
-				X.RDB$CONTEXT_TYPE == VCT_PACKAGED_PROC)
+			if (X.RDB$VIEW_CONTEXT != 1 || X.RDB$CONTEXT_TYPE == VCT_PROCEDURE)
 			{
 				relation = NULL;
 				cont = false;

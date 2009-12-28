@@ -218,7 +218,6 @@ enum drq_type_t
 	drq_m_pkg_prm_defs,		// modify packaged procedure parameters defaults
 	drq_s2_difference,		// Store backup difference file, DYN_mod's change_backup_mode
 	drq_l_relation,			// lookup relation before erase
-	drq_l_fld_src4,			// lookup a field source
 	drq_l_fun_name,			// lookup function name
 	drq_g_nxt_fun_id,		// lookup next function ID
 	drq_s_fun_usr_prvs,		// store user privileges for a function

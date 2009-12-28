@@ -383,6 +383,7 @@ static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool check_not_null(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool store_view_context_type(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_header(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -476,6 +477,7 @@ static const deferred_task task_table[] =
 	{ dfw_end_backup, end_backup },
 	{ dfw_user_management, user_management },
 	{ dfw_check_not_null, check_not_null },
+	{ dfw_store_view_context_type, store_view_context_type },
 	{ dfw_null, NULL }
 };
 
@@ -1651,6 +1653,54 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 	return false;
 }
 
+
+// Store RDB$CONTEXT_TYPE in RDB$VIEW_RELATIONS when restoring legacy backup.
+static bool store_view_context_type(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+{
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+	case 1:
+		{
+			// If RDB$PACKAGE_NAME IS NOT NULL or no record is found in RDB$RELATIONS,
+			// the context is a procedure;
+			ViewContextType vct = VCT_PROCEDURE;
+
+			jrd_req* handle1 = NULL;
+			FOR (REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
+				VRL IN RDB$VIEW_RELATIONS CROSS
+				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
+					VRL.RDB$VIEW_NAME = work->dfw_name.c_str() AND
+					VRL.RDB$VIEW_CONTEXT = work->dfw_id AND
+					VRL.RDB$PACKAGE_NAME MISSING
+			{
+				vct = (REL.RDB$VIEW_BLR.NULL ? VCT_TABLE : VCT_VIEW);
+			}
+			END_FOR
+			CMP_release(tdbb, handle1);
+
+			jrd_req* handle2 = NULL;
+			FOR (REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
+				VRL IN RDB$VIEW_RELATIONS WITH
+					VRL.RDB$VIEW_NAME = work->dfw_name.c_str() AND
+					VRL.RDB$VIEW_CONTEXT = work->dfw_id
+			{
+				MODIFY VRL USING
+					VRL.RDB$CONTEXT_TYPE.NULL = FALSE;
+					VRL.RDB$CONTEXT_TYPE = (SSHORT) vct;
+				END_MODIFY
+			}
+			END_FOR
+			CMP_release(tdbb, handle2);
+		}
+		break;
+	}
+
+	return false;
+}
+
+
 static bool user_management(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
@@ -2814,9 +2864,8 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 							Z IN RDB$VIEW_RELATIONS CROSS
 							R IN RDB$RELATIONS OVER RDB$RELATION_NAME
 							WITH Z.RDB$VIEW_NAME = work->dfw_name.c_str() AND
-								 (Z.RDB$CONTEXT_TYPE MISSING OR
-								  (Z.RDB$CONTEXT_TYPE <> VCT_SIMPLE_PROC AND
-								   Z.RDB$CONTEXT_TYPE <> VCT_PACKAGED_PROC))
+								 (Z.RDB$CONTEXT_TYPE = VCT_TABLE OR
+								  Z.RDB$CONTEXT_TYPE = VCT_VIEW)
 						{
 							Y.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
 						}

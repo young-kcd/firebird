@@ -3009,7 +3009,7 @@ static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 			const USHORT len = context->ctx_alias ? strlen(str) : name.length();
 			statement->append_string(isc_dyn_view_context_name, str, len);
 
-			ViewContextType ctxType = VCT_EXPRESSION;
+			ViewContextType ctxType;
 			if (relation)
 			{
 				if (!(relation->rel_flags & REL_view))
@@ -3019,13 +3019,9 @@ static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 			}
 			else //if (procedure)
 			{
+				ctxType = VCT_PROCEDURE;
 				if (procedure->prc_name.qualifier.hasData())
-				{
-					ctxType = VCT_PACKAGED_PROC;
 					statement->append_string(isc_dyn_pkg_name, procedure->prc_name.qualifier);
-				}
-				else
-					ctxType = VCT_SIMPLE_PROC;
 			}
 			statement->append_number(isc_dyn_view_context_type, (SSHORT) ctxType);
 

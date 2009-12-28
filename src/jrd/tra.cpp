@@ -2316,7 +2316,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 
 	for (size_t i = 0; i < ctx.getCount(); ++i)
 	{
-		if (ctx[i]->vcx_type == VCT_SIMPLE_PROC || ctx[i]->vcx_type == VCT_PACKAGED_PROC)
+		if (ctx[i]->vcx_type == VCT_PROCEDURE)
 			continue;
 
 		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i]->vcx_relation_name);
