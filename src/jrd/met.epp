@@ -485,6 +485,8 @@ void MET_verify_cache(thread_db* tdbb)
 
 							if (resource.rsc_prc == procedure)
 							{
+								// Do not enable this code in production builds unless
+								// the possible B.O. is fixed here.
 								buf += sprintf(buf, "%d:%s\n", prc->getId(),
 									prc->getName().toString().c_str());
 							}

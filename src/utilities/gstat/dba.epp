@@ -860,8 +860,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 			if (relation->rel_blobs_level_0 || relation->rel_blobs_level_1 || relation->rel_blobs_level_2)
 			{
-				dba_print(48, SafeArg() << relation->rel_blobs_level_0 + relation->rel_blobs_level_1 + 
-											relation->rel_blobs_level_2 << relation->rel_blob_space << 
+				dba_print(48, SafeArg() << (relation->rel_blobs_level_0 + relation->rel_blobs_level_1 + 
+											relation->rel_blobs_level_2) << relation->rel_blob_space << 
 											relation->rel_blob_pages);
 				// msg 48: "    Blobs: @1, total length: @2, blob pages: @3
 

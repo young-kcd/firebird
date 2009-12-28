@@ -465,7 +465,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 		mark_full(tdbb, org_rpb);
 	}
 	else
-	CCH_RELEASE(tdbb, &org_rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &org_rpb->getWindow(tdbb));
 
 	return true;
 }
@@ -1551,7 +1551,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 #endif
 
 	// If i'm a sweeper i don't need to look at swept pages. Also i should
-	// check processed pages if they was swept.
+	// check processed pages if they were swept.
 
 	const bool sweeper = (tdbb->tdbb_flags & TDBB_sweeper);
 
@@ -1581,7 +1581,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 			const SLONG page_number = ppage->ppg_page[slot];
 			const UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 			if (page_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary) &&
-				(sweeper && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_swept) || !sweeper) )
+				(!sweeper || !PPG_DP_BIT_TEST(bits, slot, ppg_dp_swept)) )
 			{
 #ifdef SUPERSERVER_V2
 				// Perform sequential prefetch of relation's data pages.
@@ -1964,7 +1964,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 		mark_full(tdbb, rpb);
 	}
 	else
-	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 }
 
 
@@ -2257,7 +2257,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 		mark_full(tdbb, rpb);
 	}
 	else
-	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 }
 
 
@@ -2270,7 +2270,7 @@ static void check_swept(thread_db* tdbb, record_param* rpb)
  **************************************
  *
  * Functional description
- *	Check if data page have primary record versions only and all of them 
+ *	Check if data page has primary record versions only and all of them
  *	created by committed transactions. Such data page should be skipped
  *	by sweep as sweep have nothing to do on it.
  *	Mark swept data page and its pointer page by corresponding flag.
@@ -2284,29 +2284,29 @@ static void check_swept(thread_db* tdbb, record_param* rpb)
 	USHORT pp_sequence;
 	SSHORT slot, line;
 
-	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, 
+	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp,
 		line, slot, pp_sequence);
 
-	pointer_page* ppage = 
+	pointer_page* ppage =
 		get_pointer_page(tdbb, rpb->rpb_relation, relPages, window, pp_sequence, LCK_read);
 	if (!ppage)
 		return;
 
 	const UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 	if (slot >= ppage->ppg_count || !ppage->ppg_page[slot] ||
-		PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary | ppg_dp_swept)) 
+		PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary | ppg_dp_swept))
 	{
 		CCH_RELEASE(tdbb, window);
 		return;
 	}
 
-	data_page* dpage = (data_page*) 
+	data_page* dpage = (data_page*)
 		CCH_HANDOFF(tdbb, window, ppage->ppg_page[slot], LCK_write, pag_data);
 
 	for (int line = 0; line < dpage->dpg_count; ++line)
 	{
 		const data_page::dpg_repeat* index = &dpage->dpg_rpt[line];
-		if (index->dpg_offset) 
+		if (index->dpg_offset)
 		{
 			rhd* header = (rhd*) ((SCHAR*) dpage + index->dpg_offset);
 			if (header->rhd_transaction > transaction->tra_oldest ||
@@ -2622,7 +2622,7 @@ static void fragment(thread_db* tdbb,
 		mark_full(tdbb, rpb);
 	}
 	else
-	CCH_RELEASE(tdbb, window);
+		CCH_RELEASE(tdbb, window);
 }
 
 
@@ -2865,9 +2865,9 @@ static UCHAR* find_space(thread_db*	tdbb,
 	{
 		if (!(page->dpg_header.pag_flags & dpg_full))
 		{
-		CCH_MARK(tdbb, &rpb->getWindow(tdbb));
-		page->dpg_header.pag_flags |= dpg_full;
-		mark_full(tdbb, rpb);
+			CCH_MARK(tdbb, &rpb->getWindow(tdbb));
+			page->dpg_header.pag_flags |= dpg_full;
+			mark_full(tdbb, rpb);
 		}
 		else
 		{
@@ -3161,7 +3161,7 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
  **************************************
  *
  * Functional description
- *	Mark a fetched page and it's pointer page to indicate the page
+ *	Mark a fetched page and its pointer page to indicate the page
  *	is full.
  *
  **************************************/

@@ -2184,11 +2184,11 @@ static void par_procedure_parms(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	bool mismatch = false;
 	SLONG count = csb->csb_blr_reader.getWord();
+	const SLONG inputCount = procedure->prc_input_fields.getCount();
 
 	// Check to see if the parameter count matches
 	if (input_flag ?
-			(count < (SLONG(procedure->prc_input_fields.getCount()) - procedure->prc_defaults) ||
-				(count > SLONG(procedure->prc_input_fields.getCount())) ) :
+			(count < (inputCount - procedure->prc_defaults) || (count > inputCount) ) :
 			(count != SLONG(procedure->prc_output_fields.getCount())))
 	{
 		// They don't match...Hmmm...Its OK if we were dropping the procedure
@@ -2270,8 +2270,7 @@ static void par_procedure_parms(thread_db* tdbb,
 			// default value for parameter
 			if ((count <= 0) && input_flag)
 			{
-				Parameter* parameter = procedure->prc_input_fields[
-					procedure->prc_input_fields.getCount() - n];
+				Parameter* parameter = procedure->prc_input_fields[inputCount - n];
 				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
 			else {
@@ -2289,9 +2288,7 @@ static void par_procedure_parms(thread_db* tdbb,
 			prm_f->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
 		}
 	}
-	else if ((input_flag ?
-			procedure->prc_input_fields.getCount() : procedure->prc_output_fields.getCount()) &&
-		!mismatch)
+	else if ((input_flag ? inputCount : procedure->prc_output_fields.getCount()) && !mismatch)
 	{
 		error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
 						Arg::Str(procedure->getName().toString()));
