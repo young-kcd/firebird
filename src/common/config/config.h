@@ -109,7 +109,6 @@ class Config
 		KEY_LEGACY_HASH,
 		KEY_GC_POLICY,
 		KEY_REDIRECTION,
-		KEY_OLD_COLUMN_NAMING,
 		KEY_AUTH_METHOD,
 		KEY_DATABASE_GROWTH_INCREMENT,
 		KEY_FILESYSTEM_CACHE_THRESHOLD,
@@ -244,9 +243,6 @@ public:
 
 	// Redirection
 	static bool getRedirection();
-
-	// Use old column naming rules (does not conform to SQL standard)
-	static bool getOldColumnNaming();
 
 	// Use native, trusted or mixed authentication
 	static const char *getAuthMethod();

@@ -2077,8 +2077,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		}
 		break;
 	case nod_concatenate:
-		if ( !Config::getOldColumnNaming() )
-			name_alias = "CONCATENATION";
+		name_alias = "CONCATENATION";
 		break;
 	case nod_constant:
 	case nod_null:
@@ -2152,31 +2151,25 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		name_alias = "TRIM";
 		break;
 	case nod_cast:
-		if ( !Config::getOldColumnNaming() )
-			name_alias	= "CAST";
+		name_alias = "CAST";
 		break;
 	case nod_upcase:
-		if ( !Config::getOldColumnNaming() )
-            name_alias	= "UPPER";
+		name_alias = "UPPER";
 		break;
     case nod_lowcase:
-        name_alias	= "LOWER";
+        name_alias = "LOWER";
 		break;
 	case nod_current_date:
-		if ( !Config::getOldColumnNaming() )
-			name_alias = "CURRENT_DATE";
+		name_alias = "CURRENT_DATE";
 		break;
 	case nod_current_time:
-		if ( !Config::getOldColumnNaming() )
-			name_alias = "CURRENT_TIME";
+		name_alias = "CURRENT_TIME";
 		break;
 	case nod_current_timestamp:
-		if ( !Config::getOldColumnNaming() )
-			name_alias = "CURRENT_TIMESTAMP";
+		name_alias = "CURRENT_TIMESTAMP";
 		break;
 	case nod_extract:
-		if ( !Config::getOldColumnNaming() )
-            name_alias = "EXTRACT";
+		name_alias = "EXTRACT";
 		break;
 	case nod_strlen:
 		{
