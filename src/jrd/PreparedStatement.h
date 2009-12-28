@@ -45,6 +45,47 @@ class PreparedStatement : public Firebird::PermanentStorage
 {
 friend class ResultSet;
 
+private:
+	// Auxiliary class to use named parameters with C++ variables.
+	class Builder
+	{
+	public:
+		Builder(const Firebird::string& aText)
+			: text(aText),
+			  params(0)
+		{
+		}
+
+		Builder& operator <<(const char* chunk)
+		{
+			text += chunk;
+			return *this;
+		}
+
+		Builder& operator <<(unsigned& param)
+		{
+			text += "?";
+			param = ++params;
+			return *this;
+		}
+
+		operator const Firebird::string& ()
+		{
+			return text;
+		}
+
+	private:
+		Firebird::string text;
+		unsigned params;
+	};
+
+public:
+	// Create a PreparedStatement builder to use named parameters with C++ variables.
+	static Builder build(const Firebird::string& text)
+	{
+		return Builder(text);
+	}
+
 public:
 	PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& aPool, Attachment* attachment,
 		jrd_tra* transaction, const Firebird::string& text, bool isInternalRequest);

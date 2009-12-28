@@ -287,9 +287,12 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 	// Store RELATIONS and RELATION_FIELDS
 
-	Firebird::string sql("insert into rdb$relations (rdb$relation_id, rdb$relation_name, "
-		"rdb$field_id, rdb$format, rdb$system_flag, rdb$dbkey_length, rdb$owner_name, "
-		"rdb$relation_type) values (?, ?, ?, 0, ?, 8, ?, ?)");
+	unsigned paramRelId, paramRelName, paramN, paramSystem, paramOwner, paramRelType;
+	Firebird::string sql(PreparedStatement::build("insert into rdb$relations (rdb$relation_id, "
+		"rdb$relation_name,  rdb$field_id, rdb$format, rdb$system_flag, rdb$dbkey_length, "
+		"rdb$owner_name,  rdb$relation_type) values (") <<
+		paramRelId << ", " << paramRelName << ", " << paramN << ", 0, " << paramSystem <<
+		", 8, " << paramOwner << ", " << paramRelType << ")");
 	Firebird::AutoPtr<PreparedStatement> ps(tdbb->getAttachment()->prepareStatement(tdbb,
 		*tdbb->getDefaultPool(), transaction, sql));
 
@@ -298,21 +301,19 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	{
 		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
-			const int* pFld    = fld;
+			const int* pFld = fld;
 			const int* pRelFld = relfld;
 			store_relation_field(tdbb, pFld, pRelFld, n, &handle1);
 			n++;
 		}
 
-		unsigned col = 0;
-		ps->setInt(tdbb, ++col, relfld[RFLD_R_ID]);
-		ps->setString(tdbb, ++col, names[relfld[RFLD_R_NAME]]);
-		ps->setInt(tdbb, ++col, n);
-		ps->setInt(tdbb, ++col, RDB_system);
-		++col;
+		ps->setInt(tdbb, paramRelId, relfld[RFLD_R_ID]);
+		ps->setString(tdbb, paramRelName, names[relfld[RFLD_R_NAME]]);
+		ps->setInt(tdbb, paramN, n);
+		ps->setInt(tdbb, paramSystem, RDB_system);
 		if (string.hasData())
-			ps->setString(tdbb, col, string);
-		ps->setInt(tdbb, ++col, relfld[RFLD_R_TYPE]);
+			ps->setString(tdbb, paramOwner, string);
+		ps->setInt(tdbb, paramRelType, relfld[RFLD_R_TYPE]);
 
 		ps->execute(tdbb, transaction);
 	}
@@ -329,11 +330,13 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	handle1 = NULL;
 
 	// Store DATABASE record
-	sql = "insert into rdb$database (rdb$relation_id, rdb$character_set_name) values (?, ?)";
-	ps.reset(tdbb->getAttachment()->prepareStatement(tdbb,
-		*tdbb->getDefaultPool(), transaction, sql));
-	ps->setInt(tdbb, 1, USER_DEF_REL_INIT_ID);
-	ps->setString(tdbb, 2, (string2.hasData() ? string2 : DEFAULT_DB_CHARACTER_SET_NAME));
+	unsigned paramCharSet;
+	sql = PreparedStatement::build("insert into rdb$database (rdb$relation_id, "
+		"rdb$character_set_name) values (") <<
+		paramRelId << ", " << paramCharSet << ")";
+	ps.reset(tdbb->getAttachment()->prepareStatement(tdbb, *tdbb->getDefaultPool(), transaction, sql));
+	ps->setInt(tdbb, paramRelId, USER_DEF_REL_INIT_ID);
+	ps->setString(tdbb, paramCharSet, (string2.hasData() ? string2 : DEFAULT_DB_CHARACTER_SET_NAME));
 	ps->execute(tdbb, transaction);
 
 	// Store ADMIN_ROLE record
