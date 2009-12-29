@@ -77,10 +77,10 @@ static void* stopAddress = (void*) 0x2254938;
 ***/
 
 #ifdef MEM_DEBUG
-static const int GUARD_BYTES = sizeof(long); // * 2048;
-static const UCHAR INIT_BYTE = 	0xCC;
-static const UCHAR GUARD_BYTE = 0xDD;
-static const UCHAR DEL_BYTE	=	0xEE;
+static const int GUARD_BYTES	= Firebird::ALLOC_ALIGNMENT; // * 2048;
+static const UCHAR INIT_BYTE	= 0xCC;
+static const UCHAR GUARD_BYTE	= 0xDD;
+static const UCHAR DEL_BYTE		= 0xEE;
 #else
 static const int GUARD_BYTES = 0;
 #endif
