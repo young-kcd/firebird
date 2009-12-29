@@ -809,6 +809,7 @@ static const struct {
 	{336068873, -901}, /* 265 dyn_funcsignat_package */
 	{336068874, -901}, /* 266 dyn_procsignat_package */
 	{336068875, -901}, /* 267 dyn_defvaldecl_package */
+	{336068877, -901}, /* 269 dyn_package_body_exists */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

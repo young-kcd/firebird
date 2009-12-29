@@ -821,6 +821,7 @@ const
 	gds_dyn_funcsignat_package           = 336068873;
 	gds_dyn_procsignat_package           = 336068874;
 	gds_dyn_defvaldecl_package           = 336068875;
+	gds_dyn_package_body_exists          = 336068877;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;

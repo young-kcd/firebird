@@ -1628,6 +1628,8 @@ C --
       PARAMETER (GDS__dyn_procsignat_package           = 336068874)
       INTEGER*4 GDS__dyn_defvaldecl_package          
       PARAMETER (GDS__dyn_defvaldecl_package           = 336068875)
+      INTEGER*4 GDS__dyn_package_body_exists         
+      PARAMETER (GDS__dyn_package_body_exists          = 336068877)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

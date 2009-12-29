@@ -455,6 +455,7 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		switch ((*items)[i].type)
 		{
 			case Item::FUNCTION:
+				(*items)[i].function->packageOwner = owner;
 				(*items)[i].function->execute(tdbb, transaction);
 				break;
 
@@ -789,8 +790,6 @@ DdlNode* CreatePackageBodyNode::internalDsqlPass()
 						fun->create = true;
 						if (arrays[i] == items)
 							fun->alter = true;
-						else
-							fun->privateScope = true;
 						itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) fun;
 						fun->dsqlPass(itemScratch);
 					}
@@ -803,8 +802,6 @@ DdlNode* CreatePackageBodyNode::internalDsqlPass()
 						proc->create = true;
 						if (arrays[i] == items)
 							proc->alter = true;
-						else
-							proc->privateScope = true;
 						itemStatement->getDdlNode()->nod_arg[0] = (dsql_nod*) proc;
 						proc->dsqlPass(itemScratch);
 					}
@@ -831,9 +828,17 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		PKG IN RDB$PACKAGES
 		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
 	{
+		if (!PKG.RDB$PACKAGE_BODY_SOURCE.NULL)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(isc_dyn_package_body_exists) << Arg::Str(name));
+		}
+
 		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
 
 		MODIFY PKG
+			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = FALSE;
 			attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_BODY_SOURCE, source);
 		END_MODIFY
 
@@ -849,6 +854,10 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			Arg::Gds(isc_no_meta_update) <<
 			Arg::Gds(isc_dyn_package_not_found) << Arg::Str(name));
 	}
+
+	SortedObjectsArray<Signature> headerFuncs(getPool());
+	SortedObjectsArray<Signature> headerProcs(getPool());
+	collectPackagedItems(tdbb, transaction, name, headerFuncs, headerProcs, false);
 
 	SortedObjectsArray<Signature> existingFuncs(getPool());
 	SortedObjectsArray<Signature> existingProcs(getPool());
@@ -869,12 +878,27 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			switch ((*arrays[i])[j].type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
-					(*arrays[i])[j].function->execute(tdbb, transaction);
+					{
+						CreateAlterFunctionNode* func = (*arrays[i])[j].function;
+
+						if (arrays[i] == items)
+							func->privateScope = !headerFuncs.exist(Signature(func->name));
+
+						func->packageOwner = owner;
+						func->execute(tdbb, transaction);
+					}
 					break;
 
 				case CreateAlterPackageNode::Item::PROCEDURE:
-					(*arrays[i])[j].procedure->packageOwner = owner;
-					(*arrays[i])[j].procedure->execute(tdbb, transaction);
+					{
+						CreateAlterProcedureNode* proc = (*arrays[i])[j].procedure;
+
+						if (arrays[i] == items)
+							proc->privateScope = !headerProcs.exist(Signature(proc->name));
+
+						proc->packageOwner = owner;
+						proc->execute(tdbb, transaction);
+					}
 					break;
 			}
 		}
@@ -1031,10 +1055,12 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		else
 		{
 			MODIFY FUN
+				FUN.RDB$FUNCTION_TYPE.NULL = TRUE;
+				FUN.RDB$FUNCTION_BLR.NULL = TRUE;
+				FUN.RDB$DEBUG_INFO.NULL = TRUE;
 				FUN.RDB$MODULE_NAME.NULL = TRUE;
 				FUN.RDB$ENGINE_NAME.NULL = TRUE;
 				FUN.RDB$ENTRYPOINT.NULL = TRUE;
-				FUN.RDB$FUNCTION_BLR.NULL = TRUE;
 			END_MODIFY
 		}
 	}
@@ -1056,7 +1082,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		else
 		{
 			MODIFY PRC
-				PRC.RDB$PROCEDURE_TYPE = (SSHORT) prc_legacy;
+				PRC.RDB$PROCEDURE_TYPE.NULL = TRUE;
 				PRC.RDB$PROCEDURE_BLR.NULL = TRUE;
 				PRC.RDB$DEBUG_INFO.NULL = TRUE;
 				PRC.RDB$ENGINE_NAME.NULL = TRUE;

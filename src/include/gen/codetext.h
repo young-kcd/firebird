@@ -810,6 +810,7 @@ static const struct {
 	{"dyn_funcsignat_package", 336068873},
 	{"dyn_procsignat_package", 336068874},
 	{"dyn_defvaldecl_package", 336068875},
+	{"dyn_package_body_exists", 336068877},
 	{"gbak_unknown_switch", 336330753},
 	{"gbak_page_size_missing", 336330754},
 	{"gbak_page_size_toobig", 336330755},

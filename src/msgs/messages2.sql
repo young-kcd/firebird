@@ -1808,6 +1808,7 @@ COMMIT WORK;
 ('dyn_procsignat_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 266, NULL, 'Procedure @1 has a signature mismatch on package body @2', NULL, NULL);
 ('dyn_defvaldecl_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 267, NULL, 'Default values for parameters are allowed only in declaration of packaged procedure @1.@2', NULL, NULL);
 ('dyn_dup_function', 'DYN_define_function', 'dyn_def.epp', NULL, 8, 268, NULL, 'Function @1 already exists', NULL, NULL);
+('dyn_package_body_exists', NULL, 'DdlNodes.epp/PackageNodes.epp', NULL, 8, 269, NULL, 'Package body @1 already exists', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

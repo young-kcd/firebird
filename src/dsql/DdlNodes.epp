@@ -1811,6 +1811,14 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 				P.RDB$PROCEDURE_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 				if (!P.RDB$PROCEDURE_SOURCE.NULL)
 					attachment->storeMetaDataBlob(tdbb, transaction, &P.RDB$PROCEDURE_SOURCE, source);
+
+				if (package.hasData())
+				{
+					P.RDB$PRIVATE_FLAG.NULL = FALSE;
+					P.RDB$PRIVATE_FLAG = privateScope;
+				}
+				else
+					P.RDB$PRIVATE_FLAG.NULL = TRUE;
 			}
 
 			if (external)
