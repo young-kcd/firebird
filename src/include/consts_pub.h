@@ -529,8 +529,8 @@
 
 #define isc_dyn_begin                     2
 #define isc_dyn_end                       3
-#define isc_dyn_if                        4
-#define isc_dyn_def_database              5
+//#define isc_dyn_if                        4
+#define isc_dyn_def_database              5 // only used in pretty.cpp; nobody generates it
 #define isc_dyn_def_global_fld            6
 #define isc_dyn_def_local_fld             7
 #define isc_dyn_def_idx                   8
@@ -538,7 +538,7 @@
 #define isc_dyn_def_sql_fld               10
 #define isc_dyn_def_view                  12
 #define isc_dyn_def_trigger               15
-#define isc_dyn_def_security_class        120
+#define isc_dyn_def_security_class        120 // only used in pretty.cpp; nobody generates it
 #define isc_dyn_def_dimension             140
 #define isc_dyn_def_generator             24
 #define isc_dyn_def_function              25
@@ -554,18 +554,18 @@
 #define isc_dyn_mod_local_fld             14
 #define isc_dyn_mod_sql_fld		  216
 #define isc_dyn_mod_view                  16
-#define isc_dyn_mod_security_class        122
-#define isc_dyn_mod_trigger               113
-#define isc_dyn_mod_trigger_msg           28
-#define isc_dyn_delete_database           18
+#define isc_dyn_mod_security_class        122 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_mod_trigger               113 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_mod_trigger_msg           28 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_delete_database           18 // only used in pretty.cpp; nobody generates it
 #define isc_dyn_delete_rel                19
 #define isc_dyn_delete_global_fld         20
 #define isc_dyn_delete_local_fld          21
 #define isc_dyn_delete_idx                22
-#define isc_dyn_delete_security_class     123
+#define isc_dyn_delete_security_class     123 // only used in pretty.cpp; nobody generates it
 #define isc_dyn_delete_dimensions         143
-#define isc_dyn_delete_trigger            23
-#define isc_dyn_delete_trigger_msg        29
+#define isc_dyn_delete_trigger            23 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_delete_trigger_msg        29 // only used in pretty.cpp; nobody generates it
 #define isc_dyn_delete_filter             32
 #define isc_dyn_delete_function           33
 #define isc_dyn_delete_shadow             35
@@ -575,11 +575,11 @@
 #define isc_dyn_def_primary_key           37
 #define isc_dyn_def_foreign_key           38
 #define isc_dyn_def_unique                40
-#define isc_dyn_def_procedure             164
-#define isc_dyn_delete_procedure          165
-#define isc_dyn_def_parameter             135
-#define isc_dyn_delete_parameter          136
-#define isc_dyn_mod_procedure             175
+#define isc_dyn_def_procedure             164 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_delete_procedure          165 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_def_parameter             135 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_delete_parameter          136 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_mod_procedure             175 // only used in pretty.cpp; nobody generates it
 /* Deprecated.
 #define isc_dyn_def_log_file              176
 #define isc_dyn_def_cache_file            180
@@ -616,13 +616,13 @@
 #define isc_dyn_rel_name                  50
 #define isc_dyn_fld_name                  51
 #define isc_dyn_new_fld_name              215
-#define isc_dyn_idx_name                  52
+//#define isc_dyn_idx_name                  52
 #define isc_dyn_description               53
 #define isc_dyn_security_class            54
 #define isc_dyn_system_flag               55
 #define isc_dyn_update_flag               56
 #define isc_dyn_prc_name                  166
-#define isc_dyn_prm_name                  137
+//#define isc_dyn_prm_name                  137
 #define isc_dyn_sql_object                196
 #define isc_dyn_fld_character_set_name    174
 #define isc_dyn_pkg_name                  247
@@ -632,13 +632,13 @@
 /* Relation specific attributes */
 /********************************/
 
-#define isc_dyn_rel_dbkey_length          61
-#define isc_dyn_rel_store_trig            62
-#define isc_dyn_rel_modify_trig           63
-#define isc_dyn_rel_erase_trig            64
-#define isc_dyn_rel_store_trig_source     65
-#define isc_dyn_rel_modify_trig_source    66
-#define isc_dyn_rel_erase_trig_source     67
+//#define isc_dyn_rel_dbkey_length          61
+//#define isc_dyn_rel_store_trig            62
+//#define isc_dyn_rel_modify_trig           63
+//#define isc_dyn_rel_erase_trig            64
+//#define isc_dyn_rel_store_trig_source     65
+//#define isc_dyn_rel_modify_trig_source    66
+//#define isc_dyn_rel_erase_trig_source     67
 #define isc_dyn_rel_ext_file              68
 #define isc_dyn_rel_sql_protection        69
 #define isc_dyn_rel_constraint            162
@@ -707,17 +707,17 @@
 #define isc_dyn_trg_type                  110
 #define isc_dyn_trg_blr                   111
 #define isc_dyn_trg_source                112
-#define isc_dyn_trg_name                  114
+//#define isc_dyn_trg_name                  114
 #define isc_dyn_trg_sequence              115
 #define isc_dyn_trg_inactive              116
-#define isc_dyn_trg_msg_number            117
+//#define isc_dyn_trg_msg_number            117
 #define isc_dyn_trg_msg                   118
 
 /**************************************/
 /* Security Class specific attributes */
 /**************************************/
 
-#define isc_dyn_scl_acl                   121
+#define isc_dyn_scl_acl                   121 // only used in pretty.cpp; nobody generates it
 #define isc_dyn_grant_user                130
 #define isc_dyn_grant_user_explicit       219
 #define isc_dyn_grant_proc                186
@@ -744,10 +744,10 @@
 /* File specific attributes */
 /****************************/
 
-#define isc_dyn_file_name                 125
+//#define isc_dyn_file_name                 125
 #define isc_dyn_file_start                126
 #define isc_dyn_file_length               127
-#define isc_dyn_shadow_number             128
+//#define isc_dyn_shadow_number             128
 #define isc_dyn_shadow_man_auto           129
 #define isc_dyn_shadow_conditional        130
 
@@ -777,54 +777,54 @@
 /********************************/
 
 #define isc_dyn_function_name             145
-#define isc_dyn_function_type             146
+//#define isc_dyn_function_type             146
 #define isc_dyn_func_module_name          147
 #define isc_dyn_func_entry_point          148
 #define isc_dyn_func_return_argument      149
-#define isc_dyn_func_arg_position         150
+//#define isc_dyn_func_arg_position         150
 #define isc_dyn_func_mechanism            151
 #define isc_dyn_filter_in_subtype         152
 #define isc_dyn_filter_out_subtype        153
 
 
-#define isc_dyn_description2              154
-#define isc_dyn_fld_computed_source2      155
-#define isc_dyn_fld_edit_string2          156
-#define isc_dyn_fld_query_header2         157
-#define isc_dyn_fld_validation_source2    158
-#define isc_dyn_trg_msg2                  159
-#define isc_dyn_trg_source2               160
-#define isc_dyn_view_source2              161
-#define isc_dyn_xcp_msg2                  184
+//#define isc_dyn_description2              154
+//#define isc_dyn_fld_computed_source2      155
+//#define isc_dyn_fld_edit_string2          156
+//#define isc_dyn_fld_query_header2         157
+//#define isc_dyn_fld_validation_source2    158
+//#define isc_dyn_trg_msg2                  159
+//#define isc_dyn_trg_source2               160
+//#define isc_dyn_view_source2              161
+//#define isc_dyn_xcp_msg2                  184
 
 /*********************************/
 /* Generator specific attributes */
 /*********************************/
 
-#define isc_dyn_generator_name            95
-#define isc_dyn_generator_id              96
+//#define isc_dyn_generator_name            95
+//#define isc_dyn_generator_id              96
 
 /*********************************/
 /* Procedure specific attributes */
 /*********************************/
 
-#define isc_dyn_prc_inputs                167
-#define isc_dyn_prc_outputs               168
-#define isc_dyn_prc_source                169
-#define isc_dyn_prc_blr                   170
-#define isc_dyn_prc_source2               171
-#define isc_dyn_prc_type                  239
+//#define isc_dyn_prc_inputs                167
+//#define isc_dyn_prc_outputs               168
+#define isc_dyn_prc_source                169 // only used in pretty.cpp; nobody generates it
+#define isc_dyn_prc_blr                   170 // only used in pretty.cpp; nobody generates it
+//#define isc_dyn_prc_source2               171
+//#define isc_dyn_prc_type                  239
 
-#define isc_dyn_prc_t_selectable          1
-#define isc_dyn_prc_t_executable          2
+//#define isc_dyn_prc_t_selectable          1
+//#define isc_dyn_prc_t_executable          2
 
 /*********************************/
 /* Parameter specific attributes */
 /*********************************/
 
-#define isc_dyn_prm_number                138
-#define isc_dyn_prm_type                  139
-#define isc_dyn_prm_mechanism             241
+//#define isc_dyn_prm_number                138
+//#define isc_dyn_prm_type                  139
+//#define isc_dyn_prm_mechanism             241
 
 /********************************/
 /* Relation specific attributes */
@@ -859,12 +859,12 @@
 
 // New for comments in objects.
 #define isc_dyn_mod_function              224
-#define isc_dyn_mod_filter                225
-#define isc_dyn_mod_generator             226
-#define isc_dyn_mod_sql_role              227
-#define isc_dyn_mod_charset               228
-#define isc_dyn_mod_collation             229
-#define isc_dyn_mod_prc_parameter         230
+//#define isc_dyn_mod_filter                225
+//#define isc_dyn_mod_generator             226
+//#define isc_dyn_mod_sql_role              227
+//#define isc_dyn_mod_charset               228
+//#define isc_dyn_mod_collation             229
+//#define isc_dyn_mod_prc_parameter         230
 
 /***********************/
 /* collation values    */
@@ -884,8 +884,8 @@
 #define isc_dyn_mapping								243
 #define isc_dyn_map_role							1
 #define isc_dyn_unmap_role							2
-#define isc_dyn_map_user							3
-#define isc_dyn_unmap_user							4
+//#define isc_dyn_map_user							3
+//#define isc_dyn_unmap_user							4
 #define isc_dyn_automap_role						5
 #define isc_dyn_autounmap_role						6
 
@@ -906,7 +906,7 @@
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
-#define isc_dyn_last_dyn_value            253
+//#define isc_dyn_last_dyn_value            253
 
 /******************************************/
 /* Array slice description language (SDL) */
@@ -924,26 +924,26 @@
 #define isc_sdl_tiny_integer              9
 #define isc_sdl_short_integer             10
 #define isc_sdl_long_integer              11
-#define isc_sdl_literal                   12
+//#define isc_sdl_literal                   12
 #define isc_sdl_add                       13
 #define isc_sdl_subtract                  14
 #define isc_sdl_multiply                  15
 #define isc_sdl_divide                    16
-#define isc_sdl_negate                    17
-#define isc_sdl_eql                       18
-#define isc_sdl_neq                       19
-#define isc_sdl_gtr                       20
-#define isc_sdl_geq                       21
-#define isc_sdl_lss                       22
-#define isc_sdl_leq                       23
-#define isc_sdl_and                       24
-#define isc_sdl_or                        25
-#define isc_sdl_not                       26
-#define isc_sdl_while                     27
-#define isc_sdl_assignment                28
-#define isc_sdl_label                     29
-#define isc_sdl_leave                     30
-#define isc_sdl_begin                     31
+#define isc_sdl_negate                    17 // only used in pretty.cpp; nobody generates it
+//#define isc_sdl_eql                       18
+//#define isc_sdl_neq                       19
+//#define isc_sdl_gtr                       20
+//#define isc_sdl_geq                       21
+//#define isc_sdl_lss                       22
+//#define isc_sdl_leq                       23
+//#define isc_sdl_and                       24
+//#define isc_sdl_or                        25
+//#define isc_sdl_not                       26
+//#define isc_sdl_while                     27
+//#define isc_sdl_assignment                28
+//#define isc_sdl_label                     29
+//#define isc_sdl_leave                     30
+#define isc_sdl_begin                     31 // only used in pretty.cpp; nobody generates it
 #define isc_sdl_end                       32
 #define isc_sdl_do3                       33
 #define isc_sdl_do2                       34
@@ -954,9 +954,9 @@
 /* International text interpretation values */
 /********************************************/
 
-#define isc_interp_eng_ascii              0
-#define isc_interp_jpn_sjis               5
-#define isc_interp_jpn_euc                6
+//#define isc_interp_eng_ascii              0
+//#define isc_interp_jpn_sjis               5
+//#define isc_interp_jpn_euc                6
 
 /*****************/
 /* Blob Subtypes */
@@ -981,17 +981,17 @@
 
 /* the range 20-30 is reserved for dBASE and Paradox types */
 
-#define isc_blob_formatted_memo           20
-#define isc_blob_paradox_ole              21
-#define isc_blob_graphic                  22
-#define isc_blob_dbase_ole                23
-#define isc_blob_typed_binary             24
+//#define isc_blob_formatted_memo           20
+//#define isc_blob_paradox_ole              21
+//#define isc_blob_graphic                  22
+//#define isc_blob_dbase_ole                23
+//#define isc_blob_typed_binary             24
 
 /* Deprecated definitions maintained for compatibility only */
 
-#define isc_info_db_SQL_dialect           62
-#define isc_dpb_SQL_dialect               63
-#define isc_dpb_set_db_SQL_dialect        65
+//#define isc_info_db_SQL_dialect           62
+//#define isc_dpb_SQL_dialect               63
+//#define isc_dpb_set_db_SQL_dialect        65
 
 /***********************************/
 /* Masks for fb_shutdown_callback  */
