@@ -4646,7 +4646,7 @@ static processing_state frontend(const TEXT* statement)
 
 	case FrontOptions::create:
 		if (!strcmp(parms[1], "DATABASE") ||
-			!strcmp(parms[1], "SCHEMA") && isqlGlob.major_ods < ODS_VERSION12)
+			!strcmp(parms[1], "SCHEMA") && isqlGlob.major_ods > 0 && isqlGlob.major_ods < ODS_VERSION12)
 		{
 			ret = create_db(cmd, lparms[2]);
 		}
@@ -4656,7 +4656,7 @@ static processing_state frontend(const TEXT* statement)
 
 	case FrontOptions::drop:
 		if (!strcmp(parms[1], "DATABASE") ||
-			!strcmp(parms[1], "SCHEMA") && isqlGlob.major_ods < ODS_VERSION12)
+			!strcmp(parms[1], "SCHEMA") && isqlGlob.major_ods > 0 && isqlGlob.major_ods < ODS_VERSION12)
 		{
 			if (*parms[2])
 				ret = ps_ERR;
