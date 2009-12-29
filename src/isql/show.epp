@@ -1473,7 +1473,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		{
 			if (*cmd[2])
 			{
-				FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
+				FOR FIRST 1 R IN RDB$RELATIONS
+					WITH R.RDB$RELATION_NAME EQ cmd[2]
+
 					key = NO_INDICES_ON_REL;
 				END_FOR
 				ON_ERROR
@@ -1602,7 +1604,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 			if (*cmd[2])
 			{
 				FOR FIRST 1 R IN RDB$RELATIONS
-					WITH R.RDB$RELATION_NAME EQ SQL_id_for_grant;
+					WITH R.RDB$RELATION_NAME EQ SQL_id_for_grant
 
 					key = NO_GRANT_ON_REL;
 				END_FOR
@@ -1623,7 +1625,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 				if (!key)
 				{
 					FOR FIRST 1 R IN RDB$ROLES
-					WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant;
+						WITH R.RDB$ROLE_NAME EQ SQL_id_for_grant
+
 						key = NO_GRANT_ON_ROL;
 					END_FOR
 					ON_ERROR
@@ -1671,7 +1674,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 			if (*cmd[2])
 			{
 				/*
-				FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
+				FOR FIRST 1 R IN RDB$RELATIONS
+					WITH R.RDB$RELATION_NAME EQ cmd[2]
+
 					key = NO_TRIGGERS_ON_REL;
 				END_FOR
 				ON_ERROR
@@ -1700,7 +1705,9 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		{
 			if (*cmd[2])
 			{
-				FOR FIRST 1 R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME EQ cmd[2];
+				FOR FIRST 1 R IN RDB$RELATIONS
+					WITH R.RDB$RELATION_NAME EQ cmd[2]
+
 					key = NO_CHECKS_ON_REL;
 				END_FOR
 				ON_ERROR
