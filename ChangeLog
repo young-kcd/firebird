@@ -1,3 +1,15 @@
+2009-12-29 11:54  dimitr
+
+	* firebird2/src/utilities/nbackup.cpp (1.95.2.5):
+
+	Support the -D switch on Windows.
+
+2009-12-28 15:53  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.6):
+
+	Update.
+
 2009-12-24 15:43  asfernandes
 
 	* firebird2/src/jrd/: Relation.h (1.12.2.2), met.epp (1.288.2.2),
