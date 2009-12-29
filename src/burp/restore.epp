@@ -167,7 +167,8 @@ USHORT	recompute_length(BurpGlobals* tdgbl, burp_rel*);
 bool	restore(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 void	restore_security_class(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 USHORT	get_view_base_relation_count(BurpGlobals* tdgbl, const TEXT*, USHORT, bool* error);
-void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT*, SINT64, const ISC_QUAD*);
+void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
+	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername);
 void	update_global_field(BurpGlobals* tdgbl);
 void	update_view_dbkey_lengths(BurpGlobals* tdgbl);
 void	general_on_error();
@@ -2240,90 +2241,210 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 	try
 	{
-		STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
-			X IN RDB$CHARACTER_SETS
-			X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
-			X.RDB$FORM_OF_USE.NULL = TRUE;
-			X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
-			X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
-			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$FUNCTION_NAME.NULL = TRUE;
-			X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
+		if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+		{
+			STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
+				X IN RDB$CHARACTER_SETS
+				X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
+				X.RDB$FORM_OF_USE.NULL = TRUE;
+				X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
+				X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
+				X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+				X.RDB$SYSTEM_FLAG = 0;
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+				X.RDB$DESCRIPTION.NULL = TRUE;
+				X.RDB$FUNCTION_NAME.NULL = TRUE;
+				X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
+				X.RDB$SECURITY_CLASS.NULL = TRUE;
+				X.RDB$OWNER_NAME.NULL = TRUE;
 
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-			{
-				switch (attribute)
+				skip_init(&scan_next_attr);
+				while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 				{
-				case att_charset_name:
-					X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$CHARACTER_SET_NAME);
-					BURP_verbose (msgVerbose_restore_charset, X.RDB$CHARACTER_SET_NAME);
-					break;
+					switch (attribute)
+					{
+					case att_charset_name:
+						X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$CHARACTER_SET_NAME);
+						BURP_verbose (msgVerbose_restore_charset, X.RDB$CHARACTER_SET_NAME);
+						break;
 
-				case att_charset_form:
-					X.RDB$FORM_OF_USE.NULL = FALSE;
-					GET_TEXT(X.RDB$FORM_OF_USE);
-					break;
+					case att_charset_form:
+						X.RDB$FORM_OF_USE.NULL = FALSE;
+						GET_TEXT(X.RDB$FORM_OF_USE);
+						break;
 
-				case att_charset_numchar:
-					X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
-					X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric(tdgbl);
-					break;
+					case att_charset_numchar:
+						X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
+						X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric(tdgbl);
+						break;
 
-				case att_charset_coll:
-					X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
-					break;
+					case att_charset_coll:
+						X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
+						break;
 
-				case att_charset_id:
-					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
-					break;
+					case att_charset_id:
+						X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+						X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+						break;
 
-				case att_charset_sysflag:
-					X.RDB$SYSTEM_FLAG.NULL = FALSE;
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
-					break;
+					case att_charset_sysflag:
+						X.RDB$SYSTEM_FLAG.NULL = FALSE;
+						X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+						break;
 
-				case att_charset_description:
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
-					break;
+					case att_charset_description:
+						X.RDB$DESCRIPTION.NULL = FALSE;
+						get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+						break;
 
-				case att_charset_funct:
-					X.RDB$FUNCTION_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$FUNCTION_NAME);
-					break;
+					case att_charset_funct:
+						X.RDB$FUNCTION_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$FUNCTION_NAME);
+						break;
 
-				case att_charset_bytes_char:
-					X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
-					X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric(tdgbl);
-					break;
+					case att_charset_bytes_char:
+						X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
+						X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric(tdgbl);
+						break;
 
-				default:
-					bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
-					// 213 character set
-					break;
+					case att_charset_security_class:
+						if (tdgbl->RESTORE_format >= 10)
+						{
+							GET_TEXT(X.RDB$SECURITY_CLASS);
+							X.RDB$SECURITY_CLASS.NULL = FALSE;
+						}
+						else
+							bad_attribute(scan_next_attr, attribute, msgErr_restore_charset);
+						break;
+
+					case att_charset_owner_name:
+						if (tdgbl->RESTORE_format >= 10)
+						{
+							GET_TEXT(X.RDB$OWNER_NAME);
+							X.RDB$OWNER_NAME.NULL = FALSE;
+						}
+						else
+							bad_attribute(scan_next_attr, attribute, msgErr_restore_charset);
+						break;
+
+					default:
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_charset);
+						// 213 character set
+						break;
+					}
 				}
-			}
 
-			if (X.RDB$CHARACTER_SET_ID.NULL && !X.RDB$DEFAULT_COLLATE_NAME.NULL &&
-				!X.RDB$CHARACTER_SET_NAME.NULL)
-			{
-				tdgbl->defaultCollations.add(
-					Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> >(
-						X.RDB$CHARACTER_SET_NAME, X.RDB$DEFAULT_COLLATE_NAME));
-				throw AbortException();	// prevent the STORE
-			}
+				if (X.RDB$CHARACTER_SET_ID.NULL && !X.RDB$DEFAULT_COLLATE_NAME.NULL &&
+					!X.RDB$CHARACTER_SET_NAME.NULL)
+				{
+					tdgbl->defaultCollations.add(
+						Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> >(
+							X.RDB$CHARACTER_SET_NAME, X.RDB$DEFAULT_COLLATE_NAME));
+					throw AbortException();	// prevent the STORE
+				}
 
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
+			END_STORE;
+			ON_ERROR
+				general_on_error ();
+			END_ERROR;
+		}
+		else
+		{
+			STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
+				X IN RDB$CHARACTER_SETS
+				X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
+				X.RDB$FORM_OF_USE.NULL = TRUE;
+				X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
+				X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
+				X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+				X.RDB$SYSTEM_FLAG = 0;
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+				X.RDB$DESCRIPTION.NULL = TRUE;
+				X.RDB$FUNCTION_NAME.NULL = TRUE;
+				X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
+
+				skip_init(&scan_next_attr);
+				while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+				{
+					switch (attribute)
+					{
+					case att_charset_name:
+						X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$CHARACTER_SET_NAME);
+						BURP_verbose (msgVerbose_restore_charset, X.RDB$CHARACTER_SET_NAME);
+						break;
+
+					case att_charset_form:
+						X.RDB$FORM_OF_USE.NULL = FALSE;
+						GET_TEXT(X.RDB$FORM_OF_USE);
+						break;
+
+					case att_charset_numchar:
+						X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
+						X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric(tdgbl);
+						break;
+
+					case att_charset_coll:
+						X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
+						break;
+
+					case att_charset_id:
+						X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+						X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+						break;
+
+					case att_charset_sysflag:
+						X.RDB$SYSTEM_FLAG.NULL = FALSE;
+						X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+						break;
+
+					case att_charset_description:
+						X.RDB$DESCRIPTION.NULL = FALSE;
+						get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+						break;
+
+					case att_charset_funct:
+						X.RDB$FUNCTION_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$FUNCTION_NAME);
+						break;
+
+					case att_charset_bytes_char:
+						X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
+						X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric(tdgbl);
+						break;
+
+					case att_charset_security_class:
+					case att_charset_owner_name:
+						if (tdgbl->RESTORE_format >= 10)
+							eat_text(tdgbl);
+						else
+							bad_attribute(scan_next_attr, attribute, msgErr_restore_charset);
+						break;
+
+					default:
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_charset);
+						// 213 character set
+						break;
+					}
+				}
+
+				if (X.RDB$CHARACTER_SET_ID.NULL && !X.RDB$DEFAULT_COLLATE_NAME.NULL &&
+					!X.RDB$CHARACTER_SET_NAME.NULL)
+				{
+					tdgbl->defaultCollations.add(
+						Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> >(
+							X.RDB$CHARACTER_SET_NAME, X.RDB$DEFAULT_COLLATE_NAME));
+					throw AbortException();	// prevent the STORE
+				}
+
+			END_STORE;
+			ON_ERROR
+				general_on_error ();
+			END_ERROR;
+		}
 	}
 	catch (const AbortException&)
 	{
@@ -2368,7 +2489,7 @@ bool get_chk_constraint(BurpGlobals* tdgbl)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 286);
+				bad_attribute(scan_next_attr, attribute, 286);
 				// msg 286 check constraint
 				break;
 			}
@@ -2396,8 +2517,124 @@ bool get_collation(BurpGlobals* tdgbl)
 	att_type		attribute;
 	scan_attr_t		scan_next_attr;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
 	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
+			X IN RDB$COLLATIONS
+			X.RDB$COLLATION_NAME.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$COLLATION_ATTRIBUTES.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$FUNCTION_NAME.NULL = TRUE;
+			X.RDB$BASE_COLLATION_NAME.NULL = TRUE;
+			X.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
+			X.RDB$SECURITY_CLASS.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+
+				case att_coll_name:
+					X.RDB$COLLATION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$COLLATION_NAME);
+					BURP_verbose(msgVerbose_restore_collation, X.RDB$COLLATION_NAME);
+					break;
+
+				case att_coll_id:
+					X.RDB$COLLATION_ID.NULL = FALSE;
+					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_coll_cs_id:
+					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_coll_attr:
+					X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
+					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_coll_subtype:	// No longer used: 93-11-15 DBS
+					// still present to handle V4 R&D gbak files
+					get_numeric(tdgbl);
+					break;
+
+				case att_coll_sysflag:
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_coll_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					break;
+
+				case att_coll_funct:
+					X.RDB$FUNCTION_NAME.NULL = FALSE;
+					GET_TEXT(X.RDB$FUNCTION_NAME);
+					break;
+
+				case att_coll_base_collation_name:
+					if (tdgbl->RESTORE_format >= 7)
+					{
+						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
+						GET_TEXT(X.RDB$BASE_COLLATION_NAME);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
+					break;
+
+				case att_coll_specific_attr:
+					if (tdgbl->RESTORE_format >= 7)
+					{
+						X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+						get_source_blob (tdgbl, X.RDB$SPECIFIC_ATTRIBUTES, false);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
+					break;
+
+				case att_coll_security_class:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$SECURITY_CLASS);
+						X.RDB$SECURITY_CLASS.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
+					break;
+
+				case att_coll_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$OWNER_NAME);
+						X.RDB$OWNER_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
+					break;
+
+				default:
+					bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
+					// Msg 215 collation
+					break;
+				}
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	{
+		// This includes DDL11_0 that doesn't know to ignore unknown system fields.
 		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
 			X IN RDB$COLLATIONS
 			X.RDB$COLLATION_NAME.NULL = TRUE;
@@ -2465,7 +2702,7 @@ bool get_collation(BurpGlobals* tdgbl)
 						GET_TEXT(X.RDB$BASE_COLLATION_NAME);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
 					break;
 
 				case att_coll_specific_attr:
@@ -2475,11 +2712,19 @@ bool get_collation(BurpGlobals* tdgbl)
 						get_source_blob (tdgbl, X.RDB$SPECIFIC_ATTRIBUTES, false);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
+					break;
+
+				case att_coll_security_class:
+				case att_coll_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+					bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
 					// Msg 215 collation
 					break;
 				}
@@ -2555,18 +2800,26 @@ bool get_collation(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 7)
 						eat_text(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
 					break;
 
 				case att_coll_specific_attr:
 					if (tdgbl->RESTORE_format >= 7)
 						eat_blob(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
+					break;
+
+				case att_coll_security_class:
+				case att_coll_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, msgErr_restore_collation);
+					bad_attribute(scan_next_attr, attribute, msgErr_restore_collation);
 					// Msg 215 collation
 					break;
 				}
@@ -3023,6 +3276,45 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 	return record;
 }
 
+// We have a corrupt backup, save the restore process from becoming useless.
+void fix_exception(BurpGlobals* tdgbl, const char* exc_name, scan_attr_t& scan_next_attr,
+	const att_type attribute, att_type& failed_attrib, UCHAR*& msg_ptr, ULONG& l2, bool& msg_seen)
+{
+	if (msg_seen && (tdgbl->RESTORE_format == 7 || tdgbl->RESTORE_format == 8))
+	{
+		if (!failed_attrib)
+		{
+			failed_attrib = attribute;
+			BURP_print(313, SafeArg() << failed_attrib << exc_name);
+		}
+
+		// Notice we use 1021 instead of 1023 because this is the maximum length
+		// for this field in v2.0 and v2.1 and they produce the corrupt backups.
+		const int FIELD_LIMIT = 1021;
+
+		const int remaining = FIELD_LIMIT - l2;
+		if (remaining < 1) // not enough space
+		{
+			bad_attribute(scan_next_attr, failed_attrib, 287);
+			return;
+		}
+		*msg_ptr++ = char(attribute); // (1)
+		UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, MIN(remaining - 1, 255));
+		if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
+		{
+			bad_attribute(scan_next_attr, failed_attrib, 287);
+			return;
+		}
+		l2 += rc_ptr - msg_ptr + 1; // + 1 because (1)
+		msg_ptr = rc_ptr;
+		*msg_ptr = 0;
+		if (l2 == FIELD_LIMIT)
+			msg_seen = false;
+	}
+	else
+		bad_attribute(scan_next_attr, attribute, 287); // msg 287 exception
+}
+
 bool get_exception(BurpGlobals* tdgbl)
 {
 /**************************************
@@ -3040,139 +3332,295 @@ bool get_exception(BurpGlobals* tdgbl)
 	ULONG		l2 = 0;
 	scan_attr_t		scan_next_attr;
 
-	STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
-		X IN RDB$EXCEPTIONS
-		X.RDB$EXCEPTION_NAME.NULL = TRUE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$MESSAGE.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG = 0;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
+			X IN RDB$EXCEPTIONS
+			X.RDB$EXCEPTION_NAME.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$MESSAGE.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$SECURITY_CLASS.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
 
-		att_type failed_attrib = att_end;
-		bool msg_seen = false; // only for att_exception_msg, not att_exception_msg2
-		UCHAR* msg_ptr = reinterpret_cast<UCHAR*>(X.RDB$MESSAGE);
+			att_type failed_attrib = att_end;
+			bool msg_seen = false; // only for att_exception_msg, not att_exception_msg2
+			UCHAR* msg_ptr = reinterpret_cast<UCHAR*>(X.RDB$MESSAGE);
 
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
-			case att_exception_name:
-				if (!X.RDB$EXCEPTION_NAME.NULL)
-					BURP_error(311, true, SafeArg() << att_exception_name << X.RDB$EXCEPTION_NAME);
-				else
+				switch (attribute)
 				{
-					const ULONG l = GET_TEXT(X.RDB$EXCEPTION_NAME);
-					X.RDB$EXCEPTION_NAME.NULL = FALSE;
-					MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
-					BURP_verbose (199, temp);
-					// msg 199 restoring exception %s
-				}
-				break;
-
-			case att_exception_description:
-				if (!X.RDB$DESCRIPTION.NULL)
-					BURP_error(311, true, SafeArg() << att_exception_description << X.RDB$EXCEPTION_NAME);
-				else
-				{
-					msg_seen = false;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-				}
-				break;
-
-			case att_exception_description2:
-				if (!X.RDB$DESCRIPTION.NULL)
-					BURP_error(311, true, SafeArg() << att_exception_description2 << X.RDB$EXCEPTION_NAME);
-				else
-				{
-					msg_seen = false;
-					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
-					X.RDB$DESCRIPTION.NULL = FALSE;
-				}
-				break;
-
-			case att_exception_msg:
-				if (msg_seen)
-					BURP_error(311, true, SafeArg() << att_exception_msg << X.RDB$EXCEPTION_NAME);
-				else if (!X.RDB$MESSAGE.NULL)
-				{
-					msg_seen = true;
-					BURP_print(312, SafeArg() << att_exception_msg << X.RDB$EXCEPTION_NAME);
-					eat_text(tdgbl);
-				}
-				else
-				{
-					msg_seen = true;
-					l2 = GET_TEXT(X.RDB$MESSAGE);
-					msg_ptr += l2;
-					X.RDB$MESSAGE.NULL = FALSE;
-				}
-				break;
-
-			case att_exception_msg2:
-				if (msg_seen)
-					BURP_error(311, true, SafeArg() << att_exception_msg2 << X.RDB$EXCEPTION_NAME);
-				else if (!X.RDB$MESSAGE.NULL)
-				{
-					BURP_print(312, SafeArg() << att_exception_msg2 << X.RDB$EXCEPTION_NAME);
-					eat_text2(tdgbl);
-				}
-				else
-				{
-					GET_TEXT2(X.RDB$MESSAGE);
-					X.RDB$MESSAGE.NULL = FALSE;
-				}
-				break;
-
-			default:
-				if (msg_seen && (tdgbl->RESTORE_format == 7 || tdgbl->RESTORE_format == 8))
-				{
-					 // we have a corrupt backup
-					if (!failed_attrib)
+				case att_exception_name:
+					if (!X.RDB$EXCEPTION_NAME.NULL)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
 					{
-						failed_attrib = attribute;
-						BURP_print(313, SafeArg() << failed_attrib << X.RDB$EXCEPTION_NAME);
+						const ULONG l = GET_TEXT(X.RDB$EXCEPTION_NAME);
+						X.RDB$EXCEPTION_NAME.NULL = FALSE;
+						MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
+						BURP_verbose (199, temp);
+						// msg 199 restoring exception %s
 					}
+					break;
 
-					// Notice we use 1021 instead of 1023 because this is the maximum length
-					// for this field in v2.0 and v2.1 and they produce the corrupt backups.
-					const int FIELD_LIMIT = 1021;
-
-					const int remaining = FIELD_LIMIT - l2;
-					if (remaining < 1) // not enough space
+				case att_exception_description:
+					if (!X.RDB$DESCRIPTION.NULL)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
 					{
-						bad_attribute(scan_next_attr, failed_attrib, 287);
-						break;
-					}
-					*msg_ptr++ = char(attribute); // (1)
-					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, MIN(remaining - 1, 255));
-					if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
-					{
-						bad_attribute(scan_next_attr, failed_attrib, 287);
-						break;
-					}
-					l2 += rc_ptr - msg_ptr + 1; // + 1 because (1)
-					msg_ptr = rc_ptr;
-					*msg_ptr = 0;
-					if (l2 == FIELD_LIMIT)
 						msg_seen = false;
+						get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_description2:
+					if (!X.RDB$DESCRIPTION.NULL)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
+					{
+						msg_seen = false;
+						get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_msg:
+					if (msg_seen)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else if (!X.RDB$MESSAGE.NULL)
+					{
+						msg_seen = true;
+						BURP_print(312, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+						eat_text(tdgbl);
+					}
+					else
+					{
+						msg_seen = true;
+						l2 = GET_TEXT(X.RDB$MESSAGE);
+						msg_ptr += l2;
+						X.RDB$MESSAGE.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_msg2:
+					if (msg_seen)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else if (!X.RDB$MESSAGE.NULL)
+					{
+						BURP_print(312, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+						eat_text2(tdgbl);
+					}
+					else
+					{
+						GET_TEXT2(X.RDB$MESSAGE);
+						X.RDB$MESSAGE.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_security_class:
+					if (!X.RDB$SECURITY_CLASS.NULL)
+					{
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					}
+					else
+					{
+						msg_seen = false;
+						if (tdgbl->RESTORE_format >= 10)
+						{
+							GET_TEXT(X.RDB$SECURITY_CLASS);
+							X.RDB$SECURITY_CLASS.NULL = FALSE;
+						}
+						else
+						{
+							fix_exception(tdgbl, X.RDB$EXCEPTION_NAME, scan_next_attr, attribute,
+								failed_attrib, msg_ptr, l2, msg_seen);
+						}
+					}
+					break;
+
+				case att_exception_owner_name:
+					if (!X.RDB$OWNER_NAME.NULL)
+					{
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					}
+					else
+					{
+						msg_seen = false;
+						if (tdgbl->RESTORE_format >= 10)
+						{
+							GET_TEXT(X.RDB$OWNER_NAME);
+							X.RDB$OWNER_NAME.NULL = FALSE;
+						}
+						else
+						{
+							fix_exception(tdgbl, X.RDB$EXCEPTION_NAME, scan_next_attr, attribute,
+								failed_attrib, msg_ptr, l2, msg_seen);
+						}
+					}
+					break;
+
+				default:
+					// do we have a corrupt backup?
+					fix_exception(tdgbl, X.RDB$EXCEPTION_NAME, scan_next_attr, attribute,
+						failed_attrib, msg_ptr, l2, msg_seen);
+					break;
 				}
-				else
-					bad_attribute(scan_next_attr, attribute, 287); // msg 287 exception
-				break;
 			}
-		}
-		// Versions prior to FB2.0 don't support a field longer than varchar(78).
-		// Versions prior to FB2.5 use a field length of 1021, not 1023.
-		if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
-			X.RDB$MESSAGE[78] = 0;
-		else if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
-			X.RDB$MESSAGE[1021] = 0;
-	END_STORE;
-	ON_ERROR
-		general_on_error ();
-	END_ERROR;
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
+			X IN RDB$EXCEPTIONS
+			X.RDB$EXCEPTION_NAME.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$MESSAGE.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
+			bool secclass_seen = false;
+			bool ownername_seen = false;
+
+			att_type failed_attrib = att_end;
+			bool msg_seen = false; // only for att_exception_msg, not att_exception_msg2
+			UCHAR* msg_ptr = reinterpret_cast<UCHAR*>(X.RDB$MESSAGE);
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_exception_name:
+					if (!X.RDB$EXCEPTION_NAME.NULL)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
+					{
+						const ULONG l = GET_TEXT(X.RDB$EXCEPTION_NAME);
+						X.RDB$EXCEPTION_NAME.NULL = FALSE;
+						MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
+						BURP_verbose (199, temp);
+						// msg 199 restoring exception %s
+					}
+					break;
+
+				case att_exception_description:
+					if (!X.RDB$DESCRIPTION.NULL)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
+					{
+						msg_seen = false;
+						get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_description2:
+					if (!X.RDB$DESCRIPTION.NULL)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
+					{
+						msg_seen = false;
+						get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_msg:
+					if (msg_seen)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else if (!X.RDB$MESSAGE.NULL)
+					{
+						msg_seen = true;
+						BURP_print(312, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+						eat_text(tdgbl);
+					}
+					else
+					{
+						msg_seen = true;
+						l2 = GET_TEXT(X.RDB$MESSAGE);
+						msg_ptr += l2;
+						X.RDB$MESSAGE.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_msg2:
+					if (msg_seen)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else if (!X.RDB$MESSAGE.NULL)
+					{
+						BURP_print(312, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+						eat_text2(tdgbl);
+					}
+					else
+					{
+						GET_TEXT2(X.RDB$MESSAGE);
+						X.RDB$MESSAGE.NULL = FALSE;
+					}
+					break;
+
+				case att_exception_security_class:
+					if (secclass_seen)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
+					{
+						msg_seen = false;
+						if (tdgbl->RESTORE_format >= 10)
+						{
+							eat_text(tdgbl);
+							secclass_seen = true;
+						}
+						else
+						{
+							fix_exception(tdgbl, X.RDB$EXCEPTION_NAME, scan_next_attr, attribute,
+								failed_attrib, msg_ptr, l2, msg_seen);
+						}
+					}
+					break;
+
+				case att_exception_owner_name:
+					if (ownername_seen)
+						BURP_error(311, true, SafeArg() << attribute << X.RDB$EXCEPTION_NAME);
+					else
+					{
+						msg_seen = false;
+						if (tdgbl->RESTORE_format >= 10)
+						{
+							eat_text(tdgbl);
+							ownername_seen = true;
+						}
+						else
+						{
+							fix_exception(tdgbl, X.RDB$EXCEPTION_NAME, scan_next_attr, attribute,
+								failed_attrib, msg_ptr, l2, msg_seen);
+						}
+					}
+					break;
+
+				default:
+					// do we have a corrupt backup?
+					fix_exception(tdgbl, X.RDB$EXCEPTION_NAME, scan_next_attr, attribute,
+						failed_attrib, msg_ptr, l2, msg_seen);
+					break;
+				}
+			}
+			// Versions prior to FB2.0 don't support a field longer than varchar(78).
+			// Versions prior to FB2.5 use a field length of 1021, not 1023.
+			if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+				X.RDB$MESSAGE[78] = 0;
+			else if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+				X.RDB$MESSAGE[1021] = 0;
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
 
 	return true;
 }
@@ -3334,12 +3782,12 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 					for (SLONG* rp = field->fld_ranges; n; rp += 2, n--)
 					{
 						if (get_attribute(&attribute, tdgbl) != att_field_range_low)
-							bad_attribute (scan_next_attr, attribute, 58);
+							bad_attribute(scan_next_attr, attribute, 58);
 						// msg 58 array
 						else
 							*rp = get_numeric(tdgbl);
 						if (get_attribute(&attribute, tdgbl) != att_field_range_high)
-							bad_attribute (scan_next_attr, attribute, 58);
+							bad_attribute(scan_next_attr, attribute, 58);
 							// msg 58 array
 						else
 							*(rp + 1) = get_numeric(tdgbl);
@@ -3388,7 +3836,7 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 84);
+				bad_attribute(scan_next_attr, attribute, 84);
 				// msg 84 column
 				break;
 			}
@@ -3442,7 +3890,7 @@ bool get_field_dimensions(BurpGlobals* tdgbl)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 288);
+				bad_attribute(scan_next_attr, attribute, 288);
 				// msg 288 array dimensions
 				break;
 			}
@@ -3509,7 +3957,7 @@ bool get_files(BurpGlobals* tdgbl)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 85);
+				bad_attribute(scan_next_attr, attribute, 85);
 				// msg 85 file
 				break;
 			}
@@ -3581,7 +4029,7 @@ bool get_filter(BurpGlobals* tdgbl)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 87);
+				bad_attribute(scan_next_attr, attribute, 87);
 				// msg 87  filter
 				break;
 			}
@@ -3624,6 +4072,14 @@ bool get_function(BurpGlobals* tdgbl)
 			X.RDB$ENGINE_NAME.NULL = TRUE;
 			X.RDB$PACKAGE_NAME.NULL = TRUE;
 			X.RDB$PRIVATE_FLAG.NULL = TRUE;
+			X.RDB$FUNCTION_BLR.NULL = TRUE;
+			X.RDB$FUNCTION_SOURCE.NULL = TRUE;
+			X.RDB$VALID_BLR.NULL = TRUE;
+			X.RDB$DEBUG_INFO.NULL = TRUE;
+			X.RDB$SECURITY_CLASS.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			X.RDB$LEGACY_FLAG.NULL = TRUE;
+			X.RDB$INVARIANT_FLAG.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -3709,6 +4165,86 @@ bool get_function(BurpGlobals* tdgbl)
 						bad_attribute(scan_next_attr, attribute, 89);
 					break;
 
+				case att_function_blr:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						get_blr_blob(tdgbl, X.RDB$FUNCTION_BLR, false);
+						X.RDB$FUNCTION_BLR.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_source:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						get_source_blob(tdgbl, X.RDB$FUNCTION_SOURCE, false);
+						X.RDB$FUNCTION_SOURCE.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_valid_blr:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$VALID_BLR = get_numeric(tdgbl);
+						X.RDB$VALID_BLR.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_debug_info:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						get_blr_blob(tdgbl, X.RDB$DEBUG_INFO, false);
+						X.RDB$DEBUG_INFO.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_security_class:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$SECURITY_CLASS);
+						X.RDB$SECURITY_CLASS.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$OWNER_NAME);
+						X.RDB$OWNER_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_legacy_flag:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$LEGACY_FLAG = get_numeric(tdgbl);
+						X.RDB$LEGACY_FLAG.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_invariant_flag:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$INVARIANT_FLAG = get_numeric(tdgbl);
+						X.RDB$INVARIANT_FLAG.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
 				default:
 					bad_attribute(scan_next_attr, attribute, 89);
 					// msg 89 function
@@ -3775,8 +4311,61 @@ bool get_function(BurpGlobals* tdgbl)
 					X.RDB$FUNCTION_TYPE = (USHORT) get_numeric(tdgbl);
 					break;
 
+				case att_function_engine_name:
+				case att_function_package_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_private_flag:
+					if (tdgbl->RESTORE_format >= 10)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_blr:
+				case att_function_source:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_valid_blr:
+					if (tdgbl->RESTORE_format >= 10)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_debug_info:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_security_class:
+				case att_function_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_legacy_flag:
+				case att_function_invariant_flag:
+					if (tdgbl->RESTORE_format >= 10)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
 				default:
-					bad_attribute (scan_next_attr, attribute, 89);
+					bad_attribute(scan_next_attr, attribute, 89);
 					// msg 89 function
 					break;
 				}
@@ -3816,14 +4405,13 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 
 	if (skip_arguments)
 	{
-		char buf[MAX_SQL_IDENTIFIER_SIZE];
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
 			case att_functionarg_name:
-				GET_TEXT(buf);
+				eat_text(tdgbl);
 				break;
 
 			case att_functionarg_position:
@@ -3859,8 +4447,35 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				break;
 
 			case att_functionarg_package_name:
+			case att_functionarg_arg_name:
+			case att_functionarg_field_source:
 				if (tdgbl->RESTORE_format >= 10)
-					GET_TEXT(buf);
+					eat_text(tdgbl);
+				else
+					bad_attribute(scan_next_attr, attribute, 90);
+				break;
+
+			case att_functionarg_default_value:
+			case att_functionarg_default_source:
+				if (tdgbl->RESTORE_format >= 10)
+					eat_blob(tdgbl);
+				else
+					bad_attribute(scan_next_attr, attribute, 90);
+				break;
+
+			case att_functionarg_collation_id:
+			case att_functionarg_null_flag:
+			case att_functionarg_arg_type_mechanism:
+				if (tdgbl->RESTORE_format >= 10)
+					get_numeric(tdgbl);
+				else
+					bad_attribute(scan_next_attr, attribute, 90);
+				break;
+
+			case att_functionarg_field_name:
+			case att_functionarg_relation_name:
+				if (tdgbl->RESTORE_format >= 10)
+					eat_text(tdgbl);
 				else
 					bad_attribute(scan_next_attr, attribute, 90);
 				break;
@@ -3886,6 +4501,15 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			X.RDB$FIELD_PRECISION.NULL = TRUE;
 			X.RDB$PACKAGE_NAME.NULL = TRUE;
+			X.RDB$ARGUMENT_NAME.NULL = TRUE;
+			X.RDB$FIELD_SOURCE.NULL = TRUE;
+			X.RDB$DEFAULT_VALUE.NULL = TRUE;
+			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$NULL_FLAG.NULL = TRUE;
+			X.RDB$ARGUMENT_MECHANISM.NULL = TRUE;
+			X.RDB$FIELD_NAME.NULL = TRUE;
+			X.RDB$RELATION_NAME.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -3948,7 +4572,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 90);
+						bad_attribute(scan_next_attr, attribute, 90);
 					break;
 
 				case att_functionarg_package_name:
@@ -3957,6 +4581,96 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						GET_TEXT(X.RDB$PACKAGE_NAME);
 						X.RDB$PACKAGE_NAME.NULL = FALSE;
 						fb_utils::exact_name(X.RDB$PACKAGE_NAME);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_arg_name:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$ARGUMENT_NAME);
+						X.RDB$ARGUMENT_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_field_source:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$FIELD_SOURCE);
+						X.RDB$FIELD_SOURCE.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_default_value:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						get_blr_blob(tdgbl, X.RDB$DEFAULT_VALUE, false);
+						X.RDB$DEFAULT_VALUE.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_default_source:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						get_source_blob(tdgbl, X.RDB$DEFAULT_SOURCE, false);
+						X.RDB$DEFAULT_SOURCE.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_collation_id:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$COLLATION_ID = get_numeric(tdgbl);
+						X.RDB$COLLATION_ID.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_null_flag:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$NULL_FLAG = get_numeric(tdgbl);
+						X.RDB$NULL_FLAG.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_arg_type_mechanism:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						X.RDB$ARGUMENT_MECHANISM = get_numeric(tdgbl);
+						X.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_field_name:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$FIELD_NAME);
+						X.RDB$FIELD_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_relation_name:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$RELATION_NAME);
+						X.RDB$RELATION_NAME.NULL = FALSE;
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 90);
@@ -4031,11 +4745,45 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 90);
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_package_name:
+				case att_functionarg_arg_name:
+				case att_functionarg_field_source:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_default_value:
+				case att_functionarg_default_source:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_collation_id:
+				case att_functionarg_null_flag:
+				case att_functionarg_arg_type_mechanism:
+					if (tdgbl->RESTORE_format >= 10)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_field_name:
+				case att_functionarg_relation_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 90);
+					bad_attribute(scan_next_attr, attribute, 90);
 					// msg 90 function argument
 					break;
 				}
@@ -4099,10 +4847,45 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					if (tdgbl->RESTORE_format >= 6)
 						get_numeric(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, 90);
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_package_name:
+				case att_functionarg_arg_name:
+				case att_functionarg_field_source:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_default_value:
+				case att_functionarg_default_source:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_collation_id:
+				case att_functionarg_null_flag:
+				case att_functionarg_arg_type_mechanism:
+					if (tdgbl->RESTORE_format >= 10)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_field_name:
+				case att_functionarg_relation_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 90);
+					bad_attribute(scan_next_attr, attribute, 90);
 					// msg 90 function argument
 					break;
 				}
@@ -4130,16 +4913,19 @@ bool get_generator(BurpGlobals* tdgbl)
  *
  **************************************/
 	SINT64		value = 0;
-	BASED_ON RDB$GENERATORS.RDB$GENERATOR_NAME name;
-	name[0] = 0; // just in case.
+	BASED_ON RDB$GENERATORS.RDB$GENERATOR_NAME name = "";
+	BASED_ON RDB$GENERATORS.RDB$SECURITY_CLASS secclass = "";
+	BASED_ON RDB$GENERATORS.RDB$OWNER_NAME ownername = "";
 	att_type	attribute;
 	scan_attr_t		scan_next_attr;
 
-	skip_init(&scan_next_attr);
-
 	ISC_QUAD gen_desc = {0, 0};
-	bool got_desc = false;
 
+	ISC_QUAD* descPtr = NULL;
+	const char* secPtr = NULL;
+	const char* ownerPtr = NULL;
+
+	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)
@@ -4162,14 +4948,35 @@ bool get_generator(BurpGlobals* tdgbl)
 			if (tdgbl->RESTORE_format >= 7)
 			{
 				get_source_blob (tdgbl, gen_desc, false);
-				got_desc = gen_desc.gds_quad_high || gen_desc.gds_quad_low;
+				if (gen_desc.gds_quad_high || gen_desc.gds_quad_low)
+					descPtr = &gen_desc;
+			}
+			else
+				bad_attribute(scan_next_attr, attribute, 289);
+			break;
+
+		case att_gen_security_class:
+			if (tdgbl->RESTORE_format >= 10)
+			{
+				GET_TEXT(secclass);
+				secPtr = reinterpret_cast<const char*>(&secclass);
+			}
+			else
+				bad_attribute(scan_next_attr, attribute, 289);
+			break;
+
+		case att_gen_owner_name:
+			if (tdgbl->RESTORE_format >= 10)
+			{
+				GET_TEXT(ownername);
+				ownerPtr = reinterpret_cast<const char*>(&ownername);
 			}
 			else
 				bad_attribute(scan_next_attr, attribute, 289);
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 289);
+			bad_attribute(scan_next_attr, attribute, 289);
 			// msg 289 generator
 			break;
 		}
@@ -4180,7 +4987,7 @@ bool get_generator(BurpGlobals* tdgbl)
 		value = 0;
 	}
 
-	store_blr_gen_id(tdgbl, name, value, got_desc ? &gen_desc : NULL);
+	store_blr_gen_id(tdgbl, name, value, descPtr, secPtr, ownerPtr);
 
 	return true;
 }
@@ -4204,7 +5011,372 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 	gfld* gfield = NULL;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	{
+		// with rdb$field_precision, rdb$security_class and rdb$owner_name.
+		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
+			X IN RDB$FIELDS
+
+			X.RDB$FIELD_SCALE = X.RDB$SEGMENT_LENGTH = 0;
+			X.RDB$CHARACTER_SET_ID = X.RDB$COLLATION_ID = 0;
+			X.RDB$FIELD_SUB_TYPE = 0;
+			X.RDB$COMPUTED_BLR.NULL = TRUE;
+			X.RDB$COMPUTED_SOURCE.NULL = TRUE;
+			X.RDB$QUERY_NAME.NULL = TRUE;
+			X.RDB$EDIT_STRING.NULL = TRUE;
+			X.RDB$QUERY_HEADER.NULL = TRUE;
+			X.RDB$MISSING_VALUE.NULL = TRUE;
+			X.RDB$DEFAULT_VALUE.NULL = TRUE;
+			X.RDB$VALIDATION_BLR.NULL = TRUE;
+			X.RDB$VALIDATION_SOURCE.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$NULL_FLAG.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$DIMENSIONS.NULL = TRUE;
+			X.RDB$EXTERNAL_LENGTH.NULL = TRUE;
+			X.RDB$EXTERNAL_TYPE.NULL = TRUE;
+			X.RDB$EXTERNAL_SCALE.NULL = TRUE;
+			X.RDB$SEGMENT_LENGTH.NULL = TRUE;
+			X.RDB$CHARACTER_LENGTH.NULL = TRUE;
+			X.RDB$MISSING_SOURCE.NULL = TRUE;
+			X.RDB$DEFAULT_SOURCE.NULL = TRUE;
+			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
+			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$FIELD_PRECISION.NULL = TRUE;
+			X.RDB$SECURITY_CLASS.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			memset(X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_field_name:
+					l = GET_TEXT(X.RDB$FIELD_NAME);
+					MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
+					BURP_verbose (121, temp);
+					// msg 121  restoring global field %s
+					break;
+
+				case att_field_query_name:
+					GET_TEXT(X.RDB$QUERY_NAME);
+					X.RDB$QUERY_NAME.NULL = FALSE;
+					break;
+
+				case att_field_edit_string:
+					GET_TEXT(X.RDB$EDIT_STRING);
+					X.RDB$EDIT_STRING.NULL = FALSE;
+					break;
+
+				case att_field_query_header:
+					X.RDB$QUERY_HEADER.NULL = FALSE;
+					get_source_blob (tdgbl, X.RDB$QUERY_HEADER, false);
+					break;
+
+				case att_field_type:
+					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_length:
+					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_scale:
+					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SCALE.NULL = FALSE;
+					break;
+
+				case att_field_sub_type:
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+					break;
+
+				case att_field_segment_length:
+					X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric(tdgbl);
+					if (X.RDB$SEGMENT_LENGTH)
+						X.RDB$SEGMENT_LENGTH.NULL = FALSE;
+					break;
+
+				case att_field_computed_blr:
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
+
+						get_blr_blob (tdgbl, gfield->gfld_computed_blr, true);
+						gfield->gfld_flags |= GFLD_computed_blr;
+					}
+					else
+					{
+						X.RDB$COMPUTED_BLR.NULL = FALSE;
+						get_blr_blob (tdgbl, X.RDB$COMPUTED_BLR, false);
+					}
+					break;
+
+				case att_field_computed_source:
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
+
+						get_misc_blob (tdgbl, gfield->gfld_computed_source, true);
+						gfield->gfld_flags |= GFLD_computed_source;
+					}
+					else
+					{
+						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+						get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
+					}
+					break;
+
+				case att_field_computed_source2:
+					// if we are going against a V4.0 database,
+					// restore the global fields in 2 phases.
+
+					if (tdgbl->global_trans)
+					{
+						if (!gfield)
+							gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
+
+						get_source_blob (tdgbl, gfield->gfld_computed_source2, true);
+						gfield->gfld_flags |= GFLD_computed_source2;
+					}
+					else
+					{
+						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
+						get_source_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
+					}
+					break;
+
+				case att_field_validation_blr:
+					if (tdgbl->gbl_sw_novalidity)
+						eat_blob(tdgbl);
+					else
+					{
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
+
+						if (tdgbl->global_trans)
+						{
+							if (!gfield)
+								gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
+
+							get_blr_blob (tdgbl, gfield->gfld_vb, true);
+							gfield->gfld_flags |= GFLD_validation_blr;
+						}
+						else
+						{
+							X.RDB$VALIDATION_BLR.NULL = FALSE;
+							get_blr_blob (tdgbl, X.RDB$VALIDATION_BLR, false);
+						}
+					}
+					break;
+
+				case att_field_validation_source:
+					if (tdgbl->gbl_sw_novalidity)
+						eat_blob(tdgbl);
+					else
+					{
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
+
+						if (tdgbl->global_trans)
+						{
+							if (!gfield)
+								gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
+
+							get_misc_blob (tdgbl, gfield->gfld_vs, true);
+							gfield->gfld_flags |= GFLD_validation_source;
+						}
+						else
+						{
+							X.RDB$VALIDATION_SOURCE.NULL = FALSE;
+							get_misc_blob (tdgbl, X.RDB$VALIDATION_SOURCE, false);
+						}
+					}
+					break;
+
+				case att_field_validation_source2:
+					if (tdgbl->gbl_sw_novalidity)
+						eat_blob(tdgbl);
+					else
+					{
+						// if we are going against a V4.0 database,
+						// restore the global fields in 2 phases.
+
+						if (tdgbl->global_trans)
+						{
+							if (!gfield)
+								gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
+
+							get_source_blob (tdgbl, gfield->gfld_vs2, true);
+							gfield->gfld_flags |= GFLD_validation_source2;
+						}
+						else
+						{
+							X.RDB$VALIDATION_SOURCE.NULL = FALSE;
+							get_source_blob (tdgbl, X.RDB$VALIDATION_SOURCE, false);
+						}
+					}
+					break;
+
+				case att_field_missing_value:
+					X.RDB$MISSING_VALUE.NULL = FALSE;
+					get_blr_blob (tdgbl, X.RDB$MISSING_VALUE, false);
+					break;
+
+				case att_field_default_value:
+					X.RDB$DEFAULT_VALUE.NULL = FALSE;
+					get_blr_blob (tdgbl, X.RDB$DEFAULT_VALUE, false);
+					break;
+
+				case att_field_system_flag:
+					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG.NULL = FALSE;
+					break;
+
+				case att_field_null_flag:
+					if (tdgbl->gbl_sw_novalidity) {
+						get_numeric(tdgbl); // skip
+					}
+					else
+					{
+						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$NULL_FLAG.NULL = FALSE;
+					}
+					break;
+
+				case att_field_description:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					break;
+
+				case att_field_description2:
+					X.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					break;
+
+				case att_field_external_length:
+					X.RDB$EXTERNAL_LENGTH.NULL = FALSE;
+					X.RDB$EXTERNAL_LENGTH = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_external_scale:
+					X.RDB$EXTERNAL_SCALE.NULL = FALSE;
+					X.RDB$EXTERNAL_SCALE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_external_type:
+					X.RDB$EXTERNAL_TYPE.NULL = FALSE;
+					X.RDB$EXTERNAL_TYPE = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_dimensions:
+					X.RDB$DIMENSIONS.NULL = FALSE;
+					X.RDB$DIMENSIONS = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_character_length:
+					X.RDB$CHARACTER_LENGTH.NULL = FALSE;
+					X.RDB$CHARACTER_LENGTH = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_default_source:
+					X.RDB$DEFAULT_SOURCE.NULL = FALSE;
+					get_source_blob (tdgbl, X.RDB$DEFAULT_SOURCE, false);
+					break;
+
+				case att_field_missing_source:
+					X.RDB$MISSING_SOURCE.NULL = FALSE;
+					get_source_blob (tdgbl, X.RDB$MISSING_SOURCE, false);
+					break;
+
+				case att_field_character_set:
+					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_collation_id:
+					X.RDB$COLLATION_ID.NULL = FALSE;
+					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					break;
+
+				case att_field_precision:
+					if (tdgbl->RESTORE_format >= 6)
+					{
+						X.RDB$FIELD_PRECISION.NULL = FALSE;
+						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 92);
+					break;
+
+				case att_field_security_class:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$SECURITY_CLASS);
+						X.RDB$SECURITY_CLASS.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 92);
+					break;
+
+				case att_field_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						GET_TEXT(X.RDB$OWNER_NAME);
+						X.RDB$OWNER_NAME.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 92);
+					break;
+
+				default:
+					bad_attribute(scan_next_attr, attribute, 92);
+					// msg 92  domain
+					break;
+				}
+			}
+
+			if (X.RDB$FIELD_TYPE <= DTYPE_BLR_MAX)
+			{
+				l = gds_cvt_blr_dtype[X.RDB$FIELD_TYPE];
+				if (l = type_lengths[l])
+					X.RDB$FIELD_LENGTH = l;
+			}
+
+			if (gfield)
+				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
+
+			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
+				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
+				((!X.RDB$CHARACTER_LENGTH.NULL &&
+					(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
+				 X.RDB$FIELD_TYPE == blr_blob))
+			{
+				if (X.RDB$FIELD_TYPE != blr_blob)
+					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
+
+				X.RDB$CHARACTER_SET_ID = CS_NONE;
+				X.RDB$COLLATION_ID = 0;
+			}
+
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+
+	}
+	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
 	{
 		// with rdb$field_precision
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
@@ -4508,11 +5680,19 @@ bool get_global_field(BurpGlobals* tdgbl)
 						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 92);
+						bad_attribute(scan_next_attr, attribute, 92);
+					break;
+
+				case att_field_security_class:
+				case att_field_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 92);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 92);
+					bad_attribute(scan_next_attr, attribute, 92);
 					// msg 92  domain
 					break;
 				}
@@ -4848,11 +6028,19 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 6)
 						get_numeric(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, 92);
+						bad_attribute(scan_next_attr, attribute, 92);
+					break;
+
+				case att_field_security_class:
+				case att_field_owner_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 92);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 92);
+					bad_attribute(scan_next_attr, attribute, 92);
 					// msg 92  domain
 					break;
 				}
@@ -5021,7 +6209,7 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 93);
+				bad_attribute(scan_next_attr, attribute, 93);
 				// msg 93 index
 				break;
 			}
@@ -5233,7 +6421,7 @@ bool get_package(BurpGlobals* tdgbl)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 338);	// msg 338 package
+				bad_attribute(scan_next_attr, attribute, 338);	// msg 338 package
 				break;
 			}
 		}
@@ -5301,25 +6489,25 @@ bool get_procedure(BurpGlobals* tdgbl)
 				switch (attribute)
 				{
 				case att_procedure_name:
-				{
-					SSHORT prefixLen = 0;
-					if (package_name[0])
 					{
-						prefixLen = strlen(package_name);
-						memcpy(temp, package_name, prefixLen);
-						temp[prefixLen++] = '.';
+						SSHORT prefixLen = 0;
+						if (package_name[0])
+						{
+							prefixLen = strlen(package_name);
+							memcpy(temp, package_name, prefixLen);
+							temp[prefixLen++] = '.';
+						}
+
+						l = GET_TEXT(X.RDB$PROCEDURE_NAME);
+						//procedure->prc_name_length = l;
+						strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
+
+						MISC_terminate (X.RDB$PROCEDURE_NAME, temp + prefixLen, l,
+							sizeof(temp) - prefixLen);
+						BURP_verbose (195, temp);
+						// msg 195 restoring stored procedure %s
 					}
-
-					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
-					//procedure->prc_name_length = l;
-					strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
-
-					MISC_terminate (X.RDB$PROCEDURE_NAME, temp + prefixLen, l,
-						sizeof(temp) - prefixLen);
-					BURP_verbose (195, temp);
-					// msg 195 restoring stored procedure %s
 					break;
-				}
 
 				case att_procedure_description:
 					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
@@ -5372,7 +6560,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 8)
 						X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, 290);
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				case att_procedure_valid_blr:
@@ -5382,7 +6570,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 						X.RDB$VALID_BLR = (USHORT) get_numeric(tdgbl);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 290);
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				case att_procedure_debug_info:
@@ -5392,7 +6580,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 						get_misc_blob (tdgbl, X.RDB$DEBUG_INFO, true);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 290);
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				case att_procedure_engine_name:
@@ -5523,14 +6711,38 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_type:
+				case att_procedure_valid_blr:
 					if (tdgbl->RESTORE_format >= 8)
 						get_numeric(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, 290);
+						bad_attribute(scan_next_attr, attribute, 290);
+					break;
+
+				case att_procedure_debug_info:
+					if (tdgbl->RESTORE_format >= 8)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
+					break;
+
+				case att_procedure_engine_name:
+				case att_procedure_entrypoint:
+				case att_procedure_package_name:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
+					break;
+
+				case att_procedure_private_flag:
+					if (tdgbl->RESTORE_format >= 10)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 290);
+					bad_attribute(scan_next_attr, attribute, 290);
 					// msg 290 procedure
 					break;
 				}
@@ -5647,7 +6859,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 						get_blr_blob (tdgbl, X.RDB$DEFAULT_VALUE, true);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 291);
+						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				case att_procedureprm_default_source:
@@ -5657,7 +6869,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 						get_source_blob (tdgbl, X.RDB$DEFAULT_SOURCE, true);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 291);
+						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				case att_procedureprm_collation_id:
@@ -5667,21 +6879,21 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 						X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 291);
+						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				case att_procedureprm_null_flag:
 					if (tdgbl->RESTORE_format >= 8)
 						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, 291);
+						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				case att_procedureprm_mechanism:
 					if (tdgbl->RESTORE_format >= 8)
 						X.RDB$PARAMETER_MECHANISM = (USHORT) get_numeric(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, 291);
+						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				// DB_VERSION_DDL11_2
@@ -5761,8 +6973,34 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
 
+				case att_procedureprm_default_value:
+				case att_procedureprm_default_source:
+					if (tdgbl->RESTORE_format >= 8)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 291);
+					break;
+
+				case att_procedureprm_collation_id:
+				case att_procedureprm_null_flag:
+				case att_procedureprm_mechanism:
+					if (tdgbl->RESTORE_format >= 8)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 291);
+					break;
+
+				// DB_VERSION_DDL11_2
+				case att_procedureprm_field_name:
+				case att_procedureprm_relation_name:
+					if (tdgbl->RESTORE_format >= 9)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 291);
+					break;
+
 				default:
-					bad_attribute (scan_next_attr, attribute, 291);
+					bad_attribute(scan_next_attr, attribute, 291);
 					// msg 291 procedure parameter
 					break;
 				}
@@ -5830,7 +7068,7 @@ bool get_ref_constraint(BurpGlobals* tdgbl)
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 292);
+					bad_attribute(scan_next_attr, attribute, 292);
 					// msg 292 referential constraint
 					break;
 			}
@@ -5988,7 +7226,7 @@ bool get_relation(BurpGlobals* tdgbl)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 111);
+			bad_attribute(scan_next_attr, attribute, 111);
 			// msg 111 table
 			break;
 		}
@@ -6200,7 +7438,7 @@ bool get_rel_constraint(BurpGlobals* tdgbl)
 					break;
 
 				default:
-					bad_attribute (scan_next_attr, attribute, 208);
+					bad_attribute(scan_next_attr, attribute, 208);
 					// msg 208 table constraint
 					break;
 			}
@@ -6244,7 +7482,7 @@ bool get_relation_data(BurpGlobals* tdgbl)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 111);
+			bad_attribute(scan_next_attr, attribute, 111);
 			// msg 111 table
 			break;
 		}
@@ -6275,7 +7513,7 @@ bool get_relation_data(BurpGlobals* tdgbl)
 
 		case rec_gen_id:
 			gen_id = get_numeric(tdgbl);
-			store_blr_gen_id (tdgbl, name, gen_id, NULL);
+			store_blr_gen_id(tdgbl, name, gen_id, NULL, NULL, NULL);
 			get_record(&record, tdgbl);
 			break;
 
@@ -6290,7 +7528,7 @@ bool get_relation_data(BurpGlobals* tdgbl)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 111);
+			bad_attribute(scan_next_attr, attribute, 111);
 			// msg 111 relation
 			get_record(&record, tdgbl);
 			break;
@@ -6353,12 +7591,12 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 						X.RDB$DESCRIPTION.NULL = FALSE;
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 250);
+						bad_attribute(scan_next_attr, attribute, 250);
 				    break;
 
 				default:
 					// msg 250 SQL role
-					bad_attribute (scan_next_attr, attribute, 250);
+					bad_attribute(scan_next_attr, attribute, 250);
 					break;
 				}
 			}
@@ -6400,12 +7638,12 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 7)
 						eat_blob(tdgbl);
 					else
-						bad_attribute (scan_next_attr, attribute, 250);
+						bad_attribute(scan_next_attr, attribute, 250);
 					break;
 
 				default:
 					// msg 250 SQL role
-					bad_attribute (scan_next_attr, attribute, 250);
+					bad_attribute(scan_next_attr, attribute, 250);
 					break;
 				}
 			}
@@ -6432,12 +7670,12 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 				if (tdgbl->RESTORE_format >= 7)
 					eat_blob(tdgbl);
 				else
-					bad_attribute (scan_next_attr, attribute, 250);
+					bad_attribute(scan_next_attr, attribute, 250);
 				break;
 
 			default:
 				// msg 250 SQL role
-				bad_attribute (scan_next_attr, attribute, 250);
+				bad_attribute(scan_next_attr, attribute, 250);
 				break;
 			}
 		}
@@ -6490,7 +7728,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 
 			default:
 				// msg 299 name mapping
-				bad_attribute (scan_next_attr, attribute, 299);
+				bad_attribute(scan_next_attr, attribute, 299);
 				break;
 			}
 		}
@@ -6620,7 +7858,7 @@ bool get_security_class(BurpGlobals* tdgbl)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 131);
+				bad_attribute(scan_next_attr, attribute, 131);
 				// msg 131 security class
 				break;
 			}
@@ -6833,7 +8071,7 @@ bool get_trigger_old (BurpGlobals* tdgbl, burp_rel* relation)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 134);
+				bad_attribute(scan_next_attr, attribute, 134);
 				// msg 134 trigger
 				break;
 			}
@@ -6863,7 +8101,7 @@ bool get_trigger_old (BurpGlobals* tdgbl, burp_rel* relation)
 			q = "$ERASE";
 			break;
 		default:
-			bad_attribute (scan_next_attr, attribute, 136);
+			bad_attribute(scan_next_attr, attribute, 136);
 			// msg 136 trigger type
 			return 0;
 		}
@@ -7018,7 +8256,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 						X.RDB$VALID_BLR = (USHORT) get_numeric(tdgbl);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 134);
+						bad_attribute(scan_next_attr, attribute, 134);
 					break;
 
 				case att_trig_debug_info:
@@ -7028,7 +8266,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 						get_misc_blob (tdgbl, X.RDB$DEBUG_INFO, true);
 					}
 					else
-						bad_attribute (scan_next_attr, attribute, 134);
+						bad_attribute(scan_next_attr, attribute, 134);
 					break;
 
 				case att_trig_engine_name:
@@ -7140,8 +8378,37 @@ bool get_trigger(BurpGlobals* tdgbl)
 					X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric(tdgbl);
 					break;
 
+				case att_trig_valid_blr:
+					if (tdgbl->RESTORE_format >= 8)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
+					break;
+
+				case att_trig_debug_info:
+					if (tdgbl->RESTORE_format >= 8)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
+					break;
+
+				case att_trig_engine_name:
+				case att_trig_entrypoint:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
+					break;
+
+				case att_trig_type2:
+					if (tdgbl->RESTORE_format >= 10)
+						get_int64(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
+					break;
+
 				default:
-					bad_attribute (scan_next_attr, attribute, 134);
+					bad_attribute(scan_next_attr, attribute, 134);
 					// msg 134 trigger
 					break;
 				}
@@ -7222,7 +8489,7 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 135);
+			bad_attribute(scan_next_attr, attribute, 135);
 			// msg 135  trigger message
 			break;
 		}
@@ -7326,7 +8593,7 @@ bool get_type(BurpGlobals* tdgbl)
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 293);
+				bad_attribute(scan_next_attr, attribute, 293);
 				// msg 293 type (in RDB$TYPES)
 				break;
 			}
@@ -7423,7 +8690,7 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 105);
+			bad_attribute(scan_next_attr, attribute, 105);
 			// msg 105 privilege
 			break;
 		}
@@ -7685,8 +8952,22 @@ bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 					X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
 					break;
 
+				case att_view_context_type:
+					if (tdgbl->RESTORE_format >= 10)
+						get_numeric(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 140);
+					break;
+
+				case att_view_context_package:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 140);
+					break;
+
 				default:
-					bad_attribute (scan_next_attr, attribute, 140);
+					bad_attribute(scan_next_attr, attribute, 140);
 					// msg 140 view
 					break;
 				}
@@ -7745,12 +9026,12 @@ void ignore_array(BurpGlobals* tdgbl, burp_rel* relation)
 			for (range = field->fld_ranges; range < end_ranges; range += 2)
 			{
 				if (get_attribute(&attribute, tdgbl) != att_array_range_low)
-					bad_attribute (scan_next_attr, attribute, 58);
+					bad_attribute(scan_next_attr, attribute, 58);
 					// msg 58 array
 				else
 					range[0] = get_numeric(tdgbl);
 				if (get_attribute(&attribute, tdgbl) != att_array_range_high)
-					bad_attribute (scan_next_attr, attribute, 58);
+					bad_attribute(scan_next_attr, attribute, 58);
 					// msg 58 array
 				else
 					range[1] = get_numeric(tdgbl);
@@ -7758,7 +9039,7 @@ void ignore_array(BurpGlobals* tdgbl, burp_rel* relation)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 58);
+			bad_attribute(scan_next_attr, attribute, 58);
 			// msg 58 array
 			break;
 		}
@@ -7833,7 +9114,7 @@ void ignore_blob(BurpGlobals* tdgbl)
 			break;
 
 		default:
-			bad_attribute (scan_next_attr, attribute, 64);
+			bad_attribute(scan_next_attr, attribute, 64);
 			// msg 64 blob
 			break;
 		}
@@ -8576,7 +9857,8 @@ USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
 }
 
 
-void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, const ISC_QUAD* gen_desc)
+void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
+	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername)
 {
 /**************************************
  *
@@ -8588,10 +9870,42 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, co
  *	Store the blr_gen_id for the relation.
  *
  **************************************/
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
+
+			strcpy (X.RDB$GENERATOR_NAME, gen_name);
+			X.RDB$DESCRIPTION.NULL = TRUE;
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$SECURITY_CLASS.NULL = TRUE;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+			if (gen_desc)
+			{
+				X.RDB$DESCRIPTION = *gen_desc;
+				X.RDB$DESCRIPTION.NULL = FALSE;
+			}
+			if (secclass)
+			{
+				strcpy(X.RDB$SECURITY_CLASS, secclass);
+				X.RDB$SECURITY_CLASS.NULL = FALSE;
+			}
+			if (ownername)
+			{
+				strcpy(X.RDB$OWNER_NAME, ownername);
+				X.RDB$OWNER_NAME.NULL = FALSE;
+			}
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
+			X IN RDB$GENERATORS
+
 			strcpy (X.RDB$GENERATOR_NAME, gen_name);
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$SYSTEM_FLAG = 0;
@@ -8610,6 +9924,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, co
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
+
 			strcpy (X.RDB$GENERATOR_NAME, gen_name);
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -8688,8 +10003,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, co
 							 blr_length, (const SCHAR*) blr_buffer))
 	{
 		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
-		BURP_error_redirect (status_vector, 42);
-		// msg 42 Failed in store_blr_gen_id
+		BURP_error_redirect (status_vector, 42); // msg 42 Failed in store_blr_gen_id
 	}
 
 	if (isc_start_request (status_vector, &gen_id_reqh,
@@ -8697,8 +10011,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, co
 						   0))
 	{
 		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
-		BURP_error_redirect (status_vector, 42);
-		// msg 42 Failed in store_blr_gen_id
+		BURP_error_redirect (status_vector, 42); // msg 42 Failed in store_blr_gen_id
 	}
 
 	BURP_verbose (185, SafeArg() << gen_name << value);

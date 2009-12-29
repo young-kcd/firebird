@@ -217,6 +217,7 @@ const int SERIES				= 1;
 
 const USHORT MAX_UPDATE_DBKEY_RECURSION_DEPTH = 16;
 
+
 enum att_type {
 	att_end = 0,		// end of major record
 
@@ -322,6 +323,11 @@ enum att_type {
 	att_field_collation_id,	// Collation id of field
 	att_field_precision,	// numeric field precision of RDB$FIELDS (44)
 
+	// beware that several items are shared between rdb$fields and rdb$relation_fields,
+	// hence the new atributes for rdb$fields may be already present
+	// att_field_security_class, // already used for relation_fields
+	att_field_owner_name, // FB3.0, ODS12_0,
+
 	// Index attributes
 
 	att_index_name = SERIES,
@@ -407,9 +413,17 @@ enum att_type {
 	att_function_query_name,
 	att_function_type,
 	att_function_description2,
-	att_function_engine_name,
+	att_function_engine_name, // FB3.0, ODS12_0
 	att_function_package_name,
 	att_function_private_flag,
+	att_function_blr,
+	att_function_source,
+	att_function_valid_blr,
+	att_function_debug_info,
+	att_function_security_class,
+	att_function_owner_name,
+	att_function_legacy_flag,
+	att_function_invariant_flag,
 
 	// Function argument attributes
 
@@ -422,7 +436,16 @@ enum att_type {
 	att_functionarg_field_sub_type,
 	att_functionarg_character_set,
 	att_functionarg_field_precision,
-	att_functionarg_package_name,
+	att_functionarg_package_name, // FB3.0, ODS12_0
+	att_functionarg_arg_name,
+	att_functionarg_field_source,
+	att_functionarg_default_value,
+	att_functionarg_default_source,
+	att_functionarg_collation_id,
+	att_functionarg_null_flag,
+	att_functionarg_arg_type_mechanism,
+	att_functionarg_field_name,
+	att_functionarg_relation_name,
 
 	// TYPE relation attributes
 	att_type_name = SERIES,
@@ -470,6 +493,8 @@ enum att_type {
 	att_gen_value,
 	att_gen_value_int64,
 	att_gen_description,
+	att_gen_security_class, // FB3.0, ODS12_0
+	att_gen_owner_name,
 
 	// Stored procedure attributes
 
@@ -514,6 +539,8 @@ enum att_type {
 	att_exception_description,
 	att_exception_description2,
 	att_exception_msg2,
+	att_exception_security_class, // FB3.0, ODS12_0
+	att_exception_owner_name,
 
 	// Relation constraints attributes
 
@@ -551,6 +578,8 @@ enum att_type {
 	att_charset_description,
 	att_charset_funct,
 	att_charset_bytes_char,
+	att_charset_security_class, // FB3.0, ODS12_0
+	att_charset_owner_name,
 
 	att_coll_name = SERIES,
 	att_coll_id,
@@ -562,6 +591,8 @@ enum att_type {
 	att_coll_funct,
 	att_coll_base_collation_name,
 	att_coll_specific_attr,
+	att_coll_security_class, // FB3.0, ODS12_0
+	att_coll_owner_name,
 
 	// Names mapping
 	att_map_os = SERIES,
@@ -1018,9 +1049,8 @@ public:
 // in other modules.
 void	BURP_exit_local(int code, BurpGlobals* tdgbl);
 
-const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
-											failure to activate one or more
-											indices */
+// database is not on-line due to failure to activate one or more indices
+const int FINI_DB_NOT_ONLINE		= 2;
 
 // I/O definitions
 
@@ -1049,8 +1079,8 @@ inline static ULONG BURP_UP_TO_BLOCK(const ULONG size)
 	return (((size) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1));
 }
 
-/* Move the read and write mode declarations in here from burp.cpp
-   so that other files can see them for multivolume opens */
+// Move the read and write mode declarations in here from burp.cpp
+// so that other files can see them for multivolume opens
 
 #ifdef WIN_NT
 static const ULONG MODE_READ	= GENERIC_READ;

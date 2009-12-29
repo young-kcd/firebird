@@ -130,10 +130,10 @@ void write_field_dimensions();
 void write_filters();
 void write_functions();
 void write_function_args(const GDS_NAME, GDS_NAME);
+void write_global_fields();
 void write_generators();
 void write_sql_roles();
 void write_mapping();
-void write_global_fields();
 void write_packages();
 void write_procedures();
 void write_procedure_prms(const GDS_NAME, const GDS_NAME);
@@ -189,7 +189,7 @@ enum backup_capabilities
 								// Type of rdb$triggers.rdb$trigger_type changed from SMALLINT to BIGINT
 };
 // ASF: Engine that works with ODS11.1 and newer supports access to non-existent system fields.
-// Reads returns NULL and writes do nothing.
+// Reads return NULL and writes do nothing.
 
 #ifdef DEBUG
 UCHAR debug_on = 0;		// able to turn this on in debug mode
@@ -2671,38 +2671,82 @@ void write_character_sets()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$CHARACTER_SETS
-		WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1 OR
-			 X.RDB$DEFAULT_COLLATE_NAME NE X.RDB$CHARACTER_SET_NAME
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$CHARACTER_SETS
+			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1 OR
+				 X.RDB$DEFAULT_COLLATE_NAME NE X.RDB$CHARACTER_SET_NAME
 
-		put(tdgbl, rec_charset);
-		PUT_TEXT (att_charset_name, X.RDB$CHARACTER_SET_NAME);
+			put(tdgbl, rec_charset);
+			PUT_TEXT (att_charset_name, X.RDB$CHARACTER_SET_NAME);
 
-		if (X.RDB$SYSTEM_FLAG.NULL || X.RDB$SYSTEM_FLAG != 1)
-		{
-			if (!X.RDB$FORM_OF_USE.NULL)
-				PUT_TEXT (att_charset_form, X.RDB$FORM_OF_USE);
-			if (!X.RDB$NUMBER_OF_CHARACTERS.NULL)
-				put_numeric (att_charset_numchar, X.RDB$NUMBER_OF_CHARACTERS);
-			put_numeric (att_charset_id, X.RDB$CHARACTER_SET_ID);
-			if (X.RDB$SYSTEM_FLAG)
-				put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
-			if (!X.RDB$DESCRIPTION.NULL)
+			if (X.RDB$SYSTEM_FLAG.NULL || X.RDB$SYSTEM_FLAG != 1)
 			{
-				put_source_blob (att_charset_description, att_charset_description, X.RDB$DESCRIPTION);
-			}
-			if (!X.RDB$FUNCTION_NAME.NULL)
-				PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
-			put_numeric (att_charset_bytes_char, X.RDB$BYTES_PER_CHARACTER);
-		}
+				if (!X.RDB$FORM_OF_USE.NULL)
+					PUT_TEXT (att_charset_form, X.RDB$FORM_OF_USE);
+				if (!X.RDB$NUMBER_OF_CHARACTERS.NULL)
+					put_numeric (att_charset_numchar, X.RDB$NUMBER_OF_CHARACTERS);
+				put_numeric (att_charset_id, X.RDB$CHARACTER_SET_ID);
+				if (X.RDB$SYSTEM_FLAG)
+					put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
+				if (!X.RDB$DESCRIPTION.NULL)
+				{
+					put_source_blob (att_charset_description, att_charset_description, X.RDB$DESCRIPTION);
+				}
+				if (!X.RDB$FUNCTION_NAME.NULL)
+					PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
+				put_numeric (att_charset_bytes_char, X.RDB$BYTES_PER_CHARACTER);
 
-		PUT_TEXT (att_charset_coll, X.RDB$DEFAULT_COLLATE_NAME);
-		put(tdgbl, att_end);
-	END_FOR;
-	ON_ERROR
-		general_on_error();
-	END_ERROR;
+				// CVC: Not sure if this code goes inside or outside this "if" block.
+				if (!X.RDB$SECURITY_CLASS.NULL)
+					PUT_TEXT(att_charset_security_class, X.RDB$SECURITY_CLASS);
+				if (!X.RDB$OWNER_NAME.NULL)
+					PUT_TEXT(att_charset_owner_name, X.RDB$OWNER_NAME);
+			}
+
+			PUT_TEXT (att_charset_coll, X.RDB$DEFAULT_COLLATE_NAME);
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$CHARACTER_SETS
+			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1 OR
+				 X.RDB$DEFAULT_COLLATE_NAME NE X.RDB$CHARACTER_SET_NAME
+
+			put(tdgbl, rec_charset);
+			PUT_TEXT (att_charset_name, X.RDB$CHARACTER_SET_NAME);
+
+			if (X.RDB$SYSTEM_FLAG.NULL || X.RDB$SYSTEM_FLAG != 1)
+			{
+				if (!X.RDB$FORM_OF_USE.NULL)
+					PUT_TEXT (att_charset_form, X.RDB$FORM_OF_USE);
+				if (!X.RDB$NUMBER_OF_CHARACTERS.NULL)
+					put_numeric (att_charset_numchar, X.RDB$NUMBER_OF_CHARACTERS);
+				put_numeric (att_charset_id, X.RDB$CHARACTER_SET_ID);
+				if (X.RDB$SYSTEM_FLAG)
+					put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
+				if (!X.RDB$DESCRIPTION.NULL)
+				{
+					put_source_blob (att_charset_description, att_charset_description, X.RDB$DESCRIPTION);
+				}
+				if (!X.RDB$FUNCTION_NAME.NULL)
+					PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
+				put_numeric (att_charset_bytes_char, X.RDB$BYTES_PER_CHARACTER);
+			}
+
+			PUT_TEXT (att_charset_coll, X.RDB$DEFAULT_COLLATE_NAME);
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
 
 	MISC_release_request_silent(req_handle1);
 }
@@ -2759,7 +2803,38 @@ void write_collations()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11)
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_collation);
+			PUT_TEXT (att_coll_name, X.RDB$COLLATION_NAME);
+			put_numeric (att_coll_id, X.RDB$COLLATION_ID);
+			put_numeric (att_coll_cs_id, X.RDB$CHARACTER_SET_ID);
+			put_numeric (att_coll_attr, X.RDB$COLLATION_ATTRIBUTES);
+			if (X.RDB$SYSTEM_FLAG)
+				put_numeric (att_coll_sysflag, X.RDB$SYSTEM_FLAG);
+			if (!X.RDB$DESCRIPTION.NULL)
+				put_source_blob (att_coll_description, att_coll_description, X.RDB$DESCRIPTION);
+			if (!X.RDB$FUNCTION_NAME.NULL)
+				PUT_TEXT (att_coll_funct, X.RDB$FUNCTION_NAME);
+			if (!X.RDB$BASE_COLLATION_NAME.NULL)
+				PUT_TEXT(att_coll_base_collation_name, X.RDB$BASE_COLLATION_NAME);
+			if (!X.RDB$SPECIFIC_ATTRIBUTES.NULL)
+				put_source_blob (att_coll_specific_attr, att_coll_specific_attr, X.RDB$SPECIFIC_ATTRIBUTES);
+
+			if (!X.RDB$SECURITY_CLASS.NULL)
+				PUT_TEXT(att_coll_security_class, X.RDB$SECURITY_CLASS);
+			if (!X.RDB$OWNER_NAME.NULL)
+				PUT_TEXT(att_coll_owner_name, X.RDB$OWNER_NAME);
+
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else if (tdgbl->BCK_capabilities & BCK_ods11)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -2993,21 +3068,48 @@ void write_exceptions()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$EXCEPTIONS
-		WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
-		put(tdgbl, rec_exception);
-		const SSHORT l = PUT_TEXT (att_exception_name, X.RDB$EXCEPTION_NAME);
-		MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
-		BURP_verbose (198, temp);
-		// msg 198 writing exception %s
-		PUT_MESSAGE(att_exception_msg, att_exception_msg2, X.RDB$MESSAGE);
-		put_source_blob (att_exception_description2, att_procedure_description, X.RDB$DESCRIPTION);
-		put(tdgbl, att_end);
-	END_FOR;
-	ON_ERROR
-		general_on_error();
-	END_ERROR;
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$EXCEPTIONS
+			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_exception);
+			const SSHORT l = PUT_TEXT (att_exception_name, X.RDB$EXCEPTION_NAME);
+			MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
+			BURP_verbose (198, temp);
+			// msg 198 writing exception %s
+			PUT_MESSAGE(att_exception_msg, att_exception_msg2, X.RDB$MESSAGE);
+			put_source_blob (att_exception_description2, att_procedure_description, X.RDB$DESCRIPTION);
+
+			if (!X.RDB$SECURITY_CLASS.NULL)
+				PUT_TEXT(att_exception_security_class, X.RDB$SECURITY_CLASS);
+			if (!X.RDB$OWNER_NAME.NULL)
+				PUT_TEXT(att_exception_owner_name, X.RDB$OWNER_NAME);
+
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$EXCEPTIONS
+			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_exception);
+			const SSHORT l = PUT_TEXT (att_exception_name, X.RDB$EXCEPTION_NAME);
+			MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
+			BURP_verbose (198, temp);
+			// msg 198 writing exception %s
+			PUT_MESSAGE(att_exception_msg, att_exception_msg2, X.RDB$MESSAGE);
+			put_source_blob (att_exception_description2, att_procedure_description, X.RDB$DESCRIPTION);
+			put(tdgbl, att_end);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
 
 	MISC_release_request_silent(req_handle1);
 }
@@ -3135,11 +3237,27 @@ void write_functions()
 
 			if (!X.RDB$ENGINE_NAME.NULL)
 				PUT_TEXT(att_function_engine_name, X.RDB$ENGINE_NAME);
-
 			if (!X.RDB$PRIVATE_FLAG.NULL)
 				put_numeric(att_function_private_flag, X.RDB$PRIVATE_FLAG);
+			if (!X.RDB$FUNCTION_BLR.NULL)
+				put_blr_blob(att_function_blr, X.RDB$FUNCTION_BLR);
+			if (!X.RDB$FUNCTION_SOURCE.NULL)
+				put_source_blob(att_function_source, att_function_source, X.RDB$FUNCTION_SOURCE);
+			if (!X.RDB$VALID_BLR.NULL)
+				put_numeric(att_function_valid_blr, X.RDB$VALID_BLR);
+			if (!X.RDB$DEBUG_INFO.NULL)
+				put_blr_blob(att_function_debug_info, X.RDB$DEBUG_INFO);
+			if (!X.RDB$SECURITY_CLASS.NULL)
+				PUT_TEXT(att_function_security_class, X.RDB$SECURITY_CLASS);
+			if (!X.RDB$OWNER_NAME.NULL)
+				PUT_TEXT(att_function_owner_name, X.RDB$OWNER_NAME);
+			if (!X.RDB$LEGACY_FLAG.NULL)
+				put_numeric(att_function_legacy_flag, X.RDB$LEGACY_FLAG);
+			if (!X.RDB$INVARIANT_FLAG.NULL)
+				put_numeric(att_function_invariant_flag, X.RDB$INVARIANT_FLAG);
 
 			put(tdgbl, att_end);
+
 			COPY (X.RDB$FUNCTION_NAME, func);
 			write_function_args ((X.RDB$PACKAGE_NAME.NULL ? "" : X.RDB$PACKAGE_NAME), func);
 			put(tdgbl, rec_function_end);
@@ -3233,6 +3351,26 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 
 			if (!X.RDB$FIELD_PRECISION.NULL)
 				put_numeric (att_functionarg_field_precision, X.RDB$FIELD_PRECISION);
+
+			if (!X.RDB$ARGUMENT_NAME.NULL)
+				PUT_TEXT(att_functionarg_arg_name, X.RDB$ARGUMENT_NAME);
+			if (!X.RDB$FIELD_SOURCE.NULL)
+				PUT_TEXT(att_functionarg_field_source, X.RDB$FIELD_SOURCE);
+			if (!X.RDB$DEFAULT_VALUE.NULL)
+				put_blr_blob(att_functionarg_default_value, X.RDB$DEFAULT_VALUE);
+			if (!X.RDB$DEFAULT_SOURCE.NULL)
+				put_source_blob(att_functionarg_default_source, att_functionarg_default_source,
+								X.RDB$DEFAULT_SOURCE);
+			if (!X.RDB$COLLATION_ID.NULL)
+				put_numeric(att_functionarg_collation_id, X.RDB$COLLATION_ID);
+			if (!X.RDB$NULL_FLAG.NULL)
+				put_numeric(att_functionarg_null_flag, X.RDB$NULL_FLAG);
+			if (!X.RDB$ARGUMENT_MECHANISM.NULL)
+				put_numeric(att_functionarg_arg_type_mechanism, X.RDB$ARGUMENT_MECHANISM);
+			if (!X.RDB$FIELD_NAME.NULL)
+				PUT_TEXT(att_functionarg_field_name, X.RDB$FIELD_NAME);
+			if (!X.RDB$RELATION_NAME.NULL)
+				PUT_TEXT(att_functionarg_relation_name, X.RDB$RELATION_NAME);
 
 			put(tdgbl, att_end);
 		END_FOR;
@@ -3331,7 +3469,38 @@ void write_generators()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11)
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$GENERATORS
+			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			put(tdgbl, rec_generator);
+			const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
+			SINT64 value = 0;
+			if (!tdgbl->gbl_sw_meta)
+			{
+				value = get_gen_id (X.RDB$GENERATOR_NAME, l);
+				put_int64 (att_gen_value_int64, value);
+			}
+			if (!X.RDB$DESCRIPTION.NULL) {
+				put_source_blob (att_gen_description, att_gen_description, X.RDB$DESCRIPTION);
+			}
+
+			if (!X.RDB$SECURITY_CLASS.NULL)
+				PUT_TEXT(att_gen_security_class, X.RDB$SECURITY_CLASS);
+			if (!X.RDB$OWNER_NAME.NULL)
+				PUT_TEXT(att_gen_owner_name, X.RDB$OWNER_NAME);
+
+			put(tdgbl, att_end);
+			MISC_terminate (X.RDB$GENERATOR_NAME, temp, l, sizeof(temp));
+			BURP_verbose (165, SafeArg() << temp << value);
+			// msg 165 writing generator %s value %ld
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else if (tdgbl->BCK_capabilities & BCK_ods11)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$GENERATORS
@@ -3397,8 +3566,7 @@ void write_global_fields()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	isc_req_handle req_handle1 = 0, req_handle2 = 0,
-		req_handle3 = 0, req_handle4 = 0;
+	isc_req_handle req_handle1 = 0, req_handle2 = 0, req_handle3 = 0, req_handle4 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3408,10 +3576,84 @@ void write_global_fields()
 	// requests--this requires more code but it is well worth it
 	// for the performance benefits, especially remotely--deej
 
-	if ((tdgbl->BCK_capabilities & BCK_attributes_v3) &&
-		(tdgbl->BCK_capabilities & BCK_ods8) &&
-		(tdgbl->BCK_capabilities & BCK_ods10))
+	if (tdgbl->BCK_capabilities & BCK_ods12_0)
 	{
+		FOR (REQUEST_HANDLE req_handle1)
+			X IN RDB$FIELDS WITH
+			X.RDB$SYSTEM_FLAG NE 1 OR
+			X.RDB$SYSTEM_FLAG MISSING
+
+			put(tdgbl, rec_global_field);
+			const SSHORT l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
+			MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
+			BURP_verbose (149, temp);
+			// msg 149  writing global field %.*s
+			if (X.RDB$QUERY_NAME [0] != ' ')
+				PUT_TEXT (att_field_query_name, X.RDB$QUERY_NAME);
+			if (X.RDB$EDIT_STRING [0] != ' ')
+				PUT_TEXT (att_field_edit_string, X.RDB$EDIT_STRING);
+			put_source_blob (att_field_query_header, att_field_query_header, X.RDB$QUERY_HEADER);
+			put_numeric (att_field_type, X.RDB$FIELD_TYPE);
+			put_numeric (att_field_length, X.RDB$FIELD_LENGTH);
+			put_numeric (att_field_sub_type, X.RDB$FIELD_SUB_TYPE);
+			put_numeric (att_field_scale, X.RDB$FIELD_SCALE);
+			put_blr_blob (att_field_missing_value, X.RDB$MISSING_VALUE);
+			put_blr_blob (att_field_default_value, X.RDB$DEFAULT_VALUE);
+			put_blr_blob (att_field_validation_blr, X.RDB$VALIDATION_BLR);
+			put_source_blob(att_field_validation_source2, att_field_validation_source,
+							X.RDB$VALIDATION_SOURCE);
+			put_blr_blob (att_field_computed_blr, X.RDB$COMPUTED_BLR);
+			put_source_blob(att_field_computed_source2, att_field_computed_source,
+							X.RDB$COMPUTED_SOURCE);
+			if (X.RDB$SEGMENT_LENGTH)
+				put_numeric (att_field_segment_length, X.RDB$SEGMENT_LENGTH);
+			if (X.RDB$SYSTEM_FLAG)
+				put_numeric (att_field_system_flag, X.RDB$SYSTEM_FLAG);
+			put_source_blob (att_field_description2, att_field_description, X.RDB$DESCRIPTION);
+
+			if (X.RDB$EXTERNAL_LENGTH)
+				put_numeric (att_field_external_length, X.RDB$EXTERNAL_LENGTH);
+			if (X.RDB$EXTERNAL_TYPE)
+				put_numeric (att_field_external_type, X.RDB$EXTERNAL_TYPE);
+			if (X.RDB$EXTERNAL_SCALE)
+				put_numeric (att_field_external_scale, X.RDB$EXTERNAL_SCALE);
+			if (X.RDB$DIMENSIONS)
+				put_numeric (att_field_dimensions, X.RDB$DIMENSIONS);
+			if (!X.RDB$NULL_FLAG.NULL)
+				put_numeric (att_field_null_flag, X.RDB$NULL_FLAG);
+			if (!X.RDB$CHARACTER_LENGTH.NULL)
+				put_numeric (att_field_character_length, X.RDB$CHARACTER_LENGTH);
+			if (!X.RDB$DEFAULT_SOURCE.NULL)
+				put_source_blob(att_field_default_source, att_field_default_source,
+								X.RDB$DEFAULT_SOURCE);
+			if (!X.RDB$MISSING_SOURCE.NULL)
+				put_source_blob(att_field_missing_source, att_field_missing_source,
+								X.RDB$MISSING_SOURCE);
+			if (!X.RDB$CHARACTER_SET_ID.NULL)
+				put_numeric (att_field_character_set, X.RDB$CHARACTER_SET_ID);
+			if (!X.RDB$COLLATION_ID.NULL)
+				put_numeric (att_field_collation_id, X.RDB$COLLATION_ID);
+			if (!X.RDB$FIELD_PRECISION.NULL)
+				put_numeric (att_field_precision, X.RDB$FIELD_PRECISION);
+
+			if (!X.RDB$SECURITY_CLASS.NULL)
+				PUT_TEXT(att_field_security_class, X.RDB$SECURITY_CLASS);
+			if (!X.RDB$OWNER_NAME.NULL)
+				PUT_TEXT(att_field_owner_name, X.RDB$OWNER_NAME);
+
+			put(tdgbl, att_end);
+
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else if (tdgbl->BCK_capabilities & BCK_ods10)
+	{
+		// Includes:
+		//(tdgbl->BCK_capabilities & BCK_attributes_v3)
+		//(tdgbl->BCK_capabilities & BCK_ods8)
+
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$FIELDS WITH
 			X.RDB$SYSTEM_FLAG NE 1 OR
