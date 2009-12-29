@@ -74,8 +74,8 @@ Objectives:
       unpackaged routines.
 
       Firebird packages are divided in two pieces: a header (aka PACKAGE) and a body (aka
-      PACKAGE BODY). This division is very similar to a Delphi unit. The header correspond to the
-      interface part, and the body correspond to the implementation part.
+      PACKAGE BODY). This division is very similar to a Delphi unit. The header corresponds to the
+      interface part, and the body corresponds to the implementation part.
 
       The user needs first to create the header (CREATE PACKAGE) and after it the body (CREATE
       PACKAGE BODY).

@@ -107,7 +107,7 @@ void ValueMover::getValue(const ValueImpl* value, const dsc* desc, dsc* target, 
 			//// TODO: localize
 			status_exception::raise(
 				Arg::Gds(isc_random) <<
-				Arg::Str("Value is NULL and isNull parameter was not informed"));
+				Arg::Str("Value is NULL but isNull parameter was not informed"));
 		}
 	}
 	else
