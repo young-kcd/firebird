@@ -1,3 +1,67 @@
+2009-12-29 13:56  robocop
+
+	* firebird2/src/include/consts_pub.h (1.45):
+
+	Comment unused items.
+
+2009-12-29 13:46  hvlad
+
+	* firebird2/src/common/classes/alloc.cpp (1.135):
+
+	All memory allocations should be ALLOC_ALLIGMENT aligned.  It fixed
+	bug in Win64 DEBUG build.
+
+2009-12-29 12:32  robocop
+
+	* firebird2/src/isql/show.epp (1.165):
+
+	Misc.
+
+2009-12-29 11:54  dimitr
+
+	* firebird2/src/utilities/nbackup.cpp (1.112):
+
+	Support the -D switch on Windows.
+
+2009-12-29 10:07  robocop
+
+	* firebird2/src/isql/isql.epp (1.308):
+
+	Nicer fix for isql v/s v3 schemas.
+
+2009-12-29 09:42  robocop
+
+	* firebird2/src/burp/: backup.epp (1.137), burp.h (1.109),
+	restore.epp (1.193):
+
+	Support Dmitry's new system fields in backup/restore. Isql is still
+	missing the needed pieces.
+
+2009-12-29 08:08  robocop
+
+	* firebird2/: doc/sql.extensions/README.packages.txt (1.6),
+	src/jrd/ValueImpl.cpp (1.7):
+
+	Misc.
+
+2009-12-28 23:18  asfernandes
+
+	* firebird2/src/jrd/: PreparedStatement.h (1.16), ini.epp (1.129):
+
+	Support for named parameters for PreparedStatement using C++
+	variables
+
+2009-12-28 16:31  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.302), dsql/metd.epp (1.158),
+	jrd/constants.h (1.73), jrd/dfw.epp (1.314), jrd/drq.h (1.45),
+	jrd/dyn_util.epp (1.75), jrd/tra.cpp (1.217), jrd/tra.h (1.112),
+	jrd/vio.cpp (1.280):
+
+	Store the view context type when it doesn't came from backup and
+	simplify the code. Still problems altering procedures used in
+	views.
+
 2009-12-28 14:25  dimitr
 
 	* firebird2/: src/dsql/make.cpp (1.199),
