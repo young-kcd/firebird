@@ -121,6 +121,32 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, si
 	rewind();	// this will set cur_offset and spbState
 }
 
+ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
+	kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
+{
+	if (buffLen)
+	{
+		while (kl->kind != EndOfList)
+		{
+			kind = kl->kind;
+			if (getBufferTag() == kl->tag)
+			{
+				break;
+			}
+			++kl;
+		}
+		if (kl->kind == EndOfList)
+		{
+			if (raise)
+			{
+				raise();
+			}
+			invalid_structure("Unknown tag value - missing in the list of possible");
+		}
+	}
+	rewind();	// this will set cur_offset and spbState
+}
+
 const UCHAR* ClumpletReader::getBuffer() const
 {
 	return static_buffer;
@@ -671,6 +697,21 @@ bool ClumpletReader::getBoolean() const
 	}
 	return length && ptr[0];
 }
+
+ClumpletReader::SingleClumplet ClumpletReader::getClumplet() const
+{
+	SingleClumplet rc;
+	rc.tag = getClumpTag();
+	rc.size = getClumpletSize(false, false, true);
+	rc.data = getBytes();
+	return rc;
+}
+
+const ClumpletReader::KindList ClumpletReader::dpbList[] = {
+	{ClumpletReader::Tagged, isc_dpb_version1},
+	{ClumpletReader::WideTagged, isc_dpb_version2},
+	{ClumpletReader::EndOfList, 0}
+};
 
 } // namespace
 

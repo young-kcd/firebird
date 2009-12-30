@@ -45,11 +45,24 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
+	enum Kind {EndOfList, Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
+	struct KindList
+	{
+		Kind kind;
+		UCHAR tag;
+	};
+	struct SingleClumplet
+	{
+		UCHAR tag;
+		size_t size;
+		const UCHAR* data;
+	};
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
 	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
+	// Different versions of clumplets may have different kinds
+	ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
 	virtual ~ClumpletReader() { }
 
 	// Navigation in clumplet buffer
@@ -108,7 +121,7 @@ protected:
 	void adjustSpbState();
 
 	size_t cur_offset;
-	const Kind kind;
+	Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer
 
 	// Methods are virtual so writer can override 'em
@@ -125,6 +138,9 @@ protected:
 	// This is called when passed buffer appears invalid
 	virtual void invalid_structure(const char* what) const;
 
+	// get the most generic representation of clumplet
+	SingleClumplet getClumplet() const;
+
 private:
 	// Assignment and copy constructor not implemented.
 	ClumpletReader(const ClumpletReader& from);
@@ -134,6 +150,10 @@ private:
 	const UCHAR* static_buffer_end;
 
 	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
+
+	// Some frequently used kind lists
+public:
+	static const KindList dpbList[];
 };
 
 } // namespace Firebird

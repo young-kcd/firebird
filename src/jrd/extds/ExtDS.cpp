@@ -356,7 +356,7 @@ bool Connection::isSameDatabase(thread_db* tdbb, const string& dbName,
 	if (m_dbName != dbName)
 		return false;
 
-	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 	generateDPB(tdbb, dpb, user, pwd, role);
 
 	return m_dpb.simpleCompare(dpb);

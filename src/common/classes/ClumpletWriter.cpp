@@ -93,6 +93,19 @@ ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t
 	rewind();
 }
 
+ClumpletWriter::ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer, size_t buffLen) :
+	ClumpletReader(kl, buffer, buffLen), sizeLimit(limit), kindList(kl), dynamic_buffer(getPool())
+{
+	if (buffer && buffLen) {
+		dynamic_buffer.push(buffer, buffLen);
+	}
+	else {
+		initNewBuffer(kl->tag);
+	}
+	rewind();
+}
+
+/*
 ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit,
 							   const UCHAR* buffer, size_t buffLen, UCHAR tag) :
 	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
@@ -105,9 +118,27 @@ ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit,
 	}
 	rewind();
 }
-
+ */
 void ClumpletWriter::reset(UCHAR tag)
 {
+	if (kindList)
+	{
+		for (const KindList* kl = kindList; kl->kind != EndOfList; ++kl)
+		{
+			if (tag == kl->tag)
+			{
+				kind = kl->kind;
+				dynamic_buffer.shrink(0);
+				initNewBuffer(tag);
+				rewind();
+
+				return;
+			}
+		}
+
+		invalid_structure("Unknown tag value - missing in the list of possible");
+	}
+	
 	dynamic_buffer.shrink(0);
 	initNewBuffer(tag);
 	rewind();
@@ -218,66 +249,75 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 		return;
 	}
 
-	// Check length according to clumplet type
-	const ClumpletType t = getClumpletType(tag);
 	UCHAR lenSize = 0;
-	switch (t)
+	// Check length according to clumplet type
+	// Perform structure upgrade when needed and possible
+	for(;;)
 	{
-	case Wide:
-		if (length > MAX_ULONG)
+		const ClumpletType t = getClumpletType(tag);
+		string m;
+
+		switch (t)
 		{
-			string m;
-			m.printf("attempt to store %d bytes in a clumplet", length);
+		case Wide:
+			if (length > MAX_ULONG)
+			{
+				m.printf("attempt to store %d bytes in a clumplet", length);
+				break;
+			}
+			lenSize = 4;
+			break;
+		case TraditionalDpb:
+			if (length > MAX_UCHAR)
+			{
+				m.printf("attempt to store %d bytes in a clumplet with maximum size 255 bytes", length);
+				break;
+			}
+			lenSize = 1;
+			break;
+		case SingleTpb:
+			if (length > 0)
+			{
+				m.printf("attempt to store data in dataless clumplet");
+				break;
+			}
+			break;
+		case StringSpb:
+			if (length > MAX_USHORT)
+			{
+				m.printf("attempt to store %d bytes in a clumplet", length);
+				break;
+			}
+			lenSize = 2;
+			break;
+		case IntSpb:
+			if (length != 4)
+			{
+				m.printf("attempt to store %d bytes in a clumplet, need 4", length);
+				break;
+			}
+			break;
+		case ByteSpb:
+			if (length != 1)
+			{
+				m.printf("attempt to store %d bytes in a clumplet, need 1", length);
+				break;
+			}
+			break;
+		}
+
+		if (m.isEmpty())
+		{
+			// OK, no errors
+			break;
+		}
+
+		if (!upgradeVersion())
+		{
+			// can't uprgade - report failure
 			usage_mistake(m.c_str());
 			return;
 		}
-		lenSize = 4;
-		break;
-	case TraditionalDpb:
-		if (length > MAX_UCHAR)
-		{
-			string m;
-			m.printf("attempt to store %d bytes in a clumplet with maximum size 255 bytes", length);
-			usage_mistake(m.c_str());
-			return;
-		}
-		lenSize = 1;
-		break;
-	case SingleTpb:
-		if (length > 0)
-		{
-        	usage_mistake("attempt to store data in dataless clumplet");
-			return;
-		}
-		break;
-	case StringSpb:
-		if (length > MAX_USHORT)
-		{
-			string m;
-			m.printf("attempt to store %d bytes in a clumplet", length);
-			usage_mistake(m.c_str());
-			return;
-		}
-		lenSize = 2;
-		break;
-	case IntSpb:
-		if (length != 4)
-		{
-			string m;
-			m.printf("attempt to store %d bytes in a clumplet, need 4", length);
-			usage_mistake(m.c_str());
-			return;
-		}
-		break;
-	case ByteSpb:
-		if (length != 1)
-		{
-			string m;
-			m.printf("attempt to store %d bytes in a clumplet, need 1", length);
-			usage_mistake(m.c_str());
-			return;
-		}
-		break;
 	}
 
 	// Check that resulting data doesn't overflow size limit
@@ -376,6 +416,65 @@ bool ClumpletWriter::deleteWithTag(UCHAR tag)
    }
 
    return rc;
+}
+
+bool ClumpletWriter::upgradeVersion()
+{
+	// Sanity check
+	if (!kindList)
+	{
+		return false;
+	}
+
+	// Check for required version - use highmost one
+	const KindList* newest = kindList;
+	for (const KindList* itr = kindList; itr->tag != EndOfList; ++itr)
+	{
+		if (itr->tag > newest->tag)
+		{
+			newest = itr;
+		}
+	}
+	if (getBufferLength() && newest->tag <= getBufferTag())
+	{
+		return false;
+	}
+
+	// Copy data to new clumplet writer
+	size_t newPos = 0;
+	ClumpletWriter newPb(newest->kind, sizeLimit, newest->tag);
+	size_t currentPosition = cur_offset;
+	for(rewind(); !isEof(); moveNext())
+	{
+		if (currentPosition == cur_offset)
+		{
+			newPos = newPb.cur_offset;
+		}
+		newPb.insertClumplet(getClumplet());
+		newPb.moveNext();
+	}
+
+	// Return it to current clumplet writer in new format
+	dynamic_buffer.clear();
+	kind = newest->kind;
+	dynamic_buffer.push(newPb.dynamic_buffer.begin(), newPb.dynamic_buffer.getCount());
+
+	// Set pointer to correct position
+	if (newPos)
+	{
+		cur_offset = newPos;
+	}
+	else
+	{
+		rewind();
+	}
+
+	return true;
+}
+
+void ClumpletWriter::insertClumplet(const SingleClumplet& clumplet)
+{
+	insertBytes(clumplet.tag, clumplet.data, clumplet.size);
 }
 
 } // namespace

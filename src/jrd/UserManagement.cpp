@@ -43,7 +43,7 @@ UserManagement::UserManagement(jrd_tra* tra)
 	ISC_STATUS_ARRAY status;
 	Attachment* att = tra->tra_attachment;
 
-	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
 	dpb.insertString(isc_dpb_trusted_auth, att->att_user->usr_user_name);
 	if (att->att_user->usr_flags & USR_trole)

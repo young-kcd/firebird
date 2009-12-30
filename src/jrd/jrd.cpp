@@ -4752,6 +4752,13 @@ static void find_intl_charset(thread_db* tdbb, Jrd::Attachment* attachment, cons
 	}
 }
 
+namespace {
+	void dpbErrorRaise()
+	{
+		ERR_post(Arg::Gds(isc_bad_dpb_form) <<
+				 Arg::Gds(isc_wrodpbver));
+	}
+} // anonymous
 
 void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_client_SQL_dialect)
 {
@@ -4788,13 +4795,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 		ERR_post(Arg::Gds(isc_bad_dpb_form));
 	}
 
-	ClumpletReader rdr(ClumpletReader::Tagged, dpb, dpb_length);
-
-	if (rdr.getBufferTag() != isc_dpb_version1)
-	{
-		ERR_post(Arg::Gds(isc_bad_dpb_form) <<
-				 Arg::Gds(isc_wrodpbver));
-	}
+	ClumpletReader rdr(ClumpletReader::dpbList, dpb, dpb_length, dpbErrorRaise);
 
 	dpb_utf8_filename = rdr.find(isc_dpb_utf8_filename);
 

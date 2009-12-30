@@ -1383,8 +1383,8 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// copy the file name to a temp buffer, since some of the following utilities can modify it
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
-			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
+			reinterpret_cast<const UCHAR*>(dpb), dpb_length);
 
 		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
 
@@ -1989,8 +1989,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		// copy the file name to a temp buffer, since some of the following utilities can modify it
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
-				dpb, dpb_length, isc_dpb_version1);
+		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpb_length);
 
 		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
 

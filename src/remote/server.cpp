@@ -1057,12 +1057,7 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
 	const USHORT dl = attach->p_atch_dpb.cstr_length;
 
-	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::Tagged, MAX_SSHORT);
-
-	if (dl)
-		dpb_buffer.reset(dpb, dl);
-	else
-		dpb_buffer.reset(isc_dpb_version1);
+	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::dpbList, MAX_SSHORT, dpb, dl);
 
 	// remove trusted role if present (security measure)
 	dpb_buffer.deleteWithTag(isc_dpb_trusted_role);
@@ -1131,11 +1126,7 @@ static void attach_database2(rem_port* port,
     send->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 
-	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::Tagged, MAX_SSHORT);
-	if (dl)
-		dpb_buffer.reset(dpb, dl);
-	else
-		dpb_buffer.reset(isc_dpb_version1);
+	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::dpbList, MAX_SSHORT, dpb, dl);
 
 #ifdef TRUSTED_AUTH
 	// If we have trusted authentication, append it to database parameter block

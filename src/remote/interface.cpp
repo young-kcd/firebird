@@ -285,8 +285,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	Rdb* rdb = 0;
 
 	try {
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
-				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
+				reinterpret_cast<const UCHAR*>(dpb), dpb_length);
 
 #ifdef UNIX
 		// If single user, return
@@ -813,8 +813,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	try
 	{
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
-					reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
+					reinterpret_cast<const UCHAR*>(dpb), dpb_length);
 
 #ifdef UNIX
 		// If single user, return
@@ -5458,9 +5458,6 @@ static bool get_single_user(ClumpletReader& dpb)
  *	otherwise.
  *
  ******************************************/
-	if (dpb.getBufferTag() != isc_dpb_version1)
-		return false;
-
 	string su;
 	if (dpb.find(isc_dpb_reserved)) {
 		dpb.getString(su);

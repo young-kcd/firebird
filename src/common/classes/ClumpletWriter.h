@@ -49,7 +49,10 @@ public:
 
 	// Create writer from a given buffer
 	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
-	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+//	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+
+	// Create writer from a given buffer with possibly different clumplet version
+	ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer = NULL, size_t buffLen = 0);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, const size_t buffLen);
@@ -68,6 +71,7 @@ public:
 	void insertTime(UCHAR tag, ISC_TIME value) { insertInt(tag, value); }
 	void insertDate(UCHAR tag, ISC_DATE value) { insertInt(tag, value); }
 	void insertEndMarker(UCHAR tag);
+	void insertClumplet(const SingleClumplet& clumplet);
 
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
@@ -81,8 +85,11 @@ protected:
 	virtual const UCHAR* getBufferEnd() const;
 	virtual void size_overflow();
 	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length);
+	// upgrade clumplet version - obtain newest from kindList
+	bool upgradeVersion();
 private:
 	size_t sizeLimit;
+	const KindList* kindList;
 
 	// Assignment and copy constructor not implemented.
 	ClumpletWriter(const ClumpletWriter& from);
