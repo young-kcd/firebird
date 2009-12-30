@@ -680,7 +680,6 @@ namespace Firebird
 		}
 		inline StringType operator+(const StringType& v) const
 		{
-			fb_assert(&v != this);
 			return add(v.c_str(), v.length());
 		}
 		inline StringType operator+(const_pointer s) const
