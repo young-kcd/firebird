@@ -3957,6 +3957,6 @@ const Routine* jrd_req::getRoutine() const
 	fb_assert(!(req_procedure && req_function));
 	if (req_procedure)
 		return req_procedure;
-	else
-		return req_function;
+
+	return req_function;
 }
