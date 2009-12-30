@@ -39,14 +39,9 @@ public:
 	PathName();
 	virtual ~PathName();
 
-	static const char* getWorkingDirectory();
-	static int findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLength, char* buffer);
-	static Firebird::string expandFilename(const char* fileName, int dpbLength, const UCHAR* dpb);
-	static Firebird::string expandFilename(const char* fileName, const char* workingDirectory);
 	static int merge(const char* fileName, const char* workingDirectory, int bufferLength, char* buffer);
 	static bool isAbsolute(const char* fileName);
 	static char* copyCanonical(const char* fileName, char* buffer, const char* endBuffer);
-	static Firebird::string expandFilename(const char* fileName);
 	static bool hasDirectory(const char* fileName);
 	static bool pathsEquivalent(const char* path1, const char* path2);
 };
