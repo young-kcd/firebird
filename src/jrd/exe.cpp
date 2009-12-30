@@ -3950,3 +3950,13 @@ void EXE_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		BUGCHECK(290); // msg 290 error during savepoint backout
 	}
 }
+
+
+const Routine* jrd_req::getRoutine() const
+{
+	fb_assert(!(req_procedure && req_function));
+	if (req_procedure)
+		return req_procedure;
+	else
+		return req_function;
+}

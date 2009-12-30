@@ -353,24 +353,23 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		{
 			jrd_req* request = tdbb->getRequest();
 			CallerName callerName;
+			const Routine* routine;
 
 			if (request && request->req_trg_name.hasData())
 				tran->tra_caller_name = CallerName(obj_trigger, request->req_trg_name);
-			else if (request && request->req_procedure &&
-				request->req_procedure->getName().identifier.hasData())
+			else if (request && (routine = request->getRoutine()) &&
+				routine->getName().identifier.hasData())
 			{
-				if (request->req_procedure->getName().qualifier.isEmpty())
-					tran->tra_caller_name = CallerName(obj_procedure, request->req_procedure->getName().identifier);
+				if (routine->getName().qualifier.isEmpty())
+				{
+					tran->tra_caller_name = CallerName(routine->getObjectType(),
+						routine->getName().identifier);
+				}
 				else
-					tran->tra_caller_name = CallerName(obj_package_header, request->req_procedure->getName().qualifier);
-			}
-			else if (request && request->req_function &&
-				request->req_function->getName().identifier.hasData())
-			{
-				if (request->req_function->getName().qualifier.isEmpty())
-					tran->tra_caller_name = CallerName(obj_udf, request->req_function->getName().identifier);
-				else
-					tran->tra_caller_name = CallerName(obj_package_header, request->req_function->getName().qualifier);
+				{
+					tran->tra_caller_name = CallerName(obj_package_header,
+						routine->getName().qualifier);
+				}
 			}
 			else
 				tran->tra_caller_name = CallerName();

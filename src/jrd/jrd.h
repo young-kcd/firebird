@@ -36,6 +36,7 @@
 #include "../jrd/dsc.h"
 #include "../jrd/btn.h"
 #include "../jrd/jrd_proto.h"
+#include "../jrd/obj.h"
 #include "../jrd/val.h"
 
 #include "../common/classes/fb_atomic.h"
@@ -263,6 +264,17 @@ public:
 		  prc_alter_count(0),
 		  prc_external(NULL)
 	{
+	}
+
+public:
+	virtual int getObjectType() const
+	{
+		return obj_procedure;
+	}
+
+	virtual const char* getSclType() const
+	{
+		return object_procedure;
 	}
 };
 

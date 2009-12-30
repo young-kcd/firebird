@@ -315,6 +315,8 @@ public:
 		}
 		req_base_stats.assign(req_stats);
 	}
+
+	const Routine* getRoutine() const;
 };
 
 // Size of request without rpb items at the tail. Used to calculate impure area size

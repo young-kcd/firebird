@@ -1126,22 +1126,16 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 		record.storeGlobalId(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
 	}
 
+	const Routine* routine = request->getRoutine();
+
 	// object name/type
-	if (request->req_procedure)
+	if (routine)
 	{
-		if (request->req_procedure->getName().qualifier.hasData())
-			record.storeString(f_mon_call_pkg_name, request->req_procedure->getName().qualifier);
+		if (routine->getName().qualifier.hasData())
+			record.storeString(f_mon_call_pkg_name, routine->getName().qualifier);
 
-		record.storeString(f_mon_call_name, request->req_procedure->getName().identifier);
-		record.storeInteger(f_mon_call_type, obj_procedure);
-	}
-	else if (request->req_function)
-	{
-		if (request->req_function->getName().qualifier.hasData())
-			record.storeString(f_mon_call_pkg_name, request->req_function->getName().qualifier);
-
-		record.storeString(f_mon_call_name, request->req_function->getName().identifier);
-		record.storeInteger(f_mon_call_type, obj_udf);
+		record.storeString(f_mon_call_name, routine->getName().identifier);
+		record.storeInteger(f_mon_call_type, routine->getObjectType());
 	}
 	else if (!request->req_trg_name.isEmpty())
 	{

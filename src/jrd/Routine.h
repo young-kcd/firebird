@@ -59,6 +59,10 @@ namespace Jrd
 		/*const*/ jrd_req* getRequest() const { return request; }
 		void setRequest(jrd_req* value) { request = value; }
 
+	public:
+		virtual int getObjectType() const = 0;
+		virtual const char* getSclType() const = 0;
+
 	private:
 		USHORT id;							// routine ID
 		Firebird::QualifiedName name;		// routine name

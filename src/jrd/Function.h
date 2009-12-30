@@ -81,6 +81,17 @@ namespace Jrd
 		static int blockingAst(void*);
 
 	public:
+		virtual int getObjectType() const
+		{
+			return obj_udf;
+		}
+
+		virtual const char* getSclType() const
+		{
+			return object_function;
+		}
+
+	public:
 		int (*fun_entrypoint)();				// function entrypoint
 		USHORT fun_inputs;						// input arguments
 		USHORT fun_defaults;					// default input arguments

@@ -583,46 +583,26 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 	if (validate)
 	{
-		jrd_prc* const procedure = request->req_procedure;
+		const Routine* routine = request->getRoutine();
 
-		if (procedure)
+		if (routine)
 		{
-			const TEXT* sec_name = procedure->getSecurityName().nullStr();
-			const SecurityClass* sec_class = SCL_get_class(tdbb, sec_name);
+			const TEXT* secName = routine->getSecurityName().nullStr();
+			const SecurityClass* secClass = SCL_get_class(tdbb, secName);
 
-			if (procedure->getName().qualifier.isEmpty())
+			if (routine->getName().qualifier.isEmpty())
 			{
-				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_procedure, procedure->getName().identifier);
+				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, routine->getSclType(),
+					routine->getName().identifier);
 			}
 			else
 			{
-				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_package, procedure->getName().qualifier);
-			}
-		}
-
-		Function* const function = request->req_function;
-
-		if (function)
-		{
-			const TEXT* sec_name = function->getSecurityName().nullStr();
-			const SecurityClass* sec_class = SCL_get_class(tdbb, sec_name);
-
-			if (procedure->getName().qualifier.isEmpty())
-			{
-				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_function, function->getName().identifier);
-			}
-			else
-			{
-				SCL_check_access(tdbb, sec_class, 0, 0, NULL, SCL_execute,
-								 object_package, function->getName().qualifier);
+				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, object_package,
+					routine->getName().qualifier);
 			}
 		}
 
 		CMP_verify_access(tdbb, request);
-
 	}
 
 	MemoryPool* const pool = request->req_pool;
