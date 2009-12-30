@@ -1550,7 +1550,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 	}
 #endif
 
-	// If i'm a sweeper i don't need to look at swept pages. Also i should
+	// If I'm a sweeper I don't need to look at swept pages. Also I should
 	// check processed pages if they were swept.
 
 	const bool sweeper = (tdbb->tdbb_flags & TDBB_sweeper);
@@ -1957,7 +1957,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 		 memset(header->rhd_data + size, 0, fill);
 	}
 
-	Ods::pag *page = rpb->getWindow(tdbb).win_buffer;
+	Ods::pag* page = rpb->getWindow(tdbb).win_buffer;
 	if (page->pag_flags & dpg_swept)
 	{
 		page->pag_flags &= ~dpg_swept;
@@ -2277,7 +2277,7 @@ static void check_swept(thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	Database* dbb = tdbb->getDatabase();
-	jrd_tra *transaction = tdbb->getTransaction();
+	jrd_tra* transaction = tdbb->getTransaction();
 	WIN* window = &rpb->getWindow(tdbb);
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 

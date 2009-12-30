@@ -3724,8 +3724,8 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 		// procedure name and ID, this is why we do it.
 		procedure->setName(QualifiedName());
 		procedure->setSecurityName("");
-		procedure->prc_defaults = 0;
 		procedure->setId(0);
+		procedure->prc_defaults = 0;
 	}
 }
 

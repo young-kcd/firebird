@@ -3298,16 +3298,20 @@ void fix_exception(BurpGlobals* tdgbl, const char* exc_name, scan_attr_t& scan_n
 			bad_attribute(scan_next_attr, failed_attrib, 287);
 			return;
 		}
+
 		*msg_ptr++ = char(attribute); // (1)
+
 		UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, MIN(remaining - 1, 255));
 		if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
 		{
 			bad_attribute(scan_next_attr, failed_attrib, 287);
 			return;
 		}
+
 		l2 += rc_ptr - msg_ptr + 1; // + 1 because (1)
 		msg_ptr = rc_ptr;
 		*msg_ptr = 0;
+
 		if (l2 == FIELD_LIMIT)
 			msg_seen = false;
 	}

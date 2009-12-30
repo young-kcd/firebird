@@ -5865,7 +5865,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 				// release the request
 
 				CMP_release(tdbb, procedure->getRequest());
-				procedure->setRequest(0);
+				procedure->setRequest(NULL);
 			}
 
 			// delete dependency lists

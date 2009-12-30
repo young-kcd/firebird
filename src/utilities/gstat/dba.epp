@@ -848,10 +848,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 			dba_print(12, SafeArg() << relation->rel_data_pages << relation->rel_slots << buf);
 			// msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s
 
-			dba_print(46, SafeArg() << relation->rel_primary_pages << relation->rel_primary_pages << 
+			dba_print(46, SafeArg() << relation->rel_primary_pages << relation->rel_primary_pages <<
 										relation->rel_swept_pages);
 			// msg 46: "    Primary pages: @1, full pages: @2, swept pages: @3
-			
+
 			if (relation->rel_bigrec_pages)
 			{
 				dba_print(47, SafeArg() << relation->rel_bigrec_pages);
@@ -860,12 +860,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 			if (relation->rel_blobs_level_0 || relation->rel_blobs_level_1 || relation->rel_blobs_level_2)
 			{
-				dba_print(48, SafeArg() << (relation->rel_blobs_level_0 + relation->rel_blobs_level_1 + 
-											relation->rel_blobs_level_2) << relation->rel_blob_space << 
+				dba_print(48, SafeArg() << (relation->rel_blobs_level_0 + relation->rel_blobs_level_1 +
+											relation->rel_blobs_level_2) << relation->rel_blob_space <<
 											relation->rel_blob_pages);
 				// msg 48: "    Blobs: @1, total length: @2, blob pages: @3
 
-				dba_print(49, SafeArg() << relation->rel_blobs_level_0 << relation->rel_blobs_level_1 << 
+				dba_print(49, SafeArg() << relation->rel_blobs_level_0 << relation->rel_blobs_level_1 <<
 											relation->rel_blobs_level_2);
 				// msg 49: "		Level 0: @1, Level 1: @2, Level 2: @3
 			}
@@ -1123,11 +1123,11 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 static void analyze_blob(dba_rel* relation, const blh* blob, int length)
 {
 	relation->rel_blob_space += blob->blh_length;
-	if (!blob->blh_level) 
+	if (!blob->blh_level)
 	{
 		relation->rel_blobs_level_0++;
 	}
-	else 
+	else
 	{
 		const int slots = (length - BLH_SIZE) / sizeof(SLONG);
 		relation->rel_blob_pages += slots;
@@ -1178,7 +1178,7 @@ static ULONG analyze_fragments(dba_rel* relation, const rhdf* header)
 			break;
 		}
 
-		if (page->dpg_header.pag_flags & (dpg_orphan | dpg_full) && page->dpg_count == 1) {
+		if ((page->dpg_header.pag_flags & (dpg_orphan | dpg_full)) && page->dpg_count == 1) {
 			relation->rel_bigrec_pages++;
 		}
 

@@ -597,8 +597,8 @@ void Function::remove(thread_db* tdbb)
 	{
 		setName(QualifiedName());
 		setSecurityName("");
-		fun_defaults = 0;
 		setId(0);
+		fun_defaults = 0;
 	}
 }
 

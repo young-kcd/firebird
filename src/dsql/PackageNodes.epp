@@ -225,7 +225,7 @@ namespace
 			WITH FUN.RDB$PACKAGE_NAME EQ metaName.c_str()
 		{
 			Signature function(FUN.RDB$FUNCTION_NAME);
-			function.defined = !FUN.RDB$ENTRYPOINT.NULL || !FUN.RDB$FUNCTION_BLR.NULL;
+			function.defined = !FUN.RDB$FUNCTION_BLR.NULL || !FUN.RDB$ENTRYPOINT.NULL;
 
 			if (details)
 			{
