@@ -230,28 +230,53 @@ namespace
 			if (details)
 			{
 				FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
-					ARG IN RDB$FUNCTION_ARGUMENTS
+					ARG IN RDB$FUNCTION_ARGUMENTS CROSS
+					FLD IN RDB$FIELDS
 					WITH ARG.RDB$PACKAGE_NAME EQ metaName.c_str() AND
-						 ARG.RDB$FUNCTION_NAME EQ FUN.RDB$FUNCTION_NAME
+						 ARG.RDB$FUNCTION_NAME EQ FUN.RDB$FUNCTION_NAME AND
+						 FLD.RDB$FIELD_NAME EQ ARG.RDB$FIELD_SOURCE
 				{
 					ParameterInfo parameter(*getDefaultMemoryPool());
-					parameter.number = ARG.RDB$ARGUMENT_POSITION;
-					parameter.mechanism = ARG.RDB$MECHANISM;
 
-					if (!ARG.RDB$FIELD_LENGTH.NULL)
-						parameter.fieldLength = ARG.RDB$FIELD_LENGTH;
-					if (!ARG.RDB$FIELD_SCALE.NULL)
-						parameter.fieldScale = ARG.RDB$FIELD_SCALE;
-					if (!ARG.RDB$FIELD_TYPE.NULL)
-						parameter.fieldType = ARG.RDB$FIELD_TYPE;
-					if (!ARG.RDB$FIELD_SUB_TYPE.NULL)
-						parameter.fieldSubType = ARG.RDB$FIELD_SUB_TYPE;
-					if (!ARG.RDB$CHARACTER_LENGTH.NULL)
-						parameter.fieldCharLength = ARG.RDB$CHARACTER_LENGTH;
-					if (!ARG.RDB$CHARACTER_SET_ID.NULL)
-						parameter.fieldCharSetId = ARG.RDB$CHARACTER_SET_ID;
-					if (!ARG.RDB$FIELD_PRECISION.NULL)
-						parameter.fieldPrecision = ARG.RDB$FIELD_PRECISION;
+					parameter.number = ARG.RDB$ARGUMENT_POSITION;
+					parameter.name = ARG.RDB$ARGUMENT_NAME;
+					parameter.fieldSource = ARG.RDB$FIELD_SOURCE;
+					parameter.mechanism = ARG.RDB$ARGUMENT_MECHANISM;
+
+					if (!ARG.RDB$FIELD_NAME.NULL)
+						parameter.fieldName = ARG.RDB$FIELD_NAME;
+					if (!ARG.RDB$RELATION_NAME.NULL)
+						parameter.relationName = ARG.RDB$RELATION_NAME;
+					if (!ARG.RDB$COLLATION_ID.NULL)
+						parameter.collationId = ARG.RDB$COLLATION_ID;
+					if (!ARG.RDB$NULL_FLAG.NULL)
+						parameter.nullFlag = ARG.RDB$NULL_FLAG;
+
+					if (!FLD.RDB$FIELD_LENGTH.NULL)
+						parameter.fieldLength = FLD.RDB$FIELD_LENGTH;
+					if (!FLD.RDB$FIELD_SCALE.NULL)
+						parameter.fieldScale = FLD.RDB$FIELD_SCALE;
+					if (!FLD.RDB$FIELD_TYPE.NULL)
+						parameter.fieldType = FLD.RDB$FIELD_TYPE;
+					if (!FLD.RDB$FIELD_SUB_TYPE.NULL)
+						parameter.fieldSubType = FLD.RDB$FIELD_SUB_TYPE;
+					if (!FLD.RDB$SEGMENT_LENGTH.NULL)
+						parameter.fieldSegmentLength = FLD.RDB$SEGMENT_LENGTH;
+					if (!FLD.RDB$NULL_FLAG.NULL)
+						parameter.fieldNullFlag = FLD.RDB$NULL_FLAG;
+					if (!FLD.RDB$CHARACTER_LENGTH.NULL)
+						parameter.fieldCharLength = FLD.RDB$CHARACTER_LENGTH;
+					if (!FLD.RDB$COLLATION_ID.NULL)
+						parameter.fieldCollationId = FLD.RDB$COLLATION_ID;
+					if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+						parameter.fieldCharSetId = FLD.RDB$CHARACTER_SET_ID;
+					if (!FLD.RDB$FIELD_PRECISION.NULL)
+						parameter.fieldPrecision = FLD.RDB$FIELD_PRECISION;
+
+					if (!ARG.RDB$DEFAULT_SOURCE.NULL)
+						parameter.defaultSource = ARG.RDB$DEFAULT_SOURCE;
+					if (!ARG.RDB$DEFAULT_VALUE.NULL)
+						parameter.defaultValue = ARG.RDB$DEFAULT_VALUE;
 
 					function.parameters.add(parameter);
 				}
@@ -286,21 +311,16 @@ namespace
 					parameter.number = PRM.RDB$PARAMETER_NUMBER;
 					parameter.name = PRM.RDB$PARAMETER_NAME;
 					parameter.fieldSource = PRM.RDB$FIELD_SOURCE;
+					parameter.mechanism = PRM.RDB$PARAMETER_MECHANISM;
 
 					if (!PRM.RDB$FIELD_NAME.NULL)
 						parameter.fieldName = PRM.RDB$FIELD_NAME;
-
 					if (!PRM.RDB$RELATION_NAME.NULL)
-					{
 						parameter.relationName = PRM.RDB$RELATION_NAME;
-					}
-
 					if (!PRM.RDB$COLLATION_ID.NULL)
 						parameter.collationId = PRM.RDB$COLLATION_ID;
 					if (!PRM.RDB$NULL_FLAG.NULL)
 						parameter.nullFlag = PRM.RDB$NULL_FLAG;
-
-					parameter.mechanism = PRM.RDB$PARAMETER_MECHANISM;
 
 					if (!FLD.RDB$FIELD_LENGTH.NULL)
 						parameter.fieldLength = FLD.RDB$FIELD_LENGTH;

@@ -1078,9 +1078,11 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 			else
 			{
 				ARG.RDB$RELATION_NAME.NULL = FALSE;
-				ARG.RDB$FIELD_NAME.NULL = FALSE;
 				strcpy(ARG.RDB$RELATION_NAME, parameter.typeOfTable.c_str());
+
+				ARG.RDB$FIELD_NAME.NULL = FALSE;
 				strcpy(ARG.RDB$FIELD_NAME, parameter.typeOfName.c_str());
+
 				strcpy(ARG.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
 			}
 
