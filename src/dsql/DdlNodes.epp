@@ -214,7 +214,6 @@ Firebird::MetaName DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transacti
 		FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		FLD.RDB$FIELD_SCALE.NULL = TRUE;
 		FLD.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		FLD.RDB$FIELD_LENGTH.NULL = TRUE;
 		FLD.RDB$CHARACTER_LENGTH.NULL = TRUE;
 		FLD.RDB$FIELD_PRECISION.NULL = TRUE;
 		FLD.RDB$COLLATION_ID.NULL = TRUE;
@@ -256,16 +255,6 @@ Firebird::MetaName DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transacti
 			FLD.RDB$FIELD_SCALE.NULL = FALSE;
 			FLD.RDB$FIELD_SCALE = 0;
 
-			FLD.RDB$FIELD_LENGTH.NULL = FALSE;
-
-			if (parameter.type == dtype_varying)
-			{
-				fb_assert(parameter.length <= MAX_SSHORT);
-				FLD.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
-			}
-			else
-				FLD.RDB$FIELD_LENGTH = parameter.length;
-
 			FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 			FLD.RDB$CHARACTER_LENGTH = parameter.charLength;
 
@@ -289,6 +278,14 @@ Firebird::MetaName DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transacti
 				FLD.RDB$FIELD_SUB_TYPE = parameter.subType;
 			}
 		}
+
+		if (parameter.type == dtype_varying)
+		{
+			fb_assert(parameter.length <= MAX_SSHORT);
+			FLD.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
+		}
+		else
+			FLD.RDB$FIELD_LENGTH = parameter.length;
 
 		FLD.RDB$FIELD_TYPE = blr_dtypes[parameter.type];
 	}
@@ -1016,7 +1013,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 		ARG.RDB$FUNCTION_NAME.NULL = FALSE;
 		strcpy(ARG.RDB$FUNCTION_NAME, name.c_str());
 
-		if (parameter.name.hasData())
+		// Avoid the return with name INTERNAL_FIELD_NAME.
+		if (parameter.name.hasData() && pos != 0)
 		{
 			ARG.RDB$ARGUMENT_NAME.NULL = FALSE;
 			strcpy(ARG.RDB$ARGUMENT_NAME, parameter.name.c_str());
@@ -1049,162 +1047,78 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 		ARG.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		ARG.RDB$COLLATION_ID.NULL = TRUE;
 
-		if (pos != 0) // input parameters are stored as domains
+		ARG.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
+		ARG.RDB$ARGUMENT_MECHANISM =
+			(USHORT) (parameter.fullDomain ? prm_mech_normal : prm_mech_type_of);
+
+		if (parameter.notNull)
 		{
-			ARG.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
-			ARG.RDB$ARGUMENT_MECHANISM =
-				(USHORT) (parameter.fullDomain ? prm_mech_normal : prm_mech_type_of);
+			ARG.RDB$NULL_FLAG.NULL = FALSE;
+			ARG.RDB$NULL_FLAG = TRUE;
+		}
 
-			if (parameter.notNull)
+		ARG.RDB$FIELD_SOURCE.NULL = FALSE;
+
+		if (parameter.typeOfTable.isEmpty())
+		{
+			if (parameter.typeOfName.hasData())
 			{
-				ARG.RDB$NULL_FLAG.NULL = FALSE;
-				ARG.RDB$NULL_FLAG = TRUE;
-			}
-
-			ARG.RDB$FIELD_SOURCE.NULL = FALSE;
-
-			if (parameter.typeOfTable.isEmpty())
-			{
-				if (parameter.typeOfName.hasData())
-				{
-					strcpy(ARG.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
-				}
-				else
-				{
-					const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
-					strcpy(ARG.RDB$FIELD_SOURCE, fieldName.c_str());
-				}
+				strcpy(ARG.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
 			}
 			else
 			{
-				ARG.RDB$RELATION_NAME.NULL = FALSE;
-				strcpy(ARG.RDB$RELATION_NAME, parameter.typeOfTable.c_str());
-
-				ARG.RDB$FIELD_NAME.NULL = FALSE;
-				strcpy(ARG.RDB$FIELD_NAME, parameter.typeOfName.c_str());
-
-				strcpy(ARG.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
-			}
-
-			// ASF: If we used a collate with a domain or table.column type, write it
-			//		into RDB$FUNCTION_ARGUMENTS.
-
-			if (parameter.collateSpecified && parameter.typeOfName.hasData())
-			{
-				ARG.RDB$COLLATION_ID.NULL = FALSE;
-				ARG.RDB$COLLATION_ID = parameter.collationId;
-			}
-
-			// ASF: I moved this block to write defaults on RDB$FUNCTION_ARGUMENTS.
-			//		It was writing in RDB$FIELDS, but that would require special support
-			//		for packaged functions signature verification.
-
-			if (parameter.legacyDefault)
-			{
-				ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
-				ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
-
-				dsql_str* defaultString =
-					(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
-				string defaultSource = string(defaultString->str_data, defaultString->str_length);
-				attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE, defaultSource);
-
-				statement->getBlrData().clear();
-
-				if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
-					statement->append_uchar(blr_version4);
-				else
-					statement->append_uchar(blr_version5);
-
-				GEN_expr(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
-
-				statement->append_uchar(blr_eoc);
-
-				attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
-					statement->getBlrData().begin(),
-					statement->getBlrData().getCount());
+				const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
+				strcpy(ARG.RDB$FIELD_SOURCE, fieldName.c_str());
 			}
 		}
-		else // output parameter is stored inline
+		else
 		{
-			ARG.RDB$MECHANISM.NULL = FALSE;
-			ARG.RDB$MECHANISM = FUN_value;
+			ARG.RDB$RELATION_NAME.NULL = FALSE;
+			strcpy(ARG.RDB$RELATION_NAME, parameter.typeOfTable.c_str());
 
-			if (parameter.type == dtype_blob)
-			{
-				ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-				ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
+			ARG.RDB$FIELD_NAME.NULL = FALSE;
+			strcpy(ARG.RDB$FIELD_NAME, parameter.typeOfName.c_str());
 
-				ARG.RDB$FIELD_SCALE.NULL = FALSE;
-				ARG.RDB$FIELD_SCALE = 0;
+			strcpy(ARG.RDB$FIELD_SOURCE, parameter.fieldSource.c_str());
+		}
 
-				ARG.RDB$FIELD_LENGTH.NULL = FALSE;
-				ARG.RDB$FIELD_LENGTH = sizeof(ISC_QUAD);
+		// ASF: If we used a collate with a domain or table.column type, write it
+		//		into RDB$FUNCTION_ARGUMENTS.
 
-				if (parameter.subType == isc_blob_text)
-				{
-					ARG.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					ARG.RDB$CHARACTER_SET_ID = parameter.charSetId;
+		if (parameter.collateSpecified && parameter.typeOfName.hasData())
+		{
+			ARG.RDB$COLLATION_ID.NULL = FALSE;
+			ARG.RDB$COLLATION_ID = parameter.collationId;
+		}
 
-					if (parameter.collateSpecified)
-					{
-						ARG.RDB$COLLATION_ID.NULL = FALSE;
-						ARG.RDB$COLLATION_ID = parameter.collationId;
-					}
-				}
-			}
-			else if (parameter.type <= dtype_any_text)
-			{
-				ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-				ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
+		// ASF: I moved this block to write defaults on RDB$FUNCTION_ARGUMENTS.
+		//		It was writing in RDB$FIELDS, but that would require special support
+		//		for packaged functions signature verification.
 
-				ARG.RDB$FIELD_SCALE.NULL = FALSE;
-				ARG.RDB$FIELD_SCALE = 0;
+		if (parameter.legacyDefault)
+		{
+			ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
+			ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
 
-				ARG.RDB$FIELD_LENGTH.NULL = FALSE;
+			dsql_str* defaultString =
+				(dsql_str*) parameter.legacyDefault->nod_arg[e_dft_default_source];
+			string defaultSource = string(defaultString->str_data, defaultString->str_length);
+			attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE, defaultSource);
 
-				if (parameter.type == dtype_varying)
-				{
-					fb_assert(parameter.length <= MAX_SSHORT);
-					ARG.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
-				}
-				else
-				{
-					ARG.RDB$FIELD_LENGTH = parameter.length;
-				}
+			statement->getBlrData().clear();
 
-				ARG.RDB$CHARACTER_LENGTH.NULL = FALSE;
-				ARG.RDB$CHARACTER_LENGTH = parameter.charLength;
-
-				ARG.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				ARG.RDB$CHARACTER_SET_ID = parameter.charSetId;
-
-				if (parameter.collateSpecified)
-				{
-					ARG.RDB$COLLATION_ID.NULL = FALSE;
-					ARG.RDB$COLLATION_ID = parameter.collationId;
-				}
-			}
+			if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+				statement->append_uchar(blr_version4);
 			else
-			{
-				ARG.RDB$FIELD_SCALE.NULL = FALSE;
-				ARG.RDB$FIELD_SCALE = parameter.scale;
+				statement->append_uchar(blr_version5);
 
-				ARG.RDB$FIELD_LENGTH.NULL = FALSE;
-				ARG.RDB$FIELD_LENGTH = parameter.length;
+			GEN_expr(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
 
-				if (DTYPE_IS_EXACT(parameter.type))
-				{
-					ARG.RDB$FIELD_PRECISION.NULL = FALSE;
-					ARG.RDB$FIELD_PRECISION = parameter.precision;
+			statement->append_uchar(blr_eoc);
 
-					ARG.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-					ARG.RDB$FIELD_SUB_TYPE = parameter.subType;
-				}
-			}
-
-			ARG.RDB$FIELD_TYPE.NULL = FALSE;
-			ARG.RDB$FIELD_TYPE = blr_dtypes[parameter.type];
+			attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
+				statement->getBlrData().begin(),
+				statement->getBlrData().getCount());
 		}
 	}
 	END_STORE
