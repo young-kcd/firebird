@@ -30,6 +30,8 @@
 #define CLASSES_TRISTATE_H
 
 #include "firebird.h"
+#include "../common/classes/fb_string.h"
+#include "../common/classes/MetaName.h"
 
 
 // Do not have constructor to allow usage in unions (used in the parser).
@@ -62,6 +64,38 @@ public:
 	bool specified;
 };
 
+
+template <typename T>	// Generic clear for TriState
+class TriStateClear
+{
+public:
+	static void clear(T& v)
+	{
+		v = 0;
+	}
+};
+
+template <>
+class TriStateClear<Firebird::string>	// string especialization to clear TriState
+{
+public:
+	static void clear(Firebird::string& v)
+	{
+		v = "";
+	}
+};
+
+template <>
+class TriStateClear<Firebird::MetaName>	// MetaName especialization to clear TriState
+{
+public:
+	static void clear(Firebird::MetaName& v)
+	{
+		v = "";
+	}
+};
+
+
 template <typename T> class TriStateType : public TriStateRawType<T>
 {
 public:
@@ -79,7 +113,7 @@ public:
 
 	TriStateType<T>()
 	{
-		this->value = 0;
+		TriStateClear<T>::clear(this->value);
 		this->specified = false;
 	}
 

@@ -168,6 +168,13 @@ Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, Memor
 }
 
 
+Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, MemoryPool& pool,
+	jrd_tra* transaction, const PreparedStatement::Builder& builder)
+{
+	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, builder, true);
+}
+
+
 PreparedStatement* Jrd::Attachment::prepareUserStatement(thread_db* tdbb, MemoryPool& pool,
 	jrd_tra* transaction, const string& text)
 {

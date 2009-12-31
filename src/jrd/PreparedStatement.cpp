@@ -53,10 +53,56 @@ namespace
 namespace Jrd {
 
 
+void PreparedStatement::Builder::moveToStatement(thread_db* tdbb, PreparedStatement* stmt) const
+{
+	for (Array<Type>::const_iterator i = types.begin(); i != types.end(); ++i)
+	{
+		unsigned param = i - types.begin();
+		void* address = addresses[param];
+		bool* specifiedAddress = specifiedAddresses[param];
+
+		if (specifiedAddress && !*specifiedAddress)
+		{
+			stmt->setNull(param + 1);
+			continue;
+		}
+
+		dsc desc;
+
+		switch (*i)
+		{
+			case TYPE_SLONG:
+				desc.makeLong(0, (SLONG*) address);
+				break;
+
+			case TYPE_STRING:
+			{
+				string* str = (string*) address;
+				desc.makeText(str->length(), CS_NONE, (UCHAR*) str->c_str());
+				break;
+			}
+
+			case TYPE_METANAME:
+			{
+				MetaName* str = (MetaName*) address;
+				desc.makeText(str->length(), CS_NONE, (UCHAR*) str->c_str());
+				break;
+			}
+
+			default:
+				fb_assert(false);
+		}
+
+		stmt->setDesc(tdbb, param + 1, desc);
+	}
+}
+
+
 PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 			Attachment* attachment, jrd_tra* transaction, const string& text,
 			bool isInternalRequest)
 	: PermanentStorage(pool),
+	  builder(NULL),
 	  inValues(pool),
 	  outValues(pool),
 	  inBlr(pool),
@@ -64,6 +110,41 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 	  inMessage(pool),
 	  outMessage(pool),
 	  resultSet(NULL)
+{
+	init(tdbb, attachment, transaction, text, isInternalRequest);
+}
+
+
+PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
+			Attachment* attachment, jrd_tra* transaction, const Builder& aBuilder,
+			bool isInternalRequest)
+	: PermanentStorage(pool),
+	  builder(&aBuilder),
+	  inValues(pool),
+	  outValues(pool),
+	  inBlr(pool),
+	  outBlr(pool),
+	  inMessage(pool),
+	  outMessage(pool),
+	  resultSet(NULL)
+{
+	init(tdbb, attachment, transaction, builder->getText(), isInternalRequest);
+}
+
+
+PreparedStatement::~PreparedStatement()
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	DSQL_free_statement(tdbb, request, DSQL_drop);
+
+	if (resultSet)
+		resultSet->stmt = NULL;
+}
+
+
+void PreparedStatement::init(thread_db* tdbb, Attachment* attachment, jrd_tra* transaction,
+	const Firebird::string& text, bool isInternalRequest)
 {
 	AutoSetRestore<SSHORT> autoAttCharset(&attachment->att_charset,
 		(isInternalRequest ? CS_METADATA : attachment->att_charset));
@@ -93,17 +174,6 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 }
 
 
-PreparedStatement::~PreparedStatement()
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	DSQL_free_statement(tdbb, request, DSQL_drop);
-
-	if (resultSet)
-		resultSet->stmt = NULL;
-}
-
-
 void PreparedStatement::setDesc(thread_db* tdbb, unsigned param, const dsc& value)
 {
 	fb_assert(param > 0);
@@ -125,6 +195,10 @@ void PreparedStatement::setDesc(thread_db* tdbb, unsigned param, const dsc& valu
 void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	fb_assert(resultSet == NULL);
+
+	if (builder)
+		builder->moveToStatement(tdbb, this);
+
 	DSQL_execute(tdbb, &transaction, request, inBlr.getCount(), inBlr.begin(), 0,
 		inMessage.getCount(), inMessage.begin(), 0, NULL, /*0,*/ 0, NULL);
 }
@@ -133,6 +207,10 @@ void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction)
 {
 	fb_assert(resultSet == NULL && request->getStatement()->getReceiveMsg());
+
+	if (builder)
+		builder->moveToStatement(tdbb, this);
+
 	return FB_NEW(getPool()) ResultSet(tdbb, this, transaction);
 }
 

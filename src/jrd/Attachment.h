@@ -31,6 +31,7 @@
 #include "../include/fb_blk.h"
 #include "../jrd/blb.h"
 #include "../jrd/scl.h"
+#include "../jrd/PreparedStatement.h"
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/RuntimeStatistics.h"
 
@@ -177,6 +178,9 @@ public:
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
+	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+		jrd_tra* transaction, const PreparedStatement::Builder& builder);
+
 	PreparedStatement* prepareUserStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
 

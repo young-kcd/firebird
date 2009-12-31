@@ -60,7 +60,7 @@
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/constants.h"
 
-
+using namespace Firebird;
 using namespace Jrd;
 
 DATABASE DB = FILENAME "ODS.RDB";
@@ -260,14 +260,14 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	Database* dbb = tdbb->getDatabase();
 
 	// Uppercase owner name
-	Firebird::MetaName string(owner ? owner : "");
-	string.upper7();
+	MetaName ownerName(owner ? owner : "");
+	ownerName.upper7();
 
 	// Uppercase charset name
-	Firebird::MetaName string2(charset ? charset : "");
-	string2.upper7();
+	MetaName charSetName(charset && strlen(charset) != 0 ?
+		charset : DEFAULT_DB_CHARACTER_SET_NAME);
+	charSetName.upper7();
 
-	SLONG n;
 	const int* fld;
 
 	// Make sure relations exist already
@@ -287,33 +287,35 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 	// Store RELATIONS and RELATION_FIELDS
 
-	unsigned paramRelId, paramRelName, paramN, paramSystem, paramOwner, paramRelType;
-	Firebird::string sql(PreparedStatement::build("insert into rdb$relations (rdb$relation_id, "
+	SLONG relId;
+	string relName;
+	SLONG fieldId;
+	SLONG systemFlag = RDB_system;
+	SLONG relType;
+
+	PreparedStatement::Builder sql("insert into rdb$relations (rdb$relation_id, "
 		"rdb$relation_name,  rdb$field_id, rdb$format, rdb$system_flag, rdb$dbkey_length, "
-		"rdb$owner_name,  rdb$relation_type) values (") <<
-		paramRelId << ", " << paramRelName << ", " << paramN << ", 0, " << paramSystem <<
-		", 8, " << paramOwner << ", " << paramRelType << ")");
-	Firebird::AutoPtr<PreparedStatement> ps(tdbb->getAttachment()->prepareStatement(tdbb,
-		*tdbb->getDefaultPool(), transaction, sql));
+		"rdb$owner_name,  rdb$relation_type) values (");
+	sql << relId << ", " << relName << ", " << fieldId << ", 0, " << systemFlag <<
+		", 8, " << ownerName << ", " << relType << ")";
+
+	Firebird::AutoPtr<PreparedStatement> ps(tdbb->getAttachment()->prepareStatement(
+		tdbb, *tdbb->getDefaultPool(), transaction, sql));
 
 	jrd_req* handle1 = NULL;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+		for (fieldId = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
 			const int* pFld = fld;
 			const int* pRelFld = relfld;
-			store_relation_field(tdbb, pFld, pRelFld, n, &handle1);
-			n++;
+			store_relation_field(tdbb, pFld, pRelFld, fieldId, &handle1);
+			++fieldId;
 		}
 
-		ps->setInt(tdbb, paramRelId, relfld[RFLD_R_ID]);
-		ps->setString(tdbb, paramRelName, names[relfld[RFLD_R_NAME]]);
-		ps->setInt(tdbb, paramN, n);
-		ps->setInt(tdbb, paramSystem, RDB_system);
-		if (string.hasData())
-			ps->setString(tdbb, paramOwner, string);
-		ps->setInt(tdbb, paramRelType, relfld[RFLD_R_TYPE]);
+		relId = relfld[RFLD_R_ID];
+		relName = names[relfld[RFLD_R_NAME]];
+		relType = relfld[RFLD_R_TYPE];
 
 		ps->execute(tdbb, transaction);
 	}
@@ -330,13 +332,12 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	handle1 = NULL;
 
 	// Store DATABASE record
-	unsigned paramCharSet;
-	sql = PreparedStatement::build("insert into rdb$database (rdb$relation_id, "
-		"rdb$character_set_name) values (") <<
-		paramRelId << ", " << paramCharSet << ")";
-	ps.reset(tdbb->getAttachment()->prepareStatement(tdbb, *tdbb->getDefaultPool(), transaction, sql));
-	ps->setInt(tdbb, paramRelId, USER_DEF_REL_INIT_ID);
-	ps->setString(tdbb, paramCharSet, (string2.hasData() ? string2 : DEFAULT_DB_CHARACTER_SET_NAME));
+	sql = PreparedStatement::Builder("insert into rdb$database (rdb$relation_id, "
+		"rdb$character_set_name) values (");
+	sql << relId << ", " << charSetName << ")";
+	ps.reset(tdbb->getAttachment()->prepareStatement(tdbb,
+		*tdbb->getDefaultPool(), transaction, sql));
+	relId = USER_DEF_REL_INIT_ID;
 	ps->execute(tdbb, transaction);
 
 	// Store ADMIN_ROLE record
@@ -344,12 +345,10 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	STORE(REQUEST_HANDLE handle1) X IN RDB$ROLES
 		PAD (ADMIN_ROLE, X.RDB$ROLE_NAME);
 		X.RDB$ROLE_NAME.NULL = FALSE;
-		if (string.length()) {
-			PAD (string.c_str(), X.RDB$OWNER_NAME);
-		}
-		else {
-			PAD (SYSDBA_USER_NAME, X.RDB$OWNER_NAME);
-		}
+		if (ownerName.hasData())
+			PAD(ownerName.c_str(), X.RDB$OWNER_NAME);
+		else
+			PAD(SYSDBA_USER_NAME, X.RDB$OWNER_NAME);
 		X.RDB$OWNER_NAME.NULL = FALSE;
 		X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO;	// Mark it as privileged role
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -451,14 +450,14 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = ACL_id_list;
 	*acl++ = id_person;
 
-	USHORT length = string.length();
+	USHORT length = ownerName.length();
 	if (length > MAX_UCHAR)
 		length = MAX_UCHAR;
 
 	*acl++ = (UCHAR)length;
 	if (length)
 	{
-		const TEXT* p_1 = string.c_str();
+		const TEXT* p_1 = ownerName.c_str();
 		memcpy(acl, p_1, length);
 		acl += length;
 	}
@@ -478,10 +477,10 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = ACL_end;
 	length = acl - buffer;
 
-	add_security_to_sys_rel(tdbb, string, "RDB$ROLES", buffer, length);
-	add_security_to_sys_rel(tdbb, string, "RDB$PAGES", buffer, length);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$ROLES", buffer, length);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", buffer, length);
 	// DFW writes here
-	add_security_to_sys_rel(tdbb, string, "RDB$FORMATS", buffer, length);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", buffer, length);
 }
 
 

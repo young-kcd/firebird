@@ -30,6 +30,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/TriState.h"
 
 namespace Jrd {
 
@@ -45,10 +46,17 @@ class PreparedStatement : public Firebird::PermanentStorage
 {
 friend class ResultSet;
 
-private:
-	// Auxiliary class to use named parameters with C++ variables.
+public:
 	class Builder
 	{
+	private:
+		enum Type
+		{
+			TYPE_SLONG,
+			TYPE_METANAME,
+			TYPE_STRING,
+		};
+
 	public:
 		Builder(const Firebird::string& aText)
 			: text(aText),
@@ -56,13 +64,87 @@ private:
 		{
 		}
 
+	public:
 		Builder& operator <<(const char* chunk)
 		{
 			text += chunk;
 			return *this;
 		}
 
-		Builder& operator <<(unsigned& param)
+		Builder& operator <<(SLONG& param)
+		{
+			types.add(TYPE_SLONG);
+			addresses.add(&param);
+			specifiedAddresses.add(NULL);
+
+			text += "?";
+			++params;
+			return *this;
+		}
+
+		Builder& operator <<(Firebird::string& param)
+		{
+			types.add(TYPE_STRING);
+			addresses.add(&param);
+			specifiedAddresses.add(NULL);
+
+			text += "?";
+			++params;
+			return *this;
+		}
+
+		Builder& operator <<(Firebird::MetaName& param)
+		{
+			types.add(TYPE_METANAME);
+			addresses.add(&param);
+			specifiedAddresses.add(NULL);
+
+			text += "?";
+			++params;
+			return *this;
+		}
+
+		template <typename T> Builder& operator <<(TriStateType<T>& param)
+		{
+			*this << param.value;
+			specifiedAddresses[specifiedAddresses.getCount() - 1] = &param.specified;
+			return *this;
+		}
+
+	public:
+		const Firebird::string& getText() const
+		{
+			return text;
+		}
+
+		void moveToStatement(thread_db* tdbb, PreparedStatement* stmt) const;
+
+	private:
+		Firebird::string text;
+		Firebird::Array<Type> types;
+		Firebird::Array<void*> addresses;
+		Firebird::Array<bool*> specifiedAddresses;
+		unsigned params;
+	};
+
+private:
+	// Auxiliary class to use positional parameters with C++ variables.
+	class PosBuilder
+	{
+	public:
+		PosBuilder(const Firebird::string& aText)
+			: text(aText),
+			  params(0)
+		{
+		}
+
+		PosBuilder& operator <<(const char* chunk)
+		{
+			text += chunk;
+			return *this;
+		}
+
+		PosBuilder& operator <<(unsigned& param)
 		{
 			text += "?";
 			param = ++params;
@@ -80,18 +162,12 @@ private:
 	};
 
 public:
-	// Create a PreparedStatement builder to use named parameters with C++ variables.
-	static Builder build(const Firebird::string& text)
+	// Create a PreparedStatement builder to use positional parameters with C++ variables.
+	static PosBuilder build(const Firebird::string& text)
 	{
-		return Builder(text);
+		return PosBuilder(text);
 	}
 
-public:
-	PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& aPool, Attachment* attachment,
-		jrd_tra* transaction, const Firebird::string& text, bool isInternalRequest);
-	~PreparedStatement();
-
-public:
 	// Escape a metadata name accordingly to SQL rules.
 	static Firebird::string escapeName(const Firebird::MetaName& s)
 	{
@@ -107,7 +183,6 @@ public:
 		return ret;
 	}
 
-
 	// Escape a string accordingly to SQL rules.
 	template <typename T> static Firebird::string escapeString(const T& s)
 	{
@@ -122,6 +197,17 @@ public:
 
 		return ret;
 	}
+
+public:
+	PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& aPool, Attachment* attachment,
+		jrd_tra* transaction, const Firebird::string& text, bool isInternalRequest);
+	PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& aPool, Attachment* attachment,
+		jrd_tra* transaction, const Builder& aBuilder, bool isInternalRequest);
+	~PreparedStatement();
+
+private:
+	void init(thread_db* tdbb, Attachment* attachment, jrd_tra* transaction,
+		const Firebird::string& text, bool isInternalRequest);
 
 public:
 	void setDesc(thread_db* tdbb, unsigned param, const dsc& value);
@@ -183,6 +269,7 @@ public:
 	static void generateBlr(const dsc* desc, Firebird::UCharBuffer& blr);
 
 private:
+	const Builder* builder;
 	dsql_req* request;
 	Firebird::Array<dsc> inValues, outValues;
 	Firebird::UCharBuffer inBlr, outBlr;
