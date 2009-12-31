@@ -113,7 +113,6 @@ enum irq_type_t
 
 	irq_l_subtype,			// lookup subtype (charset/collation)
 	irq_c_relation2,		// create new relation
-	irq_p_type,				// lookup procedure type
 	irq_prc_validate,		// procedure blr validate
 	irq_trg_validate,		// trigger blr validate
 	irq_l_domain,			// lookup a domain

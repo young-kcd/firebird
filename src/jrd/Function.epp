@@ -272,6 +272,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			memset(temp, 0, sizeof(temp));
 			ULONG length = 0;
 
+			function->setUndefined(false);
 			function->fun_inputs = 0;
 			function->fun_defaults = 0;
 
@@ -497,7 +498,10 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					}
 				}
 				else
+				{
 					function->fun_entrypoint = NULL;
+					function->setUndefined(true);
+				}
 			}
 
 			if (X.RDB$VALID_BLR.NULL || X.RDB$VALID_BLR == FALSE)
@@ -648,6 +652,13 @@ void Function::releaseLocks(thread_db* tdbb)
 
 dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) const
 {
+	if (isUndefined())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_func_pack_not_implemented) <<
+				Arg::Str(getName().identifier) << Arg::Str(getName().qualifier));
+	}
+
 	const fun_repeat* const return_ptr = &fun_args[fun_return_arg];
 	value->vlu_desc = return_ptr->fun_parameter->prm_desc;
 

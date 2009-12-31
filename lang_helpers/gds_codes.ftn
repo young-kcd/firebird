@@ -1400,6 +1400,10 @@ C --
       PARAMETER (GDS__invalid_fetch_option             = 335544993)
       INTEGER*4 GDS__bad_fun_BLR                     
       PARAMETER (GDS__bad_fun_BLR                      = 335544994)
+      INTEGER*4 GDS__func_pack_not_implemented       
+      PARAMETER (GDS__func_pack_not_implemented        = 335544995)
+      INTEGER*4 GDS__proc_pack_not_implemented       
+      PARAMETER (GDS__proc_pack_not_implemented        = 335544996)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

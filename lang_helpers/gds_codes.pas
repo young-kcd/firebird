@@ -707,6 +707,8 @@ const
 	gds_lock_dir_access                  = 335544992;
 	gds_invalid_fetch_option             = 335544993;
 	gds_bad_fun_BLR                      = 335544994;
+	gds_func_pack_not_implemented        = 335544995;
+	gds_proc_pack_not_implemented        = 335544996;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

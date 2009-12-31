@@ -37,7 +37,8 @@ namespace Jrd
 			  id(0),
 			  name(p),
 			  securityName(p),
-			  request(NULL)
+			  request(NULL),
+			  undefined(false)
 		{
 		}
 
@@ -59,6 +60,9 @@ namespace Jrd
 		/*const*/ jrd_req* getRequest() const { return request; }
 		void setRequest(jrd_req* value) { request = value; }
 
+		bool isUndefined() const { return undefined; }
+		void setUndefined(bool value) { undefined = value; }
+
 	public:
 		virtual int getObjectType() const = 0;
 		virtual const char* getSclType() const = 0;
@@ -68,6 +72,7 @@ namespace Jrd
 		Firebird::QualifiedName name;		// routine name
 		Firebird::MetaName securityName;	// security class name
 		jrd_req* request;					// compiled routine request
+		bool undefined;						// Is the packaged routine missing the body/entrypoint?
 	};
 }
 

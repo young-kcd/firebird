@@ -3223,6 +3223,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				procedure->setName(QualifiedName(P.RDB$PROCEDURE_NAME,
 					(P.RDB$PACKAGE_NAME.NULL ? "" : P.RDB$PACKAGE_NAME)));
 			}
+
 			procedure->setId(P.RDB$PROCEDURE_ID);
 
 			if (!P.RDB$SECURITY_CLASS.NULL)
@@ -3241,6 +3242,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				END_FOR
 			}
 
+			procedure->setUndefined(false);
 			procedure->prc_input_fields.resize(P.RDB$PROCEDURE_INPUTS);
 			procedure->prc_output_fields.resize(P.RDB$PROCEDURE_OUTPUTS);
 			procedure->prc_defaults = 0;
@@ -3347,25 +3349,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 				CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
-				jrd_req* request4 = CMP_find_request(tdbb, irq_p_type, IRQ_REQUESTS);
+				if (!P.RDB$PROCEDURE_TYPE.NULL)
+					prc_type = (prc_t) P.RDB$PROCEDURE_TYPE;
 
-				FOR(REQUEST_HANDLE request4)
-					PT IN RDB$PROCEDURES
-					WITH PT.RDB$PROCEDURE_ID EQ procedure->getId()
-
-					if (!REQUEST(irq_p_type))
-						REQUEST(irq_p_type) = request4;
-
-					if (!PT.RDB$PROCEDURE_TYPE.NULL)
-						prc_type = (prc_t) PT.RDB$PROCEDURE_TYPE;
-
-					if (!PT.RDB$DEBUG_INFO.NULL)
-						DBG_parse_debug_info(tdbb, &PT.RDB$DEBUG_INFO, csb->csb_dbg_info);
-
-				END_FOR;
-
-				if (!REQUEST(irq_p_type))
-					REQUEST(irq_p_type) = request4;
+				if (!P.RDB$DEBUG_INFO.NULL)
+					DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, csb->csb_dbg_info);
 
 				procedure->prc_type = prc_type;
 
@@ -4802,6 +4790,8 @@ static void parse_procedure_blr(thread_db* tdbb,
 			&request, false, 0);
 	procedure->setRequest(request);
 
+	if (!external && !blob_id)
+		procedure->setUndefined(true);
 }
 
 

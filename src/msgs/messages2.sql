@@ -782,6 +782,8 @@ Data source : @4', NULL, NULL)
 ('lock_dir_access', 'createLockDirectory', 'os_utils.cpp', NULL, 0, 672, NULL, 'Can not access lock files directory @1', NULL, NULL);
 ('invalid_fetch_option', NULL, 'Cursor.cpp', NULL, 0, 673, NULL, 'Fetch option @1 is invalid for a non-scrollable cursor', NULL, NULL);
 ('bad_fun_BLR', 'loadMetadata', 'Function.epp', NULL, 0, 674, NULL, 'Error while parsing function @1''s BLR', NULL, NULL);
+('func_pack_not_implemented', 'execute', 'Function.epp', NULL, 0, 675, NULL, 'Cannot execute function @1 of the unimplemented package @2', NULL, NULL);
+('proc_pack_not_implemented', 'EXE_start', 'exe.cpp', NULL, 0, 676, NULL, 'Cannot execute procedure @1 of the unimplemented package @2', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

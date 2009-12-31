@@ -1481,7 +1481,8 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 		error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
-	if (!function->fun_entrypoint && !function->fun_external && !function->getRequest())
+	if (!function->isUndefined() && !function->fun_entrypoint &&
+		!function->fun_external && !function->getRequest())
 	{
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{

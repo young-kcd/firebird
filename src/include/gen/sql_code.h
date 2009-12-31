@@ -695,6 +695,8 @@ static const struct {
 	{335544992, -904}, /* 672 lock_dir_access */
 	{335544993, -901}, /* 673 invalid_fetch_option */
 	{335544994, -901}, /* 674 bad_fun_BLR */
+	{335544995, -901}, /* 675 func_pack_not_implemented */
+	{335544996, -901}, /* 676 proc_pack_not_implemented */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

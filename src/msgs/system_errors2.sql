@@ -680,6 +680,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-904, '08', '006', 0, 672, 'lock_dir_access', NULL, NULL)
 (-901, 'HY', '106', 0, 673, 'invalid_fetch_option', NULL, NULL)
 (-901, '2F', '000', 0, 674, 'bad_fun_BLR', NULL, NULL)
+(-901, '2F', '000', 0, 675, 'func_pack_not_implemented', NULL, NULL)
+(-901, '2F', '000', 0, 676, 'proc_pack_not_implemented', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
