@@ -1,3 +1,49 @@
+2009-12-31 12:24  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.123),
+	lang_helpers/gds_codes.pas (1.121), src/include/gen/codetext.h
+	(1.131), src/include/gen/iberror.h (1.135), src/include/gen/msgs.h
+	(1.164), src/include/gen/sql_code.h (1.137),
+	src/include/gen/sql_state.h (1.67), src/jrd/Function.epp (1.20),
+	src/jrd/Routine.h (1.3), src/jrd/exe.cpp (1.327), src/jrd/irq.h
+	(1.26), src/jrd/met.epp (1.316), src/jrd/par.cpp (1.267),
+	src/msgs/facilities2.sql (1.114), src/msgs/messages2.sql (1.137),
+	src/msgs/system_errors2.sql (1.84):
+
+	Make referencing and execution (try) of unimplemented packaged
+	routines work correctly
+
+2009-12-31 10:07  robocop
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.122):
+
+	Silence these two warnings for now.
+
+2009-12-30 16:24  alexpeshkoff
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.50),
+	common/classes/ClumpletReader.h (1.25),
+	common/classes/ClumpletWriter.cpp (1.34),
+	common/classes/ClumpletWriter.h (1.16), include/consts_pub.h
+	(1.46), jrd/UserManagement.cpp (1.14), jrd/jrd.cpp (1.594),
+	jrd/why.cpp (1.272), jrd/extds/ExtDS.cpp (1.50),
+	remote/interface.cpp (1.227), remote/server.cpp (1.271):
+
+	Introduce isc_dpb_version2 - format is WideTagged.
+
+2009-12-30 16:16  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.h (1.31):
+
+	removed wrong assertion
+
+2009-12-30 15:50  asfernandes
+
+	* firebird2/src/dsql/: DdlNodes.epp (1.41), PackageNodes.epp
+	(1.20):
+
+	Try to collect function signatures like procedures. Not good yet.
+
 2009-12-30 13:55  alexpeshkoff
 
 	* firebird2/src/: config/ConfObject.cpp (1.13), vulcan/PathName.cpp
