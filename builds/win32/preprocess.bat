@@ -42,12 +42,12 @@
 
 ::===========
 :GPRE_M
-@%GPRE% -n -m -raw %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DB_DIR%/dbs/
+@%GPRE% -n -m %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DB_DIR%/dbs/
 @goto :EOF
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -raw -ids %3 %4 %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DB_DIR%/dbs/
+@%GPRE% -n -ids %3 %4 %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DB_DIR%/dbs/
 goto :EOF
 
 ::===========

@@ -65,9 +65,9 @@ WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CXXFLAGS)
 #	$(ECHO) $(testgpre)
 
 
-GPRE_FLAGS=	-r -m -z -n
-JRD_GPRE_FLAGS = -n -z -gds_cxx -raw -ids
-DSQL_GPRE_FLAGS = -r -m -z -n
+GPRE_FLAGS= -m -z -n
+JRD_GPRE_FLAGS = -n -z -gds_cxx -ids
+DSQL_GPRE_FLAGS = -m -z -n
 
 
 .SUFFIXES: .c .e .epp .cpp
