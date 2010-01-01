@@ -909,6 +909,7 @@ static const struct {
 	{336331093, "00000"}, // 341 gbak_invalid_metadata
 	{336331094, "00000"}, // 342 gbak_invalid_data
 	{336331096, "00000"}, // 344 gbak_inv_bkup_ver2
+	{336331100, "00000"}, // 348 gbak_db_format_too_old2
 	{336397205, "HY000"}, // 917 dsql_too_old_ods
 	{336397206, "42S02"}, // 918 dsql_table_not_found
 	{336397207, "42S02"}, // 919 dsql_view_not_found

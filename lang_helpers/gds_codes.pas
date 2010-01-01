@@ -921,6 +921,7 @@ const
 	gds_gbak_invalid_metadata            = 336331093;
 	gds_gbak_invalid_data                = 336331094;
 	gds_gbak_inv_bkup_ver2               = 336331096;
+	gds_gbak_db_format_too_old2          = 336331100;
 	gds_dsql_too_old_ods                 = 336397205;
 	gds_dsql_table_not_found             = 336397206;
 	gds_dsql_view_not_found              = 336397207;
