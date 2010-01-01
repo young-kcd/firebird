@@ -257,7 +257,7 @@ RELATION(nam_args, rel_args, ODS_8_0, rel_persistent)
 	FIELD(f_arg_dsource, nam_d_source, fld_source, 1, ODS_12_0)
 	FIELD(f_arg_coll_id, nam_collate_id, fld_collate_id, 1, ODS_12_0)
 	FIELD(f_arg_null_flag, nam_null_flag, fld_null_flag, 1, ODS_12_0)
-	FIELD(f_arg_mech2, nam_arg_mechanism, fld_arg_mechanism, 1, ODS_12_0)
+	FIELD(f_arg_arg_mech, nam_arg_mechanism, fld_arg_mechanism, 1, ODS_12_0)
 	FIELD(f_arg_fname, nam_f_name, fld_f_name, 1, ODS_12_0)
 	FIELD(f_arg_rname, nam_r_name, fld_r_name, 1, ODS_12_0)
 END_RELATION

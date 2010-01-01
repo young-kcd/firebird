@@ -258,7 +258,7 @@
 	const USHORT  f_arg_dsource = 14;
 	const USHORT  f_arg_coll_id = 15;
 	const USHORT  f_arg_null_flag = 16;
-	const USHORT  f_arg_mech2 = 17;
+	const USHORT  f_arg_arg_mech = 17;
 	const USHORT  f_arg_fname = 18;
 	const USHORT  f_arg_rname = 19;
 

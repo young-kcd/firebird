@@ -3020,7 +3020,7 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 			if (!X.RDB$NULL_FLAG.NULL)
 				put_numeric(att_functionarg_null_flag, X.RDB$NULL_FLAG);
 			if (!X.RDB$ARGUMENT_MECHANISM.NULL)
-				put_numeric(att_functionarg_arg_type_mechanism, X.RDB$ARGUMENT_MECHANISM);
+				put_numeric(att_functionarg_arg_mechanism, X.RDB$ARGUMENT_MECHANISM);
 			if (!X.RDB$FIELD_NAME.NULL)
 				PUT_TEXT(att_functionarg_field_name, X.RDB$FIELD_NAME);
 			if (!X.RDB$RELATION_NAME.NULL)

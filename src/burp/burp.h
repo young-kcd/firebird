@@ -443,7 +443,7 @@ enum att_type {
 	att_functionarg_default_source,
 	att_functionarg_collation_id,
 	att_functionarg_null_flag,
-	att_functionarg_arg_type_mechanism,
+	att_functionarg_arg_mechanism,
 	att_functionarg_field_name,
 	att_functionarg_relation_name,
 
