@@ -847,7 +847,7 @@ static void build_other_headers()
 		*q = 0;
 
 		fprintf(code_text, "\t{\"%s\", %lu},\n", S.GDS_SYMBOL, new_code);
-		fprintf(msgs, "\t{%lu, \"%s\"},\t\t/* %d, %s */\n", new_code, text, code, S.GDS_SYMBOL);
+		fprintf(msgs, "\t{%lu, \"%s\"},\t\t/* %s */\n", new_code, text, S.GDS_SYMBOL);
 		++code;
 
 	END_FOR;
