@@ -46,11 +46,13 @@ class ClumpletReader : protected AutoStorage
 {
 public:
 	enum Kind {EndOfList, Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
+
 	struct KindList
 	{
 		Kind kind;
 		UCHAR tag;
 	};
+
 	struct SingleClumplet
 	{
 		UCHAR tag;
@@ -151,12 +153,10 @@ private:
 
 	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
 
-	// Some frequently used kind lists
 public:
-	static const KindList dpbList[];
+	static const KindList dpbList[];	// Some frequently used kind lists
 };
 
 } // namespace Firebird
 
 #endif // CLUMPLETREADER_H
-

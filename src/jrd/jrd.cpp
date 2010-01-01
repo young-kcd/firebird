@@ -4752,7 +4752,8 @@ static void find_intl_charset(thread_db* tdbb, Jrd::Attachment* attachment, cons
 	}
 }
 
-namespace {
+namespace
+{
 	void dpbErrorRaise()
 	{
 		ERR_post(Arg::Gds(isc_bad_dpb_form) <<

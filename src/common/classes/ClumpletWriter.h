@@ -49,7 +49,7 @@ public:
 
 	// Create writer from a given buffer
 	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
-//	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+	//ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
 	// Create writer from a given buffer with possibly different clumplet version
 	ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer = NULL, size_t buffLen = 0);
@@ -81,12 +81,13 @@ public:
 	bool deleteWithTag(UCHAR tag);
 
 	virtual const UCHAR* getBuffer() const;
+
 protected:
 	virtual const UCHAR* getBufferEnd() const;
 	virtual void size_overflow();
 	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length);
-	// upgrade clumplet version - obtain newest from kindList
-	bool upgradeVersion();
+	bool upgradeVersion();	// upgrade clumplet version - obtain newest from kindList
+
 private:
 	size_t sizeLimit;
 	const KindList* kindList;
@@ -104,4 +105,3 @@ private:
 } // namespace Firebird
 
 #endif // CLUMPLETWRITER_H
-

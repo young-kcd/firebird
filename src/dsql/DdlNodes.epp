@@ -1083,7 +1083,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 		}
 
 		// ASF: If we used a collate with a domain or table.column type, write it
-		//		into RDB$FUNCTION_ARGUMENTS.
+		// into RDB$FUNCTION_ARGUMENTS.
 
 		if (parameter.collateSpecified && parameter.typeOfName.hasData())
 		{

@@ -65,7 +65,7 @@ public:
 };
 
 
-template <typename T>	// Generic clear for TriState
+template <typename T>	// Generic TriStateClear
 class TriStateClear
 {
 public:
@@ -76,7 +76,7 @@ public:
 };
 
 template <>
-class TriStateClear<Firebird::string>	// string especialization to clear TriState
+class TriStateClear<Firebird::string>	// string especialization for TriStateClear
 {
 public:
 	static void clear(Firebird::string& v)
@@ -86,7 +86,7 @@ public:
 };
 
 template <>
-class TriStateClear<Firebird::MetaName>	// MetaName especialization to clear TriState
+class TriStateClear<Firebird::MetaName>	// MetaName especialization for TriStateClear
 {
 public:
 	static void clear(Firebird::MetaName& v)

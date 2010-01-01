@@ -118,7 +118,8 @@ ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit,
 	}
 	rewind();
 }
- */
+*/
+
 void ClumpletWriter::reset(UCHAR tag)
 {
 	if (kindList)
@@ -138,7 +139,7 @@ void ClumpletWriter::reset(UCHAR tag)
 
 		invalid_structure("Unknown tag value - missing in the list of possible");
 	}
-	
+
 	dynamic_buffer.shrink(0);
 	initNewBuffer(tag);
 	rewind();
@@ -435,6 +436,7 @@ bool ClumpletWriter::upgradeVersion()
 			newest = itr;
 		}
 	}
+
 	if (getBufferLength() && newest->tag <= getBufferTag())
 	{
 		return false;

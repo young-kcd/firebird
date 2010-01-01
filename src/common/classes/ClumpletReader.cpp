@@ -135,6 +135,7 @@ ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t b
 			}
 			++kl;
 		}
+
 		if (kl->kind == EndOfList)
 		{
 			if (raise)
@@ -144,6 +145,7 @@ ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t b
 			invalid_structure("Unknown tag value - missing in the list of possible");
 		}
 	}
+
 	rewind();	// this will set cur_offset and spbState
 }
 
@@ -714,4 +716,3 @@ const ClumpletReader::KindList ClumpletReader::dpbList[] = {
 };
 
 } // namespace
-
