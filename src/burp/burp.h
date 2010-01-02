@@ -429,7 +429,7 @@ enum att_type {
 
 	att_functionarg_name = SERIES,
 	att_functionarg_position,
-	att_functionarg_mechanism,
+	att_functionarg_passing_mechanism, // by value, ref, descriptor
 	att_functionarg_field_type,
 	att_functionarg_field_scale,
 	att_functionarg_field_length,
@@ -443,7 +443,7 @@ enum att_type {
 	att_functionarg_default_source,
 	att_functionarg_collation_id,
 	att_functionarg_null_flag,
-	att_functionarg_arg_mechanism,
+	att_functionarg_type_mechanism, // type inheritance
 	att_functionarg_field_name,
 	att_functionarg_relation_name,
 
@@ -933,7 +933,8 @@ public:
 	burp_rel*	relations;
 	burp_pkg*	packages;
 	burp_prc*	procedures;
-	SLONG		BCK_capabilities;
+	// ODS of the target server (not necessarily the same version as gbak)
+	int			runtimeODS;
 	// Format of the backup being read on restore; gbak always creates it using the latest version
 	// but it can read backups created by previous versions.
 	USHORT		RESTORE_format;

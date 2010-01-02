@@ -161,23 +161,23 @@ enum backup_capabilities
 								// rdb$user_privileges, rdb$triggers, rdb$types
 	//BCK_attributes_v3	= 256,	// attributes in various system relations new to v3
 	//BCK_rfr_sys_flag	= 512,	// system flag is missing from Rdb/VMS V3 RFR relation
-	//BCK_ods6			= 1024,	// rdb$field_dimensions and shadow files
-	BCK_ods8			= 2048,	// stored procedures & exceptions & constraints
-	BCK_ods9			= 4096,	// SQL roles
-	BCK_ods10			= 8192,	// FIELD_PRECISION
-	BCK_ods11			= 16384,// rdb$description in rdb$roles and rdb$generators
+	//BCK_ods6			= 60,	// rdb$field_dimensions and shadow files
+	BCK_ods8			= 80,	// stored procedures & exceptions & constraints
+	BCK_ods9			= 90,	// SQL roles
+	BCK_ods10			= 100,	// FIELD_PRECISION
+	BCK_ods11			= 110,// rdb$description in rdb$roles and rdb$generators
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
 								// rdb$message enlarged to 1021.
-	BCK_ods11_1			= 32768,// rdb$relation_type in rdb$relations
+	BCK_ods11_1			= 111,// rdb$relation_type in rdb$relations
 								// rdb$procedure_type in rdb$procedures
 								// rdb$valid_blr in rdb$triggers
 								// rdb$valid_blr in rdb$procedures
 								// rdb$default_value, rdb$default_source, rdb$collation_id,
 								// rdb$null_flag and rdb$parameter_mechanism in rdb$procedure_parameters
-	BCK_ods11_2			= 65536,// rdb$field_name and rdb$relation_name in rdb$procedure_parameters
+	BCK_ods11_2			= 112,// rdb$field_name and rdb$relation_name in rdb$procedure_parameters
 								// rdb$admin system role
 								// rdb$message enlarged to 1023.
-	BCK_ods12_0			=131072	// rdb$engine_name and rdb$entrypoint in rdb$triggers
+	BCK_ods12_0			= 120	// rdb$engine_name and rdb$entrypoint in rdb$triggers
 								// rdb$package_name in rdb$dependencies
 								// rdb$engine_name, rdb$package_name and rdb$private_flag
 								// in rdb$functions
@@ -204,10 +204,7 @@ struct rfr_tab_t
 {
 	const TEXT* relation;
 	const TEXT* field;
-	// Let's be compatible with BurpGlobals.BCK_capabilities, although we could follow
-	// the enumeration backup_capabilities but the enum then should be defined
-	// in burp.h instead so BCK_capabilities isn't anymore a simple SLONG.
-	SLONG bit_mask;
+	int ods_version;
 };
 
 const rfr_tab_t rfr_table[] =
@@ -312,7 +309,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	tdgbl->io_ptr = NULL;
 	tdgbl->io_cnt = 0;
 	tdgbl->relations = NULL;
-	tdgbl->BCK_capabilities = 0;
+	tdgbl->runtimeODS = 0;
 
 	gds_trans = 0;
 
@@ -345,7 +342,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	// decide what type of database we've got
 
 	set_capabilities();
-	if (!(tdgbl->BCK_capabilities & BCK_ods8))
+	if (tdgbl->runtimeODS < BCK_ods8)
 	{
 		BURP_error(348, true, SafeArg() << tdgbl->RESTORE_ods);
 		// msg 348 database format @1 is too old to backup
@@ -394,7 +391,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	BURP_verbose(msgVerbose_write_collations);
 	write_collations();
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		// Write packages
 		BURP_verbose(336);	// msg 336 writing packages
@@ -486,7 +483,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	// msg 210 writing check constraints
 	write_check_constraints();
 
-	if (tdgbl->BCK_capabilities & BCK_ods9)
+	if (tdgbl->runtimeODS >= BCK_ods9)
 	{
 		// Write SQL roles
 		BURP_verbose(248);
@@ -494,7 +491,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		write_sql_roles();
 	}
 
-	if (tdgbl->BCK_capabilities & BCK_ods11)
+	if (tdgbl->runtimeODS >= BCK_ods11)
 	{
 		// Write names mapping
 		BURP_verbose(296);
@@ -796,7 +793,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	// the 64-bit value of the generator.  If not, build BLR to retrieve the
 	// 32-bit value, which we will cast to the expected INT64 format.
 
-	if (tdgbl->BCK_capabilities & BCK_ods10)
+	if (tdgbl->runtimeODS >= BCK_ods10)
 	{
 		// build the blr with the right relation name and 64-bit results.
 		add_byte(blr, blr_version5);
@@ -882,7 +879,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 
 
 	SINT64 read_msg1;
-	if (tdgbl->BCK_capabilities & BCK_ods10)
+	if (tdgbl->runtimeODS >= BCK_ods10)
 	{
 		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg1), &read_msg1, 0))
 		{
@@ -2114,7 +2111,7 @@ void put_relation( burp_rel* relation)
 
 	if (relation->rel_flags & REL_view)
 	{
-		if (tdgbl->BCK_capabilities & BCK_ods12_0)
+		if (tdgbl->runtimeODS >= BCK_ods12_0)
 		{
 			FOR (REQUEST_HANDLE tdgbl->handles_put_relation_req_handle1)
 				X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ relation->rel_name
@@ -2335,7 +2332,7 @@ void set_capabilities()
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	tdgbl->BCK_capabilities = 0;
+	tdgbl->runtimeODS = 0;
 	FB_API_HANDLE req = 0;
 
 	// Look for desirable fields in system relations
@@ -2347,7 +2344,8 @@ void set_capabilities()
 		FOR (REQUEST_HANDLE req) x IN RDB$RELATION_FIELDS
 			WITH x.RDB$RELATION_NAME = relation
 			AND x.RDB$FIELD_NAME = field
-			tdgbl->BCK_capabilities |= rel_field_table->bit_mask;
+			if (tdgbl->runtimeODS < rel_field_table->ods_version)
+				tdgbl->runtimeODS = rel_field_table->ods_version;
 		END_FOR;
 		ON_ERROR
 			general_on_error();
@@ -2375,7 +2373,7 @@ void write_character_sets()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$CHARACTER_SETS
@@ -2507,7 +2505,7 @@ void write_collations()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -2538,7 +2536,7 @@ void write_collations()
 			general_on_error();
 		END_ERROR;
 	}
-	else if (tdgbl->BCK_capabilities & BCK_ods11)
+	else if (tdgbl->runtimeODS >= BCK_ods11)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -2722,7 +2720,7 @@ void write_exceptions()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$EXCEPTIONS
@@ -2863,7 +2861,7 @@ void write_functions()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$FUNCTIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
@@ -2971,7 +2969,7 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 	// requests--this requires more code but it is well worth it
 	// for the performance benefits, especially remotely--deej
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		FOR (REQUEST_HANDLE tdgbl->handles_write_function_args_req_handle1)
 			X IN RDB$FUNCTION_ARGUMENTS
@@ -2995,7 +2993,7 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 			// msg 141 writing argument for function %s
 
 			put_numeric (att_functionarg_position, X.RDB$ARGUMENT_POSITION);
-			put_numeric (att_functionarg_mechanism, X.RDB$MECHANISM);
+			put_numeric (att_functionarg_passing_mechanism, X.RDB$MECHANISM);
 			put_numeric (att_functionarg_field_type, X.RDB$FIELD_TYPE);
 			put_numeric (att_functionarg_field_scale, X.RDB$FIELD_SCALE);
 			put_numeric (att_functionarg_field_length, X.RDB$FIELD_LENGTH);
@@ -3020,7 +3018,7 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 			if (!X.RDB$NULL_FLAG.NULL)
 				put_numeric(att_functionarg_null_flag, X.RDB$NULL_FLAG);
 			if (!X.RDB$ARGUMENT_MECHANISM.NULL)
-				put_numeric(att_functionarg_arg_mechanism, X.RDB$ARGUMENT_MECHANISM);
+				put_numeric(att_functionarg_type_mechanism, X.RDB$ARGUMENT_MECHANISM);
 			if (!X.RDB$FIELD_NAME.NULL)
 				PUT_TEXT(att_functionarg_field_name, X.RDB$FIELD_NAME);
 			if (!X.RDB$RELATION_NAME.NULL)
@@ -3032,7 +3030,7 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 			general_on_error();
 		END_ERROR;
 	}
-	else if (tdgbl->BCK_capabilities & BCK_ods10)
+	else if (tdgbl->runtimeODS >= BCK_ods10)
 	{
 		FOR (REQUEST_HANDLE tdgbl->handles_write_function_args_req_handle1)
 			X IN RDB$FUNCTION_ARGUMENTS WITH
@@ -3044,7 +3042,7 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 			BURP_verbose (141, temp);
 			// msg 141 writing argument for function %s
 			put_numeric (att_functionarg_position, X.RDB$ARGUMENT_POSITION);
-			put_numeric (att_functionarg_mechanism, X.RDB$MECHANISM);
+			put_numeric (att_functionarg_passing_mechanism, X.RDB$MECHANISM);
 			put_numeric (att_functionarg_field_type, X.RDB$FIELD_TYPE);
 			put_numeric (att_functionarg_field_scale, X.RDB$FIELD_SCALE);
 			put_numeric (att_functionarg_field_length, X.RDB$FIELD_LENGTH);
@@ -3072,7 +3070,7 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 			BURP_verbose (141, temp);
 			// msg 141 writing argument for function %s
 			put_numeric (att_functionarg_position, X.RDB$ARGUMENT_POSITION);
-			put_numeric (att_functionarg_mechanism, X.RDB$MECHANISM);
+			put_numeric (att_functionarg_passing_mechanism, X.RDB$MECHANISM);
 			put_numeric (att_functionarg_field_type, X.RDB$FIELD_TYPE);
 			put_numeric (att_functionarg_field_scale, X.RDB$FIELD_SCALE);
 			put_numeric (att_functionarg_field_length, X.RDB$FIELD_LENGTH);
@@ -3111,7 +3109,7 @@ void write_generators()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$GENERATORS
@@ -3142,7 +3140,7 @@ void write_generators()
 			general_on_error();
 		END_ERROR;
 	}
-	else if (tdgbl->BCK_capabilities & BCK_ods11)
+	else if (tdgbl->runtimeODS >= BCK_ods11)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$GENERATORS
@@ -3218,7 +3216,7 @@ void write_global_fields()
 	// requests--this requires more code but it is well worth it
 	// for the performance benefits, especially remotely--deej
 
-	if (tdgbl->BCK_capabilities & BCK_ods12_0)
+	if (tdgbl->runtimeODS >= BCK_ods12_0)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$FIELDS WITH
@@ -3290,7 +3288,7 @@ void write_global_fields()
 			general_on_error();
 		END_ERROR;
 	}
-	else if (tdgbl->BCK_capabilities & BCK_ods10)
+	else if (tdgbl->runtimeODS >= BCK_ods10)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$FIELDS WITH
@@ -3504,7 +3502,7 @@ void write_procedures()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11_1)
+	if (tdgbl->runtimeODS >= BCK_ods11_1)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$PROCEDURES
@@ -3611,7 +3609,7 @@ void write_procedure_prms(const GDS_NAME package, const GDS_NAME procptr)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11_1)
+	if (tdgbl->runtimeODS >= BCK_ods11_1)
 	{
 		FOR (REQUEST_HANDLE tdgbl->handles_write_procedure_prms_req_handle1)
 			X IN RDB$PROCEDURE_PARAMETERS
@@ -3774,7 +3772,7 @@ void write_relations()
 	// requests--this requires more code but it is well worth it
 	// for the performance benefits, especially remotely--deej
 
-	if (tdgbl->BCK_capabilities & BCK_ods11_1)
+	if (tdgbl->runtimeODS >= BCK_ods11_1)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$RELATIONS WITH X.RDB$SYSTEM_FLAG NE 1 OR
@@ -3973,7 +3971,7 @@ void write_sql_roles()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11)
+	if (tdgbl->runtimeODS >= BCK_ods11)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$ROLES
@@ -4035,7 +4033,7 @@ void write_mapping()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->BCK_capabilities & BCK_ods11_2)
+	if (tdgbl->runtimeODS >= BCK_ods11_2)
 	{
 		FOR (REQUEST_HANDLE req_handle)
 			X IN RDB$ROLES
@@ -4085,7 +4083,7 @@ void write_triggers()
 	// requests--this requires more code but it is well worth it
 	// for the performance benefits, especially remotely--deej
 
-	if (tdgbl->BCK_capabilities & BCK_ods11_1)
+	if (tdgbl->runtimeODS >= BCK_ods11_1)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$TRIGGERS WITH
