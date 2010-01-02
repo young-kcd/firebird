@@ -816,6 +816,8 @@ Data source : @4"},		/* eds_statement */
 	{336068874, "Procedure @1 has a signature mismatch on package body @2"},		/* dyn_procsignat_package */
 	{336068875, "Default values for parameters are allowed only in declaration of packaged procedure @1.@2"},		/* dyn_defvaldecl_package */
 	{336068877, "Package body @1 already exists"},		/* dyn_package_body_exists */
+	{336068878, "Invalid DDL statement for function @1"},		/* dyn_invalid_ddl_func */
+	{336068879, "Cannot alter new style function @1 with ALTER EXTERNAL FUNCTION"},		/* dyn_newfc_oldsyntax */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */

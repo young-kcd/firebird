@@ -847,6 +847,8 @@ const ISC_STATUS isc_dyn_funcsignat_package           = 336068873L;
 const ISC_STATUS isc_dyn_procsignat_package           = 336068874L;
 const ISC_STATUS isc_dyn_defvaldecl_package           = 336068875L;
 const ISC_STATUS isc_dyn_package_body_exists          = 336068877L;
+const ISC_STATUS isc_dyn_invalid_ddl_func             = 336068878L;
+const ISC_STATUS isc_dyn_newfc_oldsyntax              = 336068879L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -1098,7 +1100,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1042;
+const ISC_STATUS isc_err_max                          = 1044;
 
 #else /* c definitions */
 
@@ -1915,6 +1917,8 @@ const ISC_STATUS isc_err_max                          = 1042;
 #define isc_dyn_procsignat_package           336068874L
 #define isc_dyn_defvaldecl_package           336068875L
 #define isc_dyn_package_body_exists          336068877L
+#define isc_dyn_invalid_ddl_func             336068878L
+#define isc_dyn_newfc_oldsyntax              336068879L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2166,7 +2170,7 @@ const ISC_STATUS isc_err_max                          = 1042;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1042
+#define isc_err_max                          1044
 
 #endif
 

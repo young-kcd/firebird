@@ -1634,6 +1634,10 @@ C --
       PARAMETER (GDS__dyn_defvaldecl_package           = 336068875)
       INTEGER*4 GDS__dyn_package_body_exists         
       PARAMETER (GDS__dyn_package_body_exists          = 336068877)
+      INTEGER*4 GDS__dyn_invalid_ddl_func            
+      PARAMETER (GDS__dyn_invalid_ddl_func             = 336068878)
+      INTEGER*4 GDS__dyn_newfc_oldsyntax             
+      PARAMETER (GDS__dyn_newfc_oldsyntax              = 336068879)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

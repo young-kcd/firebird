@@ -324,16 +324,11 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 			if (!DYN_REQUEST(drq_m_fun))
 				DYN_REQUEST(drq_m_fun) = request;
 
+			if (!X.RDB$ENGINE_NAME.NULL)
+				status_exception::raise(Arg::Gds(isc_dyn_newfc_oldsyntax) << t);
+
 			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 				DDL_TRIGGER_ALTER_FUNCTION, t, gbl->sqlText);
-
-			if (!X.RDB$ENGINE_NAME.NULL)
-			{
-				//// TODO: localize
-				status_exception::raise(
-					Arg::Gds(isc_random) <<
-					Arg::Str("Cannot alter new style function with ALTER EXTERNAL FUNCTION"));
-			}
 
 			found = true;
 			MODIFY X

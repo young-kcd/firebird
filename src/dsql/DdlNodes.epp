@@ -1128,10 +1128,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 {
 	if (invalid)
-	{
-		//// TODO: localize
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Invalid DDL statement"));
-	}
+		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_func) << name);
 
 	if (compiled)
 		return;
