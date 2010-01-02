@@ -258,15 +258,16 @@ void INI_format(const TEXT* owner, const TEXT* charset)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	// Uppercase owner name
 	MetaName ownerName(owner ? owner : "");
 	ownerName.upper7();
 
 	// Uppercase charset name
-	MetaName charSetName(charset && strlen(charset) != 0 ?
+	MetaName rdbCharSetName(charset && strlen(charset) != 0 ?
 		charset : DEFAULT_DB_CHARACTER_SET_NAME);
-	charSetName.upper7();
+	rdbCharSetName.upper7();
 
 	const int* fld;
 
@@ -287,36 +288,35 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 	// Store RELATIONS and RELATION_FIELDS
 
-	SLONG relId;
-	string relName;
-	SLONG fieldId;
-	SLONG systemFlag = RDB_system;
-	SLONG relType;
+	SLONG rdbRelationId;
+	MetaName rdbRelationName;
+	SLONG rdbFieldId;
+	SLONG rdbSystemFlag = RDB_system;
+	SLONG rdbRelationType;
 
-	PreparedStatement::Builder sql("insert into rdb$relations (rdb$relation_id, "
-		"rdb$relation_name,  rdb$field_id, rdb$format, rdb$system_flag, rdb$dbkey_length, "
-		"rdb$owner_name,  rdb$relation_type) values (");
-	sql << relId << ", " << relName << ", " << fieldId << ", 0, " << systemFlag <<
-		", 8, " << ownerName << ", " << relType << ")";
+	PreparedStatement::Builder sql;
+	sql << "insert into rdb$relations (rdb$relation_id, rdb$relation_name, rdb$field_id, "
+		<< "rdb$format, rdb$system_flag, rdb$dbkey_length, rdb$owner_name, rdb$relation_type) "
+		<< "values (" << rdbRelationId << ", " << rdbRelationName << ", " << rdbFieldId << ", 0, "
+		<< rdbSystemFlag << ", 8, " << ownerName << ", " << rdbRelationType << ")";
 
-	Firebird::AutoPtr<PreparedStatement> ps(tdbb->getAttachment()->prepareStatement(
+	AutoPtr<PreparedStatement> ps(attachment->prepareStatement(
 		tdbb, *tdbb->getDefaultPool(), transaction, sql));
 
 	jrd_req* handle1 = NULL;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		for (fieldId = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+		for (rdbFieldId = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
 			const int* pFld = fld;
 			const int* pRelFld = relfld;
-			store_relation_field(tdbb, pFld, pRelFld, fieldId, &handle1);
-			++fieldId;
+			store_relation_field(tdbb, pFld, pRelFld, rdbFieldId, &handle1);
+			++rdbFieldId;
 		}
 
-		relId = relfld[RFLD_R_ID];
-		relName = names[relfld[RFLD_R_NAME]];
-		relType = relfld[RFLD_R_TYPE];
-
+		rdbRelationId = relfld[RFLD_R_ID];
+		rdbRelationName = names[relfld[RFLD_R_NAME]];
+		rdbRelationType = relfld[RFLD_R_TYPE];
 		ps->execute(tdbb, transaction);
 	}
 
@@ -332,12 +332,14 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	handle1 = NULL;
 
 	// Store DATABASE record
-	sql = PreparedStatement::Builder("insert into rdb$database (rdb$relation_id, "
-		"rdb$character_set_name) values (");
-	sql << relId << ", " << charSetName << ")";
-	ps.reset(tdbb->getAttachment()->prepareStatement(tdbb,
-		*tdbb->getDefaultPool(), transaction, sql));
-	relId = USER_DEF_REL_INIT_ID;
+
+	sql = PreparedStatement::Builder();
+	sql << "insert into rdb$database (rdb$relation_id, rdb$character_set_name) values ("
+		<< rdbRelationId << ", " << rdbCharSetName << ")";
+
+	ps.reset(attachment->prepareStatement(tdbb, *tdbb->getDefaultPool(), transaction, sql));
+
+	rdbRelationId = USER_DEF_REL_INIT_ID;
 	ps->execute(tdbb, transaction);
 
 	// Store ADMIN_ROLE record

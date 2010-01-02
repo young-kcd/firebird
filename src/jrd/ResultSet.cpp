@@ -72,6 +72,9 @@ bool ResultSet::fetch(thread_db* tdbb)
 	if (status == 100)
 		return false;
 
+	if (stmt->builder)
+		stmt->builder->moveFromResultSet(tdbb, this);
+
 	firstFetchDone = true;
 
 	return true;

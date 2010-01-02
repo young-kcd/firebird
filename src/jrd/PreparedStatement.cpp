@@ -53,39 +53,30 @@ namespace
 namespace Jrd {
 
 
-void PreparedStatement::Builder::moveToStatement(thread_db* tdbb, PreparedStatement* stmt) const
+// Move data from result set message to user variables.
+void PreparedStatement::Builder::moveFromResultSet(thread_db* tdbb, ResultSet* rs) const
 {
-	for (Array<Type>::const_iterator i = types.begin(); i != types.end(); ++i)
+	for (Array<Slot>::const_iterator i = outputSlots.begin(); i != outputSlots.end(); ++i)
 	{
-		unsigned param = i - types.begin();
-		void* address = addresses[param];
-		bool* specifiedAddress = specifiedAddresses[param];
+		dsc* desc = &rs->getDesc(i->number);
 
-		if (specifiedAddress && !*specifiedAddress)
-		{
-			stmt->setNull(param + 1);
-			continue;
-		}
-
-		dsc desc;
-
-		switch (*i)
+		switch (i->type)
 		{
 			case TYPE_SLONG:
-				desc.makeLong(0, (SLONG*) address);
+				*(SLONG*) i->address = MOV_get_long(desc, 0);
 				break;
 
 			case TYPE_STRING:
 			{
-				string* str = (string*) address;
-				desc.makeText(str->length(), CS_NONE, (UCHAR*) str->c_str());
+				string* str = (string*) i->address;
+				*str = MOV_make_string2(tdbb, desc, CS_NONE);
 				break;
 			}
 
 			case TYPE_METANAME:
 			{
-				MetaName* str = (MetaName*) address;
-				desc.makeText(str->length(), CS_NONE, (UCHAR*) str->c_str());
+				MetaName* str = (MetaName*) i->address;
+				*str = MOV_make_string2(tdbb, desc, CS_METADATA);
 				break;
 			}
 
@@ -93,7 +84,50 @@ void PreparedStatement::Builder::moveToStatement(thread_db* tdbb, PreparedStatem
 				fb_assert(false);
 		}
 
-		stmt->setDesc(tdbb, param + 1, desc);
+		if (i->specifiedAddress && rs->isNull(i->number))
+			*i->specifiedAddress = false;
+	}
+}
+
+
+// Move data from user variables to the request input message.
+void PreparedStatement::Builder::moveToStatement(thread_db* tdbb, PreparedStatement* stmt) const
+{
+	for (Array<Slot>::const_iterator i = inputSlots.begin(); i != inputSlots.end(); ++i)
+	{
+		if (i->specifiedAddress && !*i->specifiedAddress)
+		{
+			stmt->setNull(i->number);
+			continue;
+		}
+
+		dsc desc;
+
+		switch (i->type)
+		{
+			case TYPE_SLONG:
+				desc.makeLong(0, (SLONG*) i->address);
+				break;
+
+			case TYPE_STRING:
+			{
+				string* str = (string*) i->address;
+				desc.makeText(str->length(), CS_NONE, (UCHAR*) str->c_str());
+				break;
+			}
+
+			case TYPE_METANAME:
+			{
+				MetaName* str = (MetaName*) i->address;
+				desc.makeText(str->length(), CS_METADATA, (UCHAR*) str->c_str());
+				break;
+			}
+
+			default:
+				fb_assert(false);
+		}
+
+		stmt->setDesc(tdbb, i->number, desc);
 	}
 }
 

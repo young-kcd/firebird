@@ -57,57 +57,77 @@ public:
 			TYPE_STRING,
 		};
 
+		// This struct and the member outputParams are used to make the C++ undefined parameter
+		// evaluation order do not interfere on the question marks / slots correspondence.
+		struct OutputParam
+		{
+			OutputParam(const char* aChunk, size_t aNumber)
+				: chunk(aChunk),
+				  number(aNumber)
+			{
+			}
+
+			const char* chunk;
+			size_t number;
+		};
+
+		struct Slot
+		{
+			Type type;
+			unsigned number;
+			void* address;
+			bool* specifiedAddress;
+		};
+
 	public:
-		Builder(const Firebird::string& aText)
-			: text(aText),
-			  params(0)
+		Builder()
+			: outputParams(0)
 		{
 		}
 
 	public:
+		// Output variables.
+
+		template <typename T> OutputParam operator ()(const char* chunk, TriStateType<T>& param)
+		{
+			OutputParam ret = (*this)(chunk, param.value);
+			outputSlots[outputSlots.getCount() - 1].specifiedAddress = &param.specified;
+			return ret;
+		}
+
+		template <typename T> OutputParam operator ()(const char* chunk, T& param)
+		{
+			add(getType(param), &param, outputSlots);
+			return OutputParam(chunk, outputSlots.getCount() - 1);
+		}
+
+		// SQL text concatenation.
+		Builder& operator <<(OutputParam outputParam)
+		{
+			text += outputParam.chunk;
+			outputSlots[outputParam.number].number = ++outputParams;
+			return *this;
+		}
+
+		// Input variables.
+
 		Builder& operator <<(const char* chunk)
 		{
 			text += chunk;
 			return *this;
 		}
 
-		Builder& operator <<(SLONG& param)
-		{
-			types.add(TYPE_SLONG);
-			addresses.add(&param);
-			specifiedAddresses.add(NULL);
-
-			text += "?";
-			++params;
-			return *this;
-		}
-
-		Builder& operator <<(Firebird::string& param)
-		{
-			types.add(TYPE_STRING);
-			addresses.add(&param);
-			specifiedAddresses.add(NULL);
-
-			text += "?";
-			++params;
-			return *this;
-		}
-
-		Builder& operator <<(Firebird::MetaName& param)
-		{
-			types.add(TYPE_METANAME);
-			addresses.add(&param);
-			specifiedAddresses.add(NULL);
-
-			text += "?";
-			++params;
-			return *this;
-		}
-
 		template <typename T> Builder& operator <<(TriStateType<T>& param)
 		{
 			*this << param.value;
-			specifiedAddresses[specifiedAddresses.getCount() - 1] = &param.specified;
+			inputSlots[inputSlots.getCount() - 1].specifiedAddress = &param.specified;
+			return *this;
+		}
+
+		template <typename T> Builder& operator <<(T& param)
+		{
+			add(getType(param), &param, inputSlots);
+			text += "?";
 			return *this;
 		}
 
@@ -117,14 +137,29 @@ public:
 			return text;
 		}
 
+		void moveFromResultSet(thread_db* tdbb, ResultSet* rs) const;
 		void moveToStatement(thread_db* tdbb, PreparedStatement* stmt) const;
 
 	private:
+		// Make the C++ template engine return the constant for each type.
+		static Type getType(SLONG&)					{ return TYPE_SLONG; }
+		static Type getType(Firebird::string&)		{ return TYPE_STRING; }
+		static Type getType(Firebird::MetaName&)	{ return TYPE_METANAME; }
+
+		void add(Type type, void* address, Firebird::Array<Slot>& slots)
+		{
+			Slot slot;
+			slot.type = type;
+			slot.number = (unsigned) slots.getCount() + 1;
+			slot.address = address;
+			slot.specifiedAddress = NULL;
+			slots.add(slot);
+		}
+
+	private:
 		Firebird::string text;
-		Firebird::Array<Type> types;
-		Firebird::Array<void*> addresses;
-		Firebird::Array<bool*> specifiedAddresses;
-		unsigned params;
+		Firebird::Array<Slot> inputSlots, outputSlots;
+		unsigned outputParams;
 	};
 
 private:
