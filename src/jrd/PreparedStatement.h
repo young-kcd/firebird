@@ -132,7 +132,7 @@ private:
 	class PosBuilder
 	{
 	public:
-		PosBuilder(const Firebird::string& aText)
+		explicit PosBuilder(const Firebird::string& aText)
 			: text(aText),
 			  params(0)
 		{
