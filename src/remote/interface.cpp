@@ -1599,7 +1599,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 		if (packet->p_operation != op_sql_response)
 			check_response(rdb, packet);
-		else {
+		else
+		{
 			message->msg_address = NULL;
 			receive_response(rdb, packet);
 		}
@@ -1607,7 +1608,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		if (user_status[1])
 			return user_status[1];
 
-		if (transaction && !packet->p_resp.p_resp_object) {
+		if (transaction && !packet->p_resp.p_resp_object)
+		{
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			*rtr_handle = NULL;
@@ -3186,11 +3188,11 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
+ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 					   Rrq** req_handle,
 					   USHORT msg_type,
 					   USHORT msg_length,
-					   UCHAR * msg,
+					   UCHAR* msg,
 					   SSHORT level)
 {
 /**************************************
@@ -3413,7 +3415,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, Rrq** req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, Rrq** req_handle)
 {
 /**************************************
  *
@@ -5073,7 +5075,7 @@ static bool batch_gds_receive(rem_port*		port,
 }
 
 
-static bool check_response(Rdb* rdb, PACKET * packet)
+static bool check_response(Rdb* rdb, PACKET* packet)
 {
 /**************************************
  *
@@ -5127,7 +5129,7 @@ static bool check_response(Rdb* rdb, PACKET * packet)
 }
 
 
-static bool clear_queue(rem_port* port, ISC_STATUS * user_status)
+static bool clear_queue(rem_port* port, ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -5459,7 +5461,8 @@ static bool get_single_user(ClumpletReader& dpb)
  *
  ******************************************/
 	string su;
-	if (dpb.find(isc_dpb_reserved)) {
+	if (dpb.find(isc_dpb_reserved))
+	{
 		dpb.getString(su);
 		return su == "YES";
 	}
@@ -5467,7 +5470,7 @@ static bool get_single_user(ClumpletReader& dpb)
 }
 #endif
 
-static ISC_STATUS handle_error( ISC_STATUS * user_status, ISC_STATUS code)
+static ISC_STATUS handle_error( ISC_STATUS* user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -5754,7 +5757,8 @@ static bool mov_dsql_message(ISC_STATUS* status,
 
 	try {
 
-		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
+		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count)
+		{
 			move_error(Arg::Gds(isc_dsql_sqlda_err));
 			// Msg 263 SQLDA missing or wrong number of variables
 		}
@@ -5887,7 +5891,7 @@ static void receive_after_start( Rrq* request, USHORT msg_type)
 }
 
 
-static bool receive_packet(rem_port* port, PACKET * packet, ISC_STATUS * user_status)
+static bool receive_packet(rem_port* port, PACKET* packet, ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -5916,7 +5920,7 @@ static bool receive_packet(rem_port* port, PACKET * packet, ISC_STATUS * user_st
 }
 
 
-static bool receive_packet_noqueue(rem_port* port, PACKET * packet, ISC_STATUS * user_status)
+static bool receive_packet_noqueue(rem_port* port, PACKET* packet, ISC_STATUS* user_status)
 {
 /**************************************
  *

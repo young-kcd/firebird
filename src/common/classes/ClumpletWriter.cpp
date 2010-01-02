@@ -280,7 +280,6 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 			if (length > 0)
 			{
 				m.printf("attempt to store data in dataless clumplet");
-				break;
 			}
 			break;
 		case StringSpb:
@@ -295,14 +294,12 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 			if (length != 4)
 			{
 				m.printf("attempt to store %d bytes in a clumplet, need 4", length);
-				break;
 			}
 			break;
 		case ByteSpb:
 			if (length != 1)
 			{
 				m.printf("attempt to store %d bytes in a clumplet, need 1", length);
-				break;
 			}
 			break;
 		}
@@ -315,7 +312,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 
 		if (!upgradeVersion())
 		{
-			// can't uprgade - report failure
+			// can't upgrade - report failure
 			usage_mistake(m.c_str());
 			return;
 		}
@@ -445,7 +442,7 @@ bool ClumpletWriter::upgradeVersion()
 	// Copy data to new clumplet writer
 	size_t newPos = 0;
 	ClumpletWriter newPb(newest->kind, sizeLimit, newest->tag);
-	size_t currentPosition = cur_offset;
+	const size_t currentPosition = cur_offset;
 	for(rewind(); !isEof(); moveNext())
 	{
 		if (currentPosition == cur_offset)
