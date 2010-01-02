@@ -74,8 +74,8 @@ namespace // unnamed, private
 {
 
 
-const int DB_VERSION_DDL4		= 40;  // ods4 db
-const int DB_VERSION_DDL5		= 50;  // ods5 db
+//const int DB_VERSION_DDL4		= 40;  // ods4 db
+//const int DB_VERSION_DDL5		= 50;  // ods5 db
 const int DB_VERSION_DDL8		= 80;  // ods8 db, IB4
 const int DB_VERSION_DDL9		= 90;  // ods9 db, IB5
 const int DB_VERSION_DDL10		= 100; // ods10 db, IB6, FB1, FB1.5
@@ -877,31 +877,53 @@ void check_db_version(BurpGlobals* tdgbl)
 		int ods_version;
 	};
 
-	tdgbl->RESTORE_ods = DB_VERSION_DDL4;
+	tdgbl->RESTORE_ods = 0;
+
+	// Detect very old server before IB4 just in case to exit gracefully.
+	// select count(*) from rdb$relation_fields
+	// where rdb$relation_name in ('RDB$RELATIONS', 'RDB$RELATION_FIELDS')
+	// and rdb$field_name = 'RDB$SYSTEM_FLAG';
+
+	int count = 0;
+	isc_req_handle req_handle = 0;
+	FOR (REQUEST_HANDLE req_handle)
+		RFR IN RDB$RELATION_FIELDS
+		WITH (RFR.RDB$RELATION_NAME = 'RDB$RELATIONS' OR RFR.RDB$RELATION_NAME = 'RDB$RELATION_FIELDS')
+		AND RFR.RDB$FIELD_NAME = 'RDB$SYSTEM_FLAG'
+		++count;
+	END_FOR;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
+	MISC_release_request_silent(req_handle);
+
+	if (count != 2)
+		return;
 
 	const rel_field_t relations[] =
 	{
-		{"RDB$TRIGGERS",	0,	DB_VERSION_DDL5},	// IB3.3
+		{"RDB$TRIGGERS",	0,	0},	// IB3.3, DB_VERSION_DDL5
 		{"RDB$PROCEDURES",	0,	DB_VERSION_DDL8},	// IB4
 		{"RDB$ROLES",		0,	DB_VERSION_DDL9},	// IB5
 		{"RDB$PACKAGES",	0,	DB_VERSION_DDL12},	// FB3
 		{0, 0, 0}
 	};
 
-	isc_req_handle req_handle = 0;
+	isc_req_handle req_handle2 = 0;
 	for (const rel_field_t* rel = relations; rel->rel; ++rel)
 	{
-		FOR (REQUEST_HANDLE req_handle)
+		FOR (REQUEST_HANDLE req_handle2)
 			FIRST 1 X IN RDB$RELATIONS
 			WITH X.RDB$RELATION_NAME = rel->rel
 			AND X.RDB$SYSTEM_FLAG = 1
-			tdgbl->RESTORE_ods = rel->ods_version;
+			if (tdgbl->RESTORE_ods < rel->ods_version)
+				tdgbl->RESTORE_ods = rel->ods_version;
 		END_FOR;
 		ON_ERROR
 			general_on_error ();
 		END_ERROR;
 	}
-	MISC_release_request_silent(req_handle);
+	MISC_release_request_silent(req_handle2);
 
 	if (tdgbl->RESTORE_ods < DB_VERSION_DDL8)
 		return;
@@ -916,21 +938,22 @@ void check_db_version(BurpGlobals* tdgbl)
 		{0, 0, 0}
 	};
 
-	isc_req_handle req_handle2 = 0;
+	isc_req_handle req_handle3 = 0;
 	for (const rel_field_t* rf = rel_fields; rf->rel; ++rf)
 	{
-		FOR (REQUEST_HANDLE req_handle2)
+		FOR (REQUEST_HANDLE req_handle3)
 			FIRST 1 X2 IN RDB$RELATION_FIELDS
 			WITH X2.RDB$RELATION_NAME = rf->rel
 			AND X2.RDB$FIELD_NAME = rf->fld
 			AND X2.RDB$SYSTEM_FLAG = 1
-			tdgbl->RESTORE_ods = rf->ods_version;
+			if (tdgbl->RESTORE_ods < rf->ods_version)
+				tdgbl->RESTORE_ods = rf->ods_version;
 		END_FOR;
 		ON_ERROR
 			general_on_error ();
 		END_ERROR;
 	}
-	MISC_release_request_silent(req_handle2);
+	MISC_release_request_silent(req_handle3);
 }
 
 void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
@@ -4422,7 +4445,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				get_numeric(tdgbl);
 				break;
 
-			case att_functionarg_mechanism:
+			case att_functionarg_passing_mechanism:
 				get_numeric(tdgbl);
 				break;
 
@@ -4469,7 +4492,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 
 			case att_functionarg_collation_id:
 			case att_functionarg_null_flag:
-			case att_functionarg_arg_mechanism:
+			case att_functionarg_type_mechanism:
 				if (tdgbl->RESTORE_format >= 10)
 					get_numeric(tdgbl);
 				else
@@ -4543,7 +4566,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
 					break;
 
-				case att_functionarg_mechanism:
+				case att_functionarg_passing_mechanism:
 					X.RDB$MECHANISM = (USHORT) get_numeric(tdgbl);
 					break;
 
@@ -4650,7 +4673,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						bad_attribute(scan_next_attr, attribute, 90);
 					break;
 
-				case att_functionarg_arg_mechanism:
+				case att_functionarg_type_mechanism:
 					if (tdgbl->RESTORE_format >= 10)
 					{
 						X.RDB$ARGUMENT_MECHANISM = get_numeric(tdgbl);
@@ -4716,7 +4739,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
 					break;
 
-				case att_functionarg_mechanism:
+				case att_functionarg_passing_mechanism:
 					X.RDB$MECHANISM = (USHORT) get_numeric(tdgbl);
 					break;
 
@@ -4771,7 +4794,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 
 				case att_functionarg_collation_id:
 				case att_functionarg_null_flag:
-				case att_functionarg_arg_mechanism:
+				case att_functionarg_type_mechanism:
 					if (tdgbl->RESTORE_format >= 10)
 						get_numeric(tdgbl);
 					else
@@ -4821,7 +4844,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
 					break;
 
-				case att_functionarg_mechanism:
+				case att_functionarg_passing_mechanism:
 					X.RDB$MECHANISM = (USHORT) get_numeric(tdgbl);
 					break;
 
@@ -4873,7 +4896,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 
 				case att_functionarg_collation_id:
 				case att_functionarg_null_flag:
-				case att_functionarg_arg_mechanism:
+				case att_functionarg_type_mechanism:
 					if (tdgbl->RESTORE_format >= 10)
 						get_numeric(tdgbl);
 					else
