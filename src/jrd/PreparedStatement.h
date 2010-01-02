@@ -104,6 +104,7 @@ public:
 		// SQL text concatenation.
 		Builder& operator <<(OutputParam outputParam)
 		{
+			text += " ";
 			text += outputParam.chunk;
 			outputSlots[outputParam.number].number = ++outputParams;
 			return *this;
@@ -113,6 +114,7 @@ public:
 
 		Builder& operator <<(const char* chunk)
 		{
+			text += " ";
 			text += chunk;
 			return *this;
 		}

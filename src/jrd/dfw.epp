@@ -121,8 +121,9 @@
 #include "../jrd/IntlManager.h"
 #include "../jrd/UserManagement.h"
 #include "../jrd/Function.h"
+#include "../jrd/PreparedStatement.h"
+#include "../jrd/ResultSet.h"
 #include "../common/utils_proto.h"
-
 #include "../common/classes/Hash.h"
 
 #ifdef HAVE_UNISTD_H
@@ -2197,6 +2198,7 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = transaction->getAttachment();
 
 	bool is_create = true;
 	dfw_task_routine task_routine = NULL;
@@ -2230,17 +2232,23 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	if (is_create)
 	{
-		jrd_req* request = NULL;
+		PreparedStatement::Builder sql;
+		MetaName rdbRelationName;
+		SLONG rdbRelationType;
+		sql << "select"
+			<< sql("rel.rdb$relation_name,", rdbRelationName)
+			<< sql("rel.rdb$relation_type", rdbRelationType)
+			<< "from rdb$indices idx join rdb$relations rel using (rdb$relation_name)"
+			<< "where idx.rdb$index_name = " << work->dfw_name;
+		AutoPtr<PreparedStatement> ps(attachment->prepareStatement(
+			tdbb, *tdbb->getDefaultPool(), dbb->dbb_sys_trans, sql));
+		AutoPtr<ResultSet> rs(ps->executeQuery(tdbb, dbb->dbb_sys_trans));
 
-		FOR(REQUEST_HANDLE request)
-			IDX IN RDB$INDICES CROSS
-			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
-				IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
-			gtt_preserve = (REL.RDB$RELATION_TYPE == rel_global_temp_preserve);
-			relation = MET_lookup_relation(tdbb, REL.RDB$RELATION_NAME);
-		END_FOR;
-
-		CMP_release(tdbb, request);
+		while (rs->fetch(tdbb))
+		{
+			gtt_preserve = (rdbRelationType == rel_global_temp_preserve);
+			relation = MET_lookup_relation(tdbb, rdbRelationName);
+		}
 	}
 	else
 	{

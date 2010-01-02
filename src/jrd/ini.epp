@@ -295,9 +295,9 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	SLONG rdbRelationType;
 
 	PreparedStatement::Builder sql;
-	sql << "insert into rdb$relations (rdb$relation_id, rdb$relation_name, rdb$field_id, "
-		<< "rdb$format, rdb$system_flag, rdb$dbkey_length, rdb$owner_name, rdb$relation_type) "
-		<< "values (" << rdbRelationId << ", " << rdbRelationName << ", " << rdbFieldId << ", 0, "
+	sql << "insert into rdb$relations (rdb$relation_id, rdb$relation_name, rdb$field_id,"
+		<< "rdb$format, rdb$system_flag, rdb$dbkey_length, rdb$owner_name, rdb$relation_type)"
+		<< "values (" << rdbRelationId << ", " << rdbRelationName << ", " << rdbFieldId << ", 0,"
 		<< rdbSystemFlag << ", 8, " << ownerName << ", " << rdbRelationType << ")";
 
 	AutoPtr<PreparedStatement> ps(attachment->prepareStatement(
