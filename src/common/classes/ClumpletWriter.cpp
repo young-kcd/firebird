@@ -37,14 +37,14 @@
 namespace Firebird {
 
 ClumpletWriter::ClumpletWriter(Kind k, size_t limit, UCHAR tag) :
-	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), kindList(NULL), dynamic_buffer(getPool())
 {
 	initNewBuffer(tag);
 	rewind();
 }
 
 ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit, UCHAR tag) :
-	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
+	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), kindList(NULL), dynamic_buffer(getPool())
 {
 	initNewBuffer(tag);
 	rewind();
@@ -82,7 +82,7 @@ void ClumpletWriter::initNewBuffer(UCHAR tag)
 }
 
 ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
-	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), kindList(NULL), dynamic_buffer(getPool())
 {
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);

@@ -89,13 +89,12 @@ protected:
 	bool upgradeVersion();	// upgrade clumplet version - obtain newest from kindList
 
 private:
-	size_t sizeLimit;
-	const KindList* kindList;
-
 	// Assignment and copy constructor not implemented.
 	ClumpletWriter(const ClumpletWriter& from);
 	ClumpletWriter& operator=(const ClumpletWriter& from);
 
+	size_t sizeLimit;
+	const KindList* kindList;
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
 
 	void initNewBuffer(UCHAR tag);
