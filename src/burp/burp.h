@@ -172,10 +172,6 @@ and trigger-new is:
    CAREFUL not to pull the lastest version into maint version without
    modifying the att_backup_format to be one version back
 
-   ATT_BACKUP_FORMAT has been increased to 5. It allows us to distinguish
-   backup format between IB3.3/IB4.0 and IB4.5 in case of migration
-   problem
-
 
 Version 6: IB6, FB1, FB1.5.
 			Supports SQL Time & Date columns.
@@ -619,8 +615,8 @@ enum trig_t {
 	trig_post_erase	   // default
 };
 
-/* these types to go away when recognized by gpre as
-   <relation>.<field>.<type>  some time in the future  */
+// these types to go away when recognized by gpre as
+// <relation>.<field>.<type>  some time in the future
 
 const int TRIG_TYPE_PRE_STORE = 1;
 const int TRIG_TYPE_PRE_MODIFY = 3;
@@ -659,9 +655,9 @@ struct burp_fld
 	SSHORT		fld_view_context;
 	SSHORT		fld_update_flag;
 	SSHORT		fld_flags;
-	/* Can't do here
-	   BASED_ON RDB$RDB$RELATION_FIELDS.RDB$EDIT_STRING fld_edit_string; */
-	TEXT		fld_edit_string[128]; /* was [256] */
+	// Can't do here
+	// BASED_ON RDB$RDB$RELATION_FIELDS.RDB$EDIT_STRING fld_edit_string;
+	TEXT		fld_edit_string[128]; // was [256]
 	ISC_QUAD	fld_description;
 	ISC_QUAD	fld_query_header;
 	TEXT		fld_complex_name [GDS_NAME_LEN];
@@ -696,13 +692,6 @@ struct burp_rel
 	SSHORT		rel_name_length;
 	GDS_NAME	rel_name;
 	GDS_NAME	rel_owner;		// relation owner, if not us
-	// These fields were used for old style relations before IB4.
-	//ISC_QUAD	rel_store_blr;		// trigger blr blob id
-	//ISC_QUAD	rel_store_source;	// trigger source blob id
-	//ISC_QUAD	rel_modify_blr;		// trigger blr blob id
-	//ISC_QUAD	rel_modify_source;	// trigger source blob id
-	//ISC_QUAD	rel_erase_blr;		// trigger blr blob id
-	//ISC_QUAD	rel_erase_source;	// trigger source blob id
 };
 
 enum burp_rel_flags_vals {
@@ -820,7 +809,7 @@ burp_fil(Firebird::MemoryPool& p)
 	  fil_fd(INVALID_HANDLE_VALUE), fil_seq(0), fil_size_code(size_n) { }
 };
 
-/* Split & Join stuff */
+// Split & Join stuff
 
 enum act_t {
 	ACT_unknown, // action is unknown
@@ -856,8 +845,8 @@ struct hdr_split
 };
 
 
-/* NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
-   to 18. Otherwise we will not be able to join the gbk files v5.x */
+// NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
+// to 18. Otherwise we will not be able to join the gbk files v5.x
 
 const size_t HDR_SPLIT_SIZE	= sizeof(hdr_split);
 static const char HDR_SPLIT_TAG5[]	= "InterBase/gsplit, ";
@@ -938,8 +927,6 @@ public:
 	// Format of the backup being read on restore; gbak always creates it using the latest version
 	// but it can read backups created by previous versions.
 	USHORT		RESTORE_format;
-	// ODS of the target server (not necessarily the same version as gbak)
-	int			RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
 	FB_UINT64	mvol_cumul_count;

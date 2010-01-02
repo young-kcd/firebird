@@ -273,7 +273,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	tdgbl->packages = NULL;
 	tdgbl->procedures = NULL;
 	tdgbl->RESTORE_format = 0;
-	tdgbl->RESTORE_ods = 0;
+	tdgbl->runtimeODS = 0;
 	tdgbl->global_trans = 0;
 
 	tdgbl->gbl_sw_transportable = tdgbl->gbl_sw_compress = false;
@@ -489,7 +489,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	// Change ownership of any packages
 	for (burp_pkg* package = tdgbl->packages; package; package = package->pkg_next)
 	{
-		fb_assert(tdgbl->RESTORE_ods >= DB_VERSION_DDL12);
+		fb_assert(tdgbl->runtimeODS >= DB_VERSION_DDL12);
 
 		if (package->pkg_owner[0])
 		{
@@ -523,7 +523,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	{
 		if (procedure->prc_owner[0])
 		{
-			if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+			if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 			{
 				FOR (REQUEST_HANDLE req_handle4)
 					X IN RDB$PROCEDURES
@@ -877,7 +877,7 @@ void check_db_version(BurpGlobals* tdgbl)
 		int ods_version;
 	};
 
-	tdgbl->RESTORE_ods = 0;
+	tdgbl->runtimeODS = 0;
 
 	// Detect very old server before IB4 just in case to exit gracefully.
 	// select count(*) from rdb$relation_fields
@@ -916,8 +916,8 @@ void check_db_version(BurpGlobals* tdgbl)
 			FIRST 1 X IN RDB$RELATIONS
 			WITH X.RDB$RELATION_NAME = rel->rel
 			AND X.RDB$SYSTEM_FLAG = 1
-			if (tdgbl->RESTORE_ods < rel->ods_version)
-				tdgbl->RESTORE_ods = rel->ods_version;
+			if (tdgbl->runtimeODS < rel->ods_version)
+				tdgbl->runtimeODS = rel->ods_version;
 		END_FOR;
 		ON_ERROR
 			general_on_error ();
@@ -925,7 +925,7 @@ void check_db_version(BurpGlobals* tdgbl)
 	}
 	MISC_release_request_silent(req_handle2);
 
-	if (tdgbl->RESTORE_ods < DB_VERSION_DDL8)
+	if (tdgbl->runtimeODS < DB_VERSION_DDL8)
 		return;
 
 	const rel_field_t rel_fields[] =
@@ -946,8 +946,8 @@ void check_db_version(BurpGlobals* tdgbl)
 			WITH X2.RDB$RELATION_NAME = rf->rel
 			AND X2.RDB$FIELD_NAME = rf->fld
 			AND X2.RDB$SYSTEM_FLAG = 1
-			if (tdgbl->RESTORE_ods < rf->ods_version)
-				tdgbl->RESTORE_ods = rf->ods_version;
+			if (tdgbl->runtimeODS < rf->ods_version)
+				tdgbl->runtimeODS = rf->ods_version;
 		END_FOR;
 		ON_ERROR
 			general_on_error ();
@@ -1287,7 +1287,7 @@ void fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class, bool is_field)
 	if (strncmp(sec_class, prefix, prefix_length))
 		return;
 
-	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+	if (tdgbl->runtimeODS < DB_VERSION_DDL11_2)
 		return;
 
 	ISC_STATUS_ARRAY status_vector;
@@ -2264,7 +2264,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 	try
 	{
-		if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+		if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 		{
 			STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
 				X IN RDB$CHARACTER_SETS
@@ -2540,7 +2540,7 @@ bool get_collation(BurpGlobals* tdgbl)
 	att_type		attribute;
 	scan_attr_t		scan_next_attr;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
 			X IN RDB$COLLATIONS
@@ -2655,7 +2655,7 @@ bool get_collation(BurpGlobals* tdgbl)
 			general_on_error ();
 		END_ERROR;
 	}
-	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11)
 	{
 		// This includes DDL11_0 that doesn't know to ignore unknown system fields.
 		STORE (REQUEST_HANDLE tdgbl->handles_get_collation_req_handle1)
@@ -3359,7 +3359,7 @@ bool get_exception(BurpGlobals* tdgbl)
 	ULONG		l2 = 0;
 	scan_attr_t		scan_next_attr;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
 			X IN RDB$EXCEPTIONS
@@ -3639,9 +3639,9 @@ bool get_exception(BurpGlobals* tdgbl)
 			}
 			// Versions prior to FB2.0 don't support a field longer than varchar(78).
 			// Versions prior to FB2.5 use a field length of 1021, not 1023.
-			if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+			if (tdgbl->runtimeODS < DB_VERSION_DDL11)
 				X.RDB$MESSAGE[78] = 0;
-			else if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+			else if (tdgbl->runtimeODS < DB_VERSION_DDL11_2)
 				X.RDB$MESSAGE[1021] = 0;
 		END_STORE;
 		ON_ERROR
@@ -4089,7 +4089,7 @@ bool get_function(BurpGlobals* tdgbl)
 
 	bool existFlag = false;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 			X IN RDB$FUNCTIONS
@@ -4519,7 +4519,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 	SSHORT		l;
 	TEXT		temp[GDS_NAME_LEN * 2];
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		// with RDB$FIELD_PRECISION
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
@@ -4714,7 +4714,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 			general_on_error ();
 		END_ERROR;
 	}
-	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	else if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
 		// with RDB$FIELD_PRECISION
 		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
@@ -5038,7 +5038,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 	gfld* gfield = NULL;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		// with rdb$field_precision, rdb$security_class and rdb$owner_name.
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
@@ -5403,7 +5403,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 		END_ERROR;
 
 	}
-	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	else if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
 		// with rdb$field_precision
 		STORE (REQUEST_HANDLE tdgbl->handles_get_global_field_req_handle1)
@@ -5754,7 +5754,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 		END_ERROR;
 
 	}
-	else // RESTORE_ods < DB_VERSION_DDL10
+	else // runtimeODS < DB_VERSION_DDL10
 	{
 		// without rdb$field_precision
 
@@ -6489,7 +6489,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 	procedure->prc_next = tdgbl->procedures;
 	tdgbl->procedures = procedure;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
 	{
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_procedure_req_handle1)
@@ -6811,7 +6811,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
 	{
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
@@ -7266,7 +7266,7 @@ bool get_relation(BurpGlobals* tdgbl)
 	else
 		local_trans = tdgbl->global_trans;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
 	{
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_relation_req_handle1)
@@ -7582,7 +7582,7 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 	TEXT			temp[GDS_NAME_LEN];
 	SSHORT			l;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL11)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_sql_roles_req_handle1)
 			X IN RDB$ROLES
@@ -7632,7 +7632,7 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 			general_on_error ();
 		END_ERROR;
 	}
-	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL9)
+	else if (tdgbl->runtimeODS >= DB_VERSION_DDL9)
 	{
 		// This is the first IB version (v5, ods9) where roles appeared.
 		// They remained unchanged for IB6 / FB1 and FB1.5 (ods10).
@@ -7731,7 +7731,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 	SSHORT			l;
 	Firebird::string role, os;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
 	{
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -7760,7 +7760,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 			}
 		}
 
-		if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+		if (tdgbl->runtimeODS < DB_VERSION_DDL11_2)
 		{
 			return true;	// silently skip attributes on old server
 		}
@@ -8187,7 +8187,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
 	{
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle1)
@@ -8526,7 +8526,7 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 		return true;
 
 	// Versions prior to FB2.0 don't support a field longer than varchar(78).
-	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+	if (tdgbl->runtimeODS < DB_VERSION_DDL11)
 		message[78] = 0;
 
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
@@ -8776,11 +8776,11 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 			return false;
 
 		// Discard packages for engine < FB3
-		if (tdgbl->RESTORE_ods < DB_VERSION_DDL12)
+		if (tdgbl->runtimeODS < DB_VERSION_DDL12)
 			exists = false;
 	}
 
-	if (tdgbl->RESTORE_ods <= DB_VERSION_DDL8)
+	if (tdgbl->runtimeODS <= DB_VERSION_DDL8)
 	{
 		// Discard roles for IB4.
 		if (user_type == obj_sql_role || object_type == obj_sql_role)
@@ -8886,7 +8886,7 @@ bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		STORE (TRANSACTION_HANDLE local_trans
 				REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)
@@ -8907,7 +8907,7 @@ bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_view_context_name:
 					GET_TEXT(X.RDB$CONTEXT_NAME);
-					if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+					if (tdgbl->runtimeODS < DB_VERSION_DDL11_2)
 					{
 						// Cannot use MAX_SQL_IDENTIFIER_LEN because this value shouldn't be upgraded.
 						X.RDB$CONTEXT_NAME[31] = 0;
@@ -8968,7 +8968,7 @@ bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_view_context_name:
 					GET_TEXT(X.RDB$CONTEXT_NAME);
-					if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+					if (tdgbl->runtimeODS < DB_VERSION_DDL11_2)
 					{
 						// Cannot use MAX_SQL_IDENTIFIER_LEN because this value shouldn't be upgraded.
 						X.RDB$CONTEXT_NAME[31] = 0;
@@ -9386,9 +9386,9 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 	EXEC SQL SET TRANSACTION NAME tdgbl->global_trans ISOLATION LEVEL READ COMMITTED;
 
 	check_db_version(tdgbl);
-	if (tdgbl->RESTORE_ods < DB_VERSION_OLDEST_SUPPORTED)
+	if (tdgbl->runtimeODS < DB_VERSION_OLDEST_SUPPORTED)
 	{
-		BURP_error(51, true, SafeArg() << tdgbl->RESTORE_ods);
+		BURP_error(51, true, SafeArg() << tdgbl->runtimeODS);
 		// msg 51 database format %ld is too old to restore to
 	}
 
@@ -9897,7 +9897,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
  *	Store the blr_gen_id for the relation.
  *
  **************************************/
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
@@ -9928,7 +9928,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
 			general_on_error ();
 		END_ERROR;
 	}
-	else if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11)
+	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_store_blr_gen_id_req_handle1)
 			X IN RDB$GENERATORS
@@ -9975,7 +9975,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
 
 	// build the blr with the right relation name
 
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
 		add_byte(blr, blr_version5);
 	}
@@ -9984,7 +9984,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
 		add_byte(blr, blr_version4);
 	}
 	add_byte(blr, blr_begin);
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
 		add_byte(blr, blr_dcl_variable);
 		add_word(blr, 0);
@@ -10002,7 +10002,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value,
 	add_byte(blr, blr_assignment);
 	add_byte(blr, blr_gen_id);
 	add_string(blr, gen_name);
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL10)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
 		add_byte(blr, blr_literal);
 		add_byte(blr, blr_int64);

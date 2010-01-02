@@ -344,7 +344,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	set_capabilities();
 	if (tdgbl->runtimeODS < BCK_ods8)
 	{
-		BURP_error(348, true, SafeArg() << tdgbl->RESTORE_ods);
+		BURP_error(348, true, SafeArg() << tdgbl->runtimeODS);
 		// msg 348 database format @1 is too old to backup
 	}
 
