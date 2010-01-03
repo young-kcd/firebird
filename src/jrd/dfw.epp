@@ -2238,7 +2238,7 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		sql << "select"
 			<< sql("rel.rdb$relation_name,", rdbRelationName)
 			<< sql("rel.rdb$relation_type", rdbRelationType)
-			<< "from rdb$indices idx join rdb$relations rel using (rdb$relation_name)"
+			<< "from rdb$indices idx join rdb$relations rel on rel.rdb$relation_name = idx.rdb$relation_name"
 			<< "where idx.rdb$index_name = " << work->dfw_name;
 		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, dbb->dbb_sys_trans, sql));
 		AutoResultSet rs(ps->executeQuery(tdbb, dbb->dbb_sys_trans));
