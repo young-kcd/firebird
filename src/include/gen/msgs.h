@@ -701,6 +701,25 @@ Data source : @4"},		/* eds_statement */
 	{335544994, "Error while parsing function @1's BLR"},		/* bad_fun_BLR */
 	{335544995, "Cannot execute function @1 of the unimplemented package @2"},		/* func_pack_not_implemented */
 	{335544996, "Cannot execute procedure @1 of the unimplemented package @2"},		/* proc_pack_not_implemented */
+	{335544997, "External function @1 not returned by the external engine plugin @2"},		/* eem_func_not_returned */
+	{335544998, "External procedure @1 not returned by the external engine plugin @2"},		/* eem_proc_not_returned */
+	{335544999, "External trigger @1 not returned by the external engine plugin @2"},		/* eem_trig_not_returned */
+	{335545000, "Incompatible plugin version @1 for external engine @2"},		/* eem_bad_plugin_ver */
+	{335545001, "External engine @1 not found"},		/* eem_engine_notfound */
+	{335545002, "Attachment is in use"},		/* attachment_in_use */
+	{335545003, "Transaction is in use"},		/* transaction_in_use */
+	{335545004, "Plugin @1 not found"},		/* pman_plugin_notfound */
+	{335545005, "Cannot load plugin @1"},		/* pman_cannot_load_plugin */
+	{335545006, "Entrypoint of plugin @1 does not exist"},		/* pman_entrypoint_notfound */
+	{335545007, "Invalid value @1 for parameter index at PluginImpl::getConfigInfo: out of bounds"},		/* pman_bad_conf_index */
+	{335545008, "Plugin @1 does not create @2 instances"},		/* pman_unknown_instance */
+	{335545009, "Invalid usage of context namespace DDL_TRIGGER"},		/* sysf_invalid_trig_namespace */
+	{335545010, "Value is NULL but isNull parameter was not informed"},		/* unexpected_null */
+	{335545011, "Type @1 is incompatible with BLOB"},		/* type_notcompat_blob */
+	{335545012, "Invalid date"},		/* invalid_date_val */
+	{335545013, "Invalid time"},		/* invalid_time_val */
+	{335545014, "Invalid timestamp"},		/* invalid_timestamp_val */
+	{335545015, "Invalid index @1"},		/* invalid_index_val */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

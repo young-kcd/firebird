@@ -104,10 +104,7 @@ void ValueMover::getValue(const ValueImpl* value, const dsc* desc, dsc* target, 
 			*isNull = true;
 		else
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("Value is NULL but isNull parameter was not informed"));
+			status_exception::raise(Arg::Gds(isc_unexpected_null));
 		}
 	}
 	else
@@ -495,12 +492,9 @@ Firebird::int64 FB_CALL ValueImpl::getBlobId(Error* error, bool* isNull) const
 {
 	if (!desc.isBlob())
 	{
-		//// TODO: localize
-		ISC_STATUS status[] = {
-			isc_arg_gds, isc_random,
-			isc_arg_string, (ISC_STATUS) "Incompatible type",
-			0};
-		ErrorImpl::statusVectorToError(status, error);
+		Arg::Gds vector(isc_type_notcompat_blob);
+		vector << desc.typeToText();
+		ErrorImpl::statusVectorToError(vector.value(), error);
 		return 0;
 	}
 
@@ -569,12 +563,8 @@ void FB_CALL ValueImpl::setDate(Error* error, const Date* value)
 
 	if (t2.tm_year != t.tm_year || t2.tm_mon != t.tm_mon || t2.tm_mday != t.tm_mday)
 	{
-		//// TODO: localize
-		ISC_STATUS status[] = {
-			isc_arg_gds, isc_random,
-			isc_arg_string, (ISC_STATUS) "Invalid date",
-			0};
-		ErrorImpl::statusVectorToError(status, error);
+		Arg::Gds vector(isc_invalid_date_val);
+		ErrorImpl::statusVectorToError(vector.value(), error);
 		return;
 	}
 
@@ -611,12 +601,8 @@ void FB_CALL ValueImpl::setTime(Error* error, const Time* value)
 	if (t2.hours != value->hours || t2.minutes != value->minutes ||
 		t2.seconds != value->seconds || t2.fractions != value->fractions)
 	{
-		//// TODO: localize
-		ISC_STATUS status[] = {
-			isc_arg_gds, isc_random,
-			isc_arg_string, (ISC_STATUS) "Invalid time",
-			0};
-		ErrorImpl::statusVectorToError(status, error);
+		Arg::Gds vector(isc_invalid_time_val);
+		ErrorImpl::statusVectorToError(vector.value(), error);
 		return;
 	}
 
@@ -677,12 +663,8 @@ void FB_CALL ValueImpl::setTimeStamp(Error* error, const DateTime* value)
 		t2.tm_mon != t.tm_mon ||
 		t2.tm_mday != t.tm_mday)
 	{
-		//// TODO: localize
-		ISC_STATUS status[] = {
-			isc_arg_gds, isc_random,
-			isc_arg_string, (ISC_STATUS) "Invalid timestamp",
-			0};
-		ErrorImpl::statusVectorToError(status, error);
+		Arg::Gds vector(isc_invalid_timestamp_val);
+		ErrorImpl::statusVectorToError(vector.value(), error);
 		return;
 	}
 

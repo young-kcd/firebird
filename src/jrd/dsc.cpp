@@ -1101,6 +1101,54 @@ void dsc::address32bit() const
 }
 
 
+const char* dsc::typeToText() const
+{
+	switch (dsc_dtype)
+	{
+	case dtype_unknown:
+		return "unknown";
+	case dtype_text:
+		return "char";
+	case dtype_cstring:
+		return "Cstring";
+	case dtype_varying:
+		return "varchar";
+	case dtype_packed:
+		return "packed";
+	case dtype_byte:
+		return "byte";
+	case dtype_short:
+		return "smallint";
+	case dtype_long:
+		return "integer";
+	case dtype_quad:
+		return "quad";
+	case dtype_real:
+		return "float";
+	case dtype_double:
+		return "double precision";
+	case dtype_d_float:
+		return "d_float";
+	case dtype_sql_date:
+		return "date";
+	case dtype_sql_time:
+		return "time";
+	case dtype_timestamp:
+		return "timestamp";
+	case dtype_blob:
+		return "blob";
+	case dtype_array:
+		return "array";
+	case dtype_int64:
+		return "bigint";
+	case dtype_dbkey:
+		return "dbkey";
+	default:
+		return "out of range";
+	}
+}
+
+
 static bool validate_dsc_tables()
 {
 /**************************************

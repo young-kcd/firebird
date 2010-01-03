@@ -774,10 +774,8 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 		if (!externalFunction)
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("External function not returned by the external engine plugin"));
+			status_exception::raise(Arg::Gds(isc_eem_func_not_returned) <<
+										udf->getName().toString().c_str() << engine.c_str());
 		}
 	}
 
@@ -818,10 +816,8 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 
 		if (!externalProcedure)
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("External procedure not returned by the external engine plugin"));
+			status_exception::raise(Arg::Gds(isc_eem_proc_not_returned) <<
+										prc->getName().toString().c_str() << engine.c_str());
 		}
 	}
 
@@ -864,10 +860,8 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 
 		if (!externalTrigger)
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("External trigger not returned by the external engine plugin"));
+			status_exception::raise(Arg::Gds(isc_eem_trig_not_returned) << trg->name.c_str()
+																		<< engine.c_str());
 		}
 	}
 
@@ -913,13 +907,12 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 
 					if (engine)
 					{
-						if (engine->getVersion(RaiseError()) != EXTERNAL_VERSION_1)
+						int version = engine->getVersion(RaiseError());
+						if (version != EXTERNAL_VERSION_1)
 						{
-							//// TODO: localize
 							status_exception::raise(
-								Arg::Gds(isc_random) <<
-								Arg::Str(string("Incompatible plugin version for external engine \"") +
-									name.c_str() + "\""));
+								Arg::Gds(isc_eem_bad_plugin_ver) << Arg::Num(version) << 
+																	name.c_str());
 						}
 
 						Database::SyncGuard dsGuard(tdbb->getDatabase());
@@ -955,10 +948,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 
 	if (!engine)
 	{
-		//// TODO: localize
-		status_exception::raise(
-			Arg::Gds(isc_random) <<
-			Arg::Str(string("External engine \"") + name.c_str() + "\" not found"));
+		status_exception::raise(Arg::Gds(isc_eem_engine_notfound) << name.c_str());
 	}
 
 	return engine;

@@ -176,7 +176,7 @@ PluginImpl* PluginManager::getPlugin(const string& name)
 		s.printf("Plugin %s not found.", name.c_str());
 		gds__log(s.c_str());
 
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str(s));
+		status_exception::raise(Arg::Gds(isc_pman_plugin_notfound) << name.c_str());
 	}
 
 	if (plugin->module)
@@ -203,7 +203,7 @@ PluginImpl* PluginManager::getPlugin(const string& name)
 		s.printf("Can't load plugin module '%s'.", plugin->filename.c_str());
 		gds__log(s.c_str());
 
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str(s));
+		status_exception::raise(Arg::Gds(isc_pman_cannot_load_plugin) << plugin->filename.c_str());
 	}
 
 	PluginEntryPoint entryPoint;
@@ -216,7 +216,7 @@ PluginImpl* PluginManager::getPlugin(const string& name)
 		s.printf("Entrypoint of Plugin '%s' does not exist.", plugin->filename.c_str());
 		gds__log(s.c_str());
 
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str(s));
+		status_exception::raise(Arg::Gds(isc_pman_entrypoint_notfound) << plugin->filename.c_str());
 	}
 
 	plugin->module = module;
@@ -250,15 +250,11 @@ uint FB_CALL PluginImpl::getConfigInfoCount()
 
 void FB_CALL PluginImpl::getConfigInfo(Error* error, uint index, const char** key, const char** value)
 {
-	if (index < 0 || (size_t) index >= configInfo.getCount())
+	if (index >= configInfo.getCount())
 	{
-		//// TODO: localize
-		ISC_STATUS status[] = {
-			isc_arg_gds,
-			isc_random, isc_arg_string,
-				(ISC_STATUS) "Invalid value for parameter index at Plugin::getConfigInfo: out of bounds",
-			isc_arg_end};
-		ErrorImpl::statusVectorToError(status, error);
+		Arg::Gds vector(isc_pman_bad_conf_index);
+		vector << Arg::Num(index);
+		ErrorImpl::statusVectorToError(vector.value(), error);
 	}
 	else
 	{
@@ -278,12 +274,8 @@ ExternalEngineFactory* PluginImpl::getExternalEngineFactory()
 {
 	if (!externalEngineFactory)
 	{
-		//// TODO: localize
 		status_exception::raise(
-			Arg::Gds(isc_random) <<
-			Arg::Str("Plugin @1 does not create @2 instances") <<
-			Arg::Str(name) <<
-			Arg::Str("ExternalEngine"));
+			Arg::Gds(isc_pman_unknown_instance) << name.c_str() << "ExternalEngine");
 	}
 
 	return externalEngineFactory;

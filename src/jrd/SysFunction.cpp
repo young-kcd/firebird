@@ -2121,10 +2121,7 @@ dsc* evlGetContext(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	{
 		if (!attachment->ddlTriggersContext.hasData())
 		{
-			//// TODO: localize
-			status_exception::raise(
-				Arg::Gds(isc_random) <<
-				Arg::Str("Invalid usage of context namespace DDL_TRIGGER"));
+			status_exception::raise(Arg::Gds(isc_sysf_invalid_trig_namespace));
 		}
 
 		const DdlTriggerContext& context = Stack<DdlTriggerContext>::const_iterator(

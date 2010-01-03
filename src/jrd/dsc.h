@@ -303,10 +303,9 @@ typedef struct dsc
 	}
 
 	int getStringLength() const;
-#endif
 
-// this functions were added to have interoperability
-// between Ods::Descriptor and struct dsc
+	// These functions were added to have interoperability
+	// between Ods::Descriptor and struct dsc
 	dsc(const Ods::Descriptor& od)
 		: dsc_dtype(od.dsc_dtype),
 		  dsc_scale(od.dsc_scale),
@@ -333,7 +332,8 @@ typedef struct dsc
 #ifdef DEV_BUILD
 	void address32bit() const;
 #endif
-
+	const char* typeToText() const;
+#endif	// __cpluplus
 } DSC;
 
 inline SSHORT DSC_GET_CHARSET(const dsc* desc)

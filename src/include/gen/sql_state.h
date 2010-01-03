@@ -697,6 +697,25 @@ static const struct {
 	{335544994, "2F000"}, // 674 bad_fun_BLR
 	{335544995, "2F000"}, // 675 func_pack_not_implemented
 	{335544996, "2F000"}, // 676 proc_pack_not_implemented
+	{335544997, "39000"}, // 677 eem_func_not_returned
+	{335544998, "39000"}, // 678 eem_proc_not_returned
+	{335544999, "39000"}, // 679 eem_trig_not_returned
+	{335545000, "39000"}, // 680 eem_bad_plugin_ver
+	{335545001, "39000"}, // 681 eem_engine_notfound
+	{335545002, "08002"}, // 682 attachment_in_use
+	{335545003, "25S02"}, // 683 transaction_in_use
+	{335545004, "39000"}, // 684 pman_plugin_notfound
+	{335545005, "39000"}, // 685 pman_cannot_load_plugin
+	{335545006, "39000"}, // 686 pman_entrypoint_notfound
+	{335545007, "39000"}, // 687 pman_bad_conf_index
+	{335545008, "39000"}, // 688 pman_unknown_instance
+	{335545009, "42000"}, // 689 sysf_invalid_trig_namespace
+	{335545010, "22002"}, // 690 unexpected_null
+	{335545011, "2200G"}, // 691 type_notcompat_blob
+	{335545012, "22003"}, // 692 invalid_date_val
+	{335545013, "22003"}, // 693 invalid_time_val
+	{335545014, "22003"}, // 694 invalid_timestamp_val
+	{335545015, "22003"}, // 695 invalid_index_val
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

@@ -784,6 +784,25 @@ Data source : @4', NULL, NULL)
 ('bad_fun_BLR', 'loadMetadata', 'Function.epp', NULL, 0, 674, NULL, 'Error while parsing function @1''s BLR', NULL, NULL);
 ('func_pack_not_implemented', 'execute', 'Function.epp', NULL, 0, 675, NULL, 'Cannot execute function @1 of the unimplemented package @2', NULL, NULL);
 ('proc_pack_not_implemented', 'EXE_start', 'exe.cpp', NULL, 0, 676, NULL, 'Cannot execute procedure @1 of the unimplemented package @2', NULL, NULL);
+('eem_func_not_returned', 'makeFunction', 'ExtEngineManager.cpp', NULL, 0, 677, NULL, 'External function @1 not returned by the external engine plugin @2', NULL, NULL)
+('eem_proc_not_returned', 'makeProcedure', 'ExtEngineManager.cpp', NULL, 0, 678, NULL, 'External procedure @1 not returned by the external engine plugin @2', NULL, NULL)
+('eem_trig_not_returned', 'makeTrigger', 'ExtEngineManager.cpp', NULL, 0, 679, NULL, 'External trigger @1 not returned by the external engine plugin @2', NULL, NULL)
+('eem_bad_plugin_ver', 'getEngine', 'ExtEngineManager.cpp', NULL, 0, 680, NULL, 'Incompatible plugin version @1 for external engine @2', NULL, NULL)
+('eem_engine_notfound', 'getEngine', 'ExtEngineManager.cpp', NULL, 0, 681, NULL, 'External engine @1 not found', NULL, NULL)
+('attachment_in_use', 'GDS_DETACH/GDS_DROP_DATABASE', 'jrd.cpp', NULL, 0, 682, NULL, 'Attachment is in use', NULL, NULL)
+('transaction_in_use', 'commit/prepare/rollback', 'jrd.cpp', NULL, 0, 683, NULL, 'Transaction is in use', NULL, NULL)
+('pman_plugin_notfound', 'PluginManager::getPlugin', 'PluginManager.cpp', NULL, 0, 684, NULL, 'Plugin @1 not found', NULL, NULL)
+('pman_cannot_load_plugin', 'PluginManager::getPlugin', 'PluginManager.cpp', NULL, 0, 685, NULL, 'Cannot load plugin @1', NULL, NULL)
+('pman_entrypoint_notfound', 'PluginManager::getPlugin', 'PluginManager.cpp', NULL, 0, 686, NULL, 'Entrypoint of plugin @1 does not exist', NULL, NULL)
+('pman_bad_conf_index', 'PluginImpl::getConfigInfo', 'PluginManager.cpp', NULL, 0, 687, NULL, 'Invalid value @1 for parameter index at PluginImpl::getConfigInfo: out of bounds', NULL, NULL)
+('pman_unknown_instance', 'PluginImpl::getExternalEngineFactory', 'PluginManager.cpp', NULL, 0, 688, NULL, 'Plugin @1 does not create @2 instances', NULL, NULL)
+('sysf_invalid_trig_namespace', 'evlGetContext', 'SysFunction.cpp', NULL, 0, 689, NULL, 'Invalid usage of context namespace DDL_TRIGGER', NULL, NULL)
+('unexpected_null', 'ValueMover::getValue', 'ValueImpl.cpp', NULL, 0, 690, NULL, 'Value is NULL but isNull parameter was not informed', NULL, NULL)
+('type_notcompat_blob', 'ValueImpl::getBlobId', 'ValueImpl.cpp', NULL, 0, 691, NULL, 'Type @1 is incompatible with BLOB', NULL, NULL)
+('invalid_date_val', 'ValueImpl::setDate', 'ValueImpl.cpp', NULL, 0, 692, NULL, 'Invalid date', NULL, NULL)
+('invalid_time_val', 'ValueImpl::setTime', 'ValueImpl.cpp', NULL, 0, 693, NULL, 'Invalid time', NULL, NULL)
+('invalid_timestamp_val', 'ValueImpl::setTimeStamp', 'ValueImpl.cpp', NULL, 0, 694, NULL, 'Invalid timestamp', NULL, NULL)
+('invalid_index_val', 'ValuesImpl::getValue', 'ValuesImpl.cpp', NULL, 0, 695, NULL, 'Invalid index @1', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

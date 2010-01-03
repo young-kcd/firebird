@@ -2432,8 +2432,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Jrd::Attachment** handle)
 				{
 					if (attachment->att_in_use)
 					{
-						//// TODO: localize
-						status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Attachment in use"));
+						status_exception::raise(Arg::Gds(isc_attachment_in_use));
 					}
 
 					Database* dbb = tdbb->getDatabase();
@@ -2503,8 +2502,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Jrd::Attachment** handle)
 		{
 			if (attachment->att_in_use)
 			{
-				//// TODO: localize
-				status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Attachment in use"));
+				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 			}
 
 			Database* const dbb = tdbb->getDatabase();
@@ -4623,8 +4621,7 @@ static void commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_f
 	}
 	else if (transaction->tra_in_use)
 	{
-		//// TODO: localize
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Transaction in use"));
+		status_exception::raise(Arg::Gds(isc_transaction_in_use));
 	}
 
 	const Jrd::Attachment* const attachment = tdbb->getAttachment();
@@ -5373,8 +5370,7 @@ static void prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const 
 
 	if (transaction->tra_in_use)
 	{
-		//// TODO: localize
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Transaction in use"));
+		status_exception::raise(Arg::Gds(isc_transaction_in_use));
 	}
 
 	if (!(transaction->tra_flags & TRA_prepared))
@@ -5519,8 +5515,7 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
  **************************************/
 	if (transaction->tra_in_use)
 	{
-		//// TODO: localize
-		status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Transaction in use"));
+		status_exception::raise(Arg::Gds(isc_transaction_in_use));
 	}
 
 	ISC_STATUS_ARRAY user_status = {0};

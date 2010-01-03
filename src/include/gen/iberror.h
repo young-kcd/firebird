@@ -732,6 +732,25 @@ const ISC_STATUS isc_invalid_fetch_option             = 335544993L;
 const ISC_STATUS isc_bad_fun_BLR                      = 335544994L;
 const ISC_STATUS isc_func_pack_not_implemented        = 335544995L;
 const ISC_STATUS isc_proc_pack_not_implemented        = 335544996L;
+const ISC_STATUS isc_eem_func_not_returned            = 335544997L;
+const ISC_STATUS isc_eem_proc_not_returned            = 335544998L;
+const ISC_STATUS isc_eem_trig_not_returned            = 335544999L;
+const ISC_STATUS isc_eem_bad_plugin_ver               = 335545000L;
+const ISC_STATUS isc_eem_engine_notfound              = 335545001L;
+const ISC_STATUS isc_attachment_in_use                = 335545002L;
+const ISC_STATUS isc_transaction_in_use               = 335545003L;
+const ISC_STATUS isc_pman_plugin_notfound             = 335545004L;
+const ISC_STATUS isc_pman_cannot_load_plugin          = 335545005L;
+const ISC_STATUS isc_pman_entrypoint_notfound         = 335545006L;
+const ISC_STATUS isc_pman_bad_conf_index              = 335545007L;
+const ISC_STATUS isc_pman_unknown_instance            = 335545008L;
+const ISC_STATUS isc_sysf_invalid_trig_namespace      = 335545009L;
+const ISC_STATUS isc_unexpected_null                  = 335545010L;
+const ISC_STATUS isc_type_notcompat_blob              = 335545011L;
+const ISC_STATUS isc_invalid_date_val                 = 335545012L;
+const ISC_STATUS isc_invalid_time_val                 = 335545013L;
+const ISC_STATUS isc_invalid_timestamp_val            = 335545014L;
+const ISC_STATUS isc_invalid_index_val                = 335545015L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1100,7 +1119,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1044;
+const ISC_STATUS isc_err_max                          = 1063;
 
 #else /* c definitions */
 
@@ -1802,6 +1821,25 @@ const ISC_STATUS isc_err_max                          = 1044;
 #define isc_bad_fun_BLR                      335544994L
 #define isc_func_pack_not_implemented        335544995L
 #define isc_proc_pack_not_implemented        335544996L
+#define isc_eem_func_not_returned            335544997L
+#define isc_eem_proc_not_returned            335544998L
+#define isc_eem_trig_not_returned            335544999L
+#define isc_eem_bad_plugin_ver               335545000L
+#define isc_eem_engine_notfound              335545001L
+#define isc_attachment_in_use                335545002L
+#define isc_transaction_in_use               335545003L
+#define isc_pman_plugin_notfound             335545004L
+#define isc_pman_cannot_load_plugin          335545005L
+#define isc_pman_entrypoint_notfound         335545006L
+#define isc_pman_bad_conf_index              335545007L
+#define isc_pman_unknown_instance            335545008L
+#define isc_sysf_invalid_trig_namespace      335545009L
+#define isc_unexpected_null                  335545010L
+#define isc_type_notcompat_blob              335545011L
+#define isc_invalid_date_val                 335545012L
+#define isc_invalid_time_val                 335545013L
+#define isc_invalid_timestamp_val            335545014L
+#define isc_invalid_index_val                335545015L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2170,7 +2208,7 @@ const ISC_STATUS isc_err_max                          = 1044;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1044
+#define isc_err_max                          1063
 
 #endif
 
