@@ -9262,6 +9262,8 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 		// msg 44 Expected backup version @2..@3.  Found @1
 	}
 
+	BURP_verbose(349, SafeArg() << tdgbl->RESTORE_format); // backup version is @1
+
 	create_database(tdgbl, database_name);
 
 	EXEC SQL SET TRANSACTION NO_AUTO_UNDO;

@@ -2196,7 +2196,8 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'write_relations', 'backup.epp', NULL, 12, 345, NULL, '    writing view @1', NULL, NULL);
 (NULL, 'get_relation', 'restore.epp', NULL, 12, 346, NULL, '    table @1 is a view', NULL, NULL);
 (NULL, 'write_secclasses', 'backup.epp', NULL, 12, 347, NULL, 'writing security classes', NULL, NULL);
-('gbak_db_format_too_old2', NULL, 'burp.cpp', NULL, 12, 348, NULL, 'database format @1 is too old to backup', NULL, NULL);
+('gbak_db_format_too_old2', 'BACKUP_backup', 'backup.epp', NULL, 12, 348, NULL, 'database format @1 is too old to backup', NULL, NULL);
+(NULL, 'restore', 'restore.epp', NULL, 12, 349, NULL, 'backup version is @1', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
