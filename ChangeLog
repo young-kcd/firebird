@@ -1,3 +1,86 @@
+2010-01-03 13:43  robocop
+
+	* firebird2/src/: burp/restore.epp (1.199), msgs/facilities2.sql
+	(1.118), msgs/messages2.sql (1.141):
+
+	Show me the backup level when restoring with verbose option.
+
+2010-01-03 11:46  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.126),
+	lang_helpers/gds_codes.pas (1.124), src/include/gen/codetext.h
+	(1.134), src/include/gen/iberror.h (1.138), src/include/gen/msgs.h
+	(1.168), src/include/gen/sql_code.h (1.140),
+	src/include/gen/sql_state.h (1.70), src/jrd/ExtEngineManager.cpp
+	(1.10), src/jrd/PluginManager.cpp (1.7), src/jrd/SysFunction.cpp
+	(1.85), src/jrd/ValueImpl.cpp (1.8), src/jrd/ValuesImpl.cpp (1.6),
+	src/jrd/ValuesImpl.h (1.8), src/jrd/dsc.cpp (1.43), src/jrd/dsc.h
+	(1.54), src/jrd/jrd.cpp (1.596), src/msgs/facilities2.sql (1.117),
+	src/msgs/messages2.sql (1.140), src/msgs/system_errors2.sql (1.87):
+
+	Put more strings into the msg db.
+
+2010-01-03 11:33  dimitr
+
+	* firebird2/src/dsql/: gen.cpp (1.214), node.h (1.132), parse.y
+	(1.351), pass1.cpp (1.491):
+
+	Small refactoring (code simplification).
+
+2010-01-03 04:45  robocop
+
+	* firebird2/: builds/mac_os_x/CS/Helpers.make (1.10),
+	builds/posix/Makefile.in.client.gbak (1.24),
+	builds/posix/Makefile.in.embed.gbak (1.26),
+	builds/posix/Makefile.in.static.gbak (1.21),
+	builds/posix/make.shared.variables (1.123),
+	builds/win32/preprocess.bat (1.49), builds/win32/msvc7/burp.vcproj
+	(1.24), builds/win32/msvc7/gbak.vcproj (1.24),
+	builds/win32/msvc7/gbak_embed.vcproj (1.6),
+	builds/win32/msvc8/burp.vcproj (1.7),
+	builds/win32/msvc8/gbak.vcproj (1.8),
+	builds/win32/msvc8/gbak_embed.vcproj (1.10),
+	builds/win32/msvc9/burp.vcproj (1.2),
+	builds/win32/msvc9/gbak.vcproj (1.4),
+	builds/win32/msvc9/gbak_embed.vcproj (1.4),
+	src/burp/OdsDetection.epp (1.1), src/burp/OdsDetection.h (1.1),
+	src/burp/backup.epp (1.142), src/burp/restore.epp (1.198):
+
+	Finally use the same logic to detect ODS capabilities in backup and
+	restore.
+
+2010-01-03 01:19  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.45), jrd/Attachment.cpp
+	(1.4), jrd/Attachment.h (1.3), jrd/PreparedStatement.h (1.21),
+	jrd/ResultSet.h (1.6), jrd/dfw.epp (1.317), jrd/dyn_mod.epp
+	(1.139), jrd/execute_statement.cpp (1.46), jrd/ini.epp (1.134):
+
+	Some syntactic sugar
+
+2010-01-03 00:29  asfernandes
+
+	* firebird2/src/jrd/: PreparedStatement.h (1.20), dfw.epp (1.316),
+	ini.epp (1.133):
+
+	Convert an uncached GDML query to equivalent SQL with
+	PreparedStatement
+
+2010-01-02 22:46  asfernandes
+
+	* firebird2/src/jrd/: PreparedStatement.cpp (1.26),
+	PreparedStatement.h (1.19), ResultSet.cpp (1.10), ini.epp (1.132):
+
+	Tweaks to PreparedStatement::Builder and support for output
+	parameters (without "demo" code yet)
+
+2010-01-02 22:34  asfernandes
+
+	* firebird2/src/common/classes/: ClumpletWriter.cpp (1.37),
+	ClumpletWriter.h (1.18):
+
+	Fix segmentation fault running tcs SVC_API_SWEEP_DB
+
 2010-01-02 10:42  robocop
 
 	* firebird2/src/dsql/DdlNodes.epp (1.44):
