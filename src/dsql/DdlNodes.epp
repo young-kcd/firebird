@@ -448,171 +448,160 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->tra_attachment;
 
-	string table;
-	string column;
-	string subColumn;
-	string addWhere;
+	const char* tableClause = NULL;
+	const char* columnClause = NULL;
+	const char* subColumnClause = NULL;
+	const char* addWhereClause = NULL;
 	Arg::StatusVector status;
 
 	switch (objType)
 	{
 		case ddl_database:
-			table = "rdb$database";
+			tableClause = "rdb$database";
 			break;
 
 		case ddl_domain:
-			table = "rdb$fields";
-			column = "rdb$field_name";
+			tableClause = "rdb$fields";
+			columnClause = "rdb$field_name";
 			status << Arg::Gds(isc_dyn_domain_not_found);
 			break;
 
 		case ddl_relation:
 			if (subName.hasData())
 			{
-				table = "rdb$relation_fields";
-				subColumn = "rdb$field_name";
+				tableClause = "rdb$relation_fields";
+				subColumnClause = "rdb$field_name";
 				status << Arg::Gds(isc_dyn_column_does_not_exist) <<
 					Arg::Str(subName) << Arg::Str(objName);
 			}
 			else
 			{
-				table = "rdb$relations";
-				addWhere = "rdb$view_blr is null";
+				tableClause = "rdb$relations";
+				addWhereClause = "rdb$view_blr is null";
 				status << Arg::Gds(isc_dyn_table_not_found) << Arg::Str(objName);
 			}
-			column = "rdb$relation_name";
+			columnClause = "rdb$relation_name";
 			break;
 
 		case ddl_view:
-			table = "rdb$relations";
-			column = "rdb$relation_name";
+			tableClause = "rdb$relations";
+			columnClause = "rdb$relation_name";
 			status << Arg::Gds(isc_dyn_view_not_found) << Arg::Str(objName);
-			addWhere = "rdb$view_blr is not null";
+			addWhereClause = "rdb$view_blr is not null";
 			break;
 
 		case ddl_procedure:
 			if (subName.hasData())
 			{
-				table = "rdb$procedure_parameters";
-				subColumn = "rdb$parameter_name";
+				tableClause = "rdb$procedure_parameters";
+				subColumnClause = "rdb$parameter_name";
 				status << Arg::Gds(isc_dyn_proc_param_not_found) <<
 					Arg::Str(subName) << Arg::Str(objName);
 			}
 			else
 			{
-				table = "rdb$procedures";
+				tableClause = "rdb$procedures";
 				status << Arg::Gds(isc_dyn_proc_not_found) << Arg::Str(objName);
 			}
 
-			addWhere = "rdb$package_name is null";
-			column = "rdb$procedure_name";
+			addWhereClause = "rdb$package_name is null";
+			columnClause = "rdb$procedure_name";
 			break;
 
 		case ddl_trigger:
-			table = "rdb$triggers";
-			column = "rdb$trigger_name";
+			tableClause = "rdb$triggers";
+			columnClause = "rdb$trigger_name";
 			status << Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_udf:
-			table = "rdb$functions";
-			column = "rdb$function_name";
-			addWhere = "rdb$package_name is null";
+			tableClause = "rdb$functions";
+			columnClause = "rdb$function_name";
+			addWhereClause = "rdb$package_name is null";
 			status << Arg::Gds(isc_dyn_func_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_blob_filter:
-			table = "rdb$filters";
-			column = "rdb$function_name";
+			tableClause = "rdb$filters";
+			columnClause = "rdb$function_name";
 			status << Arg::Gds(isc_dyn_filter_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_exception:
-			table = "rdb$exceptions";
-			column = "rdb$exception_name";
+			tableClause = "rdb$exceptions";
+			columnClause = "rdb$exception_name";
 			status << Arg::Gds(isc_dyn_exception_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_generator:
-			table = "rdb$generators";
-			column = "rdb$generator_name";
+			tableClause = "rdb$generators";
+			columnClause = "rdb$generator_name";
 			status << Arg::Gds(isc_dyn_gen_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_index:
-			table = "rdb$indices";
-			column = "rdb$index_name";
+			tableClause = "rdb$indices";
+			columnClause = "rdb$index_name";
 			status << Arg::Gds(isc_dyn_index_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_role:
-			table = "rdb$roles";
-			column = "rdb$role_name";
+			tableClause = "rdb$roles";
+			columnClause = "rdb$role_name";
 			status << Arg::Gds(isc_dyn_role_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_charset:
-			table = "rdb$character_sets";
-			column = "rdb$character_set_name";
+			tableClause = "rdb$character_sets";
+			columnClause = "rdb$character_set_name";
 			status << Arg::Gds(isc_dyn_charset_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_collation:
-			table = "rdb$collations";
-			column = "rdb$collation_name";
+			tableClause = "rdb$collations";
+			columnClause = "rdb$collation_name";
 			status << Arg::Gds(isc_dyn_collation_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_package:
-			table = "rdb$packages";
-			column = "rdb$package_name";
+			tableClause = "rdb$packages";
+			columnClause = "rdb$package_name";
 			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objName);
 			break;
 
 		case ddl_schema:
-			table = "rdb$schemas";
-			column = "rdb$schema_name";
+			tableClause = "rdb$schemas";
+			columnClause = "rdb$schema_name";
 			status << Arg::Gds(isc_dyn_schema_not_found) << Arg::Str(objName);
 			break;
+
+		default:
+			fb_assert(false);
+			return;
 	}
 
-	fb_assert(table.hasData());
+	TriStateType<string> description;
+	if (!text.isEmpty())
+		description = attachment->stringToMetaCharSet(tdbb, text, textCharSet);
 
-	if (table.hasData())
+	PreparedStatement::Builder sql;
+	sql << "update" << tableClause << "set rdb$description =" << description;
+
+	if (columnClause)
 	{
-		string sqlStmt("update " + table + " set rdb$description = ?");
+		sql << "where" << columnClause << "=" << objName;
 
-		if (column.hasData())
-		{
-			sqlStmt += " where " + column + " = ?";
-
-			if (subColumn.hasData())
-				sqlStmt += " and " + subColumn + " = ?";
-		}
-
-		if (addWhere.hasData())
-			sqlStmt += " and " + addWhere;
-
-		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sqlStmt));
-
-		int n = 0;
-
-		if (text.isEmpty())
-			++n;
-		else
-			ps->setString(tdbb, ++n, attachment->stringToMetaCharSet(tdbb, text, textCharSet));
-
-		if (column.hasData())
-		{
-			ps->setString(tdbb, ++n, objName);
-
-			if (subColumn.hasData())
-				ps->setString(tdbb, ++n, subName);
-		}
-
-		if (ps->executeUpdate(tdbb, transaction) == 0)
-			status_exception::raise(status);
+		if (subColumnClause)
+			sql << "and" << subColumnClause << "=" << subName;
 	}
+
+	if (addWhereClause)
+		sql << "and" << addWhereClause;
+
+	AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
+
+	if (ps->executeUpdate(tdbb, transaction) == 0)
+		status_exception::raise(status);
 }
 
 

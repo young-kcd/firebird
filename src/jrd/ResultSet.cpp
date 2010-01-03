@@ -24,10 +24,13 @@
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/align.h"
 #include "../jrd/jrd.h"
-#include "../jrd/dsc.h"
+#include "../jrd/req.h"
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda_pub.h"
 #include "../dsql/dsql_proto.h"
+#include "../jrd/mov_proto.h"
+
+using namespace Firebird;
 
 namespace Jrd {
 
@@ -96,6 +99,48 @@ dsc& ResultSet::getDesc(unsigned param)
 {
 	fb_assert(param > 0);
 	return stmt->outValues[(param - 1) * 2];
+}
+
+
+Firebird::string ResultSet::getString(thread_db* tdbb, unsigned param)
+{
+	fb_assert(param > 0);
+
+	// Setup tdbb info necessary for blobs.
+	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
+	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
+		tdbb->getTransaction());
+
+	return MOV_make_string2(tdbb, &getDesc(param), CS_NONE);
+}
+
+
+Firebird::MetaName ResultSet::getMetaName(thread_db* tdbb, unsigned param)
+{
+	fb_assert(param > 0);
+
+	// Setup tdbb info necessary for blobs.
+	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
+	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
+		tdbb->getTransaction());
+
+	return MOV_make_string2(tdbb, &getDesc(param), CS_METADATA);
+}
+
+
+void ResultSet::moveDesc(thread_db* tdbb, unsigned param, dsc& desc)
+{
+	fb_assert(param > 0);
+
+	// Setup tdbb info necessary for blobs.
+	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
+	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
+		tdbb->getTransaction());
+
+	MOV_move(tdbb, &getDesc(param), &desc);
 }
 
 

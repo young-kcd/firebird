@@ -23,7 +23,13 @@
 #ifndef JRD_RESULT_SET_H
 #define JRD_RESULT_SET_H
 
+#include "firebird.h"
+#include "../jrd/common.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/dsc.h"
 #include "../common/classes/auto.h"
+#include "../common/classes/fb_string.h"
+#include "../common/classes/MetaName.h"
 
 struct dsc;
 
@@ -47,6 +53,64 @@ public:
 	bool fetch(thread_db* tdbb);
 	bool isNull(unsigned param) const;
 	dsc& getDesc(unsigned param);
+
+	SSHORT getSmallInt(thread_db* tdbb, unsigned param, SCHAR scale = 0)
+	{
+		fb_assert(param > 0);
+
+		SSHORT value;
+
+		dsc desc;
+		desc.makeShort(scale, &value);
+		moveDesc(tdbb, param, desc);
+
+		return value;
+	}
+
+	SLONG getInt(thread_db* tdbb, unsigned param, SCHAR scale = 0)
+	{
+		fb_assert(param > 0);
+
+		SLONG value;
+
+		dsc desc;
+		desc.makeLong(scale, &value);
+		moveDesc(tdbb, param, desc);
+
+		return value;
+	}
+
+	SINT64 getBigInt(thread_db* tdbb, unsigned param, SCHAR scale = 0)
+	{
+		fb_assert(param > 0);
+
+		SINT64 value;
+
+		dsc desc;
+		desc.makeInt64(scale, &value);
+		moveDesc(tdbb, param, desc);
+
+		return value;
+	}
+
+	double getDouble(thread_db* tdbb, unsigned param)
+	{
+		fb_assert(param > 0);
+
+		double value;
+
+		dsc desc;
+		desc.makeDouble(&value);
+		moveDesc(tdbb, param, desc);
+
+		return value;
+	}
+
+	Firebird::string getString(thread_db* tdbb, unsigned param);
+	Firebird::MetaName getMetaName(thread_db* tdbb, unsigned param);
+
+private:
+	void moveDesc(thread_db* tdbb, unsigned param, dsc& desc);
 
 private:
 	PreparedStatement* stmt;

@@ -26,6 +26,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
+#include "../jrd/intl.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/auto.h"
@@ -53,7 +54,10 @@ public:
 	private:
 		enum Type
 		{
+			TYPE_SSHORT,
 			TYPE_SLONG,
+			TYPE_SINT64,
+			TYPE_DOUBLE,
 			TYPE_METANAME,
 			TYPE_STRING,
 		};
@@ -145,9 +149,12 @@ public:
 
 	private:
 		// Make the C++ template engine return the constant for each type.
-		static Type getType(SLONG&)					{ return TYPE_SLONG; }
-		static Type getType(Firebird::string&)		{ return TYPE_STRING; }
-		static Type getType(Firebird::MetaName&)	{ return TYPE_METANAME; }
+		static Type getType(SSHORT&)					{ return TYPE_SSHORT; }
+		static Type getType(SLONG&)						{ return TYPE_SLONG; }
+		static Type getType(SINT64&)					{ return TYPE_SINT64; }
+		static Type getType(double&)					{ return TYPE_DOUBLE; }
+		static Type getType(Firebird::AbstractString&)	{ return TYPE_STRING; }
+		static Type getType(Firebird::MetaName&)		{ return TYPE_METANAME; }
 
 		void add(Type type, void* address, Firebird::Array<Slot>& slots)
 		{
@@ -259,13 +266,39 @@ public:
 		*reinterpret_cast<SSHORT*>(desc->dsc_address) = -1;
 	}
 
-	void setInt(thread_db* tdbb, unsigned param, SLONG value)
+	void setSmallInt(thread_db* tdbb, unsigned param, SSHORT value, SCHAR scale = 0)
 	{
 		fb_assert(param > 0);
 
 		dsc desc;
-		desc.makeLong(0, &value);
+		desc.makeShort(scale, &value);
+		setDesc(tdbb, param, desc);
+	}
 
+	void setInt(thread_db* tdbb, unsigned param, SLONG value, SCHAR scale = 0)
+	{
+		fb_assert(param > 0);
+
+		dsc desc;
+		desc.makeLong(scale, &value);
+		setDesc(tdbb, param, desc);
+	}
+
+	void setBigInt(thread_db* tdbb, unsigned param, SINT64 value, SCHAR scale = 0)
+	{
+		fb_assert(param > 0);
+
+		dsc desc;
+		desc.makeInt64(scale, &value);
+		setDesc(tdbb, param, desc);
+	}
+
+	void setDouble(thread_db* tdbb, unsigned param, double value)
+	{
+		fb_assert(param > 0);
+
+		dsc desc;
+		desc.makeDouble(&value);
 		setDesc(tdbb, param, desc);
 	}
 
@@ -276,18 +309,15 @@ public:
 		dsc desc;
 		desc.makeText((USHORT) value.length(), inValues[(param - 1) * 2].getTextType(),
 			(UCHAR*) value.c_str());
-
 		setDesc(tdbb, param, desc);
 	}
 
-	void setString(thread_db* tdbb, unsigned param, const Firebird::MetaName& value)
+	void setMetaName(thread_db* tdbb, unsigned param, const Firebird::MetaName& value)
 	{
 		fb_assert(param > 0);
 
 		dsc desc;
-		desc.makeText((USHORT) value.length(), inValues[(param - 1) * 2].getTextType(),
-			(UCHAR*) value.c_str());
-
+		desc.makeText((USHORT) value.length(), CS_METADATA, (UCHAR*) value.c_str());
 		setDesc(tdbb, param, desc);
 	}
 

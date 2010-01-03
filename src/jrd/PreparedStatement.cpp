@@ -23,9 +23,7 @@
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/ResultSet.h"
 #include "../jrd/align.h"
-#include "../jrd/intl.h"
 #include "../jrd/jrd.h"
-#include "../jrd/dsc.h"
 #include "../jrd/req.h"
 #include "../dsql/dsql.h"
 #include "../common/classes/auto.h"
@@ -58,27 +56,34 @@ void PreparedStatement::Builder::moveFromResultSet(thread_db* tdbb, ResultSet* r
 {
 	for (Array<Slot>::const_iterator i = outputSlots.begin(); i != outputSlots.end(); ++i)
 	{
-		dsc* desc = &rs->getDesc(i->number);
-
 		switch (i->type)
 		{
+			case TYPE_SSHORT:
+				*(SSHORT*) i->address = rs->getSmallInt(tdbb, i->number);
+				break;
+
 			case TYPE_SLONG:
-				*(SLONG*) i->address = MOV_get_long(desc, 0);
+				*(SLONG*) i->address = rs->getInt(tdbb, i->number);
+				break;
+
+			case TYPE_SINT64:
+				*(SINT64*) i->address = rs->getBigInt(tdbb, i->number);
+				break;
+
+			case TYPE_DOUBLE:
+				*(double*) i->address = rs->getDouble(tdbb, i->number);
 				break;
 
 			case TYPE_STRING:
 			{
-				string* str = (string*) i->address;
-				*str = MOV_make_string2(tdbb, desc, CS_NONE);
+				AbstractString* str = (AbstractString*) i->address;
+				str->replace(0, str->length(), rs->getString(tdbb, i->number));
 				break;
 			}
 
 			case TYPE_METANAME:
-			{
-				MetaName* str = (MetaName*) i->address;
-				*str = MOV_make_string2(tdbb, desc, CS_METADATA);
+				*(MetaName*) i->address = rs->getMetaName(tdbb, i->number);
 				break;
-			}
 
 			default:
 				fb_assert(false);
@@ -101,33 +106,35 @@ void PreparedStatement::Builder::moveToStatement(thread_db* tdbb, PreparedStatem
 			continue;
 		}
 
-		dsc desc;
-
 		switch (i->type)
 		{
+			case TYPE_SSHORT:
+				stmt->setSmallInt(tdbb, i->number, *(SSHORT*) i->address);
+				break;
+
 			case TYPE_SLONG:
-				desc.makeLong(0, (SLONG*) i->address);
+				stmt->setInt(tdbb, i->number, *(SLONG*) i->address);
+				break;
+
+			case TYPE_SINT64:
+				stmt->setBigInt(tdbb, i->number, *(SINT64*) i->address);
+				break;
+
+			case TYPE_DOUBLE:
+				stmt->setDouble(tdbb, i->number, *(double*) i->address);
 				break;
 
 			case TYPE_STRING:
-			{
-				string* str = (string*) i->address;
-				desc.makeText(str->length(), CS_NONE, (UCHAR*) str->c_str());
+				stmt->setString(tdbb, i->number, *(AbstractString*) i->address);
 				break;
-			}
 
 			case TYPE_METANAME:
-			{
-				MetaName* str = (MetaName*) i->address;
-				desc.makeText(str->length(), CS_METADATA, (UCHAR*) str->c_str());
+				stmt->setMetaName(tdbb, i->number, *(MetaName*) i->address);
 				break;
-			}
 
 			default:
 				fb_assert(false);
 		}
-
-		stmt->setDesc(tdbb, i->number, desc);
 	}
 }
 
