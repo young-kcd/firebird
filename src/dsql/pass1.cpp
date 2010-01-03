@@ -867,25 +867,12 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_sys_function:
 		return pass1_sys_function(dsqlScratch, input);
 
-	case nod_equiv:
 	case nod_eql:
 	case nod_neq:
 	case nod_gtr:
 	case nod_geq:
 	case nod_lss:
 	case nod_leq:
-	case nod_eql_any:
-	case nod_neq_any:
-	case nod_gtr_any:
-	case nod_geq_any:
-	case nod_lss_any:
-	case nod_leq_any:
-	case nod_eql_all:
-	case nod_neq_all:
-	case nod_gtr_all:
-	case nod_geq_all:
-	case nod_lss_all:
-	case nod_leq_all:
 		{
 			dsql_nod* sub2 = input->nod_arg[1];
 
@@ -940,35 +927,21 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 					return node;
 				}
 
-				switch (input->nod_type)
+				NOD_TYPE type;
+				if (input->nod_flags & NOD_ANSI_ANY)
 				{
-				case nod_equiv:
-				case nod_eql:
-				case nod_neq:
-				case nod_gtr:
-				case nod_geq:
-				case nod_lss:
-				case nod_leq:
-					return pass1_any(dsqlScratch, input, nod_any);
-
-				case nod_eql_any:
-				case nod_neq_any:
-				case nod_gtr_any:
-				case nod_geq_any:
-				case nod_lss_any:
-				case nod_leq_any:
-					return pass1_any(dsqlScratch, input, nod_ansi_any);
-
-				case nod_eql_all:
-				case nod_neq_all:
-				case nod_gtr_all:
-				case nod_geq_all:
-				case nod_lss_all:
-				case nod_leq_all:
-					return pass1_any(dsqlScratch, input, nod_ansi_all);
-				default:	// make compiler happy
-					break;
+					type = nod_ansi_any;
 				}
+				else if (input->nod_flags & NOD_ANSI_ALL)
+				{
+					type = nod_ansi_all;
+				}
+				else
+				{
+					type = nod_any;
+				}
+
+				return pass1_any(dsqlScratch, input, type);
 			}
 		}
 		break;
@@ -1142,18 +1115,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_leq:
 	case nod_lss:
 	case nod_neq:
-	case nod_eql_any:
-	case nod_gtr_any:
-	case nod_geq_any:
-	case nod_leq_any:
-	case nod_lss_any:
-	case nod_neq_any:
-	case nod_eql_all:
-	case nod_gtr_all:
-	case nod_geq_all:
-	case nod_leq_all:
-	case nod_lss_all:
-	case nod_neq_all:
 		sub1 = node->nod_arg[0];
 		sub2 = node->nod_arg[1];
 
@@ -2147,18 +2108,6 @@ static bool aggregate_found2(const DsqlCompilerScratch* dsqlScratch, const dsql_
 		case nod_geq:
 		case nod_lss:
 		case nod_leq:
-		case nod_eql_any:
-		case nod_neq_any:
-		case nod_gtr_any:
-		case nod_geq_any:
-		case nod_lss_any:
-		case nod_leq_any:
-		case nod_eql_all:
-		case nod_neq_all:
-		case nod_gtr_all:
-		case nod_geq_all:
-		case nod_lss_all:
-		case nod_leq_all:
 		case nod_between:
 		case nod_like:
 		case nod_containing:
@@ -3056,18 +3005,6 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_geq:
 		case nod_leq:
 		case nod_lss:
-		case nod_eql_any:
-		case nod_neq_any:
-		case nod_gtr_any:
-		case nod_geq_any:
-		case nod_leq_any:
-		case nod_lss_any:
-		case nod_eql_all:
-		case nod_neq_all:
-		case nod_gtr_all:
-		case nod_geq_all:
-		case nod_leq_all:
-		case nod_lss_all:
 		case nod_between:
 		case nod_like:
 		case nod_missing:
@@ -5677,18 +5614,6 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_geq:
 		case nod_leq:
 		case nod_lss:
-		case nod_eql_any:
-		case nod_neq_any:
-		case nod_gtr_any:
-		case nod_geq_any:
-		case nod_leq_any:
-		case nod_lss_any:
-		case nod_eql_all:
-		case nod_neq_all:
-		case nod_gtr_all:
-		case nod_geq_all:
-		case nod_leq_all:
-		case nod_lss_all:
 		case nod_between:
 		case nod_like:
 		case nod_missing:
@@ -5929,18 +5854,6 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_geq:
 		case nod_leq:
 		case nod_lss:
-		case nod_eql_any:
-		case nod_neq_any:
-		case nod_gtr_any:
-		case nod_geq_any:
-		case nod_leq_any:
-		case nod_lss_any:
-		case nod_eql_all:
-		case nod_neq_all:
-		case nod_gtr_all:
-		case nod_geq_all:
-		case nod_leq_all:
-		case nod_lss_all:
 		case nod_between:
 		case nod_like:
 		case nod_missing:
@@ -6142,18 +6055,6 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_geq:
 		case nod_leq:
 		case nod_lss:
-		case nod_eql_any:
-		case nod_neq_any:
-		case nod_gtr_any:
-		case nod_geq_any:
-		case nod_leq_any:
-		case nod_lss_any:
-		case nod_eql_all:
-		case nod_neq_all:
-		case nod_gtr_all:
-		case nod_geq_all:
-		case nod_leq_all:
-		case nod_lss_all:
 		case nod_between:
 		case nod_like:
 		case nod_missing:
@@ -7318,98 +7219,75 @@ static dsql_nod* pass1_not(DsqlCompilerScratch* dsqlScratch, const dsql_nod* inp
 
 	dsql_nod* node;
 	nod_t node_type = input->nod_type;
+	USHORT node_flags = input->nod_flags;
 	bool is_between = false, invert_args = false, no_op = false;
 
 	if (invert)
 	{
-		// invert the given boolean
-		switch (sub->nod_type)
+		if (sub->nod_count == 2 && sub->nod_arg[1]->nod_type == nod_list)
 		{
-		case nod_eql:
-			node_type = nod_neq;
-			break;
-		case nod_neq:
-			node_type = nod_eql;
-			break;
-		case nod_lss:
-			node_type = nod_geq;
-			break;
-		case nod_gtr:
-			node_type = nod_leq;
-			break;
-		case nod_leq:
-			node_type = nod_gtr;
-			break;
-		case nod_geq:
-			node_type = nod_lss;
-			break;
-		case nod_eql_all:
-			node_type = nod_neq_any;
-			break;
-		case nod_neq_all:
-			node_type = nod_eql_any;
-			break;
-		case nod_lss_all:
-			node_type = nod_geq_any;
-			break;
-		case nod_gtr_all:
-			node_type = nod_leq_any;
-			break;
-		case nod_leq_all:
-			node_type = nod_gtr_any;
-			break;
-		case nod_geq_all:
-			node_type = nod_lss_any;
-			break;
-		case nod_eql_any:
-			if (sub->nod_arg[1]->nod_type == nod_list)
-			{
-				// this is NOT IN (<list>), don't change it
-				no_op = true;
-			}
-			else {
-				node_type = nod_neq_all;
-			}
-			break;
-		case nod_neq_any:
-			node_type = nod_eql_all;
-			break;
-		case nod_lss_any:
-			node_type = nod_geq_all;
-			break;
-		case nod_gtr_any:
-			node_type = nod_leq_all;
-			break;
-		case nod_leq_any:
-			node_type = nod_gtr_all;
-			break;
-		case nod_geq_any:
-			node_type = nod_lss_all;
-			break;
-		case nod_between:
-			node_type = nod_or;
-			is_between = true;
-			break;
-		case nod_and:
-			node_type = nod_or;
-			invert_args = true;
-			break;
-		case nod_or:
-			node_type = nod_and;
-			invert_args = true;
-			break;
-		case nod_not:
-			// this case is handled in the beginning
-			fb_assert(false);
-		default:
+			// special case: <value> NOT IN <list>
 			no_op = true;
-			break;
+		}
+		else
+		{
+			// invert the given boolean
+			switch (sub->nod_type)
+			{
+			case nod_eql:
+				node_type = nod_neq;
+				break;
+			case nod_neq:
+				node_type = nod_eql;
+				break;
+			case nod_lss:
+				node_type = nod_geq;
+				break;
+			case nod_gtr:
+				node_type = nod_leq;
+				break;
+			case nod_leq:
+				node_type = nod_gtr;
+				break;
+			case nod_geq:
+				node_type = nod_lss;
+				break;
+			case nod_between:
+				node_type = nod_or;
+				is_between = true;
+				break;
+			case nod_and:
+				node_type = nod_or;
+				invert_args = true;
+				break;
+			case nod_or:
+				node_type = nod_and;
+				invert_args = true;
+				break;
+			default:
+				no_op = true;
+				break;
+			}
+
+			node_flags = sub->nod_flags;
+
+			if (node_flags & NOD_ANSI_ANY)
+			{
+				node_flags &= ~NOD_ANSI_ANY;
+				node_flags |= NOD_ANSI_ALL;
+			}
+			else if (node_flags & NOD_ANSI_ALL)
+			{
+				node_flags &= ~NOD_ANSI_ALL;
+				node_flags |= NOD_ANSI_ANY;
+			}
 		}
 	}
 	else
 	{
 		// subnode type hasn't been changed
 		node_type = sub->nod_type;
+		node_flags = sub->nod_flags;
 	}
 
 	if (no_op)
@@ -7418,6 +7296,7 @@ static dsql_nod* pass1_not(DsqlCompilerScratch* dsqlScratch, const dsql_nod* inp
 		// and return immediately to avoid infinite recursion later
 		fb_assert(node_type == nod_not);
 		node = MAKE_node(input->nod_type, 1);
+		node->nod_flags = input->nod_flags;
 		node->nod_arg[0] = PASS1_node(dsqlScratch, sub);
 		return node;
 	}
@@ -7427,6 +7306,7 @@ static dsql_nod* pass1_not(DsqlCompilerScratch* dsqlScratch, const dsql_nod* inp
 		// handle the special BETWEEN case
 		fb_assert(node_type == nod_or);
 		node = MAKE_node(node_type, 2);
+		node->nod_flags = node_flags;
 		node->nod_arg[0] = MAKE_node(nod_lss, 2);
 		node->nod_arg[0]->nod_arg[0] = sub->nod_arg[0];
 		node->nod_arg[0]->nod_arg[1] = sub->nod_arg[1];
@@ -7438,6 +7318,7 @@ static dsql_nod* pass1_not(DsqlCompilerScratch* dsqlScratch, const dsql_nod* inp
 	{
 		// create new (possibly inverted) node
 		node = MAKE_node(node_type, sub->nod_count);
+		node->nod_flags = node_flags;
 		dsql_nod* const* src = sub->nod_arg;
 		dsql_nod** dst = node->nod_arg;
 		for (const dsql_nod* const* end = src + sub->nod_count; src < end; src++)
@@ -10189,18 +10070,6 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 		case nod_geq:
 		case nod_lss:
 		case nod_leq:
-		case nod_eql_any:
-		case nod_neq_any:
-		case nod_gtr_any:
-		case nod_geq_any:
-		case nod_lss_any:
-		case nod_leq_any:
-		case nod_eql_all:
-		case nod_neq_all:
-		case nod_gtr_all:
-		case nod_geq_all:
-		case nod_lss_all:
-		case nod_leq_all:
 		case nod_any:
 		case nod_ansi_any:
 		case nod_ansi_all:
@@ -11189,8 +11058,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_divide:
 		verb = "divide";
 		break;
-	case nod_eql_all:
-	case nod_eql_any:
 	case nod_eql:
 		verb = "eql";
 		break;
@@ -11221,8 +11088,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_gen_id:
 		verb = "gen_id";
 		break;
-	case nod_geq_all:
-	case nod_geq_any:
 	case nod_geq:
 		verb = "geq";
 		break;
@@ -11232,8 +11097,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_grant:
 		verb = "grant";
 		break;
-	case nod_gtr_all:
-	case nod_gtr_any:
 	case nod_gtr:
 		verb = "gtr";
 		break;
@@ -11258,8 +11121,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_strlen:
 		verb = "strlen";
 		break;
-	case nod_leq_all:
-	case nod_leq_any:
 	case nod_leq:
 		verb = "leq";
 		break;
@@ -11269,8 +11130,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_list:
 		verb = "list";
 		break;
-	case nod_lss_all:
-	case nod_lss_any:
 	case nod_lss:
 		verb = "lss";
 		break;
@@ -11295,8 +11154,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_negate:
 		verb = "negate";
 		break;
-	case nod_neq_all:
-	case nod_neq_any:
 	case nod_neq:
 		verb = "neq";
 		break;

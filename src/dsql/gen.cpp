@@ -398,36 +398,24 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	case nod_not:
 		blr_operator = blr_not;
 		break;
-	case nod_eql_all:
-	case nod_eql_any:
 	case nod_eql:
 		blr_operator = blr_eql;
 		break;
 	case nod_equiv:
 		blr_operator = blr_equiv;
 		break;
-	case nod_neq_all:
-	case nod_neq_any:
 	case nod_neq:
 		blr_operator = blr_neq;
 		break;
-	case nod_gtr_all:
-	case nod_gtr_any:
 	case nod_gtr:
 		blr_operator = blr_gtr;
 		break;
-	case nod_leq_all:
-	case nod_leq_any:
 	case nod_leq:
 		blr_operator = blr_leq;
 		break;
-	case nod_geq_all:
-	case nod_geq_any:
 	case nod_geq:
 		blr_operator = blr_geq;
 		break;
-	case nod_lss_all:
-	case nod_lss_any:
 	case nod_lss:
 		blr_operator = blr_lss;
 		break;

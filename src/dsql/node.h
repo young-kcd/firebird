@@ -233,19 +233,7 @@ enum nod_t
 	nod_set_statistics,	// set statistics
 	nod_rec_version,	// record version
 	nod_ansi_any,	// ANY keyword used
-	nod_eql_any,
-	nod_neq_any,
-	nod_gtr_any,
-	nod_geq_any,
-	nod_leq_any,
-	nod_lss_any,
 	nod_ansi_all,	// ALL keyword used
-	nod_eql_all,
-	nod_neq_all,
-	nod_gtr_all,
-	nod_geq_all,
-	nod_leq_all,
-	nod_lss_all,
 	nod_ref_upd_del,	// referential integrity actions
 	nod_ref_trig_action,
 	nod_def_role,	// SQL role support
@@ -1039,7 +1027,10 @@ enum nod_flags_vals {
 	NOD_TRAN_2PC = 3,
 	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON,
 
-	NOD_AGG_WINDOW = 1				// nod_aggregate
+	NOD_AGG_WINDOW = 1,				// nod_aggregate
+
+	NOD_ANSI_ANY = 1,
+	NOD_ANSI_ALL = 2
 };
 
 } // namespace

@@ -4744,37 +4744,37 @@ comparison_predicate : value '=' value
 // quantified comparisons
 
 quantified_predicate : value '=' ALL '(' column_select ')'
-		{ $$ = make_node (nod_eql_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_eql, NOD_ANSI_ALL, 2, $1, $5); }
 	| value '<' ALL '(' column_select ')'
-		{ $$ = make_node (nod_lss_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_lss, NOD_ANSI_ALL, 2, $1, $5); }
 	| value '>' ALL '(' column_select ')'
-		{ $$ = make_node (nod_gtr_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_gtr, NOD_ANSI_ALL, 2, $1, $5); }
 	| value GEQ ALL '(' column_select ')'
-		{ $$ = make_node (nod_geq_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ALL, 2, $1, $5); }
 	| value LEQ ALL '(' column_select ')'
-		{ $$ = make_node (nod_leq_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ALL, 2, $1, $5); }
 	| value NOT_GTR ALL '(' column_select ')'
-		{ $$ = make_node (nod_leq_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ALL, 2, $1, $5); }
 	| value NOT_LSS ALL '(' column_select ')'
-		{ $$ = make_node (nod_geq_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ALL, 2, $1, $5); }
 	| value NEQ ALL '(' column_select ')'
-		{ $$ = make_node (nod_neq_all, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_neq, NOD_ANSI_ALL, 2, $1, $5); }
 	| value '=' some '(' column_select ')'
-		{ $$ = make_node (nod_eql_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_eql, NOD_ANSI_ANY, 2, $1, $5); }
 	| value '<' some '(' column_select ')'
-		{ $$ = make_node (nod_lss_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_lss, NOD_ANSI_ANY, 2, $1, $5); }
 	| value '>' some '(' column_select ')'
-		{ $$ = make_node (nod_gtr_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_gtr, NOD_ANSI_ANY, 2, $1, $5); }
 	| value GEQ some '(' column_select ')'
-		{ $$ = make_node (nod_geq_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ANY, 2, $1, $5); }
 	| value LEQ some '(' column_select ')'
-		{ $$ = make_node (nod_leq_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ANY, 2, $1, $5); }
 	| value NOT_GTR some '(' column_select ')'
-		{ $$ = make_node (nod_leq_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ANY, 2, $1, $5); }
 	| value NOT_LSS some '(' column_select ')'
-		{ $$ = make_node (nod_geq_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ANY, 2, $1, $5); }
 	| value NEQ some '(' column_select ')'
-		{ $$ = make_node (nod_neq_any, 2, $1, $5); }
+		{ $$ = make_flag_node (nod_neq, NOD_ANSI_ANY, 2, $1, $5); }
 	;
 
 some	: SOME
@@ -4807,9 +4807,9 @@ like_predicate	: value LIKE value
 	;
 
 in_predicate	: value KW_IN in_predicate_value
-		{ $$ = make_node (nod_eql_any, 2, $1, $3); }
+		{ $$ = make_flag_node (nod_eql, NOD_ANSI_ANY, 2, $1, $3); }
 	| value NOT KW_IN in_predicate_value
-		{ $$ = make_node (nod_not, 1, make_node (nod_eql_any, 2, $1, $4)); }
+		{ $$ = make_node (nod_not, 1, make_flag_node (nod_eql, NOD_ANSI_ANY, 2, $1, $4)); }
 	;
 
 containing_predicate	: value CONTAINING value
