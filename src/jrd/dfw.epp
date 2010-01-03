@@ -2240,9 +2240,8 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			<< sql("rel.rdb$relation_type", rdbRelationType)
 			<< "from rdb$indices idx join rdb$relations rel using (rdb$relation_name)"
 			<< "where idx.rdb$index_name = " << work->dfw_name;
-		AutoPtr<PreparedStatement> ps(attachment->prepareStatement(
-			tdbb, *tdbb->getDefaultPool(), dbb->dbb_sys_trans, sql));
-		AutoPtr<ResultSet> rs(ps->executeQuery(tdbb, dbb->dbb_sys_trans));
+		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, dbb->dbb_sys_trans, sql));
+		AutoResultSet rs(ps->executeQuery(tdbb, dbb->dbb_sys_trans));
 
 		while (rs->fetch(tdbb))
 		{

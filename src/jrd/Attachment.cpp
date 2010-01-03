@@ -161,24 +161,27 @@ Jrd::Attachment::~Attachment()
 }
 
 
-Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, MemoryPool& pool,
-	jrd_tra* transaction, const string& text)
+Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, jrd_tra* transaction,
+	const string& text, Firebird::MemoryPool* pool)
 {
-	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text, true);
+	pool = pool ? pool : tdbb->getDefaultPool();
+	return FB_NEW(*pool) PreparedStatement(tdbb, *pool, this, transaction, text, true);
 }
 
 
-Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, MemoryPool& pool,
-	jrd_tra* transaction, const PreparedStatement::Builder& builder)
+Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, jrd_tra* transaction,
+	const PreparedStatement::Builder& builder, Firebird::MemoryPool* pool)
 {
-	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, builder, true);
+	pool = pool ? pool : tdbb->getDefaultPool();
+	return FB_NEW(*pool) PreparedStatement(tdbb, *pool, this, transaction, builder, true);
 }
 
 
-PreparedStatement* Jrd::Attachment::prepareUserStatement(thread_db* tdbb, MemoryPool& pool,
-	jrd_tra* transaction, const string& text)
+PreparedStatement* Jrd::Attachment::prepareUserStatement(thread_db* tdbb, jrd_tra* transaction,
+	const string& text, Firebird::MemoryPool* pool)
 {
-	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text, false);
+	pool = pool ? pool : tdbb->getDefaultPool();
+	return FB_NEW(*pool) PreparedStatement(tdbb, *pool, this, transaction, text, false);
 }
 
 

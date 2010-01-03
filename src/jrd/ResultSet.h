@@ -23,6 +23,8 @@
 #ifndef JRD_RESULT_SET_H
 #define JRD_RESULT_SET_H
 
+#include "../common/classes/auto.h"
+
 struct dsc;
 
 namespace Jrd {
@@ -51,6 +53,8 @@ private:
 	jrd_tra* transaction;
 	bool firstFetchDone;
 };
+
+typedef Firebird::AutoPtr<ResultSet> AutoResultSet;
 
 
 }	// namespace

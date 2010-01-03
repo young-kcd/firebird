@@ -188,7 +188,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 									PreparedStatement::escapeName(collation).c_str());
 
 								AutoPtr<PreparedStatement> ps(attachment->prepareStatement(tdbb,
-									*tdbb->getDefaultPool(), gbl->gbl_transaction, sql));
+									gbl->gbl_transaction, sql));
 								ps->execute(tdbb, gbl->gbl_transaction);
 							}
 						}

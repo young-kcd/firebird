@@ -28,6 +28,7 @@
 #include "../jrd/dsc.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/TriState.h"
@@ -313,6 +314,8 @@ private:
 	Firebird::UCharBuffer inMessage, outMessage;
 	ResultSet* resultSet;
 };
+
+typedef Firebird::AutoPtr<PreparedStatement> AutoPreparedStatement;
 
 
 }	// namespace

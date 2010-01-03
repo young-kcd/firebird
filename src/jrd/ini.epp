@@ -300,8 +300,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		<< "values (" << rdbRelationId << ", " << rdbRelationName << ", " << rdbFieldId << ", 0,"
 		<< rdbSystemFlag << ", 8, " << ownerName << ", " << rdbRelationType << ")";
 
-	AutoPtr<PreparedStatement> ps(attachment->prepareStatement(
-		tdbb, *tdbb->getDefaultPool(), transaction, sql));
+	AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
 
 	jrd_req* handle1 = NULL;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
@@ -337,7 +336,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	sql << "insert into rdb$database (rdb$relation_id, rdb$character_set_name) values ("
 		<< rdbRelationId << ", " << rdbCharSetName << ")";
 
-	ps.reset(attachment->prepareStatement(tdbb, *tdbb->getDefaultPool(), transaction, sql));
+	ps.reset(attachment->prepareStatement(tdbb, transaction, sql));
 
 	rdbRelationId = USER_DEF_REL_INIT_ID;
 	ps->execute(tdbb, transaction);

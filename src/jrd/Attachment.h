@@ -176,13 +176,13 @@ public:
 
 	bool locksmith() const;
 
-	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
-		jrd_tra* transaction, const Firebird::string& text);
-	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
-		jrd_tra* transaction, const PreparedStatement::Builder& builder);
+	PreparedStatement* prepareStatement(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::string& text, Firebird::MemoryPool* pool = NULL);
+	PreparedStatement* prepareStatement(thread_db* tdbb, jrd_tra* transaction,
+		const PreparedStatement::Builder& builder, Firebird::MemoryPool* pool = NULL);
 
-	PreparedStatement* prepareUserStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
-		jrd_tra* transaction, const Firebird::string& text);
+	PreparedStatement* prepareUserStatement(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::string& text, Firebird::MemoryPool* pool = NULL);
 
 	Firebird::MetaName nameToMetaCharSet(thread_db* tdbb, const Firebird::MetaName& name);
 	Firebird::MetaName nameToUserCharSet(thread_db* tdbb, const Firebird::MetaName& name);

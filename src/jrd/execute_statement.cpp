@@ -70,7 +70,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 	try
 	{
 		AutoPtr<PreparedStatement> stmt(attachment->prepareUserStatement(
-			tdbb, *tdbb->getDefaultPool(), transaction, sqlStatementText));
+			tdbb, transaction, sqlStatementText));
 
 		// Other requests appear to be incorrect in this context
 		const long requests =
@@ -139,8 +139,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 
 	try
 	{
-		stmt = attachment->prepareUserStatement(tdbb, *tdbb->getDefaultPool(),
-			transaction, sqlText);
+		stmt = attachment->prepareUserStatement(tdbb, transaction, sqlText);
 
 		if (stmt->getResultCount() == 0)
 		{

@@ -593,8 +593,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		if (addWhere.hasData())
 			sqlStmt += " and " + addWhere;
 
-		AutoPtr<PreparedStatement> ps(attachment->prepareStatement(tdbb,
-			*tdbb->getDefaultPool(), transaction, sqlStmt));
+		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sqlStmt));
 
 		int n = 0;
 
