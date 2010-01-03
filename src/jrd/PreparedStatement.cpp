@@ -187,7 +187,8 @@ void PreparedStatement::init(thread_db* tdbb, Attachment* attachment, jrd_tra* t
 	try
 	{
 		const Database& dbb = *tdbb->getDatabase();
-		const int dialect = dbb.dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
+		const int dialect = isInternalRequest || (dbb.dbb_flags & DBB_DB_SQL_dialect_3) ?
+			SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
 		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
 			0, NULL, 0, NULL, isInternalRequest);
