@@ -79,9 +79,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|x64"
+			Name="Debug|Win32"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -100,15 +100,11 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
+				Optimization="0"
+				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -141,9 +137,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|Win32"
+			Name="Release|x64"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -162,11 +158,15 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -291,6 +291,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\burp\OdsDetection.epp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\burp\restore.epp"
 					>
 				</File>
@@ -300,6 +304,10 @@
 				>
 				<File
 					RelativePath="..\..\..\gen\$(PlatformName)\burp\backup.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\gen\$(PlatformName)\burp\OdsDetection.cpp"
 					>
 				</File>
 				<File
@@ -338,6 +346,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\mvol_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\burp\OdsDetection.h"
 				>
 			</File>
 			<File

@@ -327,6 +327,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\burp\burpMain.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\burp\canonical.cpp"
 				>
 			</File>
@@ -338,16 +342,16 @@
 				RelativePath="..\..\..\src\burp\mvol.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\burp\burpMain.cpp"
-				>
-			</File>
 			<Filter
 				Name="epp files"
 				Filter="epp"
 				>
 				<File
 					RelativePath="..\..\..\src\burp\backup.epp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\src\burp\OdsDetection.epp"
 					>
 				</File>
 				<File
@@ -360,6 +364,10 @@
 				>
 				<File
 					RelativePath="..\..\..\gen\$(PlatformName)\burp\backup.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\gen\$(PlatformName)\burp\OdsDetection.cpp"
 					>
 				</File>
 				<File
@@ -434,6 +442,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\mvol_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\burp\OdsDetection.h"
 				>
 			</File>
 			<File

@@ -57,7 +57,7 @@ DSQL_GEN_FILES=	$(DSQL_EPP_FILES:%.epp=$(GEN_ROOT)/dsql/%.cpp) \
 GPRE_EPP_FILES=	gpre_meta.epp
 GPRE_GEN_FILES= $(GPRE_EPP_FILES:%.epp=$(GEN_ROOT)/gpre/%.cpp)
 
-GBAK_EPP_FILES=	backup.epp restore.epp
+GBAK_EPP_FILES=	backup.epp restore.epp OdsDetection.epp
 GBAK_GEN_FILES= $(GBAK_EPP_FILES:%.epp=$(GEN_ROOT)/burp/%.cpp)
 
 GFIX_EPP_FILES=	alice_meta.epp

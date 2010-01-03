@@ -290,6 +290,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\burp\OdsDetection.epp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\burp\restore.epp"
 					>
 				</File>
@@ -299,6 +303,10 @@
 				>
 				<File
 					RelativePath="..\..\..\gen\$(PlatformName)\burp\backup.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\gen\$(PlatformName)\burp\OdsDetection.cpp"
 					>
 				</File>
 				<File
@@ -337,6 +345,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\burp\mvol_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\burp\OdsDetection.h"
 				>
 			</File>
 			<File

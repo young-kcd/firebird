@@ -41,7 +41,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp jrd/path_utils.cpp \
 					 jrd/ThreadData.cpp
-GBAK_Files = backup.epp  restore.epp \
+GBAK_Files = backup.epp  restore.epp OdsDetection.epp \
 			 burp.cpp canonical.cpp misc.cpp mvol.cpp burpMain.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)
 GBAK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Sources)))) \

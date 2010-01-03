@@ -39,7 +39,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GBAKSTATIC_Files = backup.epp  restore.epp \
+GBAKSTATIC_Files = backup.epp  restore.epp OdsDetection.epp \
 			burp.cpp canonical.cpp misc.cpp mvol.cpp burpMain.cpp
 
 GBAK_Other_Sources = 

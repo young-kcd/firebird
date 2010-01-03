@@ -57,7 +57,7 @@ goto :EOF
 @for %%i in (array, blob) do @call :PREPROCESS dsql %%i
 @for %%i in (metd, DdlNodes, PackageNodes) do @call :PREPROCESS dsql %%i -gds_cxx
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
-@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+@for %%i in (backup, restore, OdsDetection) do @call :PREPROCESS burp %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
 @for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
 
@@ -74,7 +74,7 @@ goto :EOF
 :MASTER_PROCESS
 @set GPRE=%FB_GEN_DIR%\gpre_embed
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
-@for %%i in (backup, restore) do @call :PREPROCESS burp %%i
+@for %%i in (backup, restore, OdsDetection) do @call :PREPROCESS burp %%i
 @for %%i in (array, blob) do @call :PREPROCESS dsql %%i
 @for %%i in (metd) do @call :PREPROCESS dsql %%i -gds_cxx
 @for %%i in (DdlNodes, PackageNodes) do @call :PREPROCESS dsql %%i -gds_cxx
