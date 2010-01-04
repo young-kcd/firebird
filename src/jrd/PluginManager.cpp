@@ -176,7 +176,7 @@ PluginImpl* PluginManager::getPlugin(const string& name)
 		s.printf("Plugin %s not found.", name.c_str());
 		gds__log(s.c_str());
 
-		status_exception::raise(Arg::Gds(isc_pman_plugin_notfound) << name.c_str());
+		status_exception::raise(Arg::Gds(isc_pman_plugin_notfound) << name);
 	}
 
 	if (plugin->module)
@@ -203,7 +203,7 @@ PluginImpl* PluginManager::getPlugin(const string& name)
 		s.printf("Can't load plugin module '%s'.", plugin->filename.c_str());
 		gds__log(s.c_str());
 
-		status_exception::raise(Arg::Gds(isc_pman_cannot_load_plugin) << plugin->filename.c_str());
+		status_exception::raise(Arg::Gds(isc_pman_cannot_load_plugin) << plugin->filename);
 	}
 
 	PluginEntryPoint entryPoint;
@@ -216,7 +216,7 @@ PluginImpl* PluginManager::getPlugin(const string& name)
 		s.printf("Entrypoint of Plugin '%s' does not exist.", plugin->filename.c_str());
 		gds__log(s.c_str());
 
-		status_exception::raise(Arg::Gds(isc_pman_entrypoint_notfound) << plugin->filename.c_str());
+		status_exception::raise(Arg::Gds(isc_pman_entrypoint_notfound) << plugin->filename);
 	}
 
 	plugin->module = module;
@@ -275,7 +275,7 @@ ExternalEngineFactory* PluginImpl::getExternalEngineFactory()
 	if (!externalEngineFactory)
 	{
 		status_exception::raise(
-			Arg::Gds(isc_pman_unknown_instance) << name.c_str() << "ExternalEngine");
+			Arg::Gds(isc_pman_unknown_instance) << name << "ExternalEngine");
 	}
 
 	return externalEngineFactory;

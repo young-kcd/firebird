@@ -22,7 +22,6 @@
  *
  */
 
-
 #ifndef BURP_ODSDETECTION_H
 #define BURP_ODSDETECTION_H
 

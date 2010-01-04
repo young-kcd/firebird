@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "firebird.h"
 #include "../burp/burp.h"
 #include "../burp/burp_proto.h"

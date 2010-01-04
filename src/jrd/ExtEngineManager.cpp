@@ -774,8 +774,9 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 		if (!externalFunction)
 		{
-			status_exception::raise(Arg::Gds(isc_eem_func_not_returned) <<
-										udf->getName().toString().c_str() << engine.c_str());
+			status_exception::raise(
+				Arg::Gds(isc_eem_func_not_returned) <<
+					udf->getName().toString() << engine);
 		}
 	}
 
@@ -816,8 +817,9 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 
 		if (!externalProcedure)
 		{
-			status_exception::raise(Arg::Gds(isc_eem_proc_not_returned) <<
-										prc->getName().toString().c_str() << engine.c_str());
+			status_exception::raise(
+				Arg::Gds(isc_eem_proc_not_returned) <<
+					prc->getName().toString() << engine);
 		}
 	}
 
@@ -860,8 +862,8 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 
 		if (!externalTrigger)
 		{
-			status_exception::raise(Arg::Gds(isc_eem_trig_not_returned) << trg->name.c_str()
-																		<< engine.c_str());
+			status_exception::raise(
+				Arg::Gds(isc_eem_trig_not_returned) << trg->name << engine.c_str());
 		}
 	}
 
@@ -911,8 +913,8 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 						if (version != EXTERNAL_VERSION_1)
 						{
 							status_exception::raise(
-								Arg::Gds(isc_eem_bad_plugin_ver) << Arg::Num(version) << 
-																	name.c_str());
+								Arg::Gds(isc_eem_bad_plugin_ver) <<
+									Arg::Num(version) << name);
 						}
 
 						Database::SyncGuard dsGuard(tdbb->getDatabase());
@@ -948,7 +950,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 
 	if (!engine)
 	{
-		status_exception::raise(Arg::Gds(isc_eem_engine_notfound) << name.c_str());
+		status_exception::raise(Arg::Gds(isc_eem_engine_notfound) << name);
 	}
 
 	return engine;
