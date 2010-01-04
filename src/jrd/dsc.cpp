@@ -1081,26 +1081,6 @@ void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
 }
 
 
-#ifdef DEV_BUILD
-void dsc::address32bit() const
-{
-/**************************************
- *
- *	a d d r e s s 3 2 b i t
- *
- **************************************
- *
- * Functional description
- *	Validates dsc_address member to fit into 4-byte integer.
- *
- **************************************/
-#if SIZEOF_VOID_P > 4
-	FB_UINT64 addr = (FB_UINT64)(IPTR) dsc_address;
-	fb_assert(addr == (addr & 0xFFFFFFFF));
-#endif
-}
-
-
 const char* dsc::typeToText() const
 {
 	switch (dsc_dtype)
@@ -1146,6 +1126,26 @@ const char* dsc::typeToText() const
 	default:
 		return "out of range";
 	}
+}
+
+
+#ifdef DEV_BUILD
+void dsc::address32bit() const
+{
+/**************************************
+ *
+ *	a d d r e s s 3 2 b i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Validates dsc_address member to fit into 4-byte integer.
+ *
+ **************************************/
+#if SIZEOF_VOID_P > 4
+	FB_UINT64 addr = (FB_UINT64)(IPTR) dsc_address;
+	fb_assert(addr == (addr & 0xFFFFFFFF));
+#endif
 }
 
 
