@@ -1,3 +1,65 @@
+2010-01-04 10:05  hvlad
+
+	* firebird2/src/jrd/dsc.cpp (1.45):
+
+	Make RELEASE build compilable
+
+2010-01-04 08:57  dimitr
+
+	* firebird2/src/jrd/recsrc/RecordSource.cpp (1.8):
+
+	Added the missing license.
+
+2010-01-04 08:54  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.492):
+
+	Simplified the code a bit more (removed the redundant processing).
+
+2010-01-04 06:09  robocop
+
+	* firebird2/src/jrd/ValuesImpl.cpp (1.8):
+
+	Misc.
+
+2010-01-04 01:48  asfernandes
+
+	* firebird2/src/jrd/ExtEngineManager.cpp (1.12):
+
+	Misc
+
+2010-01-04 01:43  asfernandes
+
+	* firebird2/src/: burp/OdsDetection.epp (1.2), burp/OdsDetection.h
+	(1.2), include/gen/msgs.h (1.169), jrd/ExtEngineManager.cpp (1.11),
+	jrd/PluginManager.cpp (1.8), jrd/SysFunction.cpp (1.86),
+	jrd/ValueImpl.cpp (1.9), jrd/ValuesImpl.cpp (1.7), jrd/ValuesImpl.h
+	(1.9), jrd/dsc.cpp (1.44), jrd/dsc.h (1.55), jrd/jrd.cpp (1.597),
+	msgs/facilities2.sql (1.119), msgs/messages2.sql (1.142):
+
+	Misc
+
+2010-01-03 21:56  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.46),
+	jrd/PreparedStatement.cpp (1.28), jrd/PreparedStatement.h (1.22),
+	jrd/ResultSet.cpp (1.11), jrd/ResultSet.h (1.7):
+
+	Support for new types and support for getters in ResultSet
+
+2010-01-03 19:23  asfernandes
+
+	* firebird2/src/jrd/: PreparedStatement.cpp (1.27), dfw.epp
+	(1.319):
+
+	Always use the dialect 3 for system SQL queries
+
+2010-01-03 16:21  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.318):
+
+	The easy fix to the dialect problem
+
 2010-01-03 13:43  robocop
 
 	* firebird2/src/: burp/restore.epp (1.199), msgs/facilities2.sql
