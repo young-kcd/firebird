@@ -267,7 +267,7 @@ void IUTILS_truncate_term(TEXT* str, USHORT len)
  *	Truncates the rightmost contiguous spaces on a string.
  * CVC: Notice isspace may be influenced by locales.
  **************************************/
-	int i = len;
+	int i = len-1;
 	while (i >= 0 && (isspace(UCHAR(str[i])) || (str[i] == 0)))
 		--i;
 	str[i + 1] = 0;
