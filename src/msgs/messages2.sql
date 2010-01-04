@@ -1831,7 +1831,7 @@ COMMIT WORK;
 ('dyn_dup_function', 'DYN_define_function', 'dyn_def.epp', NULL, 8, 268, NULL, 'Function @1 already exists', NULL, NULL);
 ('dyn_package_body_exists', NULL, 'DdlNodes.epp/PackageNodes.epp', NULL, 8, 269, NULL, 'Package body @1 already exists', NULL, NULL);
 ('dyn_invalid_ddl_func', 'CreateAlterFunctionNode::compile', 'DdlNodes.epp', NULL, 8, 270, NULL, 'Invalid DDL statement for function @1', NULL, NULL);
-('dyn_newfc_oldsyntax', 'DYN_modify_function', 'dyn_mod.epp', NULL, 8, 271, NULL, 'Cannot alter new style function @1 with ALTER EXTERNAL FUNCTION', NULL, NULL);
+('dyn_newfc_oldsyntax', 'DYN_modify_function', 'dyn_mod.epp', NULL, 8, 271, NULL, 'Cannot alter new style function @1 with ALTER EXTERNAL FUNCTION. Use ALTER FUNCTION instead.', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

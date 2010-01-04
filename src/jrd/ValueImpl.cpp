@@ -103,9 +103,7 @@ void ValueMover::getValue(const ValueImpl* value, const dsc* desc, dsc* target, 
 		if (isNull)
 			*isNull = true;
 		else
-		{
 			status_exception::raise(Arg::Gds(isc_unexpected_null));
-		}
 	}
 	else
 	{

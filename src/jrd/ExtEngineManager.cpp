@@ -863,7 +863,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 		if (!externalTrigger)
 		{
 			status_exception::raise(
-				Arg::Gds(isc_eem_trig_not_returned) << trg->name << engine.c_str());
+				Arg::Gds(isc_eem_trig_not_returned) << trg->name << engine);
 		}
 	}
 

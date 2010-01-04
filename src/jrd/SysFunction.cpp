@@ -2120,9 +2120,7 @@ dsc* evlGetContext(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	else if (nameSpaceStr == DDL_TRIGGER_NAMESPACE)	// Handle ddl trigger variables
 	{
 		if (!attachment->ddlTriggersContext.hasData())
-		{
 			status_exception::raise(Arg::Gds(isc_sysf_invalid_trig_namespace));
-		}
 
 		const DdlTriggerContext& context = Stack<DdlTriggerContext>::const_iterator(
 			attachment->ddlTriggersContext).object();

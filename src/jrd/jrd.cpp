@@ -2431,9 +2431,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Jrd::Attachment** handle)
 				try
 				{
 					if (attachment->att_in_use)
-					{
 						status_exception::raise(Arg::Gds(isc_attachment_in_use));
-					}
 
 					Database* dbb = tdbb->getDatabase();
 
@@ -2501,9 +2499,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Jrd::Attachment** handle)
 		try
 		{
 			if (attachment->att_in_use)
-			{
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
-			}
 
 			Database* const dbb = tdbb->getDatabase();
 
@@ -4616,13 +4612,9 @@ static void commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_f
  **************************************/
 
 	if (transaction->tra_sibling && !(transaction->tra_flags & TRA_prepared))
-	{
 		prepare(tdbb, transaction, 0, NULL);
-	}
 	else if (transaction->tra_in_use)
-	{
 		status_exception::raise(Arg::Gds(isc_transaction_in_use));
-	}
 
 	const Jrd::Attachment* const attachment = tdbb->getAttachment();
 
@@ -5369,9 +5361,7 @@ static void prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const 
 	SET_TDBB(tdbb);
 
 	if (transaction->tra_in_use)
-	{
 		status_exception::raise(Arg::Gds(isc_transaction_in_use));
-	}
 
 	if (!(transaction->tra_flags & TRA_prepared))
 	{
@@ -5514,9 +5504,7 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
  *
  **************************************/
 	if (transaction->tra_in_use)
-	{
 		status_exception::raise(Arg::Gds(isc_transaction_in_use));
-	}
 
 	ISC_STATUS_ARRAY user_status = {0};
 	ISC_STATUS_ARRAY local_status = {0};

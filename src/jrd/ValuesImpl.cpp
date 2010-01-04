@@ -237,19 +237,4 @@ ValuesQueue* FB_CALL ValuesImpl::createQueue(Error* error)
 }
 
 
-namespace
-{
-	// Done here to not pull error numbers into ValuesImpl.h
-	const USHORT JRD_FACILITY = GET_FACILITY(isc_invalid_index_val);
-	const USHORT number = GET_CODE(isc_invalid_index_val);
-	TEXT errmsg[MAX_ERRMSG_LEN + 1];
-}
-
-const char* ValuesImpl::getInvalidIdxMsg(int idx)
-{
-	fb_msg_format(0, JRD_FACILITY, number, sizeof(errmsg), errmsg, MsgFormat::SafeArg() << idx);
-	return errmsg;
-}
-
-
 }	// namespace Jrd

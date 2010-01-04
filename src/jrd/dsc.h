@@ -329,9 +329,11 @@ typedef struct dsc
 		d.dsc_offset = (ULONG)(IPTR)dsc_address;
 		return d;
 	}
+
 #ifdef DEV_BUILD
 	void address32bit() const;
 #endif
+
 	const char* typeToText() const;
 #endif	// __cpluplus
 } DSC;

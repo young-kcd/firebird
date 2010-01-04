@@ -1110,7 +1110,7 @@ const char* dsc::typeToText() const
 	case dtype_text:
 		return "char";
 	case dtype_cstring:
-		return "Cstring";
+		return "cstring";
 	case dtype_varying:
 		return "varchar";
 	case dtype_packed:

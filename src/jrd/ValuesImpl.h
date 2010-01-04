@@ -150,8 +150,7 @@ public:
 		if (index >= 1 && index <= count)
 			return getValue(index);
 
-		const static char* const msg = getInvalidIdxMsg(index);
-		error->addString(msg, strlen(msg));
+		error->addCode(isc_invalid_index_val);
 		return NULL;
 	}
 
@@ -161,8 +160,6 @@ public:
 	virtual Firebird::ValuesQueue* FB_CALL createQueue(Firebird::Error* error);
 
 private:
-	static const char* getInvalidIdxMsg(int idx);
-
 	UCHAR* msg;
 	unsigned msgLength;
 	Firebird::ObjectsArray<ValueImpl> valuesArray;
