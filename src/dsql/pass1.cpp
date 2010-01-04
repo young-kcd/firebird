@@ -902,32 +902,11 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				return node;
 			}
 
-			if (sub2->nod_type == nod_select_expr)
+			if (sub2->nod_type == nod_select_expr &&
+				!(sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON))
 			{
-				if (sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON)
-				{
-					const DsqlContextStack::iterator base(*dsqlScratch->context);
-					node = MAKE_node(input->nod_type, 2);
-					node->nod_arg[0] = PASS1_node_psql(dsqlScratch, input->nod_arg[0], false);
-					dsql_nod* temp = MAKE_node(nod_via, e_via_count);
-					node->nod_arg[1] = temp;
-					dsql_nod* rse = PASS1_rse(dsqlScratch, sub2, NULL);
-					temp->nod_arg[e_via_rse] = rse;
-					temp->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
-					temp->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
+				NOD_TYPE type = nod_any;
 
-					// Try to force sub1 to be same type as sub2 eg: ? = (select ...) case
-					sub1 = node->nod_arg[0];
-					sub2 = node->nod_arg[1];
-					set_parameter_type(dsqlScratch, sub1, sub2, false);
-
-					// Finish off by cleaning up contexts
-					dsqlScratch->context->clear(base);
-
-					return node;
-				}
-
-				NOD_TYPE type;
 				if (input->nod_flags & NOD_ANSI_ANY)
 				{
 					type = nod_ansi_any;
@@ -935,10 +914,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				else if (input->nod_flags & NOD_ANSI_ALL)
 				{
 					type = nod_ansi_all;
-				}
-				else
-				{
-					type = nod_any;
 				}
 
 				return pass1_any(dsqlScratch, input, type);
