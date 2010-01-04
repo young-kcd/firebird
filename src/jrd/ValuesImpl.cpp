@@ -25,8 +25,6 @@
 #include "../jrd/ErrorImpl.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/align.h"
-#include "../common/classes/MsgPrint.h"
-#include "../jrd/msg_encode.h"
 
 using namespace Firebird;
 using Firebird::uint;
