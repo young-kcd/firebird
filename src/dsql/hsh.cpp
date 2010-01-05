@@ -172,7 +172,8 @@ void HSHD_insert(dsql_sym* symbol)
 	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 	const void* database = symbol->sym_dbb;
 
-	fb_assert(symbol->sym_type >= SYM_statement && symbol->sym_type <= SYM_eof);
+	//fb_assert(symbol->sym_type >= SYM_statement && symbol->sym_type <= SYM_eof);
+	fb_assert(symbol->sym_type >= SYM_cursor && symbol->sym_type <= SYM_eof);
 
 	Firebird::WriteLockGuard guard(hash_sync);
 

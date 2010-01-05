@@ -31,13 +31,13 @@ namespace Jrd {
 // possible symbol types
 
 enum sym_type {
-	SYM_statement,
-	SYM_cursor,
+	//SYM_statement, // used only in an assertion in HSHD_insert()
+	SYM_cursor = 1,
 	SYM_keyword,
-	SYM_context,
+	//SYM_context,
 	SYM_relation,
-	SYM_field,
-	SYM_stream,
+	//SYM_field,
+	//SYM_stream,
 	SYM_udf,
 	SYM_procedure,
 	SYM_intlsym_charset,
