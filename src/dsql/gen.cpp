@@ -1139,59 +1139,12 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		stuff(dsqlScratch->getStatement(), (int)(IPTR) node->nod_arg[e_continue_label]->nod_arg[e_label_number]);
 		return;
 
-	case nod_abort:
-		stuff(dsqlScratch->getStatement(), blr_leave);
-		stuff(dsqlScratch->getStatement(), (int) (IPTR) node->nod_arg[e_abrt_number]);
-		return;
-
 	case nod_start_savepoint:
 		stuff(dsqlScratch->getStatement(), blr_start_savepoint);
 		return;
 
 	case nod_end_savepoint:
 		stuff(dsqlScratch->getStatement(), blr_end_savepoint);
-		return;
-
-	case nod_exception_stmt:
-		stuff(dsqlScratch->getStatement(), blr_abort);
-		string = (dsql_str*) node->nod_arg[e_xcps_name];
-		temp = node->nod_arg[e_xcps_msg];
-		// if exception name is undefined,
-		// it means we have re-initiate semantics here,
-		// so blr_raise verb should be generated
-		if (!string)
-		{
-			stuff(dsqlScratch->getStatement(), blr_raise);
-			return;
-		}
-		// if exception value is defined,
-		// it means we have user-defined exception message here,
-		// so blr_exception_msg verb should be generated
-		if (temp)
-		{
-			stuff(dsqlScratch->getStatement(), blr_exception_msg);
-		}
-		// otherwise go usual way,
-		// i.e. generate blr_exception
-		else
-		{
-			stuff(dsqlScratch->getStatement(), blr_exception);
-		}
-		if (string->type != dsql_str::TYPE_DELIMITED)
-		{
-			ULONG id_length = string->str_length;
-			for (TEXT* p = string->str_data; *p && id_length; ++p, --id_length)
-			{
-				*p = UPPER(*p);
-			}
-		}
-		stuff_cstring(dsqlScratch->getStatement(), string->str_data);
-		// if exception value is defined,
-		// generate appropriate BLR verbs
-		if (temp)
-		{
-			GEN_expr(dsqlScratch, temp);
-		}
 		return;
 
 	case nod_while:

@@ -176,6 +176,28 @@ public:
 };
 
 
+// This class (via the make method) does the job that pass1_savepoint does for the legacy nodes.
+class SavepointEncloseNode : public DsqlOnlyStmtNode
+{
+public:
+	explicit SavepointEncloseNode(MemoryPool& pool, StmtNode* aStmt)
+		: DsqlOnlyStmtNode(pool),
+		  stmt(aStmt)
+	{
+	}
+
+public:
+	static StmtNode* make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node);
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void genBlr();
+
+private:
+	StmtNode* stmt;
+};
+
+
 // Common node for all "code blocks" (i.e.: procedures, triggers and execute block)
 class BlockNode
 {

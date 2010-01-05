@@ -30,6 +30,8 @@
 #include "../jrd/dfw_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
+#include "../jrd/met_proto.h"
+#include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../dsql/ddl_proto.h"
@@ -66,6 +68,42 @@ DmlNode* DmlNode::pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
 {
 	node = aNode;
 	return pass2(tdbb, csb);
+}
+
+
+//--------------------
+
+
+StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node)
+{
+	if (dsqlScratch->errorHandlers)
+	{
+		node = FB_NEW(pool) SavepointEncloseNode(pool, node);
+		node->dsqlPass(dsqlScratch);
+	}
+
+	return node;
+}
+
+
+void SavepointEncloseNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "SavepointEncloseNode\n";
+	string s;
+	stmt->print(s, nodes);
+	text += s;
+}
+
+
+void SavepointEncloseNode::genBlr()
+{
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+
+	statement->append_uchar(blr_begin);
+	statement->append_uchar(blr_start_savepoint);
+	stmt->genBlr();
+	statement->append_uchar(blr_end_savepoint);
+	statement->append_uchar(blr_end);
 }
 
 
@@ -622,6 +660,270 @@ void ExecBlockNode::revertParametersOrder(Array<dsql_par*>& parameters)
 		parameters[end] = temp;
 		++start;
 		--end;
+	}
+}
+
+
+//--------------------
+
+
+static RegisterNode<ExceptionNode> regExceptionNode(blr_abort);
+
+
+DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	UCHAR /*blrOp*/)
+{
+	ExceptionNode* node = FB_NEW(pool) ExceptionNode(pool);
+	const bool flag = (csb->csb_blr_reader.peekByte() == blr_exception_msg);
+	const USHORT codeType = csb->csb_blr_reader.getByte();
+
+	// Don't create PsqlException if blr_raise is used.
+	if (codeType != blr_raise)
+	{
+		node->exception = FB_NEW_RPT(pool, 1) PsqlException();
+		node->exception->xcp_count = 1;
+		xcp_repeat& item = node->exception->xcp_rpt[0];
+
+		switch (codeType)
+		{
+			case blr_sql_code:
+				item.xcp_type = xcp_sql_code;
+				item.xcp_code = (SSHORT) csb->csb_blr_reader.getWord();
+				break;
+
+			case blr_gds_code:
+				{
+					string exName;
+					item.xcp_type = xcp_gds_code;
+					PAR_name(csb, exName);
+					exName.lower();
+					SLONG code_number = PAR_symbol_to_gdscode(exName);
+					if (code_number)
+						item.xcp_code = code_number;
+					else
+						PAR_error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(exName));
+				}
+				break;
+
+			case blr_exception:
+			case blr_exception_msg:
+				{
+					item.xcp_type = xcp_xcp_code;
+					PAR_name(csb, node->name);
+					if (!(item.xcp_code = MET_lookup_exception_number(tdbb, node->name)))
+						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(node->name));
+					jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
+					dep_node->nod_type = nod_dependency;
+					dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
+					dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
+					csb->csb_dependencies.push(dep_node);
+				}
+				break;
+
+			default:
+				fb_assert(false);
+				break;
+		}
+	}
+
+	if (flag)
+		node->messageExpr = PAR_parse_node(tdbb, csb, VALUE);
+
+	return node;
+}
+
+
+StmtNode* ExceptionNode::internalDsqlPass()
+{
+	ExceptionNode* node = FB_NEW(getPool()) ExceptionNode(getPool());
+	node->dsqlScratch = dsqlScratch;
+	node->name = name;
+	if (dsqlMessageExpr)
+		node->dsqlMessageExpr = PASS1_node(dsqlScratch, dsqlMessageExpr);
+
+	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
+}
+
+
+void ExceptionNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("ExceptionNode: Name: %s", name.c_str());
+	if (dsqlMessageExpr)
+		nodes.add(dsqlMessageExpr);
+}
+
+
+void ExceptionNode::genBlr()
+{
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	stuff(statement, blr_abort);
+
+	// If exception name is undefined, it means we have re-initiate semantics here,
+	// so blr_raise verb should be generated.
+	if (name.isEmpty())
+	{
+		stuff(statement, blr_raise);
+		return;
+	}
+
+	// If exception value is defined, it means we have user-defined exception message here,
+	// so blr_exception_msg verb should be generated.
+	if (dsqlMessageExpr)
+		stuff(statement, blr_exception_msg);
+	else	// Otherwise go usual way, i.e. generate blr_exception.
+		stuff(statement, blr_exception);
+
+	stuff_cstring(statement, name.c_str());
+
+	// If exception value is defined, generate appropriate BLR verbs.
+	if (dsqlMessageExpr)
+		GEN_expr(dsqlScratch, dsqlMessageExpr);
+}
+
+
+ExceptionNode* ExceptionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	messageExpr = CMP_pass1(tdbb, csb, messageExpr);
+	return this;
+}
+
+
+ExceptionNode* ExceptionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	messageExpr = CMP_pass2(tdbb, csb, messageExpr, node);
+	return this;
+}
+
+
+jrd_nod* ExceptionNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	if (request->req_operation == jrd_req::req_evaluate)
+	{
+		if (exception)
+		{
+			// PsqlException is defined, so throw an exception.
+			setError(tdbb);
+		}
+		else if (!request->req_last_xcp.success())
+		{
+			// PsqlException is undefined, but there was a known exception before,
+			// so re-initiate it.
+			setError(tdbb);
+		}
+		else
+		{
+			// PsqlException is undefined and there weren't any exceptions before,
+			// so just do nothing.
+			request->req_operation = jrd_req::req_return;
+		}
+	}
+
+	return node->nod_parent;
+}
+
+
+// Set status vector according to specified error condition and jump to handle error accordingly.
+void ExceptionNode::setError(thread_db* tdbb) const
+{
+	SET_TDBB(tdbb);
+
+	jrd_req* request = tdbb->getRequest();
+
+	if (!exception)
+	{
+		// Retrieve the status vector and punt.
+		request->req_last_xcp.copyTo(tdbb->tdbb_status_vector);
+		request->req_last_xcp.clear();
+		ERR_punt();
+	}
+
+	MetaName exName;
+	MetaName relationName;
+	TEXT message[XCP_MESSAGE_LENGTH + 1];
+	MoveBuffer temp;
+	USHORT length = 0;
+
+	if (messageExpr)
+	{
+		UCHAR* string = NULL;
+
+		// Evaluate exception message and convert it to string.
+		dsc* desc = EVL_expr(tdbb, messageExpr);
+		if (desc && !(request->req_flags & req_null))
+		{
+			length = MOV_make_string2(tdbb, desc, CS_METADATA, &string, temp);
+			length = MIN(length, sizeof(message) - 1);
+
+			/* dimitr: or should we throw an error here, i.e.
+					replace the above assignment with the following lines:
+
+			 if (length > sizeof(message) - 1)
+				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+			*/
+
+			memcpy(message, string, length);
+		}
+		else
+			length = 0;
+	}
+
+	message[length] = 0;
+
+	SLONG xcpCode = exception->xcp_rpt[0].xcp_code;
+
+	switch (exception->xcp_rpt[0].xcp_type)
+	{
+		case xcp_sql_code:
+			ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(xcpCode));
+
+		case xcp_gds_code:
+			if (xcpCode == isc_check_constraint)
+			{
+				MET_lookup_cnstrt_for_trigger(tdbb, exName, relationName, request->req_trg_name);
+				ERR_post(Arg::Gds(xcpCode) << Arg::Str(exName) << Arg::Str(relationName));
+			}
+			else
+				ERR_post(Arg::Gds(xcpCode));
+
+		case xcp_xcp_code:
+		{
+			string tempStr;
+			const TEXT* s;
+
+			// CVC: If we have the exception name, use it instead of the number.
+			// Solves SF Bug #494981.
+			MET_lookup_exception(tdbb, xcpCode, exName, &tempStr);
+
+			if (message[0])
+				s = message;
+			else if (tempStr.hasData())
+				s = tempStr.c_str();
+			else
+				s = NULL;
+
+			if (s && exName.length())
+			{
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
+						 Arg::Gds(isc_random) << Arg::Str(exName) <<
+						 Arg::Gds(isc_random) << Arg::Str(s));
+			}
+			else if (s)
+			{
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
+						 Arg::Gds(isc_random) << Arg::Str(s));
+			}
+			else if (exName.length())
+			{
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
+						 Arg::Gds(isc_random) << Arg::Str(exName));
+			}
+			else
+				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode));
+		}
+
+		default:
+			fb_assert(false);
 	}
 }
 

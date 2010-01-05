@@ -92,7 +92,6 @@ enum nod_t
 	nod_delete_rel_constraint,
 	nod_primary,
 	nod_foreign,
-	nod_abort,
 	nod_references,
 	nod_proc_obj,
 	nod_trig_obj,
@@ -120,7 +119,6 @@ enum nod_t
 	nod_sqlcode,
 	nod_gdscode,
 	nod_exception,
-	nod_exception_stmt,
 	nod_default,
 	nod_start_savepoint,
 	nod_end_savepoint,
@@ -407,10 +405,6 @@ enum node_args {
 	e_internal_info = 0,	// nod_internal_info
 	e_internal_info_count,
 
-	e_xcps_name = 0,		// nod_exception_stmt
-	e_xcps_msg,
-	e_xcps_count,
-
 	e_vrn_name = 0,			// nod_variable_name
 	e_vrn_count,
 
@@ -686,9 +680,6 @@ enum node_args {
 	e_cnstr_actions,
 	e_cnstr_source,
 	e_cnstr_count,
-
-	e_abrt_number = 0,		// nod_abort
-	e_abrt_count,
 
 	e_cast_target = 0,		// Not a DSQL_NOD   nod_cast
 	e_cast_source,

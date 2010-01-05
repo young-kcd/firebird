@@ -82,11 +82,9 @@ static const TEXT elements[][14] =
 static NodeParseFunc blr_parsers[256] = {NULL};
 
 
-static void error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError = true);
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
 static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_cast(thread_db*, CompilerScratch*);
-static PsqlException* par_condition(thread_db*, CompilerScratch*);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
 static SSHORT par_context(CompilerScratch*, SSHORT *);
 static void par_dependency(thread_db*, CompilerScratch*, SSHORT, SSHORT, const Firebird::MetaName&);
@@ -200,7 +198,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	case blr_version5:
 		break; // nothing to do
 	default:
-		error(csb, Arg::Gds(isc_metadata_corrupt) <<
+		PAR_error(csb, Arg::Gds(isc_metadata_corrupt) <<
 				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
@@ -398,7 +396,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 						break;
 
 					default:
-						error(csb, Arg::Gds(isc_collation_requires_text));
+						PAR_error(csb, Arg::Gds(isc_collation_requires_text));
 						break;
 				}
 			}
@@ -459,7 +457,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 						break;
 
 					default:
-						error(csb, Arg::Gds(isc_collation_requires_text));
+						PAR_error(csb, Arg::Gds(isc_collation_requires_text));
 						break;
 				}
 			}
@@ -479,7 +477,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		}
 
 	default:
-		error(csb, Arg::Gds(isc_datnotsup));
+		PAR_error(csb, Arg::Gds(isc_datnotsup));
 	}
 
 	if (itemInfo)
@@ -698,7 +696,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	case blr_version5:
 		break; // nothing to do
 	default:
-		error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
+		PAR_error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
 	if (dbginfo_length > 0)
@@ -755,11 +753,11 @@ void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 }
 
 
-static void error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError)
+void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError)
 {
 /**************************************
  *
- *	e r r o r
+ *	P A R _ e r r o r
  *
  **************************************
  *
@@ -892,80 +890,6 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ c o n d i t i o n
- *
- **************************************
- *
- * Functional description
- *	Parse an error conditions list.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	// allocate a node to represent the conditions list
-
-	const USHORT code_type = csb->csb_blr_reader.getByte();
-
-	// don't create PsqlException if blr_raise is used, just return NULL
-	if (code_type == blr_raise)
-	{
-		return NULL;
-	}
-
-	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) PsqlException();
-	exception_list->xcp_count = 1;
-	xcp_repeat& item = exception_list->xcp_rpt[0];
-
-	switch (code_type)
-	{
-	case blr_sql_code:
-		item.xcp_type = xcp_sql_code;
-		item.xcp_code = (SSHORT) csb->csb_blr_reader.getWord();
-		break;
-
-	case blr_gds_code:
-		{
-			string name;
-			item.xcp_type = xcp_gds_code;
-			PAR_name(csb, name);
-			name.lower();
-			SLONG code_number = PAR_symbol_to_gdscode(name);
-			if (code_number)
-				item.xcp_code = code_number;
-			else
-				error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
-		}
-		break;
-
-	case blr_exception:
-	case blr_exception_msg:
-		{
-			MetaName name;
-			item.xcp_type = xcp_xcp_code;
-			PAR_name(csb, name);
-			if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
-				error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
-			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
-			csb->csb_dependencies.push(dep_node);
-		}
-		break;
-
-	default:
-		fb_assert(false);
-		break;
-	}
-
-	return exception_list;
-}
-
-
 static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
@@ -1008,7 +932,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 				if (code_number)
 					item.xcp_code = code_number;
 				else
-					error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
+					PAR_error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
 			}
 			break;
 
@@ -1018,7 +942,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 				item.xcp_type = xcp_xcp_code;
 				PAR_name(csb, name);
 				if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
-					error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
+					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
 				jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
 				dep_node->nod_type = nod_dependency;
 				dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
@@ -1070,13 +994,13 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 			return tail->csb_stream;
 		}
 
-		error(csb, Arg::Gds(isc_ctxinuse));
+		PAR_error(csb, Arg::Gds(isc_ctxinuse));
 	}
 
 	const SSHORT stream = csb->nextStream(false);
 	if (stream >= MAX_STREAMS)
 	{
-		error(csb, Arg::Gds(isc_too_many_contexts));
+		PAR_error(csb, Arg::Gds(isc_too_many_contexts));
 	}
 
 	tail->csb_flags |= csb_used;
@@ -1177,7 +1101,7 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 
 	if (!procedure)
 	{
-		error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
+		PAR_error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
 	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_esp_length);
@@ -1300,7 +1224,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 				but we must support legacy BLR.
 		*/
 	{
-		error(csb, Arg::Gds(isc_ctxnotdef));
+		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 	}
 
 	Firebird::MetaName name;
@@ -1336,7 +1260,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			PAR_name(csb, name);
 			if ((id = find_proc_field(procedure, name)) == -1)
 			{
-				error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) <<
+				PAR_error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) <<
 													   Arg::Str(procedure->getName().toString()));
 			}
 		}
@@ -1344,7 +1268,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		{
 			jrd_rel* relation = tail->csb_relation;
 			if (!relation)
-				error(csb, Arg::Gds(isc_ctxnotdef));
+				PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 
 			// make sure relation has been scanned before using it
 
@@ -1378,11 +1302,11 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 					}
 					else if (!(relation->rel_flags & REL_deleted))
 					{
-						error(csb, Arg::Gds(isc_fldnotdef) << Arg::Str(name) <<
+						PAR_error(csb, Arg::Gds(isc_fldnotdef) << Arg::Str(name) <<
 															  Arg::Str(relation->rel_name));
 					}
 					else
-						error(csb, Arg::Gds(isc_ctxnotdef));
+						PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 				}
 			}
 		}
@@ -1478,7 +1402,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 		}
 
 		csb->csb_blr_reader.seekBackward(count);
-		error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
+		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
 	if (!function->isUndefined() && !function->fun_entrypoint &&
@@ -1492,7 +1416,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 		else
 		{
 			csb->csb_blr_reader.seekBackward(count);
-			error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()) <<
+			PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()) <<
 					   Arg::Gds(isc_modnotfound));
 		}
 	}
@@ -1507,7 +1431,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	if (node->nod_arg[e_fun_args]->nod_count < function->fun_inputs - function->fun_defaults ||
 		node->nod_arg[e_fun_args]->nod_count > function->fun_inputs)
 	{
-		error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->getName().toString()));
+		PAR_error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->getName().toString()));
 	}
 
     // CVC: I will track ufds only if a proc is not being dropped.
@@ -1713,7 +1637,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
-		error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+		PAR_error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	format->fmt_length = (USHORT) offset;
 
@@ -1740,13 +1664,13 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 	USHORT context = (unsigned int) csb->csb_blr_reader.getByte();
 	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
 	{
-		error(csb, Arg::Gds(isc_ctxnotdef));
+		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 	}
 	const SSHORT org_stream = csb->csb_rpt[context].csb_stream;
 	const SSHORT new_stream = csb->nextStream(false);
 	if (new_stream >= MAX_STREAMS)
 	{
-		error(csb, Arg::Gds(isc_too_many_contexts));
+		PAR_error(csb, Arg::Gds(isc_too_many_contexts));
 	}
 	context = (unsigned int) csb->csb_blr_reader.getByte();
 
@@ -1918,7 +1842,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 		n = csb->csb_blr_reader.getByte();
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
-			error(csb, Arg::Gds(isc_ctxnotdef));
+			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 		const SSHORT stream = csb->csb_rpt[n].csb_stream;
 
 		relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) stream;
@@ -1960,7 +1884,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					}
 					else
 					{
-						error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) <<
+						PAR_error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) <<
 															  Arg::Str(relation->rel_name));
 					}
 				}
@@ -2028,7 +1952,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 						}
 						else
 						{
-							error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) <<
+							PAR_error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) <<
 																  Arg::Str(relation->rel_name));
 						}
 					}
@@ -2133,12 +2057,12 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 
 	if (!procedure)
 	{
-		error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
+		PAR_error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
 	}
 
 	if (procedure->prc_type == prc_executable)
 	{
-		error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(procedure->getName().toString()));
+		PAR_error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(procedure->getName().toString()));
 	}
 
 	jrd_nod* const node = PAR_make_node(tdbb, e_prc_length);
@@ -2195,7 +2119,7 @@ static void par_procedure_parms(thread_db* tdbb,
 		// They don't match...Hmmm...Its OK if we were dropping the procedure
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 		{
-			error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
+			PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
 							Arg::Str(procedure->getName().toString()));
 		}
 		else
@@ -2291,7 +2215,7 @@ static void par_procedure_parms(thread_db* tdbb,
 	}
 	else if ((input_flag ? inputCount : procedure->prc_output_fields.getCount()) && !mismatch)
 	{
-		error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
+		PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
 						Arg::Str(procedure->getName().toString()));
 	}
 }
@@ -2358,7 +2282,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 
 	if (!relation)
 	{
-		error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
+		PAR_error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
 	}
 
 	// Make a relation reference node
@@ -2642,7 +2566,7 @@ static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
 	if (!function)
 	{
 		csb->csb_blr_reader.seekBackward(count);
-		error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name));
+		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name));
 	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_sysfun_length);
@@ -3077,7 +3001,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_erase:
 		n = csb->csb_blr_reader.getByte();
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
-			error(csb, Arg::Gds(isc_ctxnotdef));
+			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 		node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
 		break;
 
@@ -3249,7 +3173,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			PAR_name(csb, name);
 			const SLONG tmp = MET_lookup_generator(tdbb, name.c_str());
 			if (tmp < 0) {
-				error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
+				PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 			}
 			node->nod_arg[e_gen_relation] = (jrd_nod*) (IPTR) tmp;
 			node->nod_arg[e_gen_value] = PAR_parse_node(tdbb, csb, VALUE);
@@ -3273,7 +3197,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_dbkey:
 		n = csb->csb_blr_reader.getByte();
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
-			error(csb, Arg::Gds(isc_ctxnotdef));
+			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 		node->nod_arg[0] = (jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
 		break;
 
@@ -3360,14 +3284,14 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			n = (USHORT) csb->csb_blr_reader.getByte();
 			if (n >= csb->csb_rpt.getCount() || !(message = csb->csb_rpt[n].csb_message))
 			{
-				error(csb, Arg::Gds(isc_badmsgnum));
+				PAR_error(csb, Arg::Gds(isc_badmsgnum));
 			}
 			node->nod_arg[e_arg_message] = message;
 			n = csb->csb_blr_reader.getWord();
 			node->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
 			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			if (n >= format->fmt_count)
-				error(csb, Arg::Gds(isc_badparnum));
+				PAR_error(csb, Arg::Gds(isc_badparnum));
 			if (blr_operator != blr_parameter)
 			{
 				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
@@ -3379,7 +3303,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 				n = csb->csb_blr_reader.getWord();
 				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
 				if (n >= format->fmt_count)
-					error(csb, Arg::Gds(isc_badparnum));
+					PAR_error(csb, Arg::Gds(isc_badparnum));
 			}
 			if (blr_operator == blr_parameter3)
 			{
@@ -3392,7 +3316,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 				n = csb->csb_blr_reader.getWord();
 				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
 				if (n >= format->fmt_count)
-					error(csb, Arg::Gds(isc_badparnum));
+					PAR_error(csb, Arg::Gds(isc_badparnum));
 			}
 		}
 		break;
@@ -3434,17 +3358,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[e_err_conditions] = (jrd_nod*) par_conditions(tdbb, csb);
 		node->nod_arg[e_err_action] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
-
-	case blr_abort:
-		{
-			const bool flag = (csb->csb_blr_reader.peekByte() == blr_exception_msg);
-			node->nod_arg[e_xcp_desc] = (jrd_nod*) par_condition(tdbb, csb);
-			if (flag)
-			{
-				node->nod_arg[e_xcp_msg] = PAR_parse_node(tdbb, csb, sub_type);
-			}
-			break;
-		}
 
 	case blr_label:
 		node->nod_arg[e_lbl_label] = (jrd_nod*) (IPTR) csb->csb_blr_reader.getByte();
@@ -3542,7 +3455,7 @@ void PAR_syntax_error(CompilerScratch* csb, const TEXT* string)
 
 	csb->csb_blr_reader.seekBackward(1);
 
-	error(csb, Arg::Gds(isc_syntaxerr) << Arg::Str(string) <<
+	PAR_error(csb, Arg::Gds(isc_syntaxerr) << Arg::Str(string) <<
 										  Arg::Num(csb->csb_blr_reader.getOffset()) <<
 										  Arg::Num(csb->csb_blr_reader.peekByte()));
 }

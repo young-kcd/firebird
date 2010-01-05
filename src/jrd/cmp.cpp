@@ -4356,10 +4356,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			return node;
 		}
 
-	case nod_abort:
-		CMP_pass1(tdbb, csb, node->nod_arg[e_xcp_msg]);
-		break;
-
 	case nod_not:
 		sub = node->nod_arg[0];
 		if (sub->nod_type == nod_ansi_any)
@@ -5625,10 +5621,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	switch (node->nod_type)
 	{
-	case nod_abort:
-		CMP_pass2(tdbb, csb, node->nod_arg[e_xcp_msg], node);
-		break;
-
 	case nod_assignment:
 		CMP_pass2(tdbb, csb, node->nod_arg[e_asgn_missing2], node);
 		break;

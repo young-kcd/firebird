@@ -673,7 +673,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  db_name ddl_desc
 
 %type <legacyNode> end_default err errors event_argument_opt exception_clause
-%type <legacyNode> excp_hndl_statement excp_hndl_statements excp_statement
+%type <legacyNode> excp_hndl_statement excp_hndl_statements
 %type <legacyNode> exec_function exec_into exec_procedure exec_sql exec_stmt_inputs
 %type <legacyNode> exec_stmt_option exec_stmt_options exec_stmt_options_list exists_predicate
 %type <legacyNode> ext_datasrc ext_privs ext_pwd ext_role ext_tran ext_user extra_indices_opt
@@ -739,7 +739,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> qualified_join quantified_predicate query_spec query_term
 
-%type <legacyNode> raise_statement recreate recreate_clause referential_action referential_constraint
+%type <legacyNode> recreate recreate_clause referential_action referential_constraint
 %type <legacyNode> referential_trigger_action release_savepoint replace_clause
 %type <legacyNode> replace_exception_clause
 %type <legacyNode> replace_view_clause restr_list restr_option return_mechanism return_value
@@ -800,7 +800,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <boolVal> release_only_opt
 
 %type <ddlNode> alter_charset_clause
-%type <stmtNode> if_then_else in_autonomous_transaction
+%type <stmtNode> if_then_else in_autonomous_transaction excp_statement raise_statement
 %type <execBlockNode> exec_block
 
 %type <createAlterFunctionNode> alter_function_clause function_clause function_clause_start replace_function_clause
@@ -2229,7 +2229,9 @@ simple_proc_statement	: assignment
 		| exec_into
 		| exec_function
 		| excp_statement
+			{ $$ = makeClassNode($1); }
 		| raise_statement
+			{ $$ = makeClassNode($1); }
 		| post_event
 		| cursor_statement
 		| breakleave
@@ -2262,15 +2264,17 @@ in_autonomous_transaction
 		}
 	;
 
-excp_statement	: EXCEPTION symbol_exception_name
-			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, $2, NULL); }
-		| EXCEPTION symbol_exception_name value
-			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, $2, $3); }
-		;
+excp_statement
+	: EXCEPTION symbol_exception_name
+		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2)); }
+	| EXCEPTION symbol_exception_name value
+		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2), $3); }
+	;
 
-raise_statement	: EXCEPTION
-			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, NULL, NULL); }
-		;
+raise_statement
+	: EXCEPTION
+		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool()); }
+	;
 
 for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $3, make_list ($5), $6, $8, $1); }

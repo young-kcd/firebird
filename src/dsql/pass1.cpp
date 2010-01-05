@@ -1453,19 +1453,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		pass1_blob(dsqlScratch, input);
 		return input;
 
-	case nod_exception_stmt:
-		node = input;
-		// if exception value is defined, pass value node
-		if (input->nod_arg[e_xcps_msg])
-		{
-			node->nod_arg[e_xcps_msg] = PASS1_node(dsqlScratch, input->nod_arg[e_xcps_msg]);
-		}
-		else
-		{
-			node->nod_arg[e_xcps_msg] = 0;
-		}
-		return pass1_savepoint(dsqlScratch, node);
-
 	case nod_insert:
 		node = pass1_savepoint(dsqlScratch, pass1_insert(dsqlScratch, input, false));
 		break;
@@ -1735,7 +1722,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 		break;
 
-	case nod_abort:
 	case nod_exception:
 	case nod_sqlcode:
 	case nod_gdscode:
@@ -10894,9 +10880,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	switch (node->nod_type)
 	{
-	case nod_abort:
-		verb = "abort";
-		break;
 	case nod_agg_average:
 		verb = "agg_average";
 		break;
@@ -11389,9 +11372,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_exception:
 		verb = "exception";
-		break;
-	case nod_exception_stmt:
-		verb = "exception_stmt";
 		break;
 	case nod_start_savepoint:
 		verb = "start_savepoint";

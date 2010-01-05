@@ -211,7 +211,6 @@ static jrd_nod* receive_msg(thread_db*, jrd_nod*);
 static void release_blobs(thread_db*, jrd_req*);
 static void release_proc_save_points(jrd_req*);
 static jrd_nod* selct(thread_db*, jrd_nod*);
-static void set_error(thread_db*, const xcp_repeat*, jrd_nod*);
 static jrd_nod* stall(thread_db*, jrd_nod*);
 static jrd_nod* store(thread_db*, jrd_nod*, SSHORT);
 static bool test_and_fixup_error(thread_db*, const PsqlException*, jrd_req*);
@@ -2287,36 +2286,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 			break;
 
-		case nod_abort:
-			switch (request->req_operation)
-			{
-			case jrd_req::req_evaluate:
-				{
-					PsqlException* xcp_node = reinterpret_cast<PsqlException*>(node->nod_arg[e_xcp_desc]);
-					if (xcp_node)
-					{
-						// PsqlException is defined, so throw an exception
-						set_error(tdbb, &xcp_node->xcp_rpt[0], node->nod_arg[e_xcp_msg]);
-					}
-					else if (!request->req_last_xcp.success())
-					{
-						// PsqlException is undefined, but there was a known exception before,
-						// so re-initiate it
-						set_error(tdbb, NULL, NULL);
-					}
-					else
-					{
-						// PsqlException is undefined and there weren't any exceptions before,
-						// so just do nothing
-						request->req_operation = jrd_req::req_return;
-					}
-				}
-
-			default:
-				node = node->nod_parent;
-			}
-			break;
-
 		case nod_start_savepoint:
 			switch (request->req_operation)
 			{
@@ -3428,118 +3397,6 @@ static jrd_nod* selct(thread_db* tdbb, jrd_nod* node)
 
 	default:
 		return node->nod_parent;
-	}
-}
-
-
-static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg_node)
-{
-/**************************************
- *
- *	s e t _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	Set status vector according to specified error condition
- *	and jump to handle error accordingly.
- *
- **************************************/
-	Firebird::MetaName name, relation_name;
-	TEXT message[XCP_MESSAGE_LENGTH + 1];
-
-	MoveBuffer temp;
-
-	SET_TDBB(tdbb);
-
-	jrd_req* request = tdbb->getRequest();
-
-	if (!exception)
-	{
-		// retrieve the status vector and punt
-		request->req_last_xcp.copyTo(tdbb->tdbb_status_vector);
-		request->req_last_xcp.clear();
-		ERR_punt();
-	}
-
-	USHORT length = 0;
-
-	if (msg_node)
-	{
-		UCHAR* string = NULL;
-		// evaluate exception message and convert it to string
-		dsc* desc = EVL_expr(tdbb, msg_node);
-		if (desc && !(request->req_flags & req_null))
-		{
-			length = MOV_make_string2(tdbb, desc, CS_METADATA, &string, temp);
-			length = MIN(length, sizeof(message) - 1);
-
-			/* dimitr: or should we throw an error here, i.e.
-					replace the above assignment with the following lines:
-
-			 if (length > sizeof(message) - 1)
-				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-			*/
-
-			memcpy(message, string, length);
-		}
-		else
-		{
-			length = 0;
-		}
-	}
-	message[length] = 0;
-
-	string tempStr;
-	const TEXT* s;
-
-	switch (exception->xcp_type)
-	{
-	case xcp_sql_code:
-		ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(exception->xcp_code));
-
-	case xcp_gds_code:
-		if (exception->xcp_code == isc_check_constraint)
-		{
-			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name, request->req_trg_name);
-			ERR_post(Arg::Gds(exception->xcp_code) << Arg::Str(name) << Arg::Str(relation_name));
-		}
-		else
-			ERR_post(Arg::Gds(exception->xcp_code));
-
-	case xcp_xcp_code:
-		// CVC: If we have the exception name, use it instead of the number.
-		// Solves SF Bug #494981.
-		MET_lookup_exception(tdbb, exception->xcp_code, name, &tempStr);
-
-		if (message[0])
-			s = message;
-		else if (tempStr.hasData())
-			s = tempStr.c_str();
-		else
-			s = NULL;
-
-		if (s && name.length())
-		{
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
-					 Arg::Gds(isc_random) << Arg::Str(name) <<
-					 Arg::Gds(isc_random) << Arg::Str(s));
-		}
-		else if (s)
-		{
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
-					 Arg::Gds(isc_random) << Arg::Str(s));
-		}
-		else if (name.length())
-		{
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
-					 Arg::Gds(isc_random) << Arg::Str(name));
-		}
-		else
-			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code));
-
-	default:
-		fb_assert(false);
 	}
 }
 

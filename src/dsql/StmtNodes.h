@@ -31,6 +31,8 @@
 
 namespace Jrd {
 
+class PsqlException;
+
 
 class IfNode : public StmtNode
 {
@@ -136,6 +138,43 @@ public:
 	dsql_nod* legacyParameters;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
+};
+
+
+class ExceptionNode : public StmtNode
+{
+public:
+	explicit ExceptionNode(MemoryPool& pool, const Firebird::MetaName& aName = "",
+				dsql_nod* aDsqlMessageExpr = NULL)
+		: StmtNode(pool),
+		  name(pool, aName),
+		  dsqlMessageExpr(aDsqlMessageExpr),
+		  messageExpr(NULL),
+		  exception(NULL)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+protected:
+	virtual StmtNode* internalDsqlPass();
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void genBlr();
+	virtual ExceptionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExceptionNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+
+private:
+	void setError(thread_db* tdbb) const;
+
+public:
+	Firebird::MetaName name;
+	dsql_nod* dsqlMessageExpr;
+	jrd_nod* messageExpr;
+	PsqlException* exception;
 };
 
 
