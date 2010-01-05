@@ -4556,13 +4556,13 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 
 				if (!REFC.RDB$UPDATE_RULE.NULL)
 				{
-					IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, sizeof(REFC.RDB$UPDATE_RULE));
+					IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, strlen(REFC.RDB$UPDATE_RULE));
 					ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " On Update", false);
 				}
 
 				if (!REFC.RDB$DELETE_RULE.NULL)
 				{
-					IUTILS_truncate_term (REFC.RDB$DELETE_RULE, sizeof(REFC.RDB$DELETE_RULE));
+					IUTILS_truncate_term (REFC.RDB$DELETE_RULE, strlen(REFC.RDB$DELETE_RULE));
 					ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " On Delete", false);
 				}
 
