@@ -1,3 +1,27 @@
+2010-01-05 05:10  robocop
+
+	* firebird2/src/dsql/: hsh.cpp (1.49), sym.h (1.17):
+
+	Commenting unused sym_type values.
+
+2010-01-05 05:08  robocop
+
+	* firebird2/src/isql/show.epp (1.166):
+
+	Probably this completes Dmitry Sibiryakov's fix.
+
+2010-01-05 05:07  robocop
+
+	* firebird2/src/isql/iutils.cpp (1.5):
+
+	Misc.
+
+2010-01-04 22:53  aafemt
+
+	* firebird2/src/isql/iutils.cpp (1.4):
+
+	Fix BOF on truncation of reference action
+
 2010-01-04 10:05  hvlad
 
 	* firebird2/src/jrd/dsc.cpp (1.45):
