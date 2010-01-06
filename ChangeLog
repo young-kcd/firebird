@@ -1,3 +1,27 @@
+2010-01-06 13:53  robocop
+
+	* firebird2/src/jrd/: PreparedStatement.cpp (1.29),
+	PreparedStatement.h (1.23):
+
+	I want to be able to pass const input params.
+
+2010-01-06 10:32  dimitr
+
+	* firebird2/builds/win32/defs/: fbclient.def (1.27), fbclient_s.def
+	(1.11):
+
+	Added the missing public entrypoint.
+
+2010-01-05 18:32  asfernandes
+
+	* firebird2/src/: dsql/Nodes.h (1.14), dsql/StmtNodes.cpp (1.32),
+	dsql/StmtNodes.h (1.16), dsql/gen.cpp (1.215), dsql/node.h (1.133),
+	dsql/parse.y (1.352), dsql/pass1.cpp (1.493), jrd/cmp.cpp (1.378),
+	jrd/exe.cpp (1.328), jrd/nod.h (1.36), jrd/par.cpp (1.268),
+	jrd/par_proto.h (1.29), misc/blrtable.cpp (1.46):
+
+	1) Refactor the EXCEPTION statement 2) Cleanup DSQL nod_abort
+
 2010-01-05 05:10  robocop
 
 	* firebird2/src/dsql/: hsh.cpp (1.49), sym.h (1.17):
