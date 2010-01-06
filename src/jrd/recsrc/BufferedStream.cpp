@@ -111,7 +111,7 @@ void BufferedStream::open(thread_db* tdbb)
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 
-	impure->irsb_flags = irsb_open;
+	impure->irsb_flags = irsb_open | irsb_mustread;
 
 	m_next->open(tdbb);
 
@@ -119,11 +119,47 @@ void BufferedStream::open(thread_db* tdbb)
 	MemoryPool& pool = *tdbb->getDefaultPool();
 	impure->irsb_buffer = FB_NEW(pool) RecordBuffer(pool, m_format);
 
+	impure->irsb_position = 0;
+}
+
+void BufferedStream::close(thread_db* tdbb)
+{
+	jrd_req* const request = tdbb->getRequest();
+
+	invalidateRecords(request);
+
+	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+
+	if (impure->irsb_flags & irsb_open)
+	{
+		impure->irsb_flags &= ~irsb_open;
+
+		delete impure->irsb_buffer;
+		impure->irsb_buffer = NULL;
+
+		m_next->close(tdbb);
+	}
+}
+
+bool BufferedStream::getRecord(thread_db* tdbb)
+{
+	jrd_req* const request = tdbb->getRequest();
+	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+
+	if (!(impure->irsb_flags & irsb_open))
+	{
+		return false;
+	}
+
 	Record* const buffer_record = impure->irsb_buffer->getTempRecord();
 
-	// Place all the underlying records into the buffer
-	while (m_next->getRecord(tdbb))
+	if (impure->irsb_flags & irsb_mustread)
 	{
+		if (!m_next->getRecord(tdbb))
+		{
+			return false;
+		}
+
 		// Assign the non-null fields
 		for (size_t i = 0; i < m_map.getCount(); i++)
 		{
@@ -173,93 +209,63 @@ void BufferedStream::open(thread_db* tdbb)
 		// Put the record into the buffer
 		impure->irsb_buffer->store(buffer_record);
 	}
-
-	impure->irsb_position = 0;
-}
-
-void BufferedStream::close(thread_db* tdbb)
-{
-	jrd_req* const request = tdbb->getRequest();
-
-	invalidateRecords(request);
-
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
-	if (impure->irsb_flags & irsb_open)
+	else
 	{
-		impure->irsb_flags &= ~irsb_open;
-
-		delete impure->irsb_buffer;
-		impure->irsb_buffer = NULL;
-
-		m_next->close(tdbb);
-	}
-}
-
-bool BufferedStream::getRecord(thread_db* tdbb)
-{
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
-	if (!(impure->irsb_flags & irsb_open))
-	{
-		return false;
-	}
-
-	Record* const buffer_record = impure->irsb_buffer->getTempRecord();
-	if (!impure->irsb_buffer->fetch(impure->irsb_position, buffer_record))
-	{
-		return false;
-	}
-
-	// Assign fields back to their original streams
-	for (size_t i = 0; i < m_map.getCount(); i++)
-	{
-		const FieldMap& map = m_map[i];
-
-		record_param* const rpb = &request->req_rpb[map.map_stream];
-		rpb->rpb_stream_flags |= RPB_s_refetch;
-		Record* const record = rpb->rpb_record;
-
-		dsc from;
-		if (!EVL_field(NULL, buffer_record, (USHORT) i, &from))
+		// Read the record from the buffer
+		if (!impure->irsb_buffer->fetch(impure->irsb_position, buffer_record))
 		{
-			fb_assert(map.map_type == FieldMap::REGULAR_FIELD);
-			SET_NULL(record, map.map_id);
-			continue;
+			return false;
 		}
 
-		switch (map.map_type)
+		// Assign fields back to their original streams
+		for (size_t i = 0; i < m_map.getCount(); i++)
 		{
-		case FieldMap::REGULAR_FIELD:
+			const FieldMap& map = m_map[i];
+
+			record_param* const rpb = &request->req_rpb[map.map_stream];
+			rpb->rpb_stream_flags |= RPB_s_refetch;
+			Record* const record = rpb->rpb_record;
+
+			dsc from;
+			if (!EVL_field(NULL, buffer_record, (USHORT) i, &from))
 			{
-				if (record && !record->rec_format)
-				{
-					fb_assert(record->rec_fmt_bk);
-					record->rec_format = record->rec_fmt_bk;
-				}
-
-				dsc to;
-				EVL_field(NULL, record, map.map_id, &to);
-				MOV_move(tdbb, &from, &to);
-				CLEAR_NULL(record, map.map_id);
+				fb_assert(map.map_type == FieldMap::REGULAR_FIELD);
+				SET_NULL(record, map.map_id);
+				continue;
 			}
-			break;
 
-		case FieldMap::TRANSACTION_ID:
-			rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
-			break;
+			switch (map.map_type)
+			{
+			case FieldMap::REGULAR_FIELD:
+				{
+					if (record && !record->rec_format)
+					{
+						fb_assert(record->rec_fmt_bk);
+						record->rec_format = record->rec_fmt_bk;
+					}
 
-		case FieldMap::DBKEY_NUMBER:
-			rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));
-			break;
+					dsc to;
+					EVL_field(NULL, record, map.map_id, &to);
+					MOV_move(tdbb, &from, &to);
+					CLEAR_NULL(record, map.map_id);
+				}
+				break;
 
-		case FieldMap::DBKEY_VALID:
-			rpb->rpb_number.setValid(*from.dsc_address != 0);
-			break;
+			case FieldMap::TRANSACTION_ID:
+				rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
+				break;
 
-		default:
-			fb_assert(false);
+			case FieldMap::DBKEY_NUMBER:
+				rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));
+				break;
+
+			case FieldMap::DBKEY_VALID:
+				rpb->rpb_number.setValid(*from.dsc_address != 0);
+				break;
+
+			default:
+				fb_assert(false);
+			}
 		}
 	}
 
@@ -319,9 +325,19 @@ void BufferedStream::restoreRecords(thread_db* tdbb)
 	m_next->restoreRecords(tdbb);
 }
 
-void BufferedStream::locate(jrd_req* request, FB_UINT64 position)
+void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position)
 {
+	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+
+	// If we haven't fetched and cached the underlying stream completely, do it now
+	if (impure->irsb_flags & irsb_mustread)
+	{
+		while (this->getRecord(tdbb))
+			; // no-op
+		impure->irsb_flags &= ~irsb_mustread;
+	}
+
 	impure->irsb_position = position;
 }
 

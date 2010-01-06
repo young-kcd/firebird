@@ -119,7 +119,7 @@ bool Cursor::fetchNext(thread_db* tdbb)
 	else
 	{
 		BufferedStream* const buffer = (BufferedStream*) m_top;
-		buffer->locate(request, impure->irsb_position);
+		buffer->locate(tdbb, impure->irsb_position);
 
 		if (!buffer->getRecord(tdbb))
 		{
@@ -173,7 +173,7 @@ bool Cursor::fetchPrior(thread_db* tdbb)
 		impure->irsb_position--;
 	}
 
-	buffer->locate(request, impure->irsb_position);
+	buffer->locate(tdbb, impure->irsb_position);
 
 	if (!buffer->getRecord(tdbb))
 	{
@@ -240,7 +240,7 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset)
 
 	BufferedStream* const buffer = (BufferedStream*) m_top;
 	impure->irsb_position = (offset > 0) ? offset - 1 : buffer->getCount(request) + offset;
-	buffer->locate(request, impure->irsb_position);
+	buffer->locate(tdbb, impure->irsb_position);
 
 	if (!buffer->getRecord(tdbb))
 	{
@@ -292,7 +292,7 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
 
 	BufferedStream* const buffer = (BufferedStream*) m_top;
 	impure->irsb_position += offset;
-	buffer->locate(request, impure->irsb_position);
+	buffer->locate(tdbb, impure->irsb_position);
 
 	if (!buffer->getRecord(tdbb))
 	{

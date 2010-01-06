@@ -675,7 +675,7 @@ namespace Jrd
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
 
-		void locate(jrd_req* request, FB_UINT64 position);
+		void locate(thread_db* tdbb, FB_UINT64 position);
 		FB_UINT64 getCount(jrd_req* request) const;
 
 	private:
