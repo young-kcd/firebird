@@ -72,18 +72,6 @@ const ULONG MAX_PAGE_BUFFERS = 131072;
 const ULONG MAX_PAGE_BUFFERS = MAX_SLONG - 1;
 #endif
 
-#define DIRTY_LIST
-//#define DIRTY_TREE
-
-#ifdef DIRTY_TREE
-// AVL-balanced tree node
-
-struct BalancedTreeNode
-{
-	BufferDesc* bdb_node;
-	SSHORT comp;
-};
-#endif // DIRTY_TREE
 
 // BufferControl -- Buffer control block -- one per system
 
@@ -100,13 +88,8 @@ public:
 	UCharStack	bcb_memory;			// Large block partitioned into buffers
 	que			bcb_in_use;			// Que of buffers in use
 	que			bcb_empty;			// Que of empty buffers
-#ifdef DIRTY_TREE
-	BufferDesc*	bcb_btree;			// root of dirty page btree
-#endif
-#ifdef DIRTY_LIST
 	que			bcb_dirty;			// que of dirty buffers
 	SLONG		bcb_dirty_count;	// count of pages in dirty page btree
-#endif
 	Precedence*	bcb_free;			// Free precedence blocks
 	que			bcb_free_lwt;		// Free latch wait blocks
 	que			bcb_free_slt;		// Free shared latch blocks
@@ -145,21 +128,13 @@ public:
 	Lock*		bdb_lock;				// Lock block for buffer
 	que			bdb_que;				// Buffer que
 	que			bdb_in_use;				// queue of buffers in use
-#ifdef DIRTY_LIST
 	que			bdb_dirty;				// dirty pages LRU queue
-#endif
 	Ods::pag*	bdb_buffer;				// Actual buffer
 	exp_index_buf*	bdb_expanded_buffer;	// expanded index buffer
 	PageNumber	bdb_page;				// Database page number in buffer
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		// vector of dirty flags to reduce commit overhead
 	SLONG		bdb_mark_transaction;	// hi-water mark transaction to defer header page I/O
-#ifdef DIRTY_TREE
-	BufferDesc*	bdb_left;				// dirty page binary tree link
-	BufferDesc*	bdb_right;				// dirty page binary tree link
-	BufferDesc*	bdb_parent;				// dirty page binary tree link
-	SSHORT		bdb_balance;			// AVL-tree balance (-1, 0, 1)
-#endif
 	que			bdb_lower;				// lower precedence que
 	que			bdb_higher;				// higher precedence que
 	que			bdb_waiters;			// latch wait que
