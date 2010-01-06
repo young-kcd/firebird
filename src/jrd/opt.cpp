@@ -3293,7 +3293,8 @@ static SortedStream* gen_sort(thread_db* tdbb,
 #ifndef WORDS_BIGENDIAN
 		map_length = ROUNDUP(map_length, sizeof(SLONG));
 #endif
-		sort_key->skd_offset = map_item->flagOffset = (USHORT) map_length++;
+		const USHORT flag_offset = (USHORT) map_length++;
+		sort_key->skd_offset = flag_offset;
 		sort_key->skd_dtype = SKD_text;
 		sort_key->skd_length = 1;
 		// Handle nulls placement
@@ -3330,6 +3331,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		++sort_key;
 		map_item->clear();
 		map_item->node = node;
+		map_item->flagOffset = flag_offset;
 		map_item->desc = *desc;
 		map_item->desc.dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
