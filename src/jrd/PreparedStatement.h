@@ -76,7 +76,15 @@ public:
 			size_t number;
 		};
 
-		struct Slot
+		struct InputSlot
+		{
+			Type type;
+			unsigned number;
+			const void* address;
+			const bool* specifiedAddress;
+		};
+
+		struct OutputSlot
 		{
 			Type type;
 			unsigned number;
@@ -102,7 +110,7 @@ public:
 
 		template <typename T> OutputParam operator ()(const char* chunk, T& param)
 		{
-			add(getType(param), &param, outputSlots);
+			addOutput(getType(param), &param, outputSlots);
 			return OutputParam(chunk, outputSlots.getCount() - 1);
 		}
 
@@ -124,16 +132,16 @@ public:
 			return *this;
 		}
 
-		template <typename T> Builder& operator <<(TriStateType<T>& param)
+		template <typename T> Builder& operator <<(const TriStateType<T>& param)
 		{
 			*this << param.value;
 			inputSlots[inputSlots.getCount() - 1].specifiedAddress = &param.specified;
 			return *this;
 		}
 
-		template <typename T> Builder& operator <<(T& param)
+		template <typename T> Builder& operator <<(const T& param)
 		{
-			add(getType(param), &param, inputSlots);
+			addInput(getType(param), &param, inputSlots);
 			text += "?";
 			return *this;
 		}
@@ -149,16 +157,26 @@ public:
 
 	private:
 		// Make the C++ template engine return the constant for each type.
-		static Type getType(SSHORT&)					{ return TYPE_SSHORT; }
-		static Type getType(SLONG&)						{ return TYPE_SLONG; }
-		static Type getType(SINT64&)					{ return TYPE_SINT64; }
-		static Type getType(double&)					{ return TYPE_DOUBLE; }
-		static Type getType(Firebird::AbstractString&)	{ return TYPE_STRING; }
-		static Type getType(Firebird::MetaName&)		{ return TYPE_METANAME; }
+		static Type getType(SSHORT)								{ return TYPE_SSHORT; }
+		static Type getType(SLONG)								{ return TYPE_SLONG; }
+		static Type getType(SINT64)								{ return TYPE_SINT64; }
+		static Type getType(double)								{ return TYPE_DOUBLE; }
+		static Type getType(const Firebird::AbstractString&)	{ return TYPE_STRING; }
+		static Type getType(const Firebird::MetaName&)			{ return TYPE_METANAME; }
 
-		void add(Type type, void* address, Firebird::Array<Slot>& slots)
+		void addInput(Type type, const void* address, Firebird::Array<InputSlot>& slots)
 		{
-			Slot slot;
+			InputSlot slot;
+			slot.type = type;
+			slot.number = (unsigned) slots.getCount() + 1;
+			slot.address = address;
+			slot.specifiedAddress = NULL;
+			slots.add(slot);
+		}
+
+		void addOutput(Type type, void* address, Firebird::Array<OutputSlot>& slots)
+		{
+			OutputSlot slot;
 			slot.type = type;
 			slot.number = (unsigned) slots.getCount() + 1;
 			slot.address = address;
@@ -168,7 +186,8 @@ public:
 
 	private:
 		Firebird::string text;
-		Firebird::Array<Slot> inputSlots, outputSlots;
+		Firebird::Array<InputSlot> inputSlots;
+		Firebird::Array<OutputSlot> outputSlots;
 		unsigned outputParams;
 	};
 
@@ -261,7 +280,7 @@ public:
 	{
 		fb_assert(param > 0);
 
-		const dsc* desc = &inValues[(param - 1) * 2 + 1];
+		dsc* desc = &inValues[(param - 1) * 2 + 1];
 		fb_assert(desc->dsc_dtype == dtype_short);
 		*reinterpret_cast<SSHORT*>(desc->dsc_address) = -1;
 	}

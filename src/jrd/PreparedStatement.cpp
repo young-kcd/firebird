@@ -54,7 +54,7 @@ namespace Jrd {
 // Move data from result set message to user variables.
 void PreparedStatement::Builder::moveFromResultSet(thread_db* tdbb, ResultSet* rs) const
 {
-	for (Array<Slot>::const_iterator i = outputSlots.begin(); i != outputSlots.end(); ++i)
+	for (Array<OutputSlot>::const_iterator i = outputSlots.begin(); i != outputSlots.end(); ++i)
 	{
 		switch (i->type)
 		{
@@ -98,7 +98,7 @@ void PreparedStatement::Builder::moveFromResultSet(thread_db* tdbb, ResultSet* r
 // Move data from user variables to the request input message.
 void PreparedStatement::Builder::moveToStatement(thread_db* tdbb, PreparedStatement* stmt) const
 {
-	for (Array<Slot>::const_iterator i = inputSlots.begin(); i != inputSlots.end(); ++i)
+	for (Array<InputSlot>::const_iterator i = inputSlots.begin(); i != inputSlots.end(); ++i)
 	{
 		if (i->specifiedAddress && !*i->specifiedAddress)
 		{
