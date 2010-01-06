@@ -127,6 +127,7 @@ EXPORTS
 	fb_shutdown
 	fb_shutdown_callback
 	fb_cancel_operation
+	fb_disconnect_transaction
 
 	perf_format	@100
 	perf_get_info	@101
