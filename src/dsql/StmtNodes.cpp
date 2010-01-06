@@ -738,8 +738,7 @@ StmtNode* ExceptionNode::internalDsqlPass()
 	ExceptionNode* node = FB_NEW(getPool()) ExceptionNode(getPool());
 	node->dsqlScratch = dsqlScratch;
 	node->name = name;
-	if (dsqlMessageExpr)
-		node->dsqlMessageExpr = PASS1_node(dsqlScratch, dsqlMessageExpr);
+	node->dsqlMessageExpr = PASS1_node(dsqlScratch, dsqlMessageExpr);
 
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 }
