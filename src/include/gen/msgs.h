@@ -720,6 +720,7 @@ Data source : @4"},		/* eds_statement */
 	{335545013, "Invalid time"},		/* invalid_time_val */
 	{335545014, "Invalid timestamp"},		/* invalid_timestamp_val */
 	{335545015, "Invalid index @1"},		/* invalid_index_val */
+	{335545016, "@1"},		/* formatted_exception */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

@@ -191,7 +191,7 @@ static void		blr_indent(gds_ctl*, SSHORT);
 static void		blr_print_blr(gds_ctl*, UCHAR);
 static SCHAR	blr_print_byte(gds_ctl*);
 static SCHAR	blr_print_char(gds_ctl*);
-static void		blr_print_cond(gds_ctl*);
+static void		blr_print_cond(gds_ctl*, SSHORT);
 static int		blr_print_dtype(gds_ctl*);
 static void		blr_print_join(gds_ctl*);
 static SLONG	blr_print_line(gds_ctl*, SSHORT);
@@ -2815,7 +2815,7 @@ static SCHAR blr_print_char(gds_ctl* control)
 }
 
 
-static void blr_print_cond(gds_ctl* control)
+static void blr_print_cond(gds_ctl* control, SSHORT level)
 {
 /**************************************
  *
@@ -2830,6 +2830,7 @@ static void blr_print_cond(gds_ctl* control)
 	SSHORT n;
 
 	const USHORT ctype = control->ctl_blr_reader.getByte();
+	SLONG offset = control->ctl_blr_reader.getOffset();
 
 	switch (ctype)
 	{
@@ -2853,6 +2854,17 @@ static void blr_print_cond(gds_ctl* control)
 		while (--n >= 0)
 			blr_print_char(control);
 		blr_print_verb(control, 0);
+		break;
+
+	case blr_exception_params:
+		blr_format(control, "blr_exception_params, ");
+		n = blr_print_byte(control);
+		while (--n >= 0)
+			blr_print_char(control);
+		n = blr_print_word(control);
+		blr_print_line(control, (SSHORT) offset);
+		while (--n >= 0)
+			blr_print_verb(control, level);
 		break;
 
 	case blr_sql_code:
@@ -3241,13 +3253,13 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			while (--n >= 0)
 			{
 				blr_indent(control, level);
-				blr_print_cond(control);
+				blr_print_cond(control, level);
 				offset = blr_print_line(control, (SSHORT) offset);
 			}
 			break;
 
 		case op_set_error:
-			blr_print_cond(control);
+			blr_print_cond(control, level);
 			break;
 
 		case op_indent:

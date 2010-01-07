@@ -91,7 +91,6 @@ static void gen_udf(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
 static void stuff_context(DsqlCompiledStatement*, const dsql_ctx*);
 static void stuff_meta_string(DsqlCompiledStatement*, const char*);
-static void stuff_word(DsqlCompiledStatement*, USHORT);
 
 // STUFF is defined in dsql.h for use in common with ddl.c
 
@@ -3084,23 +3083,4 @@ static void stuff_context(DsqlCompiledStatement* dsqlScratch, const dsql_ctx* co
 static void stuff_meta_string(DsqlCompiledStatement* dsqlScratch, const char* string)
 {
 	dsqlScratch->append_meta_string(string);
-}
-
-
-/**
-
- 	stuff_word
-
-    @brief	Cram a word into the blr buffer.  If the buffer is getting
- 	ready to overflow, expand it.
-
-
-    @param dsqlScratch
-    @param word
-
- **/
-static void stuff_word(DsqlCompiledStatement* dsqlScratch, USHORT word)
-{
-	stuff(dsqlScratch, word);
-	stuff(dsqlScratch, word >> 8);
 }

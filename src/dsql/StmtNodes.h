@@ -145,11 +145,13 @@ class ExceptionNode : public StmtNode
 {
 public:
 	explicit ExceptionNode(MemoryPool& pool, const Firebird::MetaName& aName = "",
-				dsql_nod* aDsqlMessageExpr = NULL)
+				dsql_nod* aDsqlMessageExpr = NULL, dsql_nod* aDsqlParameters = NULL)
 		: StmtNode(pool),
 		  name(pool, aName),
 		  dsqlMessageExpr(aDsqlMessageExpr),
+		  dsqlParameters(aDsqlParameters),
 		  messageExpr(NULL),
+		  parameters(NULL),
 		  exception(NULL)
 	{
 	}
@@ -173,7 +175,9 @@ private:
 public:
 	Firebird::MetaName name;
 	dsql_nod* dsqlMessageExpr;
+	dsql_nod* dsqlParameters;
 	jrd_nod* messageExpr;
+	jrd_nod* parameters;
 	PsqlException* exception;
 };
 

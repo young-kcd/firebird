@@ -79,13 +79,14 @@
 #define blr_right		(unsigned char)2
 #define blr_full		(unsigned char)3
 
-#define blr_gds_code		(unsigned char)0
-#define blr_sql_code		(unsigned char)1
-#define blr_exception		(unsigned char)2
-#define blr_trigger_code 	(unsigned char)3
-#define blr_default_code 	(unsigned char)4
-#define blr_raise			(unsigned char)5
-#define blr_exception_msg	(unsigned char)6
+#define blr_gds_code			(unsigned char)0
+#define blr_sql_code			(unsigned char)1
+#define blr_exception			(unsigned char)2
+#define blr_trigger_code 		(unsigned char)3
+#define blr_default_code 		(unsigned char)4
+#define blr_raise				(unsigned char)5
+#define blr_exception_msg		(unsigned char)6
+#define blr_exception_params	(unsigned char)7
 
 #define blr_version4		(unsigned char)4
 #define blr_version5		(unsigned char)5

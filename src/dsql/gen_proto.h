@@ -39,6 +39,13 @@ inline void stuff(Jrd::DsqlCompiledStatement* statement, const UCHAR byte)
 	statement->getBlrData().add(byte);
 }
 
+// Cram a word into the blr buffer.
+inline void stuff_word(Jrd::DsqlCompiledStatement* dsqlScratch, USHORT word)
+{
+	stuff(dsqlScratch, word);
+	stuff(dsqlScratch, word >> 8);
+}
+
 // Write out a string with one byte of length.
 inline void stuff_string(Jrd::DsqlCompiledStatement* statement, const char* string, int len)
 {

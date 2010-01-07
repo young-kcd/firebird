@@ -2269,6 +2269,8 @@ excp_statement
 		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2)); }
 	| EXCEPTION symbol_exception_name value
 		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2), $3); }
+	| EXCEPTION symbol_exception_name USING '(' value_list ')'
+		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2), NULL, make_list($5)); }
 	;
 
 raise_statement

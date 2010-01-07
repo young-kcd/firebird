@@ -75,3 +75,43 @@ Run-time error codes (FB 1.5)
 
   See also:
     README.context_variables
+
+
+Parameterized exceptions (FB 3.0)
+---------------------------------
+
+  Function:
+    Allow to define exception message with slots for parameters and pass the parameters when
+    raising the exception.
+
+  Author:
+    Adriano dos Santos Fernandes <adrianosf@gmail.com>
+
+  Syntax:
+    EXCEPTION <name> USING ( <value list> )
+
+  Example:
+    create exception e_invalid_val 'Invalid value @1 for the field @2';
+
+    ...
+    if (val < 1000) then
+       thing = val;
+    else
+       exception e_invalid_val using (val, 'thing');
+    end
+
+  Notes:
+    The status vector is generated using that codes combination:
+      isc_except, <exception number>,
+      isc_formatted_exception, <exception message>, <exception parameters>
+
+    The client library formats isc_formatted_exception in an special way, using the exception
+    parameters as argument to the exception message, instead of formatting all arguments of
+    isc_formatted_exception for a predefined internal text. That's important for any code that
+    formats status vectors without the help of the client library. Also, the client library older
+    than 3.0 will not be able to correctly format exceptions raised in this new way.
+
+    @N means the N parameter (where N starts at 1) passed in the exception raise command. If a N
+    parameter is not passed, the text is not substituted. If NULL is passed, it's replaced by string
+    '*** null ***'. If more parameters is passed than used in the exception message, they are
+    ignored.

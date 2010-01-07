@@ -28,10 +28,12 @@
 #include "../jrd/common.h"
 #include "BaseStream.h"
 #include "MsgPrint.h"
+#include "array.h"
 #include <string.h>
 #include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 #include "../jrd/file_params.h"
+#include "../jrd/msg_encode.h"
 
 
 namespace MsgFormat
@@ -233,7 +235,7 @@ int MsgPrintHelper(BaseStream& out_stream, const safe_cell& item)
 
 
 // Prints the whole chain of arguments, according to format and in the specified stream.
-int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
+int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg, bool userFormatting)
 {
 	int out_bytes = 0;
 	for (const char* iter = format; true; ++iter)
@@ -247,25 +249,37 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 			switch (iter[1])
 			{
 			case 0:
-				out_bytes += out_stream.write("@(EOF)", 6);
+				if (userFormatting)
+					out_bytes += out_stream.write("@", 1);
+				else
+					out_bytes += out_stream.write("@(EOF)", 6);
 				return out_bytes;
 			case '@':
 				out_bytes += out_stream.write(iter, 1);
 				break;
 			default:
 				{
-					const int pos = iter[1] - '0';
-					if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
+					const int start = userFormatting ? 1 : 0;
+					const int pos = start + iter[1] - '0';
+					if (pos > start && static_cast<size_t>(pos) <= arg.m_count)
 						out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
-					else if (pos >= 0 && pos <= 9)
+					else
 					{
-						// Show the missing or out of range param number.
-						out_bytes += MsgPrint(out_stream,
-							"<Missing arg #@1 - possibly status vector overflow>",
-							SafeArg() << pos);
+						if (userFormatting)
+						{
+							out_bytes += out_stream.write("@", 1);
+							out_bytes += out_stream.write(iter + 1, 1);
+						}
+						else if (pos >= 0 && pos <= 9)
+						{
+							// Show the missing or out of range param number.
+							out_bytes += MsgPrint(out_stream,
+								"<Missing arg #@1 - possibly status vector overflow>",
+								SafeArg() << pos);
+						}
+						else // Something not a number following @, invalid.
+							out_bytes += out_stream.write("(error)", 7);
 					}
-					else // Something not a number following @, invalid.
-						out_bytes += out_stream.write("(error)", 7);
 				}
 			}
 			++iter;
@@ -308,10 +322,10 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 
 
 // Shortcut version to format a string with arguments on standard output.
-int MsgPrint(const char* format, const SafeArg& arg)
+int MsgPrint(const char* format, const SafeArg& arg, bool userFormatting)
 {
 	StdioStream st(stdout);
-	return MsgPrint(st, format, arg);
+	return MsgPrint(st, format, arg, userFormatting);
 }
 
 
@@ -327,44 +341,28 @@ int MsgPrint(const char* format)
 
 // Shortcut version to format a string with arguments on a string output
 // of a given size.
-int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg)
+int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg,
+	bool userFormatting)
 {
 	StringStream st(plainstring, s_size);
-	return MsgPrint(st, format, arg);
+	return MsgPrint(st, format, arg, userFormatting);
 }
 
 
 // Shortcut version to format a string with arguments on standard error.
-int MsgPrintErr(const char* format, const SafeArg& arg)
+int MsgPrintErr(const char* format, const SafeArg& arg, bool userFormatting)
 {
 	StdioStream st(stderr, true); // flush
-	return MsgPrint(st, format, arg);
+	return MsgPrint(st, format, arg, userFormatting);
 }
 
 } // namespace
 
 
-int fb_msg_format(void*        handle,
-				  USHORT       facility,
-				  USHORT       number,
-				  unsigned int bsize,
-				  TEXT*        buffer,
-				  const        MsgFormat::SafeArg& arg)
+// Lookup and format message.  Return as much of formatted string as fits in caller's buffer.
+int fb_msg_format(void* handle, USHORT facility, USHORT number, unsigned int bsize, TEXT* buffer,
+	const MsgFormat::SafeArg& arg)
 {
-/**************************************
- *
- *	f b _ m s g _ f o r m a t
- *
- **************************************
- *
- * Functional description
- *	Lookup and format message.  Return as much of formatted string
- *	as fits in caller's buffer.
- *
- **************************************/
-
-	using MsgFormat::MsgPrint;
-
 	// The field MESSAGES.TEXT is 118 bytes long.
 	int total_msg = 0;
 	char msg[120] = "";
@@ -380,7 +378,18 @@ int fb_msg_format(void*        handle,
 			total_msg = fb_utils::snprintf(buffer, bsize, msg, rep[0], rep[1], rep[2], rep[3], rep[4]);
 		}
 		else
-			total_msg = MsgPrint(buffer, bsize, msg, arg);
+		{
+			if (ENCODE_ISC_MSG(number, facility) == isc_formatted_exception && arg.getCount() > 0)
+			{
+				Firebird::HalfStaticArray<char, BUFFER_SMALL> msgBuffer(bsize);
+				MsgFormat::StringStream msgStream(msgBuffer.begin(), bsize);
+				MsgPrintHelper(msgStream, arg.getCell(0));
+
+				total_msg = MsgPrint(buffer, bsize, msgBuffer.begin(), arg, 1);
+			}
+			else
+				total_msg = MsgPrint(buffer, bsize, msg, arg);
+		}
 	}
 	else
 	{

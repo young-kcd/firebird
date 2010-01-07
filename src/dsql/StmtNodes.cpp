@@ -674,7 +674,7 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	UCHAR /*blrOp*/)
 {
 	ExceptionNode* node = FB_NEW(pool) ExceptionNode(pool);
-	const bool flag = (csb->csb_blr_reader.peekByte() == blr_exception_msg);
+	const UCHAR type = csb->csb_blr_reader.peekByte();
 	const USHORT codeType = csb->csb_blr_reader.getByte();
 
 	// Don't create PsqlException if blr_raise is used.
@@ -707,6 +707,7 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 			case blr_exception:
 			case blr_exception_msg:
+			case blr_exception_params:
 				{
 					item.xcp_type = xcp_xcp_code;
 					PAR_name(csb, node->name);
@@ -726,7 +727,18 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 		}
 	}
 
-	if (flag)
+	if (type == blr_exception_params)
+	{
+		USHORT count = csb->csb_blr_reader.getWord();
+
+		node->parameters = PAR_make_node(tdbb, count);
+		node->parameters->nod_type = nod_list;
+		node->parameters->nod_count = count;
+
+		for (unsigned i = 0; i < count; ++i)
+			node->parameters->nod_arg[i] = PAR_parse_node(tdbb, csb, VALUE);
+	}
+	else if (type == blr_exception_msg)
 		node->messageExpr = PAR_parse_node(tdbb, csb, VALUE);
 
 	return node;
@@ -739,6 +751,7 @@ StmtNode* ExceptionNode::internalDsqlPass()
 	node->dsqlScratch = dsqlScratch;
 	node->name = name;
 	node->dsqlMessageExpr = PASS1_node(dsqlScratch, dsqlMessageExpr);
+	node->dsqlParameters = PASS1_node(dsqlScratch, dsqlParameters);
 
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 }
@@ -766,17 +779,28 @@ void ExceptionNode::genBlr()
 		return;
 	}
 
-	// If exception value is defined, it means we have user-defined exception message here,
-	// so blr_exception_msg verb should be generated.
-	if (dsqlMessageExpr)
+	// If exception parameters or value is defined, it means we have user-defined exception message
+	// here, so blr_exception_msg verb should be generated.
+	if (dsqlParameters)
+		stuff(statement, blr_exception_params);
+	else if (dsqlMessageExpr)
 		stuff(statement, blr_exception_msg);
 	else	// Otherwise go usual way, i.e. generate blr_exception.
 		stuff(statement, blr_exception);
 
 	stuff_cstring(statement, name.c_str());
 
-	// If exception value is defined, generate appropriate BLR verbs.
-	if (dsqlMessageExpr)
+	// If exception parameters or value is defined, generate appropriate BLR verbs.
+	if (dsqlParameters)
+	{
+		stuff_word(statement, dsqlParameters->nod_count);
+
+		dsql_nod** ptr = dsqlParameters->nod_arg;
+		const dsql_nod* const* end = ptr + dsqlParameters->nod_count;
+		while (ptr < end)
+			GEN_expr(dsqlScratch, *ptr++);
+	}
+	else if (dsqlMessageExpr)
 		GEN_expr(dsqlScratch, dsqlMessageExpr);
 }
 
@@ -784,6 +808,7 @@ void ExceptionNode::genBlr()
 ExceptionNode* ExceptionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	messageExpr = CMP_pass1(tdbb, csb, messageExpr);
+	parameters = CMP_pass1(tdbb, csb, parameters);
 	return this;
 }
 
@@ -791,6 +816,7 @@ ExceptionNode* ExceptionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 ExceptionNode* ExceptionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	messageExpr = CMP_pass2(tdbb, csb, messageExpr, node);
+	parameters = CMP_pass2(tdbb, csb, parameters, node);
 	return this;
 }
 
@@ -901,24 +927,50 @@ void ExceptionNode::setError(thread_db* tdbb) const
 			else
 				s = NULL;
 
-			if (s && exName.length())
+			Arg::StatusVector status;
+			ISC_STATUS msgCode = parameters ? isc_formatted_exception : isc_random;
+
+			if (s && exName.hasData())
 			{
-				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
-						 Arg::Gds(isc_random) << Arg::Str(exName) <<
-						 Arg::Gds(isc_random) << Arg::Str(s));
+				status << Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
+						  Arg::Gds(isc_random) << Arg::Str(exName) <<
+						  Arg::Gds(msgCode) << Arg::Str(s);
 			}
 			else if (s)
 			{
-				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
-						 Arg::Gds(isc_random) << Arg::Str(s));
+				status << Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
+						  Arg::Gds(msgCode) << Arg::Str(s);
 			}
-			else if (exName.length())
+			else if (exName.hasData())
 			{
 				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
 						 Arg::Gds(isc_random) << Arg::Str(exName));
 			}
 			else
 				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode));
+
+			// Preallocate the strings, because Arg::StatusVector store the pointers.
+			ObjectsArray<string> paramsStr;
+
+			if (parameters)
+			{
+				for (unsigned i = 0; i < parameters->nod_count; ++i)
+				{
+					const dsc* value = EVL_expr(tdbb, parameters->nod_arg[i]);
+
+					if (!value || (request->req_flags & req_null))
+						paramsStr.push(NULL_STRING_MARK);
+					else
+						paramsStr.push(MOV_make_string2(tdbb, value, ttype_metadata));
+				}
+
+				// And add the values to the status vector only when they are all created and will
+				// not move in paramsStr.
+				for (unsigned i = 0; i < parameters->nod_count; ++i)
+					status << paramsStr[i];
+			}
+
+			ERR_post(status);
 		}
 
 		default:
