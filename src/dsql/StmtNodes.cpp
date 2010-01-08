@@ -20,6 +20,8 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
+#include "../common/classes/BaseStream.h"
+#include "../common/classes/MsgPrint.h"
 #include "../dsql/StmtNodes.h"
 #include "../dsql/node.h"
 #include "../jrd/jrd.h"
@@ -934,13 +936,11 @@ void ExceptionNode::setError(thread_db* tdbb) const
 			{
 				status << Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
 						  Arg::Gds(isc_random) << Arg::Str(exName) <<
-						  Arg::Gds(msgCode) << Arg::Str(s);
+						  Arg::Gds(msgCode);
 			}
 			else if (s)
-			{
 				status << Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
-						  Arg::Gds(msgCode) << Arg::Str(s);
-			}
+						  Arg::Gds(msgCode);
 			else if (exName.hasData())
 			{
 				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode) <<
@@ -949,7 +949,8 @@ void ExceptionNode::setError(thread_db* tdbb) const
 			else
 				ERR_post(Arg::Gds(isc_except) << Arg::Num(xcpCode));
 
-			// Preallocate the strings, because Arg::StatusVector store the pointers.
+			// Preallocate objects, because Arg::StatusVector store pointers.
+			string formattedMsg;
 			ObjectsArray<string> paramsStr;
 
 			if (parameters)
@@ -964,11 +965,24 @@ void ExceptionNode::setError(thread_db* tdbb) const
 						paramsStr.push(MOV_make_string2(tdbb, value, ttype_metadata));
 				}
 
-				// And add the values to the status vector only when they are all created and will
-				// not move in paramsStr.
+				// And add the values to the args and status vector only after they are all created
+				// and will not move in paramsStr.
+
+				MsgFormat::SafeArg arg;
+				for (unsigned i = 0; i < parameters->nod_count; ++i)
+					arg << paramsStr[i].c_str();
+
+				MsgFormat::StringRefStream stream(formattedMsg);
+				MsgFormat::MsgPrint(stream, s, arg, true);
+
+				status << formattedMsg;
+				status << s;	// add the exception text
+
 				for (unsigned i = 0; i < parameters->nod_count; ++i)
 					status << paramsStr[i];
 			}
+			else
+				status << s;	// add the exception text
 
 			ERR_post(status);
 		}

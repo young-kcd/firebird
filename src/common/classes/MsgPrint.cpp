@@ -259,9 +259,8 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg, boo
 				break;
 			default:
 				{
-					const int start = userFormatting ? 1 : 0;
-					const int pos = start + iter[1] - '0';
-					if (pos > start && static_cast<size_t>(pos) <= arg.m_count)
+					const int pos = iter[1] - '0';
+					if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
 						out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
 					else
 					{
@@ -378,18 +377,7 @@ int fb_msg_format(void* handle, USHORT facility, USHORT number, unsigned int bsi
 			total_msg = fb_utils::snprintf(buffer, bsize, msg, rep[0], rep[1], rep[2], rep[3], rep[4]);
 		}
 		else
-		{
-			if (ENCODE_ISC_MSG(number, facility) == isc_formatted_exception && arg.getCount() > 0)
-			{
-				Firebird::HalfStaticArray<char, BUFFER_SMALL> msgBuffer(bsize);
-				MsgFormat::StringStream msgStream(msgBuffer.begin(), bsize);
-				MsgPrintHelper(msgStream, arg.getCell(0));
-
-				total_msg = MsgPrint(buffer, bsize, msgBuffer.begin(), arg, 1);
-			}
-			else
-				total_msg = MsgPrint(buffer, bsize, msg, arg);
-		}
+			total_msg = MsgPrint(buffer, bsize, msg, arg);
 	}
 	else
 	{

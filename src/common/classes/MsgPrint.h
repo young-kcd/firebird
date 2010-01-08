@@ -95,6 +95,7 @@ int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const S
 
 // E. Prints a formatted string into stderr and flushed the buffer.
 int MsgPrintErr(const char* format, const SafeArg& arg, bool userFormatting = false);
+
 } // namespace
 
 // Type safe replacement of the old gds__msg_format.
