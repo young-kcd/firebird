@@ -1,3 +1,13 @@
+2010-01-08 15:13  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.exception_handling (1.4),
+	src/common/classes/BaseStream.h (1.4),
+	src/common/classes/MsgPrint.cpp (1.17),
+	src/common/classes/MsgPrint.h (1.7), src/dsql/StmtNodes.cpp (1.35):
+
+	Update way to deliver parameterized exceptions so the client
+	doesn't need special handling
+
 2010-01-07 01:16  asfernandes
 
 	* firebird2/: doc/sql.extensions/README.exception_handling (1.3),
