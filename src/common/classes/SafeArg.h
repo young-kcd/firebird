@@ -196,4 +196,3 @@ inline size_t SafeArg::getCount() const
 } // namespace
 
 #endif // FB_SAFEARG_H
-

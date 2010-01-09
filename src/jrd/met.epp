@@ -1172,9 +1172,9 @@ void MET_delete_shadow(thread_db* tdbb, USHORT shadow_number)
 }
 
 
-bool MET_dsql_cache_use(thread_db* tdbb, int type, const Firebird::MetaName& name, const Firebird::MetaName& package)
+bool MET_dsql_cache_use(thread_db* tdbb, int type, const MetaName& name, const MetaName& package)
 {
-	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, QualifiedName(package, name));
+	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, QualifiedName(name, package));
 
 	const bool obsolete = item->obsolete;
 
@@ -1191,10 +1191,9 @@ bool MET_dsql_cache_use(thread_db* tdbb, int type, const Firebird::MetaName& nam
 }
 
 
-void MET_dsql_cache_release(thread_db* tdbb, int type, const Firebird::MetaName& name,
-	const Firebird::MetaName& package)
+void MET_dsql_cache_release(thread_db* tdbb, int type, const MetaName& name, const MetaName& package)
 {
-	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, QualifiedName(package, name));
+	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, QualifiedName(name, package));
 
 	// release lock
 	LCK_release(tdbb, item->lock);

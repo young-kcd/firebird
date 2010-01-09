@@ -28,12 +28,10 @@
 #include "../jrd/common.h"
 #include "BaseStream.h"
 #include "MsgPrint.h"
-#include "array.h"
 #include <string.h>
 #include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 #include "../jrd/file_params.h"
-#include "../jrd/msg_encode.h"
 
 
 namespace MsgFormat
