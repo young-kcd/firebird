@@ -63,6 +63,7 @@
 #include <stddef.h>				// offsetof
 
 #include <stdio.h>
+#include "dyn_consts.h"
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/constants.h"

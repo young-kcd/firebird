@@ -75,6 +75,7 @@
  */
 
 #include "firebird.h"
+#include "dyn_consts.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

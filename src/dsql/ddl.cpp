@@ -69,6 +69,7 @@
  */
 
 #include "firebird.h"
+#include "dyn_consts.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/SysFunction.h"

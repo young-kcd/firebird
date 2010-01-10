@@ -28,6 +28,7 @@
 //
 
 #include "firebird.h"
+#include "dyn_consts.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
