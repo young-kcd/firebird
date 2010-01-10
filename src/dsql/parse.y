@@ -687,7 +687,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  firstname_opt
 %type <int32Val>   first_file_length
 
-%type <legacyNode> generator_clause grant grant_option granted_by granted_by_text grantee grantee_list
+%type <legacyNode> grant grant_option granted_by granted_by_text grantee grantee_list
 %type <legacyNode> grantor group_by_item group_by_list group_clause gtt_recreate_clause gtt_scope
 %type <legacyNode> gtt_table_clause
 %type <legacyStr>  grant_admin grant_admin_opt
@@ -799,7 +799,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <boolVal> release_only_opt
 
-%type <ddlNode> alter_charset_clause
+%type <ddlNode> alter_charset_clause generator_clause
 %type <stmtNode> if_then_else in_autonomous_transaction excp_statement raise_statement
 %type <execBlockNode> exec_block
 
@@ -1181,9 +1181,9 @@ create_clause	: EXCEPTION exception_clause
 		| VIEW view_clause
 			{ $$ = $2; }
 		| GENERATOR generator_clause
-			{ $$ = $2; }
+			{ $$ = makeClassNode($2); }
 		| SEQUENCE generator_clause
-			{ $$ = $2; }
+			{ $$ = makeClassNode($2); }
 		| DATABASE db_clause
 			{ $$ = $2; }
 		| DOMAIN domain_clause
@@ -1389,9 +1389,12 @@ check_constraint	: CHECK begin_trigger '(' search_condition ')' end_trigger
 
 // CREATE SEQUENCE/GENERATOR
 
-generator_clause : symbol_generator_name
-			{ $$ = make_node (nod_def_generator, (int) e_gen_count, $1); }
-		 ;
+generator_clause
+	: symbol_generator_name
+		{
+			$$ = FB_NEW(getPool()) CreateSequenceNode(getPool(), compilingText, toName($1));
+		}
+	;
 
 
 // CREATE ROLE

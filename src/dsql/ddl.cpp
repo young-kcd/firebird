@@ -130,7 +130,6 @@ static void define_field(DsqlCompilerScratch*, dsql_nod*, SSHORT, const dsql_str
 static void define_filter(DsqlCompilerScratch*);
 static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void define_collation(DsqlCompilerScratch*);
-static void define_generator(DsqlCompilerScratch*);
 static void define_role(DsqlCompilerScratch*);
 static void define_index(DsqlCompilerScratch*);
 #ifdef NOT_USED_OR_REPLACED
@@ -2194,27 +2193,6 @@ static void define_collation(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-static void define_generator(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ g e n e r a t o r
- *
- **************************************
- *
- * Function
- *	create a generator.
- *
- **************************************/
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	const dsql_str* gen_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_gen_name];
-	statement->append_cstring(isc_dyn_def_generator, gen_name->str_data);
-	statement->append_uchar(isc_dyn_end);
-}
-
-
 static void define_index(DsqlCompilerScratch* dsqlScratch)
 {
 /**************************************
@@ -2385,9 +2363,9 @@ static void define_relation(DsqlCompilerScratch* dsqlScratch)
 static void define_role(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_str* gen_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_gen_name];
+	const dsql_str* role_name = (dsql_str*) statement->getDdlNode()->nod_arg[0];
 
-	statement->append_cstring(isc_dyn_def_sql_role, gen_name->str_data);
+	statement->append_cstring(isc_dyn_def_sql_role, role_name->str_data);
 	statement->append_uchar(isc_dyn_end);
 }
 
@@ -3817,10 +3795,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	case nod_grant:
 	case nod_revoke:
 		grant_revoke(dsqlScratch);
-		break;
-
-	case nod_def_generator:
-		define_generator(dsqlScratch);
 		break;
 
 	case nod_def_role:

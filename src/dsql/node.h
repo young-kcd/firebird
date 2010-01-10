@@ -78,7 +78,6 @@ enum nod_t
 	nod_def_exception,
 	nod_mod_exception,
 	nod_del_exception,
-	nod_def_generator,
 	nod_del_generator,
 	nod_def_filter,
 	nod_del_filter,
@@ -710,9 +709,6 @@ enum node_args {
 
 	e_adb_all = 0,			//
 	e_adb_count,
-
-	e_gen_name = 0,			//
-	e_gen_count,
 
 	e_filter_name = 0,		//
 	e_filter_in_type,

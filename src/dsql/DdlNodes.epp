@@ -82,6 +82,9 @@ static void rethrowMetaException(const status_exception& ex, ISC_STATUS code, bo
 }
 
 
+//----------------------
+
+
 void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 	DdlTriggerWhen when, int action, const Firebird::MetaName& objectName,
 	const Firebird::string& sqlText)
@@ -2781,6 +2784,76 @@ void RecreateTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	createNode->execute(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void CreateSequenceNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateSequenceNode\n"
+		"  name: %s\n",
+		name.c_str());
+}
+
+
+void CreateSequenceNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
+
+	bool endStore = false;
+
+	try
+	{
+		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_generator);
+
+		AutoCacheRequest request(tdbb, drq_s_gens, DYN_REQUESTS);
+		int faults = 0;
+
+		while (true)
+		{
+			try
+			{
+				SINT64 id = DYN_UTIL_gen_unique_id(tdbb, drq_g_nxt_gen_id, "RDB$GENERATORS");
+
+				id %= MAX_SSHORT + 1;
+				if (id == 0)
+					continue;
+
+				STORE (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+					X IN RDB$GENERATORS
+				{
+					X.RDB$GENERATOR_ID = id;
+					X.RDB$SYSTEM_FLAG = 0;
+					strcpy(X.RDB$GENERATOR_NAME, name.c_str());
+
+					endStore = true;
+				}
+				END_STORE
+
+				break;
+			}
+			catch (const status_exception& ex)
+			{
+				if (ex.value()[1] != isc_no_dup)
+					throw;
+
+				if (++faults > MAX_SSHORT)
+					throw;
+
+				endStore = false;
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+			}
+		}
+	}
+	catch (const status_exception& ex)
+	{
+		rethrowMetaException(ex, ENCODE_ISC_MSG(8, DYN_MSG_FAC), endStore);	// DEFINE GENERATOR failed
+	}
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
 }
 
 

@@ -1242,7 +1242,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_grant:
 	case nod_revoke:
 	case nod_mod_database:
-	case nod_def_generator:
 	case nod_del_generator:
 	case nod_def_role:
 	case nod_del_role:
@@ -10962,9 +10961,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_def_field:
 		verb = "define field";
-		break;
-	case nod_def_generator:
-		verb = "define generator";
 		break;
 	case nod_def_filter:
 		verb = "define filter";

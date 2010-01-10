@@ -442,10 +442,6 @@ void DYN_execute(Global* gbl,
 		DYN_modify_function(gbl, ptr);
 		break;
 
-	case isc_dyn_def_generator:
-		DYN_define_generator(gbl, ptr);
-		break;
-
 	case isc_dyn_delete_generator:
 		DYN_delete_generator(gbl, ptr);
 		break;

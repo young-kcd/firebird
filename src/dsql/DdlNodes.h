@@ -595,6 +595,25 @@ private:
 };
 
 
+class CreateSequenceNode : public DdlNode
+{
+public:
+	explicit CreateSequenceNode(MemoryPool& pool, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName)
+		: DdlNode(pool, sqlText),
+		  name(pool, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+private:
+	Firebird::MetaName name;
+};
+
+
 } // namespace
 
 #endif // DSQL_DDL_NODES_H
