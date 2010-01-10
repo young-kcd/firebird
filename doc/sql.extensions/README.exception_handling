@@ -101,7 +101,7 @@ Parameterized exceptions (FB 3.0)
     end
 
   Notes:
-    The status vector is generated using that codes combination:
+    The status vector is generated using these codes combination:
       isc_except, <exception number>,
       isc_formatted_exception, <formatted exception message>,
           <defined exception message>, <exception parameters>
@@ -111,5 +111,5 @@ Parameterized exceptions (FB 3.0)
 
     @N means the N parameter (where N starts at 1) passed in the exception raise command. If a N
     parameter is not passed, the text is not substituted. If NULL is passed, it's replaced by string
-    '*** null ***'. If more parameters is passed than used in the exception message, they are
+    '*** null ***'. If more parameters are passed than used in the exception message, they are
     ignored.
