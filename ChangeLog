@@ -1,3 +1,16 @@
+2010-01-10 10:20  robocop
+
+	* firebird2/doc/sql.extensions/README.exception_handling (1.5):
+
+	Misc.
+
+2010-01-09 23:15  asfernandes
+
+	* firebird2/src/: common/classes/MsgPrint.cpp (1.18),
+	common/classes/SafeArg.h (1.9), jrd/met.epp (1.317):
+
+	Misc
+
 2010-01-08 15:13  asfernandes
 
 	* firebird2/: doc/sql.extensions/README.exception_handling (1.4),
