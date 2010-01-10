@@ -27,6 +27,7 @@
 #include "../jrd/flags.h"
 #include "../jrd/intl.h"
 #include "../jrd/jrd.h"
+#include "../jrd/msg_encode.h"
 #include "../jrd/obj.h"
 #include "../jrd/tra.h"
 #include "../jrd/PreparedStatement.h"
@@ -53,10 +54,32 @@ namespace Jrd {
 using namespace Firebird;
 using namespace Dsql;
 
+static void rethrowMetaException(const status_exception& ex, ISC_STATUS code, bool metaDataException);
+
 DATABASE DB = STATIC "ODS.RDB";
 
 
 //----------------------
+
+
+// Rethrow an exception with isc_no_meta_update and code prefix when necessary.
+static void rethrowMetaException(const status_exception& ex, ISC_STATUS code, bool metaDataException)
+{
+	Arg::StatusVector newVector;
+	const ISC_STATUS* status = ex.value();
+
+	if (metaDataException)
+	{
+		if (status[1] != isc_no_meta_update)
+			newVector << Arg::Gds(isc_no_meta_update);
+
+		if (code != 0)
+			newVector << Arg::Gds(code);
+	}
+
+	newVector.append(Arg::StatusVector(status));
+	status_exception::raise(newVector);
+}
 
 
 void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
@@ -2344,24 +2367,34 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, name);
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_triggers2, DYN_REQUESTS);
+	bool endStore = false;
 
-	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		TRG IN RDB$TRIGGERS
+	try
 	{
-		TRG.RDB$SYSTEM_FLAG = 0;
-		TRG.RDB$FLAGS = TRG_sql;	// ASF: For FK triggers, TRG_ignore_perm will also be needed.
-		strcpy(TRG.RDB$TRIGGER_NAME, name.c_str());
+		STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			TRG IN RDB$TRIGGERS
+		{
+			TRG.RDB$SYSTEM_FLAG = 0;
+			TRG.RDB$FLAGS = TRG_sql;	// ASF: For FK triggers, TRG_ignore_perm will also be needed.
+			strcpy(TRG.RDB$TRIGGER_NAME, name.c_str());
 
-		TRG.RDB$RELATION_NAME.NULL = relationName.isEmpty();
-		strcpy(TRG.RDB$RELATION_NAME, relationName.c_str());
+			TRG.RDB$RELATION_NAME.NULL = relationName.isEmpty();
+			strcpy(TRG.RDB$RELATION_NAME, relationName.c_str());
 
-		fb_assert(type.specified);
-		TRG.RDB$TRIGGER_TYPE = type.value;
+			fb_assert(type.specified);
+			TRG.RDB$TRIGGER_TYPE = type.value;
 
-		TRG.RDB$TRIGGER_SEQUENCE = (!position.specified ? 0 : position.value);
-		TRG.RDB$TRIGGER_INACTIVE = (!active.specified ? 0 : (USHORT) !active.value);
+			TRG.RDB$TRIGGER_SEQUENCE = (!position.specified ? 0 : position.value);
+			TRG.RDB$TRIGGER_INACTIVE = (!active.specified ? 0 : (USHORT) !active.value);
+
+			endStore = true;
+		}
+		END_STORE
 	}
-	END_STORE
+	catch (const status_exception& ex)
+	{
+		rethrowMetaException(ex, ENCODE_ISC_MSG(31, DYN_MSG_FAC), endStore);	// DEFINE TRIGGER failed
+	}
 
 	executeAlter(tdbb, transaction, false);
 
@@ -2379,104 +2412,111 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 
 	AutoCacheRequest requestHandle(tdbb, drq_m_trigger2, DYN_REQUESTS);
 
-	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		TRG IN RDB$TRIGGERS
-		WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
+	try
 	{
-		if (type.specified && type.value != (FB_UINT64) TRG.RDB$TRIGGER_TYPE &&
-			((create && relationName.isEmpty()) || TRG.RDB$RELATION_NAME.NULL))
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			TRG IN RDB$TRIGGERS
+			WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
 		{
-			status_exception::raise(
-				Arg::Gds(isc_dsql_command_err) <<
-				Arg::Gds(isc_dsql_db_trigger_type_cant_change));
-		}
-
-		if (!TRG.RDB$SYSTEM_FLAG.NULL)
-		{
-			switch (TRG.RDB$SYSTEM_FLAG)
+			if (type.specified && type.value != (FB_UINT64) TRG.RDB$TRIGGER_TYPE &&
+				((create && relationName.isEmpty()) || TRG.RDB$RELATION_NAME.NULL))
 			{
-				case fb_sysflag_check_constraint:
-				case fb_sysflag_referential_constraint:
-				case fb_sysflag_view_check:
-					status_exception::raise(Arg::Gds(isc_no_meta_update) <<
-											Arg::Gds(isc_dyn_cant_modify_auto_trig));
-					break;
-
-				case fb_sysflag_system:
-					status_exception::raise(Arg::Gds(isc_no_meta_update) <<
-											Arg::Gds(isc_dyn_cannot_mod_systrig) << TRG.RDB$TRIGGER_NAME);
-					break;
-
-				default:
-					break;
-			}
-		}
-
-		if (runTriggers)
-			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TRIGGER, name);
-
-		MODIFY TRG
-			if (body || external)
-			{
-				fb_assert(!(body && external));
-
-				TRG.RDB$ENGINE_NAME.NULL = TRUE;
-				TRG.RDB$ENTRYPOINT.NULL = TRUE;
-				TRG.RDB$TRIGGER_SOURCE.NULL = TRUE;
-				TRG.RDB$TRIGGER_BLR.NULL = TRUE;
-				TRG.RDB$DEBUG_INFO.NULL = TRUE;
+				status_exception::raise(
+					Arg::Gds(isc_dsql_command_err) <<
+					Arg::Gds(isc_dsql_db_trigger_type_cant_change));
 			}
 
-			if (type.specified)
-				TRG.RDB$TRIGGER_TYPE = type.value;
-
-			if (position.specified)
-				TRG.RDB$TRIGGER_SEQUENCE = position.value;
-			if (active.specified)
-				TRG.RDB$TRIGGER_INACTIVE = (USHORT) !active.value;
-
-			if (external)
+			if (!TRG.RDB$SYSTEM_FLAG.NULL)
 			{
-				TRG.RDB$ENGINE_NAME.NULL = FALSE;
-				strcpy(TRG.RDB$ENGINE_NAME, external->engine.c_str());
-
-				if (external->name.length() >= sizeof(TRG.RDB$ENTRYPOINT))
+				switch (TRG.RDB$SYSTEM_FLAG)
 				{
-					status_exception::raise(
-						Arg::Gds(isc_arith_except) <<
-						Arg::Gds(isc_string_truncation));
+					case fb_sysflag_check_constraint:
+					case fb_sysflag_referential_constraint:
+					case fb_sysflag_view_check:
+						status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+												Arg::Gds(isc_dyn_cant_modify_auto_trig));
+						break;
+
+					case fb_sysflag_system:
+						status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_dyn_cannot_mod_systrig) << TRG.RDB$TRIGGER_NAME);
+						break;
+
+					default:
+						break;
+				}
+			}
+
+			if (runTriggers)
+				executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TRIGGER, name);
+
+			MODIFY TRG
+				if (body || external)
+				{
+					fb_assert(!(body && external));
+
+					TRG.RDB$ENGINE_NAME.NULL = TRUE;
+					TRG.RDB$ENTRYPOINT.NULL = TRUE;
+					TRG.RDB$TRIGGER_SOURCE.NULL = TRUE;
+					TRG.RDB$TRIGGER_BLR.NULL = TRUE;
+					TRG.RDB$DEBUG_INFO.NULL = TRUE;
 				}
 
-				TRG.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
-				strcpy(TRG.RDB$ENTRYPOINT, external->name.c_str());
-			}
-			else if (body)
-			{
-				DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+				if (type.specified)
+					TRG.RDB$TRIGGER_TYPE = type.value;
 
-				TRG.RDB$TRIGGER_BLR.NULL = FALSE;
-				attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
-					statement->getBlrData().begin(),
-					statement->getBlrData().getCount());
+				if (position.specified)
+					TRG.RDB$TRIGGER_SEQUENCE = position.value;
+				if (active.specified)
+					TRG.RDB$TRIGGER_INACTIVE = (USHORT) !active.value;
 
-				TRG.RDB$DEBUG_INFO.NULL = FALSE;
-				attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
-					statement->getDebugData().begin(),
-					statement->getDebugData().getCount());
-			}
+				if (external)
+				{
+					TRG.RDB$ENGINE_NAME.NULL = FALSE;
+					strcpy(TRG.RDB$ENGINE_NAME, external->engine.c_str());
 
-			if (source.hasData())
-			{
-				TRG.RDB$TRIGGER_SOURCE.NULL = FALSE;
-				attachment->storeMetaDataBlob(tdbb, transaction, &TRG.RDB$TRIGGER_SOURCE, source);
-			}
+					if (external->name.length() >= sizeof(TRG.RDB$ENTRYPOINT))
+					{
+						status_exception::raise(
+							Arg::Gds(isc_arith_except) <<
+							Arg::Gds(isc_string_truncation));
+					}
 
-			TRG.RDB$VALID_BLR = TRUE;
-		END_MODIFY
+					TRG.RDB$ENTRYPOINT.NULL = (SSHORT) external->name.isEmpty();
+					strcpy(TRG.RDB$ENTRYPOINT, external->name.c_str());
+				}
+				else if (body)
+				{
+					DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-		modified = true;
+					TRG.RDB$TRIGGER_BLR.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
+						statement->getBlrData().begin(),
+						statement->getBlrData().getCount());
+
+					TRG.RDB$DEBUG_INFO.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
+						statement->getDebugData().begin(),
+						statement->getDebugData().getCount());
+				}
+
+				if (source.hasData())
+				{
+					TRG.RDB$TRIGGER_SOURCE.NULL = FALSE;
+					attachment->storeMetaDataBlob(tdbb, transaction, &TRG.RDB$TRIGGER_SOURCE, source);
+				}
+
+				TRG.RDB$VALID_BLR = TRUE;
+			END_MODIFY
+
+			modified = true;
+		}
+		END_FOR
 	}
-	END_FOR
+	catch (const status_exception& ex)
+	{
+		rethrowMetaException(ex, ENCODE_ISC_MSG(102, DYN_MSG_FAC), modified);	// MODIFY TRIGGER failed
+	}
 
 	if (modified && runTriggers)
 		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TRIGGER, name);
