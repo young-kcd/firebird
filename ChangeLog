@@ -1,3 +1,35 @@
+2010-01-10 18:56  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.304), dsql/parse.y (1.355),
+	gpre/gpre.h (1.111), gpre/pretty.cpp (1.47), include/consts_pub.h
+	(1.47), include/dyn_consts.h (1.1), jrd/dyn.epp (1.171),
+	jrd/dyn_def.epp (1.203), jrd/dyn_del.epp (1.92), jrd/dyn_mod.epp
+	(1.140), jrd/dyn_util.epp (1.76), qli/meta.epp (1.85), qli/proc.epp
+	(1.39):
+
+	Move DYN constants to private header
+
+2010-01-10 18:35  asfernandes
+
+	* firebird2/src/dsql/DdlNodes.epp (1.49):
+
+	Misc
+
+2010-01-10 18:32  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.48), dsql/DdlNodes.h (1.8),
+	dsql/ddl.cpp (1.303), dsql/node.h (1.134), dsql/parse.y (1.354),
+	dsql/pass1.cpp (1.494), jrd/dyn.epp (1.170), jrd/dyn_def.epp
+	(1.202), jrd/dyn_df_proto.h (1.17):
+
+	Refactor CREATE GENERATOR/SEQUENCE
+
+2010-01-10 17:39  asfernandes
+
+	* firebird2/src/dsql/DdlNodes.epp (1.47):
+
+	Throw trigger creation exceptions like in previous versions
+
 2010-01-10 10:20  robocop
 
 	* firebird2/doc/sql.extensions/README.exception_handling (1.5):
