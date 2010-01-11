@@ -3496,13 +3496,13 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	jrd_nod **eq_class, **ptr;
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
-	//Database* dbb = tdbb->getDatabase();
 
 	// Count the number of "rivers" involved in the operation, then allocate
 	// a scratch block large enough to hold values to compute equality
 	// classes.
 	USHORT cnt = 0;
-	for (RiverStack::iterator stack1(org_rivers); stack1.hasData(); ++stack1) {
+	for (RiverStack::iterator stack1(org_rivers); stack1.hasData(); ++stack1)
+	{
 		stack1.object()->riv_number = cnt++;
 	}
 
@@ -3517,18 +3517,26 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	const OptimizerBlk::opt_conjunct* const end = tail + opt->opt_base_conjuncts;
 	for (; tail < end; tail++)
 	{
-		if (tail->opt_conjunct_flags & opt_conjunct_used) {
+		if (tail->opt_conjunct_flags & opt_conjunct_used)
+		{
 			continue;
 		}
+
 		jrd_nod* node = tail->opt_conjunct_node;
-		if (node->nod_type != nod_eql) {
+
+		if (node->nod_type != nod_eql &&
+			node->nod_type != nod_equiv)
+		{
 			continue;
 		}
+
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
+
 		for (RiverStack::iterator stack0(org_rivers); stack0.hasData(); ++stack0)
 		{
-			River* river1 = stack0.object();
+			River* const river1 = stack0.object();
+
 			if (!river_reference(river1, node1))
 			{
 				if (river_reference(river1, node2))
@@ -3537,13 +3545,16 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 					node1 = node2;
 					node2 = node;
 				}
-				else {
+				else
+				{
 					continue;
 				}
 			}
+
 			for (RiverStack::iterator stack2(stack0); (++stack2).hasData();)
 			{
-				River* river2 = stack2.object();
+				River* const river2 = stack2.object();
+
 				if (river_reference(river2, node2))
 				{
 					for (eq_class = classes; eq_class < last_class; eq_class += cnt)
@@ -3554,9 +3565,12 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 							break;
 						}
 					}
+
 					eq_class[river1->riv_number] = node1;
 					eq_class[river2->riv_number] = node2;
-					if (eq_class == last_class) {
+
+					if (eq_class == last_class)
+					{
 						last_class += cnt;
 					}
 				}
@@ -3569,10 +3583,11 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	// to indicate that nothing could be done.
 
 	USHORT river_cnt = 0, stream_cnt = 0;
-	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(*tdbb->getDefaultPool(), cnt);
+	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(cnt);
 	for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 	{
 		i = river_count(cnt, eq_class);
+
 		if (i > river_cnt)
 		{
 			river_cnt = i;
@@ -3583,20 +3598,26 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		else
 		{
 			class_mask(cnt, eq_class, selected_rivers2);
+
 			for (i = 0; i < OPT_STREAM_BITS; i++)
 			{
-				if ((selected_rivers[i] & selected_rivers2[i]) != selected_rivers[i]) {
+				if ((selected_rivers[i] & selected_rivers2[i]) != selected_rivers[i])
+				{
 					break;
 				}
 			}
-			if (i == OPT_STREAM_BITS) {
+
+			if (i == OPT_STREAM_BITS)
+			{
 				selected_classes.add(eq_class);
 			}
 		}
 	}
 
 	if (!river_cnt)
+	{
 		return false;
+	}
 
 	HalfStaticArray<SortedStream*, OPT_STATIC_ITEMS> sorts;
 	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> keys;
@@ -3608,13 +3629,19 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	for (RiverStack::iterator stack3(org_rivers); stack3.hasData(); ++stack3)
 	{
 		River* const river1 = stack3.object();
-		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number))) {
+
+		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number)))
+		{
 			continue;
 		}
-		if (river1->riv_number > lowestRiverPosition) {
+
+		if (river1->riv_number > lowestRiverPosition)
+		{
 			lowestRiverPosition = river1->riv_number;
 		}
+
 		stream_cnt += river1->riv_count;
+
 		jrd_nod* const sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_classes.getCount() * 3) jrd_nod();
 		sort->nod_type = nod_sort;
 		sort->nod_count = (USHORT) selected_classes.getCount();
@@ -3647,24 +3674,28 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	RiverStack newRivers(org_rivers.getPool());
 	while (org_rivers.hasData())
 	{
-		River* river2 = org_rivers.pop();
+		River* const river2 = org_rivers.pop();
+
 		if (TEST_DEP_BIT(selected_rivers, river2->riv_number))
 		{
 			memcpy(stream, river2->riv_streams, river2->riv_count);
 			stream += river2->riv_count;
 			// If this is the lowest position put in the new river.
-			if (river2->riv_number == lowestRiverPosition) {
+			if (river2->riv_number == lowestRiverPosition)
+			{
 				newRivers.push(river1);
 			}
 		}
-		else {
+		else
+		{
 			newRivers.push(river2);
 		}
 	}
 
 	// AB: Put new rivers list back in the original list.
 	// Note that the rivers in the new stack are reversed.
-	while (newRivers.hasData()) {
+	while (newRivers.hasData())
+	{
 		org_rivers.push(newRivers.pop());
 	}
 
@@ -3686,6 +3717,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
 		{
 			jrd_nod* const node = tail->opt_conjunct_node;
+
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 				OPT_computable(opt->opt_csb, node, -1, false, false))
 			{
@@ -4420,14 +4452,6 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 			}
 			return false;
 
-		case nod_gtr:
-		case nod_geq:
-		case nod_leq:
-		case nod_lss:
-		case nod_matches:
-		case nod_contains:
-		case nod_like:
-		case nod_similar:
 		default:
 			break;
 	}
