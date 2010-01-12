@@ -51,7 +51,10 @@ MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
 
 	for (size_t i = 0; i < count; i++)
 	{
+		fb_assert(args[i]);
 		m_args[i] = args[i];
+
+		fb_assert(keys[i] && keys[i]->nod_type == nod_sort);
 		m_keys[i] = keys[i];
 	}
 }
@@ -432,45 +435,33 @@ int MergeJoin::compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 {
 	jrd_req* const request = tdbb->getRequest();
 
-	fb_assert(node1 && node1->nod_type == nod_sort);
-	fb_assert(node2 && node2->nod_type == nod_sort);
-
 	jrd_nod* const* ptr1 = node1->nod_arg;
 	jrd_nod* const* ptr2 = node2->nod_arg;
 
 	for (const jrd_nod* const* const end = ptr1 + node1->nod_count; ptr1 < end; ptr1++, ptr2++)
 	{
 		const dsc* const desc1 = EVL_expr(tdbb, *ptr1);
-		const ULONG flags = request->req_flags;
+		const bool null1 = (request->req_flags & req_null);
+
 		const dsc* const desc2 = EVL_expr(tdbb, *ptr2);
+		const bool null2 = (request->req_flags & req_null);
 
-		if (flags & req_null)
+		if (null1 && !null2)
 		{
-			if (!(request->req_flags & req_null))
-			{
-				return -1;
-			}
-
-			// AB: When both expression evaluated NULL then
-			// we return 0 ( (NULL = NULL) = true).
-			//
-			// Currently this (0 and higher) isn't used by the
-			// MERGE procedure, but when we allow MERGE to
-			// handle outer-joins we must not forget this one !!!
-			return 0;
+			return -1;
 		}
-
-		if (request->req_flags & req_null)
+		else if (null2 && !null1)
 		{
 			return 1;
 		}
-
-		// AB: MOV_compare can't handle NULL parameters
-		// therefore check before passing all null flags.
-		const int result = MOV_compare(desc1, desc2);
-		if (result != 0)
+		else if (!null1 && !null2)
 		{
-			return result;
+			const int result = MOV_compare(desc1, desc2);
+
+			if (result != 0)
+			{
+				return result;
+			}
 		}
 	}
 
