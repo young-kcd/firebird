@@ -102,6 +102,12 @@ void HashJoin::close(thread_db* tdbb)
 	{
 		impure->irsb_flags &= ~irsb_open;
 
+		for (size_t i = 0; i < HASH_SIZE; i++)
+		{
+			delete impure->irsb_hash_table[i];
+			impure->irsb_hash_table[i] = NULL;
+		}
+
 		m_outer->close(tdbb);
 		m_inner->close(tdbb);
 	}
