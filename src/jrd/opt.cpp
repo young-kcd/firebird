@@ -3500,18 +3500,20 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	// Count the number of "rivers" involved in the operation, then allocate
 	// a scratch block large enough to hold values to compute equality
 	// classes.
+
 	USHORT cnt = 0;
 	for (RiverStack::iterator stack1(org_rivers); stack1.hasData(); ++stack1)
 	{
 		stack1.object()->riv_number = cnt++;
 	}
 
-	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch(*tdbb->getDefaultPool());
+	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch;
 	scratch.grow(opt->opt_base_conjuncts * cnt);
 	jrd_nod** classes = scratch.begin();
 
-	// Compute equivalence classes among streams.  This involves finding groups
+	// Compute equivalence classes among streams. This involves finding groups
 	// of streams joined by field equalities.
+
 	jrd_nod** last_class = classes;
 	OptimizerBlk::opt_conjunct* tail = opt->opt_conjuncts.begin();
 	const OptimizerBlk::opt_conjunct* const end = tail + opt->opt_base_conjuncts;
@@ -4949,7 +4951,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 	}
 
 	index_desc* selected_idx = NULL;
-	Firebird::Array<index_desc> idx_sort(*JRD_get_thread_data()->getDefaultPool(), csb_tail->csb_indices);
+	Firebird::Array<index_desc> idx_sort(csb_tail->csb_indices);
 	bool same_selectivity = false;
 
 	// Walk through the indices and sort them into into idx_sort
