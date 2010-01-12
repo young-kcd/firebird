@@ -1,3 +1,42 @@
+2010-01-12 12:45  dimitr
+
+	* firebird2/src/jrd/rse.h (1.72):
+
+	Cleanup.
+
+2010-01-12 12:33  dimitr
+
+	* firebird2/src/jrd/recsrc/HashJoin.cpp (1.2):
+
+	Proper cleanup while closing the stream.
+
+2010-01-12 12:25  dimitr
+
+	* firebird2/src/jrd/: recsrc/HashJoin.cpp (1.1),
+	recsrc/RecordSource.h (1.14), inf_pub.h (1.37):
+
+	Basic implementation of hash joins (only inner so far).  Optimizer
+	support is to follow a bit later.
+
+2010-01-12 12:08  dimitr
+
+	* firebird2/src/jrd/recsrc/MergeJoin.cpp (1.6):
+
+	Slightly better support for merge joins and IS NOT DISTINCT
+	equalities.
+
+2010-01-12 10:53  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.392):
+
+	Misc.
+
+2010-01-11 18:37  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.391):
+
+	Allowed merge joins for IS NOT DISTINCT equalities.
+
 2010-01-10 18:56  asfernandes
 
 	* firebird2/src/: dsql/ddl.cpp (1.304), dsql/parse.y (1.355),
