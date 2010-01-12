@@ -315,6 +315,7 @@ enum info_db_provider
 #define isc_info_rsb_singular	26
 #define isc_info_rsb_writelock	27
 #define isc_info_rsb_buffer		28
+#define isc_info_rsb_hash		29
 
 /**********************/
 /* Bitmap expressions */
