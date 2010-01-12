@@ -753,7 +753,7 @@ namespace Jrd
 		static const size_t HASH_SIZE = 1009;
 		typedef Firebird::Array<FB_UINT64> CollisionList;
 
-		struct Impure: public RecordSource::Impure
+		struct Impure : public RecordSource::Impure
 		{
 			CollisionList* irsb_hash_table[HASH_SIZE];
 			USHORT irsb_hash_slot;
@@ -785,13 +785,13 @@ namespace Jrd
 		USHORT hashKeys(thread_db* tdbb, jrd_req* request, bool outer);
 		bool compareKeys(thread_db* tdbb, jrd_req* request);
 
-		const bool m_outerJoin;
-		const bool m_semiJoin;
-		const bool m_antiJoin;
 		RecordSource* const m_outer;
 		BufferedStream* const m_inner;
 		const jrd_nod* const m_outerKeys;
 		const jrd_nod* const m_innerKeys;
+		const bool m_outerJoin;
+		const bool m_semiJoin;
+		const bool m_antiJoin;
 	};
 
 	class MergeJoin : public RecordSource

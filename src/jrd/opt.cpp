@@ -3526,8 +3526,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 
 		jrd_nod* node = tail->opt_conjunct_node;
 
-		if (node->nod_type != nod_eql &&
-			node->nod_type != nod_equiv)
+		if (node->nod_type != nod_eql && node->nod_type != nod_equiv)
 		{
 			continue;
 		}
