@@ -138,19 +138,6 @@ const USHORT opt_stream_used = 1;			// stream is used
 const USHORT opt_conjunct_used = 1;			// conjunct is used
 const USHORT opt_conjunct_matched = 2;		// conjunct matches an index segment
 
-
-// River block - used to hold temporary information about a group of streams
-// CVC: River is a "secret" of opt.cpp, maybe a new opt.h would be adequate.
-
-class River : public pool_alloc_rpt<SCHAR, type_riv>
-{
-public:
-	RecordSource* riv_rsb;		// record source block for river
-	USHORT riv_number;			// temporary number for river
-	UCHAR riv_count;			// count of streams
-	UCHAR riv_streams[1];		// actual streams
-};
-
 } //namespace Jrd
 
 #endif // JRD_RSE_H

@@ -82,6 +82,7 @@ struct index_desc;
 struct IndexDescAlloc;
 class Format;
 class Cursor;
+class RecordSource;
 
 // NOTE: The definition of structures RecordSelExpr and lit must be defined in
 //       exactly the same way as structure jrd_nod through item nod_count.
@@ -890,7 +891,6 @@ const int csb_sub_stream	= 128;		// a sub-stream of the RSE being processed
 const int csb_erase			= 256;		// we are processing an erase
 const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation
-const int csb_made_river	= 2048;		// stream has been included in a river
 
 // Exception condition list
 

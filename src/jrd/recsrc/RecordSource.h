@@ -89,9 +89,6 @@ namespace Jrd
 		static const ULONG irsb_mustread = 8;
 		static const ULONG irsb_singular_processed = 16;
 
-		typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamList;
-		typedef Firebird::HalfStaticArray<Format*, OPT_STATIC_ITEMS> FormatList;
-
 		RecordSource()
 			: m_impure(0), m_recursive(false)
 		{}

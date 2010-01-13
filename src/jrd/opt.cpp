@@ -91,6 +91,122 @@ using namespace Firebird;
 #define OPT_DEBUG
 #endif
 
+namespace Jrd
+{
+	class River
+	{
+	public:
+		River(CompilerScratch* csb, RecordSource* rsb, size_t count, UCHAR* streams)
+			: m_rsb(rsb), m_streams(csb->csb_pool)
+		{
+			m_streams.resize(count);
+			memcpy(m_streams.begin(), streams, count);
+		}
+
+		River(CompilerScratch* csb, RiverList& rivers, RecordSource* rsb = NULL)
+			: m_streams(csb->csb_pool)
+		{
+			const size_t count = rivers.getCount();
+			HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
+			rsbs.resize(count);
+			RecordSource** ptr = rsbs.begin();
+
+			for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
+			{
+				River* const sub_river = *iter;
+
+				const size_t count = m_streams.getCount();
+				const size_t delta = sub_river->m_streams.getCount();
+				m_streams.grow(count + delta);
+				memcpy(m_streams.begin() + count, sub_river->m_streams.begin(), delta);
+
+				*ptr++ = sub_river->getRecordSource();
+			}
+
+			rivers.clear();
+
+			if (rsb)
+			{
+				m_rsb = rsb;
+			}
+			else
+			{
+				m_rsb = (count == 1) ? rsbs[0] :
+					FB_NEW(csb->csb_pool) NestedLoopJoin(csb, count, rsbs.begin());
+			}
+		}
+
+		RecordSource* getRecordSource() const
+		{
+			return m_rsb;
+		}
+
+		size_t getStreamCount() const
+		{
+			return m_streams.getCount();
+		}
+
+		const UCHAR* getStreams() const
+		{
+			return m_streams.begin();
+		}
+
+		void activate(CompilerScratch* csb)
+		{
+			for (const UCHAR* iter = m_streams.begin(); iter < m_streams.end(); iter++)
+			{
+				csb->csb_rpt[*iter].csb_flags |= csb_active;
+			}
+		}
+
+		void deactivate(CompilerScratch* csb)
+		{
+			for (const UCHAR* iter = m_streams.begin(); iter < m_streams.end(); iter++)
+			{
+				csb->csb_rpt[*iter].csb_flags &= ~csb_active;
+			}
+		}
+
+		bool isReferenced(const jrd_nod* node)
+		{
+			bool field_found = false;
+			return isReferenced(node, field_found) ? field_found : false;
+		}
+
+	private:
+		bool isReferenced(const jrd_nod* node, bool& field_found)
+		{
+			if (node->nod_type == nod_field)
+			{
+				for (const UCHAR* iter = m_streams.begin(); iter < m_streams.end(); iter++)
+				{
+					if ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == *iter)
+					{
+						field_found = true;
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+			const jrd_nod* const* ptr = node->nod_arg;
+			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+			{
+				if (!isReferenced(*ptr, field_found))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		RecordSource* m_rsb;
+		HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
+	};
+} // namespace
+
 static bool augment_stack(jrd_nod*, NodeStack&);
 static void check_indices(const CompilerScratch::csb_repeat*);
 static void check_sorts(RecordSelExpr*);
@@ -106,22 +222,21 @@ static bool expression_possible_unknown(const jrd_nod*);
 static bool expression_contains_stream(CompilerScratch*, const jrd_nod*, UCHAR, bool*);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
 static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
-static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&, jrd_nod**, jrd_nod*);
-static bool form_river(thread_db*, OptimizerBlk*, USHORT, const UCHAR*, UCHAR*, RiverStack&, jrd_nod**);
+static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
+static bool form_river(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, RiverList&, jrd_nod**);
 static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
 static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
-static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&, jrd_nod**, jrd_nod*);
-static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverStack&, jrd_nod**);
+static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
+static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverList&, jrd_nod**);
 static ProcedureScan* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
 static SortedStream* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
 					  RecordSource*, jrd_nod*, bool);
-static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
+static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverList&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static void get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
 static jrd_nod* get_unmapped_node(thread_db*, jrd_nod*, jrd_nod*, UCHAR, bool);
-static RecordSource* make_cross(thread_db*, OptimizerBlk*, RiverStack&);
 static jrd_nod* make_dbkey(thread_db*, OptimizerBlk*, jrd_nod*, USHORT);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
@@ -129,12 +244,8 @@ static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
 static USHORT river_count(USHORT, jrd_nod**);
-static bool river_reference(const River*, const jrd_nod*, bool* field_found = NULL);
 static bool search_stack(const jrd_nod*, const NodeStack&);
-static void set_active(OptimizerBlk*, const River*);
 static void set_direction(const jrd_nod*, jrd_nod*);
-static void set_inactive(OptimizerBlk*, const River*);
-static void set_made_river(OptimizerBlk*, const River*);
 static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
 static void set_rse_inactive(CompilerScratch*, const RecordSelExpr*);
 static void sort_indices_by_selectivity(CompilerScratch::csb_repeat*);
@@ -309,7 +420,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 	beds[0] = streams[0] = key_streams[0] = 0;
 	NodeStack conjunct_stack;
-	RiverStack rivers_stack;
+	RiverList rivers;
 	SLONG conjunct_count = 0;
 
 	check_sorts(rse);
@@ -504,11 +615,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		if (rsb)
 		{
-			const SSHORT i = local_streams[0];
-			River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), i) River();
-			river->riv_count = (UCHAR) i;
-			river->riv_rsb = rsb;
-			memcpy(river->riv_streams, local_streams + 1, i);
 			// AB: Save all inner-part streams
 			if (rse->rse_jointype == blr_inner ||
 			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation) == 0))
@@ -516,11 +622,16 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				rsb->findUsedStreams(subStreams);
 				// Save also the outer streams
 				if (rse->rse_jointype == blr_left)
+				{
 					rsb->findUsedStreams(outerStreams);
+				}
 			}
-			set_made_river(opt, river);
-			set_inactive(opt, river);
-			rivers_stack.push(river);
+
+			const size_t count = local_streams[0];
+			UCHAR* const streams = local_streams + 1;
+			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, count, streams);
+			river->deactivate(csb);
+			rivers.add(river);
 			continue;
 		}
 
@@ -707,7 +818,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 	// outer joins require some extra processing
 	if (rse->rse_jointype != blr_inner) {
-		rsb = gen_outer(tdbb, opt, rse, rivers_stack, &sort);
+		rsb = gen_outer(tdbb, opt, rse, rivers, &sort);
 	}
 	else
 	{
@@ -717,13 +828,13 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		// AB: If previous rsb's are already on the stack we can't use
 		// a navigational-retrieval for an ORDER BY because the next
 		// streams are JOINed to the previous ones
-		if (rivers_stack.hasData())
+		if (rivers.hasData())
 		{
 			sort = NULL;
 			sort_can_be_used = false;
 			// AB: We could already have multiple rivers at this
 			// point so try to do some sort/merging now.
-			while (rivers_stack.hasMore(1) && gen_sort_merge(tdbb, opt, rivers_stack))
+			while (gen_sort_merge(tdbb, opt, rivers))
 				;
 
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
@@ -761,45 +872,24 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				}
 
 				// Make rivers from the dependent streams
-				gen_join(tdbb, opt, dependent_streams, rivers_stack, &sort, rse->rse_plan);
+				gen_join(tdbb, opt, dependent_streams, rivers, &sort, rse->rse_plan);
 
-				// Generate 1 river which holds a cross join rsb between
-				// all currently available rivers.
+				// Generate one river which holds a cross join rsb between
+				// all currently available rivers
 
-				// First get total count of streams.
-				int count = 0;
-				RiverStack::iterator stack1(rivers_stack);
-				for (; stack1.hasData(); ++stack1) {
-					count += stack1.object()->riv_count;
-				}
-
-				// Create river and copy the streams.
-				River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), count) River();
-				river->riv_count = (UCHAR) count;
-				UCHAR* stream_itr = river->riv_streams;
-				RiverStack::iterator stack2(rivers_stack);
-				for (; stack2.hasData(); ++stack2)
-				{
-					River* subRiver = stack2.object();
-					memcpy(stream_itr, subRiver->riv_streams, subRiver->riv_count);
-					stream_itr += subRiver->riv_count;
-				}
-				river->riv_rsb = make_cross(tdbb, opt, rivers_stack);
-				rivers_stack.push(river);
-
-				// Mark the river as active.
-				set_made_river(opt, river);
-				set_active(opt, river);
+				River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rivers);
+				river->activate(csb);
+				rivers.add(river);
 			}
 			else
 			{
 				if (free_streams[0])
 				{
 					// Deactivate streams from rivers on stack, because
-					// the remaining streams don't have any indexed relationship with them.
-					RiverStack::iterator stack1(rivers_stack);
-					for (; stack1.hasData(); ++stack1) {
-						set_inactive(opt, stack1.object());
+					// the remaining streams don't have any indexed relationship with them
+					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
+					{
+						(*iter)->deactivate(csb);
 					}
 				}
 
@@ -808,13 +898,13 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		}
 
 		// attempt to form joins in decreasing order of desirability
-		gen_join(tdbb, opt, streams, rivers_stack, &sort, rse->rse_plan);
+		gen_join(tdbb, opt, streams, rivers, &sort, rse->rse_plan);
 
 		// If there are multiple rivers, try some sort/merging
-		while (rivers_stack.hasMore(1) && gen_sort_merge(tdbb, opt, rivers_stack))
+		while (gen_sort_merge(tdbb, opt, rivers))
 			;
 
-		rsb = make_cross(tdbb, opt, rivers_stack);
+		rsb = River(csb, rivers).getRecordSource();
 
 		// Assign the sort node back if it wasn't used by the index navigation
 		if (saved_sort_node && !sort_can_be_used)
@@ -897,7 +987,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		csb->csb_rpt[stream].csb_indices = 0;
 	}
 
-	DEBUG
 	// free up memory for optimizer structures
 	delete opt;
 
@@ -1727,7 +1816,6 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 			{
 				if (search_stack(stack2.object(), *eq_class2))
 				{
-					DEBUG;
 					while (eq_class2->hasData()) {
 						augment_stack(eq_class2->pop(), *eq_class);
 					}
@@ -1753,11 +1841,12 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 
 					if ((base_count + count < MAX_CONJUNCTS) && augment_stack(boolean, org_stack))
 					{
-						DEBUG;
 						count++;
 					}
 					else
+					{
 						delete boolean;
+					}
 				}
 			}
 		}
@@ -2272,7 +2361,7 @@ static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
 static void form_rivers(thread_db*		tdbb,
 						OptimizerBlk*	opt,
 						const UCHAR*	streams,
-						RiverStack&		river_stack,
+						RiverList&		river_list,
 						jrd_nod**		sort_clause,
 						jrd_nod*		plan_clause)
 {
@@ -2308,7 +2397,7 @@ static void form_rivers(thread_db*		tdbb,
 		plan_node = *ptr;
 		if (plan_node->nod_type == nod_merge || plan_node->nod_type == nod_join)
 		{
-			form_rivers(tdbb, opt, streams, river_stack, sort_clause, plan_node);
+			form_rivers(tdbb, opt, streams, river_list, sort_clause, plan_node);
 			continue;
 		}
 
@@ -2351,7 +2440,7 @@ static void form_rivers(thread_db*		tdbb,
 
 		do {
 			count = innerJoin->findJoinOrder();
-		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause));
+		} while (form_river(tdbb, opt, count, streams[0], temp, river_list, sort_clause));
 
 		delete innerJoin;
 	}
@@ -2361,9 +2450,9 @@ static void form_rivers(thread_db*		tdbb,
 static bool form_river(thread_db*		tdbb,
 					   OptimizerBlk*	opt,
 					   USHORT			count,
-					   const UCHAR*		streams,
+					   USHORT			stream_count,
 					   UCHAR*			temp,
-					   RiverStack&		river_stack,
+					   RiverList&		river_list,
 					   jrd_nod**		sort_clause)
 {
 /**************************************
@@ -2376,6 +2465,8 @@ static bool form_river(thread_db*		tdbb,
  *	Form streams into rivers (combinations of streams).
  *
  **************************************/
+	fb_assert(count);
+	
 	DEV_BLKCHK(opt, type_opt);
 	if (sort_clause) {
 		DEV_BLKCHK(*sort_clause, type_nod);
@@ -2386,31 +2477,20 @@ static bool form_river(thread_db*		tdbb,
 
 	CompilerScratch* const csb = opt->opt_csb;
 
-	// Allocate a river block and move the best order into it.
-	River* river = FB_NEW_RPT(*tdbb->getDefaultPool(), count) River();
-	river_stack.push(river);
-	river->riv_count = (UCHAR) count;
+	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
+	rsbs.resize(count);
+	RecordSource** ptr = rsbs.begin();
 
-	RecordSource** ptr;
+	HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams;
+	streams.resize(count);
+	UCHAR* stream = streams.begin();
 
-	Array<RecordSource*> rsbs;
-
-	if (count == 1)
+	if (count != stream_count)
 	{
-		ptr = &river->riv_rsb;
-	}
-	else
-	{
-		rsbs.resize(count);
-		ptr = rsbs.begin();
-	}
-
-	UCHAR* stream = river->riv_streams;
-	const OptimizerBlk::opt_stream* const opt_end = opt->opt_streams.begin() + count;
-	if (count != streams[0]) {
 		sort_clause = NULL;
 	}
 
+	const OptimizerBlk::opt_stream* const opt_end = opt->opt_streams.begin() + count;
 	for (OptimizerBlk::opt_stream* tail = opt->opt_streams.begin();
 		 tail < opt_end; tail++, stream++, ptr++)
 	{
@@ -2419,21 +2499,22 @@ static bool form_river(thread_db*		tdbb,
 		sort_clause = NULL;
 	}
 
-	if (count > 1)
-	{
-		river->riv_rsb = FB_NEW(*tdbb->getDefaultPool()) NestedLoopJoin(csb, count, rsbs.begin());
-	}
+	RecordSource* const rsb = (count == 1) ? rsbs[0] :
+		FB_NEW(*tdbb->getDefaultPool()) NestedLoopJoin(csb, count, rsbs.begin());
 
-	set_made_river(opt, river);
-	set_inactive(opt, river);
+	// Allocate a river block and move the best order into it
+	River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, count, streams.begin());
+	river->deactivate(csb);
+	river_list.push(river);
+
+	if (!(temp[0] -= count))
+	{
+		return false;
+	}
 
 	// Reform "temp" from streams not consumed
 	stream = temp + 1;
 	const UCHAR* const end_stream = stream + temp[0];
-	if (!(temp[0] -= count)) {
-		return false;
-	}
-
 	for (const UCHAR* t2 = stream; t2 < end_stream; t2++)
 	{
 		bool used = false;
@@ -2715,7 +2796,7 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 static void gen_join(thread_db*		tdbb,
 					 OptimizerBlk*	opt,
 					 const UCHAR*	streams,
-					 RiverStack&	river_stack,
+					 RiverList&		river_list,
 					 jrd_nod**		sort_clause,
 					 jrd_nod*		plan_clause)
 {
@@ -2736,17 +2817,15 @@ static void gen_join(thread_db*		tdbb,
 	DEV_BLKCHK(plan_clause, type_nod);
 	SET_TDBB(tdbb);
 
-	//Database* dbb = tdbb->getDatabase();
-	//CompilerScratch* csb = opt->opt_csb;
-
-	if (!streams[0]) {
+	if (!streams[0])
+	{
 		return;
 	}
 
 	if (plan_clause && streams[0] > 1)
 	{
 		// this routine expects a join/merge
-		form_rivers(tdbb, opt, streams, river_stack, sort_clause, plan_clause);
+		form_rivers(tdbb, opt, streams, river_list, sort_clause, plan_clause);
 		return;
 	}
 
@@ -2759,7 +2838,7 @@ static void gen_join(thread_db*		tdbb,
 	USHORT count;
 	do {
 		count = innerJoin->findJoinOrder();
-	} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause));
+	} while (form_river(tdbb, opt, count, streams[0], temp, river_list, sort_clause));
 
 	delete innerJoin;
 }
@@ -2768,7 +2847,7 @@ static void gen_join(thread_db*		tdbb,
 static RecordSource* gen_outer(thread_db* tdbb,
 					 OptimizerBlk* opt,
 					 RecordSelExpr* rse,
-					 RiverStack& river_stack,
+					 RiverList& river_list,
 					 jrd_nod** sort_clause)
 {
 /**************************************
@@ -2824,8 +2903,8 @@ static RecordSource* gen_outer(thread_db* tdbb,
 			node->nod_type == nod_procedure ||
 			node->nod_type == nod_rse)
 		{
-			River* const river = river_stack.pop();
-			stream_ptr[i]->stream_rsb = river->riv_rsb;
+			River* const river = river_list.pop();
+			stream_ptr[i]->stream_rsb = river->getRecordSource();
 		}
 		else
 		{
@@ -3204,8 +3283,8 @@ static SortedStream* gen_sort(thread_db* tdbb,
 	ULONG items = sort->nod_count + (streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
 	const UCHAR* const end_ptr = streams + streams[0];
 	const jrd_nod* const* const end_node = sort->nod_arg + sort->nod_count;
-	Firebird::Stack<SLONG> id_stack;
-	StreamStack stream_stack;
+	Firebird::HalfStaticArray<SLONG, OPT_STATIC_ITEMS> id_list;
+	StreamList stream_list;
 
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++)
 	{
@@ -3216,8 +3295,8 @@ static SortedStream* gen_sort(thread_db* tdbb,
 			do {
 				const ULONG id = accessor.current();
 				items++;
-				id_stack.push(id);
-				stream_stack.push(*ptr);
+				id_list.push(id);
+				stream_list.push(*ptr);
 				for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++)
 				{
 					jrd_nod* node = *node_ptr;
@@ -3231,8 +3310,8 @@ static SortedStream* gen_sort(thread_db* tdbb,
 						if (IS_INTL_DATA(desc))
 							break;
 						--items;
-						id_stack.pop();
-						stream_stack.pop();
+						id_list.pop();
+						stream_list.pop();
 						break;
 					}
 				}
@@ -3346,13 +3425,14 @@ static SortedStream* gen_sort(thread_db* tdbb,
 	map->keyLength = (USHORT) map_length >> SHIFTLONG;
 	USHORT flag_offset = (USHORT) map_length;
 	map_length += items - sort->nod_count;
+
 	// Now go back and process all to fields involved with the sort.  If the
 	// field has already been mentioned as a sort key, don't bother to repeat it.
-	while (stream_stack.hasData())
+
+	while (stream_list.hasData())
 	{
-		const SLONG id = id_stack.pop();
-		// AP: why USHORT - we pushed UCHAR
-		const USHORT stream = stream_stack.pop();
+		const SLONG id = id_list.pop();
+		const UCHAR stream = stream_list.pop();
 		const Format* format = CMP_format(tdbb, csb, stream);
 		const dsc* desc = &format->fmt_desc[id];
 		if (id >= format->fmt_count || desc->dsc_dtype == dtype_unknown)
@@ -3474,7 +3554,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 }
 
 
-static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_rivers)
+static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_rivers)
 {
 /**************************************
  *
@@ -3491,20 +3571,22 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
  *	return false.
  *
  **************************************/
-	USHORT i;
 	ULONG selected_rivers[OPT_STREAM_BITS], selected_rivers2[OPT_STREAM_BITS];
 	jrd_nod **eq_class, **ptr;
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
 
+	CompilerScratch* const csb = opt->opt_csb;
+
 	// Count the number of "rivers" involved in the operation, then allocate
 	// a scratch block large enough to hold values to compute equality
 	// classes.
 
-	USHORT cnt = 0;
-	for (RiverStack::iterator stack1(org_rivers); stack1.hasData(); ++stack1)
+	const USHORT cnt = (USHORT) org_rivers.getCount();
+
+	if (cnt < 2)
 	{
-		stack1.object()->riv_number = cnt++;
+		return false;
 	}
 
 	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch;
@@ -3524,7 +3606,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 			continue;
 		}
 
-		jrd_nod* node = tail->opt_conjunct_node;
+		jrd_nod* const node = tail->opt_conjunct_node;
 
 		if (node->nod_type != nod_eql && node->nod_type != nod_equiv)
 		{
@@ -3534,41 +3616,41 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
 
-		for (RiverStack::iterator stack0(org_rivers); stack0.hasData(); ++stack0)
+		USHORT number1 = 0;
+		for (River** iter1 = org_rivers.begin(); iter1 < org_rivers.end(); iter1++, number1++)
 		{
-			River* const river1 = stack0.object();
+			River* const river1 = *iter1;
 
-			if (!river_reference(river1, node1))
+			if (!river1->isReferenced(node1))
 			{
-				if (river_reference(river1, node2))
-				{
-					node = node1;
-					node1 = node2;
-					node2 = node;
-				}
-				else
+				if (!river1->isReferenced(node2))
 				{
 					continue;
 				}
+
+				jrd_nod* const temp = node1;
+				node1 = node2;
+				node2 = temp;
 			}
 
-			for (RiverStack::iterator stack2(stack0); (++stack2).hasData();)
+			USHORT number2 = number1 + 1;
+			for (River** iter2 = iter1 + 1; iter2 < org_rivers.end(); iter2++, number2++)
 			{
-				River* const river2 = stack2.object();
+				River* const river2 = *iter2;
 
-				if (river_reference(river2, node2))
+				if (river2->isReferenced(node2))
 				{
 					for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 					{
-						if (node_equality(node1, classes[river1->riv_number]) ||
-							node_equality(node2, classes[river2->riv_number]))
+						if (node_equality(node1, classes[number1]) ||
+							node_equality(node2, classes[number2]))
 						{
 							break;
 						}
 					}
 
-					eq_class[river1->riv_number] = node1;
-					eq_class[river2->riv_number] = node2;
+					eq_class[number1] = node1;
+					eq_class[number2] = node2;
 
 					if (eq_class == last_class)
 					{
@@ -3583,11 +3665,11 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	// sort merge.  Obviously, if the set of classes is empty, return false
 	// to indicate that nothing could be done.
 
-	USHORT river_cnt = 0, stream_cnt = 0;
+	USHORT river_cnt = 0;
 	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(cnt);
 	for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 	{
-		i = river_count(cnt, eq_class);
+		USHORT i = river_count(cnt, eq_class);
 
 		if (i > river_cnt)
 		{
@@ -3623,123 +3705,112 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 	HalfStaticArray<SortedStream*, OPT_STATIC_ITEMS> sorts;
 	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> keys;
 
-	stream_cnt = 0;
-	// AB: Get the lowest river position from the rivers that are merged.
-	// Note that we're walking the rivers in backwards direction.
-	USHORT lowestRiverPosition = 0;
-	for (RiverStack::iterator stack3(org_rivers); stack3.hasData(); ++stack3)
-	{
-		River* const river1 = stack3.object();
+	// AB: Get the lowest river position from the rivers that are merged
 
-		if (!(TEST_DEP_BIT(selected_rivers, river1->riv_number)))
+	RiverList rivers_to_merge;
+	USHORT lowest_river_position = MAX_USHORT;
+	USHORT number = 0;
+	for (River** iter = org_rivers.begin(); iter < org_rivers.end(); number++)
+	{
+		River* const river = *iter;
+
+		if (!(TEST_DEP_BIT(selected_rivers, number)))
 		{
+			iter++;
 			continue;
 		}
 
-		if (river1->riv_number > lowestRiverPosition)
+		if (number < lowest_river_position)
 		{
-			lowestRiverPosition = river1->riv_number;
+			lowest_river_position = number;
 		}
 
-		stream_cnt += river1->riv_count;
+		rivers_to_merge.add(river);
+		org_rivers.remove(iter);
 
-		jrd_nod* const sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_classes.getCount() * 3) jrd_nod();
+		const size_t selected_count = selected_classes.getCount();
+		jrd_nod* const sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_count * 3) jrd_nod();
 		sort->nod_type = nod_sort;
-		sort->nod_count = (USHORT) selected_classes.getCount();
+		sort->nod_count = (USHORT) selected_count;
 		jrd_nod*** selected_class;
 		for (selected_class = selected_classes.begin(), ptr = sort->nod_arg;
 			selected_class < selected_classes.end(); selected_class++)
 		{
 			ptr[sort->nod_count] = (jrd_nod*) FALSE; // Ascending sort
 			ptr[sort->nod_count * 2] = (jrd_nod*)(IPTR) rse_nulls_default; // Default nulls placement
-			*ptr++ = (*selected_class)[river1->riv_number];
+			*ptr++ = (*selected_class)[number];
 		}
 
-		sorts.add(gen_sort(tdbb, opt, &river1->riv_count, NULL, river1->riv_rsb, sort, false));
+		const size_t stream_count = river->getStreamCount();
+		fb_assert(stream_count <= MAX_STREAMS);
+		stream_array_t streams;
+		streams[0] = (UCHAR) stream_count;
+		memcpy(streams + 1, river->getStreams(), stream_count);
+
+		sorts.add(gen_sort(tdbb, opt, streams, NULL, river->getRecordSource(), sort, false));
 		keys.add(sort);
 	}
 
 	fb_assert(sorts.getCount() == keys.getCount());
 
 	// Build a merge stream
-	MergeJoin* const merge_rsb = FB_NEW(*tdbb->getDefaultPool())
-		MergeJoin(opt->opt_csb, sorts.getCount(), sorts.begin(), keys.begin());
 
-	// Finally, merge selected rivers into a single river, and rebuild
-	// original river stack.
-	// AB: Be sure that the rivers 'order' will be kept.
-	River* river1 = FB_NEW_RPT(*tdbb->getDefaultPool(), stream_cnt) River();
-	river1->riv_count = (UCHAR) stream_cnt;
-	river1->riv_rsb = merge_rsb;
-	UCHAR* stream = river1->riv_streams;
-	RiverStack newRivers(org_rivers.getPool());
-	while (org_rivers.hasData())
+	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool())
+		MergeJoin(csb, sorts.getCount(), sorts.begin(), keys.begin());
+
+	// Pick up any boolean that may apply
+
+	USHORT flag_vector[MAX_STREAMS + 1], *fv;
+	UCHAR stream_nr;
+
+	// AB: Inactivate currently all streams from every river, because we
+	// need to know which nodes are computable between the rivers used
+	// for the merge.
+
+	for (stream_nr = 0, fv = flag_vector; stream_nr < csb->csb_n_stream; stream_nr++)
 	{
-		River* const river2 = org_rivers.pop();
+		*fv++ = csb->csb_rpt[stream_nr].csb_flags & csb_active;
+		csb->csb_rpt[stream_nr].csb_flags &= ~csb_active;
+	}
 
-		if (TEST_DEP_BIT(selected_rivers, river2->riv_number))
+	// Activate streams of all the rivers being merged
+
+	for (River** iter = rivers_to_merge.begin(); iter < rivers_to_merge.end(); iter++)
+	{
+		(*iter)->activate(csb);
+	}
+
+	// Get computable booleans, if any
+
+	jrd_nod* boolean = NULL;
+	for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
+	{
+		jrd_nod* const node = tail->opt_conjunct_node;
+
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(csb, node, -1, false, false))
 		{
-			memcpy(stream, river2->riv_streams, river2->riv_count);
-			stream += river2->riv_count;
-			// If this is the lowest position put in the new river.
-			if (river2->riv_number == lowestRiverPosition)
-			{
-				newRivers.push(river1);
-			}
-		}
-		else
-		{
-			newRivers.push(river2);
+			compose(&boolean, node, nod_and);
+			tail->opt_conjunct_flags |= opt_conjunct_used;
 		}
 	}
 
-	// AB: Put new rivers list back in the original list.
-	// Note that the rivers in the new stack are reversed.
-	while (newRivers.hasData())
+	if (boolean)
 	{
-		org_rivers.push(newRivers.pop());
+		rsb = FB_NEW(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, boolean);
 	}
 
-	// Pick up any boolean that may apply.
+	// Reset all the streams to their original state
+
+	for (stream_nr = 0, fv = flag_vector; stream_nr < csb->csb_n_stream; stream_nr++)
 	{
-		USHORT flag_vector[MAX_STREAMS + 1], *fv;
-		UCHAR stream_nr;
-		// AB: Inactivate currently all streams from every river, because we
-		// need to know which nodes are computable between the rivers used
-		// for the merge.
-		for (stream_nr = 0, fv = flag_vector; stream_nr < opt->opt_csb->csb_n_stream; stream_nr++)
-		{
-			*fv++ = opt->opt_csb->csb_rpt[stream_nr].csb_flags & csb_active;
-			opt->opt_csb->csb_rpt[stream_nr].csb_flags &= ~csb_active;
-		}
-
-		set_active(opt, river1);
-		jrd_nod* boolean = NULL;
-		for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
-		{
-			jrd_nod* const node = tail->opt_conjunct_node;
-
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				OPT_computable(opt->opt_csb, node, -1, false, false))
-			{
-				compose(&boolean, node, nod_and);
-				tail->opt_conjunct_flags |= opt_conjunct_used;
-			}
-		}
-
-		if (boolean)
-		{
-			river1->riv_rsb = FB_NEW(*tdbb->getDefaultPool())
-				FilteredStream(opt->opt_csb, river1->riv_rsb, boolean);
-		}
-
-		set_inactive(opt, river1);
-
-		for (stream_nr = 0, fv = flag_vector; stream_nr < opt->opt_csb->csb_n_stream; stream_nr++)
-		{
-			opt->opt_csb->csb_rpt[stream_nr].csb_flags |= *fv++;
-		}
+		csb->csb_rpt[stream_nr].csb_flags |= *fv++;
 	}
+
+	River* const merged_river =
+		FB_NEW(*tdbb->getDefaultPool()) River(csb, rivers_to_merge, rsb);
+
+	org_rivers.insert(lowest_river_position, merged_river);
 
 	return true;
 }
@@ -4100,40 +4171,6 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 	}
 
 	return returnNode;
-}
-
-
-static RecordSource* make_cross(thread_db* tdbb, OptimizerBlk* opt, RiverStack& stack)
-{
-/**************************************
- *
- *	m a k e _ c r o s s
- *
- **************************************
- *
- * Functional description
- *	Generate a cross block.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	SET_TDBB(tdbb);
-
-	const size_t count = stack.getCount();
-
-	if (count == 1)
-	{
-		return stack.pop()->riv_rsb;
-	}
-
-	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
-	rsbs.resize(count);
-	RecordSource** ptr = rsbs.end();
-	while (stack.hasData())
-	{
-		*--ptr = stack.pop()->riv_rsb;
-	}
-
-	return FB_NEW(*tdbb->getDefaultPool()) NestedLoopJoin(opt->opt_csb, count, rsbs.begin());
 }
 
 
@@ -4639,93 +4676,6 @@ static USHORT river_count(USHORT count, jrd_nod** eq_class)
 }
 
 
-static bool river_reference(const River* river, const jrd_nod* node, bool* field_found)
-{
-/**************************************
- *
- *	r i v e r _ r e f e r e n c e
- *
- **************************************
- *
- * Functional description
- *	See if a value node is a reference to a given river.
- *  AB: Handle also expressions (F1 + F2 * 3, etc..)
- *  The expression is checked if all fields that are
- *  buried inside are pointing to the the given river.
- *  If a passed field isn't referenced by the river then
- *  we have an expression with 2 fields pointing to
- *  different rivers and then the result is always false.
- *  NOTE! The first time this function is called
- *  field_found should be NULL.
- *
- **************************************/
-	DEV_BLKCHK(river, type_riv);
-	DEV_BLKCHK(node, type_nod);
-
-	bool lfield_found = false;
-	bool root_caller = false;
-
-	// If no boolean parameter is given then this is the first call
-	// to this function and we use the local boolean to pass to
-	// itselfs. The boolean is used to see if any field has passed
-	// that references to the river.
-	if (!field_found)
-	{
-		root_caller = true;
-		field_found = &lfield_found;
-	}
-
-	switch (node->nod_type)
-	{
-
-	case nod_field :
-		{
-			// Check if field references to the river.
-			const UCHAR* streams = river->riv_streams;
-			for (const UCHAR* const end = streams + river->riv_count; streams < end; streams++)
-			{
-				if ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == *streams)
-				{
-					*field_found = true;
-					return true;
-				}
-			}
-			return false;
-		}
-
-	default :
-		{
-			const jrd_nod* const* ptr = node->nod_arg;
-			// Check all sub-nodes of this node.
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				if (!river_reference(river, *ptr, field_found)) {
-					return false;
-				}
-			}
-			// if this was the first call then field_found tells
-			// us if any field (referenced by river) was found.
-			return root_caller ? *field_found : true;
-		}
-	}
-
-	/*
-	// AB: Original code FB1.0 , just left as reference for a while
-	UCHAR *streams, *end;
-	DEV_BLKCHK(river, type_riv);
-	DEV_BLKCHK(node, type_nod);
-	if (node->nod_type != nod_field)
-		return false;
-	for (streams = river->riv_streams, end = streams + river->riv_count; streams < end; streams++)
-	{
-		if ((USHORT) node->nod_arg[e_fld_stream] == *streams)
-			return true;
-	}
-	return false;
-	*/
-}
-
-
 static bool search_stack(const jrd_nod* node, const NodeStack& stack)
 {
 /**************************************
@@ -4746,29 +4696,6 @@ static bool search_stack(const jrd_nod* node, const NodeStack& stack)
 		}
 	}
 	return false;
-}
-
-
-static void set_active(OptimizerBlk* opt, const River* river)
-{
-/**************************************
- *
- *	s e t _ a c t i v e
- *
- **************************************
- *
- * Functional description
- *	Set a group of streams active.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(river, type_riv);
-	CompilerScratch* csb = opt->opt_csb;
-	const UCHAR* streams = river->riv_streams;
-	for (const UCHAR* const end = streams + river->riv_count; streams < end; streams++)
-	{
-		csb->csb_rpt[*streams].csb_flags |= csb_active;
-	}
 }
 
 
@@ -4799,61 +4726,6 @@ static void set_direction(const jrd_nod* from_clause, jrd_nod* to_clause)
 	{
 		to_ptr[toCount] = from_ptr[fromCount];
 		to_ptr[toCount * 2] = from_ptr[fromCount * 2];
-	}
-}
-
-
-static void set_inactive(OptimizerBlk* opt, const River* river)
-{
-/**************************************
- *
- *	s e t _ i n a c t i v e
- *
- **************************************
- *
- * Functional description
- *	Set a group of streams inactive.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(river, type_riv);
-	CompilerScratch* csb = opt->opt_csb;
-	const UCHAR* streams = river->riv_streams;
-	for (const UCHAR* const end = streams + river->riv_count; streams < end; streams++)
-	{
-		csb->csb_rpt[*streams].csb_flags &= ~csb_active;
-	}
-}
-
-
-static void set_made_river(OptimizerBlk* opt, const River* river)
-{
-/**************************************
- *
- *	s e t _ m a d e _ r i v e r
- *
- **************************************
- *
- * Functional description
- *      Mark all the streams in a river with the csb_made_river flag.
- *
- *      A stream with this flag set, incicates that this stream has
- *      already been made into a river. Currently, this flag is used
- *      in OPT_computable() to decide if we can use the an index to
- *      optimise retrieving the streams involved in the conjunct.
- *
- *      We can use an index in retrieving the streams involved in a
- *      conjunct if both of the streams are currently active or have
- *      been processed (and made into rivers) before.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(river, type_riv);
-	CompilerScratch* csb = opt->opt_csb;
-	const UCHAR* streams = river->riv_streams;
-	for (const UCHAR* const end = streams + river->riv_count; streams < end; streams++)
-	{
-		csb->csb_rpt[*streams].csb_flags |= csb_made_river;
 	}
 }
 

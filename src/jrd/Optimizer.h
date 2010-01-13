@@ -71,6 +71,7 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 class IndexTableScan;
+class River;
 
 bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
 bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
@@ -291,6 +292,8 @@ private:
 	int remainingStreams;
 };
 
+typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamList;
+typedef Firebird::HalfStaticArray<River*, OPT_STATIC_ITEMS> RiverList;
 
 } // namespace Jrd
 
