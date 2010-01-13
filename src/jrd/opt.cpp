@@ -203,7 +203,7 @@ namespace Jrd
 		}
 
 		RecordSource* m_rsb;
-		HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
+		StreamList m_streams;
 	};
 } // namespace
 
