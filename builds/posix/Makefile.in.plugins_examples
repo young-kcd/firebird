@@ -56,14 +56,14 @@ Dependencies = $(AllObjects:.o=.d)
 all: udrcpp_example
 
 
-udrcpp_example: $(PLUGINS)/udr/udrcpp_example.$(SHRLIB_EXT)
+udrcpp_example: $(PLUGINS)/udr/$(LIB_PREFIX)udrcpp_example.$(SHRLIB_EXT)
 
-$(PLUGINS)/udr/udrcpp_example.$(SHRLIB_EXT): $(UDR_Objects)
+$(PLUGINS)/udr/$(LIB_PREFIX)udrcpp_example.$(SHRLIB_EXT): $(UDR_Objects)
 ifeq ($(PLATFORM),DARWIN)
 	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)udrcpp_example.$(SHRLIB_EXT) \
-$(LIB_PATH_OPTS) -o $@ $^ $(THR_LIBS) $(PLUGINS)/udr_engine.$(SHRLIB_EXT)
+$(LIB_PATH_OPTS) -o $@ $^ $(THR_LIBS) $(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT)
 endif
 
 include $(ROOT)/gen/make.shared.targets

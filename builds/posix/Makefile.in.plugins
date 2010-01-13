@@ -54,9 +54,9 @@ Dependencies = $(AllObjects:.o=.d)
 all: udr_engine $(PLUGINS)/udr_engine.conf
 
 
-udr_engine: $(PLUGINS)/udr_engine.$(SHRLIB_EXT)
+udr_engine: $(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT)
 
-$(PLUGINS)/udr_engine.$(SHRLIB_EXT): $(UDRENG_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects) $(OS_SPECIFIC_Objects)
+$(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT): $(UDRENG_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects) $(OS_SPECIFIC_Objects)
 ifeq ($(PLATFORM),DARWIN)
 	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
