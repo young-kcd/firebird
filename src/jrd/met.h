@@ -49,7 +49,8 @@ enum rsr_t {
 	RSR_field_scale,			// specific and relate to field info
 	RSR_field_length,
 	RSR_field_sub_type,
-	RSR_field_not_null
+	RSR_field_not_null,
+	RSR_field_generator_name
 };
 
 // Temporary field block

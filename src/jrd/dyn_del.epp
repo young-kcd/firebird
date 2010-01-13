@@ -74,6 +74,8 @@ static void delete_f_key_constraint(thread_db*, Global*,
 									const Firebird::MetaName&, const Firebird::MetaName&,
 									const Firebird::MetaName&, const Firebird::MetaName&);
 static void delete_gfield_for_lfield(Global*, const Firebird::MetaName&);
+static void delete_identity_generator(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& generatorName);
 static bool delete_index_segment_records(Global*, const Firebird::MetaName&);
 
 
@@ -460,6 +462,12 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
             if (!DYN_REQUEST(drq_e_gens))
                 DYN_REQUEST(drq_e_gens) = request;
 
+			if (X.RDB$SYSTEM_FLAG != 0)
+			{
+				DYN_rundown_request(request, -1);
+				DYN_error_punt(false, 272);	// msg 272: "Cannot delete system generator"
+			}
+
 		    found = true;
 
 			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
@@ -736,6 +744,7 @@ void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 		GET_STRING(ptr, tbl_nm);
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_dep_flds, DYN_REQUESTS);
+	jrd_req* request2 = NULL;
 	USHORT id = drq_l_dep_flds;
 
 	bool found;
@@ -847,6 +856,9 @@ void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::Meta
         if (!DYN_REQUEST(drq_e_lfield))
             DYN_REQUEST(drq_e_lfield) = request;
 
+		if (!RFR.RDB$GENERATOR_NAME.NULL)
+			delete_identity_generator(tdbb, gbl->gbl_transaction, RFR.RDB$GENERATOR_NAME);
+
 		ERASE RFR;
 
 		if (!RFR.RDB$SECURITY_CLASS.NULL &&
@@ -893,6 +905,7 @@ void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
+		DYN_rundown_request(request2, -1);
 
 		switch (id)
 		{
@@ -940,7 +953,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 	else
 		GET_STRING(ptr, relation_name);
 
-	jrd_req* req2 = 0;
+	jrd_req* req2 = NULL;
+	jrd_req* req3 = NULL;
 	jrd_req* request = CMP_find_request(tdbb, drq_l_relation, DYN_REQUESTS);
 	USHORT id = drq_l_relation;
 
@@ -1043,6 +1057,9 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 
         if (!DYN_REQUEST(drq_e_rel_flds))
 			  DYN_REQUEST(drq_e_rel_flds) = request;
+
+		if (!RFR.RDB$GENERATOR_NAME.NULL)
+			delete_identity_generator(tdbb, gbl->gbl_transaction, RFR.RDB$GENERATOR_NAME);
 
 		ERASE RFR;
 
@@ -1639,7 +1656,21 @@ static void delete_gfield_for_lfield( Global* gbl, const Firebird::MetaName& lfi
 
 	if (!DYN_REQUEST(drq_e_l_gfld))
 		DYN_REQUEST(drq_e_l_gfld) = request;
+}
 
+
+static void delete_identity_generator(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& generatorName)
+{
+	AutoCacheRequest request(tdbb, drq_e_ident_gens, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		GEN IN RDB$GENERATORS
+		WITH GEN.RDB$GENERATOR_NAME EQ generatorName.c_str()
+	{
+		ERASE GEN;
+	}
+	END_FOR
 }
 
 

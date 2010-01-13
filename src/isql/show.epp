@@ -4463,6 +4463,22 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 			isqlGlob.printf(" Nullable ");
 		}
 
+		if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_12_0)
+		{
+			FOR RFR2 IN RDB$RELATION_FIELDS
+				WITH RFR2.RDB$RELATION_NAME = RFR.RDB$RELATION_NAME AND
+					 RFR2.RDB$FIELD_NAME = RFR.RDB$FIELD_NAME
+			{
+				if (!RFR2.RDB$GENERATOR_NAME.NULL)
+					isqlGlob.printf("Identity (by default)");
+			}
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(isc_status);
+				return ps_ERR;
+			END_ERROR
+		}
+
 		// Handle defaults for columns
 
 		if (!RFR.RDB$DEFAULT_SOURCE.NULL)

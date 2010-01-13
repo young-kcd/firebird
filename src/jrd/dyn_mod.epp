@@ -561,7 +561,6 @@ void DYN_modify_global_field(Global* gbl,
 
 				switch (new_dom.dyn_dtype)
 				{
-
 				case blr_text:
 				case blr_text2:
 				case blr_varying:
@@ -747,9 +746,26 @@ void DYN_modify_global_field(Global* gbl,
 								new_dom.dyn_sub_type,
 								new_dom.dyn_charset,
 								new_dom.dyn_collation);
+
 			const ULONG retval = check_update_fld_type(orig_dom, new_dom);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_dom, new_dom);
+
+			if (!new_dom.dyn_dsc.isExact() || new_dom.dyn_dsc.dsc_scale != 0)
+			{
+				AutoCacheRequest request(tdbb, drq_l_ident_gens, DYN_REQUESTS);
+
+				FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+					RFR IN RDB$RELATION_FIELDS
+					WITH RFR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME AND
+						 RFR.RDB$GENERATOR_NAME NOT MISSING
+				{
+					// Domain @1 must be of exact number type with zero scale because it's used in
+					// an identity column.
+					DYN_error_punt(false, 276, SafeArg() << orig_dom.dyn_fld_name.c_str());
+				}
+				END_FOR
+			}
 		}
 
 		MODIFY FLD USING
@@ -1194,7 +1210,15 @@ void DYN_modify_local_field(Global* gbl, const UCHAR** ptr, const MetaName* rela
 				GET_STRING(&new_source, FLD.RDB$FIELD_SOURCE);
 
 			if (nullFlag.isAssigned())
+			{
+				if (!nullFlag.asBool() && !FLD.RDB$GENERATOR_NAME.NULL)
+				{
+					// msg 274: Identity column @1 of table @2 cannot be changed to NULLable
+					DYN_error_punt(false, 274, SafeArg() << f.c_str() << r.c_str());
+				}
+
 				FLD.RDB$NULL_FLAG = (SSHORT) nullFlag.asBool();
+			}
 		END_MODIFY;
 	END_FOR;
 
@@ -2166,6 +2190,13 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
 					break;
 
 				case isc_dyn_fld_default_value:
+					if (!RFR.RDB$GENERATOR_NAME.NULL)
+					{
+						// msg 275: Identity column @1 of table @2 cannot have default value
+						DYN_error_punt(false, 275,
+							SafeArg() << orig_fld.dyn_fld_name.c_str() << relation_name->c_str());
+					}
+
 					if (has_dimensions)
 					{
 						DYN_error_punt(false, 225, orig_fld.dyn_fld_name.c_str());
@@ -2250,6 +2281,16 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
 
 			if (!domain_is_computed && !is_view)
 			{
+				if (!RFR.RDB$GENERATOR_NAME.NULL)
+				{
+					if (!dom_fld.dyn_dsc.isExact() || dom_fld.dyn_dsc.dsc_scale != 0)
+					{
+						// Identity column @1 of table @2 must be exact numeric with zero scale.
+						DYN_error_punt(false, 273,
+							SafeArg() << orig_fld.dyn_fld_name.c_str() << relation_name->c_str());
+					}
+				}
+
 				const ULONG retval = check_update_fld_type(orig_fld, dom_fld);
 				if (retval != FB_SUCCESS)
 					modify_err_punt(tdbb, retval, orig_fld, dom_fld);
@@ -2334,6 +2375,16 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
 				const ULONG retval = check_update_fld_type(orig_fld, new_fld);
 				if (retval != FB_SUCCESS)
 					modify_err_punt(tdbb, retval, orig_fld, new_fld);
+
+				if (!RFR.RDB$GENERATOR_NAME.NULL)
+				{
+					if (!new_fld.dyn_dsc.isExact() || new_fld.dyn_dsc.dsc_scale != 0)
+					{
+						// Identity column @1 of table @2 must be exact numeric with zero scale.
+						DYN_error_punt(false, 273,
+							SafeArg() << orig_fld.dyn_fld_name.c_str() << relation_name->c_str());
+					}
+				}
 			}
 
 			// Check to see if the original data type for the field was based on a domain.  If it

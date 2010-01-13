@@ -121,6 +121,8 @@
 	const USHORT  f_rfr_null_flag = 16;
 	const USHORT  f_rfr_dsource = 17;
 	const USHORT  f_rfr_coll_id = 18;
+	const USHORT  f_rfr_gen_name = 19;
+	const USHORT  f_rfr_identity_type = 20;
 
 
 // Relation 6 (RDB$RELATIONS)

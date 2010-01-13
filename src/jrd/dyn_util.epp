@@ -554,6 +554,42 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* /*gbl*/,
 }
 
 
+// Generate a name unique to RDB$GENERATORS.
+void DYN_UTIL_generate_generator_name(thread_db* tdbb, Firebird::MetaName& buffer)
+{
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	AutoCacheRequest request(tdbb, drq_f_nxt_gen, DYN_REQUESTS);
+
+	try
+	{
+		bool found = false;
+
+		do
+		{
+			buffer.printf("RDB$%" SQUADFORMAT,
+				DYN_UTIL_gen_unique_id(tdbb, drq_g_nxt_gen, "RDB$GENERATOR_NAME"));
+
+			found = false;
+
+			FOR (REQUEST_HANDLE request)
+				FIRST 1 X IN RDB$GENERATORS WITH X.RDB$GENERATOR_NAME EQ buffer.c_str()
+			{
+				found = true;
+			}
+			END_FOR
+		} while (found);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 277);	// msg 277: "Generation of generator name failed"
+	}
+}
+
+
 void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* /*gbl*/, Firebird::MetaName& buffer)
 {
 /**************************************

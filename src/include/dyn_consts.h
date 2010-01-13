@@ -202,6 +202,7 @@
 #define isc_dyn_fld_base_fld              91
 #define isc_dyn_fld_position              92
 #define isc_dyn_fld_update_flag           93
+#define isc_dyn_fld_identity              253
 
 /*****************************/
 /* Index specific attributes */
@@ -420,6 +421,6 @@
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
-//#define isc_dyn_last_dyn_value            253
+//#define isc_dyn_last_dyn_value            254
 
 #endif // INCLUDE_DYN_CONSTS_H

@@ -2800,7 +2800,14 @@ void CreateSequenceNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 void CreateSequenceNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
+	store(tdbb, transaction, name, fb_sysflag_user);
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
+}
 
+
+void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const MetaName& name,
+	fb_sysflag sysFlag)
+{
 	bool endStore = false;
 
 	try
@@ -2824,7 +2831,7 @@ void CreateSequenceNode::execute(thread_db* tdbb, jrd_tra* transaction)
 					X IN RDB$GENERATORS
 				{
 					X.RDB$GENERATOR_ID = id;
-					X.RDB$SYSTEM_FLAG = 0;
+					X.RDB$SYSTEM_FLAG = (SSHORT) sysFlag;
 					strcpy(X.RDB$GENERATOR_NAME, name.c_str());
 
 					endStore = true;
@@ -2850,8 +2857,6 @@ void CreateSequenceNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		rethrowMetaException(ex, ENCODE_ISC_MSG(8, DYN_MSG_FAC), endStore);	// DEFINE GENERATOR failed
 	}
-
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
 }
 
 

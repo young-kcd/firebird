@@ -4056,6 +4056,10 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 					memcpy(&array->arr_desc, p, length);
 				break;
 
+			case RSR_field_generator_name:
+				field->fld_generator_name = (const TEXT*) p;
+				break;
+
 			default:    // Shut up compiler warning
 				break;
 			}

@@ -2415,10 +2415,13 @@ void DYN_define_local_field(Global*		gbl,
 		RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
 		RFR.RDB$EDIT_STRING.NULL = TRUE;
 		RFR.RDB$COLLATION_ID.NULL = TRUE;
+		RFR.RDB$GENERATOR_NAME.NULL = TRUE;
+		RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
 
 		bool has_default = false;
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
+		{
 			switch (verb)
 			{
 			case isc_dyn_rel_name:
@@ -2501,6 +2504,22 @@ void DYN_define_local_field(Global*		gbl,
 				DYN_put_text_blob(gbl, ptr, &RFR.RDB$DEFAULT_SOURCE);
 				break;
 
+			case isc_dyn_fld_identity:
+			{
+				MetaName sequenceName;
+				DYN_UTIL_generate_generator_name(tdbb, sequenceName);
+
+				CreateSequenceNode::store(tdbb, gbl->gbl_transaction, sequenceName,
+					fb_sysflag_identity_generator);
+
+				strcpy(RFR.RDB$GENERATOR_NAME, sequenceName.c_str());
+				RFR.RDB$GENERATOR_NAME.NULL = FALSE;
+
+				RFR.RDB$IDENTITY_TYPE = IDENT_TYPE_BY_DEFAULT;
+				RFR.RDB$IDENTITY_TYPE.NULL = FALSE;
+				break;
+			}
+
 			case isc_dyn_fld_not_null:
 				RFR.RDB$NULL_FLAG.NULL = FALSE;
 				RFR.RDB$NULL_FLAG = TRUE;
@@ -2554,11 +2573,25 @@ void DYN_define_local_field(Global*		gbl,
 				MetaTmp(RFR.RDB$FIELD_SOURCE)
 					DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
 			}
+		}
 
 		if (has_default && DYN_UTIL_is_array(tdbb, gbl, RFR.RDB$FIELD_SOURCE))
 		{
 			DYN_error_punt(false, 226, RFR.RDB$FIELD_SOURCE);
 			// msg 226: "Default value is not allowed for array type in domain %s"
+		}
+
+		if (!RFR.RDB$GENERATOR_NAME.NULL)
+		{
+			dsc desc;
+			MET_get_domain(tdbb, RFR.RDB$FIELD_SOURCE, &desc, NULL);
+
+			if (!desc.isExact() || desc.dsc_scale != 0)
+			{
+				// Identity column @1 of table @2 must be exact numeric with zero scale.
+				DYN_error_punt(false, 273,
+					SafeArg() << local_field_name.c_str() << relation_name->c_str());
+			}
 		}
 
 		if (RFR.RDB$FIELD_POSITION.NULL == TRUE)
@@ -3102,6 +3135,8 @@ void DYN_define_sql_field(Global*		gbl,
 		RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
 		RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
 		RFR.RDB$COLLATION_ID.NULL = TRUE;
+		RFR.RDB$GENERATOR_NAME.NULL = TRUE;
+		RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
 
 		old_request = request;
 		const SSHORT old_id = id;
@@ -3134,7 +3169,9 @@ void DYN_define_sql_field(Global*		gbl,
 
 			DYN_UTIL_generate_field_name(tdbb, gbl, RFR.RDB$FIELD_SOURCE);
 			strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
+
 			while ((verb = *(*ptr)++) != isc_dyn_end)
+			{
 				switch (verb)
 				{
 				case isc_dyn_rel_name:
@@ -3211,6 +3248,22 @@ void DYN_define_sql_field(Global*		gbl,
 					FLD.RDB$VALIDATION_BLR.NULL = FALSE;
 					DYN_put_blr_blob(gbl, ptr, &FLD.RDB$VALIDATION_BLR);
 					break;
+
+				case isc_dyn_fld_identity:
+				{
+					MetaName sequenceName;
+					DYN_UTIL_generate_generator_name(tdbb, sequenceName);
+
+					CreateSequenceNode::store(tdbb, gbl->gbl_transaction, sequenceName,
+						fb_sysflag_identity_generator);
+
+					strcpy(RFR.RDB$GENERATOR_NAME, sequenceName.c_str());
+					RFR.RDB$GENERATOR_NAME.NULL = FALSE;
+
+					RFR.RDB$IDENTITY_TYPE = IDENT_TYPE_BY_DEFAULT;
+					RFR.RDB$IDENTITY_TYPE.NULL = FALSE;
+					break;
+				}
 
 				case isc_dyn_fld_not_null:
 					RFR.RDB$NULL_FLAG.NULL = FALSE;
@@ -3307,6 +3360,20 @@ void DYN_define_sql_field(Global*		gbl,
 					MetaTmp(RFR.RDB$FIELD_SOURCE)
 						DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
 				}
+			}
+
+			if (!RFR.RDB$GENERATOR_NAME.NULL)
+			{
+				bool exact = FLD.RDB$FIELD_TYPE == blr_short || FLD.RDB$FIELD_TYPE == blr_long ||
+					FLD.RDB$FIELD_TYPE == blr_int64;
+
+				if (!exact || FLD.RDB$FIELD_SCALE != 0)
+				{
+					// Identity column @1 of table @2 must be exact numeric with zero scale.
+					DYN_error_punt(false, 273,
+						SafeArg() << sql_field_name.c_str() << relation_name->c_str());
+				}
+			}
 
 			if (RFR.RDB$FIELD_POSITION.NULL == TRUE)
 			{

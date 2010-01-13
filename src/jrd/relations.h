@@ -120,6 +120,8 @@ RELATION(nam_r_fields, rel_rfr, ODS_8_0, rel_persistent)
 	FIELD(f_rfr_null_flag, nam_null_flag, fld_null_flag, 1, ODS_8_0)
 	FIELD(f_rfr_dsource, nam_d_source, fld_source, 1, ODS_8_0)
 	FIELD(f_rfr_coll_id, nam_collate_id, fld_collate_id, 1, ODS_8_0)
+	FIELD(f_rfr_gen_name, nam_gen_name, fld_gen_name, 1, ODS_12_0)
+	FIELD(f_rfr_identity_type, nam_identity_type, fld_identity_type, 1, ODS_12_0)
 END_RELATION
 
 // Relation 6 (RDB$RELATIONS)

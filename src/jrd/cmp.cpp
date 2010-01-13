@@ -3057,7 +3057,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_gen_value] =
 			copy(tdbb, csb, input->nod_arg[e_gen_value], remap, field_id, message, remap_fld);
-		node->nod_arg[e_gen_relation] = input->nod_arg[e_gen_relation];
+		node->nod_arg[e_gen_id] = input->nod_arg[e_gen_id];
 		return (node);
 
 	case nod_cast:
@@ -3571,51 +3571,77 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++field_id)
 	{
 		jrd_nod* value;
-		if (*ptr1 && (value = (*ptr1)->fld_default_value))
+
+		if (!*ptr1 || !((*ptr1)->fld_generator_name.hasData() || (value = (*ptr1)->fld_default_value)))
+			continue;
+
+		fb_assert(statement->nod_type == nod_list);
+		if (statement->nod_type == nod_list)
 		{
-			fb_assert(statement->nod_type == nod_list);
-			if (statement->nod_type == nod_list)
+			bool inList = false;
+
+			for (unsigned i = 0; i < statement->nod_count; ++i)
 			{
-				bool inList = false;
+				const jrd_nod* assign = statement->nod_arg[i];
 
-				for (unsigned i = 0; i < statement->nod_count; ++i)
+				fb_assert(assign->nod_type == nod_assignment);
+				if (assign->nod_type == nod_assignment)
 				{
-					const jrd_nod* assign = statement->nod_arg[i];
+					const jrd_nod* to = assign->nod_arg[e_asgn_to];
 
-					fb_assert(assign->nod_type == nod_assignment);
-					if (assign->nod_type == nod_assignment)
+					fb_assert(to->nod_type == nod_field);
+					if (to->nod_type == nod_field &&
+						(USHORT)(IPTR) to->nod_arg[e_fld_stream] == stream &&
+						(USHORT)(IPTR) to->nod_arg[e_fld_id] == field_id)
 					{
-						const jrd_nod* to = assign->nod_arg[e_asgn_to];
-
-						fb_assert(to->nod_type == nod_field);
-						if (to->nod_type == nod_field &&
-							(USHORT)(IPTR) to->nod_arg[e_fld_stream] == stream &&
-							(USHORT)(IPTR) to->nod_arg[e_fld_id] == field_id)
-						{
-							inList = true;
-							break;
-						}
+						inList = true;
+						break;
 					}
 				}
-
-				if (inList)
-					continue;
 			}
+
+			if (inList)
+				continue;
 
 			jrd_nod* node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
-			node->nod_arg[e_asgn_from] =
-				copy(tdbb, csb, value, map, (USHORT) (field_id + 1), NULL, false);
 			node->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
+
+			if ((*ptr1)->fld_generator_name.hasData())
+			{
+				// Make a gen_id(<generator name>, 1) expression.
+
+				jrd_nod* genNode = PAR_make_node(tdbb, e_gen_length);
+				genNode->nod_type = nod_gen_id;
+				genNode->nod_count = 1;
+
+				const SLONG tmp = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
+				genNode->nod_arg[e_gen_id] = (jrd_nod*)(IPTR) tmp;
+
+				const int count = lit_delta + (sizeof(SLONG) + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
+				jrd_nod* literalNode = genNode->nod_arg[e_gen_value] = PAR_make_node(tdbb, count);
+				literalNode->nod_type = nod_literal;
+				literalNode->nod_count = 0;
+				Literal* literal = (Literal*) literalNode;
+				literal->lit_desc.makeLong(0, (SLONG*) literal->lit_data);
+				*(SLONG*) literal->lit_data = 1;
+
+				node->nod_arg[e_asgn_from] = genNode;
+			}
+			else //if (value)
+			{
+				// Clone the field default value.
+				node->nod_arg[e_asgn_from] = copy(tdbb, csb, value,
+					map, (USHORT) (field_id + 1), NULL, false);
+			}
 		}
 	}
 
 	if (stack.isEmpty())
 		return statement;
 
-	// we have some default - add the original statement and make a list out of
-	// the whole mess
+	// We have some default - add the original statement and make a list out of the whole mess.
 
 	stack.push(statement);
 

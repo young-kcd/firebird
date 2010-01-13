@@ -609,6 +609,10 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
+public:
+	static void store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
+		fb_sysflag sysFlag);
+
 private:
 	Firebird::MetaName name;
 };

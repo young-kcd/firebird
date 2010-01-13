@@ -79,6 +79,7 @@ static const Jrd::gen generators[] =
 	{ "RDB$TRIGGER_NAME", 8, "Implicit trigger name" },
 	{ "RDB$BACKUP_HISTORY", 9, "Nbackup technology" },
 	{ "RDB$FUNCTIONS", 10, "Function ID" },
+	{ "RDB$GENERATOR_NAME", 11, "Implicit generator name" },
 	{ 0, 0, NULL }
 };
 

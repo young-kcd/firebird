@@ -323,6 +323,8 @@ enum att_type {
 	// hence the new atributes for rdb$fields may be already present
 	// att_field_security_class, // already used for relation_fields
 	att_field_owner_name, // FB3.0, ODS12_0,
+	att_field_generator_name,
+	att_field_identity_type,
 
 	// Index attributes
 
@@ -491,6 +493,7 @@ enum att_type {
 	att_gen_description,
 	att_gen_security_class, // FB3.0, ODS12_0
 	att_gen_owner_name,
+	att_gen_sysflag,
 
 	// Stored procedure attributes
 
@@ -651,6 +654,8 @@ struct burp_fld
 	TEXT		fld_base [GDS_NAME_LEN];
 	TEXT		fld_query_name [GDS_NAME_LEN];
 	TEXT		fld_security_class [GDS_NAME_LEN];
+	TEXT		fld_generator[GDS_NAME_LEN];
+	SSHORT		fld_identity_type;
 	//SSHORT	fld_edit_length;
 	SSHORT		fld_view_context;
 	SSHORT		fld_update_flag;

@@ -1913,6 +1913,15 @@ static void define_field(DsqlCompilerScratch* dsqlScratch,
 		define_dimensions(dsqlScratch, field);
 	}
 
+	// check for constraints
+	bool not_null_flag = false;
+
+	if (element->nod_arg[e_dfl_identity])
+	{
+		not_null_flag = true;	// identity columns are implicitly not null
+		statement->append_uchar(isc_dyn_fld_identity);
+	}
+
 	// dimitr:  store the final position of the vector to insert a not null
 	//			item later, if required. This is a kind of a hack, but I see
 	//			no other way to ensure that NOT NULL is properly understood
@@ -1924,8 +1933,6 @@ static void define_field(DsqlCompilerScratch* dsqlScratch,
 	const size_t end = statement->getBlrData().getCount();
 	statement->append_uchar(isc_dyn_end);
 
-	// check for constraints
-	bool not_null_flag = false;
 	if ( (node = element->nod_arg[e_dfl_constraint]) )
 	{
 		const dsql_nod* const* const end_ptr = node->nod_arg + node->nod_count;

@@ -229,6 +229,10 @@ enum drq_type_t
 	drq_e_prm_gfld,			// erase parameter source
 	drq_e_prm_gfld2,		// erase parameter source
 	drq_g_nxt_sec_id,		// lookup next security class ID
+	drq_f_nxt_gen,			// find next generator name
+	drq_g_nxt_gen,			// generate next generator name
+	drq_e_ident_gens,		// erase generators (identity column)
+	drq_l_ident_gens,		// lookup generators (identity column)
 
 	drq_MAX
 };

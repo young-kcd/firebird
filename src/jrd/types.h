@@ -143,3 +143,6 @@ TYPE ("ATTACHMENT", stat_attachment, nam_mon_stat_group)
 TYPE ("TRANSACTION", stat_transaction, nam_mon_stat_group)
 TYPE ("STATEMENT", stat_statement, nam_mon_stat_group)
 TYPE ("CALL", stat_call, nam_mon_stat_group)
+
+TYPE ("ALWAYS", IDENT_TYPE_ALWAYS, nam_identity_type)
+TYPE ("BY DEFAULT", IDENT_TYPE_BY_DEFAULT, nam_identity_type)

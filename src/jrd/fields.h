@@ -164,3 +164,5 @@
 	FIELD(fld_fun_blr		, nam_fun_blr		, dtype_blob	, BLOB_SIZE					, isc_blob_blr				, NULL		, true)
 	FIELD(fld_arg_name		, nam_arg_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_arg_mechanism	, nam_arg_mechanism	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
+
+	FIELD(fld_identity_type	, nam_identity_type	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)

@@ -255,6 +255,7 @@ NAME("RDB$LEGACY_FLAG", nam_legacy_flag)
 NAME("RDB$INVARIANT_FLAG", nam_invariant_flag)
 NAME("RDB$ARGUMENT_MECHANISM", nam_arg_mechanism)
 NAME("RDB$ARGUMENT_NAME", nam_arg_name)
+NAME("RDB$IDENTITY_TYPE", nam_identity_type)
 
 NAME("MON$ATTACHMENTS", nam_mon_attachments)
 NAME("MON$ATTACHMENT_ID", nam_mon_att_id)

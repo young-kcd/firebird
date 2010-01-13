@@ -5320,8 +5320,17 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 					n = fb_utils::name_length(RFR.RDB$SECURITY_CLASS);
 					if (!RFR.RDB$SECURITY_CLASS.NULL && n)
+					{
 						put_summary_record(tdbb, blob, RSR_security_class,
 										   (UCHAR*) RFR.RDB$SECURITY_CLASS, n);
+					}
+
+					n = fb_utils::name_length(RFR.RDB$GENERATOR_NAME);
+					if (!RFR.RDB$GENERATOR_NAME.NULL && n)
+					{
+						put_summary_record(tdbb, blob, RSR_field_generator_name,
+										   (UCHAR*) RFR.RDB$GENERATOR_NAME, n);
+					}
 
 					// Make a temporary field block
 

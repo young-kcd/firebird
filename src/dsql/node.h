@@ -628,6 +628,7 @@ enum node_args {
 	e_dfl_collate,
 	e_dfl_domain,
 	e_dfl_computed,
+	e_dfl_identity,
 	e_dfl_count,
 
 	e_view_name = 0,		// nod_def_view

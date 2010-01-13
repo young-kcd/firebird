@@ -407,6 +407,14 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		sprintf(line, "    trigger_name: %s", p);
 		break;
 
+	case RSR_field_not_null:
+		sprintf(line, "    field_not_null");
+		break;
+
+	case RSR_field_generator_name:
+		sprintf(line, "    field_generator_name: %s", p);
+		break;
+
 	default:
 		sprintf(line, "*** unknown verb %d ***", (int) buff[0]);
 	}

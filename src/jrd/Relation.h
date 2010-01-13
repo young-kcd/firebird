@@ -336,10 +336,11 @@ public:
 	ArrayField*	fld_array;			// array description, if array
 	Firebird::MetaName	fld_name;	// Field name
 	Firebird::MetaName	fld_security_name;	// security class name for field
+	Firebird::MetaName	fld_generator_name;	// identity generator name
 
 public:
 	explicit jrd_fld(MemoryPool& p)
-		: fld_name(p), fld_security_name(p)
+		: fld_name(p), fld_security_name(p), fld_generator_name(p)
 	{ }
 };
 

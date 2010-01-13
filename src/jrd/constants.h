@@ -141,13 +141,19 @@ enum fb_sysflag {
 	fb_sysflag_qli = 2,
 	fb_sysflag_check_constraint = 3,
 	fb_sysflag_referential_constraint = 4,
-	fb_sysflag_view_check = 5
+	fb_sysflag_view_check = 5,
+	fb_sysflag_identity_generator = 6
 };
 
 enum ViewContextType {
 	VCT_TABLE,
 	VCT_VIEW,
 	VCT_PROCEDURE
+};
+
+enum IdentityType {
+	IDENT_TYPE_ALWAYS,
+	IDENT_TYPE_BY_DEFAULT
 };
 
 // UDF Arguments are numbered from 0 to MAX_UDF_ARGUMENTS --

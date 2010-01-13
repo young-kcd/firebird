@@ -210,6 +210,7 @@ static const TOK tokens[] =
 	{HASH, "HASH", 2, false},
 	{HAVING, "HAVING", 1, false},
 	{HOUR, "HOUR", 2, false},
+	{IDENTITY, "IDENTITY", 2, false},
 	{IF, "IF", 1, false},
 	{KW_IGNORE, "IGNORE", 2, true},
 	{IIF, "IIF", 2, true},
