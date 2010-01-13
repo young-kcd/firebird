@@ -1,3 +1,24 @@
+2010-01-13 12:46  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.395):
+
+	Misc.
+
+2010-01-13 12:44  dimitr
+
+	* firebird2/src/jrd/: exe.h (1.150), lls.h (1.7), opt.cpp (1.394),
+	Optimizer.h (1.37), rse.h (1.73), recsrc/RecordSource.h (1.16):
+
+	Cleanup and refactoring in the optimizer (mostly related to rivers
+	and sort/merge).
+
+2010-01-12 15:21  asfernandes
+
+	* firebird2/src/jrd/: opt.cpp (1.393), recsrc/RecordSource.h
+	(1.15):
+
+	Misc
+
 2010-01-12 12:45  dimitr
 
 	* firebird2/src/jrd/rse.h (1.72):
