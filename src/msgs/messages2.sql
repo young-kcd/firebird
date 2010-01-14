@@ -1838,7 +1838,7 @@ COMMIT WORK;
 (NULL, 'DYN_modify_local_field', 'dyn_mod.epp', NULL, 8, 274, NULL, 'Identity column @1 of table @2 cannot be changed to NULLable', NULL, NULL);
 (NULL, 'DYN_modify_sql_field', 'dyn_mod.epp', NULL, 8, 275, NULL, 'Identity column @1 of table @2 cannot have default value', NULL, NULL);
 (NULL, 'DYN_modify_global_field', 'dyn_mod.epp', NULL, 8, 276, NULL, 'Domain @1 must be of exact number type with zero scale because it''s used in an identity column', NULL, NULL);
-(NULL, NULL, 'dyn_util.epp', NULL, 8, 277, NULL, 'Generation of generator name failed', NULL, NULL);
+(NULL, 'DYN_UTIL_generate_generator_name', 'dyn_util.epp', NULL, 8, 277, NULL, 'Generation of generator name failed', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

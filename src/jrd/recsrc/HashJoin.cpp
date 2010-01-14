@@ -245,13 +245,13 @@ USHORT HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, bool outer)
 		if (desc && !(request->req_flags & req_null))
 		{
 			USHORT length = desc->dsc_length;
-			UCHAR* address = desc->dsc_address;
+			const UCHAR* address = desc->dsc_address;
 
 			if (desc->dsc_dtype == dtype_varying)
 			{
-				vary* const string = (vary*) address;
+				const vary* const string = (vary*) address;
 				length = string->vary_length;
-				address = (UCHAR*) string->vary_string;
+				address = (const UCHAR*) string->vary_string;
 			}
 			else if (desc->dsc_dtype == dtype_cstring)
 			{
