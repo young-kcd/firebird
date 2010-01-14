@@ -233,7 +233,7 @@ static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSourc
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
 static SortedStream* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
 					  RecordSource*, jrd_nod*, bool);
-static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverList&);
+static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static void get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
 static jrd_nod* get_unmapped_node(thread_db*, jrd_nod*, jrd_nod*, UCHAR, bool);
@@ -833,8 +833,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			sort = NULL;
 			sort_can_be_used = false;
 			// AB: We could already have multiple rivers at this
-			// point so try to do some sort/merging now.
-			while (gen_sort_merge(tdbb, opt, rivers))
+			// point so try to do some hashing or sort/merging now.
+			while (gen_equi_join(tdbb, opt, rivers))
 				;
 
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
@@ -900,8 +900,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		// attempt to form joins in decreasing order of desirability
 		gen_join(tdbb, opt, streams, rivers, &sort, rse->rse_plan);
 
-		// If there are multiple rivers, try some sort/merging
-		while (gen_sort_merge(tdbb, opt, rivers))
+		// If there are multiple rivers, try some hashing or sort/merging
+		while (gen_equi_join(tdbb, opt, rivers))
 			;
 
 		rsb = River(csb, rivers).getRecordSource();
@@ -3556,21 +3556,21 @@ static SortedStream* gen_sort(thread_db* tdbb,
 }
 
 
-static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_rivers)
+static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_rivers)
 {
 /**************************************
  *
- *	g e n _ s o r t _ m e r g e
+ *	g e n _ e q u i _ j o i n
  *
  **************************************
  *
  * Functional description
  *	We've got a set of rivers that may or may not be amenable to
- *	a sort/merge join, and it's time to find out.  If there are,
- *	build a sort/merge RecordSource, push it on the rsb stack, and update
- *	rivers accordingly.  If two or more rivers were successfully
- *	joined, return true.  If the whole things is a moby no-op,
- *	return false.
+ *	a hash join or a sort/merge join, and it's time to find out.
+ *	If there are, build an appropriate join RecordSource,
+ *	push it on the rsb stack, and update rivers accordingly.
+ *	If two or more rivers were successfully joined, return true.
+ *	If the whole things is a moby no-op, return false.
  *
  **************************************/
 	ULONG selected_rivers[OPT_STREAM_BITS], selected_rivers2[OPT_STREAM_BITS];
@@ -3663,8 +3663,8 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_ri
 		}
 	}
 
-	// Pick both a set of classes and a set of rivers on which to join with
-	// sort merge.  Obviously, if the set of classes is empty, return false
+	// Pick both a set of classes and a set of rivers on which to join.
+	// Obviously, if the set of classes is empty, return false
 	// to indicate that nothing could be done.
 
 	USHORT river_cnt = 0;
@@ -3704,8 +3704,12 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_ri
 		return false;
 	}
 
-	HalfStaticArray<SortedStream*, OPT_STATIC_ITEMS> sorts;
+	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
 	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> keys;
+
+	// Unconditionally disable merge joins in favor of hash joins.
+	// This is a temporary debugging measure.
+	bool prefer_merge_over_hash = false;
 
 	// AB: Get the lowest river position from the rivers that are merged
 
@@ -3731,34 +3735,78 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_ri
 		org_rivers.remove(iter);
 
 		const size_t selected_count = selected_classes.getCount();
-		jrd_nod* const sort = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_count * 3) jrd_nod();
-		sort->nod_type = nod_sort;
-		sort->nod_count = (USHORT) selected_count;
-		jrd_nod*** selected_class;
-		for (selected_class = selected_classes.begin(), ptr = sort->nod_arg;
-			selected_class < selected_classes.end(); selected_class++)
+
+		jrd_nod* key = NULL;
+		RecordSource* rsb = NULL;
+
+		if (prefer_merge_over_hash)
 		{
-			ptr[sort->nod_count] = (jrd_nod*) FALSE; // Ascending sort
-			ptr[sort->nod_count * 2] = (jrd_nod*)(IPTR) rse_nulls_default; // Default nulls placement
-			*ptr++ = (*selected_class)[number];
+			key = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_count * 3) jrd_nod();
+			key->nod_type = nod_sort;
+			key->nod_count = (USHORT) selected_count;
+			jrd_nod*** selected_class;
+			for (selected_class = selected_classes.begin(), ptr = key->nod_arg;
+				selected_class < selected_classes.end(); selected_class++)
+			{
+				ptr[key->nod_count] = (jrd_nod*) FALSE; // Ascending sort
+				ptr[key->nod_count * 2] = (jrd_nod*)(IPTR) rse_nulls_default; // Default nulls placement
+				*ptr++ = (*selected_class)[number];
+			}
+
+			const size_t stream_count = river->getStreamCount();
+			fb_assert(stream_count <= MAX_STREAMS);
+			stream_array_t streams;
+			streams[0] = (UCHAR) stream_count;
+			memcpy(streams + 1, river->getStreams(), stream_count);
+			rsb = gen_sort(tdbb, opt, streams, NULL, river->getRecordSource(), key, false); 
+		}
+		else
+		{
+			key = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_count) jrd_nod();
+			key->nod_type = nod_list;
+			key->nod_count = (USHORT) selected_count;
+			jrd_nod*** selected_class;
+			for (selected_class = selected_classes.begin(), ptr = key->nod_arg;
+				selected_class < selected_classes.end(); selected_class++)
+			{
+				*ptr++ = (*selected_class)[number];
+			}
+
+			rsb = river->getRecordSource();
 		}
 
-		const size_t stream_count = river->getStreamCount();
-		fb_assert(stream_count <= MAX_STREAMS);
-		stream_array_t streams;
-		streams[0] = (UCHAR) stream_count;
-		memcpy(streams + 1, river->getStreams(), stream_count);
+		rsbs.add(rsb);
+		keys.add(key);
 
-		sorts.add(gen_sort(tdbb, opt, streams, NULL, river->getRecordSource(), sort, false));
-		keys.add(sort);
+		if (!prefer_merge_over_hash && rivers_to_merge.getCount() == 2)
+		{
+			// we cannot hash-join more than two rivers at once
+			break;
+		}
 	}
 
-	fb_assert(sorts.getCount() == keys.getCount());
+	// Build a join stream
 
-	// Build a merge stream
+	RecordSource* rsb = NULL;
 
-	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool())
-		MergeJoin(csb, sorts.getCount(), sorts.begin(), keys.begin());
+	if (prefer_merge_over_hash)
+	{
+		fb_assert(rsbs.getCount() == keys.getCount());
+
+		rsb = FB_NEW(*tdbb->getDefaultPool())
+			MergeJoin(csb, rsbs.getCount(), (SortedStream**) rsbs.begin(), keys.begin());
+	}
+	else
+	{
+		fb_assert(rsbs.getCount() == 2 && keys.getCount() == 2);
+
+		// It seems that rivers are already sorted by their cardinality.
+		// We need to choose the smallest one as an inner sub-stream,
+		// hence we reverse the order when passing them into the constructor.
+
+		rsb = FB_NEW(*tdbb->getDefaultPool())
+			HashJoin(csb, rsbs[1], rsbs[0], keys[1], keys[0]);
+	}
 
 	// Pick up any boolean that may apply
 
