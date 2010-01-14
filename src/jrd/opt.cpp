@@ -3618,6 +3618,15 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
 
+		dsc desc1, desc2;
+		CMP_get_desc(tdbb, csb, node1, &desc1);
+		CMP_get_desc(tdbb, csb, node2, &desc2);
+
+		if (!DSC_EQUIV(&desc1, &desc2, true) || desc1.isBlob() || desc2.isBlob())
+		{
+			continue;
+		}
+
 		USHORT number1 = 0;
 		for (River** iter1 = org_rivers.begin(); iter1 < org_rivers.end(); iter1++, number1++)
 		{
