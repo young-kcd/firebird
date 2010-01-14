@@ -244,9 +244,23 @@ USHORT HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, bool outer)
 
 		if (desc && !(request->req_flags & req_null))
 		{
+			USHORT length = desc->dsc_length;
+			UCHAR* address = desc->dsc_address;
+
+			if (desc->dsc_dtype == dtype_varying)
+			{
+				vary* const string = (vary*) address;
+				length = string->vary_length;
+				address = (UCHAR*) string->vary_string;
+			}
+			else if (desc->dsc_dtype == dtype_cstring)
+			{
+				length = strlen((char*) address);
+			}
+
 			UCHAR* p = NULL;
-			const UCHAR* q = desc->dsc_address;
-			for (USHORT l = 0; l < desc->dsc_length; l++)
+			const UCHAR* q = address;
+			for (USHORT l = 0; l < length; l++)
 			{
 				if (!(l & 3))
 				{
