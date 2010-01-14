@@ -170,7 +170,11 @@ namespace Jrd
 		bool isReferenced(const jrd_nod* node)
 		{
 			bool field_found = false;
-			return isReferenced(node, field_found) ? field_found : false;
+
+			if (isReferenced(node, field_found))
+				return field_found;
+			else
+				return false;
 		}
 
 	private:
@@ -2468,7 +2472,7 @@ static bool form_river(thread_db*		tdbb,
  *
  **************************************/
 	fb_assert(count);
-	
+
 	DEV_BLKCHK(opt, type_opt);
 	if (sort_clause) {
 		DEV_BLKCHK(*sort_clause, type_nod);
@@ -3285,7 +3289,7 @@ static SortedStream* gen_sort(thread_db* tdbb,
 	ULONG items = sort->nod_count + (streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
 	const UCHAR* const end_ptr = streams + streams[0];
 	const jrd_nod* const* const end_node = sort->nod_arg + sort->nod_count;
-	Firebird::HalfStaticArray<SLONG, OPT_STATIC_ITEMS> id_list;
+	HalfStaticArray<SLONG, OPT_STATIC_ITEMS> id_list;
 	StreamList stream_list;
 
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++)
@@ -3677,7 +3681,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	// to indicate that nothing could be done.
 
 	USHORT river_cnt = 0;
-	Firebird::HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(cnt);
+	HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(cnt);
 	for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 	{
 		USHORT i = river_count(cnt, eq_class);
@@ -3767,7 +3771,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			stream_array_t streams;
 			streams[0] = (UCHAR) stream_count;
 			memcpy(streams + 1, river->getStreams(), stream_count);
-			rsb = gen_sort(tdbb, opt, streams, NULL, river->getRecordSource(), key, false); 
+			rsb = gen_sort(tdbb, opt, streams, NULL, river->getRecordSource(), key, false);
 		}
 		else
 		{
