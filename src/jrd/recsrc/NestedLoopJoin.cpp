@@ -224,7 +224,7 @@ void NestedLoopJoin::dump(thread_db* tdbb, UCharBuffer& buffer)
 	buffer.add(isc_info_rsb_begin);
 
 	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_cross);
+	buffer.add(m_outerJoin ? isc_info_rsb_left_cross : isc_info_rsb_cross);
 
 	const size_t count = m_args.getCount();
 	// This place must be reviewed if we allow more than 255 joins
