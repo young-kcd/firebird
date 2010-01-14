@@ -949,7 +949,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		}
 		key_streams[0] = k - &key_streams[1];
 
-		// Handle project clause, if present.
+		// Handle project clause, if present
 		if (project) {
 			rsb = gen_sort(tdbb, opt, beds, key_streams, rsb, project, true);
 		}
@@ -2266,30 +2266,30 @@ static void find_index_relationship_streams(thread_db* tdbb,
 {
 /**************************************
  *
- *	f i n d _ i n d e x _r e l a t i o n s h i p _ s t r e a m s
+ *	f i n d _ i n d e x _ r e l a t i o n s h i p _ s t r e a m s
  *
  **************************************
  *
  * Functional description
- *	Find the streams that can use a index
+ *	Find the streams that can use an index
  *	with the currently active streams.
  *
  **************************************/
 
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
-	//Database* dbb = tdbb->getDatabase();
 
 	CompilerScratch* const csb = opt->opt_csb;
 	const UCHAR* end_stream = streams + 1 + streams[0];
 	for (const UCHAR* stream = streams + 1; stream < end_stream; stream++)
 	{
+		CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[*stream];
 
-		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[*stream];
 		// Set temporary active flag for this stream
 		csb_tail->csb_flags |= csb_active;
 
 		bool indexed_relationship = false;
+
 		if (opt->opt_conjuncts.getCount())
 		{
 			// Calculate the inversion for this stream.
@@ -2297,21 +2297,23 @@ static void find_index_relationship_streams(thread_db* tdbb,
 			// index retrieval. This meant that if some stream is used this stream
 			// depends on already active streams and can not be used in a separate
 			// SORT/MERGE.
-			InversionCandidate* candidate = NULL;
-			OptimizerRetrieval* optimizerRetrieval = FB_NEW(*tdbb->getDefaultPool())
-				OptimizerRetrieval(*tdbb->getDefaultPool(), opt, *stream, false, false, NULL);
-			candidate = optimizerRetrieval->getCost();
-			if (candidate->dependentFromStreams.getCount() >= 1) {
+
+			OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, *stream, false, false, NULL);
+
+			AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
+
+			if (candidate->dependentFromStreams.hasData())
+			{
 				indexed_relationship = true;
 			}
-			delete candidate;
-			delete optimizerRetrieval;
 		}
 
-		if (indexed_relationship) {
+		if (indexed_relationship)
+		{
 			dependent_streams[++dependent_streams[0]] = *stream;
 		}
-		else {
+		else
+		{
 			free_streams[++free_streams[0]] = *stream;
 		}
 
