@@ -49,6 +49,8 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 
+using namespace Firebird;
+
 namespace Jrd {
 
 bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
@@ -644,8 +646,8 @@ jrd_nod* OPT_make_binary_node(nod_t type, jrd_nod* arg1, jrd_nod* arg2, bool fla
 }
 
 
-Firebird::string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
-								const CompilerScratch::csb_repeat* base_tail)
+string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
+					  const CompilerScratch::csb_repeat* base_tail)
 {
 /**************************************
  *
@@ -663,11 +665,11 @@ Firebird::string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
 	DEV_BLKCHK(csb, type_csb);
 	SET_TDBB(tdbb);
 
-	Firebird::string alias;
+	string alias;
 
 	if (base_tail->csb_view || base_tail->csb_alias)
 	{
-		Firebird::ObjectsArray<Firebird::string> alias_list;
+		ObjectsArray<string> alias_list;
 
 		for (const CompilerScratch::csb_repeat* csb_tail = base_tail; ;
 			csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
@@ -1123,7 +1125,7 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 	return;
 }
 
-const Firebird::string& OptimizerRetrieval::getAlias()
+const string& OptimizerRetrieval::getAlias()
 {
 /**************************************
  *
@@ -1232,7 +1234,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 
 		if (setConjunctionsMatched)
 		{
-			Firebird::SortedArray<jrd_nod*> matches;
+			SortedArray<jrd_nod*> matches;
 			// AB: Putting a unsorted array in a sorted array directly by join isn't
 			// very safe at the moment, but in our case Array holds a sorted list.
 			// However SortedArray class should be updated to handle join right!
@@ -1479,7 +1481,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
 
 	// Walk through indexes to calculate selectivity / candidate
-	Firebird::Array<jrd_nod*> matches;
+	Array<jrd_nod*> matches;
 	size_t i = 0;
 	for (i = 0; i < fromIndexScratches->getCount(); i++)
 	{
@@ -1896,7 +1898,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	}
 
 	// The matches returned in this inversion are always sorted.
-	Firebird::SortedArray<jrd_nod*> matches;
+	SortedArray<jrd_nod*> matches;
 
 	for (i = 0; i < inversions->getCount(); i++)
 	{
@@ -2572,7 +2574,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			// Add matches conjunctions that exists in both left and right inversion
 			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount()))
 			{
-				Firebird::SortedArray<jrd_nod*> matches;
+				SortedArray<jrd_nod*> matches;
 				for (size_t j = 0; j < invCandidate1->matches.getCount(); j++) {
 					matches.add(invCandidate1->matches[j]);
 				}
@@ -2959,15 +2961,12 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
 		csb_tail->csb_flags |= csb_active;
 
-		OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
-			OptimizerRetrieval(pool, optimizer, innerStreams[i]->stream, false, false, NULL);
-		InversionCandidate* candidate = optimizerRetrieval->getCost();
+		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStreams[i]->stream, false, false, NULL);
+		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
 		innerStreams[i]->baseCost = candidate->cost;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
 		innerStreams[i]->baseConjunctionMatches = (int) candidate->matches.getCount();
-		delete candidate;
-		delete optimizerRetrieval;
 
 		csb_tail->csb_flags &= ~csb_active;
 	}
@@ -3077,10 +3076,9 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
  **************************************/
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated selectivity will be returned
-	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
-		OptimizerRetrieval(pool, optimizer, stream, false, false, NULL);
+	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false, NULL);
 
-	const InversionCandidate* candidate = optimizerRetrieval->getCost();
+	AutoPtr<const InversionCandidate> candidate(optimizerRetrieval.getCost());
 	double selectivity = candidate->selectivity;
 	*cost = candidate->cost;
 
@@ -3104,9 +3102,6 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	const double cardinality = csb_tail->csb_cardinality * selectivity;
 
 	*resulting_cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
-
-	delete candidate;
-	delete optimizerRetrieval;
 }
 
 int OptimizerInnerJoin::findJoinOrder()
@@ -3218,7 +3213,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 
 	// Save the various flag bits from the optimizer block to reset its
 	// state after each test.
-	Firebird::HalfStaticArray<bool, OPT_STATIC_ITEMS> streamFlags(pool);
+	HalfStaticArray<bool, OPT_STATIC_ITEMS> streamFlags(pool);
 	streamFlags.grow(innerStreams.getCount());
 	for (size_t i = 0; i < streamFlags.getCount(); i++) {
 		streamFlags[i] = innerStreams[i]->used;
@@ -3368,9 +3363,8 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[testStream->stream];
 	csb_tail->csb_flags |= csb_active;
 
-	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
-		OptimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
-	InversionCandidate* candidate = optimizerRetrieval->getCost();
+	OptimizerRetrieval optimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
+	AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
 
 	if (candidate->dependentFromStreams.exist(baseStream->stream))
 	{
@@ -3395,8 +3389,6 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		baseStream->indexedRelationships.insert(index, indexRelationship);
 		testStream->previousExpectedStreams++;
 	}
-	delete candidate;
-	delete optimizerRetrieval;
 
 	csb_tail->csb_flags &= ~csb_active;
 }

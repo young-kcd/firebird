@@ -31,7 +31,6 @@ enum BlockType
 	type_irb,
 	type_fld,
 	type_ext,
-	type_riv,
 	type_att,
 	type_sym,
 	type_irl,
