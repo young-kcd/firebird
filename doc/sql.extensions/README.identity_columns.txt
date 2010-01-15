@@ -21,10 +21,10 @@ Syntax rules:
 Notes:
     - You cannot alter a identity column to normal column and vice versa.
     - Identity columns are implicitly NOT NULL.
-    - Identity columns doesn't enforce uniqueness automatically. Use UNIQUE or PRIMARY key for that.
+    - Identity columns don't enforce uniqueness automatically. Use UNIQUE or PRIMARY key for that.
 
 Implementation:
-    Two columns has been inserted in RDB$RELATION_FIELDS: RDB$GENERATOR_NAME and RDB$IDENTITY_TYPE.
+    Two columns have been inserted in RDB$RELATION_FIELDS: RDB$GENERATOR_NAME and RDB$IDENTITY_TYPE.
     RDB$GENERATOR_NAME stores the automatically created generator for the column. In RDB$GENERATORS,
     the value of RDB$SYSTEM_FLAG of that generator will be 6. RDB$IDENTITY_TYPE will currently
     always store the value 0 (by default) for identity columns and NULL for non-identity columns.
