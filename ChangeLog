@@ -1,3 +1,11 @@
+2010-01-15 11:06  dimitr
+
+	* firebird2/src/burp/: backup.epp (1.104.4.2), restore.epp
+	(1.126.4.5):
+
+	Fixed CORE-2793: Binary representation of the backup file is
+	inconsistent among subsequent backup/restore cycles.
+
 2009-12-29 11:58  dimitr
 
 	* firebird2/src/utilities/nbackup.cpp (1.63.2.11):
