@@ -2324,6 +2324,22 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			}
 			break;
 
+		case nod_handler:
+			switch (request->req_operation)
+			{
+			case jrd_req::req_evaluate:
+				node = node->nod_arg[0];
+				break;
+
+			case jrd_req::req_unwind:
+				if (!request->req_label)
+					request->req_operation = jrd_req::req_return;
+
+			default:
+				node = node->nod_parent;
+			}
+			break;
+
 		case nod_block:
 			switch (request->req_operation)
 			{
