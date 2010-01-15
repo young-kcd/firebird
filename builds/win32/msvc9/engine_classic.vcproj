@@ -755,6 +755,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\jrd\recsrc\HashJoin.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\jrd\recsrc\IndexTableScan.cpp"
 					>
 				</File>
