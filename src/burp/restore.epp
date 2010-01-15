@@ -3577,7 +3577,6 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 		{
 			strcpy (X.RDB$RELATION_NAME, relation->rel_name);
 			X.RDB$FIELD_POSITION = 0;
-			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 			X.RDB$VIEW_CONTEXT.NULL = TRUE;
 			X.RDB$BASE_FIELD.NULL = TRUE;
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
@@ -3787,7 +3786,6 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 		{
 			strcpy (X.RDB$RELATION_NAME, relation->rel_name);
 			X.RDB$FIELD_POSITION = 0;
-			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 			X.RDB$VIEW_CONTEXT.NULL = TRUE;
 			X.RDB$BASE_FIELD.NULL = TRUE;
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
@@ -5544,7 +5542,6 @@ bool get_global_field(BurpGlobals* tdgbl)
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			X.RDB$COLLATION_ID.NULL = TRUE;
 			X.RDB$FIELD_PRECISION.NULL = TRUE;
-			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -5895,7 +5892,6 @@ bool get_global_field(BurpGlobals* tdgbl)
 			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 			X.RDB$COLLATION_ID.NULL = TRUE;
-			memset (X.RDB$QUERY_NAME, ' ', sizeof(X.RDB$QUERY_NAME));
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
