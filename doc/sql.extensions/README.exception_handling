@@ -103,8 +103,7 @@ Parameterized exceptions (FB 3.0)
   Notes:
     The status vector is generated using these codes combination:
       isc_except, <exception number>,
-      isc_formatted_exception, <formatted exception message>,
-          <defined exception message>, <exception parameters>
+      isc_formatted_exception, <formatted exception message>, <exception parameters>
 
     Since new error code (isc_formatted_exception) is used, it's necessary that the client is v3.0
     or at least uses firebird.msg from v3.0 so that it can translate the status vector to string.

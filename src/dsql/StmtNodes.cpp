@@ -976,7 +976,6 @@ void ExceptionNode::setError(thread_db* tdbb) const
 				MsgFormat::MsgPrint(stream, s, arg, true);
 
 				status << formattedMsg;
-				status << s;	// add the exception text
 
 				for (unsigned i = 0; i < parameters->nod_count; ++i)
 					status << paramsStr[i];
