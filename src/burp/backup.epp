@@ -649,7 +649,8 @@ burp_fld* get_fields( burp_rel* relation)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	USHORT count = 1;
-	burp_fld* fields = NULL;
+
+	Firebird::HalfStaticArray<burp_fld*, 16> field_list;
 
 /* if we have all capabilities, use the first request to get the 
    most performance out of the latest engine; if we don't 
@@ -758,9 +759,8 @@ burp_fld* get_fields( burp_rel* relation)
 				field->fld_collation_id = X.RDB$COLLATION_ID;
 				field->fld_flags |= FLD_collate_flag;
 			}
-	
-			field->fld_next = fields;
-			fields = field;
+
+			field_list.add(field);	
 	
 		END_FOR;
 		ON_ERROR
@@ -904,13 +904,21 @@ burp_fld* get_fields( burp_rel* relation)
 				END_ERROR;
 			}
 	
-			field->fld_next = fields;
-			fields = field;
+			field_list.add(field);
 	
 		END_FOR;
 		ON_ERROR
 			general_on_error();
 		END_ERROR;
+	}
+
+	burp_fld* fields = NULL;
+
+	while (field_list.getCount())
+	{
+		field = field_list.pop();
+		field->fld_next = fields;
+		fields = field;
 	}
 
 	return fields;
@@ -3262,9 +3270,9 @@ void write_global_fields(void)
 			MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
 			BURP_verbose (149, temp);
 			/* msg 149  writing global field %.*s */
-			if (X.RDB$QUERY_NAME [0] != ' ')
+			if (!X.RDB$QUERY_NAME.NULL && X.RDB$QUERY_NAME [0] != ' ')
 				PUT_TEXT (att_field_query_name, X.RDB$QUERY_NAME);
-			if (X.RDB$EDIT_STRING [0] != ' ')
+			if (!X.RDB$EDIT_STRING.NULL && X.RDB$EDIT_STRING [0] != ' ')
 				PUT_TEXT (att_field_edit_string, X.RDB$EDIT_STRING);
 			put_source_blob (att_field_query_header, att_field_query_header, X.RDB$QUERY_HEADER);
 			put_numeric (att_field_type, X.RDB$FIELD_TYPE);
@@ -3330,9 +3338,9 @@ void write_global_fields(void)
 			MISC_terminate (X.RDB$FIELD_NAME, temp, l, sizeof(temp));
 			BURP_verbose (149, temp);
 			/* msg 149  writing global field %.*s */
-			if (X.RDB$QUERY_NAME [0] != ' ')
+			if (!X.RDB$QUERY_NAME.NULL && X.RDB$QUERY_NAME [0] != ' ')
 				PUT_TEXT (att_field_query_name, X.RDB$QUERY_NAME);
-			if (X.RDB$EDIT_STRING [0] != ' ')
+			if (!X.RDB$EDIT_STRING.NULL && X.RDB$EDIT_STRING [0] != ' ')
 				PUT_TEXT (att_field_edit_string, X.RDB$EDIT_STRING);
 			put_source_blob (att_field_query_header, att_field_query_header, X.RDB$QUERY_HEADER);
 			put_numeric (att_field_type, X.RDB$FIELD_TYPE);
