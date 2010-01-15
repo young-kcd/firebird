@@ -2834,8 +2834,6 @@ InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
 	baseIndexes = 0;
 	baseConjunctionMatches = 0;
 	used = false;
-
-	indexedRelationships.shrink(0);
 	previousExpectedStreams = 0;
 }
 
@@ -2905,13 +2903,13 @@ OptimizerInnerJoin::~OptimizerInnerJoin()
 
 	for (size_t i = 0; i < innerStreams.getCount(); i++)
 	{
-		for (size_t j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++) {
+		for (size_t j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++)
+		{
 			delete innerStreams[i]->indexedRelationships[j];
 		}
-		innerStreams[i]->indexedRelationships.clear();
+
 		delete innerStreams[i];
 	}
-	innerStreams.clear();
 }
 
 void OptimizerInnerJoin::calculateCardinalities()
@@ -3150,6 +3148,7 @@ int OptimizerInnerJoin::findJoinOrder()
 	if (optimizer->opt_best_count == 0)
 	{
 		IndexedRelationships indexedRelationships(pool);
+
 		for (i = 0; i < innerStreams.getCount(); i++)
 		{
 			if (!innerStreams[i]->used)
