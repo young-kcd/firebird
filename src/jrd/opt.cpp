@@ -216,7 +216,6 @@ static void check_indices(const CompilerScratch::csb_repeat*);
 static void check_sorts(RecordSelExpr*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
 static jrd_nod* compose(jrd_nod**, jrd_nod*, nod_t);
-static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
 static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UCHAR*);
 static bool check_for_nod_from(const jrd_nod*);
@@ -783,7 +782,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		fb_assert(nodeBase >= 0 && j >= 0);
 		opt->opt_conjuncts[nodeBase + j].opt_conjunct_node = node;
-		compute_dependencies(node, opt->opt_conjuncts[nodeBase + j].opt_dependencies);
 	}
 
 	// Put the parent missing nodes on the stack
@@ -794,7 +792,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		opt->opt_conjuncts.grow(conjunct_count + 1);
 		opt->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
-		compute_dependencies(node, opt->opt_conjuncts[conjunct_count].opt_dependencies);
 		conjunct_count++;
 	}
 
@@ -1444,117 +1441,6 @@ static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, nod_t node_type)
 	}
 
 	return *node1 = OPT_make_binary_node(node_type, *node1, node2, false);
-}
-
-
-static void compute_dependencies(const jrd_nod* node, ULONG* dependencies)
-{
-/**************************************
- *
- *	c o m p u t e _ d e p e n d e n c i e s
- *
- **************************************
- *
- * Functional description
- *	Compute stream dependencies for evaluation of an expression.
- *
- **************************************/
-
-	DEV_BLKCHK(node, type_nod);
-
-	// Recurse thru interesting sub-nodes
-
-	const jrd_nod* const* ptr = node->nod_arg;
-
-	if (node->nod_type == nod_procedure) {
-		return;
-	}
-
-	for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-	{
-		compute_dependencies(*ptr, dependencies);
-	}
-
-	const RecordSelExpr* rse;
-	const jrd_nod* sub;
-	const jrd_nod* value;
-
-	switch (node->nod_type)
-	{
-	case nod_field:
-		{
-			const SLONG n = (SLONG)(IPTR) node->nod_arg[e_fld_stream];
-			SET_DEP_BIT(dependencies, n);
-			return;
-		}
-
-	case nod_rec_version:
-	case nod_dbkey:
-		{
-			const SLONG n = (SLONG)(IPTR) node->nod_arg[0];
-			SET_DEP_BIT(dependencies, n);
-			return;
-		}
-
-	case nod_min:
-	case nod_max:
-	case nod_average:
-	case nod_total:
-	case nod_count:
-	case nod_from:
-		if ( (sub = node->nod_arg[e_stat_default]) ) {
-			compute_dependencies(sub, dependencies);
-		}
-		rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
-		value = node->nod_arg[e_stat_value];
-		break;
-
-	case nod_rse:
-		rse = (RecordSelExpr*) node;
-		value = NULL;
-		break;
-
-	default:
-		return;
-	}
-
-	// Node is a record selection expression.  Groan.  Ugh.  Yuck.
-
-	if ( (sub = rse->rse_first) ) {
-		compute_dependencies(sub, dependencies);
-	}
-
-	// Check sub-expressions
-
-	if ( (sub = rse->rse_boolean) ) {
-		compute_dependencies(sub, dependencies);
-	}
-
-	if ( (sub = rse->rse_sorted) ) {
-		compute_dependencies(sub, dependencies);
-	}
-
-	if ( (sub = rse->rse_projection) ) {
-		compute_dependencies(sub, dependencies);
-	}
-
-	// Check value expression, if any
-
-	if (value) {
-		compute_dependencies(value, dependencies);
-	}
-
-	// Reset streams inactive
-
-	ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
-	{
-		if ((*ptr)->nod_type != nod_rse)
-		{
-			const SLONG n = (SLONG)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			CLEAR_DEP_BIT(dependencies, n);
-		}
-	}
 }
 
 

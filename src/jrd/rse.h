@@ -111,8 +111,6 @@ public:
 	{
 		// Conjunctions and their options
 		jrd_nod* opt_conjunct_node;	// conjunction
-		// Stream dependencies to compute conjunct
-		ULONG opt_dependencies[(MAX_STREAMS + 1) / 32];
 		UCHAR opt_conjunct_flags;
 	};
 	struct opt_stream
