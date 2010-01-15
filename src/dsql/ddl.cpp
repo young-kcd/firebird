@@ -3181,7 +3181,10 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		statement->req_scope_level++;
 		statement->req_loop_level = 0;
 		statement->req_cursor_number = 0;
+
 		actions = PASS1_statement(statement, actions);
+		GEN_hidden_variables(statement, false);
+
 		// dimitr: I see no reason to deny EXIT command in triggers,
 		//		   hence I've added zero label at the beginning.
 		//		   My first suspicion regarding an obvious conflict
@@ -3191,7 +3194,6 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		//		   Hopefully, system triggers are never recompiled.
 		statement->append_uchar(blr_label);
 		statement->append_uchar(0);
-		GEN_hidden_variables(statement, false);
 		GEN_statement(statement, actions);
 		statement->req_scope_level--;
 		statement->append_uchar(blr_end);
