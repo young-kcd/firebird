@@ -731,7 +731,7 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 	if (type == blr_exception_params)
 	{
-		USHORT count = csb->csb_blr_reader.getWord();
+		const USHORT count = csb->csb_blr_reader.getWord();
 
 		node->parameters = PAR_make_node(tdbb, count);
 		node->parameters->nod_type = nod_list;
@@ -781,7 +781,7 @@ void ExceptionNode::genBlr()
 		return;
 	}
 
-	// If exception parameters or value is defined, it means we have user-defined exception message
+	// If exception value is defined, it means we have user-defined exception message
 	// here, so blr_exception_msg verb should be generated.
 	if (dsqlParameters)
 		stuff(statement, blr_exception_params);

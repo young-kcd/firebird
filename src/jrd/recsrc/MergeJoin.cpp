@@ -450,11 +450,13 @@ int MergeJoin::compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 		{
 			return -1;
 		}
-		else if (null2 && !null1)
+
+		if (null2 && !null1)
 		{
 			return 1;
 		}
-		else if (!null1 && !null2)
+
+		if (!null1 && !null2)
 		{
 			const int result = MOV_compare(desc1, desc2);
 
