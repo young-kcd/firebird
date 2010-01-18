@@ -974,15 +974,15 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// release memory allocated for index descriptions
 	for (USHORT i = 1; i <= streams[0]; ++i)
 	{
-		const USHORT stream = streams[i];
-		delete csb->csb_rpt[stream].csb_idx;
-		csb->csb_rpt[stream].csb_idx = NULL;
+		const USHORT loopStream = streams[i];
+		delete csb->csb_rpt[loopStream].csb_idx;
+		csb->csb_rpt[loopStream].csb_idx = NULL;
 
 		// CVC: The following line added because OPT_compile is recursive, both directly
 		//   and through gen_union(), too. Otherwise, we happen to step on deallocated memory
 		//   and this is the cause of the crashes with indices that have plagued IB since v4.
 
-		csb->csb_rpt[stream].csb_indices = 0;
+		csb->csb_rpt[loopStream].csb_indices = 0;
 	}
 
 #ifdef OPT_DEBUG
@@ -999,10 +999,10 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	{
 		for (USHORT i = 1; i <= streams[0]; ++i)
 		{
-			const USHORT stream = streams[i];
-			delete csb->csb_rpt[stream].csb_idx;
-			csb->csb_rpt[stream].csb_idx = NULL;
-			csb->csb_rpt[stream].csb_indices = 0; // Probably needed to be safe
+			const USHORT loopStream = streams[i];
+			delete csb->csb_rpt[loopStream].csb_idx;
+			csb->csb_rpt[loopStream].csb_idx = NULL;
+			csb->csb_rpt[loopStream].csb_indices = 0; // Probably needed to be safe
 		}
 
 		throw;
@@ -1012,8 +1012,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	{
 		for (USHORT i = 1; i <= streams[0]; ++i)
 		{
-			const USHORT stream = streams[i];
-			csb->csb_rpt[stream].csb_flags |= csb_update;
+			const USHORT loopStream = streams[i];
+			csb->csb_rpt[loopStream].csb_flags |= csb_update;
 		}
 	}
 
