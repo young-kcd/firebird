@@ -89,7 +89,7 @@ static void gen_sys_function(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_table_lock(DsqlCompilerScratch*, const dsql_nod*, USHORT);
 static void gen_udf(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
-static void stuff_context(DsqlCompiledStatement*, const dsql_ctx*);
+static void stuff_context(DsqlCompilerScratch*, const dsql_ctx*);
 static void stuff_meta_string(DsqlCompiledStatement*, const char*);
 
 // STUFF is defined in dsql.h for use in common with ddl.c
@@ -218,14 +218,14 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		node = node->nod_arg[0];
 		context = (dsql_ctx*) node->nod_arg[e_rel_context];
 		stuff(dsqlScratch->getStatement(), blr_dbkey);
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		return;
 
 	case nod_rec_version:
 		node = node->nod_arg[0];
 		context = (dsql_ctx*) node->nod_arg[e_rel_context];
 		stuff(dsqlScratch->getStatement(), blr_record_version);
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		return;
 
 	case nod_dom_value:
@@ -316,7 +316,7 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 			const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
 			context = (dsql_ctx*) node->nod_arg[e_map_context];
 			stuff(dsqlScratch->getStatement(), blr_fid);
-			stuff_context(dsqlScratch->getStatement(), context);
+			stuff(dsqlScratch->getStatement(), map->map_nodemap->context);
 			stuff_word(dsqlScratch->getStatement(), map->map_position);
 		}
 		return;
@@ -1265,20 +1265,49 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
  **/
 static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
 {
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
 	dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
 	bool window = (node->nod_flags & NOD_AGG_WINDOW);
-	stuff(dsqlScratch->getStatement(), (window ? blr_window : blr_aggregate));
-	stuff_context(dsqlScratch->getStatement(), context);
+	stuff(statement, (window ? blr_window : blr_aggregate));
+	if (!window)
+		stuff_context(dsqlScratch, context);
 	gen_rse(dsqlScratch, node->nod_arg[e_agg_rse]);
 
 	// Handle PARTITION BY and GROUP BY clause
 
 	if (window)
 	{
-		stuff(dsqlScratch->getStatement(), blr_partition_by);
-		stuff(dsqlScratch->getStatement(), 0);	// partition by expression count
-  	}
-  	else
+		fb_assert(context->ctx_maps.hasData());
+		stuff(statement, context->ctx_maps.getCount());	// number of windows
+
+		for (Array<NodeMap*>::iterator i = context->ctx_maps.begin(); i != context->ctx_maps.end(); ++i)
+		{
+			stuff(statement, blr_partition_by);
+			dsql_nod* partition = (*i)->partition;
+			dsql_nod* partitionRemapped = (*i)->partitionRemapped;
+
+			stuff(statement, (*i)->context);
+
+			if (partition)
+			{
+				stuff(statement, partition->nod_count);	// partition by expression count
+
+				dsql_nod** ptr = partition->nod_arg;
+				for (const dsql_nod* const* end = ptr + partition->nod_count; ptr < end; ++ptr)
+					GEN_expr(dsqlScratch, *ptr);
+
+				ptr = partitionRemapped->nod_arg;
+				for (const dsql_nod* const* end = ptr + partitionRemapped->nod_count; ptr < end; ++ptr)
+					GEN_expr(dsqlScratch, *ptr);
+			}
+			else
+				stuff(statement, 0);	// partition by expression count
+
+			gen_map(dsqlScratch, (*i)->map);
+		}
+	}
+	else
 	{
 		stuff(dsqlScratch->getStatement(), blr_group_by);
 
@@ -1288,17 +1317,14 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 			stuff(dsqlScratch->getStatement(), list->nod_count);
 			dsql_nod** ptr = list->nod_arg;
 			for (const dsql_nod* const* end = ptr + list->nod_count; ptr < end; ptr++)
-			{
 				GEN_expr(dsqlScratch, *ptr);
-			}
 		}
 		else
-			stuff(dsqlScratch->getStatement(), 0);
+			stuff(statement, 0);
+
+		fb_assert(context->ctx_maps.getCount() == 1);
+		gen_map(dsqlScratch, (*context->ctx_maps.begin())->map);
 	}
-
-	// Generate value map
-
-	gen_map(dsqlScratch, context->ctx_map);
 }
 
 
@@ -1831,13 +1857,13 @@ static void gen_field( DsqlCompilerScratch* dsqlScratch, const dsql_ctx* context
 	if (DDL_ids(dsqlScratch))
 	{
 		stuff(dsqlScratch->getStatement(), blr_fid);
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		stuff_word(dsqlScratch->getStatement(), field->fld_id);
 	}
 	else
 	{
 		stuff(dsqlScratch->getStatement(), blr_field);
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		stuff_meta_string(dsqlScratch->getStatement(), field->fld_name.c_str());
 	}
 
@@ -2006,7 +2032,7 @@ static void gen_map( DsqlCompilerScratch* dsqlScratch, dsql_map* map)
 	USHORT count = 0;
 	dsql_map* temp;
 	for (temp = map; temp; temp = temp->map_next)
-		temp->map_position = count++;
+		++count;
 
 	stuff(dsqlScratch->getStatement(), blr_map);
 	stuff_word(dsqlScratch->getStatement(), count);
@@ -2183,7 +2209,7 @@ static void gen_relation( DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
 			stuff_meta_string(dsqlScratch->getStatement(), context->ctx_alias);
 		}
 
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 	}
 	else if (procedure)
 	{
@@ -2212,7 +2238,7 @@ static void gen_relation( DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
 			stuff_meta_string(dsqlScratch->getStatement(), context->ctx_alias);
 		}
 
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 
 		dsql_nod* inputs = context->ctx_proc_inputs;
 		if (inputs)
@@ -2569,7 +2595,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 		{
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_dbkey);
-			stuff_context(statement, context);
+			stuff_context(dsqlScratch, context);
 			gen_parameter(dsqlScratch, parameter);
 		}
 
@@ -2577,7 +2603,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 		{
 			stuff(statement, blr_assignment);
 			stuff(statement, blr_record_version);
-			stuff_context(statement, context);
+			stuff_context(dsqlScratch, context);
 			gen_parameter(dsqlScratch, parameter);
 		}
 	}
@@ -2756,10 +2782,10 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		stuff(dsqlScratch->getStatement(), node->nod_arg[e_mod_return] ? blr_modify2 : blr_modify);
 		temp = node->nod_arg[e_mod_source];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		temp = node->nod_arg[e_mod_update];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		GEN_statement(dsqlScratch, node->nod_arg[e_mod_statement]);
 		if (node->nod_arg[e_mod_return]) {
 			GEN_statement(dsqlScratch, node->nod_arg[e_mod_return]);
@@ -2769,10 +2795,10 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 	case nod_modify_current:
 		stuff(dsqlScratch->getStatement(), node->nod_arg[e_mdc_return] ? blr_modify2 : blr_modify);
 		context = (dsql_ctx*) node->nod_arg[e_mdc_context];
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		temp = node->nod_arg[e_mdc_update];
 		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
-		stuff_context(dsqlScratch->getStatement(), context);
+		stuff_context(dsqlScratch, context);
 		GEN_statement(dsqlScratch, node->nod_arg[e_mdc_statement]);
 		if (node->nod_arg[e_mdc_return]) {
 			GEN_statement(dsqlScratch, node->nod_arg[e_mdc_return]);
@@ -2787,13 +2813,13 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 			stuff(dsqlScratch->getStatement(), blr_begin);
 			GEN_statement(dsqlScratch, node->nod_arg[e_era_return]);
 			stuff(dsqlScratch->getStatement(), blr_erase);
-			stuff_context(dsqlScratch->getStatement(), context);
+			stuff_context(dsqlScratch, context);
 			stuff(dsqlScratch->getStatement(), blr_end);
 		}
 		else
 		{
 			stuff(dsqlScratch->getStatement(), blr_erase);
-			stuff_context(dsqlScratch->getStatement(), context);
+			stuff_context(dsqlScratch, context);
 		}
 		break;
 
@@ -2804,13 +2830,13 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 			stuff(dsqlScratch->getStatement(), blr_begin);
 			GEN_statement(dsqlScratch, node->nod_arg[e_erc_return]);
 			stuff(dsqlScratch->getStatement(), blr_erase);
-			stuff_context(dsqlScratch->getStatement(), context);
+			stuff_context(dsqlScratch, context);
 			stuff(dsqlScratch->getStatement(), blr_end);
 		}
 		else
 		{
 			stuff(dsqlScratch->getStatement(), blr_erase);
-			stuff_context(dsqlScratch->getStatement(), context);
+			stuff_context(dsqlScratch, context);
 		}
 		break;
 
@@ -3013,7 +3039,7 @@ static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_n
 		map_item = map_item->nod_arg[e_alias_value];
 	}
 	dsql_ctx* union_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
-	stuff_context(dsqlScratch->getStatement(), union_context);
+	stuff_context(dsqlScratch, union_context);
 	// secondary context number must be present once in generated blr
 	union_context->ctx_flags &= ~CTX_recursive;
 
@@ -3052,19 +3078,26 @@ static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_n
     @param context
 
  **/
-static void stuff_context(DsqlCompiledStatement* dsqlScratch, const dsql_ctx* context)
+static void stuff_context(DsqlCompilerScratch* dsqlScratch, const dsql_ctx* context)
 {
 	if (context->ctx_context > MAX_UCHAR) {
 		ERRD_post(Arg::Gds(isc_too_many_contexts));
 	}
-	stuff(dsqlScratch, context->ctx_context);
+
+	USHORT ctxNumber;
+	if (context->ctx_maps.hasData())
+		ctxNumber = context->getNodeMap(dsqlScratch, NULL)->context;
+	else
+		ctxNumber = context->ctx_context;
+
+	stuff(dsqlScratch->getStatement(), ctxNumber);
 
 	if (context->ctx_flags & CTX_recursive)
 	{
 		if (context->ctx_recursive > MAX_UCHAR) {
 			ERRD_post(Arg::Gds(isc_too_many_contexts));
 		}
-		stuff(dsqlScratch, context->ctx_recursive);
+		stuff(dsqlScratch->getStatement(), context->ctx_recursive);
 	}
 }
 

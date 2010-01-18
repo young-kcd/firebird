@@ -294,6 +294,7 @@ static const TOK tokens[] =
 	{PAGES, "PAGES", 1, false},
 	{KW_PAGE_SIZE, "PAGE_SIZE", 1, false},
 	{PARAMETER, "PARAMETER", 1, false},
+	{PARTITION, "PARTITION", 2, false},
 	{PASSWORD, "PASSWORD", 1, false},
 	{PI, "PI", 2, false},
 	{PLACING, "PLACING", 2, false},

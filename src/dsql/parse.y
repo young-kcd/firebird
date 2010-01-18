@@ -562,6 +562,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> NAME
 %token <legacyNode> OVER
 %token <legacyNode> PACKAGE
+%token <legacyNode> PARTITION
 %token <legacyNode> RDB_GET_CONTEXT
 %token <legacyNode> RDB_SET_CONTEXT
 %token <legacyNode> SCROLL
@@ -788,7 +789,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> valid_symbol_name value value_list value_list_opt var_decl_opt var_declaration_item
 %type <legacyNode> variable variable_list varying_keyword version_mode view_clause
 
-%type <legacyNode> when_operand where_clause while window_function
+%type <legacyNode> when_operand where_clause while window_function window_partition_opt
 %type <legacyNode> with_clause with_item with_list
 
 %type <legacyStr> external_body_clause_opt
@@ -5327,8 +5328,15 @@ aggregate_function	: COUNT '(' '*' ')'
 		;
 
 window_function
-	: aggregate_function OVER '(' ')'
-		{ $$ = make_node(nod_window, e_window_count, $1); }
+	: aggregate_function OVER '(' window_partition_opt ')'
+		{ $$ = make_node(nod_window, e_window_count, $1, make_list($4)); }
+	;
+
+window_partition_opt
+	: PARTITION BY value_list
+		{ $$ = $3; }
+	|
+		{ $$ = NULL; }
 	;
 
 delimiter_opt
@@ -5934,6 +5942,7 @@ non_reserved_word :
 	| IDENTITY
 	| NAME
 	| PACKAGE
+	| PARTITION
 	| PRIOR
 	| RDB_GET_CONTEXT
 	| RDB_SET_CONTEXT

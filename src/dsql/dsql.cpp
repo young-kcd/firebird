@@ -1793,6 +1793,7 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
 		case isc_info_rsb_cross:
 		case isc_info_rsb_left_cross:
 		case isc_info_rsb_merge:
+		case isc_info_rsb_hash:
 
 			// if this join is itself part of a join list,
 			// but not the first item, then put out a comma
@@ -1808,13 +1809,15 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
 
 			// put out the join type
 
+			/*
+			if (rsb_type == isc_info_rsb_hash)
+				p = "HASH JOIN (";
+			else
+			*/
 			if (rsb_type == isc_info_rsb_cross || rsb_type == isc_info_rsb_left_cross)
-			{
 				p = "JOIN (";
-			}
-			else {
+			else
 				p = "MERGE (";
-			}
 
 			if ((plan_length -= strlen(p)) < 0)
 				return false;

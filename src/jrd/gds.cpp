@@ -271,6 +271,7 @@ const int op_cursor_stmt	= 22;
 const int op_byte_opt_verb	= 23;
 const int op_exec_stmt		= 24;
 const int op_derived_expr	= 25;
+const int op_partition_args	= 26;
 
 static const UCHAR
 	// generic print formats
@@ -336,7 +337,9 @@ static const UCHAR
 	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0},
 	similar[] = { op_line, op_verb, op_verb, op_indent, op_byte_opt_verb, 0},
 	exec_stmt[] = { op_exec_stmt, 0},
-	derived_expr[] = { op_derived_expr, 0};
+	derived_expr[] = { op_derived_expr, 0},
+	window[] = {op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
+	partition_by[] = {op_byte, op_line, op_partition_args, op_verb, 0};
 
 
 #include "../jrd/blp.h"
@@ -3460,6 +3463,17 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				blr_print_verb(control, level);
 			}
 			offset = blr_print_line(control, (SSHORT) offset);
+			break;
+
+		case op_partition_args:
+			blr_indent(control, level);
+			n = blr_print_byte(control);
+			offset = blr_print_line(control, (SSHORT) offset);
+			for (int i = 0; i < 2; ++i)
+			{
+				for (SSHORT j = 0; j < n; ++j)
+					blr_print_verb(control, level);
+			}
 			break;
 
 		default:

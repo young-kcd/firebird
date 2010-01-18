@@ -126,8 +126,7 @@ const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
 const int nod_invariant		= 128;		// node is recognized as being invariant
 const int nod_recurse		= 256;		// union node is a recursive union
 const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
-const int nod_window		= 1024;		// aggregate for window function
-const int nod_ansi_not		= 2048;		// ANY/ALL predicate is prefixed with a NOT one
+const int nod_ansi_not		= 1024;		// ANY/ALL predicate is prefixed with a NOT one
 
 // Special RecordSelExpr node
 
@@ -302,6 +301,10 @@ const int e_agg_rse			= 1;
 const int e_agg_group		= 2;
 const int e_agg_map			= 3;
 const int e_agg_length		= 4;
+
+const int e_win_rse			= 0;
+const int e_win_windows		= 1;
+const int e_win_length		= 2;
 
 // Statistical expressions
 
@@ -489,6 +492,13 @@ const int e_extproc_input_message	= 0;
 const int e_extproc_output_message	= 1;
 const int e_extproc_input_assign	= 2;
 const int e_extproc_output_assign	= 3;
+
+const int e_part_group		= 0;
+const int e_part_regroup	= 1;
+const int e_part_map		= 2;
+const int e_part_stream		= 3;
+const int e_part_count		= 3;
+const int e_part_length		= 4;
 
 // Request resources
 

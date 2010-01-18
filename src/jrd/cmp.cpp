@@ -3264,6 +3264,50 @@ static jrd_nod* copy(thread_db* tdbb,
 			copy(tdbb, csb, input->nod_arg[e_agg_map], remap, field_id, message, remap_fld);
 		return node;
 
+	case nod_window:
+	{
+		if (!remap)
+			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
+		node = PAR_make_node(tdbb, e_win_length);
+		node->nod_type = input->nod_type;
+		node->nod_count = 0;
+
+		node->nod_arg[e_win_rse] =
+			copy(tdbb, csb, input->nod_arg[e_win_rse], remap, field_id, message, remap_fld);
+
+		const jrd_nod* inputWindows = input->nod_arg[e_win_windows];
+
+		jrd_nod* copyWindows = node->nod_arg[e_win_windows] =
+			PAR_make_node(tdbb, inputWindows->nod_count);
+		copyWindows->nod_type = inputWindows->nod_type;
+		copyWindows->nod_count = inputWindows->nod_count;
+
+		for (unsigned i = 0; i < inputWindows->nod_count; ++i)
+		{
+			jrd_nod* inputPartition = inputWindows->nod_arg[i];
+
+			jrd_nod* copyPartition = copyWindows->nod_arg[i] = PAR_make_node(tdbb, e_part_length);
+			copyPartition->nod_type = inputPartition->nod_type;
+			copyPartition->nod_count = inputPartition->nod_count;
+
+			stream = (USHORT)(IPTR) inputPartition->nod_arg[e_part_stream];
+			fb_assert(stream <= MAX_STREAMS);
+			new_stream = csb->nextStream();
+			copyPartition->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) new_stream;
+			// fb_assert(new_stream <= MAX_UCHAR);
+			remap[stream] = (UCHAR) new_stream;
+			CMP_csb_element(csb, new_stream);
+
+			for (unsigned j = 0; j < copyPartition->nod_count; ++j)
+			{
+				copyPartition->nod_arg[j] = copy(tdbb, csb, inputPartition->nod_arg[j],
+					remap, field_id, message, remap_fld);
+			}
+		}
+
+		return node;
+	}
+
 	case nod_union:
 		if (!remap)
 			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
@@ -3515,6 +3559,9 @@ static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* r
 			break;
 		case nod_aggregate:
 			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse], view);
+			break;
+		case nod_window:
+			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], view);
 			break;
 		case nod_union:
 			const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
@@ -4246,6 +4293,23 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_arg[e_agg_map] = CMP_pass1(tdbb, csb, node->nod_arg[e_agg_map]);
 		node->nod_arg[e_agg_group] = CMP_pass1(tdbb, csb, node->nod_arg[e_agg_group]);
 		break;
+
+	case nod_window:
+	{
+		const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+
+		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+		{
+			USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+			fb_assert(stream <= MAX_STREAMS);
+			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
+		}
+
+		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], view);
+		node->nod_arg[e_win_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_rse]);
+		node->nod_arg[e_win_windows] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_windows]);
+		break;
+	}
 
 	case nod_gen_id:
 	case nod_gen_id2:
@@ -5096,6 +5160,11 @@ static void pass1_source(thread_db*			tdbb,
 		CMP_pass1(tdbb, csb, source);
 		return;
 	}
+	else if (source->nod_type == nod_window)
+	{
+		CMP_pass1(tdbb, csb, source);
+		return;
+	}
 
 	// All the special cases are exhausted, so we must have a view or a base table;
 	// prepare to check protection of relation when a field in the stream of the
@@ -5745,7 +5814,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_type = nod_asn_list;
 			for (ptr = node->nod_arg; ptr < end; ptr++)
 			{
-				if ((*ptr)->nod_type != nod_assignment)
+				if (*ptr && (*ptr)->nod_type != nod_assignment)
 				{
 					node->nod_type = nod_list;
 					break;
@@ -5858,10 +5927,30 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		CMP_pass2(tdbb, csb, node->nod_arg[e_agg_group], node);
 		stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 		fb_assert(stream <= MAX_STREAMS);
-		process_map(tdbb, csb, node->nod_arg[e_agg_map], &csb->csb_rpt[stream].csb_format);
+		if (node->nod_arg[e_agg_map])
+			process_map(tdbb, csb, node->nod_arg[e_agg_map], &csb->csb_rpt[stream].csb_format);
 		break;
 
-		// boolean nodes taking three values as inputs
+	case nod_window:
+	{
+		pass2_rse(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse]);
+		CMP_pass2(tdbb, csb, node->nod_arg[e_win_windows], node);
+
+		const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+
+		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+		{
+			stream = (SSHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+			fb_assert(stream <= MAX_STREAMS);
+
+			process_map(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_map],
+				&csb->csb_rpt[stream].csb_format);
+		}
+
+		break;
+	}
+
+	// boolean nodes taking three values as inputs
 	case nod_like:
 	case nod_between:
 	case nod_similar:
@@ -6027,6 +6116,21 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 		case nod_rse:
 			pass2_rse(tdbb, csb, (RecordSelExpr*) node);
 			break;
+
+		case nod_window:
+		{
+			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			{
+				const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+				csb->csb_rpt[stream].csb_flags |= csb_active;
+			}
+
+			CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
+			break;
+		}
+
 		case nod_relation:
 		case nod_procedure:
 		case nod_aggregate:
@@ -6037,6 +6141,7 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 			// FALL INTO
 		}
+
 		default:
 			CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
 			break;
@@ -6455,6 +6560,17 @@ static Cursor* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rs
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
+		else if (node->nod_type == nod_window)
+		{
+			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			{
+				const USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+				fb_assert(stream <= MAX_STREAMS);
+				csb->csb_rpt[stream].csb_flags &= ~csb_active;
+			}
+		}
 	}
 
 	Cursor* const cursor =
@@ -6630,6 +6746,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, For
 		ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	format->fmt_length = (USHORT) offset;
+	format->fmt_count = format->fmt_desc.getCount();
 }
 
 
@@ -6720,6 +6837,22 @@ static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
 				return true;		// do not mark as variant
 			}
 			break;
+
+		case nod_window:
+		{
+			const jrd_nod* nodWindows = sub->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			{
+				if (stream == (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream])
+					return true;		// do not mark as variant
+			}
+
+			if (stream_in_rse(stream, (const RecordSelExpr*) sub->nod_arg[e_win_rse]))
+				return true;		// do not mark as variant
+			break;
+		}
+
 		// the simplest case - relations
 		case nod_relation:
 			if (stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream])

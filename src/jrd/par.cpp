@@ -83,6 +83,7 @@ static NodeParseFunc blr_parsers[256] = {NULL};
 
 
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
+static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT, UCHAR);
 static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_cast(thread_db*, CompilerScratch*);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
@@ -96,7 +97,8 @@ static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_partition_by(thread_db*, CompilerScratch*);
+static void par_partition_by(thread_db*, CompilerScratch*, jrd_nod*& groupNode,
+	jrd_nod*& regroupNode, jrd_nod*& mapNode, SSHORT& partitionStream);
 static jrd_nod* par_plan(thread_db*, CompilerScratch*);
 static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
 static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, bool);
@@ -814,21 +816,11 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
 }
 
 
-static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
+// Parse a counted argument list, given the count.
+static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected, UCHAR count)
 {
-/**************************************
- *
- *	p a r _ a r g s
- *
- **************************************
- *
- * Functional description
- *	Parse a counted argument list.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
-	USHORT count = csb->csb_blr_reader.getByte();
 	jrd_nod* node = PAR_make_node(tdbb, count);
 	node->nod_type = nod_list;
 	jrd_nod** ptr = node->nod_arg;
@@ -841,6 +833,15 @@ static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	}
 
 	return node;
+}
+
+
+// Parse a counted argument list.
+static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
+{
+	SET_TDBB(tdbb);
+	UCHAR count = csb->csb_blr_reader.getByte();
+	return par_args(tdbb, csb, expected, count);
 }
 
 
@@ -1760,7 +1761,8 @@ size_t PAR_name(CompilerScratch* csb, Firebird::string& name)
 }
 
 
-static jrd_nod* par_partition_by(thread_db* tdbb, CompilerScratch* csb)
+static void par_partition_by(thread_db* tdbb, CompilerScratch* csb, jrd_nod*& groupNode,
+	jrd_nod*& regroupNode, jrd_nod*& mapNode, SSHORT& partitionStream)
 {
 /**************************************
  *
@@ -1774,12 +1776,23 @@ static jrd_nod* par_partition_by(thread_db* tdbb, CompilerScratch* csb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
+	if (csb->csb_blr_reader.getByte() != blr_partition_by)
+		PAR_syntax_error(csb, "blr_partition_by");
 
-	if (count != 0)	// Support for OVER (PARTITION BY <expr>)
-		status_exception::raise(Arg::Gds(isc_wish_list));
+	SSHORT context;
+	partitionStream = par_context(csb, &context);
 
-	return NULL;
+	UCHAR count = csb->csb_blr_reader.getByte();
+
+	if (count == 0)
+		groupNode = regroupNode = NULL;
+	else
+	{
+		groupNode = par_args(tdbb, csb, VALUE, count);
+		regroupNode = par_args(tdbb, csb, VALUE, count);
+	}
+
+	mapNode = par_map(tdbb, csb, partitionStream);
 }
 
 
@@ -2468,6 +2481,7 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 	SET_TDBB(tdbb);
 
 	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
+
 	jrd_nod* clause = PAR_make_node(tdbb, count * 3);
 	if (!flag)
 		clause->nod_flags = nod_unique_sort;
@@ -3123,8 +3137,34 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	case blr_window:
-		node->nod_flags = nod_window;
-		// fall into
+	{
+		node->nod_arg[e_win_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
+
+		unsigned partitionCount = csb->csb_blr_reader.getByte();
+		NodeStack stack;
+
+		for (unsigned i = 0; i < partitionCount; ++i)
+		{
+			jrd_nod* groupNode;
+			jrd_nod* regroupNode;
+			jrd_nod* mapNode;
+			SSHORT partitionStream;
+
+			par_partition_by(tdbb, csb, groupNode, regroupNode, mapNode, partitionStream);
+
+			jrd_nod* list = PAR_make_node(tdbb, e_part_length);
+			list->nod_type = nod_list;
+			list->nod_count = e_part_count;
+			list->nod_arg[e_part_group] = groupNode;
+			list->nod_arg[e_part_regroup] = regroupNode;
+			list->nod_arg[e_part_map] = mapNode;
+			list->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) partitionStream;
+			stack.push(list);
+		}
+
+		node->nod_arg[e_win_windows] = PAR_make_list(tdbb, stack);
+		break;
+	}
 
 	case blr_aggregate:
 		node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) par_context(csb, 0);
@@ -3137,9 +3177,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_group_by:
 		node = par_sort(tdbb, csb, false);
 		return node->nod_count ? node : NULL;
-
-	case blr_partition_by:
-		return par_partition_by(tdbb, csb);
 
 	case blr_field:
 	case blr_fid:

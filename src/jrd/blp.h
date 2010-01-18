@@ -230,9 +230,8 @@ static const struct
 	{"procedure2", procedure2},
 	{"exec_proc2", exec_proc2},
 	{"function2", function2},
-	{"window", aggregate},
-	{"partition_by", byte_args},
+	{"window", window},
+	{"partition_by", partition_by},
 	{"continue_loop", byte_line},
 	{0, 0}
 };
-

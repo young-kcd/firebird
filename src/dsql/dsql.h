@@ -78,6 +78,7 @@ namespace Jrd
 	class dsql_msg;
 	class dsql_par;
 	class dsql_str;
+	class dsql_map;
 	class dsql_nod;
 	class dsql_intlsym;
 
@@ -822,12 +823,29 @@ public:
 	dsql_ctx* visibleInContext;
 };
 
+struct NodeMap
+{
+	NodeMap(dsql_nod* aPartition)
+		: partition(aPartition),
+		  partitionRemapped(NULL),
+		  map(NULL),
+		  context(0)
+	{
+	}
+
+	dsql_nod* partition;
+	dsql_nod* partitionRemapped;
+	dsql_map* map;
+	USHORT context;
+};
+
 //! Context block used to create an instance of a relation reference
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
 	explicit dsql_ctx(MemoryPool& p)
-		: ctx_main_derived_contexts(p),
+		: ctx_maps(p),
+		  ctx_main_derived_contexts(p),
 		  ctx_childs_derived_table(p),
 	      ctx_imp_join(p)
 	{
@@ -836,7 +854,7 @@ public:
 	dsql_rel*			ctx_relation;		// Relation for context
 	dsql_prc*			ctx_procedure;		// Procedure for context
 	dsql_nod*			ctx_proc_inputs;	// Procedure input parameters
-	class dsql_map*		ctx_map;			// Map for aggregates
+	mutable Firebird::Array<NodeMap*> ctx_maps;		// Maps for aggregates and windows
 	dsql_nod*			ctx_rse;			// Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			// Parent context for aggregates
 	const TEXT*			ctx_alias;			// Context alias (can include concatenated derived table alias)
@@ -856,7 +874,7 @@ public:
 		ctx_relation = v.ctx_relation;
 		ctx_procedure = v.ctx_procedure;
 		ctx_proc_inputs = v.ctx_proc_inputs;
-		ctx_map = v.ctx_map;
+		ctx_maps.assign(v.ctx_maps);
 		ctx_rse = v.ctx_rse;
 		ctx_parent = v.ctx_parent;
 		ctx_alias = v.ctx_alias;
@@ -873,6 +891,7 @@ public:
 	}
 
 	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
+	NodeMap* getNodeMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode) const;
 };
 
 // Flag values for ctx_flags
@@ -891,6 +910,7 @@ public:
 	dsql_map*	map_next;			// Next map in item
 	dsql_nod*	map_node;			// Value for map item
 	USHORT		map_position;		// Position in map
+	NodeMap*	map_nodemap;
 };
 
 // Message block used in communicating with a running request

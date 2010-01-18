@@ -41,11 +41,11 @@ using namespace Jrd;
 // Data access: aggregation
 // ------------------------
 
-AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* aggregate,
-			RecordSource* next)
-	: RecordStream(csb, stream), m_next(next), m_aggregate(aggregate)
+AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* group,
+			jrd_nod* const map, RecordSource* next)
+	: RecordStream(csb, stream), m_next(next), m_group(group), m_map(map)
 {
-	fb_assert(m_next && m_aggregate);
+	fb_assert(m_map && m_next);
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
@@ -146,9 +146,6 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 	impure_value vtemp;
 	vtemp.vlu_string = NULL;
 
-	jrd_nod* const map = m_aggregate->nod_arg[e_agg_map];
-	jrd_nod* const group = m_aggregate->nod_arg[e_agg_group];
-
 	jrd_nod** ptr;
 	const jrd_nod* const* end;
 
@@ -163,7 +160,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 	{
 		// Initialize the aggregate record
 
-		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+		for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 		{
 			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 			impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
@@ -270,7 +267,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			m_next->open(tdbb);
 			if (!m_next->getRecord(tdbb))
 			{
-				if (group)
+				if (m_group)
 				{
 					finiDistinct(request);
 					return STATE_PROCESS_EOF;
@@ -281,9 +278,9 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 		dsc* desc;
 
-		if (group)
+		if (m_group)
 		{
-			for (ptr = group->nod_arg, end = ptr + group->nod_count; ptr < end; ptr++)
+			for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
 			{
 				jrd_nod* from = *ptr;
 				impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
@@ -310,9 +307,9 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				// In the case of a group by, look for a change in value of any of
 				// the columns; if we find one, stop aggregating and return what we have.
 
-				if (group)
+				if (m_group)
 				{
-					for (ptr = group->nod_arg, end = ptr + group->nod_count; ptr < end; ptr++)
+					for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
 					{
 						jrd_nod* from = *ptr;
 						impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
@@ -342,7 +339,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 			// go through and compute all the aggregates on this record
 
-			for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+			for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 			{
 				jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 				impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
@@ -508,7 +505,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 		break_out:
 
-		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+		for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 		{
 			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 			impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
@@ -528,7 +525,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 		double d;
 		SINT64 i;
 
-		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+		for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 		{
 			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 			jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
@@ -770,12 +767,10 @@ void AggregatedStream::computeDistinct(thread_db* tdbb, jrd_nod* node)
 // Finalize a sort for distinct aggregate
 void AggregatedStream::finiDistinct(jrd_req* request)
 {
-	jrd_nod* const map = m_aggregate->nod_arg[e_agg_map];
-
 	jrd_nod** ptr;
 	const jrd_nod* const* end;
 
-	for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
+	for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 	{
 		const jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
 

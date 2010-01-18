@@ -234,8 +234,6 @@ static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverL
 static ProcedureScan* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
-static SortedStream* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCHAR*,
-					  RecordSource*, jrd_nod*, bool);
 static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static void get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
@@ -468,7 +466,23 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		// find the stream number and place it at the end of the beds array
 		// (if this is really a stream and not another RecordSelExpr)
 
-		if (node->nod_type != nod_rse)
+		if (node->nod_type == nod_window)
+		{
+			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			{
+				stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+
+				fb_assert(stream <= MAX_UCHAR);
+				fb_assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR); // debug check
+				//if (beds[0] >= MAX_STREAMS) // all builds check
+				//	ERR_post(Arg::Gds(isc_too_many_contexts));
+
+				beds[++beds[0]] = (UCHAR) stream;
+			}
+		}
+		else if (node->nod_type != nod_rse)
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
 			fb_assert(stream <= MAX_UCHAR);
@@ -528,6 +542,24 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			rsb = gen_procedure(tdbb, opt, node);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] = stream;
+			break;
+
+		case nod_window:
+			{
+				NodeStack deliverStack;
+				rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(csb,
+					node->nod_arg[e_win_windows],
+					OPT_compile(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], &deliverStack));
+
+				StreamsArray rsbStreams;
+				rsb->findUsedStreams(rsbStreams);
+
+				for (StreamsArray::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
+				{
+					fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
+					local_streams[++local_streams[0]] = *i;
+				}
+			}
 			break;
 
 		case nod_rse:
@@ -949,12 +981,12 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		// Handle project clause, if present
 		if (project) {
-			rsb = gen_sort(tdbb, opt, beds, key_streams, rsb, project, true);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, beds, key_streams, rsb, project, true);
 		}
 
 		// Handle sort clause if present
 		if (sort) {
-			rsb = gen_sort(tdbb, opt, beds, key_streams, rsb, sort, false);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, beds, key_streams, rsb, sort, false);
 		}
 	}
 
@@ -1506,7 +1538,19 @@ static void compute_rse_streams(const CompilerScratch* csb, const RecordSelExpr*
 	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
 		const jrd_nod* node = *ptr;
-		if (node->nod_type != nod_rse)
+
+		if (node->nod_type == nod_window)
+		{
+			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			{
+				const USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+				fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
+				streams[++streams[0]] = (UCHAR) stream;
+			}
+		}
+		else if (node->nod_type != nod_rse)
 		{
 			fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 			streams[++streams[0]] = (UCHAR)(IPTR) node->nod_arg[STREAM_INDEX(node)];
@@ -2459,7 +2503,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	jrd_nod** ptr;
 	jrd_nod* agg_operator = NULL;
 
-	if (map->nod_count == 1 && (ptr = map->nod_arg) &&
+	if (map && map->nod_count == 1 && (ptr = map->nod_arg) &&
 		(agg_operator = (*ptr)->nod_arg[e_asgn_from]) &&
 		(agg_operator->nod_type == nod_agg_min || agg_operator->nod_type == nod_agg_max))
 	{
@@ -2487,8 +2531,8 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 
 	// allocate and optimize the record source block
 
-	AggregatedStream* const rsb =
-		FB_NEW(*tdbb->getDefaultPool()) AggregatedStream(csb, stream, node, next_rsb);
+	AggregatedStream* const rsb = FB_NEW(*tdbb->getDefaultPool()) AggregatedStream(csb, stream,
+		node->nod_arg[e_agg_group], node->nod_arg[e_agg_map], next_rsb);
 
 	if (rse->rse_aggregate)
 	{
@@ -2503,13 +2547,20 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 		}
 	}
 
-	// Now generate a separate AggregateSort (Aggregate SortedStream Block) for each
-	// distinct operation;
-	// note that this should be optimized to use indices if possible
+	OPT_gen_aggregate_distincts(tdbb, csb, map);
 
+	return rsb;
+}
+
+
+// Generate a separate AggregateSort (Aggregate SortedStream Block) for each distinct operation.
+// Note that this should be optimized to use indices if possible.
+void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map)
+{
 	DSC descriptor;
 	DSC* desc = &descriptor;
-	ptr = map->nod_arg;
+	jrd_nod** ptr = map->nod_arg;
+
 	for (const jrd_nod* const* const end = ptr + map->nod_count; ptr < end; ptr++)
 	{
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
@@ -2588,13 +2639,6 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 			from->nod_arg[asb_index] = (jrd_nod*) asb;
 		}
 	}
-
-	if (node->nod_flags & nod_window)
-	{
-		return FB_NEW(*tdbb->getDefaultPool()) WindowedStream(csb, stream, rsb, next_rsb);
-	}
-
-	return rsb;
 }
 
 
@@ -3125,13 +3169,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 }
 
 
-static SortedStream* gen_sort(thread_db* tdbb,
-					  OptimizerBlk* opt,
-					  const UCHAR* streams,
-					  const UCHAR* dbkey_streams,
-					  RecordSource* prior_rsb,
-					  jrd_nod* sort,
-					  bool project_flag)
+SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* streams,
+	const UCHAR* dbkey_streams, RecordSource* prior_rsb, jrd_nod* sort, bool project_flag)
 {
 /**************************************
  *
@@ -3146,7 +3185,6 @@ static SortedStream* gen_sort(thread_db* tdbb,
  *	recognized and handled by sort, the JRD processing is identical.
  *
  **************************************/
-	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(prior_rsb, type_rsb);
 	DEV_BLKCHK(sort, type_nod);
 	SET_TDBB(tdbb);
@@ -3165,7 +3203,6 @@ static SortedStream* gen_sort(thread_db* tdbb,
 	const UCHAR* ptr;
 	dsc descriptor;
 
-	CompilerScratch* csb = opt->opt_csb;
 	ULONG items = sort->nod_count + (streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
 	const UCHAR* const end_ptr = streams + streams[0];
 	const jrd_nod* const* const end_node = sort->nod_arg + sort->nod_count;
@@ -3408,8 +3445,8 @@ static SortedStream* gen_sort(thread_db* tdbb,
 		map_length += desc->dsc_length;
 	}
 
-	fb_assert(map_item - map->items.begin() == (USHORT) items);
-	fb_assert(sort_key - map->keyItems.begin() == sort->nod_count * 2);
+	fb_assert(map_item - map->items.begin() == USHORT(map->items.getCount()));
+	fb_assert(sort_key - map->keyItems.begin() == USHORT(map->keyItems.getCount()));
 
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 
@@ -3651,7 +3688,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			stream_array_t streams;
 			streams[0] = (UCHAR) stream_count;
 			memcpy(streams + 1, river->getStreams(), stream_count);
-			rsb = gen_sort(tdbb, opt, streams, NULL, river->getRecordSource(), key, false);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, river->getRecordSource(), key, false);
 		}
 		else
 		{
@@ -4735,7 +4772,18 @@ static void set_rse_inactive(CompilerScratch* csb, const RecordSelExpr* rse)
 	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
 		const jrd_nod* node = *ptr;
-		if (node->nod_type != nod_rse)
+
+		if (node->nod_type == nod_window)
+		{
+			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			{
+				const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+				csb->csb_rpt[stream].csb_flags &= ~csb_active;
+			}
+		}
+		else if (node->nod_type != nod_rse)
 		{
 			const SSHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;

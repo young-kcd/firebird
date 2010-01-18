@@ -168,11 +168,9 @@ const int SKD_int64			= 17;
 const int SKD_date	= SKD_timestamp1;
 
 // skd_flags
-
 const UCHAR SKD_ascending		= 0;	// default initializer
 const UCHAR SKD_descending		= 1;
 const UCHAR SKD_binary			= 2;
-
 
 // Run/merge common block header
 

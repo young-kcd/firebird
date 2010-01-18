@@ -250,9 +250,9 @@ static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT, bool in_select_
 static dsql_nod* pass1_update(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_variable(DsqlCompilerScratch*, dsql_nod*);
-static dsql_nod* post_map(dsql_nod*, dsql_ctx*);
-static dsql_nod* remap_field(DsqlCompilerScratch*, dsql_nod*, bool, dsql_ctx*, USHORT);
-static dsql_nod* remap_fields(DsqlCompilerScratch*, dsql_nod*, bool, dsql_ctx*);
+static dsql_nod* post_map(DsqlCompilerScratch*, dsql_nod*, dsql_ctx*, dsql_nod*);
+static dsql_nod* remap_field(DsqlCompilerScratch*, dsql_nod*, bool, dsql_ctx*, USHORT, dsql_nod*);
+static dsql_nod* remap_fields(DsqlCompilerScratch*, dsql_nod*, bool, dsql_ctx*, dsql_nod* = NULL);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
 static dsql_fld* resolve_context(DsqlCompilerScratch*, const dsql_str*, dsql_ctx*, bool, bool);
 static dsql_nod* resolve_using_field(DsqlCompilerScratch* dsqlScratch, dsql_str* name, DsqlNodStack& stack,
@@ -1054,6 +1054,12 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_named_param_name] = input->nod_arg[e_named_param_name];
 		node->nod_arg[e_named_param_expr] = PASS1_node(dsqlScratch, input->nod_arg[e_named_param_expr]);
+		return node;
+
+	case nod_map:
+		node = MAKE_node(input->nod_type, e_map_count);
+		node->nod_arg[e_map_context] = input->nod_arg[e_map_context];
+		node->nod_arg[e_map_map] = input->nod_arg[e_map_map];
 		return node;
 
 	default:
@@ -1918,6 +1924,12 @@ static bool aggregate_found2(const DsqlCompilerScratch* dsqlScratch, const dsql_
 			else
 			{
 				aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_window_expr],
+					false, current_level, deepest_level, ignore_sub_selects);
+			}
+
+			if (node->nod_arg[e_window_partition])
+			{
+				aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_window_partition],
 					false, current_level, deepest_level, ignore_sub_selects);
 			}
 
@@ -2860,6 +2872,12 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_window:
 			invalid |= invalid_reference(context, node->nod_arg[e_window_expr],
 				list, inside_own_map, true);
+
+			if (node->nod_arg[e_window_partition])
+			{
+				invalid |= invalid_reference(context, node->nod_arg[e_window_partition],
+					list, inside_own_map, true);
+			}
 
 			return invalid;
 
@@ -5632,6 +5650,12 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 			found |= pass1_found_aggregate(node->nod_arg[e_window_expr], check_scope_level,
 				match_type, current_scope_level_equal, false);
 
+			if (node->nod_arg[e_window_partition])
+			{
+				found |= pass1_found_aggregate(node->nod_arg[e_window_partition], check_scope_level,
+					match_type, current_scope_level_equal, windowOnly);
+			}
+
 			return found;
 
 		case nod_agg_average:
@@ -5893,6 +5917,13 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_window:
 			found |= pass1_found_field(node->nod_arg[e_window_expr],
 				check_scope_level, match_type, field);
+
+			if (node->nod_arg[e_window_partition])
+			{
+				found |= pass1_found_field(node->nod_arg[e_window_partition],
+					check_scope_level, match_type, field);
+			}
+
 			break;
 
 		case nod_agg_average:
@@ -7969,7 +8000,6 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		}
 
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
-		parent_context->ctx_context = dsqlScratch->contextNumber++;
 		parent_context->ctx_scope_level = dsqlScratch->scopeLevel;
 
 		// When we're in a outer-join part mark context for it.
@@ -8063,7 +8093,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			remap_fields(dsqlScratch, rse->nod_arg[e_rse_items], false, parent_context);
 		rse->nod_arg[e_rse_items] = NULL;
 
-		// AB: Check for invalid contructions inside selected-items list
+		// AB: Check for invalid constructions inside selected-items list
 		list = parent_rse->nod_arg[e_rse_items];
 		{ // scope block
 			const dsql_nod* const* ptr = list->nod_arg;
@@ -8168,7 +8198,6 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		sortWindow)
 	{
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
-		parent_context->ctx_context = dsqlScratch->contextNumber++;
 		parent_context->ctx_scope_level = dsqlScratch->scopeLevel;
 		dsql_nod* window = MAKE_node(nod_aggregate, e_agg_count);
 		window->nod_flags = NOD_AGG_WINDOW;
@@ -8220,6 +8249,18 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 		parent_rse->nod_arg[e_rse_items] =
 			remap_fields(dsqlScratch, rse->nod_arg[e_rse_items], true, parent_context);
+
+		// Remap the nodes to the partition context.
+		for (size_t i = 0, mapCount = parent_context->ctx_maps.getCount(); i < mapCount; ++i)
+		{
+			NodeMap* nodeMap = parent_context->ctx_maps[i];
+			if (nodeMap->partition)
+			{
+				nodeMap->partitionRemapped = PASS1_node(dsqlScratch, nodeMap->partition);
+				nodeMap->partitionRemapped = remap_fields(dsqlScratch, nodeMap->partitionRemapped,
+					true, parent_context, nodeMap->partition);
+			}
+		}
 
 		rse->nod_arg[e_rse_items] = NULL;
 
@@ -8897,10 +8938,12 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 			map_node->nod_arg[e_map_map] = (dsql_nod*) map;
 
 			// set up the dsql_map* between the sub-rses and the union context.
+			NodeMap* nodeMap = union_context->getNodeMap(dsqlScratch, NULL);
 			map->map_position = count++;
 			map->map_node = *uptr++;
-			map->map_next = union_context->ctx_map;
-			union_context->ctx_map = map;
+			map->map_next = nodeMap->map;
+			map->map_nodemap = nodeMap;
+			nodeMap->map = map;
 		}
 		union_rse->nod_arg[e_rse_items] = union_items;
 	} // end scope block
@@ -9781,30 +9824,39 @@ static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
     @param context
 
  **/
-static dsql_nod* post_map(dsql_nod* node, dsql_ctx* context)
+static dsql_nod* post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql_ctx* context,
+	dsql_nod* partitionNode)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	// Check to see if the item has already been posted
-
+	NodeMap* nodeMap = context->getNodeMap(dsqlScratch, partitionNode);
+	dsql_map* map = NULL;
 	int count = 0;
-	dsql_map* map;
-	for (map = context->ctx_map; map; map = map->map_next, ++count)
+
+	for (map = nodeMap->map; map; map = map->map_next)
 	{
 		if (node_match(node, map->map_node, false))
 			break;
+		++count;
 	}
 
 	if (!map)
 	{
-		map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
+		dsql_map** next = &nodeMap->map;
+
+		if (*next)
+		{
+			while (*(next = &(*next)->map_next))
+				;
+		}
+
+		map = *next = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
 		map->map_position = (USHORT) count;
-		map->map_next = context->ctx_map;
-		context->ctx_map = map;
 		map->map_node = node;
+		map->map_nodemap = nodeMap;
 	}
 
 	dsql_nod* new_node = MAKE_node(nod_map, e_map_count);
@@ -9835,7 +9887,7 @@ static dsql_nod* post_map(dsql_nod* node, dsql_ctx* context)
 
  **/
 static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, bool window,
-	dsql_ctx* context, USHORT current_level)
+	dsql_ctx* context, USHORT current_level, dsql_nod* partitionNode)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(field, dsql_type_nod);
@@ -9849,7 +9901,8 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 
 		case nod_alias:
 			field->nod_arg[e_alias_value] =
-				remap_field(dsqlScratch, field->nod_arg[e_alias_value], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_alias_value], window, context, current_level,
+					partitionNode);
 			return field;
 
 		case nod_derived_field:
@@ -9859,14 +9912,14 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 				// the given context (of course only if we're in the same scope-level).
 				const USHORT lscope_level = (USHORT)(U_IPTR) field->nod_arg[e_derived_field_scope];
 				if (lscope_level == context->ctx_scope_level) {
-					return post_map(field, context);
+					return post_map(dsqlScratch, field, context, partitionNode);
 				}
 
 				if (context->ctx_scope_level < lscope_level)
 				{
 					field->nod_arg[e_derived_field_value] =
 						remap_field(dsqlScratch, field->nod_arg[e_derived_field_value], window,
-									context, current_level);
+									context, current_level, partitionNode);
 				}
 				return field;
 			}
@@ -9875,7 +9928,7 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 			{
 				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(field->nod_arg[e_fld_context]);
 				if (lcontext->ctx_scope_level == context->ctx_scope_level) {
-					return post_map(field, context);
+					return post_map(dsqlScratch, field, context, partitionNode);
 				}
 
 				return field;
@@ -9888,17 +9941,29 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 				{
 					dsql_map* lmap = reinterpret_cast<dsql_map*>(field->nod_arg[e_map_map]);
 					lmap->map_node = remap_field(dsqlScratch, lmap->map_node, window, context,
-												 lcontext->ctx_scope_level);
+												 lcontext->ctx_scope_level, partitionNode);
 				}
 
 				if (window && lcontext->ctx_scope_level == context->ctx_scope_level)
-					return post_map(field, context);
+					return post_map(dsqlScratch, field, context, partitionNode);
 
 				return field;
 			}
 
 		case nod_window:
 		{
+			if (field->nod_arg[e_window_partition])
+			{
+				if (pass1_found_aggregate(field->nod_arg[e_window_partition],
+						context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true, true))
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							  Arg::Gds(isc_dsql_agg_nested_err));
+				}
+
+				partitionNode = field->nod_arg[e_window_partition];
+			}
+
 			dsql_nod* const windowNode = field;
 			field = field->nod_arg[e_window_expr];
 
@@ -9913,24 +9978,27 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 			USHORT lcurrent_level = current_level;
 			if (aggregate_found2(dsqlScratch, field, false, &lcurrent_level, &ldeepest_level, false))
 			{
-				if (!window && field->nod_count)
+				if (!window)
 				{
-					field->nod_arg[e_agg_function_expression] =
-						 remap_field(dsqlScratch, field->nod_arg[e_agg_function_expression],
-						 window, context, current_level);
+					if (field->nod_count)
+					{
+						field->nod_arg[e_agg_function_expression] = remap_field(
+							dsqlScratch, field->nod_arg[e_agg_function_expression],
+							window, context, current_level, NULL);
+					}
+
+					if (windowNode->nod_arg[e_window_partition])
+					{
+						for (unsigned i = 0; i < windowNode->nod_arg[e_window_partition]->nod_count; ++i)
+						{
+							windowNode->nod_arg[e_window_partition]->nod_arg[i] = remap_field(
+								dsqlScratch, windowNode->nod_arg[e_window_partition]->nod_arg[i],
+								window, context, current_level, NULL);
+						}
+					}
 				}
-
-				if (window && dsqlScratch->scopeLevel == ldeepest_level)
-					return post_map(field, context);
-
-				return windowNode;
-			}
-
-			if (!window && field->nod_count)
-			{
-				field->nod_arg[e_agg_function_expression] =
-					 remap_field(dsqlScratch, field->nod_arg[e_agg_function_expression],
-					 window, context, current_level);
+				else if (dsqlScratch->scopeLevel == ldeepest_level)
+					return post_map(dsqlScratch, field, context, partitionNode);
 			}
 
 			return windowNode;
@@ -9950,14 +10018,14 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 				if (aggregate_found2(dsqlScratch, field, false, &lcurrent_level, &ldeepest_level, false))
 				{
 					if (!window && dsqlScratch->scopeLevel == ldeepest_level) {
-						return post_map(field, context);
+						return post_map(dsqlScratch, field, context, partitionNode);
 					}
 
 					if (field->nod_count)
 					{
 						field->nod_arg[e_agg_function_expression] =
 							remap_field(dsqlScratch, field->nod_arg[e_agg_function_expression],
-										window, context, current_level);
+										window, context, current_level, partitionNode);
 					}
 					return field;
 				}
@@ -9966,27 +10034,32 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 				{
 					field->nod_arg[e_agg_function_expression] =
 						remap_field(dsqlScratch, field->nod_arg[e_agg_function_expression],
-									window, context, current_level);
+									window, context, current_level, partitionNode);
 				}
 				return field;
 			}
 
 		case nod_via:
 			field->nod_arg[e_via_rse] =
-				remap_field(dsqlScratch, field->nod_arg[e_via_rse], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_via_rse], window, context, current_level,
+					partitionNode);
 			field->nod_arg[e_via_value_1] = field->nod_arg[e_via_rse]->nod_arg[e_rse_items]->nod_arg[0];
 			return field;
 
 		case nod_rse:
 			current_level++;
 			field->nod_arg[e_rse_streams] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_streams], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_rse_streams], window, context, current_level,
+					partitionNode);
 			field->nod_arg[e_rse_boolean] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_boolean], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_rse_boolean], window, context, current_level,
+					partitionNode);
 			field->nod_arg[e_rse_items] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_items], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_rse_items], window, context, current_level,
+					partitionNode);
 			field->nod_arg[e_rse_sort] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_sort], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_rse_sort], window, context, current_level,
+					partitionNode);
 			current_level--;
 			return field;
 
@@ -9996,7 +10069,8 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 				dsql_nod** ptr = field->nod_arg;
 				for (const dsql_nod* const* const end = ptr + field->nod_count; ptr < end; ptr++)
 				{
-					*ptr = remap_field(dsqlScratch, *ptr, window, context, current_level);
+					*ptr = remap_field(dsqlScratch, *ptr, window, context, current_level,
+						partitionNode);
 				}
 				return field;
 			}
@@ -10005,19 +10079,21 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 			// ASF: We had deliberately changed nod_count to 1, to not process the second list.
 			// But we should remap its fields. CORE-2176
 			field->nod_arg[0] = remap_field(dsqlScratch, field->nod_arg[0], window, context,
-				current_level);
+				current_level, partitionNode);
 			field->nod_arg[1] = remap_field(dsqlScratch, field->nod_arg[1], window, context,
-				current_level);
+				current_level, partitionNode);
 			return field;
 
 		case nod_aggregate:
 			field->nod_arg[e_agg_rse] =
-				remap_field(dsqlScratch, field->nod_arg[e_agg_rse], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_agg_rse], window, context, current_level,
+					partitionNode);
 			return field;
 
 		case nod_order:
 			field->nod_arg[e_order_field] =
-				remap_field(dsqlScratch, field->nod_arg[e_order_field], window, context, current_level);
+				remap_field(dsqlScratch, field->nod_arg[e_order_field], window, context, current_level,
+					partitionNode);
 			return field;
 
 		case nod_or:
@@ -10068,7 +10144,8 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 				dsql_nod** ptr = field->nod_arg;
 				for (const dsql_nod* const* const end = ptr + field->nod_count; ptr < end; ptr++)
 				{
-					*ptr = remap_field(dsqlScratch, *ptr, window, context, current_level);
+					*ptr = remap_field(dsqlScratch, *ptr, window, context, current_level,
+						partitionNode);
 				}
 				return field;
 			}
@@ -10080,7 +10157,7 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 			if (field->nod_count == 2)
 			{
 				field->nod_arg[1] = remap_field(dsqlScratch, field->nod_arg[1], window, context,
-					current_level);
+					current_level, partitionNode);
 			}
 			return field;
 
@@ -10088,7 +10165,7 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 			if (field->nod_count == 3)
 			{
 				field->nod_arg[2] = remap_field(dsqlScratch, field->nod_arg[2], window, context,
-					current_level);
+					current_level, partitionNode);
 			}
 			return field;
 
@@ -10100,22 +10177,24 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 				{
 					// Remap the input parameters
 					lrelation_context->ctx_proc_inputs = remap_field(dsqlScratch,
-						lrelation_context->ctx_proc_inputs, window, context, current_level);
+						lrelation_context->ctx_proc_inputs, window, context, current_level,
+						partitionNode);
 				}
 				return field;
 			}
 
 		case nod_derived_table:
-			remap_field(dsqlScratch, field->nod_arg[e_derived_table_rse], window, context, current_level);
+			remap_field(dsqlScratch, field->nod_arg[e_derived_table_rse], window, context,
+				current_level, partitionNode);
 			return field;
 
 		case nod_hidden_var:
 			field->nod_arg[e_hidden_var_expr] = remap_field(dsqlScratch,
-				field->nod_arg[e_hidden_var_expr], window, context, current_level);
+				field->nod_arg[e_hidden_var_expr], window, context, current_level, partitionNode);
 			return field;
 
 		case nod_dbkey:
-			return post_map(field, context);
+			return post_map(dsqlScratch, field, context, partitionNode);
 
 		default:
 			return field;
@@ -10137,7 +10216,7 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 
  **/
 static dsql_nod* remap_fields(DsqlCompilerScratch* dsqlScratch, dsql_nod* fields, bool window,
-	dsql_ctx* context)
+	dsql_ctx* context, dsql_nod* partitionNode)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(fields, dsql_type_nod);
@@ -10148,11 +10227,13 @@ static dsql_nod* remap_fields(DsqlCompilerScratch* dsqlScratch, dsql_nod* fields
 		for (int i = 0; i < fields->nod_count; i++)
 		{
 			fields->nod_arg[i] = remap_field(dsqlScratch, fields->nod_arg[i], window, context,
-				dsqlScratch->scopeLevel);
+				dsqlScratch->scopeLevel, partitionNode);
 		}
 	}
-	else {
-		fields = remap_field(dsqlScratch, fields, window, context, dsqlScratch->scopeLevel);
+	else
+	{
+		fields = remap_field(dsqlScratch, fields, window, context, dsqlScratch->scopeLevel,
+			partitionNode);
 	}
 
 	return fields;
@@ -10797,6 +10878,32 @@ bool dsql_ctx::getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& n
 	}
 
 	return true;
+}
+
+// Returns (creating, if necessary) the NodeMap of a given partition (that may be NULL).
+NodeMap* dsql_ctx::getNodeMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode) const
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	NodeMap* nodeMap = NULL;
+
+	for (Array<NodeMap*>::iterator i = ctx_maps.begin(); !nodeMap && i != ctx_maps.end(); ++i)
+	{
+		if (((*i)->partition == NULL && partitionNode == NULL) ||
+			node_match((*i)->partition, partitionNode, false))
+		{
+			nodeMap = *i;
+		}
+	}
+
+	if (!nodeMap)
+	{
+		nodeMap = FB_NEW(*tdbb->getDefaultPool()) NodeMap(partitionNode);
+		ctx_maps.add(nodeMap);
+		nodeMap->context = dsqlScratch->contextNumber++;
+	}
+
+	return nodeMap;
 }
 
 #ifdef DSQL_DEBUG
@@ -11556,15 +11663,23 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			trace_line("%s%s\n", buffer, verb.c_str());
 			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
 			trace_line("%s   context %d\n", buffer, context->ctx_context);
-			dsql_map* map = context->ctx_map;
-			if (map != NULL)
-				trace_line("%s   map\n", buffer);
-			while (map)
+
+			for (NodeMap** nodeMap = context->ctx_maps.begin(); nodeMap != context->ctx_maps.end();
+				 ++nodeMap)
 			{
-				trace_line("%s      position %d\n", buffer, map->map_position);
-				DSQL_pretty(map->map_node, column + 2);
-				map = map->map_next;
+				trace_line("%s   nodemap\n", buffer);
+
+				dsql_map* map = (*nodeMap)->map;
+				if (map != NULL)
+					trace_line("%s      map\n", buffer);
+				while (map)
+				{
+					trace_line("%s         position %d\n", buffer, map->map_position);
+					DSQL_pretty(map->map_node, column + 2);
+					map = map->map_next;
+				}
 			}
+
 			DSQL_pretty(node->nod_arg[e_agg_group], column + 1);
 			DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
 			return;

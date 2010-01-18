@@ -157,6 +157,10 @@ bool BufferedStream::getRecord(thread_db* tdbb)
 	{
 		if (!m_next->getRecord(tdbb))
 		{
+			// ASF: There is nothing more to read, so remove irsb_mustread flag.
+			// That's important if m_next is reused in another stream and our caller
+			// rely on this BufferedStream being non-lazy, like WindowedStream does.
+			impure->irsb_flags &= ~irsb_mustread;
 			return false;
 		}
 

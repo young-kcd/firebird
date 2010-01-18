@@ -49,6 +49,7 @@ namespace Jrd
 	struct sort_context;
 	struct temporary_key;
 	struct win;
+	class BufferedStream;
 
 	typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
 
@@ -561,10 +562,10 @@ namespace Jrd
 	{
 		enum State
 		{
-			STATE_PROCESS_EOF,	// We processed everything now process (EOF)
-			STATE_PENDING,		// Values are pending from a prior fetch
-			STATE_EOF_FOUND,	// We encountered EOF from the last attempted fetch
-			STATE_GROUPING		// Entering EVL group before fetching the first record
+			STATE_PROCESS_EOF = 0,	// We processed everything now process (EOF)
+			STATE_PENDING,			// Values are pending from a prior fetch
+			STATE_EOF_FOUND,		// We encountered EOF from the last attempted fetch
+			STATE_GROUPING			// Entering EVL group before fetching the first record
 		};
 
 		struct Impure : public RecordSource::Impure
@@ -573,7 +574,8 @@ namespace Jrd
 		};
 
 	public:
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* aggregate, RecordSource* next);
+		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
+			jrd_nod* const map, RecordSource* next);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -586,11 +588,6 @@ namespace Jrd
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
-
-		jrd_nod* getAggregate() const
-		{
-			return m_aggregate;
-		}
 
 	private:
 		State evaluateGroup(thread_db* tdbb, State state);
@@ -599,14 +596,14 @@ namespace Jrd
 		void finiDistinct(jrd_req* request);
 
 		RecordSource* const m_next;
-		jrd_nod* const m_aggregate;
+		jrd_nod* const m_group;
+		jrd_nod* const m_map;
 	};
 
-	class WindowedStream : public RecordStream
+	class WindowedStream : public RecordSource
 	{
 	public:
-		WindowedStream(CompilerScratch* csb, UCHAR stream, AggregatedStream* aggregate,
-			RecordSource* next);
+		WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, RecordSource* next);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -620,9 +617,15 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request);
 
+		void findUsedStreams(StreamsArray& streams);
+		void nullRecords(thread_db* tdbb);
+		void saveRecords(thread_db* tdbb);
+		void restoreRecords(thread_db* tdbb);
+
 	private:
-		AggregatedStream* const m_aggregate;
-		RecordSource* const m_next;
+		jrd_nod* m_mainMap;
+		BufferedStream* m_next;
+		RecordSource* m_joinedStream;
 	};
 
 	class BufferedStream : public RecordSource
