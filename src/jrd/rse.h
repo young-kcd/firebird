@@ -51,18 +51,6 @@ class CompilerScratch;
 // Array which stores relative pointers to impure areas of invariant nodes
 typedef Firebird::SortedArray<SLONG> VarInvariantArray;
 
-// Blocks used to compute optimal join order:
-// indexed relationships block (IRL) holds
-// information about potential join orders
-
-class IndexedRelationship : public pool_alloc<type_irl>
-{
-public:
-	IndexedRelationship*	irl_next;		// next IRL block for stream
-	USHORT					irl_stream;		// stream reachable by relation
-	bool					irl_unique;		// is this stream reachable by unique index?
-};
-
 // Must be less then MAX_SSHORT. Not used for static arrays.
 const int MAX_CONJUNCTS	= 32000;
 
@@ -71,13 +59,13 @@ const int MAX_CONJUNCTS	= 32000;
 // limit is NOT negotiable so long as we use an array of UCHAR, where index 0
 // tells how many streams are in the array (and the streams themselves are
 // identified by a UCHAR).
-const int MAX_STREAMS	= 255;
+const int MAX_STREAMS = 255;
 
 // This is number of ULONG's needed to store bit-mapped flags for all streams
 // OPT_STREAM_BITS = (MAX_STREAMS + 1) / sizeof(ULONG)
 // This value cannot be increased simple way. Decrease is possible, but it is also
 // hardcoded in several places such as TEST_DEP_ARRAYS macro
-const int OPT_STREAM_BITS	= 8;
+const int OPT_STREAM_BITS = 8;
 
 // Number of streams, conjuncts, indices that will be statically allocated
 // in various arrays. Larger numbers will have to be allocated dynamically
