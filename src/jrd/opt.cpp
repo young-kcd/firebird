@@ -504,15 +504,12 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				}
 
 				fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-				local_streams[++local_streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_uni_stream];
+				local_streams[++local_streams[0]] = stream;
 			}
 			break;
 
 		case nod_aggregate:
 			{
-				fb_assert((int)(IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-				fb_assert((int)(IPTR) node->nod_arg[e_agg_stream] <= MAX_UCHAR);
-
 				NodeStack::const_iterator stack_end;
 				if (parent_stack) {
 					stack_end = conjunct_stack.merge(*parent_stack);
@@ -523,14 +520,14 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				}
 
 				fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-				local_streams[++local_streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_agg_stream];
+				local_streams[++local_streams[0]] = stream;
 			}
 			break;
 
 		case nod_procedure:
 			rsb = gen_procedure(tdbb, opt, node);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-			local_streams[++local_streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
+			local_streams[++local_streams[0]] = stream;
 			break;
 
 		case nod_rse:
@@ -977,9 +974,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// release memory allocated for index descriptions
 	for (USHORT i = 1; i <= streams[0]; ++i)
 	{
-		stream = streams[i];
+		const USHORT stream = streams[i];
 		delete csb->csb_rpt[stream].csb_idx;
-		csb->csb_rpt[stream].csb_idx = 0;
+		csb->csb_rpt[stream].csb_idx = NULL;
 
 		// CVC: The following line added because OPT_compile is recursive, both directly
 		//   and through gen_union(), too. Otherwise, we happen to step on deallocated memory
@@ -1007,6 +1004,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			csb->csb_rpt[stream].csb_idx = NULL;
 			csb->csb_rpt[stream].csb_indices = 0; // Probably needed to be safe
 		}
+
 		throw;
 	}
 
