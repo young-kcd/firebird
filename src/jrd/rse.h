@@ -95,17 +95,6 @@ public:
 	USHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are distributed parent
 	USHORT opt_base_parent_conjuncts;		// number of conjuncts in our rse + distributed with parent, next are parent
 	USHORT opt_base_missing_conjuncts;		// number of conjuncts in our and parent rse, but without missing
-	// 01 Oct 2003. Nickolay Samofatov: this static array takes as much as 256 bytes.
-	// This is nothing compared to original Firebird 1.5 OptimizerBlk structure size of ~180k
-	// All other arrays had been converted to dynamic to preserve memory
-	// and improve performance
-	struct opt_segment
-	{
-		// Index segments and their options
-		jrd_nod* opt_lower;			// lower bound on index value
-		jrd_nod* opt_upper;			// upper bound on index value
-		jrd_nod* opt_match;			// conjunct which matches index segment
-	} opt_segments[MAX_INDEX_SEGMENTS];
 	struct opt_conjunct
 	{
 		// Conjunctions and their options
@@ -115,20 +104,13 @@ public:
 	struct opt_stream
 	{
 		// Streams and their options
-		IndexedRelationship* opt_relationships;	// streams directly reachable by index
-		double opt_best_stream_cost;			// best cost of retrieving first n = streams
 		USHORT opt_best_stream;					// stream in best join order seen so far
 		USHORT opt_stream_number;				// stream in position of join order
-		UCHAR opt_stream_flags;
 	};
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
 	OptimizerBlk(MemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
 };
-
-// values for opt_stream_flags
-
-const USHORT opt_stream_used = 1;			// stream is used
 
 // values for opt_conjunct_flags
 
