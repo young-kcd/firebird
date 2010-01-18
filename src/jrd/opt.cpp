@@ -413,9 +413,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// memory will then be in csb->csb_rpt[stream].csb_idx_allocation, which
 	// gets cleaned up before this function exits.
 
-	OptimizerBlk* opt = FB_NEW(*tdbb->getDefaultPool()) OptimizerBlk(tdbb->getDefaultPool());
+	AutoPtr<OptimizerBlk> opt(FB_NEW(*tdbb->getDefaultPool()) OptimizerBlk(tdbb->getDefaultPool()));
 	opt->opt_streams.grow(csb->csb_n_stream);
-	RecordSource* rsb = 0;
+	RecordSource* rsb = NULL;
 
 	try {
 
@@ -988,9 +988,6 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		csb->csb_rpt[stream].csb_indices = 0;
 	}
 
-	// free up memory for optimizer structures
-	delete opt;
-
 #ifdef OPT_DEBUG
 	if (opt_debug_file)
 	{
@@ -1007,10 +1004,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		{
 			const USHORT stream = streams[i];
 			delete csb->csb_rpt[stream].csb_idx;
-			csb->csb_rpt[stream].csb_idx = 0;
+			csb->csb_rpt[stream].csb_idx = NULL;
 			csb->csb_rpt[stream].csb_indices = 0; // Probably needed to be safe
 		}
-		delete opt;
 		throw;
 	}
 

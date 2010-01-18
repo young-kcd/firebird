@@ -90,7 +90,6 @@ class OptimizerBlk : public pool_alloc<type_opt>
 {
 public:
 	CompilerScratch*	opt_csb;					// compiler scratch block
-	SLONG opt_combinations;					// number of partial orders considered
 	double opt_best_cost;					// cost of best join order
 	USHORT opt_best_count;					// longest length of indexable streams
 	USHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are distributed parent

@@ -3228,7 +3228,6 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 		new_cardinality = position_cardinality * cardinality;
 	}
 
-	optimizer->opt_combinations++;
 	// If the partial order is either longer than any previous partial order,
 	// or the same length and cheap, save order as "best".
 	if (position > optimizer->opt_best_count ||
