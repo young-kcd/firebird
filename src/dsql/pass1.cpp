@@ -6408,6 +6408,12 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	// Set up an empty context to process the joins
+
+	DsqlContextStack* const base_context = dsqlScratch->context;
+	DsqlContextStack temp;
+	dsqlScratch->context = &temp;
+
 	dsql_nod* const node = MAKE_node(input->nod_type, input->nod_count);
 
 	// First process type
@@ -6641,6 +6647,15 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	}
 
 	node->nod_arg[e_join_boolean] = PASS1_node(dsqlScratch, boolean);
+
+	// Merge the newly created contexts with the original ones
+
+	while (temp.hasData())
+	{
+		base_context->push(temp.pop());
+	}
+
+	dsqlScratch->context = base_context;
 
 	return node;
 }
