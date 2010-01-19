@@ -172,22 +172,23 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 
 	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 	{
-		jrd_nod* nodWindow = nodWindows->nod_arg[i];
+		jrd_nod* const nodWindow = nodWindows->nod_arg[i];
 
-		jrd_nod* partition = nodWindow->nod_arg[e_part_group];
-		jrd_nod* partitionMap = nodWindow->nod_arg[e_part_map];
-		jrd_nod* repartition = nodWindow->nod_arg[e_part_regroup];
-		USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
+		jrd_nod* const partition = nodWindow->nod_arg[e_part_group];
+		jrd_nod* const partitionMap = nodWindow->nod_arg[e_part_map];
+		jrd_nod* const repartition = nodWindow->nod_arg[e_part_regroup];
+		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
 
 		if (!partition)
 		{
-			// This is the main window. It have special processing.
+			// This is the main window. It has special processing.
 
-			m_mainMap = nodWindows->nod_arg[i]->nod_arg[e_part_map];
-			USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+			fb_assert(!m_mainMap);
+			m_mainMap = partitionMap;
 
+			fb_assert(!mainWindow);
 			mainWindow = FB_NEW(csb->csb_pool) AggregatedStream(
-				csb, stream, partition, m_mainMap,
+				csb, stream, NULL, m_mainMap,
 				FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next));
 
 			OPT_gen_aggregate_distincts(tdbb, csb, m_mainMap);
@@ -195,9 +196,9 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 			continue;
 		}
 
-		SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
+		SortedStream* const sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
 			FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next), partition, false);
-		AggregatedStream* aggStream = FB_NEW(csb->csb_pool) AggregatedStream(
+		AggregatedStream* const aggStream = FB_NEW(csb->csb_pool) AggregatedStream(
 			csb, stream, partition, partitionMap, sortedStream);
 
 		OPT_gen_aggregate_distincts(tdbb, csb, partitionMap);
@@ -209,7 +210,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 	if (mainWindow)
 	{
 		// Make a cross join with the main window.
-		RecordSource* rsbs[] = {mainWindow, m_joinedStream};
+		RecordSource* const rsbs[] = {mainWindow, m_joinedStream};
 		m_joinedStream = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, 2, rsbs);
 	}
 }
