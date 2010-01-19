@@ -186,7 +186,6 @@ static const VERB verbs[] =
 
 	/* nodes for set plan */
 	PAIR(nod_plan, blr_plan, 1, 1, VALUE, VALUE),
-	PAIR(nod_merge, blr_merge, 0, 0, VALUE, VALUE),
 	PAIR(nod_join, blr_join, 0, 0, VALUE, VALUE),
 	PAIR(nod_sequential, blr_sequential, 0, 0, ACCESS_TYPE, OTHER),
 	PAIR(nod_navigational, blr_navigational, 1, 1, ACCESS_TYPE, VALUE),

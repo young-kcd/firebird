@@ -11539,9 +11539,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_computed:
 		verb = "def_computed";
 		break;
-	case nod_merge_plan:
-		verb = "merge_plan";
-		break;
 	case nod_set_generator:
 		verb = "set_generator";
 		break;

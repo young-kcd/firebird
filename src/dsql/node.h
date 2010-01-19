@@ -216,7 +216,6 @@ enum nod_t
 	nod_def_computed,
 	nod_plan_expr,
 	nod_plan_item,
-	nod_merge_plan,
 	nod_natural,
 	nod_index,
 	nod_index_order,

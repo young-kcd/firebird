@@ -1809,15 +1809,12 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
 
 			// put out the join type
 
-			/*
-			if (rsb_type == isc_info_rsb_hash)
-				p = "HASH JOIN (";
-			else
-			*/
-			if (rsb_type == isc_info_rsb_cross || rsb_type == isc_info_rsb_left_cross)
-				p = "JOIN (";
-			else
+			if (rsb_type == isc_info_rsb_merge)
 				p = "MERGE (";
+			else if (rsb_type == isc_info_rsb_hash)
+				p = "HASH (";
+			else
+				p = "JOIN (";
 
 			if ((plan_length -= strlen(p)) < 0)
 				return false;

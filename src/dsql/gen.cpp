@@ -2100,13 +2100,10 @@ static void gen_plan( DsqlCompilerScratch* dsqlScratch, const dsql_nod* plan_exp
 {
 	// stuff the join type
 
-	const dsql_nod* list = plan_expression->nod_arg[1];
+	const dsql_nod* list = plan_expression->nod_arg[0];
 	if (list->nod_count > 1)
 	{
-		if (plan_expression->nod_arg[0])
-			stuff(dsqlScratch->getStatement(), blr_merge);
-		else
-			stuff(dsqlScratch->getStatement(), blr_join);
+		stuff(dsqlScratch->getStatement(), blr_join);
 		stuff(dsqlScratch->getStatement(), list->nod_count);
 	}
 

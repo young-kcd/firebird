@@ -2325,7 +2325,7 @@ static void form_rivers(thread_db*		tdbb,
 	for (const jrd_nod* const* const end = ptr + count; ptr < end; ptr++)
 	{
 		plan_node = *ptr;
-		if (plan_node->nod_type == nod_merge || plan_node->nod_type == nod_join)
+		if (plan_node->nod_type == nod_join)
 		{
 			form_rivers(tdbb, opt, streams, river_list, sort_clause, plan_node);
 			continue;

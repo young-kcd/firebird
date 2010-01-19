@@ -1821,7 +1821,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	{
 		USHORT count = (USHORT) csb->csb_blr_reader.getByte();
 		jrd_nod* plan = PAR_make_node(tdbb, count);
-		plan->nod_type = (nod_t)(USHORT) blr_table[node_type];
+		plan->nod_type = nod_join;
 
 		for (jrd_nod** arg = plan->nod_arg; count--;)
 			*arg++ = par_plan(tdbb, csb);

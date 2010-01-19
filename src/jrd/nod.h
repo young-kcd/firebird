@@ -126,7 +126,6 @@ NODE(nod_asn_list, asn_list, "")
 
 /* access plan stuff */
 		  NODE(nod_plan, plan, "PLAN")
-		  NODE(nod_merge, merge, "MERGE")
 		  NODE(nod_join, join, "JOIN")
 		  NODE(nod_sequential, sequential, "SEQUENTIAL")
 		  NODE(nod_navigational, navigational, "NAVIGATIONAL")

@@ -4378,23 +4378,16 @@ plan_clause	: PLAN plan_expression
 		;
 
 plan_expression	: plan_type '(' plan_item_list ')'
-			{ $$ = make_node (nod_plan_expr, 2, $1, make_list ($3)); }
+			{ $$ = make_node (nod_plan_expr, 1, make_list ($3)); }
 		;
 
-plan_type	: JOIN
-			{ $$ = 0; }
+plan_type : JOIN
 		| SORT MERGE
-			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
 		| MERGE
-			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
-
-		// for now the SORT operator is a no-op; it does not
-		// change the place where a sort happens, but is just intended
-		// to read the output from a SET PLAN
+		| HASH
 		| SORT
-			{ $$ = 0; }
 		|
-			{ $$ = 0; }
+			{ $$ = NULL; }
 		;
 
 plan_item_list	: plan_item
