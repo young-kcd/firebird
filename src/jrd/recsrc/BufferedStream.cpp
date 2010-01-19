@@ -339,7 +339,7 @@ void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position)
 	{
 		while (this->getRecord(tdbb))
 			; // no-op
-		impure->irsb_flags &= ~irsb_mustread;
+		fb_assert(!(impure->irsb_flags & irsb_mustread));
 	}
 
 	impure->irsb_position = position;
