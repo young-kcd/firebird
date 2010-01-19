@@ -546,7 +546,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 #endif
 
 	--blocksActive;
-	int length = block->length;
+	SINT64 length = block->length;
 
 	// If length is negative, this is a small block
 
