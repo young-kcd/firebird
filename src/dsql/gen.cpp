@@ -1268,10 +1268,14 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
-	bool window = (node->nod_flags & NOD_AGG_WINDOW);
+	const bool window = (node->nod_flags & NOD_AGG_WINDOW);
 	stuff(statement, (window ? blr_window : blr_aggregate));
+
 	if (!window)
+	{
 		stuff_context(dsqlScratch, context);
+	}
+
 	gen_rse(dsqlScratch, node->nod_arg[e_agg_rse]);
 
 	// Handle PARTITION BY and GROUP BY clause
@@ -1302,7 +1306,9 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 					GEN_expr(dsqlScratch, *ptr);
 			}
 			else
+			{
 				stuff(statement, 0);	// partition by expression count
+			}
 
 			gen_map(dsqlScratch, (*i)->map);
 		}
@@ -1320,10 +1326,19 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 				GEN_expr(dsqlScratch, *ptr);
 		}
 		else
+		{
 			stuff(statement, 0);
+		}
 
-		fb_assert(context->ctx_maps.getCount() == 1);
-		gen_map(dsqlScratch, (*context->ctx_maps.begin())->map);
+		dsql_map* map = NULL;
+
+		if (context->ctx_maps.hasData())
+		{
+			fb_assert(context->ctx_maps.getCount() == 1);
+			map = (*context->ctx_maps.begin())->map;
+		}
+
+		gen_map(dsqlScratch, map);
 	}
 }
 
