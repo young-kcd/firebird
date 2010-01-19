@@ -1,3 +1,16 @@
+2010-01-19 09:58  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.155.2.20):
+
+	Backported fix for bug CORE-2185 : PIP page could be marked after
+	it was really changed
+
+2010-01-19 09:27  hvlad
+
+	* firebird2/src/jrd/TempSpace.cpp (1.13.8.2):
+
+	Backported fix for bug CORE-2184 : Bus error on SPARC
+
 2010-01-15 11:06  dimitr
 
 	* firebird2/src/burp/: backup.epp (1.104.4.2), restore.epp
