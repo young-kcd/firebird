@@ -2828,18 +2828,15 @@ static RecordSource* gen_outer(thread_db* tdbb,
 	{
 		jrd_nod* const node = rse->rse_relation[i];
 
-		if (node->nod_type == nod_union ||
-			node->nod_type == nod_aggregate ||
-			node->nod_type == nod_procedure ||
-			node->nod_type == nod_rse)
+		if (node->nod_type == nod_relation)
 		{
-			River* const river = river_list.pop();
-			stream_ptr[i]->stream_rsb = river->getRecordSource();
+			stream_ptr[i]->stream_rsb = NULL;
+			stream_ptr[i]->stream_num = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
 		}
 		else
 		{
-			stream_ptr[i]->stream_rsb = NULL;
-			stream_ptr[i]->stream_num = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+			River* const river = river_list.pop();
+			stream_ptr[i]->stream_rsb = river->getRecordSource();
 		}
 	}
 
@@ -3853,7 +3850,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 		// member to allow recursive members be optimized
 		if (recurse)
 		{
-			const SSHORT stream = (USHORT)(IPTR) union_node->nod_arg[STREAM_INDEX(union_node)];
+			const SSHORT stream = (USHORT)(IPTR) union_node->nod_arg[e_uni_stream];
 			csb->csb_rpt[stream].csb_flags |= csb_active;
 		}
 	}

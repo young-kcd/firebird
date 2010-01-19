@@ -221,16 +221,28 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		if ((*ptr)->nod_type != nod_rse)
+		const jrd_nod* const node = *ptr;
+
+		if (node->nod_type == nod_window)
 		{
-			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
+			const jrd_nod* windows = node->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < windows->nod_count; ++i)
+			{
+				n = (USHORT)(IPTR) windows->nod_arg[i]->nod_arg[e_part_stream];
+				csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
+			}
+		}
+		else if (node->nod_type != nod_rse)
+		{
+			n = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
 			csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
 		}
 	}
 
 	// Check sub-stream
-	if (((sub = rse->rse_boolean)    && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_sorted)     && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	if (((sub = rse->rse_boolean) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_sorted) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
 	    ((sub = rse->rse_projection) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
 	{
 		result = false;
@@ -254,7 +266,19 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 	// Reset streams inactive
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		if ((*ptr)->nod_type != nod_rse)
+		const jrd_nod* const node = *ptr;
+
+		if (node->nod_type == nod_window)
+		{
+			const jrd_nod* windows = node->nod_arg[e_win_windows];
+
+			for (unsigned i = 0; i < windows->nod_count; ++i)
+			{
+				n = (USHORT)(IPTR) windows->nod_arg[i]->nod_arg[e_part_stream];
+				csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
+			}
+		}
+		else if (node->nod_type != nod_rse)
 		{
 			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
