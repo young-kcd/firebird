@@ -782,6 +782,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	// allocated from this pointer page. There is intention to create dedicated
 	// field at page_inv_page for this purpose in ODS 12.
 	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && dbb->dbb_minor_version >= 1);
+	bool pipMarked = false;
 
 	// Find an allocation page with something on it
 
@@ -857,7 +858,10 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 										start, init_pages);
 								}
 
-								if (init_pages) {
+								if (init_pages) 
+								{
+									CCH_MARK(tdbb, &pip_window);
+									pipMarked = true;
 									pip_page->pip_header.reserved += init_pages;
 								}
 								else
@@ -869,7 +873,6 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									try
 									{
 										CCH_RELEASE(tdbb, window);
-										pip_page->pip_header.reserved = relative_bit + 1;
 									}
 									catch (Firebird::status_exception)
 									{
@@ -883,6 +886,10 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 										throw;
 									}
+
+									CCH_MARK(tdbb, &pip_window);
+									pipMarked = true;
+									pip_page->pip_header.reserved = relative_bit + 1;
 
 									new_page = CCH_fake(tdbb, window, 1);
 								}
@@ -918,7 +925,9 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 	pageSpace->pipHighWater = sequence;
 
-	CCH_MARK(tdbb, &pip_window);
+	if (!pipMarked) {
+		CCH_MARK(tdbb, &pip_window);
+	}
 	*bytes &= ~bit;
 	page_inv_page* pip_page = (page_inv_page*) pip_window.win_buffer;
 
