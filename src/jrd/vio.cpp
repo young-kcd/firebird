@@ -2437,6 +2437,14 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		}
 	}
 
+	// hvlad: prepare_update() take EX lock on data page. Subsequent call of 
+	// IDX_modify_flag_uk_modified() will read database - if relation's partners 
+	// list has not been scanned yet. It could lead to single thread deadlock
+	// if the same page should be fetched for read.
+	// Explicit scan of relation's partners allows to avoid possible deadlock.
+
+	MET_scan_partners(tdbb, org_rpb->rpb_relation);
+
 	/* We're almost ready to go.  To modify the record, we must first
 	make a copy of the old record someplace else.  Then we must re-fetch
 	the record (for write) and verify that it is legal for us to
