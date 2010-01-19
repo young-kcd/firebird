@@ -1756,7 +1756,7 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
 				// finish the first union member
 
 				USHORT union_level = *level_ptr;
-				USHORT union_join_count = 0;
+				USHORT union_join_count = union_count ? 0 : 1;
 				while (explain_length > 0 && plan_length > 0)
 				{
 					if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
