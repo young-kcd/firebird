@@ -33,6 +33,8 @@
 
 // Static definitions/initializations
 
+const size_t MIN_TEMP_BLOCK_SIZE	= 64 * 1024;
+
 Firebird::Mutex TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
 size_t TempSpace::minBlockSize = 0;
@@ -145,6 +147,11 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix)
 			MemoryPool& def_pool = *getDefaultMemoryPool();
 			tempDirs = FB_NEW(def_pool) Firebird::TempDirectoryList(def_pool);
 			minBlockSize = Config::getTempBlockSize();
+
+			if (minBlockSize < MIN_TEMP_BLOCK_SIZE)
+				minBlockSize = MIN_TEMP_BLOCK_SIZE;
+			else
+				minBlockSize = FB_ALIGN(minBlockSize, MIN_TEMP_BLOCK_SIZE);
 		}
 	}
 }
@@ -606,6 +613,7 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 	freeMem = MIN(freeMem / count, maxSize);
 	freeMem = MAX(freeMem, minSize);
 	freeMem = MIN(freeMem, minBlockSize);
+	freeMem &= ~(FB_ALIGNMENT - 1);
 	
 	Segment** prevSpace = &freeSegments;
 	freeSpace = freeSegments;
