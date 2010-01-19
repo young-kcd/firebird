@@ -790,6 +790,7 @@ PAG PAG_allocate(WIN * window)
 	// from this pointer page
 	const bool isODS11_1 = (dbb->dbb_ods_version == ODS_VERSION11 && 
 							dbb->dbb_minor_version == 1);
+	bool pipMarked = false;
 
 /* Find an allocation page with something on it */
 
@@ -857,7 +858,10 @@ PAG PAG_allocate(WIN * window)
 										init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
 									}
 
-									if (init_pages) {
+									if (init_pages) 
+									{
+										CCH_MARK(tdbb, &pip_window);
+										pipMarked = true;
 										pip_page->pip_header.reserved += init_pages;
 									}
 									else 
@@ -868,7 +872,6 @@ PAG PAG_allocate(WIN * window)
 										CCH_must_write(window);
 										try {
 											CCH_RELEASE(tdbb, window);
-											pip_page->pip_header.reserved = relative_bit + 1;
 										}
 										catch (Firebird::status_exception) 
 										{
@@ -883,6 +886,10 @@ PAG PAG_allocate(WIN * window)
 											throw;
 										}
 	
+										CCH_MARK(tdbb, &pip_window);
+										pipMarked = true;
+										pip_page->pip_header.reserved = relative_bit + 1;
+
 										new_page = CCH_fake(tdbb, window, 1);
 									}
 									fb_assert(new_page);
@@ -914,7 +921,9 @@ PAG PAG_allocate(WIN * window)
 
 	pageSpace->pipHighWater = sequence;
 
-	CCH_MARK(tdbb, &pip_window);
+	if (!pipMarked) {
+		CCH_MARK(tdbb, &pip_window);
+	}
 	*bytes &= ~bit;
 	page_inv_page* pip_page = (page_inv_page*) pip_window.win_buffer;
 
