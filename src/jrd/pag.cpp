@@ -522,6 +522,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	UCHAR bit = 0;
 
 	pag* new_page = NULL; // NULL before the search for a new page.
+	bool pipMarked = false;
 
 	// Find an allocation page with something on it
 
@@ -594,7 +595,10 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 										start, init_pages);
 								}
 
-								if (init_pages) {
+								if (init_pages) 
+								{
+									CCH_MARK(tdbb, &pip_window);
+									pipMarked = true;
 									pip_page->pip_used += init_pages;
 								}
 								else
@@ -606,7 +610,6 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									try
 									{
 										CCH_RELEASE(tdbb, window);
-										pip_page->pip_used = relative_bit + 1;
 									}
 									catch (Firebird::status_exception)
 									{
@@ -620,6 +623,10 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 										throw;
 									}
+
+									CCH_MARK(tdbb, &pip_window);
+									pipMarked = true;
+									pip_page->pip_used = relative_bit + 1;
 
 									new_page = CCH_fake(tdbb, window, 1);
 								}
@@ -655,7 +662,9 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 	pageSpace->pipHighWater = sequence;
 
-	CCH_MARK(tdbb, &pip_window);
+	if (!pipMarked) {
+		CCH_MARK(tdbb, &pip_window);
+	}
 	*bytes &= ~bit;
 	page_inv_page* pip_page = (page_inv_page*) pip_window.win_buffer;
 
