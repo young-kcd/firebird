@@ -8015,6 +8015,17 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		}
 
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
+
+		// Here we shouldn't have any window mapping.
+		size_t mapCount = parent_context->ctx_maps.getCount();
+		fb_assert(mapCount <= 1);
+
+		// If we have a map, copy it context number to ctx_context. If we haven't, generate it here.
+		if (mapCount == 1)
+			parent_context->ctx_context = parent_context->ctx_maps[0]->context;
+		else
+			parent_context->ctx_context = dsqlScratch->contextNumber++;
+
 		parent_context->ctx_scope_level = dsqlScratch->scopeLevel;
 
 		// When we're in a outer-join part mark context for it.
