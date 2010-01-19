@@ -613,7 +613,7 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 	freeMem = MIN(freeMem / count, maxSize);
 	freeMem = MAX(freeMem, minSize);
 	freeMem = MIN(freeMem, minBlockSize);
-	freeMem &= ~(FB_ALIGNMENT - 1);
+	freeMem &= ~(ALIGNMENT - 1);
 	
 	Segment** prevSpace = &freeSegments;
 	freeSpace = freeSegments;
