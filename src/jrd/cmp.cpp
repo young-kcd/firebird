@@ -132,10 +132,110 @@ const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
 using namespace Jrd;
 using namespace Firebird;
 
+namespace
+{
+	// Generic node copier.
+	class NodeCopy
+	{
+	public:
+		NodeCopy(CompilerScratch* aCsb, UCHAR* aRemap)
+			: csb(aCsb),
+			  remap(aRemap),
+			  message(NULL)
+		{
+		}
+
+		virtual ~NodeCopy()
+		{
+		}
+
+	public:
+		jrd_nod* copy(thread_db* tdbb, jrd_nod* input);
+
+		static jrd_nod* copy(thread_db* tdbb, CompilerScratch* csb, jrd_nod* input, UCHAR* remap)
+		{
+			return NodeCopy(csb, remap).copy(tdbb, input);
+		}
+
+	protected:
+		virtual bool remapArgument()
+		{
+			return false;
+		}
+
+		virtual USHORT remapField(USHORT stream, USHORT fldId)
+		{
+			return fldId;
+		}
+
+		virtual USHORT getFieldId(jrd_nod* input)
+		{
+			return (USHORT)(IPTR) input->nod_arg[e_fld_id];
+		}
+
+	protected:
+		CompilerScratch* csb;
+		UCHAR* remap;
+		jrd_nod* message;
+	};
+
+	// Node copier for views.
+	class ViewNodeCopy : public NodeCopy
+	{
+	public:
+		ViewNodeCopy(CompilerScratch* aCsb, UCHAR* aRemap)
+			: NodeCopy(aCsb, aRemap)
+		{
+		}
+
+	protected:
+		virtual bool remapArgument()
+		{
+			return true;
+		}
+
+		virtual USHORT remapField(USHORT stream, USHORT fldId)
+		{
+			jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+			jrd_fld* field = MET_get_field(relation, fldId);
+
+			if (field->fld_source)
+				fldId = (USHORT)(IPTR) field->fld_source->nod_arg[e_fld_id];
+
+			return fldId;
+		}
+	};
+
+	// Node copier that remaps the field id 0 of stream 0 to a given field id.
+	class RemapFieldNodeCopy : public NodeCopy
+	{
+	public:
+		RemapFieldNodeCopy(CompilerScratch* aCsb, UCHAR* aRemap, USHORT aFldId)
+			: NodeCopy(aCsb, aRemap),
+			  fldId(aFldId)
+		{
+		}
+
+	protected:
+		virtual USHORT getFieldId(jrd_nod* input)
+		{
+			if ((input->nod_flags & nod_id) && !input->nod_arg[e_fld_id] &&
+				!input->nod_arg[e_fld_stream])
+			{
+				return fldId;
+			}
+			else
+				return NodeCopy::getFieldId(input);
+		}
+
+	private:
+		USHORT fldId;
+	};
+}	// namespace
+
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node);
-static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, nod_t, bool);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
@@ -217,7 +317,7 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	return copy(tdbb, csb, node, NULL, 0, NULL, false);
+	return NodeCopy::copy(tdbb, csb, node, NULL);
 }
 
 
@@ -243,7 +343,7 @@ jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		return node;
 	}
 
-	jrd_nod* clone = copy(tdbb, csb, node, NULL, 0, NULL, false);
+	jrd_nod* clone = NodeCopy::copy(tdbb, csb, node, NULL);
 	CMP_pass2(tdbb, csb, clone, 0);
 
 	return clone;
@@ -2204,11 +2304,11 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 		AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 			(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-		fieldInfo.defaultValue = copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
+		fieldInfo.defaultValue = NodeCopy::copy(tdbb, csb, fieldInfo.defaultValue, local_map);
 
 		csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
-		fieldInfo.validation = copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
+		fieldInfo.validation = NodeCopy::copy(tdbb, csb, fieldInfo.validation, local_map);
 
 		fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
 		fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
@@ -2863,25 +2963,9 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node)
 }
 
 
-static jrd_nod* copy(thread_db* tdbb,
-					CompilerScratch* csb,
-					jrd_nod* input,
-					UCHAR* remap,
-					USHORT field_id,
-					jrd_nod* message,
-					bool remap_fld)
+// Copy an expression tree remapping field streams. If the map isn't present, don't remap.
+jrd_nod* NodeCopy::copy(thread_db* tdbb, jrd_nod* input)
 {
-/**************************************
- *
- *	c o p y
- *
- **************************************
- *
- * Functional description
- *	Copy an expression tree remapping field streams.  If the
- *	map isn't present, don't remap.
- *
- **************************************/
 	jrd_nod* node;
 	USHORT stream, new_stream;
 
@@ -2912,7 +2996,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		break;
 
 	case nod_argument:
-		if (remap_fld)
+		if (remapArgument())
 			return input;
 		node = PAR_make_node(tdbb, e_arg_length);
 		node->nod_count = input->nod_count;
@@ -2929,10 +3013,8 @@ static jrd_nod* copy(thread_db* tdbb,
 		//			cloned outside nod_procedure (e.g. in the optimizer)
 		//			and we must keep the input message.
 		node->nod_arg[e_arg_message] = message ? message : input->nod_arg[e_arg_message];
-		node->nod_arg[e_arg_flag] =
-			copy(tdbb, csb, input->nod_arg[e_arg_flag], remap, field_id, message, remap_fld);
-		node->nod_arg[e_arg_indicator] =
-			copy(tdbb, csb, input->nod_arg[e_arg_indicator], remap, field_id, message, remap_fld);
+		node->nod_arg[e_arg_flag] = copy(tdbb, input->nod_arg[e_arg_flag]);
+		node->nod_arg[e_arg_indicator] = copy(tdbb, input->nod_arg[e_arg_indicator]);
 		return node;
 
 	case nod_assignment:
@@ -2967,22 +3049,10 @@ static jrd_nod* copy(thread_db* tdbb,
 
 	case nod_field:
 		{
-			if (field_id && (input->nod_flags & nod_id) && !input->nod_arg[e_fld_id] &&
-				!input->nod_arg[e_fld_stream])
-			{
-				--field_id;
-			}
-			else {
-				field_id = (USHORT)(IPTR) input->nod_arg[e_fld_id];
-			}
+			USHORT fldId = getFieldId(input);
+
 			stream = (USHORT)(IPTR) input->nod_arg[e_fld_stream];
-			if (remap_fld)
-			{
-				jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-				jrd_fld* field = MET_get_field(relation, field_id);
-				if (field->fld_source)
-					field_id = (USHORT)(IPTR) field->fld_source->nod_arg[e_fld_id];
-			}
+			fldId = remapField(stream, fldId);
 
 			if (remap)
 			{
@@ -2992,11 +3062,10 @@ static jrd_nod* copy(thread_db* tdbb,
 				stream = remap[stream];
 			}
 
-			jrd_nod* temp_node = PAR_gen_field(tdbb, stream, field_id);
+			jrd_nod* temp_node = PAR_gen_field(tdbb, stream, fldId);
 			if (input->nod_type == nod_field && input->nod_arg[e_fld_default_value])
-			{
 				temp_node->nod_arg[e_fld_default_value] = input->nod_arg[e_fld_default_value];
-			}
+
 			return temp_node;
 		}
 
@@ -3005,8 +3074,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_derived_expr_length);
 		node->nod_count = e_derived_expr_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_derived_expr_expr] =
-			copy(tdbb, csb, input->nod_arg[e_derived_expr_expr], remap, field_id, message, remap_fld);
+		node->nod_arg[e_derived_expr_expr] = copy(tdbb, input->nod_arg[e_derived_expr_expr]);
 
 		if (remap)
 		{
@@ -3036,8 +3104,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_fun_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_fun_args] =
-			copy(tdbb, csb, input->nod_arg[e_fun_args], remap, field_id, message, remap_fld);
+		node->nod_arg[e_fun_args] = copy(tdbb, input->nod_arg[e_fun_args]);
 		node->nod_arg[e_fun_function] = input->nod_arg[e_fun_function];
 		return (node);
 
@@ -3055,8 +3122,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_gen_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_gen_value] =
-			copy(tdbb, csb, input->nod_arg[e_gen_value], remap, field_id, message, remap_fld);
+		node->nod_arg[e_gen_value] = copy(tdbb, input->nod_arg[e_gen_value]);
 		node->nod_arg[e_gen_id] = input->nod_arg[e_gen_id];
 		return (node);
 
@@ -3064,8 +3130,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_cast_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_cast_source] =
-			copy(tdbb, csb, input->nod_arg[e_cast_source], remap, field_id, message, remap_fld);
+		node->nod_arg[e_cast_source] = copy(tdbb, input->nod_arg[e_cast_source]);
 		node->nod_arg[e_cast_fmt] = input->nod_arg[e_cast_fmt];
 		return (node);
 
@@ -3073,8 +3138,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_extract_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_extract_value] =
-			copy(tdbb, csb, input->nod_arg[e_extract_value], remap, field_id, message, remap_fld);
+		node->nod_arg[e_extract_value] = copy(tdbb, input->nod_arg[e_extract_value]);
 		node->nod_arg[e_extract_part] = input->nod_arg[e_extract_part];
 		return (node);
 
@@ -3082,8 +3146,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_strlen_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_strlen_value] =
-			copy(tdbb, csb, input->nod_arg[e_strlen_value], remap, field_id, message, remap_fld);
+		node->nod_arg[e_strlen_value] = copy(tdbb, input->nod_arg[e_strlen_value]);
 		node->nod_arg[e_strlen_type] = input->nod_arg[e_strlen_type];
 		return (node);
 
@@ -3091,10 +3154,8 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_trim_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_trim_characters] =
-			copy(tdbb, csb, input->nod_arg[e_trim_characters], remap, field_id, message, remap_fld);
-		node->nod_arg[e_trim_value] =
-			copy(tdbb, csb, input->nod_arg[e_trim_value], remap, field_id, message, remap_fld);
+		node->nod_arg[e_trim_characters] = copy(tdbb, input->nod_arg[e_trim_characters]);
+		node->nod_arg[e_trim_value] = copy(tdbb, input->nod_arg[e_trim_value]);
 		node->nod_arg[e_trim_specification] = input->nod_arg[e_trim_specification];
 		return (node);
 
@@ -3121,19 +3182,14 @@ static jrd_nod* copy(thread_db* tdbb,
 			for (const jrd_nod* const* const end = arg1 + old_rse->rse_count;
 				arg1 < end; arg1++, arg2++)
 			{
-				*arg2 = copy(tdbb, csb, *arg1, remap, field_id, message, remap_fld);
+				*arg2 = copy(tdbb, *arg1);
 			}
 			new_rse->rse_jointype = old_rse->rse_jointype;
-			new_rse->rse_first =
-				copy(tdbb, csb, old_rse->rse_first, remap, field_id, message, remap_fld);
-			new_rse->rse_skip =
-				copy(tdbb, csb, old_rse->rse_skip, remap, field_id, message, remap_fld);
-			new_rse->rse_boolean =
-				copy(tdbb, csb, old_rse->rse_boolean, remap, field_id, message, remap_fld);
-			new_rse->rse_sorted =
-				copy(tdbb, csb, old_rse->rse_sorted, remap, field_id, message, remap_fld);
-			new_rse->rse_projection =
-				copy(tdbb, csb, old_rse->rse_projection, remap, field_id, message, remap_fld);
+			new_rse->rse_first = copy(tdbb, old_rse->rse_first);
+			new_rse->rse_skip = copy(tdbb, old_rse->rse_skip);
+			new_rse->rse_boolean = copy(tdbb, old_rse->rse_boolean);
+			new_rse->rse_sorted = copy(tdbb, old_rse->rse_sorted);
+			new_rse->rse_projection = copy(tdbb, old_rse->rse_projection);
 			return (jrd_nod*) new_rse;
 		}
 
@@ -3216,11 +3272,12 @@ static jrd_nod* copy(thread_db* tdbb,
 			// dimitr:	see the appropriate code and comment above (in nod_argument).
 			//			We must copy the message first and only then use the new
 			//			pointer to copy the inputs properly.
-			node->nod_arg[e_prc_in_msg] =
-				copy(tdbb, csb, input->nod_arg[e_prc_in_msg], remap, field_id, message, remap_fld);
-			node->nod_arg[e_prc_inputs] =
-				copy(tdbb, csb, input->nod_arg[e_prc_inputs], remap, field_id,
-					 node->nod_arg[e_prc_in_msg], remap_fld);
+			node->nod_arg[e_prc_in_msg] = copy(tdbb, input->nod_arg[e_prc_in_msg]);
+
+			{	// scope
+				AutoSetRestore<jrd_nod*> autoMessage(&message, node->nod_arg[e_prc_in_msg]);
+				node->nod_arg[e_prc_inputs] = copy(tdbb, input->nod_arg[e_prc_inputs]);
+			}
 
 			stream = (USHORT)(IPTR) input->nod_arg[e_prc_stream];
 			new_stream = csb->nextStream();
@@ -3256,12 +3313,9 @@ static jrd_nod* copy(thread_db* tdbb,
 		CMP_csb_element(csb, new_stream);
 
 		csb->csb_rpt[new_stream].csb_flags |= csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
-		node->nod_arg[e_agg_rse] =
-			copy(tdbb, csb, input->nod_arg[e_agg_rse], remap, field_id, message, remap_fld);
-		node->nod_arg[e_agg_group] =
-			copy(tdbb, csb, input->nod_arg[e_agg_group], remap, field_id, message, remap_fld);
-		node->nod_arg[e_agg_map] =
-			copy(tdbb, csb, input->nod_arg[e_agg_map], remap, field_id, message, remap_fld);
+		node->nod_arg[e_agg_rse] = copy(tdbb, input->nod_arg[e_agg_rse]);
+		node->nod_arg[e_agg_group] = copy(tdbb, input->nod_arg[e_agg_group]);
+		node->nod_arg[e_agg_map] = copy(tdbb, input->nod_arg[e_agg_map]);
 		return node;
 
 	case nod_window:
@@ -3272,8 +3326,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
 
-		node->nod_arg[e_win_rse] =
-			copy(tdbb, csb, input->nod_arg[e_win_rse], remap, field_id, message, remap_fld);
+		node->nod_arg[e_win_rse] = copy(tdbb, input->nod_arg[e_win_rse]);
 
 		const jrd_nod* inputWindows = input->nod_arg[e_win_windows];
 
@@ -3299,10 +3352,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			CMP_csb_element(csb, new_stream);
 
 			for (unsigned j = 0; j < copyPartition->nod_count; ++j)
-			{
-				copyPartition->nod_arg[j] = copy(tdbb, csb, inputPartition->nod_arg[j],
-					remap, field_id, message, remap_fld);
-			}
+				copyPartition->nod_arg[j] = copy(tdbb, inputPartition->nod_arg[j]);
 		}
 
 		return node;
@@ -3333,8 +3383,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		}
 
 		csb->csb_rpt[new_stream].csb_flags |= csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
-		node->nod_arg[e_uni_clauses] =
-			copy(tdbb, csb, input->nod_arg[e_uni_clauses], remap, field_id, message, remap_fld);
+		node->nod_arg[e_uni_clauses] = copy(tdbb, input->nod_arg[e_uni_clauses]);
 		return node;
 
 	case nod_message:
@@ -3345,8 +3394,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
 		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
 		// dimitr: hmmm, cannot find where the following one is used...
-		node->nod_arg[e_msg_next] =
-			copy(tdbb, csb, input->nod_arg[e_msg_next], remap, field_id, message, remap_fld);
+		node->nod_arg[e_msg_next] = copy(tdbb, input->nod_arg[e_msg_next]);
 		return node;
 
 	case nod_sort:
@@ -3380,8 +3428,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node = PAR_make_node(tdbb, e_sysfun_length);
 		node->nod_type = input->nod_type;
 		node->nod_count = e_sysfun_count;
-		node->nod_arg[e_sysfun_args] =
-			copy(tdbb, csb, input->nod_arg[e_sysfun_args], remap, field_id, message, remap_fld);
+		node->nod_arg[e_sysfun_args] = copy(tdbb, input->nod_arg[e_sysfun_args]);
 		node->nod_arg[e_sysfun_function] = input->nod_arg[e_sysfun_function];
 		return node;
 
@@ -3408,10 +3455,8 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_count = input->nod_count;
 		node->nod_flags = input->nod_flags;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_dcl_cursor_rse] =
-			copy(tdbb, csb, input->nod_arg[e_dcl_cursor_rse], remap, field_id, message, remap_fld);
-		node->nod_arg[e_dcl_cursor_refs] =
-			copy(tdbb, csb, input->nod_arg[e_dcl_cursor_refs], remap, field_id, message, remap_fld);
+		node->nod_arg[e_dcl_cursor_rse] = copy(tdbb, input->nod_arg[e_dcl_cursor_rse]);
+		node->nod_arg[e_dcl_cursor_refs] = copy(tdbb, input->nod_arg[e_dcl_cursor_refs]);
 		node->nod_arg[e_dcl_cursor_number] = input->nod_arg[e_dcl_cursor_number];
 		break;
 
@@ -3423,10 +3468,8 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_arg[e_cursor_stmt_op] = input->nod_arg[e_cursor_stmt_op];
 		node->nod_arg[e_cursor_stmt_number] = input->nod_arg[e_cursor_stmt_number];
 		node->nod_arg[e_cursor_stmt_scroll_op] = input->nod_arg[e_cursor_stmt_scroll_op];
-		node->nod_arg[e_cursor_stmt_scroll_val] =
-			copy(tdbb, csb, input->nod_arg[e_cursor_stmt_scroll_val], remap, field_id, message, remap_fld);
-		node->nod_arg[e_cursor_stmt_into] =
-			copy(tdbb, csb, input->nod_arg[e_cursor_stmt_into], remap, field_id, message, remap_fld);
+		node->nod_arg[e_cursor_stmt_scroll_val] = copy(tdbb, input->nod_arg[e_cursor_stmt_scroll_val]);
+		node->nod_arg[e_cursor_stmt_into] = copy(tdbb, input->nod_arg[e_cursor_stmt_into]);
 		break;
 
 	default:
@@ -3445,9 +3488,8 @@ static jrd_nod* copy(thread_db* tdbb,
 
 	for (const jrd_nod* const* const end = arg1 + input->nod_count; arg1 < end; arg1++, arg2++)
 	{
-		if (*arg1) {
-			*arg2 = copy(tdbb, csb, *arg1, remap, field_id, message, remap_fld);
-		}
+		if (*arg1)
+			*arg2 = copy(tdbb, *arg1);
 	}
 
 	// finish off sort
@@ -3455,9 +3497,7 @@ static jrd_nod* copy(thread_db* tdbb,
 	if (input->nod_type == nod_sort)
 	{
 		for (jrd_nod** end = arg1 + input->nod_count * 2; arg1 < end; arg1++, arg2++)
-		{
 			*arg2 = *arg1;
-		}
 	}
 
 	return node;
@@ -3679,8 +3719,8 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 			else //if (value)
 			{
 				// Clone the field default value.
-				node->nod_arg[e_asgn_from] = copy(tdbb, csb, value,
-					map, (USHORT) (field_id + 1), NULL, false);
+				node->nod_arg[e_asgn_from] =
+					RemapFieldNodeCopy(csb, map, field_id).copy(tdbb, value);
 			}
 		}
 	}
@@ -3742,7 +3782,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
-				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1), NULL, false);
+				RemapFieldNodeCopy(csb, map, field_id).copy(tdbb, validation);
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -3755,7 +3795,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
-				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1), NULL, false);
+				RemapFieldNodeCopy(csb, map, field_id).copy(tdbb, validation);
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -4101,7 +4141,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-			sub = copy(tdbb, csb, sub, map, 0, NULL, false);
+			sub = NodeCopy::copy(tdbb, csb, sub, map);
 
 			if (relation->rel_view_rse)
 			{
@@ -4405,7 +4445,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					new_node->nod_arg[0] = PAR_make_node(tdbb, 2);
 					new_node->nod_arg[0]->nod_type = nod_eql;
 					new_node->nod_arg[0]->nod_flags = nod_comparison;
-					new_node->nod_arg[0]->nod_arg[0] = copy(tdbb, csb, node, NULL, 0, NULL, false);
+					new_node->nod_arg[0]->nod_arg[0] = NodeCopy::copy(tdbb, csb, node, NULL);
 					const SSHORT count = lit_delta + (0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
 					new_node->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, count);
 					new_node->nod_arg[0]->nod_arg[1]->nod_type = nod_literal;
@@ -4657,7 +4697,7 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			// set up the new target stream
 
-			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
+			jrd_nod* view_node = NodeCopy::copy(tdbb, csb, node, map);
 
 			view_node->nod_arg[e_erase_statement] = NULL;
 			view_node->nod_arg[e_erase_sub_erase] = NULL;
@@ -4854,7 +4894,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// copy the view source
 
 		map = alloc_map(tdbb, csb, (SSHORT)(IPTR) node->nod_arg[e_mod_new_stream]);
-		source = copy(tdbb, csb, source, map, 0, NULL, false);
+		source = NodeCopy::copy(tdbb, csb, source, map);
 
 		if (trigger)
 		{
@@ -4866,7 +4906,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			fb_assert(new_stream <= MAX_STREAMS);
 			map[view_stream] = new_stream;
 
-			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, true);
+			jrd_nod* view_node = ViewNodeCopy(csb, map).copy(tdbb, node);
+
 			view_node->nod_arg[e_mod_map_view] = NULL;
 			view_node->nod_arg[e_mod_statement] =
 				pass1_expand_view(tdbb, csb, view_stream, new_stream, true);
@@ -5223,7 +5264,7 @@ static void pass1_source(thread_db*			tdbb,
 		view_rse->rse_sorted || view_rse->rse_projection || view_rse->rse_first ||
 		view_rse->rse_skip || view_rse->rse_plan)
 	{
-		jrd_nod* node = copy(tdbb, csb, (jrd_nod*) view_rse, map, 0, NULL, false);
+		jrd_nod* node = NodeCopy::copy(tdbb, csb, (jrd_nod*) view_rse, map);
 		DEBUG;
 		stack.push(CMP_pass1(tdbb, csb, node));
 		DEBUG;
@@ -5247,7 +5288,7 @@ static void pass1_source(thread_db*			tdbb,
 	{
 		// this call not only copies the node, it adds any streams it finds to the map
 
-		jrd_nod* node = copy(tdbb, csb, *arg, map, 0, NULL, false);
+		jrd_nod* node = NodeCopy::copy(tdbb, csb, *arg, map);
 
 		// Now go out and process the base table itself. This table might also be a view,
 		// in which case we will continue the process by recursion.
@@ -5266,7 +5307,7 @@ static void pass1_source(thread_db*			tdbb,
 	if (view_rse->rse_projection)
 	{
 		rse->rse_projection =
-			CMP_pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_projection, map, 0, NULL, false));
+			CMP_pass1(tdbb, csb, NodeCopy::copy(tdbb, csb, view_rse->rse_projection, map));
 	}
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the
@@ -5275,7 +5316,7 @@ static void pass1_source(thread_db*			tdbb,
 	if (view_rse->rse_boolean)
 	{
 		jrd_nod* node =
-			CMP_pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_boolean, map, 0, NULL, false));
+			CMP_pass1(tdbb, csb, NodeCopy::copy(tdbb, csb, view_rse->rse_boolean, map));
 		if (*boolean)
 		{
 			// The order of the nodes here is important! The
@@ -5391,9 +5432,9 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			// set up the new target stream
 
-			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
+			jrd_nod* view_node = NodeCopy::copy(tdbb, csb, node, map);
 			view_node->nod_arg[e_sto_sub_store] = NULL;
-			view_node->nod_arg[e_sto_relation] = copy(tdbb, csb, source, map, 0, NULL, false);
+			view_node->nod_arg[e_sto_relation] = NodeCopy::copy(tdbb, csb, source, map);
 			const USHORT new_stream =
 				(USHORT)(IPTR) view_node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 			view_node->nod_arg[e_sto_statement] =
@@ -5401,7 +5442,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 // dimitr:	I don't think the below code is required, but time will show
 //			view_node->nod_arg[e_sto_statement] =
-//				copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL, 0, NULL, false);
+//				NodeCopy::copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL);
 
 			// bug 8150: use of blr_store2 against a view with a trigger was causing
 			// the second statement to be executed, which is not desirable
@@ -5423,7 +5464,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			csb->csb_rpt[stream].csb_flags &= ~csb_view_update;
 
-			node->nod_arg[e_sto_relation] = copy(tdbb, csb, source, map, 0, NULL, false);
+			node->nod_arg[e_sto_relation] = NodeCopy::copy(tdbb, csb, source, map);
 		}
 	}
 }
