@@ -3177,11 +3177,14 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	}
 
 	case blr_aggregate:
-		node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) par_context(csb, 0);
-		fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-		node->nod_arg[e_agg_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
-		node->nod_arg[e_agg_group] = PAR_parse_node(tdbb, csb, OTHER);
-		node->nod_arg[e_agg_map] = par_map(tdbb, csb, (USHORT)(IPTR) node->nod_arg[e_agg_stream]);
+		{
+			const USHORT stream = par_context(csb, NULL);
+			fb_assert(stream <= MAX_STREAMS);
+			node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) stream;
+			node->nod_arg[e_agg_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
+			node->nod_arg[e_agg_group] = PAR_parse_node(tdbb, csb, OTHER);
+			node->nod_arg[e_agg_map] = par_map(tdbb, csb, stream);
+		}
 		break;
 
 	case blr_group_by:
