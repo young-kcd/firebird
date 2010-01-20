@@ -1,3 +1,16 @@
+2010-01-20 11:27  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.141.2.9):
+
+	Fixed bug CORE-2820 : Small memory leak in query with PLAN ORDER
+
+2010-01-19 23:37  hvlad
+
+	* firebird2/src/jrd/TempSpace.cpp (1.13.8.3):
+
+	Correction for fix for CORE-2184.  FB_ALIGNMENT was introduced in
+	v2.5
+
 2010-01-19 09:58  hvlad
 
 	* firebird2/src/jrd/pag.cpp (1.155.2.20):
