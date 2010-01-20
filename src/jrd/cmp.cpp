@@ -5934,7 +5934,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_window:
 	{
 		pass2_rse(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse]);
-		CMP_pass2(tdbb, csb, node->nod_arg[e_win_windows], node);
 
 		const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
 
@@ -5947,6 +5946,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 				&csb->csb_rpt[stream].csb_format);
 		}
 
+		CMP_pass2(tdbb, csb, node->nod_arg[e_win_windows], node);
 		break;
 	}
 
@@ -6121,13 +6121,17 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 		{
 			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
 
+			CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
+
 			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 			{
 				const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
 				csb->csb_rpt[stream].csb_flags |= csb_active;
+
+				CMP_pass2(tdbb, csb, nodWindows->nod_arg[i], nodWindows->nod_arg[i]->nod_arg[e_part_group]);
+				CMP_pass2(tdbb, csb, nodWindows->nod_arg[i], nodWindows->nod_arg[i]->nod_arg[e_part_regroup]);
 			}
 
-			CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
 			break;
 		}
 
