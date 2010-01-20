@@ -98,6 +98,9 @@ void IndexTableScan::close(thread_db* tdbb)
 		if (impure->irsb_nav_page)
 		{
 			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+			delete impure->irsb_nav_btr_gc_lock;
+			impure->irsb_nav_btr_gc_lock = NULL;
+
 			impure->irsb_nav_page = 0;
 		}
 	}
