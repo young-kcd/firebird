@@ -26,6 +26,12 @@
 
 #include "../jrd/intl_classes.h"
 
+namespace Jrd
+{
+	struct Item;
+	struct ItemInfo;
+}
+
 // Implemented in evl.cpp
 dsc*		EVL_add(const dsc*, const Jrd::jrd_nod*, Jrd::impure_value*);
 dsc*		EVL_add2(const dsc*, const Jrd::jrd_nod*, Jrd::impure_value*);
