@@ -2002,8 +2002,8 @@ static bool aggregate_found2(const DsqlCompilerScratch* dsqlScratch, const dsql_
 
 		case nod_derived_field:
 			{
-				// This is an derived table don't look further,
-				// but don't forget to check for deepest scope_level.
+				// This is a derived table, so don't look further,
+				// but don't forget to check for the deepest scope_level.
 				const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
 				if (*deepest_level < lscope_level) {
 					*deepest_level = lscope_level;
@@ -4992,7 +4992,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		dsql_nod* items = rse->nod_arg[e_rse_items];
 		dsql_nod* map_item = items->nod_arg[0];
 		if (map_item->nod_type == nod_derived_field) {
-			map_item = map_item->nod_arg[e_alias_value];
+			map_item = map_item->nod_arg[e_derived_field_value];
 		}
 		dsql_ctx* map_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
 
