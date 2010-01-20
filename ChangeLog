@@ -1,3 +1,15 @@
+2010-01-20 11:33  hvlad
+
+	* firebird2/src/jrd/LocksCache.h (1.1.4.3):
+
+	Backported fix for bug CORE-2698 : Infinite wait in LocksCache::get
+
+2010-01-20 11:30  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.104.2.13):
+
+	Fixed bug CORE-2820 : Small memory leak in query with PLAN ORDER
+
 2009-11-28 13:36  dimitr
 
 	* firebird2/src/remote/xnet.cpp (1.70.4.11):
