@@ -1,3 +1,109 @@
+2010-01-20 14:24  asfernandes
+
+	* firebird2/src/jrd/: par.cpp (1.274), recsrc/WindowedStream.cpp
+	(1.6):
+
+	Use nod_sort to _copy_ correctly
+
+2010-01-20 11:25  hvlad
+
+	* firebird2/src/jrd/recsrc/IndexTableScan.cpp (1.10):
+
+	Fixed bug CORE-2817 : If stored procedure or trigger contains query
+	with PLAN ORDER it could fail after disconnect of attachment where
+	procedure\trigger executed first time and bug CORE-2820 : Small
+	memory leak in query with PLAN ORDER
+
+2010-01-20 09:25  robocop
+
+	* firebird2/src/common/classes/vector.h (1.23):
+
+	Totally misc.
+
+2010-01-20 09:20  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.273):
+
+	Misc.
+
+2010-01-20 08:34  dimitr
+
+	* firebird2/src/dsql/: gen.cpp (1.220), pass1.cpp (1.500):
+
+	Misc.
+
+2010-01-20 02:32  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.383):
+
+	Err...
+
+2010-01-20 02:13  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.382):
+
+	Fix bug with non-trivial partition expressions
+
+2010-01-20 01:02  asfernandes
+
+	* firebird2/src/jrd/: evl_proto.h (1.28), recsrc/WindowedStream.cpp
+	(1.5):
+
+	Replace the hash join by specialized join with the already sorted
+	streams
+
+2010-01-20 01:00  asfernandes
+
+	* firebird2/src/jrd/par.cpp (1.272):
+
+	Fix the partition aggregation sorts, that was being constructed
+	reading unallocated memory
+
+2010-01-19 19:41  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.282):
+
+	Avoid possible deadlock in VIO.
+
+2010-01-19 19:38  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.281):
+
+	Preserve record's flags when gathering record from fragments. Its
+	used in prepare_update() to check if primary record was backed out.
+
+2010-01-19 19:33  hvlad
+
+	* firebird2/src/jrd/: met.epp (1.319), met_proto.h (1.76):
+
+	Refactoring : extract part of MET_lookup_partner() as independent
+	function MET_scan_partners()
+
+2010-01-19 19:26  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.499):
+
+	Move the code to below thanks to Dmitry review.  This allow us to
+	save a context number.
+
+2010-01-19 18:52  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.498):
+
+	Complement Dmitry fix
+
+2010-01-19 18:18  dimitr
+
+	* firebird2/src/dsql/gen.cpp (1.219):
+
+	Bugfix. There may be aggregations without maps.
+
+2010-01-19 17:32  dimitr
+
+	* firebird2/src/jrd/recsrc/BufferedStream.cpp (1.9):
+
+	Misc.
+
 2010-01-19 13:50  hvlad
 
 	* firebird2/src/common/classes/alloc.cpp (1.136):
