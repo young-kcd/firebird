@@ -153,7 +153,8 @@ public:
 	bool find(const Key& item, size_t& pos) const
 	{
 		size_t highBound = this->count, lowBound = 0;
-		while (highBound > lowBound) {
+		while (highBound > lowBound)
+		{
 			const size_t temp = (highBound + lowBound) >> 1;
 			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;
