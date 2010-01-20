@@ -6127,9 +6127,6 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 			{
 				const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
 				csb->csb_rpt[stream].csb_flags |= csb_active;
-
-				CMP_pass2(tdbb, csb, nodWindows->nod_arg[i], nodWindows->nod_arg[i]->nod_arg[e_part_group]);
-				CMP_pass2(tdbb, csb, nodWindows->nod_arg[i], nodWindows->nod_arg[i]->nod_arg[e_part_regroup]);
 			}
 
 			break;
