@@ -83,7 +83,7 @@ static NodeParseFunc blr_parsers[256] = {NULL};
 
 
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
-static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT, UCHAR);
+static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT, UCHAR, USHORT);
 static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_cast(thread_db*, CompilerScratch*);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
@@ -817,11 +817,13 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
 
 
 // Parse a counted argument list, given the count.
-static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected, UCHAR count)
+static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected, UCHAR count,
+	USHORT allocCount)
 {
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = PAR_make_node(tdbb, count);
+	jrd_nod* node = PAR_make_node(tdbb, allocCount);
+	node->nod_count = count;
 	node->nod_type = nod_list;
 	jrd_nod** ptr = node->nod_arg;
 
@@ -841,7 +843,7 @@ static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 {
 	SET_TDBB(tdbb);
 	UCHAR count = csb->csb_blr_reader.getByte();
-	return par_args(tdbb, csb, expected, count);
+	return par_args(tdbb, csb, expected, count, count);
 }
 
 
@@ -1788,8 +1790,16 @@ static void par_partition_by(thread_db* tdbb, CompilerScratch* csb, jrd_nod*& gr
 		groupNode = regroupNode = NULL;
 	else
 	{
-		groupNode = par_args(tdbb, csb, VALUE, count);
-		regroupNode = par_args(tdbb, csb, VALUE, count);
+		groupNode = par_args(tdbb, csb, VALUE, count, count * 3);
+		regroupNode = par_args(tdbb, csb, VALUE, count, count);
+
+		// We have allocated groupNode with bigger length than expressions. This is to use in
+		// OPT_gen_sort. Now fill that info.
+		for (unsigned i = 0; i < count; ++i)
+		{
+			groupNode->nod_arg[count + i * count + i] = (jrd_nod*)(IPTR) false;	// ascending
+			groupNode->nod_arg[count + i * count + count + i] = (jrd_nod*)(IPTR) rse_nulls_first;
+		}
 	}
 
 	mapNode = par_map(tdbb, csb, partitionStream);
