@@ -162,6 +162,9 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 				if (imp_nav->irsb_nav_page)
 				{
 					imp_nav->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+					delete imp_nav->irsb_nav_btr_gc_lock;
+					imp_nav->irsb_nav_btr_gc_lock = NULL;
+
 					imp_nav->irsb_nav_page = 0;
 				}
 			}
