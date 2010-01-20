@@ -1795,6 +1795,9 @@ static void par_partition_by(thread_db* tdbb, CompilerScratch* csb, jrd_nod*& gr
 
 		// We have allocated groupNode with bigger length than expressions. This is to use in
 		// OPT_gen_sort. Now fill that info.
+
+		groupNode->nod_type = nod_sort;
+
 		for (unsigned i = 0; i < count; ++i)
 		{
 			groupNode->nod_arg[count + i * count + i] = (jrd_nod*)(IPTR) false;	// ascending

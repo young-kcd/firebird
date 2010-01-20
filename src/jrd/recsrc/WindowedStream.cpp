@@ -208,8 +208,8 @@ namespace
 		  m_outerKeys(outerKeys), m_innerKeys(innerKeys)
 	{
 		fb_assert(m_outer && m_inner && m_innerKeys->nod_count == m_outerKeys->nod_count);
-		fb_assert(m_outerKeys && m_outerKeys->nod_type == nod_list);
-		fb_assert(m_innerKeys && m_innerKeys->nod_type == nod_list);
+		fb_assert(m_outerKeys && (m_outerKeys->nod_type == nod_list || m_outerKeys->nod_type == nod_sort));
+		fb_assert(m_innerKeys && (m_innerKeys->nod_type == nod_list || m_innerKeys->nod_type == nod_sort));
 
 		m_impure = CMP_impure(csb, sizeof(Impure));
 	}
