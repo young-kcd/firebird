@@ -1800,8 +1800,8 @@ static void par_partition_by(thread_db* tdbb, CompilerScratch* csb, jrd_nod*& gr
 
 		for (unsigned i = 0; i < count; ++i)
 		{
-			groupNode->nod_arg[count + i * count + i] = (jrd_nod*)(IPTR) false;	// ascending
-			groupNode->nod_arg[count + i * count + count + i] = (jrd_nod*)(IPTR) rse_nulls_first;
+			groupNode->nod_arg[count + i] = (jrd_nod*)(IPTR) false;	// ascending
+			groupNode->nod_arg[count * 2 + i] = (jrd_nod*)(IPTR) rse_nulls_first;
 		}
 	}
 
