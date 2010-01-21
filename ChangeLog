@@ -1,3 +1,18 @@
+2010-01-21 03:51  asfernandes
+
+	* firebird2/src/: common/classes/vector.h (1.24), dsql/parse.y
+	(1.359), dsql/pass1.cpp (1.501), jrd/TempSpace.cpp (1.27),
+	jrd/met.epp (1.320), jrd/met_proto.h (1.77), jrd/pag.cpp (1.247),
+	jrd/vio.cpp (1.283):
+
+	Misc
+
+2010-01-20 17:27  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.384):
+
+	Refactor the cmp/copy function due to its different usage scenarios
+
 2010-01-20 14:24  asfernandes
 
 	* firebird2/src/jrd/: par.cpp (1.274), recsrc/WindowedStream.cpp
