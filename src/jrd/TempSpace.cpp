@@ -37,7 +37,7 @@ using Firebird::TempFile;
 
 // Static definitions/initializations
 
-const size_t MIN_TEMP_BLOCK_SIZE	= 64 * 1024;
+const size_t MIN_TEMP_BLOCK_SIZE = 64 * 1024;
 
 Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;

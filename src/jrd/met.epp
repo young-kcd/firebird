@@ -3656,7 +3656,7 @@ void MET_scan_partners(thread_db* tdbb, jrd_rel* relation)
  **************************************
  *
  * Functional description
- *      Scan of foreign references on other relations' primary keys and 
+ *      Scan of foreign references on other relations' primary keys and
  *      scan of primary dependencies on relation's primary key.
  *
  **************************************/
@@ -3665,7 +3665,7 @@ void MET_scan_partners(thread_db* tdbb, jrd_rel* relation)
 	Database* dbb = tdbb->getDatabase();
 	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
-	if (relation->rel_flags & REL_check_partners) 
+	if (relation->rel_flags & REL_check_partners)
 	{
 		scan_partners(tdbb, relation);
 	}
@@ -5075,7 +5075,7 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
  **************************************
  *
  * Functional description
- *      Scan of foreign references on other relations' primary keys and 
+ *      Scan of foreign references on other relations' primary keys and
  *      scan of primary dependencies on relation's primary key.
  *
  **************************************/

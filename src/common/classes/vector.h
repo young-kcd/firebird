@@ -177,4 +177,3 @@ public:
 } // namespace Firebird
 
 #endif
-

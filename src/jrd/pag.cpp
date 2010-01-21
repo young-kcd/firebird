@@ -595,7 +595,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 										start, init_pages);
 								}
 
-								if (init_pages) 
+								if (init_pages)
 								{
 									CCH_MARK(tdbb, &pip_window);
 									pipMarked = true;

@@ -8204,7 +8204,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		}
 		rse = parent_rse;
 
-		// Here we shouldn't have any window mapping.
+		// Here we shouldn't have any window mapping. We could have 1 or no map for the aggregate.
 		size_t mapCount = parent_context->ctx_maps.getCount();
 		fb_assert(mapCount <= 1);
 
@@ -11695,6 +11695,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 				dsql_map* map = (*nodeMap)->map;
 				if (map != NULL)
 					trace_line("%s      map\n", buffer);
+
 				while (map)
 				{
 					trace_line("%s         position %d\n", buffer, map->map_position);

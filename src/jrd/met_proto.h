@@ -126,4 +126,3 @@ Firebird::MetaName MET_get_relation_field(Jrd::thread_db*, const Firebird::MetaN
 void		MET_update_partners(Jrd::thread_db*);
 
 #endif // JRD_MET_PROTO_H
-

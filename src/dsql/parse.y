@@ -4381,14 +4381,15 @@ plan_expression	: plan_type '(' plan_item_list ')'
 			{ $$ = make_node (nod_plan_expr, 1, make_list ($3)); }
 		;
 
-plan_type : JOIN
-		| SORT MERGE
-		| MERGE
-		| HASH
-		| SORT
-		|
-			{ $$ = NULL; }
-		;
+plan_type
+	:
+		{ $$ = NULL; }
+	| JOIN
+	| SORT MERGE
+	| MERGE
+	| HASH
+	| SORT
+	;
 
 plan_item_list	: plan_item
 		| plan_item ',' plan_item_list
@@ -5326,10 +5327,10 @@ window_function
 	;
 
 window_partition_opt
-	: PARTITION BY value_list
-		{ $$ = $3; }
-	|
+	:
 		{ $$ = NULL; }
+	| PARTITION BY value_list
+		{ $$ = $3; }
 	;
 
 delimiter_opt
