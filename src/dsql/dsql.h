@@ -657,6 +657,7 @@ public:
 		  currCtes(p),
 		  recursiveCtx(0),
 		  recursiveCtxId(0),
+		  processingWindow(false),
 		  ctes(p),
 		  cteAliases(p),
 		  currCteAlias(NULL),
@@ -768,6 +769,7 @@ public:
 	DsqlNodStack currCtes;				// current processing CTE's
 	class dsql_ctx* recursiveCtx;		// context of recursive CTE
 	USHORT recursiveCtxId;				// id of recursive union stream context
+	bool processingWindow;				// processing window functions
 
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> ctes; // common table expressions
@@ -823,9 +825,9 @@ public:
 	dsql_ctx* visibleInContext;
 };
 
-struct NodeMap
+struct PartitionMap
 {
-	NodeMap(dsql_nod* aPartition)
+	PartitionMap(dsql_nod* aPartition)
 		: partition(aPartition),
 		  partitionRemapped(NULL),
 		  map(NULL),
@@ -844,17 +846,17 @@ class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
 	explicit dsql_ctx(MemoryPool& p)
-		: ctx_maps(p),
-		  ctx_main_derived_contexts(p),
+		: ctx_main_derived_contexts(p),
 		  ctx_childs_derived_table(p),
-	      ctx_imp_join(p)
+	      ctx_imp_join(p),
+	      ctx_win_maps(p)
 	{
 	}
 
 	dsql_rel*			ctx_relation;		// Relation for context
 	dsql_prc*			ctx_procedure;		// Procedure for context
 	dsql_nod*			ctx_proc_inputs;	// Procedure input parameters
-	mutable Firebird::Array<NodeMap*> ctx_maps;		// Maps for aggregates and windows
+	dsql_map* ctx_map;						// Maps for aggregates and unions
 	dsql_nod*			ctx_rse;			// Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			// Parent context for aggregates
 	const TEXT*			ctx_alias;			// Context alias (can include concatenated derived table alias)
@@ -868,13 +870,14 @@ public:
 	DsqlContextStack	ctx_childs_derived_table;	// Childs derived table context
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, ImplicitJoin*> > > ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
+	Firebird::Array<PartitionMap*> ctx_win_maps;	// Maps for window functions
 
 	dsql_ctx& operator=(dsql_ctx& v)
 	{
 		ctx_relation = v.ctx_relation;
 		ctx_procedure = v.ctx_procedure;
 		ctx_proc_inputs = v.ctx_proc_inputs;
-		ctx_maps.assign(v.ctx_maps);
+		ctx_map = v.ctx_map;
 		ctx_rse = v.ctx_rse;
 		ctx_parent = v.ctx_parent;
 		ctx_alias = v.ctx_alias;
@@ -886,12 +889,13 @@ public:
 		ctx_main_derived_contexts.assign(v.ctx_main_derived_contexts);
 		ctx_childs_derived_table.assign(v.ctx_childs_derived_table);
 		ctx_imp_join.assign(v.ctx_imp_join);
+		ctx_win_maps.assign(v.ctx_win_maps);
 
 		return *this;
 	}
 
 	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
-	NodeMap* getNodeMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode) const;
+	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode);
 };
 
 // Flag values for ctx_flags
@@ -907,10 +911,10 @@ const USHORT CTX_recursive	= 0x10;	// Context has secondary number (ctx_recursiv
 class dsql_map : public pool_alloc<dsql_type_map>
 {
 public:
-	dsql_map*	map_next;			// Next map in item
-	dsql_nod*	map_node;			// Value for map item
-	USHORT		map_position;		// Position in map
-	NodeMap*	map_nodemap;
+	dsql_map* map_next;				// Next map in item
+	dsql_nod* map_node;				// Value for map item
+	USHORT map_position;			// Position in map
+	PartitionMap* map_partition;	// Partition
 };
 
 // Message block used in communicating with a running request

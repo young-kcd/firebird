@@ -314,9 +314,14 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	case nod_map:
 		{
 			const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
-			context = (dsql_ctx*) node->nod_arg[e_map_context];
 			stuff(dsqlScratch->getStatement(), blr_fid);
-			stuff(dsqlScratch->getStatement(), map->map_nodemap->context);
+			if (map->map_partition)
+				stuff(dsqlScratch->getStatement(), map->map_partition->context);
+			else
+			{
+				context = (dsql_ctx*) node->nod_arg[e_map_context];
+				stuff_context(dsqlScratch, context);
+			}
 			stuff_word(dsqlScratch->getStatement(), map->map_position);
 		}
 		return;
@@ -1282,10 +1287,12 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 
 	if (window)
 	{
-		fb_assert(context->ctx_maps.hasData());
-		stuff(statement, context->ctx_maps.getCount());	// number of windows
+		fb_assert(context->ctx_win_maps.hasData());
+		stuff(statement, context->ctx_win_maps.getCount());	// number of windows
 
-		for (Array<NodeMap*>::iterator i = context->ctx_maps.begin(); i != context->ctx_maps.end(); ++i)
+		for (Array<PartitionMap*>::iterator i = context->ctx_win_maps.begin();
+			 i != context->ctx_win_maps.end();
+			 ++i)
 		{
 			stuff(statement, blr_partition_by);
 			dsql_nod* partition = (*i)->partition;
@@ -1330,15 +1337,7 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 			stuff(statement, 0);
 		}
 
-		dsql_map* map = NULL;
-
-		if (context->ctx_maps.hasData())
-		{
-			fb_assert(context->ctx_maps.getCount() == 1);
-			map = (*context->ctx_maps.begin())->map;
-		}
-
-		gen_map(dsqlScratch, map);
+		gen_map(dsqlScratch, context->ctx_map);
 	}
 }
 
@@ -3085,13 +3084,7 @@ static void stuff_context(DsqlCompilerScratch* dsqlScratch, const dsql_ctx* cont
 		ERRD_post(Arg::Gds(isc_too_many_contexts));
 	}
 
-	USHORT ctxNumber;
-	if (context->ctx_maps.hasData())
-		ctxNumber = context->getNodeMap(dsqlScratch, NULL)->context;
-	else
-		ctxNumber = context->ctx_context;
-
-	stuff(dsqlScratch->getStatement(), ctxNumber);
+	stuff(dsqlScratch->getStatement(), context->ctx_context);
 
 	if (context->ctx_flags & CTX_recursive)
 	{

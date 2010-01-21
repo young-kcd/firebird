@@ -8204,16 +8204,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		}
 		rse = parent_rse;
 
-		// Here we shouldn't have any window mapping. We could have 1 or no map for the aggregate.
-		size_t mapCount = parent_context->ctx_maps.getCount();
-		fb_assert(mapCount <= 1);
-
-		// If we have a map, copy it context number to ctx_context. If we haven't, generate it here.
-		// This is important for GEN/stuff_context.
-		if (mapCount == 1)
-			parent_context->ctx_context = parent_context->ctx_maps[0]->context;
-		else
-			parent_context->ctx_context = dsqlScratch->contextNumber++;
+		parent_context->ctx_context = dsqlScratch->contextNumber++;
 	}
 
 	bool sortWindow = rse->nod_arg[e_rse_sort] &&
@@ -8223,6 +8214,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	if ((rse->nod_arg[e_rse_items] && aggregate_found(dsqlScratch, rse->nod_arg[e_rse_items], true)) ||
 		sortWindow)
 	{
+		AutoSetRestore<bool> autoProcessingWindow(&dsqlScratch->processingWindow, true);
+
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
 		parent_context->ctx_scope_level = dsqlScratch->scopeLevel;
 		dsql_nod* window = MAKE_node(nod_aggregate, e_agg_count);
@@ -8277,14 +8270,14 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			remap_fields(dsqlScratch, rse->nod_arg[e_rse_items], true, parent_context);
 
 		// Remap the nodes to the partition context.
-		for (size_t i = 0, mapCount = parent_context->ctx_maps.getCount(); i < mapCount; ++i)
+		for (size_t i = 0, mapCount = parent_context->ctx_win_maps.getCount(); i < mapCount; ++i)
 		{
-			NodeMap* nodeMap = parent_context->ctx_maps[i];
-			if (nodeMap->partition)
+			PartitionMap* partitionMap = parent_context->ctx_win_maps[i];
+			if (partitionMap->partition)
 			{
-				nodeMap->partitionRemapped = PASS1_node(dsqlScratch, nodeMap->partition);
-				nodeMap->partitionRemapped = remap_fields(dsqlScratch, nodeMap->partitionRemapped,
-					true, parent_context, nodeMap->partition);
+				partitionMap->partitionRemapped = PASS1_node(dsqlScratch, partitionMap->partition);
+				partitionMap->partitionRemapped = remap_fields(dsqlScratch,
+					partitionMap->partitionRemapped, true, parent_context, partitionMap->partition);
 			}
 		}
 
@@ -8964,12 +8957,11 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 			map_node->nod_arg[e_map_map] = (dsql_nod*) map;
 
 			// set up the dsql_map* between the sub-rses and the union context.
-			NodeMap* nodeMap = union_context->getNodeMap(dsqlScratch, NULL);
 			map->map_position = count++;
 			map->map_node = *uptr++;
-			map->map_next = nodeMap->map;
-			map->map_nodemap = nodeMap;
-			nodeMap->map = map;
+			map->map_next = union_context->ctx_map;
+			map->map_partition = NULL;
+			union_context->ctx_map = map;
 		}
 		union_rse->nod_arg[e_rse_items] = union_items;
 	} // end scope block
@@ -9858,20 +9850,31 @@ static dsql_nod* post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	NodeMap* nodeMap = context->getNodeMap(dsqlScratch, partitionNode);
+	PartitionMap* partitionMap = NULL;
 	dsql_map* map = NULL;
+
+	if (dsqlScratch->processingWindow)
+	{
+		partitionMap = context->getPartitionMap(dsqlScratch, partitionNode);
+		map = partitionMap->map;
+	}
+	else
+		map = context->ctx_map;
+
 	int count = 0;
 
-	for (map = nodeMap->map; map; map = map->map_next)
+	while (map)
 	{
 		if (node_match(node, map->map_node, false))
 			break;
+
 		++count;
+		map = map->map_next;
 	}
 
 	if (!map)
 	{
-		dsql_map** next = &nodeMap->map;
+		dsql_map** next = partitionMap ? &partitionMap->map : &context->ctx_map;
 
 		if (*next)
 		{
@@ -9882,7 +9885,7 @@ static dsql_nod* post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql
 		map = *next = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
 		map->map_position = (USHORT) count;
 		map->map_node = node;
-		map->map_nodemap = nodeMap;
+		map->map_partition = partitionMap;
 	}
 
 	dsql_nod* new_node = MAKE_node(nod_map, e_map_count);
@@ -10906,30 +10909,32 @@ bool dsql_ctx::getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& n
 	return true;
 }
 
-// Returns (creating, if necessary) the NodeMap of a given partition (that may be NULL).
-NodeMap* dsql_ctx::getNodeMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode) const
+// Returns (creating, if necessary) the PartitionMap of a given partition (that may be NULL).
+PartitionMap* dsql_ctx::getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	NodeMap* nodeMap = NULL;
+	PartitionMap* partitionMap = NULL;
 
-	for (Array<NodeMap*>::iterator i = ctx_maps.begin(); !nodeMap && i != ctx_maps.end(); ++i)
+	for (Array<PartitionMap*>::iterator i = ctx_win_maps.begin();
+		 !partitionMap && i != ctx_win_maps.end();
+		 ++i)
 	{
 		if (((*i)->partition == NULL && partitionNode == NULL) ||
 			node_match((*i)->partition, partitionNode, false))
 		{
-			nodeMap = *i;
+			partitionMap = *i;
 		}
 	}
 
-	if (!nodeMap)
+	if (!partitionMap)
 	{
-		nodeMap = FB_NEW(*tdbb->getDefaultPool()) NodeMap(partitionNode);
-		ctx_maps.add(nodeMap);
-		nodeMap->context = dsqlScratch->contextNumber++;
+		partitionMap = FB_NEW(*tdbb->getDefaultPool()) PartitionMap(partitionNode);
+		ctx_win_maps.add(partitionMap);
+		partitionMap->context = dsqlScratch->contextNumber++;
 	}
 
-	return nodeMap;
+	return partitionMap;
 }
 
 #ifdef DSQL_DEBUG
@@ -11687,12 +11692,17 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
 			trace_line("%s   context %d\n", buffer, context->ctx_context);
 
-			for (NodeMap** nodeMap = context->ctx_maps.begin(); nodeMap != context->ctx_maps.end();
-				 ++nodeMap)
-			{
-				trace_line("%s   nodemap\n", buffer);
+			trace_line("%s   map\n", buffer);
+			if (context->ctx_map != NULL)
+				DSQL_pretty(context->ctx_map->map_node, column + 2);
 
-				dsql_map* map = (*nodeMap)->map;
+			for (PartitionMap* const* partitionMap = context->ctx_win_maps.begin();
+				 partitionMap != context->ctx_win_maps.end();
+				 ++partitionMap)
+			{
+				trace_line("%s   partitionMap\n", buffer);
+
+				dsql_map* map = (*partitionMap)->map;
 				if (map != NULL)
 					trace_line("%s      map\n", buffer);
 
