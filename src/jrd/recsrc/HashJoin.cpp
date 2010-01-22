@@ -23,11 +23,13 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
+#include "../jrd/btr.h"
 #include "../jrd/req.h"
 #include "../jrd/intl.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/intl_proto.h"
 
 #include "RecordSource.h"
 
@@ -395,33 +397,49 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, j
 			size_t length = desc->dsc_length;
 			const UCHAR* address = desc->dsc_address;
 
-			// Adjust the data length to the real string length
-
-			if (desc->dsc_dtype == dtype_varying)
-			{
-				const vary* const string = (vary*) address;
-				length = string->vary_length;
-				address = (const UCHAR*) string->vary_string;
-			}
-			else if (desc->dsc_dtype == dtype_cstring)
-			{
-				length = strlen((char*) address);
-			}
-
-			// Adjust the data length to ignore trailing spaces
-
 			if (desc->isText())
 			{
-				CHARSET_ID charset = desc->getCharSet();
-				if (charset == ttype_dynamic)
+				// Adjust the data length to the real string length
+
+				if (desc->dsc_dtype == dtype_varying)
 				{
-					charset = tdbb->getCharSet();
+					const vary* const string = (vary*) address;
+					length = string->vary_length;
+					address = (const UCHAR*) string->vary_string;
 				}
-				const UCHAR space = (charset == ttype_binary) ? '\0' : ' ';
-				const UCHAR* ptr = address + length;
-				while (length && *--ptr == space)
+				else if (desc->dsc_dtype == dtype_cstring)
 				{
-					length--;
+					length = strlen((char*) address);
+				}
+
+				MoveBuffer buffer;
+
+				if (IS_INTL_DATA(desc))
+				{
+					// Convert the INTL string into the binary comparable form
+
+					TextType* const obj = INTL_texttype_lookup(tdbb, desc->getTextType());
+					const USHORT key_length = obj->key_length(length);
+					length = obj->string_to_key(length, address, key_length,
+												buffer.getBuffer(key_length),
+												INTL_KEY_UNIQUE);
+					address = buffer.begin();
+				}
+				else
+				{
+					// Adjust the data length to ignore trailing spaces
+
+					CHARSET_ID charset = desc->getCharSet();
+					if (charset == ttype_dynamic)
+					{
+						charset = tdbb->getCharSet();
+					}
+					const UCHAR space = (charset == ttype_binary) ? '\0' : ' ';
+					const UCHAR* ptr = address + length;
+					while (length && *--ptr == space)
+					{
+						length--;
+					}
 				}
 			}
 
