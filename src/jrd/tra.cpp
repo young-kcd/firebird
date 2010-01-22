@@ -41,7 +41,6 @@
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/rse.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/jrd_pwd.h"
 #include "../jrd/ThreadStart.h"
 #include "../jrd/UserManagement.h"
 #include "../jrd/blb_proto.h"

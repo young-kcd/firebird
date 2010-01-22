@@ -76,7 +76,6 @@
 #include "../jrd/vio_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
-#include "../jrd/jrd_pwd.h"
 #include "../utilities/gsec/gsec.h"
 #include "../jrd/msg_encode.h"
 

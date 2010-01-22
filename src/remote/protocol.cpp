@@ -747,6 +747,16 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
+	case op_cont_auth:
+		{
+			P_AUTH_CONT* auth = &p->p_auth_cont;
+			MAP(xdr_cstring, auth->p_data);
+			MAP(xdr_cstring, auth->p_name);
+			DEBUG_PRINTSIZE(xdrs, p->p_operation);
+
+			return P_TRUE(xdrs, p);
+		}
+
 	case op_cancel:
 		{
 			P_CANCEL_OP* cancel_op = &p->p_cancel_op;

@@ -81,26 +81,34 @@ void ClumpletWriter::initNewBuffer(UCHAR tag)
 	}
 }
 
-ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
-	ClumpletReader(k, NULL, 0), sizeLimit(limit), kindList(NULL), dynamic_buffer(getPool())
+ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag)
+	 : ClumpletReader(k, NULL, 0), sizeLimit(limit), kindList(NULL), dynamic_buffer(getPool())
+{
+	create(buffer, buffLen, tag);
+}
+
+ClumpletWriter::ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit, 
+							   const UCHAR* buffer, size_t buffLen)
+	 : ClumpletReader(pool, kl, buffer, buffLen), sizeLimit(limit), 
+	   kindList(kl), dynamic_buffer(getPool())
+{
+	create(buffer, buffLen, kl->tag);
+}
+
+ClumpletWriter::ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer, size_t buffLen) :
+	ClumpletReader(kl, buffer, buffLen), sizeLimit(limit), kindList(kl), dynamic_buffer(getPool())
+{
+	create(buffer, buffLen, kl->tag);
+}
+
+
+void ClumpletWriter::create(const UCHAR* buffer, size_t buffLen, UCHAR tag)
 {
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
 	}
 	else {
 		initNewBuffer(tag);
-	}
-	rewind();
-}
-
-ClumpletWriter::ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer, size_t buffLen) :
-	ClumpletReader(kl, buffer, buffLen), sizeLimit(limit), kindList(kl), dynamic_buffer(getPool())
-{
-	if (buffer && buffLen) {
-		dynamic_buffer.push(buffer, buffLen);
-	}
-	else {
-		initNewBuffer(kl->tag);
 	}
 	rewind();
 }
@@ -227,10 +235,10 @@ void ClumpletWriter::insertPath(UCHAR tag, const PathName& str)
 
 void ClumpletWriter::insertString(UCHAR tag, const char* str, size_t length)
 {
-	insertBytesLengthCheck(tag, reinterpret_cast<const UCHAR*>(str), length);
+	insertBytesLengthCheck(tag, str, length);
 }
 
-void ClumpletWriter::insertBytes(UCHAR tag, const UCHAR* bytes, size_t length)
+void ClumpletWriter::insertBytes(UCHAR tag, const void* bytes, size_t length)
 {
 	insertBytesLengthCheck(tag, bytes, length);
 }
@@ -240,7 +248,7 @@ void ClumpletWriter::insertByte(UCHAR tag, const UCHAR byte)
 	insertBytesLengthCheck(tag, &byte, 1);
 }
 
-void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length)
+void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const void* bytes, const size_t length)
 {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
@@ -348,7 +356,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 		}
 		break;
 	}
-	dynamic_buffer.insert(cur_offset, bytes, length);
+	dynamic_buffer.insert(cur_offset, reinterpret_cast<const UCHAR*>(bytes), length);
 	const size_t new_offset = cur_offset + length;
 	cur_offset = saved_offset;
     adjustSpbState();
@@ -474,6 +482,30 @@ bool ClumpletWriter::upgradeVersion()
 void ClumpletWriter::insertClumplet(const SingleClumplet& clumplet)
 {
 	insertBytes(clumplet.tag, clumplet.data, clumplet.size);
+}
+
+void ClumpletWriter::clear()
+{
+	reset(getBufferTag());
+}
+
+void AuthWriter::putLevel(USHORT num, const char* name, const char* method, const char* details)
+{
+	ClumpletWriter internal(WideUnTagged, MAX_DPB_SIZE);
+	if (name)
+	{
+		internal.insertString(AuthReader::AUTH_NAME, name);
+	}
+	if (method)
+	{
+		internal.insertString(AuthReader::AUTH_METHOD, method);
+	}
+	if (details)
+	{
+		internal.insertString(AuthReader::AUTH_DETAILS, details);
+	}
+
+	insertBytes(num, internal.getBuffer(), internal.getBufferLength());
 }
 
 } // namespace

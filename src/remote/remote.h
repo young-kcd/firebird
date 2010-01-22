@@ -36,7 +36,6 @@
 #include "../jrd/ThreadStart.h"
 #include "../common/thd.h"
 #include "../common/classes/objects_array.h"
-#include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/RefMutex.h"
@@ -508,23 +507,12 @@ struct rem_que_packet
 
 typedef Firebird::Array<rem_que_packet> PacketQueue;
 
-#ifdef TRUSTED_AUTH
-// delayed authentication block for trusted auth callback
-class ServerAuth : public Firebird::GlobalStorage
+class ServerAuthBase
 {
 public:
-	typedef void Part2(rem_port*, P_OP, const char* fName, int fLen, const UCHAR* pb, int pbLen, PACKET*);
-	Firebird::PathName fileName;
-	Firebird::HalfStaticArray<UCHAR, 128> clumplet;
-	AuthSspi* authSspi;
-	Part2* part2;
-	P_OP operation;
-
-	ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, Part2* p2, P_OP op);
-	~ServerAuth();
+	virtual ~ServerAuthBase();
+	virtual bool authenticate(rem_port* port, PACKET* send, const cstring* data) = 0;
 };
-#endif // TRUSTED_AUTH
-
 
 // port_flags
 const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic
@@ -630,9 +618,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	size_t			port_qoffset;			// current packet in the queue
 #endif
-#ifdef TRUSTED_AUTH
-	ServerAuth*		port_trusted_auth;
-#endif
+	ServerAuthBase*		port_auth;
 	UCharArrayAutoPtr	port_buffer;
 
 public:
@@ -663,10 +649,7 @@ public:
 #ifdef REM_SERVER
 		port_queue(getPool()), port_qoffset(0),
 #endif
-#ifdef TRUSTED_AUTH
-		port_trusted_auth(0),
-#endif
-		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
+		port_auth(0), port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		addRef();
 		memset (&port_linger, 0, sizeof port_linger);

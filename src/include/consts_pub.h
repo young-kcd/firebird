@@ -111,6 +111,7 @@
 #define isc_dpb_org_filename			  76
 #define isc_dpb_utf8_filename			  77
 #define isc_dpb_ext_call_depth			  78
+#define isc_dpb_auth_block				  79
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -248,6 +249,7 @@
 #define isc_spb_version1                  1
 #define isc_spb_current_version           2
 #define isc_spb_version                   isc_spb_current_version
+#define isc_spb_version3                  3
 #define isc_spb_user_name                 isc_dpb_user_name
 #define isc_spb_sys_user_name             isc_dpb_sys_user_name
 #define isc_spb_sys_user_name_enc         isc_dpb_sys_user_name_enc
@@ -263,6 +265,7 @@
 #define isc_spb_process_name              112
 #define isc_spb_trusted_role              113
 #define isc_spb_verbint                   114
+#define isc_spb_auth_block                115
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout

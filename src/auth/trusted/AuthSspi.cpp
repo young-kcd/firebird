@@ -2,6 +2,7 @@
 
 #ifdef TRUSTED_AUTH
 #include <../common/classes/ClumpletReader.h>
+#include <../common/classes/alloc.h>
 
 namespace
 {
@@ -25,7 +26,16 @@ namespace
 		}
 		return (ToType)rc;
 	}
+
+	void authName(unsigned char** data, unsigned short* dataSize)
+	{
+		const char* name = "WIN_SSPI";
+		*data = (unsigned char*)name;
+		*dataSize = strlen(name);
+	}
 }
+
+namespace Auth {
 
 HINSTANCE AuthSspi::library = 0;
 
@@ -284,5 +294,149 @@ bool AuthSspi::getLogin(Firebird::string& login, bool& wh)
 	}
 	return false;
 }
+
+
+ServerInstance* WinSspiServer::instance()
+{
+	return interfaceAlloc<WinSspiServerInstance>();
+}
+
+ClientInstance* WinSspiClient::instance()
+{
+	return interfaceAlloc<WinSspiClientInstance>();
+}
+
+void WinSspiServer::getName(unsigned char** data, unsigned short* dataSize)
+{
+	authName(data, dataSize);
+}
+
+void WinSspiClient::getName(unsigned char** data, unsigned short* dataSize)
+{
+	authName(data, dataSize);
+}
+
+void WinSspiServer::release()
+{
+	interfaceFree(this);
+}
+
+void WinSspiClient::release()
+{
+	interfaceFree(this);
+}
+
+WinSspiServerInstance()
+	: sspiData(), sspi(0)
+{ }
+
+WinSspiClientInstance()
+	: sspiData(), sspi(0)
+{ }
+
+Result WinSspiServerInstance::startAuthentication(bool isService, const char* dbName,
+												const unsigned char* dpb, unsigned int dpbSize,
+												WriterInterface* writerInterface)
+{
+	UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
+	Firebird::ClumpletReader rdr(isService ?  : , dpb, dpbSize);
+	if (rdr.find(tag))
+	{
+		sspiData.clear();
+		sspiData.add(rdr.getBytes(), rdr.getClumpLength());
+		if (!sspi.accept(sspiData))
+		{
+			return AUTH_CONTINUE;
+		}
+	}
+	return AUTH_MORE_DATA;
+}
+
+Result WinSspiServerInstance::contAuthentication(WriterInterface* writerInterface,
+											   const unsigned char* data, unsigned int size)
+{
+	sspiData.clear();
+	sspiData.add(data, size);
+	sspi.accept(sspiData);
+	if (!sspi.accept(sspiData))
+	{
+		return AUTH_FAILED;
+	}
+	if (!sspi.active())
+	{
+		bool wheel = false;
+		Firebird::string login;
+		sspi.getLogin(login, wheel);
+		writerInterface->add(login.c_str(), "WIN_SSPI", "");
+		if (wheel)
+		{
+			writerInterface->add("RDB$ADMIN", "WIN_SSPI", "");
+		}
+		return AUTH_SUCCESS;
+	}
+	return AUTH_MORE_DATA;
+}
+
+void WinSspiServerInstance::getData(unsigned char** data, unsigned short* dataSize)
+{
+	*data = sspiData.begin();
+	*dataSize = sspiData.getCount();
+}
+
+void WinSspiServerInstance::release()
+{
+	interfaceFree(this);
+}
+
+Result WinSspiClientInstance::startAuthentication(bool isService, const char*, DpbInterface* dpb)
+{
+	sspi.request(sspiData);
+
+	if (dpb)
+	{
+		UCHAR tag = isService ? isc_spb_trusted_role : isc_dpb_trusted_role;
+		while (dpb->find(tag))
+		{
+			dpb->drop();
+		}
+		tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
+		while (dpb->find(tag))
+		{
+			dpb->drop();
+		}
+
+		if (sspi.active())
+		{
+			dpb->insert(tag, sspiData.begin(), sspiData.getCount());
+		}
+	}
+
+	return sspi.active() ? AUTH_SUCCESS : AUTH_CONTINUE;
+}
+
+Result WinSspiClientInstance::contAuthentication(const unsigned char* data, unsigned int size)
+{
+	sspiData.clear();
+	sspiData.add(data, size);
+	sspi.accept(sspiData);
+	if (!sspi.accept(sspiData))
+	{
+		return AUTH_FAILED;
+	}
+	return sspi.active() ? AUTH_MORE_DATA : AUTH_CONTINUE;
+}
+
+void WinSspiClientInstance::getData(unsigned char** data, unsigned short* dataSize)
+{
+	*data = sspiData.begin();
+	*dataSize = sspiData.getCount();
+}
+
+void WinSspiClientInstance::release()
+{
+	interfaceFree(this);
+}
+
+} // namespace Auth
 
 #endif // TRUSTED_AUTH

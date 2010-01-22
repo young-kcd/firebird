@@ -121,8 +121,20 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, si
 	rewind();	// this will set cur_offset and spbState
 }
 
+ClumpletReader::ClumpletReader(MemoryPool& pool, const KindList* kl, 
+							   const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
+	AutoStorage(pool), kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
+{
+	create(kl, buffLen, raise);
+}
+
 ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
 	kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
+{
+	create(kl, buffLen, raise);
+}
+
+void ClumpletReader::create(const KindList* kl, size_t buffLen, FPTR_VOID raise)
 {
 	if (buffLen)
 	{
@@ -714,5 +726,69 @@ const ClumpletReader::KindList ClumpletReader::dpbList[] = {
 	{ClumpletReader::WideTagged, isc_dpb_version2},
 	{ClumpletReader::EndOfList, 0}
 };
+
+const ClumpletReader::KindList ClumpletReader::spbList[] = {
+	{ClumpletReader::SpbAttach, isc_spb_current_version},
+	{ClumpletReader::SpbAttach, isc_spb_version1},
+	{ClumpletReader::WideTagged, isc_spb_version3},
+	{ClumpletReader::EndOfList, 0}
+};
+
+AuthReader::AuthReader(const AuthBlock& authBlock) 
+	: ClumpletReader(ClumpletReader::WideUnTagged, authBlock.begin(), authBlock.getCount())
+{
+	rewind();
+}
+
+bool AuthReader::getInfo(string* name, string* method, string* details)
+{
+	if (isEof())
+	{
+		return false;
+	}
+
+	if (name)
+	{
+		*name = "";
+	}
+	if (method)
+	{
+		*method = "";
+	}
+	if (details)
+	{
+		*details = "";
+	}
+
+	ClumpletReader internal(WideUnTagged, getBytes(), getClumpLength());
+	for (internal.rewind(); !internal.isEof(); internal.moveNext())
+	{
+		switch(internal.getClumpTag())
+		{
+		case AUTH_NAME:
+			if (name)
+			{
+				internal.getString(*name);
+			}
+			break;
+		case AUTH_METHOD:
+			if (method)
+			{
+				internal.getString(*method);
+			}
+			break;
+		case AUTH_DETAILS:
+			if (details)
+			{
+				internal.getString(*details);
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	return true;
+}
 
 } // namespace

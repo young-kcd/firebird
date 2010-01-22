@@ -77,6 +77,7 @@
 #include "../intl/charsets.h"
 #include "../jrd/sort.h"
 #include "../jrd/PreparedStatement.h"
+#include "../jrd/jrd_pwd.h"
 
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
@@ -455,7 +456,6 @@ public:
 	SLONG	dpb_remote_pid;
 	bool	dpb_no_db_triggers;
 	bool	dpb_gbak_attach;
-	bool	dpb_trusted_role;
 	bool	dpb_utf8_filename;
 	ULONG	dpb_ext_call_depth;
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
@@ -465,8 +465,7 @@ public:
 	// MUST be FIRST
 	string	dpb_sys_user_name;
 	string	dpb_user_name;
-	string	dpb_password;
-	string	dpb_password_enc;
+	AuthReader::AuthBlock	dpb_auth_block;
 	string	dpb_role_name;
 	string	dpb_journal;
 	string	dpb_key;
@@ -902,7 +901,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	UserId userId;
 	DatabaseOptions options;
 	bool invalid_client_SQL_dialect = false;
-	SecurityDatabase::InitHolder siHolder;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
 
@@ -953,13 +951,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		// Check for correct credentials supplied
 		getUserInfo(userId, options);
-	}
-	catch (const DelayFailedLogin& ex)
-	{
-		trace_failed_attach(NULL, filename, options, false, true);
-
-		ex.sleep();
-		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
@@ -1536,7 +1527,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		return unwindAttach(tdbb, ex, user_status, attachment, dbb);
 	}
 
-	siHolder.clear();
 	return FB_SUCCESS;
 }
 
@@ -1986,7 +1976,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	UserId userId;
 	DatabaseOptions options;
-	SecurityDatabase::InitHolder siHolder;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
 
@@ -2042,13 +2031,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		// Check for correct credentials supplied
 		getUserInfo(userId, options);
-	}
-	catch (const DelayFailedLogin& ex)
-	{
-		trace_failed_attach(NULL, filename, options, true, true);
-
-		ex.sleep();
-		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
@@ -2333,7 +2315,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return unwindAttach(tdbb, ex, user_status, attachment, dbb);
 	}
 
-	siHolder.clear();
 	return FB_SUCCESS;
 }
 
@@ -2462,8 +2443,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Jrd::Attachment** handle)
 		}
 
 		*handle = NULL;
-
-		SecurityDatabase::shutdown();
 	}
 	catch (const Exception& ex)
 	{
@@ -3340,11 +3319,6 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		ThreadContextHolder tdbb(user_status);
 
 		*svc_handle = new Service(service_name, spb_length, reinterpret_cast<const UCHAR*>(spb));
-	}
-	catch (const DelayFailedLogin& ex)
-	{
-		ex.sleep();
-		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
@@ -4893,31 +4867,20 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_sql_role_name:
-			if (! dpb_trusted_role)
-			{
-			    getString(rdr, dpb_role_name);
-			}
+			getString(rdr, dpb_role_name);
+			break;
+
+		case isc_dpb_auth_block:
+			dpb_auth_block.clear();
+			dpb_auth_block.add(rdr.getBytes(), rdr.getClumpLength());
 			break;
 
 		case isc_dpb_user_name:
 			getString(rdr, dpb_user_name);
 			break;
 
-		case isc_dpb_password:
-			getString(rdr, dpb_password);
-			break;
-
-		case isc_dpb_password_enc:
-			rdr.getString(dpb_password_enc);
-			break;
-
 		case isc_dpb_trusted_auth:
 			getString(rdr, dpb_trusted_login);
-			break;
-
-		case isc_dpb_trusted_role:
-			dpb_trusted_role = true;
-			getString(rdr, dpb_role_name);
 			break;
 
 		case isc_dpb_encrypt_key:
@@ -6228,7 +6191,7 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 	MutexLockGuard guard(mutex);
 
 	if (! securityNameBuffer[0]) {
-		SecurityDatabase::getPath(securityNameBuffer);
+		Auth::SecurityDatabase::getPath(securityNameBuffer);
 		expandedSecurityNameBuffer->assign(securityNameBuffer);
 		ISC_expand_filename(expandedSecurityNameBuffer, false);
 	}
@@ -6251,9 +6214,8 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 
 	getUserInfo
 
-    @brief	Checks the userinfo database to validate
-    password to that passed in.
-    Takes into account possible trusted authentication.
+    @brief	Almost stub-like now.
+    Planned to take into an account mapping of users and groups.
 	Fills UserId structure with resulting values.
 
     @param user
@@ -6263,8 +6225,7 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 static void getUserInfo(UserId& user, const DatabaseOptions& options)
 {
 	int id = -1, group = -1;	// CVC: This var contained trash
-	int node_id = 0;
-	string name;
+	string name, trusted_role;
 
 #ifdef BOOT_BUILD
 	bool wheel = true;
@@ -6274,29 +6235,29 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	{
 		name = options.dpb_trusted_login;
 	}
+	else if (options.dpb_user_name.hasData())
+	{
+		name = options.dpb_user_name;
+	}
+	else if (options.dpb_auth_block.hasData())
+	{
+		// stub instead mapUser(....);
+		AuthReader auth(options.dpb_auth_block);
+		if (auth.getInfo(&name))
+		{
+			auth.moveNext();
+			auth.getInfo(&trusted_role);
+		}
+	}
 	else
 	{
-		if (options.dpb_user_name.isEmpty() &&
-			options.dpb_network_protocol.isEmpty() &&	// This 2 checks ensure that we are not remote server
-			options.dpb_remote_address.isEmpty()) 		// process, i.e. can use unix OS auth.
+		string s(options.dpb_sys_user_name);
+		ISC_utf8ToSystem(s);
+		wheel = ISC_get_user(&name, &id, &group, s.nullStr());
+		ISC_systemToUtf8(name);
+		if (id == 0)
 		{
-			string s(options.dpb_sys_user_name);
-			ISC_utf8ToSystem(s);
-			wheel = ISC_get_user(&name, &id, &group, s.nullStr());
-			ISC_systemToUtf8(name);
-		}
-
-		if (options.dpb_user_name.hasData() || (id == -1))
-		{
-			const string remote = options.dpb_network_protocol +
-				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
-				options.dpb_remote_address;
-
-			SecurityDatabase::verifyUser(name,
-										 options.dpb_user_name.nullStr(),
-										 options.dpb_password.nullStr(),
-										 options.dpb_password_enc.nullStr(),
-										 &id, &group, &node_id, remote);
+			wheel = true;
 		}
 	}
 
@@ -6327,17 +6288,21 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	user.usr_user_name = name;
 	user.usr_project_name = "";
 	user.usr_org_name = "";
-	user.usr_sql_role_name = options.dpb_role_name;
 	user.usr_user_id = id;
 	user.usr_group_id = group;
-	user.usr_node_id = node_id;
+
 	if (wheel)
 	{
 		user.usr_flags |= USR_locksmith;
 	}
 
-	if (options.dpb_trusted_role)
+	if (options.dpb_role_name.hasData())
 	{
+		user.usr_sql_role_name = options.dpb_role_name;
+	}
+	else if (trusted_role.hasData())
+	{
+		user.usr_sql_role_name = trusted_role;
 		user.usr_flags |= USR_trole;
 	}
 }

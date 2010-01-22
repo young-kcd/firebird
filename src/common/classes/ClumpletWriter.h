@@ -53,14 +53,17 @@ public:
 
 	// Create writer from a given buffer with possibly different clumplet version
 	ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer = NULL, size_t buffLen = 0);
+	ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit, 
+				   const UCHAR* buffer = NULL, size_t buffLen = 0);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, const size_t buffLen);
+	void clear();
 
 	// Methods to create new clumplet at current position
 	void insertInt(UCHAR tag, const SLONG value);
 	void insertBigInt(UCHAR tag, const SINT64 value);
-	void insertBytes(UCHAR tag, const UCHAR* bytes, size_t length);
+	void insertBytes(UCHAR tag, const void* bytes, size_t length);
 	void insertString(UCHAR tag, const string& str);
 	void insertPath(UCHAR tag, const PathName& str);
 	void insertString(UCHAR tag, const char* str, size_t length);
@@ -85,7 +88,7 @@ public:
 protected:
 	virtual const UCHAR* getBufferEnd() const;
 	virtual void size_overflow();
-	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length);
+	void insertBytesLengthCheck(UCHAR tag, const void* bytes, const size_t length);
 	bool upgradeVersion();	// upgrade clumplet version - obtain newest from kindList
 
 private:
@@ -98,7 +101,16 @@ private:
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
 
 	void initNewBuffer(UCHAR tag);
+	void create(const UCHAR* buffer, size_t buffLen, UCHAR tag);
 	static void toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value);
+};
+
+class AuthWriter : public ClumpletWriter
+{
+public:
+	AuthWriter(MemoryPool& pool) : ClumpletWriter(pool, ClumpletWriter::WideUnTagged, MAX_DPB_SIZE)
+	{ }
+	void putLevel(USHORT num, const char* name, const char* method, const char* details);
 };
 
 } // namespace Firebird

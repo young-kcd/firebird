@@ -725,27 +725,6 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 }
 #endif //REM_SERVER
 
-#ifdef TRUSTED_AUTH
-ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb,
-					   ServerAuth::Part2* p2, P_OP op)
-	: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()),
-	  part2(p2), operation(op)
-{
-	fileName.assign(fName, fLen);
-	size_t pbLen = pb.getBufferLength();
-	if (pbLen)
-	{
-		memcpy(clumplet.getBuffer(pbLen), pb.getBuffer(), pbLen);
-	}
-	authSspi = FB_NEW(*getDefaultMemoryPool()) AuthSspi;
-}
-
-ServerAuth::~ServerAuth()
-{
-	delete authSspi;
-}
-#endif // TRUSTED_AUTH
-
 void PortsCleanup::registerPort(rem_port* port)
 {
 	Firebird::MutexLockGuard guard(m_mutex);
@@ -789,6 +768,10 @@ void PortsCleanup::closePorts()
 	}
 }
 
+ServerAuthBase::~ServerAuthBase()
+{
+}
+
 rem_port::~rem_port()
 {
 	if (port_events_shutdown)
@@ -807,9 +790,7 @@ rem_port::~rem_port()
 	delete port_packet_vector;
 #endif
 
-#ifdef TRUSTED_AUTH
-	delete port_trusted_auth;
-#endif
+	delete port_auth;
 
 #ifdef DEV_BUILD
 	--portCounter;

@@ -431,7 +431,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 		ISC_STATUS_ARRAY status;
 		isc_db_handle db_handle = 0L;
 
-		Jrd::SecurityDatabase::getPath(path);
+		Auth::SecurityDatabase::getPath(path);
 		const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1};
 		isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
 		if (status[0] == 1 && status[1] > 0)

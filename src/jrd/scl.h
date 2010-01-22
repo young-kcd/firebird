@@ -93,9 +93,7 @@ public:
 	Firebird::string	usr_org_name;		// Organization name
 	USHORT				usr_user_id;		// User id
 	USHORT				usr_group_id;		// Group id
-	USHORT				usr_node_id;		// Node id
 	USHORT				usr_flags;			// Misc. crud
-	//TEXT *usr_node_name;		// Network node name
 
 	bool locksmith() const
 	{
@@ -103,7 +101,7 @@ public:
 	}
 
 	UserId()
-		: usr_user_id(0), usr_group_id(0), usr_node_id(0), usr_flags(0)
+		: usr_user_id(0), usr_group_id(0), usr_flags(0)
 	{ }
 
 	UserId(Firebird::MemoryPool& p, const UserId& ui)
@@ -113,7 +111,6 @@ public:
 		  usr_org_name(p, ui.usr_org_name),
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
-		  usr_node_id(ui.usr_node_id),
 		  usr_flags(ui.usr_flags)
 	{ }
 
@@ -124,7 +121,6 @@ public:
 		  usr_org_name(ui.usr_org_name),
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
-		  usr_node_id(ui.usr_node_id),
 		  usr_flags(ui.usr_flags)
 	{ }
 
@@ -136,7 +132,6 @@ public:
 		usr_org_name = ui.usr_org_name;
 		usr_user_id = ui.usr_user_id;
 		usr_group_id = ui.usr_group_id;
-		usr_node_id = ui.usr_node_id;
 		usr_flags = ui.usr_flags;
 
 		return *this;

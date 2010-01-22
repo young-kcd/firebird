@@ -48,7 +48,6 @@
 #include "../jrd/license.h"
 #include "../jrd/fil.h"
 #include "../jrd/sdl.h"
-#include "../jrd/jrd_pwd.h"
 #include "../remote/inet_proto.h"
 #include "../remote/inter_proto.h"
 #include "../remote/merge_proto.h"
@@ -60,11 +59,14 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sdl_proto.h"
+#include "../jrd/jrd_pwd.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
-#include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/DbImplementation.h"
+#include "../auth/Auth.h"
+#include "../auth/SecurityDatabase/LegacyClient.h"
+#include "../auth/trusted/AuthSspi.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -96,8 +98,7 @@ namespace {
 	struct ParametersSet
 	{
 		UCHAR dummy_packet_interval, user_name, sys_user_name,
-			  password, password_enc, address_path, process_id, process_name,
-			  trusted_auth, trusted_role;
+			  password, password_enc, address_path, process_id, process_name;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
 									isc_dpb_user_name,
@@ -106,9 +107,7 @@ namespace {
 									isc_dpb_password_enc,
 									isc_dpb_address_path,
 									isc_dpb_process_id,
-									isc_dpb_process_name,
-									isc_dpb_trusted_auth,
-									isc_dpb_trusted_role};
+									isc_dpb_process_name};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
 									isc_spb_user_name,
 									isc_spb_sys_user_name,
@@ -116,9 +115,7 @@ namespace {
 									isc_spb_password_enc,
 									isc_spb_address_path,
 									isc_spb_process_id,
-									isc_spb_process_name,
-									isc_spb_trusted_auth,
-									isc_spb_trusted_role};
+									isc_spb_process_name};
 }
 
 static Rvnt* add_event(rem_port*);
@@ -144,7 +141,7 @@ static bool get_single_user(ClumpletReader&);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 					const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*);
-static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&, ClumpletWriter&, const ParametersSet&);
+static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&, ClumpletWriter&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static bool mov_dsql_message(ISC_STATUS*, const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
@@ -320,7 +317,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		const bool result = init(user_status, port, op_attach, expanded_name, newDpb, dpbParam);
+		const bool result = init(user_status, port, op_attach, expanded_name, newDpb);
 
 		if (!result) {
 			return user_status[1];
@@ -846,7 +843,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		const bool result = init(user_status, port, op_create, expanded_name, newDpb, dpbParam);
+		const bool result = init(user_status, port, op_create, expanded_name, newDpb);
 		if (!result) {
 			return user_status[1];
 		}
@@ -3798,8 +3795,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	Rdb* rdb = 0;
 
 	try {
-		ClumpletWriter newSpb(ClumpletReader::SpbAttach, MAX_DPB_SIZE,
-				reinterpret_cast<const UCHAR*>(spb), spb_length, isc_spb_current_version);
+		ClumpletWriter newSpb(ClumpletReader::spbList, MAX_DPB_SIZE,
+							  reinterpret_cast<const UCHAR*>(spb), spb_length);
 		string user_string;
 
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
@@ -3827,7 +3824,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		add_other_params(port, newSpb, spbParam);
 
-		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb, spbParam);
+		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb);
 		if (!result) {
 			return user_status[1];
 		}
@@ -5425,8 +5422,8 @@ static bool get_new_dpb(ClumpletWriter& dpb, string& user_string, const Paramete
 			ISC_systemToUtf8(password);
 		ISC_unescape(password);
 
-		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
-		ENC_crypt(pwt, sizeof pwt, password.c_str(), PASSWORD_SALT);
+		TEXT pwt[Auth::MAX_PASSWORD_LENGTH + 2];
+		ENC_crypt(pwt, sizeof pwt, password.c_str(), Auth::PASSWORD_SALT);
 		password = pwt + 2;
 		dpb.insertString(par.password_enc, password);
 	}
@@ -5561,12 +5558,39 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 }
 
 
+namespace {
+class InitList
+{
+public:
+	typedef Firebird::HalfStaticArray<Auth::ClientPlugin*, 8> List;
+	static List* init()
+	{
+		List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
+
+		// this code will be replaced with known plugins scan
+		list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseClient>());
+#ifdef TRUSTED_AUTH
+		list->push(Auth::interfaceAlloc<Auth::WinSspiClient>());
+#endif
+#ifdef AUTH_DEBUG
+		list->push(Auth::interfaceAlloc<Auth::DebugClient>());
+#endif
+
+		// must be last
+		list->push(NULL);
+		return list;
+	}
+};
+
+Firebird::InitInstance<InitList::List, InitList> listArray;
+}
+
+
 static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
 				 P_OP op,
 				 PathName& file_name,
-				 ClumpletWriter& dpb,
-				 const ParametersSet& param)
+				 ClumpletWriter& dpb)
 {
 /**************************************
  *
@@ -5585,25 +5609,32 @@ static bool init(ISC_STATUS* user_status,
 	MemoryPool& pool = *getDefaultMemoryPool();
 	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
 
-	// Do we can & need to try trusted auth
+	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
+	AutoPtr<Auth::ClientInstance, Auth::Auto> currentInstance;
+	Auth::DpbImplementation di(dpb);
+	unsigned int sequence = 0;
+	Auth::ClientPlugin** list = listArray().begin();
 
-	dpb.deleteWithTag(param.trusted_auth);
-	dpb.deleteWithTag(param.trusted_role);
-
-#ifdef TRUSTED_AUTH
-	AuthSspi authSspi;
-	AuthSspi::DataHolder data;
-
-	if ((port->port_protocol >= PROTOCOL_VERSION11) &&
-		((!dpb.find(param.user_name)) || (dpb.getClumpLength() == 0)))
+	for (bool working = true; working && list[sequence]; ++sequence)
 	{
-		if (authSspi.request(data))
+		if (port->port_protocol >= PROTOCOL_VERSION13 || 
+			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(list[sequence])))
 		{
-			// on no error we send data no matter, was context created or not
-			dpb.insertBytes(param.trusted_auth, data.begin(), data.getCount());
+			// plugin may be used
+			currentInstance.reset(list[sequence]->instance());
+			switch(currentInstance->startAuthentication(op == op_service_attach, file_name.c_str(), &di))
+			{
+			case Auth::AUTH_SUCCESS:
+				working = false;
+				break;
+			case Auth::AUTH_FAILED:
+				disconnect(port);
+				return false;
+			default:
+				break;
+			}
 		}
 	}
-#endif //TRUSTED_AUTH
 
 	if (port->port_protocol < PROTOCOL_VERSION12)
 	{
@@ -5642,7 +5673,6 @@ static bool init(ISC_STATUS* user_status,
 	}
 
 	// Make attach packet
-
 	P_ATCH* attach = &packet->p_atch;
 	packet->p_operation = op;
 	attach->p_atch_file.cstr_length = file_name.length();
@@ -5656,62 +5686,107 @@ static bool init(ISC_STATUS* user_status,
 		return false;
 	}
 
-	// Get response
-
-#ifdef TRUSTED_AUTH
-	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
-	if (!receive_packet(rdb->rdb_port, packet, status))
+	for (;;)
 	{
-		REMOTE_save_status_strings(user_status);
-		disconnect(port);
-		return false;
-	}
-
-	while (packet->p_operation == op_trusted_auth)
-	{
-		if (!authSspi.isActive())
-		{
-			disconnect(port);
-			return false;	// isc_unavailable
-		}
-		cstring* d = &packet->p_trau.p_trau_data;
-		memcpy(data.getBuffer(d->cstr_length), d->cstr_address, d->cstr_length);
-		REMOTE_free_packet(rdb->rdb_port, packet);
-		if (!authSspi.request(data))
-		{
-			disconnect(port);
-			return false;	// isc_unavailable
-		}
-		packet->p_operation = op_trusted_auth;
-		d->cstr_address = data.begin();
-		d->cstr_length = data.getCount();
-
-		if (!send_packet(rdb->rdb_port, packet, user_status))
-		{
-			disconnect(port);
-			return false;
-		}
+		// Get response
+		ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
 		if (!receive_packet(rdb->rdb_port, packet, status))
 		{
+			REMOTE_save_status_strings(user_status);
+			break;
+		}
+
+		// Check response
+		cstring* n = 0;
+		cstring* d = 0;
+		switch(packet->p_operation)
+		{
+		case op_trusted_auth:
+			d = &packet->p_trau.p_trau_data;
+			break;
+
+		case op_cont_auth:
+			d = &packet->p_auth_cont.p_data;
+			n = &packet->p_auth_cont.p_name;
+			break;
+
+		default:
+			if (check_response(rdb, packet))
+			{
+				// successfully attached
+				rdb->rdb_id = packet->p_resp.p_resp_object;
+				return true;
+			}
+
 			REMOTE_save_status_strings(user_status);
 			disconnect(port);
 			return false;
 		}
+			
+		bool contFlag = true;
+		if (n && n->cstr_length)
+		{
+			// switch to other plugin
+			currentInstance.reset(0);
+
+			for (sequence = 0; list[sequence]; ++sequence)
+			{
+				UCHAR* nm;
+				USHORT len;
+				list[sequence]->getName(&nm, &len);
+				if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
+				{
+					currentInstance.reset(list[sequence]->instance());
+					break;
+				}
+			}
+
+			if (currentInstance)
+			{
+				Auth::Result rc = currentInstance->startAuthentication(op == op_service_attach, 
+																	   file_name.c_str(), 0);
+				if (rc == Auth::AUTH_FAILED)
+				{
+					break;
+				}
+				if (rc != Auth::AUTH_MORE_DATA)
+				{
+					contFlag = false;
+				}
+			}
+			else
+			{
+				contFlag = false;
+				packet->p_trau.p_trau_data.cstr_length = 0;
+			}
+		}
+
+		if (contFlag)
+		{
+			// continue auth
+			if (!currentInstance)
+			{
+				break;
+			}
+			if (currentInstance->contAuthentication(d->cstr_address, d->cstr_length) == Auth::AUTH_FAILED)
+			{
+				break;
+			}
+		}
+
+		// send answer (may be empty) to server
+		packet->p_operation = op_trusted_auth;
+		d = &packet->p_trau.p_trau_data;
+		currentInstance->getData(&d->cstr_address, &d->cstr_length);
+		
+		if (!send_packet(rdb->rdb_port, packet, user_status))
+		{
+			break;
+		}
 	}
 
-	if (!check_response(rdb, packet))
-#else // TRUSTED_AUTH
-	if (!receive_response(rdb, packet))
-#endif //TRUSTED_AUTH
-	{
-		REMOTE_save_status_strings(user_status);
-		disconnect(port);
-		return false;
-	}
-
-	rdb->rdb_id = packet->p_resp.p_resp_object;
-
-	return true;
+	disconnect(port);
+	return false;
 }
 
 

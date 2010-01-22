@@ -39,7 +39,7 @@ UserManagement::UserManagement(jrd_tra* tra)
 	: database(0), transaction(0), commands(*tra->tra_pool)
 {
 	char securityDatabaseName[MAXPATHLEN];
-	SecurityDatabase::getPath(securityDatabaseName);
+	Auth::SecurityDatabase::getPath(securityDatabaseName);
 	ISC_STATUS_ARRAY status;
 	Attachment* att = tra->tra_attachment;
 

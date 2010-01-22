@@ -35,6 +35,8 @@
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/os/path_utils.h"
+#include "../../jrd/inf_pub.h"
+#include "../../dsql/sqlda_pub.h"
 
 
 using namespace Firebird;

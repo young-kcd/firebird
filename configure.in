@@ -1026,6 +1026,7 @@ dnl # by module name
 
 mkdir -p temp/boot/alice
 mkdir -p temp/boot/auth/trusted
+mkdir -p temp/boot/auth/SecurityDatabase
 mkdir -p temp/boot/burp
 mkdir -p temp/boot/common/classes
 mkdir -p temp/boot/common/config
@@ -1070,6 +1071,7 @@ mkdir -p temp/boot/vulcan
 mkdir -p temp/extern/binreloc
 mkdir -p temp/std/alice
 mkdir -p temp/std/auth/trusted
+mkdir -p temp/std/auth/SecurityDatabase
 mkdir -p temp/std/burp
 mkdir -p temp/std/common/classes
 mkdir -p temp/std/common/config
@@ -1113,6 +1115,7 @@ mkdir -p temp/std/vulcan
 
 mkdir -p temp/superclient/alice
 mkdir -p temp/superclient/auth/trusted
+mkdir -p temp/superclient/auth/SecurityDatabase
 mkdir -p temp/superclient/burp
 mkdir -p temp/superclient/common/classes
 mkdir -p temp/superclient/common/config
@@ -1156,6 +1159,7 @@ mkdir -p temp/superclient/vulcan
 
 mkdir -p temp/superserver/alice
 mkdir -p temp/superserver/auth/trusted
+mkdir -p temp/superserver/auth/SecurityDatabase
 mkdir -p temp/superserver/burp
 mkdir -p temp/superserver/common/classes
 mkdir -p temp/superserver/common/config

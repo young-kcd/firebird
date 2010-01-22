@@ -161,7 +161,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	else
 	{
 		TEXT database_name[MAXPATHLEN];
-		Jrd::SecurityDatabase::getPath(database_name);
+		Auth::SecurityDatabase::getPath(database_name);
 		databaseName = database_name;
 	}
 

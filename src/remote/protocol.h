@@ -99,6 +99,10 @@ const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
 
 const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
 
+// Protocol 13 has support for authentication plugins (op_cont_auth).
+
+const USHORT PROTOCOL_VERSION13	= (FB_PROTOCOL_FLAG | 13);
+
 // Architecture types
 
 enum P_ARCH
@@ -291,6 +295,8 @@ enum P_OP
 	op_trusted_auth			= 90,
 
 	op_cancel				= 91,
+
+	op_cont_auth			= 92,
 
 	op_max
 };
@@ -614,6 +620,12 @@ typedef struct p_trau
 	CSTRING	p_trau_data;					// Context
 } P_TRAU;
 
+typedef struct p_auth_continue
+{
+	CSTRING	p_data;							// Request
+	CSTRING p_name;							// Plugin name
+} P_AUTH_CONT;
+
 struct p_update_account
 {
     OBJCT			p_account_database;		// Database object id
@@ -674,7 +686,8 @@ typedef struct packet
 	P_TRAU	p_trau;				// Trusted authentication
 	p_update_account p_account_update;
 	p_authenticate p_authenticate_user;
-	P_CANCEL_OP p_cancel_op;	// cancel operation
+	P_CANCEL_OP p_cancel_op;	// Cancel operation
+	P_AUTH_CONT p_auth_cont;	// Request more auth data
 
 public:
 	packet()

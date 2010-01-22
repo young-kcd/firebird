@@ -64,7 +64,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/jrd_pwd.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"

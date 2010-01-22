@@ -8,12 +8,15 @@
 #include <../common/classes/fb_string.h>
 #include <../common/classes/array.h>
 #include <../jrd/ibase.h>
+#include "../auth/AuthInterface.h"
 
 #define SECURITY_WIN32
 
 #include <windows.h>
 #include <Security.h>
 #include <stdio.h>
+
+namespace Auth {
 
 class AuthSspi
 {
@@ -64,6 +67,55 @@ public:
 	// returns Windows user name, matching accepted security context
 	bool getLogin(Firebird::string& login, bool& wh);
 };
+
+class WinSspiServer : public ServerPlugin
+{
+public:
+	ServerInstance* instance();
+    void getName(unsigned char** data, unsigned short* dataSize);
+    void release();
+};
+
+class WinSspiClient : public ClientPlugin
+{
+public:
+	ClientInstance* instance();
+    void getName(unsigned char** data, unsigned short* dataSize);
+    void release();
+};
+
+class WinSspiServerInstance : public ServerInstance
+{
+public:
+    Result startAuthentication(bool isService, const char* dbName,
+                               const unsigned char* dpb, unsigned int dpbSize,
+                               WriterInterface* writerInterface);
+    Result contAuthentication(WriterInterface* writerInterface,
+                              const unsigned char* data, unsigned int size);
+    void getData(unsigned char** data, unsigned short* dataSize);
+    void release();
+
+	WinSspiServerInstance();
+private:
+	AuthSspi::DataHolder data;
+	AuthSspi sspi;
+};
+
+class WinSspiClientInstance : public ClientInstance
+{
+public:
+	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
+	Result contAuthentication(const unsigned char* data, unsigned int size);
+    void getData(unsigned char** data, unsigned short* dataSize);
+    void release();
+
+	WinSspiClientInstance();
+private:
+	AuthSspi::DataHolder data;
+	AuthSspi sspi;
+};
+
+} // namespace Auth
 
 #endif // TRUSTED_AUTH
 #endif // AUTH_SSPI_H

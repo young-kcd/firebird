@@ -36,7 +36,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		IntlUtil.cpp isc_sync.cpp \
 		jrd.cpp Attachment.cpp Database.cpp lck.cpp \
 		mov.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		ods.cpp PluginManager.cpp pwd.cpp PreparedStatement.cpp RandomGenerator.cpp \
+		ods.cpp PluginManager.cpp PreparedStatement.cpp RandomGenerator.cpp \
 		Relation.cpp ResultSet.cpp rlck.cpp rpb_chain.cpp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
 		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp \
@@ -108,12 +108,13 @@ LOCK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCK_Sources)))
 REMOTE_CommonFiles =  inet.cpp merge.cpp \
             parser.cpp protocol.cpp remote.cpp xdr.cpp
 
-REMOTE_ClientFiles =  interface.cpp 
+REMOTE_ClientFiles =  interface.cpp
 
 INTERFACE_Files=	$(REMOTE_ClientFiles) $(REMOTE_CommonFiles)
 
 
-INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files))
+INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files)) \
+			auth/Auth.cpp auth/SecurityDatabase/LegacyClient.cpp
 INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_Sources))))
 
 ifeq ($(PLATFORM),win32)

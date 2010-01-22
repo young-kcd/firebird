@@ -28,7 +28,6 @@
 
 #include "fb_blk.h"
 
-#include "../jrd/jrd_pwd.h"
 #include "../jrd/svc_undoc.h"
 #include "../jrd/ThreadStart.h"
 
@@ -37,11 +36,11 @@
 #include "../common/classes/SafeArg.h"
 #include "../common/UtilSvc.h"
 #include "../common/classes/Switches.h"
+#include "../common/classes/ClumpletReader.h"
 
 // forward decl.
 struct serv_entry;
 namespace Firebird {
-	class ClumpletReader;
 	namespace Arg {
 		class StatusVector;
 	}
@@ -169,9 +168,6 @@ public:		// external interface with service
 
 	const Firebird::string&	getUserName() const
 	{
-		if (svc_username.empty())
-			return svc_trusted_login;
-
 		return svc_username;
 	}
 
@@ -239,6 +235,8 @@ private:
 	static bool ck_space_for_numeric(UCHAR*& info, const UCHAR* const end);
 	// Make status vector permamnent, if one present in worker thread's space
 	void makePermanentStatusVector() throw();
+	// Read SPB on attach
+	void getOptions(Firebird::ClumpletReader&);
 
 private:
 	ISC_STATUS_ARRAY svc_status;		// status vector for running service
@@ -260,13 +258,14 @@ private:
 	bool	svc_do_shutdown;
 
 	Firebird::string	svc_username;
-	Firebird::string	svc_enc_password;
+	Firebird::AuthReader::AuthBlock	svc_auth_block;
 	Firebird::string	svc_trusted_login;
 	bool                svc_trusted_role;
 	bool				svc_uses_security_database;
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table and/or passed using spb_command_line
 	Firebird::string	svc_address_path;
+	Firebird::string	svc_command_line;
 
 	Firebird::string	svc_network_protocol;
 	Firebird::string	svc_remote_address;

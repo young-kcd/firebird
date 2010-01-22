@@ -38,7 +38,6 @@
 
 #include <stdarg.h>
 #include "../jrd/ibase.h"
-#include "../jrd/jrd_pwd.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/why_proto.h"

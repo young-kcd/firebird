@@ -35,7 +35,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/scl.h"
-#include "../jrd/jrd_pwd.h"
 #include "../jrd/acl.h"
 #include "../jrd/blb.h"
 #include "../jrd/irq.h"
@@ -1297,9 +1296,6 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					break;
 
 				case id_node:
-					if (check_hex(a, user.usr_node_id)) {
-						hit = false;
-					}
 					break;
 
 				default:

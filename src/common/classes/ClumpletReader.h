@@ -65,6 +65,7 @@ public:
 	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
 	// Different versions of clumplets may have different kinds
 	ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
+	ClumpletReader(MemoryPool& pool, const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
 	virtual ~ClumpletReader() { }
 
 	// Navigation in clumplet buffer
@@ -152,9 +153,22 @@ private:
 	const UCHAR* static_buffer_end;
 
 	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
+	void create(const KindList* kl, size_t buffLen, FPTR_VOID raise);
 
 public:
 	static const KindList dpbList[];	// Some frequently used kind lists
+	static const KindList spbList[];	// Some frequently used kind lists
+};
+
+class AuthReader : public ClumpletReader
+{
+public:
+	typedef Array<UCHAR> AuthBlock;
+	enum Tag {AUTH_NAME, AUTH_METHOD, AUTH_DETAILS};
+
+	AuthReader(const AuthBlock& authBlock);
+
+	bool getInfo(string* name, string* method = 0, string* details = 0);
 };
 
 } // namespace Firebird

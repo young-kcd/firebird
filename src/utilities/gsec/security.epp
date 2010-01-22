@@ -153,7 +153,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
  **************************************/
 	Firebird::MutexLockGuard guard(execLineMutex);
 
-	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
+	SCHAR encrypted1[Auth::MAX_PASSWORD_LENGTH + 2];
 	Firebird::string encrypted2;
 	bool found;
 	SSHORT ret = 0;
@@ -213,8 +213,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				U.GROUP_NAME.NULL = ISC_TRUE;
 			if (io_user_data->password_entered)
 			{
-				ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, PASSWORD_SALT);
-				Jrd::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
+				ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, Auth::PASSWORD_SALT);
+				Auth::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
 				strcpy(U.PASSWD, encrypted2.c_str());
 				U.PASSWD.NULL = ISC_FALSE;
 			}
@@ -284,8 +284,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 					U.GROUP_NAME.NULL = ISC_TRUE;
 				if (io_user_data->password_entered)
 				{
-					ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, PASSWORD_SALT);
-					Jrd::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
+					ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, Auth::PASSWORD_SALT);
+					Auth::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
 					strcpy(U.PASSWD, encrypted2.c_str());
 					U.PASSWD.NULL = ISC_FALSE;
 				}

@@ -68,9 +68,14 @@
 #include "../common/classes/FpeControl.h"
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 #include "../common/classes/DbImplementation.h"
+#include "../auth/Auth.h"
+#include "../jrd/jrd_pwd.h"
+#include "../auth/trusted/AuthSspi.h"
+
+using namespace Firebird;
 
 
-struct server_req_t : public Firebird::GlobalStorage
+struct server_req_t : public GlobalStorage
 {
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
@@ -81,7 +86,7 @@ public:
 	server_req_t() : req_next(0), req_chain(0) { }
 };
 
-struct srvr : public Firebird::GlobalStorage
+struct srvr : public GlobalStorage
 {
 	srvr* const srvr_next;
 	const rem_port*	const srvr_parent_port;
@@ -96,112 +101,431 @@ public:
 };
 
 namespace {
-	// this sets of parameters help use same functions
-	// for both services and databases attachments
-	struct ParametersSet
+
+// Disable attempts to brute-force logins/passwords
+class FailedLogin
+{
+public:
+	string login;
+	int	failCount;
+	time_t lastAttempt;
+
+	explicit FailedLogin(const string& l)
+		: login(l), failCount(1), lastAttempt(time(0))
+	{}
+
+	FailedLogin(MemoryPool& p, const FailedLogin& fl)
+		: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt)
+	{}
+
+	static const string* generate(const void*, const FailedLogin* f)
 	{
-		UCHAR address_path;
-	};
-	const ParametersSet dpbParam = {isc_dpb_address_path};
-	const ParametersSet spbParam = {isc_spb_address_path};
+		return &f->login;
+	}
+};
+
+const size_t MAX_CONCURRENT_FAILURES = 16;
+const int MAX_FAILED_ATTEMPTS = 4;
+const int FAILURE_DELAY = 8; // seconds
+
+class FailedLogins : private SortedObjectsArray<FailedLogin,
+	InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>,
+	const string, FailedLogin>
+{
+private:
+	Mutex fullAccess;
+
+	typedef SortedObjectsArray<FailedLogin,
+		InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>,
+		const string, FailedLogin> inherited;
+
+public:
+	explicit FailedLogins(MemoryPool& p)
+		: inherited(p)
+	{}
+
+	bool loginFail(const string& login)
+	{
+		if (!login.hasData())
+		{
+			return false;
+		}
+
+		MutexLockGuard guard(fullAccess);
+		const time_t t = time(0);
+
+		size_t pos;
+		if (find(login, pos))
+		{
+			FailedLogin& l = (*this)[pos];
+			if (t - l.lastAttempt >= FAILURE_DELAY)
+			{
+				l.failCount = 0;
+			}
+			l.lastAttempt = t;
+			if (++l.failCount >= MAX_FAILED_ATTEMPTS)
+			{
+				l.failCount = 0;
+				return true;
+			}
+			return false;
+		}
+
+		if (getCount() >= MAX_CONCURRENT_FAILURES)
+		{
+			// try to perform old entries collection
+			for (iterator i = begin(); i != end(); )
+			{
+				if (t - i->lastAttempt >= FAILURE_DELAY)
+				{
+					remove(i);
+				}
+				else
+				{
+					++i;
+				}
+			}
+		}
+		if (getCount() >= MAX_CONCURRENT_FAILURES)
+		{
+			// it seems we are under attack - too many wrong logins !!!
+			return true;
+		}
+
+		add(FailedLogin(login));
+		return false;
+	}
+
+	void loginSuccess(const string& login)
+	{
+		if (!login.hasData())
+		{
+			return;
+		}
+
+		MutexLockGuard guard(fullAccess);
+
+		size_t pos;
+		if (find(login, pos))
+		{
+			remove(pos);
+		}
+	}
+};
+
+GlobalPtr<FailedLogins> usernameFailedLogins;
+GlobalPtr<FailedLogins> remoteFailedLogins;
+
+class InitList
+{
+public:
+	typedef Firebird::HalfStaticArray<Auth::ServerPlugin*, 8> List;
+	static List* init()
+	{
+		PathName authMethod(Config::getAuthMethod());
+
+		List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
+
+		// this code will be replaced with known plugins scan
+		if (authMethod == AmNative || authMethod == AmMixed)
+		{
+			list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseServer>());
+		}
+#ifdef TRUSTED_AUTH
+		if (authMethod == AmTrusted || authMethod == AmMixed)
+		{
+			list->push(Auth::interfaceAlloc<Auth::WinSspiServer>());
+		}
+#endif
+#ifdef AUTH_DEBUG
+		list->push(Auth::interfaceAlloc<Auth::DebugServer>());
+#endif
+
+		// must be last
+		list->push(NULL);
+		return list;
+	}
+};
+
+Firebird::InitInstance<InitList::List, InitList> pluginList;
+
+// delayed authentication block for auth callback
+class ServerAuth : public GlobalStorage, public ServerAuthBase
+{
+private:
+	typedef void Part2(rem_port*, P_OP, const char*, int, ClumpletWriter&, PACKET*);
+
+public:
+	ServerAuth(rem_port* port, const char* fName, int fLen, const UCHAR *pb, int pbLen,
+			   Part2* p2, P_OP op)
+		: fileName(getPool()), 
+		  wrt(getPool(), op == op_service_attach ? ClumpletReader::spbList : ClumpletReader::dpbList,
+		  	  MAX_DPB_SIZE, pb, pbLen), 
+		  authBlockInterface(getPool(), op == op_service_attach), 
+		  remoteId(getPool()), userName(getPool()), authInstance(0), 
+		  part2(p2), sequence(0), operation(op)
+	{
+		// Do not store port here - it will be passed to authenticate() explicitly
+		fileName.assign(fName, fLen);
+
+		if (port->port_protocol_str)
+		{
+			remoteId += string(port->port_protocol_str->str_data, port->port_protocol_str->str_length);
+		}
+		if (port->port_protocol_str || port->port_address_str)
+		{
+			remoteId += '/';
+		}
+		if (port->port_address_str)
+		{
+			remoteId += string(port->port_address_str->str_data, port->port_address_str->str_length);
+		}
+		
+		if (wrt.find(isc_dpb_user_name))
+		{
+			wrt.getString(userName);
+		}
+	}
+
+	~ServerAuth()
+	{
+		if (authInstance)
+		{
+			authInstance->release();
+		}
+	}
+
+	bool authenticate(rem_port* port, PACKET* send, const cstring* data)
+	{
+		bool working = true;
+		Auth::ServerPlugin** list = pluginList().begin();
+
+		while (working && list[sequence])
+		{
+			bool first = false;
+			if (! authInstance)
+			{
+				authInstance = list[sequence]->instance();
+				first = true;
+			}
+
+			fb_assert(first || data);
+			Auth::Result ar = first ?
+				authInstance->startAuthentication(operation == op_service_attach, fileName.c_str(),
+												  wrt.getBuffer(), wrt.getBufferLength(), 
+												  &authBlockInterface)
+			:
+				authInstance->contAuthentication(&authBlockInterface, 
+												 data->cstr_address, data->cstr_length);
+
+			cstring* s;
+			switch(ar)
+			{
+			case Auth::AUTH_MORE_DATA:
+				if (port->port_protocol < PROTOCOL_VERSION11)
+				{
+					authInstance->release();
+					authInstance = 0;
+					working = false;
+					break;
+				}
+
+				if (port->port_protocol >= PROTOCOL_VERSION13)
+				{
+					send->p_operation = op_cont_auth;
+
+					s = &send->p_auth_cont.p_data;
+					s->cstr_allocated = 0;
+					authInstance->getData(&s->cstr_address, &s->cstr_length);
+
+					s = &send->p_auth_cont.p_name;
+					s->cstr_allocated = 0;
+					if (first)
+					{
+						list[sequence]->getName(&s->cstr_address, &s->cstr_length);
+					}
+					else
+					{
+						s->cstr_length = 0;
+					}
+				}
+				else
+				{
+					if (Auth::legacy(list[sequence]))
+					{
+						// compatibility with FB 2.1 trusted
+						send->p_operation = op_trusted_auth;
+
+						s = &send->p_trau.p_trau_data;
+						s->cstr_allocated = 0;
+						authInstance->getData(&s->cstr_address, &s->cstr_length);
+					}
+					else
+					{
+						authInstance->release();
+						authInstance = 0;
+						working = false;
+						break;
+					}
+				}
+
+				port->send(send);
+				return false;
+
+			case Auth::AUTH_CONTINUE:
+				++sequence;
+				authInstance->release();
+				authInstance = 0;
+				continue;
+
+			case Auth::AUTH_SUCCESS:
+				usernameFailedLogins->loginSuccess(userName);
+				remoteFailedLogins->loginSuccess(remoteId);
+				authInstance->release();
+				authInstance = 0;
+				authBlockInterface.store(wrt);
+				part2(port, operation, fileName.c_str(), fileName.length(), wrt, send);
+				return true;
+
+			case Auth::AUTH_FAILED:
+				authInstance->release();
+				authInstance = 0;
+				working = false;
+				break;
+			}
+		}
+
+		// no success - perform failure processing
+		// do not remove variables - both functions should be called
+		bool f1 = usernameFailedLogins->loginFail(userName);
+		bool f2 = remoteFailedLogins->loginFail(remoteId);
+		if (f1 || f2)
+		{
+			// Ahh, someone is too active today
+			THREAD_SLEEP(FAILURE_DELAY * 1000);
+		}
+
+		Arg::Gds(isc_login).raise();
+		return false;	// compiler warning silencer
+	}
+
+private:
+	PathName fileName;
+	ClumpletWriter wrt;
+	Auth::WriterImplementation authBlockInterface;
+	string remoteId, userName;
+	Auth::ServerInstance* authInstance;
+	Part2* part2;
+	unsigned int sequence;
+	P_OP operation;
+};
+
+// this sets of parameters help use same functions
+// for both services and databases attachments
+struct ParametersSet
+{
+	UCHAR address_path;
+};
+const ParametersSet dpbParam = {isc_dpb_address_path};
+const ParametersSet spbParam = {isc_spb_address_path};
 
 #ifdef WIN_NT
-	class GlobalPortLock
+class GlobalPortLock
+{
+public:
+	explicit GlobalPortLock(int id)
+		: handle(INVALID_HANDLE_VALUE)
 	{
-	public:
-		explicit GlobalPortLock(int id)
-			: handle(INVALID_HANDLE_VALUE)
+		if (id)
 		{
-			if (id)
+			TEXT mutex_name[MAXPATHLEN];
+			fb_utils::snprintf(mutex_name, sizeof(mutex_name), "FirebirdPortMutex%d", id);
+			fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
+
+			if (!(handle = CreateMutex(ISC_get_security_desc(), FALSE, mutex_name)))
 			{
-				TEXT mutex_name[MAXPATHLEN];
-				fb_utils::snprintf(mutex_name, sizeof(mutex_name), "FirebirdPortMutex%d", id);
-				fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
+				// MSDN: if the caller has limited access rights, the function will fail with
+				// ERROR_ACCESS_DENIED and the caller should use the OpenMutex function.
+				if (GetLastError() == ERROR_ACCESS_DENIED)
+					system_call_failed::raise("CreateMutex - cannot open existing mutex");
+				else
+					system_call_failed::raise("CreateMutex");
+			}
 
-				if (!(handle = CreateMutex(ISC_get_security_desc(), FALSE, mutex_name)))
-				{
-					// MSDN: if the caller has limited access rights, the function will fail with
-					// ERROR_ACCESS_DENIED and the caller should use the OpenMutex function.
-					if (GetLastError() == ERROR_ACCESS_DENIED)
-						Firebird::system_call_failed::raise("CreateMutex - cannot open existing mutex");
-					else
-						Firebird::system_call_failed::raise("CreateMutex");
-				}
-
-				if (WaitForSingleObject(handle, INFINITE) == WAIT_FAILED)
-				{
-					Firebird::system_call_failed::raise("WaitForSingleObject");
-				}
+			if (WaitForSingleObject(handle, INFINITE) == WAIT_FAILED)
+			{
+				system_call_failed::raise("WaitForSingleObject");
 			}
 		}
+	}
 
-		~GlobalPortLock()
+	~GlobalPortLock()
+	{
+		if (handle != INVALID_HANDLE_VALUE)
 		{
-			if (handle != INVALID_HANDLE_VALUE)
+			if (!ReleaseMutex(handle))
 			{
-				if (!ReleaseMutex(handle))
-				{
-					Firebird::system_call_failed::raise("ReleaseMutex");
-				}
-
-				CloseHandle(handle);
+				system_call_failed::raise("ReleaseMutex");
 			}
-		}
 
-	private:
-		HANDLE handle;
-	};
+			CloseHandle(handle);
+		}
+	}
+
+private:
+	HANDLE handle;
+};
 #else
-	class GlobalPortLock
+class GlobalPortLock
+{
+public:
+	explicit GlobalPortLock(int id)
+		: fd(-1)
 	{
-	public:
-		explicit GlobalPortLock(int id)
-			: fd(-1)
+		if (id)
 		{
-			if (id)
+			string firebirdPortMutex;
+			firebirdPortMutex.printf(PORT_FILE, id);
+			TEXT filename[MAXPATHLEN];
+			gds__prefix_lock(filename, firebirdPortMutex.c_str());
+			if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
 			{
-				Firebird::string firebirdPortMutex;
-				firebirdPortMutex.printf(PORT_FILE, id);
-				TEXT filename[MAXPATHLEN];
-				gds__prefix_lock(filename, firebirdPortMutex.c_str());
-				if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
-				{
-					Firebird::system_call_failed::raise("open");
-				}
+				system_call_failed::raise("open");
+			}
 
-				struct flock lock;
-				lock.l_type = F_WRLCK;
-				lock.l_whence = 0;
-				lock.l_start = 0;
-				lock.l_len = 0;
-				if (fcntl(fd, F_SETLK, &lock) == -1)
-				{
-					Firebird::system_call_failed::raise("fcntl");
-				}
+			struct flock lock;
+			lock.l_type = F_WRLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			if (fcntl(fd, F_SETLK, &lock) == -1)
+			{
+				system_call_failed::raise("fcntl");
 			}
 		}
+	}
 
-		~GlobalPortLock()
+	~GlobalPortLock()
+	{
+		if (fd != -1)
 		{
-			if (fd != -1)
+			struct flock lock;
+			lock.l_type = F_UNLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			if (fcntl(fd, F_SETLK, &lock) == -1)
 			{
-				struct flock lock;
-				lock.l_type = F_UNLCK;
-				lock.l_whence = 0;
-				lock.l_start = 0;
-				lock.l_len = 0;
-				if (fcntl(fd, F_SETLK, &lock) == -1)
-				{
-					Firebird::system_call_failed::raise("fcntl");
-				}
-
-				close(fd);
+				system_call_failed::raise("fcntl");
 			}
-		}
 
-	private:
-		int fd;
-	};
+			close(fd);
+		}
+	}
+
+private:
+	int fd;
+};
 #endif
 
 } // anonymous
@@ -216,12 +540,9 @@ static void		append_request_chain(server_req_t*, server_req_t**);
 static void		append_request_next(server_req_t*, server_req_t**);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
-static void		attach_database2(rem_port*, P_OP, const char*, int, const UCHAR*, int, PACKET*);
-static void		attach_service2(rem_port*, P_OP, const char*, int, const UCHAR*, int, PACKET*);
-#ifdef TRUSTED_AUTH
+static void		attach_database2(rem_port*, P_OP, const char*, int, ClumpletWriter&, PACKET*);
+static void		attach_service2(rem_port*, P_OP, const char*, int, ClumpletWriter&, PACKET*);
 static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
-static bool		canUseTrusted();
-#endif
 
 #ifdef NOT_USED_OR_REPLACED
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
@@ -229,7 +550,7 @@ static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
 static bool		bad_port_context(ISC_STATUS*, Rdb*, const ISC_LONG);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
-static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
+static void		addClumplets(ClumpletWriter&, const ParametersSet&, const rem_port*);
 
 static void		cancel_operation(rem_port*, USHORT);
 
@@ -290,7 +611,7 @@ public:
 private:
 	Worker* m_next;
 	Worker* m_prev;
-	Firebird::Semaphore m_sem;
+	Semaphore m_sem;
 	bool	m_active;
 #ifdef DEV_BUILD
 	FB_THREAD_ID	m_tid;
@@ -302,7 +623,7 @@ private:
 
 	static Worker* m_activeWorkers;
 	static Worker* m_idleWorkers;
-	static Firebird::GlobalPtr<Firebird::Mutex> m_mutex;
+	static GlobalPtr<Mutex> m_mutex;
 	static int m_cntAll;
 	static int m_cntIdle;
 	static bool shutting_down;
@@ -310,20 +631,20 @@ private:
 
 Worker* Worker::m_activeWorkers = NULL;
 Worker* Worker::m_idleWorkers = NULL;
-Firebird::GlobalPtr<Firebird::Mutex> Worker::m_mutex;
+GlobalPtr<Mutex> Worker::m_mutex;
 int Worker::m_cntAll = 0;
 int Worker::m_cntIdle = 0;
 bool Worker::shutting_down = false;
 
 
-static Firebird::GlobalPtr<Firebird::Mutex> request_que_mutex;
+static GlobalPtr<Mutex> request_que_mutex;
 static server_req_t* request_que		= NULL;
 static server_req_t* free_requests		= NULL;
 static server_req_t* active_requests	= NULL;
 
-static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
+static GlobalPtr<Mutex> servers_mutex;
 static srvr* servers = NULL;
-static Firebird::AtomicCounter cntServers;
+static AtomicCounter cntServers;
 static bool	server_shutdown = false;
 
 
@@ -365,10 +686,10 @@ void SRVR_main(rem_port* main_port, USHORT flags)
  *
  **************************************/
 
-	Firebird::FpeControl::maskAll();
+	FpeControl::maskAll();
 
 	// Setup context pool for main thread
-	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
+	ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
 
 	PACKET send, receive;
 	zap_packet(&receive, true);
@@ -405,7 +726,7 @@ static void free_request(server_req_t* request)
  * Functional description
  *
  **************************************/
-	Firebird::MutexLockGuard queGuard(request_que_mutex);
+	MutexLockGuard queGuard(request_que_mutex);
 
 	request->req_port = 0;
 	request->req_next = free_requests;
@@ -426,7 +747,7 @@ static server_req_t* alloc_request()
  *	if empty - allocate the new one.
  *
  **************************************/
-	Firebird::MutexEnsureUnlock queGuard(request_que_mutex);
+	MutexEnsureUnlock queGuard(request_que_mutex);
 	queGuard.enter();
 
 	server_req_t* request = free_requests;
@@ -449,12 +770,12 @@ static server_req_t* alloc_request()
 				request = new server_req_t;
 				break;
 			}
-			catch (const Firebird::BadAlloc&)
+			catch (const BadAlloc&)
 			{ }
 
 #if defined(DEV_BUILD) && defined(DEBUG)
 			if (request_count++ > 4)
-				Firebird::BadAlloc::raise();
+				BadAlloc::raise();
 #endif
 
 			// System is out of memory, let's delay processing this
@@ -495,7 +816,7 @@ static bool link_request(rem_port* port, server_req_t* request)
 	server_req_t* queue;
 
 	{	// request_que_mutex scope
-		Firebird::MutexLockGuard queGuard(request_que_mutex);
+		MutexLockGuard queGuard(request_que_mutex);
 
 		bool active = true;
 		queue = active_requests;
@@ -589,7 +910,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		{
 			const size_t MAX_PACKET_SIZE = MAX_SSHORT;
 			const SSHORT bufSize = MIN(main_port->port_buff_size, MAX_PACKET_SIZE);
-			Firebird::UCharBuffer packet_buffer;
+			UCharBuffer packet_buffer;
 			UCHAR* const buffer = packet_buffer.getBuffer(bufSize);
 
 			// When this loop exits, the server will no longer receive requests
@@ -615,11 +936,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						continue;
 					}
 					dataSize -= asyncSize;
-					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
+					RefMutexGuard queGuard(*port->port_que_sync);
 					memcpy(port->port_queue.add().getBuffer(dataSize), buffer + asyncSize, dataSize);
 				}
 
-				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
+				RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = portGuard.tryEnter();
 				// Handle bytes received only if port is currently idle and has no requests
 				// queued or if it is disconnect (dataSize == 0). Else let loopThread
@@ -634,7 +955,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						fb_assert(portLocked);
 						fb_assert(port->port_requests_queued.value() == 0);
 
-						Firebird::RefMutexGuard queGuard(*port->port_que_sync);
+						RefMutexGuard queGuard(*port->port_que_sync);
 
 						const rem_port::RecvQueState recvState = port->getRecvState();
 						port->receive(&request->req_receive);
@@ -704,11 +1025,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					current_port->disconnect(NULL, NULL);
 			}
 		}
-		catch (const Firebird::Exception& e)
+		catch (const Exception& e)
 		{
 			gds__log("SRVR_multi_thread: shutting down due to unhandled exception");
 			ISC_STATUS_ARRAY status_vector;
-			Firebird::stuff_exception(status_vector, e);
+			stuff_exception(status_vector, e);
 			gds__log_status(0, status_vector);
 
 			// If we got as far as having a port allocated before the error, disconnect it
@@ -749,7 +1070,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					port = NULL;
 
 				}	// try
-				catch (const Firebird::Exception&)
+				catch (const Exception&)
 				{
 					port->disconnect(NULL, NULL);
 					port = NULL;
@@ -771,7 +1092,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			REMOTE_free_packet(main_port->port_async_receive, &asyncPacket);
 		}
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		// Some kind of unhandled error occurred during server setup.  In lieu
 		// of anything we CAN do, log something (and we might be so hosed
@@ -827,7 +1148,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			 protocol->p_cnct_version == PROTOCOL_VERSION9 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION12) &&
+			 protocol->p_cnct_version == PROTOCOL_VERSION12 ||
+			 protocol->p_cnct_version == PROTOCOL_VERSION13) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -853,7 +1175,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	// and modify the version string to reflect the chosen protocol
 
-	Firebird::string buffer;
+	string buffer;
 	buffer.printf("%s/P%d", port->port_version->str_data, port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(buffer.c_str());
@@ -946,7 +1268,7 @@ static void append_request_chain(server_req_t* request, server_req_t** que_inst)
  *	Return count of pending requests.
  *
  **************************************/
-	Firebird::MutexLockGuard queGuard(request_que_mutex);
+	MutexLockGuard queGuard(request_que_mutex);
 
 	while (*que_inst)
 		que_inst = &(*que_inst)->req_chain;
@@ -969,7 +1291,7 @@ static void append_request_next(server_req_t* request, server_req_t** que_inst)
  *	Return count of pending requests.
  *
  **************************************/
-	Firebird::MutexLockGuard queGuard(request_que_mutex);
+	MutexLockGuard queGuard(request_que_mutex);
 
 	while (*que_inst)
 		que_inst = &(*que_inst)->req_next;
@@ -978,7 +1300,7 @@ static void append_request_next(server_req_t* request, server_req_t** que_inst)
 }
 
 
-static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
+static void addClumplets(ClumpletWriter& dpb_buffer,
 						 const ParametersSet& par,
 						 const rem_port* port)
 {
@@ -992,14 +1314,14 @@ static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
  *	Insert remote endpoint data into DPB address stack
  *
  **************************************/
-	Firebird::ClumpletWriter address_stack_buffer(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
+	ClumpletWriter address_stack_buffer(ClumpletReader::UnTagged, MAX_UCHAR - 2);
 	if (dpb_buffer.find(par.address_path))
 	{
 		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
 		dpb_buffer.deleteClumplet();
 	}
 
-	Firebird::ClumpletWriter address_record(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
+	ClumpletWriter address_record(ClumpletReader::UnTagged, MAX_UCHAR - 2);
 	if (port->port_protocol_str)
 	{
 		address_record.insertString(isc_dpb_addr_protocol,
@@ -1054,64 +1376,13 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
 
-	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
-	const USHORT dl = attach->p_atch_dpb.cstr_length;
-
-	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::dpbList, MAX_SSHORT, dpb, dl);
-
-	// remove trusted role if present (security measure)
-	dpb_buffer.deleteWithTag(isc_dpb_trusted_role);
-
-#ifdef TRUSTED_AUTH
-	// Do we need trusted authentication?
-	if (dpb_buffer.find(isc_dpb_trusted_auth))
+	port->port_auth = new ServerAuth(port, file, l, attach->p_atch_dpb.cstr_address, 
+									 attach->p_atch_dpb.cstr_length, attach_database2, operation);
+	if (port->port_auth->authenticate(port, send, NULL))
 	{
-		try
-		{
-			// extract trusted authentication data from dpb
-			AuthSspi::DataHolder data;
-			memcpy(data.getBuffer(dpb_buffer.getClumpLength()),
-				dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
-			dpb_buffer.deleteClumplet();
-
-			// remove extra trusted auth if present (security measure)
-			dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
-
-			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
-			{
-				port->port_trusted_auth =
-					new ServerAuth(file, l, dpb_buffer, attach_database2, operation);
-				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
-
-				if (authSspi->accept(data) && authSspi->isActive())
-				{
-					send->p_operation = op_trusted_auth;
-					cstring& s = send->p_trau.p_trau_data;
-					s.cstr_allocated = 0;
-					s.cstr_length = data.getCount();
-					s.cstr_address = data.begin();
-					port->send(send);
-					return;
-				}
-			}
-		}
-		catch (const Firebird::status_exception& e)
-		{
-			ISC_STATUS_ARRAY status_vector;
-			Firebird::stuff_exception(status_vector, e);
-			delete port->port_trusted_auth;
-			port->port_trusted_auth = 0;
-			port->send_response(send, 0, 0, status_vector, false);
-			return;
-		}
+		delete port->port_auth;
+		port->port_auth = 0;
 	}
-#else
-	// remove trusted auth if present (security measure)
-	dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
-#endif // TRUSTED_AUTH
-
-	attach_database2(port, operation, file, l, dpb_buffer.getBuffer(),
-		dpb_buffer.getBufferLength(), send);
 }
 
 
@@ -1119,67 +1390,56 @@ static void attach_database2(rem_port* port,
 							 P_OP operation,
 							 const char* file,
 							 int l,
-							 const UCHAR* dpb,
-							 int dl,
+							 ClumpletWriter& dpb_buffer,
 							 PACKET* send)
 {
     send->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 
-	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::dpbList, MAX_SSHORT, dpb, dl);
-
-#ifdef TRUSTED_AUTH
-	// If we have trusted authentication, append it to database parameter block
-	if (port->port_trusted_auth)
+	for (dpb_buffer.rewind(); !dpb_buffer.isEof();)
 	{
-		AuthSspi* authSspi = port->port_trusted_auth->authSspi;
-
-		Firebird::string trustedUserName;
-		bool wheel = false;
-		if (authSspi->getLogin(trustedUserName, wheel))
+		switch (dpb_buffer.getClumpTag())
 		{
-			dpb_buffer.insertString(isc_dpb_trusted_auth, trustedUserName);
-			if (wheel && !dpb_buffer.find(isc_dpb_sql_role_name))
-			{
-				dpb_buffer.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-			}
-		}
-	}
-#endif // TRUSTED_AUTH
+		// Disable remote gsec attachments
+		case isc_dpb_gsec_attach:
+		case isc_dpb_sec_attach:
 
-	// If we have user identification, append it to database parameter block
-	rem_str* string = port->port_user_name;
-	if (string)
-	{
-		dpb_buffer.setCurOffset(dpb_buffer.getBufferLength());
-		dpb_buffer.insertString(isc_dpb_sys_user_name, string->str_data, string->str_length);
+		// remove trusted auth & trusted role if present (security measure)
+		case isc_dpb_trusted_role:
+		case isc_dpb_trusted_auth:
+
+		// remove old-style logon parameters
+		case isc_dpb_user_name:
+		case isc_dpb_password:
+		case isc_dpb_password_enc:
+			dpb_buffer.deleteClumplet();
+			break;
+
+		default:
+			dpb_buffer.moveNext();
+			break;
+		}
 	}
 
 	// Now insert additional clumplets into dpb
 	addClumplets(dpb_buffer, dpbParam, port);
 
-	// Disable remote gsec attachments */
-	dpb_buffer.deleteWithTag(isc_dpb_gsec_attach);
-	dpb_buffer.deleteWithTag(isc_dpb_sec_attach);
-
 	// See if user has specified parameters relevant to the connection,
 	// they will be stuffed in the DPB if so.
 	REMOTE_get_timeout_params(port, &dpb_buffer);
 
-	dpb = dpb_buffer.getBuffer();
-	dl = dpb_buffer.getBufferLength();
+	const char* dpb = reinterpret_cast<const char*>(dpb_buffer.getBuffer());
+	USHORT dl = dpb_buffer.getBufferLength();
 
 	ISC_STATUS_ARRAY status_vector;
 
 	if (operation == op_attach)
 	{
-		isc_attach_database(status_vector, l, file,
-							&handle, dl, reinterpret_cast<const char*>(dpb));
+		isc_attach_database(status_vector, l, file, &handle, dl, dpb);
 	}
 	else
 	{
-		isc_create_database(status_vector, l, file,
-							&handle, dl, reinterpret_cast<const char*>(dpb), 0);
+		isc_create_database(status_vector, l, file, &handle, dl, dpb, 0);
 	}
 
 	if (!status_vector[1])
@@ -1203,11 +1463,6 @@ static void attach_database2(rem_port* port,
 	}
 
 	port->send_response(send, 0, 0, status_vector, false);
-
-#ifdef TRUSTED_AUTH
-	delete port->port_trusted_auth;
-	port->port_trusted_auth = 0;
-#endif
 }
 
 
@@ -2701,7 +2956,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 
 	getHandle(transaction, stuff->p_slc_transaction);
 
-	Firebird::HalfStaticArray<UCHAR, 4096> temp_buffer;
+	HalfStaticArray<UCHAR, 4096> temp_buffer;
 	UCHAR* slice = 0;
 
 	if (stuff->p_slc_length)
@@ -2764,14 +3019,14 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	}
 
 	// Make sure there is a suitable temporary blob buffer
-	Firebird::Array<UCHAR> buf;
+	Array<UCHAR> buf;
 	UCHAR* const buffer = buf.getBuffer(stuff->p_info_buffer_length);
 	memset(buffer, 0, stuff->p_info_buffer_length);
 
-	Firebird::HalfStaticArray<SCHAR, 1024> info;
+	HalfStaticArray<SCHAR, 1024> info;
 	SCHAR* info_buffer = 0;
 	USHORT info_len;
-	Firebird::HalfStaticArray<UCHAR, 1024> temp;
+	HalfStaticArray<UCHAR, 1024> temp;
 	UCHAR* temp_buffer = 0;
 	if (op == op_info_database)
 	{
@@ -2815,11 +3070,11 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 						  reinterpret_cast<char*>(temp_buffer)); //temp
 		if (!status_vector[1])
 		{
-			Firebird::string version;
+			string version;
 			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
 			info_db_len = MERGE_database_info(temp_buffer, //temp
 				buffer, stuff->p_info_buffer_length,
-				Firebird::DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
+				DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
 				reinterpret_cast<const UCHAR*>(version.c_str()),
 				reinterpret_cast<const UCHAR*>(this->port_host->str_data));
 		}
@@ -3085,7 +3340,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	}
 	getHandle(statement, prepareL->p_sqlst_statement);
 
-	Firebird::HalfStaticArray<UCHAR, 1024> local_buffer, info_buffer;
+	HalfStaticArray<UCHAR, 1024> local_buffer, info_buffer;
 	UCHAR* const info = info_buffer.getBuffer(prepareL->p_sqlst_items.cstr_length + 1);
 	UCHAR* const buffer = local_buffer.getBuffer(prepareL->p_sqlst_buffer_length);
 
@@ -3203,7 +3458,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
  *	sent.
  *
  **************************************/
-	Firebird::RefMutexGuard portGuard(*port->port_sync);
+	RefMutexGuard portGuard(*port->port_sync);
 	DecrementRequestsQueued dec(port);
 
 	try
@@ -3246,11 +3501,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_trusted_auth:
-#ifdef TRUSTED_AUTH
 			trusted_auth(port, &receive->p_trau, sendL);
-#else
-			send_error(port, sendL, isc_wish_list);
-#endif
 			break;
 
 		case op_update_account_info:
@@ -3467,25 +3718,25 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		}
 
 	}	// try
-	catch (const Firebird::status_exception& ex)
+	catch (const status_exception& ex)
 	{
 		// typical case like bad handle passed
 		ISC_STATUS_ARRAY local_status;
 		memset(local_status, 0, sizeof(local_status));
 
-		Firebird::stuff_exception(local_status, ex);
+		stuff_exception(local_status, ex);
 
 		// Send it to the user
 		port->send_response(sendL, 0, 0, local_status, false);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Exception& ex)
 	{
 		// something more serious happened
 		ISC_STATUS_ARRAY local_status;
 		memset(local_status, 0, sizeof(local_status));
 
 		// Log the error to the user.
-		Firebird::stuff_exception(local_status, ex);
+		stuff_exception(local_status, ex);
 		gds__log_status(0, local_status);
 
 		port->send_response(sendL, 0, 0, local_status, false);
@@ -3503,7 +3754,6 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 }
 
 
-#ifdef TRUSTED_AUTH
 static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
 {
 /**************************************
@@ -3516,65 +3766,18 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
  *	Server side of trusted auth handshake.
  *
  **************************************/
-	ServerAuth* sa = port->port_trusted_auth;
+	ServerAuthBase* sa = port->port_auth;
 	if (! sa)
+	{
 		send_error(port, send, isc_unavailable);
-
-	try
-	{
-		AuthSspi::DataHolder data;
-		memcpy(data.getBuffer(p_trau->p_trau_data.cstr_length),
-			p_trau->p_trau_data.cstr_address, p_trau->p_trau_data.cstr_length);
-
-		AuthSspi* authSspi = sa->authSspi;
-
-		if (authSspi->accept(data) && authSspi->isActive())
-		{
-			send->p_operation = op_trusted_auth;
-			cstring& s = send->p_trau.p_trau_data;
-			s.cstr_allocated = 0;
-			s.cstr_length = data.getCount();
-			s.cstr_address = data.begin();
-			port->send(send);
-			return;
-		}
-	}
-	catch (const Firebird::status_exception& e)
-	{
-		ISC_STATUS_ARRAY status_vector;
-		Firebird::stuff_exception(status_vector, e);
-		port->send_response(send, 0, 0, status_vector, false);
-		return;
 	}
 
-	sa->part2(port, sa->operation, sa->fileName.c_str(), sa->fileName.length(),
-		sa->clumplet.begin(), sa->clumplet.getCount(), send);
+	if (sa->authenticate(port, send, &p_trau->p_trau_data))
+	{
+		delete sa;
+		port->port_auth = 0;
+	}
 }
-
-
-static bool canUseTrusted()
-{
-/**************************************
- *
- *	c a n U s e T r u s t e d
- *
- **************************************
- *
- * Functional description
- *	Cache config setting for trusted auth.
- *
- **************************************/
-	static AmCache useTrusted = AM_UNKNOWN;
-
-	if (useTrusted == AM_UNKNOWN)
-	{
-		Firebird::PathName authMethod(Config::getAuthMethod());
-		useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? AM_ENABLED : AM_DISABLED;
-	}
-
-	return useTrusted == AM_ENABLED;
-}
-#endif // TRUSTED_AUTH
 
 
 ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
@@ -4368,7 +4571,7 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 		return;
 	}
 
-	Firebird::RefMutexGuard portGuard(*port->port_sync);
+	RefMutexGuard portGuard(*port->port_sync);
 
 	PACKET packet;
 	packet.p_operation = op_event;
@@ -4393,61 +4596,13 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 	const char* service_name = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT service_length = attach->p_atch_file.cstr_length;
 
-	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE,
-		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length, isc_spb_current_version);
-
-	// remove trusted role if present (security measure)
-	spb.deleteWithTag(isc_spb_trusted_role);
-
-#ifdef TRUSTED_AUTH
-	// Do we can & need trusted authentication?
-	if (spb.find(isc_spb_trusted_auth))
+	port->port_auth = new ServerAuth(port, service_name, service_length, attach->p_atch_dpb.cstr_address,
+									 attach->p_atch_dpb.cstr_length, attach_service2, op_service_attach);
+	if (port->port_auth->authenticate(port, sendL, NULL))
 	{
-		try
-		{
-			// extract trusted authentication data from spb
-			AuthSspi::DataHolder data;
-			memcpy(data.getBuffer(spb.getClumpLength()), spb.getBytes(), spb.getClumpLength());
-			spb.deleteClumplet();
-
-			// remove extra trusted auth if present (security measure)
-			spb.deleteWithTag(isc_spb_trusted_auth);
-
-			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
-			{
-				port->port_trusted_auth =
-					new ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
-				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
-
-				if (authSspi->accept(data) && authSspi->isActive())
-				{
-					sendL->p_operation = op_trusted_auth;
-					cstring& s = sendL->p_trau.p_trau_data;
-					s.cstr_allocated = 0;
-					s.cstr_length = data.getCount();
-					s.cstr_address = data.begin();
-					port->send(sendL);
-					return;
-				}
-			}
-		}
-		catch (const Firebird::status_exception& e)
-		{
-			ISC_STATUS_ARRAY status_vector;
-			Firebird::stuff_exception(status_vector, e);
-			delete port->port_trusted_auth;
-			port->port_trusted_auth = 0;
-			port->send_response(sendL, 0, 0, status_vector, false);
-			return;
-		}
+		delete port->port_auth;
+		port->port_auth = 0;
 	}
-#else // TRUSTED_AUTH
-	// remove trusted auth if present (security measure)
-	spb.deleteWithTag(isc_spb_trusted_auth);
-#endif // TRUSTED_AUTH
-
-	attach_service2(port, op_trusted_auth, service_name, service_length,
-		spb.getBuffer(), spb.getBufferLength(), sendL);
 }
 
 
@@ -4455,25 +4610,16 @@ static void attach_service2(rem_port* port,
 							P_OP,
 							const char* service_name,
 							int service_length,
-							const UCHAR* spb,
-							int sl,
+							ClumpletWriter& spb,
 							PACKET* sendL)
 {
-	Firebird::ClumpletWriter tmp(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE,
-			spb, sl, isc_spb_current_version);
-
-	port->service_attach(service_name, service_length, tmp, sendL);
-
-#ifdef TRUSTED_AUTH
-	delete port->port_trusted_auth;
-	port->port_trusted_auth = 0;
-#endif
+	port->service_attach(service_name, service_length, spb, sendL);
 }
 
 
 ISC_STATUS rem_port::service_attach(const char* service_name,
 									const USHORT service_length,
-									Firebird::ClumpletWriter& spb,
+									ClumpletWriter& spb,
 									PACKET* sendL)
 {
 /**************************************
@@ -4489,39 +4635,33 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	sendL->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 
-#ifdef TRUSTED_AUTH
-	// If we have trusted authentication, append it to database parameter block
-	if (port_trusted_auth)
-	{
-		AuthSspi* authSspi = port_trusted_auth->authSspi;
-
-		Firebird::string trustedUserName;
-		bool wheel = false;
-		if (authSspi->getLogin(trustedUserName, wheel))
-		{
-			spb.insertString(isc_spb_trusted_auth, trustedUserName);
-			if (wheel && !spb.find(isc_spb_sql_role_name))
-			{
-				spb.insertString(isc_spb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-			}
-		}
-	}
-#endif // TRUSTED_AUTH
-
-	// If we have user identification, append it to database parameter block
-	const rem_str* string = port_user_name;
-	if (string)
-	{
-		spb.setCurOffset(spb.getBufferLength());
-		spb.insertString(isc_spb_sys_user_name, string->str_data, string->str_length);
-	}
-
     // Now insert additional clumplets into spb
 	addClumplets(spb, spbParam, this);
 
 	// See if user has specified parameters relevent to the connection,
 	// they will be stuffed in the SPB if so.
 	REMOTE_get_timeout_params(this, &spb);
+
+	for (spb.rewind(); !spb.isEof();)
+	{
+		switch (spb.getClumpTag())
+		{
+		// remove trusted auth & trusted role if present (security measure)
+		case isc_spb_trusted_role:
+		case isc_spb_trusted_auth:
+
+		// remove old-style logon parameters
+		case isc_spb_user_name:
+		case isc_spb_password:
+		case isc_spb_password_enc:
+			spb.deleteClumplet();
+			break;
+
+		default:
+			spb.moveNext();
+			break;
+		}
+	}
 
 	ISC_STATUS_ARRAY status_vector;
 	isc_service_attach(status_vector, service_length, service_name, &handle,
@@ -4653,7 +4793,7 @@ void set_server( rem_port* port, USHORT flags)
  *	create it.
  *
  **************************************/
-	Firebird::MutexLockGuard srvrGuard(servers_mutex);
+	MutexLockGuard srvrGuard(servers_mutex);
 	srvr* server;
 
 	for (server = servers; server; server = server->srvr_next)
@@ -4861,13 +5001,13 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 	try {
 
-	Firebird::FpeControl::maskAll();
+	FpeControl::maskAll();
 
 	Worker worker;
 
 	while (!Worker::isShuttingDown())
 	{
-		Firebird::MutexEnsureUnlock reqQueGuard(request_que_mutex);
+		MutexEnsureUnlock reqQueGuard(request_que_mutex);
 		reqQueGuard.enter();
 		server_req_t* request = request_que;
 		if (request)
@@ -4897,16 +5037,16 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				// and unsplice
 
 				{ // scope
-					Firebird::MutexLockGuard queGuard(request_que_mutex);
+					MutexLockGuard queGuard(request_que_mutex);
 					request->req_next = active_requests;
 					active_requests = request;
 				}
 
 				// Validate port.  If it looks ok, process request
 
-				Firebird::RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync);
+				RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync);
 				{ // port_sync scope
-					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync);
+					RefMutexGuard portGuard(*request->req_port->port_sync);
 
 					if (request->req_port->port_state == rem_port::DISCONNECTED ||
 						!process_packet(request->req_port, &request->req_send, &request->req_receive, &port))
@@ -4963,7 +5103,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				}
 
 				{ // request_que_mutex scope
-					Firebird::MutexLockGuard queGuard(request_que_mutex);
+					MutexLockGuard queGuard(request_que_mutex);
 
 					// Take request out of list of active requests
 
@@ -5042,7 +5182,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 	}
 
 	} // try
-	catch (const Firebird::Exception& ex)
+	catch (const Exception& ex)
 	{
 		iscLogException("Error while processing the incoming packet", ex);
 	}
@@ -5087,8 +5227,8 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 	}
 
 	{ // scope for guard
-		static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-		Firebird::MutexLockGuard guard(mutex);
+		static GlobalPtr<Mutex> mutex;
+		MutexLockGuard guard(mutex);
 
 		port_async_receive->clearRecvQue();
 		port_async_receive->port_receive.x_handy = 0;
@@ -5206,13 +5346,13 @@ Worker::Worker()
 	m_tid = getThreadId();
 #endif
 
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	insert(m_active);
 }
 
 Worker::~Worker()
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	remove();
 	--m_cntAll;
 }
@@ -5223,7 +5363,7 @@ bool Worker::wait(int timeout)
 	if (m_sem.tryEnter(timeout))
 		return true;
 
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	if (m_sem.tryEnter(0))
 		return true;
 
@@ -5236,14 +5376,14 @@ void Worker::setState(const bool active)
 	if (m_active == active)
 		return;
 
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	remove();
 	insert(active);
 }
 
 bool Worker::wakeUp()
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	if (m_idleWorkers)
 	{
 		Worker* idle = m_idleWorkers;
@@ -5256,7 +5396,7 @@ bool Worker::wakeUp()
 
 void Worker::wakeUpAll()
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	for (Worker* thd = m_idleWorkers; thd; thd = thd->m_next)
 		thd->m_sem.release();
 }
@@ -5307,7 +5447,7 @@ void Worker::insert(const bool active)
 
 void Worker::start(USHORT flags)
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	if (!isShuttingDown() && !wakeUp())
 	{
 		if (gds__thread_start(loopThread, (void*)(IPTR) flags, THREAD_medium, 0, 0) == 0)
@@ -5316,14 +5456,14 @@ void Worker::start(USHORT flags)
 		}
 		else if (!m_cntAll)
 		{
-			Firebird::Arg::Gds(isc_no_threads).raise();
+			Arg::Gds(isc_no_threads).raise();
 		}
 	}
 }
 
 void Worker::shutdown()
 {
-	Firebird::MutexLockGuard guard(m_mutex);
+	MutexLockGuard guard(m_mutex);
 	if (shutting_down)
 	{
 		return;
@@ -5339,7 +5479,7 @@ void Worker::shutdown()
 		{
 			THREAD_SLEEP(100);
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{
 			m_mutex->enter();
 			throw;

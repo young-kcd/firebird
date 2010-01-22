@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp
-SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
+SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) jrd/pwd.cpp
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) $(LIBFBSERVER_Objects) $(COMMON_Objects)
 
 .PHONY: fbserver

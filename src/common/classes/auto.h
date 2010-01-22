@@ -88,6 +88,11 @@ public:
 		return !ptr;
 	}
 
+	bool hasData() const
+	{
+		return ptr != NULL;
+	}
+
 	Where* operator->()
 	{
 		return ptr;

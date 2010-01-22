@@ -166,10 +166,6 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
-	// Note: prior to V3.1E a receivers could not in truth handle more
-	// than 5 protocol descriptions; however, this restriction does not
-	// apply to Windows since it was created in 4.0
-
 	// If we want user verification, we can't speak anything less than version 7
 
 	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
@@ -181,7 +177,8 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, ptype_batch_send, 6)
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
