@@ -250,11 +250,9 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end && result; ptr++)
 	{
-		if ((*ptr)->nod_type != nod_rse)
+		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream))
 		{
-			if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream)) {
-				result = false;
-			}
+			result = false;
 		}
 	}
 
@@ -1136,9 +1134,7 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 	const jrd_nod* const* end;
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		if ((*ptr)->nod_type != nod_rse) {
-			findDependentFromStreams(*ptr, streamList);
-		}
+		findDependentFromStreams(*ptr, streamList);
 	}
 
 	// Check value expression, if any
