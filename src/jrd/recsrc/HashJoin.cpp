@@ -24,6 +24,7 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
+#include "../jrd/intl.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
@@ -387,11 +388,14 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, j
 	for (size_t i = 0; i < keys->nod_count; i++)
 	{
 		const dsc* const desc = EVL_expr(tdbb, keys->nod_arg[i]);
+		fb_assert(!desc->isBlob());
 
 		if (desc && !(request->req_flags & req_null))
 		{
 			size_t length = desc->dsc_length;
 			const UCHAR* address = desc->dsc_address;
+
+			// Adjust the data length to the real string length
 
 			if (desc->dsc_dtype == dtype_varying)
 			{
@@ -402,6 +406,23 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, j
 			else if (desc->dsc_dtype == dtype_cstring)
 			{
 				length = strlen((char*) address);
+			}
+
+			// Adjust the data length to ignore trailing spaces
+
+			if (desc->isText())
+			{
+				CHARSET_ID charset = desc->getCharSet();
+				if (charset == ttype_dynamic)
+				{
+					charset = tdbb->getCharSet();
+				}
+				const UCHAR space = (charset == ttype_binary) ? '\0' : ' ';
+				const UCHAR* ptr = address + length;
+				while (length && *--ptr == space)
+				{
+					length--;
+				}
 			}
 
 			hash_slot ^= table->hash(address, length);
