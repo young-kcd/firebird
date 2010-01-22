@@ -901,7 +901,7 @@ namespace Jrd
 					    RecordSource* root, RecordSource* inner,
 					    jrd_nod* rootMap, jrd_nod* innerMap,
 					    size_t streamCount, const UCHAR* innerStreams,
-					    size_t baseImpure);
+					    size_t saveOffset);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -922,7 +922,8 @@ namespace Jrd
 		jrd_nod* const m_rootMap;
 		jrd_nod* const m_innerMap;
 		StreamsArray m_innerStreams;
-		size_t m_impureSize;
+		size_t m_saveOffset;
+		size_t m_saveSize;
 	};
 
 } // namespace

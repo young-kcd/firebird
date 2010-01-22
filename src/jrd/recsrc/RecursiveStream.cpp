@@ -41,17 +41,18 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapSt
 							     RecordSource* root, RecordSource* inner,
 							     jrd_nod* rootMap, jrd_nod* innerMap,
 							     size_t streamCount, const UCHAR* innerStreams,
-							     size_t baseImpure)
+							     size_t saveOffset)
 	: RecordStream(csb, stream),
 	  m_mapStream(mapStream),
 	  m_root(root), m_inner(inner),
 	  m_rootMap(rootMap), m_innerMap(innerMap),
-	  m_innerStreams(csb->csb_pool)
+	  m_innerStreams(csb->csb_pool),
+	  m_saveOffset(saveOffset)
 {
 	fb_assert(m_root && m_inner && m_rootMap && m_innerMap);
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
-	m_impureSize = csb->csb_impure - baseImpure;
+	m_saveSize = csb->csb_impure - saveOffset;
 
 	m_innerStreams.resize(streamCount);
 
@@ -99,6 +100,7 @@ void RecursiveStream::close(thread_db* tdbb)
 	invalidateRecords(request);
 
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const saveImpure = (Impure*) ((UCHAR*) request + m_saveOffset);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -111,7 +113,7 @@ void RecursiveStream::close(thread_db* tdbb)
 			delete[] impure->irsb_data;
 
 			UCHAR* const tmp = impure->irsb_stack;
-			memcpy(impure, tmp, m_impureSize);
+			memcpy(saveImpure, tmp, m_saveSize);
 			delete[] tmp;
 		}
 
@@ -123,6 +125,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const saveImpure = (Impure*) ((UCHAR*) request + m_saveOffset);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{
@@ -150,10 +153,10 @@ bool RecursiveStream::getRecord(thread_db* tdbb)
 			}
 
 			// Save where we are
-			UCHAR* const tmp = FB_NEW(*tdbb->getDefaultPool()) UCHAR[m_impureSize + rpbsSize];
-			memcpy(tmp, impure, m_impureSize);
+			UCHAR* const tmp = FB_NEW(*tdbb->getDefaultPool()) UCHAR[m_saveSize + rpbsSize];
+			memcpy(tmp, saveImpure, m_saveSize);
 
-			UCHAR* p = tmp + m_impureSize;
+			UCHAR* p = tmp + m_saveSize;
 			for (size_t i = 0; i < m_innerStreams.getCount(); i++)
 			{
 				const UCHAR stream = m_innerStreams[i];
@@ -171,7 +174,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb)
 			memcpy(impure->irsb_data, record->rec_data, record->rec_length);
 
 			const Impure r = *impure;
-			memset(impure, 0, m_impureSize);
+			memset(saveImpure, 0, m_saveSize);
 			*impure = r;
 
 			// (Re-)Open a new child stream & reset record number
@@ -199,9 +202,9 @@ bool RecursiveStream::getRecord(thread_db* tdbb)
 		delete[] impure->irsb_data;
 
 		UCHAR* const tmp = impure->irsb_stack;
-		memcpy(impure, tmp, m_impureSize);
+		memcpy(saveImpure, tmp, m_saveSize);
 
-		UCHAR* p = tmp + m_impureSize;
+		UCHAR* p = tmp + m_saveSize;
 		for (size_t i = 0; i < m_innerStreams.getCount(); i++)
 		{
 			const UCHAR stream = m_innerStreams[i];
