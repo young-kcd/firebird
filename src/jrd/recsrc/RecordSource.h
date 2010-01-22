@@ -750,19 +750,16 @@ namespace Jrd
 
 	class HashJoin : public RecordSource
 	{
-		static const size_t HASH_SIZE = 1009;
-		typedef Firebird::Array<FB_UINT64> CollisionList;
+		class HashTable;
 
 		struct Impure : public RecordSource::Impure
 		{
-			CollisionList* irsb_hash_table[HASH_SIZE];
-			USHORT irsb_hash_slot;
-			size_t irsb_collision;
+			HashTable* irsb_hash_table;
 		};
 
 	public:
-		HashJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-				 const jrd_nod* outerKeys, const jrd_nod* innerKeys);
+		HashJoin(CompilerScratch* csb, size_t count,
+				 RecordSource* const* args, jrd_nod* const* keys);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -782,13 +779,14 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb);
 
 	private:
-		USHORT hashKeys(thread_db* tdbb, jrd_req* request, bool outer);
+		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, jrd_nod* keys);
 		bool compareKeys(thread_db* tdbb, jrd_req* request);
+		bool fetchRecord(thread_db* tdbb, HashTable* table, size_t stream);
 
-		RecordSource* const m_outer;
-		BufferedStream* const m_inner;
-		const jrd_nod* const m_outerKeys;
-		const jrd_nod* const m_innerKeys;
+		RecordSource* m_leader;
+		jrd_nod* m_leaderKeys;
+		Firebird::Array<BufferedStream*> m_args;
+		Firebird::Array<jrd_nod*> m_keys;
 		const bool m_outerJoin;
 		const bool m_semiJoin;
 		const bool m_antiJoin;
