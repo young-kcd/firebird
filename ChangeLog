@@ -1,3 +1,45 @@
+2010-01-22 11:25  dimitr
+
+	* firebird2/src/jrd/recsrc/HashJoin.cpp (1.6):
+
+	Fixed comparison of strings with different number of trailing
+	spaces.
+
+2010-01-22 09:23  dimitr
+
+	* firebird2/src/jrd/recsrc/: RecordSource.h (1.19),
+	RecursiveStream.cpp (1.4):
+
+	Fixed the broken recursive queries.
+
+2010-01-22 08:17  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.407):
+
+	1) Extended hash joins to handle more than two streams at once.  2)
+	Allowed the hash table size to be configurable at runtime.
+
+2010-01-22 08:11  dimitr
+
+	* firebird2/src/jrd/recsrc/: HashJoin.cpp (1.5), RecordSource.h
+	(1.18):
+
+	1) Extended hash joins to handle more than two streams at once.  2)
+	Allowed the hash table size to be configurable at runtime.
+
+2010-01-21 19:33  asfernandes
+
+	* firebird2/src/dsql/: dsql.h (1.182), gen.cpp (1.221), pass1.cpp
+	(1.502):
+
+	Separate aggregate/union maps from window maps
+
+2010-01-21 16:01  asfernandes
+
+	* firebird2/src/jrd/par.cpp (1.275):
+
+	Fix the arithmetics thanks to Claudio
+
 2010-01-21 03:51  asfernandes
 
 	* firebird2/src/: common/classes/vector.h (1.24), dsql/parse.y
