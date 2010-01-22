@@ -397,6 +397,8 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, j
 			size_t length = desc->dsc_length;
 			const UCHAR* address = desc->dsc_address;
 
+			MoveBuffer buffer;
+
 			if (desc->isText())
 			{
 				// Adjust the data length to the real string length
@@ -411,8 +413,6 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, j
 				{
 					length = strlen((char*) address);
 				}
-
-				MoveBuffer buffer;
 
 				if (IS_INTL_DATA(desc))
 				{
