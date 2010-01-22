@@ -3702,15 +3702,23 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			rsb = river->getRecordSource();
 		}
 
-		rsbs.add(rsb);
-		keys.add(key);
+		// It seems that rivers are already sorted by their cardinality.
+		// For a hash join, we need to choose the smallest ones as inner sub-streams,
+		// hence we reverse the order when storing them in the temporary arrays.
 
-		if (!prefer_merge_over_hash && rivers_to_merge.getCount() == 2)
+		if (prefer_merge_over_hash)
 		{
-			// we cannot hash-join more than two rivers at once
-			break;
+			rsbs.add(rsb);
+			keys.add(key);
+		}
+		else
+		{
+			rsbs.insert(0, rsb);
+			keys.insert(0, key);
 		}
 	}
+
+	fb_assert(rsbs.getCount() == keys.getCount());
 
 	// Build a join stream
 
@@ -3718,21 +3726,13 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 	if (prefer_merge_over_hash)
 	{
-		fb_assert(rsbs.getCount() == keys.getCount());
-
 		rsb = FB_NEW(*tdbb->getDefaultPool())
 			MergeJoin(csb, rsbs.getCount(), (SortedStream**) rsbs.begin(), keys.begin());
 	}
 	else
 	{
-		fb_assert(rsbs.getCount() == 2 && keys.getCount() == 2);
-
-		// It seems that rivers are already sorted by their cardinality.
-		// We need to choose the smallest one as an inner sub-stream,
-		// hence we reverse the order when passing them into the constructor.
-
 		rsb = FB_NEW(*tdbb->getDefaultPool())
-			HashJoin(csb, rsbs[1], rsbs[0], keys[1], keys[0]);
+			HashJoin(csb, rsbs.getCount(), rsbs.begin(), keys.begin());
 	}
 
 	// Pick up any boolean that may apply
