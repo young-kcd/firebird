@@ -187,7 +187,7 @@ namespace Jrd {
 	class dsql_req;
 }
 
-namespace
+namespace Why
 {
 	// process shutdown flag
 	bool shutdownStarted = false;
@@ -788,6 +788,7 @@ namespace
 			// There should not be transactions at this point,
 			// but it's no danger in cleaning empty array
 			h->transactions.destroy();
+			h->parent = NULL;
 
 			h->flagDestroying = false;
 		}
@@ -829,11 +830,13 @@ namespace
 			T::destroy(h);
 		}
 	}
-}
+} // namespace Why
 
 #ifdef DEV_BUILD
 static void check_status_vector(const ISC_STATUS*);
 #endif
+
+using namespace Why;
 
 static void event_ast(void*, USHORT, const UCHAR*);
 static void exit_handler(void*);
@@ -2243,6 +2246,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 		}
 
 		destroy(attachment);
+		attachment = NULL;
 		*handle = 0;
 	}
 	catch (const Exception& e)

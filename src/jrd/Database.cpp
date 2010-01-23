@@ -33,6 +33,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/Database.h"
+#include "../jrd/nbak.h"
 #include "../jrd/tra.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/os/pio_proto.h"
@@ -85,6 +86,7 @@ namespace Jrd
 		}
 
 		delete dbb_monitoring_data;
+		delete dbb_backup_manager;
 
 		dbb_flags |= DBB_destroying;
 
