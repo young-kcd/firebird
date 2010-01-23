@@ -1508,7 +1508,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				{ // scope
 					USHORT strtype_unused;
 					UCHAR *ptr;
-					length = l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
+					length = l = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
 					q = ptr;
 				} // end scope
 
@@ -1677,7 +1677,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		{
 			USHORT strtype_unused;
 			UCHAR* ptr;
-			USHORT l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
+			USHORT l = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
 
 			if (l == to->dsc_length)
 			{
@@ -2211,10 +2211,8 @@ SSHORT CVT_decompose(const char* string,
 }
 
 
-USHORT CVT_get_string_ptr(const dsc* desc,
-						  USHORT* ttype,
-						  UCHAR** address,
-						  vary* temp, USHORT length, ErrorFunction err)
+USHORT CVT_get_string_ptr_common(const dsc* desc, USHORT* ttype, UCHAR** address,
+								 vary* temp, USHORT length, Callbacks* cb)
 {
 /**************************************
  *
@@ -2241,7 +2239,7 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 	fb_assert(desc != NULL);
 	fb_assert(ttype != NULL);
 	fb_assert(address != NULL);
-	fb_assert(err != NULL);
+	fb_assert(cb != NULL);
 	fb_assert((temp != NULL && length > 0) ||
 			desc->dsc_dtype == dtype_text ||
 			desc->dsc_dtype == dtype_cstring || desc->dsc_dtype == dtype_varying);
@@ -2284,7 +2282,7 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 	temp_desc.dsc_address = (UCHAR *) temp;
 	temp_desc.dsc_dtype = dtype_varying;
 	temp_desc.setTextType(ttype_ascii);
-	CVT_move(desc, &temp_desc, err);
+	CVT_move_common(desc, &temp_desc, cb);
 	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
 	*ttype = INTL_TTYPE(&temp_desc);
 
@@ -2705,6 +2703,38 @@ namespace
 	{
 	}
 }	// namespace
+
+
+USHORT CVT_get_string_ptr(const dsc* desc, USHORT* ttype, UCHAR** address,
+						  vary* temp, USHORT length, ErrorFunction err)
+{
+/**************************************
+ *
+ *      C V T _ g e t _ s t r i n g _ p t r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get address and length of string, converting the value to
+ *      string, if necessary.  The caller must provide a sufficiently
+ *      large temporary.  The address of the resultant string is returned
+ *      by reference.  Get_string returns the length of the string (in bytes).
+ *
+ *      The text-type of the string is returned in ttype.
+ *
+ *      Note: If the descriptor is known to be a string type, the fourth
+ *      argument (temp buffer) may be NULL.
+ *
+ *      If input (desc) is already a string, the output pointers
+ *      point to the data of the same text_type.  If (desc) is not
+ *      already a string, output pointers point to ttype_ascii.
+ *
+ **************************************/
+	fb_assert(err != NULL); 
+
+	CommonCallbacks callbacks(err);
+	return CVT_get_string_ptr_common(desc, ttype, address, temp, length, &callbacks);
+}
 
 
 void CVT_move(const dsc* from, dsc* to, ErrorFunction err)
