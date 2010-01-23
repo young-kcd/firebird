@@ -26,6 +26,7 @@
 #include "../jrd/opt_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
+#include "../jrd/par_proto.h"
 #include "RecordSource.h"
 
 using namespace Firebird;
@@ -408,16 +409,19 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 	m_next->findUsedStreams(streams);
 	streams.insert(0, streams.getCount());
 
-	// Process the partitions.
+	// Process unordered partitions.
 
 	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 	{
 		jrd_nod* const nodWindow = nodWindows->nod_arg[i];
-
 		jrd_nod* const partition = nodWindow->nod_arg[e_part_group];
 		jrd_nod* const partitionMap = nodWindow->nod_arg[e_part_map];
 		jrd_nod* const repartition = nodWindow->nod_arg[e_part_regroup];
+		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
 		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
+
+		if (order)
+			continue;
 
 		if (!partition)
 		{
@@ -445,6 +449,89 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 
 		m_joinedStream = FB_NEW(csb->csb_pool) WindowJoin(csb, m_joinedStream, aggStream,
 			partition, repartition);
+	}
+
+	// Process ordered partitions.
+
+	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	{
+		jrd_nod* const nodWindow = nodWindows->nod_arg[i];
+		jrd_nod* const partition = nodWindow->nod_arg[e_part_group];
+		jrd_nod* const partitionMap = nodWindow->nod_arg[e_part_map];
+		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
+		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
+
+		if (!order)
+			continue;
+
+		// Verify if distinct is used. It's not supported.
+
+		const jrd_nod* const* ptr = partitionMap->nod_arg;
+		for (const jrd_nod* const* const end = ptr + partitionMap->nod_count; ptr < end; ++ptr)
+		{
+			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			switch (from->nod_type)
+			{
+				case nod_agg_count_distinct:
+				case nod_agg_total_distinct:
+				case nod_agg_total_distinct2:
+				case nod_agg_average_distinct2:
+				case nod_agg_average_distinct:
+				case nod_agg_list_distinct:
+					status_exception::raise(Arg::Gds(isc_wish_list) <<
+						Arg::Gds(isc_random) << "DISTINCT is not supported in ordered windows");
+					break;
+
+				case nod_agg_list:
+					status_exception::raise(Arg::Gds(isc_wish_list) <<
+						Arg::Gds(isc_random) << "LIST is not supported in ordered windows");
+					break;
+			}
+		}
+
+		// Refresh the stream list based on the last m_joinedStream.
+		streams.clear();
+		m_joinedStream->findUsedStreams(streams);
+		streams.insert(0, streams.getCount());
+
+		// Build the sort key. It's the order items following the partition items.
+
+		jrd_nod* partitionOrder;
+
+		if (partition)
+		{
+			partitionOrder = PAR_make_node(tdbb, (partition->nod_count + order->nod_count) * 3);
+			partitionOrder->nod_type = nod_sort;
+			partitionOrder->nod_count = partition->nod_count + order->nod_count;
+
+			jrd_nod** node1 = partitionOrder->nod_arg;
+			jrd_nod** node2 = partitionOrder->nod_arg + partition->nod_count + order->nod_count;
+			jrd_nod** node3 = node2 + partition->nod_count + order->nod_count;
+
+			for (jrd_nod** node = partition->nod_arg;
+				 node != partition->nod_arg + partition->nod_count;
+				 ++node)
+			{
+				*node1++ = *node;
+				*node2++ = (jrd_nod*)(IPTR) false;	// ascending
+				*node3++ = (jrd_nod*)(IPTR) rse_nulls_default;
+			}
+
+			for (jrd_nod** node = order->nod_arg; node != order->nod_arg + order->nod_count; ++node)
+			{
+				*node1++ = *node;
+				*node2++ = *(node + order->nod_count);
+				*node3++ = *(node + order->nod_count * 2);
+			}
+		}
+		else
+			partitionOrder = order;
+
+		SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
+			m_joinedStream, partitionOrder, false);
+
+		m_joinedStream = FB_NEW(csb->csb_pool) OrderedWindowStream(csb, stream, partition,
+			order, partitionMap, sortedStream);
 	}
 
 	if (mainWindow)
@@ -539,7 +626,8 @@ bool WindowedStream::refetchRecord(thread_db* tdbb)
 
 bool WindowedStream::lockRecord(thread_db* tdbb)
 {
-	return m_joinedStream->lockRecord(tdbb);
+	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
+	return false; // compiler silencer
 }
 
 void WindowedStream::dump(thread_db* tdbb, UCharBuffer& buffer)

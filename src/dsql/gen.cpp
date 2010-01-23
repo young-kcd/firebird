@@ -1297,6 +1297,7 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 			stuff(statement, blr_partition_by);
 			dsql_nod* partition = (*i)->partition;
 			dsql_nod* partitionRemapped = (*i)->partitionRemapped;
+			dsql_nod* order = (*i)->order;
 
 			stuff(statement, (*i)->context);
 
@@ -1315,6 +1316,14 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 			else
 			{
 				stuff(statement, 0);	// partition by expression count
+			}
+
+			if (order)
+				gen_sort(dsqlScratch, order);
+			else
+			{
+				stuff(dsqlScratch->getStatement(), blr_sort);
+				stuff(dsqlScratch->getStatement(), 0);
 			}
 
 			gen_map(dsqlScratch, (*i)->map);

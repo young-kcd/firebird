@@ -5322,8 +5322,8 @@ aggregate_function	: COUNT '(' '*' ')'
 		;
 
 window_function
-	: aggregate_function OVER '(' window_partition_opt ')'
-		{ $$ = make_node(nod_window, e_window_count, $1, make_list($4)); }
+	: aggregate_function OVER '(' window_partition_opt order_clause ')'
+		{ $$ = make_node(nod_window, e_window_count, $1, make_list($4), $5); }
 	;
 
 window_partition_opt

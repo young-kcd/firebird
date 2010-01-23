@@ -909,6 +909,7 @@ enum node_args {
 
 	e_window_expr = 0,				// nod_window
 	e_window_partition,
+	e_window_order,
 	e_window_count,
 
 	e_mod_fld_null_flag_field = 0,				// nod_mod_field_null_flag

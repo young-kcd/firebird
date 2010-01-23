@@ -3474,6 +3474,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				for (SSHORT j = 0; j < n; ++j)
 					blr_print_verb(control, level);
 			}
+			blr_print_verb(control, level);
 			break;
 
 		default:

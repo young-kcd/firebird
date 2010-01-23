@@ -97,14 +97,13 @@ static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
-static void par_partition_by(thread_db*, CompilerScratch*, jrd_nod*& groupNode,
-	jrd_nod*& regroupNode, jrd_nod*& mapNode, SSHORT& partitionStream);
+static jrd_nod* par_partition_by(thread_db*, CompilerScratch*);
 static jrd_nod* par_plan(thread_db*, CompilerScratch*);
 static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
 static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, bool);
 static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
 static jrd_nod* par_rse(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool);
+static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool, bool);
 #ifdef NOT_USED_OR_REPLACED
 static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 #endif
@@ -1763,8 +1762,7 @@ size_t PAR_name(CompilerScratch* csb, Firebird::string& name)
 }
 
 
-static void par_partition_by(thread_db* tdbb, CompilerScratch* csb, jrd_nod*& groupNode,
-	jrd_nod*& regroupNode, jrd_nod*& mapNode, SSHORT& partitionStream)
+static jrd_nod* par_partition_by(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1782,14 +1780,20 @@ static void par_partition_by(thread_db* tdbb, CompilerScratch* csb, jrd_nod*& gr
 		PAR_syntax_error(csb, "blr_partition_by");
 
 	SSHORT context;
+	SSHORT partitionStream;
 	partitionStream = par_context(csb, &context);
+
+	jrd_nod* list = PAR_make_node(tdbb, e_part_length);
+	list->nod_type = nod_list;
+	list->nod_count = e_part_count;
 
 	UCHAR count = csb->csb_blr_reader.getByte();
 
-	if (count == 0)
-		groupNode = regroupNode = NULL;
-	else
+	if (count != 0)
 	{
+		jrd_nod*& groupNode = list->nod_arg[e_part_group];
+		jrd_nod*& regroupNode = list->nod_arg[e_part_regroup];
+
 		groupNode = par_args(tdbb, csb, VALUE, count, count * 3);
 		regroupNode = par_args(tdbb, csb, VALUE, count, count);
 
@@ -1805,7 +1809,14 @@ static void par_partition_by(thread_db* tdbb, CompilerScratch* csb, jrd_nod*& gr
 		}
 	}
 
-	mapNode = par_map(tdbb, csb, partitionStream);
+	if (csb->csb_blr_reader.getByte() != blr_sort)
+		PAR_syntax_error(csb, "blr_sort");
+
+	list->nod_arg[e_part_order] = par_sort(tdbb, csb, true, true);
+	list->nod_arg[e_part_map] = par_map(tdbb, csb, partitionStream);
+	list->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) partitionStream;
+
+	return list;
 }
 
 
@@ -2417,13 +2428,13 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
 				PAR_syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_sorted = par_sort(tdbb, csb, true);
+			rse->rse_sorted = par_sort(tdbb, csb, true, false);
 			break;
 
 		case blr_project:
 			if (rse_op == blr_rs_stream)
 				PAR_syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_projection = par_sort(tdbb, csb, false);
+			rse->rse_projection = par_sort(tdbb, csb, false, false);
 			break;
 
 		case blr_join_type:
@@ -2478,7 +2489,7 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 }
 
 
-static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
+static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag, bool nullForEmpty)
 {
 /**************************************
  *
@@ -2494,6 +2505,9 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 	SET_TDBB(tdbb);
 
 	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
+
+	if (count == 0 && nullForEmpty)
+		return NULL;
 
 	jrd_nod* clause = PAR_make_node(tdbb, count * 3);
 	if (!flag)
@@ -3157,23 +3171,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		NodeStack stack;
 
 		for (unsigned i = 0; i < partitionCount; ++i)
-		{
-			jrd_nod* groupNode;
-			jrd_nod* regroupNode;
-			jrd_nod* mapNode;
-			SSHORT partitionStream;
-
-			par_partition_by(tdbb, csb, groupNode, regroupNode, mapNode, partitionStream);
-
-			jrd_nod* list = PAR_make_node(tdbb, e_part_length);
-			list->nod_type = nod_list;
-			list->nod_count = e_part_count;
-			list->nod_arg[e_part_group] = groupNode;
-			list->nod_arg[e_part_regroup] = regroupNode;
-			list->nod_arg[e_part_map] = mapNode;
-			list->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) partitionStream;
-			stack.push(list);
-		}
+			stack.push(par_partition_by(tdbb, csb));
 
 		node->nod_arg[e_win_windows] = PAR_make_list(tdbb, stack);
 		break;
@@ -3191,7 +3189,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	case blr_group_by:
-		node = par_sort(tdbb, csb, false);
+		node = par_sort(tdbb, csb, false, false);
 		return node->nod_count ? node : NULL;
 
 	case blr_field:

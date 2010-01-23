@@ -600,6 +600,49 @@ namespace Jrd
 		jrd_nod* const m_map;
 	};
 
+	class OrderedWindowStream : public RecordStream
+	{
+		enum State
+		{
+			STATE_PROCESS_EOF = 0,	// We processed everything now process (EOF)
+			STATE_PENDING,			// Values are pending from a prior fetch
+			STATE_EOF_FOUND,		// We encountered EOF from the last attempted fetch
+			STATE_GROUPING			// Entering EVL group before fetching the first record
+		};
+
+		struct Impure : public RecordSource::Impure
+		{
+			State state;
+			FB_UINT64 pending;
+		};
+
+	public:
+		OrderedWindowStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
+			jrd_nod* order, jrd_nod* const map, RecordSource* next);
+
+		void open(thread_db* tdbb);
+		void close(thread_db* tdbb);
+
+		bool getRecord(thread_db* tdbb);
+		bool refetchRecord(thread_db* tdbb);
+		bool lockRecord(thread_db* tdbb);
+
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+
+		void markRecursive();
+		void invalidateRecords(jrd_req* request);
+
+		void findUsedStreams(StreamsArray& streams);
+
+	private:
+		State evaluateGroup(thread_db* tdbb, State state);
+
+		BufferedStream* const m_next;
+		jrd_nod* const m_group;
+		jrd_nod* const m_order;
+		jrd_nod* const m_map;
+	};
+
 	class WindowedStream : public RecordSource
 	{
 	public:
@@ -677,6 +720,12 @@ namespace Jrd
 
 		void locate(thread_db* tdbb, FB_UINT64 position);
 		FB_UINT64 getCount(jrd_req* request) const;
+
+		FB_UINT64 getPosition(jrd_req* request) const
+		{
+			Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+			return impure->irsb_position;
+		}
 
 	private:
 		RecordSource* m_next;

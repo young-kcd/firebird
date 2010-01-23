@@ -827,9 +827,10 @@ public:
 
 struct PartitionMap
 {
-	PartitionMap(dsql_nod* aPartition)
+	PartitionMap(dsql_nod* aPartition, dsql_nod* aOrder)
 		: partition(aPartition),
 		  partitionRemapped(NULL),
+		  order(aOrder),
 		  map(NULL),
 		  context(0)
 	{
@@ -837,6 +838,7 @@ struct PartitionMap
 
 	dsql_nod* partition;
 	dsql_nod* partitionRemapped;
+	dsql_nod* order;
 	dsql_map* map;
 	USHORT context;
 };
@@ -895,7 +897,7 @@ public:
 	}
 
 	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
-	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode);
+	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode, dsql_nod* orderNode);
 };
 
 // Flag values for ctx_flags
