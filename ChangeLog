@@ -1,3 +1,10 @@
+2010-01-22 15:09  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.119.2.1):
+
+	Fixed CORE-2822: Error "no current row for fetch operation" when
+	subquery includes a non-trivial derived table.
+
 2010-01-20 11:21  hvlad
 
 	* firebird2/src/jrd/rse.cpp (1.193.2.1):
