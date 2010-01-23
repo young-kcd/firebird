@@ -5599,6 +5599,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 					if (index_block->idb_lock)
 						LCK_release(tdbb, index_block->idb_lock);
 				}
+
+				delete relation;
 			}
 		}
 	}

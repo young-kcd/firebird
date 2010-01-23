@@ -185,7 +185,7 @@ namespace Jrd {
 	class dsql_req;
 }
 
-namespace
+namespace Why
 {
 	// process shutdown flag
 	bool shutdownStarted = false;
@@ -766,6 +766,7 @@ namespace
 			// There should not be transactions at this point,
 			// but it's no danger in cleaning empty array
 			h->transactions.destroy();
+			h->parent = NULL;
 
 			h->flagDestroying = false;
 		}
@@ -822,7 +823,9 @@ namespace
 		}
 		catch (const Exception&) { }
 	}
-}
+} // namespace Why
+
+using namespace Why;
 
 #ifdef DEV_BUILD
 static void check_status_vector(const ISC_STATUS*);

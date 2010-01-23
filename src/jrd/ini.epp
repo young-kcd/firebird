@@ -626,6 +626,7 @@ void INI_init2(thread_db* tdbb)
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
+			delete relation;
 			(*vector)[id] = NULL;
 			fld = relfld + RFLD_RPT;
 			while (fld[RFLD_F_NAME])
