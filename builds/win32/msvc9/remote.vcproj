@@ -391,6 +391,10 @@
 				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\pwd.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
