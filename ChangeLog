@@ -1,3 +1,136 @@
+2010-01-23 13:01  dimitr
+
+	* firebird2/builds/win32/msvc9/: engine.vcproj (1.17),
+	engine_classic.vcproj (1.17), engine_embed.vcproj (1.17),
+	remote.vcproj (1.5), remote_classic.vcproj (1.5):
+
+	Compile /jrd/pwd.cpp as a remote module, not an engine one. This is
+	logically correct, while looks weird.
+
+2010-01-23 12:10  dimitr
+
+	* firebird2/builds/win32/msvc9/: Firebird2.sln (1.9),
+	Firebird2Boot.sln (1.2), utilities_embed.vcproj (1.3):
+
+	I don't see any real need in utilities_embed. Its files don't
+	contain any references to the EMBEDDED macro.  The only difference
+	is that it misses GSEC which fbembed doesn't need, but let's leave
+	it up to the linker to eliminate the unused code.
+
+2010-01-23 11:24  dimitr
+
+	* firebird2/builds/win32/msvc9/: fbclient.vcproj (1.4),
+	fbembed.vcproj (1.4), remote.vcproj (1.4), remote_classic.vcproj
+	(1.4):
+
+	Fixed the MSVC9 build.
+
+2010-01-23 11:18  dimitr
+
+	* firebird2/src/remote/os/win32/: cntl.cpp (1.48), srvr_w32.cpp
+	(1.82), window.cpp (1.44):
+
+	Fixed the compilation.
+
+2010-01-23 11:14  dimitr
+
+	* firebird2/src/auth/trusted/: AuthSspi.cpp (1.16), AuthSspi.h
+	(1.13):
+
+	Fixed the compilation.
+
+2010-01-23 04:01  asfernandes
+
+	* firebird2/: builds/posix/make.shared.variables (1.126),
+	builds/win32/msvc8/engine.vcproj (1.43),
+	builds/win32/msvc8/engine_classic.vcproj (1.44),
+	builds/win32/msvc8/engine_embed.vcproj (1.41),
+	builds/win32/msvc9/engine.vcproj (1.16),
+	builds/win32/msvc9/engine_classic.vcproj (1.16),
+	builds/win32/msvc9/engine_embed.vcproj (1.16), src/dsql/dsql.h
+	(1.183), src/dsql/gen.cpp (1.222), src/dsql/node.h (1.138),
+	src/dsql/parse.y (1.360), src/dsql/pass1.cpp (1.503), src/jrd/exe.h
+	(1.153), src/jrd/gds.cpp (1.324), src/jrd/par.cpp (1.276),
+	src/jrd/recsrc/RecordSource.h (1.20),
+	src/jrd/recsrc/WindowedStream.cpp (1.7),
+	src/jrd/recsrc/OrderedWindowStream.cpp (1.1):
+
+	Feature CORE-2823 - Support the ORDER BY subclause for current
+	aggregate functions (except LIST)
+
+2010-01-22 16:41  dimitr
+
+	* firebird2/src/jrd/recsrc/HashJoin.cpp (1.8):
+
+	Better pay attention to the buffer scope.
+
+2010-01-22 16:40  dimitr
+
+	* firebird2/src/jrd/recsrc/HashJoin.cpp (1.7):
+
+	Finally, fixed comparison of INTL strings.
+
+2010-01-22 15:54  alexpeshkoff
+
+	* firebird2/: configure.in (1.380),
+	builds/posix/Makefile.in.fbserver (1.30),
+	builds/posix/Makefile.in.libfbembed (1.29),
+	builds/posix/Makefile.in.smp_server (1.10),
+	builds/posix/make.platform.solaris.examples (1.8),
+	builds/posix/make.shared.variables (1.125),
+	builds/posix/prefix.aix_powerpc (1.13),
+	builds/posix/prefix.darwin_i386 (1.20),
+	builds/posix/prefix.darwin_powerpc (1.16),
+	builds/posix/prefix.darwin_ppc64 (1.12),
+	builds/posix/prefix.darwin_x86_64 (1.16),
+	builds/posix/prefix.freebsd (1.21), builds/posix/prefix.linux
+	(1.39), builds/posix/prefix.linux_amd64 (1.20),
+	builds/posix/prefix.linux_arm (1.10),
+	builds/posix/prefix.linux_generic (1.14),
+	builds/posix/prefix.linux_ia64 (1.7),
+	builds/posix/prefix.linux_mips (1.8),
+	builds/posix/prefix.linux_mipsel (1.11),
+	builds/posix/prefix.linux_powerpc (1.10),
+	builds/posix/prefix.linux_s390x (1.4),
+	builds/posix/prefix.linux_sparc32 (1.18), builds/posix/prefix.mingw
+	(1.51), builds/posix/prefix.netbsd (1.10),
+	builds/posix/prefix.solaris-64gcc (1.13),
+	builds/posix/prefix.solx86gcc (1.38),
+	builds/posix/prefix.solx86gcc_64 (1.10), src/auth/Auth.cpp (1.1),
+	src/auth/Auth.h (1.1), src/auth/AuthInterface.h (1.1),
+	src/auth/SecurityDatabase/LegacyClient.cpp (1.1),
+	src/auth/SecurityDatabase/LegacyClient.h (1.1),
+	src/auth/trusted/AuthSspi.cpp (1.15), src/auth/trusted/AuthSspi.h
+	(1.12), src/common/classes/ClumpletReader.cpp (1.52),
+	src/common/classes/ClumpletReader.h (1.27),
+	src/common/classes/ClumpletWriter.cpp (1.38),
+	src/common/classes/ClumpletWriter.h (1.19),
+	src/common/classes/auto.h (1.23), src/include/consts_pub.h (1.48),
+	src/jrd/UserManagement.cpp (1.15), src/jrd/alt.cpp (1.87),
+	src/jrd/dyn.epp (1.172), src/jrd/isc_sync.cpp (1.230),
+	src/jrd/jrd.cpp (1.598), src/jrd/jrd_pwd.h (1.40), src/jrd/pwd.cpp
+	(1.83), src/jrd/scl.epp (1.118), src/jrd/scl.h (1.32),
+	src/jrd/svc.cpp (1.307), src/jrd/svc.h (1.88), src/jrd/tra.cpp
+	(1.218), src/jrd/trace/TraceObjects.cpp (1.22), src/remote/inet.cpp
+	(1.302), src/remote/inet_server.cpp (1.102),
+	src/remote/interface.cpp (1.229), src/remote/protocol.cpp (1.98),
+	src/remote/protocol.h (1.56), src/remote/remote.cpp (1.94),
+	src/remote/remote.h (1.102), src/remote/server.cpp (1.272),
+	src/remote/xnet.cpp (1.148), src/remote/os/win32/wnet.cpp (1.90),
+	src/utilities/gsec/gsec.cpp (1.123),
+	src/utilities/gsec/security.epp (1.39),
+	src/utilities/ntrace/TracePluginImpl.cpp (1.32):
+
+	Moved authentication code from engine to remote listener.  Get
+	ready for authentication plugins.
+
+2010-01-22 15:05  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.133):
+
+	Fixed CORE-2822: Error "no current row for fetch operation" when
+	subquery includes a non-trivial derived table.
+
 2010-01-22 11:25  dimitr
 
 	* firebird2/src/jrd/recsrc/HashJoin.cpp (1.6):
