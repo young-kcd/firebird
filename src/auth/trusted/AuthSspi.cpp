@@ -326,20 +326,20 @@ void WinSspiClient::release()
 	interfaceFree(this);
 }
 
-WinSspiServerInstance()
-	: sspiData(), sspi(0)
+WinSspiServerInstance::WinSspiServerInstance()
 { }
 
-WinSspiClientInstance()
-	: sspiData(), sspi(0)
+WinSspiClientInstance::WinSspiClientInstance()
 { }
 
 Result WinSspiServerInstance::startAuthentication(bool isService, const char* dbName,
 												const unsigned char* dpb, unsigned int dpbSize,
 												WriterInterface* writerInterface)
 {
-	UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
-	Firebird::ClumpletReader rdr(isService ?  : , dpb, dpbSize);
+	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
+	Firebird::ClumpletReader rdr(isService ? Firebird::ClumpletReader::spbList : 
+								 Firebird::ClumpletReader::dpbList,
+								 dpb, dpbSize);
 	if (rdr.find(tag))
 	{
 		sspiData.clear();
@@ -362,7 +362,7 @@ Result WinSspiServerInstance::contAuthentication(WriterInterface* writerInterfac
 	{
 		return AUTH_FAILED;
 	}
-	if (!sspi.active())
+	if (!sspi.isActive())
 	{
 		bool wheel = false;
 		Firebird::string login;
@@ -405,13 +405,13 @@ Result WinSspiClientInstance::startAuthentication(bool isService, const char*, D
 			dpb->drop();
 		}
 
-		if (sspi.active())
+		if (sspi.isActive())
 		{
-			dpb->insert(tag, sspiData.begin(), sspiData.getCount());
+			dpb->add(tag, sspiData.begin(), sspiData.getCount());
 		}
 	}
 
-	return sspi.active() ? AUTH_SUCCESS : AUTH_CONTINUE;
+	return sspi.isActive() ? AUTH_SUCCESS : AUTH_CONTINUE;
 }
 
 Result WinSspiClientInstance::contAuthentication(const unsigned char* data, unsigned int size)
@@ -423,7 +423,7 @@ Result WinSspiClientInstance::contAuthentication(const unsigned char* data, unsi
 	{
 		return AUTH_FAILED;
 	}
-	return sspi.active() ? AUTH_MORE_DATA : AUTH_CONTINUE;
+	return sspi.isActive() ? AUTH_MORE_DATA : AUTH_CONTINUE;
 }
 
 void WinSspiClientInstance::getData(unsigned char** data, unsigned short* dataSize)

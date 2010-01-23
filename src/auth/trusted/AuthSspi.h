@@ -97,7 +97,7 @@ public:
 
 	WinSspiServerInstance();
 private:
-	AuthSspi::DataHolder data;
+	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;
 };
 
@@ -111,7 +111,7 @@ public:
 
 	WinSspiClientInstance();
 private:
-	AuthSspi::DataHolder data;
+	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;
 };
 

@@ -107,6 +107,7 @@
 #include "../common/utils_proto.h"
 #include "../../../common/classes/semaphore.h"
 #include "../../../common/classes/FpeControl.h"
+#include "../jrd/ibase.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);

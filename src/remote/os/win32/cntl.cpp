@@ -34,6 +34,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/init.h"
+#include "../jrd/ibase.h"
 
 #include <windows.h>
 
