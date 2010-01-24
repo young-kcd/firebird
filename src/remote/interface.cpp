@@ -5558,32 +5558,35 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 }
 
 
-namespace {
-class InitList
+namespace
 {
-public:
-	typedef Firebird::HalfStaticArray<Auth::ClientPlugin*, 8> List;
-	static List* init()
+	class InitList
 	{
-		List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
+	public:
+		typedef Firebird::HalfStaticArray<Auth::ClientPlugin*, 8> List;
 
-		// this code will be replaced with known plugins scan
-		list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseClient>());
+		static List* init()
+		{
+			List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
+
+			// this code will be replaced with known plugins scan
+			list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseClient>());
 #ifdef TRUSTED_AUTH
-		list->push(Auth::interfaceAlloc<Auth::WinSspiClient>());
+			list->push(Auth::interfaceAlloc<Auth::WinSspiClient>());
 #endif
 #ifdef AUTH_DEBUG
-		list->push(Auth::interfaceAlloc<Auth::DebugClient>());
+			list->push(Auth::interfaceAlloc<Auth::DebugClient>());
 #endif
 
-		// must be last
-		list->push(NULL);
-		return list;
-	}
-};
+			// must be last
+			list->push(NULL);
 
-Firebird::InitInstance<InitList::List, InitList> listArray;
-}
+			return list;
+		}
+	};
+
+	Firebird::InitInstance<InitList::List, InitList> listArray;
+}	// namespace
 
 
 static bool init(ISC_STATUS* user_status,
@@ -5622,6 +5625,7 @@ static bool init(ISC_STATUS* user_status,
 		{
 			// plugin may be used
 			currentInstance.reset(list[sequence]->instance());
+
 			switch(currentInstance->startAuthentication(op == op_service_attach, file_name.c_str(), &di))
 			{
 			case Auth::AUTH_SUCCESS:
@@ -5697,8 +5701,9 @@ static bool init(ISC_STATUS* user_status,
 		}
 
 		// Check response
-		cstring* n = 0;
-		cstring* d = 0;
+		cstring* n = NULL;
+		cstring* d = NULL;
+
 		switch(packet->p_operation)
 		{
 		case op_trusted_auth:
@@ -5830,8 +5835,8 @@ static bool mov_dsql_message(ISC_STATUS* status,
  *
  **************************************/
 
-	try {
-
+	try
+	{
 		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count)
 		{
 			move_error(Arg::Gds(isc_dsql_sqlda_err));
@@ -6856,4 +6861,3 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 
 	return return_success(rdb);
 }
-

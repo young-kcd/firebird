@@ -220,6 +220,7 @@ class InitList
 {
 public:
 	typedef Firebird::HalfStaticArray<Auth::ServerPlugin*, 8> List;
+
 	static List* init()
 	{
 		PathName authMethod(Config::getAuthMethod());
@@ -243,6 +244,7 @@ public:
 
 		// must be last
 		list->push(NULL);
+
 		return list;
 	}
 };
@@ -313,19 +315,19 @@ public:
 			Auth::Result ar = first ?
 				authInstance->startAuthentication(operation == op_service_attach, fileName.c_str(),
 												  wrt.getBuffer(), wrt.getBufferLength(),
-												  &authBlockInterface)
-			:
+												  &authBlockInterface) :
 				authInstance->contAuthentication(&authBlockInterface,
 												 data->cstr_address, data->cstr_length);
 
 			cstring* s;
+
 			switch(ar)
 			{
 			case Auth::AUTH_MORE_DATA:
 				if (port->port_protocol < PROTOCOL_VERSION11)
 				{
 					authInstance->release();
-					authInstance = 0;
+					authInstance = NULL;
 					working = false;
 					break;
 				}
@@ -363,7 +365,7 @@ public:
 					else
 					{
 						authInstance->release();
-						authInstance = 0;
+						authInstance = NULL;
 						working = false;
 						break;
 					}
@@ -375,21 +377,21 @@ public:
 			case Auth::AUTH_CONTINUE:
 				++sequence;
 				authInstance->release();
-				authInstance = 0;
+				authInstance = NULL;
 				continue;
 
 			case Auth::AUTH_SUCCESS:
 				usernameFailedLogins->loginSuccess(userName);
 				remoteFailedLogins->loginSuccess(remoteId);
 				authInstance->release();
-				authInstance = 0;
+				authInstance = NULL;
 				authBlockInterface.store(wrt);
 				part2(port, operation, fileName.c_str(), fileName.length(), wrt, send);
 				return true;
 
 			case Auth::AUTH_FAILED:
 				authInstance->release();
-				authInstance = 0;
+				authInstance = NULL;
 				working = false;
 				break;
 			}
@@ -1381,7 +1383,7 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 	if (port->port_auth->authenticate(port, send, NULL))
 	{
 		delete port->port_auth;
-		port->port_auth = 0;
+		port->port_auth = NULL;
 	}
 }
 
@@ -3775,7 +3777,7 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
 	if (sa->authenticate(port, send, &p_trau->p_trau_data))
 	{
 		delete sa;
-		port->port_auth = 0;
+		port->port_auth = NULL;
 	}
 }
 
@@ -4601,7 +4603,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 	if (port->port_auth->authenticate(port, sendL, NULL))
 	{
 		delete port->port_auth;
-		port->port_auth = 0;
+		port->port_auth = NULL;
 	}
 }
 

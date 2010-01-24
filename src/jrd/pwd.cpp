@@ -73,9 +73,9 @@ int stopTimer(const int, const int mask, void*)
 
 THREAD_ENTRY_DECLARE threadTimer(THREAD_ENTRY_PARAM)
 {
-	while(active == 1)
+	while (active == 1)
 	{
-		{
+		{	// scope
 			MutexLockGuard g(timerMutex);
 			if (cnt == 0)
 			{
@@ -436,7 +436,7 @@ ServerInstance* SecurityDatabaseServer::instance()
 void SecurityDatabaseServer::getName(unsigned char** data, unsigned short* dataSize)
 {
 	const char* name = "LEGACY_AUTH";
-	*data = (unsigned char*)name;
+	*data = (unsigned char*) name;
 	*dataSize = strlen(name);
 }
 
