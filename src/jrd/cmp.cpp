@@ -634,6 +634,9 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 			case obj_package_header:
 				objType = id_package;
 				break;
+			case obj_type_MAX:	// CallerName() constructor
+				fb_assert(transaction->tra_caller_name.name.isEmpty());
+				break;
 			default:
 				fb_assert(false);
 			}
