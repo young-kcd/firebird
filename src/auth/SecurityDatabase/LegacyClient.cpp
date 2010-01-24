@@ -39,7 +39,7 @@ ClientInstance* SecurityDatabaseClient::instance()
 void SecurityDatabaseClient::getName(unsigned char** data, unsigned short* dataSize)
 {
 	const char* name = "LEGACY_AUTH";
-	*data = (unsigned char*)name;
+	*data = (unsigned char*) name;
 	*dataSize = strlen(name);
 }
 
@@ -50,9 +50,9 @@ void SecurityDatabaseClient::release()
 
 Result SecurityDatabaseClientInstance::startAuthentication(bool, const char*, DpbInterface* dpb)
 {
-	return dpb->find(isc_dpb_user_name) && (dpb->find(isc_dpb_password) || 
-											dpb->find(isc_dpb_password_enc)) ? 
-		AUTH_SUCCESS : AUTH_CONTINUE;
+	return dpb->find(isc_dpb_user_name) &&
+		(dpb->find(isc_dpb_password) || dpb->find(isc_dpb_password_enc)) ?
+			AUTH_SUCCESS : AUTH_CONTINUE;
 }
 
 Result SecurityDatabaseClientInstance::contAuthentication(const unsigned char*, unsigned int)

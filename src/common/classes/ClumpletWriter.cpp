@@ -87,9 +87,9 @@ ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t
 	create(buffer, buffLen, tag);
 }
 
-ClumpletWriter::ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit, 
+ClumpletWriter::ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit,
 							   const UCHAR* buffer, size_t buffLen)
-	 : ClumpletReader(pool, kl, buffer, buffLen), sizeLimit(limit), 
+	 : ClumpletReader(pool, kl, buffer, buffLen), sizeLimit(limit),
 	   kindList(kl), dynamic_buffer(getPool())
 {
 	create(buffer, buffLen, kl->tag);

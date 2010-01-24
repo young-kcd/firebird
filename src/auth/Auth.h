@@ -43,6 +43,7 @@ class WriterImplementation : public WriterInterface, public Firebird::PermanentS
 {
 public:
 	WriterImplementation(Firebird::MemoryPool&, bool svcFlag);
+
 	void store(Firebird::ClumpletWriter& to);
 
 	void reset();
@@ -70,6 +71,7 @@ private:
 //#define AUTH_DEBUG
 
 #ifdef AUTH_DEBUG
+
 // The idea of debug plugin is to send some data from server to client,
 // modidy them on client and return result (which becomes login name) to the server
 
@@ -99,6 +101,7 @@ public:
                               const unsigned char* data, unsigned int size);
     void getData(unsigned char** data, unsigned short* dataSize);
     void release();
+
 private:
 	unsigned char str[256];
 };
@@ -110,12 +113,14 @@ public:
 	Result contAuthentication(const unsigned char* data, unsigned int size);
     void getData(unsigned char** data, unsigned short* dataSize);
     void release();
+
 private:
 	unsigned char str[256];
 };
+
 #endif // AUTH_DEBUG
 
 } // namespace Auth
 
 
-#endif // FB_STATUS_ARG
+#endif // FB_AUTH_H

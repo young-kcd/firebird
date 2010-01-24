@@ -2730,7 +2730,7 @@ USHORT CVT_get_string_ptr(const dsc* desc, USHORT* ttype, UCHAR** address,
  *      already a string, output pointers point to ttype_ascii.
  *
  **************************************/
-	fb_assert(err != NULL); 
+	fb_assert(err != NULL);
 
 	CommonCallbacks callbacks(err);
 	return CVT_get_string_ptr_common(desc, ttype, address, temp, length, &callbacks);

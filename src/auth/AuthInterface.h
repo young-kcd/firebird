@@ -102,10 +102,10 @@ public:
 class ServerInstance : public InterfaceBase
 {
 public:
-	virtual Result startAuthentication(bool isService, const char* dbName, 
+	virtual Result startAuthentication(bool isService, const char* dbName,
 									   const unsigned char* dpb, unsigned int dpbSize,
 									   WriterInterface* writerInterface) = 0;
-	virtual Result contAuthentication(WriterInterface* writerInterface, 
+	virtual Result contAuthentication(WriterInterface* writerInterface,
 									  const unsigned char* data, unsigned int size) = 0;
 	virtual void getData(unsigned char** data, unsigned short* dataSize) = 0;
 };

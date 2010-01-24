@@ -5617,7 +5617,7 @@ static bool init(ISC_STATUS* user_status,
 
 	for (bool working = true; working && list[sequence]; ++sequence)
 	{
-		if (port->port_protocol >= PROTOCOL_VERSION13 || 
+		if (port->port_protocol >= PROTOCOL_VERSION13 ||
 			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(list[sequence])))
 		{
 			// plugin may be used
@@ -5722,7 +5722,7 @@ static bool init(ISC_STATUS* user_status,
 			disconnect(port);
 			return false;
 		}
-			
+
 		bool contFlag = true;
 		if (n && n->cstr_length)
 		{
@@ -5743,7 +5743,7 @@ static bool init(ISC_STATUS* user_status,
 
 			if (currentInstance)
 			{
-				Auth::Result rc = currentInstance->startAuthentication(op == op_service_attach, 
+				Auth::Result rc = currentInstance->startAuthentication(op == op_service_attach,
 																	   file_name.c_str(), 0);
 				if (rc == Auth::AUTH_FAILED)
 				{
@@ -5778,7 +5778,7 @@ static bool init(ISC_STATUS* user_status,
 		packet->p_operation = op_trusted_auth;
 		d = &packet->p_trau.p_trau_data;
 		currentInstance->getData(&d->cstr_address, &d->cstr_length);
-		
+
 		if (!send_packet(rdb->rdb_port, packet, user_status))
 		{
 			break;

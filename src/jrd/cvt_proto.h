@@ -72,7 +72,7 @@ inline void CVT_move(const dsc* from, dsc* to)
 inline USHORT CVT_get_string_ptr(const dsc* desc, USHORT* ttype, UCHAR** address,
                                  vary* temp, USHORT length)
 {
-	return CVT_get_string_ptr_common(desc, ttype, address, temp, length, 
+	return CVT_get_string_ptr_common(desc, ttype, address, temp, length,
 									 &Jrd::EngineCallbacks::instance);
 }
 

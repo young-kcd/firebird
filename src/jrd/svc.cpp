@@ -176,7 +176,7 @@ namespace {
 
 	void spbVersionError()
 	{
-		ERR_post(Arg::Gds(isc_bad_spb_form) << 
+		ERR_post(Arg::Gds(isc_bad_spb_form) <<
 				 Arg::Gds(isc_wrospbver));
 	}
 
@@ -747,9 +747,9 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_auth_block(getPool()),
-	svc_trusted_login(getPool()), svc_trusted_role(false), 
+	svc_trusted_login(getPool()), svc_trusted_role(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
-	svc_command_line(getPool()), 
+	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
 	svc_remote_pid(0), svc_current_guard(NULL)
 {
@@ -799,7 +799,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 		else
 		{
-			if (svc_trusted_login.hasData()) 
+			if (svc_trusted_login.hasData())
 			{
 				svc_username = svc_trusted_login;
 			}
@@ -820,12 +820,12 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 						}
 					}
 				}
-				else 
+				else
 				{
 					// we have embedded service connection, check environment and unix OS auth
 					if (!fb_utils::readenv(ISC_USER, svc_username))
 					{
-						if (ISC_get_user(&svc_username, NULL, NULL, NULL)) 
+						if (ISC_get_user(&svc_username, NULL, NULL, NULL))
 						{
 							svc_username = SYSDBA_USER_NAME;
 						}

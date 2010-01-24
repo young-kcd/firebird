@@ -96,6 +96,7 @@ public:
     void release();
 
 	WinSspiServerInstance();
+
 private:
 	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;
@@ -110,6 +111,7 @@ public:
     void release();
 
 	WinSspiClientInstance();
+
 private:
 	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;

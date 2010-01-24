@@ -57,7 +57,7 @@ public:
 		name.copyTo(path_buffer, MAXPATHLEN);
 	}
 
-	static Result verify(WriterInterface* authBlock, 
+	static Result verify(WriterInterface* authBlock,
 						 Firebird::ClumpletReader& originalDpb);
 
 	static void Shutdown(void*);
@@ -119,11 +119,11 @@ public:
 class SecurityDatabaseServerInstance : public ServerInstance
 {
 public:
-	
-	Result startAuthentication(bool isService, const char* dbName, 
+
+	Result startAuthentication(bool isService, const char* dbName,
 							   const unsigned char* dpb, unsigned int dpbSize,
 							   WriterInterface* writerInterface);
-	Result contAuthentication(WriterInterface* writerInterface, 
+	Result contAuthentication(WriterInterface* writerInterface,
 							  const unsigned char* data, unsigned int size);
 	void getData(unsigned char** data, unsigned short* dataSize);
 	void release();

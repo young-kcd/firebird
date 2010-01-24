@@ -22,9 +22,8 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *
- *
  */
+
 #ifndef AUTH_LEGACY_CLIENT_H
 #define AUTH_LEGACY_CLIENT_H
 

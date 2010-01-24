@@ -121,7 +121,7 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, si
 	rewind();	// this will set cur_offset and spbState
 }
 
-ClumpletReader::ClumpletReader(MemoryPool& pool, const KindList* kl, 
+ClumpletReader::ClumpletReader(MemoryPool& pool, const KindList* kl,
 							   const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
 	AutoStorage(pool), kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
 {
@@ -734,7 +734,7 @@ const ClumpletReader::KindList ClumpletReader::spbList[] = {
 	{ClumpletReader::EndOfList, 0}
 };
 
-AuthReader::AuthReader(const AuthBlock& authBlock) 
+AuthReader::AuthReader(const AuthBlock& authBlock)
 	: ClumpletReader(ClumpletReader::WideUnTagged, authBlock.begin(), authBlock.getCount())
 {
 	rewind();

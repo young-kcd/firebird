@@ -23,8 +23,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *
- *
  */
 
 #include "firebird.h"
@@ -32,13 +30,15 @@
 #include "../jrd/ibase.h"
 
 #ifdef AUTH_DEBUG
-namespace {
-void debugName(unsigned char** data, unsigned short* dataSize)
+
+namespace
 {
-	const char* name = "DEBUG_AUTH";
-	*data = (unsigned char*)name;
-	*dataSize = strlen(name);
-}
+	void debugName(unsigned char** data, unsigned short* dataSize)
+	{
+		const char* name = "DEBUG_AUTH";
+		*data = (unsigned char*) name;
+		*dataSize = strlen(name);
+	}
 }
 
 namespace Auth {
@@ -78,14 +78,17 @@ Result DebugServerInstance::startAuthentication(bool isService, const char* dbNa
 												WriterInterface* writerInterface)
 {
 	str[0] = 0;
-	Firebird::ClumpletReader rdr(isService ? Firebird::ClumpletReader::spbList : 
-								 Firebird::ClumpletReader::dpbList, dpb, dpbSize);
+	Firebird::ClumpletReader rdr(isService ?
+		Firebird::ClumpletReader::spbList :
+		Firebird::ClumpletReader::dpbList, dpb, dpbSize);
+
 	if (rdr.find(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth))
 	{
 		memcpy(str, rdr.getBytes(), rdr.getClumpLength());
 		str[rdr.getClumpLength()] = 0;
 	}
-	strcat((char*)str, "_");
+
+	strcat((char*) str, "_");
 	return AUTH_MORE_DATA;
 }
 
@@ -100,7 +103,7 @@ Result DebugServerInstance::contAuthentication(WriterInterface* writerInterface,
 void DebugServerInstance::getData(unsigned char** data, unsigned short* dataSize)
 {
 	*data = str;
-	*dataSize = strlen((const char*)str);
+	*dataSize = strlen((const char*) str);
 	//fprintf(stderr, "DebugServerInstance::getData: %.*s\n", *dataSize, *data);
 }
 
@@ -111,11 +114,11 @@ void DebugServerInstance::release()
 
 Result DebugClientInstance::startAuthentication(bool isService, const char*, DpbInterface* dpb)
 {
-	strcpy((char*)str, "HAND");
+	strcpy((char*) str, "HAND");
 	if (dpb)
 	{
-		dpb->add(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth, str, 
-				 strlen((const char*)str));
+		dpb->add(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth,
+			str, strlen((const char*) str));
 		return AUTH_SUCCESS;
 	}
 	return AUTH_MORE_DATA;
@@ -130,14 +133,14 @@ Result DebugClientInstance::contAuthentication(const unsigned char* data, unsign
 	//fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
 	memcpy(str, data, size);
 	str[size] = 0;
-	strcat((char*)str, "SHAKE");
+	strcat((char*) str, "SHAKE");
 	return AUTH_CONTINUE;
 }
 
 void DebugClientInstance::getData(unsigned char** data, unsigned short* dataSize)
 {
 	*data = str;
-	*dataSize = strlen((const char*)str);
+	*dataSize = strlen((const char*) str);
 	//fprintf(stderr, "DebugClientInstance::getData: %.*s\n", *dataSize, *data);
 }
 
@@ -147,12 +150,13 @@ void DebugClientInstance::release()
 }
 
 } // namespace Auth
+
 #endif // AUTH_DEBUG
 
 namespace Auth {
 
 WriterImplementation::WriterImplementation(Firebird::MemoryPool& pool, bool svcFlag)
-	: Firebird::PermanentStorage(pool), body(getPool()), 
+	: Firebird::PermanentStorage(pool), body(getPool()),
 	  sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
 { }
 
@@ -207,4 +211,3 @@ bool legacy(Plugin* plugin)
 }
 
 } // namespace Auth
-

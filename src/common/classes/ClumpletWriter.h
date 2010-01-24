@@ -53,7 +53,7 @@ public:
 
 	// Create writer from a given buffer with possibly different clumplet version
 	ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer = NULL, size_t buffLen = 0);
-	ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit, 
+	ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit,
 				   const UCHAR* buffer = NULL, size_t buffLen = 0);
 
 	void reset(UCHAR tag);
@@ -110,6 +110,7 @@ class AuthWriter : public ClumpletWriter
 public:
 	AuthWriter(MemoryPool& pool) : ClumpletWriter(pool, ClumpletWriter::WideUnTagged, MAX_DPB_SIZE)
 	{ }
+
 	void putLevel(USHORT num, const char* name, const char* method, const char* details);
 };
 

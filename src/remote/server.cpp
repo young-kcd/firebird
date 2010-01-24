@@ -258,11 +258,11 @@ private:
 public:
 	ServerAuth(rem_port* port, const char* fName, int fLen, const UCHAR *pb, int pbLen,
 			   Part2* p2, P_OP op)
-		: fileName(getPool()), 
+		: fileName(getPool()),
 		  wrt(getPool(), op == op_service_attach ? ClumpletReader::spbList : ClumpletReader::dpbList,
-		  	  MAX_DPB_SIZE, pb, pbLen), 
-		  authBlockInterface(getPool(), op == op_service_attach), 
-		  remoteId(getPool()), userName(getPool()), authInstance(0), 
+		  	  MAX_DPB_SIZE, pb, pbLen),
+		  authBlockInterface(getPool(), op == op_service_attach),
+		  remoteId(getPool()), userName(getPool()), authInstance(0),
 		  part2(p2), sequence(0), operation(op)
 	{
 		// Do not store port here - it will be passed to authenticate() explicitly
@@ -280,7 +280,7 @@ public:
 		{
 			remoteId += string(port->port_address_str->str_data, port->port_address_str->str_length);
 		}
-		
+
 		if (wrt.find(isc_dpb_user_name))
 		{
 			wrt.getString(userName);
@@ -312,10 +312,10 @@ public:
 			fb_assert(first || data);
 			Auth::Result ar = first ?
 				authInstance->startAuthentication(operation == op_service_attach, fileName.c_str(),
-												  wrt.getBuffer(), wrt.getBufferLength(), 
+												  wrt.getBuffer(), wrt.getBufferLength(),
 												  &authBlockInterface)
 			:
-				authInstance->contAuthentication(&authBlockInterface, 
+				authInstance->contAuthentication(&authBlockInterface,
 												 data->cstr_address, data->cstr_length);
 
 			cstring* s;
@@ -1376,7 +1376,7 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
 
-	port->port_auth = new ServerAuth(port, file, l, attach->p_atch_dpb.cstr_address, 
+	port->port_auth = new ServerAuth(port, file, l, attach->p_atch_dpb.cstr_address,
 									 attach->p_atch_dpb.cstr_length, attach_database2, operation);
 	if (port->port_auth->authenticate(port, send, NULL))
 	{

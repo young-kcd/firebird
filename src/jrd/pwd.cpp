@@ -322,7 +322,7 @@ void SecurityDatabase::prepare()
  *	Public interface
  */
 
-Result SecurityDatabase::verify(WriterInterface* authBlock, 
+Result SecurityDatabase::verify(WriterInterface* authBlock,
 								ClumpletReader& originalDpb)
 {
 	static AmCache useNative = AM_UNKNOWN;
@@ -445,7 +445,7 @@ void SecurityDatabaseServer::release()
 	gds__free(this);
 }
 
-Result SecurityDatabaseServerInstance::startAuthentication(bool isService, const char*, 
+Result SecurityDatabaseServerInstance::startAuthentication(bool isService, const char*,
 											  const unsigned char* dpb, unsigned int dpbSize,
 											  WriterInterface* writerInterface)
 {
@@ -453,7 +453,7 @@ Result SecurityDatabaseServerInstance::startAuthentication(bool isService, const
 	return SecurityDatabase::verify(writerInterface, rdr);
 }
 
-Result SecurityDatabaseServerInstance::contAuthentication(WriterInterface* writerInterface, 
+Result SecurityDatabaseServerInstance::contAuthentication(WriterInterface* writerInterface,
 											  const unsigned char* data, unsigned int size)
 {
 	return AUTH_FAILED;

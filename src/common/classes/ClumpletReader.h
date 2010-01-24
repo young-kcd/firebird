@@ -168,7 +168,7 @@ public:
 
 	AuthReader(const AuthBlock& authBlock);
 
-	bool getInfo(string* name, string* method = 0, string* details = 0);
+	bool getInfo(string* name, string* method = NULL, string* details = NULL);
 };
 
 } // namespace Firebird
