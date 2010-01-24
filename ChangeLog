@@ -1,3 +1,20 @@
+2010-01-23 17:28  hvlad
+
+	* firebird2/src/jrd/: Database.cpp (1.15), ini.epp (1.135), jrd.cpp
+	(1.599), why.cpp (1.273):
+
+	Fixed bug CORE-2824 : Small memory and handles leak at every
+	connect\disconnect
+
+2010-01-23 15:14  alexpeshkoff
+
+	* firebird2/src/: common/cvt.cpp (1.46), common/cvt.h (1.5),
+	jrd/SysFunction.cpp (1.87), jrd/cvt2.cpp (1.76), jrd/cvt_proto.h
+	(1.18), jrd/mov.cpp (1.44):
+
+	Fixed unregistered bug - invalid datetime2string conversion,
+	reported by Claudio
+
 2010-01-23 13:01  dimitr
 
 	* firebird2/builds/win32/msvc9/: engine.vcproj (1.17),
