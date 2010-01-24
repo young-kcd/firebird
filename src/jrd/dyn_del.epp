@@ -873,8 +873,10 @@ void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 		{
 			--(*ptr);
 			Firebird::MetaName rel_name(RFR.RDB$RELATION_NAME);
-			MetaTmp(RFR.RDB$FIELD_SOURCE)
+			{
+				MetaNameProxy tmp(RFR.RDB$FIELD_SOURCE);
 				DYN_execute(gbl, ptr, &rel_name, &tmp, NULL, NULL, NULL);
+			}
 		}
 	END_FOR;
 	if (!DYN_REQUEST(drq_e_lfield)) {

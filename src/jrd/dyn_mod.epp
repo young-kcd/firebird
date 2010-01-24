@@ -1443,8 +1443,10 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 				default:
 					--(*ptr);
-					MetaTmp(REL.RDB$RELATION_NAME)
+					{
+						MetaNameProxy tmp(REL.RDB$RELATION_NAME);
 						DYN_execute(gbl, ptr, &tmp, NULL, NULL, NULL, NULL);
+					}
 				}
 			}
 		END_MODIFY;
@@ -2224,8 +2226,10 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
 
 				default:
 					--(*ptr);
-					MetaTmp(RFR.RDB$FIELD_SOURCE)
+					{
+						MetaNameProxy tmp(RFR.RDB$FIELD_SOURCE);
 						DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
+					}
 				}
 			}
 

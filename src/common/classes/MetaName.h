@@ -104,19 +104,18 @@ protected:
 	static void adjustLength(const char* const s, size_t& l);
 };
 
-// This class & macro are used to simplify calls from GDML
-class LoopMetaName : public Firebird::MetaName
+// This class is used to simplify calls from GDML, when pointer to MetaName 
+// should be passed to some function, at the same time reflecting changes in 
+// associated GDML variable (database field).
+class MetaNameProxy : public MetaName
 {
-	bool flag;
 	char* target;
 public:
-	LoopMetaName(char* s) : Firebird::MetaName(s),
-		flag(true), target(s) { }
-	~LoopMetaName() { strcpy(target, c_str()); }
-	operator bool() const { return flag; }
-	void stop() { flag = false; }
+	MetaNameProxy(char* s)
+	 : Firebird::MetaName(s), target(s) 
+	{ }
+	~MetaNameProxy() { strcpy(target, c_str()); }
 };
-#define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())
 
 } // namespace Firebird
 

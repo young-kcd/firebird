@@ -1348,8 +1348,10 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 
 				default:
 					--(*ptr);
-					MetaTmp(X.RDB$FUNCTION_NAME)
+					{
+						MetaNameProxy tmp(X.RDB$FUNCTION_NAME);
 						DYN_execute(gbl, ptr, NULL, NULL, NULL, &tmp, NULL);
+					}
 				}
 			}
 
@@ -1727,9 +1729,11 @@ void DYN_define_global_field(Global*		gbl,
 
 			default:
 				--(*ptr);
-				MetaTmp(FLD.RDB$FIELD_NAME)
+				{
+					MetaNameProxy tmp(FLD.RDB$FIELD_NAME);
 					DYN_execute(gbl, ptr, relation_name, field_name ? field_name : &tmp,
 								NULL, NULL, NULL);
+				}
 			}
 		}
 
@@ -2570,8 +2574,10 @@ void DYN_define_local_field(Global*		gbl,
 				break;
 
 			default:
-				MetaTmp(RFR.RDB$FIELD_SOURCE)
+				{	
+					MetaNameProxy tmp(RFR.RDB$FIELD_SOURCE);
 					DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
+				}
 			}
 		}
 
@@ -2841,8 +2847,10 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 
 			default:
 				--(*ptr);
-				MetaTmp(REL.RDB$RELATION_NAME)
+				{
+					MetaNameProxy tmp(REL.RDB$RELATION_NAME);
 					DYN_execute(gbl, ptr, &tmp, &field_name, NULL, NULL, NULL);
+				}
 			}
 		} // while
 
@@ -3357,8 +3365,10 @@ void DYN_define_sql_field(Global*		gbl,
 
 				default:
 					--(*ptr);
-					MetaTmp(RFR.RDB$FIELD_SOURCE)
+					{
+						MetaNameProxy tmp(RFR.RDB$FIELD_SOURCE);
 						DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
+					}
 				}
 			}
 
@@ -3636,8 +3646,10 @@ void DYN_define_trigger(Global*						gbl,
 
 			default:
 				--(*ptr);
-				MetaTmp(X.RDB$RELATION_NAME)
+				{
+					MetaNameProxy tmp(X.RDB$RELATION_NAME);
 					DYN_execute(gbl, ptr, &tmp, NULL, &t, NULL, NULL);
+				}
 			}
 		}
 
@@ -3749,8 +3761,10 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 
 				default:
 					--(*ptr);
-					MetaTmp(VRL.RDB$RELATION_NAME)
+					{
+						MetaNameProxy tmp(VRL.RDB$RELATION_NAME);
 						DYN_execute(gbl, ptr, &tmp, NULL, NULL, NULL, NULL);
+					}
 				}
 			}
 
