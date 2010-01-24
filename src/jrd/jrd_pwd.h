@@ -60,7 +60,7 @@ public:
 	static Result verify(WriterInterface* authBlock,
 						 Firebird::ClumpletReader& originalDpb);
 
-	static void Shutdown(void*);
+	static void shutdown(void*);
 
 	static void hash(Firebird::string& h, const Firebird::string& userName, const TEXT* passwd)
 	{

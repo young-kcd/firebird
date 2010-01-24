@@ -275,7 +275,7 @@ bool SecurityDatabase::lookup_user(const char* user_name, char* pwd)
 	isc_rollback_transaction(status, &lookup_trans);
 	checkStatus("isc_rollback_transaction");
 
-	fb_thread_timer(timer, 10000, Shutdown, 0);
+	fb_thread_timer(timer, 10000, shutdown, 0);
 
 	return found;
 }
@@ -423,7 +423,7 @@ void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 #endif
 }
 
-void SecurityDatabase::Shutdown(void*)
+void SecurityDatabase::shutdown(void*)
 {
 	instance.fini();
 }
