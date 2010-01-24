@@ -1,3 +1,11 @@
+2010-01-23 17:13  hvlad
+
+	* firebird2/src/jrd/: Database.cpp (1.14.2.1), ini.epp (1.110.2.1),
+	jrd.cpp (1.565.2.6), why.cpp (1.263.2.1):
+
+	Fixed bug CORE-2824 : Small memory and handles leak at every
+	connect\disconnect
+
 2010-01-22 15:09  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.119.2.1):
