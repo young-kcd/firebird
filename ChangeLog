@@ -1,3 +1,9 @@
+2010-01-25 09:42  robocop
+
+	* firebird2/src/jrd/dyn_util.epp (1.66.2.1):
+
+	Misc.
+
 2010-01-23 17:13  hvlad
 
 	* firebird2/src/jrd/: Database.cpp (1.14.2.1), ini.epp (1.110.2.1),
