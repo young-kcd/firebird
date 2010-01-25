@@ -1,3 +1,93 @@
+2010-01-25 12:37  alexpeshkoff
+
+	* firebird2/src/jrd/scl.epp (1.119):
+
+	cleanup - noticed by Adriano
+
+2010-01-25 12:36  alexpeshkoff
+
+	* firebird2/src/auth/trusted/: AuthSspi.cpp (1.18), AuthSspi.h
+	(1.15):
+
+	Added missing license
+
+2010-01-25 08:46  dimitr
+
+	* firebird2/builds/win32/msvc9/: fb_inet_server.vcproj (1.8),
+	fbserver.vcproj (1.8):
+
+	Correction.
+
+2010-01-25 08:32  dimitr
+
+	* firebird2/builds/win32/msvc9/utilities.vcproj (1.3):
+
+	This should fix the MSVC9 build.  I don't insist on copying these
+	changes into other MSVC builds.
+
+2010-01-25 08:26  dimitr
+
+	* firebird2/builds/win32/msvc9/: Firebird2.sln (1.10),
+	Firebird2Boot.sln (1.3), fb_inet_server.vcproj (1.7),
+	fbembed.vcproj (1.5), fbserver.vcproj (1.7):
+
+	This should fix the MSVC9 build.  I don't insist on copying these
+	changes into other MSVC builds.
+
+2010-01-25 07:48  robocop
+
+	* firebird2/src/jrd/recsrc/BufferedStream.cpp (1.10):
+
+	Totally misc.
+
+2010-01-25 07:40  robocop
+
+	* firebird2/src/auth/Auth.h (1.3):
+
+	Totally misc.
+
+2010-01-24 18:35  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.385):
+
+	Fix external datasources
+
+2010-01-24 18:15  asfernandes
+
+	* firebird2/src/jrd/: jrd_pwd.h (1.42), pwd.cpp (1.86):
+
+	Misc
+
+2010-01-24 17:52  asfernandes
+
+	* firebird2/src/: jrd/pwd.cpp (1.85), remote/interface.cpp (1.231),
+	remote/server.cpp (1.274):
+
+	Misc
+
+2010-01-24 16:18  asfernandes
+
+	* firebird2/src/: auth/Auth.cpp (1.2), auth/Auth.h (1.2),
+	auth/AuthInterface.h (1.2), auth/SecurityDatabase/LegacyClient.cpp
+	(1.2), auth/SecurityDatabase/LegacyClient.h (1.2),
+	auth/trusted/AuthSspi.cpp (1.17), auth/trusted/AuthSspi.h (1.14),
+	common/cvt.cpp (1.47), common/classes/ClumpletReader.cpp (1.53),
+	common/classes/ClumpletReader.h (1.28),
+	common/classes/ClumpletWriter.cpp (1.39),
+	common/classes/ClumpletWriter.h (1.20), jrd/cvt_proto.h (1.19),
+	jrd/jrd_pwd.h (1.41), jrd/pwd.cpp (1.84), jrd/svc.cpp (1.308),
+	remote/interface.cpp (1.230), remote/server.cpp (1.273):
+
+	Misc
+
+2010-01-24 16:16  alexpeshkoff
+
+	* firebird2/src/: common/classes/MetaName.h (1.13), jrd/dyn_def.epp
+	(1.205), jrd/dyn_del.epp (1.94), jrd/dyn_mod.epp (1.142),
+	jrd/pcmet.epp (1.65):
+
+	Cleanup, suggested by Claudio
+
 2010-01-23 17:28  hvlad
 
 	* firebird2/src/jrd/: Database.cpp (1.15), ini.epp (1.135), jrd.cpp
