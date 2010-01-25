@@ -25,7 +25,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpre_embed", "gpre_embed.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbembed", "fbembed.vcproj", "{C5A60E3D-7815-4127-B856-96277BEC1D11}"
 	ProjectSection(ProjectDependencies) = postProject
-		{E9AAC310-465E-4384-8BCC-674F297F777C} = {E9AAC310-465E-4384-8BCC-674F297F777C}
 		{213C6F21-D83F-48C7-BBB5-B35AB1B706B1} = {213C6F21-D83F-48C7-BBB5-B35AB1B706B1}
 		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
 		{F55ACA54-70DF-4343-8E16-FA97C757CCF6} = {F55ACA54-70DF-4343-8E16-FA97C757CCF6}
@@ -62,8 +61,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dsql_server_classic", "dsql_server_classic.vcproj", "{488199DD-D9F3-41C8-AED6-8AFFFB294CFF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lock_classic", "lock_classic.vcproj", "{213C6F21-D83F-48C7-BBB5-B35AB1B706B1}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "utilities", "utilities.vcproj", "{E9AAC310-465E-4384-8BCC-674F297F777C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -201,14 +198,6 @@ Global
 		{213C6F21-D83F-48C7-BBB5-B35AB1B706B1}.Release|Win32.Build.0 = Release|Win32
 		{213C6F21-D83F-48C7-BBB5-B35AB1B706B1}.Release|x64.ActiveCfg = Release|x64
 		{213C6F21-D83F-48C7-BBB5-B35AB1B706B1}.Release|x64.Build.0 = Release|x64
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Debug|Win32.Build.0 = Debug|Win32
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Debug|x64.ActiveCfg = Debug|x64
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Debug|x64.Build.0 = Debug|x64
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Release|Win32.ActiveCfg = Release|Win32
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Release|Win32.Build.0 = Release|Win32
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Release|x64.ActiveCfg = Release|x64
-		{E9AAC310-465E-4384-8BCC-674F297F777C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

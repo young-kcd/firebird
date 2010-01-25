@@ -685,6 +685,10 @@
 			Name="UTILITIES files"
 			>
 			<File
+				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\gen\$(PlatformName)\utilities\gstat\dba.cpp"
 				>
 			</File>
