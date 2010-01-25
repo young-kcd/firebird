@@ -529,6 +529,7 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
 					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
 					VRL.RDB$VIEW_CONTEXT EQ context AND
+					PPR.RDB$PARAMETER_TYPE = 1 AND // output
 					PPR.RDB$PARAMETER_NAME EQ local_name
 
 				if (!DYN_REQUEST(drq_l_fld_src3)) {
