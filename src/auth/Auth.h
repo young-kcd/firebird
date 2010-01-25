@@ -73,7 +73,7 @@ private:
 #ifdef AUTH_DEBUG
 
 // The idea of debug plugin is to send some data from server to client,
-// modidy them on client and return result (which becomes login name) to the server
+// modify them on client and return result (which becomes login name) to the server
 
 class DebugServer : public ServerPlugin
 {
