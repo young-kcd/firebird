@@ -67,7 +67,6 @@ using namespace Firebird;
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-static bool check_hex(const UCHAR*, USHORT);
 static bool check_number(const UCHAR*, USHORT);
 static bool check_user_group(thread_db* tdbb, const UCHAR*, USHORT);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
@@ -931,42 +930,6 @@ void SCL_release_all(SecurityClassList*& list)
 
 	delete list;
 	list = NULL;
-}
-
-
-static bool check_hex(const UCHAR* acl, USHORT number)
-{
-/**************************************
- *
- *	c h e c k _ h e x
- *
- **************************************
- *
- * Functional description
- *	Check a string against and acl numeric string.  If they don't match,
- *	return true.
- *
- **************************************/
-	int n = 0;
-	USHORT l = *acl++;
-	if (l)
-	{
-		do {
-			const TEXT c = *acl++;
-			n *= 10;
-			if (c >= '0' && c <= '9') {
-				n += c - '0';
-			}
-			else if (c >= 'a' && c <= 'f') {
-				n += c - 'a' + 10;
-			}
-			else if (c >= 'A' && c <= 'F') {
-				n += c - 'A' + 10;
-			}
-		} while (--l);
-	}
-
-	return (n != number);
 }
 
 
