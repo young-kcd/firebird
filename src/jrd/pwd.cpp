@@ -364,7 +364,10 @@ Result SecurityDatabase::verify(WriterInterface* authBlock,
 		// that means the current context must be saved and restored.
 
 		char pw1[MAX_PASSWORD_LENGTH + 1];
-		const bool found = instance.lookup_user(login.c_str(), pw1);
+		if (!instance.lookup_user(login.c_str(), pw1))
+		{
+			return AUTH_FAILED;
+		}
 		pw1[MAX_PASSWORD_LENGTH] = 0;
 		string storedHash(pw1, MAX_PASSWORD_LENGTH);
 		storedHash.rtrim();
@@ -389,7 +392,7 @@ Result SecurityDatabase::verify(WriterInterface* authBlock,
 				newHash.erase(0, 2);
 				legacyHash = newHash == storedHash;
 			}
-			if (! legacyHash)
+			if (!legacyHash)
 			{
 				return AUTH_FAILED;
 			}
