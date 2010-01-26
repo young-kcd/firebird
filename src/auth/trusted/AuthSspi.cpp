@@ -354,9 +354,11 @@ void WinSspiClient::release()
 }
 
 WinSspiServerInstance::WinSspiServerInstance()
+	: sspiData(*getDefaultMemoryPool())
 { }
 
 WinSspiClientInstance::WinSspiClientInstance()
+	: sspiData(*getDefaultMemoryPool())
 { }
 
 Result WinSspiServerInstance::startAuthentication(bool isService, const char* /*dbName*/,
