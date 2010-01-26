@@ -89,7 +89,7 @@ namespace Firebird {
 		memcpy(stringBuffer, v.c_str(), v.length());
 	}
 
-	AbstractString::AbstractString(const size_type sizeL, const_pointer dataL)
+	AbstractString::AbstractString(const size_type sizeL, const void* dataL)
 	{
 		initialize(sizeL);
 		memcpy(stringBuffer, dataL, sizeL);
