@@ -2,6 +2,41 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-2822
+        Error "no current row for fetch operation" when subquery includes a non-trivial derived table
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2820
+        Small memory leak in query with PLAN ORDER
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2815
+        PIP page could be marked after it was really changed
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2814
+        Bus error while sorting/merging on SPARC
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2793
+        Binary representation of the backup file is inconsistent among subsequent backup/restore cycles
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2785
+        BLOB transliteration problem in a specific case
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2783
+        Access violation using recursive query as subquery in select list and ordering by it
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2741
         Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
       Contributor(s):
@@ -12,10 +47,20 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2698
+        Infinite wait in LocksCache::get 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2684
         Error page NNN is of wrong type (expected 7, found N)
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2675
+        Small memory leak per every blob transliteration
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-2648
         NBackup's delta file ignores the "Forced Writes" database setting
@@ -54,6 +99,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2578
+        select rdb$db_key from a view with more than one table joined results in a conversion error
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2572
         Locks of type LCK_page_space are processed incorrectly (big-endian machines)
       Contributor(s):
@@ -89,10 +139,10 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
-    * Improvement CORE-2597
-        Backport RPAD and LPAD return types from FB 2.5
+    * Improvement CORE-2769
+        Make XNET_CONNECT_TIMEOUT in xnet.h user configurable
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Improvement CORE-1658
         Avoid memory consumption of <page size> bytes per every temporary blob
