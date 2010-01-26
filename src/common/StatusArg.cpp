@@ -31,6 +31,7 @@
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/QualifiedName.h"
 #include "../common/classes/alloc.h"
 #include "fb_exception.h"
 #include "gen/iberror.h"
@@ -181,6 +182,11 @@ void StatusVector::ImplStatusVector::shiftLeft(const MetaName& text) throw()
 	shiftLeft(Str(text));
 }
 
+void StatusVector::ImplStatusVector::shiftLeft(const QualifiedName& text) throw()
+{
+	shiftLeft(Str(text));
+}
+
 void StatusVector::raise() const
 {
 	if (hasData())
@@ -229,6 +235,7 @@ Windows::Windows(ISC_STATUS s) throw() :
 Warning::Warning(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_warning, s) { }
 
+// Str overloading.
 Str::Str(const char* text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text) { }
 
@@ -237,6 +244,10 @@ Str::Str(const AbstractString& text) throw() :
 
 Str::Str(const MetaName& text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.c_str()) { }
+
+Str::Str(const QualifiedName& text) throw() :
+	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.toString().c_str()) { }
+
 
 SqlState::SqlState(const char* text) throw() :
 	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text) { }
