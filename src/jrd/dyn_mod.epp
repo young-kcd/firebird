@@ -1444,7 +1444,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 				default:
 					--(*ptr);
 					{
-						MetaNameProxy tmp(REL.RDB$RELATION_NAME);
+						const MetaName tmp(REL.RDB$RELATION_NAME);
 						DYN_execute(gbl, ptr, &tmp, NULL, NULL, NULL, NULL);
 					}
 				}
