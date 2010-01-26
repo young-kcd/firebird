@@ -3305,7 +3305,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	case 1:
 		{
-			Firebird::MetaName depName(work->dfw_name);
+			const Firebird::MetaName depName(work->dfw_name);
 			jrd_req* handle = NULL;
 			bid validation;
 			validation.clear();
@@ -3435,7 +3435,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	case 1:
 		{
-			Firebird::MetaName depName(work->dfw_name);
+			const Firebird::MetaName depName(work->dfw_name);
 			jrd_req* handle = NULL;
 			bid validation;
 			validation.clear();
@@ -4743,7 +4743,7 @@ static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra*
 		MemoryPool* const new_pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-		Firebird::MetaName depName(work->dfw_package.isEmpty() ?
+		const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
 			work->dfw_name : work->dfw_package);
 
 		MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
@@ -4820,7 +4820,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			Firebird::MetaName depName(work->dfw_package.isEmpty() ?
+			const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
 				work->dfw_name : work->dfw_package);
 			MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
 								 NULL, depName,
@@ -4892,7 +4892,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 		const USHORT par_flags = (USHORT) (type & 1) ? csb_pre_trigger : csb_post_trigger;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
-		Firebird::MetaName depName(work->dfw_name);
+		const Firebird::MetaName depName(work->dfw_name);
 		MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
 							 NULL, depName, obj_trigger, par_flags, transaction);
 

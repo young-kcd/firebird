@@ -745,8 +745,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > 
 
 class CompilerScratch : public pool_alloc<type_csb>
 {
-public:
-	CompilerScratch(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
+	CompilerScratch(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation)
 	:	/*csb_node(0),
 		csb_variables(0),
 		csb_dependencies(0),
@@ -774,7 +773,9 @@ public:
 		csb_rpt(p, len)
 	{}
 
-	static CompilerScratch* newCsb(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
+public:
+	static CompilerScratch* newCsb(MemoryPool& p, size_t len,
+								   const Firebird::MetaName& domain_validation = Firebird::MetaName())
 	{
 		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
 	}
