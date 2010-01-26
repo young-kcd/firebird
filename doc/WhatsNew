@@ -2,6 +2,36 @@
   * v2.0.6
   **************************
 
+    * Bugfix CORE-2822
+        Error "no current row for fetch operation" when subquery includes a non-trivial derived table
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2820
+        Small memory leak in query with PLAN ORDER
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2741
+        Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2720
+        Wrong evaluation result with divide and unary plus\minus operations
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2698
+        Infinite wait in LocksCache::get 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2684
+        Error page NNN is of wrong type (expected 7, found N)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2648
         NBackup's delta file ignores the "Forced Writes" database setting
       Contributor(s):
@@ -149,6 +179,11 @@
 
     * Bugfix CORE-1923
         "instsvc remove" returns 1 when succefully executed
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-2769
+        Make XNET_CONNECT_TIMEOUT in xnet.h user configurable
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
