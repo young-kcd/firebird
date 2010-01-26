@@ -75,22 +75,25 @@ void DebugClient::release()
 	interfaceFree(this);
 }
 
+DebugServerInstance::DebugServerInstance()
+	: str(*getDefaultMemoryPool())
+{ }
+
 Result DebugServerInstance::startAuthentication(bool isService, const char* dbName,
 												const unsigned char* dpb, unsigned int dpbSize,
 												WriterInterface* writerInterface)
 {
-	str[0] = 0;
+	str.erase();
 	Firebird::ClumpletReader rdr(isService ?
 		Firebird::ClumpletReader::spbList :
 		Firebird::ClumpletReader::dpbList, dpb, dpbSize);
 
 	if (rdr.find(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth))
 	{
-		memcpy(str, rdr.getBytes(), rdr.getClumpLength());
-		str[rdr.getClumpLength()] = 0;
+		str.assign(rdr.getBytes(), rdr.getClumpLength());
 	}
 
-	strcat((char*) str, "_");
+	str += '_';
 	return AUTH_MORE_DATA;
 }
 
@@ -104,8 +107,8 @@ Result DebugServerInstance::contAuthentication(WriterInterface* writerInterface,
 
 void DebugServerInstance::getData(unsigned char** data, unsigned short* dataSize)
 {
-	*data = str;
-	*dataSize = strlen((const char*) str);
+	*data = (unsigned char*)str.c_str();
+	*dataSize = str.length();
 	//fprintf(stderr, "DebugServerInstance::getData: %.*s\n", *dataSize, *data);
 }
 
@@ -114,13 +117,17 @@ void DebugServerInstance::release()
 	interfaceFree(this);
 }
 
+DebugClientInstance::DebugClientInstance()
+	: str(*getDefaultMemoryPool())
+{ }
+
 Result DebugClientInstance::startAuthentication(bool isService, const char*, DpbInterface* dpb)
 {
-	strcpy((char*) str, "HAND");
+	str = "HAND";
 	if (dpb)
 	{
-		dpb->add(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth,
-			str, strlen((const char*) str));
+		dpb->add(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth, 
+				 str.c_str(), str.length());
 		return AUTH_SUCCESS;
 	}
 	return AUTH_MORE_DATA;
@@ -128,21 +135,16 @@ Result DebugClientInstance::startAuthentication(bool isService, const char*, Dpb
 
 Result DebugClientInstance::contAuthentication(const unsigned char* data, unsigned int size)
 {
-	if (size > sizeof(str) - 6)
-	{
-		size = sizeof(str) - 6;
-	}
 	//fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
-	memcpy(str, data, size);
-	str[size] = 0;
-	strcat((char*) str, "SHAKE");
+	str.assign(data, size);
+	str += "SHAKE";
 	return AUTH_CONTINUE;
 }
 
 void DebugClientInstance::getData(unsigned char** data, unsigned short* dataSize)
 {
-	*data = str;
-	*dataSize = strlen((const char*) str);
+	*data = (unsigned char*)str.c_str();
+	*dataSize = str.length();
 	//fprintf(stderr, "DebugClientInstance::getData: %.*s\n", *dataSize, *data);
 }
 
@@ -189,7 +191,7 @@ int DpbImplementation::find(UCHAR tag)
 	return body->find(tag) ? 1 : 0;
 }
 
-void DpbImplementation::add(UCHAR tag, void* bytes, unsigned int count)
+void DpbImplementation::add(UCHAR tag, const void* bytes, unsigned int count)
 {
 	body->insertBytes(tag, bytes, count);
 }

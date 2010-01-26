@@ -89,7 +89,7 @@ class DpbInterface
 {
 public:
 	virtual int find(UCHAR tag) = 0;
-	virtual void add(UCHAR tag, void* bytes, unsigned int count) = 0;
+	virtual void add(UCHAR tag, const void* bytes, unsigned int count) = 0;
 	virtual void drop() = 0;
 };
 

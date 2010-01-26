@@ -34,6 +34,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
 
 namespace Auth {
 
@@ -61,7 +62,7 @@ public:
 	DpbImplementation(Firebird::ClumpletWriter& base);
 
 	int find(UCHAR tag);
-	void add(UCHAR tag, void* bytes, unsigned int count);
+	void add(UCHAR tag, const void* bytes, unsigned int count);
 	void drop();
 
 private:
@@ -94,6 +95,8 @@ public:
 class DebugServerInstance : public ServerInstance
 {
 public:
+	DebugServerInstance();
+
     Result startAuthentication(bool isService, const char* dbName,
                                const unsigned char* dpb, unsigned int dpbSize,
                                WriterInterface* writerInterface);
@@ -103,19 +106,21 @@ public:
     void release();
 
 private:
-	unsigned char str[256];
+	Firebird::string str;
 };
 
 class DebugClientInstance : public ClientInstance
 {
 public:
+	DebugClientInstance();
+
 	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
 	Result contAuthentication(const unsigned char* data, unsigned int size);
     void getData(unsigned char** data, unsigned short* dataSize);
     void release();
 
 private:
-	unsigned char str[256];
+	Firebird::string str;
 };
 
 #endif // AUTH_DEBUG
