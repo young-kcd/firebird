@@ -2,10 +2,86 @@
   * v2.5 Release Candidate 2
   **************************
 
+    * Bugfix CORE-2824
+        Small memory and handles leak at every connect\disconnect
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2822
+        Error "no current row for fetch operation" when subquery includes a non-trivial derived table
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2820
+        Small memory leak in query with PLAN ORDER
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2817
+        If stored procedure or trigger contains query with PLAN ORDER it could fail
+        after disconnecting of an attachment where procedure\trigger executed the first time
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2815
+        PIP page could be marked after it was really changed
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2814
+        Bus error while sorting/merging on SPARC
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2811
+        'Unsuccessful execution' error when updating a record
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2807
+        Problem with tracing on Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2806
+        Views based on procedures can't be created if the proc's output fields participate in an expression
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2804
+        Problems with COMMENT ON and strings using introducer (charset)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2797
+        Problem with default value of SP parameter
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2793
+        Binary representation of the backup file is inconsistent among subsequent backup/restore cycles
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2792
+        Bad extraction syntax for procedure's parameter based on table's field
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2790
+        Authentication fails with "Mixed" option specified in firebird.conf
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2785
         BLOB transliteration problem in a specific case
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2783
+        Access violation using recursive query as subquery in select list and ordering by it
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-2781
         Access violation in fbtracemgr when command line switches set wrongly
