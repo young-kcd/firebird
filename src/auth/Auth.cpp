@@ -35,7 +35,9 @@ namespace
 {
 	void debugName(unsigned char** data, unsigned short* dataSize)
 	{
-		const char* name = "DEBUG_AUTH";
+		// Construct a copy of the literal so we don't violate the constness.
+		// The caller can do anything with the pointer unless we change getName() signature.
+		static char name[] = "DEBUG_AUTH";
 		*data = (unsigned char*) name;
 		*dataSize = strlen(name);
 	}
@@ -96,7 +98,7 @@ Result DebugServerInstance::contAuthentication(WriterInterface* writerInterface,
 											   const unsigned char* data, unsigned int size)
 {
 	//fprintf(stderr, "DebugServerInstance::contAuthentication: %.*s\n", size, data);
-	writerInterface->add(Firebird::string((const char*)data, size).c_str(), "DEBUG", "");
+	writerInterface->add(Firebird::string((const char*) data, size).c_str(), "DEBUG", "");
 	return AUTH_SUCCESS;
 }
 
@@ -126,9 +128,9 @@ Result DebugClientInstance::startAuthentication(bool isService, const char*, Dpb
 
 Result DebugClientInstance::contAuthentication(const unsigned char* data, unsigned int size)
 {
-	if (size > sizeof(data) - 1)
+	if (size > sizeof(str) - 6)
 	{
-		size = sizeof(data) - 1;
+		size = sizeof(str) - 6;
 	}
 	//fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
 	memcpy(str, data, size);

@@ -38,7 +38,8 @@ ClientInstance* SecurityDatabaseClient::instance()
 
 void SecurityDatabaseClient::getName(unsigned char** data, unsigned short* dataSize)
 {
-	const char* name = "LEGACY_AUTH";
+	// Do not violate the constness.
+	static char name[] = "LEGACY_AUTH";
 	*data = (unsigned char*) name;
 	*dataSize = strlen(name);
 }

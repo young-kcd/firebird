@@ -438,7 +438,7 @@ ServerInstance* SecurityDatabaseServer::instance()
 
 void SecurityDatabaseServer::getName(unsigned char** data, unsigned short* dataSize)
 {
-	const char* name = "LEGACY_AUTH";
+	static char name[] = "LEGACY_AUTH";
 	*data = (unsigned char*) name;
 	*dataSize = strlen(name);
 }
@@ -456,8 +456,8 @@ Result SecurityDatabaseServerInstance::startAuthentication(bool isService, const
 	return SecurityDatabase::verify(writerInterface, rdr);
 }
 
-Result SecurityDatabaseServerInstance::contAuthentication(WriterInterface* writerInterface,
-											  const unsigned char* data, unsigned int size)
+Result SecurityDatabaseServerInstance::contAuthentication(WriterInterface* /*writerInterface*/,
+											  const unsigned char* /*data*/, unsigned int /*size*/)
 {
 	return AUTH_FAILED;
 }
