@@ -1,3 +1,22 @@
+2010-01-26 10:12  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.7):
+
+	Update.
+
+2010-01-26 10:00  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.9):
+
+	Update.
+
+2010-01-25 15:54  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.242.2.2):
+
+	Additional patch for bug CORE- 2824 : Small memory and handles leak
+	at every connect\disconnect
+
 2010-01-25 09:42  robocop
 
 	* firebird2/src/jrd/dyn_util.epp (1.66.2.1):
