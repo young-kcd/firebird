@@ -64,9 +64,16 @@ const int id_views			= 8;		// All views
 const int id_trigger		= 9;		// Trigger name
 const int id_procedure		= 10;		// Procedure name
 const int id_sql_role		= 11;		// SQL role
+// New in FB3
 const int id_package		= 12;		// Package name
 const int id_function		= 13;		// Function name
-const int id_max			= 14;
+const int id_schema			= 14;		// Schema name
+const int id_generator		= 15;
+const int id_domain			= 16;		// global field (domain)
+const int id_charset		= 17;
+const int id_collation		= 18;
+const int id_exception		= 19;
+const int id_max			= 20;
 
 /* Format of access control list:
 
