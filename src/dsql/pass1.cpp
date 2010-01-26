@@ -8235,7 +8235,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		parent_context->ctx_context = dsqlScratch->contextNumber++;
 	}
 
-	bool sortWindow = rse->nod_arg[e_rse_sort] &&
+	const bool sortWindow = rse->nod_arg[e_rse_sort] &&
 		aggregate_found(dsqlScratch, rse->nod_arg[e_rse_sort], true);
 
 	// WINDOW functions
@@ -10057,13 +10057,13 @@ static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, 
 							window, context, current_level, NULL, NULL);
 					}
 
-					if (windowNode->nod_arg[e_window_partition])
+					dsql_nod* temp = windowNode->nod_arg[e_window_partition];
+					if (temp)
 					{
-						for (unsigned i = 0; i < windowNode->nod_arg[e_window_partition]->nod_count; ++i)
+						for (unsigned i = 0; i < temp->nod_count; ++i)
 						{
-							windowNode->nod_arg[e_window_partition]->nod_arg[i] = remap_field(
-								dsqlScratch, windowNode->nod_arg[e_window_partition]->nod_arg[i],
-								window, context, current_level, NULL, NULL);
+							temp->nod_arg[i] = remap_field(dsqlScratch, temp->nod_arg[i],
+														window, context, current_level, NULL, NULL);
 						}
 					}
 				}

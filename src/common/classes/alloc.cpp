@@ -541,12 +541,14 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 
 #ifdef MEM_DEBUG
 	for (const UCHAR* end = (UCHAR*) block + absVal(block->length), *p = end - GUARD_BYTES; p < end;)
+	{
 		if (*p++ != GUARD_BYTE)
 			corrupt("guard bytes overwritten");
+	}
 #endif
 
 	--blocksActive;
-	SINT64 length = block->length;
+	const SINT64 length = block->length;
 
 	// If length is negative, this is a small block
 

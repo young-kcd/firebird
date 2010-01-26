@@ -869,10 +869,10 @@ void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 
 		found = true;
 		delete_gfield_for_lfield(gbl, RFR.RDB$FIELD_SOURCE);
+		const Firebird::MetaName rel_name(RFR.RDB$RELATION_NAME);
 		while (*(*ptr)++ != isc_dyn_end)
 		{
 			--(*ptr);
-			Firebird::MetaName rel_name(RFR.RDB$RELATION_NAME);
 			{
 				MetaNameProxy tmp(RFR.RDB$FIELD_SOURCE);
 				DYN_execute(gbl, ptr, &rel_name, &tmp, NULL, NULL, NULL);
@@ -956,7 +956,6 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 		GET_STRING(ptr, relation_name);
 
 	jrd_req* req2 = NULL;
-	jrd_req* req3 = NULL;
 	jrd_req* request = CMP_find_request(tdbb, drq_l_relation, DYN_REQUESTS);
 	USHORT id = drq_l_relation;
 

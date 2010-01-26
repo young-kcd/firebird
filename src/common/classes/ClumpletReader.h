@@ -166,7 +166,7 @@ public:
 	typedef Array<UCHAR> AuthBlock;
 	enum Tag {AUTH_NAME, AUTH_METHOD, AUTH_DETAILS};
 
-	AuthReader(const AuthBlock& authBlock);
+	explicit AuthReader(const AuthBlock& authBlock);
 
 	bool getInfo(string* name, string* method = NULL, string* details = NULL);
 };

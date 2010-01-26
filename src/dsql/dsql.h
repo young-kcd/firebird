@@ -858,7 +858,7 @@ public:
 	dsql_rel*			ctx_relation;		// Relation for context
 	dsql_prc*			ctx_procedure;		// Procedure for context
 	dsql_nod*			ctx_proc_inputs;	// Procedure input parameters
-	dsql_map* ctx_map;						// Maps for aggregates and unions
+	dsql_map*			ctx_map;			// Maps for aggregates and unions
 	dsql_nod*			ctx_rse;			// Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			// Parent context for aggregates
 	const TEXT*			ctx_alias;			// Context alias (can include concatenated derived table alias)
@@ -897,7 +897,8 @@ public:
 	}
 
 	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
-	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode, dsql_nod* orderNode);
+	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode,
+								  dsql_nod* orderNode);
 };
 
 // Flag values for ctx_flags

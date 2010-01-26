@@ -359,9 +359,9 @@ WinSspiServerInstance::WinSspiServerInstance()
 WinSspiClientInstance::WinSspiClientInstance()
 { }
 
-Result WinSspiServerInstance::startAuthentication(bool isService, const char* dbName,
+Result WinSspiServerInstance::startAuthentication(bool isService, const char* /*dbName*/,
 												const unsigned char* dpb, unsigned int dpbSize,
-												WriterInterface* writerInterface)
+												WriterInterface* /*writerInterface*/)
 {
 	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
 	Firebird::ClumpletReader rdr(isService ?

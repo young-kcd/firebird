@@ -971,7 +971,7 @@ namespace Jrd
 		jrd_nod* const m_rootMap;
 		jrd_nod* const m_innerMap;
 		StreamsArray m_innerStreams;
-		size_t m_saveOffset;
+		const size_t m_saveOffset;
 		size_t m_saveSize;
 	};
 

@@ -296,7 +296,8 @@ namespace
 
 			if (cmp == 0)
 				return true;
-			else if (cmp < 0)
+
+			if (cmp < 0)
 			{
 				finish = pos;
 				pos -= MAX(1, (finish - start) / 2);
@@ -464,7 +465,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		if (!order)
 			continue;
 
-		// Verify if distinct is used. It's not supported.
+		// Verify if DISTINCT is used. It's not supported.
 
 		const jrd_nod* const* ptr = partitionMap->nod_arg;
 		for (const jrd_nod* const* const end = ptr + partitionMap->nod_count; ptr < end; ++ptr)
@@ -475,8 +476,8 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 				case nod_agg_count_distinct:
 				case nod_agg_total_distinct:
 				case nod_agg_total_distinct2:
-				case nod_agg_average_distinct2:
 				case nod_agg_average_distinct:
+				case nod_agg_average_distinct2:
 				case nod_agg_list_distinct:
 					status_exception::raise(Arg::Gds(isc_wish_list) <<
 						Arg::Gds(isc_random) << "DISTINCT is not supported in ordered windows");

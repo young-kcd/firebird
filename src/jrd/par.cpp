@@ -821,6 +821,7 @@ static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 {
 	SET_TDBB(tdbb);
 
+	fb_assert(allocCount >= count);
 	jrd_nod* node = PAR_make_node(tdbb, allocCount);
 	node->nod_count = count;
 	node->nod_type = nod_list;
@@ -1787,7 +1788,7 @@ static jrd_nod* par_partition_by(thread_db* tdbb, CompilerScratch* csb)
 	list->nod_type = nod_list;
 	list->nod_count = e_part_count;
 
-	UCHAR count = csb->csb_blr_reader.getByte();
+	const UCHAR count = csb->csb_blr_reader.getByte();
 
 	if (count != 0)
 	{
@@ -3164,18 +3165,18 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	case blr_window:
-	{
-		node->nod_arg[e_win_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
+		{
+			node->nod_arg[e_win_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
 
-		unsigned partitionCount = csb->csb_blr_reader.getByte();
-		NodeStack stack;
+			unsigned partitionCount = csb->csb_blr_reader.getByte();
+			NodeStack stack;
 
-		for (unsigned i = 0; i < partitionCount; ++i)
-			stack.push(par_partition_by(tdbb, csb));
+			for (unsigned i = 0; i < partitionCount; ++i)
+				stack.push(par_partition_by(tdbb, csb));
 
-		node->nod_arg[e_win_windows] = PAR_make_list(tdbb, stack);
+			node->nod_arg[e_win_windows] = PAR_make_list(tdbb, stack);
+		}
 		break;
-	}
 
 	case blr_aggregate:
 		{

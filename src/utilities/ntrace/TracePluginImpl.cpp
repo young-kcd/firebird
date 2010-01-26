@@ -42,7 +42,7 @@
 using namespace Firebird;
 using namespace Jrd;
 
-static const char* DEFAULT_LOG_NAME = "default_trace.log";
+static const char* const DEFAULT_LOG_NAME = "default_trace.log";
 
 #ifdef WIN_NT
 #define NEWLINE "\r\n"

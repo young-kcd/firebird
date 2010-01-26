@@ -111,7 +111,7 @@ class MetaNameProxy : public MetaName
 {
 	char* target;
 public:
-	MetaNameProxy(char* s)
+	explicit MetaNameProxy(char* s)
 	 : Firebird::MetaName(s), target(s) 
 	{ }
 	~MetaNameProxy() { strcpy(target, c_str()); }

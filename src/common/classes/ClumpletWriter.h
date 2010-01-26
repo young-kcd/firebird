@@ -108,7 +108,7 @@ private:
 class AuthWriter : public ClumpletWriter
 {
 public:
-	AuthWriter(MemoryPool& pool) : ClumpletWriter(pool, ClumpletWriter::WideUnTagged, MAX_DPB_SIZE)
+	explicit AuthWriter(MemoryPool& pool) : ClumpletWriter(pool, ClumpletWriter::WideUnTagged, MAX_DPB_SIZE)
 	{ }
 
 	void putLevel(USHORT num, const char* name, const char* method, const char* details);

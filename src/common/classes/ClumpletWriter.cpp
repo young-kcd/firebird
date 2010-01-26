@@ -356,7 +356,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const void* bytes, const 
 		}
 		break;
 	}
-	dynamic_buffer.insert(cur_offset, reinterpret_cast<const UCHAR*>(bytes), length);
+	dynamic_buffer.insert(cur_offset, static_cast<const UCHAR*>(bytes), length);
 	const size_t new_offset = cur_offset + length;
 	cur_offset = saved_offset;
     adjustSpbState();

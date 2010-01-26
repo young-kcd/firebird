@@ -163,7 +163,7 @@ namespace
 			return false;
 		}
 
-		virtual USHORT remapField(USHORT stream, USHORT fldId)
+		virtual USHORT remapField(USHORT /*stream*/, USHORT fldId)
 		{
 			return fldId;
 		}
@@ -224,8 +224,8 @@ namespace
 			{
 				return fldId;
 			}
-			else
-				return NodeCopy::getFieldId(input);
+
+			return NodeCopy::getFieldId(input);
 		}
 
 	private:
@@ -259,7 +259,7 @@ static Cursor* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
-static bool stream_in_rse(USHORT, const RecordSelExpr*);
+static bool stream_in_rse(const USHORT, const RecordSelExpr*);
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
@@ -4338,21 +4338,21 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		break;
 
 	case nod_window:
-	{
-		const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 		{
-			USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-			fb_assert(stream <= MAX_STREAMS);
-			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
-		}
+			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
 
-		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], view);
-		node->nod_arg[e_win_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_rse]);
-		node->nod_arg[e_win_windows] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_windows]);
+			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			{
+				USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+				fb_assert(stream <= MAX_STREAMS);
+				csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
+			}
+
+			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], view);
+			node->nod_arg[e_win_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_rse]);
+			node->nod_arg[e_win_windows] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_windows]);
+		}
 		break;
-	}
 
 	case nod_gen_id:
 	case nod_gen_id2:
@@ -5204,7 +5204,8 @@ static void pass1_source(thread_db*			tdbb,
 		CMP_pass1(tdbb, csb, source);
 		return;
 	}
-	else if (source->nod_type == nod_window)
+
+	if (source->nod_type == nod_window)
 	{
 		CMP_pass1(tdbb, csb, source);
 		return;
@@ -6162,30 +6163,29 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 			break;
 
 		case nod_window:
-		{
-			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-			CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
-
-			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 			{
-				const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-				csb->csb_rpt[stream].csb_flags |= csb_active;
-			}
+				const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
 
+				CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
+
+				for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+				{
+					const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
+					csb->csb_rpt[stream].csb_flags |= csb_active;
+				}
+			}
 			break;
-		}
 
 		case nod_relation:
 		case nod_procedure:
 		case nod_aggregate:
 		case nod_union:
-		{
-			const USHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-			fb_assert(stream <= MAX_STREAMS);
-			csb->csb_rpt[stream].csb_flags |= csb_active;
-			// FALL INTO
-		}
+			{
+				const USHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+				fb_assert(stream <= MAX_STREAMS);
+				csb->csb_rpt[stream].csb_flags |= csb_active;
+				// FALL INTO
+			}
 
 		default:
 			CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
@@ -6822,7 +6822,7 @@ static SSHORT strcmp_space(const char* p, const char* q)
 }
 
 
-static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
+static bool stream_in_rse(const USHORT stream, const RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -6884,19 +6884,19 @@ static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
 			break;
 
 		case nod_window:
-		{
-			const jrd_nod* nodWindows = sub->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 			{
-				if (stream == (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream])
+				const jrd_nod* nodWindows = sub->nod_arg[e_win_windows];
+
+				for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+				{
+					if (stream == (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream])
+						return true;		// do not mark as variant
+				}
+
+				if (stream_in_rse(stream, (const RecordSelExpr*) sub->nod_arg[e_win_rse]))
 					return true;		// do not mark as variant
 			}
-
-			if (stream_in_rse(stream, (const RecordSelExpr*) sub->nod_arg[e_win_rse]))
-				return true;		// do not mark as variant
 			break;
-		}
 
 		// the simplest case - relations
 		case nod_relation:

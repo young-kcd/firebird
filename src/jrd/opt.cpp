@@ -167,18 +167,18 @@ namespace Jrd
 			}
 		}
 
-		bool isReferenced(const jrd_nod* node)
+		bool isReferenced(const jrd_nod* node) const
 		{
 			bool field_found = false;
 
 			if (isReferenced(node, field_found))
 				return field_found;
-			else
-				return false;
+
+			return false;
 		}
 
 	private:
-		bool isReferenced(const jrd_nod* node, bool& field_found)
+		bool isReferenced(const jrd_nod* node, bool& field_found) const
 		{
 			if (node->nod_type == nod_field)
 			{
@@ -2411,7 +2411,7 @@ static bool form_river(thread_db*		tdbb,
 	rsbs.resize(count);
 	RecordSource** ptr = rsbs.begin();
 
-	HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> streams;
+	StreamList streams;
 	streams.resize(count);
 	UCHAR* stream = streams.begin();
 
