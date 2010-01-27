@@ -3225,11 +3225,24 @@ static void restore_record(record_param* rpb)
 	SaveRecordParam* rpb_copy = rpb->rpb_copy;
 	if (rpb_copy && (rec_copy = rpb_copy->srpb_rpb->rpb_record)) {
 		Record* record = rpb->rpb_record;
-		const USHORT size = rec_copy->rec_length;
-		if (!record || size > record->rec_length)
+
+		if (!record)
 			/* msg 284 cannot restore singleton select data */
 			BUGCHECK(284);
-		record->rec_format = rec_copy->rec_format;
+
+		const USHORT size = rec_copy->rec_length;
+		if (size > record->rec_length)
+		{
+			// hvlad: saved copy of record have longer format, reallocate
+			// given record to make enough space for saved data
+			thread_db* tdbb = JRD_get_thread_data();
+			record = VIO_record(tdbb, rpb, rec_copy->rec_format, tdbb->getDefaultPool());
+		}
+		else
+		{
+			record->rec_length = size;
+			record->rec_format = rec_copy->rec_format;
+		}
 		record->rec_number = rec_copy->rec_number;
 		MOVE_FAST(rec_copy->rec_data, record->rec_data, size);
 
@@ -3238,9 +3251,8 @@ static void restore_record(record_param* rpb)
 
 		delete rec_copy;
 	}
-	if (rpb_copy)
-		delete rpb_copy;
 
+	delete rpb_copy;
 	rpb->rpb_copy = NULL;
 }
 
