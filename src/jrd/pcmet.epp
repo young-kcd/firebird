@@ -150,14 +150,13 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 
 				if (!IDX.RDB$EXPRESSION_BLR.NULL)
 				{
-					MetaTmp(IDX.RDB$INDEX_NAME)
-						idx.idx_expression = MET_get_dependencies(tdbb, relation,
-														  NULL, 0, NULL,
-														  &IDX.RDB$EXPRESSION_BLR,
-														  &idx.idx_expression_request,
-														  &csb, tmp,
-														  obj_expression_index, 0,
-														  transaction);
+					idx.idx_expression = MET_get_dependencies(tdbb, relation,
+													  NULL, 0, NULL,
+													  &IDX.RDB$EXPRESSION_BLR,
+													  &idx.idx_expression_request,
+													  &csb, IDX.RDB$INDEX_NAME,
+													  obj_expression_index, 0,
+													  transaction);
 				}
 			}
 
