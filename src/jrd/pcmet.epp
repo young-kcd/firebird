@@ -149,13 +149,12 @@ void PCMET_expression_index(thread_db* tdbb, const Firebird::string& name,
 
 				if (!IDX.RDB$EXPRESSION_BLR.NULL) 
 				{
-					MetaTmp(IDX.RDB$INDEX_NAME)
-						idx.idx_expression = MET_get_dependencies(tdbb, relation,
-														  NULL, NULL, 
-														  &IDX.RDB$EXPRESSION_BLR,
-														  &idx.idx_expression_request,
-														  &csb, tmp,
-														  obj_expression_index, 0);
+					idx.idx_expression = MET_get_dependencies(tdbb, relation,
+													  NULL, NULL,
+													  &IDX.RDB$EXPRESSION_BLR,
+													  &idx.idx_expression_request,
+													  &csb, IDX.RDB$INDEX_NAME,
+													  obj_expression_index, 0);
 				}
 			}
 
