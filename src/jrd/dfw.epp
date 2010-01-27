@@ -3431,7 +3431,7 @@ static void get_procedure_dependencies(DeferredWork* work)
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			Firebird::MetaName depName(work->dfw_name);
+			const Firebird::MetaName depName(work->dfw_name);
 			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, 
 							gbak ? NULL : &request,
 							NULL, depName, obj_procedure, 0);
@@ -3504,7 +3504,7 @@ static void get_trigger_dependencies( DeferredWork* work)
 			(type & 1) ? csb_pre_trigger : csb_post_trigger;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
-		Firebird::MetaName depName(work->dfw_name);
+		const Firebird::MetaName depName(work->dfw_name);
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
 							 gbak ? NULL : &request,
 							 NULL, depName, obj_trigger, par_flags);

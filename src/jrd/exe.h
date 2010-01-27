@@ -603,7 +603,6 @@ typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAcc
 
 class CompilerScratch : public pool_alloc<type_csb>
 {
-public:
 	CompilerScratch(MemoryPool& p, size_t len)
 	:	/*csb_blr(0),
 		csb_running(0),
@@ -631,6 +630,7 @@ public:
 		csb_rpt(p, len)
 	{}
 
+public:
 	static CompilerScratch* newCsb(MemoryPool& p, size_t len)
 		{ return FB_NEW(p) CompilerScratch(p, len); }
 

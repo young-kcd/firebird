@@ -1061,7 +1061,7 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 							  bid*						blob_id,
 							  jrd_req**					request,
 							  CompilerScratch**			csb_ptr,
-							  Firebird::MetaName&		object_name,
+							  const Firebird::MetaName&	object_name,
 							  USHORT				type,
 							  USHORT				flags)
 {
@@ -1104,6 +1104,8 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 
 	if (type == (USHORT) obj_computed)
 	{
+		Firebird::MetaName domainName;
+
 		jrd_req* handle = NULL;
 		FOR(REQUEST_HANDLE handle)
 			RLF IN RDB$RELATION_FIELDS CROSS
@@ -1111,12 +1113,16 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 				RLF.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
 				RLF.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND
 				RLF.RDB$FIELD_NAME EQ object_name.c_str()
-            object_name = FLD.RDB$FIELD_NAME;
+            domainName = FLD.RDB$FIELD_NAME;
 		END_FOR;
 		CMP_release(tdbb, handle);
-	}
 
-	store_dependencies(tdbb, csb, object_name, type);
+		store_dependencies(tdbb, csb, domainName, type);
+	}
+	else
+	{
+		store_dependencies(tdbb, csb, object_name, type);
+	}
 
 	if (csb_ptr)
 	{
@@ -3308,7 +3314,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 			if (dependencies)
 			{
-				Firebird::MetaName depName(REL.RDB$RELATION_NAME);
+				const Firebird::MetaName depName(REL.RDB$RELATION_NAME);
 				relation->rel_view_rse =
 					(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, NULL,
 											&REL.RDB$VIEW_BLR, NULL,
