@@ -195,10 +195,6 @@ static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static dsql_ctx* get_context(const dsql_nod* node);
-#ifdef NOT_USED_OR_REPLACED
-static bool get_object_and_field(const dsql_nod* node,
-	const char** obj_name, const char** fld_name, bool do_collation);
-#endif
 static bool invalid_reference(const dsql_ctx*, const dsql_nod*, const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
 static dsql_nod* nullify_returning(DsqlCompilerScratch*, dsql_nod* input);
@@ -2710,62 +2706,6 @@ static dsql_ctx* get_context(const dsql_nod* node)
 	// nod_derived_table
 	return (dsql_ctx*) node->nod_arg[e_derived_table_context];
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-/**
-
- 	get_object_and_field
-
-    @brief	Get the relation/procedure's name and field's name from a context
-
-
-    @param node
-    @param obj_name
-    @param fld_name
-    @param do_collation
-
- **/
-static bool get_object_and_field(const dsql_nod* node,
-	const char** obj_name, const char** fld_name, bool do_collation)
-{
-	switch (node->nod_type)
-	{
-	case nod_field:
-		break;
-	case nod_derived_field:
-		node = node->nod_arg[e_derived_field_value];
-		break;
-	case nod_via:
-		node = node->nod_arg[e_via_value_1];
-		break;
-	case nod_cast:
-		if (!do_collation)
-			return false;
-		node = node->nod_arg[e_cast_source];
-		break;
-	default: // nod_alias, nod_constant, expressions, etc
-		return false;
-	}
-
-	if (node->nod_type != nod_field)
-		return false;
-
-	const dsql_ctx* context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-	DEV_BLKCHK(context, dsql_type_ctx);
-
-	if (context->ctx_relation)
-		*obj_name = context->ctx_relation->rel_name.c_str();
-	else if (context->ctx_procedure)
-		*obj_name = context->ctx_procedure->prc_name.identifier.c_str();
-	else
-		*obj_name = NULL;
-
-	*fld_name = reinterpret_cast<dsql_fld*>(node->nod_arg[e_fld_field])->fld_name;
-
-	return obj_name && fld_name;
-}
-#endif
 
 
 /**

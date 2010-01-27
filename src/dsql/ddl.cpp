@@ -133,9 +133,6 @@ static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_
 static void define_collation(DsqlCompilerScratch*);
 static void define_role(DsqlCompilerScratch*);
 static void define_index(DsqlCompilerScratch*);
-#ifdef NOT_USED_OR_REPLACED
-static dsql_nod* define_insert_action(DsqlCompilerScratch*);
-#endif
 static void define_rel_constraint(DsqlCompilerScratch*, dsql_nod*);
 static void define_relation(DsqlCompilerScratch*);
 static void define_set_null_trg(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*,
