@@ -390,10 +390,11 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, j
 	for (size_t i = 0; i < keys->nod_count; i++)
 	{
 		const dsc* const desc = EVL_expr(tdbb, keys->nod_arg[i]);
-		fb_assert(!desc->isBlob());
 
 		if (desc && !(request->req_flags & req_null))
 		{
+			fb_assert(!desc->isBlob());
+
 			size_t length = desc->dsc_length;
 			const UCHAR* address = desc->dsc_address;
 
