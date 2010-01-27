@@ -44,8 +44,8 @@ session. When application reads part of the output so output size stay less than
 
 	When application decides to stop its trace session it just does detach from
 service. Also there is ability to manage trace sessions (suspend\resume\stop).
-Administrators are allowed to manage any trace session while ordinary users are allowed
-to manage their own trace sessions only.
+Administrators are allowed to manage any trace session while ordinary users are 
+allowed to manage their own trace sessions only.
 
     If user trace session was created by ordinary user it will trace only
 connections established by this user.
@@ -56,6 +56,16 @@ this session is stopped and will not be restarted with new Firebird process. For
 CS this is not the case as user trace session can't live without connection with
 service manager and dedicated CS process.
 
+
+	There is new Trace API introduced for use with trace facilities. This API is
+not stable and will be changed in next Firebird releases, therefore it is not
+officially published. Trace API is a set of hooks which is implemented by external
+trace plugin module and called by the engine when any traced event happens. Trace
+plugin responsible for logging this events in some form.
+
+	There is "standard" implementation of trace plugin, fbtrace.dll (.so) resided 
+in \plugins folder.
+	
 
 	There is new specialized standalone utility to work with trace services : 
 fbtracemgr. It has the following command line switches :
