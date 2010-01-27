@@ -1097,7 +1097,7 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	else
 	{
 		if (blr_operator == blr_exec_proc2)
-			PAR_name(csb, name.qualifier);
+			PAR_name(csb, name.package);
 		PAR_name(csb, name.identifier);
 		procedure = MET_lookup_procedure(tdbb, name, false);
 	}
@@ -1378,7 +1378,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_o
 	USHORT count = 0;
 
 	if (blr_operator == blr_function2)
-		count = PAR_name(csb, name.qualifier);
+		count = PAR_name(csb, name.package);
 
 	count += PAR_name(csb, name.identifier);
 
@@ -2074,7 +2074,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 		{
 			if (blr_operator == blr_procedure3 || blr_operator == blr_procedure4)
 			{
-				PAR_name(csb, name.qualifier);
+				PAR_name(csb, name.package);
 			}
 
 			PAR_name(csb, name.identifier);

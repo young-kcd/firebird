@@ -177,7 +177,7 @@ void METD_drop_function(jrd_tra* transaction, const dsql_str* name, const MetaNa
 
 	if (dbb->dbb_functions.get(metaName, function))
 	{
-		MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.qualifier);
+		MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.package);
 		function->udf_flags |= UDF_dropped;
 		dbb->dbb_functions.remove(metaName);
 	}
@@ -211,7 +211,7 @@ void METD_drop_procedure(jrd_tra* transaction, const dsql_str* name, const MetaN
 
 	if (dbb->dbb_procedures.get(metaName, procedure))
 	{
-		MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.qualifier);
+		MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.package);
 		procedure->prc_flags |= PRC_dropped;
 		dbb->dbb_procedures.remove(metaName);
 	}
@@ -884,19 +884,19 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	QualifiedName metaName(MetaName(name->str_data, name->str_length),
 		(package ? MetaName(package->str_data, package->str_length) : NULL));
 
-	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.qualifier.isEmpty();
+	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.package.isEmpty();
 	if (maybeUnqualified)
-		metaName.qualifier = dsqlScratch->package;
+		metaName.package = dsqlScratch->package;
 
 	// Start by seeing if symbol is already defined
 
 	dsql_udf* userFunc = NULL;
 	if (dbb->dbb_functions.get(metaName, userFunc))
 	{
-		if (userFunc->udf_private && metaName.qualifier != dsqlScratch->package)
+		if (userFunc->udf_private && metaName.package != dsqlScratch->package)
 			return NULL;
 
-		if (MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.qualifier))
+		if (MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.package))
 			userFunc->udf_flags |= UDF_dropped;
 
 		return userFunc;
@@ -913,7 +913,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$FUNCTIONS WITH
 			X.RDB$FUNCTION_NAME EQ name->str_data AND
-			X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
+			X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 
 			if (!DSQL_REQUEST(irq_function))
 				DSQL_REQUEST(irq_function) = handle1;
@@ -934,7 +934,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 			if (maybeUnqualified)
 			{
 				maybeUnqualified = false;
-				metaName.qualifier = "";
+				metaName.package = "";
 			}
 			else
 				return NULL;
@@ -946,7 +946,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
 		X.RDB$FUNCTION_NAME EQ name->str_data AND
-		X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
+		X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 		SORTED BY X.RDB$ARGUMENT_POSITION
 
 		if (!DSQL_REQUEST(irq_func_return))
@@ -1117,10 +1117,10 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 	dbb->dbb_functions.put(userFunc->udf_name, userFunc);
 
-	if (userFunc->udf_private && metaName.qualifier != dsqlScratch->package)
+	if (userFunc->udf_private && metaName.package != dsqlScratch->package)
 		return NULL;
 
-	MET_dsql_cache_use(tdbb, SYM_udf, userFunc->udf_name.identifier, userFunc->udf_name.qualifier);
+	MET_dsql_cache_use(tdbb, SYM_udf, userFunc->udf_name.identifier, userFunc->udf_name.package);
 
 	return userFunc;
 }
@@ -1231,19 +1231,19 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 	//
 	// I hope for a solution, involving savepoint logic.
 
-	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.qualifier.isEmpty();
+	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.package.isEmpty();
 	if (maybeUnqualified)
-		metaName.qualifier = dsqlScratch->package;
+		metaName.package = dsqlScratch->package;
 
 	// Start by seeing if symbol is already defined
 
 	dsql_prc* procedure = NULL;
 	if (dbb->dbb_procedures.get(metaName, procedure))
 	{
-		if (procedure->prc_private && metaName.qualifier != dsqlScratch->package)
+		if (procedure->prc_private && metaName.package != dsqlScratch->package)
 			return NULL;
 
-		if (MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.qualifier))
+		if (MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.package))
 			procedure->prc_flags |= PRC_dropped;
 
 		return procedure;
@@ -1258,7 +1258,7 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$PROCEDURES
 			WITH X.RDB$PROCEDURE_NAME EQ name->str_data AND
-				 X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
+				 X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 
 			if (!DSQL_REQUEST(irq_procedure))
 				DSQL_REQUEST(irq_procedure) = handle1;
@@ -1281,7 +1281,7 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			if (maybeUnqualified)
 			{
 				maybeUnqualified = false;
-				metaName.qualifier = "";
+				metaName.package = "";
 			}
 			else
 				return NULL;
@@ -1304,7 +1304,7 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE AND
 				 PR.RDB$PROCEDURE_NAME EQ name->str_data AND
 				 PR.RDB$PARAMETER_TYPE = type AND
-				 PR.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.qualifier.c_str(), '')
+				 PR.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 			SORTED BY DESCENDING PR.RDB$PARAMETER_NUMBER
 
 			if (!DSQL_REQUEST(irq_parameters))
@@ -1386,11 +1386,11 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 	dbb->dbb_procedures.put(procedure->prc_name, procedure);
 
-	if (procedure->prc_private && metaName.qualifier != dsqlScratch->package)
+	if (procedure->prc_private && metaName.package != dsqlScratch->package)
 		return NULL;
 
 	MET_dsql_cache_use(tdbb, SYM_procedure, procedure->prc_name.identifier,
-		procedure->prc_name.qualifier);
+		procedure->prc_name.package);
 
 	return procedure;
 }

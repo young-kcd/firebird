@@ -2227,10 +2227,10 @@ static void gen_relation( DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
 		}
 		else
 		{
-			if (procedure->prc_name.qualifier.hasData())
+			if (procedure->prc_name.package.hasData())
 			{
 				stuff(dsqlScratch->getStatement(), context->ctx_alias ? blr_procedure4 : blr_procedure3);
-				stuff_meta_string(dsqlScratch->getStatement(), procedure->prc_name.qualifier.c_str());
+				stuff_meta_string(dsqlScratch->getStatement(), procedure->prc_name.package.c_str());
 				stuff_meta_string(dsqlScratch->getStatement(), procedure->prc_name.identifier.c_str());
 			}
 			else
@@ -2995,12 +2995,12 @@ static void gen_udf( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
 {
 	const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
 
-	if (userFunc->udf_name.qualifier.isEmpty())
+	if (userFunc->udf_name.package.isEmpty())
 		stuff(dsqlScratch->getStatement(), blr_function);
 	else
 	{
 		stuff(dsqlScratch->getStatement(), blr_function2);
-		stuff_meta_string(dsqlScratch->getStatement(), userFunc->udf_name.qualifier.c_str());
+		stuff_meta_string(dsqlScratch->getStatement(), userFunc->udf_name.package.c_str());
 	}
 
 	stuff_meta_string(dsqlScratch->getStatement(), userFunc->udf_name.identifier.c_str());

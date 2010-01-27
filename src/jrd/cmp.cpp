@@ -584,7 +584,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 		{
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 
-			if (routine->getName().qualifier.isEmpty())
+			if (routine->getName().package.isEmpty())
 			{
 				SCL_check_access(tdbb, sec_class, access->acc_view_id, aclType,
 					routine->getName().identifier, access->acc_mask, access->acc_type,
@@ -593,7 +593,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 			else
 			{
 				SCL_check_access(tdbb, sec_class, access->acc_view_id,
-					id_package, routine->getName().qualifier,
+					id_package, routine->getName().package,
 					access->acc_mask, access->acc_type,
 					access->acc_name, access->acc_r_name);
 			}
@@ -693,7 +693,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 			const TEXT* secName = routine->getSecurityName().nullStr();
 			const SecurityClass* secClass = SCL_get_class(tdbb, secName);
 
-			if (routine->getName().qualifier.isEmpty())
+			if (routine->getName().package.isEmpty())
 			{
 				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, routine->getSclType(),
 					routine->getName().identifier);
@@ -701,7 +701,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 			else
 			{
 				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, object_package,
-					routine->getName().qualifier);
+					routine->getName().package);
 			}
 		}
 
@@ -4278,7 +4278,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			{
 				const TEXT* sec_name = function->getSecurityName().nullStr();
 
-				if (function->getName().qualifier.isEmpty())
+				if (function->getName().package.isEmpty())
 				{
 					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, object_function,
 									function->getName().identifier.c_str());
@@ -4286,7 +4286,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				else
 				{
 					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, object_package,
-									function->getName().qualifier.c_str());
+									function->getName().package.c_str());
 				}
 
 				ExternalAccess temp(ExternalAccess::exa_function, function->getId());
@@ -6528,7 +6528,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	const TEXT* prc_sec_name = procedure->getSecurityName().nullStr();
 
 	// this request must have EXECUTE permission on the stored procedure
-	if (procedure->getName().qualifier.isEmpty())
+	if (procedure->getName().package.isEmpty())
 	{
 		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
 						procedure->getName().identifier.c_str());
@@ -6536,7 +6536,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	else
 	{
 		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_package,
-						procedure->getName().qualifier.c_str());
+						procedure->getName().package.c_str());
 	}
 
 	// Add the procedure to list of external objects accessed

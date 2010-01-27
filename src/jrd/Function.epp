@@ -152,7 +152,7 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$FUNCTIONS
 		WITH X.RDB$FUNCTION_NAME EQ name.identifier.c_str() AND
-			 X.RDB$PACKAGE_NAME EQUIV NULLIF(name.qualifier.c_str(), '')
+			 X.RDB$PACKAGE_NAME EQUIV NULLIF(name.package.c_str(), '')
 
 		if (!REQUEST(irq_l_fun_name))
 			REQUEST(irq_l_fun_name) = request;
@@ -281,7 +281,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			FOR(REQUEST_HANDLE request_arg)
 				Y IN RDB$FUNCTION_ARGUMENTS
 				WITH Y.RDB$FUNCTION_NAME EQ function->getName().identifier.c_str() AND
-					 Y.RDB$PACKAGE_NAME EQUIV NULLIF(function->getName().qualifier.c_str(), '')
+					 Y.RDB$PACKAGE_NAME EQUIV NULLIF(function->getName().package.c_str(), '')
 				SORTED BY Y.RDB$ARGUMENT_POSITION
 
 				if (!REQUEST(irq_l_args))
@@ -656,7 +656,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 	{
 		status_exception::raise(
 			Arg::Gds(isc_func_pack_not_implemented) <<
-				Arg::Str(getName().identifier) << Arg::Str(getName().qualifier));
+				Arg::Str(getName().identifier) << Arg::Str(getName().package));
 	}
 
 	const fun_repeat* const return_ptr = &fun_args[fun_return_arg];

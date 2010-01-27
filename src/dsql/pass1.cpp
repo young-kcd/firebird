@@ -1333,10 +1333,10 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			node->nod_arg[e_exe_procedure] = input->nod_arg[e_exe_procedure];
 			node->nod_arg[e_exe_package] = input->nod_arg[e_exe_package];
 
-			if (!node->nod_arg[e_exe_package] && procedure->prc_name.qualifier.hasData())
+			if (!node->nod_arg[e_exe_package] && procedure->prc_name.package.hasData())
 			{
 				node->nod_arg[e_exe_package] = (dsql_nod*) MAKE_string(
-					procedure->prc_name.qualifier.c_str(), procedure->prc_name.qualifier.length());
+					procedure->prc_name.package.c_str(), procedure->prc_name.package.length());
 			}
 
 			// handle input parameters
@@ -8639,7 +8639,7 @@ static dsql_nod* pass1_sys_function(DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 			node = MAKE_node(nod_udf, 3);
 			node->nod_arg[0] = (dsql_nod*) name;
 
-			const MetaName& package = userFunc->udf_name.qualifier;
+			const MetaName& package = userFunc->udf_name.package;
 			if (package.isEmpty())
 				node->nod_arg[1] = NULL;
 			else

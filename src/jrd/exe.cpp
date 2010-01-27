@@ -983,7 +983,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	{
 		status_exception::raise(
 			Arg::Gds(isc_proc_pack_not_implemented) <<
-				Arg::Str(proc->getName().identifier) << Arg::Str(proc->getName().qualifier));
+				Arg::Str(proc->getName().identifier) << Arg::Str(proc->getName().package));
 	}
 
 	/* Post resources to transaction block.  In particular, the interest locks

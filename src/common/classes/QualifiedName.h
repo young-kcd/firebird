@@ -35,21 +35,21 @@ namespace Firebird {
 class QualifiedName
 {
 public:
-	QualifiedName(MemoryPool& p, const MetaName& aIdentifier, const MetaName& aQualifier)
+	QualifiedName(MemoryPool& p, const MetaName& aIdentifier, const MetaName& aPackage)
 		: identifier(p, aIdentifier),
-		  qualifier(p, aQualifier)
+		  package(p, aPackage)
 	{
 	}
 
-	QualifiedName(const MetaName& aIdentifier, const MetaName& aQualifier)
+	QualifiedName(const MetaName& aIdentifier, const MetaName& aPackage)
 		: identifier(aIdentifier),
-		  qualifier(aQualifier)
+		  package(aPackage)
 	{
 	}
 
 	explicit QualifiedName(MemoryPool& p)
 		: identifier(p),
-		  qualifier(p)
+		  package(p)
 	{
 	}
 
@@ -59,28 +59,28 @@ public:
 
 	QualifiedName(MemoryPool& p, const QualifiedName& src)
 		: identifier(p, src.identifier),
-		  qualifier(p, src.qualifier)
+		  package(p, src.package)
 	{
 	}
 
 public:
 	bool operator >(const QualifiedName& m) const
 	{
-		return qualifier > m.qualifier || (qualifier == m.qualifier && identifier > m.identifier);
+		return package > m.package || (package == m.package && identifier > m.identifier);
 	}
 
 	bool operator ==(const QualifiedName& m) const
 	{
-		return identifier == m.identifier && qualifier == m.qualifier;
+		return identifier == m.identifier && package == m.package;
 	}
 
 public:
 	string toString() const
 	{
 		string s;
-		if (qualifier.hasData())
+		if (package.hasData())
 		{
-			s = qualifier.c_str();
+			s = package.c_str();
 			s.append(".");
 		}
 		s.append(identifier.c_str());
@@ -89,7 +89,7 @@ public:
 
 public:
 	MetaName identifier;
-	MetaName qualifier;
+	MetaName package;
 };
 
 } // namespace Firebird

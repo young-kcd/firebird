@@ -360,7 +360,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 			else if (request && (routine = request->getRoutine()) &&
 				routine->getName().identifier.hasData())
 			{
-				if (routine->getName().qualifier.isEmpty())
+				if (routine->getName().package.isEmpty())
 				{
 					tran->tra_caller_name = CallerName(routine->getObjectType(),
 						routine->getName().identifier);
@@ -368,7 +368,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 				else
 				{
 					tran->tra_caller_name = CallerName(obj_package_header,
-						routine->getName().qualifier);
+						routine->getName().package);
 				}
 			}
 			else

@@ -397,9 +397,9 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, function,
-		(udf->getName().qualifier.isEmpty() ?
+		(udf->getName().package.isEmpty() ?
 			CallerName(obj_udf, udf->getName().identifier) :
-			CallerName(obj_package_header, udf->getName().qualifier)));
+			CallerName(obj_package_header, udf->getName().package)));
 
 	impure->vlu_desc.dsc_flags = DSC_null;
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -506,9 +506,9 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, ValuesImpl* inputParams,
 {
 	attInfo = procedure->extManager->getEngineAttachment(tdbb, procedure->engine);
 	ContextManager<ExternalProcedure> ctxManager(tdbb, attInfo, procedure->procedure,
-		(procedure->prc->getName().qualifier.isEmpty() ?
+		(procedure->prc->getName().package.isEmpty() ?
 			CallerName(obj_procedure, procedure->prc->getName().identifier) :
-			CallerName(obj_package_header, procedure->prc->getName().qualifier)));
+			CallerName(obj_package_header, procedure->prc->getName().package)));
 	Attachment* attachment = tdbb->getAttachment();
 
 	charSet = attachment->att_charset;
@@ -539,9 +539,9 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 		return wasFirstFetch;
 
 	ContextManager<ExternalProcedure> ctxManager(tdbb, attInfo, charSet,
-		(procedure->prc->getName().qualifier.isEmpty() ?
+		(procedure->prc->getName().package.isEmpty() ?
 			CallerName(obj_procedure, procedure->prc->getName().identifier) :
-			CallerName(obj_package_header, procedure->prc->getName().qualifier)));
+			CallerName(obj_package_header, procedure->prc->getName().package)));
 
 	Database::Checkout dcoHolder(tdbb->getDatabase());
 	return resultSet->fetch(RaiseError());
@@ -759,9 +759,9 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 	EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
-		(udf->getName().qualifier.isEmpty() ?
+		(udf->getName().package.isEmpty() ?
 			CallerName(obj_udf, udf->getName().identifier) :
-			CallerName(obj_package_header, udf->getName().qualifier)));
+			CallerName(obj_package_header, udf->getName().package)));
 
 	ExternalFunction* externalFunction;
 
@@ -769,7 +769,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 		Database::Checkout dcoHolder(tdbb->getDatabase());
 
 		externalFunction = attInfo->engine->makeFunction(RaiseError(),
-			attInfo->context, udf->getName().qualifier.nullStr(), udf->getName().identifier.c_str(),
+			attInfo->context, udf->getName().package.nullStr(), udf->getName().identifier.c_str(),
 			entryPointTrimmed.nullStr(), body.nullStr());
 
 		if (!externalFunction)
@@ -802,9 +802,9 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 
 	EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalProcedure> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
-		(prc->getName().qualifier.isEmpty() ?
+		(prc->getName().package.isEmpty() ?
 			CallerName(obj_procedure, prc->getName().identifier) :
-			CallerName(obj_package_header, prc->getName().qualifier)));
+			CallerName(obj_package_header, prc->getName().package)));
 
 	ExternalProcedure* externalProcedure;
 
@@ -812,7 +812,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 		Database::Checkout dcoHolder(tdbb->getDatabase());
 
 		externalProcedure = attInfo->engine->makeProcedure(RaiseError(),
-			attInfo->context, prc->getName().qualifier.nullStr(), prc->getName().identifier.c_str(),
+			attInfo->context, prc->getName().package.nullStr(), prc->getName().identifier.c_str(),
 			entryPointTrimmed.nullStr(), body.nullStr());
 
 		if (!externalProcedure)

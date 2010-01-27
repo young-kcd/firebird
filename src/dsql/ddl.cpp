@@ -3003,8 +3003,8 @@ static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 			else //if (procedure)
 			{
 				ctxType = VCT_PROCEDURE;
-				if (procedure->prc_name.qualifier.hasData())
-					statement->append_string(isc_dyn_pkg_name, procedure->prc_name.qualifier);
+				if (procedure->prc_name.package.hasData())
+					statement->append_string(isc_dyn_pkg_name, procedure->prc_name.package);
 			}
 			statement->append_number(isc_dyn_view_context_type, (SSHORT) ctxType);
 

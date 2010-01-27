@@ -1131,8 +1131,8 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 	// object name/type
 	if (routine)
 	{
-		if (routine->getName().qualifier.hasData())
-			record.storeString(f_mon_call_pkg_name, routine->getName().qualifier);
+		if (routine->getName().package.hasData())
+			record.storeString(f_mon_call_pkg_name, routine->getName().package);
 
 		record.storeString(f_mon_call_name, routine->getName().identifier);
 		record.storeInteger(f_mon_call_type, routine->getObjectType());

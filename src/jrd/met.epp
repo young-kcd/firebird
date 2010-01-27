@@ -2491,7 +2491,7 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
 	FOR(REQUEST_HANDLE request)
 		P IN RDB$PROCEDURES
 		WITH P.RDB$PROCEDURE_NAME EQ name.identifier.c_str() AND
-			 P.RDB$PACKAGE_NAME EQUIV NULLIF(name.qualifier.c_str(), '')
+			 P.RDB$PACKAGE_NAME EQUIV NULLIF(name.package.c_str(), '')
 
 		if (!REQUEST(irq_l_procedure))
 			REQUEST(irq_l_procedure) = request;
@@ -4201,9 +4201,9 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Quali
 	key.append((char*) &len, sizeof(len));
 	key.append(name.identifier.c_str());
 
-	len = name.qualifier.length();
+	len = name.package.length();
 	key.append((char*) &len, sizeof(len));
-	key.append(name.qualifier.c_str());
+	key.append(name.package.c_str());
 
 	DSqlCacheItem* item = attachment->att_dsql_cache.put(key);
 	if (item)
@@ -5313,7 +5313,7 @@ static void store_dependencies(thread_db* tdbb,
 		case obj_procedure:
 			procedure = (jrd_prc*) node->nod_arg[e_dep_object];
 			dpdo_name = &procedure->getName().identifier;
-			packageName = procedure->getName().qualifier;
+			packageName = procedure->getName().package;
 			break;
 		case obj_collation:
 			{
@@ -5344,7 +5344,7 @@ static void store_dependencies(thread_db* tdbb,
 			{
 				Function* const udf = (Function*) node->nod_arg[e_dep_object];
 				dpdo_name = &udf->getName().identifier;
-				packageName = udf->getName().qualifier;
+				packageName = udf->getName().package;
 			}
 			break;
 		case obj_index:
