@@ -5736,7 +5736,7 @@ static bool init(ISC_STATUS* user_status,
 
 			for (sequence = 0; list[sequence]; ++sequence)
 			{
-				UCHAR* nm;
+				const char* nm;
 				USHORT len;
 				list[sequence]->getName(&nm, &len);
 				if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
@@ -5782,7 +5782,9 @@ static bool init(ISC_STATUS* user_status,
 		// send answer (may be empty) to server
 		packet->p_operation = op_trusted_auth;
 		d = &packet->p_trau.p_trau_data;
-		currentInstance->getData(&d->cstr_address, &d->cstr_length);
+		// violate constness here safely - send operation does not modify data
+		currentInstance->getData(const_cast<const unsigned char**>(&d->cstr_address), 
+								 &d->cstr_length);
 
 		if (!send_packet(rdb->rdb_port, packet, user_status))
 		{

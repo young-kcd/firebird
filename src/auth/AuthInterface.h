@@ -96,7 +96,7 @@ public:
 class Plugin : public InterfaceBase
 {
 public:
-	virtual void getName(unsigned char** data, unsigned short* dataSize) = 0;
+	virtual void getName(const char** data, unsigned short* dataSize) = 0;
 };
 
 class ServerInstance : public InterfaceBase
@@ -107,7 +107,7 @@ public:
 									   WriterInterface* writerInterface) = 0;
 	virtual Result contAuthentication(WriterInterface* writerInterface,
 									  const unsigned char* data, unsigned int size) = 0;
-	virtual void getData(unsigned char** data, unsigned short* dataSize) = 0;
+	virtual void getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 
 class ServerPlugin : public Plugin
@@ -121,7 +121,7 @@ class ClientInstance : public InterfaceBase
 public:
 	virtual Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb) = 0;
 	virtual Result contAuthentication(const unsigned char* data, unsigned int size) = 0;
-	virtual void getData(unsigned char** data, unsigned short* dataSize) = 0;
+	virtual void getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 
 class ClientPlugin : public Plugin

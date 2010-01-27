@@ -436,10 +436,10 @@ ServerInstance* SecurityDatabaseServer::instance()
 	return interfaceAlloc<SecurityDatabaseServerInstance>();
 }
 
-void SecurityDatabaseServer::getName(unsigned char** data, unsigned short* dataSize)
+void SecurityDatabaseServer::getName(const char** data, unsigned short* dataSize)
 {
 	static char name[] = "LEGACY_AUTH";
-	*data = (unsigned char*) name;
+	*data = name;
 	*dataSize = strlen(name);
 }
 
@@ -462,7 +462,7 @@ Result SecurityDatabaseServerInstance::contAuthentication(WriterInterface* /*wri
 	return AUTH_FAILED;
 }
 
-void SecurityDatabaseServerInstance::getData(unsigned char** data, unsigned short* dataSize)
+void SecurityDatabaseServerInstance::getData(const unsigned char** data, unsigned short* dataSize)
 {
 	*data = NULL;
 	*dataSize = 0;

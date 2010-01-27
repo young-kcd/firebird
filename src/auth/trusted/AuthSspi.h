@@ -99,7 +99,7 @@ class WinSspiServer : public ServerPlugin
 {
 public:
 	ServerInstance* instance();
-    void getName(unsigned char** data, unsigned short* dataSize);
+    void getName(const char** data, unsigned short* dataSize);
     void release();
 };
 
@@ -107,7 +107,7 @@ class WinSspiClient : public ClientPlugin
 {
 public:
 	ClientInstance* instance();
-    void getName(unsigned char** data, unsigned short* dataSize);
+    void getName(const char** data, unsigned short* dataSize);
     void release();
 };
 
@@ -119,7 +119,7 @@ public:
                                WriterInterface* writerInterface);
     Result contAuthentication(WriterInterface* writerInterface,
                               const unsigned char* data, unsigned int size);
-    void getData(unsigned char** data, unsigned short* dataSize);
+    void getData(const unsigned char** data, unsigned short* dataSize);
     void release();
 
 	WinSspiServerInstance();
@@ -134,7 +134,7 @@ class WinSspiClientInstance : public ClientInstance
 public:
 	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
 	Result contAuthentication(const unsigned char* data, unsigned int size);
-    void getData(unsigned char** data, unsigned short* dataSize);
+    void getData(const unsigned char** data, unsigned short* dataSize);
     void release();
 
 	WinSspiClientInstance();

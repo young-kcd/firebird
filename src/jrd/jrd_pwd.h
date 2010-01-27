@@ -112,7 +112,7 @@ class SecurityDatabaseServer : public ServerPlugin
 {
 public:
 	ServerInstance* instance();
-	void getName(unsigned char** data, unsigned short* dataSize);
+	void getName(const char** data, unsigned short* dataSize);
 	void release();
 };
 
@@ -125,7 +125,7 @@ public:
 							   WriterInterface* writerInterface);
 	Result contAuthentication(WriterInterface* writerInterface,
 							  const unsigned char* data, unsigned int size);
-	void getData(unsigned char** data, unsigned short* dataSize);
+	void getData(const unsigned char** data, unsigned short* dataSize);
 	void release();
 };
 

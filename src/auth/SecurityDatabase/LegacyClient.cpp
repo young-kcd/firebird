@@ -36,11 +36,11 @@ ClientInstance* SecurityDatabaseClient::instance()
 	return interfaceAlloc<SecurityDatabaseClientInstance>();
 }
 
-void SecurityDatabaseClient::getName(unsigned char** data, unsigned short* dataSize)
+void SecurityDatabaseClient::getName(const char** data, unsigned short* dataSize)
 {
 	// Do not violate the constness.
 	static char name[] = "LEGACY_AUTH";
-	*data = (unsigned char*) name;
+	*data = name;
 	*dataSize = strlen(name);
 }
 
@@ -61,7 +61,7 @@ Result SecurityDatabaseClientInstance::contAuthentication(const unsigned char*, 
 	return AUTH_FAILED;
 }
 
-void SecurityDatabaseClientInstance::getData(unsigned char**, unsigned short* dataSize)
+void SecurityDatabaseClientInstance::getData(const unsigned char**, unsigned short* dataSize)
 {
 	*dataSize = 0;
 }

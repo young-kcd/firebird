@@ -54,10 +54,10 @@ namespace
 		return (ToType)rc;
 	}
 
-	void authName(unsigned char** data, unsigned short* dataSize)
+	void authName(const char** data, unsigned short* dataSize)
 	{
 		const char* name = "WIN_SSPI";
-		*data = (unsigned char*) name;
+		*data = name;
 		*dataSize = strlen(name);
 	}
 }
@@ -333,12 +333,12 @@ ClientInstance* WinSspiClient::instance()
 	return interfaceAlloc<WinSspiClientInstance>();
 }
 
-void WinSspiServer::getName(unsigned char** data, unsigned short* dataSize)
+void WinSspiServer::getName(const char** data, unsigned short* dataSize)
 {
 	authName(data, dataSize);
 }
 
-void WinSspiClient::getName(unsigned char** data, unsigned short* dataSize)
+void WinSspiClient::getName(const char** data, unsigned short* dataSize)
 {
 	authName(data, dataSize);
 }
@@ -411,7 +411,7 @@ Result WinSspiServerInstance::contAuthentication(WriterInterface* writerInterfac
 	return AUTH_MORE_DATA;
 }
 
-void WinSspiServerInstance::getData(unsigned char** data, unsigned short* dataSize)
+void WinSspiServerInstance::getData(const unsigned char** data, unsigned short* dataSize)
 {
 	*data = sspiData.begin();
 	*dataSize = sspiData.getCount();
@@ -460,7 +460,7 @@ Result WinSspiClientInstance::contAuthentication(const unsigned char* data, unsi
 	return sspi.isActive() ? AUTH_MORE_DATA : AUTH_CONTINUE;
 }
 
-void WinSspiClientInstance::getData(unsigned char** data, unsigned short* dataSize)
+void WinSspiClientInstance::getData(const unsigned char** data, unsigned short* dataSize)
 {
 	*data = sspiData.begin();
 	*dataSize = sspiData.getCount();

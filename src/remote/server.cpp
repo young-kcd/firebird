@@ -338,13 +338,16 @@ public:
 
 					s = &send->p_auth_cont.p_data;
 					s->cstr_allocated = 0;
-					authInstance->getData(&s->cstr_address, &s->cstr_length);
+					// violate constness here safely - send operation does not modify data
+					authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address), 
+										  &s->cstr_length);
 
 					s = &send->p_auth_cont.p_name;
 					s->cstr_allocated = 0;
 					if (first)
 					{
-						list[sequence]->getName(&s->cstr_address, &s->cstr_length);
+						// violate constness here safely - send operation does not modify data
+						list[sequence]->getName((const char**)(&s->cstr_address), &s->cstr_length);
 					}
 					else
 					{
@@ -360,7 +363,9 @@ public:
 
 						s = &send->p_trau.p_trau_data;
 						s->cstr_allocated = 0;
-						authInstance->getData(&s->cstr_address, &s->cstr_length);
+						// violate constness here safely - send operation does not modify data
+						authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address),
+											  &s->cstr_length);
 					}
 					else
 					{

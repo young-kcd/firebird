@@ -33,12 +33,12 @@
 
 namespace
 {
-	void debugName(unsigned char** data, unsigned short* dataSize)
+	void debugName(const char** data, unsigned short* dataSize)
 	{
 		// Construct a copy of the literal so we don't violate the constness.
 		// The caller can do anything with the pointer unless we change getName() signature.
 		static char name[] = "DEBUG_AUTH";
-		*data = (unsigned char*) name;
+		*data = name;
 		*dataSize = strlen(name);
 	}
 }
@@ -55,12 +55,12 @@ ClientInstance* DebugClient::instance()
 	return interfaceAlloc<DebugClientInstance>();
 }
 
-void DebugServer::getName(unsigned char** data, unsigned short* dataSize)
+void DebugServer::getName(const char** data, unsigned short* dataSize)
 {
 	debugName(data, dataSize);
 }
 
-void DebugClient::getName(unsigned char** data, unsigned short* dataSize)
+void DebugClient::getName(const char** data, unsigned short* dataSize)
 {
 	debugName(data, dataSize);
 }
@@ -105,9 +105,9 @@ Result DebugServerInstance::contAuthentication(WriterInterface* writerInterface,
 	return AUTH_SUCCESS;
 }
 
-void DebugServerInstance::getData(unsigned char** data, unsigned short* dataSize)
+void DebugServerInstance::getData(const unsigned char** data, unsigned short* dataSize)
 {
-	*data = (unsigned char*)str.c_str();
+	*data = reinterpret_cast<const unsigned char*>(str.c_str());
 	*dataSize = str.length();
 	//fprintf(stderr, "DebugServerInstance::getData: %.*s\n", *dataSize, *data);
 }
@@ -141,9 +141,9 @@ Result DebugClientInstance::contAuthentication(const unsigned char* data, unsign
 	return AUTH_CONTINUE;
 }
 
-void DebugClientInstance::getData(unsigned char** data, unsigned short* dataSize)
+void DebugClientInstance::getData(const unsigned char** data, unsigned short* dataSize)
 {
-	*data = (unsigned char*)str.c_str();
+	*data = reinterpret_cast<const unsigned char*>(str.c_str());
 	*dataSize = str.length();
 	//fprintf(stderr, "DebugClientInstance::getData: %.*s\n", *dataSize, *data);
 }
@@ -206,7 +206,7 @@ bool legacy(Plugin* plugin)
 {
 	const char* legacyTrusted = "WIN_SSPI";
 	const short legLength = strlen(legacyTrusted);
-	UCHAR* nm;
+	const char* nm;
 	USHORT len;
 
 	plugin->getName(&nm, &len);

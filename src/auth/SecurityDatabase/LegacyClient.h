@@ -38,7 +38,7 @@ class SecurityDatabaseClient : public ClientPlugin
 {
 public:
 	ClientInstance* instance();
-	void getName(unsigned char** data, unsigned short* dataSize);
+	void getName(const char** data, unsigned short* dataSize);
 	void release();
 };
 
@@ -47,7 +47,7 @@ class SecurityDatabaseClientInstance : public ClientInstance
 public:
 	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
 	Result contAuthentication(const unsigned char* data, unsigned int size);
-    void getData(unsigned char** data, unsigned short* dataSize);
+    void getData(const unsigned char** data, unsigned short* dataSize);
     void release();
 };
 
