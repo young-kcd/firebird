@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="fbclient"
 	ProjectGUID="{492E7BDA-8948-408D-A43E-4C0A5B86AFB8}"
 	>
@@ -454,10 +454,6 @@
 			Name="REMOTE files"
 			>
 			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\inet.cpp"
 				>
 			</File>
@@ -621,6 +617,22 @@
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
 					/>
 				</FileConfiguration>
+			</File>
+		</Filter>
+		<Filter
+			Name="AUTH files"
+			>
+			<File
+				RelativePath="..\..\..\src\auth\Auth.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp"
+				>
 			</File>
 		</Filter>
 		<File
