@@ -1,3 +1,18 @@
+2010-01-27 11:31  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.219.2.10), exe.h (1.107.2.2),
+	met.epp (1.227.2.5), met_proto.h (1.60.4.1), pcmet.epp (1.44.2.5):
+
+	Backport: fix misinterpretation of MET_get_dependencies's
+	parameters done years ago with conversion to MetaName class.
+
+2010-01-26 18:55  dimitr
+
+	* firebird2/: doc/WhatsNew (1.148.2.35), src/jrd/isc_version.h
+	(1.9.8.28):
+
+	Update.
+
 2010-01-22 15:05  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.78.2.7):
