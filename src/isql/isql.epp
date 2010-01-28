@@ -1323,14 +1323,14 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 		}
 	}
 
-/*
-   Using view_name and view_context get the relation name from
-   RDB$VIEW_RELATIONS which contains the base_field for this view column.
-   Get row corresponding to this base field and relation from
-   rdb$field_relations. This will contain info on field's nullability unless
-   it is a view column itself, in which case repeat this procedure till
-   we get to a "real" column.
-*/
+	/*
+	Using view_name and view_context get the relation name from
+	RDB$VIEW_RELATIONS which contains the base_field for this view column.
+	Get row corresponding to this base field and relation from
+	rdb$field_relations. This will contain info on field's nullability unless
+	it is a view column itself, in which case repeat this procedure till
+	we get to a "real" column.
+	*/
 	bool null_flag = true;
 	bool done = false;
 	bool error = false;
@@ -1341,8 +1341,7 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 		bool found = false;
 		FOR FIRST 1
 			VR IN RDB$VIEW_RELATIONS
-			CROSS NEWRFR IN RDB$RELATION_FIELDS
-		   WITH
+			CROSS NEWRFR IN RDB$RELATION_FIELDS WITH
 			VR.RDB$VIEW_NAME EQ save_view_name AND
 			VR.RDB$VIEW_CONTEXT EQ save_view_context AND
 			NEWRFR.RDB$RELATION_NAME = VR.RDB$RELATION_NAME AND
@@ -1351,8 +1350,9 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 			found = true;
 			if (NEWRFR.RDB$BASE_FIELD.NULL)
 			{
-				if (NEWRFR.RDB$NULL_FLAG == 1)
+				if (!NEWRFR.RDB$NULL_FLAG.NULL && NEWRFR.RDB$NULL_FLAG == 1)
 					null_flag = false;
+
 				done = true;
 			}
 			else
@@ -1365,6 +1365,28 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 		ON_ERROR
 			error = true;
 		END_ERROR;
+
+		if (!found && ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+		{
+			FOR FIRST 1
+				VR IN RDB$VIEW_RELATIONS
+				CROSS NEWPP IN RDB$PROCEDURE_PARAMETERS WITH
+				VR.RDB$VIEW_NAME EQ save_view_name AND
+				VR.RDB$VIEW_CONTEXT EQ save_view_context AND
+				NEWPP.RDB$PROCEDURE_NAME = VR.RDB$RELATION_NAME AND
+				NEWPP.RDB$PARAMETER_NAME = save_base_field AND
+				NEWPP.RDB$PARAMETER_TYPE = 1 // output param
+
+				found = true;
+				if (!NEWPP.RDB$NULL_FLAG.NULL && NEWPP.RDB$NULL_FLAG == 1)
+					null_flag = false;
+
+				done = true;
+			END_FOR
+			ON_ERROR
+				error = true;
+			END_ERROR;
+		}
 		if (!found)
 			error = true;
 	}
@@ -1410,7 +1432,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 			RFR.RDB$RELATION_NAME EQ rel_name AND
 			RFR.RDB$FIELD_NAME EQ field_name
 
-			if (FLD.RDB$NULL_FLAG == 1)
+			if (!FLD.RDB$NULL_FLAG.NULL && FLD.RDB$NULL_FLAG == 1)
 				null_flag = false;
 			else
 			{
@@ -1422,7 +1444,7 @@ bool ISQL_get_null_flag(const TEXT* rel_name,
 
 					// Simple column. Did user define it not null?
 
-					if (RFR.RDB$NULL_FLAG == 1)
+					if (!RFR.RDB$NULL_FLAG.NULL && RFR.RDB$NULL_FLAG == 1)
 						null_flag = false;
 				}
 				else
