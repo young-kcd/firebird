@@ -2574,7 +2574,7 @@ void DYN_define_local_field(Global*		gbl,
 				break;
 
 			default:
-				{	
+				{
 					MetaNameProxy tmp(RFR.RDB$FIELD_SOURCE);
 					DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
 				}

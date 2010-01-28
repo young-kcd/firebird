@@ -339,7 +339,7 @@ public:
 					s = &send->p_auth_cont.p_data;
 					s->cstr_allocated = 0;
 					// violate constness here safely - send operation does not modify data
-					authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address), 
+					authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address),
 										  &s->cstr_length);
 
 					s = &send->p_auth_cont.p_name;

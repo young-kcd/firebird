@@ -5783,7 +5783,7 @@ static bool init(ISC_STATUS* user_status,
 		packet->p_operation = op_trusted_auth;
 		d = &packet->p_trau.p_trau_data;
 		// violate constness here safely - send operation does not modify data
-		currentInstance->getData(const_cast<const unsigned char**>(&d->cstr_address), 
+		currentInstance->getData(const_cast<const unsigned char**>(&d->cstr_address),
 								 &d->cstr_length);
 
 		if (!send_packet(rdb->rdb_port, packet, user_status))
