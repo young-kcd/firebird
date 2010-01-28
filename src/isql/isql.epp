@@ -641,6 +641,8 @@ int ISQL_main(int argc,
 	case EXTRACT:
 	case EXTRACTALL:
 		if (*isqlGlob.global_Db_name) {
+			Interactive = false; // "extract" option only can be called from command-line
+		
 			// Let's use user and password if provided.
 			// This should solve bug #112263 FSG 28.Jan.2001
 			if (newdb(isqlGlob.global_Db_name, isqlGlob.User, Password, global_numbufs,
