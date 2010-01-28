@@ -437,7 +437,7 @@ namespace
 	};
 
 	// Check the fields inside an aggregate and check if the field scope_level meets the specified
-	// conditions. In the first call current_scope_level_equal should always be true, because this
+	// conditions. In the first call currentScopeLevelEqual should always be true, because this
 	// is used internally!
 	class Aggregate2Finder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
 	{
@@ -557,6 +557,7 @@ namespace
 		static dsql_nod* remap(DsqlCompilerScratch* dsqlScratch, dsql_ctx* context, bool window,
 			dsql_nod* field, dsql_nod* partitionNode = NULL, dsql_nod* orderNode = NULL)
 		{
+			// The bool value returned by the visitor is completely discarded in this class.
 			FieldRemapper(dsqlScratch, context, window, partitionNode, orderNode).visit(field);
 			return field;
 		}
@@ -737,14 +738,14 @@ bool AggregateFinder::visit(const dsql_nod* node)
 
 		case nod_relation:
 		{
-			const dsql_ctx* lrelation_context =
+			const dsql_ctx* localRelationContext =
 				reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
 
 			// Check if relation is a procedure
-			if (lrelation_context->ctx_procedure)
+			if (localRelationContext->ctx_procedure)
 			{
 				// Check if a aggregate is buried inside the input parameters
-				aggregate |= visit(lrelation_context->ctx_proc_inputs);
+				aggregate |= visit(localRelationContext->ctx_proc_inputs);
 			}
 
 			return aggregate;
@@ -752,9 +753,9 @@ bool AggregateFinder::visit(const dsql_nod* node)
 
 		case nod_field:
 		{
-			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-			if (deepestLevel < lcontext->ctx_scope_level)
-				deepestLevel = lcontext->ctx_scope_level;
+			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
+			if (deepestLevel < localContext->ctx_scope_level)
+				deepestLevel = localContext->ctx_scope_level;
 			return false;
 		}
 
@@ -762,9 +763,9 @@ bool AggregateFinder::visit(const dsql_nod* node)
 		{
 			// This is a derived table, so don't look further,
 			// but don't forget to check for the deepest scope_level.
-			const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-			if (deepestLevel < lscope_level)
-				deepestLevel = lscope_level;
+			const USHORT localScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+			if (deepestLevel < localScopeLevel)
+				deepestLevel = localScopeLevel;
 			return aggregate;
 		}
 
@@ -816,7 +817,7 @@ bool Aggregate2Finder::visit(const dsql_nod* node)
 					// For example COUNT(*) is always same scope_level (node->nod_count = 0)
 					// Normaly COUNT(*) is the only way to come here but something stupid
 					// as SUM(5) is also possible.
-					// If current_scope_level_equal is false scope_level is always higher
+					// If currentScopeLevelEqual is false scopeLevel is always higher
 					switch (matchType)
 					{
 						case FIELD_MATCH_TYPE_LOWER_EQUAL:
@@ -1116,10 +1117,10 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 			}
 			else
 			{
-				bool linside_higher_map = lcontext->ctx_scope_level > context->ctx_scope_level;
+				bool localInsideHigherMap = lcontext->ctx_scope_level > context->ctx_scope_level;
 
 				AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap, false);
-				AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, linside_higher_map);
+				AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, localInsideHigherMap);
 
 				invalid |= visit(lmap->map_node);
 			}
@@ -1133,7 +1134,7 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 
 		case nod_field:
 		{
-			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
+			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
 
 			// Wouldn't it be better to call a error from this
 			// point where return is true. Then we could give
@@ -1146,7 +1147,7 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 			// If the context-scope-level from this field is
 			// lower or the same as the scope-level from the
 			// given context then it is an invalid field
-			if (lcontext->ctx_scope_level == context->ctx_scope_level)
+			if (localContext->ctx_scope_level == context->ctx_scope_level)
 			{
 				// Return TRUE (invalid) if this Field isn't inside
 				// the GROUP BY clause, that should already been
@@ -1160,10 +1161,10 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 		case nod_dbkey:
 			if (node->nod_arg[0] && node->nod_arg[0]->nod_type == nod_relation)
 			{
-				const dsql_ctx* lcontext =
+				const dsql_ctx* localContext =
 					reinterpret_cast<dsql_ctx*>(node->nod_arg[0]->nod_arg[e_rel_context]);
 
-				if (lcontext && lcontext->ctx_scope_level == context->ctx_scope_level)
+				if (localContext && localContext->ctx_scope_level == context->ctx_scope_level)
 					invalid = true;
 			}
 			break;
@@ -1190,11 +1191,11 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 
 		case nod_derived_field:
 		{
-			const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+			const USHORT localScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
 
-			if (lscope_level == context->ctx_scope_level)
+			if (localScopeLevel == context->ctx_scope_level)
 				invalid |= true;
-			else if (context->ctx_scope_level < lscope_level)
+			else if (context->ctx_scope_level < localScopeLevel)
 				invalid |= visit(node->nod_arg[e_derived_field_value]);
 
 			break;
@@ -1202,14 +1203,11 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 
 		case nod_relation:
 		{
-			const dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
+			const dsql_ctx* localRelationContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
 
-			// Check if relation is a procedure
-			if (lrelation_context->ctx_procedure)
-			{
-				// Check if the parameters are valid
-				invalid |= visit(lrelation_context->ctx_proc_inputs);
-			}
+			// If relation is a procedure, check if the parameters are valid.
+			if (localRelationContext->ctx_procedure)
+				invalid |= visit(localRelationContext->ctx_proc_inputs);
 
 			break;
 		}
@@ -1241,15 +1239,15 @@ bool FieldRemapper::visit(dsql_nod*& node)
 			// If we got a field from a derived table we should not remap anything
 			// deeper in the alias, but this "virtual" field should be mapped to
 			// the given context (of course only if we're in the same scope-level).
-			const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+			const USHORT localScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
 
-			if (lscope_level == context->ctx_scope_level)
+			if (localScopeLevel == context->ctx_scope_level)
 			{
 				node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
 				break;
 			}
 
-			if (context->ctx_scope_level < lscope_level)
+			if (context->ctx_scope_level < localScopeLevel)
 				visit(node->nod_arg[e_derived_field_value]);
 
 			break;
@@ -1257,8 +1255,8 @@ bool FieldRemapper::visit(dsql_nod*& node)
 
 		case nod_field:
 		{
-			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-			if (lcontext->ctx_scope_level == context->ctx_scope_level)
+			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
+			if (localContext->ctx_scope_level == context->ctx_scope_level)
 				node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
 
 			break;
@@ -1266,16 +1264,16 @@ bool FieldRemapper::visit(dsql_nod*& node)
 
 		case nod_map:
 		{
-			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
-			if (lcontext->ctx_scope_level != context->ctx_scope_level)
+			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
+			if (localContext->ctx_scope_level != context->ctx_scope_level)
 			{
 				dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
 
-				AutoSetRestore<USHORT> autoCurrentLevel(&currentLevel, lcontext->ctx_scope_level);
+				AutoSetRestore<USHORT> autoCurrentLevel(&currentLevel, localContext->ctx_scope_level);
 				visit(lmap->map_node);
 			}
 
-			if (window && lcontext->ctx_scope_level == context->ctx_scope_level)
+			if (window && localContext->ctx_scope_level == context->ctx_scope_level)
 				node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
 
 			break;
@@ -1427,10 +1425,10 @@ bool FieldRemapper::visit(dsql_nod*& node)
 
 		case nod_relation:
 		{
-			dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
+			dsql_ctx* localRelationContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
 			// Check if relation is a procedure
-			if (lrelation_context->ctx_procedure)
-				visit(lrelation_context->ctx_proc_inputs);	// Remap the input parameters
+			if (localRelationContext->ctx_procedure)
+				visit(localRelationContext->ctx_proc_inputs);	// Remap the input parameters
 			break;
 		}
 
