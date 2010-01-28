@@ -1,3 +1,23 @@
+2010-01-28 09:18  robocop
+
+	* firebird2/src/isql/isql.epp (1.291.2.5):
+
+	Backport CORE-2735: isql hangs when trying to show a view based on
+	a procedure.
+
+2010-01-28 09:04  robocop
+
+	* firebird2/src/isql/isql.epp (1.291.2.4):
+
+	Backport CORE-2831: isql shouldn't display db and user name when
+	extracting a script.
+
+2010-01-28 06:08  robocop
+
+	* firebird2/doc/README.trace_services (1.4.2.5):
+
+	Misc.
+
 2010-01-27 12:51  hvlad
 
 	* firebird2/doc/README.trace_services (1.4.2.4):
