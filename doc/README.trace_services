@@ -61,9 +61,9 @@ service manager and dedicated CS process.
 not stable and will be changed in next Firebird releases, therefore it is not
 officially published. Trace API is a set of hooks which is implemented by external
 trace plugin module and called by the engine when any traced event happens. Trace
-plugin responsible for logging this events in some form.
+plugin is responsible for logging these events in some form.
 
-	There is "standard" implementation of trace plugin, fbtrace.dll (.so) resided 
+	There is "standard" implementation of trace plugin, fbtrace.dll (.so) located
 in \plugins folder.
 	
 
