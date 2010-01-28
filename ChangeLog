@@ -1,3 +1,10 @@
+2010-01-28 09:04  robocop
+
+	* firebird2/src/isql/isql.epp (1.223.4.5):
+
+	Backport CORE-2831: isql shouldn't display db and user name when
+	extracting a script.
+
 2010-01-27 11:31  robocop
 
 	* firebird2/src/jrd/: dfw.epp (1.219.2.10), exe.h (1.107.2.2),
