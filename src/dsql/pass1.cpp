@@ -181,8 +181,6 @@ static void DSQL_pretty(const dsql_nod*, int);
 #endif
 
 
-static bool aggregate_found(const DsqlCompilerScratch*, const dsql_nod*, bool);
-static bool aggregate_found2(const DsqlCompilerScratch*, const dsql_nod*, bool, USHORT*, USHORT*, bool);
 static dsql_nod* ambiguity_check(DsqlCompilerScratch*, dsql_nod*, const dsql_str*,
 	const DsqlContextStack&);
 static void assign_fld_dtype_from_dsc(dsql_fld*, const dsc*);
@@ -195,7 +193,6 @@ static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static dsql_ctx* get_context(const dsql_nod* node);
-static bool invalid_reference(const dsql_ctx*, const dsql_nod*, const dsql_nod*, bool, bool);
 static bool node_match(const dsql_nod*, const dsql_nod*, bool);
 static dsql_nod* nullify_returning(DsqlCompilerScratch*, dsql_nod* input);
 static dsql_nod* pass1_alias_list(DsqlCompilerScratch*, dsql_nod*);
@@ -217,9 +214,6 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, dsql_str*)
 static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static void pass1_expand_select_node(DsqlCompilerScratch*, dsql_nod*, DsqlNodStack&, bool);
 static dsql_nod* pass1_field(DsqlCompilerScratch*, dsql_nod*, const bool, dsql_nod*);
-static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool, bool);
-static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
-static bool pass1_found_sub_select(const dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod*& expr);
 static dsql_nod* pass1_insert(DsqlCompilerScratch*, dsql_nod*, bool);
@@ -247,8 +241,6 @@ static dsql_nod* pass1_update(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_variable(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* post_map(DsqlCompilerScratch*, dsql_nod*, dsql_ctx*, dsql_nod*, dsql_nod*);
-static dsql_nod* remap_field(DsqlCompilerScratch*, dsql_nod*, bool, dsql_ctx*, USHORT, dsql_nod*, dsql_nod*);
-static dsql_nod* remap_fields(DsqlCompilerScratch*, dsql_nod*, bool, dsql_ctx*, dsql_nod* = NULL, dsql_nod* = NULL);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
 static dsql_fld* resolve_context(DsqlCompilerScratch*, const dsql_str*, dsql_ctx*, bool, bool);
 static dsql_nod* resolve_using_field(DsqlCompilerScratch* dsqlScratch, dsql_str* name, DsqlNodStack& stack,
@@ -279,13 +271,1243 @@ const int LIKE_PARAM_LEN = 30;	// CVC: This is a guess for the length of the
 								// original dtype isn't string and force_varchar
 								// is true.
 
-enum field_match_val {
+enum FieldMatchType {
 	FIELD_MATCH_TYPE_EQUAL = 0,
 	FIELD_MATCH_TYPE_LOWER = 1,
 	FIELD_MATCH_TYPE_LOWER_EQUAL = 2,
 	FIELD_MATCH_TYPE_HIGHER = 3,
 	FIELD_MATCH_TYPE_HIGHER_EQUAL = 4
 };
+
+
+namespace
+{
+	template <typename T, typename T2>
+	class NodeVisitor
+	{
+	public:
+		NodeVisitor(bool aAssertOnOthers, bool aReturnOnOthers)
+			: assertOnOthers(aAssertOnOthers),
+			  returnOnOthers(aReturnOnOthers)
+		{
+		}
+
+	public:
+		bool visitChildren(T node)
+		{
+			bool ret = false;
+
+			if (!node)
+				return ret;
+
+			switch (node->nod_type)
+			{
+				case nod_constant:
+				case nod_parameter:
+				case nod_variable:
+				case nod_null:
+				case nod_current_date:
+				case nod_current_time:
+				case nod_current_timestamp:
+				case nod_user_name:
+				case nod_current_role:
+				case nod_dom_value:
+					break;
+
+				case nod_alias:
+					ret |= visit(node->nod_arg[e_alias_value]);
+					break;
+
+				case nod_hidden_var:
+					ret |= visit(node->nod_arg[e_hidden_var_expr]);
+					break;
+
+				case nod_order:
+					ret |= visit(node->nod_arg[e_order_field]);
+					break;
+
+				case nod_gen_id:
+				case nod_gen_id2:
+				case nod_cast:
+				case nod_sys_function:
+					if (node->nod_count == 2)
+						ret |= visit(node->nod_arg[1]);
+					break;
+
+				case nod_udf:
+					if (node->nod_count == 3)
+						ret |= visit(node->nod_arg[2]);
+					break;
+
+				case nod_or:
+				case nod_and:
+				case nod_not:
+				case nod_equiv:
+				case nod_eql:
+				case nod_neq:
+				case nod_gtr:
+				case nod_geq:
+				case nod_lss:
+				case nod_leq:
+				case nod_between:
+				case nod_like:
+				case nod_containing:
+				case nod_similar:
+				case nod_starting:
+				case nod_missing:
+				case nod_add:
+				case nod_add2:
+				case nod_concatenate:
+				case nod_divide:
+				case nod_divide2:
+				case nod_multiply:
+				case nod_multiply2:
+				case nod_negate:
+				case nod_substr:
+				case nod_subtract:
+				case nod_subtract2:
+				case nod_trim:
+				case nod_upcase:
+				case nod_lowcase:
+				case nod_extract:
+				case nod_strlen:
+				case nod_simple_case:
+				case nod_searched_case:
+				case nod_any:
+				case nod_ansi_any:
+				case nod_ansi_all:
+				case nod_list:
+				case nod_join:
+				case nod_join_inner:
+				case nod_join_left:
+				case nod_join_right:
+				case nod_join_full:
+				{
+					T2 ptr = node->nod_arg;
+					for (T2 end = ptr + node->nod_count; ptr < end; ++ptr)
+						ret |= visit(*ptr);
+					break;
+				}
+
+				default:
+					if (assertOnOthers)
+						fb_assert(false);
+					return returnOnOthers;
+			}
+
+			return ret;
+		}
+
+		virtual bool visit(T node) = 0;
+
+	private:
+		const bool assertOnOthers;
+		const bool returnOnOthers;
+	};
+
+    // Check for an aggregate expression in an expression. It could be buried in an expression
+	// tree and therefore call itselfs again. The level parameters (currentLevel & deepestLevel)
+	// are used to see how deep we are with passing sub-queries (= scope_level).
+	class AggregateFinder : public NodeVisitor<const dsql_nod*, const dsql_nod* const*>
+	{
+	public:
+		AggregateFinder(const DsqlCompilerScratch* aDsqlScratch, bool aWindow, bool aIgnoreSubSelects)
+			: NodeVisitor<const dsql_nod*, const dsql_nod* const*>(false, false),
+			  dsqlScratch(aDsqlScratch),
+			  window(aWindow),
+			  ignoreSubSelects(aIgnoreSubSelects),
+			  currentLevel(dsqlScratch->scopeLevel),
+			  deepestLevel(0)
+		{
+		}
+
+		static bool find(const DsqlCompilerScratch* dsqlScratch, const dsql_nod* node, bool window)
+		{
+			return AggregateFinder(dsqlScratch, window, false).visit(node);
+		}
+
+		virtual bool visit(const dsql_nod* node);
+
+	public:
+		const DsqlCompilerScratch* const dsqlScratch;
+		bool window;
+		bool ignoreSubSelects;
+		USHORT currentLevel;
+		USHORT deepestLevel;
+	};
+
+	// Check the fields inside an aggregate and check if the field scope_level meets the specified
+	// conditions. In the first call current_scope_level_equal should always be true, because this
+	// is used internally!
+	class Aggregate2Finder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
+	{
+	public:
+		Aggregate2Finder(USHORT aCheckScopeLevel, FieldMatchType aMatchType,
+					bool aCurrentScopeLevelEqual, bool aWindowOnly)
+			: NodeVisitor<const dsql_nod*, const dsql_nod* const*>(true, false),
+			  checkScopeLevel(aCheckScopeLevel),
+			  matchType(aMatchType),
+			  currentScopeLevelEqual(aCurrentScopeLevelEqual),
+			  windowOnly(aWindowOnly)
+		{
+		}
+
+		static bool find(USHORT checkScopeLevel, FieldMatchType matchType,
+			bool currentScopeLevelEqual, bool windowOnly, const dsql_nod* node)
+		{
+			return Aggregate2Finder(checkScopeLevel, matchType,
+				currentScopeLevelEqual, windowOnly).visit(node);
+		}
+
+	protected:
+		virtual bool visit(const dsql_nod* node);
+
+	private:
+		const USHORT checkScopeLevel;
+		const FieldMatchType matchType;
+		bool currentScopeLevelEqual;
+		bool windowOnly;
+	};
+
+	// Check the fields inside an aggregate and check if the field scope_level meets the specified
+	// conditions.
+	class FieldFinder : public NodeVisitor<const dsql_nod*, const dsql_nod* const*>
+	{
+	public:
+		FieldFinder(USHORT aCheckScopeLevel, FieldMatchType aMatchType)
+			: NodeVisitor<const dsql_nod*, const dsql_nod* const*>(true, false),
+			  checkScopeLevel(aCheckScopeLevel),
+			  matchType(aMatchType),
+			  field(false)
+		{
+		}
+
+		static bool find(USHORT checkScopeLevel, FieldMatchType matchType, const dsql_nod* node)
+		{
+			return FieldFinder(checkScopeLevel, matchType).visit(node);
+		}
+
+		virtual bool visit(const dsql_nod* node);
+
+	public:
+		bool getField() const
+		{
+			return field;
+		}
+
+	private:
+		const USHORT checkScopeLevel;
+		const FieldMatchType matchType;
+		bool field;
+	};
+
+    // Validate that an expanded field / context pair is in a specified list. Thus is used in one
+    // instance to check that a simple field selected through a grouping rse is a grouping field -
+    // thus a valid field reference. For the sake of argument, we'll match qualified to unqualified
+    // reference, but qualified reference must match completely.
+    // A list element containing a simple CAST for collation purposes is allowed.
+	class InvalidReferenceFinder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
+	{
+	public:
+		InvalidReferenceFinder(const dsql_ctx* aContext, const dsql_nod* aList)
+			: NodeVisitor<const dsql_nod*, const dsql_nod* const*>(true, false),
+			  context(aContext),
+			  list(aList),
+			  insideOwnMap(false),
+			  insideHigherMap(false)
+		{
+			DEV_BLKCHK(list, dsql_type_nod);
+		}
+
+		static bool find(const dsql_ctx* context, const dsql_nod* list, const dsql_nod* node)
+		{
+			return InvalidReferenceFinder(context, list).visit(node);
+		}
+
+	protected:
+		virtual bool visit(const dsql_nod* node);
+
+	private:
+		const dsql_ctx* const context;
+		const dsql_nod* const list;
+		bool insideOwnMap;
+		bool insideHigherMap;
+	};
+
+	// Called to map fields used in an aggregate-context after all pass1 calls
+	// (SELECT-, ORDER BY-lists). Walk completly through the given node 'field' and map the fields
+	// with same scope_level as the given context to the given context with the post_map function.
+	class FieldRemapper : protected NodeVisitor<dsql_nod*&, dsql_nod**>
+	{
+	public:
+		FieldRemapper(DsqlCompilerScratch* aDsqlScratch, dsql_ctx* aContext, bool aWindow,
+					dsql_nod* aPartitionNode, dsql_nod* aOrderNode)
+			: NodeVisitor<dsql_nod*&, dsql_nod**>(false, false),
+			  dsqlScratch(aDsqlScratch),
+			  context(aContext),
+			  window(aWindow),
+			  partitionNode(aPartitionNode),
+			  orderNode(aOrderNode),
+			  currentLevel(dsqlScratch->scopeLevel)
+		{
+			DEV_BLKCHK(dsqlScratch, dsql_type_req);
+			DEV_BLKCHK(context, dsql_type_ctx);
+		}
+
+		static dsql_nod* remap(DsqlCompilerScratch* dsqlScratch, dsql_ctx* context, bool window,
+			dsql_nod* field, dsql_nod* partitionNode = NULL, dsql_nod* orderNode = NULL)
+		{
+			FieldRemapper(dsqlScratch, context, window, partitionNode, orderNode).visit(field);
+			return field;
+		}
+
+	protected:
+		virtual bool visit(dsql_nod*& node);
+
+	private:
+		DsqlCompilerScratch* const dsqlScratch;
+		dsql_ctx* const context;
+		const bool window;
+		dsql_nod* partitionNode;
+		dsql_nod* orderNode;
+		USHORT currentLevel;
+	};
+
+	// Search if a sub select is buried inside an select list from an query expression.
+	class SubSelectFinder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
+	{
+	public:
+		SubSelectFinder()
+			: NodeVisitor<const dsql_nod*, const dsql_nod* const*>(false, true)
+		{
+		}
+
+		static bool find(const dsql_nod* node)
+		{
+			return SubSelectFinder().visit(node);
+		}
+
+	protected:
+		virtual bool visit(const dsql_nod* node);
+	};
+}	// namespace
+
+
+bool AggregateFinder::visit(const dsql_nod* node)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (!node)
+		return false;
+
+	bool aggregate = false;
+
+	switch (node->nod_type)
+	{
+		case nod_any:
+		case nod_ansi_any:
+		case nod_ansi_all:
+			fb_assert(false);
+			break;
+
+		case nod_window:
+		{
+			bool wereWindow = window;
+			AutoSetRestore<bool> autoWindow(&window, false);
+
+			if (!wereWindow)
+			{
+				if (node->nod_arg[e_window_expr]->nod_count > 0)
+					aggregate |= visit(node->nod_arg[e_window_expr]->nod_arg[0]);
+			}
+			else
+				aggregate |= visit(node->nod_arg[e_window_expr]);
+
+			aggregate |= visit(node->nod_arg[e_window_partition]);
+			aggregate |= visit(node->nod_arg[e_window_order]);
+
+			return aggregate;
+		}
+
+		// handle the simple case of a straightforward aggregate
+		case nod_agg_average:
+		case nod_agg_average2:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_total2:
+		case nod_agg_list:
+			if (window)
+				return false;
+
+			if (!ignoreSubSelects)
+			{
+				if (node->nod_count)
+				{
+					USHORT localDeepestLevel = 0;
+
+					// If we are already in a aggregate function don't search inside
+					// sub-selects and other aggregate-functions for the deepest field
+					// used else we would have a wrong deepest_level value.
+
+					{	// scope
+						AutoSetRestore<USHORT> autoDeepestLevel(&deepestLevel, 0);
+						AutoSetRestore<bool> autoIgnoreSubSelects(&ignoreSubSelects, true);
+
+						visit(node->nod_arg[e_agg_function_expression]);
+
+						localDeepestLevel = deepestLevel;
+					}
+
+					if (localDeepestLevel == 0)
+						deepestLevel = currentLevel;
+					else
+						deepestLevel = localDeepestLevel;
+
+					// If the deepest_value is the same as the current scope_level
+					// this an aggregate that belongs to the current context.
+					if (deepestLevel == dsqlScratch->scopeLevel)
+						aggregate = true;
+					else
+					{
+						// Check also for a nested aggregate that could belong to this context
+						AutoSetRestore<USHORT> autoDeepestLevel(&deepestLevel, localDeepestLevel);
+						AutoSetRestore<bool> autoIgnoreSubSelects(&ignoreSubSelects, false);
+
+						aggregate |= visit(node->nod_arg[e_agg_function_expression]);
+					}
+				}
+				else
+				{
+					// we have count(*)
+					if (dsqlScratch->scopeLevel ==
+							(USHORT)(U_IPTR) node->nod_arg[e_agg_function_scope_level])
+					{
+						aggregate = true;
+					}
+				}
+			}
+			return aggregate;
+
+		case nod_map:
+		{
+			if (window)
+				return false;
+
+			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
+			if (lcontext->ctx_scope_level == dsqlScratch->scopeLevel)
+				return true;
+
+			const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
+			return visit(lmap->map_node);
+		}
+
+		case nod_via:
+			if (!ignoreSubSelects)
+				aggregate = visit(node->nod_arg[e_via_rse]);
+			return aggregate;
+
+		case nod_rse:
+			++currentLevel;
+			aggregate |= visit(node->nod_arg[e_rse_streams]);
+			aggregate |= visit(node->nod_arg[e_rse_boolean]);
+			aggregate |= visit(node->nod_arg[e_rse_items]);
+			--currentLevel;
+			return aggregate;
+
+		case nod_aggregate:
+			if (!ignoreSubSelects)
+				aggregate = visit(node->nod_arg[e_agg_rse]);
+			return aggregate;
+
+		case nod_exists:
+		case nod_singular:
+			if (!ignoreSubSelects)
+				aggregate = visit(node->nod_arg[0]);
+			return aggregate;
+
+		case nod_coalesce:
+		{
+			const dsql_nod* const* ptr = node->nod_arg;
+			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
+				aggregate |= visit(*ptr);
+			return aggregate;
+		}
+
+		case nod_relation:
+		{
+			const dsql_ctx* lrelation_context =
+				reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
+
+			// Check if relation is a procedure
+			if (lrelation_context->ctx_procedure)
+			{
+				// Check if a aggregate is buried inside the input parameters
+				aggregate |= visit(lrelation_context->ctx_proc_inputs);
+			}
+
+			return aggregate;
+		}
+
+		case nod_field:
+		{
+			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
+			if (deepestLevel < lcontext->ctx_scope_level)
+				deepestLevel = lcontext->ctx_scope_level;
+			return false;
+		}
+
+		case nod_derived_field:
+		{
+			// This is a derived table, so don't look further,
+			// but don't forget to check for the deepest scope_level.
+			const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+			if (deepestLevel < lscope_level)
+				deepestLevel = lscope_level;
+			return aggregate;
+		}
+
+		default:
+			return visitChildren(node);
+	}
+}
+
+
+bool Aggregate2Finder::visit(const dsql_nod* node)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (!node)
+		return false;
+
+	bool found = false;
+
+	switch (node->nod_type)
+	{
+		case nod_window:
+			{	// scope
+				AutoSetRestore<bool> autoWindowOnly(&windowOnly, false);
+				found |= visit(node->nod_arg[e_window_expr]);
+			}
+
+			found |= visit(node->nod_arg[e_window_partition]);
+			found |= visit(node->nod_arg[e_window_order]);
+
+			return found;
+
+		case nod_agg_average:
+		case nod_agg_average2:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_total2:
+		case nod_agg_list:
+			if (!windowOnly)
+			{
+				FieldFinder fieldFinder(checkScopeLevel, matchType);
+
+				if (node->nod_count)
+					found |= fieldFinder.visit(node->nod_arg[e_agg_function_expression]);
+
+				if (!fieldFinder.getField())
+				{
+					// For example COUNT(*) is always same scope_level (node->nod_count = 0)
+					// Normaly COUNT(*) is the only way to come here but something stupid
+					// as SUM(5) is also possible.
+					// If current_scope_level_equal is false scope_level is always higher
+					switch (matchType)
+					{
+						case FIELD_MATCH_TYPE_LOWER_EQUAL:
+						case FIELD_MATCH_TYPE_EQUAL:
+							return currentScopeLevelEqual;
+
+						case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+							return true;
+
+						case FIELD_MATCH_TYPE_LOWER:
+						case FIELD_MATCH_TYPE_HIGHER:
+							return false;
+
+						default:
+							fb_assert(false);
+					}
+				}
+			}
+			break;
+
+		case nod_map:
+		{
+			const dsql_map* map = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
+			found |= visit(map->map_node);
+			break;
+		}
+
+		case nod_via:
+			// Pass only the rse from the nod_via
+			found |= visit(node->nod_arg[e_via_rse]);
+			break;
+
+		case nod_rse:
+		{
+			AutoSetRestore<bool> autoCurrentScopeLevelEqual(&currentScopeLevelEqual, false);
+			// Pass rse_boolean (where clause) and rse_items (select items)
+			found |= visit(node->nod_arg[e_rse_boolean]);
+			found |= visit(node->nod_arg[e_rse_items]);
+			break;
+		}
+
+		case nod_aggregate:
+			// Pass only rse_group (group by clause)
+			found |= visit(node->nod_arg[e_agg_group]);
+			break;
+
+		case nod_exists:
+		case nod_singular:
+		case nod_coalesce:
+		case nod_unique:
+		{
+			const dsql_nod* const* ptr = node->nod_arg;
+			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
+				found |= visit(*ptr);
+			break;
+		}
+
+		case nod_relation:
+		case nod_dbkey:
+		case nod_internal_info:
+		case nod_field:
+		case nod_derived_field:
+			return false;
+
+		default:
+			return visitChildren(node);
+	}
+
+	return found;
+}
+
+
+bool FieldFinder::visit(const dsql_nod* node)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (!node)
+		return false;
+
+	bool found = false;
+
+	switch (node->nod_type)
+	{
+		case nod_join:
+		case nod_join_inner:
+		case nod_join_left:
+		case nod_join_right:
+		case nod_join_full:
+			fb_assert(false);
+			break;
+
+		case nod_window:
+			found |= visit(node->nod_arg[e_window_expr]);
+			found |= visit(node->nod_arg[e_window_partition]);
+			found |= visit(node->nod_arg[e_window_order]);
+			break;
+
+		case nod_agg_average:
+		case nod_agg_average2:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_total2:
+		case nod_agg_list:
+			if (node->nod_count)
+				found |= visit(node->nod_arg[e_agg_function_expression]);
+			break;
+
+		case nod_map:
+		{
+			const dsql_map* map = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
+			found |= visit(map->map_node);
+			break;
+		}
+
+		case nod_via:
+			// Pass only the rse from the nod_via
+			found |= visit(node->nod_arg[e_via_rse]);
+			break;
+
+		case nod_rse:
+			// Pass rse_boolean (where clause) and rse_items (select items)
+			found |= visit(node->nod_arg[e_rse_boolean]);
+			found |= visit(node->nod_arg[e_rse_items]);
+			break;
+
+		case nod_aggregate:
+			// Pass only rse_group (group by clause)
+			found |= visit(node->nod_arg[e_agg_group]);
+			break;
+
+		case nod_exists:
+		case nod_singular:
+		case nod_coalesce:
+		case nod_unique:
+		{
+			const dsql_nod* const* ptr = node->nod_arg;
+			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+				found |= visit(*ptr);
+			break;
+		}
+
+		case nod_relation:
+		case nod_dbkey:
+			return false;
+
+		case nod_internal_info:
+			return false;
+
+		case nod_field:
+		{
+			const dsql_ctx* field_context = (dsql_ctx*) node->nod_arg[e_fld_context];
+			DEV_BLKCHK(field_context, dsql_type_ctx);
+
+			field = true;
+
+			switch (matchType)
+			{
+				case FIELD_MATCH_TYPE_EQUAL:
+					return field_context->ctx_scope_level == checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_LOWER:
+					return field_context->ctx_scope_level < checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_LOWER_EQUAL:
+					return field_context->ctx_scope_level <= checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_HIGHER:
+					return field_context->ctx_scope_level > checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+					return field_context->ctx_scope_level >= checkScopeLevel;
+
+				default:
+					fb_assert(false);
+			}
+			break;
+		}
+
+		case nod_derived_field:
+		{
+			// This is a "virtual" field
+			field = true;
+			const USHORT dfScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+
+			switch (matchType)
+			{
+				case FIELD_MATCH_TYPE_EQUAL:
+					return dfScopeLevel == checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_LOWER:
+					return dfScopeLevel < checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_LOWER_EQUAL:
+					return dfScopeLevel <= checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_HIGHER:
+					return dfScopeLevel > checkScopeLevel;
+
+				case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+					return dfScopeLevel >= checkScopeLevel;
+
+				default:
+					fb_assert(false);
+			}
+
+			break;
+		}
+
+		default:
+			return visitChildren(node);
+	}
+
+	return found;
+}
+
+
+bool InvalidReferenceFinder::visit(const dsql_nod* node)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (!node)
+		return false;
+
+	bool invalid = false;
+
+	if (list)
+	{
+		// Check if this node (with ignoring of CASTs) appear also
+		// in the list of group by. If yes then it's allowed
+		const dsql_nod* const* ptr = list->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
+		{
+			if (node_match(node, *ptr, true))
+				return false;
+		}
+	}
+
+	switch (node->nod_type)
+	{
+		case nod_window:
+		{
+			AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, true);
+			invalid |= visit(node->nod_arg[e_window_expr]);
+			invalid |= visit(node->nod_arg[e_window_partition]);
+			invalid |= visit(node->nod_arg[e_window_order]);
+			return invalid;
+		}
+
+		case nod_agg_average:
+		case nod_agg_average2:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_total2:
+		case nod_agg_list:
+			if (!insideOwnMap)
+			{
+				// We are not in an aggregate from the same scope_level so
+				// check for valid fields inside this aggregate
+				if (node->nod_count)
+					invalid |= visit(node->nod_arg[e_agg_function_expression]);
+			}
+
+			if (!insideHigherMap)
+			{
+				if (node->nod_count)
+				{
+					// If there's another aggregate with the same scope_level or
+					// an higher one then it's a invalid aggregate, because
+					// aggregate-functions from the same context can't
+					// be part of each other.
+					if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
+							true, false, node->nod_arg[e_agg_function_expression]))
+					{
+						// Nested aggregate functions are not allowed
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+								  Arg::Gds(isc_dsql_agg_nested_err));
+					}
+				}
+			}
+
+			break;
+
+		case nod_map:
+		{
+			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
+			const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
+
+			if (lcontext->ctx_scope_level == context->ctx_scope_level)
+			{
+				AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap, true);
+				AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, false);
+				invalid |= visit(lmap->map_node);
+			}
+			else
+			{
+				bool linside_higher_map = lcontext->ctx_scope_level > context->ctx_scope_level;
+
+				AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap, false);
+				AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, linside_higher_map);
+
+				invalid |= visit(lmap->map_node);
+			}
+
+			break;
+		}
+
+		case nod_aggregate:
+			invalid |= visit(node->nod_arg[e_agg_rse]);
+			break;
+
+		case nod_field:
+		{
+			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
+
+			// Wouldn't it be better to call a error from this
+			// point where return is true. Then we could give
+			// the fieldname that's making the trouble
+
+			// If we come here then this Field is used inside a
+			// aggregate-function. The ctx_scope_level gives the
+			// info how deep the context is inside the statement.
+
+			// If the context-scope-level from this field is
+			// lower or the same as the scope-level from the
+			// given context then it is an invalid field
+			if (lcontext->ctx_scope_level == context->ctx_scope_level)
+			{
+				// Return TRUE (invalid) if this Field isn't inside
+				// the GROUP BY clause, that should already been
+				// seen in the match_node above
+				invalid = true;
+			}
+
+			break;
+		}
+
+		case nod_dbkey:
+			if (node->nod_arg[0] && node->nod_arg[0]->nod_type == nod_relation)
+			{
+				const dsql_ctx* lcontext =
+					reinterpret_cast<dsql_ctx*>(node->nod_arg[0]->nod_arg[e_rel_context]);
+
+				if (lcontext && lcontext->ctx_scope_level == context->ctx_scope_level)
+					invalid = true;
+			}
+			break;
+
+		case nod_via:
+		case nod_exists:
+		case nod_singular:
+		{
+			const dsql_nod* const* ptr = node->nod_arg;
+			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+				invalid |= visit(*ptr);
+			break;
+		}
+
+		case nod_coalesce:
+		case nod_unique:
+		case nod_rse:
+		{
+			const dsql_nod* const* ptr = node->nod_arg;
+			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+				invalid |= visit(*ptr);
+			break;
+		}
+
+		case nod_derived_field:
+		{
+			const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+
+			if (lscope_level == context->ctx_scope_level)
+				invalid |= true;
+			else if (context->ctx_scope_level < lscope_level)
+				invalid |= visit(node->nod_arg[e_derived_field_value]);
+
+			break;
+		}
+
+		case nod_relation:
+		{
+			const dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
+
+			// Check if relation is a procedure
+			if (lrelation_context->ctx_procedure)
+			{
+				// Check if the parameters are valid
+				invalid |= visit(lrelation_context->ctx_proc_inputs);
+			}
+
+			break;
+		}
+
+		case nod_internal_info:
+		case nod_derived_table:
+		case nod_plan_expr:
+			return false;
+
+		default:
+			return visitChildren(node);
+	}
+
+	return invalid;
+}
+
+
+bool FieldRemapper::visit(dsql_nod*& node)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (!node)
+		return false;
+
+	switch (node->nod_type)
+	{
+		case nod_derived_field:
+		{
+			// If we got a field from a derived table we should not remap anything
+			// deeper in the alias, but this "virtual" field should be mapped to
+			// the given context (of course only if we're in the same scope-level).
+			const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
+
+			if (lscope_level == context->ctx_scope_level)
+			{
+				node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
+				break;
+			}
+
+			if (context->ctx_scope_level < lscope_level)
+				visit(node->nod_arg[e_derived_field_value]);
+
+			break;
+		}
+
+		case nod_field:
+		{
+			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
+			if (lcontext->ctx_scope_level == context->ctx_scope_level)
+				node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
+
+			break;
+		}
+
+		case nod_map:
+		{
+			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
+			if (lcontext->ctx_scope_level != context->ctx_scope_level)
+			{
+				dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
+
+				AutoSetRestore<USHORT> autoCurrentLevel(&currentLevel, lcontext->ctx_scope_level);
+				visit(lmap->map_node);
+			}
+
+			if (window && lcontext->ctx_scope_level == context->ctx_scope_level)
+				node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
+
+			break;
+		}
+
+		case nod_window:
+		{
+			if (node->nod_arg[e_window_partition])
+			{
+				if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true,
+						true, node->nod_arg[e_window_partition]))
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							  Arg::Gds(isc_dsql_agg_nested_err));
+				}
+
+				partitionNode = node->nod_arg[e_window_partition];
+			}
+
+			if (node->nod_arg[e_window_order])
+			{
+				if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true,
+						true, node->nod_arg[e_window_order]))
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							  Arg::Gds(isc_dsql_agg_nested_err));
+				}
+
+				orderNode = node->nod_arg[e_window_order];
+			}
+
+			dsql_nod* const windowNode = node;
+			dsql_nod* copy = node->nod_arg[e_window_expr];
+
+			if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true,
+					true, copy->nod_arg[e_agg_function_expression]))
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_dsql_agg_nested_err));
+			}
+
+			AggregateFinder aggFinder(dsqlScratch, false, false);
+			aggFinder.deepestLevel = dsqlScratch->scopeLevel;
+			aggFinder.currentLevel = currentLevel;
+
+			if (aggFinder.visit(copy))
+			{
+				if (!window)
+				{
+					if (copy->nod_count)
+					{
+						AutoSetRestore<dsql_nod*> autoPartitionNode(&partitionNode, NULL);
+						AutoSetRestore<dsql_nod*> autoOrderNode(&orderNode, NULL);
+
+						visit(copy->nod_arg[e_agg_function_expression]);
+					}
+
+					dsql_nod* temp = windowNode->nod_arg[e_window_partition];
+					if (temp)
+					{
+						for (unsigned i = 0; i < temp->nod_count; ++i)
+						{
+							AutoSetRestore<dsql_nod*> autoPartitionNode(&partitionNode, NULL);
+							AutoSetRestore<dsql_nod*> autoOrderNode(&orderNode, NULL);
+
+							visit(temp->nod_arg[i]);
+						}
+					}
+				}
+				else if (dsqlScratch->scopeLevel == aggFinder.deepestLevel)
+				{
+					node = post_map(dsqlScratch, copy, context, partitionNode, orderNode);
+					break;
+				}
+			}
+
+			node = windowNode;
+			break;
+		}
+
+		case nod_agg_count:
+		case nod_agg_min:
+		case nod_agg_max:
+		case nod_agg_average:
+		case nod_agg_total:
+		case nod_agg_average2:
+		case nod_agg_total2:
+		case nod_agg_list:
+		{
+			AggregateFinder aggFinder(dsqlScratch, false, false);
+			aggFinder.deepestLevel = dsqlScratch->scopeLevel;
+			aggFinder.currentLevel = currentLevel;
+
+			if (aggFinder.visit(node))
+			{
+				if (!window && dsqlScratch->scopeLevel == aggFinder.deepestLevel)
+				{
+					node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
+					break;
+				}
+
+				if (node->nod_count)
+					visit(node->nod_arg[e_agg_function_expression]);
+
+				break;
+			}
+
+			if (node->nod_count)
+				visit(node->nod_arg[e_agg_function_expression]);
+
+			break;
+		}
+
+		case nod_via:
+			visit(node->nod_arg[e_via_rse]);
+			node->nod_arg[e_via_value_1] = node->nod_arg[e_via_rse]->nod_arg[e_rse_items]->nod_arg[0];
+			break;
+
+		case nod_rse:
+		{
+			AutoSetRestore<USHORT> autoCurrentLevel(&currentLevel, currentLevel + 1);
+			visit(node->nod_arg[e_rse_streams]);
+			visit(node->nod_arg[e_rse_boolean]);
+			visit(node->nod_arg[e_rse_items]);
+			visit(node->nod_arg[e_rse_sort]);
+			break;
+		}
+
+		case nod_coalesce:
+			// ASF: We had deliberately changed nod_count to 1, to not process the second list.
+			// But we should remap its fields. CORE-2176
+			visit(node->nod_arg[0]);
+			visit(node->nod_arg[1]);
+			break;
+
+		case nod_aggregate:
+			visit(node->nod_arg[e_agg_rse]);
+			break;
+
+		case nod_internal_info:
+		case nod_exists:
+		case nod_singular:
+		{
+			dsql_nod** ptr = node->nod_arg;
+			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+				visit(*ptr);
+			break;
+		}
+
+		case nod_relation:
+		{
+			dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
+			// Check if relation is a procedure
+			if (lrelation_context->ctx_procedure)
+				visit(lrelation_context->ctx_proc_inputs);	// Remap the input parameters
+			break;
+		}
+
+		case nod_derived_table:
+		{
+			dsql_nod* copy = node->nod_arg[e_derived_table_rse];
+			visit(copy);
+			break;
+		}
+
+		case nod_dbkey:
+			node = post_map(dsqlScratch, node, context, partitionNode, orderNode);
+			break;
+
+		default:
+			return visitChildren(node);
+	}
+
+	return false;
+}
+
+
+bool SubSelectFinder::visit(const dsql_nod* node)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	if (!node)
+		return false;
+
+	switch (node->nod_type)
+	{
+		case nod_exists:
+		case nod_singular:
+		case nod_coalesce:
+		case nod_unique:
+		{
+			const dsql_nod* const* ptr = node->nod_arg;
+			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
+			{
+				if (visit(*ptr))
+					return true;
+			}
+			break;
+		}
+
+		case nod_via:
+			return true;
+
+		case nod_aggregate:
+		case nod_agg_average:
+		case nod_agg_count:
+		case nod_agg_max:
+		case nod_agg_min:
+		case nod_agg_total:
+		case nod_agg_average2:
+		case nod_agg_total2:
+		case nod_agg_list:
+		case nod_map:
+
+		case nod_derived_field:
+		case nod_dbkey:
+		case nod_field:
+		case nod_relation:
+		case nod_internal_info:
+		case nod_field_name:
+			return false;
+
+		case nod_order:
+			fb_assert(false);
+			return true;
+
+		default:
+			return visitChildren(node);
+	}
+
+	return false;
+}
 
 
 /**
@@ -1847,330 +3069,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 /**
 
- 	aggregate_found
-
-    @brief	Check for an aggregate expression in an
- 	rse select list.  It could be buried in
- 	an expression tree.
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static bool aggregate_found(const DsqlCompilerScratch* dsqlScratch, const dsql_nod* node, bool window)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(node, dsql_type_nod);
-
-	USHORT current_level = dsqlScratch->scopeLevel;
-	USHORT deepest_level = 0;
-
-	return aggregate_found2(dsqlScratch, node, window, &current_level, &deepest_level, false);
-}
-
-
-/**
-
- 	aggregate_found2
-
-    @brief	Check for an aggregate expression in an
- 	expression. It could be buried in an expression
-	tree and therefore call itselfs again. The level
-	parameters (current_level & deepest_level) are used
-	to see how deep we are with passing sub-queries
-	(= scope_level).
-
- 	field is true if a non-aggregate field reference is seen.
-
-
-    @param dsqlScratch
-    @param node
-    @param current_level
-    @param deepest_level
-    @param ignore_sub_selects
-
- **/
-static bool aggregate_found2(const DsqlCompilerScratch* dsqlScratch, const dsql_nod* node, bool window,
-								USHORT* current_level,
-								USHORT* deepest_level, bool ignore_sub_selects)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (!node)
-		return false;
-
-	bool aggregate = false;
-
-	switch (node->nod_type)
-	{
-		// handle the simple case of a straightforward aggregate
-
-		case nod_window:
-			if (!window)
-			{
-				if (node->nod_arg[e_window_expr]->nod_count > 0)
-				{
-					aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_window_expr]->nod_arg[0],
-						window, current_level, deepest_level, ignore_sub_selects);
-				}
-			}
-			else
-			{
-				aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_window_expr],
-					false, current_level, deepest_level, ignore_sub_selects);
-			}
-
-			if (node->nod_arg[e_window_partition])
-			{
-				aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_window_partition],
-					false, current_level, deepest_level, ignore_sub_selects);
-			}
-
-			if (node->nod_arg[e_window_order])
-			{
-				aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_window_order],
-					false, current_level, deepest_level, ignore_sub_selects);
-			}
-
-			return aggregate;
-
-		case nod_agg_average:
-		case nod_agg_average2:
-		case nod_agg_total2:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_count:
-		case nod_agg_list:
-			if (window)
-				return false;
-
-			if (!ignore_sub_selects)
-			{
-				if (node->nod_count)
-				{
-					USHORT ldeepest_level = 0;
-					// If we are already in a aggregate function don't search inside
-					// sub-selects and other aggregate-functions for the deepest field
-					// used else we would have a wrong deepest_level value.
-					aggregate_found2(dsqlScratch, node->nod_arg[e_agg_function_expression],
-									 window, current_level, &ldeepest_level, true);
-					if (ldeepest_level == 0) {
-						*deepest_level = *current_level;
-					}
-					else {
-						*deepest_level = ldeepest_level;
-					}
-					// If the deepest_value is the same as the current scope_level
-					// this an aggregate that belongs to the current context.
-					if (*deepest_level == dsqlScratch->scopeLevel) {
-						aggregate = true;
-					}
-					else
-					{
-						// Check also for a nested aggregate that could belong to this context
-						aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_agg_function_expression],
-													  window, current_level, &ldeepest_level, false);
-					}
-				}
-				else
-				{
-					// we have Count(*)
-					if (dsqlScratch->scopeLevel ==
-						(USHORT)(U_IPTR) node->nod_arg[e_agg_function_scope_level])
-					{
-						aggregate = true;
-					}
-				}
-			}
-			return aggregate;
-
-		case nod_field:
-			{
-				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-				if (*deepest_level < lcontext->ctx_scope_level) {
-					*deepest_level = lcontext->ctx_scope_level;
-				}
-				return false;
-			}
-
-		case nod_alias:
-			aggregate = aggregate_found2(dsqlScratch, node->nod_arg[e_alias_value],
-										 window, current_level, deepest_level, ignore_sub_selects);
-			return aggregate;
-
-		case nod_derived_field:
-			{
-				// This is a derived table, so don't look further,
-				// but don't forget to check for the deepest scope_level.
-				const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-				if (*deepest_level < lscope_level) {
-					*deepest_level = lscope_level;
-				}
-			}
-			return aggregate;
-
-		case nod_map:
-			{
-				if (window)
-					return false;
-
-				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
-				if (lcontext->ctx_scope_level == dsqlScratch->scopeLevel) {
-					return true;
-				}
-
-				const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-				aggregate = aggregate_found2(dsqlScratch, lmap->map_node, window, current_level,
-											 deepest_level, ignore_sub_selects);
-				return aggregate;
-			}
-
-			// for expressions in which an aggregate might
-			// be buried, recursively check for one
-
-		case nod_via:
-			if (!ignore_sub_selects) {
-				aggregate = aggregate_found2(dsqlScratch, node->nod_arg[e_via_rse], window,
-											 current_level, deepest_level, ignore_sub_selects);
-			}
-			return aggregate;
-
-		case nod_exists:
-		case nod_singular:
-			if (!ignore_sub_selects)
-			{
-				aggregate = aggregate_found2(dsqlScratch, node->nod_arg[0], window, current_level,
-											 deepest_level, ignore_sub_selects);
-			}
-			return aggregate;
-
-		case nod_aggregate:
-			if (!ignore_sub_selects)
-			{
-				aggregate = aggregate_found2(dsqlScratch, node->nod_arg[e_agg_rse], window,
-											 current_level, deepest_level, ignore_sub_selects);
-			}
-			return aggregate;
-
-		case nod_rse:
-			++*current_level;
-			aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_rse_streams], window,
-										  current_level, deepest_level, ignore_sub_selects);
-			aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_rse_boolean], window,
-										  current_level, deepest_level, ignore_sub_selects);
-			aggregate |= aggregate_found2(dsqlScratch, node->nod_arg[e_rse_items], window,
-										  current_level, deepest_level, ignore_sub_selects);
-			--*current_level;
-			return aggregate;
-
-		case nod_order:
-			aggregate = aggregate_found2(dsqlScratch, node->nod_arg[e_order_field], window,
-										 current_level, deepest_level, ignore_sub_selects);
-			return aggregate;
-
-		case nod_or:
-		case nod_and:
-		case nod_not:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_gtr:
-		case nod_geq:
-		case nod_lss:
-		case nod_leq:
-		case nod_between:
-		case nod_like:
-		case nod_containing:
-		case nod_similar:
-		case nod_starting:
-		case nod_missing:
-		case nod_add:
-		case nod_add2:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_substr:
-		case nod_subtract:
-		case nod_subtract2:
-		case nod_trim:
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_extract:
-		case nod_strlen:
-		case nod_coalesce:
-		case nod_simple_case:
-		case nod_searched_case:
-		case nod_list:
-		case nod_join:
-		case nod_join_inner:
-		case nod_join_left:
-		case nod_join_right:
-		case nod_join_full:
-			{
-				const dsql_nod* const* ptr = node->nod_arg;
-				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
-				{
-					aggregate |= aggregate_found2(dsqlScratch, *ptr, window, current_level,
-												  deepest_level, ignore_sub_selects);
-				}
-				return aggregate;
-			}
-
-		case nod_cast:
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_sys_function:
-			if (node->nod_count == 2)
-			{
-				return (aggregate_found2(dsqlScratch, node->nod_arg[1], window, current_level,
-										 deepest_level, ignore_sub_selects));
-			}
-			return false;
-
-		case nod_udf:
-			if (node->nod_count == 3)
-			{
-				return (aggregate_found2(dsqlScratch, node->nod_arg[2], window, current_level,
-										 deepest_level, ignore_sub_selects));
-			}
-			return false;
-
-		case nod_constant:
-			return false;
-
-		case nod_relation:
-			{
-				const dsql_ctx* lrelation_context =
-					reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
-				// Check if relation is a procedure
-				if (lrelation_context->ctx_procedure)
-				{
-					// Check if a aggregate is buried inside the input parameters
-					aggregate |= aggregate_found2(dsqlScratch, lrelation_context->ctx_proc_inputs,
-												  window, current_level, deepest_level,
-												  ignore_sub_selects);
-				}
-				return aggregate;
-			}
-
-		case nod_hidden_var:
-			return (aggregate_found2(dsqlScratch, node->nod_arg[e_hidden_var_expr], window,
-									 current_level, deepest_level, ignore_sub_selects));
-
-		default:
-			return false;
-	}
-}
-
-
-/**
-
  	ambiguity
 
     @brief	Check for ambiguity in a field
@@ -2705,322 +3603,6 @@ static dsql_ctx* get_context(const dsql_nod* node)
 
 	// nod_derived_table
 	return (dsql_ctx*) node->nod_arg[e_derived_table_context];
-}
-
-
-/**
-
- 	invalid_reference
-
-    @brief	Validate that an expanded field / context
- 	pair is in a specified list.  Thus is used
- 	in one instance to check that a simple field selected
- 	through a grouping rse is a grouping field -
- 	thus a valid field reference.  For the sake of
-       argument, we'll match qualified to unqualified
- 	reference, but qualified reference must match
- 	completely.
-
- 	A list element containing a simple CAST for collation purposes
- 	is allowed.
-
-
-    @param context
-    @param node
-    @param list
-    @param inside_map
-
- **/
-static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
-							  const dsql_nod* list, bool inside_own_map,
-							  bool inside_higher_map)
-{
-	DEV_BLKCHK(node, dsql_type_nod);
-	DEV_BLKCHK(list, dsql_type_nod);
-
-	if (node == NULL) {
-		return false;
-	}
-
-	bool invalid = false;
-
-	if (list)
-	{
-		// Check if this node (with ignoring of CASTs) appear also
-		// in the list of group by. If yes then it's allowed
-		const dsql_nod* const* ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-		{
-			if (node_match(node, *ptr, true)) {
-				return false;
-			}
-		}
-	}
-
-	switch (node->nod_type)
-	{
-		default:
-			fb_assert(false);
-			// FALLINTO
-
-		case nod_map:
-			{
-				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
-				const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-				if (lcontext->ctx_scope_level == context->ctx_scope_level) {
-					invalid |= invalid_reference(context, lmap->map_node, list, true, false);
-				}
-				else
-				{
-					bool linside_higher_map = lcontext->ctx_scope_level > context->ctx_scope_level;
-					invalid |= invalid_reference(context, lmap->map_node, list, false, linside_higher_map);
-				}
-			}
-			break;
-
-		case nod_field:
-			{
-				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-
-				// Wouldn't it be better to call a error from this
-				// point where return is true. Then we could give
-				// the fieldname that's making the trouble
-
-				// If we come here then this Field is used inside a
-				// aggregate-function. The ctx_scope_level gives the
-				// info how deep the context is inside the statement.
-
-				// If the context-scope-level from this field is
-				// lower or the same as the scope-level from the
-				// given context then it is an invalid field
-				if (lcontext->ctx_scope_level == context->ctx_scope_level)
-				{
-					// Return TRUE (invalid) if this Field isn't inside
-					// the GROUP BY clause, that should already been
-					// seen in the match_node above
-					invalid = true;
-				}
-			}
-			break;
-
-		case nod_dbkey:
-			if (node->nod_arg[0] && node->nod_arg[0]->nod_type == nod_relation)
-			{
-				const dsql_ctx* lcontext =
-					reinterpret_cast<dsql_ctx*>(node->nod_arg[0]->nod_arg[e_rel_context]);
-
-				if (lcontext && lcontext->ctx_scope_level == context->ctx_scope_level)
-					invalid = true;
-			}
-			break;
-
-		case nod_window:
-			invalid |= invalid_reference(context, node->nod_arg[e_window_expr],
-				list, inside_own_map, true);
-
-			if (node->nod_arg[e_window_partition])
-			{
-				invalid |= invalid_reference(context, node->nod_arg[e_window_partition],
-					list, inside_own_map, true);
-			}
-
-			if (node->nod_arg[e_window_order])
-			{
-				invalid |= invalid_reference(context, node->nod_arg[e_window_order],
-					list, inside_own_map, true);
-			}
-
-			return invalid;
-
-		case nod_agg_count:
-		case nod_agg_average:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_average2:
-		case nod_agg_total2:
-		case nod_agg_list:
-			if (!inside_own_map)
-			{
-				// We are not in an aggregate from the same scope_level so
-				// check for valid fields inside this aggregate
-				if (node->nod_count)
-				{
-					invalid |= invalid_reference(context, node->nod_arg[e_agg_function_expression], list,
-												 inside_own_map, inside_higher_map);
-				}
-			}
-			if (!inside_higher_map)
-			{
-				if (node->nod_count)
-				{
-					// If there's another aggregate with the same scope_level or
-					// an higher one then it's a invalid aggregate, because
-					// aggregate-functions from the same context can't
-					// be part of each other.
-					if (pass1_found_aggregate(node->nod_arg[e_agg_function_expression],
-											  context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
-											  true, false))
-					{
-						// Nested aggregate functions are not allowed
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-								  Arg::Gds(isc_dsql_agg_nested_err));
-					}
-				}
-			}
-			break;
-
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_cast:
-		case nod_sys_function:
-			// If there are no arguments given to the UDF/SDF then it's always valid
-			if (node->nod_count == 2)
-			{
-				invalid |= invalid_reference(context, node->nod_arg[1], list,
-											 inside_own_map, inside_higher_map);
-			}
-			break;
-
-		case nod_udf:
-			// If there are no arguments given to the UDF/SDF then it's always valid
-			if (node->nod_count == 3)
-			{
-				invalid |= invalid_reference(context, node->nod_arg[2], list,
-											 inside_own_map, inside_higher_map);
-			}
-			break;
-
-		case nod_via:
-		case nod_exists:
-		case nod_singular:
-			{
-				const dsql_nod* const* ptr = node->nod_arg;
-				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				{
-					invalid |= invalid_reference(context, *ptr, list, inside_own_map, inside_higher_map);
-				}
-			}
-			break;
-
-		case nod_order:
-			invalid |= invalid_reference(context, node->nod_arg[e_order_field], list,
-										 inside_own_map, inside_higher_map);
-			break;
-
-		case nod_coalesce:
-		case nod_simple_case:
-		case nod_searched_case:
-		case nod_add:
-		case nod_add2:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_substr:
-		case nod_subtract:
-		case nod_subtract2:
-		case nod_trim:
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_extract:
-		case nod_strlen:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_gtr:
-		case nod_geq:
-		case nod_leq:
-		case nod_lss:
-		case nod_between:
-		case nod_like:
-		case nod_missing:
-		case nod_and:
-		case nod_or:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_not:
-		case nod_unique:
-		case nod_containing:
-		case nod_similar:
-		case nod_starting:
-		case nod_rse:
-		case nod_join:
-		case nod_join_inner:
-		case nod_join_left:
-		case nod_join_right:
-		case nod_join_full:
-		case nod_list:
-			{
-				const dsql_nod* const* ptr = node->nod_arg;
-				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				{
-					invalid |= invalid_reference(context, *ptr, list, inside_own_map, inside_higher_map);
-				}
-			}
-			break;
-
-		case nod_alias:
-				invalid |= invalid_reference(context, node->nod_arg[e_alias_value],
-											 list, inside_own_map, inside_higher_map);
-			break;
-
-		case nod_derived_field:
-			{
-				const USHORT lscope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-				if (lscope_level == context->ctx_scope_level) {
-					invalid |= true;
-				}
-				else if (context->ctx_scope_level < lscope_level)
-				{
-					invalid |= invalid_reference(context, node->nod_arg[e_derived_field_value],
-												 list, inside_own_map, inside_higher_map);
-				}
-			}
-			break;
-
-		case nod_aggregate:
-			invalid |= invalid_reference(context, node->nod_arg[e_agg_rse],
-										 list, inside_own_map, inside_higher_map);
-			break;
-
-		case nod_relation:
-			{
-				const dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
-				// Check if relation is a procedure
-				if (lrelation_context->ctx_procedure)
-				{
-					// Check if the parameters are valid
-					invalid |= invalid_reference(context, lrelation_context->ctx_proc_inputs,
-												 list, inside_own_map, inside_higher_map);
-				}
-			}
-			break;
-
-		case nod_variable:
-		case nod_constant:
-		case nod_parameter:
-		case nod_null:
-		case nod_current_date:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_user_name:
-		case nod_current_role:
-		case nod_internal_info:
-		case nod_dom_value:
-		case nod_derived_table:
-		case nod_plan_expr:
-			return false;
-
-		case nod_hidden_var:
-			invalid |= invalid_reference(context, node->nod_arg[e_hidden_var_expr],
-										 list, inside_own_map, inside_higher_map);
-	}
-
-	return invalid;
 }
 
 
@@ -4718,9 +5300,8 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		//   the worse thing is that a UNION currently can't be used in
 		//   deciding the JOIN order.
 		bool foundSubSelect = false;
-		if (query->nod_type == nod_query_spec) {
-			foundSubSelect = pass1_found_sub_select(query->nod_arg[e_qry_list]);
-		}
+		if (query->nod_type == nod_query_spec)
+			foundSubSelect = SubSelectFinder::find(query->nod_arg[e_qry_list]);
 
 		if (foundSubSelect)
 		{
@@ -5461,637 +6042,6 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	// CVC: field_unknown() calls ERRD_post() that never returns, so the next line
 	// is only to make the compiler happy.
 	return NULL;
-}
-
-
-/**
-
- 	pass1_found_aggregate
-
-    @brief	Check the fields inside an aggregate
-   and check if the field scope_level
-   meets the specified conditions.
-   In the first call current_scope_level_equal
-   should always be true, because this is used
-   internally!
-
-
-    @param node
-    @param check_scope_level
-    @param match_type
-    @param current_scope_level_equal
-
- **/
-static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level,
-	USHORT match_type, bool current_scope_level_equal, bool windowOnly)
-{
-	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (node == NULL)
-		return false;
-
-	bool found = false;
-
-	switch (node->nod_type)
-	{
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_cast:
-		case nod_sys_function:
-			// If arguments are given to the UDF/SDF then there's a node list
-			if (node->nod_count == 2)
-			{
-				found |= pass1_found_aggregate(node->nod_arg[1], check_scope_level,
-											   match_type, current_scope_level_equal, windowOnly);
-			}
-			break;
-
-		case nod_udf:
-			// If arguments are given to the UDF/SDF then there's a node list
-			if (node->nod_count == 3)
-			{
-				found |= pass1_found_aggregate(node->nod_arg[2], check_scope_level,
-											   match_type, current_scope_level_equal, windowOnly);
-			}
-			break;
-
-		case nod_exists:
-		case nod_singular:
-		case nod_coalesce:
-		case nod_simple_case:
-		case nod_searched_case:
-		case nod_add:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_multiply:
-		case nod_negate:
-		case nod_substr:
-		case nod_subtract:
-		case nod_trim:
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_extract:
-		case nod_strlen:
-		case nod_add2:
-		case nod_divide2:
-		case nod_multiply2:
-		case nod_subtract2:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_gtr:
-		case nod_geq:
-		case nod_leq:
-		case nod_lss:
-		case nod_between:
-		case nod_like:
-		case nod_missing:
-		case nod_and:
-		case nod_or:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_not:
-		case nod_unique:
-		case nod_containing:
-		case nod_similar:
-		case nod_starting:
-		case nod_list:
-		case nod_join:
-		case nod_join_inner:
-		case nod_join_left:
-		case nod_join_right:
-		case nod_join_full:
-			{
-				const dsql_nod* const* ptr = node->nod_arg;
-				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
-				{
-					found |= pass1_found_aggregate(*ptr, check_scope_level, match_type,
-												   current_scope_level_equal, windowOnly);
-				}
-			}
-			break;
-
-		case nod_via:
-			// Pass only the rse from the nod_via
-			found |= pass1_found_aggregate(node->nod_arg[e_via_rse], check_scope_level,
-										   match_type, current_scope_level_equal, windowOnly);
-			break;
-
-		case nod_rse:
-			// Pass rse_boolean (where clause) and rse_items (select items)
-			found |= pass1_found_aggregate(node->nod_arg[e_rse_boolean], check_scope_level,
-										   match_type, false, windowOnly);
-			found |= pass1_found_aggregate(node->nod_arg[e_rse_items], check_scope_level,
-										   match_type, false, windowOnly);
-			break;
-
-		case nod_alias:
-			found |= pass1_found_aggregate(node->nod_arg[e_alias_value], check_scope_level,
-										   match_type, current_scope_level_equal, windowOnly);
-			break;
-
-		case nod_aggregate:
-			// Pass only rse_group (group by clause)
-			found |= pass1_found_aggregate(node->nod_arg[e_agg_group], check_scope_level,
-										   match_type, current_scope_level_equal, windowOnly);
-			break;
-
-		case nod_window:
-			found |= pass1_found_aggregate(node->nod_arg[e_window_expr], check_scope_level,
-				match_type, current_scope_level_equal, false);
-
-			if (node->nod_arg[e_window_partition])
-			{
-				found |= pass1_found_aggregate(node->nod_arg[e_window_partition], check_scope_level,
-					match_type, current_scope_level_equal, windowOnly);
-			}
-
-			if (node->nod_arg[e_window_order])
-			{
-				found |= pass1_found_aggregate(node->nod_arg[e_window_order], check_scope_level,
-					match_type, current_scope_level_equal, windowOnly);
-			}
-
-			return found;
-
-		case nod_agg_average:
-		case nod_agg_count:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_average2:
-		case nod_agg_total2:
-		case nod_agg_list:
-			if (!windowOnly)
-			{
-				bool field = false;
-				if (node->nod_count)
-				{
-					found |= pass1_found_field(node->nod_arg[e_agg_function_expression],
-											   check_scope_level, match_type, &field);
-				}
-				if (!field)
-				{
-					// For example COUNT(*) is always same scope_level (node->nod_count = 0)
-					// Normaly COUNT(*) is the only way to come here but something stupid
-					// as SUM(5) is also possible.
-					// If current_scope_level_equal is false scope_level is always higher
-					switch (match_type)
-					{
-						case FIELD_MATCH_TYPE_LOWER_EQUAL:
-						case FIELD_MATCH_TYPE_EQUAL:
-							return current_scope_level_equal;
-
-						case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-							return true;
-
-						case FIELD_MATCH_TYPE_LOWER:
-						case FIELD_MATCH_TYPE_HIGHER:
-							return false;
-
-						default:
-							fb_assert(false);
-					}
-				}
-			}
-			break;
-
-		case nod_map:
-			{
-				const dsql_map* map = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-				found |= pass1_found_aggregate(map->map_node, check_scope_level, match_type,
-											   current_scope_level_equal, windowOnly);
-			}
-			break;
-
-		case nod_derived_field:
-		case nod_dbkey:
-		case nod_field:
-		case nod_parameter:
-		case nod_relation:
-		case nod_variable:
-		case nod_constant:
-		case nod_null:
-		case nod_current_date:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_user_name:
-		case nod_current_role:
-		case nod_internal_info:
-		case nod_dom_value:
-			return false;
-
-		case nod_hidden_var:
-			found |= pass1_found_aggregate(node->nod_arg[e_hidden_var_expr], check_scope_level,
-										   match_type, current_scope_level_equal, windowOnly);
-			break;
-
-		case nod_order:
-			found |= pass1_found_aggregate(node->nod_arg[e_order_field], check_scope_level,
-										   match_type, current_scope_level_equal, windowOnly);
-			break;
-
-		default:
-			fb_assert(false);
-	}
-
-	return found;
-}
-
-
-/**
-
- 	pass1_found_field
-
-    @brief	Check the fields inside an aggregate
-   and check if the field scope_level
-   meets the specified conditions.
-
-
-    @param node
-    @param check_scope_level
-    @param match_type
-    @param field
-
- **/
-static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
-								 USHORT match_type, bool* field)
-{
-	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (node == NULL)
-		return false;
-
-	bool found = false;
-
-	switch (node->nod_type)
-	{
-		case nod_field:
-			{
-				const dsql_ctx* field_context = (dsql_ctx*) node->nod_arg[e_fld_context];
-				DEV_BLKCHK(field_context, dsql_type_ctx);
-				*field = true;
-				switch (match_type)
-				{
-					case FIELD_MATCH_TYPE_EQUAL:
-						return (field_context->ctx_scope_level == check_scope_level);
-
-					case FIELD_MATCH_TYPE_LOWER:
-						return (field_context->ctx_scope_level < check_scope_level);
-
-					case FIELD_MATCH_TYPE_LOWER_EQUAL:
-						return (field_context->ctx_scope_level <= check_scope_level);
-
-					case FIELD_MATCH_TYPE_HIGHER:
-						return (field_context->ctx_scope_level > check_scope_level);
-
-					case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-						return (field_context->ctx_scope_level >= check_scope_level);
-
-					default:
-						fb_assert(false);
-				}
-			}
-			break;
-
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_cast:
-		case nod_sys_function:
-			// If arguments are given to the UDF/SDF then there's a node list
-			if (node->nod_count == 2) {
-				found |= pass1_found_field(node->nod_arg[1], check_scope_level, match_type, field);
-			}
-			break;
-
-		case nod_udf:
-			// If arguments are given to the UDF/SDF then there's a node list
-			if (node->nod_count == 3) {
-				found |= pass1_found_field(node->nod_arg[2], check_scope_level, match_type, field);
-			}
-			break;
-
-		case nod_exists:
-		case nod_singular:
-		case nod_coalesce:
-		case nod_simple_case:
-		case nod_searched_case:
-		case nod_add:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_multiply:
-		case nod_negate:
-		case nod_substr:
-		case nod_subtract:
-		case nod_trim:
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_extract:
-		case nod_strlen:
-		case nod_add2:
-		case nod_divide2:
-		case nod_multiply2:
-		case nod_subtract2:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_gtr:
-		case nod_geq:
-		case nod_leq:
-		case nod_lss:
-		case nod_between:
-		case nod_like:
-		case nod_missing:
-		case nod_and:
-		case nod_or:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_not:
-		case nod_unique:
-		case nod_containing:
-		case nod_similar:
-		case nod_starting:
-		case nod_list:
-			{
-				const dsql_nod* const* ptr = node->nod_arg;
-				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				{
-					found |= pass1_found_field(*ptr, check_scope_level, match_type, field);
-				}
-			}
-			break;
-
-		case nod_via:
-			// Pass only the rse from the nod_via
-			found |= pass1_found_field(node->nod_arg[e_via_rse], check_scope_level, match_type, field);
-			break;
-
-		case nod_rse:
-			// Pass rse_boolean (where clause) and rse_items (select items)
-			found |= pass1_found_field(node->nod_arg[e_rse_boolean], check_scope_level,
-									   match_type, field);
-			found |= pass1_found_field(node->nod_arg[e_rse_items], check_scope_level,
-									   match_type, field);
-			break;
-
-		case nod_alias:
-			found |= pass1_found_field(node->nod_arg[e_alias_value], check_scope_level,
-									   match_type, field);
-			break;
-
-		case nod_derived_field:
-			{
-				// This is a "virtual" field
-				*field = true;
-				const USHORT df_scope_level = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-
-				switch (match_type)
-				{
-				case FIELD_MATCH_TYPE_EQUAL:
-					return (df_scope_level == check_scope_level);
-
-				case FIELD_MATCH_TYPE_LOWER:
-					return (df_scope_level < check_scope_level);
-
-				case FIELD_MATCH_TYPE_LOWER_EQUAL:
-					return (df_scope_level <= check_scope_level);
-
-				case FIELD_MATCH_TYPE_HIGHER:
-					return (df_scope_level > check_scope_level);
-
-				case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-					return (df_scope_level >= check_scope_level);
-
-				default:
-					fb_assert(false);
-				}
-			}
-			break;
-
-		case nod_aggregate:
-			// Pass only rse_group (group by clause)
-			found |= pass1_found_field(node->nod_arg[e_agg_group], check_scope_level,
-									   match_type, field);
-			break;
-
-		case nod_window:
-			found |= pass1_found_field(node->nod_arg[e_window_expr],
-				check_scope_level, match_type, field);
-
-			if (node->nod_arg[e_window_partition])
-			{
-				found |= pass1_found_field(node->nod_arg[e_window_partition],
-					check_scope_level, match_type, field);
-			}
-
-			if (node->nod_arg[e_window_order])
-			{
-				found |= pass1_found_field(node->nod_arg[e_window_order],
-					check_scope_level, match_type, field);
-			}
-
-			break;
-
-		case nod_agg_average:
-		case nod_agg_count:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_average2:
-		case nod_agg_total2:
-		case nod_agg_list:
-			if (node->nod_count)
-			{
-				found |= pass1_found_field(node->nod_arg[e_agg_function_expression],
-										   check_scope_level, match_type, field);
-			}
-			break;
-
-		case nod_map:
-			{
-				const dsql_map* map = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-				found |= pass1_found_field(map->map_node, check_scope_level, match_type, field);
-			}
-			break;
-
-		case nod_dbkey:
-		case nod_parameter:
-		case nod_relation:
-		case nod_variable:
-		case nod_constant:
-		case nod_null:
-		case nod_current_date:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_user_name:
-		case nod_current_role:
-		case nod_internal_info:
-		case nod_dom_value:
-			return false;
-
-		case nod_hidden_var:
-			found |= pass1_found_field(node->nod_arg[e_hidden_var_expr], check_scope_level,
-									   match_type, field);
-			break;
-
-		default:
-			fb_assert(false);
-	}
-
-	return found;
-}
-
-
-/**
-
- 	pass1_found_sub_select
-
-    @brief	Search if a sub select is buried inside
-   an select list from an query expression.
-
-    @param node
-
- **/
-static bool pass1_found_sub_select(const dsql_nod* node)
-{
-	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (node == NULL)
-		return false;
-
-	switch (node->nod_type)
-	{
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_cast:
-		case nod_sys_function:
-			// If arguments are given to the UDF/SDF then there's a node list
-			if (node->nod_count == 2)
-			{
-				if (pass1_found_sub_select(node->nod_arg[1])) {
-					return true;
-				}
-			}
-			break;
-
-		case nod_udf:
-			// If arguments are given to the UDF/SDF then there's a node list
-			if (node->nod_count == 3)
-			{
-				if (pass1_found_sub_select(node->nod_arg[2])) {
-					return true;
-				}
-			}
-			break;
-
-		case nod_exists:
-		case nod_singular:
-		case nod_coalesce:
-		case nod_simple_case:
-		case nod_searched_case:
-		case nod_add:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_multiply:
-		case nod_negate:
-		case nod_substr:
-		case nod_subtract:
-		case nod_trim:
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_extract:
-		case nod_strlen:
-		case nod_add2:
-		case nod_divide2:
-		case nod_multiply2:
-		case nod_subtract2:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_gtr:
-		case nod_geq:
-		case nod_leq:
-		case nod_lss:
-		case nod_between:
-		case nod_like:
-		case nod_missing:
-		case nod_and:
-		case nod_or:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_not:
-		case nod_unique:
-		case nod_containing:
-		case nod_similar:
-		case nod_starting:
-		case nod_list:
-		case nod_join:
-		case nod_join_inner:
-		case nod_join_left:
-		case nod_join_right:
-		case nod_join_full:
-			{
-				const dsql_nod* const* ptr = node->nod_arg;
-				for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
-				{
-					if (pass1_found_sub_select(*ptr)) {
-						return true;
-					}
-				}
-			}
-			break;
-
-		case nod_via:
-			return true;
-
-		case nod_alias:
-			if (pass1_found_sub_select(node->nod_arg[e_alias_value])) {
-				return true;
-			}
-			break;
-
-		case nod_aggregate:
-		case nod_agg_average:
-		case nod_agg_count:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_average2:
-		case nod_agg_total2:
-		case nod_agg_list:
-		case nod_map:
-
-		case nod_derived_field:
-		case nod_dbkey:
-		case nod_field:
-		case nod_parameter:
-		case nod_relation:
-		case nod_variable:
-		case nod_constant:
-		case nod_null:
-		case nod_current_date:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_user_name:
-		case nod_current_role:
-		case nod_internal_info:
-		case nod_dom_value:
-		case nod_field_name:
-			return false;
-
-		case nod_hidden_var:
-			if (pass1_found_sub_select(node->nod_arg[e_hidden_var_expr]))
-				return true;
-			break;
-
-		default:
-			return true;
-	}
-
-	return false;
 }
 
 
@@ -7918,8 +7868,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 		// AB: An aggregate pointing to it's own parent_context isn't
 		// allowed, HAVING should be used instead
-		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean],
-				dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_EQUAL, true, false))
+		if (Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_EQUAL, true, false,
+				rse->nod_arg[e_rse_boolean]))
 		{
 			// Cannot use an aggregate in a WHERE clause, use HAVING instead
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -7970,8 +7920,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 	if (input->nod_arg[e_qry_group] ||
 		input->nod_arg[e_qry_having] ||
-		(rse->nod_arg[e_rse_items] && aggregate_found(dsqlScratch, rse->nod_arg[e_rse_items], false)) ||
-		(rse->nod_arg[e_rse_sort] && aggregate_found(dsqlScratch, rse->nod_arg[e_rse_sort], false)))
+		(rse->nod_arg[e_rse_items] && AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_items], false)) ||
+		(rse->nod_arg[e_rse_sort] && AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_sort], false)))
 	{
 		// dimitr: don't allow WITH LOCK for aggregates
 		if (update_lock)
@@ -8025,11 +7975,10 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 		// AB: An field pointing to another parent_context isn't
 		// allowed and GROUP BY items can't contain aggregates
-		bool field;
-		if (pass1_found_field(aggregate->nod_arg[e_agg_group],
-				dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_LOWER, &field) ||
-			pass1_found_aggregate(aggregate->nod_arg[e_agg_group],
-				dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_LOWER_EQUAL, true, false))
+		if (FieldFinder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_LOWER,
+				aggregate->nod_arg[e_agg_group]) ||
+			Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_LOWER_EQUAL, true,
+				false, aggregate->nod_arg[e_agg_group]))
 		{
 			// Cannot use an aggregate in a GROUP BY clause
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -8072,8 +8021,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	{
 		// Reset context of select items to point to the parent stream
 
-		parent_rse->nod_arg[e_rse_items] =
-			remap_fields(dsqlScratch, rse->nod_arg[e_rse_items], false, parent_context);
+		parent_rse->nod_arg[e_rse_items] = FieldRemapper::remap(dsqlScratch, parent_context, false,
+			rse->nod_arg[e_rse_items]);
 		rse->nod_arg[e_rse_items] = NULL;
 
 		// AB: Check for invalid constructions inside selected-items list
@@ -8082,8 +8031,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			const dsql_nod* const* ptr = list->nod_arg;
 			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 			{
-				if (invalid_reference(parent_context, *ptr,
-						aggregate->nod_arg[e_agg_group], false, false))
+				if (InvalidReferenceFinder::find(parent_context,
+						aggregate->nod_arg[e_agg_group], *ptr))
 				{
 					// Invalid expression in the select list
 					// (not contained in either an aggregate or the GROUP BY clause)
@@ -8097,8 +8046,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 		if (order)
 		{
-			parent_rse->nod_arg[e_rse_sort] =
-				remap_fields(dsqlScratch, rse->nod_arg[e_rse_sort], false, parent_context);
+			parent_rse->nod_arg[e_rse_sort] = FieldRemapper::remap(dsqlScratch, parent_context,
+				false, rse->nod_arg[e_rse_sort]);
 			rse->nod_arg[e_rse_sort] = NULL;
 
 			// AB: Check for invalid contructions inside the ORDER BY clause
@@ -8106,8 +8055,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			const dsql_nod* const* ptr = list->nod_arg;
 			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 			{
-				if (invalid_reference(parent_context, *ptr,
-						aggregate->nod_arg[e_agg_group], false, false))
+				if (InvalidReferenceFinder::find(parent_context,
+						aggregate->nod_arg[e_agg_group], *ptr))
 				{
 					// Invalid expression in the ORDER BY clause
 					// (not contained in either an aggregate or the GROUP BY clause)
@@ -8120,8 +8069,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		// And, of course, reduction clauses must also apply to the parent
 		if (input->nod_arg[e_qry_distinct])
 		{
-			parent_rse->nod_arg[e_rse_reduced] =
-				remap_fields(dsqlScratch, parent_rse->nod_arg[e_rse_reduced], false, parent_context);
+			parent_rse->nod_arg[e_rse_reduced] = FieldRemapper::remap(dsqlScratch, parent_context,
+				false, parent_rse->nod_arg[e_rse_reduced]);
 		}
 
 		// Process HAVING clause, if any
@@ -8132,16 +8081,16 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			parent_rse->nod_arg[e_rse_boolean] = PASS1_node_psql(dsqlScratch, node, false);
 			--dsqlScratch->inHavingClause;
 
-			parent_rse->nod_arg[e_rse_boolean] =
-				remap_fields(dsqlScratch, parent_rse->nod_arg[e_rse_boolean], false, parent_context);
+			parent_rse->nod_arg[e_rse_boolean] = FieldRemapper::remap(dsqlScratch, parent_context,
+				false, parent_rse->nod_arg[e_rse_boolean]);
 
 			// AB: Check for invalid contructions inside the HAVING clause
 			list = parent_rse->nod_arg[e_rse_boolean];
 			dsql_nod** ptr = list->nod_arg;
 			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 			{
-				if (invalid_reference(parent_context, *ptr,
-						aggregate->nod_arg[e_agg_group], false, false))
+				if (InvalidReferenceFinder::find(parent_context,
+						aggregate->nod_arg[e_agg_group], *ptr))
 				{
 					// Invalid expression in the HAVING clause
 					// (neither an aggregate nor contained in the GROUP BY clause)
@@ -8150,25 +8099,12 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 				}
 			}
 
-			if (aggregate_found(dsqlScratch, list, true))
+			if (AggregateFinder::find(dsqlScratch, list, true))
 			{
 				// Cannot use an aggregate in a WHERE clause, use HAVING instead
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_agg_where_err));
 			}
-
-#ifdef CHECK_HAVING
-			if (aggregate)
-			{
-				if (invalid_reference(parent_rse->nod_arg[e_rse_boolean],
-									aggregate->nod_arg[e_agg_group]))
-				{
-					// invalid field reference
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  Arg::Gds(isc_field_ref_err));
-				}
-			}
-#endif
 		}
 		rse = parent_rse;
 
@@ -8176,10 +8112,10 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	}
 
 	const bool sortWindow = rse->nod_arg[e_rse_sort] &&
-		aggregate_found(dsqlScratch, rse->nod_arg[e_rse_sort], true);
+		AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_sort], true);
 
 	// WINDOW functions
-	if ((rse->nod_arg[e_rse_items] && aggregate_found(dsqlScratch, rse->nod_arg[e_rse_items], true)) ||
+	if ((rse->nod_arg[e_rse_items] && AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_items], true)) ||
 		sortWindow)
 	{
 		AutoSetRestore<bool> autoProcessingWindow(&dsqlScratch->processingWindow, true);
@@ -8223,8 +8159,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			const dsql_nod* const* ptr = list->nod_arg;
 			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 			{
-				if (invalid_reference(parent_context, *ptr,
-						aggregate->nod_arg[e_agg_group], false, false))
+				if (InvalidReferenceFinder::find(parent_context,
+						aggregate->nod_arg[e_agg_group], *ptr))
 				{
 					// Invalid expression in the select list
 					// (not contained in either an aggregate or the GROUP BY clause)
@@ -8234,8 +8170,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			}
 		}
 
-		parent_rse->nod_arg[e_rse_items] =
-			remap_fields(dsqlScratch, rse->nod_arg[e_rse_items], true, parent_context);
+		parent_rse->nod_arg[e_rse_items] = FieldRemapper::remap(dsqlScratch, parent_context, true,
+			rse->nod_arg[e_rse_items]);
 
 		// Remap the nodes to the partition context.
 		for (size_t i = 0, mapCount = parent_context->ctx_win_maps.getCount(); i < mapCount; ++i)
@@ -8244,8 +8180,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			if (partitionMap->partition)
 			{
 				partitionMap->partitionRemapped = PASS1_node(dsqlScratch, partitionMap->partition);
-				partitionMap->partitionRemapped = remap_fields(dsqlScratch,
-					partitionMap->partitionRemapped, true, parent_context, partitionMap->partition,
+				partitionMap->partitionRemapped = FieldRemapper::remap(dsqlScratch, parent_context,
+					true, partitionMap->partitionRemapped, partitionMap->partition,
 					partitionMap->order);
 			}
 		}
@@ -8261,8 +8197,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 				const dsql_nod* const* ptr = list->nod_arg;
 				for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 				{
-					if (invalid_reference(parent_context, *ptr,
-							aggregate->nod_arg[e_agg_group], false, false))
+					if (InvalidReferenceFinder::find(parent_context,
+							aggregate->nod_arg[e_agg_group], *ptr))
 					{
 						// Invalid expression in the ORDER BY list
 						// (not contained in either an aggregate or the GROUP BY clause)
@@ -8272,8 +8208,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 				}
 			}
 
-			parent_rse->nod_arg[e_rse_sort] =
-				remap_fields(dsqlScratch, rse->nod_arg[e_rse_sort], true, parent_context);
+			parent_rse->nod_arg[e_rse_sort] = FieldRemapper::remap(dsqlScratch, parent_context,
+				true, rse->nod_arg[e_rse_sort]);
 
 			rse->nod_arg[e_rse_sort] = NULL;
 		}
@@ -8281,8 +8217,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		// And, of course, reduction clauses must also apply to the parent
 		if (rse->nod_arg[e_rse_reduced])
 		{
-			parent_rse->nod_arg[e_rse_reduced] =
-				remap_fields(dsqlScratch, rse->nod_arg[e_rse_reduced], true, parent_context);
+			parent_rse->nod_arg[e_rse_reduced] = FieldRemapper::remap(dsqlScratch, parent_context,
+				true, rse->nod_arg[e_rse_reduced]);
 			rse->nod_arg[e_rse_reduced] = NULL;
 		}
 
@@ -9864,389 +9800,6 @@ static dsql_nod* post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql
 	new_node->nod_desc = node->nod_desc;
 
 	return new_node;
-}
-
-
-/**
-
- 	remap_field
-
-    @brief	Called to map fields used in an aggregate-context
-	after all pass1 calls (SELECT-, ORDER BY-lists).
-    Walk completly through the given node 'field' and
-	map the fields with same scope_level as the given context
-	to the given context with the post_map function.
-
-
-    @param dsqlScratch
-    @param field
-    @param context
-    @param current_level
-
- **/
-static dsql_nod* remap_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* field, bool window,
-	dsql_ctx* context, USHORT current_level, dsql_nod* partitionNode, dsql_nod* orderNode)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(field, dsql_type_nod);
-	DEV_BLKCHK(context, dsql_type_ctx);
-
-	if (!field)
-		return NULL;
-
-	switch (field->nod_type)
-	{
-
-		case nod_alias:
-			field->nod_arg[e_alias_value] =
-				remap_field(dsqlScratch, field->nod_arg[e_alias_value], window, context, current_level,
-					partitionNode, orderNode);
-			return field;
-
-		case nod_derived_field:
-			{
-				// If we got a field from a derived table we should not remap anything
-				// deeper in the alias, but this "virtual" field should be mapped to
-				// the given context (of course only if we're in the same scope-level).
-				const USHORT lscope_level = (USHORT)(U_IPTR) field->nod_arg[e_derived_field_scope];
-				if (lscope_level == context->ctx_scope_level) {
-					return post_map(dsqlScratch, field, context, partitionNode, orderNode);
-				}
-
-				if (context->ctx_scope_level < lscope_level)
-				{
-					field->nod_arg[e_derived_field_value] =
-						remap_field(dsqlScratch, field->nod_arg[e_derived_field_value], window,
-									context, current_level, partitionNode, orderNode);
-				}
-				return field;
-			}
-
-		case nod_field:
-			{
-				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(field->nod_arg[e_fld_context]);
-				if (lcontext->ctx_scope_level == context->ctx_scope_level) {
-					return post_map(dsqlScratch, field, context, partitionNode, orderNode);
-				}
-
-				return field;
-			}
-
-		case nod_map:
-			{
-				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(field->nod_arg[e_map_context]);
-				if (lcontext->ctx_scope_level != context->ctx_scope_level)
-				{
-					dsql_map* lmap = reinterpret_cast<dsql_map*>(field->nod_arg[e_map_map]);
-					lmap->map_node = remap_field(dsqlScratch, lmap->map_node, window, context,
-												 lcontext->ctx_scope_level, partitionNode, orderNode);
-				}
-
-				if (window && lcontext->ctx_scope_level == context->ctx_scope_level)
-					return post_map(dsqlScratch, field, context, partitionNode, orderNode);
-
-				return field;
-			}
-
-		case nod_window:
-		{
-			if (field->nod_arg[e_window_partition])
-			{
-				if (pass1_found_aggregate(field->nod_arg[e_window_partition],
-						context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true, true))
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  Arg::Gds(isc_dsql_agg_nested_err));
-				}
-
-				partitionNode = field->nod_arg[e_window_partition];
-			}
-
-			if (field->nod_arg[e_window_order])
-			{
-				if (pass1_found_aggregate(field->nod_arg[e_window_order],
-						context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true, true))
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  Arg::Gds(isc_dsql_agg_nested_err));
-				}
-
-				orderNode = field->nod_arg[e_window_order];
-			}
-
-			dsql_nod* const windowNode = field;
-			field = field->nod_arg[e_window_expr];
-
-			if (pass1_found_aggregate(field->nod_arg[e_agg_function_expression],
-					context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true, true))
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_dsql_agg_nested_err));
-			}
-
-			USHORT ldeepest_level = dsqlScratch->scopeLevel;
-			USHORT lcurrent_level = current_level;
-			if (aggregate_found2(dsqlScratch, field, false, &lcurrent_level, &ldeepest_level, false))
-			{
-				if (!window)
-				{
-					if (field->nod_count)
-					{
-						field->nod_arg[e_agg_function_expression] = remap_field(
-							dsqlScratch, field->nod_arg[e_agg_function_expression],
-							window, context, current_level, NULL, NULL);
-					}
-
-					dsql_nod* temp = windowNode->nod_arg[e_window_partition];
-					if (temp)
-					{
-						for (unsigned i = 0; i < temp->nod_count; ++i)
-						{
-							temp->nod_arg[i] = remap_field(dsqlScratch, temp->nod_arg[i],
-														window, context, current_level, NULL, NULL);
-						}
-					}
-				}
-				else if (dsqlScratch->scopeLevel == ldeepest_level)
-					return post_map(dsqlScratch, field, context, partitionNode, orderNode);
-			}
-
-			return windowNode;
-		}
-
-		case nod_agg_count:
-		case nod_agg_min:
-		case nod_agg_max:
-		case nod_agg_average:
-		case nod_agg_total:
-		case nod_agg_average2:
-		case nod_agg_total2:
-		case nod_agg_list:
-			{
-				USHORT ldeepest_level = dsqlScratch->scopeLevel;
-				USHORT lcurrent_level = current_level;
-				if (aggregate_found2(dsqlScratch, field, false, &lcurrent_level, &ldeepest_level, false))
-				{
-					if (!window && dsqlScratch->scopeLevel == ldeepest_level) {
-						return post_map(dsqlScratch, field, context, partitionNode, orderNode);
-					}
-
-					if (field->nod_count)
-					{
-						field->nod_arg[e_agg_function_expression] =
-							remap_field(dsqlScratch, field->nod_arg[e_agg_function_expression],
-										window, context, current_level, partitionNode, orderNode);
-					}
-					return field;
-				}
-
-				if (field->nod_count)
-				{
-					field->nod_arg[e_agg_function_expression] =
-						remap_field(dsqlScratch, field->nod_arg[e_agg_function_expression],
-									window, context, current_level, partitionNode, orderNode);
-				}
-				return field;
-			}
-
-		case nod_via:
-			field->nod_arg[e_via_rse] =
-				remap_field(dsqlScratch, field->nod_arg[e_via_rse], window, context, current_level,
-					partitionNode, orderNode);
-			field->nod_arg[e_via_value_1] = field->nod_arg[e_via_rse]->nod_arg[e_rse_items]->nod_arg[0];
-			return field;
-
-		case nod_rse:
-			current_level++;
-			field->nod_arg[e_rse_streams] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_streams], window, context, current_level,
-					partitionNode, orderNode);
-			field->nod_arg[e_rse_boolean] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_boolean], window, context, current_level,
-					partitionNode, orderNode);
-			field->nod_arg[e_rse_items] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_items], window, context, current_level,
-					partitionNode, orderNode);
-			field->nod_arg[e_rse_sort] =
-				remap_field(dsqlScratch, field->nod_arg[e_rse_sort], window, context, current_level,
-					partitionNode, orderNode);
-			current_level--;
-			return field;
-
-		case nod_simple_case:
-		case nod_searched_case:
-			{
-				dsql_nod** ptr = field->nod_arg;
-				for (const dsql_nod* const* const end = ptr + field->nod_count; ptr < end; ptr++)
-				{
-					*ptr = remap_field(dsqlScratch, *ptr, window, context, current_level,
-						partitionNode, orderNode);
-				}
-				return field;
-			}
-
-		case nod_coalesce:
-			// ASF: We had deliberately changed nod_count to 1, to not process the second list.
-			// But we should remap its fields. CORE-2176
-			field->nod_arg[0] = remap_field(dsqlScratch, field->nod_arg[0], window, context,
-				current_level, partitionNode, orderNode);
-			field->nod_arg[1] = remap_field(dsqlScratch, field->nod_arg[1], window, context,
-				current_level, partitionNode, orderNode);
-			return field;
-
-		case nod_aggregate:
-			field->nod_arg[e_agg_rse] =
-				remap_field(dsqlScratch, field->nod_arg[e_agg_rse], window, context, current_level,
-					partitionNode, orderNode);
-			return field;
-
-		case nod_order:
-			field->nod_arg[e_order_field] =
-				remap_field(dsqlScratch, field->nod_arg[e_order_field], window, context, current_level,
-					partitionNode, orderNode);
-			return field;
-
-		case nod_or:
-		case nod_and:
-		case nod_not:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_gtr:
-		case nod_geq:
-		case nod_lss:
-		case nod_leq:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_between:
-		case nod_like:
-		case nod_containing:
-		case nod_similar:
-		case nod_starting:
-		case nod_exists:
-		case nod_singular:
-		case nod_missing:
-		case nod_add:
-		case nod_add2:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_substr:
-		case nod_subtract:
-		case nod_subtract2:
-		case nod_trim:
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_internal_info:
-		case nod_extract:
-		case nod_strlen:
-		case nod_list:
-		case nod_join:
-		case nod_join_inner:
-		case nod_join_left:
-		case nod_join_right:
-		case nod_join_full:
-			{
-				dsql_nod** ptr = field->nod_arg;
-				for (const dsql_nod* const* const end = ptr + field->nod_count; ptr < end; ptr++)
-				{
-					*ptr = remap_field(dsqlScratch, *ptr, window, context, current_level,
-						partitionNode, orderNode);
-				}
-				return field;
-			}
-
-		case nod_cast:
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_sys_function:
-			if (field->nod_count == 2)
-			{
-				field->nod_arg[1] = remap_field(dsqlScratch, field->nod_arg[1], window, context,
-					current_level, partitionNode, orderNode);
-			}
-			return field;
-
-		case nod_udf:
-			if (field->nod_count == 3)
-			{
-				field->nod_arg[2] = remap_field(dsqlScratch, field->nod_arg[2], window, context,
-					current_level, partitionNode, orderNode);
-			}
-			return field;
-
-		case nod_relation:
-			{
-				dsql_ctx* lrelation_context = reinterpret_cast<dsql_ctx*>(field->nod_arg[e_rel_context]);
-				// Check if relation is a procedure
-				if (lrelation_context->ctx_procedure)
-				{
-					// Remap the input parameters
-					lrelation_context->ctx_proc_inputs = remap_field(dsqlScratch,
-						lrelation_context->ctx_proc_inputs, window, context, current_level,
-						partitionNode, orderNode);
-				}
-				return field;
-			}
-
-		case nod_derived_table:
-			remap_field(dsqlScratch, field->nod_arg[e_derived_table_rse], window, context,
-				current_level, partitionNode, orderNode);
-			return field;
-
-		case nod_hidden_var:
-			field->nod_arg[e_hidden_var_expr] = remap_field(dsqlScratch,
-				field->nod_arg[e_hidden_var_expr], window, context, current_level, partitionNode, orderNode);
-			return field;
-
-		case nod_dbkey:
-			return post_map(dsqlScratch, field, context, partitionNode, orderNode);
-
-		default:
-			return field;
-	}
-}
-
-
-/**
-
- 	remap_fields
-
-    @brief	Remap fields inside a field list against
-	an artificial context.
-
-
-    @param dsqlScratch
-    @param fields
-    @param context
-
- **/
-static dsql_nod* remap_fields(DsqlCompilerScratch* dsqlScratch, dsql_nod* fields, bool window,
-	dsql_ctx* context, dsql_nod* partitionNode, dsql_nod* orderNode)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(fields, dsql_type_nod);
-	DEV_BLKCHK(context, dsql_type_ctx);
-
-	if (fields->nod_type == nod_list)
-	{
-		for (int i = 0; i < fields->nod_count; i++)
-		{
-			fields->nod_arg[i] = remap_field(dsqlScratch, fields->nod_arg[i], window, context,
-				dsqlScratch->scopeLevel, partitionNode, orderNode);
-		}
-	}
-	else
-	{
-		fields = remap_field(dsqlScratch, fields, window, context, dsqlScratch->scopeLevel,
-			partitionNode, orderNode);
-	}
-
-	return fields;
 }
 
 
