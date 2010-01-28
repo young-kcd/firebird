@@ -220,13 +220,6 @@ const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning i
 // macros used to manipulate btree nodes
 #define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
 
-#define NEXT_NODE(node)	(btree_nod*)(node->btn_data + node->btn_length)
-#define NEXT_NODE_RECNR(node)	(btree_nod*)(node->btn_data + node->btn_length + sizeof(SLONG))
-
-//#define LAST_NODE(page)	(btree_nod*) ((UCHAR*) page + page->btr_length)
-
-//#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
-
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
 class BtrPageGCLock : public Lock

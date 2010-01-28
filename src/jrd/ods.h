@@ -234,18 +234,6 @@ struct blob_page
 const UCHAR blp_pointers	= 1;		// Blob pointer page, not data page
 
 
-// B-tree node
-
-struct btree_nod
-{
-	UCHAR btn_prefix;			// size of compressed prefix
-	UCHAR btn_length;			// length of data in node
-	UCHAR btn_number[4];		// page or record number
-	UCHAR btn_data[1];
-};
-
-const int BTN_SIZE	= 6;
-
 // B-tree page ("bucket")
 struct btree_page
 {
@@ -257,7 +245,7 @@ struct btree_page
 	USHORT btr_length;			// length of data in bucket
 	UCHAR btr_id;				// index id for consistency
 	UCHAR btr_level;			// index level (0 = leaf)
-	btree_nod btr_nodes[1];
+	UCHAR btr_nodes[1];
 };
 
 // Firebird B-tree nodes

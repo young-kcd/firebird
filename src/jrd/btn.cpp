@@ -325,18 +325,18 @@ UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
 	{
 		if (jumpInfo)
 		{
-			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
+			UCHAR* pointer = page->btr_nodes;
 			return readJumpInfo(jumpInfo, pointer);
 		}
 
 		IndexJumpInfo jumpInformation;
-		UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
+		UCHAR* pointer = page->btr_nodes;
 		readJumpInfo(&jumpInformation, pointer);
 
 		return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
 	}
 
-	return reinterpret_cast<UCHAR*>(page->btr_nodes);
+	return page->btr_nodes;
 }
 
 
@@ -471,7 +471,7 @@ UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
  *  given pointer.
  *
  **************************************/
-	UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
+	UCHAR* pointer = page->btr_nodes;
 	put_short(pointer, jumpInfo->firstNodeOffset);
 	pointer += sizeof(USHORT);
 	put_short(pointer, jumpInfo->jumpAreaSize);
