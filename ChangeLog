@@ -1,3 +1,25 @@
+2010-01-29 12:34  alexpeshkoff
+
+	* firebird2/: configure.in (1.368.2.7),
+	builds/install/arch-specific/freebsd/install.sh.in (1.13.2.1),
+	builds/posix/prefix.freebsd_amd64 (1.1.2.2), src/jrd/isc.h
+	(1.44.2.1):
+
+	Fixed regression when missing --prefix switch in configure.  Fixed
+	FreeBSD built, install on FreeBSD is in progress.
+
+2010-01-29 11:04  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.hpux_aCC (1.6.2.2):
+
+	HPUX port
+
+2010-01-29 09:26  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.10):
+
+	Update.
+
 2010-01-28 09:18  robocop
 
 	* firebird2/src/isql/isql.epp (1.291.2.5):
@@ -17,6 +39,19 @@
 	* firebird2/doc/README.trace_services (1.4.2.5):
 
 	Misc.
+
+2010-01-27 16:55  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.freebsd_amd64 (1.1.2.1):
+
+	file prefix.freebsd_amd64 was added on branch B2_5_Release on
+	2010-01-29 11:34:24 +0000
+
+2010-01-27 16:55  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.freebsd_amd64 (1.1):
+
+	freebsd port
 
 2010-01-27 12:51  hvlad
 
