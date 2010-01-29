@@ -5612,6 +5612,10 @@ static bool init(ISC_STATUS* user_status,
 	MemoryPool& pool = *getDefaultMemoryPool();
 	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
 
+	// current instance name
+	const char* nm;
+	USHORT len;
+
 	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
 	AutoPtr<Auth::ClientInstance, Auth::Auto> currentInstance;
 	Auth::DpbImplementation di(dpb);
@@ -5625,6 +5629,7 @@ static bool init(ISC_STATUS* user_status,
 		{
 			// plugin may be used
 			currentInstance.reset(list[sequence]->instance());
+			list[sequence]->getName(&nm, &len);
 
 			switch(currentInstance->startAuthentication(op == op_service_attach, file_name.c_str(), &di))
 			{
@@ -5729,15 +5734,22 @@ static bool init(ISC_STATUS* user_status,
 		}
 
 		bool contFlag = true;
-		if (!n || !n->cstr_length)
+		if (n && n->cstr_length && currentInstance.hasData())
+		{
+			// if names match, do not reset instance
+			if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
+			{
+				n = NULL;
+			}
+		}
+
+		if (n && n->cstr_length)
 		{
 			// switch to other plugin
 			currentInstance.reset(0);
 
 			for (sequence = 0; list[sequence]; ++sequence)
 			{
-				const char* nm;
-				USHORT len;
 				list[sequence]->getName(&nm, &len);
 				if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
 				{
