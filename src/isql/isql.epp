@@ -1366,27 +1366,55 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 			error = true;
 		END_ERROR;
 
-		if (!found && ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+		if (!found)
 		{
-			FOR FIRST 1
-				VR IN RDB$VIEW_RELATIONS
-				CROSS NEWPP IN RDB$PROCEDURE_PARAMETERS WITH
-				VR.RDB$VIEW_NAME EQ save_view_name AND
-				VR.RDB$VIEW_CONTEXT EQ save_view_context AND
-				NEWPP.RDB$PROCEDURE_NAME = VR.RDB$RELATION_NAME AND
-				NEWPP.RDB$PARAMETER_NAME = save_base_field AND
-				NEWPP.RDB$PARAMETER_TYPE = 1 // output param
+			if (isqlGlob.major_ods >= ODS_VERSION12)
+			{
+				// Copy/paste from DYN_UTIL_find_field_source
+				FOR FIRST 1
+					VRL IN RDB$VIEW_RELATIONS CROSS
+						PPR IN RDB$PROCEDURE_PARAMETERS
+						WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
+						VRL.RDB$VIEW_NAME EQ save_view_name AND
+						VRL.RDB$VIEW_CONTEXT EQ save_view_context AND
+						VRL.RDB$CONTEXT_TYPE EQ VCT_PROCEDURE AND
+						PPR.RDB$PACKAGE_NAME EQUIV VRL.RDB$PACKAGE_NAME AND
+						PPR.RDB$PARAMETER_NAME EQ save_base_field AND
+						PPR.RDB$PARAMETER_TYPE = 1 // output
 
-				found = true;
-				if (!NEWPP.RDB$NULL_FLAG.NULL && NEWPP.RDB$NULL_FLAG == 1)
-					null_flag = false;
+					found = true;
+					if (!PPR.RDB$NULL_FLAG.NULL && PPR.RDB$NULL_FLAG == 1)
+						null_flag = false;
 
-				done = true;
-			END_FOR
-			ON_ERROR
-				error = true;
-			END_ERROR;
+					done = true;
+				END_FOR
+				ON_ERROR
+					error = true;
+				END_ERROR;
+			}
+			else if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+			{
+				FOR FIRST 1
+					VR IN RDB$VIEW_RELATIONS
+					CROSS NEWPP IN RDB$PROCEDURE_PARAMETERS WITH
+					VR.RDB$VIEW_NAME EQ save_view_name AND
+					VR.RDB$VIEW_CONTEXT EQ save_view_context AND
+					NEWPP.RDB$PROCEDURE_NAME = VR.RDB$RELATION_NAME AND
+					NEWPP.RDB$PARAMETER_NAME = save_base_field AND
+					NEWPP.RDB$PARAMETER_TYPE = 1 // output param
+
+					found = true;
+					if (!NEWPP.RDB$NULL_FLAG.NULL && NEWPP.RDB$NULL_FLAG == 1)
+						null_flag = false;
+
+					done = true;
+				END_FOR
+				ON_ERROR
+					error = true;
+				END_ERROR;
+			}
 		}
+
 		if (!found)
 			error = true;
 	}
