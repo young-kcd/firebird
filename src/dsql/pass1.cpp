@@ -571,7 +571,7 @@ namespace
 		USHORT currentLevel;
 	};
 
-	// Search if a sub select is buried inside an select list from an query expression.
+	// Search if a sub select is buried inside a select list from a query expression.
 	class SubSelectFinder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
 	{
 	public:
@@ -664,7 +664,7 @@ bool AggregateFinder::visit(const dsql_nod* node)
 						deepestLevel = localDeepestLevel;
 
 					// If the deepest_value is the same as the current scope_level
-					// this an aggregate that belongs to the current context.
+					// this is an aggregate that belongs to the current context.
 					if (deepestLevel == dsqlScratch->scopeLevel)
 						aggregate = true;
 					else
@@ -769,6 +769,8 @@ bool AggregateFinder::visit(const dsql_nod* node)
 		default:
 			return visitChildren(node);
 	}
+
+	return false; // to cover the first three cases in the switch
 }
 
 
@@ -1044,7 +1046,7 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 
 	if (list)
 	{
-		// Check if this node (with ignoring of CASTs) appear also
+		// Check if this node (with ignoring of CASTs) appears also
 		// in the list of group by. If yes then it's allowed
 		const dsql_nod* const* ptr = list->nod_arg;
 		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
@@ -1133,8 +1135,8 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 		{
 			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
 
-			// Wouldn't it be better to call a error from this
-			// point where return is true. Then we could give
+			// Wouldn't it be better to call an error from this
+			// point where return is true? Then we could give
 			// the fieldname that's making the trouble
 
 			// If we come here then this Field is used inside a
@@ -1303,7 +1305,7 @@ bool FieldRemapper::visit(dsql_nod*& node)
 			}
 
 			dsql_nod* const windowNode = node;
-			dsql_nod* copy = node->nod_arg[e_window_expr];
+			dsql_nod* const copy = node->nod_arg[e_window_expr];
 
 			if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 					true, copy->nod_arg[e_agg_function_expression]))
