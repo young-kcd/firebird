@@ -70,6 +70,12 @@ PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Ofltacc=strict +Ofenvaccess \
 	$(COMMON_FLAGS)
 DEV_FLAGS= -g -z -DLIBC_CALLS_NEW \
 	$(COMMON_FLAGS)
+LINK_EMBED_LIBS+=-lstd_v2 -lCsup
+LINK_CLIENT_LIBS+=-lstd_v2 -lCsup
+LINK_TRACE_LIBS+=-lstd_v2 -lCsup
+LINK_INTL_LIBS+=-lstd_v2 -lCsup
+LINK_IB_UTIL_LIBS+=-lstd_v2 -lCsup
+LINK_UDF_LIBS+=-lstd_v2 -lCsup
 else
 # ...for PA-RISC
 # PA-RISC requires old version of aCC, 3.85, with different flags
@@ -77,6 +83,12 @@ PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Olibcalls +Onomoveflops \
 	$(COMMON_FLAGS)
 DEV_FLAGS= -g -z \
 	$(COMMON_FLAGS)
+LINK_EMBED_LIBS+=-lstd_v2 -lCsup_v2
+LINK_CLIENT_LIBS+=-lstd_v2 -lCsup_v2
+LINK_TRACE_LIBS+=-lstd_v2 -lCsup_v2
+LINK_INTL_LIBS+=-lstd_v2 -lCsup_v2
+LINK_IB_UTIL_LIBS+=-lstd_v2 -lCsup_v2
+LINK_UDF_LIBS+=-lstd_v2 -lCsup_v2
 endif
 
 OS_ServerFiles=inet_server.cpp
