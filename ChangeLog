@@ -1,3 +1,66 @@
+2010-01-29 14:08  hvlad
+
+	* firebird2/src/: auth/trusted/AuthSspi.cpp (1.22),
+	remote/interface.cpp (1.234):
+
+	Make trusted auth works again.	To be reviewed by Alex.
+
+2010-01-29 12:07  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.510):
+
+	Misc.
+
+2010-01-29 11:54  robocop
+
+	* firebird2/src/isql/extract.epp (1.121):
+
+	For now, isql is not prepared to deal with the new function types
+	(packaged, BLR-based) until the code is enhanced. Besides,
+	traditional UDFs should appear early in a script whereas BLR
+	functions may depend on other objects, so they should appear later.
+
+2010-01-29 05:29  robocop
+
+	* firebird2/src/msgs/messages2.sql (1.146):
+
+	Misc.
+
+2010-01-29 05:28  robocop
+
+	* firebird2/src/isql/isql.epp (1.312):
+
+	More for CORE-2735: isql looks into packages, too for ODS12, as
+	Adriano said.
+
+2010-01-29 02:16  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.509):
+
+	Misc
+
+2010-01-28 18:22  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.508):
+
+	Misc
+
+2010-01-28 16:18  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.507):
+
+	Simplify DSQL removing a lot of copy-and-paste and recursion that
+	change some parameters some times.  Some assertion errors may have
+	been introduced. It would be easy to revert them.
+
+2010-01-28 16:01  asfernandes
+
+	* firebird2/src/: auth/Auth.cpp (1.6), common/classes/MetaName.h
+	(1.15), jrd/dyn_def.epp (1.207), remote/interface.cpp (1.233),
+	remote/server.cpp (1.276):
+
+	Misc
+
 2010-01-28 11:46  dimitr
 
 	* firebird2/src/jrd/: btn.cpp (1.36), btr.h (1.56), ods.h (1.73):
