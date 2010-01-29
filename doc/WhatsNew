@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 2
   **************************
 
+    * Bugfix CORE-2831
+        ISQL shouldn't display database and user names when extracting a script
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-2824
         Small memory and handles leak at every connect\disconnect
       Contributor(s):
@@ -130,6 +135,11 @@
 
     * Bugfix CORE-2741
         Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2735
+        ISQL hangs when trying to show a view based on a procedure
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
