@@ -437,26 +437,23 @@ namespace
 	};
 
 	// Check the fields inside an aggregate and check if the field scope_level meets the specified
-	// conditions. In the first call currentScopeLevelEqual should always be true, because this
-	// is used internally!
+	// conditions.
 	class Aggregate2Finder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
 	{
 	public:
-		Aggregate2Finder(USHORT aCheckScopeLevel, FieldMatchType aMatchType,
-					bool aCurrentScopeLevelEqual, bool aWindowOnly)
+		Aggregate2Finder(USHORT aCheckScopeLevel, FieldMatchType aMatchType, bool aWindowOnly)
 			: NodeVisitor<const dsql_nod*, const dsql_nod* const*>(true, false),
 			  checkScopeLevel(aCheckScopeLevel),
 			  matchType(aMatchType),
-			  currentScopeLevelEqual(aCurrentScopeLevelEqual),
-			  windowOnly(aWindowOnly)
+			  windowOnly(aWindowOnly),
+			  currentScopeLevelEqual(true)
 		{
 		}
 
-		static bool find(USHORT checkScopeLevel, FieldMatchType matchType,
-			bool currentScopeLevelEqual, bool windowOnly, const dsql_nod* node)
+		static bool find(USHORT checkScopeLevel, FieldMatchType matchType, bool windowOnly,
+			const dsql_nod* node)
 		{
-			return Aggregate2Finder(checkScopeLevel, matchType,
-				currentScopeLevelEqual, windowOnly).visit(node);
+			return Aggregate2Finder(checkScopeLevel, matchType, windowOnly).visit(node);
 		}
 
 	protected:
@@ -465,8 +462,8 @@ namespace
 	private:
 		const USHORT checkScopeLevel;
 		const FieldMatchType matchType;
-		bool currentScopeLevelEqual;
 		bool windowOnly;
+		bool currentScopeLevelEqual;
 	};
 
 	// Check the fields inside an aggregate and check if the field scope_level meets the specified
@@ -1093,7 +1090,7 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 					// aggregate-functions from the same context can't
 					// be part of each other.
 					if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
-							true, false, node->nod_arg[e_agg_function_expression]))
+							false, node->nod_arg[e_agg_function_expression]))
 					{
 						// Nested aggregate functions are not allowed
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -1283,7 +1280,7 @@ bool FieldRemapper::visit(dsql_nod*& node)
 		{
 			if (node->nod_arg[e_window_partition])
 			{
-				if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true,
+				if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 						true, node->nod_arg[e_window_partition]))
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -1295,7 +1292,7 @@ bool FieldRemapper::visit(dsql_nod*& node)
 
 			if (node->nod_arg[e_window_order])
 			{
-				if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true,
+				if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 						true, node->nod_arg[e_window_order]))
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -1308,7 +1305,7 @@ bool FieldRemapper::visit(dsql_nod*& node)
 			dsql_nod* const windowNode = node;
 			dsql_nod* copy = node->nod_arg[e_window_expr];
 
-			if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL, true,
+			if (Aggregate2Finder::find(context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 					true, copy->nod_arg[e_agg_function_expression]))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -7866,7 +7863,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 		// AB: An aggregate pointing to it's own parent_context isn't
 		// allowed, HAVING should be used instead
-		if (Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_EQUAL, true, false,
+		if (Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_EQUAL, false,
 				rse->nod_arg[e_rse_boolean]))
 		{
 			// Cannot use an aggregate in a WHERE clause, use HAVING instead
@@ -7975,7 +7972,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 		// allowed and GROUP BY items can't contain aggregates
 		if (FieldFinder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_LOWER,
 				aggregate->nod_arg[e_agg_group]) ||
-			Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_LOWER_EQUAL, true,
+			Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_LOWER_EQUAL,
 				false, aggregate->nod_arg[e_agg_group]))
 		{
 			// Cannot use an aggregate in a GROUP BY clause
