@@ -2675,6 +2675,19 @@ static void list_functions()
 		WITH FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING
 		SORTED BY FUN.RDB$FUNCTION_NAME
 
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FUN2 IN RDB$FUNCTIONS
+				WITH FUN2.RDB$FUNCTION_ID = FUN.RDB$FUNCTION_ID
+				AND (FUN2.RDB$PACKAGE_NAME NOT MISSING OR FUN2.RDB$FUNCTION_BLR NOT MISSING)
+				continue;
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg (gds_status);
+				return;
+			END_ERROR;
+		}
+
 		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
 		fb_utils::exact_name(FUN.RDB$MODULE_NAME);
 		fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
