@@ -246,7 +246,7 @@ segmented) blob.');
 ('trans_invalid', 'TRA_invalidate', 'tra.c', NULL, 0, 149, NULL, 'transaction marked invalid by I/O error', NULL, NULL);
 ('buf_invalid', 'write_page', 'cch.c', NULL, 0, 150, NULL, 'cache buffer for page @1 invalid', NULL, NULL);
 ('indexnotdefined', 'set_index', 'exe.c', NULL, 0, 151, NULL, 'there is no index in table @1 with id @2', NULL, NULL);
-('login', 'SCL_init', 'scl.e', NULL, 0, 152, NULL, 'Your user name and password are not defined. Ask your database administrator to set up a Firebird login.', NULL, NULL);
+('login', 'ServerAuth::authenticate', 'server.cpp', NULL, 0, 152, NULL, 'Your user name and password are not defined. Ask your database administrator to set up a Firebird login.', NULL, NULL);
 ('invalid_bookmark', 'EVL_expr', 'evl.c', NULL, 0, 153, NULL, 'invalid bookmark handle', NULL, NULL);
 ('bad_lock_level', 'lock_relation', 'EXE.C', NULL, 0, 154, NULL, 'invalid lock level @1', NULL, NULL);
 ('relation_lock', 'TRA_lock_relation', 'TRA.C', NULL, 0, 155, NULL, 'lock on table @1 conflicts with existing lock', NULL, NULL);
