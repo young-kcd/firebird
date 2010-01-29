@@ -5729,7 +5729,7 @@ static bool init(ISC_STATUS* user_status,
 		}
 
 		bool contFlag = true;
-		if (n && n->cstr_length)
+		if (!n || !n->cstr_length)
 		{
 			// switch to other plugin
 			currentInstance.reset(0);

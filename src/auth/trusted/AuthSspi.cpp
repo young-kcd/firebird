@@ -388,7 +388,6 @@ Result WinSspiServerInstance::contAuthentication(WriterInterface* writerInterfac
 {
 	sspiData.clear();
 	sspiData.add(data, size);
-	sspi.accept(sspiData);
 
 	if (!sspi.accept(sspiData))
 	{
@@ -452,8 +451,8 @@ Result WinSspiClientInstance::contAuthentication(const unsigned char* data, unsi
 {
 	sspiData.clear();
 	sspiData.add(data, size);
-	sspi.accept(sspiData);
-	if (!sspi.accept(sspiData))
+
+	if (!sspi.request(sspiData))
 	{
 		return AUTH_FAILED;
 	}
