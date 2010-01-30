@@ -1,3 +1,28 @@
+2010-01-30 10:58  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.322), dfw_proto.h (1.24), met.epp
+	(1.323), pcmet.epp (1.67), pcmet_proto.h (1.15):
+
+	Misc.
+
+2010-01-30 09:59  robocop
+
+	* firebird2/src/jrd/dyn_del.epp (1.96):
+
+	Misc.
+
+2010-01-30 03:32  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.511):
+
+	Comments (explanations and non-used code)
+
+2010-01-29 18:53  alexpeshkoff
+
+	* firebird2/src/remote/interface.cpp (1.235):
+
+	Better fix for trusted authentication problem
+
 2010-01-29 14:08  hvlad
 
 	* firebird2/src/: auth/trusted/AuthSspi.cpp (1.22),
