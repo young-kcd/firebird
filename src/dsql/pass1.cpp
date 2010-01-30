@@ -451,7 +451,7 @@ namespace
 	// or <select list>, the <set function specification> shall contain a column reference, and
 	// every column reference contained in an aggregated argument of the <set function specification>
 	// shall be an outer reference.
-	//         NOTE 160 — outer reference is defined in Subclause 6.7, “<column reference>”.
+	//    NOTE 160 - outer reference is defined in Subclause 6.7, "<column reference>".
 	// 2) The <search condition> shall not contain a <window function> without an intervening
 	// <query expression>.
 	class Aggregate2Finder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
