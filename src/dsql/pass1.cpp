@@ -274,9 +274,12 @@ const int LIKE_PARAM_LEN = 30;	// CVC: This is a guess for the length of the
 enum FieldMatchType {
 	FIELD_MATCH_TYPE_EQUAL = 0,
 	FIELD_MATCH_TYPE_LOWER = 1,
-	FIELD_MATCH_TYPE_LOWER_EQUAL = 2,
+	FIELD_MATCH_TYPE_LOWER_EQUAL = 2
+	/***
+	,
 	FIELD_MATCH_TYPE_HIGHER = 3,
 	FIELD_MATCH_TYPE_HIGHER_EQUAL = 4
+	***/
 };
 
 
@@ -411,19 +414,19 @@ namespace
 	class AggregateFinder : public NodeVisitor<const dsql_nod*, const dsql_nod* const*>
 	{
 	public:
-		AggregateFinder(const DsqlCompilerScratch* aDsqlScratch, bool aWindow, bool aIgnoreSubSelects)
+		AggregateFinder(const DsqlCompilerScratch* aDsqlScratch, bool aWindow)
 			: NodeVisitor<const dsql_nod*, const dsql_nod* const*>(false, false),
 			  dsqlScratch(aDsqlScratch),
 			  window(aWindow),
-			  ignoreSubSelects(aIgnoreSubSelects),
 			  currentLevel(dsqlScratch->scopeLevel),
-			  deepestLevel(0)
+			  deepestLevel(0),
+			  ignoreSubSelects(false)
 		{
 		}
 
-		static bool find(const DsqlCompilerScratch* dsqlScratch, const dsql_nod* node, bool window)
+		static bool find(const DsqlCompilerScratch* dsqlScratch, bool window, const dsql_nod* node)
 		{
-			return AggregateFinder(dsqlScratch, window, false).visit(node);
+			return AggregateFinder(dsqlScratch, window).visit(node);
 		}
 
 		virtual bool visit(const dsql_nod* node);
@@ -431,13 +434,26 @@ namespace
 	public:
 		const DsqlCompilerScratch* const dsqlScratch;
 		bool window;
-		bool ignoreSubSelects;
 		USHORT currentLevel;
 		USHORT deepestLevel;
+		bool ignoreSubSelects;
 	};
 
 	// Check the fields inside an aggregate and check if the field scope_level meets the specified
 	// conditions.
+	//
+	// The SQL 2008 standard says:
+	// <where clause> ::=
+	//   WHERE <search condition>
+	// Syntax Rules
+	// 1) If a <value expression> directly contained in the <search condition> is a
+	// <set function specification>, then the <where clause> shall be contained in a <having clause>
+	// or <select list>, the <set function specification> shall contain a column reference, and
+	// every column reference contained in an aggregated argument of the <set function specification>
+	// shall be an outer reference.
+	//         NOTE 160 — outer reference is defined in Subclause 6.7, “<column reference>”.
+	// 2) The <search condition> shall not contain a <window function> without an intervening
+	// <query expression>.
 	class Aggregate2Finder : protected NodeVisitor<const dsql_nod*, const dsql_nod* const*>
 	{
 	public:
@@ -650,6 +666,9 @@ bool AggregateFinder::visit(const dsql_nod* node)
 					// used else we would have a wrong deepest_level value.
 
 					{	// scope
+						// We disable visiting of subqueries to handle this kind of query:
+						//   select (select sum((select outer.column from inner1)) from inner2)
+						//     from outer;
 						AutoSetRestore<USHORT> autoDeepestLevel(&deepestLevel, 0);
 						AutoSetRestore<bool> autoIgnoreSubSelects(&ignoreSubSelects, true);
 
@@ -659,11 +678,18 @@ bool AggregateFinder::visit(const dsql_nod* node)
 					}
 
 					if (localDeepestLevel == 0)
+					{
+						// ASF: There were no usage of a field of this scope [COUNT(*) or SUM(1)] or
+						// they are inside a subquery [COUNT((select outer.field from inner))].
+
+						// So the level found (deepestLevel) is the one of the current query in
+						// processing.
 						deepestLevel = currentLevel;
+					}
 					else
 						deepestLevel = localDeepestLevel;
 
-					// If the deepest_value is the same as the current scope_level
+					// If the deepestLevel is the same as the current scopeLevel
 					// this is an aggregate that belongs to the current context.
 					if (deepestLevel == dsqlScratch->scopeLevel)
 						aggregate = true;
@@ -671,7 +697,6 @@ bool AggregateFinder::visit(const dsql_nod* node)
 					{
 						// Check also for a nested aggregate that could belong to this context
 						AutoSetRestore<USHORT> autoDeepestLevel(&deepestLevel, localDeepestLevel);
-						AutoSetRestore<bool> autoIgnoreSubSelects(&ignoreSubSelects, false);
 
 						aggregate |= visit(node->nod_arg[e_agg_function_expression]);
 					}
@@ -823,11 +848,12 @@ bool Aggregate2Finder::visit(const dsql_nod* node)
 						case FIELD_MATCH_TYPE_EQUAL:
 							return currentScopeLevelEqual;
 
-						case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-							return true;
+						///case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+						///	return true;
 
-						case FIELD_MATCH_TYPE_LOWER:
-						case FIELD_MATCH_TYPE_HIGHER:
+						case FIELD_MATCH_TYPE_LOWER:	// Not used here
+						///case FIELD_MATCH_TYPE_HIGHER:
+							fb_assert(false);
 							return false;
 
 						default:
@@ -985,11 +1011,11 @@ bool FieldFinder::visit(const dsql_nod* node)
 				case FIELD_MATCH_TYPE_LOWER_EQUAL:
 					return field_context->ctx_scope_level <= checkScopeLevel;
 
-				case FIELD_MATCH_TYPE_HIGHER:
-					return field_context->ctx_scope_level > checkScopeLevel;
+				///case FIELD_MATCH_TYPE_HIGHER:
+				///	return field_context->ctx_scope_level > checkScopeLevel;
 
-				case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-					return field_context->ctx_scope_level >= checkScopeLevel;
+				///case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+				///	return field_context->ctx_scope_level >= checkScopeLevel;
 
 				default:
 					fb_assert(false);
@@ -1014,11 +1040,11 @@ bool FieldFinder::visit(const dsql_nod* node)
 				case FIELD_MATCH_TYPE_LOWER_EQUAL:
 					return dfScopeLevel <= checkScopeLevel;
 
-				case FIELD_MATCH_TYPE_HIGHER:
-					return dfScopeLevel > checkScopeLevel;
+				///case FIELD_MATCH_TYPE_HIGHER:
+				///	return dfScopeLevel > checkScopeLevel;
 
-				case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-					return dfScopeLevel >= checkScopeLevel;
+				///case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+				///	return dfScopeLevel >= checkScopeLevel;
 
 				default:
 					fb_assert(false);
@@ -1314,7 +1340,7 @@ bool FieldRemapper::visit(dsql_nod*& node)
 						  Arg::Gds(isc_dsql_agg_nested_err));
 			}
 
-			AggregateFinder aggFinder(dsqlScratch, false, false);
+			AggregateFinder aggFinder(dsqlScratch, false);
 			aggFinder.deepestLevel = dsqlScratch->scopeLevel;
 			aggFinder.currentLevel = currentLevel;
 
@@ -1362,7 +1388,7 @@ bool FieldRemapper::visit(dsql_nod*& node)
 		case nod_agg_total2:
 		case nod_agg_list:
 		{
-			AggregateFinder aggFinder(dsqlScratch, false, false);
+			AggregateFinder aggFinder(dsqlScratch, false);
 			aggFinder.deepestLevel = dsqlScratch->scopeLevel;
 			aggFinder.currentLevel = currentLevel;
 
@@ -7917,8 +7943,8 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 	if (input->nod_arg[e_qry_group] ||
 		input->nod_arg[e_qry_having] ||
-		(rse->nod_arg[e_rse_items] && AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_items], false)) ||
-		(rse->nod_arg[e_rse_sort] && AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_sort], false)))
+		(rse->nod_arg[e_rse_items] && AggregateFinder::find(dsqlScratch, false, rse->nod_arg[e_rse_items])) ||
+		(rse->nod_arg[e_rse_sort] && AggregateFinder::find(dsqlScratch, false, rse->nod_arg[e_rse_sort])))
 	{
 		// dimitr: don't allow WITH LOCK for aggregates
 		if (update_lock)
@@ -8096,7 +8122,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 				}
 			}
 
-			if (AggregateFinder::find(dsqlScratch, list, true))
+			if (AggregateFinder::find(dsqlScratch, true, list))
 			{
 				// Cannot use an aggregate in a WHERE clause, use HAVING instead
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -8109,10 +8135,10 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	}
 
 	const bool sortWindow = rse->nod_arg[e_rse_sort] &&
-		AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_sort], true);
+		AggregateFinder::find(dsqlScratch, true, rse->nod_arg[e_rse_sort]);
 
 	// WINDOW functions
-	if ((rse->nod_arg[e_rse_items] && AggregateFinder::find(dsqlScratch, rse->nod_arg[e_rse_items], true)) ||
+	if ((rse->nod_arg[e_rse_items] && AggregateFinder::find(dsqlScratch, true, rse->nod_arg[e_rse_items])) ||
 		sortWindow)
 	{
 		AutoSetRestore<bool> autoProcessingWindow(&dsqlScratch->processingWindow, true);
