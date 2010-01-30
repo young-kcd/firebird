@@ -483,7 +483,7 @@ static const deferred_task task_table[] =
 };
 
 
-USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::string& name, SSHORT field_type,
+USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SSHORT field_type,
 	SSHORT ttype)
 {
 /**************************************

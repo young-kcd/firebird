@@ -4199,11 +4199,11 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Quali
 	Firebird::string key((char*) &type, sizeof(type));
 	int len = name.identifier.length();
 	key.append((char*) &len, sizeof(len));
-	key.append(name.identifier.c_str());
+	key.append(name.identifier.c_str(), len);
 
 	len = name.package.length();
 	key.append((char*) &len, sizeof(len));
-	key.append(name.package.c_str());
+	key.append(name.package.c_str(), len);
 
 	DSqlCacheItem* item = attachment->att_dsql_cache.put(key);
 	if (item)
