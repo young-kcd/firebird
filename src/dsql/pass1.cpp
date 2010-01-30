@@ -1070,6 +1070,14 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 
 	bool invalid = false;
 
+	// ASF: What we do in this function is the verification of all fields/dbkeys (or any parent
+	// expression involving them) are present in the passed node list.
+	// That makes valid:
+	//   select n + 0 from table group by n			=> The n item is present in the list
+	//   select n + 0 from table group by n + 0		=> The n + 0 item is present in the list
+	// And makes invalid:
+	//   select n + 1 from table group by n + 0		=> The n + 1 item is not present in the list
+
 	if (list)
 	{
 		// Check if this node (with ignoring of CASTs) appears also
@@ -1086,6 +1094,7 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 	{
 		case nod_window:
 		{
+			// It's allowed to use an aggregate function of our context inside window functions.
 			AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, true);
 			invalid |= visit(node->nod_arg[e_window_expr]);
 			invalid |= visit(node->nod_arg[e_window_partition]);
@@ -1134,22 +1143,22 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
 			const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
 
-			if (lcontext->ctx_scope_level == context->ctx_scope_level)
-			{
-				AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap, true);
-				AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, false);
-				invalid |= visit(lmap->map_node);
-			}
-			else
-			{
-				bool localInsideHigherMap = lcontext->ctx_scope_level > context->ctx_scope_level;
+			// If that map is of the current scopeLevel, we prevent the visiting of the aggregate
+			// expression. This is because a field embedded in an aggregate function is valid even
+			// not being in the group by list. Examples:
+			//   select count(n) from table group by m
+			//   select count(n) from table
 
-				AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap, false);
-				AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap, localInsideHigherMap);
+			AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap,
+				lcontext->ctx_scope_level == context->ctx_scope_level);
 
-				invalid |= visit(lmap->map_node);
-			}
+			// If the context scope is greater than our own, someone should already inspected
+			// nested aggregates, so set insideHigherMap to true.
 
+			AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap,
+				lcontext->ctx_scope_level > context->ctx_scope_level);
+
+			invalid |= visit(lmap->map_node);
 			break;
 		}
 
@@ -1161,22 +1170,18 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 		{
 			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
 
-			// Wouldn't it be better to call an error from this
-			// point where return is true? Then we could give
-			// the fieldname that's making the trouble
+			// Wouldn't it be better to call an error from this point where return is true?
+			// Then we could give the fieldname that's making the trouble.
 
-			// If we come here then this Field is used inside a
-			// aggregate-function. The ctx_scope_level gives the
-			// info how deep the context is inside the statement.
+			// If we come here then this field is used inside a aggregate-function. The
+			// ctx_scope_level gives the info how deep the context is inside the statement.
 
-			// If the context-scope-level from this field is
-			// lower or the same as the scope-level from the
-			// given context then it is an invalid field
+			// If the context-scope-level from this field is lower or the same as the scope-level
+			// from the given context then it is an invalid field.
 			if (localContext->ctx_scope_level == context->ctx_scope_level)
 			{
-				// Return TRUE (invalid) if this Field isn't inside
-				// the GROUP BY clause, that should already been
-				// seen in the match_node above
+				// Return true (invalid) if this field isn't inside the GROUP BY clause, that
+				// should already been seen in the match_node test in that routine start.
 				invalid = true;
 			}
 
@@ -1357,6 +1362,18 @@ bool FieldRemapper::visit(dsql_nod*& node)
 					}
 
 					dsql_nod* temp = windowNode->nod_arg[e_window_partition];
+					if (temp)
+					{
+						for (unsigned i = 0; i < temp->nod_count; ++i)
+						{
+							AutoSetRestore<dsql_nod*> autoPartitionNode(&partitionNode, NULL);
+							AutoSetRestore<dsql_nod*> autoOrderNode(&orderNode, NULL);
+
+							visit(temp->nod_arg[i]);
+						}
+					}
+
+					temp = windowNode->nod_arg[e_window_order];
 					if (temp)
 					{
 						for (unsigned i = 0; i < temp->nod_count; ++i)
