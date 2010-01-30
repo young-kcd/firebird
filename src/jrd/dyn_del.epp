@@ -744,7 +744,6 @@ void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 		GET_STRING(ptr, tbl_nm);
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_dep_flds, DYN_REQUESTS);
-	jrd_req* request2 = NULL;
 	USHORT id = drq_l_dep_flds;
 
 	bool found;
@@ -907,7 +906,6 @@ void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_rundown_request(request2, -1);
 
 		switch (id)
 		{
