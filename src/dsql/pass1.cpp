@@ -1152,7 +1152,7 @@ bool InvalidReferenceFinder::visit(const dsql_nod* node)
 			AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap,
 				lcontext->ctx_scope_level == context->ctx_scope_level);
 
-			// If the context scope is greater than our own, someone should already inspected
+			// If the context scope is greater than our own, someone should have already inspected
 			// nested aggregates, so set insideHigherMap to true.
 
 			AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap,
