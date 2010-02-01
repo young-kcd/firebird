@@ -9078,13 +9078,13 @@ static int query_abort(const int reason, const int, void*)
 	{
 		return FB_SUCCESS;
 	}
+#endif
 
 	if (DB)
 	{
 		ISC_STATUS_ARRAY status;
 		flag = (fb_cancel_operation(status, &DB, fb_cancel_raise) == FB_SUCCESS);
 	}
-#endif
 
 	if (flag)
 	{
