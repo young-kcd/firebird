@@ -1,3 +1,10 @@
+2010-02-01 11:37  hvlad
+
+	* firebird2/src/utilities/ntrace/fbtrace.conf (1.11):
+
+	Improvement CORE-2821 : Add indication about log size limit for
+	trace API
+
 2010-01-31 06:10  robocop
 
 	* firebird2/src/dsql/pass1.cpp (1.514):
