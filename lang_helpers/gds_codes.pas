@@ -729,6 +729,7 @@ const
 	gds_invalid_timestamp_val            = 335545014;
 	gds_invalid_index_val                = 335545015;
 	gds_formatted_exception              = 335545016;
+	gds_async_active                     = 335545017;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

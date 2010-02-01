@@ -717,6 +717,7 @@ static const struct {
 	{335545014, -901}, /* 694 invalid_timestamp_val */
 	{335545015, -901}, /* 695 invalid_index_val */
 	{335545016, -836}, /* 696 formatted_exception */
+	{335545017, -532}, /* 697 async_active */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

@@ -718,6 +718,7 @@ static const struct {
 	{"invalid_timestamp_val", 335545014},
 	{"invalid_index_val", 335545015},
 	{"formatted_exception", 335545016},
+	{"async_active", 335545017},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

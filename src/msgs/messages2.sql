@@ -804,6 +804,7 @@ Data source : @4', NULL, NULL)
 ('invalid_timestamp_val', 'ValueImpl::setTimeStamp', 'ValueImpl.cpp', NULL, 0, 694, NULL, 'Invalid timestamp', NULL, NULL)
 ('invalid_index_val', 'ValuesImpl::getValue', 'ValuesImpl.cpp', NULL, 0, 695, NULL, 'Invalid index @1', NULL, NULL)
 ('formatted_exception', 'ExceptionNode::setError', 'StmtNodes.cpp', NULL, 0, 696, NULL, '@1', NULL, NULL)
+('async_active', 'REM_cancel_operation', 'interface.cpp', NULL, 0, 697, NULL, 'Asynchronous call is already running for this attachment', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
