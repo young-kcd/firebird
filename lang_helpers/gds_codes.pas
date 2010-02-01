@@ -700,6 +700,7 @@ const
 	gds_out_of_temp_space                = 335544985;
 	gds_eds_expl_tran_ctrl               = 335544986;
 	gds_no_trusted_spb                   = 335544987;
+	gds_async_active                     = 335545017;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

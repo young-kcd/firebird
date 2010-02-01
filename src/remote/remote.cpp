@@ -821,3 +821,20 @@ rem_port::~rem_port()
 	--portCounter;
 #endif
 }
+
+void Rdb::set_async_vector(ISC_STATUS* userStatus) throw()
+{
+	rdb_async_status_vector = userStatus;
+	rdb_async_thread_id = getThreadId();
+}
+
+void Rdb::reset_async_vector() throw()
+{
+	rdb_async_thread_id = 0;
+	rdb_async_status_vector = NULL;
+}
+
+ISC_STATUS* Rdb::get_status_vector() throw()
+{
+	return rdb_async_thread_id == getThreadId() ? rdb_async_status_vector : rdb_status_vector;
+}

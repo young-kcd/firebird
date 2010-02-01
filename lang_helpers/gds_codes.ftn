@@ -1386,6 +1386,8 @@ C --
       PARAMETER (GDS__eds_expl_tran_ctrl               = 335544986)
       INTEGER*4 GDS__no_trusted_spb                  
       PARAMETER (GDS__no_trusted_spb                   = 335544987)
+      INTEGER*4 GDS__async_active                    
+      PARAMETER (GDS__async_active                     = 335545017)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

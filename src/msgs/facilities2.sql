@@ -1,7 +1,8 @@
 /* MAX_NUMBER is the next number to be used, always one more than the highest message number. */
 set bulk_insert INSERT INTO FACILITIES (LAST_CHANGE, FACILITY, FAC_CODE, MAX_NUMBER) VALUES (?, ?, ?, ?);
 --
-('2009-10-02 20:33:37', 'JRD', 0, 668)
+-- 668-696 are skipped to be in sync with FB3
+('2010-02-01 16:45:47', 'JRD', 0, 698)
 -- Reserved 513-529 by CVC for FB3
 ('2009-07-16 05:41:59', 'QLI', 1, 530)
 ('2008-11-28 20:27:04', 'GDEF', 2, 346)

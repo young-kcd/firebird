@@ -775,6 +775,7 @@ Data source : @4', NULL, NULL)
 ('out_of_temp_space', 'setupFile', 'TempSpace.cpp', NULL, 0, 665, NULL, 'No free space found in temporary directories', NULL, NULL);
 ('eds_expl_tran_ctrl', NULL, '', NULL, 0, 666, NULL, 'Explicit transaction control is not allowed', NULL, NULL)
 ('no_trusted_spb', NULL, 'svc.cpp', NULL, 0, 667, NULL, 'Use of TRUSTED switches in spb_command_line is prohibited', NULL, NULL)
+('async_active', 'REM_cancel_operation', 'interface.cpp', NULL, 0, 697, NULL, 'Asynchronous call is already running for this attachment', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
