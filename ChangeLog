@@ -1,3 +1,35 @@
+2010-02-01 11:37  hvlad
+
+	* firebird2/src/utilities/ntrace/fbtrace.conf (1.6.2.4):
+
+	Improvement CORE-2821 : Add indication about log size limit for
+	trace API
+
+2010-02-01 11:36  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbpanel.cpp (1.8.2.2):
+
+	CORE-2828 On further thought, there is no need to have a version
+	number here at all. And there is no precedent in the system control
+	panel to display version numbers at this level.
+
+2010-02-01 11:23  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt
+	(1.22.2.2), installation_readme.txt (1.23.2.2),
+	ba/Instalacija_ProcitajMe.txt (1.6.2.1), ba/ProcitajMe.txt
+	(1.4.2.1):
+
+	Update Bosnian translations for Windows installer readme etc Change
+	RC1 -> RC2 where appropriate
+
+2010-02-01 11:14  paul_reeves
+
+	* firebird2/src/utilities/fbcpl/fbpanel.cpp (1.8.2.1):
+
+	Temporary fix for CORE-2828 Update major.minor version string that
+	displays in the system-level Control Panel screen
+
 2010-01-29 12:34  alexpeshkoff
 
 	* firebird2/: configure.in (1.368.2.7),
