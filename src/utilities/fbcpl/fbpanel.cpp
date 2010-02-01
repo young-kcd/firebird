@@ -58,8 +58,8 @@ LONG CFBPanel::OnInquire(UINT /*uAppNum*/, NEWCPLINFO* pInfo)
     pInfo->lData = 0;
     pInfo->hIcon = ::LoadIcon(AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON1));
     // Shouldn't this read FB 2 without fixing the minor version?
-    strcpy(pInfo->szName, "Firebird 2.0 Server Manager");
-    strcpy(pInfo->szInfo, "Configure Firebird 2.0 Database Server");
+    strcpy(pInfo->szName, "Firebird 2.5 Server Manager");
+    strcpy(pInfo->szInfo, "Configure Firebird 2.5 Database Server");
     strcpy(pInfo->szHelpFile, "");
     return 0; // OK (don't send CPL_INQUIRE msg)
 }
