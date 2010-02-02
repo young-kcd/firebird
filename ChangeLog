@@ -1,3 +1,59 @@
+2010-02-02 13:19  alexpeshkoff
+
+	* firebird2/src/jrd/cch.cpp (1.242.2.4):
+
+	Corrected fix for CORE-2842 - thanks to Vlad
+
+2010-02-02 12:21  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.12):
+
+	Update.
+
+2010-02-02 11:35  alexpeshkoff
+
+	* firebird2/src/jrd/cch.cpp (1.242.2.3):
+
+	Fixed CORE-2842: Timeout with latchs in CCH does not work
+
+2010-02-02 09:32  dimitr
+
+	* firebird2/: doc/WhatsNew (1.190.2.11), src/jrd/isc_version.h
+	(1.10.2.8):
+
+	Update.
+
+2010-02-02 09:22  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.565.2.7):
+
+	Fixed CORE-2840: Engine crashes if the NULL attachment handle is
+	passed from the Y-valve.
+
+2010-02-01 15:34  hvlad
+
+	* firebird2/src/isql/isql.epp (1.291.2.6):
+
+	Fixed bug CORE-2837 : Asynchronous query cancellation (via Ctrl+C)
+	is not worked
+
+2010-02-01 15:27  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.104.2.3),
+	lang_helpers/gds_codes.pas (1.103.2.3), src/include/gen/codetext.h
+	(1.113.2.3), src/include/gen/iberror.h (1.117.2.3),
+	src/include/gen/msgs.h (1.143.2.3), src/include/gen/sql_code.h
+	(1.119.2.3), src/include/gen/sql_state.h (1.49.2.3),
+	src/msgs/facilities2.sql (1.79.2.6), src/msgs/messages2.sql
+	(1.102.2.7), src/msgs/system_errors2.sql (1.65.2.3),
+	src/remote/inet.cpp (1.298.2.3), src/remote/interface.cpp
+	(1.222.2.1), src/remote/remote.cpp (1.92.2.1), src/remote/remote.h
+	(1.100.2.1), src/remote/xnet.cpp (1.144.2.2),
+	src/remote/os/win32/wnet.cpp (1.88.2.1):
+
+	Fixed CORE-2836: fb_cancel_operation() incorrectly modifies
+	rdb_status_vector
+
 2010-02-01 11:37  hvlad
 
 	* firebird2/src/utilities/ntrace/fbtrace.conf (1.6.2.4):
