@@ -5418,12 +5418,7 @@ static SSHORT latch_bdb(thread_db* tdbb,
 	{
 		//LATCH_MUTEX_RELEASE;
 		Database::Checkout dcoHolder(dbb);
-		if (latch_wait > 0) {
-			timeout_occurred = !(lwt->lwt_sem.tryEnter(120));
-		}
-		else {
-			lwt->lwt_sem.tryEnter(-latch_wait);
-		}
+		timeout_occurred = !(lwt->lwt_sem.tryEnter(latch_wait > 0 ? 120 : -latch_wait));
 		//LATCH_MUTEX_ACQUIRE;
 	}
 
