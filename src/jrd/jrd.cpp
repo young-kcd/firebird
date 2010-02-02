@@ -175,7 +175,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, Jrd::Attachment* const attachment)
 	{
-		if (attachment == tdbb->getAttachment())
+		if (attachment && attachment == tdbb->getAttachment())
 			return;
 
 		if (!attachment->checkHandle() || !attachment->att_database->checkHandle())
