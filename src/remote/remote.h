@@ -423,7 +423,7 @@ public:
 	template <typename R>
 	R* get(R* r)
 	{
-		if (! r->checkHandle())
+		if (!r || !r->checkHandle())
 		{
 			Firebird::status_exception::raise(Firebird::Arg::Gds(R::badHandle()));
 		}
