@@ -2,6 +2,21 @@
   * v2.5 Release Candidate 2
   **************************
 
+    * Bugfix CORE-2840
+        Engine crashes if the NULL attachment handle is passed from the Y-valve
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2837
+        Asynchronous query cancellation (via Ctrl+C) does not work in ISQL on Windows
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2836
+        fb_cancel_operation() incorrectly modifies rdb_status_vector
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2831
         ISQL shouldn't display database and user names when extracting a script
       Contributor(s):
