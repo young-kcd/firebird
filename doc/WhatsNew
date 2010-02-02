@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 2
   **************************
 
+    * Bugfix CORE-2842
+        Latch timeouts in the page cache code do not work
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2840
         Engine crashes if the NULL attachment handle is passed from the Y-valve
       Contributor(s):
