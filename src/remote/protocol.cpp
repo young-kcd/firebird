@@ -204,8 +204,7 @@ void xdr_debug_memory(XDR* xdrs,
 						}
 					}
 					else
-					{
-						// XDR_ENCODE or XDR_DECODE
+					{		// XDR_ENCODE or XDR_DECODE
 
 						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
@@ -361,6 +360,15 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_transaction));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_messages));
+#ifdef SCROLLABLE_CURSORS
+		port = (rem_port*) xdrs->x_public;
+		if ((p->p_operation == op_receive) && (port->port_protocol > PROTOCOL_VERSION8))
+		{
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_direction));
+			MAP(xdr_long, reinterpret_cast<SLONG&>(data->p_data_offset));
+		}
+
+#endif
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -747,16 +755,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
-	case op_cont_auth:
-		{
-			P_AUTH_CONT* auth = &p->p_auth_cont;
-			MAP(xdr_cstring, auth->p_data);
-			MAP(xdr_cstring, auth->p_name);
-			DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-			return P_TRUE(xdrs, p);
-		}
-
 	case op_cancel:
 		{
 			P_CANCEL_OP* cancel_op = &p->p_cancel_op;
@@ -1134,8 +1132,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		}
 	}
 	else
-	{
-		// XDR_ENCODE or XDR_DECODE
+	{						// XDR_ENCODE or XDR_DECODE
 
 		// Allocate an unused slot in the packet tracking vector
 		// to start recording memory allocations for this packet.
@@ -1230,6 +1227,12 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 		return TRUE;
 
 	const rem_port* port = (rem_port*) xdrs->x_public;
+
+
+	if ((!message) || (!format))
+	{
+		return FALSE;
+	}
 
 	// If we are running a symmetric version of the protocol, just slop
 	// the bits and don't sweat the translations
@@ -1541,6 +1544,9 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+		message->msg_prior = message;
+#endif
 	}
 
 	return TRUE;
@@ -1589,12 +1595,15 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		return FALSE;
 
 	RMessage* message = statement->rsr_buffer;
-	if (message)
+	if (!message)
 	{
-		statement->rsr_buffer = message->msg_next;
-		if (!message->msg_address)
-			message->msg_address = message->msg_buffer;
+		// We should not call xdr_message() with NULL
+		return FALSE;
 	}
+	
+	statement->rsr_buffer = message->msg_next;
+	if (!message->msg_address)
+		message->msg_address = message->msg_buffer;
 
 	return xdr_message(xdrs, message, statement->rsr_format);
 }

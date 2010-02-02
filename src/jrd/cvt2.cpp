@@ -248,8 +248,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		UCHAR* p1 = NULL;
 		UCHAR* p2 = NULL;
 		USHORT t1, t2; // unused later
-		USHORT length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0);
-		USHORT length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0);
+		USHORT length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, ERR_post);
+		USHORT length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, ERR_post);
 
 		int fill = length - length2;
 		const UCHAR pad = charset1 == ttype_binary || charset2 == ttype_binary ? '\0' : ' ';
@@ -305,14 +305,15 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 
 	switch (arg1->dsc_dtype)
 	{
+		SLONG date[2];
+
 	case dtype_timestamp:
 		{
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_timestamp;
-			SLONG datetime[2];
-			desc.dsc_length = sizeof(datetime);
-			desc.dsc_address = (UCHAR*) datetime;
+			desc.dsc_length = sizeof(date);
+			desc.dsc_address = (UCHAR *) date;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -322,9 +323,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_sql_time;
-			SLONG atime;
-			desc.dsc_length = sizeof(atime);
-			desc.dsc_address = (UCHAR*) &atime;
+			desc.dsc_length = sizeof(date[0]);
+			desc.dsc_address = (UCHAR *) date;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -334,9 +334,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_sql_date;
-			SLONG date;
-			desc.dsc_length = sizeof(date);
-			desc.dsc_address = (UCHAR*) &date;
+			desc.dsc_length = sizeof(date[0]);
+			desc.dsc_address = (UCHAR *) date;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -421,7 +420,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		{
 			UCHAR* p = NULL;
 			USHORT t; // unused later
-			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0);
+			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0, ERR_post);
 
 			USHORT l = MIN(arg1->dsc_length, length);
 			SSHORT rc = memcmp(arg1->dsc_address, p, l);
@@ -716,7 +715,6 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 		UCHAR* tempptr = temp.getBuffer(length);
 		length = INTL_convert_bytes(tdbb, cs1, tempptr, length, cs2, from_buf, from_len, ERR_post);
 		*address = tempptr;
-		temp.resize(length);
 		return length;
 	}
 
@@ -727,8 +725,8 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 	temp_desc.dsc_length = temp.getCapacity();
 	temp_desc.dsc_address = temp.getBuffer(temp_desc.dsc_length);
 	vary* vtmp = reinterpret_cast<vary*>(temp_desc.dsc_address);
+	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
-	temp_desc.setTextType(to_interp);
 	CVT_move(desc, &temp_desc);
 	*address = reinterpret_cast<UCHAR*>(vtmp->vary_string);
 

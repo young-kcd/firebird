@@ -272,6 +272,9 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 		printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
 		msg->msg_next = msg;
+#ifdef SCROLLABLE_CURSORS
+		msg->msg_prior = msg;
+#endif
 		msg->msg_number = tail->rrq_message->msg_number;
 		tail->rrq_message = msg;
 	}
@@ -549,6 +552,9 @@ void REMOTE_reset_statement( Rsr* statement)
 
 	temp->msg_next = message->msg_next;
 	message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+	message->msg_prior = message;
+#endif
 
 	statement->rsr_buffer = statement->rsr_message;
 
@@ -725,6 +731,27 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 }
 #endif //REM_SERVER
 
+#ifdef TRUSTED_AUTH
+ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb,
+					   ServerAuth::Part2* p2, P_OP op)
+	: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()),
+	  part2(p2), operation(op)
+{
+	fileName.assign(fName, fLen);
+	size_t pbLen = pb.getBufferLength();
+	if (pbLen)
+	{
+		memcpy(clumplet.getBuffer(pbLen), pb.getBuffer(), pbLen);
+	}
+	authSspi = FB_NEW(*getDefaultMemoryPool()) AuthSspi;
+}
+
+ServerAuth::~ServerAuth()
+{
+	delete authSspi;
+}
+#endif // TRUSTED_AUTH
+
 void PortsCleanup::registerPort(rem_port* port)
 {
 	Firebird::MutexLockGuard guard(m_mutex);
@@ -768,10 +795,6 @@ void PortsCleanup::closePorts()
 	}
 }
 
-ServerAuthBase::~ServerAuthBase()
-{
-}
-
 rem_port::~rem_port()
 {
 	if (port_events_shutdown)
@@ -790,9 +813,28 @@ rem_port::~rem_port()
 	delete port_packet_vector;
 #endif
 
-	delete port_auth;
+#ifdef TRUSTED_AUTH
+	delete port_trusted_auth;
+#endif
 
 #ifdef DEV_BUILD
 	--portCounter;
 #endif
+}
+
+void Rdb::set_async_vector(ISC_STATUS* userStatus) throw()
+{
+	rdb_async_status_vector = userStatus;
+	rdb_async_thread_id = getThreadId();
+}
+
+void Rdb::reset_async_vector() throw()
+{
+	rdb_async_thread_id = 0;
+	rdb_async_status_vector = NULL;
+}
+
+ISC_STATUS* Rdb::get_status_vector() throw()
+{
+	return rdb_async_thread_id == getThreadId() ? rdb_async_status_vector : rdb_status_vector;
 }

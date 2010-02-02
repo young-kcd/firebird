@@ -119,8 +119,13 @@ void TraceCfgReader::readConfig()
 	charset cs;
 	IntlUtil::initUtf8Charset(&cs);
 
+	string collAttributes("ICU-VERSION=");
+	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	IntlUtil::setupIcuAttributes(&cs, collAttributes, "", collAttributes);
+
 	UCharBuffer collAttributesBuffer;
-	IntlUtil::getDefaultCollationAttributes(collAttributesBuffer, cs);
+	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
+		collAttributes.length());
 
 	texttype tt;
 	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))

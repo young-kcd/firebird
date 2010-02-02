@@ -47,10 +47,6 @@ typedef unsigned _int16 uint16_t;
 */
 #endif
 
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-
 // Just an emulation of 128-bit numbers for now.
 struct DoubleQuad
 {
@@ -166,14 +162,11 @@ public:
 	void dump(const TEXT* target[], size_t v_size) const;
 	const safe_cell& getCell(size_t index) const;
 	size_t getCount() const;
-
 private:
 	size_t m_count;
 	safe_cell m_arguments[SAFEARG_MAX_ARG];
 	const void* m_extras; // Formatting, etc.
-
-	friend int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg,
-		bool userFormatting);
+	friend int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg);
 };
 
 inline SafeArg::SafeArg()
@@ -196,3 +189,4 @@ inline size_t SafeArg::getCount() const
 } // namespace
 
 #endif // FB_SAFEARG_H
+

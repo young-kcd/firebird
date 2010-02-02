@@ -4286,6 +4286,11 @@
 			path = fun_proto.h;
 			refType = 4;
 		};
+		F616C5E30200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = functions.cpp;
+			refType = 4;
+		};
 		F616C5E40200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = gds.bas;
@@ -7491,6 +7496,11 @@
 		F616C9250200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = example.mak;
+			refType = 4;
+		};
+		F616C9260200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = functions.c;
 			refType = 4;
 		};
 		F616C9270200B0D001EF0ADE = {

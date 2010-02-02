@@ -88,7 +88,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 		m_svc.printf("Can not start trace session. There are no trace plugins loaded\n");
 		return;
 	}
-
+	
 	ConfigStorage* storage = TraceManager::getStorage();
 
 	{	// scope

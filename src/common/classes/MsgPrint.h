@@ -80,22 +80,19 @@ class BaseStream;
 
 
 // A. The basic routine.
-int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg,
-	bool userFormatting = false);
+int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg);
 
 // B. Printf replacement. Output to stdout.
-int MsgPrint(const char* format, const SafeArg& arg, bool userFormatting = false);
+int MsgPrint(const char* format, const SafeArg& arg);
 
 // C. Print without arguments to stdout.
 int MsgPrint(const char* format);
 
 // D. Print to a string, without buffer overrun.
-int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg,
-	bool userFormatting = false);
+int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg);
 
 // E. Prints a formatted string into stderr and flushed the buffer.
-int MsgPrintErr(const char* format, const SafeArg& arg, bool userFormatting = false);
-
+int MsgPrintErr(const char* format, const SafeArg& arg);
 } // namespace
 
 // Type safe replacement of the old gds__msg_format.

@@ -73,14 +73,14 @@
 /* It turns out to be tricky to write the INT64 versions of those constant in
    a way that will do the right thing on all platforms.  Here we go. */
 
-#define LONG_MAX_int64 ((SINT64) 2147483647)	// max int64 value of an SLONG
-#define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	// min int64 value of an SLONG
+#define LONG_MAX_int64 ((SINT64) 2147483647)	/* max int64 value of an SLONG */
+#define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	/* min int64 value of an SLONG */
 
 #define DIGIT(c)        ((c) >= '0' && (c) <= '9')
 
-// NOTE: The syntax for the below line may need modification to ensure
-// the result of 1 << 62 is a quad
-
+/* NOTE: The syntax for the below line may need modification to ensure
+ *	 the result of 1 << 62 is a quad
+ */
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
 #define NUMERIC_LIMIT   (INT64_LIMIT)
 
@@ -141,11 +141,11 @@ double CVT_date_to_double(const dsc* desc)
 		}
 	}
 
-	/* Instead of returning the calculated double value in the return
-	statement, am assigning the value to a local volatile double
-	variable and returning that. This is to prevent a specific kind of
-	precision error caused on Intel platforms (SCO and Linux) due
-	to FPU register being 80 bits long and double being 64 bits long */
+/* Instead of returning the calculated double value in the return
+statement, am assigning the value to a local volatile double
+variable and returning that. This is to prevent a specific kind of
+precision error caused on Intel platforms (SCO and Linux) due
+to FPU register being 80 bits long and double being 64 bits long */
 	volatile double retval;
 	retval =
 		date[0] +
@@ -170,11 +170,15 @@ void CVT_double_to_date(double real, SLONG fixed[2])
  **************************************/
 
 	fixed[0] = (SLONG) real;
-	fixed[1] = (SLONG) ((real - fixed[0]) * 24. * 60. * 60. * ISC_TIME_SECONDS_PRECISION);
+	fixed[1] =
+		(SLONG) ((real - fixed[0]) * 24. * 60. * 60. *
+				 ISC_TIME_SECONDS_PRECISION);
 }
 
 
-UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, double* ptr)
+UCHAR CVT_get_numeric(const UCHAR* string,
+					  const USHORT length,
+					  SSHORT* scale, double* ptr)
 {
 /**************************************
  *
@@ -212,20 +216,17 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, d
 
 	const UCHAR* p = string;
 	const UCHAR* const end = p + length;
-	for (; p < end; p++)
-	{
-		if (DIGIT(*p))
-		{
+	for (; p < end; p++) {
+		if (DIGIT(*p)) {
 			digit_seen = true;
 
-			// Before computing the next value, make sure there will be
-			// no overflow. Trying to detect overflow after the fact is
-			// tricky: the value doesn't always become negative after an
-			// overflow!
+			/* Before computing the next value, make sure there will be
+			   no overflow. Trying to detect overflow after the fact is
+			   tricky: the value doesn't always become negative after an
+			   overflow!  */
 
-			if (value >= NUMERIC_LIMIT)
-			{
-				// possibility of an overflow
+			if (value >= NUMERIC_LIMIT) {
+				/* possibility of an overflow */
 				if (value > NUMERIC_LIMIT)
 					break;
 
@@ -233,14 +234,13 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, d
 					break;
 			}
 
-			// Force the subtraction to be performed before the addition,
-			// thus preventing a possible signed arithmetic overflow.
+			/* Force the subtraction to be performed before the addition,
+			   thus preventing a possible signed arithmetic overflow.    */
 			value = value * 10 + (*p - '0');
 			if (fraction)
 				--local_scale;
 		}
-		else if (*p == '.')
-		{
+		else if (*p == '.') {
 			if (fraction)
 				CVT_conversion_error(&desc, ERR_post);
 			else
@@ -259,35 +259,33 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, d
 	if (!digit_seen)
 		CVT_conversion_error(&desc, ERR_post);
 
-	if ((p < end) ||			// there is an exponent
-		((value < 0) && (sign != -1))) // MAX_SINT64+1 wrapped around
+	if ((p < end) ||			/* there is an exponent */
+		((value < 0) && (sign != -1))) /* MAX_SINT64+1 wrapped around */
 	{
-		// convert to double
+		/* convert to double */
 		*ptr = CVT_get_double(&desc, ERR_post);
 		return dtype_double;
 	}
 
 	*scale = local_scale;
 
-	// The literal has already been converted to a 64-bit integer: return
-	// a long if the value fits into a long, else return an int64.
+/* The literal has already been converted to a 64-bit integer: return
+   a long if the value fits into a long, else return an int64. */
 
-	if ((value <= LONG_MAX_int64) && (value >= 0))
-	{
+	if ((value <= LONG_MAX_int64) && (value >= 0)) {
 		*(SLONG *) ptr = (SLONG) ((sign == -1) ? -value : value);
 		return dtype_long;
 	}
 
-	if ((sign == -1) && (-value == LONG_MIN_int64))
-	{
+	if ((sign == -1) && (-value == LONG_MIN_int64)) {
 		*(SLONG *) ptr = SLONG_MIN;
 		return dtype_long;
 	}
 
-	// Either MAX_SLONG < value <= MAX_SINT64, or
-	// (value == MIN_SINT64) && (sign == -1)).
-	// In the first case, the number can be negated, while in the second
-	// negating the value will not change it on a 2s-complement system.
+	/* Either MAX_SLONG < value <= MAX_SINT64, or
+	   ((value == MIN_SINT64) && (sign == -1)).
+	   In the first case, the number can be negated, while in the second
+	   negating the value will not change it on a 2s-complement system. */
 
 	*(SINT64 *) ptr = ((sign == -1) ? -value : value);
 	return dtype_int64;
@@ -385,9 +383,9 @@ bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charse
 	else
 		charset2 = INTL_TTYPE(to);
 
-	// The charset[12] can be ttype_dynamic only if we are
-	// outside the engine. Within the engine INTL_charset
-	// would have set it to the ttype of the attachment
+	/* The charset[12] can be ttype_dynamic only if we are
+	   outside the engine. Within the engine INTL_charset
+	   would have set it to the ttype of the attachment */
 
 	if ((charset1 != charset2) &&
 		(charset2 != ttype_none) &&
@@ -403,10 +401,10 @@ bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charse
 }
 
 
-CharSet* EngineCallbacks::getToCharset(CHARSET_ID charSetId)
+CharSet* EngineCallbacks::getToCharset(CHARSET_ID charset2)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	return INTL_charset_lookup(tdbb, charSetId);
+	return charset2 == ttype_dynamic || charset2 == CS_METADATA ? NULL :
+		   INTL_charset_lookup(NULL, charset2);
 }
 
 

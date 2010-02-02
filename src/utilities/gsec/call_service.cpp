@@ -335,10 +335,10 @@ void callRemoteServiceManager(ISC_STATUS* status,
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
-	if (userInfo.operation != DIS_OPER &&
-		userInfo.operation != OLD_DIS_OPER &&
+	if (userInfo.operation != DIS_OPER && 
+		userInfo.operation != OLD_DIS_OPER && 
 		userInfo.operation != MAP_SET_OPER &&
-		userInfo.operation != MAP_DROP_OPER &&
+		userInfo.operation != MAP_DROP_OPER && 
 		!userInfo.user_name_entered)
 	{
 	    status[0] = isc_arg_gds;
@@ -362,7 +362,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	case DEL_OPER:
 		stuffSpbByte(spb, isc_action_svc_delete_user);
 		stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
-		if (userInfo.sql_role_name_entered)
+		if (userInfo.sql_role_name_entered) 
 		{
 			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
 		}
@@ -379,7 +379,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		{
 			stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
 		}
-		if (userInfo.sql_role_name_entered)
+		if (userInfo.sql_role_name_entered) 
 		{
 			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
 		}
@@ -689,8 +689,8 @@ static void checkServerUsersVersion(isc_svc_handle svc_handle, char& server_user
 		{
 		case isc_info_svc_server_version:
 			{
-				USHORT length = (USHORT) isc_vax_integer(p, sizeof(USHORT));
-				p += sizeof(length);
+				unsigned short length = (unsigned short) isc_vax_integer (p, sizeof(unsigned short));
+				p += sizeof (unsigned short);
 				version.assign(p, length);
 				p += length;
 			}

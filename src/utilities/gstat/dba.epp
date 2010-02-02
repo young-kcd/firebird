@@ -104,23 +104,11 @@ struct dba_rel
 	ULONG rel_pointer_page;
 	ULONG rel_slots;
 	ULONG rel_data_pages;
-	ULONG rel_full_pages;
-	ULONG rel_primary_pages;
-	ULONG rel_swept_pages;
-	ULONG rel_blob_pages;
-	ULONG rel_bigrec_pages;
 	FB_UINT64 rel_records;
 	FB_UINT64 rel_record_space;
 	FB_UINT64 rel_versions;
 	FB_UINT64 rel_version_space;
 	FB_UINT64 rel_max_versions;
-	FB_UINT64 rel_fragments;
-	FB_UINT64 rel_fragment_space;
-	FB_UINT64 rel_max_fragments;
-	FB_UINT64 rel_blobs_level_0;
-	FB_UINT64 rel_blobs_level_1;
-	FB_UINT64 rel_blobs_level_2;
-	FB_UINT64 rel_blob_space;
 	ULONG rel_fill_distribution[BUCKETS];
 	FB_UINT64 rel_total_space;
 	SSHORT rel_id;
@@ -145,10 +133,9 @@ struct dba_fil
 };
 
 static char* alloc(size_t);
-static void analyze_blob(dba_rel*, const blh*, int length);
 static void analyze_data(dba_rel*, bool);
 static bool analyze_data_page(dba_rel*, const data_page*, bool);
-static ULONG analyze_fragments(dba_rel*, const rhdf*);
+static ULONG analyze_fragments(const dba_rel*, const rhdf*);
 static ULONG analyze_versions(dba_rel*, const rhdf*);
 static void analyze_index(const dba_rel*, dba_idx*);
 
@@ -349,7 +336,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 	bool sw_relation = false;
 	bool sw_nocreation = false;
 
-	const Switches switches(dba_in_sw_table, FB_NELEM(dba_in_sw_table), false, true);
 	const char* name = NULL;
 
 	const TEXT* const* const end = argv + argc;
@@ -369,20 +355,32 @@ int gstat(Firebird::UtilSvc* uSvc)
 			continue;
 		}
 
-		const Switches::in_sw_tab_t* in_sw_tab = switches.findSwitch(str);
-		if (!in_sw_tab)
+		if (!str[1])
+			str = "-*NONE*";
+		const in_sw_tab_t* in_sw_tab;
+		const TEXT* q;
+		for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
-			if (!str[1])
-				str = "-*NONE*";
-			dba_print(20, SafeArg() << (str + 1));	// msg 20: unknown switch "%s"
-			print_help();
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg() << (str + 1));
-			dba_error(1);	// msg 1: found unknown switch
-			break; // redundant
+			TEXT c;
+			for (const TEXT* p = str + 1; c = *p++;)
+			{
+				if (UPPER(c) != *q++)
+					break;
+			}
+			if (!c && strlen(str + 1) >= in_sw_tab->in_sw_min_length)
+			{
+				break;
+			}
 		}
 
 		switch (in_sw_tab->in_sw)
 		{
+		case IN_SW_DBA_0:
+			dba_print(20, SafeArg() << (str + 1));	// msg 20: unknown switch "%s"
+			print_help();
+			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg() << (str + 1));
+			dba_error(1);	// msg 1: found unknown switch
+			break;
 		case IN_SW_DBA_HELP:
 			print_help();
 			dba_exit(FINI_OK, tddba);
@@ -408,12 +406,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 				}
 			}
 			break;
-		case IN_SW_DBA_TRUSTED_USER:
+		case IN_SW_DBA_TRUSTEDUSER:
 			uSvc->checkService();
 			if (argv < end)
 				fb_utils::copy_terminate(tr_user, *argv++, sizeof(tr_buff));
 			break;
-		case IN_SW_DBA_TRUSTED_ROLE:
+		case IN_SW_DBA_TRUSTEDROLE:
 			uSvc->checkService();
 			trusted_role = true;
 			break;
@@ -832,13 +830,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 				// dba_print(19, SafeArg() << buf << relation->rel_versions <<
 				//			 relation->rel_max_versions);
 				// msg 19: " Average version length: %s, total versions: %ld, max versions: %ld
-
-				average = relation->rel_fragments ?
-					(double) relation->rel_fragment_space / relation->rel_fragments : 0.0;
-				sprintf((char*) buf, "%.2f", average);
-				uSvc->printf(
-						"    Average fragment length: %s, total fragments: %" UQUADFORMAT ", max fragments: %" UQUADFORMAT "\n",
-						buf, relation->rel_fragments, relation->rel_max_fragments);
 			}
 
 			const double average = (relation->rel_data_pages) ?
@@ -847,29 +838,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 			sprintf((char*) buf, "%.0f%%", average);
 			dba_print(12, SafeArg() << relation->rel_data_pages << relation->rel_slots << buf);
 			// msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s
-
-			dba_print(46, SafeArg() << relation->rel_primary_pages << relation->rel_full_pages <<
-										relation->rel_swept_pages);
-			// msg 46: "    Primary pages: @1, full pages: @2, swept pages: @3
-
-			if (relation->rel_bigrec_pages)
-			{
-				dba_print(47, SafeArg() << relation->rel_bigrec_pages);
-				// msg 47: "    Big record pages: @1
-			}
-
-			if (relation->rel_blobs_level_0 || relation->rel_blobs_level_1 || relation->rel_blobs_level_2)
-			{
-				dba_print(48, SafeArg() << (relation->rel_blobs_level_0 + relation->rel_blobs_level_1 +
-											relation->rel_blobs_level_2) << relation->rel_blob_space <<
-											relation->rel_blob_pages);
-				// msg 48: "    Blobs: @1, total length: @2, blob pages: @3
-
-				dba_print(49, SafeArg() << relation->rel_blobs_level_0 << relation->rel_blobs_level_1 <<
-											relation->rel_blobs_level_2);
-				// msg 49: "		Level 0: @1, Level 1: @2, Level 2: @3
-			}
-
 			dba_print(13);	// msg 13: "    Fill distribution:"
 			print_distribution("\t", relation->rel_fill_distribution);
 		}
@@ -1095,9 +1063,6 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 					if (header->rhdf_b_page)
 						relation->rel_version_space += analyze_versions(relation, header);
 				}
-
-				if (header->rhdf_flags & rhd_blob)
-					analyze_blob(relation, (blh*)header, tail->dpg_length);
 			}
 		}
 	}
@@ -1108,51 +1073,13 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 	if (bucket == BUCKETS)
 		--bucket;
 
-	if (page->dpg_header.pag_flags & dpg_full)
-		++relation->rel_full_pages;
-	if (!(page->dpg_header.pag_flags & dpg_secondary))
-		++relation->rel_primary_pages;
-	if (page->dpg_header.pag_flags & dpg_swept)
-		++relation->rel_swept_pages;
 	++relation->rel_fill_distribution[bucket];
 
 	return true;
 }
 
 
-static void analyze_blob(dba_rel* relation, const blh* blob, int length)
-{
-	relation->rel_blob_space += blob->blh_length;
-	if (!blob->blh_level)
-	{
-		relation->rel_blobs_level_0++;
-	}
-	else
-	{
-		const int slots = (length - BLH_SIZE) / sizeof(SLONG);
-		relation->rel_blob_pages += slots;
-		if (blob->blh_level == 1)
-		{
-			relation->rel_blobs_level_1++;
-		}
-		else
-		{
-			relation->rel_blobs_level_2++;
-
-			SLONG pages[MAX_PAGE_SIZE / sizeof(SLONG)];
-			memcpy(pages, blob->blh_page, slots * sizeof(SLONG));
-
-			for (int i = 0; i < slots; i++)
-			{
-				const blob_page* bpage = (const blob_page*) db_read(pages[i]);
-				relation->rel_blob_pages += bpage->blp_length / sizeof(SLONG);
-			}
-		}
-	}
-}
-
-
-static ULONG analyze_fragments(dba_rel* relation, const rhdf* header)
+static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
 {
 /**************************************
  *
@@ -1165,7 +1092,7 @@ static ULONG analyze_fragments(dba_rel* relation, const rhdf* header)
  *
  **************************************/
 	//tdba* tddba = tdba::getSpecific();
-	ULONG space = 0, fragments = 0;
+	ULONG space = 0;
 
 	while (header->rhdf_flags & rhd_incomplete)
 	{
@@ -1177,25 +1104,12 @@ static ULONG analyze_fragments(dba_rel* relation, const rhdf* header)
 		{
 			break;
 		}
-
-		if ((page->dpg_header.pag_flags & (dpg_orphan | dpg_full)) && page->dpg_count == 1) {
-			relation->rel_bigrec_pages++;
-		}
-
 		const data_page::dpg_repeat* index = &page->dpg_rpt[f_line];
 		if (!index->dpg_offset)
 			break;
 		space += index->dpg_length;
 		space -= RHDF_SIZE;
 		header = (const rhdf*) ((SCHAR *) page + index->dpg_offset);
-
-		fragments++;
-	}
-
-	relation->rel_fragments += fragments;
-	relation->rel_fragment_space += space;
-	if (fragments > relation->rel_max_fragments) {
-		relation->rel_max_fragments = fragments;
 	}
 
 	return space;
@@ -1234,7 +1148,7 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 	while (bucket->btr_level)
 	{
 		pointer = BTreeNode::getPointerFirstNode(const_cast<btree_page*>(bucket));
-		BTreeNode::readNode(&node, pointer, false);
+		BTreeNode::readNode(&node, pointer, bucket->btr_header.pag_flags, false);
 		bucket = (const btree_page*) db_read(node.pageNumber);
 	}
 
@@ -1253,7 +1167,7 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 		const UCHAR* const firstNode = pointer;
 		while (true)
 		{
-			pointer = BTreeNode::readNode(&node, pointer, true);
+			pointer = BTreeNode::readNode(&node, pointer, bucket->btr_header.pag_flags, true);
 
 			if (node.isEndBucket || node.isEndLevel) {
 				break;
@@ -1454,8 +1368,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil = fil->fil_next;
 	}
 	else
-	{
-		// empty list
+	{						// empty list
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
 	}
@@ -1636,8 +1549,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil = fil->fil_next;
 	}
 	else
-	{
-		// empty list
+	{						// empty list
 
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
@@ -1803,7 +1715,7 @@ static void print_help()
 {
 	dba_print(39);	// msg 39: usage:   gstat [options] <database> or gstat <database> [options]
 	dba_print(21);	// msg 21: Available switches:
-	for (const Switches::in_sw_tab_t* in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
+	for (const in_sw_tab_t* in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
 	{
 		if (in_sw_tab->in_sw_msg)
 			dba_print(in_sw_tab->in_sw_msg);

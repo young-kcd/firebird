@@ -34,7 +34,6 @@
 #include "../jrd/os/guid.h"
 #include "../jrd/nbak.h"
 #include "../jrd/gds_proto.h"
-#include "../common/classes/DbImplementation.h"
 
 #include "../utilities/gstat/ppg_proto.h"
 
@@ -63,9 +62,8 @@ void PPG_print_header(const header_page* header, SLONG page,
 	if (page == HEADER_PAGE)
 	{
 		uSvc->printf("\tFlags\t\t\t%d\n", header->hdr_header.pag_flags);
-		//uSvc->printf("\tChecksum\t\t%d\n", header->hdr_header.pag_checksum);
+		uSvc->printf("\tChecksum\t\t%d\n", header->hdr_header.pag_checksum);
 		uSvc->printf("\tGeneration\t\t%"ULONGFORMAT"\n", header->hdr_header.pag_generation);
-		uSvc->printf("\tSystem Change Number\t%"ULONGFORMAT"\n", header->hdr_header.pag_scn);
 		uSvc->printf("\tPage size\t\t%d\n", header->hdr_page_size);
 		uSvc->printf("\tODS version\t\t%d.%d\n",
 				header->hdr_ods_version & ~ODS_FIREBIRD_FLAG, header->hdr_ods_minor);
@@ -73,13 +71,11 @@ void PPG_print_header(const header_page* header, SLONG page,
 		uSvc->printf("\tOldest active\t\t%"SLONGFORMAT"\n", header->hdr_oldest_active);
 		uSvc->printf("\tOldest snapshot\t\t%"SLONGFORMAT"\n", header->hdr_oldest_snapshot);
 		uSvc->printf("\tNext transaction\t%"SLONGFORMAT"\n", header->hdr_next_transaction);
+		uSvc->printf("\tBumped transaction\t%"SLONGFORMAT"\n", header->hdr_bumped_transaction);
 		uSvc->printf("\tSequence number\t\t%d\n", header->hdr_sequence);
 
 		uSvc->printf("\tNext attachment ID\t%"SLONGFORMAT"\n", header->hdr_attachment_id);
-
-		Firebird::DbImplementation imp(header);
-		uSvc->printf("\tImplementation\t\tHW=%s %s-endian OS=%s CC=%s\n",
-							 imp.cpu(), imp.endianess(), imp.os(), imp.cc());
+		uSvc->printf("\tImplementation ID\t%d\n", header->hdr_implementation);
 		uSvc->printf("\tShadow count\t\t%"SLONGFORMAT"\n", header->hdr_shadow_count);
 		uSvc->printf("\tPage buffers\t\t%"ULONGFORMAT"\n", header->hdr_page_buffers);
 	}
@@ -234,13 +230,12 @@ void PPG_print_header(const header_page* header, SLONG page,
 			uSvc->printf("\tSweep interval:\t\t%ld\n", number);
 			break;
 
-/*
 		case HDR_log_name:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';
 			uSvc->printf("\tReplay logging file:\t\t%s\n", temp);
 			break;
-
+/*
 		case HDR_cache_file:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';

@@ -77,7 +77,7 @@ static HANDLE server_process_handle = 0;
 static void server_shutdown(rem_port* port);
 #endif
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
-static void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
+static bool make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
 static bool server_init(ISC_STATUS*, USHORT);
 static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
@@ -248,6 +248,10 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
+	// Note: prior to V3.1E a recievers could not in truth handle more
+	// then 5 protocol descriptions; however, the interprocess server
+	// was created in 4.0 so this does not apply.
+
 	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
@@ -257,8 +261,11 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, ptype_batch_send, 6)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+#endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
@@ -651,7 +658,7 @@ static rem_port* alloc_port(rem_port* parent,
 							UCHAR* send_buffer,
 							ULONG send_length,
 							UCHAR* receive_buffer,
-							ULONG /*receive_length*/)
+							ULONG receive_length)
 {
 /**************************************
  *
@@ -1743,7 +1750,7 @@ static void xnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 
 	ISC_STATUS* status_vector = NULL;
 	if (port->port_context != NULL) {
-		status_vector = port->port_context->rdb_status_vector;
+		status_vector = port->port_context->get_status_vector();
 	}
 	if (status_vector == NULL) {
 		status_vector = port->port_status_vector;
@@ -2208,7 +2215,7 @@ void release_all()
 /********************** ONLY SERVER CODE FROM HERE *********************/
 /***********************************************************************/
 
-static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
+static bool make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
 {
 /**************************************
  *
@@ -2247,6 +2254,8 @@ static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CAD
 			CloseHandle(*map_handle);
 		throw;
 	}
+
+	return true;
 }
 
 
@@ -2265,7 +2274,8 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 	FILE_ID map_handle = 0;
 	CADDR_T map_address = 0;
 
-	make_map(map_number, timestamp, &map_handle, &map_address);
+	if (!make_map(map_number, timestamp, &map_handle, &map_address))
+		return NULL;
 
 	// allocate XPM structure and initialize it
 

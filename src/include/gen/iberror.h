@@ -723,35 +723,6 @@ const ISC_STATUS isc_instance_conflict                = 335544984L;
 const ISC_STATUS isc_out_of_temp_space                = 335544985L;
 const ISC_STATUS isc_eds_expl_tran_ctrl               = 335544986L;
 const ISC_STATUS isc_no_trusted_spb                   = 335544987L;
-const ISC_STATUS isc_package_name                     = 335544988L;
-const ISC_STATUS isc_cannot_make_not_null             = 335544989L;
-const ISC_STATUS isc_feature_deprecated               = 335544990L;
-const ISC_STATUS isc_view_name                        = 335544991L;
-const ISC_STATUS isc_lock_dir_access                  = 335544992L;
-const ISC_STATUS isc_invalid_fetch_option             = 335544993L;
-const ISC_STATUS isc_bad_fun_BLR                      = 335544994L;
-const ISC_STATUS isc_func_pack_not_implemented        = 335544995L;
-const ISC_STATUS isc_proc_pack_not_implemented        = 335544996L;
-const ISC_STATUS isc_eem_func_not_returned            = 335544997L;
-const ISC_STATUS isc_eem_proc_not_returned            = 335544998L;
-const ISC_STATUS isc_eem_trig_not_returned            = 335544999L;
-const ISC_STATUS isc_eem_bad_plugin_ver               = 335545000L;
-const ISC_STATUS isc_eem_engine_notfound              = 335545001L;
-const ISC_STATUS isc_attachment_in_use                = 335545002L;
-const ISC_STATUS isc_transaction_in_use               = 335545003L;
-const ISC_STATUS isc_pman_plugin_notfound             = 335545004L;
-const ISC_STATUS isc_pman_cannot_load_plugin          = 335545005L;
-const ISC_STATUS isc_pman_entrypoint_notfound         = 335545006L;
-const ISC_STATUS isc_pman_bad_conf_index              = 335545007L;
-const ISC_STATUS isc_pman_unknown_instance            = 335545008L;
-const ISC_STATUS isc_sysf_invalid_trig_namespace      = 335545009L;
-const ISC_STATUS isc_unexpected_null                  = 335545010L;
-const ISC_STATUS isc_type_notcompat_blob              = 335545011L;
-const ISC_STATUS isc_invalid_date_val                 = 335545012L;
-const ISC_STATUS isc_invalid_time_val                 = 335545013L;
-const ISC_STATUS isc_invalid_timestamp_val            = 335545014L;
-const ISC_STATUS isc_invalid_index_val                = 335545015L;
-const ISC_STATUS isc_formatted_exception              = 335545016L;
 const ISC_STATUS isc_async_active                     = 335545017L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
@@ -810,21 +781,7 @@ const ISC_STATUS isc_upd_ins_doesnt_match_matching    = 336003100L;
 const ISC_STATUS isc_upd_ins_with_complex_view        = 336003101L;
 const ISC_STATUS isc_dsql_incompatible_trigger_type   = 336003102L;
 const ISC_STATUS isc_dsql_db_trigger_type_cant_change = 336003103L;
-const ISC_STATUS isc_dyn_filter_not_found             = 336068645L;
-const ISC_STATUS isc_dyn_func_not_found               = 336068649L;
-const ISC_STATUS isc_dyn_index_not_found              = 336068656L;
-const ISC_STATUS isc_dyn_view_not_found               = 336068662L;
-const ISC_STATUS isc_dyn_domain_not_found             = 336068697L;
-const ISC_STATUS isc_dyn_cant_modify_auto_trig        = 336068717L;
 const ISC_STATUS isc_dyn_dup_table                    = 336068740L;
-const ISC_STATUS isc_dyn_proc_not_found               = 336068748L;
-const ISC_STATUS isc_dyn_exception_not_found          = 336068752L;
-const ISC_STATUS isc_dyn_proc_param_not_found         = 336068754L;
-const ISC_STATUS isc_dyn_trig_not_found               = 336068755L;
-const ISC_STATUS isc_dyn_charset_not_found            = 336068759L;
-const ISC_STATUS isc_dyn_collation_not_found          = 336068760L;
-const ISC_STATUS isc_dyn_role_not_found               = 336068763L;
-const ISC_STATUS isc_dyn_name_longer                  = 336068767L;
 const ISC_STATUS isc_dyn_column_does_not_exist        = 336068784L;
 const ISC_STATUS isc_dyn_role_does_not_exist          = 336068796L;
 const ISC_STATUS isc_dyn_no_grant_admin_opt           = 336068797L;
@@ -843,11 +800,9 @@ const ISC_STATUS isc_dyn_char_fld_too_small           = 336068816L;
 const ISC_STATUS isc_dyn_invalid_dtype_conversion     = 336068817L;
 const ISC_STATUS isc_dyn_dtype_conv_invalid           = 336068818L;
 const ISC_STATUS isc_dyn_zero_len_id                  = 336068820L;
-const ISC_STATUS isc_dyn_gen_not_found                = 336068822L;
 const ISC_STATUS isc_max_coll_per_charset             = 336068829L;
 const ISC_STATUS isc_invalid_coll_attr                = 336068830L;
 const ISC_STATUS isc_dyn_wrong_gtt_scope              = 336068840L;
-const ISC_STATUS isc_dyn_table_not_found              = 336068849L;
 const ISC_STATUS isc_dyn_scale_too_big                = 336068852L;
 const ISC_STATUS isc_dyn_precision_too_small          = 336068853L;
 const ISC_STATUS isc_dyn_miss_priv_warning            = 336068855L;
@@ -855,21 +810,6 @@ const ISC_STATUS isc_dyn_ods_not_supp_feature         = 336068856L;
 const ISC_STATUS isc_dyn_cannot_addrem_computed       = 336068857L;
 const ISC_STATUS isc_dyn_no_empty_pw                  = 336068858L;
 const ISC_STATUS isc_dyn_dup_index                    = 336068859L;
-const ISC_STATUS isc_dyn_package_not_found            = 336068864L;
-const ISC_STATUS isc_dyn_schema_not_found             = 336068865L;
-const ISC_STATUS isc_dyn_cannot_mod_sysproc           = 336068866L;
-const ISC_STATUS isc_dyn_cannot_mod_systrig           = 336068867L;
-const ISC_STATUS isc_dyn_cannot_mod_sysfunc           = 336068868L;
-const ISC_STATUS isc_dyn_invalid_ddl_proc             = 336068869L;
-const ISC_STATUS isc_dyn_invalid_ddl_trig             = 336068870L;
-const ISC_STATUS isc_dyn_funcnotdef_package           = 336068871L;
-const ISC_STATUS isc_dyn_procnotdef_package           = 336068872L;
-const ISC_STATUS isc_dyn_funcsignat_package           = 336068873L;
-const ISC_STATUS isc_dyn_procsignat_package           = 336068874L;
-const ISC_STATUS isc_dyn_defvaldecl_package           = 336068875L;
-const ISC_STATUS isc_dyn_package_body_exists          = 336068877L;
-const ISC_STATUS isc_dyn_invalid_ddl_func             = 336068878L;
-const ISC_STATUS isc_dyn_newfc_oldsyntax              = 336068879L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -954,20 +894,8 @@ const ISC_STATUS isc_gbak_not_ownr                    = 336331026L;
 const ISC_STATUS isc_gbak_mode_req                    = 336331031L;
 const ISC_STATUS isc_gbak_just_data                   = 336331033L;
 const ISC_STATUS isc_gbak_data_only                   = 336331034L;
-const ISC_STATUS isc_gbak_missing_interval            = 336331078L;
-const ISC_STATUS isc_gbak_wrong_interval              = 336331079L;
-const ISC_STATUS isc_gbak_verify_verbint              = 336331081L;
-const ISC_STATUS isc_gbak_option_only_restore         = 336331082L;
-const ISC_STATUS isc_gbak_option_only_backup          = 336331083L;
-const ISC_STATUS isc_gbak_option_conflict             = 336331084L;
-const ISC_STATUS isc_gbak_param_conflict              = 336331085L;
-const ISC_STATUS isc_gbak_option_repeated             = 336331086L;
-const ISC_STATUS isc_gbak_max_dbkey_recursion         = 336331091L;
-const ISC_STATUS isc_gbak_max_dbkey_length            = 336331092L;
 const ISC_STATUS isc_gbak_invalid_metadata            = 336331093L;
 const ISC_STATUS isc_gbak_invalid_data                = 336331094L;
-const ISC_STATUS isc_gbak_inv_bkup_ver2               = 336331096L;
-const ISC_STATUS isc_gbak_db_format_too_old2          = 336331100L;
 const ISC_STATUS isc_dsql_too_old_ods                 = 336397205L;
 const ISC_STATUS isc_dsql_table_not_found             = 336397206L;
 const ISC_STATUS isc_dsql_view_not_found              = 336397207L;
@@ -1053,6 +981,26 @@ const ISC_STATUS isc_gsec_db_specified                = 336724046L;
 const ISC_STATUS isc_gsec_db_admin_specified          = 336724047L;
 const ISC_STATUS isc_gsec_db_admin_pw_specified       = 336724048L;
 const ISC_STATUS isc_gsec_sql_role_specified          = 336724049L;
+const ISC_STATUS isc_license_no_file                  = 336789504L;
+const ISC_STATUS isc_license_op_specified             = 336789523L;
+const ISC_STATUS isc_license_op_missing               = 336789524L;
+const ISC_STATUS isc_license_inv_switch               = 336789525L;
+const ISC_STATUS isc_license_inv_switch_combo         = 336789526L;
+const ISC_STATUS isc_license_inv_op_combo             = 336789527L;
+const ISC_STATUS isc_license_amb_switch               = 336789528L;
+const ISC_STATUS isc_license_inv_parameter            = 336789529L;
+const ISC_STATUS isc_license_param_specified          = 336789530L;
+const ISC_STATUS isc_license_param_req                = 336789531L;
+const ISC_STATUS isc_license_syntx_error              = 336789532L;
+const ISC_STATUS isc_license_dup_id                   = 336789534L;
+const ISC_STATUS isc_license_inv_id_key               = 336789535L;
+const ISC_STATUS isc_license_err_remove               = 336789536L;
+const ISC_STATUS isc_license_err_update               = 336789537L;
+const ISC_STATUS isc_license_err_convert              = 336789538L;
+const ISC_STATUS isc_license_err_unk                  = 336789539L;
+const ISC_STATUS isc_license_svc_err_add              = 336789540L;
+const ISC_STATUS isc_license_svc_err_remove           = 336789541L;
+const ISC_STATUS isc_license_eval_exists              = 336789563L;
 const ISC_STATUS isc_gstat_unknown_switch             = 336920577L;
 const ISC_STATUS isc_gstat_retry                      = 336920578L;
 const ISC_STATUS isc_gstat_wrong_ods                  = 336920579L;
@@ -1072,56 +1020,7 @@ const ISC_STATUS isc_fbsvcmgr_fp_read                 = 336986161L;
 const ISC_STATUS isc_fbsvcmgr_fp_empty                = 336986162L;
 const ISC_STATUS isc_fbsvcmgr_bad_arg                 = 336986164L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_nbackup_missing_param            = 337117213L;
-const ISC_STATUS isc_nbackup_allowed_switches         = 337117214L;
-const ISC_STATUS isc_nbackup_unknown_param            = 337117215L;
-const ISC_STATUS isc_nbackup_unknown_switch           = 337117216L;
-const ISC_STATUS isc_nbackup_nofetchpw_svc            = 337117217L;
-const ISC_STATUS isc_nbackup_pwfile_error             = 337117218L;
-const ISC_STATUS isc_nbackup_size_with_lock           = 337117219L;
-const ISC_STATUS isc_nbackup_no_switch                = 337117220L;
-const ISC_STATUS isc_nbackup_err_read                 = 337117223L;
-const ISC_STATUS isc_nbackup_err_write                = 337117224L;
-const ISC_STATUS isc_nbackup_err_seek                 = 337117225L;
-const ISC_STATUS isc_nbackup_err_opendb               = 337117226L;
-const ISC_STATUS isc_nbackup_err_fadvice              = 337117227L;
-const ISC_STATUS isc_nbackup_err_createdb             = 337117228L;
-const ISC_STATUS isc_nbackup_err_openbk               = 337117229L;
-const ISC_STATUS isc_nbackup_err_createbk             = 337117230L;
-const ISC_STATUS isc_nbackup_err_eofdb                = 337117231L;
-const ISC_STATUS isc_nbackup_fixup_wrongstate         = 337117232L;
-const ISC_STATUS isc_nbackup_err_db                   = 337117233L;
-const ISC_STATUS isc_nbackup_userpw_toolong           = 337117234L;
-const ISC_STATUS isc_nbackup_lostrec_db               = 337117235L;
-const ISC_STATUS isc_nbackup_lostguid_db              = 337117236L;
-const ISC_STATUS isc_nbackup_err_eofhdrdb             = 337117237L;
-const ISC_STATUS isc_nbackup_db_notlock               = 337117238L;
-const ISC_STATUS isc_nbackup_lostguid_bk              = 337117239L;
-const ISC_STATUS isc_nbackup_page_changed             = 337117240L;
-const ISC_STATUS isc_nbackup_dbsize_inconsistent      = 337117241L;
-const ISC_STATUS isc_nbackup_failed_lzbk              = 337117242L;
-const ISC_STATUS isc_nbackup_err_eofhdrbk             = 337117243L;
-const ISC_STATUS isc_nbackup_invalid_incbk            = 337117244L;
-const ISC_STATUS isc_nbackup_unsupvers_incbk          = 337117245L;
-const ISC_STATUS isc_nbackup_invlevel_incbk           = 337117246L;
-const ISC_STATUS isc_nbackup_wrong_orderbk            = 337117247L;
-const ISC_STATUS isc_nbackup_err_eofbk                = 337117248L;
-const ISC_STATUS isc_nbackup_err_copy                 = 337117249L;
-const ISC_STATUS isc_nbackup_err_eofhdr_restdb        = 337117250L;
-const ISC_STATUS isc_nbackup_lostguid_l0bk            = 337117251L;
-const ISC_STATUS isc_nbackup_switchd_parameter        = 337117255L;
-const ISC_STATUS isc_trace_conflict_acts              = 337182750L;
-const ISC_STATUS isc_trace_act_notfound               = 337182751L;
-const ISC_STATUS isc_trace_switch_once                = 337182752L;
-const ISC_STATUS isc_trace_param_val_miss             = 337182753L;
-const ISC_STATUS isc_trace_param_invalid              = 337182754L;
-const ISC_STATUS isc_trace_switch_unknown             = 337182755L;
-const ISC_STATUS isc_trace_switch_svc_only            = 337182756L;
-const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
-const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
-const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
-const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1065;
+const ISC_STATUS isc_err_max                          = 964;
 
 #else /* c definitions */
 
@@ -1814,35 +1713,6 @@ const ISC_STATUS isc_err_max                          = 1065;
 #define isc_out_of_temp_space                335544985L
 #define isc_eds_expl_tran_ctrl               335544986L
 #define isc_no_trusted_spb                   335544987L
-#define isc_package_name                     335544988L
-#define isc_cannot_make_not_null             335544989L
-#define isc_feature_deprecated               335544990L
-#define isc_view_name                        335544991L
-#define isc_lock_dir_access                  335544992L
-#define isc_invalid_fetch_option             335544993L
-#define isc_bad_fun_BLR                      335544994L
-#define isc_func_pack_not_implemented        335544995L
-#define isc_proc_pack_not_implemented        335544996L
-#define isc_eem_func_not_returned            335544997L
-#define isc_eem_proc_not_returned            335544998L
-#define isc_eem_trig_not_returned            335544999L
-#define isc_eem_bad_plugin_ver               335545000L
-#define isc_eem_engine_notfound              335545001L
-#define isc_attachment_in_use                335545002L
-#define isc_transaction_in_use               335545003L
-#define isc_pman_plugin_notfound             335545004L
-#define isc_pman_cannot_load_plugin          335545005L
-#define isc_pman_entrypoint_notfound         335545006L
-#define isc_pman_bad_conf_index              335545007L
-#define isc_pman_unknown_instance            335545008L
-#define isc_sysf_invalid_trig_namespace      335545009L
-#define isc_unexpected_null                  335545010L
-#define isc_type_notcompat_blob              335545011L
-#define isc_invalid_date_val                 335545012L
-#define isc_invalid_time_val                 335545013L
-#define isc_invalid_timestamp_val            335545014L
-#define isc_invalid_index_val                335545015L
-#define isc_formatted_exception              335545016L
 #define isc_async_active                     335545017L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
@@ -1901,21 +1771,7 @@ const ISC_STATUS isc_err_max                          = 1065;
 #define isc_upd_ins_with_complex_view        336003101L
 #define isc_dsql_incompatible_trigger_type   336003102L
 #define isc_dsql_db_trigger_type_cant_change 336003103L
-#define isc_dyn_filter_not_found             336068645L
-#define isc_dyn_func_not_found               336068649L
-#define isc_dyn_index_not_found              336068656L
-#define isc_dyn_view_not_found               336068662L
-#define isc_dyn_domain_not_found             336068697L
-#define isc_dyn_cant_modify_auto_trig        336068717L
 #define isc_dyn_dup_table                    336068740L
-#define isc_dyn_proc_not_found               336068748L
-#define isc_dyn_exception_not_found          336068752L
-#define isc_dyn_proc_param_not_found         336068754L
-#define isc_dyn_trig_not_found               336068755L
-#define isc_dyn_charset_not_found            336068759L
-#define isc_dyn_collation_not_found          336068760L
-#define isc_dyn_role_not_found               336068763L
-#define isc_dyn_name_longer                  336068767L
 #define isc_dyn_column_does_not_exist        336068784L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
@@ -1934,11 +1790,9 @@ const ISC_STATUS isc_err_max                          = 1065;
 #define isc_dyn_invalid_dtype_conversion     336068817L
 #define isc_dyn_dtype_conv_invalid           336068818L
 #define isc_dyn_zero_len_id                  336068820L
-#define isc_dyn_gen_not_found                336068822L
 #define isc_max_coll_per_charset             336068829L
 #define isc_invalid_coll_attr                336068830L
 #define isc_dyn_wrong_gtt_scope              336068840L
-#define isc_dyn_table_not_found              336068849L
 #define isc_dyn_scale_too_big                336068852L
 #define isc_dyn_precision_too_small          336068853L
 #define isc_dyn_miss_priv_warning            336068855L
@@ -1946,21 +1800,6 @@ const ISC_STATUS isc_err_max                          = 1065;
 #define isc_dyn_cannot_addrem_computed       336068857L
 #define isc_dyn_no_empty_pw                  336068858L
 #define isc_dyn_dup_index                    336068859L
-#define isc_dyn_package_not_found            336068864L
-#define isc_dyn_schema_not_found             336068865L
-#define isc_dyn_cannot_mod_sysproc           336068866L
-#define isc_dyn_cannot_mod_systrig           336068867L
-#define isc_dyn_cannot_mod_sysfunc           336068868L
-#define isc_dyn_invalid_ddl_proc             336068869L
-#define isc_dyn_invalid_ddl_trig             336068870L
-#define isc_dyn_funcnotdef_package           336068871L
-#define isc_dyn_procnotdef_package           336068872L
-#define isc_dyn_funcsignat_package           336068873L
-#define isc_dyn_procsignat_package           336068874L
-#define isc_dyn_defvaldecl_package           336068875L
-#define isc_dyn_package_body_exists          336068877L
-#define isc_dyn_invalid_ddl_func             336068878L
-#define isc_dyn_newfc_oldsyntax              336068879L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2045,20 +1884,8 @@ const ISC_STATUS isc_err_max                          = 1065;
 #define isc_gbak_mode_req                    336331031L
 #define isc_gbak_just_data                   336331033L
 #define isc_gbak_data_only                   336331034L
-#define isc_gbak_missing_interval            336331078L
-#define isc_gbak_wrong_interval              336331079L
-#define isc_gbak_verify_verbint              336331081L
-#define isc_gbak_option_only_restore         336331082L
-#define isc_gbak_option_only_backup          336331083L
-#define isc_gbak_option_conflict             336331084L
-#define isc_gbak_param_conflict              336331085L
-#define isc_gbak_option_repeated             336331086L
-#define isc_gbak_max_dbkey_recursion         336331091L
-#define isc_gbak_max_dbkey_length            336331092L
 #define isc_gbak_invalid_metadata            336331093L
 #define isc_gbak_invalid_data                336331094L
-#define isc_gbak_inv_bkup_ver2               336331096L
-#define isc_gbak_db_format_too_old2          336331100L
 #define isc_dsql_too_old_ods                 336397205L
 #define isc_dsql_table_not_found             336397206L
 #define isc_dsql_view_not_found              336397207L
@@ -2144,6 +1971,26 @@ const ISC_STATUS isc_err_max                          = 1065;
 #define isc_gsec_db_admin_specified          336724047L
 #define isc_gsec_db_admin_pw_specified       336724048L
 #define isc_gsec_sql_role_specified          336724049L
+#define isc_license_no_file                  336789504L
+#define isc_license_op_specified             336789523L
+#define isc_license_op_missing               336789524L
+#define isc_license_inv_switch               336789525L
+#define isc_license_inv_switch_combo         336789526L
+#define isc_license_inv_op_combo             336789527L
+#define isc_license_amb_switch               336789528L
+#define isc_license_inv_parameter            336789529L
+#define isc_license_param_specified          336789530L
+#define isc_license_param_req                336789531L
+#define isc_license_syntx_error              336789532L
+#define isc_license_dup_id                   336789534L
+#define isc_license_inv_id_key               336789535L
+#define isc_license_err_remove               336789536L
+#define isc_license_err_update               336789537L
+#define isc_license_err_convert              336789538L
+#define isc_license_err_unk                  336789539L
+#define isc_license_svc_err_add              336789540L
+#define isc_license_svc_err_remove           336789541L
+#define isc_license_eval_exists              336789563L
 #define isc_gstat_unknown_switch             336920577L
 #define isc_gstat_retry                      336920578L
 #define isc_gstat_wrong_ods                  336920579L
@@ -2163,56 +2010,7 @@ const ISC_STATUS isc_err_max                          = 1065;
 #define isc_fbsvcmgr_fp_empty                336986162L
 #define isc_fbsvcmgr_bad_arg                 336986164L
 #define isc_utl_trusted_switch               337051649L
-#define isc_nbackup_missing_param            337117213L
-#define isc_nbackup_allowed_switches         337117214L
-#define isc_nbackup_unknown_param            337117215L
-#define isc_nbackup_unknown_switch           337117216L
-#define isc_nbackup_nofetchpw_svc            337117217L
-#define isc_nbackup_pwfile_error             337117218L
-#define isc_nbackup_size_with_lock           337117219L
-#define isc_nbackup_no_switch                337117220L
-#define isc_nbackup_err_read                 337117223L
-#define isc_nbackup_err_write                337117224L
-#define isc_nbackup_err_seek                 337117225L
-#define isc_nbackup_err_opendb               337117226L
-#define isc_nbackup_err_fadvice              337117227L
-#define isc_nbackup_err_createdb             337117228L
-#define isc_nbackup_err_openbk               337117229L
-#define isc_nbackup_err_createbk             337117230L
-#define isc_nbackup_err_eofdb                337117231L
-#define isc_nbackup_fixup_wrongstate         337117232L
-#define isc_nbackup_err_db                   337117233L
-#define isc_nbackup_userpw_toolong           337117234L
-#define isc_nbackup_lostrec_db               337117235L
-#define isc_nbackup_lostguid_db              337117236L
-#define isc_nbackup_err_eofhdrdb             337117237L
-#define isc_nbackup_db_notlock               337117238L
-#define isc_nbackup_lostguid_bk              337117239L
-#define isc_nbackup_page_changed             337117240L
-#define isc_nbackup_dbsize_inconsistent      337117241L
-#define isc_nbackup_failed_lzbk              337117242L
-#define isc_nbackup_err_eofhdrbk             337117243L
-#define isc_nbackup_invalid_incbk            337117244L
-#define isc_nbackup_unsupvers_incbk          337117245L
-#define isc_nbackup_invlevel_incbk           337117246L
-#define isc_nbackup_wrong_orderbk            337117247L
-#define isc_nbackup_err_eofbk                337117248L
-#define isc_nbackup_err_copy                 337117249L
-#define isc_nbackup_err_eofhdr_restdb        337117250L
-#define isc_nbackup_lostguid_l0bk            337117251L
-#define isc_nbackup_switchd_parameter        337117255L
-#define isc_trace_conflict_acts              337182750L
-#define isc_trace_act_notfound               337182751L
-#define isc_trace_switch_once                337182752L
-#define isc_trace_param_val_miss             337182753L
-#define isc_trace_param_invalid              337182754L
-#define isc_trace_switch_unknown             337182755L
-#define isc_trace_switch_svc_only            337182756L
-#define isc_trace_switch_user_only           337182757L
-#define isc_trace_switch_param_miss          337182758L
-#define isc_trace_param_act_notcompat        337182759L
-#define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1065
+#define isc_err_max                          964
 
 #endif
 

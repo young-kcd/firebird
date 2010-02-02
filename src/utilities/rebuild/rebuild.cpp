@@ -978,6 +978,7 @@ static void print_db_header( FILE* file, const header_page* header)
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
 	fprintf(file, "    Cache buffers\t\t%ld\n", header->hdr_cache_buffers);
+	fprintf(file, "    Bumped transaction\t\t%ld\n", header->hdr_bumped_transaction);
 
 	fprintf(file, "\n    Variable header data:\n");
 
@@ -1014,11 +1015,11 @@ static void print_db_header( FILE* file, const header_page* header)
 			memcpy(&number, p + 2, sizeof(number));
 			fprintf(file, "\tSweep interval: %ld\n", number);
 			break;
-/*
+
 		case HDR_log_name:
 			fprintf(file, "\tReplay logging file: %*s\n", p[1], p + 2);
 			break;
-
+/*
 		case HDR_journal_file:
 			fprintf(file, "\tJournal file: %*s\n", p[1], p + 2);
 			break;

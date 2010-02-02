@@ -47,8 +47,8 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-SERVER_Files = $(OS_ServerFiles) server.cpp
-SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) jrd/pwd.cpp
+SERVER_Files = $(OS_ServerFiles) server.cpp 
+SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
 

@@ -21,7 +21,7 @@
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 
-WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings -Wno-non-virtual-dtor
+WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
 COMM_SOLX_FLAGS:=-DSOLARIS -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer -fmessage-length=0 -MMD -fPIC
 
 SFIO=@SFIO_DIR@
@@ -32,7 +32,7 @@ ifdef SFIO
 COMM_SOLX_FLAGS+=$(SFIO_FLAGS) 
 endif
 
-PROD_FLAGS=-w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
 ifdef SFIO
 LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio

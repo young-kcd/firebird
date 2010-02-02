@@ -29,7 +29,6 @@
 
 #include "../jrd/gdsassert.h"
 #include <string.h>
-#include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"
 
 namespace Firebird {
@@ -274,8 +273,7 @@ public:
 	// Resize array according to STL's vector::resize() rules
 	void resize(const size_t newCount, const T& val)
 	{
-		if (newCount > count)
-		{
+		if (newCount > count) {
 			ensureCapacity(newCount);
 			while (count < newCount) {
 				data[count++] = val;
@@ -359,10 +357,8 @@ public:
 	// Maybe we should modify it to iterate directy with "pos".
 	bool find(const T& item, size_t& pos) const
 	{
-		for (size_t i = 0; i < count; i++)
-		{
-			if (data[i] == item)
-			{
+		for (size_t i = 0; i < count; i++) {
+			if (data[i] == item) {
 				pos = i;
 				return true;
 			}
@@ -394,8 +390,7 @@ protected:
 
 	void ensureCapacity(size_t newcapacity, bool preserve = true)
 	{
-		if (newcapacity > capacity)
-		{
+		if (newcapacity > capacity) {
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
 			}
@@ -433,8 +428,7 @@ public:
 	bool find(const Key& item, size_t& pos) const
 	{
 		size_t highBound = this->count, lowBound = 0;
-		while (highBound > lowBound)
-		{
+		while (highBound > lowBound) {
 			const size_t temp = (highBound + lowBound) >> 1;
 			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;

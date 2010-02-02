@@ -271,7 +271,7 @@ Firebird::string ConfObject::expand(const char* rawValue)
 	if (!changed)
 		return temp;
 
-	return temp;
+	return PathName::expandFilename (temp);
 }
 
 Firebird::string ConfObject::getValue(const char* attributeName)

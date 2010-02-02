@@ -36,7 +36,6 @@
 #include "../jrd/dsc.h"
 #include "../jrd/btn.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/obj.h"
 #include "../jrd/val.h"
 
 #include "../common/classes/fb_atomic.h"
@@ -52,8 +51,6 @@
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/scl.h"
-#include "../jrd/Routine.h"
-#include "../jrd/ExtEngineManager.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -106,9 +103,9 @@ namespace EDS {
 
 namespace Jrd {
 
-const int QUANTUM				= 100;	// Default quantum
-const int SWEEP_QUANTUM			= 10;	// Make sweeps less disruptive
-const unsigned MAX_CALLBACKS	= 50;
+const int QUANTUM			= 100;	// Default quantum
+const int SWEEP_QUANTUM		= 10;	// Make sweeps less disruptive
+const int MAX_CALLBACKS		= 50;
 
 // fwd. decl.
 class thread_db;
@@ -127,6 +124,7 @@ class ViewContext;
 class IndexBlock;
 class IndexLock;
 class ArrayField;
+class Symbol;
 struct sort_context;
 class RecordSelExpr;
 class vcl;
@@ -150,31 +148,34 @@ public:
 	jrd_req*	request;					// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
-	FB_UINT64	type;						// Trigger type
+	UCHAR		type;						// Trigger type
 	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
 	jrd_rel*	relation;					// Trigger parent relation
 	Firebird::MetaName	name;				// Trigger name
-	Firebird::MetaName	engine;				// External engine name
-	Firebird::string	entryPoint;			// External trigger entrypoint
-	Firebird::string	extBody;			// External trigger body
-	ExtEngineManager::Trigger* extTrigger;	// External trigger
-
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
 
 	explicit Trigger(MemoryPool& p)
-		: blr(p),
-		  name(p),
-		  engine(p),
-		  entryPoint(p),
-		  extBody(p),
-		  extTrigger(NULL)
+		: blr(p), name(p)
 	{
 		dbg_blob_id.clear();
 	}
 };
 
 
+
+//
+// Database attachments
+//
+const int DBB_read_seq_count		= 0;
+const int DBB_read_idx_count		= 1;
+const int DBB_update_count			= 2;
+const int DBB_insert_count			= 3;
+const int DBB_delete_count			= 4;
+const int DBB_backout_count			= 5;
+const int DBB_purge_count			= 6;
+const int DBB_expunge_count			= 7;
+const int DBB_max_count				= 8;
 
 //
 // Flags to indicate normal internal requests vs. dyn internal requests
@@ -213,82 +214,240 @@ const int VAL_REL_CHAIN_ORPHANS			= 22;
 const int VAL_INDEX_MISSING_ROWS		= 23;
 const int VAL_INDEX_ORPHAN_CHILD		= 24;
 const int VAL_INDEX_CYCLE				= 25;
-const int VAL_SCNS_PAGE_INCONSISTENT	= 26;
-const int VAL_PAG_WRONG_SCN				= 27;
-const int VAL_MAX_ERROR					= 28;
+const int VAL_MAX_ERROR					= 26;
+
+
+struct DSqlCacheItem
+{
+	Lock* lock;
+	bool locked;
+	bool obsolete;
+};
+
+typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+	Firebird::string, DSqlCacheItem> > > DSqlCache;
+
+
+//
+// the attachment block; one is created for each attachment to a database
+//
+class Attachment : public pool_alloc<type_att>, public Firebird::PublicHandle
+{
+public:
+	static Attachment* create(Database* dbb)
+	{
+		MemoryPool* const pool = dbb->createPool();
+
+		try
+		{
+			Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb);
+			pool->setStatsGroup(attachment->att_memory_stats);
+			return attachment;
+		}
+		catch (const Firebird::Exception&)
+		{
+			dbb->deletePool(pool);
+			throw;
+		}
+	}
+
+	static void destroy(Attachment* const attachment)
+	{
+		if (attachment)
+		{
+			Database* const dbb = attachment->att_database;
+			MemoryPool* const pool = attachment->att_pool;
+			Firebird::MemoryStats temp_stats;
+			pool->setStatsGroup(temp_stats);
+			delete attachment;
+			dbb->deletePool(pool);
+		}
+	}
+
+/*	Attachment()
+	:	att_database(0),
+		att_next(0),
+		att_blocking(0),
+		att_user(0),
+		att_transactions(0),
+		att_dbkey_trans(0),
+		att_requests(0),
+		att_active_sorts(0),
+		att_id_lock(0),
+		att_attachment_id(0),
+		att_lock_owner_handle(0),
+		att_event_session(0),
+		att_security_class(0),
+		att_security_classes(0),
+		att_flags(0),
+		att_charset(0),
+		att_long_locks(0),
+		att_compatibility_table(0),
+		att_val_errors(0),
+		att_working_directory(0)
+	{
+		att_counts[0] = 0;
+	}*/
+
+	MemoryPool* const att_pool;					// Memory pool
+	Firebird::MemoryStats att_memory_stats;
+
+	Database*	att_database;				// Parent database block
+	Attachment*	att_next;					// Next attachment to database
+	UserId*		att_user;					// User identification
+	jrd_tra*	att_transactions;			// Transactions belonging to attachment
+	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
+	jrd_req*	att_requests;				// Requests belonging to attachment
+	sort_context*	att_active_sorts;		// Active sorts
+	Lock*		att_id_lock;				// Attachment lock (if any)
+	SLONG		att_attachment_id;			// Attachment ID
+	const ULONG	att_lock_owner_id;			// ID for the lock manager
+	SLONG		att_lock_owner_handle;		// Handle for the lock manager
+	ULONG		att_backup_state_counter;	// Counter of backup state locks for attachment
+	SLONG		att_event_session;			// Event session id, if any
+	SecurityClass*	att_security_class;		// security class for database
+	SecurityClassList*	att_security_classes;	// security classes
+	vcl*		att_counts[DBB_max_count];
+	RuntimeStatistics	att_stats;
+	ULONG		att_flags;					// Flags describing the state of the attachment
+	SSHORT		att_charset;				// user's charset specified in dpb
+	Lock*		att_long_locks;				// outstanding two phased locks
+	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
+	vcl*		att_val_errors;
+	Firebird::PathName	att_working_directory;	// Current working directory is cached
+	Firebird::PathName	att_filename;			// alias used to attach the database
+	const Firebird::TimeStamp	att_timestamp;	// Connection date and time
+	Firebird::StringMap att_context_vars;	// Context variables for the connection
+	Firebird::string att_network_protocol;	// Network protocol used by client for connection
+	Firebird::string att_remote_address;	// Protocol-specific addess of remote client
+	SLONG att_remote_pid;					// Process id of remote client
+	Firebird::PathName att_remote_process;	// Process name of remote client
+	RandomGenerator att_random_generator;	// Random bytes generator
+#ifndef SUPERSERVER
+	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
+#endif
+	DSqlCache att_dsql_cache;	// DSQL cache locks
+	Firebird::SortedArray<void*> att_udf_pointers;
+	dsql_dbb* att_dsql_instance;
+	Firebird::Mutex att_mutex;				// attachment mutex
+
+	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
+	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
+	TraceManager* att_trace_manager;		// Trace API manager
+
+	bool locksmith() const;
+
+	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+		jrd_tra* transaction, const Firebird::string& text);
+
+	void cancelExternalConnection(thread_db* tdbb);
+
+	bool backupStateWriteLock(thread_db* tdbb, SSHORT wait);
+	void backupStateWriteUnLock(thread_db* tdbb);
+	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
+	void backupStateReadUnLock(thread_db* tdbb);
+
+	bool checkHandle() const
+	{
+		if (!isKnownHandle())
+		{
+			return false;
+		}
+
+		return TypedHandle<type_att>::checkHandle();
+	}
+
+private:
+	Attachment(MemoryPool* pool, Database* dbb);
+	~Attachment();
+};
+
+
+// Attachment flags
+
+const ULONG ATT_no_cleanup			= 1;	// Don't expunge, purge, or garbage collect
+const ULONG ATT_shutdown			= 2;	// attachment has been shutdown
+const ULONG ATT_purge_error			= 4;	// trouble happened in purge attachment, att_mutex remains locked
+const ULONG ATT_shutdown_manager	= 8;	// attachment requesting shutdown
+const ULONG ATT_lck_init_done		= 16;	// LCK_init() called for the attachment
+const ULONG ATT_exclusive			= 32;	// attachment wants exclusive database access
+const ULONG ATT_attach_pending		= 64;	// Indicate attachment is only pending
+const ULONG ATT_exclusive_pending	= 128;	// Indicate exclusive attachment pending
+const ULONG ATT_gbak_attachment		= 256;	// Indicate GBAK attachment
+
+#ifdef GARBAGE_THREAD
+const ULONG ATT_notify_gc			= 1024;	// Notify garbage collector to expunge, purge ..
+const ULONG ATT_disable_notify_gc	= 2048;	// Temporarily perform own garbage collection
+const ULONG ATT_garbage_collector	= 4096;	// I'm a garbage collector
+
+const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
+#else
+const ULONG ATT_NO_CLEANUP			= ATT_no_cleanup;
+#endif
+
+const ULONG ATT_cancel_raise		= 8192;		// Cancel currently running operation
+const ULONG ATT_cancel_disable		= 16384;	// Disable cancel operations
+const ULONG ATT_gfix_attachment		= 32768;	// Indicate a GFIX attachment
+const ULONG ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
+const ULONG ATT_no_db_triggers		= 131072;	// Don't execute database triggers
+
+
+inline bool Attachment::locksmith() const
+{
+	return att_user && att_user->locksmith();
+}
+
 
 
 // Procedure block
 
-class jrd_prc : public Routine
+class jrd_prc : public pool_alloc<type_prc>
 {
 public:
+	USHORT prc_id;
 	USHORT prc_flags;
+	USHORT prc_inputs;
 	USHORT prc_defaults;
+	USHORT prc_outputs;
+	//jrd_nod*	prc_input_msg;				// It's set once by met.epp and never used.
 	jrd_nod*	prc_output_msg;
 	Format*		prc_input_fmt;
 	Format*		prc_output_fmt;
 	Format*		prc_format;
-	Firebird::Array<Parameter*> prc_input_fields;	// array of field blocks
-	Firebird::Array<Parameter*> prc_output_fields;	// array of field blocks
+	vec<Parameter*>*	prc_input_fields;	// vector of field blocks
+	vec<Parameter*>*	prc_output_fields;	// vector of field blocks
 	prc_t		prc_type;					// procedure type
+	jrd_req*	prc_request;				// compiled procedure request
 	USHORT prc_use_count;					// requests compiled with procedure
 	SSHORT prc_int_use_count;				// number of procedures compiled with procedure, set and
 											// used internally in the MET_clear_cache procedure
 											// no code should rely on value of this field
 											// (it will usually be 0)
 	Lock* prc_existence_lock;				// existence lock, if any
+	Firebird::MetaName prc_security_name;	// security class name for procedure
+	Firebird::MetaName prc_name;			// ascic name
 	USHORT prc_alter_count;					// No. of times the procedure was altered
-
-	const ExtEngineManager::Procedure* getExternal() const { return prc_external; }
-	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
-
-private:
-	ExtEngineManager::Procedure* prc_external;
 
 public:
 	explicit jrd_prc(MemoryPool& p)
-		: Routine(p),
-		  prc_flags(0),
-		  prc_defaults(0),
-		  prc_output_msg(NULL),
-		  prc_input_fmt(NULL),
-		  prc_output_fmt(NULL),
-		  prc_format(NULL),
-		  prc_input_fields(p),
-		  prc_output_fields(p),
-		  prc_type(prc_legacy),
-		  prc_use_count(0),
-		  prc_int_use_count(0),
-		  prc_existence_lock(NULL),
-		  prc_alter_count(0),
-		  prc_external(NULL)
-	{
-	}
-
-public:
-	virtual int getObjectType() const
-	{
-		return obj_procedure;
-	}
-
-	virtual const char* getSclType() const
-	{
-		return object_procedure;
-	}
+		: prc_security_name(p), prc_name(p)
+	{}
 };
 
 // prc_flags
 
 const USHORT PRC_scanned			= 1;	// Field expressions scanned
-const USHORT PRC_obsolete			= 2;	// Procedure known gonzo
-const USHORT PRC_being_scanned		= 4;	// New procedure needs dependencies during scan
-const USHORT PRC_being_altered		= 8;	// Procedure is getting altered
+const USHORT PRC_system				= 2;	// Set in met.epp, never tested.
+const USHORT PRC_obsolete			= 4;	// Procedure known gonzo
+const USHORT PRC_being_scanned		= 8;	// New procedure needs dependencies during scan
+//const USHORT PRC_blocking			= 16;	// Blocking someone from dropping procedure
+const USHORT PRC_create				= 32;	// Newly created. Set in met.epp, never tested or disabled.
+const USHORT PRC_being_altered		= 64;	// Procedure is getting altered
 									// This flag is used to make sure that MET_remove_procedure
 									// does not delete and remove procedure block from cache
 									// so dfw.epp:modify_procedure() can flip procedure body without
 									// invalidating procedure pointers from other parts of metadata cache
-const USHORT PRC_check_existence	= 16;	// Existence lock released
+const USHORT PRC_check_existence	= 128;	// Existence lock released
 
 const USHORT MAX_PROC_ALTER			= 64;	// No. of times an in-cache procedure can be altered
 
@@ -302,17 +461,11 @@ public:
 	USHORT		prm_number;
 	dsc			prm_desc;
 	jrd_nod*	prm_default_value;
-	bool		prm_nullable;
-	prm_mech_t	prm_mechanism;
 	Firebird::MetaName prm_name;			// asciiz name
-	Firebird::MetaName prm_field_source;
-
-public:
+//public:
 	explicit Parameter(MemoryPool& p)
-		: prm_name(p),
-		  prm_field_source(p)
-	{
-	}
+		: prm_name(p)
+	{ }
 };
 
 // Index block to cache index information
@@ -569,7 +722,11 @@ public:
 		return attachment;
 	}
 
-	void setAttachment(Attachment* val);
+	void setAttachment(Attachment* val)
+	{
+		attachment = val;
+		attStat = val ? &val->att_stats : RuntimeStatistics::getDummy();
+	}
 
 	jrd_tra* getTransaction()
 	{
@@ -594,8 +751,6 @@ public:
 	}
 
 	void setRequest(jrd_req* val);
-
-	SSHORT getCharSet() const;
 
 	void bumpStats(const RuntimeStatistics::StatType index)
 	{
@@ -741,6 +896,16 @@ typedef Firebird::HalfStaticArray<UCHAR, 256> MoveBuffer;
 
 } //namespace Jrd
 
+// Random string block -- as long as impure areas don't have
+// constructors and destructors, the need this varying string
+
+class VaryingString : public pool_alloc_rpt<SCHAR, type_str>
+{
+public:
+	USHORT str_length;
+	UCHAR str_data[2];			// one byte for ALLOC and one for the NULL
+};
+
 // Threading macros
 
 /* Define JRD_get_thread_data off the platform specific version.
@@ -793,11 +958,11 @@ inline Jrd::thread_db* JRD_get_thread_data()
 	return (Jrd::thread_db*) ThreadData::getSpecific();
 }
 
-inline void CHECK_DBB(const Jrd::Database*)
+inline void CHECK_DBB(const Jrd::Database* dbb)
 {
 }
 
-inline void CHECK_TDBB(const Jrd::thread_db*)
+inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
 {
 }
 

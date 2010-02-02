@@ -7,7 +7,6 @@
 
 const char PathUtils::dir_sep = '\\';
 const char* PathUtils::up_dir_link = "..";
-const char PathUtils::dir_list_sep = ';';
 
 class Win32DirItr : public PathUtils::dir_iterator
 {

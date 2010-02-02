@@ -76,12 +76,8 @@ public:
 
 	size_t length() const { return count; }
 	const char* c_str() const { return data; }
-	const char* nullStr() const { return (count == 0 ? NULL : data); }
 	bool isEmpty() const { return count == 0; }
 	bool hasData() const { return count != 0; }
-
-	const char* begin() const { return data; }
-	const char* end() const { return data + count; }
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
@@ -104,19 +100,21 @@ protected:
 	static void adjustLength(const char* const s, size_t& l);
 };
 
-// This class is used to simplify calls from GDML, when pointer to MetaName
-// should be passed to some function, at the same time reflecting changes in
-// associated GDML variable (database field).
-class MetaNameProxy : public MetaName
+// This class & macro are used to simplify calls from GDML
+class LoopMetaName : public Firebird::MetaName
 {
+	bool flag;
 	char* target;
 public:
-	explicit MetaNameProxy(char* s)
-	 : Firebird::MetaName(s), target(s)
-	{ }
-	~MetaNameProxy() { strcpy(target, c_str()); }
+	LoopMetaName(char* s) : Firebird::MetaName(s),
+		flag(true), target(s) { }
+	~LoopMetaName() { strcpy(target, c_str()); }
+	operator bool() const { return flag; }
+	void stop() { flag = false; }
 };
+#define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())
 
 } // namespace Firebird
 
 #endif // METANAME_H
+

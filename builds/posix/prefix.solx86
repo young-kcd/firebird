@@ -49,7 +49,7 @@ endif
 
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) -I$(STLPort) -KPIC -pentium
 
-PROD_FLAGS=+w $(COMM_SOLX_FLAGS) -O2  
+PROD_FLAGS=-DNDEBUG +w $(COMM_SOLX_FLAGS) -O2  
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -g  $(WARNINGS)  
 
 OS_ServerFiles=inet_server.cpp

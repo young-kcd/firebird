@@ -129,7 +129,10 @@ const int idx_plan_dont_use	= 1;	// index is not mentioned in user-specified acc
 const int idx_plan_navigate	= 2;	// plan specifies index to be used for ordering
 const int idx_used 			= 4;	// index was in fact selected for retrieval
 const int idx_navigate		= 8;	// index was in fact selected for navigation
-const int idx_marker		= 16;	// marker used in procedure sort_indices
+const int idx_plan_missing	= 16;	// index mentioned in missing clause
+const int idx_plan_starts	= 32;	// index mentioned in starts clause
+const int idx_used_with_and	= 64;	// marker used in procedure sort_indices
+const int idx_marker		= 128;	// marker used in procedure sort_indices
 
 // Index insertion block -- parameter block for index insertions
 
@@ -219,6 +222,13 @@ const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning i
 
 // macros used to manipulate btree nodes
 #define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
+
+#define NEXT_NODE(node)	(btree_nod*)(node->btn_data + node->btn_length)
+#define NEXT_NODE_RECNR(node)	(btree_nod*)(node->btn_data + node->btn_length + sizeof(SLONG))
+
+//#define LAST_NODE(page)	(btree_nod*) ((UCHAR*) page + page->btr_length)
+
+//#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 

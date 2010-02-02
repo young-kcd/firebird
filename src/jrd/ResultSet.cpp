@@ -24,13 +24,10 @@
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/align.h"
 #include "../jrd/jrd.h"
-#include "../jrd/req.h"
+#include "../jrd/dsc.h"
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda_pub.h"
 #include "../dsql/dsql_proto.h"
-#include "../jrd/mov_proto.h"
-
-using namespace Firebird;
 
 namespace Jrd {
 
@@ -40,7 +37,8 @@ ResultSet::ResultSet(thread_db* tdbb, PreparedStatement* aStmt, jrd_tra* aTransa
 	  transaction(aTransaction),
 	  firstFetchDone(false)
 {
-	stmt->execute(tdbb, transaction);
+	DSQL_execute(tdbb, &transaction, stmt->request, 0, NULL, 0, 0, NULL, 0, NULL, /*0,*/ 0, NULL);
+
 	stmt->resultSet = this;
 }
 
@@ -54,29 +52,23 @@ ResultSet::~ResultSet()
 
 	stmt->resultSet = NULL;
 
-	if (stmt->request->getStatement()->getType() != DsqlCompiledStatement::TYPE_EXEC_PROCEDURE)
+	if (stmt->request->req_type != REQ_EXEC_PROCEDURE)
 		DSQL_free_statement(tdbb, stmt->request, DSQL_close);
 }
 
 
 bool ResultSet::fetch(thread_db* tdbb)
 {
-	if (stmt->request->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE &&
-		firstFetchDone)
-	{
+	if (stmt->request->req_type == REQ_EXEC_PROCEDURE && firstFetchDone)
 		return false;
-	}
 
-	memset(stmt->outMessage.begin(), 0, stmt->outMessage.getCount());
+	memset(stmt->message.begin(), 0, stmt->message.getCount());
 
-	ISC_STATUS status = DSQL_fetch(tdbb, stmt->request, stmt->outBlr.getCount(), stmt->outBlr.begin(),
-		/*0,*/ stmt->outMessage.getCount(), stmt->outMessage.begin());
+	ISC_STATUS status = DSQL_fetch(tdbb, stmt->request, stmt->blr.getCount(), stmt->blr.begin(),
+		/*0,*/ stmt->message.getCount(), stmt->message.begin());
 
 	if (status == 100)
 		return false;
-
-	if (stmt->builder)
-		stmt->builder->moveFromResultSet(tdbb, this);
 
 	firstFetchDone = true;
 
@@ -84,63 +76,18 @@ bool ResultSet::fetch(thread_db* tdbb)
 }
 
 
-bool ResultSet::isNull(unsigned param) const
+bool ResultSet::isNull(int param) const
 {
-	fb_assert(param > 0);
-
-	const dsc* desc = &stmt->outValues[(param - 1) * 2 + 1];
+	const dsc* desc = &stmt->values[(param - 1) * 2 + 1];
 	fb_assert(desc->dsc_dtype == dtype_short);
 
 	return *reinterpret_cast<SSHORT*>(desc->dsc_address) != 0;
 }
 
 
-dsc& ResultSet::getDesc(unsigned param)
+dsc& ResultSet::getDesc(int param)
 {
-	fb_assert(param > 0);
-	return stmt->outValues[(param - 1) * 2];
-}
-
-
-Firebird::string ResultSet::getString(thread_db* tdbb, unsigned param)
-{
-	fb_assert(param > 0);
-
-	// Setup tdbb info necessary for blobs.
-	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
-		tdbb->getTransaction());
-
-	return MOV_make_string2(tdbb, &getDesc(param), CS_NONE);
-}
-
-
-Firebird::MetaName ResultSet::getMetaName(thread_db* tdbb, unsigned param)
-{
-	fb_assert(param > 0);
-
-	// Setup tdbb info necessary for blobs.
-	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
-		tdbb->getTransaction());
-
-	return MOV_make_string2(tdbb, &getDesc(param), CS_METADATA);
-}
-
-
-void ResultSet::moveDesc(thread_db* tdbb, unsigned param, dsc& desc)
-{
-	fb_assert(param > 0);
-
-	// Setup tdbb info necessary for blobs.
-	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
-		tdbb->getTransaction());
-
-	MOV_move(tdbb, &getDesc(param), &desc);
+	return stmt->values[(param - 1) * 2];
 }
 
 

@@ -32,7 +32,6 @@ using namespace Jrd;
 Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
 			const TEXT* string, USHORT length, SSHORT characterSet)
 	: PermanentStorage(pool),
-	  compilingText(pool, string, length),
 	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
 	  parser_version(aParserVersion),
@@ -91,7 +90,7 @@ Parser::~Parser()
 }
 
 
-dsql_nod* Parser::parse()
+Parser::YYSTYPE Parser::parse()
 {
 	if (parseAux() != 0)
 		return NULL;

@@ -54,7 +54,7 @@
 #   libC and libCrun need libthread for a multithreaded application
 COMMON_FLAGS= -DSOLARIS -DBSD_COMP -D__EXTENSIONS__ \
 	-D_POSIX_THREAD_SEMANTICS -D_POSIX_THREAD_PRIO_INHERIT -D_POSIX_C_SOURCE=199506L \
-	-KPIC $(CAS_OPTIONS) \
+	-KPIC \
 	-erroff=wvarhidemem $(ATOMIC_OPTIONS)
 
 # if we keep sfio this needs to be set by configure (or move in to extern directory)
@@ -74,7 +74,7 @@ SFIO_LDFLAGS=@SFIO_LDFLAGS@
 # -xO2, optimize level 2, safer than -xO3
 # -xlibmil, inline select libm library routines for optimization
 # -xlibmopt -fround=nearest, use optimized math routines
-PROD_FLAGS= -xbuiltin=%all -xO2 -xlibmil \
+PROD_FLAGS= -xbuiltin=%all -xO2 -xlibmil -DNDEBUG \
 	$(COMMON_FLAGS) $(SFIO_FLAGS)
 
 # Debug flags

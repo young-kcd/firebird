@@ -424,6 +424,10 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	}
 
 	// Establish connection to server
+
+	// Note: prior to V3.1E a recievers could not in truth handle more
+	// than 5 protocol descriptions, so we try them in chunks of 5 or less
+
 	// If we want user verification, we can't speak anything less than version 7
 
 	P_CNCT*	cnct = &packet->p_cnct;
@@ -436,8 +440,11 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, MAX_PTYPE, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, MAX_PTYPE, 5)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, MAX_PTYPE, 4)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
+#endif
 	};
 
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -469,6 +476,31 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
 
 		copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try2, cnct->p_cnct_count);
+
+		port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
+		if (!port) {
+			return NULL;
+		}
+	}
+
+	if (packet->p_operation == op_reject && !uv_flag)
+	{
+		disconnect(port);
+
+		// try again with next set of known protocols
+
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
+
+		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_rpc, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_rpc, ptype_batch_send, 2)
+		};
+
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
+
+		copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try3, cnct->p_cnct_count);
 
 		port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
 		if (!port) {
@@ -2371,7 +2403,7 @@ static void inet_gen_error(rem_port* port, const Arg::StatusVector& v)
 
 	ISC_STATUS* status_vector = NULL;
 	if (port->port_context != NULL) {
-		status_vector = port->port_context->rdb_status_vector;
+		status_vector = port->port_context->get_status_vector();
 	}
 	if (status_vector == NULL) {
 		status_vector = port->port_status_vector;

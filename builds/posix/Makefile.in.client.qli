@@ -46,9 +46,9 @@ QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
 		report.cpp show.cpp
 QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
-QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
+QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources)))) $(CLUMPLETS_Objects)
 
-AllObjects = $(QLI_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects) $(FBUTIL_Objects)
+AllObjects = $(QLI_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -60,7 +60,7 @@ all:	qli
 
 qli : create_yachts $(LIBFBCLIENT_SO) $(QLI)
 
-$(QLI): $(AllObjects)
+$(QLI): $(QLI_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail

@@ -63,7 +63,6 @@
 #include <stddef.h>				// offsetof
 
 #include <stdio.h>
-#include "dyn_consts.h"
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/constants.h"
@@ -850,6 +849,9 @@ struct gpre_dbb
 	int dbb_buffercount;
 	ULONG dbb_length;				// Length of database in pages, if known
 	gpre_file* dbb_logfiles;
+#ifdef SCROLLABLE_CURSORS
+	SSHORT dbb_base_level;			// code level of the engine we are talking to
+#endif
 #ifdef FLINT_CACHE // In practice, never used.
 	gpre_file* dbb_cache_file;
 #endif
@@ -1199,6 +1201,9 @@ public:
 	gpre_ctx* req_update;		// update context for mass insert
 	gpre_req* req_next;			// next request in module or metadata action
 	ref* req_values;			// host values required
+#ifdef SCROLLABLE_CURSORS
+	ref* req_avalues;			// parameters to pass to asynchronous message
+#endif
 	ref* req_eof;				// eof reference for FOR
 	//ref* req_index;				// index variable; unused
 	ref* req_references;		// fields referenced in context
@@ -1208,6 +1213,9 @@ public:
 	gpre_port* req_primary;		// primary input or output port
 	gpre_port* req_sync;		// synchronization port
 	gpre_port* req_vport;		// port to send values in
+#ifdef SCROLLABLE_CURSORS
+	gpre_port* req_aport;		// port for asynchronous message
+#endif
 	gpre_req* req_routine;		// other requests in routine
 	blb*		req_blobs;		// blobs in request
 	slc* req_slice;				// slice for request
@@ -1259,7 +1267,11 @@ enum req_flags_vals {
 	REQ_sql_blob_open		= 8192,		// request is SQL open blob cursor
 	REQ_sql_blob_create		= 16384,	// request is SQL create blob cursor
 	REQ_sql_database_dyn	= 32768,	// request is to generate DYN to add files o database
-	REQ_blr_version4		= 65536		// request must generate blr_version4
+#ifdef SCROLLABLE_CURSORS
+	REQ_scroll				= 65536,	// request is a scrollable cursor
+	REQ_backwards			= 131072,	// request was last scrolled backwards
+#endif
+	REQ_blr_version4		= 262144	// request must generate blr_version4
 };
 
 const size_t REQ_LEN = sizeof(gpre_req);

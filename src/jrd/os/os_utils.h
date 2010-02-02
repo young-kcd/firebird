@@ -47,3 +47,4 @@ namespace os_utils
 } // namespace os_utils
 
 #endif // INCLUDE_OS_FILE_UTILS_H
+

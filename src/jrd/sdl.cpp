@@ -52,7 +52,7 @@ struct sdl_arg
 	const IPTR* sdl_arg_end;
 };
 
-// Structure to compute ranges
+/* Structure to computes ranges */
 
 // Let's stop this insanity! The header rng.h defined rng for the purposes
 // of refresh range and emulation of file-based data formats like Pdx.
@@ -128,8 +128,7 @@ UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size, UCHAR* target, siz
 		temp_sdl = (UCHAR*)gds__alloc((SLONG) origin_size);
 		// FREE: apparently never freed, the caller is responsible.
 		if (!temp_sdl)
-		{
-			// NOMEM: ignore operation
+		{	// NOMEM: ignore operation
 			fb_assert_continue(FALSE);	// no real error handling
 			return 0;
 		}
@@ -291,11 +290,10 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 					if (new_sdl == old_sdl)
 					{
 						UCHAR* temp_sdl = (UCHAR*)gds__alloc((SLONG) sdl_length);
-						// FREE: apparently never freed
+						/* FREE: apparently never freed */
 						if (!temp_sdl)
-						{
-							// NOMEM: ignore operation
-							fb_assert_continue(FALSE);	// no real error handling
+						{	/* NOMEM: ignore operation */
+							fb_assert_continue(FALSE);	/* no real error handling */
 							return old_sdl;
 						}
 						memcpy(temp_sdl, old_sdl, sdl_length);
@@ -390,7 +388,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 			break;
 
 		default:
-			// Check that element is in range of valid SDL
+			/* Check that element is in range of valid SDL */
 			fb_assert_continue(*(p - 1) >= isc_sdl_version1 && *(p - 1) <= isc_sdl_element);
 
 			arg.sdl_arg_next = arg.sdl_arg_compiled;
@@ -445,11 +443,11 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		else
 		{
 			ptr1 = p;
-			COMPILE(p, 0);		// skip over lower bound
+			COMPILE(p, 0);		/* skip over lower bound */
 		}
-		COMPILE(p, arg);		// upper bound
+		COMPILE(p, arg);		/* upper bound */
 		if (op == isc_sdl_do3) {
-			COMPILE(p, arg);	// increment
+			COMPILE(p, arg);	/* increment */
 		}
 		else
 		{
@@ -457,18 +455,18 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 			STUFF(1, arg);
 		}
 		if (ptr1) {
-			COMPILE(ptr1, arg);	// initial value
+			COMPILE(ptr1, arg);	/* initial value */
 		}
 		else
 		{
-			STUFF(op_literal, arg);	// default initial value
+			STUFF(op_literal, arg);	/* default initial value */
 			STUFF(1, arg);
 		}
 		STUFF(op_loop, arg);
 		if (!(label = stuff(op_iterate, arg)))
 			return NULL;
 		STUFF(variable, arg);
-		STUFF(0, arg);			// future branch out address
+		STUFF(0, arg);			/* future branch out address */
 		if (!(p = compile(p, arg)))
 			return NULL;
 		STUFF(op_goto, arg);
@@ -547,7 +545,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		if (arg && count != 1)
 		{
 			error(arg->sdl_arg_status_vector, Arg::Gds(isc_datnotsup));
-			// Msg107: "data operation not supported" (arrays of structures)
+			/* Msg107: "data operation not supported" (arrays of structures) */
 			return NULL;
 		}
 		expr = expressions;
@@ -681,7 +679,7 @@ static bool execute(sdl_arg* arg)
 		case op_scalar:
 			{
 				value = *next++;
-				next++;				// Skip count, unsupported.
+				next++;				/* Skip count, unsupported. */
 				SLONG subscript = 0;
 				for (const Ods::InternalArrayDesc::iad_repeat* range = array_desc->iad_rpt;
 					 range < range_end; ++range)
@@ -698,7 +696,7 @@ static bool execute(sdl_arg* arg)
 				element_desc.dsc_address = arg->sdl_arg_array + (IPTR) element_desc.dsc_address +
 					(array_desc->iad_element_length * subscript);
 
-				// Is this element within the array bounds?
+				/* Is this element within the array bounds? */
 				fb_assert_continue(element_desc.dsc_address >= arg->sdl_arg_array);
 				fb_assert_continue(element_desc.dsc_address + element_desc.dsc_length <=
 									arg->sdl_arg_array + array_desc->iad_total_length);
@@ -709,13 +707,13 @@ static bool execute(sdl_arg* arg)
 			count = *next++;
 			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array)
 			{
-				// Storing INTO array
+				/* Storing INTO array */
 
 				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
 			}
 			else
 			{
-				// Fetching FROM array
+				/* Fetching FROM array */
 
 				if (element_desc.dsc_address < arg->sdl_arg_argument->slice_high_water)
 				{
@@ -885,35 +883,35 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 	{
 	case blr_text2:
 		desc->dsc_dtype = dtype_text;
-		desc->setTextType(get_word(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
 		break;
 
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
-		desc->setTextType(ttype_dynamic);
+		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
 		desc->dsc_flags |= DSC_no_subtype;
 		break;
 
 	case blr_cstring2:
 		desc->dsc_dtype = dtype_cstring;
-		desc->setTextType(get_word(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
 		break;
 
 	case blr_cstring:
 		desc->dsc_dtype = dtype_cstring;
-		desc->setTextType(ttype_dynamic);
+		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
 		desc->dsc_flags |= DSC_no_subtype;
 		break;
 
 	case blr_varying2:
 		desc->dsc_dtype = dtype_cstring;
-		desc->setTextType(get_word(sdl));
+		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
 		desc->dsc_length = sizeof(USHORT);
 		break;
 
 	case blr_varying:
 		desc->dsc_dtype = dtype_cstring;
-		desc->setTextType(ttype_dynamic);
+		INTL_ASSIGN_TTYPE(desc, ttype_dynamic);
 		desc->dsc_length = sizeof(USHORT);
 		desc->dsc_flags |= DSC_no_subtype;
 		break;
@@ -1010,9 +1008,10 @@ static IPTR* stuff(IPTR value, sdl_arg* arg)
 
 	if (arg->sdl_arg_next >= arg->sdl_arg_end)
 		error(arg->sdl_arg_status_vector, Arg::Gds(isc_virmemexh));
-		// unable to allocate memory from operating system
+	/* unable to allocate memory from operating system */
 
 	*(arg->sdl_arg_next)++ = value;
 
 	return arg->sdl_arg_next - 1;
 }
+

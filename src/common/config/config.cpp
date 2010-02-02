@@ -100,6 +100,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
 #endif
 	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
+	{TYPE_BOOLEAN,		"CompleteBooleanEvaluation", (ConfigValue) false},
 	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
@@ -115,6 +116,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
+	{TYPE_BOOLEAN,		"OldColumnNaming",			(ConfigValue) false},	// if true use old style concatenation
 	{TYPE_STRING,		"Authentication",			(ConfigValue) AmNative},	// use native, trusted or mixed
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
 	{TYPE_INTEGER,		"FileSystemCacheThreshold",	(ConfigValue) 65536},	// page buffers
@@ -411,6 +413,11 @@ int Config::getProcessPriorityLevel()
 	return (int) sysConfig().values[KEY_PROCESS_PRIORITY_LEVEL];
 }
 
+bool Config::getCompleteBooleanEvaluation()
+{
+	return (bool) sysConfig().values[KEY_COMPLETE_BOOLEAN_EVALUATION];
+}
+
 int Config::getRemoteAuxPort()
 {
 	return (int) sysConfig().values[KEY_REMOTE_AUX_PORT];
@@ -480,7 +487,7 @@ bool Config::getLegacyHash()
 
 const char *Config::getGCPolicy()
 {
-	return (const char*) sysConfig().values[KEY_GC_POLICY];
+	return (const char *) sysConfig().values[KEY_GC_POLICY];
 }
 
 bool Config::getRedirection()
@@ -488,9 +495,14 @@ bool Config::getRedirection()
 	return (bool) sysConfig().values[KEY_REDIRECTION];
 }
 
+bool Config::getOldColumnNaming()
+{
+	return (bool) sysConfig().values[KEY_OLD_COLUMN_NAMING];
+}
+
 const char *Config::getAuthMethod()
 {
-	return (const char*) sysConfig().values[KEY_AUTH_METHOD];
+	return (const char *) sysConfig().values[KEY_AUTH_METHOD];
 }
 
 int Config::getDatabaseGrowthIncrement()
@@ -500,8 +512,7 @@ int Config::getDatabaseGrowthIncrement()
 
 int Config::getFileSystemCacheThreshold()
 {
-	int rc = (int) sysConfig().values[KEY_FILESYSTEM_CACHE_THRESHOLD];
-	return rc < 0 ? 0 : rc;
+	return (int) sysConfig().values[KEY_FILESYSTEM_CACHE_THRESHOLD];
 }
 
 bool Config::getRelaxedAliasChecking()

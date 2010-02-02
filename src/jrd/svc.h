@@ -28,6 +28,7 @@
 
 #include "fb_blk.h"
 
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/svc_undoc.h"
 #include "../jrd/ThreadStart.h"
 
@@ -35,12 +36,11 @@
 #include "../common/classes/array.h"
 #include "../common/classes/SafeArg.h"
 #include "../common/UtilSvc.h"
-#include "../common/classes/Switches.h"
-#include "../common/classes/ClumpletReader.h"
 
 // forward decl.
 struct serv_entry;
 namespace Firebird {
+	class ClumpletReader;
 	namespace Arg {
 		class StatusVector;
 	}
@@ -52,32 +52,32 @@ const ULONG SERVICE_VERSION			= 2;
 
 const int SVC_STDOUT_BUFFER_SIZE	= 1024;
 
-// Flag of capabilities supported by the server
-//const ULONG WAL_SUPPORT				= 0x1L;		// Write Ahead Log
-const ULONG MULTI_CLIENT_SUPPORT		= 0x2L;		// SuperServer model (vs. multi-inet)
-const ULONG REMOTE_HOP_SUPPORT			= 0x4L;		// Server can connect to other server
-//const ULONG NO_SVR_STATS_SUPPORT		= 0x8L;		// Does not support statistics
+/* Flag of capabilities supported by the server */
+//const ULONG WAL_SUPPORT					= 0x1L;	// Write Ahead Log
+const ULONG MULTI_CLIENT_SUPPORT		= 0x2L;	/* SuperServer model (vs. multi-inet) */
+const ULONG REMOTE_HOP_SUPPORT			= 0x4L;	/* Server can connect to other server */
+//const ULONG NO_SVR_STATS_SUPPORT		= 0x8L;	// Does not support statistics
 
-//const ULONG NO_DB_STATS_SUPPORT		= 0x10L;	// Does not support statistics
+//const ULONG NO_DB_STATS_SUPPORT			= 0x10L;	// Does not support statistics
 // Really the 16 bit LIBS here?
 //const ULONG LOCAL_ENGINE_SUPPORT		= 0x20L;	// The local 16 bit engine
-//const ULONG NO_FORCED_WRITE_SUPPORT	= 0x40L;	// Can not configure sync writes
-//const ULONG NO_SHUTDOWN_SUPPORT		= 0x80L;	// Can not shutdown/restart databases
-const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	// Can not shutdown server
-const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	// Can configure server
-const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	// Can pass quoted filenames in
+//const ULONG NO_FORCED_WRITE_SUPPORT		= 0x40L;	// Can not configure sync writes
+//const ULONG NO_SHUTDOWN_SUPPORT			= 0x80L;	// Can not shutdown/restart databases
+const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	/* Can not shutdown server */
+const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	/* Can configure server */
+const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	/* Can pass quoted filenames in */
 
-// Range definitions for service actions.  Any action outside of
-// this range is not supported
+/* Range definitions for service actions.  Any action outside of
+   this range is not supported */
 const USHORT isc_action_min				= 1;
 const USHORT isc_action_max				= isc_action_svc_last;
 
-// Range definitions for service actions.  Any action outside of
-// this range is not supported
+/* Range definitions for service actions.  Any action outside of
+   this range is not supported */
 //define isc_info_min                  50
 //define isc_info_max                  67
 
-// Bitmask values for the svc_flags variable
+/* Bitmask values for the svc_flags variable */
 const int SVC_shutdown		= 0x1;
 const int SVC_timeout		= 0x2;
 //const int SVC_forked		= 0x4;
@@ -168,6 +168,9 @@ public:		// external interface with service
 
 	const Firebird::string&	getUserName() const
 	{
+		if (svc_username.empty())
+			return svc_trusted_login;
+
 		return svc_username;
 	}
 
@@ -213,13 +216,12 @@ private:
 	// Convert spb flags to utility switches
 	static void			conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Find spb switch in switch table
-	static const TEXT*	find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table);
+	static const TEXT*	find_switch(int in_spb_sw, const in_sw_tab_t* table);
 	// Loop through the appropriate switch table looking for the text for the given command switch
 	static bool			process_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Get bitmask from within spb buffer, find corresponding switches within specified table,
 	// add them to the command line
-	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
-									   const Switches::in_sw_tab_t* table,
+	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb, const in_sw_tab_t* table,
 									   Firebird::string& sw);
 	// Get string from within spb buffer, add it to the command line
 	static void get_action_svc_string(const Firebird::ClumpletReader& spb, Firebird::string& sw);
@@ -227,16 +229,13 @@ private:
 	static void get_action_svc_data(const Firebird::ClumpletReader& spb, Firebird::string& sw);
 	// Get parameter from within spb buffer, find corresponding switch within specified table,
 	// add it to the command line
-	static bool get_action_svc_parameter(UCHAR tag, const Switches::in_sw_tab_t* table,
-										 Firebird::string&);
+	static bool get_action_svc_parameter(UCHAR tag, const in_sw_tab_t* table, Firebird::string&);
 	// Create 'SYSDBA needed' error in status vector
 	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);
 	// Does info buffer have enough space for SLONG?
 	static bool ck_space_for_numeric(UCHAR*& info, const UCHAR* const end);
 	// Make status vector permamnent, if one present in worker thread's space
 	void makePermanentStatusVector() throw();
-	// Read SPB on attach
-	void getOptions(Firebird::ClumpletReader&);
 
 private:
 	ISC_STATUS_ARRAY svc_status;		// status vector for running service
@@ -258,14 +257,13 @@ private:
 	bool	svc_do_shutdown;
 
 	Firebird::string	svc_username;
-	Firebird::AuthReader::AuthBlock	svc_auth_block;
+	Firebird::string	svc_enc_password;
 	Firebird::string	svc_trusted_login;
 	bool                svc_trusted_role;
-	//bool				svc_uses_security_database;
+	bool				svc_uses_security_database;
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table and/or passed using spb_command_line
 	Firebird::string	svc_address_path;
-	Firebird::string	svc_command_line;
 
 	Firebird::string	svc_network_protocol;
 	Firebird::string	svc_remote_address;
@@ -280,7 +278,6 @@ public:
 		FB_THREAD_ID workerThread;
 		Firebird::Mutex mtx;
 	};
-
 private:
 	StatusStringsHelper	svc_thread_strings;
 
@@ -291,14 +288,11 @@ private:
 		explicit ExistenceGuard(Service* svc);
 		~ExistenceGuard();
 		void release();
-
 	private:
 		Service* svc;
 		bool locked;
 	};
-
 	friend class ExistenceGuard;
-
 	Firebird::Mutex		svc_existence_lock;
 	ExistenceGuard*		svc_current_guard;
 };

@@ -31,7 +31,6 @@
  */
 
 #include "firebird.h"
-#include "memory_routines.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +44,7 @@
 #include "../jrd/svc.h"
 #include "../jrd/constants.h"
 #include "../burp/burp.h"
+#include "../burp/burpswi.h"
 #include "../burp/std_desc.h"
 #include "../jrd/license.h"
 
@@ -56,8 +56,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/classes/Switches.h"
-#include "../burp/burpswi.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -90,14 +88,13 @@ const char switch_char = '-';
 
 const char* const output_suppress	= "SUPPRESS";
 const int burp_msg_fac				= 12;
-const int MIN_VERBOSE_INTERVAL		= 100;
 
 enum gbak_action
 {
 	QUIT	=	0,
 	BACKUP	=	1 ,
-	RESTORE	=	2
-	//FDESC	=	3 // CVC: Unused
+	RESTORE	=	2,
+	FDESC	=	3
 };
 
 static void close_out_transaction(gbak_action, isc_tr_handle*);
@@ -107,10 +104,10 @@ static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
 							  const Firebird::ClumpletWriter&);
-static int api_gbak(Firebird::UtilSvc*, const Switches& switches);
+static int api_gbak(Firebird::UtilSvc*, in_sw_tab_t* const in_sw_tab);
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
-static void burp_usage(const Switches& switches);
-static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::string& sw);
+static void burp_usage(const in_sw_tab_t* const in_sw_tab);
+static in_sw_tab_t* findSwitch(in_sw_tab_t* const in_sw_tab, Firebird::string, bool);
 
 // fil.fil_length is ULONG
 const ULONG KBYTE	= 1024;
@@ -150,7 +147,7 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 }
 
 
-static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
+static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 {
 /**********************************************
  *
@@ -168,15 +165,13 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 #ifdef TRUSTED_AUTH
 	bool flag_trusted = false;
 #endif
-	bool flag_verbint = false;
-	ULONG verbint_val = 0;
 
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = uSvc->argv.getCount();
 
 	for (int itr = 1; itr < argc; ++itr)
 	{
-		const Switches::in_sw_tab_t* inSw = switches.findSwitch(argv[itr]);
+		const in_sw_tab_t* inSw = findSwitch(in_sw_tab, argv[itr], false);
 		if (! inSw)
 		{
 			continue;
@@ -194,11 +189,12 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 		case IN_SW_BURP_SE:				// service name
 			if (itr >= argc - 1)
 			{
-				int errnum = inSw->in_sw == IN_SW_BURP_USER ? 188 : // user name parameter missing
-						   		inSw->in_sw == IN_SW_BURP_PASS ? 189 : // password parameter missing
-									273; // service name parameter missing
-
-				BURP_error(errnum, true);
+				// user name parameter missing
+				BURP_error(inSw->in_sw == IN_SW_BURP_USER ? 188 :
+								// password parameter missing
+						   		inSw->in_sw == IN_SW_BURP_PASS ? 189 :
+									// service name parameter missing
+									273, true);
 			}
 			else
 			{
@@ -220,29 +216,10 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 			}
 			break;
 		case IN_SW_BURP_V:				// verify actions
-			if (flag_verbint)
-				BURP_error(329, true); // verify (verbose) and verbint options are mutually exclusive
 			flag_verbose = true;
 			break;
-		case IN_SW_BURP_VERBINT:		// verify with explicit reporting interval for records
-			if (flag_verbose)
-				BURP_error(329, true); // verify (verbose) and verbint options are mutually exclusive
-			if (flag_verbint)
-				BURP_error(333, true, SafeArg() << inSw->in_sw_name << verbint_val);
-			if (itr >= argc - 1)
-				BURP_error(326, true); // verbose interval value parameter missing
-			argv[itr++] = 0;
-			verbint_val = get_number(argv[itr]);
-			if (verbint_val < MIN_VERBOSE_INTERVAL)
-			{
-				// verbose interval value cannot be smaller than @1
-				BURP_error(327, true, SafeArg() << MIN_VERBOSE_INTERVAL);
-			}
-			flag_verbint = true;
-			argv[itr] = 0;
-			break;
 #ifdef TRUSTED_AUTH
-		case IN_SW_BURP_TRUSTED_AUTH:	// use trusted auth
+		case IN_SW_BURP_TRUSTED_USER:	// use trusted auth
 			flag_trusted = true;
 			argv[itr] = 0;
 			break;
@@ -320,12 +297,11 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 			return FINI_ERROR;
 		}
 
-		char thd[10];
+		char thd[2];
 		// 'isc_action_svc_restore/isc_action_svc_backup'
 		// 'isc_spb_verbose'
-		// 'isc_spb_verbint'
 
-		char* thd_ptr = thd;
+		char *thd_ptr = thd;
 		if (flag_restore)
 			*thd_ptr++ = isc_action_svc_restore;
 		else
@@ -334,16 +310,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 		if (flag_verbose)
 			*thd_ptr++ = isc_spb_verbose;
 
-		if (flag_verbint)
-		{
-			*thd_ptr++ = isc_spb_verbint;
-			//stream verbint_val into a SPB
-			put_vax_long(reinterpret_cast<UCHAR*>(thd_ptr), verbint_val);
-			thd_ptr += sizeof(SLONG);
-		}
-
 		const USHORT thdlen = thd_ptr - thd;
-		fb_assert(thdlen <= sizeof(thd));
 
 		if (isc_service_start(status, &svc_handle, NULL, thdlen, thd))
 		{
@@ -406,35 +373,75 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 }
 
 
-static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::string& sw)
+static bool switchMatch(const Firebird::string& sw, const char* target)
 {
 /**************************************
  *
- *	f i n d S w i t c h O r T h r o w
+ *	s w i t c h M a t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns true if switch matches target
+ *
+ **************************************/
+	size_t n = strlen(target);
+	if (n < sw.length())
+	{
+		return false;
+	}
+	n = sw.length();
+	return memcmp(sw.c_str(), target, n) == 0;
+}
+
+
+static in_sw_tab_t* findSwitch(in_sw_tab_t* const table, Firebird::string sw, bool throwErrors)
+{
+/**************************************
+ *
+ *	f i n d S w i t c h
  *
  **************************************
  *
  * Functional description
  *	Returns pointer to in_sw_tab entry for current switch
  *	If not a switch, returns 0.
- *	If no match, throws.
+ *	If no match, throws if throwErrors or returns 0.
  *
  **************************************/
-	bool invalid = false;
-	Switches::in_sw_tab_t* rc = switches.findSwitchMod(sw, &invalid);
-	if (rc)
-		return rc;
+	if (sw.isEmpty())
+	{
+		return 0;
+	}
+	if (sw[0] != switch_char)
+	{
+		return 0;
+	}
+	sw.erase(0, 1);
+	sw.upper();
 
-	if (invalid)
+	for (in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
+	{
+		if (sw.length() < in_sw_tab->in_sw_min_length)
+		{
+			continue;
+		}
+		if (switchMatch(sw, in_sw_tab->in_sw_name))
+		{
+			return in_sw_tab;
+		}
+	}
+
+	if (throwErrors)
 	{
 		BURP_print(137, sw.c_str());
 		// msg 137  unknown switch %s
-		burp_usage(switches);
+		burp_usage(table);
 		BURP_error(1, true);
 		// msg 1: found unknown switch
 	}
 
-	return NULL;
+	return 0;
 }
 
 
@@ -463,32 +470,45 @@ int gbak(Firebird::UtilSvc* uSvc)
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = uSvc->argv.getCount();
 
-	try
-	{
-
 	// Copy the static const table to a local array for processing.
-	Switches switches(reference_burp_in_sw_table, FB_NELEM(reference_burp_in_sw_table), true, true);
+	in_sw_tab_t burp_in_sw_table[FB_NELEM(reference_burp_in_sw_table)];
+
+	for (size_t maxt = FB_NELEM(reference_burp_in_sw_table), iter = 0; iter < maxt; ++iter)
+	{
+		burp_in_sw_table[iter] = reference_burp_in_sw_table[iter];
+		burp_in_sw_table[iter].in_sw_state = false;
+	}
 
 	// test for "-service" switch
-	if (switches.exists(IN_SW_BURP_SE, argv.begin(), 1, argc))
-		return api_gbak(uSvc, switches);
+	for (int itr = 1; itr < argc; ++itr)
+	{
+		const in_sw_tab_t* inSw = findSwitch(burp_in_sw_table, argv[itr], false);
+
+		if (inSw && inSw->in_sw == IN_SW_BURP_SE)
+		{
+			return api_gbak(uSvc, burp_in_sw_table);
+		}
+	}
+
+	try {
+
+	in_sw_tab_t* in_sw_tab;
 
 	tdgbl->status = tdgbl->status_vector;
 	uSvc->started();
 
-	if (argc <= 1)
-	{
-		burp_usage(switches);
+	if (argc <= 1) {
+		burp_usage(burp_in_sw_table);
 		BURP_exit_local(FINI_ERROR, tdgbl);
 	}
 
 	if (argc == 2 && strcmp(argv[1], "-?") == 0)
 	{
-		burp_usage(switches);
+		burp_usage(burp_in_sw_table);
 		BURP_exit_local(FINI_OK, tdgbl);
 	}
 
-	USHORT sw_replace = 0;
+	USHORT sw_replace = FALSE;
 
 	tdgbl->gbl_sw_compress = true;
 	tdgbl->gbl_sw_convert_ext_tables = false;
@@ -505,10 +525,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 	burp_fil* file_list = NULL;
 	tdgbl->io_buffer_size = GBAK_IO_BUFFER_SIZE;
 
-	const char none[] = "-*NONE*";
-	bool verbint = false;
-	bool noGarbage = false, ignoreDamaged = false, noDbTrig = false;
-	bool transportableMentioned = false;
+	// Avoid overwriting literal strings.
+	char none[] = "-*NONE*";
 
 	for (int itr = 1; itr < argc; ++itr)
 	{
@@ -520,9 +538,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 		if (str[str.length() - 1] == ',')
 		{
 			str.erase(str.length() - 1, 1);
-			// Let's ignore single comma
-			if (str.isEmpty())
-				continue;
 		}
 
 		if (str[0] != switch_char)
@@ -546,36 +561,36 @@ int gbak(Firebird::UtilSvc* uSvc)
 			str = none;
 		}
 
-		Switches::in_sw_tab_t* const in_sw_tab = findSwitchOrThrow(switches, str);
+		in_sw_tab = findSwitch(burp_in_sw_table, str, true);
 		fb_assert(in_sw_tab);
-		//in_sw_tab->in_sw_state = true; It's not enough with switches that have multiple spellings
-		switches.activate(in_sw_tab->in_sw);
+		in_sw_tab->in_sw_state = true;
 
-		switch (in_sw_tab->in_sw)
+		if (in_sw_tab->in_sw == IN_SW_BURP_RECREATE)
 		{
-		case IN_SW_BURP_RECREATE:
+			int real_sw = IN_SW_BURP_C;
+			if ((itr < argc - 1) && (*argv[itr + 1] != switch_char))
 			{
-				int real_sw = IN_SW_BURP_C;
-				if ((itr < argc - 1) && (*argv[itr + 1] != switch_char))
+				// find optional BURP_SW_OVERWRITE parameter
+				Firebird::string next(argv[itr + 1]);
+				next.upper();
+				if (strstr(BURP_SW_OVERWRITE, next.c_str()) == BURP_SW_OVERWRITE)
 				{
-					// find optional BURP_SW_OVERWRITE parameter
-					Firebird::string next(argv[itr + 1]);
-					next.upper();
-					if (strstr(BURP_SW_OVERWRITE, next.c_str()) == BURP_SW_OVERWRITE)
-					{
-						real_sw = IN_SW_BURP_R;
-						itr++;
-					}
+					real_sw = IN_SW_BURP_R;
+					itr++;
 				}
-
-				// replace IN_SW_BURP_RECREATE by IN_SW_BURP_R or IN_SW_BURP_C
-				in_sw_tab->in_sw_state = false;
-				switches.activate(real_sw);
 			}
-			break;
-		case IN_SW_BURP_S:
-			if (tdgbl->gbl_sw_skip_count)
-				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->gbl_sw_skip_count);
+
+			// replace IN_SW_BURP_RECREATE by IN_SW_BURP_R or IN_SW_BURP_C
+			in_sw_tab->in_sw_state = false;
+
+			in_sw_tab_t* real_sw_tab = burp_in_sw_table;
+			while (real_sw_tab->in_sw != real_sw)
+				++real_sw_tab;
+
+			real_sw_tab->in_sw_state = true;
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_S)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(200, true);
@@ -587,10 +602,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 				BURP_error(201, true, argv[itr]);
 				// msg 201: expected number of bytes to be skipped, encountered "%s"
 			}
-			break;
-		case IN_SW_BURP_P:
-			if (tdgbl->gbl_sw_page_size)
-				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->gbl_sw_page_size);
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_P)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(2, true);
@@ -602,10 +616,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 				BURP_error(12, true, argv[itr]);
 				// msg 12 expected page size, encountered "%s"
 			}
-			break;
-		case IN_SW_BURP_BU:
-			if (tdgbl->gbl_sw_page_buffers)
-				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->gbl_sw_page_buffers);
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_BU)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(258, true);
@@ -617,20 +630,16 @@ int gbak(Firebird::UtilSvc* uSvc)
 				BURP_error(259, true, argv[itr]);
 				// msg 259 expected page buffers, encountered "%s"
 			}
-			break;
-		case IN_SW_BURP_MODE:
-			if (tdgbl->gbl_sw_mode)
-			{
-				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name <<
-					(tdgbl->gbl_sw_mode_val ? BURP_SW_MODE_RO : BURP_SW_MODE_RW));
-			}
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_MODE)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(279, true);
 				// msg 279: "read_only" or "read_write" required
 			}
 			str = argv[itr];
-			str.upper();
+			str.lower();
 			if (str == BURP_SW_MODE_RO)
 				tdgbl->gbl_sw_mode_val = true;
 			else if (str == BURP_SW_MODE_RW)
@@ -641,8 +650,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// msg 279: "read_only" or "read_write" required
 			}
 			tdgbl->gbl_sw_mode = true;
-			break;
-		case IN_SW_BURP_PASS:
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_PASS)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(189, true);
@@ -655,8 +665,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// too many passwords provided
 			}
 			tdgbl->gbl_sw_password = argv[itr];
-			break;
-		case IN_SW_BURP_FETCHPASS:
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FETCHPASS)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(189, true);
@@ -684,16 +695,18 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// password file @1 is empty
 				break;
 			}
-			break;
-		case IN_SW_BURP_USER:
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_USER)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(188, true);
 				// user name parameter missing
 			}
 			tdgbl->gbl_sw_user = argv[itr];
-			break;
-		case IN_SW_BURP_TRUSTED_USER:
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_TRUSTED_SVC)
+		{
 			uSvc->checkService();
 			if (++itr >= argc)
 			{
@@ -701,18 +714,18 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// trusted user name parameter missing
 			}
 			tdgbl->gbl_sw_tr_user = argv[itr];
-			break;
-		case IN_SW_BURP_ROLE:
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(253, true);
 				// SQL role parameter missing
 			}
 			tdgbl->gbl_sw_sql_role = argv[itr];
-			break;
-		case IN_SW_BURP_FA:
-			if (tdgbl->gbl_sw_blk_factor)
-				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->gbl_sw_blk_factor);
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FA)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(182, true);
@@ -724,28 +737,27 @@ int gbak(Firebird::UtilSvc* uSvc)
 				BURP_error(183, true, argv[itr]);
 				// msg 183 expected blocking factor, encountered "%s"
 			}
-			break;
-		case IN_SW_BURP_FIX_FSS_DATA:
-			if (tdgbl->gbl_sw_fix_fss_data)
-				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->gbl_sw_fix_fss_data);
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_DATA)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(304, true);
 				// Character set parameter missing
 			}
 			tdgbl->gbl_sw_fix_fss_data = argv[itr];
-			break;
-		case IN_SW_BURP_FIX_FSS_METADATA:
-			if (tdgbl->gbl_sw_fix_fss_metadata)
-				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->gbl_sw_fix_fss_metadata);
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_METADATA)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(304, true);
 				// Character set parameter missing
 			}
 			tdgbl->gbl_sw_fix_fss_metadata = argv[itr];
-			break;
-		case IN_SW_BURP_SE:
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_SE)
+		{
 			if (++itr >= argc)
 			{
 				BURP_error(273, true);
@@ -753,166 +765,47 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			// skip a service specification
 			in_sw_tab->in_sw_state = false;
-			break;
-		case IN_SW_BURP_Y:
-			{
-				// want to do output redirect handling now instead of waiting
-				const TEXT* redirect = NULL;
-				if (++itr < argc)
-				{
-					redirect = argv[itr];
-					if (*redirect == switch_char)
-					{
-						redirect = NULL;
-					}
-				}
-				if (!redirect)
-				{
-					BURP_error(4, true);
-					// msg 4 redirect location for output is not specified
-				}
-
-				Firebird::string up(redirect);
-				up.upper();
-				tdgbl->sw_redirect = (up == output_suppress) ? NOOUTPUT : REDIRECT;
-
-				if (tdgbl->sw_redirect == REDIRECT)		// not NOREDIRECT, and not NOOUTPUT
-				{
-					// Make sure the status file doesn't already exist
-					FILE* tmp_outfile = fopen(redirect, fopen_read_type);
-					if (tmp_outfile)
-					{
-						BURP_print(66, redirect);
-						// msg 66 can't open status and error output file %s
-						fclose(tmp_outfile);
-						BURP_exit_local(FINI_ERROR, tdgbl);
-					}
-					if (! (tdgbl->output_file = fopen(redirect, fopen_write_type)))
-					{
-						BURP_print(66, redirect);
-						// msg 66 can't open status and error output file %s
-						BURP_exit_local(FINI_ERROR, tdgbl);
-					}
-				}
-			}
-			break;
-		case IN_SW_BURP_VERBINT:
-			{
-				if (tdgbl->gbl_sw_verbose)
-					BURP_error(329, true); // verify (verbose) and verbint options are mutually exclusive
-				if (verbint)
-					BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->verboseInterval);
-				if (++itr >= argc)
-					BURP_error(326, true); // verbose interval parameter missing
-
-				ULONG verbint_val = get_number(argv[itr]);
-				if (verbint_val < MIN_VERBOSE_INTERVAL)
-				{
-					// verbose interval value cannot be smaller than @1
-					BURP_error(327, true, SafeArg() << MIN_VERBOSE_INTERVAL);
-				}
-				tdgbl->verboseInterval = verbint_val;
-				verbint = true;
-			}
-			break;
-		case IN_SW_BURP_V:
-			if (verbint)
-				BURP_error(329, true); // verify (verbose) and verbint options are mutually exclusive
-			if (tdgbl->gbl_sw_verbose)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_verbose = true;
-			break;
-		case IN_SW_BURP_CO:
-			if (tdgbl->gbl_sw_convert_ext_tables)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_convert_ext_tables = true;
-			break;
-		case IN_SW_BURP_E:
-			if (!tdgbl->gbl_sw_compress)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_compress = false;
-			break;
-		case IN_SW_BURP_G:
-			if (noGarbage)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			noGarbage = true;
-			break;
-		case IN_SW_BURP_I:
-			if (tdgbl->gbl_sw_deactivate_indexes)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_deactivate_indexes = true;
-			break;
-		case IN_SW_BURP_IG:
-			if (ignoreDamaged)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			ignoreDamaged = true;
-			break;
-
-		case IN_SW_BURP_K:
-			if (tdgbl->gbl_sw_kill)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_kill = true;
-			break;
-
-		case IN_SW_BURP_L:
-			if (tdgbl->gbl_sw_ignore_limbo)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_ignore_limbo = true;
-			break;
-
-		case IN_SW_BURP_M:
-			if (tdgbl->gbl_sw_meta)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_meta = true;
-			break;
-		case IN_SW_BURP_N:
-			if (tdgbl->gbl_sw_novalidity)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_novalidity = true;
-			break;
-		case IN_SW_BURP_NOD:
-			if (noDbTrig)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			noDbTrig = true;
-			break;
-		case IN_SW_BURP_O:
-			if (tdgbl->gbl_sw_incremental)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_incremental = true;
-			break;
-		case IN_SW_BURP_OL:
-			if (tdgbl->gbl_sw_old_descriptions)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_old_descriptions = true;
-			break;
-		case IN_SW_BURP_US:
-			if (tdgbl->gbl_sw_no_reserve)
-				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			tdgbl->gbl_sw_no_reserve = true;
-			break;
-		case IN_SW_BURP_NT:	// Backup non-transportable format
-			if (transportableMentioned)
-			{
-				if (tdgbl->gbl_sw_transportable)
-					BURP_error(332, true, SafeArg() << "NT" << "T");
-				else
-					BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			}
-			tdgbl->gbl_sw_transportable = false;
-			transportableMentioned = true;
-			break;
-		case IN_SW_BURP_T:
-			if (transportableMentioned)
-			{
-				if (!tdgbl->gbl_sw_transportable)
-					BURP_error(332, true, SafeArg() << "NT" << "T");
-				else
-					BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			}
-			tdgbl->gbl_sw_transportable = true;
-			transportableMentioned = true;
-			break;
 		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_Y)
+		{
+			// want to do output redirect handling now instead of waiting
+			const TEXT* redirect = NULL;
+			if (++itr < argc)
+			{
+				redirect = argv[itr];
+				if (*redirect == switch_char)
+				{
+					redirect = NULL;
+				}
+			}
+			if (!redirect)
+			{
+				BURP_error(4, true);
+				// msg 4 redirect location for output is not specified
+			}
+
+			Firebird::string up(redirect);
+			up.upper();
+			tdgbl->sw_redirect = (up == output_suppress) ? NOOUTPUT : REDIRECT;
+
+			if (tdgbl->sw_redirect == REDIRECT)		// not NOREDIRECT, and not NOOUTPUT
+			{
+				// Make sure the status file doesn't already exist
+				FILE* tmp_outfile = fopen(redirect, fopen_read_type);
+				if (tmp_outfile) {
+					BURP_print(66, redirect);
+					// msg 66 can't open status and error output file %s
+					fclose(tmp_outfile);
+					BURP_exit_local(FINI_ERROR, tdgbl);
+				}
+				if (! (tdgbl->output_file = fopen(redirect, fopen_write_type)))
+				{
+					BURP_print(66, redirect);
+					// msg 66 can't open status and error output file %s
+					BURP_exit_local(FINI_ERROR, tdgbl);
+				}
+			}
+		}					//else if (in_sw_tab->in_sw == IN_SW_BURP_Y)
 	}						// for
 
 	// reverse the linked list of file blocks
@@ -920,8 +813,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	tdgbl->gbl_sw_files = NULL;
 
 	burp_fil* next_file = NULL;
-	for (file = file_list; file; file = next_file)
-	{
+	for (file = file_list; file; file = next_file) {
 		next_file = file->fil_next;
 		file->fil_next = tdgbl->gbl_sw_files;
 		tdgbl->gbl_sw_files = file;
@@ -956,10 +848,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
 	uSvc->getAddressPath(dpb);
 
-	// We call getTableMod() because we are interested in the items that were activated previously,
-	// not in the original, unchanged table that "switches" took as parameter in the constructor.
-	for (const Switches::in_sw_tab_t* in_sw_tab = switches.getTableMod();
-		in_sw_tab->in_sw_name; in_sw_tab++)
+	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
 		if (!in_sw_tab->in_sw_state)
 			continue;
@@ -981,21 +870,60 @@ int gbak(Firebird::UtilSvc* uSvc)
 				sw_replace = IN_SW_BURP_C;
 			break;
 
+		case IN_SW_BURP_CO:
+			tdgbl->gbl_sw_convert_ext_tables = true;
+			break;
+
+		case IN_SW_BURP_E:
+			tdgbl->gbl_sw_compress = false;
+			break;
+
 		case IN_SW_BURP_G:
 			dpb.insertTag(isc_dpb_no_garbage_collect);
+			break;
+
+		case IN_SW_BURP_I:
+			tdgbl->gbl_sw_deactivate_indexes = true;
 			break;
 
 		case IN_SW_BURP_IG:
 			dpb.insertByte(isc_dpb_damaged, 1);
 			break;
 
+		case IN_SW_BURP_K:
+			tdgbl->gbl_sw_kill = true;
+			break;
+
+		case IN_SW_BURP_L:
+			tdgbl->gbl_sw_ignore_limbo = true;
+			break;
+
+		case IN_SW_BURP_M:
+			tdgbl->gbl_sw_meta = true;
+			break;
+
 		case IN_SW_BURP_MODE:
-			// checked before, seems irrelevant to activate it again
 			tdgbl->gbl_sw_mode = true;
+			break;
+
+		case IN_SW_BURP_N:
+			tdgbl->gbl_sw_novalidity = true;
 			break;
 
 		case IN_SW_BURP_NOD:
 			dpb.insertByte(isc_dpb_no_db_triggers, 1);
+			break;
+
+		case IN_SW_BURP_NT:	// Backup non-transportable format
+			tdgbl->gbl_sw_transportable = false;
+			break;
+
+		case IN_SW_BURP_O:
+			tdgbl->gbl_sw_incremental = true;
+			break;
+
+		case IN_SW_BURP_OL:
+			tdgbl->gbl_sw_old_descriptions = true;
 			break;
 
 		case IN_SW_BURP_PASS:
@@ -1011,12 +939,20 @@ int gbak(Firebird::UtilSvc* uSvc)
 			sw_replace = IN_SW_BURP_R;
 			break;
 
+		case IN_SW_BURP_T:
+			tdgbl->gbl_sw_transportable = true;
+			break;
+
 		/*
 		case IN_SW_BURP_U:
 			BURP_error(7, true);
 			// msg 7 protection isn't there yet
 			break;
 		*/
+
+		case IN_SW_BURP_US:
+			tdgbl->gbl_sw_no_reserve = true;
+			break;
 
 		case IN_SW_BURP_ROLE:
 			dpb.insertString(isc_dpb_sql_role_name,
@@ -1027,7 +963,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
 			break;
 
-		case IN_SW_BURP_TRUSTED_USER:
+		case IN_SW_BURP_TRUSTED_SVC:
 			uSvc->checkService();
 			dpb.deleteWithTag(isc_dpb_trusted_auth);
 			dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
@@ -1038,15 +974,17 @@ int gbak(Firebird::UtilSvc* uSvc)
 			dpb.deleteWithTag(isc_dpb_trusted_role);
 			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 			break;
-
 #ifdef TRUSTED_AUTH
-		case IN_SW_BURP_TRUSTED_AUTH:
+		case IN_SW_BURP_TRUSTED_USER:
 			if (!dpb.find(isc_dpb_trusted_auth))
 			{
 				dpb.insertTag(isc_dpb_trusted_auth);
 			}
 			break;
 #endif
+		case IN_SW_BURP_V:
+			tdgbl->gbl_sw_verbose = true;
+			break;
 
 		case IN_SW_BURP_Z:
 			BURP_print(91, GDS_VERSION);
@@ -1080,86 +1018,21 @@ int gbak(Firebird::UtilSvc* uSvc)
 			BURP_error(3, true, SafeArg() << tdgbl->gbl_sw_page_size);
 			// msg 3 Page size specified (%ld) greater than limit (MAX_PAGE_SIZE bytes)
 		}
-		if (temp != tdgbl->gbl_sw_page_size)
-		{
+		if (temp != tdgbl->gbl_sw_page_size) {
 			BURP_print(103, SafeArg() << tdgbl->gbl_sw_page_size << temp);
 			// msg 103 page size specified (%ld bytes) rounded up to %ld bytes
 			tdgbl->gbl_sw_page_size = temp;
 		}
 	}
 
-	if (sw_replace == IN_SW_BURP_B)
-	{
-		if (tdgbl->gbl_sw_page_buffers)
-			BURP_error(260, true); // msg 260 page buffers is allowed only on restore or create
-
-		int errNum = IN_SW_BURP_0;
-
-		if (tdgbl->gbl_sw_fix_fss_data)
-			errNum = IN_SW_BURP_FIX_FSS_DATA;
-		else if (tdgbl->gbl_sw_fix_fss_metadata)
-			errNum = IN_SW_BURP_FIX_FSS_METADATA;
-		else if (tdgbl->gbl_sw_deactivate_indexes)
-			errNum = IN_SW_BURP_I;
-		else if (tdgbl->gbl_sw_kill)
-			errNum = IN_SW_BURP_K;
-		else if (tdgbl->gbl_sw_mode)
-			errNum = IN_SW_BURP_MODE;
-		else if (tdgbl->gbl_sw_novalidity)
-			errNum = IN_SW_BURP_N;
-		else if (tdgbl->gbl_sw_incremental)
-			errNum = IN_SW_BURP_O;
-		else if (tdgbl->gbl_sw_skip_count)
-			errNum = IN_SW_BURP_S;
-		else if (tdgbl->gbl_sw_no_reserve)
-			errNum = IN_SW_BURP_US;
-
-		if (errNum != IN_SW_BURP_0)
-		{
-			const char* msg = switches.findNameByTag(errNum);
-			BURP_error(330, true, SafeArg() << msg);
-		}
-	}
-	else
-	{
-		fb_assert(sw_replace == IN_SW_BURP_C || sw_replace == IN_SW_BURP_R);
-		int errNum = IN_SW_BURP_0;
-
-		if (tdgbl->gbl_sw_convert_ext_tables)
-			errNum = IN_SW_BURP_CO;
-		else if (!tdgbl->gbl_sw_compress)
-			errNum = IN_SW_BURP_E;
-		else if (tdgbl->gbl_sw_blk_factor)
-			errNum = IN_SW_BURP_FA;
-		else if (noGarbage)
-			errNum = IN_SW_BURP_G;
-		else if (ignoreDamaged)
-			errNum = IN_SW_BURP_IG;
-		else if (tdgbl->gbl_sw_ignore_limbo)
-			errNum = IN_SW_BURP_L;
-		else if (noDbTrig)
-			errNum = IN_SW_BURP_NOD;
-		else if (transportableMentioned)
-		{
-			if (tdgbl->gbl_sw_transportable)
-				errNum = IN_SW_BURP_T;
-			else
-				errNum = IN_SW_BURP_NT;
-		}
-		else if (tdgbl->gbl_sw_old_descriptions)
-			errNum = IN_SW_BURP_OL;
-
-		if (errNum != IN_SW_BURP_0)
-		{
-			const char* msg = switches.findNameByTag(errNum);
-			BURP_error(331, true, SafeArg() << msg);
-		}
+	if (tdgbl->gbl_sw_page_buffers) {
+		if (sw_replace == IN_SW_BURP_B)
+			BURP_error(260, true);
+			// msg 260 page buffers is allowed only on restore or create
 	}
 
 	if (!tdgbl->gbl_sw_blk_factor || sw_replace != IN_SW_BURP_B)
 		tdgbl->gbl_sw_blk_factor = 1;
-	if (verbint)
-		tdgbl->gbl_sw_verbose = true;
 
 	if (!file2)
 		BURP_error(10, true);
@@ -1249,8 +1122,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	}
 
 	// Detach from database to release system resources
-	if (tdgbl->db_handle != 0)
-	{
+	if (tdgbl->db_handle != 0) {
 		close_out_transaction(action, &tdgbl->tr_handle);
 		close_out_transaction(action, &tdgbl->global_trans);
 		if (isc_detach_database(tdgbl->status_vector, &tdgbl->db_handle))
@@ -1260,15 +1132,13 @@ int gbak(Firebird::UtilSvc* uSvc)
 	}
 
 	// Close the status output file
-	if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL)
-	{
+	if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL) {
 		fclose(tdgbl->output_file);
 		tdgbl->output_file = NULL;
 	}
 
 	// Free all unfreed memory used by GBAK itself
-	while (tdgbl->head_of_mem_list != NULL)
-	{
+	while (tdgbl->head_of_mem_list != NULL) {
 		UCHAR* mem = tdgbl->head_of_mem_list;
 		tdgbl->head_of_mem_list = *((UCHAR **) tdgbl->head_of_mem_list);
 		gds__free(mem);
@@ -1376,11 +1246,7 @@ void BURP_error_redirect(const ISC_STATUS* status_vector, USHORT errcode, const 
 }
 
 
-// **********************************
-// B U R P _ e x i t _ l o c a l
-// **********************************
 // Raises an exception when the old SEH system would jump to another place.
-// **********************************
 void BURP_exit_local(int code, BurpGlobals* tdgbl)
 {
 	tdgbl->exit_code = code;
@@ -1520,23 +1386,19 @@ void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
  *	to allow redirecting output.
  *
  **************************************/
-	if (status_vector)
-	{
+	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 
-		if (flagStuff)
-		{
+		if (flagStuff) {
 			BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 			tdgbl->uSvc->setServiceStatus(vector);
 		}
 
         SCHAR s[1024];
-		if (fb_interpret(s, sizeof(s), &vector))
-		{
+		if (fb_interpret(s, sizeof(s), &vector)) {
 			BURP_msg_partial(256); // msg 256: gbak: ERROR:
 			burp_output("%s\n", s);
-			while (fb_interpret(s, sizeof(s), &vector))
-			{
+			while (fb_interpret(s, sizeof(s), &vector)) {
 				BURP_msg_partial(256); // msg 256: gbak: ERROR:
 				burp_output("    %s\n", s);
 			}
@@ -1566,12 +1428,10 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
 		// print the warning message
 		const ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
-		if (fb_interpret(s, sizeof(s), &vector))
-		{
+		if (fb_interpret(s, sizeof(s), &vector)) {
 			BURP_msg_partial(255); // msg 255: gbak: WARNING:
 			burp_output("%s\n", s);
-			while (fb_interpret(s, sizeof(s), &vector))
-			{
+			while (fb_interpret(s, sizeof(s), &vector)) {
 				BURP_msg_partial(255); // msg 255: gbak: WARNING:
 				burp_output("    %s\n", s);
 			}
@@ -1649,8 +1509,7 @@ static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 			// Even if the restore failed, commit the transaction so that
 			// a partial database is at least recovered.
 			isc_commit_transaction(status_vector, handle);
-			if (status_vector[1])
-			{
+			if (status_vector[1]) {
 				// If we can't commit - have to roll it back, as
 				// we need to close all outstanding transactions before
 				// we can detach from the database.
@@ -1682,14 +1541,12 @@ static SLONG get_number( const SCHAR* string)
  * Functional description
  *	Convert a string to binary, complaining bitterly if
  *	the string is bum.
- *	CVC: where does it complain? It does return zero, nothing else.
- *	Worse, this function doesn't check for overflow.
+ *  CVC: where does it complain? It does return zero, nothing else.
  **************************************/
 	SCHAR c;
 	SLONG value = 0;
 
-	for (const SCHAR* p = string; c = *p++;)
-	{
+	for (const SCHAR* p = string; c = *p++;) {
 		if (c < '0' || c > '9')
 			return 0;
 		value *= 10;
@@ -1734,8 +1591,7 @@ static gbak_action open_files(const TEXT* file1,
 								  dpb.getBufferLength(),
 								  reinterpret_cast<const char*>(dpb.getBuffer())))
 		{
-			if (sw_replace != IN_SW_BURP_B)
-			{
+			if (sw_replace != IN_SW_BURP_B) {
 				// msg 13 REPLACE specified, but the first file %s is a database
 				BURP_error(13, true, file1);
 				if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
@@ -1743,14 +1599,14 @@ static gbak_action open_files(const TEXT* file1,
 				}
 				return QUIT;
 			}
-			if (tdgbl->gbl_sw_version)
-			{
+			if (tdgbl->gbl_sw_version) {
 				// msg 139 Version(s) for database "%s"
 				BURP_print(139, file1);
 				isc_version(&tdgbl->db_handle, BURP_output_version, (void*) "\t%s\n");
 			}
 			if (sw_verbose)
-				BURP_print(166, file1); // msg 166: readied database %s for backup
+				BURP_print(166, file1);
+				// msg 166: readied database %s for backup
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
 			(status_vector[1] != isc_io_error && status_vector[1] != isc_bad_db_format))
@@ -1774,19 +1630,18 @@ static gbak_action open_files(const TEXT* file1,
 		for (fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next)
 		{
 			// adjust the file size first
-			FB_UINT64 fsize = fil->fil_length;
 			switch (fil->fil_size_code)
 			{
 			case size_n:
 				break;
 			case size_k:
-				fsize *= KBYTE;
+				fil->fil_length *= KBYTE;
 				break;
 			case size_m:
-				fsize *= MBYTE;
+				fil->fil_length *= MBYTE;
 				break;
 			case size_g:
-				fsize *= GBYTE;
+				fil->fil_length *= GBYTE;
 				break;
 			case size_e:
 				BURP_error(262, true, fil->fil_name.c_str());
@@ -1796,11 +1651,6 @@ static gbak_action open_files(const TEXT* file1,
 				fb_assert(FALSE);
 				break;
 			}
-			// CVC: Check for overflow: 4g is already out of bounds.
-			if (fsize > FB_UINT64(MAX_ULONG))
-				BURP_error(262, true, fil->fil_name.c_str());
-
-			fil->fil_length = static_cast<ULONG>(fsize);
 
 			if ((fil->fil_seq = ++tdgbl->action->act_total) >= 2)
 			{
@@ -2019,8 +1869,7 @@ static gbak_action open_files(const TEXT* file1,
 			}
 			tdgbl->action->act_file = tdgbl->gbl_sw_files;
 			tdgbl->file_desc = tdgbl->action->act_file->fil_fd;
-			if ((tdgbl->gbl_sw_files = fil) == NULL)
-			{
+			if ((tdgbl->gbl_sw_files = fil) == NULL) {
 				BURP_error(268, true);
 				// msg 268 database file specification missing
 				return QUIT;
@@ -2060,19 +1909,16 @@ static gbak_action open_files(const TEXT* file1,
 							 dpb.getBufferLength(),
 							 reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
-		if (sw_replace == IN_SW_BURP_C)
-		{
+		if (sw_replace == IN_SW_BURP_C) {
 			if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
 				BURP_print_status(status_vector, true);
 			}
 			BURP_error(14, true, *file2);
 			// msg 14 database %s already exists.  To replace it, use the -R switch
 		}
-		else
-		{
+		else {
 			isc_drop_database(status_vector, &tdgbl->db_handle);
-			if (tdgbl->db_handle)
-			{
+			if (tdgbl->db_handle) {
 				Firebird::makePermanentVector(status_vector);
 				ISC_STATUS_ARRAY status_vector2;
 				if (isc_detach_database(status_vector2, &tdgbl->db_handle)) {
@@ -2088,8 +1934,7 @@ static gbak_action open_files(const TEXT* file1,
 			}
 		}
 	}
-	if (sw_replace == IN_SW_BURP_R && status_vector[1] == isc_adm_task_denied)
-	{
+	if (sw_replace == IN_SW_BURP_R && status_vector[1] == isc_adm_task_denied) {
 		// if we got an error from attach database and we have replace switch set
 		// then look for error from attach returned due to not owner, if we are
 		// not owner then return the error status back up
@@ -2160,7 +2005,7 @@ static void burp_output( const SCHAR* format, ...)
 }
 
 
-static void burp_usage(const Switches& switches)
+static void burp_usage(const in_sw_tab_t* const in_sw_tab)
 {
 /**********************************************
  *
@@ -2180,29 +2025,28 @@ static void burp_usage(const Switches& switches)
 		BURP_msg_put(i, dummy); // usage
 
 	BURP_print(95); // msg 95  legal switches are
-	const Switches::in_sw_tab_t* const base = switches.getTable();
-	for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
 	{
 		if (p->in_sw_msg && p->in_sw_optype == boMain)
 			BURP_msg_put(p->in_sw_msg, sa);
 	}
 
 	BURP_print(323); // backup options are
-	for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
 	{
 		if (p->in_sw_msg && p->in_sw_optype == boBackup)
 			BURP_msg_put(p->in_sw_msg, sa);
 	}
 
 	BURP_print(324); // restore options are
-	for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
 	{
 		if (p->in_sw_msg && p->in_sw_optype == boRestore)
 			BURP_msg_put(p->in_sw_msg, sa);
 	}
 
 	BURP_print(325); // general options are
-	for (const Switches::in_sw_tab_t* p = base; p->in_sw; ++p)
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
 	{
 		if (p->in_sw_msg && p->in_sw_optype == boGeneral)
 			BURP_msg_put(p->in_sw_msg, sa);
@@ -2225,7 +2069,6 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
  *	restoring to multiple files
  *
  **********************************************/
-	const ULONG overflow = MAX_ULONG / 10 - 1;
 	UCHAR c;
 	ULONG size = 0;
 	bool digit = false;
@@ -2233,24 +2076,15 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
 	file->fil_size_code = size_n;
 	for (const SCHAR *num = string; c = *num++;)
 	{
-		if (isdigit(c))
-		{
-			int val = c - '0';
-			if (size >= overflow)
-			{
-				file->fil_size_code = size_e;
-				size = 0;
-				break;
-			}
-			size = size * 10 + val;
+		if (isdigit(c)) {
+			size = size * 10 + (c - '0');
 			digit = true;
 		}
 		else
 		{
 			if (isalpha(c))
 			{
-				if (!digit)
-				{
+				if (!digit) {
 					file->fil_size_code = size_e;
 					size = 0;
 					break;
@@ -2272,8 +2106,7 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
 					size = 0;
 					break;
 				}
-				if (*num)
-				{
+				if (*num) {
 					file->fil_size_code = size_e;
 					size = 0;
 				}

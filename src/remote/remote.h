@@ -36,6 +36,7 @@
 #include "../jrd/ThreadStart.h"
 #include "../common/thd.h"
 #include "../common/classes/objects_array.h"
+#include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/RefMutex.h"
@@ -90,14 +91,19 @@ struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 {
 	USHORT			rdb_id;
 	USHORT			rdb_flags;
-	FB_API_HANDLE	rdb_handle;			// database handle
-	rem_port*		rdb_port;			// communication port
-	struct Rtr*		rdb_transactions;	// linked list of transactions
-	struct Rrq*		rdb_requests;		// compiled requests
-	struct Rvnt*	rdb_events;			// known events
-	struct Rsr*		rdb_sql_requests;	// SQL requests
-	ISC_STATUS*		rdb_status_vector;
-	PACKET			rdb_packet;			// Communication structure
+	FB_API_HANDLE	rdb_handle;				// database handle
+	rem_port*		rdb_port;				// communication port
+	struct Rtr*		rdb_transactions;		// linked list of transactions
+	struct Rrq*		rdb_requests;			// compiled requests
+	struct Rvnt*	rdb_events;				// known events
+	struct Rsr*		rdb_sql_requests;		// SQL requests
+	PACKET			rdb_packet;				// Communication structure
+private:
+	ISC_STATUS*		rdb_status_vector;		// Normally used status vector
+	ISC_STATUS*		rdb_async_status_vector;	// status vector for async thread
+	FB_THREAD_ID	rdb_async_thread_id;		// Id of async thread (when active)
+public:
+	Firebird::Mutex	rdb_async_lock;			// Sync to avoid 2 async calls at once
 
 public:
 	// Values for rdb_flags
@@ -109,11 +115,30 @@ public:
 	Rdb() :
 		rdb_id(0), rdb_flags(0), rdb_handle(0),
 		rdb_port(0), rdb_transactions(0), rdb_requests(0),
-		rdb_events(0), rdb_sql_requests(0), rdb_status_vector(0)
+		rdb_events(0), rdb_sql_requests(0), rdb_status_vector(0),
+		rdb_async_status_vector(0), rdb_async_thread_id(0)
 	{
 	}
 
 	static ISC_STATUS badHandle() { return isc_bad_db_handle; }
+
+	// This 2 functions assume rdb_async_lock to be locked 
+	void set_async_vector(ISC_STATUS* userStatus) throw();
+	void reset_async_vector() throw();
+
+	ISC_STATUS* get_status_vector() throw();
+	void set_status_vector(ISC_STATUS* userStatus) throw()
+	{
+		rdb_status_vector = userStatus;
+	}
+	void status_assert(ISC_STATUS* userStatus)
+	{
+		fb_assert(rdb_status_vector == userStatus);
+	}
+	void save_status_vector(ISC_STATUS*& save) throw()
+	{
+		save = rdb_status_vector;
+	}
 };
 
 
@@ -232,13 +257,21 @@ public:
 struct RMessage : public Firebird::GlobalStorage
 {
 	RMessage*	msg_next;			// Next available message
+#ifdef SCROLLABLE_CURSORS
+	RMessage*	msg_prior;			// Next available message
+	ULONG		msg_absolute; 		// Absolute record number in cursor result set
+#endif
 	USHORT		msg_number;			// Message number
 	UCHAR*		msg_address;		// Address of message
 	UCharArrayAutoPtr msg_buffer;	// Allocated message
 
 public:
 	explicit RMessage(size_t rpt) :
-		msg_next(0), msg_number(0), msg_address(0), msg_buffer(FB_NEW(getPool()) UCHAR[rpt])
+		msg_next(0),
+#ifdef SCROLLABLE_CURSORS
+		msg_prior(0), msg_absolute(0),
+#endif
+		msg_number(0), msg_address(0), msg_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		memset(msg_buffer, 0, rpt);
 	}
@@ -280,6 +313,11 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 		rem_fmt*	rrq_format;		// format for this message
 		RMessage*	rrq_message; 	// beginning or end of cache, depending on whether it is client or server
 		RMessage*	rrq_xdr;		// point at which cache is read or written by xdr
+#ifdef SCROLLABLE_CURSORS
+		RMessage*	rrq_last;		// last message returned
+		ULONG		rrq_absolute;	// current offset in result set for record being read into cache
+		USHORT		rrq_flags;
+#endif
 		USHORT		rrq_msgs_waiting;	// count of full rrq_messages
 		USHORT		rrq_rows_pending;	// How many rows in waiting
 		USHORT		rrq_reorder_level;	// Reorder when rows_pending < this level
@@ -287,6 +325,15 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 
 	};
 	Firebird::Array<rrq_repeat> rrq_rpt;
+
+public:
+#ifdef SCROLLABLE_CURSORS
+	enum {
+		BACKWARD = 1,			// the cache was created in the backward direction
+		ABSOLUTE_BACKWARD = 2,	// rrq_absolute is measured from the end of the stream
+		LAST_BACKWARD = 4		// last time, the next level up asked for us to scroll in the backward direction
+	};
+#endif
 
 public:
 	explicit Rrq(size_t rpt) :
@@ -507,12 +554,23 @@ struct rem_que_packet
 
 typedef Firebird::Array<rem_que_packet> PacketQueue;
 
-class ServerAuthBase
+#ifdef TRUSTED_AUTH
+// delayed authentication block for trusted auth callback
+class ServerAuth : public Firebird::GlobalStorage
 {
 public:
-	virtual ~ServerAuthBase();
-	virtual bool authenticate(rem_port* port, PACKET* send, const cstring* data) = 0;
+	typedef void Part2(rem_port*, P_OP, const char* fName, int fLen, const UCHAR* pb, int pbLen, PACKET*);
+	Firebird::PathName fileName;
+	Firebird::HalfStaticArray<UCHAR, 128> clumplet;
+	AuthSspi* authSspi;
+	Part2* part2;
+	P_OP operation;
+
+	ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, Part2* p2, P_OP op);
+	~ServerAuth();
 };
+#endif // TRUSTED_AUTH
+
 
 // port_flags
 const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic
@@ -618,7 +676,9 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	size_t			port_qoffset;			// current packet in the queue
 #endif
-	ServerAuthBase*		port_auth;
+#ifdef TRUSTED_AUTH
+	ServerAuth*		port_trusted_auth;
+#endif
 	UCharArrayAutoPtr	port_buffer;
 
 public:
@@ -649,7 +709,10 @@ public:
 #ifdef REM_SERVER
 		port_queue(getPool()), port_qoffset(0),
 #endif
-		port_auth(0), port_buffer(FB_NEW(getPool()) UCHAR[rpt])
+#ifdef TRUSTED_AUTH
+		port_trusted_auth(0),
+#endif
+		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		addRef();
 		memset (&port_linger, 0, sizeof port_linger);

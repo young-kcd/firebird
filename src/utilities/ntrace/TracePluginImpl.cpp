@@ -35,14 +35,12 @@
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/os/path_utils.h"
-#include "../../jrd/inf_pub.h"
-#include "../../dsql/sqlda_pub.h"
 
 
 using namespace Firebird;
 using namespace Jrd;
 
-static const char* const DEFAULT_LOG_NAME = "default_trace.log";
+static const char* DEFAULT_LOG_NAME = "default_trace.log";
 
 #ifdef WIN_NT
 #define NEWLINE "\r\n"
@@ -141,8 +139,13 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 
 	IntlUtil::initUtf8Charset(&cs);
 
+	string collAttributes("ICU-VERSION=");
+	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	IntlUtil::setupIcuAttributes(&cs, collAttributes, "", collAttributes);
+
 	UCharBuffer collAttributesBuffer;
-	IntlUtil::getDefaultCollationAttributes(collAttributesBuffer, cs);
+	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
+		collAttributes.length());
 
 	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
 		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
@@ -1638,7 +1641,7 @@ bool TracePluginImpl::checkServiceFilter(TraceService* service, bool started)
 {
 	ReadLockGuard lock(servicesLock);
 
-	ServiceData* data = NULL;
+	ServiceData *data = NULL;
 	ServicesTree::Accessor accessor(&services);
 	if (accessor.locate(service->getServiceID()))
 		data = &accessor.current();

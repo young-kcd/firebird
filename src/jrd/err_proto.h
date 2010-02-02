@@ -32,7 +32,7 @@
 
 namespace Jrd {
 
-// Index error types
+/* Index error types */
 
 enum idx_e {
 	idx_e_ok = 0,
@@ -54,6 +54,7 @@ void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
 void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT, const TEXT* = NULL);
 void	ERR_error(int);
+void	ERR_error_msg(const TEXT*);
 void	ERR_post(const Firebird::Arg::StatusVector& v);
 void	ERR_post_nothrow(const Firebird::Arg::StatusVector& v);
 void	ERR_punt();
@@ -64,4 +65,4 @@ void	ERR_make_permanent(Firebird::Arg::StatusVector& v);
 void	ERR_append_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 void	ERR_build_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 
-#endif // JRD_ERR_PROTO_H
+#endif /* JRD_ERR_PROTO_H */

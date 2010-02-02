@@ -637,7 +637,7 @@ private:
 			CharType c = *control++;
 			if (*control == *(CharType*) obj->getCanonicalChar(CHAR_GDML_SUBSTITUTE))
 			{
-				// Note: don't allow substitution characters larger than vector
+				/* Note: don't allow substitution characters larger than vector */
 				CharType** const end_vector = vector + (((int) c < FB_NELEM(vector)) ? c : 0);
 				while (v <= end_vector)
 					*v++ = 0;

@@ -72,15 +72,31 @@ static const UCHAR blr_bpb[] =
 };
 
 static void convert_dtype(dsql_fld*, SSHORT);
+static void free_procedure(dsql_prc*);
 static void free_relation(dsql_rel*);
+static void insert_symbol(dsql_sym*);
+static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, const SYM_TYPE, USHORT = 0);
+static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0);
 
 #define DSQL_REQUEST(id) dbb->dbb_database->dbb_internal[id]
 
-namespace
-{
-	inline void validateTransaction(const jrd_tra* transaction)
+namespace {
+	class MutexHolder : public Database::CheckoutLockGuard
 	{
-		if (!transaction->checkHandle())
+	public:
+		explicit MutexHolder(dsql_req* request)
+			: CheckoutLockGuard(request->req_dbb->dbb_database, request->req_dbb->dbb_cache_mutex)
+		{}
+
+	private:
+		// copying is prohibited
+		MutexHolder(const MutexHolder&);
+		MutexHolder& operator=(const MutexHolder&);
+	};
+
+	inline void validateTransaction(const dsql_req* request)
+	{
+		if (!request->req_transaction->checkHandle())
 		{
 			ERR_post(Arg::Gds(isc_bad_trans_handle));
 		}
@@ -88,7 +104,7 @@ namespace
 }
 
 
-void METD_drop_charset(jrd_tra* transaction, const MetaName& metaName)
+void METD_drop_charset(dsql_req* request, const MetaName& name)
 {
 /**************************************
  *
@@ -104,21 +120,24 @@ void METD_drop_charset(jrd_tra* transaction, const MetaName& metaName)
  *  accessing it.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	dsql_intlsym* charSet;
+	MutexHolder holder(request);
 
-	if (dbb->dbb_charsets.get(metaName, charSet))
+	// If the symbol wasn't defined, we've got nothing to do
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name.length(), name.c_str(),
+									 SYM_intlsym_charset, 0);
+
+	if (symbol)
 	{
-		MET_dsql_cache_use(tdbb, SYM_intlsym_charset, metaName);
-		charSet->intlsym_flags |= INTLSYM_dropped;
-		dbb->dbb_charsets.remove(metaName);
-		dbb->dbb_charsets_by_id.remove(charSet->intlsym_charset_id);
+		dsql_intlsym* intlsym = (dsql_intlsym*) symbol->sym_object;
+		intlsym->intlsym_flags |= INTLSYM_dropped;
 	}
+
+	// mark other potential candidates as maybe dropped
+	HSHD_set_flag(request->req_dbb, name.c_str(), name.length(), SYM_intlsym_charset, INTLSYM_dropped);
 }
 
 
-void METD_drop_collation(jrd_tra* transaction, const dsql_str* name)
+void METD_drop_collation(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -136,22 +155,24 @@ void METD_drop_collation(jrd_tra* transaction, const dsql_str* name)
  *  accessing it.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	MutexHolder holder(request);
 
-	MetaName metaName(name->str_data, name->str_length);
-	dsql_intlsym* collation;
+	// If the symbol wasn't defined, we've got nothing to do
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, 0);
 
-	if (dbb->dbb_collations.get(metaName, collation))
+	if (symbol)
 	{
-		MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName);
-		collation->intlsym_flags |= INTLSYM_dropped;
-		dbb->dbb_collations.remove(metaName);
+		dsql_intlsym* intlsym = (dsql_intlsym*) symbol->sym_object;
+		intlsym->intlsym_flags |= INTLSYM_dropped;
 	}
+
+	// mark other potential candidates as maybe dropped
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length,
+				  SYM_intlsym_collation, INTLSYM_dropped);
 }
 
 
-void METD_drop_function(jrd_tra* transaction, const dsql_str* name, const MetaName& packageName)
+void METD_drop_function(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -169,23 +190,25 @@ void METD_drop_function(jrd_tra* transaction, const dsql_str* name, const MetaNa
  *  accessing it.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	MutexHolder holder(request);
 
-	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
-	dsql_udf* function;
+	// If the symbol wasn't defined, we've got nothing to do
 
-	if (dbb->dbb_functions.get(metaName, function))
-	{
-		MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.package);
-		function->udf_flags |= UDF_dropped;
-		dbb->dbb_functions.remove(metaName);
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
+
+	if (symbol) {
+		dsql_udf* userFunc = (dsql_udf*) symbol->sym_object;
+		userFunc->udf_flags |= UDF_dropped;
 	}
+
+	// mark other potential candidates as maybe dropped
+
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_udf, UDF_dropped);
 
 }
 
 
-void METD_drop_procedure(jrd_tra* transaction, const dsql_str* name, const MetaName& packageName)
+void METD_drop_procedure(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -203,22 +226,25 @@ void METD_drop_procedure(jrd_tra* transaction, const dsql_str* name, const MetaN
  *  accessing it.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	MutexHolder holder(request);
 
-	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
-	dsql_prc* procedure;
+	// If the symbol wasn't defined, we've got nothing to do
 
-	if (dbb->dbb_procedures.get(metaName, procedure))
-	{
-		MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.package);
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
+
+	if (symbol) {
+		dsql_prc* procedure = (dsql_prc*) symbol->sym_object;
 		procedure->prc_flags |= PRC_dropped;
-		dbb->dbb_procedures.remove(metaName);
 	}
+
+	// mark other potential candidates as maybe dropped
+
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_procedure, PRC_dropped);
+
 }
 
 
-void METD_drop_relation(jrd_tra* transaction, const dsql_str* name)
+void METD_drop_relation(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -236,22 +262,27 @@ void METD_drop_relation(jrd_tra* transaction, const dsql_str* name)
  *      accessing it.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	MutexHolder holder(request);
 
-	MetaName metaName(name->str_data, name->str_length);
-	dsql_rel* relation;
+	// If the symbol wasn't defined, we've got nothing to do
 
-	if (dbb->dbb_relations.get(metaName, relation))
-	{
-		MET_dsql_cache_use(tdbb, SYM_relation, metaName);
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
+
+	if (symbol) {
+		dsql_rel* relation = (dsql_rel*) symbol->sym_object;
 		relation->rel_flags |= REL_dropped;
-		dbb->dbb_relations.remove(metaName);
 	}
+
+	// mark other potential candidates as maybe dropped
+
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_relation, REL_dropped);
+
 }
 
 
-dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USHORT charset_id)
+dsql_intlsym* METD_get_collation(dsql_req* request,
+								 const dsql_str* name,
+								 USHORT charset_id)
 {
 /**************************************
  *
@@ -264,31 +295,26 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
  *  If it doesn't exist, return NULL.
  *
  **************************************/
+	MutexHolder holder(request);
+
 	thread_db* tdbb = JRD_get_thread_data();
-
-	validateTransaction(transaction);
-
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	MetaName metaName(name->str_data, name->str_length);
 
 	// Start by seeing if symbol is already defined
 
-	dsql_intlsym* symbol;
-	if (dbb->dbb_collations.get(metaName, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped))
-	{
-		if (MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName))
-			symbol->intlsym_flags |= INTLSYM_dropped;
-		else
-			return symbol;
-	}
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_intlsym_collation, charset_id);
+	if (symbol)
+		return (dsql_intlsym*) symbol->sym_object;
 
 	// Now see if it is in the database
 
-	symbol = NULL;
+	validateTransaction(request);
+
+	dsql_dbb* dbb = request->req_dbb;
+	dsql_intlsym* iname = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_collation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		WITH X.RDB$COLLATION_NAME EQ name->str_data AND
@@ -297,14 +323,14 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
 		if (!DSQL_REQUEST(irq_collation))
 			DSQL_REQUEST(irq_collation) = handle;
 
-		symbol = FB_NEW(dbb->dbb_pool) dsql_intlsym(dbb->dbb_pool);
-		symbol->intlsym_name = metaName;
-		symbol->intlsym_flags = 0;
-		symbol->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
-		symbol->intlsym_collate_id = X.RDB$COLLATION_ID;
-		symbol->intlsym_ttype =
-			INTL_CS_COLL_TO_TTYPE(symbol->intlsym_charset_id, symbol->intlsym_collate_id);
-		symbol->intlsym_bytes_per_char =
+		iname = FB_NEW_RPT(dbb->dbb_pool, name->str_length) dsql_intlsym;
+		strcpy(iname->intlsym_name, name->str_data);
+		iname->intlsym_flags = 0;
+		iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
+		iname->intlsym_collate_id = X.RDB$COLLATION_ID;
+		iname->intlsym_ttype =
+			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id, iname->intlsym_collate_id);
+		iname->intlsym_bytes_per_char =
 			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 
 	END_FOR
@@ -312,18 +338,29 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
 	if (!DSQL_REQUEST(irq_collation))
 		DSQL_REQUEST(irq_collation) = handle;
 
-	if (!symbol)
+	if (!iname)
 		return NULL;
 
-	dbb->dbb_collations.put(metaName, symbol);
-	MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName);
+	// Store in the symbol table
 
-	return symbol;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
+	symbol->sym_object = iname;
+	symbol->sym_string = iname->intlsym_name;
+	symbol->sym_length = name->str_length;
+	symbol->sym_type = SYM_intlsym_collation;
+	symbol->sym_dbb = dbb;
+	insert_symbol(symbol);
+
+	return iname;
 }
 
 
-USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
-	const char* for_col_name, bool* has_default, UCHAR* buffer, USHORT buff_length)
+USHORT METD_get_col_default(dsql_req* request,
+							const char* for_rel_name,
+							const char* for_col_name,
+							bool* has_default,
+							UCHAR* buffer,
+							USHORT buff_length)
 {
 /*************************************************************
  *
@@ -344,9 +381,10 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
  **************************************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(request);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
+
 	bid* blob_id;
 
 	USHORT result = 0;
@@ -356,7 +394,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_col_default, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		RFL IN RDB$RELATION_FIELDS CROSS
 		FLD IN RDB$FIELDS WITH
 		RFL.RDB$RELATION_NAME EQ for_rel_name AND
@@ -366,13 +404,11 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 		if (!DSQL_REQUEST(irq_col_default))
 			DSQL_REQUEST(irq_col_default) = handle;
 
-		if (!RFL.RDB$DEFAULT_VALUE.NULL)
-		{
+		if (!RFL.RDB$DEFAULT_VALUE.NULL) {
 			blob_id = &RFL.RDB$DEFAULT_VALUE;
 			*has_default = true;
 		}
-		else if (!FLD.RDB$DEFAULT_VALUE.NULL)
-		{
+		else if (!FLD.RDB$DEFAULT_VALUE.NULL) {
 			blob_id = &FLD.RDB$DEFAULT_VALUE;
 			*has_default = true;
 		}
@@ -381,7 +417,8 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 
 		if (*has_default)
 		{
-			blob_handle = BLB_open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
+			blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
+									sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assuming here that the buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
@@ -421,9 +458,8 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
 			fb_assert(buffer[1] == blr_literal);
 		}
-		else
-		{
-			if (dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
+		else {
+			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
 				buffer[0] = blr_version4;
@@ -440,7 +476,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 }
 
 
-dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* name) // UTF-8
+dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* name) // UTF-8
 {
 /**************************************
  *
@@ -453,31 +489,26 @@ dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* 
  *  If it doesn't exist, return NULL.
  *
  **************************************/
+	MutexHolder holder(request);
+
 	thread_db* tdbb = JRD_get_thread_data();
-
-	validateTransaction(transaction);
-
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	MetaName metaName(name, length);
 
 	// Start by seeing if symbol is already defined
 
-	dsql_intlsym* symbol;
-	if (dbb->dbb_charsets.get(metaName, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped))
-	{
-		if (MET_dsql_cache_use(tdbb, SYM_intlsym_charset, metaName))
-			symbol->intlsym_flags |= INTLSYM_dropped;
-		else
-			return symbol;
-	}
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, length, name, SYM_intlsym_charset);
+	if (symbol)
+		return (dsql_intlsym*) symbol->sym_object;
 
 	// Now see if it is in the database
 
-	symbol = NULL;
+	validateTransaction(request);
+
+	dsql_dbb* dbb = request->req_dbb;
+	dsql_intlsym* iname = NULL;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_charset, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		CROSS Z IN RDB$TYPES
@@ -489,14 +520,14 @@ dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* 
 		if (!DSQL_REQUEST(irq_charset))
 			DSQL_REQUEST(irq_charset) = handle;
 
-		symbol = FB_NEW(dbb->dbb_pool) dsql_intlsym(dbb->dbb_pool);
-		symbol->intlsym_name = metaName;
-		symbol->intlsym_flags = 0;
-		symbol->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
-		symbol->intlsym_collate_id = X.RDB$COLLATION_ID;
-		symbol->intlsym_ttype =
-			INTL_CS_COLL_TO_TTYPE(symbol->intlsym_charset_id, symbol->intlsym_collate_id);
-		symbol->intlsym_bytes_per_char =
+		iname = FB_NEW_RPT(dbb->dbb_pool, length) dsql_intlsym;
+		strcpy(iname->intlsym_name, name);
+		iname->intlsym_flags = 0;
+		iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
+		iname->intlsym_collate_id = X.RDB$COLLATION_ID;
+		iname->intlsym_ttype =
+			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id, iname->intlsym_collate_id);
+		iname->intlsym_bytes_per_char =
 			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 
 	END_FOR
@@ -504,18 +535,26 @@ dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* 
 	if (!DSQL_REQUEST(irq_charset))
 		DSQL_REQUEST(irq_charset) = handle;
 
-	if (!symbol)
+	if (!iname)
 		return NULL;
 
-	dbb->dbb_charsets.put(metaName, symbol);
-	dbb->dbb_charsets_by_id.put(symbol->intlsym_charset_id, symbol);
-	MET_dsql_cache_use(tdbb, SYM_intlsym_charset, metaName);
+	// Store in the symbol table
 
-	return symbol;
+	symbol = iname->intlsym_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
+	symbol->sym_object = iname;
+	symbol->sym_string = iname->intlsym_name;
+	symbol->sym_length = length;
+	symbol->sym_type = SYM_intlsym_charset;
+	symbol->sym_dbb = dbb;
+	insert_symbol(symbol);
+
+	dbb->dbb_charsets_by_id.add(iname);
+
+	return iname;
 }
 
 
-USHORT METD_get_charset_bpc(jrd_tra* transaction, SSHORT charset_id)
+USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 {
 /**************************************
  *
@@ -533,25 +572,28 @@ USHORT METD_get_charset_bpc(jrd_tra* transaction, SSHORT charset_id)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 
 	if (charset_id == CS_dynamic)
-		charset_id = tdbb->getCharSet();
+		charset_id = tdbb->getAttachment()->att_charset;
 
-	dsql_intlsym* symbol = NULL;
-	if (!dbb->dbb_charsets_by_id.get(charset_id, symbol))
-	{
-		const MetaName cs_name = METD_get_charset_name(transaction, charset_id);
-		symbol = METD_get_charset(transaction, cs_name.length(), cs_name.c_str());
+	dsql_intlsym* cs_sym = 0;
+	size_t pos = 0;
+	if (dbb->dbb_charsets_by_id.find(charset_id, pos)) {
+		cs_sym = dbb->dbb_charsets_by_id[pos];
+	}
+	else {
+		const MetaName cs_name = METD_get_charset_name(request, charset_id);
+		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
 	}
 
-	fb_assert(symbol);
+	fb_assert(cs_sym);
 
-	return symbol ? symbol->intlsym_bytes_per_char : 0;
+	return cs_sym ? cs_sym->intlsym_bytes_per_char : 0;
 }
 
 
-MetaName METD_get_charset_name(jrd_tra* transaction, SSHORT charset_id)
+MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 {
 /**************************************
  *
@@ -568,22 +610,24 @@ MetaName METD_get_charset_name(jrd_tra* transaction, SSHORT charset_id)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	dsql_dbb* dbb = request->req_dbb;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	if (charset_id == CS_dynamic)
+		charset_id = tdbb->getAttachment()->att_charset;
 
-    if (charset_id == CS_dynamic)
-		charset_id = tdbb->getCharSet();
+	size_t pos = 0;
+	if (dbb->dbb_charsets_by_id.find(charset_id, pos))
+	{
+		return dbb->dbb_charsets_by_id[pos]->intlsym_name;
+	}
 
-	dsql_intlsym* sym = NULL;
-	if (dbb->dbb_charsets_by_id.get(charset_id, sym))
-		return sym->intlsym_name;
+	validateTransaction(request);
 
 	MetaName name;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_cs_name, IRQ_REQUESTS);
 
-	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		Y IN RDB$CHARACTER_SETS
 		WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
 
@@ -598,13 +642,13 @@ MetaName METD_get_charset_name(jrd_tra* transaction, SSHORT charset_id)
 		DSQL_REQUEST(irq_cs_name) = handle;
 
 	// put new charset into hash table if needed
-	METD_get_charset(transaction, name.length(), name.c_str());
+	METD_get_charset(request, name.length(), name.c_str());
 
 	return name;
 }
 
 
-dsql_str* METD_get_default_charset(jrd_tra* transaction)
+dsql_str* METD_get_default_charset(dsql_req* request)
 {
 /**************************************
  *
@@ -618,9 +662,7 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
-
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 	if (dbb->dbb_no_charset)
 		return NULL;
 
@@ -629,9 +671,11 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
 
 	// Now see if it is in the database
 
+	validateTransaction(request);
+
 	jrd_req* handle = CMP_find_request(tdbb, irq_default_cs, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		FIRST 1 DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING;
 
@@ -658,7 +702,7 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
 }
 
 
-bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) // UTF-8
+bool METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UTF-8
 {
 /**************************************
  *
@@ -672,15 +716,15 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(request);
 
 	bool found = false;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name
 
 		if (!DSQL_REQUEST(irq_domain))
@@ -723,8 +767,11 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
 }
 
 
-USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bool* has_default,
-	UCHAR* buffer, USHORT buff_length)
+USHORT METD_get_domain_default(dsql_req* request,
+							   const TEXT* domain_name,
+							   bool* has_default,
+							   UCHAR* buffer,
+							   USHORT buff_length)
 {
 /*************************************************************
  *
@@ -738,33 +785,32 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
  **************************************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(request);
 
 	*has_default = false;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 	USHORT result = 0;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain_2, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
 
 		if (!DSQL_REQUEST(irq_domain_2))
 			DSQL_REQUEST(irq_domain_2) = handle;
 
 		bid* blob_id;
-		if (!FLD.RDB$DEFAULT_VALUE.NULL)
-		{
+		if (!FLD.RDB$DEFAULT_VALUE.NULL) {
 			blob_id = &FLD.RDB$DEFAULT_VALUE;
 			*has_default = true;
 		}
 		else
 			*has_default = false;
 
-		if (*has_default)
-		{
-			blb* blob_handle = BLB_open2(tdbb, transaction, blob_id, sizeof(blr_bpb), blr_bpb, true);
+		if (*has_default) {
+			blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
+										 sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assume buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
@@ -804,9 +850,8 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
 			fb_assert(buffer[1] == blr_literal);
 		}
-		else
-		{
-			if (dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
+		else {
+			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
 				buffer[0] = blr_version4;
@@ -823,7 +868,7 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 }
 
 
-bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
+bool METD_get_exception(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -837,14 +882,14 @@ bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(request);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 	bool found = false;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_exception, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$EXCEPTIONS WITH
 		X.RDB$EXCEPTION_NAME EQ name->str_data;
 
@@ -862,8 +907,7 @@ bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
 }
 
 
-dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
-	const dsql_str* name, const dsql_str* package)
+dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
@@ -878,222 +922,123 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
-
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	QualifiedName metaName(MetaName(name->str_data, name->str_length),
-		(package ? MetaName(package->str_data, package->str_length) : NULL));
-
-	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.package.isEmpty();
-	if (maybeUnqualified)
-		metaName.package = dsqlScratch->package;
+	MutexHolder holder(request);
 
 	// Start by seeing if symbol is already defined
 
-	dsql_udf* userFunc = NULL;
-	if (dbb->dbb_functions.get(metaName, userFunc))
-	{
-		if (userFunc->udf_private && metaName.package != dsqlScratch->package)
-			return NULL;
-
-		if (MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.package))
-			userFunc->udf_flags |= UDF_dropped;
-
-		return userFunc;
-	}
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
+	if (symbol)
+		return (dsql_udf*) symbol->sym_object;
 
 	// Now see if it is in the database
 
+	validateTransaction(request);
+
+	dsql_dbb* dbb = request->req_dbb;
+	dsql_udf* userFunc = NULL;
 	USHORT return_arg = 0;
 
-	while (!userFunc)
-	{
-		jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
+	jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
-			X IN RDB$FUNCTIONS WITH
-			X.RDB$FUNCTION_NAME EQ name->str_data AND
-			X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
-
-			if (!DSQL_REQUEST(irq_function))
-				DSQL_REQUEST(irq_function) = handle1;
-
-			userFunc = FB_NEW(dbb->dbb_pool) dsql_udf(dbb->dbb_pool);
-			userFunc->udf_name = metaName;
-			userFunc->udf_private = !X.RDB$PRIVATE_FLAG.NULL && X.RDB$PRIVATE_FLAG != 0;
-
-			return_arg = X.RDB$RETURN_ARGUMENT;
-
-		END_FOR
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
+		X IN RDB$FUNCTIONS WITH
+		X.RDB$FUNCTION_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_function))
 			DSQL_REQUEST(irq_function) = handle1;
 
-		if (!userFunc)
-		{
-			if (maybeUnqualified)
-			{
-				maybeUnqualified = false;
-				metaName.package = "";
-			}
-			else
-				return NULL;
-		}
+		userFunc = FB_NEW(dbb->dbb_pool) dsql_udf(dbb->dbb_pool);
+		// Moved below as still can't say for sure it will be stored.
+		// Following the same logic for MET_get_procedure and MET_get_relation
+		// userFunc->udf_next = dbb->dbb_functions;
+		// dbb->dbb_functions = userFunc;
+
+		userFunc->udf_name = name->str_data;
+		return_arg = X.RDB$RETURN_ARGUMENT;
+
+	END_FOR
+
+	if (!DSQL_REQUEST(irq_function))
+		DSQL_REQUEST(irq_function) = handle1;
+
+	if (!userFunc) {
+		return NULL;
 	}
+
+	// Note: The following two requests differ in the fields which are
+	// new since ODS7 (DBB_v3 flag).  One of the two requests
+	// here will be cached in dbb_internal[ird_func_return],
+	// the one that is appropriate for the database we are
+	// working against.
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_func_return, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
-		X.RDB$FUNCTION_NAME EQ name->str_data AND
-		X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
+		X.RDB$FUNCTION_NAME EQ name->str_data
 		SORTED BY X.RDB$ARGUMENT_POSITION
 
 		if (!DSQL_REQUEST(irq_func_return))
 			DSQL_REQUEST(irq_func_return) = handle2;
 
-		if (!X.RDB$FIELD_SOURCE.NULL)
-		{
-			jrd_req* handle3 = CMP_find_request(tdbb, irq_func_ret_fld, IRQ_REQUESTS);
+		if (X.RDB$ARGUMENT_POSITION == return_arg) {
+			userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+			userFunc->udf_scale = X.RDB$FIELD_SCALE;
 
-			FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE transaction)
-				F IN RDB$FIELDS WITH
-				F.RDB$FIELD_NAME EQ X.RDB$FIELD_SOURCE
-
-				if (!DSQL_REQUEST(irq_func_ret_fld))
-					DSQL_REQUEST(irq_func_ret_fld) = handle3;
-
-				if (X.RDB$ARGUMENT_POSITION == return_arg)
-				{
-					userFunc->udf_dtype = (F.RDB$FIELD_TYPE != blr_blob) ?
-						gds_cvt_blr_dtype[F.RDB$FIELD_TYPE] : dtype_blob;
-					userFunc->udf_scale = F.RDB$FIELD_SCALE;
-
-					if (!F.RDB$FIELD_SUB_TYPE.NULL) {
-						userFunc->udf_sub_type = F.RDB$FIELD_SUB_TYPE;
-					}
-					else {
-						userFunc->udf_sub_type = 0;
-					}
-					// CVC: We are overcoming a bug in ddl.cpp:put_field()
-					// when any field is defined: the length is not given for blobs.
-					if (F.RDB$FIELD_TYPE == blr_blob)
-						userFunc->udf_length = sizeof(ISC_QUAD);
-					else
-						userFunc->udf_length = F.RDB$FIELD_LENGTH;
-
-					if (!F.RDB$CHARACTER_SET_ID.NULL) {
-						userFunc->udf_character_set_id = F.RDB$CHARACTER_SET_ID;
-					}
-				}
-				else
-				{
-					DSC d;
-					d.dsc_dtype = (F.RDB$FIELD_TYPE != blr_blob) ?
-						gds_cvt_blr_dtype[F.RDB$FIELD_TYPE] : dtype_blob;
-					// dimitr: adjust the UDF arguments for CSTRING
-					if (d.dsc_dtype == dtype_cstring) {
-						d.dsc_dtype = dtype_text;
-					}
-					d.dsc_scale = F.RDB$FIELD_SCALE;
-					if (!F.RDB$FIELD_SUB_TYPE.NULL) {
-						d.dsc_sub_type = F.RDB$FIELD_SUB_TYPE;
-					}
-					else {
-						d.dsc_sub_type = 0;
-					}
-					d.dsc_length = F.RDB$FIELD_LENGTH;
-					if (d.dsc_dtype == dtype_varying) {
-						d.dsc_length += sizeof(USHORT);
-					}
-					d.dsc_address = NULL;
-
-					if (!F.RDB$CHARACTER_SET_ID.NULL)
-					{
-						if (d.dsc_dtype != dtype_blob) {
-							d.dsc_ttype() = F.RDB$CHARACTER_SET_ID;
-						}
-						else {
-							d.dsc_scale = F.RDB$CHARACTER_SET_ID;
-						}
-					}
-
-					if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
-					{
-						d.dsc_flags = DSC_nullable;
-					}
-
-					userFunc->udf_arguments.add(d);
-				}
-			END_FOR
-
-			if (!DSQL_REQUEST(irq_func_ret_fld))
-				DSQL_REQUEST(irq_func_ret_fld) = handle3;
-		}
-		else
-		{
-			if (X.RDB$ARGUMENT_POSITION == return_arg)
-			{
-				userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-					gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-				userFunc->udf_scale = X.RDB$FIELD_SCALE;
-
-				if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-					userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-				}
-				else {
-					userFunc->udf_sub_type = 0;
-				}
-				// CVC: We are overcoming a bug in ddl.c:put_field()
-				// when any field is defined: the length is not given for blobs.
-				if (X.RDB$FIELD_TYPE == blr_blob)
-					userFunc->udf_length = sizeof(ISC_QUAD);
-				else
-					userFunc->udf_length = X.RDB$FIELD_LENGTH;
-
-				if (!X.RDB$CHARACTER_SET_ID.NULL) {
-					userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
-				}
+			if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+				userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
 			}
+			else {
+				userFunc->udf_sub_type = 0;
+			}
+			// CVC: We are overcoming a bug in ddl.c:put_field()
+			// when any field is defined: the length is not given for blobs.
+			if (X.RDB$FIELD_TYPE == blr_blob)
+				userFunc->udf_length = sizeof(ISC_QUAD);
 			else
-			{
-				DSC d;
-				d.dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-					gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-				// dimitr: adjust the UDF arguments for CSTRING
-				if (d.dsc_dtype == dtype_cstring) {
-					d.dsc_dtype = dtype_text;
-				}
-				d.dsc_scale = X.RDB$FIELD_SCALE;
-				if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-					d.dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
+				userFunc->udf_length = X.RDB$FIELD_LENGTH;
+
+			if (!X.RDB$CHARACTER_SET_ID.NULL) {
+				userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
+			}
+		}
+		else {
+			DSC d;
+			d.dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+			// dimitr: adjust the UDF arguments for CSTRING
+			if (d.dsc_dtype == dtype_cstring) {
+				d.dsc_dtype = dtype_text;
+			}
+			d.dsc_scale = X.RDB$FIELD_SCALE;
+			if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+				d.dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
+			}
+			else {
+				d.dsc_sub_type = 0;
+			}
+			d.dsc_length = X.RDB$FIELD_LENGTH;
+			if (d.dsc_dtype == dtype_varying) {
+				d.dsc_length += sizeof(USHORT);
+			}
+			d.dsc_address = NULL;
+
+			if (!X.RDB$CHARACTER_SET_ID.NULL) {
+				if (d.dsc_dtype != dtype_blob) {
+					d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
 				}
 				else {
-					d.dsc_sub_type = 0;
+					d.dsc_scale = X.RDB$CHARACTER_SET_ID;
 				}
-				d.dsc_length = X.RDB$FIELD_LENGTH;
-				if (d.dsc_dtype == dtype_varying) {
-					d.dsc_length += sizeof(USHORT);
-				}
-				d.dsc_address = NULL;
-
-				if (!X.RDB$CHARACTER_SET_ID.NULL)
-				{
-					if (d.dsc_dtype != dtype_blob) {
-						d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
-					}
-					else {
-						d.dsc_scale = X.RDB$CHARACTER_SET_ID;
-					}
-				}
-
-				if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
-				{
-					d.dsc_flags = DSC_nullable;
-				}
-
-				userFunc->udf_arguments.add(d);
 			}
+
+			if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
+			{
+				d.dsc_flags = DSC_nullable;
+			}
+
+			userFunc->udf_arguments.add(d);
 		}
 
 	END_FOR
@@ -1105,8 +1050,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	// cstring & varying.  While a UDF can return CSTRING, we convert it
 	// to VARCHAR for manipulation as CSTRING is not a SQL type.
 
-	if (userFunc->udf_dtype == dtype_cstring)
-	{
+	if (userFunc->udf_dtype == dtype_cstring) {
 		userFunc->udf_dtype = dtype_varying;
 		userFunc->udf_length += sizeof(USHORT);
 		if (userFunc->udf_length > MAX_SSHORT)
@@ -1115,18 +1059,33 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	else if (userFunc->udf_dtype == dtype_varying)
 		userFunc->udf_length += sizeof(USHORT);
 
-	dbb->dbb_functions.put(userFunc->udf_name, userFunc);
+	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_udf)))
+	{
+		// Get rid of all the stuff we just read in. Use existing one
+		delete userFunc;
+		return (dsql_udf*) symbol->sym_object;
+	}
 
-	if (userFunc->udf_private && metaName.package != dsqlScratch->package)
-		return NULL;
+	// Add udf in the front of the list.
+	userFunc->udf_next = dbb->dbb_functions;
+	dbb->dbb_functions = userFunc;
 
-	MET_dsql_cache_use(tdbb, SYM_udf, userFunc->udf_name.identifier, userFunc->udf_name.package);
+	// Store in the symbol table
+	// The UDF_new_udf flag is not used, so nothing extra to check.
+
+	symbol = userFunc->udf_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
+	symbol->sym_object = userFunc;
+	symbol->sym_string = userFunc->udf_name.c_str();
+	symbol->sym_length = userFunc->udf_name.length();
+	symbol->sym_type = SYM_udf;
+	symbol->sym_dbb = dbb;
+	insert_symbol(symbol);
 
 	return userFunc;
 }
 
 
-dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_name)
+dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 {
 /**************************************
  *
@@ -1142,15 +1101,15 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_na
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(request);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 
 	DsqlNodStack stack;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_primary_key, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$INDICES CROSS
 		Y IN RDB$INDEX_SEGMENTS
 		OVER RDB$INDEX_NAME CROSS
@@ -1174,8 +1133,7 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_na
 }
 
 
-dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
-	const dsql_str* name, const dsql_str* package)
+dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 {
 /**************************************
  *
@@ -1191,135 +1149,116 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	dsql_dbb* dbb = statement->req_dbb;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	QualifiedName metaName(MetaName(name->str_data, name->str_length),
-		(package ? MetaName(package->str_data, package->str_length) : ""));
+	// see if the procedure is the one currently being defined in this statement
 
-	// ASF: I've removed the code where we verify if the procedure being looked up is the one being
-	// defined (dsqlScratch->procedure). This code is totally incorrect, not considering
-	// transactions and savepoints, hence being incompatible with packages).
-	// Example (with autocommit off):
-	//
-	// SQL> create procedure p1 as begin end!
-	// SQL> create procedure p2 as begin execute procedure p1; end!
-	// SQL> rollback!
-	// SQL> execute procedure p2!
-	// Statement failed, SQLSTATE = 42000
-	// Dynamic SQL Error
-	// -SQL error code = -204
-	// -Procedure unknown
-	// -P2
-	// SQL> execute procedure p1!
-	// Statement failed, SQLSTATE = 42000
-	// invalid request BLR at offset 5
-	// -procedure P1 is not defined
-	//
-	// The side effect is that this occur in more cases now:
-	//
-	// SQL> create procedure p as begin execute procedure p; execute procedure p2; end!
-	// Statement failed, SQLSTATE = 42000
-	// Dynamic SQL Error
-	// -SQL error code = -204
-	// -Procedure unknown
-	// -P2
-	// SQL> execute procedure p!
-	// Statement failed, SQLSTATE = 42000
-	// invalid request BLR at offset 4
-	// -procedure P is not defined
-	//
-	// I hope for a solution, involving savepoint logic.
+	dsql_prc* temp = statement->req_procedure;
+	if (temp != NULL && temp->prc_name == name->str_data)
+	{
+		return temp;
+	}
 
-	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.package.isEmpty();
-	if (maybeUnqualified)
-		metaName.package = dsqlScratch->package;
+	MutexHolder holder(statement);
 
 	// Start by seeing if symbol is already defined
 
-	dsql_prc* procedure = NULL;
-	if (dbb->dbb_procedures.get(metaName, procedure))
-	{
-		if (procedure->prc_private && metaName.package != dsqlScratch->package)
-			return NULL;
-
-		if (MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.package))
-			procedure->prc_flags |= PRC_dropped;
-
-		return procedure;
-	}
+	dsql_sym* symbol = lookup_symbol(statement->req_dbb, name, SYM_procedure);
+	if (symbol)
+		return (dsql_prc*) symbol->sym_object;
 
 	// now see if it is in the database
 
-	while (!procedure)
-	{
-		jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
+	validateTransaction(statement);
 
-		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
-			X IN RDB$PROCEDURES
-			WITH X.RDB$PROCEDURE_NAME EQ name->str_data AND
-				 X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
+	dsql_prc* procedure = NULL;
 
-			if (!DSQL_REQUEST(irq_procedure))
-				DSQL_REQUEST(irq_procedure) = handle1;
+	jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
 
-			fb_utils::exact_name(X.RDB$OWNER_NAME);
-
-			procedure = FB_NEW(dbb->dbb_pool) dsql_prc(dbb->dbb_pool);
-			procedure->prc_id = X.RDB$PROCEDURE_ID;
-			procedure->prc_name = metaName;
-			procedure->prc_owner = X.RDB$OWNER_NAME;
-			procedure->prc_private = !X.RDB$PRIVATE_FLAG.NULL && X.RDB$PRIVATE_FLAG != 0;
-
-		END_FOR
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
+		X IN RDB$PROCEDURES WITH
+		X.RDB$PROCEDURE_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_procedure))
 			DSQL_REQUEST(irq_procedure) = handle1;
 
-		if (!procedure)
-		{
-			if (maybeUnqualified)
-			{
-				maybeUnqualified = false;
-				metaName.package = "";
-			}
-			else
-				return NULL;
-		}
+		fb_utils::exact_name(X.RDB$OWNER_NAME);
+
+		procedure = FB_NEW(dbb->dbb_pool) dsql_prc(dbb->dbb_pool);
+		procedure->prc_id = X.RDB$PROCEDURE_ID;
+
+		procedure->prc_name = name->str_data;
+		procedure->prc_owner = X.RDB$OWNER_NAME;
+
+	END_FOR
+
+	if (!DSQL_REQUEST(irq_procedure))
+		DSQL_REQUEST(irq_procedure) = handle1;
+
+	if (!procedure) {
+		return NULL;
 	}
 
 	// Lookup parameter stuff
 
 	for (int type = 0; type < 2; type++)
 	{
-		dsql_fld** const ptr = type ? &procedure->prc_outputs : &procedure->prc_inputs;
+		dsql_fld** ptr;
+		if (type)
+			ptr = &procedure->prc_outputs;
+		else
+			ptr = &procedure->prc_inputs;
 
 		SSHORT count = 0, defaults = 0;
 
 		jrd_req* handle2 = CMP_find_request(tdbb, irq_parameters, IRQ_REQUESTS);
 
-		FOR (REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
-			PR IN RDB$PROCEDURE_PARAMETERS
-			CROSS FLD IN RDB$FIELDS
-			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE AND
-				 PR.RDB$PROCEDURE_NAME EQ name->str_data AND
-				 PR.RDB$PARAMETER_TYPE = type AND
-				 PR.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
+		FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
+			PR IN RDB$PROCEDURE_PARAMETERS CROSS
+			FLD IN RDB$FIELDS
+			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
+			AND PR.RDB$PROCEDURE_NAME EQ name->str_data
+			AND PR.RDB$PARAMETER_TYPE = type
 			SORTED BY DESCENDING PR.RDB$PARAMETER_NUMBER
 
 			if (!DSQL_REQUEST(irq_parameters))
 				DSQL_REQUEST(irq_parameters) = handle2;
 
-			const SSHORT pr_collation_id_null = PR.RDB$COLLATION_ID.NULL;
-			const SSHORT pr_collation_id = PR.RDB$COLLATION_ID;
+			SSHORT pr_collation_id_null = TRUE;
+			SSHORT pr_collation_id;
+			SSHORT pr_default_value_null = TRUE;
+			SSHORT pr_null_flag_null = TRUE;
+			SSHORT pr_null_flag;
+			bool pr_type_of = false;
 
-			const SSHORT pr_default_value_null = PR.RDB$DEFAULT_VALUE.NULL;
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1)
+			{
+				jrd_req* handle3 = CMP_find_request(tdbb, irq_parameters2, IRQ_REQUESTS);
 
-			const SSHORT pr_null_flag_null = PR.RDB$NULL_FLAG.NULL;
-			const SSHORT pr_null_flag = PR.RDB$NULL_FLAG;
+				FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
+					PR2 IN RDB$PROCEDURE_PARAMETERS
+					WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
+						 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
 
-			const bool pr_type_of =
-				(!PR.RDB$PARAMETER_MECHANISM.NULL && PR.RDB$PARAMETER_MECHANISM == prm_mech_type_of);
+					if (!DSQL_REQUEST(irq_parameters2))
+						DSQL_REQUEST(irq_parameters2) = handle3;
+
+					pr_collation_id_null = PR2.RDB$COLLATION_ID.NULL;
+					pr_collation_id = PR2.RDB$COLLATION_ID;
+
+					pr_default_value_null = PR2.RDB$DEFAULT_VALUE.NULL;
+
+					pr_null_flag_null = PR2.RDB$NULL_FLAG.NULL;
+					pr_null_flag = PR2.RDB$NULL_FLAG;
+
+					if (!PR2.RDB$PARAMETER_MECHANISM.NULL && PR2.RDB$PARAMETER_MECHANISM == prm_mech_type_of)
+						pr_type_of = true;
+
+				END_FOR
+
+				if (!DSQL_REQUEST(irq_parameters2))
+					DSQL_REQUEST(irq_parameters2) = handle3;
+			}
 
 			count++;
 			// allocate the field block
@@ -1377,26 +1316,46 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 		if (type)
 			procedure->prc_out_count = count;
-		else
-		{
+		else {
 			procedure->prc_in_count = count;
 			procedure->prc_def_count = defaults;
 		}
 	}
 
-	dbb->dbb_procedures.put(procedure->prc_name, procedure);
+	// Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
+	// calls, another thread may have added the same procedure in the mean time
 
-	if (procedure->prc_private && metaName.package != dsqlScratch->package)
-		return NULL;
+	if ((symbol = lookup_symbol(statement->req_dbb, name, SYM_procedure)))
+	{
+		// Get rid of all the stuff we just read in. Use existing one
+		free_procedure(procedure);
+		return (dsql_prc*) symbol->sym_object;
+	}
 
-	MET_dsql_cache_use(tdbb, SYM_procedure, procedure->prc_name.identifier,
-		procedure->prc_name.package);
+	// store in the symbol table unless the procedure is not yet committed
+	// CVC: This is strange, because PRC_new_procedure is never set.
+
+	if (!(procedure->prc_flags & PRC_new_procedure))
+	{
+		// add procedure in the front of the list
+
+		procedure->prc_next = dbb->dbb_procedures;
+		dbb->dbb_procedures = procedure;
+
+		symbol = procedure->prc_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
+		symbol->sym_object = procedure;
+		symbol->sym_string = procedure->prc_name.c_str();
+		symbol->sym_length = procedure->prc_name.length();
+		symbol->sym_type = SYM_procedure;
+		symbol->sym_dbb = dbb;
+		insert_symbol(symbol);
+	}
 
 	return procedure;
 }
 
 
-dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch, const dsql_str* name)
+dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 {
 /**************************************
  *
@@ -1411,38 +1370,35 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
-
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	MetaName metaName(name->str_data, name->str_length);
+	dsql_dbb* dbb = statement->req_dbb;
 
 	// See if the relation is the one currently being defined in this statement
 
-	dsql_rel* temp = dsqlScratch->relation;
+	dsql_rel* temp = statement->req_relation;
 	if (temp != NULL && temp->rel_name == name->str_data)
 	{
 		return temp;
 	}
 
+	MutexHolder holder(statement);
+
 	// Start by seeing if symbol is already defined
 
-	if (dbb->dbb_relations.get(metaName, temp) && !(temp->rel_flags & REL_dropped))
-	{
-		if (MET_dsql_cache_use(tdbb, SYM_relation, metaName))
-			temp->rel_flags |= REL_dropped;
-		else
-			return temp;
-	}
+	dsql_sym* symbol = lookup_symbol(statement->req_dbb, name, SYM_relation);
+	if (symbol)
+		return (dsql_rel*) symbol->sym_object;
 
 	// If the relation id or any of the field ids have not yet been assigned,
 	// and this is a type of statement which does not use ids, prepare a
 	// temporary relation block to provide information without caching it
 
+	validateTransaction(statement);
+
 	bool permanent = true;
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_rel_ids, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
 		REL IN RDB$RELATIONS
 		CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 		WITH REL.RDB$RELATION_NAME EQ name->str_data
@@ -1466,7 +1422,7 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_relation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
 		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_relation))
@@ -1476,19 +1432,17 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 		// Allocate from default or permanent pool as appropriate
 
-		if (!X.RDB$RELATION_ID.NULL)
-		{
+		if (!X.RDB$RELATION_ID.NULL) {
 			relation = FB_NEW(pool) dsql_rel(pool);
 			relation->rel_id = X.RDB$RELATION_ID;
 		}
-		else if (!DDL_ids(dsqlScratch)) {
+		else if (!DDL_ids(statement)) {
 			relation = FB_NEW(pool) dsql_rel(pool);
 		}
 
 		// fill out the relation information
 
-		if (relation)
-		{
+		if (relation) {
 			relation->rel_name = name->str_data;
 			relation->rel_owner = X.RDB$OWNER_NAME;
 			if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
@@ -1517,7 +1471,7 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 	jrd_req* handle3 = CMP_find_request(tdbb, irq_fields, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
 		FLX IN RDB$FIELDS CROSS
 		RFR IN RDB$RELATION_FIELDS
 		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
@@ -1536,16 +1490,14 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 		dsql_fld* field = NULL;
 
-		if (!RFR.RDB$FIELD_ID.NULL)
-		{
+		if (!RFR.RDB$FIELD_ID.NULL) {
 			field = FB_NEW(pool) dsql_fld(pool);
 			field->fld_id = RFR.RDB$FIELD_ID;
 		}
-		else if (!DDL_ids(dsqlScratch))
+		else if (!DDL_ids(statement))
 			field = FB_NEW(pool) dsql_fld(pool);
 
-		if (field)
-		{
+		if (field) {
 			*ptr = field;
 			ptr = &field->fld_next;
 
@@ -1598,27 +1550,37 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	if (!DSQL_REQUEST(irq_fields))
 		DSQL_REQUEST(irq_fields) = handle3;
 
-	if (dbb->dbb_relations.get(metaName, temp) && !(temp->rel_flags & REL_dropped))
+	if ((symbol = lookup_symbol(statement->req_dbb, name, SYM_relation)))
 	{
 		free_relation(relation);
-		return temp;
+		return (dsql_rel*) symbol->sym_object;
 	}
 
-	// Add relation to the list
+	// Add relation to front of list
 
-	if (permanent)
-	{
-		dbb->dbb_relations.put(relation->rel_name, relation);
-		MET_dsql_cache_use(tdbb, SYM_relation, relation->rel_name);
+	if (permanent) {
+		relation->rel_next = dbb->dbb_relations;
+		dbb->dbb_relations = relation;
+
+		// store in the symbol table unless the relation is not yet committed
+
+		symbol = relation->rel_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
+		symbol->sym_object = relation;
+		symbol->sym_string = relation->rel_name.c_str();
+		symbol->sym_length = relation->rel_name.length();
+		symbol->sym_type = SYM_relation;
+		symbol->sym_dbb = dbb;
+		insert_symbol(symbol);
 	}
-	else
+	else {
 		relation->rel_flags |= REL_new_relation;
+	}
 
 	return relation;
 }
 
 
-bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** relation, USHORT* trig_type)
+bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relation, USHORT* trig_type)
 {
 /**************************************
  *
@@ -1632,9 +1594,9 @@ bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** rel
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(request);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 
 	bool found = false;
 
@@ -1643,7 +1605,7 @@ bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** rel
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_trigger, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_trigger))
@@ -1670,7 +1632,7 @@ bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** rel
 }
 
 
-bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field, SSHORT* value)
+bool METD_get_type(dsql_req* request, const dsql_str* name, const char* field, SSHORT* value)
 {
 /**************************************
  *
@@ -1684,14 +1646,14 @@ bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(request);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = request->req_dbb;
 	bool found = false;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_type, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name->str_data;
 
@@ -1710,8 +1672,9 @@ bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field
 }
 
 
-dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
-	const char* view_name, MetaNamePairMap& fields)
+dsql_rel* METD_get_view_base(CompiledStatement* statement,
+							 const char* view_name, // UTF-8
+							 MetaNamePairMap& fields)
 {
 /**************************************
  *
@@ -1730,11 +1693,11 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(statement);
 
 	dsql_rel* relation = NULL;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = statement->req_dbb;
 	bool first = true;
 	bool cont = true;
 	MetaNamePairMap previousAux;
@@ -1745,7 +1708,7 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 	{
 		jrd_req* handle1 = CMP_find_request(tdbb, irq_view_base, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
 			X IN RDB$VIEW_RELATIONS
 			WITH X.RDB$VIEW_NAME EQ view_name
 
@@ -1753,7 +1716,7 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 				DSQL_REQUEST(irq_view_base) = handle1;
 
 			// return NULL if there is more than one context
-			if (X.RDB$VIEW_CONTEXT != 1 || X.RDB$CONTEXT_TYPE == VCT_PROCEDURE)
+			if (X.RDB$VIEW_CONTEXT != 1)
 			{
 				relation = NULL;
 				cont = false;
@@ -1764,7 +1727,7 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			fb_utils::exact_name(X.RDB$RELATION_NAME);
 
 			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(transaction, dsqlScratch, relation_name);
+			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
 
 			Array<MetaName> ambiguities;
@@ -1778,7 +1741,7 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 			jrd_req* handle2 = CMP_find_request(tdbb, irq_view_base_flds, IRQ_REQUESTS);
 
-			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
+			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
 				RFL IN RDB$RELATION_FIELDS
 				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
 
@@ -1852,8 +1815,9 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 }
 
 
-dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
-	const char* view_name, const char* relation_or_alias)
+dsql_rel* METD_get_view_relation(CompiledStatement* statement,
+								const char* view_name,         // UTF-8
+								const char* relation_or_alias) // UTF-8
 {
 /**************************************
  *
@@ -1869,15 +1833,15 @@ dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsql
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(transaction);
+	validateTransaction(statement);
 
 	dsql_rel* relation = NULL;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	dsql_dbb* dbb = statement->req_dbb;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_view, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE statement->req_transaction)
 		X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name
 
 		if (!DSQL_REQUEST(irq_view))
@@ -1890,16 +1854,15 @@ dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsql
 			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
 			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(transaction, dsqlScratch, relation_name);
+			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
 			return relation;
 		}
 
-		relation = METD_get_view_relation(transaction, dsqlScratch, X.RDB$RELATION_NAME,
-			relation_or_alias);
-
-		if (relation)
+		relation = METD_get_view_relation(statement, X.RDB$RELATION_NAME, relation_or_alias);
+		if (relation) {
 			return relation;
+		}
 
 	END_FOR
 
@@ -1948,7 +1911,6 @@ static void convert_dtype(dsql_fld* field, SSHORT field_type)
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
 static void free_procedure(dsql_prc* procedure)
 {
 /**************************************
@@ -1965,15 +1927,13 @@ static void free_procedure(dsql_prc* procedure)
 
 	// release the input & output parameter blocks
 
-	for (param = procedure->prc_inputs; param;)
-	{
+	for (param = procedure->prc_inputs; param;) {
 		dsql_fld* temp = param;
 		param = param->fld_next;
 		delete temp;
 	}
 
-	for (param = procedure->prc_outputs; param;)
-	{
+	for (param = procedure->prc_outputs; param;) {
 		dsql_fld* temp = param;
 		param = param->fld_next;
 		delete temp;
@@ -1983,7 +1943,6 @@ static void free_procedure(dsql_prc* procedure)
 
 	delete procedure;
 }
-#endif	// NOT_USED_OR_REPLACED
 
 
 static void free_relation(dsql_rel* relation)
@@ -2011,4 +1970,138 @@ static void free_relation(dsql_rel* relation)
 	// release the relation & symbol blocks
 
 	delete relation;
+}
+
+
+static void insert_symbol(dsql_sym* symbol)
+{
+/**************************************
+ *
+ *  i n s e r t _ s y m b o l
+ *
+ **************************************
+ *
+ * Functional description
+ *  Insert a symbol in the hash table and
+ *  inform the engine that we're using it.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
+	HSHD_insert(symbol);
+
+	MET_dsql_cache_use(tdbb, symbol->sym_type, symbol->sym_string);
+}
+
+
+static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
+	const SYM_TYPE type, USHORT charset_id)
+{
+/**************************************
+ *
+ *  l o o k u p _ s y m b o l
+ *
+ **************************************
+ *
+ * Functional description
+ *  Lookup a symbol in the hash table and
+ *  inform the engine that we're using it.
+ *  The engine may inform that the symbol
+ *  is obsolete, in this case mark it as
+ *  dropped and return NULL.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
+	dsql_intlsym* intlSym = NULL;
+	dsql_prc* procedure = NULL;
+	dsql_rel* relation = NULL;
+	dsql_udf* userFunc = NULL;
+
+	dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
+
+	for (; symbol; symbol = symbol->sym_homonym)
+	{
+		if (symbol->sym_type == type)
+		{
+			if (type == SYM_intlsym_charset && (intlSym = (dsql_intlsym*) symbol->sym_object) &&
+				!(intlSym->intlsym_flags & INTLSYM_dropped))
+			{
+				break;
+			}
+			else if (type == SYM_intlsym_collation &&
+				(intlSym = (dsql_intlsym*) symbol->sym_object) &&
+				!(intlSym->intlsym_flags & INTLSYM_dropped) &&
+				(charset_id == 0 || intlSym->intlsym_charset_id == charset_id))
+			{
+				break;
+			}
+			else if (type == SYM_procedure && (procedure = (dsql_prc*) symbol->sym_object) &&
+				!(procedure->prc_flags & PRC_dropped))
+			{
+				break;
+			}
+			else if (type == SYM_relation && (relation = (dsql_rel*) symbol->sym_object) &&
+				!(relation->rel_flags & REL_dropped))
+			{
+				break;
+			}
+			else if (type == SYM_udf && (userFunc = (dsql_udf*) symbol->sym_object) &&
+				!(userFunc->udf_flags & UDF_dropped))
+			{
+				break;
+			}
+		}
+	}
+
+	if (symbol)
+	{
+		bool obsolete = MET_dsql_cache_use(tdbb, type, name);
+
+		if (obsolete)
+		{
+			switch (type)
+			{
+				case SYM_intlsym_charset:
+				case SYM_intlsym_collation:
+					intlSym->intlsym_flags |= INTLSYM_dropped;
+					break;
+
+				case SYM_procedure:
+					procedure->prc_flags |= PRC_dropped;
+					break;
+
+				case SYM_relation:
+					relation->rel_flags |= REL_dropped;
+					break;
+
+				case SYM_udf:
+					userFunc->udf_flags |= UDF_dropped;
+					break;
+
+				default:
+					return symbol;
+			}
+
+			symbol = NULL;
+		}
+	}
+
+	return symbol;
+}
+
+
+static dsql_sym* lookup_symbol(dsql_dbb* dbb, const dsql_str* name, SYM_TYPE type, USHORT charset_id)
+{
+/**************************************
+ *
+ *  l o o k u p _ s y m b o l
+ *
+ **************************************
+ *
+ * Functional description
+ *  Wrapper for the above function.
+ *
+ **************************************/
+	return lookup_symbol(dbb, name->str_length, name->str_data, type, charset_id);
 }

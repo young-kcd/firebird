@@ -39,7 +39,6 @@
 #include "../mov_proto.h"
 #include "../mov_proto.h"
 #include "../PreparedStatement.h"
-#include "../Function.h"
 
 #include "InternalDS.h"
 
@@ -64,7 +63,7 @@ static RegisterInternalProvider reg;
 
 // InternalProvider
 
-void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
+void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Attachment* att)
 {
 	if (m_connections.getCount() == 0)
 		return;
@@ -120,7 +119,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbName.isEmpty() || dbName == dbb->dbb_database_name.c_str());
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	if ((user.isEmpty() || user == attachment->att_user->usr_user_name) &&
 		pwd.isEmpty() &&
 		(role.isEmpty() || role == attachment->att_user->usr_sql_role_name))
@@ -138,7 +137,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 
 		{
 			EngineCallbackGuard guard(tdbb, *this);
-			jrd8_attach_database(status, 0, m_dbName.c_str(), &m_attachment,
+			jrd8_attach_database(status, m_dbName.c_str(), &m_attachment,
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
 		if (status[1]) {
@@ -163,7 +162,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 		ISC_STATUS_ARRAY status = {0};
 
 		{	// scope
-			Jrd::Attachment* att = m_attachment;
+			Attachment* att = m_attachment;
 			m_attachment = NULL;
 
 			EngineCallbackGuard guard(tdbb, *this);
@@ -248,10 +247,10 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 	}
 	else
 	{
-		Jrd::Attachment* att = m_IntConnection.getJrdAtt();
+		Attachment* att = m_IntConnection.getJrdAtt();
 
 		EngineCallbackGuard guard(tdbb, *this);
-		jrd8_start_transaction(status, 0, &m_transaction, 1, &att,	//// FIXME: public_handle
+		jrd8_start_transaction(status, &m_transaction, 1, &att,
 			tpb.getBufferLength(), tpb.getBuffer());
 	}
 }
@@ -329,7 +328,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	m_inBlr.clear();
 	m_outBlr.clear();
 
-	Jrd::Attachment* att = m_intConnection.getJrdAtt();
+	Attachment* att = m_intConnection.getJrdAtt();
 	jrd_tra* tran = getIntTransaction()->getJrdTran();
 
 	ISC_STATUS_ARRAY status = {0};
@@ -347,49 +346,21 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 
-		CallerName save_caller_name(tran->tra_caller_name);
-
-		if (m_callerPrivileges)
-		{
-			jrd_req* request = tdbb->getRequest();
-			CallerName callerName;
-			const Routine* routine;
-
-			if (request && request->req_trg_name.hasData())
-				tran->tra_caller_name = CallerName(obj_trigger, request->req_trg_name);
-			else if (request && (routine = request->getRoutine()) &&
-				routine->getName().identifier.hasData())
-			{
-				if (routine->getName().package.isEmpty())
-				{
-					tran->tra_caller_name = CallerName(routine->getObjectType(),
-						routine->getName().identifier);
-				}
-				else
-				{
-					tran->tra_caller_name = CallerName(obj_package_header,
-						routine->getName().package);
-				}
-			}
-			else
-				tran->tra_caller_name = CallerName();
-		}
+		jrd_req* const save_caller = tran->tra_callback_caller;
+		tran->tra_callback_caller = m_callerPrivileges ? tdbb->getRequest() : NULL;
 
 		jrd8_prepare(status, &tran, &m_request, sql.length(), sql.c_str(),
 			m_connection.getSqlDialect(), 0, NULL, 0, NULL);
 
-		tran->tra_caller_name = save_caller_name;
+		tran->tra_callback_caller = save_caller;
 	}
 	if (status[1]) {
 		raise(status, tdbb, "jrd8_prepare", &sql);
 	}
 
-	const DsqlCompiledStatement* statement = m_request->getStatement();
-
-	if (statement->getSendMsg()) {
+	if (m_request->req_send) {
 		try {
-			PreparedStatement::parseDsqlMessage(statement->getSendMsg(), m_inDescs,
-				m_inBlr, m_in_buffer);
+			PreparedStatement::parseDsqlMessage(m_request->req_send, m_inDescs, m_inBlr, m_in_buffer);
 			m_inputs = m_inDescs.getCount() / 2;
 		}
 		catch (const Exception&) {
@@ -400,10 +371,9 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_inputs = 0;
 	}
 
-	if (statement->getReceiveMsg()) {
+	if (m_request->req_receive) {
 		try {
-			PreparedStatement::parseDsqlMessage(statement->getReceiveMsg(), m_outDescs,
-				m_outBlr, m_out_buffer);
+			PreparedStatement::parseDsqlMessage(m_request->req_receive, m_outDescs, m_outBlr, m_out_buffer);
 			m_outputs = m_outDescs.getCount() / 2;
 		}
 		catch (const Exception&) {
@@ -415,37 +385,37 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	m_stmt_selectable = false;
-
-	switch (statement->getType())
+	switch (m_request->req_type)
 	{
-	case DsqlCompiledStatement::TYPE_SELECT:
-	case DsqlCompiledStatement::TYPE_SELECT_UPD:
-	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
+	case REQ_SELECT:
+	case REQ_SELECT_UPD:
+	case REQ_EMBED_SELECT:
+	case REQ_SELECT_BLOCK:
 		m_stmt_selectable = true;
 		break;
 
-	case DsqlCompiledStatement::TYPE_START_TRANS:
-	case DsqlCompiledStatement::TYPE_COMMIT:
-	case DsqlCompiledStatement::TYPE_ROLLBACK:
-	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-	case DsqlCompiledStatement::TYPE_CREATE_DB:
+	case REQ_START_TRANS:
+	case REQ_COMMIT:
+	case REQ_ROLLBACK:
+	case REQ_COMMIT_RETAIN:
+	case REQ_ROLLBACK_RETAIN:
+	case REQ_CREATE_DB:
 		ERR_build_status(status, Arg::Gds(isc_eds_expl_tran_ctrl));
 		raise(status, tdbb, "jrd8_prepare", &sql);
 		break;
 
-	case DsqlCompiledStatement::TYPE_INSERT:
-	case DsqlCompiledStatement::TYPE_DELETE:
-	case DsqlCompiledStatement::TYPE_UPDATE:
-	case DsqlCompiledStatement::TYPE_UPDATE_CURSOR:
-	case DsqlCompiledStatement::TYPE_DELETE_CURSOR:
-	case DsqlCompiledStatement::TYPE_DDL:
-	case DsqlCompiledStatement::TYPE_GET_SEGMENT:
-	case DsqlCompiledStatement::TYPE_PUT_SEGMENT:
-	case DsqlCompiledStatement::TYPE_EXEC_PROCEDURE:
-	case DsqlCompiledStatement::TYPE_SET_GENERATOR:
-	case DsqlCompiledStatement::TYPE_SAVEPOINT:
-	case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
+	case REQ_INSERT:
+	case REQ_DELETE:
+	case REQ_UPDATE:
+	case REQ_UPDATE_CURSOR:
+	case REQ_DELETE_CURSOR:
+	case REQ_DDL:
+	case REQ_GET_SEGMENT:
+	case REQ_PUT_SEGMENT:
+	case REQ_EXEC_PROCEDURE:
+	case REQ_SET_GENERATOR:
+	case REQ_SAVEPOINT:
+	case REQ_EXEC_BLOCK:
 		break;
 	}
 }
@@ -563,7 +533,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Jrd::Attachment* att = m_connection.getJrdAtt();
+	Attachment* att = m_connection.getJrdAtt();
 	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
 	memcpy(&m_blob_id, desc.dsc_address, sizeof(m_blob_id));
 
@@ -588,7 +558,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Jrd::Attachment* att = m_connection.getJrdAtt();
+	Attachment* att = m_connection.getJrdAtt();
 	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
 	m_blob_id.clear();
 

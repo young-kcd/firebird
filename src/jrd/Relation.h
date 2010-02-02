@@ -36,11 +36,11 @@ class ViewContext
 public:
 	explicit ViewContext(MemoryPool& p, const TEXT* context_name,
 						 const TEXT* relation_name, USHORT context,
-						 ViewContextType type)
-	: vcx_context_name(p, context_name, strlen(context_name)),
-	  vcx_relation_name(relation_name),
-	  vcx_context(context),
-	  vcx_type(type)
+						 bool is_relation) :
+		vcx_context_name(p, context_name, strlen(context_name)),
+		vcx_relation_name(relation_name),
+		vcx_context(context),
+		vcx_is_relation(is_relation)
 	{
 	}
 
@@ -49,10 +49,10 @@ public:
 		return vc->vcx_context;
 	}
 
-	const Firebird::string vcx_context_name;
-	const Firebird::MetaName vcx_relation_name;
-	const USHORT vcx_context;
-	const ViewContextType vcx_type;
+	const Firebird::string	vcx_context_name;
+	const Firebird::MetaName	vcx_relation_name;
+	const USHORT	vcx_context;
+	const bool		vcx_is_relation;
 };
 
 typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>,
@@ -336,11 +336,10 @@ public:
 	ArrayField*	fld_array;			// array description, if array
 	Firebird::MetaName	fld_name;	// Field name
 	Firebird::MetaName	fld_security_name;	// security class name for field
-	Firebird::MetaName	fld_generator_name;	// identity generator name
 
 public:
 	explicit jrd_fld(MemoryPool& p)
-		: fld_name(p), fld_security_name(p), fld_generator_name(p)
+		: fld_name(p), fld_security_name(p)
 	{ }
 };
 

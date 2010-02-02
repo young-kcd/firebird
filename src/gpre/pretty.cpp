@@ -28,7 +28,6 @@
 //
 
 #include "firebird.h"
-#include "dyn_consts.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
@@ -53,11 +52,11 @@ static inline void ADVANCE_PTR(TEXT*& ptr)
 
 struct ctl
 {
-	const UCHAR* ctl_blr;				// Running blr string
-	const UCHAR* ctl_blr_start;			// Original start of blr string
+	UCHAR *ctl_blr;				// Running blr string
+	UCHAR *ctl_blr_start;		// Original start of blr string
 	FPTR_PRINT_CALLBACK ctl_routine;	// Call back
-	void* ctl_user_arg;					// User argument
-	TEXT* ctl_ptr;
+	void *ctl_user_arg;		// User argument
+	TEXT *ctl_ptr;
 	SSHORT ctl_language;
 	SSHORT ctl_level;
 	TEXT ctl_buffer[PRETTY_BUFFER_SIZE];
@@ -124,7 +123,7 @@ const char *map_strings[] =
 //		Pretty print create database parameter buffer thru callback routine.
 //
 
-int PRETTY_print_cdb(const UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
+int PRETTY_print_cdb( UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
 {
 
 	ctl ctl_buffer;
@@ -181,7 +180,7 @@ int PRETTY_print_cdb(const UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_a
 }
 
 
-int PRETTY_print_dyn(const UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
+int PRETTY_print_dyn(UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
 //____________________________________________________________
 //
 //		Pretty print dynamic DDL thru callback routine.
@@ -224,7 +223,7 @@ int PRETTY_print_dyn(const UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_a
 }
 
 
-int PRETTY_print_sdl(const UCHAR* blr, FPTR_PRINT_CALLBACK routine, void *user_arg, SSHORT language)
+int PRETTY_print_sdl(UCHAR* blr, FPTR_PRINT_CALLBACK routine, void *user_arg, SSHORT language)
 //____________________________________________________________
 //
 //		Pretty print slice description language.

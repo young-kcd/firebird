@@ -48,7 +48,6 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/sdw_proto.h"
-#include "../jrd/Attachment.h"
 
 
 using namespace Jrd;
@@ -109,7 +108,7 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 	WIN window(HEADER_PAGE_NUMBER);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
-	CCH_write_all_shadows(tdbb, 0, window.win_bdb, tdbb->tdbb_status_vector, false);
+	CCH_write_all_shadows(tdbb, 0, window.win_bdb, tdbb->tdbb_status_vector, 1, false);
 	CCH_RELEASE(tdbb, &window);
 	if (file_flags & FILE_conditional)
 		shadow->sdw_flags |= SDW_conditional;
@@ -206,7 +205,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		temp_bdb.bdb_page = next->fil_min_page;
 		temp_bdb.bdb_dbb = dbb;
 		temp_bdb.bdb_buffer = (PAG) header;
-		header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
+		header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
 		if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 		{
 			delete[] spare_buffer;
@@ -252,7 +251,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 								 reinterpret_cast<const UCHAR*>(&start));
 			file->fil_fudge = 0;
 			temp_bdb.bdb_page = file->fil_min_page;
-			header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
+			header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
 			if (!PIO_write(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 			{
 				delete[] spare_buffer;
@@ -487,9 +486,9 @@ void SDW_dump_pages(thread_db* tdbb)
 				// checksum errors on this type of page, don't check for checksum when the
 				// page type is 0
 
-				CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
+				CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_read, pag_undefined);
 				if (!CCH_write_all_shadows(tdbb, shadow, window.win_bdb,
-										   tdbb->tdbb_status_vector, false))
+										   tdbb->tdbb_status_vector, 1, false))
 				{
 					CCH_RELEASE(tdbb, &window);
 					ERR_punt();

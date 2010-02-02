@@ -343,11 +343,14 @@
 	isc_vtof
 	isc_vtov
 
+* Stubs - were exported in previous versions due to various reasons, missing now
+
+	CVT_move
+	SCH_ast
+
 *-----------------
 * OTHER FUNCTIONS
 *-----------------
-
-	CVT_move
 
 	KEYWORD_stringIsAToken
 	KEYWORD_getTokens

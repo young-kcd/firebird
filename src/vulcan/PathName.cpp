@@ -61,6 +61,82 @@ PathName::~PathName()
 {
 }
 
+const char* PathName::getWorkingDirectory()
+{
+	static char workingDirectory [MAXPATHLEN];
+
+#ifdef _WIN32
+	GetCurrentDirectory(sizeof (workingDirectory), workingDirectory);
+#else
+	if (workingDirectory [0])
+		return workingDirectory;
+
+#ifdef HAVE_GETCWD
+	getcwd(workingDirectory, sizeof (workingDirectory));
+#else
+	getwd(workingDirectory);
+#endif
+
+#endif
+
+	return workingDirectory;
+}
+
+int PathName::findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLength, char* buffer)
+{
+	const UCHAR* p = dpb;
+	const UCHAR* const end = dpb + dpbLength;
+
+	if (dpbLength <= 0 || *p++ != isc_dpb_version1)
+		return 0;
+
+	for (int length = 0; p < end; p += length)
+	{
+		const UCHAR verb = *p++;
+		length = *p++;
+		length += (*p++) << 8;
+
+		if (verb == isc_dpb_working_directory)
+		{
+			const int l = MIN (bufferLength - 1, length);
+			memcpy (buffer, p, l);
+			buffer [l] = 0;
+			return length;
+		}
+	}
+
+	return 0;
+}
+
+Firebird::string PathName::expandFilename(const char* fileName, int dpbLength, const UCHAR* dpb)
+{
+	char workingDirectory [MAXPATHLEN];
+	const char *directory;
+
+	if (findWorkingDirectory (dpbLength, dpb, sizeof (workingDirectory), workingDirectory))
+		directory = workingDirectory;
+	else
+		directory = getWorkingDirectory();
+
+	return expandFilename (fileName, directory);
+}
+
+Firebird::string PathName::expandFilename(const char* fileName, const char* workingDirectory)
+{
+	char buffer [MAXPATHLEN];
+	int length = merge (fileName, workingDirectory, sizeof (buffer), buffer);
+
+#ifdef _WIN32
+	for (char *p = buffer; *p; ++p)
+	{
+		if (*p == '/')
+			*p = SEPARATOR;
+	}
+#endif
+
+	return Firebird::string(buffer, length);
+}
+
 int PathName::merge(const char* fileName, const char* workingDirectory, int bufferLength, char* buffer)
 {
 	const char* const endBuffer = buffer + bufferLength - 1;
@@ -164,6 +240,11 @@ char* PathName::copyCanonical(const char* fileName, char* buffer, const char* en
 	*q = 0;
 
 	return q;
+}
+
+Firebird::string PathName::expandFilename(const char* fileName)
+{
+	return expandFilename (fileName, getWorkingDirectory());
 }
 
 bool PathName::hasDirectory(const char* fileName)

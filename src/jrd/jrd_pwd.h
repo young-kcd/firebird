@@ -31,36 +31,40 @@
 #include "../common/utils_proto.h"
 #include "../jrd/sha.h"
 #include "gen/iberror.h"
-#include "../common/classes/ClumpletWriter.h"
-
-#include "../auth/AuthInterface.h"
-
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #include <time.h>
-
-namespace Auth {
 
 const size_t MAX_PASSWORD_ENC_LENGTH = 12;		// passed by remote protocol
 const size_t MAX_PASSWORD_LENGTH = 64;			// used to store passwords internally
 static const char* const PASSWORD_SALT = "9z";	// for old ENC_crypt()
 const size_t SALT_LENGTH = 12;					// measured after base64 coding
 
+namespace Jrd {
+
 class SecurityDatabase
 {
+	struct user_record
+	{
+		SLONG gid;
+		SLONG uid;
+		SSHORT flag;
+		SCHAR password[MAX_PASSWORD_LENGTH + 2];
+	};
+
 public:
-	static void getPath(char* path_buffer)
+	static void getPath(TEXT* path_buffer)
 	{
 		static const char* USER_INFO_NAME = "security2.fdb";
 		Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_SECDB, USER_INFO_NAME);
 		name.copyTo(path_buffer, MAXPATHLEN);
 	}
 
-	static Result verify(WriterInterface* authBlock,
-						 Firebird::ClumpletReader& originalDpb);
-
-	static void shutdown(void*);
+	static void initialize();
+	static void shutdown();
+	static void verifyUser(Firebird::string&, const TEXT*, const TEXT*, const TEXT*,
+		int*, int*, int*, const Firebird::string&);
 
 	static void hash(Firebird::string& h, const Firebird::string& userName, const TEXT* passwd)
 	{
@@ -71,7 +75,7 @@ public:
 
 	static void hash(Firebird::string& h,
 					 const Firebird::string& userName,
-					 const Firebird::string& passwd,
+					 const TEXT* passwd,
 					 const Firebird::string& oldHash)
 	{
 		Firebird::string salt(oldHash);
@@ -84,6 +88,9 @@ public:
 	}
 
 private:
+	static const UCHAR PWD_REQUEST[256];
+	static const UCHAR TPB[4];
+
 	Firebird::Mutex mutex;
 
 	ISC_STATUS_ARRAY status;
@@ -91,44 +98,65 @@ private:
 	isc_db_handle lookup_db;
 	isc_req_handle lookup_req;
 
-	int timer;
-	char user_info_name[MAXPATHLEN];
+	int counter;
 
-	void init();
 	void fini();
-	bool lookup_user(const char*, char*);
+	void init();
+	bool lookup_user(const TEXT*, int*, int*, TEXT*);
 	void prepare();
 	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
 
 	static SecurityDatabase instance;
 
 	SecurityDatabase()
-		: lookup_db(0), lookup_req(0), timer(0)
+		: lookup_db(0), lookup_req(0), counter(0)
+	{}
+
+public:
+	// Shuts SecurityDatabase in case of errors during attach or create.
+	// When attachment is created, control is passed to it using clear.
+	class InitHolder
 	{
-	}
+	public:
+		InitHolder()
+			: shutdown(true)
+		{
+			SecurityDatabase::initialize();
+		}
+
+		void clear()
+		{
+			shutdown = false;
+		}
+
+		~InitHolder()
+		{
+			if (shutdown)
+			{
+				SecurityDatabase::shutdown();
+			}
+		}
+
+	private:
+		bool shutdown;
+	};
 };
 
-class SecurityDatabaseServer : public ServerPlugin
+class DelayFailedLogin : public Firebird::Exception
 {
+private:
+	int seconds;
+
 public:
-	ServerInstance* instance();
-	void getName(const char** data, unsigned short* dataSize);
-	void release();
+	explicit DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
+
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
+	virtual const char* what() const throw() { return "Jrd::DelayFailedLogin"; }
+	static void raise(int sec);
+	void sleep() const;
 };
 
-class SecurityDatabaseServerInstance : public ServerInstance
-{
-public:
 
-	Result startAuthentication(bool isService, const char* dbName,
-							   const unsigned char* dpb, unsigned int dpbSize,
-							   WriterInterface* writerInterface);
-	Result contAuthentication(WriterInterface* writerInterface,
-							  const unsigned char* data, unsigned int size);
-	void getData(const unsigned char** data, unsigned short* dataSize);
-	void release();
-};
-
-} // namespace Auth
+} // namespace Jrd
 
 #endif // JRD_PWD_H

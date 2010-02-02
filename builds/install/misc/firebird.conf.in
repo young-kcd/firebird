@@ -353,6 +353,19 @@
 
 
 # ----------------------------
+# Boolean evaluation method (complete or shortcut)
+#
+# If your SQL code depends on side-effects of full evaluation of OR
+# and AND statements (right-hand-side terms), even if the expressions
+# final result could be determined by just examining the value of the
+# first term, you might need to turn this on.
+#
+# Type: boolean
+#
+#CompleteBooleanEvaluation = 0
+
+
+# ----------------------------
 #
 # Determines the number of seconds that the lock manager will wait after a
 # conflict has been encountered before purging locks from dead processes
@@ -404,6 +417,24 @@
 # Type: boolean
 #
 #BugcheckAbort = 0
+
+
+# Prior to Firebird 1.5 various SELECT expressions generated unnamed
+# columns. This did not conform to the SQL standard. Fb 1.5 saw the
+# introduction of default aliases for these unnamed columns. In some
+# cases, particularly if string concatenation is used (via the ||
+# operator) this breaks existing scripts.
+#
+# This setting will affect aliases generated via CONCATENATION,
+# CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP and EXTRACT. Setting
+# the value to true will disable the alias generation. It is only
+# recommended to be used where legacy scripts need to be supported.
+# It will be marked deprecated in Firebird 2.0 and removed in
+# Firebird 3.0.
+#
+# Type: boolean
+#
+#OldColumnNaming = 0
 
 
 # Prior to Firebird 2.5 the SET clause of the UPDATE statement assigned

@@ -39,7 +39,7 @@
 // from ODS 8 up to the latest.  If this macro is undefined, the engine
 // only opens a database of the current ODS major version.
 
-//#define ODS_8_TO_CURRENT
+#define ODS_8_TO_CURRENT
 
 /**********************************************************************
 **
@@ -54,7 +54,6 @@
 **   Here the Firebird history begins:
 **   ODS 10.0 is for FB1.0 and ODS 10.1 is for FB1.5.
 **   ODS 11.0 is for FB2.0, ODS11.1 is for FB2.1 and ODS11.2 is for FB2.5.
-**   ODS 12.0 is for FB3.
 **
 ***********************************************************************/
 
@@ -67,7 +66,6 @@ const USHORT ODS_VERSION9	= 9;		// btree leaf pages are always propagated up
 const USHORT ODS_VERSION10	= 10;		// V6.0 features. SQL delimited idetifier,
 										// SQLDATE, and 64-bit exact numeric type
 const USHORT ODS_VERSION11	= 11;		// Firebird 2.x features
-const USHORT ODS_VERSION12	= 12;		// Firebird 3.x features
 
 // ODS minor version -- minor versions ARE compatible, but may be
 // increasingly functional.  Add new minor versions, but leave previous
@@ -108,18 +106,13 @@ const USHORT ODS_VERSION12	= 12;		// Firebird 3.x features
 
 // Minor versions for ODS 11
 
-//const USHORT ODS_CURRENT11_0	= 0;	// Firebird 2.0 features
-//const USHORT ODS_CURRENT11_1	= 1;	// Firebird 2.1 features
-//const USHORT ODS_CURRENT11_2	= 2;	// Firebird 2.5 features
-//const USHORT ODS_CURRENT11	= 2;
-
-// Minor versions for ODS 12
-
-const USHORT ODS_CURRENT12_0	= 0;	// Firebird 3.0 features
-const USHORT ODS_CURRENT12		= 0;
+const USHORT ODS_CURRENT11_0	= 0;	// Firebird 2.0 features
+const USHORT ODS_CURRENT11_1	= 1;	// Firebird 2.1 features
+const USHORT ODS_CURRENT11_2	= 2;	// Firebird 2.5 features
+const USHORT ODS_CURRENT11		= 2;
 
 // useful ODS macros. These are currently used to flag the version of the
-// system triggers and system indices in ini.e
+// system triggers and system indices in ini.epp
 
 inline USHORT ENCODE_ODS(USHORT major, USHORT minor)
 {
@@ -135,7 +128,6 @@ const USHORT ODS_10_1		= ENCODE_ODS(ODS_VERSION10, 1);
 const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 const USHORT ODS_11_1		= ENCODE_ODS(ODS_VERSION11, 1);
 const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
-const USHORT ODS_12_0		= ENCODE_ODS(ODS_VERSION12, 0);
 
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
@@ -154,20 +146,20 @@ inline USHORT DECODE_ODS_MINOR(USHORT ods_version)
 
 // Set current ODS major and minor version
 
-const USHORT ODS_VERSION = ODS_VERSION12;		// Current ODS major version -- always
+const USHORT ODS_VERSION = ODS_VERSION11;		// Current ODS major version -- always
 												// the highest.
 
-const USHORT ODS_RELEASED = ODS_CURRENT12_0;	// The lowest stable minor version
+const USHORT ODS_RELEASED = ODS_CURRENT11_0;	// The lowest stable minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT = ODS_CURRENT12;		// The highest defined minor version
+const USHORT ODS_CURRENT = ODS_CURRENT11;		// The highest defined minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT_VERSION = ODS_12_0;	// Current ODS version in use which includes
+const USHORT ODS_CURRENT_VERSION = ODS_11_2;	// Current ODS version in use which includes
 												// both major and minor ODS versions!
 
 
-//const USHORT USER_REL_INIT_ID_ODS8	= 31;	// ODS < 9 ( <= 8.2)
+const USHORT USER_REL_INIT_ID_ODS8		= 31;	// ODS < 9 ( <= 8.2)
 const USHORT USER_DEF_REL_INIT_ID		= 128;	// ODS >= 9
 
 
@@ -183,14 +175,13 @@ const SCHAR pag_root			= 6;		// Index root page
 const SCHAR pag_index			= 7;		// Index (B-tree) page
 const SCHAR pag_blob			= 8;		// Blob data page
 const SCHAR pag_ids				= 9;		// Gen-ids
-const SCHAR pag_scns			= 10;		// SCN's inventory page
+const SCHAR pag_log				= 10;		// Write ahead log information DEPRECATED
 const SCHAR pag_max				= 10;		// Max page type
 
 // Pre-defined page numbers
 
 const SLONG HEADER_PAGE		= 0;
-const SLONG FIRST_PIP_PAGE	= 1;
-const SLONG FIRST_SCN_PAGE	= 2;
+const SLONG LOG_PAGE		= 2;
 
 // Page size limits
 
@@ -207,10 +198,11 @@ struct pag
 {
 	SCHAR pag_type;
 	UCHAR pag_flags;
-	USHORT pag_reserved;		// not used but anyway present because of alignment rules
+	USHORT pag_checksum;
 	ULONG pag_generation;
-	ULONG pag_scn;
-	ULONG pag_pageno;			// for validation
+	// We renamed pag_seqno for SCN number usage to avoid major ODS version bump
+	ULONG pag_scn;			// WAL seqno of last update, now used by nbackup
+	ULONG reserved;			// Was used for WAL
 };
 
 typedef pag* PAG;
@@ -234,6 +226,18 @@ struct blob_page
 const UCHAR blp_pointers	= 1;		// Blob pointer page, not data page
 
 
+// B-tree node
+
+struct btree_nod
+{
+	UCHAR btn_prefix;			// size of compressed prefix
+	UCHAR btn_length;			// length of data in node
+	UCHAR btn_number[4];		// page or record number
+	UCHAR btn_data[1];
+};
+
+const int BTN_SIZE	= 6;
+
 // B-tree page ("bucket")
 struct btree_page
 {
@@ -245,7 +249,7 @@ struct btree_page
 	USHORT btr_length;			// length of data in bucket
 	UCHAR btr_id;				// index id for consistency
 	UCHAR btr_level;			// index level (0 = leaf)
-	UCHAR btr_nodes[1];
+	btree_nod btr_nodes[1];
 };
 
 // Firebird B-tree nodes
@@ -281,11 +285,14 @@ struct IndexJumpInfo
 };
 
 // pag_flags
-//const UCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page
-const UCHAR btr_descending			= 2;	// Page/bucket is part of a descending index
-const UCHAR btr_jump_info			= 16;	// AB: 2003-index-structure enhancement
+const UCHAR btr_dont_gc				= 1;	// Don't garbage-collect this page
+//const UCHAR btr_not_propagated	= 2;	// page is not propagated upward
+const UCHAR btr_descending			= 8;	// Page/bucket is part of a descending index
+const UCHAR btr_all_record_number	= 16;	// Non-leaf-nodes will contain record number information
+const UCHAR btr_large_keys			= 32;	// AB: 2003-index-structure enhancement
+const UCHAR btr_jump_info			= 64;	// AB: 2003-index-structure enhancement
 
-const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_jump_info);
+const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
 
 // Data Page
 
@@ -308,9 +315,6 @@ struct data_page
 const UCHAR dpg_orphan	= 1;		// Data page is NOT in pointer page
 const UCHAR dpg_full	= 2;		// Pointer page is marked FULL
 const UCHAR dpg_large	= 4;		// Large object is on page
-const UCHAR dpg_swept	= 8;		// Sweep has nothing to do on this page
-const UCHAR dpg_secondary	= 16;	// Primary record versions not stored on this page
-									// Set in dpm.epp's extend_relation() but never tested.
 
 
 // Index root page
@@ -335,20 +339,24 @@ struct index_root_page
 
 // key descriptor
 
-struct irtd
+struct irtd_ods10
 {
 	USHORT irtd_field;
 	USHORT irtd_itype;
+};
+
+struct irtd : public irtd_ods10
+{
 	float irtd_selectivity;
 };
 
 // irtd_itype
-const USHORT irt_unique		= 1; // Tested in validation.cpp's walk_index but never set!
-//const USHORT irt_descending	= 2;
+const USHORT irt_unique		= 1;
+const USHORT irt_descending	= 2;
 const USHORT irt_in_progress= 4;
-//const USHORT irt_foreign	= 8;
-//const USHORT irt_primary	= 16;
-const USHORT irt_expression	= 32; // Tested, disabled and restored in validation.cpp but never set originally
+const USHORT irt_foreign	= 8;
+const USHORT irt_primary	= 16;
+const USHORT irt_expression	= 32;
 
 const int STUFF_COUNT		= 4;
 const SLONG END_LEVEL		= -1;
@@ -371,13 +379,12 @@ struct header_page
 	SLONG hdr_creation_date[2];		// Date/time of creation
 	SLONG hdr_attachment_id;		// Next attachment id
 	SLONG hdr_shadow_count;			// Event count for shadow synchronization
-	UCHAR hdr_cpu;					// CPU database was created on
-	UCHAR hdr_os;					// OS database was created under
-	UCHAR hdr_cc;					// Compiler of engine on which database was created
-	UCHAR hdr_compatibility_flags;	// Cross-platform database transfer compatibility flags
+	SSHORT hdr_implementation;		// Implementation number
 	USHORT hdr_ods_minor;			// Update version of ODS
+	USHORT hdr_ods_minor_original;	// Update version of ODS at creation
 	USHORT hdr_end;					// offset of HDR_end in page
 	ULONG hdr_page_buffers;			// Page buffers for database cache
+	SLONG hdr_bumped_transaction;	// Bumped transaction id for log optimization
 	SLONG hdr_oldest_snapshot;		// Oldest snapshot of active transactions
 	SLONG hdr_backup_pages; 		// The amount of pages in files locked for backup
 	SLONG hdr_misc[3];				// Stuff to be named later
@@ -394,22 +401,32 @@ struct header_page
 
 const UCHAR HDR_end					= 0;
 const UCHAR HDR_root_file_name		= 1;	// Original name of root file
-const UCHAR HDR_file				= 2;	// Secondary file
-const UCHAR HDR_last_page			= 3;	// Last logical page number of file
-const UCHAR HDR_sweep_interval		= 4;	// Transactions between sweeps
-const UCHAR HDR_password_file_key	= 5;	// Key to compare to password db
-const UCHAR HDR_difference_file		= 6;	// Delta file that is used during backup lock
-const UCHAR HDR_backup_guid			= 7;	// UID generated on each switch into backup mode
-const UCHAR HDR_max					= 8;	// Maximum HDR_clump value
+//const UCHAR HDR_journal_server	= 2;	// Name of journal server
+const UCHAR HDR_file				= 3;	// Secondary file
+const UCHAR HDR_last_page			= 4;	// Last logical page number of file
+//const UCHAR HDR_unlicensed		= 5;	// Count of unlicensed activity
+const UCHAR HDR_sweep_interval		= 6;	// Transactions between sweeps
+const UCHAR HDR_log_name			= 7;	// replay log name
+//const UCHAR HDR_journal_file		= 8;	// Intermediate journal file
+const UCHAR HDR_password_file_key	= 9;	// Key to compare to password db
+//const UCHAR HDR_backup_info		= 10;	// WAL backup information
+//const UCHAR HDR_cache_file		= 11;	// Shared cache file
+const UCHAR HDR_difference_file		= 12;	// Delta file that is used during backup lock
+const UCHAR HDR_backup_guid			= 13;	// UID generated on each switch into backup mode
+const UCHAR HDR_max					= 14;	// Maximum HDR_clump value
 
 // Header page flags
 
 const USHORT hdr_active_shadow		= 0x1;		// 1    file is an active shadow file
 const USHORT hdr_force_write		= 0x2;		// 2    database is forced write
-// const USHORT hdr_no_checksums	= 0x4;		// 4   don't calculate checksums, not used since ODS 12
-const USHORT hdr_no_reserve			= 0x8;		// 8   don't reserve space for versions
-const USHORT hdr_SQL_dialect_3		= 0x10;		// 16  database SQL dialect 3
-const USHORT hdr_read_only			= 0x20;		// 32  Database in ReadOnly. If not set, DB is RW
+//const USHORT hdr_short_journal	= 0x4;		// 4    short-term journalling
+//const USHORT hdr_long_journal		= 0x8;		// 8    long-term journalling
+const USHORT hdr_no_checksums		= 0x10;		// 16   don't calculate checksums
+const USHORT hdr_no_reserve			= 0x20;		// 32   don't reserve space for versions
+//const USHORT hdr_disable_cache	= 0x40;		// 64   disable using shared cache file
+//const USHORT hdr_shutdown			= 0x80;		// 128  database is shutdown
+const USHORT hdr_SQL_dialect_3		= 0x100;	// 256  database SQL dialect 3
+const USHORT hdr_read_only			= 0x200;	// 512  Database in ReadOnly. If not set, DB is RW
 // backup status mask - see bit values in nbak.h
 const USHORT hdr_backup_mask		= 0xC00;
 const USHORT hdr_shutdown_mask		= 0x1080;
@@ -420,6 +437,16 @@ const USHORT hdr_shutdown_multi		= 0x80;
 const USHORT hdr_shutdown_full		= 0x1000;
 const USHORT hdr_shutdown_single	= 0x1080;
 
+/*
+struct sfd
+{
+	SLONG sfd_min_page;			// Minimum page number
+	SLONG sfd_max_page;			// Maximum page number
+	UCHAR sfd_index;			// Sequence of secondary file
+	UCHAR sfd_file[1];			// Given file name
+};
+typedef sfd SFD;
+*/
 
 // Page Inventory Page
 
@@ -427,48 +454,8 @@ struct page_inv_page
 {
 	pag pip_header;
 	SLONG pip_min;				// Lowest (possible) free page
-	SLONG pip_used;				// Number of pages allocated from this PIP page
 	UCHAR pip_bits[1];
 };
-
-
-// SCN's Page
-
-struct scns_page
-{
-	pag scn_header;
-	ULONG scn_sequence;			// Sequence number in page space
-	ULONG scn_pages[1];			// SCN's vector
-};
-
-// Important note !
-// pagesPerPIP value must be multiply of pagesPerSCN value !
-//
-// Nth PIP page number is : pagesPerPIP * N - 1
-// Nth SCN page number is : pagesPerSCN * N
-// Numbers of first PIP and SCN pages (N = 0) is fixed and not interesting here.
-//
-// Generally speaking it is possible that exists N and M that
-//   pagesPerSCN * N == pagesPerPIP * M - 1,
-// i.e. we can't guarantee that some SCN page will not have the same number as
-// some PIP page. We can implement checks for this case and put corresponding
-// SCN page at the next position but it will complicate code a lot.
-//
-// The much more easy solution is to make pagesPerPIP multiply of pagesPerSCN.
-// The fact that page_inv_page::pip_bits array is LONG aligned and occupy less
-// size (in bytes) than scns_page::scn_pages array allow us to use very simple
-// formula for pagesPerSCN : pagesPerSCN = pagesPerPIP / BITS_PER_LONG.
-// Please, consider above when changing page_inv_page or scns_page definition.
-//
-// Table below show numbers for different page sizes using current (ODS12)
-// definitions of page_inv_page and scns_page
-//
-// PageSize  pagesPerPIP  maxPagesPerSCN    pagesPerSCN
-//     4096        32576            1019           1018
-//     8192        65344            2043           2042
-//    16384       130880            4091           4090
-//    32768       261952            8187           8186
-//    65536       524096           16379          16378
 
 
 // Pointer Page
@@ -481,31 +468,12 @@ struct pointer_page
 	USHORT ppg_count;			// Number of slots active
 	USHORT ppg_relation;		// Relation id
 	USHORT ppg_min_space;		// Lowest slot with space available
+	USHORT ppg_max_space;		// Highest slot with space available
 	SLONG ppg_page[1];			// Data page vector
 };
 
 // pag_flags
 const UCHAR ppg_eof		= 1;	// Last pointer page in relation
-
-// After array of physical page numbers (ppg_page) there is also array of bit
-// flags per every data page. These flags describes state of corresponding data
-// page. Definitions below used to deal with these bits.
-const int PPG_DP_BITS_NUM	= 4;		// Number of additional flag bits per data page
-
-const UCHAR ppg_dp_full		= 1;		// Data page is FULL
-const UCHAR ppg_dp_large	= 2;		// Large object is on data page
-const UCHAR ppg_dp_swept	= 4;		// Sweep has nothing to do on data page
-const UCHAR ppg_dp_secondary = 8;		// Primary record versions not stored on data page
-
-const UCHAR PPG_DP_ALL_BITS	= (1 << PPG_DP_BITS_NUM) - 1;
-
-#define PPG_DP_BIT_MASK(slot, bit)		((bit) << (((slot) & 1) << 2))
-#define PPG_DP_BITS_BYTE(bits, slot)	((bits)[(slot) >> 1])
-
-#define PPG_DP_BIT_TEST(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) & PPG_DP_BIT_MASK((slot), (bit)))
-#define PPG_DP_BIT_SET(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) |= PPG_DP_BIT_MASK((slot), (bit)))
-#define PPG_DP_BIT_CLEAR(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) &= ~PPG_DP_BIT_MASK((slot), (bit)))
-
 
 // Transaction Inventory Page
 
@@ -518,20 +486,23 @@ struct tx_inv_page
 
 
 // Generator Page
-// For ODS12 and beyond
 
 struct generator_page
 {
 	pag gpg_header;
 	SLONG gpg_sequence;			// Sequence number
+	SLONG gpg_waste1;			// overhead carried for backward compatibility
+	USHORT gpg_waste2;			// overhead carried for backward compatibility
+	USHORT gpg_waste3;			// overhead carried for backward compatibility
+	USHORT gpg_waste4;			// overhead carried for backward compatibility
+	USHORT gpg_waste5;			// overhead carried for backward compatibility
 	SINT64 gpg_values[1];		// Generator vector
 };
 
 
 // Record header
 
-struct rhd
-{
+struct rhd {
 	SLONG rhd_transaction;		// transaction id
 	SLONG rhd_b_page;			// back pointer
 	USHORT rhd_b_line;			// back line
@@ -579,8 +550,6 @@ struct blh
 #define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
 // rhd_flags, rhdf_flags and blh_flags
 
-// record_param flags in req.h must be an exact replica of ODS record header flags
-
 const USHORT rhd_deleted		= 1;		// record is logically deleted
 const USHORT rhd_chain			= 2;		// record is an old version
 const USHORT rhd_fragment		= 4;		// record is a fragment
@@ -588,13 +557,59 @@ const USHORT rhd_incomplete		= 8;		// record is incomplete
 const USHORT rhd_blob			= 16;		// isn't a record but a blob
 const USHORT rhd_stream_blob	= 32;		// blob is a stream mode blob
 const USHORT rhd_delta			= 32;		// prior version is differences only
-											// Tested in validation.cpp's walk_chain but never set
 const USHORT rhd_large			= 64;		// object is large
 const USHORT rhd_damaged		= 128;		// object is known to be damaged
 const USHORT rhd_gc_active		= 256;		// garbage collecting dead record version
-//const USHORT rhd_uk_modified	= 512;		// record key field values are changed
+const USHORT rhd_uk_modified	= 512;		// record key field values are changed
 
 
+// Log page
+
+struct ctrl_pt
+{
+	SLONG cp_seqno;
+	SLONG cp_offset;
+	SLONG cp_p_offset;
+	SSHORT cp_fn_length;
+};
+
+struct log_info_page
+{
+	pag log_header;
+	SLONG log_flags;			// flags, OBSOLETE
+	ctrl_pt log_cp_1;			// control point 1
+	ctrl_pt log_cp_2;			// control point 2
+	ctrl_pt log_file;			// current file
+	SLONG log_next_page;		// Next log page
+	SLONG log_mod_tip;			// tip of modify transaction
+	SLONG log_mod_tid;			// transaction id of modify process
+	SLONG log_creation_date[2];	// Date/time of log creation
+	SLONG log_free[4];			// some extra space for later use
+	USHORT log_end;				// similar to hdr_end
+	UCHAR log_data[1];
+};
+
+#define LIP_SIZE	OFFSETA (Ods::log_info_page*, log_data)
+
+// additions for write ahead log, almost obsolete.
+
+//const int CTRL_FILE_LEN			= 255;	// Pre allocated size of file name
+//const USHORT CLUMP_ADD			= 0;
+//const USHORT CLUMP_REPLACE		= 1;
+//const USHORT CLUMP_REPLACE_ONLY	= 2;
+
+// Log Clumplet types
+
+const UCHAR LOG_end				= HDR_end;
+//const int LOG_ctrl_file1		= 1;	// file name of 2nd last control pt
+//const int LOG_ctrl_file2		= 2;	// file name of last ctrl pt
+//const int LOG_logfile			= 3;	// Primary WAL file name
+//const int LOG_backup_info		= 4;	// Journal backup directory
+//const int LOG_chkpt_len		= 5;	// checkpoint length
+//const int LOG_num_bufs		= 6;	// Number of log buffers
+//const int LOG_bufsize			= 7;	// Buffer size
+//const int LOG_grp_cmt_wait	= 8;	// Group commit wait time
+//const int LOG_max				= 8;	// Maximum LOG_clump value
 
 // This (not exact) copy of class DSC is used to store descriptors on disk.
 // Hopefully its binary layout is common for 32/64 bit CPUs.

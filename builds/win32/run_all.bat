@@ -8,6 +8,9 @@ set FBBUILD_BUILDTYPE=release
 set FBBUILD_INCLUDE_PDB=
 set FBBUILD_MAKE_KITS_ONLY=
 
+set FBBUILD_KITS=ISX ZIP EMB
+::set FBBUILD_KITS=ISX
+
 ::Check if on-line help is required
 for %%v in ( %1 %2 %3 %4 %5 %6 %7 %8 %9 )  do (
   ( @if /I "%%v"=="-h" (goto :HELP & goto :EOF) )
@@ -41,11 +44,11 @@ if "%ERRLEV%"=="1" goto :END
 :MAKE_KITS
 :: Package everything up
 pushd ..\install\arch-specific\win32
-call BuildExecutableInstall ISX ZIP EMB %FBBUILD_BUILDTYPE%
+call BuildExecutableInstall %FBBUILD_KITS% %FBBUILD_BUILDTYPE%
 if "%ERRLEV%"=="1" (popd & goto :END)
 if defined FBBUILD_INCLUDE_PDB (
 set /A FBBUILD_PACKAGE_NUMBER-=1
-call BuildExecutableInstall ISX ZIP EMB %FBBUILD_BUILDTYPE% PDB
+call BuildExecutableInstall %FBBUILD_KITS% %FBBUILD_BUILDTYPE% PDB
 )
 popd
 

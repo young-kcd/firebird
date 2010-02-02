@@ -29,7 +29,6 @@
 namespace Jrd {
 
 class CompilerScratch;
-class TypeClause;
 
 
 class Node : public Firebird::PermanentStorage
@@ -37,7 +36,7 @@ class Node : public Firebird::PermanentStorage
 public:
 	explicit Node(MemoryPool& pool)
 		: PermanentStorage(pool),
-		  dsqlScratch(NULL)
+		  compiledStatement(NULL)
 	{
 	}
 
@@ -46,67 +45,43 @@ public:
 	}
 
 public:
-	Node* dsqlPass(DsqlCompilerScratch* aDsqlScratch)
+	Node* dsqlPass(CompiledStatement* aCompiledStatement)
 	{
-		dsqlScratch = aDsqlScratch;
-		return internalDsqlPass();
+		compiledStatement = aCompiledStatement;
+		return dsqlPass();
 	}
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const = 0;
 
 protected:
-	virtual Node* internalDsqlPass()
+	virtual Node* dsqlPass()
 	{
 		return this;
 	}
 
 protected:
-	DsqlCompilerScratch* dsqlScratch;
+	CompiledStatement* compiledStatement;
 };
 
 
 class DdlNode : public Node
 {
 public:
-	explicit DdlNode(MemoryPool& pool, const Firebird::string& aSqlText)
-		: Node(pool),
-		  sqlText(pool, aSqlText)
+	explicit DdlNode(MemoryPool& pool)
+		: Node(pool)
 	{
 	}
 
-public:
-	const Firebird::string& getSqlText()
-	{
-		return sqlText;
-	}
-
-public:
-	enum DdlTriggerWhen { DTW_BEFORE, DTW_AFTER };
-	static void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
-		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName,
-		const Firebird::string& sqlText);
-
 protected:
-	void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
-		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName);
-	void putType(const TypeClause& type, bool useSubType);
-	void resetContextStack();
-	Firebird::MetaName storeGlobalField(thread_db* tdbb, jrd_tra* transaction,
-		const TypeClause& parameter);
-
-protected:
-	virtual DdlNode* internalDsqlPass()
+	virtual Node* dsqlPass()
 	{
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
+		compiledStatement->req_type = REQ_DDL;
 		return this;
 	}
 
 public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction) = 0;
-
-private:
-	Firebird::string sqlText;
 };
 
 
@@ -114,8 +89,7 @@ class DmlNode : public Node
 {
 public:
 	explicit DmlNode(MemoryPool& pool)
-		: Node(pool),
-		  node(NULL)
+		: Node(pool)
 	{
 	}
 
@@ -126,7 +100,7 @@ public:
 	virtual void genBlr() = 0;
 	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) = 0;
 
 protected:
 	jrd_nod* node;
@@ -140,75 +114,6 @@ public:
 		: DmlNode(pool)
 	{
 	}
-};
-
-
-// Used to represent nodes that don't have a specific BLR verb, i.e.,
-// do not use RegisterNode.
-class DsqlOnlyStmtNode : public StmtNode
-{
-public:
-	explicit DsqlOnlyStmtNode(MemoryPool& pool)
-		: StmtNode(pool)
-	{
-	}
-
-public:
-	DsqlOnlyStmtNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-	{
-		fb_assert(false);
-		return this;
-	}
-
-
-	DsqlOnlyStmtNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-	{
-		fb_assert(false);
-		return this;
-	}
-
-
-	jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
-	{
-		fb_assert(false);
-		return NULL;
-	}
-};
-
-
-// This class (via the make method) does the job that pass1_savepoint does for the legacy nodes.
-class SavepointEncloseNode : public DsqlOnlyStmtNode
-{
-public:
-	explicit SavepointEncloseNode(MemoryPool& pool, StmtNode* aStmt)
-		: DsqlOnlyStmtNode(pool),
-		  stmt(aStmt)
-	{
-	}
-
-public:
-	static StmtNode* make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node);
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void genBlr();
-
-private:
-	StmtNode* stmt;
-};
-
-
-// Common node for all "code blocks" (i.e.: procedures, triggers and execute block)
-class BlockNode
-{
-public:
-	virtual ~BlockNode()
-	{
-	}
-
-public:
-	virtual void genReturn() = 0;
-	virtual dsql_nod* resolveVariable(const dsql_str* varName) = 0;
 };
 
 

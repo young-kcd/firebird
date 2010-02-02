@@ -48,6 +48,7 @@
 #include "../jrd/license.h"
 #include "../jrd/fil.h"
 #include "../jrd/sdl.h"
+#include "../jrd/jrd_pwd.h"
 #include "../remote/inet_proto.h"
 #include "../remote/inter_proto.h"
 #include "../remote/merge_proto.h"
@@ -59,13 +60,9 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/jrd_pwd.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/DbImplementation.h"
-#include "../auth/Auth.h"
-#include "../auth/SecurityDatabase/LegacyClient.h"
 #include "../auth/trusted/AuthSspi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -98,7 +95,8 @@ namespace {
 	struct ParametersSet
 	{
 		UCHAR dummy_packet_interval, user_name, sys_user_name,
-			  password, password_enc, address_path, process_id, process_name;
+			  password, password_enc, address_path, process_id, process_name,
+			  trusted_auth, trusted_role;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
 									isc_dpb_user_name,
@@ -107,7 +105,9 @@ namespace {
 									isc_dpb_password_enc,
 									isc_dpb_address_path,
 									isc_dpb_process_id,
-									isc_dpb_process_name};
+									isc_dpb_process_name,
+									isc_dpb_trusted_auth,
+									isc_dpb_trusted_role};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
 									isc_spb_user_name,
 									isc_spb_sys_user_name,
@@ -115,7 +115,9 @@ namespace {
 									isc_spb_password_enc,
 									isc_spb_address_path,
 									isc_spb_process_id,
-									isc_spb_process_name};
+									isc_spb_process_name,
+									isc_spb_trusted_auth,
+									isc_spb_trusted_role};
 }
 
 static Rvnt* add_event(rem_port*);
@@ -129,6 +131,9 @@ static bool check_response(Rdb*, PACKET *);
 static bool clear_queue(rem_port*, ISC_STATUS *);
 static bool clear_stmt_que(rem_port*, ISC_STATUS*, Rsr*);
 static void disconnect(rem_port*);
+#ifdef SCROLLABLE_CURSORS
+static RMessage* dump_cache(rem_port*, ISC_STATUS *, Rrq::rrq_repeat *);
+#endif
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
@@ -141,7 +146,7 @@ static bool get_single_user(ClumpletReader&);
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 					const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*);
-static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&, ClumpletWriter&);
+static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&, ClumpletWriter&, const ParametersSet&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static bool mov_dsql_message(ISC_STATUS*, const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
@@ -158,6 +163,9 @@ static void release_statement(Rsr**);
 static void release_sql_request(Rsr*);
 static void release_transaction(Rtr*);
 static ISC_STATUS return_success(Rdb*);
+#ifdef SCROLLABLE_CURSORS
+static RMessage* scroll_cache(ISC_STATUS *, Rrq*, rem_port*, Rrq::rrq_repeat *, USHORT *, ULONG *);
+#endif
 static ISC_STATUS send_and_receive(Rdb*, PACKET *, ISC_STATUS *);
 static ISC_STATUS send_blob(ISC_STATUS*, Rbl*, USHORT, const UCHAR*);
 static void send_cancel_event(Rvnt*);
@@ -255,7 +263,6 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 
 
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
-							   FB_API_HANDLE /*public_handle*/,
 							   const TEXT* filename,
 							   Rdb** handle,
 							   SSHORT dpb_length,
@@ -282,8 +289,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	Rdb* rdb = 0;
 
 	try {
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
-				reinterpret_cast<const UCHAR*>(dpb), dpb_length);
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 #ifdef UNIX
 		// If single user, return
@@ -308,7 +315,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		RefMutexGuard portGuard(*port->port_sync);
 		rdb = port->port_context;
-		rdb->rdb_status_vector = user_status;
+		rdb->set_status_vector(user_status);
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
 		// the DPB so the server can pay attention to it.  Note: allocation code must
@@ -317,7 +324,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		const bool result = init(user_status, port, op_attach, expanded_name, newDpb);
+		const bool result = init(user_status, port, op_attach, expanded_name, newDpb, dpbParam);
 
 		if (!result) {
 			return user_status[1];
@@ -359,7 +366,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	ISC_STATUS status;
 	try
@@ -407,7 +414,7 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, Rbl** blob_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 	try
 	{
 		if (!release_object(rdb, op_cancel_blob, blob->rbl_id)) {
@@ -443,7 +450,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS* user_status, Rdb** handle, SLONG* id)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -490,7 +497,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS* user_status, Rbl** blob_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -538,7 +545,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -578,7 +585,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -626,7 +633,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -686,10 +693,16 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 			next = message->msg_next;
 
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 
 			Rrq::rrq_repeat * tail = &request->rrq_rpt[message->msg_number];
 			tail->rrq_message = message;
 			tail->rrq_xdr = message;
+#ifdef SCROLLABLE_CURSORS
+			tail->rrq_last = NULL;
+#endif
 			tail->rrq_format = (rem_fmt*) message->msg_address;
 
 			message->msg_address = NULL;
@@ -733,7 +746,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *rtr_handle;
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -783,7 +796,6 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
-							   FB_API_HANDLE /*public_handle*/,
 							   const TEXT* filename,
 							   Rdb** handle,
 							   SSHORT dpb_length,
@@ -810,8 +822,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	try
 	{
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
-					reinterpret_cast<const UCHAR*>(dpb), dpb_length);
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+					reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 #ifdef UNIX
 		// If single user, return
@@ -834,7 +846,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		RefMutexGuard portGuard(*port->port_sync);
 		rdb = port->port_context;
-		rdb->rdb_status_vector = user_status;
+		rdb->set_status_vector(user_status);
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
 		// the DPB so the server can pay attention to it.  Note: allocation code must
@@ -843,7 +855,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		const bool result = init(user_status, port, op_create, expanded_name, newDpb);
+		const bool result = init(user_status, port, op_create, expanded_name, newDpb, dpbParam);
 		if (!result) {
 			return user_status[1];
 		}
@@ -884,7 +896,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -899,7 +911,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 			version.printf("%s/%s", GDS_VERSION, port->port_version->str_data);
 
 			MERGE_database_info(temp_buffer, buffer, buffer_length,
-								DbImplementation::current.backwardCompatibleImplementation(), 3, 1,
+								IMPLEMENTATION, 3, 1,
 								reinterpret_cast<const UCHAR*>(version.c_str()),
 								reinterpret_cast<const UCHAR*>(port->port_host->str_data));
 		}
@@ -940,7 +952,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *rtr_handle;
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -986,7 +998,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Rdb** handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1065,7 +1077,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Rdb** handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1095,7 +1107,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Rdb** handle)
 		if (port->port_statement)
 			release_statement(&port->port_statement);
 
-		rdb->rdb_status_vector = local_status;
+		rdb->set_status_vector(local_status);
 
 		disconnect(port);
 		*handle = NULL;
@@ -1130,7 +1142,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1244,7 +1256,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1302,6 +1314,9 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 				port->port_statement->rsr_buffer = message2;
 				port->port_statement->rsr_message = message2;
 				message2->msg_next = message2;
+#ifdef SCROLLABLE_CURSORS
+				message2->msg_prior = message2;
+#endif
 				port->port_statement->rsr_fmt_length = 0;
 			}
 		}
@@ -1313,6 +1328,9 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 			statement->rsr_message = message;
 
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 
 			statement->rsr_fmt_length = 0;
 		}
@@ -1367,7 +1385,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		if (out_msg_length)
 			port->port_statement->rsr_message->msg_address = out_msg;
 
-		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 
 		if (!receive_packet(port, packet, user_status))
 			return user_status[1];
@@ -1473,7 +1491,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	if (dialect > 10)
 	{
@@ -1546,6 +1564,9 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			statement->rsr_buffer = message = new RMessage(0);
 			statement->rsr_message = message;
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 			statement->rsr_fmt_length = 0;
 		}
 		else {
@@ -1590,14 +1611,13 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		if (in_msg_length || out_msg_length)
 			port->port_statement->rsr_message->msg_address = out_msg;
 
-		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 		if (!receive_packet(rdb->rdb_port, packet, user_status))
 			return user_status[1];
 
 		if (packet->p_operation != op_sql_response)
 			check_response(rdb, packet);
-		else
-		{
+		else {
 			message->msg_address = NULL;
 			receive_response(rdb, packet);
 		}
@@ -1605,8 +1625,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		if (user_status[1])
 			return user_status[1];
 
-		if (transaction && !packet->p_resp.p_resp_object)
-		{
+		if (transaction && !packet->p_resp.p_resp_object) {
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			*rtr_handle = NULL;
@@ -1650,7 +1669,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1728,6 +1747,9 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			statement->rsr_buffer = new RMessage(0);
 			statement->rsr_message = statement->rsr_buffer;
 			statement->rsr_message->msg_next = statement->rsr_message;
+#ifdef SCROLLABLE_CURSORS
+			statement->rsr_message->msg_prior = statement->rsr_message;
+#endif
 			statement->rsr_fmt_length = 0;
 		}
 
@@ -1921,7 +1943,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2028,7 +2050,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2061,6 +2083,9 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 			statement->rsr_buffer = message = new RMessage(0);
 			statement->rsr_message = message;
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 			statement->rsr_fmt_length = 0;
 		}
 		else {
@@ -2156,7 +2181,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status, Rtr** rtr_handle,
 	if (transaction) {
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	if (dialect > 10)
 	{
@@ -2296,7 +2321,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2394,7 +2419,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2448,7 +2473,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2673,7 +2698,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *tra_handle;
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2722,7 +2747,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 			err_flag = true;
 		else
 		{
-			packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+			packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 			if (!receive_packet(rdb->rdb_port, packet, user_status))
 				err_flag = true;
 		}
@@ -2780,7 +2805,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *rtr_handle;
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2854,7 +2879,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
 	RefMutexGuard portGuard(*port->port_sync);
 
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2919,7 +2944,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3004,7 +3029,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *tra_handle;
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3106,7 +3131,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 	PACKET* packet = &rdb->rdb_packet;
 
 	try
@@ -3185,12 +3210,17 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
+ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 					   Rrq** req_handle,
 					   USHORT msg_type,
 					   USHORT msg_length,
-					   UCHAR* msg,
-					   SSHORT level)
+					   UCHAR * msg,
+					   SSHORT level
+#ifdef SCROLLABLE_CURSORS
+					 , USHORT direction
+					 , ULONG offset
+#endif
+	)
 {
 /**************************************
  *
@@ -3214,13 +3244,23 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
 		Rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 
 		RMessage* message = tail->rrq_message;
+#ifdef SCROLLABLE_CURSORS
+		if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
+		{
+			message = scroll_cache(user_status, request, port, tail, &direction, &offset);
+			if (!message) {
+				return user_status[1];
+			}
+		}
+#endif
+
 
 #ifdef DEBUG
 		fprintf(stdout, "Rows Pending in REM_receive=%d\n", tail->rrq_rows_pending);
@@ -3263,6 +3303,48 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 			data->p_data_request = request->rrq_id;
 			data->p_data_message_number = msg_type;
 			data->p_data_incarnation = level;
+#ifdef SCROLLABLE_CURSORS
+			// if the protocol can handle it, tell the server to scroll before returning records
+
+			if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
+			{
+				data->p_data_direction = direction;
+				data->p_data_offset = offset;
+
+				// set the appropriate flags according to the way we're about to scroll
+				// the next layer down, and calculate the offset from the beginning
+				// of the result set
+
+				switch (direction)
+				{
+				case blr_forward:
+					tail->rrq_flags &= ~Rrq::BACKWARD;
+					tail->rrq_absolute +=
+						(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
+					break;
+
+				case blr_backward:
+					tail->rrq_flags |= Rrq::BACKWARD;
+					tail->rrq_absolute +=
+						(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
+					break;
+
+				case blr_bof_forward:
+					tail->rrq_flags &= ~Rrq::BACKWARD;
+					tail->rrq_flags &= ~Rrq::ABSOLUTE_BACKWARD;
+					tail->rrq_absolute = offset;
+					direction = blr_forward;
+					break;
+
+				case blr_eof_backward:
+					tail->rrq_flags |= Rrq::BACKWARD;
+					tail->rrq_flags |= Rrq::ABSOLUTE_BACKWARD;
+					tail->rrq_absolute = offset;
+					direction = blr_backward;
+					break;
+				}
+			}
+#endif
 
 			// Compute how many to send in a batch.  While this calculation
 			// is the same for each batch (June 1996), perhaps in the future it
@@ -3345,6 +3427,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		message = tail->rrq_message;
 		memcpy(msg, message->msg_address, msg_length);
 
+#ifdef SCROLLABLE_CURSORS
+		tail->rrq_last = message;
+#else
 		// Move the head-of-full-buffer-queue pointer forward
 
 		tail->rrq_message = message->msg_next;
@@ -3352,7 +3437,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		// Mark the buffer the message came from as available for reuse
 
 		message->msg_address = NULL;
-
+#endif
 		tail->rrq_msgs_waiting--;
 	}
 	catch (const Exception& ex)
@@ -3386,7 +3471,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3412,7 +3497,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, Rrq** req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, Rrq** req_handle)
 {
 /**************************************
  *
@@ -3432,7 +3517,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, Rrq** req_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3480,7 +3565,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3574,7 +3659,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3617,7 +3702,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3662,7 +3747,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3729,7 +3814,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, isc_badmsgnum);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3795,8 +3880,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	Rdb* rdb = 0;
 
 	try {
-		ClumpletWriter newSpb(ClumpletReader::spbList, MAX_DPB_SIZE,
-							  reinterpret_cast<const UCHAR*>(spb), spb_length);
+		ClumpletWriter newSpb(ClumpletReader::SpbAttach, MAX_DPB_SIZE,
+				reinterpret_cast<const UCHAR*>(spb), spb_length, isc_spb_current_version);
 		string user_string;
 
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
@@ -3809,7 +3894,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		RefMutexGuard portGuard(*port->port_sync);
 		rdb = port->port_context;
-		rdb->rdb_status_vector = user_status;
+		rdb->set_status_vector(user_status);
 
 		// make sure the protocol supports it
 		if (port->port_protocol < PROTOCOL_VERSION8)
@@ -3824,7 +3909,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		add_other_params(port, newSpb, spbParam);
 
-		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb);
+		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb, spbParam);
 		if (!result) {
 			return user_status[1];
 		}
@@ -3860,7 +3945,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Rdb** handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3926,7 +4011,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3979,7 +4064,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4030,7 +4115,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, isc_badmsgnum);
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4115,7 +4200,7 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4164,7 +4249,6 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
-								 FB_API_HANDLE /*public_handle*/,
 								 Rtr** rtr_handle,
 								 SSHORT /*count*/,
 								 Rdb** db_handle,
@@ -4188,7 +4272,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4246,7 +4330,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 
 	Rtr* transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4331,7 +4415,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 		// But when success occurs a packet with op_transact_response comes back
 		// which does not change the status vector.
 
-		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 		if (!receive_packet(port, packet, user_status)) {
 			return user_status[1];
 		}
@@ -4376,7 +4460,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	ISC_STATUS status;
 	try
@@ -4413,7 +4497,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, Rrq** req_handle, USHORT level)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	/* Unreachable code because EXE_unwind was commented out.
 	try
@@ -4854,10 +4938,20 @@ static bool batch_dsql_fetch(rem_port*	port,
 
 			new_msg->msg_next = message;
 
+#ifdef SCROLLABLE_CURSORS
+			// link the new message in a doubly linked list to make it
+			// easier to scroll back and forth through the records
+
+			RMessage* prior = message->msg_prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
+#else
 			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
 			}
 			message->msg_next = new_msg;
+#endif
 		}
 
 		if (!receive_packet_noqueue(port, packet, tmp_status))
@@ -5002,12 +5096,22 @@ static bool batch_gds_receive(rem_port*		port,
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
 
+#ifdef SCROLLABLE_CURSORS
+			// link the new message in a doubly linked list to make it
+			// easier to scroll back and forth through the records
+
+			RMessage* prior = message->msg_prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
+#else
 			// Walk the que until we find the predecessor of message
 
 			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
 			}
 			message->msg_next = new_msg;
+#endif
 		}
 
 		// Note: not receive_packet
@@ -5041,6 +5145,21 @@ static bool batch_gds_receive(rem_port*		port,
 			break;
 		}
 
+#ifdef SCROLLABLE_CURSORS
+		// at this point we've received a row into the message, so mark the message
+		// with the absolute offset
+		const bool bIsBackward    = (tail->rrq_flags & Rrq::BACKWARD) != 0;
+		const bool bIsAbsBackward = (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) != 0;
+
+		if (bIsBackward == bIsAbsBackward) {
+				tail->rrq_absolute++;
+		}
+		else {
+			tail->rrq_absolute--;
+		}
+		message->msg_absolute = tail->rrq_absolute;
+#endif
+
 		tail->rrq_msgs_waiting++;
 		tail->rrq_rows_pending--;
 #ifdef DEBUG
@@ -5065,6 +5184,14 @@ static bool batch_gds_receive(rem_port*		port,
 
 		if (!clear_queue)
 			break;
+
+#ifdef SCROLLABLE_CURSORS
+		// if we are just trying to clear the queue, then NULL out the message
+		// address so we don't get a record out of order--it would mess up
+		// scrolling through the cache
+
+		message->msg_address = NULL;
+#endif
 	}
 
 	packet->p_resp.p_resp_status_vector = save_status;
@@ -5072,7 +5199,7 @@ static bool batch_gds_receive(rem_port*		port,
 }
 
 
-static bool check_response(Rdb* rdb, PACKET* packet)
+static bool check_response(Rdb* rdb, PACKET * packet)
 {
 /**************************************
  *
@@ -5117,7 +5244,7 @@ static bool check_response(Rdb* rdb, PACKET* packet)
 	}
 
 	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
-		!rdb->rdb_status_vector[1])
+		!rdb->get_status_vector()[1])
 	{
 		return true;
 	}
@@ -5126,7 +5253,7 @@ static bool check_response(Rdb* rdb, PACKET* packet)
 }
 
 
-static bool clear_queue(rem_port* port, ISC_STATUS* user_status)
+static bool clear_queue(rem_port* port, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -5218,6 +5345,42 @@ static void disconnect( rem_port* port)
 	port->disconnect();
 	delete rdb;
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage* dump_cache(rem_port* port, ISC_STATUS * user_status, Rrq::rrq_repeat * tail)
+{
+/**************************************
+ *
+ *	d u m p _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *	We have encountered a situation where what's in
+ *	cache is not useful, so clear any pending requests
+ *	and empty the cache in preparation for refilling it.
+ *
+ **************************************/
+	if (!clear_queue(port, user_status))
+		return NULL;
+
+	RMessage* message = tail->rrq_message;
+	while (true)
+	{
+		message->msg_address = NULL;
+		message = message->msg_next;
+		if (message == tail->rrq_message)
+			break;
+	}
+
+	tail->rrq_xdr = message;
+	tail->rrq_last = NULL;
+	tail->rrq_rows_pending = 0;
+
+	return message;
+}
+#endif
 
 
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
@@ -5339,7 +5502,7 @@ static ISC_STATUS fetch_blob(ISC_STATUS* user_status,
 
 	// set up the response packet.
 
-	packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+	packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 
 	// Swallow up data.
 
@@ -5422,8 +5585,8 @@ static bool get_new_dpb(ClumpletWriter& dpb, string& user_string, const Paramete
 			ISC_systemToUtf8(password);
 		ISC_unescape(password);
 
-		TEXT pwt[Auth::MAX_PASSWORD_LENGTH + 2];
-		ENC_crypt(pwt, sizeof pwt, password.c_str(), Auth::PASSWORD_SALT);
+		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
+		ENC_crypt(pwt, sizeof pwt, password.c_str(), PASSWORD_SALT);
 		password = pwt + 2;
 		dpb.insertString(par.password_enc, password);
 	}
@@ -5457,9 +5620,11 @@ static bool get_single_user(ClumpletReader& dpb)
  *	otherwise.
  *
  ******************************************/
+	if (dpb.getBufferTag() != isc_dpb_version1)
+		return false;
+
 	string su;
-	if (dpb.find(isc_dpb_reserved))
-	{
+	if (dpb.find(isc_dpb_reserved)) {
 		dpb.getString(su);
 		return su == "YES";
 	}
@@ -5467,7 +5632,7 @@ static bool get_single_user(ClumpletReader& dpb)
 }
 #endif
 
-static ISC_STATUS handle_error( ISC_STATUS* user_status, ISC_STATUS code)
+static ISC_STATUS handle_error( ISC_STATUS * user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -5531,7 +5696,7 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 
 	// Assume the result will be successful
 
-	fb_assert(user_status == rdb->rdb_status_vector);
+	rdb->status_assert(user_status);
 	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = isc_arg_end;
@@ -5554,46 +5719,16 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 
 	response->p_resp_data = temp;
 
-	return rdb->rdb_status_vector[1];
+	return rdb->get_status_vector()[1];
 }
-
-
-namespace
-{
-	class InitList
-	{
-	public:
-		typedef Firebird::HalfStaticArray<Auth::ClientPlugin*, 8> List;
-
-		static List* init()
-		{
-			List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
-
-			// this code will be replaced with known plugins scan
-			list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseClient>());
-#ifdef TRUSTED_AUTH
-			list->push(Auth::interfaceAlloc<Auth::WinSspiClient>());
-#endif
-#ifdef AUTH_DEBUG
-			list->push(Auth::interfaceAlloc<Auth::DebugClient>());
-#endif
-
-			// must be last
-			list->push(NULL);
-
-			return list;
-		}
-	};
-
-	Firebird::InitInstance<InitList::List, InitList> listArray;
-}	// namespace
 
 
 static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
 				 P_OP op,
 				 PathName& file_name,
-				 ClumpletWriter& dpb)
+				 ClumpletWriter& dpb,
+				 const ParametersSet& param)
 {
 /**************************************
  *
@@ -5612,38 +5747,25 @@ static bool init(ISC_STATUS* user_status,
 	MemoryPool& pool = *getDefaultMemoryPool();
 	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
 
-	// current instance name
-	const char* nm;
-	USHORT len;
+	// Do we can & need to try trusted auth
 
-	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
-	AutoPtr<Auth::ClientInstance, Auth::Auto> currentInstance;
-	Auth::DpbImplementation di(dpb);
-	unsigned int sequence = 0;
-	Auth::ClientPlugin** list = listArray().begin();
+	dpb.deleteWithTag(param.trusted_auth);
+	dpb.deleteWithTag(param.trusted_role);
 
-	for (bool working = true; working && list[sequence]; ++sequence)
+#ifdef TRUSTED_AUTH
+	AuthSspi authSspi;
+	AuthSspi::DataHolder data;
+
+	if ((port->port_protocol >= PROTOCOL_VERSION11) &&
+		((!dpb.find(param.user_name)) || (dpb.getClumpLength() == 0)))
 	{
-		if (port->port_protocol >= PROTOCOL_VERSION13 ||
-			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(list[sequence])))
+		if (authSspi.request(data))
 		{
-			// plugin may be used
-			currentInstance.reset(list[sequence]->instance());
-			list[sequence]->getName(&nm, &len);
-
-			switch(currentInstance->startAuthentication(op == op_service_attach, file_name.c_str(), &di))
-			{
-			case Auth::AUTH_SUCCESS:
-				working = false;
-				break;
-			case Auth::AUTH_FAILED:
-				disconnect(port);
-				return false;
-			default:
-				break;
-			}
+			// on no error we send data no matter, was context created or not
+			dpb.insertBytes(param.trusted_auth, data.begin(), data.getCount());
 		}
 	}
+#endif //TRUSTED_AUTH
 
 	if (port->port_protocol < PROTOCOL_VERSION12)
 	{
@@ -5682,6 +5804,7 @@ static bool init(ISC_STATUS* user_status,
 	}
 
 	// Make attach packet
+
 	P_ATCH* attach = &packet->p_atch;
 	packet->p_operation = op;
 	attach->p_atch_file.cstr_length = file_name.length();
@@ -5695,117 +5818,62 @@ static bool init(ISC_STATUS* user_status,
 		return false;
 	}
 
-	for (;;)
+	// Get response
+
+#ifdef TRUSTED_AUTH
+	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
+	if (!receive_packet(rdb->rdb_port, packet, status))
 	{
-		// Get response
-		ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		REMOTE_save_status_strings(user_status);
+		disconnect(port);
+		return false;
+	}
+
+	while (packet->p_operation == op_trusted_auth)
+	{
+		if (!authSspi.isActive())
+		{
+			disconnect(port);
+			return false;	// isc_unavailable
+		}
+		cstring* d = &packet->p_trau.p_trau_data;
+		memcpy(data.getBuffer(d->cstr_length), d->cstr_address, d->cstr_length);
+		REMOTE_free_packet(rdb->rdb_port, packet);
+		if (!authSspi.request(data))
+		{
+			disconnect(port);
+			return false;	// isc_unavailable
+		}
+		packet->p_operation = op_trusted_auth;
+		d->cstr_address = data.begin();
+		d->cstr_length = data.getCount();
+
+		if (!send_packet(rdb->rdb_port, packet, user_status))
+		{
+			disconnect(port);
+			return false;
+		}
 		if (!receive_packet(rdb->rdb_port, packet, status))
 		{
-			REMOTE_save_status_strings(user_status);
-			break;
-		}
-
-		// Check response
-		cstring* n = NULL;
-		cstring* d = NULL;
-
-		switch(packet->p_operation)
-		{
-		case op_trusted_auth:
-			d = &packet->p_trau.p_trau_data;
-			break;
-
-		case op_cont_auth:
-			d = &packet->p_auth_cont.p_data;
-			n = &packet->p_auth_cont.p_name;
-			break;
-
-		default:
-			if (check_response(rdb, packet))
-			{
-				// successfully attached
-				rdb->rdb_id = packet->p_resp.p_resp_object;
-				return true;
-			}
-
 			REMOTE_save_status_strings(user_status);
 			disconnect(port);
 			return false;
 		}
-
-		bool contFlag = true;
-		if (n && n->cstr_length && currentInstance.hasData())
-		{
-			// if names match, do not reset instance
-			if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
-			{
-				n = NULL;
-			}
-		}
-
-		if (n && n->cstr_length)
-		{
-			// switch to other plugin
-			currentInstance.reset(0);
-
-			for (sequence = 0; list[sequence]; ++sequence)
-			{
-				list[sequence]->getName(&nm, &len);
-				if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
-				{
-					currentInstance.reset(list[sequence]->instance());
-					break;
-				}
-			}
-
-			if (currentInstance)
-			{
-				Auth::Result rc = currentInstance->startAuthentication(op == op_service_attach,
-																	   file_name.c_str(), 0);
-				if (rc == Auth::AUTH_FAILED)
-				{
-					break;
-				}
-				if (rc != Auth::AUTH_MORE_DATA)
-				{
-					contFlag = false;
-				}
-			}
-			else
-			{
-				contFlag = false;
-				packet->p_trau.p_trau_data.cstr_length = 0;
-			}
-		}
-
-		if (contFlag)
-		{
-			// continue auth
-			if (!currentInstance)
-			{
-				break;
-			}
-			if (currentInstance->contAuthentication(d->cstr_address, d->cstr_length) == Auth::AUTH_FAILED)
-			{
-				break;
-			}
-		}
-
-		// send answer (may be empty) to server
-		packet->p_operation = op_trusted_auth;
-		d = &packet->p_trau.p_trau_data;
-		// violate constness here safely - send operation does not modify data
-		currentInstance->getData(const_cast<const unsigned char**>(&d->cstr_address),
-								 &d->cstr_length);
-
-		if (!send_packet(rdb->rdb_port, packet, user_status))
-		{
-			break;
-		}
 	}
 
-	disconnect(port);
-	return false;
+	if (!check_response(rdb, packet))
+#else // TRUSTED_AUTH
+	if (!receive_response(rdb, packet))
+#endif //TRUSTED_AUTH
+	{
+		REMOTE_save_status_strings(user_status);
+		disconnect(port);
+		return false;
+	}
+
+	rdb->rdb_id = packet->p_resp.p_resp_object;
+
+	return true;
 }
 
 
@@ -5849,10 +5917,9 @@ static bool mov_dsql_message(ISC_STATUS* status,
  *
  **************************************/
 
-	try
-	{
-		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count)
-		{
+	try {
+
+		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
 			move_error(Arg::Gds(isc_dsql_sqlda_err));
 			// Msg 263 SQLDA missing or wrong number of variables
 		}
@@ -5954,9 +6021,19 @@ static void receive_after_start( Rrq* request, USHORT msg_type)
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
 
+#ifdef SCROLLABLE_CURSORS
+			// link the new message in a doubly linked list to make it
+			// easier to scroll back and forth through the records
+
+			RMessage* prior = message->msg_prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
+#else
 			while (message->msg_next != new_msg->msg_next)
 				message = message->msg_next;
 			message->msg_next = new_msg;
+#endif
 		}
 
 		// Note: not receive_packet
@@ -5985,7 +6062,7 @@ static void receive_after_start( Rrq* request, USHORT msg_type)
 }
 
 
-static bool receive_packet(rem_port* port, PACKET* packet, ISC_STATUS* user_status)
+static bool receive_packet(rem_port* port, PACKET * packet, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6014,7 +6091,7 @@ static bool receive_packet(rem_port* port, PACKET* packet, ISC_STATUS* user_stat
 }
 
 
-static bool receive_packet_noqueue(rem_port* port, PACKET* packet, ISC_STATUS* user_status)
+static bool receive_packet_noqueue(rem_port* port, PACKET * packet, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6062,14 +6139,16 @@ static bool receive_packet_noqueue(rem_port* port, PACKET* packet, ISC_STATUS* u
 	memset(tmp_status, 0, sizeof(tmp_status));
 
 	Rdb* rdb = port->port_context;
-	ISC_STATUS* const save_status = rdb->rdb_status_vector;
+	ISC_STATUS* save_status;
+	rdb->save_status_vector(save_status);
 	while (port->port_deferred_packets->getCount())
 	{
 		rem_que_packet* const p = port->port_deferred_packets->begin();
 		if (!p->sent)
 			break;
 
-		p->packet.p_resp.p_resp_status_vector = rdb->rdb_status_vector = tmp_status;
+		p->packet.p_resp.p_resp_status_vector = tmp_status;
+		rdb->set_status_vector(tmp_status);
 
 		OBJCT stmt_id = 0;
 		bool bCheckResponse = false, bFreeStmt = false;
@@ -6120,7 +6199,7 @@ static bool receive_packet_noqueue(rem_port* port, PACKET* packet, ISC_STATUS* u
 		port->port_deferred_packets->remove(p);
 	}
 
-	rdb->rdb_status_vector = save_status;
+	rdb->set_status_vector(save_status);
 	return (port->receive(packet));
 }
 
@@ -6233,7 +6312,7 @@ static bool receive_response(Rdb* rdb, PACKET* packet)
  *
  **************************************/
 
-	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 
 	if (!receive_packet(rdb->rdb_port, packet, status))
 		return false;
@@ -6315,7 +6394,7 @@ static bool release_object(Rdb* rdb, P_OP op, USHORT id)
 	packet->p_operation = op;
 	packet->p_rlse.p_rlse_object = id;
 
-	ISC_STATUS* status = rdb->rdb_status_vector;
+	ISC_STATUS* status = rdb->get_status_vector();
 
 	if (rdb->rdb_port->port_flags & PORT_lazy)
 	{
@@ -6454,7 +6533,7 @@ static ISC_STATUS return_success( Rdb* rdb)
  *	Set up status vector to reflect successful execution.
  *
  **************************************/
-	ISC_STATUS* p = rdb->rdb_status_vector;
+	ISC_STATUS* p = rdb->get_status_vector();
 
 	// If the status vector has not been initialized, then
 	// initialize the status vector to indicate success.
@@ -6470,6 +6549,192 @@ static ISC_STATUS return_success( Rdb* rdb)
 
 	return FB_SUCCESS;
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage* scroll_cache(ISC_STATUS * user_status,
+							Rrq* request,
+							rem_port* port,
+							Rrq::rrq_repeat * tail,
+							USHORT * direction, ULONG * offset)
+{
+/**************************************
+ *
+ *	s c r o l l _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ * Try to fetch the requested record from cache, if possible.  This algorithm depends
+ * on all scrollable cursors being INSENSITIVE to database changes, so that absolute
+ * record numbers within the result set will remain constant.
+ *
+ *  1.  BOF Forward or EOF Backward:  Retain the record number of the offset from the
+ *      beginning or end of the result set.  If we can figure out the relative offset
+ *      from the absolute, then scroll to it.  If it's in cache, great, otherwise dump
+ *      the cache and have the server scroll the correct number of records.
+ *
+ *  2.  Forward or Backward:  Try to scroll the desired offset in cache.  If we
+ *      scroll off the end of the cache, dump the cache and ask the server for a
+ *      packetful of records.
+ *
+ *  In the forward direction, assume X is the number of records cached.
+ *  If offset <= X, scroll forward offset records.  If offset > X,
+ *  dump the cache and send a message to the server to scroll forward (offset - X)
+ *  records.  However, if the server last scrolled in the backward direction,
+ *  ask the server to scroll forward (offset - X + C) records, where C is the
+ *  total number of records in cache.
+ *
+ *  In the backward direction, do the same thing but in reverse.
+ *
+ **************************************/
+
+	// if we are to continue in the current direction, set direction to
+	// the last direction scrolled; then depending on the direction asked
+	// for, save the last direction asked for by the next layer above
+
+	if (*direction == blr_continue)
+	{
+		if (tail->rrq_flags & Rrq::LAST_BACKWARD)
+			*direction = blr_backward;
+		else
+			*direction = blr_forward;
+	}
+
+	if (*direction == blr_forward || *direction == blr_bof_forward)
+		tail->rrq_flags &= ~Rrq::LAST_BACKWARD;
+	else
+		tail->rrq_flags |= Rrq::LAST_BACKWARD;
+
+	// set to the last message returned to the higher level;
+	// if none, set to the first message in cache
+	RMessage* message = tail->rrq_last;
+	if (!message)
+	{
+		message = tail->rrq_message;
+
+		// if the first record hasn't been returned yet and we are doing a relative seek
+		// forward (or backward when caching backwards), we effectively have just seeked
+		// forward one by positioning to the first record, so decrement the offset by one
+
+		if (*offset &&
+			((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
+			((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
+		{
+			(*offset)--;
+		}
+	}
+
+	// if we are scrolling from BOF and the cache was started from EOF
+	// (or vice versa), the cache is unusable.
+
+	if (
+		(*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)) ||
+		(*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
+	{
+		return dump_cache(port, user_status, tail);
+	}
+
+	// if we are going to an absolute position, see if we can find that position
+	// in cache, otherwise change to a relative seek from our former position
+
+	if (*direction == blr_bof_forward || *direction == blr_eof_backward)
+	{
+		// if offset is before our current position, scroll backwards
+		// through the cache to see if we can find it
+
+		if (*offset < message->msg_absolute)
+		{
+			for (;;)
+			{
+				if (message == tail->rrq_xdr || !message->msg_address)
+				{
+					// if the cache was formed in the backward direction, see if
+					// there are any packets pending which might contain the record
+
+					if ((tail->rrq_flags & Rrq::BACKWARD) && (tail->rrq_rows_pending > 0))
+					{
+						tail->rrq_message = message;
+						while (!message->msg_address && !request->rrq_status_vector[1])
+						{
+							if (!receive_queued_packet(port, user_status, request->rrq_id))
+							{
+								return NULL;
+							}
+						}
+					}
+
+					if ((message == tail->rrq_xdr) || !message->msg_address) {
+						return dump_cache(port, user_status, tail);
+					}
+				}
+				else {
+					message = message->msg_prior;
+				}
+
+				if (*offset == message->msg_absolute)
+					return message;
+			}
+		}
+
+		// convert the absolute to relative, and prepare to scroll forward or
+		// back to look for the record
+
+		*offset -= message->msg_absolute;
+		if (*direction == blr_bof_forward)
+			*direction = blr_forward;
+		else
+			*direction = blr_backward;
+	}
+
+	for (; *offset; (*offset)--)
+	{
+		// if the record was not found, see if there are any packets pending
+		// which might contain the record; otherwise dump the cache
+
+		if (!message->msg_address || message == tail->rrq_xdr)
+		{
+			if (tail->rrq_rows_pending > 0)
+			{
+				if (((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
+					((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
+				{
+					tail->rrq_message = message;
+					while (!message->msg_address && !request->rrq_status_vector[1])
+					{
+						if (!receive_queued_packet(port, user_status,
+												   request->rrq_id))
+						{
+							return NULL;
+						}
+					}
+				}
+			}
+
+			if ((message == tail->rrq_xdr) || !message->msg_address)
+			{
+				return dump_cache(port, user_status, tail);
+			}
+		}
+
+		// step one record forward or back, depending on whether the cache was
+		// initially formed in the forward or backward direction
+
+		if (((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
+			((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
+		{
+			message = message->msg_next;
+		}
+		else
+		{
+			message = message->msg_prior;
+		}
+	}
+
+	return message;
+}
+#endif
 
 
 static ISC_STATUS send_and_receive(Rdb* rdb, PACKET* packet, ISC_STATUS* user_status)
@@ -6585,7 +6850,7 @@ static void send_cancel_event(Rvnt* event)
 
 	// Send the packet, and if that worked, get a response
 
-	if (send_packet(rdb->rdb_port, packet, rdb->rdb_status_vector))
+	if (send_packet(rdb->rdb_port, packet, rdb->get_status_vector()))
 	{
 		receive_response(rdb, packet);
 	}
@@ -6754,7 +7019,7 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 
 	// Assume the result will be successful
 
-	fb_assert(user_status == rdb->rdb_status_vector);
+	rdb->status_assert(user_status);
 	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = isc_arg_end;
@@ -6775,7 +7040,7 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 
 	response->p_resp_data = temp;
 
-	return rdb->rdb_status_vector[1];
+	return rdb->get_status_vector()[1];
 }
 
 
@@ -6853,8 +7118,17 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 		return user_status[1];
 	}
 
-	// This is async operation - should not lock port_sync
-	rdb->rdb_status_vector = user_status;
+	MutexEnsureUnlock guard(rdb->rdb_async_lock);	// This is async operation
+	if (!guard.tryEnter())
+	{
+		user_status[0] = isc_arg_gds;
+		user_status[1] = isc_async_active;
+		user_status[2] = isc_arg_end;
+
+		return user_status[1];
+	}
+
+	rdb->set_async_vector(user_status);
 
 	try
 	{
@@ -6870,8 +7144,11 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 	}
 	catch (const Exception& ex)
 	{
+		rdb->reset_async_vector();
 		return stuff_exception(user_status, ex);
 	}
 
+	rdb->reset_async_vector();
 	return return_success(rdb);
 }
+

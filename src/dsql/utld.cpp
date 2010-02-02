@@ -1076,12 +1076,12 @@ static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
 
 UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
 {
-	return METD_get_charset_bpc(dsqlScratch->getTransaction(), charSet);
+	return METD_get_charset_bpc(statement, charSet);
 }
 
 USHORT DSqlDataTypeUtil::getDialect() const
 {
-	return dsqlScratch->clientDialect;
+	return statement->req_client_dialect;
 }
 
 #endif

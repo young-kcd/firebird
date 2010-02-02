@@ -314,7 +314,7 @@ public:
 								 char *,
 								 const char*);
 
-	// 17 May 2001 - isc_expand_dpb is DEPRECATED
+/* 17 May 2001 - isc_expand_dpb is DEPRECATED */
 	virtual void ISC_EXPORT_VARARG isc_expand_dpb(char * *,
 									  short *, ...);
 

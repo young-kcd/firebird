@@ -74,7 +74,7 @@ static const struct {
 	{335544371, "HY000"}, //  51 segstr_no_write
 	{335544372, "HY000"}, //  52 segstr_wrong_db
 	{335544373, "HY000"}, //  53 sys_request
-	{335544374, "HY109"}, //  54 stream_eof
+	{335544374, "HY000"}, //  54 stream_eof
 	{335544375, "08001"}, //  55 unavailable
 	{335544376, "HY000"}, //  56 unres_rel
 	{335544377, "HY000"}, //  57 uns_ext
@@ -344,7 +344,7 @@ static const struct {
 	{335544641, "42000"}, // 321 dsql_domain_not_found
 	{335544642, "42000"}, // 322 index_unused
 	{335544643, "42000"}, // 323 dsql_self_join
-	{335544644, "HY109"}, // 324 stream_bof
+	{335544644, "HY000"}, // 324 stream_bof
 	{335544645, "HY000"}, // 325 stream_crack
 	{335544646, "HY000"}, // 326 db_or_file_exists
 	{335544647, "42000"}, // 327 invalid_operator
@@ -688,35 +688,6 @@ static const struct {
 	{335544985, "HY000"}, // 665 out_of_temp_space
 	{335544986, "42000"}, // 666 eds_expl_tran_ctrl
 	{335544987, "28000"}, // 667 no_trusted_spb
-	{335544988, "42000"}, // 668 package_name
-	{335544989, "22006"}, // 669 cannot_make_not_null
-	{335544990, "0A000"}, // 670 feature_deprecated
-	{335544991, "00000"}, // 671 view_name
-	{335544992, "08006"}, // 672 lock_dir_access
-	{335544993, "HY106"}, // 673 invalid_fetch_option
-	{335544994, "2F000"}, // 674 bad_fun_BLR
-	{335544995, "2F000"}, // 675 func_pack_not_implemented
-	{335544996, "2F000"}, // 676 proc_pack_not_implemented
-	{335544997, "39000"}, // 677 eem_func_not_returned
-	{335544998, "39000"}, // 678 eem_proc_not_returned
-	{335544999, "39000"}, // 679 eem_trig_not_returned
-	{335545000, "39000"}, // 680 eem_bad_plugin_ver
-	{335545001, "39000"}, // 681 eem_engine_notfound
-	{335545002, "08002"}, // 682 attachment_in_use
-	{335545003, "25S02"}, // 683 transaction_in_use
-	{335545004, "39000"}, // 684 pman_plugin_notfound
-	{335545005, "39000"}, // 685 pman_cannot_load_plugin
-	{335545006, "39000"}, // 686 pman_entrypoint_notfound
-	{335545007, "39000"}, // 687 pman_bad_conf_index
-	{335545008, "39000"}, // 688 pman_unknown_instance
-	{335545009, "42000"}, // 689 sysf_invalid_trig_namespace
-	{335545010, "22002"}, // 690 unexpected_null
-	{335545011, "2200G"}, // 691 type_notcompat_blob
-	{335545012, "22003"}, // 692 invalid_date_val
-	{335545013, "22003"}, // 693 invalid_time_val
-	{335545014, "22003"}, // 694 invalid_timestamp_val
-	{335545015, "22003"}, // 695 invalid_index_val
-	{335545016, "00000"}, // 696 formatted_exception
 	{335545017, "HY018"}, // 697 async_active
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
@@ -775,21 +746,7 @@ static const struct {
 	{336003101, "54001"}, //  29 upd_ins_with_complex_view
 	{336003102, "42000"}, //  30 dsql_incompatible_trigger_type
 	{336003103, "42000"}, //  31 dsql_db_trigger_type_cant_change
-	{336068645, "42000"}, //  37 dyn_filter_not_found
-	{336068649, "42000"}, //  41 dyn_func_not_found
-	{336068656, "42000"}, //  48 dyn_index_not_found
-	{336068662, "42000"}, //  54 dyn_view_not_found
-	{336068697, "42000"}, //  89 dyn_domain_not_found
-	{336068717, "42000"}, // 109 dyn_cant_modify_auto_trig
 	{336068740, "42S01"}, // 132 dyn_dup_table
-	{336068748, "42000"}, // 140 dyn_proc_not_found
-	{336068752, "42000"}, // 144 dyn_exception_not_found
-	{336068754, "42000"}, // 146 dyn_proc_param_not_found
-	{336068755, "42000"}, // 147 dyn_trig_not_found
-	{336068759, "42000"}, // 151 dyn_charset_not_found
-	{336068760, "42000"}, // 152 dyn_collation_not_found
-	{336068763, "42000"}, // 155 dyn_role_not_found
-	{336068767, "42000"}, // 159 dyn_name_longer
 	{336068784, "42S22"}, // 176 dyn_column_does_not_exist
 	{336068796, "28000"}, // 188 dyn_role_does_not_exist
 	{336068797, "28000"}, // 189 dyn_no_grant_admin_opt
@@ -808,11 +765,9 @@ static const struct {
 	{336068817, "42000"}, // 209 dyn_invalid_dtype_conversion
 	{336068818, "42000"}, // 210 dyn_dtype_conv_invalid
 	{336068820, "42000"}, // 212 dyn_zero_len_id
-	{336068822, "42000"}, // 214 dyn_gen_not_found
 	{336068829, "2C000"}, // 221 max_coll_per_charset
 	{336068830, "HY000"}, // 222 invalid_coll_attr
 	{336068840, "HY000"}, // 232 dyn_wrong_gtt_scope
-	{336068849, "42000"}, // 241 dyn_table_not_found
 	{336068852, "42000"}, // 244 dyn_scale_too_big
 	{336068853, "42000"}, // 245 dyn_precision_too_small
 	{336068855, "42000"}, // 247 dyn_miss_priv_warning
@@ -820,21 +775,6 @@ static const struct {
 	{336068857, "42000"}, // 249 dyn_cannot_addrem_computed
 	{336068858, "42000"}, // 250 dyn_no_empty_pw
 	{336068859, "42S11"}, // 251 dyn_dup_index
-	{336068864, "42000"}, // 256 dyn_package_not_found
-	{336068865, "42000"}, // 257 dyn_schema_not_found
-	{336068866, "HY000"}, // 258 dyn_cannot_mod_sysproc
-	{336068867, "HY000"}, // 259 dyn_cannot_mod_systrig
-	{336068868, "HY000"}, // 260 dyn_cannot_mod_sysfunc
-	{336068869, "HY000"}, // 261 dyn_invalid_ddl_proc
-	{336068870, "HY000"}, // 262 dyn_invalid_ddl_trig
-	{336068871, "42000"}, // 263 dyn_funcnotdef_package
-	{336068872, "42000"}, // 264 dyn_procnotdef_package
-	{336068873, "42000"}, // 265 dyn_funcsignat_package
-	{336068874, "42000"}, // 266 dyn_procsignat_package
-	{336068875, "42000"}, // 267 dyn_defvaldecl_package
-	{336068877, "42000"}, // 269 dyn_package_body_exists
-	{336068878, "HY000"}, // 270 dyn_invalid_ddl_func
-	{336068879, "42000"}, // 271 dyn_newfc_oldsyntax
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig
@@ -919,20 +859,8 @@ static const struct {
 	{336331031, "00000"}, // 279 gbak_mode_req
 	{336331033, "00000"}, // 281 gbak_just_data
 	{336331034, "00000"}, // 282 gbak_data_only
-	{336331078, "00000"}, // 326 gbak_missing_interval
-	{336331079, "00000"}, // 327 gbak_wrong_interval
-	{336331081, "00000"}, // 329 gbak_verify_verbint
-	{336331082, "00000"}, // 330 gbak_option_only_restore
-	{336331083, "00000"}, // 331 gbak_option_only_backup
-	{336331084, "00000"}, // 332 gbak_option_conflict
-	{336331085, "00000"}, // 333 gbak_param_conflict
-	{336331086, "00000"}, // 334 gbak_option_repeated
-	{336331091, "00000"}, // 339 gbak_max_dbkey_recursion
-	{336331092, "00000"}, // 340 gbak_max_dbkey_length
 	{336331093, "00000"}, // 341 gbak_invalid_metadata
 	{336331094, "00000"}, // 342 gbak_invalid_data
-	{336331096, "00000"}, // 344 gbak_inv_bkup_ver2
-	{336331100, "00000"}, // 348 gbak_db_format_too_old2
 	{336397205, "HY000"}, // 917 dsql_too_old_ods
 	{336397206, "42S02"}, // 918 dsql_table_not_found
 	{336397207, "42S02"}, // 919 dsql_view_not_found
@@ -1018,6 +946,26 @@ static const struct {
 	{336724047, "00000"}, //  79 gsec_db_admin_specified
 	{336724048, "00000"}, //  80 gsec_db_admin_pw_specified
 	{336724049, "00000"}, //  81 gsec_sql_role_specified
+	{336789504, "00000"}, //   0 license_no_file
+	{336789523, "00000"}, //  19 license_op_specified
+	{336789524, "00000"}, //  20 license_op_missing
+	{336789525, "00000"}, //  21 license_inv_switch
+	{336789526, "00000"}, //  22 license_inv_switch_combo
+	{336789527, "00000"}, //  23 license_inv_op_combo
+	{336789528, "00000"}, //  24 license_amb_switch
+	{336789529, "00000"}, //  25 license_inv_parameter
+	{336789530, "00000"}, //  26 license_param_specified
+	{336789531, "00000"}, //  27 license_param_req
+	{336789532, "00000"}, //  28 license_syntx_error
+	{336789534, "00000"}, //  30 license_dup_id
+	{336789535, "00000"}, //  31 license_inv_id_key
+	{336789536, "00000"}, //  32 license_err_remove
+	{336789537, "00000"}, //  33 license_err_update
+	{336789538, "00000"}, //  34 license_err_convert
+	{336789539, "00000"}, //  35 license_err_unk
+	{336789540, "00000"}, //  36 license_svc_err_add
+	{336789541, "00000"}, //  37 license_svc_err_remove
+	{336789563, "00000"}, //  59 license_eval_exists
 	{336920577, "00000"}, //   1 gstat_unknown_switch
 	{336920578, "00000"}, //   2 gstat_retry
 	{336920579, "00000"}, //   3 gstat_wrong_ods
@@ -1037,54 +985,5 @@ static const struct {
 	{336986162, "00000"}, //  50 fbsvcmgr_fp_empty
 	{336986164, "00000"}, //  52 fbsvcmgr_bad_arg
 	{337051649, "00000"}, //   1 utl_trusted_switch
-	{337117213, "00000"}, //  29 nbackup_missing_param
-	{337117214, "00000"}, //  30 nbackup_allowed_switches
-	{337117215, "00000"}, //  31 nbackup_unknown_param
-	{337117216, "00000"}, //  32 nbackup_unknown_switch
-	{337117217, "00000"}, //  33 nbackup_nofetchpw_svc
-	{337117218, "00000"}, //  34 nbackup_pwfile_error
-	{337117219, "00000"}, //  35 nbackup_size_with_lock
-	{337117220, "00000"}, //  36 nbackup_no_switch
-	{337117223, "00000"}, //  39 nbackup_err_read
-	{337117224, "00000"}, //  40 nbackup_err_write
-	{337117225, "00000"}, //  41 nbackup_err_seek
-	{337117226, "00000"}, //  42 nbackup_err_opendb
-	{337117227, "00000"}, //  43 nbackup_err_fadvice
-	{337117228, "00000"}, //  44 nbackup_err_createdb
-	{337117229, "00000"}, //  45 nbackup_err_openbk
-	{337117230, "00000"}, //  46 nbackup_err_createbk
-	{337117231, "00000"}, //  47 nbackup_err_eofdb
-	{337117232, "00000"}, //  48 nbackup_fixup_wrongstate
-	{337117233, "00000"}, //  49 nbackup_err_db
-	{337117234, "00000"}, //  50 nbackup_userpw_toolong
-	{337117235, "00000"}, //  51 nbackup_lostrec_db
-	{337117236, "00000"}, //  52 nbackup_lostguid_db
-	{337117237, "00000"}, //  53 nbackup_err_eofhdrdb
-	{337117238, "00000"}, //  54 nbackup_db_notlock
-	{337117239, "00000"}, //  55 nbackup_lostguid_bk
-	{337117240, "00000"}, //  56 nbackup_page_changed
-	{337117241, "00000"}, //  57 nbackup_dbsize_inconsistent
-	{337117242, "00000"}, //  58 nbackup_failed_lzbk
-	{337117243, "00000"}, //  59 nbackup_err_eofhdrbk
-	{337117244, "00000"}, //  60 nbackup_invalid_incbk
-	{337117245, "00000"}, //  61 nbackup_unsupvers_incbk
-	{337117246, "00000"}, //  62 nbackup_invlevel_incbk
-	{337117247, "00000"}, //  63 nbackup_wrong_orderbk
-	{337117248, "00000"}, //  64 nbackup_err_eofbk
-	{337117249, "00000"}, //  65 nbackup_err_copy
-	{337117250, "00000"}, //  66 nbackup_err_eofhdr_restdb
-	{337117251, "00000"}, //  67 nbackup_lostguid_l0bk
-	{337117255, "00000"}, //  71 nbackup_switchd_parameter
-	{337182750, "00000"}, //  30 trace_conflict_acts
-	{337182751, "00000"}, //  31 trace_act_notfound
-	{337182752, "00000"}, //  32 trace_switch_once
-	{337182753, "00000"}, //  33 trace_param_val_miss
-	{337182754, "00000"}, //  34 trace_param_invalid
-	{337182755, "00000"}, //  35 trace_switch_unknown
-	{337182756, "00000"}, //  36 trace_switch_svc_only
-	{337182757, "00000"}, //  37 trace_switch_user_only
-	{337182758, "00000"}, //  38 trace_switch_param_miss
-	{337182759, "00000"}, //  39 trace_param_act_notcompat
-	{337182760, "00000"}, //  40 trace_mandatory_switch_miss
 	{0, NULL}
 };

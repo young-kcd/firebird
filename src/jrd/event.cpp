@@ -66,12 +66,10 @@
 
 #define SRQ_BASE                  ((UCHAR*) m_header)
 
-using namespace Firebird;
-
 namespace Jrd {
 
-GlobalPtr<EventManager::DbEventMgrMap> EventManager::g_emMap;
-GlobalPtr<Mutex> EventManager::g_mapMutex;
+Firebird::GlobalPtr<EventManager::DbEventMgrMap> EventManager::g_emMap;
+Firebird::GlobalPtr<Firebird::Mutex> EventManager::g_mapMutex;
 
 
 void EventManager::init(Database* dbb)
@@ -120,7 +118,7 @@ EventManager::~EventManager()
 	m_exiting = true;
 	const SLONG process_offset = m_processOffset;
 
-	Arg::StatusVector localStatus;
+	ISC_STATUS_ARRAY local_status;
 
 	if (m_process)
 	{
@@ -130,7 +128,7 @@ EventManager::~EventManager()
 		m_cleanupSemaphore.tryEnter(5);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_unmap_object(localStatus, (UCHAR**) &m_process, sizeof(prb));
+		ISC_unmap_object(local_status, /*&m_shmemData,*/ (UCHAR**) &m_process, sizeof(prb));
 #else
 		m_process = NULL;
 #endif
@@ -166,14 +164,14 @@ void EventManager::attach_shared_file()
 	Firebird::PathName name;
 	get_shared_file_name(name);
 
-	Arg::StatusVector localStatus;
-	if (!(m_header = (evh*) ISC_map_file(localStatus,
+	ISC_STATUS_ARRAY local_status;
+	if (!(m_header = (evh*) ISC_map_file(local_status,
 										 name.c_str(),
 										 init_shmem, this,
 										 Config::getEventMemSize(),
 										 &m_shmemData)))
 	{
-		localStatus.raise();
+		Firebird::status_exception::raise(local_status);
 	}
 
 	fb_assert(m_header->evh_version == EVENT_VERSION);
@@ -182,11 +180,11 @@ void EventManager::attach_shared_file()
 
 void EventManager::detach_shared_file()
 {
-	Arg::StatusVector localStatus;
+	ISC_STATUS_ARRAY local_status;
 	if (m_header)
 	{
 		ISC_mutex_fini(MUTEX);
-		ISC_unmap_file(localStatus, &m_shmemData);
+		ISC_unmap_file(local_status, &m_shmemData);
 		m_header = NULL;
 	}
 }
@@ -534,8 +532,7 @@ evh* EventManager::acquire_shmem()
 
 	while (SRQ_EMPTY(m_header->evh_processes))
 	{
-		if (! m_sharedFileCreated)
-		{
+		if (! m_sharedFileCreated) {
 			// Someone is going to delete shared file? Reattach.
 			mutex_state = ISC_mutex_unlock(MUTEX);
 			if (mutex_state)
@@ -550,8 +547,7 @@ evh* EventManager::acquire_shmem()
 				mutex_bugcheck("mutex lock", mutex_state);
 			}
 		}
-		else
-		{
+		else {
 			// complete initialization
 			m_sharedFileCreated = false;
 
@@ -569,8 +565,8 @@ evh* EventManager::acquire_shmem()
 		evh* header = NULL;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		Arg::StatusVector localStatus;
-		header = (evh*) ISC_remap_file(localStatus, &m_shmemData, length, false);
+		ISC_STATUS_ARRAY local_status;
+		header = (evh*) ISC_remap_file(local_status, &m_shmemData, length, false);
 #endif
 		if (!header)
 		{
@@ -623,13 +619,15 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 		evh* header = NULL;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		Arg::StatusVector localStatus;
-		header = (evh*) ISC_remap_file(localStatus, &m_shmemData, ev_length, true);
+		ISC_STATUS_ARRAY local_status;
+		header = (evh*) ISC_remap_file(local_status, &m_shmemData, ev_length, true);
 #endif
 		if (header)
 		{
 			free = (frb*) ((UCHAR*) header + old_length);
-			//free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
+/**
+	free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
+**/
 			free->frb_header.hdr_length = m_shmemData.sh_mem_length_mapped - old_length;
 			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;
@@ -694,13 +692,13 @@ void EventManager::create_process()
 	m_processOffset = SRQ_REL_PTR(process);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-	Arg::StatusVector localStatus;
-	m_process = (prb*) ISC_map_object(localStatus, &m_shmemData, m_processOffset, sizeof(prb));
+	ISC_STATUS_ARRAY local_status;
+	m_process = (prb*) ISC_map_object(local_status, &m_shmemData, m_processOffset, sizeof(prb));
 
 	if (!m_process)
 	{
 		release_shmem();
-		localStatus.raise();
+		Firebird::status_exception::raise(local_status);
 	}
 #else
 	m_process = process;
@@ -1041,7 +1039,7 @@ void EventManager::free_global(frb* block)
 			break;
 	}
 
-	if (offset <= 0 || static_cast<ULONG>(offset) > m_header->evh_length ||
+	if (offset <= 0 || offset > m_header->evh_length ||
 		(prior && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
 	{
 		punt("free_global: bad block");
@@ -1383,8 +1381,7 @@ int EventManager::validate()
 			else if (offset > next_free)
 				punt("bad free chain");
 		}
-		if (block->frb_header.hdr_type == type_frb)
-		{
+		if (block->frb_header.hdr_type == type_frb) {
 			next_free = ((frb*) block)->frb_next;
 			if (next_free >= m_header->evh_length)
 				punt("bad frb_next");

@@ -383,7 +383,7 @@ dsql_str* MAKE_cstring(const char* str)
 	@param null_replacement
 
  **/
-void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
+void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 {
 	dsc desc1, desc2, desc3;
 	USHORT dtype, dtype1, dtype2;
@@ -433,7 +433,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	case nod_map:
 		map = (dsql_map*) node->nod_arg[e_map_map];
 		context = (dsql_ctx*) node->nod_arg[e_map_context];
-		MAKE_desc(dsqlScratch, desc, map->map_node, null_replacement);
+		MAKE_desc(statement, desc, map->map_node, null_replacement);
 
 		// ASF: We should mark nod_agg_count as nullable when it's in an outer join - CORE-2660.
 		if (context->ctx_flags & CTX_outer_join)
@@ -443,67 +443,59 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 	case nod_agg_min:
 	case nod_agg_max:
-	case nod_window:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		return;
 
 	case nod_agg_average:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) && !DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("AVG"));
 		}
-		else if (DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
+		else if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
 		}
 		return;
 
 	case nod_agg_average2:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
-		if (!DTYPE_IS_NUMERIC(dtype))
-		{
+		if (!DTYPE_IS_NUMERIC(dtype)) {
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("AVG"));
 		}
-		else if (DTYPE_IS_EXACT(dtype))
-		{
+		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
 			node->nod_flags |= NOD_COMP_DIALECT;
 		}
-		else
-		{
+		else {
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
 		}
 		return;
 
 	case nod_agg_total:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) && !DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("SUM"));
 		}
-		else if (desc->dsc_dtype == dtype_short)
-		{
+		else if (desc->dsc_dtype == dtype_short) {
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof(SLONG);
 		}
-		else if (desc->dsc_dtype == dtype_int64)
-		{
+		else if (desc->dsc_dtype == dtype_int64) {
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
 		}
-		else if (DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
+		else if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
 		}
@@ -511,21 +503,18 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_agg_total2:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		dtype = desc->dsc_dtype;
-		if (!DTYPE_IS_NUMERIC(dtype))
-		{
+		if (!DTYPE_IS_NUMERIC(dtype)) {
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("SUM"));
 		}
-		else if (DTYPE_IS_EXACT(dtype))
-		{
+		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
 			node->nod_flags |= NOD_COMP_DIALECT;
 		}
-		else
-		{
+		else {
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
 		}
@@ -533,24 +522,24 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_agg_list:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 		desc->setNullable(true);
 		return;
 
 	case nod_concatenate:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-		DSqlDataTypeUtil(dsqlScratch).makeConcatenate(desc, &desc1, &desc2);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		DSqlDataTypeUtil(statement).makeConcatenate(desc, &desc1, &desc2);
 		return;
 
 	case nod_derived_field:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_derived_field_value], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[e_derived_field_value], null_replacement);
 		return;
 
  	case nod_upcase:
  	case nod_lowcase:
- 		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], null_replacement);
+ 		MAKE_desc(statement, &desc1, node->nod_arg[0], null_replacement);
 		if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
  		{
  			*desc = desc1;
@@ -565,16 +554,16 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_substr:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], null_replacement);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], null_replacement);
-		MAKE_desc(dsqlScratch, &desc3, node->nod_arg[2], null_replacement);
- 		DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], null_replacement);
+		MAKE_desc(statement, &desc3, node->nod_arg[2], null_replacement);
+ 		DSqlDataTypeUtil(statement).makeSubstr(desc, &desc1, &desc2, &desc3);
   		return;
 
     case nod_trim:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_trim_value], null_replacement);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_trim_value], null_replacement);
 		if (node->nod_arg[e_trim_characters])
-			MAKE_desc(dsqlScratch, &desc2, node->nod_arg[e_trim_characters], null_replacement);
+			MAKE_desc(statement, &desc2, node->nod_arg[e_trim_characters], null_replacement);
 		else
 			desc2.dsc_flags = 0;
 
@@ -604,24 +593,24 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	case nod_cast:
 		field = (dsql_fld*) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_cast_source], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_cast_source], NULL);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
 
 	case nod_simple_case:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_simple_case_results],
+		MAKE_desc_from_list(statement, &desc1, node->nod_arg[e_simple_case_results],
 							null_replacement, "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_searched_case:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_searched_case_results],
+		MAKE_desc_from_list(statement, &desc1, node->nod_arg[e_searched_case_results],
 							null_replacement, "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_coalesce:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[0],
+		MAKE_desc_from_list(statement, &desc1, node->nod_arg[0],
 							null_replacement, "COALESCE");
 		*desc = desc1;
 		return;
@@ -634,8 +623,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 	case nod_add:
 	case nod_subtract:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
@@ -654,8 +643,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 		dtype = MAX(dtype1, dtype2);
 
-		if (DTYPE_IS_BLOB(dtype))
-		{
+		if (DTYPE_IS_BLOB(dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
 		}
@@ -707,43 +695,37 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 					{
 						dtype = dtype_timestamp;
 					}
-					else
-					{
+					else {
 						ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_dsql_invalid_datetime_subtract));
 					}
 
-					if (dtype == dtype_sql_date)
-					{
+					if (dtype == dtype_sql_date) {
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = 0;
 					}
-					else if (dtype == dtype_sql_time)
-					{
+					else if (dtype == dtype_sql_time) {
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
-					else
-					{
+					else {
 						fb_assert(dtype == dtype_timestamp);
 						desc->dsc_dtype = dtype_double;
 						desc->dsc_length = sizeof(double);
 						desc->dsc_scale = 0;
 					}
 				}
-				else if (is_date_and_time(desc1, desc2))
-				{
+				else if (is_date_and_time(desc1, desc2)) {
 					// <date> + <time>
 					// <time> + <date>
 					desc->dsc_dtype = dtype_timestamp;
 					desc->dsc_length = type_lengths[dtype_timestamp];
 					desc->dsc_scale = 0;
 				}
-				else
-				{
+				else {
 					// <date> + <date>
 					// <time> + <time>
 					// CVC: Hard to see it, since we are in dialect 1.
@@ -762,8 +744,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 				desc->dsc_length = type_lengths[desc->dsc_dtype];
 				desc->dsc_scale = 0;
 			}
-			else
-			{
+			else {
 				// <non-date> - <date>
 				fb_assert(node->nod_type == nod_subtract);
 				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
@@ -793,8 +774,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 	case nod_add2:
 	case nod_subtract2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
@@ -807,8 +788,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		dtype2 = desc2.dsc_dtype;
 
 		// Arrays and blobs can never partipate in addition/subtraction
-		if (DTYPE_IS_BLOB(dtype1) || DTYPE_IS_BLOB(dtype2))
-		{
+		if (DTYPE_IS_BLOB(dtype1) || DTYPE_IS_BLOB(dtype2)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
 		}
@@ -834,8 +814,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 			fb_assert(DTYPE_IS_APPROX(dtype1) || DTYPE_IS_APPROX(dtype2));
 			dtype = dtype_double;
 		}
-		else
-		{
+		else {
 			// mixed numeric and non-numeric:
 
 			// The MAX(dtype) rule doesn't apply with dtype_int64
@@ -973,8 +952,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_multiply:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
@@ -984,8 +963,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 
 		// Arrays and blobs can never partipate in multiplication
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
+		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
 		}
@@ -1016,8 +994,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_multiply2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
@@ -1035,8 +1013,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 
 		// Arrays and blobs can never partipate in multiplication
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
+		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
 		}
@@ -1078,8 +1055,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	*/
 
 	case nod_divide:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
@@ -1089,8 +1066,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 
 		// Arrays and blobs can never partipate in division
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
+		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
 		}
@@ -1105,8 +1081,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 		dtype = MAX(dtype1, dtype2);
 
-		if (!DTYPE_IS_NUMERIC(dtype))
-		{
+		if (!DTYPE_IS_NUMERIC(dtype)) {
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_mustuse_numeric_div_dial1));
 		}
@@ -1118,8 +1093,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_divide2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
@@ -1137,8 +1112,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 
 		// Arrays and blobs can never partipate in division
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
+		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
 		}
@@ -1168,7 +1142,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_negate:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 
 		if (node->nod_arg[0]->nod_type == nod_null)
 		{
@@ -1179,10 +1153,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 		// In Dialect 2 or 3, a string can never partipate in negation
 		// (use a specific cast instead)
-		if (DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			if (dsqlScratch->clientDialect >= SQL_DIALECT_V6_TRANSITION)
-			{
+		if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
+			if (statement->req_client_dialect >= SQL_DIALECT_V6_TRANSITION) {
 				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 							Arg::Gds(isc_dsql_nostring_neg_dial3));
 			}
@@ -1196,15 +1168,14 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 		// Forbid other not numeric datatypes
-		else if (!DTYPE_IS_NUMERIC(desc->dsc_dtype))
-		{
+		else if (!DTYPE_IS_NUMERIC(desc->dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_invalid_type_neg));
 		}
 		return;
 
 	case nod_alias:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[e_alias_value], null_replacement);
 		return;
 
 	case nod_dbkey:
@@ -1221,8 +1192,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 			desc->dsc_flags = DSC_nullable;
 			desc->dsc_ttype() = ttype_binary;
 		}
-		else
-		{
+		else {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_dbkey_from_non_table));
 		}
@@ -1260,20 +1230,19 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 				for (dsql_nod** p = nodeArgs->nod_arg;
 					p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
 				{
-					MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
+					MAKE_desc(statement, &(*p)->nod_desc, *p, NULL);
 					args.add(&(*p)->nod_desc);
 				}
 			}
 
 			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
-			DSqlDataTypeUtil(dsqlScratch).makeSysFunction(desc, name->str_data,
-				args.getCount(), args.begin());
+			DSqlDataTypeUtil(statement).makeSysFunction(desc, name->str_data, args.getCount(), args.begin());
 
 			return;
 		}
 
 	case nod_gen_id:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_gen_id_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
@@ -1282,7 +1251,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_gen_id2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_gen_id_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
@@ -1293,13 +1262,11 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 	case nod_limit:
 	case nod_rows:
-		if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
-		{
+		if (statement->req_client_dialect <= SQL_DIALECT_V5) {
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof (SLONG);
 		}
-		else
-		{
+		else {
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof (SINT64);
 		}
@@ -1327,8 +1294,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		desc->dsc_flags = 0;
 		desc->dsc_ttype() = ttype_metadata;
 		desc->dsc_length =
-			(USERNAME_LENGTH / METADATA_BYTES_PER_CHAR) *
-			METD_get_charset_bpc(dsqlScratch->getTransaction(), ttype_metadata) + sizeof(USHORT);
+			USERNAME_LENGTH * METD_get_charset_bpc(statement, ttype_metadata) + sizeof(USHORT);
 		return;
 
 	case nod_internal_info:
@@ -1363,7 +1329,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_extract:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_extract_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_extract_value], NULL);
 
 		switch (node->nod_arg[e_extract_part]->getSlong())
 		{
@@ -1385,7 +1351,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_strlen:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_strlen_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_strlen_value], NULL);
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
@@ -1422,7 +1388,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 		if (null_replacement)
 		{
-			MAKE_desc(dsqlScratch, desc, null_replacement, NULL);
+			MAKE_desc(statement, desc, null_replacement, NULL);
 			desc->dsc_flags |= (DSC_nullable | DSC_null);
 		}
 		else
@@ -1430,7 +1396,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_via:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_via_value_1], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[e_via_value_1], null_replacement);
 	    // Set the descriptor flag as nullable. The
 	    // select expression may or may not return
 	    // this row based on the WHERE clause. Setting this
@@ -1441,15 +1407,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_hidden_var:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_hidden_var_expr], null_replacement);
-		return;
-
-	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
-		node = node->nod_arg[e_sel_query_spec];
-		fb_assert(node->nod_type == nod_query_spec);
-		node = node->nod_arg[e_qry_list];
-		fb_assert(node->nod_type == nod_list && node->nod_count > 0);
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[e_hidden_var_expr], null_replacement);
 		return;
 
 	default:
@@ -1490,11 +1448,13 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	desc->dsc_sub_type = field->fld_sub_type;
 	desc->dsc_length = field->fld_length;
 	desc->dsc_flags = (field->fld_flags & FLD_nullable) ? DSC_nullable : 0;
-
-	if (desc->isText() || desc->isBlob())
+	if (desc->dsc_dtype <= dtype_any_text) {
+		INTL_ASSIGN_DSC(desc, field->fld_character_set_id, field->fld_collation_id);
+	}
+	else if (desc->dsc_dtype == dtype_blob)
 	{
-		desc->setTextType(INTL_CS_COLL_TO_TTYPE(
-			field->fld_character_set_id, field->fld_collation_id));
+		desc->dsc_scale = static_cast<SCHAR>(field->fld_character_set_id);
+		desc->dsc_flags |= field->fld_collation_id << 8;
 	}
 }
 
@@ -1512,7 +1472,7 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	@param expression_name
 
  **/
-void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node,
+void MAKE_desc_from_list(CompiledStatement* statement, dsc* desc, dsql_nod* node,
 						 dsql_nod* null_replacement,
 						 const TEXT* expression_name)
 {
@@ -1522,17 +1482,17 @@ void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* 
 
 	for (dsql_nod** p = node->nod_arg; p < node->nod_arg + node->nod_count; ++p)
 	{
-		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
+		MAKE_desc(statement, &(*p)->nod_desc, *p, NULL);
 		args.add(&(*p)->nod_desc);
 	}
 
-	DSqlDataTypeUtil(dsqlScratch).makeFromList(desc, expression_name, args.getCount(), args.begin());
+	DSqlDataTypeUtil(statement).makeFromList(desc, expression_name, args.getCount(), args.begin());
 
 	// If we have literal NULLs only, let the result be either
 	// CHAR(1) CHARACTER SET NONE or the context-provided datatype
 	if (desc->isNull() && null_replacement)
 	{
-		MAKE_desc(dsqlScratch, desc, null_replacement, NULL);
+		MAKE_desc(statement, desc, null_replacement, NULL);
 		desc->dsc_flags |= DSC_null | DSC_nullable;
 		return;
 	}
@@ -1597,7 +1557,6 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		node->nod_desc.dsc_flags |= DSC_nullable;
 	}
 
-	// UNICODE_FSS_HACK
 	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
 	if ((field->fld_flags & FLD_system) && node->nod_desc.dsc_dtype <= dtype_varying &&
 		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
@@ -1702,19 +1661,17 @@ dsql_nod* MAKE_node(NOD_TYPE type, int count)
 dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	USHORT sqlda_index, const dsql_nod* node)
 {
-	if (!message)
-	{
+	if (!message) {
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_badmsgnum));
 	}
 
+	DEV_BLKCHK(message, dsql_type_msg);
+
 	if (sqlda_flag && sqlda_index && sqlda_index <= message->msg_index)
 	{
-		// This parameter is possibly already here. Look for it.
-		for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
-		{
-			dsql_par* temp = message->msg_parameters[i];
-
+		// This parameter possibly already here. Look for it
+		for (dsql_par* temp = message->msg_parameters; temp; temp = temp->par_next) {
 			if (temp->par_index == sqlda_index)
 				return temp;
 		}
@@ -1722,9 +1679,10 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_par* parameter = FB_NEW(*tdbb->getDefaultPool()) dsql_par(*tdbb->getDefaultPool());
+	dsql_par* parameter = FB_NEW(*tdbb->getDefaultPool()) dsql_par;
 	parameter->par_message = message;
-	message->msg_parameters.insert(0, parameter);
+	parameter->par_next = message->msg_parameters;
+	message->msg_parameters = parameter;
 	parameter->par_parameter = message->msg_parameter++;
 
 	parameter->par_rel_name = NULL;
@@ -1738,8 +1696,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	// If the parameter is used declared, set SQLDA index
 	if (sqlda_flag)
 	{
-		if (sqlda_index)
-		{
+		if (sqlda_index) {
 			parameter->par_index = sqlda_index;
 			if (message->msg_index < sqlda_index)
 				message->msg_index = sqlda_index;
@@ -1751,8 +1708,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 	// If a null handing has been requested, set up a null flag
 
-	if (null_flag)
-	{
+	if (null_flag) {
 		dsql_par* null = MAKE_parameter(message, false, false, 0, NULL);
 		parameter->par_null = null;
 		null->par_desc.dsc_dtype = dtype_short;
@@ -1850,6 +1806,27 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 
 /**
 
+ 	MAKE_trigger_type
+
+    @brief	Make a trigger type
+
+
+    @param prefix_node
+    @param suffix_node
+
+ **/
+dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
+{
+	const SLONG prefix = prefix_node->getSlong();
+	const SLONG suffix = suffix_node->getSlong();
+	delete prefix_node;
+	delete suffix_node;
+	return MAKE_const_slong(prefix + suffix - 1);
+}
+
+
+/**
+
  	MAKE_variable
 
     @brief	Make up a field node.
@@ -1878,6 +1855,7 @@ dsql_nod* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type t
 	variable->var_variable_number = local_number;
 	variable->var_field = field;
 	strcpy(variable->var_name, name);
+	//variable->var_flags = 0;
 	variable->var_type = type;
 	if (field)
 		MAKE_desc_from_field(&node->nod_desc, field);
@@ -1942,14 +1920,12 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		string = (dsql_str*) item->nod_arg[e_alias_alias];
 		parameter->par_alias = string->str_data;
 		alias = item->nod_arg[e_alias_value];
-		if (alias->nod_type == nod_field)
-		{
+		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
 			parameter->par_name = field->fld_name.c_str();
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
-		else if (alias->nod_type == nod_dbkey)
-		{
+		else if (alias->nod_type == nod_dbkey) {
 			parameter->par_name = DB_KEY_NAME;
 			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 		}
@@ -1962,14 +1938,12 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		string = (dsql_str*) item->nod_arg[e_derived_field_name];
 		parameter->par_alias = string->str_data;
 		alias = item->nod_arg[e_derived_field_value];
-		if (alias->nod_type == nod_field)
-		{
+		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
 			parameter->par_name = field->fld_name.c_str();
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
-		else if (alias->nod_type == nod_dbkey)
-		{
+		else if (alias->nod_type == nod_dbkey) {
 			parameter->par_name = DB_KEY_NAME;
 			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 		}
@@ -1978,8 +1952,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		{
 			const dsql_map* map = (dsql_map*) item->nod_arg[e_map_map];
 			const dsql_nod* map_node = map->map_node;
-			while (map_node->nod_type == nod_map)
-			{
+			while (map_node->nod_type == nod_map) {
 				// skip all the nod_map nodes
 				map = (dsql_map*) map_node->nod_arg[e_map_map];
 				map_node = map->map_node;
@@ -1995,8 +1968,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				string = (dsql_str*) map_node->nod_arg[e_alias_alias];
 				parameter->par_alias = string->str_data;
 				alias = map_node->nod_arg[e_alias_value];
-				if (alias->nod_type == nod_field)
-				{
+				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
 					parameter->par_name = field->fld_name.c_str();
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
@@ -2006,8 +1978,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
 				parameter->par_alias = string->str_data;
 				alias = map_node->nod_arg[e_derived_field_value];
-				if (alias->nod_type == nod_field)
-				{
+				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
 					parameter->par_name = field->fld_name.c_str();
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
@@ -2053,7 +2024,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_udf:
 		{
 			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
-			name_alias = userFunc->udf_name.identifier.c_str();
+			name_alias = userFunc->udf_name.c_str();
 			break;
 		}
 	case nod_sys_function:
@@ -2077,7 +2048,8 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		}
 		break;
 	case nod_concatenate:
-		name_alias = "CONCATENATION";
+		if ( !Config::getOldColumnNaming() )
+			name_alias = "CONCATENATION";
 		break;
 	case nod_constant:
 	case nod_null:
@@ -2151,25 +2123,31 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		name_alias = "TRIM";
 		break;
 	case nod_cast:
-		name_alias = "CAST";
+		if ( !Config::getOldColumnNaming() )
+			name_alias	= "CAST";
 		break;
 	case nod_upcase:
-		name_alias = "UPPER";
+		if ( !Config::getOldColumnNaming() )
+            name_alias	= "UPPER";
 		break;
     case nod_lowcase:
-        name_alias = "LOWER";
+        name_alias	= "LOWER";
 		break;
 	case nod_current_date:
-		name_alias = "CURRENT_DATE";
+		if ( !Config::getOldColumnNaming() )
+			name_alias = "CURRENT_DATE";
 		break;
 	case nod_current_time:
-		name_alias = "CURRENT_TIME";
+		if ( !Config::getOldColumnNaming() )
+			name_alias = "CURRENT_TIME";
 		break;
 	case nod_current_timestamp:
-		name_alias = "CURRENT_TIMESTAMP";
+		if ( !Config::getOldColumnNaming() )
+			name_alias = "CURRENT_TIMESTAMP";
 		break;
 	case nod_extract:
-		name_alias = "EXTRACT";
+		if ( !Config::getOldColumnNaming() )
+            name_alias = "EXTRACT";
 		break;
 	case nod_strlen:
 		{
@@ -2218,7 +2196,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		}
 		else if (context->ctx_procedure)
 		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
+			parameter->par_rel_name = context->ctx_procedure->prc_name.c_str();
 			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
 		}
 

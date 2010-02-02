@@ -41,6 +41,7 @@
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/rse.h"
 #include "../jrd/intl_classes.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/ThreadStart.h"
 #include "../jrd/UserManagement.h"
 #include "../jrd/blb_proto.h"
@@ -73,7 +74,6 @@
 #include "../common/StatusArg.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
-#include "../jrd/Function.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -286,8 +286,7 @@ void TRA_cleanup(thread_db* tdbb)
 
 	// First, make damn sure there are no outstanding transactions
 
-	for (Jrd::Attachment* attachment = dbb->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		if (attachment->att_transactions)
 			return;
@@ -445,6 +444,10 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, true);
+
+	// Check in with external file system
+
+	EXT_trans_commit(transaction);
 
 #ifdef GARBAGE_THREAD
 	// Flush pages if transaction logically modified data
@@ -776,8 +779,8 @@ void TRA_invalidate(Database* database, ULONG mask)
  *	modified a page that couldn't be written.
  *
  **************************************/
-	for (Jrd::Attachment* attachment = database->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	for (Attachment* attachment = database->dbb_attachments; attachment;
+		attachment = attachment->att_next)
 	{
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
 			transaction = transaction->tra_next)
@@ -983,6 +986,10 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 		transaction->tra_flags |= TRA_prepare2;
 	}
 
+	// Check in with external file system
+
+	EXT_trans_prepare(transaction);
+
 	// Perform any meta data work deferred
 
 	DFW_perform_work(tdbb, transaction);
@@ -1026,7 +1033,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	// Cannot work on limbo transactions for ReadOnly database
 	if (dbb->dbb_flags & DBB_read_only)
@@ -1095,7 +1102,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!transaction->tra_outer)
 	{
@@ -1148,9 +1155,6 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			break;
 		case Resource::rsc_collation:
 			rsc->rsc_coll->decUseCount(tdbb);
-			break;
-		case Resource::rsc_function:
-			rsc->rsc_fun->release(tdbb);
 			break;
 		default:
 			fb_assert(false);
@@ -1250,6 +1254,10 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, retaining_flag, false /*force_flag ?*/);
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
+
+	// Check in with external file system
+
+	EXT_trans_rollback(transaction);
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, false);
@@ -1465,7 +1473,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 }
 
 
-void TRA_shutdown_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
+void TRA_shutdown_attachment(thread_db* tdbb, Attachment* attachment)
 {
 /**************************************
  *
@@ -1585,7 +1593,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
@@ -1639,7 +1647,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
@@ -1968,7 +1976,7 @@ static int blocking_ast_transaction(void* ast_object)
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
-		Jrd::Attachment* att = transaction->tra_cancel_lock->lck_attachment;
+		Attachment* att = transaction->tra_cancel_lock->lck_attachment;
 		tdbb->setAttachment(att);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
@@ -2315,7 +2323,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 
 	for (size_t i = 0; i < ctx.getCount(); ++i)
 	{
-		if (ctx[i]->vcx_type == VCT_PROCEDURE)
+		if (!ctx[i]->vcx_is_relation)
 			continue;
 
 		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i]->vcx_relation_name);
@@ -2493,7 +2501,7 @@ static void link_transaction(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	transaction->tra_next = attachment->att_transactions;
 	attachment->att_transactions = transaction;
 }
@@ -3252,7 +3260,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
 	Lock* lock = create_transaction_lock(tdbb, temp);
@@ -3507,6 +3515,10 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		// Why nobody checks the result? Changed the function to return nothing.
 		start_sweeper(tdbb, dbb);
 	}
+
+	// Check in with external file system
+
+	EXT_trans_start(trans);
 
 	// Start a 'transaction-level' savepoint, unless this is the
 	// system transaction, or unless the transactions doesn't want

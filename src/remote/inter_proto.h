@@ -28,8 +28,8 @@
 extern "C" {
 #endif
 
-ISC_STATUS	REM_attach_database(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
-	const TEXT* file_name, struct Rdb** handle, SSHORT dpb_length, const SCHAR* dpb);
+ISC_STATUS	REM_attach_database(ISC_STATUS* user_status, const TEXT* file_name, struct Rdb** handle,
+	SSHORT dpb_length, const SCHAR* dpb);
 ISC_STATUS	REM_blob_info(ISC_STATUS* user_status, struct Rbl** blob_handle,
 	SSHORT item_length, const UCHAR* items,
 	SSHORT buffer_length, UCHAR* buffer);
@@ -44,8 +44,8 @@ ISC_STATUS	REM_compile_request(ISC_STATUS* user_status, struct Rdb** db_handle,
 ISC_STATUS	REM_create_blob2(ISC_STATUS* user_status, struct Rdb** db_handle,
 	struct Rtr** rtr_handle,
 	struct Rbl** blob_handle, BID blob_id, USHORT bpb_length, const UCHAR* bpb);
-ISC_STATUS	REM_create_database(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
-	const TEXT* file_name, struct Rdb** handle, SSHORT dpb_length, const SCHAR* dpb);
+ISC_STATUS	REM_create_database(ISC_STATUS* user_status, const TEXT* file_name, struct Rdb** handle,
+	SSHORT dpb_length, const SCHAR* dpb);
 ISC_STATUS	REM_database_info(ISC_STATUS* user_status, struct Rdb** handle,
 	SSHORT item_length, const UCHAR* items,
 	SSHORT buffer_length, UCHAR* buffer);
@@ -102,8 +102,14 @@ ISC_STATUS	REM_put_slice(ISC_STATUS* user_status, struct Rdb** db_handle,
 	USHORT param_length, const UCHAR* param, SLONG slice_length, UCHAR* slice);
 ISC_STATUS	REM_que_events(ISC_STATUS* user_status, struct Rdb** handle, SLONG* id,
 	SSHORT length, const UCHAR* items, FPTR_EVENT_CALLBACK ast, void* arg);
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS	REM_receive(ISC_STATUS* user_status, struct Rrq** req_handle,
+	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level,
+	USHORT direction, ULONG offset);
+#else
 ISC_STATUS	REM_receive(ISC_STATUS* user_status, struct Rrq** req_handle,
 	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level);
+#endif
 ISC_STATUS	REM_reconnect_transaction(ISC_STATUS* user_status, struct Rdb** db_handle,
 	struct Rtr** rtr_handle, USHORT length, const UCHAR* id);
 ISC_STATUS	REM_release_request(ISC_STATUS* user_status, struct Rrq** req_handle);
@@ -127,8 +133,8 @@ ISC_STATUS	REM_start_and_send(ISC_STATUS* user_status, struct Rrq** req_handle,
 	struct Rtr** rtr_handle, USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level);
 ISC_STATUS	REM_start_request(ISC_STATUS* user_status, struct Rrq** req_handle,
 	struct Rtr** rtr_handle, USHORT level);
-ISC_STATUS	REM_start_transaction(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
-	struct Rtr** rtr_handle, SSHORT count, struct Rdb** db_handle, SSHORT tpb_length, const UCHAR* tpb);
+ISC_STATUS	REM_start_transaction(ISC_STATUS* user_status, struct Rtr** rtr_handle,
+	SSHORT count, struct Rdb** db_handle, SSHORT tpb_length, const UCHAR* tpb);
 ISC_STATUS	REM_transact_request(ISC_STATUS* user_status, struct Rdb** db_handle,
 	struct Rtr** rtr_handle, USHORT blr_length, UCHAR* blr,
 	USHORT in_msg_length, UCHAR* in_msg, USHORT out_msg_length, UCHAR* out_msg);

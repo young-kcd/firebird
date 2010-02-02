@@ -54,18 +54,17 @@
 #include <stdio.h>
 #include "../jrd/gdsassert.h"
 
-// includes specific for DSQL
+/* includes specific for DSQL */
 
 #include "../dsql/sqlda.h"
 #include "../dsql/sqlda_pub.h"
 #include "../dsql/prepa_proto.h"
 #include "../dsql/utld_proto.h"
 
-// end DSQL-specific includes
+/* end DSQL-specific includes */
 
 #include "../jrd/why_proto.h"
 #include "../common/classes/alloc.h"
-#include "../common/classes/tree.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/RefCounted.h"
@@ -97,6 +96,9 @@
 #include "../common/classes/FpeControl.h"
 #include "../jrd/constants.h"
 #include "../jrd/ThreadStart.h"
+#ifdef SCROLLABLE_CURSORS
+#include "../jrd/blr.h"
+#endif
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -115,7 +117,7 @@
 #endif
 
 #ifdef HAVE_FLOCK
-#include <sys/file.h>			// for flock()
+#include <sys/file.h>			/* for flock() */
 #endif
 
 #ifdef WIN_NT
@@ -157,7 +159,7 @@ static bool disableConnections = false;
 
 typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
-// Transaction element block
+/* Transaction element block */
 
 struct teb
 {
@@ -344,6 +346,26 @@ namespace Why
 				fb_assert(false);
 			}
 #endif
+		}
+
+		FB_API_HANDLE getPublicHandle(const void* handle)
+		{
+			if (handle)
+			{
+				MutexLockGuard guard(mtx);
+
+				for (T** itr = arr.begin(); itr < arr.end(); itr++)
+				{
+					T* const member = *itr;
+
+					if (member->handle == handle)
+					{
+						return member->public_handle;
+					}
+				}
+			}
+
+			return 0;
 		}
 
 	private:
@@ -808,28 +830,13 @@ namespace Why
 			T::destroy(h);
 		}
 	}
-
-	template <typename T>
-	void destroyNoThrow(RefPtr<T> h) throw()
-	{
-		// This form of destroy is used in catch handlers,
-		// when we already have probably more interesting status to return.
-		try
-		{
-			if (h)
-			{
-				T::destroy(h);
-			}
-		}
-		catch (const Exception&) { }
-	}
 } // namespace Why
-
-using namespace Why;
 
 #ifdef DEV_BUILD
 static void check_status_vector(const ISC_STATUS*);
 #endif
+
+using namespace Why;
 
 static void event_ast(void*, USHORT, const UCHAR*);
 static void exit_handler(void*);
@@ -870,11 +877,14 @@ static bool why_initialized = false;
  * this is the most close code to what we are doing now.
  */
 
-//static const USHORT FPE_RESET_INIT_ONLY		= 0x0;	// Don't reset FPE after init
-//static const USHORT FPE_RESET_NEXT_API_CALL	= 0x1;	// Reset FPE on next gds call
-static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	// Reset FPE on all gds call
+//static const USHORT FPE_RESET_INIT_ONLY		= 0x0;	/* Don't reset FPE after init */
+//static const USHORT FPE_RESET_NEXT_API_CALL	= 0x1;	/* Reset FPE on next gds call */
+static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
 
-// Global array to store string from the status vector in save_error_string.
+/*
+ * Global array to store string from the status vector in
+ * save_error_string.
+ */
 
 const int MAXERRORSTRINGLENGTH	= 250;
 static TEXT glbstr1[MAXERRORSTRINGLENGTH];
@@ -1082,6 +1092,11 @@ namespace
 #define GDS_QUE_EVENTS			isc_que_events
 #define GDS_RECONNECT			isc_reconnect_transaction
 #define GDS_RECEIVE				isc_receive
+
+#ifdef SCROLLABLE_CURSORS
+#define GDS_RECEIVE2			isc_receive2
+#endif
+
 #define GDS_RELEASE_REQUEST		isc_release_request
 #define GDS_REQUEST_INFO		isc_request_info
 #define GDS_ROLLBACK			isc_rollback_transaction
@@ -1199,7 +1214,7 @@ const int PROC_PING				= 55;
 
 const int PROC_count			= 56;
 
-// Define complicated table for multi-subsystem world
+/* Define complicated table for multi-subsystem world */
 
 namespace
 {
@@ -1233,7 +1248,7 @@ static PTR entrypoints[PROC_count * SUBSYSTEMS] =
 
 } // extern "C"
 
-// Information items for two phase commit
+/* Information items for two phase commit */
 
 static const UCHAR prepare_tr_info[] =
 {
@@ -1241,7 +1256,7 @@ static const UCHAR prepare_tr_info[] =
 	isc_info_end
 };
 
-// Information items for DSQL prepare
+/* Information items for DSQL prepare */
 
 static const SCHAR sql_prepare_info[] =
 {
@@ -1259,7 +1274,7 @@ static const SCHAR sql_prepare_info[] =
 	isc_info_sql_describe_end
 };
 
-// Information items for SQL info
+/* Information items for SQL info */
 
 static const SCHAR describe_select_info[] =
 {
@@ -1383,11 +1398,12 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		ptr = status;
 
-		// copy the file name to a temp buffer, since some of the following utilities can modify it
+/* copy the file name to a temp buffer, since some of the following
+   utilities can modify it */
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
-			reinterpret_cast<const UCHAR*>(dpb), dpb_length);
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
 
@@ -1457,14 +1473,12 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				continue;
 			}
 
-			attachment = new CAttachment(NULL, public_handle, n);
-			attachment->db_path = expanded_filename;
-
-			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, *public_handle, expanded_filename.c_str(),
-												&attachment->handle, newDpb.getBufferLength(),
+			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, expanded_filename.c_str(),
+												&handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
-				handle = attachment->handle;
+				attachment = new CAttachment(handle, public_handle, n);
+				attachment->db_path = expanded_filename;
 
 				status[0] = isc_arg_gds;
 				status[1] = 0;
@@ -1482,12 +1496,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 				return status[1];
 			}
-			else
-			{
-				*public_handle = 0;
-				destroy(attachment);
-			}
-
 			if (ptr[1] != isc_unavailable)
 			{
 				ptr = temp;
@@ -1500,7 +1508,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DETACH, n) (temp, &handle);
 		}
-		destroyNoThrow(attachment);
+		destroy(attachment);
 
   		e.stuff_exception(status);
 	}
@@ -1989,10 +1997,12 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		ptr = status;
 
-		// copy the file name to a temp buffer, since some of the following utilities can modify it
+/* copy the file name to a temp buffer, since some of the following
+   utilities can modify it */
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpb_length);
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+				dpb, dpb_length, isc_dpb_version1);
 
 		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
 
@@ -2035,19 +2045,10 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				continue;
 			}
 
-			attachment = new CAttachment(NULL, public_handle, n);
-#ifdef WIN_NT
-			attachment->db_path = expanded_filename;
-#else
-			attachment->db_path = org_filename;
-#endif
-
-			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, *public_handle, expanded_filename.c_str(),
-												&attachment->handle, newDpb.getBufferLength(),
+			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, expanded_filename.c_str(),
+												&handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
-				handle = attachment->handle;
-
 #ifdef WIN_NT
             	// Now we can expand, the file exists
 				expanded_filename = org_filename;
@@ -2057,6 +2058,13 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				ISC_systemToUtf8(expanded_filename);
 #endif
 
+				attachment = new CAttachment(handle, public_handle, n);
+#ifdef WIN_NT
+				attachment->db_path = expanded_filename;
+#else
+				attachment->db_path = org_filename;
+#endif
+
 				status[0] = isc_arg_gds;
 				status[1] = 0;
 				if (status[2] != isc_arg_warning)
@@ -2064,12 +2072,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 				return status[1];
 			}
-			else
-			{
-				*public_handle = 0;
-				destroy(attachment);
-			}
-
 			if (ptr[1] != isc_unavailable)
 				ptr = temp;
 		}
@@ -2082,7 +2084,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			CALL(PROC_DROP_DATABASE, n) (temp, &handle);
 		}
 
-		destroyNoThrow(attachment);
+		destroy(attachment);
 	}
 
 	return status[1];
@@ -2244,6 +2246,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 		}
 
 		destroy(attachment);
+		attachment = NULL;
 		*handle = 0;
 	}
 	catch (const Exception& e)
@@ -2949,7 +2952,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 
 		bool ret_v3_error = false;
 		if (!stmt_eaten) {
-			// Check if against < 4.0 database
+			/* Check if against < 4.0 database */
 
 			const SCHAR ch = isc_info_base_level;
 			SCHAR buffer[16];
@@ -3140,6 +3143,71 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 }
 
 
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
+									   FB_API_HANDLE* stmt_handle,
+									   USHORT dialect,
+									   XSQLDA* sqlda,
+									   USHORT direction,
+									   SLONG offset)
+{
+/**************************************
+ *
+ *	i s c _ d s q l _ f e t c h 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch next record from a dynamic SQL cursor
+ *
+ **************************************/
+	Status status(user_status);
+
+	try
+	{
+		if (!sqlda)
+		{
+			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
+		}
+
+		Statement statement = translate<CStatement>(stmt_handle);
+
+		statement->checkPrepared();
+		sqlda_sup& dasup = statement->das;
+
+		USHORT blr_length, msg_type, msg_length;
+
+		if (UTLD_parse_sqlda(status, &dasup, &blr_length, &msg_type, &msg_length,
+							 dialect, sqlda, DASUP_CLAUSE_select))
+		{
+			return status[1];
+		}
+
+		ISC_STATUS s = GDS_DSQL_FETCH2_M(status, stmt_handle, blr_length,
+										 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
+										 0, msg_length,
+										 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg,
+										 direction, offset);
+		if (s && s != 101)
+		{
+			return s;
+		}
+
+		if (UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect, sqlda, DASUP_CLAUSE_select))
+		{
+			return status[1];
+		}
+	}
+	catch (const Exception& e)
+	{
+		e.stuff_exception(status);
+	}
+
+	return status[1];
+}
+#endif
+
+
 ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 										FB_API_HANDLE* stmt_handle,
 										USHORT blr_length,
@@ -3168,7 +3236,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 		ISC_STATUS s =
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
 															  blr_length, blr,
-															  msg_type, msg_length, msg);
+															  msg_type, msg_length, msg
+#ifdef SCROLLABLE_CURSORS
+															  ,
+															  (USHORT) 0, (ULONG) 1
+#endif // SCROLLABLE_CURSORS
+															  );
 
 		if (s == 100 || s == 101)
 		{
@@ -3182,6 +3255,55 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 
 	return status[1];
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
+										 FB_API_HANDLE* stmt_handle,
+										 USHORT blr_length,
+										 SCHAR* blr,
+										 USHORT msg_type,
+										 USHORT msg_length,
+										 SCHAR* msg,
+										 USHORT direction,
+										 SLONG offset)
+{
+/**************************************
+ *
+ *	i s c _ d s q l _ f e t c h 2 _ m
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch next record from a dynamic SQL cursor
+ *
+ **************************************/
+	Status status(user_status);
+
+	try
+	{
+		Statement statement = translate<CStatement>(stmt_handle);
+		YEntry entryGuard(statement);
+
+		ISC_STATUS s =
+			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
+															  blr_length, blr,
+															  msg_type, msg_length, msg,
+															  direction, offset);
+
+		if (s == 100 || s == 101)
+		{
+			return s;
+		}
+	}
+	catch (const Exception& e)
+	{
+		e.stuff_exception(status);
+	}
+
+	return status[1];
+}
+#endif
 
 
 ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS* user_status,
@@ -4027,6 +4149,12 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
+
+#ifdef SCROLLABLE_CURSORS
+	return GDS_RECEIVE2(user_status, req_handle, msg_type, msg_length,
+						msg, level, (USHORT) blr_continue,	/* means continue in same direction as before */
+						(ULONG) 1);
+#else
 	Status status(user_status);
 
 	try
@@ -4044,7 +4172,50 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE(ISC_STATUS* user_status,
 	}
 
 	return status[1];
+#endif
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS* user_status,
+									FB_API_HANDLE* req_handle,
+									USHORT msg_type,
+									USHORT msg_length,
+									SCHAR* msg,
+									SSHORT level,
+									USHORT direction,
+									ULONG offset)
+{
+/**************************************
+ *
+ *	i s c _ r e c e i v e 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	Scroll through the request output stream,
+ *	then get a record from the host program.
+ *
+ **************************************/
+	Status status(user_status);
+
+	try
+	{
+		Request request = translate<CRequest>(req_handle);
+		YEntry entryGuard(request);
+
+		CALL(PROC_RECEIVE, request->implementation) (status, &request->handle,
+													 msg_type, msg_length, msg,
+													 level, direction, offset);
+	}
+	catch (const Exception& e)
+	{
+		e.stuff_exception(status);
+	}
+
+	return status[1];
+}
+#endif
 
 
 ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
@@ -4442,8 +4613,8 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		if (handle)
 		{
 			CALL(PROC_SERVICE_DETACH, n) (temp, &handle);
-			destroyNoThrow(service);
 			*public_handle = 0;
+			destroy(service);
 		}
 	}
 
@@ -4671,6 +4842,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY temp;
 	Transaction transaction(NULL);
 	Attachment attachment(NULL);
+	StoredTra* handle = NULL;
 
 	Status status(user_status);
 
@@ -4680,25 +4852,29 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 		nullCheck(tra_handle, isc_bad_trans_handle);
 
 		if (count <= 0 || !vector)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_teb_form));
+		}
 
-		Transaction* ptr = &transaction;
-
-		for (USHORT n = 0; n < count; n++, ptr = &(*ptr)->next, vector++)
+		Transaction* ptr;
+		USHORT n;
+		for (n = 0, ptr = &transaction; n < count; n++, ptr = &(*ptr)->next, vector++)
 		{
 			if (vector->teb_tpb_length < 0 || (vector->teb_tpb_length > 0 && !vector->teb_tpb))
+			{
 				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+			}
 
 			attachment = translate<CAttachment>(vector->teb_database);
 
-			*ptr = new CTransaction(0, 0, attachment);
-
-			if (CALL(PROC_START_TRANSACTION, attachment->implementation) (status,
-					(*ptr)->public_handle, &(*ptr)->handle, 1, &attachment->handle,
-					vector->teb_tpb_length, vector->teb_tpb))
+			if (CALL(PROC_START_TRANSACTION, attachment->implementation) (status, &handle, 1,
+					&attachment->handle, vector->teb_tpb_length, vector->teb_tpb))
 			{
 				status_exception::raise(status);
 			}
+
+			*ptr = new CTransaction(handle, 0, attachment);
+			handle = 0;
 		}
 
 		if (transaction->next)
@@ -4714,7 +4890,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 	{
 		e.stuff_exception(status);
 
-		if (transaction)
+		if (handle || transaction)
 		{
 			*tra_handle = 0;
 		}
@@ -4731,7 +4907,12 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 
 		if (transaction)
 		{
-			destroyNoThrow(transaction);
+			destroy(transaction);
+		}
+
+		if (handle && attachment)
+		{
+			CALL(PROC_ROLLBACK, attachment->implementation) (temp, &handle);
 		}
 	}
 
@@ -5011,8 +5192,8 @@ static void check_status_vector(const ISC_STATUS* status)
 		return;
 	}
 
-	// Vector [2] could either end the vector, or start a warning
-	// in either case the status vector is a success
+/* Vector [2] could either end the vector, or start a warning
+   in either case the status vector is a success */
 	if ((s[1] == FB_SUCCESS) && (s[2] != isc_arg_end) && (s[2] != isc_arg_gds) &&
 		(s[2] != isc_arg_warning))
 	{
@@ -5028,8 +5209,8 @@ static void check_status_vector(const ISC_STATUS* status)
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
-			// The next element must either be 0 (indicating no error) or a
-			// valid isc error message, let's check
+			/* The next element must either be 0 (indicating no error) or a
+			 * valid isc error message, let's check */
 			if (*s && (*s & ISC_MASK) != ISC_MASK) {
 				if (code == isc_arg_warning) {
 					SV_MSG("warning code not a valid ISC message");
@@ -5039,8 +5220,8 @@ static void check_status_vector(const ISC_STATUS* status)
 				}
 			}
 
-			// If the error code is valid, then I better be able to retrieve a
-			// proper facility code from it ... let's find out
+			/* If the error code is valid, then I better be able to retrieve a
+			 * proper facility code from it ... let's find out */
 			if (*s && (*s & ISC_MASK) == ISC_MASK) {
 				bool found = false;
 
@@ -5068,7 +5249,7 @@ static void check_status_vector(const ISC_STATUS* status)
 		case isc_arg_string:
 		case isc_arg_sql_state:
 			length = strlen((const char*) *s);
-			// This check is heuristic, not deterministic
+			/* This check is heuristic, not deterministic */
 			if (length > 1024 - 1)
 				SV_MSG("suspect length value");
 			if (*((const UCHAR *) * s) == 0xCB)
@@ -5079,8 +5260,9 @@ static void check_status_vector(const ISC_STATUS* status)
 		case isc_arg_cstring:
 			length = (ULONG) * s;
 			s++;
-			// This check is heuristic, not deterministic
-			// Note: This can never happen anyway, as the length is coming from a byte value
+			/* This check is heuristic, not deterministic */
+			/* Note: This can never happen anyway, as the length is coming
+			   from a byte value */
 			if (length > 1024 - 1)
 				SV_MSG("suspect length value");
 			if (*((const UCHAR *) * s) == 0xCB)
@@ -5241,6 +5423,7 @@ static PTR get_entrypoint(int proc, int implementation)
 		return *entry;
 
 	return &no_entrypoint;
+
 }
 
 
@@ -5259,9 +5442,10 @@ static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda, USH
  **************************************/
 	USHORT n_variables;
 
-	// If dialect / 10 == 0, then it has not been combined with the
-	// parser version for a prepare statement.  If it has been combined, then
-	// the dialect needs to be pulled out to compare to DIALECT_xsqlda
+/* If dialect / 10 == 0, then it has not been combined with the
+   parser version for a prepare statement.  If it has been combined, then
+   the dialect needs to be pulled out to compare to DIALECT_xsqlda
+*/
 
 	USHORT sql_dialect = dialect / 10;
 	if (sql_dialect == 0)
@@ -5502,9 +5686,9 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 	TEXT* const description = (length > sizeof(tdr_buffer)) ?
 		(TEXT *) gds__alloc(length) : tdr_buffer;
 
-	// build a transaction description record containing
-	// the host site and database/transaction
-	// information for the target databases.
+/* build a transaction description record containing
+   the host site and database/transaction
+   information for the target databases. */
 
 	TEXT* p = description;
 	if (!p)
@@ -5519,14 +5703,14 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 	memcpy(p, host, hostlen);
 	p += hostlen;
 
-	// Get database and transaction stuff for each sub-transaction
+/* Get database and transaction stuff for each sub-transaction */
 
 	for (sub = transaction->next; sub; sub = sub->next) {
 		get_database_info(sub, &p);
 		get_transaction_info(status, sub, &p);
 	}
 
-	// So far so good -- prepare each sub-transaction
+/* So far so good -- prepare each sub-transaction */
 
 	length = p - description;
 
@@ -5612,11 +5796,12 @@ static void save_error_string(ISC_STATUS* status)
 			l = (ULONG) * status;
 			if (l < len)
 			{
-				status++;		// Length is unchanged
-
-				// This strncpy should really be a memcpy
+				status++;		/* Length is unchanged */
+				/*
+				 * This strncpy should really be a memcpy
+				 */
 				strncpy(p, reinterpret_cast<char*>(*status), l);
-				*status++ = (ISC_STATUS) p;	// string in static memory
+				*status++ = (ISC_STATUS) p;	/* string in static memory */
 				p += l;
 				len -= l;
 			}
@@ -5633,7 +5818,7 @@ static void save_error_string(ISC_STATUS* status)
 			if (l < len)
 			{
 				strncpy(p, reinterpret_cast<char*>(*status), l);
-				*status++ = (ISC_STATUS) p;	// string in static memory
+				*status++ = (ISC_STATUS) p;	/* string in static memory */
 				p += l;
 				len -= l;
 			}
@@ -5650,7 +5835,7 @@ static void save_error_string(ISC_STATUS* status)
 		case isc_arg_vms:
 		case isc_arg_unix:
 		case isc_arg_win32:
-			status++;			// Skip parameter
+			status++;			/* Skip parameter */
 			break;
 		}
 	}
@@ -5737,6 +5922,23 @@ bool WHY_get_shutdown()
  **************************************/
 
 	return disableConnections;
+}
+
+// dimitr: to be removed in FB 3.0
+FB_API_HANDLE WHY_get_public_attachment_handle(const void* handle)
+{
+/**************************************
+ *
+ *	W H Y _ g e t _ p u b l i c _ a t t a c h m e n t _ h a n d l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns public attachment handle for a given private handle.
+ *
+ **************************************/
+
+	return attachments().getPublicHandle(handle);
 }
 #endif // !SUPERCLIENT
 

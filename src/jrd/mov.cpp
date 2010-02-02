@@ -203,7 +203,8 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 	USHORT dummy_type;
 	UCHAR *ptr;
 
-	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr, NULL, 0);
+	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr,
+									   NULL, 0, ERR_post);
 
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
@@ -275,7 +276,7 @@ int MOV_get_string_ptr(const dsc* desc,
  *
  **************************************/
 
-	return CVT_get_string_ptr(desc, ttype, address, temp, length);
+	return CVT_get_string_ptr(desc, ttype, address, temp, length, ERR_post);
 }
 
 
@@ -433,16 +434,6 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 	}
 
 	return CVT2_make_string2(desc, ttype, address, buffer);
-}
-
-
-Firebird::string MOV_make_string2(Jrd::thread_db* tdbb, const dsc* desc, USHORT ttype, bool limit)
-{
-	Jrd::MoveBuffer buffer;
-	UCHAR* ptr;
-	int len = MOV_make_string2(tdbb, desc, ttype, &ptr, buffer, limit);
-
-	return string((const char*) ptr, len);
 }
 
 

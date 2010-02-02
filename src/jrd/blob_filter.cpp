@@ -220,9 +220,8 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 		result->blf_from = from;
 		result->blf_to = to;
 		result->blf_filter = filters[from];
-		result->blf_exception_message.printf("Exception occurred in system provided internal "
-				"filters for filtering internal subtype %d to text.",
-			from);
+		result->blf_exception_message.printf("Exception occurred in system provided internal filters for filtering internal subtype %d to text.",
+				from);
 		return result;
 	}
 

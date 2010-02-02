@@ -47,11 +47,9 @@
 #pragma warning(disable:4310)  // cast truncates constant value
 #pragma warning(disable:4355)  // '....' used in base member initializer list
 //#pragma warning(disable:4505)  // unreferenced local function has been removed
-#pragma warning(disable:4510)  // '<cls>': default constructor could not be generated
 #pragma warning(disable:4511)  // copy constructor could not be generated
 #pragma warning(disable:4512)  // assignment operator could not be generated
 #pragma warning(disable:4514)  // unreferenced inline function has been removed
-#pragma warning(disable:4610)  // class '<cls>' can never be instantiated - user defined constructor required
 #pragma warning(disable:4663)  // to explicitly specialize class template '.....' use the following syntax
 #pragma warning(disable:4701)  // local variable '......' may be used without having been initialized
 //#pragma warning(disable:4702)  // unreachable code

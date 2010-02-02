@@ -1132,17 +1132,16 @@ static bool nt_error(const TEXT* string,
  *	to do something about it.  Harumph!
  *
  **************************************/
-	const DWORD lastError = GetLastError();
-	Arg::StatusVector status;
-	status << Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
-			  Arg::Gds(operation);
-	if (lastError != ERROR_SUCCESS)
-		status << Arg::Windows(lastError);
-
 	if (!status_vector)
-		ERR_post(status);
+	{
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+				 Arg::Gds(operation) << Arg::Windows(GetLastError()));
+	}
 
-	ERR_build_status(status_vector, status);
+	ERR_build_status(status_vector,
+					 Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+					 Arg::Gds(operation) << Arg::Windows(GetLastError()));
+
 	gds__log_status(0, status_vector);
 
 	return false;

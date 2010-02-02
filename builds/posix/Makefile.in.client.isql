@@ -43,11 +43,11 @@ unexport ISC_PASSWORD
 
 ISQL_Other_Sources = jrd/path_utils.cpp dsql/keywords.cpp
 ISQL_Files = extract.epp isql.epp show.epp Extender.cpp InputDevices.cpp \
-    ColList.cpp OptionsBase.cpp iutils.cpp
+    ColList.cpp OptionsBase.cpp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
-AllObjects = $(ISQL_Objects) $(FBCOMMON_Objects) $(FBUTIL_Objects) $(CLUMPLETS_Objects) $(FBCLASSES_Objects)
+AllObjects = $(ISQL_Objects) $(CLUMPLETS_Objects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
@@ -58,7 +58,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 isql : $(LIBFBCLIENT_SO) $(ISQL)
 
-$(ISQL):	$(AllObjects)
+$(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) $(LIBEDITLINE)
 
 

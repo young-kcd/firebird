@@ -68,7 +68,6 @@
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
-				ModuleDefinitionFile="..\defs\fbclient.def"
 				SubSystem="2"
 				StackReserveSize="2097152"
 			/>
@@ -146,7 +145,6 @@
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
-				ModuleDefinitionFile="..\defs\fbclient.def"
 				SubSystem="2"
 				StackReserveSize="2097152"
 			/>
@@ -227,7 +225,6 @@
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
-				ModuleDefinitionFile="..\defs\fbclient.def"
 				SubSystem="2"
 				StackReserveSize="4194304"
 				TargetMachine="17"
@@ -307,7 +304,6 @@
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
-				ModuleDefinitionFile="..\defs\fbclient.def"
 				SubSystem="2"
 				StackReserveSize="4194304"
 				TargetMachine="17"
@@ -354,10 +350,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\nbackup\nbkMain.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\perf.cpp"
 				>
 			</File>
 			<File
@@ -422,10 +414,6 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<File
-			RelativePath="..\defs\fbclient.def"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

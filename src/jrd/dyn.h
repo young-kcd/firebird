@@ -26,15 +26,17 @@
 
 #include "../common/classes/MsgPrint.h"
 
-const char* const ALL_PRIVILEGES = "SIUDR";	// all applicable grant/revoke privileges
-const char* const ALL_PROC_PRIVILEGES = "X";	// all applicable grant/revoke privileges for a procedure
+const char* const ALL_PRIVILEGES = "SIUDR";
+		/* all applicable grant/revoke privileges */
+const char* const ALL_PROC_PRIVILEGES = "X";
+		/* all applicable grant/revoke privileges for a procedure */
 const int DYN_MSG_FAC		= 8;
 const int STUFF_COUNT		= 4; // Is this the same value defined in ods.h???
 const int TEXT_BLOB_LENGTH	= 512;
 
 
-#define GET_STRING(from, to)	DYN_get_string(from, to, sizeof(to))
-#define GET_BYTES(from, to)		DYN_get_string(from, to, sizeof(to))
+#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), true)
+#define GET_BYTES(from, to)		DYN_get_string ((const TEXT**)from, to, sizeof(to), false)
 
 namespace Jrd {
 
@@ -44,15 +46,13 @@ class jrd_tra;
 class Global
 {
 public:
-	Global(jrd_tra* t, const Firebird::string& aSqlText) //, const UCHAR* dyn, size_t length)
-		: gbl_transaction(t),// gbl_length(length), gbl_end(dyn + length)
-		  sqlText(aSqlText)
+	Global(jrd_tra* t) //, const UCHAR* dyn, size_t length)
+		: gbl_transaction(t)//, gbl_length(length), gbl_end(dyn + length)
 	{ }
 
 	jrd_tra* const gbl_transaction;
 	//size_t gbl_length;			// length of BLR stream
 	//const UCHAR* const gbl_end;	// end of BLR sream
-	Firebird::string sqlText;
 };
 
 class dyn_fld
@@ -102,11 +102,11 @@ void	DYN_error_punt(bool, USHORT);
 void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*,
 	Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
-USHORT	DYN_get_string(const UCHAR**, Firebird::MetaName&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::PathName&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::string&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::UCharBuffer&, size_t);
-USHORT	DYN_get_string(const UCHAR**, TEXT*, size_t);
+USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::string&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 
 bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
 USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
@@ -118,3 +118,4 @@ USHORT	DYN_skip_attribute(const UCHAR**);
 void	DYN_unsupported_verb();
 
 #endif // JRD_DYN_H
+

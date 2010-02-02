@@ -126,7 +126,7 @@ static const TEXT gdslogid[] = "";
 #include <share.h>
 #include "err_proto.h"
 #undef leave
-#endif // WIN_NT
+#endif /* WIN_NT */
 
 static char fb_prefix_val[MAXPATHLEN];
 static char fb_prefix_lock_val[MAXPATHLEN];
@@ -191,7 +191,7 @@ static void		blr_indent(gds_ctl*, SSHORT);
 static void		blr_print_blr(gds_ctl*, UCHAR);
 static SCHAR	blr_print_byte(gds_ctl*);
 static SCHAR	blr_print_char(gds_ctl*);
-static void		blr_print_cond(gds_ctl*, SSHORT);
+static void		blr_print_cond(gds_ctl*);
 static int		blr_print_dtype(gds_ctl*);
 static void		blr_print_join(gds_ctl*);
 static SLONG	blr_print_line(gds_ctl*, SSHORT);
@@ -212,7 +212,7 @@ static void safe_strncpy(char* target, const char* source, size_t bs);
 static bool GetProgramFilesDir(Firebird::PathName& output);
 
 
-// Generic cleanup handlers
+/* Generic cleanup handlers */
 
 struct clean_t
 {
@@ -245,7 +245,7 @@ ULONG API_ROUTINE gds__free(void* blk)
 static SLONG gds_pid = 0;
 #endif
 
-// BLR Pretty print stuff
+/* BLR Pretty print stuff */
 
 const int op_line		= 1;
 const int op_verb		= 2;
@@ -271,10 +271,9 @@ const int op_cursor_stmt	= 22;
 const int op_byte_opt_verb	= 23;
 const int op_exec_stmt		= 24;
 const int op_derived_expr	= 25;
-const int op_partition_args	= 26;
 
 static const UCHAR
-	// generic print formats
+	/* generic print formats */
 	zero[]		= { op_line, 0 },
 	one[]		= { op_line, op_verb, 0},
 	two[]		= { op_line, op_verb, op_verb, 0},
@@ -286,12 +285,12 @@ static const UCHAR
 	byte_verb_verb[] = { op_byte, op_line, op_verb, op_verb, 0},
 	byte_literal[] = { op_byte, op_literal, op_line, 0},
 	byte_byte_verb[] = { op_byte, op_byte, op_line, op_verb, 0},
-	parm[]		= { op_byte, op_word, op_line, 0},	// also field id
+	parm[]		= { op_byte, op_word, op_line, 0},	/* also field id */
 
 	parm2[]		= { op_byte, op_word, op_word, op_line, 0},
 	parm3[]		= { op_byte, op_word, op_word, op_word, op_line, 0},
 
-	// formats specific to a verb
+	/* formats specific to a verb */
 	begin[]		= { op_line, op_begin, op_verb, 0},
 	literal[]	= { op_dtype, op_literal, op_line, 0},
 	message[]	= { op_byte, op_word, op_line, op_message, 0},
@@ -305,8 +304,6 @@ static const UCHAR
 	union_ops[] = { op_byte, op_byte, op_line, op_union, 0},
     map[]  	    = { op_word, op_line, op_map, 0},
 	function[]	= { op_byte, op_literal, op_byte, op_line, op_args, 0},
-	function2[]	= { op_byte, op_literal, op_pad, op_byte, op_literal, op_pad, op_byte, op_line,
-					op_args, 0},
 	gen_id[]	= { op_byte, op_literal, op_line, op_verb, 0},
 	declare[]	= { op_word, op_dtype, op_line, 0},
 	variable[]	= { op_word, op_line, 0},
@@ -315,11 +312,7 @@ static const UCHAR
 	join[]		= { op_join, op_line, 0},
 	exec_proc[] = { op_byte, op_literal, op_line, op_indent, op_word, op_line,
 					op_parameters, op_indent, op_word, op_line, op_parameters, 0},
-	exec_proc2[] = { op_byte, op_literal, op_pad, op_byte, op_literal, op_line, op_indent, op_word, op_line,
-					op_parameters, op_indent, op_word, op_line, op_parameters, 0},
 	procedure[] = { op_byte, op_literal, op_pad, op_byte, op_line, op_indent,
-					op_word, op_line, op_parameters, 0},
-	procedure2[] = { op_byte, op_literal, op_pad, op_byte, op_literal, op_pad, op_byte, op_line, op_indent,
 					op_word, op_line, op_parameters, 0},
 	pid[]		= { op_word, op_pad, op_byte, op_line, op_indent, op_word,
 					op_line, op_parameters, 0},
@@ -337,9 +330,7 @@ static const UCHAR
 	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0},
 	similar[] = { op_line, op_verb, op_verb, op_indent, op_byte_opt_verb, 0},
 	exec_stmt[] = { op_exec_stmt, 0},
-	derived_expr[] = { op_derived_expr, 0},
-	window[] = {op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
-	partition_by[] = {op_byte, op_line, op_partition_args, op_verb, 0};
+	derived_expr[] = { op_derived_expr, 0};
 
 
 #include "../jrd/blp.h"
@@ -598,7 +589,7 @@ void GDS_breakpoint(int /*parameter*/)
  *	using the BREAKPOINT(x) macro.
  *
  **************************************/
-	// Put a breakpoint here via the debugger
+/* Put a breakpoint here via the debugger */
 }
 #endif
 
@@ -653,9 +644,9 @@ void API_ROUTINE gds_alloc_flag_unfreed(void* /*blk*/)
  *	don't report it in gds_alloc_report
  *
  **************************************/
-	// JMB: need to rework this for the new pools
-	// Skidder: Not sure we need to rework this routine.
-	// What we really need is to fix all memory leaks including very old.
+// JMB: need to rework this for the new pools
+// Skidder: Not sure we need to rework this routine.
+// What we really need is to fix all memory leaks including very old.
 }
 
 
@@ -973,9 +964,11 @@ static void safe_strncpy(char* target, const char* source, size_t bs)
 }
 
 
-// CVC: This special function for ADA has been restored to non-const vector,
-// too, in case its usage was broken.
-void API_ROUTINE gds__interprete_a(SCHAR* s, SSHORT* length, ISC_STATUS* vector, SSHORT* offset)
+/* CVC: This special function for ADA has been restored to non-const vector,
+ too, in case its usage was broken. */
+void API_ROUTINE gds__interprete_a(SCHAR* s,
+								   SSHORT* length,
+								   ISC_STATUS* vector, SSHORT* offset)
 {
 /**************************************
  *
@@ -1086,7 +1079,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 #endif
 }
 
-void API_ROUTINE gds__trace(const TEXT* text)
+void API_ROUTINE gds__trace(const TEXT * text)
 {
 /**************************************
  *
@@ -1384,12 +1377,12 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 
 	TEXT* formatted = (TEXT *) gds__alloc(size);
 
-	if (!formatted)				// NOMEM:
+	if (!formatted)				/* NOMEM: */
 		return -1;
 
-	// Let's assume that the text to be output will never be shorter
-	// than the raw text of the message to be formatted.  Then we can
-	// use the caller's buffer to temporarily hold the raw text.
+/* Let's assume that the text to be output will never be shorter
+   than the raw text of the message to be formatted.  Then we can
+   use the caller's buffer to temporarily hold the raw text. */
 
 	const int n = gds__msg_lookup(handle, facility, number, length, buffer, NULL);
 
@@ -1451,7 +1444,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
  *	number if we can't find the message.
  *
  **************************************/
-	// Handle default message file
+// Handle default message file
 	int status = -1;
 	gds_msg* messageL = (gds_msg*) handle;
 
@@ -1459,7 +1452,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	if (!messageL && !(messageL = global_default_msg))
 	{
-		// Try environment variable setting first
+		/* Try environment variable setting first */
 
 		Firebird::string p;
 		if (!fb_utils::readenv("ISC_MSGS", p) ||
@@ -1467,12 +1460,13 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		{
 			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
 
-			// Try declared language of this attachment
-			// This is not quite the same as the language declared on the READY statement
+			/* Try declared language of this attachment */
+			/* This is not quite the same as the language declared on the
+			   READY statement */
 
 			TEXT* msg_file = (TEXT *) gds__alloc((SLONG) MAXPATHLEN);
-			// FREE: at block exit
-			if (!msg_file)		// NOMEM:
+			/* FREE: at block exit */
+			if (!msg_file)		/* NOMEM: */
 				return -2;
 
 			if (fb_utils::readenv("LC_MESSAGES", p))
@@ -1495,7 +1489,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 			if (status)
 			{
-				// Default to standard message file
+				/* Default to standard message file */
 
 				gds__prefix_msg(msg_file, MSG_FILE);
 				status = gds__msg_open(reinterpret_cast<void**>(&messageL), msg_file);
@@ -1509,7 +1503,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		global_default_msg = messageL;
 	}
 
-	// Search down index levels to the leaf.  If we get lost, punt
+/* Search down index levels to the leaf.  If we get lost, punt */
 
 	const ULONG code = MSG_NUMBER(facility, number);
 	const msgnod* const end = (msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
@@ -1544,7 +1538,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	if (!status)
 	{
-		// Search the leaf
+		/* Search the leaf */
 		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status; leaf = NEXT_LEAF(leaf))
 		{
 			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code)
@@ -1554,7 +1548,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			}
 			if (leaf->msgrec_code == code)
 			{
-				// We found the correct message, so return it to the user
+				/* We found the correct message, so return it to the user */
 				const USHORT n = MIN(length - 1, leaf->msgrec_length);
 				memcpy(buffer, leaf->msgrec_text, n);
 				buffer[n] = 0;
@@ -1607,16 +1601,16 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	}
 
 	gds_msg* messageL = (gds_msg*) gds__alloc((SLONG) sizeof(gds_msg) + header.msghdr_bucket_size - 1);
-	// FREE: in gds__msg_close
+/* FREE: in gds__msg_close */
 	if (!messageL)
 	{
-		// NOMEM: return non-open error
+		/* NOMEM: return non-open error */
 		close(n);
 		return -5;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-	// This will only be freed if the client closes the message file for us
+/* This will only be freed if the client closes the message file for us */
 	gds_alloc_flag_unfreed((void *) messageL);
 #endif
 
@@ -1807,8 +1801,8 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 		return FB_SUCCESS;
 
 	TEXT* s = (TEXT *) gds__alloc((SLONG) BUFFER_LARGE);
-	// FREE: at procedure return
-	if (!s)						// NOMEM:
+/* FREE: at procedure return */
+	if (!s)						/* NOMEM: */
 		return vec[1];
 
 	const ISC_STATUS* vector = vec;
@@ -1831,7 +1825,10 @@ ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
 }
 
 
-USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length, const UCHAR* bpb, USHORT* source, USHORT* target)
+USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
+								  const UCHAR* bpb,
+								  USHORT* source,
+								  USHORT* target)
 {
 /**************************************
  *
@@ -1845,7 +1842,7 @@ USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length, const UCHAR* bpb, USHORT* s
  *
  **************************************/
 
-	// SIGN ERROR
+  /* SIGN ERROR */
 
 	return gds__parse_bpb2(bpb_length, bpb, (SSHORT*)source, (SSHORT*)target,
 		NULL, NULL, NULL, NULL, NULL, NULL);
@@ -2126,7 +2123,7 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 	clean->clean_arg = arg;
 
 #ifdef DEBUG_GDS_ALLOC
-	// Startup function - known to be unfreed
+/* Startup function - known to be unfreed */
 	gds_alloc_flag_unfreed((void *) clean);
 #endif
 
@@ -2162,13 +2159,14 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 	}
 
 	bool have_sqlcode = false;
-	SLONG sqlcode = GENERIC_SQLCODE;	// error of last resort
+	SLONG sqlcode = GENERIC_SQLCODE;	/* error of last resort */
 
-	// SQL code -999 (GENERIC_SQLCODE) is generic, meaning "no other sql code
-	// known".  Now scan the status vector, seeing if there is ANY sqlcode
-	// reported.  Make note of the first error in the status vector who's
-	// SQLCODE is NOT -999, that will be the return code if there is no specific
-	// sqlerr reported.
+/* SQL code -999 (GENERIC_SQLCODE) is generic, meaning "no other sql code
+ * known".  Now scan the status vector, seeing if there is ANY sqlcode
+ * reported.  Make note of the first error in the status vector who's
+ * SQLCODE is NOT -999, that will be the return code if there is no specific
+ * sqlerr reported.
+ */
 
 	const ISC_STATUS* s = status_vector;
 	while (*s != isc_arg_end)
@@ -2276,7 +2274,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 	strcpy(sqlstate, "HY000"); // error of last resort
 
 	// step #1, maybe we already have a SQLSTATE stuffed in the status vector
-	while ((*s != isc_arg_end) && !have_sqlstate)
+	while ((*s != isc_arg_end) && (!have_sqlstate))
 	{
 		if (*s == isc_arg_sql_state)
 		{
@@ -2484,13 +2482,13 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 	{
 		strncpy(resolved_module, module, length);
 		resolved_module[length - 1] = 0;
-		return TRUE;		// The variable is not defined. Return TRUE
+		return TRUE;		/* The variable is not defined. Return TRUE */
 	}
 
 	TEXT abs_module[MAXPATHLEN];
 	if (EXPAND_PATH(module, abs_module))
 	{
-		// Extract the path from the absolute module name
+		/* Extract the path from the absolute module name */
 		const TEXT* q = NULL;
 		for (const TEXT* mp = abs_module; *mp; mp++)
 		{
@@ -2502,9 +2500,9 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		memset(abs_module_path, 0, MAXPATHLEN);
 		strncpy(abs_module_path, abs_module, q - abs_module);
 
-		// Check to see if the module path is in the lib path
-		// if it is return TRUE.  If it does not find it, then
-		// the module path is not valid so return FALSE
+		/* Check to see if the module path is in the lib path
+		   if it is return TRUE.  If it does not find it, then
+		   the module path is not valid so return FALSE */
 
 		TEXT abs_path[MAXPATHLEN];
 		TEXT path[MAXPATHLEN];
@@ -2515,7 +2513,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		{
 			strncpy(path, token, sizeof(path));
 			path[sizeof(path) - 1] = 0;
-			// make sure that there is no traing slash on the path
+			/* make sure that there is no traing slash on the path */
 			TEXT* p = path + strlen(path);
 			if ((p != path) && ((p[-1] == '/') || (p[-1] == '\\')))
 				p[-1] = 0;
@@ -2818,7 +2816,7 @@ static SCHAR blr_print_char(gds_ctl* control)
 }
 
 
-static void blr_print_cond(gds_ctl* control, SSHORT level)
+static void blr_print_cond(gds_ctl* control)
 {
 /**************************************
  *
@@ -2833,7 +2831,6 @@ static void blr_print_cond(gds_ctl* control, SSHORT level)
 	SSHORT n;
 
 	const USHORT ctype = control->ctl_blr_reader.getByte();
-	SLONG offset = control->ctl_blr_reader.getOffset();
 
 	switch (ctype)
 	{
@@ -2857,17 +2854,6 @@ static void blr_print_cond(gds_ctl* control, SSHORT level)
 		while (--n >= 0)
 			blr_print_char(control);
 		blr_print_verb(control, 0);
-		break;
-
-	case blr_exception_params:
-		blr_format(control, "blr_exception_params, ");
-		n = blr_print_byte(control);
-		while (--n >= 0)
-			blr_print_char(control);
-		n = blr_print_word(control);
-		blr_print_line(control, (SSHORT) offset);
-		while (--n >= 0)
-			blr_print_verb(control, level);
 		break;
 
 	case blr_sql_code:
@@ -2903,7 +2889,8 @@ static int blr_print_dtype(gds_ctl* control)
 
 	const USHORT dtype = control->ctl_blr_reader.getByte();
 
-	// Special case blob (261) to keep down the size of the jump table
+/* Special case blob (261) to keep down the size of the
+   jump table */
 	const TEXT* string;
 
 	switch (dtype)
@@ -2952,7 +2939,7 @@ static int blr_print_dtype(gds_ctl* control)
 		{
 			string = "double";
 
-			// for double literal, return the length of the numeric string
+			/* for double literal, return the length of the numeric string */
 			const UCHAR* pos = control->ctl_blr_reader.getPos();
 			const UCHAR v1 = control->ctl_blr_reader.getByte();
 			const UCHAR v2 = control->ctl_blr_reader.getByte();
@@ -3256,13 +3243,13 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			while (--n >= 0)
 			{
 				blr_indent(control, level);
-				blr_print_cond(control, level);
+				blr_print_cond(control);
 				offset = blr_print_line(control, (SSHORT) offset);
 			}
 			break;
 
 		case op_set_error:
-			blr_print_cond(control, level);
+			blr_print_cond(control);
 			break;
 
 		case op_indent:
@@ -3456,25 +3443,15 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		case op_cursor_stmt:
 			blr_operator = blr_print_byte(control);
 			blr_print_word(control);
-			offset = blr_print_line(control, (SSHORT) offset);
-			if (blr_operator == blr_cursor_fetch_scroll)
+			if (blr_operator == blr_cursor_fetch)
 			{
-				blr_print_verb(control, level);
-				blr_print_verb(control, level);
-			}
-			offset = blr_print_line(control, (SSHORT) offset);
-			break;
-
-		case op_partition_args:
-			blr_indent(control, level);
-			n = blr_print_byte(control);
-			offset = blr_print_line(control, (SSHORT) offset);
-			for (int i = 0; i < 2; ++i)
-			{
-				for (SSHORT j = 0; j < n; ++j)
+#ifdef SCROLLABLE_CURSORS
+				if (control->ctl_blr_reader.peekByte() == blr_seek) {
 					blr_print_verb(control, level);
+				}
+#endif
 			}
-			blr_print_verb(control, level);
+			offset = blr_print_line(control, (SSHORT) offset);
 			break;
 
 		default:
@@ -3535,8 +3512,9 @@ void gds__cleanup()
 		FPTR_VOID_PTR routine = clean->clean_routine;
 		void* arg = clean->clean_arg;
 
-		// We must free the handler before calling it because there
-		// may be a handler (and is) that frees all memory that has been allocated.
+		/* We must free the handler before calling it because there
+		   may be a handler (and is) that frees all memory that has
+		   been allocated. */
 
 		gds__free(clean);
 
@@ -3620,8 +3598,7 @@ void gds__trace_printer(void* /*arg*/, SSHORT offset, const TEXT* line)
 	gds__ulstr(p, offset, 4, ' ');
 	p += strlen(p);
 	*p++ = ' ';
-	strncpy(p, line, PRETTY_BUFFER_SIZE);
-	p[PRETTY_BUFFER_SIZE] = '\0';
+	strcpy(p, line);
 	p += strlen(p);
 	*p++ = '\n';
 	*p = 0;

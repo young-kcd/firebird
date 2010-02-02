@@ -49,7 +49,6 @@
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/DatabaseSnapshot.h"
-#include "../jrd/Function.h"
 
 #include "../common/utils_proto.h"
 
@@ -85,11 +84,11 @@ DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 	string name;
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
-	Arg::StatusVector statusVector;
+	ISC_STATUS_ARRAY statusVector;
 	base = (Header*) ISC_map_file(statusVector, name.c_str(), init, this, DEFAULT_SIZE, &handle);
 	if (!base)
 	{
-		iscLogStatus("Cannot initialize the shared memory region", statusVector.value());
+		iscLogStatus("Cannot initialize the shared memory region", statusVector);
 		status_exception::raise(statusVector);
 	}
 
@@ -110,7 +109,7 @@ DatabaseSnapshot::SharedData::~SharedData()
 	ISC_mutex_fini(&base->mutex);
 #endif
 
-	Arg::StatusVector statusVector;
+	ISC_STATUS_ARRAY statusVector;
 	ISC_unmap_file(statusVector, &handle);
 }
 
@@ -125,7 +124,7 @@ void DatabaseSnapshot::SharedData::acquire()
 	if (base->allocated > handle.sh_mem_length_mapped)
 	{
 #if (defined HAVE_MMAP || defined WIN_NT)
-		Arg::StatusVector statusVector;
+		ISC_STATUS_ARRAY statusVector;
 		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false);
 		if (!base)
 		{
@@ -277,7 +276,7 @@ void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		Arg::StatusVector statusVector;
+		ISC_STATUS_ARRAY statusVector;
 		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
 		if (!base)
 		{
@@ -410,16 +409,27 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original);
+
 	// Initialize record buffers
-	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
-	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
-	RecordBuffer* const tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
-	RecordBuffer* const stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
-	RecordBuffer* const call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
-	RecordBuffer* const io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
-	RecordBuffer* const rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
-	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
-	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
+	RecordBuffer* const dbb_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_database) : NULL;
+	RecordBuffer* const att_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_attachments) : NULL;
+	RecordBuffer* const tra_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_transactions) : NULL;
+	RecordBuffer* const stmt_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_statements) : NULL;
+	RecordBuffer* const call_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_calls) : NULL;
+	RecordBuffer* const io_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_io_stats) : NULL;
+	RecordBuffer* const rec_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
+	RecordBuffer* const ctx_var_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
+	RecordBuffer* const mem_usage_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_mem_usage) : NULL;
 
 	// Release our own lock
 	LCK_release(tdbb, dbb->dbb_monitor_lock);
@@ -679,7 +689,9 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 		MOV_move(tdbb, &from_desc, &to_desc);
 
 		if (set_charset)
+		{
 			charset = (int) value;
+		}
 	}
 	else if (field.type == VALUE_TIMESTAMP)
 	{
@@ -772,7 +784,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
-		if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
+		if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
 			continue;
 
 		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
@@ -927,8 +939,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 }
 
 
-bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* attachment,
-	Writer& writer, int stat_id)
+bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& writer, int stat_id)
 {
 	fb_assert(attachment);
 
@@ -978,7 +989,7 @@ bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* att
 	// remote process name
 	record.storeString(f_mon_att_remote_process, attachment->att_remote_process);
 	// charset
-	record.storeInteger(f_mon_att_charset_id, tdbb->getCharSet());
+	record.storeInteger(f_mon_att_charset_id, attachment->att_charset);
 	// timestamp
 	record.storeTimestamp(f_mon_att_timestamp, attachment->att_timestamp);
 	// garbage collection flag
@@ -1125,17 +1136,11 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 	{
 		record.storeGlobalId(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
 	}
-
-	const Routine* routine = request->getRoutine();
-
 	// object name/type
-	if (routine)
+	if (request->req_procedure)
 	{
-		if (routine->getName().package.hasData())
-			record.storeString(f_mon_call_pkg_name, routine->getName().package);
-
-		record.storeString(f_mon_call_name, routine->getName().identifier);
-		record.storeInteger(f_mon_call_type, routine->getObjectType());
+		record.storeString(f_mon_call_name, request->req_procedure->prc_name);
+		record.storeInteger(f_mon_call_type, obj_procedure);
 	}
 	else if (!request->req_trg_name.isEmpty())
 	{
@@ -1147,7 +1152,6 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 		// we should never be here...
 		fb_assert(false);
 	}
-
 	// timestamp
 	record.storeTimestamp(f_mon_call_timestamp, request->req_timestamp);
 	// source line/column

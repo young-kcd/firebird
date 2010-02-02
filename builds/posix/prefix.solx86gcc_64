@@ -29,7 +29,7 @@
 # make sure that make.defaults uses -lncurses instead of -lcurses for
 # LINK_LIBS and STATICLINK_LIBS e.g. -lncurses -leditline
 
-WARNINGS=-Wall -Wno-switch -Wno-parentheses -Wno-unused-variable -Wno-non-virtual-dtor
+WARNINGS=-Wall -Wno-switch -Wno-parentheses -Wno-unused-variable
 COMM_SOLX_FLAGS:=-DSOLARIS -DBSD_COMP -DAMD64 -pipe -fmessage-length=0 -MMD -fPIC
 
 SFIO=@SFIO_DIR@
@@ -42,7 +42,7 @@ COMM_SOLX_FLAGS+=$(SFIO_FLAGS)
 endif
 endif
 
-PROD_FLAGS=-w $(COMM_SOLX_FLAGS) -O2 
+PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb $(WARNINGS)
 ifdef SFIO
 LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio

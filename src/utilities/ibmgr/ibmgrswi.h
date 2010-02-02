@@ -26,7 +26,6 @@
 #define IBMGR_IBMGRSWI_H
 
 #include "../jrd/common.h"
-#include "../common/classes/Switches.h"
 
 // Switch constants
 const int IN_SW_IBMGR_0			= 0;	// not a known switch
@@ -62,7 +61,7 @@ const int IN_SW_IBMGR_PIDFILE	= 20;	// Pid file name
 
 const int IN_SW_IBMGR_AMBIG		= 99;	// ambiguous switch
 
-static const struct Switches::in_sw_tab_t ibmgr_in_sw_table [] =
+static const struct in_sw_tab_t ibmgr_in_sw_table [] =
 {
     {IN_SW_IBMGR_START,		0,	"START",	0, 0, 0, false,	0,	2, NULL},   // start server
     {IN_SW_IBMGR_ONCE,		0,	"ONCE",		0, 0, 0, false,	0,	1, NULL},	// start server once

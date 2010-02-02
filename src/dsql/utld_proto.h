@@ -46,13 +46,13 @@ SCHAR*		UTLD_skip_sql_info(SCHAR*);
 
 namespace Jrd {
 
-	class DsqlCompilerScratch;
+	class CompiledStatement;
 
 	class DSqlDataTypeUtil : public DataTypeUtilBase
 	{
 	public:
-		explicit DSqlDataTypeUtil(DsqlCompilerScratch* aDsqlScratch)
-			: dsqlScratch(aDsqlScratch)
+		explicit DSqlDataTypeUtil(CompiledStatement* aStatement)
+			: statement(aStatement)
 		{
 		}
 
@@ -61,7 +61,7 @@ namespace Jrd {
 		virtual USHORT getDialect() const;
 
 	private:
-		DsqlCompilerScratch* dsqlScratch;
+		CompiledStatement* statement;
 	};
 
 } // namespace
@@ -70,3 +70,4 @@ namespace Jrd {
 
 
 #endif //  DSQL_UTLD_PROTO_H
+

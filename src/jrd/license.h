@@ -77,18 +77,18 @@
 #define FB_PLATFORM	"SO"
 #else
 #define FB_PLATFORM	"S4"
-#endif // Solaris
-#endif // Sparc
+#endif /* Solaris */
+#endif /* Sparc */
 #ifdef i386
 #define FB_PLATFORM     "SI"
-#endif // i386
+#endif /* i386 */
 #ifdef AMD64
 #define FB_PLATFORM	"SI"
 #endif
 #ifndef FB_PLATFORM
 #define FB_PLATFORM	"S3"
 #endif
-#endif // __sun
+#endif /* __sun */
 
 #ifdef AIX
 #ifdef AIX_PPC
@@ -96,34 +96,34 @@
 #else
 #define FB_PLATFORM	"IA"
 #endif
-#endif // aix
+#endif /* aix */
 
 #ifdef WIN_NT
 #ifdef i386
 #define FB_PLATFORM	"WI"
 #else
 #define FB_PLATFORM	"NP"
-#endif // i386
+#endif /* i386 */
 #endif
 
 #ifdef LINUX
-#define FB_PLATFORM     "LI"	// Linux on Intel
+#define FB_PLATFORM     "LI"	/* Linux on Intel */
 #endif
 
 #ifdef FREEBSD
-#define FB_PLATFORM     "FB"	// FreeBSD/i386
+#define FB_PLATFORM     "FB"	/* FreeBSD/i386 */
 #endif
 
 #ifdef NETBSD
-#define FB_PLATFORM     "NB"	// NetBSD
+#define FB_PLATFORM     "NB"	/* NetBSD */
 #endif
 
 #ifdef DARWIN
 #if defined(i386) || defined(__x86_64__)
-#define FB_PLATFORM		"UI"	// Darwin/Intel
+#define FB_PLATFORM		"UI"	/* Darwin/Intel */
 #endif
 #if defined(__ppc__) || defined(__ppc64__)
-#define FB_PLATFORM     "UP"	// Darwin/PowerPC
+#define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
 #endif	// DARWIN
 
@@ -139,4 +139,5 @@
 #define ISC_VERSION		FB_PLATFORM "-" FB_BUILD_TYPE ISC_MAJOR_VER "." ISC_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX
 #endif
 
-#endif // JRD_LICENSE_H
+#endif /* JRD_LICENSE_H */
+

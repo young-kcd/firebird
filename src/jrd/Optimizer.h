@@ -70,15 +70,14 @@ class jrd_nod;
 struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
-class IndexTableScan;
-class River;
 
 bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
 bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
 bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
-Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
+VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
+USHORT OPT_nav_rsb_size(RecordSource*, USHORT, USHORT);
 
 inline int STREAM_INDEX(const jrd_nod* node)
 {
@@ -179,14 +178,14 @@ public:
 	~OptimizerRetrieval();
 
 	InversionCandidate* getCost();
-	InversionCandidate* getInversion(IndexTableScan** rsb);
+	InversionCandidate* getInversion(RecordSource** rsb);
 
 protected:
 	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
 	void findDependentFromStreams(const jrd_nod* node, SortedStreamList* streamList) const;
-	const Firebird::string& getAlias();
-	InversionCandidate* generateInversion(IndexTableScan** rsb);
-	IndexTableScan* generateNavigation();
+	VaryingString* getAlias();
+	InversionCandidate* generateInversion(RecordSource** rsb);
+	RecordSource* generateNavigation();
 	void getInversionCandidates(InversionCandidateList* inversions,
 		IndexScratchList* indexScratches, USHORT scope) const;
 	jrd_nod* makeIndexNode(const index_desc* idx) const;
@@ -207,7 +206,7 @@ private:
 	MemoryPool& pool;
 	thread_db* tdbb;
 	SSHORT stream;
-	Firebird::string alias;
+	VaryingString* alias;
 	jrd_nod** sort;
 	jrd_rel* relation;
 	CompilerScratch* csb;
@@ -257,7 +256,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-					   jrd_nod** sort_clause, jrd_nod* plan_clause);
+		/*RiverStack& river_stack,*/ jrd_nod** sort_clause, jrd_nod** project_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();
@@ -284,6 +283,7 @@ private:
 	MemoryPool& pool;
 	thread_db* tdbb;
 	jrd_nod** sort;
+	jrd_nod** project;
 	jrd_nod* plan;
 	CompilerScratch* csb;
 	Database* database;
@@ -292,8 +292,6 @@ private:
 	int remainingStreams;
 };
 
-typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamList;
-typedef Firebird::HalfStaticArray<River*, OPT_STATIC_ITEMS> RiverList;
 
 } // namespace Jrd
 

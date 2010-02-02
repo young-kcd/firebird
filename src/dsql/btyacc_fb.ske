@@ -15,11 +15,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../dsql/Nodes.h"
-#include "../dsql/DdlNodes.h"
-#include "../dsql/PackageNodes.h"
-#include "../dsql/StmtNodes.h"
-#include "../common/classes/TriState.h"
 #include "dsql.tab.h"
 #include "Parser.h"
 

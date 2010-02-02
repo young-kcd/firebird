@@ -123,3 +123,4 @@ private:
 } // namespace
 
 #endif // JRD_EVENT_PROTO_H
+

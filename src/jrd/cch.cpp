@@ -89,7 +89,8 @@ IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #define PAGE_LOCK_RELEASE(lock)
 #define PAGE_LOCK_ASSERT(lock)
 #define PAGE_LOCK_RE_POST(lock)
-#define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof(BufferDesc) + (int) dbb->dbb_page_size)
+#define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof(BufferDesc) + \
+			 (int) dbb->dbb_page_size)
 #else
 #define PAGE_LOCK_RELEASE(lock)			LCK_release (tdbb, lock)
 #define PAGE_LOCK_ASSERT(lock)			LCK_assert (tdbb, lock)
@@ -136,13 +137,13 @@ static void release_bdb(thread_db*, BufferDesc*, const bool, const bool, const b
 static void unmark(thread_db*, WIN*);
 static bool writeable(BufferDesc*);
 static bool is_writeable(BufferDesc*, const ULONG);
-static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS* const,
-	const bool);
-static bool write_page(thread_db*, BufferDesc*, ISC_STATUS* const, const bool);
+static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS* const, const bool);
+static bool write_page(thread_db*, BufferDesc*, /*const bool,*/ ISC_STATUS* const, const bool);
 static void set_diff_page(thread_db*, BufferDesc*);
 static void set_dirty_flag(thread_db*, BufferDesc*);
 static void clear_dirty_flag(thread_db*, BufferDesc*);
 
+#ifdef DIRTY_LIST
 
 static inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
 {
@@ -168,6 +169,33 @@ static inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
 static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only, ISC_STATUS* status);
 static void flushAll(thread_db* tdbb, USHORT flush_flag);
 
+#endif // DIRTY_LIST
+
+#ifdef DIRTY_TREE
+
+static void btc_flush(thread_db*, SLONG, const bool, ISC_STATUS*);
+
+// comment this macro out to revert back to the old tree
+#define BALANCED_DIRTY_PAGE_TREE
+
+#ifdef BALANCED_DIRTY_PAGE_TREE
+static void btc_insert_balanced(Database*, BufferDesc*);
+static void btc_remove_balanced(BufferDesc*);
+#define btc_insert btc_insert_balanced
+#define btc_remove btc_remove_balanced
+
+static bool btc_insert_balance(BufferDesc**, bool, SSHORT);
+static bool btc_remove_balance(BufferDesc**, bool, SSHORT);
+#else
+static void btc_insert_unbalanced(Database*, BufferDesc*);
+static void btc_remove_unbalanced(BufferDesc*);
+#define btc_insert btc_insert_unbalanced
+#define btc_remove btc_remove_unbalanced
+#endif
+
+const int BTREE_STACK_SIZE = 40;
+
+#endif // DIRTY_TREE
 
 const SLONG MIN_BUFFER_SEGMENT = 65536;
 
@@ -255,6 +283,76 @@ const PageNumber MIN_PAGE_NUMBER(DB_PAGE_SPACE,	-5);
 const int PRE_SEARCH_LIMIT	= 256;
 const int PRE_EXISTS		= -1;
 const int PRE_UNKNOWN		= -2;
+
+const int DUMMY_CHECKSUM	= 12345;
+
+
+USHORT CCH_checksum(BufferDesc* bdb)
+{
+/**************************************
+ *
+ *	C C H _ c h e c k s u m
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compute the checksum of a page.
+ *
+ **************************************/
+#ifdef NO_CHECKSUM
+	return DUMMY_CHECKSUM;
+#else
+	Database* dbb = bdb->bdb_dbb;
+#ifdef WIN_NT
+	// ODS_VERSION8 for NT was shipped before page checksums
+	// were disabled on other platforms. Continue to compute
+	// checksums for ODS_VERSION8 databases but eliminate them
+	// for ODS_VERSION9 databases. The following code can be
+	// deleted when development on ODS_VERSION10 begins and
+	// NO_CHECKSUM is defined for all platforms.
+
+	if (dbb->dbb_ods_version >= ODS_VERSION9) {
+		return DUMMY_CHECKSUM;
+	}
+#endif
+	pag* page = bdb->bdb_buffer;
+
+	const ULONG* const end = (ULONG *) ((SCHAR *) page + dbb->dbb_page_size);
+	const USHORT old_checksum = page->pag_checksum;
+	page->pag_checksum = 0;
+	const ULONG* p = (ULONG *) page;
+	ULONG checksum = 0;
+
+	do {
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+		checksum += *p++;
+	} while (p < end);
+
+	page->pag_checksum = old_checksum;
+
+	if (checksum) {
+		return (USHORT) checksum;
+	}
+
+	// If the page is all zeros, return an artificial checksum
+
+	for (p = (ULONG *) page; p < end;)
+	{
+		if (*p++)
+			return (USHORT) checksum;
+	}
+
+	// Page is all zeros -- invent a checksum
+
+	return 12345;
+#endif
+}
 
 
 int CCH_down_grade_dbb(void* ast_object)
@@ -433,7 +531,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	if (attachment->att_flags & ATT_exclusive) {
 		return true;
 	}
@@ -448,7 +546,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	if (level != LCK_none)
 	{
-		for (Jrd::Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
+		for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
 		{
 			if (*ptr == attachment)
 			{
@@ -600,7 +698,7 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 		SDW_get_shadows(tdbb);
 	}
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!attachment->backupStateReadLock(tdbb, latch_wait))
 		return NULL;
@@ -659,8 +757,8 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 }
 
 
-pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT latch_wait,
-	const bool read_shadow, const bool merge_flag)
+pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT checksum,
+	SSHORT latch_wait, const bool read_shadow, const bool merge_flag)
 {
 /**************************************
  *
@@ -697,7 +795,7 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
 	{
 	case 1:
 		CCH_TRACE(("FE %d:%06d", window->win_page.getPageSpaceID(), window->win_page.getPageNum()));
-		CCH_FETCH_PAGE(tdbb, window, read_shadow, merge_flag);	// must read page from disk
+		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow, merge_flag);	// must read page from disk
 		break;
 	case -2:
 	case -1:
@@ -801,7 +899,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	}
 
 	// Look for the page in the cache.
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!attachment->backupStateReadLock(tdbb, wait))
 		return -2;
@@ -839,7 +937,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	return lock_result;
 }
 
-void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow, const bool merge_flag)
+void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const bool read_shadow, const bool merge_flag)
 {
 /**************************************
  *
@@ -951,7 +1049,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow, const 
 		if (merge_flag)
 			bdb->bdb_flags |= BDB_merge;
 
-		if ((page->pag_type == 0) && !merge_flag)
+		if ((page->pag_checksum == 0) && !merge_flag)
 		{
 			// We encountered a page which was allocated, but never written to the
 			// difference file. In this case we try to read the page from database. With
@@ -987,6 +1085,21 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow, const 
 			}
 		}
 	}
+
+#ifndef NO_CHECKSUM
+	if ((compute_checksum == 1 || (compute_checksum == 2 && page->pag_type)) &&
+		page->pag_checksum != CCH_checksum(bdb) && !(dbb->dbb_flags & DBB_damaged))
+	{
+		ERR_build_status(status,
+						 Arg::Gds(isc_db_corrupt) << Arg::Str("") <<	// why isn't the db name used here?
+						 Arg::Gds(isc_bad_checksum) <<
+						 Arg::Gds(isc_badpage) << Arg::Num(bdb->bdb_page.getPageNum()));
+		// We should invalidate this bad buffer.
+
+		PAGE_LOCK_RELEASE(bdb->bdb_lock);
+		CCH_unwind(tdbb, true);
+	}
+#endif // NO_CHECKSUM
 
 	bdb->bdb_flags &= ~(BDB_not_valid | BDB_read_pending);
 	window->win_buffer = bdb->bdb_buffer;
@@ -1031,7 +1144,13 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 	bdb->bdb_flags = 0;
 	BufferControl* bcb = dbb->dbb_bcb;
 
+#ifdef DIRTY_LIST
 	removeDirty(bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
+	if (bdb->bdb_parent || (bdb == bcb->bcb_btree))
+		btc_remove(bdb);
+#endif
 
 	QUE_DELETE(bdb->bdb_in_use);
 	QUE_DELETE(bdb->bdb_que);
@@ -1141,7 +1260,8 @@ void CCH_fini(thread_db* tdbb)
 			{
 				QUE que_inst = bcb->bcb_free_lwt.que_forward;
 				QUE_DELETE(*que_inst);
-				// LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
+				LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
+				delete lwt;
 			}
 #endif
 		}
@@ -1158,8 +1278,7 @@ void CCH_fini(thread_db* tdbb)
 			}
 		}
 
-		if (!flush_error) {
-			// wasn't set in the catch => no failure, just exit
+		if (!flush_error) { // wasn't set in the catch => no failure, just exit
 			break;
 		}
 
@@ -1211,11 +1330,66 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		else
 #endif
 
+#ifdef DIRTY_LIST
 			flushDirty(tdbb, transaction_mask, sys_only, status);
+#endif
+#ifdef DIRTY_TREE
+			btc_flush(tdbb, transaction_mask, sys_only, status);
+#endif
 	}
 	else
 	{
+#ifdef DIRTY_LIST
 		flushAll(tdbb, flush_flag);
+#endif
+#ifdef DIRTY_TREE
+		const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
+		const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
+		const bool write_thru = release_flag;
+		const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
+		LATCH latch = release_flag ? LATCH_exclusive : LATCH_none;
+
+		BufferControl* bcb;
+		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++)
+		{
+			BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
+			if (!release_flag && !(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)))
+			{
+				continue;
+			}
+			if (latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1)
+			{
+				BUGCHECK(302);	// msg 302 unexpected page change
+			}
+			if (bdb->bdb_use_count > 1)
+				BUGCHECK(210);	// msg 210 page in use during flush
+#ifdef SUPERSERVER
+			if (bdb->bdb_flags & BDB_db_dirty)
+			{
+				if (all_flag || (sweep_flag && (!bdb->bdb_parent && bdb != bcb->bcb_btree)))
+				{
+					if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, status, true))
+					{
+						CCH_unwind(tdbb, true);
+					}
+				}
+			}
+#else
+			if (bdb->bdb_flags & BDB_dirty)
+			{
+				if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, status, true))
+				{
+					CCH_unwind(tdbb, true);
+				}
+			}
+#endif
+			if (release_flag)
+			{
+				PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			}
+			release_bdb(tdbb, bdb, false, false, false);
+		}
+#endif // DIRTY_TREE
 	}
 
 	//
@@ -1470,7 +1644,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 		CCH_RELEASE(tdbb, &temp);
 
 	if (must_read) {
-		CCH_FETCH_PAGE(tdbb, window, true, false);
+		CCH_FETCH_PAGE(tdbb, window, 1, true, false);
 	}
 
 	BufferDesc* bdb = window->win_bdb;
@@ -1584,8 +1758,10 @@ void CCH_init(thread_db* tdbb, ULONG number)
 
 	dbb->dbb_bcb = bcb;
 	QUE_INIT(bcb->bcb_in_use);
+#ifdef DIRTY_LIST
 	QUE_INIT(bcb->bcb_dirty);
 	bcb->bcb_dirty_count = 0;
+#endif
 	QUE_INIT(bcb->bcb_empty);
 	QUE_INIT(bcb->bcb_free_lwt);
 	QUE_INIT(bcb->bcb_free_slt);
@@ -1705,20 +1881,27 @@ void CCH_mark(thread_db* tdbb, WIN* window, USHORT mark_system, USHORT must_writ
 
 	if (!(tdbb->tdbb_flags & TDBB_sweeper) || bdb->bdb_flags & BDB_system_dirty)
 	{
+#ifdef DIRTY_LIST
 		insertDirty(bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
+		if (!bdb->bdb_parent && bdb != bcb->bcb_btree) {
+			btc_insert(dbb, bdb);
+		}
+#endif
 	}
 
 #ifdef SUPERSERVER
 	bdb->bdb_flags |= BDB_db_dirty;
 #endif
 
+	bdb->bdb_flags |= BDB_marked;
 	set_dirty_flag(tdbb, bdb);
 
 	if (must_write || dbb->dbb_backup_manager->databaseFlushInProgress())
 		bdb->bdb_flags |= BDB_must_write;
 
 	set_diff_page(tdbb, bdb);
-	bdb->bdb_flags |= BDB_marked;
 }
 
 
@@ -1752,7 +1935,7 @@ void CCH_must_write(WIN* window)
 
 void CCH_precedence(thread_db* tdbb, WIN* window, SLONG pageNum)
 {
-	const USHORT pageSpaceID = pageNum > FIRST_PIP_PAGE ?
+	const USHORT pageSpaceID = pageNum > LOG_PAGE ?
 		window->win_page.getPageSpaceID() : DB_PAGE_SPACE;
 
 	CCH_precedence(tdbb, window, PageNumber(pageSpaceID, pageNum));
@@ -1797,7 +1980,7 @@ void CCH_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 
 
 #ifdef CACHE_READER
-void CCH_prefetch(thread_db* tdbb, SLONG* pages, SSHORT count)
+void CCH_prefetch(thread_db* tdbb, SLONG * pages, SSHORT count)
 {
 /**************************************
  *
@@ -1888,15 +2071,7 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 	if (bdb->bdb_page != HEADER_PAGE_NUMBER)
 	{
 		// SCN of header page is adjusted in nbak.cpp
-		if (bdb->bdb_buffer->pag_scn != bm->getCurrentSCN())
-		{
-			bdb->bdb_buffer->pag_scn = bm->getCurrentSCN(); // Set SCN for the page
-
-			win window(bdb->bdb_page);
-			window.win_bdb = bdb;
-			window.win_buffer = bdb->bdb_buffer;
-			PAG_set_page_scn(tdbb, &window);
-		}
+		bdb->bdb_buffer->pag_scn = bm->getCurrentSCN(); // Set SCN for the page
 	}
 
 	const int backup_state = bm->getState();
@@ -2010,7 +2185,12 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 			release_bdb(tdbb, bdb, false, true, false);
 			if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, tdbb->tdbb_status_vector, true))
 			{
+#ifdef DIRTY_LIST
 				insertDirty(dbb->dbb_bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
+				btc_insert(dbb, bdb);	// Don't lose track of must_write
+#endif
 				CCH_unwind(tdbb, true);
 			}
 		}
@@ -2053,12 +2233,13 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 #ifdef CACHE_WRITER
 				if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
 				{
+#ifdef DIRTY_LIST
 					if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty)
 					{
 						QUE_DELETE(bdb->bdb_dirty);
 						QUE_APPEND(bcb->bcb_dirty, bdb->bdb_dirty);
 					}
-
+#endif
 					bcb->bcb_flags |= BCB_free_pending;
 					if (bcb->bcb_flags & BCB_cache_writer && !(bcb->bcb_flags & BCB_writer_active))
 					{
@@ -2104,7 +2285,7 @@ void CCH_release_exclusive(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	dbb->dbb_flags &= ~DBB_exclusive;
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	if (attachment) {
 		attachment->att_flags &= ~ATT_exclusive;
 	}
@@ -2286,12 +2467,19 @@ bool CCH_validate(WIN* window)
 		return true;
 	}
 
-	return (bdb->bdb_buffer->pag_pageno == bdb->bdb_page.getPageNum());
+	pag* page = window->win_buffer;
+	const USHORT sum = CCH_checksum(bdb);
+
+	if (sum == page->pag_checksum) {
+		return true;
+	}
+
+	return false;
 }
 
 
 bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
-	ISC_STATUS* status, const bool inAst)
+	ISC_STATUS* status, USHORT checksum, const bool inAst)
 {
 /**************************************
  *
@@ -2327,7 +2515,13 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		old_buffer = bdb->bdb_buffer;
 		bdb->bdb_buffer = page;
 	}
-	bdb->bdb_buffer->pag_pageno = bdb->bdb_page.getPageNum();
+	else
+	{
+		page = bdb->bdb_buffer;
+		if (checksum) {
+			page->pag_checksum = CCH_checksum(bdb);
+		}
+	}
 
 	for (; sdw; sdw = sdw->sdw_next)
 	{
@@ -2374,7 +2568,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 			}
 
 			header->hdr_flags |= hdr_active_shadow;
-			header->hdr_header.pag_pageno = bdb->bdb_page.getPageNum();
+			header->hdr_header.pag_checksum = CCH_checksum(bdb);
 		}
 
 		// This condition makes sure that PIO_write is performed in case of
@@ -2463,7 +2657,9 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
 	QUE_INIT(bdb->bdb_waiters);
 	QUE_INIT(bdb->bdb_shared);
 	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+#ifdef DIRTY_LIST
 	QUE_INIT(bdb->bdb_dirty);
+#endif
 
 	return bdb;
 }
@@ -2557,6 +2753,7 @@ static int blocking_ast_bdb(void* ast_object)
 }
 #endif
 
+#ifdef DIRTY_LIST
 
 // Used in qsort below
 extern "C" {
@@ -2766,6 +2963,1018 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 			writeAll = true;
 	}
 }
+#endif // DIRTY_LIST
+
+#ifdef DIRTY_TREE
+
+static void btc_flush(thread_db* tdbb, SLONG transaction_mask, const bool sys_only,
+	ISC_STATUS* status)
+{
+/**************************************
+ *
+ *	b t c _ f l u s h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Walk the dirty page binary tree, flushing all buffers
+ *	that could have been modified by this transaction.
+ *	The pages are flushed in page order to roughly
+ *	emulate an elevator-type disk controller. Iteration
+ *	is used to minimize call overhead.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	// traverse the tree, flagging to prevent pages
+	// from being removed from the tree during write_page() --
+	// this simplifies worrying about random pages dropping
+	// out when dependencies have been set up
+
+	PageNumber max_seen = MIN_PAGE_NUMBER;
+
+	// Pick starting place at leftmost node
+
+	//BTC_MUTEX_ACQUIRE;
+	BufferDesc* next = dbb->dbb_bcb->bcb_btree;
+	while (next && next->bdb_left) {
+		 next = next->bdb_left;
+	}
+
+	PageNumber next_page = ZERO_PAGE_NUMBER;
+	if (next) {
+		next_page = next->bdb_page;
+	}
+
+	// Walk tree.  If we get lost, reposition and continue
+
+	BufferDesc* bdb;
+	while ( (bdb = next) )
+	{
+		// If we're lost, reposition
+
+		if ((bdb->bdb_page != next_page) || (!bdb->bdb_parent && (bdb != dbb->dbb_bcb->bcb_btree)))
+		{
+			for (bdb = dbb->dbb_bcb->bcb_btree; bdb;)
+			{
+				if (bdb->bdb_left && (max_seen < bdb->bdb_page)) {
+					bdb = bdb->bdb_left;
+				}
+				else if (bdb->bdb_right && (max_seen > bdb->bdb_page)) {
+					bdb = bdb->bdb_right;
+				}
+				else {
+					break;
+				}
+			}
+			if (!bdb) {
+				break;
+			}
+		}
+
+		// Decide where to go next.  The options are (right, then down to the left) or up
+
+		if (bdb->bdb_right && (max_seen < bdb->bdb_right->bdb_page))
+		{
+			for (next = bdb->bdb_right; next->bdb_left;
+				 next = next->bdb_left);
+		}
+		else {
+			next = bdb->bdb_parent;
+		}
+
+		if (next) {
+			next_page = next->bdb_page;
+		}
+
+		if (max_seen >= bdb->bdb_page) {
+			continue;
+		}
+
+		max_seen = bdb->bdb_page;
+
+		// forget about this page if it was written out
+		// as a dependency while we were walking the tree
+
+		if (!(bdb->bdb_flags & BDB_dirty))
+		{
+			//BTC_MUTEX_RELEASE;
+			btc_remove(bdb);
+			//BTC_MUTEX_ACQUIRE;
+			continue;
+		}
+
+		// this code replicates code in CCH_flush() -- changes should be made in both places
+
+		const PageNumber page = bdb->bdb_page;
+		//BTC_MUTEX_RELEASE;
+
+		// if any transaction has dirtied this page, check to see if it could have been this one
+
+		if ((transaction_mask & bdb->bdb_transactions) || (bdb->bdb_flags & BDB_system_dirty) ||
+			(!transaction_mask && !sys_only) || (!bdb->bdb_transactions))
+		{
+			if (!write_buffer(tdbb, bdb, page, false, status, true)) {
+				CCH_unwind(tdbb, true);
+			}
+		}
+
+		// re-post the lock only if it was really written
+
+		if ((bdb->bdb_ast_flags & BDB_blocking) && !(bdb->bdb_flags & BDB_dirty))
+		{
+			PAGE_LOCK_RE_POST(bdb->bdb_lock);
+		}
+		//BTC_MUTEX_ACQUIRE;
+	}
+
+	//BTC_MUTEX_RELEASE;
+}
+
+
+#ifdef BALANCED_DIRTY_PAGE_TREE
+static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
+{
+/**************************************
+ *
+ *	b t c _ i n s e r t _ b a l a n c e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Insert a buffer into the dirty page
+ *	AVL-binary tree.
+ *
+ **************************************/
+
+	// avoid recursion when rebalancing tree
+	// (40 - enough to hold 2^32 nodes)
+	BalancedTreeNode stack[BTREE_STACK_SIZE];
+
+	// if the page is already in the tree (as in when it is
+	// written out as a dependency while walking the tree),
+	// just leave well enough alone -- this won't check if
+	// it's at the root but who cares then
+
+	if (bdb->bdb_parent) {
+		return;
+	}
+
+	SET_DBB(dbb);
+
+	// if the tree is empty, this is now the tree
+
+	//BTC_MUTEX_ACQUIRE;
+	BufferDesc* p = dbb->dbb_bcb->bcb_btree;
+	if (!p)
+	{
+		dbb->dbb_bcb->bcb_btree = bdb;
+		bdb->bdb_parent = bdb->bdb_left = bdb->bdb_right = NULL;
+		bdb->bdb_balance = 0;
+		//BTC_MUTEX_RELEASE;
+		return;
+	}
+
+	// insert the page sorted by page number;
+	// do this iteratively to minimize call overhead
+
+	const PageNumber page = bdb->bdb_page;
+
+	// find where new node should fit in tree
+
+	int stackp = -1;
+	SSHORT comp = 0;
+
+	while (p)
+	{
+		if (page == p->bdb_page)
+		{
+			comp = 0;
+		}
+		else if (page > p->bdb_page)
+		{
+			comp = 1;
+		}
+		else
+		{
+			comp = -1;
+		}
+
+		if (comp == 0)
+		{
+			//BTC_MUTEX_RELEASE;
+			return;
+		} // already in the tree
+
+		stackp++;
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
+		stack[stackp].bdb_node = p;
+		stack[stackp].comp = comp;
+
+		p = (comp > 0) ? p->bdb_right : p->bdb_left;
+	}
+
+	// insert new node
+
+	fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
+	if (comp > 0)
+	{
+		stack[stackp].bdb_node->bdb_right = bdb;
+	}
+	else
+	{
+		stack[stackp].bdb_node->bdb_left = bdb;
+	}
+
+	bdb->bdb_parent = stack[stackp].bdb_node;
+	bdb->bdb_left = bdb->bdb_right = NULL;
+	bdb->bdb_balance = 0;
+
+	// unwind the stack and rebalance
+
+	bool subtree = true;
+
+	while (stackp >= 0 && subtree)
+	{
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
+		if (stackp == 0)
+		{
+			subtree = btc_insert_balance(&dbb->dbb_bcb->bcb_btree, subtree, stack[0].comp);
+		}
+		else
+		{
+			if (stack[stackp - 1].comp > 0)
+			{
+				subtree = btc_insert_balance(&stack[stackp - 1].bdb_node->bdb_right,
+											 subtree, stack[stackp].comp);
+			}
+			else
+			{
+				subtree = btc_insert_balance(&stack[stackp - 1].bdb_node->bdb_left,
+											 subtree, stack[stackp].comp);
+			}
+		}
+		stackp--;
+	}
+	//BTC_MUTEX_RELEASE;
+}
+#endif //BALANCED_DIRTY_PAGE_TREE
+
+
+static bool btc_insert_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
+{
+/**************************************
+ *
+ *	b t c _ i n s e r t _ b a l a n c e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Rebalance the AVL-binary tree.
+ *
+ **************************************/
+
+	BufferDesc* p = *bdb;
+
+	if (p->bdb_balance == -comp)
+	{
+		p->bdb_balance = 0;
+		subtree = false;
+	}
+	else
+	{
+	    if (p->bdb_balance == 0)
+		{
+			p->bdb_balance = comp;
+		}
+		else
+		{
+			BufferDesc *p1, *p2;
+			if (comp > 0)
+			{
+				p1 = p->bdb_right;
+
+				if (p1->bdb_balance == comp)
+				{
+					if ( (p->bdb_right = p1->bdb_left) )
+					{
+						p1->bdb_left->bdb_parent = p;
+					}
+
+					p1->bdb_left = p;
+					p1->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p1;
+					p->bdb_balance = 0;
+					p = p1;
+				}
+				else
+				{
+					p2 = p1->bdb_left;
+
+					if ( (p1->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p1;
+					}
+
+					p2->bdb_right = p1;
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p;
+					}
+
+					p2->bdb_left = p;
+					p2->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p2;
+
+					if (p2->bdb_balance == comp)
+					{
+						p->bdb_balance = -comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (p2->bdb_balance == -comp)
+					{
+						p1->bdb_balance = comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+	            }
+		    }
+			else
+			{
+				p1 = p->bdb_left;
+
+				if (p1->bdb_balance == comp)
+				{
+					if ( (p->bdb_left = p1->bdb_right) )
+					{
+						p1->bdb_right->bdb_parent = p;
+					}
+
+					p1->bdb_right = p;
+					p1->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p1;
+					p->bdb_balance = 0;
+					p = p1;
+				}
+				else
+				{
+					p2 = p1->bdb_right;
+
+					if ( (p1->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p1;
+					}
+
+					p2->bdb_left = p1;
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p;
+					}
+
+					p2->bdb_right = p;
+					p2->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p2;
+
+					if (p2->bdb_balance == comp)
+					{
+						p->bdb_balance = -comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (p2->bdb_balance == -comp)
+					{
+						p1->bdb_balance = comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+	            }
+	        }
+			p->bdb_balance = 0;
+			subtree = false;
+			*bdb = p;
+		}
+	}
+
+	return subtree;
+}
+
+
+#ifndef BALANCED_DIRTY_PAGE_TREE
+static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
+{
+/**************************************
+ *
+ *	b t c _ i n s e r t _ u n b a l a n c e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Insert a buffer into the dirty page
+ *	binary tree.
+ *
+ **************************************/
+
+	// if the page is already in the tree (as in when it is
+	// written out as a dependency while walking the tree),
+	// just leave well enough alone -- this won't check if
+	// it's at the root but who cares then
+
+	if (bdb->bdb_parent) {
+		return;
+	}
+
+	SET_DBB(dbb);
+
+	// if the tree is empty, this is now the tree
+
+	//BTC_MUTEX_ACQUIRE;
+	BufferDesc* node = dbb->dbb_bcb->bcb_btree;
+	if (!node)
+	{
+		dbb->dbb_bcb->bcb_btree = bdb;
+		//BTC_MUTEX_RELEASE;
+		return;
+	}
+
+	// insert the page sorted by page number; do this iteratively to minimize call overhead
+
+	const PageNumber page = bdb->bdb_page;
+
+	while (true)
+	{
+		if (page == node->bdb_page) {
+			break;
+		}
+
+		if (page < node->bdb_page)
+		{
+			if (!node->bdb_left)
+			{
+				node->bdb_left = bdb;
+				bdb->bdb_parent = node;
+				break;
+			}
+
+			node = node->bdb_left;
+		}
+		else
+		{
+			if (!node->bdb_right)
+			{
+				node->bdb_right = bdb;
+				bdb->bdb_parent = node;
+				break;
+			}
+
+			node = node->bdb_right;
+		}
+	}
+
+	//BTC_MUTEX_RELEASE;
+}
+#endif //!BALANCED_DIRTY_PAGE_TREE
+
+
+#ifdef BALANCED_DIRTY_PAGE_TREE
+static void btc_remove_balanced(BufferDesc* bdb)
+{
+/**************************************
+ *
+ *	b t c _ r e m o v e _ b a l a n c e d
+ *
+ **************************************
+ *
+ * Functional description
+ * 	Remove a page from the dirty page
+ *  AVL-binary tree.
+ *
+ **************************************/
+
+	// avoid recursion when rebalancing tree
+	// (40 - enough to hold 2^32 nodes)
+	BalancedTreeNode stack[BTREE_STACK_SIZE];
+
+	Database* dbb = bdb->bdb_dbb;
+
+	// engage in a little defensive programming to make sure the node is actually in the tree
+
+	//BTC_MUTEX_ACQUIRE;
+	BufferControl* bcb = dbb->dbb_bcb;
+
+	if (!bcb->bcb_btree ||
+		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && bcb->bcb_btree != bdb))
+	{
+		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
+		{
+			// Must writes aren't worth the effort
+			//BTC_MUTEX_RELEASE;
+			return;
+		}
+
+		BUGCHECK(211);
+		// msg 211 attempt to remove page from dirty page list when not there
+	}
+
+	// stack the way to node from root
+
+	const PageNumber page = bdb->bdb_page;
+
+	BufferDesc* p = bcb->bcb_btree;
+	int stackp = -1;
+	SSHORT comp;
+
+	while (true)
+	{
+		if (page == p->bdb_page)
+		{
+			comp = 0;
+		}
+		else if (page > p->bdb_page)
+		{
+			comp = 1;
+		}
+		else
+		{
+			comp = -1;
+		}
+
+		stackp++;
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
+
+		if (comp == 0)
+		{
+			stack[stackp].bdb_node = p;
+			stack[stackp].comp = -1;
+			break;
+		}
+
+		stack[stackp].bdb_node = p;
+		stack[stackp].comp = comp;
+
+		p = (comp > 0) ? p->bdb_right : p->bdb_left;
+
+		// node not found, bad tree
+		if (!p)
+		{
+			BUGCHECK(211);
+		}
+	}
+
+	// wrong node found, bad tree
+
+	if (bdb != p)
+	{
+		BUGCHECK(211);
+	}
+
+	// delete node
+
+	if (!bdb->bdb_right || !bdb->bdb_left)
+	{
+		// node has at most one branch
+		stackp--;
+		p = bdb->bdb_right ? bdb->bdb_right : bdb->bdb_left;
+
+		if (stackp == -1)
+		{
+			if ( (bcb->bcb_btree = p) )
+			{
+				p->bdb_parent = NULL;
+			}
+		}
+		else
+		{
+			fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
+			if (stack[stackp].comp > 0)
+			{
+                stack[stackp].bdb_node->bdb_right = p;
+			}
+			else
+			{
+				stack[stackp].bdb_node->bdb_left = p;
+			}
+
+			if (p)
+			{
+				p->bdb_parent = stack[stackp].bdb_node;
+			}
+		}
+	}
+	else
+	{
+		// node has two branches, stack nodes to reach one with no right child
+
+		p = bdb->bdb_left;
+
+		if (!p->bdb_right)
+		{
+			if (stack[stackp].comp > 0)
+			{
+				BUGCHECK(211);
+			}
+
+			if ( (p->bdb_parent = bdb->bdb_parent) )
+			{
+				if (p->bdb_parent->bdb_right == bdb)
+				{
+					p->bdb_parent->bdb_right = p;
+				}
+				else
+				{
+					p->bdb_parent->bdb_left = p;
+				}
+			}
+			else
+			{
+				bcb->bcb_btree = p;	// new tree root
+			}
+
+			if ( (p->bdb_right = bdb->bdb_right) )
+			{
+				bdb->bdb_right->bdb_parent = p;
+			}
+
+			p->bdb_balance = bdb->bdb_balance;
+		}
+		else
+		{
+			const int stackp_save = stackp;
+
+			while (p->bdb_right)
+			{
+				stackp++;
+				fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
+				stack[stackp].bdb_node = p;
+				stack[stackp].comp = 1;
+				p = p->bdb_right;
+			}
+
+			if (p->bdb_parent = bdb->bdb_parent)
+			{
+				if (p->bdb_parent->bdb_right == bdb)
+				{
+					p->bdb_parent->bdb_right = p;
+				}
+				else
+				{
+					p->bdb_parent->bdb_left = p;
+				}
+			}
+			else
+			{
+				bcb->bcb_btree = p;	// new tree root
+			}
+
+			if ( (stack[stackp].bdb_node->bdb_right = p->bdb_left) )
+			{
+				p->bdb_left->bdb_parent = stack[stackp].bdb_node;
+			}
+
+			if ( (p->bdb_left = bdb->bdb_left) )
+			{
+				p->bdb_left->bdb_parent = p;
+			}
+
+			if ( (p->bdb_right = bdb->bdb_right) )
+			{
+				p->bdb_right->bdb_parent = p;
+			}
+
+			p->bdb_balance = bdb->bdb_balance;
+			stack[stackp_save].bdb_node = p; // replace BufferDesc in stack
+		}
+	}
+
+	// unwind the stack and rebalance
+
+	bool subtree = true;
+
+	while (stackp >= 0 && subtree)
+	{
+		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
+		if (stackp == 0)
+		{
+			subtree = btc_remove_balance(&bcb->bcb_btree, subtree, stack[0].comp);
+		}
+		else
+		{
+			if (stack[stackp - 1].comp > 0)
+			{
+				subtree = btc_remove_balance(&stack[stackp - 1].bdb_node->bdb_right,
+											 subtree, stack[stackp].comp);
+			}
+			else
+			{
+				subtree = btc_remove_balance(&stack[stackp - 1].bdb_node->bdb_left,
+											 subtree, stack[stackp].comp);
+			}
+		}
+		stackp--;
+	}
+
+	// initialize the node for next usage
+
+	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = NULL;
+	//BTC_MUTEX_RELEASE;
+}
+#endif //BALANCED_DIRTY_PAGE_TREE
+
+
+static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
+{
+/**************************************
+ *
+ *	b t c _ r e m o v e _ b a l a n c e
+ *
+ **************************************
+ *
+ * Functional description
+ * 	Rebalance the AVL-binary tree.
+ *
+ **************************************/
+
+	BufferDesc* p = *bdb;
+
+	if (p->bdb_balance == comp)
+	{
+		p->bdb_balance = 0;
+	}
+	else
+	{
+		if (p->bdb_balance == 0)
+		{
+			p->bdb_balance = -comp;
+			subtree = false;
+        }
+		else
+		{
+			BufferDesc *p1, *p2;
+			if (comp < 0)
+			{
+				p1 = p->bdb_right;
+				const SSHORT b1 = p1->bdb_balance;
+
+				if ((b1 == 0) || (b1 == -comp))
+				{
+					// single RR or LL rotation
+
+					if ( (p->bdb_right = p1->bdb_left) )
+					{
+						p1->bdb_left->bdb_parent = p;
+					}
+
+					p1->bdb_left = p;
+					p1->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p1;
+
+					if (b1 == 0)
+					{
+						p->bdb_balance = -comp;
+						p1->bdb_balance = comp;
+						subtree = false;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+						p1->bdb_balance = 0;
+					}
+
+					p = p1;
+				}
+				else
+				{
+					// double RL or LR rotation
+
+					p2 = p1->bdb_left;
+					const SSHORT b2 = p2->bdb_balance;
+
+					if ( (p1->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p1;
+					}
+
+					p2->bdb_right = p1;
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p;
+					}
+
+					p2->bdb_left = p;
+					p2->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p2;
+
+					if (b2 == -comp)
+					{
+						p->bdb_balance = comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (b2 == comp)
+					{
+						p1->bdb_balance = -comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+					p2->bdb_balance = 0;
+				}
+			}
+			else
+			{
+				p1 = p->bdb_left;
+				const SSHORT b1 = p1->bdb_balance;
+
+				if ((b1 == 0) || (b1 == -comp))
+				{
+					// single RR or LL rotation
+
+					if ( (p->bdb_left = p1->bdb_right) )
+					{
+						p1->bdb_right->bdb_parent = p;
+					}
+
+					p1->bdb_right = p;
+					p1->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p1;
+
+					if (b1 == 0)
+					{
+						p->bdb_balance = -comp;
+						p1->bdb_balance = comp;
+						subtree = false;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+						p1->bdb_balance = 0;
+					}
+
+					p = p1;
+				}
+				else
+				{
+					// double RL or LR rotation
+
+					p2 = p1->bdb_right;
+					const SSHORT b2 = p2->bdb_balance;
+
+					if ( (p1->bdb_right = p2->bdb_left) )
+					{
+						p2->bdb_left->bdb_parent = p1;
+					}
+
+					p2->bdb_left = p1;
+					p1->bdb_parent = p2;
+
+					if ( (p->bdb_left = p2->bdb_right) )
+					{
+						p2->bdb_right->bdb_parent = p;
+					}
+
+					p2->bdb_right = p;
+					p2->bdb_parent = p->bdb_parent;
+					p->bdb_parent = p2;
+
+					if (b2 == -comp)
+					{
+						p->bdb_balance = comp;
+					}
+					else
+					{
+						p->bdb_balance = 0;
+					}
+
+					if (b2 == comp)
+					{
+						p1->bdb_balance = -comp;
+					}
+					else
+					{
+						p1->bdb_balance = 0;
+					}
+
+					p = p2;
+					p2->bdb_balance = 0;
+				}
+			}
+
+			*bdb = p;
+		}
+	}
+
+	return subtree;
+}
+
+
+#ifndef BALANCED_DIRTY_PAGE_TREE
+static void btc_remove_unbalanced(BufferDesc* bdb)
+{
+/**************************************
+ *
+ *	b t c _ r e m o v e _ u n b a l a n c e d
+ *
+ **************************************
+ *
+ * Functional description
+ * 	Remove a page from the dirty page binary tree.
+ *	The idea is to place the left child of this
+ *	page in this page's place, then make the
+ *	right child of this page a child of the left
+ *	child -- this removal mechanism won't promote
+ *	a balanced tree but that isn't of primary
+ *	importance.
+ *
+ **************************************/
+	Database* dbb = bdb->bdb_dbb;
+
+	// engage in a little defensive programming to make sure the node is actually in the tree
+
+	//BTC_MUTEX_ACQUIRE;
+	BufferControl* bcb = dbb->dbb_bcb;
+	if (!bcb->bcb_btree ||
+		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && bcb->bcb_btree != bdb))
+	{
+		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
+		{
+			// Must writes aren't worth the effort
+			//BTC_MUTEX_RELEASE;
+			return;
+		}
+
+		BUGCHECK(211);
+		// msg 211 attempt to remove page from dirty page list when not there
+	}
+
+	// make a new child out of the left and right children
+
+	BufferDesc* new_child = bdb->bdb_left;
+	if (new_child)
+	{
+		BufferDesc* ptr = new_child;
+		while (ptr->bdb_right) {
+			ptr = ptr->bdb_right;
+		}
+		if ( (ptr->bdb_right = bdb->bdb_right) ) {
+			ptr->bdb_right->bdb_parent = ptr;
+		}
+	}
+	else {
+		new_child = bdb->bdb_right;
+	}
+
+	// link the parent with the child node -- if no parent place it at the root
+
+	BufferDesc* bdb_parent = bdb->bdb_parent;
+	if (!bdb_parent) {
+		bcb->bcb_btree = new_child;
+	}
+	else if (bdb_parent->bdb_left == bdb) {
+		bdb_parent->bdb_left = new_child;
+	}
+	else {
+		bdb_parent->bdb_right = new_child;
+	}
+
+	if (new_child) {
+		new_child->bdb_parent = bdb_parent;
+	}
+
+	// initialize the node for next usage
+
+	bdb->bdb_left = bdb->bdb_right = bdb->bdb_parent = NULL;
+	//BTC_MUTEX_RELEASE;
+}
+#endif //!BALANCED_DIRTY_PAGE_TREE
+
+#endif // DIRTY_TREE
 
 
 #ifdef CACHE_READER
@@ -2793,7 +4002,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 	// Dummy attachment needed for lock owner identification.
 	tdbb->setDatabase(dbb);
-	Jrd::Attachment* const attachment = Attachment::create(dbb);
+	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
@@ -2911,7 +4120,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
-	Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
+	Attachment::destroy(attachment);	// no need saving warning error strings here
 	tdbb->setAttachment(NULL);
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	dbb->dbb_reader_fini.post();
@@ -2955,7 +4164,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	// Dummy attachment needed for lock owner identification.
 
 	tdbb->setDatabase(dbb);
-	Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, 0);
+	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
@@ -3071,7 +4280,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
+		Attachment::destroy(attachment);	// no need saving warning error strings here
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		// Notify the finalization caller that we're finishing.
@@ -3228,10 +4437,11 @@ static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 	QUE_INSERT(low->bdb_higher, precedence->pre_higher);
 	QUE_INSERT(high->bdb_lower, precedence->pre_lower);
 
+#ifdef DIRTY_LIST
 	// explicitly include high page in system transaction flush process
 	if (low->bdb_flags & BDB_system_dirty && high->bdb_flags & BDB_dirty)
 		high->bdb_flags |= BDB_system_dirty;
-
+#endif
 	//PRE_MUTEX_RELEASE;
 }
 
@@ -3402,7 +4612,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 	// Everything is clear to write this buffer.  Do so and reduce the lock
 
-	if (invalid || !write_page(tdbb, bdb, tdbb->tdbb_status_vector, true))
+	if (invalid || !write_page(tdbb, bdb, /*false,*/ tdbb->tdbb_status_vector, true))
 	{
 		bdb->bdb_flags |= BDB_not_valid;
 		clear_dirty_flag(tdbb, bdb);
@@ -3490,9 +4700,14 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 	// point at the dirty page binary tree
 
+#ifdef DIRTY_LIST
 	new_block->bcb_dirty_count = old->bcb_dirty_count;
 	QUE_INSERT(old->bcb_dirty, new_block->bcb_dirty);
 	QUE_DELETE(old->bcb_dirty);
+#endif
+#ifdef DIRTY_TREE
+	new_block->bcb_btree = old->bcb_btree;
+#endif
 
 	// point at the free precedence blocks
 
@@ -3841,7 +5056,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			// If the buffer is still in the dirty tree, remove it.
 			// In any case, release any lock it may have.
 
+#ifdef DIRTY_LIST
 			removeDirty(bcb, bdb);
+#endif
+#ifdef DIRTY_TREE
+			if (bdb->bdb_parent || (bdb == bcb->bcb_btree)) {
+				btc_remove(bdb);
+			}
+#endif
 
 			// if the page has an expanded index buffer, release it
 
@@ -3932,14 +5154,13 @@ static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const U
  *
  **************************************/
 	const struct que* base = &bdb->bdb_lower;
-	for (const struct que* que_inst = base->que_forward; que_inst != base;
-		 que_inst = que_inst->que_forward)
+	for (const struct que* que_inst = base->que_forward; que_inst != base; que_inst = que_inst->que_forward)
 	{
 		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
 		if (precedence->pre_flags & PRE_cleared)
 			continue;
 
-		BufferDesc* low = precedence->pre_low;
+		BufferDesc *low = precedence->pre_low;
 		if (low->bdb_prec_walk_mark == mark)
 			continue;
 
@@ -4197,12 +5418,7 @@ static SSHORT latch_bdb(thread_db* tdbb,
 	{
 		//LATCH_MUTEX_RELEASE;
 		Database::Checkout dcoHolder(dbb);
-		if (latch_wait == 1) {
-			timeout_occurred = !(lwt->lwt_sem.tryEnter(120));
-		}
-		else {
-			lwt->lwt_sem.enter();
-		}
+		timeout_occurred = !(lwt->lwt_sem.tryEnter(latch_wait > 0 ? 120 : -latch_wait));
 		//LATCH_MUTEX_ACQUIRE;
 	}
 
@@ -4580,7 +5796,7 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 			if (next_buffer != reinterpret_cast<char*>(page)) {
 				memcpy(page, next_buffer, (ULONG) dbb->dbb_page_size);
 			}
-			if (page->pag_pageno == (*next_bdb)->bdb_page.getPageNum())
+			if (page->pag_checksum == CCH_checksum(*next_bdb))
 			{
 				(*next_bdb)->bdb_flags &= ~(BDB_read_pending | BDB_not_valid);
 				(*next_bdb)->bdb_flags |= BDB_prefetch;
@@ -5199,7 +6415,7 @@ static int write_buffer(thread_db* tdbb,
 	if ((bdb->bdb_flags & BDB_dirty || (write_thru && bdb->bdb_flags & BDB_db_dirty)) &&
 		!(bdb->bdb_flags & BDB_marked))
 	{
-		if ( (result = write_page(tdbb, bdb, status, false)) ) {
+		if ( (result = write_page(tdbb, bdb, /*write_thru,*/ status, false)) ) {
 			clear_precedence(tdbb, bdb);
 		}
 	}
@@ -5223,7 +6439,11 @@ static int write_buffer(thread_db* tdbb,
 }
 
 
-static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const status, const bool inAst)
+static bool write_page(thread_db* tdbb,
+					   BufferDesc* bdb,
+					   //const bool write_thru,
+					   ISC_STATUS* const status,
+					   const bool inAst)
 {
 /**************************************
  *
@@ -5280,7 +6500,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 		if (bdb->bdb_page.getPageNum() >= 0)
 		{
 			fb_assert(backup_state != nbak_state_unknown);
-			page->pag_pageno = bdb->bdb_page.getPageNum();
+			page->pag_checksum = CCH_checksum(bdb);
 
 #ifdef NBAK_DEBUG
 			// We cannot call normal trace functions here as they are signal-unsafe
@@ -5357,7 +6577,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
 				}
 				if (dbb->dbb_shadow && !isTempPage) {
-					result = CCH_write_all_shadows(tdbb, 0, bdb, status, inAst);
+					result = CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
 				}
 			}
 		}
@@ -5394,10 +6614,18 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 		// write_page so clean it now to avoid confusion
 		bdb->bdb_difference_page = 0;
 		bdb->bdb_transactions = bdb->bdb_mark_transaction = 0;
-
+#ifdef DIRTY_LIST
 		if (!(dbb->dbb_bcb->bcb_flags & BCB_keep_pages)) {
 			removeDirty(dbb->dbb_bcb, bdb);
 		}
+#endif
+#ifdef DIRTY_TREE
+		if (!(dbb->dbb_bcb->bcb_flags & BCB_keep_pages) &&
+			(bdb->bdb_parent || bdb == dbb->dbb_bcb->bcb_btree))
+		{
+			btc_remove(bdb);
+		}
+#endif
 
 		bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty | BDB_merge);
 		clear_dirty_flag(tdbb, bdb);
@@ -5437,3 +6665,5 @@ static void clear_dirty_flag(thread_db* tdbb, BufferDesc* bdb)
 		tdbb->getDatabase()->dbb_backup_manager->unlockDirtyPage(tdbb);
 	}
 }
+
+

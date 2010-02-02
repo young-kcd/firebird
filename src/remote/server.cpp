@@ -67,15 +67,10 @@
 #endif
 #include "../common/classes/FpeControl.h"
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
-#include "../common/classes/DbImplementation.h"
-#include "../auth/Auth.h"
-#include "../jrd/jrd_pwd.h"
-#include "../auth/trusted/AuthSspi.h"
-
-using namespace Firebird;
+#include "../jrd/scroll_cursors.h"
 
 
-struct server_req_t : public GlobalStorage
+struct server_req_t : public Firebird::GlobalStorage
 {
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
@@ -86,7 +81,7 @@ public:
 	server_req_t() : req_next(0), req_chain(0) { }
 };
 
-struct srvr : public GlobalStorage
+struct srvr : public Firebird::GlobalStorage
 {
 	srvr* const srvr_next;
 	const rem_port*	const srvr_parent_port;
@@ -101,438 +96,112 @@ public:
 };
 
 namespace {
-
-// Disable attempts to brute-force logins/passwords
-class FailedLogin
-{
-public:
-	string login;
-	int	failCount;
-	time_t lastAttempt;
-
-	explicit FailedLogin(const string& l)
-		: login(l), failCount(1), lastAttempt(time(0))
-	{}
-
-	FailedLogin(MemoryPool& p, const FailedLogin& fl)
-		: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt)
-	{}
-
-	static const string* generate(const void*, const FailedLogin* f)
+	// this sets of parameters help use same functions
+	// for both services and databases attachments
+	struct ParametersSet
 	{
-		return &f->login;
-	}
-};
-
-const size_t MAX_CONCURRENT_FAILURES = 16;
-const int MAX_FAILED_ATTEMPTS = 4;
-const int FAILURE_DELAY = 8; // seconds
-
-class FailedLogins : private SortedObjectsArray<FailedLogin,
-	InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>,
-	const string, FailedLogin>
-{
-private:
-	Mutex fullAccess;
-
-	typedef SortedObjectsArray<FailedLogin,
-		InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>,
-		const string, FailedLogin> inherited;
-
-public:
-	explicit FailedLogins(MemoryPool& p)
-		: inherited(p)
-	{}
-
-	bool loginFail(const string& login)
-	{
-		if (!login.hasData())
-		{
-			return false;
-		}
-
-		MutexLockGuard guard(fullAccess);
-		const time_t t = time(0);
-
-		size_t pos;
-		if (find(login, pos))
-		{
-			FailedLogin& l = (*this)[pos];
-			if (t - l.lastAttempt >= FAILURE_DELAY)
-			{
-				l.failCount = 0;
-			}
-			l.lastAttempt = t;
-			if (++l.failCount >= MAX_FAILED_ATTEMPTS)
-			{
-				l.failCount = 0;
-				return true;
-			}
-			return false;
-		}
-
-		if (getCount() >= MAX_CONCURRENT_FAILURES)
-		{
-			// try to perform old entries collection
-			for (iterator i = begin(); i != end(); )
-			{
-				if (t - i->lastAttempt >= FAILURE_DELAY)
-				{
-					remove(i);
-				}
-				else
-				{
-					++i;
-				}
-			}
-		}
-		if (getCount() >= MAX_CONCURRENT_FAILURES)
-		{
-			// it seems we are under attack - too many wrong logins !!!
-			return true;
-		}
-
-		add(FailedLogin(login));
-		return false;
-	}
-
-	void loginSuccess(const string& login)
-	{
-		if (!login.hasData())
-		{
-			return;
-		}
-
-		MutexLockGuard guard(fullAccess);
-
-		size_t pos;
-		if (find(login, pos))
-		{
-			remove(pos);
-		}
-	}
-};
-
-GlobalPtr<FailedLogins> usernameFailedLogins;
-GlobalPtr<FailedLogins> remoteFailedLogins;
-
-class InitList
-{
-public:
-	typedef Firebird::HalfStaticArray<Auth::ServerPlugin*, 8> List;
-
-	static List* init()
-	{
-		PathName authMethod(Config::getAuthMethod());
-
-		List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
-
-		// this code will be replaced with known plugins scan
-		if (authMethod == AmNative || authMethod == AmMixed)
-		{
-			list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseServer>());
-		}
-#ifdef TRUSTED_AUTH
-		if (authMethod == AmTrusted || authMethod == AmMixed)
-		{
-			list->push(Auth::interfaceAlloc<Auth::WinSspiServer>());
-		}
-#endif
-#ifdef AUTH_DEBUG
-		list->push(Auth::interfaceAlloc<Auth::DebugServer>());
-#endif
-
-		// must be last
-		list->push(NULL);
-
-		return list;
-	}
-};
-
-Firebird::InitInstance<InitList::List, InitList> pluginList;
-
-// delayed authentication block for auth callback
-class ServerAuth : public GlobalStorage, public ServerAuthBase
-{
-private:
-	typedef void Part2(rem_port*, P_OP, const char*, int, ClumpletWriter&, PACKET*);
-
-public:
-	ServerAuth(rem_port* port, const char* fName, int fLen, const UCHAR *pb, int pbLen,
-			   Part2* p2, P_OP op)
-		: fileName(getPool()),
-		  wrt(getPool(), op == op_service_attach ? ClumpletReader::spbList : ClumpletReader::dpbList,
-		  	  MAX_DPB_SIZE, pb, pbLen),
-		  authBlockInterface(getPool(), op == op_service_attach),
-		  remoteId(getPool()), userName(getPool()), authInstance(0),
-		  part2(p2), sequence(0), operation(op)
-	{
-		// Do not store port here - it will be passed to authenticate() explicitly
-		fileName.assign(fName, fLen);
-
-		if (port->port_protocol_str)
-		{
-			remoteId += string(port->port_protocol_str->str_data, port->port_protocol_str->str_length);
-		}
-		if (port->port_protocol_str || port->port_address_str)
-		{
-			remoteId += '/';
-		}
-		if (port->port_address_str)
-		{
-			remoteId += string(port->port_address_str->str_data, port->port_address_str->str_length);
-		}
-
-		if (wrt.find(isc_dpb_user_name))
-		{
-			wrt.getString(userName);
-		}
-	}
-
-	~ServerAuth()
-	{
-		if (authInstance)
-		{
-			authInstance->release();
-		}
-	}
-
-	bool authenticate(rem_port* port, PACKET* send, const cstring* data)
-	{
-		bool working = true;
-		Auth::ServerPlugin** list = pluginList().begin();
-
-		while (working && list[sequence])
-		{
-			bool first = false;
-			if (! authInstance)
-			{
-				authInstance = list[sequence]->instance();
-				first = true;
-			}
-
-			fb_assert(first || data);
-			Auth::Result ar = first ?
-				authInstance->startAuthentication(operation == op_service_attach, fileName.c_str(),
-												  wrt.getBuffer(), wrt.getBufferLength(),
-												  &authBlockInterface) :
-				authInstance->contAuthentication(&authBlockInterface,
-												 data->cstr_address, data->cstr_length);
-
-			cstring* s;
-
-			switch(ar)
-			{
-			case Auth::AUTH_MORE_DATA:
-				if (port->port_protocol < PROTOCOL_VERSION11)
-				{
-					authInstance->release();
-					authInstance = NULL;
-					working = false;
-					break;
-				}
-
-				if (port->port_protocol >= PROTOCOL_VERSION13)
-				{
-					send->p_operation = op_cont_auth;
-
-					s = &send->p_auth_cont.p_data;
-					s->cstr_allocated = 0;
-					// violate constness here safely - send operation does not modify data
-					authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address),
-										  &s->cstr_length);
-
-					s = &send->p_auth_cont.p_name;
-					s->cstr_allocated = 0;
-					if (first)
-					{
-						// violate constness here safely - send operation does not modify data
-						list[sequence]->getName((const char**)(&s->cstr_address), &s->cstr_length);
-					}
-					else
-					{
-						s->cstr_length = 0;
-					}
-				}
-				else
-				{
-					if (Auth::legacy(list[sequence]))
-					{
-						// compatibility with FB 2.1 trusted
-						send->p_operation = op_trusted_auth;
-
-						s = &send->p_trau.p_trau_data;
-						s->cstr_allocated = 0;
-						// violate constness here safely - send operation does not modify data
-						authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address),
-											  &s->cstr_length);
-					}
-					else
-					{
-						authInstance->release();
-						authInstance = NULL;
-						working = false;
-						break;
-					}
-				}
-
-				port->send(send);
-				return false;
-
-			case Auth::AUTH_CONTINUE:
-				++sequence;
-				authInstance->release();
-				authInstance = NULL;
-				continue;
-
-			case Auth::AUTH_SUCCESS:
-				usernameFailedLogins->loginSuccess(userName);
-				remoteFailedLogins->loginSuccess(remoteId);
-				authInstance->release();
-				authInstance = NULL;
-				authBlockInterface.store(wrt);
-				part2(port, operation, fileName.c_str(), fileName.length(), wrt, send);
-				return true;
-
-			case Auth::AUTH_FAILED:
-				authInstance->release();
-				authInstance = NULL;
-				working = false;
-				break;
-			}
-		}
-
-		// no success - perform failure processing
-		// do not remove variables - both functions should be called
-		bool f1 = usernameFailedLogins->loginFail(userName);
-		bool f2 = remoteFailedLogins->loginFail(remoteId);
-		if (f1 || f2)
-		{
-			// Ahh, someone is too active today
-			THREAD_SLEEP(FAILURE_DELAY * 1000);
-		}
-
-		Arg::Gds(isc_login).raise();
-		return false;	// compiler warning silencer
-	}
-
-private:
-	PathName fileName;
-	ClumpletWriter wrt;
-	Auth::WriterImplementation authBlockInterface;
-	string remoteId, userName;
-	Auth::ServerInstance* authInstance;
-	Part2* part2;
-	unsigned int sequence;
-	P_OP operation;
-};
-
-// this sets of parameters help use same functions
-// for both services and databases attachments
-struct ParametersSet
-{
-	UCHAR address_path;
-};
-const ParametersSet dpbParam = {isc_dpb_address_path};
-const ParametersSet spbParam = {isc_spb_address_path};
+		UCHAR address_path;
+	};
+	const ParametersSet dpbParam = {isc_dpb_address_path};
+	const ParametersSet spbParam = {isc_spb_address_path};
 
 #ifdef WIN_NT
-class GlobalPortLock
-{
-public:
-	explicit GlobalPortLock(int id)
-		: handle(INVALID_HANDLE_VALUE)
+	class GlobalPortLock
 	{
-		if (id)
+	public:
+		explicit GlobalPortLock(int id)
+			: handle(INVALID_HANDLE_VALUE)
 		{
-			TEXT mutex_name[MAXPATHLEN];
-			fb_utils::snprintf(mutex_name, sizeof(mutex_name), "FirebirdPortMutex%d", id);
-			fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
-
-			if (!(handle = CreateMutex(ISC_get_security_desc(), FALSE, mutex_name)))
+			if (id)
 			{
-				// MSDN: if the caller has limited access rights, the function will fail with
-				// ERROR_ACCESS_DENIED and the caller should use the OpenMutex function.
-				if (GetLastError() == ERROR_ACCESS_DENIED)
-					system_call_failed::raise("CreateMutex - cannot open existing mutex");
-				else
-					system_call_failed::raise("CreateMutex");
-			}
+				TEXT mutex_name[MAXPATHLEN];
+				fb_utils::snprintf(mutex_name, sizeof(mutex_name), "FirebirdPortMutex%d", id);
+				fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
 
-			if (WaitForSingleObject(handle, INFINITE) == WAIT_FAILED)
-			{
-				system_call_failed::raise("WaitForSingleObject");
+				if (!(handle = CreateMutex(ISC_get_security_desc(), FALSE, mutex_name)))
+				{
+					// MSDN: if the caller has limited access rights, the function will fail with
+					// ERROR_ACCESS_DENIED and the caller should use the OpenMutex function.
+					if (GetLastError() == ERROR_ACCESS_DENIED)
+						Firebird::system_call_failed::raise("CreateMutex - cannot open existing mutex");
+					else
+						Firebird::system_call_failed::raise("CreateMutex");
+				}
+
+				if (WaitForSingleObject(handle, INFINITE) == WAIT_FAILED)
+				{
+					Firebird::system_call_failed::raise("WaitForSingleObject");
+				}
 			}
 		}
-	}
 
-	~GlobalPortLock()
-	{
-		if (handle != INVALID_HANDLE_VALUE)
+		~GlobalPortLock()
 		{
-			if (!ReleaseMutex(handle))
+			if (handle != INVALID_HANDLE_VALUE)
 			{
-				system_call_failed::raise("ReleaseMutex");
+				if (!ReleaseMutex(handle))
+				{
+					Firebird::system_call_failed::raise("ReleaseMutex");
+				}
+
+				CloseHandle(handle);
 			}
-
-			CloseHandle(handle);
 		}
-	}
 
-private:
-	HANDLE handle;
-};
+	private:
+		HANDLE handle;
+	};
 #else
-class GlobalPortLock
-{
-public:
-	explicit GlobalPortLock(int id)
-		: fd(-1)
+	class GlobalPortLock
 	{
-		if (id)
+	public:
+		explicit GlobalPortLock(int id)
+			: fd(-1)
 		{
-			string firebirdPortMutex;
-			firebirdPortMutex.printf(PORT_FILE, id);
-			TEXT filename[MAXPATHLEN];
-			gds__prefix_lock(filename, firebirdPortMutex.c_str());
-			if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
+			if (id)
 			{
-				system_call_failed::raise("open");
-			}
+				Firebird::string firebirdPortMutex;
+				firebirdPortMutex.printf(PORT_FILE, id);
+				TEXT filename[MAXPATHLEN];
+				gds__prefix_lock(filename, firebirdPortMutex.c_str());
+				if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
+				{
+					Firebird::system_call_failed::raise("open");
+				}
 
-			struct flock lock;
-			lock.l_type = F_WRLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			if (fcntl(fd, F_SETLK, &lock) == -1)
-			{
-				system_call_failed::raise("fcntl");
+				struct flock lock;
+				lock.l_type = F_WRLCK;
+				lock.l_whence = 0;
+				lock.l_start = 0;
+				lock.l_len = 0;
+				if (fcntl(fd, F_SETLK, &lock) == -1)
+				{
+					Firebird::system_call_failed::raise("fcntl");
+				}
 			}
 		}
-	}
 
-	~GlobalPortLock()
-	{
-		if (fd != -1)
+		~GlobalPortLock()
 		{
-			struct flock lock;
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			if (fcntl(fd, F_SETLK, &lock) == -1)
+			if (fd != -1)
 			{
-				system_call_failed::raise("fcntl");
+				struct flock lock;
+				lock.l_type = F_UNLCK;
+				lock.l_whence = 0;
+				lock.l_start = 0;
+				lock.l_len = 0;
+				if (fcntl(fd, F_SETLK, &lock) == -1)
+				{
+					Firebird::system_call_failed::raise("fcntl");
+				}
+
+				close(fd);
 			}
-
-			close(fd);
 		}
-	}
 
-private:
-	int fd;
-};
+	private:
+		int fd;
+	};
 #endif
 
 } // anonymous
@@ -547,9 +216,12 @@ static void		append_request_chain(server_req_t*, server_req_t**);
 static void		append_request_next(server_req_t*, server_req_t**);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
-static void		attach_database2(rem_port*, P_OP, const char*, int, ClumpletWriter&, PACKET*);
-static void		attach_service2(rem_port*, P_OP, const char*, int, ClumpletWriter&, PACKET*);
+static void		attach_database2(rem_port*, P_OP, const char*, int, const UCHAR*, int, PACKET*);
+static void		attach_service2(rem_port*, P_OP, const char*, int, const UCHAR*, int, PACKET*);
+#ifdef TRUSTED_AUTH
 static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
+static bool		canUseTrusted();
+#endif
 
 #ifdef NOT_USED_OR_REPLACED
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
@@ -557,12 +229,16 @@ static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
 static bool		bad_port_context(ISC_STATUS*, Rdb*, const ISC_LONG);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
-static void		addClumplets(ClumpletWriter&, const ParametersSet&, const rem_port*);
+static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
 
 static void		cancel_operation(rem_port*, USHORT);
 
 static bool		check_request(Rrq*, USHORT, USHORT);
 static USHORT	check_statement_type(Rsr*);
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage*	dump_cache(Rrq::rrq_repeat*);
+#endif
 
 static bool		get_next_msg_no(Rrq*, USHORT, USHORT*);
 static Rtr*		make_transaction(Rdb*, FB_API_HANDLE);
@@ -573,6 +249,10 @@ static void		release_request(Rrq*);
 static void		release_statement(Rsr**);
 static void		release_sql_request(Rsr*);
 static void		release_transaction(Rtr*);
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage*	scroll_cache(Rrq::rrq_repeat*, USHORT *, ULONG *);
+#endif
 
 static void		send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode);
 static void		server_ast(void*, USHORT, const UCHAR*);
@@ -618,7 +298,7 @@ public:
 private:
 	Worker* m_next;
 	Worker* m_prev;
-	Semaphore m_sem;
+	Firebird::Semaphore m_sem;
 	bool	m_active;
 #ifdef DEV_BUILD
 	FB_THREAD_ID	m_tid;
@@ -630,7 +310,7 @@ private:
 
 	static Worker* m_activeWorkers;
 	static Worker* m_idleWorkers;
-	static GlobalPtr<Mutex> m_mutex;
+	static Firebird::GlobalPtr<Firebird::Mutex> m_mutex;
 	static int m_cntAll;
 	static int m_cntIdle;
 	static bool shutting_down;
@@ -638,20 +318,20 @@ private:
 
 Worker* Worker::m_activeWorkers = NULL;
 Worker* Worker::m_idleWorkers = NULL;
-GlobalPtr<Mutex> Worker::m_mutex;
+Firebird::GlobalPtr<Firebird::Mutex> Worker::m_mutex;
 int Worker::m_cntAll = 0;
 int Worker::m_cntIdle = 0;
 bool Worker::shutting_down = false;
 
 
-static GlobalPtr<Mutex> request_que_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> request_que_mutex;
 static server_req_t* request_que		= NULL;
 static server_req_t* free_requests		= NULL;
 static server_req_t* active_requests	= NULL;
 
-static GlobalPtr<Mutex> servers_mutex;
+static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
 static srvr* servers = NULL;
-static AtomicCounter cntServers;
+static Firebird::AtomicCounter cntServers;
 static bool	server_shutdown = false;
 
 
@@ -693,10 +373,10 @@ void SRVR_main(rem_port* main_port, USHORT flags)
  *
  **************************************/
 
-	FpeControl::maskAll();
+	Firebird::FpeControl::maskAll();
 
 	// Setup context pool for main thread
-	ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
+	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
 
 	PACKET send, receive;
 	zap_packet(&receive, true);
@@ -733,7 +413,7 @@ static void free_request(server_req_t* request)
  * Functional description
  *
  **************************************/
-	MutexLockGuard queGuard(request_que_mutex);
+	Firebird::MutexLockGuard queGuard(request_que_mutex);
 
 	request->req_port = 0;
 	request->req_next = free_requests;
@@ -754,7 +434,7 @@ static server_req_t* alloc_request()
  *	if empty - allocate the new one.
  *
  **************************************/
-	MutexEnsureUnlock queGuard(request_que_mutex);
+	Firebird::MutexEnsureUnlock queGuard(request_que_mutex);
 	queGuard.enter();
 
 	server_req_t* request = free_requests;
@@ -777,12 +457,12 @@ static server_req_t* alloc_request()
 				request = new server_req_t;
 				break;
 			}
-			catch (const BadAlloc&)
+			catch (const Firebird::BadAlloc&)
 			{ }
 
 #if defined(DEV_BUILD) && defined(DEBUG)
 			if (request_count++ > 4)
-				BadAlloc::raise();
+				Firebird::BadAlloc::raise();
 #endif
 
 			// System is out of memory, let's delay processing this
@@ -823,7 +503,7 @@ static bool link_request(rem_port* port, server_req_t* request)
 	server_req_t* queue;
 
 	{	// request_que_mutex scope
-		MutexLockGuard queGuard(request_que_mutex);
+		Firebird::MutexLockGuard queGuard(request_que_mutex);
 
 		bool active = true;
 		queue = active_requests;
@@ -917,7 +597,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		{
 			const size_t MAX_PACKET_SIZE = MAX_SSHORT;
 			const SSHORT bufSize = MIN(main_port->port_buff_size, MAX_PACKET_SIZE);
-			UCharBuffer packet_buffer;
+			Firebird::UCharBuffer packet_buffer;
 			UCHAR* const buffer = packet_buffer.getBuffer(bufSize);
 
 			// When this loop exits, the server will no longer receive requests
@@ -943,11 +623,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						continue;
 					}
 					dataSize -= asyncSize;
-					RefMutexGuard queGuard(*port->port_que_sync);
+					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
 					memcpy(port->port_queue.add().getBuffer(dataSize), buffer + asyncSize, dataSize);
 				}
 
-				RefMutexEnsureUnlock portGuard(*port->port_sync);
+				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = portGuard.tryEnter();
 				// Handle bytes received only if port is currently idle and has no requests
 				// queued or if it is disconnect (dataSize == 0). Else let loopThread
@@ -962,7 +642,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						fb_assert(portLocked);
 						fb_assert(port->port_requests_queued.value() == 0);
 
-						RefMutexGuard queGuard(*port->port_que_sync);
+						Firebird::RefMutexGuard queGuard(*port->port_que_sync);
 
 						const rem_port::RecvQueState recvState = port->getRecvState();
 						port->receive(&request->req_receive);
@@ -1032,11 +712,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					current_port->disconnect(NULL, NULL);
 			}
 		}
-		catch (const Exception& e)
+		catch (const Firebird::Exception& e)
 		{
 			gds__log("SRVR_multi_thread: shutting down due to unhandled exception");
 			ISC_STATUS_ARRAY status_vector;
-			stuff_exception(status_vector, e);
+			Firebird::stuff_exception(status_vector, e);
 			gds__log_status(0, status_vector);
 
 			// If we got as far as having a port allocated before the error, disconnect it
@@ -1077,7 +757,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					port = NULL;
 
 				}	// try
-				catch (const Exception&)
+				catch (const Firebird::Exception&)
 				{
 					port->disconnect(NULL, NULL);
 					port = NULL;
@@ -1099,7 +779,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			REMOTE_free_packet(main_port->port_async_receive, &asyncPacket);
 		}
 	}
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		// Some kind of unhandled error occurred during server setup.  In lieu
 		// of anything we CAN do, log something (and we might be so hosed
@@ -1155,10 +835,13 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			 protocol->p_cnct_version == PROTOCOL_VERSION9 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION12 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION13) &&
+			 protocol->p_cnct_version == PROTOCOL_VERSION12
+#ifdef SCROLLABLE_CURSORS
+			 || protocol->p_cnct_version == PROTOCOL_SCROLLABLE_CURSORS
+#endif
+			) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
-			  protocol->p_cnct_architecture == ARCHITECTURE) &&
+			 protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
 		{
 			accepted = true;
@@ -1182,7 +865,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	// and modify the version string to reflect the chosen protocol
 
-	string buffer;
+	Firebird::string buffer;
 	buffer.printf("%s/P%d", port->port_version->str_data, port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(buffer.c_str());
@@ -1275,7 +958,7 @@ static void append_request_chain(server_req_t* request, server_req_t** que_inst)
  *	Return count of pending requests.
  *
  **************************************/
-	MutexLockGuard queGuard(request_que_mutex);
+	Firebird::MutexLockGuard queGuard(request_que_mutex);
 
 	while (*que_inst)
 		que_inst = &(*que_inst)->req_chain;
@@ -1298,7 +981,7 @@ static void append_request_next(server_req_t* request, server_req_t** que_inst)
  *	Return count of pending requests.
  *
  **************************************/
-	MutexLockGuard queGuard(request_que_mutex);
+	Firebird::MutexLockGuard queGuard(request_que_mutex);
 
 	while (*que_inst)
 		que_inst = &(*que_inst)->req_next;
@@ -1307,7 +990,7 @@ static void append_request_next(server_req_t* request, server_req_t** que_inst)
 }
 
 
-static void addClumplets(ClumpletWriter& dpb_buffer,
+static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
 						 const ParametersSet& par,
 						 const rem_port* port)
 {
@@ -1321,14 +1004,14 @@ static void addClumplets(ClumpletWriter& dpb_buffer,
  *	Insert remote endpoint data into DPB address stack
  *
  **************************************/
-	ClumpletWriter address_stack_buffer(ClumpletReader::UnTagged, MAX_UCHAR - 2);
+	Firebird::ClumpletWriter address_stack_buffer(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
 	if (dpb_buffer.find(par.address_path))
 	{
 		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
 		dpb_buffer.deleteClumplet();
 	}
 
-	ClumpletWriter address_record(ClumpletReader::UnTagged, MAX_UCHAR - 2);
+	Firebird::ClumpletWriter address_record(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
 	if (port->port_protocol_str)
 	{
 		address_record.insertString(isc_dpb_addr_protocol,
@@ -1383,13 +1066,69 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 	const char* file = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT l = attach->p_atch_file.cstr_length;
 
-	port->port_auth = new ServerAuth(port, file, l, attach->p_atch_dpb.cstr_address,
-									 attach->p_atch_dpb.cstr_length, attach_database2, operation);
-	if (port->port_auth->authenticate(port, send, NULL))
+	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
+	const USHORT dl = attach->p_atch_dpb.cstr_length;
+
+	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::Tagged, MAX_SSHORT);
+
+	if (dl)
+		dpb_buffer.reset(dpb, dl);
+	else
+		dpb_buffer.reset(isc_dpb_version1);
+
+	// remove trusted role if present (security measure)
+	dpb_buffer.deleteWithTag(isc_dpb_trusted_role);
+
+#ifdef TRUSTED_AUTH
+	// Do we need trusted authentication?
+	if (dpb_buffer.find(isc_dpb_trusted_auth))
 	{
-		delete port->port_auth;
-		port->port_auth = NULL;
+		try
+		{
+			// extract trusted authentication data from dpb
+			AuthSspi::DataHolder data;
+			memcpy(data.getBuffer(dpb_buffer.getClumpLength()),
+				dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
+			dpb_buffer.deleteClumplet();
+
+			// remove extra trusted auth if present (security measure)
+			dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
+
+			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
+			{
+				port->port_trusted_auth =
+					new ServerAuth(file, l, dpb_buffer, attach_database2, operation);
+				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+				if (authSspi->accept(data) && authSspi->isActive())
+				{
+					send->p_operation = op_trusted_auth;
+					cstring& s = send->p_trau.p_trau_data;
+					s.cstr_allocated = 0;
+					s.cstr_length = data.getCount();
+					s.cstr_address = data.begin();
+					port->send(send);
+					return;
+				}
+			}
+		}
+		catch (const Firebird::status_exception& e)
+		{
+			ISC_STATUS_ARRAY status_vector;
+			Firebird::stuff_exception(status_vector, e);
+			delete port->port_trusted_auth;
+			port->port_trusted_auth = 0;
+			port->send_response(send, 0, 0, status_vector, false);
+			return;
+		}
 	}
+#else
+	// remove trusted auth if present (security measure)
+	dpb_buffer.deleteWithTag(isc_dpb_trusted_auth);
+#endif // TRUSTED_AUTH
+
+	attach_database2(port, operation, file, l, dpb_buffer.getBuffer(),
+		dpb_buffer.getBufferLength(), send);
 }
 
 
@@ -1397,56 +1136,71 @@ static void attach_database2(rem_port* port,
 							 P_OP operation,
 							 const char* file,
 							 int l,
-							 ClumpletWriter& dpb_buffer,
+							 const UCHAR* dpb,
+							 int dl,
 							 PACKET* send)
 {
     send->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 
-	for (dpb_buffer.rewind(); !dpb_buffer.isEof();)
+	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::Tagged, MAX_SSHORT);
+	if (dl)
+		dpb_buffer.reset(dpb, dl);
+	else
+		dpb_buffer.reset(isc_dpb_version1);
+
+#ifdef TRUSTED_AUTH
+	// If we have trusted authentication, append it to database parameter block
+	if (port->port_trusted_auth)
 	{
-		switch (dpb_buffer.getClumpTag())
+		AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+		Firebird::string trustedUserName;
+		bool wheel = false;
+		if (authSspi->getLogin(trustedUserName, wheel))
 		{
-		// Disable remote gsec attachments
-		case isc_dpb_gsec_attach:
-		case isc_dpb_sec_attach:
-
-		// remove trusted auth & trusted role if present (security measure)
-		case isc_dpb_trusted_role:
-		case isc_dpb_trusted_auth:
-
-		// remove old-style logon parameters
-		case isc_dpb_user_name:
-		case isc_dpb_password:
-		case isc_dpb_password_enc:
-			dpb_buffer.deleteClumplet();
-			break;
-
-		default:
-			dpb_buffer.moveNext();
-			break;
+			dpb_buffer.insertString(isc_dpb_trusted_auth, trustedUserName);
+			if (wheel && !dpb_buffer.find(isc_dpb_sql_role_name))
+			{
+				dpb_buffer.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			}
 		}
+	}
+#endif // TRUSTED_AUTH
+
+	// If we have user identification, append it to database parameter block
+	rem_str* string = port->port_user_name;
+	if (string)
+	{
+		dpb_buffer.setCurOffset(dpb_buffer.getBufferLength());
+		dpb_buffer.insertString(isc_dpb_sys_user_name, string->str_data, string->str_length);
 	}
 
 	// Now insert additional clumplets into dpb
 	addClumplets(dpb_buffer, dpbParam, port);
 
+	// Disable remote gsec attachments */
+	dpb_buffer.deleteWithTag(isc_dpb_gsec_attach);
+	dpb_buffer.deleteWithTag(isc_dpb_sec_attach);
+
 	// See if user has specified parameters relevant to the connection,
 	// they will be stuffed in the DPB if so.
 	REMOTE_get_timeout_params(port, &dpb_buffer);
 
-	const char* dpb = reinterpret_cast<const char*>(dpb_buffer.getBuffer());
-	USHORT dl = dpb_buffer.getBufferLength();
+	dpb = dpb_buffer.getBuffer();
+	dl = dpb_buffer.getBufferLength();
 
 	ISC_STATUS_ARRAY status_vector;
 
 	if (operation == op_attach)
 	{
-		isc_attach_database(status_vector, l, file, &handle, dl, dpb);
+		isc_attach_database(status_vector, l, file,
+							&handle, dl, reinterpret_cast<const char*>(dpb));
 	}
 	else
 	{
-		isc_create_database(status_vector, l, file, &handle, dl, dpb, 0);
+		isc_create_database(status_vector, l, file,
+							&handle, dl, reinterpret_cast<const char*>(dpb), 0);
 	}
 
 	if (!status_vector[1])
@@ -1470,6 +1224,11 @@ static void attach_database2(rem_port* port,
 	}
 
 	port->send_response(send, 0, 0, status_vector, false);
+
+#ifdef TRUSTED_AUTH
+	delete port->port_trusted_auth;
+	port->port_trusted_auth = 0;
+#endif
 }
 
 
@@ -1819,6 +1578,9 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	{
 		next = message->msg_next;
 		message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+		message->msg_prior = message;
+#endif
 
 		Rrq::rrq_repeat* tail = &requestL->rrq_rpt[message->msg_number];
 		tail->rrq_message = message;
@@ -2063,6 +1825,37 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 
 	this->send_response(sendL, 0, 0, status_vector, false);
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage* dump_cache( Rrq::rrq_repeat* tail)
+{
+/**************************************
+ *
+ *	d u m p _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *	We have encountered a situation where what's in
+ *	cache is not useful, so empty the cache in
+ *	preparation for refilling it.
+ *
+ **************************************/
+	RMessage* message = tail->rrq_xdr;
+	while (true)
+	{
+		message->msg_address = NULL;
+		message = message->msg_next;
+		if (message == tail->rrq_xdr)
+			break;
+	}
+
+	tail->rrq_message = message;
+
+	return message;
+}
+#endif
 
 
 ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
@@ -2963,7 +2756,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 
 	getHandle(transaction, stuff->p_slc_transaction);
 
-	HalfStaticArray<UCHAR, 4096> temp_buffer;
+	Firebird::HalfStaticArray<UCHAR, 4096> temp_buffer;
 	UCHAR* slice = 0;
 
 	if (stuff->p_slc_length)
@@ -3026,14 +2819,14 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	}
 
 	// Make sure there is a suitable temporary blob buffer
-	Array<UCHAR> buf;
+	Firebird::Array<UCHAR> buf;
 	UCHAR* const buffer = buf.getBuffer(stuff->p_info_buffer_length);
 	memset(buffer, 0, stuff->p_info_buffer_length);
 
-	HalfStaticArray<SCHAR, 1024> info;
+	Firebird::HalfStaticArray<SCHAR, 1024> info;
 	SCHAR* info_buffer = 0;
 	USHORT info_len;
-	HalfStaticArray<UCHAR, 1024> temp;
+	Firebird::HalfStaticArray<UCHAR, 1024> temp;
 	UCHAR* temp_buffer = 0;
 	if (op == op_info_database)
 	{
@@ -3077,13 +2870,13 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 						  reinterpret_cast<char*>(temp_buffer)); //temp
 		if (!status_vector[1])
 		{
-			string version;
+			Firebird::string version;
 			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
 			info_db_len = MERGE_database_info(temp_buffer, //temp
-				buffer, stuff->p_info_buffer_length,
-				DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
-				reinterpret_cast<const UCHAR*>(version.c_str()),
-				reinterpret_cast<const UCHAR*>(this->port_host->str_data));
+								buffer, stuff->p_info_buffer_length,
+								IMPLEMENTATION, 4, 1,
+								reinterpret_cast<const UCHAR*>(version.c_str()),
+								reinterpret_cast<const UCHAR*>(this->port_host->str_data));
 		}
 		break;
 
@@ -3347,7 +3140,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	}
 	getHandle(statement, prepareL->p_sqlst_statement);
 
-	HalfStaticArray<UCHAR, 1024> local_buffer, info_buffer;
+	Firebird::HalfStaticArray<UCHAR, 1024> local_buffer, info_buffer;
 	UCHAR* const info = info_buffer.getBuffer(prepareL->p_sqlst_items.cstr_length + 1);
 	UCHAR* const buffer = local_buffer.getBuffer(prepareL->p_sqlst_buffer_length);
 
@@ -3465,7 +3258,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
  *	sent.
  *
  **************************************/
-	RefMutexGuard portGuard(*port->port_sync);
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 	DecrementRequestsQueued dec(port);
 
 	try
@@ -3508,7 +3301,11 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_trusted_auth:
+#ifdef TRUSTED_AUTH
 			trusted_auth(port, &receive->p_trau, sendL);
+#else
+			send_error(port, sendL, isc_wish_list);
+#endif
 			break;
 
 		case op_update_account_info:
@@ -3725,25 +3522,25 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		}
 
 	}	// try
-	catch (const status_exception& ex)
+	catch (const Firebird::status_exception& ex)
 	{
 		// typical case like bad handle passed
 		ISC_STATUS_ARRAY local_status;
 		memset(local_status, 0, sizeof(local_status));
 
-		stuff_exception(local_status, ex);
+		Firebird::stuff_exception(local_status, ex);
 
 		// Send it to the user
 		port->send_response(sendL, 0, 0, local_status, false);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		// something more serious happened
 		ISC_STATUS_ARRAY local_status;
 		memset(local_status, 0, sizeof(local_status));
 
 		// Log the error to the user.
-		stuff_exception(local_status, ex);
+		Firebird::stuff_exception(local_status, ex);
 		gds__log_status(0, local_status);
 
 		port->send_response(sendL, 0, 0, local_status, false);
@@ -3761,6 +3558,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 }
 
 
+#ifdef TRUSTED_AUTH
 static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
 {
 /**************************************
@@ -3773,18 +3571,65 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
  *	Server side of trusted auth handshake.
  *
  **************************************/
-	ServerAuthBase* sa = port->port_auth;
+	ServerAuth* sa = port->port_trusted_auth;
 	if (! sa)
-	{
 		send_error(port, send, isc_unavailable);
+
+	try
+	{
+		AuthSspi::DataHolder data;
+		memcpy(data.getBuffer(p_trau->p_trau_data.cstr_length),
+			p_trau->p_trau_data.cstr_address, p_trau->p_trau_data.cstr_length);
+
+		AuthSspi* authSspi = sa->authSspi;
+
+		if (authSspi->accept(data) && authSspi->isActive())
+		{
+			send->p_operation = op_trusted_auth;
+			cstring& s = send->p_trau.p_trau_data;
+			s.cstr_allocated = 0;
+			s.cstr_length = data.getCount();
+			s.cstr_address = data.begin();
+			port->send(send);
+			return;
+		}
+	}
+	catch (const Firebird::status_exception& e)
+	{
+		ISC_STATUS_ARRAY status_vector;
+		Firebird::stuff_exception(status_vector, e);
+		port->send_response(send, 0, 0, status_vector, false);
+		return;
 	}
 
-	if (sa->authenticate(port, send, &p_trau->p_trau_data))
-	{
-		delete sa;
-		port->port_auth = NULL;
-	}
+	sa->part2(port, sa->operation, sa->fileName.c_str(), sa->fileName.length(),
+		sa->clumplet.begin(), sa->clumplet.getCount(), send);
 }
+
+
+static bool canUseTrusted()
+{
+/**************************************
+ *
+ *	c a n U s e T r u s t e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cache config setting for trusted auth.
+ *
+ **************************************/
+	static AmCache useTrusted = AM_UNKNOWN;
+
+	if (useTrusted == AM_UNKNOWN)
+	{
+		Firebird::PathName authMethod(Config::getAuthMethod());
+		useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? AM_ENABLED : AM_DISABLED;
+	}
+
+	return useTrusted == AM_ENABLED;
+}
+#endif // TRUSTED_AUTH
 
 
 ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
@@ -4043,6 +3888,30 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	sendL->p_data.p_data_incarnation = level;
 	sendL->p_data.p_data_messages = 1;
 
+#ifdef SCROLLABLE_CURSORS
+	// check the direction and offset for possible redirection; if the user
+	// scrolls in a direction other than we were going or an offset other
+	// than 1, then we need to resynchronize:
+	// if the direction is the same as the lookahead cache, scroll forward
+	// through the cache to see if we find the record; otherwise scroll the
+	// next layer down backward by an amount equal to the number of records
+	// in the cache, plus the amount asked for by the next level up
+
+	USHORT direction;
+	ULONG offset;
+	if (this->port_protocol < PROTOCOL_SCROLLABLE_CURSORS)
+	{
+		direction = blr_forward;
+		offset = 1;
+	}
+	else
+	{
+		direction = data->p_data_direction;
+		offset = data->p_data_offset;
+		tail->rrq_xdr = scroll_cache(tail, &direction, &offset);
+	}
+#endif
+
 	// Check to see if any messages are already sitting around
 
 	RMessage* message = 0;
@@ -4065,11 +3934,55 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 				return res;
 			}
 
+#ifdef SCROLLABLE_CURSORS
+			isc_receive2(status_vector, &requestL->rrq_handle, msg_number,
+						 format->fmt_length, message->msg_buffer, level, direction, offset);
+#else
 			isc_receive(status_vector, &requestL->rrq_handle, msg_number,
 						format->fmt_length, message->msg_buffer, level);
-
+#endif
 			if (status_vector[1])
 				return this->send_response(sendL, 0, 0, status_vector, false);
+
+#ifdef SCROLLABLE_CURSORS
+			// set the appropriate flags according to the way we just scrolled
+			// the next layer down, and calculate the offset from the beginning
+			// of the result set
+
+			switch (direction)
+			{
+			case blr_forward:
+				tail->rrq_flags &= ~Rrq::BACKWARD;
+				tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
+				break;
+
+			case blr_backward:
+				tail->rrq_flags |= Rrq::BACKWARD;
+				tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
+				break;
+
+			case blr_bof_forward:
+				tail->rrq_flags &= ~Rrq::BACKWARD;
+				tail->rrq_flags &= ~Rrq::ABSOLUTE_BACKWARD;
+				tail->rrq_absolute = offset;
+				direction = blr_forward;
+				break;
+
+			case blr_eof_backward:
+				tail->rrq_flags |= Rrq::BACKWARD;
+				tail->rrq_flags |= Rrq::ABSOLUTE_BACKWARD;
+				tail->rrq_absolute = offset;
+				direction = blr_backward;
+				break;
+			}
+
+			message->msg_absolute = tail->rrq_absolute;
+
+			// if we have already scrolled to the location indicated,
+			// then we just want to continue one by one in that direction
+
+			offset = 1;
+#endif
 
 			message->msg_address = message->msg_buffer;
 		}
@@ -4122,10 +4035,13 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		if (message->msg_address)
 		{
 			if (!prior)
+#ifdef SCROLLABLE_CURSORS
+				prior = message->msg_prior;
+#else
 				prior = tail->rrq_xdr;
-
-			while (prior->msg_next != message)
-				prior = prior->msg_next;
+				while (prior->msg_next != message)
+					prior = prior->msg_next;
+#endif
 
 			// allocate a new message block and put it in the cache
 
@@ -4135,6 +4051,9 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 #endif
 			message->msg_number = prior->msg_number;
 			message->msg_next = prior->msg_next;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = prior;
+#endif
 
 			prior->msg_next = message;
 			prior = message;
@@ -4158,6 +4077,24 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			}
 			break;
 		}
+
+#ifdef SCROLLABLE_CURSORS
+		// if we have already scrolled to the location indicated,
+		// then we just want to continue on in that direction
+
+		switch (direction)
+		{
+		case blr_forward:
+			tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
+			break;
+
+		case blr_backward:
+			tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
+			break;
+		}
+
+		message->msg_absolute = tail->rrq_absolute;
+#endif
 
 		message->msg_address = message->msg_buffer;
 		message = message->msg_next;
@@ -4328,6 +4265,127 @@ static void release_transaction( Rtr* transaction)
 #endif
 	delete transaction;
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage* scroll_cache(Rrq::rrq_repeat* tail, USHORT* direction, ULONG* offset)
+{
+/**************************************
+ *
+ *	s c r o l l _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ * Try to fetch the requested record from cache, if possible.  This algorithm depends
+ * on all scrollable cursors being INSENSITIVE to database changes, so that absolute
+ * record numbers within the result set will remain constant.
+ *
+ *  1.  BOF Forward or EOF Backward:  Retain the record number of the offset from the
+ *      beginning or end of the result set.  If we can figure out the relative offset
+ *      from the absolute, then scroll to it.  If it's in cache, great, otherwise dump
+ *      the cache and have the server scroll the correct number of records.
+ *
+ *  2.  Forward or Backward:  Try to scroll the desired offset in cache.  If we
+ *      scroll off the end of the cache, dump the cache and ask the server for a
+ *      packetful of records.
+ *
+ *  This routine differs from the corresponding routine on the client in that
+ *  we are using only a lookahead cache.  There is no point in caching records backward,
+ *  in that the client already has them and would not request them from us.
+ *
+ **************************************/
+
+	// if we are to continue in the current direction, set direction to
+	// the last direction scrolled; then depending on the direction asked
+	// for, save the last direction asked for by the next layer above
+
+	if (*direction == blr_continue)
+	{
+		if (tail->rrq_flags & Rrq::LAST_BACKWARD)
+			*direction = blr_backward;
+		else
+			*direction = blr_forward;
+	}
+
+	if (*direction == blr_forward || *direction == blr_bof_forward)
+		tail->rrq_flags &= ~Rrq::LAST_BACKWARD;
+	else
+		tail->rrq_flags |= Rrq::LAST_BACKWARD;
+
+	// set to the first message; if it has no record, this means the cache is
+	// empty and there is no point in trying to find the record here
+
+	RMessage* message = tail->rrq_xdr;
+	if (!message->msg_address)
+		return message;
+
+	// if we are scrolling from BOF and the cache was started from EOF (or vice-versa),
+	// the cache is unusable.
+
+	if ((*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)) ||
+		(*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
+	{
+		return dump_cache(tail);
+	}
+
+	// if we are going to an absolute position, see if we can find that position
+	// in cache, otherwise change to a relative seek from our former position
+
+	if (*direction == blr_bof_forward || *direction == blr_eof_backward)
+	{
+		// If offset is before our current position, just dump the cache because
+		// the server cache is purely a lookahead cache--we don't bother to cache
+		// back records because the client will cache those records, making it
+		// unlikely the client would be asking us for a record which is in our cache.
+
+		if (*offset < message->msg_absolute)
+			return dump_cache(tail);
+
+		// convert the absolute to relative, and prepare to scroll forward to look for the record
+
+		*offset -= message->msg_absolute;
+		if (*direction == blr_bof_forward)
+			*direction = blr_forward;
+		else
+			*direction = blr_backward;
+	}
+
+	if ((*direction == blr_forward && (tail->rrq_flags & Rrq::BACKWARD)) ||
+		(*direction == blr_backward && !(tail->rrq_flags & Rrq::BACKWARD)))
+	{
+		// lookahead cache was in opposite direction from the scroll direction,
+		// so increase the scroll amount by the amount we looked ahead, then
+		// dump the cache
+
+		for (message = tail->rrq_xdr; message->msg_address;)
+		{
+			(*offset)++;
+			message = message->msg_next;
+			if (message == tail->rrq_message)
+				break;
+		}
+
+		return dump_cache(tail);
+	}
+
+	// lookahead cache is in same direction we want to scroll, so scroll
+	// forward through the cache, decrementing the offset
+
+	for (message = tail->rrq_xdr; message->msg_address;)
+	{
+		if (*offset == 1)
+			break;
+		(*offset)--;
+		message = message->msg_next;
+		if (message == tail->rrq_message)
+			break;
+	}
+
+	return message;
+}
+#endif
 
 
 ISC_STATUS rem_port::seek_blob(P_SEEK* seek, PACKET* sendL)
@@ -4578,7 +4636,7 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 		return;
 	}
 
-	RefMutexGuard portGuard(*port->port_sync);
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	PACKET packet;
 	packet.p_operation = op_event;
@@ -4603,13 +4661,61 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 	const char* service_name = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT service_length = attach->p_atch_file.cstr_length;
 
-	port->port_auth = new ServerAuth(port, service_name, service_length, attach->p_atch_dpb.cstr_address,
-									 attach->p_atch_dpb.cstr_length, attach_service2, op_service_attach);
-	if (port->port_auth->authenticate(port, sendL, NULL))
+	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE,
+		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length, isc_spb_current_version);
+
+	// remove trusted role if present (security measure)
+	spb.deleteWithTag(isc_spb_trusted_role);
+
+#ifdef TRUSTED_AUTH
+	// Do we can & need trusted authentication?
+	if (spb.find(isc_spb_trusted_auth))
 	{
-		delete port->port_auth;
-		port->port_auth = NULL;
+		try
+		{
+			// extract trusted authentication data from spb
+			AuthSspi::DataHolder data;
+			memcpy(data.getBuffer(spb.getClumpLength()), spb.getBytes(), spb.getClumpLength());
+			spb.deleteClumplet();
+
+			// remove extra trusted auth if present (security measure)
+			spb.deleteWithTag(isc_spb_trusted_auth);
+
+			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
+			{
+				port->port_trusted_auth =
+					new ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
+				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
+
+				if (authSspi->accept(data) && authSspi->isActive())
+				{
+					sendL->p_operation = op_trusted_auth;
+					cstring& s = sendL->p_trau.p_trau_data;
+					s.cstr_allocated = 0;
+					s.cstr_length = data.getCount();
+					s.cstr_address = data.begin();
+					port->send(sendL);
+					return;
+				}
+			}
+		}
+		catch (const Firebird::status_exception& e)
+		{
+			ISC_STATUS_ARRAY status_vector;
+			Firebird::stuff_exception(status_vector, e);
+			delete port->port_trusted_auth;
+			port->port_trusted_auth = 0;
+			port->send_response(sendL, 0, 0, status_vector, false);
+			return;
+		}
 	}
+#else // TRUSTED_AUTH
+	// remove trusted auth if present (security measure)
+	spb.deleteWithTag(isc_spb_trusted_auth);
+#endif // TRUSTED_AUTH
+
+	attach_service2(port, op_trusted_auth, service_name, service_length,
+		spb.getBuffer(), spb.getBufferLength(), sendL);
 }
 
 
@@ -4617,16 +4723,25 @@ static void attach_service2(rem_port* port,
 							P_OP,
 							const char* service_name,
 							int service_length,
-							ClumpletWriter& spb,
+							const UCHAR* spb,
+							int sl,
 							PACKET* sendL)
 {
-	port->service_attach(service_name, service_length, spb, sendL);
+	Firebird::ClumpletWriter tmp(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE,
+			spb, sl, isc_spb_current_version);
+
+	port->service_attach(service_name, service_length, tmp, sendL);
+
+#ifdef TRUSTED_AUTH
+	delete port->port_trusted_auth;
+	port->port_trusted_auth = 0;
+#endif
 }
 
 
 ISC_STATUS rem_port::service_attach(const char* service_name,
 									const USHORT service_length,
-									ClumpletWriter& spb,
+									Firebird::ClumpletWriter& spb,
 									PACKET* sendL)
 {
 /**************************************
@@ -4642,33 +4757,39 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	sendL->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 
+#ifdef TRUSTED_AUTH
+	// If we have trusted authentication, append it to database parameter block
+	if (port_trusted_auth)
+	{
+		AuthSspi* authSspi = port_trusted_auth->authSspi;
+
+		Firebird::string trustedUserName;
+		bool wheel = false;
+		if (authSspi->getLogin(trustedUserName, wheel))
+		{
+			spb.insertString(isc_spb_trusted_auth, trustedUserName);
+			if (wheel && !spb.find(isc_spb_sql_role_name))
+			{
+				spb.insertString(isc_spb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			}
+		}
+	}
+#endif // TRUSTED_AUTH
+
+	// If we have user identification, append it to database parameter block
+	const rem_str* string = port_user_name;
+	if (string)
+	{
+		spb.setCurOffset(spb.getBufferLength());
+		spb.insertString(isc_spb_sys_user_name, string->str_data, string->str_length);
+	}
+
     // Now insert additional clumplets into spb
 	addClumplets(spb, spbParam, this);
 
 	// See if user has specified parameters relevent to the connection,
 	// they will be stuffed in the SPB if so.
 	REMOTE_get_timeout_params(this, &spb);
-
-	for (spb.rewind(); !spb.isEof();)
-	{
-		switch (spb.getClumpTag())
-		{
-		// remove trusted auth & trusted role if present (security measure)
-		case isc_spb_trusted_role:
-		case isc_spb_trusted_auth:
-
-		// remove old-style logon parameters
-		case isc_spb_user_name:
-		case isc_spb_password:
-		case isc_spb_password_enc:
-			spb.deleteClumplet();
-			break;
-
-		default:
-			spb.moveNext();
-			break;
-		}
-	}
 
 	ISC_STATUS_ARRAY status_vector;
 	isc_service_attach(status_vector, service_length, service_name, &handle,
@@ -4800,7 +4921,7 @@ void set_server( rem_port* port, USHORT flags)
  *	create it.
  *
  **************************************/
-	MutexLockGuard srvrGuard(servers_mutex);
+	Firebird::MutexLockGuard srvrGuard(servers_mutex);
 	srvr* server;
 
 	for (server = servers; server; server = server->srvr_next)
@@ -5008,13 +5129,13 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 	try {
 
-	FpeControl::maskAll();
+	Firebird::FpeControl::maskAll();
 
 	Worker worker;
 
 	while (!Worker::isShuttingDown())
 	{
-		MutexEnsureUnlock reqQueGuard(request_que_mutex);
+		Firebird::MutexEnsureUnlock reqQueGuard(request_que_mutex);
 		reqQueGuard.enter();
 		server_req_t* request = request_que;
 		if (request)
@@ -5044,16 +5165,16 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				// and unsplice
 
 				{ // scope
-					MutexLockGuard queGuard(request_que_mutex);
+					Firebird::MutexLockGuard queGuard(request_que_mutex);
 					request->req_next = active_requests;
 					active_requests = request;
 				}
 
 				// Validate port.  If it looks ok, process request
 
-				RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync);
+				Firebird::RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync);
 				{ // port_sync scope
-					RefMutexGuard portGuard(*request->req_port->port_sync);
+					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync);
 
 					if (request->req_port->port_state == rem_port::DISCONNECTED ||
 						!process_packet(request->req_port, &request->req_send, &request->req_receive, &port))
@@ -5110,7 +5231,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				}
 
 				{ // request_que_mutex scope
-					MutexLockGuard queGuard(request_que_mutex);
+					Firebird::MutexLockGuard queGuard(request_que_mutex);
 
 					// Take request out of list of active requests
 
@@ -5189,7 +5310,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 	}
 
 	} // try
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		iscLogException("Error while processing the incoming packet", ex);
 	}
@@ -5234,8 +5355,8 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 	}
 
 	{ // scope for guard
-		static GlobalPtr<Mutex> mutex;
-		MutexLockGuard guard(mutex);
+		static Firebird::GlobalPtr<Firebird::Mutex> mutex;
+		Firebird::MutexLockGuard guard(mutex);
 
 		port_async_receive->clearRecvQue();
 		port_async_receive->port_receive.x_handy = 0;
@@ -5353,13 +5474,13 @@ Worker::Worker()
 	m_tid = getThreadId();
 #endif
 
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	insert(m_active);
 }
 
 Worker::~Worker()
 {
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	remove();
 	--m_cntAll;
 }
@@ -5370,12 +5491,12 @@ bool Worker::wait(int timeout)
 	if (m_sem.tryEnter(timeout))
 		return true;
 
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	if (m_sem.tryEnter(0))
 		return true;
 
 	remove();
-	return false;
+	return false; 
 }
 
 void Worker::setState(const bool active)
@@ -5383,14 +5504,14 @@ void Worker::setState(const bool active)
 	if (m_active == active)
 		return;
 
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	remove();
 	insert(active);
 }
 
 bool Worker::wakeUp()
 {
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	if (m_idleWorkers)
 	{
 		Worker* idle = m_idleWorkers;
@@ -5403,7 +5524,7 @@ bool Worker::wakeUp()
 
 void Worker::wakeUpAll()
 {
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	for (Worker* thd = m_idleWorkers; thd; thd = thd->m_next)
 		thd->m_sem.release();
 }
@@ -5454,7 +5575,7 @@ void Worker::insert(const bool active)
 
 void Worker::start(USHORT flags)
 {
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	if (!isShuttingDown() && !wakeUp())
 	{
 		if (gds__thread_start(loopThread, (void*)(IPTR) flags, THREAD_medium, 0, 0) == 0)
@@ -5463,14 +5584,14 @@ void Worker::start(USHORT flags)
 		}
 		else if (!m_cntAll)
 		{
-			Arg::Gds(isc_no_threads).raise();
+			Firebird::Arg::Gds(isc_no_threads).raise();
 		}
 	}
 }
 
 void Worker::shutdown()
 {
-	MutexLockGuard guard(m_mutex);
+	Firebird::MutexLockGuard guard(m_mutex);
 	if (shutting_down)
 	{
 		return;
@@ -5486,7 +5607,7 @@ void Worker::shutdown()
 		{
 			THREAD_SLEEP(100);
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			m_mutex->enter();
 			throw;

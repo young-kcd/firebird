@@ -103,12 +103,12 @@ struct sig
 typedef sig *SIG;
 
 // flags
-const USHORT SIG_user		= 0;		// Our routine
-const USHORT SIG_client		= 1;		// Not our routine
-const USHORT SIG_informs	= 2;		// routine tells us whether to chain
+const USHORT SIG_user		= 0;		/* Our routine */
+const USHORT SIG_client		= 1;		/* Not our routine */
+const USHORT SIG_informs	= 2;		/* routine tells us whether to chain */
 
-const SLONG SIG_informs_continue	= 0;	// continue on signal processing
-const SLONG SIG_informs_stop		= 1;	// stop signal processing
+const SLONG SIG_informs_continue	= 0;	/* continue on signal processing */
+const SLONG SIG_informs_stop		= 1;	/* stop signal processing */
 
 static SIG volatile signals = NULL;
 static SLONG volatile overflow_count = 0;
@@ -124,13 +124,8 @@ static void signal_cleanup(void* arg);
 static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool w_siginfo);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context);
-#ifdef __cplusplus
-}
-#endif
+
 #ifndef SIG_HOLD
 #define SIG_HOLD	SIG_DFL
 #endif
@@ -171,17 +166,17 @@ static bool isc_signal2(int signal_number, FPTR_VOID handler, void* arg, ULONG f
 
 	Firebird::MutexLockGuard guard(sig_mutex);
 
-	// See if this signal has ever been cared about before
+/* See if this signal has ever been cared about before */
 
 	for (sig = signals; sig; sig = sig->sig_next)
 		if (sig->sig_signal == signal_number)
 			break;
 
-	/* If it hasn't been attach our chain handler to the signal,
-	and queue up whatever used to handle it as a non-ISC
-	routine (they are invoked differently).  Note that if
-	the old action was SIG_DFL, SIG_HOLD, SIG_IGN or our
-	multiplexor, there is no need to save it. */
+/* If it hasn't been attach our chain handler to the signal,
+   and queue up whatever used to handle it as a non-ISC
+   routine (they are invoked differently).  Note that if
+   the old action was SIG_DFL, SIG_HOLD, SIG_IGN or our
+   multiplexor, there is no need to save it. */
 
 	bool old_sig_w_siginfo = false;
 	bool rc = false;
@@ -208,7 +203,7 @@ static bool isc_signal2(int signal_number, FPTR_VOID handler, void* arg, ULONG f
 		}
 	}
 
-	// Que up the new ISC signal handler routine
+	/* Que up the new ISC signal handler routine */
 
 	que_signal(signal_number, handler, arg, flags, false);
 
@@ -322,16 +317,17 @@ static SIG que_signal(int signal_number,
  *
  **************************************/
 	SIG sig = (SIG) gds__alloc((SLONG) sizeof(struct sig));
-	// FREE: unknown
-	if (!sig) {
-		// NOMEM:
+/* FREE: unknown */
+	if (!sig) {					/* NOMEM: */
 		DEV_REPORT("que_signal: out of memory");
-		return NULL;			// NOMEM: not handled, too difficult
+		return NULL;			/* NOMEM: not handled, too difficult */
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-	// This will only be freed when a signal handler is de-registered
-	// and we don't do that at process exit - so this not always a freed structure.
+/* This will only be freed when a signal handler is de-registered
+ * and we don't do that at process exit - so this not always
+ * a freed structure.
+ */
 	gds_alloc_flag_unfreed((void *) sig);
 #endif
 
@@ -379,7 +375,7 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 			}
 			else if (sig->sig_flags & SIG_informs)
 			{
-				// Routine will tell us whether to chain the signal to other handlers
+				/* Routine will tell us whether to chain the signal to other handlers */
 				if ((*sig->sig_routine.informs)(sig->sig_arg) == SIG_informs_stop)
 				{
 					break;
@@ -392,3 +388,4 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 		}
 	}
 }
+

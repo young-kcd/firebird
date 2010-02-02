@@ -33,7 +33,7 @@
 #include "firebird.h"
 #include "../jrd/ThreadData.h"
 
-// Thread priorities (may be ignored)
+/* Thread priorities (may be ignored) */
 
 const int THREAD_high			= 1;
 const int THREAD_medium_high	= 2;
@@ -43,7 +43,7 @@ const int THREAD_low			= 5;
 const int THREAD_critical		= 6;
 
 
-// Thread startup
+/* Thread startup */
 
 // BRS 01/07/2004
 // Hack due to a bug in mingw.

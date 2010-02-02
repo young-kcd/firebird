@@ -373,7 +373,8 @@ static TEXT_PTR merge_file[] = {	"MERGE EQUIVALENCE FILE BLOCK", 0};
 static TEXT_PTR River[] = {	"SORT MERGE RIVER", 0};
 static TEXT_PTR UserId[] = {	"USER IDENTIFICATION BLOCK ", 0};
 static TEXT_PTR Attachment[] = {	"ATTACHMENT BLOCK", 0};
-static TEXT_PTR Function[] = {	"FUNCTION", 0};
+static TEXT_PTR Symbol[] = {	"SYMBOL", 0};
+static TEXT_PTR UserFunction[] = {	"FUNCTION", 0};
 static TEXT_PTR IndexedRelationship[] = {	"INDEXED RELATIONSHIP", 0};
 static TEXT_PTR AccessItem[] = {	"ACCESS", 0};
 static TEXT_PTR Resource[] = {	"RESOURCE", 0};
@@ -383,6 +384,7 @@ static TEXT_PTR Savepoint[] = {	"SAVE POINT", 0};
 static TEXT_PTR VerbAction[] = {	"VERB", 0};
 static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
 static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
+//static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
 static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {

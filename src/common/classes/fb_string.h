@@ -147,7 +147,7 @@ namespace Firebird
 		}
 
 	protected:
-		AbstractString(const size_type sizeL, const void* datap);
+		AbstractString(const size_type sizeL, const_pointer datap);
 
 		AbstractString(const_pointer p1, const size_type n1,
 					 const_pointer p2, const size_type n2);
@@ -175,7 +175,7 @@ namespace Firebird
 			memcpy(stringBuffer, v.c_str(), stringLength);
 		}
 
-		inline AbstractString(MemoryPool& p, const void* s, const size_type l)
+		inline AbstractString(MemoryPool& p, const char_type* s, const size_type l)
 			: AutoStorage(p)
 		{
 			initialize(l);
@@ -608,7 +608,7 @@ namespace Firebird
 	public:
 		inline StringBase<Comparator>() : AbstractString() {}
 		inline StringBase<Comparator>(const StringType& v) : AbstractString(v) {}
-		inline StringBase<Comparator>(const void* s, size_type n) : AbstractString(n, s) {}
+		inline StringBase<Comparator>(const_pointer s, size_type n) : AbstractString(n, s) {}
 		inline StringBase<Comparator>(const_pointer s) : AbstractString(strlen(s), s) {}
 		inline explicit StringBase<Comparator>(const unsigned char* s) : AbstractString(strlen((char*)s), (char*)s) {}
 		inline StringBase<Comparator>(size_type n, char_type c) : AbstractString(n, c) {}
@@ -629,7 +629,7 @@ namespace Firebird
 			adjustRange(str.length(), pos, n);
 			return assign(&str.c_str()[pos], n);
 		}
-		inline StringType& assign(const void* s, size_type n)
+		inline StringType& assign(const_pointer s, size_type n)
 		{
 			memcpy(baseAssign(n), s, n);
 			return *this;
@@ -650,8 +650,7 @@ namespace Firebird
 
 		inline StringType& operator=(const StringType& v)
 		{
-			if (&v == this)
-				return *this;
+			fb_assert(&v != this);
 			return assign(v);
 		}
 		inline StringType& operator=(const_pointer s)
@@ -680,6 +679,7 @@ namespace Firebird
 		}
 		inline StringType operator+(const StringType& v) const
 		{
+			fb_assert(&v != this);
 			return add(v.c_str(), v.length());
 		}
 		inline StringType operator+(const_pointer s) const

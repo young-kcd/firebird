@@ -24,8 +24,6 @@
 #ifndef ISQL_SHOW_PROTO_H
 #define ISQL_SHOW_PROTO_H
 
-#include "../common/classes/fb_string.h"
-
 void	SHOW_comments(bool force);
 bool	SHOW_dbb_parameters (FB_API_HANDLE, SCHAR*, const SCHAR*, USHORT, bool, const char*);
 processing_state	SHOW_grants (const SCHAR*, const SCHAR*, USHORT);
@@ -35,6 +33,6 @@ void	SHOW_grant_roles2 (const SCHAR*, bool*, const TEXT*, bool);
 void	SHOW_print_metadata_text_blob(FILE*, ISC_QUAD*, bool escape_squote = false);
 processing_state	SHOW_metadata(const SCHAR* const*, SCHAR**);
 void	SHOW_read_owner();
-const Firebird::string SHOW_trigger_action(SINT64);
 
 #endif // ISQL_SHOW_PROTO_H
+

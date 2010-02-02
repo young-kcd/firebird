@@ -35,6 +35,7 @@
 #include "../../jrd/isc_proto.h"
 #include "../../jrd/isc_s_proto.h"
 #include "../../jrd/jrd.h"
+#include "../../jrd/jrd_pwd.h"
 #include "../../jrd/tra.h"
 #include "../../jrd/evl_proto.h"
 #include "../../jrd/mov_proto.h"
@@ -146,6 +147,26 @@ ntrace_tra_isolation_t TraceTransactionImpl::getIsolation()
 }
 
 
+/// TraceDYNRequestImpl
+
+const char* TraceDYNRequestImpl::getText()
+{
+	if (m_text.empty() && m_length) {
+		PRETTY_print_dyn((UCHAR*) m_ddl, print_dyn, this, 0);
+	}
+	return m_text.c_str();
+}
+
+void TraceDYNRequestImpl::print_dyn(void* arg, SSHORT offset, const char* line)
+{
+	TraceDYNRequestImpl *dyn = (TraceDYNRequestImpl*) arg;
+
+	string temp;
+	temp.printf("%4d %s\n", offset, line);
+	dyn->m_text.append(temp);
+}
+
+
 /// BLRPrinter
 
 const char* BLRPrinter::getText()
@@ -183,7 +204,7 @@ int TraceSQLStatementImpl::getStmtID()
 
 const char* TraceSQLStatementImpl::getText()
 {
-	return m_stmt->getStatement()->getSqlText()->c_str();
+	return m_stmt->req_sql_text->c_str();
 }
 
 const char* TraceSQLStatementImpl::getPlan()
@@ -224,10 +245,8 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 		return;
 
 	USHORT first_index = 0;
-	for (size_t i = 0 ; i < m_params->getCount(); ++i)
+	for (const dsql_par* parameter = m_params; parameter; parameter = parameter->par_next)
 	{
-		dsql_par* parameter = (*m_params)[i];
-
 		if (parameter->par_index)
 		{
 			if (!first_index)
@@ -271,6 +290,7 @@ const dsc* TraceSQLStatementImpl::DSQLParamsImpl::getParam(size_t idx)
 
 	return NULL;
 }
+
 
 
 /// TraceProcedureImpl::JrdParamsImpl
