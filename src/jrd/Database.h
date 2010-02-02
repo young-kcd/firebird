@@ -181,7 +181,7 @@ public:
 		explicit SyncGuard(Database* dbb, bool ast = false)
 			: sync(*dbb->dbb_sync)
 		{
-			if (!dbb->checkHandle())
+			if (!dbb || !dbb->checkHandle())
 			{
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
 			}

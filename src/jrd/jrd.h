@@ -783,7 +783,7 @@ inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
 
 inline void CHECK_DBB(const Jrd::Database* dbb)
 {
-	fb_assert(dbb->checkHandle());
+	fb_assert(dbb && dbb->checkHandle());
 }
 
 #else // PROD_BUILD

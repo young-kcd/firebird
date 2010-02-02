@@ -170,7 +170,7 @@ static void zap_packet(PACKET *);
 
 static ULONG remote_event_id = 0;
 
-#define CHECK_HANDLE(blk, type, error) if (!blk->checkHandle()) \
+#define CHECK_HANDLE(blk, type, error) if (!blk || !blk->checkHandle()) \
 				return handle_error (user_status, (ISC_STATUS) error)
 
 #define NULL_CHECK(ptr, code)	if (*ptr) return handle_error (user_status, (ISC_STATUS) code)

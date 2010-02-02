@@ -178,7 +178,8 @@ namespace
 		if (attachment && attachment == tdbb->getAttachment())
 			return;
 
-		if (!attachment->checkHandle() || !attachment->att_database->checkHandle())
+		if (!attachment || !attachment->checkHandle() ||
+			!attachment->att_database || !attachment->att_database->checkHandle())
 		{
 			status_exception::raise(Arg::Gds(isc_bad_db_handle));
 		}
@@ -189,7 +190,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, jrd_tra* const transaction)
 	{
-		if (!transaction->checkHandle())
+		if (!transaction || !transaction->checkHandle())
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
 
 		validateHandle(tdbb, transaction->tra_attachment);
@@ -199,7 +200,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, jrd_req* const request)
 	{
-		if (!request->checkHandle())
+		if (!request || !request->checkHandle())
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
 		validateHandle(tdbb, request->req_attachment);
@@ -207,7 +208,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, dsql_req* const statement)
 	{
-		if (!statement->checkHandle())
+		if (!statement || !statement->checkHandle())
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
 		validateHandle(tdbb, statement->req_dbb->dbb_attachment);
@@ -215,7 +216,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, blb* blob)
 	{
-		if (!blob->checkHandle())
+		if (!blob || !blob->checkHandle())
 			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
 
 		validateHandle(tdbb, blob->blb_transaction);
@@ -275,13 +276,14 @@ namespace
 			  tdbb(arg)
 		{
 			Database* dbb = tdbb->getDatabase();
+			fb_assert(dbb);
 			++dbb->dbb_use_count;
 		}
 
 		~DatabaseContextHolder()
 		{
 			Database* dbb = tdbb->getDatabase();
-			if (dbb->checkHandle())
+			if (dbb && dbb->checkHandle())
 			{
 				--dbb->dbb_use_count;
 			}

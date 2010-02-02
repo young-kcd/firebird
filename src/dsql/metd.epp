@@ -80,7 +80,7 @@ namespace
 {
 	inline void validateTransaction(const jrd_tra* transaction)
 	{
-		if (!transaction->checkHandle())
+		if (!transaction || !transaction->checkHandle())
 		{
 			ERR_post(Arg::Gds(isc_bad_trans_handle));
 		}
