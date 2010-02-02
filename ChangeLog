@@ -1,3 +1,29 @@
+2010-02-02 09:28  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.600):
+
+	Fixed CORE-2840: Engine crashes if the NULL attachment handle is
+	passed from the Y-valve.
+
+2010-02-01 15:34  hvlad
+
+	* firebird2/src/isql/isql.epp (1.313):
+
+	Fixed bug CORE-2837 : Asynchronous query cancellation (via Ctrl+C)
+	is not worked
+
+2010-02-01 15:04  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.128),
+	lang_helpers/gds_codes.pas (1.126), src/include/gen/codetext.h
+	(1.136), src/include/gen/iberror.h (1.140), src/include/gen/msgs.h
+	(1.171), src/include/gen/sql_code.h (1.142),
+	src/include/gen/sql_state.h (1.72), src/msgs/facilities2.sql
+	(1.122), src/msgs/messages2.sql (1.147),
+	src/msgs/system_errors2.sql (1.89):
+
+	Reserved error code for 2.5 fix
+
 2010-02-01 11:37  hvlad
 
 	* firebird2/src/utilities/ntrace/fbtrace.conf (1.11):
