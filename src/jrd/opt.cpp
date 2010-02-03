@@ -2437,14 +2437,15 @@ static bool form_river(thread_db*		tdbb,
 	river->deactivate(csb);
 	river_list.push(river);
 
+	stream = temp + 1;
+	const UCHAR* const end_stream = stream + temp[0];
+
 	if (!(temp[0] -= count))
 	{
 		return false;
 	}
 
 	// Reform "temp" from streams not consumed
-	stream = temp + 1;
-	const UCHAR* const end_stream = stream + temp[0];
 	for (const UCHAR* t2 = stream; t2 < end_stream; t2++)
 	{
 		bool used = false;
