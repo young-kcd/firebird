@@ -3631,6 +3631,19 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		return false;
 	}
 
+	// AB: Inactivate currently all streams from every river, because we
+	// need to know which nodes are computable between the rivers used
+	// for the merge.
+
+	USHORT flag_vector[MAX_STREAMS + 1], *fv;
+	UCHAR stream_nr;
+
+	for (stream_nr = 0, fv = flag_vector; stream_nr < csb->csb_n_stream; stream_nr++)
+	{
+		*fv++ = csb->csb_rpt[stream_nr].csb_flags & csb_active;
+		csb->csb_rpt[stream_nr].csb_flags &= ~csb_active;
+	}
+
 	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
 	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> keys;
 
@@ -3661,10 +3674,37 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		rivers_to_merge.add(river);
 		org_rivers.remove(iter);
 
+		RecordSource* rsb = river->getRecordSource();
+
+		// Apply local river booleans, if any
+
+		river->activate(csb);
+
+		jrd_nod* river_boolean = NULL;
+		for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
+		{
+			jrd_nod* const node = tail->opt_conjunct_node;
+
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				OPT_computable(csb, node, -1, false, false))
+			{
+				compose(&river_boolean, node, nod_and);
+				tail->opt_conjunct_flags |= opt_conjunct_used;
+			}
+		}
+
+		river->deactivate(csb);
+
+		if (river_boolean)
+		{
+			rsb = FB_NEW(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, river_boolean);
+		}
+
+		// Collect RSBs and keys to join
+
 		const size_t selected_count = selected_classes.getCount();
 
 		jrd_nod* key = NULL;
-		RecordSource* rsb = NULL;
 
 		if (prefer_merge_over_hash)
 		{
@@ -3685,7 +3725,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			stream_array_t streams;
 			streams[0] = (UCHAR) stream_count;
 			memcpy(streams + 1, river->getStreams(), stream_count);
-			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, river->getRecordSource(), key, false);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, rsb, key, false);
 		}
 		else
 		{
@@ -3698,8 +3738,6 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			{
 				*ptr++ = (*selected_class)[number];
 			}
-
-			rsb = river->getRecordSource();
 		}
 
 		// It seems that rivers are already sorted by their cardinality.
@@ -3735,21 +3773,6 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			HashJoin(csb, rsbs.getCount(), rsbs.begin(), keys.begin());
 	}
 
-	// Pick up any boolean that may apply
-
-	USHORT flag_vector[MAX_STREAMS + 1], *fv;
-	UCHAR stream_nr;
-
-	// AB: Inactivate currently all streams from every river, because we
-	// need to know which nodes are computable between the rivers used
-	// for the merge.
-
-	for (stream_nr = 0, fv = flag_vector; stream_nr < csb->csb_n_stream; stream_nr++)
-	{
-		*fv++ = csb->csb_rpt[stream_nr].csb_flags & csb_active;
-		csb->csb_rpt[stream_nr].csb_flags &= ~csb_active;
-	}
-
 	// Activate streams of all the rivers being merged
 
 	for (River** iter = rivers_to_merge.begin(); iter < rivers_to_merge.end(); iter++)
@@ -3757,7 +3780,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		(*iter)->activate(csb);
 	}
 
-	// Get computable booleans, if any
+	// Pick up any boolean that may apply
 
 	jrd_nod* boolean = NULL;
 	for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
