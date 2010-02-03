@@ -110,10 +110,18 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
-  amd64-*-freebsd*)
+  amd64-*-freebsd* | x86_64*-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=freebsd_amd64
-    INSTALL_PREFIX=freebsd
-    PLATFORM=FREEBSD
+    case "$target" in
+        x86_64*-*-k*bsd-gnu)      # Debian/kFreeBSD
+            PLATFORM=LINUX
+            INSTALL_PREFIX=linux
+            ;;
+		*)
+            PLATFORM=FREEBSD
+            INSTALL_PREFIX=freebsd
+            ;;
+    esac
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
     EDITLINE_FLG=Y
@@ -130,7 +138,15 @@ dnl CPU_TYPE=ppc64
 
   *-*-freebsd*)
     MAKEFILE_PREFIX=freebsd
-    PLATFORM=FREEBSD
+    case "$target" in
+        *-*-k*bsd-gnu)      # Debian/kFreeBSD
+            PLATFORM=LINUX
+            INSTALL_PREFIX=linux
+            ;;
+        *)
+            PLATFORM=FREEBSD
+            ;;
+    esac
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
