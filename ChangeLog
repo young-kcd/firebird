@@ -1,3 +1,37 @@
+2010-02-03 09:34  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.410):
+
+	Fixed the logic I have broken recently.
+
+2010-02-03 06:42  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.409):
+
+	Fixed the first part of CORE-2832: Optimizer fails applying
+	stream-local predicates before merging.  This part is related to
+	the merge/hash join algorithms.
+
+2010-02-02 15:22  dimitr
+
+	* firebird2/src/remote/remote.h (1.103):
+
+	Restored the legacy explicit checks for NULL objects instead of
+	hiding that check inside checkHandle() and isHandleKnown().  This
+	improves the readability and also fixes the [possible in the
+	future] issues with multiple inheritence.
+
+2010-02-02 15:12  dimitr
+
+	* firebird2/src/: jrd/Database.h (1.49), jrd/jrd.cpp (1.601),
+	jrd/jrd.h (1.288), remote/interface.cpp (1.236), dsql/metd.epp
+	(1.160):
+
+	Restored the legacy explicit checks for NULL objects instead of
+	hiding that check inside checkHandle() and isHandleKnown().  This
+	improves the readability and also fixes the [possible in the
+	future] issues with multiple inheritence.
+
 2010-02-02 09:28  dimitr
 
 	* firebird2/src/jrd/jrd.cpp (1.600):
