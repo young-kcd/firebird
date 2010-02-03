@@ -181,8 +181,6 @@ namespace
 		return rc;
 	}
 #else // HAVE_POSIX_FADVISE
-#define POSIX_FADV_SEQUENTIAL 0
-#define POSIX_FADV_NOREUSE 0
 	int fb_fadvise(int, off_t, size_t, int)
 	{
 		return 0;
@@ -450,15 +448,19 @@ void NBackup::open_database_scan()
 	if (dbase < 0)
 		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());
 
+#ifdef POSIX_FADV_SEQUENTIAL
 	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(SEQUENTIAL) for %s", rc, dbname.c_str());
+#endif // POSIX_FADV_SEQUENTIAL
+#ifdef POSIX_FADV_NOREUSE
 	if (direct_io)
 	{
 		rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
 		if (rc)
 			b_error::raise(uSvc, "Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
 	}
+#endif // POSIX_FADV_NOREUSE
 
 #endif // WIN_NT
 }
