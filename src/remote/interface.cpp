@@ -308,7 +308,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		RefMutexGuard portGuard(*port->port_sync);
 		rdb = port->port_context;
-		rdb->rdb_status_vector = user_status;
+		rdb->set_status_vector(user_status);
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
 		// the DPB so the server can pay attention to it.  Note: allocation code must
@@ -359,7 +359,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	ISC_STATUS status;
 	try
@@ -407,7 +407,7 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, Rbl** blob_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 	try
 	{
 		if (!release_object(rdb, op_cancel_blob, blob->rbl_id)) {
@@ -443,7 +443,7 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS* user_status, Rdb** handle, SLONG* id)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -490,7 +490,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS* user_status, Rbl** blob_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -538,7 +538,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -578,7 +578,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -626,7 +626,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -733,7 +733,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *rtr_handle;
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -834,7 +834,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		RefMutexGuard portGuard(*port->port_sync);
 		rdb = port->port_context;
-		rdb->rdb_status_vector = user_status;
+		rdb->set_status_vector(user_status);
 
 		// The client may have set a parameter for dummy_packet_interval.  Add that to the
 		// the DPB so the server can pay attention to it.  Note: allocation code must
@@ -884,7 +884,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -940,7 +940,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *rtr_handle;
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -986,7 +986,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Rdb** handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1065,7 +1065,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Rdb** handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1095,7 +1095,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Rdb** handle)
 		if (port->port_statement)
 			release_statement(&port->port_statement);
 
-		rdb->rdb_status_vector = local_status;
+		rdb->set_status_vector(local_status);
 
 		disconnect(port);
 		*handle = NULL;
@@ -1130,7 +1130,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1244,7 +1244,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1367,7 +1367,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		if (out_msg_length)
 			port->port_statement->rsr_message->msg_address = out_msg;
 
-		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 
 		if (!receive_packet(port, packet, user_status))
 			return user_status[1];
@@ -1473,7 +1473,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	if (dialect > 10)
 	{
@@ -1590,7 +1590,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		if (in_msg_length || out_msg_length)
 			port->port_statement->rsr_message->msg_address = out_msg;
 
-		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 		if (!receive_packet(rdb->rdb_port, packet, user_status))
 			return user_status[1];
 
@@ -1650,7 +1650,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -1921,7 +1921,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2028,7 +2028,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2156,7 +2156,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status, Rtr** rtr_handle,
 	if (transaction) {
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	if (dialect > 10)
 	{
@@ -2296,7 +2296,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2394,7 +2394,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2448,7 +2448,7 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2673,7 +2673,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *tra_handle;
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2722,7 +2722,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 			err_flag = true;
 		else
 		{
-			packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+			packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 			if (!receive_packet(rdb->rdb_port, packet, user_status))
 				err_flag = true;
 		}
@@ -2780,7 +2780,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *rtr_handle;
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2854,7 +2854,7 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
 	RefMutexGuard portGuard(*port->port_sync);
 
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -2919,7 +2919,7 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3004,7 +3004,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	Rtr* transaction = *tra_handle;
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3106,7 +3106,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 	PACKET* packet = &rdb->rdb_packet;
 
 	try
@@ -3214,7 +3214,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3386,7 +3386,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3432,7 +3432,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, Rrq** req_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3480,7 +3480,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3574,7 +3574,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3617,7 +3617,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, Rtr** rtr_handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3662,7 +3662,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3729,7 +3729,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, isc_badmsgnum);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3809,7 +3809,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		RefMutexGuard portGuard(*port->port_sync);
 		rdb = port->port_context;
-		rdb->rdb_status_vector = user_status;
+		rdb->set_status_vector(user_status);
 
 		// make sure the protocol supports it
 		if (port->port_protocol < PROTOCOL_VERSION8)
@@ -3860,7 +3860,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Rdb** handle)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3926,7 +3926,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -3979,7 +3979,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4030,7 +4030,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, isc_badmsgnum);
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4115,7 +4115,7 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4188,7 +4188,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4246,7 +4246,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 
 	Rtr* transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	try
 	{
@@ -4331,7 +4331,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 		// But when success occurs a packet with op_transact_response comes back
 		// which does not change the status vector.
 
-		packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 		if (!receive_packet(port, packet, user_status)) {
 			return user_status[1];
 		}
@@ -4376,7 +4376,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	ISC_STATUS status;
 	try
@@ -4413,7 +4413,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, Rrq** req_handle, USHORT level)
 	rem_port* port = rdb->rdb_port;
 	RefMutexGuard portGuard(*port->port_sync);
 
-	rdb->rdb_status_vector = user_status;
+	rdb->set_status_vector(user_status);
 
 	/* Unreachable code because EXE_unwind was commented out.
 	try
@@ -5117,7 +5117,7 @@ static bool check_response(Rdb* rdb, PACKET* packet)
 	}
 
 	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
-		!rdb->rdb_status_vector[1])
+		!rdb->get_status_vector()[1])
 	{
 		return true;
 	}
@@ -5339,7 +5339,7 @@ static ISC_STATUS fetch_blob(ISC_STATUS* user_status,
 
 	// set up the response packet.
 
-	packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+	packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 
 	// Swallow up data.
 
@@ -5531,7 +5531,7 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 
 	// Assume the result will be successful
 
-	fb_assert(user_status == rdb->rdb_status_vector);
+	rdb->status_assert(user_status);
 	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = isc_arg_end;
@@ -5554,7 +5554,7 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 
 	response->p_resp_data = temp;
 
-	return rdb->rdb_status_vector[1];
+	return rdb->get_status_vector()[1];
 }
 
 
@@ -5698,7 +5698,7 @@ static bool init(ISC_STATUS* user_status,
 	for (;;)
 	{
 		// Get response
-		ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+		ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 		if (!receive_packet(rdb->rdb_port, packet, status))
 		{
 			REMOTE_save_status_strings(user_status);
@@ -6062,14 +6062,16 @@ static bool receive_packet_noqueue(rem_port* port, PACKET* packet, ISC_STATUS* u
 	memset(tmp_status, 0, sizeof(tmp_status));
 
 	Rdb* rdb = port->port_context;
-	ISC_STATUS* const save_status = rdb->rdb_status_vector;
+	ISC_STATUS* save_status;
+	rdb->save_status_vector(save_status);
 	while (port->port_deferred_packets->getCount())
 	{
 		rem_que_packet* const p = port->port_deferred_packets->begin();
 		if (!p->sent)
 			break;
 
-		p->packet.p_resp.p_resp_status_vector = rdb->rdb_status_vector = tmp_status;
+		p->packet.p_resp.p_resp_status_vector = tmp_status;
+		rdb->set_status_vector(tmp_status);
 
 		OBJCT stmt_id = 0;
 		bool bCheckResponse = false, bFreeStmt = false;
@@ -6120,7 +6122,7 @@ static bool receive_packet_noqueue(rem_port* port, PACKET* packet, ISC_STATUS* u
 		port->port_deferred_packets->remove(p);
 	}
 
-	rdb->rdb_status_vector = save_status;
+	rdb->set_status_vector(save_status);
 	return (port->receive(packet));
 }
 
@@ -6233,7 +6235,7 @@ static bool receive_response(Rdb* rdb, PACKET* packet)
  *
  **************************************/
 
-	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
+	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
 
 	if (!receive_packet(rdb->rdb_port, packet, status))
 		return false;
@@ -6315,7 +6317,7 @@ static bool release_object(Rdb* rdb, P_OP op, USHORT id)
 	packet->p_operation = op;
 	packet->p_rlse.p_rlse_object = id;
 
-	ISC_STATUS* status = rdb->rdb_status_vector;
+	ISC_STATUS* status = rdb->get_status_vector();
 
 	if (rdb->rdb_port->port_flags & PORT_lazy)
 	{
@@ -6454,7 +6456,7 @@ static ISC_STATUS return_success( Rdb* rdb)
  *	Set up status vector to reflect successful execution.
  *
  **************************************/
-	ISC_STATUS* p = rdb->rdb_status_vector;
+	ISC_STATUS* p = rdb->get_status_vector();
 
 	// If the status vector has not been initialized, then
 	// initialize the status vector to indicate success.
@@ -6585,7 +6587,7 @@ static void send_cancel_event(Rvnt* event)
 
 	// Send the packet, and if that worked, get a response
 
-	if (send_packet(rdb->rdb_port, packet, rdb->rdb_status_vector))
+	if (send_packet(rdb->rdb_port, packet, rdb->get_status_vector()))
 	{
 		receive_response(rdb, packet);
 	}
@@ -6754,7 +6756,7 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 
 	// Assume the result will be successful
 
-	fb_assert(user_status == rdb->rdb_status_vector);
+	rdb->status_assert(user_status);
 	user_status[0] = isc_arg_gds;
 	user_status[1] = FB_SUCCESS;
 	user_status[2] = isc_arg_end;
@@ -6775,7 +6777,7 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 
 	response->p_resp_data = temp;
 
-	return rdb->rdb_status_vector[1];
+	return rdb->get_status_vector()[1];
 }
 
 
@@ -6853,8 +6855,17 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 		return user_status[1];
 	}
 
-	// This is async operation - should not lock port_sync
-	rdb->rdb_status_vector = user_status;
+	MutexEnsureUnlock guard(rdb->rdb_async_lock);	// This is async operation
+	if (!guard.tryEnter())
+	{
+		user_status[0] = isc_arg_gds;
+		user_status[1] = isc_async_active;
+		user_status[2] = isc_arg_end;
+
+		return user_status[1];
+	}
+
+	rdb->set_async_vector(user_status);
 
 	try
 	{
@@ -6870,8 +6881,10 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 	}
 	catch (const Exception& ex)
 	{
+		rdb->reset_async_vector();
 		return stuff_exception(user_status, ex);
 	}
 
+	rdb->reset_async_vector();
 	return return_success(rdb);
 }
