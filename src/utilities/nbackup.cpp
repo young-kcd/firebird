@@ -317,6 +317,12 @@ void nbackup::open_database_scan()
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
 #else
+#ifndef O_NOATIME
+#define O_NOATIME 0
+#endif
+#ifndef O_DIRECT
+#define O_DIRECT 0
+#endif
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
   	if (dbase < 0)
   		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());
