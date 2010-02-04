@@ -1,3 +1,16 @@
+2010-02-04 13:49  paulbeach
+
+	* firebird2/src/jrd/common.h (1.228):
+
+	Additional  re. Solaris 256 fd issue In 2.5+ this affects
+	superclassic
+
+2010-02-04 13:24  paulbeach
+
+	* firebird2/src/jrd/common.h (1.227):
+
+	Additional comments re. Solaris 256 fd issue
+
 2010-02-03 09:34  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.410):
