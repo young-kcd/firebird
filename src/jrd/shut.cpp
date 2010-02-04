@@ -82,29 +82,38 @@ bool SHUT_blocking_ast(Database* dbb)
 	const SSHORT flag = data.data_items.flag;
 	const SSHORT delay = data.data_items.delay;
 
+	const int shut_mode = flag & isc_dpb_shut_mode_mask;
+
 /* Database shutdown has been cancelled. */
 
 	// Delay of -1 means we're going online
-	if (delay == -1) {
+	if (delay == -1)
+	{
 		dbb->dbb_ast_flags &=
-			~(DBB_shut_attach | DBB_shut_tran | DBB_shut_force |
-			  DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
-		switch (flag & isc_dpb_shut_mode_mask) {
-		case isc_dpb_shut_normal:
-			break;
-		case isc_dpb_shut_multi:
-			dbb->dbb_ast_flags |= DBB_shutdown;
-			break;
-		case isc_dpb_shut_single:
-			dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_single;
-			break;
-		case isc_dpb_shut_full:
-			dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_full;
-			break;
-		default:
-			fb_assert(false);
+			~(DBB_shut_attach | DBB_shut_tran | DBB_shut_force);
+
+		if (shut_mode)
+		{
+			dbb->dbb_ast_flags &=
+				~(DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
+
+			switch (shut_mode) {
+			case isc_dpb_shut_normal:
+				break;
+			case isc_dpb_shut_multi:
+				dbb->dbb_ast_flags |= DBB_shutdown;
+				break;
+			case isc_dpb_shut_single:
+				dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_single;
+				break;
+			case isc_dpb_shut_full:
+				dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_full;
+				break;
+			default:
+				fb_assert(false);
+			}
 		}
-					
+
 		dbb->dbb_shutdown_delay = 0; // not tested anywhere
 		/* CVC: We never set it, so how could we need to unset ATT_shutdown_modify?
 		for (Attachment* attachment = dbb->dbb_attachments; attachment;
@@ -234,7 +243,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 					   flag & (isc_dpb_shut_attachment |
 							   isc_dpb_shut_transaction)))
 	{
-		notify_shutdown(dbb, 0, 0);	/* Tell everyone we're giving up */
+		notify_shutdown(dbb, 0, -1);	/* Tell everyone we're giving up */
 		SHUT_blocking_ast(dbb);
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		++dbb->dbb_use_count;
