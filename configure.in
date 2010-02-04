@@ -24,9 +24,9 @@ dnl XE_CONF_DIR(param, help, variable, default)
 define([XE_CONF_DIR],[
 AC_ARG_WITH([$1], 
 	[AC_HELP_STRING([--with-$1], [$2])], 
-	[[$3]=$withval
+	[[$3]="$withval"
 	 AC_DEFINE_UNQUOTED([$3], "$[$3]", [$2])], 
-	[[$3]=[$4]
+	[[$3]="[`if test ""x$prefix"" = ""xNONE"" ; then echo ""$ac_default_prefix""; else echo ""$prefix""; fi`][$4]"
 	 AC_DEFINE_UNQUOTED([$3], [""], [$2])]
 )
 AC_SUBST([$3])
@@ -512,23 +512,23 @@ AC_SUBST(FB_IPC_NAME)
 
 dnl Use non-standard directory placement control
 dnl Sorry - GNU standard is not Ok for us
-XE_CONF_DIR(fbbin, [executables DIR (PREFIX/bin)], FB_BINDIR, $prefix/bin)
-XE_CONF_DIR(fbsbin, [system admin executables DIR (PREFIX/bin)], FB_SBINDIR, $prefix/bin)
-XE_CONF_DIR(fbconf, [config files DIR (PREFIX)], FB_CONFDIR, $prefix)
-XE_CONF_DIR(fblib, [object code libraries DIR (PREFIX/lib)], FB_LIBDIR, $prefix/lib)
-XE_CONF_DIR(fbinclude, [C/C++ header files DIR (PREFIX/include)], FB_INCDIR, $prefix/include)
-XE_CONF_DIR(fbdoc, [documentation root DIR (PREFIX/doc)], FB_DOCDIR, $prefix/doc)
-XE_CONF_DIR(fbudf, [UDF DIR (PREFIX/UDF)], FB_UDFDIR, $prefix/UDF)
-XE_CONF_DIR(fbsample, [examples DIR (PREFIX/examples)], FB_SAMPLEDIR, $prefix/examples)
-XE_CONF_DIR(fbsample-db, [examples database DIR (PREFIX/examples/empbuild)], FB_SAMPLEDBDIR, $prefix/examples/empbuild)
-XE_CONF_DIR(fbhelp, [QLI help DIR (PREFIX/help)], FB_HELPDIR, $prefix/help)
-XE_CONF_DIR(fbintl, [international DIR (PREFIX/intl)], FB_INTLDIR, $prefix/intl)
-XE_CONF_DIR(fbmisc, [misc DIR (PREFIX/misc)], FB_MISCDIR, $prefix/misc)
-XE_CONF_DIR(fbsecure-db, [security database DIR (PREFIX)], FB_SECDBDIR, $prefix)
-XE_CONF_DIR(fbmsg, [message files DIR (PREFIX)], FB_MSGDIR, $prefix)
-XE_CONF_DIR(fblog, [log files DIR (PREFIX)], FB_LOGDIR, $prefix)
-XE_CONF_DIR(fbglock, [guardian lock DIR (PREFIX)], FB_GUARDDIR, $prefix)
-XE_CONF_DIR(fbplugins, [plugins DIR (PREFIX)], FB_PLUGDIR, $prefix/plugins)
+XE_CONF_DIR(fbbin, [executables DIR (PREFIX/bin)], FB_BINDIR, /bin)
+XE_CONF_DIR(fbsbin, [system admin executables DIR (PREFIX/bin)], FB_SBINDIR, /bin)
+XE_CONF_DIR(fbconf, [config files DIR (PREFIX)], FB_CONFDIR)
+XE_CONF_DIR(fblib, [object code libraries DIR (PREFIX/lib)], FB_LIBDIR, /lib)
+XE_CONF_DIR(fbinclude, [C/C++ header files DIR (PREFIX/include)], FB_INCDIR, /include)
+XE_CONF_DIR(fbdoc, [documentation root DIR (PREFIX/doc)], FB_DOCDIR, /doc)
+XE_CONF_DIR(fbudf, [UDF DIR (PREFIX/UDF)], FB_UDFDIR, /UDF)
+XE_CONF_DIR(fbsample, [examples DIR (PREFIX/examples)], FB_SAMPLEDIR, /examples)
+XE_CONF_DIR(fbsample-db, [examples database DIR (PREFIX/examples/empbuild)], FB_SAMPLEDBDIR, /examples/empbuild)
+XE_CONF_DIR(fbhelp, [QLI help DIR (PREFIX/help)], FB_HELPDIR, /help)
+XE_CONF_DIR(fbintl, [international DIR (PREFIX/intl)], FB_INTLDIR, /intl)
+XE_CONF_DIR(fbmisc, [misc DIR (PREFIX/misc)], FB_MISCDIR, /misc)
+XE_CONF_DIR(fbsecure-db, [security database DIR (PREFIX)], FB_SECDBDIR)
+XE_CONF_DIR(fbmsg, [message files DIR (PREFIX)], FB_MSGDIR)
+XE_CONF_DIR(fblog, [log files DIR (PREFIX)], FB_LOGDIR)
+XE_CONF_DIR(fbglock, [guardian lock DIR (PREFIX)], FB_GUARDDIR)
+XE_CONF_DIR(fbplugins, [plugins DIR (PREFIX)], FB_PLUGDIR, /plugins)
 
 dnl gpre built-in language support (C/C++ are mandatory)
 GPRE_LANGUAGE_MODULES=""
