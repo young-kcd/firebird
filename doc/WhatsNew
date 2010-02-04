@@ -2,6 +2,17 @@
   * v2.0.6
   **************************
 
+    * Bugfix CORE-2846
+        Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
+        fails after the specified timeout (because of connections being still active)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2831
+        ISQL shouldn't display database and user names when extracting a script
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-2822
         Error "no current row for fetch operation" when subquery includes a non-trivial derived table
       Contributor(s):
@@ -124,6 +135,11 @@
         fbserver terminates abnormally when thread start failed
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2291
+        Bugcheck 284 (cannot restore singleton select data)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-2282
         *truncate UDFs are broken for numbers below -1
