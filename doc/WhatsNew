@@ -2,6 +2,17 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-2846
+        Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
+        fails after the specified timeout (because of connections being still active)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2831
+        ISQL shouldn't display database and user names when extracting a script
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-2822
         Error "no current row for fetch operation" when subquery includes a non-trivial derived table
       Contributor(s):
