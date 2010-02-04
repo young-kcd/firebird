@@ -213,8 +213,6 @@ namespace
 		return rc;
 	}
 #else // HAVE_POSIX_FADVISE
-#define POSIX_FADV_SEQUENTIAL 0
-#define POSIX_FADV_NOREUSE 0
 	int fb_fadvise(int, off_t, size_t, int)
 	{
 		return 0;
@@ -444,12 +442,15 @@ void NBackup::open_database_scan()
 		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << dbname.c_str() << Arg::OsError());
 	}
 
+#ifdef POSIX_FADV_SEQUENTIAL
 	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
 	{
 		status_exception::raise(Arg::Gds(isc_nbackup_err_fadvice) <<
 								"SEQUENTIAL" << dbname.c_str() << Arg::Unix(rc));
 	}
+#endif // POSIX_FADV_SEQUENTIAL
+#ifdef POSIX_FADV_NOREUSE
 	if (direct_io)
 	{
 		rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
@@ -459,6 +460,7 @@ void NBackup::open_database_scan()
 									"NOREUSE" << dbname.c_str() << Arg::Unix(rc));
 		}
 	}
+#endif // POSIX_FADV_NOREUSE
 
 #endif // WIN_NT
 }

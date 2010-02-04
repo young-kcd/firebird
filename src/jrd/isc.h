@@ -33,7 +33,7 @@
 
 // Firebird platform-specific synchronization data structures
 
-#if defined(DARWIN)
+#if defined(DARWIN) || defined(FREEBSD)
 #define USE_SYS5SEMAPHORE
 #endif
 
