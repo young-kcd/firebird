@@ -319,6 +319,16 @@
 /* 	Need to use full sfio not just stdio emulation to fix
 	file descriptor number limit. nmcc Dec2002
 */
+
+/* Update for Solaris 10. The problem still exists pre Solaris 10,
+however if you are using A version of Solaris 10 after 11/06 the 
+problem with file descriptors has been solved and this defineand
+the following function can now be commented out.
+If you are using Solaris 10 from 03/05 - 11/06 you need to patch
+your operating system.
+Earlier versions of Solaris still have the problem. pbeach Feb2010
+*/
+
 #ifndef SFIO
 #error "need to use SFIO"
 #endif
