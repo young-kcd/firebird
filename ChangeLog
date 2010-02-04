@@ -1,3 +1,35 @@
+2010-02-04 13:44  paulbeach
+
+	* firebird2/src/jrd/common.h (1.221.2.3):
+
+	Additional  re. Solaris 256 fd issue In 2.5+ this affects
+	superclassic
+
+2010-02-04 13:23  paulbeach
+
+	* firebird2/src/jrd/common.h (1.221.2.2):
+
+	Correct the define. the 256 fd issue is 32bit and SuperServer
+	specific
+
+2010-02-04 13:20  paulbeach
+
+	* firebird2/src/jrd/common.h (1.221.2.1):
+
+	Solaris and the 256 file descriptor issue
+
+2010-02-04 11:55  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.17.2.2):
+
+	Make changeMultiConnectMode executable.
+
+2010-02-03 15:04  alexpeshkoff
+
+	* firebird2/configure.in (1.368.2.8):
+
+	Applied last patch from CORE-2825, sligtly modified
+
 2010-02-03 12:56  alexpeshkoff
 
 	* firebird2/: builds/posix/prefix.freebsd (1.19.2.1),
