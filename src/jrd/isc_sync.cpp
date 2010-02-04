@@ -105,9 +105,7 @@ static int process_id;
 #include <fcntl.h>
 #endif
 
-#ifdef HAVE_MMAP
 #include <sys/mman.h>
-#endif
 
 #define FTOK_KEY	15
 #define PRIV		0666
@@ -174,12 +172,6 @@ static void		longjmp_sig_handler(int);
 #endif
 static void		longjmp_sig_handler(int);
 static GlobalPtr<Mutex> openFdInit;
-
-#ifndef HAVE_MMAP
-static SLONG	find_key(Arg::StatusVector& statusVector, const TEXT*);
-#endif
-
-#ifdef HAVE_MMAP
 
 namespace {
 
@@ -703,8 +695,6 @@ int Sys5Semaphore::getId()
 	return id;
 }
 #endif // USE_SYS5SEMAPHORE
-
-#endif // HAVE_MMAP
 
 #endif // UNIX
 
@@ -1690,27 +1680,6 @@ void ISC_remove_map_file(const TEXT* filename)
 {
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
-#if defined(UNIX) && (!defined(HAVE_MMAP))
-	key_t key = 0;
-
-	Firebird::AutoPtr<FILE, Firebird::FileClose> fp(fopen(expanded_filename, "r"));
-	if (fp)
-	{
-		Firebird::string s;
-		s.LoadFromFile(fp);
-		key = atoi(s.c_str());
-	}
-
-	if (key)
-	{
-		int shmid = shmget(key, 0, 0);
-		if (shmid > 0)
-		{
-			shmid_ds dummy;
-			shmctl(shmid, IPC_RMID, &dummy);
-		}
-	}
-#endif
 
 	// We can't do much (specially in dtors) when it fails
 	// therefore do not check for errors - at least it's just /tmp.
@@ -1718,8 +1687,6 @@ void ISC_remove_map_file(const TEXT* filename)
 }
 
 #ifdef UNIX
-
-#ifdef HAVE_MMAP
 
 UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 					const TEXT* filename,
@@ -1932,331 +1899,6 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 
 	return address;
 }
-
-#else // no HAVE_MMAP
-
-static bool setSharedMemoryAccessRights(Arg::StatusVector& statusVector, SLONG shmid)
-{
-	char secDb[MAXPATHLEN];
-	SecurityDatabase::getPath(secDb);
-	struct stat st;
-
-	if (stat(secDb, &st) == 0)
-	{
-		shmid_ds ds;
-		ds.shm_perm.uid = geteuid() == 0 ? st.st_uid : geteuid();
-		ds.shm_perm.gid = st.st_gid;
-		ds.shm_perm.mode = st.st_mode;
-		if (shmctl(shmid, IPC_SET, &ds) == -1)
-		{
-			error(statusVector, "shmctl", errno);
-			return false;
-		}
-	}
-
-	return true;
-}
-
-UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
-					const TEXT* filename,
-					FPTR_INIT_GLOBAL_REGION init_routine,
-					void* init_arg,
-					ULONG length,
-					sh_mem* shmem_data)
-{
-/**************************************
- *
- *	I S C _ m a p _ f i l e		( U N I X - s h m a t )
- *
- **************************************
- *
- * Functional description
- *	Try to map a given file.  If we are the first (i.e. only)
- *	process to map the file, call a given initialization
- *	routine (if given) or punt (leaving the file unmapped).
- *
- **************************************/
-
-	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, filename);
-
-	bool init_flag = false;
-
-	// Produce shared memory key for file
-
-	const SLONG key = find_key(statusVector, expanded_filename);
-	if (!key) {
-		return NULL;
-	}
-
-	// Write shared memory key into expanded_filename file
-
-	MutexLockGuard guard(openFdInit);
-
-	const int fd = os_utils::openCreateSharedFile(expanded_filename, O_TRUNC);
-	if (fd < 0)
-	{
-		error(statusVector, "open", errno);
-		return NULL;
-	}
-
-	FILE* const fp = fdopen(fd, "w");
-	if (!fp)
-	{
-		error(statusVector, "fdopen", errno);
-		return NULL;
-	}
-
-	fprintf(fp, "%"SLONGFORMAT, key);
-
-	// Get an exclusive lock on the file until the initialization process
-	// is complete.  That way potential race conditions are avoided.
-
-#ifndef HAVE_FLOCK
-	if (lockf(fd, F_LOCK, 0))
-	{
-		error(statusVector, "lockf", errno);
-#else
-	if (flock(fd, LOCK_EX))
-	{
-		error(statusVector, "flock", errno);
-#endif
-		fclose(fp);
-		return NULL;
-	}
-
-	// Create the shared memory region if it doesn't already exist.
-
-	struct shmid_ds buf;
-	SLONG shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV);
-	if (shmid == -1) {
-		shmid = shmget(key, length, 0);
-	}
-	else
-	{
-		if (!setSharedMemoryAccessRights(statusVector, shmid))
-		{
-			fclose(fp);
-			return NULL;
-		}
-	}
-
-	if (shmid == -1)
-	{
-#ifdef SUPERSERVER
-		if (errno == EINVAL)
-		{
-			/* There are two cases when shmget() returns EINVAL error:
-
-			   - "length" is less than the system-imposed minimum or
-			   greater than the system-imposed maximum.
-
-			   - A shared memory identifier exists for "key" but the
-			   size of the segment associated with it is less
-			   than "length" and "length" is not equal to zero.
-
-			   Let's find out what the problem is by getting the
-			   system-imposed limits.
-
-			   If we are here then the shared memory segment already
-			   exists and the "length" we specified in shmget() is
-			   bigger than the size of the existing segment.
-
-			   Because the segment has to exist at this point the
-			   following shmget() does not have IPC_CREAT flag set.
-
-			   We need to get shmid to delete the segment. Because we
-			   do not know the size of the existing segment the easiest
-			   way to get shmid is to attach to the segment with zero
-			   length
-			 */
-			if ((shmid = shmget(key, 0, 0)) == -1)
-			{
-				string msg;
-				msg.printf("shmget(0x%x, 0, 0)", key);
-				error(statusVector, msg.c_str(), errno);
-				fclose(fp);
-				return NULL;
-			}
-
-			if (shmctl(shmid, IPC_RMID, &buf) == -1)
-			{
-				error(statusVector, "shmctl/IPC_RMID", errno);
-				fclose(fp);
-				return NULL;
-			}
-
-			// We have just deleted shared memory segment and current
-			// code fragment is an atomic operation (we are holding an
-			// exclusive lock on the "isc_lock1.<machine>" file), so
-			// we use IPC_EXCL flag to get an error if by some miracle
-			// the sagment with the same key is already exists
-			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) == -1)
-			{
-				string msg;
-				msg.printf("shmget(0x%x, %d, IPC_CREAT | IPC_EXCL | PRIV)", key, length);
-				error(statusVector, msg.c_str(), errno);
-				fclose(fp);
-				return NULL;
-			}
-			if (!setSharedMemoryAccessRights(statusVector, shmid))
-			{
-				fclose(fp);
-				return NULL;
-			}
-		}
-		else					// if errno != EINVAL)
-#endif // SUPERSERVER
-		{
-			string msg;
-			msg.printf("shmget(0x%x, %d, 0)", key, length);
-			error(statusVector, msg.c_str(), errno);
-			fclose(fp);
-			return NULL;
-		}
-	}
-
-#ifdef SUPERSERVER
-	/* If we are here there are two possibilities:
-
-	1. we mapped the shared memory segment of the "length" size;
-	2. we mapped the segment of the size less than "length" (but
-	  not zero length and bigger than system-imposed minimum);
-
-	We want shared memory segment exactly of the "length" size.
-	Let's find out what the size of the segment is and if it is
-	bigger than length, we remove it and create new one with the
-	size "length".
-	Also, if "length" is zero (that means we have already mapped
-	the existing segment with the zero size) remap the segment
-	with the existing size
-	*/
-	if (shmctl(shmid, IPC_STAT, &buf) == -1)
-	{
-		error(statusVector, "shmctl/IPC_STAT", errno);
-		fclose(fp);
-		return NULL;
-	}
-
-	fb_assert(length <= buf.shm_segsz);
-	if (length < buf.shm_segsz)
-	{
-		if (length)
-		{
-			if (shmctl(shmid, IPC_RMID, &buf) == -1)
-			{
-				error(statusVector, "shmctl/IPC_RMID", errno);
-				fclose(fp);
-				return NULL;
-			}
-
-			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) == -1)
-			{
-				string msg;
-				msg.printf("shmget(0x%x, %d, IPC_CREAT | IPC_EXCL | PRIV)", key, length);
-				error(statusVector, msg.c_str(), errno);
-				fclose(fp);
-				return NULL;
-			}
-			if (!setSharedMemoryAccessRights(statusVector, shmid))
-			{
-				fclose(fp);
-				return NULL;
-			}
-		}
-		else
-		{
-			length = buf.shm_segsz;
-			if ((shmid = shmget(key, length, 0)) == -1)
-			{
-				string msg;
-				msg.printf("shmget(0x%x, %d, 0)", key, length);
-				error(statusVector, msg.c_str(), errno);
-				fclose(fp);
-				return NULL;
-			}
-		}
-	}
-#else // !SUPERSERVER
-
-	if (length == 0)
-	{
-		// Use the existing length.  This should not happen for the
-		// very first attachment to the shared memory.
-
-		if (shmctl(shmid, IPC_STAT, &buf) == -1)
-		{
-			error(statusVector, "shmctl/IPC_STAT", errno);
-			fclose(fp);
-			return NULL;
-		}
-		length = buf.shm_segsz;
-
-		// Now remap with the new-found length
-
-		if ((shmid = shmget(key, length, 0)) == -1)
-		{
-			string msg;
-			msg.printf("shmget(0x%x, %d, 0)", key, length);
-			error(statusVector, msg.c_str(), errno);
-			fclose(fp);
-			return NULL;
-		}
-	}
-#endif // SUPERSERVER
-
-
-	UCHAR* const address = (UCHAR*) shmat(shmid, NULL, 0);
-	if ((IPTR) address == (IPTR) -1)
-	{
-		error(statusVector, "shmat", errno);
-		fclose(fp);
-		return NULL;
-	}
-
-	if (shmctl(shmid, IPC_STAT, &buf) == -1)
-	{
-		error(statusVector, "shmctl/IPC_STAT", errno);
-		shmdt(address);
-		fclose(fp);
-		return NULL;
-	}
-
-	// Get semaphore for mutex
-
-
-	// If we're the only one with shared memory mapped, see if
-	// we can initialize it.  If we can't, return failure.
-
-	if (buf.shm_nattch == 1)
-	{
-		if (!init_routine)
-		{
-			shmdt(address);
-			fclose(fp);
-			statusVector << Arg::Gds(isc_unavailable);
-			return NULL;
-		}
-		buf.shm_perm.mode = 0660;
-		shmctl(shmid, IPC_SET, &buf);
-		init_flag = true;
-	}
-
-	shmem_data->sh_mem_address = address;
-	shmem_data->sh_mem_length_mapped = length;
-	shmem_data->sh_mem_handle = shmid;
-
-	if (init_routine)
-		(*init_routine) (init_arg, shmem_data, init_flag);
-
-	// When the mapped file is closed here, the lock we applied for
-	// synchronization will be released.
-
-	fclose(fp);
-
-	return address;
-}
-#endif // HAVE_MMAP
 
 #endif // UNIX
 
@@ -2649,7 +2291,7 @@ void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, U
 	*object_pointer = NULL;
 	return; // true;
 }
-#endif
+#endif // HAVE_MMAP
 
 
 #ifdef WIN_NT
@@ -3498,8 +3140,8 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 	return address;
 }
-#endif
-#endif
+#endif // HAVE_MMAP
+#endif // UNIX
 
 
 #ifdef WIN_NT
@@ -3677,7 +3319,6 @@ void ISC_sync_signals_reset()
 #endif // UNIX
 
 #ifdef UNIX
-#ifdef HAVE_MMAP
 void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 {
 /**************************************
@@ -3714,31 +3355,6 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 	close(shmem_data->sh_mem_handle);
 }
 #endif
-#endif
-
-
-#ifdef UNIX
-#ifndef HAVE_MMAP
-void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
-{
-/**************************************
- *
- *	I S C _ u n m a p _ f i l e		( U N I X - s h m a t )
- *
- **************************************
- *
- * Functional description
- *	Detach from the shared memory
- *
- **************************************/
-	//struct shmid_ds buf;
-	//union semun arg;
-
-	shmdt(shmem_data->sh_mem_address);
-}
-#endif
-#endif
-
 
 #ifdef WIN_NT
 void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
@@ -3877,7 +3493,7 @@ static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int s
 	}
 }
 
-#endif
+#endif // USE_SYS5SEMAPHORE
 
 void longjmp_sig_handler(int sig_num)
 {
@@ -3895,42 +3511,6 @@ void longjmp_sig_handler(int sig_num)
 	siglongjmp(*TLS_GET(sigjmp_ptr), sig_num);
 }
 
-#ifndef HAVE_MMAP
-static SLONG find_key(Arg::StatusVector& statusVector, const TEXT* filename)
-{
-/**************************************
- *
- *	f i n d _ k e y
- *
- **************************************
- *
- * Functional description
- *	Find the semaphore/shared memory key for a file.
- *
- **************************************/
-
-	// Produce shared memory key for file
-
-	key_t key = ftok(filename, FTOK_KEY);
-	if (key == -1)
-	{
-		int fd = os_utils::openCreateSharedFile(filename, O_TRUNC);
-		if (fd == -1)
-		{
-			error(statusVector, "open", errno);
-			return 0L;
-		}
-		close(fd);
-		if ((key = ftok(filename, FTOK_KEY)) == -1)
-		{
-			error(statusVector, "ftok", errno);
-			return 0L;
-		}
-	}
-
-	return key;
-}
-#endif // HAVE_MMAP
 #endif // UNIX
 
 
