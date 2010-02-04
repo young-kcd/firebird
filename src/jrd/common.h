@@ -329,7 +329,7 @@ your operating system.
 Earlier versions of Solaris still have the problem. pbeach Feb2010
 */
 
-#ifndef SFIO
+#if (!defined(__arch64__)) && (!defined(SFIO)) && defined(SUPERSERVER)
 #error "need to use SFIO"
 #endif
 
