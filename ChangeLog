@@ -1,3 +1,73 @@
+2010-02-05 11:58  dimitr
+
+	* firebird2/src/jrd/RecordNumber.h (1.17):
+
+	EMPTY_NUMBER doesn't have any special semantics, it's just
+	something the default constructor assigns to the object value.
+	Also, it's never accessed from the outer world. Thus wiped out.
+
+2010-02-05 11:47  alexpeshkoff
+
+	* firebird2/src/jrd/: RecordNumber.h (1.16), rpb_chain.cpp (1.15):
+
+	Fixed CORE-195: Bugcheck 291
+
+2010-02-05 09:06  dimitr
+
+	* firebird2/src/jrd/Database.h (1.50):
+
+	Cleanup.
+
+2010-02-05 08:01  dimitr
+
+	* firebird2/src/jrd/shut.cpp (1.74):
+
+	Fixed CORE-2846: Cannot connect to the database if GFIX -shut
+	<mode> -attach <timeout> fails after the specified timeout (because
+	of connections being still active).
+
+2010-02-05 07:22  robocop
+
+	* firebird2/src/jrd/common.h (1.229):
+
+	Totally misc.
+
+2010-02-04 17:04  alexpeshkoff
+
+	* firebird2/: configure.in (1.382), builds/posix/prefix.freebsd
+	(1.22), builds/posix/prefix.freebsd_amd64 (1.2), src/jrd/isc.h
+	(1.45), src/utilities/nbackup.cpp (1.113):
+
+	Frontported fix for freebsd and related OSs, including CORE-2825
+
+2010-02-04 16:54  alexpeshkoff
+
+	* firebird2/configure.in (1.381):
+
+	Frontported fix for building w/o --prefix switch
+
+2010-02-04 16:36  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.303), interface.cpp (1.237),
+	remote.cpp (1.95), remote.h (1.104), xnet.cpp (1.149),
+	os/win32/wnet.cpp (1.91):
+
+	Frontported fix for CORE-2836: fb_cancel_operation() incorrectly
+	modifies rdb_status_vector
+
+2010-02-04 16:28  alexpeshkoff
+
+	* firebird2/src/jrd/cch.cpp (1.256):
+
+	Frontported fix for CORE-2842: Timeout with latchs in CCH does not
+	work
+
+2010-02-04 16:17  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.231):
+
+	Frontported cleanup
+
 2010-02-04 13:49  paulbeach
 
 	* firebird2/src/jrd/common.h (1.228):
