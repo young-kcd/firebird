@@ -128,23 +128,21 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 	class Sync : public Firebird::RefCounted
 	{
 	public:
-		Sync() : threadId(0), isAst(false)
+		Sync() : threadId(0)
 		{}
 
-		void lock(bool ast = false)
+		void lock()
 		{
 			ThreadPriorityScheduler::enter();
 			++waiters;
 			syncMutex.enter();
 			--waiters;
 			threadId = getThreadId();
-			isAst = ast;
 		}
 
 		void unlock()
 		{
 			ThreadPriorityScheduler::exit();
-			isAst = false;
 			threadId = 0;
 			syncMutex.leave();
 		}
@@ -170,7 +168,6 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		Firebird::Mutex syncMutex;
 		Firebird::AtomicCounter waiters;
 		FB_THREAD_ID threadId;
-		bool isAst;
 	};
 
 public:
@@ -187,7 +184,7 @@ public:
 			}
 
 			sync.addRef();
-			sync.lock(ast);
+			sync.lock();
 
 			if (!dbb->checkHandle())
 			{
