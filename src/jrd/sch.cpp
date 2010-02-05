@@ -378,16 +378,6 @@ THREAD SCH_current_thread(void)
 }
 
 
-static FB_THREAD_ID schStopped = 0;
-
-void SCH_stop(void)
-{
-	sch_mutex_lock(thread_mutex);
-	schStopped = ThreadData::getId();
-	sch_mutex_unlock(thread_mutex);
-}
-
-
 void SCH_enter(void)
 {
 /**************************************
@@ -421,27 +411,7 @@ void SCH_enter(void)
 
 /* Get mutex on scheduler data structures to prevent tragic misunderstandings */
 
-#ifdef MULTI_THREAD
-	if (schStopped)
-	{
-mStop:
-		if (ThreadData::getId() != schStopped)
-		{
-			pthread_exit(0);
-		}
-		return;
-	}
-#endif
-
 	sch_mutex_lock(thread_mutex);
-
-#ifdef MULTI_THREAD
-	if (schStopped)
-	{
-		sch_mutex_unlock(thread_mutex);
-		goto mStop;
-	}
-#endif
 
 	THREAD thread = alloc_thread();
 	thread->thread_id = ThreadData::getId();
@@ -496,24 +466,7 @@ void SCH_exit(void)
 	active_thread = NULL;
 	free_threads->thread_next = NULL;
 #else
-
-	if (schStopped)
-	{
-mStop:
-		if (ThreadData::getId() != schStopped)
-		{
-			pthread_exit(0);
-		}
-		return;
-	}
-
 	sch_mutex_lock(thread_mutex);
-
-	if (schStopped)
-	{
-		sch_mutex_unlock(thread_mutex);
-		goto mStop;
-	}
 
 	ast_enable();				/* Reenable AST delivery */
 

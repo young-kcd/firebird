@@ -6658,9 +6658,6 @@ static ISC_STATUS shutdown_all()
 	// that no threads will get in and try to access the data
 	// structures we released here
 
-	void SCH_stop(void);
-	SCH_stop();
-
 	thread_db thd_context;
 	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
 
