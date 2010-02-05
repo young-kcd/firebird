@@ -1,3 +1,30 @@
+2010-02-05 13:25  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.359.2.15), sch.cpp (1.42.4.2):
+
+	Restored accidentailly committed to CORE-195 experimental changes
+
+2010-02-05 13:14  alexpeshkoff
+
+	* firebird2/src/jrd/: RecordNumber.h (1.10.4.1), dpm.epp
+	(1.74.2.4), dpm_proto.h (1.19.8.1), idx.cpp (1.125.2.2), jrd.cpp
+	(1.359.2.14), rpb_chain.cpp (1.12.8.1), rse.cpp (1.141.2.10),
+	sch.cpp (1.42.4.1), vio.cpp (1.199.2.7), vio_proto.h (1.28.8.1):
+
+	Backported fix for CORE-195: Bugcheck 291
+
+2010-02-04 16:46  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.9.8.29):
+
+	Update.
+
+2010-02-04 16:39  dimitr
+
+	* firebird2/doc/WhatsNew (1.148.2.36):
+
+	Update.
+
 2010-02-04 13:24  paulbeach
 
 	* firebird2/src/jrd/common.h (1.158.2.19):
