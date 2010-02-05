@@ -333,7 +333,7 @@
 
 /* Update for Solaris 10. The problem still exists pre Solaris 10,
 however if you are using A version of Solaris 10 after 11/06 the 
-problem with file descriptors has been solved and this defineand
+problem with file descriptors has been solved and this define and
 the following function can now be commented out.
 If you are using Solaris 10 from 03/05 - 11/06 you need to patch
 your operating system.
