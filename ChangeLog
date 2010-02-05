@@ -1,3 +1,25 @@
+2010-02-05 13:44  alexpeshkoff
+
+	* firebird2/src/jrd/: RecordNumber.h (1.5.4.5), dpm.epp (1.63.4.2),
+	dpm_proto.h (1.18.4.1), idx.cpp (1.103.4.6), rpb_chain.cpp
+	(1.11.4.1), rse.cpp (1.104.2.15), vio.cpp (1.151.2.16), vio_proto.h
+	(1.27.4.1):
+
+	Backported fix for CORE-195: Bugcheck 291
+
+2010-02-04 16:34  dimitr
+
+	* firebird2/: doc/WhatsNew (1.95.2.47), src/jrd/isc_version.h
+	(1.8.4.24):
+
+	Update.
+
+2010-02-04 15:13  alexpeshkoff
+
+	* firebird2/src/utilities/nbackup.cpp (1.48.4.6):
+
+	Fixed build on old linux versions
+
 2010-02-04 11:38  dimitr
 
 	* firebird2/src/jrd/shut.cpp (1.38.4.6):
