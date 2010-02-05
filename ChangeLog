@@ -1,3 +1,10 @@
+2010-02-05 12:04  alexpeshkoff
+
+	* firebird2/src/jrd/: RecordNumber.h (1.15.2.1), rpb_chain.cpp
+	(1.14.2.1):
+
+	Backported fix for CORE-195: Bugcheck 291
+
 2010-02-04 13:44  paulbeach
 
 	* firebird2/src/jrd/common.h (1.221.2.3):
