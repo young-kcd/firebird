@@ -139,8 +139,6 @@ public:
 
 	bool isBof() const { return value == BOF_NUMBER; }
 
-	bool isEmpty() const { return value == EMPTY_NUMBER; }
-
 	inline bool checkNumber(
 		USHORT records_per_page, // ~400 (8k page)
 		USHORT data_pages_per_pointer_page  // ~2000 (8k page)

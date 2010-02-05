@@ -349,7 +349,11 @@ void IDX_create_index(
    find them, too. */
 	bool cancel = false;
 	temporary_key key;
-	while (!cancel && DPM_next(tdbb, &primary, LCK_read, false, false)) {
+	while (!cancel && DPM_next(tdbb, &primary, LCK_read, 
+#ifdef SCROLLABLE_CURSORS
+							   false, 
+#endif
+							   false)) {
 		if (transaction && !VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
 		if (primary.rpb_flags & rpb_deleted)

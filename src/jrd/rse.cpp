@@ -1862,8 +1862,6 @@ static bool get_record(thread_db*	tdbb,
 							request->req_pool,
 #ifdef SCROLLABLE_CURSORS
 							(mode == RSE_get_backward),
-#else
-							false,
 #endif
 							false))
 		{
