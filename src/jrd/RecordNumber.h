@@ -30,7 +30,6 @@
 #ifndef JRD_RECORDNUMBER_H
 #define JRD_RECORDNUMBER_H
 
-const SINT64 EMPTY_NUMBER = QUADCONST(0);
 const SINT64 BOF_NUMBER = QUADCONST(-1);
 
 // This class is to be used everywhere you may need to handle record numbers. We
@@ -95,7 +94,7 @@ public:
 	};
 
 	// Default constructor.
-	inline RecordNumber() : value(EMPTY_NUMBER), valid(false) {}
+	inline RecordNumber() : value(0), valid(false) {}
 
 	// Copy constructor
 	inline RecordNumber(const RecordNumber& from) : value(from.value), valid(from.valid) {}
