@@ -87,29 +87,35 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 	const SSHORT flag = data.data_items.flag;
 	const SSHORT delay = data.data_items.delay;
 
+	const int shut_mode = flag & isc_dpb_shut_mode_mask;
+
 	// Database shutdown has been cancelled.
 
 	// Delay of -1 means we're going online
 	if (delay == -1)
 	{
-		dbb->dbb_ast_flags &=
-			~(DBB_shut_attach | DBB_shut_tran | DBB_shut_force |
-			  DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
-		switch (flag & isc_dpb_shut_mode_mask)
+		dbb->dbb_ast_flags &= ~(DBB_shut_attach | DBB_shut_tran | DBB_shut_force);
+
+		if (shut_mode)
 		{
-		case isc_dpb_shut_normal:
-			break;
-		case isc_dpb_shut_multi:
-			dbb->dbb_ast_flags |= DBB_shutdown;
-			break;
-		case isc_dpb_shut_single:
-			dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_single;
-			break;
-		case isc_dpb_shut_full:
-			dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_full;
-			break;
-		default:
-			fb_assert(false);
+			dbb->dbb_ast_flags &= ~(DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
+
+			switch (shut_mode)
+			{
+			case isc_dpb_shut_normal:
+				break;
+			case isc_dpb_shut_multi:
+				dbb->dbb_ast_flags |= DBB_shutdown;
+				break;
+			case isc_dpb_shut_single:
+				dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_single;
+				break;
+			case isc_dpb_shut_full:
+				dbb->dbb_ast_flags |= DBB_shutdown | DBB_shutdown_full;
+				break;
+			default:
+				fb_assert(false);
+			}
 		}
 
 		return false;
