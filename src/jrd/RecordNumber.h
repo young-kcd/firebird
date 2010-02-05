@@ -139,8 +139,6 @@ public:
 
 	bool isBof() const { return value == BOF_NUMBER; }
 
-	bool isEmpty() const { return value == EMPTY_NUMBER; }
-
 	bool isValid() const { return valid; }
 
 	inline bool checkNumber(

@@ -1502,7 +1502,11 @@ punt:
 
 bool DPM_next(thread_db* tdbb,
 				 record_param* rpb,
-				 USHORT lock_type, bool backwards, bool onepage)
+				 USHORT lock_type, 
+#ifdef SCROLLABLE_CURSORS
+				 bool backwards, 
+#endif
+				 bool onepage)
 {
 /**************************************
  *
@@ -1539,6 +1543,7 @@ bool DPM_next(thread_db* tdbb,
 
 /* Find starting point */
 
+#ifdef SCROLLABLE_CURSORS
 	if (backwards) {
 		if (rpb->rpb_number.isEmpty())
 			return false;
@@ -1565,7 +1570,9 @@ bool DPM_next(thread_db* tdbb,
 				((SINT64) pp_sequence) * dbb->dbb_dp_per_pp * dbb->dbb_max_records - 1);
 		}
 	}
-	else {
+	else 
+#endif
+	{
 		rpb->rpb_number.increment();
 	}
 
@@ -1589,9 +1596,11 @@ bool DPM_next(thread_db* tdbb,
 				BUGCHECK(249);	/* msg 249 pointer page vanished from DPM_next */
 		}
 
+#ifdef SCROLLABLE_CURSORS
 		if (backwards && slot >= ppage->ppg_count) {
 			slot = ppage->ppg_count - 1;
 		}
+#endif
 		for (; slot >= 0 && slot < ppage->ppg_count;) {
 			const SLONG page_number = ppage->ppg_page[slot];
 			if (page_number) {
@@ -1599,7 +1608,12 @@ bool DPM_next(thread_db* tdbb,
 				/* Perform sequential prefetch of relation's data pages.
 				   This may need more work for scrollable cursors. */
 
-				if (!onepage && !line && !backwards) {
+#ifdef SCROLLABLE_CURSORS
+				if (!onepage && !line && !backwards) 
+#else
+				if (!onepage && !line) 
+#endif
+				{
 					if (!(slot % dbb->dbb_prefetch_sequence)) {
                         SLONG pages[PREFETCH_MAX_PAGES + 1];
 						USHORT slot2 = slot;
@@ -1623,12 +1637,17 @@ bool DPM_next(thread_db* tdbb,
 #endif
 				const data_page* dpage = (data_page*) CCH_HANDOFF(tdbb, window,
 									page_number, lock_type, pag_data);
+#ifdef SCROLLABLE_CURSORS
 				if (backwards && line >= dpage->dpg_count) {
 					line = dpage->dpg_count - 1;
 				}
+#endif
 
 				for (; line >= 0 && line < dpage->dpg_count;
-					 backwards ? line-- : line++)
+#ifdef SCROLLABLE_CURSORS
+					 backwards ? line-- : 
+#endif
+					 line++)
 				{
 					if (get_header(window, line, rpb)
 						&& !(rpb->
@@ -1672,23 +1691,31 @@ bool DPM_next(thread_db* tdbb,
 				return false;
 			}
 
-			if (backwards) {
+#ifdef SCROLLABLE_CURSORS
+			if (backwards) 
+			{
 				slot--;
 				line = dbb->dbb_max_records - 1;
 			}
-			else {
+			else 
+#endif
+			{
 				slot++;
 				line = 0;
 			}
 		}
 
 		const UCHAR flags = ppage->ppg_header.pag_flags;
-		if (backwards) {
+#ifdef SCROLLABLE_CURSORS
+		if (backwards) 
+		{
 			pp_sequence--;
 			slot = ppage->ppg_count - 1;
 			line = dbb->dbb_max_records - 1;
 		}
-		else {
+		else 
+#endif
+		{
 			pp_sequence++;
 			slot = 0;
 			line = 0;
