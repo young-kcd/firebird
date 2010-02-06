@@ -1,3 +1,16 @@
+2010-02-06 05:26  robocop
+
+	* firebird2/src/remote/remote.h (1.106):
+
+	Totally misc.
+
+2010-02-06 02:32  asfernandes
+
+	* firebird2/src/: jrd/common.h (1.230), remote/remote.h (1.105),
+	utilities/nbackup.cpp (1.114):
+
+	Misc
+
 2010-02-05 11:58  dimitr
 
 	* firebird2/src/jrd/RecordNumber.h (1.17):
