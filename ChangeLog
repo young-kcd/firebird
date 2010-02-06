@@ -1,3 +1,9 @@
+2010-02-06 05:13  robocop
+
+	* firebird2/src/jrd/common.h (1.158.2.20):
+
+	Totally misc.
+
 2010-02-05 13:25  alexpeshkoff
 
 	* firebird2/src/jrd/: jrd.cpp (1.359.2.15), sch.cpp (1.42.4.2):
