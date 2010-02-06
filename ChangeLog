@@ -1,3 +1,9 @@
+2010-02-06 05:13  robocop
+
+	* firebird2/src/jrd/common.h (1.221.2.4):
+
+	Totally misc.
+
 2010-02-05 12:04  alexpeshkoff
 
 	* firebird2/src/jrd/: RecordNumber.h (1.15.2.1), rpb_chain.cpp
