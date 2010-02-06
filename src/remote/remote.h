@@ -123,7 +123,7 @@ public:
 
 	static ISC_STATUS badHandle() { return isc_bad_db_handle; }
 
-	// This 2 functions assume rdb_async_lock to be locked
+	// These 2 functions assume rdb_async_lock to be locked
 	void set_async_vector(ISC_STATUS* userStatus) throw();
 	void reset_async_vector() throw();
 
