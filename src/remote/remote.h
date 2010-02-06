@@ -97,10 +97,12 @@ struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 	struct Rvnt*	rdb_events;				// known events
 	struct Rsr*		rdb_sql_requests;		// SQL requests
 	PACKET			rdb_packet;				// Communication structure
+
 private:
-	ISC_STATUS*		rdb_status_vector;		// Normally used status vector
+	ISC_STATUS*		rdb_status_vector;			// Normally used status vector
 	ISC_STATUS*		rdb_async_status_vector;	// status vector for async thread
 	FB_THREAD_ID	rdb_async_thread_id;		// Id of async thread (when active)
+
 public:
 	Firebird::Mutex	rdb_async_lock;			// Sync to avoid 2 async calls at once
 
@@ -121,19 +123,22 @@ public:
 
 	static ISC_STATUS badHandle() { return isc_bad_db_handle; }
 
-	// This 2 functions assume rdb_async_lock to be locked 
+	// This 2 functions assume rdb_async_lock to be locked
 	void set_async_vector(ISC_STATUS* userStatus) throw();
 	void reset_async_vector() throw();
 
 	ISC_STATUS* get_status_vector() throw();
+
 	void set_status_vector(ISC_STATUS* userStatus) throw()
 	{
 		rdb_status_vector = userStatus;
 	}
+
 	void status_assert(ISC_STATUS* userStatus)
 	{
 		fb_assert(rdb_status_vector == userStatus);
 	}
+
 	void save_status_vector(ISC_STATUS*& save) throw()
 	{
 		save = rdb_status_vector;

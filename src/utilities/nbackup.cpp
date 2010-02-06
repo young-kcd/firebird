@@ -450,6 +450,7 @@ void NBackup::open_database_scan()
 								"SEQUENTIAL" << dbname.c_str() << Arg::Unix(rc));
 	}
 #endif // POSIX_FADV_SEQUENTIAL
+
 #ifdef POSIX_FADV_NOREUSE
 	if (direct_io)
 	{
