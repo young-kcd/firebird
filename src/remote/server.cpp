@@ -216,40 +216,35 @@ public:
 GlobalPtr<FailedLogins> usernameFailedLogins;
 GlobalPtr<FailedLogins> remoteFailedLogins;
 
-class InitList
+class InitList : public HalfStaticArray<Auth::ServerPlugin*, 8>
 {
 public:
-	typedef Firebird::HalfStaticArray<Auth::ServerPlugin*, 8> List;
-
-	static List* init()
+	InitList(MemoryPool& p)
+		: HalfStaticArray<Auth::ServerPlugin*, 8>(p)
 	{
 		PathName authMethod(Config::getAuthMethod());
-
-		List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
 
 		// this code will be replaced with known plugins scan
 		if (authMethod == AmNative || authMethod == AmMixed)
 		{
-			list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseServer>());
+			push(Auth::interfaceAlloc<Auth::SecurityDatabaseServer>());
 		}
 #ifdef TRUSTED_AUTH
 		if (authMethod == AmTrusted || authMethod == AmMixed)
 		{
-			list->push(Auth::interfaceAlloc<Auth::WinSspiServer>());
+			push(Auth::interfaceAlloc<Auth::WinSspiServer>());
 		}
 #endif
 #ifdef AUTH_DEBUG
-		list->push(Auth::interfaceAlloc<Auth::DebugServer>());
+		push(Auth::interfaceAlloc<Auth::DebugServer>());
 #endif
 
 		// must be last
-		list->push(NULL);
-
-		return list;
+		push(NULL);
 	}
 };
 
-Firebird::InitInstance<InitList::List, InitList> pluginList;
+Firebird::InitInstance<InitList> pluginList;
 
 // delayed authentication block for auth callback
 class ServerAuth : public GlobalStorage, public ServerAuthBase

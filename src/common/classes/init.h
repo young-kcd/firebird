@@ -176,39 +176,41 @@ public:
 	}
 };
 
-// InitInstance - initialize pointer to class once and only once,
-// DefaultInit uses default memory pool for it.
+// InitInstance - allocate instance of class T on first request.
 
 template <typename T>
-class DefaultInit
-{
-public:
-	static T* init()
-	{
-		return FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
-	}
-};
-
-template <typename T,
-	typename I = DefaultInit<T> >
-class InitInstance
+class InitInstance : private InstanceControl
 {
 private:
 	T* instance;
 	volatile bool flag;
+
 public:
 	InitInstance()
-		: flag(false) { }
+		: instance(0), flag(false) 
+	{ }
+
 	T& operator()()
 	{
 		if (!flag) {
 			MutexLockGuard guard(*StaticMutex::mutex);
 			if (!flag) {
-				instance = I::init();
+				instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 				flag = true;
+				// Put ourself into linked list for cleanup.
+				// Allocated pointer is saved by InstanceList::constructor.
+				new InstanceControl::InstanceLink<InitInstance>(this);
 			}
 		}
 		return *instance;
+	}
+
+	void dtor()
+	{
+		MutexLockGuard guard(*StaticMutex::mutex);
+		flag = false;
+		delete instance;
+		instance = 0;
 	}
 };
 

@@ -5560,33 +5560,29 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 
 namespace
 {
-	class InitList
+	class InitList : public HalfStaticArray<Auth::ClientPlugin*, 8>
 	{
 	public:
-		typedef Firebird::HalfStaticArray<Auth::ClientPlugin*, 8> List;
-
-		static List* init()
+		InitList(MemoryPool& p)
+			: HalfStaticArray<Auth::ClientPlugin*, 8>(p)
 		{
-			List* list = FB_NEW(*getDefaultMemoryPool()) List(*getDefaultMemoryPool());
-
 			// this code will be replaced with known plugins scan
-			list->push(Auth::interfaceAlloc<Auth::SecurityDatabaseClient>());
+			push(Auth::interfaceAlloc<Auth::SecurityDatabaseClient>());
 #ifdef TRUSTED_AUTH
-			list->push(Auth::interfaceAlloc<Auth::WinSspiClient>());
+			push(Auth::interfaceAlloc<Auth::WinSspiClient>());
 #endif
 #ifdef AUTH_DEBUG
-			list->push(Auth::interfaceAlloc<Auth::DebugClient>());
+			push(Auth::interfaceAlloc<Auth::DebugClient>());
 #endif
 
 			// must be last
-			list->push(NULL);
-
-			return list;
+			push(NULL);
 		}
 	};
 
-	Firebird::InitInstance<InitList::List, InitList> listArray;
+	Firebird::InitInstance<InitList> listArray;
 }	// namespace
+
 
 
 static bool init(ISC_STATUS* user_status,

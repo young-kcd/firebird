@@ -124,18 +124,19 @@ class UnicodeUtil::ICUModules
 	typedef GenericMap<Pair<Left<string, ICU*> > > ModulesMap;
 
 public:
-	explicit ICUModules(MemoryPool&)
+	explicit ICUModules(MemoryPool& p)
+		: modules(p)
 	{
 	}
 
 	~ICUModules()
 	{
-		ModulesMap::Accessor modulesAccessor(&modules());
+		ModulesMap::Accessor modulesAccessor(&modules);
 		for (bool found = modulesAccessor.getFirst(); found; found = modulesAccessor.getNext())
 			delete modulesAccessor.current()->second;
 	}
 
-	InitInstance<ModulesMap> modules;
+	ModulesMap modules;
 	RWLock lock;
 };
 
@@ -790,7 +791,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		ReadLockGuard readGuard(icuModules->lock);
 
 		ICU* icu;
-		if (icuModules->modules().get(version, icu))
+		if (icuModules->modules.get(version, icu))
 		{
 			return icu;
 		}
@@ -924,13 +925,13 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		// In this small amount of time, one may already loaded the
 		// same version, so within the write lock we verify again.
 		ICU* icu2;
-		if (icuModules->modules().get(version, icu2))
+		if (icuModules->modules.get(version, icu2))
 		{
 			delete icu;
 			return icu2;
 		}
 
-		icuModules->modules().put(version, icu);
+		icuModules->modules.put(version, icu);
 		return icu;
 	}
 
