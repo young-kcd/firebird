@@ -1,3 +1,9 @@
+2010-02-07 11:29  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.64.2.4):
+
+	Fixed copy of cstring in status vector
+
 2010-02-06 05:13  robocop
 
 	* firebird2/src/jrd/common.h (1.221.2.4):
