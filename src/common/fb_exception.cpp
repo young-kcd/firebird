@@ -180,7 +180,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 					size_t len = *perm++ = *trans++;
 					const char* temp = reinterpret_cast<char*>(*trans++);
 					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
-					//perm[-2] = len; redundant
+					perm[-2] = len;
 				}
 				break;
 			case isc_arg_string:
