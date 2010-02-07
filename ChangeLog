@@ -1,3 +1,16 @@
+2010-02-07 14:17  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.69):
+
+	Always convert arg_cstring to arg_string when saving strings in
+	circular buffer
+
+2010-02-07 11:16  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.68):
+
+	Fixed copy of cstring in status vector
+
 2010-02-06 05:26  robocop
 
 	* firebird2/src/remote/remote.h (1.106):
