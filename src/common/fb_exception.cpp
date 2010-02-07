@@ -31,7 +31,7 @@ private:
 	public:
 		explicit ThreadBuffer(FB_THREAD_ID thr) : buffer_ptr(buffer), thread(thr) { }
 
-		const char* alloc(const char* string, size_t& length)
+		const char* alloc(const char* string, size_t length)
 		{
 			// if string is already in our buffer - return it
 			// it was already saved in our buffer once
@@ -146,7 +146,7 @@ private:
 	}
 
 public:
-	const char* alloc(const char* s, size_t& len, FB_THREAD_ID thr = getThreadId())
+	const char* alloc(const char* s, size_t len, FB_THREAD_ID thr = getThreadId())
 	{
 		ThreadCleanup::add(cleanupAllStrings, this);
 		return getThreadBuffer(thr)->alloc(s, len);
@@ -177,10 +177,10 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 				return;
 			case isc_arg_cstring:
 				{
-					size_t len = *perm++ = *trans++;
+					perm [-1] = isc_arg_string;
+					const size_t len = *trans++;
 					const char* temp = reinterpret_cast<char*>(*trans++);
 					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
-					perm[-2] = len;
 				}
 				break;
 			case isc_arg_string:
@@ -188,8 +188,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 			case isc_arg_sql_state:
 				{
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					size_t len = strlen(temp);
-					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
+					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, strlen(temp), thr));
 				}
 				break;
 			default:
