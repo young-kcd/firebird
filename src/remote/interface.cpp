@@ -5563,7 +5563,7 @@ namespace
 	class InitList : public HalfStaticArray<Auth::ClientPlugin*, 8>
 	{
 	public:
-		InitList(MemoryPool& p)
+		explicit InitList(MemoryPool& p)
 			: HalfStaticArray<Auth::ClientPlugin*, 8>(p)
 		{
 			// this code will be replaced with known plugins scan

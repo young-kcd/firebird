@@ -219,7 +219,7 @@ GlobalPtr<FailedLogins> remoteFailedLogins;
 class InitList : public HalfStaticArray<Auth::ServerPlugin*, 8>
 {
 public:
-	InitList(MemoryPool& p)
+	explicit InitList(MemoryPool& p)
 		: HalfStaticArray<Auth::ServerPlugin*, 8>(p)
 	{
 		PathName authMethod(Config::getAuthMethod());

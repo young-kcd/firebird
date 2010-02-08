@@ -125,7 +125,7 @@ public:
 		// This means - for objects with ctors/dtors that want to be global,
 		// provide ctor with MemoryPool& parameter. Even if it is ignored!
 		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
-		// Put ourself into linked list for cleanup.
+		// Put ourselves into linked list for cleanup.
 		// Allocated pointer is saved by InstanceList::constructor.
 		new InstanceControl::InstanceLink<GlobalPtr>(this);
 	}
@@ -156,9 +156,11 @@ public:
 		: flag(false) { }
 	void init()
 	{
-		if (!flag) {
+		if (!flag)
+		{
 			MutexLockGuard guard(*StaticMutex::mutex);
-			if (!flag) {
+			if (!flag)
+			{
 				C::init();
 				flag = true;
 			}
@@ -166,9 +168,11 @@ public:
 	}
 	void cleanup()
 	{
-		if (flag) {
+		if (flag)
+		{
 			MutexLockGuard guard(*StaticMutex::mutex);
-			if (flag) {
+			if (flag)
+			{
 				C::cleanup();
 				flag = false;
 			}
@@ -187,17 +191,19 @@ private:
 
 public:
 	InitInstance()
-		: instance(0), flag(false) 
+		: instance(0), flag(false)
 	{ }
 
 	T& operator()()
 	{
-		if (!flag) {
+		if (!flag)
+		{
 			MutexLockGuard guard(*StaticMutex::mutex);
-			if (!flag) {
+			if (!flag)
+			{
 				instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 				flag = true;
-				// Put ourself into linked list for cleanup.
+				// Put ourselves into linked list for cleanup.
 				// Allocated pointer is saved by InstanceList::constructor.
 				new InstanceControl::InstanceLink<InitInstance>(this);
 			}
