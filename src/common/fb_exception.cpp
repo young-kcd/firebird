@@ -188,7 +188,8 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 			case isc_arg_sql_state:
 				{
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, strlen(temp), thr));
+					size_t len = strlen(temp);
+					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
 				}
 				break;
 			default:
