@@ -1,3 +1,9 @@
+2010-02-08 14:30  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.222.2.2):
+
+	Fixed bug CORE-2851 : problem with fb_cancel_operation
+
 2010-02-07 11:29  alexpeshkoff
 
 	* firebird2/src/common/fb_exception.cpp (1.64.2.4):
