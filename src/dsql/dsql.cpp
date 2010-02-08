@@ -2780,6 +2780,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	catch (const Firebird::Exception&)
 	{
 		trace.prepare(res_failed);
+		request->req_traced = true;
 		release_request(tdbb, request, true);
 		throw;
 	}
