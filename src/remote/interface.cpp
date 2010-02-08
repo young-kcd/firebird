@@ -6881,6 +6881,7 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 		return stuff_exception(user_status, ex);
 	}
 
+	return_success(rdb);
 	rdb->reset_async_vector();
-	return return_success(rdb);
+	return FB_SUCCESS;
 }
