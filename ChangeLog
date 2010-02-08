@@ -1,3 +1,36 @@
+2010-02-08 14:39  alexpeshkoff
+
+	* firebird2/src/common/fb_exception.cpp (1.71):
+
+	const correctness
+
+2010-02-08 14:36  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.240):
+
+	Fixed bug CORE-2851 : problem with fb_cancel_operation
+
+2010-02-08 08:57  robocop
+
+	* firebird2/src/: common/classes/init.h (1.21),
+	remote/interface.cpp (1.239), remote/server.cpp (1.278):
+
+	Misc.
+
+2010-02-08 08:57  robocop
+
+	* firebird2/src/common/fb_exception.cpp (1.70):
+
+	Leave this clause in two lines for easier debugging, please.
+
+2010-02-07 16:13  alexpeshkoff
+
+	* firebird2/src/: common/classes/init.h (1.20),
+	jrd/unicode_util.cpp (1.55), remote/interface.cpp (1.238),
+	remote/server.cpp (1.277):
+
+	Make InitInstance release objects, created by it
+
 2010-02-07 14:17  alexpeshkoff
 
 	* firebird2/src/common/fb_exception.cpp (1.69):
