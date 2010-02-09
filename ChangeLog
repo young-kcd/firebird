@@ -1,3 +1,16 @@
+2010-02-09 10:00  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.323):
+
+	Correction, thanks to Claudio
+
+2010-02-08 15:49  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.322):
+
+	Fixed bug CORE-2852 : Server crash when executing syntactical wrong
+	SQL statement with an active trace session
+
 2010-02-08 14:39  alexpeshkoff
 
 	* firebird2/src/common/fb_exception.cpp (1.71):
