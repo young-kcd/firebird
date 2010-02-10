@@ -6502,12 +6502,18 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	btree_page* page = (btree_page*) window->win_buffer;
 	temporary_key* key = insertion->iib_key;
 
+	const UCHAR idx_flags = insertion->iib_descriptor->idx_flags;
+	const bool validateDuplicates =
+		((idx_flags & idx_unique) && !(key->key_flags & key_all_nulls)) ||
+		(idx_flags & idx_primary);
+
 	// Look for the first node with the value to be removed.
 	UCHAR* pointer;
 	USHORT prefix;
 	while (!(pointer = find_node_start_point(page, key, 0, &prefix,
 			insertion->iib_descriptor->idx_flags & idx_descending,
-			false, false, insertion->iib_number)))
+			false, false, 
+			validateDuplicates ? NO_VALUE : insertion->iib_number )))
 	{
 		page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling, LCK_write, pag_index);
 	}
