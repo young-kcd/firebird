@@ -245,7 +245,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	if (!exclusive && (timeout > 0 || flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction)))
 	{
-		notify_shutdown(tdbb, 0, 0);	// Tell everyone we're giving up
+		notify_shutdown(tdbb, 0, -1);	// Tell everyone we're giving up
 		SHUT_blocking_ast(tdbb);
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		++dbb->dbb_use_count;
