@@ -1,3 +1,24 @@
+2010-02-11 07:45  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.259.2.3):
+
+	Misc.
+
+2010-02-10 16:23  dimitr
+
+	* firebird2/src/jrd/shut.cpp (1.71.2.1):
+
+	Fixed CORE-2846: Cannot connect to the database if GFIX -shut
+	<mode> -attach <timeout> fails after the specified timeout (because
+	of connections being still active).  Backport into v2.5.
+
+2010-02-10 15:33  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.259.2.2):
+
+	Fixed bug CORE-2586 : Non-NULL key in unique index could be not
+	found when key is removed
+
 2010-02-08 15:49  hvlad
 
 	* firebird2/src/dsql/dsql.cpp (1.291.2.2):
