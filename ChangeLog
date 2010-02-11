@@ -1,3 +1,10 @@
+2010-02-10 15:59  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.26):
+
+	Backport fix for bug CORE-2586 : Non-NULL key in unique index could
+	be not found when key is removed
+
 2010-02-05 13:44  alexpeshkoff
 
 	* firebird2/src/jrd/: RecordNumber.h (1.5.4.5), dpm.epp (1.63.4.2),
