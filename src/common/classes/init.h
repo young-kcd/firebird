@@ -191,7 +191,7 @@ private:
 
 public:
 	InitInstance()
-		: instance(0), flag(false)
+		: instance(NULL), flag(false)
 	{ }
 
 	T& operator()()
@@ -216,7 +216,7 @@ public:
 		MutexLockGuard guard(*StaticMutex::mutex);
 		flag = false;
 		delete instance;
-		instance = 0;
+		instance = NULL;
 	}
 };
 
