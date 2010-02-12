@@ -449,7 +449,7 @@ DECLARE EXTERNAL FUNCTION mod
  *****************************************
  *
  * Functional description:
- *	Returns the value of pi = 3.1459...
+ *	Returns the value of pi = 3.14159...
  *
  *****************************************
 DECLARE EXTERNAL FUNCTION pi
