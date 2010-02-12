@@ -103,6 +103,9 @@ namespace fb_utils
 
 	Firebird::PathName get_process_name();
 	SLONG genUniqueId();
+	
+	void init_status(ISC_STATUS* status);
+	
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

@@ -40,6 +40,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/fb_atomic.h"
+#include "gen/iberror.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -654,6 +655,13 @@ SLONG genUniqueId()
 {
 	static Firebird::AtomicCounter cnt;
 	return ++cnt;
+}
+
+void init_status(ISC_STATUS* status)
+{
+	status[0] = isc_arg_gds;
+	status[1] = FB_SUCCESS;
+	status[2] = isc_arg_end;
 }
 
 } // namespace fb_utils

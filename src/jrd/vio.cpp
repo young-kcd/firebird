@@ -88,13 +88,14 @@
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../common/utils_proto.h"
 
 using namespace Jrd;
 
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static void check_control(thread_db*);
 static bool check_user(thread_db*, const dsc*);
-static void check_rel_field_class(record_param*, SecurityClass::flags_t, jrd_tra*);
+static void check_rel_field_class(thread_db* tdbb, record_param*, SecurityClass::flags_t, jrd_tra*);
 static void delete_record(thread_db*, record_param*, SLONG, JrdMemoryPool*);
 static UCHAR* delete_tail(thread_db*, record_param*, SLONG, UCHAR*, const UCHAR*);
 static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
@@ -2255,8 +2256,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 			break;
 
 		case rel_rfr:
-			check_rel_field_class(org_rpb, SCL_control, transaction);
-			check_rel_field_class(new_rpb, SCL_control, transaction);
+			check_rel_field_class(tdbb, org_rpb, SCL_control, transaction);
+			check_rel_field_class(tdbb, new_rpb, SCL_control, transaction);
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_rfr_class);
 			break;
 
@@ -3343,7 +3344,8 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 }
 
 
-static void check_rel_field_class(record_param* rpb, 
+static void check_rel_field_class(thread_db* tdbb,
+								  record_param* rpb, 
 								  SecurityClass::flags_t flags,
 								  jrd_tra* transaction)
 {
@@ -3359,27 +3361,31 @@ static void check_rel_field_class(record_param* rpb,
  *	relation, whom it belongs, are OK for given flags.
  *
  **************************************/
-
+	SET_TDBB(tdbb);
+	
 	bool okField = true;
 	DSC desc;
-	EVL_field(0, rpb->rpb_record, f_rfr_class, &desc);
-	const Firebird::MetaName class_name(reinterpret_cast<TEXT*>(desc.dsc_address),
-								  desc.dsc_length);
-	const SecurityClass* s_class = SCL_get_class(class_name.c_str());
-	if (s_class)
+	if (EVL_field(0, rpb->rpb_record, f_rfr_class, &desc))
 	{
-		// In case when user has no access to the field, 
-		// he may have access to relation as whole.
-		try 
+		const Firebird::MetaName class_name(reinterpret_cast<TEXT*>(desc.dsc_address),
+									  desc.dsc_length);
+		const SecurityClass* s_class = SCL_get_class(class_name.c_str());
+		if (s_class)
 		{
-			SCL_check_access(s_class, 0, NULL, NULL, flags, "", "");
-		}
-		catch(const Firebird::Exception&)
-		{
-			okField = false;
+			// In case when user has no access to the field, 
+			// he may have access to relation as whole.
+			try 
+			{
+				SCL_check_access(s_class, 0, NULL, NULL, flags, "COLUMN", "");
+			}
+			catch (const Firebird::Exception&)
+			{
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+				okField = false;
+			}
 		}
 	}
-
+	
 	EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 	if (! okField)
 	{
