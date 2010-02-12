@@ -1,3 +1,10 @@
+2010-02-12 12:23  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.259.2.1):
+
+	Backport CORE-2858: Possible memory trashing when raising some
+	exceptions to signal failed security checks. Thanks Dmitry.
+
 2010-02-11 07:45  robocop
 
 	* firebird2/src/jrd/btr.cpp (1.259.2.3):
