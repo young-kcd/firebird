@@ -33,7 +33,7 @@
 
 using namespace Jrd;
 
-USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCHAR* const end)
+USHORT SQZ_apply_differences(Record* record, const UCHAR* differences, const UCHAR* const end)
 {
 /**************************************
  *
@@ -51,12 +51,12 @@ USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCH
 		BUGCHECK(176);			// msg 176 bad difference record
 	}
 
-	SCHAR* p     = (SCHAR*) record->rec_data;
-	const SCHAR* const p_end = (SCHAR*) p + record->rec_length;
+	UCHAR* p = record->rec_data;
+	const UCHAR* const p_end = p + record->rec_length;
 
 	while (differences < end && p < p_end)
 	{
-		const SSHORT l = *differences++;
+		const SSHORT l = (signed char) *differences++;
 		if (l > 0)
 		{
 			if (p + l > p_end)
@@ -73,7 +73,7 @@ USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCH
 		}
 	}
 
-	const USHORT length = (p - (SCHAR *) record->rec_data);
+	const USHORT length = p - record->rec_data;
 
 	if (length > record->rec_length || differences < end)
 	{

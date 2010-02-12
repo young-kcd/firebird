@@ -1114,10 +1114,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	USHORT length;
 	if (prior)
 	{
-		length =
-			SQZ_apply_differences(record,
-								  reinterpret_cast<char*>(differences),
-								  reinterpret_cast<char*>(tail));
+		length = SQZ_apply_differences(record, differences, tail);
 	}
 	else
 	{
@@ -3667,8 +3664,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 
 	if (pool && prior)
 	{
-		SQZ_apply_differences(record, reinterpret_cast<const char*>(differences),
-							  reinterpret_cast<const char*>(tail));
+		SQZ_apply_differences(record, differences, tail);
 	}
 }
 
