@@ -28,35 +28,99 @@
 #include "../jrd/req.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/sqz_proto.h"
-
 
 using namespace Jrd;
 
-USHORT SQZ_apply_differences(Record* record, const UCHAR* differences, const UCHAR* const end)
+
+Compressor::Compressor(size_t length, const UCHAR* data)
+	: m_control(getPool()), m_length(0)
+{
+	UCHAR* control = m_control.getBuffer((length + 1) / 2, false);
+	const UCHAR* const end = data + length;
+
+	size_t count;
+	size_t max;
+	while ( (count = end - data) )
+	{
+		const UCHAR* start = data;
+
+		// Find length of non-compressable run
+
+		if ((max = count - 1) > 1)
+		{
+			do {
+				if (data[0] != data[1] || data[0] != data[2])
+				{
+					data++;
+				}
+				else
+				{
+					count = data - start;
+					break;
+				}
+			} while (--max > 1);
+		}
+
+		data = start + count;
+
+		// Non-compressable runs are limited to 127 bytes
+
+		while (count)
+		{
+			max = MIN(count, 127);
+			m_length += 1 + max;
+			count -= max;
+			*control++ = (UCHAR) max;
+		}
+
+		// Find compressible run. Compressable runs are limited to 128 bytes.
+
+		if ((max = MIN(128, end - data)) >= 3)
+		{
+			start = data;
+			const UCHAR c = *data;
+			do
+			{
+				if (*data != c)
+				{
+					break;
+				}
+				++data;
+			} while (--max);
+
+			*control++ = (UCHAR) (start - data);
+			m_length += 2;
+		}
+	}
+
+	// set array size to the really used length
+	m_control.shrink(control - m_control.begin());
+}
+
+size_t Compressor::applyDiff(size_t diffLength,
+							 const UCHAR* differences,
+							 size_t outLength,
+							 UCHAR* output)
 {
 /**************************************
  *
- *	S Q Z _ a p p l y _ d i f f e r e n c e s
- *
- **************************************
- *
- * Functional description
- *	Apply a differences (delta) to a record.  Return the length.
+ *	Apply a differences (delta) to a record.
+ *  Return the length.
  *
  **************************************/
-
-	if (end - differences > MAX_DIFFERENCES)
+	if (diffLength > MAX_DIFFERENCES)
 	{
 		BUGCHECK(176);			// msg 176 bad difference record
 	}
 
-	UCHAR* p = record->rec_data;
-	const UCHAR* const p_end = p + record->rec_length;
+	const UCHAR* const end = differences + diffLength;
+	UCHAR* p = output;
+	const UCHAR* const p_end = output + outLength;
 
 	while (differences < end && p < p_end)
 	{
-		const SSHORT l = (signed char) *differences++;
+		const int l = (signed char) *differences++;
+
 		if (l > 0)
 		{
 			if (p + l > p_end)
@@ -73,9 +137,9 @@ USHORT SQZ_apply_differences(Record* record, const UCHAR* differences, const UCH
 		}
 	}
 
-	const USHORT length = p - record->rec_data;
+	const size_t length = p - output;
 
-	if (length > record->rec_length || differences < end)
+	if (length > outLength || differences < end)
 	{
 		BUGCHECK(177);			// msg 177 applied differences will not fit in record
 	}
@@ -83,40 +147,37 @@ USHORT SQZ_apply_differences(Record* record, const UCHAR* differences, const UCH
 	return length;
 }
 
-
-USHORT SQZ_compress(const DataComprControl* dcc, const SCHAR* input, SCHAR* output, int space)
+size_t Compressor::pack(const UCHAR* input, size_t outLength, UCHAR* output) const
 {
 /**************************************
  *
- *	S Q Z _ c o m p r e s s
- *
- **************************************
- *
- * Functional description
  *	Compress a string into an area of known length.
  *	If it doesn't fit, throw BUGCHECK error.
  *
  **************************************/
-	SSHORT length;
+	const UCHAR* const start = input;
 
-	const SCHAR* const start = input;
+	const UCHAR* control = m_control.begin();
+	const UCHAR* const dcc_end = m_control.end();
 
-	const SCHAR* control = dcc->begin();
-	const SCHAR* dcc_end = dcc->end();
+	int space = (int) outLength;
 
 	while (control < dcc_end)
 	{
 		if (--space <= 0)
 		{
 			if (space == 0)
+			{
 				*output = 0;
+			}
 			return input - start;
 		}
 
-		if ((length = *output++ = *control++) & 128)
+		int length = (signed char) *control++;
+		*output++ = (UCHAR) length;
+
+		if (length < 0)
 		{
-			// TMN: This is bad code. It assumes char is 8 bits
-			// and that bit 7 is the sign-bit.
 			--space;
 			*output++ = *input;
 			input += (-length) & 255;
@@ -126,7 +187,7 @@ USHORT SQZ_compress(const DataComprControl* dcc, const SCHAR* input, SCHAR* outp
 			if ((space -= length) < 0)
 			{
 				length += space;
-				output[-1] = length;
+				output[-1] = (UCHAR) length;
 				if (length > 0)
 				{
 					memcpy(output, input, length);
@@ -145,36 +206,34 @@ USHORT SQZ_compress(const DataComprControl* dcc, const SCHAR* input, SCHAR* outp
 	}
 
 	BUGCHECK(178);	// msg 178 record length inconsistent
-	return input - start;	// shut up compiler warning
+	return 0;	// shut up compiler warning
 }
 
-
-USHORT SQZ_compress_length(const DataComprControl* dcc, const SCHAR* input, int space)
+size_t Compressor::getPartialLength(size_t inLength, const UCHAR* input) const
 {
 /**************************************
  *
- *	S Q Z _ c o m p r e s s _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *	Same as SQZ_compress without the output.  If it doesn't fit,
- *	return the number of bytes that did.
+ *	Same as pack() without the output.
+ *	If it doesn't fit, return the number of bytes that did.
  *
  **************************************/
-	SSHORT length;
+	const UCHAR* const start = input;
 
-	const SCHAR* const start = input;
+	const UCHAR* control = m_control.begin();
+	const UCHAR* const dcc_end = m_control.end();
 
-	const SCHAR* control = dcc->begin();
-	const SCHAR* dcc_end = dcc->end();
+	int space = (int) inLength;
 
 	while (control < dcc_end)
 	{
 		if (--space <= 0)
+		{
 			return input - start;
+		}
 
-		if ((length = *control++) & 128)
+		int length = (signed char) *control++;
+
+		if (length < 0)
 		{
 			--space;
 			input += (-length) & 255;
@@ -192,31 +251,27 @@ USHORT SQZ_compress_length(const DataComprControl* dcc, const SCHAR* input, int 
 	}
 
 	BUGCHECK(178);	// msg 178 record length inconsistent
-	return input - start;	// shut up compiler warning
+	return 0;	// shut up compiler warning
 }
 
-
-UCHAR* SQZ_decompress(const UCHAR*	input,
-					  USHORT		length,
-					  UCHAR*		output,
-					  const UCHAR* const	output_end)
+UCHAR* Compressor::unpack(size_t inLength,
+						  const UCHAR* input,
+						  size_t outLength,
+						  UCHAR* output)
 {
 /**************************************
  *
- *	S Q Z _ d e c o m p r e s s
- *
- **************************************
- *
- * Functional description
- *	Decompress a compressed string into a buffer.  Return the address
- *	where the output stopped.
+ *	Decompress a compressed string into a buffer.
+ *	Return the address where the output stopped.
  *
  **************************************/
-	const UCHAR* const last = input + length;
+	const UCHAR* const end = input + inLength;
+	const UCHAR* const output_end = output + outLength;
 
-	while (input < last)
+	while (input < end)
 	{
 		const int len = (signed char) *input++;
+
 		if (len < 0)
 		{
 			const UCHAR c = *input++;
@@ -248,112 +303,105 @@ UCHAR* SQZ_decompress(const UCHAR*	input,
 	return output;
 }
 
-
-USHORT SQZ_no_differences(SCHAR* const out, int length)
+size_t Compressor::makeNoDiff(size_t outLength, UCHAR* output)
 {
 /**************************************
  *
- *	S Q Z _ n o _ d i f f e r e n c e s
- *
- **************************************
- *
- * Functional description
- *  Generates differences record marking that there are no differences
+ *  Generates differences record marking that there are no differences.
  *
  **************************************/
-	SCHAR* temp = out;
+	UCHAR* temp = output;
+	int length = (int) outLength;
+
 	while (length > 127)
 	{
-	  *temp++ = -127;
-	  length -= 127;
+		*temp++ = -127;
+		length -= 127;
 	}
-	if (length) {
-	  *temp++ = -length;
+
+	if (length)
+	{
+		*temp++ = (UCHAR) -length;
 	}
-	return temp - out;
+
+	return temp - output;
 }
 
-
-USHORT SQZ_differences(const SCHAR*	rec1,
-					   USHORT	length1,
-					   SCHAR*	rec2,
-					   USHORT	length2,
-					   SCHAR*	out,
-					   int		length)
+size_t Compressor::makeDiff(size_t length1,
+							const UCHAR* rec1,
+							size_t length2,
+							UCHAR* rec2,
+							size_t outLength,
+							UCHAR* output)
 {
 /**************************************
  *
- *	S Q Z _ d i f f e r e n c e s
- *
- **************************************
- *
- * Functional description
- *	Compute differences between two records.  The difference
+ *	Compute differences between two records. The difference
  *	record, when applied to the first record, produces the
  *	second record.
  *
- *	    difference_record	:= <control_string>...
+ *	    difference_record := <control_string>...
  *
- *	    control_string	:= <positive_integer> <positive_integer data bytes>
+ *	    control_string := <positive_integer> <positive_integer data bytes>
  *				:= <negative_integer>
  *
  *	Return the total length of the differences string.
  *
  **************************************/
-	SCHAR *p;
-	// SLONG l; Moved to the proper scope. Comment immediately below still applies.
-	// This "l" could be more than 32K since the Old and New records
-	// could be the same for more than 32K characters.
-	// MAX record size is currently 64K. Hence it is defined as a SLONG
+	UCHAR *p;
 
-#define STUFF(val)	if (out < end) *out++ = val; else return 32000;
-	/* WHY IS THIS RETURNING 32000 ???
-	* It returns a large Positive value to indicate to the caller that we ran out
+#define STUFF(val)	if (output < end) *output++ = val; else return MAX_ULONG;
+
+	/* WHY IS THIS RETURNING MAX_ULONG ???
+	* It returns a large positive value to indicate to the caller that we ran out
 	* of buffer space in the 'out' argument. Thus we could not create a
 	* successful differences record. Now it is upto the caller to check the
 	* return value of this function and figure out whether the differences record
 	* was created or not. Check prepare_update() (JRD/vio.c) for further
 	* information. Of course, the size for a 'differences' record is not expected
-	* to go near 32000 in the future. If the case arises where we want to store
-	* differences record of 32000 bytes and more, please change the return value
-	* above to accomodate a failure value.
+	* to go near 2^32 in the future.
 	*
 	* This was investigated as a part of solving bug 10206, bsriram - 25-Feb-1999.
 	*/
 
-	const SCHAR* const start = out;
-	const SCHAR* const end = out + length;
-	const SCHAR* const end1 = rec1 + MIN(length1, length2);
-	const SCHAR* const end2 = rec2 + length2;
+	const UCHAR* const start = output;
+	const UCHAR* const end = output + outLength;
+	const UCHAR* const end1 = rec1 + MIN(length1, length2);
+	const UCHAR* const end2 = rec2 + length2;
 
 	while (end1 - rec1 > 2)
 	{
 		if (rec1[0] != rec2[0] || rec1[1] != rec2[1])
 		{
-			p = out++;
+			p = output++;
 
 			// cast this to LONG to take care of OS/2 pointer arithmetic
 			// when rec1 is at the end of a segment, to avoid wrapping around
 
-			const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
+			const UCHAR* yellow = (UCHAR*) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
 			while (rec1 <= yellow && (rec1[0] != rec2[0] || (rec1[1] != rec2[1] && rec1 < yellow)))
 			{
 				STUFF(*rec2++);
 				++rec1;
 			}
-			*p = out - p - 1;
+			*p = output - p - 1;
 			continue;
 		}
+
 		for (p = rec2; rec1 < end1 && *rec1 == *rec2; rec1++, rec2++)
-		{
-			;
-		}
-		SLONG l = p - rec2;
+			; // no-op
+
+		// This "l" could be more than 32K since the Old and New records
+		// could be the same for more than 32K characters.
+		// MAX record size is currently 64K. Hence it is defined as "int".
+		int l = p - rec2;
+
 		while (l < -127)
 		{
 			STUFF(-127);
 			l += 127;
 		}
+
 		if (l)
 		{
 			STUFF(l);
@@ -362,43 +410,38 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 
 	while (rec2 < end2)
 	{
-		p = out++;
+		p = output++;
 
 		// cast this to LONG to take care of OS/2 pointer arithmetic
 		// when rec1 is at the end of a segment, to avoid wrapping around
 
-		const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end2, ((U_IPTR) rec2 + 127));
+		const UCHAR* yellow = (UCHAR*) MIN((U_IPTR) end2, ((U_IPTR) rec2 + 127));
 		while (rec2 < yellow)
 		{
 			STUFF(*rec2++);
 		}
-		*p = out - p - 1;
+		*p = output - p - 1;
 	}
 
-	return out - start;
+	return output - start;
 }
 
-
-void SQZ_fast(const DataComprControl* dcc, const SCHAR* input, SCHAR* output)
+void Compressor::pack(const UCHAR* input, UCHAR* output) const
 {
 /**************************************
  *
- *	S Q Z _ f a s t
- *
- **************************************
- *
- * Functional description
- *	Compress a string into an sufficiently large area.  Don't
- *	check nuttin' -- go for speed, man, raw SPEED!
+ *	Compress a string into a sufficiently large area.
+ *	Don't check nuttin' -- go for speed, man, raw SPEED!
  *
  **************************************/
-	const SCHAR* control = dcc->begin();
-	const SCHAR* dcc_end = dcc->end();
+	const UCHAR* control = m_control.begin();
+	const UCHAR* const dcc_end = m_control.end();
 
 	while (control < dcc_end)
 	{
-		const SSHORT length = *control++;
-		*output++ = length;
+		const int length = (signed char) *control++;
+		*output++ = (UCHAR) length;
+
 		if (length < 0)
 		{
 			*output++ = *input;
@@ -411,86 +454,4 @@ void SQZ_fast(const DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 			input += length;
 		}
 	}
-}
-
-
-USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
-{
-/**************************************
- *
- *	S Q Z _ l e n g t h
- *
- **************************************
- *
- * Functional description
- *	Compute the compressed length of a record.  While we're at it, generate
- *	the control string for subsequent compression.
- *
- **************************************/
-
- 	fb_assert(length >= 0);
-
-	// allocate buffer big enough for worst case
-	SCHAR* control = dcc->getBuffer((length + 1) / 2, false);
-	const SCHAR* const end = &data[length];
-	length = 0;
-
-	USHORT count;
-	USHORT max;
-	while ( (count = end - data) )
-	{
-		const SCHAR* start = data;
-
-		// Find length of non-compressable run
-
-		if ((max = count - 1) > 1)
-		{
-			do {
-				if (data[0] != data[1] || data[0] != data[2])
-				{
-					data++;
-				}
-				else
-				{
-					count = data - start;
-					break;
-				}
-			} while (--max > 1);
-		}
-		data = start + count;
-
-		// Non-compressable runs are limited to 127 bytes
-
-		while (count)
-		{
-			max = MIN(count, 127);
-			length += 1 + max;
-			count -= max;
-			*control++ = max;
-		}
-
-		// Find compressible run.  Compressable runs are limited to 128 bytes
-
-		if ((max = MIN(128, end - data)) >= 3)
-		{
-			start = data;
-			const SCHAR c = *data;
-			do
-			{
-				if (*data != c)
-				{
-					break;
-				}
-				++data;
-			} while (--max);
-
-			*control++ = start - data;
-			length += 2;
-		}
-	}
-
-	// set array size to really used length
-	dcc->shrink(control - dcc->begin());
-
-	return length;
 }

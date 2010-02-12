@@ -53,6 +53,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/lls.h"
 #include "../jrd/scl.h"
+#include "../jrd/sqz.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../jrd/ods.h"
@@ -82,7 +83,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/sqz_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
@@ -1090,7 +1090,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 
 	// Snarf data from record
 
-	tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
+	tail = Compressor::unpack(rpb->rpb_length, rpb->rpb_address, tail_end - tail, tail);
 
 	if (rpb->rpb_flags & rpb_incomplete)
 	{
@@ -1101,7 +1101,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 		{
 			DPM_fetch_fragment(tdbb, rpb, LCK_read);
 
-			tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
+			tail = Compressor::unpack(rpb->rpb_length, rpb->rpb_address, tail_end - tail, tail);
 		}
 		rpb->rpb_b_page = back_page;
 		rpb->rpb_b_line = back_line;
@@ -1114,7 +1114,8 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	USHORT length;
 	if (prior)
 	{
-		length = SQZ_apply_differences(record, differences, tail);
+		length = (USHORT) Compressor::applyDiff(tail - differences, differences,
+												record->rec_length, record->rec_data);
 	}
 	else
 	{
@@ -3654,7 +3655,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 			tail = record->rec_data;
 			tail_end = tail + record->rec_length;
 		}
-		tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
+		tail = Compressor::unpack(rpb->rpb_length, rpb->rpb_address, tail_end - tail, tail);
 		rpb->rpb_prior = (rpb->rpb_flags & rpb_delta) ? record : 0;
 	}
 
@@ -3664,7 +3665,8 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 
 	if (pool && prior)
 	{
-		SQZ_apply_differences(record, differences, tail);
+		Compressor::applyDiff(tail - differences, differences,
+							  record->rec_length, record->rec_data);
 	}
 }
 
@@ -3715,7 +3717,7 @@ static UCHAR* delete_tail(thread_db* tdbb,
 			BUGCHECK(248);		// msg 248 cannot find record fragment
 		}
 		if (tail) {
-			tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
+			tail = Compressor::unpack(rpb->rpb_length, rpb->rpb_address, tail_end - tail, tail);
 		}
 		DPM_delete(tdbb, rpb, prior_page);
 		prior_page = rpb->rpb_page;
@@ -4585,17 +4587,14 @@ static int prepare_update(	thread_db*		tdbb,
 	UCHAR differences[MAX_DIFFERENCES];
 	if (new_rpb)
 	{
-		const USHORT l = SQZ_differences(
-							reinterpret_cast<const char*>(new_rpb->rpb_address),
-							new_rpb->rpb_length,
-							reinterpret_cast<char*>(temp->rpb_address),
-							temp->rpb_length,
-							reinterpret_cast<char*>(differences),
-							sizeof(differences));
+		const size_t l =
+			Compressor::makeDiff(new_rpb->rpb_length, new_rpb->rpb_address,
+								 temp->rpb_length, temp->rpb_address,
+								 sizeof(differences), differences);
 		if ((l < sizeof(differences)) && (l < temp->rpb_length))
 		{
 			temp->rpb_address = differences;
-			temp->rpb_length = l;
+			temp->rpb_length = (USHORT) l;
 			new_rpb->rpb_flags |= rpb_delta;
 		}
 	}
@@ -4603,7 +4602,7 @@ static int prepare_update(	thread_db*		tdbb,
 	if (writelock)
 	{
 	  temp->rpb_address = differences;
-	  temp->rpb_length = SQZ_no_differences((SCHAR*) differences, temp->rpb_length);
+	  temp->rpb_length = (USHORT) Compressor::makeNoDiff(temp->rpb_length, differences);
 	}
 
 #ifdef VIO_DEBUG
@@ -5095,7 +5094,7 @@ static void set_security_class(thread_db* tdbb, Record* record, USHORT field_id)
 		Firebird::MetaName name;
 		name.printf("%s%d", SQL_SECCLASS_PREFIX, value);
 		dsc desc2;
-		desc2.makeText(name.length(), CS_ASCII, (UCHAR*) name.c_str());
+		desc2.makeText((USHORT) name.length(), CS_ASCII, (UCHAR*) name.c_str());
 		MOV_move(tdbb, &desc2, &desc1);
 		CLEAR_NULL(record, field_id);
 	}

@@ -63,7 +63,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/sqz_proto.h"
 #include "../common/StatusArg.h"
 
 #ifdef DEV_BUILD
@@ -83,14 +82,14 @@ using namespace Firebird;
 
 static void check_swept(thread_db*, record_param*);
 static void delete_tail(thread_db*, rhdf*, const USHORT, USHORT);
-static void fragment(thread_db*, record_param*, SSHORT, DataComprControl*, SSHORT, const jrd_tra*);
+static void fragment(thread_db*, record_param*, SSHORT, const Compressor&, SSHORT, const jrd_tra*);
 static void extend_relation(thread_db*, jrd_rel*, WIN*, USHORT);
 static UCHAR* find_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static bool get_header(WIN*, SSHORT, record_param*);
 static pointer_page* get_pointer_page(thread_db*, jrd_rel*, RelationPages*, WIN*, USHORT, USHORT);
 static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static void mark_full(thread_db*, record_param*);
-static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, USHORT, USHORT);
+static void store_big_record(thread_db*, record_param*, PageStack&, const UCHAR*, USHORT, USHORT);
 
 
 PAG DPM_allocate(thread_db* tdbb, WIN* window)
@@ -312,8 +311,8 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 #endif
 
 	record_param temp = *org_rpb;
-	DataComprControl dcc(*tdbb->getDefaultPool());
-	const USHORT size = SQZ_length((SCHAR*) new_rpb->rpb_address, (int) new_rpb->rpb_length, &dcc);
+	const Compressor dcc(new_rpb->rpb_length, new_rpb->rpb_address);
+	const USHORT size = (USHORT) dcc.getPackedLength();
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write))
 	{
@@ -453,7 +452,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	header->rhd_b_page = new_rpb->rpb_b_page;
 	header->rhd_b_line = new_rpb->rpb_b_line;
 
-	SQZ_fast(&dcc, (SCHAR*) new_rpb->rpb_address, (SCHAR*) header->rhd_data);
+	dcc.pack(new_rpb->rpb_address, header->rhd_data);
 
 	if (fill) {
 		memset(header->rhd_data + size, 0, fill);
@@ -1911,15 +1910,15 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 	}
 #endif
 
-	DataComprControl dcc(*tdbb->getDefaultPool());
-	const USHORT size = SQZ_length((SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
+	const Compressor dcc(rpb->rpb_length, rpb->rpb_address);
+	const USHORT size = (USHORT) dcc.getPackedLength();
 
 	// If the record isn't going to fit on a page, even if fragmented,
 	// handle it a little differently.
 
 	if (size > dbb->dbb_page_size - (sizeof(data_page) + RHD_SIZE))
 	{
-		store_big_record(tdbb, rpb, stack, &dcc, size, type);
+		store_big_record(tdbb, rpb, stack, dcc.getControl() + dcc.getControlSize(), size, type);
 		return;
 	}
 
@@ -1938,7 +1937,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 	header->rhd_b_page = rpb->rpb_b_page;
 	header->rhd_b_line = rpb->rpb_b_line;
 
-	SQZ_fast(&dcc, (SCHAR*) rpb->rpb_address, (SCHAR*) header->rhd_data);
+	dcc.pack(rpb->rpb_address, header->rhd_data);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
@@ -2178,8 +2177,8 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 	CCH_precedence(tdbb, &rpb->getWindow(tdbb), -rpb->rpb_transaction_nr);
 	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
-	DataComprControl dcc(*tdbb->getDefaultPool());
-	const USHORT size = SQZ_length((SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
+	const Compressor dcc(rpb->rpb_length, rpb->rpb_address);
+	const USHORT size = (USHORT) dcc.getPackedLength();
 
 	// It is critical that the record be padded, if necessary, to the length of
 	// a fragmented record header.  Compute the amount of fill required.
@@ -2213,7 +2212,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 
 	if (length > available)
 	{
-		fragment(tdbb, rpb, available, &dcc, old_length, transaction);
+		fragment(tdbb, rpb, available, dcc, old_length, transaction);
 		return;
 	}
 
@@ -2232,7 +2231,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 	header->rhd_b_page = rpb->rpb_b_page;
 	header->rhd_b_line = rpb->rpb_b_line;
 
-	SQZ_fast(&dcc, (SCHAR*) rpb->rpb_address, (SCHAR*) header->rhd_data);
+	dcc.pack(rpb->rpb_address, header->rhd_data);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
@@ -2405,7 +2404,9 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 static void fragment(thread_db* tdbb,
 					 record_param* rpb,
 					 SSHORT available_space,
-					 DataComprControl* dcc, SSHORT length, const jrd_tra* transaction)
+					 const Compressor& dcc,
+					 SSHORT length,
+					 const jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2550,8 +2551,8 @@ static void fragment(thread_db* tdbb,
 	// first figuring out how much of the original record fits on the
 	// original page.
 
-	const USHORT pre_header_length =
-		SQZ_compress_length(dcc, (SCHAR*) rpb->rpb_address, (int) (available_space - RHDF_SIZE));
+	const size_t pre_header_length =
+		dcc.getPartialLength(available_space - RHDF_SIZE, rpb->rpb_address);
 
 	record_param tail_rpb = *rpb;
 	tail_rpb.rpb_flags = rpb_fragment;
@@ -2590,10 +2591,8 @@ static void fragment(thread_db* tdbb,
 		header->rhdf_b_line = rpb->rpb_b_line;
 	}
 
-
-	const USHORT post_header_length =
-		SQZ_compress(dcc, (SCHAR*) rpb->rpb_address, (SCHAR*) header->rhdf_data,
-					 (int) (available_space - RHDF_SIZE));
+	const size_t post_header_length =
+		dcc.pack(rpb->rpb_address, available_space - RHDF_SIZE, header->rhdf_data);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
@@ -3279,9 +3278,12 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 }
 
 
-static void store_big_record(thread_db* tdbb, record_param* rpb,
+static void store_big_record(thread_db* tdbb,
+							 record_param* rpb,
 							 PageStack& stack,
-							 DataComprControl* dcc, USHORT size, USHORT type)
+							 const UCHAR* control,
+							 USHORT size,
+							 USHORT type)
 {
 /**************************************
  *
@@ -3304,8 +3306,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 
 	// Start compression from the end.
 
-	const SCHAR* control = dcc->end();
-	const SCHAR* in = (SCHAR *) rpb->rpb_address + rpb->rpb_length;
+	const UCHAR* in = rpb->rpb_address + rpb->rpb_length;
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	PageNumber prior(relPages->rel_pg_space_id, 0);
 	SCHAR count = 0;
@@ -3329,7 +3330,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 		header->rhdf_f_page = prior.getPageNum();
 		USHORT length = max_data;
 		size -= length;
-		SCHAR* out = (SCHAR *) header->rhdf_data + length;
+		UCHAR* out = header->rhdf_data + length;
 
 		// Move compressed data onto page
 
@@ -3343,7 +3344,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 				do {
 					*--out = *--in;
 				} while (--n);
-				*--out = l;
+				*--out = (UCHAR) l;
 				length -= (SSHORT) (l + 1);	// bytes remaining on page
 				count -= (SSHORT) l;	// bytes remaining in run
 				continue;
@@ -3352,7 +3353,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 			if ((count = *--control) < 0)
 			{
 				*--out = in[-1];
-				*--out = count;
+				*--out = (UCHAR) count;
 				in += count;
 				length -= 2;
 			}
@@ -3390,7 +3391,8 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 
 	// What's left fits on a page.  Luckily, we don't have to store it ourselves.
 
-	size = SQZ_length((SCHAR*) rpb->rpb_address, in - (SCHAR*) rpb->rpb_address, dcc);
+	const Compressor dcc(in - rpb->rpb_address, rpb->rpb_address);
+	size = dcc.getPackedLength();
 	rhdf* header = (rhdf*) locate_space(tdbb, rpb, (SSHORT) (RHDF_SIZE + size), stack, NULL, type);
 
 	header->rhdf_flags = rhd_incomplete | rhd_large | rpb->rpb_flags;
@@ -3400,7 +3402,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	header->rhdf_b_line = rpb->rpb_b_line;
 	header->rhdf_f_page = prior.getPageNum();
 	header->rhdf_f_line = 0;
-	SQZ_fast(dcc, (SCHAR*) rpb->rpb_address, (SCHAR*) header->rhdf_data);
+	dcc.pack(rpb->rpb_address, header->rhdf_data);
 
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
 
