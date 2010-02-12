@@ -3462,7 +3462,7 @@ static void check_rel_field_class(thread_db* tdbb,
  *
  * Functional description
  *	Given rpb for a record in the nam_r_fields system relation,
- *  containing a security class, checks does that record itself or
+ *  containing a security class, check that record itself or
  *	relation, whom it belongs, are OK for given flags.
  *
  **************************************/
@@ -3470,21 +3470,24 @@ static void check_rel_field_class(thread_db* tdbb,
 
 	bool okField = true;
 	DSC desc;
-	EVL_field(0, rpb->rpb_record, f_rfr_class, &desc);
-	const Firebird::MetaName class_name(reinterpret_cast<TEXT*>(desc.dsc_address),
-										desc.dsc_length);
-	const SecurityClass* s_class = SCL_get_class(tdbb, class_name.c_str());
-	if (s_class)
+	if (EVL_field(0, rpb->rpb_record, f_rfr_class, &desc))
 	{
-		// In case when user has no access to the field,
-		// he may have access to relation as whole.
-		try
+		const Firebird::MetaName class_name(reinterpret_cast<TEXT*>(desc.dsc_address),
+											desc.dsc_length);
+		const SecurityClass* s_class = SCL_get_class(tdbb, class_name.c_str());
+		if (s_class)
 		{
-			SCL_check_access(tdbb, s_class, 0, 0, NULL, flags, "", "");
-		}
-		catch (const Firebird::Exception&)
-		{
-			okField = false;
+			// In case when user has no access to the field,
+			// he may have access to relation as whole.
+			try
+			{
+				SCL_check_access(tdbb, s_class, 0, 0, NULL, flags, "", "");
+			}
+			catch (const Firebird::Exception&)
+			{
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+				okField = false;
+			}
 		}
 	}
 
