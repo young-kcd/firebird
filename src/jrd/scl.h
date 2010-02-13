@@ -138,7 +138,6 @@ public:
 	}
 };
 
-
 // Here, higher is more priority.
 // These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.
 // We need to include here the new objects that accept ACLs.

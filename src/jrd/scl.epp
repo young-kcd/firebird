@@ -78,83 +78,81 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb, const Acl&, const jrd_re
 
 namespace
 {
-
-struct P_NAMES
-{
-	SecurityClass::flags_t p_names_priv;
-	USHORT p_names_acl;
-	const TEXT* p_names_string;
-};
-
-const P_NAMES p_names[] =
-{
-	{ SCL_protect, priv_protect, "protect" },
-	{ SCL_control, priv_control, "control" },
-	{ SCL_delete, priv_delete, "delete" },
-	{ SCL_sql_insert, priv_sql_insert, "insert/write" },
-	{ SCL_sql_update, priv_sql_update, "update/write" },
-	{ SCL_sql_delete, priv_sql_delete, "delete/write" },
-	{ SCL_write, priv_write, "write" },
-	{ SCL_read, priv_read, "read/select" },
-	{ SCL_grant, priv_grant, "grant" },
-	{ SCL_sql_references, priv_sql_references, "references" },
-	{ SCL_execute, priv_execute, "execute" },
-	{ 0, 0, "" }
-};
-
-
-// Database is never requested through CMP_post_access.
-const char* const object_str_database	= "DATABASE";
-const char* const object_str_schema		= "SCHEMA";
-const char* const object_str_table		= "TABLE";
-const char* const object_str_package	= "PACKAGE";
-const char* const object_str_procedure	= "PROCEDURE";
-const char* const object_str_function	= "FUNCTION";
-const char* const object_str_column		= "COLUMN";
-
-
-struct SecObjectNamePriority
-{
-	const char* name;
-	SLONG num;
-};
-
-const SecObjectNamePriority priorities[] =
-{
-	{object_str_database, SCL_object_database},
-	{object_str_schema, SCL_object_schema},
-	{object_str_table, SCL_object_table},
-	{object_str_package, SCL_object_package},
-	{object_str_procedure, SCL_object_procedure},
-	{object_str_function, SCL_object_function},
-	{object_str_column, SCL_object_column},
-	{"", 0}
-};
-
-/* Unused, may be needed
-SLONG accTypeStrToNum(const char* name)
-{
-	for (const SecObjectNamePriority* p = priorities; p->num != 0; ++p)
+	struct P_NAMES
 	{
-		if (strcmp(p->name, name) == 0)
-			return p->num;
-	}
-	fb_assert(false);
-	return 0;
-}
-*/
+		SecurityClass::flags_t p_names_priv;
+		USHORT p_names_acl;
+		const TEXT* p_names_string;
+	};
 
-const char* accTypeNumToStr(const SLONG num)
-{
-	for (const SecObjectNamePriority* p = priorities; p->num != 0; ++p)
+	const P_NAMES p_names[] =
 	{
-		if (p->num == num)
-			return p->name;
-	}
-	fb_assert(false);
-	return "<unknown object type>";
-}
+		{ SCL_protect, priv_protect, "protect" },
+		{ SCL_control, priv_control, "control" },
+		{ SCL_delete, priv_delete, "delete" },
+		{ SCL_sql_insert, priv_sql_insert, "insert/write" },
+		{ SCL_sql_update, priv_sql_update, "update/write" },
+		{ SCL_sql_delete, priv_sql_delete, "delete/write" },
+		{ SCL_write, priv_write, "write" },
+		{ SCL_read, priv_read, "read/select" },
+		{ SCL_grant, priv_grant, "grant" },
+		{ SCL_sql_references, priv_sql_references, "references" },
+		{ SCL_execute, priv_execute, "execute" },
+		{ 0, 0, "" }
+	};
 
+
+	// Database is never requested through CMP_post_access.
+	const char* const object_str_database	= "DATABASE";
+	const char* const object_str_schema		= "SCHEMA";
+	const char* const object_str_table		= "TABLE";
+	const char* const object_str_package	= "PACKAGE";
+	const char* const object_str_procedure	= "PROCEDURE";
+	const char* const object_str_function	= "FUNCTION";
+	const char* const object_str_column		= "COLUMN";
+
+
+	struct SecObjectNamePriority
+	{
+		const char* name;
+		SLONG num;
+	};
+
+	const SecObjectNamePriority priorities[] =
+	{
+		{object_str_database, SCL_object_database},
+		{object_str_schema, SCL_object_schema},
+		{object_str_table, SCL_object_table},
+		{object_str_package, SCL_object_package},
+		{object_str_procedure, SCL_object_procedure},
+		{object_str_function, SCL_object_function},
+		{object_str_column, SCL_object_column},
+		{"", 0}
+	};
+
+	/* Unused, may be needed
+	SLONG accTypeStrToNum(const char* name)
+	{
+		for (const SecObjectNamePriority* p = priorities; p->num != 0; ++p)
+		{
+			if (strcmp(p->name, name) == 0)
+				return p->num;
+		}
+		fb_assert(false);
+		return 0;
+	}
+	*/
+
+	const char* accTypeNumToStr(const SLONG num)
+	{
+		for (const SecObjectNamePriority* p = priorities; p->num != 0; ++p)
+		{
+			if (p->num == num)
+				return p->name;
+		}
+		fb_assert(false);
+		return "<unknown object type>";
+	}
 } // anonymous namespace
 
 

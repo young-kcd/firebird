@@ -1391,7 +1391,7 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 			index->idx_total_length += pointer - node.nodePointer;
 			index->idx_prefix_length += node.prefix;
 			index->idx_data_length += node.length;
-			
+
 			size_t specials = 1;
 			if (node.prefix > 127)
 				specials += 2;
@@ -1523,10 +1523,8 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 }
 
 
-USHORT get_format_length(ISC_STATUS* status_vector,
-						 isc_db_handle database,
-						 isc_tr_handle transaction,
-						 ISC_QUAD& blob_id)
+static USHORT get_format_length(ISC_STATUS* status_vector, isc_db_handle database,
+	isc_tr_handle transaction, ISC_QUAD& blob_id)
 {
 	UserBlob blob(status_vector);
 
