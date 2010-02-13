@@ -20,16 +20,11 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
-#include "../jrd/btr.h"
-#include "../jrd/intl.h"
 #include "../dsql/Nodes.h"
-#include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/sort_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/Attachment.h"
 
@@ -43,8 +38,12 @@ using namespace Jrd;
 // ------------------------
 
 AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* group,
-			jrd_nod* const map, RecordSource* next)
-	: RecordStream(csb, stream), m_next(next), m_group(group), m_map(map)
+			jrd_nod* const map, RecordSource* next, jrd_nod* order)
+	: RecordStream(csb, stream),
+	  m_next(order ? FB_NEW(csb->csb_pool) BufferedStream(csb, next) : next),
+	  m_group(group),
+	  m_map(map),
+	  m_order(order)
 {
 	fb_assert(m_map && m_next);
 
@@ -59,7 +58,10 @@ void AggregatedStream::open(thread_db* tdbb)
 	impure->irsb_flags = irsb_open;
 
 	impure->state = STATE_GROUPING;
+	impure->pending = 0;
 	VIO_record(tdbb, &request->req_rpb[m_stream], m_format, tdbb->getDefaultPool());
+
+	m_next->open(tdbb);
 }
 
 void AggregatedStream::close(thread_db* tdbb)
@@ -90,12 +92,43 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	impure->state = evaluateGroup(tdbb, impure->state);
-
-	if (impure->state == STATE_PROCESS_EOF)
+	if (m_order)
 	{
-		rpb->rpb_number.setValid(false);
-		return false;
+		BufferedStream* bufferedStream = static_cast<BufferedStream*>(m_next);
+
+		if (impure->pending == 0)
+		{
+			FB_UINT64 position = bufferedStream->getPosition(request);
+
+			if (impure->state == STATE_PENDING)
+				bufferedStream->getRecord(tdbb);
+
+			impure->state = evaluateGroup(tdbb, impure->state);
+
+			if (impure->state == STATE_PROCESS_EOF)
+			{
+				rpb->rpb_number.setValid(false);
+				return false;
+			}
+
+			impure->pending = bufferedStream->getPosition(request) - position -
+				(impure->state == STATE_EOF_FOUND ? 0 : 1);
+			bufferedStream->locate(tdbb, position);
+		}
+
+		if (impure->pending > 0)
+			--impure->pending;
+		bufferedStream->getRecord(tdbb);
+	}
+	else
+	{
+		impure->state = evaluateGroup(tdbb, impure->state);
+
+		if (impure->state == STATE_PROCESS_EOF)
+		{
+			rpb->rpb_number.setValid(false);
+			return false;
+		}
 	}
 
 	rpb->rpb_number.setValid(true);
@@ -135,6 +168,13 @@ void AggregatedStream::invalidateRecords(jrd_req* request)
 	m_next->invalidateRecords(request);
 }
 
+void AggregatedStream::findUsedStreams(StreamsArray& streams)
+{
+	RecordStream::findUsedStreams(streams);
+	if (m_order)
+		m_next->findUsedStreams(streams);
+}
+
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state
 // variable.
 AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, AggregatedStream::State state)
@@ -153,42 +193,42 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 	// if we found the last record last time, we're all done
 
 	if (state == STATE_EOF_FOUND)
-	{
 		return STATE_PROCESS_EOF;
-	}
 
 	try
 	{
-		// Initialize the aggregate record
+		// If there isn't a record pending, open the stream and get one
 
-		for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
+		if (!m_order || state == STATE_PROCESS_EOF || state == STATE_GROUPING)
 		{
-			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			// Initialize the aggregate record
 
-			switch (from->nod_type)
+			for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 			{
-				case nod_literal:
-					EXE_assignment(tdbb, *ptr);
-					break;
+				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 
-				case nod_class_exprnode_jrd:
+				switch (from->nod_type)
 				{
-					const AggNode* aggNode = ExprNode::as<AggNode>(from);
-					if (aggNode)
-						aggNode->aggInit(tdbb, request);
-					break;
-				}
+					case nod_literal:
+						EXE_assignment(tdbb, *ptr);
+						break;
 
-				default:    // Shut up some compiler warnings
-					break;
+					case nod_class_exprnode_jrd:
+					{
+						const AggNode* aggNode = ExprNode::as<AggNode>(from);
+						if (aggNode)
+							aggNode->aggInit(tdbb, request);
+						break;
+					}
+
+					default:    // Shut up some compiler warnings
+						break;
+				}
 			}
 		}
 
-		// If there isn't a record pending, open the stream and get one
-
 		if (state == STATE_PROCESS_EOF || state == STATE_GROUPING)
 		{
-			m_next->open(tdbb);
 			if (!m_next->getRecord(tdbb))
 			{
 				if (m_group)
@@ -196,6 +236,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 					finiDistinct(tdbb, request);
 					return STATE_PROCESS_EOF;
 				}
+
 				state = STATE_EOF_FOUND;
 			}
 		}
@@ -205,6 +246,20 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 		if (m_group)
 		{
 			for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
+			{
+				jrd_nod* from = *ptr;
+				impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+				desc = EVL_expr(tdbb, from);
+				if (request->req_flags & req_null)
+					impure->vlu_desc.dsc_address = NULL;
+				else
+					EVL_make_value(tdbb, desc, impure);
+			}
+		}
+
+		if (m_order)
+		{
+			for (ptr = m_order->nod_arg, end = ptr + m_order->nod_count; ptr < end; ptr++)
 			{
 				jrd_nod* from = *ptr;
 				impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
@@ -234,6 +289,43 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				if (m_group)
 				{
 					for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
+					{
+						jrd_nod* from = *ptr;
+						impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+
+						if (impure->vlu_desc.dsc_address)
+							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
+						else
+							vtemp.vlu_desc.dsc_address = NULL;
+
+						desc = EVL_expr(tdbb, from);
+
+						if (request->req_flags & req_null)
+						{
+							impure->vlu_desc.dsc_address = NULL;
+							if (vtemp.vlu_desc.dsc_address)
+							{
+								if (m_order)
+									state = STATE_GROUPING;
+								goto break_out;
+							}
+						}
+						else
+						{
+							EVL_make_value(tdbb, desc, impure);
+							if (!vtemp.vlu_desc.dsc_address || MOV_compare(&vtemp.vlu_desc, desc))
+							{
+								if (m_order)
+									state = STATE_GROUPING;
+								goto break_out;
+							}
+						}
+					}
+				}
+
+				if (m_order)
+				{
+					for (ptr = m_order->nod_arg, end = ptr + m_order->nod_count; ptr < end; ptr++)
 					{
 						jrd_nod* from = *ptr;
 						impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);

@@ -571,52 +571,12 @@ namespace Jrd
 		struct Impure : public RecordSource::Impure
 		{
 			State state;
-		};
-
-	public:
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
-			jrd_nod* const map, RecordSource* next);
-
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
-
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
-
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
-
-		void markRecursive();
-		void invalidateRecords(jrd_req* request);
-
-	private:
-		State evaluateGroup(thread_db* tdbb, State state);
-		void finiDistinct(thread_db* tdbb, jrd_req* request);
-
-		RecordSource* const m_next;
-		jrd_nod* const m_group;
-		jrd_nod* const m_map;
-	};
-
-	class OrderedWindowStream : public RecordStream
-	{
-		enum State
-		{
-			STATE_PROCESS_EOF = 0,	// We processed everything now process (EOF)
-			STATE_PENDING,			// Values are pending from a prior fetch
-			STATE_EOF_FOUND,		// We encountered EOF from the last attempted fetch
-			STATE_GROUPING			// Entering EVL group before fetching the first record
-		};
-
-		struct Impure : public RecordSource::Impure
-		{
-			State state;
 			FB_UINT64 pending;
 		};
 
 	public:
-		OrderedWindowStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
-			jrd_nod* order, jrd_nod* const map, RecordSource* next);
+		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
+			jrd_nod* const map, RecordSource* next, jrd_nod* order = NULL);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -634,11 +594,12 @@ namespace Jrd
 
 	private:
 		State evaluateGroup(thread_db* tdbb, State state);
+		void finiDistinct(thread_db* tdbb, jrd_req* request);
 
-		BufferedStream* const m_next;
+		RecordSource* const m_next;
 		jrd_nod* const m_group;
-		jrd_nod* const m_order;
 		jrd_nod* const m_map;
+		jrd_nod* const m_order;
 	};
 
 	class WindowedStream : public RecordSource

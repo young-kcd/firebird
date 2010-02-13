@@ -771,10 +771,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\jrd\recsrc\OrderedWindowStream.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\src\jrd\recsrc\ProcedureScan.cpp"
 					>
 				</File>

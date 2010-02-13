@@ -519,8 +519,8 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
 			m_joinedStream, partitionOrder, false);
 
-		m_joinedStream = FB_NEW(csb->csb_pool) OrderedWindowStream(csb, stream, partition,
-			order, partitionMap, sortedStream);
+		m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, stream, partition,
+			partitionMap, sortedStream, order);
 	}
 
 	if (mainWindow)
