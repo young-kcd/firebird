@@ -65,7 +65,7 @@ namespace Jrd
 
 	public:
 		virtual int getObjectType() const = 0;
-		virtual const char* getSclType() const = 0;
+		virtual SLONG getSclType() const = 0;
 
 	private:
 		USHORT id;							// routine ID

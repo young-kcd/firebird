@@ -75,10 +75,9 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb, const SecurityClas
 static SecurityClass::flags_t walk_acl(thread_db* tdbb, const Acl&, const jrd_rel*,
 	SLONG, const Firebird::MetaName&);
 
-static inline void check_and_move(UCHAR from, Acl& to)
+
+namespace
 {
-	to.push(from);
-}
 
 struct P_NAMES
 {
@@ -87,7 +86,7 @@ struct P_NAMES
 	const TEXT* p_names_string;
 };
 
-static const P_NAMES p_names[] =
+const P_NAMES p_names[] =
 {
 	{ SCL_protect, priv_protect, "protect" },
 	{ SCL_control, priv_control, "control" },
@@ -104,13 +103,68 @@ static const P_NAMES p_names[] =
 };
 
 
+// Database is never requested through CMP_post_access.
+const char* const object_str_database	= "DATABASE";
+const char* const object_str_schema		= "SCHEMA";
+const char* const object_str_table		= "TABLE";
+const char* const object_str_package	= "PACKAGE";
+const char* const object_str_procedure	= "PROCEDURE";
+const char* const object_str_function	= "FUNCTION";
+const char* const object_str_column		= "COLUMN";
+
+
+struct SecObjectNamePriority
+{
+	const char* name;
+	SLONG num;
+};
+
+const SecObjectNamePriority priorities[] =
+{
+	{object_str_database, SCL_object_database},
+	{object_str_schema, SCL_object_schema},
+	{object_str_table, SCL_object_table},
+	{object_str_package, SCL_object_package},
+	{object_str_procedure, SCL_object_procedure},
+	{object_str_function, SCL_object_function},
+	{object_str_column, SCL_object_column},
+	{"", 0}
+};
+
+/* Unused, may be needed
+SLONG accTypeStrToNum(const char* name)
+{
+	for (const SecObjectNamePriority* p = priorities; p->num != 0; ++p)
+	{
+		if (strcmp(p->name, name) == 0)
+			return p->num;
+	}
+	fb_assert(false);
+	return 0;
+}
+*/
+
+const char* accTypeNumToStr(const SLONG num)
+{
+	for (const SecObjectNamePriority* p = priorities; p->num != 0; ++p)
+	{
+		if (p->num == num)
+			return p->name;
+	}
+	fb_assert(false);
+	return "<unknown object type>";
+}
+
+} // anonymous namespace
+
+
 void SCL_check_access(thread_db* tdbb,
 					  const SecurityClass* s_class,
 					  SLONG view_id,
 					  SLONG obj_type,
 					  const Firebird::MetaName& obj_name,
 					  SecurityClass::flags_t mask,
-					  const TEXT* type,
+					  SLONG type,
 					  const char* name)
 {
 /**************************************
@@ -185,14 +239,17 @@ void SCL_check_access(thread_db* tdbb,
 
 	if (denied_db)
 	{
+		fb_assert(type == SCL_object_database);
 		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) <<
-										  Arg::Str("DATABASE") <<
+										  Arg::Str(object_str_database) <<
 										  Arg::Str(""));
 	}
 	else
 	{
+		fb_assert(type != SCL_object_database);
+		const char* typeAsStr = accTypeNumToStr(type);
 		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) <<
-										  Arg::Str(type) <<
+										  Arg::Str(typeAsStr) <<
 										  Arg::Str(name));
 	}
 }
@@ -204,7 +261,7 @@ void SCL_check_access(thread_db* tdbb,
 					  SLONG obj_type,
 					  const Firebird::MetaName& obj_name,
 					  SecurityClass::flags_t mask,
-					  const TEXT* type,
+					  SLONG type,
 					  const Firebird::MetaName& name,
 					  const Firebird::MetaName& r_name)
 {
@@ -318,7 +375,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		return;
 	}
 
-	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, object_table, reln_name);
+	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, reln_name);
 
 	request = NULL;
 
@@ -348,11 +405,11 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 	        if (!RF.RDB$SECURITY_CLASS.NULL)
 	        {
 				s_class = SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS);
-				SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, object_column, fullFieldName);
+				SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_column, fullFieldName);
 			}
 			else
 			{
-				SCL_check_access(tdbb, default_s_class, 0, 0, NULL, mask, object_column,
+				SCL_check_access(tdbb, default_s_class, 0, 0, NULL, mask, SCL_object_column,
 								 fullFieldName);
 			}
 
@@ -410,7 +467,7 @@ void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 	if (!REQUEST(irq_pkg_security))
 		REQUEST(irq_pkg_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, id_package, name, mask, object_package, name);
+	SCL_check_access(tdbb, s_class, 0, id_package, name, mask, SCL_object_package, name);
 }
 
 
@@ -455,7 +512,7 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, id_procedure, name, mask, object_procedure, name);
+	SCL_check_access(tdbb, s_class, 0, id_procedure, name, mask, SCL_object_procedure, name);
 }
 
 
@@ -500,7 +557,7 @@ void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	if (!REQUEST(irq_f_security))
 		REQUEST(irq_f_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, object_function, name);
+	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, SCL_object_function, name);
 }
 
 
@@ -544,7 +601,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, object_table, name);
+	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, name);
 }
 
 
@@ -849,19 +906,19 @@ void SCL_move_priv(SecurityClass::flags_t mask, Acl& acl)
  **************************************/
 	// Terminate identification criteria, and move privileges
 
-	check_and_move(ACL_end, acl);
-	check_and_move(ACL_priv_list, acl);
+	acl.push(ACL_end);
+	acl.push(ACL_priv_list);
 
 	for (const P_NAMES* priv = p_names; priv->p_names_priv; priv++)
 	{
 		if (mask & priv->p_names_priv)
 		{
 			fb_assert(priv->p_names_acl <= MAX_UCHAR);
-			check_and_move(priv->p_names_acl, acl);
+			acl.push(priv->p_names_acl);
 		}
 	}
 
-	check_and_move(0, acl);
+	acl.push(0);
 }
 
 

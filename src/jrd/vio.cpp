@@ -3479,7 +3479,7 @@ static void check_rel_field_class(thread_db* tdbb,
 			// he may have access to relation as whole.
 			try
 			{
-				SCL_check_access(tdbb, s_class, 0, 0, NULL, flags, "", "");
+				SCL_check_access(tdbb, s_class, 0, 0, NULL, flags, SCL_object_column, "");
 			}
 			catch (const Firebird::Exception&)
 			{
@@ -3524,7 +3524,7 @@ static void check_class(thread_db* tdbb,
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	SCL_check_access(tdbb, attachment->att_security_class, 0, 0, NULL, SCL_protect,
-					 "DATABASE", NULL);
+					 SCL_object_database, NULL);
 	DFW_post_work(transaction, dfw_compute_security, &desc2, 0);
 }
 
@@ -3547,7 +3547,7 @@ static void check_control(thread_db* tdbb)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	SCL_check_access(tdbb, attachment->att_security_class, 0, 0, NULL, SCL_control,
-					 "DATABASE", NULL);
+					 SCL_object_database, NULL);
 }
 
 

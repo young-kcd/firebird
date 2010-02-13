@@ -546,23 +546,29 @@ typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
 // Access items
 // In case we start to use MetaName with required pool parameter,
 // access item to be reworked!
+// This struct seems better located in scl.h.
 
 struct AccessItem
 {
 	Firebird::MetaName		acc_security_name;
 	SLONG					acc_view_id;
 	Firebird::MetaName		acc_name, acc_r_name;
-	const TEXT*				acc_type;
+	//const TEXT*			acc_type;
+	SLONG					acc_type;
 	SecurityClass::flags_t	acc_mask;
 
 	static bool greaterThan(const AccessItem& i1, const AccessItem& i2)
 	{
 		int v;
 
+		/* CVC: Disabled this horrible hack.
 		// Relations and procedures should be sorted before
 		// columns, hence such a tricky inverted condition
 		if ((v = -strcmp(i1.acc_type, i2.acc_type)) != 0)
 			return v > 0;
+		*/
+		if (i1.acc_type != i2.acc_type)
+			return i1.acc_type > i2.acc_type;
 
 		if ((v = i1.acc_security_name.compare(i2.acc_security_name)) != 0)
 			return v > 0;
@@ -583,7 +589,7 @@ struct AccessItem
 	}
 
 	AccessItem(const Firebird::MetaName& security_name, SLONG view_id,
-		const Firebird::MetaName& name, const TEXT* type,
+		const Firebird::MetaName& name, SLONG type,
 		SecurityClass::flags_t mask, const Firebird::MetaName& relName)
 		: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
 			acc_r_name(relName), acc_type(type), acc_mask(mask)

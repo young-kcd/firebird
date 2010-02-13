@@ -272,9 +272,9 @@ public:
 		return obj_procedure;
 	}
 
-	virtual const char* getSclType() const
+	virtual SLONG getSclType() const
 	{
-		return object_procedure;
+		return SCL_object_procedure;
 	}
 };
 

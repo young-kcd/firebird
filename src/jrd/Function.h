@@ -86,9 +86,9 @@ namespace Jrd
 			return obj_udf;
 		}
 
-		virtual const char* getSclType() const
+		virtual SLONG getSclType() const
 		{
-			return object_function;
+			return SCL_object_function;
 		}
 
 	public:

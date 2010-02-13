@@ -485,12 +485,12 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 
 			if (!(owner_relation->rel_flags & REL_system))
 			{
-				if (!strcmp(access->acc_type, object_table) &&
+				if (access->acc_type == SCL_object_table &&
 					(owner_relation->rel_name == access->acc_name))
 				{
 					continue;
 				}
-				if (!strcmp(access->acc_type, object_column) &&
+				if (access->acc_type == SCL_object_column &&
 					(MET_lookup_field(tdbb, owner_relation, access->acc_name,
 						&access->acc_security_name) >= 0 ||
 					 MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
@@ -700,7 +700,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 			}
 			else
 			{
-				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, object_package,
+				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, SCL_object_package,
 					routine->getName().package);
 			}
 		}
@@ -2479,7 +2479,7 @@ void CMP_post_access(thread_db* tdbb,
 					 const Firebird::MetaName& security_name,
 					 SLONG view_id,
 					 SecurityClass::flags_t mask,
-					 const TEXT* type_name,
+					 SLONG type_name,
 					 const Firebird::MetaName& name,
 					 const Firebird::MetaName& r_name)
 {
@@ -3592,7 +3592,7 @@ static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* r
 			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : (view ? view->rel_id : 0),
-								SCL_read, object_table,
+								SCL_read, SCL_object_table,
 								relation->rel_name);
 			}
 			break;
@@ -4060,12 +4060,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id :
 										(view ? view->rel_id : 0),
-									SCL_sql_update, object_table,
+									SCL_sql_update, SCL_object_table,
 									relation->rel_name);
 					CMP_post_access(tdbb, csb, field->fld_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id :
 										(view ? view->rel_id : 0),
-									SCL_sql_update, object_column,
+									SCL_sql_update, SCL_object_column,
 									field->fld_name, relation->rel_name);
 				}
 			}
@@ -4074,7 +4074,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
-								SCL_sql_delete, object_table,
+								SCL_sql_delete, SCL_object_table,
 								relation->rel_name);
 			}
 			else if (tail->csb_flags & csb_store)
@@ -4082,12 +4082,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
-								SCL_sql_insert, object_table,
+								SCL_sql_insert, SCL_object_table,
 								relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
-								SCL_sql_insert, object_column,
+								SCL_sql_insert, SCL_object_column,
 								field->fld_name, relation->rel_name);
 			}
 			else
@@ -4095,11 +4095,11 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
-								SCL_read, object_table, relation->rel_name);
+								SCL_read, SCL_object_table, relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
-								SCL_read, object_column, field->fld_name, relation->rel_name);
+								SCL_read, SCL_object_column, field->fld_name, relation->rel_name);
 			}
 
 			if (!(sub = field->fld_computation) && !(sub = field->fld_source))
@@ -4280,12 +4280,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 				if (function->getName().package.isEmpty())
 				{
-					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, object_function,
+					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, SCL_object_function,
 									function->getName().identifier.c_str());
 				}
 				else
 				{
-					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, object_package,
+					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, SCL_object_package,
 									function->getName().package.c_str());
 				}
 
@@ -5506,7 +5506,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 	// unless this is an internal request, check access permission
 
 	CMP_post_access(tdbb, csb, relation->rel_security_name, (view ? view->rel_id : 0),
-					priv, object_table, relation->rel_name);
+					priv, SCL_object_table, relation->rel_name);
 
 	// ensure that the view is set for the input streams,
 	// so that access to views can be checked at the field level
@@ -6530,12 +6530,12 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	// this request must have EXECUTE permission on the stored procedure
 	if (procedure->getName().package.isEmpty())
 	{
-		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
+		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, SCL_object_procedure,
 						procedure->getName().identifier.c_str());
 	}
 	else
 	{
-		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_package,
+		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, SCL_object_package,
 						procedure->getName().package.c_str());
 	}
 

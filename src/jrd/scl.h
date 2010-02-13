@@ -138,11 +138,17 @@ public:
 	}
 };
 
-const char* const object_table		= "TABLE";
-const char* const object_procedure	= "PROCEDURE";
-const char* const object_column		= "COLUMN";
-const char* const object_package	= "PACKAGE";
-const char* const object_function	= "FUNCTION";
+
+// Here, higher is more priority.
+// These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.
+// We need to include here the new objects that accept ACLs.
+const SLONG SCL_object_database		= 30;
+const SLONG SCL_object_schema		= 20;
+const SLONG SCL_object_table		= 10;
+const SLONG SCL_object_package		= 9;
+const SLONG SCL_object_procedure	= 8;
+const SLONG SCL_object_function		= 7;
+const SLONG SCL_object_column		= 5;
 
 } //namespace Jrd
 
