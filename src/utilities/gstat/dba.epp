@@ -1144,7 +1144,7 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 
 	if (sw_record)
 	{
-		for (dba_fmt* format = relation->rel_formats; format; format = format->fmt_next)
+		for (const dba_fmt* format = relation->rel_formats; format; format = format->fmt_next)
 		{
 			if (format->fmt_used)
 			{
@@ -1563,7 +1563,7 @@ USHORT get_format_length(ISC_STATUS* status_vector,
 
 	USHORT count = buffer[0] | (buffer[1] << 8);
 	USHORT format_length = 0;
-	for (Ods::Descriptor* desc = (Ods::Descriptor*) &buffer[2]; count--; desc++)
+	for (const Ods::Descriptor* desc = (Ods::Descriptor*) &buffer[2]; count--; desc++)
 	{
 		format_length += desc->dsc_length;
 	}
