@@ -1,3 +1,34 @@
+2010-02-13 09:34  robocop
+
+	* firebird2/src/jrd/: dpm.epp (1.123), sqz.cpp (1.39), sqz.h
+	(1.12):
+
+	Misc.
+
+2010-02-13 09:31  robocop
+
+	* firebird2/src/jrd/: Function.h (1.8), cmp.cpp (1.388),
+	cmp_proto.h (1.40), exe.h (1.155), idx.cpp (1.167), jrd.h (1.289),
+	Routine.h (1.4), scl.epp (1.120), scl.h (1.33), scl_proto.h (1.36),
+	vio.cpp (1.288):
+
+	The way AccessItem instances were ordered was a hack that sooner or
+	later would fail when adding more object types (that now have ACLs
+	but we still don't enfornce them). Further, comparing numbers is
+	faster than comparing strings.
+
+2010-02-13 09:26  robocop
+
+	* firebird2/src/utilities/gstat/dba.epp (1.129):
+
+	Misc.
+
+2010-02-12 17:11  dimitr
+
+	* firebird2/src/jrd/sqz_proto.h (1.18):
+
+	This file shouldn't be necessary anymore.
+
 2010-02-12 13:53  dimitr
 
 	* firebird2/src/jrd/: dpm.epp (1.122), sqz.cpp (1.38), sqz.h
