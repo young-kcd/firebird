@@ -38,6 +38,7 @@
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
+#include "../dsql/Nodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
@@ -80,7 +81,6 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
 }
 
 static void make_null(dsc* const desc);
-static void make_parameter_names(dsql_par*, const dsql_nod*);
 
 
 static const char* DB_KEY_NAME = "DB_KEY";
@@ -414,20 +414,16 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 
 	switch (node->nod_type)
 	{
+	case nod_class_exprnode:
+		{
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			exprNode->make(desc, null_replacement);
+		}
+		return;
+
 	case nod_constant:
 	case nod_variable:
 		*desc = node->nod_desc;
-		return;
-
-	case nod_agg_count:
-// count2
-//    case nod_agg_distinct:
-
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
 		return;
 
 	case nod_map:
@@ -439,109 +435,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		if (context->ctx_flags & CTX_outer_join)
 			desc->dsc_flags |= DSC_nullable;
 
-		return;
-
-	case nod_agg_min:
-	case nod_agg_max:
-	case nod_window:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
-		desc->dsc_flags = DSC_nullable;
-		return;
-
-	case nod_agg_average:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
-		desc->dsc_flags = DSC_nullable;
-		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) && !DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("AVG"));
-		}
-		else if (DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_length = sizeof(double);
-		}
-		return;
-
-	case nod_agg_average2:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
-		desc->dsc_flags = DSC_nullable;
-		dtype = desc->dsc_dtype;
-		if (!DTYPE_IS_NUMERIC(dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("AVG"));
-		}
-		else if (DTYPE_IS_EXACT(dtype))
-		{
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_length = sizeof(SINT64);
-			node->nod_flags |= NOD_COMP_DIALECT;
-		}
-		else
-		{
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_length = sizeof(double);
-		}
-		return;
-
-	case nod_agg_total:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
-		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) && !DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("SUM"));
-		}
-		else if (desc->dsc_dtype == dtype_short)
-		{
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_length = sizeof(SLONG);
-		}
-		else if (desc->dsc_dtype == dtype_int64)
-		{
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_length = sizeof(double);
-		}
-		else if (DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_length = sizeof(double);
-		}
-		desc->dsc_flags = DSC_nullable;
-		return;
-
-	case nod_agg_total2:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
-		dtype = desc->dsc_dtype;
-		if (!DTYPE_IS_NUMERIC(dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("SUM"));
-		}
-		else if (DTYPE_IS_EXACT(dtype))
-		{
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_length = sizeof(SINT64);
-			node->nod_flags |= NOD_COMP_DIALECT;
-		}
-		else
-		{
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_length = sizeof(double);
-		}
-		desc->dsc_flags = DSC_nullable;
-		return;
-
-	case nod_agg_list:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
-		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
-		desc->setNullable(true);
-		return;
-
-	case nod_concatenate:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-		DSqlDataTypeUtil(dsqlScratch).makeConcatenate(desc, &desc1, &desc2);
 		return;
 
 	case nod_derived_field:
@@ -1731,9 +1624,8 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	parameter->par_owner_name = NULL;
 	parameter->par_rel_alias = NULL;
 
-	if (node) {
-		make_parameter_names(parameter, node);
-	}
+	if (node)
+		MAKE_parameter_names(parameter, node);
 
 	// If the parameter is used declared, set SQLDA index
 	if (sqlda_flag)
@@ -1907,7 +1799,7 @@ static void make_null(dsc* const desc)
 
 /**
 
-	make_parameter_names
+	MAKE_parameter_names
 
 	@brief  Determine relation/column/alias names (if appropriate)
 			and store them in the given parameter.
@@ -1916,7 +1808,7 @@ static void make_null(dsc* const desc)
 	@param item
 
 **/
-static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
+void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 {
 	const dsql_fld* field;
 	const dsql_ctx* context = NULL;
@@ -1929,6 +1821,9 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 
 	switch (item->nod_type)
 	{
+	case nod_class_exprnode:
+		reinterpret_cast<ExprNode*>(item->nod_arg[0])->setParameterName(parameter);
+		break;
 	case nod_field:
 		field = (dsql_fld*) item->nod_arg[e_fld_field];
 		name_alias = field->fld_name.c_str();
@@ -1956,7 +1851,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_via:
 		// subquery, aka sub-select
-		make_parameter_names(parameter, item->nod_arg[e_via_value_1]);
+		MAKE_parameter_names(parameter, item->nod_arg[e_via_value_1]);
 		break;
 	case nod_derived_field:
 		string = (dsql_str*) item->nod_arg[e_derived_field_name];
@@ -1984,6 +1879,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				map = (dsql_map*) map_node->nod_arg[e_map_map];
 				map_node = map->map_node;
 			}
+
 			switch (map_node->nod_type)
 			{
 			case nod_field:
@@ -2013,32 +1909,19 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
-
-			case nod_agg_count:
-				name_alias = "COUNT";
-				break;
-			case nod_agg_total:
-			case nod_agg_total2:
-				name_alias = "SUM";
-				break;
-			case nod_agg_average:
-			case nod_agg_average2:
-				name_alias = "AVG";
-				break;
-			case nod_agg_min:
-				name_alias = "MIN";
-				break;
-			case nod_agg_max:
-				name_alias = "MAX";
-				break;
-			case nod_agg_list:
-				name_alias = "LIST";
-				break;
 			case nod_constant:
 				name_alias = "CONSTANT";
 				break;
 			case nod_dbkey:
 				name_alias = DB_KEY_NAME;
+				break;
+
+			case nod_class_exprnode:
+				{
+					const AggNode* aggNode = ExprNode::as<AggNode>(map_node);
+					if (aggNode)
+						aggNode->setParameterName(parameter);
+				}
 				break;
 			} // switch(map_node->nod_type)
 			break;
@@ -2076,9 +1959,6 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			name_alias = InternalInfo::getAlias(id);
 		}
 		break;
-	case nod_concatenate:
-		name_alias = "CONCATENATION";
-		break;
 	case nod_constant:
 	case nod_null:
 		name_alias = "CONSTANT";
@@ -2087,7 +1967,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		{
 			// CVC: For this to be a thorough check, we need to recurse over all nodes.
 			// This means we should separate the code that sets aliases from
-			// the rest of the functionality here in make_parameter_names().
+			// the rest of the functionality here in MAKE_parameter_names().
 			// Otherwise, we need to test here for most of the other node types.
 			// However, we need to be recursive only if we agree things like -gen_id()
 			// should be given the GEN_ID alias, too.
@@ -2205,9 +2085,8 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	}
 
-	if (name_alias) {
+	if (name_alias)
 		parameter->par_name = parameter->par_alias = name_alias;
-	}
 
 	if (context)
 	{

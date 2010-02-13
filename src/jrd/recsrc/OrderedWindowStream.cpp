@@ -21,6 +21,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
+#include "../dsql/Nodes.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
@@ -187,56 +188,23 @@ OrderedWindowStream::State OrderedWindowStream::evaluateGroup(thread_db* tdbb,
 		for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 		{
 			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
-			impure->vlux_count = 0;
 
 			switch (from->nod_type)
 			{
-			case nod_agg_average:
-				impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
-				impure->vlu_desc.dsc_length = sizeof(double);
-				impure->vlu_desc.dsc_sub_type = 0;
-				impure->vlu_desc.dsc_scale = 0;
-				impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_double;
-				impure->vlu_misc.vlu_double = 0;
-				break;
+				case nod_literal:
+					EXE_assignment(tdbb, *ptr);
+					break;
 
-			case nod_agg_average2:
-				// Initialize the result area as an int64.  If the field being
-				// averaged is approximate numeric, the first call to add2 will
-				// convert the descriptor to double.
-				impure->make_int64(0, from->nod_scale);
-				break;
+				case nod_class_exprnode_jrd:
+				{
+					const AggNode* aggNode = ExprNode::as<AggNode>(from);
+					if (aggNode)
+						aggNode->aggInit(tdbb, request);
+					break;
+				}
 
-			case nod_agg_total:
-				impure->make_long(0);
-				break;
-
-			case nod_agg_total2:
-				// Initialize the result area as an int64.  If the field being
-				// averaged is approximate numeric, the first call to add2 will
-				// convert the descriptor to double.
-				impure->make_int64(0, from->nod_scale);
-				break;
-
-			case nod_agg_min:
-			case nod_agg_min_indexed:
-			case nod_agg_max:
-			case nod_agg_max_indexed:
-				impure->vlu_desc.dsc_dtype = 0;
-				break;
-
-			case nod_agg_count:
-			case nod_agg_count2:
-				impure->make_long(0);
-				break;
-
-			case nod_literal:	// pjpg 20001124
-				EXE_assignment(tdbb, *ptr);
-				break;
-
-			default:    // Shut up some compiler warnings
-				break;
+				default:    // Shut up some compiler warnings
+					break;
 			}
 		}
 
@@ -358,77 +326,18 @@ OrderedWindowStream::State OrderedWindowStream::evaluateGroup(thread_db* tdbb,
 		for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 		{
 			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
-			switch (from->nod_type)
+			if (aggNode)
 			{
-			case nod_agg_min:
-			case nod_agg_min_indexed:
-			case nod_agg_max:
-			case nod_agg_max_indexed:
-				{
-					desc = EVL_expr(tdbb, from->nod_arg[0]);
-					if (request->req_flags & req_null)
-						break;
+				aggNode->aggPass(tdbb, request);
 
-					// if a max or min has been mapped to an index,
-					// then the first record is the EOF
-
-					if (from->nod_type == nod_agg_max_indexed || from->nod_type == nod_agg_min_indexed)
-						state = STATE_EOF_FOUND;
-
-					++impure->vlux_count;
-					if (!impure->vlu_desc.dsc_dtype)
-					{
-						EVL_make_value(tdbb, desc, impure);
-						break;
-					}
-
-					const SLONG result = MOV_compare(desc, &impure->vlu_desc);
-
-					if ((result > 0 &&
-							(from->nod_type == nod_agg_max || from->nod_type == nod_agg_max_indexed)) ||
-						(result < 0 &&
-							(from->nod_type == nod_agg_min || from->nod_type == nod_agg_min_indexed)))
-					{
-						EVL_make_value(tdbb, desc, impure);
-					}
-
-					break;
-				}
-
-			case nod_agg_total:
-			case nod_agg_average:
-				desc = EVL_expr(tdbb, from->nod_arg[0]);
-				if (request->req_flags & req_null)
-					break;
-				++impure->vlux_count;
-				EVL_add(desc, from, impure);
-				break;
-
-			case nod_agg_total2:
-			case nod_agg_average2:
-				desc = EVL_expr(tdbb, from->nod_arg[0]);
-				if (request->req_flags & req_null)
-					break;
-				++impure->vlux_count;
-				EVL_add2(desc, from, impure);
-				break;
-
-			case nod_agg_count2:
-				++impure->vlux_count;
-				desc = EVL_expr(tdbb, from->nod_arg[0]);
-				if (request->req_flags & req_null)
-					break;
-
-			case nod_agg_count:
-				++impure->vlux_count;
-				++impure->vlu_misc.vlu_long;
-				break;
-
-			default:
-				EXE_assignment(tdbb, *ptr);
+				// If a max or min has been mapped to an index, then the first record is the EOF.
+				if (aggNode->indexed)
+					state = STATE_EOF_FOUND;
 			}
+			else
+				EXE_assignment(tdbb, *ptr);
 		}
 
 		if (state == STATE_EOF_FOUND)
@@ -444,94 +353,25 @@ OrderedWindowStream::State OrderedWindowStream::evaluateGroup(thread_db* tdbb,
 
 	delete vtemp.vlu_string;
 
-	dsc temp;
-	double d;
-	SINT64 i;
-
 	for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 	{
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-		Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
-		impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+		const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
-		switch (from->nod_type)
+		if (aggNode)
 		{
-		case nod_agg_min:
-		case nod_agg_min_indexed:
-		case nod_agg_max:
-		case nod_agg_max_indexed:
-		case nod_agg_total:
-		case nod_agg_total2:
-			if (!impure->vlux_count)
-			{
-				SET_NULL(record, id);
-				break;
-			}
-			// If vlux_count is non-zero, we need to fall through.
+			jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+			const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+			Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 
-		case nod_agg_count:
-		case nod_agg_count2:
-			if (!impure->vlu_desc.dsc_dtype)
-			{
+			desc = aggNode->execute(tdbb, request);
+			if (!desc || !desc->dsc_dtype)
 				SET_NULL(record, id);
-			}
 			else
 			{
-				MOV_move(tdbb, &impure->vlu_desc, EVL_assign_to(tdbb, field));
+				MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
 				CLEAR_NULL(record, id);
 			}
-			break;
-
-		case nod_agg_average:
-			if (!impure->vlux_count)
-			{
-				SET_NULL(record, id);
-				break;
-			}
-			CLEAR_NULL(record, id);
-			temp.dsc_dtype = DEFAULT_DOUBLE;
-			temp.dsc_length = sizeof(double);
-			temp.dsc_scale = 0;
-			temp.dsc_sub_type = 0;
-			temp.dsc_address = (UCHAR*) &d;
-			d = MOV_get_double(&impure->vlu_desc) / impure->vlux_count;
-			MOV_move(tdbb, &temp, EVL_assign_to(tdbb, field));
-			break;
-
-		case nod_agg_average2:
-			if (!impure->vlux_count)
-			{
-				SET_NULL(record, id);
-				break;
-			}
-
-			CLEAR_NULL(record, id);
-			temp.dsc_sub_type = 0;
-
-			if (dtype_int64 == impure->vlu_desc.dsc_dtype)
-			{
-				temp.dsc_dtype = dtype_int64;
-				temp.dsc_length = sizeof(SINT64);
-				temp.dsc_scale = impure->vlu_desc.dsc_scale;
-				temp.dsc_address = (UCHAR*) &i;
-				i = *((SINT64*) impure->vlu_desc.dsc_address) / impure->vlux_count;
-			}
-			else
-			{
-				temp.dsc_dtype = DEFAULT_DOUBLE;
-				temp.dsc_length = sizeof(double);
-				temp.dsc_scale = 0;
-				temp.dsc_address = (UCHAR*) &d;
-				d = MOV_get_double(&impure->vlu_desc) / impure->vlux_count;
-			}
-
-			MOV_move(tdbb, &temp, EVL_assign_to(tdbb, field));
-			break;
-
-		default:	// Shut up some compiler warnings
-			break;
 		}
 	}
 

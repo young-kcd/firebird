@@ -83,6 +83,8 @@
 #include "../jrd/recsrc/Cursor.h"
 
 #include "../jrd/Optimizer.h"
+#include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -90,6 +92,421 @@ using namespace Firebird;
 #ifdef DEV_BUILD
 #define OPT_DEBUG
 #endif
+
+
+bool JrdNodeVisitor::visitChildren(jrd_nod* node)
+{
+	bool ret = false;
+
+	if (!node)
+		return ret;
+
+	switch (node->nod_type)
+	{
+		case nod_class_exprnode_jrd:
+		{
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			return (exprNode->*exprVisit)(*this);
+		}
+
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			break;
+
+		case nod_cast:
+			ret |= visit(node->nod_arg[e_cast_source]);
+			break;
+
+		case nod_extract:
+			ret |= visit(node->nod_arg[e_extract_value]);
+			break;
+
+		case nod_strlen:
+			ret |= visit(node->nod_arg[e_strlen_value]);
+			break;
+
+		case nod_add:
+		case nod_add2:
+		case nod_divide:
+		case nod_divide2:
+		case nod_multiply:
+		case nod_multiply2:
+		case nod_negate:
+		case nod_subtract:
+		case nod_subtract2:
+		case nod_upcase:
+		case nod_lowcase:
+		case nod_substr:
+		case nod_trim:
+		case nod_sys_function:
+		case nod_derived_expr:
+		{
+			jrd_nod* const* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (jrd_nod* const* end = ptr + node->nod_count; ptr < end; ptr++)
+				ret |= visit(*ptr);
+
+			return ret;
+		}
+
+		default:
+			return returnOnOthers;
+	}
+
+	return ret;
+}
+
+
+PossibleUnknownFinder::PossibleUnknownFinder()
+	: JrdNodeVisitor(true, &ExprNode::jrdPossibleUnknownFinder)
+{
+}
+
+bool PossibleUnknownFinder::visit(jrd_nod* node)
+{
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node)
+		return false;
+
+	switch (node->nod_type)
+	{
+		case nod_field:
+		case nod_rec_version:
+		case nod_dbkey:
+			return false;
+
+		case nod_or:
+		case nod_and:
+
+		case nod_like:
+		case nod_between:
+		case nod_contains:
+		case nod_similar:
+		case nod_starts:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
+		{
+			jrd_nod* const* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+			{
+				if (visit(*ptr))
+					return true;
+			}
+
+			return false;
+		}
+
+		default:
+			return visitChildren(node);
+	}
+}
+
+
+StreamFinder::StreamFinder(CompilerScratch* aCsb, UCHAR aStream)
+	: JrdNodeVisitor(true, &ExprNode::jrdStreamFinder),
+	  csb(aCsb),
+	  stream(aStream)
+{
+}
+
+bool StreamFinder::visit(jrd_nod* node)
+{
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node)
+		return false;
+
+	switch (node->nod_type)
+	{
+		case nod_field:
+			return (USHORT)(IPTR) node->nod_arg[e_fld_stream] == stream;
+
+		case nod_rec_version:
+		case nod_dbkey:
+			return (USHORT)(IPTR) node->nod_arg[0] == stream;
+
+		case nod_function:
+			return visit(node->nod_arg[e_fun_args]);
+
+		case nod_procedure:
+			return visit(node->nod_arg[e_prc_inputs]);
+
+		case nod_any:
+		case nod_unique:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_exists:
+			return visit(node->nod_arg[e_any_rse]);
+
+		case nod_rse:
+		{
+			RecordSelExpr* rse = (RecordSelExpr*) node;
+
+			if (rse)
+			{
+				jrd_nod* sub;
+
+				if ((sub = rse->rse_first) && visit(sub))
+					return true;
+
+				if ((sub = rse->rse_skip) && visit(sub))
+					return true;
+
+				if ((sub = rse->rse_boolean) && visit(sub))
+					return true;
+
+				if ((sub = rse->rse_sorted) && visit(sub))
+					return true;
+
+				if ((sub = rse->rse_projection) && visit(sub))
+					return true;
+			}
+
+			break;
+		}
+
+		case nod_average:
+		case nod_count:
+		case nod_from:
+		case nod_max:
+		case nod_min:
+		case nod_total:
+		{
+			jrd_nod* nodeDefault = node->nod_arg[e_stat_rse];
+			if (nodeDefault && visit(nodeDefault))
+				return true;
+
+			jrd_nod* value = node->nod_arg[e_stat_value];
+			if (value && visit(value))
+				return true;
+
+			return false;
+		}
+
+		case nod_like:
+		case nod_between:
+		case nod_contains:
+		case nod_similar:
+		case nod_starts:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
+
+		case nod_sleuth:
+		case nod_missing:
+		case nod_value_if:
+		case nod_matches:
+		case nod_equiv:
+		{
+			jrd_nod* const* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			bool result = false;
+			for (jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+			{
+				if (visit(*ptr))
+					return true;
+			}
+
+			return result;
+		}
+
+		default:
+			return visitChildren(node);
+	}
+
+	return false;
+}
+
+
+StreamsCollector::StreamsCollector(SortedArray<int>& aStreams)
+	: JrdNodeVisitor(false, &ExprNode::jrdStreamsCollector),
+	  streams(aStreams)
+{
+}
+
+bool StreamsCollector::visit(jrd_nod* node)
+{
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node)
+		return false;
+
+	switch (node->nod_type)
+	{
+		case nod_field:
+		{
+			int n = (int)(IPTR) node->nod_arg[e_fld_stream];
+			if (!streams.exist(n))
+				streams.add(n);
+			break;
+		}
+
+		case nod_rec_version:
+		case nod_dbkey:
+		{
+			int n = (int)(IPTR) node->nod_arg[0];
+			if (!streams.exist(n))
+				streams.add(n);
+			break;
+		}
+
+		case nod_function:
+			visit(node->nod_arg[e_fun_args]);
+			break;
+
+		case nod_procedure:
+			visit(node->nod_arg[e_prc_inputs]);
+			break;
+
+		case nod_any:
+		case nod_unique:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_exists:
+			visit(node->nod_arg[e_any_rse]);
+			break;
+
+		case nod_rse:
+		{
+			RecordSelExpr* rse = (RecordSelExpr*) node;
+			if (rse)
+			{
+				visit(rse->rse_first);
+				visit(rse->rse_skip);
+				visit(rse->rse_boolean);
+				visit(rse->rse_sorted);
+				visit(rse->rse_projection);
+			}
+			break;
+		}
+
+		case nod_average:
+		case nod_count:
+		case nod_from:
+		case nod_max:
+		case nod_min:
+		case nod_total:
+			visit(node->nod_arg[e_stat_rse]);
+			visit(node->nod_arg[e_stat_value]);
+			break;
+
+		case nod_like:
+		case nod_between:
+		case nod_contains:
+		case nod_similar:
+		case nod_starts:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
+
+		case nod_sleuth:
+		case nod_missing:
+		case nod_value_if:
+		case nod_matches:
+		case nod_equiv:
+		{
+			jrd_nod* const* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+				visit(*ptr);
+			break;
+		}
+
+		default:
+			return visitChildren(node);
+	}
+
+	return false;
+}
+
+
+UnmappedNodeGetter::UnmappedNodeGetter(jrd_nod* aMap, UCHAR aShellStream)
+	: JrdNodeVisitor(false, &ExprNode::jrdUnmappedNodeGetter),
+	  map(aMap),
+	  shellStream(aShellStream),
+	  rootNode(true),
+	  invalid(false),
+	  nodeFound(NULL)
+{
+	DEV_BLKCHK(map, type_nod);
+}
+
+bool UnmappedNodeGetter::visit(jrd_nod* node)
+{
+	bool wasRootNode = rootNode;
+	rootNode = false;
+
+	// Check if node is a mapping and if so unmap it, but only for root nodes (not contained in
+	// another node). This can be expanded by checking complete expression (Then don't forget to
+	// leave aggregate-functions alone in case of aggregate rse).
+	// Because this is only to help using an index we keep it simple.
+	if (node->nod_type == nod_field && (USHORT)(IPTR) node->nod_arg[e_fld_stream] == shellStream)
+	{
+		const USHORT fieldId = (USHORT)(IPTR) node->nod_arg[e_fld_id];
+		if (!wasRootNode || fieldId >= map->nod_count)
+		{
+			invalid = true;
+			return false;
+		}
+
+		// Check also the expression inside the map, because aggregate
+		// functions aren't allowed to be delivered to the WHERE clause.
+		if (!visit(map->nod_arg[fieldId]->nod_arg[e_asgn_from]))
+			invalid = true;
+		return !invalid;
+	}
+
+	nodeFound = node;
+
+	switch (node->nod_type)
+	{
+		case nod_field:
+			break;
+
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			break;
+
+		default:
+			invalid |= !visitChildren(node);
+			return !invalid;
+	}
+
+	return !invalid;
+}
+
 
 namespace Jrd
 {
@@ -221,8 +638,6 @@ static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UC
 static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
-static bool expression_possible_unknown(const jrd_nod*);
-static bool expression_contains_stream(CompilerScratch*, const jrd_nod*, UCHAR, bool*);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
 static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
 static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
@@ -236,8 +651,6 @@ static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSourc
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
 static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
-static void get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
-static jrd_nod* get_unmapped_node(thread_db*, jrd_nod*, jrd_nod*, UCHAR, bool);
 static jrd_nod* make_dbkey(thread_db*, OptimizerBlk*, jrd_nod*, USHORT);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
@@ -600,9 +1013,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 					for (; stackItem.hasData(); ++stackItem)
 					{
 						jrd_nod* deliverNode = stackItem.object();
-						if (!expression_possible_unknown(deliverNode)) {
+						if (!PossibleUnknownFinder::find(deliverNode))
 							deliverStack.push(deliverNode);
-						}
 					}
 					stack_end = conjunct_stack.merge(deliverStack);
 				}
@@ -746,7 +1158,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		{
 			jrd_nod* const node = iter.object();
 
-			if ((rse->rse_jointype != blr_inner) && expression_possible_unknown(node))
+			if (rse->rse_jointype != blr_inner && PossibleUnknownFinder::find(node))
 			{
 				// parent missing conjunctions shouldn't be
 				// distributed to FULL OUTER JOIN streams at all
@@ -1282,7 +1694,7 @@ static void check_sorts(RecordSelExpr* rse)
 	{
 		int sort_stream = 0;
 		bool usableSort = true;
-		const jrd_nod* const* sort_ptr = sort->nod_arg;
+		jrd_nod* const* sort_ptr = sort->nod_arg;
 		const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
 		for (; sort_ptr < sort_end; sort_ptr++)
 		{
@@ -1314,7 +1726,7 @@ static void check_sorts(RecordSelExpr* rse)
 				// This position doesn't use a simple field, thus we should
 				// check the expression internals.
 				Firebird::SortedArray<int> streams;
-				get_expression_streams(*sort_ptr, streams);
+				StreamsCollector::collect(*sort_ptr, streams);
 				// We can use this sort only if there's a single stream
 				// referenced by the expression.
 				if (streams.getCount() == 1) {
@@ -1854,338 +2266,6 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 }
 
 
-static bool expression_possible_unknown(const jrd_nod* node)
-{
-/**************************************
- *
- *      e x p r e s s i o n _ p o s s i b l e _ u n k n o w n
- *
- **************************************
- *
- * Functional description
- *  Check if expression could return NULL
- *  or expression can turn NULL into
- *  a True/False.
- *
- **************************************/
-	DEV_BLKCHK(node, type_nod);
-
-	if (!node) {
-		return false;
-	}
-
-	switch (node->nod_type)
-	{
-		case nod_cast:
-			return expression_possible_unknown(node->nod_arg[e_cast_source]);
-
-		case nod_extract:
-			return expression_possible_unknown(node->nod_arg[e_extract_value]);
-
-		case nod_strlen:
-			return expression_possible_unknown(node->nod_arg[e_strlen_value]);
-
-		case nod_field:
-		case nod_rec_version:
-		case nod_dbkey:
-		case nod_argument:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_internal_info:
-		case nod_literal:
-		case nod_null:
-		case nod_user_name:
-		case nod_variable:
-			return false;
-
-		case nod_or:
-		case nod_and:
-
-		case nod_add:
-		case nod_add2:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_subtract:
-		case nod_subtract2:
-
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_substr:
-		case nod_trim:
-		case nod_sys_function:
-		case nod_derived_expr:
-
-		case nod_like:
-		case nod_between:
-		case nod_contains:
-		case nod_similar:
-		case nod_starts:
-		case nod_eql:
-		case nod_neq:
-		case nod_geq:
-		case nod_gtr:
-		case nod_lss:
-		case nod_leq:
-		{
-			const jrd_nod* const* ptr = node->nod_arg;
-			// Check all sub-nodes of this node.
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				if (expression_possible_unknown(*ptr)) {
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		default :
-			return true;
-	}
-}
-
-
-static bool expression_contains_stream(CompilerScratch* csb,
-									   const jrd_nod* node,
-									   UCHAR stream,
-									   bool* otherActiveStreamFound)
-{
-/**************************************
- *
- *      e x p r e s s i o n _ c o n t a i n s _ s t r e a m
- *
- **************************************
- *
- * Functional description
- *  Search if somewhere in the expression the given stream
- *  is used. If a unknown node is found it will return true.
- *
- **************************************/
-	DEV_BLKCHK(node, type_nod);
-
-	if (!node) {
-		return false;
-	}
-
-	RecordSelExpr* rse = NULL;
-
-	USHORT n;
-	switch (node->nod_type)
-	{
-
-		case nod_field:
-			n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-			if (otherActiveStreamFound && (n != stream))
-			{
-				if (csb->csb_rpt[n].csb_flags & csb_active) {
-					*otherActiveStreamFound = true;
-				}
-			}
-			return ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == stream);
-
-		case nod_rec_version:
-		case nod_dbkey:
-			n = (USHORT)(IPTR) node->nod_arg[0];
-			if (otherActiveStreamFound && (n != stream))
-			{
-				if (csb->csb_rpt[n].csb_flags & csb_active) {
-					*otherActiveStreamFound = true;
-				}
-			}
-			return ((USHORT)(IPTR) node->nod_arg[0] == stream);
-
-		case nod_cast:
-			return expression_contains_stream(csb,
-				node->nod_arg[e_cast_source], stream, otherActiveStreamFound);
-
-		case nod_extract:
-			return expression_contains_stream(csb,
-				node->nod_arg[e_extract_value], stream, otherActiveStreamFound);
-
-		case nod_strlen:
-			return expression_contains_stream(csb,
-				node->nod_arg[e_strlen_value], stream, otherActiveStreamFound);
-
-		case nod_function:
-			return expression_contains_stream(csb,
-				node->nod_arg[e_fun_args], stream, otherActiveStreamFound);
-
-		case nod_procedure:
-			return expression_contains_stream(csb, node->nod_arg[e_prc_inputs],
-				stream, otherActiveStreamFound);
-
-		case nod_any:
-		case nod_unique:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_exists:
-			return expression_contains_stream(csb, node->nod_arg[e_any_rse],
-				stream, otherActiveStreamFound);
-
-		case nod_argument:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_internal_info:
-		case nod_literal:
-		case nod_null:
-		case nod_user_name:
-		case nod_variable:
-			return false;
-
-		case nod_rse:
-			rse = (RecordSelExpr*) node;
-			break;
-
-		case nod_average:
-		case nod_count:
-		case nod_from:
-		case nod_max:
-		case nod_min:
-		case nod_total:
-			{
-				const jrd_nod* nodeDefault = node->nod_arg[e_stat_rse];
-				bool result = false;
-				if (nodeDefault &&
-					expression_contains_stream(csb, nodeDefault, stream, otherActiveStreamFound))
-				{
-					result = true;
-					if (!otherActiveStreamFound) {
-						return result;
-					}
-				}
-				rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
-				const jrd_nod* value = node->nod_arg[e_stat_value];
-				if (value && expression_contains_stream(csb, value, stream, otherActiveStreamFound))
-				{
-					result = true;
-					if (!otherActiveStreamFound) {
-						return result;
-					}
-				}
-				return result;
-			}
-			break;
-
-		// go into the node arguments
-		case nod_add:
-		case nod_add2:
-		case nod_agg_average:
-		case nod_agg_average2:
-		case nod_agg_average_distinct:
-		case nod_agg_average_distinct2:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_total2:
-		case nod_agg_total_distinct:
-		case nod_agg_total_distinct2:
-		case nod_agg_list:
-		case nod_agg_list_distinct:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_subtract:
-		case nod_subtract2:
-
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_substr:
-		case nod_trim:
-		case nod_sys_function:
-		case nod_derived_expr:
-
-		case nod_like:
-		case nod_between:
-		case nod_similar:
-		case nod_sleuth:
-		case nod_missing:
-		case nod_value_if:
-		case nod_matches:
-		case nod_contains:
-		case nod_starts:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_geq:
-		case nod_gtr:
-		case nod_lss:
-		case nod_leq:
-		{
-			const jrd_nod* const* ptr = node->nod_arg;
-			// Check all sub-nodes of this node.
-			bool result = false;
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				if (expression_contains_stream(csb, *ptr, stream, otherActiveStreamFound))
-				{
-					result = true;
-					if (!otherActiveStreamFound) {
-						return result;
-					}
-				}
-			}
-			return result;
-		}
-
-		default :
-			return true;
-	}
-
-	if (rse)
-	{
-
-		jrd_nod* sub;
-		if ((sub = rse->rse_first) &&
-			expression_contains_stream(csb, sub, stream, otherActiveStreamFound))
-		{
-			return true;
-		}
-
-		if ((sub = rse->rse_skip) &&
-			expression_contains_stream(csb, sub, stream, otherActiveStreamFound))
-		{
-			return true;
-		}
-
-		if ((sub = rse->rse_boolean) &&
-			expression_contains_stream(csb, sub, stream, otherActiveStreamFound))
-		{
-			return true;
-		}
-
-		if ((sub = rse->rse_sorted) &&
-			expression_contains_stream(csb, sub, stream, otherActiveStreamFound))
-		{
-			return true;
-		}
-
-		if ((sub = rse->rse_projection) &&
-			expression_contains_stream(csb, sub, stream, otherActiveStreamFound))
-		{
-			return true;
-		}
-
-	}
-
-	return false;
-}
-
-
 static void find_index_relationship_streams(thread_db* tdbb,
 											OptimizerBlk* opt,
 											const UCHAR* streams,
@@ -2274,16 +2354,19 @@ static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
 		return NULL;
 	}
 
-	if (dbkey->nod_type == nod_concatenate)
+	ConcatenateNode* concatNode = ExprNode::as<ConcatenateNode>(dbkey);
+
+	if (concatNode)
 	{
-        jrd_nod** ptr = dbkey->nod_arg;
-		for (const jrd_nod* const* const end = ptr + dbkey->nod_count; ptr < end; ptr++)
-		{
-			jrd_nod* dbkey_temp = find_dbkey(*ptr, stream, position);
-			if (dbkey_temp)
-				return dbkey_temp;
-		}
+		jrd_nod* dbkey_temp = find_dbkey(concatNode->arg1, stream, position);
+		if (dbkey_temp)
+			return dbkey_temp;
+
+		dbkey_temp = find_dbkey(concatNode->arg2, stream, position);
+		if (dbkey_temp)
+			return dbkey_temp;
 	}
+
 	return NULL;
 }
 
@@ -2502,24 +2585,22 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	// only the simplest case, although it is probably possible
 	// to use an index in more complex situations
 	jrd_nod** ptr;
-	jrd_nod* agg_operator = NULL;
+	AggNode* aggNode = NULL;
 
 	if (map && map->nod_count == 1 && (ptr = map->nod_arg) &&
-		(agg_operator = (*ptr)->nod_arg[e_asgn_from]) &&
-		(agg_operator->nod_type == nod_agg_min || agg_operator->nod_type == nod_agg_max))
+		(aggNode = ExprNode::as<AggNode>((*ptr)->nod_arg[e_asgn_from])) &&
+		(aggNode->aggInfo.blr == blr_agg_min || aggNode->aggInfo.blr == blr_agg_max))
 	{
 		// generate a sort block which the optimizer will try to map to an index
 
 		jrd_nod* aggregate = PAR_make_node(tdbb, 3);
 		aggregate->nod_type = nod_sort;
 		aggregate->nod_count = 1;
-		aggregate->nod_arg[0] = agg_operator->nod_arg[e_asgn_from];
+		aggregate->nod_arg[0] = aggNode->arg;
 		// in the max case, flag the sort as descending
-		if (agg_operator->nod_type == nod_agg_max) {
+		if (aggNode->aggInfo.blr == blr_agg_max)
 			aggregate->nod_arg[1] = (jrd_nod*) TRUE;
-		}
-		// 10-Aug-2004. Nickolay Samofatov
-		// Unneeded nulls seem to be skipped somehow.
+		// 10-Aug-2004. Nickolay Samofatov - Unneeded nulls seem to be skipped somehow.
 		aggregate->nod_arg[2] = (jrd_nod*)(IPTR) rse_nulls_default;
 		rse->rse_aggregate = aggregate;
 	}
@@ -2540,12 +2621,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 		// The rse_aggregate is still set. That means the optimizer
 		// was able to match the field to an index, so flag that fact
 		// so that it can be handled in EVL_group
-		if (agg_operator->nod_type == nod_agg_min) {
-			agg_operator->nod_type = nod_agg_min_indexed;
-		}
-		else if (agg_operator->nod_type == nod_agg_max) {
-			agg_operator->nod_type = nod_agg_max_indexed;
-		}
+		aggNode->indexed = true;
 	}
 
 	OPT_gen_aggregate_distincts(tdbb, csb, map);
@@ -2565,15 +2641,13 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod*
 	for (const jrd_nod* const* const end = ptr + map->nod_count; ptr < end; ptr++)
 	{
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		if ((from->nod_type == nod_agg_count_distinct)    ||
-			(from->nod_type == nod_agg_total_distinct)    ||
-			(from->nod_type == nod_agg_total_distinct2)   ||
-			(from->nod_type == nod_agg_average_distinct2) ||
-			(from->nod_type == nod_agg_average_distinct)  ||
-			(from->nod_type == nod_agg_list_distinct))
+		AggNode* aggNode = ExprNode::as<AggNode>(from);
+
+		if (aggNode && aggNode->distinct)
 		{
 			// Build the sort key definition. Turn cstrings into varying text.
-			CMP_get_desc(tdbb, csb, from->nod_arg[0], desc);
+			CMP_get_desc(tdbb, csb, aggNode->arg, desc);
+
 			if (desc->dsc_dtype == dtype_cstring)
 			{
 				desc->dsc_dtype = dtype_varying;
@@ -2608,9 +2682,7 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod*
 				asb->asb_length = sort_key->skd_offset = key_length;
 			}
 			else
-			{
 				asb->asb_length = 0;
-			}
 
 			fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 			sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
@@ -2628,16 +2700,13 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod*
 				asb->asb_length = sort_key->skd_vary_offset + sizeof(USHORT);
 			}
 			else
-			{
 				asb->asb_length += sort_key->skd_length;
-			}
 
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));
 			asb->asb_desc = *desc;
-			// store asb as a last argument
-			const size_t asb_index = (from->nod_type == nod_agg_list_distinct) ? 2 : 1;
-			from->nod_arg[asb_index] = (jrd_nod*) asb;
+
+			aggNode->asb = asb;
 		}
 	}
 }
@@ -2705,9 +2774,8 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 		bool wrongNode = false;
 		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++)
 		{
-
-			jrd_nod* booleanNode =
-				get_unmapped_node(tdbb, boolean->nod_arg[indexArg], map, shellStream, true);
+			jrd_nod* booleanNode = UnmappedNodeGetter::get(
+				map, shellStream, boolean->nod_arg[indexArg]);
 
 			wrongNode = (booleanNode == NULL);
 			if (!wrongNode) {
@@ -3125,7 +3193,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		{
 			// If no index is used then leave other nodes alone, because they
 			// could be used for building a SORT/MERGE.
-			if ((inversion && expression_contains_stream(csb, node, stream, NULL)) ||
+			if ((inversion && StreamFinder::find(csb, stream, node)) ||
 				(!inversion && OPT_computable(csb, node, stream, false, true)))
 			{
 				compose(&boolean, node, nod_and);
@@ -3894,287 +3962,6 @@ static RecordSource* gen_union(thread_db* tdbb,
 }
 
 
-static void get_expression_streams(const jrd_nod* node, Firebird::SortedArray<int>& streams)
-{
-/**************************************
- *
- *  g e t _ e x p r e s s i o n _ s t r e a m s
- *
- **************************************
- *
- * Functional description
- *  Return all streams referenced by the expression.
- *
- **************************************/
-	DEV_BLKCHK(node, type_nod);
-
-	if (!node) {
-		return;
-	}
-
-	RecordSelExpr* rse = NULL;
-
-	int n;
-	size_t pos;
-
-	switch (node->nod_type)
-	{
-
-		case nod_field:
-			n = (int)(IPTR) node->nod_arg[e_fld_stream];
-			if (!streams.find(n, pos))
-				streams.add(n);
-			break;
-
-		case nod_rec_version:
-		case nod_dbkey:
-			n = (int)(IPTR) node->nod_arg[0];
-			if (!streams.find(n, pos))
-				streams.add(n);
-			break;
-
-		case nod_cast:
-			get_expression_streams(node->nod_arg[e_cast_source], streams);
-			break;
-
-		case nod_extract:
-			get_expression_streams(node->nod_arg[e_extract_value], streams);
-			break;
-
-		case nod_strlen:
-			get_expression_streams(node->nod_arg[e_strlen_value], streams);
-			break;
-
-		case nod_function:
-			get_expression_streams(node->nod_arg[e_fun_args], streams);
-			break;
-
-		case nod_procedure:
-			get_expression_streams(node->nod_arg[e_prc_inputs], streams);
-			break;
-
-		case nod_any:
-		case nod_unique:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_exists:
-			get_expression_streams(node->nod_arg[e_any_rse], streams);
-			break;
-
-		case nod_argument:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_internal_info:
-		case nod_literal:
-		case nod_null:
-		case nod_user_name:
-		case nod_variable:
-			break;
-
-		case nod_rse:
-			rse = (RecordSelExpr*) node;
-			break;
-
-		case nod_average:
-		case nod_count:
-		case nod_from:
-		case nod_max:
-		case nod_min:
-		case nod_total:
-			get_expression_streams(node->nod_arg[e_stat_rse], streams);
-			get_expression_streams(node->nod_arg[e_stat_value], streams);
-			break;
-
-		// go into the node arguments
-		case nod_add:
-		case nod_add2:
-		case nod_agg_average:
-		case nod_agg_average2:
-		case nod_agg_average_distinct:
-		case nod_agg_average_distinct2:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_total2:
-		case nod_agg_total_distinct:
-		case nod_agg_total_distinct2:
-		case nod_agg_list:
-		case nod_agg_list_distinct:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_subtract:
-		case nod_subtract2:
-
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_substr:
-		case nod_trim:
-		case nod_sys_function:
-		case nod_derived_expr:
-
-		case nod_like:
-		case nod_between:
-		case nod_similar:
-		case nod_sleuth:
-		case nod_missing:
-		case nod_value_if:
-		case nod_matches:
-		case nod_contains:
-		case nod_starts:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_geq:
-		case nod_gtr:
-		case nod_lss:
-		case nod_leq:
-		{
-			const jrd_nod* const* ptr = node->nod_arg;
-			// Check all sub-nodes of this node.
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				get_expression_streams(*ptr, streams);
-			}
-			break;
-		}
-
-		default:
-			break;
-	}
-
-	if (rse) {
-		get_expression_streams(rse->rse_first, streams);
-		get_expression_streams(rse->rse_skip, streams);
-		get_expression_streams(rse->rse_boolean, streams);
-		get_expression_streams(rse->rse_sorted, streams);
-		get_expression_streams(rse->rse_projection, streams);
-	}
-}
-
-
-static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
-	jrd_nod* map, UCHAR shellStream, bool rootNode)
-{
-/**************************************
- *
- *	g e t _ u n m a p p e d _ n o d e
- *
- **************************************
- *
- *	Return correct node if this node is
- *  allowed in a unmapped boolean.
- *
- **************************************/
-	DEV_BLKCHK(map, type_nod);
-	SET_TDBB(tdbb);
-
-	// Check if node is a mapping and if so unmap it, but
-	// only for root nodes (not contained in another node).
-	// This can be expanded by checking complete expression
-	// (Then don't forget to leave aggregate-functions alone
-	//  in case of aggregate rse)
-	// Because this is only to help using an index we keep
-	// it simple.
-	if ((node->nod_type == nod_field) && ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == shellStream))
-	{
-		const USHORT fieldId = (USHORT)(IPTR) node->nod_arg[e_fld_id];
-		if (!rootNode || (fieldId >= map->nod_count)) {
-			return NULL;
-		}
-		// Check also the expression inside the map, because aggregate
-		// functions aren't allowed to be delivered to the WHERE clause.
-		return get_unmapped_node(tdbb, map->nod_arg[fieldId]->nod_arg[e_asgn_from],
-								 map, shellStream, false);
-	}
-
-	jrd_nod* returnNode = NULL;
-
-	switch (node->nod_type)
-	{
-
-		case nod_cast:
-			if (get_unmapped_node(tdbb, node->nod_arg[e_cast_source], map, shellStream, false) != NULL)
-			{
-				returnNode = node;
-			}
-			break;
-
-		case nod_extract:
-			if (get_unmapped_node(tdbb, node->nod_arg[e_extract_value], map, shellStream, false) != NULL)
-			{
-				returnNode = node;
-			}
-			break;
-
-		case nod_strlen:
-			if (get_unmapped_node(tdbb, node->nod_arg[e_strlen_value], map, shellStream, false) != NULL)
-			{
-				returnNode = node;
-			}
-			break;
-
-		case nod_argument:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_field:
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_internal_info:
-		case nod_literal:
-		case nod_null:
-		case nod_user_name:
-		case nod_variable:
-			returnNode = node;
-			break;
-
-		case nod_add:
-		case nod_add2:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_subtract:
-		case nod_subtract2:
-
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_substr:
-		case nod_trim:
-		case nod_sys_function:
-		case nod_derived_expr:
-		{
-			// Check all sub-nodes of this node.
-			jrd_nod** ptr = node->nod_arg;
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				if (!get_unmapped_node(tdbb, *ptr, map, shellStream, false))
-				{
-					return NULL;
-				}
-			}
-			return node;
-		}
-
-		default:
-			return NULL;
-	}
-
-	return returnNode;
-}
-
-
 jrd_nod* make_dbkey(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* boolean, USHORT stream)
 {
 /**************************************
@@ -4208,12 +3995,11 @@ jrd_nod* make_dbkey(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* boolean, USHORT
 	jrd_nod* dbkey = boolean->nod_arg[0];
 	jrd_nod* value = boolean->nod_arg[1];
 
-	if (dbkey->nod_type != nod_dbkey && dbkey->nod_type != nod_concatenate)
+	if (dbkey->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(dbkey))
 	{
-		if (value->nod_type != nod_dbkey && value->nod_type != nod_concatenate)
-		{
+		if (value->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(value))
 			return NULL;
-		}
+
 		dbkey = value;
 		value = boolean->nod_arg[0];
 	}
@@ -4221,19 +4007,17 @@ jrd_nod* make_dbkey(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* boolean, USHORT
 	// If the value isn't computable, this has been a waste of time
 
 	CompilerScratch* csb = opt->opt_csb;
-	if (!OPT_computable(csb, value, stream, false, false)) {
+	if (!OPT_computable(csb, value, stream, false, false))
 		return NULL;
-	}
 
 	// If this is a concatenation, find an appropriate dbkey
 
 	SLONG n = 0;
-	if (dbkey->nod_type == nod_concatenate)
+	if (ExprNode::is<ConcatenateNode>(dbkey))
 	{
 		dbkey = find_dbkey(dbkey, stream, &n);
-		if (!dbkey) {
+		if (!dbkey)
 			return NULL;
-		}
 	}
 
 	// Make sure we have the correct stream

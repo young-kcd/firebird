@@ -65,7 +65,7 @@
 #include <math.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-
+#include "../dsql/Nodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/req.h"
@@ -137,7 +137,6 @@ static dsc* add_sql_time(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
 static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
-static dsc* concatenate(thread_db*, const dsc*, const dsc*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
 static dsc* extract(thread_db*, jrd_nod*, impure_value*);
@@ -794,6 +793,19 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	switch (node->nod_type)
 	{
+	case nod_class_exprnode_jrd:
+		{
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			dsc* desc = exprNode->execute(tdbb, request);
+
+			if (desc)
+				request->req_flags &= ~req_null;
+			else
+				request->req_flags |= req_null;
+
+			return desc;
+		}
+
 	case nod_add:
 	case nod_subtract:
 	case nod_divide:
@@ -802,7 +814,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	case nod_subtract2:
 	case nod_divide2:
 	case nod_multiply2:
-	case nod_concatenate:
 		return binary_value(tdbb, node, impure);
 
 	case nod_argument:
@@ -1503,14 +1514,9 @@ dsc* EVL_add(const dsc* desc, const jrd_nod* node, impure_value* value)
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
-	fb_assert(node->nod_type == nod_add ||
-			  node->nod_type == nod_subtract ||
-			  node->nod_type == nod_total ||
-			  node->nod_type == nod_average ||
-			  node->nod_type == nod_agg_total ||
-			  node->nod_type == nod_agg_average ||
-			  node->nod_type == nod_agg_total_distinct ||
-			  node->nod_type == nod_agg_average_distinct);
+	fb_assert(ExprNode::is<AggNode>(node) ||
+		node->nod_type == nod_add || node->nod_type == nod_subtract ||
+		node->nod_type == nod_total || node->nod_type == nod_average);
 
 	dsc* const result = &value->vlu_desc;
 
@@ -1587,13 +1593,9 @@ dsc* EVL_add2(const dsc* desc, const jrd_nod* node, impure_value* value)
  *
  **************************************/
 	DEV_BLKCHK(node, type_nod);
-	fb_assert(node->nod_type == nod_add2 ||
-			  node->nod_type == nod_subtract2 ||
-			  node->nod_type == nod_average2 ||
-			  node->nod_type == nod_agg_total2 ||
-			  node->nod_type == nod_agg_average2 ||
-			  node->nod_type == nod_agg_total_distinct2 ||
-			  node->nod_type == nod_agg_average_distinct2);
+	fb_assert(ExprNode::is<AggNode>(node) ||
+		node->nod_type == nod_add2 || node->nod_type == nod_subtract2 ||
+		node->nod_type == nod_average2);
 
 	dsc* result = &value->vlu_desc;
 
@@ -2179,7 +2181,6 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();
-	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 
 	// Evaluate arguments.  If either is null, result is null, but in
 	// any case, evaluate both, since some expressions may later depend
@@ -2198,12 +2199,6 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 
 	if (request->req_flags & req_null)
 		return NULL;
-
-	// special case: concatenation doesn't need its first argument
-	// being passed in the impure area, as it would double number
-	// of memory allocations
-	if (node->nod_type == nod_concatenate)
-		return concatenate(tdbb, desc1, desc2, impure);
 
 	EVL_make_value(tdbb, desc1, impure);
 
@@ -2324,170 +2319,6 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 
 	if (impure->vlu_desc.dsc_dtype == dtype_text)
 		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
-
-	return &impure->vlu_desc;
-}
-
-
-static dsc* concatenate(thread_db* tdbb, const dsc* value1, const dsc* value2, impure_value* impure)
-{
-/**************************************
- *
- *      c o n c a t e n a t e
- *
- **************************************
- *
- * Functional description
- *      Concatenate two values.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	dsc desc;
-
-	if (value1->dsc_dtype == dtype_dbkey && value2->dsc_dtype == dtype_dbkey)
-	{
-		if ((ULONG) value1->dsc_length + (ULONG) value2->dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
-		{
-			ERR_post(Arg::Gds(isc_concat_overflow));
-			return NULL;
-		}
-
-		desc.dsc_dtype = dtype_dbkey;
-		desc.dsc_length = value1->dsc_length + value2->dsc_length;
-		desc.dsc_address = NULL;
-
-		VaryingString* string = NULL;
-		if (value1->dsc_address == impure->vlu_desc.dsc_address ||
-			value2->dsc_address == impure->vlu_desc.dsc_address)
-		{
-			string = impure->vlu_string;
-			impure->vlu_string = NULL;
-		}
-
-		EVL_make_value(tdbb, &desc, impure);
-		UCHAR* p = impure->vlu_desc.dsc_address;
-
-		memcpy(p, value1->dsc_address, value1->dsc_length);
-		p += value1->dsc_length;
-		memcpy(p, value2->dsc_address, value2->dsc_length);
-
-		delete string;
-
-		return &impure->vlu_desc;
-	}
-
-	DataTypeUtil(tdbb).makeConcatenate(&desc, value1, value2);
-
-	// Both values are present; build the concatenation
-
-	MoveBuffer temp1;
-	UCHAR* address1 = NULL;
-	USHORT length1 = 0;
-
-	if (!value1->isBlob())
-		length1 = MOV_make_string2(tdbb, value1, desc.getTextType(), &address1, temp1);
-
-	MoveBuffer temp2;
-	UCHAR* address2 = NULL;
-	USHORT length2 = 0;
-
-	if (!value2->isBlob())
-		length2 = MOV_make_string2(tdbb, value2, desc.getTextType(), &address2, temp2);
-
-	if (address1 && address2)
-	{
-		fb_assert(desc.dsc_dtype == dtype_varying);
-
-		if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
-		{
-			ERR_post(Arg::Gds(isc_concat_overflow));
-			return NULL;
-		}
-
-		desc.dsc_dtype = dtype_text;
-		desc.dsc_length = length1 + length2;
-		desc.dsc_address = NULL;
-
-		VaryingString* string = NULL;
-		if (value1->dsc_address == impure->vlu_desc.dsc_address ||
-			value2->dsc_address == impure->vlu_desc.dsc_address)
-		{
-			string = impure->vlu_string;
-			impure->vlu_string = NULL;
-		}
-
-		EVL_make_value(tdbb, &desc, impure);
-		UCHAR* p = impure->vlu_desc.dsc_address;
-
-		if (length1)
-		{
-			memcpy(p, address1, length1);
-			p += length1;
-		}
-		if (length2) {
-			memcpy(p, address2, length2);
-		}
-
-		delete string;
-	}
-	else
-	{
-		fb_assert(desc.isBlob());
-
-		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
-
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
-								  &impure->vlu_misc.vlu_bid);
-
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-
-		if (address1)
-			BLB_put_data(tdbb, newBlob, address1, length1);	// first value is not a blob
-		else
-		{
-			Firebird::UCharBuffer bpb;
-			BLB_gen_bpb_from_descs(value1, &desc, bpb);
-
-			blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
-				reinterpret_cast<bid*>(value1->dsc_address), bpb.getCount(), bpb.begin());
-
-			while (!(blob->blb_flags & BLB_eof))
-			{
-				SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
-
-				if (len)
-					BLB_put_data(tdbb, newBlob, buffer.begin(), len);
-			}
-
-			BLB_close(tdbb, blob);
-		}
-
-		if (address2)
-			BLB_put_data(tdbb, newBlob, address2, length2);	// second value is not a blob
-		else
-		{
-			Firebird::UCharBuffer bpb;
-			BLB_gen_bpb_from_descs(value2, &desc, bpb);
-
-			blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
-				reinterpret_cast<bid*>(value2->dsc_address), bpb.getCount(), bpb.begin());
-
-			while (!(blob->blb_flags & BLB_eof))
-			{
-				SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
-
-				if (len)
-					BLB_put_data(tdbb, newBlob, buffer.begin(), len);
-			}
-
-			BLB_close(tdbb, blob);
-		}
-
-		BLB_close(tdbb, newBlob);
-
-		EVL_make_value(tdbb, &desc, impure);
-	}
 
 	return &impure->vlu_desc;
 }

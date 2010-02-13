@@ -3326,7 +3326,7 @@ static UCHAR* var_info(const dsql_msg* message,
 			for (const UCHAR* describe = items; describe < end_describe;)
 			{
 				USHORT length;
-				string name;
+				MetaName name;
 				const UCHAR* buffer = buf;
 				UCHAR item = *describe++;
 
@@ -3361,9 +3361,9 @@ static UCHAR* var_info(const dsql_msg* message,
 					break;
 
 				case isc_info_sql_field:
-					if (param->par_name)
+					if (param->par_name.hasData())
 					{
-						name = attachment->stringToUserCharSet(tdbb, param->par_name);
+						name = attachment->nameToUserCharSet(tdbb, param->par_name);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3372,9 +3372,9 @@ static UCHAR* var_info(const dsql_msg* message,
 					break;
 
 				case isc_info_sql_relation:
-					if (param->par_rel_name)
+					if (param->par_rel_name.hasData())
 					{
-						name = attachment->stringToUserCharSet(tdbb, param->par_rel_name);
+						name = attachment->nameToUserCharSet(tdbb, param->par_rel_name);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3383,9 +3383,9 @@ static UCHAR* var_info(const dsql_msg* message,
 					break;
 
 				case isc_info_sql_owner:
-					if (param->par_owner_name)
+					if (param->par_owner_name.hasData())
 					{
-						name = attachment->stringToUserCharSet(tdbb, param->par_owner_name);
+						name = attachment->nameToUserCharSet(tdbb, param->par_owner_name);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3394,9 +3394,9 @@ static UCHAR* var_info(const dsql_msg* message,
 					break;
 
 				case isc_info_sql_relation_alias:
-					if (param->par_rel_alias)
+					if (param->par_rel_alias.hasData())
 					{
-						name = attachment->stringToUserCharSet(tdbb, param->par_rel_alias);
+						name = attachment->nameToUserCharSet(tdbb, param->par_rel_alias);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}
@@ -3405,9 +3405,9 @@ static UCHAR* var_info(const dsql_msg* message,
 					break;
 
 				case isc_info_sql_alias:
-					if (param->par_alias)
+					if (param->par_alias.hasData())
 					{
-						name = attachment->stringToUserCharSet(tdbb, param->par_alias);
+						name = attachment->nameToUserCharSet(tdbb, param->par_alias);
 						length = name.length();
 						buffer = reinterpret_cast<const UCHAR*>(name.c_str());
 					}

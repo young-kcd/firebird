@@ -183,10 +183,12 @@
 #define blr_agg_total		(unsigned char)86
 #define blr_agg_average		(unsigned char)87
 #define	blr_parameter3		(unsigned char)88	/* same as Rdb definition */
+/* unsupported
 #define blr_run_max		(unsigned char)89
 #define blr_run_min		(unsigned char)90
 #define blr_run_total		(unsigned char)91
 #define blr_run_average		(unsigned char)92
+*/
 #define blr_agg_count2		(unsigned char)93
 #define blr_agg_count_distinct	(unsigned char)94
 #define blr_agg_total_distinct	(unsigned char)95

@@ -25,11 +25,29 @@
 
 #include "../jrd/common.h"
 #include "../dsql/dsql.h"
+#include "../dsql/node.h"
+#include "../dsql/Visitors.h"
+#include "../common/classes/array.h"
 
 namespace Jrd {
 
+class AggregateSort;
 class CompilerScratch;
+class dsql_nod;
+class ExprNode;
+class jrd_nod;
 class TypeClause;
+
+
+template <typename T>
+class RegisterNode
+{
+public:
+	explicit RegisterNode(UCHAR blr)
+	{
+		PAR_register(blr, T::parse);
+	}
+};
 
 
 class Node : public Firebird::PermanentStorage
@@ -126,10 +144,257 @@ public:
 	virtual void genBlr() = 0;
 	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
 
 protected:
 	jrd_nod* node;
+};
+
+
+template <typename T, typename T::Type typeConst>
+class TypedNode : public T
+{
+public:
+	TypedNode(MemoryPool& pool)
+		: T(typeConst, pool)
+	{
+	}
+
+public:
+	const static typename T::Type TYPE = typeConst;
+};
+
+
+class ExprNode : public DmlNode
+{
+public:
+	enum Type
+	{
+		TYPE_AGGREGATE,
+		TYPE_CONCATENATE,
+		TYPE_OVER
+	};
+
+	explicit ExprNode(Type aType, MemoryPool& pool)
+		: DmlNode(pool),
+		  type(aType),
+		  dsqlCompatDialectVerb(NULL),
+		  dsqlChildNodes(pool),
+		  jrdChildNodes(pool)
+	{
+	}
+
+	template <typename T> T* as()
+	{
+		return type == T::TYPE ? (T*) this : NULL;
+	}
+
+	template <typename T> const T* as() const
+	{
+		return type == T::TYPE ? (T*) this : NULL;
+	}
+
+	template <typename T> bool is() const
+	{
+		return type == T::TYPE;
+	}
+
+	template <typename T, typename LegacyType> static T* as(LegacyType* node)
+	{
+		ExprNode* obj = T::fromLegacy(node);
+		return obj ? obj->as<T>() : NULL;
+	}
+
+	template <typename T, typename LegacyType> static const T* as(const LegacyType* node)
+	{
+		const ExprNode* obj = T::fromLegacy(const_cast<LegacyType*>(node));
+		return obj ? obj->as<T>() : NULL;
+	}
+
+	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
+	{
+		ExprNode* obj = T::fromLegacy(const_cast<LegacyType*>(node));
+		return obj ? obj->is<T>() : false;
+	}
+
+	static ExprNode* fromLegacy(dsql_nod* node);
+	static ExprNode* fromLegacy(jrd_nod* node);
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
+	{
+		return dsqlVisit(visitor);
+	}
+
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor)
+	{
+		return dsqlVisit(visitor);
+	}
+
+	virtual bool dsqlFieldFinder(FieldFinder& visitor)
+	{
+		return dsqlVisit(visitor);
+	}
+
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+	{
+		return dsqlVisit(visitor);
+	}
+
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor)
+	{
+		return dsqlVisit(visitor);
+	}
+
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor)
+	{
+		return dsqlVisit(visitor);
+	}
+
+	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& visitor)
+	{
+		return jrdVisit(visitor);
+	}
+
+	virtual bool jrdStreamFinder(StreamFinder& visitor)
+	{
+		return jrdVisit(visitor);
+	}
+
+	virtual bool jrdStreamsCollector(StreamsCollector& visitor)
+	{
+		return jrdVisit(visitor);
+	}
+
+	virtual bool jrdUnmappedNodeGetter(UnmappedNodeGetter& visitor)
+	{
+		visitor.nodeFound = node;
+		return jrdVisit(visitor);
+	}
+
+	virtual bool isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const;
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
+		dsql_nod* node, bool forceVarChar) const
+	{
+		return false;
+	}
+
+	virtual void setParameterName(dsql_par* parameter) const = 0;
+	virtual void make(dsc* desc, dsql_nod* nullReplacement) = 0;
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const = 0;
+
+protected:
+	virtual bool dsqlVisit(ConstDsqlNodeVisitor& visitor);
+	virtual bool dsqlVisit(NonConstDsqlNodeVisitor& visitor);
+	virtual bool jrdVisit(JrdNodeVisitor& visitor);
+
+	void addChildNode(dsql_nod*& dsqlNode, jrd_nod*& jrdNode)
+	{
+		dsqlChildNodes.add(&dsqlNode);
+		jrdChildNodes.add(&jrdNode);
+	}
+
+	void addChildNode(dsql_nod*& dsqlNode)
+	{
+		dsqlChildNodes.add(&dsqlNode);
+	}
+
+public:
+	const Type type;
+	const char* dsqlCompatDialectVerb;
+	Firebird::Array<dsql_nod**> dsqlChildNodes;
+	Firebird::Array<jrd_nod**> jrdChildNodes;
+};
+
+class AggNode : public TypedNode<ExprNode, ExprNode::TYPE_AGGREGATE>
+{
+public:
+	struct AggInfo
+	{
+		const char* name;
+		UCHAR blr;
+		UCHAR distinctBlr;
+	};
+
+	explicit AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool aDialect1,
+		dsql_nod* aArg = NULL);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual void genBlr();
+
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+
+	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& visitor)
+	{
+		return true;
+	}
+
+	virtual bool jrdStreamFinder(StreamFinder& visitor)
+	{
+		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
+		// been set to 0 in CMP_pass2, so that doesn't happens.
+		return false;
+	}
+
+	virtual bool jrdStreamsCollector(StreamsCollector& visitor)
+	{
+		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
+		// been set to 0 in CMP_pass2, so that doesn't happens.
+		return false;
+	}
+
+	virtual bool jrdUnmappedNodeGetter(UnmappedNodeGetter& visitor)
+	{
+		visitor.invalid = true;
+		return false;
+	}
+
+	virtual void checkOrderedWindowCapable() const
+	{
+		if (distinct)
+		{
+			Firebird::status_exception::raise(
+				Firebird::Arg::Gds(isc_wish_list) <<
+				Firebird::Arg::Gds(isc_random) <<
+					"DISTINCT is not supported in ordered windows");
+		}
+	}
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
+	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const = 0;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const = 0;
+
+protected:
+	virtual ExprNode* internalDsqlPass();
+	virtual AggNode* dsqlCopy() const = 0;
+
+public:
+	const AggInfo& aggInfo;
+	bool distinct;
+	bool dialect1;
+	dsql_nod* dsqlArg;
+	jrd_nod* arg;
+	AggregateSort* asb;
+	bool indexed;
 };
 
 
@@ -140,6 +405,9 @@ public:
 		: DmlNode(pool)
 	{
 	}
+
+public:
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
 };
 
 
@@ -160,13 +428,11 @@ public:
 		return this;
 	}
 
-
 	DsqlOnlyStmtNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return this;
 	}
-
 
 	jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	{

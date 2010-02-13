@@ -113,7 +113,6 @@ const int BLOB_BUFFER_SIZE    = 4096;	// to read in blr blob for default values
 
 
 static void assign_field_length(dsql_fld*, USHORT);
-static bool is_array_or_blob(DsqlCompilerScratch*, const dsql_nod*);
 static void check_constraint(DsqlCompilerScratch*, dsql_nod*, bool);
 static void check_one_call(USHORT*, SSHORT, const TEXT*);
 static void create_view_triggers(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
@@ -313,7 +312,7 @@ void DDL_execute(dsql_req* request)
 	if (string)
 		MET_dsql_cache_release(tdbb, sym_type, string->str_data);
 
-	if (type == nod_class_node)
+	if (type == nod_class_stmtnode)
 	{
 		// run all statements under savepoint control
 		{	// scope
@@ -357,12 +356,12 @@ void DDL_generate(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		return;
 	}
 
-	if (node->nod_type != nod_class_node)
+	if (node->nod_type != nod_class_stmtnode)
 		dsqlScratch->getStatement()->append_uchar(isc_dyn_version_1);
 
 	generate_dyn(dsqlScratch, node);
 
-	if (node->nod_type != nod_class_node)
+	if (node->nod_type != nod_class_stmtnode)
 		dsqlScratch->getStatement()->append_uchar(isc_dyn_eoc);
 }
 
@@ -727,11 +726,11 @@ static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
 }
 
 
-static bool is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
+bool DDL_is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
 {
 /**************************************
  *
- *	i s _ a r r a y _ o r _ b l o b
+ *	D D L _ i s _ a r r a y _ o r _ b l o b
  *
  **************************************
  *
@@ -745,8 +744,9 @@ static bool is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* n
 
 	switch (node->nod_type)
 	{
-	case nod_agg_count:
-	//case nod_count:
+	case nod_class_exprnode:
+		return reinterpret_cast<ExprNode*>(node->nod_arg[0])->isArrayOrBlob(dsqlScratch);
+
 	case nod_gen_id:
 	case nod_gen_id2:
 	case nod_dbkey:
@@ -761,25 +761,18 @@ static bool is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* n
 		return false;
 
 	case nod_via:
-		return is_array_or_blob(dsqlScratch, node->nod_arg[e_via_value_1]);
+		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[e_via_value_1]);
 
 	case nod_map:
 		{
 			const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
-			return is_array_or_blob(dsqlScratch, map->map_node);
+			return DDL_is_array_or_blob(dsqlScratch, map->map_node);
 		}
 
-	case nod_agg_max:
-	case nod_agg_min:
-	case nod_agg_average:
-	case nod_agg_total:
-	case nod_agg_average2:
-	case nod_agg_total2:
-	case nod_agg_list:
 	case nod_upcase:
 	case nod_lowcase:
 	case nod_negate:
-		return is_array_or_blob(dsqlScratch, node->nod_arg[0]);
+		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[0]);
 
 	case nod_cast:
 		{
@@ -787,11 +780,10 @@ static bool is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* n
 			if (fld->fld_dtype == dtype_blob || fld->fld_dtype == dtype_array)
 				return true;
 		}
-		return is_array_or_blob(dsqlScratch, node->nod_arg[e_cast_source]);
+		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[e_cast_source]);
 
 	case nod_add:
 	case nod_subtract:
-	case nod_concatenate:
 	case nod_multiply:
 	case nod_divide:
 	case nod_add2:
@@ -799,13 +791,13 @@ static bool is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* n
 	case nod_multiply2:
 	case nod_divide2:
 
-		if (is_array_or_blob(dsqlScratch, node->nod_arg[0])) {
+		if (DDL_is_array_or_blob(dsqlScratch, node->nod_arg[0])) {
 			return true;
 		}
-		return is_array_or_blob(dsqlScratch, node->nod_arg[1]);
+		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[1]);
 
 	case nod_alias:
-		return is_array_or_blob(dsqlScratch, node->nod_arg[e_alias_value]);
+		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[e_alias_value]);
 
 	case nod_udf:
 		{
@@ -846,7 +838,7 @@ static bool is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* n
 			const dsql_nod* const* const end = node->nod_arg + node->nod_count;
 			for (const dsql_nod* const* ptr = node->nod_arg; ptr < end; ++ptr)
 			{
-				if (is_array_or_blob(dsqlScratch, *ptr)) {
+				if (DDL_is_array_or_blob(dsqlScratch, *ptr)) {
 					return true;
 				}
 			}
@@ -864,10 +856,10 @@ static bool is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* n
 		return false;
 
 	case nod_trim:
-		return is_array_or_blob(dsqlScratch, node->nod_arg[e_trim_value]);
+		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[e_trim_value]);
 
 	case nod_derived_field:
-		return is_array_or_blob(dsqlScratch, node->nod_arg[e_derived_field_value]);
+		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[e_derived_field_value]);
 
 	default:
 		fb_assert(false);
@@ -1053,7 +1045,7 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 
 	// check if array or blobs are used in expression
 
-	if (is_array_or_blob(dsqlScratch, input))
+	if (DDL_is_array_or_blob(dsqlScratch, input))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_no_array_computed));
 	}
@@ -5766,7 +5758,7 @@ static void modify_field(DsqlCompilerScratch* dsqlScratch, dsql_nod*element, con
 
 			computedNod = PASS1_node(dsqlScratch, computedNod->nod_arg[e_cmp_expr]);
 
-			if (is_array_or_blob(dsqlScratch, computedNod))
+			if (DDL_is_array_or_blob(dsqlScratch, computedNod))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 						  Arg::Gds(isc_dsql_no_array_computed));

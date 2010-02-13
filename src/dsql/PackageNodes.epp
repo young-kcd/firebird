@@ -409,7 +409,7 @@ DdlNode* CreateAlterPackageNode::internalDsqlPass()
 			dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
 		itemScratch->package = name;
-		itemStatement->setDdlNode(MAKE_node(nod_class_node, 1));
+		itemStatement->setDdlNode(MAKE_node(nod_class_stmtnode, 1));
 
 		switch ((*items)[i].type)
 		{
@@ -799,7 +799,7 @@ DdlNode* CreatePackageBodyNode::internalDsqlPass()
 				dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
 			itemScratch->clientDialect = dsqlScratch->clientDialect;
 			itemScratch->package = name;
-			itemStatement->setDdlNode(MAKE_node(nod_class_node, 1));
+			itemStatement->setDdlNode(MAKE_node(nod_class_stmtnode, 1));
 
 			switch ((*arrays[i])[j].type)
 			{

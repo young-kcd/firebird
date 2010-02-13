@@ -37,6 +37,8 @@
 #include "../jrd/ods.h"
 #include "../jrd/Optimizer.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
@@ -393,6 +395,24 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 	switch (node1->nod_type)
 	{
+		case nod_class_exprnode_jrd:
+		{
+			ExprNode* exprNode1 = reinterpret_cast<ExprNode*>(node1->nod_arg[0]);
+			ExprNode* exprNode2 = reinterpret_cast<ExprNode*>(node2->nod_arg[0]);
+
+			if (exprNode1->type == ExprNode::TYPE_CONCATENATE && exprNode2->type == ExprNode::TYPE_CONCATENATE)
+			{
+				if (OPT_expression_equal2(tdbb, opt, ((ConcatenateNode*) exprNode1)->arg1,
+						((ConcatenateNode*) exprNode2)->arg1, stream) &&
+					OPT_expression_equal2(tdbb, opt, ((ConcatenateNode*) exprNode1)->arg2,
+						((ConcatenateNode*) exprNode2)->arg2, stream))
+				{
+					return true;
+				}
+			}
+			break;
+		}
+
 		case nod_add:
 		case nod_multiply:
 		case nod_add2:
@@ -415,7 +435,6 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		case nod_divide:
 		case nod_subtract2:
 		case nod_divide2:
-		case nod_concatenate:
 
 		// TODO match A > B to B <= A, etc
 	    case nod_gtr:

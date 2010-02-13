@@ -954,11 +954,11 @@ public:
 		  par_node(NULL),
 		  par_dbkey_relname(p),
 		  par_rec_version_relname(p),
-		  par_name(NULL),
-		  par_rel_name(NULL),
-		  par_owner_name(NULL),
-		  par_rel_alias(NULL),
-		  par_alias(NULL),
+		  par_name(p),
+		  par_rel_name(p),
+		  par_owner_name(p),
+		  par_rel_alias(p),
+		  par_alias(p),
 		  par_parameter(0),
 		  par_index(0)
 	{
@@ -968,13 +968,13 @@ public:
 	dsql_msg*	par_message;		// Parent message
 	dsql_par*	par_null;			// Null parameter, if used
 	dsql_nod*	par_node;			// Associated value node, if any
-	Firebird::MetaName par_dbkey_relname;	// Context of internally requested dbkey
+	Firebird::MetaName par_dbkey_relname;		// Context of internally requested dbkey
 	Firebird::MetaName par_rec_version_relname;	// Context of internally requested rec. version
-	const TEXT*	par_name;			// Parameter name, if any
-	const TEXT*	par_rel_name;		// Relation name, if any
-	const TEXT*	par_owner_name;		// Owner name, if any
-	const TEXT*	par_rel_alias;		// Relation alias, if any
-	const TEXT*	par_alias;			// Alias, if any
+	Firebird::MetaName par_name;				// Parameter name, if any
+	Firebird::MetaName par_rel_name;			// Relation name, if any
+	Firebird::MetaName par_owner_name;			// Owner name, if any
+	Firebird::MetaName par_rel_alias;			// Relation alias, if any
+	Firebird::MetaName par_alias;				// Alias, if any
 	dsc			par_desc;			// Field data type
 	USHORT		par_parameter;		// BLR parameter number
 	USHORT		par_index;			// Index into SQLDA, if appropriate

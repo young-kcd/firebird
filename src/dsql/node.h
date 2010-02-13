@@ -167,7 +167,6 @@ enum nod_t
 	nod_multiply,
 	nod_divide,
 	nod_negate,
-	nod_concatenate,
 	nod_substr,
 	nod_null,
 	nod_dbkey,
@@ -184,13 +183,6 @@ enum nod_t
 	nod_gen_id2,
 	nod_exists,
 	nod_singular,
-	nod_agg_average,
-	nod_agg_max,
-	nod_agg_min,
-	nod_agg_total,
-	nod_agg_count,
-	nod_agg_average2,
-	nod_agg_total2,
 	nod_get_segment,	// blobs
 	nod_put_segment,
 	nod_join_inner,	// join types
@@ -289,7 +281,6 @@ enum nod_t
 	nod_returning,
 	nod_tra_misc,
 	nod_lock_timeout,
-	nod_agg_list,
 	nod_src_info,
 	nod_with,
 	nod_update_or_insert,
@@ -315,11 +306,11 @@ enum nod_t
 	nod_dfl_collate,
 	nod_trg_act,
 	nod_trg_ext,
-	nod_class_node,
+	nod_class_stmtnode,
+	nod_class_exprnode,
 	nod_hidden_var,
 	nod_package_name,
 	nod_package_obj,
-	nod_window,
 	nod_mod_field_null_flag,
 	nod_continue,
 	nod_func_obj,
@@ -907,11 +898,6 @@ enum node_args {
 	e_hidden_var_var,
 	e_hidden_var_count,
 
-	e_window_expr = 0,				// nod_window
-	e_window_partition,
-	e_window_order,
-	e_window_count,
-
 	e_mod_fld_null_flag_field = 0,				// nod_mod_field_null_flag
 	e_mod_fld_null_flag_value,
 	e_mod_fld_null_flag_count,
@@ -954,8 +940,6 @@ public:
 
 // values of flags
 enum nod_flags_vals {
-	NOD_AGG_DISTINCT		= 1, // nod_agg_...
-
 	NOD_UNION_ALL			= 1, // nod_list
 	NOD_UNION_RECURSIVE 	= 2,
 	NOD_SIMPLE_LIST			= 4,	// no need to enclose with blr_begin ... blr_end

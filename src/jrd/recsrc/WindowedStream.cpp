@@ -22,6 +22,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
+#include "../dsql/Nodes.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/evl_proto.h"
@@ -465,29 +466,16 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		if (!order)
 			continue;
 
-		// Verify if DISTINCT is used. It's not supported.
+		// Verify not supported functions/clauses.
 
 		const jrd_nod* const* ptr = partitionMap->nod_arg;
 		for (const jrd_nod* const* const end = ptr + partitionMap->nod_count; ptr < end; ++ptr)
 		{
 			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			switch (from->nod_type)
-			{
-				case nod_agg_count_distinct:
-				case nod_agg_total_distinct:
-				case nod_agg_total_distinct2:
-				case nod_agg_average_distinct:
-				case nod_agg_average_distinct2:
-				case nod_agg_list_distinct:
-					status_exception::raise(Arg::Gds(isc_wish_list) <<
-						Arg::Gds(isc_random) << "DISTINCT is not supported in ordered windows");
-					break;
+			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
-				case nod_agg_list:
-					status_exception::raise(Arg::Gds(isc_wish_list) <<
-						Arg::Gds(isc_random) << "LIST is not supported in ordered windows");
-					break;
-			}
+			if (aggNode)
+				aggNode->checkOrderedWindowCapable();
 		}
 
 		// Refresh the stream list based on the last m_joinedStream.
@@ -588,32 +576,10 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 		for (const jrd_nod* const* end = ptr + m_mainMap->nod_count; ptr < end; ptr++)
 		{
 			jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
+			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
-			switch (from->nod_type)
-			{
-				case nod_agg_average:
-				case nod_agg_average_distinct:
-				case nod_agg_average2:
-				case nod_agg_average_distinct2:
-				case nod_agg_total:
-				case nod_agg_total_distinct:
-				case nod_agg_total2:
-				case nod_agg_total_distinct2:
-				case nod_agg_min:
-				case nod_agg_min_indexed:
-				case nod_agg_max:
-				case nod_agg_max_indexed:
-				case nod_agg_count:
-				case nod_agg_count2:
-				case nod_agg_count_distinct:
-				case nod_agg_list:
-				case nod_agg_list_distinct:
-					break;
-
-				default:
-					EXE_assignment(tdbb, *ptr);
-					break;
-			}
+			if (!aggNode)
+				EXE_assignment(tdbb, *ptr);
 		}
 	}
 

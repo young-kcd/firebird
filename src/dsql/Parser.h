@@ -27,6 +27,8 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/ExprNodes.h"
+#include "../dsql/AggNodes.h"
 #include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../common/classes/TriState.h"
@@ -159,7 +161,9 @@ private:
 	dsql_nod* make_list (dsql_nod* node);
 	dsql_nod* make_parameter();
 	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
-	dsql_nod* makeClassNode(Node* node);
+	dsql_nod* makeClassNode(ExprNode* node);
+	dsql_nod* makeClassNode(DdlNode* node);
+	dsql_nod* makeClassNode(StmtNode* node);
 	dsql_nod* make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 

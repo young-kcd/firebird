@@ -77,6 +77,11 @@ namespace Jrd
 
 		virtual ~RecordSource();
 
+		static bool rejectDuplicate(const UCHAR* /*data1*/, const UCHAR* /*data2*/, void* /*userArg*/)
+		{
+			return true;
+		}
+
 	protected:
 		// Generic impure block
 		struct Impure
@@ -101,11 +106,6 @@ namespace Jrd
 
 		static void saveRecord(thread_db* tdbb, record_param* rpb);
 		static void restoreRecord(thread_db* tdbb, record_param* rpb);
-
-		static bool rejectDuplicate(const UCHAR* /*data1*/, const UCHAR* /*data2*/, void* /*userArg*/)
-		{
-			return true;
-		}
 
 		ULONG m_impure;
 		bool m_recursive;
@@ -591,9 +591,7 @@ namespace Jrd
 
 	private:
 		State evaluateGroup(thread_db* tdbb, State state);
-		void initDistinct(jrd_req* request, const jrd_nod* node);
-		void computeDistinct(thread_db* tdbb, jrd_nod* node);
-		void finiDistinct(jrd_req* request);
+		void finiDistinct(thread_db* tdbb, jrd_req* request);
 
 		RecordSource* const m_next;
 		jrd_nod* const m_group;

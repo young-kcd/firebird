@@ -96,6 +96,8 @@
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Function.h"
+#include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 
 using Firebird::AutoSetRestore;
 
@@ -134,57 +136,12 @@ using namespace Firebird;
 
 namespace
 {
-	// Generic node copier.
-	class NodeCopy
-	{
-	public:
-		NodeCopy(CompilerScratch* aCsb, UCHAR* aRemap)
-			: csb(aCsb),
-			  remap(aRemap),
-			  message(NULL)
-		{
-		}
-
-		virtual ~NodeCopy()
-		{
-		}
-
-	public:
-		jrd_nod* copy(thread_db* tdbb, jrd_nod* input);
-
-		static jrd_nod* copy(thread_db* tdbb, CompilerScratch* csb, jrd_nod* input, UCHAR* remap)
-		{
-			return NodeCopy(csb, remap).copy(tdbb, input);
-		}
-
-	protected:
-		virtual bool remapArgument()
-		{
-			return false;
-		}
-
-		virtual USHORT remapField(USHORT /*stream*/, USHORT fldId)
-		{
-			return fldId;
-		}
-
-		virtual USHORT getFieldId(jrd_nod* input)
-		{
-			return (USHORT)(IPTR) input->nod_arg[e_fld_id];
-		}
-
-	protected:
-		CompilerScratch* csb;
-		UCHAR* remap;
-		jrd_nod* message;
-	};
-
 	// Node copier for views.
-	class ViewNodeCopy : public NodeCopy
+	class ViewNodeCopier : public NodeCopier
 	{
 	public:
-		ViewNodeCopy(CompilerScratch* aCsb, UCHAR* aRemap)
-			: NodeCopy(aCsb, aRemap)
+		ViewNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap)
+			: NodeCopier(aCsb, aRemap)
 		{
 		}
 
@@ -207,11 +164,11 @@ namespace
 	};
 
 	// Node copier that remaps the field id 0 of stream 0 to a given field id.
-	class RemapFieldNodeCopy : public NodeCopy
+	class RemapFieldNodeCopier : public NodeCopier
 	{
 	public:
-		RemapFieldNodeCopy(CompilerScratch* aCsb, UCHAR* aRemap, USHORT aFldId)
-			: NodeCopy(aCsb, aRemap),
+		RemapFieldNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap, USHORT aFldId)
+			: NodeCopier(aCsb, aRemap),
 			  fldId(aFldId)
 		{
 		}
@@ -225,7 +182,7 @@ namespace
 				return fldId;
 			}
 
-			return NodeCopy::getFieldId(input);
+			return NodeCopier::getFieldId(input);
 		}
 
 	private:
@@ -317,7 +274,7 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	return NodeCopy::copy(tdbb, csb, node, NULL);
+	return NodeCopier::copy(tdbb, csb, node, NULL);
 }
 
 
@@ -343,7 +300,7 @@ jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		return node;
 	}
 
-	jrd_nod* clone = NodeCopy::copy(tdbb, csb, node, NULL);
+	jrd_nod* clone = NodeCopier::copy(tdbb, csb, node, NULL);
 	CMP_pass2(tdbb, csb, clone, 0);
 
 	return clone;
@@ -1013,8 +970,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
 		return;
 
-	case nod_agg_total:
-	case nod_agg_total_distinct:
 	case nod_total:
 		if (node->nod_type == nod_total)
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
@@ -1078,72 +1033,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 		break;
 
-	case nod_agg_total2:
-	case nod_agg_total_distinct2:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		switch (dtype = desc->dsc_dtype)
-		{
-		case dtype_short:
-		case dtype_long:
-		case dtype_int64:
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_length = sizeof(SINT64);
-			node->nod_scale = desc->dsc_scale;
-			desc->dsc_flags = 0;
-			return;
-
-		case dtype_unknown:
-			desc->dsc_dtype = dtype_unknown;
-			desc->dsc_length = 0;
-			node->nod_scale = 0;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			return;
-
-		case dtype_real:
-		case dtype_double:
-		case dtype_text:
-		case dtype_cstring:
-		case dtype_varying:
-			desc->dsc_dtype = DEFAULT_DOUBLE;
-			desc->dsc_length = sizeof(double);
-			desc->dsc_scale = 0;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			node->nod_flags |= nod_double;
-			return;
-
-
-		case dtype_quad:
-			desc->dsc_dtype = dtype_quad;
-			desc->dsc_length = sizeof(SQUAD);
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			node->nod_scale = desc->dsc_scale;
-			node->nod_flags |= nod_quad;
-#ifdef NATIVE_QUAD
-			return;
-#endif
-
-		default:
-			fb_assert(false);
-			// FALLINTO
-		case dtype_sql_time:
-		case dtype_sql_date:
-		case dtype_timestamp:
-		case dtype_blob:
-		case dtype_array:
-		case dtype_dbkey:
-			// break to error reporting code
-			break;
-		}
-		break;
-
 	case nod_prot_mask:
 	case nod_null:
-	case nod_agg_count:
-	case nod_agg_count2:
-	case nod_agg_count_distinct:
 	case nod_count:
 	case nod_gen_id:
 	case nod_lock_state:
@@ -1236,10 +1127,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
-	case nod_agg_average:
-	case nod_agg_average_distinct:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		// FALL INTO
 	case nod_average:
 		if (node->nod_type == nod_average) {
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
@@ -1255,55 +1142,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
-		return;
-
-		// In 6.0, the AVERAGE of an exact numeric type is int64 with the
-		// same scale. Only AVERAGE on an approximate numeric type can
-		// return a double.
-
-	case nod_agg_average2:
-	case nod_agg_average_distinct2:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		// In V6, the average of an exact type is computed in SINT64,
-		// rather than double as in prior releases
-		switch (dtype = desc->dsc_dtype)
-		{
-		case dtype_short:
-		case dtype_long:
-		case dtype_int64:
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_length = sizeof(SINT64);
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			node->nod_scale = desc->dsc_scale;
-			return;
-
-		case dtype_unknown:
-			desc->dsc_dtype = dtype_unknown;
-			desc->dsc_length = 0;
-			desc->dsc_scale = 0;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			return;
-
-		default:
-			if (!DTYPE_IS_NUMERIC(desc->dsc_dtype)) {
-				break;
-			}
-			desc->dsc_dtype = DEFAULT_DOUBLE;
-			desc->dsc_length = sizeof(double);
-			desc->dsc_scale = 0;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			node->nod_flags |= nod_double;
-			return;
-		}
-		break;
-
-	case nod_agg_list:
-	case nod_agg_list_distinct:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 		return;
 
 	case nod_add:
@@ -1832,12 +1670,10 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 		break;
 
-	case nod_concatenate:
+	case nod_class_exprnode_jrd:
 		{
-			DSC desc1, desc2;
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
-			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			exprNode->getDesc(tdbb, csb, desc);
 			return;
 		}
 
@@ -1935,11 +1771,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
-		return;
-
-	case nod_agg_min:
-	case nod_agg_max:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
 		return;
 
 	case nod_negate:
@@ -2307,11 +2138,11 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 		AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 			(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-		fieldInfo.defaultValue = NodeCopy::copy(tdbb, csb, fieldInfo.defaultValue, local_map);
+		fieldInfo.defaultValue = NodeCopier::copy(tdbb, csb, fieldInfo.defaultValue, local_map);
 
 		csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
-		fieldInfo.validation = NodeCopy::copy(tdbb, csb, fieldInfo.validation, local_map);
+		fieldInfo.validation = NodeCopier::copy(tdbb, csb, fieldInfo.validation, local_map);
 
 		fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
 		fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
@@ -2861,12 +2692,16 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 	if (stack.isEmpty())
 		return node1;
 
-	jrd_nod* cat_node = PAR_make_node(tdbb, 2);
-	cat_node->nod_type = nod_concatenate;
-	cat_node->nod_arg[0] = node1;
-	cat_node->nod_arg[1] = catenate_nodes(tdbb, stack);
+	ConcatenateNode* concatNode = FB_NEW(*tdbb->getDefaultPool()) ConcatenateNode(
+		*tdbb->getDefaultPool());
+	concatNode->arg1 = node1;
+	concatNode->arg2 = catenate_nodes(tdbb, stack);
 
-	return cat_node;
+	jrd_nod* node = PAR_make_node(tdbb, 1);
+	node->nod_type = nod_class_exprnode_jrd;
+	node->nod_arg[0] = (jrd_nod*) concatNode;
+
+	return node;
 }
 
 
@@ -2966,8 +2801,13 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node)
 }
 
 
+USHORT NodeCopier::getFieldId(jrd_nod* input)
+{
+	return (USHORT)(IPTR) input->nod_arg[e_fld_id];
+}
+
 // Copy an expression tree remapping field streams. If the map isn't present, don't remap.
-jrd_nod* NodeCopy::copy(thread_db* tdbb, jrd_nod* input)
+jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 {
 	jrd_nod* node;
 	USHORT stream, new_stream;
@@ -2986,6 +2826,21 @@ jrd_nod* NodeCopy::copy(thread_db* tdbb, jrd_nod* input)
 
 	switch (input->nod_type)
 	{
+	case nod_class_exprnode_jrd:
+		{
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
+			ExprNode* copy = exprNode->copy(tdbb, *this);
+
+			if (copy != exprNode)
+			{
+				node = PAR_make_node(tdbb, 1);
+				node->nod_type = input->nod_type;
+				node->nod_count = input->nod_count;
+				node->nod_arg[0] = (jrd_nod*) copy;
+			}
+		}
+		return node;
+
 	case nod_ansi_all:
 	case nod_ansi_any:
 	case nod_any:
@@ -3723,7 +3578,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 			{
 				// Clone the field default value.
 				node->nod_arg[e_asgn_from] =
-					RemapFieldNodeCopy(csb, map, field_id).copy(tdbb, value);
+					RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, value);
 			}
 		}
 	}
@@ -3785,7 +3640,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
-				RemapFieldNodeCopy(csb, map, field_id).copy(tdbb, validation);
+				RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, validation);
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -3798,7 +3653,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
-				RemapFieldNodeCopy(csb, map, field_id).copy(tdbb, validation);
+				RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, validation);
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -4144,7 +3999,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-			sub = NodeCopy::copy(tdbb, csb, sub, map);
+			sub = NodeCopier::copy(tdbb, csb, sub, map);
 
 			if (relation->rel_view_rse)
 			{
@@ -4448,7 +4303,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					new_node->nod_arg[0] = PAR_make_node(tdbb, 2);
 					new_node->nod_arg[0]->nod_type = nod_eql;
 					new_node->nod_arg[0]->nod_flags = nod_comparison;
-					new_node->nod_arg[0]->nod_arg[0] = NodeCopy::copy(tdbb, csb, node, NULL);
+					new_node->nod_arg[0]->nod_arg[0] = NodeCopier::copy(tdbb, csb, node, NULL);
 					const SSHORT count = lit_delta + (0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
 					new_node->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, count);
 					new_node->nod_arg[0]->nod_arg[1]->nod_type = nod_literal;
@@ -4537,9 +4392,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_arg[e_src_info_node] = CMP_pass1(tdbb, csb, node->nod_arg[e_src_info_node]);
 		return node;
 
-	case nod_class_node_jrd:
-		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-			reinterpret_cast<DmlNode*>(node->nod_arg[0])->pass1(tdbb, csb));
+	case nod_class_exprnode_jrd:
+	case nod_class_stmtnode_jrd:
+		{
+			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(dmlNode->pass1(tdbb, csb));
+		}
 		return node;
 
 	case nod_dcl_variable:
@@ -4700,7 +4558,7 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			// set up the new target stream
 
-			jrd_nod* view_node = NodeCopy::copy(tdbb, csb, node, map);
+			jrd_nod* view_node = NodeCopier::copy(tdbb, csb, node, map);
 
 			view_node->nod_arg[e_erase_statement] = NULL;
 			view_node->nod_arg[e_erase_sub_erase] = NULL;
@@ -4897,7 +4755,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// copy the view source
 
 		map = alloc_map(tdbb, csb, (SSHORT)(IPTR) node->nod_arg[e_mod_new_stream]);
-		source = NodeCopy::copy(tdbb, csb, source, map);
+		source = NodeCopier::copy(tdbb, csb, source, map);
 
 		if (trigger)
 		{
@@ -4909,7 +4767,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			fb_assert(new_stream <= MAX_STREAMS);
 			map[view_stream] = new_stream;
 
-			jrd_nod* view_node = ViewNodeCopy(csb, map).copy(tdbb, node);
+			jrd_nod* view_node = ViewNodeCopier(csb, map).copy(tdbb, node);
 
 			view_node->nod_arg[e_mod_map_view] = NULL;
 			view_node->nod_arg[e_mod_statement] =
@@ -5268,7 +5126,7 @@ static void pass1_source(thread_db*			tdbb,
 		view_rse->rse_sorted || view_rse->rse_projection || view_rse->rse_first ||
 		view_rse->rse_skip || view_rse->rse_plan)
 	{
-		jrd_nod* node = NodeCopy::copy(tdbb, csb, (jrd_nod*) view_rse, map);
+		jrd_nod* node = NodeCopier::copy(tdbb, csb, (jrd_nod*) view_rse, map);
 		DEBUG;
 		stack.push(CMP_pass1(tdbb, csb, node));
 		DEBUG;
@@ -5292,7 +5150,7 @@ static void pass1_source(thread_db*			tdbb,
 	{
 		// this call not only copies the node, it adds any streams it finds to the map
 
-		jrd_nod* node = NodeCopy::copy(tdbb, csb, *arg, map);
+		jrd_nod* node = NodeCopier::copy(tdbb, csb, *arg, map);
 
 		// Now go out and process the base table itself. This table might also be a view,
 		// in which case we will continue the process by recursion.
@@ -5311,7 +5169,7 @@ static void pass1_source(thread_db*			tdbb,
 	if (view_rse->rse_projection)
 	{
 		rse->rse_projection =
-			CMP_pass1(tdbb, csb, NodeCopy::copy(tdbb, csb, view_rse->rse_projection, map));
+			CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb, csb, view_rse->rse_projection, map));
 	}
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the
@@ -5320,7 +5178,7 @@ static void pass1_source(thread_db*			tdbb,
 	if (view_rse->rse_boolean)
 	{
 		jrd_nod* node =
-			CMP_pass1(tdbb, csb, NodeCopy::copy(tdbb, csb, view_rse->rse_boolean, map));
+			CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb, csb, view_rse->rse_boolean, map));
 		if (*boolean)
 		{
 			// The order of the nodes here is important! The
@@ -5436,9 +5294,9 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			// set up the new target stream
 
-			jrd_nod* view_node = NodeCopy::copy(tdbb, csb, node, map);
+			jrd_nod* view_node = NodeCopier::copy(tdbb, csb, node, map);
 			view_node->nod_arg[e_sto_sub_store] = NULL;
-			view_node->nod_arg[e_sto_relation] = NodeCopy::copy(tdbb, csb, source, map);
+			view_node->nod_arg[e_sto_relation] = NodeCopier::copy(tdbb, csb, source, map);
 			const USHORT new_stream =
 				(USHORT)(IPTR) view_node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 			view_node->nod_arg[e_sto_statement] =
@@ -5446,7 +5304,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 // dimitr:	I don't think the below code is required, but time will show
 //			view_node->nod_arg[e_sto_statement] =
-//				NodeCopy::copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL);
+//				NodeCopier::copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL);
 
 			// bug 8150: use of blr_store2 against a view with a trigger was causing
 			// the second statement to be executed, which is not desirable
@@ -5468,7 +5326,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			csb->csb_rpt[stream].csb_flags &= ~csb_view_update;
 
-			node->nod_arg[e_sto_relation] = NodeCopy::copy(tdbb, csb, source, map);
+			node->nod_arg[e_sto_relation] = NodeCopier::copy(tdbb, csb, source, map);
 		}
 	}
 }
@@ -5766,8 +5624,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 
 	case nod_average:
-	case nod_agg_average:
-	case nod_agg_average_distinct:
 		node->nod_flags |= nod_double;
 		// FALL INTO
 
@@ -5775,11 +5631,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_min:
 	case nod_from:
 	case nod_count:
-	case nod_agg_count2:
-	case nod_agg_count_distinct:
-	case nod_agg_min:
-	case nod_agg_max:
-	case nod_agg_count:
 		node->nod_count = 0;
 		csb->csb_impure += sizeof(impure_value_ex);
 		break;
@@ -5806,14 +5657,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 
 	case nod_total:
-	case nod_agg_total:
-	case nod_agg_total_distinct:
-	case nod_agg_total2:
-	case nod_agg_total_distinct2:
-	case nod_agg_average2:
-	case nod_agg_average_distinct2:
-	case nod_agg_list:
-	case nod_agg_list_distinct:
 		{
 			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value_ex);
@@ -5895,8 +5738,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			sizeof(impure_value_ex) : sizeof(dsc);
 		break;
 
-	case nod_concatenate:
-    case nod_literal:
+	case nod_literal:
 	case nod_dbkey:
 	case nod_rec_version:
 	case nod_negate:
@@ -5980,10 +5822,14 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	{
 		pass2_rse(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse]);
 
-		const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
+		jrd_nod* nodWindows = node->nod_arg[e_win_windows];
 
 		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 		{
+			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_map], nodWindows->nod_arg[i]);
+			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_group], nodWindows->nod_arg[i]);
+			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_order], nodWindows->nod_arg[i]);
+
 			stream = (SSHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
 			fb_assert(stream <= MAX_STREAMS);
 
@@ -5991,7 +5837,9 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 				&csb->csb_rpt[stream].csb_format);
 		}
 
-		CMP_pass2(tdbb, csb, node->nod_arg[e_win_windows], node);
+		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_regroup], nodWindows->nod_arg[i]);
+
 		break;
 	}
 
@@ -6069,10 +5917,11 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		csb->csb_impure += sizeof(void**);
 		break;
 
-	case nod_class_node_jrd:
+	case nod_class_exprnode_jrd:
+	case nod_class_stmtnode_jrd:
 		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
 			reinterpret_cast<DmlNode*>(node->nod_arg[0])->pass2(tdbb, csb, node));
-		return node;
+		break;
 
 	default:
 		// note: no fb_assert(false); here as too many nodes are missing

@@ -156,6 +156,13 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	switch (node->nod_type)
 	{
+	case nod_class_exprnode:
+		{
+			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
+			dmlNode->genBlr();
+			return;
+		}
+
 	case nod_alias:
 		GEN_expr(dsqlScratch, node->nod_arg[e_alias_value]);
 		return;
@@ -352,47 +359,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		gen_rse(dsqlScratch, node->nod_arg[0]);
 		return;
 
-	case nod_agg_count:
-		if (node->nod_count)
-			blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-				blr_agg_count_distinct : blr_agg_count2;
-		else
-			blr_operator = blr_agg_count;
-		break;
-
-	case nod_agg_min:
-		blr_operator = blr_agg_min;
-		break;
-	case nod_agg_max:
-		blr_operator = blr_agg_max;
-		break;
-
-	case nod_window:
-		GEN_expr(dsqlScratch, node->nod_arg[0]);
-		return;
-
-	case nod_agg_average:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-			blr_agg_average_distinct : blr_agg_average;
-		break;
-
-	case nod_agg_total:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ? blr_agg_total_distinct : blr_agg_total;
-		break;
-
-	case nod_agg_average2:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-			blr_agg_average_distinct : blr_agg_average;
-		break;
-
-	case nod_agg_total2:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ? blr_agg_total_distinct : blr_agg_total;
-		break;
-
-	case nod_agg_list:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ? blr_agg_list_distinct : blr_agg_list;
-		break;
-
 	case nod_and:
 		blr_operator = blr_and;
 		break;
@@ -491,9 +457,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		break;
 	case nod_divide2:
 		blr_operator = blr_divide;
-		break;
-	case nod_concatenate:
-		blr_operator = blr_concatenate;
 		break;
 	case nod_null:
 		blr_operator = blr_null;
@@ -608,17 +571,35 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	switch (node->nod_type)
 	{
+	case nod_class_exprnode:
+		{
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+
+			if (exprNode->dsqlCompatDialectVerb &&
+				dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
+			{
+				dsc desc;
+				MAKE_desc(dsqlScratch, &desc, node, NULL);
+
+				if (desc.dsc_dtype == dtype_int64)
+				{
+					ERRD_post_warning(
+						Arg::Warning(isc_dsql_dialect_warning_expr) <<
+						Arg::Str(exprNode->dsqlCompatDialectVerb));
+				}
+			}
+		}
+		break;
+
 	case nod_add2:
 	case nod_subtract2:
 	case nod_multiply2:
 	case nod_divide2:
-	case nod_agg_total2:
-	case nod_agg_average2:
 		dsc desc;
 		MAKE_desc(dsqlScratch, &desc, node, NULL);
 
-		if ((node->nod_flags & NOD_COMP_DIALECT) &&
-			(dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION))
+		if (node->nod_flags & NOD_COMP_DIALECT &&
+			dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
 		{
 			const char* s = 0;
 			char message_buf[8];
@@ -637,18 +618,13 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 			case nod_divide2:
 				s = "divide";
 				break;
-			case nod_agg_total2:
-				s = "sum";
-				break;
-			case nod_agg_average2:
-				s = "avg";
-				break;
 			default:
 				sprintf(message_buf, "blr %d", (int) blr_operator);
 				s = message_buf;
 			}
 			ERRD_post_warning(Arg::Warning(isc_dsql_dialect_warning_expr) << Arg::Str(s));
 		}
+		break;
 	}
 }
 
@@ -1050,12 +1026,12 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		stuff(dsqlScratch->getStatement(), blr_end);
 		return;
 
-	case nod_class_node:
+	case nod_class_stmtnode:
 		{
-			StmtNode* stmtNode = reinterpret_cast<StmtNode*>(node->nod_arg[0]);
-			stmtNode->genBlr();
-			return;
+			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
+			dmlNode->genBlr();
 		}
+		return;
 
 	case nod_for_select:
 		gen_for_select(dsqlScratch, node);

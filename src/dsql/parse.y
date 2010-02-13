@@ -628,9 +628,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreateAlterPackageNode::Item packageItem;
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
 	Jrd::ExecBlockNode* execBlockNode;
+	Jrd::AggNode* aggNode;
 }
 
-%type <legacyNode> access_mode access_type aggregate_function alias_list
+%type <legacyNode> access_mode access_type alias_list
 %type <legacyNode> alter alter_clause alter_column_name
 %type <legacyNode> alter_data_type_or_domain alter_db alter_domain_op alter_domain_ops
 %type <legacyNode> alter_exception_clause alter_index_clause alter_op alter_ops
@@ -822,6 +823,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <createPackageBodyNode> package_body_clause
 %type <packageItems> package_items_opt package_items package_body_items_opt package_body_items
 %type <packageItem> package_item package_body_item
+
+%type <aggNode> aggregate_function
 
 %%
 
@@ -4996,7 +4999,7 @@ value	: column_name
 					$$ = make_node (nod_add, 2, $1, $3);
 			}
 		| value CONCATENATE value
-			{ $$ = make_node (nod_concatenate, 2, $1, $3); }
+			{ $$ = makeClassNode(FB_NEW(getPool()) ConcatenateNode(getPool(), $1, $3)); }
 		| value COLLATE symbol_collation_name
 			{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
 		| value '-' value
@@ -5262,6 +5265,7 @@ long_integer
 
 function
 	: aggregate_function
+		{ $$ = makeClassNode($1); }
 	| non_aggregate_function
 	| window_function
 	;
@@ -5272,58 +5276,53 @@ non_aggregate_function
 	| system_function_expression
 	;
 
-aggregate_function	: COUNT '(' '*' ')'
-			{ $$ = make_node (nod_agg_count, 0, NULL); }
-		| COUNT '(' all_noise value ')'
-			{ $$ = make_node (nod_agg_count, 1, $4); }
-		| COUNT '(' DISTINCT value ')'
-			{ $$ = make_flag_node (nod_agg_count,
-									   NOD_AGG_DISTINCT, 1, $4); }
-		| SUM '(' all_noise value ')'
-			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_agg_total2, 1, $4);
-				else
-					$$ = make_node (nod_agg_total, 1, $4);
-			}
-		| SUM '(' DISTINCT value ')'
-			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_flag_node (nod_agg_total2, NOD_AGG_DISTINCT, 1, $4);
-				else
-					$$ = make_flag_node (nod_agg_total, NOD_AGG_DISTINCT, 1, $4);
-			}
-		| AVG '(' all_noise value ')'
-			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_agg_average2, 1, $4);
-				else
-					$$ = make_node (nod_agg_average, 1, $4);
-			}
-		| AVG '(' DISTINCT value ')'
-			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_flag_node (nod_agg_average2, NOD_AGG_DISTINCT, 1, $4);
-				else
-					$$ = make_flag_node (nod_agg_average, NOD_AGG_DISTINCT, 1, $4);
-			}
-		| MINIMUM '(' all_noise value ')'
-			{ $$ = make_node (nod_agg_min, 1, $4); }
-		| MINIMUM '(' DISTINCT value ')'
-			{ $$ = make_node (nod_agg_min, 1, $4); }
-		| MAXIMUM '(' all_noise value ')'
-			{ $$ = make_node (nod_agg_max, 1, $4); }
-		| MAXIMUM '(' DISTINCT value ')'
-			{ $$ = make_node (nod_agg_max, 1, $4); }
-		| LIST '(' all_noise value delimiter_opt ')'
-			{ $$ = make_node (nod_agg_list, 2, $4, $5); }
-		| LIST '(' DISTINCT value delimiter_opt ')'
-			{ $$ = make_flag_node (nod_agg_list, NOD_AGG_DISTINCT, 2, $4, $5); }
-		;
+aggregate_function
+	: COUNT '(' '*' ')'
+		{ $$ = FB_NEW(getPool()) CountAggNode(getPool(), false); }
+	| COUNT '(' all_noise value ')'
+		{ $$ = FB_NEW(getPool()) CountAggNode(getPool(), false, $4); }
+	| COUNT '(' DISTINCT value ')'
+		{ $$ = FB_NEW(getPool()) CountAggNode(getPool(), true, $4); }
+	| SUM '(' all_noise value ')'
+		{
+			$$ = FB_NEW(getPool()) SumAggNode(getPool(), false,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
+		}
+	| SUM '(' DISTINCT value ')'
+		{
+			$$ = FB_NEW(getPool()) SumAggNode(getPool(), true,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
+		}
+	| AVG '(' all_noise value ')'
+		{
+			$$ = FB_NEW(getPool()) AvgAggNode(getPool(), false,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
+		}
+	| AVG '(' DISTINCT value ')'
+		{
+			$$ = FB_NEW(getPool()) AvgAggNode(getPool(), true,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
+	}
+	| MINIMUM '(' all_noise value ')'
+		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MIN, $4); }
+	| MINIMUM '(' DISTINCT value ')'
+		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MIN, $4); }
+	| MAXIMUM '(' all_noise value ')'
+		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MAX, $4); }
+	| MAXIMUM '(' DISTINCT value ')'
+		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MAX, $4); }
+	| LIST '(' all_noise value delimiter_opt ')'
+		{ $$ = FB_NEW(getPool()) ListAggNode(getPool(), false, $4, $5); }
+	| LIST '(' DISTINCT value delimiter_opt ')'
+		{ $$ = FB_NEW(getPool()) ListAggNode(getPool(), true, $4, $5); }
+	;
 
 window_function
 	: aggregate_function OVER '(' window_partition_opt order_clause ')'
-		{ $$ = make_node(nod_window, e_window_count, $1, make_list($4), $5); }
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) OverNode(getPool(), makeClassNode($1),
+					make_list($4), $5));
+		}
 	;
 
 window_partition_opt
@@ -6182,9 +6181,19 @@ dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
 }
 
 
-dsql_nod* Parser::makeClassNode(Node* node)
+dsql_nod* Parser::makeClassNode(ExprNode* node)
 {
-	return make_node(nod_class_node, 1, reinterpret_cast<dsql_nod*>(node));
+	return make_node(nod_class_exprnode, 1, reinterpret_cast<dsql_nod*>(node));
+}
+
+dsql_nod* Parser::makeClassNode(DdlNode* node)
+{
+	return make_node(nod_class_stmtnode, 1, reinterpret_cast<dsql_nod*>(node));
+}
+
+dsql_nod* Parser::makeClassNode(StmtNode* node)
+{
+	return make_node(nod_class_stmtnode, 1, reinterpret_cast<dsql_nod*>(node));
 }
 
 

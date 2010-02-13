@@ -2824,7 +2824,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			node = node->nod_parent;
 			break;
 
-		case nod_class_node_jrd:
+		case nod_class_stmtnode_jrd:
 			node = reinterpret_cast<const StmtNode*>(node->nod_arg[0])->execute(tdbb, request);
 			break;
 

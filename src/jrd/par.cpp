@@ -2769,7 +2769,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_subtract:
 	case blr_multiply:
 	case blr_divide:
-	case blr_concatenate:
 
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
@@ -2784,14 +2783,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_negate:
 	case blr_not:
 	case blr_missing:
-	case blr_agg_count2:
-	case blr_agg_max:
-	case blr_agg_min:
-	case blr_agg_total:
-	case blr_agg_average:
-	case blr_agg_count_distinct:
-	case blr_agg_total_distinct:
-	case blr_agg_average_distinct:
 	case blr_internal_info:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
@@ -2806,12 +2797,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			*arg++ = NULL;
 			--node->nod_count;
 		}
-		break;
-
-	case blr_agg_list:
-	case blr_agg_list_distinct:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 		break;
 
 	case blr_exec_sql:
@@ -2990,7 +2975,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	case blr_null:
-	case blr_agg_count:
 	case blr_user_name:
     case blr_current_role:
 	case blr_current_date:
@@ -3455,7 +3439,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	default:
-		if ((nod_t)(USHORT) blr_table[(int) blr_operator] == nod_class_node_jrd)
+		if ((nod_t)(USHORT) blr_table[(int) blr_operator] == nod_class_exprnode_jrd ||
+			(nod_t)(USHORT) blr_table[(int) blr_operator] == nod_class_stmtnode_jrd)
 		{
 			fb_assert(blr_parsers[blr_operator]);
 

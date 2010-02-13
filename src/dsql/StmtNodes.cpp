@@ -24,9 +24,7 @@
 #include "../common/classes/MsgPrint.h"
 #include "../dsql/StmtNodes.h"
 #include "../dsql/node.h"
-#include "../jrd/jrd.h"
 #include "../jrd/blr.h"
-#include "../jrd/exe.h"
 #include "../jrd/tra.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"
@@ -50,20 +48,6 @@ using namespace Jrd;
 
 
 namespace Jrd {
-
-
-template <typename T>
-class RegisterNode
-{
-public:
-	explicit RegisterNode(UCHAR blr)
-	{
-		PAR_register(blr, T::parse);
-	}
-};
-
-
-//--------------------
 
 
 DmlNode* DmlNode::pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)

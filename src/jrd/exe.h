@@ -184,7 +184,7 @@ public:
 	UCHAR	nod_flags;
 	SCHAR	nod_scale;
 	USHORT	nod_count;
-	dsc		asb_desc;
+	dsc		asb_desc;			// WARNING: non-impure place used in request execution
 	USHORT	asb_length;
 	bool	asb_intl;
 	sort_key_def* asb_key_desc;	// for the aggregate
