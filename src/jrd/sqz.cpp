@@ -67,7 +67,7 @@ Compressor::Compressor(size_t length, const UCHAR* data)
 
 		while (count)
 		{
-			max = MIN(count, 127);
+			max = MIN(count, 127U);
 			m_length += 1 + max;
 			count -= max;
 			*control++ = (UCHAR) max;
@@ -100,7 +100,7 @@ Compressor::Compressor(size_t length, const UCHAR* data)
 size_t Compressor::applyDiff(size_t diffLength,
 							 const UCHAR* differences,
 							 size_t outLength,
-							 UCHAR* output)
+							 UCHAR* const output)
 {
 /**************************************
  *

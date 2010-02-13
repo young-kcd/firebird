@@ -54,7 +54,7 @@ namespace Jrd
 		size_t getPartialLength(size_t, const UCHAR*) const;
 
 		static UCHAR* unpack(size_t, const UCHAR*, size_t, UCHAR*);
-		static size_t applyDiff(size_t, const UCHAR*, size_t, UCHAR*);
+		static size_t applyDiff(size_t, const UCHAR*, size_t, UCHAR* const);
 		static size_t makeDiff(size_t, const UCHAR*, size_t, UCHAR*, size_t, UCHAR*);
 		static size_t makeNoDiff(size_t, UCHAR*);
 
