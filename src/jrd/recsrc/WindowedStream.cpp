@@ -411,6 +411,9 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 	m_next->findUsedStreams(streams);
 	streams.insert(0, streams.getCount());
 
+	Array<bool> noAggregatedStreams;
+	noAggregatedStreams.resize(nodWindows->nod_count);
+
 	// Process unordered partitions.
 
 	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
@@ -422,7 +425,30 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
 		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
 
+		noAggregatedStreams[i] = false;
+
 		if (order)
+			noAggregatedStreams[i] = true;
+		else if (partition)
+		{
+			// In the case of an item needs winPass call, we should process the partition as an
+			// ordered one.
+
+			jrd_nod* const* ptr = partitionMap->nod_arg;
+			for (const jrd_nod* const* end = ptr + partitionMap->nod_count; ptr < end; ptr++)
+			{
+				jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
+				const AggNode* aggNode = ExprNode::as<AggNode>(from);
+
+				if (aggNode && aggNode->shouldCallWinPass())
+				{
+					noAggregatedStreams[i] = true;
+					break;
+				}
+			}
+		}
+
+		if (noAggregatedStreams[i])
 			continue;
 
 		if (!partition)
@@ -463,7 +489,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
 		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
 
-		if (!order)
+		if (!noAggregatedStreams[i])
 			continue;
 
 		// Verify not supported functions/clauses.
@@ -489,13 +515,14 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 
 		if (partition)
 		{
-			partitionOrder = PAR_make_node(tdbb, (partition->nod_count + order->nod_count) * 3);
+			USHORT orderCount = order ? order->nod_count : 0;
+			partitionOrder = PAR_make_node(tdbb, (partition->nod_count + orderCount) * 3);
 			partitionOrder->nod_type = nod_sort;
-			partitionOrder->nod_count = partition->nod_count + order->nod_count;
+			partitionOrder->nod_count = partition->nod_count + orderCount;
 
 			jrd_nod** node1 = partitionOrder->nod_arg;
-			jrd_nod** node2 = partitionOrder->nod_arg + partition->nod_count + order->nod_count;
-			jrd_nod** node3 = node2 + partition->nod_count + order->nod_count;
+			jrd_nod** node2 = partitionOrder->nod_arg + partition->nod_count + orderCount;
+			jrd_nod** node3 = node2 + partition->nod_count + orderCount;
 
 			for (jrd_nod** node = partition->nod_arg;
 				 node != partition->nod_arg + partition->nod_count;
@@ -506,11 +533,14 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 				*node3++ = (jrd_nod*)(IPTR) rse_nulls_default;
 			}
 
-			for (jrd_nod** node = order->nod_arg; node != order->nod_arg + order->nod_count; ++node)
+			if (order)
 			{
-				*node1++ = *node;
-				*node2++ = *(node + order->nod_count);
-				*node3++ = *(node + order->nod_count * 2);
+				for (jrd_nod** node = order->nod_arg; node != order->nod_arg + orderCount; ++node)
+				{
+					*node1++ = *node;
+					*node2++ = *(node + orderCount);
+					*node3++ = *(node + orderCount * 2);
+				}
 			}
 		}
 		else
@@ -572,6 +602,8 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 	// Map the inner stream non-aggregate fields to the main partition.
 	if (m_mainMap)
 	{
+		dsc* desc;
+
 		jrd_nod* const* ptr = m_mainMap->nod_arg;
 		for (const jrd_nod* const* end = ptr + m_mainMap->nod_count; ptr < end; ptr++)
 		{
@@ -580,6 +612,21 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 
 			if (!aggNode)
 				EXE_assignment(tdbb, *ptr);
+			else if (aggNode->shouldCallWinPass())
+			{
+				jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+
+				desc = aggNode->winPass(tdbb, request);
+				if (!desc)
+					SET_NULL(record, id);
+				else
+				{
+					MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
+					CLEAR_NULL(record, id);
+				}
+			}
 		}
 	}
 

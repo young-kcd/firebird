@@ -158,7 +158,7 @@ static const struct
 	{"error_handler", error_handler},	// 130
 	{"cast", cast},
 	{NULL, NULL},
-	{NULL, NULL},
+	{"procedure2", procedure2},
 	{"start_savepoint", zero},
 	{"end_savepoint", zero},
 	{NULL, NULL},
@@ -227,11 +227,13 @@ static const struct
 	{"exec_stmt", exec_stmt},
 	{"stmt_expr", two},
 	{"derived_expr", derived_expr},
-	{"procedure2", procedure2},
+	{"procedure3", procedure3},
 	{"exec_proc2", exec_proc2},
 	{"function2", function2},
 	{"window", window},
 	{"partition_by", partition_by},
 	{"continue_loop", byte_line},
+	{"procedure4", procedure4},
+	{"agg_function", function},
 	{0, 0}
 };

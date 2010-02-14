@@ -337,6 +337,10 @@
 				RelativePath="..\..\..\src\dsql\utld.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\WinNodes.cpp"
+				>
+			</File>
 			<Filter
 				Name="epp files"
 				Filter="epp"
@@ -518,6 +522,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\Visitors.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\WinNodes.h"
 				>
 			</File>
 		</Filter>

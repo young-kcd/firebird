@@ -162,6 +162,7 @@ static const TOK tokens[] =
 	{DEFAULT, "DEFAULT", 1, false},
 	{KW_DELETE, "DELETE", 1, false},
 	{DELETING, "DELETING", 2, true},
+	{DENSE_RANK, "DENSE_RANK", 2, false},
 	{DESC, "DESC", 1, false},	// Alias of DESCENDING
 	{DESC, "DESCENDING", 1, false},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2, true},
@@ -310,6 +311,7 @@ static const TOK tokens[] =
 	{PROCEDURE, "PROCEDURE", 1, false},
 	{PROTECTED, "PROTECTED", 1, false},
 	{RAND, "RAND", 2, false},
+	{RANK, "RANK", 2, false},
 	{DB_KEY, "RDB$DB_KEY", 1, false},
 	{RDB_GET_CONTEXT, "RDB$GET_CONTEXT", 2, true},
 	{RDB_SET_CONTEXT, "RDB$SET_CONTEXT", 2, true},
@@ -339,6 +341,7 @@ static const TOK tokens[] =
 	{ROLLBACK, "ROLLBACK", 1, false},
 	{ROUND, "ROUND", 2, false},
 	{ROW_COUNT, "ROW_COUNT", 2, false},
+	{ROW_NUMBER, "ROW_NUMBER", 2, false},
 	{ROWS, "ROWS", 2, false},
 	{RPAD, "RPAD", 2, false},
 	{SAVEPOINT, "SAVEPOINT", 2, false},

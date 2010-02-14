@@ -576,7 +576,10 @@ namespace Jrd
 
 	public:
 		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
-			jrd_nod* const map, RecordSource* next, jrd_nod* order = NULL);
+			jrd_nod* const map, RecordSource* next, jrd_nod* order);
+
+		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
+			jrd_nod* const map, RecordSource* next);
 
 		void open(thread_db* tdbb);
 		void close(thread_db* tdbb);
@@ -596,6 +599,7 @@ namespace Jrd
 		State evaluateGroup(thread_db* tdbb, State state);
 		void finiDistinct(thread_db* tdbb, jrd_req* request);
 
+		BufferedStream* m_bufferedStream;
 		RecordSource* const m_next;
 		jrd_nod* const m_group;
 		jrd_nod* const m_map;

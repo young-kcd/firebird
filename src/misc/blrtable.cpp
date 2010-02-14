@@ -223,6 +223,7 @@ static const VERB verbs[] =
 	PAIR(nod_derived_expr, blr_derived_expr, e_derived_expr_length, e_derived_expr_count, VALUE, VALUE),
 	PAIR(nod_window, blr_window, e_agg_length, 0, RELATION, OTHER),
 	PAIR(nod_continue_loop, blr_continue_loop, 1, 0, STATEMENT, OTHER),
+	PAIR(nod_class_exprnode_jrd, blr_agg_function, 1, 0, VALUE, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 

@@ -314,12 +314,42 @@ public:
 
 class AggNode : public TypedNode<ExprNode, ExprNode::TYPE_AGGREGATE>
 {
-public:
+protected:
 	struct AggInfo
 	{
+		AggInfo(const char* aName, UCHAR aBlr, UCHAR aDistinctBlr)
+			: name(aName),
+			  blr(aBlr),
+			  distinctBlr(aDistinctBlr)
+		{
+		}
+
 		const char* name;
 		UCHAR blr;
 		UCHAR distinctBlr;
+	};
+
+public:
+	template <typename T>
+	class Register : public AggInfo
+	{
+	public:
+		explicit Register(const char* aName, UCHAR blr, UCHAR blrDistinct)
+			: AggInfo(aName, blr, blrDistinct),
+			  registerNode1(blr),
+			  registerNode2(blrDistinct)
+		{
+		}
+
+		explicit Register(const char* aName, UCHAR blr)
+			: AggInfo(aName, blr, blr),
+			  registerNode1(blr),
+			  registerNode2(blr)
+		{
+		}
+
+	private:
+		RegisterNode<T> registerNode1, registerNode2;
 	};
 
 	explicit AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool aDialect1,
@@ -375,6 +405,16 @@ public:
 		}
 	}
 
+	virtual bool shouldCallWinPass() const
+	{
+		return false;
+	}
+
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request) const
+	{
+		return NULL;
+	}
+
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
 	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request) const;
@@ -395,6 +435,50 @@ public:
 	jrd_nod* arg;
 	AggregateSort* asb;
 	bool indexed;
+};
+
+
+class WinFuncNode : public AggNode
+{
+private:
+	class Factory : public AggInfo
+	{
+	public:
+		explicit Factory(const char* aName)
+			: AggInfo(aName, 0, 0)
+		{
+		}
+
+		virtual WinFuncNode* newInstance(MemoryPool& pool) const = 0;
+
+	public:
+		const Factory* next;
+	};
+
+public:
+	template <typename T>
+	class Register : public Factory
+	{
+	public:
+		explicit Register(const char* aName)
+			: Factory(aName)
+		{
+			next = factories;
+			factories = this;
+		}
+
+		WinFuncNode* newInstance(MemoryPool& pool) const
+		{
+			return new T(pool);
+		}
+	};
+
+	explicit WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, dsql_nod* aArg = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+private:
+	static Factory* factories;
 };
 
 

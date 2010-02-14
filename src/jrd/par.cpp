@@ -749,7 +749,7 @@ SLONG PAR_symbol_to_gdscode(const Firebird::string& name)
 // Registers a parse function (DmlNode creator) for a BLR code.
 void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 {
-	fb_assert(!blr_parsers[blr]);
+	fb_assert(!blr_parsers[blr] || blr_parsers[blr] == parseFunc);
 	blr_parsers[blr] = parseFunc;
 }
 

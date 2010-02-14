@@ -29,6 +29,7 @@
 #include "../dsql/DdlNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/AggNodes.h"
+#include "../dsql/WinNodes.h"
 #include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../common/classes/TriState.h"

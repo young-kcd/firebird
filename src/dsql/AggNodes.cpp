@@ -265,8 +265,11 @@ bool AggNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	const AggNode* o = other->as<AggNode>();
 	fb_assert(o);
 
-	if (aggInfo.blr != o->aggInfo.blr || distinct != o->distinct || dialect1 != o->dialect1)
+	if (aggInfo.blr != o->aggInfo.blr || aggInfo.name != o->aggInfo.name ||
+		distinct != o->distinct || dialect1 != o->dialect1)
+	{
 		return false;
+	}
 
 	return true;
 }
@@ -278,10 +281,30 @@ void AggNode::setParameterName(dsql_par* parameter) const
 
 void AggNode::genBlr()
 {
-	stuff(dsqlScratch->getStatement(), (distinct ? aggInfo.distinctBlr : aggInfo.blr));
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	if (aggInfo.blr)	// Is this a standard aggregate function?
+		stuff(statement, (distinct ? aggInfo.distinctBlr : aggInfo.blr));
+	else	// This is a new window function.
+	{
+		stuff(statement, blr_agg_function);
+		stuff_cstring(statement, aggInfo.name);
+
+		unsigned count = 0;
+		for (dsql_nod*** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
+		{
+			if (**i)
+				++count;
+		}
+
+		stuff(statement, UCHAR(count));
+	}
 
 	for (dsql_nod*** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-		GEN_expr(dsqlScratch, **i);
+	{
+		if (**i)
+			GEN_expr(dsqlScratch, **i);
+	}
 }
 
 ExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -421,10 +444,7 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
-static RegisterNode<AvgAggNode> regAvgAggNode1(blr_agg_average);
-static RegisterNode<AvgAggNode> regAvgAggNode2(blr_agg_average_distinct);
-
-static AggNode::AggInfo avgAggInfo = {"AVG", blr_agg_average, blr_agg_average_distinct};
+static AggNode::Register<AvgAggNode> avgAggInfo("AVG", blr_agg_average, blr_agg_average_distinct);
 
 AvgAggNode::AvgAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_nod* aArg)
 	: AggNode(pool, avgAggInfo, aDistinct, aDialect1, aArg),
@@ -628,10 +648,7 @@ AggNode* AvgAggNode::dsqlCopy() const
 //--------------------
 
 
-static RegisterNode<ListAggNode> regListAggNode1(blr_agg_list);
-static RegisterNode<ListAggNode> regListAggNode2(blr_agg_list_distinct);
-
-static AggNode::AggInfo listAggInfo = {"LIST", blr_agg_list, blr_agg_list_distinct};
+static AggNode::Register<ListAggNode> listAggInfo("LIST", blr_agg_list, blr_agg_list_distinct);
 
 ListAggNode::ListAggNode(MemoryPool& pool, bool aDistinct, dsql_nod* aArg, dsql_nod* aDelimiter)
 	: AggNode(pool, listAggInfo, aDistinct, false, aArg),
@@ -756,11 +773,9 @@ AggNode* ListAggNode::dsqlCopy() const
 //--------------------
 
 
-static RegisterNode<CountAggNode> regCountAggNode1(blr_agg_count);
-static RegisterNode<CountAggNode> regCountAggNode2(blr_agg_count2);
-static RegisterNode<CountAggNode> regCountAggNode3(blr_agg_count_distinct);
+static RegisterNode<CountAggNode> regCountAggNodeLegacy(blr_agg_count);
 
-static AggNode::AggInfo countAggInfo = {"COUNT", blr_agg_count2, blr_agg_count_distinct};
+static AggNode::Register<CountAggNode> countAggInfo("COUNT", blr_agg_count2, blr_agg_count_distinct);
 
 CountAggNode::CountAggNode(MemoryPool& pool, bool aDistinct, dsql_nod* aArg)
 	: AggNode(pool, countAggInfo, aDistinct, false, aArg)
@@ -817,7 +832,6 @@ void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 void CountAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
-	++impure->vlux_count;
 	++impure->vlu_misc.vlu_long;
 }
 
@@ -841,10 +855,7 @@ AggNode* CountAggNode::dsqlCopy() const
 //--------------------
 
 
-static RegisterNode<SumAggNode> regSumAggNode1(blr_agg_total);
-static RegisterNode<SumAggNode> regSumAggNode2(blr_agg_total_distinct);
-
-static AggNode::AggInfo sumAggInfo = {"SUM", blr_agg_total, blr_agg_total_distinct};
+static AggNode::Register<SumAggNode> sumAggInfo("SUM", blr_agg_total, blr_agg_total_distinct);
 
 SumAggNode::SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_nod* aArg)
 	: AggNode(pool, sumAggInfo, aDistinct, aDialect1, aArg)
@@ -1092,11 +1103,8 @@ AggNode* SumAggNode::dsqlCopy() const
 //--------------------
 
 
-static RegisterNode<MaxMinAggNode> regMaxMinAggNode1(blr_agg_max);
-static RegisterNode<MaxMinAggNode> regMaxMinAggNode2(blr_agg_min);
-
-static AggNode::AggInfo maxAggInfo = {"MAX", blr_agg_max, blr_agg_max};
-static AggNode::AggInfo minAggInfo = {"MIN", blr_agg_min, blr_agg_min};
+static AggNode::Register<MaxMinAggNode> maxAggInfo("MAX", blr_agg_max);
+static AggNode::Register<MaxMinAggNode> minAggInfo("MIN", blr_agg_min);
 
 MaxMinAggNode::MaxMinAggNode(MemoryPool& pool, MaxMinType aType, dsql_nod* aArg)
 	: AggNode(pool, (aType == MaxMinAggNode::TYPE_MAX ? maxAggInfo : minAggInfo), false, false, aArg),

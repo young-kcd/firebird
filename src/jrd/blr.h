@@ -394,4 +394,6 @@
 #define blr_continue_loop			(unsigned char) 197
 #define blr_procedure4				(unsigned char) 198
 
+#define blr_agg_function			(unsigned char) 199
+
 #endif // JRD_BLR_H

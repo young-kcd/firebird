@@ -576,6 +576,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> DETERMINISTIC
 %token <legacyNode> IDENTITY
 
+%token <legacyNode> DENSE_RANK
+%token <legacyNode> RANK
+%token <legacyNode> ROW_NUMBER
+
 // precedence declarations for expression evaluation
 
 %left	OR
@@ -730,6 +734,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> octet_length_expression open_cursor opt_snapshot optional_retain
 %type <legacyNode> optional_savepoint optional_work order_clause order_direction order_item order_list
+%type <legacyNode> over_clause
 %type output_parameters(<parametersClause>) output_proc_parameter(<parametersClause>)
 %type output_proc_parameters(<parametersClause>)
 
@@ -790,7 +795,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> valid_symbol_name value value_list value_list_opt var_decl_opt var_declaration_item
 %type <legacyNode> variable variable_list varying_keyword version_mode view_clause
 
-%type <legacyNode> when_operand where_clause while window_function window_partition_opt
+%type <legacyNode> when_operand where_clause while window_partition_opt
 %type <legacyNode> with_clause with_item with_list
 
 %type <legacyStr> external_body_clause_opt
@@ -824,7 +829,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <packageItems> package_items_opt package_items package_body_items_opt package_body_items
 %type <packageItem> package_item package_body_item
 
-%type <aggNode> aggregate_function
+%type <aggNode> aggregate_function aggregate_window_function window_function
 
 %%
 
@@ -5267,7 +5272,7 @@ function
 	: aggregate_function
 		{ $$ = makeClassNode($1); }
 	| non_aggregate_function
-	| window_function
+	| over_clause
 	;
 
 non_aggregate_function
@@ -5302,7 +5307,7 @@ aggregate_function
 		{
 			$$ = FB_NEW(getPool()) AvgAggNode(getPool(), true,
 				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
-	}
+		}
 	| MINIMUM '(' all_noise value ')'
 		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MIN, $4); }
 	| MINIMUM '(' DISTINCT value ')'
@@ -5318,7 +5323,21 @@ aggregate_function
 	;
 
 window_function
-	: aggregate_function OVER '(' window_partition_opt order_clause ')'
+	: DENSE_RANK '(' ')'
+		{ $$ = FB_NEW(getPool()) DenseRankWinNode(getPool()); }
+	| RANK '(' ')'
+		{ $$ = FB_NEW(getPool()) RankWinNode(getPool()); }
+	| ROW_NUMBER '(' ')'
+		{ $$ = FB_NEW(getPool()) RowNumberWinNode(getPool()); }
+	;
+
+aggregate_window_function
+	: aggregate_function
+	| window_function
+	;
+
+over_clause
+	: aggregate_window_function OVER '(' window_partition_opt order_clause ')'
 		{
 			$$ = makeClassNode(FB_NEW(getPool()) OverNode(getPool(), makeClassNode($1),
 					make_list($4), $5));
@@ -5940,6 +5959,9 @@ non_reserved_word :
 	| RDB_GET_CONTEXT
 	| RDB_SET_CONTEXT
 	| KW_RELATIVE
+	| DENSE_RANK
+	| RANK
+	| ROW_NUMBER
 	;
 
 %%

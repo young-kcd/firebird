@@ -37,13 +37,30 @@ using namespace Jrd;
 // Data access: aggregation
 // ------------------------
 
+// Note that we can have NULL order here, in case of window function with shouldCallWinPass
+// returning true, with partition, and without order. Example: ROW_NUMBER() OVER (PARTITION BY N).
 AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* group,
 			jrd_nod* const map, RecordSource* next, jrd_nod* order)
 	: RecordStream(csb, stream),
-	  m_next(order ? FB_NEW(csb->csb_pool) BufferedStream(csb, next) : next),
+	  m_bufferedStream(FB_NEW(csb->csb_pool) BufferedStream(csb, next)),
+	  m_next(m_bufferedStream),
 	  m_group(group),
 	  m_map(map),
 	  m_order(order)
+{
+	fb_assert(m_map && m_next);
+
+	m_impure = CMP_impure(csb, sizeof(Impure));
+}
+
+AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* group,
+			jrd_nod* const map, RecordSource* next)
+	: RecordStream(csb, stream),
+	  m_bufferedStream(NULL),
+	  m_next(next),
+	  m_group(group),
+	  m_map(map),
+	  m_order(NULL)
 {
 	fb_assert(m_map && m_next);
 
@@ -92,16 +109,14 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	if (m_order)
+	if (m_bufferedStream)
 	{
-		BufferedStream* bufferedStream = static_cast<BufferedStream*>(m_next);
-
 		if (impure->pending == 0)
 		{
-			FB_UINT64 position = bufferedStream->getPosition(request);
+			FB_UINT64 position = m_bufferedStream->getPosition(request);
 
 			if (impure->state == STATE_PENDING)
-				bufferedStream->getRecord(tdbb);
+				m_bufferedStream->getRecord(tdbb);
 
 			impure->state = evaluateGroup(tdbb, impure->state);
 
@@ -111,14 +126,38 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 				return false;
 			}
 
-			impure->pending = bufferedStream->getPosition(request) - position -
+			impure->pending = m_bufferedStream->getPosition(request) - position -
 				(impure->state == STATE_EOF_FOUND ? 0 : 1);
-			bufferedStream->locate(tdbb, position);
+			m_bufferedStream->locate(tdbb, position);
 		}
 
 		if (impure->pending > 0)
 			--impure->pending;
-		bufferedStream->getRecord(tdbb);
+		m_bufferedStream->getRecord(tdbb);
+
+		dsc* desc;
+
+		for (jrd_nod** ptr = m_map->nod_arg, **end = ptr + m_map->nod_count; ptr < end; ptr++)
+		{
+			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			const AggNode* aggNode = ExprNode::as<AggNode>(from);
+
+			if (aggNode && aggNode->shouldCallWinPass())
+			{
+				jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+
+				desc = aggNode->winPass(tdbb, request);
+				if (!desc)
+					SET_NULL(record, id);
+				else
+				{
+					MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
+					CLEAR_NULL(record, id);
+				}
+			}
+		}
 	}
 	else
 	{
