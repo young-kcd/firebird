@@ -43,7 +43,7 @@
 
 #define isc_dyn_begin                     2
 #define isc_dyn_end                       3
-//#define isc_dyn_if                        4
+#define isc_dyn_schema_name               4
 #define isc_dyn_def_database              5 // only used in pretty.cpp; nobody generates it
 #define isc_dyn_def_global_fld            6
 #define isc_dyn_def_local_fld             7
