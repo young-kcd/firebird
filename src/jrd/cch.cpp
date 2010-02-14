@@ -1254,7 +1254,7 @@ void CCH_fini(thread_db* tdbb)
 			{
 				dbb->dbb_bufferpool->deallocate(bcb->bcb_memory.pop());
 			}
-#ifdef CACHE_WRITER
+
 			// Dispose off any associated latching semaphores
 			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt))
 			{
@@ -1263,7 +1263,6 @@ void CCH_fini(thread_db* tdbb)
 				LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
 				delete lwt;
 			}
-#endif
 		}
 
 		}	// try
