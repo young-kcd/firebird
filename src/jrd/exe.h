@@ -527,7 +527,8 @@ struct Resource
 		// is the first field in ResourceList ordering
 		if (i1.rsc_type != i2.rsc_type)
 			return i1.rsc_type > i2.rsc_type;
-		if (i1.rsc_type == rsc_index) {
+		if (i1.rsc_type == rsc_index)
+		{
 			// Sort by relation ID for now
 			if (i1.rsc_rel->rel_id != i2.rsc_rel->rel_id)
 				return i1.rsc_rel->rel_id > i2.rsc_rel->rel_id;
