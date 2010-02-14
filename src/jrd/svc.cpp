@@ -1068,7 +1068,7 @@ ISC_STATUS SVC_query2(Service* service,
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
 				service->svc_do_shutdown = false;
-				WHY_set_shutdown(FALSE);
+				WHY_set_shutdown(SHUTDOWN_NONE);
 			}
 			else
 				need_admin_privs(&status, "isc_info_svc_svr_online");
@@ -1078,7 +1078,7 @@ ISC_STATUS SVC_query2(Service* service,
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
 				service->svc_do_shutdown = true;
-				WHY_set_shutdown(TRUE);
+				WHY_set_shutdown(SHUTDOWN_ATTACH);
 			}
 			else
 				need_admin_privs(&status, "isc_info_svc_svr_offline");
@@ -1507,7 +1507,7 @@ void SVC_query(Service*		service,
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
 				service->svc_do_shutdown = false;
-				WHY_set_shutdown(FALSE);
+				WHY_set_shutdown(SHUTDOWN_NONE);
 				*info++ = 0;	/* Success */
 			}
 			else
@@ -1518,7 +1518,7 @@ void SVC_query(Service*		service,
 			*info++ = item;
 			if (service->svc_user_flag & SVC_user_dba) {
 				service->svc_do_shutdown = true;
-				WHY_set_shutdown(TRUE);
+				WHY_set_shutdown(SHUTDOWN_ATTACH);
 				*info++ = 0;	/* Success */
 			}
 			else

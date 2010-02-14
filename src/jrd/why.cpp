@@ -101,6 +101,10 @@
 //extern "C" ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, Jrd::Attachment**, USHORT);
 void JRD_process_close();
 void JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
+
+#define SHUTDOWN_NONE 0
+#define SHUTDOWN_ATTACH 1
+#define SHUTDOWN_ALL 2
 #endif
 
 using namespace YValve;
@@ -175,7 +179,7 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 #endif
 
 #if !defined (SUPERCLIENT) && !defined (REQUESTER)
-static BOOLEAN shutdown_flag = FALSE;
+static int shutdown_flag = SHUTDOWN_NONE;
 #endif /* !SUPERCLIENT && !REQUESTER */
 
 typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
@@ -655,7 +659,7 @@ namespace
 		static void Handler()
 		{
 #if !defined (SUPERCLIENT) && !defined (REQUESTER)
-			shutdown_flag = true;
+			shutdown_flag = SHUTDOWN_ATTACH;
 #endif
 			if (inside)
 			{
@@ -702,6 +706,13 @@ namespace
 
 		void setPrimaryHandle(BaseHandle* h)
 		{ 
+#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+			if (shutdown_flag == SHUTDOWN_ALL)
+			{
+				Firebird::status_exception::raise(isc_shutwarn,
+												  isc_arg_end);
+			}
+#endif /* !SUPERCLIENT && !REQUESTER */
 		}
 
 		~YEntry()
@@ -1104,7 +1115,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 
 #if !defined (SUPERCLIENT) && !defined (REQUESTER)
-		if (shutdown_flag)
+		if (shutdown_flag != SHUTDOWN_NONE)
 		{
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
@@ -1674,7 +1685,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		}
 
 #if !defined (SUPERCLIENT) && !defined (REQUESTER)
-		if (shutdown_flag)
+		if (shutdown_flag != SHUTDOWN_NONE)
 		{
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
@@ -1900,6 +1911,14 @@ ISC_STATUS API_ROUTINE GDS_DETACH(ISC_STATUS * user_status,
 	YEntry status(user_status);
 	try 
 	{
+#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+		if (shutdown_flag == SHUTDOWN_ALL)
+		{
+			Firebird::status_exception::raise(isc_shutwarn,
+											  isc_arg_end);
+		}
+#endif /* !SUPERCLIENT && !REQUESTER */
+
 		Attachment* dbb = translate<Attachment>(handle);
 		size_t i;
 
@@ -2011,6 +2030,14 @@ ISC_STATUS API_ROUTINE GDS_DROP_DATABASE(ISC_STATUS * user_status,
 	YEntry status(user_status);
 	try 
 	{
+#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+		if (shutdown_flag == SHUTDOWN_ALL)
+		{
+			Firebird::status_exception::raise(isc_shutwarn,
+											  isc_arg_end);
+		}
+#endif /* !SUPERCLIENT && !REQUESTER */
+
 		Attachment* dbb = translate<Attachment>(handle);
 		size_t i;
 
@@ -4679,7 +4706,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		}
 
 #if !defined (SUPERCLIENT) && !defined (REQUESTER)
-		if (shutdown_flag) 
+		if (shutdown_flag != SHUTDOWN_NONE) 
 		{
 			Firebird::status_exception::raise(isc_shutwarn, isc_arg_end);
 		}
@@ -4760,6 +4787,14 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_DETACH(ISC_STATUS * user_status,
 
 	try
 	{
+#if !defined (SUPERCLIENT) && !defined (REQUESTER)
+		if (shutdown_flag == SHUTDOWN_ALL)
+		{
+			Firebird::status_exception::raise(isc_shutwarn,
+											  isc_arg_end);
+		}
+#endif /* !SUPERCLIENT && !REQUESTER */
+
 		Service* service = translate<Service>(handle);
 
 		if (CALL(PROC_SERVICE_DETACH, service->implementation) (status,
@@ -6191,7 +6226,7 @@ static void subsystem_exit(void) throw()
 
 
 #if !defined (SUPERCLIENT) && !defined (REQUESTER)
-BOOLEAN WHY_set_shutdown(BOOLEAN flag)
+int WHY_set_shutdown(int flag)
 {
 /**************************************
  *
@@ -6200,31 +6235,16 @@ BOOLEAN WHY_set_shutdown(BOOLEAN flag)
  **************************************
  *
  * Functional description
- *	Set shutdown_flag to either TRUE or FALSE.
- *		TRUE = accept new connections
- *		FALSE= refuse new connections
+ *	Set shutdown_flag to:
+ *	SHUTDOWN_NONE - normal operation
+ *	SHUTDOWN_ATTACH - new attachments to server disabled
+ *	SHUTDOWN_ALL - any activity of server disabled
  *	Returns the prior state of the flag (server).
  *
  **************************************/
 
-	const BOOLEAN old_flag = shutdown_flag;
+	const int old_flag = shutdown_flag;
 	shutdown_flag = flag;
 	return old_flag;
-}
-
-BOOLEAN WHY_get_shutdown()
-{
-/**************************************
- *
- *	W H Y _ g e t _ s h u t d o w n
- *
- **************************************
- *
- * Functional description
- *	Returns the current value of shutdown_flag.
- *
- **************************************/
-
-	return shutdown_flag;
 }
 #endif /* SERVER_SHUTDOWN && !SUPERCLIENT && !REQUESTER */

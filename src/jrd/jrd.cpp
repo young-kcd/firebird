@@ -6653,8 +6653,14 @@ static ISC_STATUS shutdown_all()
  *
  **************************************/
 	THREAD_ENTER();
+#ifdef SERVER_SHUTDOWN
+	WHY_set_shutdown(SHUTDOWN_ALL);
+	THREAD_EXIT();
+	THREAD_YIELD();
+	THREAD_ENTER();
+#endif
 	// NOTE!!!
-	// This routine doesn't contain THREAD_EXIT to help ensure
+	// This routine doesn't contain THREAD_EXIT in the end to help ensure
 	// that no threads will get in and try to access the data
 	// structures we released here
 
