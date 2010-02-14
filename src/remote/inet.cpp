@@ -1663,7 +1663,7 @@ static void wsaExitHandler(void*)
 }
 
 
-static int fork(SOCKET handle, USHORT flag)
+static int fork(SOCKET old_handle, USHORT flag)
 {
 /**************************************
  *
@@ -1678,8 +1678,17 @@ static int fork(SOCKET handle, USHORT flag)
 	TEXT name[MAXPATHLEN];
 	GetModuleFileName(NULL, name, sizeof(name));
 
+	HANDLE new_handle;
+	if (!DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
+						 GetCurrentProcess(), &new_handle, 
+						 0, TRUE, DUPLICATE_SAME_ACCESS))
+	{
+		gds__log("INET/inet_error: fork/DuplicateHandle errno = %d", GetLastError());
+		return 0;
+	}
+
 	Firebird::string cmdLine;
-	cmdLine.printf("%s -i -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, handle, GetCurrentProcessId());
+	cmdLine.printf("%s -i -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, new_handle, GetCurrentProcessId());
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -1704,7 +1713,7 @@ static int fork(SOCKET handle, USHORT flag)
 	}
 
 	gds__log("INET/inet_error: fork/CreateProcess errno = %d", GetLastError());
-	SOCLOSE(handle);
+	CloseHandle(new_handle);
 	return 0;
 }
 
@@ -1731,6 +1740,7 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 				forkSockets->remove((size_t) 0);
 			}
 			fork(s, flag);
+			SOCLOSE(s);
 		}
 	}
 
