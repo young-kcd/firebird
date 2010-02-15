@@ -1730,7 +1730,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		return;
 
 	case nod_user_name:
-    case nod_current_role:
+	case nod_current_role:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_metadata;
 		// ASF: should be multiplied by maxBytesPerChar of ttype_metadata in the future
@@ -2247,7 +2247,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 		}
 	}
 
-    CompilerScratch::csb_repeat* tail = csb->csb_rpt.begin();
+	CompilerScratch::csb_repeat* tail = csb->csb_rpt.begin();
 	const CompilerScratch::csb_repeat* const streams_end = tail + csb->csb_n_stream;
 	DEBUG;
 
@@ -5747,7 +5747,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_divide:
 	case nod_null:
 	case nod_user_name:
-    case nod_current_role:
+	case nod_current_role:
 	case nod_internal_info:
 	case nod_gen_id:
 	case nod_gen_id2:
