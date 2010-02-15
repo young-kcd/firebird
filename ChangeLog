@@ -1,3 +1,10 @@
+2010-02-14 16:43  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.359.2.16), svc.cpp (1.193.2.11),
+	why.cpp (1.135.2.5), why_proto.h (1.36.2.1):
+
+	Fixed CORE-2865: SegFault when superserver is restarted
+
 2010-02-12 12:23  robocop
 
 	* firebird2/src/: common/utils.cpp (1.42.4.3), common/utils_proto.h
