@@ -1,3 +1,9 @@
+2010-02-14 23:56  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.242.2.5):
+
+	Fixed bug CORE-2867 : SuperClassic leaks semaphores on disconnect
+
 2010-02-14 13:14  hvlad
 
 	* firebird2/src/remote/inet.cpp (1.298.2.4):
