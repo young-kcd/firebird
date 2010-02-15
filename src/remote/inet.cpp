@@ -1648,7 +1648,7 @@ static int fork(SOCKET old_handle, USHORT flag)
 
 	HANDLE new_handle;
 	if (!DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
-						 GetCurrentProcess(), &new_handle, 
+						 GetCurrentProcess(), &new_handle,
 						 0, TRUE, DUPLICATE_SAME_ACCESS))
 	{
 		gds__log("INET/inet_error: fork/DuplicateHandle errno = %d", GetLastError());

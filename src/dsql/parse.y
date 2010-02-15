@@ -575,7 +575,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> RETURN
 %token <legacyNode> DETERMINISTIC
 %token <legacyNode> IDENTITY
-
 %token <legacyNode> DENSE_RANK
 %token <legacyNode> RANK
 %token <legacyNode> ROW_NUMBER

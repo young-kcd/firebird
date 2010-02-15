@@ -399,7 +399,8 @@ namespace
 // ------------------------------
 
 WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, RecordSource* next)
-	: m_mainMap(NULL)
+	: m_mainMap(NULL),
+	  m_winPassMap(csb->csb_pool)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -558,6 +559,16 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		// Make a cross join with the main window.
 		RecordSource* const rsbs[] = {mainWindow, m_joinedStream};
 		m_joinedStream = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, 2, rsbs);
+
+		// Separate nodes that requires the winPass call.
+		for (jrd_nod** ptr = m_mainMap->nod_arg, **end = ptr + m_mainMap->nod_count; ptr < end; ptr++)
+		{
+			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			const AggNode* aggNode = ExprNode::as<AggNode>(from);
+
+			if (aggNode && aggNode->shouldCallWinPass())
+				m_winPassMap.add(*ptr);
+		}
 	}
 }
 
@@ -605,27 +616,32 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 		dsc* desc;
 
 		jrd_nod* const* ptr = m_mainMap->nod_arg;
-		for (const jrd_nod* const* end = ptr + m_mainMap->nod_count; ptr < end; ptr++)
+		for (const jrd_nod* const* end = ptr + m_mainMap->nod_count; ptr < end; ++ptr)
 		{
 			jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
 			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
 			if (!aggNode)
 				EXE_assignment(tdbb, *ptr);
-			else if (aggNode->shouldCallWinPass())
-			{
-				jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+		}
 
-				desc = aggNode->winPass(tdbb, request);
-				if (!desc)
-					SET_NULL(record, id);
-				else
-				{
-					MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
-					CLEAR_NULL(record, id);
-				}
+		for (ptr = m_winPassMap.begin(); ptr != m_winPassMap.end(); ++ptr)
+		{
+			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			fb_assert(from->nod_type == nod_class_exprnode_jrd);
+			const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
+
+			jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+			const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+			Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+
+			desc = aggNode->winPass(tdbb, request);
+			if (!desc)
+				SET_NULL(record, id);
+			else
+			{
+				MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
+				CLEAR_NULL(record, id);
 			}
 		}
 	}

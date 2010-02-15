@@ -46,11 +46,10 @@ AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* 
 	  m_next(m_bufferedStream),
 	  m_group(group),
 	  m_map(map),
-	  m_order(order)
+	  m_order(order),
+	  m_winPassMap(csb->csb_pool)
 {
-	fb_assert(m_map && m_next);
-
-	m_impure = CMP_impure(csb, sizeof(Impure));
+	init(csb);
 }
 
 AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* group,
@@ -60,11 +59,10 @@ AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* 
 	  m_next(next),
 	  m_group(group),
 	  m_map(map),
-	  m_order(NULL)
+	  m_order(NULL),
+	  m_winPassMap(csb->csb_pool)
 {
-	fb_assert(m_map && m_next);
-
-	m_impure = CMP_impure(csb, sizeof(Impure));
+	init(csb);
 }
 
 void AggregatedStream::open(thread_db* tdbb)
@@ -137,25 +135,23 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 
 		dsc* desc;
 
-		for (jrd_nod** ptr = m_map->nod_arg, **end = ptr + m_map->nod_count; ptr < end; ptr++)
+		for (const jrd_nod* const* ptr = m_winPassMap.begin(); ptr != m_winPassMap.end(); ++ptr)
 		{
 			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			const AggNode* aggNode = ExprNode::as<AggNode>(from);
+			fb_assert(from->nod_type == nod_class_exprnode_jrd);
+			const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
 
-			if (aggNode && aggNode->shouldCallWinPass())
+			jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+			const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+			Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+
+			desc = aggNode->winPass(tdbb, request);
+			if (!desc)
+				SET_NULL(record, id);
+			else
 			{
-				jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
-
-				desc = aggNode->winPass(tdbb, request);
-				if (!desc)
-					SET_NULL(record, id);
-				else
-				{
-					MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
-					CLEAR_NULL(record, id);
-				}
+				MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
+				CLEAR_NULL(record, id);
 			}
 		}
 	}
@@ -210,8 +206,24 @@ void AggregatedStream::invalidateRecords(jrd_req* request)
 void AggregatedStream::findUsedStreams(StreamsArray& streams)
 {
 	RecordStream::findUsedStreams(streams);
-	if (m_order)
-		m_next->findUsedStreams(streams);
+	if (m_bufferedStream)
+		m_bufferedStream->findUsedStreams(streams);
+}
+
+void AggregatedStream::init(CompilerScratch* csb)
+{
+	fb_assert(m_map && m_next);
+	m_impure = CMP_impure(csb, sizeof(Impure));
+
+	// Separate nodes that requires the winPass call.
+	for (jrd_nod** ptr = m_map->nod_arg, **end = ptr + m_map->nod_count; ptr < end; ptr++)
+	{
+		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+		const AggNode* aggNode = ExprNode::as<AggNode>(from);
+
+		if (aggNode && aggNode->shouldCallWinPass())
+			m_winPassMap.add(*ptr);
+	}
 }
 
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state

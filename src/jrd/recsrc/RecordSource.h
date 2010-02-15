@@ -41,6 +41,7 @@ namespace Jrd
 	class jrd_req;
 	class jrd_nod;
 	class jrd_prc;
+	class AggNode;
 	class CompilerScratch;
 	class RecordBuffer;
 	class BtrPageGCLock;
@@ -596,6 +597,8 @@ namespace Jrd
 		void findUsedStreams(StreamsArray& streams);
 
 	private:
+		void init(CompilerScratch* csb);
+
 		State evaluateGroup(thread_db* tdbb, State state);
 		void finiDistinct(thread_db* tdbb, jrd_req* request);
 
@@ -604,6 +607,7 @@ namespace Jrd
 		jrd_nod* const m_group;
 		jrd_nod* const m_map;
 		jrd_nod* const m_order;
+		Firebird::Array<const jrd_nod*> m_winPassMap;
 	};
 
 	class WindowedStream : public RecordSource
@@ -632,6 +636,7 @@ namespace Jrd
 		jrd_nod* m_mainMap;
 		BufferedStream* m_next;
 		RecordSource* m_joinedStream;
+		Firebird::Array<jrd_nod*> m_winPassMap;
 	};
 
 	class BufferedStream : public RecordSource

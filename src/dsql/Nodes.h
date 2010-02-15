@@ -324,9 +324,9 @@ protected:
 		{
 		}
 
-		const char* name;
-		UCHAR blr;
-		UCHAR distinctBlr;
+		const char* const name;
+		const UCHAR blr;
+		const UCHAR distinctBlr;
 	};
 
 public:
@@ -438,9 +438,11 @@ public:
 };
 
 
+// Base class for window functions.
 class WinFuncNode : public AggNode
 {
 private:
+	// Base factory to create instance of subclasses.
 	class Factory : public AggInfo
 	{
 	public:
@@ -456,6 +458,7 @@ private:
 	};
 
 public:
+	// Concrete implementation of the factory.
 	template <typename T>
 	class Register : public Factory
 	{

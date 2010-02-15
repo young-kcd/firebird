@@ -30,6 +30,7 @@
 namespace Jrd {
 
 
+// DENSE_RANK function.
 class DenseRankWinNode : public WinFuncNode
 {
 public:
@@ -47,6 +48,7 @@ protected:
 	virtual AggNode* dsqlCopy() const;
 };
 
+// RANK function.
 class RankWinNode : public WinFuncNode
 {
 public:
@@ -68,6 +70,7 @@ private:
 	USHORT tempImpure;
 };
 
+// ROW_NUMBER function.
 class RowNumberWinNode : public WinFuncNode
 {
 public:
