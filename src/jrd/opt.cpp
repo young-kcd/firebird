@@ -1642,7 +1642,11 @@ static void check_sorts(RecordSelExpr* rse)
 
 					// AB: Don't distribute the sort when a FIRST/SKIP is supplied,
 					// because that will affect the behaviour from the deeper RSE.
-					if (new_rse->rse_first || new_rse->rse_skip) {
+					// dimitr: the same rule applies to explicit/implicit user-defined sorts.
+					if (new_rse != rse &&
+						(new_rse->rse_first || new_rse->rse_skip ||
+						new_rse->rse_sorted || new_rse->rse_projection))
+					{
 						node = NULL;
 						break;
 					}
