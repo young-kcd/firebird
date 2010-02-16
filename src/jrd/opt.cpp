@@ -455,7 +455,7 @@ UnmappedNodeGetter::UnmappedNodeGetter(jrd_nod* aMap, UCHAR aShellStream)
 
 bool UnmappedNodeGetter::visit(jrd_nod* node)
 {
-	bool wasRootNode = rootNode;
+	const bool wasRootNode = rootNode;
 	rootNode = false;
 
 	// Check if node is a mapping and if so unmap it, but only for root nodes (not contained in

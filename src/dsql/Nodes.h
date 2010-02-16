@@ -155,7 +155,7 @@ template <typename T, typename T::Type typeConst>
 class TypedNode : public T
 {
 public:
-	TypedNode(MemoryPool& pool)
+	explicit TypedNode(MemoryPool& pool)
 		: T(typeConst, pool)
 	{
 	}
@@ -277,8 +277,8 @@ public:
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar) const
+	virtual bool setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
+		dsql_nod* /*node*/, bool /*forceVarChar*/) const
 	{
 		return false;
 	}
@@ -370,19 +370,19 @@ public:
 
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& visitor)
+	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& /*visitor*/)
 	{
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(StreamFinder& visitor)
+	virtual bool jrdStreamFinder(StreamFinder& /*visitor*/)
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
 		return false;
 	}
 
-	virtual bool jrdStreamsCollector(StreamsCollector& visitor)
+	virtual bool jrdStreamsCollector(StreamsCollector& /*visitor*/)
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
@@ -411,7 +411,7 @@ public:
 		return false;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
+	virtual dsc* winPass(thread_db* /*tdbb*/, jrd_req* /*request*/, SlidingWindow* /*window*/) const
 	{
 		return NULL;
 	}

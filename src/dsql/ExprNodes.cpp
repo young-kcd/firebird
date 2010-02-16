@@ -92,6 +92,7 @@ bool ExprNode::isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const
 
 void ExprNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
+	text = "ExprNode"; // needed or not?
 	for (dsql_nod* const* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
 		nodes.add(**i);
 }
@@ -189,7 +190,7 @@ void ConcatenateNode::genBlr()
 	GEN_expr(dsqlScratch, dsqlArg2);
 }
 
-void ConcatenateNode::make(dsc* desc, dsql_nod* nullReplacement)
+void ConcatenateNode::make(dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	dsc desc1, desc2;
 
@@ -425,7 +426,7 @@ void OverNode::print(string& text, Array<dsql_nod*>& nodes) const
 bool OverNode::dsqlAggregateFinder(AggregateFinder& visitor)
 {
 	bool aggregate = false;
-	bool wereWindow = visitor.window;
+	const bool wereWindow = visitor.window;
 	AutoSetRestore<bool> autoWindow(&visitor.window, false);
 
 	if (!wereWindow)
@@ -473,7 +474,7 @@ bool OverNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 	return invalid;
 }
 
-bool OverNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool OverNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
@@ -585,18 +586,18 @@ void OverNode::make(dsc* desc, dsql_nod* nullReplacement)
 	desc->setNullable(true);
 }
 
-void OverNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void OverNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 {
 	fb_assert(false);
 }
 
-ExprNode* OverNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* OverNode::copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 {
 	fb_assert(false);
 	return NULL;
 }
 
-dsc* OverNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* OverNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 {
 	fb_assert(false);
 	return NULL;

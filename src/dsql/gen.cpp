@@ -598,7 +598,7 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsc desc;
 		MAKE_desc(dsqlScratch, &desc, node, NULL);
 
-		if (node->nod_flags & NOD_COMP_DIALECT &&
+		if ((node->nod_flags & NOD_COMP_DIALECT) &&
 			dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
 		{
 			const char* s = 0;

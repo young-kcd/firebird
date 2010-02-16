@@ -402,10 +402,10 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 
 			if (exprNode1->type == ExprNode::TYPE_CONCATENATE && exprNode2->type == ExprNode::TYPE_CONCATENATE)
 			{
-				if (OPT_expression_equal2(tdbb, opt, ((ConcatenateNode*) exprNode1)->arg1,
-						((ConcatenateNode*) exprNode2)->arg1, stream) &&
-					OPT_expression_equal2(tdbb, opt, ((ConcatenateNode*) exprNode1)->arg2,
-						((ConcatenateNode*) exprNode2)->arg2, stream))
+				ConcatenateNode* c1 = reinterpret_cast<ConcatenateNode*>(exprNode1);
+				ConcatenateNode* c2 = reinterpret_cast<ConcatenateNode*>(exprNode2);
+				if (OPT_expression_equal2(tdbb, opt, c1->arg1, c2->arg1, stream) &&
+					OPT_expression_equal2(tdbb, opt, c1->arg2, c2->arg2, stream))
 				{
 					return true;
 				}

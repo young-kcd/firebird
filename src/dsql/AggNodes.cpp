@@ -225,7 +225,7 @@ bool AggNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 	return invalid;
 }
 
-bool AggNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+bool AggNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 {
 	return false;
 }
@@ -267,13 +267,8 @@ bool AggNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 	// ASF: We compare name address. That should be ok, as we have only one AggInfo instance
 	// per function.
-	if (aggInfo.blr != o->aggInfo.blr || aggInfo.name != o->aggInfo.name ||
-		distinct != o->distinct || dialect1 != o->dialect1)
-	{
-		return false;
-	}
-
-	return true;
+	return aggInfo.blr == o->aggInfo.blr && aggInfo.name == o->aggInfo.name &&
+		distinct == o->distinct && dialect1 == o->dialect1;
 }
 
 void AggNode::setParameterName(dsql_par* parameter) const
@@ -793,7 +788,7 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	return node;
 }
 
-void CountAggNode::make(dsc* desc, dsql_nod* nullReplacement)
+void CountAggNode::make(dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->makeLong(0);
 }
@@ -806,7 +801,7 @@ void CountAggNode::genBlr()
 		dsqlScratch->getStatement()->append_uchar(blr_agg_count);
 }
 
-void CountAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void CountAggNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_long;
 	desc->dsc_length = sizeof(SLONG);
@@ -831,7 +826,7 @@ void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure->make_long(0);
 }
 
-void CountAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+void CountAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* /*desc*/) const
 {
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
 	++impure->vlu_misc.vlu_long;

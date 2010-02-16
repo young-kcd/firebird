@@ -528,7 +528,7 @@ SlidingWindow::~SlidingWindow()
 // Move in the window without pass partition boundaries.
 bool SlidingWindow::move(SINT64 delta)
 {
-	SINT64 newPosition = SINT64(savedPosition) + delta;
+	const SINT64 newPosition = SINT64(savedPosition) + delta;
 
 	// If we try to go out of bounds, no need to check the partition.
 	if (newPosition < 0 || newPosition >= (SINT64) stream->getCount(request))

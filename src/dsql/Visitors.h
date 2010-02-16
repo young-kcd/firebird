@@ -182,7 +182,7 @@ public:
 	bool field;
 };
 
-// Validate that an expanded field / context pair is in a specified list. Thus is used in one
+// Validate that an expanded field / context pair is in a specified list. This is used in one
 // instance to check that a simple field selected through a grouping rse is a grouping field -
 // thus a valid field reference. For the sake of argument, we'll match qualified to unqualified
 // reference, but qualified reference must match completely.

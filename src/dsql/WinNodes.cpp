@@ -48,7 +48,7 @@ WinFuncNode::WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, dsql_nod* aA
 {
 }
 
-DmlNode* WinFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* WinFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	MetaName name;
 	PAR_name(csb, name);
@@ -98,17 +98,17 @@ DenseRankWinNode::DenseRankWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
-void DenseRankWinNode::make(dsc* desc, dsql_nod* nullReplacement)
+void DenseRankWinNode::make(dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->makeInt64(0);
 }
 
-void DenseRankWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void DenseRankWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
 
-ExprNode* DenseRankWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* DenseRankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	DenseRankWinNode* node = FB_NEW(*tdbb->getDefaultPool()) DenseRankWinNode(*tdbb->getDefaultPool());
 	return node;
@@ -122,7 +122,7 @@ void DenseRankWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure->make_int64(0, 0);
 }
 
-void DenseRankWinNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+void DenseRankWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
 {
 }
 
@@ -153,17 +153,17 @@ RankWinNode::RankWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
-void RankWinNode::make(dsc* desc, dsql_nod* nullReplacement)
+void RankWinNode::make(dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->makeInt64(0);
 }
 
-void RankWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void RankWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
 
-ExprNode* RankWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* RankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	RankWinNode* node = FB_NEW(*tdbb->getDefaultPool()) RankWinNode(*tdbb->getDefaultPool());
 	return node;
@@ -184,7 +184,7 @@ void RankWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure->vlux_count = 0;
 }
 
-void RankWinNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+void RankWinNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* /*desc*/) const
 {
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
 	++impure->vlux_count;
@@ -225,17 +225,17 @@ RowNumberWinNode::RowNumberWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
-void RowNumberWinNode::make(dsc* desc, dsql_nod* nullReplacement)
+void RowNumberWinNode::make(dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->makeInt64(0);
 }
 
-void RowNumberWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void RowNumberWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
 
-ExprNode* RowNumberWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* RowNumberWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	RowNumberWinNode* node = FB_NEW(*tdbb->getDefaultPool()) RowNumberWinNode(*tdbb->getDefaultPool());
 	return node;
@@ -249,7 +249,7 @@ void RowNumberWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure->make_int64(0, 0);
 }
 
-void RowNumberWinNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+void RowNumberWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
 {
 }
 
@@ -259,7 +259,7 @@ dsc* RowNumberWinNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 	return &impure->vlu_desc;
 }
 
-dsc* RowNumberWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
+dsc* RowNumberWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* /*window*/) const
 {
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
 	++impure->vlu_misc.vlu_int64;
@@ -307,18 +307,18 @@ void LagLeadWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure->make_int64(0, 0);
 }
 
-void LagLeadWinNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+void LagLeadWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
 {
 }
 
-dsc* LagLeadWinNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* LagLeadWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 {
 	return NULL;
 }
 
 dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	//impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
 
 	dsc* desc = EVL_expr(tdbb, rows);
 	SINT64 records;

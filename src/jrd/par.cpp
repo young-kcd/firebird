@@ -2714,6 +2714,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	}
 
 	bool set_type = true;
+	bool notHandled = false;
 
 	// Dispatch on operator type.
 
@@ -3439,8 +3440,13 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	default:
-		if ((nod_t)(USHORT) blr_table[(int) blr_operator] == nod_class_exprnode_jrd ||
-			(nod_t)(USHORT) blr_table[(int) blr_operator] == nod_class_stmtnode_jrd)
+		notHandled = true;
+	}
+
+	if (notHandled)
+	{
+		const nod_t temp = (nod_t)(USHORT) blr_table[(int) blr_operator];
+		if (temp == nod_class_exprnode_jrd || temp == nod_class_stmtnode_jrd)
 		{
 			fb_assert(blr_parsers[blr_operator]);
 

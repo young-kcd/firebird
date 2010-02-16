@@ -111,13 +111,15 @@ bool ExternalTableScan::getRecord(thread_db* tdbb)
 	return false;
 }
 
-bool ExternalTableScan::refetchRecord(thread_db* tdbb)
+bool ExternalTableScan::refetchRecord(thread_db* /*tdbb*/)
 {
 	return true;
 }
 
 bool ExternalTableScan::lockRecord(thread_db* tdbb)
 {
+	SET_TDBB(tdbb);
+
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
