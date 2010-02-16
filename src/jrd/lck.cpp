@@ -558,7 +558,10 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	{
     	set_lock_attachment(lock, NULL);
 		if (!wait)
+		{
+			statusVector.copyTo(tdbb->tdbb_status_vector);
 			return false;
+		}
 
 		switch (statusVector.value()[1])
 		{
