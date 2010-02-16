@@ -41,7 +41,7 @@ namespace
 {
 	// This stream makes possible to reuse a BufferedStream, so each usage maintains a different
 	// cursor position.
-	class BufferedStreamWindow : public RecordSource
+	class BufferedStreamWindow : public BaseBufferedStream
 	{
 		struct Impure : public RecordSource::Impure
 		{
@@ -67,6 +67,24 @@ namespace
 		void nullRecords(thread_db* tdbb);
 		void saveRecords(thread_db* tdbb);
 		void restoreRecords(thread_db* tdbb);
+
+		void locate(thread_db* tdbb, FB_UINT64 position)
+		{
+			jrd_req* const request = tdbb->getRequest();
+			Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+			impure->irsb_position = position;
+		}
+
+		FB_UINT64 getCount(jrd_req* request) const
+		{
+			return m_next->getCount(request);
+		}
+
+		FB_UINT64 getPosition(jrd_req* request) const
+		{
+			Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+			return impure->irsb_position;
+		}
 
 	public:
 		BufferedStream* m_next;
@@ -153,8 +171,12 @@ namespace
 		if (!(impure->irsb_flags & irsb_open))
 			return false;
 
-		m_next->locate(tdbb, impure->irsb_position++);
-		return m_next->getRecord(tdbb);
+		m_next->locate(tdbb, impure->irsb_position);
+		if (!m_next->getRecord(tdbb))
+			return false;
+
+		++impure->irsb_position;
+		return true;
 	}
 
 	bool BufferedStreamWindow::refetchRecord(thread_db* tdbb)
@@ -399,88 +421,13 @@ namespace
 // ------------------------------
 
 WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, RecordSource* next)
-	: m_mainMap(NULL),
-	  m_winPassMap(csb->csb_pool)
+	: m_joinedStream(NULL)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	m_next = FB_NEW(csb->csb_pool) BufferedStream(csb, next);
-	m_joinedStream = FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next);
 
-	AggregatedStream* mainWindow = NULL;
-	StreamsArray streams;
-	m_next->findUsedStreams(streams);
-	streams.insert(0, streams.getCount());
-
-	Array<bool> noAggregatedStreams;
-	noAggregatedStreams.resize(nodWindows->nod_count);
-
-	// Process unordered partitions.
-
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-	{
-		jrd_nod* const nodWindow = nodWindows->nod_arg[i];
-		jrd_nod* const partition = nodWindow->nod_arg[e_part_group];
-		jrd_nod* const partitionMap = nodWindow->nod_arg[e_part_map];
-		jrd_nod* const repartition = nodWindow->nod_arg[e_part_regroup];
-		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
-		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
-
-		noAggregatedStreams[i] = false;
-
-		if (order)
-			noAggregatedStreams[i] = true;
-		else if (partition)
-		{
-			// In the case of an item needs winPass call, we should process the partition as an
-			// ordered one.
-
-			jrd_nod* const* ptr = partitionMap->nod_arg;
-			for (const jrd_nod* const* end = ptr + partitionMap->nod_count; ptr < end; ptr++)
-			{
-				jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
-				const AggNode* aggNode = ExprNode::as<AggNode>(from);
-
-				if (aggNode && aggNode->shouldCallWinPass())
-				{
-					noAggregatedStreams[i] = true;
-					break;
-				}
-			}
-		}
-
-		if (noAggregatedStreams[i])
-			continue;
-
-		if (!partition)
-		{
-			// This is the main window. It has special processing.
-
-			fb_assert(!m_mainMap);
-			m_mainMap = partitionMap;
-
-			fb_assert(!mainWindow);
-			mainWindow = FB_NEW(csb->csb_pool) AggregatedStream(
-				csb, stream, NULL, m_mainMap,
-				FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next));
-
-			OPT_gen_aggregate_distincts(tdbb, csb, m_mainMap);
-
-			continue;
-		}
-
-		SortedStream* const sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
-			FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next), partition, false);
-		AggregatedStream* const aggStream = FB_NEW(csb->csb_pool) AggregatedStream(
-			csb, stream, partition, partitionMap, sortedStream);
-
-		OPT_gen_aggregate_distincts(tdbb, csb, partitionMap);
-
-		m_joinedStream = FB_NEW(csb->csb_pool) WindowJoin(csb, m_joinedStream, aggStream,
-			partition, repartition);
-	}
-
-	// Process ordered partitions.
+	// Process the unpartioned and unordered map, if existent.
 
 	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
 	{
@@ -490,10 +437,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
 		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
 
-		if (!noAggregatedStreams[i])
-			continue;
-
-		// Verify not supported functions/clauses.
+		// While here, verify not supported functions/clauses.
 
 		const jrd_nod* const* ptr = partitionMap->nod_arg;
 		for (const jrd_nod* const* const end = ptr + partitionMap->nod_count; ptr < end; ++ptr)
@@ -501,9 +445,35 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
-			if (aggNode)
+			if (order && aggNode)
 				aggNode->checkOrderedWindowCapable();
 		}
+
+		if (!partition && !order)
+		{
+			fb_assert(!m_joinedStream);
+
+			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, stream, NULL,
+				partitionMap, FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next), NULL);
+
+			OPT_gen_aggregate_distincts(tdbb, csb, partitionMap);
+		}
+	}
+
+	if (!m_joinedStream)
+		m_joinedStream = FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next);
+
+	// Process ordered partitions.
+
+	StreamsArray streams;
+
+	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	{
+		jrd_nod* const nodWindow = nodWindows->nod_arg[i];
+		jrd_nod* const partition = nodWindow->nod_arg[e_part_group];
+		jrd_nod* const partitionMap = nodWindow->nod_arg[e_part_map];
+		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
+		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
 
 		// Refresh the stream list based on the last m_joinedStream.
 		streams.clear();
@@ -547,27 +517,15 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		else
 			partitionOrder = order;
 
-		SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
-			m_joinedStream, partitionOrder, false);
-
-		m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, stream, partition,
-			partitionMap, sortedStream, order);
-	}
-
-	if (mainWindow)
-	{
-		// Make a cross join with the main window.
-		RecordSource* const rsbs[] = {mainWindow, m_joinedStream};
-		m_joinedStream = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, 2, rsbs);
-
-		// Separate nodes that requires the winPass call.
-		for (jrd_nod** ptr = m_mainMap->nod_arg, **end = ptr + m_mainMap->nod_count; ptr < end; ptr++)
+		if (partitionOrder)
 		{
-			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			const AggNode* aggNode = ExprNode::as<AggNode>(from);
+			SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
+				m_joinedStream, partitionOrder, false);
 
-			if (aggNode && aggNode->shouldCallWinPass())
-				m_winPassMap.add(*ptr);
+			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, stream, partition,
+				partitionMap, FB_NEW(csb->csb_pool) BufferedStream(csb, sortedStream), order);
+
+			OPT_gen_aggregate_distincts(tdbb, csb, partitionMap);
 		}
 	}
 }
@@ -609,42 +567,6 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 
 	if (!m_joinedStream->getRecord(tdbb))
 		return false;
-
-	// Map the inner stream non-aggregate fields to the main partition.
-	if (m_mainMap)
-	{
-		dsc* desc;
-
-		jrd_nod* const* ptr = m_mainMap->nod_arg;
-		for (const jrd_nod* const* end = ptr + m_mainMap->nod_count; ptr < end; ++ptr)
-		{
-			jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
-			const AggNode* aggNode = ExprNode::as<AggNode>(from);
-
-			if (!aggNode)
-				EXE_assignment(tdbb, *ptr);
-		}
-
-		for (ptr = m_winPassMap.begin(); ptr != m_winPassMap.end(); ++ptr)
-		{
-			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			fb_assert(from->nod_type == nod_class_exprnode_jrd);
-			const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
-
-			jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-			const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-			Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
-
-			desc = aggNode->winPass(tdbb, request);
-			if (!desc)
-				SET_NULL(record, id);
-			else
-			{
-				MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
-				CLEAR_NULL(record, id);
-			}
-		}
-	}
 
 	return true;
 }

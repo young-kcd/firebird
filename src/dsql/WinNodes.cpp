@@ -23,10 +23,13 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../dsql/WinNodes.h"
+#include "../dsql/make_proto.h"
+#include "../dsql/pass1_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
+#include "../jrd/recsrc/RecordSource.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -50,20 +53,35 @@ DmlNode* WinFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	MetaName name;
 	PAR_name(csb, name);
 
-	UCHAR count = csb->csb_blr_reader.getByte();
-
-	fb_assert(count == 0);	// Arguments not yet supported here.
-	if (count != 0)
-		PAR_error(csb, Arg::Gds(isc_funmismat) << name);
+	WinFuncNode* node = NULL;
 
 	for (const Factory* factory = factories; factory; factory = factory->next)
 	{
 		if (name == factory->name)
-			return factory->newInstance(pool);
+		{
+			node = factory->newInstance(pool);
+			break;
+		}
 	}
 
-	PAR_error(csb, Arg::Gds(isc_funmismat) << name);
-	return NULL;	// silence
+	if (!node)
+		PAR_error(csb, Arg::Gds(isc_funnotdef) << name);
+
+	UCHAR count = csb->csb_blr_reader.getByte();
+
+	if (count != node->jrdChildNodes.getCount())
+		PAR_error(csb, Arg::Gds(isc_funmismat) << name);
+
+	if (count != 0)
+	{
+		jrd_nod*** arg = node->jrdChildNodes.begin();
+		do
+		{
+			**arg++ = PAR_parse_node(tdbb, csb, VALUE);
+		} while (--count);
+	}
+
+	return node;
 }
 
 
@@ -75,6 +93,9 @@ static WinFuncNode::Register<DenseRankWinNode> denseRankWinInfo("DENSE_RANK");
 DenseRankWinNode::DenseRankWinNode(MemoryPool& pool)
 	: WinFuncNode(pool, denseRankWinInfo)
 {
+	fb_assert(dsqlChildNodes.getCount() == 1 && jrdChildNodes.getCount() == 1);
+	dsqlChildNodes.clear();
+	jrdChildNodes.clear();
 }
 
 void DenseRankWinNode::make(dsc* desc, dsql_nod* nullReplacement)
@@ -127,6 +148,9 @@ RankWinNode::RankWinNode(MemoryPool& pool)
 	: WinFuncNode(pool, rankWinInfo),
 	  tempImpure(0)
 {
+	fb_assert(dsqlChildNodes.getCount() == 1 && jrdChildNodes.getCount() == 1);
+	dsqlChildNodes.clear();
+	jrdChildNodes.clear();
 }
 
 void RankWinNode::make(dsc* desc, dsql_nod* nullReplacement)
@@ -196,6 +220,9 @@ static WinFuncNode::Register<RowNumberWinNode> rowNumberWinInfo("ROW_NUMBER");
 RowNumberWinNode::RowNumberWinNode(MemoryPool& pool)
 	: WinFuncNode(pool, rowNumberWinInfo)
 {
+	fb_assert(dsqlChildNodes.getCount() == 1 && jrdChildNodes.getCount() == 1);
+	dsqlChildNodes.clear();
+	jrdChildNodes.clear();
 }
 
 void RowNumberWinNode::make(dsc* desc, dsql_nod* nullReplacement)
@@ -232,7 +259,7 @@ dsc* RowNumberWinNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 	return &impure->vlu_desc;
 }
 
-dsc* RowNumberWinNode::winPass(thread_db* tdbb, jrd_req* request) const
+dsc* RowNumberWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 {
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
 	++impure->vlu_misc.vlu_int64;
@@ -242,6 +269,127 @@ dsc* RowNumberWinNode::winPass(thread_db* tdbb, jrd_req* request) const
 AggNode* RowNumberWinNode::dsqlCopy() const
 {
 	return FB_NEW(getPool()) RowNumberWinNode(getPool());
+}
+
+
+//--------------------
+
+
+// A direction of -1 is LAG, and 1 is LEAD.
+LagLeadWinNode::LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
+			dsql_nod* aArg, dsql_nod* aRows)
+	: WinFuncNode(pool, aAggInfo, aArg),
+	  direction(aDirection),
+	  dsqlRows(aRows),
+	  rows(NULL)
+{
+	fb_assert(direction == -1 || direction == 1);
+
+	dsqlChildNodes.add(&dsqlRows);
+	jrdChildNodes.add(&rows);
+}
+
+void LagLeadWinNode::make(dsc* desc, dsql_nod* nullReplacement)
+{
+	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
+	desc->setNullable(true);
+}
+
+void LagLeadWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	CMP_get_desc(tdbb, csb, arg, desc);
+}
+
+void LagLeadWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+{
+	AggNode::aggInit(tdbb, request);
+
+	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure->make_int64(0, 0);
+}
+
+void LagLeadWinNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+{
+}
+
+dsc* LagLeadWinNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+{
+	return NULL;
+}
+
+dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
+{
+	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+
+	dsc* desc = EVL_expr(tdbb, rows);
+	SINT64 records;
+
+	if (!desc || (request->req_flags & req_null) || (records = MOV_get_int64(desc, 0)) < 0)
+	{
+		status_exception::raise(Arg::Gds(isc_sysf_argnmustbe_nonneg) <<
+			Arg::Num(2) << Arg::Str(aggInfo.name));
+	}
+
+	if (!window->move(records * direction))
+		return NULL;
+
+	desc = EVL_expr(tdbb, arg);
+	if (!desc || (request->req_flags & req_null))
+		return NULL;
+
+	return desc;
+}
+
+
+//--------------------
+
+
+static WinFuncNode::Register<LagWinNode> lagWinInfo("LAG");
+
+LagWinNode::LagWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows)
+	: LagLeadWinNode(pool, lagWinInfo, -1, aArg, aRows)
+{
+}
+
+ExprNode* LagWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	LagWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LagWinNode(*tdbb->getDefaultPool());
+	node->arg = copier.copy(tdbb, arg);
+	node->rows = copier.copy(tdbb, rows);
+	return node;
+}
+
+AggNode* LagWinNode::dsqlCopy() const
+{
+	return FB_NEW(getPool()) LagWinNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlArg),
+		PASS1_node(dsqlScratch, dsqlRows));
+}
+
+
+//--------------------
+
+
+static WinFuncNode::Register<LeadWinNode> leadWinInfo("LEAD");
+
+LeadWinNode::LeadWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows)
+	: LagLeadWinNode(pool, leadWinInfo, 1, aArg, aRows)
+{
+}
+
+ExprNode* LeadWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	LeadWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LeadWinNode(*tdbb->getDefaultPool());
+	node->arg = copier.copy(tdbb, arg);
+	node->rows = copier.copy(tdbb, rows);
+	return node;
+}
+
+AggNode* LeadWinNode::dsqlCopy() const
+{
+	return FB_NEW(getPool()) LeadWinNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlArg),
+		PASS1_node(dsqlScratch, dsqlRows));
 }
 
 

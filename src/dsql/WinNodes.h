@@ -89,7 +89,58 @@ public:
 		return true;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+
+protected:
+	virtual AggNode* dsqlCopy() const;
+};
+
+// LAG/LEAD function.
+class LagLeadWinNode : public WinFuncNode
+{
+public:
+	explicit LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
+		dsql_nod* aArg = NULL, dsql_nod* aRows = NULL);
+
+	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual bool shouldCallWinPass() const
+	{
+		return true;
+	}
+
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
+
+protected:
+	const int direction;
+	dsql_nod* dsqlRows;
+	jrd_nod* rows;
+};
+
+// LAG function.
+class LagWinNode : public LagLeadWinNode
+{
+public:
+	explicit LagWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL);
+
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+protected:
+	virtual AggNode* dsqlCopy() const;
+};
+
+// LEAD function.
+class LeadWinNode : public LagLeadWinNode
+{
+public:
+	explicit LeadWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL);
+
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
 protected:
 	virtual AggNode* dsqlCopy() const;

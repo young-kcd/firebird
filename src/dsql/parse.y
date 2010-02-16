@@ -576,6 +576,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> DETERMINISTIC
 %token <legacyNode> IDENTITY
 %token <legacyNode> DENSE_RANK
+%token <legacyNode> LAG
+%token <legacyNode> LEAD
 %token <legacyNode> RANK
 %token <legacyNode> ROW_NUMBER
 
@@ -5328,6 +5330,14 @@ window_function
 		{ $$ = FB_NEW(getPool()) RankWinNode(getPool()); }
 	| ROW_NUMBER '(' ')'
 		{ $$ = FB_NEW(getPool()) RowNumberWinNode(getPool()); }
+	| LAG '(' value ',' value ')'
+		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5); }
+	| LAG '(' value ')'
+		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, MAKE_const_slong(1)); }
+	| LEAD '(' value ',' value ')'
+		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5); }
+	| LEAD '(' value ')'
+		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, MAKE_const_slong(1)); }
 	;
 
 aggregate_window_function
@@ -5959,6 +5969,8 @@ non_reserved_word :
 	| RDB_SET_CONTEXT
 	| KW_RELATIVE
 	| DENSE_RANK
+	| LAG
+	| LEAD
 	| RANK
 	| ROW_NUMBER
 	;

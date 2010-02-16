@@ -40,9 +40,9 @@ using namespace Jrd;
 // Note that we can have NULL order here, in case of window function with shouldCallWinPass
 // returning true, with partition, and without order. Example: ROW_NUMBER() OVER (PARTITION BY N).
 AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* group,
-			jrd_nod* const map, RecordSource* next, jrd_nod* order)
+			jrd_nod* const map, BaseBufferedStream* next, jrd_nod* order)
 	: RecordStream(csb, stream),
-	  m_bufferedStream(FB_NEW(csb->csb_pool) BufferedStream(csb, next)),
+	  m_bufferedStream(next),
 	  m_next(m_bufferedStream),
 	  m_group(group),
 	  m_map(map),
@@ -109,10 +109,10 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 
 	if (m_bufferedStream)
 	{
+		FB_UINT64 position = m_bufferedStream->getPosition(request);
+
 		if (impure->pending == 0)
 		{
-			FB_UINT64 position = m_bufferedStream->getPosition(request);
-
 			if (impure->state == STATE_PENDING)
 				m_bufferedStream->getRecord(tdbb);
 
@@ -129,29 +129,48 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 			m_bufferedStream->locate(tdbb, position);
 		}
 
+		if (m_winPassMap.hasData())
+		{
+			SlidingWindow window(tdbb, m_bufferedStream, m_group, request);
+			dsc* desc;
+
+			for (const jrd_nod* const* ptr = m_winPassMap.begin(); ptr != m_winPassMap.end(); ++ptr)
+			{
+				jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+				fb_assert(from->nod_type == nod_class_exprnode_jrd);
+				const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
+
+				jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+
+				desc = aggNode->winPass(tdbb, request, &window);
+
+				if (!desc)
+					SET_NULL(record, id);
+				else
+				{
+					MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
+					CLEAR_NULL(record, id);
+				}
+			}
+		}
+
 		if (impure->pending > 0)
 			--impure->pending;
+
 		m_bufferedStream->getRecord(tdbb);
 
-		dsc* desc;
-
-		for (const jrd_nod* const* ptr = m_winPassMap.begin(); ptr != m_winPassMap.end(); ++ptr)
+		// If there is no group, we should reassign the map items.
+		if (!m_group)
 		{
-			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			fb_assert(from->nod_type == nod_class_exprnode_jrd);
-			const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
-
-			jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-			const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-			Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
-
-			desc = aggNode->winPass(tdbb, request);
-			if (!desc)
-				SET_NULL(record, id);
-			else
+			for (jrd_nod** ptr = m_map->nod_arg, **end = ptr + m_map->nod_count; ptr < end; ptr++)
 			{
-				MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
-				CLEAR_NULL(record, id);
+				jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+				const AggNode* aggNode = ExprNode::as<AggNode>(from);
+
+				if (!aggNode)
+					EXE_assignment(tdbb, *ptr);
 			}
 		}
 	}
@@ -299,7 +318,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
 			{
 				jrd_nod* from = *ptr;
-				impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+				impure_value* impure = (impure_value*) ((SCHAR*) request + from->nod_impure);
 				desc = EVL_expr(tdbb, from);
 				if (request->req_flags & req_null)
 					impure->vlu_desc.dsc_address = NULL;
@@ -313,7 +332,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			for (ptr = m_order->nod_arg, end = ptr + m_order->nod_count; ptr < end; ptr++)
 			{
 				jrd_nod* from = *ptr;
-				impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+				impure_value* impure = (impure_value*) ((SCHAR*) request + from->nod_impure);
 				desc = EVL_expr(tdbb, from);
 				if (request->req_flags & req_null)
 					impure->vlu_desc.dsc_address = NULL;
@@ -342,7 +361,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 					for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
 					{
 						jrd_nod* from = *ptr;
-						impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+						impure_value* impure = (impure_value*) ((SCHAR*) request + from->nod_impure);
 
 						if (impure->vlu_desc.dsc_address)
 							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
@@ -379,7 +398,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 					for (ptr = m_order->nod_arg, end = ptr + m_order->nod_count; ptr < end; ptr++)
 					{
 						jrd_nod* from = *ptr;
-						impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + from->nod_impure);
+						impure_value* impure = (impure_value*) ((SCHAR*) request + from->nod_impure);
 
 						if (impure->vlu_desc.dsc_address)
 							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
@@ -481,4 +500,116 @@ void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request)
 		if (aggNode)
 			aggNode->aggFinish(tdbb, request);
 	}
+}
+
+
+SlidingWindow::SlidingWindow(thread_db* aTdbb, BaseBufferedStream* aStream, jrd_nod* aGroup,
+			jrd_req* aRequest)
+	: tdbb(aTdbb),	// Note: instanciate the class only as local variable
+	  stream(aStream),
+	  group(aGroup),
+	  request(aRequest)
+{
+	savedPosition = stream->getPosition(request);
+}
+
+SlidingWindow::~SlidingWindow()
+{
+	if (!moved)
+		return;
+
+	for (impure_value* impure = partitionKeys.begin(); impure != partitionKeys.end(); ++impure)
+		delete impure->vlu_string;
+
+	// Position the stream where we received it.
+	stream->locate(tdbb, savedPosition);
+}
+
+// Move in the window without pass partition boundaries.
+bool SlidingWindow::move(SINT64 delta)
+{
+	SINT64 newPosition = SINT64(savedPosition) + delta;
+
+	// If we try to go out of bounds, no need to check the partition.
+	if (newPosition < 0 || newPosition >= (SINT64) stream->getCount(request))
+		return false;
+
+	if (!group)
+	{
+		// No partition, we may go everywhere.
+
+		moved = true;
+
+		stream->locate(tdbb, newPosition);
+
+		if (!stream->getRecord(tdbb))
+		{
+			fb_assert(false);
+			return false;
+		}
+
+		return true;
+	}
+
+	if (!moved)
+	{
+		// This is our first move. We should cache the partition values, so subsequente moves didn't
+		// need to evaluate them again.
+
+		if (!stream->getRecord(tdbb))
+		{
+			fb_assert(false);
+			return false;
+		}
+
+		impure_value* impure = partitionKeys.getBuffer(group->nod_count);
+		memset(impure, 0, sizeof(impure_value) * group->nod_count);
+
+		dsc* desc;
+
+		for (jrd_nod** ptr = group->nod_arg, **end = ptr + group->nod_count; ptr < end;
+			 ++ptr, ++impure)
+		{
+			jrd_nod* from = *ptr;
+			desc = EVL_expr(tdbb, from);
+			if (request->req_flags & req_null)
+				impure->vlu_desc.dsc_address = NULL;
+			else
+				EVL_make_value(tdbb, desc, impure);
+		}
+
+		moved = true;
+	}
+
+	stream->locate(tdbb, newPosition);
+
+	if (!stream->getRecord(tdbb))
+	{
+		fb_assert(false);
+		return false;
+	}
+
+	// Verify if we're still inside the same partition.
+
+	impure_value* impure = partitionKeys.begin();
+	dsc* desc;
+
+	for (jrd_nod** ptr = group->nod_arg, **end = ptr + group->nod_count; ptr < end; ++ptr, ++impure)
+	{
+		jrd_nod* from = *ptr;
+		desc = EVL_expr(tdbb, from);
+
+		if (request->req_flags & req_null)
+		{
+			if (impure->vlu_desc.dsc_address)
+				return false;
+		}
+		else
+		{
+			if (!impure->vlu_desc.dsc_address || MOV_compare(&impure->vlu_desc, desc) != 0)
+				return false;
+		}
+	}
+
+	return true;
 }

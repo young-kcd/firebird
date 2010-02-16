@@ -36,6 +36,7 @@ class CompilerScratch;
 class dsql_nod;
 class ExprNode;
 class jrd_nod;
+class SlidingWindow;
 class TypeClause;
 
 
@@ -410,7 +411,7 @@ public:
 		return false;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request) const
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 	{
 		return NULL;
 	}

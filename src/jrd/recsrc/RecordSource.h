@@ -50,6 +50,7 @@ namespace Jrd
 	struct sort_context;
 	struct temporary_key;
 	struct win;
+	class BaseBufferedStream;
 	class BufferedStream;
 
 	typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
@@ -559,6 +560,25 @@ namespace Jrd
 		SortMap* const m_map;
 	};
 
+	// Make moves in a window without going out of partition boundaries.
+	class SlidingWindow
+	{
+	public:
+		SlidingWindow(thread_db* aTdbb, BaseBufferedStream* aStream, jrd_nod* aGroup, jrd_req* aRequest);
+		~SlidingWindow();
+
+		bool move(SINT64 delta);
+
+	private:
+		thread_db* tdbb;
+		BaseBufferedStream* stream;
+		jrd_nod* group;
+		jrd_req* request;
+		Firebird::Array<impure_value> partitionKeys;
+		bool moved;
+		FB_UINT64 savedPosition;
+	};
+
 	class AggregatedStream : public RecordStream
 	{
 		enum State
@@ -577,7 +597,7 @@ namespace Jrd
 
 	public:
 		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
-			jrd_nod* const map, RecordSource* next, jrd_nod* order);
+			jrd_nod* const map, BaseBufferedStream* next, jrd_nod* order);
 
 		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
 			jrd_nod* const map, RecordSource* next);
@@ -602,7 +622,7 @@ namespace Jrd
 		State evaluateGroup(thread_db* tdbb, State state);
 		void finiDistinct(thread_db* tdbb, jrd_req* request);
 
-		BufferedStream* m_bufferedStream;
+		BaseBufferedStream* m_bufferedStream;
 		RecordSource* const m_next;
 		jrd_nod* const m_group;
 		jrd_nod* const m_map;
@@ -633,13 +653,20 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb);
 
 	private:
-		jrd_nod* m_mainMap;
 		BufferedStream* m_next;
 		RecordSource* m_joinedStream;
-		Firebird::Array<jrd_nod*> m_winPassMap;
 	};
 
-	class BufferedStream : public RecordSource
+	// Abstract class for different implementations of buffered streams.
+	class BaseBufferedStream : public RecordSource
+	{
+	public:
+		virtual void locate(thread_db* tdbb, FB_UINT64 position) = 0;
+		virtual FB_UINT64 getCount(jrd_req* request) const = 0;
+		virtual FB_UINT64 getPosition(jrd_req* request) const = 0;
+	};
+
+	class BufferedStream : public BaseBufferedStream
 	{
 		struct FieldMap
 		{
