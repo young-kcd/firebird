@@ -285,8 +285,7 @@ LagLeadWinNode::LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aD
 {
 	fb_assert(direction == -1 || direction == 1);
 
-	dsqlChildNodes.add(&dsqlRows);
-	jrdChildNodes.add(&rows);
+	addChildNode(dsqlRows, rows);
 }
 
 void LagLeadWinNode::make(dsc* desc, dsql_nod* nullReplacement)
