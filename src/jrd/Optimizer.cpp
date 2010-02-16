@@ -202,6 +202,11 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 		value = NULL;
 		break;
 
+	case nod_window:
+		rse = (RecordSelExpr*) node->nod_arg[e_win_rse];
+		value = NULL;
+		break;
+
 	default:
 		return true;
 	}
@@ -1121,6 +1126,11 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 		case nod_aggregate:
 			rse = (RecordSelExpr*) node->nod_arg[e_agg_rse];
 			rse->rse_sorted = node->nod_arg[e_agg_group];
+			value = NULL;
+			break;
+
+		case nod_window:
+			rse = (RecordSelExpr*) node->nod_arg[e_win_rse];
 			value = NULL;
 			break;
 
