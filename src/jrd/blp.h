@@ -23,7 +23,7 @@ static const struct
 {
 	const char* blr_string;
 	const UCHAR* blr_operators;
-} blr_table[] =
+} blr_print_table[] =
 {
 	{NULL, NULL},
 	{"assignment", two},

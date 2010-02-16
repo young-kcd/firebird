@@ -2766,7 +2766,7 @@ static void blr_print_blr(gds_ctl* control, UCHAR blr_operator)
  **************************************/
 	const char* p;
 
-	if (blr_operator >= FB_NELEM(blr_table) || !(p = blr_table[blr_operator].blr_string))
+	if (blr_operator >= FB_NELEM(blr_print_table) || !(p = blr_print_table[blr_operator].blr_string))
 	{
 		blr_error(control, "*** blr operator %d is undefined ***", (int) blr_operator);
 	}
@@ -3195,7 +3195,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 	blr_print_blr(control, blr_operator);
 	level++;
-	const UCHAR* ops = blr_table[blr_operator].blr_operators;
+	const UCHAR* ops = blr_print_table[blr_operator].blr_operators;
 	SSHORT n;
 
 	while (*ops)
