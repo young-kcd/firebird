@@ -70,7 +70,7 @@ public:
 				 bool ignoreTrailingSpaces = false)
 	{
 		dst.getBuffer(convertLength(srcLen));
-		dst.resize(convert(srcLen, src, dst.getCapacity(), dst.begin(), badInputPos, ignoreTrailingSpaces));
+		dst.resize(convert(srcLen, src, (ULONG) dst.getCapacity(), dst.begin(), badInputPos, ignoreTrailingSpaces));
 	}
 
 	// CVC: Beware of this can of worms: csconvert_convert gets assigned
