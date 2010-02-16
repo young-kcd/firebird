@@ -234,7 +234,7 @@ static dsql_nod* pass1_sort(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_sys_function(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_udf(DsqlCompilerScratch*, dsql_nod*);
 static void pass1_udf_args(DsqlCompilerScratch*, dsql_nod*, dsql_udf*, USHORT&, DsqlNodStack&);
-static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
+static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT, bool in_select_list = false);
 static dsql_nod* pass1_update(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch*, dsql_nod*);
@@ -4663,7 +4663,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		recursive_map_ctx = dsqlScratch->contextNumber++;
 
 		dsqlScratch->recursiveCtxId = dsqlScratch->contextNumber;
-		rse = pass1_union(dsqlScratch, query, NULL, NULL, 0);
+		rse = pass1_union(dsqlScratch, query, NULL, NULL, NULL, 0);
 		dsqlScratch->contextNumber = dsqlScratch->recursiveCtxId + 1;
 
 		// recursive union always have exactly 2 members
@@ -4698,7 +4698,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 			dsql_nod* union_expr = MAKE_node(nod_list, 1);
 			union_expr->nod_arg[0] = select_expr;
 			union_expr->nod_flags = NOD_UNION_ALL;
-			rse = pass1_union(dsqlScratch, union_expr, NULL, NULL, 0);
+			rse = pass1_union(dsqlScratch, union_expr, NULL, NULL, NULL, 0);
 		}
 		else {
 			rse = PASS1_rse(dsqlScratch, select_expr, NULL);
@@ -7182,16 +7182,7 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	else if (input->nod_type == nod_list)
 	{
 		fb_assert(input->nod_count > 1);
-
-		if (update_lock)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
-		}
-
-		return pass1_union(dsqlScratch, input, order, rows, flags);
+		return pass1_union(dsqlScratch, input, order, rows, update_lock, flags);
 	}
 
 	fb_assert(input->nod_type == nod_query_spec);
@@ -8126,10 +8117,12 @@ static void pass1_udf_args(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, ds
     @param input
     @param order_list
 	@param rows
+	@param update_lock
+	@param flags
 
  **/
 static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order_list,
-	dsql_nod* rows, USHORT flags)
+	dsql_nod* rows, dsql_nod* update_lock, USHORT flags)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -8327,10 +8320,20 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	}
 
 	// PROJECT on all the select items unless UNION ALL was specified.
-	if (!(input->nod_flags & NOD_UNION_ALL)) {
+	if (!(input->nod_flags & NOD_UNION_ALL))
+	{
+		if (update_lock)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  // Token unknown
+					  Arg::Gds(isc_token_err) <<
+					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
+		}
+
 		union_rse->nod_arg[e_rse_reduced] = union_items;
 	}
 
+	union_rse->nod_arg[e_rse_lock] = update_lock;
 	union_rse->nod_flags = flags;
 	return union_rse;
 }
