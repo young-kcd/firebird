@@ -244,11 +244,6 @@ bool AggNode::dsqlFieldRemapper(FieldRemapper& visitor)
 				visitor.context, visitor.partitionNode, visitor.orderNode));
 			return false;
 		}
-
-		for (dsql_nod*** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-			visitor.visit(*i);
-
-		return false;
 	}
 
 	for (dsql_nod*** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)

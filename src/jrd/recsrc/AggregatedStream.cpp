@@ -562,20 +562,28 @@ bool SlidingWindow::move(SINT64 delta)
 			return false;
 		}
 
-		impure_value* impure = partitionKeys.getBuffer(group->nod_count);
-		memset(impure, 0, sizeof(impure_value) * group->nod_count);
-
-		dsc* desc;
-
-		for (jrd_nod** ptr = group->nod_arg, **end = ptr + group->nod_count; ptr < end;
-			 ++ptr, ++impure)
+		try
 		{
-			jrd_nod* from = *ptr;
-			desc = EVL_expr(tdbb, from);
-			if (request->req_flags & req_null)
-				impure->vlu_desc.dsc_address = NULL;
-			else
-				EVL_make_value(tdbb, desc, impure);
+			impure_value* impure = partitionKeys.getBuffer(group->nod_count);
+			memset(impure, 0, sizeof(impure_value) * group->nod_count);
+
+			dsc* desc;
+
+			for (jrd_nod** ptr = group->nod_arg, **end = ptr + group->nod_count; ptr < end;
+				 ++ptr, ++impure)
+			{
+				jrd_nod* from = *ptr;
+				desc = EVL_expr(tdbb, from);
+				if (request->req_flags & req_null)
+					impure->vlu_desc.dsc_address = NULL;
+				else
+					EVL_make_value(tdbb, desc, impure);
+			}
+		}
+		catch (const Exception&)
+		{
+			stream->locate(tdbb, savedPosition);	// Reposition for a new try.
+			throw;
 		}
 
 		moved = true;

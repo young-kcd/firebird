@@ -481,6 +481,7 @@ bool OverNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 
 bool OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
+	// Save the values to restore them in the end.
 	AutoSetRestore<dsql_nod*> autoPartitionNode(&visitor.partitionNode, visitor.partitionNode);
 	AutoSetRestore<dsql_nod*> autoOrderNode(&visitor.orderNode, visitor.orderNode);
 
