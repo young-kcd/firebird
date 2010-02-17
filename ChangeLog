@@ -1,3 +1,10 @@
+2010-02-16 15:42  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.261.2.18):
+
+	Fixed CORE-1089: Wrong ordering with views, distinct, left join and
+	order by and CORE-2871: Outer ORDER BY clause has no effect.
+
 2010-02-10 15:59  hvlad
 
 	* firebird2/src/jrd/btr.cpp (1.162.2.26):
