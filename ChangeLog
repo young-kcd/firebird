@@ -1,3 +1,49 @@
+2010-02-17 03:11  asfernandes
+
+	* firebird2/src/dsql/Visitors.h (1.4):
+
+	Misc
+
+2010-02-17 03:04  asfernandes
+
+	* firebird2/src/: dsql/Visitors.h (1.3), jrd/opt.cpp (1.414):
+
+	Rework in the visitor classes to remove ugly reinterpret_cast of
+	PMFs. Hope that solve the warning reported by Claudio too.
+
+2010-02-16 22:16  asfernandes
+
+	* firebird2/src/: dsql/AggNodes.cpp (1.5), dsql/ExprNodes.cpp
+	(1.3), jrd/recsrc/AggregatedStream.cpp (1.15):
+
+	Misc and fix per Claudio comments
+
+2010-02-16 17:28  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.516):
+
+	Enabled WITH LOCK for non-DISTINCT unions. It's expected to work
+	correctly.
+
+2010-02-16 17:23  dimitr
+
+	* firebird2/src/jrd/lck.cpp (1.112):
+
+	Fixed error reporting for no-wait transactions.
+
+2010-02-16 15:47  dimitr
+
+	* firebird2/src/jrd/CsConvert.h (1.19):
+
+	Worked around the most annoying warning.
+
+2010-02-16 15:42  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.413):
+
+	Fixed CORE-1089: Wrong ordering with views, distinct, left join and
+	order by and CORE-2871: Outer ORDER BY clause has no effect.
+
 2010-02-16 09:57  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.136):
