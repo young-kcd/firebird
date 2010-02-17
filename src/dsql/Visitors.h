@@ -109,14 +109,15 @@ public:
 		return internalVisit(*nodePtr);
 	}
 
+	bool visitChildren(T node);
+
+	virtual bool internalVisit(T node) = 0;
+
+private:
 	bool call(ExprNode* exprNode)
 	{
 		return caller->call(exprNode);
 	}
-
-	bool visitChildren(T node);
-
-	virtual bool internalVisit(T node) = 0;
 
 private:
 	const bool assertOnOthers;
@@ -297,6 +298,7 @@ public:
 
 	virtual bool visit(jrd_nod* node) = 0;
 
+private:
 	bool call(ExprNode* exprNode)
 	{
 		return caller->call(exprNode);
