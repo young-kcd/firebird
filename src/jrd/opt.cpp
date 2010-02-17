@@ -106,7 +106,7 @@ bool JrdNodeVisitor::visitChildren(jrd_nod* node)
 		case nod_class_exprnode_jrd:
 		{
 			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-			return (exprNode->*exprVisit)(*this);
+			return call(exprNode);
 		}
 
 		case nod_argument:

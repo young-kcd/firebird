@@ -49,29 +49,56 @@ enum FieldMatchType
 };
 
 
-template <typename T, typename T2>
-class DsqlNodeVisitor
+// Base class to call a visitor of an ExprNode.
+class VisitorCaller
 {
-private:
-	typedef bool (ExprNode::*Callback)(DsqlNodeVisitor& visitor);
-
 public:
-	template <typename T3>
-	DsqlNodeVisitor(bool aAssertOnOthers, bool aReturnOnOthers, bool (ExprNode::*aExprVisit)(T3& visitor))
-		: assertOnOthers(aAssertOnOthers),
-		  returnOnOthers(aReturnOnOthers),
-		  exprVisit(reinterpret_cast<Callback>(aExprVisit)),
-		  currentNode(NULL)
+	virtual bool call(ExprNode* exprNode) = 0;
+};
+
+// Implementation class to call a visitor of an ExprNode.
+template <typename T>
+class VisitorCallerImpl : public VisitorCaller
+{
+public:
+	VisitorCallerImpl(T& aVisitor, bool (ExprNode::*aVisitFunction)(T&))
+		: visitor(aVisitor),
+		  visitFunction(aVisitFunction)
 	{
 	}
 
+	virtual bool call(ExprNode* exprNode)
+	{
+		return (exprNode->*visitFunction)(visitor);
+	}
+
+private:
+	T& visitor;
+	bool (ExprNode::*visitFunction)(T&);
+};
+
+
+template <typename T, typename T2>
+class DsqlNodeVisitor
+{
 public:
-	dsql_nod* getCurrentNode()
+	template <typename Self>
+	DsqlNodeVisitor(bool aAssertOnOthers, bool aReturnOnOthers, bool (ExprNode::*aVisitFunction)(Self&))
+		: assertOnOthers(aAssertOnOthers),
+		  returnOnOthers(aReturnOnOthers),
+		  currentNode(NULL)
+	{
+		caller = FB_NEW(*getDefaultMemoryPool()) VisitorCallerImpl<Self>(
+			static_cast<Self&>(*this), aVisitFunction);
+	}
+
+public:
+	T getCurrentNode()
 	{
 		return *currentNode;
 	}
 
-	void replaceNode(dsql_nod* node)
+	void replaceNode(T node)
 	{
 		*currentNode = node;
 	}
@@ -82,6 +109,11 @@ public:
 		return internalVisit(*nodePtr);
 	}
 
+	bool call(ExprNode* exprNode)
+	{
+		return caller->call(exprNode);
+	}
+
 	bool visitChildren(T node);
 
 	virtual bool internalVisit(T node) = 0;
@@ -89,7 +121,7 @@ public:
 private:
 	const bool assertOnOthers;
 	const bool returnOnOthers;
-	const Callback exprVisit;
+	Firebird::AutoPtr<VisitorCaller> caller;
 	T2 currentNode;
 };
 
@@ -251,15 +283,13 @@ public:
 
 class JrdNodeVisitor
 {
-private:
-	typedef bool (ExprNode::*Callback)(JrdNodeVisitor& visitor);
-
 public:
-	template <typename T>
-	JrdNodeVisitor(bool aReturnOnOthers, bool (ExprNode::*aExprVisit)(T& visitor))
-		: returnOnOthers(aReturnOnOthers),
-		  exprVisit(reinterpret_cast<Callback>(aExprVisit))
+	template <typename Self>
+	JrdNodeVisitor(bool aReturnOnOthers, bool (ExprNode::*aVisitFunction)(Self&))
+		: returnOnOthers(aReturnOnOthers)
 	{
+		caller = FB_NEW(*getDefaultMemoryPool()) VisitorCallerImpl<Self>(
+			static_cast<Self&>(*this), aVisitFunction);
 	}
 
 public:
@@ -267,9 +297,14 @@ public:
 
 	virtual bool visit(jrd_nod* node) = 0;
 
+	bool call(ExprNode* exprNode)
+	{
+		return caller->call(exprNode);
+	}
+
 private:
 	const bool returnOnOthers;
-	const Callback exprVisit;
+	Firebird::AutoPtr<VisitorCaller> caller;
 };
 
 
@@ -413,7 +448,7 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		case nod_class_exprnode:
 		{
 			Jrd::ExprNode* exprNode = reinterpret_cast<Jrd::ExprNode*>(node->nod_arg[0]);
-			ret |= (exprNode->*exprVisit)(*this);
+			ret |= call(exprNode);
 			break;
 		}
 
