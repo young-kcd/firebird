@@ -144,7 +144,9 @@ bool AggNode::dsqlAggregateFinder(AggregateFinder& visitor)
 		aggregate = true;
 	else
 	{
-		// Check also for a nested aggregate that could belong to this context
+		// Check also for a nested aggregate that could belong to this context. Example:
+		//   select (select count(count(outer.n)) from inner) from outer
+
 		AutoSetRestore<USHORT> autoDeepestLevel(&visitor.deepestLevel, localDeepestLevel);
 
 		for (dsql_nod*** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)

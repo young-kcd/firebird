@@ -434,7 +434,9 @@ bool OverNode::dsqlAggregateFinder(AggregateFinder& visitor)
 		AggNode* aggNode = ExprNode::as<AggNode>(dsqlAggExpr);
 		fb_assert(aggNode);
 
-		aggregate |= visitor.visit(&aggNode->dsqlArg);
+		Array<dsql_nod**>& exprChildren = aggNode->dsqlChildNodes;
+		for (dsql_nod*** i = exprChildren.begin(); i != exprChildren.end(); ++i)
+			aggregate |= visitor.visit(*i);
 	}
 	else
 		aggregate |= visitor.visit(&dsqlAggExpr);
@@ -514,13 +516,16 @@ bool OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	AggNode* aggNode = ExprNode::as<AggNode>(copy);
 	fb_assert(aggNode);
 
-	dsql_nod*& aggExpr = aggNode->dsqlArg;
+	Array<dsql_nod**>& exprChildren = aggNode->dsqlChildNodes;
 
-	if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
-			true, aggExpr))
+	for (dsql_nod*** i = exprChildren.begin(); i != exprChildren.end(); ++i)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  Arg::Gds(isc_dsql_agg_nested_err));
+		if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
+				true, **i))
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  Arg::Gds(isc_dsql_agg_nested_err));
+		}
 	}
 
 	AggregateFinder aggFinder(dsqlScratch, false);
@@ -531,12 +536,13 @@ bool OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	{
 		if (!visitor.window)
 		{
-			if (copy->nod_count)
-			{
+			{	// scope
 				AutoSetRestore<dsql_nod*> autoPartitionNode2(&visitor.partitionNode, NULL);
 				AutoSetRestore<dsql_nod*> autoOrderNode2(&visitor.orderNode, NULL);
 
-				visitor.visit(&aggExpr);
+				Array<dsql_nod**>& exprChildren = aggNode->dsqlChildNodes;
+				for (dsql_nod*** i = exprChildren.begin(); i != exprChildren.end(); ++i)
+					visitor.visit(*i);
 			}
 
 			if (dsqlPartition)
