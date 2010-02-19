@@ -546,17 +546,17 @@ int INTL_compare(thread_db* tdbb,
 
 	UCHAR* p1;
 	USHORT t1;
-	USHORT length1 = CVT_get_string_ptr(pText1, &t1, &p1, NULL, 0, err);
+	ULONG length1 = CVT_get_string_ptr(pText1, &t1, &p1, NULL, 0, err);
 
 	UCHAR* p2;
 	USHORT t2;
-	USHORT length2 = CVT_get_string_ptr(pText2, &t2, &p2, NULL, 0, err);
+	ULONG length2 = CVT_get_string_ptr(pText2, &t2, &p2, NULL, 0, err);
 
 /* YYY - by SQL II compare_type must be explicit in the
    SQL statement if there is any doubt */
 
 	USHORT compare_type = MAX(t1, t2);	/* YYY */
-	UCHAR buffer[MAX_KEY];
+	HalfStaticArray<UCHAR, BUFFER_XLARGE> buffer;
 
 	if (t1 != t2)
 	{
@@ -576,15 +576,21 @@ int INTL_compare(thread_db* tdbb,
 				   sense if the string cannot be expressed...
 				 */
 
-				length2 = INTL_convert_bytes(tdbb, cs1, buffer, sizeof(buffer), cs2, p2, length2, err);
-				p2 = buffer;
+				UCHAR* p = buffer.getBuffer(INTL_convert_bytes(tdbb, cs1, NULL, 0,
+					cs2, p2, length2, err));
+				length2 = INTL_convert_bytes(tdbb, cs1, p, (ULONG) buffer.getCount(),
+					cs2, p2, length2, err);
+				p2 = p;
 			}
 			else
 			{
 				/* convert pText1 to pText2's type, if possible */
 
-				length1 = INTL_convert_bytes(tdbb, cs2, buffer, sizeof(buffer), cs1, p1, length1, err);
-				p1 = buffer;
+				UCHAR* p = buffer.getBuffer(INTL_convert_bytes(tdbb, cs2, NULL, 0,
+					cs1, p1, length1, err));
+				length1 = INTL_convert_bytes(tdbb, cs2, p, (ULONG) buffer.getCount(),
+					cs1, p1, length1, err);
+				p1 = p;
 			}
 		}
 	}
