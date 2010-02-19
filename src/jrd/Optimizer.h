@@ -193,8 +193,10 @@ protected:
 	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
 	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
 	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
+	InversionCandidate* matchDbKey(jrd_nod* boolean) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
 		jrd_nod* boolean, USHORT scope) const;
+	jrd_nod* findDbKey(jrd_nod*, USHORT, SLONG*) const;
 
 #ifdef OPT_DEBUG_RETRIEVAL
 	void printCandidate(const InversionCandidate* candidate) const;

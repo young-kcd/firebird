@@ -639,7 +639,6 @@ static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
-static jrd_nod* find_dbkey(jrd_nod*, USHORT, SLONG*);
 static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
 static bool form_river(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, RiverList&, jrd_nod**);
 static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
@@ -651,7 +650,6 @@ static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSourc
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
 static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
-static jrd_nod* make_dbkey(thread_db*, OptimizerBlk*, jrd_nod*, USHORT);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
@@ -2334,46 +2332,6 @@ static void find_index_relationship_streams(thread_db* tdbb,
 }
 
 
-static jrd_nod* find_dbkey(jrd_nod* dbkey, USHORT stream, SLONG* position)
-{
-/**************************************
- *
- *	f i n d _ d b k e y
- *
- **************************************
- *
- * Functional description
- *	Search a dbkey (possibly a concatenated one) for
- *	a dbkey for specified stream.
- *
- **************************************/
-	DEV_BLKCHK(dbkey, type_nod);
-	if (dbkey->nod_type == nod_dbkey)
-	{
-		if ((USHORT)(IPTR) dbkey->nod_arg[0] == stream)
-			return dbkey;
-
-		*position = *position + 1;
-		return NULL;
-	}
-
-	ConcatenateNode* concatNode = ExprNode::as<ConcatenateNode>(dbkey);
-
-	if (concatNode)
-	{
-		jrd_nod* dbkey_temp = find_dbkey(concatNode->arg1, stream, position);
-		if (dbkey_temp)
-			return dbkey_temp;
-
-		dbkey_temp = find_dbkey(concatNode->arg2, stream, position);
-		if (dbkey_temp)
-			return dbkey_temp;
-	}
-
-	return NULL;
-}
-
-
 static void form_rivers(thread_db*		tdbb,
 						OptimizerBlk*	opt,
 						const UCHAR*	streams,
@@ -3187,10 +3145,6 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	for (; tail < opt_end; tail++)
 	{
 		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!relation->rel_file && !relation->isVirtual())
-		{
-			compose(&inversion, make_dbkey(tdbb, opt, node, stream), nod_bit_and);
-		}
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			OPT_computable(csb, node, -1, false, false))
 		{
@@ -3962,82 +3916,6 @@ static RecordSource* gen_union(thread_db* tdbb,
 
 	return FB_NEW(*tdbb->getDefaultPool()) Union(csb, stream, count / 2, rsbs.begin(),
 		maps.begin(), nstreams, streams);
-}
-
-
-jrd_nod* make_dbkey(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* boolean, USHORT stream)
-{
-/**************************************
- *
- *	m a k e _ d b k e y
- *
- **************************************
- *
- * Functional description
- *	If boolean is an equality comparison on the proper dbkey,
- *	make a "bit_dbkey" operator (makes bitmap out of dbkey
- *	expression.
- *
- *	This is a little hairy, since view dbkeys are expressed as
- *	concatenations of primitive dbkeys.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(boolean, type_nod);
-
-	// If this isn't an equality, it isn't even interesting
-
-	if (boolean->nod_type != nod_eql)
-		return NULL;
-
-	// Find the side of the equality that is potentially a dbkey.  If
-	// neither, make the obvious deduction
-
-	jrd_nod* dbkey = boolean->nod_arg[0];
-	jrd_nod* value = boolean->nod_arg[1];
-
-	if (dbkey->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(dbkey))
-	{
-		if (value->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(value))
-			return NULL;
-
-		dbkey = value;
-		value = boolean->nod_arg[0];
-	}
-
-	// If the value isn't computable, this has been a waste of time
-
-	CompilerScratch* csb = opt->opt_csb;
-	if (!OPT_computable(csb, value, stream, false, false))
-		return NULL;
-
-	// If this is a concatenation, find an appropriate dbkey
-
-	SLONG n = 0;
-	if (ExprNode::is<ConcatenateNode>(dbkey))
-	{
-		dbkey = find_dbkey(dbkey, stream, &n);
-		if (!dbkey)
-			return NULL;
-	}
-
-	// Make sure we have the correct stream
-
-	if ((USHORT)(IPTR) dbkey->nod_arg[0] != stream)
-		return NULL;
-
-	// If this is a dbkey for the appropriate stream, it's invertable
-
-	dbkey = PAR_make_node(tdbb, 2);
-	dbkey->nod_count = 1;
-	dbkey->nod_type = nod_bit_dbkey;
-	dbkey->nod_arg[0] = value;
-	dbkey->nod_arg[1] = (jrd_nod*)(IPTR) n;
-	dbkey->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
-
-	return dbkey;
 }
 
 

@@ -1216,7 +1216,25 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 					optimizer->opt_conjuncts.end();
 
 	InversionCandidateList inversions;
-	inversions.shrink(0);
+	InversionCandidate* invCandidate = NULL;
+
+	// Check for any DB_KEY comparisons
+	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+	{
+		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+			continue;
+		}
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node)
+		{
+			invCandidate = matchDbKey(node);
+			if (invCandidate)
+			{
+				invCandidate->boolean = node;
+				inversions.add(invCandidate);
+			}
+		}
+	}
 
 	// First, handle "AND" comparisons (all nodes except nod_or)
 	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
@@ -1230,6 +1248,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 			matchOnIndexes(&indexScratches, node, 1);
 		}
 	}
+
 	getInversionCandidates(&inversions, &indexScratches, 1);
 
 	if (sort && rsb) {
@@ -1237,7 +1256,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 	}
 
 	// Second, handle "OR" comparisons
-	InversionCandidate* invCandidate = NULL;
 	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 	{
 		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
@@ -1689,6 +1707,52 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 		}
 	}
 }
+
+jrd_nod* OptimizerRetrieval::findDbKey(jrd_nod* dbkey, USHORT stream, SLONG* position) const
+{
+/**************************************
+ *
+ *	f i n d D b K e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Search a dbkey (possibly a concatenated one) for
+ *	a dbkey for specified stream.
+ *
+ **************************************/
+
+	if (dbkey->nod_type == nod_dbkey)
+	{
+		if ((USHORT)(IPTR) dbkey->nod_arg[0] == stream)
+		{
+			return dbkey;
+		}
+
+		*position = *position + 1;
+		return NULL;
+	}
+
+	ConcatenateNode* concatNode = ExprNode::as<ConcatenateNode>(dbkey);
+
+	if (concatNode)
+	{
+		jrd_nod* dbkey_temp = findDbKey(concatNode->arg1, stream, position);
+		if (dbkey_temp)
+		{
+			return dbkey_temp;
+		}
+
+		dbkey_temp = findDbKey(concatNode->arg2, stream, position);
+		if (dbkey_temp)
+		{
+			return dbkey_temp;
+		}
+	}
+
+	return NULL;
+}
+
 
 jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 {
@@ -2528,6 +2592,91 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 	}
 
 	return (count >= 1);
+}
+
+InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
+{
+/**************************************
+ *
+ *	m a t c h D b K e y
+ *
+ **************************************
+ *
+ * Functional description
+ *  Check whether a boolean is a DB_KEY based comparison.
+ *
+ **************************************/
+	// If this isn't an equality, it isn't even interesting
+
+	if (boolean->nod_type != nod_eql)
+	{
+		return NULL;
+	}
+
+	// Find the side of the equality that is potentially a dbkey.  If
+	// neither, make the obvious deduction
+
+	jrd_nod* dbkey = boolean->nod_arg[0];
+	jrd_nod* value = boolean->nod_arg[1];
+
+	if (dbkey->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(dbkey))
+	{
+		if (value->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(value))
+		{
+			return NULL;
+		}
+
+		dbkey = value;
+		value = boolean->nod_arg[0];
+	}
+
+	// If the value isn't computable, this has been a waste of time
+
+	if (!OPT_computable(csb, value, stream, false, false))
+	{
+		return NULL;
+	}
+
+	// If this is a concatenation, find an appropriate dbkey
+
+	SLONG n = 0;
+	if (ExprNode::is<ConcatenateNode>(dbkey))
+	{
+		dbkey = findDbKey(dbkey, stream, &n);
+		if (!dbkey)
+		{
+			return NULL;
+		}
+	}
+
+	// Make sure we have the correct stream
+
+	if ((USHORT)(IPTR) dbkey->nod_arg[0] != stream)
+	{
+		return NULL;
+	}
+
+	// If this is a dbkey for the appropriate stream, it's invertable
+
+	InversionCandidate* const invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	invCandidate->indexes = 0;
+	invCandidate->selectivity = 1 / csb->csb_rpt[stream].csb_cardinality;
+	invCandidate->cost = 0;
+	invCandidate->unique = true;
+	invCandidate->matches.add(boolean);
+
+	if (createIndexScanNodes)
+	{
+		jrd_nod* const inversion = PAR_make_node(tdbb, 2);
+		inversion->nod_count = 1;
+		inversion->nod_type = nod_bit_dbkey;
+		inversion->nod_arg[0] = value;
+		inversion->nod_arg[1] = (jrd_nod*)(IPTR) n;
+		inversion->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
+		invCandidate->inversion = inversion;
+	}
+
+	return invCandidate;
 }
 
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
