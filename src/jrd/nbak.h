@@ -260,6 +260,9 @@ public:
 	// Must have ISC_STATUS because it is called from write_page
 	bool write_difference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
 	bool read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
+
+	void openDelta();
+	void closeDelta();
 	
 	// Routines to declare and release interest in the database file
 	void checkout_dirty_page(thread_db* tdbb, SLONG owner_handle);

@@ -92,6 +92,7 @@ void NBackupState::invalidate(thread_db* tdbb, bool ast_handler)
 {
 	backup_manager->set_state(nbak_state_unknown);
 	NBAK_TRACE_AST( ("set state nbak_state_unknown") );
+	backup_manager->closeDelta();
 }
 
 void NBackupState::blockingAstHandler(thread_db* tdbb)
@@ -231,6 +232,28 @@ void BackupManager::generate_filename()
 {
 	diff_name = database->dbb_filename + ".delta";
 	explicit_diff_name = false;
+}
+
+void BackupManager::openDelta()
+{
+    fb_assert(!diff_file);
+    diff_file = PIO_open(database, diff_name, false, diff_name, false);
+
+    if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
+    {
+        PIO_force_write(diff_file,
+            database->dbb_flags & DBB_force_write,
+            database->dbb_flags & DBB_no_fs_cache);
+    }
+}
+
+void BackupManager::closeDelta()
+{
+    if (diff_file)
+    {
+        PIO_close(diff_file);
+        diff_file = NULL;
+    }
 }
 
 // Initialize and open difference file for writing
@@ -535,11 +558,8 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		last_allocated_page = 0;
 		if (!alloc_lock->tryReleaseLock(tdbb))
 			ERR_bugcheck_msg("There are holders of alloc_lock after end_backup finish");
-		
-		if (diff_file) {
-			PIO_close(diff_file);
-			diff_file = NULL;
-		}
+
+		closeDelta();
 		unlink(diff_name.c_str());
 		
 		if (database_locked)
@@ -847,11 +867,6 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 		generate_filename();
 		
 	if (new_backup_state == nbak_state_normal || missed_cycle) {
-		if (diff_file) {
-			NBAK_TRACE(("Close difference file"));
-			PIO_close(diff_file);
-			diff_file = NULL;
-		}
 		// Page allocation table cache is no longer valid.
 		if (alloc_table) {
 			NBAK_TRACE(("Dropping alloc table"));
@@ -866,13 +881,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	if (new_backup_state != nbak_state_normal && !diff_file) {
 		try {
 			NBAK_TRACE(("Open difference file"));
-			diff_file = PIO_open(database, diff_name, false, diff_name, false);
-			if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
-			{
-				PIO_force_write(diff_file, 
-					database->dbb_flags & DBB_force_write, 
-					database->dbb_flags & DBB_no_fs_cache);
-			}
+			openDelta();
 		}
 		catch (const Firebird::Exception& ex) {
 			Firebird::stuff_exception(status, ex);
@@ -887,8 +896,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 
 void BackupManager::shutdown(thread_db* tdbb) 
 {
-	if (diff_file)
-		PIO_close(diff_file);
-	shutdown_locks(tdbb);
+    closeDelta();
+    shutdown_locks(tdbb);
 	delete this;
 }
