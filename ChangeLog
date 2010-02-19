@@ -1,3 +1,9 @@
+2010-02-19 14:04  roman-simakov
+
+	* firebird2/src/jrd/: nbak.cpp (1.72.2.7), nbak.h (1.29.4.2):
+
+	Fixed CORE-2539: Delta file is not deleted after end backup.
+
 2010-02-16 15:39  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.301.2.7):
