@@ -836,11 +836,6 @@ enum node_args {
 	e_cur_stmt_into,
 	e_cur_stmt_count,
 
-	e_agg_function_expression = 0,
-	e_agg_function_delimiter,
-	e_agg_function_scope_level,
-	e_agg_function_count,
-
 	e_mod_udf_name = 0,				// nod_mod_udf
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
