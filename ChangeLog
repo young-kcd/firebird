@@ -1,3 +1,10 @@
+2010-02-19 11:10  asfernandes
+
+	* firebird2/src/jrd/intl.cpp (1.130.2.1):
+
+	Fixed CORE-2875 - String right truncation error when char column
+	longer than 4096 bytes is compared with string constant
+
 2010-02-16 15:35  dimitr
 
 	* firebird2/src/jrd/opt.cpp (1.361.2.2):
