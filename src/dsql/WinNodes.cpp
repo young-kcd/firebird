@@ -318,8 +318,6 @@ dsc* LagLeadWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 
 dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 {
-	//impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
-
 	dsc* desc = EVL_expr(tdbb, rows);
 	SINT64 records;
 

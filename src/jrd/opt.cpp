@@ -1755,7 +1755,7 @@ static void check_sorts(RecordSelExpr* rse)
 					// dimitr: the same rule applies to explicit/implicit user-defined sorts.
 					if (new_rse != rse &&
 						(new_rse->rse_first || new_rse->rse_skip ||
-						new_rse->rse_sorted || new_rse->rse_projection))
+						 new_rse->rse_sorted || new_rse->rse_projection))
 					{
 						node = NULL;
 						break;

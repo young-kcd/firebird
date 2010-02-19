@@ -107,7 +107,7 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 		return false;
 	}
 
-	if (m_bufferedStream)
+	if (m_bufferedStream)	// Is that a window stream?
 	{
 		FB_UINT64 position = m_bufferedStream->getPosition(request);
 
