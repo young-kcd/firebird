@@ -1,3 +1,16 @@
+2010-02-20 07:39  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.138):
+
+	Minor code unification.
+
+2010-02-19 21:25  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.416), Optimizer.cpp (1.137),
+	Optimizer.h (1.38):
+
+	Fixed CORE-1295: Bad optimization of queries with DB_KEY.
+
 2010-02-19 13:35  asfernandes
 
 	* firebird2/src/dsql/node.h (1.140):
