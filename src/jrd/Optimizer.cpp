@@ -1204,10 +1204,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
  * Functional description
  *
  **************************************/
-	if (!relation || relation->rel_file || relation->isVirtual()) {
-		return NULL;
-	}
-
 	OptimizerBlk::opt_conjunct* const opt_begin =
 		optimizer->opt_conjuncts.begin() + (outerFlag ? optimizer->opt_base_parent_conjuncts : 0);
 
@@ -1215,104 +1211,122 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		innerFlag ? optimizer->opt_conjuncts.begin() + optimizer->opt_base_missing_conjuncts :
 					optimizer->opt_conjuncts.end();
 
-	InversionCandidateList inversions;
 	InversionCandidate* invCandidate = NULL;
 
-	// Check for any DB_KEY comparisons
-	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+	if (relation && !relation->rel_file && !relation->isVirtual())
 	{
-		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-			continue;
-		}
-		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node)
+		InversionCandidateList inversions;
+
+		// Check for any DB_KEY comparisons
+		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			invCandidate = matchDbKey(node);
-			if (invCandidate)
+			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+				continue;
+			}
+			jrd_nod* const node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node)
 			{
-				invCandidate->boolean = node;
-				inversions.add(invCandidate);
+				invCandidate = matchDbKey(node);
+				if (invCandidate)
+				{
+					invCandidate->boolean = node;
+					inversions.add(invCandidate);
+				}
 			}
 		}
-	}
 
-	// First, handle "AND" comparisons (all nodes except nod_or)
-	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
-	{
-		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-			continue;
-		}
-		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type != nod_or))
+		// First, handle "AND" comparisons (all nodes except nod_or)
+		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			matchOnIndexes(&indexScratches, node, 1);
-		}
-	}
-
-	getInversionCandidates(&inversions, &indexScratches, 1);
-
-	if (sort && rsb) {
-		*rsb = generateNavigation();
-	}
-
-	// Second, handle "OR" comparisons
-	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
-	{
-		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-			continue;
-		}
-		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type == nod_or))
-		{
-			invCandidate = matchOnIndexes(&indexScratches, node, 1);
-			if (invCandidate)
+			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+				continue;
+			}
+			jrd_nod* const node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type != nod_or))
 			{
-				invCandidate->boolean = node;
-				inversions.add(invCandidate);
+				matchOnIndexes(&indexScratches, node, 1);
 			}
 		}
-	}
+
+		getInversionCandidates(&inversions, &indexScratches, 1);
+
+		if (sort && rsb) {
+			*rsb = generateNavigation();
+		}
+
+		// Second, handle "OR" comparisons
+		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+		{
+			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+				continue;
+			}
+			jrd_nod* const node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type == nod_or))
+			{
+				invCandidate = matchOnIndexes(&indexScratches, node, 1);
+				if (invCandidate)
+				{
+					invCandidate->boolean = node;
+					inversions.add(invCandidate);
+				}
+			}
+		}
 
 #ifdef OPT_DEBUG_RETRIEVAL
-	// Debug
-	printCandidates(&inversions);
+		// Debug
+		printCandidates(&inversions);
 #endif
 
-	invCandidate = makeInversion(&inversions);
+		invCandidate = makeInversion(&inversions);
 
-	if (invCandidate)
+		// Clean up inversion list
+		InversionCandidate** inversion = inversions.begin();
+		for (size_t i = 0; i < inversions.getCount(); i++)
+		{
+			delete inversion[i];
+		}
+	}
+
+	if (!invCandidate)
 	{
-		if (invCandidate->unique)
-		{
-			// Set up the unique retrieval cost to be fixed and not dependent on
-			// possibly outdated statistics
-			invCandidate->cost = DEFAULT_INDEX_COST * invCandidate->indexes + 1;
-		}
-		else
-		{
-			// Add the records retrieval cost to the priorly calculated index scan cost
-			invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
-		}
+		// No index will be used, thus create a dummy inversion candidate
+		// representing the natural table access. All the necessary properties
+		// (selectivity: 1.0, cost: 0, unique: false) are set up by the constructor.
+		invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	}
 
-		// Add the streams where this stream is depending on.
-		for (size_t i = 0; i < invCandidate->matches.getCount(); i++) {
-			findDependentFromStreams(invCandidate->matches[i], &invCandidate->dependentFromStreams);
-		}
+	if (invCandidate->unique)
+	{
+		// Set up the unique retrieval cost to be fixed and not dependent on
+		// possibly outdated statistics
+		invCandidate->cost = DEFAULT_INDEX_COST * invCandidate->indexes + 1;
+	}
+	else
+	{
+		// Add the records retrieval cost to the priorly calculated index scan cost
+		invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
+	}
 
-		if (setConjunctionsMatched)
+	// Add the streams where this stream is depending on.
+	for (size_t i = 0; i < invCandidate->matches.getCount(); i++)
+	{
+		findDependentFromStreams(invCandidate->matches[i], &invCandidate->dependentFromStreams);
+	}
+
+	if (setConjunctionsMatched)
+	{
+		SortedArray<jrd_nod*> matches;
+		// AB: Putting a unsorted array in a sorted array directly by join isn't
+		// very safe at the moment, but in our case Array holds a sorted list.
+		// However SortedArray class should be updated to handle join right!
+		matches.join(invCandidate->matches);
+		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			SortedArray<jrd_nod*> matches;
-			// AB: Putting a unsorted array in a sorted array directly by join isn't
-			// very safe at the moment, but in our case Array holds a sorted list.
-			// However SortedArray class should be updated to handle join right!
-			matches.join(invCandidate->matches);
-			for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used))
 			{
-				if (!(tail->opt_conjunct_flags & opt_conjunct_used))
+				if (matches.exist(tail->opt_conjunct_node))
 				{
-					if (matches.exist(tail->opt_conjunct_node)) {
-						tail->opt_conjunct_flags |= opt_conjunct_matched;
-					}
+					tail->opt_conjunct_flags |= opt_conjunct_matched;
 				}
 			}
 		}
@@ -1322,12 +1336,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 	// Debug
 	printFinalCandidate(invCandidate);
 #endif
-
-	// Clean up inversion list
-	InversionCandidate** inversion = inversions.begin();
-	for (size_t i = 0; i < inversions.getCount(); i++) {
-		delete inversion[i];
-	}
 
 	return invCandidate;
 }
@@ -1484,23 +1492,7 @@ InversionCandidate* OptimizerRetrieval::getCost()
  **************************************/
 	createIndexScanNodes = false;
 	setConjunctionsMatched = false;
-	InversionCandidate* inversion = generateInversion(NULL);
-	if (inversion) {
-		return inversion;
-	}
-
-	// No index will be used, thus
-	InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
-	invCandidate->indexes = 0;
-	invCandidate->selectivity = MAXIMUM_SELECTIVITY;
-	invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
-/*
-	OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-	for (; tail < optimizer->opt_conjuncts.end(); tail++) {
-		findDependentFromStreams(tail->opt_conjunct_node, &invCandidate->dependentFromStreams);
-	}
-*/
-	return invCandidate;
+	return generateInversion(NULL);
 }
 
 InversionCandidate* OptimizerRetrieval::getInversion(IndexTableScan** rsb)
@@ -1520,17 +1512,7 @@ InversionCandidate* OptimizerRetrieval::getInversion(IndexTableScan** rsb)
  **************************************/
 	createIndexScanNodes = true;
 	setConjunctionsMatched = true;
-	InversionCandidate* inversion = generateInversion(rsb);
-	if (inversion) {
-		return inversion;
-	}
-
-	// No index will be used
-	InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
-	invCandidate->indexes = 0;
-	invCandidate->selectivity = MAXIMUM_SELECTIVITY;
-	invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
-	return invCandidate;
+	return generateInversion(rsb);
 }
 
 void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions,
