@@ -139,6 +139,7 @@ public:
 	}
 
 public:
+	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode);
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode);
 
 public:
@@ -172,7 +173,8 @@ public:
 	{
 		TYPE_AGGREGATE,
 		TYPE_CONCATENATE,
-		TYPE_OVER
+		TYPE_OVER,
+		TYPE_SUBSTRING_SIMILAR
 	};
 
 	explicit ExprNode(Type aType, MemoryPool& pool)

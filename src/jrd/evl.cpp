@@ -3801,14 +3801,13 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 					if (node->nod_type == nod_like)
 					{
-						impure->vlu_misc.vlu_invariant = evaluator =
-							obj->createLikeMatcher(*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
+						impure->vlu_misc.vlu_invariant = evaluator = obj->createLikeMatcher(
+							*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
 					}
 					else	// nod_similar
 					{
-						impure->vlu_misc.vlu_invariant = evaluator =
-							obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
-								p2, l2, escape_str, escape_length);
+						impure->vlu_misc.vlu_invariant = evaluator = obj->createSimilarToMatcher(
+							*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length, false);
 					}
 				}
 				else
@@ -3825,7 +3824,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			else	// nod_similar
 			{
 				evaluator = obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
-					p2, l2, escape_str, escape_length);
+					p2, l2, escape_str, escape_length, false);
 			}
 
 			while (!(blob->blb_flags & BLB_eof))
@@ -4024,7 +4023,7 @@ static bool string_function(thread_db* tdbb,
 				else	// nod_similar
 				{
 					impure->vlu_misc.vlu_invariant = evaluator = obj->createSimilarToMatcher(
-						*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
+						*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length, false);
 				}
 			}
 			else
@@ -4042,7 +4041,8 @@ static bool string_function(thread_db* tdbb,
 			return obj->like(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length);
 
 		// nod_similar
-		return obj->similarTo(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length);
+		return obj->similarTo(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str,
+			escape_length, false);
 	}
 
 	// Handle MATCHES

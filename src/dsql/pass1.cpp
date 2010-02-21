@@ -9676,6 +9676,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 			switch (exprNode->type)
 			{
 				case ExprNode::TYPE_CONCATENATE:
+				case ExprNode::TYPE_SUBSTRING_SIMILAR:
 					for (dsql_nod*** i = exprNode->dsqlChildNodes.begin();
 						 i != exprNode->dsqlChildNodes.end(); ++i)
 					{

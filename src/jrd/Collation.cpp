@@ -758,31 +758,32 @@ public:
 	}
 
 	virtual bool like(MemoryPool& pool, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
 	{
-		return pLikeMatcher::evaluate(pool, this, s, sl, p, pl, escape, escape_length,
+		return pLikeMatcher::evaluate(pool, this, s, sl, p, pl, escape, escapeLen,
 			getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(),
 			getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
 	}
 
 	virtual PatternMatcher* createLikeMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escape_length)
+		const UCHAR* escape, SLONG escapeLen)
 	{
-		return pLikeMatcher::create(pool, this, p, pl, escape, escape_length,
+		return pLikeMatcher::create(pool, this, p, pl, escape, escapeLen,
 			getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(),
 			getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
 	}
 
 	virtual bool similarTo(MemoryPool& pool, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
 	{
-		return pSimilarToMatcher::evaluate(pool, this, s, sl, p, pl, escape, escape_length);
+		return pSimilarToMatcher::evaluate(pool, this, s, sl, p, pl, escape,
+			escapeLen, forSubstring);
 	}
 
-	virtual PatternMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escape_length)
+	virtual BaseSimilarToMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
+		const UCHAR* escape, SLONG escapeLen, bool forSubstring)
 	{
-		return pSimilarToMatcher::create(pool, this, p, pl, escape, escape_length);
+		return pSimilarToMatcher::create(pool, this, p, pl, escape, escapeLen, forSubstring);
 	}
 
 	virtual bool contains(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)

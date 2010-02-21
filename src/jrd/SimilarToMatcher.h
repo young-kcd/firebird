@@ -38,7 +38,7 @@ namespace Firebird
 {
 
 template <typename StrConverter, typename CharType>
-class SimilarToMatcher : public Jrd::PatternMatcher
+class SimilarToMatcher : public Jrd::BaseSimilarToMatcher
 {
 private:
 	typedef Jrd::CharSet CharSet;
@@ -74,7 +74,7 @@ private:
 	public:
 		Evaluator(MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType escapeChar, bool useEscape);
+			CharType escapeChar, bool useEscape, bool forSubstring);
 
 		bool getResult();
 		bool processNextChunk(const UCHAR* data, SLONG dataLen);
@@ -230,6 +230,7 @@ private:
 		TextType* textType;
 		CharType escapeChar;
 		bool useEscape;
+		bool forSubstring;
 		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 		const UCHAR* originalPatternStr;
 		SLONG originalPatternLen;
@@ -252,9 +253,9 @@ private:
 
 public:
 	SimilarToMatcher(MemoryPool& pool, TextType* ttype, const UCHAR* str,
-			SLONG str_len, CharType escape, bool use_escape)
-		: PatternMatcher(pool, ttype),
-		  evaluator(pool, ttype, str, str_len, escape, use_escape)
+			SLONG strLen, CharType escape, bool useEscape, bool forSubstring)
+		: BaseSimilarToMatcher(pool, ttype),
+		  evaluator(pool, ttype, str, strLen, escape, useEscape, forSubstring)
 	{
 	}
 
@@ -286,21 +287,23 @@ public:
 	}
 
 	static SimilarToMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escape_length)
+		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
 	{
-		StrConverter cvt_escape(pool, ttype, escape, escape_length);
+		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
 
 		return FB_NEW(pool) SimilarToMatcher(pool, ttype, str, length,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0,
+			forSubstring);
 	}
 
 	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
 	{
-		StrConverter cvt_escape(pool, ttype, escape, escape_length);
+		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
 
 		Evaluator evaluator(pool, ttype, p, pl,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0,
+			forSubstring);
 		evaluator.processNextChunk(s, sl);
 		return evaluator.getResult();
 	}
@@ -314,11 +317,12 @@ template <typename StrConverter, typename CharType>
 SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
 			MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType escapeChar, bool useEscape)
+			CharType escapeChar, bool useEscape, bool forSubstring)
 	: StaticAllocator(pool),
 	  textType(textType),
 	  escapeChar(escapeChar),
 	  useEscape(useEscape),
+	  forSubstring(forSubstring),
 	  buffer(pool),
 	  originalPatternStr(patternStr),
 	  originalPatternLen(patternLen),
@@ -359,6 +363,9 @@ SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
 
 	int flags;
 	parseExpr(&flags);
+
+	if (forSubstring && branchNum != 2)
+		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 	nodes.push(Node(opEnd));
 
@@ -487,6 +494,14 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseTerm(int* flagp)
 		   (c = *patternPos) != canonicalChar(TextType::CHAR_VERTICAL_BAR) &&
 		   c != canonicalChar(TextType::CHAR_CLOSE_PAREN))
 	{
+		if (forSubstring && branchNum != 0 && patternPos + 1 < patternEnd &&
+			*patternPos == escapeChar &&
+			patternPos[1] == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
+		{
+			++branchNum;
+			break;
+		}
+
 		parseFactor(&flags);
 
 		*flagp |= flags & FLAG_NOT_EMPTY;
@@ -888,10 +903,11 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 	}
 	else if (op == canonicalChar(TextType::CHAR_OPEN_PAREN))
 	{
-		++branchNum;
-
 		int flags;
 		parseExpr(&flags);
+
+		if (!forSubstring)	// This is used for the trace stuff.
+			++branchNum;
 
 		if (patternPos >= patternEnd || *patternPos++ != canonicalChar(TextType::CHAR_CLOSE_PAREN))
 			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
@@ -903,14 +919,40 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 		if (patternPos >= patternEnd)
 			status_exception::raise(Arg::Gds(isc_escape_invalid));
 
-		if (*patternPos != escapeChar &&
-			notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
+		if (forSubstring && *patternPos == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
 		{
-			status_exception::raise(Arg::Gds(isc_escape_invalid));
-		}
+			if (branchNum != 0)
+			{
+				--patternPos;
+				return;
+			}
 
-		nodes.push(Node(opExactly, patternPos++, 1));
-		*flagp |= FLAG_NOT_EMPTY;
+			++branchNum;
+			++patternPos;
+
+			int flags;
+			parseExpr(&flags);
+
+			if (patternPos + 1 >= patternEnd || *patternPos != escapeChar ||
+				patternPos[1] != canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
+			{
+				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
+			}
+
+			patternPos += 2;
+			*flagp |= flags & FLAG_NOT_EMPTY;
+		}
+		else
+		{
+			if (*patternPos != escapeChar &&
+				notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
+			{
+				status_exception::raise(Arg::Gds(isc_escape_invalid));
+			}
+
+			nodes.push(Node(opExactly, patternPos++, 1));
+			*flagp |= FLAG_NOT_EMPTY;
+		}
 	}
 	else
 	{

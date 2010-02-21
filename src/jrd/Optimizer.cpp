@@ -404,17 +404,26 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 		{
 			ExprNode* exprNode1 = reinterpret_cast<ExprNode*>(node1->nod_arg[0]);
 			ExprNode* exprNode2 = reinterpret_cast<ExprNode*>(node2->nod_arg[0]);
+			Array<jrd_nod**>& children1 = exprNode1->jrdChildNodes;
+			Array<jrd_nod**>& children2 = exprNode2->jrdChildNodes;
 
-			if (exprNode1->type == ExprNode::TYPE_CONCATENATE && exprNode2->type == ExprNode::TYPE_CONCATENATE)
+			if (exprNode1->type != exprNode2->type || children1.getCount() != children2.getCount())
+				return false;
+
+			switch (exprNode1->type)
 			{
-				ConcatenateNode* c1 = reinterpret_cast<ConcatenateNode*>(exprNode1);
-				ConcatenateNode* c2 = reinterpret_cast<ConcatenateNode*>(exprNode2);
-				if (OPT_expression_equal2(tdbb, opt, c1->arg1, c2->arg1, stream) &&
-					OPT_expression_equal2(tdbb, opt, c1->arg2, c2->arg2, stream))
-				{
+				case ExprNode::TYPE_CONCATENATE:
+				case ExprNode::TYPE_SUBSTRING_SIMILAR:
+					for (jrd_nod*** i = children1.begin(), ***j = children2.begin();
+						 i != children1.end(); ++i, ++j)
+					{
+						if (!OPT_expression_equal2(tdbb, opt, **i, **j, stream))
+							return false;
+					}
+
 					return true;
-				}
 			}
+
 			break;
 		}
 

@@ -94,6 +94,40 @@ public:
 };
 
 
+class SubstringSimilarNode : public TypedNode<ExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
+{
+public:
+	explicit SubstringSimilarNode(MemoryPool& pool, dsql_nod* aExpr = NULL,
+		dsql_nod* aPattern = NULL, dsql_nod* aEscape = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
+		dsql_nod* node, bool forceVarChar) const;
+	virtual void genBlr();
+	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+protected:
+	virtual ExprNode* internalDsqlPass();
+
+public:
+	dsql_nod* dsqlExpr;
+	dsql_nod* dsqlPattern;
+	dsql_nod* dsqlEscape;
+	jrd_nod* expr;
+	jrd_nod* pattern;
+	jrd_nod* escape;
+};
+
+
 } // namespace
 
 #endif // DSQL_EXPR_NODES_H

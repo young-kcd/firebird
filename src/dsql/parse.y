@@ -5503,15 +5503,18 @@ string_value_function	:  substring_function
 			{ $$ = make_node (nod_lowcase, 1, $3); }
 		;
 
-substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
+substring_function
+	: SUBSTRING '(' value FROM value string_length_opt ')'
+		{
 			// SQL spec requires numbering to start with 1,
 			// hence we decrement the first parameter to make it
 			// compatible with the engine's implementation
-			{
-				$$ = make_node (nod_substr, (int) e_substr_count, $3,
-					make_node (nod_subtract, 2, $5, MAKE_const_slong (1)), $6);
-			}
-		;
+			$$ = make_node (nod_substr, (int) e_substr_count, $3,
+				make_node (nod_subtract, 2, $5, MAKE_const_slong (1)), $6);
+		}
+	| SUBSTRING '(' value SIMILAR value ESCAPE value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) SubstringSimilarNode(getPool(), $3, $5, $7)); }
+	;
 
 string_length_opt	: FOR value
 			{ $$ = $2; }

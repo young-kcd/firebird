@@ -387,13 +387,11 @@
 #define blr_procedure3				(unsigned char) 192
 #define blr_exec_proc2				(unsigned char) 193
 #define blr_function2				(unsigned char) 194
-
 #define blr_window					(unsigned char) 195
 #define blr_partition_by			(unsigned char) 196
-
 #define blr_continue_loop			(unsigned char) 197
 #define blr_procedure4				(unsigned char) 198
-
 #define blr_agg_function			(unsigned char) 199
+#define blr_substring_similar		(unsigned char) 200
 
 #endif // JRD_BLR_H

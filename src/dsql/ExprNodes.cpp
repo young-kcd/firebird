@@ -622,4 +622,229 @@ ExprNode* OverNode::internalDsqlPass()
 }
 
 
+//--------------------
+
+
+static RegisterNode<SubstringSimilarNode> regSubstringSimilarNode(blr_substring_similar);
+
+SubstringSimilarNode::SubstringSimilarNode(MemoryPool& pool, dsql_nod* aExpr, dsql_nod* aPattern,
+			dsql_nod* aEscape)
+	: TypedNode<ExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>(pool),
+	  dsqlExpr(aExpr),
+	  dsqlPattern(aPattern),
+	  dsqlEscape(aEscape),
+	  expr(NULL),
+	  pattern(NULL),
+	  escape(NULL)
+{
+	addChildNode(dsqlExpr, expr);
+	addChildNode(dsqlPattern, pattern);
+	addChildNode(dsqlEscape, escape);
+}
+
+DmlNode* SubstringSimilarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	UCHAR /*blrOp*/)
+{
+	SubstringSimilarNode* node = FB_NEW(pool) SubstringSimilarNode(pool);
+	node->expr = PAR_parse_node(tdbb, csb, VALUE);
+	node->pattern = PAR_parse_node(tdbb, csb, VALUE);
+	node->escape = PAR_parse_node(tdbb, csb, VALUE);
+	return node;
+}
+
+void SubstringSimilarNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "SubstringSimilarNode";
+	ExprNode::print(text, nodes);
+}
+
+void SubstringSimilarNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "SUBSTRING";
+}
+
+bool SubstringSimilarNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
+	dsql_nod* node, bool forceVarChar) const
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlExpr, node, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, dsqlPattern, node, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, dsqlEscape, node, forceVarChar);
+}
+
+void SubstringSimilarNode::genBlr()
+{
+	stuff(dsqlScratch->getStatement(), blr_substring_similar);
+	GEN_expr(dsqlScratch, dsqlExpr);
+	GEN_expr(dsqlScratch, dsqlPattern);
+	GEN_expr(dsqlScratch, dsqlEscape);
+}
+
+void SubstringSimilarNode::make(dsc* desc, dsql_nod* nullReplacement)
+{
+	MAKE_desc(dsqlScratch, desc, dsqlExpr, nullReplacement);
+	desc->setNullable(true);
+}
+
+void SubstringSimilarNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	CMP_get_desc(tdbb, csb, expr, desc);
+
+	dsc tempDesc;
+	CMP_get_desc(tdbb, csb, pattern, &tempDesc);
+	CMP_get_desc(tdbb, csb, escape, &tempDesc);
+}
+
+ExprNode* SubstringSimilarNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	SubstringSimilarNode* node = FB_NEW(*tdbb->getDefaultPool()) SubstringSimilarNode(
+		*tdbb->getDefaultPool());
+	node->expr = copier.copy(tdbb, expr);
+	node->pattern = copier.copy(tdbb, pattern);
+	node->escape = copier.copy(tdbb, escape);
+	return node;
+}
+
+ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	expr = CMP_pass1(tdbb, csb, expr);
+
+	// We need to take care of invariantness expressions to be able to pre-compile the pattern.
+	node->nod_flags |= nod_invariant;
+	csb->csb_current_nodes.push(node);
+
+	pattern = CMP_pass1(tdbb, csb, pattern);
+	escape = CMP_pass1(tdbb, csb, escape);
+
+	csb->csb_current_nodes.pop();
+
+	// If there is no top-level RSE present and patterns are not constant, unmark node as invariant
+	// because it may be dependent on data or variables.
+	if ((node->nod_flags & nod_invariant) &&
+		(pattern->nod_type != nod_literal || escape->nod_type != nod_literal))
+	{
+		jrd_node_base **ctx_node, **end;
+		for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
+			 ctx_node < end; ctx_node++)
+		{
+			if ((*ctx_node)->nod_type == nod_rse)
+				break;
+		}
+
+		if (ctx_node >= end)
+			node->nod_flags &= ~nod_invariant;
+	}
+
+	return this;
+}
+
+ExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	if (node->nod_flags & nod_invariant)
+		csb->csb_invariants.push(node);
+
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	// Run all expression arguments.
+
+	const dsc* exprDesc = EVL_expr(tdbb, expr);
+	exprDesc = (request->req_flags & req_null) ? NULL : exprDesc;
+
+	const dsc* patternDesc = EVL_expr(tdbb, pattern);
+	patternDesc = (request->req_flags & req_null) ? NULL : patternDesc;
+
+	const dsc* escapeDesc = EVL_expr(tdbb, escape);
+	escapeDesc = (request->req_flags & req_null) ? NULL : escapeDesc;
+
+	// If any of them is NULL, return NULL.
+	if (!exprDesc || !patternDesc || !escapeDesc)
+		return NULL;
+
+	USHORT textType = exprDesc->getTextType();
+	Collation* collation = INTL_texttype_lookup(tdbb, textType);
+	CharSet* charSet = collation->getCharSet();
+
+	MoveBuffer exprBuffer;
+	UCHAR* exprStr;
+	int exprLen = MOV_make_string2(tdbb, exprDesc, textType, &exprStr, exprBuffer);
+
+	MoveBuffer patternBuffer;
+	UCHAR* patternStr;
+	int patternLen = MOV_make_string2(tdbb, patternDesc, textType, &patternStr, patternBuffer);
+
+	MoveBuffer escapeBuffer;
+	UCHAR* escapeStr;
+	int escapeLen = MOV_make_string2(tdbb, escapeDesc, textType, &escapeStr, escapeBuffer);
+
+	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
+
+	AutoPtr<BaseSimilarToMatcher> autoEvaluator;	// dealocate non-invariant evaluator
+	BaseSimilarToMatcher* evaluator;
+
+	if (node->nod_flags & nod_invariant)
+	{
+		if (!(impure->vlu_flags & VLU_computed))
+		{
+			delete impure->vlu_misc.vlu_invariant;
+
+			impure->vlu_misc.vlu_invariant = evaluator = collation->createSimilarToMatcher(
+				*tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen, true);
+
+			impure->vlu_flags |= VLU_computed;
+		}
+		else
+		{
+			evaluator = static_cast<BaseSimilarToMatcher*>(impure->vlu_misc.vlu_invariant);
+			evaluator->reset();
+		}
+	}
+	else
+	{
+		autoEvaluator = evaluator = collation->createSimilarToMatcher(*tdbb->getDefaultPool(),
+			patternStr, patternLen, escapeStr, escapeLen, true);
+	}
+
+	evaluator->process(exprStr, exprLen);
+
+	if (evaluator->result())
+	{
+		// Get the bounds of the matched substring.
+		unsigned start = 0;
+		unsigned length = 0;
+		evaluator->getBranchInfo(1, &start, &length);
+
+		dsc desc;
+		desc.makeText((USHORT) exprLen, textType);
+		EVL_make_value(tdbb, &desc, impure);
+
+		// And return it.
+		impure->vlu_desc.dsc_length = charSet->substring(exprLen, exprStr,
+			impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address, start, length);
+
+		return &impure->vlu_desc;
+	}
+	else
+		return NULL;	// No match. Return NULL.
+}
+
+ExprNode* SubstringSimilarNode::internalDsqlPass()
+{
+	SubstringSimilarNode* node = FB_NEW(getPool()) SubstringSimilarNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlExpr),
+		PASS1_node(dsqlScratch, dsqlPattern),
+		PASS1_node(dsqlScratch, dsqlEscape));
+	node->dsqlScratch = dsqlScratch;
+
+	return node;
+}
+
+
 }	// namespace Jrd

@@ -61,6 +61,18 @@ protected:
 	TextType* textType;
 };
 
+class BaseSimilarToMatcher : public PatternMatcher
+{
+public:
+	BaseSimilarToMatcher(MemoryPool& pool, TextType* ttype)
+		: PatternMatcher(pool, ttype)
+	{
+	}
+
+	virtual unsigned getNumBranches() = 0;
+	virtual void getBranchInfo(unsigned n, unsigned* start, unsigned* length) = 0;
+};
+
 class NullStrConverter
 {
 public:

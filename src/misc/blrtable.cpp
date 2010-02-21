@@ -224,6 +224,7 @@ static const VERB verbs[] =
 	PAIR(nod_window, blr_window, e_agg_length, 0, RELATION, OTHER),
 	PAIR(nod_continue_loop, blr_continue_loop, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_class_exprnode_jrd, blr_agg_function, 1, 0, VALUE, VALUE),
+	PAIR(nod_class_exprnode_jrd, blr_substring_similar, 1, 0, VALUE, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 

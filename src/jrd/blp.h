@@ -235,5 +235,6 @@ static const struct
 	{"continue_loop", byte_line},
 	{"procedure4", procedure4},
 	{"agg_function", function},
+	{"substring_similar", three},
 	{0, 0}
 };

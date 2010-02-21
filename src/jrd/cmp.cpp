@@ -3764,7 +3764,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			jrd_node_base **ctx_node, **end;
 			for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
-				ctx_node < end;	ctx_node++)
+				ctx_node < end; ctx_node++)
 			{
 				if ((*ctx_node)->nod_type == nod_rse)
 					break;
@@ -4396,7 +4396,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_class_stmtnode_jrd:
 		{
 			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
-			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(dmlNode->pass1(tdbb, csb));
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(dmlNode->pass1(tdbb, csb, node));
 		}
 		return node;
 
