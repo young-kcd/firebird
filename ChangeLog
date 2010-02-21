@@ -1,3 +1,25 @@
+2010-02-21 10:17  robocop
+
+	* firebird2/src/misc/blrtable.cpp (1.52):
+
+	Misc.
+
+2010-02-21 02:47  asfernandes
+
+	* firebird2/src/: dsql/ExprNodes.cpp (1.5), dsql/ExprNodes.h (1.2),
+	dsql/Nodes.h (1.20), dsql/StmtNodes.cpp (1.39), dsql/parse.y
+	(1.365), dsql/pass1.cpp (1.517), jrd/Collation.cpp (1.24),
+	jrd/Collation.h (1.7), jrd/Optimizer.cpp (1.139),
+	jrd/SimilarToMatcher.h (1.29), jrd/TextType.cpp (1.15),
+	jrd/TextType.h (1.7), jrd/blp.h (1.44), jrd/blr.h (1.53),
+	jrd/cmp.cpp (1.391), jrd/evl.cpp (1.334), jrd/intl_classes.h
+	(1.32), misc/blrtable.cpp (1.51),
+	utilities/ntrace/TraceConfiguration.cpp (1.18),
+	utilities/ntrace/TracePluginImpl.cpp (1.34):
+
+	Feature CORE-2006 - SUBSTRING with regular expression (SIMILAR TO)
+	capability
+
 2010-02-20 07:39  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.138):
