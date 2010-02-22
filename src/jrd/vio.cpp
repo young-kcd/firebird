@@ -3356,7 +3356,8 @@ static void check_rel_field_class(thread_db* tdbb,
 			}
 			catch (const Firebird::Exception&)
 			{
-				fb_utils::init_status(tdbb->tdbb_status_vector);				okField = false;
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+				okField = false;
 			}
 		}
 	}
