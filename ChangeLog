@@ -1,3 +1,22 @@
+2010-02-22 11:16  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.259.2.3):
+
+	Fixed bug CORE-2879 : Sweep could raise error : page 0 is of wrong
+	type (expected 6, found 1)
+
+2010-02-22 11:12  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.259.2.2):
+
+	Misc: wrong line ends
+
+2010-02-22 10:54  alexpeshkoff
+
+	* firebird2/configure.in (1.368.2.9):
+
+	freebsd port
+
 2010-02-19 11:10  asfernandes
 
 	* firebird2/src/jrd/intl.cpp (1.130.2.1):
