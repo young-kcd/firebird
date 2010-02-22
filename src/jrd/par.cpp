@@ -66,6 +66,7 @@
 #include "../jrd/BlrReader.h"
 #include "../jrd/Function.h"
 #include "../jrd/Attachment.h"
+#include "../dsql/StmtNodes.h"
 
 
 using namespace Jrd;
@@ -102,7 +103,6 @@ static jrd_nod* par_plan(thread_db*, CompilerScratch*);
 static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
 static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, bool);
 static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
-static jrd_nod* par_rse(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool, bool);
 #ifdef NOT_USED_OR_REPLACED
 static jrd_nod* par_stream(thread_db*, CompilerScratch*);
@@ -1128,7 +1128,7 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 }
 
 
-static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_node)
+static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
  *
@@ -1144,10 +1144,12 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
  **************************************/
 	SET_TDBB(tdbb);
 
+	ForNode* forNode = reinterpret_cast<ForNode*>(node->nod_arg[0]);
+
 	// Fake RecordSelExpr
 
-	for_node->nod_arg[e_for_re] = PAR_make_node(tdbb, 1 + rse_delta + 2);
-	RecordSelExpr* rse = (RecordSelExpr*) for_node->nod_arg[e_for_re];
+	forNode->rse = PAR_make_node(tdbb, 1 + rse_delta + 2);
+	RecordSelExpr* rse = (RecordSelExpr*) forNode->rse;
 	rse->nod_type = nod_rse;
 	rse->nod_count = 0;
 	rse->rse_count = 1;
@@ -1156,21 +1158,21 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
 
 	// Fake boolean
 
-	jrd_nod* node = rse->rse_boolean = PAR_make_node(tdbb, 2);
-	node->nod_type = nod_eql;
-	node->nod_flags = nod_comparison;
-	node->nod_arg[1] = PAR_parse_node(tdbb, csb, VALUE);
-	node->nod_arg[0] = PAR_make_node(tdbb, 1);
-	node = node->nod_arg[0];
-	node->nod_type = nod_dbkey;
-	node->nod_count = 0;
-	node->nod_arg[0] = relation->nod_arg[e_rel_stream];
+	jrd_nod* booleanNode = rse->rse_boolean = PAR_make_node(tdbb, 2);
+	booleanNode->nod_type = nod_eql;
+	booleanNode->nod_flags = nod_comparison;
+	booleanNode->nod_arg[1] = PAR_parse_node(tdbb, csb, VALUE);
+	booleanNode->nod_arg[0] = PAR_make_node(tdbb, 1);
+	booleanNode = booleanNode->nod_arg[0];
+	booleanNode->nod_type = nod_dbkey;
+	booleanNode->nod_count = 0;
+	booleanNode->nod_arg[0] = relation->nod_arg[e_rel_stream];
 
 	// Pick up statement
 
-	for_node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, STATEMENT);
+	forNode->statement = PAR_parse_node(tdbb, csb, STATEMENT);
 
-	return for_node;
+	return node;
 }
 
 
@@ -2378,11 +2380,11 @@ static jrd_nod* par_relation(thread_db* tdbb,
 }
 
 
-static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
+jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 {
 /**************************************
  *
- *	p a r _ r s e
+ *	P A R _ r s e
  *
  **************************************
  *
@@ -3065,23 +3067,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[1] = par_args(tdbb, csb, sub_type);
 		break;
 
-	case blr_for:
-		if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
-			node->nod_arg[e_for_stall] = PAR_parse_node(tdbb, csb, STATEMENT);
-
-		if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
-			csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
-			csb->csb_blr_reader.peekByte() == (UCHAR) blr_scrollable)
-		{
-			node->nod_arg[e_for_re] = PAR_parse_node(tdbb, csb, TYPE_RSE);
-		}
-		else
-		{
-			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
-		}
-		node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
 	case blr_dcl_cursor:
 		{
 			node->nod_arg[e_dcl_cursor_number] = (jrd_nod*) (IPTR) csb->csb_blr_reader.getWord();
@@ -3121,7 +3106,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	case blr_rse:
 	case blr_rs_stream:
-		node = par_rse(tdbb, csb, blr_operator);
+		node = PAR_rse(tdbb, csb, blr_operator);
 		break;
 
 	case blr_singular:

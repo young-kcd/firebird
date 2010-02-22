@@ -26,6 +26,7 @@
 #include "../dsql/node.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/recsrc/Cursor.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"
 #include "../jrd/evl_proto.h"
@@ -996,6 +997,209 @@ void ExitNode::genBlr()
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	stuff(statement, blr_leave);
 	stuff(statement, 0);
+}
+
+
+//--------------------
+
+
+static RegisterNode<ForNode> regForNode(blr_for);
+
+DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	ForNode* node = FB_NEW(pool) ForNode(pool);
+
+	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
+		node->stall = PAR_parse_node(tdbb, csb, STATEMENT);
+
+	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
+		csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
+		csb->csb_blr_reader.peekByte() == (UCHAR) blr_scrollable)
+	{
+		node->rse = PAR_parse_node(tdbb, csb, TYPE_RSE);
+	}
+	else
+		node->rse = PAR_rse(tdbb, csb, blrOp);
+
+	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+
+	return node;
+}
+
+StmtNode* ForNode::internalDsqlPass()
+{
+	ForNode* node = FB_NEW(getPool()) ForNode(getPool());
+	node->dsqlScratch = dsqlScratch;
+
+	node->dsqlCursor = dsqlCursor;
+	node->dsqlSelect = PASS1_statement(dsqlScratch, dsqlSelect);
+
+	if (dsqlCursor)
+	{
+		fb_assert(dsqlCursor->nod_flags > 0);
+		PASS1_cursor_name(dsqlScratch, (dsql_str*) dsqlCursor->nod_arg[Dsql::e_cur_name],
+			NOD_CURSOR_ALL, false);
+		dsqlCursor->nod_arg[Dsql::e_cur_rse] = node->dsqlSelect;
+		dsqlCursor->nod_arg[Dsql::e_cur_number] = (dsql_nod*) (IPTR) dsqlScratch->cursorNumber++;
+		dsqlScratch->cursors.push(dsqlCursor);
+	}
+
+	if (dsqlInto)
+	{
+		node->dsqlInto = MAKE_node(dsqlInto->nod_type, dsqlInto->nod_count);
+		const dsql_nod** ptr2 = const_cast<const dsql_nod**>(node->dsqlInto->nod_arg);
+		dsql_nod** ptr = dsqlInto->nod_arg;
+		for (const dsql_nod* const* const end = ptr + dsqlInto->nod_count; ptr < end; ptr++)
+		{
+			DEV_BLKCHK(*ptr, dsql_type_nod);
+			*ptr2++ = PASS1_node(dsqlScratch, *ptr);
+			DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
+		}
+	}
+
+	if (dsqlAction)
+	{
+		// CVC: Let's add the ability to BREAK the for_select same as the while,
+		// but only if the command is FOR SELECT, otherwise we have singular SELECT
+		dsqlScratch->loopLevel++;
+		node->dsqlLabel = PASS1_label2(dsqlScratch, NULL, dsqlLabel);
+		node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
+		dsqlScratch->loopLevel--;
+		dsqlScratch->labels.pop();
+	}
+
+	if (dsqlCursor)
+	{
+		dsqlScratch->cursorNumber--;
+		dsqlScratch->cursors.pop();
+	}
+
+	return node;
+}
+
+void ForNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "ForNode";
+	nodes.add(dsqlSelect);
+	nodes.add(dsqlInto);
+	nodes.add(dsqlCursor);
+	nodes.add(dsqlAction);
+	nodes.add(dsqlLabel);
+}
+
+void ForNode::genBlr()
+{
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	// CVC: Only put a label if this is not singular; otherwise,
+	// what loop is the user trying to abandon?
+	if (dsqlAction)
+	{
+		stuff(statement, blr_label);
+		stuff(statement, (int) (IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
+	}
+
+	// Generate FOR loop
+
+	stuff(statement, blr_for);
+
+	if (!dsqlAction)
+		stuff(statement, blr_singular);
+
+	GEN_rse(dsqlScratch, dsqlSelect);
+	stuff(statement, blr_begin);
+
+	// Build body of FOR loop
+
+	dsql_nod* list = dsqlSelect->nod_arg[Dsql::e_rse_items];
+
+	if (dsqlInto)
+	{
+		if (list->nod_count != dsqlInto->nod_count)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-313) <<
+					  Arg::Gds(isc_dsql_count_mismatch));
+		}
+
+		dsql_nod** ptr = list->nod_arg;
+		dsql_nod** ptr_to = dsqlInto->nod_arg;
+
+		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++, ptr_to++)
+		{
+			stuff(statement, blr_assignment);
+			GEN_expr(dsqlScratch, *ptr);
+			GEN_expr(dsqlScratch, *ptr_to);
+		}
+	}
+
+	if (dsqlAction)
+		GEN_statement(dsqlScratch, dsqlAction);
+
+	stuff(statement, blr_end);
+}
+
+StmtNode* ForNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	stall = CMP_pass1(tdbb, csb, stall);
+	rse = CMP_pass1(tdbb, csb, rse);
+	statement = CMP_pass1(tdbb, csb, statement);
+	return this;
+}
+
+StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	stall = CMP_pass2(tdbb, csb, stall, node);
+	rse = CMP_pass2(tdbb, csb, rse, node);
+	statement = CMP_pass2(tdbb, csb, statement, node);
+	return this;
+}
+
+jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	switch (request->req_operation)
+	{
+		case jrd_req::req_evaluate:
+			cursor->open(tdbb);
+			request->req_records_affected.clear();
+			// fall into
+
+		case jrd_req::req_return:
+			if (stall)
+				return stall;
+			// fall into
+
+		case jrd_req::req_sync:
+			if (cursor->fetchNext(tdbb))
+			{
+				request->req_operation = jrd_req::req_evaluate;
+				return statement;
+			}
+			request->req_operation = jrd_req::req_return;
+			// fall into
+
+		case jrd_req::req_unwind:
+		{
+			jrd_nod* parent = node->nod_parent;
+
+			if (parent && parent->nod_type == nod_label &&
+				request->req_label == (USHORT)(IPTR) parent->nod_arg[e_lbl_label] &&
+				(request->req_flags & req_continue_loop))
+			{
+				request->req_flags &= ~req_continue_loop;
+				request->req_operation = jrd_req::req_sync;
+				return node;
+			}
+
+			// fall into
+		}
+
+		default:
+			cursor->close(tdbb);
+			return node->nod_parent;
+	}
+
+	fb_assert(false);
+	return NULL;
 }
 
 

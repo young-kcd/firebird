@@ -2850,7 +2850,8 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		break;
 
 	case nod_for:
-		args = e_for_length;
+		///args = e_for_length;
+		fb_assert(false);
 		break;
 
 	case nod_argument:
@@ -5472,16 +5473,15 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	switch (node->nod_type)
 	{
+	case nod_class_stmtnode_jrd:
+		reinterpret_cast<StmtNode*>(node->nod_arg[0])->pass2Cursor(rse_node, cursor_ptr);
+		break;
+
 	case nod_rse:
 		return NULL;
 
 	case nod_union:
 		return pass2_union(tdbb, csb, node);
-
-	case nod_for:
-		rse_node = (RecordSelExpr*) node->nod_arg[e_for_re];
-		cursor_ptr = (Cursor**) &node->nod_arg[e_for_rsb];
-		break;
 
 	case nod_dcl_cursor:
 		rse_node = (RecordSelExpr*) node->nod_arg[e_dcl_cursor_rse];

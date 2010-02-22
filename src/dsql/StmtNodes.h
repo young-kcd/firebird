@@ -196,6 +196,57 @@ public:
 };
 
 
+class ForNode : public StmtNode
+{
+public:
+	explicit ForNode(MemoryPool& pool, DsqlCompilerScratch* aDsqlScratch = NULL)
+		: StmtNode(pool),
+		  dsqlSelect(NULL),
+		  dsqlInto(NULL),
+		  dsqlCursor(NULL),
+		  dsqlAction(NULL),
+		  dsqlLabel(NULL),
+		  stall(NULL),
+		  rse(NULL),
+		  statement(NULL),
+		  cursor(NULL)
+	{
+		dsqlScratch = aDsqlScratch;
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+protected:
+	virtual StmtNode* internalDsqlPass();
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void genBlr();
+	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+
+	virtual void pass2Cursor(RecordSelExpr*& rsePtr, Cursor**& cursorPtr)
+	{
+		rsePtr = (RecordSelExpr*) rse;
+		cursorPtr = &cursor;
+	}
+
+	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsql_nod* dsqlSelect;
+	dsql_nod* dsqlInto;
+	dsql_nod* dsqlCursor;
+	dsql_nod* dsqlAction;
+	dsql_nod* dsqlLabel;
+	jrd_nod* stall;
+	jrd_nod* rse;
+	jrd_nod* statement;
+	Cursor* cursor;
+};
+
+
 class PostEventNode : public StmtNode
 {
 public:

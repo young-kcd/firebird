@@ -432,13 +432,6 @@ enum node_args {
 	e_par_parameter,
 	e_par_count,
 
-	e_flp_select = 0,		// nod_for_select
-	e_flp_into,
-	e_flp_cursor,
-	e_flp_action,
-	e_flp_label,
-	e_flp_count,
-
 	e_cur_name = 0,			// nod_cursor
 	e_cur_scroll,
 	e_cur_rse,

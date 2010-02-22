@@ -71,7 +71,6 @@ static void gen_constant(DsqlCompilerScratch*, dsql_nod*, bool);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void gen_field(DsqlCompilerScratch*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
-static void gen_for_select(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_gen_id(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_join_rse(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_map(DsqlCompilerScratch*, dsql_map*);
@@ -79,7 +78,6 @@ static inline void gen_optional_expr(DsqlCompilerScratch*, const UCHAR code, dsq
 static void gen_parameter(DsqlCompilerScratch*, const dsql_par*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_relation(DsqlCompilerScratch*, dsql_ctx*);
-static void gen_rse(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_select(DsqlCompilerScratch*, dsql_nod*);
 static void gen_simple_case(DsqlCompilerScratch*, const dsql_nod*);
@@ -342,21 +340,21 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		return;
 
 	case nod_rse:
-		gen_rse(dsqlScratch, node);
+		GEN_rse(dsqlScratch, node);
 		return;
 
 	case nod_derived_table:
-		gen_rse(dsqlScratch, node->nod_arg[e_derived_table_rse]);
+		GEN_rse(dsqlScratch, node->nod_arg[e_derived_table_rse]);
 		return;
 
 	case nod_exists:
 		stuff(dsqlScratch->getStatement(), blr_any);
-		gen_rse(dsqlScratch, node->nod_arg[0]);
+		GEN_rse(dsqlScratch, node->nod_arg[0]);
 		return;
 
 	case nod_singular:
 		stuff(dsqlScratch->getStatement(), blr_unique);
-		gen_rse(dsqlScratch, node->nod_arg[0]);
+		GEN_rse(dsqlScratch, node->nod_arg[0]);
 		return;
 
 	case nod_and:
@@ -1033,10 +1031,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		}
 		return;
 
-	case nod_for_select:
-		gen_for_select(dsqlScratch, node);
-		return;
-
 	case nod_set_generator:
 	case nod_set_generator2:
 		stuff(dsqlScratch->getStatement(), blr_set_generator);
@@ -1153,7 +1147,7 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		{
 			stuff(dsqlScratch->getStatement(), blr_scrollable);
 		}
-		gen_rse(dsqlScratch, node->nod_arg[e_cur_rse]);
+		GEN_rse(dsqlScratch, node->nod_arg[e_cur_rse]);
 		temp = node->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
 		stuff_word(dsqlScratch->getStatement(), temp->nod_count);
 		ptr = temp->nod_arg;
@@ -1257,7 +1251,7 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 		stuff_context(dsqlScratch, context);
 	}
 
-	gen_rse(dsqlScratch, node->nod_arg[e_agg_rse]);
+	GEN_rse(dsqlScratch, node->nod_arg[e_agg_rse]);
 
 	// Handle PARTITION BY and GROUP BY clause
 
@@ -1880,68 +1874,6 @@ static void gen_field( DsqlCompilerScratch* dsqlScratch, const dsql_ctx* context
 
 /**
 
- 	gen_for_select
-
-    @brief	Generate BLR for a SELECT dsqlScratch.
-
-
-    @param dsqlScratch
-    @param for_select
-
- **/
-static void gen_for_select( DsqlCompilerScratch* dsqlScratch, const dsql_nod* for_select)
-{
-	dsql_nod* rse = for_select->nod_arg[e_flp_select];
-
-	// CVC: Only put a label if this is not singular; otherwise,
-	// what loop is the user trying to abandon?
-	if (for_select->nod_arg[e_flp_action])
-	{
-		stuff(dsqlScratch->getStatement(), blr_label);
-		stuff(dsqlScratch->getStatement(), (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
-	}
-
-	// Generate FOR loop
-
-	stuff(dsqlScratch->getStatement(), blr_for);
-
-	if (!for_select->nod_arg[e_flp_action])
-	{
-		stuff(dsqlScratch->getStatement(), blr_singular);
-	}
-	gen_rse(dsqlScratch, rse);
-	stuff(dsqlScratch->getStatement(), blr_begin);
-
-	// Build body of FOR loop
-
-	dsql_nod* list = rse->nod_arg[e_rse_items];
-	dsql_nod* list_to = for_select->nod_arg[e_flp_into];
-
-	if (list_to)
-	{
-		if (list->nod_count != list_to->nod_count)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-313) <<
-					  Arg::Gds(isc_dsql_count_mismatch));
-		}
-		dsql_nod** ptr = list->nod_arg;
-		dsql_nod** ptr_to = list_to->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++, ptr_to++)
-		{
-			stuff(dsqlScratch->getStatement(), blr_assignment);
-			GEN_expr(dsqlScratch, *ptr);
-			GEN_expr(dsqlScratch, *ptr_to);
-		}
-	}
-
-	if (for_select->nod_arg[e_flp_action])
-		GEN_statement(dsqlScratch, for_select->nod_arg[e_flp_action]);
-	stuff(dsqlScratch->getStatement(), blr_end);
-}
-
-
-/**
-
  gen_gen_id
 
     @brief      Generate BLR for gen_id
@@ -2301,7 +2233,7 @@ void GEN_return(DsqlCompilerScratch* dsqlScratch, const Array<dsql_nod*>& variab
 
 /**
 
- 	gen_rse
+ 	GEN_rse
 
     @brief	Generate a record selection expression.
 
@@ -2310,7 +2242,7 @@ void GEN_return(DsqlCompilerScratch* dsqlScratch, const Array<dsql_nod*>& variab
     @param rse
 
  **/
-static void gen_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rse)
+void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rse)
 {
 	if (rse->nod_flags & NOD_SELECT_EXPR_SINGLETON)
 	{
@@ -2541,7 +2473,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	stuff(statement, blr_for);
 	stuff(statement, blr_stall);
-	gen_rse(dsqlScratch, rse);
+	GEN_rse(dsqlScratch, rse);
 
 	stuff(statement, blr_send);
 	stuff(statement, message->msg_number);
@@ -3035,7 +2967,7 @@ static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_n
 	for (const dsql_nod* const* const end = ptr + streams->nod_count; ptr < end; ptr++)
 	{
 		dsql_nod* sub_rse = *ptr;
-		gen_rse(dsqlScratch, sub_rse);
+		GEN_rse(dsqlScratch, sub_rse);
 		items = sub_rse->nod_arg[e_rse_items];
 		stuff(dsqlScratch->getStatement(), blr_map);
 		stuff_word(dsqlScratch->getStatement(), items->nod_count);

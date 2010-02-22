@@ -2303,9 +2303,18 @@ raise_statement
 		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool()); }
 	;
 
-for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
-			{ $$ = make_node (nod_for_select, (int) e_flp_count, $3, make_list ($5), $6, $8, $1); }
-		;
+for_select
+	: label_opt FOR select INTO variable_list cursor_def DO proc_block
+		{
+			ForNode* node = FB_NEW(getPool()) ForNode(getPool());
+			node->dsqlLabel = $1;
+			node->dsqlSelect = $3;
+			node->dsqlInto = make_list($5);
+			node->dsqlCursor = $6;
+			node->dsqlAction = $8;
+			$$ = makeClassNode(node);
+		}
+	;
 
 exec_sql
 	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
@@ -2460,10 +2469,15 @@ event_argument_opt
 		{ $$ = NULL; }
 	;
 
-singleton_select	: select INTO variable_list
-			{ $$ = make_node (nod_for_select, (int) e_flp_count, $1,
-					  make_list ($3), NULL, NULL, NULL); }
-		;
+singleton_select
+	: select INTO variable_list
+		{
+			ForNode* node = FB_NEW(getPool()) ForNode(getPool());
+			node->dsqlSelect = $1;
+			node->dsqlInto = make_list($3);
+			$$ = makeClassNode(node);
+		}
+	;
 
 variable	: ':' symbol_variable_name
 			{ $$ = make_node (nod_var_name, (int) e_vrn_count, $2); }

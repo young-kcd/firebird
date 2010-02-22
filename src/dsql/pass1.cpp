@@ -204,7 +204,6 @@ static dsql_nod* pass1_coalesce(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_collate(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
 static dsql_nod* pass1_constant(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* pass1_cursor_context(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*);
-static dsql_nod* pass1_cursor_name(DsqlCompilerScratch*, const dsql_str*, USHORT, bool);
 static dsql_nod* pass1_cursor_reference(DsqlCompilerScratch*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_dbkey(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_delete(DsqlCompilerScratch*, dsql_nod*);
@@ -217,7 +216,6 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*)
 static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod*& expr);
 static dsql_nod* pass1_insert(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_join(DsqlCompilerScratch*, dsql_nod*);
-static dsql_nod* pass1_label(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch*, const dsql_str*, dsql_nod*, bool);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
 static dsql_nod* pass1_merge(DsqlCompilerScratch*, dsql_nod*);
@@ -2008,59 +2006,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 		break;
 
-	case nod_for_select:
-		{
-			node = MAKE_node(input->nod_type, input->nod_count);
-			node->nod_flags = input->nod_flags;
-			dsql_nod* cursor = node->nod_arg[e_flp_cursor] = input->nod_arg[e_flp_cursor];
-
-			node->nod_arg[e_flp_select] = PASS1_statement(dsqlScratch, input->nod_arg[e_flp_select]);
-
-			if (cursor)
-			{
-				fb_assert(cursor->nod_flags > 0);
-				pass1_cursor_name(dsqlScratch, (dsql_str*) cursor->nod_arg[e_cur_name],
-								  NOD_CURSOR_ALL, false);
-				cursor->nod_arg[e_cur_rse] = node->nod_arg[e_flp_select];
-				cursor->nod_arg[e_cur_number] = (dsql_nod*) (IPTR) dsqlScratch->cursorNumber++;
-				dsqlScratch->cursors.push(cursor);
-			}
-
-			dsql_nod* into_in = input->nod_arg[e_flp_into];
-
-			if (into_in)
-			{
-				dsql_nod* into_out = MAKE_node(into_in->nod_type, into_in->nod_count);
-				node->nod_arg[e_flp_into] = into_out;
-				const dsql_nod** ptr2 = const_cast<const dsql_nod**>(into_out->nod_arg);
-				dsql_nod** ptr = into_in->nod_arg;
-				for (const dsql_nod* const* const end = ptr + into_in->nod_count; ptr < end; ptr++)
-				{
-					DEV_BLKCHK(*ptr, dsql_type_nod);
-					*ptr2++ = PASS1_node(dsqlScratch, *ptr);
-					DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
-				}
-			}
-
-			if (input->nod_arg[e_flp_action])
-			{
-				// CVC: Let's add the ability to BREAK the for_select same as the while,
-				// but only if the command is FOR SELECT, otherwise we have singular SELECT
-				dsqlScratch->loopLevel++;
-				node->nod_arg[e_flp_label] = pass1_label(dsqlScratch, input);
-				node->nod_arg[e_flp_action] = PASS1_statement(dsqlScratch, input->nod_arg[e_flp_action]);
-				dsqlScratch->loopLevel--;
-				dsqlScratch->labels.pop();
-			}
-
-			if (cursor)
-			{
-				dsqlScratch->cursorNumber--;
-				dsqlScratch->cursors.pop();
-			}
-		}
-		break;
-
 	case nod_get_segment:
 	case nod_put_segment:
 		pass1_blob(dsqlScratch, input);
@@ -2125,7 +2070,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		if (input->nod_arg[e_exec_into_block])
 		{
 			dsqlScratch->loopLevel++;
-			node->nod_arg[e_exec_into_label] = pass1_label(dsqlScratch, input);
+			node->nod_arg[e_exec_into_label] = PASS1_label(dsqlScratch, input);
 			node->nod_arg[e_exec_into_block] =
 				PASS1_statement(dsqlScratch, input->nod_arg[e_exec_into_block]);
 			dsqlScratch->loopLevel--;
@@ -2188,7 +2133,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		if (input->nod_arg[e_exec_stmt_proc_block])
 		{
 			dsqlScratch->loopLevel++;
-			node->nod_arg[e_exec_stmt_label] = pass1_label(dsqlScratch, input);
+			node->nod_arg[e_exec_stmt_label] = PASS1_label(dsqlScratch, input);
 			node->nod_arg[e_exec_stmt_proc_block] =
 				PASS1_statement(dsqlScratch, input->nod_arg[e_exec_stmt_proc_block]);
 			dsqlScratch->loopLevel--;
@@ -2274,7 +2219,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("BREAK/LEAVE"));
 		}
-		input->nod_arg[e_breakleave_label] = pass1_label(dsqlScratch, input);
+		input->nod_arg[e_breakleave_label] = PASS1_label(dsqlScratch, input);
 		return input;
 
 	case nod_continue:
@@ -2285,7 +2230,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("CONTINUE"));
 		}
-		input->nod_arg[e_continue_label] = pass1_label(dsqlScratch, input);
+		input->nod_arg[e_continue_label] = PASS1_label(dsqlScratch, input);
 		return input;
 
 	case nod_select:
@@ -2328,7 +2273,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			// CVC: loop numbers should be incremented before analyzing the body
 			// to preserve nesting <==> increasing level number
 			dsqlScratch->loopLevel++;
-			node->nod_arg[e_while_label] = pass1_label(dsqlScratch, input);
+			node->nod_arg[e_while_label] = PASS1_label(dsqlScratch, input);
 			node->nod_arg[e_while_action] = PASS1_statement(dsqlScratch, input->nod_arg[e_while_action]);
 			dsqlScratch->loopLevel--;
 			dsqlScratch->labels.pop();
@@ -2368,7 +2313,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		{
 			fb_assert(input->nod_flags > 0);
 			// make sure the cursor doesn't exist
-			pass1_cursor_name(dsqlScratch, (dsql_str*) input->nod_arg[e_cur_name], NOD_CURSOR_ALL, false);
+			PASS1_cursor_name(dsqlScratch, (dsql_str*) input->nod_arg[e_cur_name], NOD_CURSOR_ALL, false);
 			// temporarily hide unnecessary contexts and process our RSE
 			DsqlContextStack* const base_context = dsqlScratch->context;
 			DsqlContextStack temp;
@@ -2411,7 +2356,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 		// resolve the cursor
 		input->nod_arg[e_cur_stmt_id] =
-			pass1_cursor_name(dsqlScratch, (dsql_str*) input->nod_arg[e_cur_stmt_id],
+			PASS1_cursor_name(dsqlScratch, (dsql_str*) input->nod_arg[e_cur_stmt_id],
 							  NOD_CURSOR_EXPLICIT, true);
 		// process a scroll node, if exists
 		if (input->nod_arg[e_cur_stmt_scroll]) {
@@ -3732,7 +3677,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	DEV_BLKCHK(string, dsql_type_str);
 
 	// this function must throw an error if no cursor was found
-	const dsql_nod* node = pass1_cursor_name(dsqlScratch, string, NOD_CURSOR_ALL, true);
+	const dsql_nod* node = PASS1_cursor_name(dsqlScratch, string, NOD_CURSOR_ALL, true);
 	fb_assert(node);
 
 	const dsql_nod* rse = node->nod_arg[e_cur_rse];
@@ -3796,7 +3741,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 
 /**
 
- 	pass1_cursor_name
+ 	PASS1_cursor_name
 
     @brief	Find a cursor.
 
@@ -3807,7 +3752,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	@param existence_flag
 
  **/
-static dsql_nod* pass1_cursor_name(DsqlCompilerScratch* dsqlScratch, const dsql_str* string,
+dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const dsql_str* string,
 	USHORT mask, bool existence_flag)
 {
 	DEV_BLKCHK(string, dsql_type_str);
@@ -5969,18 +5914,8 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 }
 
 
-/**
-
- 	pass1_label
-
-    @brief	Process loop interruption
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
+// Process loop interruption.
+dsql_nod* PASS1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -5997,9 +5932,6 @@ static dsql_nod* pass1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_continue:
 		label = input->nod_arg[e_continue_label];
 		break;
-	case nod_for_select:
-		label = input->nod_arg[e_flp_label];
-		break;
 	case nod_exec_into:
 		label = input->nod_arg[e_exec_into_label];
 		break;
@@ -6012,6 +5944,17 @@ static dsql_nod* pass1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	default:
 		fb_assert(false);
 	}
+
+	return PASS1_label2(dsqlScratch, input, label);
+}
+
+
+// Process loop interruption.
+dsql_nod* PASS1_label2(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* label)
+{
+	DEV_BLKCHK(dsqlScratch, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+	DEV_BLKCHK(label, dsql_type_nod);
 
 	// look for a label, if specified
 
@@ -6041,7 +5984,7 @@ static dsql_nod* pass1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	}
 
 	USHORT number = 0;
-	if (input->nod_type == nod_breakleave || input->nod_type == nod_continue)
+	if (input && (input->nod_type == nod_breakleave || input->nod_type == nod_continue))
 	{
 		if (position > 0)
 		{
@@ -6087,6 +6030,7 @@ static dsql_nod* pass1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		label = MAKE_node(nod_label, e_label_count);
 		// this label is unnamed, i.e. its nod_arg[e_label_name] is NULL
 	}
+
 	label->nod_arg[e_label_number] = (dsql_nod*) (IPTR) number;
 
 	return label;
@@ -6354,16 +6298,18 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	select->nod_arg[e_select_expr] = select_expr;
 
 	// build a FOR SELECT node
-	dsql_nod* for_select = MAKE_node(nod_for_select, e_flp_count);
-	for_select->nod_arg[e_flp_select] = select;
-	for_select->nod_arg[e_flp_action] = MAKE_node(nod_list, 0);
+	ForNode* forNode = FB_NEW(dsqlScratch->getStatement()->getPool()) ForNode(
+		dsqlScratch->getStatement()->getPool(), dsqlScratch);
+	forNode->dsqlSelect = select;
+	forNode->dsqlAction = MAKE_node(nod_list, 0);
+
+	dsql_nod* for_select = MAKE_node(nod_class_stmtnode, 1);
+	for_select->nod_arg[0]->nod_arg[0] = (dsql_nod*) forNode;
 	for_select = PASS1_statement(dsqlScratch, for_select);
 
 	// get the already processed relations
-	source = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->
-		nod_arg[0]->nod_arg[e_join_left_rel];
-	target = for_select->nod_arg[e_flp_select]->nod_arg[e_select_expr]->
-		nod_arg[0]->nod_arg[e_join_rght_rel];
+	source = forNode->dsqlSelect->nod_arg[e_select_expr]->nod_arg[0]->nod_arg[e_join_left_rel];
+	target = forNode->dsqlSelect->nod_arg[e_select_expr]->nod_arg[0]->nod_arg[e_join_rght_rel];
 
 	dsql_nod* modify = NULL;
 
@@ -6484,8 +6430,8 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	}
 
 	// insert the IF inside the FOR SELECT
-	for_select->nod_arg[e_flp_action] = MAKE_node(nod_class_stmtnode, 1);
-	for_select->nod_arg[e_flp_action]->nod_arg[0] = (dsql_nod*) action;
+	forNode->dsqlAction = MAKE_node(nod_class_stmtnode, 1);
+	forNode->dsqlAction->nod_arg[0] = (dsql_nod*) action;
 
 	// describe it as an INSERT
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
@@ -10579,10 +10525,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_continue:
 		verb = "continue";
-		break;
-
-	case nod_for_select:
-		verb = "for_select";
 		break;
 
 	case nod_while:

@@ -541,8 +541,7 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		}
 
 		default:
-			if (assertOnOthers)
-				fb_assert(false);
+			fb_assert(!assertOnOthers);
 			return returnOnOthers;
 	}
 

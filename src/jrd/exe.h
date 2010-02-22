@@ -211,12 +211,6 @@ struct impure_agg_sort
 
 // Various field positions
 
-const int e_for_re			= 0;
-const int e_for_statement	= 1;
-const int e_for_stall		= 2;
-const int e_for_rsb			= 3;
-const int e_for_length		= 4;
-
 const int e_arg_flag		= 0;
 const int e_arg_indicator	= 1;
 const int e_arg_message		= 2;

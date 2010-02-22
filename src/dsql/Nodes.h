@@ -33,9 +33,11 @@ namespace Jrd {
 
 class AggregateSort;
 class CompilerScratch;
+class Cursor;
 class dsql_nod;
 class ExprNode;
 class jrd_nod;
+class RecordSelExpr;
 class SlidingWindow;
 class TypeClause;
 
@@ -497,6 +499,10 @@ public:
 	}
 
 public:
+	virtual void pass2Cursor(RecordSelExpr*& rsePtr, Cursor**& cursorPtr)
+	{
+	}
+
 	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
 };
 

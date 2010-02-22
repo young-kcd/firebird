@@ -2133,51 +2133,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			request->req_operation = jrd_req::req_return;
 			break;
 
-		case nod_for:
-			{
-				Cursor* const rsb = (Cursor*) node->nod_arg[e_for_rsb];
-
-				switch (request->req_operation)
-				{
-				case jrd_req::req_evaluate:
-					rsb->open(tdbb);
-					request->req_records_affected.clear();
-				case jrd_req::req_return:
-					if (node->nod_arg[e_for_stall])
-					{
-						node = node->nod_arg[e_for_stall];
-						break;
-					}
-				case jrd_req::req_sync:
-					if (rsb->fetchNext(tdbb))
-					{
-						node = node->nod_arg[e_for_statement];
-						request->req_operation = jrd_req::req_evaluate;
-						break;
-					}
-					request->req_operation = jrd_req::req_return;
-
-				case jrd_req::req_unwind:
-				{
-					jrd_nod* parent = node->nod_parent;
-					if (parent && parent->nod_type == nod_label &&
-						(request->req_label == (USHORT)(IPTR) parent->nod_arg[e_lbl_label]) &&
-						(request->req_flags & req_continue_loop))
-					{
-						request->req_flags &= ~req_continue_loop;
-						request->req_operation = jrd_req::req_sync;
-						break;
-					}
-					// fall into
-				}
-
-				default:
-					rsb->close(tdbb);
-					node = node->nod_parent;
-				}
-			}
-			break;
-
 		case nod_dcl_cursor:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{

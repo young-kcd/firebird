@@ -60,6 +60,7 @@ size_t			PAR_name(Jrd::CompilerScratch* csb, Firebird::string& name);
 Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length,
 	bool internal_flag, USHORT = 0, const UCHAR* = NULL);
 
+Jrd::jrd_nod*	PAR_rse(Jrd::thread_db*, Jrd::CompilerScratch*, SSHORT);
 SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
 
 typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool,
