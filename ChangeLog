@@ -1,3 +1,16 @@
+2010-02-22 12:09  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.289):
+
+	Fixed bug CORE-2879 : Sweep could raise error : page 0 is of wrong
+	type (expected 6, found 1)
+
+2010-02-22 10:40  alexpeshkoff
+
+	* firebird2/configure.in (1.383):
+
+	freebsd port
+
 2010-02-21 10:17  robocop
 
 	* firebird2/src/misc/blrtable.cpp (1.52):
