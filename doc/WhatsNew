@@ -2,6 +2,16 @@
   * v2.0.6
   **************************
 
+    * Bugfix CORE-2871
+        Outer ORDER BY clause has no effect
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2856
+        Non-NULL key in unique index could be not found when key is removed
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2846
         Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
         fails after the specified timeout (because of connections being still active)
@@ -197,6 +207,16 @@
         "instsvc remove" returns 1 when succefully executed
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1089
+        Wrong ordering with views, distinct, left join and order by
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-195
+        Bugcheck 291 (cannnot find back record version)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-2769
         Make XNET_CONNECT_TIMEOUT in xnet.h user configurable
