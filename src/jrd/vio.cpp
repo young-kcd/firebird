@@ -2897,8 +2897,8 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 
 		for (size_t i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
 		{
-			if ((relation = (*vector)[i]) && relation->getPages(tdbb)->rel_pages &&
-				!(relation->rel_flags & (REL_deleted | REL_deleting)))
+			if ((relation = (*vector)[i]) && !(relation->rel_flags & (REL_deleted | REL_deleting)) &&
+				 relation->getPages(tdbb)->rel_pages)
 			{
 				rpb.rpb_relation = relation;
 				rpb.rpb_number.setValue(BOF_NUMBER);
