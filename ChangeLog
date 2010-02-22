@@ -1,3 +1,10 @@
+2010-02-22 11:41  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.199.2.9):
+
+	Backport fix for bug CORE-2879 : Sweep could raise error : page 0
+	is of wrong type (expected 6, found 1)
+
 2010-02-19 14:04  roman-simakov
 
 	* firebird2/src/jrd/: nbak.cpp (1.72.2.7), nbak.h (1.29.4.2):
