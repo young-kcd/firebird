@@ -110,7 +110,7 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
-  amd64-*-freebsd* | x86_64*-*-k*bsd*-gnu)
+  amd64-*-freebsd* | x86_64*-*-freebsd* | x86_64*-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=freebsd_amd64
     case "$target" in
         x86_64*-*-k*bsd-gnu)      # Debian/kFreeBSD
