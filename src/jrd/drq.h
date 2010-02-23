@@ -181,7 +181,7 @@ const int drq_e_gens			= 127;	// erase generators
 const int drq_s_f_class			= 128;	// set the security class name for a field
 const int drq_s_u_class			= 129;	// find a unique security class name for a field
 const int drq_l_difference		= 130;	// Look up a backup difference file
-const int drq_s_difference		= 131;	// Store backup difference file
+const int drq_s_difference		= 131;	// Store backup difference file, DYN_define_difference
 const int drq_d_difference		= 132;	// Delete backup difference file
 const int drq_l_fld_src3		= 133;	// lookup a field source
 const int drq_e_fld_prvs		= 134;	// erase user privileges on relation field
@@ -218,6 +218,7 @@ const int drq_g_nxt_xcp_id		= 164;	// generate next exception id
 const int drq_l_xcp_name		= 165;	// lookup exception name
 const int drq_l_gen_name		= 166;	// lookup generator name
 const int drq_e_grant3			= 167;	// revoke all on all
-const int drq_MAX				= 168;
+const int drq_s2_difference		= 168;	// Store backup difference file, DYN_mod's change_backup_mode
+const int drq_MAX				= 169;
 
 #endif // JRD_DRQ_H
