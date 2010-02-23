@@ -3909,18 +3909,19 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			// the nodes in the subtree are involved in a validation
 			// clause only, the subtree is a validate_subtree in our notation.
 
+			const SLONG viewId = (tail->csb_view) ? tail->csb_view->rel_id :
+										(view ? view->rel_id : 0);
+
 			if (tail->csb_flags & csb_modify)
 			{
 				if (!csb->csb_validate_expr)
 				{
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
-									(tail->csb_view) ? tail->csb_view->rel_id :
-										(view ? view->rel_id : 0),
+									viewId,
 									SCL_sql_update, SCL_object_table,
 									relation->rel_name);
 					CMP_post_access(tdbb, csb, field->fld_security_name,
-									(tail->csb_view) ? tail->csb_view->rel_id :
-										(view ? view->rel_id : 0),
+									viewId,
 									SCL_sql_update, SCL_object_column,
 									field->fld_name, relation->rel_name);
 				}
@@ -3928,33 +3929,28 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			else if (tail->csb_flags & csb_erase)
 			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id :
-									(view ? view->rel_id : 0),
+								viewId,
 								SCL_sql_delete, SCL_object_table,
 								relation->rel_name);
 			}
 			else if (tail->csb_flags & csb_store)
 			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id :
-									(view ? view->rel_id : 0),
+								viewId,
 								SCL_sql_insert, SCL_object_table,
 								relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id :
-									(view ? view->rel_id : 0),
+								viewId,
 								SCL_sql_insert, SCL_object_column,
 								field->fld_name, relation->rel_name);
 			}
 			else
 			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id :
-									(view ? view->rel_id : 0),
+								viewId,
 								SCL_read, SCL_object_table, relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id :
-									(view ? view->rel_id : 0),
+								viewId,
 								SCL_read, SCL_object_column, field->fld_name, relation->rel_name);
 			}
 
