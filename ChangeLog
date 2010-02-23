@@ -1,3 +1,35 @@
+2010-02-23 05:32  robocop
+
+	* firebird2/src/jrd/cmp.cpp (1.393):
+
+	Reduce copy/paste.
+
+2010-02-23 05:31  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.168):
+
+	Fix call to CMP_post_access (security validations), although the
+	call comes from an unused function.
+
+2010-02-23 05:30  robocop
+
+	* firebird2/src/dsql/Nodes.h (1.22):
+
+	Misc.
+
+2010-02-22 17:00  asfernandes
+
+	* firebird2/src/: dsql/Nodes.h (1.21), dsql/StmtNodes.cpp (1.40),
+	dsql/StmtNodes.h (1.18), dsql/Visitors.h (1.5), dsql/gen.cpp
+	(1.226), dsql/gen_proto.h (1.29), dsql/node.h (1.141), dsql/parse.y
+	(1.366), dsql/pass1.cpp (1.518), dsql/pass1_proto.h (1.25),
+	jrd/cmp.cpp (1.392), jrd/exe.cpp (1.333), jrd/exe.h (1.158),
+	jrd/par.cpp (1.282), jrd/par_proto.h (1.30), misc/blrtable.cpp
+	(1.53):
+
+	Refactor FOR statement and SELECT...INTO. Indirectly (blr_for), JRD
+	side of standard SELECT is affected as well.
+
 2010-02-22 12:09  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.289):
