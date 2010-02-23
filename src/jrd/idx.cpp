@@ -156,7 +156,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 				CMP_post_access(tdbb, csb,
 								referenced_field->fld_security_name, 0,
 								SCL_sql_references, SCL_object_column,
-								referenced_field->fld_name);
+								referenced_field->fld_name, referenced_relation->rel_name);
 			}
 
 			CCH_RELEASE(tdbb, &referenced_window);
