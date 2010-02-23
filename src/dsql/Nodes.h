@@ -499,7 +499,7 @@ public:
 	}
 
 public:
-	virtual void pass2Cursor(RecordSelExpr*& rsePtr, Cursor**& cursorPtr)
+	virtual void pass2Cursor(RecordSelExpr*& /*rsePtr*/, Cursor**& /*cursorPtr*/)
 	{
 	}
 
