@@ -1,3 +1,10 @@
+2010-02-23 08:08  robocop
+
+	* firebird2/src/jrd/: drq.h (1.29.2.1), dyn_mod.epp (1.117.2.4):
+
+	Backport CORE-2750: Physical backup cannot restart operations after
+	the explicit difference file has been dropped.
+
 2010-02-22 11:16  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.259.2.3):
