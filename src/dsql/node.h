@@ -110,7 +110,6 @@ enum nod_t
 	nod_assign,
 	nod_exec_procedure,
 	nod_while,
-	nod_for_select,
 	nod_erase_current,
 	nod_modify_current,
 	nod_block,
