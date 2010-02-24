@@ -6304,8 +6304,9 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	forNode->dsqlAction = MAKE_node(nod_list, 0);
 
 	dsql_nod* for_select = MAKE_node(nod_class_stmtnode, 1);
-	for_select->nod_arg[0]->nod_arg[0] = (dsql_nod*) forNode;
+	for_select->nod_arg[0] = (dsql_nod*) forNode;
 	for_select = PASS1_statement(dsqlScratch, for_select);
+	forNode = (ForNode*) for_select->nod_arg[0];
 
 	// get the already processed relations
 	source = forNode->dsqlSelect->nod_arg[e_select_expr]->nod_arg[0]->nod_arg[e_join_left_rel];
