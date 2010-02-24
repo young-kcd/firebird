@@ -253,7 +253,7 @@ private:
 
 public:
 	SimilarToMatcher(MemoryPool& pool, TextType* ttype, const UCHAR* str,
-			SLONG strLen, CharType escape, bool useEscape, bool forSubstring)
+				SLONG strLen, CharType escape, bool useEscape, bool forSubstring)
 		: BaseSimilarToMatcher(pool, ttype),
 		  evaluator(pool, ttype, str, strLen, escape, useEscape, forSubstring)
 	{

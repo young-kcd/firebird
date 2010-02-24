@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 		}
 		table[blr] = verb->internal;
 		table2[blr] = (verb->internal2 == 0) ? verb->internal : verb->internal2;
-			
+
 		lengths[blr] = verb->length;
 		counts[blr] = verb->count;
 		types[blr] = verb->type;
