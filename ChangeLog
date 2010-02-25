@@ -1,3 +1,9 @@
+2010-02-25 11:04  dimitr
+
+	* firebird2/src/jrd/ini.epp (1.110.2.2):
+
+	Fixed the accidentally broken security on system tables.
+
 2010-02-23 08:08  robocop
 
 	* firebird2/src/jrd/: drq.h (1.29.2.1), dyn_mod.epp (1.117.2.4):
