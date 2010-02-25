@@ -1,4 +1,81 @@
   **************************
+  * v2.5 Release Candidate 3
+  **************************
+
+    * Bugfix CORE-2879
+        Sweep could raise error: page 0 is of wrong type (expected 6, found 1)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2875
+        String right truncation error when char column longer than 4096 bytes is compared with string constant
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2871
+        Outer ORDER BY clause has no effect
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2867
+        SuperClassic leaks semaphores on disconnect
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2864
+        Listener process of Classic Server leaks handles
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2858
+        Possible memory trashing when raising some exceptions to signal failed security checks
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2871
+        Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
+        fails after the specified timeout (because of connections being still active)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2856
+        Non-NULL key in unique index could be not found when key is removed
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2852
+        Server crash when executing syntactical wrong SQL statement with an active trace session
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2851
+        Problem with the fb_cancel_operation() API call
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2825
+        Some patches for building on Debian/kFreeBSD and FreeBSD
+      Contributor(s):
+        Damyan Ivanov <dmn at debian.org>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2750
+        Physical backup cannot restart operations after the explicit difference file has been dropped
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1089
+        Wrong ordering with views, distinct, left join and order by
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-195
+        Bugcheck 291 (cannot find record back version)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
+  **************************
   * v2.5 Release Candidate 2
   **************************
 
