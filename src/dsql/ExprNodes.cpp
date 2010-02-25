@@ -786,7 +786,7 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
 
-	AutoPtr<BaseSimilarToMatcher> autoEvaluator;	// dealocate non-invariant evaluator
+	AutoPtr<BaseSimilarToMatcher> autoEvaluator;	// deallocate non-invariant evaluator
 	BaseSimilarToMatcher* evaluator;
 
 	if (node->nod_flags & nod_invariant)
