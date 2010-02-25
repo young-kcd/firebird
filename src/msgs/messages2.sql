@@ -805,6 +805,8 @@ Data source : @4', NULL, NULL)
 ('invalid_index_val', 'ValuesImpl::getValue', 'ValuesImpl.cpp', NULL, 0, 695, NULL, 'Invalid index @1', NULL, NULL)
 ('formatted_exception', 'ExceptionNode::setError', 'StmtNodes.cpp', NULL, 0, 696, NULL, '@1', NULL, NULL)
 ('async_active', 'REM_cancel_operation', 'interface.cpp', NULL, 0, 697, NULL, 'Asynchronous call is already running for this attachment', NULL, NULL)
+('private_function', 'METD_get_function', 'metd.epp', NULL, 0, 698, NULL, 'Function @1 is private to package @2', NULL, NULL)
+('private_procedure', 'METD_get_procedure', 'metd.epp', NULL, 0, 699, NULL, 'Procedure @1 is private to package @2', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

@@ -718,6 +718,8 @@ static const struct {
 	{335545015, "22003"}, // 695 invalid_index_val
 	{335545016, "00000"}, // 696 formatted_exception
 	{335545017, "HY018"}, // 697 async_active
+	{335545018, "42000"}, // 698 private_function
+	{335545019, "42000"}, // 699 private_procedure
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

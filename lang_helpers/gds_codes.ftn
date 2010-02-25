@@ -1446,6 +1446,10 @@ C --
       PARAMETER (GDS__formatted_exception              = 335545016)
       INTEGER*4 GDS__async_active                    
       PARAMETER (GDS__async_active                     = 335545017)
+      INTEGER*4 GDS__private_function                
+      PARAMETER (GDS__private_function                 = 335545018)
+      INTEGER*4 GDS__private_procedure               
+      PARAMETER (GDS__private_procedure                = 335545019)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

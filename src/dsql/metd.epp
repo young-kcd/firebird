@@ -894,7 +894,10 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	if (dbb->dbb_functions.get(metaName, userFunc))
 	{
 		if (userFunc->udf_private && metaName.package != dsqlScratch->package)
-			return NULL;
+		{
+			status_exception::raise(Arg::Gds(isc_private_function) <<
+				Arg::Str(metaName.identifier) << Arg::Str(metaName.package));
+		}
 
 		if (MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.package))
 			userFunc->udf_flags |= UDF_dropped;
@@ -1118,7 +1121,10 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	dbb->dbb_functions.put(userFunc->udf_name, userFunc);
 
 	if (userFunc->udf_private && metaName.package != dsqlScratch->package)
-		return NULL;
+	{
+		status_exception::raise(Arg::Gds(isc_private_function) <<
+			Arg::Str(metaName.identifier) << Arg::Str(metaName.package));
+	}
 
 	MET_dsql_cache_use(tdbb, SYM_udf, userFunc->udf_name.identifier, userFunc->udf_name.package);
 
@@ -1241,7 +1247,10 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 	if (dbb->dbb_procedures.get(metaName, procedure))
 	{
 		if (procedure->prc_private && metaName.package != dsqlScratch->package)
-			return NULL;
+		{
+			status_exception::raise(Arg::Gds(isc_private_procedure) <<
+				Arg::Str(metaName.identifier) << Arg::Str(metaName.package));
+		}
 
 		if (MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.package))
 			procedure->prc_flags |= PRC_dropped;
@@ -1387,7 +1396,10 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 	dbb->dbb_procedures.put(procedure->prc_name, procedure);
 
 	if (procedure->prc_private && metaName.package != dsqlScratch->package)
-		return NULL;
+	{
+		status_exception::raise(Arg::Gds(isc_private_procedure) <<
+			Arg::Str(metaName.identifier) << Arg::Str(metaName.package));
+	}
 
 	MET_dsql_cache_use(tdbb, SYM_procedure, procedure->prc_name.identifier,
 		procedure->prc_name.package);
