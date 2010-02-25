@@ -951,14 +951,10 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
  *      privilege.
  *
  **************************************/
-	TEXT sec_class_name[100];
-	Firebird::MetaName default_class;
+	Firebird::MetaName security_class, default_class;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-
-	strcpy(sec_class_name, SQL_SECCLASS_PREFIX);
-	strcat(sec_class_name, rel_name);
 
     bid blob_id_1;
 	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id_1);
@@ -970,10 +966,49 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	BLB_put_segment(tdbb, blob, acl, acl_length);
 	BLB_close(tdbb, blob);
 
+	security_class.printf("%s%" SQUADFORMAT, SQL_SECCLASS_PREFIX,
+						  DPM_gen_id(tdbb, MET_lookup_generator(tdbb, SQL_SECCLASS_GENERATOR), false, 1));
+
 	default_class.printf("%s%" SQUADFORMAT, DEFAULT_CLASS,
 						 DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), false, 1));
 
 	jrd_req* handle1 = NULL;
+
+	STORE(REQUEST_HANDLE handle1)
+		CLS IN RDB$SECURITY_CLASSES
+		jrd_vtof(security_class.c_str(), CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
+		CLS.RDB$ACL = blob_id_1;
+	END_STORE;
+
+	CMP_release(tdbb, handle1);
+
+	handle1 = NULL;
+
+	STORE(REQUEST_HANDLE handle1)
+		CLS IN RDB$SECURITY_CLASSES
+		jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
+		CLS.RDB$ACL = blob_id_2;
+	END_STORE;
+
+	CMP_release(tdbb, handle1);
+
+	handle1 = NULL;
+
+	FOR(REQUEST_HANDLE handle1) REL IN RDB$RELATIONS
+		WITH REL.RDB$RELATION_NAME EQ rel_name
+		MODIFY REL USING
+			REL.RDB$SECURITY_CLASS.NULL = FALSE;
+			jrd_vtof(security_class.c_str(), REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
+
+			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
+			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
+		END_MODIFY;
+
+	END_FOR;
+
+	CMP_release(tdbb, handle1);
+
+	handle1 = NULL;
 
 	for (int cnt = 0; cnt < 6; cnt++)
 	{
@@ -1021,40 +1056,6 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	}
 
 	CMP_release(tdbb, handle1);
-
-	handle1 = NULL;
-
-	STORE(REQUEST_HANDLE handle1)
-		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
-		CLS.RDB$ACL = blob_id_1;
-	END_STORE;
-
-	CMP_release(tdbb, handle1);
-
-	handle1 = NULL;
-
-	STORE(REQUEST_HANDLE handle1)
-		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
-		CLS.RDB$ACL = blob_id_2;
-	END_STORE;
-
-	CMP_release(tdbb, handle1);
-
-	handle1 = NULL;
-
-	FOR(REQUEST_HANDLE handle1) REL IN RDB$RELATIONS
-		WITH REL.RDB$RELATION_NAME EQ rel_name
-		MODIFY REL USING
-			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
-			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
-		END_MODIFY;
-
-	END_FOR;
-
-	CMP_release(tdbb, handle1);
-
 }
 
 
