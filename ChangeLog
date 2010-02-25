@@ -1,3 +1,15 @@
+2010-02-25 11:34  robocop
+
+	* firebird2/src/dsql/ExprNodes.cpp (1.6):
+
+	Misc (comment).
+
+2010-02-25 11:20  dimitr
+
+	* firebird2/src/jrd/ini.epp (1.136):
+
+	Fixed the accidentally broken security on system tables.
+
 2010-02-24 01:59  asfernandes
 
 	* firebird2/src/dsql/node.h (1.142):
