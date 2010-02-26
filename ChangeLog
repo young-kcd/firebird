@@ -1,3 +1,12 @@
+2010-02-26 09:43  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.78.2.8), btr.cpp
+	(1.204.2.12):
+
+	Backport CORE-2833: Changing data that affects an expression index
+	that contains references to null date fields fails.  I haven't
+	verified the compilation, sorry.
+
 2010-02-22 11:41  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.199.2.9):
