@@ -245,8 +245,7 @@ public:
 
 	inline bool operator==(const PageNumber& other) const
 	{
-		return (pageNum == other.pageNum) &&
-			(pageSpaceID == other.pageSpaceID);
+		return (pageNum == other.pageNum) && (pageSpaceID == other.pageSpaceID);
 	}
 
 	inline bool operator!=(const PageNumber& other) const
