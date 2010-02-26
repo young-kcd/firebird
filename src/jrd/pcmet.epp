@@ -66,25 +66,17 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
  *	Create a new expression index.
  *
  **************************************/
-	jrd_rel* relation;
+	jrd_rel* relation = NULL;
 	index_desc idx;
 	MemoryPool* new_pool = NULL;
-	jrd_req* current_request, *request;
-	jrd_tra* current_transaction;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	relation = NULL;
 	MOVE_CLEAR(&idx, sizeof(index_desc));
 
-	request = CMP_find_request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
-	/*
-	if (request)
-	{
-		EXE_unwind(tdbb, request);
-	}
-	*/
+	jrd_req* request = CMP_find_request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
+
 	FOR(REQUEST_HANDLE request)
 		IDX IN RDB$INDICES CROSS
 			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
@@ -191,10 +183,7 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 	SelectivityList selectivity(*tdbb->getDefaultPool());
 
-	current_request = tdbb->getRequest();
-	current_transaction = tdbb->getTransaction();
-	TRA_attach_request(transaction, idx.idx_expression_request);
-	tdbb->setRequest(idx.idx_expression_request);
+	jrd_tra* const current_transaction = tdbb->getTransaction();
 
 	fb_assert(id <= dbb->dbb_max_idx);
 	idx.idx_id = id;
@@ -202,8 +191,6 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 	fb_assert(id == idx.idx_id);
 
-	TRA_detach_request(idx.idx_expression_request);
-	tdbb->setRequest(current_request);
 	tdbb->setTransaction(current_transaction);
 
 	DFW_update_index(name.c_str(), idx.idx_id, selectivity, transaction);

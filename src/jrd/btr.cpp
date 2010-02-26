@@ -472,58 +472,54 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	SET_TDBB(tdbb);
 	fb_assert(idx->idx_expression != NULL);
 
-	// 15 June 2004. Nickolay Samofatov.
-	// This code doesn't look correct. It should get broken in
-	// case of reentrance due to recursion or multi-threading
-	// 28 Nov 2005 hvlad
-	// When using EXE_find_request i hope all is ok here
-	jrd_req* expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
+	jrd_req* const org_request = tdbb->getRequest();
+	jrd_req* const expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
+
 	fb_assert(expr_request->req_caller == NULL);
+	expr_request->req_caller = org_request;
 
-	expr_request->req_caller = tdbb->getRequest();
+	TRA_attach_request(tdbb->getTransaction(), expr_request);
+	tdbb->setRequest(expr_request);
 
-	// 10 Feb 2005 hvlad
-	// When this code called from IDX_create_index
-	// tdbb->getRequest() is set to our idx->idx_expression_request
-	// by PCMET_expression_index. Therefore no need to attach\detach
-	// idx_expression_request to the same transaction twice
-	const bool already_attached = (expr_request->req_caller == expr_request);
-
-	if (!already_attached) {
-		TRA_attach_request(tdbb->getTransaction(), expr_request);
-	}
 	fb_assert(expr_request->req_transaction);
 
-	tdbb->setRequest(expr_request);
-	tdbb->getRequest()->req_rpb[0].rpb_record = record;
-	tdbb->getRequest()->req_flags &= ~req_null;
+	expr_request->req_rpb[0].rpb_record = record;
+	expr_request->req_flags &= ~req_null;
 
-	DSC* result = 0;
-	try {
-		Jrd::ContextPoolHolder context(tdbb, tdbb->getRequest()->req_pool);
+	DSC* result = NULL;
+
+	try
+	{
+		Jrd::ContextPoolHolder context(tdbb, expr_request->req_pool);
+
+		expr_request->req_timestamp = org_request ?
+			org_request->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
 
 		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
+		{
 			result = &idx->idx_expression_desc;
+		}
+
+		notNull = !(expr_request->req_flags & req_null);
 	}
 	catch (const Firebird::Exception&)
 	{
-		if (!already_attached) {
-			TRA_detach_request(expr_request);
-		}
-		tdbb->setRequest(expr_request->req_caller);
+		TRA_detach_request(expr_request);
+		tdbb->setRequest(org_request);
+
 		expr_request->req_caller = NULL;
 		expr_request->req_flags &= ~req_in_use;
+		expr_request->req_timestamp.invalidate();
 
 		throw;
 	}
-	notNull = !(tdbb->getRequest()->req_flags & req_null);
 
-	if (!already_attached) {
-		TRA_detach_request(expr_request);
-	}
-	tdbb->setRequest(expr_request->req_caller);
+	TRA_detach_request(expr_request);
+	tdbb->setRequest(org_request);
+
 	expr_request->req_caller = NULL;
 	expr_request->req_flags &= ~req_in_use;
+	expr_request->req_timestamp.invalidate();
 
 	return result;
 }
