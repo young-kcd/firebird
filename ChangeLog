@@ -1,3 +1,23 @@
+2010-02-26 08:53  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.259.2.4), Optimizer.cpp
+	(1.119.2.2):
+
+	This should fix CORE-2833: Changing data that affects an expression
+	index that contains references to null date fields fails.
+
+2010-02-25 17:54  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.13):
+
+	Update.
+
+2010-02-25 17:21  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.9):
+
+	Update.
+
 2010-02-25 11:04  dimitr
 
 	* firebird2/src/jrd/ini.epp (1.110.2.2):
