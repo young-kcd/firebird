@@ -283,20 +283,38 @@ bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 	{
 		fb_assert(idx->idx_flags & idx_expressn);
 
-		jrd_req* expr_req = EXE_find_request(tdbb, idx->idx_expression_request, false);
+		jrd_req* org_request = tdbb->getRequest();
+		jrd_req* expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
 
-		fb_assert(expr_req->req_caller == NULL);
-		expr_req->req_caller = tdbb->getRequest();
-		tdbb->setRequest(expr_req);
+		fb_assert(expr_request->req_caller == NULL);
+		expr_request->req_caller = org_request;
+		tdbb->setRequest(expr_request);
+
 		bool result = false;
+
+		try
 		{
-			Jrd::ContextPoolHolder context(tdbb, tdbb->getRequest()->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, expr_request->req_pool);
+
+			expr_request->req_timestamp = expr_request->req_caller ?
+				expr_request->req_caller->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
 
 			result = OPT_expression_equal2(tdbb, opt, idx->idx_expression, node, stream);
 		}
-		tdbb->setRequest(expr_req->req_caller);
-		expr_req->req_caller = NULL;
-		expr_req->req_flags &= ~req_in_use;
+		catch (const Firebird::Exception&)
+		{
+			tdbb->setRequest(org_request);
+			expr_request->req_caller = NULL;
+			expr_request->req_flags &= ~req_in_use;
+			expr_request->req_timestamp.invalidate();
+
+			throw;
+		}
+
+		tdbb->setRequest(org_request);
+		expr_request->req_caller = NULL;
+		expr_request->req_flags &= ~req_in_use;
+		expr_request->req_timestamp.invalidate();
 
 		return result;
 	}
