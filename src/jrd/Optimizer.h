@@ -74,8 +74,8 @@ class IndexTableScan;
 class River;
 
 bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
-bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
-bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
+bool OPT_expression_equal(thread_db*, CompilerScratch*, const index_desc*, jrd_nod*, USHORT);
+bool OPT_expression_equal2(thread_db*, CompilerScratch*, jrd_nod*, jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);

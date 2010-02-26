@@ -65,7 +65,6 @@
 #include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
-#include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
 
 #include "../jrd/lck_proto.h"
