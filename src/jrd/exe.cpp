@@ -224,9 +224,9 @@ static void stuff_stack_trace(const jrd_req*);
 // macro definitions
 
 #if (defined SUPERSERVER) && (defined WIN_NT)
-const int MAX_CLONES	= 750;
+const size_t MAX_CLONES	= 750;
 #else
-const int MAX_CLONES	= 1000;
+const size_t MAX_CLONES	= 1000;
 #endif
 
 const int ALL_TRIGS	= 0;
@@ -659,12 +659,13 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		// this attachment. If not found, return first inactive request.
 
 		vec<jrd_req*>* vector = request->req_sub_requests;
-		const USHORT clones = vector ? (vector->count() - 1) : 0;
+		const size_t clones = vector ? (vector->count() - 1) : 0;
 
 		USHORT n;
 		for (n = 1; n <= clones; n++)
 		{
 			jrd_req* next = CMP_clone_request(tdbb, request, n, validate);
+
 			if (next->req_attachment == attachment)
 			{
 				if (!(next->req_flags & req_in_use))
@@ -676,14 +677,20 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 				count++;
 			}
 			else if (!(next->req_flags & req_in_use) && !clone)
+			{
 				clone = next;
+			}
 		}
 
-		if (count > MAX_CLONES) {
+		if (count > MAX_CLONES)
+		{
 			ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
 		}
+
 		if (!clone)
+		{
 			clone = CMP_clone_request(tdbb, request, n, validate);
+		}
 	}
 
 	clone->req_attachment = attachment;
@@ -1716,8 +1723,6 @@ static void execute_triggers(thread_db* tdbb,
 		memset(null_rec->rec_data, 0xFF, n);
 	}
 
-	const Firebird::TimeStamp timestamp(Firebird::TimeStamp::getCurrentTimeStamp());
-
 	try
 	{
 		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
@@ -1759,7 +1764,7 @@ static void execute_triggers(thread_db* tdbb,
 				if (tdbb->getRequest())
 					trigger->req_timestamp = tdbb->getRequest()->req_timestamp;
 				else
-					trigger->req_timestamp = timestamp;
+					trigger->req_timestamp = Firebird::TimeStamp::getCurrentTimeStamp();
 
 				trigger->req_trigger_action = trigger_action;
 
