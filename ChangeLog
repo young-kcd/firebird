@@ -1,3 +1,55 @@
+2010-02-26 10:51  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.141), Optimizer.h (1.39),
+	opt.cpp (1.417):
+
+	Actually, the optimizer doesn't need an expression index request to
+	operate.  Moreover, I have a feeling that calling EVL from OPT is a
+	bad design.
+
+2010-02-26 10:02  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.140), btr.cpp (1.276),
+	pcmet.epp (1.68):
+
+	Front ported CORE-2833: Changing data that affects an expression
+	index that contains references to null date fields fails.  Also,
+	removed the duplicated (and, at the first glance, unnecessary) code
+	that forced us to deal with the already_attached flag. To be tested
+	in the field.
+
+2010-02-26 07:54  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.334):
+
+	Misc.
+
+2010-02-26 03:16  robocop
+
+	* firebird2/src/jrd/pag.h (1.31):
+
+	Misc.
+
+2010-02-26 02:03  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.520):
+
+	Fixed CORE-2888 - A memory corruption cause incorrect query
+	evaluation and may crash the server
+
+2010-02-25 16:56  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.129),
+	lang_helpers/gds_codes.pas (1.127), src/dsql/metd.epp (1.161),
+	src/include/gen/codetext.h (1.137), src/include/gen/iberror.h
+	(1.141), src/include/gen/msgs.h (1.172), src/include/gen/sql_code.h
+	(1.143), src/include/gen/sql_state.h (1.73),
+	src/msgs/facilities2.sql (1.123), src/msgs/messages2.sql (1.148),
+	src/msgs/system_errors2.sql (1.90):
+
+	Implement Claudio' suggestion of explicit message about access to
+	private packaged routines
+
 2010-02-25 11:34  robocop
 
 	* firebird2/src/dsql/ExprNodes.cpp (1.6):
