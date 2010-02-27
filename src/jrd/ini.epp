@@ -942,7 +942,6 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
 			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 		END_MODIFY;
-
 	END_FOR;
 
 	CMP_release(tdbb, handle1);
