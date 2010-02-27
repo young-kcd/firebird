@@ -188,11 +188,34 @@ namespace
 	private:
 		USHORT fldId;
 	};
+
+	// Copy sub expressions (including subqueries).
+	class SubExprNodeCopier : public NodeCopier
+	{
+	public:
+		SubExprNodeCopier(CompilerScratch* aCsb)
+			: NodeCopier(aCsb, localMap)
+		{
+			// Initialize the map so all streams initially resolve to the original number. As soon
+			// copy creates new streams, the map are being overwritten.
+			for (unsigned i = 0; i < MAP_LENGTH; ++i)
+				localMap[i] = i;
+		}
+
+		static jrd_nod* copy(thread_db* tdbb, CompilerScratch* csb, jrd_nod* input)
+		{
+			SubExprNodeCopier obj(csb);
+			return static_cast<NodeCopier&>(obj).copy(tdbb, input);
+		}
+
+	private:
+		UCHAR localMap[MAP_LENGTH];
+	};
 }	// namespace
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
-static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node);
+static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, nod_t, bool);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
@@ -754,7 +777,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 					i, s.csb_view_stream,
 					(s.csb_alias ? s.csb_alias->c_str() : ""),
 					(s.csb_relation ? s.csb_relation->rel_name.c_str() : ""),
-					(s.csb_procedure ? s.csb_procedure->getName().c_str() : ""),
+					(s.csb_procedure ? s.csb_procedure->getName().toString().c_str() : ""),
 					(s.csb_view ? s.csb_view->rel_name.c_str() : ""));
 			}
 
@@ -2716,7 +2739,7 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 //
 // Because the second form can use indexes.
 // Returns NULL when not converted, and a new node to be processed when converted.
-static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node)
+static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 	SET_TDBB(tdbb);
 
@@ -2797,7 +2820,7 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node)
 
 	newInnerRse->rse_boolean = boolean;
 
-	return newNode;
+	return SubExprNodeCopier::copy(tdbb, csb, newNode);
 }
 
 
@@ -4344,7 +4367,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_ansi_all:
 		{
-			jrd_nod* newNode = convertNeqAllToNotAny(tdbb, node);
+			jrd_nod* newNode = convertNeqAllToNotAny(tdbb, csb, node);
 			if (newNode)
 				return CMP_pass1(tdbb, csb, newNode);
 
