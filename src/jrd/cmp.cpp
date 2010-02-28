@@ -3690,11 +3690,10 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 }
 
 
-// Look at all RecordSelExpr's which are lower in scope than the RecordSelExpr which this field
-// is referencing, and mark them as varying - the rule is that if a field
-// from one RecordSelExpr is referenced within the scope of another RecordSelExpr, the first RecordSelExpr
-// can't be invariant. This won't optimize all cases, but it is the simplest
-// operating assumption for now.
+// Look at all RecordSelExpr's which are lower in scope than the RecordSelExpr which this field is
+// referencing, and mark them as variant - the rule is that if a field from one RecordSelExpr is
+// referenced within the scope of another RecordSelExpr, the inner RecordSelExpr can't be invariant.
+// This won't optimize all cases, but it is the simplest operating assumption for now.
 static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 	if (csb->csb_current_nodes.hasData())
@@ -4194,7 +4193,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_count:
 	case nod_total:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_stat_rse], view);
-		break;
+		node->nod_arg[e_stat_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_rse]);
+		csb->csb_current_nodes.push(node->nod_arg[e_stat_rse]);
+		node->nod_arg[e_stat_value] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_value]);
+		node->nod_arg[e_stat_default] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_default]);
+		csb->csb_current_nodes.pop();
+		return node;
 
 	case nod_aggregate:
 		fb_assert((int) (IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);

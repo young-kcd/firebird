@@ -318,14 +318,13 @@ bool StreamFinder::visit(jrd_nod* node)
 		{
 			jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
-			bool result = false;
 			for (jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 			{
 				if (visit(*ptr))
 					return true;
 			}
 
-			return result;
+			return false;
 		}
 
 		default:
