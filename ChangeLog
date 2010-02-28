@@ -1,3 +1,23 @@
+2010-02-28 01:40  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.396), opt.cpp (1.418):
+
+	Fixed CORE-2893 - Expression in a subquery in WHERE is treated as
+	invariant and produce incorrect results
+
+2010-02-27 19:24  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.395):
+
+	Frontport fix for CORE-2886 - Query with "NOT IN <subselect from
+	view>" fails
+
+2010-02-27 03:41  asfernandes
+
+	* firebird2/src/jrd/ini.epp (1.137):
+
+	Misc
+
 2010-02-26 10:51  dimitr
 
 	* firebird2/src/jrd/: Optimizer.cpp (1.141), Optimizer.h (1.39),
