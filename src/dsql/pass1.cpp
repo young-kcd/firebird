@@ -7053,8 +7053,13 @@ static dsql_nod* pass1_make_derived_field(CompiledStatement* statement, thread_d
 				// Try to generate derived field from sub-select
 				dsql_nod* derived_field = pass1_make_derived_field(statement, tdbb,
 					select_item->nod_arg[e_via_value_1]);
-				derived_field->nod_arg[e_derived_field_value] = select_item;
-				return derived_field;
+				if (derived_field->nod_type == nod_derived_field)
+				{
+					derived_field->nod_arg[e_derived_field_value] = select_item;
+					return derived_field;
+				}
+
+				return select_item;
 			}
 
 		default:
