@@ -1,3 +1,9 @@
+2010-02-27 19:22  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.352.2.3):
+
+	Fixed CORE-2886 - Query with "NOT IN <subselect from view>" fails
+
 2010-02-26 08:53  dimitr
 
 	* firebird2/src/jrd/: btr.cpp (1.259.2.4), Optimizer.cpp
