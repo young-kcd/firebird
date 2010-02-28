@@ -386,7 +386,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	{
 		Firebird::PathName org_name = db_file;
 		Firebird::PathName db_name;
-		if (!ResolveDatabaseAlias(org_name, db_name))
+		if (!ResolveDatabaseAlias(org_name, db_name, NULL))
 		{
 			db_name = org_name;
 		}

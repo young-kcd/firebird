@@ -74,9 +74,36 @@ __int64 __cdecl _ftelli64(FILE*);
 #define FSEEK64 fseeko
 #endif
 
-using namespace Jrd;
 using namespace Firebird;
 
+namespace Jrd {
+	class ExternalFileDirectoryList : public Firebird::DirectoryList
+	{
+	private:
+		const Firebird::PathName getConfigString() const
+		{
+			return Firebird::PathName(config->getExternalFileAccess());
+		}
+	public:
+		ExternalFileDirectoryList(const Database* dbb)
+			: DirectoryList(*dbb->dbb_permanent), config(dbb->dbb_config)
+		{
+			initialize();
+		}
+		static void create(Database* dbb)
+		{
+			if (!dbb->dbb_external_file_directory_list)
+			{
+				dbb->dbb_external_file_directory_list = 
+					FB_NEW(*dbb->dbb_permanent) ExternalFileDirectoryList(dbb);
+			}
+		}
+	private:
+		Firebird::RefPtr<Config> config;
+	};
+}
+
+using namespace Jrd;
 
 namespace {
 
@@ -87,29 +114,12 @@ namespace {
 #endif
 	static const char* const FOPEN_READ_ONLY	= "rb";
 
-	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file);
-
-	class ExternalFileDirectoryList : public Firebird::DirectoryList
-	{
-	private:
-		const Firebird::PathName getConfigString() const
-		{
-			return Firebird::PathName(Config::getExternalFileAccess());
-		}
-	public:
-		explicit ExternalFileDirectoryList(MemoryPool& p)
-			: DirectoryList(p)
-		{
-			initialize();
-		}
-	};
-	Firebird::InitInstance<ExternalFileDirectoryList> iExternalFileDirectoryList;
-
 	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file)
 	{
 		const char* file_name = ext_file->ext_filename;
 
-		if (!iExternalFileDirectoryList().isPathInList(file_name))
+		ExternalFileDirectoryList::create(dbb);
+		if (!dbb->dbb_external_file_directory_list->isPathInList(file_name))
 		{
 			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("external file") <<
 														 Arg::Str(file_name));
@@ -190,9 +200,10 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 	if (Path.length() == 0)
 	{
 		// path component not present in file_name
-		if (!(iExternalFileDirectoryList().expandFileName(Path, Name)))
+		ExternalFileDirectoryList::create(dbb);
+		if (!(dbb->dbb_external_file_directory_list->expandFileName(Path, Name)))
 		{
-			iExternalFileDirectoryList().defaultName(Path, Name);
+			dbb->dbb_external_file_directory_list->defaultName(Path, Name);
 		}
 		file_name = Path.c_str();
 	}

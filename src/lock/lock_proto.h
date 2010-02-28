@@ -307,6 +307,8 @@ namespace Firebird {
 	class RWLock;
 }
 
+class Config;
+
 namespace Jrd {
 
 class Database;
@@ -321,7 +323,7 @@ class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 	const int PID;
 
 public:
-	static LockManager* create(const Firebird::string&);
+	static LockManager* create(const Firebird::string&, Firebird::RefPtr<Config>);
 
 	bool initializeOwner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	void shutdownOwner(Database*, SRQ_PTR*);
@@ -340,7 +342,7 @@ public:
 	SLONG writeData(SRQ_PTR, SLONG);
 
 private:
-	explicit LockManager(const Firebird::string&);
+	explicit LockManager(const Firebird::string&, Firebird::RefPtr<Config>);
 	~LockManager();
 
 	bool lockOrdering() const
@@ -434,6 +436,7 @@ private:
 	Firebird::Semaphore m_startupSemaphore;
 
 	Firebird::string m_dbId;
+	Firebird::RefPtr<Config> m_config;
 
 	const ULONG m_acquireSpins;
 	const ULONG m_memorySize;

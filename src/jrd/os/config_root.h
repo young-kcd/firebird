@@ -94,8 +94,6 @@ public:
 		config_file = root_dir + string(CONFIG_FILE);
 	}
 
-	virtual ~ConfigRoot() {}
-
 	const char* getInstallDirectory()
 	{
 		return install_dir.c_str();

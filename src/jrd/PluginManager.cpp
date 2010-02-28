@@ -28,15 +28,12 @@
 #include "../jrd/ErrorImpl.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
-#include "../config/ConfigFile.h"
-#include "../config/ConfObj.h"
-#include "../config/ConfObject.h"
-#include "../config/Element.h"
+#include "../common/config/config_file.h"
 #include "../config/ScanDir.h"
-#include "../config/AdminException.h"
 
 using namespace Firebird;
 using Firebird::uint;
@@ -46,11 +43,11 @@ namespace Jrd {
 
 namespace
 {
-	class PluginsMap : public GenericMap<Pair<Left<string, PluginImpl*> > >
+	class PluginsMap : public GenericMap<Pair<Left<PathName, PluginImpl*> > >
 	{
 	public:
 		explicit PluginsMap(MemoryPool& p)
-			: GenericMap<Pair<Left<string, PluginImpl*> > >(p)
+			: GenericMap<Pair<Left<PathName, PluginImpl*> > >(p)
 		{
 		}
 
@@ -91,68 +88,74 @@ void PluginManager::initialize()
 
 	try
 	{
-		SortedObjectsArray<string> conflicts(*getDefaultMemoryPool());
+		SortedObjectsArray<ConfigFile::String> conflicts(*getDefaultMemoryPool());
 
 		while (dir.next())
 		{
-			Vulcan::ConfigFile configFile(dir.getFilePath(), Vulcan::ConfigFile::LEX_none);
+			ConfigFile configFile(dir.getFilePath(), 
+								  ConfigFile::HAS_SUB_CONF | ConfigFile::EXCEPTION_ON_ERROR);
 
-			for (Element* el = configFile.getObjects()->children; el; el = el->sibling)
+			const ConfigFile::Parameters& params = configFile.getParameters(); 
+			for (size_t n = 0; n < params.getCount(); ++n)
 			{
-				if (el->name == "plugin_module")
+				const ConfigFile::Parameter* pm = &params[n];
+				if (pm->name != "plugin_module")
 				{
-					AutoPtr<PluginImpl> plugin(new PluginImpl);
-					plugin->name = el->getAttributeName(0);
+					continue;
+				}
 
-					if (plugins->exist(plugin->name) || conflicts.exist(plugin->name))
+				AutoPtr<PluginImpl> plugin(new PluginImpl);
+				plugin->name = pm->value;
+				if (plugins->exist(plugin->name) || conflicts.exist(plugin->name))
+				{
+					gds__log("Plugin %s defined more than once.", plugin->name.c_str());
+					conflicts.add(plugin->name);
+					continue;
+				}
+
+				if (!pm->sub)
+				{
+					fatal_exception::raiseFmt("Missing required parameters for plugin %s", 
+											  plugin->name.c_str());
+				}
+				const ConfigFile::Parameter* par = pm->sub->findParameter("filename");
+
+				if (!par)
+				{
+					fatal_exception::raiseFmt("Missing required parameter 'filename' for plugin %s", 
+											  plugin->name.c_str());
+				}
+				plugin->filename = par->value;
+
+				par = pm->sub->findParameter("plugin_config");
+				if (par)
+				{
+					par = configFile.findParameter("plugin_config", par->value);
+					if (!par)
 					{
-						string s;
-						s.printf("Plugin %s defined more than once.", plugin->name.c_str());
-						gds__log(s.c_str());
-
-						conflicts.add(plugin->name);
-						continue;
+						fatal_exception::raiseFmt("Missing required config for plugin %s", 
+												  plugin->name.c_str());
 					}
-
-					ConfObj objModule(configFile.findObject("plugin_module", plugin->name.c_str()));
-					plugin->filename = objModule->getValue("filename", "");
-
-					Element* config = el->findChild("plugin_config");
-					if (config)
+					if (par->sub)
 					{
-						string configName(config->getAttributeName(0));
-						ConfObj objConfig(configFile.findObject("plugin_config",
-							configName.c_str()));
-
-						for (Element* elConfig = objConfig->object->children;
-							 elConfig; elConfig = elConfig->sibling)
+						const ConfigFile::Parameters& all = par->sub->getParameters();
+						for (size_t n = 0; n < all.getCount(); ++n)
 						{
-							const string key = elConfig->name;
-							string value;
-							const char* attribute;
-
-							for (int i = 0; (attribute = elConfig->getAttributeName(i)); ++i)
-							{
-								if (i != 0)
-									value += PathUtils::dir_list_sep;
-								value += objConfig->expand(attribute);
-							}
-
-							plugin->configInfo.add(ConfigEntry(*getDefaultMemoryPool(), key, value));
+							plugin->configInfo.add(ConfigEntry(*getDefaultMemoryPool(), all[n].name, all[n].value));
 						}
-
-						PluginImpl* p = plugin.release();
-						plugins->put(p->name, p);
 					}
 				}
+
+				PluginImpl* p = plugin.release();
+				plugins->put(p->name, p);
 			}
 		}
 	}
-	catch (AdminException& ex)
+	catch (const Exception& ex)
 	{
 		string s;
-		s.printf("Error in plugin config file '%s': %s'", dir.getFilePath(), ex.getText());
-		gds__log(s.c_str());
+		s.printf("Error in plugin config file '%s'", dir.getFilePath());
+		iscLogException(s.c_str(), ex);
 	}
 }
 
@@ -165,7 +168,7 @@ PathName PluginManager::getPluginsDirectory()
 }
 
 
-PluginImpl* PluginManager::getPlugin(const string& name)
+PluginImpl* PluginManager::getPlugin(const PathName& name)
 {
 	PluginImpl* plugin;
 

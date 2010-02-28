@@ -29,11 +29,12 @@
 #include "../common/classes/TempFile.h"
 #include "../common/config/dir_list.h"
 #include "../common/classes/init.h"
+#include "../common/config/config.h"
 
 class TempSpace : public Firebird::File
 {
 public:
-	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix);
+	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix, Firebird::RefPtr<Config> conf);
 	virtual ~TempSpace();
 
 	size_t read(offset_t offset, void* buffer, size_t length);
@@ -163,6 +164,7 @@ private:
 
 	MemoryPool& pool;
 	Firebird::PathName filePrefix;
+	Firebird::RefPtr<Config> config;
 	offset_t logicalSize;
 	offset_t physicalSize;
 	offset_t localCacheUsage;

@@ -557,7 +557,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	if (ResolveDatabaseAlias(fileName, tempStr)) {
+	if (ResolveDatabaseAlias(fileName, tempStr, NULL)) {
 		fileName = tempStr;
 	}
 

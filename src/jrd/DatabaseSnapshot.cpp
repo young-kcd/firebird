@@ -623,7 +623,7 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, i
 	Format* format = MET_current(tdbb, relation);
 	fb_assert(format);
 
-	RecordBuffer* buffer = FB_NEW(pool) RecordBuffer(pool, format);
+	RecordBuffer* buffer = FB_NEW(pool) RecordBuffer(pool, format, tdbb->getDatabase()->dbb_config);
 	RelationData data = {relation->rel_id, buffer};
 	snapshot.add(data);
 

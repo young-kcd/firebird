@@ -23,10 +23,11 @@
 #ifndef CONFIG_CONFIG_FILE_H
 #define CONFIG_CONFIG_FILE_H
 
-#include "../../common/classes/alloc.h"
-#include "../../common/classes/fb_pair.h"
-#include "../../common/classes/objects_array.h"
+#include "../common/classes/alloc.h"
+#include "../common/classes/fb_pair.h"
+#include "../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/auto.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -45,56 +46,82 @@
 	(common/config/config.cpp) and server-side alias manager (jrd/db_alias.cpp).
 **/
 
-class ConfigFile : public Firebird::AutoStorage
+class ConfigFile : public Firebird::AutoStorage, public Firebird::RefCounted
 {
-	// config_file works with OS case-sensitivity
-	typedef Firebird::PathName string;
-
-	typedef Firebird::Pair<Firebird::Full<string, string> > Parameter;
-
-    typedef Firebird::SortedObjectsArray <Parameter,
-		Firebird::InlineStorage<Parameter *, 100>,
-		string, Firebird::FirstPointerKey<Parameter> > mymap_t;
-
 public:
-	ConfigFile(MemoryPool& p, bool ExceptionOnError)
-		: AutoStorage(p), isLoadedFlg(false),
-		  fExceptionOnError(ExceptionOnError), parsingAliases(false),
-		  parameters(getPool()) {}
-	ConfigFile(bool ExceptionOnError, bool useForAliases)
-		: AutoStorage(), isLoadedFlg(false),
-		  fExceptionOnError(ExceptionOnError), parsingAliases(useForAliases),
-		  parameters(getPool()) {}
+	// flags for config file
+	static const USHORT EXCEPTION_ON_ERROR =	0x01;
+	static const USHORT HAS_SUB_CONF =			0x02;
+	static const USHORT NO_MACRO =				0x04;
 
-    explicit ConfigFile(bool ExceptionOnError)
-		: AutoStorage(), isLoadedFlg(false),
-		  fExceptionOnError(ExceptionOnError), parsingAliases(false),
-		  parameters(getPool()) {}
+	// enum to distinguish ctors
+	enum UseText {USE_TEXT};
 
-	// configuration file management
-    const string getConfigFilePath() const { return configFile; }
-    void setConfigFilePath(const string& newFile) { configFile = newFile; }
+	// config_file works with OS case-sensitivity
+	typedef Firebird::PathName String;
 
-    bool isLoaded() const { return isLoadedFlg; }
+	class Stream
+	{
+	public:
+		virtual ~Stream();
+		virtual bool getLine(String&, unsigned int&) = 0;
+	};
 
-    void loadConfig();
-    void checkLoadConfig();
+	struct Parameter : public AutoStorage
+	{
+		Parameter(MemoryPool& p, const Parameter& par)
+			: AutoStorage(p), name(getPool(), par.name), value(getPool(), par.value), 
+			  sub(par.sub), line(par.line)
+		{ }
+		Parameter()
+			: AutoStorage(), name(getPool()), value(getPool()), sub(0), line(0)
+		{ }
+	
+		String name;
+		String value;
+		Firebird::RefPtr<ConfigFile> sub;
+		unsigned int line;
 
-	// key and value management
-    bool doesKeyExist(const string&);
-    string getString(const string&);
+		static const String* generate(const void* /*sender*/, const Parameter* item)
+		{
+			return &item->name;
+		}
+	};
+		
+    typedef Firebird::SortedObjectsArray <Parameter, Firebird::InlineStorage<Parameter*, 100>,
+										  String, Parameter> Parameters;
 
-	// utilities
-	bool stripComments(string&) const;
-	static string parseKeyFrom(const string&, string::size_type&);
-	string parseValueFrom(string, string::size_type);
+	ConfigFile(const String& file, USHORT fl);
+	ConfigFile(const char* file, USHORT fl);
+	ConfigFile(UseText, const char* configText, USHORT fl);
 
 private:
-    string configFile;
-    bool isLoadedFlg;
-	const bool fExceptionOnError;
-	const bool parsingAliases;
-    mymap_t parameters;
+	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const String& file);
+
+public:
+	// key and value management
+	const Parameter* findParameter(const String& name) const;
+	const Parameter* findParameter(const String& name, const String& value) const;
+
+	// all parameters access
+	const Parameters& getParameters() const
+	{
+		return parameters;
+	}
+
+private:
+	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB};
+
+    String configFile;
+    Parameters parameters;
+	USHORT flags;
+	USHORT badLinesCount;
+
+	// utilities
+	void parse(Stream* stream);
+	LineType parseLine(const String& input, String& key, String& value);
+	bool translate(const String& from, String& to);
+	void badLine(const String& line);
 };
 
 #endif	// CONFIG_CONFIG_FILE_H

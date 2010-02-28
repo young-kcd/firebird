@@ -24,6 +24,11 @@
 #define JRD_DB_ALIAS_H
 
 #include "../common/classes/fb_string.h"
+#include "../common/classes/RefCounted.h"
 
-bool ResolveDatabaseAlias(const Firebird::PathName& alias, Firebird::PathName& database);
+class Config;
+
+bool ResolveDatabaseAlias(const Firebird::PathName& alias, 
+						  Firebird::PathName& file, 
+						  Firebird::RefPtr<Config>* config);
 #endif // JRD_DB_ALIAS_H

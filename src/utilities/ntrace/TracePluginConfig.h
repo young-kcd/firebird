@@ -38,7 +38,7 @@ struct TracePluginConfig
 #define SERVICE_PARAMS
 
 #define PATH_PARAMETER(NAME, VALUE) Firebird::PathName NAME;
-#define STR_PARAMETER(NAME, VALUE) Firebird::string NAME;
+#define STR_PARAMETER(NAME, VALUE) Firebird::PathName NAME;
 #define BOOL_PARAMETER(NAME, VALUE) bool NAME;
 #define UINT_PARAMETER(NAME, VALUE) ULONG NAME;
 #include "paramtable.h"

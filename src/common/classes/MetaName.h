@@ -60,12 +60,12 @@ public:
 	MetaName(const char* s) { assign(s); }
 	MetaName(const char* s, size_t l) { assign(s, l); }
 	MetaName(const MetaName& m) { set(m); }
-	MetaName(const string& s) { assign(s.c_str(), s.length()); }
+	MetaName(const AbstractString& s) { assign(s.c_str(), s.length()); }
 	explicit MetaName(MemoryPool&) { init(); count = 0; }
 	MetaName(MemoryPool&, const char* s) { assign(s); }
 	MetaName(MemoryPool&, const char* s, size_t l) { assign(s, l); }
 	MetaName(MemoryPool&, const MetaName& m) { set(m); }
-	MetaName(MemoryPool&, const string& s) { assign(s.c_str(), s.length()); }
+	MetaName(MemoryPool&, const AbstractString& s) { assign(s.c_str(), s.length()); }
 
 	MetaName& assign(const char* s, size_t l);
 	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }

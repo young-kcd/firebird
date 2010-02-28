@@ -154,12 +154,12 @@ namespace Firebird
 	public:
 		explicit Hash(MemoryPool&)
 		{
-			memset(data, 0, sizeof data);
+			clean();
 		}
 
 		Hash()
 		{
-			memset(data, 0, sizeof data);
+			clean();
 		}
 
 		~Hash()
@@ -231,6 +231,11 @@ namespace Firebird
 	private:
 		// disable use of default operator=
 		Hash& operator= (const Hash&);
+
+		void clean()
+		{
+			memset(data, 0, sizeof data);
+		}
 
 	public:
 		class iterator

@@ -165,14 +165,14 @@ Firebird::GlobalPtr<LockManager::DbLockMgrMap> LockManager::g_lmMap;
 Firebird::GlobalPtr<Firebird::Mutex> LockManager::g_mapMutex;
 
 
-LockManager* LockManager::create(const Firebird::string& id)
+LockManager* LockManager::create(const Firebird::string& id, Firebird::RefPtr<Config> conf)
 {
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
 	LockManager* lockMgr = NULL;
 	if (!g_lmMap->get(id, lockMgr))
 	{
-		lockMgr = new LockManager(id);
+		lockMgr = new LockManager(id, conf);
 	}
 
 	fb_assert(lockMgr);
@@ -181,7 +181,7 @@ LockManager* LockManager::create(const Firebird::string& id)
 }
 
 
-LockManager::LockManager(const Firebird::string& id)
+LockManager::LockManager(const Firebird::string& id, Firebird::RefPtr<Config> conf)
 	: PID(getpid()),
 	  m_bugcheck(false),
 	  m_sharedFileCreated(false),
@@ -189,8 +189,9 @@ LockManager::LockManager(const Firebird::string& id)
 	  m_process(NULL),
 	  m_processOffset(0),
 	  m_dbId(getPool(), id),
-	  m_acquireSpins(Config::getLockAcquireSpins()),
-	  m_memorySize(Config::getLockMemSize())
+	  m_config(conf),
+	  m_acquireSpins(m_config->getLockAcquireSpins()),
+	  m_memorySize(m_config->getLockMemSize())
 #ifdef USE_SHMEM_EXT
 	  , m_extents(getPool())
 #endif
@@ -2338,14 +2339,14 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 	}
 #endif
 
-	int hash_slots = Config::getLockHashSlots();
+	int hash_slots = m_config->getLockHashSlots();
 	if (hash_slots < HASH_MIN_SLOTS)
 		hash_slots = HASH_MIN_SLOTS;
 	if (hash_slots > HASH_MAX_SLOTS)
 		hash_slots = HASH_MAX_SLOTS;
 
 	m_header->lhb_hash_slots = (USHORT) hash_slots;
-	m_header->lhb_scan_interval = Config::getDeadlockTimeout();
+	m_header->lhb_scan_interval = m_config->getDeadlockTimeout();
 	m_header->lhb_acquire_spins = m_acquireSpins;
 
 	// Initialize lock series data queues and lock hash chains
@@ -2363,7 +2364,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 
 	// Set lock_ordering flag for the first time
 
-	if (Config::getLockGrantOrder())
+	if (m_config->getLockGrantOrder())
 		m_header->lhb_flags |= LHB_lock_ordering;
 
 	const ULONG length = sizeof(lhb) + (m_header->lhb_hash_slots * sizeof(m_header->lhb_hash[0]));

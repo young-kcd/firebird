@@ -117,7 +117,8 @@ void BufferedStream::open(thread_db* tdbb)
 
 	delete impure->irsb_buffer;
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	impure->irsb_buffer = FB_NEW(pool) RecordBuffer(pool, m_format);
+	impure->irsb_buffer = FB_NEW(pool) RecordBuffer(pool, m_format, 
+													tdbb->getDatabase()->dbb_config);
 
 	impure->irsb_position = 0;
 }

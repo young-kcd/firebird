@@ -47,14 +47,14 @@ void TraceCfgReader::readTraceConfiguration(const char* text,
 
 #define PATH_PARAMETER(NAME, VALUE) \
 	if (!found && el->name == #NAME) { \
-		string temp; \
+		ConfigFile::String temp; \
 		expandPattern(el, temp); \
 		m_config.NAME = temp.c_str(); \
 		found = true; \
 	}
 #define STR_PARAMETER(NAME, VALUE) \
 	if (!found && el->name == #NAME) { \
-		m_config.NAME = el->getAttributeName(0); \
+		m_config.NAME = el->value; \
 		found = true; \
 	}
 #define BOOL_PARAMETER(NAME, VALUE) \
@@ -92,21 +92,8 @@ namespace
 
 void TraceCfgReader::readConfig()
 {
-	Firebird::AutoPtr<ConfigFile> cfgFile(new ConfigFile(Lex::LEX_none));
-	cfgFile->addText(m_text);
-	try
-	{
-		cfgFile->parse();
-	}
-	catch (const AdminException& ex)
-	{
-		fatal_exception::raiseFmt("error while parsing trace configuration\n\t%s",
-			ex.getText());
-	}
-	catch (...)
-	{
-		fatal_exception::raiseFmt("unknown error while parsing trace configuration");
-	}
+	ConfigFile cfgFile(ConfigFile::USE_TEXT, m_text, 
+					   ConfigFile::HAS_SUB_CONF | ConfigFile::EXCEPTION_ON_ERROR);
 
 	m_subpatterns[0].start = 0;
 	m_subpatterns[0].end = m_databaseName.length();
@@ -130,14 +117,16 @@ void TraceCfgReader::readConfig()
 	Jrd::TextType textType(0, &tt, charSet);
 
 	bool defDB = false, defSvc = false, exactMatch = false;
-	const Element* section = cfgFile->getObjects()->children;
-	for (; section && !exactMatch; section = section->sibling)
+	const ConfigFile::Parameters& params = cfgFile.getParameters();
+	for (size_t n = 0; n < params.getCount() && !exactMatch; ++n)
 	{
+		const ConfigFile::Parameter* section = &params[n];
+
 		const bool isDatabase = (section->name == "database");
 		if (!isDatabase && section->name != "services")
 			continue;
 
-		const string pattern = section->getAttributes() ? section->getAttributeName(0) : "";
+		const ConfigFile::String pattern = section->value;
 		bool match = false;
 		if (pattern.empty())
 		{
@@ -146,7 +135,7 @@ void TraceCfgReader::readConfig()
 				if (defDB)
 				{
 					fatal_exception::raiseFmt("line %d: second default database section is not allowed",
-						section->lineNumber + 1);
+						section->line);
 				}
 
 				match = !m_databaseName.empty();
@@ -157,7 +146,7 @@ void TraceCfgReader::readConfig()
 				if (defSvc)
 				{
 					fatal_exception::raiseFmt("line %d: second default service section is not allowed",
-						section->lineNumber + 1);
+						section->line);
 				}
 				match = m_databaseName.empty();
 				defSvc = true;
@@ -205,12 +194,12 @@ void TraceCfgReader::readConfig()
 					if (regExpOk) {
 						fatal_exception::raiseFmt(
 							"line %d: error while processing string \"%s\" against regular expression \"%s\"",
-							section->lineNumber + 1, m_databaseName.c_str(), pattern.c_str());
+							section->line, m_databaseName.c_str(), pattern.c_str());
 					}
 					else {
 						fatal_exception::raiseFmt(
 							"line %d: error while compiling regular expression \"%s\"",
-							section->lineNumber + 1, pattern.c_str());
+							section->line, pattern.c_str());
 					}
 				}
 			}
@@ -219,12 +208,15 @@ void TraceCfgReader::readConfig()
 		if (!match)
 			continue;
 
-		for (const Element* el = section->children; el; el = el->sibling)
+		const ConfigFile::Parameters& elements = section->sub->getParameters();
+		for (size_t p = 0; p < elements.getCount(); ++p)
 		{
-			if (!el->getAttributes())
+			const ConfigFile::Parameter* el = &elements[p];
+
+			if (!el->value.hasData())
 			{
 				fatal_exception::raiseFmt("line %d: element \"%s\" have no attribute value set",
-					el->lineNumber + 1, el->name.c_str());
+					el->line, el->name.c_str());
 			}
 
 			bool found = false;
@@ -244,7 +236,7 @@ void TraceCfgReader::readConfig()
 			if (!found)
 			{
 				fatal_exception::raiseFmt("line %d: element \"%s\" is unknown",
-					el->lineNumber + 1, el->name.c_str());
+					el->line, el->name.c_str());
 			}
 		}
 	}
@@ -255,10 +247,9 @@ void TraceCfgReader::readConfig()
 #undef BOOL_PARAMETER
 #undef UINT_PARAMETER
 
-bool TraceCfgReader::parseBoolean(const Element* el) const
+bool TraceCfgReader::parseBoolean(const ConfigFile::Parameter* el) const
 {
-	const char* value = el->getAttributeName(0);
-	string tempValue(value);
+	ConfigFile::String tempValue(el->value);
 	tempValue.upper();
 
 	if (tempValue == "1" || tempValue == "ON" || tempValue == "YES" || tempValue == "TRUE")
@@ -267,24 +258,24 @@ bool TraceCfgReader::parseBoolean(const Element* el) const
 		return false;
 
 	fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid boolean value",
-		el->lineNumber + 1, el->name.c_str(), value);
+		el->line, el->name.c_str(), el->value.c_str());
 	return false; // Silence the compiler
 }
 
-ULONG TraceCfgReader::parseUInteger(const Element* el) const
+ULONG TraceCfgReader::parseUInteger(const ConfigFile::Parameter* el) const
 {
-	const char *value = el->getAttributeName(0);
+	const char *value = el->value.c_str();
 	ULONG result = 0;
 	if (!sscanf(value, "%"ULONGFORMAT, &result)) {
 		fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid integer value",
-			el->lineNumber + 1, el->name.c_str(), value);
+			el->line, el->name.c_str(), value);
 	}
 	return result;
 }
 
-void TraceCfgReader::expandPattern(const Element* el, string& valueToExpand)
+void TraceCfgReader::expandPattern(const ConfigFile::Parameter* el, ConfigFile::String& valueToExpand)
 {
-	valueToExpand = el->getAttributeName(0);
+	valueToExpand = el->value;
 	string::size_type pos = 0;
 	while (pos < valueToExpand.length())
 	{
@@ -293,7 +284,7 @@ void TraceCfgReader::expandPattern(const Element* el, string& valueToExpand)
 		{
 			if (pos + 1 >= valueToExpand.length())
 				fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
-					el->lineNumber + 1, el->name.c_str(), el->getAttributeName(0));
+					el->line, el->name.c_str(), el->value.c_str());
 
 			c = valueToExpand[pos + 1];
 			if (c == '\\')
@@ -321,7 +312,7 @@ void TraceCfgReader::expandPattern(const Element* el, string& valueToExpand)
 			}
 
 			fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
-				el->lineNumber + 1, el->name.c_str(), el->getAttributeName(0));
+				el->line, el->name.c_str(), el->value.c_str());
 		}
 
 		pos++;

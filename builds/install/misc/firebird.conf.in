@@ -105,6 +105,8 @@
 # paths (for Win32 this may be something like 'C:\ExternalTables',
 # for unix - '/db/extern;/mnt/extern').
 #
+# Per-database configurable.
+#
 # NOTE: THE EXTERNAL TABLE ENGINE FEATURE COULD BE USED TO COMPROMISE
 # THE SERVER/HOST AS WELL AS DATABASE SECURITY!!
 #
@@ -213,6 +215,8 @@
 # SuperServer allocates 2048 pages for each database and the classic
 # allocates 75 pages per client connection per database.
 #
+# Per-database configurable.
+#
 # Type: integer
 #
 #DefaultDbCachePages = 2048
@@ -227,6 +231,8 @@
 # not less than 128KB and no more than DatabaseGrowthIncrement (128MB by 
 # default). To disable preallocation set DatabaseGrowthIncrement to zero.
 # Shadow database files are not preallocated.
+#
+# Per-database configurable.
 #
 # Type: integer
 #
@@ -245,6 +251,8 @@
 # zero.
 # 
 # Type: integer, measured in database pages
+#
+# Per-database configurable.
 #
 #FileSystemCacheThreshold = 65536
 
@@ -335,6 +343,8 @@
 # The smallest block size being allocated in the temporary storage.
 # This value reflects the allocation granularity.
 #
+# Per-database configurable.
+#
 # Type: integer
 #
 #TempBlockSize = 1048576
@@ -346,6 +356,8 @@
 # For Classic servers, this setting is defaulted to 8 MB.
 # Although it can be increased, the value applies to each client
 # connection/server instance and thus consumes a lot of memory.
+#
+# Per-database configurable.
 #
 # Type: integer
 #
@@ -359,6 +371,8 @@
 # and doing extra deadlock scan cycle. Engine detects deadlocks instantly
 # in all normal cases, so this value affects things only if something goes
 # wrong. Setting it too low may degrade system performance.
+#
+# Per-database configurable.
 #
 # Type: integer
 #
@@ -374,6 +388,8 @@
 # flushed, at the next transaction commit.  For non-Win32 ports,
 # the default value is -1 (Disabled)
 #
+# Per-database configurable.
+#
 # Type: integer
 #
 #MaxUnflushedWrites = 100
@@ -382,6 +398,8 @@
 # Number of seconds during which unflushed writes will accumulate
 # before they are flushed, at the next transaction commit. For non-Win32
 # ports, the default value is -1 (Disabled)
+#
+# Per-database configurable.
 #
 # Type: integer
 #
@@ -549,6 +567,8 @@
 # table expands dynamically up to the limit of memory. In SuperServer, the
 # initial size is also the final size.
 #
+# Per-database configurable.
+#
 # Type: integer
 #
 #LockMemSize = 1048576
@@ -566,6 +586,8 @@
 #	  as soon as they are available; can result in lock request
 #       starvation.
 #
+# Per-database configurable.
+#
 # Type: integer/boolean
 #
 #LockGrantOrder = 1
@@ -579,6 +601,8 @@
 # will be made conditionally. Zero value means unconditional mode.
 # Relevant only on SMP machines.
 #
+# Per-database configurable.
+#
 # Type: integer
 #
 #LockAcquireSpins = 0
@@ -587,6 +611,8 @@
 # Tune lock hash list; more hash slots mean shorter hash chains. Only
 # necessary under very high load. Prime number values are recommended.
 #
+# Per-database configurable.
+#
 # Type: integer
 #
 #LockHashSlots = 1009
@@ -594,6 +620,8 @@
 # ----------------------------
 #
 # Bytes of shared memory allocated for event manager.
+#
+# Per-database configurable.
 #
 # Type: integer
 #
@@ -659,6 +687,8 @@
 # Superserver has by default "combined" policy
 # Classic has by default "cooperative" policy.
 #	Other values are ignored by classic server build
+#
+# Per-database configurable.
 #
 # Type: string (special format)
 #

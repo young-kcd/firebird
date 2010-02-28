@@ -37,7 +37,7 @@
 namespace Jrd {
 
 
-typedef Firebird::Pair<Firebird::Full<Firebird::string, Firebird::string> > ConfigEntry;
+typedef Firebird::Pair<Firebird::Full<Firebird::PathName, Firebird::PathName> > ConfigEntry;
 
 class PluginImpl : public Firebird::Plugin, public Firebird::GlobalStorage
 {
@@ -66,12 +66,12 @@ public:
 	Firebird::ExternalEngineFactory* getExternalEngineFactory();
 
 private:
-	Firebird::string name;
+	Firebird::PathName name;
 	Firebird::PathName filename;
 	Firebird::SortedObjectsArray<
 		ConfigEntry,
 		Firebird::EmptyStorage<ConfigEntry*>,
-		Firebird::string, Firebird::FirstPointerKey<ConfigEntry>
+		Firebird::PathName, Firebird::FirstPointerKey<ConfigEntry>
 	> configInfo;
 	Firebird::AutoPtr<ModuleLoader::Module> module;
 	Firebird::ExternalEngineFactory* externalEngineFactory;
@@ -83,7 +83,7 @@ class PluginManager
 public:
 	static void initialize();
 	static Firebird::PathName getPluginsDirectory();
-	static PluginImpl* getPlugin(const Firebird::string& name);
+	static PluginImpl* getPlugin(const Firebird::PathName& name);
 };
 
 

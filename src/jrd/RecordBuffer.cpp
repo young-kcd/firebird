@@ -31,10 +31,10 @@ const char* const SCRATCH = "fb_recbuf_";
 
 using namespace Jrd;
 
-RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
+RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format, Firebird::RefPtr<Config> conf)
 	: length(format->fmt_length), count(0), filled(false)
 {
-	space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+	space = FB_NEW(pool) TempSpace(pool, SCRATCH, conf);
 
 	record = FB_NEW_RPT(pool, length) Record(pool);
 	record->rec_format = format;

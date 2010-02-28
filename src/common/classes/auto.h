@@ -83,6 +83,11 @@ public:
 		return ptr;
 	}
 
+	operator const Where*() const
+	{
+		return ptr;
+	}
+
 	bool operator !() const
 	{
 		return !ptr;

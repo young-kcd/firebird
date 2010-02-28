@@ -47,7 +47,7 @@
 
 #include "../common/classes/fb_string.h"
 
-class ScanDir : public Firebird::GlobalStorage
+class ScanDir : public Firebird::AutoStorage
 {
 public:
 	ScanDir(const char *dir, const char *pattern);

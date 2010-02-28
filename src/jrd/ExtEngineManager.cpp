@@ -45,18 +45,13 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/Function.h"
+#include "../jrd/isc_proto.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
 #include "../common/config/config.h"
-
-#include "../config/ConfigFile.h"
-#include "../config/ConfObj.h"
-#include "../config/ConfObject.h"
-#include "../config/Element.h"
 #include "../config/ScanDir.h"
-#include "../config/AdminException.h"
 
 using namespace Firebird;
 
@@ -313,7 +308,7 @@ void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 	transaction = FB_NEW(*internalAttachment->att_pool) TransactionImpl(traHandle);
 }
 
-ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(Firebird::Error* /*error*/)
+ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(Error* /*error*/)
 {
 	return engine;
 }
@@ -336,7 +331,7 @@ Firebird::Transaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransac
 }
 
 
-const Firebird::Utf8* FB_CALL ExtEngineManager::ExternalContextImpl::getClientCharSet()
+const Utf8* FB_CALL ExtEngineManager::ExternalContextImpl::getClientCharSet()
 {
 	return clientCharSet.c_str();
 }
@@ -368,14 +363,14 @@ void* FB_CALL ExtEngineManager::ExternalContextImpl::setInfo(int code, void* val
 //---------------------
 
 
-static InitInstance<GenericMap<Pair<Full<MetaName, string> > > > enginesModules;
+static InitInstance<GenericMap<Pair<Full<MetaName, PathName> > > > enginesModules;
 
 
 //---------------------
 
 
 ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtManager,
-		ExternalEngine* aEngine, Firebird::ExternalFunction* aFunction,
+		ExternalEngine* aEngine, ExternalFunction* aFunction,
 		const Jrd::Function* aUdf)
 	: extManager(aExtManager),
 	  engine(aEngine),
@@ -405,7 +400,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 	MemoryPool& pool = *tdbb->getDefaultPool();
 	ValueImpl result(pool, &impure->vlu_desc, "", true);
 
-	Firebird::HalfStaticArray<impure_value, 32> impureArgs;
+	HalfStaticArray<impure_value, 32> impureArgs;
 
 	impure_value* impureArgsPtr = impureArgs.getBuffer(args->nod_count);
 	try
@@ -470,7 +465,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_
 
 
 ExtEngineManager::Procedure::Procedure(thread_db* tdbb, ExtEngineManager* aExtManager,
-	    ExternalEngine* aEngine, Firebird::ExternalProcedure* aProcedure,
+	    ExternalEngine* aEngine, ExternalProcedure* aProcedure,
 		const jrd_prc* aPrc)
 	: extManager(aExtManager),
 	  engine(aEngine),
@@ -552,7 +547,7 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 
 
 ExtEngineManager::Trigger::Trigger(thread_db* tdbb, ExtEngineManager* aExtManager,
-			ExternalEngine* aEngine, Firebird::ExternalTrigger* aTrigger,
+			ExternalEngine* aEngine, ExternalTrigger* aTrigger,
 			const Jrd::Trigger* aTrg)
 	: extManager(aExtManager),
 	  engine(aEngine),
@@ -568,7 +563,7 @@ ExtEngineManager::Trigger::~Trigger()
 }
 
 
-void ExtEngineManager::Trigger::execute(thread_db* tdbb, Firebird::ExternalTrigger::Action action,
+void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action action,
 	record_param* oldRpb, record_param* newRpb)
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
@@ -675,22 +670,26 @@ ExtEngineManager::~ExtEngineManager()
 
 void ExtEngineManager::initialize()
 {
-	Firebird::PathName pluginsPath = PluginManager::getPluginsDirectory();
+	PathName pluginsPath = PluginManager::getPluginsDirectory();
+
 	ScanDir dir(pluginsPath.c_str(), "*.conf");
 
 	try
 	{
-		SortedObjectsArray<MetaName> conflicts(*getDefaultMemoryPool());
+		SortedArray<MetaName> conflicts;
 
 		while (dir.next())
 		{
-			Vulcan::ConfigFile configFile(dir.getFilePath(), Vulcan::ConfigFile::LEX_none);
+			ConfigFile configFile(dir.getFilePath(), 
+								  ConfigFile::EXCEPTION_ON_ERROR | ConfigFile::HAS_SUB_CONF);
 
-			for (Element* el = configFile.getObjects()->children; el; el = el->sibling)
+			const ConfigFile::Parameters& params = configFile.getParameters();
+			for (size_t n = 0; n < params.getCount(); ++n)
 			{
+				const ConfigFile::Parameter* el = &params[n];
 				if (el->name == "external_engine")
 				{
-					MetaName name = el->getAttributeName(0);
+					MetaName name(el->value);
 
 					if (enginesModules().exist(name) || conflicts.exist(name))
 					{
@@ -702,22 +701,23 @@ void ExtEngineManager::initialize()
 						continue;
 					}
 
-					Element* plugin = el->findChild("plugin_module");
+					const ConfigFile::Parameter* plugin = el->sub->findParameter("plugin_module");
 
 					if (plugin)
-						enginesModules().put(name, plugin->getAttributeName(0));
+						enginesModules().put(name, plugin->value);
 					else
 						conflicts.add(name);
 				}
 			}
 		}
 	}
-	catch (AdminException& ex)
+	catch (const Exception& ex)
 	{
 		string s;
-		s.printf("Error in plugin config file '%s': %s'", dir.getFilePath(), ex.getText());
-		gds__log(s.c_str());
+		s.printf("Error in plugin config file '%s':", dir.getFilePath());
+		iscLogException(s.c_str(), ex);
 	}
+
 }
 
 
@@ -751,8 +751,8 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* /*attachment
 
 
 ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, const Jrd::Function* udf,
-	const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-	const Firebird::string& body)
+	const MetaName& engine, const string& entryPoint,
+	const string& body)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -794,8 +794,8 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 
 ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, const jrd_prc* prc,
-	const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-	const Firebird::string& body)
+	const MetaName& engine, const string& entryPoint,
+	const string& body)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -837,8 +837,8 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 
 
 ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
-	const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-	const Firebird::string& body, Firebird::ExternalTrigger::Type type)
+	const MetaName& engine, const string& entryPoint,
+	const string& body, ExternalTrigger::Type type)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -880,7 +880,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 }
 
 
-ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::MetaName& name)
+ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& name)
 {
 	ReadLockGuard readGuard(enginesLock);
 	ExternalEngine* engine = NULL;
@@ -892,7 +892,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 
 		if (!engines.get(name, engine))
 		{
-			string pluginName;
+			PathName pluginName;
 			if (enginesModules().get(name, pluginName))
 			{
 				PluginImpl* plugin = PluginManager::getPlugin(pluginName);
@@ -958,7 +958,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const Firebird::Met
 
 
 ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
-	thread_db* tdbb, const Firebird::MetaName& name)
+	thread_db* tdbb, const MetaName& name)
 {
 	ExternalEngine* engine = getEngine(tdbb, name);
 	return getEngineAttachment(tdbb, engine);
@@ -1007,7 +1007,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 }
 
 
-void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, Firebird::ExternalEngine* engine,
+void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, ExternalEngine* engine,
 	EngineAttachmentInfo* attInfo)
 {
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, CS_UTF8);

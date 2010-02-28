@@ -31,7 +31,7 @@ namespace Jrd {
 class RecordBuffer
 {
 public:
-	RecordBuffer(MemoryPool&, const Format*);
+	RecordBuffer(MemoryPool&, const Format*, Firebird::RefPtr<Config> conf);
 	~RecordBuffer();
 
 	size_t getCount() const

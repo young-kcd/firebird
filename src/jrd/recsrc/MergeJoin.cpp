@@ -297,7 +297,8 @@ bool MergeJoin::getRecord(thread_db* tdbb)
 			if (!mfb->mfb_space)
 			{
 				MemoryPool& pool = *getDefaultMemoryPool();
-				mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+				mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH, 
+														tdbb->getDatabase()->dbb_config);
 			}
 
 			SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
@@ -509,7 +510,8 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index)
 		if (!mfb->mfb_space)
 		{
 			MemoryPool& pool = *getDefaultMemoryPool();
-			mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+			mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH, 
+													tdbb->getDatabase()->dbb_config);
 		}
 
 		SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,

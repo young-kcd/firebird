@@ -486,7 +486,21 @@ public:
 		memset(this, 0,
 			reinterpret_cast<char*>(&this->dpb_sys_user_name) - reinterpret_cast<char*>(this));
 	}
+
 	void get(const UCHAR*, USHORT, bool&);
+
+	void setBuffers(Firebird::RefPtr<Config> config)
+	{
+		if (dpb_buffers == 0)
+		{
+			dpb_buffers = config->getDefaultDbCachePages();
+
+			if (dpb_buffers < MIN_PAGE_BUFFERS)
+				dpb_buffers = MIN_PAGE_BUFFERS;
+			if (dpb_buffers > MAX_PAGE_BUFFERS)
+				dpb_buffers = MAX_PAGE_BUFFERS;
+		}
+	}
 
 private:
 	void getPath(ClumpletReader& reader, PathName& s)
@@ -561,7 +575,7 @@ static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, ISC_STATUS*
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
 #endif
 
-static Database*	init(thread_db*, const PathName&, bool);
+static Database*	init(thread_db*, const PathName&, Firebird::RefPtr<Config>, bool);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	USHORT count, TEB* vector, FB_API_HANDLE public_handle = 0);
@@ -902,6 +916,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	UserId userId;
 	DatabaseOptions options;
+	Firebird::RefPtr<Config> config;
 	bool invalid_client_SQL_dialect = false;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
@@ -926,7 +941,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		ISC_utf8ToSystem(file_name);
 
 		// Resolve given alias name
-		is_alias = ResolveDatabaseAlias(file_name, expanded_name);
+		is_alias = ResolveDatabaseAlias(file_name, expanded_name, &config);
 		if (is_alias)
 		{
 			ISC_systemToUtf8(expanded_name);
@@ -975,7 +990,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	try
 	{
 		// Unless we're already attached, do some initialization
-		dbb = init(tdbb, expanded_name, true);
+		dbb = init(tdbb, expanded_name, config, true);
 	}
 	catch (const Exception& ex)
 	{
@@ -1096,7 +1111,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		pageSpace->file = PIO_open(dbb, expanded_name, file_name, false);
 
 		// Initialize the lock manager
-		dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId());
+		dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
 
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
@@ -1124,6 +1139,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
 
+		options.setBuffers(dbb->dbb_config);
 		CCH_init(tdbb, options.dpb_buffers);
 
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
@@ -1980,6 +1996,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	DatabaseOptions options;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
+	Firebird::RefPtr<Config> config;
 
 	try
 	{
@@ -2005,7 +2022,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		ISC_utf8ToSystem(file_name);
 
 		// Resolve given alias name
-		is_alias = ResolveDatabaseAlias(file_name, expanded_name);
+		is_alias = ResolveDatabaseAlias(file_name, expanded_name, &config);
 		if (is_alias)
 		{
 			ISC_systemToUtf8(expanded_name);
@@ -2054,7 +2071,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	try
 	{
-		dbb = init(tdbb, expanded_name, false);
+		dbb = init(tdbb, expanded_name, config, false);
 	}
 	catch (const Exception& ex)
 	{
@@ -2188,7 +2205,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	const jrd_file* const first_dbb_file = pageSpace->file;
 
 	// Initialize the lock manager
-	dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId());
+	dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
 
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
@@ -2208,13 +2225,14 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
 
-	CCH_init(tdbb, options.dpb_buffers);
-
 #ifdef WIN_NT
 	dbb->dbb_filename.assign(first_dbb_file->fil_string);
 #else
 	dbb->dbb_filename = expanded_name;
 #endif
+
+	options.setBuffers(dbb->dbb_config);
+	CCH_init(tdbb, options.dpb_buffers);
 
 	// NS: Use alias as database ID only if accessing database using file name is not possible.
 	//
@@ -4740,13 +4758,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
  **************************************/
 	SSHORT num_old_files = 0;
 
-	ULONG page_cache_size = Config::getDefaultDbCachePages();
-	if (page_cache_size < MIN_PAGE_BUFFERS)
-		page_cache_size = MIN_PAGE_BUFFERS;
-	if (page_cache_size > MAX_PAGE_BUFFERS)
-		page_cache_size = MAX_PAGE_BUFFERS;
-
-	dpb_buffers = page_cache_size;
+	dpb_buffers = 0;
 	dpb_sweep_interval = -1;
 	dpb_overwrite = false;
 	dpb_sql_dialect = 99;
@@ -5114,6 +5126,7 @@ static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code)
 
 static Database* init(thread_db* tdbb,
 					  const PathName& expanded_filename, // only for SS
+					  Firebird::RefPtr<Config> config,
 					  bool attach_flag) // only for SS
 {
 /**************************************
@@ -5163,6 +5176,7 @@ static Database* init(thread_db* tdbb,
 #endif
 
 	dbb = Database::create();
+	dbb->dbb_config = config;
 	tdbb->setDatabase(dbb);
 
 	dbb->dbb_bufferpool = dbb->createPool();
@@ -5182,7 +5196,7 @@ static Database* init(thread_db* tdbb,
 
 	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
 	{
-		string gc_policy = Config::getGCPolicy();
+		string gc_policy = dbb->dbb_config->getGCPolicy();
 		gc_policy.lower();
 		if (gc_policy == GCPolicyCooperative) {
 			dbb->dbb_flags |= DBB_gc_cooperative;

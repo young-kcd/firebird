@@ -114,7 +114,7 @@ LIB_LINK_SONAME=
 
 OS_ServerFiles=inet_server.cpp
 INTL_Files2=common/utils.cpp \
-	common/config/config.cpp common/config/config_file.cpp \
+	common/config/config.cpp common/config/config_file.cpp common/config/ConfigCache.cpp \
 	common/classes/MsgPrint.cpp common/classes/SafeArg.cpp \
 	common/classes/BaseStream.cpp common/classes/fb_string.cpp \
 	common/classes/TempFile.cpp \

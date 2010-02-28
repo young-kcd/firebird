@@ -40,7 +40,8 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 LOCKPRINT_Other_Sources = jrd/isc_sync.cpp jrd/isc.cpp jrd/db_alias.cpp \
-common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+common/config/config.cpp common/config/config_file.cpp common/config/ConfigCache.cpp \
+$(OS_SPECIFIC_Sources)
 LOCKPRINT_Files= print.cpp
 LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
 LOCKPRINT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCKPRINT_Sources)))) \
@@ -59,7 +60,8 @@ CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_So
 
 
 DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
-common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
+common/config/config.cpp common/config/config_file.cpp common/config/ConfigCache.cpp \
+$(OS_SPECIFIC_Sources)
 
 DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)

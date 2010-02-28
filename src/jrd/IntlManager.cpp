@@ -29,18 +29,15 @@
 #include "../jrd/os/mod_loader.h"
 #include "../jrd/intlobj_new.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 
-#include "../config/ConfigFile.h"
-#include "../config/ConfObj.h"
-#include "../config/ConfObject.h"
-#include "../config/Element.h"
 #include "../config/ScanDir.h"
-#include "../config/AdminException.h"
+#include "../common/config/config_file.h"
 
 using namespace Firebird;
 
@@ -421,7 +418,7 @@ const IntlManager::CollationDefinition IntlManager::defaultCollations[] =
 bool IntlManager::initialize()
 {
 	bool ok = true;
-	ObjectsArray<string> conflicts;
+	ObjectsArray<ConfigFile::String> conflicts;
 	string builtinConfig;
 
 	Firebird::PathName intlPath = fb_utils::getPrefix(fb_utils::FB_DIR_INTL, "");
@@ -432,94 +429,122 @@ bool IntlManager::initialize()
 	{
 		while (dir.next())
 		{
-			ConfigFile configFile(dir.getFilePath(), ConfigFile::LEX_none);
+			ConfigFile configFile(dir.getFilePath(), ConfigFile::HAS_SUB_CONF);
 
-			ConfObj builtinModule(configFile.findObject("intl_module", "builtin"));
+			const ConfigFile::Parameter* builtinModule = configFile.findParameter("intl_module", "builtin");
 			string s = getConfigInfo(builtinModule);
 			if (s.hasData())
 				builtinConfig = s;
 
-			for (const Element* el = configFile.getObjects()->children; el; el = el->sibling)
+			const ConfigFile::Parameters& params = configFile.getParameters();
+			for (size_t n = 0; n < params.getCount(); ++n)
 			{
-				if (el->name == "charset")
+				const ConfigFile::Parameter* ch = &params[n];
+				if (ch->name != "charset")
 				{
-					const string charSetName = el->getAttributeName(0);
-					PathName filename;
-					string configInfo;
+					continue;
+				}
+				if (!ch->sub)
+				{
+					continue;
+				}
 
-					const Element* module = el->findChild("intl_module");
-					if (module)
+				const ConfigFile::String charSetName = ch->value;
+				PathName filename;
+				string configInfo;
+
+				const ConfigFile::Parameter* module = ch->sub->findParameter("intl_module");
+				const ConfigFile::Parameter* objModule;
+				if (module && 
+					(objModule = configFile.findParameter("intl_module", module->value.c_str())))
+				{
+					if (!objModule->sub)
 					{
-						const Firebird::string moduleName(module->getAttributeName(0));
-						ConfObj objModule(configFile.findObject("intl_module", moduleName.c_str()));
-						filename = objModule->getValue("filename", "");
-						configInfo = getConfigInfo(objModule);
+						fatal_exception::raiseFmt("Missing parameters for intl_module %s\n", module->value.c_str());
+					}
+					const ConfigFile::Parameter* fname = objModule->sub->findParameter("filename");
+					if (!fname)
+					{
+						fatal_exception::raiseFmt("Missing parameter 'filename' for intl_module %s\n", module->value.c_str());
+					}
+					filename = fname->value;
+					configInfo = getConfigInfo(objModule);
 
-						if (!modules->exist(filename))
+					if (!modules->exist(filename))
+					{
+						ModuleLoader::Module* mod = ModuleLoader::loadModule(filename);
+						if (!mod)
 						{
-							ModuleLoader::Module* mod = ModuleLoader::loadModule(filename);
-							if (!mod)
-							{
-								ModuleLoader::doctorModuleExtension(filename);
-								mod = ModuleLoader::loadModule(filename);
-							}
-							if (mod)
-							{
-								// Negotiate version
-								pfn_INTL_version versionFunction;
-								USHORT version;
+							ModuleLoader::doctorModuleExtension(filename);
+							mod = ModuleLoader::loadModule(filename);
+						}
+						if (mod)
+						{
+							// Negotiate version
+							pfn_INTL_version versionFunction;
+							USHORT version;
 
-								if (mod->findSymbol(STRINGIZE(INTL_VERSION_ENTRYPOINT), versionFunction))
-								{
-									version = INTL_VERSION_2;
-									versionFunction(&version);
-								}
-								else
-									version = INTL_VERSION_1;
-
-								if (version != INTL_VERSION_1 && version != INTL_VERSION_2)
-								{
-									string err_msg;
-									err_msg.printf("INTL module '%s' is of incompatible version number %d",
-										filename.c_str(), version);
-									gds__log(err_msg.c_str());
-									ok = false;
-								}
-								else
-									modules->put(filename, mod);
+							if (mod->findSymbol(STRINGIZE(INTL_VERSION_ENTRYPOINT), versionFunction))
+							{
+								version = INTL_VERSION_2;
+								versionFunction(&version);
 							}
 							else
+								version = INTL_VERSION_1;
+
+							if (version != INTL_VERSION_1 && version != INTL_VERSION_2)
 							{
-								gds__log((string("Can't load INTL module '") +
-									filename.c_str() + "'").c_str());
+								string err_msg;
+								err_msg.printf("INTL module '%s' is of incompatible version number %d",
+									filename.c_str(), version);
+								gds__log(err_msg.c_str());
 								ok = false;
 							}
+							else
+								modules->put(filename, mod);
+						}
+						else
+						{
+							gds__log((string("Can't load INTL module '") +
+								filename.c_str() + "'").c_str());
+							ok = false;
 						}
 					}
+				}
 
-					for (const Element* el2 = el->children; el2; el2 = el2->sibling)
+				const ConfigFile::Parameters& sub = ch->sub->getParameters();
+				for (size_t coll = 0; coll < sub.getCount(); ++coll)
+				{
+					if (sub[coll].name != "collation")
 					{
-						if (el2->name == "collation")
-						{
-							const string collationName = el2->getAttributeName(0);
-							const string charSetCollation = charSetName + ":" + collationName;
-							const char* externalName = el2->getAttributeName(1);
+						continue;
+					}
+					ConfigFile::String collationName = sub[coll].value;
+					ConfigFile::String externalName;
+					size_t pos = collationName.find(' ');
+					if (pos != ConfigFile::String::npos)
+					{
+						externalName = collationName.substr(pos);
+						externalName.ltrim(" \t");
+						collationName = collationName.substr(0, pos);
+					}
+					const ConfigFile::String charSetCollation = charSetName + ":" + collationName;
 
-							if (!registerCharSetCollation(charSetCollation, filename,
-								(externalName ? externalName : collationName), configInfo))
-							{
-								conflicts.add(charSetCollation);
-								ok = false;
-							}
-						}
+					if (!registerCharSetCollation(charSetCollation.ToString(), filename,
+						(externalName.hasData() ? externalName : collationName).ToString(), configInfo))
+					{
+						conflicts.add(charSetCollation);
+						ok = false;
 					}
 				}
 			}
 		}
 	}
-	catch (AdminException& ex)
+	catch (const Exception& ex)
 	{
-		gds__log((string("Error in INTL plugin config file '") + dir.getFilePath() + "': " + ex.getText()).c_str());
+		string message = "Error in INTL plugin config file ";
+		message += dir.getFilePath();
+		iscLogException(message.c_str(), ex);
 		ok = false;
 	}
 
@@ -538,8 +563,8 @@ bool IntlManager::initialize()
 	registerCharSetCollation("UTF32:UCS_BASIC", "", "UCS_BASIC", builtinConfig);
 #endif
 
-	for (ObjectsArray<string>::const_iterator name(conflicts.begin()); name != conflicts.end(); ++name)
-		charSetCollations->remove(*name);
+	for (ObjectsArray<ConfigFile::String>::const_iterator name(conflicts.begin()); name != conflicts.end(); ++name)
+		charSetCollations->remove(name->ToString());
 
 	return ok;
 }
@@ -683,31 +708,28 @@ bool IntlManager::setupCollationAttributes(
 }
 
 
-Firebird::string IntlManager::getConfigInfo(const ConfObj& confObj)
+Firebird::string IntlManager::getConfigInfo(const ConfigFile::Parameter* confObj)
 {
-	if (!confObj.hasObject())
-		return "";
-
-	string configInfo;
-
-	for (const Element* el = confObj->object->children; el; el = el->sibling)
+	if (!confObj || !confObj->sub)
 	{
-		string values;
-
-		for (int i = 0; el->getAttributeName(i); ++i)
-		{
-			if (i > 0)
-				values.append(" ");
-
-			values.append(el->getAttributeName(i));
-		}
-
-		if (configInfo.hasData())
-			configInfo.append(";");
-		configInfo.append(string(el->name.c_str()) + "=" + values);
+		return "";
 	}
 
-	return configInfo;
+	ConfigFile::String configInfo;
+	const ConfigFile::Parameters& all = confObj->sub->getParameters();
+
+	for (size_t n = 0; n < all.getCount(); ++n)
+	{
+		const ConfigFile::Parameter& par = all[n];
+
+		if (configInfo.hasData())
+		{
+			configInfo.append(";");
+		}
+		configInfo.append(par.name + "=" + par.value);
+	}
+
+	return configInfo.ToString();
 }
 
 

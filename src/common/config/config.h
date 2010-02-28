@@ -23,8 +23,9 @@
 #ifndef COMMON_CONFIG_H
 #define COMMON_CONFIG_H
 
+#include "../common/classes/alloc.h"
 #include "../common/classes/fb_string.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/classes/RefCounted.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -68,8 +69,13 @@ extern const char*	AmMixed;
 
 enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
 
-class Config
+class ConfigFile;
+
+class Config : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
+public:
+	typedef IPTR ConfigValue;
+
 	enum ConfigKey
 	{
 		KEY_ROOT_DIRECTORY,
@@ -116,19 +122,57 @@ class Config
 		KEY_OLD_SET_CLAUSE_SEMANTICS,
 		KEY_TRACE_CONFIG,
 		KEY_MAX_TRACELOG_SIZE,
-		KEY_FILESYSTEM_CACHE_SIZE
+		KEY_FILESYSTEM_CACHE_SIZE,
+		MAX_CONFIG_KEY		// keep it last
 	};
 
+
+private:
+	enum ConfigType
+	{
+		TYPE_BOOLEAN,
+		TYPE_INTEGER,
+		TYPE_STRING
+		//TYPE_STRING_VECTOR // CVC: Unused
+	};
+
+	typedef const char* ConfigName;
+	struct ConfigEntry
+	{
+		ConfigType data_type;
+		ConfigName key;
+		ConfigValue default_value;
+	};
+
+	static Firebird::PathName getValue(const ConfigFile&, ConfigName);
+
+	static int asInteger(const Firebird::PathName&);
+	static bool asBoolean(const Firebird::PathName&);
+	static const char* asString(const Firebird::PathName&);
+	void loadValues(const ConfigFile& file);
+	template <typename T> T get(Config::ConfigKey key) const;
+
+	static const ConfigEntry entries[MAX_CONFIG_KEY];
+	ConfigValue values[MAX_CONFIG_KEY];
+
 public:
+	Config(const ConfigFile& file);						// use to build default config
+	Config(const ConfigFile& file, const Config& base);	// use to build db-specific config
+	~Config();
 
 	// Interface to support command line root specification.
-
 	// This ugly solution was required to make it possible to specify root
 	// in command line to load firebird.conf from that root, though in other
 	// cases firebird.conf may be also used to specify root.
 
 	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
 	static const Firebird::PathName* getCommandLineRootDirectory();
+
+	// Master config - needed to provide per-database config
+	static const Firebird::RefPtr<Config> getDefaultConfig();
+
+	// Static functions apply to instance-wide values,
+	// non-static may be specified per database.
 
 	// Installation directory
 	static const char* getInstallDirectory();
@@ -137,10 +181,10 @@ public:
 	static const char* getRootDirectory();
 
 	// Allocation chunk for the temporary spaces
-	static int getTempBlockSize();
+	int getTempBlockSize() const;
 
 	// Caching limit for the temporary data
-	static int getTempCacheLimit();
+	int getTempCacheLimit() const;
 
 	// Whether remote (NFS) files can be opened
 	static bool getRemoteFileOpenAbility();
@@ -158,7 +202,7 @@ public:
 	static bool getTcpNoNagle();
 
 	// Default database cache size
-	static int getDefaultDbCachePages();
+	int getDefaultDbCachePages() const;
 
 	// Connection timeout
 	static int getConnectionTimeout();
@@ -167,22 +211,22 @@ public:
 	static int getDummyPacketInterval();
 
 	// Lock manager memory size
-	static int getLockMemSize();
+	int getLockMemSize() const;
 
 	// Lock manager grant order
-	static bool getLockGrantOrder();
+	bool getLockGrantOrder() const;
 
 	// Lock manager hash slots
-	static int getLockHashSlots();
+	int getLockHashSlots() const;
 
 	// Lock manager acquire spins
-	static int getLockAcquireSpins();
+	int getLockAcquireSpins() const;
 
 	// Event manager memory size
-	static int getEventMemSize();
+	int getEventMemSize() const;
 
 	// Deadlock timeout
-	static int getDeadlockTimeout();
+	int getDeadlockTimeout() const;
 
 	// Priority switch delay
 	static int getPrioritySwitchDelay();
@@ -206,10 +250,10 @@ public:
 	static const char *getIpcName();
 
 	// Unflushed writes number
-	static int getMaxUnflushedWrites();
+	int getMaxUnflushedWrites() const;
 
 	// Unflushed write time
-	static int getMaxUnflushedWriteTime();
+	int getMaxUnflushedWriteTime() const;
 
 	// Process priority level
 	static int getProcessPriorityLevel();
@@ -221,7 +265,7 @@ public:
 	static const char *getRemoteBindAddress();
 
 	// Directory list for external tables
-	static const char *getExternalFileAccess();
+	const char *getExternalFileAccess() const;
 
 	// Directory list for databases
 	static const char *getDatabaseAccess();
@@ -239,7 +283,7 @@ public:
 	static bool getLegacyHash();
 
 	// GC policy
-	static const char *getGCPolicy();
+	const char *getGCPolicy() const;
 
 	// Redirection
 	static bool getRedirection();
@@ -247,9 +291,9 @@ public:
 	// Use native, trusted or mixed authentication
 	static const char *getAuthMethod();
 
-	static int getDatabaseGrowthIncrement();
+	int getDatabaseGrowthIncrement() const;
 
-	static int getFileSystemCacheThreshold();
+	int getFileSystemCacheThreshold() const;
 
 	static int getFileSystemCacheSize();
 

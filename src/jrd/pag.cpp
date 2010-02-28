@@ -1071,7 +1071,8 @@ void PAG_header(thread_db* tdbb, bool info)
 										  Arg::Str(attachment->att_filename));
 	}
 
-	const bool useFSCache = dbb->dbb_bcb->bcb_count < ULONG(Config::getFileSystemCacheThreshold());
+	const bool useFSCache = dbb->dbb_bcb->bcb_count < 
+							ULONG(dbb->dbb_config->getFileSystemCacheThreshold());
 
 	if ((header->hdr_flags & hdr_force_write) || !useFSCache)
 	{
@@ -2046,12 +2047,12 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
  *	extend file(s)
  *
  **************************************/
-	const int MAX_EXTEND_BYTES = Config::getDatabaseGrowthIncrement();
+	fb_assert(dbb == tdbb->getDatabase())
+
+	const int MAX_EXTEND_BYTES = dbb->dbb_config->getDatabaseGrowthIncrement();
 
 	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
 		return true;
-
-	fb_assert(dbb == tdbb->getDatabase())
 
 	if (pageNum >= maxAlloc())
 	{

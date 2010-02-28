@@ -1221,8 +1221,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 	//
 	// Check if flush needed
 	//
-	const int max_unflushed_writes = Config::getMaxUnflushedWrites();
-	const time_t max_unflushed_write_time = Config::getMaxUnflushedWriteTime();
+	const int max_unflushed_writes = dbb->dbb_config->getMaxUnflushedWrites();
+	const time_t max_unflushed_write_time = dbb->dbb_config->getMaxUnflushedWriteTime();
 	bool max_num = (max_unflushed_writes >= 0);
 	bool max_time = (max_unflushed_write_time >= 0);
 

@@ -217,7 +217,7 @@ FBCLASSES_Objects = $(FBCLASSES_ClientObjects) $(FBCLASSES_ServerObjects) $(FBCL
 #
 # common/config
 
-FBCONFIG_ClientFiles=config.cpp config_file.cpp dir_list.cpp
+FBCONFIG_ClientFiles=config.cpp config_file.cpp dir_list.cpp ConfigCache.cpp
 FBCONFIG_ServerFiles=
 
 FBCONFIG_Files= $(FBCONFIG_ClientFiles) $(FBCONFIG_ServerFiles)
@@ -229,10 +229,7 @@ FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_So
 #
 # config
 
-CONFIG_ClientFiles=AdminException.cpp Args.cpp ArgsException.cpp \
-    ConfObj.cpp ConfObject.cpp ConfigFile.cpp Configuration.cpp \
-    Element.cpp FileName.cpp InputFile.cpp \
-    InputStream.cpp Lex.cpp ScanDir.cpp Stream.cpp StreamSegment.cpp
+CONFIG_ClientFiles=ScanDir.cpp
 CONFIG_ServerFiles=
 
 CONFIG_Files= $(CONFIG_ClientFiles) $(CONFIG_ServerFiles)
@@ -244,7 +241,7 @@ CONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CONFIG_Source
 #
 # vulcan
 
-VULCAN_ClientFiles=PathName.cpp RefObject.cpp
+VULCAN_ClientFiles=
 VULCAN_ServerFiles=
 
 VULCAN_Files= $(VULCAN_ClientFiles) $(VULCAN_ServerFiles)

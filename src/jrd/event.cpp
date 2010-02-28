@@ -85,7 +85,7 @@ void EventManager::init(Database* dbb)
 		EventManager* eventMgr = NULL;
 		if (!g_emMap->get(id, eventMgr))
 		{
-			eventMgr = new EventManager(id);
+			eventMgr = new EventManager(id, dbb->dbb_config);
 		}
 
 		fb_assert(eventMgr);
@@ -95,12 +95,13 @@ void EventManager::init(Database* dbb)
 }
 
 
-EventManager::EventManager(const Firebird::string& id)
+EventManager::EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf)
 	: PID(getpid()),
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
 	  m_dbId(getPool(), id),
+	  m_config(conf),
 	  m_sharedFileCreated(false),
 	  m_exiting(false)
 {
@@ -170,7 +171,7 @@ void EventManager::attach_shared_file()
 	if (!(m_header = (evh*) ISC_map_file(localStatus,
 										 name.c_str(),
 										 init_shmem, this,
-										 Config::getEventMemSize(),
+										 m_config->getEventMemSize(),
 										 &m_shmemData)))
 	{
 		localStatus.raise();
@@ -618,7 +619,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	if (!best && !recurse)
 	{
 		const ULONG old_length = m_shmemData.sh_mem_length_mapped;
-		const ULONG ev_length = old_length + Config::getEventMemSize();
+		const ULONG ev_length = old_length + m_config->getEventMemSize();
 
 		evh* header = NULL;
 

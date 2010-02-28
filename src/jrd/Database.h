@@ -63,6 +63,7 @@
 #include "../jrd/os/thd_priority.h"
 #include "../jrd/event_proto.h"
 #include "../lock/lock_proto.h"
+#include "../common/config/config.h"
 
 class CharSetContainer;
 
@@ -77,6 +78,7 @@ namespace Jrd
 	class TxPageCache;
 	class BackupManager;
 	class vcl;
+    class ExternalFileDirectoryList;
 
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
@@ -455,6 +457,8 @@ public:
 	Firebird::Array<Function*> dbb_functions;	// User defined functions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, USHORT> > > dbb_charset_ids;	// Character set ids
+	ExternalFileDirectoryList* dbb_external_file_directory_list;
+	Firebird::RefPtr<Config> dbb_config;
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -489,7 +493,8 @@ private:
 		dbb_charsets(*p),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
 		dbb_functions(*p),
-		dbb_charset_ids(*p)
+		dbb_charset_ids(*p),
+		dbb_external_file_directory_list(NULL)
 	{
 		dbb_pools.add(p);
 		dbb_internal.grow(irq_MAX);
