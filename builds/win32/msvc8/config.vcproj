@@ -271,90 +271,18 @@
 			Name="Config files"
 			>
 			<File
-				RelativePath="..\..\..\src\config\AdminException.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\Args.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\ArgsException.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\ConfigFile.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\Configuration.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\ConfObj.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\ConfObject.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\Element.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\FileName.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\InputFile.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\InputStream.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\Lex.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\config\ScanDir.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\Stream.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\config\StreamSegment.cpp"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Vulcan files"
 			>
-			<File
-				RelativePath="..\..\..\src\vulcan\PathName.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\vulcan\RefObject.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h"
 			>
-			<File
-				RelativePath="..\..\..\src\vulcan\PathName.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\vulcan\RefObject.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\config\ScanDir.h"
 				>

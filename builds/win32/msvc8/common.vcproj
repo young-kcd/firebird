@@ -304,6 +304,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\config\ConfigCache.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\config\dir_list.cpp"
 				>
 			</File>
@@ -450,6 +454,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\config_root.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\ConfigCache.h"
 				>
 			</File>
 			<File
