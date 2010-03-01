@@ -1,3 +1,10 @@
+2010-02-28 15:42  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.458.2.3):
+
+	Backport fix for CORE-2888 - A memory corruption cause incorrect
+	query evaluation and may crash the server
+
 2010-02-27 19:22  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.352.2.3):
