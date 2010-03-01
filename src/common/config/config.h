@@ -137,6 +137,7 @@ private:
 	};
 
 	typedef const char* ConfigName;
+
 	struct ConfigEntry
 	{
 		ConfigType data_type;
@@ -149,10 +150,12 @@ private:
 	static int asInteger(const Firebird::PathName&);
 	static bool asBoolean(const Firebird::PathName&);
 	static const char* asString(const Firebird::PathName&);
+
 	void loadValues(const ConfigFile& file);
 	template <typename T> T get(Config::ConfigKey key) const;
 
 	static const ConfigEntry entries[MAX_CONFIG_KEY];
+
 	ConfigValue values[MAX_CONFIG_KEY];
 
 public:
@@ -238,16 +241,16 @@ public:
 	static int getPriorityBoost();
 
 	// Service name for remote protocols
-	static const char *getRemoteServiceName();
+	static const char* getRemoteServiceName();
 
 	// Service port for INET
 	static unsigned short getRemoteServicePort();
 
 	// Pipe name for WNET
-	static const char *getRemotePipeName();
+	static const char* getRemotePipeName();
 
 	// Name for IPC-related objects
-	static const char *getIpcName();
+	static const char* getIpcName();
 
 	// Unflushed writes number
 	int getMaxUnflushedWrites() const;
@@ -262,19 +265,19 @@ public:
 	static int getRemoteAuxPort();
 
 	// Server binding NIC address
-	static const char *getRemoteBindAddress();
+	static const char* getRemoteBindAddress();
 
 	// Directory list for external tables
-	const char *getExternalFileAccess() const;
+	const char* getExternalFileAccess() const;
 
 	// Directory list for databases
-	static const char *getDatabaseAccess();
+	static const char* getDatabaseAccess();
 
 	// Directory list for UDF libraries
-	static const char *getUdfAccess();
+	static const char* getUdfAccess();
 
 	// Temporary directories list
-	static const char *getTempDirectories();
+	static const char* getTempDirectories();
 
 	// Abort on BUGCHECK and structured exceptions
  	static bool getBugcheckAbort();
@@ -283,13 +286,13 @@ public:
 	static bool getLegacyHash();
 
 	// GC policy
-	const char *getGCPolicy() const;
+	const char* getGCPolicy() const;
 
 	// Redirection
 	static bool getRedirection();
 
 	// Use native, trusted or mixed authentication
-	static const char *getAuthMethod();
+	static const char* getAuthMethod();
 
 	int getDatabaseGrowthIncrement() const;
 
@@ -301,7 +304,7 @@ public:
 
 	static bool getOldSetClauseSemantics();
 
-	static const char *getAuditTraceConfigFile();
+	static const char* getAuditTraceConfigFile();
 
 	static int getMaxUserTraceLogSize();
 };

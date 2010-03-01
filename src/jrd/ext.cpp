@@ -76,30 +76,34 @@ __int64 __cdecl _ftelli64(FILE*);
 
 using namespace Firebird;
 
-namespace Jrd {
-	class ExternalFileDirectoryList : public Firebird::DirectoryList
+namespace Jrd
+{
+	class ExternalFileDirectoryList : public DirectoryList
 	{
 	private:
-		const Firebird::PathName getConfigString() const
+		const PathName getConfigString() const
 		{
-			return Firebird::PathName(config->getExternalFileAccess());
+			return PathName(config->getExternalFileAccess());
 		}
+
 	public:
 		ExternalFileDirectoryList(const Database* dbb)
 			: DirectoryList(*dbb->dbb_permanent), config(dbb->dbb_config)
 		{
 			initialize();
 		}
+
 		static void create(Database* dbb)
 		{
 			if (!dbb->dbb_external_file_directory_list)
 			{
-				dbb->dbb_external_file_directory_list = 
+				dbb->dbb_external_file_directory_list =
 					FB_NEW(*dbb->dbb_permanent) ExternalFileDirectoryList(dbb);
 			}
 		}
+
 	private:
-		Firebird::RefPtr<Config> config;
+		RefPtr<Config> config;
 	};
 }
 
@@ -195,17 +199,17 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 #endif
 
 	// If file_name has no path part, expand it in ExternalFilesPath.
-	Firebird::PathName Path, Name;
-	PathUtils::splitLastComponent(Path, Name, file_name);
-	if (Path.length() == 0)
+	PathName path, name;
+	PathUtils::splitLastComponent(path, name, file_name);
+	if (path.isEmpty())
 	{
 		// path component not present in file_name
 		ExternalFileDirectoryList::create(dbb);
-		if (!(dbb->dbb_external_file_directory_list->expandFileName(Path, Name)))
+		if (!(dbb->dbb_external_file_directory_list->expandFileName(path, name)))
 		{
-			dbb->dbb_external_file_directory_list->defaultName(Path, Name);
+			dbb->dbb_external_file_directory_list->defaultName(path, name);
 		}
-		file_name = Path.c_str();
+		file_name = path.c_str();
 	}
 
 	ExternalFile* file = FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();

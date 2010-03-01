@@ -671,7 +671,6 @@ ExtEngineManager::~ExtEngineManager()
 void ExtEngineManager::initialize()
 {
 	PathName pluginsPath = PluginManager::getPluginsDirectory();
-
 	ScanDir dir(pluginsPath.c_str(), "*.conf");
 
 	try
@@ -680,8 +679,8 @@ void ExtEngineManager::initialize()
 
 		while (dir.next())
 		{
-			ConfigFile configFile(dir.getFilePath(), 
-								  ConfigFile::EXCEPTION_ON_ERROR | ConfigFile::HAS_SUB_CONF);
+			ConfigFile configFile(dir.getFilePath(),
+				ConfigFile::EXCEPTION_ON_ERROR | ConfigFile::HAS_SUB_CONF);
 
 			const ConfigFile::Parameters& params = configFile.getParameters();
 			for (size_t n = 0; n < params.getCount(); ++n)
@@ -751,8 +750,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* /*attachment
 
 
 ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, const Jrd::Function* udf,
-	const MetaName& engine, const string& entryPoint,
-	const string& body)
+	const MetaName& engine, const string& entryPoint, const string& body)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -794,8 +792,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 
 ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, const jrd_prc* prc,
-	const MetaName& engine, const string& entryPoint,
-	const string& body)
+	const MetaName& engine, const string& entryPoint, const string& body)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -837,8 +834,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 
 
 ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
-	const MetaName& engine, const string& entryPoint,
-	const string& body, ExternalTrigger::Type type)
+	const MetaName& engine, const string& entryPoint, const string& body, ExternalTrigger::Type type)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();

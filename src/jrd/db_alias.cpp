@@ -32,7 +32,6 @@
 #include "../jrd/Database.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/Hash.h"
-
 #include <ctype.h>
 
 using namespace Firebird;
@@ -134,8 +133,9 @@ namespace
 	typedef Hash<DbName, 127, PathName, PathHash<DbName>, PathHash<DbName> > DbHash;
 	struct DbName : public DbHash::Entry
 	{
-		DbName(MemoryPool& p, const PathName& db) 
-			: name(p, db) { }
+		DbName(MemoryPool& p, const PathName& db)
+			: name(p, db)
+		{ }
 
 		DbName* get()
 		{
@@ -153,10 +153,12 @@ namespace
 
 	struct AliasName;
 	typedef Hash<AliasName, 251, PathName, PathHash<AliasName>, PathHash<AliasName> > AliasHash;
+
 	struct AliasName : public AliasHash::Entry
 	{
-		AliasName(MemoryPool& p, const PathName& al, DbName* db) 
-			: name(p, al), database(db) { }
+		AliasName(MemoryPool& p, const PathName& al, DbName* db)
+			: name(p, al), database(db)
+		{ }
 
 		AliasName* get()
 		{
@@ -219,12 +221,12 @@ namespace
 					databases.add(db);
 					dbHash.add(db);
 				}
-				else 
+				else
 				{
 					// check for duplicated config
 					if (par->sub && db->config.hasData())
 					{
-						fatal_exception::raiseFmt("Duplicated configuration for database %s\n", 
+						fatal_exception::raiseFmt("Duplicated configuration for database %s\n",
 												  file.c_str());
 					}
 				}
@@ -233,13 +235,14 @@ namespace
 					// load per-database configuration
 					db->config = new Config(*par->sub, *Config::getDefaultConfig());
 				}
-				
+
 				PathName correctedAlias(par->name);
 				AliasName* alias = aliasHash.lookup(correctedAlias);
 				if (alias)
 				{
 					fatal_exception::raiseFmt("Duplicated alias %s\n", correctedAlias.c_str());
 				}
+
 				alias = FB_NEW(getPool()) AliasName(getPool(), correctedAlias, db);
 				aliases.add(alias);
 				aliasHash.add(alias);

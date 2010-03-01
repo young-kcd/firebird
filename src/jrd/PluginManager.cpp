@@ -92,10 +92,10 @@ void PluginManager::initialize()
 
 		while (dir.next())
 		{
-			ConfigFile configFile(dir.getFilePath(), 
-								  ConfigFile::HAS_SUB_CONF | ConfigFile::EXCEPTION_ON_ERROR);
+			ConfigFile configFile(dir.getFilePath(),
+				ConfigFile::HAS_SUB_CONF | ConfigFile::EXCEPTION_ON_ERROR);
 
-			const ConfigFile::Parameters& params = configFile.getParameters(); 
+			const ConfigFile::Parameters& params = configFile.getParameters();
 			for (size_t n = 0; n < params.getCount(); ++n)
 			{
 				const ConfigFile::Parameter* pm = &params[n];
@@ -115,16 +115,18 @@ void PluginManager::initialize()
 
 				if (!pm->sub)
 				{
-					fatal_exception::raiseFmt("Missing required parameters for plugin %s", 
-											  plugin->name.c_str());
+					fatal_exception::raiseFmt("Missing required parameters for plugin %s",
+						plugin->name.c_str());
 				}
+
 				const ConfigFile::Parameter* par = pm->sub->findParameter("filename");
 
 				if (!par)
 				{
-					fatal_exception::raiseFmt("Missing required parameter 'filename' for plugin %s", 
-											  plugin->name.c_str());
+					fatal_exception::raiseFmt("Missing required parameter 'filename' for plugin %s",
+						plugin->name.c_str());
 				}
+
 				plugin->filename = par->value;
 
 				par = pm->sub->findParameter("plugin_config");
@@ -133,15 +135,17 @@ void PluginManager::initialize()
 					par = configFile.findParameter("plugin_config", par->value);
 					if (!par)
 					{
-						fatal_exception::raiseFmt("Missing required config for plugin %s", 
-												  plugin->name.c_str());
+						fatal_exception::raiseFmt("Missing required config for plugin %s",
+							plugin->name.c_str());
 					}
+
 					if (par->sub)
 					{
 						const ConfigFile::Parameters& all = par->sub->getParameters();
 						for (size_t n = 0; n < all.getCount(); ++n)
 						{
-							plugin->configInfo.add(ConfigEntry(*getDefaultMemoryPool(), all[n].name, all[n].value));
+							plugin->configInfo.add(ConfigEntry(*getDefaultMemoryPool(),
+								all[n].name, all[n].value));
 						}
 					}
 				}
@@ -175,10 +179,7 @@ PluginImpl* PluginManager::getPlugin(const PathName& name)
 	if (!plugins->get(name, plugin))
 	{
 		//// TODO: localize
-		string s;
-		s.printf("Plugin %s not found.", name.c_str());
-		gds__log(s.c_str());
-
+		gds__log("Plugin %s not found.", name.c_str());
 		status_exception::raise(Arg::Gds(isc_pman_plugin_notfound) << name);
 	}
 
@@ -202,10 +203,7 @@ PluginImpl* PluginManager::getPlugin(const PathName& name)
 	if (!module)
 	{
 		//// TODO: localize
-		string s;
-		s.printf("Can't load plugin module '%s'.", plugin->filename.c_str());
-		gds__log(s.c_str());
-
+		gds__log("Can't load plugin module '%s'.", plugin->filename.c_str());
 		status_exception::raise(Arg::Gds(isc_pman_cannot_load_plugin) << plugin->filename);
 	}
 
@@ -215,10 +213,7 @@ PluginImpl* PluginManager::getPlugin(const PathName& name)
 	else
 	{
 		//// TODO: localize
-		string s;
-		s.printf("Entrypoint of Plugin '%s' does not exist.", plugin->filename.c_str());
-		gds__log(s.c_str());
-
+		gds__log("Entrypoint of Plugin '%s' does not exist.", plugin->filename.c_str());
 		status_exception::raise(Arg::Gds(isc_pman_entrypoint_notfound) << plugin->filename);
 	}
 

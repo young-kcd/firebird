@@ -165,7 +165,7 @@ Firebird::GlobalPtr<LockManager::DbLockMgrMap> LockManager::g_lmMap;
 Firebird::GlobalPtr<Firebird::Mutex> LockManager::g_mapMutex;
 
 
-LockManager* LockManager::create(const Firebird::string& id, Firebird::RefPtr<Config> conf)
+LockManager* LockManager::create(const Firebird::string& id, RefPtr<Config> conf)
 {
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
@@ -181,7 +181,7 @@ LockManager* LockManager::create(const Firebird::string& id, Firebird::RefPtr<Co
 }
 
 
-LockManager::LockManager(const Firebird::string& id, Firebird::RefPtr<Config> conf)
+LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 	: PID(getpid()),
 	  m_bugcheck(false),
 	  m_sharedFileCreated(false),

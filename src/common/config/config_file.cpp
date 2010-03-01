@@ -43,7 +43,7 @@ public:
 	MainStream(const char* fname, bool fExceptionOnError)
 		: file(fopen(fname, "rt")), l(0)
 	{
-		if ((!file) && fExceptionOnError)
+		if (!file && fExceptionOnError)
 		{
 			// config file does not exist
 			fatal_exception::raiseFmt("Missing configuration file: ", fname);
@@ -69,6 +69,7 @@ public:
 			++l;
 			input.alltrim(" \t\r");
 		} while (input.isEmpty() || input[0] == '#');
+
 		line = l;
 		return true;
 	}
@@ -99,6 +100,7 @@ public:
 				input = "";
 				return false;
 			}
+
 			const char* ptr = strchr(s, '\n');
 			if (!ptr)
 			{
@@ -114,9 +116,11 @@ public:
 					s = NULL;
 				}
 			}
+
 			++l;
 			input.alltrim(" \t\r");
 		} while (input.isEmpty() || input[0] == '#');
+
 		line = l;
 		return true;
 	}
@@ -144,6 +148,7 @@ public:
 		input = data[cnt].first;
 		line = data[cnt].second;
 		++cnt;
+
 		return true;
 	}
 
@@ -188,7 +193,9 @@ ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const St
 	parse(s);
 }
 
-ConfigFile::Stream::~Stream() { }
+ConfigFile::Stream::~Stream()
+{
+}
 
 /******************************************************************************
  *
@@ -239,7 +246,8 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, Str
 		case '}':
 			if (flags & HAS_SUB_CONF)
 			{
-				if (inString != 1) {
+				if (inString != 1)
+				{
 					if (input[n] == '}')	// Subconf close mark not expected
 					{
 						return LINE_BAD;
@@ -262,7 +270,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, Str
 
 	if (inString == 1)				// If we are still inside a string, it's error
 		return LINE_BAD;
-	
+
 	if (key.isEmpty())
 	{
 		key = input.substr(0, eol);
@@ -364,7 +372,7 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const String& name, const
 		return NULL;
 	}
 
-	while(pos < parameters.getCount() && parameters[pos].name == name)
+	while (pos < parameters.getCount() && parameters[pos].name == name)
 	{
 		if (parameters[pos].value == value)
 		{
@@ -372,6 +380,7 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const String& name, const
 		}
 		++pos;
 	}
+
 	return NULL;
 }
 
@@ -384,8 +393,8 @@ void ConfigFile::badLine(const String& line)
 {
 	if (flags & EXCEPTION_ON_ERROR)
 	{
-		fatal_exception::raiseFmt("%s: illegal line <%s>" , 
-								  configFile.hasData() ? configFile.c_str() : "Passed text", 
+		fatal_exception::raiseFmt("%s: illegal line <%s>",
+								  (configFile.hasData() ? configFile.c_str() : "Passed text"),
 								  line.c_str());
 	}
 }
@@ -406,7 +415,7 @@ void ConfigFile::parse(Stream* stream)
 		Parameter current;
 		current.line = line;
 
-		switch(parseLine(inputLine, current.name, current.value))
+		switch (parseLine(inputLine, current.name, current.value))
 		{
 		case LINE_BAD:
 			badLine(inputLine);
@@ -428,6 +437,7 @@ void ConfigFile::parse(Stream* stream)
 				size_t n = parameters.add(current);
 				previous = &parameters[n];
 			}
+
 			{ // subconf scope
 				SubStream subStream;
 				while (stream->getLine(inputLine, line))
@@ -446,7 +456,7 @@ void ConfigFile::parse(Stream* stream)
 					subStream.putLine(inputLine, line);
 				}
 
-				previous->sub = FB_NEW(getPool()) ConfigFile(getPool(), &subStream, 
+				previous->sub = FB_NEW(getPool()) ConfigFile(getPool(), &subStream,
 															 flags & ~HAS_SUB_CONF, configFile);
 			}
 			break;

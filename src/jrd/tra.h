@@ -282,7 +282,10 @@ public:
 			return tra_outer->getBlobSpace();
 
 		if (!tra_blob_space)
-			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE, tra_attachment->att_database->dbb_config);
+		{
+			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE,
+				tra_attachment->att_database->dbb_config);
+		}
 
 		return tra_blob_space;
 	}
@@ -290,7 +293,10 @@ public:
 	TempSpace* getUndoSpace()
 	{
 		if (!tra_undo_space)
-			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE, tra_attachment->att_database->dbb_config);
+		{
+			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE,
+				tra_attachment->att_database->dbb_config);
+		}
 
 		return tra_undo_space;
 	}

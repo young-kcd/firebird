@@ -489,7 +489,7 @@ public:
 
 	void get(const UCHAR*, USHORT, bool&);
 
-	void setBuffers(Firebird::RefPtr<Config> config)
+	void setBuffers(RefPtr<Config> config)
 	{
 		if (dpb_buffers == 0)
 		{
@@ -575,7 +575,7 @@ static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, ISC_STATUS*
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
 #endif
 
-static Database*	init(thread_db*, const PathName&, Firebird::RefPtr<Config>, bool);
+static Database*	init(thread_db*, const PathName&, RefPtr<Config>, bool);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	USHORT count, TEB* vector, FB_API_HANDLE public_handle = 0);
@@ -916,7 +916,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	UserId userId;
 	DatabaseOptions options;
-	Firebird::RefPtr<Config> config;
+	RefPtr<Config> config;
 	bool invalid_client_SQL_dialect = false;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
@@ -5126,7 +5126,7 @@ static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code)
 
 static Database* init(thread_db* tdbb,
 					  const PathName& expanded_filename, // only for SS
-					  Firebird::RefPtr<Config> config,
+					  RefPtr<Config> config,
 					  bool attach_flag) // only for SS
 {
 /**************************************

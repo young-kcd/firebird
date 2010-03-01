@@ -1071,8 +1071,8 @@ void PAG_header(thread_db* tdbb, bool info)
 										  Arg::Str(attachment->att_filename));
 	}
 
-	const bool useFSCache = dbb->dbb_bcb->bcb_count < 
-							ULONG(dbb->dbb_config->getFileSystemCacheThreshold());
+	const bool useFSCache = dbb->dbb_bcb->bcb_count <
+		ULONG(dbb->dbb_config->getFileSystemCacheThreshold());
 
 	if ((header->hdr_flags & hdr_force_write) || !useFSCache)
 	{

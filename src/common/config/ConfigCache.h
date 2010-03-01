@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef CONFIG_CONFIG_CASHE_H
-#define CONFIG_CONFIG_CASHE_H
+#ifndef COMMON_CONFIG_CASHE_H
+#define COMMON_CONFIG_CASHE_H
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/fb_string.h"
@@ -54,4 +54,4 @@ private:
 	unsigned long fileTime;
 };
 
-#endif // CLASSES_HASH_H
+#endif // COMMON_CONFIG_CASHE_H

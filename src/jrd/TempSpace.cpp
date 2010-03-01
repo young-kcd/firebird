@@ -138,10 +138,10 @@ size_t TempSpace::FileBlock::write(offset_t offset, const void* buffer, size_t l
 //
 
 TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, Firebird::RefPtr<Config> conf)
-		: pool(p), filePrefix(p, prefix), config(conf), 
-		  logicalSize(0), physicalSize(0), localCacheUsage(0),
-		  head(NULL), tail(NULL), tempFiles(p),
-		  freeSegments(NULL), notUsedSegments(NULL)
+	: pool(p), filePrefix(p, prefix), config(conf),
+	  logicalSize(0), physicalSize(0), localCacheUsage(0),
+	  head(NULL), tail(NULL), tempFiles(p),
+	  freeSegments(NULL), notUsedSegments(NULL)
 {
 	if (!tempDirs)
 	{

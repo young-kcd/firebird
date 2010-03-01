@@ -36,9 +36,12 @@
 
 ConfigCache::ConfigCache(Firebird::MemoryPool& p, const Firebird::PathName& fName)
 	: PermanentStorage(p), fileName(getPool(), fName), fileTime(0)
-{ }
+{
+}
 
-ConfigCache::~ConfigCache() { }
+ConfigCache::~ConfigCache()
+{
+}
 
 void ConfigCache::checkLoadConfig()
 {
@@ -47,7 +50,7 @@ void ConfigCache::checkLoadConfig()
 	{
 		return;
 	}
-	
+
 	Firebird::WriteLockGuard guard(rwLock);
 
 	// may be someone already reloaded?
@@ -56,6 +59,7 @@ void ConfigCache::checkLoadConfig()
 	{
 		return;
 	}
+
 	fileTime = newTime;
 
 	loadConfig();

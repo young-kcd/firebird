@@ -92,7 +92,7 @@ namespace
 
 void TraceCfgReader::readConfig()
 {
-	ConfigFile cfgFile(ConfigFile::USE_TEXT, m_text, 
+	ConfigFile cfgFile(ConfigFile::USE_TEXT, m_text,
 					   ConfigFile::HAS_SUB_CONF | ConfigFile::EXCEPTION_ON_ERROR);
 
 	m_subpatterns[0].start = 0;

@@ -70,13 +70,13 @@ public:
 	struct Parameter : public AutoStorage
 	{
 		Parameter(MemoryPool& p, const Parameter& par)
-			: AutoStorage(p), name(getPool(), par.name), value(getPool(), par.value), 
+			: AutoStorage(p), name(getPool(), par.name), value(getPool(), par.value),
 			  sub(par.sub), line(par.line)
 		{ }
 		Parameter()
 			: AutoStorage(), name(getPool()), value(getPool()), sub(0), line(0)
 		{ }
-	
+
 		String name;
 		String value;
 		Firebird::RefPtr<ConfigFile> sub;
@@ -87,9 +87,9 @@ public:
 			return &item->name;
 		}
 	};
-		
-    typedef Firebird::SortedObjectsArray <Parameter, Firebird::InlineStorage<Parameter*, 100>,
-										  String, Parameter> Parameters;
+
+    typedef Firebird::SortedObjectsArray<Parameter, Firebird::InlineStorage<Parameter*, 100>,
+										 String, Parameter> Parameters;
 
 	ConfigFile(const String& file, USHORT fl);
 	ConfigFile(const char* file, USHORT fl);

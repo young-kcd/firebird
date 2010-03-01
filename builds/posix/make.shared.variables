@@ -239,18 +239,6 @@ CONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CONFIG_Source
 
 #________________________________________________________________________
 #
-# vulcan
-
-VULCAN_ClientFiles=
-VULCAN_ServerFiles=
-
-VULCAN_Files= $(VULCAN_ClientFiles) $(VULCAN_ServerFiles)
-
-VULCAN_Sources = $(addprefix vulcan/, $(VULCAN_Files))
-VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Sources))))
-
-#________________________________________________________________________
-#
 # common
 
 FBCOMMON_ClientFiles = fb_exception.cpp thd.cpp classes/MetaName.cpp StatusHolder.cpp classes/init.cpp StatusArg.cpp
@@ -295,8 +283,7 @@ OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECI
 
 COMMON_Objects = $(FBCLASSES_Objects) \
 				$(FBCOMMON_Objects) \
-				$(CONFIG_Objects) \
-				$(VULCAN_Objects)
+				$(CONFIG_Objects)
 
 
 #________________________________________________________________________
