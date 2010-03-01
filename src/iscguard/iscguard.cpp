@@ -43,6 +43,7 @@
 #include "../remote/os/win32/chop_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
+#include "../jrd/os/path_utils.h"
 
 #ifdef WIN_NT
 #include <process.h>			// _beginthread

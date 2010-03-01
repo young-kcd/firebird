@@ -28,10 +28,13 @@
 #include "../common/config/ConfigCache.h"
 #include "../common/config/config_file.h"
 
-#ifndef WIN_NT
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifndef WIN_NT
 #include <unistd.h>
+#else
+#include <errno.h>
 #endif
 
 ConfigCache::ConfigCache(Firebird::MemoryPool& p, const Firebird::PathName& fName)
@@ -65,7 +68,6 @@ void ConfigCache::checkLoadConfig()
 	loadConfig();
 }
 
-#ifndef WIN_NT
 unsigned long ConfigCache::getTime()
 {
 	struct stat st;
@@ -80,6 +82,3 @@ unsigned long ConfigCache::getTime()
 	}
 	return st.st_mtime;
 }
-#else // WIN_NT
-error: add getTime() for windows
-#endif // WIN_NT
