@@ -46,7 +46,7 @@ public:
 		if (!file && fExceptionOnError)
 		{
 			// config file does not exist
-			fatal_exception::raiseFmt("Missing configuration file: ", fname);
+			fatal_exception::raiseFmt("Missing configuration file: %s", fname);
 		}
 	}
 
