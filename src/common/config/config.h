@@ -56,6 +56,11 @@
 				  position within appropriate structures)
 		3. Add member function to Config class (config.h) and implement it
 		   in config.cpp module.
+		4. For per-database configurable parameters, please use 
+				type getParameterName() const;
+		   form, for world-wide parameters:
+				static type getParameterName();
+		   should be used.
 **/
 
 extern const char*	GCPolicyCooperative;
