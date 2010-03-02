@@ -51,7 +51,7 @@ public:
 	Firebird::PathName fileName;
 
 private:
-	time_t fileTime;
+	volatile time_t fileTime;
 };
 
 #endif // COMMON_CONFIG_CASHE_H
