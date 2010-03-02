@@ -275,6 +275,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, Str
 	{
 		key = input.substr(0, eol);
 		key.rtrim(" \t\r");
+		value.erase();
 	}
 	else
 	{
