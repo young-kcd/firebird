@@ -44,14 +44,14 @@ protected:
 	virtual void loadConfig() = 0;
 
 private:
-	unsigned long getTime();
+	time_t getTime();
 
 public:
 	Firebird::RWLock rwLock;
 	Firebird::PathName fileName;
 
 private:
-	unsigned long fileTime;
+	time_t fileTime;
 };
 
 #endif // COMMON_CONFIG_CASHE_H

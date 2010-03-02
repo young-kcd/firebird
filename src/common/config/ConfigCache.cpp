@@ -68,7 +68,7 @@ void ConfigCache::checkLoadConfig()
 	loadConfig();
 }
 
-unsigned long ConfigCache::getTime()
+time_t ConfigCache::getTime()
 {
 	struct stat st;
 	if (stat(fileName.c_str(), &st) != 0)
