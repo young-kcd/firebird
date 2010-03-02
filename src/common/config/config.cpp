@@ -295,12 +295,6 @@ const char* Config::asString(const String &value)
 	return value.c_str();
 }
 
-template <typename T>
-T Config::get(Config::ConfigKey key) const
-{
-	return (T) values[key];
-}
-
 /******************************************************************************
  *
  *	Public interface

@@ -152,7 +152,10 @@ private:
 	static const char* asString(const Firebird::PathName&);
 
 	void loadValues(const ConfigFile& file);
-	template <typename T> T get(Config::ConfigKey key) const;
+	template <typename T> T get(Config::ConfigKey key) const
+	{
+		return (T) values[key];
+	}
 
 	static const ConfigEntry entries[MAX_CONFIG_KEY];
 
