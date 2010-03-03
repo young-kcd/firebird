@@ -192,10 +192,10 @@ public:
 	static const char* getRootDirectory();
 
 	// Allocation chunk for the temporary spaces
-	int getTempBlockSize() const;
+	static int getTempBlockSize();
 
 	// Caching limit for the temporary data
-	int getTempCacheLimit() const;
+	static int getTempCacheLimit();
 
 	// Whether remote (NFS) files can be opened
 	static bool getRemoteFileOpenAbility();

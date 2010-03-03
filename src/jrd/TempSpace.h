@@ -34,7 +34,7 @@
 class TempSpace : public Firebird::File
 {
 public:
-	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix, Firebird::RefPtr<Config> conf);
+	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix);
 	virtual ~TempSpace();
 
 	size_t read(offset_t offset, void* buffer, size_t length);
@@ -164,7 +164,6 @@ private:
 
 	MemoryPool& pool;
 	Firebird::PathName filePrefix;
-	Firebird::RefPtr<Config> config;
 	offset_t logicalSize;
 	offset_t physicalSize;
 	offset_t localCacheUsage;

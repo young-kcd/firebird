@@ -283,8 +283,7 @@ public:
 
 		if (!tra_blob_space)
 		{
-			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE,
-				tra_attachment->att_database->dbb_config);
+			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
 		}
 
 		return tra_blob_space;
@@ -294,8 +293,7 @@ public:
 	{
 		if (!tra_undo_space)
 		{
-			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE,
-				tra_attachment->att_database->dbb_config);
+			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
 		}
 
 		return tra_undo_space;

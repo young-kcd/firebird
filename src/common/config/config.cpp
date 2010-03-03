@@ -336,14 +336,14 @@ const char* Config::getRootDirectory()
 	return result ? result : firebirdConf().getCachedRootDir();
 }
 
-int Config::getTempBlockSize() const
+int Config::getTempBlockSize()
 {
-	return get<int>(KEY_TEMP_BLOCK_SIZE);
+	return (int) getDefaultConfig()->values[KEY_TEMP_BLOCK_SIZE];
 }
 
-int Config::getTempCacheLimit() const
+int Config::getTempCacheLimit()
 {
-	int v = get<int>(KEY_TEMP_CACHE_LIMIT);
+	int v = (int) getDefaultConfig()->values[KEY_TEMP_CACHE_LIMIT];
 	return v < 0 ? 0 : v;
 }
 

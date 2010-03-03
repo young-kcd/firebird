@@ -343,8 +343,6 @@
 # The smallest block size being allocated in the temporary storage.
 # This value reflects the allocation granularity.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
 #TempBlockSize = 1048576
@@ -356,8 +354,6 @@
 # For Classic servers, this setting is defaulted to 8 MB.
 # Although it can be increased, the value applies to each client
 # connection/server instance and thus consumes a lot of memory.
-#
-# Per-database configurable.
 #
 # Type: integer
 #

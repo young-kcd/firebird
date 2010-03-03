@@ -382,7 +382,7 @@ sort_context* SORT_init(Database* dbb,
 
 		// Set up the temp space
 
-		scb->scb_space = FB_NEW(pool) TempSpace(pool, SCRATCH, dbb->dbb_config);
+		scb->scb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 
 		// Set up to receive the first record
 

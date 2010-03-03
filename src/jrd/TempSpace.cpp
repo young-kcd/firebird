@@ -137,8 +137,8 @@ size_t TempSpace::FileBlock::write(offset_t offset, const void* buffer, size_t l
 // Constructor
 //
 
-TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, Firebird::RefPtr<Config> conf)
-	: pool(p), filePrefix(p, prefix), config(conf),
+TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix)
+	: pool(p), filePrefix(p, prefix),
 	  logicalSize(0), physicalSize(0), localCacheUsage(0),
 	  head(NULL), tail(NULL), tempFiles(p),
 	  freeSegments(NULL), notUsedSegments(NULL)
@@ -150,7 +150,7 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, Firebird::
 		{
 			MemoryPool& def_pool = *getDefaultMemoryPool();
 			tempDirs = FB_NEW(def_pool) Firebird::TempDirectoryList(def_pool);
-			minBlockSize = config->getTempBlockSize();
+			minBlockSize = Config::getTempBlockSize();
 
 			if (minBlockSize < MIN_TEMP_BLOCK_SIZE)
 				minBlockSize = MIN_TEMP_BLOCK_SIZE;
@@ -284,7 +284,7 @@ void TempSpace::extend(size_t size)
 
 		Block* block = NULL;
 
-		if (globalCacheUsage + size <= size_t(config->getTempCacheLimit()))
+		if (globalCacheUsage + size <= size_t(Config::getTempCacheLimit()))
 		{
 			try
 			{
