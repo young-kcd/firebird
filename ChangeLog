@@ -1,3 +1,41 @@
+2010-03-03 13:45  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.327):
+
+	Fixed abort when firebird.conf is missing
+
+2010-03-02 16:13  alexpeshkoff
+
+	* firebird2/src/common/config/ConfigCache.h (1.4):
+
+	Make this variable volatile - thanks to Adriano
+
+2010-03-02 15:52  alexpeshkoff
+
+	* firebird2/src/common/config/config.h (1.63):
+
+	comments
+
+2010-03-02 15:48  alexpeshkoff
+
+	* firebird2/src/common/config/: config.cpp (1.108), config.h
+	(1.62):
+
+	Moved template function to .h file
+
+2010-03-02 15:25  alexpeshkoff
+
+	* firebird2/src/common/config/config_file.cpp (1.40):
+
+	Clear value here - thanks to Claudio
+
+2010-03-02 15:09  alexpeshkoff
+
+	* firebird2/src/utilities/ntrace/fbtrace.conf (1.13):
+
+	false/true are also recognized with new format - restored them in
+	sample file
+
 2010-03-02 11:23  hvlad
 
 	* firebird2/src/common/config/: ConfigCache.cpp (1.4),
