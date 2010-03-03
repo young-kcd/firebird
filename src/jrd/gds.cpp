@@ -1457,124 +1457,132 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
  *	number if we can't find the message.
  *
  **************************************/
-	// Handle default message file
-	int status = -1;
-	gds_msg* messageL = (gds_msg*) handle;
-
-	Firebird::MutexLockGuard guard(global_msg_mutex);
-
-	if (!messageL && !(messageL = global_default_msg))
+	try
 	{
-		// Try environment variable setting first
+		// Handle default message file
+		int status = -1;
+		gds_msg* messageL = (gds_msg*) handle;
 
-		Firebird::string p;
-		if (!fb_utils::readenv("ISC_MSGS", p) ||
-			(status = gds__msg_open(reinterpret_cast<void**>(&messageL), p.c_str())))
+		Firebird::MutexLockGuard guard(global_msg_mutex);
+
+		if (!messageL && !(messageL = global_default_msg))
 		{
-			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
+			// Try environment variable setting first
 
-			// Try declared language of this attachment
-			// This is not quite the same as the language declared on the READY statement
-
-			TEXT* msg_file = (TEXT *) gds__alloc((SLONG) MAXPATHLEN);
-			// FREE: at block exit
-			if (!msg_file)		// NOMEM:
-				return -2;
-
-			if (fb_utils::readenv("LC_MESSAGES", p))
+			Firebird::string p;
+			if (!fb_utils::readenv("ISC_MSGS", p) ||
+				(status = gds__msg_open(reinterpret_cast<void**>(&messageL), p.c_str())))
 			{
-				sanitize(p);
-				Firebird::string::size_type pos = p.find_last_of('/');
-				if (pos == Firebird::string::npos)
-				    pos = p.find_last_of('\\');
+				TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
 
-				if (pos != Firebird::string::npos)
-				    p.erase(0, pos + 1);
+				// Try declared language of this attachment
+				// This is not quite the same as the language declared on the READY statement
 
-				fb_utils::snprintf(translated_msg_file,
-					sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
-				gds__prefix_msg(msg_file, translated_msg_file);
-				status = gds__msg_open(reinterpret_cast<void**>(&messageL), msg_file);
+				TEXT* msg_file = (TEXT *) gds__alloc((SLONG) MAXPATHLEN);
+				// FREE: at block exit
+				if (!msg_file)		// NOMEM:
+					return -2;
+
+				if (fb_utils::readenv("LC_MESSAGES", p))
+				{
+					sanitize(p);
+					Firebird::string::size_type pos = p.find_last_of('/');
+					if (pos == Firebird::string::npos)
+					    pos = p.find_last_of('\\');
+
+					if (pos != Firebird::string::npos)
+					    p.erase(0, pos + 1);
+
+					fb_utils::snprintf(translated_msg_file,
+						sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
+					gds__prefix_msg(msg_file, translated_msg_file);
+					status = gds__msg_open(reinterpret_cast<void**>(&messageL), msg_file);
+				}
+				else
+					status = 1;
+
+				if (status)
+				{
+					// Default to standard message file
+
+					gds__prefix_msg(msg_file, MSG_FILE);
+					status = gds__msg_open(reinterpret_cast<void**>(&messageL), msg_file);
+				}
+				gds__free(msg_file);
 			}
-			else
-				status = 1;
 
 			if (status)
-			{
-				// Default to standard message file
+				return status;
 
-				gds__prefix_msg(msg_file, MSG_FILE);
-				status = gds__msg_open(reinterpret_cast<void**>(&messageL), msg_file);
-			}
-			gds__free(msg_file);
+			global_default_msg = messageL;
 		}
 
-		if (status)
-			return status;
+		// Search down index levels to the leaf.  If we get lost, punt
 
-		global_default_msg = messageL;
-	}
+		const ULONG code = MSG_NUMBER(facility, number);
+		const msgnod* const end = (msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
+		ULONG position = messageL->msg_top_tree;
 
-	// Search down index levels to the leaf.  If we get lost, punt
-
-	const ULONG code = MSG_NUMBER(facility, number);
-	const msgnod* const end = (msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
-	ULONG position = messageL->msg_top_tree;
-
-	status = 0;
-	for (USHORT n = 1; !status; n++)
-	{
-		if (lseek(messageL->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
-			status = -6;
-		else if (read(messageL->msg_file, messageL->msg_bucket, messageL->msg_bucket_size) < 0)
-			status = -7;
-		else if (n == messageL->msg_levels)
-			break;
-		else
+		status = 0;
+		for (USHORT n = 1; !status; n++)
 		{
-			for (const msgnod* node = (msgnod*) messageL->msg_bucket; !status; node++)
+			if (lseek(messageL->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
+				status = -6;
+			else if (read(messageL->msg_file, messageL->msg_bucket, messageL->msg_bucket_size) < 0)
+				status = -7;
+			else if (n == messageL->msg_levels)
+				break;
+			else
 			{
-				if (node >= end)
+				for (const msgnod* node = (msgnod*) messageL->msg_bucket; !status; node++)
 				{
-					status = -8;
-					break;
-				}
-				if (node->msgnod_code >= code)
-				{
-					position = node->msgnod_seek;
-					break;
+					if (node >= end)
+					{
+						status = -8;
+						break;
+					}
+					if (node->msgnod_code >= code)
+					{
+						position = node->msgnod_seek;
+						break;
+					}
 				}
 			}
 		}
-	}
 
-	if (!status)
-	{
-		// Search the leaf
-		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status; leaf = NEXT_LEAF(leaf))
+		if (!status)
 		{
-			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code)
+			// Search the leaf
+			for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status; leaf = NEXT_LEAF(leaf))
 			{
-				status = -1;
-				break;
-			}
-			if (leaf->msgrec_code == code)
-			{
-				// We found the correct message, so return it to the user
-				const USHORT n = MIN(length - 1, leaf->msgrec_length);
-				memcpy(buffer, leaf->msgrec_text, n);
-				buffer[n] = 0;
+				if (leaf >= (const msgrec*) end || leaf->msgrec_code > code)
+				{
+					status = -1;
+					break;
+				}
+				if (leaf->msgrec_code == code)
+				{
+					// We found the correct message, so return it to the user
+					const USHORT n = MIN(length - 1, leaf->msgrec_length);
+					memcpy(buffer, leaf->msgrec_text, n);
+					buffer[n] = 0;
 
-				if (flags)
-					*flags = leaf->msgrec_flags;
+					if (flags)
+						*flags = leaf->msgrec_flags;
 
-				status = leaf->msgrec_length;
-				break;
+					status = leaf->msgrec_length;
+					break;
+				}
 			}
 		}
-	}
 
-	return status;
+		return status;
+	}
+	catch (const Firebird::Exception&)
+	{
+		// not much can be done here
+		return -100;
+	}
 }
 
 
@@ -3662,7 +3670,7 @@ public:
 			if (prefix.isEmpty() && !GetProgramFilesDir(prefix))
 				prefix = FB_CONFDIR[0] ? FB_CONFDIR : FB_PREFIX;
 		}
-		catch (Firebird::fatal_exception&)
+		catch (const Firebird::Exception&)
 		{
 			// CVC: Presumably here we failed because the config file can't be located.
 			if (!GetProgramFilesDir(prefix))
