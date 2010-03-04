@@ -26,6 +26,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/RefCounted.h"
+#include "../common/config/config_file.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -73,8 +74,6 @@ extern const char*	AmTrusted;
 extern const char*	AmMixed;
 
 enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
-
-class ConfigFile;
 
 class Config : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
@@ -150,11 +149,11 @@ private:
 		ConfigValue default_value;
 	};
 
-	static Firebird::PathName getValue(const ConfigFile&, ConfigName);
+	static ConfigFile::String getValue(const ConfigFile&, ConfigName);
 
-	static int asInteger(const Firebird::PathName&);
-	static bool asBoolean(const Firebird::PathName&);
-	static const char* asString(const Firebird::PathName&);
+	static int asInteger(const ConfigFile::String&);
+	static bool asBoolean(const ConfigFile::String&);
+	static const char* asString(const ConfigFile::String&);
 
 	void loadValues(const ConfigFile& file);
 

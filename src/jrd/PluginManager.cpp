@@ -43,11 +43,11 @@ namespace Jrd {
 
 namespace
 {
-	class PluginsMap : public GenericMap<Pair<Left<PathName, PluginImpl*> > >
+	class PluginsMap : public GenericMap<Pair<Left<ConfigFile::String, PluginImpl*> > >
 	{
 	public:
 		explicit PluginsMap(MemoryPool& p)
-			: GenericMap<Pair<Left<PathName, PluginImpl*> > >(p)
+			: GenericMap<Pair<Left<ConfigFile::String, PluginImpl*> > >(p)
 		{
 		}
 
@@ -127,7 +127,7 @@ void PluginManager::initialize()
 						plugin->name.c_str());
 				}
 
-				plugin->filename = par->value;
+				plugin->filename = par->value.ToPathName();
 
 				par = pm->sub->findParameter("plugin_config");
 				if (par)
@@ -172,7 +172,7 @@ PathName PluginManager::getPluginsDirectory()
 }
 
 
-PluginImpl* PluginManager::getPlugin(const PathName& name)
+PluginImpl* PluginManager::getPlugin(const ConfigFile::String& name)
 {
 	PluginImpl* plugin;
 

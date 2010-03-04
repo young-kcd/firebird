@@ -57,8 +57,8 @@ public:
 	// enum to distinguish ctors
 	enum UseText {USE_TEXT};
 
-	// config_file works with OS case-sensitivity
-	typedef Firebird::PathName String;
+	// config_file is always OS case sensitive
+	typedef Firebird::string String;
 
 	class Stream
 	{
@@ -91,7 +91,7 @@ public:
     typedef Firebird::SortedObjectsArray<Parameter, Firebird::InlineStorage<Parameter*, 100>,
 										 String, Parameter> Parameters;
 
-	ConfigFile(const String& file, USHORT fl);
+	ConfigFile(const Firebird::PathName& file, USHORT fl);
 	ConfigFile(const char* file, USHORT fl);
 	ConfigFile(UseText, const char* configText, USHORT fl);
 

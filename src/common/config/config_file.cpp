@@ -166,7 +166,7 @@ private:
 } // anonymous namespace
 
 
-ConfigFile::ConfigFile(const ConfigFile::String& file, USHORT fl)
+ConfigFile::ConfigFile(const Firebird::PathName& file, USHORT fl)
 	: AutoStorage(), configFile(getPool(), file), parameters(getPool()), flags(fl)
 {
 	MainStream s(configFile.c_str(), flags & EXCEPTION_ON_ERROR);
@@ -334,8 +334,9 @@ bool ConfigFile::translate(const String& from, String& to)
 		{
 			return false;
 		}
-		PathName file;
-		PathUtils::splitLastComponent(to, file, configFile);
+		PathName path, file;
+		PathUtils::splitLastComponent(path, file, configFile.ToPathName());
+		to = path.ToString();
 	}
 /*	else if (!substituteOneOfStandardFirebirdDirs(from, to))
 	{

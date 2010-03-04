@@ -468,7 +468,7 @@ bool IntlManager::initialize()
 					{
 						fatal_exception::raiseFmt("Missing parameter 'filename' for intl_module %s\n", module->value.c_str());
 					}
-					filename = fname->value;
+					filename = fname->value.ToPathName();
 					configInfo = getConfigInfo(objModule);
 
 					if (!modules->exist(filename))

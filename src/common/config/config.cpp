@@ -32,9 +32,6 @@
 #include <stdlib.h>
 #endif
 
-// config_file works with OS case-sensitivity
-typedef Firebird::PathName String;
-
 namespace {
 
 /******************************************************************************
@@ -222,7 +219,7 @@ void Config::loadValues(const ConfigFile& file)
 	for (int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		const ConfigEntry& entry = entries[i];
-		const String value = getValue(file, entry.key);
+		const ConfigFile::String value = getValue(file, entry.key);
 
 		if (value.length())
 		{
@@ -274,23 +271,23 @@ Config::~Config()
 	}
 }
 
-String Config::getValue(const ConfigFile& file, ConfigName key)
+ConfigFile::String Config::getValue(const ConfigFile& file, ConfigName key)
 {
 	const ConfigFile::Parameter* p = file.findParameter(key);
 	return p ? p->value : "";
 }
 
-int Config::asInteger(const String &value)
+int Config::asInteger(const ConfigFile::String &value)
 {
 	return atoi(value.data());
 }
 
-bool Config::asBoolean(const String &value)
+bool Config::asBoolean(const ConfigFile::String &value)
 {
 	return (atoi(value.data()) != 0);
 }
 
-const char* Config::asString(const String &value)
+const char* Config::asString(const ConfigFile::String &value)
 {
 	return value.c_str();
 }

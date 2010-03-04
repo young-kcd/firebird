@@ -33,11 +33,12 @@
 #include "../common/classes/MetaName.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
+#include "../common/config/config_file.h"
 
 namespace Jrd {
 
 
-typedef Firebird::Pair<Firebird::Full<Firebird::PathName, Firebird::PathName> > ConfigEntry;
+typedef Firebird::Pair<Firebird::Full<ConfigFile::String, ConfigFile::String> > ConfigEntry;
 
 class PluginImpl : public Firebird::Plugin, public Firebird::GlobalStorage
 {
@@ -66,12 +67,12 @@ public:
 	Firebird::ExternalEngineFactory* getExternalEngineFactory();
 
 private:
-	Firebird::PathName name;
+	ConfigFile::String name;
 	Firebird::PathName filename;
 	Firebird::SortedObjectsArray<
 		ConfigEntry,
 		Firebird::EmptyStorage<ConfigEntry*>,
-		Firebird::PathName, Firebird::FirstPointerKey<ConfigEntry>
+		ConfigFile::String, Firebird::FirstPointerKey<ConfigEntry>
 	> configInfo;
 	Firebird::AutoPtr<ModuleLoader::Module> module;
 	Firebird::ExternalEngineFactory* externalEngineFactory;
@@ -83,7 +84,7 @@ class PluginManager
 public:
 	static void initialize();
 	static Firebird::PathName getPluginsDirectory();
-	static PluginImpl* getPlugin(const Firebird::PathName& name);
+	static PluginImpl* getPlugin(const ConfigFile::String& name);
 };
 
 

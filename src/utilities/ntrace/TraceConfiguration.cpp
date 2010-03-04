@@ -47,7 +47,7 @@ void TraceCfgReader::readTraceConfiguration(const char* text,
 
 #define PATH_PARAMETER(NAME, VALUE) \
 	if (!found && el->name == #NAME) { \
-		ConfigFile::String temp; \
+		Firebird::PathName temp; \
 		expandPattern(el, temp); \
 		m_config.NAME = temp.c_str(); \
 		found = true; \
@@ -273,10 +273,10 @@ ULONG TraceCfgReader::parseUInteger(const ConfigFile::Parameter* el) const
 	return result;
 }
 
-void TraceCfgReader::expandPattern(const ConfigFile::Parameter* el, ConfigFile::String& valueToExpand)
+void TraceCfgReader::expandPattern(const ConfigFile::Parameter* el, PathName& valueToExpand)
 {
-	valueToExpand = el->value;
-	string::size_type pos = 0;
+	valueToExpand = el->value.ToPathName();
+	PathName::size_type pos = 0;
 	while (pos < valueToExpand.length())
 	{
 		string::char_type c = valueToExpand[pos];

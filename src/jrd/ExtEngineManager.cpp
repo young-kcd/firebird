@@ -363,7 +363,7 @@ void* FB_CALL ExtEngineManager::ExternalContextImpl::setInfo(int code, void* val
 //---------------------
 
 
-static InitInstance<GenericMap<Pair<Full<MetaName, PathName> > > > enginesModules;
+static InitInstance<GenericMap<Pair<Full<MetaName, ConfigFile::String> > > > enginesModules;
 
 
 //---------------------
@@ -888,7 +888,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 		if (!engines.get(name, engine))
 		{
-			PathName pluginName;
+			ConfigFile::String pluginName;
 			if (enginesModules().get(name, pluginName))
 			{
 				PluginImpl* plugin = PluginManager::getPlugin(pluginName);
