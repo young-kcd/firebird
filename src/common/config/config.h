@@ -56,7 +56,7 @@
 				  position within appropriate structures)
 		3. Add member function to Config class (config.h) and implement it
 		   in config.cpp module.
-		4. For per-database configurable parameters, please use 
+		4. For per-database configurable parameters, please use
 				type getParameterName() const;
 		   form, for world-wide parameters:
 				static type getParameterName();
@@ -157,6 +157,7 @@ private:
 	static const char* asString(const Firebird::PathName&);
 
 	void loadValues(const ConfigFile& file);
+
 	template <typename T> T get(Config::ConfigKey key) const
 	{
 		return (T) values[key];
