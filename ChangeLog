@@ -1,3 +1,36 @@
+2010-03-04 13:51  alexpeshkoff
+
+	* firebird2/src/: common/config/config.cpp (1.110),
+	common/config/config.h (1.66), common/config/config_file.cpp
+	(1.41), common/config/config_file.h (1.19),
+	jrd/ExtEngineManager.cpp (1.16), jrd/IntlManager.cpp (1.41),
+	jrd/PluginManager.cpp (1.11), jrd/PluginManager.h (1.4),
+	jrd/db_alias.cpp (1.31), utilities/ntrace/TraceConfiguration.cpp
+	(1.21), utilities/ntrace/TracePluginConfig.h (1.7):
+
+	Make all configuration files case-sensitive
+
+2010-03-04 03:16  asfernandes
+
+	* firebird2/src/: common/config/config.h (1.65),
+	utilities/ntrace/fbtrace.conf (1.14):
+
+	Misc
+
+2010-03-03 16:01  alexpeshkoff
+
+	* firebird2/: builds/install/misc/firebird.conf.in (1.8),
+	src/common/config/config.cpp (1.109), src/common/config/config.h
+	(1.64), src/jrd/DatabaseSnapshot.cpp (1.130),
+	src/jrd/RecordBuffer.cpp (1.11), src/jrd/RecordBuffer.h (1.8),
+	src/jrd/TempSpace.cpp (1.30), src/jrd/TempSpace.h (1.17),
+	src/jrd/sort.cpp (1.144), src/jrd/tra.h (1.115),
+	src/jrd/recsrc/BufferedStream.cpp (1.13),
+	src/jrd/recsrc/MergeJoin.cpp (1.10):
+
+	It was bad idea to make two TempSpace related parameters
+	per-database - rolled back some changes
+
 2010-03-03 13:45  alexpeshkoff
 
 	* firebird2/src/jrd/gds.cpp (1.327):
