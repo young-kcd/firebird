@@ -256,7 +256,7 @@ void PPG_print_header(const header_page* header, SLONG page,
 		case HDR_backup_guid:
 		{
 			char buff[GUID_BUFF_SIZE];
-			GuidToString(buff, reinterpret_cast<const FB_GUID*>(p + 2));
+			GuidToString(buff, reinterpret_cast<const FB_GUID*>(p + 2), true);
 			uSvc->printf("\tDatabase backup GUID:\t%s\n", buff);
 			break;
 		}
