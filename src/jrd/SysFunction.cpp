@@ -1423,7 +1423,7 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	memcpy(buffer + 1, data, GUID_BODY_SIZE);
 
 	FB_GUID guid;
-	StringToGuid(&guid, buffer);
+	StringToGuid(&guid, buffer, false);
 
 	dsc result;
 	result.makeText(16, ttype_binary, reinterpret_cast<UCHAR*>(guid.data));
@@ -3268,7 +3268,7 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	}
 
 	char buffer[GUID_BUFF_SIZE];
-	GuidToString(buffer, reinterpret_cast<const FB_GUID*>(data));
+	GuidToString(buffer, reinterpret_cast<const FB_GUID*>(data), false);
 
 	dsc result;
 	result.makeText(GUID_BODY_SIZE, ttype_ascii, reinterpret_cast<UCHAR*>(buffer) + 1);
