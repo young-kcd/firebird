@@ -41,7 +41,7 @@
 # String
 # ------
 # Strings are also what they sound like, strings. Examples:
-#   RootDirectory  = /opt/firebird
+#   RemoteServiceName = gds_db
 #   RemotePipeName = pipe47
 #
 #
@@ -50,28 +50,16 @@
 #
 #######################################
 
-# ==================================
-# Settings for all platforms/engines
-# ==================================
-#
-# ----------------------------
-# Specify the root directory under which Firebird is installed.
-# Can be used to override the OS-specifically determined one.
-#
-# Type: string
-#
-#RootDirectory =
-
 
 # ----------------------------
 # Database Paths/Directories
 #
 # DatabaseAccess may be None, Full or Restrict. If you choose Restrict,
 # provide ';'-separated trees list, where database files are stored.
-# Relative paths are treated relative to RootDirectory entry
-# (see above). Default value 'Full' gives full access to all files
-# on your site. To specify access to specific trees, enum all required
-# paths (for Win32 this may be something like 'C:\DataBase;D:\Mirror',
+# Relative paths are treated relative to root directory of firebird.
+# Default value 'Full' gives full access to all files on your site.
+# To specify access to specific trees, enum all required paths 
+# (for Win32 this may be something like 'C:\DataBase;D:\Mirror',
 # for unix - '/db;/mnt/mirrordb'). If you choose 'None', then only
 # databases listed in aliases.conf can be attached.
 #
@@ -99,8 +87,8 @@
 #
 # ExternalFileAccess may be None, Full or Restrict. If you choose
 # Restrict, provide ';'-separated trees list, where external files
-# are stored. Relative paths are treated relative to RootDirectory entry
-# (see above). Default value 'None' disables any use of external files
+# are stored. Relative paths are treated relative to root directory 
+# of firebird. Default value 'None' disables any use of external files
 # on your site. To specify access to specific trees, enum all required
 # paths (for Win32 this may be something like 'C:\ExternalTables',
 # for unix - '/db/extern;/mnt/extern').
@@ -123,8 +111,8 @@
 #
 # UdfAccess may be None, Full or Restrict. If you choose
 # Restrict, provide ';'-separated trees list, where UDF libraries
-# are stored. Relative paths are treated relative to RootDirectory entry
-# (see above).
+# are stored. Relative paths are treated relative to root directory 
+# of firebird.
 #
 # Default value 'Restrict UDF' provides the same restrictions
 # as in FB 1.0. To specify access to specific trees, enum all required
@@ -146,11 +134,10 @@
 # Temporary directories
 #
 # Provide ';'-separated trees list, where temporary files are stored.
-# Relative paths are treated relative to RootDirectory entry
-# (see above). Default value is determined using FIREBIRD_TMP,
-# TEMP or TMP environment options. Once the first specified
-# directory has no available space, the engine will switch to the
-# next one, and so on.
+# Relative paths are treated relative to root directory of firebird.
+# Default value is determined using FIREBIRD_TMP, TEMP or TMP 
+# environment options. Once the first specified directory has no 
+# available space, the engine will switch to the next one, and so on.
 #
 # E.g.:
 # TempDirectories = c:\temp

@@ -315,11 +315,6 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, Str
 
 bool ConfigFile::translate(const String& from, String& to)
 {
-	if (flags & NO_MACRO)
-	{
-		return false;
-	}
-
 	if (from == "root")
 	{
 		to = Config::getRootDirectory();

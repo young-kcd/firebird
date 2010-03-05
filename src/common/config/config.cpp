@@ -39,16 +39,17 @@ namespace {
  *	firebird.conf implementation
  */
 
-class ConfigImpl : public ConfigRoot
+const char* CONFIG_FILE  = "firebird.conf";
+
+class ConfigImpl : public Firebird::PermanentStorage
 {
 public:
-	explicit ConfigImpl(Firebird::MemoryPool& p) : ConfigRoot(p)
+	explicit ConfigImpl(Firebird::MemoryPool& p) : Firebird::PermanentStorage(p)
 	{
 		try
 		{
-			root_dir = getRootDirectory();
-
-			ConfigFile file(getConfigFilePath(), ConfigFile::EXCEPTION_ON_ERROR | ConfigFile::NO_MACRO);
+			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE), 
+							ConfigFile::EXCEPTION_ON_ERROR);
 			defaultConfig = new Config(file);
 		}
 		catch (const Firebird::fatal_exception& ex)
@@ -69,13 +70,7 @@ public:
 		return defaultConfig;
 	}
 
-	const char* getCachedRootDir()
-	{
-		return root_dir;
-	}
-
 private:
-	const char* root_dir;
 	Firebird::RefPtr<Config> defaultConfig;
 
     ConfigImpl(const ConfigImpl&);
@@ -89,6 +84,13 @@ private:
  */
 
 Firebird::InitInstance<ConfigImpl> firebirdConf;
+
+/******************************************************************************
+ *
+ *	Static instance of the root and install directories detector
+ */
+
+Firebird::InitInstance<ConfigRoot> rootDetector;
 
 }	// anonymous namespace
 
@@ -112,7 +114,6 @@ const char*	AmMixed		= "mixed";
 
 const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
-	{TYPE_STRING,		"RootDirectory",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
 #ifdef SUPERSERVER
 	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 67108864},	// bytes
@@ -304,7 +305,7 @@ const Firebird::RefPtr<Config> Config::getDefaultConfig()
 
 const char* Config::getInstallDirectory()
 {
-	return firebirdConf().getInstallDirectory();
+	return rootDetector().getInstallDirectory();
 }
 
 static Firebird::PathName* rootFromCommandLine = 0;
@@ -323,14 +324,13 @@ const Firebird::PathName* Config::getCommandLineRootDirectory()
 
 const char* Config::getRootDirectory()
 {
-	// must check it here - command line must override any other root settings, including firebird.conf
+	// must check it here - command line must override any other root settings
 	if (rootFromCommandLine)
 	{
 		return rootFromCommandLine->c_str();
 	}
 
-	const char* result = (char*) getDefaultConfig()->values[KEY_ROOT_DIRECTORY];
-	return result ? result : firebirdConf().getCachedRootDir();
+	return rootDetector().getRootDirectory();;
 }
 
 int Config::getTempBlockSize()

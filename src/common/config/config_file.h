@@ -52,7 +52,6 @@ public:
 	// flags for config file
 	static const USHORT EXCEPTION_ON_ERROR =	0x01;
 	static const USHORT HAS_SUB_CONF =			0x02;
-	static const USHORT NO_MACRO =				0x04;
 
 	// enum to distinguish ctors
 	enum UseText {USE_TEXT};
