@@ -1,3 +1,14 @@
+2010-03-05 03:00  asfernandes
+
+	* firebird2/src/: jrd/SysFunction.cpp (1.80.2.1), jrd/os/guid.h
+	(1.10.2.1), jrd/os/posix/guid.cpp (1.13.2.1), jrd/os/win32/guid.cpp
+	(1.16.2.1), jrd/trace/TraceService.cpp (1.14.2.4),
+	utilities/nbackup.cpp (1.95.2.7), utilities/gstat/ppg.cpp
+	(1.36.2.1):
+
+	Backport fix for CORE-2898 - CHAR_TO_UUID and UUID_TO_CHAR works
+	different in big/little endian architectures
+
 2010-02-28 15:42  asfernandes
 
 	* firebird2/src/dsql/pass1.cpp (1.458.2.3):
