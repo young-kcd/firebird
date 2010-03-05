@@ -1,3 +1,13 @@
+2010-03-05 02:18  asfernandes
+
+	* firebird2/src/: jrd/SysFunction.cpp (1.88), jrd/os/guid.h (1.11),
+	jrd/os/posix/guid.cpp (1.14), jrd/os/win32/guid.cpp (1.17),
+	jrd/trace/TraceService.cpp (1.19), utilities/nbackup.cpp (1.116),
+	utilities/gstat/ppg.cpp (1.43):
+
+	Fixed CORE-2898 - CHAR_TO_UUID and UUID_TO_CHAR works different in
+	big/little endian architectures
+
 2010-03-04 13:51  alexpeshkoff
 
 	* firebird2/src/: common/config/config.cpp (1.110),
