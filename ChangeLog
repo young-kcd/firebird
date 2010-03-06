@@ -1,3 +1,21 @@
+2010-03-06 03:13  asfernandes
+
+	* firebird2/src/jrd/recsrc/RecordSource.h (1.27):
+
+	Fix the bug reported by Ivan Prenosil (FB3 - problem with inactive
+	triggers). It was the SortMap::flags not initialized.
+
+2010-03-05 18:21  alexpeshkoff
+
+	* firebird2/: builds/install/misc/firebird.conf.in (1.9),
+	src/common/config/config.cpp (1.111), src/common/config/config.h
+	(1.67), src/common/config/config_file.cpp (1.42),
+	src/common/config/config_file.h (1.20), src/jrd/os/config_root.h
+	(1.24):
+
+	Removed RootDirectory parameter from firebird.conf and enabled use
+	of vulcan-style macro in it
+
 2010-03-05 02:18  asfernandes
 
 	* firebird2/src/: jrd/SysFunction.cpp (1.88), jrd/os/guid.h (1.11),
