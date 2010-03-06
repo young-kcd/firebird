@@ -1148,6 +1148,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	SqlIdentifier relation_name, revokee, privilege, procedure_name;
 
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 	jrd_req* request = tdbb->getRequest();
 
 #ifdef VIO_DEBUG
@@ -1212,7 +1213,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			if (EVL_field(0, rpb->rpb_record, f_rel_id, &desc2))
 			{
 				id = MOV_get_long(&desc2, 0);
-				if (id < (int) rel_MAX)
+				if (id <= dbb->dbb_max_sys_rel)
 				{
 					IBERROR(187);	/* msg 187 cannot delete system relations */
 				}

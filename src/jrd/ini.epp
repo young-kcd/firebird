@@ -587,6 +587,14 @@ void INI_init2(void)
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
+
+	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
+		dbb->dbb_max_sys_rel = USER_REL_INIT_ID_ODS8 - 1;
+	}
+	else {
+		dbb->dbb_max_sys_rel = USER_DEF_REL_INIT_ID - 1;
+	}
+
 	vec<jrd_rel*>* vector = dbb->dbb_relations;
 
 	const int* fld;

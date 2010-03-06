@@ -1162,7 +1162,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	for (USHORT i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
-		if (i >= 32 /* rel_MAX */ ) // Why not system flag instead?
+		if (i > dbb->dbb_max_sys_rel) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
 		jrd_rel* relation = (*vector)[i];
