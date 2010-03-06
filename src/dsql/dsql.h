@@ -686,6 +686,11 @@ public:
 		return transaction;
 	}
 
+	void setTransaction(jrd_tra* value)
+	{
+		transaction = value;
+	}
+
 	DsqlCompiledStatement* getStatement()
 	{
 		return statement;

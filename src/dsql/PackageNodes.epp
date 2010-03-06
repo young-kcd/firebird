@@ -476,12 +476,12 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			case Item::FUNCTION:
 				(*items)[i].function->packageOwner = owner;
-				(*items)[i].function->execute(tdbb, transaction);
+				(*items)[i].function->executeDdl(tdbb, transaction);
 				break;
 
 			case Item::PROCEDURE:
 				(*items)[i].procedure->packageOwner = owner;
-				(*items)[i].procedure->execute(tdbb, transaction);
+				(*items)[i].procedure->executeDdl(tdbb, transaction);
 				break;
 		}
 	}
@@ -564,7 +564,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 				DropFunctionNode dropNode(getPool(), "", i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
-				dropNode.execute(tdbb, transaction);
+				dropNode.executeDdl(tdbb, transaction);
 			}
 		}
 
@@ -576,7 +576,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 				DropProcedureNode dropNode(getPool(), "", i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
-				dropNode.execute(tdbb, transaction);
+				dropNode.executeDdl(tdbb, transaction);
 			}
 		}
 
@@ -656,7 +656,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		DropFunctionNode dropNode(getPool(), "", i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
-		dropNode.execute(tdbb, transaction);
+		dropNode.executeDdl(tdbb, transaction);
 	}
 
 	for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
@@ -665,7 +665,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		DropProcedureNode dropNode(getPool(), "", i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
-		dropNode.execute(tdbb, transaction);
+		dropNode.executeDdl(tdbb, transaction);
 	}
 
 	requestHandle.reset(tdbb, drq_e_pkg_prv, DYN_REQUESTS);
@@ -709,8 +709,8 @@ void RecreatePackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
+	dropNode.executeDdl(tdbb, transaction);
+	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }
@@ -905,7 +905,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 							func->privateScope = !headerFuncs.exist(Signature(func->name));
 
 						func->packageOwner = owner;
-						func->execute(tdbb, transaction);
+						func->executeDdl(tdbb, transaction);
 					}
 					break;
 
@@ -917,7 +917,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 							proc->privateScope = !headerProcs.exist(Signature(proc->name));
 
 						proc->packageOwner = owner;
-						proc->execute(tdbb, transaction);
+						proc->executeDdl(tdbb, transaction);
 					}
 					break;
 			}
@@ -1070,7 +1070,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			DropFunctionNode dropNode(getPool(), "", FUN.RDB$FUNCTION_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
-			dropNode.execute(tdbb, transaction);
+			dropNode.executeDdl(tdbb, transaction);
 		}
 		else
 		{
@@ -1097,7 +1097,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			DropProcedureNode dropNode(getPool(), "", PRC.RDB$PROCEDURE_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
-			dropNode.execute(tdbb, transaction);
+			dropNode.executeDdl(tdbb, transaction);
 		}
 		else
 		{
@@ -1140,8 +1140,8 @@ void RecreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
+	dropNode.executeDdl(tdbb, transaction);
+	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }

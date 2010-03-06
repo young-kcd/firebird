@@ -1419,8 +1419,8 @@ void RecreateFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
+	dropNode.executeDdl(tdbb, transaction);
+	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }
@@ -2234,8 +2234,8 @@ void RecreateProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
+	dropNode.executeDdl(tdbb, transaction);
+	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }
@@ -2778,8 +2778,8 @@ void RecreateTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
+	dropNode.executeDdl(tdbb, transaction);
+	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }

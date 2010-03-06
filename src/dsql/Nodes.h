@@ -102,6 +102,14 @@ public:
 		return sqlText;
 	}
 
+	// Set the scratch's transaction when executing a node. Fact of accessing the scratch during
+	// execution is a hack.
+	void executeDdl(thread_db* tdbb, jrd_tra* transaction)
+	{
+		dsqlScratch->setTransaction(transaction);
+		execute(tdbb, transaction);
+	}
+
 public:
 	enum DdlTriggerWhen { DTW_BEFORE, DTW_AFTER };
 	static void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,

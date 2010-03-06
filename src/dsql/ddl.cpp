@@ -318,8 +318,8 @@ void DDL_execute(dsql_req* request)
 		{	// scope
 			AutoSavePoint savePoint(tdbb, request->req_transaction);
 
-			reinterpret_cast<DdlNode*>(statement->getDdlNode()->nod_arg[0])->execute(tdbb,
-				request->req_transaction);
+			DdlNode* ddlNode = reinterpret_cast<DdlNode*>(statement->getDdlNode()->nod_arg[0]);
+			ddlNode->executeDdl(tdbb, request->req_transaction);
 
 			savePoint.release();	// everything is ok
 		}
