@@ -1990,7 +1990,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 	DEV_BLKCHK(relation, type_rel);
 
-	if (relation->rel_id < (USHORT) rel_MAX) {
+	if (relation->rel_id <= dbb->dbb_max_sys_rel) {
 		return NULL;
 	}
 

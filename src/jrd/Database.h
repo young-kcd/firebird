@@ -375,6 +375,7 @@ public:
 	USHORT dbb_dp_per_pp;				// data pages per pointer page
 	USHORT dbb_max_records;				// max record per data page
 	USHORT dbb_max_idx;					// max number of indexes on a root page
+	USHORT dbb_max_sys_rel;				// max id of system relation
 	USHORT dbb_use_count;				// active count of threads
 
 #ifdef SUPERSERVER_V2

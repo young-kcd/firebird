@@ -2684,7 +2684,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 
 /* System relations are above suspicion */
 
-	if (id < (int) rel_MAX)
+	if (id <= (int) dbb->dbb_max_sys_rel)
 	{
 		fb_assert(id < MAX_USHORT);
 		return MET_relation(tdbb, (USHORT) id);
@@ -3372,19 +3372,6 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 		return relation;
 	}
 
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
-
-/* From ODS 9 onwards, the first 128 relation IDS have been
-   reserved for system relations */
-	USHORT max_sys_rel;
-	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-		max_sys_rel = USER_REL_INIT_ID_ODS8 - 1;
-	}
-	else {
-		max_sys_rel = USER_DEF_REL_INIT_ID - 1;
-	}
-
 	relation = FB_NEW(*dbb->dbb_permanent) jrd_rel(*dbb->dbb_permanent);
 	(*vector)[id] = relation;
 	relation->rel_id = id;
@@ -3403,7 +3390,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	}
 
 	// This should check system flag instead.
-	if (relation->rel_id <= max_sys_rel) {
+	if (relation->rel_id <= dbb->dbb_max_sys_rel) {
 		return relation;
 	}
 

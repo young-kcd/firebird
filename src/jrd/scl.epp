@@ -734,16 +734,19 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		END_FOR;
 		CMP_release(tdbb, handle1);
 
-		FOR(REQUEST_HANDLE handle2) R IN RDB$ROLES
-			WITH R.RDB$ROLE_NAME EQ role_name.c_str()
+		if (!preODS9)
+		{
+			FOR(REQUEST_HANDLE handle2) R IN RDB$ROLES
+				WITH R.RDB$ROLE_NAME EQ role_name.c_str()
 
-			if (!R.RDB$SYSTEM_FLAG.NULL)
-			{
-				if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
-					user->usr_flags |= USR_dba;
-			}
-		END_FOR;
-		CMP_release(tdbb, handle2);
+				if (!R.RDB$SYSTEM_FLAG.NULL)
+				{
+					if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
+						user->usr_flags |= USR_dba;
+				}
+			END_FOR;
+			CMP_release(tdbb, handle2);
+		}
 	}
 	else {
 		user->usr_flags |= USR_owner;
