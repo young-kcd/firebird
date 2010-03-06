@@ -509,6 +509,9 @@ namespace Jrd
 
 			explicit SortMap(MemoryPool& p)
 				: PermanentStorage(p),
+				  length(0),
+				  keyLength(0),
+				  flags(0),
 				  keyItems(p),
 				  items(p)
 			{
