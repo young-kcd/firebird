@@ -1,3 +1,20 @@
+2010-03-07 05:30  robocop
+
+	* firebird2/src/: common/classes/auto.h (1.25),
+	common/config/config.h (1.68), common/config/config_file.cpp
+	(1.43), jrd/Optimizer.cpp (1.142), jrd/cmp.cpp (1.397), jrd/ext.cpp
+	(1.99), jrd/os/config_root.h (1.25), jrd/os/posix/guid.cpp (1.15),
+	utilities/ntrace/TraceConfiguration.cpp (1.22):
+
+	Misc.
+
+2010-03-06 20:10  asfernandes
+
+	* firebird2/src/dsql/: DdlNodes.epp (1.51), Nodes.h (1.23),
+	PackageNodes.epp (1.22), ddl.cpp (1.309), dsql.h (1.186):
+
+	Hope this fix the DDL problem reported by Ivan Prenosil
+
 2010-03-06 03:13  asfernandes
 
 	* firebird2/src/jrd/recsrc/RecordSource.h (1.27):
