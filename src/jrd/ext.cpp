@@ -87,7 +87,7 @@ namespace Jrd
 		}
 
 	public:
-		ExternalFileDirectoryList(const Database* dbb)
+		explicit ExternalFileDirectoryList(const Database* dbb)
 			: DirectoryList(*dbb->dbb_permanent), config(dbb->dbb_config)
 		{
 			initialize();

@@ -112,7 +112,8 @@ public:
 
 	void reset(Where* v = NULL)
 	{
-		if (v != ptr) {
+		if (v != ptr)
+		{
 			Clear::clear(ptr);
 			ptr = v;
 		}

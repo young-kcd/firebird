@@ -193,7 +193,7 @@ namespace
 	class SubExprNodeCopier : public NodeCopier
 	{
 	public:
-		SubExprNodeCopier(CompilerScratch* aCsb)
+		explicit SubExprNodeCopier(CompilerScratch* aCsb)
 			: NodeCopier(aCsb, localMap)
 		{
 			// Initialize the map so all streams initially resolve to the original number. As soon

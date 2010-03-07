@@ -82,7 +82,7 @@ private:
 class TextStream : public ConfigFile::Stream
 {
 public:
-	TextStream(const char* configText)
+	explicit TextStream(const char* configText)
 		: s(configText), l(0)
 	{
 		if (s && !*s)
@@ -199,7 +199,7 @@ ConfigFile::Stream::~Stream()
 
 /******************************************************************************
  *
- *	Parse line, taking quotes into an account
+ *	Parse line, taking quotes into account
  */
 
 ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, String& value)
@@ -209,7 +209,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, Str
 	String::size_type eol = String::npos;
 	bool hasSub = false;
 
-	for (String::size_type n=0; n < input.length(); ++n)
+	for (String::size_type n = 0; n < input.length(); ++n)
 	{
 		switch (input[n])
 		{

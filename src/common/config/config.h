@@ -166,8 +166,8 @@ private:
 	ConfigValue values[MAX_CONFIG_KEY];
 
 public:
-	Config(const ConfigFile& file);						// use to build default config
-	Config(const ConfigFile& file, const Config& base);	// use to build db-specific config
+	explicit Config(const ConfigFile& file);				// use to build default config
+	Config(const ConfigFile& file, const Config& base);		// use to build db-specific config
 	~Config();
 
 	// Interface to support command line root specification.

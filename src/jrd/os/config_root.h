@@ -61,7 +61,8 @@ private:
 	void GetRoot()
 	{
 		const Firebird::PathName* clRoot = Config::getCommandLineRootDirectory();
-		if (clRoot) {
+		if (clRoot)
+		{
 			root_dir = *clRoot;
 			addSlash();
 			return;
@@ -91,7 +92,7 @@ public:
 		GetRoot();
 	}
 
-	const char* getInstallDirectory()
+	const char* getInstallDirectory() const
 	{
 		return install_dir.c_str();
 	}

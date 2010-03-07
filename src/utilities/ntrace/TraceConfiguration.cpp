@@ -191,12 +191,14 @@ void TraceCfgReader::readConfig()
 				}
 				catch (const Exception&)
 				{
-					if (regExpOk) {
+					if (regExpOk)
+					{
 						fatal_exception::raiseFmt(
 							"line %d: error while processing string \"%s\" against regular expression \"%s\"",
 							section->line, m_databaseName.c_str(), pattern.c_str());
 					}
-					else {
+					else
+					{
 						fatal_exception::raiseFmt(
 							"line %d: error while compiling regular expression \"%s\"",
 							section->line, pattern.c_str());
@@ -266,7 +268,8 @@ ULONG TraceCfgReader::parseUInteger(const ConfigFile::Parameter* el) const
 {
 	const char *value = el->value.c_str();
 	ULONG result = 0;
-	if (!sscanf(value, "%"ULONGFORMAT, &result)) {
+	if (!sscanf(value, "%"ULONGFORMAT, &result))
+	{
 		fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid integer value",
 			el->line, el->name.c_str(), value);
 	}
@@ -283,8 +286,10 @@ void TraceCfgReader::expandPattern(const ConfigFile::Parameter* el, PathName& va
 		if (c == '\\')
 		{
 			if (pos + 1 >= valueToExpand.length())
+			{
 				fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
 					el->line, el->name.c_str(), el->value.c_str());
+			}
 
 			c = valueToExpand[pos + 1];
 			if (c == '\\')

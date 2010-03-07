@@ -316,9 +316,6 @@ bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
 	if (idx && idx->idx_expression_request && idx->idx_expression)
 	{
 		fb_assert(idx->idx_flags & idx_expressn);
-
-		bool result = false;
-
 		return OPT_expression_equal2(tdbb, csb, idx->idx_expression, node, stream);
 	}
 
