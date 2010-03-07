@@ -1,3 +1,13 @@
+2010-03-06 15:26  hvlad
+
+	* firebird2/src/jrd/: cmp.cpp (1.352.2.4), Database.h (1.42.2.2),
+	dfw.epp (1.283.2.4), ini.epp (1.110.2.3), met.epp (1.288.2.4),
+	scl.epp (1.109.2.1), validation.cpp (1.52.2.1), vio.cpp
+	(1.259.2.4):
+
+	Fixed bug CORE-2908 : Engine could crash or raise not expected
+	errors working with ODS 8.x database
+
 2010-03-05 03:00  asfernandes
 
 	* firebird2/src/: jrd/SysFunction.cpp (1.80.2.1), jrd/os/guid.h
