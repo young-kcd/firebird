@@ -277,15 +277,18 @@ AggNode* RowNumberWinNode::dsqlCopy() const
 
 // A direction of -1 is LAG, and 1 is LEAD.
 LagLeadWinNode::LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
-			dsql_nod* aArg, dsql_nod* aRows)
+			dsql_nod* aArg, dsql_nod* aRows, dsql_nod* aOutExpr)
 	: WinFuncNode(pool, aAggInfo, aArg),
 	  direction(aDirection),
 	  dsqlRows(aRows),
-	  rows(NULL)
+	  dsqlOutExpr(aOutExpr),
+	  rows(NULL),
+	  outExpr(NULL)
 {
 	fb_assert(direction == -1 || direction == 1);
 
 	addChildNode(dsqlRows, rows);
+	addChildNode(dsqlOutExpr, outExpr);
 }
 
 void LagLeadWinNode::make(dsc* desc, dsql_nod* nullReplacement)
@@ -328,7 +331,15 @@ dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* w
 	}
 
 	if (!window->move(records * direction))
-		return NULL;
+	{
+		window->move(0);	// Come back to our row because outExpr may reference columns.
+
+		desc = EVL_expr(tdbb, outExpr);
+		if (!desc || (request->req_flags & req_null))
+			return NULL;
+
+		return desc;
+	}
 
 	desc = EVL_expr(tdbb, arg);
 	if (!desc || (request->req_flags & req_null))
@@ -343,8 +354,8 @@ dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* w
 
 static WinFuncNode::Register<LagWinNode> lagWinInfo("LAG");
 
-LagWinNode::LagWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows)
-	: LagLeadWinNode(pool, lagWinInfo, -1, aArg, aRows)
+LagWinNode::LagWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows, dsql_nod* aOutExpr)
+	: LagLeadWinNode(pool, lagWinInfo, -1, aArg, aRows, aOutExpr)
 {
 }
 
@@ -353,6 +364,7 @@ ExprNode* LagWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	LagWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LagWinNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
 	node->rows = copier.copy(tdbb, rows);
+	node->outExpr = copier.copy(tdbb, outExpr);
 	return node;
 }
 
@@ -360,7 +372,8 @@ AggNode* LagWinNode::dsqlCopy() const
 {
 	return FB_NEW(getPool()) LagWinNode(getPool(),
 		PASS1_node(dsqlScratch, dsqlArg),
-		PASS1_node(dsqlScratch, dsqlRows));
+		PASS1_node(dsqlScratch, dsqlRows),
+		PASS1_node(dsqlScratch, dsqlOutExpr));
 }
 
 
@@ -369,8 +382,8 @@ AggNode* LagWinNode::dsqlCopy() const
 
 static WinFuncNode::Register<LeadWinNode> leadWinInfo("LEAD");
 
-LeadWinNode::LeadWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows)
-	: LagLeadWinNode(pool, leadWinInfo, 1, aArg, aRows)
+LeadWinNode::LeadWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows, dsql_nod* aOutExpr)
+	: LagLeadWinNode(pool, leadWinInfo, 1, aArg, aRows, aOutExpr)
 {
 }
 
@@ -379,6 +392,7 @@ ExprNode* LeadWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	LeadWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LeadWinNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
 	node->rows = copier.copy(tdbb, rows);
+	node->outExpr = copier.copy(tdbb, outExpr);
 	return node;
 }
 
@@ -386,7 +400,8 @@ AggNode* LeadWinNode::dsqlCopy() const
 {
 	return FB_NEW(getPool()) LeadWinNode(getPool(),
 		PASS1_node(dsqlScratch, dsqlArg),
-		PASS1_node(dsqlScratch, dsqlRows));
+		PASS1_node(dsqlScratch, dsqlRows),
+		PASS1_node(dsqlScratch, dsqlOutExpr));
 }
 
 

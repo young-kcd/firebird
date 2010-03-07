@@ -100,7 +100,7 @@ class LagLeadWinNode : public WinFuncNode
 {
 public:
 	explicit LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
-		dsql_nod* aArg = NULL, dsql_nod* aRows = NULL);
+		dsql_nod* aArg = NULL, dsql_nod* aRows = NULL, dsql_nod* aOutExpr = NULL);
 
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -119,14 +119,17 @@ public:
 protected:
 	const int direction;
 	dsql_nod* dsqlRows;
+	dsql_nod* dsqlOutExpr;
 	jrd_nod* rows;
+	jrd_nod* outExpr;
 };
 
 // LAG function.
 class LagWinNode : public LagLeadWinNode
 {
 public:
-	explicit LagWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL);
+	explicit LagWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
+		dsql_nod* aOutExpr = NULL);
 
 	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
@@ -138,7 +141,8 @@ protected:
 class LeadWinNode : public LagLeadWinNode
 {
 public:
-	explicit LeadWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL);
+	explicit LeadWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
+		dsql_nod* aOutExpr = NULL);
 
 	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 

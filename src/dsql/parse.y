@@ -5344,14 +5344,18 @@ window_function
 		{ $$ = FB_NEW(getPool()) RankWinNode(getPool()); }
 	| ROW_NUMBER '(' ')'
 		{ $$ = FB_NEW(getPool()) RowNumberWinNode(getPool()); }
+	| LAG '(' value ',' value ',' value ')'
+		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5, $7); }
 	| LAG '(' value ',' value ')'
-		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5); }
+		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5, make_node(nod_null, 0, NULL)); }
 	| LAG '(' value ')'
-		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, MAKE_const_slong(1)); }
+		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, MAKE_const_slong(1), make_node(nod_null, 0, NULL)); }
+	| LEAD '(' value ',' value ',' value ')'
+		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5, $7); }
 	| LEAD '(' value ',' value ')'
-		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5); }
+		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5, make_node(nod_null, 0, NULL)); }
 	| LEAD '(' value ')'
-		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, MAKE_const_slong(1)); }
+		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, MAKE_const_slong(1), make_node(nod_null, 0, NULL)); }
 	;
 
 aggregate_window_function
