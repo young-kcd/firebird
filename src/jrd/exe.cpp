@@ -1696,8 +1696,9 @@ static void execute_triggers(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	jrd_tra* transaction =
-		(tdbb->getRequest() ? tdbb->getRequest()->req_transaction : tdbb->getTransaction());
+	jrd_req* const request = tdbb->getRequest();
+	jrd_tra* const transaction = request ? request->req_transaction : tdbb->getTransaction();
+
 	trig_vec* vector = *triggers;
 	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
 	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
@@ -1722,6 +1723,9 @@ static void execute_triggers(thread_db* tdbb,
 		const SSHORT n = (record->rec_format->fmt_count + 7) >> 3;
 		memset(null_rec->rec_data, 0xFF, n);
 	}
+
+	const Firebird::TimeStamp timestamp =
+		request ? request->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
 
 	try
 	{
@@ -1761,11 +1765,7 @@ static void execute_triggers(thread_db* tdbb,
 				else
 					trigger->req_rpb[1].rpb_number.setValid(false);
 
-				if (tdbb->getRequest())
-					trigger->req_timestamp = tdbb->getRequest()->req_timestamp;
-				else
-					trigger->req_timestamp = Firebird::TimeStamp::getCurrentTimeStamp();
-
+				trigger->req_timestamp = timestamp;
 				trigger->req_trigger_action = trigger_action;
 
 				TraceTrigExecute trace(tdbb, trigger, which_trig);
