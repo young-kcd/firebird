@@ -1,3 +1,21 @@
+2010-03-08 02:21  asfernandes
+
+	* firebird2/: builds/install/misc/firebird.conf.in (1.10),
+	src/common/config/config.cpp (1.112),
+	src/common/config/config_file.cpp (1.44), src/jrd/IntlManager.cpp
+	(1.42), src/jrd/db_alias.cpp (1.32), src/jrd/trace/TraceService.cpp
+	(1.20):
+
+	Misc
+
+2010-03-07 21:21  asfernandes
+
+	* firebird2/src/dsql/: WinNodes.cpp (1.6), WinNodes.h (1.4),
+	parse.y (1.367):
+
+	Add a third optional (default is NULL) parameter to LAG and LEAD,
+	that is the value returned when moving out of the partition.
+
 2010-03-07 05:30  robocop
 
 	* firebird2/src/: common/classes/auto.h (1.25),
