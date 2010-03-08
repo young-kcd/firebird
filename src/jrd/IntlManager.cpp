@@ -463,11 +463,13 @@ bool IntlManager::initialize()
 					{
 						fatal_exception::raiseFmt("Missing parameters for intl_module %s\n", module->value.c_str());
 					}
+
 					const ConfigFile::Parameter* fname = objModule->sub->findParameter("filename");
 					if (!fname)
 					{
 						fatal_exception::raiseFmt("Missing parameter 'filename' for intl_module %s\n", module->value.c_str());
 					}
+
 					filename = fname->value.ToPathName();
 					configInfo = getConfigInfo(objModule);
 

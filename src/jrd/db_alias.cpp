@@ -85,7 +85,9 @@ namespace
 		static void upcpy(size_t* toPar, const char* from, size_t length)
 		{
 			memcpy(toPar, from, length);
-/*			char* to = reinterpret_cast<char*>(toPar);
+
+			/***
+			char* to = reinterpret_cast<char*>(toPar);
 			while (length--)
 			{
 				if (CASE_SENSITIVITY)
@@ -97,7 +99,7 @@ namespace
 					*to++ = toupper(*from++);
 				}
 			}
- */
+ 			***/
 		}
 
 		static size_t hash(const char* value, size_t length, size_t hashSize)

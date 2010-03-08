@@ -39,7 +39,7 @@ namespace {
  *	firebird.conf implementation
  */
 
-const char* CONFIG_FILE  = "firebird.conf";
+const char* const CONFIG_FILE = "firebird.conf";
 
 class ConfigImpl : public Firebird::PermanentStorage
 {
@@ -48,7 +48,7 @@ public:
 	{
 		try
 		{
-			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE), 
+			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE),
 							ConfigFile::EXCEPTION_ON_ERROR);
 			defaultConfig = new Config(file);
 		}

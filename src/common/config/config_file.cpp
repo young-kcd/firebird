@@ -329,6 +329,7 @@ bool ConfigFile::translate(const String& from, String& to)
 		{
 			return false;
 		}
+
 		PathName path, file;
 		PathUtils::splitLastComponent(path, file, configFile.ToPathName());
 		to = path.ToString();
