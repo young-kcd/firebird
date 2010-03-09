@@ -76,7 +76,9 @@ public:
 		hActCtx = INVALID_HANDLE_VALUE;
 
 // if we don't use MSVC then we don't use MS CRT ?
-#ifndef _MSC_VER
+// NS: versions of MSVC before 2005 and, as preliminary reports suggest,
+// after 2008 do not need this hack
+#if !defined(_MSC_VER) || (_MSC_VER < 1400)
 		return;
 #endif
 
@@ -93,6 +95,8 @@ public:
 				ACTIVATION_CONTEXT_SECTION_DLL_REDIRECTION, 
 #if _MSC_VER == 1400
 				"msvcr80.dll",
+#elif _MSC_VER == 1500
+				"msvcr90.dll",
 #else
 				#error Specify CRT DLL name here !
 #endif
