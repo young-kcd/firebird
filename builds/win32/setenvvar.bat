@@ -62,7 +62,13 @@ if DEFINED VS71COMNTOOLS (
 
 @if "%VS_VER_EXPRESS%" == "" (
   @vcexpress /? >nul 2>nul
-  @if not errorlevel 9009 ((set MSVC_VERSION=8) & (set VS_VER=msvc8) & (set VS_VER_EXPRESS=1) & (goto :SET_FB_TARGET_PLATFORM))
+  @if not errorlevel 9009 (
+    @if DEFINED VS80COMNTOOLS ((set MSVC_VERSION=8) & (set VS_VER=msvc8))
+    @if DEFINED VS90COMNTOOLS ((set MSVC_VERSION=9) & (set VS_VER=msvc9))
+
+    set VS_VER_EXPRESS=1
+    goto :SET_FB_TARGET_PLATFORM
+  )
 
   @set VS_VER_EXPRESS=
 )
