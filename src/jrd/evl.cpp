@@ -3033,8 +3033,13 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 		desc.setTextType(ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
-		impure->vlu_desc.dsc_length = (textType->*tt_str_to_case)(desc.dsc_length,
+		ULONG len = (textType->*tt_str_to_case)(desc.dsc_length,
 			ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
+
+		if (len == INTL_BAD_STR_LENGTH)
+			status_exception::raise(Arg::Gds(isc_arith_except));
+
+		impure->vlu_desc.dsc_length = (USHORT) len;
 	}
 
 	return &impure->vlu_desc;
