@@ -1,3 +1,23 @@
+2010-03-09 10:24  alexpeshkoff
+
+	* firebird2/src/jrd/db_alias.cpp (1.33):
+
+	Restored use of correct hash function for filename strings
+
+2010-03-08 17:16  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.335):
+
+	Addressed Adriano's and Claudio's worries re. different timestamps
+	passed into different triggers.  I'm not sure it's really
+	important, but anyway...
+
+2010-03-08 16:58  asfernandes
+
+	* firebird2/builds/win32/setenvvar.bat (1.24):
+
+	Ability to build with VS 2008 Express
+
 2010-03-08 02:21  asfernandes
 
 	* firebird2/: builds/install/misc/firebird.conf.in (1.10),
