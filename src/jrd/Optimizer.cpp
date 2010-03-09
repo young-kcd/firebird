@@ -351,15 +351,14 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 	if (node1->nod_type != node2->nod_type)
 	{
-		dsc dsc1, dsc2;
-		dsc *desc1 = &dsc1, *desc2 = &dsc2;
+		dsc desc1, desc2;
 
 		if (node1->nod_type == nod_cast && node2->nod_type == nod_field)
 		{
-			CMP_get_desc(tdbb, csb, node1, desc1);
-			CMP_get_desc(tdbb, csb, node2, desc2);
+			CMP_get_desc(tdbb, csb, node1, &desc1);
+			CMP_get_desc(tdbb, csb, node2, &desc2);
 
-			if (DSC_EQUIV(desc1, desc2, true) &&
+			if (DSC_EQUIV(&desc1, &desc2, true) &&
 				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_cast_source], node2, stream))
 			{
 				return true;
@@ -368,10 +367,10 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		if (node1->nod_type == nod_field && node2->nod_type == nod_cast)
 		{
-			CMP_get_desc(tdbb, csb, node1, desc1);
-			CMP_get_desc(tdbb, csb, node2, desc2);
+			CMP_get_desc(tdbb, csb, node1, &desc1);
+			CMP_get_desc(tdbb, csb, node2, &desc2);
 
-			if (DSC_EQUIV(desc1, desc2, true) &&
+			if (DSC_EQUIV(&desc1, &desc2, true) &&
 				OPT_expression_equal2(tdbb, csb, node1, node2->nod_arg[e_cast_source], stream))
 			{
 				return true;
@@ -485,14 +484,13 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		case nod_literal:
 			{
-				dsc dsc1, dsc2;
-				dsc *desc1 = &dsc1, *desc2 = &dsc2;
+				dsc desc1, desc2;
 
-				CMP_get_desc(tdbb, csb, node1, desc1);
-				CMP_get_desc(tdbb, csb, node2, desc2);
+				CMP_get_desc(tdbb, csb, node1, &desc1);
+				CMP_get_desc(tdbb, csb, node2, &desc2);
 
-				if (DSC_EQUIV(desc1, desc2, true) &&
-					!memcmp(desc1->dsc_address, desc2->dsc_address, desc1->dsc_length))
+				if (DSC_EQUIV(&desc1, &desc2, true) &&
+					!memcmp(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length))
 				{
 					return true;
 				}
@@ -562,13 +560,12 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		case nod_cast:
 			{
-				dsc dsc1, dsc2;
-				dsc *desc1 = &dsc1, *desc2 = &dsc2;
+				dsc desc1, desc2;
 
-				CMP_get_desc(tdbb, csb, node1, desc1);
-				CMP_get_desc(tdbb, csb, node2, desc2);
+				CMP_get_desc(tdbb, csb, node1, &desc1);
+				CMP_get_desc(tdbb, csb, node2, &desc2);
 
-				if (DSC_EQUIV(desc1, desc2, true) &&
+				if (DSC_EQUIV(&desc1, &desc2, true) &&
 					OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_cast_source],
 										  node2->nod_arg[e_cast_source], stream))
 				{
