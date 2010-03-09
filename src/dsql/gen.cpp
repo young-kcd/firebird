@@ -175,7 +175,8 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		// ASF: If we are not referencing a field, we should evaluate the expression based on
 		// a set (ORed) of contexts. If any of them are in a valid position the expression is
 		// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
-		if (node->nod_arg[e_derived_field_value]->nod_type != nod_field &&
+		if (node->nod_arg[e_derived_field_value]->nod_type != nod_derived_field &&
+			node->nod_arg[e_derived_field_value]->nod_type != nod_field &&
 			node->nod_arg[e_derived_field_value]->nod_type != nod_dbkey &&
 			node->nod_arg[e_derived_field_value]->nod_type != nod_map)
 		{
