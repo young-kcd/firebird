@@ -333,6 +333,13 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	}
 #endif
 
+	if (!function->fun_entrypoint)
+	{
+		Firebird::status_exception::raise(Arg::Gds(isc_funnotdef) <<
+										  Arg::Str(function->fun_name) <<
+										  Arg::Gds(isc_modnotfound);
+	}
+
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	HalfStaticArray<UCHAR, 800> temp;
 
