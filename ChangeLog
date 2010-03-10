@@ -1,3 +1,15 @@
+2010-03-09 19:55  asfernandes
+
+	* firebird2/builds/win32/setenvvar.bat (1.23.2.1):
+
+	Ability to build with VS 2008 Express
+
+2010-03-09 19:55  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.186.2.1):
+
+	Backport change that fix CORE-2910, found by Dmitry
+
 2010-03-06 15:26  hvlad
 
 	* firebird2/src/jrd/: cmp.cpp (1.352.2.4), Database.h (1.42.2.2),
