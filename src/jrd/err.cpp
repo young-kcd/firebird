@@ -133,6 +133,8 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	const Arg::StatusVector org_status(tdbb->tdbb_status_vector);
+
 	MetaName index, constraint;
 	if (!idx_name)
 		MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
@@ -163,7 +165,7 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 		break;
 
 	case idx_e_conversion:
-		ERR_punt();
+		org_status.raise();
 		break;
 
 	case idx_e_foreign_target_doesnt_exist:
