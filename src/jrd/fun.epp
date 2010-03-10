@@ -337,7 +337,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	{
 		Firebird::status_exception::raise(Arg::Gds(isc_funnotdef) <<
 										  Arg::Str(function->fun_name) <<
-										  Arg::Gds(isc_modnotfound);
+										  Arg::Gds(isc_modnotfound));
 	}
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
