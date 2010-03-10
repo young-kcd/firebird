@@ -397,36 +397,41 @@ void IDX_create_index(
 				else {
 					result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 				}
-				if (null_state != idx_nulls_none) {
-					result = idx_e_ok;
-				}
-				else {
-					result =
-						check_partner_index(tdbb, relation, record,
-											transaction, idx,
-											partner_relation,
-											partner_index_id);
-				}
-			}
 
-			if (result == idx_e_ok) {
-				idx_null_state null_state;
-				BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
-				key_is_null = (null_state == idx_nulls_all);
-
-				if (isPrimary && null_state != idx_nulls_none) 
+				if (result == idx_e_ok && null_state == idx_nulls_none)
 				{
-					fb_assert(key.key_null_segment < idx->idx_count);
-
-					const USHORT bad_id = idx->idx_rpt[key.key_null_segment].idx_field;
-					const jrd_fld *bad_fld = MET_get_field(relation, bad_id);
-
-					ERR_post(isc_not_valid,
-						isc_arg_string, bad_fld->fld_name.c_str(),
-						isc_arg_string, NULL_STRING_MARK, isc_arg_end);
+					result = check_partner_index(tdbb, relation, record,
+												 transaction, idx,
+												 partner_relation,
+												 partner_index_id);
 				}
 			}
-			else {
+
+			if (result == idx_e_ok)
+			{
+				idx_null_state null_state;
+				result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
+
+				if (result == idx_e_ok)
+				{
+					if (isPrimary && null_state != idx_nulls_none) 
+					{
+						fb_assert(key.key_null_segment < idx->idx_count);
+
+						const USHORT bad_id = idx->idx_rpt[key.key_null_segment].idx_field;
+						const jrd_fld *bad_fld = MET_get_field(relation, bad_id);
+
+						ERR_post(isc_not_valid,
+							isc_arg_string, bad_fld->fld_name.c_str(),
+							isc_arg_string, NULL_STRING_MARK, isc_arg_end);
+					}
+
+					key_is_null = (null_state == idx_nulls_all);
+				}
+			}
+
+			if (result != idx_e_ok)
+			{
 				do {
 					if (record != gc_record)
 						delete record;
@@ -434,8 +439,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_duplicate_error(result, partner_relation,
-									partner_index_id);
+				ERR_duplicate_error(result, relation, idx->idx_id);
 			}
 
 			if (key.key_length > key_length) {

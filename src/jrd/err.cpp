@@ -173,6 +173,9 @@ void ERR_duplicate_error(IDX_E	code,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
+	ISC_STATUS_ARRAY org_status;
+	memcpy(org_status, tdbb->tdbb_status_vector, ISC_STATUS_LENGTH);
+
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
 	if (index.length()) {
 		index_name = ERR_cstring(index);
@@ -186,6 +189,8 @@ void ERR_duplicate_error(IDX_E	code,
 		index_name = "***unknown***";
 		constraint_name = "***unknown***";
 	}
+
+	memcpy(tdbb->tdbb_status_vector, org_status, ISC_STATUS_LENGTH);
 
 	switch (code) {
 	case idx_e_keytoobig:
@@ -209,13 +214,17 @@ void ERR_duplicate_error(IDX_E	code,
 			 	 isc_arg_gds, isc_foreign_key_references_present, isc_arg_end);
 		break;
 
-	default:
+	case idx_e_duplicate:
 		if (constraint.length() > 0)
 			ERR_post(isc_unique_key_violation,
 					 isc_arg_string, constraint_name,
 					 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
 		else
 			ERR_post(isc_no_dup, isc_arg_string, index_name, isc_arg_end);
+		break;
+
+	default:
+		fb_assert(false);
 	}
 }
 #endif
