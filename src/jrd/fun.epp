@@ -320,6 +320,13 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, jrd_nod* node, impu
 	}
 #endif
 
+	if (!function->fun_entrypoint)
+	{
+		Firebird::status_exception::raise(Arg::Gds(isc_funnotdef) <<
+										  Arg::Str(function->getName()) <<
+										  Arg::Gds(isc_modnotfound));
+	}
+
 	SET_TDBB(tdbb);
 
 	const fun_repeat* return_ptr = &function->fun_args[function->fun_return_arg];
@@ -690,13 +697,13 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, jrd_nod* node, impu
 			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_udf_fp_overflow) <<
-									Arg::Str(function->getName().toString()));
+									Arg::Str(function->getName()));
 			}
 			else if (isnan(value->vlu_misc.vlu_double))
 			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_udf_fp_nan) <<
-									Arg::Str(function->getName().toString()));
+									Arg::Str(function->getName()));
 			}
 		}
 		request->req_flags &= ~req_null;
