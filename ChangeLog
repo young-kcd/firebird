@@ -1,3 +1,17 @@
+2010-03-09 17:55  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.143):
+
+	Reduced number of local variables. Thanks to Claudio.
+
+2010-03-09 16:43  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.335):
+
+	This is related to CORE-2912, but changes nothing internally.
+	Intead of reading non-allocated memory, throw a (not always
+	correct, btw) exception.
+
 2010-03-09 10:24  alexpeshkoff
 
 	* firebird2/src/jrd/db_alias.cpp (1.33):
