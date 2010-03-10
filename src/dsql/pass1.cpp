@@ -251,9 +251,6 @@ static dsql_nod* pass1_rse_is_recursive(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_recursive_cte(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* process_returning(DsqlCompilerScratch*, dsql_nod*);
 
-// CVC: more global variables???
-static const dsql_str* global_temp_collation_name = NULL;
-
 const char* const DB_KEY_STRING	= "DB_KEY"; // NTX: pseudo field name
 const int MAX_MEMBER_LIST	= 1500;	// Maximum members in "IN" list.
 									// For eg. SELECT * FROM T WHERE
@@ -1257,9 +1254,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		return node;
 
 	case nod_collate:
-		global_temp_collation_name = (dsql_str*) input->nod_arg[e_coll_target];
 		sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_coll_source]);
-		global_temp_collation_name = NULL;
 		node = pass1_collate(dsqlScratch, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
 		return node;
 
@@ -3590,22 +3585,6 @@ static dsql_nod* pass1_constant( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 			// character set name is not defined
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 					  Arg::Gds(isc_charset_not_found) << Arg::Str(string->str_charset));
-		}
-
-		if (global_temp_collation_name)
-		{
-			const dsql_intlsym* resolved_collation = METD_get_collation(dsqlScratch->getTransaction(),
-				global_temp_collation_name, resolved->intlsym_charset_id);
-
-			if (!resolved_collation)
-			{
-				// Specified collation not found
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-						  Arg::Gds(isc_dsql_datatype_err) <<
-						  Arg::Gds(isc_collation_not_found) << Arg::Str(global_temp_collation_name->str_data) <<
-															   Arg::Str(resolved->intlsym_name));
-			}
-			resolved = resolved_collation;
 		}
 
 		constant->nod_desc.setTextType(resolved->intlsym_ttype);
