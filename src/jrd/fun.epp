@@ -169,6 +169,14 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
  *
  **************************************/
 
+	if (!function->fun_entrypoint)
+	{
+		Firebird::status_exception::raise(isc_funnotdef,
+			isc_arg_string, ERR_string(function->fun_name),
+			isc_arg_interpreted, "module name or entrypoint could not be found",
+			isc_arg_end);
+	}
+
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	Firebird::HalfStaticArray<UCHAR, 800> temp;
 
@@ -646,6 +654,7 @@ UserFunction* FUN_lookup_function(const Firebird::MetaName& name, bool ShowAcces
         END_FOR;
 		UserFunction* function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) 
 							  UserFunction(*dbb->dbb_permanent);
+		function->fun_name = name;
 		function->fun_count = count;
 		function->fun_args = args;
 		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;

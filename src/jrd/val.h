@@ -111,6 +111,7 @@ class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 {
     public:
 	Firebird::string fun_exception_message;	/* message containing the exception error message */
+	Firebird::MetaName fun_name;	/* Function name */
 	UserFunction*	fun_homonym;	/* Homonym functions */
 	Symbol*		fun_symbol;			/* Symbol block */
 	int (*fun_entrypoint) ();		/* Function entrypoint */
@@ -121,7 +122,7 @@ class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 	ULONG		fun_temp_length;	/* Temporary space required */
     fun_repeat fun_rpt[1];
     public:
-	UserFunction(MemoryPool& p) : fun_exception_message(p) { }
+	UserFunction(MemoryPool& p) : fun_exception_message(p), fun_name(p) { }
 };
 
 // Those two defines seems an intention to do something that wasn't completed.
