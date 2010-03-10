@@ -180,7 +180,7 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 			 	 Arg::Gds(isc_foreign_key_references_present));
 		break;
 
-	default:
+	case idx_e_duplicate:
 		if (haveConstraint)
 		{
 			ERR_post(Arg::Gds(isc_unique_key_violation) << Arg::Str(constraint) <<
@@ -188,6 +188,9 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 		}
 		else
 			ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index));
+
+	default:
+		fb_assert(false);
 	}
 }
 
