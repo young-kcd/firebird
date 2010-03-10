@@ -133,6 +133,8 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	const Arg::StatusVector org_status(tdbb->tdbb_status_vector);
+
 	MetaName index, constraint;
 	if (!idx_name)
 		MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
@@ -163,7 +165,7 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 		break;
 
 	case idx_e_conversion:
-		ERR_punt();
+		org_status.raise();
 		break;
 
 	case idx_e_foreign_target_doesnt_exist:
@@ -178,14 +180,20 @@ void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_numbe
 			 	 Arg::Gds(isc_foreign_key_references_present));
 		break;
 
-	default:
+	case idx_e_duplicate:
 		if (haveConstraint)
 		{
 			ERR_post(Arg::Gds(isc_unique_key_violation) << Arg::Str(constraint) <<
 														   Arg::Str(relation->rel_name));
 		}
 		else
+		{
 			ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index));
+		}
+		break;
+
+	default:
+		fb_assert(false);
 	}
 }
 
