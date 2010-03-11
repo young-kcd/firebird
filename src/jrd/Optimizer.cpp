@@ -816,6 +816,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	selectivity = MAXIMUM_SELECTIVITY;
 	candidate = false;
 	scopeCandidate = false;
+	utilized = false;
 	lowerCount = 0;
 	upperCount = 0;
 	nonFullMatchedSegments = 0;
@@ -842,7 +843,8 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 		// Compound indexes are generally less compressed.
 		factor = 0.7;
 	}
-	Database* dbb = tdbb->getDatabase();
+
+	const Database* const dbb = tdbb->getDatabase();
 	cardinality = (csb_tail->csb_cardinality * (2 + (length * factor))) / (dbb->dbb_page_size - BTR_SIZE);
 	cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 }
@@ -863,6 +865,7 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
 	cardinality = scratch.cardinality;
 	candidate = scratch.candidate;
 	scopeCandidate = scratch.scopeCandidate;
+	utilized = scratch.utilized;
 	lowerCount = scratch.lowerCount;
 	upperCount = scratch.upperCount;
 	nonFullMatchedSegments = scratch.nonFullMatchedSegments;
@@ -1464,6 +1467,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		*sort = NULL;
 		idx->idx_runtime_flags |= idx_navigate;
 
+		indexScratches[i].utilized = true;
 		jrd_nod* const index_node = makeIndexScanNode(&indexScratches[i]);
 		const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
 		return FB_NEW(*tdbb->getDefaultPool())
@@ -1530,6 +1534,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	{
 		IndexScratch& scratch = (*fromIndexScratches)[i];
 		scratch.scopeCandidate = false;
+		scratch.utilized = false;
 		scratch.lowerCount = 0;
 		scratch.upperCount = 0;
 		scratch.nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
@@ -1886,7 +1891,8 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	// already at index scan. But this rule doesn't apply to nod_equiv
 	// which requires NULLs to be found in the index.
 	// A second exception is when this index is used for navigation.
-	if (ignoreNullsOnScan && !(idx->idx_runtime_flags & idx_navigate)) {
+	if (ignoreNullsOnScan && !(idx->idx_runtime_flags & idx_navigate))
+	{
 		retrieval->irb_generic |= irb_ignore_null_value_key;
 	}
 
@@ -1980,7 +1986,9 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		inversion[i]->used = false;
 		if (inversion[i]->scratch)
 		{
-			if (inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use) {
+			if (inversion[i]->scratch->utilized ||
+				inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use)
+			{
 				inversion[i]->used = true;
 			}
 		}
