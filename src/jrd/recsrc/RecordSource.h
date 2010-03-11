@@ -228,8 +228,8 @@ namespace Jrd
 		const Firebird::string m_name;
 		jrd_nod* const m_index;
 		jrd_nod* m_inversion;
-		const USHORT m_length;
-		USHORT m_offset;
+		const size_t m_length;
+		size_t m_offset;
 	};
 
 	class ExternalTableScan : public RecordStream
