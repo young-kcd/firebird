@@ -1,3 +1,29 @@
+2010-03-10 19:43  dimitr
+
+	* firebird2/src/jrd/fun.epp (1.127.2.5):
+
+	Correction.
+
+2010-03-10 19:35  dimitr
+
+	* firebird2/src/jrd/fun.epp (1.127.2.4):
+
+	Fixed CORE-2914: Server crashes while restoring a database having
+	an expression index referencing a non-existent UDF.
+
+2010-03-10 19:08  dimitr
+
+	* firebird2/src/jrd/err.cpp (1.97.2.2):
+
+	Misc.
+
+2010-03-10 19:06  dimitr
+
+	* firebird2/src/jrd/: err.cpp (1.97.2.1), idx.cpp (1.161.2.1):
+
+	Fixed CORE-2916: Broken error handling in the case of a conversion
+	error happened during index creation.
+
 2010-03-09 19:55  asfernandes
 
 	* firebird2/builds/win32/setenvvar.bat (1.23.2.1):
