@@ -731,7 +731,7 @@ string IntlManager::getConfigInfo(const ConfigFile::Parameter* confObj)
 		{
 			configInfo.append(";");
 		}
-		configInfo.append(par.name + "=" + par.value);
+		configInfo.append(par.name.ToString() + "=" + par.value);
 	}
 
 	return configInfo.ToString();

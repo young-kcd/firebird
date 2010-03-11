@@ -591,6 +591,13 @@ namespace Firebird
 						   AbstractString::const_pointer s2,
 						   const AbstractString::size_type n);
 	};
+	class IgnoreCaseComparator
+	{
+	public:
+		static int compare(AbstractString::const_pointer s1,
+						   AbstractString::const_pointer s2,
+						   const AbstractString::size_type n);
+	};
 
 	template<typename Comparator>
 	class StringBase : public AbstractString
@@ -699,6 +706,10 @@ namespace Firebird
 		{
 			return StringBase<PathNameComparator>(c_str());
 		}
+		inline StringBase<IgnoreCaseComparator> ToNoCaseString() const
+		{
+			return StringBase<IgnoreCaseComparator>(c_str());
+		}
 
 		inline StringType substr(size_type pos = 0, size_type n = npos) const
 		{
@@ -802,6 +813,20 @@ namespace Firebird
 	inline PathName operator+(PathName::char_type c, const PathName& str)
 	{
 		PathName rc(1, c);
+		rc += str;
+		return rc;
+	}
+
+	typedef StringBase<IgnoreCaseComparator> NoCaseString;
+	inline NoCaseString operator+(NoCaseString::const_pointer s, const NoCaseString& str)
+	{
+		NoCaseString rc(s);
+		rc += str;
+		return rc;
+	}
+	inline NoCaseString operator+(NoCaseString::char_type c, const NoCaseString& str)
+	{
+		NoCaseString rc(1, c);
 		rc += str;
 		return rc;
 	}

@@ -469,4 +469,10 @@ extern "C" {
 		}
 		return (STRNCASECMP(c_str(), string, ++l) == 0);
 	}
+
+	int IgnoreCaseComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2,
+		const AbstractString::size_type n)
+	{
+		return STRNCASECMP(s1, s2, n);
+	}
 }	// namespace Firebird

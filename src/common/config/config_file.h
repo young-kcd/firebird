@@ -56,8 +56,10 @@ public:
 	// enum to distinguish ctors
 	enum UseText {USE_TEXT};
 
-	// config_file is always OS case sensitive
+	// config_file strings are mostly case sensitive
 	typedef Firebird::string String;
+	// keys are case-insensitive
+	typedef Firebird::NoCaseString KeyType;
 
 	class Stream
 	{
@@ -76,31 +78,31 @@ public:
 			: AutoStorage(), name(getPool()), value(getPool()), sub(0), line(0)
 		{ }
 
-		String name;
+		KeyType name;
 		String value;
 		Firebird::RefPtr<ConfigFile> sub;
 		unsigned int line;
 
-		static const String* generate(const void* /*sender*/, const Parameter* item)
+		static const KeyType* generate(const void* /*sender*/, const Parameter* item)
 		{
 			return &item->name;
 		}
 	};
 
     typedef Firebird::SortedObjectsArray<Parameter, Firebird::InlineStorage<Parameter*, 100>,
-										 String, Parameter> Parameters;
+										 KeyType, Parameter> Parameters;
 
 	ConfigFile(const Firebird::PathName& file, USHORT fl);
 	ConfigFile(const char* file, USHORT fl);
 	ConfigFile(UseText, const char* configText, USHORT fl);
 
 private:
-	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const String& file);
+	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file);
 
 public:
 	// key and value management
-	const Parameter* findParameter(const String& name) const;
-	const Parameter* findParameter(const String& name, const String& value) const;
+	const Parameter* findParameter(const KeyType& name) const;
+	const Parameter* findParameter(const KeyType& name, const String& value) const;
 
 	// all parameters access
 	const Parameters& getParameters() const
@@ -111,14 +113,14 @@ public:
 private:
 	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB};
 
-    String configFile;
+    Firebird::PathName configFile;
     Parameters parameters;
 	USHORT flags;
 	USHORT badLinesCount;
 
 	// utilities
 	void parse(Stream* stream);
-	LineType parseLine(const String& input, String& key, String& value);
+	LineType parseLine(const String& input, KeyType& key, String& value);
 	bool translate(const String& from, String& to);
 	void badLine(const String& line);
 };

@@ -38,7 +38,7 @@
 namespace Jrd {
 
 
-typedef Firebird::Pair<Firebird::Full<ConfigFile::String, ConfigFile::String> > ConfigEntry;
+typedef Firebird::Pair<Firebird::Full<ConfigFile::KeyType, ConfigFile::String> > ConfigEntry;
 
 class PluginImpl : public Firebird::Plugin, public Firebird::GlobalStorage
 {
@@ -72,7 +72,7 @@ private:
 	Firebird::SortedObjectsArray<
 		ConfigEntry,
 		Firebird::EmptyStorage<ConfigEntry*>,
-		ConfigFile::String, Firebird::FirstPointerKey<ConfigEntry>
+		ConfigFile::KeyType, Firebird::FirstPointerKey<ConfigEntry>
 	> configInfo;
 	Firebird::AutoPtr<ModuleLoader::Module> module;
 	Firebird::ExternalEngineFactory* externalEngineFactory;

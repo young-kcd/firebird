@@ -187,7 +187,7 @@ ConfigFile::ConfigFile(UseText, const char* configText, USHORT fl)
 	parse(&s);
 }
 
-ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const String& file)
+ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file)
 	: AutoStorage(p), configFile(getPool(), file), parameters(getPool()), flags(fl)
 {
 	parse(s);
@@ -202,7 +202,7 @@ ConfigFile::Stream::~Stream()
  *	Parse line, taking quotes into account
  */
 
-ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, String& value)
+ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, String& value)
 {
 	int inString = 0;
 	String::size_type valStart = 0;
@@ -222,7 +222,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, Str
 			break;
 
 		case '=':
-			key = input.substr(0, n);
+			key = input.substr(0, n).ToNoCaseString();
 			key.rtrim(" \t\r");
 			if (key.isEmpty())		// not good - no key
 				return LINE_BAD;
@@ -273,7 +273,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, String& key, Str
 
 	if (key.isEmpty())
 	{
-		key = input.substr(0, eol);
+		key = input.substr(0, eol).ToNoCaseString();
 		key.rtrim(" \t\r");
 		value.erase();
 	}
@@ -351,7 +351,7 @@ bool ConfigFile::translate(const String& from, String& to)
  *	Return parameter corresponding the given key
  */
 
-const ConfigFile::Parameter* ConfigFile::findParameter(const String& name) const
+const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name) const
 {
 	size_t pos;
 	return parameters.find(name, pos) ? &parameters[pos] : NULL;
@@ -362,7 +362,7 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const String& name) const
  *	Return parameter corresponding the given key and value
  */
 
-const ConfigFile::Parameter* ConfigFile::findParameter(const String& name, const String& value) const
+const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name, const String& value) const
 {
 	size_t pos;
 	if (!parameters.find(name, pos))
