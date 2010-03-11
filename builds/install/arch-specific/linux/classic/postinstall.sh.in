@@ -53,8 +53,8 @@
     # The \n is needed, some /etc/services files are missing a trailing
     # line feed - MOD 7-Nov-2002
     FileName=/etc/services
-    newLine="gds_db          3050/tcp  # Firebird SQL Database Remote Protocol"
-    oldLine=`grep "^gds_db" $FileName`
+    newLine="@FB_SERVICE_NAME@          @FB_SERVICE_PORT@/tcp  # Firebird SQL Database Remote Protocol"
+    oldLine=`grep "^@FB_SERVICE_NAME@" $FileName`
     if [ -z "$oldLine" ]
       then
         echo "" >> $FileName

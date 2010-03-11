@@ -6,8 +6,8 @@ origDir=`pwd`
 
 
 # Update /etc/services
-newLine="gds_db          3050/tcp  # Firebird SQL Database Remote Protocol"
-replaceLineInFile /etc/services "$newLine" "^gds_db"
+newLine="@FB_SERVICE_NAME@          @FB_SERVICE_PORT@/tcp  # Firebird SQL Database Remote Protocol"
+replaceLineInFile /etc/services "$newLine" "^@FB_SERVICE_NAME@"
 
 # Update ownership of files
 if [ $RunUser = firebird ]
