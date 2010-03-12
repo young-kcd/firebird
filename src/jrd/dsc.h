@@ -120,6 +120,11 @@ typedef struct dsc
 		dsc_flags |= DSC_null | DSC_nullable;
 	}
 
+	void clearNull()
+	{
+		dsc_flags &= ~DSC_null;
+	}
+
 	bool isBlob() const
 	{
 		return dsc_dtype == dtype_blob || dsc_dtype == dtype_quad;

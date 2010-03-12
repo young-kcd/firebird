@@ -1280,8 +1280,13 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 			src = EVL_expr(tdbb, *jrdVar);
 			paramDescs.put(*jrdVar, src);
 
-			if (src && (request->req_flags & req_null))
-				src->setNull();
+			if (src)
+			{
+				if (request->req_flags & req_null)
+					src->setNull();
+				else
+					src->clearNull();
+			}
 		}
 
 		const bool srcNull = !src || src->isNull();
