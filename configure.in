@@ -1226,6 +1226,7 @@ mkdir -p temp/examples/udr
 MAKE_SRC_DIR=builds/posix
 
 dnl common files for all posix hosts
+dnl TODO: fix "arch-specific/linux/" paths for common posix scripts with SVN
 AC_CONFIG_FILES([gen/firebird/firebird.conf:builds/install/misc/firebird.conf.in
 gen/firebird/aliases.conf:builds/install/misc/aliases.conf.in
 gen/firebird/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
@@ -1236,14 +1237,14 @@ gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
 gen/firebird/bin/superLibrary.sh:builds/install/misc/superLibrary.sh.in
 gen/firebird/bin/changeRunUser.sh:builds/install/misc/changeRunUser.sh.in
 gen/firebird/bin/restoreRootRunUser.sh:builds/install/misc/restoreRootRunUser.sh.in
-gen/firebird/bin/tarMainInstall.sh:builds/install/misc/tarMainInstall.sh.in
-gen/firebird/bin/tarinstall.sh:builds/install/misc/tarinstall.sh.in
-gen/firebird/bin/preinstall.sh:builds/install/misc/preinstall.sh.in
-gen/firebird/bin/postinstall.sh:builds/install/misc/postinstall.sh.in
-gen/firebird/bin/preuninstall.sh:builds/install/misc/preuninstall.sh.in
-gen/firebird/bin/postuninstall.sh:builds/install/misc/postuninstall.sh.in
-gen/firebird/bin/taruninstall.sh:builds/install/misc/taruninstall.sh.in
-gen/firebird/bin/tarMainUninstall.sh:builds/install/misc/tarMainUninstall.sh.in
+gen/firebird/bin/tarMainInstall.sh:builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
+gen/firebird/bin/tarinstall.sh:builds/install/arch-specific/linux/misc/tarinstall.sh.in
+gen/firebird/bin/preinstall.sh:builds/install/arch-specific/linux/misc/preinstall.sh.in
+gen/firebird/bin/postinstall.sh:builds/install/arch-specific/linux/misc/postinstall.sh.in
+gen/firebird/bin/preuninstall.sh:builds/install/arch-specific/linux/misc/preuninstall.sh.in
+gen/firebird/bin/postuninstall.sh:builds/install/arch-specific/linux/misc/postuninstall.sh.in
+gen/firebird/bin/taruninstall.sh:builds/install/arch-specific/linux/misc/taruninstall.sh.in
+gen/firebird/bin/tarMainUninstall.sh:builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
 gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
 gen/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in
 gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
