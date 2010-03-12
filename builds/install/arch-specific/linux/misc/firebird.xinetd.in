@@ -5,7 +5,7 @@
 # be the first as some scripts (CSchangeRunUser.sh in particular) use sed 
 # scripting to modify it.
 
-service gds_db
+service @FB_SERVICE_NAME@
 {
 	disable = no
 	flags		= REUSE

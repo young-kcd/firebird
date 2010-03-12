@@ -127,7 +127,7 @@ resetInetdServer() {
 # take into account possible pre-firebird xinetd services
 
 removeXinetdEntry() {
-	for i in `grep -l "service gds_db" /etc/xinetd.d/*`
+	for i in `grep -l "service @FB_SERVICE_NAME@" /etc/xinetd.d/*`
 	do
         rm -f $i
     done
@@ -139,7 +139,7 @@ removeXinetdEntry() {
 
 removeInetdEntry() {
     FileName=/etc/inetd.conf
-    oldLine=`grep "^gds_db" $FileName`
+    oldLine=`grep "^@FB_SERVICE_NAME@" $FileName`
     removeLineFromFile "$FileName" "$oldLine"
 }
 
@@ -390,7 +390,7 @@ changeDBAPassword() {
 #------------------------------------------------------------------------
 # UpdateHostsDotEquivFile
 # The /etc/hosts.equiv file is needed to allow local access for super server
-# from processes on the machine to port 3050 on the local machine.
+# from processes on the machine to port @FB_SERVICE_PORT@ on the local machine.
 # The two host names that are needed there are 
 # localhost.localdomain and whatever hostname returns.
 

@@ -306,7 +306,7 @@ startInetService() {
 #------------------------------------------------------------------------
 # UpdateHostsDotEquivFile
 # The /etc/hosts.equiv file is needed to allow local access for super server
-# from processes on the machine to port 3050 on the local machine.
+# from processes on the machine to port @FB_SERVICE_PORT@ on the local machine.
 # The two host names that are needed there are 
 # localhost.localdomain and whatever hostname returns.
 
@@ -462,8 +462,8 @@ removeLineFromFile() {
     # line feed - MOD 12-Dec-2003
 
     FileName=/etc/services
-    newLine="gds_db          3050/tcp  # Firebird SQL Database Remote Protocol"
-    oldLine=`grep "^gds_db" $FileName`
+    newLine="@FB_SERVICE_NAME@          @FB_SERVICE_PORT@/tcp  # Firebird SQL Database Remote Protocol"
+    oldLine=`grep "^@FB_SERVICE_NAME@" $FileName`
 
     if [ -z "$oldLine" ]
       then
@@ -479,11 +479,11 @@ removeLineFromFile() {
 #   updateHostsDotFile /etc/hosts.allow
 	
 	
-    # remove any gds_db line in the /etc/inetd.conf
+    # remove any @FB_SERVICE_NAME@ line in the /etc/inetd.conf
     FileName=/etc/inetd.conf
     if [ -f $FileName ]
       then
-        oldLine=`grep "^gds_db" $FileName`
+        oldLine=`grep "^@FB_SERVICE_NAME@" $FileName`
 
 	removeLineFromFile "$FileName" "$oldLine"
     fi
