@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.examples,v 1.8.4.2 2008-09-02 13:22:20 paulbeach Exp $
+#  $Id: Makefile.in.examples,v 1.8.4.3 2010-03-12 10:56:34 alexpeshkoff Exp $
 #
 ROOT=../..
 ObjModuleType=std
@@ -53,10 +53,10 @@ PATH := ./:$(BIN):$(PATH)
 export PATH
 
 ifeq ($(PLATFORM),DARWIN)
-DYLD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
+DYLD_LIBRARY_PATH += $(GEN_ROOT)/firebird/lib
 export DYLD_LIBRARY_PATH
 else
-LD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
+LD_LIBRARY_PATH += $(GEN_ROOT)/firebird/lib
 export LD_LIBRARY_PATH
 endif
 GPRE_FLAGS=	-r -m -z -n
