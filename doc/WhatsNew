@@ -2,6 +2,46 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-2919
+        Installation script ignores non-standard ports
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2916
+        Broken error handling in the case of a conversion error happened during index creation
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2914
+        Server crashes while restoring a database having an expression index referencing a non-existent UDF
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2910
+        PK index is not used for derived tables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2908
+        Engine could crash or raise not expected errors working with ODS 8.x database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2898
+        CHAR_TO_UUID and UUID_TO_CHAR work differently in big/little endian architectures
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2888
+        A memory corruption cause incorrect query evaluation and may crash the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2886
+        Query with "NOT IN <subselect from view>" fails
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2879
         Sweep could raise error: page 0 is of wrong type (expected 6, found 1)
       Contributor(s):
@@ -52,6 +92,11 @@
         Problem with the fb_cancel_operation() API call
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2833
+        Changing data that affects an expression index that contains references to null date fields fails
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-2825
         Some patches for building on Debian/kFreeBSD and FreeBSD
