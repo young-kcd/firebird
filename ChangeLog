@@ -1,3 +1,54 @@
+2010-03-13 11:50  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.14):
+
+	Update.
+
+2010-03-13 11:41  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.10):
+
+	Update.
+
+2010-03-12 19:51  alexpeshkoff
+
+	* firebird2/configure.in (1.368.2.11):
+
+	Fixed accidentially broken by me posix build
+
+2010-03-12 16:32  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.45.2.2):
+
+	Fixed bug CORE-2920 :  Incorrect execution of volatile SQL
+	statements inside EXECUTE STATEMENT
+
+2010-03-12 15:43  alexpeshkoff
+
+	* firebird2/: configure.in (1.368.2.10),
+	builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
+	(1.1.2.2), builds/install/arch-specific/freebsd/install.sh.in
+	(1.13.2.2):
+
+	CORE-2921: backported changes from HEAD
+
+2010-03-12 15:40  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
+	(1.1.2.1):
+
+	file freebsdLibrary.sh.in was added on branch B2_5_Release on
+	2010-03-12 14:43:48 +0000
+
+2010-03-12 15:40  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
+	(1.1):
+
+	CORE-2921: still miss superclassic support
+
 2010-03-11 15:58  alexpeshkoff
 
 	* firebird2/builds/install/arch-specific/:
