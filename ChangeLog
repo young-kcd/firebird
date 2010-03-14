@@ -1,3 +1,9 @@
+2010-03-14 11:46  dimitr
+
+	* firebird2/src/jrd/err.cpp (1.69.2.3):
+
+	Correction, thanks to Claudio.
+
 2010-03-11 16:07  alexpeshkoff
 
 	* firebird2/builds/install/arch-specific/:
