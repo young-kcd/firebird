@@ -481,6 +481,15 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		PAR_error(csb, Arg::Gds(isc_datnotsup));
 	}
 
+	if (desc->getTextType() != CS_NONE)
+	{
+		jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
+		dep_node->nod_type = nod_dependency;
+		dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
+		dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
+		csb->csb_dependencies.push(dep_node);
+	}
+
 	if (itemInfo)
 	{
 		if (dtype == blr_cstring2 || dtype == blr_text2 || dtype == blr_varying2 ||
