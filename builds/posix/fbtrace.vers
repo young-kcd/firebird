@@ -25,11 +25,4 @@
 #	Alex Peshkov
 #
 
-
-{
-global:
-	trace_create;
-
-local:
-	*;
-};
+trace_create

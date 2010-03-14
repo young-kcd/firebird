@@ -72,12 +72,6 @@ LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(LIB_PATH_OPTS) -shared -Wl,-G,-bbigt
 # AIX ld uses "export files" to manage symbol visibility. Export files are
 # functionally similar to "version files" on ELF systems and are specified
 # with the "-Wl,-bE:exportfile.exp" option.
-LINK_FIREBIRD_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.exp
-LINK_FIREBIRD_EMBED_SYMBOLS=$(LINK_FIREBIRD_SYMBOLS)
-LINK_FIREBIRD_CLIENT_SYMBOLS=$(LINK_FIREBIRD_SYMBOLS)
-LINK_TRACE_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.exp
-LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.exp
-LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.exp
 LIB_LINK_MAPFILE=-Wl,-bE:
 
 # These options aren't used by AIX (XCOFF) object files...

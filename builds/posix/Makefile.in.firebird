@@ -158,7 +158,7 @@ firebird_super firebird_server: firebird_basic super_targets fbtrace
 # some complications particularly for super in needing to start the server
 # that you are currently building. MOD 28-July-2002
 
-firebird_basic: btyacc_binary external_libraries firebird_boot basic_targets
+firebird_basic: btyacc_binary external_libraries export_lists firebird_boot basic_targets
 
 firebird_boot: updateBuildNum boot_phase1 boot_phase2
 
@@ -171,7 +171,7 @@ firebird_boot: updateBuildNum boot_phase1 boot_phase2
 # writeBuildNum.sh script is autoupdated by CVS checkins.
 #
 
-.PHONY: updateBuildNum external_libraries
+.PHONY: updateBuildNum external_libraries export_lists
 
 updateBuildNum : jrd/build_no.h $(GEN_ROOT)/Make.Version
 
@@ -466,6 +466,17 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 # wants them.  You might need to hunt around in the old cvs tree for them.
 
 
+#___________________________________________________________________________
+
+# create platform-specific export lists (version scripts) in gen
+
+client.firebird.vers: ../builds/posix/firebird.vers
+	sh vers.sh firebird.vers client
+
+%.vers: ../builds/posix/%.vers
+	sh vers.sh $(firstword $@)
+
+export_lists: $(ALLVERS)
 
 #___________________________________________________________________________
 
