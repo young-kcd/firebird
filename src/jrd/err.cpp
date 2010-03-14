@@ -174,7 +174,7 @@ void ERR_duplicate_error(IDX_E	code,
 	thread_db* tdbb = JRD_get_thread_data();
 
 	ISC_STATUS_ARRAY org_status;
-	memcpy(org_status, tdbb->tdbb_status_vector, ISC_STATUS_LENGTH);
+	memcpy(org_status, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
 
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
 	if (index.length()) {
@@ -190,7 +190,7 @@ void ERR_duplicate_error(IDX_E	code,
 		constraint_name = "***unknown***";
 	}
 
-	memcpy(tdbb->tdbb_status_vector, org_status, ISC_STATUS_LENGTH);
+	memcpy(tdbb->tdbb_status_vector, org_status, sizeof(ISC_STATUS_ARRAY));
 
 	switch (code) {
 	case idx_e_keytoobig:
