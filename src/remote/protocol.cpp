@@ -1232,7 +1232,7 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 	const rem_port* port = (rem_port*) xdrs->x_public;
 
 
-	if ((!message) || (!format))
+	if (!message || !format)
 	{
 		return FALSE;
 	}
@@ -1600,7 +1600,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		// We should not call xdr_message() with NULL
 		return FALSE;
 	}
-	
+
 	statement->rsr_buffer = message->msg_next;
 	if (!message->msg_address)
 		message->msg_address = message->msg_buffer;

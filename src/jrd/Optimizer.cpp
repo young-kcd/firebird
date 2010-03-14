@@ -1987,7 +1987,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		if (inversion[i]->scratch)
 		{
 			if (inversion[i]->scratch->utilized ||
-				inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use)
+				(inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use))
 			{
 				inversion[i]->used = true;
 			}

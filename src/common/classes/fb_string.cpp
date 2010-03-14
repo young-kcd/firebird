@@ -451,15 +451,6 @@ extern "C" {
 		return value % tableSize;
 	}
 
-	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2,
-		const AbstractString::size_type n)
-	{
-		if (CASE_SENSITIVITY)
-			return memcmp(s1, s2, n);
-
-		return STRNCASECMP(s1, s2, n);
-	}
-
 	bool AbstractString::equalsNoCase(AbstractString::const_pointer string) const
 	{
 		size_t l = strlen(string);
@@ -468,6 +459,15 @@ extern "C" {
 			l = length();
 		}
 		return (STRNCASECMP(c_str(), string, ++l) == 0);
+	}
+
+	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2,
+		const AbstractString::size_type n)
+	{
+		if (CASE_SENSITIVITY)
+			return memcmp(s1, s2, n);
+
+		return STRNCASECMP(s1, s2, n);
 	}
 
 	int IgnoreCaseComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2,
