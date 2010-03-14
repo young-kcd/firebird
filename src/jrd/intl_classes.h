@@ -81,7 +81,7 @@ public:
 	}
 };
 
-template <typename PrevConverter>
+template <typename PrevConverter = NullStrConverter>
 class UpcaseConverter : public PrevConverter
 {
 public:
@@ -107,7 +107,7 @@ private:
 	UCHAR* out_str;
 };
 
-template <typename PrevConverter>
+template <typename PrevConverter = NullStrConverter>
 class CanonicalConverter : public PrevConverter
 {
 public:

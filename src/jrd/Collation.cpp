@@ -137,7 +137,7 @@ static const UCHAR SLEUTH_SPECIAL[128] =
 
 // Below are templates for functions used in Collation implementation
 
-template <typename StrConverter, typename CharType>
+template <typename CharType, typename StrConverter = CanonicalConverter<> >
 class LikeMatcher : public PatternMatcher
 {
 public:
@@ -210,7 +210,7 @@ private:
 	Firebird::LikeEvaluator<CharType> evaluator;
 };
 
-template <typename StrConverter, typename CharType>
+template <typename CharType, typename StrConverter>
 class StartsMatcher : public PatternMatcher
 {
 public:
@@ -264,7 +264,7 @@ private:
 	Firebird::StartsEvaluator<CharType> evaluator;
 };
 
-template <typename StrConverter, typename CharType>
+template <typename CharType, typename StrConverter = CanonicalConverter<UpcaseConverter<> > >
 class ContainsMatcher : public PatternMatcher
 {
 public:
@@ -317,7 +317,7 @@ private:
 	Firebird::ContainsEvaluator<CharType> evaluator;
 };
 
-template <typename StrConverter, typename CharType>
+template <typename CharType, typename StrConverter = CanonicalConverter<> >
 class MatchesMatcher
 {
 public:
@@ -385,7 +385,7 @@ private:
 	}
 };
 
-template <typename StrConverter, typename CharType>
+template <typename CharType, typename StrConverter = CanonicalConverter<> >
 class SleuthMatcher
 {
 public:
@@ -716,12 +716,18 @@ private:
 	static const int SLEUTH_INSENSITIVE;
 };
 
-template <typename StrConverter, typename CharType>
-const int SleuthMatcher<StrConverter, CharType>::SLEUTH_INSENSITIVE	= 1;
+template <typename CharType, typename StrConverter>
+const int SleuthMatcher<CharType, StrConverter>::SLEUTH_INSENSITIVE	= 1;
 
 
-template <typename pStartsMatcher, typename pContainsMatcher, typename pLikeMatcher,
-	typename pSimilarToMatcher, typename pMatchesMatcher, typename pSleuthMatcher>
+template <
+	typename pStartsMatcher,
+	typename pContainsMatcher,
+	typename pLikeMatcher,
+	typename pSimilarToMatcher,
+	typename pMatchesMatcher,
+	typename pSleuthMatcher
+>
 class CollationImpl : public Collation
 {
 public:
@@ -797,32 +803,37 @@ public:
 	}
 };
 
-using namespace Firebird;
+template <typename T> Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
+{
+	using namespace Firebird;
 
-typedef StartsMatcher<NullStrConverter, UCHAR> StartsMatcherUCharDirect;
-typedef StartsMatcher<CanonicalConverter<NullStrConverter>, UCHAR> StartsMatcherUCharCanonical;
+	typedef StartsMatcher<UCHAR, NullStrConverter> StartsMatcherUCharDirect;
+	typedef StartsMatcher<UCHAR, CanonicalConverter<> > StartsMatcherUCharCanonical;
+	typedef ContainsMatcher<UCHAR, UpcaseConverter<> > ContainsMatcherUCharDirect;
 
-typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, UCHAR> ContainsMatcherUCharDirect;
-//typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, USHORT> ContainsMatcherUShortDirect;
-//typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, ULONG> ContainsMatcherULongDirect;
+	typedef CollationImpl<
+		StartsMatcherUCharDirect,
+		ContainsMatcherUCharDirect,
+		LikeMatcher<T>,
+		SimilarToMatcher<T>,
+		MatchesMatcher<T>,
+		SleuthMatcher<T>
+	> DirectImpl;
 
-typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, UCHAR> MatchesMatcherUCharCanonical;
-typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, UCHAR> SleuthMatcherUCharCanonical;
-typedef LikeMatcher<CanonicalConverter<NullStrConverter>, UCHAR> LikeMatcherUCharCanonical;
-typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, UCHAR> SimilarToMatcherUCharCanonical;
-typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, UCHAR> ContainsMatcherUCharCanonical;
+	typedef CollationImpl<
+		StartsMatcherUCharCanonical,
+		ContainsMatcher<T>,
+		LikeMatcher<T>,
+		SimilarToMatcher<T>,
+		MatchesMatcher<T>,
+		SleuthMatcher<T>
+	> NonDirectImpl;
 
-typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, USHORT> MatchesMatcherUShortCanonical;
-typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, USHORT> SleuthMatcherUShortCanonical;
-typedef LikeMatcher<CanonicalConverter<NullStrConverter>, USHORT> LikeMatcherUShortCanonical;
-typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, USHORT> SimilarToMatcherUShortCanonical;
-typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, USHORT> ContainsMatcherUShortCanonical;
-
-typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, ULONG> MatchesMatcherULongCanonical;
-typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, ULONG> SleuthMatcherULongCanonical;
-typedef LikeMatcher<CanonicalConverter<NullStrConverter>, ULONG> LikeMatcherULongCanonical;
-typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, ULONG> SimilarToMatcherULongCanonical;
-typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, ULONG> ContainsMatcherULongCanonical;
+	if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
+		return FB_NEW(pool) DirectImpl(id, tt, cs);
+	else
+		return FB_NEW(pool) NonDirectImpl(id, tt, cs);
+}
 
 }	// namespace
 
@@ -835,47 +846,16 @@ namespace Jrd {
 
 Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
 {
-	fb_assert(tt->texttype_canonical_width == 1 ||
-			  tt->texttype_canonical_width == 2 ||
-			  tt->texttype_canonical_width == 4);
-
 	switch (tt->texttype_canonical_width)
 	{
 		case 1:
-			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-			{
-				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
-					LikeMatcherUCharCanonical, SimilarToMatcherUCharCanonical,
-					MatchesMatcherUCharCanonical, SleuthMatcherUCharCanonical>(id, tt, cs);
-			}
-
-			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherUCharCanonical,
-				LikeMatcherUCharCanonical, SimilarToMatcherUCharCanonical,
-				MatchesMatcherUCharCanonical, SleuthMatcherUCharCanonical>(id, tt, cs);
+			return newCollation<UCHAR>(pool, id, tt, cs);
 
 		case 2:
-			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-			{
-				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
-					LikeMatcherUShortCanonical, SimilarToMatcherUShortCanonical,
-					MatchesMatcherUShortCanonical, SleuthMatcherUShortCanonical>(id, tt, cs);
-			}
-
-			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherUShortCanonical,
-				LikeMatcherUShortCanonical, SimilarToMatcherUShortCanonical,
-				MatchesMatcherUShortCanonical, SleuthMatcherUShortCanonical>(id, tt, cs);
+			return newCollation<USHORT>(pool, id, tt, cs);
 
 		case 4:
-			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-			{
-				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
-					LikeMatcherULongCanonical, SimilarToMatcherULongCanonical,
-					MatchesMatcherULongCanonical, SleuthMatcherULongCanonical>(id, tt, cs);
-			}
-
-			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherULongCanonical,
-				LikeMatcherULongCanonical, SimilarToMatcherULongCanonical,
-				MatchesMatcherULongCanonical, SleuthMatcherULongCanonical>(id, tt, cs);
+			return newCollation<ULONG>(pool, id, tt, cs);
 	}
 
 	fb_assert(false);

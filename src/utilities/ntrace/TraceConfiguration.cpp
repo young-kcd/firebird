@@ -71,7 +71,7 @@ void TraceCfgReader::readTraceConfiguration(const char* text,
 
 namespace
 {
-	template <typename PrevConverter>
+	template <typename PrevConverter = Jrd::NullStrConverter>
 	class SystemToUtf8Converter : public PrevConverter
 	{
 	public:
@@ -162,12 +162,11 @@ void TraceCfgReader::readConfig()
 				try
 				{
 #ifdef WIN_NT	// !CASE_SENSITIVITY
-					typedef Jrd::UpcaseConverter<SystemToUtf8Converter<Jrd::NullStrConverter> >
-						SimilarConverter;
+					typedef Jrd::UpcaseConverter<SystemToUtf8Converter<> > SimilarConverter;
 #else
-					typedef SystemToUtf8Converter<Jrd::NullStrConverter> SimilarConverter;
+					typedef SystemToUtf8Converter<> SimilarConverter;
 #endif
-					SimilarToMatcher<Jrd::CanonicalConverter<SimilarConverter>, ULONG> matcher(
+					SimilarToMatcher<ULONG, Jrd::CanonicalConverter<SimilarConverter> > matcher(
 						*getDefaultMemoryPool(), &textType, (const UCHAR*) pattern.c_str(),
 						pattern.length(), '\\', true, false);
 

@@ -155,7 +155,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	{
 		try
 		{
-			include_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
+			include_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) config.include_filter.c_str(),
 				config.include_filter.length(), '\\', true, false);
 		}
@@ -171,7 +171,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	{
 		try
 		{
-			exclude_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
+			exclude_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) config.exclude_filter.c_str(),
 				config.exclude_filter.length(), '\\', true, false);
 		}

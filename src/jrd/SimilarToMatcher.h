@@ -27,6 +27,8 @@
 #ifndef JRD_SIMILAR_TO_EVALUATOR_H
 #define JRD_SIMILAR_TO_EVALUATOR_H
 
+#include "../jrd/intl_classes.h"
+
 // #define DEBUG_SIMILAR
 
 #ifdef DEBUG_SIMILAR
@@ -37,7 +39,7 @@
 namespace Firebird
 {
 
-template <typename StrConverter, typename CharType>
+template <typename CharType, typename StrConverter = Jrd::CanonicalConverter<> >
 class SimilarToMatcher : public Jrd::BaseSimilarToMatcher
 {
 private:
@@ -313,8 +315,8 @@ private:
 };
 
 
-template <typename StrConverter, typename CharType>
-SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
+template <typename CharType, typename StrConverter>
+SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 			MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen,
 			CharType escapeChar, bool useEscape, bool forSubstring)
@@ -383,8 +385,8 @@ SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
 }
 
 
-template <typename StrConverter, typename CharType>
-bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
+template <typename CharType, typename StrConverter>
+bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 {
 	const UCHAR* str = buffer.begin();
 	SLONG len = buffer.getCount();
@@ -422,8 +424,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 }
 
 
-template <typename StrConverter, typename CharType>
-bool SimilarToMatcher<StrConverter, CharType>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
+template <typename CharType, typename StrConverter>
+bool SimilarToMatcher<CharType, StrConverter>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
 {
 	const size_t pos = buffer.getCount();
 	memcpy(buffer.getBuffer(pos + dataLen) + pos, data, dataLen);
@@ -431,8 +433,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::processNextChunk(const
 }
 
 
-template <typename StrConverter, typename CharType>
-void SimilarToMatcher<StrConverter, CharType>::Evaluator::reset()
+template <typename CharType, typename StrConverter>
+void SimilarToMatcher<CharType, StrConverter>::Evaluator::reset()
 {
 	buffer.shrink(0);
 	scopes.shrink(0);
@@ -441,8 +443,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::reset()
 }
 
 
-template <typename StrConverter, typename CharType>
-void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseExpr(int* flagp)
+template <typename CharType, typename StrConverter>
+void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseExpr(int* flagp)
 {
 	*flagp = FLAG_NOT_EMPTY;
 
@@ -481,8 +483,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseExpr(int* flagp)
 }
 
 
-template <typename StrConverter, typename CharType>
-void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseTerm(int* flagp)
+template <typename CharType, typename StrConverter>
+void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseTerm(int* flagp)
 {
 	*flagp = 0;
 
@@ -518,8 +520,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseTerm(int* flagp)
 }
 
 
-template <typename StrConverter, typename CharType>
-void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp)
+template <typename CharType, typename StrConverter>
+void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp)
 {
 	int atomPos = nodes.getCount();
 
@@ -648,8 +650,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 }
 
 
-template <typename StrConverter, typename CharType>
-void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flagp)
+template <typename CharType, typename StrConverter>
+void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flagp)
 {
 	*flagp = 0;
 
@@ -972,8 +974,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 }
 
 
-template <typename StrConverter, typename CharType>
-bool SimilarToMatcher<StrConverter, CharType>::Evaluator::isRep(CharType c) const
+template <typename CharType, typename StrConverter>
+bool SimilarToMatcher<CharType, StrConverter>::Evaluator::isRep(CharType c) const
 {
 	return (c == canonicalChar(TextType::CHAR_ASTERISK) ||
 			c == canonicalChar(TextType::CHAR_PLUS) ||
@@ -983,8 +985,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::isRep(CharType c) cons
 
 
 #ifdef DEBUG_SIMILAR
-template <typename StrConverter, typename CharType>
-void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
+template <typename CharType, typename StrConverter>
+void SimilarToMatcher<CharType, StrConverter>::Evaluator::dump() const
 {
 	string text;
 
@@ -1056,9 +1058,9 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
 #endif	// DEBUG_SIMILAR
 
 
-template <typename StrConverter, typename CharType>
+template <typename CharType, typename StrConverter>
 #ifdef RECURSIVE_SIMILAR
-bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int start)
+bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int start)
 {
 	for (int i = start; i < limit; ++i)
 	{
@@ -1222,7 +1224,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 	return true;
 }
 #else
-bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
+bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 {
 	//
 	// state  description
@@ -1519,8 +1521,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 
 
 // Returns the number of characters up to first one present in set.
-template <typename StrConverter, typename CharType>
-SLONG SimilarToMatcher<StrConverter, CharType>::Evaluator::notInSet(
+template <typename CharType, typename StrConverter>
+SLONG SimilarToMatcher<CharType, StrConverter>::Evaluator::notInSet(
 	const CharType* str, SLONG strLen, const CharType* set, SLONG setLen)
 {
 	for (const CharType* begin = str; str - begin < strLen; ++str)

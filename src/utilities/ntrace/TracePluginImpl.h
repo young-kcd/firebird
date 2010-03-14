@@ -170,7 +170,7 @@ private:
 	Firebird::AutoPtr<Jrd::CharSet> charSet;
 	Firebird::AutoPtr<Jrd::TextType> textType;
 
-	Firebird::AutoPtr<Firebird::SimilarToMatcher<Jrd::UpcaseConverter<Jrd::NullStrConverter>, UCHAR> >
+	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > >
 		include_matcher, exclude_matcher;
 
 	void appendGlobalCounts(const PerformanceInfo* info);
