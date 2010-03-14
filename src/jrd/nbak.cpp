@@ -202,21 +202,30 @@ void BackupManager::beginBackup(thread_db* tdbb)
 
 	WIN window(HEADER_PAGE_NUMBER);
 
+	StateWriteGuard stateGuard(tdbb, &window);
+	Ods::header_page* header = (Ods::header_page*) window.win_buffer;
+
+	// Check state
+	if (backup_state != nbak_state_normal) {
+		NBAK_TRACE(("end backup - invalid state %d", backup_state));
+		return;
+	}
+
 	try
 	{
-		StateWriteGuard stateGuard(tdbb, &window);
-		Ods::header_page* header = (Ods::header_page*) window.win_buffer;
-
-		// Check state
-		if (backup_state != nbak_state_normal) {
-			NBAK_TRACE(("end backup - invalid state %d", backup_state));
-			return;
-		}
-
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name.c_str()));
 		diff_file = PIO_create(database, diff_name, true, false, false);
+	}
+	catch (const Firebird::Exception&)
+	{
+		// no reasons to set it to unknown if we just failed to open difference file
+		backup_state = nbak_state_normal;
+		throw;
+	}
 
+	try
+	{
 		if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 		{
 			PIO_force_write(diff_file,
