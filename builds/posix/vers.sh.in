@@ -62,11 +62,11 @@ platform_linux() {
 
 	for i in `grep -v '#' ${1}`
 	do 
-		echo -e "\t$i;"
+		echo "\t$i;"
 	done
 
 	echo 'local:'
-	echo -e '\t*;'
+	echo '\t*;'
 	echo '};'
 }
 

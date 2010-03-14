@@ -25,15 +25,8 @@
 # 
 #
 
-
-{
-global:
-	firebirdPlugin;
-	fbUdrRegFunction;
-	fbUdrRegProcedure;
-	fbUdrRegTrigger;
-	fbUdrGetFunction;
-
-local:
-	*;
-};
+firebirdPlugin
+fbUdrRegFunction
+fbUdrRegProcedure
+fbUdrRegTrigger
+fbUdrGetFunction
