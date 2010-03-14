@@ -90,7 +90,8 @@ GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)
 
 FBSVCMGR_Files= fbsvcmgr.cpp
 FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
-common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp jrd/path_utils.cpp
+common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp jrd/path_utils.cpp \
+common/classes/semaphore.cpp
 
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
@@ -99,12 +100,12 @@ $(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 FBTRACEMGR_Files= fbtracemgr/traceMgrMain.cpp
 FBTRACEMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
-	common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp common/UtilSvc.cpp \
-	jrd/trace/TraceCmdLine.cpp jrd/path_utils.cpp
+common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp common/UtilSvc.cpp \
+jrd/trace/TraceCmdLine.cpp jrd/path_utils.cpp common/classes/semaphore.cpp
 
 FBTRACEMGR_Sources = $(addprefix utilities/, $(FBTRACEMGR_Files)) $(FBTRACEMGR_Other_Sources)
 FBTRACEMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACEMGR_Sources)))) \
-	$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
+$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 
 FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp
