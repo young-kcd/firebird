@@ -221,7 +221,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 	}
 	catch (const Firebird::Exception&)
 	{
-		// no reasons to set it to unknown if we just failed to open difference file
+		// no reasons to set it to unknown if we just failed to create difference file
 		backup_state = nbak_state_normal;
 		throw;
 	}

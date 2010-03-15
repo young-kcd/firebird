@@ -803,7 +803,8 @@ public:
 	}
 };
 
-template <typename T> Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
+template <typename T>
+Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
 {
 	using namespace Firebird;
 
