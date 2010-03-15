@@ -1,3 +1,24 @@
+2010-03-15 12:58  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/freebsd/install.sh.in
+	(1.13.2.3):
+
+	freebsd port
+
+2010-03-14 16:27  alexpeshkoff
+
+	* firebird2/src/jrd/nbak.cpp (1.96.2.1):
+
+	Backported fix for CORE-2876: Wrong backup mode when using "alter
+	database add difference file"
+
+2010-03-14 15:17  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.embed.util (1.53.2.1):
+
+	Backported fix for CORE-2844: Unresolved symbol references when
+	linking fbsvcmgr and fbtracemgr
+
 2010-03-13 11:50  dimitr
 
 	* firebird2/doc/WhatsNew (1.190.2.14):
