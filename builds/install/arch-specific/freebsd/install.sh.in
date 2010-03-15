@@ -39,6 +39,8 @@ BuildRootDir=..
 BuiltFBDir=./firebird  # Where the just build fb exists.
 TargetDir=             # Install in real FS
 SecurityDatabase=security2.fdb
+RunUser=firebird
+RunGroup=firebird
 
 
 #------------------------------------------------------------------------
@@ -425,17 +427,17 @@ fixFilePermissions
 # remove any existing gds service
 cp /etc/services /etc/services.old
 cp /etc/inetd.conf /etc/inetd.conf.old
-cat /etc/services |grep -v gds_db >/etc/services.new
-cat /etc/inetd.conf |grep -v gds_db >/etc/inetd.conf.new
+cat /etc/services |grep -v @FB_SERVICE_NAME@ >/etc/services.new
+cat /etc/inetd.conf |grep -v @FB_SERVICE_NAME@ >/etc/inetd.conf.new
 mv /etc/services.new /etc/services
 mv /etc/inetd.conf.new /etc/inetd.conf
 
 # add the gds service and restart inetd
 cat >>/etc/services <<EOF
-gds_db		3050/tcp  #Firebird Database Remote Protocol
+@FB_SERVICE_NAME@		@FB_SERVICE_PORT@/tcp  #Firebird Database Remote Protocol
 EOF
 cat >>/etc/inetd.conf <<EOF
-gds_db	stream	tcp	nowait	firebird	${TargetDir}@FB_SBINDIR@/fb_inet_server  fb_inet_server
+@FB_SERVICE_NAME@	stream	tcp	nowait	firebird	${TargetDir}@FB_SBINDIR@/fb_inet_server  fb_inet_server
 EOF
 if [ -f /var/run/inetd.pid ]; then
         kill -HUP `cat /var/run/inetd.pid`
