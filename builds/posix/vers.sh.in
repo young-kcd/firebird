@@ -21,12 +21,16 @@
 #  Contributor(s): ______________________________________.
 #
 
+# Different echo versions interprete backslash escapes differently.
+# To avoid related problems lets have:
+TAB="	"
+
 platform_aix() {
 	echo '#!'
 
 	for i in `grep -v '#' ${1}`
 	do 
-		echo -e "\t$i"
+		echo "${TAB}$i"
 	done
 }
 
@@ -44,7 +48,7 @@ do
 
 	if test -n "$i"
 	then
-		echo -e "\t_$i"
+		echo "${TAB}_$i"
 	fi
 done
 }
@@ -62,11 +66,11 @@ platform_linux() {
 
 	for i in `grep -v '#' ${1}`
 	do 
-		echo "\t$i;"
+		echo "${TAB}$i;"
 	done
 
 	echo 'local:'
-	echo '\t*;'
+	echo "${TAB}*;"
 	echo '};'
 }
 
