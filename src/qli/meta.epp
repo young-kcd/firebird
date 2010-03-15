@@ -151,6 +151,7 @@ static const rfr_tab_t rfr_table[] =
 	{ "RDB$RELATION_FIELDS", "RDB$SYSTEM_FLAG", DBB_cap_rfr_sys_flag },
 	{ "RDB$FILTERS", "RDB$FUNCTION_NAME", DBB_cap_filters },
 	{ "RDB$INDICES", "RDB$INDEX_TYPE", DBB_cap_index_type },
+	{ "RDB$PROCEDURES", "RDB$ENGINE_NAME", DBB_cap_nodyn },		// FB3.0
 	{ 0, 0, 0 }
 };
 
@@ -2085,7 +2086,8 @@ static bool check_relation( qli_rel* relation)
 
 	FOR(REQUEST_HANDLE relation->rel_database->dbb_requests[REQ_relation_def]
 		TRANSACTION_HANDLE relation->rel_database->dbb_meta_trans)
-			X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
+			X IN DB.RDB$RELATIONS
+			WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
 		previously_defined = true;
 	END_FOR
 	ON_ERROR
@@ -2140,13 +2142,12 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_begin);
 
-	FOR(REQUEST_HANDLE req1
-		TRANSACTION_HANDLE s_trans)
-			Y IN DB.RDB$RELATION_FIELDS
-				CROSS F IN DB.RDB$FIELDS
-				WITH Y.RDB$RELATION_NAME = source->rel_symbol->sym_string
-				AND Y.RDB$FIELD_SOURCE = F.RDB$FIELD_NAME
-				// If SQL made this field, create a new global field for it
+	FOR(REQUEST_HANDLE req1 TRANSACTION_HANDLE s_trans)
+		Y IN DB.RDB$RELATION_FIELDS
+			CROSS F IN DB.RDB$FIELDS
+			WITH Y.RDB$RELATION_NAME = source->rel_symbol->sym_string
+			AND Y.RDB$FIELD_SOURCE = F.RDB$FIELD_NAME
+			// If SQL made this field, create a new global field for it
 		if (F.RDB$COMPUTED_BLR.NULL &&
 			!fb_utils::implicit_domain(Y.RDB$FIELD_NAME) &&
 			fb_utils::implicit_domain(F.RDB$FIELD_NAME))
@@ -2329,8 +2330,7 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 	qli_rlb* rlb = NULL;
 	bool first_field = true;
 
-	FOR(REQUEST_HANDLE req1
-		TRANSACTION_HANDLE s_trans)
+	FOR(REQUEST_HANDLE req1 TRANSACTION_HANDLE s_trans)
 		RFR IN DB.RDB$RELATION_FIELDS CROSS
 		Y IN DB.RDB$FIELDS
 		WITH RFR.RDB$RELATION_NAME = source->rel_symbol->sym_string AND
@@ -2858,7 +2858,7 @@ static void install( qli_dbb* old_dbb)
 
 	// Copy the database block to one out of the permanent pool
 
-	SSHORT l = old_dbb->dbb_filename_length;
+	const SSHORT l = old_dbb->dbb_filename_length;
 	qli_dbb* new_dbb = (qli_dbb*) ALLOCPV(type_dbb, l);
 	new_dbb->dbb_filename_length = l;
 	memcpy(new_dbb->dbb_filename, old_dbb->dbb_filename, l);
@@ -2888,6 +2888,13 @@ static void install( qli_dbb* old_dbb)
 
 	get_database_type(new_dbb);
 	set_capabilities(new_dbb);
+	if (new_dbb->dbb_capabilities & DBB_cap_nodyn)
+	{
+		const char* str = new_dbb->dbb_filename;
+		if (name && strncmp(name->nam_string, "QLI_", 4))
+			str = name->nam_string;
+		ERRQ_msg_put(530, str);
+	}
 
 	// Get all relations in database.  For each relation make up a
 	// relation block, make up a symbol block, and insert the symbol

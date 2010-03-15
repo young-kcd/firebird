@@ -340,7 +340,8 @@ const ULONG DBB_cap_dimensions		= 4096;	// Database supports arrays -- What a da
 //const ULONG DBB_cap_external_type	= 8192;	// Database supports external datatypes. Unused
 const ULONG DBB_cap_rfr_sys_flag	= 16384;	// Database hasn't forgotten about the system flag
 const ULONG DBB_cap_filters			= 32768;	// Database supports filters
-const ULONG DBB_cap_index_type		= 65536;	// Database has too damn much stuff
+const ULONG DBB_cap_index_type		= 65536;	// Database has descending indices
+const ULONG DBB_cap_nodyn			= 131072;	// Database (really, engine) does not support DYN
 // Relation block
 
 struct qli_rel
