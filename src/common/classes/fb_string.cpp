@@ -38,10 +38,12 @@
 #ifdef HAVE_STRICMP
 #define STRNCASECMP strnicmp
 #else
-namespace {
+namespace
+{
 	int StringIgnoreCaseCompare(const char* s1, const char* s2, unsigned int l)
 	{
-		while (l--) {
+		while (l--)
+		{
 			const int delta = toupper(*s1++) - toupper(*s2++);
 			if (delta) {
 				return delta;
@@ -67,7 +69,8 @@ namespace {
 				l = strlen(s);
 			}
 			Firebird::AbstractString::const_pointer end = s + l;
-			while (s < end) {
+			while (s < end)
+			{
 				const unsigned char uc = static_cast<unsigned char>(*s++);
 				m[uc >> 3] |= (1 << (uc & 7));
 			}
@@ -80,7 +83,8 @@ namespace {
 	};
 } // namespace
 
-namespace Firebird {
+namespace Firebird
+{
 	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(~0);
 
 	AbstractString::AbstractString(const AbstractString& v)
@@ -121,7 +125,8 @@ namespace Firebird {
 		if (pos == npos) {
 			pos = length > n ? length - n : 0;
 		}
-		if (pos >= length) {
+		if (pos >= length)
+		{
 			pos = length;
 			n = 0;
 		}
@@ -181,7 +186,8 @@ namespace Firebird {
 		if (n == length()) {
 			return;
 		}
-		if (n > stringLength) {
+		if (n > stringLength)
+		{
 			reserveBuffer(n);
 			memset(stringBuffer + stringLength, c, n - stringLength);
 		}
@@ -233,7 +239,8 @@ namespace Firebird {
 	{
 		const strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
-		while (pos < length()) {
+		while (pos < length())
+		{
 			if (sm.Contains(*p++)) {
 				return pos;
 			}
@@ -250,7 +257,8 @@ namespace Firebird {
 			lpos = pos;
 		}
 		const_pointer p = &c_str()[lpos];
-		while (lpos >= 0) {
+		while (lpos >= 0)
+		{
 			if (sm.Contains(*p--)) {
 				return lpos;
 			}
@@ -263,7 +271,8 @@ namespace Firebird {
 	{
 		const strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
-		while (pos < length()) {
+		while (pos < length())
+		{
 			if (! sm.Contains(*p++)) {
 				return pos;
 			}
@@ -280,7 +289,8 @@ namespace Firebird {
 			lpos = pos;
 		}
 		const_pointer p = &c_str()[lpos];
-		while (lpos >= 0) {
+		while (lpos >= 0)
+		{
 			if (! sm.Contains(*p--)) {
 				return lpos;
 			}
@@ -297,7 +307,8 @@ namespace Firebird {
 
 		bool rc = false;
 		int c;
-		while ((c = getc(file)) != EOF) {
+		while ((c = getc(file)) != EOF)
+		{
 			rc = true;
 			if (c == '\n') {
 				break;
@@ -344,16 +355,20 @@ extern "C" {
 		const strBitMask sm(toTrim, strlen(toTrim));
 		const_pointer b = c_str();
 		const_pointer e = &c_str()[length() - 1];
-		if (whereTrim != TrimRight) {
-			while (b <= e) {
+		if (whereTrim != TrimRight)
+		{
+			while (b <= e)
+			{
 				if (! sm.Contains(*b)) {
 					break;
 				}
 				++b;
 			}
 		}
-		if (whereTrim != TrimLeft) {
-			while (b <= e) {
+		if (whereTrim != TrimLeft)
+		{
+			while (b <= e)
+			{
 				if (! sm.Contains(*e)) {
 					break;
 				}
@@ -408,7 +423,8 @@ extern "C" {
 		if (l < 0)
 		{
 			size_type n = sizeof(temp);
-			while (true) {
+			while (true)
+			{
 				n *= 2;
 				if (n > max_length())
 					n = max_length();
@@ -417,7 +433,8 @@ extern "C" {
 				FB_CLOSE_VACOPY(paramsCopy);
 				if (l >= 0)
 					break;
-				if (n >= max_length()) {
+				if (n >= max_length())
+				{
 					stringBuffer[max_length()] = 0;
 					return;
 				}
@@ -429,7 +446,8 @@ extern "C" {
 		if (l < tempsize) {
 			memcpy(baseAssign(l), temp, l);
 		}
-		else {
+		else
+		{
 			resize(l);
 			FB_VA_COPY(paramsCopy, params);
 			VSNPRINTF(begin(), l + 1, format, paramsCopy);
