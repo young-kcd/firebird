@@ -1930,8 +1930,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// This flag disables our smart index selection algorithm.
 	// It's set for any explicit (i.e. user specified) plan which
 	// requires all existing indices to be considered for a retrieval.
-	// Also, it's set for very small tables (see above).
-	const bool acceptAll = csb->csb_rpt[stream].csb_plan || smallTable;
+	const bool acceptAll = csb->csb_rpt[stream].csb_plan;
 
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
 	double totalIndexCost = 0;
@@ -2172,7 +2171,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 			// Test if the new totalCost will be higher than the previous totalCost
 			// and if the current selectivity (without the bestCandidate) is already good enough.
-			if (acceptAll || firstCandidate ||
+			if (acceptAll || smallTable || firstCandidate ||
 				(totalCost < previousTotalCost && totalSelectivity > minimumSelectivity))
 			{
 				// Exclude index from next pass
