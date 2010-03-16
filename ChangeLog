@@ -1,3 +1,53 @@
+2010-03-16 12:21  dimitr
+
+	* firebird2/builds/win32/msvc9/: engine.vcproj (1.19),
+	engine_classic.vcproj (1.19), engine_embed.vcproj (1.19):
+
+	Cleanup.
+
+2010-03-16 12:19  dimitr
+
+	* firebird2/src/: dsql/AggNodes.cpp (1.7), jrd/btr.cpp (1.278),
+	jrd/btr_proto.h (1.48), jrd/cmp.cpp (1.398), jrd/dbt.cpp (1.48),
+	jrd/evl.cpp (1.336), jrd/exe.h (1.159), jrd/fil.h (1.22),
+	jrd/gds.cpp (1.328), jrd/idx.cpp (1.170), jrd/jrd.cpp (1.604),
+	jrd/pag.cpp (1.250), jrd/sort.cpp (1.145), jrd/sort.h (1.48),
+	jrd/sort_proto.h (1.27), jrd/why.cpp (1.274),
+	jrd/recsrc/MergeJoin.cpp (1.11), jrd/recsrc/RecordSource.h (1.30),
+	jrd/recsrc/SortedStream.cpp (1.5), remote/interface.cpp (1.241):
+
+	Refactored the sorter into a proper class.  Removed some dead code
+	and unused files.
+
+2010-03-16 07:26  dimitr
+
+	* firebird2/src/jrd/recsrc/: IndexTableScan.cpp (1.12),
+	RecordSource.h (1.29):
+
+	Cleanup the dead code remaining from the legacy scrollable cursors
+	feature.
+
+2010-03-16 07:21  dimitr
+
+	* firebird2/src/jrd/: btn.cpp (1.37), btn.h (1.29), btr.cpp
+	(1.277), btr_proto.h (1.47), cch.cpp (1.258), cch.h (1.55), jrd.h
+	(1.290):
+
+	Cleanup the dead code remaining from the legacy scrollable cursors
+	feature.
+
+2010-03-16 06:00  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.146):
+
+	Correction for one of my prior optimizer commits.
+
+2010-03-15 15:34  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/Makefile.in (1.12):
+
+	Fixed CORE-2926: "make install" fails on linux
+
 2010-03-15 12:58  alexpeshkoff
 
 	* firebird2/builds/install/arch-specific/freebsd/install.sh.in
