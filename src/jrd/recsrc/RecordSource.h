@@ -27,9 +27,6 @@
 #include "../jrd/rse.h"
 #include "../jrd/inf_pub.h"
 
-struct btree_exp;
-struct exp_index_buf;
-
 namespace Ods
 {
 	struct btree_page;
@@ -183,13 +180,12 @@ namespace Jrd
 	{
 		struct Impure : public RecordSource::Impure
 		{
-			SLONG irsb_nav_expanded_offset;				// page offset of current index node on expanded index page
 			RecordNumber irsb_nav_number;				// last record number
 			SLONG irsb_nav_page;						// index page number
 			SLONG irsb_nav_incarnation;					// buffer/page incarnation counter
-			RecordBitmap**	irsb_nav_bitmap;			// bitmap for inversion tree
-			RecordBitmap*	irsb_nav_records_visited;	// bitmap of records already retrieved
-			BtrPageGCLock*	irsb_nav_btr_gc_lock;		// lock to prevent removal of currently walked index page
+			RecordBitmap** irsb_nav_bitmap;				// bitmap for inversion tree
+			RecordBitmap* irsb_nav_records_visited;		// bitmap of records already retrieved
+			BtrPageGCLock* irsb_nav_btr_gc_lock;		// lock to prevent removal of currently walked index page
 			USHORT irsb_nav_offset;						// page offset of current index node
 			USHORT irsb_nav_lower_length;				// length of lower key value
 			USHORT irsb_nav_upper_length;				// length of upper key value
@@ -216,14 +212,13 @@ namespace Jrd
 
 	private:
 		int compareKeys(const index_desc*, const UCHAR*, USHORT, const temporary_key*, USHORT);
-		btree_exp* findCurrent(exp_index_buf*, Ods::btree_page*, const UCHAR*);
-		bool findSavedNode(thread_db* tdbb, win* window, UCHAR**);
-		UCHAR* getPosition(thread_db* tdbb, win* window, btree_exp**);
-		UCHAR* openStream(thread_db* tdbb, win* window);
-		void setPage(thread_db* tdbb, win* window);
-		void setPosition(thread_db* tdbb, record_param*, win* window, const UCHAR*, btree_exp*,
-			const UCHAR*, USHORT);
-		bool setupBitmaps(thread_db* tdbb);
+		bool findSavedNode(thread_db* tdbb, Impure* impure, win* window, UCHAR**);
+		UCHAR* getPosition(thread_db* tdbb, Impure* impure, win* window);
+		UCHAR* openStream(thread_db* tdbb, Impure* impure, win* window);
+		void setPage(thread_db* tdbb, Impure* impure, win* window);
+		void setPosition(thread_db* tdbb, Impure* impure, record_param*,
+						 win* window, const UCHAR*, const temporary_key&);
+		bool setupBitmaps(thread_db* tdbb, Impure* impure);
 
 		const Firebird::string m_name;
 		jrd_nod* const m_index;

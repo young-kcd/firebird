@@ -121,7 +121,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 	if (impure->irsb_flags & irsb_first)
 	{
 		impure->irsb_flags &= ~irsb_first;
-		setPage(tdbb, NULL);
+		setPage(tdbb, impure, NULL);
 	}
 
 	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
@@ -130,8 +130,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 	const USHORT pageSpaceID = rpb->rpb_relation->getPages(tdbb)->rel_pg_space_id;
 	win window(pageSpaceID, impure->irsb_nav_page);
 
-	btree_exp* expanded_next = NULL;
-	UCHAR* nextPointer = getPosition(tdbb, &window, &expanded_next);
+	UCHAR* nextPointer = getPosition(tdbb, impure, &window);
 	if (!nextPointer)
 	{
 		rpb->rpb_number.setValid(false);
@@ -158,7 +157,6 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 		Ods::btree_page* page = (Ods::btree_page*) window.win_buffer;
 
 		UCHAR* pointer = nextPointer;
-		btree_exp* expanded_node = expanded_next;
 		if (pointer)
 		{
 			BTreeNode::readNode(&node, pointer, true);
@@ -170,25 +168,13 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 
 		if (node.isEndBucket)
 		{
-			page = (Ods::btree_page*) window.win_buffer;
-			page = (Ods::btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling,
-				LCK_read, pag_index);
+			page = (Ods::btree_page*) CCH_HANDOFF(tdbb, &window, page->btr_sibling, LCK_read, pag_index);
 			nextPointer = BTreeNode::getPointerFirstNode(page);
-			exp_index_buf* expanded_page = window.win_expanded_buffer;
-			if (expanded_page) {
-				expanded_next = (btree_exp*) expanded_page->exp_nodes;
-			}
-
 			continue;
 		}
 
 		// Build the current key value from the prefix and current node data.
-		if (expanded_node) {
-			memcpy(key.key_data, expanded_node->btx_data, node.length + node.prefix);
-		}
-		else {
-			memcpy(key.key_data + node.prefix, node.data, node.length);
-		}
+		memcpy(key.key_data + node.prefix, node.data, node.length);
 		key.key_length = node.length + node.prefix;
 
 		// Make sure we haven't hit the upper (or lower) limit.
@@ -206,17 +192,16 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 
 		if ((m_inversion &&
 			 (!impure->irsb_nav_bitmap ||
-			 	!RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue()))) ||
+		 		!RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue()))) ||
 			RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue()))
 		{
-			nextPointer = BTreeNode::nextNode(&node, pointer, &expanded_node);
-			expanded_next = expanded_node;
+			nextPointer = BTreeNode::readNode(&node, pointer, true);
 			continue;
 		}
 
 		// reset the current navigational position in the index
 		rpb->rpb_number = number;
-		setPosition(tdbb, rpb, &window, pointer, expanded_node, key.key_data, key.key_length);
+		setPosition(tdbb, impure, rpb, &window, pointer, key);
 
 		CCH_RELEASE(tdbb, &window);
 
@@ -236,7 +221,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 			}
 		}
 
-		nextPointer = getPosition(tdbb, &window, &expanded_next);
+		nextPointer = getPosition(tdbb, impure, &window);
 		if (!nextPointer)
 		{
 			rpb->rpb_number.setValid(false);
@@ -273,10 +258,10 @@ void IndexTableScan::dump(thread_db* tdbb, UCharBuffer& buffer)
 }
 
 int IndexTableScan::compareKeys(const index_desc* idx,
-								  const UCHAR* key_string1,
-								  USHORT length1,
-								  const temporary_key* key2,
-								  USHORT flags)
+								const UCHAR* key_string1,
+								USHORT length1,
+								const temporary_key* key2,
+								USHORT flags)
 {
 	const UCHAR* string1 = key_string1;
 	const UCHAR* string2 = key2->key_data;
@@ -387,34 +372,8 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 	return (length1 < length2) ? -1 : 1;
 }
 
-btree_exp* IndexTableScan::findCurrent(exp_index_buf* expanded_page,
-										 Ods::btree_page* page,
-										 const UCHAR* current_pointer)
+bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window, UCHAR** return_pointer)
 {
-	if (expanded_page)
-	{
-		btree_exp* expanded_node = expanded_page->exp_nodes;
-		UCHAR* pointer = BTreeNode::getPointerFirstNode(page);
-		const UCHAR* const endPointer = (UCHAR*) page + page->btr_length;
-		while (pointer < endPointer)
-		{
-			if (pointer == current_pointer)
-			{
-				return expanded_node;
-			}
-
-			Ods::IndexNode node;
-			pointer = BTreeNode::nextNode(&node, pointer, &expanded_node);
-		}
-	}
-
-	return NULL;
-}
-
-bool IndexTableScan::findSavedNode(thread_db* tdbb, win* window, UCHAR** return_pointer)
-{
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
 	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
 	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
@@ -436,6 +395,7 @@ bool IndexTableScan::findSavedNode(thread_db* tdbb, win* window, UCHAR** return_
 				*return_pointer = node.nodePointer;
 				return false;
 			}
+
 			if (node.isEndBucket)
 			{
 				page = (Ods::btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
@@ -473,18 +433,13 @@ bool IndexTableScan::findSavedNode(thread_db* tdbb, win* window, UCHAR** return_
 	}
 }
 
-UCHAR* IndexTableScan::getPosition(thread_db* tdbb, win* window, btree_exp** expanded_node)
+UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
 {
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
 	// If this is the first time, start at the beginning
 	if (!window->win_page.getPageNum())
 	{
-		return openStream(tdbb, window);
+		return openStream(tdbb, impure, window);
 	}
-
-	exp_index_buf* expanded_page = NULL;
 
 	// Re-fetch page and get incarnation counter
 	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
@@ -495,25 +450,10 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, win* window, btree_exp** exp
 	if (incarnation == impure->irsb_nav_incarnation)
 	{
 		pointer = ((UCHAR*) page + impure->irsb_nav_offset);
-		if (!expanded_page)
-		{
-			// theoretically impossible
-			*expanded_node = NULL;
-		}
-		else if (impure->irsb_nav_expanded_offset < 0)
-		{
-			// position unknown or invalid
-			*expanded_node = findCurrent(expanded_page, page, pointer);
-		}
-		else
-		{
-			*expanded_node = (btree_exp*) ((UCHAR*) expanded_page +
-				impure->irsb_nav_expanded_offset);
-		}
 
 		// The new way of doing things is to have the current
 		// nav_offset be the last node fetched.
-		return BTreeNode::nextNode(&node, pointer, expanded_node);
+		return BTreeNode::readNode(&node, pointer, true);
 	}
 
 	// Page is presumably changed.  If there is a previous
@@ -521,36 +461,31 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, win* window, btree_exp** exp
 	CCH_RELEASE(tdbb, window);
 	if (!impure->irsb_nav_page)
 	{
-		return openStream(tdbb, window);
+		return openStream(tdbb, impure, window);
 	}
 
-	const bool found = findSavedNode(tdbb, window, &pointer);
+	const bool found = findSavedNode(tdbb, impure, window, &pointer);
 	page = (Ods::btree_page*) window->win_buffer;
 	if (pointer)
 	{
-		*expanded_node = findCurrent(window->win_expanded_buffer, page, pointer);
-
 		// seek to the next node only if we found the actual node on page;
 		// if we did not find it, we are already at the next node
 		// (such as when the node is garbage collected)
-		return found ? BTreeNode::nextNode(&node, pointer, expanded_node) : pointer;
+		return found ? BTreeNode::readNode(&node, pointer, true) : pointer;
 	}
 
 	return BTreeNode::getPointerFirstNode(page);
 }
 
-UCHAR* IndexTableScan::openStream(thread_db* tdbb, win* window)
+UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window)
 {
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
 	// initialize for a retrieval
-	if (!setupBitmaps(tdbb))
+	if (!setupBitmaps(tdbb, impure))
 	{
 		return NULL;
 	}
 
-	setPage(tdbb, NULL);
+	setPage(tdbb, impure, NULL);
 	impure->irsb_nav_length = 0;
 
 	// Find the starting leaf page
@@ -558,7 +493,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, win* window)
 	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
 	temporary_key lower, upper;
 	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper);
-	setPage(tdbb, window);
+	setPage(tdbb, impure, window);
 
 	// find the upper limit for the search
 	temporary_key* limit_ptr = NULL;
@@ -598,11 +533,8 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, win* window)
 	return BTreeNode::getPointerFirstNode(page);
 }
 
-void IndexTableScan::setPage(thread_db* tdbb, win* window)
+void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window)
 {
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
 	const SLONG newPage = window ? window->win_page.getPageNum() : 0;
 
 	if (impure->irsb_nav_page != newPage)
@@ -628,47 +560,28 @@ void IndexTableScan::setPage(thread_db* tdbb, win* window)
 }
 
 void IndexTableScan::setPosition(thread_db* tdbb,
-								   record_param* rpb,
-								   win* window,
-								   const UCHAR* pointer,
-								   btree_exp* expanded_node,
-								   const UCHAR* key_data,
-								   USHORT length)
+								 Impure* impure,
+								 record_param* rpb,
+								 win* window,
+								 const UCHAR* pointer,
+								 const temporary_key& key)
 {
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
 	// We can actually set position without having a data page
 	// fetched; if not, just set the incarnation to the lowest possible
 	impure->irsb_nav_incarnation = CCH_get_incarnation(window);
-	setPage(tdbb, window);
+	setPage(tdbb, impure, window);
 	impure->irsb_nav_number = rpb->rpb_number;
 
-	// save the current key value if it hasn't already been saved
-	if (key_data)
-	{
-		impure->irsb_nav_length = length;
-		memcpy(impure->irsb_nav_data, key_data, length);
-	}
+	// save the current key value
+	impure->irsb_nav_length = key.key_length;
+	memcpy(impure->irsb_nav_data, key.key_data, key.key_length);
 
-	// setup the offsets into the current index page and expanded index buffer
+	// setup the offsets into the current index page
 	impure->irsb_nav_offset = pointer - (UCHAR*) window->win_buffer;
-	if (window->win_expanded_buffer)
-	{
-		impure->irsb_nav_expanded_offset =
-			(UCHAR*) expanded_node - (UCHAR*) window->win_expanded_buffer;
-	}
-	else
-	{
-		impure->irsb_nav_expanded_offset = -1;
-	}
 }
 
-bool IndexTableScan::setupBitmaps(thread_db* tdbb)
+bool IndexTableScan::setupBitmaps(thread_db* tdbb, Impure* impure)
 {
-	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-
 	// Start a bitmap which tells us we have already visited
 	// this record; this is to handle the case where there is more
 	// than one leaf node reference to the same record number; the
