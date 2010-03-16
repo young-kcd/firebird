@@ -1072,10 +1072,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\fil.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\file_params.h"
 				>
 			</File>
@@ -1461,10 +1457,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sort.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sort_proto.h"
 				>
 			</File>
 			<File
