@@ -203,7 +203,7 @@ USHORT getNodeSize(const IndexNode* indexNode, bool leafNode)
 	}
 	else if (indexNode->length == 0)
 	{
-		if	(indexNode->prefix == 0) {
+		if (indexNode->prefix == 0) {
 			internalFlags = BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG;
 		}
 		else {
@@ -363,32 +363,6 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 	}
 
 	return !memcmp(indexNode->data, data + indexNode->prefix, len);
-}
-
-
-UCHAR* nextNode(IndexNode* node, UCHAR* pointer, btree_exp** expanded_node)
-{
-/**************************************
- *
- *	n e x t N o d e
- *
- **************************************
- *
- * Functional description
- *	Find the next node on both the index page
- *	and its associated expanded buffer.
- *
- **************************************/
-
-	pointer = readNode(node, pointer, true);
-
-	if (*expanded_node)
-	{
-		*expanded_node = (btree_exp*) ((UCHAR*) (*expanded_node)->btx_data +
-			node->prefix + node->length);
-	}
-
-	return pointer;
 }
 
 

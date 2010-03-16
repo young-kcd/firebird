@@ -715,7 +715,6 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 
 		while (true)
 		{
-
 			if (node.isEndLevel) {
 				break;
 			}
@@ -4273,10 +4272,6 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 		find_record_number = NO_VALUE;
 	}
 
-//	UCHAR* p;			// pointer on key
-//	UCHAR* q;			// pointer on processing node
-//	UCHAR* keyEnd;		// pointer on end of key
-//	UCHAR* nodeEnd;		// pointer on end of processing node
 	USHORT prefix = 0;	// last computed prefix against processed node
 
 	// pointer where to start reading next node
@@ -4397,8 +4392,7 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 		}
 		prefix = p - key->key_data;
 
-		// If this is the end of bucket, return node.  Somebody else can
-		// deal with this
+		// If this is the end of bucket, return node. Somebody else can deal with this.
 		if (node.isEndBucket) {
 			return node.pageNumber;
 		}
@@ -4667,6 +4661,7 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 			n--;
 		}
 	}
+
 	while (true)
 	{
 		leftPointer = BTreeNode::readNode(&leftNode, leftPointer, leafPage);
@@ -5064,9 +5059,11 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 	while (pointer < endpoint)
 	{
 		pointer = BTreeNode::readNode(&node, pointer, leafPage);
+
 		if (node.isEndBucket || node.isEndLevel) {
 			break;
 		}
+
 		if (node.length)
 		{
 			UCHAR* q = currentData + node.prefix;
@@ -5986,7 +5983,6 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 	ULONG pages = 0;
 	while (true)
 	{
-
 		// if we find the right one, quit
 		if (insertion->iib_number == node.recordNumber && !node.isEndBucket && !node.isEndLevel)
 		{

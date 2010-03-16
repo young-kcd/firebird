@@ -48,8 +48,6 @@ DEFINE_TRACE_ROUTINE(cch_trace);
 #define CCH_TRACEE_AST(message) // nothing
 #endif
 
-struct exp_index_buf;
-
 namespace Ods {
 	struct pag;
 }
@@ -130,7 +128,6 @@ public:
 	que			bdb_in_use;				// queue of buffers in use
 	que			bdb_dirty;				// dirty pages LRU queue
 	Ods::pag*	bdb_buffer;				// Actual buffer
-	exp_index_buf*	bdb_expanded_buffer;	// expanded index buffer
 	PageNumber	bdb_page;				// Database page number in buffer
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		// vector of dirty flags to reduce commit overhead

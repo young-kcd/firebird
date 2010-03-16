@@ -650,7 +650,6 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 
 	MOVE_CLEAR(bdb->bdb_buffer, (SLONG) dbb->dbb_page_size);
 	window->win_buffer = bdb->bdb_buffer;
-	window->win_expanded_buffer = NULL;
 	window->win_bdb = bdb;
 	window->win_flags = 0;
 	CCH_MARK(tdbb, window);
@@ -818,18 +817,8 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 		bdb->bdb_flags |= BDB_writer;
 	}
 
-	// the expanded index buffer is only good when the page is
-	// fetched for read; if it is ever fetched for write, it must be discarded
-
-	if (bdb->bdb_expanded_buffer && (lock_type > LCK_read))
-	{
-		delete bdb->bdb_expanded_buffer;
-		bdb->bdb_expanded_buffer = NULL;
-	}
-
 	window->win_bdb = bdb;
 	window->win_buffer = bdb->bdb_buffer;
-	window->win_expanded_buffer = bdb->bdb_expanded_buffer;
 
 	// lock_buffer returns 0 or 1 or -1.
 	const SSHORT lock_result = lock_buffer(tdbb, bdb, wait, page_type);
@@ -1075,8 +1064,6 @@ void CCH_fini(thread_db* tdbb)
 				for (const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count; tail < end; tail++)
 				{
 					BufferDesc* bdb = tail->bcb_bdb;
-					delete bdb->bdb_expanded_buffer;
-					bdb->bdb_expanded_buffer = NULL;
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				}
 			}
@@ -1973,11 +1960,6 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 	BLKCHK(bdb, type_bdb);
 
 	CCH_TRACE(("R %d:%06d", window->win_page.getPageSpaceID(), window->win_page.getPageNum()));
-
-	// if an expanded buffer has been created, retain it for possible future use
-
-	bdb->bdb_expanded_buffer = window->win_expanded_buffer;
-	window->win_expanded_buffer = NULL;
 
 	// A large sequential scan has requested that the garbage
 	// collector garbage collect. Mark the buffer so that the
@@ -3842,11 +3824,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			// In any case, release any lock it may have.
 
 			removeDirty(bcb, bdb);
-
-			// if the page has an expanded index buffer, release it
-
-			delete bdb->bdb_expanded_buffer;
-			bdb->bdb_expanded_buffer = NULL;
 
 			// Cleanup any residual precedence blocks.  Unless something is
 			// screwed up, the only precedence blocks that can still be hanging

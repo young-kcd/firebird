@@ -459,11 +459,9 @@ struct win
 {
 	PageNumber win_page;
 	Ods::pag* win_buffer;
-	exp_index_buf* win_expanded_buffer;
 	class BufferDesc* win_bdb;
 	SSHORT win_scans;
 	USHORT win_flags;
-//	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
 	explicit win(const PageNumber& wp)
 		: win_page(wp), win_bdb(NULL), win_flags(0)
 	{}

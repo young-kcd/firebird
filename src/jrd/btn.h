@@ -34,16 +34,6 @@
 #include "../jrd/ods.h"
 #include "../common/classes/array.h"
 
-// format of expanded index node, used for backwards navigation
-struct btree_exp
-{
-	UCHAR btx_previous_length;		// AB: total size for previous node --length of data for previous node
-	UCHAR btx_btr_previous_length;	// length of data for previous node on btree page
-	UCHAR btx_data[1];				// expanded data element
-};
-
-const int BTX_SIZE				= 2;
-
 // Flags (3-bits) used for index node
 const int BTN_NORMAL_FLAG					= 0;
 const int BTN_END_LEVEL_FLAG				= 1;
@@ -53,16 +43,6 @@ const int BTN_ZERO_LENGTH_FLAG				= 4;
 const int BTN_ONE_LENGTH_FLAG				= 5;
 //const int BTN_ZERO_PREFIX_ONE_LENGTH_FLAG	= 6;
 //const int BTN_GET_MORE_FLAGS	= 7;
-
-// format of expanded index buffer
-struct exp_index_buf
-{
-	USHORT exp_length;
-	ULONG exp_incarnation;
-	btree_exp exp_nodes[1];
-};
-
-const size_t EXP_SIZE	= OFFSETA (exp_index_buf*, exp_nodes);
 
 struct dynKey
 {
@@ -86,10 +66,6 @@ namespace BTreeNode {
 	UCHAR* getPointerFirstNode(Ods::btree_page* page, Ods::IndexJumpInfo* jumpInfo = NULL);
 
 	bool keyEquality(USHORT length, const UCHAR* data, const Ods::IndexNode* indexNode);
-
-	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, btree_exp** expanded_node);
-
-	//void quad_put(SLONG value, UCHAR *data);
 
 	UCHAR* readJumpInfo(Ods::IndexJumpInfo* jumpInfo, UCHAR* pagePointer);
 	UCHAR* readJumpNode(Ods::IndexJumpNode* jumpNode, UCHAR* pagePointer);
