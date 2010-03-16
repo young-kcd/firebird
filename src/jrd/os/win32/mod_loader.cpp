@@ -159,7 +159,7 @@ bool ModuleLoader::isLoadableModule(const PathName& module)
 	ContextActivator ctx;
 
 	const HMODULE hMod = LoadLibraryEx(module.c_str(), 0,
-		LOAD_WITH_ALTERED_SEARCH_PATH | LOAD_LIBRARY_AS_DATAFILE);
+		(Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0) | LOAD_LIBRARY_AS_DATAFILE);
 
 	if (hMod) {
 		FreeLibrary(hMod);
@@ -183,7 +183,8 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	const UINT oldErrorMode =
 		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 
-	const HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+	const HMODULE module = LoadLibraryEx(modPath.c_str(), 0, 
+		Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
 
 	// Restore old mode in case we are embedded into user application
 	SetErrorMode(oldErrorMode);
