@@ -755,6 +755,15 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 }
 
 
+UserId::~UserId()
+{
+	if (usr_fini_sec_db)
+	{
+		SecurityDatabase::shutdown();
+	}
+}
+
+
 void SCL_move_priv(SecurityClass::flags_t mask, Acl& acl)
 {
 /**************************************

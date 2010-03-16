@@ -95,7 +95,7 @@ public:
 	USHORT				usr_group_id;		/* Group id */
 	USHORT				usr_node_id;		/* Node id */
 	USHORT				usr_flags;			/* Misc. crud */
-	//TEXT *usr_node_name;		// Network node name
+	bool				usr_fini_sec_db;	/* Security database was initialized for it */
 
 	bool locksmith() const
 	{
@@ -103,7 +103,7 @@ public:
 	}
 
 	UserId()
-		: usr_user_id(0), usr_group_id(0), usr_node_id(0), usr_flags(0)
+		: usr_user_id(0), usr_group_id(0), usr_node_id(0), usr_flags(0), usr_fini_sec_db(false)
 	{ }
 
 	UserId(Firebird::MemoryPool& p, const UserId& ui)
@@ -114,7 +114,8 @@ public:
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_node_id(ui.usr_node_id),
-		  usr_flags(ui.usr_flags)
+		  usr_flags(ui.usr_flags),
+		  usr_fini_sec_db(false)
 	{ }
 
 	UserId(const UserId& ui)
@@ -125,7 +126,8 @@ public:
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_node_id(ui.usr_node_id),
-		  usr_flags(ui.usr_flags)
+		  usr_flags(ui.usr_flags),
+		  usr_fini_sec_db(false)
 	{ }
 
 	UserId& operator=(const UserId& ui)
@@ -141,6 +143,8 @@ public:
 
 		return *this;
 	}
+
+	~UserId();
 };
 
 const char* const object_table		= "TABLE";

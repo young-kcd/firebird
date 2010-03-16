@@ -284,7 +284,8 @@ public:
 		att_long_locks(0),
 		att_compatibility_table(0),
 		att_val_errors(0),
-		att_working_directory(0)
+		att_working_directory(0), 
+		att_fini_sec_db(false)
 	{
 		att_counts[0] = 0;
 	}*/
@@ -334,6 +335,7 @@ public:
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
+	bool att_fini_sec_db;
 
 	bool locksmith() const;
 

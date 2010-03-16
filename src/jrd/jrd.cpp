@@ -787,7 +787,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	UserId userId;
 	DatabaseOptions options;
 	bool invalid_client_SQL_dialect = false;
-	SecurityDatabase::InitHolder siHolder;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
 
@@ -930,6 +929,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_next = dbb->dbb_attachments;
 	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
+
+	// make attachment keep sec_db fini info
+	attachment->att_fini_sec_db = userId.usr_fini_sec_db;
+	userId.usr_fini_sec_db = false;
 
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -1423,7 +1426,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 
-	siHolder.clear();
 	return FB_SUCCESS;
 }
 
@@ -1810,7 +1812,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	UserId userId;
 	DatabaseOptions options;
-	SecurityDatabase::InitHolder siHolder;
 	PathName file_name, expanded_name;
 	bool is_alias = false;
 
@@ -1927,6 +1928,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
 	attachment->att_next = dbb->dbb_attachments;
+
+	// make attachment keep sec_db fini info
+	attachment->att_fini_sec_db = userId.usr_fini_sec_db;
+	userId.usr_fini_sec_db = false;
 
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
@@ -2156,7 +2161,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 
-	siHolder.clear();
 	return FB_SUCCESS;
 }
 
@@ -2299,8 +2303,6 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 		}
 
 		*handle = NULL;
-
-		SecurityDatabase::shutdown();
 	}
 	catch (const Exception& ex)
 	{
@@ -5210,6 +5212,11 @@ Attachment::~Attachment()
 {
 	delete att_trace_manager;
 
+	if (att_fini_sec_db)
+	{
+		SecurityDatabase::shutdown();
+	}
+
 	// For normal attachments that happens in release_attachment(),
 	// but for special ones like GC should be done also in dtor -
 	// they do not (and should not) call release_attachment().
@@ -6032,6 +6039,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
 				options.dpb_remote_address;
 
+			SecurityDatabase::initialize();
+			user.usr_fini_sec_db = true;
 			SecurityDatabase::verifyUser(name,
 										 options.dpb_user_name.nullStr(),
 										 options.dpb_password.nullStr(),

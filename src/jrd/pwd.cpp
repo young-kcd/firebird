@@ -226,7 +226,10 @@ namespace {
 void SecurityDatabase::fini()
 {
 	MutexLockGuard guard(mutex);
-	if (--counter == 1)
+
+	fb_assert(counter > 0);
+
+	if (--counter <= 0)
 	{
 		if (lookup_req)
 		{
