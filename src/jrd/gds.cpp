@@ -114,7 +114,6 @@ static const TEXT gdslogid[] = "";
 
 #include "../jrd/blr.h"
 #include "../jrd/msg.h"
-#include "../jrd/fil.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"

@@ -25,24 +25,20 @@
 #define JRD_SORT_H
 
 #include "../jrd/common.h"
-#include "../jrd/fil.h"
-
 #include "../include/fb_blk.h"
 #include "../jrd/TempSpace.h"
 
 namespace Jrd {
 
 // Forward declaration
-struct sort_work_file;
 class Attachment;
-struct irsb_sort;
-struct merge_control;
 class SortOwner;
+struct merge_control;
 
 // SORTP is used throughout sort.c as a pointer into arrays of
 // longwords(32 bits).
 // Use this definition whenever doing pointer arithmetic, as
-// Firebird variables (eg. scb->scb_longs) are in 32 - bit longwords.
+// Firebird variables (eg. scb->m_longs) are in 32 - bit longwords.
 
 typedef ULONG SORTP;
 
@@ -52,18 +48,17 @@ typedef ULONG SORTP;
 
 typedef IPTR sort_ptr_t;
 
-#define PREV_RUN_RECORD(record) (((SORTP*) record - scb->scb_longs))
-#define NEXT_RUN_RECORD(record) (((SORTP*) record + scb->scb_longs))
+#define PREV_RUN_RECORD(record) (((SORTP*) record - m_longs))
+#define NEXT_RUN_RECORD(record) (((SORTP*) record + m_longs))
 
 // a macro to goto the key_id part of a particular record.
 // Pls. refer to the SR structure in sort.h for an explanation of the record structure.
 
 #define KEYOF(record) ((SORTP*)(((SR*)record)->sr_sort_record.sort_record_key))
 
-// macro to point to the next/previous  record for sorting.
-// still using scb_longs as we cannot do record++ *
-//#define PREV_RECORD(record) ((SR*)((SORTP*) record + scb->scb_longs))
-#define NEXT_RECORD(record) ((SR*)((SORTP*) record - scb->scb_longs))
+// macro to point to the next record for sorting.
+// still using m_longs as we cannot do record++ *
+#define NEXT_RECORD(record) ((SR*)((SORTP*) record - m_longs))
 
 // structure containing the key and data part of the sort record,
 // the back pointer is not written to the disk, this is how the records
@@ -77,13 +72,13 @@ struct sort_record
 	   is rounded upwards if necessary).
 	   Min length of 1 ULONG, max indeterminate
 	   For current sort, length is stored as
-	   scb_key_length.
+	   m_key_length.
 	   Keys are created by BTR_* routines as
 	   sequences of ULONG - this representation
 	   cannot be easily changed. */
 
 /*  sort_record_data  is here to explain the sort record.
-    To get to the data part of a record add scb->scb_key_length to a pointer
+    To get to the data part of a record add scb->m_key_length to a pointer
     pointing to the start of the sort_record_key.
 
     ULONG       sort_record_data [1];
@@ -93,7 +88,7 @@ struct sort_record
                                    byte data, but starts on ULONG boundary and
                                    rounded up to ULONG size
                                    Sizeof sr_data array would be
-                                   (scb_longs - scb_key_length)*sizeof(ULONG) -
+                                   (m_longs - m_key_length)*sizeof(ULONG) -
                                                  sizeof(sr_bckptr)
 */
 
@@ -112,7 +107,7 @@ typedef struct sr
 	};
 } SR;
 
-// scb_longs includes the size of sr_bckptr.
+// m_longs includes the size of sr_bckptr.
 
 /* The sort memory pool is laid out as follows during sorting:
 
@@ -126,7 +121,7 @@ struct sort_memory
 We pack items into sort_memory, inserting the first pointer into
 records [0], and the first data value into data[X1-1];  Continuing
 until we are out of records to sort or memory.
-(eg: X1*(sizeof(struct sr*) + scb->scb_longs) + X2*sizeof(ULONG) == MAX_MEMORY
+(eg: X1*(sizeof(struct sr*) + scb->m_longs) + X2*sizeof(ULONG) == MAX_MEMORY
 */
 
 
@@ -217,47 +212,82 @@ struct merge_control
 };
 
 
-// Sort Context Block
-// Context or Control???
+// Sort class
 
-// Used by SORT_init
 typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 
-struct sort_context
+class Sort
 {
-	Database*			scb_dbb;			// Database
-	SortOwner*			scb_owner;			// Sort owner
-	SORTP*				scb_memory;			// ALLOC: Memory for sort
-	SORTP*				scb_end_memory;		// End of memory
-	ULONG				scb_size_memory;	// Bytes allocated
-	SR*					scb_last_record;	// Address of last record
-	sort_record**		scb_first_pointer;	// Memory for sort
-	sort_record**		scb_next_pointer;	// Address for next pointer
-	//USHORT			scb_length;			// Record length. Unused.
-	USHORT				scb_longs;			// Length of record in longwords
-	ULONG				scb_keys;			// Number of keys
-	ULONG				scb_key_length;		// Key length
-	ULONG				scb_unique_length;	// Unique key length, used when duplicates eliminated
-	ULONG				scb_records;		// Number of records
-	//FB_UINT64			scb_max_records;	// Maximum number of records to store. Unused.
-	TempSpace*			scb_space;			// temporary space for scratch file
-	run_control*		scb_runs;			// ALLOC: Run on scratch file, if any
-	merge_control*		scb_merge;			// Top level merge block
-	run_control*		scb_free_runs;		// ALLOC: Currently unused run blocks
-	SORTP*				scb_merge_space;	// ALLOC: memory space to do merging
-	ULONG				scb_flags;			// see flag bits below
-	FPTR_REJECT_DUP_CALLBACK scb_dup_callback;	// Duplicate handling callback
-	void*				scb_dup_callback_arg;	// Duplicate handling callback arg
-	merge_control*		scb_merge_pool;		// ALLOC: pool of merge_control blocks
-	sort_key_def		scb_description[1];
+public:
+	Sort(Database*, SortOwner*,
+		 USHORT, size_t, size_t, const sort_key_def*,
+		 FPTR_REJECT_DUP_CALLBACK, void*, FB_UINT64 = 0);
+	~Sort();
+
+	void get(Jrd::thread_db*, ULONG**);
+	void put(Jrd::thread_db*, ULONG**);
+	void sort(Jrd::thread_db*);
+
+	static FB_UINT64 readBlock(TempSpace* space, FB_UINT64 seek, BLOB_PTR* address, ULONG length)
+	{
+		const size_t bytes = space->read(seek, address, length);
+		fb_assert(bytes == length);
+		return seek + bytes;
+	}
+
+	static FB_UINT64 writeBlock(TempSpace* space, FB_UINT64 seek, BLOB_PTR* address, ULONG length)
+	{
+		const size_t bytes = space->write(seek, address, length);
+		fb_assert(bytes == length);
+		return seek + bytes;
+	}
+
+private:
+	void diddleKey(UCHAR*, bool);
+	sort_record* getMerge(merge_control*);
+	ULONG allocate(ULONG, ULONG, bool);
+	void init();
+	void mergeRuns(USHORT);
+	ULONG order();
+	void orderAndSave();
+	void putRun();
+	void sort();
+	void sortRunsBySeek(int);
+
+#ifdef DEV_BUILD
+	void checkFile(const run_control*);
+#endif
+
+	static void quick(SLONG, SORTP**, ULONG);
+
+	Database* m_dbb;							// Database
+	SortOwner* m_owner;							// Sort owner
+	SORTP* m_memory;							// ALLOC: Memory for sort
+	SORTP* m_end_memory;						// End of memory
+	ULONG m_size_memory;						// Bytes allocated
+	SR* m_last_record;							// Address of last record
+	sort_record** m_first_pointer;				// Memory for sort
+	sort_record** m_next_pointer;				// Address for next pointer
+	USHORT m_longs;								// Length of record in longwords
+	ULONG m_key_length;							// Key length
+	ULONG m_unique_length;						// Unique key length, used when duplicates eliminated
+	FB_UINT64 m_records;						// Number of records
+	FB_UINT64 m_max_records;					// Maximum number of records to store
+	TempSpace* m_space;							// temporary space for scratch file
+	run_control* m_runs;						// ALLOC: Run on scratch file, if any
+	merge_control* m_merge;						// Top level merge block
+	run_control* m_free_runs;					// ALLOC: Currently unused run blocks
+	ULONG m_flags;								// see flag bits below
+	FPTR_REJECT_DUP_CALLBACK m_dup_callback;	// Duplicate handling callback
+	void* m_dup_callback_arg;					// Duplicate handling callback arg
+	merge_control* m_merge_pool;				// ALLOC: pool of merge_control blocks
+
+	Firebird::Array<sort_key_def> m_description;
 };
 
-// flags as set in scb_flags
+// flags as set in m_flags
 
-const int scb_initialized	= 1;
-const int scb_sorted		= 2;	// stream has been sorted
-
-#define SCB_LEN(n_k)	(sizeof (sort_context) + (SLONG)(n_k) * sizeof (sort_key_def))
+const int m_sorted = 1;	// stream has been sorted
 
 class SortOwner
 {
@@ -268,7 +298,7 @@ public:
 
 	~SortOwner();
 
-	void linkSort(sort_context* scb)
+	void linkSort(Sort* scb)
 	{
 		fb_assert(scb);
 
@@ -278,7 +308,7 @@ public:
 		}
 	}
 
-	void unlinkSort(sort_context* scb)
+	void unlinkSort(Sort* scb)
 	{
 		fb_assert(scb);
 
@@ -296,7 +326,7 @@ public:
 
 private:
 	MemoryPool& pool;
-	Firebird::SortedArray<sort_context*> sorts;
+	Firebird::SortedArray<Sort*> sorts;
 };
 
 } //namespace Jrd

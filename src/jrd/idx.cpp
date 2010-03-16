@@ -62,7 +62,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/sort_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
 
@@ -310,13 +309,11 @@ void IDX_create_index(thread_db* tdbb,
 	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
-	sort_context* sort_handle =
-		SORT_init(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
-				  2, 1, key_desc, callback, callback_arg);
+	Firebird::AutoPtr<Sort> scb(FB_NEW(transaction->tra_sorts.getPool())
+		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
+				  2, 1, key_desc, callback, callback_arg));
 
-	try {
-
-	jrd_rel* partner_relation = 0;
+	jrd_rel* partner_relation = NULL;
 	USHORT partner_index_id = 0;
 	if (idx->idx_flags & idx_foreign)
 	{
@@ -453,7 +450,7 @@ void IDX_create_index(thread_db* tdbb,
 			}
 
 			UCHAR* p;
-			SORT_put(tdbb, sort_handle, reinterpret_cast<ULONG**>(&p));
+			scb->put(tdbb, reinterpret_cast<ULONG**>(&p));
 
 			// try to catch duplicates early
 
@@ -500,25 +497,16 @@ void IDX_create_index(thread_db* tdbb,
 	if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
 
-	SORT_sort(tdbb, sort_handle);
+	scb->sort(tdbb);
 
 	if (ifl_data.ifl_duplicates > 0) {
 		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
 
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		SORT_fini(sort_handle);
-		ERR_punt();
-	}
-
-	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
+	BTR_create(tdbb, relation, idx, key_length, scb, selectivity);
 
 	if (ifl_data.ifl_duplicates > 0)
 	{
-		// we don't need SORT_fini() here, as it's called inside BTR_create()
 		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
 

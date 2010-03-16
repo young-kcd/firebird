@@ -34,7 +34,6 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
-#include "../jrd/sort_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
@@ -327,11 +326,12 @@ void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 		const sort_key_def* sortKey = asb->asb_key_desc;
 
 		// Get rid of the old sort areas if this request has been used already.
-		SORT_fini(asbImpure->iasb_sort_handle);
+		delete asbImpure->iasb_sort;
 
-		asbImpure->iasb_sort_handle = SORT_init(database, &request->req_sorts,
-			ROUNDUP_LONG(asb->asb_length), (asb->asb_intl ? 2 : 1), 1, sortKey,
-			RecordSource::rejectDuplicate, 0);
+		asbImpure->iasb_sort = FB_NEW(request->req_sorts.getPool())
+			Sort(database, &request->req_sorts,
+				 ROUNDUP_LONG(asb->asb_length), (asb->asb_intl ? 2 : 1), 1, sortKey,
+				 RecordSource::rejectDuplicate, 0);
 	}
 }
 
@@ -352,7 +352,7 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 			// "Put" the value to sort.
 			impure_agg_sort* asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
 			UCHAR* data;
-			SORT_put(tdbb, asbImpure->iasb_sort_handle, reinterpret_cast<ULONG**>(&data));
+			asbImpure->iasb_sort->put(tdbb, reinterpret_cast<ULONG**>(&data));
 
 			MOVE_CLEAR(data, asb->asb_length);
 
@@ -387,8 +387,8 @@ void AggNode::aggFinish(thread_db* tdbb, jrd_req* request) const
 	if (asb)
 	{
 		impure_agg_sort* const asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
-		SORT_fini(asbImpure->iasb_sort_handle);
-		asbImpure->iasb_sort_handle = NULL;
+		delete asbImpure->iasb_sort;
+		asbImpure->iasb_sort = NULL;
 	}
 }
 
@@ -408,20 +408,20 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 		dsc* desc = &asb->asb_desc;
 
 		// Sort the values already "put" to sort.
-		SORT_sort(tdbb, asbImpure->iasb_sort_handle);
+		asbImpure->iasb_sort->sort(tdbb);
 
 		// Now get the sorted/projected values and compute the aggregate.
 
 		while (true)
 		{
 			UCHAR* data;
-			SORT_get(tdbb, asbImpure->iasb_sort_handle, reinterpret_cast<ULONG**>(&data));
+			asbImpure->iasb_sort->get(tdbb, reinterpret_cast<ULONG**>(&data));
 
 			if (!data)
 			{
 				// We are done, close the sort.
-				SORT_fini(asbImpure->iasb_sort_handle);
-				asbImpure->iasb_sort_handle = NULL;
+				delete asbImpure->iasb_sort;
+				asbImpure->iasb_sort = NULL;
 				break;
 			}
 

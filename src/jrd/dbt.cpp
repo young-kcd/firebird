@@ -51,7 +51,6 @@
 #include "../jrd/sdw.h"
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/fil.h"
 #include "../jrd/tpc.h"
 #include "../jrd/svc.h"
 #include "../jrd/blob_filter.h"

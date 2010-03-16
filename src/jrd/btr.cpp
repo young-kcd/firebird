@@ -61,7 +61,6 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/pcmet_proto.h"
-#include "../jrd/sort_proto.h"
 #include "../jrd/tra_proto.h"
 
 using namespace Jrd;
@@ -177,7 +176,7 @@ static void copy_key(const temporary_key*, temporary_key*);
 static contents delete_node(thread_db*, WIN*, UCHAR*);
 static void delete_tree(thread_db*, USHORT, USHORT, PageNumber, PageNumber);
 static DSC *eval(thread_db*, jrd_nod*, DSC*, bool*);
-static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, sort_context*, SelectivityList&);
+static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, Sort*, SelectivityList&);
 
 static index_root_page* fetch_root(thread_db*, WIN*, const jrd_rel*, const RelationPages*);
 static UCHAR* find_node_start_point(btree_page*, temporary_key*, UCHAR*, USHORT*,
@@ -323,7 +322,7 @@ void BTR_create(thread_db* tdbb,
 				jrd_rel* relation,
 				index_desc* idx,
 				USHORT key_length,
-				sort_context* sort_handle,
+				Sort* scb,
 				SelectivityList& selectivity)
 {
 /**************************************
@@ -342,7 +341,7 @@ void BTR_create(thread_db* tdbb,
 	CHECK_DBB(dbb);
 
 	// Now that the index id has been checked out, create the index.
-	idx->idx_root = fast_load(tdbb, relation, idx, key_length, sort_handle, selectivity);
+	idx->idx_root = fast_load(tdbb, relation, idx, key_length, scb, selectivity);
 
 	// Index is created.  Go back to the index root page and update it to
 	// point to the index.
@@ -3008,7 +3007,7 @@ static SLONG fast_load(thread_db* tdbb,
 					   jrd_rel* relation,
 					   index_desc* idx,
 					   USHORT key_length,
-					   sort_context* sort_handle,
+					   Sort* scb,
 					   SelectivityList& selectivity)
 {
 /**************************************
@@ -3199,7 +3198,7 @@ static SLONG fast_load(thread_db* tdbb,
 			// Get the next record in sorted order.
 
 			UCHAR* record;
-			SORT_get(tdbb, sort_handle, reinterpret_cast<ULONG**>(&record));
+			scb->get(tdbb, reinterpret_cast<ULONG**>(&record));
 
 			if (!record) {
 				break;
@@ -3790,7 +3789,6 @@ static SLONG fast_load(thread_db* tdbb,
 	tdbb->tdbb_flags &= ~TDBB_no_cache_unwind;
 
 	// do some final housekeeping
-	SORT_fini(sort_handle);
 
 	// If index flush fails, try to delete the index tree.
 	// If the index delete fails, just go ahead and punt.

@@ -79,7 +79,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
-#include "../jrd/sort_proto.h"
 #include "../jrd/execute_statement.h"
 #include "../jrd/Optimizer.h"
 

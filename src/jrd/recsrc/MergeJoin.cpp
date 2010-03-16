@@ -25,7 +25,6 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/sort_proto.h"
 
 #include "RecordSource.h"
 
@@ -300,8 +299,8 @@ bool MergeJoin::getRecord(thread_db* tdbb)
 				mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 			}
 
-			SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
-				mfb->mfb_block_data, mfb->mfb_block_size);
+			Sort::writeBlock(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
+							 mfb->mfb_block_data, mfb->mfb_block_size);
 		}
 	}
 
@@ -477,8 +476,8 @@ UCHAR* MergeJoin::getData(thread_db* tdbb, MergeFile* mfb, SLONG record)
 	const ULONG merge_block = record / mfb->mfb_blocking_factor;
 	if (merge_block != mfb->mfb_current_block)
 	{
-		SORT_read_block(mfb->mfb_space, mfb->mfb_block_size * merge_block,
-			mfb->mfb_block_data, mfb->mfb_block_size);
+		Sort::readBlock(mfb->mfb_space, mfb->mfb_block_size * merge_block,
+						mfb->mfb_block_data, mfb->mfb_block_size);
 		mfb->mfb_current_block = merge_block;
 	}
 
@@ -512,8 +511,8 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index)
 			mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 		}
 
-		SORT_write_block(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
-			mfb->mfb_block_data, mfb->mfb_block_size);
+		Sort::writeBlock(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
+						 mfb->mfb_block_data, mfb->mfb_block_size);
 		mfb->mfb_current_block = merge_block;
 	}
 

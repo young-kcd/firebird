@@ -74,6 +74,7 @@ enum nod_t {
 
 class jrd_rel;
 class jrd_nod;
+class Sort;
 struct sort_key_def;
 template <typename T> class vec;
 class jrd_prc;
@@ -205,7 +206,7 @@ struct impure_inversion
 
 struct impure_agg_sort
 {
-	sort_context* iasb_sort_handle;
+	Sort* iasb_sort;
 };
 
 

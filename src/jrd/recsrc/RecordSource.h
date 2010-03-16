@@ -39,12 +39,12 @@ namespace Jrd
 	class jrd_nod;
 	class jrd_prc;
 	class AggNode;
+	class Sort;
 	class CompilerScratch;
 	class RecordBuffer;
 	class BtrPageGCLock;
 	struct index_desc;
 	struct record_param;
-	struct sort_context;
 	struct temporary_key;
 	struct win;
 	class BaseBufferedStream;
@@ -470,7 +470,7 @@ namespace Jrd
 	{
 		struct Impure : public RecordSource::Impure
 		{
-			sort_context* irsb_sort_handle;
+			Sort* irsb_sort;
 		};
 
 	public:
@@ -552,7 +552,7 @@ namespace Jrd
 		void mapData(thread_db* tdbb, jrd_req* request, UCHAR* data);
 
 	private:
-		sort_context* init(thread_db* tdbb);
+		Sort* init(thread_db* tdbb);
 
 		RecordSource* const m_next;
 		SortMap* const m_map;
