@@ -1,3 +1,24 @@
+2010-03-16 11:21  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.565.2.8), jrd.h (1.270.2.2),
+	pwd.cpp (1.79.2.1), scl.epp (1.109.2.2), scl.h (1.27.2.1):
+
+	Fixed CORE-2859: Security database remains locked after replacing
+	database
+
+2010-03-16 06:00  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.119.2.3):
+
+	Correction for one of my prior optimizer commits.
+
+2010-03-15 15:35  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/Makefile.in
+	(1.11.2.1):
+
+	Backported fix for CORE-2926: "make install" fails on linux
+
 2010-03-15 12:58  alexpeshkoff
 
 	* firebird2/builds/install/arch-specific/freebsd/install.sh.in
