@@ -374,7 +374,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				*(io_user_data->sys_user_name) = '\0';
 				strcpy(io_user_data->user_name, U.USER_NAME);
 				strcpy(io_user_data->group_name, U.GROUP_NAME);
-				strcpy(io_user_data->password, U.PASSWD);
+				io_user_data->password[0] = 0;
 				strcpy(io_user_data->first_name, U.FIRST_NAME);
 				strcpy(io_user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(io_user_data->last_name, U.LAST_NAME);
@@ -404,7 +404,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				*(io_user_data->sys_user_name) = '\0';
 				strcpy(io_user_data->user_name, U.USER_NAME);
 				strcpy(io_user_data->group_name, U.GROUP_NAME);
-				strcpy(io_user_data->password, U.PASSWD);
+				io_user_data->password[0] = 0;
 				strcpy(io_user_data->first_name, U.FIRST_NAME);
 				strcpy(io_user_data->middle_name, U.MIDDLE_NAME);
 				strcpy(io_user_data->last_name, U.LAST_NAME);
