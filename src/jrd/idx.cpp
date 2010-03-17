@@ -309,7 +309,7 @@ void IDX_create_index(thread_db* tdbb,
 	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
-	Firebird::AutoPtr<Sort> scb(FB_NEW(transaction->tra_sorts.getPool())
+	AutoPtr<Sort> scb(FB_NEW(transaction->tra_sorts.getPool())
 		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
 				  2, 1, key_desc, callback, callback_arg));
 

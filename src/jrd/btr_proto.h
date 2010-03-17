@@ -55,4 +55,3 @@ void	BTR_selectivity(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityLis
 bool	BTR_types_comparable(const dsc& target, const dsc& source, const int flags);
 
 #endif // JRD_BTR_PROTO_H
-

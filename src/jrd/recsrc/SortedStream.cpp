@@ -162,7 +162,7 @@ Sort* SortedStream::init(thread_db* tdbb)
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
 
-	Firebird::AutoPtr<Sort> scb(FB_NEW(request->req_sorts.getPool())
+	AutoPtr<Sort> scb(FB_NEW(request->req_sorts.getPool())
 		Sort(tdbb->getDatabase(), &request->req_sorts,
 			 m_map->length, m_map->keyItems.getCount(), m_map->keyItems.getCount(),
 			 m_map->keyItems.begin(),
@@ -197,7 +197,7 @@ Sort* SortedStream::init(thread_db* tdbb)
 			to = item->desc;
 			to.dsc_address = data + (IPTR) to.dsc_address;
 			bool flag = false;
-			dsc* from = 0;
+			dsc* from = NULL;
 
 			if (item->node)
 			{

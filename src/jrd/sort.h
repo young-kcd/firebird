@@ -88,7 +88,7 @@ struct sort_record
                                    byte data, but starts on ULONG boundary and
                                    rounded up to ULONG size
                                    Sizeof sr_data array would be
-                                   (m_longs - m_key_length)*sizeof(ULONG) -
+                                   (m_longs - m_key_length) * sizeof(ULONG) -
                                                  sizeof(sr_bckptr)
 */
 
@@ -121,7 +121,7 @@ struct sort_memory
 We pack items into sort_memory, inserting the first pointer into
 records [0], and the first data value into data[X1-1];  Continuing
 until we are out of records to sort or memory.
-(eg: X1*(sizeof(struct sr*) + scb->m_longs) + X2*sizeof(ULONG) == MAX_MEMORY
+(eg: X1 * (sizeof(struct sr*) + scb->m_longs) + X2 * sizeof(ULONG) == MAX_MEMORY
 */
 
 

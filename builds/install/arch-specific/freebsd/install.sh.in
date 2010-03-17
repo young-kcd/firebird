@@ -450,4 +450,3 @@ if [ -d /etc/rc.d ]; then
 	) > /etc/rc.d/000.firebird.sh
 	chmod a=rx /etc/rc.d/000.firebird.sh
 fi
-
