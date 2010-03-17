@@ -1,3 +1,9 @@
+2010-03-17 11:12  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.16.2.1):
+
+	Backported fix for CORE-2928: Buffer overflow in gsec
+
 2010-03-12 11:56  alexpeshkoff
 
 	* firebird2/builds/install/:
