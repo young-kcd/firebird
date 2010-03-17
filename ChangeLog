@@ -1,3 +1,16 @@
+2010-03-17 11:08  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.32.2.5):
+
+	Backported fix for CORE-2928: Buffer overflow in gsec
+
+2010-03-16 15:56  hvlad
+
+	* firebird2/src/jrd/os/win32/mod_loader.cpp (1.24.2.1):
+
+	Fixed bug CORE-2628 : FB 2.5-beta2-win32 denied FreeAdhocUDF
+	library functions
+
 2010-03-16 11:21  alexpeshkoff
 
 	* firebird2/src/jrd/: jrd.cpp (1.565.2.8), jrd.h (1.270.2.2),
