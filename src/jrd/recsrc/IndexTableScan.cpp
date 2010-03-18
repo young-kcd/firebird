@@ -192,7 +192,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 
 		if ((m_inversion &&
 			 (!impure->irsb_nav_bitmap ||
-		 		!RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue()))) ||
+				!RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue()))) ||
 			RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue()))
 		{
 			nextPointer = BTreeNode::readNode(&node, pointer, true);
