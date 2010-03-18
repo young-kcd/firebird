@@ -295,7 +295,8 @@ Connection::Connection(Provider& prov) :
 	m_used_stmts(0),
 	m_free_stmts(0),
 	m_deleting(false),
-	m_sqlDialect(0)
+	m_sqlDialect(0),
+	m_wrapErrors(true)
 {
 }
 
@@ -526,6 +527,11 @@ Transaction* Connection::findTransaction(thread_db* tdbb, TraScope traScope) con
 
 void Connection::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere)
 {
+	if (!getWrapErrors())
+	{
+		ERR_post(Arg::StatusVector(status));
+	}
+
 	string rem_err;
 	m_provider.getRemoteError(status, rem_err);
 
@@ -1475,6 +1481,11 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 		const string* sQuery)
 {
 	m_error = true;
+
+	if (!m_connection.getWrapErrors())
+	{
+		ERR_post(Arg::StatusVector(status));
+	}
 
 	string rem_err;
 	if (status)

@@ -119,6 +119,9 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbName.isEmpty() || dbName == dbb->dbb_database_name.c_str());
 
+	// Don't wrap raised errors. This is needed for backward compatibility.
+	setWrapErrors(false);
+
 	Attachment* attachment = tdbb->getAttachment();
 	if ((user.isEmpty() || user == attachment->att_user->usr_user_name) &&
 		pwd.isEmpty() &&

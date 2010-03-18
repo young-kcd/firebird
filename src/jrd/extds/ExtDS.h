@@ -190,6 +190,10 @@ public:
 	// info into locally raised exception
 	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
 
+	// will we wrap external errors into our ones (isc_eds_xxx) or pass them as is
+	bool getWrapErrors() const	{ return m_wrapErrors; }
+	void setWrapErrors(bool val) { m_wrapErrors = val; }
+
 	// Transactions management within connection scope : put newly created
 	// transaction into m_transactions array and delete not needed transaction
 	// immediately (as we didn't pool transactions)
@@ -236,6 +240,7 @@ protected:
 	int	m_free_stmts;
 	bool m_deleting;
 	int m_sqlDialect;	// must be filled in attach call
+	bool m_wrapErrors;
 };
 
 
