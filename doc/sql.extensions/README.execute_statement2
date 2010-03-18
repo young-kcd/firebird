@@ -96,6 +96,47 @@ Syntax and notes :
 	(if EXECUTE STATEMENT is inside SP\trigger). This causes the same effect as if statement 
 	is executed by SP\trigger directly.
 
+- Exceptions handling
+	a) if ON EXTERNAL DATA SOURCE clause is present then error information is interpreted 
+		by the Firebird itself and wrapped into Firebird own error (isc_eds_connection or 
+		isc_eds_statement). This is necessary as in general user application can't interprete
+		or understand error codes provided by (unknown) external data source. Text of 
+		interpreted remote error contains both error codes and corresponding messages.
+		
+		a1) format of isc_eds_connection error :
+			Template string 
+				Execute statement error at @1 :\n@2Data source : @3
+			Status-vector tags
+				isc_eds_connection,
+				isc_arg_string, <failed API function name>,
+				isc_arg_string, <text of interpreted external error>,
+				isc_arg_string, <data source name>
+		
+		a2) format of isc_eds_statement error :
+			Template string 
+				Execute statement error at @1 :\n@2Statement : @3\nData source : @4
+			Status-vector tags
+				isc_eds_statement,
+				isc_arg_string, <failed API function name>,
+				isc_arg_string, <text of interpreted external error>,
+				isc_arg_string, <query>,
+				isc_arg_string, <data source name>
+				
+		At PSQL level this errors could be handled using appropriate GDS code, for example
+
+			WHEN GDSCODE isc_eds_statement
+			
+		Note, that original error codes is not accessible in WHEN statement. This could be
+		improved in the future.
+			
+	b) if ON EXTERNAL DATA SOURCE clause is omitted then original status-vector with 
+		error passed to the caller PSQL code as is. For example, if dynamic statement
+		raised isc_lock_conflict error, this error will be passed to the caller and
+		could be handled using following handler
+		
+			WHEN GDSCODE isc_lock_conflict
+			
+
 
     Examples :
 
