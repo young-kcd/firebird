@@ -1,3 +1,28 @@
+2010-03-18 13:47  robocop
+
+	* firebird2/src/jrd/: sort.cpp (1.146), sort.h (1.50):
+
+	Reverted to the old flag name.
+
+2010-03-18 12:52  hvlad
+
+	* firebird2/doc/sql.extensions/README.execute_statement2 (1.11):
+
+	Update documentation
+
+2010-03-18 12:51  hvlad
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.52), ExtDS.h (1.22),
+	InternalDS.cpp (1.42):
+
+	Fixed bug CORE-2907 : Exception handling with EXECUTE STATEMENT
+
+2010-03-18 10:12  robocop
+
+	* firebird2/src/jrd/recsrc/IndexTableScan.cpp (1.13):
+
+	Totally misc.
+
 2010-03-17 10:55  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/security.epp (1.40):
