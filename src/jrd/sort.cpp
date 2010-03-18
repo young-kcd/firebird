@@ -478,7 +478,7 @@ void Sort::sort(thread_db* tdbb)
 		{
 			sort();
 			m_next_pointer = m_first_pointer + 1;
-			m_flags |= m_sorted;
+			m_flags |= scb_sorted;
 			tdbb->bumpStats(RuntimeStatistics::SORTS);
 			return;
 		}
@@ -644,7 +644,7 @@ void Sort::sort(thread_db* tdbb)
 
 		sortRunsBySeek(run_count);
 
-		m_flags |= m_sorted;
+		m_flags |= scb_sorted;
 		tdbb->bumpStats(RuntimeStatistics::SORTS);
 	}
 	catch (const BadAlloc&)
@@ -694,7 +694,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			if (direction)
 			{
 				USHORT& vlen = ((vary*) p)->vary_length;
-				if (!(m_flags & m_sorted))
+				if (!(m_flags & scb_sorted))
 				{
 					*((USHORT*) (record + key->skd_vary_offset)) = vlen;
 					const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
@@ -711,7 +711,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			if (direction)
 			{
 				const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-				if (!(m_flags & m_sorted))
+				if (!(m_flags & scb_sorted))
 				{
 					const USHORT l = strlen(reinterpret_cast<char*>(p));
 					*((USHORT*) (record + key->skd_vary_offset)) = l;
@@ -833,7 +833,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			if (key->skd_dtype == SKD_varying && direction)
 			{
 				USHORT& vlen = ((vary*) p)->vary_length;
-				if (!(m_flags & m_sorted))
+				if (!(m_flags & scb_sorted))
 				{
 					*((USHORT*) (record + key->skd_vary_offset)) = vlen;
 					const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
@@ -848,7 +848,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			if (key->skd_dtype == SKD_cstring && direction)
 			{
 				const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-				if (!(m_flags & m_sorted))
+				if (!(m_flags & scb_sorted))
 				{
 					const USHORT l = (USHORT) strlen(reinterpret_cast<char*>(p));
 					*((USHORT*) (record + key->skd_vary_offset)) = l;
@@ -1530,7 +1530,7 @@ void Sort::quick(SLONG size, SORTP** pointers, ULONG length)
  * assumption that something will eventually stop the comparison.
  *
  * WARNING: THIS ROUTINE DOES NOT MAKE A FINAL PASS TO UNSCRAMBLE
- * PARITIONS OF SIZE TWO.  THE POINTER ARRAY REQUIRES ADDITIONAL
+ * PARTITIONS OF SIZE TWO.  THE POINTER ARRAY REQUIRES ADDITIONAL
  * PROCESSING BEFORE IT MAY BE USED!
  *
  **************************************/
@@ -1882,7 +1882,7 @@ void Sort::sort()
 		return;
 
 	// Make another pass and eliminate duplicates. It's possible to do this
-	// is the same pass the final ordering, but the logic is complicated enough
+	// in the same pass the final ordering, but the logic is complicated enough
 	// to screw up register optimizations. Better two fast passes than one
 	// slow pass, I suppose. Prove me wrong and win a trip for two to
 	// Cleveland, Ohio.

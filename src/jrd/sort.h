@@ -272,7 +272,7 @@ private:
 	ULONG m_key_length;							// Key length
 	ULONG m_unique_length;						// Unique key length, used when duplicates eliminated
 	FB_UINT64 m_records;						// Number of records
-	FB_UINT64 m_max_records;					// Maximum number of records to store
+	FB_UINT64 m_max_records;					// Maximum number of records to store, assigned but unused.
 	TempSpace* m_space;							// temporary space for scratch file
 	run_control* m_runs;						// ALLOC: Run on scratch file, if any
 	merge_control* m_merge;						// Top level merge block
@@ -287,7 +287,7 @@ private:
 
 // flags as set in m_flags
 
-const int m_sorted = 1;	// stream has been sorted
+const int scb_sorted = 1;	// stream has been sorted
 
 class SortOwner
 {
