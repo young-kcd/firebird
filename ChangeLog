@@ -1,3 +1,16 @@
+2010-03-18 11:33  hvlad
+
+	* firebird2/doc/sql.extensions/README.execute_statement2 (1.9.2.2):
+
+	Update documentation
+
+2010-03-18 11:29  hvlad
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.45.2.3), ExtDS.h
+	(1.20.2.2), InternalDS.cpp (1.26.2.3):
+
+	Fixed bug CORE-2907 : Exception handling with EXECUTE STATEMENT
+
 2010-03-17 11:08  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/security.epp (1.32.2.5):
