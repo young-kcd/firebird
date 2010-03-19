@@ -1,3 +1,56 @@
+2010-03-19 13:55  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.152):
+
+	Misc.
+
+2010-03-19 12:51  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.151):
+
+	Misc.
+
+2010-03-19 12:50  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.150):
+
+	Correction.
+
+2010-03-19 12:03  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.149):
+
+	Misc.
+
+2010-03-19 11:54  dimitr
+
+	* firebird2/src/jrd/: TempSpace.cpp (1.31), TempSpace.h (1.18),
+	sort.cpp (1.148), sort.h (1.51):
+
+	Bring some consistency into the memory management.  Reduce number
+	of casts for memory buffers.  Use UCHAR instead of confusing
+	BLOB_PTR.
+
+2010-03-19 08:04  robocop
+
+	* firebird2/doc/sql.extensions/README.execute_statement2 (1.12):
+
+	Misc.
+
+2010-03-19 04:53  dimitr
+
+	* firebird2/src/jrd/: sort.cpp (1.147), recsrc/SortedStream.cpp
+	(1.7):
+
+	Corrections based on the scrutineers comments.
+
+2010-03-19 02:09  asfernandes
+
+	* firebird2/src/jrd/dyn_del.epp (1.97):
+
+	Fixed CORE-2930 - DROP VIEW drops output parameters of used stored
+	procedures
+
 2010-03-18 13:47  robocop
 
 	* firebird2/src/jrd/: sort.cpp (1.146), sort.h (1.50):
