@@ -1246,14 +1246,13 @@ ULONG Sort::allocate(ULONG n, ULONG chunkSize, bool useFreeSpace)
 	{
 		run->run_buffer = NULL;
 
-		UCHAR* mem = m_space->inMemory(run->run_seek, run->run_size);
+		UCHAR* const mem = m_space->inMemory(run->run_seek, run->run_size);
 
 		if (mem)
 		{
 			run->run_buffer = mem;
 			run->run_record = reinterpret_cast<sort_record*>(mem);
-			mem += run->run_size;
-			run->run_end_buffer = mem;
+			run->run_end_buffer = run->run_buffer + run->run_size;
 			run->run_seek += run->run_size; // emulate read
 			allocated++;
 		}
