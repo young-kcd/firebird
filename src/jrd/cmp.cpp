@@ -3274,8 +3274,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_msg_number] = input->nod_arg[e_msg_number];
 		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
 		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
-		// dimitr: hmmm, cannot find where the following one is used...
-		node->nod_arg[e_msg_next] = copy(tdbb, input->nod_arg[e_msg_next]);
 		return node;
 
 	case nod_sort:

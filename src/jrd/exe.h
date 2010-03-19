@@ -221,9 +221,8 @@ const int e_arg_length		= 5;
 
 const int e_msg_number			= 0;
 const int e_msg_format			= 1;
-const int e_msg_next			= 2;
-const int e_msg_impure_flags	= 3;
-const int e_msg_length			= 4;
+const int e_msg_impure_flags	= 2;
+const int e_msg_length			= 3;
 
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
