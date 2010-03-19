@@ -284,7 +284,7 @@ Sort::~Sort()
 
 	m_owner->unlinkSort(this);
 
-	// Loop through the sfb list and close work files
+	// Release the temporary space
 
 	delete m_space;
 
