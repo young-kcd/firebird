@@ -192,8 +192,8 @@ struct run_control
 	FB_UINT64		run_seek;			// Offset in file of run
 	FB_UINT64		run_size;			// Length of run in work file
 	sort_record*	run_record;			// Next record in run
-	SORTP*			run_buffer;			// Run buffer
-	SORTP*			run_end_buffer;		// End of buffer
+	UCHAR*			run_buffer;			// Run buffer
+	UCHAR*			run_end_buffer;		// End of buffer
 	bool			run_buff_alloc;		// Allocated buffer flag
 	bool			run_buff_cache;		// run buffer is already in cache
 	FB_UINT64		run_mem_seek;		// position of run's buffer in in-memory part of sort file
@@ -228,14 +228,14 @@ public:
 	void put(Jrd::thread_db*, ULONG**);
 	void sort(Jrd::thread_db*);
 
-	static FB_UINT64 readBlock(TempSpace* space, FB_UINT64 seek, BLOB_PTR* address, ULONG length)
+	static FB_UINT64 readBlock(TempSpace* space, FB_UINT64 seek, UCHAR* address, ULONG length)
 	{
 		const size_t bytes = space->read(seek, address, length);
 		fb_assert(bytes == length);
 		return seek + bytes;
 	}
 
-	static FB_UINT64 writeBlock(TempSpace* space, FB_UINT64 seek, BLOB_PTR* address, ULONG length)
+	static FB_UINT64 writeBlock(TempSpace* space, FB_UINT64 seek, UCHAR* address, ULONG length)
 	{
 		const size_t bytes = space->write(seek, address, length);
 		fb_assert(bytes == length);
@@ -262,8 +262,8 @@ private:
 
 	Database* m_dbb;							// Database
 	SortOwner* m_owner;							// Sort owner
-	SORTP* m_memory;							// ALLOC: Memory for sort
-	SORTP* m_end_memory;						// End of memory
+	UCHAR* m_memory;							// ALLOC: Memory for sort
+	UCHAR* m_end_memory;						// End of memory
 	ULONG m_size_memory;						// Bytes allocated
 	SR* m_last_record;							// Address of last record
 	sort_record** m_first_pointer;				// Memory for sort

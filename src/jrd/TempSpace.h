@@ -52,11 +52,11 @@ public:
 	offset_t allocateSpace(size_t size);
 	void releaseSpace(offset_t offset, size_t size);
 
-	char* inMemory(offset_t offset, size_t size) const;
+	UCHAR* inMemory(offset_t offset, size_t size) const;
 
 	struct SegmentInMemory
 	{
-		char* memory;
+		UCHAR* memory;
 		offset_t position;
 		size_t size;
 	};
@@ -78,7 +78,7 @@ private:
 		virtual size_t read(offset_t offset, void* buffer, size_t length) = 0;
 		virtual size_t write(offset_t offset, const void* buffer, size_t length) = 0;
 
-		virtual char* inMemory(offset_t offset, size_t size) const = 0;
+		virtual UCHAR* inMemory(offset_t offset, size_t size) const = 0;
 		virtual bool sameFile(const Firebird::TempFile* file) const = 0;
 
 		Block *prev;
@@ -95,7 +95,7 @@ private:
 		size_t read(offset_t offset, void* buffer, size_t length);
 		size_t write(offset_t offset, const void* buffer, size_t length);
 
-		char* inMemory(offset_t offset, size_t _size) const
+		UCHAR* inMemory(offset_t offset, size_t _size) const
 		{
 			if ((offset < this->size) && (offset + _size <= this->size))
 				return ptr + offset;
@@ -109,7 +109,7 @@ private:
 		}
 
 	private:
-		char* ptr;
+		UCHAR* ptr;
 	};
 
 	class FileBlock : public Block
@@ -121,7 +121,7 @@ private:
 		size_t read(offset_t offset, void* buffer, size_t length);
 		size_t write(offset_t offset, const void* buffer, size_t length);
 
-		char* inMemory(offset_t /*offset*/, size_t /*a_size*/) const
+		UCHAR* inMemory(offset_t /*offset*/, size_t /*a_size*/) const
 		{
 			return NULL;
 		}
@@ -144,7 +144,7 @@ private:
 		return false;
 	}
 
-	char* findMemory(offset_t& begin, offset_t end, size_t size) const;
+	UCHAR* findMemory(offset_t& begin, offset_t end, size_t size) const;
 
 	//  free/used segments management
 	class Segment

@@ -224,7 +224,7 @@ Sort::Sort(Database* dbb,
 #ifdef DEBUG_MERGE
 		// To debug the merge algorithm, force the in-memory pool to be VERY small
 		m_size_memory = 2000;
-		m_memory = (SORTP*) pool.allocate(m_size_memory);
+		m_memory = FB_NEW(pool) UCHAR[m_size_memory];
 #else
 		// Try to get a big chunk of memory, if we can't try smaller and
 		// smaller chunks until we can get the memory. If we get down to
@@ -236,7 +236,7 @@ Sort::Sort(Database* dbb,
 		{
 			try
 			{
-				m_memory = (SORTP*) pool.allocate(m_size_memory);
+				m_memory = FB_NEW(pool) UCHAR[m_size_memory];
 				break;
 			}
 			catch (const BadAlloc&)
@@ -249,7 +249,7 @@ Sort::Sort(Database* dbb,
 		}
 #endif // DEBUG_MERGE
 
-		m_end_memory = (SORTP*) ((BLOB_PTR*) m_memory + m_size_memory);
+		m_end_memory = m_memory + m_size_memory;
 		m_first_pointer = (sort_record**) m_memory;
 
 		// Set up the temp space
@@ -291,7 +291,7 @@ Sort::~Sort()
 	// If runs are allocated and not in the big block, release them.
 	// Then release the big block.
 
-	delete m_memory;
+	delete[] m_memory;
 
 	// Clean up the runs that were used
 
@@ -300,7 +300,7 @@ Sort::~Sort()
 	{
 		m_runs = run->run_next;
 		if (run->run_buff_alloc)
-			delete (UCHAR*) run->run_buffer;
+			delete[] run->run_buffer;
 		delete run;
 	}
 
@@ -310,11 +310,11 @@ Sort::~Sort()
 	{
 		m_free_runs = run->run_next;
 		if (run->run_buff_alloc)
-			delete (UCHAR*) run->run_buffer;
+			delete[] run->run_buffer;
 		delete run;
 	}
 
-	delete m_merge_pool;
+	delete[] m_merge_pool;
 }
 
 
@@ -403,8 +403,8 @@ void Sort::put(thread_db* tdbb, ULONG** record_address)
 		// Check that we are not at the beginning of the buffer in addition
 		// to checking for space for the record. This avoids the pointer
 		// record from underflowing in the second condition.
-		if ((BLOB_PTR*) record < (BLOB_PTR*) (m_memory + m_longs) ||
-			(BLOB_PTR*) NEXT_RECORD(record) <= (BLOB_PTR*) (m_next_pointer + 1))
+		if ((UCHAR*) record < m_memory + m_longs ||
+			(UCHAR*) NEXT_RECORD(record) <= (UCHAR*) (m_next_pointer + 1))
 		{
 			putRun();
 			while (true)
@@ -514,14 +514,13 @@ void Sort::sort(thread_db* tdbb)
 		{
 			if (run->run_buff_alloc)
 			{
-				delete (UCHAR*) run->run_buffer;
+				delete[] run->run_buffer;
 				run->run_buff_alloc = false;
 			}
 			++run_count;
 		}
 
-		run_merge_hdr** streams =
-			(run_merge_hdr**) m_owner->getPool().allocate(run_count * sizeof(run_merge_hdr*));
+		AutoPtr<run_merge_hdr*> streams(FB_NEW(m_owner->getPool()) run_merge_hdr*[run_count]);
 
 		run_merge_hdr** m1 = streams;
 		for (run = m_runs; run; run = run->run_next)
@@ -534,24 +533,15 @@ void Sort::sort(thread_db* tdbb)
 		if (count > 1)
 		{
 			fb_assert(!m_merge_pool);	// shouldn't have a pool
-			try
-			{
-				m_merge_pool =
-					(merge_control*) m_owner->getPool().allocate((count - 1) * sizeof(merge_control));
-				merge_pool = m_merge_pool;
-				memset(merge_pool, 0, (count - 1) * sizeof(merge_control));
-			}
-			catch (const BadAlloc&)
-			{
-				delete streams;
-				throw;
-			}
+			m_merge_pool = FB_NEW(m_owner->getPool()) merge_control[count - 1];
+			merge_pool = m_merge_pool;
+			memset(merge_pool, 0, (count - 1) * sizeof(merge_control));
 		}
 		else
 		{
 			// Merge of 1 or 0 runs doesn't make sense
 			fb_assert(false);				// We really shouldn't get here
-			merge = (merge_control*) * streams;	// But if we do...
+			merge = (merge_control*) *streams;	// But if we do...
 		}
 
 		// Each pass through the vector builds a level of the merge tree
@@ -596,7 +586,7 @@ void Sort::sort(thread_db* tdbb)
 			count = m2 - streams;
 		}
 
-		delete streams;
+		streams.reset();
 
 		merge->mrg_header.rmh_parent = NULL;
 		m_merge = merge;
@@ -619,25 +609,25 @@ void Sort::sort(thread_db* tdbb)
 				if (!run->run_buffer)
 				{
 					int mem_size = MIN(allocSize / rec_size, run->run_records) * rec_size;
-					char* mem = NULL;
+					UCHAR* mem = NULL;
 					try
 					{
-						mem = (char*) m_owner->getPool().allocate(mem_size);
+						mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
 					}
 					catch (const BadAlloc&)
 					{
 						mem_size = (mem_size / (2 * rec_size)) * rec_size;
 						if (!mem_size)
 							throw;
-						mem = (char*) m_owner->getPool().allocate(mem_size);
+						mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
 					}
 					run->run_buff_alloc = true;
 					run->run_buff_cache = false;
 
-					run->run_buffer = reinterpret_cast<SORTP*>(mem);
+					run->run_buffer = mem;
 					mem += mem_size;
 					run->run_record = reinterpret_cast<sort_record*>(mem);
-					run->run_end_buffer = reinterpret_cast<SORTP*> (mem);
+					run->run_end_buffer = mem;
 				}
 			}
 		}
@@ -803,7 +793,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 
 	for (sort_key_def* key = m_description.begin(), *end = m_description.end(); key < end; key++)
 	{
-		BLOB_PTR* p = (BLOB_PTR*) record + key->skd_offset;
+		UCHAR* p = (UCHAR*) record + key->skd_offset;
 		USHORT* wp = (USHORT*) p;
 		SORTP* lwp = (SORTP*) p;
 		USHORT complement = key->skd_flags & SKD_descending;
@@ -875,7 +865,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 				*p = c1;
 				p += 3;
 			}
-			p = (BLOB_PTR*) wp;
+			p = (UCHAR*) wp;
 			break;
 
 		case SKD_short:
@@ -983,13 +973,13 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 
 		if (key->skd_dtype == SKD_varying && !direction)
 		{
-			p = (BLOB_PTR*) record + key->skd_offset;
+			p = (UCHAR*) record + key->skd_offset;
 			((vary*) p)->vary_length = *((USHORT*) (record + key->skd_vary_offset));
 		}
 
 		if (key->skd_dtype == SKD_cstring && !direction)
 		{
-			p = (BLOB_PTR*) record + key->skd_offset;
+			p = (UCHAR*) record + key->skd_offset;
 			USHORT l = *((USHORT*) (record + key->skd_vary_offset));
 			*(p + l) = 0;
 		}
@@ -1035,8 +1025,7 @@ sort_record* Sort::getMerge(merge_control* merge)
 
 			// Find the appropriate record in the buffer to return
 
-			if ((record = (sort_record*) run->run_record) <
-				(sort_record*) run->run_end_buffer)
+			if ((record = (sort_record*) run->run_record) < (sort_record*) run->run_end_buffer)
 			{
 				run->run_record = reinterpret_cast<sort_record*>(NEXT_RUN_RECORD(run->run_record));
 				--run->run_records;
@@ -1046,10 +1035,10 @@ sort_record* Sort::getMerge(merge_control* merge)
 			// There are records remaining, but the buffer is full.
 			// Read a buffer full.
 
-			l = (ULONG) ((BLOB_PTR*) run->run_end_buffer - (BLOB_PTR*) run->run_buffer);
+			l = (ULONG) (run->run_end_buffer - run->run_buffer);
 			n = run->run_records * m_longs * sizeof(ULONG);
 			l = MIN(l, n);
-			run->run_seek = readBlock(m_space, run->run_seek, (UCHAR*) run->run_buffer, l);
+			run->run_seek = readBlock(m_space, run->run_seek, run->run_buffer, l);
 
 			record = reinterpret_cast<sort_record*>(run->run_buffer);
 			run->run_record =
@@ -1189,21 +1178,24 @@ void Sort::init()
 		m_runs->run_depth == MAX_MERGE_LEVEL)
 	{
 		const ULONG mem_size = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
-		void* const mem = m_owner->getPool().allocate_nothrow(mem_size);
 
-		if (mem)
+		try
 		{
-			m_owner->getPool().deallocate(m_memory);
+			UCHAR* const mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
 
-			m_memory = (SORTP*) mem;
+			delete[] m_memory;
+
+			m_memory = mem;
 			m_size_memory = mem_size;
 
-			m_end_memory = (SORTP*) ((BLOB_PTR*) m_memory + m_size_memory);
+			m_end_memory = m_memory + m_size_memory;
 			m_first_pointer = (sort_record**) m_memory;
 
 			for (run_control *run = m_runs; run; run = run->run_next)
 				run->run_depth--;
 		}
+		catch (const BadAlloc&)
+		{} // no-op
 	}
 
 	m_next_pointer = m_first_pointer;
@@ -1252,15 +1244,15 @@ ULONG Sort::allocate(ULONG n, ULONG chunkSize, bool useFreeSpace)
 	// if some run's already in memory cache - use this memory
 	for (run = m_runs, count = 0; count < n; run = run->run_next, count++)
 	{
-		run->run_buffer = 0;
+		run->run_buffer = NULL;
 
-		char* mem = 0;
-		if (mem = m_space->inMemory(run->run_seek, run->run_size))
+		UCHAR* mem = NULL;
+		if ( (mem = m_space->inMemory(run->run_seek, run->run_size)) )
 		{
-			run->run_buffer = reinterpret_cast<SORTP*>(mem);
+			run->run_buffer = mem;
 			run->run_record = reinterpret_cast<sort_record*>(mem);
 			mem += run->run_size;
-			run->run_end_buffer = reinterpret_cast<SORTP*>(mem);
+			run->run_end_buffer = mem;
 			run->run_seek += run->run_size; // emulate read
 			allocated++;
 		}
@@ -1284,14 +1276,14 @@ ULONG Sort::allocate(ULONG n, ULONG chunkSize, bool useFreeSpace)
 			if (!run->run_buffer)
 			{
 				const size_t runSize = MIN(seg->size / rec_size, run->run_records) * rec_size;
-				char* mem = seg->memory;
+				UCHAR* mem = seg->memory;
 
 				run->run_mem_seek = seg->position;
 				run->run_mem_size = (ULONG) seg->size;
-				run->run_buffer = reinterpret_cast<SORTP*>(mem);
+				run->run_buffer = mem;
 				mem += runSize;
 				run->run_record = reinterpret_cast<sort_record*>(mem);
-				run->run_end_buffer = reinterpret_cast<SORTP*>(mem);
+				run->run_end_buffer = mem;
 
 				seg++;
 				if (seg == lastSeg)
@@ -1325,11 +1317,11 @@ void Sort::mergeRuns(USHORT n)
 	// space requirements, and filling in a vector of streams with run pointers
 
 	const USHORT rec_size = m_longs << SHIFTLONG;
-	BLOB_PTR* buffer = (BLOB_PTR*) m_first_pointer;
+	UCHAR* buffer = (UCHAR*) m_first_pointer;
 	run_control temp_run;
 	memset(&temp_run, 0, sizeof(run_control));
 
-	temp_run.run_end_buffer = (SORTP*) (buffer + (m_size_memory / rec_size) * rec_size);
+	temp_run.run_end_buffer = buffer + (m_size_memory / rec_size) * rec_size;
 	temp_run.run_size = 0;
 	temp_run.run_buff_alloc = false;
 
@@ -1364,25 +1356,24 @@ void Sort::mergeRuns(USHORT n)
 			{
 				if (!run->run_buff_alloc)
 				{
-					run->run_buffer = (ULONG*) m_owner->getPool().allocate(rec_size * 2);
+					run->run_buffer = FB_NEW(m_owner->getPool()) UCHAR[rec_size * 2];
 					run->run_buff_alloc = true;
 				}
-				run->run_end_buffer =
-					reinterpret_cast<ULONG*>((BLOB_PTR*) run->run_buffer + (rec_size * 2));
+				run->run_end_buffer = run->run_buffer + (rec_size * 2);
 				run->run_record = reinterpret_cast<sort_record*>(run->run_end_buffer);
 			}
 			else
 			{
-				run->run_buffer = (ULONG*) buffer;
+				run->run_buffer = buffer;
 				buffer += size;
-				run->run_record =
-					reinterpret_cast<sort_record*>(run->run_end_buffer = (ULONG*) buffer);
+				run->run_end_buffer = buffer;
+				run->run_record = reinterpret_cast<sort_record*>(run->run_end_buffer);
 			}
 		}
 		temp_run.run_size += run->run_size;
 	}
 	temp_run.run_record = reinterpret_cast<sort_record*>(buffer);
-	temp_run.run_buffer = reinterpret_cast<ULONG*>(temp_run.run_record);
+	temp_run.run_buffer = reinterpret_cast<UCHAR*>(temp_run.run_record);
 	temp_run.run_buff_cache = false;
 
 	// Build merge tree bottom up.
@@ -1437,8 +1428,8 @@ void Sort::mergeRuns(USHORT n)
 	{
 		if (q >= (sort_record*) temp_run.run_end_buffer)
 		{
-			size = (BLOB_PTR*) q - (BLOB_PTR*) temp_run.run_buffer;
-			seek = writeBlock(m_space, seek, (UCHAR*) temp_run.run_buffer, size);
+			size = (UCHAR*) q - temp_run.run_buffer;
+			seek = writeBlock(m_space, seek, temp_run.run_buffer, size);
 			q = reinterpret_cast<sort_record*>(temp_run.run_buffer);
 		}
 		count = m_longs;
@@ -1450,8 +1441,8 @@ void Sort::mergeRuns(USHORT n)
 
 	// Write the tail of the new run and return any unused space
 
-	if ( (size = (BLOB_PTR*) q - (BLOB_PTR*) temp_run.run_buffer) )
-		seek = writeBlock(m_space, seek, (UCHAR*) temp_run.run_buffer, size);
+	if ( (size = (UCHAR*) q - temp_run.run_buffer) )
+		seek = writeBlock(m_space, seek, temp_run.run_buffer, size);
 
 	// If the records did not fill the allocated run (such as when duplicates are
 	// rejected), then free the remainder and diminish the size of the run accordingly
@@ -1493,7 +1484,7 @@ void Sort::mergeRuns(USHORT n)
 	m_free_runs = run->run_next;
 	if (run->run_buff_alloc)
 	{
-		delete (UCHAR*) run->run_buffer;
+		delete[] run->run_buffer;
 		run->run_buff_alloc = false;
 	}
 	temp_run.run_header.rmh_type = RMH_TYPE_RUN;
@@ -1766,7 +1757,7 @@ void Sort::orderAndSave()
 	run->run_size = run->run_records * key_length;
 	run->run_seek = m_space->allocateSpace(run->run_size);
 
-	char* mem = m_space->inMemory(run->run_seek, run->run_size);
+	UCHAR* mem = m_space->inMemory(run->run_seek, run->run_size);
 
 	if (mem)
 	{
