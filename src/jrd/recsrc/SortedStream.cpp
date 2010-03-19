@@ -54,8 +54,11 @@ void SortedStream::open(thread_db* tdbb)
 
 	impure->irsb_flags = irsb_open;
 
-	// get rid of the old sort areas if this request has been used already
+	// Get rid of the old sort areas if this request has been used already.
+	// Null the pointer before calling init() because it may throw.
 	delete impure->irsb_sort;
+	impure->irsb_sort = NULL;
+
 	impure->irsb_sort = init(tdbb);
 }
 

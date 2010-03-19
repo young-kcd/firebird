@@ -1225,6 +1225,8 @@ void Sort::checkFile(const run_control* temp_run)
 	offset_t free = 0;
 	FB_UINT64 run_mem = 0;
 
+	fb_assert(m_space->validate(free));
+
 	for (const run_control* run = m_runs; run; run = run->run_next)
 	{
 		runs += run->run_size;
