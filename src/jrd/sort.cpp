@@ -1246,7 +1246,7 @@ ULONG Sort::allocate(ULONG n, ULONG chunkSize, bool useFreeSpace)
 	{
 		run->run_buffer = NULL;
 
-		UCHAR* mem = m_space->inMemory(run->run_seek, run->run_size));
+		UCHAR* mem = m_space->inMemory(run->run_seek, run->run_size);
 
 		if (mem)
 		{
