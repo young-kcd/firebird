@@ -2334,6 +2334,7 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	SortedArray<MetaName> modifyInputs, modifyOutputs;
 	SSHORT inputs  = 0, defaults = 0;
 	SSHORT outputs = 0;
 	SSHORT locals  = 0;
@@ -2361,16 +2362,67 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 			const dsql_prc* procedure = METD_get_procedure(statement, procedure_name);
 			if (procedure)
 			{
+				// Let verify the fields we can modify, and the ones we need to delete or recreate.
+
+				SortedArray<MetaName> newInputs, newOutputs;
+
+				const dsql_nod* parameters = procedure_node->nod_arg[e_prc_inputs];
+				if (parameters)
+				{
+					const dsql_nod* const* ptr = parameters->nod_arg;
+					for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
+					{
+						const dsql_nod* parameter = *ptr;
+						const dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
+
+						if (field->fld_type_of_name.isEmpty() && field->fld_source.isEmpty())
+							newInputs.add(field->fld_name);
+					}
+				}
+
+				parameters = procedure_node->nod_arg[e_prc_outputs];
+				if (parameters)
+				{
+					const dsql_nod* const* ptr = parameters->nod_arg;
+					for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
+					{
+						const dsql_nod* parameter = *ptr;
+						const dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
+
+						if (field->fld_type_of_name.isEmpty() && field->fld_source.isEmpty())
+							newOutputs.add(field->fld_name);
+					}
+				}
+
 				const dsql_fld* field;
 				for (field = procedure->prc_inputs; field; field = field->fld_next)
 				{
-					statement->append_string(isc_dyn_delete_parameter, field->fld_name);
-					statement->append_uchar(isc_dyn_end);
+					if (field->fld_type_of_name.isEmpty() &&
+						fb_utils::implicit_domain(field->fld_source.c_str()) &&
+						newInputs.exist(field->fld_name))
+					{
+						modifyInputs.add(field->fld_name);
+					}
+					else
+					{
+						statement->append_string(isc_dyn_delete_parameter, field->fld_name);
+						statement->append_uchar(isc_dyn_end);
+					}
 				}
+
 				for (field = procedure->prc_outputs; field; field = field->fld_next)
 				{
-					statement->append_string(isc_dyn_delete_parameter, field->fld_name);
-					statement->append_uchar(isc_dyn_end);
+					if (field->fld_type_of_name.isEmpty() &&
+						fb_utils::implicit_domain(field->fld_source.c_str()) &&
+						newOutputs.exist(field->fld_name))
+					{
+						modifyOutputs.add(field->fld_name);
+					}
+					else
+					{
+						statement->append_string(isc_dyn_delete_parameter, field->fld_name);
+						statement->append_uchar(isc_dyn_end);
+					}
 				}
 			}
 		}
@@ -2410,7 +2462,14 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 			dsql_nod* parameter = *ptr;
 			dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
 
-			statement->append_string(isc_dyn_def_parameter, field->fld_name);
+			if (modifyInputs.exist(field->fld_name))
+			{
+				statement->append_string(isc_dyn_mod_prc_parameter, field->fld_name);
+				statement->append_string(isc_dyn_prc_name, procedure->prc_name);
+			}
+			else
+				statement->append_string(isc_dyn_def_parameter, field->fld_name);
+
 			statement->append_number(isc_dyn_prm_number, position);
 			statement->append_number(isc_dyn_prm_type, 0);
 
@@ -2464,7 +2523,15 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 		{
 			dsql_nod* parameter = *ptr;
 			dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
-			statement->append_string(isc_dyn_def_parameter, field->fld_name);
+
+			if (modifyOutputs.exist(field->fld_name))
+			{
+				statement->append_string(isc_dyn_mod_prc_parameter, field->fld_name);
+				statement->append_string(isc_dyn_prc_name, procedure->prc_name);
+			}
+			else
+				statement->append_string(isc_dyn_def_parameter, field->fld_name);
+
 			statement->append_number(isc_dyn_prm_number, position);
 			statement->append_number(isc_dyn_prm_type, 1);
 			DDL_resolve_intl_type(statement, field,
