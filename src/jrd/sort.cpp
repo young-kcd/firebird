@@ -518,7 +518,8 @@ void Sort::sort(thread_db* tdbb)
 			++run_count;
 		}
 
-		AutoPtr<run_merge_hdr*> streams(FB_NEW(m_owner->getPool()) run_merge_hdr*[run_count]);
+		AutoPtr<run_merge_hdr*, ArrayDelete<run_merge_hdr*> > streams(
+			FB_NEW(m_owner->getPool()) run_merge_hdr*[run_count]);
 
 		run_merge_hdr** m1 = streams;
 		for (run = m_runs; run; run = run->run_next)
