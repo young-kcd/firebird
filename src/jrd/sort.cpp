@@ -281,11 +281,9 @@ Sort::Sort(Database* dbb,
 Sort::~Sort()
 {
 	// Unlink the sort
-
 	m_owner->unlinkSort(this);
 
 	// Release the temporary space
-
 	delete m_space;
 
 	// If runs are allocated and not in the big block, release them.
