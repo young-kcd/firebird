@@ -1,3 +1,21 @@
+2010-03-20 02:28  asfernandes
+
+	* firebird2/src/jrd/sort.cpp (1.154):
+
+	Fix usage of AutoPtr with array
+
+2010-03-20 02:17  asfernandes
+
+	* firebird2/src/jrd/sort.cpp (1.153):
+
+	Misc
+
+2010-03-19 21:10  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.399), exe.h (1.160):
+
+	Cleanup.
+
 2010-03-19 13:55  dimitr
 
 	* firebird2/src/jrd/sort.cpp (1.152):
