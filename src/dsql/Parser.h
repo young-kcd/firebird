@@ -117,7 +117,7 @@ private:
 
 public:
 	Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
-		const TEXT* string, USHORT length, SSHORT characterSet);
+		const TEXT* string, size_t length, SSHORT characterSet);
 	~Parser();
 
 public:

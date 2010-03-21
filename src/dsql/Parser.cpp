@@ -30,7 +30,7 @@ using namespace Jrd;
 
 
 Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
-			const TEXT* string, USHORT length, SSHORT characterSet)
+			const TEXT* string, size_t length, SSHORT characterSet)
 	: PermanentStorage(pool),
 	  compilingText(pool, string, length),
 	  client_dialect(aClientDialect),
