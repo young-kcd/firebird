@@ -116,7 +116,6 @@ static xdr_t::xdr_ops wnet_ops =
 rem_port* WNET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
-					//const TEXT*	user_string,
 					bool	uv_flag)
 {
 /**************************************

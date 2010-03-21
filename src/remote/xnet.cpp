@@ -197,8 +197,6 @@ static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = NULL)
 
 rem_port* XNET_analyze(const Firebird::PathName& file_name,
 					   ISC_STATUS* status_vector,
-					   //const TEXT* node_name,
-					   //const TEXT* user_string,
 					   bool uv_flag)
 {
 /**************************************
@@ -268,7 +266,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
-	rem_port* port = XNET_connect(/*node_name,*/ packet, status_vector, 0);
+	rem_port* port = XNET_connect(packet, status_vector, 0);
 	if (!port)
 	{
 		delete rdb;
@@ -307,7 +305,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try2[i];
 		}
 
-		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0)))
+		if (!(port = XNET_connect(packet, status_vector, 0)))
 		{
 			delete rdb;
 			return NULL;
@@ -345,7 +343,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try3[i];
 		}
 
-		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0)))
+		if (!(port = XNET_connect(packet, status_vector, 0)))
 		{
 			delete rdb;
 			return NULL;
@@ -393,8 +391,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 }
 
 
-rem_port* XNET_connect(//const TEXT* name,
-					   PACKET* packet,
+rem_port* XNET_connect(PACKET* packet,
 					   ISC_STATUS* status_vector,
 					   USHORT flag)
 {
