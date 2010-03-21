@@ -843,6 +843,15 @@ ExprNode* SubstringSimilarNode::internalDsqlPass()
 		PASS1_node(dsqlScratch, dsqlEscape));
 	node->dsqlScratch = dsqlScratch;
 
+	// ? SIMILAR FIELD case.
+	PASS1_set_parameter_type(dsqlScratch, node->dsqlExpr, node->dsqlPattern, true);
+
+	// FIELD SIMILAR ? case.
+	PASS1_set_parameter_type(dsqlScratch, node->dsqlPattern, node->dsqlExpr, true);
+
+	// X SIMILAR Y ESCAPE ? case.
+	PASS1_set_parameter_type(dsqlScratch, node->dsqlEscape, node->dsqlPattern, true);
+
 	return node;
 }
 
