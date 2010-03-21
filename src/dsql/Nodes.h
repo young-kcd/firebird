@@ -219,18 +219,24 @@ public:
 
 	template <typename T, typename LegacyType> static const T* as(const LegacyType* node)
 	{
-		const ExprNode* obj = T::fromLegacy(const_cast<LegacyType*>(node));
+		const ExprNode* obj = T::fromLegacy(node);
+		return obj ? obj->as<T>() : NULL;
+	}
+
+	template <typename T, typename LegacyType> static const T* const_as(const LegacyType* node)
+	{
+		const ExprNode* obj = T::fromLegacy(node);
 		return obj ? obj->as<T>() : NULL;
 	}
 
 	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
 	{
-		ExprNode* obj = T::fromLegacy(const_cast<LegacyType*>(node));
+		ExprNode* obj = T::fromLegacy(node);
 		return obj ? obj->is<T>() : false;
 	}
 
-	static ExprNode* fromLegacy(dsql_nod* node);
-	static ExprNode* fromLegacy(jrd_nod* node);
+	static ExprNode* fromLegacy(const dsql_nod* node);
+	static ExprNode* fromLegacy(const jrd_nod* node);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{

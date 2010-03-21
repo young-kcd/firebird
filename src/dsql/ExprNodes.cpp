@@ -47,13 +47,13 @@ using namespace Jrd;
 namespace Jrd {
 
 
-ExprNode* ExprNode::fromLegacy(dsql_nod* node)
+ExprNode* ExprNode::fromLegacy(const dsql_nod* node)
 {
 	return node->nod_type == Dsql::nod_class_exprnode ?
 		reinterpret_cast<ExprNode*>(node->nod_arg[0]) : NULL;
 }
 
-ExprNode* ExprNode::fromLegacy(jrd_nod* node)
+ExprNode* ExprNode::fromLegacy(const jrd_nod* node)
 {
 	return node->nod_type == nod_class_exprnode_jrd ?
 		reinterpret_cast<ExprNode*>(node->nod_arg[0]) : NULL;
