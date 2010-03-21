@@ -223,15 +223,9 @@ public:
 		return obj ? obj->as<T>() : NULL;
 	}
 
-	template <typename T, typename LegacyType> static const T* const_as(const LegacyType* node)
-	{
-		const ExprNode* obj = T::fromLegacy(node);
-		return obj ? obj->as<T>() : NULL;
-	}
-
 	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
 	{
-		ExprNode* obj = T::fromLegacy(node);
+		const ExprNode* obj = T::fromLegacy(node);
 		return obj ? obj->is<T>() : false;
 	}
 

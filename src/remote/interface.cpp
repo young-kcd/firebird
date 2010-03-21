@@ -4657,7 +4657,6 @@ static rem_port* analyze(PathName& file_name,
 
 #endif // SUPERCLIENT
 
-
 	if (port || status_vector[1])
 	{
 		return port;

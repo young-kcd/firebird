@@ -40,4 +40,3 @@ rem_port* XNET_reconnect(ULONG, ISC_STATUS*);
 #endif
 
 #endif // REMOTE_XNET_PROTO_H
-
