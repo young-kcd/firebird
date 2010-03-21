@@ -5802,6 +5802,7 @@ static bool init(ISC_STATUS* user_status,
 		// send answer (may be empty) to server
 		packet->p_operation = op_trusted_auth;
 		d = &packet->p_trau.p_trau_data;
+		d->cstr_allocated = 0;
 		// violate constness here safely - send operation does not modify data
 		currentInstance->getData(const_cast<const unsigned char**>(&d->cstr_address),
 								 &d->cstr_length);
