@@ -100,8 +100,6 @@ enum nod_t
 	nod_insert,
 	nod_delete,
 	nod_update,
-	nod_close,
-	nod_open,
 	nod_all,	// ALL privileges
 	nod_execute,	// EXECUTE privilege
 	nod_store,
