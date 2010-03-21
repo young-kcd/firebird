@@ -580,6 +580,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> LEAD
 %token <legacyNode> RANK
 %token <legacyNode> ROW_NUMBER
+%token <legacyNode> SQLSTATE
 
 // precedence declarations for expression evaluation
 
@@ -3141,6 +3142,7 @@ keyword_or_column	: valid_symbol_name
 		| SCROLL
 		| RETURN
 		| DETERMINISTIC
+		| SQLSTATE
 		;
 
 col_opt	: ALTER
@@ -5200,6 +5202,9 @@ internal_info	: CURRENT_CONNECTION
 		| SQLCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
 						MAKE_const_slong (internal_sqlcode)); }
+		| SQLSTATE
+			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
+						MAKE_const_slong (internal_sqlstate)); }
 		| ROW_COUNT
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
 						MAKE_const_slong (internal_rows_affected)); }

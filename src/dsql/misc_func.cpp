@@ -34,7 +34,8 @@ const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] =
 	{"GDSCODE", DsqlCompilerScratch::FLAG_BLOCK},
 	{"SQLCODE", DsqlCompilerScratch::FLAG_BLOCK},
 	{"ROW_COUNT", DsqlCompilerScratch::FLAG_BLOCK},
-	{"INSERTING/UPDATING/DELETING", DsqlCompilerScratch::FLAG_TRIGGER}
+	{"INSERTING/UPDATING/DELETING", DsqlCompilerScratch::FLAG_TRIGGER},
+	{"SQLSTATE", DsqlCompilerScratch::FLAG_BLOCK}
 };
 
 const char* InternalInfo::getAlias(internal_info_id info_id)
