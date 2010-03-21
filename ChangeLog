@@ -1,3 +1,73 @@
+2010-03-21 14:38  dimitr
+
+	* firebird2/src/dsql/: Parser.cpp (1.12), Parser.h (1.17):
+
+	Misc.
+
+2010-03-21 14:31  dimitr
+
+	* firebird2/src/jrd/trace/TraceDSQLHelpers.h (1.9):
+
+	Misc.
+
+2010-03-21 14:15  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.243):
+
+	Fixed the client side crash when error is returned from the server
+	during attaching.
+
+2010-03-21 14:11  dimitr
+
+	* firebird2/src/: remote/interface.cpp (1.242), jrd/isc_f_proto.h
+	(1.32), jrd/isc_file.cpp (1.146):
+
+	Reworked the remote protocol analyzing logic.  In particular, it
+	resolves the possible problems with the local access to databases
+	on network shares.  Also, it removes any dependencies from EMBEDDED
+	to simplify Alex's cleanup.  Finally, it adds the initial
+	implementation of the Vlad's suggestion (for testing purposes).
+
+2010-03-21 14:00  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.150), xnet_proto.h (1.19),
+	os/win32/wnet.cpp (1.92), os/win32/wnet_proto.h (1.14):
+
+	Cleanup.
+
+2010-03-21 10:49  dimitr
+
+	* firebird2/src/: common/config/config.cpp (1.113),
+	common/config/config.h (1.69), jrd/os/win32/config_root.cpp (1.34):
+
+	A (temporary?) solution to prevent dependencies from
+	SUPERCLIENT/EMBEDDED in the root directory determination.  To be
+	reconsidered later, if necessary.
+
+2010-03-21 08:29  dimitr
+
+	* firebird2/src/: dsql/keywords.cpp (1.91), dsql/make.cpp (1.201),
+	dsql/misc_func.cpp (1.13), dsql/parse.y (1.368), jrd/cmp.cpp
+	(1.400), jrd/evl.cpp (1.337), jrd/exe.cpp (1.336), jrd/exe.h
+	(1.161), jrd/misc_func_ids.h (1.5):
+
+	Fixed CORE-2890: SQLSTATE should also be available as a PSQL
+	context variable like GDSCODE/SQLCODE.	To be later backported into
+	v2.5.1, I suppose.
+
+2010-03-21 03:27  asfernandes
+
+	* firebird2/src/dsql/DdlNodes.epp (1.53):
+
+	Correction to my last commit
+
+2010-03-21 03:01  asfernandes
+
+	* firebird2/src/: dsql/DdlNodes.epp (1.52), jrd/drq.h (1.47):
+
+	Fixed CORE-2923 - Problem with dependencies between a procedure and
+	a view using that procedure.
+
 2010-03-20 02:28  asfernandes
 
 	* firebird2/src/jrd/sort.cpp (1.154):
