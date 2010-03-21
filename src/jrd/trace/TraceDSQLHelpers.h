@@ -35,7 +35,7 @@ namespace Jrd {
 class TraceDSQLPrepare
 {
 public:
-	TraceDSQLPrepare(Attachment* attachemnt, USHORT string_length, const TEXT* string) :
+	TraceDSQLPrepare(Attachment* attachemnt, size_t string_length, const TEXT* string) :
 		m_attachment(attachemnt),
 		m_request(NULL),
 		m_string_len(string_length),
