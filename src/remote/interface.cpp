@@ -76,9 +76,6 @@
 #endif
 
 #if defined(WIN_NT)
-#if !defined(EMBEDDED)
-#define USE_XNET
-#endif
 #include "../jrd/isc_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
 #include "../remote/xnet_proto.h"
@@ -87,6 +84,14 @@
 #ifdef WIN_NT
 #define sleep(seconds)		Sleep ((seconds) * 1000)
 #endif // WIN_NT
+
+
+const char* const PROTOCOL_INET = "inet";
+const char* const PROTOCOL_WNET = "wnet";
+const char* const PROTOCOL_XNET = "xnet";
+
+const char* const INET_LOCALHOST = "localhost";
+const char* const WNET_LOCALHOST = "\\\\.";
 
 
 using namespace Firebird;
@@ -4569,97 +4574,89 @@ static rem_port* analyze(PathName& file_name,
  *	NOTE: The file name must have been expanded prior to this call.
  *
  **************************************/
-#if defined(WIN_NT)
-	ISC_expand_share(file_name);
-#endif
-
 	rem_port* port = NULL;
 
 	// Analyze the file name to see if a remote connection is required.  If not,
 	// quietly (sic) return.
 
-#if defined(WIN_NT)
-	if (ISC_analyze_pclan(file_name, node_name)) {
-		return WNET_analyze(file_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
+#ifdef WIN_NT
+	if (ISC_analyze_protocol(PROTOCOL_XNET, file_name, node_name))
+	{
+		return XNET_analyze(file_name, status_vector, uv_flag);
+	}
+
+	if (ISC_analyze_protocol(PROTOCOL_WNET, file_name, node_name) ||
+		ISC_analyze_pclan(file_name, node_name))
+	{
+		if (node_name.isEmpty())
+		{
+			node_name = WNET_LOCALHOST;
+		}
+		return WNET_analyze(file_name, status_vector, node_name.c_str(), uv_flag);
 	}
 #endif
 
-	if (!port)
+	if (ISC_analyze_protocol(PROTOCOL_INET, file_name, node_name) ||
+		ISC_analyze_tcp(file_name, node_name))
 	{
-		if (ISC_analyze_tcp(file_name, node_name))
+		if (node_name.isEmpty())
 		{
-			port = INET_analyze(file_name, status_vector,
-								node_name.c_str(), user_string, uv_flag, dpb);
-
-			if (!port)
-			{
-				// retry in case multiclient inet server not forked yet
-				sleep(2);
-				port = INET_analyze(file_name, status_vector,
-									node_name.c_str(), user_string, uv_flag, dpb);
-			}
+			node_name = INET_LOCALHOST;
 		}
-		else
-		{
-#ifndef NO_NFS
-			if (!port)
-			{
-				if (ISC_analyze_nfs(file_name, node_name))
-				{
-					port = INET_analyze(file_name, status_vector,
-										node_name.c_str(), user_string, uv_flag, dpb);
-					if (!port)
-					{
-						// retry in case multiclient inet server not forked yet
-
-						sleep(2);
-						port = INET_analyze(file_name, status_vector,
-											node_name.c_str(), user_string, uv_flag, dpb);
-					}
-				}
-			}
-#endif
-		}
+		return INET_analyze(file_name, status_vector,
+						    node_name.c_str(), user_string, uv_flag, dpb);
 	}
 
-#if defined(USE_XNET)
-
-	// all remote attempts have failed, so access locally through the interprocess server
-
-	if (!port && node_name.isEmpty())
-	{
-		return XNET_analyze(file_name, status_vector, /*node_name.c_str(), user_string,*/ uv_flag);
-	}
-
-#endif // USE_XNET
-
-#if defined(SUPERCLIENT) && !defined(EMBEDDED)
-	// Coerce host connections to loopback
+	// We have a local connection string. If it's a file on a network share,
+	// try to connect to the corresponding host remotely.
 
 #ifdef WIN_NT
-	if (!port && node_name.isEmpty())
+	PathName expanded_name = file_name;
+	ISC_expand_share(expanded_name);
+
+	if (ISC_analyze_pclan(expanded_name, node_name))
 	{
-		file_name.insert(0, "\\\\.\\");
-		if (ISC_analyze_pclan(file_name, node_name))
-			return WNET_analyze(file_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
+		port = WNET_analyze(expanded_name, status_vector, node_name.c_str(), uv_flag);
 	}
-#endif // WIN_NT
+#endif
 
-#ifdef UNIX
-
-	if (!port && node_name.isEmpty())
+#ifndef NO_NFS
+	PathName expanded_name = file_name;
+	if (ISC_analyze_nfs(expanded_name, node_name))
 	{
-		file_name.insert(0, "localhost:");
-		if (ISC_analyze_tcp(file_name, node_name))
+		port = INET_analyze(expanded_name, status_vector,
+							node_name.c_str(), user_string, uv_flag, dpb);
+	}
+#endif
+
+	// We still have a local connection string but failed to connect so far.
+	// If we're a pure client, attempt connect to the localhost.
+
+#ifdef SUPERCLIENT
+
+	if (node_name.isEmpty())
+	{
+#ifdef WIN_NT
+		if (!port)
 		{
-			return INET_analyze(file_name, status_vector,
-								node_name.c_str(), user_string, uv_flag, dpb);
+			port = XNET_analyze(file_name, status_vector, uv_flag);
+		}
+
+		if (!port)
+		{
+			port = WNET_analyze(file_name, status_vector,
+								WNET_LOCALHOST, uv_flag);
+		}
+#endif
+		if (!port)
+		{
+			port = INET_analyze(file_name, status_vector,
+								INET_LOCALHOST, user_string, uv_flag, dpb);
 		}
 	}
 
-#endif // UNIX
-
 #endif // SUPERCLIENT
+
 
 	if (port || status_vector[1])
 	{
@@ -4698,44 +4695,60 @@ static rem_port* analyze_service(PathName& service_name,
 	// quietly (sic) return.
 
 #if defined(WIN_NT)
-	if (ISC_analyze_pclan(service_name, node_name)) {
-		return WNET_analyze(service_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
-	}
-#endif
-	if (!port)
+	if (ISC_analyze_protocol(PROTOCOL_XNET, service_name, node_name))
 	{
-		if (ISC_analyze_tcp(service_name, node_name))
-		{
-			port = INET_analyze(service_name, status_vector,
-								node_name.c_str(), user_string, uv_flag, spb);
-		}
+		return XNET_analyze(service_name, status_vector, uv_flag);
 	}
 
-#if defined(USE_XNET)
-
-	// all remote attempts have failed, so access locally through the
-	// interprocess server
-
-	if (!port && node_name.isEmpty()) {
-		port = XNET_analyze(service_name, status_vector, /*node_name.c_str(), user_string,*/ uv_flag);
+	if (ISC_analyze_protocol(PROTOCOL_WNET, service_name, node_name) ||
+		ISC_analyze_pclan(service_name, node_name))
+	{
+		if (node_name.isEmpty())
+		{
+			node_name = WNET_LOCALHOST;
+		}
+		return WNET_analyze(service_name, status_vector, node_name.c_str(), uv_flag);
 	}
 #endif
+
+	if (ISC_analyze_protocol(PROTOCOL_INET, service_name, node_name) ||
+		ISC_analyze_tcp(service_name, node_name))
+	{
+		if (node_name.isEmpty())
+		{
+			node_name = INET_LOCALHOST;
+		}
+		return INET_analyze(service_name, status_vector,
+							node_name.c_str(), user_string, uv_flag, spb);
+	}
+
+	// We have a local connection string. If we're a pure client,
+	// attempt connect to a localhost.
 
 #ifdef SUPERCLIENT
-#ifdef UNIX
 
-	if (!port && node_name.isEmpty())
+	if (node_name.isEmpty())
 	{
-		service_name.insert(0, "localhost:");
-		if (ISC_analyze_tcp(service_name, node_name))
+#if defined(WIN_NT)
+		if (!port)
 		{
-			return INET_analyze(service_name, status_vector,
-								node_name.c_str(), user_string, uv_flag, spb);
+			port = XNET_analyze(service_name, status_vector, uv_flag);
+		}
+
+		if (!port)
+		{
+			port = WNET_analyze(service_name, status_vector,
+								WNET_LOCALHOST, uv_flag);
+		}
+#endif
+		if (!port)
+		{
+			port = INET_analyze(service_name, status_vector,
+								INET_LOCALHOST, user_string, uv_flag, spb);
 		}
 	}
-#endif // UNIX
-#endif // SUPERCLIENT
 
+#endif // SUPERCLIENT
 
 	return port;
 }

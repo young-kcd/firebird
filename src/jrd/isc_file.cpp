@@ -295,6 +295,40 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 #endif
 
 
+bool ISC_analyze_protocol(const char* protocol, tstring& expanded_name, tstring& node_name)
+{
+/**************************************
+ *
+ *	I S C _ a n a l y z e _ p r o t o c o l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Analyze a filename for a known protocol prefix.
+ *	If one is found, extract the node name, compute the residual
+ *	file name, and return true.  Otherwise return false.
+ *
+ **************************************/
+	node_name.erase();
+
+	const PathName prefix = PathName(protocol) + "://";
+	if (expanded_name.find(prefix) != 0)
+	{
+		return false;
+	}
+
+	expanded_name.erase(0, prefix.length());
+	const size p = expanded_name.find_first_of('/');
+	if (p != npos)
+	{
+		node_name = expanded_name.substr(0, p);
+		expanded_name.erase(0, node_name.length() + 1);
+	}
+
+	return true;
+}
+
+
 #if defined(WIN_NT)
 bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
 {
