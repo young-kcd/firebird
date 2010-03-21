@@ -1074,9 +1074,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 		if (parameter.typeOfTable.isEmpty())
 		{
 			if (parameter.typeOfName.hasData())
-			{
 				strcpy(ARG.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
-			}
 			else
 			{
 				const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
@@ -1813,6 +1811,28 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 			ParameterClause& parameter = returns[i];
 			storeParameter(tdbb, transaction, 1, i, parameter);
 		}
+
+		AutoCacheRequest requestHandle2(tdbb, drq_m_prm_view, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
+			PRM IN RDB$PROCEDURE_PARAMETERS CROSS
+			RFR IN RDB$RELATION_FIELDS CROSS
+			VRL IN RDB$VIEW_RELATIONS
+			WITH PRM.RDB$PROCEDURE_NAME EQ name.c_str() AND
+				 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '') AND
+				 VRL.RDB$RELATION_NAME EQ PRM.RDB$PROCEDURE_NAME AND
+				 VRL.RDB$PACKAGE_NAME EQUIV PRM.RDB$PACKAGE_NAME AND
+				 VRL.RDB$CONTEXT_TYPE EQ VCT_PROCEDURE AND
+				 RFR.RDB$RELATION_NAME EQ VRL.RDB$VIEW_NAME AND
+				 RFR.RDB$VIEW_CONTEXT EQ VRL.RDB$VIEW_CONTEXT
+		{
+			MODIFY RFR
+			{
+				strcpy(RFR.RDB$FIELD_SOURCE, PRM.RDB$FIELD_SOURCE);
+			}
+			END_MODIFY
+		}
+		END_FOR
 	}
 
 	return modified;
@@ -1867,9 +1887,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 		if (PRM.RDB$RELATION_NAME.NULL)
 		{
 			if (parameter.typeOfName.hasData())
-			{
 				strcpy(PRM.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
-			}
 			else
 			{
 				const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
@@ -2080,7 +2098,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(packageName.c_str(), '')
 	{
 		// get rid of parameters in rdb$fields
-		if (!PRM.RDB$FIELD_SOURCE.NULL)
+		if (!PRM.RDB$FIELD_SOURCE.NULL && PRM.RDB$RELATION_NAME.NULL && PRM.RDB$FIELD_NAME.NULL)
 		{
 			AutoCacheRequest requestHandle2(tdbb, drq_e_prm_gfld, DYN_REQUESTS);
 
@@ -2090,27 +2108,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 					 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX AND
 					 (FLD.RDB$SYSTEM_FLAG EQ 0 OR FLD.RDB$SYSTEM_FLAG MISSING)
 			{
-				bool erase = true;
-
-				// Can this loop be merged with the previous?
-				{ // scope
-					AutoCacheRequest requestHandle3(tdbb, drq_e_prm_gfld2, DYN_REQUESTS);
-
-					FOR (REQUEST_HANDLE requestHandle3 TRANSACTION_HANDLE transaction)
-						PRM2 IN RDB$PROCEDURE_PARAMETERS
-						WITH PRM2.RDB$PROCEDURE_NAME = PRM.RDB$PROCEDURE_NAME AND
-							 PRM2.RDB$PACKAGE_NAME EQUIV
-							 	NULLIF(packageName.c_str(), '') AND
-							 PRM2.RDB$PARAMETER_NAME = PRM.RDB$PARAMETER_NAME
-					{
-						if (!PRM2.RDB$RELATION_NAME.NULL && !PRM2.RDB$FIELD_NAME.NULL)
-							erase = false;
-					}
-					END_FOR
-				} // end scope
-
-				if (erase)
-					ERASE FLD;
+				ERASE FLD;
 			}
 			END_FOR
 		}
