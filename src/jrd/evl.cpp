@@ -4354,7 +4354,7 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
 
 	if (id == internal_sqlstate)
 	{
-		char sqlstate[FB_SQLSTATE_SIZE];
+		FB_SQLSTATE_STRING sqlstate;
 		request->req_last_xcp.as_sqlstate(sqlstate);
 
 		dsc desc;
