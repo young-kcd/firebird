@@ -75,6 +75,8 @@ extern const char*	AmMixed;
 
 enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
 
+const char* const CONFIG_FILE = "firebird.conf";
+
 class Config : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
 public:

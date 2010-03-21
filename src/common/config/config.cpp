@@ -39,8 +39,6 @@ namespace {
  *	firebird.conf implementation
  */
 
-const char* const CONFIG_FILE = "firebird.conf";
-
 class ConfigImpl : public Firebird::PermanentStorage
 {
 public:
