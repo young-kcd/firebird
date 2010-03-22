@@ -142,17 +142,17 @@ public:
 	}
 
 	// ISC date/time helper routines
-	static ISC_DATE encode_date(const struct tm* times);
-	static ISC_TIME encode_time(int hours, int minutes, int seconds, int fractions = 0);
-	static ISC_TIMESTAMP encode_timestamp(const struct tm* times, const int fractions = 0);
+	static ISC_DATE encode_date(const struct tm* times) throw();
+	static ISC_TIME encode_time(int hours, int minutes, int seconds, int fractions = 0) throw();
+	static ISC_TIMESTAMP encode_timestamp(const struct tm* times, const int fractions = 0) throw();
 
-	static void decode_date(ISC_DATE nday, struct tm* times);
-	static void decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions = NULL);
-	static void decode_timestamp(const ISC_TIMESTAMP ntimestamp, struct tm* times, int* fractions = NULL);
+	static void decode_date(ISC_DATE nday, struct tm* times) throw();
+	static void decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions = NULL) throw();
+	static void decode_timestamp(const ISC_TIMESTAMP ntimestamp, struct tm* times, int* fractions = NULL) throw();
 
 	static void round_time(ISC_TIME& ntime, const int precision);
 
-	static inline bool isLeapYear(const int year)
+	static inline bool isLeapYear(const int year) throw()
 	{
 		return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 	}
@@ -160,7 +160,7 @@ public:
 private:
 	ISC_TIMESTAMP mValue;
 
-	static int yday(const struct tm* times);
+	static int yday(const struct tm* times) throw();
 	static void report_error(const char* msg);
 };
 

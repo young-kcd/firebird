@@ -41,9 +41,7 @@ namespace Firebird {
 
 void TimeStamp::report_error(const char* msg)
 {
-#ifndef SUPERCLIENT
 	system_call_failed::raise(msg);
-#endif
 }
 
 TimeStamp TimeStamp::getCurrentTimeStamp()
@@ -104,7 +102,7 @@ TimeStamp TimeStamp::getCurrentTimeStamp()
 	return result;
 }
 
-int TimeStamp::yday(const struct tm* times)
+int TimeStamp::yday(const struct tm* times) throw()
 {
 	// Convert a calendar date to the day-of-year.
 	//
@@ -131,7 +129,7 @@ int TimeStamp::yday(const struct tm* times)
 }
 
 
-void TimeStamp::decode_date(ISC_DATE nday, struct tm* times)
+void TimeStamp::decode_date(ISC_DATE nday, struct tm* times) throw()
 {
 	// Convert a numeric day to [day, month, year].
 	//
@@ -185,7 +183,7 @@ void TimeStamp::decode_date(ISC_DATE nday, struct tm* times)
 }
 
 
-ISC_DATE TimeStamp::encode_date(const struct tm* times)
+ISC_DATE TimeStamp::encode_date(const struct tm* times) throw()
 {
 	// Convert a calendar date to a numeric day
 	// (the number of days since the base date)
@@ -209,7 +207,7 @@ ISC_DATE TimeStamp::encode_date(const struct tm* times)
 					   (153 * month + 2) / 5 + day + 1721119 - 2400001);
 }
 
-void TimeStamp::decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions)
+void TimeStamp::decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions) throw()
 {
 	fb_assert(hours);
 	fb_assert(minutes);
@@ -227,20 +225,20 @@ void TimeStamp::decode_time(ISC_TIME ntime, int* hours, int* minutes, int* secon
 	}
 }
 
-ISC_TIME TimeStamp::encode_time(int hours, int minutes, int seconds, int fractions)
+ISC_TIME TimeStamp::encode_time(int hours, int minutes, int seconds, int fractions) throw()
 {
 	fb_assert(fractions	>= 0 && fractions < ISC_TIME_SECONDS_PRECISION);
 
 	return ((hours * 60 + minutes) * 60 + seconds) * ISC_TIME_SECONDS_PRECISION + fractions;
 }
 
-void TimeStamp::decode_timestamp(const ISC_TIMESTAMP ts, struct tm* times, int* fractions)
+void TimeStamp::decode_timestamp(const ISC_TIMESTAMP ts, struct tm* times, int* fractions) throw()
 {
 	decode_date(ts.timestamp_date, times);
 	decode_time(ts.timestamp_time, &times->tm_hour, &times->tm_min, &times->tm_sec, fractions);
 }
 
-ISC_TIMESTAMP TimeStamp::encode_timestamp(const struct tm* times, const int fractions)
+ISC_TIMESTAMP TimeStamp::encode_timestamp(const struct tm* times, const int fractions) throw()
 {
 	fb_assert(fractions >= 0 && fractions < ISC_TIME_SECONDS_PRECISION);
 

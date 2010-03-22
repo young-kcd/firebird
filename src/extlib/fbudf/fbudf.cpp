@@ -396,12 +396,12 @@ FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 
 namespace internal
 {
-	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg)
+	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg) throw()
 	{
 		Firebird::TimeStamp::decode_timestamp(*date, times_arg);
 	}
 
-	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date)
+	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date) throw()
 	{
 		*date = Firebird::TimeStamp::encode_timestamp(times_arg);
 	}
