@@ -1,3 +1,65 @@
+2010-03-22 14:29  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.245):
+
+	Misc.
+
+2010-03-22 13:58  robocop
+
+	* firebird2/doc/README.build.mingw.html (1.19):
+
+	Misc.
+
+2010-03-22 02:09  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.144):
+
+	Fixed CORE-2932 - Wrong field position after ALTER POSITION
+
+2010-03-22 00:01  asfernandes
+
+	* firebird2/src/: dsql/Nodes.h (1.25), include/types_pub.h (1.14),
+	jrd/cmp.cpp (1.401), remote/interface.cpp (1.244),
+	remote/xnet_proto.h (1.20):
+
+	Misc
+
+2010-03-21 23:06  aafemt
+
+	* firebird2/src/dsql/: ExprNodes.cpp (1.8), Nodes.h (1.24):
+
+	Const-ness
+
+2010-03-21 19:30  aafemt
+
+	* firebird2/doc/README.build.mingw.html (1.18):
+
+	Update the doc
+
+2010-03-21 19:20  asfernandes
+
+	* firebird2/src/dsql/node.h (1.143):
+
+	Misc
+
+2010-03-21 18:57  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.338):
+
+	Misc.
+
+2010-03-21 18:55  dimitr
+
+	* firebird2/src/include/types_pub.h (1.13):
+
+	Commit the forgotten file, sorry.
+
+2010-03-21 18:32  asfernandes
+
+	* firebird2/src/dsql/ExprNodes.cpp (1.7):
+
+	Fix parameter handling in SUBSTRING(SIMILAR)
+
 2010-03-21 14:38  dimitr
 
 	* firebird2/src/dsql/: Parser.cpp (1.12), Parser.h (1.17):
