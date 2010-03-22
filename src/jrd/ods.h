@@ -272,6 +272,7 @@ const SCHAR btr_descending		= 8;	// Page/bucket is part of a descending index
 const SCHAR btr_all_record_number	= 16;	// Non-leaf-nodes will contain record number information
 const SCHAR btr_large_keys		= 32;	// AB: 2003-index-structure enhancement
 const SCHAR btr_jump_info		= 64;	// AB: 2003-index-structure enhancement
+const SCHAR btr_released		= 128;	// Page was released from b-tree
 
 const SCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
 
