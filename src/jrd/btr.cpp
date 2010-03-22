@@ -1895,6 +1895,10 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		// on the free list, making sure the root page is written out first 
 		// so that we're not pointing to a released page
 		CCH_RELEASE(tdbb, root_window);
+
+		CCH_MARK(tdbb, &window);
+		page->btr_header.pag_flags |= btr_released;
+
 		CCH_RELEASE(tdbb, &window);
 		PAG_release_page(window.win_page, root_window->win_page);
 	}
@@ -4925,6 +4929,15 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		return contents_above_threshold;
 	}
 
+	if (parent_page->btr_header.pag_flags & btr_released)
+	{
+		CCH_RELEASE(tdbb, &parent_window);
+#ifdef DEBUG_BTR
+		gds__log("BTR/garbage_collect : parent page is released.");
+#endif
+		return contents_above_threshold;
+	}
+
 	// Find the node on the parent's level--the parent page could 
 	// have split while we didn't have it locked
 	UCHAR *parentPointer = BTreeNode::getPointerFirstNode(parent_page);
@@ -4990,6 +5003,17 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		return contents_above_threshold;
 	}
 
+	if (left_page->btr_header.pag_flags & btr_released)
+	{
+		CCH_RELEASE(tdbb, &parent_window);
+		CCH_RELEASE(tdbb, &left_window);
+#ifdef DEBUG_BTR
+		gds__log("BTR/garbage_collect : left page is released.");
+#endif
+		return contents_above_threshold;
+	}
+
+
 	while (left_page->btr_sibling != window->win_page.getPageNum()) {
 #ifdef DEBUG_BTR
 		CCH_RELEASE(tdbb, &parent_window);
@@ -5017,6 +5041,18 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, &left_window);
 		CCH_RELEASE(tdbb, window);
+		return contents_above_threshold;
+	}
+
+	if (gc_page->btr_header.pag_flags & btr_released)
+	{
+		CCH_RELEASE(tdbb, &parent_window);
+		CCH_RELEASE(tdbb, &left_window);
+		CCH_RELEASE(tdbb, window);
+#ifdef DEBUG_BTR
+		gds__log("BTR/garbage_collect : gc_page is released.");
+		CORRUPT(204);	// msg 204 index inconsistent
+#endif
 		return contents_above_threshold;
 	}
 
@@ -5381,6 +5417,9 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 	// finally, release the page, and indicate that we should write the 
 	// previous page out before we write the TIP page out
+	CCH_MARK(tdbb, window);
+	gc_page->btr_header.pag_flags |= btr_released;
+
 	CCH_RELEASE(tdbb, window);
 	PAG_release_page(window->win_page, left_page ? left_window.win_page :
 		right_page ? right_window.win_page : parent_window.win_page);
