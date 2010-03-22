@@ -1644,6 +1644,29 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	try {
 
+	// Make sure that there are no duplicate field positions and no gaps in the position sequence.
+	// (gaps are introduced when fields are removed)
+
+	USHORT new_pos = 0;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		FLD IN RDB$RELATION_FIELDS
+		WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str()
+		SORTED BY ASCENDING FLD.RDB$FIELD_POSITION
+
+		if (FLD.RDB$FIELD_POSITION != new_pos)
+		{
+			MODIFY FLD USING
+				FLD.RDB$FIELD_POSITION = new_pos;
+			END_MODIFY;
+		}
+
+		++new_pos;
+	END_FOR;
+
+	CMP_release(tdbb, request);
+	request = NULL;
+
 	// Find the position of the last field in the relation
 	SLONG max_position = -1;
 	DYN_UTIL_generate_field_position(tdbb, gbl, relation_name, &max_position);
@@ -1687,27 +1710,6 @@ static void modify_lfield_position(thread_db* tdbb,
 
 			FLD.RDB$FIELD_POSITION.NULL = FALSE;
 		END_MODIFY;
-	END_FOR;
-
-	CMP_release(tdbb, request);
-	request = NULL;
-
-	// Once the field position has been changed, make sure that there are no
-	// duplicate field positions and no gaps in the position sequence (this can
-	// not be guaranteed by the query above
-
-	USHORT new_pos = 0;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		FLD IN RDB$RELATION_FIELDS WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str()
-			SORTED BY ASCENDING FLD.RDB$FIELD_POSITION
-
-		if (FLD.RDB$FIELD_POSITION != new_pos)
-		{
-			MODIFY FLD USING
-				FLD.RDB$FIELD_POSITION = new_pos;
-			END_MODIFY;
-		}
-		new_pos += 1;
 	END_FOR;
 
 	CMP_release(tdbb, request);
