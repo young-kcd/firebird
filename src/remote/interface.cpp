@@ -4574,7 +4574,6 @@ static rem_port* analyze(PathName& file_name,
  *	NOTE: The file name must have been expanded prior to this call.
  *
  **************************************/
-	rem_port* port = NULL;
 
 	// Analyze the file name to see if a remote connection is required.  If not,
 	// quietly (sic) return.
@@ -4610,6 +4609,8 @@ static rem_port* analyze(PathName& file_name,
 	// We have a local connection string. If it's a file on a network share,
 	// try to connect to the corresponding host remotely.
 
+	rem_port* port = NULL;
+
 #ifdef WIN_NT
 	PathName expanded_name = file_name;
 	ISC_expand_share(expanded_name);
@@ -4621,11 +4622,14 @@ static rem_port* analyze(PathName& file_name,
 #endif
 
 #ifndef NO_NFS
-	PathName expanded_name = file_name;
-	if (ISC_analyze_nfs(expanded_name, node_name))
+	if (!port)
 	{
-		port = INET_analyze(expanded_name, status_vector,
-							node_name.c_str(), user_string, uv_flag, dpb);
+		PathName expanded_name = file_name;
+		if (ISC_analyze_nfs(expanded_name, node_name))
+		{
+			port = INET_analyze(expanded_name, status_vector,
+								node_name.c_str(), user_string, uv_flag, dpb);
+		}
 	}
 #endif
 
@@ -4687,7 +4691,6 @@ static rem_port* analyze_service(PathName& service_name,
  *	Otherwise, return NULL.
  *
  **************************************/
-	rem_port* port = NULL;
 	PathName node_name;
 
 	// Analyze the service name to see if a remote connection is required.  If not,
@@ -4723,6 +4726,8 @@ static rem_port* analyze_service(PathName& service_name,
 
 	// We have a local connection string. If we're a pure client,
 	// attempt connect to a localhost.
+
+	rem_port* port = NULL;
 
 #ifdef SUPERCLIENT
 
