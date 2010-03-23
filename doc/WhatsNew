@@ -2,6 +2,21 @@
   * v2.0.6
   **************************
 
+    * Bugfix CORE-2936
+        Wrong page type (expected 7 found N) error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2928
+        Buffer overflow in GSEC
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2919
+        Installation script ignores non-standard ports
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2871
         Outer ORDER BY clause has no effect
       Contributor(s):
