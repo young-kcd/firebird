@@ -70,13 +70,6 @@
 #define NULL            0L
 #endif
 
-#if defined(WIN_NT) && defined(SUPERSERVER)
-// Comment this definition to build without priority scheduler
-//	OR:
-// Uncomment this definition to build with priority scheduler
-//#define THREAD_PSCHED
-#endif
-
 #if defined(WIN_NT)
 #define TRUSTED_AUTH
 #endif
