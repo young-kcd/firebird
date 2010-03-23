@@ -1,3 +1,9 @@
+2010-03-22 23:33  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.162.2.27), ods.h (1.38.4.3):
+
+	Fixed bug CORE-2936 : Wrong page type (expected 7 found N) error
+
 2010-03-17 11:12  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/security.epp (1.16.2.1):
