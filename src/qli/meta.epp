@@ -2888,6 +2888,7 @@ static void install( qli_dbb* old_dbb)
 
 	get_database_type(new_dbb);
 	set_capabilities(new_dbb);
+#ifndef DEV_BUILD
 	if (new_dbb->dbb_capabilities & DBB_cap_nodyn)
 	{
 		const char* str = new_dbb->dbb_filename;
@@ -2895,6 +2896,7 @@ static void install( qli_dbb* old_dbb)
 			str = name->nam_string;
 		ERRQ_msg_put(530, str);
 	}
+#endif
 
 	// Get all relations in database.  For each relation make up a
 	// relation block, make up a symbol block, and insert the symbol
