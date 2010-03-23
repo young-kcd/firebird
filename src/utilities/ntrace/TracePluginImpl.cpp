@@ -403,8 +403,11 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 		}
 	}
 
-	if (!log)
+	if (!log) 
+	{
+		record = "";
 		return;
+	}
 
 	if (!transaction) {
 		logRecordConn(action, connection);
