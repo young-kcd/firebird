@@ -1,3 +1,9 @@
+2010-03-22 23:48  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.259.2.5), ods.h (1.53.2.1):
+
+	Fixed bug CORE-2936 : Wrong page type (expected 7 found N) error
+
 2010-03-20 20:12  asfernandes
 
 	* firebird2/src/: dsql/ddl.cpp (1.283.2.7), jrd/dyn_mod.epp
