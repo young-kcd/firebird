@@ -1,3 +1,24 @@
+2010-03-23 12:55  alexpeshkoff
+
+	* firebird2/src/include/firebird.h (1.55):
+
+	Cleanup SUPERSERVER - this code is not needed in FB3
+
+2010-03-22 23:52  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.280), ods.h (1.74):
+
+	Fixed bug CORE-2936 : Wrong page type (expected 7 found N) error
+
+2010-03-22 19:27  alexpeshkoff
+
+	* firebird2/src/: common/classes/timestamp.cpp (1.22),
+	common/classes/timestamp.h (1.19), extlib/fbudf/fbudf.cpp (1.36):
+
+	Cleanup - SUPERCLIENT, never needed here to avoid throwing
+	something in fbudf library now. To be explicit marked used methods
+	(which really never throw something) as "throw()"
+
 2010-03-22 14:29  dimitr
 
 	* firebird2/src/remote/interface.cpp (1.245):
