@@ -6297,13 +6297,16 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	source = forNode->dsqlSelect->nod_arg[e_select_expr]->nod_arg[0]->nod_arg[e_join_left_rel];
 	target = forNode->dsqlSelect->nod_arg[e_select_expr]->nod_arg[0]->nod_arg[e_join_rght_rel];
 
-	dsql_nod* modify = NULL;
+	dsql_nod* update = NULL;
 
-	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched])
+	fb_assert(input->nod_arg[e_mrg_when]->nod_type == nod_merge_when);
+	dsql_nod* whenNode = input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched];
+	dsql_nod* updateCondition = NULL;
+
+	if (whenNode && whenNode->nod_type == nod_merge_update)
 	{
 		// get the assignments of the UPDATE dsqlScratch
-		dsql_nod* list =
-			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement];
+		dsql_nod* list = whenNode->nod_arg[e_mrg_update_statement];
 		fb_assert(list->nod_type == nod_list);
 
 		Firebird::Array<dsql_nod*> org_values, new_values;
@@ -6318,11 +6321,11 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 
 		// build the MODIFY node
-		modify = MAKE_node(nod_modify_current, e_mdc_count);
+		update = MAKE_node(nod_modify_current, e_mdc_count);
 		dsql_ctx* context = get_context(target);
 		dsql_nod** ptr;
 
-		modify->nod_arg[e_mdc_context] = (dsql_nod*) context;
+		update->nod_arg[e_mdc_context] = (dsql_nod*) context;
 
 		dsqlScratch->scopeLevel++;	// go to the same level of source and target contexts
 		dsqlScratch->context->push(get_context(source));	// push the USING context
@@ -6331,13 +6334,16 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
 			*ptr = PASS1_node_psql(dsqlScratch, *ptr, false);
 
+		updateCondition = PASS1_node_psql(dsqlScratch,
+			whenNode->nod_arg[e_mrg_update_condition], false);
+
 		// and pop the contexts
 		dsqlScratch->context->pop();
 		dsqlScratch->context->pop();
 		dsqlScratch->scopeLevel--;
 
 		// process relation
-		modify->nod_arg[e_mdc_update] = pass1_relation(dsqlScratch, input->nod_arg[e_mrg_relation]);
+		update->nod_arg[e_mdc_update] = pass1_relation(dsqlScratch, input->nod_arg[e_mrg_relation]);
 
 		// process new context values
 		for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
@@ -6346,7 +6352,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		dsqlScratch->context->pop();
 
 		// recreate list of assignments
-		modify->nod_arg[e_mdc_statement] = list = MAKE_node(nod_list, list->nod_count);
+		update->nod_arg[e_mdc_statement] = list = MAKE_node(nod_list, list->nod_count);
 
 		for (int i = 0; i < list->nod_count; ++i)
 		{
@@ -6360,17 +6366,54 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 
 		// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
-		field_appears_once(modify->nod_arg[e_mdc_statement],
-			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched]->nod_arg[e_mrg_update_statement],
-			false, "MERGE");
+		field_appears_once(update->nod_arg[e_mdc_statement],
+			whenNode->nod_arg[e_mrg_update_statement], false, "MERGE");
+	}
+	else if (whenNode && whenNode->nod_type == nod_merge_delete)
+	{
+		// build the DELETE node
+		update = MAKE_node(nod_erase_current, e_erc_count);
+		dsql_ctx* context = get_context(target);
+		update->nod_arg[e_erc_context] = (dsql_nod*) context;
+
+		if (whenNode->nod_arg[e_mrg_delete_condition])
+		{
+			dsqlScratch->scopeLevel++;	// go to the same level of source and target contexts
+			dsqlScratch->context->push(get_context(source));	// push the USING context
+			dsqlScratch->context->push(context);	// process old context values
+
+			updateCondition = PASS1_node_psql(dsqlScratch,
+				whenNode->nod_arg[e_mrg_delete_condition], false);
+
+			// and pop the contexts
+			dsqlScratch->context->pop();
+			dsqlScratch->context->pop();
+			dsqlScratch->scopeLevel--;
+		}
 	}
 
+	if (updateCondition)
+	{
+		IfNode* testNode = FB_NEW(dsqlScratch->getStatement()->getPool()) IfNode(
+			dsqlScratch->getStatement()->getPool(), dsqlScratch);
+
+		testNode->dsqlCondition = updateCondition;
+		testNode->dsqlTrueAction = update;
+
+		update = MAKE_node(nod_class_stmtnode, 1);
+		update->nod_arg[0] = (dsql_nod*) testNode;
+	}
+
+	whenNode = input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched];
 	dsql_nod* insert = NULL;
 
-	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched])
+	if (whenNode)
 	{
 		dsqlScratch->scopeLevel++;	// go to the same level of the source context
 		dsqlScratch->context->push(get_context(source));	// push the USING context
+
+		dsql_nod* insertCondition = PASS1_node_psql(dsqlScratch,
+			whenNode->nod_arg[e_mrg_insert_condition], false);
 
 		// the INSERT relation should be processed in a higher level than the source context
 		dsqlScratch->scopeLevel++;
@@ -6378,10 +6421,8 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		// build the INSERT node
 		insert = MAKE_node(nod_insert, e_ins_count);
 		insert->nod_arg[e_ins_relation] = input->nod_arg[e_mrg_relation];
-		insert->nod_arg[e_ins_fields] =
-			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_fields];
-		insert->nod_arg[e_ins_values] =
-			input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched]->nod_arg[e_mrg_insert_values];
+		insert->nod_arg[e_ins_fields] = whenNode->nod_arg[e_mrg_insert_fields];
+		insert->nod_arg[e_ins_values] = whenNode->nod_arg[e_mrg_insert_values];
 		insert = pass1_insert(dsqlScratch, insert, false);
 
 		// restore the scope level
@@ -6390,6 +6431,18 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		// pop the USING context
 		dsqlScratch->scopeLevel--;
 		dsqlScratch->context->pop();
+
+		if (insertCondition)
+		{
+			IfNode* testNode = FB_NEW(dsqlScratch->getStatement()->getPool()) IfNode(
+				dsqlScratch->getStatement()->getPool(), dsqlScratch);
+
+			testNode->dsqlCondition = insertCondition;
+			testNode->dsqlTrueAction = insert;
+
+			insert = MAKE_node(nod_class_stmtnode, 1);
+			insert->nod_arg[0] = (dsql_nod*) testNode;
+		}
 	}
 
 	// build a IF (target.RDB$DB_KEY IS NULL)
@@ -6403,7 +6456,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	if (insert)
 	{
 		action->dsqlTrueAction = insert;	// then INSERT
-		action->dsqlFalseAction = modify;	// else UPDATE
+		action->dsqlFalseAction = update;	// else UPDATE/DELETE
 	}
 	else
 	{
@@ -6412,7 +6465,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		not_node->nod_arg[0] = action->dsqlCondition;
 		action->dsqlCondition = not_node;
 
-		action->dsqlTrueAction = modify;	// then UPDATE
+		action->dsqlTrueAction = update;	// then UPDATE/DELETE
 	}
 
 	// insert the IF inside the FOR SELECT
@@ -10784,6 +10837,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_merge_update:
 		verb = "merge_update";
+		break;
+
+	case nod_merge_delete:
+		verb = "merge_delete";
 		break;
 
 	case nod_merge_insert:

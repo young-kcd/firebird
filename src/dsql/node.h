@@ -284,6 +284,7 @@ enum nod_t
 	nod_merge,
 	nod_merge_when,
 	nod_merge_update,
+	nod_merge_delete,
 	nod_merge_insert,
 	nod_sys_function,
 	nod_similar,
@@ -478,10 +479,15 @@ enum node_args {
 	e_mrg_when_not_matched,
 	e_mrg_when_count,
 
-	e_mrg_update_statement = 0,	// nod_merge_update
+	e_mrg_update_condition = 0,	// nod_merge_update
+	e_mrg_update_statement,
 	e_mrg_update_count,
 
-	e_mrg_insert_fields = 0,	// nod_merge_insert
+	e_mrg_delete_condition = 0,	// nod_merge_delete
+	e_mrg_delete_count,
+
+	e_mrg_insert_condition = 0,	// nod_merge_insert
+	e_mrg_insert_fields,
 	e_mrg_insert_values,
 	e_mrg_insert_count,
 

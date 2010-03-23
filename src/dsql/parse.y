@@ -4519,7 +4519,7 @@ insert		: INSERT INTO simple_table_name ins_column_parens_opt
 
 // MERGE statement
 merge
-	:	MERGE INTO table_name USING table_reference ON search_condition
+	: MERGE INTO table_name USING table_reference ON search_condition
 			merge_when_clause
 		{
 			$$ = make_node(nod_merge, e_mrg_count, $3, $5, $7, $8);
@@ -4527,34 +4527,42 @@ merge
 	;
 
 merge_when_clause
-	:	merge_when_matched_clause merge_when_not_matched_clause
+	: merge_when_matched_clause merge_when_not_matched_clause
 		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, $2); }
-	|	merge_when_not_matched_clause merge_when_matched_clause
+	| merge_when_not_matched_clause merge_when_matched_clause
 		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $2, $1); }
-	|	merge_when_matched_clause
+	| merge_when_matched_clause
 		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, NULL); }
-	|	merge_when_not_matched_clause
+	| merge_when_not_matched_clause
 		{ $$ = make_node(nod_merge_when, e_mrg_when_count, NULL, $1); }
 	;
 
 merge_when_matched_clause
-	:	WHEN MATCHED THEN merge_update_specification
-		{ $$ = $4; }
+	: WHEN MATCHED merge_update_specification
+		{ $$ = $3; }
 	;
 
 merge_when_not_matched_clause
-	:	WHEN NOT MATCHED THEN merge_insert_specification
-		{ $$ = $5; }
+	: WHEN NOT MATCHED merge_insert_specification
+		{ $$ = $4; }
 	;
 
 merge_update_specification
-	:	UPDATE SET assignments
-		{ $$ = make_node(nod_merge_update, e_mrg_update_count, make_list($3)); }
+	: THEN UPDATE SET assignments
+		{ $$ = make_node(nod_merge_update, e_mrg_update_count, NULL, make_list($4)); }
+	| AND search_condition THEN UPDATE SET assignments
+		{ $$ = make_node(nod_merge_update, e_mrg_update_count, $2, make_list($6)); }
+	| THEN KW_DELETE
+		{ $$ = make_node(nod_merge_delete, e_mrg_delete_count, NULL); }
+	| AND search_condition THEN KW_DELETE
+		{ $$ = make_node(nod_merge_delete, e_mrg_delete_count, $2); }
 	;
 
 merge_insert_specification
-	:	INSERT ins_column_parens_opt VALUES '(' value_list ')'
-		{ $$ = make_node(nod_merge_insert, e_mrg_insert_count, make_list($2), make_list($5)); }
+	: THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
+		{ $$ = make_node(nod_merge_insert, e_mrg_insert_count, NULL, make_list($3), make_list($6)); }
+	| AND search_condition THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
+		{ $$ = make_node(nod_merge_insert, e_mrg_insert_count, $2, make_list($5), make_list($8)); }
 	;
 
 
