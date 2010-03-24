@@ -1,3 +1,35 @@
+2010-03-24 13:50  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.fbtrace (1.13.2.1):
+
+	fixed posic build
+
+2010-03-24 13:29  hvlad
+
+	* firebird2/builds/win32/: msvc8/fbtrace.vcproj (1.9.2.1),
+	msvc9/fbtrace.vcproj (1.8.2.1):
+
+	Fixed bug CORE-2934 : Memory leak in FB2.5 trace plugin.  Updated
+	MSVC project files
+
+2010-03-24 13:29  hvlad
+
+	* firebird2/src/: config/ConfigFile.cpp (1.16.2.1),
+	utilities/ntrace/TraceConfiguration.cpp (1.15.2.1),
+	utilities/ntrace/TracePluginImpl.cpp (1.28.2.4),
+	utilities/ntrace/TracePluginImpl.h (1.10.2.2),
+	utilities/ntrace/TraceUnicodeUtils.cpp (1.1.2.1),
+	utilities/ntrace/TraceUnicodeUtils.h (1.1.2.1):
+
+	Fixed bug CORE-2934 : Memory leak in FB2.5 trace plugin
+
+2010-03-23 21:06  hvlad
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.28.2.3):
+
+	Fixed bug CORE-2940 : Trace output could contain garbage data left
+	from filtered out statements
+
 2010-03-22 23:48  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.259.2.5), ods.h (1.53.2.1):
