@@ -253,8 +253,8 @@ void TimeStamp::round_time(ISC_TIME &ntime, const int precision)
 {
 	const int scale = -ISC_TIME_SECONDS_PRECISION_SCALE - precision;
 
-	// for the moment, if greater precision was requested than we can
-	// provide return what we have.
+	// for the moment, if greater precision was requested than we can provide,
+	// return what we have.
 	if (scale <= 0)
 		return;
 
