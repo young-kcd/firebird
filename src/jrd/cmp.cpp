@@ -4890,7 +4890,6 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 		RecordSelExpr* new_rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
 		*new_rse = *rse;
 		new_rse->rse_count = count;
-		new_rse->nod_flags = rse->nod_flags;
 		rse = new_rse;
 
 		// AB: Because we've build an new RecordSelExpr, we must put this one in the stack
