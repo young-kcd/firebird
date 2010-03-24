@@ -1077,15 +1077,12 @@ MemoryPool* MemoryPool::getContextPool()
 
 MemoryPool& AutoStorage::getAutoMemoryPool()
 {
-#ifndef SUPERCLIENT
 	MemoryPool* p = MemoryPool::getContextPool();
 	if (! p)
 	{
 		p = getDefaultMemoryPool();
 	}
-#else //SUPERCLIENT
-	MemoryPool* p = getDefaultMemoryPool();
-#endif //SUPERCLIENT
+
 	fb_assert(p);
 	return *p;
 }
