@@ -911,13 +911,14 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
 // The same function is being used to check P_SGMT & P_DDL.
 static inline bool_t xdr_cstring_const(XDR* xdrs, CSTRING_CONST* cstring)
 {
-#ifdef SUPERCLIENT
 #ifdef DEV_BUILD
-	const bool cond =
-		!(xdrs->x_op == XDR_DECODE &&
-			cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
-	fb_assert(cond);
-#endif
+	if (xdrs->x_client)
+	{
+		const bool cond =
+			!(xdrs->x_op == XDR_DECODE &&
+				cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
+		fb_assert(cond);
+	}
 #endif
 	return xdr_cstring(xdrs, reinterpret_cast<CSTRING*>(cstring));
 }

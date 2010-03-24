@@ -76,10 +76,16 @@ typedef struct xdr_t
 	caddr_t	x_private;	// pointer to private data
 	caddr_t	x_base;		// private used for position info
 	int		x_handy;	// extra private word
+#ifdef DEV_BUILD
+	bool	x_client;	// set this flag to true if this is client port
+#endif
 
 public:
 	xdr_t() :
 		x_op(XDR_ENCODE), x_ops(0), x_public(0), x_private(0), x_base(0), x_handy(0)
+#ifdef DEV_BUILD
+		, x_client(false)
+#endif
 	{ }
 } XDR;
 

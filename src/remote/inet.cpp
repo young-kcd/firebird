@@ -1882,6 +1882,9 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	// this level rather than try to catch them in all places where
 	// this routine is called
 
+#ifdef DEV_BUILD
+	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
+#endif
 	do {
 		if (!xdr_protocol(&main_port->port_receive, packet))
 		{
@@ -2254,6 +2257,9 @@ static int send_full( rem_port* port, PACKET * packet)
  *
  **************************************/
 
+#ifdef DEV_BUILD
+	port->port_send.x_client = !(port->port_flags & PORT_server);
+#endif
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 
@@ -2297,6 +2303,10 @@ static int send_partial( rem_port* port, PACKET * packet)
 			fflush(stdout);
 		}
 	} // end scope
+#endif
+
+#ifdef DEV_BUILD
+	port->port_send.x_client = !(port->port_flags & PORT_server);
 #endif
 
 	return xdr_protocol(&port->port_send, packet);
@@ -2437,7 +2447,7 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 
 		if (!inet_read(xdrs))
 			return FALSE;
-}
+	}
 
 	// Scalar values and bulk transfer remainder fall thru
 	// to be moved byte-by-byte to avoid memcpy setup costs.

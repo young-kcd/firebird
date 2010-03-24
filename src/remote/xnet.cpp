@@ -1590,6 +1590,10 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
  *
  **************************************/
 
+#ifdef DEV_BUILD
+	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
+#endif
+
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
 
@@ -1610,6 +1614,10 @@ static int send_full( rem_port* port, PACKET* packet)
  *  Flush data to remote interface
  *
  **************************************/
+
+#ifdef DEV_BUILD
+	port->port_send.x_client = !(port->port_flags & PORT_server);
+#endif
 
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
@@ -1634,6 +1642,10 @@ static int send_partial( rem_port* port, PACKET* packet)
  *	Send a packet across a port to another process.
  *
  **************************************/
+
+#ifdef DEV_BUILD
+	port->port_send.x_client = !(port->port_flags & PORT_server);
+#endif
 
 	return xdr_protocol(&port->port_send, packet);
 }

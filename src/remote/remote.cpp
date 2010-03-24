@@ -299,6 +299,9 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 	{
 		xdrmem_create(&xdr, reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
+#ifdef DEV_BUILD
+		xdr.x_client = false;
+#endif
 
 		if (partial) {
 			xdr_protocol(&xdr, packet);
