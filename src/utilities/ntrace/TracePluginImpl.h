@@ -165,11 +165,6 @@ private:
 	// Lock for log rotation
 	Firebird::RWLock renameLock;
 
-	charset cs;
-	texttype tt;
-	Firebird::AutoPtr<Jrd::CharSet> charSet;
-	Firebird::AutoPtr<Jrd::TextType> textType;
-
 	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > >
 		include_matcher, exclude_matcher;
 

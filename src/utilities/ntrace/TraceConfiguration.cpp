@@ -26,11 +26,9 @@
  */
 
 #include "TraceConfiguration.h"
-#include "../../jrd/intl_classes.h"
+#include "TraceUnicodeUtils.h"
 #include "../../jrd/evl_string.h"
-#include "../../jrd/TextType.h"
 #include "../../jrd/SimilarToMatcher.h"
-#include "../../jrd/unicode_util.h"
 #include "../../jrd/isc_f_proto.h"
 
 using namespace Firebird;
@@ -103,19 +101,6 @@ void TraceCfgReader::readConfig()
 		m_subpatterns[i].end = -1;
 	}
 
-	charset cs;
-	IntlUtil::initUtf8Charset(&cs);
-
-	UCharBuffer collAttributesBuffer;
-	IntlUtil::getDefaultCollationAttributes(collAttributesBuffer, cs);
-
-	texttype tt;
-	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
-		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
-
-	AutoPtr<Jrd::CharSet> charSet(Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs));
-	Jrd::TextType textType(0, &tt, charSet);
-
 	bool defDB = false, defSvc = false, exactMatch = false;
 	const ConfigFile::Parameters& params = cfgFile.getParameters();
 	for (size_t n = 0; n < params.getCount() && !exactMatch; ++n)
@@ -166,8 +151,10 @@ void TraceCfgReader::readConfig()
 #else
 					typedef SystemToUtf8Converter<> SimilarConverter;
 #endif
+					Jrd::TextType *textType = GetUnicodeTextType();
+
 					SimilarToMatcher<ULONG, Jrd::CanonicalConverter<SimilarConverter> > matcher(
-						*getDefaultMemoryPool(), &textType, (const UCHAR*) pattern.c_str(),
+						*getDefaultMemoryPool(), textType, (const UCHAR*) pattern.c_str(),
 						pattern.length(), '\\', true, false);
 
 					regExpOk = true;
