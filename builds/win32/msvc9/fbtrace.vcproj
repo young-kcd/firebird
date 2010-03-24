@@ -328,6 +328,10 @@
 				RelativePath="..\..\..\src\utilities\ntrace\TracePluginImpl.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\ntrace\TraceUnicodeUtils.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -368,6 +372,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\ntrace\TracePluginImpl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\ntrace\TraceUnicodeUtils.h"
 				>
 			</File>
 		</Filter>
