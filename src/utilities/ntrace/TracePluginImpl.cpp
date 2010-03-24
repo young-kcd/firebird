@@ -30,6 +30,7 @@
 #include <math.h>
 
 #include "TracePluginImpl.h"
+#include "TraceUnicodeUtils.h"
 #include "PluginLogWriter.h"
 #include "os/platform.h"
 #include "../../jrd/req.h"
@@ -137,21 +138,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 
-	IntlUtil::initUtf8Charset(&cs);
-
-	string collAttributes("ICU-VERSION=");
-	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
-	IntlUtil::setupIcuAttributes(&cs, collAttributes, "", collAttributes);
-
-	UCharBuffer collAttributesBuffer;
-	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
-		collAttributes.length());
-
-	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
-		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
-
-	charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
-	textType = FB_NEW(*getDefaultMemoryPool()) Jrd::TextType(0, &tt, charSet);
+	Jrd::TextType *textType = GetUnicodeTextType();
 
 	// Compile filtering regular expressions
 	if (config.include_filter.hasData())

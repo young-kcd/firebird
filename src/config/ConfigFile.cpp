@@ -118,6 +118,7 @@ void ConfigFile::addText(const char* text)
 {
 	InputStream *stream = new InputStream(text);
 	pushStream(stream);
+	stream->release();
 }
 
 void ConfigFile::parse()
