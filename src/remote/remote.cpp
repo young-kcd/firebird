@@ -671,7 +671,6 @@ rem_port* rem_port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
-#ifdef REM_SERVER
 bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
@@ -723,7 +722,6 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 
 	return TRUE;
 }
-#endif //REM_SERVER
 
 void PortsCleanup::registerPort(rem_port* port)
 {

@@ -41,10 +41,6 @@
 #include "../common/classes/RefMutex.h"
 #include "../common/StatusHolder.h"
 
-#if !defined(SUPERCLIENT) && !defined(EMBEDDED)
-#define REM_SERVER
-#endif
-
 // Include some apollo include files for tasking
 
 #ifndef WIN_NT
@@ -571,9 +567,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 
 	// sync objects
 	Firebird::RefPtr<Firebird::RefMutex> port_sync;
-#ifdef REM_SERVER
 	Firebird::RefPtr<Firebird::RefMutex> port_que_sync;
-#endif
 	Firebird::RefPtr<Firebird::RefMutex> port_write_sync;
 
 	// port function pointers (C "emulation" of virtual functions)
@@ -643,19 +637,15 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	xcc*			port_xcc;				// interprocess structure
 	PacketQueue*	port_deferred_packets;	// queue of deferred packets
 	OBJCT			port_last_object_id;	// cached last id
-#ifdef REM_SERVER
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	size_t			port_qoffset;			// current packet in the queue
-#endif
 	ServerAuthBase*		port_auth;
 	UCharArrayAutoPtr	port_buffer;
 
 public:
 	rem_port(rem_port_t t, size_t rpt) :
 		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-#ifdef REM_SERVER
 		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-#endif
 		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0),
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
@@ -675,9 +665,7 @@ public:
 		port_connection(0), port_user_name(0), port_passwd(0), port_protocol_str(0),
 		port_address_str(0), port_rpr(0), port_statement(0), port_receive_rmtque(0),
 		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0),
-#ifdef REM_SERVER
 		port_queue(getPool()), port_qoffset(0),
-#endif
 		port_auth(0), port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		addRef();
@@ -771,7 +759,6 @@ public:
 	rem_port*	request(PACKET* pckt);
 	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
 
-#ifdef REM_SERVER
 	bool haveRecvData()
 	{
 		Firebird::RefMutexGuard queGuard(*port_que_sync);
@@ -817,7 +804,6 @@ public:
 		port_receive.x_private = port_receive.x_base + rs.save_private;
 		port_receive.x_handy = rs.save_handy;
 	}
-#endif // REM_SERVER
 
 	// TMN: The following member functions are conceptually private
 	// to server.cpp and should be _made_ private in due time!
