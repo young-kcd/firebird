@@ -1,3 +1,82 @@
+2010-03-24 14:27  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.fbtrace (1.15):
+
+	fixed posic build
+
+2010-03-24 14:13  hvlad
+
+	* firebird2/builds/win32/: msvc8/fbtrace.vcproj (1.10),
+	msvc9/fbtrace.vcproj (1.9):
+
+	Fixed bug CORE-2934 : Memory leak in FB2.5 trace plugin.  Updated
+	MSVC project files
+
+2010-03-24 14:12  hvlad
+
+	* firebird2/src/utilities/ntrace/: TraceConfiguration.cpp (1.24),
+	TracePluginImpl.cpp (1.37), TracePluginImpl.h (1.14),
+	TraceUnicodeUtils.cpp (1.2), TraceUnicodeUtils.h (1.2):
+
+	Fixed bug CORE-2934 : Memory leak in FB2.5 trace plugin
+
+2010-03-24 13:13  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.307), protocol.cpp (1.101),
+	remote.cpp (1.97), xdr.h (1.18), xnet.cpp (1.151),
+	os/win32/wnet.cpp (1.93):
+
+	Cleanup SUPERCLIENT - and also more generic control for overwritten
+	const cstring
+
+2010-03-24 13:11  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.138):
+
+	Cleanup SUPERCLIENT - always use same method to get automatic pool
+
+2010-03-24 10:10  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.402):
+
+	This line is redundant, because the RSE contents (its fixed part)
+	is copied by value right above.
+
+2010-03-24 08:50  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.306), remote.cpp (1.96),
+	remote.h (1.107):
+
+	Cleanup SUPERCLIENT/EMBEDDED - avoid different remote builds
+
+2010-03-24 08:02  robocop
+
+	* firebird2/src/common/classes/timestamp.cpp (1.23):
+
+	Totally misc.
+
+2010-03-23 21:06  hvlad
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.36):
+
+	Fixed bug CORE-2940 : Trace output could contain garbage data left
+	from filtered out statements
+
+2010-03-23 17:06  asfernandes
+
+	* firebird2/src/dsql/: node.h (1.144), parse.y (1.369), pass1.cpp
+	(1.522):
+
+	Improvement CORE-2005 - Support SQL 2008 syntax for MERGE statement
+	with DELETE extension
+
+2010-03-23 16:19  alexpeshkoff
+
+	* firebird2/src/qli/meta.epp (1.87):
+
+	A hach, making qli usable in tcs at least with DEV version (does
+	not affect end users)
+
 2010-03-23 12:55  alexpeshkoff
 
 	* firebird2/src/include/firebird.h (1.55):
