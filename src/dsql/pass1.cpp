@@ -4865,7 +4865,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 		request->req_recursive_ctx = context;
 		request->req_context = &temp;
 
-		request->resetCTEAlias();
+		request->resetCTEAlias(alias);
 
 		rse = PASS1_rse(request, input->nod_arg[e_derived_table_rse], NULL);
 
@@ -10411,6 +10411,11 @@ void dsql_req::addCTEs(dsql_nod* with)
 			req_curr_ctes.push(*cte);
 			req_ctes.add(pass1_recursive_cte(this, *cte, false));
 			req_curr_ctes.pop();
+
+			// Add CTE name into CTE aliases stack. It allows later to search for 
+			// aliases of given CTE.
+			const dsql_str* cte_name = (dsql_str*) (*cte)->nod_arg[e_derived_table_alias];
+			addCTEAlias(cte_name);
 		}
 		else {
 			req_ctes.add(*cte);

@@ -486,6 +486,8 @@ public:
 	// CTE name or via alias. We need to substitute this aliases when processing CTE 
 	// member to resolve field names. Therefore we store all aliases in order of 
 	// occurence and later use it in backward order (since our parser is right-to-left). 
+	// Also we put CTE name after all such aliases to distinguish aliases for 
+	// different CTE's.
 	// We also need to repeat this process if main select expression contains union with 
 	// recursive CTE
 	void addCTEAlias(const dsql_str* alias) 
@@ -496,9 +498,21 @@ public:
 	{
 		return *(--req_curr_cte_alias);
 	}
-	void resetCTEAlias()
+	void resetCTEAlias(const dsql_str* alias)
 	{
-		req_curr_cte_alias = req_cte_aliases.end();
+		const dsql_str* const* begin = req_cte_aliases.begin();
+
+		req_curr_cte_alias = req_cte_aliases.end() - 1;
+		fb_assert(req_curr_cte_alias >= begin);
+
+		const dsql_str* curr = *(req_curr_cte_alias);
+		while (strcmp(curr->str_data, alias->str_data)) 
+		{
+			req_curr_cte_alias--;
+			fb_assert(req_curr_cte_alias >= begin);
+
+			curr = *(req_curr_cte_alias);
+		}
 	}
 
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
