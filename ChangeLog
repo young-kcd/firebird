@@ -1,3 +1,20 @@
+2010-03-25 12:02  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.214):
+
+	Frontported fix for CORE-2942: Huge (>10Gb) memory consumption by
+	some fb_inet_server processes
+
+2010-03-25 03:10  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.523), remote/remote.h (1.108),
+	utilities/ntrace/TraceConfiguration.cpp (1.25),
+	utilities/ntrace/TracePluginImpl.cpp (1.38),
+	utilities/ntrace/TraceUnicodeUtils.cpp (1.3),
+	utilities/ntrace/TraceUnicodeUtils.h (1.3):
+
+	Misc
+
 2010-03-24 14:27  alexpeshkoff
 
 	* firebird2/builds/posix/Makefile.in.fbtrace (1.15):
