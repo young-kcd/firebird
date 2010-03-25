@@ -5075,7 +5075,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 		statement->req_recursive_ctx = context;
 		statement->req_context = &temp;
 
-		statement->resetCTEAlias();
+		statement->resetCTEAlias(alias);
 
 		rse = PASS1_rse(statement, input->nod_arg[e_derived_table_rse], NULL);
 
@@ -10717,11 +10717,17 @@ void CompiledStatement::addCTEs(dsql_nod* with)
 	{
 		fb_assert((*cte)->nod_type == nod_derived_table);
 
-		if (with->nod_flags & NOD_UNION_RECURSIVE) {
+		if (with->nod_flags & NOD_UNION_RECURSIVE) 
+		{
 			req_curr_ctes.push(*cte);
 			PsqlChanger changer(this, false);
 			req_ctes.add(pass1_recursive_cte(this, *cte));
 			req_curr_ctes.pop();
+
+			// Add CTE name into CTE aliases stack. It allows later to search for 
+			// aliases of given CTE.
+			const dsql_str* cte_name = (dsql_str*) (*cte)->nod_arg[e_derived_table_alias];
+			addCTEAlias(cte_name);
 		}
 		else {
 			req_ctes.add(*cte);
