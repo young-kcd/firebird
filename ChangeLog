@@ -1,3 +1,10 @@
+2010-03-25 11:33  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.207.2.1):
+
+	Fixed CORE-2942: Huge (>10Gb) memory consumption by some
+	fb_inet_server processes
+
 2010-03-24 13:50  alexpeshkoff
 
 	* firebird2/builds/posix/Makefile.in.fbtrace (1.13.2.1):
