@@ -4804,7 +4804,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		dsqlScratch->recursiveCtx = context;
 		dsqlScratch->context = &temp;
 
-		dsqlScratch->resetCTEAlias();
+		dsqlScratch->resetCTEAlias(alias);
 
 		rse = PASS1_rse(dsqlScratch, input->nod_arg[e_derived_table_rse], NULL);
 
@@ -9772,6 +9772,11 @@ void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 			PsqlChanger changer(this, false);
 			ctes.add(pass1_recursive_cte(this, *cte));
 			currCtes.pop();
+
+			// Add CTE name into CTE aliases stack. It allows later to search for 
+			// aliases of given CTE.
+			const dsql_str* cte_name = (dsql_str*) (*cte)->nod_arg[e_derived_table_alias];
+			addCTEAlias(cte_name);
 		}
 		else {
 			ctes.add(*cte);
