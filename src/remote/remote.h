@@ -41,8 +41,6 @@
 #include "../common/classes/RefMutex.h"
 #include "../common/StatusHolder.h"
 
-// Include some apollo include files for tasking
-
 #ifndef WIN_NT
 #include <signal.h>
 #include <fcntl.h>

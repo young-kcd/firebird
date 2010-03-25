@@ -22,6 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ *  Adriano dos Santos Fernandes
  *
  */
 
@@ -39,8 +40,8 @@ namespace
 	private:
 		charset cs;
 		texttype tt;
-		Jrd::CharSet *charSet;
-		Jrd::TextType *textType;
+		AutoPtr<Jrd::CharSet> charSet;
+		AutoPtr<Jrd::TextType> textType;
 
 	public:
 		UnicodeCollationHolder(MemoryPool&)
@@ -58,25 +59,21 @@ namespace
 			if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
 				fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
 
-
 			charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
 			textType = FB_NEW(*getDefaultMemoryPool()) Jrd::TextType(0, &tt, charSet);
 		}
 
-		~UnicodeCollationHolder()
+		Jrd::TextType* getTextType()
 		{
-			delete textType;
-			delete charSet;
+			return textType;
 		}
-
-		Jrd::TextType* getTextType() const { return textType; };
 	};
 }
 
 static InitInstance<UnicodeCollationHolder> unicodeCollation;
 
 
-Jrd::TextType* GetUnicodeTextType()
+Jrd::TextType* TraceUnicodeUtils::getUnicodeTextType()
 {
 	return unicodeCollation().getTextType();
 }

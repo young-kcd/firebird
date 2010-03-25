@@ -146,13 +146,13 @@ void TraceCfgReader::readConfig()
 				bool regExpOk = false;
 				try
 				{
+					Jrd::TextType* textType = TraceUnicodeUtils::getUnicodeTextType();
+
 #ifdef WIN_NT	// !CASE_SENSITIVITY
 					typedef Jrd::UpcaseConverter<SystemToUtf8Converter<> > SimilarConverter;
 #else
 					typedef SystemToUtf8Converter<> SimilarConverter;
 #endif
-					Jrd::TextType *textType = GetUnicodeTextType();
-
 					SimilarToMatcher<ULONG, Jrd::CanonicalConverter<SimilarConverter> > matcher(
 						*getDefaultMemoryPool(), textType, (const UCHAR*) pattern.c_str(),
 						pattern.length(), '\\', true, false);

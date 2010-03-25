@@ -6297,10 +6297,10 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	source = forNode->dsqlSelect->nod_arg[e_select_expr]->nod_arg[0]->nod_arg[e_join_left_rel];
 	target = forNode->dsqlSelect->nod_arg[e_select_expr]->nod_arg[0]->nod_arg[e_join_rght_rel];
 
-	dsql_nod* update = NULL;
-
 	fb_assert(input->nod_arg[e_mrg_when]->nod_type == nod_merge_when);
 	dsql_nod* whenNode = input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched];
+
+	dsql_nod* update = NULL;
 	dsql_nod* updateCondition = NULL;
 
 	if (whenNode && whenNode->nod_type == nod_merge_update)

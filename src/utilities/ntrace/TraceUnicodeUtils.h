@@ -33,6 +33,12 @@
 #include "../../jrd/intl_classes.h"
 #include "../../jrd/TextType.h"
 
-Jrd::TextType* GetUnicodeTextType();
+
+class TraceUnicodeUtils
+{
+public:
+	static Jrd::TextType* getUnicodeTextType();
+};
+
 
 #endif // TRACE_UNICODE_UTILS_H
