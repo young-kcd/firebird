@@ -214,7 +214,10 @@ LockManager::LockManager(const Firebird::string& id)
 LockManager::~LockManager()
 {
 	const SRQ_PTR process_offset = m_processOffset;
-	m_processOffset = 0;
+	{ // guardian's scope
+		Firebird::MutexLockGuard guard(m_localMutex);
+		m_processOffset = 0;
+	}
 
 	ISC_STATUS_ARRAY local_status;
 
@@ -1463,56 +1466,55 @@ void LockManager::blocking_action_thread()
 	{
 		while (true)
 		{
-			m_localMutex.enter();
+			SLONG value;
+			{ // guardian's scope
+				Firebird::MutexLockGuard guard(m_localMutex);
 
-			// See if the main thread has requested us to go away
-			if (!m_processOffset || m_process->prc_process_id != PID)
-			{
+				// See if the main thread has requested us to go away
+				if (!m_processOffset || m_process->prc_process_id != PID)
+				{
+					if (atStartup)
+					{
+						m_startupSemaphore.release();
+					}
+					break;
+				}
+
+				value = ISC_event_clear(&m_process->prc_blocking);
+
+				DEBUG_DELAY;
+
+				Firebird::HalfStaticArray<SRQ_PTR, 4> blocking_owners;
+
+				acquire_shmem(DUMMY_OWNER);
+				const prc* const process = (prc*) SRQ_ABS_PTR(m_processOffset);
+
+				srq* lock_srq;
+				SRQ_LOOP(process->prc_owners, lock_srq)
+				{
+					own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
+					blocking_owners.add(SRQ_REL_PTR(owner));
+				}
+
+				release_mutex();
+
+				while (blocking_owners.getCount() && m_processOffset)
+				{
+					const SRQ_PTR owner_offset = blocking_owners.pop();
+					acquire_shmem(owner_offset);
+					blocking_action(NULL, owner_offset, (SRQ_PTR) NULL);
+					release_shmem(owner_offset);
+				}
+
 				if (atStartup)
 				{
+					atStartup = false;
 					m_startupSemaphore.release();
 				}
-				break;
 			}
-
-			const SLONG value = ISC_event_clear(&m_process->prc_blocking);
-
-			DEBUG_DELAY;
-
-			Firebird::HalfStaticArray<SRQ_PTR, 4> blocking_owners;
-
-			acquire_shmem(DUMMY_OWNER);
-			const prc* const process = (prc*) SRQ_ABS_PTR(m_processOffset);
-
-			srq* lock_srq;
-			SRQ_LOOP(process->prc_owners, lock_srq)
-			{
-				own* owner = (own*) ((UCHAR*) lock_srq - OFFSET(own*, own_prc_owners));
-				blocking_owners.add(SRQ_REL_PTR(owner));
-			}
-
-			release_mutex();
-
-			while (blocking_owners.getCount() && m_processOffset)
-			{
-				const SRQ_PTR owner_offset = blocking_owners.pop();
-				acquire_shmem(owner_offset);
-				blocking_action(NULL, owner_offset, (SRQ_PTR) NULL);
-				release_shmem(owner_offset);
-			}
-
-			if (atStartup)
-			{
-				atStartup = false;
-				m_startupSemaphore.release();
-			}
-
-			m_localMutex.leave();
 
 			ISC_event_wait(&m_process->prc_blocking, value, 0);
 		}
-
-		m_localMutex.leave();
 	}
 	catch (const Firebird::Exception& x)
 	{
