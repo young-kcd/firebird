@@ -1,3 +1,40 @@
+2010-03-26 12:45  dimitr
+
+	* firebird2/builds/win32/msvc9/: Firebird2.sln (1.12),
+	Firebird2Boot.sln (1.4), fb_inet_server.vcproj (1.9),
+	fbclient.vcproj (1.5), fbembed.vcproj (1.6), fbserver.vcproj (1.9),
+	fbudf.vcproj (1.3), remote.vcproj (1.6):
+
+	Cleanup the MSVC9 build to benefit from the latest changes by Alex:
+	1) Make remote.lib independent of SUPERSERVER and containing only
+	the protocol and authentication files (needed for both server and
+	client) 2) Drop remote_classic.lib 3) Add the server-only remote
+	files (listener and server.cpp) directly into fbserver.exe and
+	fb_inet_server.exe 4) Make fbembed.dll, fbclient.dll, fbserver.exe
+	and fb_inet_server.exe dependent on remote.lib 5) Explicitly add
+	interface.cpp into fbclient.dll to benefit from the SUPERCLIENT
+	stuff (override the code from remote.lib) 6) Some cleanup in
+	fbclient/fbembed regarding common.lib 7) Add pwd.cpp into
+	fbserver.exe and fb_inet_server.exe
+
+	Also, fixed compilation of fbudf.dll. The only easy way to do that
+	was to re-link it (dynamically) with fbclient.dll. To be
+	reconsidered, if required.
+
+2010-03-26 11:57  dimitr
+
+	* firebird2/builds/win32/msvc8/fbembed.vcproj (1.22):
+
+	This should make fbembed to work again and thus fix the boot build.
+	 MSVC9 changes are still incomplete, they will be more global.
+
+2010-03-25 15:14  hvlad
+
+	* firebird2/src/dsql/: dsql.h (1.187), pass1.cpp (1.524):
+
+	Fixed bug CORE-2943 : parsing error recursive query with two
+	recursive parts
+
 2010-03-25 12:02  alexpeshkoff
 
 	* firebird2/src/lock/lock.cpp (1.214):
