@@ -1,3 +1,10 @@
+2010-03-25 15:05  hvlad
+
+	* firebird2/src/dsql/: dsql.h (1.113.6.3), pass1.cpp (1.348.2.12):
+
+	Fixed bug CORE-2943 : parsing error recursive query with two
+	recursive parts
+
 2010-03-22 23:39  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.204.2.13), ods.h (1.43.8.1):
