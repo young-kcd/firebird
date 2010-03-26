@@ -76,6 +76,11 @@ private:
 			const UCHAR* patternStr, SLONG patternLen,
 			CharType escapeChar, bool useEscape);
 
+		~Evaluator()
+		{
+			delete[] branches;
+		}
+
 		bool getResult();
 		bool processNextChunk(const UCHAR* data, SLONG dataLen);
 		void reset();
