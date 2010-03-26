@@ -343,10 +343,6 @@
 				RelativePath="..\..\..\src\extlib\fbudf\stdafx.h"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\timestamp.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
