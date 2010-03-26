@@ -423,6 +423,42 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
+		<Filter
+			Name="REMOTE files"
+			>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\chop.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\property.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\server.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\srvr_w32.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\window.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="AUTH files"
+			>
+			<File
+				RelativePath="..\..\..\src\jrd\pwd.cpp"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

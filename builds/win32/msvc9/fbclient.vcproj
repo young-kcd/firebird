@@ -330,18 +330,6 @@
 			Name="COMMON files"
 			>
 			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\config\config_file.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\init.cpp"
 				>
 			</File>
@@ -444,46 +432,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\utld.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="REMOTE files"
-			>
-			<File
-				RelativePath="..\..\..\src\remote\inet.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\interface.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\merge.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\parser.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\protocol.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\remote.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xdr.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xnet.cpp"
 				>
 			</File>
 		</Filter>
@@ -621,18 +569,10 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="AUTH files"
+			Name="REMOTE files"
 			>
 			<File
-				RelativePath="..\..\..\src\auth\Auth.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp"
+				RelativePath="..\..\..\src\remote\interface.cpp"
 				>
 			</File>
 		</Filter>

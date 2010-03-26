@@ -326,10 +326,6 @@
 				RelativePath="..\..\..\src\extlib\fbudf\stdafx.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\timestamp.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -102,7 +102,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -164,7 +164,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -226,7 +226,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -267,14 +267,6 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\chop.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\inet.cpp"
 				>
 			</File>
@@ -291,27 +283,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\property.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\protocol.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\remote.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\server.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\srvr_w32.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.cpp"
 				>
 			</File>
 			<File
@@ -389,10 +365,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\pwd.cpp"
 				>
 			</File>
 		</Filter>
