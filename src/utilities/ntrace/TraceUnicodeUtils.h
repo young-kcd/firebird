@@ -32,7 +32,21 @@
 #include "../../common/classes/fb_string.h"
 #include "../../jrd/intl_classes.h"
 #include "../../jrd/TextType.h"
+#include "../../jrd/unicode_util.h"
 
-Jrd::TextType* GetUnicodeTextType();
+class UnicodeCollationHolder
+{
+private:
+	charset *cs;
+	texttype *tt;
+	Firebird::AutoPtr<Jrd::CharSet> charSet;
+	Firebird::AutoPtr<Jrd::TextType> textType;
+
+public:
+	UnicodeCollationHolder(Firebird::MemoryPool& pool);
+	~UnicodeCollationHolder();
+
+	Jrd::TextType* getTextType() { return textType; };
+};
 
 #endif // TRACE_UNICODE_UTILS_H

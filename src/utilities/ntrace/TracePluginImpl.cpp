@@ -115,7 +115,8 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	connections(getDefaultMemoryPool()),
 	transactions(getDefaultMemoryPool()),
 	statements(getDefaultMemoryPool()),
-	services(getDefaultMemoryPool())
+	services(getDefaultMemoryPool()),
+	unicodeCollation(*getDefaultMemoryPool())
 {
 	const char* ses_name = initInfo->getTraceSessionName();
 	session_name = ses_name && *ses_name ? ses_name : " ";
@@ -138,7 +139,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 
-	Jrd::TextType *textType = GetUnicodeTextType();
+	Jrd::TextType *textType = unicodeCollation.getTextType();
 
 	// Compile filtering regular expressions
 	if (config.include_filter.hasData())
