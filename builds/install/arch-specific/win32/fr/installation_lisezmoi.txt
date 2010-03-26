@@ -1,4 +1,4 @@
-Firebird Serveur Bases de données 2.0.5
+Firebird Serveur Bases de données 2.0.6
 ==================================================
 
   ** IMPORTANT **
@@ -18,10 +18,10 @@ version, seul le texte original en anglais
 
 **       FIN      **
 
-Ce document est un guide pour l'insatllation de
-Firebird 2.0.5 sur une plateforme Win32. Ces notes concernent 
+Ce document est un guide pour l'installation de
+Firebird 2.0.6 sur une plateforme Win32. Ces notes concernent 
 l'itilitaire d'installation, pas
-Firebird 2.0.5 en général.
+Firebird 2.0.6 en général.
 
 
 Contenu

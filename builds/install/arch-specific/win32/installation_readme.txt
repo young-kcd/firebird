@@ -1,6 +1,6 @@
 
 ==================================================
-Firebird Database Server 2.0.5
+Firebird Database Server 2.0.6
 ==================================================
 
   ** IMPORTANT **
@@ -12,9 +12,9 @@ Firebird Database Server 2.0.5
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0.5 on the Win32 platform. These notes refer
+Firebird 2.0.6 on the Win32 platform. These notes refer
 to the installation package itself, rather than
-Firebird 2.0.5 in general.
+Firebird 2.0.6 in general.
 
 
 Contents

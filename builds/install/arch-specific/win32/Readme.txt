@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.0.5       (Win32 Build)
+Firebird 2.0.6       (Win32 Build)
 ==================================
 
 
@@ -46,14 +46,14 @@ deploying this release on a production server. ie:
 Features in this release (all platforms)
 ========================================
 
-See doc/Firebird_v2.0.5.ReleaseNotes.pdf for more
+See doc/Firebird_v2.0.6.ReleaseNotes.pdf for more
 information.
 
 
 Bugs fixed in this release (all platforms)
 ==========================================
 
-See doc/Firebird_v2.0.5.ReleaseNotes.pdf for more
+See doc/Firebird_v2.0.6.ReleaseNotes.pdf for more
 information.
 
 
