@@ -710,7 +710,7 @@ public:
 	// CTE name or via alias. We need to substitute this aliases when processing CTE
 	// member to resolve field names. Therefore we store all aliases in order of
 	// occurrence and later use it in backward order (since our parser is right-to-left).
-	// Also we put CTE name after all such aliases to distinguish aliases for 
+	// Also we put CTE name after all such aliases to distinguish aliases for
 	// different CTE's.
 	// We also need to repeat this process if main select expression contains union with
 	// recursive CTE
@@ -732,7 +732,7 @@ public:
 		fb_assert(currCteAlias >= begin);
 
 		const dsql_str* curr = *(currCteAlias);
-		while (strcmp(curr->str_data, alias->str_data)) 
+		while (strcmp(curr->str_data, alias->str_data))
 		{
 			currCteAlias--;
 			fb_assert(currCteAlias >= begin);
