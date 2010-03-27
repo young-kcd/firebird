@@ -1,3 +1,22 @@
+2010-03-27 12:30  dimitr
+
+	* firebird2/builds/win32/msvc9/remote_classic.vcproj (1.6):
+
+	Cleanup.
+
+2010-03-26 18:35  dimitr
+
+	* firebird2/builds/win32/msvc9/fbudf.vcproj (1.4):
+
+	Misc.
+
+2010-03-26 18:28  dimitr
+
+	* firebird2/builds/win32/msvc8/: Firebird2.sln (1.24), fbudf.vcproj
+	(1.8):
+
+	Fixed fbudf in the MSVC8 build as well. Untested.
+
 2010-03-26 12:45  dimitr
 
 	* firebird2/builds/win32/msvc9/: Firebird2.sln (1.12),
