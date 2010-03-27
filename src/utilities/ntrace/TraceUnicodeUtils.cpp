@@ -28,52 +28,39 @@
 
 
 #include "TraceUnicodeUtils.h"
-#include "../../common/classes/init.h"
-#include "../../jrd/unicode_util.h"
 
 using namespace Firebird;
 
-namespace
+UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 {
-	class UnicodeCollationHolder
-	{
-	private:
-		charset cs;
-		texttype tt;
-		AutoPtr<Jrd::CharSet> charSet;
-		AutoPtr<Jrd::TextType> textType;
+	cs = FB_NEW(pool) charset;
+	tt = FB_NEW(pool) texttype;
 
-	public:
-		UnicodeCollationHolder(MemoryPool&)
-		{
-			IntlUtil::initUtf8Charset(&cs);
+	IntlUtil::initUtf8Charset(cs);
 
-			string collAttributes("ICU-VERSION=");
-			collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
-			IntlUtil::setupIcuAttributes(&cs, collAttributes, "", collAttributes);
+	string collAttributes("ICU-VERSION=");
+	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	IntlUtil::setupIcuAttributes(cs, collAttributes, "", collAttributes);
 
-			UCharBuffer collAttributesBuffer;
-			collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
-				collAttributes.length());
+	UCharBuffer collAttributesBuffer;
+	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
+		collAttributes.length());
 
-			if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
-				fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
+	if (!IntlUtil::initUnicodeCollation(tt, cs, "UNICODE", 0, collAttributesBuffer, string()))
+		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
 
-			charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
-			textType = FB_NEW(*getDefaultMemoryPool()) Jrd::TextType(0, &tt, charSet);
-		}
 
-		Jrd::TextType* getTextType()
-		{
-			return textType;
-		}
-	};
+	charSet = Jrd::CharSet::createInstance(pool, 0, cs);
+	textType = FB_NEW(pool) Jrd::TextType(0, tt, charSet);
 }
 
-static InitInstance<UnicodeCollationHolder> unicodeCollation;
-
-
-Jrd::TextType* TraceUnicodeUtils::getUnicodeTextType()
+UnicodeCollationHolder::~UnicodeCollationHolder()
 {
-	return unicodeCollation().getTextType();
+	fb_assert(tt->texttype_fn_destroy);
+
+	if (tt->texttype_fn_destroy)
+		tt->texttype_fn_destroy(tt);
+
+	// cs should be deleted by texttype_fn_destroy call above
+	delete tt;
 }

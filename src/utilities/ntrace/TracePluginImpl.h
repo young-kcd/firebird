@@ -31,6 +31,7 @@
 
 #include "../../jrd/ntrace.h"
 #include "TracePluginConfig.h"
+#include "TraceUnicodeUtils.h"
 #include "../../jrd/intl_classes.h"
 #include "../../jrd/evl_string.h"
 #include "../../jrd/TextType.h"
@@ -165,6 +166,7 @@ private:
 	// Lock for log rotation
 	Firebird::RWLock renameLock;
 
+	UnicodeCollationHolder unicodeCollation;
 	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > >
 		include_matcher, exclude_matcher;
 
