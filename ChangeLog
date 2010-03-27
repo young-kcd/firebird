@@ -1,3 +1,20 @@
+2010-03-26 16:36  hvlad
+
+	* firebird2/src/utilities/ntrace/: TraceConfiguration.cpp
+	(1.15.2.2), TracePluginImpl.cpp (1.28.2.5), TracePluginImpl.h
+	(1.10.2.3), TraceUnicodeUtils.cpp (1.1.2.2), TraceUnicodeUtils.h
+	(1.1.2.2):
+
+	Rework fix for bug CORE-2934 : Memory leak in FB2.5 trace plugin
+	Thread safety
+
+2010-03-26 16:35  hvlad
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.26.2.3):
+
+	Additional fix for bug CORE-2934 : Memory leak in FB2.5 trace
+	plugin
+
 2010-03-25 14:50  hvlad
 
 	* firebird2/src/dsql/: dsql.h (1.156.2.2), pass1.cpp (1.458.2.4):
