@@ -43,10 +43,10 @@ private:
 	Firebird::AutoPtr<Jrd::TextType> textType;
 
 public:
-	UnicodeCollationHolder(Firebird::MemoryPool& pool);
+	explicit UnicodeCollationHolder(Firebird::MemoryPool& pool);
 	~UnicodeCollationHolder();
 
-	Jrd::TextType* getTextType() { return textType; };
+	Jrd::TextType* getTextType() { return textType; }
 };
 
 
