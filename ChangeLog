@@ -1,3 +1,27 @@
+2010-03-28 05:47  robocop
+
+	* firebird2/src/utilities/ntrace/TraceUnicodeUtils.h (1.5):
+
+	Misc.
+
+2010-03-27 21:06  hvlad
+
+	* firebird2/src/: jrd/SimilarToMatcher.h (1.32),
+	utilities/ntrace/TraceConfiguration.cpp (1.26),
+	utilities/ntrace/TracePluginImpl.cpp (1.39),
+	utilities/ntrace/TracePluginImpl.h (1.15),
+	utilities/ntrace/TraceUnicodeUtils.cpp (1.4),
+	utilities/ntrace/TraceUnicodeUtils.h (1.4):
+
+	Frontport more fixes for bug CORE-2934 : Memory leak in FB2.5 trace
+	plugin
+
+2010-03-27 19:20  asfernandes
+
+	* firebird2/src/dsql/: dsql.h (1.188), pass1.cpp (1.525):
+
+	Misc
+
 2010-03-27 12:30  dimitr
 
 	* firebird2/builds/win32/msvc9/remote_classic.vcproj (1.6):
