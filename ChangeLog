@@ -1,3 +1,21 @@
+2010-03-29 09:39  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.12):
+
+	Sorry, wrong calculation of the build number.
+
+2010-03-29 09:38  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.15):
+
+	Update.
+
+2010-03-29 09:23  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.11):
+
+	Update.
+
 2010-03-26 16:36  hvlad
 
 	* firebird2/src/utilities/ntrace/: TraceConfiguration.cpp
