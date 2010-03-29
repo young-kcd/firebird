@@ -26,6 +26,7 @@
 #include "../common/config/config_file.h"
 #include "../jrd/os/config_root.h"
 #include "../common/classes/init.h"
+#include "../common/dllinst.h"
 #include "../jrd/os/fbsyslog.h"
 
 #ifdef HAVE_STDLIB_H
@@ -46,8 +47,19 @@ public:
 	{
 		try
 		{
-			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE),
-							ConfigFile::EXCEPTION_ON_ERROR);
+			// ATTENTION!
+			// This is a brute-force solution to ignore configuration file errors
+			// (existence and syntax) for the shared libraries, which seems being
+			// important at least on Windows. Perhaps the same logic should be
+			// applied to the standalone executables and other platforms as well,
+			// but that's to be decided some other day.
+			const USHORT flag =
+#ifdef FB_DLL_INST
+				Firebird::hDllInst ? 0 : ConfigFile::EXCEPTION_ON_ERROR;
+#else
+				ConfigFile::EXCEPTION_ON_ERROR;
+#endif
+			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE), flag);
 			defaultConfig = new Config(file);
 		}
 		catch (const Firebird::fatal_exception& ex)
