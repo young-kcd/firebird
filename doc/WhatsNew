@@ -2,6 +2,51 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-2943
+        Error while parsing a recursive query with two recursive parts
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2942
+        Huge (>10Gb) memory consumption by some fb_inet_server processes
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2940
+        Trace output could contain garbage data left from filtered out statements
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2936
+        Wrong page type (expected 7 found N) error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2934
+        Memory leak in the trace plugin (fbtrace)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2930
+        DROP VIEW drops output parameters of used stored procedures
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2928
+        Buffer overflow in GSEC
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2926
+        "make install" fails on Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2923
+        Problem with dependencies between a procedure and a view using that procedure
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2919
         Installation script ignores non-standard ports
       Contributor(s):
@@ -24,6 +69,11 @@
 
     * Bugfix CORE-2908
         Engine could crash or raise not expected errors working with ODS 8.x database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2907
+        Exception handling with EXECUTE STATEMENT
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
@@ -72,11 +122,21 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Bugfix CORE-2876
+        Wrong backup mode when using "alter database add difference file"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2871
         Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
         fails after the specified timeout (because of connections being still active)
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2859
+        Security database remains locked after replacing database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-2856
         Non-NULL key in unique index could be not found when key is removed
@@ -93,6 +153,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2844
+        Unresolved symbol references when linking fbsvcmgr and fbtracemgr
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2833
         Changing data that affects an expression index that contains references to null date fields fails
       Contributor(s):
@@ -108,6 +173,11 @@
         Physical backup cannot restart operations after the explicit difference file has been dropped
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2628
+        FB 2.5-beta2-win32 denied FreeAdhocUDF library functions
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1089
         Wrong ordering with views, distinct, left join and order by
