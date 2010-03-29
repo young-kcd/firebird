@@ -136,6 +136,16 @@ ISC_STATUS	REM_transaction_info(ISC_STATUS* user_status, struct Rtr** tra_handle
 	SSHORT item_length, const UCHAR* items, SSHORT buffer_length, UCHAR* buffer);
 ISC_STATUS	REM_unwind_request(ISC_STATUS* user_status, struct Rrq** req_handle, USHORT level);
 
+// loopback provider
+ISC_STATUS LOOP_attach_database(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
+								const TEXT* filename, Rdb** handle,
+								SSHORT dpb_length, const SCHAR* dpb);
+ISC_STATUS LOOP_create_database(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
+								const TEXT* filename, Rdb** handle,
+								SSHORT dpb_length, const SCHAR* dpb);
+ISC_STATUS LOOP_service_attach(ISC_STATUS* user_status, const TEXT* service_name,
+							   Rdb** handle, USHORT spb_length, const UCHAR* spb);
+
 #ifdef __cplusplus
 }	/* extern "C" */
 #endif

@@ -468,9 +468,9 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	}
 #endif
 
-	// let shutdown thread continue operation if needed
-	// and get ready for normal at-exit shutdown from us
-	THD_yield();
+	// perform atexit shutdown here when all globals in embedded library are active
+	// also sync with possibly already running shutdown in dedicated thread
+	fb_shutdown(10000, fb_shutrsn_exit_called);
 
 	return FINI_OK;
 }

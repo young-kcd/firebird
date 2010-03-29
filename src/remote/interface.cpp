@@ -125,8 +125,8 @@ namespace {
 static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
-static rem_port* analyze(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&, PathName&);
-static rem_port* analyze_service(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&);
+static rem_port* analyze(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&, PathName&, bool);
+static rem_port* analyze_service(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&, bool);
 static bool batch_gds_receive(rem_port*, struct rmtque *, ISC_STATUS *, USHORT);
 static bool batch_dsql_fetch(rem_port*, struct rmtque *, ISC_STATUS *, USHORT);
 static bool check_response(Rdb*, PACKET *);
@@ -258,12 +258,12 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 #define GDS_DSQL_SQL_INFO	REM_sql_info
 
 
-ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
-							   FB_API_HANDLE /*public_handle*/,
-							   const TEXT* filename,
-							   Rdb** handle,
-							   SSHORT dpb_length,
-							   const SCHAR* dpb)
+static ISC_STATUS remloop_att(ISC_STATUS* user_status,
+							  const TEXT* filename,
+							  Rdb** handle,
+							  SSHORT dpb_length,
+							  const SCHAR* dpb,
+							  bool loopback)
 {
 /**************************************
  *
@@ -304,7 +304,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name);
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name, loopback);
 		if (!port)
 		{
 			return user_status[1];
@@ -335,6 +335,50 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	return return_success(rdb);
+}
+
+
+ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
+							   FB_API_HANDLE /*public_handle*/,
+							   const TEXT* filename,
+							   Rdb** handle,
+							   SSHORT dpb_length,
+							   const SCHAR* dpb)
+{
+/**************************************
+ *
+ *	g d s _ a t t a c h _ d a t a b a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Connect to an old, grungy database, corrupted by user data.
+ *
+ **************************************/
+
+	return remloop_att(user_status, filename, handle, dpb_length, dpb, false);
+}
+
+
+ISC_STATUS LOOP_attach_database(ISC_STATUS* user_status,
+								FB_API_HANDLE /*public_handle*/,
+								const TEXT* filename,
+								Rdb** handle,
+								SSHORT dpb_length,
+								const SCHAR* dpb)
+{
+/**************************************
+ *
+ *	g d s _ a t t a c h _ d a t a b a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Connect to an old, grungy database, corrupted by user data.
+ *
+ **************************************/
+
+	return remloop_att(user_status, filename, handle, dpb_length, dpb, true);
 }
 
 
@@ -786,12 +830,12 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
-							   FB_API_HANDLE /*public_handle*/,
-							   const TEXT* filename,
-							   Rdb** handle,
-							   SSHORT dpb_length,
-							   const SCHAR* dpb)
+static ISC_STATUS remloop_create(ISC_STATUS* user_status,
+								 const TEXT* filename,
+								 Rdb** handle,
+								 SSHORT dpb_length,
+								 const SCHAR* dpb,
+								 bool loopback)
 {
 /**************************************
  *
@@ -803,6 +847,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
+
 	ISC_STATUS* v = user_status;
 	*v++ = isc_arg_gds;
 	*v++ = isc_unavailable;
@@ -831,7 +876,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name);
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name, loopback);
 		if (!port) {
 			return user_status[1];
 		}
@@ -860,6 +905,50 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 
 	return return_success(rdb);
+}
+
+
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
+							   FB_API_HANDLE /*public_handle*/,
+							   const TEXT* filename,
+							   Rdb** handle,
+							   SSHORT dpb_length,
+							   const SCHAR* dpb)
+{
+/**************************************
+ *
+ *	g d s _ c r e a t e _ d a t a b a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create a nice, squeeky clean database, uncorrupted by user data.
+ *
+ **************************************/
+
+	return remloop_create(user_status, filename, handle, dpb_length, dpb, false);
+}
+
+
+ISC_STATUS LOOP_create_database(ISC_STATUS* user_status,
+								FB_API_HANDLE /*public_handle*/,
+								const TEXT* filename,
+								Rdb** handle,
+								SSHORT dpb_length,
+								const SCHAR* dpb)
+{
+/**************************************
+ *
+ *	g d s _ c r e a t e _ d a t a b a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create a nice, squeeky clean database, uncorrupted by user data.
+ *
+ **************************************/
+
+	return remloop_create(user_status, filename, handle, dpb_length, dpb, true);
 }
 
 
@@ -3771,11 +3860,12 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
+static ISC_STATUS remloop_svc(ISC_STATUS* user_status,
 							  const TEXT* service_name,
 							  Rdb** handle,
 							  USHORT spb_length,
-							  const UCHAR* spb)
+							  const UCHAR* spb,
+							  bool loopback)
 {
 /**************************************
  *
@@ -3806,7 +3896,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
 		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
 
-		rem_port* port = analyze_service(expanded_name, user_status, us, user_verification, newSpb);
+		rem_port* port = analyze_service(expanded_name, user_status, us, user_verification, newSpb, loopback);
 		if (!port) {
 			return user_status[1];
 		}
@@ -3841,6 +3931,48 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	}
 
 	return return_success(rdb);
+}
+
+
+ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
+							  const TEXT* service_name,
+							  Rdb** handle,
+							  USHORT spb_length,
+							  const UCHAR* spb)
+{
+/**************************************
+ *
+ *	g d s _ s e r v i c e _ a t t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Connect to a Firebird service.
+ *
+ **************************************/
+
+	return remloop_svc(user_status, service_name, handle, spb_length, spb, false);
+}
+
+
+ISC_STATUS LOOP_service_attach(ISC_STATUS* user_status,
+							   const TEXT* service_name,
+							   Rdb** handle,
+							   USHORT spb_length,
+							   const UCHAR* spb)
+{
+/**************************************
+ *
+ *	g d s _ s e r v i c e _ a t t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Connect to a Firebird service.
+ *
+ **************************************/
+
+	return remloop_svc(user_status, service_name, handle, spb_length, spb, true);
 }
 
 
@@ -4555,7 +4687,8 @@ static rem_port* analyze(PathName& file_name,
 						 const TEXT* user_string,
 						 bool uv_flag,
 						 ClumpletReader& dpb,
-						 PathName& node_name)
+						 PathName& node_name,
+						 bool loopback)
 {
 /**************************************
  *
@@ -4633,10 +4766,13 @@ static rem_port* analyze(PathName& file_name,
 	}
 #endif
 
+	if (!loopback)
+	{
+		return port;
+	}
+
 	// We still have a local connection string but failed to connect so far.
 	// If we're a pure client, attempt connect to the localhost.
-
-#ifdef SUPERCLIENT
 
 	if (node_name.isEmpty())
 	{
@@ -4659,14 +4795,7 @@ static rem_port* analyze(PathName& file_name,
 		}
 	}
 
-#endif // SUPERCLIENT
-
-	if (port || status_vector[1])
-	{
-		return port;
-	}
-
-	return NULL;
+	return port;
 }
 
 
@@ -4674,7 +4803,8 @@ static rem_port* analyze_service(PathName& service_name,
 								 ISC_STATUS* status_vector,
 								 const TEXT* user_string,
 								 bool uv_flag,
-								 ClumpletReader& spb)
+								 ClumpletReader& spb,
+								 bool loopback)
 {
 /**************************************
  *
@@ -4724,12 +4854,15 @@ static rem_port* analyze_service(PathName& service_name,
 							node_name.c_str(), user_string, uv_flag, spb);
 	}
 
+	if (!loopback)
+	{
+		return NULL;
+	}
+
 	// We have a local connection string. If we're a pure client,
 	// attempt connect to a localhost.
 
 	rem_port* port = NULL;
-
-#ifdef SUPERCLIENT
 
 	if (node_name.isEmpty())
 	{
@@ -4751,8 +4884,6 @@ static rem_port* analyze_service(PathName& service_name,
 								INET_LOCALHOST, user_string, uv_flag, spb);
 		}
 	}
-
-#endif // SUPERCLIENT
 
 	return port;
 }
