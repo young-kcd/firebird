@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:		Firebird Message file edit program
- *	MODULE:			change_msgs.epp
+ *	PROGRAM:	Interbase Message file edit program
+ *	MODULE:		change_msgs.epp
  *	DESCRIPTION:	Allow limited change of messages in database
  *
  * The contents of this file are subject to the Interbase Public
@@ -46,13 +46,13 @@ const char UPPER_Z	= 'Z';
 
 static void ascii_str_upper(char*);
 static void explicit_print(const TEXT*);
-static bool get_sql_class(char*);
-static bool get_sql_subclass(char*);
+static bool get_sql_class(UCHAR *);
+static bool get_sql_subclass(UCHAR *);
 #ifdef NOT_USED_OR_REPLACED
-static bool get_symbol(char*);
+static bool get_symbol(UCHAR *);
 #endif
-static bool mustget(char*);
-static bool translate(const char*, char*, SSHORT);
+static bool mustget(SCHAR *);
+static bool translate(const SCHAR*, SCHAR*, SSHORT);
 
 
 int main( int argc, char **argv)
@@ -64,18 +64,14 @@ int main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.
+ *	Top level routine.  
  *
  **************************************/
-	char facility[20], text[256];
-	BASED_ON MESSAGES.ROUTINE routine;
-	BASED_ON MESSAGES.MODULE module;
-	BASED_ON SYSTEM_ERRORS.SQL_CLASS sql_class;
-	BASED_ON SYSTEM_ERRORS.SQL_SUBCLASS sql_sub_class;
-	BASED_ON SYSTEM_ERRORS.GDS_SYMBOL symbol;
-	SCHAR input[200];
-	char yesno[100];
-	char nstring[32];
+	char facility[20], text[256], module[32], routine[32];
+	UCHAR sql_class[32], sql_sub_class[32];
+	SCHAR input[200], yesno[100];
+	char symbol[30];
+	SCHAR nstring[32];
 	SSHORT count;
 	SSHORT sql_number;
 	SSHORT msg_number;
@@ -170,7 +166,8 @@ int main( int argc, char **argv)
 							if (routine[0])
 								strcpy(Y.ROUTINE, routine);
 							if (text[0])
-								while (!translate(text, Y.TEXT, sizeof(Y.TEXT)))
+								while (!translate
+									   (text, Y.TEXT, sizeof(Y.TEXT)))
 								{
 									printf
 										("Message too long: max length: %d\n",
@@ -190,9 +187,9 @@ int main( int argc, char **argv)
 							if (sql_number != 0)
 								Z.SQL_CODE = sql_number;
 							if (sql_class[0])
-								strcpy(Z.SQL_CLASS, sql_class);
+								strcpy(Z.SQL_CLASS, (char*) sql_class);
 							if (sql_sub_class[0])
-								strcpy(Z.SQL_SUBCLASS, sql_sub_class);
+								strcpy(Z.SQL_SUBCLASS, (char*) sql_sub_class);
 						END_MODIFY;
 					END_FOR;
 				}
@@ -255,10 +252,8 @@ static void explicit_print( const TEXT* string)
  **************************************/
 	const TEXT* p = string;
 
-	while (*p)
-	{
-		switch (*p)
-		{
+	while (*p) {
+		switch (*p) {
 		case '\n':
 			putchar('\\');
 			putchar('n');
@@ -302,7 +297,7 @@ static void explicit_print( const TEXT* string)
 }
 
 
-static bool get_sql_class(char* sql_class)
+static bool get_sql_class( UCHAR * sql_class)
 {
 /**************************************
  *
@@ -317,22 +312,22 @@ static bool get_sql_class(char* sql_class)
  **************************************/
 	while (true) {
 		printf("   SQLCLASS: ");
-		gets(sql_class);
-		const SSHORT length = strlen(sql_class);
+		gets((char*) sql_class);
+		const SSHORT length = strlen((char*) sql_class);
 		if (!length)
 			break;
 
 		if (length == 2)
 			return true;
-
-		fprintf(stderr, "Sqlclass is two characters!\n");
+		else
+			fprintf(stderr, "Sqlclass is two characters!\n");
 	}
 
 	return false;
 }
 
 
-static bool get_sql_subclass(char* sql_sub_class)
+static bool get_sql_subclass( UCHAR * sql_sub_class)
 {
 /**************************************
  *
@@ -347,21 +342,21 @@ static bool get_sql_subclass(char* sql_sub_class)
  **************************************/
 	while (true) {
 		printf("SQLSUBCLASS: ");
-		gets(sql_sub_class);
-		const SSHORT length = strlen(sql_sub_class);
+		gets((char*) sql_sub_class);
+		const SSHORT length = strlen((char*) sql_sub_class);
 		if (!length)
 			break;
 
 		if (length == 3)
 			return true;
-
-		fprintf(stderr, "Sqlsubclass is three characters!\n");
+		else
+			fprintf(stderr, "Sqlsubclass is three characters!\n");
 	}
 	return false;
 }
 
 #ifdef NOT_USED_OR_REPLACED
-static bool get_symbol(char* symbol)
+static bool get_symbol( UCHAR * symbol)
 {
 /**************************************
  *
@@ -377,14 +372,14 @@ static bool get_symbol(char* symbol)
 	while (true) {
 		fprintf(stderr, "Symbols are required for system errors!\n");
 		printf(" Symbol: ");
-		gets(symbol);
-		if (strlen(symbol))
+		gets((char*) symbol);
+		if (strlen((char*) symbol))
 			return true;
 	}
 }
 #endif
 
-static bool mustget(char* s)
+static bool mustget( SCHAR * s)
 {
 /**************************************
  *
@@ -398,14 +393,14 @@ static bool mustget(char* s)
  *
  **************************************/
 
-	if (!gets(s))
+	if (!gets((char*) s))
 		return false;
 
 	return (s[0] != 0);
 }
 
 
-static bool translate(const char* source, char* target, SSHORT length)
+static bool translate( const SCHAR* source, SCHAR* target, SSHORT length)
 {
 /**************************************
  *
@@ -421,15 +416,12 @@ static bool translate(const char* source, char* target, SSHORT length)
 	SCHAR* p = target;
 	const SCHAR* q = source;
 
-	while (*q)
-	{
+	while (*q) {
 		if (!--length)
 			return false;
-
 		if (*q == '\\') {
 			*q++;
-			switch (*q)
-			{
+			switch (*q) {
 			case 'n':
 				*p++ = '\n';
 				break;

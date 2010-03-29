@@ -27,6 +27,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdio.h>
+#include "../jrd/isc_proto.h"
 #include <stdlib.h>
 #include <windows.h>
 //#include "../jrd/license.h"
@@ -39,7 +40,9 @@ static void cleanup_key(HKEY, const char*);
 static USHORT remove_subkeys(HKEY, bool, pfnRegError);
 #endif
 
-USHORT REGISTRY_install(HKEY hkey_rootnode, const TEXT* directory, pfnRegError err_handler)
+USHORT REGISTRY_install(HKEY hkey_rootnode,
+						const TEXT* directory,
+						pfnRegError err_handler)
 {
 /**************************************
  *
@@ -67,8 +70,7 @@ USHORT REGISTRY_install(HKEY hkey_rootnode, const TEXT* directory, pfnRegError e
 	TEXT path_name[MAXPATHLEN];
 	TEXT* p;
 	USHORT len = GetFullPathName(directory, sizeof(path_name), path_name, &p);
-	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\')
-	{
+	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\') {
 		path_name[len++] = '\\';
 		path_name[len] = 0;
 	}
@@ -120,11 +122,14 @@ USHORT REGISTRY_remove(HKEY hkey_rootnode,
 		return (*err_handler) (status, "RegOpenKeyEx", NULL);
 	}
 
-	// Remove the FB_DEFAULT_INSTANCE value
-	if ((status = RegDeleteValue(hkey_instances, FB_DEFAULT_INSTANCE)) != ERROR_SUCCESS)
+	// Remove the DEFAULT_INSTANCE value
+	if ((status = RegDeleteValue(hkey_instances, FB_DEFAULT_INSTANCE))
+		!= ERROR_SUCCESS)
 	{
 		RegCloseKey(hkey_instances);
-		return silent_flag ? FB_FAILURE : (*err_handler) (status, "RegDeleteValue", NULL);
+		if (silent_flag)
+			return FB_FAILURE;
+		return (*err_handler) (status, "RegDeleteValue", NULL);
 	}
 
 	RegCloseKey(hkey_instances);
@@ -150,7 +155,7 @@ static void cleanup_key(HKEY hkey_rootnode, const char* key)
  **************************************/
 
 	HKEY hkey;
-
+	
 	if (RegOpenKeyEx(hkey_rootnode, key, 0,
 			KEY_READ | KEY_WRITE, &hkey) == ERROR_SUCCESS)
 	{
@@ -166,11 +171,13 @@ static void cleanup_key(HKEY hkey_rootnode, const char* key)
 		else
 			RegCloseKey(hkey);
 	}
+	return;
 }
 
 #ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
 // I keep it here for possible re-use after FB 1.5 release. OM, sept 30, 2003.
-static USHORT remove_subkeys(HKEY hkey,
+static USHORT remove_subkeys(
+							 HKEY hkey,
 							 bool silent_flag,
 							 pfnRegError err_handler)
 {
@@ -195,8 +202,7 @@ static USHORT remove_subkeys(HKEY hkey,
 							 &n_sub_keys,
 							 &max_sub_key,
 							 &i, &i, &i, &i, &i, &last_write_time);
-	if (status != ERROR_SUCCESS && status != ERROR_MORE_DATA)
-	{
+	if (status != ERROR_SUCCESS && status != ERROR_MORE_DATA) {
 		if (silent_flag)
 			return FB_FAILURE;
 		return (*err_handler) (status, "RegQueryInfoKey", NULL);
@@ -206,8 +212,7 @@ static USHORT remove_subkeys(HKEY hkey,
 		(TEXT*) malloc((SLONG) max_sub_key) : buffer;
 
 	const TEXT* p = NULL;
-	for (DWORD i = 0; i < n_sub_keys; i++)
-	{
+	for (DWORD i = 0; i < n_sub_keys; i++) {
 		DWORD sub_key_len = max_sub_key;
 		if ((status = RegEnumKeyEx(hkey, i, sub_key, &sub_key_len,
 								   NULL, NULL, NULL,
@@ -221,7 +226,7 @@ static USHORT remove_subkeys(HKEY hkey,
 		if ((status = RegOpenKeyEx(hkey, sub_key,
 								   0,
 								   KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE |
-								   KEY_WRITE, &hkey_sub)) != ERROR_SUCCESS)
+								   KEY_WRITE, &hkey_sub)) != ERROR_SUCCESS) 
 		{
 			p = "RegOpenKeyEx";
 			break;
@@ -230,8 +235,7 @@ static USHORT remove_subkeys(HKEY hkey,
 		RegCloseKey(hkey_sub);
 		if (ret == FB_FAILURE)
 			return FB_FAILURE;
-		if ((status = RegDeleteKey(hkey, sub_key)) != ERROR_SUCCESS)
-		{
+		if ((status = RegDeleteKey(hkey, sub_key)) != ERROR_SUCCESS) {
 			p = "RegDeleteKey";
 			break;
 		}
@@ -240,8 +244,7 @@ static USHORT remove_subkeys(HKEY hkey,
 	if (buffer != sub_key)
 		free(sub_key);
 
-	if (p)
-	{
+	if (p) {
 		if (silent_flag)
 			return FB_FAILURE;
 		return (*err_handler) (status, p, NULL);

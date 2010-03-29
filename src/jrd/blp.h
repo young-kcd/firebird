@@ -17,20 +17,19 @@
  * Contributor(s): ______________________________________.
  *
  * 2001.07.28: John Bellardo: Added skip and current_role to table.
- * Adriano dos Santos Fernandes
  */
 static const struct
 {
 	const char* blr_string;
 	const UCHAR* blr_operators;
-} blr_print_table[] =
+} blr_table[] =
 {
 	{NULL, NULL},
 	{"assignment", two},
 	{"begin", begin},
 	{"declare", declare},
 	{"message", message},
-	{"erase", byte_line},
+	{"erase", byte},
 	{"fetch", two},
 	{"for", two},
 	{"if", three},
@@ -43,11 +42,11 @@ static const struct
 	{"store", two},
 	{NULL, NULL},
 	{"label", byte_verb},
-	{"leave", byte_line},
+	{"leave", byte},
 	{"store2", three},
 	{"post", one},	// 20
 	{"literal", literal},
-	{"dbkey", byte_line},
+	{"dbkey", byte},
 	{"field", field},
 	{"fid", parm},
 	{"parameter", parm},
@@ -71,7 +70,7 @@ static const struct
 	{"via", three},
 	{"user_name", zero},
 	{"null", zero},
-	{"equiv", two},
+	{NULL, NULL},
 	{"eql", two},
 	{"neq", two},
 	{"gtr", two},
@@ -158,7 +157,7 @@ static const struct
 	{"error_handler", error_handler},	// 130
 	{"cast", cast},
 	{NULL, NULL},
-	{"procedure2", procedure2},
+	{NULL, NULL},
 	{"start_savepoint", zero},
 	{"end_savepoint", zero},
 	{NULL, NULL},
@@ -179,7 +178,7 @@ static const struct
 	{"ansi_any", one},
 	{"exists", one},
 	{NULL, NULL},
-	{"record_version", byte_line},
+	{"record_version", byte},
 	{"stall", zero},
 	{NULL, NULL},
 	{NULL, NULL},
@@ -194,17 +193,13 @@ static const struct
 	{"user_savepoint", user_savepoint},
 	{"dcl_cursor", dcl_cursor},
 	{"cursor_stmt", cursor_stmt},
-	{"current_timestamp2", byte_line},
-	{"current_time2", byte_line},
-	{"agg_list", two}, // 170
-	{"agg_list_distinct", two},
-	/***
+	{"current_timestamp2", byte},
+	{"current_time2", byte},
 	// These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete
-	{"gen_id2", gen_id},
+	{"agg_average_distinct2", one},	// 170
+	{"average2", two}, 
+	{"gen_id2", gen_id}, 
 	{"set_generator2", gen_id},
-	***/
-	{"modify2", modify2},
-	{NULL, NULL},
 	// New BLR in FB1
 	{"current_role", zero},
 	{"skip", one},
@@ -217,24 +212,6 @@ static const struct
 	{"lowcase", one},
 	{"strlen", strlength},
 	{"trim", trim},
-	// New BLR in FB2.1
-	{"init_variable", variable},
-	{"recurse", union_ops},
-	{"sys_function", function},
-	// New BLR in FB2.5
-	{"auto_trans", byte_verb},
-	{"similar", similar},
-	{"exec_stmt", exec_stmt},
-	{"stmt_expr", two},
-	{"derived_expr", derived_expr},
-	{"procedure3", procedure3},
-	{"exec_proc2", exec_proc2},
-	{"function2", function2},
-	{"window", window},
-	{"partition_by", partition_by},
-	{"continue_loop", byte_line},
-	{"procedure4", procedure4},
-	{"agg_function", function},
-	{"substring_similar", three},
 	{0, 0}
 };
+

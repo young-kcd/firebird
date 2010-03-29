@@ -30,17 +30,15 @@
 /* Indices to be created */
 
 /* Maxinum number of segments in any existing system index */
-const int  INI_IDX_MAX_SEGMENTS		= 3;
+const int  INI_IDX_MAX_SEGMENTS		= 2;
 
-struct ini_idx_t
-{
+struct ini_idx_t {
 	UCHAR ini_idx_index_id;
 	UCHAR ini_idx_version_flag;
 	UCHAR ini_idx_relid;
 	UCHAR ini_idx_flags;
 	UCHAR ini_idx_segment_count;
-	struct ini_idx_segment_t
-	{
+	struct ini_idx_segment_t {
 		UCHAR ini_idx_rfld_id;
 		UCHAR ini_idx_type;
 	} ini_idx_segment[INI_IDX_MAX_SEGMENTS];
@@ -53,11 +51,10 @@ using Jrd::idx_metadata;
 using Jrd::idx_numeric;
 using Jrd::idx_descending;
 
-#define INDEX(id, flag, rel, unique, count) {(id), (flag), (UCHAR) (rel), (unique), (count), {
-#define SEGMENT(fld, type) {(fld), (type)}
+#define INDEX(id,flag,rel,unique,count) {(id),(flag),(UCHAR) (rel),(unique),(count),{
+#define SEGMENT(fld,type) {(fld),(type)}
 
-static const struct ini_idx_t indices[] =
-{
+static const struct ini_idx_t indices[] = {
 
 /*	define index RDB$INDEX_0 for RDB$RELATIONS unique RDB$RELATION_NAME; */
 	INDEX(0, ODS_8_0, rel_relations, idx_unique, 1)
@@ -95,16 +92,14 @@ static const struct ini_idx_t indices[] =
 	INDEX(8, ODS_8_0, rel_triggers, idx_unique, 1)
 		SEGMENT(f_trg_name, idx_metadata)	/* trigger name */
 	}},
-#if 0	// removed for package support
 /*	define index RDB$INDEX_9 for RDB$FUNCTIONS unique RDB$FUNCTION_NAME; */
 	INDEX(9, ODS_8_0, rel_funs, idx_unique, 1)
-		SEGMENT(f_fun_name, idx_metadata)	// function name
+		SEGMENT(f_fun_name, idx_metadata)	/* function name */
 	}},
 /*	define index RDB$INDEX_10 for RDB$FUNCTION_ARGUMENTS RDB$FUNCTION_NAME; */
 	INDEX(10, ODS_8_0, rel_args, 0, 1)
-		SEGMENT(f_arg_fun_name, idx_metadata)	// function name
+		SEGMENT(f_arg_fun_name, idx_metadata)	/* function name */
 	}},
-#endif
 /*	define index RDB$INDEX_11 for RDB$GENERATORS unique RDB$GENERATOR_NAME; */
 	INDEX(11, ODS_8_0, rel_gens, idx_unique, 1)
 		SEGMENT(f_gen_name, idx_metadata)	/* Generator name */
@@ -136,13 +131,11 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_flt_input, idx_numeric),	/* input subtype */
 		SEGMENT(f_flt_output, idx_numeric)	/* output subtype */
 	}},
-#if 0	// removed for package support
 /*	define index RDB$INDEX_18 for RDB$PROCEDURE_PARAMETERS unique RDB$PROCEDURE_NAME, RDB$PARAMETER_NAME; */
 	INDEX(18, ODS_8_0, rel_prc_prms, idx_unique, 2)
-		SEGMENT(f_prm_procedure, idx_metadata),	// procedure name
-		SEGMENT(f_prm_name, idx_metadata)		// parameter name
+		SEGMENT(f_prm_procedure, idx_metadata),	/* procedure name */
+		SEGMENT(f_prm_name, idx_metadata)	/* parameter name */
 	}},
-#endif
 
 	/* Index on rel_files removed 93-Feb-27 by DaveS.
 	 * f_file_name is now 255 bytes, which with roundup creates
@@ -150,7 +143,7 @@ static const struct ini_idx_t indices[] =
 	 * Per Deej, this is only necessary to prevent someone creating
 	 * a shadow file of the same name as the database file.
 	 * Once large indices are implemented this should be reactivated.
-	 *
+	 * 
 	 *	INDEX (XX, no_ODS, rel_files, idx_unique, 1)
 	 *		SEGMENT (f_file_name, idx_string)
 	 *  }},
@@ -166,22 +159,20 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_coll_name, idx_metadata)	// collation name
 	}},
 
-#if 0	// removed for package support
 /*	define index RDB$INDEX_21 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME; */
 	INDEX(21, ODS_8_0, rel_procedures, idx_unique, 1)
-		SEGMENT(f_prc_name, idx_metadata)	// procedure name
+		SEGMENT(f_prc_name, idx_metadata)	/* procedure name */
 	}},
-#endif
-/*	define index RDB$INDEX_22 for RDB$PROCEDURES unique RDB$PROCEDURE_ID; */
-	INDEX(22, ODS_8_0, rel_procedures, idx_unique, 1)
+/*	define index RDB$INDEX_22 for RDB$PROCEDURES RDB$PROCEDURE_ID; */
+	INDEX(22, ODS_8_0, rel_procedures, 0, 1)
 		SEGMENT(f_prc_id, idx_numeric)	/* procedure id */
 	}},
 /*	define index RDB$INDEX_23 for RDB$EXCEPTIONS unique RDB$EXCEPTION_NAME; */
 	INDEX(23, ODS_8_0, rel_exceptions, idx_unique, 1)
 		SEGMENT(f_xcp_name, idx_metadata)	/* exception name */
 	}},
-/*	define index RDB$INDEX_24 for RDB$EXCEPTIONS unique RDB$EXCEPTION_NUMBER; */
-	INDEX(24, ODS_8_0, rel_exceptions, idx_unique, 1)
+/*	define index RDB$INDEX_24 for RDB$EXCEPTIONS RDB$EXCEPTION_NUMBER; */
+	INDEX(24, ODS_8_0, rel_exceptions, 0, 1)
 		SEGMENT(f_xcp_number, idx_numeric)	/* exception number */
 	}},
 /*	define index RDB$INDEX_25 for RDB$CHARACTER_SETS unique	RDB$CHARACTER_SET_ID; */
@@ -195,9 +186,9 @@ static const struct ini_idx_t indices[] =
 	}},
 
 	/* Last index in ODS 8.0 is RDB$INDEX_26 */
-
+	
 	/* New indices added as part of ODS 8.1
-	 * These are now indices on all system tables that previously
+	 * These are now indices on all system tables that previously 
 	 * did not have one, except for RDB$PAGES & RDB$LOG_FILES
 	 * An index on rel_pages would help DROP TABLE, but not any other
 	 * operation.
@@ -257,9 +248,9 @@ static const struct ini_idx_t indices[] =
 	}},
 
 	/* Last index in ODS 9.0 is RDB$INDEX_39 */
-
+	
 	/* New indices added as part of ODS 9.1
-	 * These are now indices on all system tables that previously
+	 * These are now indices on all system tables that previously 
 	 * did not have one.
 	 */
 
@@ -271,7 +262,7 @@ static const struct ini_idx_t indices[] =
 	/* Last index in both ODS 9.1 and ODS 10.0 is RDB$INDEX_40 */
 
 	/* New indices added as part of ODS 10.1
-	 * These are now indices on all system tables that previously
+	 * These are now indices on all system tables that previously 
 	 * did not have one.
 	 */
 
@@ -292,7 +283,7 @@ static const struct ini_idx_t indices[] =
 	/* Last index in ODS 10.1 is RDB$INDEX_43 */
 
 	/* New indices added as part of ODS 11.0
-	 * These are now indices on all system tables that previously
+	 * These are now indices on all system tables that previously 
 	 * did not have one.
 	 */
 
@@ -304,50 +295,9 @@ static const struct ini_idx_t indices[] =
 /*	define index RDB$INDEX_45 for RDB$FILTERS RDB$FUNCTION_NAME; */
 	INDEX(45, ODS_11_0, rel_filters, idx_unique, 1)
 		SEGMENT(f_flt_name, idx_metadata)	/* function name */
-	}},
-
-	/* Last index in both ODS 11.0 and ODS 11.1 is RDB$INDEX_45 */
-
-	/* New indices added as part of ODS 11.2
-	 * These are now indices on all system tables that previously
-	 * did not have one.
-	 */
-
-	/*	define index RDB$INDEX_46 for RDB$GENERATORS unique RDB$GENERATOR_ID; */
-	INDEX(46, ODS_11_2, rel_gens, idx_unique, 1)
-		SEGMENT(f_gen_id, idx_numeric)	/* generator id */
-	}},
-
-	/* Last index in ODS 11.2 is RDB$INDEX_46 */
-
-	// define index RDB$INDEX_47 for RDB$FUNCTIONS unique RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
-	INDEX(47, ODS_12_0, rel_funs, idx_unique, 2)
-		SEGMENT(f_fun_name, idx_metadata),		// function name
-		SEGMENT(f_fun_pkg_name, idx_metadata)	// package name
-	}},
-	// define index RDB$INDEX_48 for RDB$FUNCTION_ARGUMENTS RDB$FUNCTION_NAME, RDB$PACKAGE_NAME;
-	INDEX(48, ODS_12_0, rel_args, 0, 2)
-		SEGMENT(f_arg_fun_name, idx_metadata),	// function name
-		SEGMENT(f_arg_pkg_name, idx_metadata)	// package name
-	}},
-	// define index RDB$INDEX_49 for RDB$PACKAGES unique RDB$PACKAGE_NAME;
-	INDEX(49, ODS_12_0, rel_packages, idx_unique, 1)
-		SEGMENT(f_pkg_name, idx_metadata)		// package name
-	}},
-	// define index RDB$INDEX_50 for RDB$PROCEDURES unique RDB$PROCEDURE_NAME, RDB$PACKAGE_NAME;
-	INDEX(50, ODS_12_0, rel_procedures, idx_unique, 2)
-		SEGMENT(f_prc_name, idx_metadata),		// procedure name
-		SEGMENT(f_prc_pkg_name, idx_metadata)	// package name
-	}},
-	// define index RDB$INDEX_51 for RDB$PROCEDURE_PARAMETERS unique RDB$PROCEDURE_NAME,
-	// RDB$PARAMETER_NAME, RDB$PACKAGE_NAME;
-	INDEX(51, ODS_12_0, rel_prc_prms, idx_unique, 3)
-		SEGMENT(f_prm_procedure, idx_metadata),	// procedure name
-		SEGMENT(f_prm_name, idx_metadata),		// parameter name
-		SEGMENT(f_prm_pkg_name, idx_metadata)	// package name
 	}}
 
-	// Last index in ODS 12.0 is RDB$INDEX_51
+	/* Last index in ODS 11.0 is RDB$INDEX_45 */
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)

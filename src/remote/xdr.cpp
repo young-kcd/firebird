@@ -29,65 +29,74 @@
 #include "../remote/remote.h"
 #include "../remote/xdr.h"
 #include "../jrd/common.h"
+#include "../remote/allr_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
 
+// 30 Dec 2002. Nickolay Samofatov 
+// This needs to be checked for all supported platforms
+// The simpliest way to check it is to issue
+// "select abs(2.0/3.0) from rdb$database" from correct client
+// It will return big strange value in case of invalid define
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
+#define		SWAP_DOUBLE
+#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX)
+#undef		SWAP_DOUBLE
+#else
+#error "Define SWAP_DOUBLE for your platform correctly !"
+#endif
+
+#ifdef VMS
+double MTH$CVT_D_G(), MTH$CVT_G_D();
+#endif
+
 #ifdef BURP
-#include "../burp/misc_proto.h"
-inline UCHAR* XDR_ALLOC(ULONG size)
-{
+#include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
+inline UCHAR* XDR_ALLOC(ULONG size) {
 	return MISC_alloc_burp(size);
 }
-inline void XDR_FREEA(void* block)
-{
+inline void XDR_FREEA(void* block) {
 	MISC_free_burp(block);
 }
 #else // BURP
-inline UCHAR* XDR_ALLOC(ULONG size)
-{
+inline UCHAR* XDR_ALLOC(ULONG size) {
 	return (UCHAR*) gds__alloc((SLONG) size);
 }
-inline void XDR_FREEA(void* block)
-{
+inline void XDR_FREEA(void* block) {
 	gds__free(block);
 }
 #endif // BURP
 
 #ifdef DEBUG_XDR_MEMORY
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
-{
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len)
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
-{
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 	xdr_debug_memory (xdrs, XDR_FREE, xdrvar, addr, (ULONG) len);
 }
 #else
-inline void DEBUG_XDR_ALLOC(XDR*, const void*, const void*, ULONG)
-{
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 }
-inline void DEBUG_XDR_FREE(XDR*, const void*, const void*, ULONG)
-{
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
 }
-#endif // DEBUG_XDR_MEMORY
+#endif /* DEBUG_XDR_MEMORY */
 
-// Sun's XDR documentation says this should be "MAXUNSIGNED", but
-// for Firebird purposes, limiting strings to 65K is more than
-// sufficient.
-// This setting may be related to our max DSQL statement size.
+/* Sun's XDR documentation says this should be "MAXUNSIGNED", but
+   for InterBase purposes, limiting strings to 65K is more than
+   sufficient. */
 
 const u_int MAXSTRING_FOR_WRAPSTRING	= 65535;
 
 
-static XDR_INT mem_destroy(XDR*);
-static bool_t mem_getbytes(XDR*, SCHAR*, u_int);
-static bool_t mem_getlong(XDR*, SLONG*);
-static u_int mem_getpostn(XDR*);
-static caddr_t mem_inline(XDR*, u_int);
+static XDR_INT mem_destroy(XDR *);
+static bool_t mem_getbytes(XDR *, SCHAR *, u_int);
+static bool_t mem_getlong(XDR *, SLONG *);
+static u_int mem_getpostn(XDR *);
+static caddr_t mem_inline(XDR *, u_int);
 static bool_t mem_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t mem_putlong(XDR*, const SLONG*);
-static bool_t mem_setpostn(XDR*, u_int);
+static bool_t mem_putlong(XDR *, const SLONG*);
+static bool_t mem_setpostn(XDR *, u_int);
 
 
 static const XDR::xdr_ops mem_ops =
@@ -110,7 +119,7 @@ static const XDR::xdr_ops mem_ops =
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
 
 
-bool_t xdr_hyper( XDR* xdrs, void* pi64)
+bool_t xdr_hyper( XDR * xdrs, void * pi64)
 {
 /**************************************
  *
@@ -134,8 +143,7 @@ bool_t xdr_hyper( XDR* xdrs, void* pi64)
  **************************************/
 	SLONG temp_long[2];
 
-	switch (xdrs->x_op)
-	{
+	switch (xdrs->x_op) {
 	case XDR_ENCODE:
 		memcpy(temp_long, pi64, sizeof temp_long);
 #ifndef WORDS_BIGENDIAN
@@ -173,11 +181,11 @@ bool_t xdr_hyper( XDR* xdrs, void* pi64)
 	case XDR_FREE:
 		return TRUE;
 	}
-	// TMN: added compiler silencier return FALSE.
+// TMN: added compiler silencier return FALSE.
 	return FALSE;
 }
 
-bool_t xdr_bool( XDR* xdrs, bool_t* bp)
+bool_t xdr_bool( XDR * xdrs, bool_t * bp)
 {
 /**************************************
  *
@@ -211,11 +219,12 @@ bool_t xdr_bool( XDR* xdrs, bool_t* bp)
 }
 
 
-bool_t xdr_bytes(XDR* xdrs, SCHAR** bpp, u_int* lp, u_int maxlength)
+bool_t xdr_bytes(XDR * xdrs,
+				 SCHAR ** bpp, u_int * lp, u_int maxlength)
 {
 /**************************************
  *
- *	x d r _ b y t e s
+ *	x d r _ b y t e s 
  *
  **************************************
  *
@@ -229,7 +238,8 @@ bool_t xdr_bytes(XDR* xdrs, SCHAR** bpp, u_int* lp, u_int maxlength)
 	{
 	case XDR_ENCODE:
 		length = *lp;
-		if (length > (SLONG) maxlength || !PUTLONG(xdrs, &length) || !PUTBYTES(xdrs, *bpp, length))
+		if (length > (SLONG) maxlength ||
+			!PUTLONG(xdrs, &length) || !PUTBYTES(xdrs, *bpp, length))
 		{
 			return FALSE;
 		}
@@ -240,13 +250,14 @@ bool_t xdr_bytes(XDR* xdrs, SCHAR** bpp, u_int* lp, u_int maxlength)
 	case XDR_DECODE:
 		if (!*bpp)
 		{
-			*bpp = (SCHAR*) XDR_ALLOC((ULONG) (maxlength + 1));
-			// FREE: via XDR_FREE call to this procedure
-			if (!*bpp)			// NOMEM:
+			*bpp = (SCHAR *) XDR_ALLOC((ULONG) (maxlength + 1));
+			/* FREE: via XDR_FREE call to this procedure */
+			if (!*bpp)			/* NOMEM: */
 				return FALSE;
 			DEBUG_XDR_ALLOC(xdrs, bpp, *bpp, (maxlength + 1));
 		}
-		if (!GETLONG(xdrs, &length) || length > (SLONG) maxlength || !GETBYTES(xdrs, *bpp, length))
+		if (!GETLONG(xdrs, &length) ||
+			length > (SLONG) maxlength || !GETBYTES(xdrs, *bpp, length))
 		{
 			return FALSE;
 		}
@@ -269,7 +280,7 @@ bool_t xdr_bytes(XDR* xdrs, SCHAR** bpp, u_int* lp, u_int maxlength)
 }
 
 
-bool_t xdr_double(XDR* xdrs, double* ip)
+bool_t xdr_double(XDR * xdrs, double *ip)
 {
 /**************************************
  *
@@ -281,30 +292,71 @@ bool_t xdr_double(XDR* xdrs, double* ip)
  *	Map from external to internal representation (or vice versa).
  *
  **************************************/
+#ifdef VAX_FLOAT
+	SSHORT t1;
+#endif
 	union {
 		double temp_double;
 		SLONG temp_long[2];
+		SSHORT temp_short[4];
 	} temp;
-
-	fb_assert(sizeof(double) == sizeof(temp));
 
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
 		temp.temp_double = *ip;
-		if (PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) &&
-			PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
+#ifdef VAX_FLOAT
+		if (temp.temp_double != 0)
+			temp.temp_short[0] -= 0x20;
+		t1 = temp.temp_short[0];
+		temp.temp_short[0] = temp.temp_short[1];
+		temp.temp_short[1] = t1;
+		t1 = temp.temp_short[2];
+		temp.temp_short[2] = temp.temp_short[3];
+		temp.temp_short[3] = t1;
+#endif
+#ifdef SWAP_DOUBLE
+		if (PUTLONG(xdrs, &temp.temp_long[1]) &&
+			PUTLONG(xdrs, &temp.temp_long[0]))
 		{
 			return TRUE;
 		}
 		return FALSE;
+#else
+		if (PUTLONG(xdrs, &temp.temp_long[0]) &&
+			PUTLONG(xdrs, &temp.temp_long[1]))
+		{
+			return TRUE;
+		}
+		return FALSE;
+#endif
 
 	case XDR_DECODE:
-		if (!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) ||
-			!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
+#ifdef SWAP_DOUBLE
+		if (!GETLONG(xdrs, &temp.temp_long[1]) ||
+			!GETLONG(xdrs, &temp.temp_long[0]))
 		{
 			return FALSE;
 		}
+#else
+		if (!GETLONG(xdrs, &temp.temp_long[0]) ||
+			!GETLONG(xdrs, &temp.temp_long[1]))
+		{
+			return FALSE;
+		}
+#endif
+#ifdef VAX_FLOAT
+		t1 = temp.temp_short[0];
+		temp.temp_short[0] = temp.temp_short[1];
+		temp.temp_short[1] = t1;
+		t1 = temp.temp_short[2];
+		temp.temp_short[2] = temp.temp_short[3];
+		temp.temp_short[3] = t1;
+		if (!temp.temp_long[1] && !(temp.temp_long[0] ^ 0x8000))
+			temp.temp_long[0] = 0;
+		else if (temp.temp_long[1] || temp.temp_long[0])
+			temp.temp_short[0] += 0x20;
+#endif
 		*ip = temp.temp_double;
 		return TRUE;
 
@@ -316,7 +368,43 @@ bool_t xdr_double(XDR* xdrs, double* ip)
 }
 
 
-bool_t xdr_enum(XDR* xdrs, xdr_op* ip)
+#ifdef VMS
+bool_t xdr_d_float(xdrs, ip)
+	 XDR *xdrs;
+	 double *ip;
+{
+/**************************************
+ *
+ *	x d r _ d _ f l o a t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Map from external to internal representation (or vice versa).
+ *
+ **************************************/
+	double temp;
+
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		temp = MTH$CVT_D_G(ip);
+		return xdr_double(xdrs, &temp);
+
+	case XDR_DECODE:
+		if (!xdr_double(xdrs, ip))
+			return FALSE;
+		*ip = MTH$CVT_G_D(ip);
+		return TRUE;
+
+	case XDR_FREE:
+		return TRUE;
+	}
+}
+#endif
+
+
+bool_t xdr_enum(XDR * xdrs, enum_t * ip)
 {
 /**************************************
  *
@@ -333,13 +421,13 @@ bool_t xdr_enum(XDR* xdrs, xdr_op* ip)
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
-		temp = (SLONG) *ip;
+		temp = (SLONG) * ip;
 		return PUTLONG(xdrs, &temp);
 
 	case XDR_DECODE:
 		if (!GETLONG(xdrs, &temp))
 			return FALSE;
-		*ip = (xdr_op) temp;
+		*ip = (enum_t) temp;
 		return TRUE;
 
 	case XDR_FREE:
@@ -350,7 +438,7 @@ bool_t xdr_enum(XDR* xdrs, xdr_op* ip)
 }
 
 
-bool_t xdr_float(XDR* xdrs, float* ip)
+bool_t xdr_float(XDR * xdrs, float *ip)
 {
 /**************************************
  *
@@ -362,14 +450,51 @@ bool_t xdr_float(XDR* xdrs, float* ip)
  *	Map from external to internal representation (or vice versa).
  *
  **************************************/
+#ifdef VAX_FLOAT
+	SSHORT t1;
+	union {
+		float temp_float;
+		SLONG temp_long;
+		USHORT temp_short[2];
+	} temp;
+#endif
+
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
+#ifdef VAX_FLOAT
+		temp.temp_float = *ip;
+		if (temp.temp_float)
+		{
+			t1 = temp.temp_short[0];
+			temp.temp_short[0] = temp.temp_short[1];
+			temp.temp_short[1] = t1 - 0x100;
+		}
+		if (!PUTLONG(xdrs, &temp))
+			return FALSE;
+		return TRUE;
+#else
 		return PUTLONG(xdrs, reinterpret_cast<SLONG*>(ip));
+#endif
 
 	case XDR_DECODE:
+#ifdef VAX_FLOAT
+		if (!GETLONG(xdrs, &temp))
+			return FALSE;
+		if (!(temp.temp_long ^ 0x80000000))
+			temp.temp_long = 0;
+		else if (temp.temp_long)
+		{
+			t1 = temp.temp_short[1];
+			temp.temp_short[1] = temp.temp_short[0];
+			temp.temp_short[0] = t1 + 0x100;
+		}
+		*ip = temp.temp_float;
+		return TRUE;
+#else
 #pragma FB_COMPILER_MESSAGE("BUGBUG! No way float* and SLONG* are compatible!")
 		return GETLONG(xdrs, reinterpret_cast<SLONG*>(ip));
+#endif
 
 	case XDR_FREE:
 		return TRUE;
@@ -379,7 +504,7 @@ bool_t xdr_float(XDR* xdrs, float* ip)
 }
 
 
-bool_t xdr_free(xdrproc_t proc, SCHAR* objp)
+bool_t xdr_free(xdrproc_t proc, SCHAR * objp)
 {
 /**************************************
  *
@@ -399,7 +524,7 @@ bool_t xdr_free(xdrproc_t proc, SCHAR* objp)
 }
 
 
-bool_t xdr_int(XDR* xdrs, int* ip)
+bool_t xdr_int(XDR * xdrs, int *ip)
 {
 /**************************************
  *
@@ -433,7 +558,7 @@ bool_t xdr_int(XDR* xdrs, int* ip)
 }
 
 
-bool_t xdr_long(XDR* xdrs, SLONG* ip)
+bool_t xdr_long(XDR * xdrs, SLONG * ip)
 {
 /**************************************
  *
@@ -462,7 +587,7 @@ bool_t xdr_long(XDR* xdrs, SLONG* ip)
 }
 
 
-bool_t xdr_opaque(XDR* xdrs, SCHAR* p, u_int len)
+bool_t xdr_opaque(XDR * xdrs, SCHAR * p, u_int len)
 {
 /**************************************
  *
@@ -503,7 +628,7 @@ bool_t xdr_opaque(XDR* xdrs, SCHAR* p, u_int len)
 }
 
 
-bool_t xdr_short(XDR* xdrs, SSHORT* ip)
+bool_t xdr_short(XDR * xdrs, SSHORT * ip)
 {
 /**************************************
  *
@@ -537,7 +662,8 @@ bool_t xdr_short(XDR* xdrs, SSHORT* ip)
 }
 
 
-bool_t xdr_string(XDR* xdrs, SCHAR** sp, u_int maxlength)
+bool_t xdr_string(XDR * xdrs,
+				  SCHAR ** sp, u_int maxlength)
 {
 /**************************************
  *
@@ -570,9 +696,9 @@ bool_t xdr_string(XDR* xdrs, SCHAR** sp, u_int maxlength)
 	case XDR_DECODE:
 		if (!*sp)
 		{
-			*sp = (SCHAR*) XDR_ALLOC((ULONG) (maxlength + 1));
-			// FREE: via XDR_FREE call to this procedure
-			if (!*sp)			// NOMEM: return error
+			*sp = (SCHAR *) XDR_ALLOC((ULONG) (maxlength + 1));
+			/* FREE: via XDR_FREE call to this procedure */
+			if (!*sp)			/* NOMEM: return error */
 				return FALSE;
 			DEBUG_XDR_ALLOC(xdrs, sp, *sp, (maxlength + 1));
 		}
@@ -600,7 +726,7 @@ bool_t xdr_string(XDR* xdrs, SCHAR** sp, u_int maxlength)
 }
 
 
-bool_t xdr_u_int(XDR* xdrs, u_int* ip)
+bool_t xdr_u_int(XDR * xdrs, u_int * ip)
 {
 /**************************************
  *
@@ -635,7 +761,7 @@ bool_t xdr_u_int(XDR* xdrs, u_int* ip)
 }
 
 
-bool_t xdr_u_long(XDR* xdrs, ULONG* ip)
+bool_t xdr_u_long(XDR * xdrs, ULONG * ip)
 {
 /**************************************
  *
@@ -666,7 +792,7 @@ bool_t xdr_u_long(XDR* xdrs, ULONG* ip)
 }
 
 
-bool_t xdr_u_short(XDR* xdrs, u_short* ip)
+bool_t xdr_u_short(XDR * xdrs, u_short * ip)
 {
 /**************************************
  *
@@ -701,7 +827,7 @@ bool_t xdr_u_short(XDR* xdrs, u_short* ip)
 
 
 int xdr_union(	XDR*			xdrs,
-				xdr_op*			dscmp,
+				enum_t*			dscmp,
 				SCHAR*			unp,
 				xdr_discrim*	choices,
 				xdrproc_t		dfault)
@@ -721,7 +847,7 @@ int xdr_union(	XDR*			xdrs,
 	// can have any size.
 	int enum_value = *dscmp;
 	const bool_t bOK = xdr_int(xdrs, &enum_value);
-	*dscmp = static_cast<xdr_op>(enum_value);
+	*dscmp = static_cast < enum_t >(enum_value);
 
 	if (!bOK)
 	{
@@ -745,7 +871,7 @@ int xdr_union(	XDR*			xdrs,
 }
 
 
-bool_t xdr_wrapstring(XDR* xdrs, SCHAR** strp)
+bool_t xdr_wrapstring(XDR * xdrs, SCHAR ** strp)
 {
 /**************************************
  *
@@ -762,7 +888,10 @@ bool_t xdr_wrapstring(XDR* xdrs, SCHAR** strp)
 }
 
 
-int xdrmem_create(	XDR* xdrs, SCHAR* addr, u_int len, xdr_op x_op)
+int xdrmem_create(	XDR*	xdrs,
+					SCHAR*			addr,
+					u_int			len,
+					enum xdr_op		x_op)
 {
 /**************************************
  *
@@ -784,7 +913,7 @@ int xdrmem_create(	XDR* xdrs, SCHAR* addr, u_int len, xdr_op x_op)
 }
 
 
-static XDR_INT mem_destroy(XDR*)
+static XDR_INT mem_destroy(XDR * xdrs)
 {
 /**************************************
  *
@@ -800,7 +929,9 @@ static XDR_INT mem_destroy(XDR*)
 }
 
 
-static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, u_int count)
+static bool_t mem_getbytes(	XDR*	xdrs,
+							SCHAR*	buff,
+							u_int	count)
 {
 /**************************************
  *
@@ -830,7 +961,7 @@ static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, u_int count)
 }
 
 
-static bool_t mem_getlong( XDR* xdrs, SLONG* lp)
+static bool_t mem_getlong( XDR * xdrs, SLONG * lp)
 {
 /**************************************
  *
@@ -848,37 +979,15 @@ static bool_t mem_getlong( XDR* xdrs, SLONG* lp)
 		return FALSE;
 	}
 
-	SLONG* p = (SLONG*) xdrs->x_private;
+	SLONG* p = (SLONG *) xdrs->x_private;
 	*lp = ntohl(*p++);
-	xdrs->x_private = (SCHAR*) p;
+	xdrs->x_private = (SCHAR *) p;
 
 	return TRUE;
 }
 
 
-SLONG getOperation(const void* data, size_t size)
-{
-/**************************************
- *
- *	g e t O p e r a t i o n
- *
- **************************************
- *
- * Functional description
- *	Fetch an operation from buffer in network format
- *
- **************************************/
-	if (size < sizeof(SLONG))
-	{
-		return op_void;
-	}
-
-	const SLONG* p = (SLONG*) data;
-	return ntohl(*p);
-}
-
-
-static u_int mem_getpostn( XDR* xdrs)
+static u_int mem_getpostn( XDR * xdrs)
 {
 /**************************************
  *
@@ -895,7 +1004,7 @@ static u_int mem_getpostn( XDR* xdrs)
 }
 
 
-static caddr_t mem_inline( XDR* xdrs, u_int bytecount)
+static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -915,7 +1024,9 @@ static caddr_t mem_inline( XDR* xdrs, u_int bytecount)
 }
 
 
-static bool_t mem_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
+static bool_t mem_putbytes(
+						   XDR* xdrs,
+						   const SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -945,7 +1056,7 @@ static bool_t mem_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t mem_putlong( XDR* xdrs, const SLONG* lp)
+static bool_t mem_putlong( XDR * xdrs, const SLONG* lp)
 {
 /**************************************
  *
@@ -963,15 +1074,15 @@ static bool_t mem_putlong( XDR* xdrs, const SLONG* lp)
 		return FALSE;
 	}
 
-	SLONG* p = (SLONG*) xdrs->x_private;
+	SLONG* p = (SLONG *) xdrs->x_private;
 	*p++ = htonl(*lp);
-	xdrs->x_private = (SCHAR*) p;
+	xdrs->x_private = (SCHAR *) p;
 
 	return TRUE;
 }
 
 
-static bool_t mem_setpostn( XDR* xdrs, u_int bytecount)
+static bool_t mem_setpostn( XDR * xdrs, u_int bytecount)
 {
 /**************************************
  *

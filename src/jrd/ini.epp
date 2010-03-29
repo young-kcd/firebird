@@ -32,7 +32,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "gen/ids.h"
-#include "../jrd/intl.h"
 #include "../jrd/tra.h"
 #include "../jrd/trig.h"
 #include "../jrd/intl.h"
@@ -40,7 +39,7 @@
 #include "../jrd/ini.h"
 #include "../jrd/idx.h"
 #include "../jrd/gdsassert.h"
-#include "../dsql/dsql.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -53,38 +52,48 @@
 #include "../jrd/ini_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/obj.h"
 #include "../jrd/acl.h"
 #include "../jrd/irq.h"
-#include "../jrd/IntlManager.h"
-#include "../jrd/PreparedStatement.h"
-#include "../jrd/constants.h"
 
-using namespace Firebird;
 using namespace Jrd;
 
 DATABASE DB = FILENAME "ODS.RDB";
 
 #define PAD(string, field) jrd_vtof ((char*)(string), field, sizeof (field))
-const int FB_MAX_ACL_SIZE	= 4096;
+const int MAX_ACL_SIZE		= 4096;
+const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 
-
-static void add_index_set(Database*);
+#ifdef NOT_USED_OR_REPLACED
+static void add_generator(TEXT*, jrd_req**);
+#endif
+static void add_global_fields(USHORT);
+static void add_index_set(Database*, bool, USHORT, USHORT);
+static void add_new_triggers(USHORT, USHORT);
+static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
 		const TEXT*, const UCHAR*, const SSHORT);
+#ifdef NOT_USED_OR_REPLACED
+static void add_trigger(TEXT*, jrd_req**, jrd_req**);
+#endif
+//static void add_user_priv(thread_db*, TEXT*, TEXT*, TEXT*, TEXT);
+static int init2_helper(const UCHAR* fld, int n, jrd_rel* relation);
+static void modify_relation_field(thread_db*, const UCHAR*, const UCHAR*, jrd_req**);
 static void store_generator(thread_db*, const gen*, jrd_req**);
 static void store_global_field(thread_db*, const gfld*, jrd_req**);
 static void store_intlnames(thread_db*, Database*);
+static void store_functions(thread_db*, Database*);
 static void store_message(thread_db*, const trigger_msg*, jrd_req**);
-static void store_relation_field(thread_db*, const int*, const int*, int, jrd_req**);
+static void store_relation_field(thread_db*, const UCHAR*, const UCHAR*, int, jrd_req**, bool);
 static void store_trigger(thread_db*, const jrd_trg*, jrd_req**);
 
 
-// This is the table used in defining triggers; note that
-// RDB$TRIGGER_0 was first changed to RDB$TRIGGER_7 to make it easier to
-// upgrade a database to support field-level grant.  It has since been
-// changed to RDB$TRIGGER_9 to handle SQL security on relations whose
-// name is > 27 characters
+/* This is the table used in defining triggers; note that
+   RDB$TRIGGER_0 was first changed to RDB$TRIGGER_7 to make it easier to
+   upgrade a database to support field-level grant.  It has since been
+   changed to RDB$TRIGGER_9 to handle SQL security on relations whose
+   name is > 27 characters */
 
 static const jrd_trg triggers[] =
 {
@@ -197,7 +206,7 @@ static const jrd_trg triggers[] =
 };
 
 
-// this table is used in defining messages for system triggers
+/* this table is used in defining messages for system triggers */
 
 static const trigger_msg trigger_messages[] =
 {
@@ -257,161 +266,115 @@ void INI_format(const TEXT* owner, const TEXT* charset)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->tdbb_database;
 
-	// Uppercase owner name
-	MetaName ownerName(owner ? owner : "");
-	ownerName.upper7();
+/* Uppercase owner name */
+	Firebird::MetaName string(owner ? owner : "");
+	string.upper7();
 
-	// Uppercase charset name
-	MetaName rdbCharSetName(charset && strlen(charset) != 0 ?
-		charset : DEFAULT_DB_CHARACTER_SET_NAME);
-	rdbCharSetName.upper7();
+/* Uppercase charset name */
+	Firebird::MetaName string2(charset ? charset : "");
+	string2.upper7();
 
-	const int* fld;
+	int n;
 
-	// Make sure relations exist already
+/* Make sure relations exist already */
 
-	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
-	{
-		if (relfld[RFLD_R_TYPE] == rel_persistent)
-		{
-			DPM_create_relation(tdbb, MET_relation(tdbb, relfld[RFLD_R_ID]));
-		}
-
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
-			;
+	for (n = 0; n < (int) rel_MAX; n++) {
+		DPM_create_relation(tdbb, MET_relation(tdbb, (USHORT)n));
 	}
 
-	jrd_tra* transaction = dbb->dbb_sys_trans;
-
-	// Store RELATIONS and RELATION_FIELDS
-
-	SLONG rdbRelationId;
-	MetaName rdbRelationName;
-	SLONG rdbFieldId;
-	SLONG rdbSystemFlag = RDB_system;
-	SLONG rdbRelationType;
-
-	PreparedStatement::Builder sql;
-	sql << "insert into rdb$relations (rdb$relation_id, rdb$relation_name, rdb$field_id,"
-		<< "rdb$format, rdb$system_flag, rdb$dbkey_length, rdb$owner_name, rdb$relation_type)"
-		<< "values (" << rdbRelationId << ", " << rdbRelationName << ", " << rdbFieldId << ", 0,"
-		<< rdbSystemFlag << ", 8, " << ownerName << ", " << rdbRelationType << ")";
-
-	AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
+/* Store RELATIONS and RELATION_FIELDS */
 
 	jrd_req* handle1 = NULL;
-	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	jrd_req* handle2 = NULL;
+	const UCHAR* fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		for (rdbFieldId = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			 fld += RFLD_F_LENGTH)
 		{
-			const int* pFld = fld;
-			const int* pRelFld = relfld;
-			store_relation_field(tdbb, pFld, pRelFld, rdbFieldId, &handle1);
-			++rdbFieldId;
+			if (!fld[RFLD_F_MINOR])
+			{
+				const UCHAR* pFld    = fld;
+				const UCHAR* pRelFld = relfld;
+				store_relation_field(tdbb, pFld, pRelFld, n, &handle2, true);
+				n++;
+			}
 		}
 
-		rdbRelationId = relfld[RFLD_R_ID];
-		rdbRelationName = names[relfld[RFLD_R_NAME]];
-		rdbRelationType = relfld[RFLD_R_TYPE];
-		ps->execute(tdbb, transaction);
+		STORE(REQUEST_HANDLE handle1) X IN RDB$RELATIONS
+			X.RDB$RELATION_ID = relfld[RFLD_R_ID];
+			PAD(names[relfld[RFLD_R_NAME]], X.RDB$RELATION_NAME);
+			X.RDB$FIELD_ID = n;
+			X.RDB$FORMAT = 0;
+			X.RDB$SYSTEM_FLAG = RDB_system;
+			X.RDB$DBKEY_LENGTH = 8;
+			X.RDB$OWNER_NAME.NULL = TRUE;
+
+			if (string.length())
+			{
+				PAD(string.c_str(), X.RDB$OWNER_NAME);
+				X.RDB$OWNER_NAME.NULL = FALSE;
+			}
+
+		END_STORE;
+	}
+
+	CMP_release(tdbb, handle1);
+	CMP_release(tdbb, handle2);
+	handle1 = handle2 = NULL;
+
+/* Store global FIELDS */
+
+	for (const gfld* gfield = (gfld*) gfields; gfield->gfld_name; gfield++)
+	{
+		store_global_field(tdbb, gfield, &handle1);
 	}
 
 	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
-	// Store global FIELDS
-
-	for (const gfld* gfield = gfields; gfield->gfld_name; gfield++)
-		store_global_field(tdbb, gfield, &handle1);
-
-	CMP_release(tdbb, handle1);
-	handle1 = NULL;
-
-	// Store DATABASE record
-
-	sql = PreparedStatement::Builder();
-	sql << "insert into rdb$database (rdb$relation_id, rdb$character_set_name) values ("
-		<< rdbRelationId << ", " << rdbCharSetName << ")";
-
-	ps.reset(attachment->prepareStatement(tdbb, transaction, sql));
-
-	rdbRelationId = USER_DEF_REL_INIT_ID;
-	ps->execute(tdbb, transaction);
-
-	// Store ADMIN_ROLE record
-
-	STORE(REQUEST_HANDLE handle1) X IN RDB$ROLES
-		PAD (ADMIN_ROLE, X.RDB$ROLE_NAME);
-		X.RDB$ROLE_NAME.NULL = FALSE;
-		if (ownerName.hasData())
-			PAD(ownerName.c_str(), X.RDB$OWNER_NAME);
-		else
-			PAD(SYSDBA_USER_NAME, X.RDB$OWNER_NAME);
-		X.RDB$OWNER_NAME.NULL = FALSE;
-		X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO;	// Mark it as privileged role
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
+		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
+		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
+		if (string2.length()) {
+			PAD (string2.c_str(), X.RDB$CHARACTER_SET_NAME);
+			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+		}
+		else {
+			PAD (DEFAULT_DB_CHARACTER_SET_NAME, X.RDB$CHARACTER_SET_NAME);
+			X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+		}
 	END_STORE
 
 	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
-	// Create indices for system relations
-	add_index_set(dbb);
+/* Create indices for system relations */
+	add_index_set(dbb, false, 0, 0);
 
-	// Create parameter types
+/* Create parameter types */
 
 	handle1 = NULL;
 
 	for (const rtyp* type = types; type->rtyp_name; ++type)
 	{
-		// this STORE should be compatible with two below,
-		// as they use the same compiled request
 		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
 			PAD(names[type->rtyp_field], X.RDB$FIELD_NAME);
 			PAD(type->rtyp_name, X.RDB$TYPE_NAME);
 			X.RDB$TYPE = type->rtyp_value;
 			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		END_STORE;
-	}
-
-	for (const IntlManager::CharSetDefinition* charSet = IntlManager::defaultCharSets;
-		 charSet->name; ++charSet)
-	{
-		// this STORE should be compatible with one above and below,
-		// as they use the same compiled request
-		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
-			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
-			PAD(charSet->name, X.RDB$TYPE_NAME);
-			X.RDB$TYPE = charSet->id;
-			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		END_STORE;
-	}
-
-	for (const IntlManager::CharSetAliasDefinition* alias = IntlManager::defaultCharSetAliases;
-		alias->name; ++alias)
-	{
-		// this STORE should be compatible with two above,
-		// as they use the same compiled request
-		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
-			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
-			PAD(alias->name, X.RDB$TYPE_NAME);
-			X.RDB$TYPE = alias->charSetId;
-			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		END_STORE;
 	}
 
 	CMP_release(tdbb, handle1);
 
-	// Store symbols for international character sets & collations
+/* Store symbols for international character sets & collations */
+
 	store_intlnames(tdbb, dbb);
 
-	// Create generators to be used by system triggers
+/* Create generators to be used by system triggers */
 
 	handle1 = NULL;
 	for (const gen* generator = generators; generator->gen_name; generator++)
@@ -420,10 +383,11 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	}
 	CMP_release(tdbb, handle1);
 
-	// Adjust the value of the hidden generator RDB$GENERATORS
+// Adjust the value of the hidden generator RDB$GENERATORS
+
 	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
 
-	// store system-defined triggers
+/* store system-defined triggers */
 
 	handle1 = NULL;
 	for (const jrd_trg* trigger = triggers; trigger->trg_relation; ++trigger)
@@ -432,33 +396,44 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	}
 	CMP_release(tdbb, handle1);
 
-	// store trigger messages to go with triggers
+/* store trigger messages to go with triggers */
 
 	handle1 = NULL;
-	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name;
+		++message)
 	{
 		store_message(tdbb, message, &handle1);
 	}
 	CMP_release(tdbb, handle1);
 
-	DFW_perform_system_work(tdbb);
+// Store IUDFs declared automatically as system functions.
+// CVC: Demonstration code to register IUDF automatically moved to functions.h
 
-	// Add security on RDB$ROLES system table
+	store_functions(tdbb, dbb);
 
-	UCHAR buffer[FB_MAX_ACL_SIZE];
+	DFW_perform_system_work();
+
+	add_relation_fields(0);
+
+/*
+====================================================================
+==
+== Add security on RDB$ROLES system table
+==
+======================================================================
+*/
+
+	UCHAR buffer[MAX_ACL_SIZE];
 	UCHAR* acl = buffer;
 	*acl++ = ACL_version;
 	*acl++ = ACL_id_list;
 	*acl++ = id_person;
 
-	USHORT length = ownerName.length();
-	if (length > MAX_UCHAR)
-		length = MAX_UCHAR;
-
+	const TEXT* p_1 = string.c_str();
+	USHORT length = string.length();
 	*acl++ = (UCHAR)length;
 	if (length)
 	{
-		const TEXT* p_1 = ownerName.c_str();
 		memcpy(acl, p_1, length);
 		acl += length;
 	}
@@ -478,10 +453,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = ACL_end;
 	length = acl - buffer;
 
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$ROLES", buffer, length);
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", buffer, length);
-	// DFW writes here
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", buffer, length);
+	add_security_to_sys_rel(tdbb, string, "RDB$ROLES", buffer, length);
+
 }
 
 
@@ -509,7 +482,7 @@ USHORT INI_get_trig_flags(const TEXT* trig_name)
 }
 
 
-void INI_init(thread_db* tdbb)
+void INI_init(void)
 {
 /**************************************
  *
@@ -524,23 +497,25 @@ void INI_init(thread_db* tdbb)
  *	format descriptor.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-	const int* fld;
-	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	const UCHAR* fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		jrd_rel* relation = MET_relation(tdbb, relfld[RFLD_R_ID]);
 		relation->rel_flags |= REL_system;
 		relation->rel_name = names[relfld[RFLD_R_NAME]];
 		int n = 0;
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			fld += RFLD_F_LENGTH)
 		{
 			n++;
 		}
 
-		// Set a flag if their is a trigger on the relation.  Later we may need to compile it.
+		/* Set a flag if their is a trigger on the relation.  Later we may
+		   need to compile it. */
 
 		for (const jrd_trg* trigger = triggers; trigger->trg_relation; trigger++)
 		{
@@ -561,27 +536,13 @@ void INI_init(thread_db* tdbb)
 		(*formats)[0] = format;
 		Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH, ++desc, ++itr)
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			 fld += RFLD_F_LENGTH, ++desc, ++itr)
 		{
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
-			if (gfield->gfld_dtype == dtype_varying)
-			{
-				fb_assert(desc->dsc_length <= MAX_USHORT - sizeof(USHORT));
-				desc->dsc_length += sizeof(USHORT);
-			}
 			desc->dsc_dtype = gfield->gfld_dtype;
-
-			if (desc->isText())
-			{
-				if (gfield->gfld_sub_type & dsc_text_type_metadata)
-					desc->dsc_sub_type = CS_METADATA;
-				else
-					desc->dsc_sub_type = CS_NONE;
-			}
-			else
-				desc->dsc_sub_type = gfield->gfld_sub_type;
-
+			desc->dsc_sub_type = gfield->gfld_sub_type;
 			if (desc->dsc_dtype == dtype_blob && desc->dsc_sub_type == isc_blob_text)
 				desc->dsc_scale = CS_METADATA;	// blob charset
 
@@ -593,7 +554,7 @@ void INI_init(thread_db* tdbb)
 }
 
 
-void INI_init2(thread_db* tdbb)
+void INI_init2(void)
 {
 /**************************************
  *
@@ -607,26 +568,28 @@ void INI_init2(thread_db* tdbb)
  *	the database when it was created.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_version = dbb->dbb_minor_version;
+	const USHORT minor_original = dbb->dbb_minor_original;
 	vec<jrd_rel*>* vector = dbb->dbb_relations;
 
-	const int* fld;
-	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	const UCHAR* fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		if (relfld[RFLD_R_ODS] > ENCODE_ODS(major_version, minor_version))
+		if (relfld[RFLD_R_MINOR] > ENCODE_ODS(major_version, minor_original))
 		{
-			// free the space allocated for RDB$ROLES
-
+		/*****************************************************
+        **
+        ** free the space allocated for RDB$ROLES
+        **
+        ******************************************************/
 			const USHORT id = relfld[RFLD_R_ID];
 			jrd_rel* relation = (*vector)[id];
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
-			delete relation;
 			(*vector)[id] = NULL;
 			fld = relfld + RFLD_RPT;
 			while (fld[RFLD_F_NAME])
@@ -640,22 +603,71 @@ void INI_init2(thread_db* tdbb)
 			Format* format = relation->rel_current_format;
 
 			int n = 0;
-			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+				 fld += RFLD_F_LENGTH)
 			{
-				if (ENCODE_ODS(major_version, minor_version) >= fld[RFLD_F_ODS])
-					n++;
+				/* If the ODS is less than 10, then remove all fields named
+				 * RDB$FIELD_PRECISION and field RDB$CHARACTER_LENGTH from
+				 * relation RDB$FUNCTION_ARGUMENTS , as they were not present
+				 * in < 10 ODS
+				 */
+				if (fld[RFLD_F_NAME] == nam_f_precision ||
+					(fld[RFLD_F_NAME] == nam_char_length &&
+					 relfld[RFLD_R_NAME] == nam_args))
+				{
+					if (major_version >= ODS_VERSION10)
+						n = init2_helper(fld, n, relation);
+				}
+				else if (fld[RFLD_F_NAME] == nam_statistics &&
+					 relfld[RFLD_R_NAME] == nam_i_segments)
+				{
+					if (major_version >= ODS_VERSION11)
+						n = init2_helper(fld, n, relation);
+				}
+				else if ((fld[RFLD_F_NAME] == nam_description ||
+					fld[RFLD_F_NAME] == nam_sys_flag) &&
+					relfld[RFLD_R_NAME] == nam_roles)
+				{
+					if (major_version >= ODS_VERSION11)
+						n = init2_helper(fld, n, relation);
+				}
+				else if (fld[RFLD_F_NAME] == nam_description &&
+					relfld[RFLD_R_NAME] == nam_gens)
+				{
+					if (major_version >= ODS_VERSION11)
+						n = init2_helper(fld, n, relation);
+				}
+				else if ((fld[RFLD_F_NAME] == nam_base_collation_name ||
+						  fld[RFLD_F_NAME] == nam_specific_attr) &&
+						 relfld[RFLD_R_NAME] == nam_collations)
+				{
+					if (major_version >= ODS_VERSION11)
+						n = init2_helper(fld, n, relation);
+				}
+				else
+					n = init2_helper(fld, n, relation);
 			}
 
 			relation->rel_fields->resize(n);
 			format->fmt_count = n; // We are using less than the allocated members.
 			format->fmt_length = (USHORT)FLAG_BYTES(n);
 			Format::fmt_desc_iterator desc = format->fmt_desc.begin();
-			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH, ++desc)
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+				 fld += RFLD_F_LENGTH, ++desc)
 			{
 				if (n-- > 0)
 				{
-					format->fmt_length = (USHORT) MET_align(&(*desc), format->fmt_length);
+					format->fmt_length = (USHORT)MET_align(dbb, &(*desc), format->fmt_length);
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
+
+					/* In ODS11 length of RDB$MESSAGES are
+						enlarged from 80 to 1023 bytes	*/
+					if ((fld[RFLD_F_NAME] == nam_msg) &&
+						(major_version < ODS_VERSION11))
+					{
+						desc->dsc_length = 80;
+					}
+
 					format->fmt_length += desc->dsc_length;
 				}
 			}
@@ -664,136 +676,176 @@ void INI_init2(thread_db* tdbb)
 }
 
 
-// Load system objects into DSQL metadata cache.
-void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
+void INI_update_database()
 {
-	SET_TDBB(tdbb);
+/**************************************
+ *
+ *	I N I _ u p d a t e _ d a t a b a s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Perform changes to ODS that were required
+ *	since ODS 8 and are dynamically updatable.
+ *
+ * %% Note %% Update the switch() statement to reflect new major ODS
+ *            addition
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+	CHECK_DBB(dbb);
 
-	Database* const dbb = tdbb->getDatabase();
-	const USHORT majorVersion = dbb->dbb_ods_version;
-	const USHORT minorVersion = dbb->dbb_minor_version;
-	const int* fld;
+/* If database is ReadOnly, return without upgrading ODS */
+	if (dbb->dbb_flags & DBB_read_only)
+		return;
 
-	// Load relation and fields.
+/* check out the update version to see if we have work to do */
 
-	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	const USHORT major_version = dbb->dbb_ods_version;
+	const USHORT minor_version = dbb->dbb_minor_version;
+
+/*******************************************************************
+** when old engine is attaching a newer ODS database, do nothing
+********************************************************************/
+
+/* if database ODS is less than the server's, then upgrade */
+	if (ENCODE_ODS(major_version, minor_version) >= ODS_CURRENT_VERSION)
 	{
-		if (relfld[RFLD_R_ODS] > ENCODE_ODS(majorVersion, minorVersion))
-			continue;
-
-		dsql_rel* relation = FB_NEW(database->dbb_pool) dsql_rel(database->dbb_pool);
-
-		relation->rel_id = relfld[RFLD_R_ID];
-		relation->rel_name = names[relfld[RFLD_R_NAME]];
-		relation->rel_owner = SYSDBA_USER_NAME;
-		relation->rel_dbkey_length = 8;
-
-		dsql_fld** ptr = &relation->rel_fields;
-		int n = 0;
-
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
-		{
-			if (ENCODE_ODS(majorVersion, minorVersion) < fld[RFLD_F_ODS])
-				continue;
-
-			dsql_fld* field = FB_NEW(database->dbb_pool) dsql_fld(database->dbb_pool);
-			field->fld_id = n++;
-
-			*ptr = field;
-			ptr = &field->fld_next;
-
-			// get field information
-
-			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
-
-			field->fld_name = names[fld[RFLD_F_NAME]];
-			field->fld_source = names[gfield->gfld_name];
-			field->fld_length = gfield->gfld_length;
-			field->fld_scale = 0;
-			field->fld_sub_type = gfield->gfld_sub_type;
-			field->fld_relation = relation;
-
-			field->fld_dtype = gfield->gfld_dtype;
-
-			if (field->fld_dtype == dtype_varying)
-				field->fld_length += sizeof(USHORT);
-			else if (field->fld_dtype == dtype_blob)
-			{
-				field->fld_seg_length = 80;
-				if (gfield->gfld_sub_type == isc_blob_text)
-					field->fld_character_set_id = CS_METADATA;
-			}
-
-			if (DTYPE_IS_TEXT(gfield->gfld_dtype))
-			{
-				switch (gfield->gfld_sub_type)
-				{
-					case dsc_text_type_metadata:
-						field->fld_character_set_id = CS_METADATA;
-						break;
-					case dsc_text_type_ascii:
-						field->fld_character_set_id = CS_ASCII;
-						break;
-					case dsc_text_type_fixed:
-						field->fld_character_set_id = CS_BINARY;
-						break;
-				}
-			}
-
-			if (gfield->gfld_nullable)
-				field->fld_flags |= FLD_nullable;
-
-			field->fld_flags |= FLD_system;
-		}
-
-		database->dbb_relations.put(relation->rel_name, relation);
-		MET_dsql_cache_use(tdbb, SYM_relation, relation->rel_name);
+		return;
 	}
 
-	// Load internal character sets and collations, necessary for engine operation.
+/*******************************************************************
+** when new engine is attaching an older ODS database
+**   perform the necessary modifications
+********************************************************************/
 
-	for (const IntlManager::CharSetDefinition* csDef = IntlManager::defaultCharSets;
-		 csDef->name; ++csDef)
+	if (major_version == ODS_VERSION8)
 	{
-		if (csDef->id > ttype_last_internal)
-			continue;
+	/*** NOTE: The following two functions/structures need to understand
+               the difference between major ODS versions. The structure
+               which holds their information needs to have an additional field
+               to define which major ODS version they belong to.
+               PENDING WORK.
+                 add_global_fields (major_version, minor_version);
+                 add_relation_fields (major_version, minor_version);
+               Look at add_new_triggers() for reference.
+     ***/
 
-		dsql_intlsym* csSymbol = FB_NEW(database->dbb_pool) dsql_intlsym(database->dbb_pool);
-		csSymbol->intlsym_name = csDef->name;
-		csSymbol->intlsym_flags = 0;
-		csSymbol->intlsym_charset_id = csDef->id;
-		csSymbol->intlsym_collate_id = 0;
-		csSymbol->intlsym_ttype =
-			INTL_CS_COLL_TO_TTYPE(csSymbol->intlsym_charset_id, csSymbol->intlsym_collate_id);
-		csSymbol->intlsym_bytes_per_char = csDef->maxBytes;
+		add_global_fields(minor_version);
+		add_relation_fields(minor_version);
+	}
 
-		database->dbb_charsets.put(csDef->name, csSymbol);
-		database->dbb_charsets_by_id.put(csSymbol->intlsym_charset_id, csSymbol);
-		MET_dsql_cache_use(tdbb, SYM_intlsym_charset, csDef->name);
+	add_index_set(dbb, true, major_version, minor_version);
+	add_new_triggers(major_version, minor_version);
 
-		for (const IntlManager::CollationDefinition* colDef = IntlManager::defaultCollations;
-			 colDef->name; ++colDef)
+	/* if the database was updated; mark it with the current ODS minor
+	   version so other process will attempt to do so. We mark this after
+	   doing the update so that no other process can see the new minor
+	   version but not the update. */
+
+	WIN window(HEADER_PAGE);
+	Ods::header_page* header =
+		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	CCH_MARK(tdbb, &window);
+
+/* Only minor upgrades can occur within a major ODS, define which one
+   occured here. */
+	switch (major_version)
+	{
+	case ODS_VERSION8:
+		header->hdr_ods_minor = ODS_CURRENT8;
+		break;
+	case ODS_VERSION9:
+		header->hdr_ods_minor = ODS_CURRENT9;
+		break;
+	case ODS_VERSION10:
+		header->hdr_ods_minor = ODS_CURRENT10;
+		break;
+	default:
+		/* Make sure we add a new case per new major ODS. Look at code above */
+		fb_assert(FALSE);
+		header->hdr_ods_minor = minor_version;
+		break;
+	}
+
+	dbb->dbb_minor_version = header->hdr_ods_minor;
+	CCH_RELEASE(tdbb, &window);
+
+	DFW_perform_system_work();
+}
+
+#ifdef NOT_USED_OR_REPLACED
+static void add_generator(TEXT* generator_name, jrd_req** handle)
+{
+/**************************************
+ *
+ *	a d d _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Store a generator of the given name.
+ *	This routine is used to upgrade ODS versions.
+ *	DO NOT DELETE, even though it is not used
+ *	now, since it may be used when we go to 8.1.
+ *
+ **************************************/
+	const gen* generator = generators;
+
+	thread_db* tdbb = JRD_get_thread_data();
+
+/* find the new generator to be stored; assume it exists in the table */
+/* TMN: If it doesn't exist in the table, we will CRASH here! */
+
+	while (strcmp(generator->gen_name, generator_name))
+	{
+		++generator;
+	}
+
+	store_generator(tdbb, generator, handle);
+}
+#endif
+
+static void add_global_fields( USHORT minor_version)
+{
+/**************************************
+ *
+ *	a d d _ g l o b a l _ f i e l d s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Add any global fields which have a non-zero
+ *	update number in the fields table.  That
+ *	is, those that have been added since the last
+ *	ODS change.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
+/* add desired global fields to system relations  */
+
+	jrd_req* handle = NULL;
+	for (const gfld* gfield = (gfld*) gfields; gfield->gfld_name; gfield++)
+	{
+		if (minor_version < gfield->gfld_minor)
 		{
-			if (colDef->charSetId != csDef->id)
-				continue;
-
-			dsql_intlsym* colSymbol = FB_NEW(database->dbb_pool) dsql_intlsym(database->dbb_pool);
-			colSymbol->intlsym_name = colDef->name;
-			colSymbol->intlsym_flags = 0;
-			colSymbol->intlsym_charset_id = csDef->id;
-			colSymbol->intlsym_collate_id = colDef->collationId;
-			colSymbol->intlsym_ttype =
-				INTL_CS_COLL_TO_TTYPE(colSymbol->intlsym_charset_id, colSymbol->intlsym_collate_id);
-			colSymbol->intlsym_bytes_per_char = csDef->maxBytes;
-
-			database->dbb_collations.put(colDef->name, colSymbol);
-			MET_dsql_cache_use(tdbb, SYM_intlsym_collation, colDef->name);
+			store_global_field(tdbb, gfield, &handle);
 		}
 	}
+
+	if (handle) {
+		CMP_release(tdbb, handle);
+	}
+
+	DFW_perform_system_work();
 }
 
 
-static void add_index_set(Database*	dbb)
+static void add_index_set(Database*	dbb,
+						  bool		update_ods,
+						  USHORT	major_version,
+						  USHORT	minor_version)
 {
 /**************************************
  *
@@ -818,6 +870,19 @@ static void add_index_set(Database*	dbb)
 	{
 		const ini_idx_t* index = &indices[n];
 
+		/* For minor ODS updates, only add indices newer than on-disk ODS */
+		if (update_ods &&
+			((index->ini_idx_version_flag <=
+				ENCODE_ODS(major_version, minor_version)) ||
+			 (index->ini_idx_version_flag > ODS_CURRENT_VERSION) ||
+			 (((USHORT) DECODE_ODS_MAJOR(index->ini_idx_version_flag)) !=
+			  major_version)))
+		{
+			/* The DECODE_ODS_MAJOR() is used (in this case) to instruct the server
+			   to perform updates for minor ODS versions only within a major ODS */
+			continue;
+		}
+
 		STORE(REQUEST_HANDLE handle1) X IN RDB$INDICES
 			jrd_rel* relation = MET_relation(tdbb, index->ini_idx_relid);
 			PAD(relation->rel_name.c_str(), X.RDB$RELATION_NAME);
@@ -825,23 +890,23 @@ static void add_index_set(Database*	dbb)
 			PAD(string.c_str(), X.RDB$INDEX_NAME);
 			X.RDB$UNIQUE_FLAG = index->ini_idx_flags & idx_unique;
 			X.RDB$SEGMENT_COUNT = index->ini_idx_segment_count;
-			if (index->ini_idx_flags & idx_descending)
-			{
+			if (index->ini_idx_flags & idx_descending) {
 				X.RDB$INDEX_TYPE.NULL = FALSE;
 				X.RDB$INDEX_TYPE = 1;
 			}
 			else {
 				X.RDB$INDEX_TYPE.NULL = TRUE;
 			}
-			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$SYSTEM_FLAG = 1;
 			X.RDB$INDEX_INACTIVE = 0;
 
-			// Store each segment for the index
+			/* Store each segment for the index */
 			index_desc::idx_repeat* tail = idx.idx_rpt;
-			for (USHORT position = 0; position < index->ini_idx_segment_count; position++, tail++)
+			for (USHORT position = 0;
+				 position < index->ini_idx_segment_count; position++, tail++)
 			{
-				const ini_idx_t::ini_idx_segment_t* segment = &index->ini_idx_segment[position];
+				const ini_idx_t::ini_idx_segment_t* segment =
+					&index->ini_idx_segment[position];
 				STORE(REQUEST_HANDLE handle2) Y IN RDB$INDEX_SEGMENTS
 					jrd_fld* field = (*relation->rel_fields)[segment->ini_idx_rfld_id];
 
@@ -856,7 +921,8 @@ static void add_index_set(Database*	dbb)
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
-			IDX_create_index(tdbb, relation, &idx, string.c_str(), NULL, dbb->dbb_sys_trans, selectivity);
+			IDX_create_index(tdbb, relation, &idx, string.c_str(), NULL, NULL,
+							 selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;
 
@@ -867,6 +933,117 @@ static void add_index_set(Database*	dbb)
 	if (handle2) {
 		CMP_release(tdbb, handle2);
 	}
+}
+
+
+static void add_new_triggers(USHORT major_version, USHORT minor_version)
+{
+/**************************************
+ *
+ *	a d d _ n e w _ t r i g g e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Store all new ODS 8.x (x > 0) triggers.
+ *      The major and minor_version passed in are the ODS versions
+ *      before the ODS is upgraded.
+ *	This routine is used to upgrade ODS versions.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
+	jrd_req* handle1 = NULL;
+
+/* add all new triggers, that were added since the database was created */
+	for (const jrd_trg* trig = triggers; trig->trg_length > 0; trig++)
+	{
+		if ((trig->trg_ods_version > ENCODE_ODS(major_version, minor_version))
+			&& (DECODE_ODS_MAJOR(trig->trg_ods_version) == major_version))
+		{
+			store_trigger(tdbb, trig, &handle1);
+		}
+	}
+
+	jrd_req* handle2 = NULL;
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; message++)
+	{
+		if ((message->trg_ods_version >
+				ENCODE_ODS(major_version, minor_version)) &&
+			(DECODE_ODS_MAJOR(message->trg_ods_version) == major_version))
+		{
+			store_message(tdbb, message, &handle2);
+		}
+	}
+
+	if (handle1) {
+		CMP_release(tdbb, handle1);
+	}
+	if (handle2) {
+		CMP_release(tdbb, handle2);
+	}
+}
+
+
+static void add_relation_fields( USHORT minor_version)
+{
+/**************************************
+ *
+ *	a d d _ r e l a t i o n _ f i e l d s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Add any local fields which have a non-zero
+ *	update number in the relfields table.  That
+ *	is, those that have been added since the last
+ *	ODS change.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+
+/* add desired fields to system relations, forcing a new format version */
+
+	jrd_req* s_handle = NULL;
+	jrd_req* m_handle = NULL;
+	const UCHAR* fld;
+	for (const UCHAR* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	{
+		int n = 0;
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
+			 n++, fld += RFLD_F_LENGTH)
+		{
+			if (minor_version < fld[RFLD_F_MINOR] ||
+				minor_version < fld[RFLD_F_UPD_MINOR])
+			{
+				if (minor_version < fld[RFLD_F_MINOR])
+				{
+					store_relation_field(tdbb, fld, relfld, n, &s_handle,
+										 false);
+				}
+				else
+				{
+					modify_relation_field(tdbb, fld, relfld, &m_handle);
+				}
+				dsc desc;
+				desc.dsc_dtype = dtype_text;
+				INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
+				desc.dsc_address = (UCHAR*) names[relfld[RFLD_R_NAME]];
+				desc.dsc_length = strlen((char*)desc.dsc_address);
+				DFW_post_work(dbb->dbb_sys_trans, dfw_update_format, &desc, 0);
+			}
+		}
+	}
+
+	if (s_handle) {
+		CMP_release(tdbb, s_handle);
+	}
+	if (m_handle) {
+		CMP_release(tdbb, m_handle);
+	}
+
+	DFW_perform_system_work();
 }
 
 
@@ -893,60 +1070,30 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
  *      privilege.
  *
  **************************************/
-	Firebird::MetaName security_class, default_class;
+	TEXT sec_class_name[100];
+	Firebird::MetaName default_class;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->tdbb_database;
+
+	strcpy(sec_class_name, SQL_SECCLASS_PREFIX);
+	strcat(sec_class_name, rel_name);
 
     bid blob_id_1;
-    attachment->storeBinaryBlob(tdbb, dbb->dbb_sys_trans, &blob_id_1, acl, acl_length);
+	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id_1);
+	BLB_put_segment(tdbb, blob, acl, acl_length);
+	BLB_close(tdbb, blob);
 
     bid blob_id_2;
-    attachment->storeBinaryBlob(tdbb, dbb->dbb_sys_trans, &blob_id_2, acl, acl_length);
+	blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id_2);
+	BLB_put_segment(tdbb, blob, acl, acl_length);
+	BLB_close(tdbb, blob);
 
-	security_class.printf("%s%" SQUADFORMAT, SQL_SECCLASS_PREFIX,
-						  DPM_gen_id(tdbb, MET_lookup_generator(tdbb, SQL_SECCLASS_GENERATOR), false, 1));
-
-	default_class.printf("%s%" SQUADFORMAT, DEFAULT_CLASS,
-						 DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), false, 1));
+	default_class.printf("%s%" QUADFORMAT "d", DEFAULT_CLASS,
+			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
+					   false, (SINT64) 1));
 
 	jrd_req* handle1 = NULL;
-
-	STORE(REQUEST_HANDLE handle1)
-		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof(security_class.c_str(), CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
-		CLS.RDB$ACL = blob_id_1;
-	END_STORE;
-
-	CMP_release(tdbb, handle1);
-
-	handle1 = NULL;
-
-	STORE(REQUEST_HANDLE handle1)
-		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
-		CLS.RDB$ACL = blob_id_2;
-	END_STORE;
-
-	CMP_release(tdbb, handle1);
-
-	handle1 = NULL;
-
-	FOR(REQUEST_HANDLE handle1) REL IN RDB$RELATIONS
-		WITH REL.RDB$RELATION_NAME EQ rel_name
-		MODIFY REL USING
-			REL.RDB$SECURITY_CLASS.NULL = FALSE;
-			jrd_vtof(security_class.c_str(), REL.RDB$SECURITY_CLASS, sizeof(REL.RDB$SECURITY_CLASS));
-
-			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
-			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
-		END_MODIFY;
-	END_FOR;
-
-	CMP_release(tdbb, handle1);
-
-	handle1 = NULL;
 
 	for (int cnt = 0; cnt < 6; cnt++)
 	{
@@ -994,6 +1141,132 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	}
 
 	CMP_release(tdbb, handle1);
+
+	handle1 = NULL;
+
+	STORE(REQUEST_HANDLE handle1)
+		CLS IN RDB$SECURITY_CLASSES
+        jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS,
+                 sizeof(CLS.RDB$SECURITY_CLASS));
+		CLS.RDB$ACL = blob_id_1;
+	END_STORE;
+
+	CMP_release(tdbb, handle1);
+
+	handle1 = NULL;
+
+	STORE(REQUEST_HANDLE handle1)
+		CLS IN RDB$SECURITY_CLASSES
+        jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS,
+                 sizeof(CLS.RDB$SECURITY_CLASS));
+		CLS.RDB$ACL = blob_id_2;
+	END_STORE;
+
+	CMP_release(tdbb, handle1);
+
+	handle1 = NULL;
+
+	FOR(REQUEST_HANDLE handle1) REL IN RDB$RELATIONS
+		WITH REL.RDB$RELATION_NAME EQ rel_name
+		MODIFY REL USING
+			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
+            jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS,
+                     sizeof(REL.RDB$DEFAULT_CLASS));
+		END_MODIFY;
+
+	END_FOR;
+
+	CMP_release(tdbb, handle1);
+
+}
+
+#ifdef NOT_USED_OR_REPLACED
+static void add_trigger(TEXT* trigger_name, jrd_req** handle1, jrd_req** handle2)
+{
+/**************************************
+ *
+ *	a d d _ t r i g g e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Store a trigger of the given name.
+ *	This routine is used to upgrade ODS versions.
+ *	DO NOT DELETE, even though it is not used
+ *	now, since it will be used when we go to 8.1.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
+/* Find the new trigger to be stored; assume it exists in the table */
+
+	const jrd_trg* trigger = triggers;
+	while (strcmp(trigger->trg_name, trigger_name))
+	{
+		++trigger;
+	}
+
+	store_trigger(tdbb, trigger, handle1);
+
+/* Look for any related trigger messages */
+
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name;
+		++message)
+	{
+		if (!strcmp(message->trigmsg_name, trigger->trg_name))
+		{
+			store_message(tdbb, message, handle2);
+		}
+	}
+}
+#endif
+
+
+static int init2_helper(const UCHAR* fld, int n, jrd_rel* relation)
+{
+	if (!fld[RFLD_F_MINOR])
+	{
+		++n;
+		if (fld[RFLD_F_UPD_MINOR])
+			relation->rel_flags |= REL_force_scan;
+	}
+	else
+	{
+		relation->rel_flags |= REL_force_scan;
+	}
+	return n;
+}
+
+
+static void modify_relation_field(thread_db*	tdbb,
+								  const UCHAR*	fld,
+								  const UCHAR*	relfld,
+								  jrd_req**	handle)
+{
+/**************************************
+ *
+ *	m o d i f y _ r e l a t i o n _ f i e l d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Modify a local field according to the
+ *	passed information.  Note that the field id and
+ *	field position do not change.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	FOR(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS WITH
+		X.RDB$RELATION_NAME EQ names[relfld[RFLD_R_NAME]] AND
+			X.RDB$FIELD_NAME EQ names[fld[RFLD_F_NAME]]
+		MODIFY X USING
+			const gfld* gfield = &gfields[fld[RFLD_F_UPD_ID]];
+			PAD(names[gfield->gfld_name], X.RDB$FIELD_SOURCE);
+			X.RDB$UPDATE_FLAG = fld[RFLD_F_UPDATE];
+		END_MODIFY;
+	END_FOR;
 }
 
 
@@ -1011,18 +1284,22 @@ static void store_generator(thread_db* tdbb, const gen* generator, jrd_req** han
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_tra* trans = dbb->dbb_sys_trans;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$GENERATORS
 		PAD(generator->gen_name, X.RDB$GENERATOR_NAME);
 		X.RDB$GENERATOR_ID = generator->gen_id;
 		X.RDB$SYSTEM_FLAG = RDB_system;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		if (generator->gen_description)
 		{
-		    attachment->storeMetaDataBlob(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTION,
-				generator->gen_description);
+			blb* blob = BLB_create(tdbb, trans, &X.RDB$DESCRIPTION);
+			BLB_put_segment(tdbb,
+							blob,
+							reinterpret_cast<const UCHAR*>(generator->gen_description),
+							strlen(generator->gen_description));
+			BLB_close(tdbb, blob);
 			X.RDB$DESCRIPTION.NULL = FALSE;
 		}
 		else
@@ -1048,24 +1325,27 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_tra* trans = dbb->dbb_sys_trans;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$FIELDS
 		PAD(names[(USHORT)gfield->gfld_name], X.RDB$FIELD_NAME);
 		X.RDB$FIELD_LENGTH = gfield->gfld_length;
 		X.RDB$FIELD_SCALE = 0;
 		X.RDB$SYSTEM_FLAG = RDB_system;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		X.RDB$COLLATION_ID.NULL = TRUE;
 		X.RDB$SEGMENT_LENGTH.NULL = TRUE;
-		X.RDB$CHARACTER_LENGTH.NULL = TRUE;
 		if (gfield->gfld_dflt_blr)
 		{
-		    attachment->storeBinaryBlob(tdbb, dbb->dbb_sys_trans, &X.RDB$DEFAULT_VALUE,
-				gfield->gfld_dflt_blr, gfield->gfld_dflt_len);
+			blb* blob = BLB_create(tdbb, trans, &X.RDB$DEFAULT_VALUE);
+			BLB_put_segment(tdbb,
+							blob,
+							gfield->gfld_dflt_blr,
+							gfield->gfld_dflt_len);
+			BLB_close(tdbb, blob);
 			X.RDB$DEFAULT_VALUE.NULL = FALSE;
 		}
 		else
@@ -1094,14 +1374,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			else if (gfield->gfld_dtype == dtype_long)
 				X.RDB$FIELD_TYPE = (int) blr_long;
 			else
-			{
-				// Workaround to allow fld_counter domain
-				// in dialect 1 databases
-				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-					X.RDB$FIELD_TYPE = (int) blr_int64;
-				else
-					X.RDB$FIELD_TYPE = (int) blr_double;
-			}
+				X.RDB$FIELD_TYPE = (int) blr_int64;
 			if ((gfield->gfld_sub_type == dsc_num_type_numeric) ||
 				(gfield->gfld_sub_type == dsc_num_type_decimal))
 			{
@@ -1123,41 +1396,32 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			else
 			{
 				X.RDB$FIELD_TYPE = (int) blr_varying;
+				X.RDB$FIELD_LENGTH -= sizeof(USHORT);
 			}
-			switch (gfield->gfld_sub_type)
+			if (gfield->gfld_sub_type == dsc_text_type_metadata)
 			{
-			case dsc_text_type_metadata:
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				X.RDB$CHARACTER_SET_ID = CS_METADATA;
 				X.RDB$COLLATION_ID.NULL = FALSE;
 				X.RDB$COLLATION_ID = COLLATE_NONE;
 				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
-				X.RDB$CHARACTER_LENGTH.NULL = FALSE;
-				X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH / METADATA_BYTES_PER_CHAR;
-				break;
-			case dsc_text_type_ascii:
-				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				X.RDB$CHARACTER_SET_ID = CS_ASCII;
-				X.RDB$COLLATION_ID.NULL = FALSE;
-				X.RDB$COLLATION_ID = COLLATE_NONE;
-				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
-				break;
-			case dsc_text_type_fixed:
+			}
+			else if (gfield->gfld_sub_type == dsc_text_type_fixed)
+			{
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				X.RDB$CHARACTER_SET_ID = CS_BINARY;
 				X.RDB$COLLATION_ID.NULL = FALSE;
 				X.RDB$COLLATION_ID = COLLATE_NONE;
 				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 				X.RDB$FIELD_SUB_TYPE = gfield->gfld_sub_type;
-				break;
-			default:
+			}
+			else
+			{
 				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 				X.RDB$CHARACTER_SET_ID = CS_NONE;
 				X.RDB$COLLATION_ID.NULL = FALSE;
 				X.RDB$COLLATION_ID = COLLATE_NONE;
-				break;
 			}
 			break;
 
@@ -1179,10 +1443,6 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			break;
 		}
 
-		// Acknowledge not NULL sys fields
-		X.RDB$NULL_FLAG.NULL = FALSE;
-		X.RDB$NULL_FLAG = !gfield->gfld_nullable;
-
 	END_STORE;
 }
 
@@ -1201,60 +1461,110 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	jrd_req* handle = NULL;
-
-	for (const IntlManager::CharSetDefinition* charSet = IntlManager::defaultCharSets;
-		 charSet->name; ++charSet)
+	for (const CS_TYPE* csptr = cs_types; csptr->init_charset_name; csptr++)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$CHARACTER_SETS USING
-			PAD(charSet->name, X.RDB$CHARACTER_SET_NAME);
-			PAD(charSet->name, X.RDB$DEFAULT_COLLATE_NAME);
-			X.RDB$CHARACTER_SET_ID = charSet->id;
-			X.RDB$BYTES_PER_CHARACTER = charSet->maxBytes;
+			PAD(csptr->init_charset_name, X.RDB$CHARACTER_SET_NAME);
+			PAD(csptr->init_charset_name, X.RDB$DEFAULT_COLLATE_NAME);
+			X.RDB$CHARACTER_SET_ID = csptr->init_charset_id;
+			X.RDB$BYTES_PER_CHARACTER = csptr->init_charset_bytes_per_char;
 			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		END_STORE;
 	}
 
 	CMP_release(tdbb, handle);
 	handle = NULL;
 
-	for (const IntlManager::CollationDefinition* collation = IntlManager::defaultCollations;
-		collation->name; ++collation)
+	for (const COLL_TYPE* collptr = coll_types; collptr->init_collation_name; collptr++)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$COLLATIONS USING
-			PAD(collation->name, X.RDB$COLLATION_NAME);
-
-			if (collation->baseName)
-			{
-				X.RDB$BASE_COLLATION_NAME.NULL = false;
-				PAD(collation->baseName, X.RDB$BASE_COLLATION_NAME);
-			}
-			else
-				X.RDB$BASE_COLLATION_NAME.NULL = true;
-
-			X.RDB$CHARACTER_SET_ID = collation->charSetId;
-			X.RDB$COLLATION_ID = collation->collationId;
+			PAD(collptr->init_collation_name, X.RDB$COLLATION_NAME);
+			X.RDB$CHARACTER_SET_ID = collptr->init_collation_charset;
+			X.RDB$COLLATION_ID = collptr->init_collation_id;
 			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$COLLATION_ATTRIBUTES = collation->attributes;
-
-			if (collation->specificAttributes)
-			{
-				attachment->storeMetaDataBlob(tdbb, dbb->dbb_sys_trans, &X.RDB$SPECIFIC_ATTRIBUTES,
-					collation->specificAttributes);
-				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-			}
-			else
-				X.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
-
+			X.RDB$COLLATION_ATTRIBUTES = collptr->init_collation_attributes;
 		END_STORE;
 	}
 
 	CMP_release(tdbb, handle);
 	handle = NULL;
+}
+
+static void store_function_argument(
+	thread_db* tdbb, Database* dbb,
+    jrd_req* &handle,
+	const char* function_name, SLONG argument_position, SLONG mechanism, SLONG type, SLONG scale,
+	SLONG length, SLONG sub_type, SLONG charset, SLONG precision, SLONG char_length)
+{
+	STORE(REQUEST_HANDLE handle) FA IN RDB$FUNCTION_ARGUMENTS
+		PAD(function_name, FA.RDB$FUNCTION_NAME);
+		FA.RDB$FUNCTION_NAME.NULL          = FALSE;
+		FA.RDB$ARGUMENT_POSITION           = argument_position;
+		FA.RDB$MECHANISM                   = mechanism;
+		FA.RDB$FIELD_TYPE                  = type;
+		FA.RDB$FIELD_SCALE                 = scale;
+		FA.RDB$FIELD_LENGTH                = length;
+		FA.RDB$FIELD_SUB_TYPE              = sub_type;
+		FA.RDB$CHARACTER_SET_ID            = charset;
+		FA.RDB$FIELD_PRECISION             = precision;
+		FA.RDB$CHARACTER_LENGTH            = char_length;
+	END_STORE;
+}
+
+static void store_function(
+	thread_db* tdbb, Database* dbb,
+    jrd_req* &handle,
+	const char* function_name, const char* module, const char* entrypoint, SLONG argument)
+{
+	STORE(REQUEST_HANDLE handle) F IN RDB$FUNCTIONS
+		PAD(function_name, F.RDB$FUNCTION_NAME);
+		F.RDB$FUNCTION_NAME.NULL          = FALSE;
+		//F.RDB$FUNCTION_TYPE               <null>
+		//F.RDB$QUERY_NAME                  <null>
+		//F.RDB$DESCRIPTION                 <null>
+		strcpy(F.RDB$MODULE_NAME, module);
+		F.RDB$MODULE_NAME.NULL            = FALSE;
+		PAD(entrypoint, F.RDB$ENTRYPOINT);
+		F.RDB$ENTRYPOINT.NULL             = FALSE;
+		F.RDB$RETURN_ARGUMENT             = argument;
+		F.RDB$SYSTEM_FLAG                 = RDB_system;
+	END_STORE;
+}
+
+static void store_functions(thread_db* tdbb, Database* dbb)
+{
+/**************************************
+ *
+ *	s t o r e _ f u n c t i o n s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Store built-in functions and their arguments
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	jrd_req *fun_handle = NULL, *arg_handle = NULL;
+	const char *function_name;
+	SLONG argument_position;
+
+#define FUNCTION(ROUTINE, FUNCTION_NAME, MODULE_NAME, ENTRYPOINT, RET_ARG) \
+	function_name = FUNCTION_NAME; \
+	argument_position = RET_ARG ? 1 : 0; \
+	store_function(tdbb, dbb, fun_handle, FUNCTION_NAME, MODULE_NAME, ENTRYPOINT, RET_ARG);
+#define END_FUNCTION
+#define FUNCTION_ARGUMENT(MECHANISM, TYPE, SCALE, LENGTH, SUB_TYPE, CHARSET, PRECISION, CHAR_LENGTH) \
+	store_function_argument(tdbb, dbb, arg_handle, function_name, argument_position, \
+		MECHANISM, TYPE, SCALE, LENGTH, SUB_TYPE, CHARSET, PRECISION, CHAR_LENGTH);	\
+	argument_position++;
+
+#include "../jrd/functions.h"
+
+	CMP_release(tdbb, fun_handle);
+	CMP_release(tdbb, arg_handle);
 }
 
 
@@ -1271,9 +1581,9 @@ static void store_message(thread_db* tdbb, const trigger_msg* message, jrd_req**
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
-	// store the trigger
+/* store the trigger */
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$TRIGGER_MESSAGES
 		PAD(message->trigmsg_name, X.RDB$TRIGGER_NAME);
@@ -1284,10 +1594,11 @@ static void store_message(thread_db* tdbb, const trigger_msg* message, jrd_req**
 
 
 static void store_relation_field(thread_db*		tdbb,
-								 const int*		fld,
-								 const int*		relfld,
+								 const UCHAR*	fld,
+								 const UCHAR*	relfld,
 								 int			field_id,
-								 jrd_req**		handle)
+								 jrd_req**		handle,
+								 bool			fmt0_flag)
 {
 /**************************************
  *
@@ -1301,17 +1612,17 @@ static void store_relation_field(thread_db*		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$RELATION_FIELDS
-		const gfld* gfield = &gfields[fld[RFLD_F_ID]];
+		const gfld* gfield = (fld[RFLD_F_UPD_MINOR] && !fmt0_flag) ?
+			&gfields[fld[RFLD_F_UPD_ID]] : &gfields[fld[RFLD_F_ID]];
 		PAD(names[relfld[RFLD_R_NAME]], X.RDB$RELATION_NAME);
 		PAD(names[fld[RFLD_F_NAME]], X.RDB$FIELD_NAME);
 		PAD(names[gfield->gfld_name], X.RDB$FIELD_SOURCE);
 		X.RDB$FIELD_POSITION = field_id;
 		X.RDB$FIELD_ID = field_id;
 		X.RDB$SYSTEM_FLAG = RDB_system;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$UPDATE_FLAG = fld[RFLD_F_UPDATE];
 	END_STORE;
 }
@@ -1331,26 +1642,33 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, jrd_req** han
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->tdbb_database;
 
-	// indicate that the relation format needs revising
+	jrd_tra* trans = dbb->dbb_sys_trans;
+
+/* indicate that the relation format needs revising */
 	dsc desc;
-	desc.makeText(strlen(names[trigger->trg_relation]), CS_METADATA,
-		(UCHAR*) names[trigger->trg_relation]);
-	DFW_post_system_work(tdbb, dfw_update_format, &desc, 0);
+	desc.dsc_dtype = dtype_text;
+	INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
+	desc.dsc_address = (UCHAR*) names[trigger->trg_relation];
+	desc.dsc_length = strlen((char*)desc.dsc_address);
+	DFW_post_work(trans, dfw_update_format, &desc, 0);
 
-	// store the trigger
+/* store the trigger */
 
 	STORE(REQUEST_HANDLE * handle) X IN RDB$TRIGGERS
 		PAD(trigger->trg_name, X.RDB$TRIGGER_NAME);
 		PAD(names[trigger->trg_relation], X.RDB$RELATION_NAME);
 		X.RDB$TRIGGER_SEQUENCE = 0;
 		X.RDB$SYSTEM_FLAG = RDB_system;
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$TRIGGER_TYPE = trigger->trg_type;
 		X.RDB$FLAGS = trigger->trg_flags;
-		attachment->storeBinaryBlob(tdbb, dbb->dbb_sys_trans, &X.RDB$TRIGGER_BLR,
-			trigger->trg_blr, trigger->trg_length);
+		blb* blob = BLB_create(tdbb, trans, &X.RDB$TRIGGER_BLR);
+		BLB_put_segment(tdbb,
+						blob,
+						trigger->trg_blr,
+						trigger->trg_length);
+		BLB_close(tdbb, blob);
 	END_STORE;
 }
+

@@ -14,13 +14,6 @@ CFG=Debug
 !MESSAGE No configuration specified. Defaulting to common - Win32 Debug.
 !ENDIF
 
-
-# this test is pointless in an automated build system. It might make sense if
-# this make file was run stand-alone, but as part of the Firebird/ICU component
-# it will probably never be built alone. CFG errors, if any, will be picked up
-# long before. However, as we need to diff against the original ICU code
-# we probably need to keep this code in place
-!if "$(CFG)" == "xyz"
 #Here we test if a valid configuration is given
 !IF "$(CFG)" != "Release" && "$(CFG)" != "release" && "$(CFG)" != "Debug" && "$(CFG)" != "debug"
 !MESSAGE Invalid configuration "$(CFG)" specified.
@@ -36,7 +29,6 @@ CFG=Debug
 !MESSAGE
 !ERROR An invalid configuration is specified.
 !ENDIF
-!ENDIF
 
 #Let's see if user has given us a path to ICU
 #This could be found according to the path to makefile, but for now it is this way
@@ -44,7 +36,6 @@ CFG=Debug
 !ERROR Can't find path!
 !ENDIF
 !MESSAGE ICU path is $(ICUP)
-!MESSAGE CFG is $(CFG)
 RESNAME=uconvmsg
 RESDIR=.
 RESFILES=resfiles.mk
@@ -57,12 +48,7 @@ PKGMODE=static
 
 ICD=$(ICUDATA)^\
 DATA_PATH=$(ICUP)\data^\
-
-!IF "$(CFG)" == "Release" || "$(CFG)" == "release"  || "$(CFG)" == "Debug" || "$(CFG)" == "debug"
 ICUTOOLS=$(ICUP)\bin
-!ELSE
-ICUTOOLS=$(ICUP)\$(CFG)\bin
-!ENDIF
 
 PATH = $(PATH);$(ICUP)\bin
 

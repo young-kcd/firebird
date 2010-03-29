@@ -37,19 +37,19 @@
 #include "../qli/meta_proto.h"
 #include "../qli/proc_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../common/utils_proto.h"
-
-using MsgFormat::SafeArg;
-
-
-static void dump_procedure(qli_dbb*, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
-static void extract_procedure(void*, const TEXT*, USHORT, qli_dbb*, ISC_QUAD&);
-
-#ifdef NOT_USED_OR_REPLACED
-static SCHAR db_items[] = { gds_info_page_size, gds_info_allocation, gds_info_end };
+#ifdef VMS
+#include <descrip.h>
 #endif
 
-bool CMD_check_ready()
+static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
+static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
+
+#ifdef NOT_USED_OR_REPLACED
+static SCHAR db_items[] =
+	{ gds_info_page_size, gds_info_allocation, gds_info_end };
+#endif
+
+bool CMD_check_ready(void)
 {
 /**************************************
  *
@@ -66,7 +66,7 @@ bool CMD_check_ready()
 	if (QLI_databases)
 		return false;
 
-	ERRQ_msg_put(95);	// Msg95 No databases are currently ready
+	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	// Msg95 No databases are currently ready
 
 	return true;
 }
@@ -85,11 +85,13 @@ void CMD_copy_procedure( qli_syntax* node)
  *	across databases
  *
  **************************************/
-	qli_proc* old_proc = (qli_proc*) node->syn_arg[0];
-	qli_proc* new_proc = (qli_proc*) node->syn_arg[1];
+	QPR old_proc = (QPR) node->syn_arg[0];
+	QPR new_proc = (QPR) node->syn_arg[1];
 
-	PRO_copy_procedure(old_proc->qpr_database, old_proc->qpr_name->nam_string,
-					   new_proc->qpr_database, new_proc->qpr_name->nam_string);
+	PRO_copy_procedure(old_proc->qpr_database,
+					   old_proc->qpr_name->nam_string,
+					   new_proc->qpr_database,
+					   new_proc->qpr_name->nam_string);
 }
 
 
@@ -106,7 +108,7 @@ void CMD_define_procedure( qli_syntax* node)
  *	or in the most recently readied database.
  *
  **************************************/
-	qli_proc* proc = (qli_proc*) node->syn_arg[0];
+	QPR proc = (QPR) node->syn_arg[0];
 
 	if (!(proc->qpr_database))
 		proc->qpr_database = QLI_databases;
@@ -128,7 +130,7 @@ void CMD_delete_proc( qli_syntax* node)
  *	or in the most recently readied database.
  *
  **************************************/
-	qli_proc* proc = (qli_proc*) node->syn_arg[0];
+	QPR proc = (QPR) node->syn_arg[0];
 
 	if (!proc->qpr_database)
 		proc->qpr_database = QLI_databases;
@@ -136,8 +138,9 @@ void CMD_delete_proc( qli_syntax* node)
 	if (PRO_delete_procedure(proc->qpr_database, proc->qpr_name->nam_string))
 		return;
 
-	ERRQ_msg_put(88, SafeArg() << proc->qpr_name->nam_string <<	// Msg88 Procedure %s not found in database %s
-				 proc->qpr_database->dbb_symbol->sym_string);
+	ERRQ_msg_put(88, proc->qpr_name->nam_string,	// Msg88 Procedure %s not found in database %s
+				 proc->qpr_database->dbb_symbol->sym_string, NULL, NULL,
+				 NULL);
 }
 
 
@@ -153,7 +156,7 @@ void CMD_edit_proc( qli_syntax* node)
  *	Edit a procedure in the specified database.
  *
  **************************************/
-	qli_proc* proc = (qli_proc*) node->syn_arg[0];
+	QPR proc = (QPR) node->syn_arg[0];
 	if (!proc->qpr_database)
 		proc->qpr_database = QLI_databases;
 
@@ -173,34 +176,37 @@ void CMD_extract( qli_syntax* node)
  *	Extract a series of procedures.
  *
  **************************************/
+	DBB database;
+
 	FILE* file = (FILE*) EXEC_open_output((qli_nod*) node->syn_arg[1]);
 
 	qli_syntax* list = node->syn_arg[0];
-	if (list)
-	{
+	if (list) {
 		qli_syntax** ptr = list->syn_arg;
-		for (const qli_syntax* const* const end = ptr + list->syn_count; ptr < end; ptr++)
+		for (const qli_syntax* const* const end = ptr + list->syn_count;
+			ptr < end; ptr++)
 		{
-			qli_proc* proc = (qli_proc*) *ptr;
-			qli_dbb* database = proc->qpr_database;
-			if (!database)
+			QPR proc = (QPR) *ptr;
+			if (!(database = proc->qpr_database))
 				database = QLI_databases;
-
-			const qli_name* name = proc->qpr_name;
+			NAM name = proc->qpr_name;
 			FB_API_HANDLE blob = PRO_fetch_procedure(database, name->nam_string);
-			if (!blob)
-			{
-				ERRQ_msg_put(89, SafeArg() << name->nam_string << database->dbb_symbol->sym_string);
-				// Msg89 Procedure %s not found in database %s
+			if (!blob) {
+				ERRQ_msg_put(89,	// Msg89 Procedure %s not found in database %s
+							 name->nam_string,
+							 database->dbb_symbol->sym_string, NULL, NULL,
+							 NULL);
 				continue;
 			}
-			dump_procedure(database, file, name->nam_string, name->nam_length, blob);
+			dump_procedure(database, file, name->nam_string, name->nam_length,
+						   blob);
 		}
 	}
-	else
-	{
+	else {
 		CMD_check_ready();
-		for (qli_dbb* database = QLI_databases; database; database = database->dbb_next)
+		for (database = QLI_databases; database;
+			 database =
+			 database->dbb_next)
 		{
 			PRO_scan(database, extract_procedure, file);
 		}
@@ -227,15 +233,14 @@ void CMD_finish( qli_syntax* node)
  *	Perform FINISH.  Either finish listed databases or everything.
  *
  **************************************/
-	if (node->syn_count == 0)
-	{
+	if (node->syn_count == 0) {
 		while (QLI_databases)
 			MET_finish(QLI_databases);
 		return;
 	}
 
 	for (USHORT i = 0; i < node->syn_count; i++)
-		MET_finish((qli_dbb*) node->syn_arg[i]);
+		MET_finish((DBB) node->syn_arg[i]);
 }
 
 
@@ -252,25 +257,27 @@ void CMD_rename_proc( qli_syntax* node)
  *	or the most recently readied database.
  *
  **************************************/
-	qli_proc* old_proc = (qli_proc*) node->syn_arg[0];
-	qli_proc* new_proc = (qli_proc*) node->syn_arg[1];
-
-	qli_dbb* database = old_proc->qpr_database;
+	QPR old_proc = (QPR) node->syn_arg[0];
+	QPR new_proc = (QPR) node->syn_arg[1];
+	
+	DBB database = old_proc->qpr_database;
 	if (!database)
 		database = QLI_databases;
 
 	if (new_proc->qpr_database && (new_proc->qpr_database != database))
 		IBERROR(84);			// Msg84 Procedures can not be renamed across databases. Try COPY
-	const qli_name* old_name = old_proc->qpr_name;
-	const qli_name* new_name = new_proc->qpr_name;
+	NAM old_name = old_proc->qpr_name;
+	NAM new_name = new_proc->qpr_name;
 
-	if (PRO_rename_procedure(database, old_name->nam_string, new_name->nam_string))
+	if (PRO_rename_procedure
+		(database, old_name->nam_string, new_name->nam_string))
 	{
 		return;
 	}
 
-	ERRQ_error(85, SafeArg() << old_name->nam_string << database->dbb_symbol->sym_string);
-	// Msg85 Procedure %s not found in database %s
+	ERRQ_error(85,				// Msg85 Procedure %s not found in database %s
+			   old_name->nam_string, database->dbb_symbol->sym_string, NULL,
+			   NULL, NULL);
 }
 
 
@@ -291,13 +298,11 @@ void CMD_set( qli_syntax* node)
 
 	const qli_syntax* const* ptr = node->syn_arg;
 
-	for (USHORT i = 0; i < node->syn_count; i++)
-	{
+	for (USHORT i = 0; i < node->syn_count; i++) {
 		const USHORT foo = (USHORT)(IPTR) *ptr++;
 		const enum set_t sw = (enum set_t) foo;
 		const qli_syntax* value = *ptr++;
-		switch (sw)
-		{
+		switch (sw) {
 		case set_blr:
 			QLI_blr = (bool)(IPTR) value;
 			break;
@@ -322,53 +327,61 @@ void CMD_set( qli_syntax* node)
 			QLI_echo = (bool)(IPTR) value;
 			break;
 
-		//case set_form:
-		//	IBERROR(484);		// FORMs not supported
-		//	break;
+		case set_form:
+			IBERROR(484);		// FORMs not supported
+			break;
 
 		case set_password:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_password));
-			fb_utils::copy_terminate(QLI_default_password, (char*) string->con_data, length);
+			length =
+				MIN(string->con_desc.dsc_length,
+					sizeof(QLI_default_password));
+			strncpy(QLI_default_password, (char*) string->con_data, length);
+			QLI_default_password[length] = 0;
 			break;
 
 		case set_prompt:
 			string = (qli_const*) value;
-			if (string->con_desc.dsc_length >= sizeof(QLI_prompt_string))
-				ERRQ_error(86);	// Msg86 substitute prompt string too long
-			fb_utils::copy_terminate(QLI_prompt_string, (char*) string->con_data, string->con_desc.dsc_length + 1);
+			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
+				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	// Msg86 substitute prompt string too long
+			strncpy(QLI_prompt_string, (char*) string->con_data,
+					string->con_desc.dsc_length);
+			QLI_prompt_string[string->con_desc.dsc_length] = 0;
 			break;
 
 		case set_continuation:
 			string = (qli_const*) value;
-			if (string->con_desc.dsc_length >= sizeof(QLI_cont_string))
-				ERRQ_error(87);	// Msg87 substitute prompt string too long
-			fb_utils::copy_terminate(QLI_cont_string, (char*) string->con_data, string->con_desc.dsc_length + 1);
+			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
+				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	// Msg87 substitute prompt string too long
+			strncpy(QLI_cont_string, (char*) string->con_data,
+					string->con_desc.dsc_length);
+			QLI_cont_string[string->con_desc.dsc_length] = 0;
 			break;
 
 		case set_matching_language:
 			if (QLI_matching_language)
-				ALLQ_release((qli_frb*) QLI_matching_language);
-			string = (qli_const*) value;
-			if (!string)
+				ALLQ_release((FRB) QLI_matching_language);
+			if (!(string = (qli_const*) value)) {
 				QLI_matching_language = NULL;
-			else
-			{
-				const USHORT len = string->con_desc.dsc_length;
-				QLI_matching_language = (qli_const*) ALLOCPV(type_con, len);
-				fb_utils::copy_terminate((char*) QLI_matching_language->con_data,
-										 (char*) string->con_data, len + 1);
-				dsc& lang = QLI_matching_language->con_desc;
-				lang.dsc_dtype = dtype_text;
-				lang.dsc_address = QLI_matching_language->con_data;
-				lang.dsc_length = len;
+				break;
 			}
+			QLI_matching_language =
+				(qli_const*) ALLOCPV(type_con, string->con_desc.dsc_length);
+			strncpy((char*)QLI_matching_language->con_data, (char*)string->con_data,
+					string->con_desc.dsc_length);
+			QLI_matching_language->con_desc.dsc_dtype = dtype_text;
+			QLI_matching_language->con_desc.dsc_address =
+				QLI_matching_language->con_data;
+			QLI_matching_language->con_desc.dsc_length =
+				string->con_desc.dsc_length;
 			break;
 
 		case set_user:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_user));
-			fb_utils::copy_terminate(QLI_default_user, (char*) string->con_data, length);
+			length =
+				MIN(string->con_desc.dsc_length, sizeof(QLI_default_user));
+			strncpy(QLI_default_user, (char*)string->con_data, length);
+			QLI_default_user[length] = 0;
 			break;
 
 			break;
@@ -379,13 +392,14 @@ void CMD_set( qli_syntax* node)
 
 		case set_charset:
 			{
-				if (!value)
-				{
+				if (!value) {
 					QLI_charset[0] = 0;
 					break;
 				}
-				const TEXT* name = ((qli_name*) value)->nam_string;
-				fb_utils::copy_terminate(QLI_charset, name, sizeof(QLI_charset));
+				const TEXT* name = ((NAM) value)->nam_string;
+				length = MIN(strlen(name), sizeof(QLI_charset));
+				strncpy(QLI_charset, name, length);
+				QLI_charset[length] = 0;
 				break;
 			}
 
@@ -420,30 +434,54 @@ void CMD_shell( qli_syntax* node)
  **************************************/
 	TEXT buffer[256];
 
-	// Copy command, inserting extra blank at end.
+// Copy command, inserting extra blank at end.
 
 	TEXT* p = buffer;
 	const qli_const* constant = (qli_const*) node->syn_arg[0];
-	if (constant)
-	{
-		const USHORT l = constant->con_desc.dsc_length;
+	if (constant) {
+		const TEXT* q = (TEXT*) constant->con_data;
+		USHORT l = constant->con_desc.dsc_length;
 		if (l)
-			memcpy(p, constant->con_data, l);
-
-		p += l;
+			do {
+				*p++ = *q++;
+			} while (--l);
 		*p++ = ' ';
 		*p = 0;
 	}
 	else
-	{
 #ifndef WIN_NT
 		strcpy(buffer, "$SHELL");
 #else
 		strcpy(buffer, "%ComSpec%");
 #endif
-	}
 
+#ifdef VMS
+	struct dsc$descriptor desc, *ptr;
+	if (constant) {
+		desc.dsc$b_dtype = DSC$K_DTYPE_T;
+		desc.dsc$b_class = DSC$K_CLASS_S;
+		desc.dsc$w_length = p - buffer;
+		desc.dsc$a_pointer = buffer;
+		ptr = &desc;
+	}
+	else
+		ptr = NULL;
+	int return_status = 0;
+	int mask = 1;
+	int status = lib$spawn(ptr,		// Command to be executed
+					   NULL,	// Command file
+					   NULL,	// Output file
+					   &mask,	// sub-process characteristics mask
+					   NULL,	// sub-process name
+					   NULL,	// returned process id
+					   &return_status,	// completion status
+					   &15);	// event flag for completion
+	if (status & 1)
+		while (!return_status)
+			sys$waitfr(15);
+#else
 	system(buffer);
+#endif
 }
 
 
@@ -461,37 +499,36 @@ void CMD_transaction( qli_syntax* node)
  *
  **************************************/
 
-	// If there aren't any open databases then obviously
-	// there isn't anything to commit.
+/* If there aren't any open databases then obviously
+   there isn't anything to commit. */
 
 	if (node->syn_count == 0 && !QLI_databases)
 		return;
 
 	if (node->syn_type == nod_commit)
-	{
-		if ((node->syn_count > 1) || (node->syn_count == 0 && QLI_databases->dbb_next))
+		if ((node->syn_count > 1) ||
+			(node->syn_count == 0 && QLI_databases->dbb_next))
 		{
 			node->syn_type = nod_prepare;
 			CMD_transaction(node);
 			node->syn_type = nod_commit;
 		}
-		else if (node->syn_count == 1)
-		{
-			qli_dbb* tmp_db = (qli_dbb*) node->syn_arg[0];
+		else if (node->syn_count == 1) {
+			DBB tmp_db = (DBB) node->syn_arg[0];
 			tmp_db->dbb_flags |= DBB_prepared;
 		}
 		else
 			QLI_databases->dbb_flags |= DBB_prepared;
-	}
 
 
-	if (node->syn_count == 0)
-	{
-		for (qli_dbb* db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
+	if (node->syn_count == 0) {
+		for (DBB db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
 		{
-			if ((node->syn_type == nod_commit) && !(db_iter->dbb_flags & DBB_prepared))
+			if ((node->syn_type == nod_commit)
+				&& !(db_iter->dbb_flags & DBB_prepared))
 			{
-				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string);
+				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string,
+							NULL, NULL, NULL, NULL);
 			}
 			else if (node->syn_type == nod_prepare)
 				db_iter->dbb_flags |= DBB_prepared;
@@ -506,12 +543,15 @@ void CMD_transaction( qli_syntax* node)
 	}
 
 	qli_syntax** ptr = node->syn_arg;
-	for (const qli_syntax* const* const end = ptr + node->syn_count; ptr < end; ptr++)
+	for (const qli_syntax* const* const end = ptr + node->syn_count;
+		ptr < end; ptr++)
 	{
-		qli_dbb* database = (qli_dbb*) *ptr;
-		if ((node->syn_type == nod_commit) && !(database->dbb_flags & DBB_prepared))
+		DBB database = (DBB) *ptr;
+		if ((node->syn_type == nod_commit) &&
+			!(database->dbb_flags & DBB_prepared))
 		{
-				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
+				ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL,
+							 NULL, NULL, NULL);
 		}
 		else if (node->syn_type == nod_prepare)
 			database->dbb_flags |= DBB_prepared;
@@ -521,7 +561,8 @@ void CMD_transaction( qli_syntax* node)
 }
 
 
-static void dump_procedure(qli_dbb* database,
+static void dump_procedure(
+						   DBB database,
 						   FILE* file,
 						   const TEXT* name, USHORT length, FB_API_HANDLE blob)
 {
@@ -548,9 +589,10 @@ static void dump_procedure(qli_dbb* database,
 }
 
 
-static void extract_procedure(void* file,
+static void extract_procedure(
+							  void* file,
 							  const TEXT* name,
-							  USHORT length, qli_dbb* database, ISC_QUAD& blob_id)
+							  USHORT length, DBB database, ISC_QUAD* blob_id)
 {
 /**************************************
  *

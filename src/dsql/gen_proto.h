@@ -24,43 +24,18 @@
 #ifndef DSQL_GEN_PROTO_H
 #define DSQL_GEN_PROTO_H
 
-void	GEN_descriptor(Jrd::DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool texttype);
-void	GEN_expr(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
-void	GEN_hidden_variables(Jrd::DsqlCompilerScratch* dsqlScratch, bool inExpression);
-void	GEN_port(Jrd::DsqlCompilerScratch*, Jrd::dsql_msg*);
-void	GEN_request(Jrd::dsql_req*, Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
-void	GEN_rse(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
-void	GEN_return(Jrd::DsqlCompilerScratch*, const Firebird::Array<Jrd::dsql_nod*>& variables, bool, bool);
-void	GEN_start_transaction(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
-void	GEN_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
+void	GEN_expr(dsql_req*, dsql_nod*);
+void	GEN_port(dsql_req*, dsql_msg*);
+void	GEN_request(dsql_req*, dsql_nod*);
+void	GEN_return(dsql_req*, const dsql_nod*, bool);
+void	GEN_start_transaction(dsql_req*, const dsql_nod*);
+void	GEN_statement(dsql_req*, dsql_nod*);
 
-// CVC: I think this can be replaced by statement->append_uchar(byte) in the calling code.
-inline void stuff(Jrd::DsqlCompiledStatement* statement, const UCHAR byte)
+inline UCHAR stuff(dsql_req* request, const UCHAR byte)
 {
-	statement->getBlrData().add(byte);
-}
-
-// Cram a word into the blr buffer.
-inline void stuff_word(Jrd::DsqlCompiledStatement* dsqlScratch, USHORT word)
-{
-	stuff(dsqlScratch, word);
-	stuff(dsqlScratch, word >> 8);
-}
-
-// Write out a string with one byte of length.
-inline void stuff_string(Jrd::DsqlCompiledStatement* statement, const char* string, int len)
-{
-	fb_assert(len >= 0 && len <= 255);
-	// CVC: Maybe the Release version should truncate "len" to 255?
-
-	stuff(statement, len);
-	statement->append_raw_string(string, len);
-}
-
-// Write out a string with one byte of length.
-inline void stuff_cstring(Jrd::DsqlCompiledStatement* statement, const char* string)
-{
-	stuff_string(statement, string, strlen(string));
+	request->req_blr_data.add(byte);
+	return byte;
 }
 
 #endif //  DSQL_GEN_PROTO_H
+

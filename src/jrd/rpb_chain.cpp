@@ -19,7 +19,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
+ 
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/rpb_chain.h"
@@ -38,19 +38,17 @@ int traRpbList::PushRpb(record_param* value)
 {
 	if (value->rpb_relation->rel_view_rse ||	// this is view
 		value->rpb_relation->rel_file ||		// this is external file
-		value->rpb_relation->isVirtual() ||		// this is virtual table
 		value->rpb_number.isBof())				// recno is a BOF marker
 	{
 		return -1;
 	}
 	int pos = add(traRpbListElement(value, ~0));
 	int level = -1;
-	if (pos-- > 0)
-	{
+	if (pos-- > 0) {
 		traRpbListElement& prev = (*this)[pos];
 		if (prev.lr_rpb->rpb_relation->rel_id == value->rpb_relation->rel_id &&
-			prev.lr_rpb->rpb_number == value->rpb_number)
-		{
+			prev.lr_rpb->rpb_number == value->rpb_number) 
+		{ 
 			// we got the same record once more - mark for refetch
 			level = prev.level;
 			fb_assert(pos >= level);

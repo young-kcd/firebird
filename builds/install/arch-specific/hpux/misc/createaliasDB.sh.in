@@ -129,6 +129,9 @@ checkAccessToFile() {
 #= Main Post ===============================================================
 
 
+    FBRootDir=@prefix@
+    FBBin=$FBRootDir/bin
+
     if [ $# -ne 2 ]
       then
         echo "Usage is createAliasDB.sh <name> <newDB>"
@@ -138,7 +141,7 @@ checkAccessToFile() {
     aliasName=$1
     newDB=$2
 
-    AliasFile=@FB_CONFDIR@/aliases.conf
+    AliasFile=$FBRootDir/aliases.conf
 
 
     checkNameStartsWithSlash $newDB
@@ -148,7 +151,8 @@ checkAccessToFile() {
 
     if [ ! -f $newDB ]
       then
-        @FB_BINDIR@/isql <<EOF
+        #source $FBRootDir/SYSDBA.password
+        $FBBin/isql <<EOF
 create database 'localhost:$aliasName';
 quit;
 EOF

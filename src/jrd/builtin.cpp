@@ -2,7 +2,7 @@
  *	PROGRAM:	InterBase Access Method
  *	MODULE:		builtin.cpp
  *	DESCRIPTION:	Entry points for builtin UDF library
- *
+ *			
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * $Id: builtin.cpp,v 1.9 2004-05-24 17:28:32 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -30,26 +30,24 @@
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 
-struct FN
-{
+struct FN {
 	const TEXT* fn_module;
 	const TEXT* fn_entrypoint;
 	FPTR_INT fn_function;
 };
 
-static const FN isc_builtin_functions[] =
-{
-	// Internal functions available for QA testing only
-	/*
-	"DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,
+static const FN isc_builtin_functions[] = {
+/*    Internal functions available for QA testing only */
+/*    "DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,  
+ 
+and so shall it be, *NEVER* include this in a production build
+removed this ugly security hole
+FSG 18.Dez.2000
 
-	and so shall it be, *NEVER* include this in a production build
-	removed this ugly security hole
-	FSG 18.Dez.2000
-	*/
+*/
 
 
-	{NULL, NULL, NULL}			// End of list marker
+	{NULL, NULL, NULL}			/* End of list marker */
 };
 
 
@@ -66,20 +64,21 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
  *	entrypoint names are null terminated, but may contain
  *	insignificant trailing blanks.
  *
- *	Builtin functions may reside under the Firebird install
- *	location.  The module name may be prefixed with $FIREBIRD.
+ *	Builtin functions may reside under the InterBase install
+ *	location.  The module name may be prefixed with $INTERBASE.
  *
  **************************************/
 
-	// Strip off any preceeding $FIREBIRD path location from the requested module name.
+/* Strip off any preceeding $INTERBASE path location from the 
+ * requested module name.
+ */
 
 	const TEXT* modname = module;
 
 	TEXT temp[MAXPATHLEN];
 	gds__prefix(temp, "");
 	TEXT* p = temp;
-	for (p = temp; *p; p++, modname++)
-	{
+	for (p = temp; *p; p++, modname++) {
 		if (*p != *modname)
 			break;
 	}
@@ -87,7 +86,7 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 	if (!*p)
 		module = modname;
 
-	// Strip off any trailing spaces from module name
+/* Strip off any trailing spaces from module name */
 
 	p = temp;
 
@@ -96,7 +95,7 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 
 	*p++ = 0;
 
-	// Strip off any trailing spaces from entrypoint name
+/* Strip off any trailing spaces from entrypoint name */
 
 	const TEXT* ep = p;
 
@@ -105,11 +104,11 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 
 	*p = 0;
 
-	// Scan the list for a matching (module, entrypoint) name
+/* Scan the list for a matching (module, entrypoint) name */
 
-	for (const FN* function = isc_builtin_functions; function->fn_module; ++function)
-	{
-		if (!strcmp(temp, function->fn_module) && !strcmp(ep, function->fn_entrypoint))
+	for (const FN* function = isc_builtin_functions; function->fn_module; ++function) {
+		if (!strcmp(temp, function->fn_module)
+			&& !strcmp(ep, function->fn_entrypoint))
 		{
 			return function->fn_function;
 		}

@@ -27,12 +27,12 @@
 #define CONFIG_ROOT_H
 
 #include "fb_types.h"
-#include "../common/classes/init.h"
 #include "../common/classes/fb_string.h"
-#include "../common/config/config.h"
 
 #include "../jrd/os/path_utils.h"
 #include "../common/utils_proto.h"
+
+static const char* CONFIG_FILE	= "firebird.conf";
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -54,19 +54,11 @@
 
 class ConfigRoot : public Firebird::PermanentStorage
 {
-	// we deal with names of files here
+	// config_file works with OS case-sensitivity
 	typedef Firebird::PathName string;
 
 private:
-	void GetRoot()
-	{
-		const Firebird::PathName* clRoot = Config::getCommandLineRootDirectory();
-		if (clRoot)
-		{
-			root_dir = *clRoot;
-			addSlash();
-			return;
-		}
+	void GetRoot() {
 #ifdef DEV_BUILD
 		if (getRootFromEnvironment("FIREBIRD_DEV")) {
 			return;
@@ -78,41 +70,41 @@ private:
 		osConfigRoot();
 	}
 
-	void GetInstallDir()
-	{
-		// we have no reliable ways to detect install directory in OS-independent way
-		osConfigInstallDir();
-	}
-
 public:
-	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
-		root_dir(getPool()), install_dir(getPool())
+	ConfigRoot(MemoryPool& p) : PermanentStorage(p),
+		install_dir(getPool()), root_dir(getPool()), config_file(getPool()) 
 	{
-		GetInstallDir();
 		GetRoot();
+		install_dir = root_dir;
+		config_file = root_dir + string(CONFIG_FILE);
 	}
 
-	const char* getInstallDirectory() const
-	{
+
+	virtual ~ConfigRoot() {}
+
+	const char *getInstallDirectory() const {
 		return install_dir.c_str();
 	}
 
-	const char* getRootDirectory() const
-	{
+	const char *getRootDirectory() const {
 		return root_dir.c_str();
 	}
 
-private:
-	string root_dir, install_dir;
 
-	void addSlash()
-	{
+protected:
+	const char *getConfigFilePath() const {
+		return config_file.c_str();
+	}
+
+	
+private:
+	string install_dir, root_dir, config_file;
+	void addSlash() {
 		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
 		{
 			root_dir += PathUtils::dir_sep;
 		}
 	}
-
 	bool getRootFromEnvironment(const char* envName)
 	{
 		string envValue;
@@ -123,9 +115,7 @@ private:
 		addSlash();
 		return true;
 	}
-
 	void osConfigRoot();
-	void osConfigInstallDir();
 
 	// copy prohibition
 	ConfigRoot(const ConfigRoot&);

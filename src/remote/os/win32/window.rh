@@ -42,7 +42,7 @@ produced by Borland Resource Workshop
 #define IDS_PNP1		200
 #define IDS_PNP2		201
 #define IDS_PNP3		202
-#define IDS_QUIT1		203
+#define IDS_QUIT		203
 #define IDS_MAPERROR		204
 #define IDS_REGERROR		205
 #define IDS_LIC_BADFILE		206
@@ -52,4 +52,3 @@ produced by Borland Resource Workshop
 #define IDS_PROPERTIES		210
 #define IDS_SHUTDOWN		212
 #define IDS_ALREADYSTARTED	213
-#define IDS_QUIT2		214

@@ -33,27 +33,33 @@ stopServerIfRunning() {
 
 
 
-    SecurityDatabase=security2.fdb
+    FBRootDir=@prefix@
+    FBBin=$FBRootDir/bin
+    SecurityDatabase=security.fdb
 
 
     stopServerIfRunning
 
-    if [ -f @FB_SECDBDIR@/$SecurityDatabase ] 
+    cd $FBRootDir
+    if [ -f $SecurityDatabase ] 
       then 
-        cp @FB_SECDBDIR@/$SecurityDatabase /tmp 
+        cp $SecurityDatabase /tmp 
         echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
 		chown root:root /tmp/$SecurityDatabase
 		chmod 0600 /tmp/$SecurityDatabase
     fi 
         
 
-    for i in @FB_GUARDDIR@/fbguard @FB_LOGDIR@/firebird.log @FB_CONFDIR@/SYSDBA.password @FB_SBINDIR@/fbmgr
+    for i in isc_init1* isc_event1* isc_lock1* isc_guard* firebird.log SYSDBA.password
       do
         if [ -f $i ]
           then
             rm -f $i
         fi
       done
+
+
+    rm -f $FBBin/fbmgr
 
 #	testStr=`grep firebird /etc/passwd`
 #	if [ ! -z "$testStr" ]

@@ -4,25 +4,25 @@
  *	DESCRIPTION:	Main file to provide GUI based server control functions
  *					for Firebird 2.0
  *
- *  The contents of this file are subject to the Initial Developer's
- *  Public License Version 1.0 (the "License"); you may not use this
- *  file except in compliance with the License. You may obtain a copy
+ *  The contents of this file are subject to the Initial Developer's 
+ *  Public License Version 1.0 (the "License"); you may not use this 
+ *  file except in compliance with the License. You may obtain a copy 
  *  of the License here:
  *
  *    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl.
  *
- *  Software distributed under the License is distributed on an "AS
- *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  Software distributed under the License is distributed on an "AS 
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or 
  *  implied. See the License for the specific language governing rights
  *  and limitations under the License.
- *
+ *  
  *  The Initial Developer of the Original Code is Paul Reeves.
  *
  *  The Original Code is (C) 2003 Paul Reeves .
  *
  *  All Rights Reserved.
- *
- *  Contributor(s): ______________________________________.
+ *  
+ *  Contributor(s): ______________________________________. 
  *
  */
 
@@ -82,7 +82,7 @@ public:
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CFBDialog)
-protected:
+	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
@@ -96,7 +96,7 @@ protected:
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnButtonStop();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnTimer(UINT nIDEvent);
 	afx_msg void OnDestroy();
 	afx_msg void OnService();
 	afx_msg void OnManualStart();
@@ -111,7 +111,7 @@ protected:
 
 //========= End of MSVC specific stuff
 
-//Our Stuff
+//Our Stuff 
 public:
 	CString m_SS_Server_Name;
 	CString m_Guardian_Name;
@@ -129,7 +129,7 @@ public:
 
     SERVICE_STATUS service_status;
 
-	DWORD m_Error_Status;			//This is set by the calls to SERVICES_
+	int m_Error_Status;				//This is set by the calls to SERVICES_
 									//and is also set by GetLastError()
 									//It is tested in ShowError to prevent
 									//the same error message being reported.
@@ -142,21 +142,21 @@ public:
 		bool UseGuardian;
 		bool ServicesAvailable;		// Set via UpdateServerStatus()
 		int  ServerStatus;
-		bool UseService;			// This is a convenience. It is set when
-									// ServiceStatus is checked and saves trying
-									// to do the more complex evaluation of
+		bool UseService;			// This is a convenience. It is set when 
+									// ServiceStatus is checked and saves trying 
+									// to do the more complex evaluation of 
 									// ServiceStatus
 		bool AutoStart;
-		bool WasRunning;			// Set via UpdateServerStatus(). Allows us
-									// to check if server was running before we
+		bool WasRunning;			// Set via UpdateServerStatus(). Allows us 
+									// to check if server was running before we 
 									// updated our settings.
-		bool SystemLogin;			// Are we using LocalSystem to control the
+		bool SystemLogin;			// Are we using LocalSystem to control the 
 									// service
 		bool SufficientUserRights;	// Does user have sufficient rights to change service
 
 		CString ServerName;			// Initially set by call to ViewRegistryEntries
 		CString ServiceExecutable;	// Initially set by call to ViewRegistryEntries
-
+								
 	} 	fb_status;
 
 
@@ -167,12 +167,11 @@ public:
 	bool CheckServiceInstalled( LPCTSTR service );
 	int DatabasesConnected();
 
-	//bool FirebirdInstalled();  Not implemented?
+	bool FirebirdInstalled();
 	bool FirebirdRunning();
 
 //Get Stuff
 
-	CString GetServiceName(const char* name) const;
 	HWND GetSuperServerHandle() const;
 #ifdef MANAGE_CLASSIC
 	HWND GetClassicServerHandle() const;
@@ -189,8 +188,8 @@ public:
 	void ViewRegistryEntries();
 
 //Set stuff
-	bool ConfigureRegistryForApp(const CFBDialog::STATUS status );
-	void SetAutoStart(const CFBDialog::STATUS status );
+	bool ConfigureRegistryForApp( CFBDialog::STATUS status );
+	void SetAutoStart( CFBDialog::STATUS status );
 #ifdef FBCPL_UPDATE_CONF
 	void SetGuardianUseInConf( bool UseGuardian );
 #endif
@@ -201,10 +200,10 @@ public:
 	bool UpdateFirebirdConf(CString option, CString value);
 #endif
 
-
+	
 //Do stuff
 	void ApplyChanges();
-	bool AppInstall(const CFBDialog::STATUS status );
+	bool AppInstall( CFBDialog::STATUS status );
 	bool AppRemove();
 	void CloseServiceManager();
 	void DisableApplyButton();
@@ -212,10 +211,10 @@ public:
 	void KillApp();
 	bool OpenServiceManager( DWORD DesiredAccess );
 	void ProcessMessages();
-	void ResetCheckBoxes(const CFBDialog::STATUS status );
+	void ResetCheckBoxes( CFBDialog::STATUS status );
 	bool ServerStop();
-	bool ServerStart(const CFBDialog::STATUS status );
-	bool ServiceInstall(CFBDialog::STATUS status );
+	bool ServerStart( CFBDialog::STATUS status );
+	bool ServiceInstall( CFBDialog::STATUS status );
 	bool ServiceRemove();
 	static void HandleSvcError(SLONG status, const TEXT* string);
 	void HandleError(bool silent, const TEXT* string );

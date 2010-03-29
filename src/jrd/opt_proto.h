@@ -38,14 +38,19 @@ namespace Jrd {
 	struct index_desc;
 	class CompilerScratch;
 	class OptimizerBlk;
-	class SortedStream;
 }
 
-bool OPT_access_path(const Jrd::jrd_req*, UCHAR*, SLONG, ULONG*);
+bool OPT_access_path(const Jrd::jrd_req*, SCHAR*, SSHORT, USHORT*);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
 							   Jrd::RecordSelExpr*, Jrd::NodeStack*);
-void OPT_gen_aggregate_distincts(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
-Jrd::SortedStream* OPT_gen_sort(Jrd::thread_db*, Jrd::CompilerScratch*, const UCHAR*,
-	const UCHAR*, Jrd::RecordSource*, Jrd::jrd_nod*, bool);
+							   
+// Begin only exported for VMS
+Jrd::jrd_nod* OPT_make_dbkey(Jrd::OptimizerBlk*, Jrd::jrd_nod*,
+								  USHORT);
+Jrd::jrd_nod* OPT_make_index(Jrd::thread_db*, Jrd::OptimizerBlk*, Jrd::jrd_rel*,
+								  Jrd::index_desc*);
+int OPT_match_index(Jrd::OptimizerBlk*, USHORT, Jrd::index_desc*);
+// End only exported for VMS
 
 #endif // JRD_OPT_PROTO_H
+

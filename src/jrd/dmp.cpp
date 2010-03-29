@@ -34,19 +34,21 @@
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
-#include "../common/classes/timestamp.h"
+//#include "../common/classes/timestamp.h"
 #include "../jrd/tra.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dmp_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sqz_proto.h"
+#include "../jrd/thd.h"
+
 
 
 void (*dbg_block) (const BufferDesc*);
 
-void (*dmp_active) () = DMP_active;
-void (*dmp_dirty) () = DMP_dirty;
+void (*dmp_active) (void) = DMP_active;
+void (*dmp_dirty) (void) = DMP_dirty;
 void (*dmp_page) (SLONG, USHORT) = DMP_page;
 
 extern FILE* dbg_file;
@@ -72,7 +74,7 @@ static int dmp_descending = 0;
 //#define TRANS_OFFSET(number)	((number) >> TRA_SHIFT)
 
 
-void DMP_active()
+void DMP_active(void)
 {
 /**************************************
  *
@@ -102,7 +104,7 @@ void DMP_active()
 }
 
 
-void DMP_btc()
+void DMP_btc(void)
 {
 /**************************************
  *
@@ -130,7 +132,7 @@ void DMP_btc()
 }
 
 
-void DMP_btc_errors()
+void DMP_btc_errors(void)
 {
 /**************************************
  *
@@ -153,7 +155,7 @@ void DMP_btc_errors()
 }
 
 
-void DMP_btc_ordered()
+void DMP_btc_ordered(void)
 {
 /**************************************
  *
@@ -167,42 +169,38 @@ void DMP_btc_ordered()
  **************************************/
 	Database* dbb = GET_DBB();
 
-	// Pick starting place at leftmost node
+/* Pick starting place at leftmost node */
 
-	fprintf(dbg_file, "\nDirty Page Binary Tree -- Page (Transaction) { Dirty | Clean }\n");
+	fprintf(dbg_file,
+			   "\nDirty Page Binary Tree -- Page (Transaction) { Dirty | Clean }\n");
 
 	SLONG max_seen = -3;
-	const BufferDesc* next = dbb->dbb_bcb->bcb_btree;
-	while (next && next->bdb_left)
-		next = next->bdb_left;
+	const BufferDesc* next;
+	for (next = dbb->dbb_bcb->bcb_btree; next && next->bdb_left;
+		 next = next->bdb_left);
 
 	int i = 0;
 
 	const BufferDesc* bdb;
-	while (bdb = next)
-	{
-		if (!bdb->bdb_parent && bdb != dbb->dbb_bcb->bcb_btree)
-		{
+	while (bdb = next) {
+		if (!bdb->bdb_parent && bdb != dbb->dbb_bcb->bcb_btree) {
 			for (bdb = dbb->dbb_bcb->bcb_btree; bdb;)
-			{
 				if (bdb->bdb_left && max_seen < bdb->bdb_page)
 					bdb = bdb->bdb_left;
 				else if (bdb->bdb_right && max_seen > bdb->bdb_page)
 					bdb = bdb->bdb_right;
 				else
 					break;
-			}
 			if (!bdb)
 				break;
 		}
 
-		// Decide where to go next.  The options are (right, then down to the left) or up
+		/* Decide where to go next.  The options are (right, then down to the left)
+		   or up */
 		i++;
 		if (bdb->bdb_right && max_seen < bdb->bdb_right->bdb_page)
-		{
 			for (next = bdb->bdb_right; next->bdb_left;
 				 next = next->bdb_left);
-		}
 		else
 			next = bdb->bdb_parent;
 
@@ -221,7 +219,7 @@ void DMP_btc_ordered()
 }
 
 
-void DMP_dirty()
+void DMP_dirty(void)
 {
 /**************************************
  *
@@ -251,7 +249,10 @@ void DMP_dirty()
 }
 
 
-void DMP_fetched_page(const pag* page, ULONG number, ULONG sequence, USHORT page_size)
+void DMP_fetched_page(const pag* page,
+					  ULONG		number,
+					  ULONG		sequence,
+					  USHORT page_size)
 {
 /**************************************
  *
@@ -307,12 +308,13 @@ void DMP_fetched_page(const pag* page, ULONG number, ULONG sequence, USHORT page
 		fprintf(dbg_file, "GEN-IDS PAGE\n");
 		break;
 
-	//case pag_log:
-	//	fprintf(dbg_file, "WRITE-AHEAD LOG INFO PAGE\n");
-	//	break;
+	case pag_log:
+		fprintf(dbg_file, "WRITE-AHEAD LOG INFO PAGE\n");
+		break;
 
 	default:
-		fprintf(dbg_file, "*** Page %ld (type %d) is undefined ***", number, page->pag_type);
+		fprintf(dbg_file, "*** Page %ld (type %d) is undefined ***",
+				   number, page->pag_type);
 	}
 
 	fprintf(dbg_file, "\n");
@@ -352,16 +354,14 @@ static void btc_printer(SLONG level, const BufferDesc* bdb, SCHAR* buffer)
  *
  **************************************/
 
-	if (level >= 48)
-	{
+	if (level >= 48) {
 		fprintf(dbg_file, "overflow\n");
 		return;
 	}
 
 	sprintf((buffer + 5 * level + 1), "%.4ld", bdb->bdb_page);
 
-	if (bdb->bdb_left)
-	{
+	if (bdb->bdb_left) {
 		buffer[5 * (level + 1)] = 'L';
 		btc_printer(level + 1, bdb->bdb_left, buffer);
 	}
@@ -371,8 +371,7 @@ static void btc_printer(SLONG level, const BufferDesc* bdb, SCHAR* buffer)
 	memset(buffer, ' ', 250);
 	buffer[249] = 0;
 
-	if (bdb->bdb_right)
-	{
+	if (bdb->bdb_right) {
 		buffer[5 * (level + 1)] = 'R';
 		btc_printer(level + 1, bdb->bdb_right, buffer);
 	}
@@ -444,16 +443,14 @@ static double decompress(const SCHAR* value)
 
 	char* p = (SCHAR *) & dbl;
 
-	if (*value & (1 << 7))
-	{
+	if (*value & (1 << 7)) {
 		*p++ = static_cast<SCHAR>(*value++ ^ (1 << 7));
 		int l = 7;
 		do {
 			*p++ = *value++;
 		} while (--l);
 	}
-	else
-	{
+	else {
 		int l = 8;
 		do {
 			*p++ = -*value++ - 1;
@@ -481,8 +478,7 @@ static void dmp_blob(const blob_page* page)
 			   ((PAG) page)->pag_flags, page->blp_lead_page,
 			   page->blp_sequence, page->blp_length);
 
-	if (((PAG) page)->pag_flags & blp_pointers)
-	{
+	if (((PAG) page)->pag_flags & blp_pointers) {
 		const int n = page->blp_length >> SHIFTLONG;
 		const ULONG* ptr = (ULONG *) page->blp_page;
 		for (int i = 0; i < n; i++, ptr++)
@@ -517,18 +513,19 @@ static void dmp_data(const data_page* page)
 			   ((PAG) page)->pag_flags);
 
 	int i = 0;
-	for (const data_page::dpg_repeat* index = page->dpg_rpt; i < page->dpg_count; i++, index++)
+	for (const data_page::dpg_repeat* index = page->dpg_rpt; i < page->dpg_count;
+		i++, index++)
 	{
 		if (index->dpg_length == 0)
 		{
 			fprintf(dbg_file, "\n\t%d - (empty)\n", i);
 			continue;
 		}
-		const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
-		const rhdf* fragment = (rhdf*) header;
+		const rhd* header = (RHD) ((SCHAR *) page + index->dpg_offset);
+		const rhdf* fragment = (RHDF) header;
 		if (header->rhd_flags & rhd_blob)
 		{
-			const blh* blob = (blh*) header;
+			const blh* blob = (BLH) header;
 			fprintf(dbg_file,
 					   "\n\t%d - (blob) offset: %d, length: %d, flags: %x\n",
 					   i, index->dpg_offset, index->dpg_length,
@@ -551,24 +548,22 @@ static void dmp_data(const data_page* page)
 			{
 				if (header->rhd_flags & rhd_incomplete)
 				{
-					length = index->dpg_length - OFFSETA(rhdf*, rhdf_data);
-					p = (SCHAR *) ((rhdf*) header)->rhdf_data;
+					length = index->dpg_length - OFFSETA(RHDF, rhdf_data);
+					p = (SCHAR *) ((RHDF) header)->rhdf_data;
 				}
 				else
 				{
-					length = index->dpg_length - OFFSETA(rhd*, rhd_data);
+					length = index->dpg_length - OFFSETA(RHD, rhd_data);
 					p = (SCHAR *) header->rhd_data;
 				}
 				const char* q = p;
 				for (const char* const end = p + length; q < end;)
 				{
-					if (*q > 0)
-					{
+					if (*q > 0) {
 						expanded_length += *q;
 						q += *q + 1;
 					}
-					else
-					{
+					else {
 						expanded_length += -(*q);
 						q += 2;
 					}
@@ -576,9 +571,11 @@ static void dmp_data(const data_page* page)
 			}
 			fprintf(dbg_file,
 					   "\n\t%d - offset: %d, length: %d, expanded data length: %d\n\t",
-					   i, index->dpg_offset, index->dpg_length, expanded_length);
+					   i, index->dpg_offset, index->dpg_length,
+					   expanded_length);
 			fprintf(dbg_file, "trans: %d, format: %d, flags: %#x\n\t",
-					   header->rhd_transaction, (int) header->rhd_format, header->rhd_flags);
+					   header->rhd_transaction, (int) header->rhd_format,
+					   header->rhd_flags);
 			if (header->rhd_b_page)
 			{
 				fprintf(dbg_file, "back page: %d, line: %d\n\t",
@@ -601,10 +598,11 @@ static void dmp_data(const data_page* page)
 					const int length_save = length;
 					//int compress_value = 0;
 					int cnt = 0;
-					fprintf(dbg_file, "Raw Compressed format: (length %d)\n\t", length);
+					fprintf(dbg_file,
+							   "Raw Compressed format: (length %d)\n\t",
+							   length);
 					do {
-						if (cnt++ >= 16)
-						{
+						if (cnt++ >= 16) {
 							fprintf(dbg_file, "\n\t");
 							cnt = 1;
 						}
@@ -616,19 +614,21 @@ static void dmp_data(const data_page* page)
 
 					buffer[0] = 0;
 					const char* const end =
-						SQZ_decompress((const UCHAR*) p_save, length_save, &buffer[1],
+						SQZ_decompress(p_save, length_save, &buffer[1],
 										 &buffer[sizeof(buffer)]);
 					cnt = 0;
 					p = &buffer[1];
-					fprintf(dbg_file, "Decompressed format: (length %d)\n\t", end - p);
+					fprintf(dbg_file,
+							   "Decompressed format: (length %d)\n\t",
+							   end - p);
 					do {
-						if (cnt++ >= 20)
-						{
+						if (cnt++ >= 20) {
 							fprintf(dbg_file, "\n\t");
 							cnt = 1;
 						}
 
-						if (isprint(*p) && (isprint(*(p + 1)) || isprint(*(p - 1))))
+						if (isprint(*p) &&
+							(isprint(*(p + 1)) || isprint(*(p - 1))))
 						{
 							fprintf(dbg_file, "%2c ", *p++);
 						}
@@ -660,24 +660,22 @@ static void dmp_header(const header_page* page)
 	const USHORT minor_version = page->hdr_ods_minor;
 
 	fprintf(dbg_file,
-			   "HEADER PAGE\t checksum %d\t generation %ld\n\tPage size: %d, version: %d.%d, pages: %ld\n",
+			   "HEADER PAGE\t checksum %d\t generation %ld\n\tPage size: %d, version: %d.%d(%d), pages: %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
-			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG,
-			   minor_version, page->hdr_PAGES);
-
-	const Firebird::TimeStamp ts(*((GDS_TIMESTAMP *) page->hdr_creation_date));
+			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG, 
+			   minor_version, page->hdr_ods_minor_original, page->hdr_PAGES);
 
 	struct tm time;
-	ts.decode(&time);
-
+	isc_decode_timestamp((GDS_TIMESTAMP *) page->hdr_creation_date, &time);
 	fprintf(dbg_file, "\tCreation date:\t%s %d, %d %d:%02d:%02d\n",
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
 
 	fprintf(dbg_file,
-			   "\tOldest trans %ld, oldest_active %ld, oldest_snapshot %ld, next trans %ld\n",
+			   "\tOldest trans %ld, oldest_active %ld, oldest_snapshot %ld, next trans %ld, bumped trans %ld\n",
 			   page->hdr_oldest_transaction, page->hdr_oldest_active,
-			   page->hdr_oldest_snapshot, page->hdr_next_transaction);
+			   page->hdr_oldest_snapshot, page->hdr_next_transaction,
+			   page->hdr_bumped_transaction);
 
 	fprintf(dbg_file,
 			   "\tfile sequence # %d, flags %d, attachment %ld\n",
@@ -685,19 +683,19 @@ static void dmp_header(const header_page* page)
 
 
 	fprintf(dbg_file,
-			   "\timplementation %s, shadow count %ld\n",
-			   DbImplementation(page).implementation().c_str(), page->hdr_shadow_count);
+			   "\timplementation %ld, shadow count %ld\n",
+			   page->hdr_implementation, page->hdr_shadow_count);
 
 
 	fprintf(dbg_file, "\n    Variable header data:\n");
 
 	SLONG number;
 
-	const UCHAR* p = (UCHAR*) page->hdr_data;
-	for (const UCHAR* const end = p + page->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
+	const char* p = (SCHAR *) page->hdr_data;
+	for (const char* const end = p + page->hdr_page_size;
+		 p < end && *p != HDR_end; p += 2 + p[1])
 	{
-		switch (*p)
-		{
+		switch (*p) {
 		case HDR_root_file_name:
 			printf("\tRoot file name: %*s\n", p[1], p + 2);
 			break;
@@ -725,15 +723,14 @@ static void dmp_header(const header_page* page)
 			printf("\tSweep interval: %ld\n", number);
 			break;
 
-		/*
 		case HDR_log_name:
 			printf("\tLog file name: %*s\n", p[1], p + 2);
 			break;
-
+/*
 		case HDR_journal_file:
 			printf("\tJournal file: %*s\n", p[1], p + 2);
 			break;
-		*/
+*/
 		case HDR_password_file_key:
 			printf("\tPassword file key: (can't print)\n");
 			break;
@@ -777,13 +774,13 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			   page->btr_level,
 			   page->btr_length,
 			   ((PAG) page)->pag_flags);
-	// Compute the number of data pages per pointer page.  Each data page
-	// requires a 32 bit pointer and a 2 bit control field.
+/* Compute the number of data pages per pointer page.  Each data page
+   requires a 32 bit pointer and a 2 bit control field. */
 	const USHORT dp_per_pp =
 			(USHORT)((ULONG) ((page_size - OFFSETA(pointer_page*, ppg_page)) * 8) /
 						(BITS_PER_LONG + 2));
 	const USHORT max_records = (page_size - sizeof(data_page)) /
-								(sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
+								(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 
 	const btree_nod* const end  = (btree_nod*) ((UCHAR *) page + page->btr_length);
 	btree_nod* node = (btree_nod*) page->btr_nodes;
@@ -795,7 +792,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 	{
 		const ULONG number = get_long(node->btn_number);
 
-		// compute running value
+		/* compute running value */
 
 		UCHAR* p = value + node->btn_prefix;
 		const UCHAR* q = node->btn_data;
@@ -811,7 +808,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			*p++ = 0;
 		}
 
-		// format value as number
+		/* format value as number */
 
 		if (dmp_descending || (page->pag_flags & btr_descending))
 			complement_key(value, node->btn_prefix + node->btn_length);
@@ -827,7 +824,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			n = decompress((SCHAR *) value);
 		}
 
-		// format value as string for printing
+		/* format value as string for printing */
 
 		p = print;
 		q = value;
@@ -848,16 +845,16 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 		}
 		*p = 0;
 
-		// print formatted node
+		/* print formatted node */
 
 		fprintf(dbg_file, "\t+%x Prefix: %d, length: %d, ",
-				   (SCHAR *) node - (SCHAR *) page, node->btn_prefix, node->btn_length);
+				   (SCHAR *) node - (SCHAR *) page, node->btn_prefix,
+				   node->btn_length);
 		if (page->btr_level)
 			fprintf(dbg_file, "page number: %ld", number);
 		else
 			fprintf(dbg_file, "number: %ld", number);
-		if (page_size && !page->btr_level)
-		{
+		if (page_size && !page->btr_level) {
 			const int line = number % max_records;
 			const int slot = (number / max_records) % dp_per_pp;
 			const int pp = (number / max_records) / dp_per_pp;
@@ -890,25 +887,23 @@ static void dmp_pip(const page_inv_page* page, ULONG sequence)
 	PageControl* control = dbb->dbb_pcontrol;
 	fprintf(dbg_file,
 			   "PAGE INVENTORY PAGE\t checksum %d\t generation %ld\n\tMin page: %ld\n\tFree pages:\n\t",
-			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation, page->pip_min);
+			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
+			   page->pip_min);
 
 #define BIT(n) (page->pip_bits [n >> 3] & (1 << (n & 7)))
 
-	for (int n = 0; n < control->pgc_ppp;)
-	{
+	for (int n = 0; n < control->pgc_ppp;) {
 		while (n < control->pgc_ppp)
-		{
 			if (BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d - ", n);
 		while (n < control->pgc_ppp)
-		{
 			if (!BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d, ", n - 1);
 	}
 
@@ -939,13 +934,10 @@ static void dmp_pointer(const pointer_page* page)
 
 	const UCHAR* bytes = (UCHAR *) & page->ppg_page[dbb->dbb_dp_per_pp];
 
-	for (USHORT i = 0; i < page->ppg_count; i++)
-	{
+	for (USHORT i = 0; i < page->ppg_count; i++) {
 		if (i % 20 == 0)
-		{
-			// fprintf (dbg_file, "\n\t%d: ", bytes [i / 4]);
+			/* fprintf (dbg_file, "\n\t%d: ", bytes [i / 4]); */
 			fprintf(dbg_file, "\n\t");
-		}
 		fprintf(dbg_file, "%ld ", page->ppg_page[i]);
 	}
 
@@ -968,18 +960,25 @@ static void dmp_root(const index_root_page* page)
 			   "INDEX ROOT PAGE\t checksum %d\t generation %ld\n\tRelation: %d, Count: %d\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
 			   page->irt_relation, page->irt_count);
+	const bool ods11plus =
+		(JRD_get_thread_data()->tdbb_database->dbb_ods_version >= ODS_VERSION11);
 	USHORT i = 0;
-	for (const index_root_page::irt_repeat* desc = page->irt_rpt; i < page->irt_count; i++, desc++)
+	for (const index_root_page::irt_repeat* desc = page->irt_rpt;
+		i < page->irt_count; i++, desc++)
 	{
-		fprintf(dbg_file, "\t%d -- root: %ld, number of keys: %d, flags: %x\n", i,
+		fprintf(dbg_file,
+				   "\t%d -- root: %ld, number of keys: %d, flags: %x\n", i,
 				   desc->irt_root, desc->irt_keys, desc->irt_flags);
 		fprintf(dbg_file, "\t     keys (field, type): ");
 		const SCHAR* ptr = (SCHAR *) page + desc->irt_desc;
-		for (USHORT j = 0; j < desc->irt_keys; j++)
-		{
-			ptr += sizeof(irtd);
+		for (USHORT j = 0; j < desc->irt_keys; j++) {
+			if (ods11plus) then
+				ptr += sizeof(irtd);
+			else
+				ptr += sizeof(irtd_ods10);
 			const irtd* stuff = (irtd*)ptr;
-			fprintf(dbg_file, "(%d, %d),", stuff->irtd_field, stuff->irtd_itype);
+			fprintf(dbg_file, "(%d, %d),", stuff->irtd_field,
+					   stuff->irtd_itype);
 		}
 		fprintf(dbg_file, "\n");
 	}
@@ -990,7 +989,7 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
 {
 /**************************************
  *
- *	d m p _ t r a n s a c t i o n
+ *	d m p _ t r a n s a c t i o n 
  *
  **************************************
  *
@@ -998,22 +997,24 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const ULONG transactions_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
-	fprintf(dbg_file, "Transaction Inventory Page\t checksum %d\t generation %ld\n",
+	fprintf(dbg_file,
+			   "Transaction Inventory Page\t checksum %d\t generation %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation);
-	if (tdbb->getTransaction())
-	{
-		fprintf(dbg_file, "\tCurrent transaction %d", tdbb->getTransaction()->tra_number);
-	}
+	if (tdbb->tdbb_transaction)
+		fprintf(dbg_file, "\tCurrent transaction %d",
+				   tdbb->tdbb_transaction->tra_number);
 	else
 		fprintf(dbg_file, "\tCurrent transaction (NULL)");
 	if (sequence)
-		fprintf(dbg_file, "\t first transaction on page %ld", transactions_per_tip * (sequence - 1));
+		fprintf(dbg_file, "\t first transaction on page %ld",
+				   transactions_per_tip * (sequence - 1));
 	else
-		fprintf(dbg_file, "\t Transactions per TIP %ld", transactions_per_tip);
+		fprintf(dbg_file, "\t Transactions per TIP %ld",
+				   transactions_per_tip);
 	fprintf(dbg_file, "\tnext TIP page %d\n\n", page->tip_next);
 	fprintf(dbg_file,
 			   "\t          1         2         3         4         5         6         7         8         9\n");
@@ -1033,8 +1034,7 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
 		const USHORT state = (*byte >> shift) & TRA_MASK;
 		*p++ = (state == tra_active) ? 'A' :
 			(state == tra_limbo) ? 'L' : (state == tra_dead) ? 'D' : 'C';
-		if (p >= end)
-		{
+		if (p >= end) {
 			*p = 0;
 			fprintf(dbg_file, "  %3d\t%s\n", hundreds++, s);
 			p = s;
@@ -1045,3 +1045,5 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
 	*p = 0;
 	fprintf(dbg_file, "  %3d\t%s\n", hundreds, s);
 }
+
+

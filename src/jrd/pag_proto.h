@@ -25,55 +25,38 @@
 #define JRD_PAG_PROTO_H
 
 namespace Jrd {
-	class thread_db;
 	class Database;
-	class PageNumber;
-	class PageSpace;
 	struct win;
 }
 namespace Ods {
 	struct pag;
 	struct header_page;
-	//enum ClumpOper { CLUMP_ADD, CLUMP_REPLACE, CLUMP_REPLACE_ONLY };
-
 }
 
-//void	PAG_add_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT, const UCHAR*, Ods::ClumpOper);
-USHORT	PAG_add_file(Jrd::thread_db* tdbb, const TEXT*, SLONG);
-bool	PAG_add_header_entry(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
-//void	PAG_attach_temp_pages(Jrd::thread_db*, USHORT pageSpaceID);
-bool	PAG_replace_entry_first(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
-Ods::pag*	PAG_allocate(Jrd::thread_db* tdbb, Jrd::win*);
-SLONG	PAG_attachment_id(Jrd::thread_db*);
-bool	PAG_delete_clump_entry(Jrd::thread_db* tdbb, USHORT);
-void	PAG_format_header(Jrd::thread_db*);
-void	PAG_format_pip(Jrd::thread_db*, Jrd::PageSpace& pageSpace);
-#ifdef NOT_USED_OR_REPLACED
-bool	PAG_get_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT*, UCHAR*);
-#endif
-void	PAG_header(Jrd::thread_db*, bool);
-void	PAG_header_init(Jrd::thread_db*);
-void	PAG_init(Jrd::thread_db*);
-void	PAG_init2(Jrd::thread_db*, USHORT);
-SLONG	PAG_last_page(Jrd::thread_db* tdbb);
-void	PAG_release_page(Jrd::thread_db* tdbb, const Jrd::PageNumber&, const Jrd::PageNumber&);
-void	PAG_set_force_write(Jrd::thread_db* tdbb, bool);
-void	PAG_set_no_reserve(Jrd::thread_db* tdbb, bool);
-void	PAG_set_db_readonly(Jrd::thread_db* tdbb, bool);
-void	PAG_set_db_SQL_dialect(Jrd::thread_db* tdbb, SSHORT);
-void	PAG_set_page_buffers(Jrd::thread_db* tdbb, ULONG);
-void	PAG_set_page_scn(Jrd::thread_db* tdbb, Jrd::win* window);
-void	PAG_sweep_interval(Jrd::thread_db* tdbb, SLONG);
-
-namespace Jrd {
-	class PageCountCallback
-	{
-	public:
-//		PageCountCallback() { }
-		virtual void newPage(const SLONG, Ods::pag*) = 0;
-		virtual ~PageCountCallback() { }
-	};
-}
-ULONG	PAG_page_count(Jrd::Database*, Jrd::PageCountCallback*);
+void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
+USHORT	PAG_add_file(const TEXT*, SLONG);
+int		PAG_add_header_entry(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
+int		PAG_replace_entry_first(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
+Ods::pag*	PAG_allocate(Jrd::win *);
+SLONG	PAG_attachment_id(void);
+int		PAG_delete_clump_entry(SLONG, USHORT);
+void	PAG_format_header(void);
+void	PAG_format_log(void);
+void	PAG_format_pip(void);
+bool	PAG_get_clump(SLONG, USHORT, USHORT*, UCHAR*);
+void	PAG_header(bool);
+void	PAG_header_init();
+void	PAG_init(void);
+void	PAG_init2(USHORT);
+SLONG	PAG_last_page(void);
+void	PAG_release_page(SLONG, SLONG);
+void	PAG_set_force_write(Jrd::Database*, SSHORT);
+void	PAG_set_no_reserve(Jrd::Database*, USHORT);
+void	PAG_set_db_readonly(Jrd::Database*, bool);
+void	PAG_set_db_SQL_dialect(Jrd::Database*, SSHORT);
+void	PAG_set_page_buffers(ULONG);
+void	PAG_sweep_interval(SLONG);
+//int		PAG_unlicensed(void);
 
 #endif // JRD_PAG_PROTO_H
+

@@ -88,7 +88,7 @@
 				HEADER_SEARCH_PATHS = "\U0001stlport fb/src fb/src/include";
 				LIBRARY_SEARCH_PATHS = "\U0001";
 				OPTIMIZATION_CFLAGS = "-O3";
-				OTHER_CFLAGS = "\U0001-DDARWIN";
+				OTHER_CFLAGS = "\U0001-DDARWIN -DPROD_BUILD";
 				WARNING_CFLAGS = "\U0001-Wno-switch -Wno-unused";
 			};
 			isa = PBXBuildStyle;
@@ -4286,6 +4286,11 @@
 			path = fun_proto.h;
 			refType = 4;
 		};
+		F616C5E30200B0CF01EF0ADE = {
+			isa = PBXFileReference;
+			path = functions.cpp;
+			refType = 4;
+		};
 		F616C5E40200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = gds.bas;
@@ -5610,10 +5615,13 @@
 		};
 		F616C6FC0200B0D001EF0ADE = {
 			children = (
+				F616C6FD0200B0D001EF0ADE,
 				F616C6FF0200B0D001EF0ADE,
 				F616C7000200B0D001EF0ADE,
 				F616C7010200B0D001EF0ADE,
 				F616C7020200B0D001EF0ADE,
+				F616C7030200B0D001EF0ADE,
+				F616C7040200B0D001EF0ADE,
 				F616C7050200B0D001EF0ADE,
 				F616C7060200B0D001EF0ADE,
 				F616C7070200B0D001EF0ADE,
@@ -5630,6 +5638,11 @@
 			);
 			isa = PBXGroup;
 			path = lock;
+			refType = 4;
+		};
+		F616C6FD0200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = config_params;
 			refType = 4;
 		};
 		F616C6FF0200B0D001EF0ADE = {
@@ -5650,6 +5663,16 @@
 		F616C7020200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = lock.h;
+			refType = 4;
+		};
+		F616C7030200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = lock_header_mmap;
+			refType = 4;
+		};
+		F616C7040200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = lock_header_shmem;
 			refType = 4;
 		};
 		F616C7050200B0D001EF0ADE = {
@@ -5743,6 +5766,11 @@
 		F616C7F50200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = codetext.h;
+			refType = 4;
+		};
+		F616C7F60200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = fb_boilerplate.h;
 			refType = 4;
 		};
 		F616C7F70200B0D001EF0ADE = {
@@ -7491,6 +7519,11 @@
 		F616C9250200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = example.mak;
+			refType = 4;
+		};
+		F616C9260200B0D001EF0ADE = {
+			isa = PBXFileReference;
+			path = functions.c;
 			refType = 4;
 		};
 		F616C9270200B0D001EF0ADE = {

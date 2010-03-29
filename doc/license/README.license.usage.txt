@@ -11,6 +11,11 @@ of the Firebird RDBMS project are:
   2) Initial Developer's Public License (IDPL), version 1.0
      http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl
 
+  3) GNU Lesser General Public License (LGPL), version 2.1 or higher
+     http://www.gnu.org/licences/lgpl.html
+     NOTE: MUST BE USED WITH A SPECIAL EXCEPTION CLAUSE
+     (see /doc/license/LGPL_w_exception.txt for details)
+
 The IPL is copyright of Borland Corp., the other licenses are copyright
 by the source code authors and contributors.
 
@@ -26,13 +31,15 @@ USAGE RULES
    the IPL, then this file should be released under the IPL too.
 
 3) The new files developed by the members of the Firebird project should
-   be released under the IDPL.
+   be released under either the IDPL or the LGPL with exception clause.
+   It's up to an author (initial developer) to decide which license should
+   be used for his/her code.
 
 4) The new files contributed by people who are not members of the Firebird
    project should follow the rule #3. If an author (initial developer) doesn't
-   specify the license to be used, the person who applies the contributed code
-   to the CVS tree (a committer) becomes responsible for the license assigned
-   to the contributed code.
+   care about the license to be used, the person who applies the contributed code
+   to the CVS tree (a committer) becomes responsible for the license for the
+   contributed code.
 
 5) Every non-binary file that exists in the CVS tree, should have a header
    section which describes the license this code is released under. If a file

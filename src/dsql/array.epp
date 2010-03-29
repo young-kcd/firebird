@@ -26,7 +26,7 @@
  *   could be returned or a lookup for a blob field could fail. In addition,
  *   a possible buffer overrun due to unchecked bounds was closed. The fc
  *   get_name() as been renamed copy_exact_name().
- *
+ * 
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  *
  *
@@ -40,29 +40,26 @@
 #include "../dsql/array_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../common/StatusArg.h"
-#include "../jrd/constants.h"
-
-using namespace Firebird;
 
 DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 const int array_desc_column_major = 1;	// Set for FORTRAN
 
-struct gen_t
-{
+struct gen_t {
 	UCHAR* gen_sdl;
 	UCHAR** gen_sdl_ptr;
-	const UCHAR* gen_end;
+	UCHAR* gen_end;
 	ISC_STATUS* gen_status;
 	SSHORT gen_internal;
 };
 
+typedef gen_t *GEN_T;
 
 static void adjust_length(ISC_ARRAY_DESC*);
 static void copy_exact_name (const char*, char*, SSHORT);
-static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v);
-static ISC_STATUS gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*, SSHORT*, UCHAR**, SSHORT*, bool);
+static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
+static ISC_STATUS gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
+					  SSHORT*, bool);
 static ISC_STATUS lookup_desc(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, const SCHAR*,
 						const SCHAR*, ISC_ARRAY_DESC*, SCHAR*);
 static ISC_STATUS stuff_args(gen_t*, SSHORT, ...);
@@ -102,17 +99,17 @@ ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS* status,
   * Functional description
   *
   **************************************/
-
+ 
  	return gen_sdl(status, desc, sdl_buffer_length, &sdl_buffer, sdl_length, false);
 }
-
-
+ 
+ 
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 									   FB_API_HANDLE* db_handle,
 									   FB_API_HANDLE* trans_handle,
 									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
-									   void* array,
+									   void* array, 
 									   SLONG* slice_length)
 {
 /**************************************
@@ -132,9 +129,9 @@ ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 	if (gen_sdl(status, desc, &sdl_length, &sdl, &sdl_length, true))
 		return status[1];
 
-	// SD: I do not complain but in ibase.h sdl is a plain char in functions'
-	// declaration while it is UCHAR in the functions' implementations. Damned legacy!
 	isc_get_slice(status, db_handle, trans_handle, array_id,
+// SD: I do not complain but in ibase.h sdl is a plain char in functions'
+//     declaration while it is UCHAR in the functions' implementations. Damned legacy!
 				  sdl_length, reinterpret_cast<const char*>(sdl),
 				  0, NULL, *slice_length, array, slice_length);
 
@@ -161,16 +158,17 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
  * Functional description
  *
  **************************************/
-	SCHAR global[MAX_SQL_IDENTIFIER_SIZE];
+	SCHAR global[32];
 
-	if (lookup_desc(status, db_handle, trans_handle, field_name, relation_name, desc, global))
+	if (lookup_desc(status, db_handle, trans_handle,
+					field_name, relation_name, desc, global))
 	{
 		return status[1];
 	}
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
-	isc_req_handle handle = 0;
+	isc_req_handle handle = NULL;
 
 	ISC_ARRAY_BOUND* tail = desc->array_desc_bounds;
 
@@ -178,11 +176,11 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
 		X IN RDB$FIELD_DIMENSIONS
 		WITH X.RDB$FIELD_NAME EQ global
 		SORTED BY X.RDB$DIMENSION
-        tail->array_bound_lower = (SSHORT) X.RDB$LOWER_BOUND;
-	    tail->array_bound_upper = (SSHORT) X.RDB$UPPER_BOUND;
+        tail->array_bound_lower = (SSHORT)X.RDB$LOWER_BOUND;
+	    tail->array_bound_upper = (SSHORT)X.RDB$UPPER_BOUND;
         ++tail;
-	END_FOR
-    ON_ERROR
+	END_FOR 
+    ON_ERROR 
 		ISC_STATUS_ARRAY temp_status;
 		isc_release_request(temp_status, &handle);
 		return UTLD_copy_status(isc_status, status);
@@ -210,7 +208,8 @@ ISC_STATUS API_ROUTINE isc_array_lookup_desc(ISC_STATUS* status,
  *
  **************************************/
 
-	return lookup_desc(status, db_handle, trans_handle, field_name, relation_name, desc, NULL);
+	return lookup_desc(status, db_handle, trans_handle,
+					   field_name, relation_name, desc, NULL);
 }
 
 
@@ -219,7 +218,7 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
 									   FB_API_HANDLE* trans_handle,
 									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
-									   void* array,
+									   void* array, 
 									   SLONG* slice_length)
 {
 /**************************************
@@ -267,8 +266,11 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
  * Functional description
  *
  **************************************/
-    copy_exact_name(field_name, desc->array_desc_field_name, sizeof(desc->array_desc_field_name));
-    copy_exact_name (relation_name, desc->array_desc_relation_name, sizeof(desc->array_desc_relation_name));
+    copy_exact_name (field_name, desc->array_desc_field_name,
+                     sizeof(desc->array_desc_field_name));
+    copy_exact_name (relation_name, desc->array_desc_relation_name,
+                     sizeof(desc->array_desc_relation_name));
+ 
 
 	desc->array_desc_flags = 0;
 	desc->array_desc_dimensions = *dimensions;
@@ -277,8 +279,7 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 
 	const SSHORT dtype = *sql_dtype & ~1;
 
-	switch (dtype)
-	{
+	switch (dtype) {
 	case SQL_VARYING:
 		desc->array_desc_dtype = blr_varying;
 		break;
@@ -316,15 +317,18 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 		desc->array_desc_dtype = blr_quad;
 		break;
 	default:
-		return error(status, Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-							 Arg::Gds(isc_random) << Arg::Str("data type not understood"));
+		return error(status, 7, (ISC_STATUS) isc_sqlerr,
+					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) - 804,
+					 (ISC_STATUS) isc_arg_gds, (ISC_STATUS) isc_random,
+					 (ISC_STATUS) isc_arg_string,
+					 (ISC_STATUS) "data type not understood");
 	}
 
-	return error(status, Arg::Gds(FB_SUCCESS));
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
-static void adjust_length(ISC_ARRAY_DESC*)
+static void adjust_length( ISC_ARRAY_DESC* desc)
 {
 /**************************************
  *
@@ -338,8 +342,10 @@ static void adjust_length(ISC_ARRAY_DESC*)
  **************************************/
 }
 
-
-static void copy_exact_name (const char* from, char* to, SSHORT bsize)
+static void copy_exact_name ( 
+    const char* from,
+    char* to,
+    SSHORT bsize)
 {
 /**************************************
  *
@@ -347,15 +353,14 @@ static void copy_exact_name (const char* from, char* to, SSHORT bsize)
  *
  **************************************
  *
- * Functional description
+ * Functional description 
  *  Copy null terminated name ot stops at bsize - 1.
  *  CVC: This is just another fc like DYN_terminate.
  *
  **************************************/
 	const char* const from_end = from + bsize - 1;
 	char* to2 = to - 1;
-	while (*from && from < from_end)
-	{
+	while (*from && from < from_end) {
 		if (*from != ' ') {
 			to2 = to;
 		}
@@ -365,11 +370,11 @@ static void copy_exact_name (const char* from, char* to, SSHORT bsize)
 }
 
 
-static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
+static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 {
 /**************************************
  *
- *	e r r o r
+ *	e r r o r	
  *
  **************************************
  *
@@ -377,7 +382,20 @@ static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
  *	Stuff a status vector.
  *
  **************************************/
-	return v.copyTo(status);
+	ISC_STATUS* stat;
+	va_list ptr;
+
+	va_start(ptr, count);
+	stat = status;
+	*stat++ = isc_arg_gds;
+
+	for (; count; --count)
+		*stat++ = (ISC_STATUS) va_arg(ptr, ISC_STATUS);
+
+	va_end(ptr);
+	*stat = isc_arg_end;
+
+	return status[1];
 }
 
 
@@ -400,7 +418,9 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	const SSHORT dimensions = desc->array_desc_dimensions;
 
 	if (dimensions > 16)
-		return error(status, Arg::Gds(isc_invalid_dimension) << Arg::Num(dimensions) << Arg::Num(16));
+		return error(status, 5, (ISC_STATUS) isc_invalid_dimension,
+					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) dimensions,
+					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) 16);
 
 	gen_t gen_block;
 	gen_t* gen = &gen_block;
@@ -410,13 +430,13 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	gen->gen_status = status;
 	gen->gen_internal = internal_flag ? 0 : -1;
 
-	if (stuff_args(gen, 4, isc_sdl_version1, isc_sdl_struct, 1, desc->array_desc_dtype))
+	if (stuff_args(gen, 4, isc_sdl_version1, isc_sdl_struct, 1,
+				   desc->array_desc_dtype))
 	{
 		return status[1];
 	}
 
-	switch (desc->array_desc_dtype)
-	{
+	switch (desc->array_desc_dtype) {
 	case blr_short:
 	case blr_long:
 	case blr_int64:
@@ -442,30 +462,25 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 		return status[1];
 
 	SSHORT from, to, increment;
-	if (desc->array_desc_flags & array_desc_column_major)
-	{
+	if (desc->array_desc_flags & array_desc_column_major) {
 		from = dimensions - 1;
 		to = -1;
 		increment = -1;
 	}
-	else
-	{
+	else {
 		from = 0;
 		to = dimensions;
 		increment = 1;
 	}
 
     SSHORT n;
-	for (n = from; n != to; n += increment)
-	{
+	for (n = from; n != to; n += increment) {
 		const ISC_ARRAY_BOUND* tail = desc->array_desc_bounds + n;
-		if (tail->array_bound_lower == 1)
-		{
+		if (tail->array_bound_lower == 1) {
 			if (stuff_args(gen, 2, isc_sdl_do1, n))
 				return status[1];
 		}
-		else
-		{
+		else {
 			if (stuff_args(gen, 2, isc_sdl_do2, n))
 				return status[1];
 			if (stuff_literal(gen, (SLONG) tail->array_bound_lower))
@@ -479,16 +494,14 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 		return status[1];
 
 	for (n = 0; n < dimensions; n++)
-	{
 		if (stuff_args(gen, 2, isc_sdl_variable, n))
 			return status[1];
-	}
 
 	if (stuff_sdl(gen, isc_sdl_eoc))
 		return status[1];
 	*sdl_length = gen->gen_sdl - *gen->gen_sdl_ptr;
 
-	return error(status, Arg::Gds(FB_SUCCESS));
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
@@ -512,10 +525,12 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
  **************************************/
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
-	isc_req_handle handle = 0;
+	isc_req_handle handle = NULL;
 
-    copy_exact_name(field_name, desc->array_desc_field_name, sizeof(desc->array_desc_field_name));
-    copy_exact_name(relation_name, desc->array_desc_relation_name, sizeof(desc->array_desc_relation_name));
+    copy_exact_name (field_name, desc->array_desc_field_name,
+                     sizeof(desc->array_desc_field_name));
+    copy_exact_name (relation_name, desc->array_desc_relation_name,
+                     sizeof(desc->array_desc_relation_name));
 
 	desc->array_desc_flags = 0;
 
@@ -535,9 +550,9 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
         if (global) {
             copy_exact_name (Y.RDB$FIELD_NAME, global, sizeof(Y.RDB$FIELD_NAME));
         }
-
-	END_FOR
-    ON_ERROR
+ 
+	END_FOR 
+    ON_ERROR 
 		ISC_STATUS_ARRAY temp_status;
 		isc_release_request(temp_status, &handle);
 		return UTLD_copy_status(isc_status, status);
@@ -546,10 +561,13 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
     isc_release_request(isc_status, &handle);
 
 	if (!flag)
-		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str(desc->array_desc_field_name) <<
-														Arg::Str(desc->array_desc_relation_name));
+		return error(status, 5, (ISC_STATUS) isc_fldnotdef,
+					 (ISC_STATUS) isc_arg_string,
+					 (ISC_STATUS) desc->array_desc_field_name,
+					 (ISC_STATUS) isc_arg_string,
+					 (ISC_STATUS) desc->array_desc_relation_name);
 
-	return error(status, Arg::Gds(FB_SUCCESS));
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
@@ -568,20 +586,22 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 	UCHAR c;
 	va_list ptr;
 
-	if (gen->gen_sdl + count >= gen->gen_end)
-	{
+	if (gen->gen_sdl + count >= gen->gen_end) {
 		if (gen->gen_internal < 0) {
-			return error(gen->gen_status, Arg::Gds(isc_misc_interpreted) << Arg::Str("SDL buffer overflow"));
+			return error(gen->gen_status, 3, (ISC_STATUS) isc_misc_interpreted,
+						 (ISC_STATUS) isc_arg_string,
+						 (ISC_STATUS) "SDL buffer overflow");
 		}
 
-		// The sdl buffer is too small.  Allocate a larger one.
+		// The sdl buffer is too small.  Allocate a larger one. 
 
 		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
 		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);
-		if (!new_sdl)
-		{
-			return error(gen->gen_status, Arg::Gds(isc_misc_interpreted) << Arg::Str("SDL buffer overflow") <<
-										  Arg::Gds(isc_virmemexh));
+		if (!new_sdl) {
+			return error(gen->gen_status, 5, (ISC_STATUS) isc_misc_interpreted,
+						 (ISC_STATUS) isc_arg_string,
+						 (ISC_STATUS) "SDL buffer overflow", (ISC_STATUS) isc_arg_gds,
+						 (ISC_STATUS) isc_virmemexh);
 		}
 
 		const SSHORT current_len = gen->gen_sdl - *gen->gen_sdl_ptr;
@@ -595,8 +615,7 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 
 	va_start(ptr, count);
 
-	for (; count; --count)
-	{
+	for (; count; --count) {
 		c = va_arg(ptr, int);
 		*(gen->gen_sdl)++ = c;
 	}
@@ -654,11 +673,11 @@ static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, const SCHAR* string)
 	if (stuff_sdl(gen, strlen(string)))
 		return status[1];
 
-	while (*string)
-	{
+	while (*string) {
 		if (stuff_sdl(gen, *string++))
 			return status[1];
 	}
 
 	return FB_SUCCESS;
 }
+

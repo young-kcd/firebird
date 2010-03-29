@@ -31,76 +31,66 @@
 
 #include "../jrd/common.h"
 
-#include <sys/types.h>
-#ifdef WIN_NT
-#include <winsock.h>
-typedef	char* caddr_t;
-#else // WIN_NT
-#include <netinet/in.h>
-#endif // WIN_NT
-
-#if defined(__hpux) && !defined(ntohl)
-// this include is only for HP 11i v2.
-// ntohl is not defined in <netinet/in.h> when _XOPEN_SOURCE_EXTENDED
-// is defined, even though ntohl is defined by POSIX
-#include <arpa/inet.h>
+#ifdef VMS
+#error "VMS remote must be completed"
 #endif
+
+#ifdef WIN_NT
+#include <sys/types.h>
+#include <winsock.h>
+typedef	char *	caddr_t;
+#else // WIN_NT
+#include <sys/types.h>
+#include <netinet/in.h>
+#ifdef _AIX
+#include <sys/select.h>
+#endif
+#endif // WIN_NT
 
 typedef int XDR_INT;
 typedef int bool_t;
-//#ifndef enum_t
-//#define enum_t	enum xdr_op
-//#endif
+#ifndef enum_t
+#define enum_t	enum xdr_op
+#endif
 
-#define xdr_getpostn(xdr)	((*(*xdr).x_ops->x_getpostn)(xdr)) // unused?
-#define xdr_destroy(xdr)	(*(*xdr).x_ops->x_destroy)() // unused?
+#define xdr_getpostn(xdr)	((*(*xdr).x_ops->x_getpostn)(xdr))
+#define xdr_destroy(xdr)	(*(*xdr).x_ops->x_destroy)()
 
 
 enum xdr_op { XDR_ENCODE = 0, XDR_DECODE = 1, XDR_FREE = 2 };
 
 typedef struct xdr_t
 {
-	xdr_op x_op;			// operation; fast additional param
+	enum xdr_op	x_op;			/* operation; fast additional param */
 	struct xdr_ops
 	{
-		bool_t  (*x_getlong)(struct xdr_t*, SLONG*);			// get a long from underlying stream
-		bool_t  (*x_putlong)(struct xdr_t*, const SLONG*);		// put a long to "
-		bool_t  (*x_getbytes)(struct xdr_t*, SCHAR *, u_int);	// get some bytes from "
-		bool_t  (*x_putbytes)(struct xdr_t*, const SCHAR*, u_int);	// put some bytes to "
-		u_int   (*x_getpostn)(struct xdr_t*);			// returns bytes offset from beginning
-		bool_t  (*x_setpostn)(struct xdr_t*, u_int);	// repositions position in stream
-		caddr_t (*x_inline)(struct xdr_t*, u_int);		// buf quick ptr to buffered data
-		XDR_INT (*x_destroy)(struct xdr_t*);			// free privates of this xdr_stream
+		bool_t  (*x_getlong)(struct xdr_t*, SLONG*);		/* get a long from underlying stream */
+		bool_t  (*x_putlong)(struct xdr_t*, const SLONG*);		/* put a long to " */
+		bool_t  (*x_getbytes)(struct xdr_t*, SCHAR *, u_int);	/* get some bytes from " */
+		bool_t  (*x_putbytes)(struct xdr_t*, const SCHAR*, u_int);	/* put some bytes to " */
+		u_int   (*x_getpostn)(struct xdr_t*);	/* returns bytes offset from beginning*/
+		bool_t  (*x_setpostn)(struct xdr_t*, u_int);	/* repositions position in stream */
+		caddr_t (*x_inline)(struct xdr_t*, u_int);		/* buf quick ptr to buffered data */
+		XDR_INT (*x_destroy)(struct xdr_t*);		/* free privates of this xdr_stream */
 	} const *x_ops;
-	caddr_t	x_public;	// Users' data
-	caddr_t	x_private;	// pointer to private data
-	caddr_t	x_base;		// private used for position info
-	int		x_handy;	// extra private word
-#ifdef DEV_BUILD
-	bool	x_client;	// set this flag to true if this is client port
-#endif
-
-public:
-	xdr_t() :
-		x_op(XDR_ENCODE), x_ops(0), x_public(0), x_private(0), x_base(0), x_handy(0)
-#ifdef DEV_BUILD
-		, x_client(false)
-#endif
-	{ }
+	caddr_t	x_public;	/* Users' data */
+	caddr_t	x_private;	/* pointer to private data */
+	caddr_t	x_base;		/* private used for position info */
+	int		x_handy;	/* extra private word */
 } XDR;
 
-// Discriminated union crud
+/* Descriminated union crud */
 
 // CVC: Restore the old definition if some compilation failure happens.
 //typedef bool_t			(*xdrproc_t)();
 typedef bool_t          (*xdrproc_t)(xdr_t*, SCHAR*);
-//#define NULL_xdrproc_t	((xdrproc_t) 0)
+#define NULL_xdrproc_t	((xdrproc_t) 0)
 
 struct xdr_discrim
 {
-	xdr_op		value;
+	enum_t		value;
 	xdrproc_t	proc;
 };
 
 
-#endif // REMOTE_XDR_H
+#endif /* REMOTE_XDR_H */

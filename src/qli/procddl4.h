@@ -16,13 +16,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-    isc_dyn_version_1,
-       isc_dyn_begin,
+    isc_dyn_version_1, 
+       isc_dyn_begin, 
           isc_dyn_def_idx, 19,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','S','_','I','D','X','1',
              isc_dyn_rel_name, 14,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','S',
              isc_dyn_idx_unique, 2,0, 1,0,
              isc_dyn_idx_inactive, 2,0, 0,0,
              isc_dyn_fld_name, 18,0, 'Q','L','I','$','P','R','O','C','E','D','U','R','E','_','N','A','M','E',
-             isc_dyn_end,
-          isc_dyn_end,
+             isc_dyn_end, 
+          isc_dyn_end, 
     isc_dyn_eoc

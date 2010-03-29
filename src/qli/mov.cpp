@@ -31,16 +31,12 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../qli/mov_proto.h"
-#include "../common/utils_proto.h"
-
-using MsgFormat::SafeArg;
-
 
 static void date_error(const TEXT*, const USHORT);
 static double double_from_text(const dsc* desc);
-static void sql_date_to_text(const SLONG[1], DSC*);
-static void sql_time_to_text(const ULONG[1], DSC*);
-static void timestamp_to_text(const SLONG[2], DSC*);
+static void timestamp_to_text(SLONG[2], DSC *);
+static void sql_time_to_text(ULONG[1], DSC *);
+static void sql_date_to_text(SLONG[1], DSC *);
 static void mover_error(int, USHORT, USHORT);
 static void now_to_date(const tm*, SLONG[2]);
 static void numeric_to_text(const dsc*, dsc*);
@@ -59,14 +55,12 @@ const char* const YESTERDAY = "YESTERDAY";
 
 const int PRECISION		= 10000;
 
-struct dtypes_t
-{
+struct dtypes_t {
 	USHORT type;
 	const TEXT* description;
 };
 
-static const dtypes_t dtypes_table[] =
-{
+static const dtypes_t dtypes_table[] = {
 	{ dtype_unknown, "NULL" },
 	{ dtype_text, "character string" },
 	{ dtype_cstring, "character string" },
@@ -101,141 +95,160 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-	// Handle the simple (matched) ones first
+// Handle the simple (matched) ones first 
 
-	if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
+	if (arg1->dsc_dtype == arg2->dsc_dtype &&
+		arg1->dsc_scale == arg2->dsc_scale)
 	{
 		const UCHAR* p1 = arg1->dsc_address;
 		const UCHAR* p2 = arg2->dsc_address;
 
-		switch (arg1->dsc_dtype)
-		{
+		switch (arg1->dsc_dtype) {
 		case dtype_short:
-			if (*(SSHORT*) p1 == *(SSHORT*) p2)
+			if (*(SSHORT *) p1 == *(SSHORT *) p2)
 				return 0;
-			if (*(SSHORT*) p1 > *(SSHORT*) p2)
+			if (*(SSHORT *) p1 > *(SSHORT *) p2)
 				return 1;
 			return -1;
 
 		case dtype_long:
 		case dtype_sql_date:
 		case dtype_sql_time:
-			if (*(SLONG*) p1 == *(SLONG*) p2)
+			if (*(SLONG *) p1 == *(SLONG *) p2)
 				return 0;
-			if (*(SLONG*) p1 > *(SLONG*) p2)
+			if (*(SLONG *) p1 > *(SLONG *) p2)
 				return 1;
 			return -1;
 		case dtype_int64:
        	case dtype_timestamp:
 		case dtype_quad:
-			if (((SLONG*) p1)[0] < ((SLONG*) p2)[0])
+			if (((SLONG *) p1)[0] < ((SLONG *) p2)[0])
 				return -1;
-			if (((SLONG*) p1)[0] > ((SLONG*) p2)[0])
+			if (((SLONG *) p1)[0] > ((SLONG *) p2)[0])
 				return 1;
-			if (((ULONG*) p1)[1] < ((ULONG*) p2)[1])
+			if (((ULONG *) p1)[1] < ((ULONG *) p2)[1])
 				return -1;
-			if (((ULONG*) p1)[1] > ((ULONG*) p2)[1])
+			if (((ULONG *) p1)[1] > ((ULONG *) p2)[1])
 				return 1;
 			return 0;
 
 		case dtype_real:
-			if (*(float*) p1 == *(float*) p2)
+			if (*(float *) p1 == *(float *) p2)
 				return 0;
-			if (*(float*) p1 > *(float*) p2)
+			if (*(float *) p1 > *(float *) p2)
 				return 1;
 			return -1;
 
 		case dtype_double:
-			if (*(double*) p1 == *(double*) p2)
+			if (*(double *) p1 == *(double *) p2)
 				return 0;
-			if (*(double*) p1 > *(double*) p2)
+			if (*(double *) p1 > *(double *) p2)
 				return 1;
 			return -1;
 
 		case dtype_text:
 			{
 			    SSHORT length;
-				if (arg1->dsc_length >= arg2->dsc_length)
-				{
+				if (arg1->dsc_length >= arg2->dsc_length) {
 					if (length = arg2->dsc_length)
 						do {
 							if (*p1++ != *p2++)
-								return (p1[-1] > p2[-1]) ? 1 : -1;
+								if (p1[-1] > p2[-1])
+									return 1;
+								else
+									return -1;
 						} while (--length);
 					if (length = arg1->dsc_length - arg2->dsc_length)
 						do {
 							if (*p1++ != ' ')
-								return (p1[-1] > ' ') ? 1 : -1;
+								if (p1[-1] > ' ')
+									return 1;
+								else
+									return -1;
 						} while (--length);
 					return 0;
 				}
 				if (length = arg1->dsc_length)
 					do {
 						if (*p1++ != *p2++)
-							return (p1[-1] > p2[-1]) ? 1 : -1;
+							if (p1[-1] > p2[-1])
+								return 1;
+							else
+								return -1;
 					} while (--length);
 				length = arg2->dsc_length - arg1->dsc_length;
 				do {
 					if (*p2++ != ' ')
-						return (' ' > p2[-1]) ? 1 : -1;
+						if (' ' > p2[-1])
+							return 1;
+						else
+							return -1;
 				} while (--length);
 				return 0;
 			}
 		}
 	}
 
-	// Handle mixed string comparisons
+// Handle mixed string comparisons
 
-	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying)
-	{
+	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying) {
 	    const TEXT* p1;
 	    const TEXT* p2;
 		SSHORT length = MOVQ_get_string(arg1, &p1, 0, 0);
 		SSHORT length2 = MOVQ_get_string(arg2, &p2, 0, 0);
 		SSHORT fill = length - length2;
-		if (length >= length2)
-		{
+		if (length >= length2) {
 			if (length2)
 				do {
 					if (*p1++ != *p2++)
-						return (p1[-1] > p2[-1]) ? 1 : -1;
+						if (p1[-1] > p2[-1])
+							return 1;
+						else
+							return -1;
 				} while (--length2);
 			if (fill > 0)
 				do {
 					if (*p1++ != ' ')
-						return (p1[-1] > ' ') ? 1 : -1;
+						if (p1[-1] > ' ')
+							return 1;
+						else
+							return -1;
 				} while (--fill);
 			return 0;
 		}
-		if (length)
-		{
+		if (length) {
 			do {
 				if (*p1++ != *p2++)
-					return (p1[-1] > p2[-1]) ? 1 : -1;
+					if (p1[-1] > p2[-1])
+						return 1;
+					else
+						return -1;
 			} while (--length);
 		}
 		do {
 			if (*p2++ != ' ')
-				return (' ' > p2[-1]) ? 1 : -1;
+				if (' ' > p2[-1])
+					return 1;
+				else
+					return -1;
 		} while (++fill);
 		return 0;
 	}
 
-	// Handle hetergeneous compares
+// Handle hetergeneous compares
 
 	if (arg1->dsc_dtype < arg2->dsc_dtype)
 		return (-MOVQ_compare(arg2, arg1));
 
 	dsc desc;
 	SLONG date[2];
-
-	switch (arg1->dsc_dtype)
-	{
+	
+	switch (arg1->dsc_dtype) {
 	case dtype_timestamp:
 		desc.dsc_dtype = dtype_timestamp;
 		desc.dsc_length = sizeof(date);
 		desc.dsc_scale = 0;
-		desc.dsc_address = (UCHAR*) date;
+		desc.dsc_address = (UCHAR *) date;
 		desc.dsc_sub_type = 0;
 		MOVQ_move(arg2, &desc);
 		return MOVQ_compare(arg1, &desc);
@@ -244,7 +257,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 		desc.dsc_dtype = dtype_sql_time;
 		desc.dsc_length = sizeof(date[0]);
 		desc.dsc_scale = 0;
-		desc.dsc_address = (UCHAR*) date;
+		desc.dsc_address = (UCHAR *) date;
 		desc.dsc_sub_type = 0;
 		MOVQ_move(arg2, &desc);
 		return MOVQ_compare(arg1, &desc);
@@ -253,7 +266,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 		desc.dsc_dtype = dtype_sql_date;
 		desc.dsc_length = sizeof(date[0]);
 		desc.dsc_scale = 0;
-		desc.dsc_address = (UCHAR*) date;
+		desc.dsc_address = (UCHAR *) date;
 		desc.dsc_sub_type = 0;
 		MOVQ_move(arg2, &desc);
 		return MOVQ_compare(arg1, &desc);
@@ -320,19 +333,18 @@ double MOVQ_date_to_double(const dsc* desc)
  **************************************/
 	SLONG temp[2], *date;
 
-	// If the input descriptor is not in date form, convert it.
+// If the input descriptor is not in date form, convert it.
 
 	if (desc->dsc_dtype == dtype_timestamp)
 		date = (SLONG *) desc->dsc_address;
-	else
-	{
+	else {
 	    dsc temp_desc;
 		temp_desc.dsc_dtype = dtype_timestamp;
 		temp_desc.dsc_length = sizeof(temp);
 		temp_desc.dsc_scale = 0;
 		temp_desc.dsc_sub_type = 0;
 		date = temp;
-		temp_desc.dsc_address = (UCHAR*) date;
+		temp_desc.dsc_address = (UCHAR *) date;
 		QLI_validate_desc(temp_desc);
 		MOVQ_move(desc, &temp_desc);
 	}
@@ -362,61 +374,52 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 
 	const TEXT* p = string;
 	const TEXT* const end = p + length;
-	for (; p < end; p++)
-	{
+	for (; p < end; p++) {
 		if (*p == ',')
 			continue;
-
-		if (DIGIT(*p))
-		{
+		else if (DIGIT(*p)) {
 			value = value * 10 + *p - '0';
 			if (fraction)
 				--scale;
 		}
 		else if (*p == '.')
-		{
-			if (fraction)
-			{
+			if (fraction) {
 				MOVQ_terminate(string, temp, length, sizeof(temp));
-				ERRQ_error(411, temp);
+				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
 			}
 			else
 				fraction = true;
-		}
 		else if (*p == '-' && !value && !sign)
 			sign = true;
 		else if (*p == '+' && !value && !sign)
 			sign = false;
 		else if (*p == 'e' || *p == 'E')
 			break;
-		else if (*p != ' ')
-		{
+		else if (*p != ' ') {
 			MOVQ_terminate(string, temp, length, sizeof(temp));
-			ERRQ_error(411, temp);
+			ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
 		}
 	}
 
 	if (sign)
 		value = -value;
 
-	// If there's still something left, there must be an explicit exponent
+/* If there's still something left, there must be an explicit
+   exponent */
 
-	if (p < end)
-	{
+	if (p < end) {
 		SSHORT exp = 0;
 		sign = false;
-		for (p++; p < end; p++)
-		{
+		for (p++; p < end; p++) {
 			if (DIGIT(*p))
 				exp = exp * 10 + *p - '0';
 			else if (*p == '-' && !exp)
 				sign = true;
 			else if (*p == '+' && !exp && !sign)
 				continue;
-			else if (*p != ' ')
-			{
+			else if (*p != ' ') {
 				MOVQ_terminate(string, temp, length, sizeof(temp));
-				ERRQ_error(411, temp);
+				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
 			}
 		}
 		if (sign)
@@ -451,6 +454,28 @@ void MOVQ_double_to_date( double real, SLONG fixed[2])
 }
 
 
+void MOVQ_fast(const SCHAR* from,
+			   SCHAR* to,
+			   ULONG length)
+{
+/**************************************
+ *
+ *	M O V Q _ f a s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move a byte string as fast as possible.
+ *
+ **************************************/
+
+	if (length)
+		do {
+			*to++ = *from++;
+		} while (--length);
+}
+
+
 double MOVQ_get_double(const dsc* desc)
 {
 /**************************************
@@ -466,25 +491,24 @@ double MOVQ_get_double(const dsc* desc)
  **************************************/
 	double value = 0;
 
-	switch (desc->dsc_dtype)
-	{
+	switch (desc->dsc_dtype) {
 	case dtype_short:
-		value = *((SSHORT*) desc->dsc_address);
+		value = *((SSHORT *) desc->dsc_address);
 		break;
 
 	case dtype_long:
-		value = *((SLONG*) desc->dsc_address);
+		value = *((SLONG *) desc->dsc_address);
 		break;
 
 	case dtype_int64:
-		value = *((SINT64*) desc->dsc_address);
+		value = *((SINT64 *) desc->dsc_address);
 		break;
 
 	case dtype_real:
-		return *((float*) desc->dsc_address);
+		return *((float *) desc->dsc_address);
 
 	case dtype_double:
-		return *((double*) desc->dsc_address);
+		return *((double *) desc->dsc_address);
 
 	case dtype_varying:
 	case dtype_cstring:
@@ -495,9 +519,9 @@ double MOVQ_get_double(const dsc* desc)
 		mover_error(410, desc->dsc_dtype, dtype_double);
 	}
 
-	// Last, but not least, adjust for scale
+// Last, but not least, adjust for scale
 
-	int scale = desc->dsc_scale;
+	SSHORT scale = desc->dsc_scale;
 	if (scale == 0)
 		return value;
 
@@ -532,23 +556,22 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 
 	scale -= (SSHORT) desc->dsc_scale;
 
-	const TEXT* p = (TEXT*) desc->dsc_address;
-	switch (desc->dsc_dtype)
-	{
+	const TEXT* p = (TEXT *) desc->dsc_address;
+	switch (desc->dsc_dtype) {
 	case dtype_short:
-		value = *((SSHORT*) p);
+		value = *((SSHORT *) p);
 		break;
 
 	case dtype_int64:
-		value = *((SINT64*) p);
+		value = *((SINT64 *) p);
 		break;
 
 	case dtype_long:
-		value = *((SLONG*) p);
+		value = *((SLONG *) p);
 		break;
 
 	case dtype_real:
-		d = *((float*) p);
+		d = *((float *) p);
 		if (scale > 0)
 			do {
 				d /= 10.;
@@ -564,7 +587,7 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 		return (SLONG) d;
 
 	case dtype_double:
-		d = *((double*) p);
+		d = *((double *) p);
 		if (scale > 0)
 			do {
 				d /= 10.;
@@ -592,16 +615,15 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 		mover_error(410, desc->dsc_dtype, dtype_long);
 	}
 
-	// Last, but not least, adjust for scale
+// Last, but not least, adjust for scale
 
 	if (scale == 0)
 		return value;
 
-	if (scale > 0)
-	{
-		if ((desc->dsc_dtype == dtype_short) || (desc->dsc_dtype == dtype_long))
-		{
-			int fraction = 0;
+	if (scale > 0) {
+		if ((desc->dsc_dtype == dtype_short)
+			|| (desc->dsc_dtype == dtype_long)) {
+			SSHORT fraction = 0;
 			do {
 				if (scale == 1)
 					fraction = value % 10;
@@ -624,7 +646,8 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 }
 
 
-int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, USHORT length)
+int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, 
+					USHORT length)
 {
 /**************************************
  *
@@ -643,27 +666,24 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, USHORT le
  *
  **************************************/
 
-	// If the value is already a string (fixed or varying), just return
-	// the address and length.
+/* If the value is already a string (fixed or varying), just return
+   the address and length. */
 
-	if (desc->dsc_dtype == dtype_text)
-	{
-		*address = (TEXT*) desc->dsc_address;
+	if (desc->dsc_dtype == dtype_text) {
+		*address = (TEXT *) desc->dsc_address;
 		return desc->dsc_length;
 	}
 
-	// Perhaps it a "C" type string?
+// Perhaps it a "C" type string?
 
-	if (desc->dsc_dtype == dtype_cstring)
-	{
-		*address = (TEXT*) desc->dsc_address;
+	if (desc->dsc_dtype == dtype_cstring) {
+		*address = (TEXT *) desc->dsc_address;
 		return MIN(static_cast<int>(strlen((char*)desc->dsc_address)), desc->dsc_length - 1);
 	}
 
-	// No luck -- convert value to varying string.
+// No luck -- convert value to varying string.
 
-	if (desc->dsc_dtype == dtype_varying)
-	{
+	if (desc->dsc_dtype == dtype_varying) {
 		vary* varying = (vary*) desc->dsc_address;
 		*address = varying->vary_string;
 		return varying->vary_length;
@@ -671,7 +691,7 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, USHORT le
 
 	dsc temp_desc;
 	temp_desc.dsc_length = length;
-	temp_desc.dsc_address = (UCHAR*) temp;
+	temp_desc.dsc_address = (UCHAR *) temp;
 	temp_desc.dsc_scale = 0;
 	temp_desc.dsc_dtype = dtype_varying;
 	temp_desc.dsc_sub_type = ttype_ascii;
@@ -699,62 +719,62 @@ void MOVQ_move(const dsc* from, dsc* to)
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
-	// If the datatypes and lengths are identical, just move the
-	// stuff byte by byte.  Although this may seem slower than
-	// optimal, it would cost more to find the fast move than the
-	// fast move would gain.
+/* If the datatypes and lengths are identical, just move the
+   stuff byte by byte.  Although this may seem slower than
+   optimal, it would cost more to find the fast move than the
+   fast move would gain. */
 
-	// if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
-   	if (DSC_EQUIV(from, to, false))
+	if (DSC_EQUIV(from, to, false))
+/*
+if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
+*/
 	{
 		if (length)
-			memcpy(p, q, length);
-
+			do {
+				*p++ = *q++;
+			} while (--length);
 		return;
 	}
 
 	const TEXT* ptr;
 
-	// Do data type by data type conversions.  Not all are supported,
-	// and some will drop out for additional handling.
+/* Do data type by data type conversions.  Not all are supported,
+   and some will drop out for additional handling. */
 
-	switch (to->dsc_dtype)
-	{
+	switch (to->dsc_dtype) {
 	case dtype_timestamp:
-		switch (from->dsc_dtype)
-		{
+		switch (from->dsc_dtype) {
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
 			length = MOVQ_get_string(from, &ptr, 0, 0);
-			string_to_date((TEXT*) ptr, length, (SLONG*) to->dsc_address);
+			string_to_date((TEXT*) ptr, length, (SLONG*)to->dsc_address);
 			return;
 		case dtype_sql_date:
-			((SLONG*) to->dsc_address)[0] = *(SLONG*) from->dsc_address;
-			((SLONG*) to->dsc_address)[1] = 0;
+			((SLONG *) to->dsc_address)[0] = *(SLONG *) from->dsc_address;
+			((SLONG *) to->dsc_address)[1] = 0;
 			return;
 		case dtype_sql_time:
-			((SLONG*) to->dsc_address)[0] = 0;
-			((SLONG*) to->dsc_address)[1] = *(SLONG*) from->dsc_address;
+			((SLONG *) to->dsc_address)[0] = 0;
+			((SLONG *) to->dsc_address)[1] = *(SLONG *) from->dsc_address;
 			return;
 		}
 		break;
 
 	case dtype_sql_date:
-		switch (from->dsc_dtype)
-		{
+		switch (from->dsc_dtype) {
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
 			{
 				SLONG date[2];
 				length = MOVQ_get_string(from, &ptr, 0, 0);
-				string_to_date((TEXT*) ptr, length, (SLONG*) date);
-				((SLONG*) to->dsc_address)[0] = date[0];
+				string_to_date((TEXT*) ptr, length, (SLONG*)date);
+				((SLONG *) to->dsc_address)[0] = date[0];
 			}
 			return;
 		case dtype_timestamp:
-			((SLONG*) to->dsc_address)[0] = ((SLONG*) from->dsc_address)[0];
+			((SLONG *) to->dsc_address)[0] = ((SLONG *) from->dsc_address)[0];
 			return;
 		case dtype_sql_time:
 			// Error situation
@@ -763,8 +783,7 @@ void MOVQ_move(const dsc* from, dsc* to)
 		break;
 
 	case dtype_sql_time:
-		switch (from->dsc_dtype)
-		{
+		switch (from->dsc_dtype) {
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
@@ -772,11 +791,11 @@ void MOVQ_move(const dsc* from, dsc* to)
 				SLONG date[2];
 				length = MOVQ_get_string(from, &ptr, 0, 0);
 				string_to_time((TEXT*) ptr, length, (SLONG*) date);
-				((SLONG*) to->dsc_address)[0] = date[1];
+				((SLONG *) to->dsc_address)[0] = date[1];
 			}
 			return;
 		case dtype_timestamp:
-			((SLONG*) to->dsc_address)[0] = ((SLONG*) from->dsc_address)[1];
+			((SLONG *) to->dsc_address)[0] = ((SLONG *) from->dsc_address)[1];
 			return;
 		case dtype_sql_date:
 			// Error situation
@@ -787,7 +806,7 @@ void MOVQ_move(const dsc* from, dsc* to)
 	case dtype_text:
 	case dtype_cstring:
 	case dtype_varying:
-		switch (from->dsc_dtype)
+		switch (from->dsc_dtype) 
 		{
 		case dtype_varying:
 		case dtype_cstring:
@@ -796,34 +815,40 @@ void MOVQ_move(const dsc* from, dsc* to)
 				length = MOVQ_get_string(from, &ptr, 0, 0);
 				const TEXT* s = ptr;
 
-				switch (to->dsc_dtype)
+				switch (to->dsc_dtype) 
 				{
 				case dtype_text:
 					{
 						length = MIN(length, to->dsc_length);
 						SSHORT fill = to->dsc_length - length;
 						if (length)
-							memcpy(p, s, length);
+							do {
+								*p++ = *s++;
+							} while (--length);
 						if (fill > 0)
-							memset(p + length, ' ', fill);
+							do {
+								*p++ = ' ';
+							} while (--fill);
 						return;
 					}
 
 				case dtype_cstring:
 					length = MIN(length, to->dsc_length - 1);
 					if (length)
-						memcpy(p, s, length);
-					p[length] = 0;
+						do {
+							*p++ = *s++;
+						} while (--length);
+					*p = 0;
 					return;
 
 				case dtype_varying:
-					{
-						length = MIN(length, to->dsc_length - sizeof(SSHORT));
-						vary* avary = reinterpret_cast<vary*>(p);
-						avary->vary_length = length;
-						if (length)
-							memcpy(avary->vary_string, s, length);
-					}
+					length = MIN(length, to->dsc_length - sizeof(SSHORT));
+					((vary*) p)->vary_length = length;
+					p = (UCHAR*) ((vary*) p)->vary_string;
+					if (length)
+						do {
+							*p++ = *s++;
+						} while (--length);
 					return;
 				}
 			}
@@ -849,19 +874,17 @@ void MOVQ_move(const dsc* from, dsc* to)
 		break;
 
 	case dtype_blob:
-		if (from->dsc_dtype == dtype_quad)
-		{
-			((SLONG*) p)[0] = ((SLONG*) q)[0];
-			((SLONG*) p)[1] = ((SLONG*) q)[1];
+		if (from->dsc_dtype == dtype_quad) {
+			((SLONG *) p)[0] = ((SLONG *) q)[0];
+			((SLONG *) p)[1] = ((SLONG *) q)[1];
 			return;
 		}
 		break;
 
 	case dtype_quad:
-		if (from->dsc_dtype == dtype_blob)
-		{
-			((SLONG*) p)[0] = ((SLONG*) q)[0];
-			((SLONG*) p)[1] = ((SLONG*) q)[1];
+		if (from->dsc_dtype == dtype_blob) {
+			((SLONG *) p)[0] = ((SLONG *) q)[0];
+			((SLONG *) p)[1] = ((SLONG *) q)[1];
 			return;
 		}
 		break;
@@ -869,26 +892,26 @@ void MOVQ_move(const dsc* from, dsc* to)
 	case dtype_short:
 		{
 			const SLONG l = MOVQ_get_long(from, to->dsc_scale);
-			*(SSHORT*) p = l;
-			if (*(SSHORT*) p != l)
+			*(SSHORT *) p = l;
+			if (*(SSHORT *) p != l)
 				IBERROR(14);		// Msg14 integer overflow
 			return;
 		}
 
 	case dtype_long:
-		*(SLONG*) p = MOVQ_get_long(from, to->dsc_scale);
+		*(SLONG *) p = MOVQ_get_long(from, to->dsc_scale);
 		return;
 
 	case dtype_int64:
-		*(SINT64*) p = MOVQ_get_long(from, to->dsc_scale);
+		*(SINT64 *) p = MOVQ_get_long(from, to->dsc_scale);
 		return;
 
 	case dtype_real:
-		*(float*) p = MOVQ_get_double(from);
+		*(float *) p = MOVQ_get_double(from);
 		return;
 
 	case dtype_double:
-		*(double*) p = MOVQ_get_double(from);
+		*(double *) p = MOVQ_get_double(from);
 		return;
 	}
 
@@ -899,7 +922,10 @@ void MOVQ_move(const dsc* from, dsc* to)
 }
 
 
-void MOVQ_terminate(const SCHAR* from, SCHAR* to, USHORT length, USHORT max_length)
+void MOVQ_terminate(const SCHAR* from,
+					SCHAR* to,
+					USHORT length,
+					USHORT max_length)
 {
 /**************************************
  *
@@ -915,14 +941,17 @@ void MOVQ_terminate(const SCHAR* from, SCHAR* to, USHORT length, USHORT max_leng
  **************************************/
 
 	fb_assert(max_length != 0);
-	if (length)
-	{
+	if (length) {
 		length = MIN(length, max_length - 1);
-		memcpy(to, from, length);
-		to[length] = '\0';
+		do {
+			*to++ = *from++;
+		} while (--length);
+		*to++ = '\0';
 	}
-	else
-		fb_utils::copy_terminate(to, from, max_length);
+	else {
+		while (max_length-- && (*to++ = *from++));
+		*--to = '\0';
+	}
 }
 
 
@@ -941,7 +970,7 @@ static void date_error(const TEXT* string, const USHORT length)
 	SCHAR temp[128];
 
 	MOVQ_terminate(string, temp, length, sizeof(temp));
-	ERRQ_error(56, temp);
+	ERRQ_error(56, temp, NULL, NULL, NULL, NULL);
 	// Msg 56 Error converting string \"%s\" to date
 }
 
@@ -950,28 +979,23 @@ static double double_from_text(const dsc* desc)
 {
 	const TEXT* p;
 	const SSHORT length = MOVQ_get_string(desc, &p, 0, 0);
-	int scale = 0;
+	SSHORT scale = 0;
 	bool fraction = false, sign = false;
 	double value = 0;
 	const TEXT* const end = p + length;
-	for (; p < end; p++)
-	{
+	for (; p < end; p++) {
 		if (*p == ',')
 			continue;
-
-		if (DIGIT(*p))
-		{
+		else if (DIGIT(*p)) {
 			value = value * 10. + (*p - '0');
 			if (fraction)
 				scale++;
 		}
 		else if (*p == '.')
-		{
 			if (fraction)
 				IBERROR(52);	// Msg 52 conversion error
 			else
 				fraction = true;
-		}
 		else if (!value && *p == '-')
 			sign = true;
 		else if (!value && *p == '+')
@@ -985,20 +1009,18 @@ static double double_from_text(const dsc* desc)
 	if (sign)
 		value = -value;
 
-	// If there's still something left, there must be an explicit exponent
+	/* If there's still something left, there must be an explicit
+	   exponent */
 
-	if (p < end)
-	{
+	if (p < end) {
 		sign = false;
-		int exp = 0;
-		for (p++; p < end; p++)
-		{
+		SSHORT exp = 0;
+		for (p++; p < end; p++) {
 			if (DIGIT(*p))
 				exp = exp * 10 + *p - '0';
 			else if (*p == '-' && !exp)
 				sign = true;
-			else if (*p == '+' && !exp)
-				;
+			else if (*p == '+' && !exp);
 			else if (*p != ' ')
 				IBERROR(54);	// Msg 54 conversion error
 		}
@@ -1021,7 +1043,7 @@ static double double_from_text(const dsc* desc)
 }
 
 
-static void sql_date_to_text( const SLONG date[1], DSC* to)
+static void sql_date_to_text( SLONG date[1], DSC * to)
 {
 /**************************************
  *
@@ -1038,7 +1060,7 @@ static void sql_date_to_text( const SLONG date[1], DSC* to)
 
 	date2[0] = date[0];
 	date2[1] = 0;
-	isc_decode_date((const ISC_QUAD*) date2, &times);
+	isc_decode_date((ISC_QUAD*) date2, &times);
 
 	TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
@@ -1050,7 +1072,7 @@ static void sql_date_to_text( const SLONG date[1], DSC* to)
 
 	dsc desc;
 	desc.dsc_length = p - temp;
-	desc.dsc_address = (UCHAR*) temp;
+	desc.dsc_address = (UCHAR *) temp;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
@@ -1060,7 +1082,7 @@ static void sql_date_to_text( const SLONG date[1], DSC* to)
 }
 
 
-static void sql_time_to_text( const ULONG date[1], DSC* to)
+static void sql_time_to_text( ULONG date[1], DSC * to)
 {
 /**************************************
  *
@@ -1078,7 +1100,7 @@ static void sql_time_to_text( const ULONG date[1], DSC* to)
 	date2[0] = 0;
 	date2[1] = date[0];
 
-	isc_decode_date((const ISC_QUAD*) date2, &times);
+	isc_decode_date((ISC_QUAD*) date2, &times);
 
 	TEXT temp[35];
 	sprintf(temp, " %2d:%.2d:%.2d.%.4"SLONGFORMAT, times.tm_hour, times.tm_min,
@@ -1090,7 +1112,7 @@ static void sql_time_to_text( const ULONG date[1], DSC* to)
 
 	dsc desc;
 	desc.dsc_length = p - temp;
-	desc.dsc_address = (UCHAR*) temp;
+	desc.dsc_address = (UCHAR *) temp;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
@@ -1100,7 +1122,7 @@ static void sql_time_to_text( const ULONG date[1], DSC* to)
 }
 
 
-static void timestamp_to_text( const SLONG date[2], DSC* to)
+static void timestamp_to_text( SLONG date[2], DSC * to)
 {
 /**************************************
  *
@@ -1113,14 +1135,13 @@ static void timestamp_to_text( const SLONG date[2], DSC* to)
  *
  **************************************/
 	tm times;
-	isc_decode_date((const ISC_QUAD*) date, &times);
+	isc_decode_date((ISC_QUAD*)date, &times);
 
     TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
 			FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
 
-	if (times.tm_hour || times.tm_min || times.tm_sec || date[1])
-	{
+	if (times.tm_hour || times.tm_min || times.tm_sec || date[1]) {
 		TEXT time[15];
 		sprintf(time, " %2d:%.2d:%.2d.%.4"SLONGFORMAT, times.tm_hour, times.tm_min,
 				times.tm_sec, date[1] % PRECISION);
@@ -1133,7 +1154,7 @@ static void timestamp_to_text( const SLONG date[2], DSC* to)
 
 	dsc desc;
 	desc.dsc_length = p - temp;
-	desc.dsc_address = (UCHAR*) temp;
+	desc.dsc_address = (UCHAR *) temp;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
@@ -1159,23 +1180,21 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
  **************************************/
 	TEXT in_name[25], out_name[25], msg_unknown[40];
 
-	ERRQ_msg_get(504, msg_unknown, sizeof(msg_unknown));	// Msg504 unknown datatype %d
+	ERRQ_msg_get(504, msg_unknown);	// Msg504 unknown datatype %d
 
 	const TEXT* in = type_name(in_type);
-	if (!in)
-	{
+	if (!in) {
 		in = in_name;
 		sprintf(in_name, msg_unknown, in_type);
 	}
 
 	const TEXT* out = type_name(out_type);
-	if (!out)
-	{
+	if (!out) {
 		out = out_name;
 		sprintf(out_name, msg_unknown, out_type);
 	}
 
-	ERRQ_error(pattern, SafeArg() << in << out);
+	ERRQ_error(pattern, in, out, NULL, NULL, NULL);
 }
 
 
@@ -1213,7 +1232,8 @@ static void numeric_to_text(const dsc* from, dsc* to)
  *
  **************************************/
 
-	// Save (or compute) scale of source.  Then convert source to ordinary longword.
+/* Save (or compute) scale of source.  Then convert source to ordinary
+   longword. */
 
 	SSHORT scale = from->dsc_scale;
 
@@ -1229,16 +1249,15 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	intermediate.dsc_length = sizeof(SLONG);
 	intermediate.dsc_scale = scale;
 	intermediate.dsc_sub_type = 0;
-	intermediate.dsc_address = (UCHAR*) &n;
+	intermediate.dsc_address = (UCHAR *) &n;
 	QLI_validate_desc(intermediate);
 
 	MOVQ_move(from, &intermediate);
 
-	// Check for negation, then convert the number to a string of digits
+// Check for negation, then convert the number to a string of digits
 
 	SSHORT neg = 0;
-	if (n < 0)
-	{
+	if (n < 0) {
 		neg = 1;
 		n = -n;
 	}
@@ -1251,16 +1270,17 @@ static void numeric_to_text(const dsc* from, dsc* to)
 		n /= 10;
 	} while (n);
 
-	// Compute the total length off the field formatted.  Make sure it
-	// fits.  Keep in mind that routine handles both string and varying
-	// string fields.
+/* Compute the total length off the field formatted.  Make sure it
+   fits.  Keep in mind that routine handles both string and varying
+   string fields. */
 
 	SSHORT l = p - temp;
 	const size_t length = l + neg + decimal + pad;
 
 	if ((to->dsc_dtype == dtype_text && length > to->dsc_length) ||
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
-		(to->dsc_dtype == dtype_varying && length > to->dsc_length - sizeof(SSHORT)))
+		(to->dsc_dtype == dtype_varying
+		 && length > to->dsc_length - sizeof(SSHORT)))
 	{
 		IBERROR(57);			// Msg 57 overflow during conversion
 	}
@@ -1269,16 +1289,15 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	TEXT* q = (TEXT*) ((to->dsc_dtype == dtype_text) ?
 		to->dsc_address : to->dsc_address + sizeof(SSHORT));
 
-	// If negative, put in minus sign
+// If negative, put in minus sign
 
 	if (neg)
 		*q++ = '-';
 
-	// If a decimal point is required, do the formatting.  Otherwise just
-	// copy number
+/* If a decimal point is required, do the formatting.  Otherwise just
+   copy number */
 
-	if (scale < 0)
-	{
+	if (scale < 0) {
 		if ((l += scale) > 0)
 			do {
 				*q++ = *--p;
@@ -1293,18 +1312,17 @@ static void numeric_to_text(const dsc* from, dsc* to)
 			*q++ = *--p;
 		} while (--l);
 
-	// If padding is required, do it now.
+// If padding is required, do it now.
 
 	if (pad)
 		do {
 			*q++ = '0';
 		} while (--pad);
 
-	// Finish up by padding (if fixed) or computing the actual length
-	// (varying string)
+/* Finish up by padding (if fixed) or computing the actual length
+   (varying string) */
 
-	if (to->dsc_dtype == dtype_text)
-	{
+	if (to->dsc_dtype == dtype_text) {
 		if (l = to->dsc_length - length)
 			do {
 				*q++ = ' ';
@@ -1312,13 +1330,13 @@ static void numeric_to_text(const dsc* from, dsc* to)
 		return;
 	}
 
-	if (to->dsc_dtype == dtype_cstring)
-	{
+	if (to->dsc_dtype == dtype_cstring) {
 		*q = 0;
 		return;
 	}
 
-	*(SSHORT*) (to->dsc_address) = (UCHAR*) q - to->dsc_address - sizeof(SSHORT);
+	*(SSHORT *) (to->dsc_address) =
+		(UCHAR *) q - to->dsc_address - sizeof(SSHORT);
 }
 
 
@@ -1334,8 +1352,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
  *	Convert an arbitrary string to a date.
  *
  **************************************/
-	if (!length)
-	{
+	if (!length) {
 		date[0] = date[1] = 0;
 		return;
 	}
@@ -1348,20 +1365,21 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	const time_t clock = time(0);
 	tm* today = localtime(&clock);
 
+	USHORT i;
 	USHORT components[7];
-	for (int i = 0; i < 7; i++)
+	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
-	// Parse components
+// Parse components
 
 	TEXT temp[15];
 	USHORT n, precision;
 	bool year = false;
 
-	for (int i = 0; i < 7; i++)
-	{
+	for (i = 0; i < 7; i++) {
 
-		// Skip leading blanks.  If we run out of characters, we're done with parse.
+		/* Skip leading blanks.  If we run out of characters, we're done
+		   with parse.  */
 
 		while (p < end && *p == ' ')
 			p++;
@@ -1371,22 +1389,18 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 		// Handle digit or character strings
 
 		TEXT c = UPPER(*p);
-		if (DIGIT(c))
-		{
+		if (DIGIT(c)) {
 			precision = n = 0;
-			while (p < end && DIGIT(*p))
-			{
+			while (p < end && DIGIT(*p)) {
 				n = n * 10 + *p++ - '0';
 				precision++;
 			}
 			if (i == 2)
 				year = true;
 		}
-		else if (LETTER(c))
-		{
+		else if (LETTER(c)) {
 			TEXT* t = temp;
-			while (p < end && LETTER(c))
-			{
+			while (p < end && LETTER(c)) {
 				c = UPPER(*p);
 				if (!LETTER(c))
 					break;
@@ -1394,17 +1408,14 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 				p++;
 			}
 			*t = 0;
-			const TEXT* const* month_ptr = FB_LONG_MONTHS_UPPER;
-			while (true)
-			{
-				if (!*month_ptr)
-				{
+			const TEXT** month_ptr = FB_LONG_MONTHS_UPPER;
+			while (true) {
+				if (!*month_ptr) {
 					while (++p < end)
 						if (*p != ' ' && *p != '\t' && *p != 0)
 							date_error(string, length);
 
-					if (strcmp(temp, NOW) == 0)
-					{
+					if (strcmp(temp, NOW) == 0) {
 						now_to_date(today, date);
 						return;
 					}
@@ -1412,13 +1423,11 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 					isc_encode_date(today, (ISC_QUAD*)date);
 					if (strcmp(temp, TODAY) == 0)
 						return;
-					if (strcmp(temp, TOMORROW) == 0)
-					{
+					if (strcmp(temp, TOMORROW) == 0) {
 						++date[0];
 						return;
 					}
-					if (strcmp(temp, YESTERDAY) == 0)
-					{
+					if (strcmp(temp, YESTERDAY) == 0) {
 						--date[0];
 						return;
 					}
@@ -1432,8 +1441,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 			n = month_ptr - FB_LONG_MONTHS_UPPER;
 			month_position = i;
 		}
-		else
-		{
+		else {
 			date_error(string, length);
 			return;
 		}
@@ -1441,41 +1449,35 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 		while (p < end && *p == ' ')
 			p++;
 
-		switch (*p)
-		{
-		case '.':
+		if (*p == '/' || *p == '-' || *p == ',' || *p == ':') {
+			p++;
+			continue;
+		}
+		if (*p == '.') {
 			if (!month_position && i < 2)
 				month_position = 1;
-			// fall into
-		case '/':
-		case '-':
-		case ',':
-		case ':':
 			p++;
 			continue;
 		}
 	}
 
-	// Slide things into day, month, year form
+// Slide things into day, month, year form
 
 	tm times;
-	if (month_position)
-	{
+	if (month_position) {
 		times.tm_mon = components[1];
 		times.tm_mday = components[0];
 	}
-	else
-	{
+	else {
 		times.tm_mon = components[0];
 		times.tm_mday = components[1];
 	}
 
-	// Handle defaulting of year
+// Handle defaulting of year
 
 	if (((times.tm_year = components[2]) == 0) && !year)
 		times.tm_year = today->tm_year + 1900;
-	else if (times.tm_year < 100)
-	{
+	else if (times.tm_year < 100) {
 		if (times.tm_year < (today->tm_year - 50) % 100)
 			times.tm_year += 2000;
 		else
@@ -1488,7 +1490,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	times.tm_min = components[4];
 	times.tm_sec = components[5];
 
-	// convert day/month/year to Julian and validate result
+// convert day/month/year to Julian and validate result
 
 	isc_encode_date(&times, (ISC_QUAD*)date);
 	tm times2;
@@ -1496,9 +1498,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
-	{
 		date_error(string, length);
-	}
 
 	while (precision++ < 4)
 		components[6] *= 10;
@@ -1520,8 +1520,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
  *	Convert an arbitrary string to a time.
  *
  **************************************/
-	if (!length)
-	{
+	if (!length) {
 		date[0] = date[1] = 0;
 		return;
 	}
@@ -1532,20 +1531,20 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 	const time_t clock = time(0);
 	const tm* today = localtime(&clock);
 
-	int i;
+	USHORT i;
 	USHORT components[7];
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
-	// Parse components
+// Parse components
 
 	TEXT temp[15];
 	USHORT n, precision;
 
-	for (i = 3; i < 7; i++)
-	{
+	for (i = 3; i < 7; i++) {
 
-		// Skip leading blanks.  If we run out of characters, we're done with parse.
+		/* Skip leading blanks.  If we run out of characters, we're done
+		   with parse.  */
 
 		while (p < end && *p == ' ')
 			p++;
@@ -1555,20 +1554,16 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 		// Handle digit or character strings
 
 		TEXT c = UPPER(*p);
-		if (DIGIT(c))
-		{
+		if (DIGIT(c)) {
 			precision = n = 0;
-			while (p < end && DIGIT(*p))
-			{
+			while (p < end && DIGIT(*p)) {
 				n = n * 10 + *p++ - '0';
 				precision++;
 			}
 		}
-		else if (LETTER(c))
-		{
+		else if (LETTER(c)) {
 			TEXT* t = temp;
-			while (p < end && LETTER(c))
-			{
+			while (p < end && LETTER(c)) {
 				c = UPPER(*p);
 				if (!LETTER(c))
 					break;
@@ -1577,20 +1572,16 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 			}
 			*t = 0;
 			while (++p < end)
-			{
 				if (*p != ' ' && *p != '\t' && *p != 0)
 					date_error(string, length);
-			}
 
-			if (strcmp(temp, NOW) == 0)
-			{
+			if (strcmp(temp, NOW) == 0) {
 				now_to_date(today, date);
 				return;
 			}
 			date_error(string, length);
 		}
-		else
-		{
+		else {
 			date_error(string, length);
 			return;
 		}
@@ -1598,8 +1589,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 		while (p < end && *p == ' ')
 			p++;
 
-		if (*p == '/' || *p == '-' || *p == ',' || *p == ':' || *p == '.')
-		{
+		if (*p == '/' || *p == '-' || *p == ',' || *p == ':' || *p == '.') {
 			p++;
 			continue;
 		}
@@ -1611,7 +1601,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 	times.tm_min = components[4];
 	times.tm_sec = components[5];
 
-	// convert day/month/year to Julian and validate result
+// convert day/month/year to Julian and validate result
 
 	isc_encode_date(&times, (ISC_QUAD*)date);
 
@@ -1635,10 +1625,11 @@ static const TEXT* type_name( USHORT dtype)
  *	Return the name of a data type.
  *
  **************************************/
-	for (const dtypes_t* names = dtypes_table; names->description; names++)
-	{
+	for (const dtypes_t* names = dtypes_table; names->description; names++) {
 		if (names->type == dtype)
 			return names->description;
 	}
 	return NULL;
 }
+
+

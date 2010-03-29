@@ -30,11 +30,14 @@
 #define FB_MISC_STATUS_H
 
 #include <stdlib.h>				// size_t
+#include <stdarg.h>			//va_list
 #include "../jrd/common.h"		// ISC_STATUS
 
 const int MAX_ERRMSG_LEN	= 128;
 const int MAX_ERRSTR_LEN	= 1024;
 
-void PARSE_STATUS(const ISC_STATUS* status_vector, size_t& length, size_t& warning);
+void STUFF_STATUS_function(ISC_STATUS* status_vector, ISC_STATUS status, va_list args);
+
+void PARSE_STATUS(const ISC_STATUS* status_vector, int &length, int &warning);
 
 #endif // FB_MISC_STATUS_H

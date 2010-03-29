@@ -22,6 +22,10 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
+ 
+ 
+ 
+ 
 
 #ifndef MEMORY_ROUTINES_H
 #define MEMORY_ROUTINES_H
@@ -31,21 +35,23 @@ template <typename T>
 inline void copy_toptr(void* to, const T from)
 {
 #ifndef I386
-	memcpy(to, &from, sizeof(T));
+        memcpy(to, &from, sizeof(T));
 #else
-	*((T*) to) = from;
+         *((T*) to) = from;
 #endif
-}
+} 
 
 template <typename T>
 inline void copy_fromptr(T& to, const void* from)
 {
 #ifndef I386
-	memcpy(&to, from, sizeof(T));
+         memcpy(&to, from, sizeof(T));
 #else
-	to = *(T*) from;
+         to = *(T*) from;
 #endif
-}
+} 
+
+
 
 
 inline USHORT get_short(const UCHAR* p)
@@ -61,9 +67,23 @@ inline USHORT get_short(const UCHAR* p)
  *    from two chars
  *
  **************************************/
-	USHORT temp;
-	memcpy(&temp, p, sizeof(USHORT));
-	return temp;
+#ifndef WORDS_BIGENDIAN
+  // little-endian
+  USHORT temp;
+  memcpy(&temp, p, sizeof(USHORT));
+  return temp;
+#else
+  // big-endian
+  union {
+    USHORT n;
+    UCHAR c[2];
+  } temp;
+
+  temp.c[0] = p[0];
+  temp.c[1] = p[1];
+
+  return temp.n;
+#endif
 }
 
 inline SLONG get_long(const UCHAR* p)
@@ -79,9 +99,25 @@ inline SLONG get_long(const UCHAR* p)
  *    from four chars
  *
  **************************************/
-	SLONG temp;
-	memcpy(&temp, p, sizeof(SLONG));
-	return temp;
+#ifndef WORDS_BIGENDIAN
+  // little-endian
+  SLONG temp;
+  memcpy(&temp, p, sizeof(SLONG));
+  return temp;
+#else
+  // big-endian
+  union {
+    SLONG n;
+    UCHAR c[4];
+  } temp;
+
+  temp.c[0] = p[0];
+  temp.c[1] = p[1];
+  temp.c[2] = p[2];
+  temp.c[3] = p[3];
+
+  return temp.n;
+#endif
 }
 
 inline void put_short(UCHAR* p, USHORT value)
@@ -97,7 +133,21 @@ inline void put_short(UCHAR* p, USHORT value)
  *    two chars
  *
  **************************************/
-	memcpy(p, &value, sizeof(USHORT));
+#ifndef WORDS_BIGENDIAN
+  // little-endian
+  memcpy(p, &value, sizeof(USHORT));
+#else
+  // big-endian
+  union {
+    USHORT n;
+    UCHAR c[2];
+  } temp;
+
+  temp.n = value;
+
+  p[0] = temp.c[0];
+  p[1] = temp.c[1];
+#endif
 }
 
 inline void put_long(UCHAR* p, SLONG value)
@@ -113,107 +163,22 @@ inline void put_long(UCHAR* p, SLONG value)
  *    four chars
  *
  **************************************/
-	memcpy(p, &value, sizeof(SLONG));
-}
-
-inline void put_vax_short(UCHAR* p, SSHORT value)
-{
-/**************************************
- *
- *      p u t _ v a x _ s h o r t
- *
- **************************************
- *
- * Functional description
- *    Store one signed short int as
- *    two chars in VAX format
- *
- **************************************/
 #ifndef WORDS_BIGENDIAN
-	// little-endian
-	memcpy(p, &value, sizeof(value));
+  // little-endian
+  memcpy(p, &value, sizeof(SLONG));
 #else
-	// big-endian
-	union
-	{
-		SSHORT n;
-		UCHAR c[2];
-	} temp;
+  // big-endian
+  union {
+    SLONG n;
+    UCHAR c[4];
+  } temp;
 
-	temp.n = value;
+  temp.n = value;
 
-	p[0] = temp.c[1];
-	p[1] = temp.c[0];
-#endif
-}
-
-inline void put_vax_long(UCHAR* p, SLONG value)
-{
-/**************************************
- *
- *      p u t _ v a x _ l o n g
- *
- **************************************
- *
- * Functional description
- *    Store one signed long int as
- *    four chars in VAX format
- *
- **************************************/
-#ifndef WORDS_BIGENDIAN
-	// little-endian
-	memcpy(p, &value, sizeof(SLONG));
-#else
-	// big-endian
-	union
-	{
-		SLONG n;
-		UCHAR c[4];
-	} temp;
-
-	temp.n = value;
-
-	p[0] = temp.c[3];
-	p[1] = temp.c[2];
-	p[2] = temp.c[1];
-	p[3] = temp.c[0];
-#endif
-}
-
-inline void put_vax_int64(UCHAR* p, SINT64 value)
-{
-/**************************************
- *
- *      p u t _ v a x _ i n t 6 4
- *
- **************************************
- *
- * Functional description
- *    Store one signed long long int as
- *    eight chars in VAX format
- *
- **************************************/
-#ifndef WORDS_BIGENDIAN
-	// little-endian
-	memcpy(p, &value, sizeof(SINT64));
-#else
-	// big-endian
-	union
-	{
-		SINT64 n;
-		UCHAR c[8];
-	} temp;
-
-	temp.n = value;
-
-	p[0] = temp.c[7];
-	p[1] = temp.c[6];
-	p[2] = temp.c[5];
-	p[3] = temp.c[4];
-	p[4] = temp.c[3];
-	p[5] = temp.c[2];
-	p[6] = temp.c[1];
-	p[7] = temp.c[0];
+  p[0] = temp.c[0];
+  p[1] = temp.c[1];
+  p[2] = temp.c[2];
+  p[3] = temp.c[3];
 #endif
 }
 

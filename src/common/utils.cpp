@@ -19,14 +19,12 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  Nickolay Samofatov <nickolay@broadviewsoftware.com>
  */
 
 
 // =====================================
 // Utility functions
 
-#include "firebird.h"
 #include "../jrd/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -37,55 +35,12 @@
 #undef __need_size_t
 #endif
 #include <stdarg.h>
-#include <stdio.h>
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/locks.h"
-#include "../common/classes/init.h"
-#include "../jrd/constants.h"
-#include "../jrd/os/path_utils.h"
-
-#ifdef WIN_NT
-#include <direct.h>
-#include <io.h> // isatty()
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifdef HAVE_TERMIOS_H
-#include <termios.h>
-#endif
 
 namespace fb_utils
 {
-
-bool implicit_name(const char* name, const char* prefix, int prefix_len);
-
-
-char* copy_terminate(char* dest, const char* src, size_t bufsize)
-{
-/**************************************
- *
- * c o p y _ t e r m i n a t e
- *
- **************************************
- *
- * Functional description
- *	Do the same as strncpy but ensure the null terminator is written.
- *
- **************************************/
-	if (!bufsize) // Was it a joke?
-		return dest;
-
-	--bufsize;
-	strncpy(dest, src, bufsize);
-	dest[bufsize] = 0;
-	return dest;
-}
 
 
 char* exact_name(char* const str)
@@ -151,61 +106,6 @@ char* exact_name_limit(char* const str, size_t bufsize)
 }
 
 
-// *****************************
-// i m p l i c i t _ d o m a i n
-// *****************************
-// Determines if a domain or index is of the form RDB$<n[...n]>[<spaces>]
-// This may be true for implicit domains and for unique and non-unique indices except PKs.
-bool implicit_domain(const char* domain_name)
-{
-	return implicit_name(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
-}
-
-
-// ***********************************
-// i m p l i c i t _ i n t e g r i t y
-// ***********************************
-// Determines if a table integrity constraint domain is of the form INTEG_<n[...n]>[<spaces>]
-bool implicit_integrity(const char* integ_name)
-{
-	return implicit_name(integ_name, IMPLICIT_INTEGRITY_PREFIX, IMPLICIT_INTEGRITY_PREFIX_LEN);
-}
-
-
-// ***********************************
-// i m p l i c i t _ p k
-// ***********************************
-// Determines if an index is of the form RDB$PRIMARY<n[...n]>[<spaces>]
-bool implicit_pk(const char* pk_name)
-{
-	return implicit_name(pk_name, IMPLICIT_PK_PREFIX, IMPLICIT_PK_PREFIX_LEN);
-}
-
-
-// ***********************************
-// i m p l i c i t _ n a m e
-// ***********************************
-// Determines if a name is of the form prefix<n[...n]>[<spaces>]
-// where prefix has a fixed known length.
-bool implicit_name(const char* name, const char* prefix, int prefix_len)
-{
-	if (strncmp(name, prefix, prefix_len) != 0)
-		return false;
-
-	int i = prefix_len;
-	while (name[i] >= '0' && name[i] <= '9')
-		++i;
-
-	if (i == prefix_len) // 'prefix' alone isn't valid
-		return false;
-
-	while (name[i] == ' ')
-		++i;
-
-	return !name[i]; // we reached null term
-}
-
-
 int name_length(const TEXT* const name)
 {
 /**************************************
@@ -221,8 +121,7 @@ int name_length(const TEXT* const name)
  *
  **************************************/
 	const TEXT* q = name - 1;
-	for (const TEXT* p = name; *p; p++)
-	{
+	for (const TEXT* p = name; *p; p++) {
 		if (*p != ' ') {
 			q = p;
 		}
@@ -296,45 +195,17 @@ int snprintf(char* buffer, size_t count, const char* format...)
 	return rc;
 }
 
-// *******************
-// c l e a n u p _ p a s s w d
-// *******************
-// Copy password to newly allocated place and replace existing one in argv with spaces.
-// Allocated space is released upon exit from utility.
-// This is planned leak of a few bytes of memory in utilities.
-// This function is deprecated. Use UtilSvc::hidePasswd(ArgvType&, int) whenever possible.
-// However, there are several usages through fb_utils::get_passwd(char* arg);
-char* cleanup_passwd(char* arg)
-{
-	if (! arg)
-	{
-		return arg;
-	}
-
-	const int lpass = strlen(arg);
-	char* savePass = (char*) gds__alloc(lpass + 1);
-	if (! savePass)
-	{
-		// No clear idea, how will it work if there is no memory
-		// for password, but let others think. As a minimum avoid AV.
-		return arg;
-	}
-	memcpy(savePass, arg, lpass + 1);
-	memset(arg, ' ', lpass);
-	return savePass;
-}
-
-
 #ifdef WIN_NT
 
 static bool validateProductSuite (LPCSTR lpszSuiteToValidate);
+static bool isGlobalKernelPrefix();
 
-// hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for
-// names of all kernel objects we use. For Win9x we must not add this prefix.
-// Win NT will accept such names only if Terminal Server is installed.
+// hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for 
+// names of all kernel objects we use. For Win9x we must not add this prefix. 
+// Win NT will accept such names only if Terminal Server is installed. 
 // Check OS version carefully and add prefix if we can add it
 
-bool prefix_kernel_object_name(char* name, size_t bufsize)
+void prefix_kernel_object_name(char* name, size_t bufsize)
 {
 	static bool bGlobalPrefix = false;
 	static bool bInitDone = false;
@@ -345,8 +216,8 @@ bool prefix_kernel_object_name(char* name, size_t bufsize)
 		bInitDone = true;
 	}
 
-	// Backwards compatibility feature with Firebird 2.0.3 and earlier.
-	// If the name already contains some prefix (specified by the user, as was
+	// Backwards compatibility feature with Firebird 2.0.3 and earlier. 
+	// If the name already contains some prefix (specified by the user, as was 
 	// recommended in firebird.conf) additional prefix is not added
 	if (bGlobalPrefix && !strchr(name, '\\'))
 	{
@@ -354,19 +225,14 @@ bool prefix_kernel_object_name(char* name, size_t bufsize)
 		const size_t len_prefix = strlen(prefix);
 		const size_t len_name = strlen(name) + 1;
 
-		// if name and prefix can't fit in name's buffer than we must
+		// if name and prefix can't fit in name's buffer than we must 
 		// not overwrite end of name because it contains object type
-		const size_t move_prefix = (len_name + len_prefix > bufsize) ?
+		const int move_prefix = (len_name + len_prefix > bufsize) ?
 			(bufsize - len_name) : len_prefix;
 
 		memmove(name + move_prefix, name, len_name);
 		memcpy(name, prefix, move_prefix);
-		// CVC: Unfortunately, things like Glob instead of Global\\ do not achieve the objective
-		// of telling the NT kernel the object is global and hence I consider them failures.
-		//return move_prefix > 0; // Soft version of the check
-		return move_prefix == len_prefix; // Strict version of the check.
 	}
-	return true;
 }
 
 
@@ -397,7 +263,7 @@ private:
 };
 
 
-// hvlad: two functions below got from
+// hvlad: two functions below got from 
 // http://msdn2.microsoft.com/en-us/library/aa380797.aspx
 // and slightly adapted for our coding style
 
@@ -405,18 +271,20 @@ private:
 //   Note that the validateProductSuite and isTerminalServices
 //   functions use ANSI versions of the functions to maintain
 //   compatibility with Windows Me/98/95.
-//   -------------------------------------------------------------
+//   ------------------------------------------------------------- 
 
-bool isGlobalKernelPrefix()
+// isTerminalServices replaced by isGlobalKernelPrefix
+
+bool isGlobalKernelPrefix() 
 {
-	// The strategy of this function is as follows: use Global\ kernel namespace
-	// for engine objects if we can. This can be prevented by either lack of OS support
+	// The strategy of this function is as follows: use Global\ kernel namespace 
+	// for engine objects if we can. This can be prevented by either lack of OS support 
 	// for the feature (Win9X) or lack of privileges (Vista, Windows 2000/XP restricted accounts)
 
 	const DWORD dwVersion = GetVersion();
 
 	// Is Windows NT running?
-	if (!(dwVersion & 0x80000000))
+	if (!(dwVersion & 0x80000000)) 
 	{
 		if (LOBYTE(LOWORD(dwVersion)) <= 4) // This is Windows NT 4.0 or earlier.
 			return validateProductSuite("Terminal Server");
@@ -425,13 +293,12 @@ bool isGlobalKernelPrefix()
 		// version of Windows from Windows 2000 and up
 		// Check if we have enough privileges to create global handles.
 		// If not fall back to creating local ones.
-		// The API for that is the NT thing, so we have to get addresses of the
+		// The API for that is the NT thing, so we have to get addresses of the 
 		// functions dynamically to avoid troubles on Windows 9X platforms
 
 		DynLibHandle hmodAdvApi(LoadLibrary("advapi32.dll"));
 
-		if (!hmodAdvApi)
-		{
+		if (!hmodAdvApi) {
 			gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
 			return false;
 		}
@@ -440,15 +307,14 @@ bool isGlobalKernelPrefix()
 		typedef BOOL (WINAPI *PFnLookupPrivilegeValue) (LPCSTR, LPCSTR, PLUID);
 		typedef BOOL (WINAPI *PFnPrivilegeCheck) (HANDLE, PPRIVILEGE_SET, LPBOOL);
 
-		PFnOpenProcessToken pfnOpenProcessToken =
+		PFnOpenProcessToken pfnOpenProcessToken = 
 			(PFnOpenProcessToken) GetProcAddress(hmodAdvApi, "OpenProcessToken");
-		PFnLookupPrivilegeValue pfnLookupPrivilegeValue =
+		PFnLookupPrivilegeValue pfnLookupPrivilegeValue = 
 			(PFnLookupPrivilegeValue) GetProcAddress(hmodAdvApi, "LookupPrivilegeValueA");
-		PFnPrivilegeCheck pfnPrivilegeCheck =
+		PFnPrivilegeCheck pfnPrivilegeCheck = 
 			(PFnPrivilegeCheck) GetProcAddress(hmodAdvApi, "PrivilegeCheck");
 
-		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck)
-		{
+		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
 			// Should never happen, really
 			gds__log("Cannot access privilege management API");
 			return false;
@@ -456,8 +322,7 @@ bool isGlobalKernelPrefix()
 
 		HANDLE hProcess = GetCurrentProcess();
 		HANDLE hToken;
-		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0)
-		{
+		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
 			gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
 			return false;
 		}
@@ -466,8 +331,7 @@ bool isGlobalKernelPrefix()
 		memset(&ps, 0, sizeof(ps));
 		ps.Control = PRIVILEGE_SET_ALL_NECESSARY;
 		ps.PrivilegeCount = 1;
-		if (pfnLookupPrivilegeValue(NULL, TEXT("SeCreateGlobalPrivilege"), &ps.Privilege[0].Luid) == 0)
-		{
+		if (pfnLookupPrivilegeValue(NULL, TEXT("SeCreateGlobalPrivilege"), &ps.Privilege[0].Luid) == 0) {
 			// Failure here means we're running on old version of Windows 2000 or XP
 			// which always allow creating global handles
 			CloseHandle(hToken);
@@ -475,8 +339,7 @@ bool isGlobalKernelPrefix()
 		}
 
 		BOOL checkResult;
-		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0)
-		{
+		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
 			gds__log("PrivilegeCheck failed. Error code: %lu", GetLastError());
 			CloseHandle(hToken);
 			return false;
@@ -484,7 +347,7 @@ bool isGlobalKernelPrefix()
 
 		CloseHandle(hToken);
 
-		return checkResult;
+		return checkResult; 
 	}
 
 	return false;
@@ -543,7 +406,7 @@ void NTRegQuery::close()
 {
 	if (m_hKey)
 		RegCloseKey(m_hKey);
-
+		
 	m_hKey = NULL;
 }
 
@@ -598,7 +461,7 @@ inline bool NTLocalString::allocated() const
 	return m_string != 0;
 }
 
-
+		
 ////////////////////////////////////////////////////////////
 // validateProductSuite function
 //
@@ -607,7 +470,7 @@ inline bool NTLocalString::allocated() const
 //
 ////////////////////////////////////////////////////////////
 
-bool validateProductSuite (LPCSTR lpszSuiteToValidate)
+bool validateProductSuite (LPCSTR lpszSuiteToValidate) 
 {
 	NTRegQuery query;
 
@@ -630,7 +493,7 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 		return false;
 
 	query.close();  // explicit but redundant.
-
+	
 	// Search for suite name in array of strings.
 	bool fValidated = false;
 	LPCSTR lpszSuite = lpszProductSuites.c_str();
@@ -649,371 +512,4 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 }
 
 #endif // WIN_NT
-
-// *******************************
-// g e t _ p r o c e s s _ n a m e
-// *******************************
-// Return the name of the current process
-
-Firebird::PathName get_process_name()
-{
-	char buffer[MAXPATHLEN];
-
-#if defined(WIN_NT)
-	const int len = GetModuleFileName(NULL, buffer, sizeof(buffer));
-#elif defined(HAVE__PROC_SELF_EXE)
-    const int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
-#else
-	const int len = 0;
-#endif
-
-	if (len <= 0)
-		buffer[0] = 0;
-	else if (size_t(len) < sizeof(buffer))
-		buffer[len] = 0;
-	else
-		buffer[len - 1] = 0;
-
-	return buffer;
-}
-
-SLONG genUniqueId()
-{
-	static Firebird::AtomicCounter cnt;
-	return ++cnt;
-}
-
-void getCwd(Firebird::PathName& pn)
-{
-	char* buffer = pn.getBuffer(MAXPATHLEN);
-#if defined(WIN_NT)
-	_getcwd(buffer, MAXPATHLEN);
-#elif defined(HAVE_GETCWD)
-	getcwd(buffer, MAXPATHLEN);
-#else
-	getwd(buffer);
-#endif
-	pn.recalculate_length();
-}
-
-namespace {
-	class InputFile
-	{
-	public:
-		explicit InputFile(const Firebird::PathName& name)
-		  : flagEcho(false)
-		{
-			if (name == "stdin") {
-				f = stdin;
-			}
-			else {
-				f = fopen(name.c_str(), "rt");
-			}
-			if (f && isatty(fileno(f)))
-			{
-				fprintf(stderr, "Enter password: ");
-				fflush(stderr);
-#ifdef HAVE_TERMIOS_H
-				flagEcho = tcgetattr(fileno(f), &oldState) == 0;
-				if (flagEcho)
-				{
-					flagEcho = oldState.c_lflag & ECHO;
-				}
-				if (flagEcho)
-				{
-					struct termios newState(oldState);
-					newState.c_lflag &= ~ECHO;
-					tcsetattr(fileno(f), TCSANOW, &newState);
-				}
-#elif defined(WIN_NT)
-				HANDLE handle = (HANDLE) _get_osfhandle(fileno(f));
-				DWORD dwMode;
-				flagEcho = GetConsoleMode(handle, &dwMode) && (dwMode & ENABLE_ECHO_INPUT);
-				if (flagEcho)
-					SetConsoleMode(handle, dwMode & ~ENABLE_ECHO_INPUT);
-#endif
-			}
-		}
-		~InputFile()
-		{
-			if (flagEcho)
-			{
-				fprintf(stderr, "\n");
-				fflush(stderr);
-#ifdef HAVE_TERMIOS_H
-				tcsetattr(fileno(f), TCSANOW, &oldState);
-#elif defined(WIN_NT)
-				HANDLE handle = (HANDLE) _get_osfhandle(fileno(f));
-				DWORD dwMode;
-				if (GetConsoleMode(handle, &dwMode))
-					SetConsoleMode(handle, dwMode | ENABLE_ECHO_INPUT);
-#endif
-			}
-			if (f && f != stdin) {
-				fclose(f);
-			}
-		}
-
-		FILE* getStdioFile() { return f; }
-		bool operator!() { return !f; }
-
-	private:
-		FILE* f;
-#ifdef HAVE_TERMIOS_H
-		struct termios oldState;
-#endif
-		bool flagEcho;
-	};
-} // namespace
-
-// fetch password from file
-FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& password)
-{
-	InputFile file(name);
-	if (!file)
-	{
-		return FETCH_PASS_FILE_OPEN_ERROR;
-	}
-
-	Firebird::string pwd;
-	if (! pwd.LoadFromFile(file.getStdioFile()))
-	{
-		return ferror(file.getStdioFile()) ? FETCH_PASS_FILE_READ_ERROR : FETCH_PASS_FILE_EMPTY;
-	}
-
-	// this is planned leak of a few bytes of memory in utilities
-	char* pass = FB_NEW(*getDefaultMemoryPool()) char[pwd.length() + 1];
-	pwd.copyTo(pass, pwd.length() + 1);
-	password = pass;
-	return FETCH_PASS_OK;
-}
-
-
-
-const SINT64 BILLION = 1000000000;
-static SINT64 saved_frequency = 0;
-
-// Returns current value of performance counter
-SINT64 query_performance_counter()
-{
-#if defined(WIN_NT)
-
-	// Use Windows performance counters
-	LARGE_INTEGER counter;
-	if (QueryPerformanceCounter(&counter) == 0)
-		return 0;
-
-	return counter.QuadPart;
-#elif defined(HAVE_CLOCK_GETTIME)
-
-	// Use high-resultion clock
-	struct timespec tp;
-	if (clock_gettime(CLOCK_REALTIME, &tp) != 0)
-		return 0;
-
-	return static_cast<SINT64>(tp.tv_sec) * BILLION + tp.tv_nsec;
-#else
-
-	// This is not safe because of possible wrapping and very imprecise
-	return clock();
-#endif
-}
-
-
-// Returns frequency of performance counter in Hz
-SINT64 query_performance_frequency()
-{
-#if defined(WIN_NT)
-	if (saved_frequency)
-		return saved_frequency;
-
-	LARGE_INTEGER frequency;
-	if (QueryPerformanceFrequency(&frequency) == 0)
-		return 1;
-
-	saved_frequency = frequency.QuadPart;
-	return frequency.QuadPart;
-#elif defined(HAVE_CLOCK_GETTIME)
-
-	return BILLION;
-#else
-
-	// This is not safe because of possible wrapping and very imprecise
-	return CLOCKS_PER_SEC;
-#endif
-}
-
-void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append)
-{
-	if (value == 0)
-	{
-		if (append)
-			target.append("0", 1);
-		else
-			target.assign("0", 1);
-		return;
-	}
-
-	const int MAX_SCALE = 25;
-	const int MAX_BUFFER = 50;
-
-	if (scale < -MAX_SCALE || scale > MAX_SCALE)
-	{
-		fb_assert(false);
-		return; // throw exception here?
-	}
-
-	const bool neg = value < 0;
-	const bool dot = scale < 0; // Need the decimal separator or not?
-	char buffer[MAX_BUFFER];
-	int iter = MAX_BUFFER;
-
-	buffer[--iter] = '\0';
-
-	if (scale > 0)
-	{
-		while (scale-- > 0)
-			buffer[--iter] = '0';
-	}
-
-	bool dot_used = false;
-	FB_UINT64 uval = neg ? FB_UINT64(-(value + 1)) + 1 : value; // avoid problems with MIN_SINT64
-
-	while (uval != 0)
-	{
-		buffer[--iter] = static_cast<char>(uval % 10) + '0';
-		uval /= 10;
-
-		if (dot && !++scale)
-		{
-			buffer[--iter] = '.';
-			dot_used = true;
-		}
-	}
-
-	if (dot)
-	{
-		// if scale > 0 we have N.M
-		// if scale == 0 we have .M and we need 0.M
-		// if scale < 0 we have pending zeroes and need 0.{0+}M
-		if (!dot_used)
-		{
-			while (scale++ < 0)
-				buffer[--iter] = '0';
-
-			buffer[--iter] = '.';
-			buffer[--iter] = '0';
-		}
-		else if (!scale)
-			buffer[--iter] = '0';
-	}
-
-	if (neg)
-		buffer[--iter] = '-';
-
-	const size_t len = MAX_BUFFER - iter - 1;
-
-	if (append)
-		target.append(buffer + iter, len);
-	else
-		target.assign(buffer + iter, len);
-}
-
-
-// Build full file name in specified directory
-Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
-{
-	Firebird::PathName s;
-	char tmp[MAXPATHLEN];
-
-#ifndef BOOT_BUILD
-	const char* configDir[] = {
-		FB_BINDIR, FB_SBINDIR, FB_CONFDIR, FB_LIBDIR, FB_INCDIR, FB_DOCDIR, FB_UDFDIR, FB_SAMPLEDIR,
-		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR,
-		FB_GUARDDIR, FB_PLUGDIR
-	};
-
-	fb_assert(FB_NELEM(configDir) == FB_DIR_LAST);
-	fb_assert(prefType < FB_DIR_LAST);
-
-	if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
-	{
-		// Value is set explicitly and is not environment overridable
-		PathUtils::concatPath(s, configDir[prefType], name);
-		return s;
-	}
-#endif
-
-	switch(prefType)
-	{
-		case FB_DIR_BIN:
-		case FB_DIR_SBIN:
-			s = "bin";
-			break;
-
-		case FB_DIR_CONF:
-		case FB_DIR_LOG:
-		case FB_DIR_GUARD:
-		case FB_DIR_SECDB:
-			s = "";
-			break;
-
-		case FB_DIR_LIB:
-			s = "lib";
-			break;
-
-		case FB_DIR_PLUGINS:
-			s = "plugins";
-			break;
-
-		case FB_DIR_INC:
-			s = "include";
-			break;
-
-		case FB_DIR_DOC:
-			s = "doc";
-			break;
-
-		case FB_DIR_UDF:
-			s = "UDF";
-			break;
-
-		case FB_DIR_SAMPLE:
-			s = "examples";
-			break;
-
-		case FB_DIR_SAMPLEDB:
-			s = "examples/empbuild";
-			break;
-
-		case FB_DIR_HELP:
-			s = "help";
-			break;
-
-		case FB_DIR_INTL:
-			s = "intl";
-			break;
-
-		case FB_DIR_MISC:
-			s = "misc";
-			break;
-
-		case FB_DIR_MSG:
-			gds__prefix_msg(tmp, name);
-			return tmp;
-
-		default:
-			fb_assert(false);
-			break;
-	}
-
-	if (s.hasData() && name[0])
-	{
-		s += '/';
-	}
-	s += name;
-	gds__prefix(tmp, s.c_str());
-	return tmp;
-}
-
 } // namespace fb_utils

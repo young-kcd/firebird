@@ -34,48 +34,39 @@ const int ACL_end		= 0;
 const int ACL_id_list	= 1;
 const int ACL_priv_list	= 2;
 
-// Privileges to be granted
+/* Privileges to be granted */
 
 const int priv_end			= 0;
-const int priv_control		= 1;		// Control over ACL
-const int priv_grant		= 2;		// Grant subset of rights to others
-const int priv_delete		= 3;		// Delete object
-const int priv_read			= 4;		// Read object
-const int priv_write		= 5;		// Write object
-const int priv_protect		= 6;		// Change protection
-const int priv_sql_insert	= 7;		// SQL insertion
-const int priv_sql_delete	= 8;		// SQL deletion
-const int priv_sql_update	= 9;		// SQL update
-const int priv_sql_references	= 10;	// SQL references for foreign key
-const int priv_execute		= 11;		// Execute (procedure)
+const int priv_control		= 1;		/* Control over ACL */
+const int priv_grant		= 2;		/* Grant subset of rights to others */
+const int priv_delete		= 3;		/* Delete object */
+const int priv_read			= 4;		/* Read object */
+const int priv_write		= 5;		/* Write object */
+const int priv_protect		= 6;		/* Change protection */
+const int priv_sql_insert	= 7;		/* SQL insertion */
+const int priv_sql_delete	= 8;		/* SQL deletion */
+const int priv_sql_update	= 9;		/* SQL update */
+const int priv_sql_references	= 10;	/* SQL references for foreign key */
+const int priv_execute		= 11;		/* Execute (procedure) */
 const int priv_max			= 12;
 
-// Identification criterias
+/* Identification criterias */
 
 const int id_end			= 0;
-const int id_group			= 1;		// UNIX group id
-const int id_user			= 2;		// UNIX user
-const int id_person			= 3;		// User name
-const int id_project		= 4;		// Project name
-const int id_organization	= 5;		// Organization name
-const int id_node			= 6;		// Node id
-const int id_view			= 7;		// View name
-const int id_views			= 8;		// All views
-const int id_trigger		= 9;		// Trigger name
-const int id_procedure		= 10;		// Procedure name
-const int id_sql_role		= 11;		// SQL role
-// New in FB3
-const int id_package		= 12;		// Package name
-const int id_function		= 13;		// Function name
-const int id_schema			= 14;		// Schema name
-const int id_generator		= 15;
-const int id_domain			= 16;		// global field (domain)
-const int id_charset		= 17;
-const int id_collation		= 18;
-const int id_exception		= 19;
-const int id_max			= 20;
+const int id_group			= 1;		/* UNIX group id */
+const int id_user			= 2;		/* UNIX user */
+const int id_person			= 3;		/* User name */
+const int id_project		= 4;		/* Project name */
+const int id_organization	= 5;		/* Organization name */
+const int id_node			= 6;		/* Node id */
+const int id_view			= 7;		/* View name */
+const int id_views			= 8;		/* All views */
+const int id_trigger		= 9;		/* Trigger name */
+const int id_procedure		= 10;		/* Procedure name */
+const int id_sql_role		= 11;		/* SQL role */
+const int id_max			= 12;
 
-/* Format of access control list:
+/* Format of access control list: 
 
 	acl		:=	<ACL_version> [ <acl_element> ]... <0>
 	acl_element	:=	<ACL_id_list> <id_list> <ACL_priv_list> <priv_list>
@@ -85,9 +76,7 @@ const int id_max			= 20;
 
 */
 
-
-// Transaction Description Record
-// CVC: This information should match enum tdr_vals in alice.h
+/* Transaction Description Record */
 
 const int TDR_VERSION			= 1;
 const int TDR_HOST_SITE			= 1;
@@ -95,4 +84,5 @@ const int TDR_DATABASE_PATH		= 2;
 const int TDR_TRANSACTION_ID	= 3;
 const int TDR_REMOTE_SITE		= 4;
 
-#endif // JRD_ACL_H
+#endif /* JRD_ACL_H */
+

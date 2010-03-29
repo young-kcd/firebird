@@ -31,7 +31,7 @@
 #include "../utilities/install/regis_proto.h"
 
 static USHORT reg_error(SLONG, const TEXT*, HKEY);
-static void usage_exit();
+static void usage_exit(void);
 
 static const struct
 {
@@ -40,8 +40,8 @@ static const struct
 	USHORT code;
 } commands[] =
 {
-	{"INSTALL", 1, COMMAND_INSTALL},
-	{"REMOVE", 1, COMMAND_REMOVE},
+	{"INSTALL", 1, COMMAND_INSTALL}, 
+	{"REMOVE", 1, COMMAND_REMOVE}, 
 	{NULL, 0, 0}
 };
 
@@ -55,7 +55,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
  **************************************
  *
  * Functional description
- *	Install or remove Firebird.
+ *	Install or remove InterBase.
  *
  **************************************/
 	TEXT directory[MAXPATHLEN];
@@ -66,7 +66,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
 	// so we GetModuleFileName()
-	const USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
+	USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
 	if (len == 0)
 		return reg_error(GetLastError(), "GetModuleFileName", NULL);
 
@@ -83,15 +83,13 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	const TEXT* const* const end = argv + argc;
 	while (++argv < end)
 	{
-		if (**argv != '-')
-		{
+		if (**argv != '-') {
 			const TEXT* cmd;
 			USHORT i;
 			for (i = 0; cmd = commands[i].name; i++)
 			{
 				const TEXT* q = cmd;
-				for (p = *argv; *p && UPPER(*p) == *q; ++p, ++q)
-					;
+				for (p = *argv; *p && UPPER(*p) == *q; ++p, ++q);
 				if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
 					break;
 			}
@@ -108,11 +106,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			switch (UPPER(*p))
 			{
 				case 'Z':
-					sw_version = true;
+				sw_version = true;
 					break;
-
-				case '?':
-					usage_exit();
 
 				default:
 					printf("Unknown switch \"%s\"\n", p);
@@ -122,7 +117,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	}
 
 	if (sw_version)
-		printf("instreg version %s\n", FB_VERSION);
+		printf("instreg version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE)
 		usage_exit();
@@ -204,7 +199,7 @@ static USHORT reg_error( SLONG status, const TEXT* string, HKEY hkey)
 	return FB_FAILURE;
 }
 
-static void usage_exit()
+static void usage_exit(void)
 {
 /**************************************
  *

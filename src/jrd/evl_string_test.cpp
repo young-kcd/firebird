@@ -24,6 +24,8 @@
  *  Contributor(s): ______________________________________.
  *
  *
+ *  $Id: evl_string_test.cpp,v 1.7 2004-07-07 16:06:19 skidder Exp $
+ *
  */
 
 #include "../common/classes/alloc.h"
@@ -32,22 +34,19 @@
 const isc_like_escape_invalid = 1;
 
 void ERR_post(...) {
-	throw Firebird::LongJump();
+	throw std::exception();
 }
 
 #include "evl_string.h"
 
 using namespace Firebird;
 
-class StringLikeEvaluator : public LikeEvaluator<char>
-{
+class StringLikeEvaluator : public LikeEvaluator<char> {
 public:
-	StringLikeEvaluator(MemoryPool *pool, const char *pattern, char escape_char)
-		: LikeEvaluator<char>(*pool, pattern, (SSHORT) strlen(pattern), escape_char, '%', '_')
-	{}
+	StringLikeEvaluator(MemoryPool *pool, const char *pattern, char escape_char) : 
+	  LikeEvaluator<char>(*pool, pattern, (SSHORT)strlen(pattern), escape_char, '%', '_') {}
 
-	void process(const char *data, bool more, bool result)
-	{
+	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
 		bool needMore = processNextChunk(data, len);
 		assert(more == needMore);
@@ -55,15 +54,12 @@ public:
 	}
 };
 
-class StringStartsEvaluator : public StartsEvaluator<char>
-{
+class StringStartsEvaluator : public StartsEvaluator<char> {
 public:
-	StringStartsEvaluator(const char *pattern)
-		: StartsEvaluator<char>(pattern, (SSHORT)strlen(pattern))
-	{}
+	StringStartsEvaluator(const char *pattern) : 
+	  StartsEvaluator<char>(pattern, (SSHORT)strlen(pattern)) {}
 
-	void process(const char *data, bool more, bool result)
-	{
+	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
 		bool needMore = processNextChunk(data, len);
 		assert(more == needMore);
@@ -71,15 +67,12 @@ public:
 	}
 };
 
-class StringContainsEvaluator : public ContainsEvaluator<char>
-{
+class StringContainsEvaluator : public ContainsEvaluator<char> {
 public:
-	StringContainsEvaluator(MemoryPool *pool, const char *pattern)
-		: ContainsEvaluator<char>(*pool, pattern, (SSHORT)strlen(pattern))
-	{}
+	StringContainsEvaluator(MemoryPool *pool, const char *pattern) : 
+	  ContainsEvaluator<char>(*pool, pattern, (SSHORT)strlen(pattern)) {}
 
-	void process(const char *data, bool more, bool result)
-	{
+	void process(const char *data, bool more, bool result) {
 		SSHORT len = (SSHORT)strlen(data);
 		bool needMore = processNextChunk(data, len);
 		assert(more == needMore);
@@ -87,8 +80,7 @@ public:
 	}
 };
 
-int main()
-{
+int main() {
 	MemoryPool *p = MemoryPool::createPool();
 
 	// The tests below attempt to do full code coverage for the LikeEvaluator
@@ -117,7 +109,7 @@ int main()
 	t4.reset();
 	t4.process("%_some text", true, false);
 	t4.process(".", true, true);
-
+	
 	// More escaped patterns
 	StringLikeEvaluator t5(p, "%sosome_\\%text%", '\\');
 	t5.process("sosomso", true, false);
@@ -132,8 +124,7 @@ int main()
 	try {
 		StringLikeEvaluator t7(p, "%sosome_text\\?", '\\');
 		assert(false);
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 	}
 
 	// Test single '%' pattern

@@ -1,8 +1,4 @@
 /*
- *      PROGRAM:        FB Server
- *      MODULE:         property.cpp
- *      DESCRIPTION:    Property sheet implementation for WIN32 server
- *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy
@@ -22,6 +18,14 @@
  *
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
  *
+*/
+
+
+/*
+ *      PROGRAM:        IB Server
+ *      MODULE:         property.cpp
+ *      DESCRIPTION:    Property sheet implementation for WIN32 server
+ *
  */
 
 #include "firebird.h"
@@ -30,7 +34,7 @@
 #include <prsht.h>
 #include <dbt.h>
 
-// Since it's a Win32-only file, we might as well assert it
+/* Since it's a Win32-only file, we might as well assert it*/
 #if !defined(WIN_NT)
 #error This is a Win32 only file.
 #endif
@@ -43,28 +47,56 @@
 #include "../remote/os/win32/window.h"
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
+
+#include "../jrd/svc_proto.h"
 #include "../remote/os/win32/window_proto.h"
-#include "../remote/os/win32/chop_proto.h"
+#include "../remote/os/win32/propty_proto.h"
+#include "../remote/os/win32/ibconfig.h"
 
 #include "../jrd/ibase.h"
 
-#include "../common/thd.h"		// get jrd_proto.h to declare the function
-#include "../jrd/jrd_proto.h"	// JRD_num_attachments()
-#include <stdio.h>				// sprintf()
+#include "../remote/os/win32/ibsvrhlp.h"
+#include "../remote/os/win32/chop_proto.h"
+
+#include "../jrd/thd.h"			/* get jrd_proto.h to declare the function */
+#include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
+#include <stdio.h>				/* sprintf() */
 
 static HINSTANCE hInstance = NULL;	// Handle to the current app. instance
 static HWND hPSDlg = NULL;		// Handle to the parent prop. sheet window
 HBRUSH hGrayBrush = NULL;		// Handle to a Gray Brush
 static USHORT usServerFlags;	// Server Flag Mask
 
+// Define an array of dword pairs,
+// where the first of each pair is the control ID,
+// and the second is the context ID for a help topic,
+// which is used in the help file.
+static const DWORD aMenuHelpIDs[] = {
+	IDC_IBSVR_ICON, ibs_server_icon,
+	IDC_PROTOCOLS, ibs_capabilities,
+	IDC_CAPABILITIES_TEXT, ibs_capabilities,
+	IDC_PRODNAME, ibs_prodname,
+	IDC_PATH, ibs_image_path,
+	IDC_LOCATION_TEXT, ibs_image_path,
+	IDC_STAT1, ibs_version,
+	IDC_VERSION_TEXT, ibs_version,
+	IDC_STAT2, ibs_num_dbs_attached,
+	IDC_NUM_ATTACH_TEXT, ibs_num_dbs_attached,
+	IDC_STAT3, ibs_num_dbs,
+	IDC_NUM_DB_TEXT, ibs_num_dbs,
+	IDC_REFRESH, ibs_refresh,
+	0, 0
+};
+
 // Window procedures
-LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
+LRESULT APIENTRY GeneralPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions to be called from this file only.
 static char *MakeVersionString(char *, int, USHORT);
 static void RefreshUserCount(HWND);
 
-HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask)
+HWND DisplayProperties(HWND hParentWnd,
+					   HINSTANCE hInst, USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -85,7 +117,7 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 
 	PROPSHEETPAGE PSPages[1];
 	PSPages[0].dwSize = sizeof(PROPSHEETPAGE);
-	PSPages[0].dwFlags = PSP_USETITLE;
+	PSPages[0].dwFlags = PSP_USETITLE | PSP_HASHELP;
 	PSPages[0].hInstance = hInstance;
 	PSPages[0].pszTemplate = MAKEINTRESOURCE(GENERAL_DLG);
 	PSPages[0].pszTitle = "General";
@@ -94,7 +126,8 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 
 	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
-	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;
+	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE |
+		PSH_USEICONID | PSH_MODELESS;
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBSVR);
@@ -104,22 +137,23 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;
 	PSHdr.pfnCallback = NULL;
 
-	// Initialize the gray brush to paint the background
-	// for all prop. sheet pages and their controls
+// Initialize the gray brush to paint the background
+// for all prop. sheet pages and their controls
 	hGrayBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 
 	hPSDlg = (HWND) PropertySheet(&PSHdr);
 
-	if (hPSDlg == 0 || hPSDlg == (HWND) -1)
-	{
-		gds__log("Create property sheet window failed. Error code %d", GetLastError());
+	if (hPSDlg <= 0)
 		hPSDlg = NULL;
-	}
+	else
+		// Add the Configuration pages
+		AddConfigPages(hPSDlg, hInstance);
 
 	return hPSDlg;
 }
 
-LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
+							 LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -138,32 +172,37 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
  *  Description: This is the window procedure for the "General" page dialog
  *               of the property sheet dialog box. All the Property Sheet
  *               related events are passed as WM_NOTIFY messages and they
- *               are identified within the LPARAM which will be pointer to
+ *               are identified within the LPARAM which will be pointer to 
  *               the NMDR structure
  *****************************************************************************/
 
-	switch (unMsg)
-	{
+	switch (unMsg) {
 	case WM_INITDIALOG:
 		{
-			char szText[BUFFER_MEDIUM];
+			char szText[MSG_STRINGLEN];
 			lstrcpy(szText, GDS_VERSION);
 			SetDlgItemText(hDlg, IDC_STAT1, szText);
 
+			LoadString(hInstance, IDS_UNLIMITED_USERS, szText, MSG_STRINGLEN);
+
+			SetDlgItemText(hDlg, IDC_LICENSE, szText);
+
 			if (usServerFlags & (SRVR_inet | SRVR_wnet))
-				LoadString(hInstance, IDS_SERVERPROD_NAME, szText, sizeof(szText));
+				LoadString(hInstance,
+						   IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
 			else
-				LoadString(hInstance, IDS_LOCALPROD_NAME, szText, sizeof(szText));
+				LoadString(hInstance,
+						   IDS_LOCALPROD_NAME, szText, MSG_STRINGLEN);
 
 			SetDlgItemText(hDlg, IDC_PRODNAME, szText);
 
-			char szWindowText[BUFFER_MEDIUM];
+			char szWindowText[WIN_TEXTLEN];
 			MakeVersionString(szWindowText, sizeof(szWindowText), usServerFlags);
 			SetDlgItemText(hDlg, IDC_PROTOCOLS, szWindowText);
 
 			GetModuleFileName(hInstance, szWindowText, sizeof(szWindowText));
 			char* pszPtr = strrchr(szWindowText, '\\');
-			pszPtr[1] = 0x00;
+			*(pszPtr + 1) = 0x00;
 
 			ChopFileName(szWindowText, szWindowText, 38);
 			SetDlgItemText(hDlg, IDC_PATH, szWindowText);
@@ -179,29 +218,48 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	case WM_CTLCOLORBTN:
 		{
 			OSVERSIONINFO OsVersionInfo;
-			ZeroMemory(&OsVersionInfo, sizeof(OsVersionInfo));
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx(&OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
+				OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hGrayBrush;
 			}
 		}
 		break;
-	case WM_COMMAND:
-		switch (wParam)
+	case WM_HELP:
 		{
+			LPHELPINFO lphi = (LPHELPINFO) lParam;
+			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
+			{
+				WinHelp(static_cast<HWND>(lphi->hItemHandle),
+						"IBSERVER.HLP",
+						HELP_WM_HELP, (DWORD) (LPVOID) aMenuHelpIDs);
+			}
+		}
+		return TRUE;
+	case WM_CONTEXTMENU:
+		{
+			WinHelp((HWND) wParam,
+					"IBSERVER.HLP",
+					HELP_CONTEXTMENU, (DWORD) (LPVOID) aMenuHelpIDs);
+		}
+		return TRUE;
+	case WM_COMMAND:
+		switch (wParam) {
 		case IDC_REFRESH:
 			RefreshUserCount(hDlg);
 			break;
 		}
 		break;
 	case WM_NOTIFY:
-		switch (((LPNMHDR) lParam)->code)
-		{
+		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:
-			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+			break;
+		case PSN_HELP:
+			HelpCmd(hDlg, hInstance, ibsp_Server_Information_Properties);
 			break;
 		}
 		break;
@@ -209,7 +267,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
+static char *MakeVersionString(char *pchBuf, int nLen,
+							   USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -229,16 +288,14 @@ static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
 	char* p = pchBuf;
 	const char* const end = p + nLen;
 
-	if (usServerFlagMask & SRVR_inet)
-	{
+	if (usServerFlagMask & SRVR_inet) {
 		p += LoadString(hInstance, IDS_TCP, p, end - p);
 		if (p < end)
 			*p++ = '\r';
 		if (p < end)
 			*p++ = '\n';
 	}
-	if (usServerFlagMask & SRVR_wnet)
-	{
+	if (usServerFlagMask & SRVR_wnet) {
 		p += LoadString(hInstance, IDS_NP, p, end - p);
 		if (p < end)
 			*p++ = '\r';
@@ -267,18 +324,18 @@ static void RefreshUserCount(HWND hDlg)
  *  Description: This method calls the JRD_num_attachments() function to get
  *               the number of active attachments to the server.
  *****************************************************************************/
-	ULONG num_att = 0, num_dbs = 0, num_svc = 0;
-	const HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
+	USHORT num_att = 0;
+	USHORT num_dbs = 0;
+	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs, &num_svc);
+	JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
 
-	char szText[BUFFER_MEDIUM];
+	char szText[MSG_STRINGLEN];
 	sprintf(szText, "%d", num_att);
 	SetDlgItemText(hDlg, IDC_STAT2, szText);
 	sprintf(szText, "%d", num_dbs);
 	SetDlgItemText(hDlg, IDC_STAT3, szText);
-	sprintf(szText, "%d", num_svc);
-	SetDlgItemText(hDlg, IDC_STAT4, szText);
 
 	SetCursor(hOldCursor);
 }
+

@@ -35,27 +35,32 @@
 #include "../qli/help_proto.h"
 #include "../qli/lex_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../common/utils_proto.h"
-#include "../common/classes/fb_string.h"
-
-using MsgFormat::SafeArg;
-
 
 const char* INDENT	= "  ";
 const int COLUMN_WIDTH	= 20;
 const int RIGHT_MARGIN	= 70;
 
-const char* const TARGET = "help.fdb";
+#ifdef VMS
+const char* TARGET	= "[syshlp]help.fdb";
+#endif
+
+#ifdef UNIX
+const char* TARGET	= "help/help.fdb";
+#endif
+
+#if (defined WIN_NT)
+const char* TARGET	= "help/help.fdb";
+#endif
 
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
 static int additional_topics(const TEXT*, const TEXT*, const TEXT*);
-static void print_more(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*); //, bool);
+static void print_more(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*, bool);
 static void print_topic(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*, bool);
 static const TEXT* strip(const TEXT*);
 
 
-void HELP_fini()
+void HELP_fini(void)
 {
 /**************************************
  *
@@ -67,8 +72,7 @@ void HELP_fini()
  *
  **************************************/
 
-	if (HELP_DB)
-	{
+	if (HELP_DB) {
 		COMMIT;
 		FINISH;
 	}
@@ -87,11 +91,10 @@ void HELP_help( qli_syntax* node)
  *	Give the poor sucker help.
  *
  **************************************/
-	if (!HELP_DB)
-	{
-		Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_HELP, TARGET);
-		TEXT target[MAXPATHLEN];
-		name.copyTo(target, sizeof target);
+	TEXT target[MAXPATHLEN];
+
+	if (!HELP_DB) {
+		gds__prefix(target, TARGET);
 		READY
 		ON_ERROR
 			ERRQ_database_error(NULL, gds_status);
@@ -104,9 +107,9 @@ void HELP_help( qli_syntax* node)
 	const TEXT** topic = topics;
 	*topic++ = "QLI";
 
-	qli_name** ptr;
-	qli_name** end;
-	for (ptr = (qli_name**) node->syn_arg, end = ptr + node->syn_count; ptr < end; ptr++)
+	NAM *ptr, *end;
+	for (ptr = (NAM *) node->syn_arg, end = ptr + node->syn_count; ptr < end;
+		 ptr++)
 	{
 		*topic++ = (*ptr)->nam_string;
 	}
@@ -132,14 +135,14 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
  **************************************/
 	TEXT line[256];
 
-	// Print list of know topics.  When we find the first, print the banner, if any
+/* Print list of know topics.  When we find the first,
+   print the banner, if any */
 
 	TEXT* ptr = line;
 	USHORT topics = 0;
 	USHORT l = strlen(parent);
 
-	FOR X IN TOPICS
-		WITH X.PARENT EQ parent SORTED BY X.TOPIC
+	FOR X IN TOPICS WITH X.PARENT EQ parent SORTED BY X.TOPIC
 		if (QLI_abort)
 			return 0;
 		const TEXT* p = X.TOPIC;
@@ -152,8 +155,7 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 		p =
 			line +
 			((ptr - line + COLUMN_WIDTH - 1) / COLUMN_WIDTH) * COLUMN_WIDTH;
-		if (p + l > line + RIGHT_MARGIN)
-		{
+		if (p + l > line + RIGHT_MARGIN) {
 			*ptr = 0;
 			printf("%s%s\n", INDENT, line);
 			p = ptr = line;
@@ -167,8 +169,7 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 		*ptr++ = ' ';
 	END_FOR;
 
-	if (ptr != line)
-	{
+	if (ptr != line) {
 		*ptr = 0;
 		printf("%s%s\n", INDENT, line);
 	}
@@ -177,12 +178,13 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 }
 
 
-static void print_more(USHORT level,
+static void print_more(
+					   USHORT level,
 					   USHORT depth,
 					   const TEXT** topics,
-					   USHORT* max_level,
-					   const TEXT* parent)
-					   //bool error_flag) // unused
+					   USHORT * max_level,
+					   const TEXT* parent,
+					   bool error_flag) // unused
 {
 /**************************************
  *
@@ -197,14 +199,14 @@ static void print_more(USHORT level,
  **************************************/
 	TEXT buffer[256], topic[80], prompt[80];
 
-	ERRQ_msg_get(502, prompt, sizeof(prompt));	// Msg502 "Subtopic? "
+	ERRQ_msg_get(502, prompt);	/* Msg502 "Subtopic? "  */
 
-	// Prompt the user for a line
+// Prompt the user for a line
 
 	if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 		return;
 
-	// Upcase the response and zap the blanks
+// Upcase the response and zap the blanks
 	TEXT* p = topic;
 	topics[1] = p;
 
@@ -213,17 +215,16 @@ static void print_more(USHORT level,
 			*p++ = UPPER(*q);
 	*p = 0;
 
-	// If we got anything, print the new topic
+// If we got anything, print the new topic
 
 	if (p != topic)
-	{
-		print_topic(level + 1, depth + 1, topics + 1, max_level, parent, false);
-		// strange, it doesn't use error_flag
-	}
+		print_topic(level + 1, depth + 1, topics + 1, max_level, parent,
+					false);  // strange, it doesn't use error_flag
 }
 
 
-static void print_topic(USHORT level,
+static void print_topic(
+						USHORT level,
 						USHORT depth,
 						const TEXT** topics,
 						USHORT* max_level, const TEXT* parent, bool error_flag)
@@ -243,12 +244,11 @@ static void print_topic(USHORT level,
  **************************************/
 	TEXT string[128], banner[128], buffer[128], prompt[80];
 
-	// Copy the parent string inserting a blank at the end
+// Copy the parent string inserting a blank at the end
 
 	TEXT* p = string;
 
-	if (*parent)
-	{
+	if (*parent) {
 		const TEXT* q = parent;
 		while (*q)
 			*p++ = *q++;
@@ -258,20 +258,18 @@ static void print_topic(USHORT level,
 	TEXT* const next = p;
 	USHORT count = 0;
 
-	FOR X IN TOPICS
-		WITH X.FACILITY EQ "QLI" AND
+	FOR X IN TOPICS WITH X.FACILITY EQ "QLI" AND
 		(X.TOPIC STARTING WITH * topics AND X.PARENT EQ parent) OR
          (X.TOPIC = X.FACILITY AND X.TOPIC = *topics AND X.TOPIC = X.PARENT)
         count++;
 	END_FOR;
 
 	if (count > 1)
-		ERRQ_msg_put(80, SafeArg() << count << *topics);	// Msg80 [%d topics matched %s]
+		ERRQ_msg_put(80, (TEXT*)(IPTR) count, *topics, NULL, NULL, NULL);	/* Msg80 [%d topics matched %s] */
 
 	count = 0;
 
-	FOR(LEVEL level) X IN TOPICS
-		WITH X.FACILITY EQ "QLI" AND
+	FOR(LEVEL level) X IN TOPICS WITH X.FACILITY EQ "QLI" AND
 		(X.TOPIC STARTING WITH * topics AND X.PARENT EQ parent) OR
         (X.TOPIC = X.FACILITY AND X.TOPIC = *topics AND X.TOPIC = X.PARENT)
 		SORTED BY X.TOPIC
@@ -279,10 +277,8 @@ static void print_topic(USHORT level,
         if (QLI_abort)
 			  return;
 
-		if (count)
-		{
-			ERRQ_msg_get(503, prompt, sizeof(prompt));
-			// Msg503 "\ntype <cr> for next topic or <EOF> to stop: "
+		if (count) {
+			ERRQ_msg_get(503, prompt);	/* Msg503 "\ntype <cr> for next topic or <EOF> to stop: " */
 			if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 				return;
 		}
@@ -295,9 +291,9 @@ static void print_topic(USHORT level,
 			*p++ = *q++;
 		*p = 0;
 		if (level < depth)
-			print_topic(level + 1, depth, topics + 1, max_level, string, error_flag);
-		else
-		{
+			print_topic(level + 1, depth, topics + 1, max_level, string,
+						error_flag);
+		else {
 			printf("\n%s\n\n", strip(string));
 			QLI_skip_line = true;
 			FOR B IN X.TEXT
@@ -306,19 +302,18 @@ static void print_topic(USHORT level,
 				B.SEGMENT[B.LENGTH] = 0;
 				printf("%s%s", INDENT, B.SEGMENT);
 			END_FOR;
-			ERRQ_msg_format(81, sizeof(banner), banner, SafeArg() << INDENT);
-			// Msg81 %sSub-topics available:
+			ERRQ_msg_format(81, sizeof(banner), banner, INDENT, NULL, NULL,
+							NULL, NULL);	// Msg81 %sSub-topics available:
 			if (additional_topics(string, banner, INDENT))
-				print_more(level, depth, topics, max_level, string); //, error_flag);
+				print_more(level, depth, topics, max_level, string,
+						   error_flag);
 		}
 	END_FOR;
 
-	if (!count && error_flag && level > *max_level)
-	{
+	if (!count && error_flag && level > *max_level) {
 		const TEXT* path = strip(parent);
-		ERRQ_msg_put(82, SafeArg() << path << *topics);	// Msg82 No help is available for %s %s
-		ERRQ_msg_format(83, sizeof(banner), banner, SafeArg() << path);
-		// Msg83 Sub-topics available for %s are:
+		ERRQ_msg_put(82, path, *topics, NULL, NULL, NULL);	// Msg82 No help is available for %s %s
+		ERRQ_msg_format(83, sizeof(banner), banner, path, NULL, NULL, NULL, NULL);	// Msg83 Sub-topics available for %s are:
 		additional_topics(parent, banner, path);
 	}
 }
@@ -348,3 +343,4 @@ static const TEXT* strip( const TEXT* string)
 
 	return p;
 }
+

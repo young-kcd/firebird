@@ -21,7 +21,6 @@
  * Contributor(s): ______________________________________.
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -59,8 +58,7 @@ enum {
 
 static void print(const SCHAR **, int, const SCHAR *);
 
-struct VERB
-{
+struct VERB {
 	UCHAR blr;
 	const SCHAR* internal;
 	const SCHAR* internal2;
@@ -70,53 +68,49 @@ struct VERB
 	const SCHAR* sub_type;
 };
 
-static const VERB verbs[] =
+static const VERB verbs[] = 
 {
 	PAIR(nod_assignment, blr_assignment, e_asgn_length, 2, STATEMENT, VALUE),
 	PAIR(nod_erase, blr_erase, e_erase_length, 0, STATEMENT, OTHER),
 	PAIR(nod_dcl_variable, blr_dcl_variable, e_dcl_length, 0, STATEMENT, OTHER),
-	PAIR(nod_class_stmtnode_jrd, blr_fetch, 1, 0, STATEMENT, STATEMENT),
-	PAIR(nod_class_stmtnode_jrd, blr_for, 1, 0, STATEMENT, STATEMENT),
+	PAIR(nod_for, blr_fetch, e_for_length, 3, STATEMENT, STATEMENT),
+	PAIR(nod_for, blr_for, e_for_length, 3, STATEMENT, STATEMENT),
 	PAIR(nod_handler, blr_handler, 1, 1, STATEMENT, OTHER),
-	PAIR(nod_class_stmtnode_jrd, blr_if, 1, 0, STATEMENT, STATEMENT),
+	PAIR(nod_if, blr_if, e_if_length, 3, STATEMENT, STATEMENT),
 	PAIR(nod_label, blr_label, e_lbl_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_leave, blr_leave, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_list, blr_begin, 0, 0, STATEMENT, STATEMENT),
 	PAIR(nod_loop, blr_loop, 1, 1, STATEMENT, STATEMENT),
 	PAIR(nod_message, blr_message, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_modify, blr_modify, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_modify, blr_modify2, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_class_stmtnode_jrd, blr_user_savepoint, 1, 0, STATEMENT, OTHER),
+	PAIR(nod_user_savepoint, blr_user_savepoint, e_sav_length, 0, STATEMENT, OTHER),
 	PAIR(nod_receive, blr_receive, e_send_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_select, blr_select, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_class_stmtnode_jrd, blr_send, 1, 0, STATEMENT, STATEMENT),
+	PAIR(nod_send, blr_send, e_send_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_store, blr_store, e_sto_length, e_sto_length - 1, STATEMENT, STATEMENT),
 	PAIR(nod_store, blr_store2, e_sto_length, e_sto_length - 1, STATEMENT, STATEMENT),
-	PAIR(nod_class_stmtnode_jrd, blr_post, 1, 0, STATEMENT, VALUE),
-	PAIR(nod_class_stmtnode_jrd, blr_post_arg, 1, 0, STATEMENT, VALUE),
+	PAIR(nod_post, blr_post, 2, 1, STATEMENT, VALUE),
+	PAIR(nod_post, blr_post_arg, 2, 2, STATEMENT, VALUE),
 	PAIR(nod_exec_sql, blr_exec_sql, 1, 1, STATEMENT, VALUE),
 	PAIR(nod_exec_into, blr_exec_into, 0, 0, STATEMENT, OTHER),
-	PAIR(nod_exec_stmt, blr_exec_stmt, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_internal_info, blr_internal_info, 1, 1, VALUE, VALUE),
 	PAIR2(nod_add, blr_add, 2, 2, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_count, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_count2, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_count_distinct, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_max, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_min, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_total, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_total_distinct, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_average, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_average_distinct, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_list, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_agg_list_distinct, 1, 0, VALUE, VALUE),
+	PAIR(nod_agg_count, blr_agg_count, 1, 0, VALUE, VALUE),
+	PAIR(nod_agg_count2, blr_agg_count2, 1, 1, VALUE, VALUE),
+	PAIR(nod_agg_count_distinct, blr_agg_count_distinct, 2, 1, VALUE, VALUE),
+	PAIR(nod_agg_max, blr_agg_max, 1, 1, VALUE, VALUE),
+	PAIR(nod_agg_min, blr_agg_min, 1, 1, VALUE, VALUE),
+	PAIR2(nod_agg_total, blr_agg_total, 1, 1, VALUE, VALUE),
+	PAIR2(nod_agg_total_distinct, blr_agg_total_distinct, 2, 1, VALUE, VALUE),
+	PAIR2(nod_agg_average, blr_agg_average, 1, 1, VALUE, VALUE),
+	PAIR2(nod_agg_average_distinct, blr_agg_average_distinct, 2, 1, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter2, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter3, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_variable, blr_variable, e_var_length, 0, VALUE, VALUE),
 	PAIR(nod_user_name, blr_user_name, 1, 0, VALUE, VALUE),
 	PAIR2(nod_average, blr_average, e_stat_length, 2, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_concatenate, 1, 0, VALUE, VALUE),
+	PAIR(nod_concatenate, blr_concatenate, 2, 2, VALUE, VALUE),
 	PAIR(nod_count, blr_count, e_stat_length, 1, VALUE, VALUE),
 /* count2
     , PAIR (nod_count2, blr_count2, e_stat_length, 2, VALUE, VALUE)
@@ -165,9 +159,11 @@ static const VERB verbs[] =
 	PAIR(nod_not, blr_not, 1, 1, TYPE_BOOL, TYPE_BOOL),
 	PAIR(nod_rse, blr_rse, 0, 0, TYPE_RSE, OTHER),
 
+	// nodes for SCROLLABLE_CURSORS
+	PAIR(nod_seek, blr_seek, e_seek_length, 2, STATEMENT, VALUE),
+
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
-	PAIR(nod_union, blr_recurse, 0, 0, RELATION, OTHER),
 	PAIR(nod_aggregate, blr_aggregate, e_agg_length, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_relation, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid, 0, 0, RELATION, OTHER),
@@ -178,7 +174,7 @@ static const VERB verbs[] =
 	PAIR(nod_exec_proc, blr_exec_pid, e_esp_length, 4, STATEMENT, OTHER),
 	PAIR(nod_block, blr_block, e_blk_length, e_blk_length, STATEMENT, STATEMENT),
 	PAIR(nod_error_handler, blr_error_handler, e_err_length, 1, STATEMENT, OTHER),
-	PAIR(nod_class_stmtnode_jrd, blr_abort, 1, 0, STATEMENT, OTHER),
+	PAIR(nod_abort, blr_abort, 2, 0, STATEMENT, OTHER),
 	PAIR(nod_cast, blr_cast, e_cast_length, 1, VALUE, VALUE),
 	PAIR(nod_rse, blr_singular, 0, 0, TYPE_RSE, OTHER),
 	PAIR(nod_start_savepoint, blr_start_savepoint, 1, 0, STATEMENT, OTHER),
@@ -186,12 +182,12 @@ static const VERB verbs[] =
 
 	/* nodes for set plan */
 	PAIR(nod_plan, blr_plan, 1, 1, VALUE, VALUE),
+	PAIR(nod_merge, blr_merge, 0, 0, VALUE, VALUE),
 	PAIR(nod_join, blr_join, 0, 0, VALUE, VALUE),
 	PAIR(nod_sequential, blr_sequential, 0, 0, ACCESS_TYPE, OTHER),
 	PAIR(nod_navigational, blr_navigational, 1, 1, ACCESS_TYPE, VALUE),
 	PAIR(nod_indices, blr_indices, 1, 0, ACCESS_TYPE, VALUE),
 	PAIR(nod_retrieve, blr_retrieve, 2, 0, ACCESS_TYPE, VALUE),
-
 	PAIR(nod_relation, blr_relation2, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid2, 0, 0, RELATION, OTHER),
 	PAIR2(nod_set_generator, blr_set_generator, e_gen_length, 1, STATEMENT, VALUE),
@@ -208,23 +204,12 @@ static const VERB verbs[] =
 	PAIR(nod_current_time, blr_current_time2, e_current_time_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp, e_current_timestamp_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp2, e_current_timestamp_length, 0, VALUE, OTHER),
-
 	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
 	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cursor_length, 2, STATEMENT, OTHER),
 	PAIR(nod_cursor_stmt, blr_cursor_stmt, e_cursor_stmt_length, 0, STATEMENT, OTHER),
 	PAIR(nod_lowcase, blr_lowcase, 1, 1, VALUE, VALUE),
 	PAIR(nod_strlen, blr_strlen, e_strlen_length, e_strlen_count, VALUE, VALUE),
 	PAIR(nod_trim, blr_trim, e_trim_length, e_trim_count, VALUE, VALUE),
-	PAIR(nod_init_variable, blr_init_variable, e_init_var_length, 0, STATEMENT, OTHER),
-	PAIR(nod_sys_function, blr_sys_function, e_sysfun_length, e_sysfun_count, VALUE, VALUE),
-	PAIR(nod_class_stmtnode_jrd, blr_auto_trans, 1, 0, STATEMENT, STATEMENT),
-	PAIR(nod_similar, blr_similar, 3, 3, TYPE_BOOL, VALUE),
-	PAIR(nod_stmt_expr, blr_stmt_expr, e_stmt_expr_length, 2, VALUE, OTHER),
-	PAIR(nod_derived_expr, blr_derived_expr, e_derived_expr_length, e_derived_expr_count, VALUE, VALUE),
-	PAIR(nod_window, blr_window, e_agg_length, 0, RELATION, OTHER),
-	PAIR(nod_continue_loop, blr_continue_loop, 1, 0, STATEMENT, OTHER),
-	PAIR(nod_class_exprnode_jrd, blr_agg_function, 1, 0, VALUE, VALUE),
-	PAIR(nod_class_exprnode_jrd, blr_substring_similar, 1, 0, VALUE, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 
@@ -245,8 +230,8 @@ int main(int argc, char *argv[])
  *	Spit out a conversion table.
  *
  **************************************/
-	for (int blr = 0; blr < FB_NELEM(table); blr++)
-	{
+	{ // scope
+	for (int blr = 0; blr < FB_NELEM(table); blr++) {
 		table[blr] = NULL;
 		table2[blr] = NULL;
 		lengths[blr] = NULL;
@@ -255,19 +240,18 @@ int main(int argc, char *argv[])
 		types[blr] = NULL;
 		sub_types[blr] = NULL;
 	}
+	} // scope
 
 	int max = 0;
-	for (const VERB* verb = verbs; verb->internal; ++verb)
-	{
+	for (const VERB* verb = verbs; verb->internal; ++verb) {
 		const int blr = verb->blr;
-		if (table[blr])
-		{
+		if (table[blr]) {
 			fprintf(stderr, "BLRTABLE: duplicate blr %d\n", blr);
 			exit(1);
 		}
 		table[blr] = verb->internal;
-		table2[blr] = (verb->internal2 == 0) ? verb->internal : verb->internal2;
-
+		table2[blr] =
+			(verb->internal2 == 0) ? verb->internal : verb->internal2;
 		lengths[blr] = verb->length;
 		counts[blr] = verb->count;
 		types[blr] = verb->type;
@@ -298,7 +282,7 @@ int main(int argc, char *argv[])
 }
 
 
-static void print(const SCHAR** tableL, int max, const SCHAR* fudge)
+static void print(const SCHAR ** tableL, int max, const SCHAR * fudge)
 {
 /**************************************
  *
@@ -313,16 +297,14 @@ static void print(const SCHAR** tableL, int max, const SCHAR* fudge)
 	SCHAR buffer[100];
 	char* s = buffer;
 
-	for (int blr = 0; blr <= max; blr++, tableL++)
-	{
+	for (int blr = 0; blr <= max; blr++, tableL++) {
 		if (*tableL)
 			sprintf(s, "%s%s, ", fudge, *tableL);
 		else
 			sprintf(s, " 0, ");
 		while (*s)
 			s++;
-		if (s > buffer + 50)
-		{
+		if (s > buffer + 50) {
 			printf("\t%s\n/*%3d*/", buffer, blr + 1);
 			s = buffer;
 			*s = 0;

@@ -38,12 +38,12 @@
 #ifndef JRD_QUAD_PROTO_H
 #define JRD_QUAD_PROTO_H
 
-SQUAD	QUAD_add(const SQUAD*, const SQUAD*, ErrorFunction);
+SQUAD	QUAD_add(const SQUAD*, const SQUAD*, FPTR_ERROR);
 SSHORT	QUAD_compare(const SQUAD*, const SQUAD*);
-SQUAD	QUAD_from_double(const double*, ErrorFunction);
-SQUAD	QUAD_multiply(const SQUAD*, const SQUAD*, ErrorFunction);
-SQUAD	QUAD_negate(const SQUAD*, ErrorFunction);
-SQUAD	QUAD_subtract(const SQUAD*, const SQUAD*, ErrorFunction);
+SQUAD	QUAD_from_double(const double*, FPTR_ERROR);
+SQUAD	QUAD_multiply(const SQUAD*, const SQUAD*, FPTR_ERROR);
+SQUAD	QUAD_negate(const SQUAD*, FPTR_ERROR);
+SQUAD	QUAD_subtract(const SQUAD*, const SQUAD*, FPTR_ERROR);
 
 #endif // JRD_QUAD_PROTO_H
 

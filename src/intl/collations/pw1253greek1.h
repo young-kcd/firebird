@@ -24,16 +24,16 @@ const int UPPERCASE_LEN			= 256;
 const int NOCASESORT_LEN		= 256;
 const int LDRV_TIEBREAK			= LOCAL_EXPAND;
 
-//const int MAX_NCO_PRIMARY		= 184;
+const int MAX_NCO_PRIMARY		= 184;
 const int MAX_NCO_SECONDARY		= 6;
 const int MAX_NCO_TERTIARY		= 0;
-//const int MAX_NCO_IGNORE		= 0;
+const int MAX_NCO_IGNORE		= 0;
 const int NULL_SECONDARY		= 0;
 const int NULL_TERTIARY			= 0;
-//const int FIRST_IGNORE			= 1;
+const int FIRST_IGNORE			= 1;
 const int FIRST_TERTIARY		= 1;
-const int FIRST_SECONDARY		= (FIRST_TERTIARY + MAX_NCO_TERTIARY + 1);
-const int FIRST_PRIMARY			= (FIRST_SECONDARY + MAX_NCO_SECONDARY + 1);
+const int FIRST_SECONDARY		= (FIRST_TERTIARY+MAX_NCO_TERTIARY+1);
+const int FIRST_PRIMARY			= (FIRST_SECONDARY+MAX_NCO_SECONDARY+1);
 
 static const BYTE ToUpperConversionTbl[UPPERCASE_LEN] = {
 	0,							/*     0 ->     0 */

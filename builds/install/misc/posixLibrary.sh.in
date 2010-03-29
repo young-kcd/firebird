@@ -1,26 +1,4 @@
 #!/bin/sh
-#
-#  The contents of this file are subject to the Initial
-#  Developer's Public License Version 1.0 (the "License");
-#  you may not use this file except in compliance with the
-#  License. You may obtain a copy of the License at
-#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
-#
-#  Software distributed under the License is distributed AS IS,
-#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
-#  See the License for the specific language governing rights
-#  and limitations under the License.
-#
-#  The Original Code was created by Mark O'Donohue
-#  for the Firebird Open Source RDBMS project.
-#
-#  Copyright (c) Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-#  and all contributors signed below.
-#
-#  All Rights Reserved.
-#  Contributor(s): ______________________________________.
-#		Alex Peshkoff
-#
 
 
 #------------------------------------------------------------------------
@@ -29,11 +7,14 @@
 Answer=""
 OrigPasswd=""
 TmpFile=""
+FBRootDir=@prefix@
+export FBRootDir
+FBBin=$FBRootDir/bin
+export FBBin
 SecurityDatabase=security2.fdb
-UninstallScript=FirebirdUninstall.sh
 ArchiveDateTag=`date +"%Y%m%d_%H%M"`
 export ArchiveDateTag
-ArchiveMainFile="@FB_CONFDIR@_${ArchiveDateTag}"
+ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"
 export ArchiveMainFile
 
 
@@ -41,7 +22,7 @@ export ArchiveMainFile
 # Create temporary file. In case mktemp failed, do something...
 
 MakeTemp() {
-	TmpFile=`mktemp $mktOptions /tmp/firebird_install.XXXXXX`
+	TmpFile=`mktemp /tmp/firebird_install.XXXXXX`
 	if [ $? -ne 0 ]
 	then
 		TmpFile=/tmp/firebird_install
@@ -133,7 +114,7 @@ checkInstallUser() {
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
-	pid=`ps -eaf$psOptions | grep inetd | grep -v grep | awk '{print $2}'`
+	pid=`ps -eaf | grep inetd | grep -v grep | awk '{print $2}'`
     if [ "$pid" ]
     then
         kill -HUP $pid
@@ -187,30 +168,13 @@ removeInetdServiceEntry() {
 
 checkIfServerRunning() {
 
-	checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
-    if [ ! -z "$checkString" ]
-	then
-		serverMode=super
-	fi
-
-# have to be root to stop the server
-	if [ "$1" != "install-embedded" ]
-    then
-    	stopSuperServerIfRunning
-    fi
+    stopSuperServerIfRunning
 
 
 # Check is server is being actively used.
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_smp_server)\b" |grep -v grep`
-    if [ ! -z "$checkString" ]
-    then
-        echo "An instance of the Firebird SuperClassic server seems to be running."
-        echo "Please quit all Firebird applications and then proceed."
-        exit 1
-    fi
+    checkString=`ps -eaf | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
 
-    checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
@@ -218,7 +182,8 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -eaf | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -229,7 +194,8 @@ checkIfServerRunning() {
 
 # The following check for running interbase or firebird 1.0 servers.
 
-    checkString=`ps -ef$psOptions | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+    checkString=`ps -eaf | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
@@ -238,7 +204,8 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -eaf | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Classic server seems to be running." 
@@ -247,11 +214,15 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-# have to be root to modify (x)inetd
-	if [ "$1" != "install-embedded" ]
-	then
-		removeInetdServiceEntry
-	fi
+	removeInetdServiceEntry
+	
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -eaf | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+	do
+        kill $i
+	done
+
 }
 
 
@@ -264,7 +235,7 @@ askForOrigDBAPassword() {
     do
         AskQuestion "Please enter current password for SYSDBA user: "
         OrigPasswd=$Answer
-        if ! runSilent "@FB_BINDIR@/gsec -user sysdba -password $OrigPasswd -di"
+        if ! runSilent "$FBBin/gsec -user sysdba -password $OrigPasswd -di"
 		then
 			OrigPasswd=""
 		fi
@@ -293,7 +264,7 @@ askUserForNewDBAPassword() {
         NewPasswd=$Answer
         if [ ! -z "$NewPasswd" ]
         then
-            if ! runSilent "@FB_BINDIR@/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
+            if ! runSilent "$FBBin/gsec -user sysdba -password $OrigPasswd -modify sysdba -pw $NewPasswd"
             then
 				NewPasswd=""
 			fi
@@ -315,13 +286,16 @@ replaceLineInFile() {
     oldLine=`grep "$3" $FileName`
 
     if [ -z "$oldLine" ] 
-      then
+    then
         echo "$newLine" >> "$FileName"
     elif [ "$oldLine" != "$newLine"  ]
-      then
+    then
 		MakeTemp
         grep -v "$oldLine" "$FileName" > "$TmpFile"
         echo "$newLine" >> $TmpFile
+	    # The \n is needed, some /etc/services files are missing a trailing
+    	# line feed - MOD 12-Dec-2003
+		echo "" >>$TmpFile
         cp $TmpFile $FileName && rm -f $TmpFile
         echo "Updated $1"
     fi
@@ -360,11 +334,11 @@ removeLineFromFile() {
 
 
 #------------------------------------------------------------------------
-# Write new password to the @FB_CONFDIR@/SYSDBA.password file
+# Write new password to the @prefix@/SYSDBA.password file
 
 writeNewPassword() {
     NewPasswd=$1
-	DBAPasswordFile=@FB_CONFDIR@/SYSDBA.password
+	DBAPasswordFile=$FBRootDir/SYSDBA.password
 
 	cat <<EOT >$DBAPasswordFile
 # Firebird generated password for user SYSDBA is:
@@ -385,7 +359,7 @@ EOT
 	cat <<EOT >>$DBAPasswordFile
 
 # Your password can be changed to a more suitable one using the
-# @FB_BINDIR@/gsec utility.
+# @prefix@/bin/changeDBAPassword.sh script
 EOT
 
     chmod u=r,go= $DBAPasswordFile
@@ -396,7 +370,7 @@ EOT
 
     if [ $NewPasswd != "masterkey" ]
     then
-        runSilent "@FB_BINDIR@/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
+        runSilent "$FBBin/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
     fi
 }
 
@@ -414,6 +388,39 @@ changeDBAPassword() {
 
 
 #------------------------------------------------------------------------
+# UpdateHostsDotEquivFile
+# The /etc/hosts.equiv file is needed to allow local access for super server
+# from processes on the machine to port @FB_SERVICE_PORT@ on the local machine.
+# The two host names that are needed there are 
+# localhost.localdomain and whatever hostname returns.
+
+# Automatically adding /etc/hosts.equiv file was security risk,
+# therefore it was disabled. But in order to let anonymous
+# services operate, we need /etc/gds_hosts.equiv instead.
+# I hope nobody except firebird understands it.
+
+updateHostsDotFile() {
+	hostEquivFile=/etc/gds_hosts.equiv
+
+	if [ ! -f $hostEquivFile ]
+	then
+		touch $hostEquivFile
+		chown root:root $hostEquivFile
+		chmod u=rw,go=r $hostEquivFile
+	fi
+
+	newLine="localhost"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+
+	newLine="localhost.localdomain"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+
+	newLine="`hostname`"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+}
+
+
+#------------------------------------------------------------------------
 #  buildUninstallFile
 #  This will work only for the .tar.gz install and it builds an
 #  uninstall shell script.  The RPM system, if present, takes care of it's own.
@@ -426,12 +433,10 @@ buildUninstallFile() {
         return
     fi
 
-	cp manifest.txt @FB_MISCDIR@
+    cp manifest.txt $FBRootDir/misc
 
-	cp -r scripts @FB_MISCDIR@
-	[ -f scripts/tarMainUninstall.sh ] && cp scripts/tarMainUninstall.sh @FB_SBINDIR@/$UninstallScript
-	[ -f scripts/tarmainUninstall.sh ] && cp scripts/tarmainUninstall.sh @FB_SBINDIR@/$UninstallScript
-	[ -f @FB_SBINDIR@/$UninstallScript ] && chmod u=rx,go= @FB_SBINDIR@/$UninstallScript
+    cp -r scripts $FBRootDir/misc/
+    cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
 }
 
 
@@ -478,10 +483,10 @@ createLinksForBackCompatibility() {
 	if [ "$1" ]
 	then
 		# Use library name from parameter
-		newLibrary=@FB_LIBDIR@/$1
+		newLibrary=$FBRootDir/lib/$1
 	else
 	    # Use DefaultLibrary, set by appropriate install library
-    	newLibrary=@FB_LIBDIR@/$DefaultLibrary.so
+    	newLibrary=$FBRootDir/lib/$DefaultLibrary.so
 	fi
 
 	safeLink $newLibrary @libdir@/libgds.so
@@ -497,6 +502,37 @@ createLinksForBackCompatibility() {
 removeLinksForBackCompatibility() {
     removeIfOnlyAlink @libdir@/libgds.so
     removeIfOnlyAlink @libdir@/libgds.so.0
+}
+
+
+#------------------------------------------------------------------------
+#  For security reasons most files in firebird installation are
+#  root-owned and world-readable(executable) only (including firebird).
+
+#  For some files RunUser (firebird) must have write access - 
+#  lock and log for examples.
+
+MakeFileFirebirdWritable() {
+    FileName=$1
+    chown $RunUser:$RunUser $FileName
+    chmod 0644 $FileName
+}
+
+
+#------------------------------------------------------------------------
+#  Set correct permissions for $FbRoot/doc tree 
+
+fixDocPermissions() {
+	cd $FBRootDir
+
+	for i in `find doc -print`; do
+		chown root:root $i
+		if [ -d $i ]; then
+			chmod 0755 $i
+		else
+			chmod 0644 $i
+		fi
+	done
 }
 
 
@@ -543,33 +579,22 @@ archivePriorInstallSystemFiles() {
 		exit 1
 	fi
 
-	tarArc=${ArchiveMainFile}.$tarExt
-
     oldPWD=`pwd`
     archiveFileList=""
 
     cd /
 
-	if [ -f ${oldPWD}/manifest.txt ]; then
-		manifest=`cat ${oldPWD}/manifest.txt`
-		for i in $manifest; do
-			if [ -f $i ]; then
-				i=${i#/}	# strip off leading /
-				archiveFileList="$archiveFileList $i"
-			fi
-		done
-	fi
-
-    DestFile=@FB_CONFDIR@
-    if [ -e "$DestFile" ]
+    DestFile=${FBRootDir#/}   # strip off leading /
+    if [ -e "$DestFile"  ]
     then
         echo ""
         echo ""
         echo ""
         echo "--- Warning ----------------------------------------------"
-        echo "    The installation target directory $DestFile already exists."
-        echo "    This and other related files found will be"
-        echo "    archived in the file : ${tarArc}"
+        echo "    The installation target directory: $FBRootDir"
+        echo "    Already contains a prior installation of InterBase/Firebird."
+        echo "    This and files found in /usr/include and @libdir@ will be"
+        echo "    archived in the file : ${ArchiveMainFile}"
         echo "" 
 
         if [ ! -z "$InteractiveInstall" ]
@@ -587,10 +612,9 @@ archivePriorInstallSystemFiles() {
     for i in ibase.h ib_util.h
     do
         DestFile=usr/include/$i
-        if [ -e $DestFile ]; then
-			if [ ! "`echo $archiveFileList | grep $DestFile`" ]; then
-            	archiveFileList="$archiveFileList $DestFile"
-			fi
+        if [ -e $DestFile ]
+        then
+            archiveFileList="$archiveFileList $DestFile"
         fi
     done
 
@@ -598,28 +622,37 @@ archivePriorInstallSystemFiles() {
 	do
 		for DestFile in usr/lib/$i
 	    do
-        	if [ -e $DestFile ]; then
-				if [ ! "`echo $archiveFileList | grep $DestFile`" ]; then
-    	        	archiveFileList="$archiveFileList $DestFile"
-				fi
+        	if [ -e $DestFile ]
+	        then
+    	        archiveFileList="$archiveFileList $DestFile"
         	fi
 		done
     done
 
+#    for i in `cat manifest.txt`
+#    do
+#        if [ ! -d /$i ]  # Ignore directories 
+#        then
+#            if [ -e /$i ]
+#            then
+#                archiveFileList="$archiveFileList $i"          
+#            fi
+#        fi
+#    done
+
     for i in usr/sbin/rcfirebird etc/init.d/firebird etc/rc.d/init.d/firebird
     do
         DestFile=./$i
-        if [ -e $DestFile ]; then
-			if [ ! "`echo $archiveFileList | grep $DestFile`" ]; then
-            	archiveFileList="$archiveFileList $DestFile"
-			fi
+        if [ -e /$DestFile ]
+        then
+            archiveFileList="$archiveFileList $DestFile"
         fi
     done
 	
     if [ ! -z "$archiveFileList" ]
     then
         displayMessage "Archiving..."
-        runAndCheckExit "tar -cv${tarOptions}f $tarArc $archiveFileList"
+        runAndCheckExit "tar -cvf $ArchiveMainFile $archiveFileList"
         displayMessage "Done."
 
         displayMessage "Deleting..."
@@ -639,9 +672,9 @@ archivePriorInstallSystemFiles() {
 # 
 removeInstalledFiles() {
 
-    manifestFile=@FB_MISCDIR@/manifest.txt
+    manifestFile=$FBRootDir/misc/manifest.txt
 
-    if [ ! -f "$manifestFile" ]
+    if [ ! -f  $manifestFile ]
       then
         return
     fi
@@ -670,9 +703,11 @@ removeInstalledFiles() {
 
 removeUninstallFiles() {
     # remove the uninstall scripts files.
-    rm -rf @FB_MISCDIR@/scripts
-    rm -f @FB_MISCDIR@/manifest.txt
-    rm -f @FB_SBINDIR@/$UninstallScript
+    #echo $FBRootDir/misc/scripts
+    rm -rf $FBRootDir/misc/scripts
+    rm -f $FBRootDir/misc/manifest.txt
+    rm -f $FBRootDir/bin/uninstall.sh
+
 }
 
 
@@ -686,59 +721,19 @@ removeUninstallFiles() {
 removeEmptyDirs() {
 
     dirContentChanged='yes'
-    while [ "$dirContentChanged" ]; do
+    while [ ! -z $dirContentChanged ]
+      do
         dirContentChanged=''
+        for i in `find $FBRootDir -empty -type d -print`
+          do
+            rmdir $i
+            dirContentChanged=$i
+        done
 
-		for rootDir in @FB_BINDIR@ @FB_SBINDIR@ @FB_LIBDIR@ @FB_INCDIR@ @FB_DOCDIR@ @FB_UDFDIR@ @FB_SAMPLEDIR@ @FB_SAMPLEDBDIR@ \
-					   @FB_HELPDIR@ @FB_INTLDIR@ @FB_MISCDIR@ @FB_SECDBDIR@ @FB_MSGDIR@ @FB_LOGDIR@ @FB_GUARDDIR@ @FB_PLUGDIR@ \
-					   @FB_CONFDIR@; do
+        if [ ! -d $FBRootDir ]  # end loop if the FBRootDir was deleted.
+          then
+            dirContentChanged=''
+        fi
 
-			if [ -d $rootDir ]; then	
-		        for i in `find $rootDir -type d -print`; do
-		            ls $i/* >/dev/null 2>&1
-	    	        if [ $? -ne 0 ]; then
-	        	        rmdir $i && dirContentChanged=$i
-	    	        fi
-		        done
-			fi
-
-		done
-	done
+      done
 }
-
-
-#------------------------------------------------------------------------
-#  fixFilePermissions
-#  Change the permissions to restrict access to server programs to 
-#  firebird group only.  This is MUCH better from a safety point of 
-#  view than installing as root user, even if it requires a little 
-#  more work.
-
-fixFilePermissions() {
-    # Lock files
-    cd @FB_GUARDDIR@
-    for FileName in fb_guard
-    do
-        touch $FileName
-        MakeFileFirebirdWritable $FileName
-    done
-
-	# Log file
-	cd @FB_LOGDIR@
-    touch firebird.log
-    MakeFileFirebirdWritable firebird.log
-    
-    # Security database
-	cd @FB_SECDBDIR@
-    MakeFileFirebirdWritable $SecurityDatabase
-
-    # make examples DB(s) writable
-    for i in `find @FB_SAMPLEDBDIR@ -name '*.fdb' -print`
-    do
-		MakeFileFirebirdWritable $i
-    done
-
-	# Architecture (CS/SS) specific permissions
-	fixArcSpecificPermissions
-}
-

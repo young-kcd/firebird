@@ -1,6 +1,6 @@
 /*
  *
- *      PROGRAM:        Firebird server manager
+ *      PROGRAM:        InterBase server manager
  *      MODULE:         ibmgr.cpp
  *      DESCRIPTION:    server manager's routines
  *
@@ -23,6 +23,10 @@
  */
 
 #include "firebird.h"
+#ifdef SOLARIS_MT
+#include <thread.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +35,7 @@
 #include <unistd.h>
 #endif
 #include <sys/types.h>
-#ifdef HAVE_SYS_WAIT_H
+#if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 
@@ -44,19 +48,18 @@
 #include "../common/stuff.h"
 #include "../utilities/ibmgr/ibmgr.h"
 #include "../utilities/ibmgr/srvrmgr_proto.h"
-#include "../common/utils_proto.h"
 
-const int SPB_BUFLEN		= 128;	// service params buffer length
-//#define SEND_BUFLEN             32	// length of send and resp
-//#define RESP_BUFLEN             128	// used by isc_service_query
+const int SPB_BUFLEN		= 128;	/* service params buffer length */
+//#define SEND_BUFLEN             32	/* length of send and resp */
+//#define RESP_BUFLEN             128	/* used by isc_service_query */
 
-// After we fork and exec a guardian process, to determine
-// if the server have started we wait ATTACH_PAUSE seconds
-// and try to attach to it. This happens ATTACH_RETRY number
-// of times
-
-const int ATTACH_PAUSE		= 1;	// seconds to pause before attach
-const int ATTACH_RETRY		= 10;	// Number of attach retries
+/* After we fork and exec a guardian process, to determine
+   if the server have started we wait ATTACH_PAUSE seconds
+   and try to attach to it. This happens ATTACH_RETRY number
+   of times
+*/
+const int ATTACH_PAUSE		= 1;	/* seconds to pause before attach */
+const int ATTACH_RETRY		= 10;	/* Number of attach retries */
 
 
 static bool attach_service(ibmgr_data_t*);
@@ -100,41 +103,38 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
  **************************************/
 	fb_assert(data->attached || data->reattach);
 
-	// If reattach is true and we currently attached, then we
-	// will detach from service. This is potentially dangerous
-	// situation, because if shutdown is true (server shutdown
-	// was initiated) server will be shutdowned.
-	// I do not check the shutdown flag here because reattach
-	// could be true only if shutdown has not been initiated.
-
+/* If reattach is true and we currently attached, then we
+   will detach from service. This is potentially dangerous
+   situation, because if shutdown is true (server shutdown 
+   was initiated) server will be shutdowned.
+   I do not check the shutdown flag here because reattach
+   could be true only if shutdown has not been initiated.
+*/
 	if (data->operation != OP_START)
-	{
-		if (data->reattach)
-		{
+		if (data->reattach) {
 			fb_assert(!data->shutdown);
-			if (data->attached) // Attached flag should be NULL after detach_service
+			if (data->attached)
+
+				/* Attached flag should be NULL after detach_service
+				 */
 				detach_service(data);
-			if (!attach_service(data))
+			if (attach_service(data) == false)
 				return MSG_ATTFAIL;
 			data->reattach = 0;
 		}
-	}
 
-	switch (data->operation)
-	{
+	switch (data->operation) {
 	case OP_START:
-		if (!start_server(data))
+		if (start_server(data) == false)
 			return MSG_STARTFAIL;
 		break;
 
 	case OP_SHUT:
-		switch (data->suboperation)
-		{
+		switch (data->suboperation) {
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
 			data->shutdown = true;
-			if (!start_shutdown(data))
-			{
+			if (start_shutdown(data) == false) {
 				data->shutdown = false;
 				return MSG_SSHUTFAIL;
 			}
@@ -161,10 +161,9 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 		break;
 
 	case OP_PRINT:
-		switch (data->suboperation)
-		{
+		switch (data->suboperation) {
 		case SOP_PRINT_POOL:
-			if (!print_pool(data))
+			if (print_pool(data) == false)
 				return MSG_PRPOOLFAIL;
 			return MSG_PRPOOLOK;
 		}
@@ -196,16 +195,15 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
  *
  **************************************/
 
-	/* The following line will be the future of this function
+/* The following line will be the future of this function
 
-	static const SafeArg arg;
-	fb_msg_format (0, MSG_FAC, number, MSG_LEN, msg, arg);
-	*/
+gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
+    NULL, NULL, NULL, NULL, NULL);
+*/
 
 	const char* rs = 0;
-
-	switch (number)
-	{
+	
+	switch (number) {
 	case MSG_PROMPT:
 		rs = "FBMGR>";
 		break;
@@ -299,7 +297,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 	default:
 		rs = "can not get an error message";
 	}
-
+	
 	strcpy(msg, rs);
 }
 
@@ -320,8 +318,8 @@ static bool attach_service( ibmgr_data_t* data)
 	ISC_STATUS_ARRAY status;
 	TEXT svc_name[128];
 
-	// Obviously we should not be already attached to service
-
+/* Obviously we should not be already attached to service
+*/
 	fb_assert(!data->attached);
 
 	strcpy(svc_name, data->host);
@@ -329,8 +327,7 @@ static bool attach_service( ibmgr_data_t* data)
 	TEXT spb[SPB_BUFLEN];
 	TEXT* p = spb;
 
-	if (!strcmp(data->user, SYSDBA_USER_NAME))
-	{
+	if (!strcmp(data->user, SYSDBA_USER_NAME)) {
 		*p++ = isc_spb_version1;
 		*p++ = isc_spb_user_name;
 		*p++ = strlen(SYSDBA_USER_NAME);
@@ -346,16 +343,15 @@ static bool attach_service( ibmgr_data_t* data)
 		fprintf(OUTFILE, "spb: \"%s\"\nsvc_name: \"%s\"\n", spb, svc_name);
 #endif
 
-		isc_service_attach(status, 0, svc_name, &data->attached, strlen(spb), spb);
+		isc_service_attach(status, 0, svc_name, &data->attached, strlen(spb),
+						   spb);
 	}
-	else
-	{
+	else {
 		strcat(svc_name, ":anonymous");
 		isc_service_attach(status, 0, svc_name, &data->attached, 0, "");
 	}
 
-	if (status[0] == 1 && status[1] > 0)
-	{
+	if (status[0] == 1 && status[1] > 0) {
 #ifdef DEBUG
 		fprintf(OUTFILE, "ERROR: %lu\n", status[1]);
 #endif
@@ -383,19 +379,18 @@ static bool detach_service( ibmgr_data_t* data)
  **************************************/
 	ISC_STATUS_ARRAY status;
 
-	// We should be attached if we want to detach
-
+/* We should be attached if we want to detach
+*/
 	fb_assert(data->attached);
 
 	isc_service_detach(status, &data->attached);
 	data->attached = 0;
 
-	if (status[0] == 1 && status[1] > 0)
-	{
-		// If as a result of detach_service server has been
-		// shut down we will get an error.
-		// MMM - need to check for that error and return true
-
+	if (status[0] == 1 && status[1] > 0) {
+/* If as a result of detach_service server has been
+   shutdowned we will get an error.
+   MMM - need to check for that error and return true
+*/
 #ifdef DEBUG
 		fprintf(OUTFILE, "ERROR: %lu\n", status[1]);
 #endif
@@ -422,15 +417,15 @@ static bool start_shutdown( ibmgr_data_t* data)
 	ISC_STATUS_ARRAY status;
 	char respbuf[2];
 
-	// We should be attached to ask for any service
-
+/* We should be attached to ask for any service
+*/
 	fb_assert(data->attached);
 
 	const char sendbuf[] = { isc_info_svc_svr_offline };
-	isc_service_query(status, &data->attached, 0, 0, NULL, 1, sendbuf, sizeof(respbuf), respbuf);
+	isc_service_query(status, &data->attached, 0, 0, NULL,
+					  1, sendbuf, sizeof(respbuf), respbuf);
 
-	if (status[0] == 1 && status[1] > 0)
-	{
+	if (status[0] == 1 && status[1] > 0) {
 		isc_print_status(status);
 		return false;
 	}
@@ -452,38 +447,36 @@ static bool start_server( ibmgr_data_t* data)
  **************************************/
 	TEXT msg[MSG_LEN];
 
-	// If we are currently attached and host has not been changed,
-	// server on this host is up and running.
-
-	if (data->attached && !(data->reattach & REA_HOST))
-	{
+/* If we are currently attached and host has not been changed,
+   server on this host is up and running.
+*/
+	if (data->attached && !(data->reattach & REA_HOST)) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		fprintf(OUTFILE, "%s\n", msg);
 		return true;
 	}
 
-	if (data->attached)
-	{
+	if (data->attached) {
 		detach_service(data);
 		data->reattach |= (REA_HOST | REA_USER | REA_PASSWORD);
 	}
 
 	fb_assert(data->reattach);
 
-	// Let's see if server is already running, try to attach to it
-
-	if (server_is_up(data))
-	{
+/* Let's see if server is already running, try to attach to it
+*/
+	if (server_is_up(data) == true) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		fprintf(OUTFILE, "%s\n", msg);
 		return true;
 	}
 
-	// We failed to attach to service, thus server might not be running
-	// You know what? We'll try to start it.
-
-	Firebird::PathName path = fb_utils::getPrefix(fb_utils::FB_DIR_SBIN, SERVER_GUARDIAN);
-
+/* We failed to attach to service, thus server might not be running
+   You know what? We'll try to start it.
+*/
+	TEXT path[MAXPATHLEN];
+	gds__prefix(path, SERVER_GUARDIAN);
+	
 	// CVC: Newer compilers won't accept assigning literal strings to non-const
 	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]
 	// that may not be accepted by execv().
@@ -493,22 +486,16 @@ static bool start_server( ibmgr_data_t* data)
 	static char option_p[] = "-p";
 
 	TEXT *argv[5];
-	argv[0] = path.begin();
-	switch (data->suboperation)
-	{
-	case SOP_START_ONCE:
+	argv[0] = path;
+	if (data->suboperation == SOP_START_ONCE)
 		argv[1] = option_o;
-		break;
-	case SOP_START_SIGNORE:
+	else if (data->suboperation == SOP_START_SIGNORE)
 		argv[1] = option_s;
-		break;
-	default:
+	else
 		argv[1] = option_f;
-	}
 	argv[2] = NULL;
 	argv[3] = NULL;
-	if (data->pidfile[0])
-	{
+	if (data->pidfile[0]) {
 		argv[2] = option_p;
 		argv[3] = data->pidfile;
 	}
@@ -519,76 +506,74 @@ static bool start_server( ibmgr_data_t* data)
 #endif
 
 	pid_t pid;
-#if (defined SOLARIS)
-	// According to Sun's documentation, vfork() is not MT-safe
-	// while linking with libthreads, fork1 - fork one thread
-
-	if (!(pid = fork1()))
-	{
-		if (execv(path.c_str(), argv) == -1) {
-			printf("Could not create child process %s with args %s \n", path.c_str(), argv[1]);
+#if (defined SOLARIS_MT)
+/* Accoding Sun's documentation vfork()  is not MT-safe
+   while linking with libthreads, fork1 - fork one thread
+*/
+	if (!(pid = fork1())) {
+		if (execv(path, argv) == -1) {
+			printf("Could not create child process %s with args %s \n",
+				   path, argv[1]);
 		}
 		_exit(FINI_ERROR);
 	}
 
 #else
 
-	if (!(pid = vfork()))
-	{
-		execv(path.c_str(), argv);
+	if (!(pid = vfork())) {
+		execv(path, argv);
 		_exit(FINI_ERROR);
 	}
 #endif
 
-	// Wait a little bit to let the server start
-
+/* Wait a little bit to let the server start
+*/
 	sleep(ATTACH_PAUSE);
-	for (int retry = ATTACH_RETRY; retry; retry--)
-	{
+	for (int retry = ATTACH_RETRY; retry; retry--) {
 		sleep(ATTACH_PAUSE);
 
-		// What we want to do here is to find out if the server has
-		// started or not. We do it by trying to attach to the server
-		// by calling isc_service_attach (in server_is_up()).
-		// But in a local server startup (and this the way it works
-		// currently) before calling isc_service_attach, we can check
-		// if the child process (ibguard) exited or not. If it did,
-		// then the server exited with startup error and there is no
-		// need to try to attach to it.
-
+		/* What we want to do here is to find out if the server has
+		   started or not. We do it by trying to attach to the server
+		   by calling isc_service_attach (in server_is_up()).
+		   But in a local server startup (and this the way it works
+		   currently) before calling isc_service_attach, we can check
+		   if the child process (ibguard) exited or not. If it did,
+		   then the server exited with startup error and there is no
+		   need to try to attach to it.
+		 */
 		int exit_status; // unused after the call below.
 		const pid_t ret_value = waitpid(pid, &exit_status, WNOHANG);
 
-		// waitpid() returns guardian process pid if the server has
-		// exited (or killed by a signal), -1 if error happened,
-		// 0 if an exit status of a child process is unavailable (that
-		// means in our case that the server is running).
-
-#if (defined SOLARIS)
+		/* waitpid() returns guardian process pid if the server has
+		   exited (or killed by a signal), -1 if error happened,
+		   0 if an exit status of a child process is unavailable (that
+		   means in our case that the server is running).
+		 */
+#if (defined SOLARIS_MT)
 		// Trying to understand why it died
-		if (ret_value == pid &&
-			(WIFEXITED(exit_status) || WCOREDUMP(exit_status) || WIFSIGNALED(exit_status)))
+		if ((ret_value == pid) && ( WIFEXITED(exit_status)
+					|| WCOREDUMP(exit_status)
+					|| WIFSIGNALED(exit_status)))
 		{
-			printf("Guardian process %ld terminated with code %ld\n", pid, WEXITSTATUS(exit_status));
+			printf("Guardian process %ld terminated with code %ld\n",
+				pid, WEXITSTATUS(exit_status)); 
 			break;
 		}
 
-#else
+#else		 
 
 
-		if (ret_value == pid)
-		{
+		if (ret_value == pid) {
 #ifdef DEBUG
 			printf("Guardian process %ld terminated\n", pid);
 #endif
 			break;
 		}
 
-#endif // SOLARIS
+#endif /* SOLARIS_MT */
 
 #ifdef DEBUG
-		else if (ret_value == -1)
-		{
+		else if (ret_value == -1) {
 			printf("waitpid returned error, errno = %ld\n", errno);
 		}
 #endif
@@ -596,8 +581,7 @@ static bool start_server( ibmgr_data_t* data)
 #ifdef DEBUG
 		printf("Attach retries left: %d\n", retry);
 #endif
-		if (server_is_up(data))
-		{
+		if (server_is_up(data) == true) {
 			SRVRMGR_msg_get(MSG_SRVUPOK, msg);
 			fprintf(OUTFILE, "%s\n", msg);
 			return true;
@@ -626,32 +610,34 @@ static bool server_is_up( ibmgr_data_t* data)
 	TEXT svc_name[128];
 	isc_svc_handle svc_handle = 0;
 
-	// Obviously we should not be already attached to service
-
+/* Obviously we should not be already attached to service
+*/
 	fb_assert(!data->attached);
 
 	bool up = true;
 
-	// To find out if we the server is already running we
-	// will try to attach to it. We are going to use "anonymous"
-	// service in order not to get an error like wrong user/password
-
+/* To find out if we the server is already running we
+   will try to attach to it. We are going to use "anonymous"
+   service in order not to get an error like wrong user/password
+*/
 	strcpy(svc_name, data->host);
 	strcat(svc_name, ":anonymous");
 	isc_service_attach(status, 0, svc_name, &svc_handle, 0, "");
 
-	if (status[0] == 1 && status[1] > 0)
-	{
+	if (status[0] == 1 && status[1] > 0) {
 #ifdef DEBUG
 		fprintf(OUTFILE, "server_is_up ERROR: %lu\n", status[1]);
 #endif
 		fb_assert(status[1] != isc_svcnotdef);
 
-		// Server can be running but attach could fail for
-		// other reasons. For example, attach could return
-		// not enough memory error. Let's take care of it.
-
-		up = (status[1] == isc_virmemexh);
+		/* Server can be running but attach could fail for
+		   other reasons. For example, attach could return
+		   not enough memory error. Let's take care of it.
+		 */
+		if (status[1] == isc_virmemexh)
+			up = true;
+		else
+			up = false;
 	}
 	isc_service_detach(status, &svc_handle);
 	return up;
@@ -671,8 +657,8 @@ static bool print_pool( ibmgr_data_t* data)
  *
  **************************************/
 
-	// We should be attached to ask for any service
-
+/* We should be attached to ask for any service
+*/
 	fb_assert(data->attached);
 
 	char sendbuf[512];
@@ -683,16 +669,15 @@ static bool print_pool( ibmgr_data_t* data)
 	add_word(reinterpret_cast<UCHAR*&>(sptr), path_length);
 	strcpy(sptr, data->print_file);
 	sptr += path_length;
-	fb_assert(sptr < sendbuf + sizeof(sendbuf)); // strcpy wrote \0 one byte beyond path_length
 
 	ISC_STATUS_ARRAY status;
 	char respbuf[2];
 	isc_service_query(status, &data->attached, 0, 0, NULL,
 					  sptr - sendbuf, sendbuf, sizeof(respbuf), respbuf);
-	if (status[0] == 1 && status[1] > 0)
-	{
+	if (status[0] == 1 && status[1] > 0) {
 		isc_print_status(status);
 		return false;
 	}
 	return true;
 }
+

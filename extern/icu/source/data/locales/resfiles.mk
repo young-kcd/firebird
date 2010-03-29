@@ -29,5 +29,4 @@
 GENRB_ALIAS_SOURCE =
 
 # Please try to keep this list in alphabetical order
-# Use at least one locale due to problem in Linux (CORE-1885)
-GENRB_SOURCE = pt_BR.txt
+GENRB_SOURCE =

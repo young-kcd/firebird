@@ -33,7 +33,6 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 
-#define DEBUG_CLUMPLETS
 #if defined(DEV_BUILD) && !defined(DEBUG_CLUMPLETS)
 #define DEBUG_CLUMPLETS
 #endif
@@ -45,27 +44,10 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {EndOfList, Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
-
-	struct KindList
-	{
-		Kind kind;
-		UCHAR tag;
-	};
-
-	struct SingleClumplet
-	{
-		UCHAR tag;
-		size_t size;
-		const UCHAR* data;
-	};
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/};
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
-	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
-	// Different versions of clumplets may have different kinds
-	ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
-	ClumpletReader(MemoryPool& pool, const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
 	virtual ~ClumpletReader() { }
 
 	// Navigation in clumplet buffer
@@ -84,18 +66,13 @@ public:
 	string& getString(string& str) const;
 	PathName& getPath(PathName& str) const;
 	const UCHAR* getBytes() const;
-	double getDouble() const;
-	ISC_TIMESTAMP getTimeStamp() const;
-	ISC_TIME getTime() const { return getInt(); }
-	ISC_DATE getDate() const { return getInt(); }
 
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
-	size_t getBufferLength() const
+	size_t getBufferLength() const 
 	{
 		size_t rc = getBufferEnd() - getBuffer();
-		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
-					   kind != WideUnTagged && kind != SpbItems)
+		if (rc == 1 && kind != UnTagged && kind != SpbStart)
 		{
 			rc = 0;
 		}
@@ -103,35 +80,27 @@ public:
 	}
 	size_t getCurOffset() const { return cur_offset; }
 	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
-
+	
 #ifdef DEBUG_CLUMPLETS
 	// Sometimes it's really useful to have it in case of errors
 	void dump() const;
 #endif
 
-	// it is not exact comparison as clumplets may have same tags
-	// but in different order
-	bool simpleCompare(const ClumpletReader &other) const
-	{
-		const size_t len = getBufferLength();
-		return (len == other.getBufferLength()) && (memcmp(getBuffer(), other.getBuffer(), len) == 0);
-	}
-
 protected:
-	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb, Wide};
+	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb};
 	ClumpletType getClumpletType(UCHAR tag) const;
 	size_t getClumpletSize(bool wTag, bool wLength, bool wData) const;
 	void adjustSpbState();
-
+	
 	size_t cur_offset;
-	Kind kind;
+	const Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer
 
 	// Methods are virtual so writer can override 'em
-	virtual const UCHAR* getBuffer() const;
-	virtual const UCHAR* getBufferEnd() const;
+	virtual const UCHAR* getBuffer() const { return static_buffer; }
+	virtual const UCHAR* getBufferEnd() const { return static_buffer_end; }
 
-	// These functions are called when error condition is detected by this class.
+	// These functions are called when error condition is detected by this class. 
 	// They may throw exceptions. If they don't reader tries to do something
 	// sensible, certainly not overwrite memory or read past the end of buffer
 
@@ -141,9 +110,6 @@ protected:
 	// This is called when passed buffer appears invalid
 	virtual void invalid_structure(const char* what) const;
 
-	// get the most generic representation of clumplet
-	SingleClumplet getClumplet() const;
-
 private:
 	// Assignment and copy constructor not implemented.
 	ClumpletReader(const ClumpletReader& from);
@@ -151,26 +117,9 @@ private:
 
 	const UCHAR* static_buffer;
 	const UCHAR* static_buffer_end;
-
-	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
-	void create(const KindList* kl, size_t buffLen, FPTR_VOID raise);
-
-public:
-	static const KindList dpbList[];	// Some frequently used kind lists
-	static const KindList spbList[];	// Some frequently used kind lists
-};
-
-class AuthReader : public ClumpletReader
-{
-public:
-	typedef Array<UCHAR> AuthBlock;
-	enum Tag {AUTH_NAME, AUTH_METHOD, AUTH_DETAILS};
-
-	explicit AuthReader(const AuthBlock& authBlock);
-
-	bool getInfo(string* name, string* method = NULL, string* details = NULL);
 };
 
 } // namespace Firebird
 
 #endif // CLUMPLETREADER_H
+

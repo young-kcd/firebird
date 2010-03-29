@@ -38,9 +38,8 @@ const int HASH_SIZE = 224;
 static qli_symbol* hash_table[HASH_SIZE];
 static qli_symbol* key_symbols;
 
-struct qli_kword
-{
-	kwwords id;
+struct qli_kword {
+	KWWORDS id;
 	const char* keyword;
 };
 
@@ -51,7 +50,7 @@ const qli_kword keywords[] =
 };
 
 
-void HSH_fini()
+void HSH_fini(void)
 {
 /**************************************
  *
@@ -63,17 +62,16 @@ void HSH_fini()
  *	Release space used by keywords.
  *
  **************************************/
-	while (key_symbols)
-	{
+	while (key_symbols) {
 		qli_symbol* symbol = key_symbols;
 		key_symbols = (qli_symbol*) key_symbols->sym_object;
 		HSH_remove(symbol);
-		ALLQ_release((qli_frb*) symbol);
+		ALLQ_release((FRB) symbol);
 	}
 }
 
 
-void HSH_init()
+void HSH_init(void)
 {
 /**************************************
  *
@@ -88,13 +86,15 @@ void HSH_init()
  **************************************/
 	const qli_kword* qword = keywords;
 
-	for (int i = 0; i < FB_NELEM(keywords); i++, qword++)
-	{
+	for (int i = 0; i < FB_NELEM(keywords); i++, qword++) {
+	    const char* string = qword->keyword;
+		while (*string)
+			++string;
 		qli_symbol* symbol = (qli_symbol*) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;
-		symbol->sym_length = strlen(qword->keyword);
+		symbol->sym_length = string - qword->keyword;
 		symbol->sym_string = qword->keyword;
-		symbol->sym_keyword = qword->id;
+		symbol->sym_keyword = (int) qword->id;
 		HSH_insert(symbol, true);
 		symbol->sym_object = (BLK) key_symbols;
 		key_symbols = symbol;
@@ -118,14 +118,13 @@ void HSH_insert( qli_symbol* symbol, bool ignore_case)
 	scompare_t scompare = ignore_case ? scompare_ins : scompare_sens;
 
 	for (qli_symbol* old = hash_table[h]; old; old = old->sym_collision)
-	{
-		if (scompare(symbol->sym_string, symbol->sym_length, old->sym_string, old->sym_length))
+		if (scompare(symbol->sym_string, symbol->sym_length,
+					 old->sym_string, old->sym_length))
 		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
 			return;
 		}
-	}
 
 	symbol->sym_collision = hash_table[h];
 	hash_table[h] = symbol;
@@ -145,7 +144,7 @@ qli_symbol* HSH_lookup(const SCHAR* string, int length)
  *
  **************************************/
 	scompare_t scompare = scompare_ins;
-
+	
 	if (length > 1 && string[0] == '"')
 	{
 		// This logic differs from DSQL. See how LEX_token works.
@@ -154,7 +153,7 @@ qli_symbol* HSH_lookup(const SCHAR* string, int length)
 		scompare = scompare_sens;
 	}
 	for (qli_symbol* symbol = hash_table[hash(string, length)]; symbol;
-		symbol = symbol->sym_collision)
+		 symbol = symbol->sym_collision)
 	{
 		if (scompare(string, length, symbol->sym_string, symbol->sym_length))
 			return symbol;
@@ -179,32 +178,27 @@ void HSH_remove( qli_symbol* symbol)
 	const int h = hash(symbol->sym_string, symbol->sym_length);
 
 	for (qli_symbol** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
-	{
-		if (symbol == *next)
-		{
+		if (symbol == *next) {
 			qli_symbol* homonym = symbol->sym_homonym;
-			if (homonym)
-			{
+			if (homonym) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
+				return;
 			}
-			else
+			else {
 				*next = symbol->sym_collision;
-
-			return;
-		}
-
-		for (qli_symbol** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
-		{
-			if (symbol == *ptr)
-			{
-				*ptr = symbol->sym_homonym;
 				return;
 			}
 		}
-	}
+		else {
+			for (qli_symbol** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
+				if (symbol == *ptr) {
+					*ptr = symbol->sym_homonym;
+					return;
+				}
+		}
 
-	ERRQ_error(27);	// Msg 27 HSH_remove failed
+	ERRQ_error(27, NULL, NULL, NULL, NULL, NULL);	// Msg 27 HSH_remove failed
 }
 
 
@@ -222,9 +216,8 @@ static int hash(const SCHAR* string, int length)
  **************************************/
 	int value = 0;
 
-	while (length--)
-	{
-		const UCHAR c = *string++;
+	while (length--) {
+		const SCHAR c = *string++;
 		value = (value << 1) + UPPER(c);
 	}
 
@@ -232,7 +225,10 @@ static int hash(const SCHAR* string, int length)
 }
 
 
-static bool scompare_ins(const SCHAR* string1, int length1, const SCHAR* string2, int length2)
+static bool scompare_ins(const SCHAR* string1,
+					 int length1,
+					 const SCHAR* string2,
+					 int length2)
 {
 /**************************************
  *
@@ -259,7 +255,10 @@ static bool scompare_ins(const SCHAR* string1, int length1, const SCHAR* string2
 }
 
 
-static bool scompare_sens(const SCHAR* string1, int length1, const SCHAR* string2, int length2)
+static bool scompare_sens(const SCHAR* string1,
+					 int length1,
+					 const SCHAR* string2,
+					 int length2)
 {
 /**************************************
  *

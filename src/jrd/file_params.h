@@ -32,22 +32,55 @@
 #ifndef JRD_FILE_PARAMS_H
 #define JRD_FILE_PARAMS_H
 
-static const char* const EVENT_FILE		= "fb_event_%s";
-static const char* const LOCK_FILE		= "fb_lock_%s";
-static const char* const MONITOR_FILE	= "fb_monitor_%s";
-static const char* const TRACE_FILE		= "fb_trace";
+const int EVENT_DEFAULT_SIZE	= 32768;
+const int EVENT_EXTEND_SIZE		= 32768;
+const int EVENT_VERSION		= 2;
+const int EVENT_SEMAPHORES	= 1;
 
-#ifdef UNIX
-static const char* const INIT_FILE		= "fb_init";
-static const char* const SEM_FILE		= "fb_sem";
-static const char* const PORT_FILE		= "fb_port_%d";
+#ifdef NOHOSTNAME
+static const char* EVENT_FILE	= "isc_event1";
+static const char* LOCK_FILE	= "isc_lock1.gbl";
+static const char* LOCK_HEADER	= "isc_config";
+static const char* INIT_FILE	= "isc_init1";
+static const char* GUARD_FILE	= "isc_guard1";
+#elif defined(SMALL_FILE_NAMES)
+static const char* EVENT_FILE	= "isce1.%s";
+static const char* LOCK_FILE	= "iscl1.%s";
+static const char* LOCK_HEADER	= "isc_config";
+static const char* INIT_FILE	= "isci1.%s";
+static const char* GUARD_FILE	= "iscg1.%s";
+#elif defined(VMS)
+static const char* EVENT_FILE	= "[000000]isc_event1.%s";
+static const char* LOCK_FILE	= "[000000]isc_lock1.%s";
+static const char* LOCK_HEADER	= "[000000]isc_config";
+static const char* INIT_FILE	= "[000000]isc_init1.%s";
+static const char* GUARD_FILE	= "[000000]isc_guard1.%s";
+#elif defined(WIN_NT)
+static const char* EVENT_FILE	= "%s.evn";
+static const char* LOCK_FILE	= "%s.lck";
+static const char* LOCK_HEADER	= "ibconfig";
+static const char* INIT_FILE	= "%s.int";
+static const char* GUARD_FILE	= "%s.grd";
+#else
+static const char* EVENT_FILE	= "isc_event1.%s";
+static const char* LOCK_FILE	= "isc_lock1.%s";
+static const char* LOCK_HEADER	= "isc_config";
+static const char* INIT_FILE	= "isc_init1.%s";
+static const char* GUARD_FILE	= "isc_guard1.%s";
 #endif
 
-#ifdef HAVE_SYS_TYPES_H
+#ifdef sun
 #include <sys/types.h>
+#include <sys/ipc.h>
 #endif
 
-#ifdef HAVE_SYS_IPC_H
+#ifdef LINUX
+#include <sys/types.h>
+#include <sys/ipc.h>
+#endif
+
+#if defined FREEBSD || defined NETBSD
+#include <sys/types.h>
 #include <sys/ipc.h>
 #endif
 
@@ -58,19 +91,56 @@ static const char* const PORT_FILE		= "fb_port_%d";
 #define DARWIN_FRAMEWORK_ID	"com.firebirdsql.Firebird"
 #endif
 
-// keep MSG_FILE_LANG in sync with build_file.epp
-#ifdef WIN_NT
-static const char* const WORKFILE	= "c:\\temp\\";
-static const char MSG_FILE_LANG[]	= "intl\\%.10s.msg";
+/* keep MSG_FILE_LANG in sync with build_file.epp */
+#ifdef UNIX
+static const char* WORKFILE		= "/tmp/";
+static const char* MSG_FILE		= "firebird.msg";
+static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
+const int LOCALE_MAX	= 10;
+static const char* LOGFILE		= "firebird.log";
+#define TEMP_PATTERN	"_XXXXXX"
+#elif defined(WIN_NT)
+static const char* WORKFILE		= "c:\\temp\\";
+static const char* MSG_FILE		= "firebird.msg";
+static const char MSG_FILE_LANG[]= "intl/%.8s.msg";
+const int LOCALE_MAX	= 6;
+static const char* LOGFILE		= "firebird.log";
+#define TEMP_PATTERN	"XXXXXX"
+#elif defined(VMS)
+static const char* WORKFILE		= "SYS$SCRATCH:";
+static const char* MSG_FILE		= "[sysmsg]firebird_msg.dat";
+static const char MSG_FILE_LANG[]= "[sysmsg]firebird_%.10s.dat";
+const int LOCALE_MAX	= 10;
+static const char* LOGFILE		= "[syserr]firebird.log";
+#define TEMP_PATTERN	"_XXXXXX"
+
+static const char ISC_LOGICAL[]	= "interbase:";
+static const char ISC_LOGICAL_LOCK[]	= "interbase_lock:";
+
+struct isc_vms_prefix
+{
+	const TEXT*	isc_prefix;
+	const TEXT*	vms_prefix;
+};
+
+static struct isc_vms_prefix trans_prefix[] =
+{
+	"[SYSMSG]", "SYS$MESSAGE:",
+	"[SYSEXE]", "SYS$SYSTEM:",
+	"[SYSMGR]", "SYS$MANAGER:",
+	"[SYSLIB]", "SYS$LIBRARY:",
+	"[SYSHLP]", "SYS$HELP:",
+	"[SYSERR]", "SYS$ERRORLOG:",
+	"[000000]", "SYS$SYSTEM:",
+	NULL, NULL
+};
 #else
-static const char* const WORKFILE	= "/tmp/";
-static const char MSG_FILE_LANG[]	= "intl/%.10s.msg";
+static const char* WORKFILE		= "/tmp/";
+static const char* MSG_FILE		= "firebird.msg";
+static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
+const int LOCALE_MAX	= 10;
+static const char* LOGFILE		= "firebird.log";
+#define TEMP_PATTERN	"_XXXXXX"
 #endif
 
-static const char* const LOCKDIR	= "firebird";		// created in WORKFILE
-static const char* const LOGFILE	= "firebird.log";
-static const char* const MSG_FILE	= "firebird.msg";
-// Keep in sync with MSG_FILE_LANG
-const int LOCALE_MAX	= 10;
-
-#endif // JRD_FILE_PARAMS_H
+#endif /* JRD_FILE_PARAMS_H */

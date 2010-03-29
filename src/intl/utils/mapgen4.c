@@ -197,7 +197,7 @@ main(int argc, char *argv[])
 	printf("\n");
 
 /* Small tables print with all comments */
-	if ((codepoint_conversion.count < 256) || (!option_condensed))
+	if ((unicode_conversion.count < 256) || (!option_condensed))
 		print_indexed_table("from_unicode", &unicode_conversion,
 							CANT_MAP_CHARACTER);
 	else
@@ -237,7 +237,7 @@ void declare(unsigned short codepoint, unsigned short unicode, char *name)
 		if (unicode < unicode_conversion.low_point)
 			unicode_conversion.low_point = unicode;
 		if (unicode > unicode_conversion.high_point)
-			unicode_conversion.high_point = unicode;
+			codepoint_conversion.high_point = unicode;
 		if (!unicode_conversion.table[unicode].exists++) {
 			unicode_conversion.table[unicode].codepoint = unicode;
 			if (unicode != UNICODE_REPLACEMENT_CHARACTER) {
@@ -325,7 +325,8 @@ void print_indexed_table(char *name, TABLE * table,
 						  table->table[codepoint].name, index);
 			index++;
 			codepoint++;
-		} while (index % 256);
+		}
+		while (index % 256);
 	}
 	printf("\t0 /* END OF MAP TABLE */\n");
 	printf("};\n");
@@ -401,7 +402,8 @@ void print_condensed_indexed_table(
 				printf(" ");
 			index++;
 			codepoint++;
-		} while (index % 256);
+		}
+		while (index % 256);
 	}
 	printf("\t0 /* END OF MAP TABLE */\n");
 	printf("};\n");

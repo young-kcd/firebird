@@ -8,12 +8,6 @@ PidDir=/var/run/firebird
 export PidDir
 
 #------------------------------------------------------------------------
-# Get correct options & misc.
-
-tarExt=tar
-export tarExt
-
-#------------------------------------------------------------------------
 #  Add new user and group
 
 TryAddGroup() {
@@ -36,7 +30,7 @@ TryAddUser() {
 	
     if [ -z "$testStr" ]
       then
-        useradd $AdditionalParameter -d @FB_CONFDIR@ -s /bin/false \
+        useradd $AdditionalParameter -d $FBRootDir -s /bin/false \
             -c "Firebird Database Owner" -g firebird firebird 
     fi
 
@@ -91,11 +85,9 @@ stopSuperServerIfRunning() {
 		fi
     fi
 }
-
 #-----------------------------------------------------------------------
 # Blank stub on HPUX - don't use openssl
 
 generateNewDBAPassword() {
-	return 0
+echo "generateNewDBAPassword" >/dev/null 2>&1
 }
-

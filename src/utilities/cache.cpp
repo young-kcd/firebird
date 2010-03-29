@@ -32,7 +32,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
 
-#ifdef HAVE_IO_H
+#if (defined WIN_NT)
 #include <io.h>
 #endif
 
@@ -53,18 +53,24 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Run the shared cache manager.
  *
  **************************************/
+	TEXT c, *p, **end;
+	SLONG db_handle;
+	ISC_STATUS status;
+	ISC_STATUS_ARRAY status_vector;
 
-	// Perform some special handling when run as a Firebird service.  The
-	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
-	if (argc > 1 && !strcmp(argv[1], "-svc"))
-	{
+/* Perform some special handling when run as an Interbase service.  The
+   first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
+
+	if (argc > 1 && !strcmp(argv[1], "-svc")) {
 		argv++;
 		argc--;
 	}
-	else if (argc > 4 && !strcmp(argv[1], "-svc_re"))
-	{
+	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
 		long redir_in = atol(argv[2]);
 		long redir_out = atol(argv[3]);
 		long redir_err = atol(argv[4]);
@@ -92,15 +98,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
-	setpgrp();
+	(void)setpgrp();
 #else
-	setpgrp(0, 0);
-#endif // SETPGRP_VOID
+	(void)setpgrp(0, 0);
+#endif /* SETPGRP_VOID */
 #else
 #ifdef HAVE_SETPGID
-	setpgid(0, 0);
-#endif // HAVE_SETPGID
-#endif // HAVE_SETPGRP
+	(void)setpgid(0, 0);
+#endif /* HAVE_SETPGID */
+#endif /* HAVE_SETPGRP */
 
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
@@ -108,41 +114,33 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	const TEXT* sw_database = "";
 
-	for (TEXT** end = argv++ + argc; argv < end;)
-	{
-		const TEXT* p = *argv++;
+	for (end = argv++ + argc; argv < end;) {
+		p = *argv++;
 		if (*p != '-')
 			sw_database = p;
-		else
-		{
-			TEXT c;
+		else {
 			while (c = *++p)
-			{
-				switch (UPPER(c))
-				{
+				switch (UPPER(c)) {
 				case 'D':
 					sw_database = *argv++;
 					break;
 
 				case 'Z':
-					printf("Shared cache manager version %s\n", GDS_VERSION);
+					printf("Shared cache manager version %s\n",
+							  GDS_VERSION);
 					exit(FINI_OK);
 				}
-			}
 		}
 	}
 
 	gds__disable_subsystem("REMINT");
 
-	ISC_STATUS status;
 	do {
-		isc_db_handle db_handle = NULL;
-		ISC_STATUS_ARRAY status_vector;
+		db_handle = NULL;
 		status = isc_attach_database(status_vector, 0, sw_database, &db_handle,
 									  sizeof(cache_dpb), cache_dpb);
 
-		if (status && status != isc_cache_restart)
-		{
+		if (status && status != isc_cache_restart) {
 			isc_print_status(status_vector);
 			gds__log_status(sw_database, status_vector);
 		}
@@ -154,3 +152,4 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	exit(status ? FINI_ERROR : FINI_OK);
 }
+

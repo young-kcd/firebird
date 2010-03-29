@@ -24,56 +24,22 @@
 #ifndef JRD_CVT_PROTO_H
 #define JRD_CVT_PROTO_H
 
-#include "../common/cvt.h"
-#include "../jrd/err_proto.h"
-
-double		CVT_date_to_double(const dsc*);
-void		CVT_double_to_date(double, SLONG[2]);
-UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, double*);
-GDS_DATE	CVT_get_sql_date(const dsc*);
-GDS_TIME	CVT_get_sql_time(const dsc*);
-GDS_TIMESTAMP CVT_get_timestamp(const dsc*);
-
-namespace Jrd
-{
-	class EngineCallbacks : public Firebird::Callbacks
-	{
-	public:
-		explicit EngineCallbacks(ErrorFunction aErr)
-			: Callbacks(aErr)
-		{
-		}
-
-		EngineCallbacks()
-			: Callbacks(ERR_post)
-		{
-		}
-
-	public:
-		virtual bool transliterate(const dsc* from, dsc* to, CHARSET_ID&);
-		virtual CHARSET_ID getChid(const dsc* d);
-		virtual CharSet* getToCharset(CHARSET_ID charset2);
-		virtual void validateData(CharSet* toCharset, SLONG length, const UCHAR* q);
-		virtual void validateLength(CharSet* toCharset, SLONG toLength, const UCHAR* start,
-			const USHORT to_size);
-		virtual SLONG getCurDate();
-		virtual void isVersion4(bool& v4);
-
-	public:
-		static EngineCallbacks instance;
-	};
-}
-
-inline void CVT_move(const dsc* from, dsc* to)
-{
-	CVT_move_common(from, to, &Jrd::EngineCallbacks::instance);
-}
-
-inline USHORT CVT_get_string_ptr(const dsc* desc, USHORT* ttype, UCHAR** address,
-                                 vary* temp, USHORT length)
-{
-	return CVT_get_string_ptr_common(desc, ttype, address, temp, length,
-									 &Jrd::EngineCallbacks::instance);
-}
+double		CVT_date_to_double(const dsc*, FPTR_ERROR);
+void		CVT_double_to_date(double, SLONG[2], FPTR_ERROR);
+double		CVT_get_double(const dsc*, FPTR_ERROR);
+SLONG		CVT_get_long(const dsc*, SSHORT, FPTR_ERROR);
+SINT64		CVT_get_int64(const dsc*, SSHORT, FPTR_ERROR);
+UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, double*,
+							FPTR_ERROR);
+SQUAD		CVT_get_quad(const dsc*, SSHORT, FPTR_ERROR);
+USHORT		CVT_get_string_ptr(const dsc*, USHORT*, UCHAR**,
+								 vary*, USHORT, FPTR_ERROR);
+GDS_DATE	CVT_get_sql_date(const dsc*, FPTR_ERROR);
+GDS_TIME	CVT_get_sql_time(const dsc*, FPTR_ERROR);
+GDS_TIMESTAMP CVT_get_timestamp(const dsc*, FPTR_ERROR);
+USHORT		CVT_make_string(const dsc*, USHORT, const char**, vary*,
+							  USHORT, FPTR_ERROR);
+extern "C" void CVT_move(const dsc*, dsc*, FPTR_ERROR);
 
 #endif // JRD_CVT_PROTO_H
+

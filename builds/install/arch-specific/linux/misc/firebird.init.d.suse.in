@@ -40,38 +40,16 @@ link=${base#*[SK][0-9][0-9]}
 test $link = $base && START_FIREBIRD="yes"
 test "$START_FIREBIRD" = yes || exit 0
 
-FIREBIRD=@FB_CONFDIR@
+FIREBIRD=@prefix@
 FBRunUser=firebird
-
-makeFbDir() {
-	mDir=${1}
-	mode=${2}
-	if [ ! -d $mDir ]; then
-		rm -rf $mDir
-		mkdir $mDir
-		if [ "$mode" ]; then
-			chmod $mode $mDir
-		fi
-	fi
-	chown $FBRunUser:$FBRunUser $mDir
-}
-runDir=/var/run/firebird
-makeFbDir $runDir
-lockDir=/tmp/firebird
-makeFbDir $lockDir 0770
-
-pidfile="$runDir/$INSTANCE.pid"
+pidfile=/var/run/firebird/firebird.pid
 
 export FIREBIRD
 
-# Check the files are there and are executable.
-FBSBIN=$FIREBIRD/bin
-if [ ! -x $FBSBIN/fbguard ]; then
-	FBSBIN=@FB_SBINDIR@
-fi
-
-[ -x $FBSBIN/fbguard ] || exit 5
-[ -x $FBSBIN/fbserver ] || [ -x $FBSBIN/fb_smp_server ] || exit 5
+# Check the file is there and is executable.
+[ -x $FIREBIRD/bin/fbmgr ] || exit 5
+[ -x $FIREBIRD/bin/fbguard ] || exit 5
+[ -x $FIREBIRD/bin/fbserver ] || exit 5
 
 # Shell functions sourced from /etc/rc.status:
 #      rc_check         check and set local and overall rc status
@@ -110,7 +88,7 @@ case "$1" in
 
 	# NOTE: startproc return 0, even if service is
 	# already running to match LSB spec.
-	startproc -u $FBRunUser $FBSBIN/fbguard -pidfile $pidfile -forever
+	startproc -u $FBRunUser $FIREBIRD/bin/fbguard -pidfile $pidfile -forever
 
 	# Remember status and be verbose
 	rc_status -v
@@ -166,7 +144,7 @@ case "$1" in
 	# 3 - service not running
 
 	# NOTE: checkproc returns LSB compliant status values.
-	checkproc $FBSBIN/fbguard
+	checkproc $FIREBIRD/bin/fbserver
 	rc_status -v
 	;;
 

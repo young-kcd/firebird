@@ -29,6 +29,19 @@
    check out GRANT.GDL, modify the trigger source to generate the
    proper blr, replace the blr in TRIG.H, and check both files back in. */
 
+/* NOTE:
+   The blr in trigger 1 has been manually changed to add a substring
+   operation to the four concatenations of SQL$ and the relation name.
+   This blr cannot be generate by gdef.  The modified blr is:
+
+       blr_substring,
+       blr_concatenate, 
+          blr_literal, blr_text, 4,0, 'S','Q','L','$',
+          blr_field, 5, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N','A','M','E', 
+       blr_literal, blr_long, 0, 0,0,0,0,
+       blr_literal, blr_long, 0, 31,0,0,0,
+*/
+
 namespace Jrd {
 
 /* trigger definition structure */
@@ -66,7 +79,7 @@ struct gen
 } //namespace Jrd
 
 /* generators needed by the system triggers */
-// Keep in sync with constants.h
+
 static const Jrd::gen generators[] =
 {
 	{ "RDB$SECURITY_CLASS", 1, NULL },
@@ -78,8 +91,6 @@ static const Jrd::gen generators[] =
 	{ "RDB$INDEX_NAME", 7, "Implicit index name" },
 	{ "RDB$TRIGGER_NAME", 8, "Implicit trigger name" },
 	{ "RDB$BACKUP_HISTORY", 9, "Nbackup technology" },
-	{ "RDB$FUNCTIONS", 10, "Function ID" },
-	{ "RDB$GENERATOR_NAME", 11, "Implicit generator name" },
 	{ 0, 0, NULL }
 };
 
@@ -97,6 +108,20 @@ static const TEXT trigger_1_msg_5 [] = "user does not have GRANT privileges on b
 
 static const UCHAR trigger1[] =
 {
+/* NOTE:
+   The blr in trigger 1 has been manually changed to add a substring
+   operation to the four concatenations of SQL$ and the relation name.
+   This avoids the generation of security class names that are longer
+   than 32 characters.
+   This blr cannot be generate by gdef.  The modified blr is:
+
+       blr_substring,
+       blr_concatenate, 
+          blr_literal, blr_text, 4,0, 'S','Q','L','$',
+          blr_field, 5, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N','A','M','E', 
+       blr_literal, blr_long, 0, 0,0,0,0,
+       blr_literal, blr_long, 0, 31,0,0,0,
+*/
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -164,26 +189,6 @@ static const UCHAR trigger1[] =
 	blr_eql,
 	blr_field, 5, 18, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
 		'R', 'E', '_', 'N', 'A', 'M', 'E',
-	blr_field, 1, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
-		'N', '_', 'N', 'A', 'M', 'E',
-	blr_end,
-	blr_leave, 0,
-	blr_end,
-	blr_if,
-	blr_and,
-	blr_eql,
-	blr_field, 1, 15, 'R', 'D', 'B', '$', 'O', 'B', 'J', 'E', 'C', 'T', '_',
-		'T', 'Y', 'P', 'E',
-	blr_literal, blr_long, 0, 18, 0, 0, 0,
-	blr_not,
-	blr_any,
-	blr_rse, 1,
-	blr_relation, 12, 'R', 'D', 'B', '$', 'P', 'A', 'C', 'K', 'A', 'G', 'E',
-		'S', 21,
-	blr_boolean,
-	blr_eql,
-	blr_field, 21, 16, 'R', 'D', 'B', '$', 'P', 'A', 'C', 'K', 'A', 'G', 'E',
-		'_', 'N', 'A', 'M', 'E',
 	blr_field, 1, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
 		'N', '_', 'N', 'A', 'M', 'E',
 	blr_end,
@@ -287,15 +292,10 @@ static const UCHAR trigger1[] =
 	blr_field, 6, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
 		'A', 'M', 'E',
 	blr_field, 1, 8, 'R', 'D', 'B', '$', 'U', 'S', 'E', 'R',
-	blr_or,
 	blr_eql,
 	blr_upcase,
 	blr_user_name,
 	blr_literal, blr_text, 6, 0, 'S', 'Y', 'S', 'D', 'B', 'A',
-	blr_eql,
-	blr_upcase,
-	blr_current_role,
-	blr_literal, blr_text, 9, 0, 'R', 'D', 'B', '$', 'A', 'D', 'M', 'I', 'N',
 	blr_begin,
 	blr_end,
 	blr_if,
@@ -414,15 +414,10 @@ static const UCHAR trigger1[] =
 		'A', 'M', 'E',
 	blr_field, 6, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
 		'A', 'M', 'E',
-	blr_and,
 	blr_neq,
 	blr_upcase,
 	blr_user_name,
 	blr_literal, blr_text, 6, 0, 'S', 'Y', 'S', 'D', 'B', 'A',
-	blr_neq,
-	blr_upcase,
-	blr_current_role,
-	blr_literal, blr_text, 9, 0, 'R', 'D', 'B', '$', 'A', 'D', 'M', 'I', 'N',
 	blr_begin,
 	blr_if,
 	blr_not,
@@ -507,15 +502,10 @@ static const UCHAR trigger1[] =
 		'A', 'M', 'E',
 	blr_field, 6, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
 		'A', 'M', 'E',
-	blr_and,
 	blr_neq,
 	blr_upcase,
 	blr_user_name,
 	blr_literal, blr_text, 6, 0, 'S', 'Y', 'S', 'D', 'B', 'A',
-	blr_neq,
-	blr_upcase,
-	blr_current_role,
-	blr_literal, blr_text, 9, 0, 'R', 'D', 'B', '$', 'A', 'D', 'M', 'I', 'N',
 	blr_begin,
 	blr_if,
 	blr_not,
@@ -573,22 +563,27 @@ static const UCHAR trigger1[] =
 	blr_modify, 6, 15,
 	blr_begin,
 	blr_assignment,
-	blr_cast, blr_varying2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_LEN),
+	blr_substring,
 	blr_concatenate,
-	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_gen_id, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
-		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_literal, blr_long, 0, 1, 0, 0, 0,
+	blr_literal, blr_text, 4, 0, 'S', 'Q', 'L', '$',
+	blr_field, 6, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
+		'N', '_', 'N', 'A', 'M', 'E',
+	blr_literal, blr_long, 0, 0, 0, 0, 0,
+	blr_literal, blr_long, 0, 31, 0, 0, 0,
 	blr_field, 15, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
 	blr_end,
 	blr_if,
-	blr_not,
-	blr_starting,
+	blr_neq,
 	blr_field, 6, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_cast, blr_varying2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_LEN),
-	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
+	blr_substring,
+	blr_concatenate,
+	blr_literal, blr_text, 4, 0, 'S', 'Q', 'L', '$',
+	blr_field, 6, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
+		'N', '_', 'N', 'A', 'M', 'E',
+	blr_literal, blr_long, 0, 0, 0, 0, 0,
+	blr_literal, blr_long, 0, 31, 0, 0, 0,
 	blr_leave, 3,
 	blr_end,
 	blr_end,
@@ -665,15 +660,10 @@ static const UCHAR trigger1[] =
 		'A', 'M', 'E',
 	blr_upcase,
 	blr_user_name,
-	blr_and,
 	blr_neq,
 	blr_upcase,
 	blr_user_name,
 	blr_literal, blr_text, 6, 0, 'S', 'Y', 'S', 'D', 'B', 'A',
-	blr_neq,
-	blr_upcase,
-	blr_current_role,
-	blr_literal, blr_text, 9, 0, 'R', 'D', 'B', '$', 'A', 'D', 'M', 'I', 'N',
 	blr_if,
 	blr_not,
 	blr_any,
@@ -732,132 +722,27 @@ static const UCHAR trigger1[] =
 	blr_modify, 18, 20,
 	blr_begin,
 	blr_assignment,
-	blr_cast, blr_varying2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_LEN),
+	blr_substring,
 	blr_concatenate,
-	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_gen_id, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
-		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_literal, blr_long, 0, 1, 0, 0, 0,
+	blr_literal, blr_text, 4, 0, 'S', 'Q', 'L', '$',
+	blr_field, 18, 18, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
+		'R', 'E', '_', 'N', 'A', 'M', 'E',
+	blr_literal, blr_long, 0, 0, 0, 0, 0,
+	blr_literal, blr_long, 0, 31, 0, 0, 0,
 	blr_field, 20, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
 	blr_end,
 	blr_if,
-	blr_not,
-	blr_starting,
+	blr_neq,
 	blr_field, 18, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
 		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_cast, blr_varying2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_LEN),
-	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_leave, 3,
-	blr_end,
-	blr_end,
-	blr_if,
-	blr_eql,
-	blr_field, 1, 15, 'R', 'D', 'B', '$', 'O', 'B', 'J', 'E', 'C', 'T', '_',
-		'T', 'Y', 'P', 'E',
-	blr_literal, blr_long, 0, 18, 0, 0, 0,
-	blr_for,
-	blr_rse, 1,
-	blr_relation, 12, 'R', 'D', 'B', '$', 'P', 'A', 'C', 'K', 'A', 'G', 'E',
-		'S', 22,
-	blr_boolean,
-	blr_eql,
-	blr_field, 22, 16, 'R', 'D', 'B', '$', 'P', 'A', 'C', 'K', 'A', 'G', 'E',
-		'_', 'N', 'A', 'M', 'E',
-	blr_field, 1, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
-		'N', '_', 'N', 'A', 'M', 'E',
-	blr_end,
-	blr_begin,
-	blr_if,
-	blr_and,
-	blr_neq,
-	blr_field, 22, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
-		'A', 'M', 'E',
-	blr_upcase,
-	blr_user_name,
-	blr_and,
-	blr_neq,
-	blr_upcase,
-	blr_user_name,
-	blr_literal, blr_text, 6, 0, 'S', 'Y', 'S', 'D', 'B', 'A',
-	blr_neq,
-	blr_upcase,
-	blr_current_role,
-	blr_literal, blr_text, 9, 0, 'R', 'D', 'B', '$', 'A', 'D', 'M', 'I', 'N',
-	blr_if,
-	blr_not,
-	blr_any,
-	blr_rse, 1,
-	blr_relation, 19, 'R', 'D', 'B', '$', 'U', 'S', 'E', 'R', '_', 'P', 'R',
-		'I', 'V', 'I', 'L', 'E', 'G', 'E', 'S', 24,
-	blr_boolean,
-	blr_and,
-	blr_eql,
-	blr_field, 24, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
-		'N', '_', 'N', 'A', 'M', 'E',
-	blr_field, 1, 17, 'R', 'D', 'B', '$', 'R', 'E', 'L', 'A', 'T', 'I', 'O',
-		'N', '_', 'N', 'A', 'M', 'E',
-	blr_and,
-	blr_eql,
-	blr_field, 24, 15, 'R', 'D', 'B', '$', 'O', 'B', 'J', 'E', 'C', 'T', '_',
-		'T', 'Y', 'P', 'E',
-	blr_literal, blr_long, 0, 18, 0, 0, 0,
-	blr_and,
-	blr_eql,
-	blr_field, 24, 13, 'R', 'D', 'B', '$', 'P', 'R', 'I', 'V', 'I', 'L', 'E',
-		'G', 'E',
-	blr_field, 1, 13, 'R', 'D', 'B', '$', 'P', 'R', 'I', 'V', 'I', 'L', 'E',
-		'G', 'E',
-	blr_and,
-	blr_eql,
-	blr_field, 24, 8, 'R', 'D', 'B', '$', 'U', 'S', 'E', 'R',
-	blr_field, 1, 11, 'R', 'D', 'B', '$', 'G', 'R', 'A', 'N', 'T', 'O', 'R',
-	blr_and,
-	blr_eql,
-	blr_field, 24, 13, 'R', 'D', 'B', '$', 'U', 'S', 'E', 'R', '_', 'T', 'Y',
-		'P', 'E',
-	blr_literal, blr_long, 0, 8, 0, 0, 0,
-	blr_and,
-	blr_neq,
-	blr_field, 24, 16, 'R', 'D', 'B', '$', 'G', 'R', 'A', 'N', 'T', '_', 'O',
-		'P', 'T', 'I', 'O', 'N',
-	blr_literal, blr_long, 0, 0, 0, 0, 0,
-	blr_or,
-	blr_missing,
-	blr_field, 24, 14, 'R', 'D', 'B', '$', 'F', 'I', 'E', 'L', 'D', '_', 'N',
-		'A', 'M', 'E',
-	blr_eql,
-	blr_field, 24, 14, 'R', 'D', 'B', '$', 'F', 'I', 'E', 'L', 'D', '_', 'N',
-		'A', 'M', 'E',
-	blr_field, 1, 14, 'R', 'D', 'B', '$', 'F', 'I', 'E', 'L', 'D', '_', 'N',
-		'A', 'M', 'E',
-	blr_end,
-	blr_leave, 2,
-	blr_end,
-	blr_end,
-	blr_if,
-	blr_missing,
-	blr_field, 22, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
-		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_modify, 22, 23,
-	blr_begin,
-	blr_assignment,
-	blr_cast, blr_varying2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_LEN),
+	blr_substring,
 	blr_concatenate,
-	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
-	blr_gen_id, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
-		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_literal, blr_long, 0, 1, 0, 0, 0,
-	blr_field, 23, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
-		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_end,
-	blr_if,
-	blr_not,
-	blr_starting,
-	blr_field, 22, 18, 'R', 'D', 'B', '$', 'S', 'E', 'C', 'U', 'R', 'I', 'T',
-		'Y', '_', 'C', 'L', 'A', 'S', 'S',
-	blr_cast, blr_varying2, CS_METADATA, 0, BLR_WORD(MAX_SQL_IDENTIFIER_LEN),
-	blr_literal, blr_text2, 1, 0, 4, 0, 'S', 'Q', 'L', '$',
+	blr_literal, blr_text, 4, 0, 'S', 'Q', 'L', '$',
+	blr_field, 18, 18, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
+		'R', 'E', '_', 'N', 'A', 'M', 'E',
+	blr_literal, blr_long, 0, 0, 0, 0, 0,
+	blr_literal, blr_long, 0, 31, 0, 0, 0,
 	blr_leave, 3,
 	blr_end,
 	blr_end,
@@ -868,8 +753,7 @@ static const UCHAR trigger1[] =
 
 
 
-static const UCHAR trigger2[] =
-{
+static const UCHAR trigger2[] = {
 	blr_version5,
 	blr_if,
 	blr_not,
@@ -925,7 +809,7 @@ static const UCHAR trigger2[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -934,8 +818,7 @@ static const UCHAR trigger2[] =
 static const TEXT trigger_3_msg_0 [] = "cannot modify an existing user privilege";
 ******/
 
-static const UCHAR trigger3[] =
-{
+static const UCHAR trigger3[] = {
 	blr_version5,
 	blr_leave, 0,
 	blr_eoc
@@ -946,8 +829,7 @@ static const UCHAR trigger3[] =
 static const TEXT trigger_4_msg_0 [] = "cannot modify or erase a system trigger";
 ******/
 
-static const UCHAR trigger4[] =
-{
+static const UCHAR trigger4[] = {
 	blr_version5,
 	blr_if,
 	blr_eql,
@@ -960,8 +842,7 @@ static const UCHAR trigger4[] =
 };
 
 
-static const UCHAR trigger5[] =
-{
+static const UCHAR trigger5[] = {
 	blr_version5,
 	blr_if,
 	blr_missing,
@@ -973,7 +854,7 @@ static const UCHAR trigger5[] =
 	blr_field, 1, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
 		'A', 'M', 'E',
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -981,8 +862,7 @@ static const UCHAR trigger5[] =
 static const TEXT trigger_6_msg_0 [] = "only the owner of a relation may reassign ownership";
 ******/
 
-static const UCHAR trigger6[] =
-{
+static const UCHAR trigger6[] = {
 	blr_version5,
 	blr_if,
 	blr_and,
@@ -998,27 +878,19 @@ static const UCHAR trigger6[] =
 	blr_user_name,
 	blr_leave, 0,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
-static const UCHAR trigger7[] =
-{
+static const UCHAR trigger7[] = {
 	blr_version5,
-	blr_begin,
-	blr_if,
-	blr_missing,
-	blr_field, 1, 16, 'R', 'D', 'B', '$', 'G', 'E', 'N', 'E', 'R', 'A', 'T',
-		'O', 'R', '_', 'I', 'D',
 	blr_assignment,
 	blr_gen_id, 14, 'R', 'D', 'B', '$', 'G', 'E', 'N', 'E', 'R', 'A', 'T',
 		'O', 'R', 'S',
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
 	blr_field, 1, 16, 'R', 'D', 'B', '$', 'G', 'E', 'N', 'E', 'R', 'A', 'T',
 		'O', 'R', '_', 'I', 'D',
-	blr_end,
-	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1030,8 +902,7 @@ static const TEXT trigger_26_msg_1 [] = "internal gds software consistency check
 static const TEXT trigger_26_msg_2 [] = "Attempt to define a second primary key for the same relation";
 ******/
 
-static const UCHAR trigger26[] =
-{
+static const UCHAR trigger26[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1113,7 +984,7 @@ static const UCHAR trigger26[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1124,13 +995,12 @@ static const UCHAR trigger26[] =
 static const TEXT trigger_25_msg_0 [] = "Can't update constraints (RDB$RELATION_CONSTRAINTS).";
 ******/
 
-static const UCHAR trigger25[] =
-{
+static const UCHAR trigger25[] = {
 	blr_version5,
 	blr_begin,
 	blr_leave, 1,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1142,8 +1012,7 @@ static const TEXT trigger_10_msg_0 [] = "Cannot delete PRIMARY KEY being used in
 static const TEXT trigger_10_msg_1 [] = "Cannot drop NOT NULL constraint for fields in PRIMARY/UNIQUE constraints.";
 ******/
 
-static const UCHAR trigger10[] =
-{
+static const UCHAR trigger10[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1280,14 +1149,13 @@ static const UCHAR trigger10[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
 /* define trigger post_delete_constraint for rdb$relation_constraints   */
 
-static const UCHAR trigger11[] =
-{
+static const UCHAR trigger11[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1435,8 +1303,7 @@ static const TEXT trigger_12_msg_0 [] = "Name of Referential Constraint not defi
 static const TEXT trigger_12_msg_1 [] = "Non-existent Primary or Unique key specifed for Foreign Key.";
 ******/
 
-static const UCHAR trigger12[] =
-{
+static const UCHAR trigger12[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1487,7 +1354,7 @@ static const UCHAR trigger12[] =
 	blr_leave, 2,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1497,13 +1364,12 @@ static const UCHAR trigger12[] =
 static const TEXT trigger_13_msg_0 [] = "Can't update constraints (RDB$REF_CONSTRAINTS).";
 ******/
 
-static const UCHAR trigger13[] =
-{
+static const UCHAR trigger13[] = {
 	blr_version5,
 	blr_begin,
 	blr_leave, 1,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1513,13 +1379,12 @@ static const UCHAR trigger13[] =
 static const TEXT trigger_14_msg_0 [] = "Can't update constraints (RDB$CHECK_CONSTRAINTS).";
 ******/
 
-static const UCHAR trigger14[] =
-{
+static const UCHAR trigger14[] = {
 	blr_version5,
 	blr_begin,
 	blr_leave, 1,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1529,8 +1394,7 @@ static const UCHAR trigger14[] =
 static const TEXT trigger_15_msg_0 [] = "Can't delete CHECK constraint entry (RDB$CHECK_CONSTRAINTS)";
 ******/
 
-static const UCHAR trigger15[] =
-{
+static const UCHAR trigger15[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1548,14 +1412,14 @@ static const UCHAR trigger15[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
+
 };
 
 
 /* define trigger post_delete_check_constraint for rdb$check_constraints */
 
-static const UCHAR trigger16[] =
-{
+static const UCHAR trigger16[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -1641,8 +1505,7 @@ static const UCHAR trigger16[] =
 static const TEXT trigger_17_msg_0 [] = "Can't delete index segment used by an Integrity Constraint";
 ******/
 
-static const UCHAR trigger17[] =
-{
+static const UCHAR trigger17[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1660,7 +1523,7 @@ static const UCHAR trigger17[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1670,8 +1533,7 @@ static const UCHAR trigger17[] =
 static const TEXT trigger_18_msg_0 [] = "Can't update index segment used by an Integrity Constraint";
 ******/
 
-static const UCHAR trigger18[] =
-{
+static const UCHAR trigger18[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1709,7 +1571,7 @@ static const UCHAR trigger18[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1719,8 +1581,7 @@ static const UCHAR trigger18[] =
 static const TEXT trigger_19_msg_0 [] = "Can't delete index used by an Integrity Constraint";
 ******/
 
-static const UCHAR trigger19[] =
-{
+static const UCHAR trigger19[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1738,7 +1599,7 @@ static const UCHAR trigger19[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1750,8 +1611,7 @@ static const TEXT trigger_20_msg_1 [] = "Can't deactivate index used by an integ
 static const TEXT trigger_20_msg_2 [] = "Can't deactivate index used by a PRIMARY/UNIQUE constraint";
 ******/
 
-static const UCHAR trigger20[] =
-{
+static const UCHAR trigger20[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -1914,8 +1774,7 @@ static const UCHAR trigger20[] =
 static const TEXT trigger_21_msg_0 [] = "Can't delete trigger used by a CHECK Constraint";
 ******/
 
-static const UCHAR trigger21[] =
-{
+static const UCHAR trigger21[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -1946,7 +1805,7 @@ static const UCHAR trigger21[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -1956,8 +1815,7 @@ static const UCHAR trigger21[] =
 static const TEXT trigger_22_msg_0 [] = "Can't update trigger used by a CHECK Constraint";
 ******/
 
-static const UCHAR trigger22[] =
-{
+static const UCHAR trigger22[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -1985,57 +1843,10 @@ static const UCHAR trigger22[] =
 	blr_literal, blr_text, 5, 0, 'C', 'H', 'E', 'C', 'K',
 	blr_end,
 	blr_begin,
-	// ASF: Instead of always throw error here as before, we now check if any (except
-	// RDB$DESCRIPTION and RDB$TRIGGER_SOURCE) field was changed.
-	// We need this to RDB$FIX_METADATA (from metadata charset upgrade script) work.
-	blr_if,
-	blr_not,
-	blr_and,
-	blr_and,
-	blr_and,
-	blr_and,
-	blr_and,
-	blr_and,
-	blr_and,
-	blr_and,
-	blr_and,
-	blr_equiv,
-	blr_field, 0, 16, 'R','D','B','$','T','R','I','G','G','E','R','_','N','A','M','E',
-	blr_field, 1, 16, 'R','D','B','$','T','R','I','G','G','E','R','_','N','A','M','E',
-	blr_equiv,
-	blr_field, 0, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N','A','M','E',
-	blr_field, 1, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N','A','M','E',
-	blr_equiv,
-	blr_field, 0, 20, 'R','D','B','$','T','R','I','G','G','E','R','_','S','E','Q','U','E','N','C','E',
-	blr_field, 1, 20, 'R','D','B','$','T','R','I','G','G','E','R','_','S','E','Q','U','E','N','C','E',
-	blr_equiv,
-	blr_field, 0, 16, 'R','D','B','$','T','R','I','G','G','E','R','_','T','Y','P','E',
-	blr_field, 1, 16, 'R','D','B','$','T','R','I','G','G','E','R','_','T','Y','P','E',
-	blr_equiv,
-	blr_field, 0, 15, 'R','D','B','$','T','R','I','G','G','E','R','_','B','L','R',
-	blr_field, 1, 15, 'R','D','B','$','T','R','I','G','G','E','R','_','B','L','R',
-	blr_equiv,
-	blr_field, 0, 20, 'R','D','B','$','T','R','I','G','G','E','R','_','I','N','A','C','T','I','V','E',
-	blr_field, 1, 20, 'R','D','B','$','T','R','I','G','G','E','R','_','I','N','A','C','T','I','V','E',
-	blr_equiv,
-	blr_field, 0, 15, 'R','D','B','$','S','Y','S','T','E','M','_','F','L','A','G',
-	blr_field, 1, 15, 'R','D','B','$','S','Y','S','T','E','M','_','F','L','A','G',
-	blr_equiv,
-	blr_field, 0, 9, 'R','D','B','$','F','L','A','G','S',
-	blr_field, 1, 9, 'R','D','B','$','F','L','A','G','S',
-	blr_equiv,
-	blr_field, 0, 13, 'R','D','B','$','V','A','L','I','D','_','B','L','R',
-	blr_field, 1, 13, 'R','D','B','$','V','A','L','I','D','_','B','L','R',
-	blr_equiv,
-	blr_field, 0, 14, 'R','D','B','$','D','E','B','U','G','_','I','N','F','O',
-	blr_field, 1, 14, 'R','D','B','$','D','E','B','U','G','_','I','N','F','O',
-    blr_begin,
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_end,
-	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
@@ -2045,144 +1856,143 @@ static const UCHAR trigger22[] =
 static const TEXT trigger_23_msg_0 [] = "Cannot delete field being used in an integrity constraint.";
 ******/
 
-static const UCHAR trigger23[] =
-{
+static const UCHAR trigger23[] = {
 	blr_version5,
-    blr_begin,
-	blr_for,
-    blr_rse, 3,
-    blr_relation, 11, 'R','D','B','$','I','N','D','I','C','E','S', 3,
+    blr_begin, 
+	blr_for, 
+    blr_rse, 3, 
+    blr_relation, 11, 'R','D','B','$','I','N','D','I','C','E','S', 3, 
     blr_relation, 24, 'R','D','B','$','R','E','L','A','T','I','O','N','_','C',
-		'O','N','S','T','R','A','I','N','T','S', 4,
+		'O','N','S','T','R','A','I','N','T','S', 4, 
     blr_relation, 18, 'R','D','B','$','I','N','D','E','X','_','S','E','G','M',
-		'E','N','T','S', 5,
-    blr_boolean,
-    blr_and,
-    blr_eql,
+		'E','N','T','S', 5, 
+    blr_boolean, 
+    blr_and, 
+    blr_eql, 
     blr_field, 3, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N',
-		'A','M','E',
+		'A','M','E', 
     blr_field, 0, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N',
-		'A','M','E',
-    blr_and,
-    blr_eql,
-    blr_field, 3, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E',
-    blr_field, 5, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E',
-    blr_and,
-    blr_eql,
-    blr_field, 4, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E',
-    blr_field, 5, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E',
-    blr_eql,
-    blr_field, 5, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_end,
-    blr_begin,
-	blr_if,
-    blr_any,
-    blr_rse, 1,
+		'A','M','E', 
+    blr_and, 
+    blr_eql, 
+    blr_field, 3, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E', 
+    blr_field, 5, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E', 
+    blr_and, 
+    blr_eql, 
+    blr_field, 4, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E', 
+    blr_field, 5, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E', 
+    blr_eql, 
+    blr_field, 5, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_end, 
+    blr_begin, 
+	blr_if, 
+    blr_any, 
+    blr_rse, 1, 
     blr_relation, 18, 'R','D','B','$','I','N','D','E','X','_','S','E','G','M',
-		'E','N','T','S', 6,
-    blr_boolean,
-    blr_and,
-    blr_eql,
-    blr_field, 6, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E',
-    blr_field, 5, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E',
-    blr_neq,
-    blr_field, 6, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_end,
-    blr_leave, 1,
-    blr_erase, 4,
-    blr_end,
-    blr_for,
-    blr_rse, 3,
+		'E','N','T','S', 6, 
+    blr_boolean, 
+    blr_and, 
+    blr_eql, 
+    blr_field, 6, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E', 
+    blr_field, 5, 14, 'R','D','B','$','I','N','D','E','X','_','N','A','M','E', 
+    blr_neq, 
+    blr_field, 6, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_end, 
+    blr_leave, 1, 
+    blr_erase, 4, 
+    blr_end, 
+    blr_for, 
+    blr_rse, 3, 
     blr_relation, 24, 'R','D','B','$','R','E','L','A','T','I','O','N','_','C',
-		'O','N','S','T','R','A','I','N','T','S', 7,
+		'O','N','S','T','R','A','I','N','T','S', 7, 
     blr_relation, 21, 'R','D','B','$','C','H','E','C','K','_','C','O','N','S',
-		'T','R','A','I','N','T','S', 8,
+		'T','R','A','I','N','T','S', 8, 
     blr_relation, 16, 'R','D','B','$','D','E','P','E','N','D','E','N','C','I',
-		'E','S', 9,
-    blr_boolean,
-    blr_and,
-    blr_and,
-    blr_eql,
+		'E','S', 9, 
+    blr_boolean, 
+    blr_and, 
+    blr_and, 
+    blr_eql, 
     blr_field, 7, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N',
-		'A','M','E',
+		'A','M','E', 
     blr_field, 0, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N',
-		'A','M','E',
-    blr_and,
-    blr_eql,
+		'A','M','E', 
+    blr_and, 
+    blr_eql, 
     blr_field, 7, 19, 'R','D','B','$','C','O','N','S','T','R','A','I','N','T',
-		'_','T','Y','P','E',
+		'_','T','Y','P','E', 
     blr_literal, blr_text, 5,0, 'C','H','E','C','K',
-    blr_and,
-    blr_eql,
+    blr_and, 
+    blr_eql, 
     blr_field, 8, 16, 'R','D','B','$','T','R','I','G','G','E','R','_','N','A',
-		'M','E',
+		'M','E', 
     blr_field, 9, 18, 'R','D','B','$','D','E','P','E','N','D','E','N','T','_',
-		'N','A','M','E',
-    blr_and,
-    blr_eql,
+		'N','A','M','E', 
+    blr_and, 
+    blr_eql, 
     blr_field, 9, 18, 'R','D','B','$','D','E','P','E','N','D','E','N','T','_',
-		'T','Y','P','E',
+		'T','Y','P','E', 
     blr_literal, blr_long, 0, 2,0,0,0,
-    blr_and,
-    blr_eql,
+    blr_and, 
+    blr_eql, 
     blr_field, 9, 20, 'R','D','B','$','D','E','P','E','N','D','E','D','_','O',
-		'N','_','T','Y','P','E',
+		'N','_','T','Y','P','E', 
     blr_literal, blr_long, 0, 0,0,0,0,
-    blr_and,
-    blr_eql,
+    blr_and, 
+    blr_eql, 
     blr_field, 9, 20, 'R','D','B','$','D','E','P','E','N','D','E','D','_','O',
-		'N','_','N','A','M','E',
+		'N','_','N','A','M','E', 
     blr_field, 0, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N',
-		'A','M','E',
-    blr_eql,
-    blr_field, 9, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_eql,
+		'A','M','E', 
+    blr_eql, 
+    blr_field, 9, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_eql, 
     blr_field, 8, 19, 'R','D','B','$','C','O','N','S','T','R','A','I','N','T',
-		'_','N','A','M','E',
+		'_','N','A','M','E', 
     blr_field, 7, 19, 'R','D','B','$','C','O','N','S','T','R','A','I','N','T',
-		'_','N','A','M','E',
-    blr_end,
-    blr_begin,
-    blr_if,
-    blr_any,
-    blr_rse, 1,
+		'_','N','A','M','E', 
+    blr_end, 
+    blr_begin, 
+    blr_if, 
+    blr_any, 
+    blr_rse, 1, 
     blr_relation, 16, 'R','D','B','$','D','E','P','E','N','D','E','N','C','I',
-		'E','S', 10,
-    blr_boolean,
-    blr_and,
-    blr_eql,
+		'E','S', 10, 
+    blr_boolean, 
+    blr_and, 
+    blr_eql, 
     blr_field, 10, 18, 'R','D','B','$','D','E','P','E','N','D','E','N','T','_',
-		'N','A','M','E',
+		'N','A','M','E', 
     blr_field, 8, 16, 'R','D','B','$','T','R','I','G','G','E','R','_','N','A',
-		'M','E',
-    blr_and,
-    blr_eql,
+		'M','E', 
+    blr_and, 
+    blr_eql, 
     blr_field, 10, 18, 'R','D','B','$','D','E','P','E','N','D','E','N','T','_',
-		'T','Y','P','E',
+		'T','Y','P','E', 
     blr_literal, blr_long, 0, 2,0,0,0,
-    blr_and,
-    blr_eql,
+    blr_and, 
+    blr_eql, 
     blr_field, 10, 20, 'R','D','B','$','D','E','P','E','N','D','E','D','_','O',
-		'N','_','T','Y','P','E',
+		'N','_','T','Y','P','E', 
     blr_literal, blr_long, 0, 0,0,0,0,
-    blr_and,
-    blr_eql,
+    blr_and, 
+    blr_eql, 
     blr_field, 10, 20, 'R','D','B','$','D','E','P','E','N','D','E','D','_','O',
-		'N','_','N','A','M','E',
+		'N','_','N','A','M','E', 
     blr_field, 0, 17, 'R','D','B','$','R','E','L','A','T','I','O','N','_','N',
-		'A','M','E',
-    blr_neq,
-    blr_field, 10, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',
-    blr_end,
-    blr_leave, 1,
-    blr_erase, 7,
-    blr_end,
-    blr_end,
-    blr_eoc
+		'A','M','E', 
+    blr_neq, 
+    blr_field, 10, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_field, 0, 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E', 
+    blr_end, 
+    blr_leave, 1, 
+    blr_erase, 7, 
+    blr_end, 
+    blr_end, 
+    blr_eoc,
 };
 
 
@@ -2192,8 +2002,7 @@ static const UCHAR trigger23[] =
 static const TEXT trigger_24_msg_0 [] = "Cannot rename field being used in an integrity constraint.";
 ******/
 
-static const UCHAR trigger24[] =
-{
+static const UCHAR trigger24[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2257,14 +2066,13 @@ static const UCHAR trigger24[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
 
 /* define trigger post_delete_field for rdb$relation_fields  */
-static const UCHAR trigger27[] =
-{
+static const UCHAR trigger27[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -2302,12 +2110,11 @@ static const UCHAR trigger27[] =
 	blr_erase, 3,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 
-static const UCHAR trigger28[] =
-{
+static const UCHAR trigger28[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2320,10 +2127,6 @@ static const UCHAR trigger28[] =
 	blr_field, 1, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
 		'A', 'M', 'E',
 	blr_end,
-	blr_if,
-	blr_missing,
-	blr_field, 1, 16, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
-		'R', 'E', '_', 'I', 'D',
 	blr_assignment,
 	blr_gen_id, 14, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
 		'R', 'E', 'S',
@@ -2331,13 +2134,11 @@ static const UCHAR trigger28[] =
 	blr_field, 1, 16, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
 		'R', 'E', '_', 'I', 'D',
 	blr_end,
-	blr_end,
 	blr_eoc
 };
 
 
-static const UCHAR trigger29[] =
-{
+static const UCHAR trigger29[] = {
 	blr_version5,
 	blr_if,
 	blr_and,
@@ -2357,14 +2158,9 @@ static const UCHAR trigger29[] =
 };
 
 
-static const UCHAR trigger30[] =
-{
+static const UCHAR trigger30[] = {
 	blr_version5,
 	blr_begin,
-	blr_if,
-	blr_missing,
-	blr_field, 1, 20, 'R', 'D', 'B', '$', 'E', 'X', 'C', 'E', 'P', 'T', 'I',
-		'O', 'N', '_', 'N', 'U', 'M', 'B', 'E', 'R',
 	blr_assignment,
 	blr_gen_id, 14, 'R', 'D', 'B', '$', 'E', 'X', 'C', 'E', 'P', 'T', 'I',
 		'O', 'N', 'S',
@@ -2372,14 +2168,12 @@ static const UCHAR trigger30[] =
 	blr_field, 1, 20, 'R', 'D', 'B', '$', 'E', 'X', 'C', 'E', 'P', 'T', 'I',
 		'O', 'N', '_', 'N', 'U', 'M', 'B', 'E', 'R',
 	blr_end,
-	blr_end,
 	blr_eoc
 };
 
 
 /* new trigger to create ODS 8.1 (and to upgrade from ODS 8.0 to ODS 8.1 */
-static const UCHAR trigger31[] =
-{
+static const UCHAR trigger31[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2392,15 +2186,10 @@ static const UCHAR trigger31[] =
 	blr_field, 1, 11, 'R', 'D', 'B', '$', 'G', 'R', 'A', 'N', 'T', 'O', 'R',
 	blr_upcase,
 	blr_user_name,
-	blr_and,
 	blr_neq,
 	blr_upcase,
 	blr_user_name,
 	blr_literal, blr_text, 6, 0, 'S', 'Y', 'S', 'D', 'B', 'A',
-	blr_neq,
-	blr_upcase,
-	blr_current_role,
-	blr_literal, blr_text, 9, 0, 'R', 'D', 'B', '$', 'A', 'D', 'M', 'I', 'N',
 	blr_begin,
 	blr_for,
 	blr_rse, 1,
@@ -2435,8 +2224,7 @@ static const UCHAR trigger31[] =
 
 
 /* ODS 8.1 trigger  */
-static const UCHAR trigger34[] =
-{
+static const UCHAR trigger34[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2481,8 +2269,7 @@ static const UCHAR trigger34[] =
 };
 
 /* ODS 8.1 trigger  */
-static const UCHAR trigger35[] =
-{
+static const UCHAR trigger35[] = {
 	blr_version5,
 	blr_begin,
 	blr_for,
@@ -2518,8 +2305,7 @@ static const UCHAR trigger35[] =
 };
 
 /* ODS 11.0 trigger  */
-static const UCHAR trigger36[] =
-{
+static const UCHAR trigger36[] = {
 	blr_version5,
 	blr_begin,
 	blr_if,
@@ -2593,7 +2379,7 @@ static const UCHAR trigger36[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc
+	blr_eoc,
 };
 
 

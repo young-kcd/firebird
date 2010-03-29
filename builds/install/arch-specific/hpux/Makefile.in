@@ -27,6 +27,8 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in,v 1.1.2.2 2008-01-10 09:49:24 paulbeach Exp $
+#
 ROOT=..
 
 
@@ -75,11 +77,10 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
 TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar
-TgzFile=$(TarFile).gz
 DepotFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).depot
 RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
-#DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
-#DebugFile=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType).tar
+DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
+DebugFile=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType).tar
 psfFile=firebird$(ArchPrefix).psf
 
 PkgSrcDir=$(InstallRoot)/$(ArchType)
@@ -90,27 +91,66 @@ TarInstallDir=$(GEN_ROOT)/install
 
 dist : packages
 
-#packages: depotfile
-packages: tarfile depotfile
-#packages: tarfile debugfile depotfile
-
-depotfile: buildRoot $(DepotFile)
+packages: depotfile tarfile debugfile
+depotfile: $(DepotFile)
 
 $(DepotFile): buildDepot
-	(cd $(GEN_ROOT); /usr/sbin/swpackage -d "| gzip -c > $(DepotFile).gz" -x media_type=tape -s $(psfFile)) 
+	(cd $(GEN_ROOT); swpackage -d "| gzip -c > $(DepotFile).gz" -x media_type=tape -s $(psfFile)) 
 
-tarfile:  buildRoot $(TgzFile)
+tarfile:  $(TarFile)
 
-$(TgzFile) :  buildTarDir
-	(cd $(GEN_ROOT); tar -cvf - $(TarDir) | gzip -c >$(TgzFile))
+$(TarFile) :  buildTarDir
+	(cd $(GEN_ROOT); tar -cvf $(TarFile) $(TarDir))
 
-#debugfile:  $(DebugFile)
+debugfile:  $(DebugFile)
 
-#$(DebugFile) :  buildImageDir
-#	(cd $(GEN_ROOT)/$(DebugDir); tar -cvf ../$(DebugFile) *)
+$(DebugFile) :  buildImageDir
+	(cd $(GEN_ROOT)/$(DebugDir); tar -cvf ../$(DebugFile) *)
+
+# objcopy --add-gnu-debuglink fails with binutils 2.14 or older
+# its failure affects only GDB ability to pick up external debug 
+# symbols automatically. We may use eu-strip command from elfutils 
+# instead, but it doesn't work or compile with such distros 
+# as Mandrake 9.0 not saying about older ones. New binutils
+# seem to compile and work everywhere I tried, but we try to 
+# use eu-strip first since it is a part of default Red Hat 9 
+# install and is available in binary form for Mandrake 9.1 and newer.
+#
+#     28-Dec-2003. Nickolay Samofatov
+#
+# Do not use eu-strip any longer because version 0.89/AMD64 shipped with 
+# Mandrake 9.2 produces broken debuginfo packages and there is no easy way to 
+# detect the breakage. Binutils seem to be more reliable alternative to me.
+#
+#     05-Apr-2004. Nickolay Samofatov
+#
 
 buildRoot:
 	(cd $(GEN_ROOT); ./install/makeinstallImage.sh)
+
+buildDebugInfo: buildRoot
+	mkdir -p $(GEN_ROOT)/$(DebugDir)
+	for x in `(cd $(GEN_ROOT)/buildroot; find)`; do \
+        FIL=$(GEN_ROOT)/buildroot/$$x; \
+        D_FIL=$(GEN_ROOT)/$(DebugDir)/`dirname $${x}`/.debug/`basename $${x}`.debug; \
+        if [ ! -h $$FIL ] && readelf -h $$FIL > /dev/null 2> /dev/null; then \
+            mkdir -p $(GEN_ROOT)/$(DebugDir)/`dirname $$x`/.debug; \
+            echo Generating external debug info for $$x; \
+            cp $${FIL} $${D_FIL}; \
+            if objcopy --add-gnu-debuglink $${D_FIL} $${FIL}; > /dev/null 2> /dev/null; then \
+                echo Succeeded using objcopy from binutils; \
+            else \
+                echo Failed to set debug link for $${x}; \
+            fi; \
+            echo Stripping unneeded symbols from $${x}; \
+            objcopy --strip-debug --strip-unneeded $${FIL}; \
+        fi; \
+    done
+# Work around GDB 6.0 bug
+	mkdir -p $(GEN_ROOT)/$(DebugDir)@libdir@/.debug
+	for x in `ls $(GEN_ROOT)/$(DebugDir)@prefix@/lib/.debug`; do \
+        ln -f -s @prefix@/lib/.debug/`basename $$x` $(GEN_ROOT)/$(DebugDir)@libdir@/.debug; \
+    done
 
 # Use this line if you don't want to use separate debug info
 buildImageDir: buildRoot
@@ -122,10 +162,11 @@ buildTarDir: buildImageDir
 	cp -r $(GEN_ROOT)/install/scripts $(GEN_ROOT)/$(TarDir)
 	cp -r $(GEN_ROOT)/install/scripts/tarmainInstall.sh $(GEN_ROOT)/$(TarDir)/install.sh
 	chmod a+x $(GEN_ROOT)/$(TarDir)/install.sh $(GEN_ROOT)/$(TarDir)/scripts/*sh
-	(cd $(GEN_ROOT)/buildroot; rm -f buildroot.tar manifest.txt; tar -cvf buildroot.tar * )
+	(cd $(GEN_ROOT)/buildroot; tar -cvf buildroot.tar usr opt )
 	(cd $(GEN_ROOT)/buildroot; tar -tvf buildroot.tar > manifest.txt )
 	(cd $(GEN_ROOT)/buildroot; cp buildroot.tar ../$(TarDir)/buildroot.tar )
 	(cd $(GEN_ROOT)/buildroot; cp manifest.txt ../$(TarDir)/manifest.txt )
 
 install: buildTarDir
 	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)
+	cp -r $(GEN_ROOT)/$(DebugDir)/* /

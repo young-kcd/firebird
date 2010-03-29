@@ -47,8 +47,8 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-SERVER_Files = $(OS_ServerFiles) server.cpp
-SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) jrd/pwd.cpp
+SERVER_Files = $(OS_ServerFiles) server.cpp 
+SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
 
@@ -59,11 +59,17 @@ Dependencies = $(AllObjects:.o=.d)
 
 .PHONY: libfbembed
 
-libfbembed : $(LIBIBUTIL_SO) $(LIBFBEMBED_SONAME)
+libfbembed : $(LIBFBEMBED_SONAME)
 
 $(LIBFBEMBED_SO): $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
-	$(LINK_EMBED) -o $@ $^ $(LINK_EMBED_LIBS)
-
+ifeq ($(PLATFORM),DARWIN)
+	$(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) \
+$(LIB_EMBED_LINK_OPTIONS) $(LIB_LINK_SONAME) \
+-o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
+else
+	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) \
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
+endif
 $(LIBFBEMBED_SOBASENAME): $(LIBFBEMBED_SO)
 	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
 

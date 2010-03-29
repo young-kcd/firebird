@@ -28,16 +28,11 @@
 extern "C" {
 #endif
 
-int		API_ROUTINE perf_format(const struct perf*, const struct perf*,
+int		API_ROUTINE perf_format(const struct perf*, const struct perf*, 
 								const SCHAR*, SCHAR*, SSHORT*);
 void	API_ROUTINE perf_get_info(FB_API_HANDLE*, struct perf*);
-void	API_ROUTINE perf_report(const struct perf*, const struct perf*, SCHAR*, SSHORT*);
-
-
-int		API_ROUTINE perf64_format(const struct perf64*, const struct perf64*,
-								const SCHAR*, SCHAR*, SSHORT*);
-void	API_ROUTINE perf64_get_info(FB_API_HANDLE*, struct perf64*);
-void	API_ROUTINE perf64_report(const struct perf64*, const struct perf64*, SCHAR*, SSHORT*);
+void	API_ROUTINE perf_report(const struct perf*, const struct perf*, SCHAR*,
+									SSHORT*);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -1,27 +1,27 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	C preprocess
 //		MODULE:		int_cxx.cpp
 //		DESCRIPTION:	Code generate for internal JRD modules
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings in generated code
-//
+//  
 //
 //____________________________________________________________
 //
@@ -39,14 +39,14 @@
 #include "../common/utils_proto.h"
 
 static void align(const int);
-static void asgn_from(ref*, int);
+static void asgn_from(REF, int);
 #ifdef NOT_USED_OR_REPLACED
-static void asgn_to(ref*);
+static void asgn_to(REF);
 #endif
 static void gen_at_end(const act*, int);
 static void gen_blr(void*, SSHORT, const char*);
 static void gen_compile(const gpre_req*, int);
-static void gen_database();
+static void gen_database(const act*, int);
 static void gen_emodify(const act*, int);
 static void gen_estore(const act*, int, bool);
 static void gen_endfor(const act*, int);
@@ -64,7 +64,7 @@ static void gen_send(const gpre_req*, const gpre_port*, int, bool);
 static void gen_start(const gpre_req*, const gpre_port*, int, bool);
 static void gen_type(const act*, int);
 static void gen_variable(const act*, int);
-static void make_port(const gpre_port*, int);
+static void make_port(gpre_port*, int);
 static void printa(const int, const TEXT*, ...);
 
 static bool global_first_flag = false;
@@ -73,7 +73,7 @@ const int INDENT = 3;
 
 static const char* const GDS_VTOV = "gds__vtov";
 static const char* const JRD_VTOF = "jrd_vtof";
-static const char* const VTO_CALL = "%s ((const char*) %s, (char*) %s, %d);";
+static const char* const VTO_CALL = "%s ((const char*)%s, (char*)%s, %d);";
 
 static inline void begin(const int column)
 {
@@ -86,16 +86,15 @@ static inline void endp(const int column)
 }
 
 //____________________________________________________________
-//
-//
+//  
+//  
 
 void INT_CXX_action( const act* action, int column)
 {
 
-	// Put leading braces where required
+//  Put leading braces where required 
 
-	switch (action->act_type)
-	{
+	switch (action->act_type) {
 	case ACT_for:
 	case ACT_insert:
 	case ACT_modify:
@@ -106,14 +105,13 @@ void INT_CXX_action( const act* action, int column)
 		align(column);
 	}
 
-	switch (action->act_type)
-	{
+	switch (action->act_type) {
 	case ACT_at_end:
 		gen_at_end(action, column);
 		return;
 	case ACT_b_declare:
 	case ACT_database:
-		gen_database();
+		gen_database(action, column);
 		return;
 	case ACT_endfor:
 		gen_endfor(action, column);
@@ -158,39 +156,41 @@ void INT_CXX_action( const act* action, int column)
 		return;
 	}
 
-	// Put in a trailing brace for those actions still with us
+//  Put in a trailing brace for those actions still with us 
 
 	endp(column);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Align output to a specific column for output.
-//
+//  
 
 static void align(const int column)
 {
+	int i;
+
 	if (column < 0)
 		return;
 
 	putc('\n', gpreGlob.out_file);
 
-	for (int i = column / 8; i; --i)
+	for (i = column / 8; i; --i)
 		putc('\t', gpreGlob.out_file);
 
-	for (int i = column % 8; i; --i)
+	for (i = column % 8; i; --i)
 		putc(' ', gpreGlob.out_file);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment from a host language variable to
 //		a port variable.
-//
+//  
 
-static void asgn_from( ref* reference, int column)
+static void asgn_from( REF reference, int column)
 {
 	TEXT variable[MAX_REF_SIZE];
 	TEXT temp[MAX_REF_SIZE];
@@ -213,10 +213,14 @@ static void asgn_from( ref* reference, int column)
 		// gds$_vtov2 and jrd_vtof2 wherever necessary
 
 		if (!field || field->fld_dtype == dtype_text)
-			fprintf(gpreGlob.out_file, VTO_CALL, JRD_VTOF, value, variable,
+			fprintf(gpreGlob.out_file, VTO_CALL,
+					   JRD_VTOF,
+					   value, variable,
 					   field ? field->fld_length : 0);
 		else if (!field || field->fld_dtype == dtype_cstring)
-			fprintf(gpreGlob.out_file, VTO_CALL, GDS_VTOV, value, variable,
+			fprintf(gpreGlob.out_file, VTO_CALL,
+					   GDS_VTOV,
+					   value, variable,
 					   field ? field->fld_length : 0);
 		else
 			fprintf(gpreGlob.out_file, "%s = %s;", variable, value);
@@ -225,16 +229,16 @@ static void asgn_from( ref* reference, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment to a host language variable from
 //		a port variable.
-//
+//  
 #ifdef NOT_USED_OR_REPLACED
-static void asgn_to( ref* reference)
+static void asgn_to( REF reference)
 {
 	TEXT s[MAX_REF_SIZE];
 
-	ref* source = reference->ref_friend;
+	REF source = reference->ref_friend;
 	gpre_fld* field = source->ref_field;
 	gen_name(s, source);
 
@@ -242,10 +246,12 @@ static void asgn_to( ref* reference)
 	// emitting jrd_ftof call.
 
 	if (!field || field->fld_dtype == dtype_text)
-		fprintf(gpreGlob.out_file, "gds__ftov (%s, %d, %s, sizeof(%s));",
-				   s, field ? field->fld_length : 0, reference->ref_value, reference->ref_value);
+		fprintf(gpreGlob.out_file, "gds__ftov (%s, %d, %s, sizeof (%s));",
+				   s,
+				   field ? field->fld_length : 0,
+				   reference->ref_value, reference->ref_value);
 	else if (!field || field->fld_dtype == dtype_cstring)
-		fprintf(gpreGlob.out_file, "gds__vtov((const char*) %s, (char*) %s, sizeof(%s));",
+		fprintf(gpreGlob.out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
 				   s, reference->ref_value, reference->ref_value);
 	else
 		fprintf(gpreGlob.out_file, "%s = %s;", reference->ref_value, s);
@@ -253,9 +259,9 @@ static void asgn_to( ref* reference)
 #endif
 
 //____________________________________________________________
-//
+//  
 //		Generate code for AT END clause of FETCH.
-//
+//  
 
 static void gen_at_end( const act* action, int column)
 {
@@ -267,44 +273,43 @@ static void gen_at_end( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Callback routine for BLR pretty printer.
-//
+//  
 
-static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
+static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
 	fprintf(gpreGlob.out_file, "%s\n", string);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to compile a request.
-//
+//  
 
 static void gen_compile( const gpre_req* request, int column)
 {
 	column += INDENT;
-	//const gpre_dbb* db = request->req_database;
-	//const gpre_sym* symbol = db->dbb_name;
+	const dbb* db = request->req_database;
+	const gpre_sym* symbol = db->dbb_name;
 	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);
 	fprintf(gpreGlob.out_file,
-		"%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"), true);",
-			   request->req_handle, request->req_ident, request->req_ident);
+			   "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%"ULONGFORMAT", TRUE);",
+			   request->req_handle, request->req_ident);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate insertion text for the database statement.
-//
+//  
 
-static void gen_database()
+static void gen_database( const act* action, int column)
 {
 	if (global_first_flag)
 		return;
-
 	global_first_flag = true;
 
 	align(0);
@@ -314,9 +319,9 @@ static void gen_database()
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_MODIFY.
-//
+//  
 
 static void gen_emodify( const act* action, int column)
 {
@@ -325,7 +330,7 @@ static void gen_emodify( const act* action, int column)
 	const upd* modify = (upd*) action->act_object;
 
 	for (const ref* reference = modify->upd_port->por_references; reference;
-		reference = reference->ref_next)
+		 reference = reference->ref_next)
 	{
 		const ref* source = reference->ref_source;
 		if (!source) {
@@ -334,19 +339,18 @@ static void gen_emodify( const act* action, int column)
 		const gpre_fld* field = reference->ref_field;
 		align(column);
 
-		switch (field->fld_dtype)
-		{
-		case dtype_text:
+		if (field->fld_dtype == dtype_text)
 			fprintf(gpreGlob.out_file, "jrd_ftof (%s, %d, %s, %d);",
-					gen_name(s1, source), field->fld_length, gen_name(s2, reference), field->fld_length);
-			break;
-		case dtype_cstring:
-			fprintf(gpreGlob.out_file, "gds__vtov((const char*) %s, (char*) %s, %d);",
-					gen_name(s1, source), gen_name(s2, reference), field->fld_length);
-			break;
-		default:
-			fprintf(gpreGlob.out_file, "%s = %s;", gen_name(s1, reference), gen_name(s2, source));
-		}
+					   gen_name(s1, source),
+					   field->fld_length,
+					   gen_name(s2, reference), field->fld_length);
+		else if (field->fld_dtype == dtype_cstring)
+			fprintf(gpreGlob.out_file, "gds__vtov((const char*)%s, (char*)%s, %d);",
+					   gen_name(s1, source),
+					   gen_name(s2, reference), field->fld_length);
+		else
+			fprintf(gpreGlob.out_file, "%s = %s;",
+					   gen_name(s1, reference), gen_name(s2, source));
 	}
 
 	gen_send(action->act_request, modify->upd_port, column, false);
@@ -354,9 +358,9 @@ static void gen_emodify( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STORE.
-//
+//  
 
 static void gen_estore( const act* action, int column, bool special)
 {
@@ -368,9 +372,9 @@ static void gen_estore( const act* action, int column, bool special)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate definitions associated with a single request.
-//
+//  
 
 static void gen_endfor( const act* action, int column)
 {
@@ -385,9 +389,9 @@ static void gen_endfor( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for ERASE.
-//
+//  
 
 static void gen_erase( const act* action, int column)
 {
@@ -397,9 +401,9 @@ static void gen_erase( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FOR statement.
-//
+//  
 
 static void gen_for( const act* action, int column)
 {
@@ -420,24 +424,25 @@ static void gen_for( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a name for a reference.  Name is constructed from
 //		port and parameter idents.
-//
+//  
 
 static char* gen_name(char* const string, const ref* reference)
 {
+
 	fb_utils::snprintf(string, MAX_REF_SIZE, "jrd_%d.jrd_%d",
-					   reference->ref_port->por_ident, reference->ref_ident);
+			reference->ref_port->por_ident, reference->ref_ident);
 
 	return string;
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate BLR in raw, numeric form.  Ugly but dense.
-//
+//  
 
 static void gen_raw( const gpre_req* request)
 {
@@ -448,8 +453,7 @@ static void gen_raw( const gpre_req* request)
 	TEXT* p = buffer;
 	align(0);
 
-	while (--blr_length)
-	{
+	while (--blr_length) {
 		const UCHAR c = *blr++;
 		if ((c >= 'A' && c <= 'Z') || c == '$' || c == '_')
 			sprintf(p, "'%c',", c);
@@ -457,8 +461,7 @@ static void gen_raw( const gpre_req* request)
 			sprintf(p, "%d,", c);
 		while (*p)
 			p++;
-		if (p - buffer > 60)
-		{
+		if (p - buffer > 60) {
 			fprintf(gpreGlob.out_file, "%s\n", buffer);
 			p = buffer;
 			*p = 0;
@@ -470,30 +473,31 @@ static void gen_raw( const gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a send or receive call for a port.
-//
+//  
 
 static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
 
 	fprintf(gpreGlob.out_file,
-			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*) &jrd_%"ULONGFORMAT");",
+			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*)&jrd_%"ULONGFORMAT");",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate definitions associated with a single request.
-//
+//  
 
 static void gen_request( const gpre_req* request)
 {
 
 	if (!(request->req_flags & REQ_exp_hand))
-		fprintf(gpreGlob.out_file, "static void\t*%s;\t// request handle \n", request->req_handle);
+		fprintf(gpreGlob.out_file, "static void\t*%s;\t// request handle \n",
+				   request->req_handle);
 
 	fprintf(gpreGlob.out_file, "static const UCHAR\tjrd_%"ULONGFORMAT" [%d] =",
 			   request->req_ident, request->req_length);
@@ -503,33 +507,33 @@ static void gen_request( const gpre_req* request)
 	if (gpreGlob.sw_raw)
 		gen_raw(request);
 	else
-		fb_print_blr(request->req_blr, request->req_length, gen_blr, 0, 0);
+		gds__print_blr(request->req_blr, gen_blr, 0, 0);
 
 	printa(INDENT, "};\t// end of blr string \n");
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Process routine head.  If there are gpreGlob.requests in the
 //		routine, insert local definitions.
-//
+//  
 
 static void gen_routine( const act* action, int column)
 {
 	for (const gpre_req* request = (gpre_req*) action->act_object; request;
-		request = request->req_routine)
+		 request = request->req_routine) 
 	{
-		for (const gpre_port* port = request->req_ports; port; port = port->por_next)
+		for (gpre_port* port = request->req_ports; port; port = port->por_next)
 			make_port(port, column + INDENT);
 	}
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STREAM.
-//
+//  
 
 static void gen_s_end( const act* action, int column)
 {
@@ -539,9 +543,9 @@ static void gen_s_end( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FETCH.
-//
+//  
 
 static void gen_s_fetch( const act* action, int column)
 {
@@ -554,10 +558,10 @@ static void gen_s_fetch( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to compile and start a stream.  This is
 //		used both by START_STREAM and FOR
-//
+//  
 
 static void gen_s_start( const act* action, int column)
 {
@@ -573,14 +577,14 @@ static void gen_s_start( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a send or receive call for a port.
-//
+//  
 
-static void gen_send( const gpre_req* request, const gpre_port* port, int column, bool special)
+static void gen_send( const gpre_req* request, const gpre_port* port,
+	int column, bool special)
 {
-	if (special)
-	{
+	if (special) {
 		align(column);
 		fprintf(gpreGlob.out_file, "if (ignore_perm)");
 		align(column);
@@ -588,21 +592,24 @@ static void gen_send( const gpre_req* request, const gpre_port* port, int column
 	}
 	align(column);
 
-	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*) &jrd_%"ULONGFORMAT");",
-			   request->req_handle, port->por_msg_number, port->por_length, port->por_ident);
+	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%"ULONGFORMAT");",
+			   request->req_handle,
+			   port->por_msg_number, port->por_length, port->por_ident);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a START.
-//
+//  
 
-static void gen_start( const gpre_req* request, const gpre_port* port, int column, bool special)
+static void gen_start( const gpre_req* request, const gpre_port* port,
+	int column, bool special)
 {
 	align(column);
 
-	fprintf(gpreGlob.out_file, "EXE_start (tdbb, %s, %s);", request->req_handle, request->req_trans);
+	fprintf(gpreGlob.out_file, "EXE_start (tdbb, %s, %s);",
+			   request->req_handle, request->req_trans);
 
 	if (port)
 		gen_send(request, port, column, special);
@@ -610,9 +617,9 @@ static void gen_start( const gpre_req* request, const gpre_port* port, int colum
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a variable reference.
-//
+//  
 
 static void gen_type( const act* action, int column)
 {
@@ -622,9 +629,9 @@ static void gen_type( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a variable reference.
-//
+//  
 
 static void gen_variable( const act* action, int column)
 {
@@ -637,83 +644,91 @@ static void gen_variable( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Insert a port record description in output.
-//
+//  
 
-static void make_port( const gpre_port* port, int column)
+static void make_port( gpre_port* port, int column)
 {
 	printa(column, "struct {");
 
-	for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
+	for (REF reference = port->por_references; reference;
+		 reference = reference->ref_next)
 	{
 		align(column + INDENT);
-		const gpre_fld* field = reference->ref_field;
-		const gpre_sym* symbol = field->fld_symbol;
+		gpre_fld* field = reference->ref_field;
+		gpre_sym* symbol = field->fld_symbol;
 		const TEXT* name = symbol->sym_string;
-		const char* fmtstr = NULL;
 
-		switch (field->fld_dtype)
-		{
+		switch (field->fld_dtype) {
 		case dtype_short:
-			fmtstr = "    SSHORT jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    SSHORT jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
 		case dtype_long:
-			fmtstr = "    SLONG  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    SLONG  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
-		// Begin sql date/time/timestamp
+// ** Begin sql date/time/timestamp *
 		case dtype_sql_date:
-			fmtstr = "    ISC_DATE  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    ISC_DATE  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
 		case dtype_sql_time:
-			fmtstr = "    ISC_TIME  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    ISC_TIME  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
 		case dtype_timestamp:
-			fmtstr = "    ISC_TIMESTAMP  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    ISC_TIMESTAMP  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
-		// End sql date/time/timestamp
+// ** End sql date/time/timestamp *
 
 		case dtype_int64:
-			fmtstr = "    ISC_INT64  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    ISC_INT64  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
 		case dtype_quad:
-			fmtstr = "    ISC_QUAD  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    ISC_QUAD  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
-
+			
 		case dtype_blob:
-			fmtstr = "    bid  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    bid  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
 		case dtype_cstring:
 		case dtype_text:
 			fprintf(gpreGlob.out_file, "    TEXT  jrd_%d [%d];\t// %s ",
-					reference->ref_ident, field->fld_length, name);
+					   reference->ref_ident, field->fld_length, name);
 			break;
 
 		case dtype_real:
-			fmtstr = "    float  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    float  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
 		case dtype_double:
-			fmtstr = "    double  jrd_%d;\t// %s ";
+			fprintf(gpreGlob.out_file, "    double  jrd_%d;\t// %s ",
+					   reference->ref_ident, name);
 			break;
 
 		default:
 			{
 				TEXT s[ERROR_LENGTH];
-				fb_utils::snprintf(s, sizeof(s), "datatype %d unknown for field %s, msg %d",
+				fb_utils::snprintf(s, sizeof(s),
+						"datatype %d unknown for field %s, msg %d",
 						field->fld_dtype, name, port->por_msg_number);
 				CPR_error(s);
 				return;
 			}
 		}
-		if (fmtstr)
-			fprintf(gpreGlob.out_file, fmtstr, reference->ref_ident, name);
 	}
 	align(column);
 	fprintf(gpreGlob.out_file, "} jrd_%"ULONGFORMAT";", port->por_ident);
@@ -721,9 +736,9 @@ static void make_port( const gpre_port* port, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Print a fixed string at a particular column.
-//
+//  
 
 static void printa(const int column, const TEXT* string, ...)
 {

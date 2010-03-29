@@ -24,10 +24,12 @@
 #ifndef INTL_LDCOMMON_H
 #define INTL_LDCOMMON_H
 
+/* #include "../jrd/gdsassert.h" */
+/* Put the assert in here */
+
 #include "../common/classes/alloc.h"
 #include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
-#include "../jrd/gdsassert.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../intl/ld.h"
@@ -36,6 +38,20 @@
 #undef DEBUG
 
 typedef USHORT UNICODE;
+
+/* Redirect the assertion code defined by gdsassert.h to a local routine */
+#ifdef fb_assert
+#undef fb_assert
+#endif
+#ifndef DEV_BUILD
+#define ERR_assert				/* nothing */
+#define fb_assert(ex)				/* nothing */
+#else
+#include <stdlib.h> /* prototype for abort() */
+#define ERR_assert	LD_assert
+#define fb_assert(ex)	{if (!(ex)) {LD_assert (__FILE__, __LINE__); abort();}}
+
+#endif
 
 #ifndef MIN
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
@@ -46,23 +62,10 @@ typedef USHORT UNICODE;
 
 
 
-#define	TEXTTYPE_ENTRY(name)	INTL_BOOL name (texttype* cache, charset* cs,										\
-												const ASCII* /*tt_name*/, const ASCII* /*cs_name*/,					\
-												USHORT attributes,													\
-												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
-												const ASCII* /*config_info*/)
+#define	TEXTTYPE_ENTRY(name)	INTL_BOOL name (TEXTTYPE cache, const ASCII* tt_name, const ASCII* cs_name, \
+												USHORT attributes, const UCHAR* specific_attributes, \
+												ULONG specific_attributes_length)
 
-#define	TEXTTYPE_ENTRY2(name)	INTL_BOOL name (texttype* cache, charset* /*cs*/,									\
-												const ASCII* /*tt_name*/, const ASCII* cs_name,						\
-												USHORT attributes,													\
-												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
-												const ASCII* config_info)
-
-#define	TEXTTYPE_ENTRY3(name)	INTL_BOOL name (texttype* cache, charset* /*cs*/,									\
-												const ASCII* /*tt_name*/, const ASCII* /*cs_name*/,					\
-												USHORT attributes,													\
-												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
-												const ASCII* /*config_info*/)
 
 
 #ifdef NOT_USED_OR_REPLACED
@@ -73,7 +76,7 @@ typedef USHORT UNICODE;
 
 
 
-#define CHARSET_ENTRY(name)	INTL_BOOL	name (charset* csptr, const ASCII* /*cs_name*/)
+#define CHARSET_ENTRY(name)	INTL_BOOL	name (charset* csptr, const ASCII* cs_name)
 
 #define CHARSET_RETURN	return (true)
 
@@ -87,4 +90,5 @@ inline void put(UCHAR*& dest, const C src)
 	dest += sizeof(C);
 }
 
-#endif // INTL_LDCOMMON_H
+#endif /* INTL_LDCOMMON_H */
+

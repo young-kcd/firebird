@@ -27,54 +27,27 @@
 const int APP_HSIZE			= 220;
 const int APP_VSIZE			= 150;
 
-// This is the title used by the hidden msgs window in the engine.
-// Both fbclient.dll and fbserver.exe should use the same.
+/* This is the title used by the hidden msgs window in the engine.
+   Both fbclient.dll and fbserver.exe should use the same. */
 
-static const char* const APP_NAME	= "Firebird Server";
-static const char* const APP_LABEL	= "Firebird Server";
+static const char* APP_NAME		= "Firebird Server";
+static const char* APP_LABEL	= "Firebird Server";
 
 #define ON_NOTIFYICON		WM_USER + 2
 
-// Moved to window.cpp
-//#define CHECK_VOLUME(a)		((a)->dbcv_devicetype == DBT_DEVTYP_VOLUME)
-//#define CHECK_USAGE(a)		((a)->dbcv_unitmask & ulInUseMask)
+const int WIN_TEXTLEN		= 128;
+const int MSG_STRINGLEN		= 64;
+const int DRV_STRINGLEN		= 32;
+const int TMP_STRINGLEN		= 512;
 
-// This is the class name used by the hidden msgs window in the engine.
-// Both fbclient.dll and fbserver.exe should use the same.
+#define CHECK_VOLUME(a)		((a)->dbcv_devicetype == DBT_DEVTYP_VOLUME)
+#define CHECK_USAGE(a)		((a)->dbcv_unitmask & ulInUseMask)
 
-static const char* const szClassName	= "FB_Server";
-static const char* const szWindowName	= "Firebird Server"; // Used in iscguard.cpp
+/* This is the class name used by the hidden msgs window in the engine.
+   Both fbclient.dll and fbserver.exe should use the same. */
 
-// Defines to make 32-bit only compilers happy
-
-#ifndef _WIN64
-#ifndef DWLP_MSGRESULT
-#define DWLP_MSGRESULT DWL_MSGRESULT
-#endif
-#ifndef GWLP_HINSTANCE
-#define GWLP_HINSTANCE GWL_HINSTANCE
-#endif
-#ifndef GCLP_HICON
-#define GCLP_HICON GCL_HICON
-#endif
-#ifndef LONG_PTR
-#define LONG_PTR LONG
-#endif
-#ifndef UINT_PTR
-#define UINT_PTR UINT
-#endif
-#ifndef GetWindowLongPtr
-#define GetWindowLongPtr GetWindowLong
-#endif
-#ifndef SetWindowLongPtr
-#define SetWindowLongPtr SetWindowLong
-#endif
-#ifndef GetClassLongPtr
-#define GetClassLongPtr GetClassLong
-#endif
-#ifndef SetClassLongPtr
-#define SetClassLongPtr SetClassLong
-#endif
-#endif // _WIN64
+static const char* szClassName = "FB_Server";
+static const char* szWindowName = "Firebird Server"; // Used in iscguard.cpp
 
 #endif // OS_WIN32_WINDOW_H
+

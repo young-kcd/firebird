@@ -26,9 +26,8 @@
 
 /* Definitions for DSQL free_statement routine */
 
-#define DSQL_close		1
-#define DSQL_drop		2
-#define DSQL_unprepare	4
+#define DSQL_close	1
+#define DSQL_drop	2
 
 /* Declare the extended SQLDA */
 
@@ -75,10 +74,9 @@ typedef struct
 #define SQL_BLOB                           520
 #define SQL_ARRAY                          540
 #define SQL_QUAD                           550
-#define SQL_TYPE_TIME                      560
+#define SQL_TYPE_TIME			   560
 #define SQL_TYPE_DATE                      570
 #define SQL_INT64                          580
-#define SQL_NULL                         32766
 
 /* Historical alias for pre v6 code */
 #define SQL_DATE                           SQL_TIMESTAMP

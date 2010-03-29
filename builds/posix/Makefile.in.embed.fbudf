@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.embed.fbudf,v 1.4.4.1 2007-03-07 15:04:15 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=superclient
-CXXFLAGS+= -DSUPERCLIENT
+CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -46,11 +47,11 @@ FBUDF_Files = fbudf.cpp
 FBUDF_Sources = $(addprefix extlib/fbudf/, $(FBUDF_Files)) $(FBUDF_Other_Sources)
 FBUDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUDF_Sources))))
 
-UTIL_Files = ib_util.cpp
+UTIL_Files = ib_util.c
 UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
-AllObjects = $(FBUDF_Objects)
+AllObjects = $(FBUDF_Objects) $(FBUTIL_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -63,10 +64,20 @@ all: lib_fbudf
 # User defined functions.  (I've put the .$(SHRLIB_EXT) extension back onto the library)
 # 
 
-lib_fbudf: $(LIBIBUTIL_SO) $(UDF)/fbudf.$(SHRLIB_EXT)
+lib_fbudf: $(UDF)/fbudf.$(SHRLIB_EXT) 
 
-$(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects)
-	$(call LINK_UDF,fbudf) -o $@ $^ $(LINK_UDF_LIBS)
+$(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(FBUTIL_Objects)
+ifeq ($(PLATFORM),win32)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) -L$(LIB) -lfbembed -o $@ $^
+endif
+ifeq ($(PLATFORM),DARWIN)
+	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
+-lm -o $@ $^
+else
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -lm -o $@ $^
+endif
+
 
 include $(ROOT)/gen/make.shared.targets
 

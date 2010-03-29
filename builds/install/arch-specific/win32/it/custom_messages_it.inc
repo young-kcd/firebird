@@ -44,7 +44,7 @@ it.InstalledProducts=L'analisi preliminare ha evidenziato la presenza di %s %s d
 it.InstalledProdCountSingular=versione
 it.InstalledProdCountPlural=versioni
 
-it.FbRunning1=Risulta al momento in esecuzione un'istanza di Firebird %s Server.
+it.FbRunning1=Risulta al momento in esecuzione un'istanza di %s Server.
 it.FbRunning2=     È necessario arrestare l'applicazione o il servizio
 it.FbRunning3=                    prima di continuare.
 

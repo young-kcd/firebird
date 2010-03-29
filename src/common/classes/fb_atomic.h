@@ -22,18 +22,14 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ * 
+ *
+ *  $Id: fb_atomic.h,v 1.4 2004-06-30 01:26:06 skidder Exp $
  *
  */
-
+ 
 #ifndef CLASSES_FB_ATOMIC_H
 #define CLASSES_FB_ATOMIC_H
-
-// Here we define an atomic type, which is to be used in interface for all OS
-#if SIZEOF_VOID_P == 8
-typedef SINT64 AtomicType;
-#else
-typedef SLONG AtomicType;
-#endif
 
 #if defined(WIN_NT)
 
@@ -46,65 +42,35 @@ namespace Firebird {
 class AtomicCounter
 {
 public:
-#ifdef _WIN64
-	typedef LONGLONG counter_type;
-#else
 	typedef LONG counter_type;
-#endif
-
-	explicit AtomicCounter(counter_type val = 0) : counter(val) {}
+	
+	AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
-
-	counter_type exchangeAdd(counter_type val)
-	{
-#ifdef _WIN64
-		return InterlockedExchangeAdd64(&counter, val);
-#else
+			
+	counter_type exchangeAdd(counter_type val) {
 		return InterlockedExchangeAdd(&counter, val);
-#endif
 	}
-
-	counter_type operator +=(counter_type val)
-	{
+	
+	counter_type operator +=(counter_type val) {
 		return exchangeAdd(val) + val;
 	}
-
-	counter_type operator -=(counter_type val)
-	{
+	
+	counter_type operator -=(counter_type val) {
 		return exchangeAdd(-val) - val;
 	}
-
-	counter_type operator ++()
-	{
-#ifdef _WIN64
-		return InterlockedIncrement64(&counter);
-#else
+	
+	counter_type operator ++() {
 		return InterlockedIncrement(&counter);
-#endif
 	}
-
-	counter_type operator --()
-	{
-#ifdef _WIN64
-		return InterlockedDecrement64(&counter);
-#else
+	
+	counter_type operator --() {
 		return InterlockedDecrement(&counter);
-#endif
 	}
-
+	
 	counter_type value() const { return counter; }
-
-	counter_type setValue(counter_type val)
-	{
-#ifdef _WIN64
-		return InterlockedExchange64(&counter, val);
-#else
-		return InterlockedExchange(&counter, val);
-#endif
-	}
-
+	
 private:
-# if defined(MINGW)
+# if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
 	counter_type counter;
 # else
 	volatile counter_type counter;
@@ -113,409 +79,107 @@ private:
 
 } // namespace Firebird
 
-#elif defined(AIX)
-
-#if SIZEOF_VOID_P != 8
-#error: Only 64-bit mode supported on AIX
-#endif
-
-#include <sys/atomic_op.h>
-
-namespace Firebird {
-
-// AIX version - uses AIX atomic API
-class AtomicCounter
-{
-private:
-	typedef long counter_type;
-
-public:
-	explicit AtomicCounter(AtomicType value = 0) : counter(value) {}
-	~AtomicCounter() {}
-
-	counter_type exchangeAdd(AtomicType value)
-	{
-		return fetch_and_addlp(&counter, static_cast<unsigned long>(value));
-	}
-
-	counter_type operator +=(AtomicType value)
-	{
-		return exchangeAdd(value) + value;
-	}
-
-	counter_type operator -=(AtomicType value)
-	{
-		return exchangeAdd(-value) - value;
-	}
-
-	counter_type operator ++()
-	{
-		return exchangeAdd(1) + 1;
-	}
-
-	counter_type operator --()
-	{
-		return exchangeAdd(-1) - 1;
-	}
-
-	counter_type value() const { return counter; }
-
-	counter_type setValue(AtomicType val)
-	{
-		counter_type old;
-		do
-		{
-			old = counter;
-		} while (!compare_and_swaplp(&counter, &old, val));
-		return old;
-	}
-
-private:
-	counter_type counter;
-};
-
-} // namespace Firebird
-
-#elif defined(HPUX) && defined(HAVE_ATOMIC_H)
-
-#include <atomic.h>
-
-namespace Firebird {
-
-// HPUX version - uses atomic API library
-class AtomicCounter
-{
-public:
-	typedef uint64_t counter_type;
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
-	~AtomicCounter() {}
-
-	counter_type exchangeAdd(counter_type value)
-	{
-		counter_type old = counter;
-		do
-		{
-			old = counter;
-			errno = 0;
-		} while (atomic_cas_64(&counter, old, old + value) != old);
-		return old;
-	}
-
-	counter_type operator +=(counter_type value)
-	{
-		return exchangeAdd(value) + value;
-	}
-
-	counter_type operator -=(counter_type value)
-	{
-		return exchangeAdd(-value) - value;
-	}
-
-	counter_type operator ++()
-	{
-		return atomic_inc_64(&counter) + 1;
-	}
-
-	counter_type operator --()
-	{
-		return atomic_dec_64(&counter) - 1;
-	}
-
-	counter_type value() const { return counter; }
-
-	counter_type setValue(counter_type val)
-	{
-		return atomic_swap_64(&counter, val);
-	}
-
-private:
-	volatile counter_type counter;
-};
-
-} // namespace Firebird
-
-#elif defined(SOLARIS) && defined(HAVE_ATOMIC_H)
-
-#include <atomic.h>
-
-namespace Firebird {
-
-// Solaris version - uses Solaris atomic_ops
-class AtomicCounter
-{
-public:
-	typedef volatile ulong_t counter_type;
-	typedef long delta_type;
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
-	~AtomicCounter() {}
-
-	counter_type exchangeAdd(delta_type value)
-	{
-		return atomic_add_long_nv(&counter, value);
-	}
-
-	counter_type operator +=(delta_type value)
-	{
-		return exchangeAdd(value) + value;
-	}
-
-	counter_type operator -=(delta_type value)
-	{
-		return exchangeAdd(-value) - value;
-	}
-
-	counter_type operator ++()
-	{
-		return atomic_inc_ulong_nv(&counter);
-	}
-
-	counter_type operator --()
-	{
-		return atomic_dec_ulong_nv(&counter);
-	}
-
-	counter_type value() const { return counter; }
-
-	counter_type setValue(delta_type value)
-	{
-		return atomic_swap_ulong(&counter, value);
-	}
-
-private:
-	counter_type counter;
-};
-
-} // namespace Firebird
-
-
-#elif defined(__SUNPRO_CC) && !defined(HAVE_ATOMIC_H) && defined(__sparc)
-// Solaris 9 does not have nice <atomic.h> header file, so we provide
-// an assembly language, Sun Studio Pro only, implementation.
-
-// assembly versions of fetch_and_add_il, compare_and_swap_il,
-// are in fb_atomic_*.il
-
-// No GNU CC implementation on Solaris 9 is planned!
-extern "C"
-{
-	extern int fetch_and_add_il(volatile unsigned int* word_addr, int value);
-	extern boolean_t compare_and_swap_il(volatile unsigned int* word_addr,
-		unsigned int* old_val_addr, unsigned int new_val);
-}
-
-namespace Firebird {
-
-class AtomicCounter
-{
-public:
-	typedef uint_t counter_type;
-	typedef int delta_type;
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
-	~AtomicCounter() {}
-
-	counter_type exchangeAdd(delta_type value)
-	{
-		return fetch_and_add_il(&counter, value);
-	}
-
-	counter_type operator +=(delta_type value)
-	{
-		return exchangeAdd(value) + value;
-	}
-
-	counter_type operator -=(delta_type value)
-	{
-		return exchangeAdd(-value) - value;
-	}
-
-	counter_type operator ++()
-	{
-		return exchangeAdd(1) + 1;
-	}
-
-	counter_type operator --()
-	{
-		return exchangeAdd(-1) - 1;
-	}
-
-	counter_type value() const { return counter; }
-
-	counter_type setValue(delta_type value)
-	{
-		counter_type old;
-		do
-		{
-			old = counter;
-		} while (!compare_and_swap_il(&counter, &old, value));
-		return old;
-	}
-
-private:
-	counter_type counter;
-};
-
-} // namespace Firebird
-
-#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
-
-namespace Firebird {
+#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64))
 
 // Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
 class AtomicCounter
 {
 public:
-	typedef AtomicType counter_type;
-
-	explicit AtomicCounter(AtomicType value = 0) : counter(value) {}
+	typedef int counter_type;
+	
+	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-
-	AtomicType exchangeAdd(AtomicType value)
-	{
+			
+	counter_type exchangeAdd(counter_type value) {
 		register counter_type result;
 		__asm __volatile (
-#if SIZEOF_VOID_P == 8
-			"lock; xaddq %0, %1"
-#else
 			"lock; xaddl %0, %1"
-#endif
 			 : "=r" (result), "=m" (counter)
 			 : "0" (value), "m" (counter));
 		return result;
 	}
-
-	AtomicType operator +=(AtomicType value)
-	{
+	
+	counter_type operator +=(counter_type value) {
 		return exchangeAdd(value) + value;
 	}
-
-	AtomicType operator -=(AtomicType value)
-	{
+	
+	counter_type operator -=(counter_type value) {
 		return exchangeAdd(-value) - value;
 	}
-
-	AtomicType operator ++()
-	{
+	
+	counter_type operator ++() {
 		return exchangeAdd(1) + 1;
 	}
-
-	AtomicType operator --()
-	{
+	
+	counter_type operator --() {
 		return exchangeAdd(-1) - 1;
 	}
-
-	AtomicType value() const { return counter; }
-
-	AtomicType setValue(AtomicType val)
-	{
-		register counter_type result;
-		__asm __volatile (
-#if SIZEOF_VOID_P == 8
-			"lock; xchgq %0, %1"
-#else
-			"lock; xchgl %0, %1"
-#endif
-			 : "=r" (result), "=m" (counter)
-			 : "0" (val), "m" (counter));
-		return result;
-	}
-
+	
+	counter_type value() const { return counter; }
+	
 private:
 	volatile counter_type counter;
 };
 
-} // namespace Firebird
+#else
 
-#elif defined(HAVE_AO_COMPARE_AND_SWAP_FULL) && !defined(HPUX)
-
-// Sometimes in the future it can become the best choice for all platforms.
-// Currently far not CPUs/OSs/compilers are supported well.
-// Therefore use it as last chance to build successfully.
-
-// wbo 2009-10 - We tested libatomic_ops against Firebird 2.5/HPUX and the
-// atomic implementation was incomplete on IA-64/HPPA
-
-#include <atomic_ops.h>
+# include "../common/classes/locks.h"
 
 namespace Firebird {
 
+// Highly inefficient, but safe and portable implementation
 class AtomicCounter
 {
 public:
-	typedef AO_t counter_type;		// AO_t should match maximum native in type
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	typedef int counter_type;
+	
+	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-
-	/*
-	counter_type exchangeAdd(counter_type value)
-	{
-		return AO_fetch_and_add_full(&counter, value);
+			
+	counter_type exchangeAdd(counter_type value) {
+		lock.enter();
+		counter_type temp = counter;
+		counter += value;
+		lock.leave();
+		return temp;		
 	}
-	*/
-	AtomicType exchangeAdd(AtomicType value)
-	{
-#ifdef DEV_BUILD
-		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(AtomicType) != sizeof(AO_t)) abort();
-#endif
-
-		counter_type old;
-		do
-		{
-			old = counter;
-		} while (!AO_compare_and_swap_full(&counter, old, old + counter_type(value)));
-		return AtomicType(old);
+	
+	counter_type operator +=(counter_type value) {
+		lock.enter();
+		counter_type temp = counter += value;
+		lock.leave();
+		return temp;
 	}
-
-	AtomicType operator +=(AtomicType value)
-	{
-		return exchangeAdd(value) + value;
+	
+	counter_type operator -=(counter_type value) {
+		lock.enter();
+		counter_type temp = counter -= value;
+		lock.leave();
+		return temp;
 	}
-
-	AtomicType operator -=(AtomicType value)
-	{
-		return exchangeAdd(-value) - value;
+	
+	counter_type operator ++() {
+		lock.enter();
+		counter_type temp = counter++;
+		lock.leave();
+		return temp;
 	}
-
-	AtomicType operator ++()
-	{
-		return exchangeAdd(1) + 1;
+	
+	counter_type operator --() {
+		lock.enter();
+		counter_type temp = counter--;
+		lock.leave();
+		return temp;
 	}
-
-	AtomicType operator --()
-	{
-		return exchangeAdd(-1) - 1;
-	}
-
-	AtomicType value() const { return counter; }
-
-	AtomicType setValue(AtomicType val)
-	{
-#ifdef DEV_BUILD
-		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(AtomicType) != sizeof(AO_t)) abort();
-#endif
-
-		counter_type old;
-		do
-		{
-			old = counter;
-		} while (!AO_compare_and_swap_full(&counter, old, counter_type(val)));
-		return AtomicType(old);
-	}
-
+	
+	counter_type value() const { return counter; }
+	
 private:
-	counter_type counter;
+	volatile counter_type counter;
+	Mutex lock;
 };
 
 } // namespace Firebird
-
-#else
-
-#error AtomicCounter: implement appropriate code for your platform!
 
 #endif
 

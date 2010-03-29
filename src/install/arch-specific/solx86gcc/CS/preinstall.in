@@ -1,7 +1,8 @@
 #!/bin/sh
 
+# $Header: /home/job/firebird/cvs-backup/firebird2/src/install/arch-specific/solx86gcc/CS/preinstall.in,v 1.2 2004-08-19 13:50:59 kkuznetsov Exp $
 #------------------------------------------------------------------------------
-# $Copyright:
+# $Copyright: 
 # Copyright (C) Siemens Nixdorf Informationssysteme AG 1994 - 1998
 # Copyright (C) Siemens AG 1998 1999
 # Copyright (C) Fujitsu Siemens Computers GmbH 1999 2000
@@ -38,7 +39,7 @@ for file in ${FILELIST}; do
 	[ ! -s ${file} ] && continue
 	if [ ! -f ${PKGSAV}${file}.Z ]; then
 		if [ "$ERR" = '0' ];then
-			echo "\nAn error occurred when saving original modules. \ntmp/ERROR.${PKGINST} contains the reported errors.\n\n"
+			echo "\nAn error occured when saving original modules. \ntmp/ERROR.${PKGINST} contains the reported errors.\n\n"
 			echo "/tmp/ERROR.${PKGINST}:"
 			cat /tmp/ERROR.${PKGINST}
 			ERR=1

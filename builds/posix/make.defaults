@@ -8,25 +8,26 @@
 #   "GPL"), in which case the provisions of the GPL are applicable
 #   instead of those above. You may obtain a copy of the Licence at
 #   http://www.gnu.org/copyleft/gpl.html
-#
+# 
 #   This program is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   Relevant for more details.
-#
+# 
 #   This file was created by members of the firebird development team.
 #   All individual contributions remain the Copyright (C) of those
 #   individuals.  Contributors to this file are either listed here or
 #   can be obtained from a CVS history command.
-#
+# 
 #   All rights reserved.
 #
 #   Created by: Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-#
+# 
 #   Contributor(s):
-#
-#
-#
+# 
+# 
+#   $Id: make.defaults,v 1.44.4.9 2008-09-04 11:50:16 paulbeach Exp $
+# 
 
 
 #_____________________________________________________________________________
@@ -35,7 +36,7 @@
 
 # This file contains default values that are used by the build process do not
 # change these here, but override them in the platform specific file
-# prefix.xxx where xxx is the platform name using the form SH := bash
+# prefix.xxx where xxx is the platform name using the form SH := bash 
 # see the readme file with the Makefile.in files for more details.
 
 #_____________________________________________________________________________
@@ -55,7 +56,6 @@ export FIREBIRD
 
 LIB=$(FIREBIRD)/lib
 BIN=$(FIREBIRD)/bin
-PLUGINS=$(FIREBIRD)/plugins
 
 # This picks up the current directory and maps it to the equivalent module
 # in the src and gen area.
@@ -75,22 +75,17 @@ GEN_SRC=$(OBJ)
 RealFirebirdPath = @NEW_FIREBIRD_DIR@
 
 #____________________________________________________________________________
-# From here we may set some global options to both compiler and linker.
-
-# Use configure's CFLAGS as global options for all compilers and linkers
-GLOB_OPTIONS=@CFLAGS@
-
-# Possible use - profiling.
-#GLOB_OPTIONS+= -pg
-
-CFLAGS:= $(CFLAGS) $(GLOB_OPTIONS)
-CXXFLAGS:= $(CXXFLAGS) $(GLOB_OPTIONS)
-
-#____________________________________________________________________________
 
 IsProdTypeBuild = @PROD_BUILD_FLG@
                            # If this is defined then we are building a production
                            # release with debug and optimization
+
+
+ifeq ($(PLATFORM),DARWIN)
+FirebirdInstallPrefix =
+else
+FirebirdInstallPrefix = @prefix@
+endif
 
 CpuType=@CPU_TYPE@
 
@@ -105,29 +100,12 @@ SFIO_EXAMPLES=@SFIO_EXAMPLES@
 
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
-STD_EDITLINE=@STD_EDITLINE@
-READLINE=@READLINE@
-STD_ICU=@STD_ICU@
 
-# threading options - set by configure
-THR_FLAGS=@PTHREAD_CFLAGS@
-THR_LIBS=@PTHREAD_LIBS@
-
-# thread local storage options - set by configure
-TLS_OPTIONS=@TLS_OPTIONS@
-
-# atomic options - set by configure
-ATOMIC_OPTIONS=@ATOMIC_OPTIONS@
-
-# compare and swap options - set by configure
-# needed at least for solaris inline assembly routines
-CAS_OPTIONS=@CAS_OPTIONS@
 
 # Default programs and tools to be used in the build process
 
 SH=			sh -c
 RM=			rm -f
-RM_R=		rm -rf
 CHMOD=			chmod
 CHMOD_6=		chmod 666
 CHMOD_7=		chmod 777
@@ -139,27 +117,10 @@ ECHO=			echo
 QUIET_ECHO=		@echo
 CD=			cd
 CAT=			cat
-AR=			ar @AR_OPTIONS@ crsu
+AR=			ar crsu
 LN=			@LN_S@
 RANLIB=			@RANLIB@
-BTYACC=$(ROOT)/extern/btyacc/btyacc
-
-CC =	@CC@
-CXX =	@CXX@
-LD =	@CXX@
-
-# LINKER COMMANDS
-
-LIB_LINK:= @CXX@ $(GLOB_OPTIONS)
-STATICLIB_LINK:= ar cruvs
-CLIENTLIB_LINK:= @CC@ $(GLOB_OPTIONS)
-EXE_LINK:= @CXX@ $(GLOB_OPTIONS)
-STATICEXE_LINK:= @CXX@ $(GLOB_OPTIONS)
-
-LINK_LIBS = @LIBS@
-ICU_LIBS = -licuuc -licudata -licui18n
-STATICLINK_LIBS = @LIBS@
-SO_LINK_LIBS = @LIBS@
+YACC=			@YACC@
 
 # Default extensions
 
@@ -167,7 +128,6 @@ ARCH_EXT=		.a
 EXEC_EXT=		@EXEEXT@
 SHRLIB_EXT=@SHRLIB_EXT@
 LIB_PREFIX=		lib
-SHRLIB_FOREIGN_EXT=	$(SHRLIB_EXT)
 
 #_____________________________________________________________________________
 
@@ -190,16 +150,17 @@ vpath %.dll $(LIB)
 
 # From jrd
 
+JRD_BOOT=		$(LIB)/jrd_boot.a
 BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
 # The shared library name for the embedded (or classic) library
 # SD: This name is also hard-coded in builds/install/.../linux/classic scripts.
 #     Scold me, but I don't want library names to be in configure.in
-#
+# 
 
 SharedLibraryName=libfbembed.${SHRLIB_EXT}.${FirebirdVersion}
-SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}.${MinorVer}
+SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}
 SharedLibraryBaseName=libfbembed.${SHRLIB_EXT}
 
 LIBFBEMBED_SO = $(LIB)/$(SharedLibraryName)
@@ -211,11 +172,11 @@ LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
 # to the fbserver. MOD 28-July-2002
 
 ClientLibraryName = $(LIB_PREFIX)fbclient.$(SHRLIB_EXT)
-ClientLibrarySoName = $(ClientLibraryName).2
+ClientLibraryNameMajor = $(ClientLibraryName).${MajorVer}
 ClientLibraryNameFull = $(ClientLibraryName).${FirebirdVersion}
 
 LIBFBCLIENT_SO = $(LIB)/$(ClientLibraryNameFull)
-LIBFBCLIENT_SOBASENAME=$(LIB)/$(ClientLibrarySoName)
+LIBFBCLIENT_SOBASENAME=$(LIB)/$(ClientLibraryNameMajor)
 LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 
 # intl will load dynamically, and having the whole soname set with version
@@ -225,110 +186,54 @@ LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 LIBFBINTL_SO = $(FIREBIRD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
 
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
-
-ifeq ($(EDITLINE_FLG),Y)
-  ifeq ($(STD_EDITLINE), true)
-	LIBEDITLINE := -l$(READLINE)
-  else
-	LIBEDITLINE := $(LIB)/libedit.a
-  endif
-endif
-
-LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc*.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icudata*.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icui18n*.$(SHRLIB_FOREIGN_EXT)
+LIBEDITLINE_A = $(LIB)/libeditline.a
+LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc.$(SHRLIB_EXT) \
+			$(LIB)/$(LIB_PREFIX)icudata.$(SHRLIB_EXT) \
+			$(LIB)/$(LIB_PREFIX)icui18n.$(SHRLIB_EXT)
 
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = $(LIB_PREFIX)ib_util.$(SHRLIB_EXT)
 LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 
+# LINKER COMMANDS
+# Alternatively we may use libtool here.
+
+LIB_LINK:= @CXX@
+STATICLIB_LINK:= ar cruvs
+CLIENTLIB_LINK:= @CC@
+EXE_LINK:= @CXX@
+STATICEXE_LINK:= @CXX@
+
+LINK_LIBS = @EDITLINE_A@ @LIBS@
+ICU_LIBS = -licuuc -licudata -licui18n
+STATICLINK_LIBS = @EDITLINE_A@ @LIBS@
+SO_LINK_LIBS = @LIBS@
+
 # LINKER OPTIONS
 #
 
-UNDEF_PLATFORM = -Wl,--no-undefined
-ifneq ($(IsProdTypeBuild),Y)
-  UNDEF_FLAGS = $(UNDEF_PLATFORM)
-endif
-
-FIREBIRD_VERS = firebird.vers
-FIREBIRD_CLIENT_VERS = client.firebird.vers
-FBTRACE_VERS = fbtrace.vers
-FBINTL_VERS = fbintl.vers
-IB_UTIL_VERS = ib_util.vers
-UDR_ENGINE_VERS = udr_engine.vers
-EMPTY_VERS = empty.vers
-
-ALLVERS = $(FIREBIRD_VERS) $(FIREBIRD_CLIENT_VERS) $(FBTRACE_VERS) $(FBINTL_VERS) $(IB_UTIL_VERS) 
-ALLVERS += $(UDR_ENGINE_VERS) $(EMPTY_VERS)
-
-LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(FIREBIRD_VERS)
-LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(FIREBIRD_VERS)
-LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(FIREBIRD_CLIENT_VERS)
-LINK_TRACE_SYMBOLS = $(LIB_LINK_MAPFILE)$(FBTRACE_VERS)
-LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(FBINTL_VERS)
-LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(IB_UTIL_VERS)
-LINK_UDRENG_SYMBOLS = $(LIB_LINK_MAPFILE)$(UDR_ENGINE_VERS)
-LINK_EMPTY_SYMBOLS = $(LIB_LINK_MAPFILE)$(EMPTY_VERS)
-LINK_EXEC_EXPORT=-rdynamic
-
-LIB_PLATFORM_RPATH = -Wl,-rpath,$(1)
-ifeq ($(strip @BINRELOC_CFLAGS@),)
-LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,$(if $(subst intl,,$(1)),@FB_LIBDIR@,@FB_INTLDIR@))
-else
-LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,'$$ORIGIN/../$(1)')
-endif
-LIB_PATH_OPTS = $(call LIB_LINK_RPATH,lib) $(call LIB_LINK_RPATH,intl)
-LIB_LINK_SONAME= -Wl,-soname,$(1)
+LINK_OPTS = $(LDFLAGS) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
+LIB_LINK_OPTIONS = $(LDFLAGS) -shared
+LIB_LINK_RPATH = -Wl,-rpath,
+LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
 FBEMBED_LINK= -L$(LIB) -lfbembed
 
-LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
-LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -shared
+LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
+LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
-FB_DAEMON = $(BIN)/fb_smp_server$(EXEC_EXT)
 
-STATIC_CXXSUPPORT_LIB=@STATIC_CXXSUPPORT_LIB@
-LIB_LINK_IMPLIB =
-LIB_GUI =
-
-# Per-library link rules
-LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_EXT))\
- $(call LIB_LINK_RPATH,lib) -lm
-LINK_UDF_LIBS = $(THR_LIBS) -L$(LIB) -lib_util
-
-LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS)\
- $(call LIB_LINK_SONAME,$(IbUtilLibraryName)) $(call LIB_LINK_RPATH,lib)
-LINK_IB_UTIL_LIBS = $(THR_LIBS)
-
-LINK_INTL = $(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS)\
- $(call LIB_LINK_SONAME,libintl.$(SHRLIB_EXT).1) $(call LIB_LINK_RPATH,lib)
-LINK_INTL_LIBS = -L$(LIB) $(ICU_LIBS) $(SO_LINK_LIBS)
-
-LINK_TRACE = $(LIB_LINK) $(LINK_TRACE_SYMBOLS) $(LIB_LINK_OPTIONS)\
- $(call LIB_LINK_SONAME,$(LIB_PREFIX)fbtrace.$(SHRLIB_EXT).0) $(call LIB_LINK_RPATH,lib)
-LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS)
-
-LINK_CLIENT = $(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS)\
- $(LIB_LINK_IMPLIB) $(call LIB_LINK_SONAME,$(ClientLibrarySoName)) $(call LIB_LINK_RPATH,lib)
-LINK_CLIENT_LIBS = $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
-
-LINK_EMBED = $(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_EMBED_LINK_OPTIONS)\
- $(call LIB_LINK_SONAME,$(SharedLibrarySoName)) $(call LIB_LINK_RPATH,lib)
-LINK_EMBED_LIBS = -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
-
-# From utilities
+# From utilities 
 CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
 GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
-FBSVCMGR	= $(BIN)/fbsvcmgr$(EXEC_EXT)
-FBTRACEMGR	= $(BIN)/fbtracemgr$(EXEC_EXT)
 GSTAT		= $(BIN)/gstat$(EXEC_EXT)
 NBACKUP		= $(BIN)/nbackup$(EXEC_EXT)
-FBTRACE		= $(PLUGINS)/$(LIB_PREFIX)fbtrace.$(SHRLIB_EXT)
 LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)
 GSEC		= $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)
+GFIX_STATIC	= $(BIN)/gfix_static$(EXEC_EXT)
 GDS_REBUILD	= $(BIN)/gds_rebuild$(EXEC_EXT)
 GDS_RELAY	= $(BIN)/gds_relay$(EXEC_EXT)
 GDS_INSTALL	= $(BIN)/gds_install$(EXEC_EXT)
@@ -375,8 +280,9 @@ fr_FR_MSG       = $(FIREBIRD)/fr_FR.msg
 de_DE_MSG       = $(FIREBIRD)/de_DE.msg
 ja_JP_MSG       = $(FIREBIRD)/ja_JP.msg
 
+# From gdef
+GDEF			= $(BIN)/gdef$(EXEC_EXT)
 
 #Platform Manager
 #For want of a better suggestion we may as well default to posix
 PLATFORM_PATH	=	os/posix
-TRACE_OS_Sources	=

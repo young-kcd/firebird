@@ -24,8 +24,8 @@
 #ifndef GPRE_PAT_H
 #define GPRE_PAT_H
 
-/*
-Substitution codes:
+/* 
+Substitution codes: 
 
     RH	Request handle
     RL	Request level
@@ -67,9 +67,8 @@ Substitution codes:
 
 */
 
-struct pat
-{
-	const gpre_dbb* pat_database;
+struct pat {
+	const dbb* pat_database;
 	const gpre_req* pat_request;
 	//gpre_tra* pat_transaction; CVC: unused
 	const blb* pat_blob;

@@ -47,12 +47,25 @@ typedef unsigned short SHORT;
 /* Following defines are duplicates of those in intl.c */
 /* Name of module that implements text-type (n) */
 
+#ifdef VMS
+#define	INTL_MODULE "[syslib]IBLD_%03d"
+#endif
+
 #ifndef INTL_MODULE
-#define	INTL_MODULE "IBLD_%03d"
+#define	INTL_MODULE "lib/IBLD_%03d"
 #endif
 
 #ifndef INTL_INIT_ENTRY
 #define INTL_INIT_ENTRY "ld_init"
+#endif
+
+
+#ifdef VMS
+char *defaults[] = {
+	"<null>",
+	"IBLD_010",
+	"IBLD_011", "ask", "ask", "ask", "ask", "ask", "ask", "ask"
+};
 #endif
 
 
@@ -71,11 +84,16 @@ int main(int argc, char** argv)
 	char buffer[200];
 	struct texttype this_textobj;
 
+#ifdef VMS
+	char** vector = defaults;
+	argc = FB_NELEM(defaults);
+#else
 	if (argc <= 1) {
 		printf("usage: dtest Intl_module_name\n");
 		return (1);
 	}
 	char** vector = argv;
+#endif
 
 	FPTR_INT func = 0;
 
@@ -84,14 +102,14 @@ int main(int argc, char** argv)
 #ifdef LIKE_JRD
 		{
 			char module[200];
-			Firebird::PathName path;
+			char path[MAXPATHLEN];
 			char entry[200];
 			const int t_type = atoi(vector[i]);
 			sprintf(module, INTL_MODULE, t_type);
-			path = fb_utils::getPrefix(fb_utils::FB_DIR_LIB, module);
+			gds__prefix(path, module);
 			sprintf(entry, INTL_INIT_ENTRY, t_type);
-			printf("path=%s entry=%s\n", path.c_str(), entry);
-			func = (FPTR_INT) ISC_lookup_entrypoint(path.c_str(), entry, NULL);
+			printf("path=%s entry=%s\n", path, entry);
+			func = (FPTR_INT) ISC_lookup_entrypoint(path, entry, NULL);
 		}
 #else
 		if (strcmp(vector[i], "ask") == 0) {

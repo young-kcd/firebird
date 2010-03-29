@@ -3,6 +3,6 @@ gds_codes.ftn
 iberror.h
 codetext.h
 msgs.h
+rdb_codes.h
 sql_code.h
 msg_facs.h
-sql_state.h

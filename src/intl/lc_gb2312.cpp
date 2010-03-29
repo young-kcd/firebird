@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	InterBase International support
  *	MODULE:		lc_gb2312.cpp
- *	DESCRIPTION:	Language Drivers in the GB2312 family.
+ *	DESCRIPTION:	Language Drivers in the GB2312 family.  
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -24,14 +24,20 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 
+/* These macros have a duplicate in cv_gb2312.cpp */
+#define	GB1(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
+			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 1st-byte */
+#define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
+			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
+
 #include "lc_ascii.h"
 #include "cv_gb2312.h"
 
-static inline bool FAMILY_MULTIBYTE(texttype* cache,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
-									const UCHAR*, // specific_attributes,
+									const UCHAR* specific_attributes,
 									ULONG specific_attributes_length)
 //#define FAMILY_MULTIBYTE(id_number, name, charset, country)
 {
@@ -52,7 +58,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 }
 
 
-TEXTTYPE_ENTRY3(GB_2312_init)
+TEXTTYPE_ENTRY(GB_2312_init)
 {
 	static const ASCII POSIX[] = "C.GB_2312";
 

@@ -25,7 +25,6 @@
  *
  */
 
-#include "firebird.h"
 #include "../jrd/os/mod_loader.h"
 #include "../../common.h"
 #ifdef HAVE_UNISTD_H
@@ -40,13 +39,10 @@
 class DlfcnModule : public ModuleLoader::Module
 {
 public:
-	DlfcnModule(void* m)
-		: module(m)
-	{}
-
+	DlfcnModule(void *m) : module(m) {}
 	~DlfcnModule();
 	void *findSymbol(const Firebird::string&);
-
+	
 private:
 	void *module;
 };
@@ -63,30 +59,20 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 	return true;
 }
 
-void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
-	if (name.isEmpty())
-		return;
-
 	Firebird::PathName::size_type pos = name.rfind(".so");
-	if (pos == Firebird::PathName::npos || pos != name.length() - 3)
-	{
-		name += ".so";
-	}
-	pos = name.rfind('/');
-	pos = (pos == Firebird::PathName::npos) ? 0 : pos + 1;
-	if (name.find("lib", pos) != pos)
-	{
-		name.insert(pos, "lib");
-	}
+	if (pos != Firebird::PathName::npos && pos == name.length() - 3)
+		return;		// No doctoring necessary
+	name += ".so";
 }
 
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
-	void* module = dlopen(modPath.nullStr(), RTLD_LAZY);
+	void* module = dlopen(modPath.c_str(), RTLD_LAZY);
 	if (module == NULL)
 		return 0;
-
+	
 	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
 }
 

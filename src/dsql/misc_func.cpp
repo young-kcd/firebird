@@ -24,26 +24,23 @@
 #include "../dsql/dsql.h"
 #include "../dsql/misc_func.h"
 
-using namespace Jrd;
-
-const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] =
-{
+const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
 	{"<UNKNOWN>", 0},
 	{"CURRENT_CONNECTION", 0},
 	{"CURRENT_TRANSACTION", 0},
-	{"GDSCODE", DsqlCompilerScratch::FLAG_BLOCK},
-	{"SQLCODE", DsqlCompilerScratch::FLAG_BLOCK},
-	{"ROW_COUNT", DsqlCompilerScratch::FLAG_BLOCK},
-	{"INSERTING/UPDATING/DELETING", DsqlCompilerScratch::FLAG_TRIGGER},
-	{"SQLSTATE", DsqlCompilerScratch::FLAG_BLOCK}
+	{"GDSCODE", REQ_block},
+	{"SQLCODE", REQ_block},
+	{"ROW_COUNT", REQ_block},
+	{"INSERTING/UPDATING/DELETING", REQ_trigger}
 };
 
-const char* InternalInfo::getAlias(internal_info_id info_id)
+char* InternalInfo::getAlias(internal_info_id info_id)
 {
 	return attr_array[info_id].alias_name;
 }
 
-unsigned InternalInfo::getMask(internal_info_id info_id)
+USHORT InternalInfo::getMask(internal_info_id info_id)
 {
 	return attr_array[info_id].req_mask;
 }
+

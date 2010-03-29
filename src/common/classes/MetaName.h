@@ -25,34 +25,29 @@
  *
  *
  */
-
+ 
 #ifndef METANAME_H
 #define METANAME_H
 
 #include "../common/classes/fb_string.h"
 #include "../jrd/constants.h"
 
-#ifdef SFIO
-#include <stdio.h>
-#endif
-
 namespace Firebird {
 
-class MetaName
-{
+class MetaName {
 private:
 	char data[MAX_SQL_IDENTIFIER_SIZE];
 	unsigned int count;
-
+	
 	void init()
 	{
 		memset(data, 0, MAX_SQL_IDENTIFIER_SIZE);
 	}
 	MetaName& set(const MetaName& m)
 	{
-		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE);
+		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE); 
 		count = m.count;
-		return *this;
+		return *this; 
 	}
 
 public:
@@ -60,28 +55,22 @@ public:
 	MetaName(const char* s) { assign(s); }
 	MetaName(const char* s, size_t l) { assign(s, l); }
 	MetaName(const MetaName& m) { set(m); }
-	MetaName(const AbstractString& s) { assign(s.c_str(), s.length()); }
+	MetaName(const string& s) { assign(s.c_str(), s.length()); }
 	explicit MetaName(MemoryPool&) { init(); count = 0; }
 	MetaName(MemoryPool&, const char* s) { assign(s); }
 	MetaName(MemoryPool&, const char* s, size_t l) { assign(s, l); }
 	MetaName(MemoryPool&, const MetaName& m) { set(m); }
-	MetaName(MemoryPool&, const AbstractString& s) { assign(s.c_str(), s.length()); }
-
+	MetaName(MemoryPool&, const string& s) { assign(s.c_str(), s.length()); }
+	
 	MetaName& assign(const char* s, size_t l);
 	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
 	MetaName& operator=(const char* s) { return assign(s); }
 	MetaName& operator=(const string& s) { return assign(s.c_str(), s.length()); }
 	MetaName& operator=(const MetaName& m) { return set(m); }
-	char* getBuffer(const size_t l);
+	char* getBuffer(size_t l);
 
 	size_t length() const { return count; }
 	const char* c_str() const { return data; }
-	const char* nullStr() const { return (count == 0 ? NULL : data); }
-	bool isEmpty() const { return count == 0; }
-	bool hasData() const { return count != 0; }
-
-	const char* begin() const { return data; }
-	const char* end() const { return data + count; }
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
@@ -104,19 +93,21 @@ protected:
 	static void adjustLength(const char* const s, size_t& l);
 };
 
-// This class is used to simplify calls from GDML, when pointer to MetaName
-// should be passed to some function, at the same time reflecting changes in
-// associated GDML variable (database field).
-class MetaNameProxy : public MetaName
+// This class & macro are used to simplify calls from GDML
+class LoopMetaName : public Firebird::MetaName
 {
+	bool flag;
 	char* target;
 public:
-	explicit MetaNameProxy(char* s)
-	 : Firebird::MetaName(s), target(s)
-	{ }
-	~MetaNameProxy() { strcpy(target, c_str()); }
+	LoopMetaName(char* s) : Firebird::MetaName(s), 
+		flag(true), target(s) { }
+	~LoopMetaName() { strcpy(target, c_str()); }
+	operator bool() { return flag; }
+	void stop() { flag = false; }
 };
+#define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())
 
 } // namespace Firebird
 
 #endif // METANAME_H
+

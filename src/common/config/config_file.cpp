@@ -22,378 +22,125 @@
 
 #include "firebird.h"
 
-#include "../common/classes/alloc.h"
-#include "../common/classes/auto.h"
-#include "../common/config/config_file.h"
-#include "../common/config/config.h"
-#include "../jrd/os/path_utils.h"
+#include "../../common/classes/alloc.h"
+#include "../../common/classes/auto.h"
+#include "../../common/config/config_file.h"
+#include "../jrd/os/fbsyslog.h"
 #include <stdio.h>
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
-using namespace Firebird;
+//#include <fstream>
+//#include <iostream>
 
-namespace {
+// Invalid or missing CONF_FILE may lead to severe errors
+// in applications. That's why for regular SERVER builds
+// it's better to exit with appropriate diags rather continue
+// with missing / wrong configuration.
+#if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED)) && (! defined(SUPERCLIENT))
+#define EXCEPTION_ON_NO_CONF
+#else
+#undef EXCEPTION_ON_NO_CONF
+#endif
 
-class MainStream : public ConfigFile::Stream
+// config_file works with OS case-sensitivity
+typedef Firebird::PathName string;
+
+/******************************************************************************
+ *
+ *	Strip any comments
+ */
+
+void ConfigFile::stripComments(string& s)
 {
-public:
-	MainStream(const char* fname, bool fExceptionOnError)
-		: file(fopen(fname, "rt")), l(0)
+	// Note that this is only a hack. It won't work in case inputLine
+	// contains hash-marks embedded in quotes! Not that I know if we
+	// should care about that case.
+	const string::size_type commentPos = s.find('#');
+	if (commentPos != string::npos)
 	{
-		if (!file && fExceptionOnError)
-		{
-			// config file does not exist
-			fatal_exception::raiseFmt("Missing configuration file: %s", fname);
-		}
+		s = s.substr(0, commentPos);
 	}
-
-	bool getLine(ConfigFile::String& input, unsigned int& line)
-	{
-		input = "";
-		if (!file)
-		{
-			return false;
-		}
-
-		// this loop efficiently skips almost all comment lines
-		do
-		{
-			if (feof(file))
-			{
-				return false;
-			}
-			input.LoadFromFile(file);
-			++l;
-			input.alltrim(" \t\r");
-		} while (input.isEmpty() || input[0] == '#');
-
-		line = l;
-		return true;
-	}
-
-private:
-	AutoPtr<FILE, FileClose> file;
-	unsigned int l;
-};
-
-class TextStream : public ConfigFile::Stream
-{
-public:
-	explicit TextStream(const char* configText)
-		: s(configText), l(0)
-	{
-		if (s && !*s)
-		{
-			s = NULL;
-		}
-	}
-
-	bool getLine(ConfigFile::String& input, unsigned int& line)
-	{
-		do
-		{
-			if (!s)
-			{
-				input = "";
-				return false;
-			}
-
-			const char* ptr = strchr(s, '\n');
-			if (!ptr)
-			{
-				input.assign(s);
-				s = NULL;
-			}
-			else
-			{
-				input.assign(s, ptr - s);
-				s = ptr + 1;
-				if (!*s)
-				{
-					s = NULL;
-				}
-			}
-
-			++l;
-			input.alltrim(" \t\r");
-		} while (input.isEmpty() || input[0] == '#');
-
-		line = l;
-		return true;
-	}
-
-private:
-	const char* s;
-	unsigned int l;
-};
-
-class SubStream : public ConfigFile::Stream
-{
-public:
-	SubStream()
-		: cnt(0)
-	{ }
-
-	bool getLine(ConfigFile::String& input, unsigned int& line)
-	{
-		if (cnt >= data.getCount())
-		{
-			input = "";
-			return false;
-		}
-
-		input = data[cnt].first;
-		line = data[cnt].second;
-		++cnt;
-
-		return true;
-	}
-
-	void putLine(const ConfigFile::String& input, unsigned int line)
-	{
-		data.push(Line(input, line));
-	}
-
-private:
-	typedef Pair<Left<ConfigFile::String, unsigned int> > Line;
-	ObjectsArray<Line> data;
-	size_t cnt;
-};
-
-} // anonymous namespace
-
-
-ConfigFile::ConfigFile(const Firebird::PathName& file, USHORT fl)
-	: AutoStorage(), configFile(getPool(), file), parameters(getPool()), flags(fl)
-{
-	MainStream s(configFile.c_str(), flags & EXCEPTION_ON_ERROR);
-	parse(&s);
-}
-
-ConfigFile::ConfigFile(const char* file, USHORT fl)
-	: AutoStorage(), configFile(getPool(), String(file)), parameters(getPool()), flags(fl)
-{
-	MainStream s(configFile.c_str(), flags & EXCEPTION_ON_ERROR);
-	parse(&s);
-}
-
-ConfigFile::ConfigFile(UseText, const char* configText, USHORT fl)
-	: AutoStorage(), configFile(getPool()), parameters(getPool()), flags(fl)
-{
-	TextStream s(configText);
-	parse(&s);
-}
-
-ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file)
-	: AutoStorage(p), configFile(getPool(), file), parameters(getPool()), flags(fl)
-{
-	parse(s);
-}
-
-ConfigFile::Stream::~Stream()
-{
 }
 
 /******************************************************************************
  *
- *	Parse line, taking quotes into account
+ *	Check whether the given key exists or not
  */
 
-ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, String& value)
+bool ConfigFile::doesKeyExist(const string& key)
 {
-	int inString = 0;
-	String::size_type valStart = 0;
-	String::size_type eol = String::npos;
-	bool hasSub = false;
+    checkLoadConfig();
 
-	for (String::size_type n = 0; n < input.length(); ++n)
-	{
-		switch (input[n])
-		{
-		case '"':
-			if (key.isEmpty())		// quoted string to the left of = doesn't make sense
-				return LINE_BAD;
-			if (inString >= 2)		// one more quote after quoted string doesn't make sense
-				return LINE_BAD;
-			inString++;
-			break;
+    string data = getString(key);
 
-		case '=':
-			key = input.substr(0, n).ToNoCaseString();
-			key.rtrim(" \t\r");
-			if (key.isEmpty())		// not good - no key
-				return LINE_BAD;
-			valStart = n + 1;
-			break;
-
-		case '#':
-			if (inString != 1)
-			{
-				eol = n;
-				n = input.length();	// skip the rest of symbols
-			}
-			break;
-
-		case ' ':
-		case '\t':
-		case '\r':
-			break;
-
-		case '{':
-		case '}':
-			if (flags & HAS_SUB_CONF)
-			{
-				if (inString != 1)
-				{
-					if (input[n] == '}')	// Subconf close mark not expected
-					{
-						return LINE_BAD;
-					}
-
-					hasSub = true;
-					inString = 2;
-					eol = n;
-				}
-				break;
-			}
-			// fall through ....
-
-		default:
-			if (inString >= 2)		// Something after the end of line
-				return LINE_BAD;
-			break;
-		}
-	}
-
-	if (inString == 1)				// If we are still inside a string, it's error
-		return LINE_BAD;
-
-	if (key.isEmpty())
-	{
-		key = input.substr(0, eol).ToNoCaseString();
-		key.rtrim(" \t\r");
-		value.erase();
-	}
-	else
-	{
-		value = input.substr(valStart, eol - valStart);
-		value.alltrim(" \t\r");
-		value.alltrim("\"");
-	}
-
-	// Now expand macros in value
-	String::size_type subFrom;
-	while ((subFrom = value.find("$(")) != String::npos)
-	{
-		String::size_type subTo = value.find(")", subFrom);
-		if (subTo != String::npos)
-		{
-			String macro;
-			String m = value.substr(subFrom + 2, subTo - (subFrom + 2));
-			if (! translate(m, macro))
-			{
-				return LINE_BAD;
-			}
-			value.replace(subFrom, subTo + 1 - subFrom, macro);
-		}
-		else
-		{
-			return LINE_BAD;
-		}
-	}
-
-	return hasSub ? LINE_START_SUB : LINE_REGULAR;
+    return !data.empty();
 }
 
 /******************************************************************************
  *
- *	Find macro value
+ *	Return string value corresponding the given key
  */
 
-bool ConfigFile::translate(const String& from, String& to)
+string ConfigFile::getString(const string& key)
 {
-	if (from == "root")
-	{
-		to = Config::getRootDirectory();
-	}
-	else if (from == "install")
-	{
-		to = Config::getInstallDirectory();
-	}
-	else if (from == "this")
-	{
-		if (configFile.isEmpty())
-		{
-			return false;
-		}
+    checkLoadConfig();
 
-		PathName path, file;
-		PathUtils::splitLastComponent(path, file, configFile.ToPathName());
-		to = path.ToString();
-	}
-/*	else if (!substituteOneOfStandardFirebirdDirs(from, to))
-	{
-		return false;
-	}	*/
-	else
-	{
-		return false;
-	}
-
-	return true;
+    size_t pos;
+    return parameters.find(key, pos) ? parameters[pos].second : string();
 }
 
 /******************************************************************************
  *
- *	Return parameter corresponding the given key
+ *	Parse key
  */
 
-const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name) const
+string ConfigFile::parseKeyFrom(const string& inputLine, string::size_type& endPos)
 {
-	size_t pos;
-	return parameters.find(name, pos) ? &parameters[pos] : NULL;
+    endPos = inputLine.find_first_of("=");
+    if (endPos == string::npos)
+    {
+        return inputLine;
+    }
+
+    return inputLine.substr(0, endPos);
 }
 
 /******************************************************************************
  *
- *	Return parameter corresponding the given key and value
+ *	Parse value
  */
 
-const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name, const String& value) const
+string ConfigFile::parseValueFrom(string inputLine, string::size_type initialPos)
 {
-	size_t pos;
-	if (!parameters.find(name, pos))
-	{
-		return NULL;
-	}
+    if (initialPos == string::npos)
+    {
+        return string();
+    }
 
-	while (pos < parameters.getCount() && parameters[pos].name == name)
-	{
-		if (parameters[pos].value == value)
-		{
-			return &parameters[pos];
-		}
-		++pos;
-	}
+    // skip leading white spaces
+    const string::size_type startPos = inputLine.find_first_not_of("= \t", initialPos);
+    if (startPos == string::npos)
+    {
+        return string();
+    }
 
-	return NULL;
+    inputLine.rtrim(" \t\r");
+    return inputLine.substr(startPos);
 }
 
 /******************************************************************************
  *
- *	Take into an account fault line
+ *	Load file, if necessary
  */
 
-void ConfigFile::badLine(const String& line)
+void ConfigFile::checkLoadConfig()
 {
-	if (flags & EXCEPTION_ON_ERROR)
+	if (!isLoadedFlg)
 	{
-		fatal_exception::raiseFmt("%s: illegal line <%s>",
-								  (configFile.hasData() ? configFile.c_str() : "Passed text"),
-								  line.c_str());
+    	loadConfig();
 	}
 }
 
@@ -402,62 +149,85 @@ void ConfigFile::badLine(const String& line)
  *	Load file immediately
  */
 
-void ConfigFile::parse(Stream* stream)
-{
-	String inputLine;
-	Parameter* previous = NULL;
-	unsigned int line;
-
-	while (stream->getLine(inputLine, line))
+namespace {
+	class FileClose
 	{
-		Parameter current;
-		current.line = line;
-
-		switch (parseLine(inputLine, current.name, current.value))
+	public:
+		static void clear(FILE *f)
 		{
-		case LINE_BAD:
-			badLine(inputLine);
-			break;
-
-		case LINE_REGULAR:
-			if (current.name.isEmpty())
-			{
-				badLine(inputLine);
-				break;
+			if (f) {
+				fclose(f);
 			}
-
-			previous = &parameters[parameters.add(current)];
-			break;
-
-		case LINE_START_SUB:
-			if (current.name.hasData())
-			{
-				size_t n = parameters.add(current);
-				previous = &parameters[n];
-			}
-
-			{ // subconf scope
-				SubStream subStream;
-				while (stream->getLine(inputLine, line))
-				{
-					if (inputLine[0] == '}')
-					{
-						String s = inputLine.substr(1);
-						s.ltrim(" \t\r");
-						if (s.hasData() && s[0] != '#')
-						{
-							badLine(s);
-							continue;
-						}
-						break;
-					}
-					subStream.putLine(inputLine, line);
-				}
-
-				previous->sub = FB_NEW(getPool()) ConfigFile(getPool(), &subStream,
-															 flags & ~HAS_SUB_CONF, configFile);
-			}
-			break;
 		}
+	};
+} // namespace
+
+void ConfigFile::loadConfig()
+{
+	isLoadedFlg = true;
+
+	parameters.clear();
+
+	Firebird::AutoPtr<FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
+	
+#ifdef EXCEPTION_ON_NO_CONF
+	int BadLinesCount = 0;
+#endif
+    if (!ifile)
+    {
+        // config file does not exist
+#ifdef EXCEPTION_ON_NO_CONF
+		if (fExceptionOnError)
+		{
+			Firebird::string Msg = "Missing configuration file: " + 
+				configFile.ToString() + ", exiting";
+			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg);
+			Firebird::fatal_exception::raise(Msg.c_str());
+		}
+#endif //EXCEPTION_ON_NO_CONF
+		return;
+    }
+    string inputLine;
+
+    while (!feof(ifile))
+    {
+		inputLine.LoadFromFile(ifile);
+
+		stripComments(inputLine);
+		inputLine.ltrim(" \t\r");
+		
+		if (!inputLine.size())
+		{
+			continue;	// comment-line or empty line
+		}
+
+        if (inputLine.find('=') == string::npos)
+        {
+			Firebird::string Msg = (configFile + ": illegal line \"" +
+				inputLine + "\"").ToString();
+			Firebird::Syslog::Record(fExceptionOnError ? 
+					Firebird::Syslog::Error :
+					Firebird::Syslog::Warning, Msg);
+#ifdef EXCEPTION_ON_NO_CONF
+			BadLinesCount++;
+#endif
+            continue;
+        }
+
+        string::size_type endPos;
+
+        string key   = parseKeyFrom(inputLine, endPos);
+		key.rtrim(" \t\r");
+		// TODO: here we must check for correct parameter spelling !
+        string value = parseValueFrom(inputLine, endPos);
+
+		parameters.add(Parameter(getPool(), key, value));
+    }
+#ifdef EXCEPTION_ON_NO_CONF
+	if (BadLinesCount && fExceptionOnError) 
+	{
+		Firebird::fatal_exception::raise("Bad lines in firebird.conf");
 	}
+#endif
 }
+

@@ -46,10 +46,6 @@ define trigger grant_trigger for rdb$user_privileges pre store 0
 	   not any prc in rdb$procedures
 	     with prc.rdb$procedure_name eq new.rdb$relation_name
 	    abort 0;
-	if new.rdb$object_type = 18 /* obj_package_header */ and
-	   not any pkg in rdb$packages
-	     with pkg.rdb$package_name eq new.rdb$relation_name
-	    abort 0;
 
 	if new.rdb$user_type = 0  or new.rdb$user_type = 3  or
 	   new.rdb$user_type = 4  or new.rdb$user_type = 6  or
@@ -142,9 +138,9 @@ define trigger grant_trigger for rdb$user_privileges pre store 0
 		    end
 		if rel.rdb$security_class missing
 		    modify rel
-			rel.rdb$security_class = "SQL$" | gen_id (RDB$SECURITY_CLASS, 1);
+			rel.rdb$security_class = "SQL$" | rel.rdb$relation_name;
 		    end_modify
-		else if rel.rdb$security_class not starting "SQL$"
+		else if rel.rdb$security_class != "SQL$" | rel.rdb$relation_name
 		    abort 3;
 	    end_for;
 	    if new.rdb$field_name not missing
@@ -176,31 +172,9 @@ define trigger grant_trigger for rdb$user_privileges pre store 0
 			abort 2;
 		if prc.rdb$security_class missing
 		    modify prc
-			prc.rdb$security_class = "SQL$" | gen_id (RDB$SECURITY_CLASS, 1);
+			prc.rdb$security_class = "SQL$" | prc.rdb$procedure_name;
 		    end_modify
-		else if prc.rdb$security_class not starting "SQL$"
-		    abort 3;
-	    end_for;
-	else if new.rdb$object_type = 18 /* obj_package_header */
-	    for pkg in rdb$packages
-	        with pkg.rdb$package_name eq new.rdb$relation_name
-		if pkg.rdb$owner_name ne UPPERCASE (rdb$user_name)
-			   and UPPERCASE (rdb$user_name) ne "SYSDBA"
-		    if not any priv in rdb$user_privileges 
-			with priv.rdb$relation_name eq new.rdb$relation_name and
-			     priv.rdb$object_type   eq 18 and
-			     priv.rdb$privilege     eq new.rdb$privilege and
-			     priv.rdb$user          eq new.rdb$grantor and
-			     priv.rdb$user_type     eq 8 and
-			     priv.rdb$grant_option ne 0 and
-			     (priv.rdb$field_name missing or 
-                    	      priv.rdb$field_name eq new.rdb$field_name)
-			abort 2;
-		if pkg.rdb$security_class missing
-		    modify pkg
-			pkg.rdb$security_class = "SQL$" | gen_id (RDB$SECURITY_CLASS, 1);
-		    end_modify
-		else if pkg.rdb$security_class not starting "SQL$"
+		else if prc.rdb$security_class != "SQL$" | prc.rdb$procedure_name
 		    abort 3;
 	    end_for;
     end;

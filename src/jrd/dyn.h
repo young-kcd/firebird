@@ -24,17 +24,18 @@
 #ifndef	JRD_DYN_H
 #define JRD_DYN_H
 
-#include "../common/classes/MsgPrint.h"
-
-const char* const ALL_PRIVILEGES = "SIUDR";	// all applicable grant/revoke privileges
-const char* const ALL_PROC_PRIVILEGES = "X";	// all applicable grant/revoke privileges for a procedure
+const char* const ALL_PRIVILEGES = "SIUDR";
+		/* all applicable grant/revoke privileges */
+const char* const ALL_PROC_PRIVILEGES = "X";
+		/* all applicable grant/revoke privileges for a procedure */
 const int DYN_MSG_FAC		= 8;
-const int STUFF_COUNT		= 4; // Is this the same value defined in ods.h???
+const int STUFF_COUNT		= 4;
 const int TEXT_BLOB_LENGTH	= 512;
 
 
-#define GET_STRING(from, to)	DYN_get_string(from, to, sizeof(to))
-#define GET_BYTES(from, to)		DYN_get_string(from, to, sizeof(to))
+#define GET_STRING(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), true)
+
+#define GET_STRING_2(from, to)	DYN_get_string ((const TEXT**)from, to, sizeof(to), false)
 
 namespace Jrd {
 
@@ -44,19 +45,11 @@ class jrd_tra;
 class Global
 {
 public:
-	Global(jrd_tra* t, const Firebird::string& aSqlText) //, const UCHAR* dyn, size_t length)
-		: gbl_transaction(t),// gbl_length(length), gbl_end(dyn + length)
-		  sqlText(aSqlText)
-	{ }
-
-	jrd_tra* const gbl_transaction;
-	//size_t gbl_length;			// length of BLR stream
-	//const UCHAR* const gbl_end;	// end of BLR sream
-	Firebird::string sqlText;
+	explicit Global(jrd_tra* t) : gbl_transaction(t) { }
+	jrd_tra* gbl_transaction;
 };
 
-class dyn_fld
-{
+class dyn_fld {
 public:
 	dsc dyn_dsc;
 	bool dyn_null_flag;
@@ -65,7 +58,6 @@ public:
 	USHORT dyn_charlen;
 	SSHORT dyn_collation;
 	SSHORT dyn_charset;
-	SSHORT dyn_sub_type;
 	Firebird::MetaName dyn_fld_source;
 	Firebird::MetaName dyn_rel_name;
 	Firebird::MetaName dyn_fld_name;
@@ -73,48 +65,51 @@ public:
     const UCHAR* dyn_default_src;
     const UCHAR* dyn_default_val;
     bool dyn_drop_default;
-    const UCHAR* dyn_computed_src;
-    const UCHAR* dyn_computed_val;
-    bool dyn_drop_computed;
 public:
-	explicit dyn_fld(MemoryPool& p)
-		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0),
-		dyn_collation(0), dyn_charset(0), dyn_sub_type(0), dyn_fld_source(p), dyn_rel_name(p),
+	explicit dyn_fld(MemoryPool& p) 
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
+		dyn_collation(0), dyn_charset(0), dyn_fld_source(p), dyn_rel_name(p),
 		dyn_fld_name(p), dyn_charbytelen(0),
-		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
-		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false)
-	{ }
-
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
 	dyn_fld()
-		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0),
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
 		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0),
-		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
-		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false)
-	{ }
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
 };
 
 } //namespace Jrd
 
-void	DYN_error(bool, USHORT, const MsgFormat::SafeArg& sarg = MsgFormat::SafeArg());
-void	DYN_error_punt(bool, USHORT, const MsgFormat::SafeArg& arg);
-void	DYN_error_punt(bool, USHORT, const char* str);
-void	DYN_error_punt(bool, USHORT);
-void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*,
-	Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
+void	DYN_error(bool, USHORT, const TEXT*, const TEXT*, const TEXT*,
+				const TEXT*, const TEXT*);
+void	DYN_error_punt(bool, USHORT, const TEXT*, const TEXT*,
+				const TEXT*, const TEXT*, const TEXT*);
+void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
-USHORT	DYN_get_string(const UCHAR**, Firebird::MetaName&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::PathName&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::string&, size_t);
-USHORT	DYN_get_string(const UCHAR**, Firebird::UCharBuffer&, size_t);
-USHORT	DYN_get_string(const UCHAR**, TEXT*, size_t);
+USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
+USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 
+// This function is not defined anywhere.
+// void	DYN_get_string2(TEXT**, TEXT*, USHORT);
+
+// This function doesn't need to be exported currently.
 bool	DYN_is_it_sql_role(Jrd::Global*, const Firebird::MetaName&, Firebird::MetaName&, Jrd::thread_db*);
 USHORT	DYN_put_blr_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
-USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
+
+// This function is not defined anywhere.
+//USHORT	DYN_put_blr_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
+
+USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*, USHORT bpb_length = 0, const UCHAR* bpb = NULL);
+// This function is not defined anywhere.
+//USHORT	DYN_put_text_blob2(Jrd::gbl*, const UCHAR**, ISC_QUAD *);
 
 void	DYN_rundown_request(Jrd::jrd_req*, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);
 
-void	DYN_unsupported_verb();
+// This function is not defined anywhere.
+//USHORT	DYN_skip_attribute2(const UCHAR**);
+
+void	DYN_unsupported_verb(void);
 
 #endif // JRD_DYN_H
+

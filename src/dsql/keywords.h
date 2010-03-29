@@ -25,22 +25,18 @@
  * MOD 29-Jun-2002
  */
 
-#include "../jrd/common.h"
-
-struct tok
-{
+struct tok {
     USHORT tok_ident;
     const char* tok_string;
     USHORT tok_version;
-    bool nonReserved;
+    bool specialHandling;
 };
 
 typedef tok TOK;
-typedef const TOK* Tokens;
 
 // These symbols are exported
 extern "C" {
-int API_ROUTINE KEYWORD_stringIsAToken(const char*);
-Tokens API_ROUTINE KEYWORD_getTokens();
+int KEYWORD_stringIsAToken(const char*);
+const TOK* KEYWORD_getTokens();
 }
 

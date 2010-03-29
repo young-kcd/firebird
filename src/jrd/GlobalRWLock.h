@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Access Method
  *	MODULE:		GlobalRWLock.h
- *	DESCRIPTION:	Global Read Write Lock
+ *	DESCRIPTION:	Cached Object Synchronizer
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -21,22 +21,20 @@
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
- *  Contributor(s):
+ *  Contributor(s): ______________________________________.
  *
- *	Roman Simakov <roman-simakov@users.sourceforge.net>
  *
  */
 
-#ifndef GLOBAL_RW_LOCK
-#define GLOBAL_RW_LOCK
+#ifndef GLOBALRWLOCK_H
+#define GLOBALRWLOCK_H
 
 #include "../common/classes/alloc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/lck_proto.h"
 #include "../include/fb_types.h"
-#include "os/pio.h"
-#include "../common/classes/condition.h"
+#include "../jrd/isc.h"
 
 //#define COS_DEBUG
 
@@ -54,58 +52,124 @@ namespace Jrd {
 
 typedef USHORT locktype_t;
 
-class GlobalRWLock : public Firebird::PermanentStorage
-{
+struct ObjectOwnerData {
+	SLONG owner_handle;
+	ULONG entry_count;
+	static const SLONG& generate(const void* sender, const ObjectOwnerData& value) {
+		return value.owner_handle;
+	}
+	ObjectOwnerData() {
+		owner_handle = 0;
+		entry_count = 0;
+	}
+};
+
+/*
+ * Architecture goals for the class
+ * - Lock to protect intra-process cached resources with object-oriented interface:
+ *   invalidate()/fetch()
+ * - Two lock modes: LCK_read (LCK_PR) and LCK_write (LCK_EX)
+ * - Support for lock recursion (multiple acquires of a lock by a given owner)
+ * - Flexible execution environment
+ * - Multiple threads
+ * - Multiple processes
+ * - Signals
+ * - Locks belong to logical owners (typically type ATTACHMENT or DATABASE, but
+ *   potentially also THREAD and PROCESS)
+ * - Logical ownership of a lock may change during the object access lifecycle
+ *   (somewhat special case, happens if cached resource needs to be passed from
+ *   one worker thread to another without releasing the lock)
+ *
+ * Implementation constraints
+ * - Avoid calling lock manager for synchronization in non-contention case
+ *   (for performance reasons, especially in DLM environments)
+ * - All contention to be handled via Lock manager to ensure reliable deadlock
+ *   detection and to be monitored and debuggable via standard means
+ */
+class GlobalRWLock : public Firebird::PermanentStorage {
 public:
-	GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
-			lck_owner_t lock_owner, bool lock_caching = true,
-			size_t lockLen = 0, const UCHAR* lockStr = NULL);
+	GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType, 
+					   size_t lockLen, const UCHAR* lockStr,
+					   lck_owner_t physical_lock_owner = LCK_OWNER_database,
+					   lck_owner_t default_logical_lock_owner = LCK_OWNER_attachment,
+					   bool lock_caching = true);
 
 	virtual ~GlobalRWLock();
 
+	// As usual, 
+	// wait = 0 - try to lock a thing instantly (doesn't send ASTs)
+	// wait < 0 - timeout in seconds (doesn't deadlock)
+	// wait > 0 - infinite wait (may deadlock)
+	//
 	// This function returns false if it cannot take the lock
-	bool lockWrite(thread_db* tdbb, SSHORT wait);
-	void unlockWrite(thread_db* tdbb);
-	bool lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump = false);
-	void unlockRead(thread_db* tdbb);
-	bool tryReleaseLock(thread_db* tdbb);
-	void shutdownLock();
+	bool lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG owner_handle);
+	bool lock(thread_db* tdbb, locklevel_t level, SSHORT wait) {
+		return lock(tdbb, level, wait, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
+	}
 
+	// NOTE: unlock method must be signal safe
+	// This function may be called in AST. The function doesn't wait.
+	void unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle);
+	void unlock(thread_db* tdbb, locklevel_t level) {
+		unlock(tdbb, level, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
+	}
+
+	// Change the lock owner. The function doesn't wait.
+	void changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle);
+
+	SLONG getLockData() const {
+		return cached_lock->lck_data;
+	}
+	void setLockData(SLONG lck_data);
+
+	// Release phisical lock if possible. Use to force refetch
+	// Returns true if lock was released
+	bool tryReleaseLock(thread_db* tdbb);
 protected:
+	Lock* cached_lock;
 	// Flag to indicate that somebody is waiting via lock manager.
 	// If somebody uses lock manager, all concurrent requests should also
 	// go via lock manager to prevent starvation.
-	Lock* cachedLock;
+	int internal_blocking;
+	bool external_blocking; // Unprocessed AST pending
 
 	// Load the object from shared location.
-	virtual bool fetch(thread_db* /*tdbb*/) { return true; }
-	virtual void invalidate(thread_db* /*tdbb*/)
-	{
-		fb_assert(readers == 0);
-		blocking = false;
-	}
+	virtual void fetch(thread_db* tdbb) {}
+
+	// May be called under AST. Should not throw exceptions.
+	virtual void invalidate(thread_db* tdbb, bool ast_handler) {}
 
 	virtual void blockingAstHandler(thread_db* tdbb);
-
 private:
-	Firebird::Mutex counterMutex;	// Protects counter and blocking flag
-	ULONG pendingLock;
-
-	ULONG	readers;
-	Firebird::Condition noReaders;		// Semaphore to wait all readers unlock to start relock
-
-	ULONG	pendingWriters;
-	bool	currentWriter;
-	Firebird::Condition	writerFinished;
-
-	// true - unlock keep cached lock and release by AST.
+	Firebird::Mutex lockMutex;	// Protects status of logical lock, counters and blocking flag
+	lck_owner_t		physicalLockOwner;	// Holds cached lock
+	lck_owner_t		defaultLogicalLockOwner;	// Requests new lock to replace cached
+	
+	// true - unlock keep cached lock and release by AST. 
 	// false - unlock releases cached lock if possible
 	bool	lockCaching;
-	bool	blocking; // Unprocessed AST pending
+
+	Firebird::SortedArray<ObjectOwnerData, Firebird::EmptyStorage<ObjectOwnerData>, 
+		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
+	ObjectOwnerData writer;
+
+	// In current implementation, threads are not used along with signals
+	// Anyways, if we own mutex only with signals disabled this code
+	// becomes signal-safe even in presense of threads.
+	//
+	// SUPERSERVER: We do not call any functions that can cause wait 
+	// when under counters lock so we do not need to release thread
+	// scheduler here
+	class CountersLockHolder : public AstInhibit, public Firebird::MutexLockGuard
+	{
+	public:
+		explicit CountersLockHolder(Firebird::Mutex& mtx)
+			: AstInhibit(), MutexLockGuard(mtx) { }
+	};
 
 	static int blocking_ast_cached_lock(void* ast_object);
 };
 
 }
 
-#endif // GLOBAL_RW_LOCK
+#endif // GLOBALRWLOCK_H

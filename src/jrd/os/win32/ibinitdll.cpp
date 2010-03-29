@@ -1,5 +1,5 @@
 /*
- *      PROGRAM:        Firebird Windows platforms
+ *      PROGRAM:        InterBase Window platforms
  *      MODULE:         ibinitdll.cpp
  *      DESCRIPTION:    DLL entry/exit function
  *
@@ -19,28 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
-#include "../../../common/dllinst.h"
-
 #include <windows.h>
 
-using namespace Firebird;
 
-
-BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
+BOOL WINAPI DllMain(HINSTANCE /*h*/, DWORD /*reason*/, LPVOID /*reserved*/)
 {
-	switch (reason)
-	{
-		case DLL_PROCESS_ATTACH:
-			hDllInst = h;
-#if defined(EMBEDDED)
-			bEmbedded = true;
-#endif
-			break;
-	}
-
 	return TRUE;
 }

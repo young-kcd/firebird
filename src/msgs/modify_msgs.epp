@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:		Firebird Message file modify for escape chars
- *	MODULE:			modify_messages.epp
+ *	PROGRAM:	Interbase Message file modify for escape chars
+ *	MODULE:		modify_messages.epp
  *	DESCRIPTION:	Allow modification of messages with translatation of escape sequences
  *
  * The contents of this file are subject to the Interbase Public
@@ -45,7 +45,7 @@ int main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.
+ *	Top level routine.  
  *
  **************************************/
 	SCHAR facility[20], newtext[256];
@@ -81,13 +81,10 @@ int main( int argc, char **argv)
 					const SCHAR* q = newtext;
 
 					/* translate scape sequences to single bytes */
-					while (*q)
-					{
-						if (*q == '\\')
-						{
+					while (*q) {
+						if (*q == '\\') {
 							*q++;
-							switch (*q)
-							{
+							switch (*q) {
 							case 'n':
 								*p++ = '\n';
 								break;
@@ -158,10 +155,8 @@ static void explicit_print( const TEXT* string)
  **************************************/
 	const TEXT* p = string;
 
-	while (*p)
-	{
-		switch (*p)
-		{
+	while (*p) {
+		switch (*p) {
 		case '\n':
 			putchar('\\');
 			putchar('n');

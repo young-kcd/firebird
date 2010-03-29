@@ -26,21 +26,19 @@
 
 #include "../common/classes/MetaName.h"
 
-struct sdl_info
-{
+struct sdl_info {
 	USHORT			sdl_info_fid;
 	USHORT			sdl_info_rid;
 	Firebird::MetaName	sdl_info_field;
 	Firebird::MetaName	sdl_info_relation;
 	dsc				sdl_info_element;
 	USHORT			sdl_info_dimensions;
-	SLONG			sdl_info_lower[MAX_ARRAY_DIMENSIONS];
-	SLONG			sdl_info_upper[MAX_ARRAY_DIMENSIONS];
+	SLONG			sdl_info_lower[16];
+	SLONG			sdl_info_upper[16];
 };
 
 
-struct array_slice
-{
+struct array_slice {
 	enum slice_dir_t { slc_reading_array, slc_writing_array };
 	DSC slice_desc;
 	const BLOB_PTR* slice_end;

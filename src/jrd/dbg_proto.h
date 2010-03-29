@@ -26,36 +26,26 @@
 
 /* Don't declare DBG_supervisor in _ANSI_PROTOTYPES_, it screws up val.cpp */
 
-namespace Jrd
-{
-	class jrd_nod;
-	struct record_param;
-	class SortMap;
-}
-
-class MemoryPool;
-struct blk;
-
 int DBG_supervisor(int);
 
-int DBG_all();
+int DBG_all(void);
 int DBG_analyze(int);
-int DBG_bdbs();
-int DBG_precedence();
+int DBG_bdbs(void);
+int DBG_precedence(void);
 int DBG_block(blk*);
 int DBG_check(int);
-int DBG_close();
+int DBG_close(void);
 int DBG_eval(int);
 int DBG_examine(int *);
-int DBG_init();
-int DBG_open();
-int DBG_pool(MemoryPool*);
+int DBG_init(void);
+int DBG_open(void);
+int DBG_pool(class JrdMemoryPool*);
 int DBG_pretty(const Jrd::jrd_nod*, int);
 int DBG_rpb(Jrd::record_param*);
 int DBG_smb(Jrd::SortMap*, int);
-int DBG_verify();
+int DBG_verify(void);
 int DBG_window(int *);
-int DBG_memory();
+int DBG_memory(void);
 
 #endif // JRD_DBG_PROTO_H
 

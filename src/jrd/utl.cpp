@@ -55,16 +55,26 @@
 #include "../jrd/event.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#include "../jrd/blb_proto.h"
+#endif
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MetaName.h"
-#include "../common/classes/TempFile.h"
-#include "../common/classes/DbImplementation.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#ifdef VMS
+#include <file.h>
+#include <perror.h>
+#include <descrip.h>
+#include <types.h>
+#include <stat.h>
+
+#else /* !VMS */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -72,30 +82,40 @@
 #if defined(WIN_NT)
 #include <io.h> // mktemp, unlink ..
 #include <process.h>
-#endif
-
-#ifdef HAVE_SYS_FILE_H
+#else
 #include <sys/file.h>
 #endif
 
-// Bug 7119 - BLOB_load will open external file for read in BINARY mode.
+#endif /* VMS */
+
+#ifdef VMS
+#ifdef __ALPHA
+static const char* EDT_IMAGE	= "TPUSHR";
+static const char* EDT_SYMBOL	= "TPU$EDIT";
+#else
+static const char* EDT_IMAGE	= "EDTSHR";
+static const char* EDT_SYMBOL	= "EDT$EDIT";
+#endif
+#endif
+
+/* Bug 7119 - BLOB_load will open external file for read in BINARY mode. */
 
 #ifdef WIN_NT
-static const char* const FOPEN_READ_TYPE		= "rb";
-static const char* const FOPEN_WRITE_TYPE		= "wb";
-static const char* const FOPEN_READ_TYPE_TEXT	= "rt";
-static const char* const FOPEN_WRITE_TYPE_TEXT	= "wt";
+static const char* FOPEN_READ_TYPE		= "rb";
+static const char* FOPEN_WRITE_TYPE		= "wb";
+static const char* FOPEN_READ_TYPE_TEXT	= "rt";
+static const char* FOPEN_WRITE_TYPE_TEXT= "wt";
 #else
-static const char* const FOPEN_READ_TYPE		= "r";
-static const char* const FOPEN_WRITE_TYPE		= "w";
-static const char* const FOPEN_READ_TYPE_TEXT	= FOPEN_READ_TYPE;
-static const char* const FOPEN_WRITE_TYPE_TEXT	= FOPEN_WRITE_TYPE;
+static const char* FOPEN_READ_TYPE		= "r";
+static const char* FOPEN_WRITE_TYPE		= "w";
+static const char* FOPEN_READ_TYPE_TEXT	= FOPEN_READ_TYPE;
+static const char* FOPEN_WRITE_TYPE_TEXT= FOPEN_WRITE_TYPE;
 #endif
 
 #define LOWER7(c) ( (c >= 'A' && c<= 'Z') ? c + 'a' - 'A': c )
 
 
-// Blob stream stuff
+/* Blob stream stuff */
 
 const int BSTR_input	= 0;
 const int BSTR_output	= 1;
@@ -108,48 +128,155 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
 static int load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 
 
-// Blob info stuff
+#ifdef VMS
+static int display(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE);
+#endif
 
-static const char blob_items[] =
-{
+/* Blob info stuff */
+
+static const char blob_items[] = {
 	isc_info_blob_max_segment, isc_info_blob_num_segments,
 	isc_info_blob_total_length
 };
 
 
-// gds__version stuff
+/* gds__version stuff */
 
 static const char info[] =
-	{ isc_info_firebird_version, isc_info_implementation, fb_info_implementation, isc_info_end };
+	{ isc_info_firebird_version, isc_info_implementation, isc_info_end };
 
 static const char ods_info[] =
 	{ isc_info_ods_version, isc_info_ods_minor_version, isc_info_end };
 
-static const TEXT* const impl_class[] =
-{
-	NULL,						// 0
-	"access method",			// 1
-	"Y-valve",					// 2
-	"remote interface",			// 3
-	"remote server",			// 4
-	NULL,						// 5
-	NULL,						// 6
-	"pipe interface",			// 7
-	"pipe server",				// 8
-	"central interface",		// 9
-	"central server",			// 10
-	"gateway",					// 11
-	"classic server",			// 12
-	"super server"				// 13
+static const TEXT* const impl_class[] = {
+	NULL,						/* 0 */
+	"access method",			/* 1 */
+	"Y-valve",					/* 2 */
+	"remote interface",			/* 3 */
+	"remote server",			/* 4 */
+	NULL,						/* 5 */
+	NULL,						/* 6 */
+	"pipe interface",			/* 7 */
+	"pipe server",				/* 8 */
+	"central interface",		/* 9 */
+	"central server",			/* 10 */
+	"gateway",					/* 11 */
+	"classic server",		/* 12 */
+	"super server"			/* 13 */
 };
 
-#if (defined SOLARIS ) || (defined __cplusplus)
+static const TEXT* const impl_implementation[] = {
+	NULL,						/* 0 */
+    "Rdb/VMS",				/* 1 */
+    "Rdb/ELN target",		/* 2 */
+    "Rdb/ELN development",	/* 3 */
+    "Rdb/VMS Y",			/* 4 */
+    "Rdb/ELN Y",			/* 5 */
+    "JRI",					/* 6 */
+    "JSV",					/* 7 */
+    NULL,					/* 8 */
+    NULL,					/* 9 */
+    NULL, // "Firebird/apollo",     /* 10 */
+    NULL, // "Firebird/ultrix",		/* 11 */
+    "Firebird/vms",		/* 12 */
+    "Firebird/sun",		/* 13 */
+    NULL, // "Firebird/OS2",        /* 14 */
+    NULL,					/* 15 */
+    NULL,					/* 16 */
+    NULL,					/* 17 */
+    NULL,					/* 18 */
+    NULL,					/* 19 */
+    NULL,					/* 20 */
+    NULL,					/* 21 */
+    NULL,					/* 22 */
+    NULL,					/* 23 */
+    NULL,					/* 24 */
+    NULL, // "Firebird/apollo",     /* 25 */
+    NULL, // "Firebird/ultrix",		/* 26 */
+    "Firebird/vms",		/* 27 */
+    "Firebird/sun",		/* 28 */
+    NULL, // "Firebird/OS2",        /* 29 */
+    "Firebird/sun4",		/* 30 */
+    NULL, // "Firebird/hpux800",	/* 31 */
+    "Firebird/sun386",		/* 32 */
+    "Firebird:ORACLE/vms",	/* 33 */
+    NULL, // "Firebird/mac/aux",    /* 34 */
+    "Firebird/ibm/aix",	/* 35 */
+    NULL, // "Firebird/mips/ultrix",	/* 36 */
+    NULL, // "Firebird/xenix",      /* 37 */
+    NULL, // "Firebird/AViiON",		/* 38 */
+    NULL, // "Firebird/hp/mpexl",	/* 39 */
+    NULL, // "Firebird/hp/ux300",	/* 40 */
+    NULL, // "Firebird/sgi",		/* 41 */
+    "Firebird/sco/unix",	/* 42 */
+    NULL, // "Firebird/Cray",       /* 43 */
+    NULL, // "Firebird/imp",        /* 44 */
+    NULL, // "Firebird/delta",      /* 45 */
+    NULL, // "Firebird/NeXT",       /* 46 */
+    NULL, // "Firebird/DOS",		/* 47 */
+    NULL, // "Firebird/m88k",       /* 48 */
+    NULL, // "Firebird/UNIXWARE",	/* 49 */
+    "Firebird/x86/Windows NT",	/* 50 */
+    NULL, // "Firebird/epson",      /* 51 */
+    NULL, // "Firebird/DEC/OSF",	/* 52 */
+    "Firebird/Alpha/OpenVMS",	/* 53 */
+    NULL, // "Firebird/NetWare",	/* 54 */
+    "Firebird/Windows",	/* 55 */
+    NULL, // "Firebird/NCR3000",    /* 56 */
+    NULL, // "Firebird/PPC/Windows NT", /* 57 */
+    NULL, // "Firebird/DG_X86",		/* 58 */
+    "Firebird/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
+    "Firebird/linux Intel",	/* 60 */
+    "Firebird/FreeBSD/i386",	/* 61 */
+    "Firebird/NetBSD/i386",	/* 62 */
+    "Firebird/Darwin/PowerPC",	/* 63 */
+    "Firebird/SINIX-Z",	/* 64 */
+    "Firebird/linux Sparc",	/* 65 */
+    "Firebird/linux AMD64",	/* 66 */
+    "Firebird/FreeBSD/amd64",	/* 67 */
+    NULL, // "Firebird/x86-64/Windows NT",   /* 68 */		//Windows/amd64 - not ported yet
+    "Firebird/linux PowerPC",	/* 69 */
+    "Firebird/Darwin/Intel",	/* 70 */
+    "Firebird/sun/amd64"	/* 71 */	
+};
+
+
+#if (defined SOLARIS ) || (defined __cplusplus) 
 extern "C" {
 #endif
-// Avoid C++ linkage API functions
+/* Avoid C++ linkage API functions*/
 
 
-int API_ROUTINE gds__blob_size(FB_API_HANDLE* b, SLONG* size, SLONG* seg_count, SLONG* max_seg)
+#ifdef VMS
+ISC_STATUS API_ROUTINE gds__attach_database_d(
+										  ISC_STATUS* user_status,
+										  struct dsc$descriptor_s* file_name,
+										  void** handle,
+										  SSHORT dpb_length,
+	const SCHAR* dpb, SSHORT db_type)
+{
+/**************************************
+ *
+ *	g d s _ $ a t t a c h _ d a t a b a s e _ d
+ *
+ **************************************
+ *
+ * Functional description
+ *	An attach database for COBOL to call
+ *
+ **************************************/
+
+	return gds_attach_database(user_status, file_name->dsc$w_length,
+							   file_name->dsc$a_pointer, handle, dpb_length,
+							   dpb, db_type);
+}
+#endif
+
+
+int API_ROUTINE gds__blob_size(
+							   FB_API_HANDLE* b,
+							   SLONG* size,
+							   SLONG* seg_count, SLONG* max_seg)
 {
 /**************************************
  *
@@ -159,29 +286,30 @@ int API_ROUTINE gds__blob_size(FB_API_HANDLE* b, SLONG* size, SLONG* seg_count, 
  *
  * Functional description
  *	Get the size, number of segments, and max
- *	segment length of a blob.  Return TRUE
+ *	segment length of a blob.  Return true
  *	if it happens to succeed.
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	SCHAR buffer[64];
 
-	if (isc_blob_info(status_vector, b, sizeof(blob_items), blob_items, sizeof(buffer), buffer))
+	if (isc_blob_info(status_vector, b, sizeof(blob_items),
+					   blob_items,
+					   sizeof(buffer), buffer)) 
 	{
 		isc_print_status(status_vector);
 		return FALSE;
 	}
 
-	const UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
-	UCHAR item;
-	while ((item = *p++) != isc_info_end)
-	{
-		const USHORT l = gds__vax_integer(p, 2);
+	const TEXT* p = buffer;
+	char item;
+	while ((item = *p++) != isc_info_end) {
+		const USHORT l =
+			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2);
 		p += 2;
-		const SLONG n = gds__vax_integer(p, l);
+		const SLONG n = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), l);
 		p += l;
-		switch (item)
-		{
+		switch (item) {
 		case isc_info_blob_max_segment:
 			if (max_seg)
 				*max_seg = n;
@@ -232,16 +360,17 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
  * use than the natural alternative.
  *
  **************************************/
-	SSHORT length;
-	UCHAR* p = NULL;
+	SSHORT	length;
+	char*	p = 0;
 	const char*	q;
 	va_list	args;
-	USHORT type;
+	USHORT	type;
 	UCHAR* new_dpb;
 
-	// calculate length of database parameter block, setting initial length to include version
+/* calculate length of database parameter block,
+   setting initial length to include version */
 
-	SSHORT new_dpb_length;
+   	SSHORT new_dpb_length;
 	if (!*dpb || !(new_dpb_length = *dpb_size))
 	{
 		new_dpb_length = 1;
@@ -274,21 +403,20 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 	va_end(args);
 
-	// if items have been added, allocate space
-	// for the new dpb and copy the old one over
+/* if items have been added, allocate space
+   for the new dpb and copy the old one over */
 
 	if (new_dpb_length > *dpb_size)
 	{
-		// Note: gds__free done by GPRE generated code
+		/* Note: gds__free done by GPRE generated code */
 
-		new_dpb = (UCHAR*) gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
-		p = new_dpb;
-		// FREE: done by client process in GPRE generated code
+		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
+		p = reinterpret_cast<char*>(new_dpb);
+		/* FREE: done by client process in GPRE generated code */
 		if (!new_dpb)
-		{
-			// NOMEM: don't trash existing dpb
+		{			/* NOMEM: don't trash existing dpb */
 			DEV_REPORT("isc_extend_dpb: out of memory");
-			return;				// NOMEM: not really handled
+			return;				/* NOMEM: not really handled */
 		}
 
 		q = *dpb;
@@ -300,23 +428,23 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 	else
 	{
-		// CVC: Notice this case is new_dpb_length <= *dpb_size, but since
-		// we have new_dpb_length = MAX(*dpb_size, 1) our case is reduced
-		// to new_dpb_length == *dpb_size. Therefore, this code is a waste
-		// of time, since the function didn't find any param to add and thus,
+	    // CVC: Notice this case is new_dpb_length <= *dpb_size, but since
+	    // we have new_dpb_length = MAX(*dpb_size, 1) our case is reduced
+	    // to new_dpb_length == *dpb_size. Therefore, this code is a waste
+	    // of time, since the function didn't find any param to add and thus,
 		// the loop below won't find anything worth adding either.
-		// Notice, too that the original input dpb is used, yet the pointer "p"
-		// is positioned exactly at the end, so if something was added at the
+	    // Notice, too that the original input dpb is used, yet the pointer "p"
+	    // is positioned exactly at the end, so if something was added at the
 		// tail, it would be a memory failure, unless the caller lies and is
 		// always passing a dpb bigger than *dpb_size.
 		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
-		p = new_dpb + *dpb_size;
+		p = reinterpret_cast<char*>(new_dpb + *dpb_size);
 	}
 
 	if (!*dpb_size)
 		*p++ = isc_dpb_version1;
 
-	// copy in the new runtime items
+/* copy in the new runtime items */
 
 	va_start(args, dpb_size);
 
@@ -335,9 +463,9 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 			{
 				length = strlen(q);
 				fb_assert(type <= CHAR_MAX);
-				*p++ = (UCHAR) type;
+				*p++ = (char) type;
 				fb_assert(length <= CHAR_MAX);
-				*p++ = (UCHAR) length;
+				*p++ = (char) length;
 				while (length--)
 					*p++ = *q++;
 			}
@@ -350,7 +478,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 	va_end(args);
 
-	*dpb_size = p - new_dpb;
+	*dpb_size = p - reinterpret_cast<char*>(new_dpb);
 	*dpb = reinterpret_cast<SCHAR*>(new_dpb);
 }
 
@@ -366,7 +494,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *	i s c _ m o d i f y _ d p b
  *
  **************************************
- * CVC: This is exactly the same logic as isc_expand_dpb, but for one param.
+ * CVC: This is exactly the same login than isc_expand_dpb, but for one param.
  * However, the difference is that when presented with a dpb type it that's
  * unknown, it returns FB_FAILURE immediately. In contrast, isc_expand_dpb
  * doesn't complain and instead treats those as integers and tries to skip
@@ -394,7 +522,8 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *
  **************************************/
 
-	// calculate length of database parameter block, setting initial length to include version
+/* calculate length of database parameter block,
+   setting initial length to include version */
 
 	SSHORT new_dpb_length;
 	if (!*dpb || !(new_dpb_length = *dpb_size))
@@ -417,37 +546,44 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		return FB_FAILURE;
 	}
 
-	// if items have been added, allocate space
-	// for the new dpb and copy the old one over
+/* if items have been added, allocate space
+   for the new dpb and copy the old one over */
 
 	UCHAR* new_dpb;
+	UCHAR* p;
 	if (new_dpb_length > *dpb_size)
 	{
-		// Note: gds__free done by GPRE generated code
+		/* Note: gds__free done by GPRE generated code */
 
-		new_dpb = (UCHAR*) gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
+		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
 
-		// FREE: done by client process in GPRE generated code
+		/* FREE: done by client process in GPRE generated code */
 		if (!new_dpb)
-		{
-			// NOMEM: don't trash existing dpb
+		{			/* NOMEM: don't trash existing dpb */
 			DEV_REPORT("isc_extend_dpb: out of memory");
-			return FB_FAILURE;		// NOMEM: not really handled
+			return FB_FAILURE;		/* NOMEM: not really handled */
 		}
 
-		memcpy(new_dpb, *dpb, *dpb_size);
+		p = new_dpb;
+		const UCHAR* q = reinterpret_cast<const UCHAR*>(*dpb);
+		for (SSHORT length = *dpb_size; length; length--)
+		{
+			*p++ = *q++;
+		}
+
 	}
 	else
+	{
 		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
-
-	UCHAR* p = new_dpb + *dpb_size;
+		p = new_dpb + *dpb_size;
+	}
 
 	if (!*dpb_size)
 	{
 		*p++ = isc_dpb_version1;
 	}
 
-	// copy in the new runtime items
+/* copy in the new runtime items */
 
 	switch (type)
 	{
@@ -458,7 +594,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 	case isc_dpb_lc_ctype:
 	case isc_dpb_reserved:
 		{
-			const UCHAR* q = reinterpret_cast<const UCHAR*>(str);
+		    const UCHAR* q = reinterpret_cast<const UCHAR*>(str);
 			if (q)
 			{
 				SSHORT length = str_len;
@@ -479,14 +615,14 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 	}
 
 	*dpb_size = p - new_dpb;
-	*dpb = (SCHAR*) new_dpb;
+	*dpb = (SCHAR *) new_dpb;
 
 	return FB_SUCCESS;
 }
 
 
 #if defined(UNIX) || defined(WIN_NT)
-int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
+int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 {
 /**************************************
  *
@@ -520,12 +656,50 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
 	struct stat after;
 	stat(file_name, &after);
 
-	return (before.st_mtime != after.st_mtime || before.st_size != after.st_size);
+	return (before.st_mtime != after.st_mtime ||
+			before.st_size != after.st_size);
 }
 #endif
 
 
-SLONG API_ROUTINE gds__event_block(UCHAR** event_buffer, UCHAR** result_buffer, USHORT count, ...)
+#ifdef VMS
+int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
+{
+/**************************************
+ *
+ *	g d s _ $ e d i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open a blob, dump it to a file, allow the user to edit the
+ *	window, and dump the data back into a blob.  If the user
+ *	bails out, return FALSE, otherwise return TRUE.
+ *
+ **************************************/
+	struct dsc$descriptor_s desc, symbol, image;
+	struct stat before, after;
+
+	stat(file_name, &before);
+	ISC_make_desc(file_name, &desc, 0);
+	ISC_make_desc(EDT_SYMBOL, &symbol, 0);
+	ISC_make_desc(EDT_IMAGE, &image, 0);
+
+	int (*editor)(dsc$descriptor_s, dsc$descriptor_s);
+	lib$find_image_symbol(&image, &symbol, &editor);
+	int status = (*editor) (&desc, &desc);
+	stat(file_name, &after);
+
+	return (before.st_ctime != after.st_ctime ||
+			before.st_ino[0] != after.st_ino[0] ||
+			before.st_ino[1] != after.st_ino[1] ||
+			before.st_ino[2] != after.st_ino[2]);
+}
+#endif
+
+SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
+								   UCHAR ** result_buffer,
+								   USHORT count, ...)
 {
 /**************************************
  *
@@ -542,63 +716,59 @@ SLONG API_ROUTINE gds__event_block(UCHAR** event_buffer, UCHAR** result_buffer, 
  *	created for any reason.
  *
  **************************************/
-	UCHAR* p;
-	SCHAR* q;
+	UCHAR *p;
+	SCHAR *q;
+	const SCHAR *end;
 	SLONG length;
 	va_list ptr;
 	USHORT i;
 
 	va_start(ptr, count);
 
-	// calculate length of event parameter block,
-	// setting initial length to include version
-	// and counts for each argument
+/* calculate length of event parameter block, 
+   setting initial length to include version
+   and counts for each argument */
 
 	length = 1;
 	i = count;
-	while (i--)
-	{
-		q = va_arg(ptr, SCHAR*);
+	while (i--) {
+		q = va_arg(ptr, SCHAR *);
 		length += strlen(q) + 5;
 	}
 
-	p = *event_buffer = (UCHAR*) gds__alloc((SLONG) (sizeof(UCHAR) * length));
-	// FREE: unknown
-	if (!*event_buffer)			// NOMEM:
+	p = *event_buffer =
+		(UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
+/* FREE: unknown */
+	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	*result_buffer = (UCHAR*) gds__alloc((SLONG) (sizeof(UCHAR) * length));
-	// FREE: unknown
-	if (!*result_buffer)
-	{
-		// NOMEM:
+	*result_buffer = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
+/* FREE: unknown */
+	if (!*result_buffer) {		/* NOMEM: */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-	// I can't find anywhere these items are freed
-	// 1994-October-25 David Schnepper
-	gds_alloc_flag_unfreed((void*) *event_buffer);
-	gds_alloc_flag_unfreed((void*) *result_buffer);
-#endif // DEBUG_GDS_ALLOC
+/* I can't find anywhere these items are freed */
+/* 1994-October-25 David Schnepper  */
+	gds_alloc_flag_unfreed((void *) *event_buffer);
+	gds_alloc_flag_unfreed((void *) *result_buffer);
+#endif /* DEBUG_GDS_ALLOC */
 
-	// initialize the block with event names and counts
+/* initialize the block with event names and counts */
 
 	*p++ = EPB_version1;
 
 	va_start(ptr, count);
 
 	i = count;
-	while (i--)
-	{
-		q = va_arg(ptr, SCHAR*);
+	while (i--) {
+		q = va_arg(ptr, SCHAR *);
 
-		// Strip trailing blanks from string
+		/* Strip trailing blanks from string */
 
-		const SCHAR* end = q + strlen(q);
-		while (--end >= q && *end == ' ')
-			; // empty loop
+		for (end = q + strlen(q); --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -612,14 +782,14 @@ SLONG API_ROUTINE gds__event_block(UCHAR** event_buffer, UCHAR** result_buffer, 
 }
 
 
-USHORT API_ROUTINE gds__event_block_a(SCHAR** event_buffer,
-									  SCHAR** result_buffer,
+USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
+									  SCHAR ** result_buffer,
 									  SSHORT count,
-									  SCHAR** name_buffer)
+									  SCHAR ** name_buffer)
 {
 /**************************************
  *
- *	g d s _ $ e v e n t _ b l o c k _ a
+ *	g d s _ $ e v e n t _ b l o c k _ a 
  *
  **************************************
  *
@@ -630,58 +800,54 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR** event_buffer,
  *	Return the size of the block.
  *
  **************************************/
-	const int MAX_NAME_LENGTH = 31;
-	// calculate length of event parameter block,
-	// setting initial length to include version
-	// and counts for each argument
+
+/* calculate length of event parameter block, 
+   setting initial length to include version
+   and counts for each argument */
 
 	USHORT i = count;
 	const SCHAR* const* nb = name_buffer;
 	SLONG length = 0;
-	while (i--)
-	{
+	while (i--) {
 		const SCHAR* q = *nb++;
 
-		// Strip trailing blanks from string
-		const SCHAR* end = q + MAX_NAME_LENGTH;
+		/* Strip trailing blanks from string */
+		const SCHAR* end = q + 31;
 		while (--end >= q && *end == ' '); // null body
 		length += end - q + 1 + 5;
 	}
 
 	i = count;
-	SCHAR* p = *event_buffer = (SCHAR*) gds__alloc((SLONG) (sizeof(SCHAR) * length));
-	// FREE: unknown
-	if (!*event_buffer)			// NOMEM:
+	SCHAR* p = *event_buffer =
+		(SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+/* FREE: unknown */
+	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	*result_buffer = (SCHAR*) gds__alloc((SLONG) (sizeof(SCHAR) * length));
-	// FREE: unknown
-	if (!*result_buffer)
-	{
-		// NOMEM:
+	*result_buffer = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+/* FREE: unknown */
+	if (!*result_buffer) {		/* NOMEM: */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
 		return 0;
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-	// I can't find anywhere these items are freed
-	// 1994-October-25 David Schnepper
-	gds_alloc_flag_unfreed((void*) *event_buffer);
-	gds_alloc_flag_unfreed((void*) *result_buffer);
-#endif // DEBUG_GDS_ALLOC
+/* I can't find anywhere these items are freed */
+/* 1994-October-25 David Schnepper  */
+	gds_alloc_flag_unfreed((void *) *event_buffer);
+	gds_alloc_flag_unfreed((void *) *result_buffer);
+#endif /* DEBUG_GDS_ALLOC */
 
 	*p++ = EPB_version1;
 
 	nb = name_buffer;
 
-	while (i--)
-	{
+	while (i--) {
 		const SCHAR* q = *nb++;
 
-		// Strip trailing blanks from string
-		const SCHAR* end = q + MAX_NAME_LENGTH;
-		while (--end >= q && *end == ' ')
-			; // null body
+		/* Strip trailing blanks from string */
+		const SCHAR* end = q + 31;
+		while (--end >= q && *end == ' '); // null body
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -695,11 +861,12 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR** event_buffer,
 }
 
 
-void API_ROUTINE gds__event_block_s(SCHAR** event_buffer,
-									SCHAR** result_buffer,
+void API_ROUTINE gds__event_block_s(
+									SCHAR ** event_buffer,
+									SCHAR ** result_buffer,
 									SSHORT count,
-									SCHAR** name_buffer,
-									SSHORT* return_count)
+									SCHAR ** name_buffer,
+									SSHORT * return_count)
 {
 /**************************************
  *
@@ -713,14 +880,16 @@ void API_ROUTINE gds__event_block_s(SCHAR** event_buffer,
  *
  **************************************/
 
-	*return_count = gds__event_block_a(event_buffer, result_buffer, count, name_buffer);
+	*return_count =
+		gds__event_block_a(event_buffer, result_buffer, count, name_buffer);
 }
 
 
-void API_ROUTINE isc_event_counts(ULONG* result_vector,
-								  SSHORT buffer_length,
-								  UCHAR* event_buffer,
-								  const UCHAR* result_buffer)
+void API_ROUTINE isc_event_counts(
+					ULONG* result_vector,
+					SSHORT buffer_length,
+					UCHAR* event_buffer,
+					const UCHAR* result_buffer)
 {
 /**************************************
  *
@@ -740,19 +909,18 @@ void API_ROUTINE isc_event_counts(ULONG* result_vector,
 	USHORT length = buffer_length;
 	const UCHAR* const end = p + length;
 
-	// analyze the event blocks, getting the delta for each event
+/* analyze the event blocks, getting the delta for each event */
 
 	p++;
 	q++;
-	while (p < end)
-	{
-		// skip over the event name
+	while (p < end) {
+		/* skip over the event name */
 
 		const USHORT i = (USHORT)* p++;
 		p += i;
 		q += i + 1;
 
-		// get the change in count
+		/* get the change in count */
 
 		const ULONG initial_count = gds__vax_integer(p, sizeof(SLONG));
 		p += sizeof(SLONG);
@@ -761,14 +929,14 @@ void API_ROUTINE isc_event_counts(ULONG* result_vector,
 		*vec++ = new_count - initial_count;
 	}
 
-	// copy over the result to the initial block to prepare
-	// for the next call to gds__event_wait
+/* copy over the result to the initial block to prepare
+   for the next call to gds__event_wait */
 
 	memcpy(event_buffer, result_buffer, length);
 }
 
 
-void API_ROUTINE isc_get_client_version(SCHAR* buffer)
+void API_ROUTINE isc_get_client_version(SCHAR *buffer)
 {
 /**************************************
  *
@@ -817,7 +985,7 @@ int API_ROUTINE isc_get_client_minor_version()
 }
 
 
-void API_ROUTINE gds__map_blobs(int* /*handle1*/, int* /*handle2*/)
+void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
 {
 /**************************************
  *
@@ -826,13 +994,29 @@ void API_ROUTINE gds__map_blobs(int* /*handle1*/, int* /*handle2*/)
  **************************************
  *
  * Functional description
- *	Deprecated API function.
+ *	Map an old blob to a new blob.
+ *	This call is intended for use by REPLAY,
+ *	and is probably not generally useful
+ *	for anyone else.
  *
  **************************************/
+
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#ifndef SUPERCLIENT
+/* Note: gds__map_blobs is almost like an API call,
+   it needs a thread_db structure setup for it in order
+   to function properly.  This currently does
+   not function.
+   1996-Nov-06 David Schnepper  */
+	deliberate_compile_error++;
+	BLB_map_blobs(NULL, handle1, handle2);
+#endif
+#endif
 }
 
 
-void API_ROUTINE isc_set_debug(int /*value*/)
+#if !(defined REQUESTER)
+void API_ROUTINE isc_set_debug(int value)
 {
 /**************************************
  *
@@ -847,6 +1031,7 @@ void API_ROUTINE isc_set_debug(int /*value*/)
 
 #pragma FB_COMPILER_MESSAGE("Empty function?!")
 }
+#endif
 
 
 void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
@@ -866,27 +1051,26 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
  **************************************/
 #ifndef SUPERSERVER
 
-	// look for the environment variables
+/* look for the environment variables */
 
 	Firebird::string username, password;
-	if (!fb_utils::readenv(ISC_USER, username) && !fb_utils::readenv(ISC_PASSWORD, password))
+	if (!fb_utils::readenv("ISC_USER", username) && !fb_utils::readenv("ISC_PASSWORD", password))
 		return;
 
-	// figure out whether the username or password have already been specified
-
+/* figure out whether the username or 
+   password have already been specified */
+   
 	bool user_seen = false, password_seen = false;
 
-	if (*dpb && *dpb_size)
-	{
+	if (*dpb && *dpb_size) {
 	    const UCHAR* p = *dpb;
-		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;)
-		{
+		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;) {
 			const int item = *p++;
-			switch (item)
-			{
-			case isc_dpb_version1:
+
+			if (item == isc_dpb_version1)
 				continue;
 
+			switch (item) {
 			case isc_dpb_sys_user_name:
 			case isc_dpb_user_name:
 				user_seen = true;
@@ -898,27 +1082,31 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 				break;
 			}
 
-			// get the length and increment past the parameter.
+			/* get the length and increment past the parameter. */
 			const USHORT l = *p++;
 			p += l;
 		}
 	}
 
-	if (username.length() && !user_seen)
+	if (username.length() && !user_seen) 
 	{
 		if (password.length() && !password_seen)
-			isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_user_name, username.c_str(),
-									isc_dpb_password, password.c_str(), 0);
+			isc_expand_dpb_internal(dpb, dpb_size,
+						   isc_dpb_user_name, username.c_str(), isc_dpb_password,
+						   password.c_str(), 0);
 		else
-			isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_user_name, username.c_str(), 0);
+			isc_expand_dpb_internal(dpb, dpb_size,
+						   isc_dpb_user_name, username.c_str(), 0);
 	}
 	else if (password.length() && !password_seen)
-		isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_password, password.c_str(), 0);
+		isc_expand_dpb_internal(dpb, dpb_size,
+					   isc_dpb_password, password.c_str(), 0);
 #endif
 }
 
 
-void API_ROUTINE isc_set_single_user(const UCHAR** dpb, SSHORT* dpb_size, const TEXT* single_user)
+void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
+									 SSHORT* dpb_size, const TEXT* single_user)
 {
 /****************************************
  *
@@ -932,26 +1120,29 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb, SSHORT* dpb_size, const 
  *
  ****************************************/
 
-	// Discover if single user access has already been specified
+/* Discover if single user access has already been specified */
 
 	bool single_user_seen = false;
 
-	if (*dpb && *dpb_size)
-	{
+	if ((*dpb) && (*dpb_size)) {
 		const UCHAR* p = *dpb;
-		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;)
-		{
+		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;) {
+
 			const int item = *p++;
-			switch (item)
-			{
-			case isc_dpb_version1:
+
+			if (item == isc_dpb_version1)
 				continue;
+
+			switch (item) {
+
 			case isc_dpb_reserved:
+
 				single_user_seen = true;
 				break;
+
 			}
 
-			// Get the length and increment past the parameter.
+/* Get the length and increment past the parameter. */
 
 			const USHORT l = *p++;
 			p += l;
@@ -960,17 +1151,19 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb, SSHORT* dpb_size, const 
 	}
 
 	if (!single_user_seen)
-		isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_reserved, single_user, 0);
+		isc_expand_dpb_internal(dpb, dpb_size,
+					   isc_dpb_reserved, single_user, 0);
 
 }
 
-static void print_version(void*, const char* version)
+static void print_version(void* dummy, const char* version)
 {
 	printf("\t%s\n", version);
 }
 
 
-int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine, void* user_arg)
+int API_ROUTINE isc_version(FB_API_HANDLE* handle,
+							 FPTR_VERSION_CALLBACK routine, void* user_arg)
 {
 /**************************************
  *
@@ -992,11 +1185,13 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	ISC_STATUS_ARRAY status_vector;
 	const TEXT* versions = 0;
 	const TEXT* implementations = 0;
-	const UCHAR* dbis = NULL;
 	bool redo;
 	do {
-		if (isc_database_info(status_vector, handle, sizeof(info), info,
-							  buf_len, reinterpret_cast<char*>(buf)))
+		if (isc_database_info(status_vector,
+							  handle,
+							  sizeof(info),
+							  info,
+							  buf_len, reinterpret_cast<char*>(buf))) 
 		{
 			if (buf != buffer)
 				gds__free(buf);
@@ -1006,32 +1201,17 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 		const UCHAR* p = buf;
 		redo = false;
 
-		while (!redo && *p != isc_info_end && p < buf + buf_len)
-		{
+		while (!redo && *p != isc_info_end && p < buf + buf_len) {
 			const UCHAR item = *p++;
 			const USHORT len = static_cast<USHORT>(gds__vax_integer(p, 2));
 			p += 2;
-			switch (item)
-			{
+			switch (item) {
 			case isc_info_firebird_version:
-				versions = (TEXT*) p;
+				versions = (TEXT *) p;
 				break;
 
 			case isc_info_implementation:
-				implementations = (TEXT*) p;
-				break;
-
-			case fb_info_implementation:
-				dbis = p;
-				if (dbis[0] * 6 + 1 > len)
-				{
-					// fb_info_implementation value appears incorrect
-					dbis = NULL;
-				}
-				break;
-
-			case isc_info_error:
-				// old server does not understand fb_info_implementation
+				implementations = (TEXT *) p;
 				break;
 
 			case isc_info_truncated:
@@ -1046,16 +1226,16 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 			p += len;
 		}
 
-		// Our buffer wasn't large enough to hold all the information,
-		// make a larger one and try again.
-		if (redo)
-		{
+		/* Our buffer wasn't large enough to hold all the information,
+		 * make a larger one and try again.
+		 */
+		if (redo) {
 			if (buf != buffer)
 				gds__free(buf);
 			buf_len += 1024;
-			buf = (UCHAR*) gds__alloc((SLONG) (sizeof(UCHAR) * buf_len));
-			// FREE: freed within this module
-			if (!buf)			// NOMEM:
+			buf = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * buf_len));
+			/* FREE: freed within this module */
+			if (!buf)			/* NOMEM: */
 				return FB_FAILURE;
 		}
 	} while (redo);
@@ -1064,42 +1244,21 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	++versions;
 	++implementations;
 
-	UCHAR diCount = 0;
-	if (dbis)
-	{
-		diCount = *dbis++;
-	}
-
 	TEXT s[128];
 
-	UCHAR diCurrent = 0;
-	for (UCHAR level = 0; level < count; ++level)
-	{
+	while (count-- > 0) {
 		const USHORT implementation_nr = *implementations++;
 		const USHORT impl_class_nr = *implementations++;
 		const int l = *versions++; // it was UCHAR
 		const TEXT* implementation_string;
-		Firebird::string dbi_string;
-		if (dbis && dbis[diCurrent * 6 + 5] == level)
+		if (implementation_nr >= FB_NELEM(impl_implementation)
+			|| !(implementation_string = impl_implementation[implementation_nr]))
 		{
-			dbi_string = Firebird::DbImplementation::pick(&dbis[diCurrent * 6]).implementation();
-			implementation_string = dbi_string.c_str();
-			if (++diCurrent >= diCount)
-			{
-				dbis = NULL;
-			}
-		}
-		else
-		{
-			dbi_string = Firebird::DbImplementation::fromBackwardCompatibleByte(implementation_nr).implementation();
-			implementation_string = dbi_string.nullStr();
-			if (!implementation_string)
-			{
-				implementation_string = "**unknown**";
-			}
+			implementation_string = "**unknown**";
 		}
 		const TEXT* class_string;
-		if (impl_class_nr >= FB_NELEM(impl_class) || !(class_string = impl_class[impl_class_nr]))
+		if (impl_class_nr >= FB_NELEM(impl_class) ||
+			!(class_string = impl_class[impl_class_nr]))
 		{
 			class_string = "**unknown**";
 		}
@@ -1117,17 +1276,19 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	if (get_ods_version(handle, &ods_version, &ods_minor_version) == FB_FAILURE)
 		return FB_FAILURE;
 
-	sprintf(s, "on disk structure version %d.%d", ods_version, ods_minor_version);
+	sprintf(s, "on disk structure version %d.%d", ods_version,
+			ods_minor_version);
 	(*routine)(user_arg, s);
 
 	return FB_SUCCESS;
 }
 
 
-void API_ROUTINE isc_format_implementation(USHORT impl_nr,
-										   USHORT ibuflen, TEXT* ibuf,
-										   USHORT impl_class_nr,
-										   USHORT cbuflen, TEXT* cbuf)
+void API_ROUTINE isc_format_implementation(
+										   USHORT implementation_nr,
+										   USHORT ibuflen,
+										   TEXT* ibuf,
+	USHORT impl_class_nr, USHORT cbuflen, TEXT* cbuf)
 {
 /**************************************
  *
@@ -1140,22 +1301,27 @@ void API_ROUTINE isc_format_implementation(USHORT impl_nr,
  * 	by looking up their values in the internal tables.
  *
  **************************************/
-	if (ibuflen > 0)
-	{
-		Firebird::string imp =
-			Firebird::DbImplementation::fromBackwardCompatibleByte(impl_nr).implementation();
-		imp.copyTo(ibuf, ibuflen);
+	if (ibuflen > 0) {
+		if (implementation_nr >= FB_NELEM(impl_implementation) ||
+			!(impl_implementation[implementation_nr]))
+		{
+			strncpy(ibuf, "**unknown**", ibuflen - 1);
+			ibuf[MIN(11, ibuflen - 1)] = '\0';
+		}
+		else {
+			strncpy(ibuf, impl_implementation[implementation_nr], ibuflen - 1);
+			const int len = strlen(impl_implementation[implementation_nr]);
+			ibuf[MIN(len, ibuflen - 1)] = '\0';
+		}
 	}
 
-	if (cbuflen > 0)
-	{
+	if (cbuflen > 0) {
 		if (impl_class_nr >= FB_NELEM(impl_class) || !(impl_class[impl_class_nr]))
 		{
 			strncpy(cbuf, "**unknown**", cbuflen - 1);
 			cbuf[MIN(11, cbuflen - 1)] = '\0';
 		}
-		else
-		{
+		else {
 			strncpy(cbuf, impl_class[impl_class_nr], cbuflen - 1);
 			const int len = strlen(impl_class[impl_class_nr]);
 			cbuf[MIN(len, cbuflen - 1)] = '\0';
@@ -1165,7 +1331,7 @@ void API_ROUTINE isc_format_implementation(USHORT impl_nr,
 }
 
 
-uintptr_t API_ROUTINE isc_baddress(SCHAR* object)
+U_IPTR API_ROUTINE isc_baddress(SCHAR* object)
 {
 /**************************************
  *
@@ -1178,11 +1344,11 @@ uintptr_t API_ROUTINE isc_baddress(SCHAR* object)
  *
  **************************************/
 
-	return (uintptr_t) object;
+	return (U_IPTR) object;
 }
 
 
-void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
+void API_ROUTINE isc_baddress_s(const SCHAR* object, U_IPTR* address)
 {
 /**************************************
  *
@@ -1195,8 +1361,27 @@ void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
  *
  **************************************/
 
-	*address = (uintptr_t) object;
+	*address = (U_IPTR) object;
 }
+
+
+#ifdef VMS
+void API_ROUTINE gds__wake_init(void)
+{
+/**************************************
+ *
+ *	g d s _ $ w a k e _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set up to be awakened by another process thru a blocking AST.
+ *
+ **************************************/
+
+	ISC_wake_init();
+}
+#endif
 
 
 int API_ROUTINE BLOB_close(BSTREAM* bstream)
@@ -1216,16 +1401,14 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 	if (!bstream->bstr_blob)
 		return FALSE;
 
-	if (bstream->bstr_mode & BSTR_output)
-	{
+	if (bstream->bstr_mode & BSTR_output) {
 		const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 		if (l > 0)
-		{
-			if (isc_put_segment(status_vector, &bstream->bstr_blob, l, bstream->bstr_buffer))
+			if (isc_put_segment(status_vector, &bstream->bstr_blob, l,
+								 bstream->bstr_buffer)) 
 			{
 				return FALSE;
 			}
-		}
 	}
 
 	isc_close_blob(status_vector, &bstream->bstr_blob);
@@ -1239,7 +1422,8 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 }
 
 
-int API_ROUTINE blob__display(SLONG blob_id[2],
+int API_ROUTINE blob__display(
+							  SLONG blob_id[2],
 							  FB_API_HANDLE* database,
 							  FB_API_HANDLE* transaction,
 							  const TEXT* field_name, const SSHORT* name_length)
@@ -1254,16 +1438,17 @@ int API_ROUTINE blob__display(SLONG blob_id[2],
  *	PASCAL callable version of EDIT_blob.
  *
  **************************************/
-	const Firebird::MetaName temp(field_name, *name_length);
+	Firebird::MetaName temp(field_name, *name_length);
 
-	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp.c_str());
+	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
+						*transaction, temp.c_str());
 }
 
 
 int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 							 FB_API_HANDLE database,
-							 FB_API_HANDLE transaction,
-							 const TEXT* /*field_name*/)
+							 FB_API_HANDLE transaction, 
+							 const TEXT* field_name)
 {
 /**************************************
  *
@@ -1273,15 +1458,26 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
  *
  * Functional description
  *	Open a blob, dump it to a file, allow the user to read the
- *	window.
+ *	window. 
  *
  **************************************/
 
+/* On VMS use the system library routines to do the output */
+
+#ifdef VMS
+	return display(blob_id, database, transaction);
+#else
+
+/* On UNIX, just dump the file to stdout */
+
 	return dump(blob_id, database, transaction, stdout);
+
+#endif
 }
 
 
-int API_ROUTINE blob__dump(SLONG blob_id[2],
+int API_ROUTINE blob__dump(
+						   SLONG blob_id[2],
 						   FB_API_HANDLE* database,
 						   FB_API_HANDLE* transaction,
 						   const TEXT* file_name, const SSHORT* name_length)
@@ -1300,22 +1496,22 @@ int API_ROUTINE blob__dump(SLONG blob_id[2],
 	// CVC: The old logic passed garbage to BLOB_dump if !*name_length
 	TEXT temp[129];
 	USHORT l = *name_length;
-	if (l != 0)
-	{
-		if (l >= sizeof(temp))
+	if (l != 0) {
+        if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
-
+			
 		memcpy(temp, file_name, l);
 	}
 	temp[l] = 0;
 
-	return BLOB_dump(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp);
+	return BLOB_dump(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
+					 *transaction, temp);
 }
 
 
 int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
 							   FB_API_HANDLE database,
-							   FB_API_HANDLE transaction,
+							   FB_API_HANDLE transaction, 
 							   const SCHAR* file_name)
 {
 /**************************************
@@ -1346,7 +1542,7 @@ int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
 
 int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
 						  FB_API_HANDLE database,
-						  FB_API_HANDLE transaction,
+						  FB_API_HANDLE transaction, 
 						  const SCHAR* file_name)
 {
 /**************************************
@@ -1374,7 +1570,8 @@ int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
 }
 
 
-int API_ROUTINE blob__edit(SLONG blob_id[2],
+int API_ROUTINE blob__edit(
+						   SLONG blob_id[2],
 						   FB_API_HANDLE* database,
 						   FB_API_HANDLE* transaction,
 						   const TEXT* field_name, const SSHORT* name_length)
@@ -1390,15 +1587,16 @@ int API_ROUTINE blob__edit(SLONG blob_id[2],
  *	into an internal edit call.
  *
  **************************************/
-	const Firebird::MetaName temp(field_name, *name_length);
+	Firebird::MetaName temp(field_name, *name_length);
 
-	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp.c_str());
+	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
+					 *transaction, temp.c_str());
 }
 
 
 int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 						  FB_API_HANDLE database,
-						  FB_API_HANDLE transaction,
+						  FB_API_HANDLE transaction, 
 						  const SCHAR* field_name)
 {
 /**************************************
@@ -1436,17 +1634,14 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 	if (!bstream->bstr_buffer)
 		return EOF;
 
-	while (true)
-	{
+	while (true) {
 		if (--bstream->bstr_cnt >= 0)
 			return *bstream->bstr_ptr++ & 0377;
 
 		isc_get_segment(status_vector, &bstream->bstr_blob,
-			// safe - cast from short, alignment is OK
-			reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
-			bstream->bstr_length, bstream->bstr_buffer);
-		if (status_vector[1] && status_vector[1] != isc_segment)
-		{
+						 reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
+						 bstream->bstr_length, bstream->bstr_buffer);
+		if (status_vector[1] && status_vector[1] != isc_segment) {
 			bstream->bstr_ptr = 0;
 			bstream->bstr_cnt = 0;
 			if (status_vector[1] != isc_segstr_eof)
@@ -1458,7 +1653,8 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 }
 
 
-int API_ROUTINE blob__load(SLONG blob_id[2],
+int API_ROUTINE blob__load(
+						   SLONG blob_id[2],
 						   FB_API_HANDLE* database,
 						   FB_API_HANDLE* transaction,
 						   const TEXT* file_name, const SSHORT* name_length)
@@ -1477,22 +1673,22 @@ int API_ROUTINE blob__load(SLONG blob_id[2],
 	// CVC: The old logic passed garbage to BLOB_load if !*name_length
 	TEXT temp[129];
 	USHORT l = *name_length;
-	if (l != 0)
-	{
-		if (l >= sizeof(temp))
+	if (l != 0) {
+        if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
-
+			
 		memcpy(temp, file_name, l);
 	}
 	temp[l] = 0;
 
-	return BLOB_load(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp);
+	return BLOB_load(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
+					 *transaction, temp);
 }
 
 
 int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
 							   FB_API_HANDLE database,
-							   FB_API_HANDLE transaction,
+							   FB_API_HANDLE transaction, 
 							   const TEXT* file_name)
 {
 /**************************************
@@ -1502,7 +1698,7 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
  **************************************
  *
  * Functional description
- *	Load a  blob with the contents of a file.
+ *	Load a  blob with the contents of a file.  
  *      This call does CR/LF translation on NT.
  *      Return TRUE is successful.
  *
@@ -1520,8 +1716,8 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
 
 
 int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
-						  FB_API_HANDLE database,
-						  FB_API_HANDLE transaction,
+						  FB_API_HANDLE database, 
+						  FB_API_HANDLE transaction, 
 						  const TEXT* file_name)
 {
 /**************************************
@@ -1547,7 +1743,7 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
 
 
 BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
-						   FB_API_HANDLE database,
+						   FB_API_HANDLE database, 
 						   FB_API_HANDLE transaction,
 						   const SCHAR* mode)
 {
@@ -1568,38 +1764,33 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
 
-	switch (*mode)
-	{
-	case 'w':
-	case 'W':
-		if (isc_create_blob2(status_vector, &database, &transaction, &blob, blob_id,
-							 bpb_length, reinterpret_cast<const char*>(bpb)))
+	if (*mode == 'w' || *mode == 'W') {
+		if (isc_create_blob2(status_vector, &database, &transaction, &blob,
+							  blob_id, bpb_length,
+							  reinterpret_cast<const char*>(bpb)))
 		{
 			return NULL;
 		}
-		break;
-	case 'r':
-	case 'R':
-		if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
-						   bpb_length, bpb))
-		{
-			return NULL;
-		}
-		break;
-	default:
-		return NULL;
 	}
+	else if (*mode == 'r' || *mode == 'R') {
+		if (isc_open_blob2(status_vector, &database, &transaction, &blob,
+							blob_id, bpb_length,
+							bpb))
+		{
+			return NULL;
+		}
+	}
+	else
+		return NULL;
 
 	BSTREAM* bstream = BLOB_open(blob, NULL, 0);
 
-	if (*mode == 'w' || *mode == 'W')
-	{
+	if (*mode == 'w' || *mode == 'W') {
 		bstream->bstr_mode |= BSTR_output;
 		bstream->bstr_cnt = bstream->bstr_length;
 		bstream->bstr_ptr = bstream->bstr_buffer;
 	}
-	else
-	{
+	else {
 		bstream->bstr_cnt = 0;
 		bstream->bstr_mode |= BSTR_input;
 	}
@@ -1624,37 +1815,37 @@ BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 	if (!blob)
 		return NULL;
 
-	BSTREAM* bstream = (BSTREAM*) gds__alloc((SLONG) sizeof(BSTREAM));
-	// FREE: This structure is freed by BLOB_close
-	if (!bstream)				// NOMEM:
+	BSTREAM* bstream = (BSTREAM *) gds__alloc((SLONG) sizeof(BSTREAM));
+/* FREE: This structure is freed by BLOB_close */
+	if (!bstream)				/* NOMEM: */
 		return NULL;
 
 #ifdef DEBUG_gds__alloc
-	// This structure is handed to the user process, we depend on the client
-	// to call BLOB_close() for it to be freed.
-	gds_alloc_flag_unfreed((void*) bstream);
+/* This structure is handed to the user process, we depend on the client
+ * to call BLOB_close() for it to be freed.
+ */
+	gds_alloc_flag_unfreed((void *) bstream);
 #endif
 
 	bstream->bstr_blob = blob;
-	bstream->bstr_length = length ? length : 512;
+	bstream->bstr_length = (length) ? length : 512;
 	bstream->bstr_mode = 0;
 	bstream->bstr_cnt = 0;
 	bstream->bstr_ptr = 0;
 
-	if (!(bstream->bstr_buffer = buffer))
-	{
-		bstream->bstr_buffer = (SCHAR*) gds__alloc((SLONG) (sizeof(SCHAR) * bstream->bstr_length));
-		// FREE: This structure is freed in BLOB_close()
-		if (!bstream->bstr_buffer)
-		{
-			// NOMEM:
+	if (!(bstream->bstr_buffer = buffer)) {
+		bstream->bstr_buffer = (SCHAR *)
+			gds__alloc((SLONG) (sizeof(SCHAR) * bstream->bstr_length));
+		/* FREE: This structure is freed in BLOB_close() */
+		if (!bstream->bstr_buffer) {	/* NOMEM: */
 			gds__free(bstream);
 			return NULL;
 		}
 #ifdef DEBUG_gds__alloc
-		// This structure is handed to the user process, we depend on the client
-		// to call BLOB_close() for it to be freed.
-		gds_alloc_flag_unfreed((void*) bstream->bstr_buffer);
+		/* This structure is handed to the user process, we depend on the client
+		 * to call BLOB_close() for it to be freed.
+		 */
+		gds_alloc_flag_unfreed((void *) bstream->bstr_buffer);
 #endif
 
 		bstream->bstr_mode |= BSTR_alloc;
@@ -1677,7 +1868,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
  *	stick in the final character, then
  *	compute the length and send off the
  *	segment.  Finally, set up the buffer
- *	block and retun TRUE if all is well.
+ *	block and retun TRUE if all is well. 
  *
  **************************************/
 	if (!bstream->bstr_buffer)
@@ -1687,7 +1878,8 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 	const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_put_segment(status_vector, &bstream->bstr_blob, l, bstream->bstr_buffer))
+	if (isc_put_segment(status_vector, &bstream->bstr_blob,
+						 l, bstream->bstr_buffer))
 	{
 		return FALSE;
 	}
@@ -1696,12 +1888,66 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 	return TRUE;
 }
 
-#if (defined SOLARIS ) || (defined __cplusplus)
+#if (defined SOLARIS ) || (defined __cplusplus) 
 } //extern "C" {
 #endif
 
 
-static int dump(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction, FILE* file)
+#ifdef VMS
+static display(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction)
+{
+/**************************************
+ *
+ *	d i s p l a y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Display a file on VMS
+ *
+ **************************************/
+	ISC_STATUS_ARRAY status_vector;
+
+/* Open the blob.  If it failed, what the hell -- just return failure */
+
+	int* blob = NULL;
+	if (isc_open_blob(status_vector, &database, &transaction, &blob, blob_id)) {
+		isc_print_status(status_vector);
+		return FALSE;
+	}
+
+/* Copy data from blob to scratch file */
+
+	struct dsc$descriptor_s desc;
+	SCHAR buffer[256];
+	const SSHORT short_length = sizeof(buffer);
+	for (;;) {
+		USHORT l = 0;
+		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
+		if (status_vector[1] && status_vector[1] != isc_segment) {
+			if (status_vector[1] != isc_segstr_eof)
+				isc_print_status(status_vector);
+			break;
+		}
+		buffer[l] = 0;
+		ISC_make_desc(buffer, &desc, 0);
+		lib$put_output(&desc);
+	}
+
+/* Close the blob */
+
+	isc_close_blob(status_vector, &blob);
+
+	return TRUE;
+}
+#endif /* VMS */
+
+
+
+static int dump(ISC_QUAD* blob_id,
+				FB_API_HANDLE database, 
+				FB_API_HANDLE transaction, 
+				FILE* file)
 {
 /**************************************
  *
@@ -1717,43 +1963,39 @@ static int dump(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 	const USHORT bpb_length = 0;
 	const UCHAR* bpb = NULL;
 
-	// Open the blob.  If it failed, what the hell -- just return failure
+/* Open the blob.  If it failed, what the hell -- just return failure */
 
 	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id, bpb_length, bpb))
+	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
+						bpb_length, bpb))
 	{
 		isc_print_status(status_vector);
 		return FALSE;
 	}
 
-	// Copy data from blob to scratch file
+/* Copy data from blob to scratch file */
 
 	SCHAR buffer[256];
 	const SSHORT short_length = sizeof(buffer);
 
-	for (;;)
-	{
+	for (;;) {
 		USHORT l = 0;
-		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
-		if (status_vector[1] && status_vector[1] != isc_segment)
-		{
+		isc_get_segment(status_vector, &blob, &l,
+						 short_length, buffer);
+		if (status_vector[1] && status_vector[1] != isc_segment) {
 			if (status_vector[1] != isc_segstr_eof)
 				isc_print_status(status_vector);
 			break;
 		}
-		/*
 		const TEXT* p = buffer;
 		if (l)
 			do {
 				fputc(*p++, file);
 			} while (--l);
-		*/
-		if (l)
-			fwrite(buffer, 1, l, file);
 	}
 
-	// Close the blob
+/* Close the blob */
 
 	isc_close_blob(status_vector, &blob);
 
@@ -1763,8 +2005,8 @@ static int dump(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 
 static int edit(ISC_QUAD* blob_id,
 				FB_API_HANDLE database,
-				FB_API_HANDLE transaction,
-				SSHORT type,
+				FB_API_HANDLE transaction, 
+				SSHORT type, 
 				const SCHAR* field_name)
 {
 /**************************************
@@ -1793,45 +2035,51 @@ static int edit(ISC_QUAD* blob_id,
 
 	TEXT* p;
 	for (p = buffer; *q && p < buffer + sizeof(buffer) - 1; q++)
-	{
 		if (*q == '$')
 			*p++ = '_';
 		else
 			*p++ = LOWER7(*q);
-	}
 	*p = 0;
 
-	// Moved this out of #ifndef mpexl to get mktemp/mkstemp to work for Linux
-	// This has been done in the inprise tree some days ago.
-	// Would have saved me a lot of time, if I had seen this earlier :-(
-	// FSG 15.Oct.2000
-	Firebird::PathName tmpf = Firebird::TempFile::create(buffer);
-	if (tmpf.empty()) {
+/* Moved this out of #ifndef mpexl to get mktemp/mkstemp to work for Linux
+   This has been done in the inprise tree some days ago.
+   Would have saved me a lot of time, if I had seen this earlier :-(
+   FSG 15.Oct.2000
+*/
+	TEXT file_name[50];
+	sprintf(file_name, "%sXXXXXX", buffer);
+
+	FILE* file;
+
+#ifdef HAVE_MKSTEMP
+	const int fd = mkstemp(file_name);
+	if (!(file = fdopen(fd, "w+"))) {
+		close(fd);
 		return FALSE;
 	}
-
-	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
-	if (!file)
-	{
-		unlink(tmpf.c_str());
+#else
+	if (mktemp(file_name) == (char *)0)
 		return FALSE;
-	}
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE)))
+		return FALSE;
+	fclose(file);
 
-	if (!dump(blob_id, database, transaction, file))
-	{
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE_TEXT)))
+		return FALSE;
+#endif
+
+	if (!dump(blob_id, database, transaction, file)) {
 		fclose(file);
-		unlink(tmpf.c_str());
+		unlink(file_name);
 		return FALSE;
 	}
 
 	fclose(file);
 
-	if (type = gds__edit(tmpf.c_str(), type))
-	{
+	if (type = gds__edit(file_name, type)) {
 
-		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT)))
-		{
-			unlink(tmpf.c_str());
+		if (!(file = fopen(file_name, FOPEN_READ_TYPE_TEXT))) {
+			unlink(file_name);
 			return FALSE;
 		}
 
@@ -1841,13 +2089,15 @@ static int edit(ISC_QUAD* blob_id,
 
 	}
 
-	unlink(tmpf.c_str());
+	unlink(file_name);
 
 	return type;
 }
 
 
-static int get_ods_version(FB_API_HANDLE* handle, USHORT* ods_version, USHORT* ods_minor_version)
+static int get_ods_version(
+						   FB_API_HANDLE* handle,
+						   USHORT* ods_version, USHORT* ods_minor_version)
 {
 /**************************************
  *
@@ -1863,7 +2113,10 @@ static int get_ods_version(FB_API_HANDLE* handle, USHORT* ods_version, USHORT* o
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR buffer[16];
 
-	isc_database_info(status_vector, handle, sizeof(ods_info), ods_info,
+	isc_database_info(status_vector,
+					  handle,
+					  sizeof(ods_info),
+					  ods_info,
 					  sizeof(buffer), reinterpret_cast<char*>(buffer));
 
 	if (status_vector[1])
@@ -1872,14 +2125,12 @@ static int get_ods_version(FB_API_HANDLE* handle, USHORT* ods_version, USHORT* o
 	const UCHAR* p = buffer;
 	UCHAR item;
 
-	while ((item = *p++) != isc_info_end)
-	{
+	while ((item = *p++) != isc_info_end) {
 		const USHORT l = static_cast<USHORT>(gds__vax_integer(p, 2));
 		p += 2;
 		const USHORT n = static_cast<USHORT>(gds__vax_integer(p, l));
 		p += l;
-		switch (item)
-		{
+		switch (item) {
 		case isc_info_ods_version:
 			*ods_version = n;
 			break;
@@ -1939,7 +2190,8 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 	USHORT	type;
 	UCHAR* new_dpb;
 
-	// calculate length of database parameter block, setting initial length to include version
+/* calculate length of database parameter block,
+   setting initial length to include version */
 
 	SSHORT new_dpb_length;
 	if (!*dpb || !(new_dpb_length = *dpb_size))
@@ -1974,20 +2226,20 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 	va_end(args);
 
-	// if items have been added, allocate space for the new dpb and copy the old one over
+/* if items have been added, allocate space
+   for the new dpb and copy the old one over */
 
 	if (new_dpb_length > *dpb_size)
 	{
-		// Note: gds__free done by GPRE generated code
+		/* Note: gds__free done by GPRE generated code */
 
-		new_dpb = (UCHAR*) gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
+		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
 		p = new_dpb;
-		// FREE: done by client process in GPRE generated code
+		/* FREE: done by client process in GPRE generated code */
 		if (!new_dpb)
-		{
-			// NOMEM: don't trash existing dpb
+		{			/* NOMEM: don't trash existing dpb */
 			DEV_REPORT("isc_extend_dpb: out of memory");
-			return;				// NOMEM: not really handled
+			return;				/* NOMEM: not really handled */
 		}
 
 		uq = *dpb;
@@ -2014,7 +2266,7 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 	if (!*dpb_size)
 		*p++ = isc_dpb_version1;
 
-	// copy in the new runtime items
+/* copy in the new runtime items */
 
 	va_start(args, dpb_size);
 
@@ -2053,11 +2305,14 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 }
 
 
-static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction, FILE* file)
+static int load(ISC_QUAD* blob_id,
+				FB_API_HANDLE database, 
+				FB_API_HANDLE transaction, 
+				FILE* file)
 {
 /**************************************
  *
- *     l o a d
+ *     l o a d  
  *
  **************************************
  *
@@ -2067,22 +2322,22 @@ static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	// Open the blob.  If it failed, what the hell -- just return failure
+/* Open the blob.  If it failed, what the hell -- just return failure */
 
 	FB_API_HANDLE blob = 0;
-	if (isc_create_blob(status_vector, &database, &transaction, &blob, blob_id))
+	if (isc_create_blob(status_vector, &database, &transaction, &blob,
+						 blob_id))
 	{
 		isc_print_status(status_vector);
 		return FALSE;
 	}
 
-	// Copy data from file to blob.  Make up boundaries at end of of line.
+/* Copy data from file to blob.  Make up boundaries at end of of line. */
 	TEXT buffer[512];
 	TEXT* p = buffer;
 	const TEXT* const buffer_end = buffer + sizeof(buffer);
 
-	for (;;)
-	{
+	for (;;) {
 		const SSHORT c = fgetc(file);
 		if (feof(file))
 			break;
@@ -2090,8 +2345,7 @@ static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 		if ((c != '\n') && p < buffer_end)
 			continue;
 		const SSHORT l = p - buffer;
-		if (isc_put_segment(status_vector, &blob, l, buffer))
-		{
+		if (isc_put_segment(status_vector, &blob, l, buffer)) {
 			isc_print_status(status_vector);
 			isc_close_blob(status_vector, &blob);
 			return FALSE;
@@ -2101,14 +2355,11 @@ static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 
 	const SSHORT l = p - buffer;
 	if (l != 0)
-	{
-		if (isc_put_segment(status_vector, &blob, l, buffer))
-		{
+		if (isc_put_segment(status_vector, &blob, l, buffer)) {
 			isc_print_status(status_vector);
 			isc_close_blob(status_vector, &blob);
 			return FALSE;
 		}
-	}
 
 	isc_close_blob(status_vector, &blob);
 
@@ -2116,7 +2367,7 @@ static int load(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transac
 }
 
 // new utl
-static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
+inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 {
 	if (! dpb.find(tag))
 	{
@@ -2126,18 +2377,65 @@ static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* 
 
 void setLogin(Firebird::ClumpletWriter& dpb)
 {
-	if (!(dpb.find(isc_dpb_trusted_auth) || dpb.find(isc_dpb_address_path)))
+	Firebird::string username;
+	if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
 	{
-		Firebird::string username;
-		if (fb_utils::readenv(ISC_USER, username) && !dpb.find(isc_dpb_sys_user_name))
-		{
-			setTag(dpb, isc_dpb_user_name, username.c_str());
-		}
-
-		Firebird::string password;
-		if (fb_utils::readenv(ISC_PASSWORD, password) && !dpb.find(isc_dpb_password_enc))
-		{
-			setTag(dpb, isc_dpb_password, password.c_str());
-		}
+		setTag(dpb, isc_dpb_user_name, username.c_str());
 	}
+
+	Firebird::string password;
+	if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
+	{
+		setTag(dpb, isc_dpb_password, password.c_str());
+	}
+}
+
+BOOLEAN iscSetPath(const Firebird::PathName& file_name, Firebird::PathName& expanded_name)
+{
+/**************************************
+ *
+ *	i s c _ s e t _ p a t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set a prefix to a filename based on 
+ *	the ISC_PATH user variable.
+ *
+ **************************************/
+
+/* look for the environment variables to tack 
+   onto the beginning of the database path */
+
+	Firebird::PathName pathname;
+	if (!fb_utils::readenv("ISC_PATH", pathname))
+	{
+		return FALSE;
+	}
+
+/* if the file already contains a remote node
+   or any path at all forget it */
+
+	if (file_name.find_first_of(":/\\") != Firebird::PathName::npos)
+	{
+		return FALSE;
+	}
+
+/* concatenate the strings */
+
+	expanded_name = pathname;
+
+    /* CVC: Make the concatenation work if no slash is present. */
+	if (expanded_name.length() > 0)
+	{
+		const char c = expanded_name[expanded_name.length() - 1];
+	    if (c != ':' && c != '/' && c != '\\')
+		{
+        	expanded_name += "/";
+    	}
+	}
+
+	expanded_name += file_name;
+
+	return TRUE;
 }

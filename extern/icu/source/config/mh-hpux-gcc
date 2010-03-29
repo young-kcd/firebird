@@ -21,8 +21,8 @@ DEFS += -D_HPUX_SOURCE -D_POSIX_C_SOURCE=199506L
 
 ## Commands to link
 ## For aCC, use the C++ linker so that __shlinit gets defined
-LINK.c=     $(CXX) $(DEFS) -mlp64 $(LDFLAGS) -Wl,+s $(LD_DEFAULTPATH)
-LINK.cc=    $(CXX) $(DEFS) -mlp64 $(LDFLAGS) -Wl,+s $(LD_DEFAULTPATH)
+LINK.c=     $(CXX) $(DEFS) $(LDFLAGS) -Wl,+s $(LD_DEFAULTPATH)
+LINK.cc=    $(CXX) $(DEFS) $(LDFLAGS) -Wl,+s $(LD_DEFAULTPATH)
 
 ## Commands to make a shared library
 SHLIB.c=  $(CC) $(DEFS) $(CFLAGS) $(LDFLAGS) $(SHAREDLIBCXXFLAGS) -shared -Wl,+s $(LD_DEFAULTPATH)
