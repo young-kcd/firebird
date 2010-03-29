@@ -1,3 +1,18 @@
+2010-03-29 14:06  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.examples (1.8.4.4),
+	Makefile.in.firebird (1.67.4.5):
+
+	Fixed build using relatively-old gmake
+
+2010-03-29 08:32  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.15.2.16):
+
+	use correct version string to locate docs
+
 2010-03-26 17:22  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/:
