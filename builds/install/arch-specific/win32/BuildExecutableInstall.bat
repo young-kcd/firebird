@@ -188,7 +188,7 @@ set FBBUILD_FB20_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
 :: Now set some version strings of our legacy releases.
 :: This helps us copy the correct documentation,
 :: as well as set up the correct shortcuts
-set FBBUILD_FB15_CUR_VER=1.5.5
+set FBBUILD_FB15_CUR_VER=1.5.6
 
 
 ::End of SED_MAGIC
