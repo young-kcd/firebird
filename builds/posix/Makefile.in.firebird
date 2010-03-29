@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.firebird,v 1.67.4.4 2010-03-12 10:56:34 alexpeshkoff Exp $
+#  $Id: Makefile.in.firebird,v 1.67.4.5 2010-03-29 12:06:17 alexpeshkoff Exp $
 #
 
 ROOT=..
@@ -45,7 +45,7 @@ ISC_PASSWORD=	masterkey
 TEST_PATH = @FIREBIRD_BUILD_DIR@
 # Firebird libs path set at link time (-R) so do not override local requirements - nmcc 28/12/2002
 #LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
-LD_LIBRARY_PATH+=$(LIB)
+LD_LIBRARY_PATH += :$(LIB)
 
 #export ISC_USER
 #export ISC_PASSWORD
