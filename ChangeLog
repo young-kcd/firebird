@@ -1,3 +1,9 @@
+2010-03-29 12:54  dimitr
+
+	* firebird2/src/common/config/config.cpp (1.114):
+
+	Fixed fbclient/fbembed being loaded from non-FB-instance location.
+
 2010-03-28 05:47  robocop
 
 	* firebird2/src/utilities/ntrace/TraceUnicodeUtils.h (1.5):
