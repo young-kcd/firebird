@@ -1202,7 +1202,7 @@ const int PROC_count			= 56;
 
 namespace
 {
-	const char* const subsystems[] = {"REMINT", "GDSSHR"};
+	const char* const subsystems[] = {"REMINT", "GDSSHR", "LOOPBACK"};
 	const size_t SUBSYSTEMS = FB_NELEM(subsystems);
 	int enabledSubsystems = 0;
 }
@@ -1212,22 +1212,25 @@ extern "C" {
 static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...);
 
 #ifdef SUPERCLIENT
-#define ENTRYPOINT(cur, rem)	ISC_STATUS rem(ISC_STATUS* user_status, ...);
+#define ENTRYPOINT(cur, rem, loop)	ISC_STATUS rem(ISC_STATUS* user_status, ...), loop(ISC_STATUS* user_status, ...);
 #else
-#define ENTRYPOINT(cur, rem)	ISC_STATUS rem(ISC_STATUS* user_status, ...), cur(ISC_STATUS* user_status, ...);
+#define ENTRYPOINT(cur, rem, loop)	ISC_STATUS rem(ISC_STATUS* user_status, ...), cur(ISC_STATUS* user_status, ...), loop(ISC_STATUS* user_status, ...);
 #endif
 
 #include "../jrd/entry.h"
 
 static PTR entrypoints[PROC_count * SUBSYSTEMS] =
 {
-#define ENTRYPOINT(cur, rem)	rem,
+#define ENTRYPOINT(cur, rem, loop)	rem,
 #include "../jrd/entry.h"
 
 #if !defined(SUPERCLIENT)
-#define ENTRYPOINT(cur, rem)	cur,
+#define ENTRYPOINT(cur, rem, loop)	cur,
 #include "../jrd/entry.h"
 #endif
+
+#define ENTRYPOINT(cur, rem, loop)	loop,
+#include "../jrd/entry.h"
 };
 
 } // extern "C"
