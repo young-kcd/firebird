@@ -329,4 +329,5 @@ private:
 		TraceService* service, ntrace_result_t detach_result);
 };
 
+
 #endif // TRACEPLUGINIMPL_H

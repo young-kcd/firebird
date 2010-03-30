@@ -283,11 +283,12 @@ static ISC_STATUS remloop_att(ISC_STATUS* user_status,
 
 	NULL_CHECK(handle, isc_bad_db_handle);
 
-	Rdb* rdb = 0;
+	Rdb* rdb = NULL;
 
-	try {
+	try
+	{
 		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
-				reinterpret_cast<const UCHAR*>(dpb), dpb_length);
+			reinterpret_cast<const UCHAR*>(dpb), dpb_length);
 
 #ifdef UNIX
 		// If single user, return
@@ -300,11 +301,13 @@ static ISC_STATUS remloop_att(ISC_STATUS* user_status,
 		string user_string;
 		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
 
-		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name, loopback);
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification,
+			newDpb, node_name, loopback);
+
 		if (!port)
 		{
 			return user_status[1];
@@ -855,12 +858,12 @@ static ISC_STATUS remloop_create(ISC_STATUS* user_status,
 
 	NULL_CHECK(handle, isc_bad_db_handle);
 
-	Rdb* rdb = 0;
+	Rdb* rdb = NULL;
 
 	try
 	{
 		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
-					reinterpret_cast<const UCHAR*>(dpb), dpb_length);
+			reinterpret_cast<const UCHAR*>(dpb), dpb_length);
 
 #ifdef UNIX
 		// If single user, return
@@ -876,7 +879,9 @@ static ISC_STATUS remloop_create(ISC_STATUS* user_status,
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name, loopback);
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification,
+			newDpb, node_name, loopback);
+
 		if (!port) {
 			return user_status[1];
 		}
@@ -3886,17 +3891,20 @@ static ISC_STATUS remloop_svc(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-	Rdb* rdb = 0;
+	Rdb* rdb = NULL;
 
-	try {
+	try
+	{
 		ClumpletWriter newSpb(ClumpletReader::spbList, MAX_DPB_SIZE,
-							  reinterpret_cast<const UCHAR*>(spb), spb_length);
+			reinterpret_cast<const UCHAR*>(spb), spb_length);
 		string user_string;
 
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
 		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
 
-		rem_port* port = analyze_service(expanded_name, user_status, us, user_verification, newSpb, loopback);
+		rem_port* port = analyze_service(expanded_name, user_status, us,
+			user_verification, newSpb, loopback);
+
 		if (!port) {
 			return user_status[1];
 		}

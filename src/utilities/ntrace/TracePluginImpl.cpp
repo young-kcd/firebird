@@ -140,7 +140,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 
-	Jrd::TextType *textType = unicodeCollation.getTextType();
+	Jrd::TextType* textType = unicodeCollation.getTextType();
 
 	// Compile filtering regular expressions
 	if (config.include_filter.hasData())

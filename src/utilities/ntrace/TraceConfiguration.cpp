@@ -153,7 +153,7 @@ void TraceCfgReader::readConfig()
 #endif
 
 					UnicodeCollationHolder unicodeCollation(*getDefaultMemoryPool());
-					Jrd::TextType *textType = unicodeCollation.getTextType();
+					Jrd::TextType* textType = unicodeCollation.getTextType();
 
 					SimilarToMatcher<ULONG, Jrd::CanonicalConverter<SimilarConverter> > matcher(
 						*getDefaultMemoryPool(), textType, (const UCHAR*) pattern.c_str(),
