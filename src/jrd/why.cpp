@@ -150,9 +150,7 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 	}
 }
 
-#if !defined (SUPERCLIENT)
 static bool disableConnections = false;
-#endif
 
 typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
@@ -967,9 +965,7 @@ namespace
 			return;
 		}
 		killed = sig;
-#if !defined (SUPERCLIENT)
 		disableConnections = true;
-#endif
 		shutdownSemaphore->release();
 	}
 
@@ -1376,12 +1372,10 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_bad_dpb_form));
 		}
 
-#if !defined (SUPERCLIENT)
 		if (disableConnections)
 		{
 			status_exception::raise(Arg::Gds(isc_shutwarn));
 		}
-#endif // !SUPERCLIENT
 
 		ptr = status;
 
@@ -1982,12 +1976,10 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_bad_dpb_form));
 		}
 
-#if !defined (SUPERCLIENT)
 		if (disableConnections)
 		{
 			status_exception::raise(Arg::Gds(isc_shutwarn));
 		}
-#endif // !SUPERCLIENT
 
 		ptr = status;
 
@@ -4398,12 +4390,10 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_bad_spb_form));
 		}
 
-#if !defined (SUPERCLIENT)
 		if (disableConnections)
 		{
 			status_exception::raise(Arg::Gds(isc_shutwarn));
 		}
-#endif // !SUPERCLIENT
 
 		string svcname(service_name, service_length ? service_length : strlen(service_name));
 		svcname.rtrim();
@@ -5703,7 +5693,6 @@ static bool set_path(const PathName& file_name, PathName& expanded_name)
 }
 
 
-#if !defined (SUPERCLIENT)
 bool WHY_set_shutdown(bool flag)
 {
 /**************************************
@@ -5724,23 +5713,6 @@ bool WHY_set_shutdown(bool flag)
 	disableConnections = flag;
 	return old_flag;
 }
-
-bool WHY_get_shutdown()
-{
-/**************************************
- *
- *	W H Y _ g e t _ s h u t d o w n
- *
- **************************************
- *
- * Functional description
- *	Returns the current value of disableConnections.
- *
- **************************************/
-
-	return disableConnections;
-}
-#endif // !SUPERCLIENT
 
 
 static GlobalPtr<Mutex> singleShutdown;

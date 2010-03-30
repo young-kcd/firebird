@@ -254,7 +254,6 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
 
 bool WHY_set_shutdown(bool);
-bool WHY_get_shutdown();
 
 
 #ifdef __cplusplus
