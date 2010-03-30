@@ -784,36 +784,31 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 				struct
 				{
-					const char* name;
 					const GetCanonicalFunc* funcs;
+					const ULONG nameLen;
+					const USHORT name[10];
 				} static const classes[] =
 					{
-						{"ALNUM", alNum},
-						{"ALPHA", alpha},
-						{"DIGIT", digit},
-						{"LOWER", lower},
-						{"SPACE", space},
-						{"UPPER", upper},
-						{"WHITESPACE", whitespace}
+						{alNum, 10, {'A','L','N','U','M'}},
+						{alpha, 10, {'A','L','P','H','A'}},
+						{digit, 10, {'D','I','G','I','T'}},
+						{lower, 10, {'L','O','W','E','R'}},
+						{space, 10, {'S','P','A','C','E'}},
+						{upper, 10, {'U','P','P','E','R'}},
+						{whitespace, 20, {'W','H','I','T','E','S','P','A','C','E'}}
 					};
 
-				UCharBuffer className;
+				HalfStaticArray<USHORT,12> className(len);
 
-				className.getBuffer(len);
-				className.resize(charSet->substring(originalPatternLen, originalPatternStr,
-													className.getCapacity(), className.begin(),
-													start - patternStart, len));
-
+				ULONG classNameLen = charSet->getConvToUnicode().convert(len, reinterpret_cast<const UCHAR*>(start),
+																		 className.getCapacity()*sizeof(USHORT), className.begin());
 				int classN;
-				UCharBuffer buffer;
 
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
 				{
-					const string s = IntlUtil::convertAsciiToUtf16(classes[classN].name);
-					charSet->getConvFromUnicode().convert(s.length(), (const UCHAR*) s.c_str(), buffer);
-
-					if (textType->compare(className.getCount(), className.begin(),
-										  buffer.getCount(), buffer.begin()) == 0)
+					INTL_BOOL error_flag;
+					if (Jrd::UnicodeUtil::utf16Compare(classNameLen, className.begin(),
+												  classes[classN].nameLen, classes[classN].name, &error_flag) == 0)
 					{
 						for (const GetCanonicalFunc* func = classes[classN].funcs; *func; ++func)
 						{
@@ -821,7 +816,6 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 							const CharType* canonic = (const CharType*) (textType->**func)(&count);
 							charsBuffer.push(canonic, count);
 						}
-
 						break;
 					}
 				}
@@ -898,9 +892,9 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 		if (rangeBuffer.getCount() > 0)
 		{
-			UCHAR* p = (UCHAR*) alloc(rangeBuffer.getCount());
-			memcpy(p, rangeBuffer.begin(), rangeBuffer.getCount());
-			*nodeRange = p;
+			UCHAR* r = (UCHAR*) alloc(rangeBuffer.getCount());
+			memcpy(r, rangeBuffer.begin(), rangeBuffer.getCount());
+			*nodeRange = r;
 		}
 
 		*nodeRangeLen = rangeBuffer.getCount();

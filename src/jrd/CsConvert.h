@@ -92,7 +92,7 @@ public:
 	// To be used with getConvToUnicode method of CharSet class
 	ULONG convert(ULONG srcLen,
 				  const UCHAR* src,
-				  ULONG dstLen,
+				  ULONG dstLen, // Beware: in bytes, not in characters 
 				  USHORT* dst,
 				  ULONG* badInputPos = NULL,
 				  bool ignoreTrailingSpaces = false)
