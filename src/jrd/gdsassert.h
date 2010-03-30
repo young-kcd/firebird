@@ -28,23 +28,21 @@
 #include <stdlib.h>		// abort()
 #include <stdio.h>
 
+#ifdef WIN_NT
+#include <io.h> 		// isatty()
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>		// isatty()
+#endif
+
 #define FB_ASSERT_FAILURE_STRING	"Assertion (%s) failure: %s %"LINEFORMAT"\n"
 
-#ifdef SUPERCLIENT
-
 #if !defined(fb_assert)
-#define fb_assert(ex)	{if (!(ex)) {fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)) {fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
+#define fb_assert_continue(ex)	{if (!(ex)) {if (isatty(2)) fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);\
+											 else gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {if (isatty(2)) fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);\
+									 else gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
 #endif
-
-#else	// !SUPERCLIENT
-
-#if !defined(fb_assert)
-#define fb_assert(ex)	{if (!(ex)) {gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)) {gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
-#endif
-
-#endif	// SUPERCLIENT
 
 #else	// DEV_BUILD
 
