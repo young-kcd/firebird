@@ -97,16 +97,6 @@
 
 #include "../common/config/config.h"
 
-#ifdef SUPERSERVER
-static const TEXT gdslogid[] = " (Server)";
-#else
-#ifdef SUPERCLIENT
-static const TEXT gdslogid[] = " (Client)";
-#else
-static const TEXT gdslogid[] = "";
-#endif
-#endif
-
 #include "gen/sql_code.h"
 #include "gen/sql_state.h"
 #include "gen/iberror.h"
@@ -1221,7 +1211,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 #endif
 
 		TEXT buffer[MAXPATHLEN];
-		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(buffer, MAXPATHLEN), gdslogid, ctime(&now));
+		fprintf(file, "\n%s\t%.25s\t", ISC_get_host(buffer, MAXPATHLEN), ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		va_end(ptr);
@@ -1269,7 +1259,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 	if (file != NULL)
 	{
 		TEXT buffer[MAXPATHLEN];
-		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(buffer, MAXPATHLEN), gdslogid, ctime(&now));
+		fprintf(file, "\n%s\t%.25s\t", ISC_get_host(buffer, MAXPATHLEN), ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		va_end(ptr);
