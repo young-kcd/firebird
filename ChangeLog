@@ -1,3 +1,9 @@
+2010-03-29 17:24  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.101.2.1):
+
+	Backported fix for CORE-2948: Segfault when server is exiting
+
 2010-03-29 09:39  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.10.2.12):
