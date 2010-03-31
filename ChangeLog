@@ -1,3 +1,50 @@
+2010-03-31 11:42  aafemt
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.34):
+
+	Case-insensitive character class names (CORE-2952)
+
+2010-03-31 10:38  alexpeshkoff
+
+	* firebird2/configure.in (1.388):
+
+	Fixed libatomic_ops detection. This should help with linux/hppa
+	build
+
+2010-03-30 20:35  aafemt
+
+	* firebird2/src/jrd/: CsConvert.h (1.20), SimilarToMatcher.h
+	(1.33):
+
+	Code simplification
+
+2010-03-30 16:25  alexpeshkoff
+
+	* firebird2/src/jrd/alt.cpp (1.88):
+
+	Cleanup SUPERCLIENT - misc
+
+2010-03-30 16:24  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.329):
+
+	Cleanup SUPERCLIENT - gdslogid approach can not be used with
+	providers arch
+
+2010-03-30 16:22  alexpeshkoff
+
+	* firebird2/src/jrd/gdsassert.h (1.20):
+
+	Cleanup SUPERCLIENT - use other logic to decide where should assert
+	message go
+
+2010-03-30 16:21  alexpeshkoff
+
+	* firebird2/src/jrd/: why.cpp (1.276), why_proto.h (1.58):
+
+	Cleanup SUPERCLIENT - was used to make yValve on client a few bytes
+	smaller
+
 2010-03-30 02:25  asfernandes
 
 	* firebird2/src/: remote/interface.cpp (1.247),
