@@ -785,10 +785,10 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 				struct
 				{
 					const GetCanonicalFunc* funcs;
-					const ULONG nameLen;
+					const ULONG nameLen; // in bytes, not characters because all functions accept length in bytes
 					const USHORT name[10];
 				} static const classes[] =
-					{
+					{	// Names are in utf16 in order not to convert them every time for comparsion and thus save some CPU
 						{alNum, 10, {'A','L','N','U','M'}},
 						{alpha, 10, {'A','L','P','H','A'}},
 						{digit, 10, {'D','I','G','I','T'}},
@@ -802,6 +802,10 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 				ULONG classNameLen = charSet->getConvToUnicode().convert(len, reinterpret_cast<const UCHAR*>(start),
 																		 className.getCapacity()*sizeof(USHORT), className.begin());
+				// Bring class name to uppercase for case-insensitivity
+				// Do it in utf16 because original collation can have no uppercase conversion
+				classNameLen = Jrd::UnicodeUtil::utf16UpperCase(classNameLen, className.begin(),
+																className.getCapacity()*sizeof(USHORT), className.begin(), NULL);
 				int classN;
 
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
