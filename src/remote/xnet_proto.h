@@ -34,9 +34,6 @@
 
 rem_port* XNET_analyze(const Firebird::PathName&, ISC_STATUS*, bool);
 rem_port* XNET_connect(struct packet*, ISC_STATUS*, USHORT);
-
-#ifndef SUPERCLIENT
 rem_port* XNET_reconnect(ULONG, ISC_STATUS*);
-#endif
 
 #endif // REMOTE_XNET_PROTO_H

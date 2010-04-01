@@ -72,10 +72,7 @@ static rem_port* receive(rem_port*, PACKET*);
 static int send_full(rem_port*, PACKET*);
 static int send_partial(rem_port*, PACKET*);
 
-#ifdef SUPERCLIENT
-static HANDLE server_process_handle = 0;
-static void server_shutdown(rem_port* port);
-#endif
+static void peer_shutdown(rem_port* port);
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
 static void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
@@ -108,12 +105,6 @@ static xdr_t::xdr_ops xnet_ops =
 	xnet_destroy
 };
 
-#ifdef SUPERCLIENT
-const ISC_STATUS CONN_LOST_ERROR = isc_lost_db_connection;
-#else
-const ISC_STATUS CONN_LOST_ERROR = isc_conn_lost;
-#endif
-
 static ULONG global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
 static ULONG global_slots_per_map = XPS_DEF_NUM_CLI;
 static XPM global_client_maps = NULL;
@@ -144,10 +135,7 @@ static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
 static Firebird::GlobalPtr<PortsCleanup>	xnet_ports;
 static ULONG xnet_next_free_map_num = 0;
 
-#ifdef SUPERCLIENT
 static bool connect_init(ISC_STATUS* status);
-#endif
-
 static void connect_fini();
 static void release_all();
 
@@ -490,7 +478,6 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 }
 
 
-#ifdef SUPERCLIENT
 static bool connect_init(ISC_STATUS* status)
 {
 /**************************************
@@ -563,7 +550,6 @@ static bool connect_init(ISC_STATUS* status)
 		return false;
 	}
 }
-#endif
 
 
 static void connect_fini()
@@ -1052,15 +1038,13 @@ static void cleanup_port(rem_port* port)
 }
 
 
-#ifdef SUPERCLIENT
 static void raise_lostconn_or_syserror(const char* msg)
 {
 	if (ERRNO == ERROR_FILE_NOT_FOUND)
-		Firebird::status_exception::raise(Arg::Gds(isc_lost_db_connection));
+		Firebird::status_exception::raise(Arg::Gds(isc_conn_lost));
 	else
 		Firebird::system_error::raise(msg);
 }
-#endif
 
 
 static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
@@ -1075,9 +1059,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
  *	Establish a client side part of the connection
  *
  **************************************/
-#ifndef SUPERCLIENT
-	return NULL;
-#else
+
 	if (!xnet_initialized)
 	{
 		Firebird::MutexLockGuard guard(xnet_mutex);
@@ -1206,7 +1188,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			{
 				if (xpm->xpm_number == map_num &&
 					xpm->xpm_timestamp == timestamp &&
-					!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
+					!(xpm->xpm_flags & XPMF_PEER_SHUTDOWN))
 				{
 					break;
 				}
@@ -1214,7 +1196,6 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 
 			if (!xpm)
 			{
-
 				// Area hasn't been mapped. Open new file mapping.
 
 				make_map_name(name_buffer, sizeof(name_buffer), XNET_MAPPED_FILE_NAME,
@@ -1349,7 +1330,6 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 		return NULL;
 	}
-#endif
 }
 
 
@@ -1374,7 +1354,6 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 
 	while (!xnet_shutdown)
 	{
-
 		const DWORD wait_res = WaitForSingleObject(xnet_connect_event, INFINITE);
 
 		if (wait_res != WAIT_OBJECT_0)
@@ -1650,47 +1629,46 @@ static int send_partial( rem_port* port, PACKET* packet)
 	return xdr_protocol(&port->port_send, packet);
 }
 
-#ifdef SUPERCLIENT
-static void server_shutdown(rem_port* port)
+static void peer_shutdown(rem_port* port)
 {
 /**************************************
  *
- *      s e r v e r _ s h u t d o w n
+ *      p e e r _ s h u t d o w n
  *
  **************************************
  *
  * Functional description
- *   Server shutdown handler (client side only).
+ *   Peer shutdown handler.
  *
  **************************************/
-	xnet_log_error("Server shutdown detected");
+	xnet_log_error("Peer shutdown detected");
 
 	XCC xcc = port->port_xcc;
-	xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
+	xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
 
 	XPM xpm = xcc->xcc_xpm;
-	if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
+	if (!(xpm->xpm_flags & XPMF_PEER_SHUTDOWN))
 	{
+		const ULONG dead_proc_id = (port->port_flags & PORT_server) ?
+			XPS(xpm->xpm_address)->xps_client_proc_id : XPS(xpm->xpm_address)->xps_server_proc_id;
 
-		const ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
-
-		// mark all mapped areas connected to server with dead_proc_id
+		// mark all mapped areas connected to the process with pid == dead_proc_id
 
 		Firebird::MutexLockGuard guard(xnet_mutex);
 
 		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next)
 		{
-			if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) &&
-				XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id)
+			if (!(xpm->xpm_flags & XPMF_PEER_SHUTDOWN) &&
+				(XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id ||
+				XPS(xpm->xpm_address)->xps_client_proc_id == dead_proc_id))
 			{
-				xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
+				xpm->xpm_flags |= XPMF_PEER_SHUTDOWN;
 				xpm->xpm_handle = 0;
 				xpm->xpm_address = NULL;
 			}
 		}
 	}
 }
-#endif	// SUPERCLIENT
 
 
 static int xdrxnet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
@@ -1780,9 +1758,18 @@ static void xnet_error(rem_port* port, ISC_STATUS operation, int status)
  *
  **************************************/
 	if (status)
+	{
+		if (port->port_state != rem_port::BROKEN)
+		{
+			gds__log("WNET/wnet_error: errno = %d", status);
+		}
+
 		xnet_gen_error(port, Arg::Gds(operation) << SYS_ERR(status));
+	}
 	else
+	{
 		xnet_gen_error(port, Arg::Gds(operation));
+	}
 }
 
 
@@ -1801,26 +1788,22 @@ static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, u_int count)
 
 	SLONG bytecount = count;
 
-#ifdef SUPERCLIENT
 	rem_port* port = (rem_port*) xdrs->x_public;
 	XCC xcc = port->port_xcc;
-	//XCH xch = xcc->xcc_recv_channel;
 	XPM xpm = xcc->xcc_xpm;
-#endif
 
 	while (bytecount && !xnet_shutdown)
 	{
-#ifdef SUPERCLIENT
-		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+		if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
 		{
-			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+			if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
 			{
-				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_lost_db_connection, 0);
+				xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+				xnet_error(port, isc_conn_lost, 0);
 			}
 			return FALSE;
 		}
-#endif
+
 		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
 			to_copy = bytecount;
@@ -1925,24 +1908,20 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_send_channel;
-#ifdef SUPERCLIENT
 	XPM xpm = xcc->xcc_xpm;
-#endif
 	XPS xps = (XPS) xcc->xcc_mapped_addr;
 
 	while (bytecount && !xnet_shutdown)
 	{
-#ifdef SUPERCLIENT
-		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+		if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
 		{
-			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+			if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
 			{
-				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_lost_db_connection, 0);
+				xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+				xnet_error(port, isc_conn_lost, 0);
 			}
 			return FALSE;
 		}
-#endif
 
 		SLONG to_copy;
 		if (xdrs->x_handy >= bytecount)
@@ -1955,20 +1934,18 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 
 			if ((ULONG) xdrs->x_handy == xch->xch_size)
 			{
-
 				while (!xnet_shutdown)
 				{
-#ifdef SUPERCLIENT
-					if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+					if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
 					{
-						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+						if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
 						{
-							xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-							xnet_error(port, isc_lost_db_connection, 0);
+							xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+							xnet_error(port, isc_conn_lost, 0);
 						}
 						return FALSE;
 					}
-#endif
+
 					const DWORD wait_result =
 						WaitForSingleObject(xcc->xcc_event_send_channel_empted,
 										    XNET_SEND_WAIT_TIMEOUT);
@@ -1987,12 +1964,12 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 						}
 
 						// Another side is dead or something bad has happened
-#ifdef SUPERCLIENT
-						if (!(xps->xps_flags & XPS_DISCONNECTED)) {
-							server_shutdown(port);
+						if (!(xps->xps_flags & XPS_DISCONNECTED))
+						{
+							peer_shutdown(port);
 						}
-#endif
-						xnet_error(port, CONN_LOST_ERROR, 0);
+
+						xnet_error(port, isc_conn_lost, 0);
 						return FALSE;
 					}
 
@@ -2061,9 +2038,7 @@ static bool_t xnet_read(XDR* xdrs)
 	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_recv_channel;
-#ifdef SUPERCLIENT
 	XPM xpm = xcc->xcc_xpm;
-#endif
 	XPS xps = (XPS) xcc->xcc_mapped_addr;
 
 	if (xnet_shutdown)
@@ -2077,17 +2052,16 @@ static bool_t xnet_read(XDR* xdrs)
 
 	while (!xnet_shutdown)
 	{
-#ifdef SUPERCLIENT
-		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+		if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
 		{
-			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+			if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
 			{
-				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_lost_db_connection, 0);
+				xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+				xnet_error(port, isc_conn_lost, 0);
 			}
 			return FALSE;
 		}
-#endif
+
 		const DWORD wait_result =
 			WaitForSingleObject(xcc->xcc_event_recv_channel_filled, XNET_RECV_WAIT_TIMEOUT);
 
@@ -2109,12 +2083,12 @@ static bool_t xnet_read(XDR* xdrs)
 			}
 
 			// Another side is dead or something bad has happened
-#ifdef SUPERCLIENT
-			if (!(xps->xps_flags & XPS_DISCONNECTED)) {
-				server_shutdown(port);
+			if (!(xps->xps_flags & XPS_DISCONNECTED))
+			{
+				peer_shutdown(port);
 			}
-#endif
-			xnet_error(port, CONN_LOST_ERROR, 0);
+
+			xnet_error(port, isc_conn_lost, 0);
 			return FALSE;
 		}
 
@@ -2191,13 +2165,11 @@ void release_all()
 	if (!xnet_initialized)
 		return;
 
-#ifndef SUPERCLIENT
 	connect_fini();
-#endif
 
 	Firebird::MutexLockGuard guard(xnet_mutex);
 
-	// release all map stuf left not released by broken ports
+	// release all map stuff left not released by broken ports
 
 	XPM xpm, nextxpm;
 	for (xpm = nextxpm = global_client_maps; nextxpm; xpm = nextxpm)
