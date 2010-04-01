@@ -31,7 +31,7 @@
 
 USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::IndexDescAlloc**, Jrd::RelationPages*);
 void	BTR_complement_key(Jrd::temporary_key*);
-void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, USHORT, Jrd::Sort*, Jrd::SelectivityList&);
+void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, USHORT, Firebird::AutoPtr<Jrd::Sort>&, Jrd::SelectivityList&);
 bool	BTR_delete_index(Jrd::thread_db*, Jrd::win*, USHORT);
 //USHORT	BTR_delete_node(Jrd::thread_db*, Ods::btree_page*, USHORT);
 bool	BTR_description(Jrd::thread_db*, Jrd::jrd_rel*, Ods::index_root_page*, Jrd::index_desc*, USHORT);
