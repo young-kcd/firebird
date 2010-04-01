@@ -127,7 +127,7 @@
 
 using namespace Firebird;
 
-const int IO_RETRY	= 20;
+const int IO_RETRY = 20;
 
 inline bool is_network_error(const ISC_STATUS* vector)
 {
@@ -144,7 +144,7 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 {
 	// this function is called for incoming API handles,
 	// proposed to be created by the call
-	if ((!ptr) || (*ptr))
+	if (!ptr || *ptr)
 	{
 		bad_handle(code);
 	}
@@ -158,9 +158,9 @@ typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
 
 struct teb
 {
-	FB_API_HANDLE *teb_database;
+	FB_API_HANDLE* teb_database;
 	int teb_tpb_length;
-	const UCHAR *teb_tpb;
+	const UCHAR* teb_tpb;
 };
 typedef teb TEB;
 

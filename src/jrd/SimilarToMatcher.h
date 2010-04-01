@@ -798,21 +798,23 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 						{whitespace, 20, {'W','H','I','T','E','S','P','A','C','E'}}
 					};
 
-				HalfStaticArray<USHORT,12> className(len);
+				HalfStaticArray<USHORT, 12> className(len);
 
 				ULONG classNameLen = charSet->getConvToUnicode().convert(len, reinterpret_cast<const UCHAR*>(start),
-																		 className.getCapacity()*sizeof(USHORT), className.begin());
+					className.getCapacity() * sizeof(USHORT), className.begin());
+
 				// Bring class name to uppercase for case-insensitivity
 				// Do it in utf16 because original collation can have no uppercase conversion
 				classNameLen = Jrd::UnicodeUtil::utf16UpperCase(classNameLen, className.begin(),
-																className.getCapacity()*sizeof(USHORT), className.begin(), NULL);
+					className.getCapacity() * sizeof(USHORT), className.begin(), NULL);
 				int classN;
 
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
 				{
-					INTL_BOOL error_flag;
+					INTL_BOOL errorFlag;
+
 					if (Jrd::UnicodeUtil::utf16Compare(classNameLen, className.begin(),
-												  classes[classN].nameLen, classes[classN].name, &error_flag) == 0)
+							classes[classN].nameLen, classes[classN].name, &errorFlag) == 0)
 					{
 						for (const GetCanonicalFunc* func = classes[classN].funcs; *func; ++func)
 						{
@@ -820,6 +822,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 							const CharType* canonic = (const CharType*) (textType->**func)(&count);
 							charsBuffer.push(canonic, count);
 						}
+
 						break;
 					}
 				}

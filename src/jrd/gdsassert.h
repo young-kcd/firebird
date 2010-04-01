@@ -66,4 +66,3 @@ namespace DtorException {
 }
 
 #endif // JRD_GDSASSERT_H
-
