@@ -1364,6 +1364,7 @@ void Sort::mergeRuns(USHORT n)
 			}
 			else
 			{
+				fb_assert(!run->run_buff_alloc);
 				run->run_buffer = buffer;
 				buffer += size;
 				run->run_end_buffer = buffer;
