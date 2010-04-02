@@ -311,7 +311,9 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
  *
  *******************************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
+
 	const SecurityClass* s_class = NULL;
 	const SecurityClass* default_s_class = NULL;
 
@@ -446,9 +448,10 @@ void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 		dsc_name->dsc_length);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	const SecurityClass* s_class = NULL;
 
+	const SecurityClass* s_class = NULL;
 	jrd_req* request = CMP_find_request(tdbb, irq_pkg_security, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
@@ -490,9 +493,10 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	const SecurityClass* s_class = NULL;
 
+	const SecurityClass* s_class = NULL;
 	jrd_req* request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
@@ -535,9 +539,10 @@ void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 							dsc_name->dsc_length);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	const SecurityClass* s_class = NULL;
 
+	const SecurityClass* s_class = NULL;
 	jrd_req* request = CMP_find_request(tdbb, irq_f_security, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
@@ -580,10 +585,10 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	const Firebird::MetaName name(reinterpret_cast<TEXT*>(dsc_name->dsc_address),
 								  dsc_name->dsc_length);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
-
 	jrd_req* request = CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
@@ -734,6 +739,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
@@ -839,7 +845,6 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		role_name = NULL_ROLE;
 	}
 
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	MemoryPool& pool = *attachment->att_pool;
 	UserId* const user = FB_NEW(pool) UserId(pool, tempId);
 	user->usr_sql_role_name = role_name.c_str();
@@ -1112,6 +1117,8 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 	Acl acl;
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* dbb = tdbb->getDatabase();
 
 	SecurityClass::flags_t privileges = SCL_scanned;
@@ -1125,7 +1132,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 			REQUEST(irq_l_security) = request;
 
 		privileges |= SCL_exists;
-		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$ACL);
+		blb* blob = BLB_open(tdbb, sysTransaction, &X.RDB$ACL);
 		UCHAR* buffer = acl.getBuffer(ACL_BLOB_BUFFER_SIZE);
 		UCHAR* end = buffer;
 		while (true)
@@ -1178,6 +1185,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	// Munch ACL. If we find a hit, eat up privileges.

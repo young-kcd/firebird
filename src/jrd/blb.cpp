@@ -2155,6 +2155,7 @@ static void delete_blob_id(thread_db* tdbb, const bid* blob_id, SLONG prior_page
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
@@ -2168,7 +2169,7 @@ static void delete_blob_id(thread_db* tdbb, const bid* blob_id, SLONG prior_page
 
 	// Fetch blob
 
-	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
+	blb* blob = allocate_blob(tdbb, attachment->getSysTransaction());
 	blob->blb_relation = relation;
 	blob->blb_pg_space_id = relation->getPages(tdbb)->rel_pg_space_id;
 	prior_page = DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true, prior_page);

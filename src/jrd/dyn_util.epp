@@ -249,9 +249,7 @@ void DYN_UTIL_check_unique_name(thread_db* tdbb, jrd_tra* transaction,
 }
 
 
-SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
-							  SSHORT id,
-							  const char* generator_name)
+SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb, SSHORT id, const char* generator_name)
 {
 /**************************************
  *
@@ -264,6 +262,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, id, DYN_REQUESTS);
@@ -293,7 +292,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
 			request = CMP_compile2(tdbb, blr.begin(), (ULONG) blr.getCount(), true);
 		}
 
-		EXE_start(tdbb, request, dbb->dbb_sys_trans);
+		EXE_start(tdbb, request, attachment->getSysTransaction());
 		EXE_receive(tdbb, request, 0, sizeof(value), (UCHAR*) &value);
 		EXE_unwind(tdbb, request);
 	}
@@ -324,6 +323,7 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* /*gbl*/, Firebi
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
@@ -396,6 +396,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* /*gbl*/, Firebird::M
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
@@ -454,6 +455,7 @@ void DYN_UTIL_generate_field_position(thread_db* tdbb,
 	SLONG field_position = -1;
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
@@ -501,6 +503,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* /*gbl*/,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
@@ -558,6 +561,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* /*gbl*/,
 void DYN_UTIL_generate_generator_name(thread_db* tdbb, Firebird::MetaName& buffer)
 {
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	AutoCacheRequest request(tdbb, drq_f_nxt_gen, DYN_REQUESTS);
@@ -603,6 +607,7 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* /*gbl*/, Firebird:
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;

@@ -901,15 +901,7 @@ void CMP_fini(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 
 	// shutdown shared database locks
-
 	CMP_shutdown_database(tdbb);
-
-	// unwind any active system requests
-
-	while (dbb->dbb_sys_trans->tra_requests)
-	{
-		EXE_unwind(tdbb, dbb->dbb_sys_trans->tra_requests);
-	}
 
 	// and release them
 

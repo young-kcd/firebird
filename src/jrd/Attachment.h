@@ -133,6 +133,7 @@ public:
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
+	jrd_tra*	att_sys_transaction;		// system transaction
 	jrd_req*	att_requests;				// Requests belonging to attachment
 	sort_context*	att_active_sorts;		// Active sorts
 	Lock*		att_id_lock;				// Attachment lock (if any)
@@ -175,6 +176,11 @@ public:
 	TraceManager* att_trace_manager;		// Trace API manager
 
 	bool locksmith() const;
+
+	jrd_tra* getSysTransaction()
+	{
+		return att_sys_transaction;
+	}
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::string& text, Firebird::MemoryPool* pool = NULL);

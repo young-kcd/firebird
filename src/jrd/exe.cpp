@@ -978,6 +978,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	BLKCHK(request, type_req);
@@ -1049,7 +1050,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	}
 
 	// Start a save point if not in middle of one
-	if (transaction && (transaction != dbb->dbb_sys_trans)) {
+	if (transaction && (transaction != attachment->getSysTransaction())) {
 		VIO_start_save_point(tdbb, transaction);
 	}
 
@@ -1060,8 +1061,8 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	// If any requested modify/delete/insert ops have completed, forget them
 
-	if (transaction && (transaction != dbb->dbb_sys_trans) && transaction->tra_save_point &&
-	    !(transaction->tra_save_point->sav_flags & SAV_user) &&
+	if (transaction && (transaction != attachment->getSysTransaction()) &&
+		transaction->tra_save_point && !(transaction->tra_save_point->sav_flags & SAV_user) &&
 	    !transaction->tra_save_point->sav_verb_count)
 	{
 		// Forget about any undo for this verb
@@ -1258,6 +1259,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	BLKCHK(node, type_nod);
 
@@ -1306,7 +1308,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
-	if (transaction != dbb->dbb_sys_trans)
+	if (transaction != attachment->getSysTransaction())
 		++transaction->tra_save_point->sav_verb_count;
 
 	// Handle pre-operation trigger
@@ -1368,9 +1370,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		request->req_records_affected.bumpModified(true);
 	}
 
-	if (transaction != dbb->dbb_sys_trans) {
+	if (transaction != attachment->getSysTransaction())
 		--transaction->tra_save_point->sav_verb_count;
-	}
 
 	rpb->rpb_number.setValid(false);
 
@@ -1396,13 +1397,14 @@ static void execute_looper(thread_db* tdbb,
 	DEV_BLKCHK(request, type_req);
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	// Start a save point
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
-		if (transaction && (transaction != dbb->dbb_sys_trans))
+		if (transaction && (transaction != attachment->getSysTransaction()))
 			VIO_start_save_point(tdbb, transaction);
 	}
 
@@ -1415,8 +1417,8 @@ static void execute_looper(thread_db* tdbb,
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
-		if (transaction && (transaction != dbb->dbb_sys_trans) && transaction->tra_save_point &&
-			!transaction->tra_save_point->sav_verb_count)
+		if (transaction && (transaction != attachment->getSysTransaction()) &&
+			transaction->tra_save_point && !transaction->tra_save_point->sav_verb_count)
 		{
 			// Forget about any undo for this verb
 
@@ -1458,6 +1460,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();
@@ -1532,7 +1535,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 		// Clean up all savepoints started during execution of the procedure
 
-		if (transaction != tdbb->getDatabase()->dbb_sys_trans)
+		if (transaction != attachment->getSysTransaction())
 		{
 			for (const Savepoint* save_point = transaction->tra_save_point;
 				 save_point && save_point_number < save_point->sav_number;
@@ -1907,6 +1910,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* dbb = tdbb->getDatabase();
 	BLKCHK(in_node, type_nod);
 
@@ -2257,7 +2262,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			case jrd_req::req_evaluate:
 				// Start a save point
 
-				if (transaction != dbb->dbb_sys_trans)
+				if (transaction != sysTransaction)
 					VIO_start_save_point(tdbb, transaction);
 
 			default:
@@ -2272,7 +2277,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			case jrd_req::req_evaluate:
 			case jrd_req::req_unwind:
 				// If any requested modify/delete/insert ops have completed, forget them
-				if (transaction != dbb->dbb_sys_trans)
+				if (transaction != sysTransaction)
 				{
 					// If an error is still pending when the savepoint is
 					// supposed to end, then the application didn't handle the
@@ -2311,7 +2316,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			SLONG count;
 
 			case jrd_req::req_evaluate:
-				if (transaction != dbb->dbb_sys_trans)
+				if (transaction != sysTransaction)
 				{
 					VIO_start_save_point(tdbb, transaction);
 					const Savepoint* save_point = transaction->tra_save_point;
@@ -2331,7 +2336,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						// BREAK/LEAVE/CONTINUE statement in the SP/trigger code.
 						// Do not perform the error handling stuff.
 
-						if (transaction != dbb->dbb_sys_trans)
+						if (transaction != sysTransaction)
 						{
 							memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
 
@@ -2346,7 +2351,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						node = node->nod_parent;
 						break;
 					}
-					if (transaction != dbb->dbb_sys_trans)
+					if (transaction != sysTransaction)
 					{
 						memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
 						// Since there occurred an error (req_unwind), undo all savepoints
@@ -2420,7 +2425,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 								// The error is dealt with by the application, cleanup
 								// this block's savepoint.
 
-								if (transaction != dbb->dbb_sys_trans)
+								if (transaction != sysTransaction)
 								{
 									for (const Savepoint* save_point = transaction->tra_save_point;
 										save_point && count <= save_point->sav_number;
@@ -2441,7 +2446,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					// the error will still be pending.  Undo the block by
 					// using its savepoint.
 
-					if (error_pending && transaction != dbb->dbb_sys_trans)
+					if (error_pending && transaction != sysTransaction)
 					{
 						for (const Savepoint* save_point = transaction->tra_save_point;
 							save_point && count <= save_point->sav_number;
@@ -2455,7 +2460,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				break;
 
 			case jrd_req::req_return:
-				if (transaction != dbb->dbb_sys_trans)
+				if (transaction != sysTransaction)
 				{
 					memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
 
@@ -2816,7 +2821,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		// our own savepoints.
 		if (catch_disabled)
 		{
-			if (transaction != dbb->dbb_sys_trans)
+			if (transaction != sysTransaction)
 			{
 				for (const Savepoint* save_point = transaction->tra_save_point;
 					((save_point) && (save_point_number <= save_point->sav_number));
@@ -2836,7 +2841,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		}
 
 		// Since an error happened, the current savepoint needs to be undone
-		if (transaction != dbb->dbb_sys_trans && transaction->tra_save_point)
+		if (transaction != sysTransaction && transaction->tra_save_point)
 		{
 			++transaction->tra_save_point->sav_verb_count;
 			EXE_verb_cleanup(tdbb, transaction);
@@ -2897,7 +2902,7 @@ end:
 
 	if (error_pending)
 	{
-		if (transaction != dbb->dbb_sys_trans)
+		if (transaction != sysTransaction)
 		{
 			for (const Savepoint* save_point = transaction->tra_save_point;
 				((save_point) && (save_point_number <= save_point->sav_number));
@@ -2959,6 +2964,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	BLKCHK(node, type_nod);
 
@@ -3011,7 +3017,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			// varchar field whose tail may contain garbage.
 			cleanup_rpb(tdbb, new_rpb);
 
-			if (transaction != dbb->dbb_sys_trans)
+			if (transaction != attachment->getSysTransaction())
 				++transaction->tra_save_point->sav_verb_count;
 
 			PreModifyEraseTriggers(tdbb, &relation->rel_pre_modify, which_trig, org_rpb, new_rpb,
@@ -3069,9 +3075,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				}
 			}
 
-			if (transaction != dbb->dbb_sys_trans) {
+			if (transaction != attachment->getSysTransaction())
 				--transaction->tra_save_point->sav_verb_count;
-			}
 
 			// CVC: Increment the counter only if we called VIO/EXT_modify() and
 			// we were successful.
@@ -3416,6 +3421,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	BLKCHK(node, type_nod);
 
@@ -3442,7 +3448,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (impure->sta_state)
 			return node->nod_parent;
 
-		if (transaction != dbb->dbb_sys_trans)
+		if (transaction != attachment->getSysTransaction())
 			++transaction->tra_save_point->sav_verb_count;
 
 		if (relation->rel_pre_store && which_trig != POST_TRIG)
@@ -3513,9 +3519,8 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			request->req_records_affected.bumpModified(true);
 		}
 
-		if (transaction != dbb->dbb_sys_trans) {
+		if (transaction != attachment->getSysTransaction())
 			--transaction->tra_save_point->sav_verb_count;
-		}
 
 		if (node->nod_arg[e_sto_statement2])
 		{

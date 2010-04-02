@@ -2789,6 +2789,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	try {
 
 		LCK_init(tdbb, LCK_OWNER_attachment);
+		TRA_init(attachment);
 		bcb = dbb->dbb_bcb;
 		bcb->bcb_flags |= BCB_cache_reader;
 		dbb->dbb_reader_init.post();	// Notify our creator that we have started
@@ -2950,6 +2951,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 	try {
 		LCK_init(tdbb, LCK_OWNER_attachment);
+		TRA_init(attachment);
 		bcb->bcb_flags |= BCB_cache_writer;
 		bcb->bcb_flags &= ~BCB_writer_start;
 

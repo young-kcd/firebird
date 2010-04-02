@@ -32,6 +32,7 @@
 #include "../jrd/intl.h"
 
 #include "../jrd/blb_proto.h"
+#include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
 
@@ -68,15 +69,27 @@ Jrd::Attachment* Jrd::Attachment::create(Database* dbb, FB_API_HANDLE publicHand
 // static method
 void Jrd::Attachment::destroy(Attachment* const attachment)
 {
-	if (attachment)
+	if (!attachment)
+		return;
+
+	thread_db* tdbb = JRD_get_thread_data();
+
+	jrd_tra* sysTransaction = attachment->getSysTransaction();
+	if (sysTransaction)
 	{
-		Database* const dbb = attachment->att_database;
-		MemoryPool* const pool = attachment->att_pool;
-		Firebird::MemoryStats temp_stats;
-		pool->setStatsGroup(temp_stats);
-		delete attachment;
-		dbb->deletePool(pool);
+		// unwind any active system requests
+		while (sysTransaction->tra_requests)
+			EXE_unwind(tdbb, sysTransaction->tra_requests);
+
+		delete sysTransaction;
 	}
+
+	Database* const dbb = attachment->att_database;
+	MemoryPool* const pool = attachment->att_pool;
+	Firebird::MemoryStats temp_stats;
+	pool->setStatsGroup(temp_stats);
+	delete attachment;
+	dbb->deletePool(pool);
 }
 
 

@@ -608,7 +608,7 @@ int main(int argc, char* argv[])
 			gpreGlob.sw_language			= lang_internal;
 			gen_routine			= INT_CXX_action;
 			gpreGlob.sw_cstring			= false;
-			gpreGlob.transaction_name	= "dbb->dbb_sys_trans";
+			gpreGlob.transaction_name	= "attachment->getSysTransaction()";
 			gpreGlob.sw_know_interp		= true;
 			gpreGlob.sw_interp			= ttype_metadata;
 			break;

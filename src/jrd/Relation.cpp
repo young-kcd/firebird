@@ -119,8 +119,10 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 	if (tdbb->tdbb_flags & TDBB_use_db_page_space)
 		return &rel_pages_base;
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	SLONG inst_id;
+
 	if (rel_flags & REL_temp_tran)
 	{
 		if (tran > 0)
@@ -195,9 +197,8 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 		Jrd::ContextPoolHolder context(tdbb, pool);
 
 		jrd_tra* idxTran = tdbb->getTransaction();
-		if (!idxTran) {
-			idxTran = dbb->dbb_sys_trans;
-		}
+		if (!idxTran)
+			idxTran = attachment->getSysTransaction();
 
 		IndexDescAlloc* indices = NULL;
 		// read indices from "base" index root page

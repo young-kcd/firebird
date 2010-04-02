@@ -684,11 +684,9 @@ void DFW_perform_system_work(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
-
-	DFW_perform_work(tdbb, dbb->dbb_sys_trans);
+	DFW_perform_work(tdbb, attachment->getSysTransaction());
 }
 
 
@@ -875,11 +873,9 @@ DeferredWork* DFW_post_system_work(thread_db* tdbb, enum dfw_t type, const dsc* 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
-
-	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id, "");
+	return DFW_post_work(attachment->getSysTransaction(), type, desc, id, "");
 }
 
 
@@ -1921,6 +1917,7 @@ static void check_dependencies(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	const MetaName packageName(package_name);
@@ -2149,6 +2146,7 @@ static bool compute_security(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -2240,8 +2238,9 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			<< sql("rel.rdb$relation_type", rdbRelationType)
 			<< "from rdb$indices idx join rdb$relations rel using (rdb$relation_name)"
 			<< "where idx.rdb$index_name = " << work->dfw_name;
-		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, dbb->dbb_sys_trans, sql));
-		AutoResultSet rs(ps->executeQuery(tdbb, dbb->dbb_sys_trans));
+		AutoPreparedStatement ps(attachment->prepareStatement(tdbb,
+			attachment->getSysTransaction(), sql));
+		AutoResultSet rs(ps->executeQuery(tdbb, attachment->getSysTransaction()));
 
 		while (rs->fetch(tdbb))
 		{
@@ -2337,6 +2336,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	jrd_req* handle;
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -2781,6 +2781,7 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	blob_id.clear();
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	const USHORT local_min_relation_id = USER_DEF_REL_INIT_ID;
@@ -3006,6 +3007,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
  **************************************/
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -3296,6 +3298,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  **************************************/
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -3365,6 +3368,7 @@ static bool delete_field(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_
 	jrd_req* handle;
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -3426,6 +3430,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  **************************************/
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -3502,6 +3507,7 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -4066,6 +4072,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	bool adjusted;
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -4293,6 +4300,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 	jrd_rel* relation;
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
@@ -4503,6 +4511,7 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	fb_utils::exact_name(object_name);
@@ -4647,6 +4656,7 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name, Ods::Interna
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
@@ -4701,6 +4711,7 @@ static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra*
  *
  **************************************/
 	thread_db* const tdbb = JRD_get_thread_data();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* const dbb = tdbb->getDatabase();
 
 	if (compile)
@@ -4778,6 +4789,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	if (compile)
@@ -4855,6 +4867,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	if (compile)
@@ -4961,6 +4974,8 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 	TemporaryField* tfb;
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* dbb = tdbb->getDatabase();
 
 	// Figure out the highest field id and allocate a format block
@@ -5067,7 +5082,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 			REQUEST(irq_format3) = request;
 		FMTS.RDB$FORMAT = format->fmt_version;
 		FMTS.RDB$RELATION_ID = relation->rel_id;
-		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMTS.RDB$DESCRIPTOR);
+		blb* blob = BLB_create(tdbb, sysTransaction, &FMTS.RDB$DESCRIPTOR);
 
 		// Use generic representation of formats with 32-bit offsets
 
@@ -5154,6 +5169,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	trig_vec* triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	bool null_view;
 
@@ -6357,8 +6373,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 	if (!relation)
 		return blob;
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-
 
 	// system triggers
 

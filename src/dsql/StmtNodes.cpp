@@ -268,6 +268,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 
 jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request) const
 {
+	Jrd::Attachment* attachment = request->req_attachment;
 	SLONG* savNumber = (SLONG*) ((char*) request + savNumberOffset);
 
 	if (request->req_operation == jrd_req::req_evaluate)
@@ -283,7 +284,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		VIO_start_save_point(tdbb, request->req_transaction);
 		*savNumber = request->req_transaction->tra_save_point->sav_number;
 
-		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION START triggers
 			EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_start);
@@ -293,13 +294,12 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 	}
 
 	jrd_tra* transaction = request->req_transaction;
-	fb_assert(transaction);
-	fb_assert(transaction != tdbb->getDatabase()->dbb_sys_trans);
+	fb_assert(transaction && transaction != attachment->getSysTransaction());
 
 	switch (request->req_operation)
 	{
 	case jrd_req::req_return:
-		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
 			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
@@ -324,7 +324,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		{
 			try
 			{
-				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+				if (!(attachment->att_flags & ATT_no_db_triggers))
 				{
 					// run ON TRANSACTION COMMIT triggers
 					EXE_execute_db_triggers(tdbb, transaction,
@@ -352,7 +352,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		{
 			ThreadStatusGuard temp_status(tdbb);
 
-			if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
+			if (!(attachment->att_flags & ATT_no_db_triggers))
 			{
 				try
 				{
@@ -1385,10 +1385,10 @@ SavepointNode* SavepointNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*
 
 jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	Database* dbb = request->req_attachment->att_database;
 	jrd_tra* transaction = request->req_transaction;
 
-	if (request->req_operation == jrd_req::req_evaluate && transaction != dbb->dbb_sys_trans)
+	if (request->req_operation == jrd_req::req_evaluate &&
+		transaction != request->req_attachment->getSysTransaction())
 	{
 		// Skip the savepoint created by EXE_start
 		Savepoint* savepoint = transaction->tra_save_point->sav_next;

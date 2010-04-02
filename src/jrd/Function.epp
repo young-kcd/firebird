@@ -60,6 +60,7 @@ const char* const Function::EXCEPTION_MESSAGE = "The user defined function: \t%s
 
 Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags)
 {
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* const dbb = tdbb->getDatabase();
 	Function* check_function = NULL;
 
@@ -114,6 +115,7 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 
 Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool noscan)
 {
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* const dbb = tdbb->getDatabase();
 
 	Function* check_function = NULL;
@@ -179,6 +181,8 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 
 Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 {
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* const dbb = tdbb->getDatabase();
 
 	if (id >= dbb->dbb_functions.getCount())
@@ -421,7 +425,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				if (!X.RDB$FUNCTION_SOURCE.NULL)
 				{
-					blb* const blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$FUNCTION_SOURCE);
+					blb* const blob = BLB_open(tdbb, sysTransaction, &X.RDB$FUNCTION_SOURCE);
 					const ULONG len = BLB_get_data(tdbb, blob,
 						body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
 					body[MIN(blob->blb_length, len)] = 0;
@@ -700,6 +704,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		fb_assert(getRequest());
 		fb_assert(!fun_return_arg);
 
+		Jrd::Attachment* attachment = tdbb->getAttachment();
 		Database* const dbb = tdbb->getDatabase();
 		jrd_req* const request = tdbb->getRequest();
 
@@ -778,7 +783,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 
 			// Clean up all savepoints started during execution of the function
 
-			if (transaction != dbb->dbb_sys_trans)
+			if (transaction != attachment->getSysTransaction())
 			{
 				for (const Savepoint* save_point = transaction->tra_save_point;
 					 save_point && save_point_number < save_point->sav_number;

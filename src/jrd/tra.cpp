@@ -742,7 +742,7 @@ void TRA_header_write(thread_db* tdbb, Database* dbb, SLONG number)
 #endif
 
 
-void TRA_init(Database* dbb)
+void TRA_init(Jrd::Attachment* attachment)
 {
 /**************************************
  *
@@ -754,11 +754,13 @@ void TRA_init(Database* dbb)
  *	"Start" the system transaction.
  *
  **************************************/
+	Database* dbb = attachment->att_database;
 	CHECK_DBB(dbb);
 
 	MemoryPool* const pool = dbb->dbb_permanent;
 	jrd_tra* const trans = FB_NEW(*pool) jrd_tra(pool, &dbb->dbb_memory_stats, NULL, NULL);
-	dbb->dbb_sys_trans = trans;
+	trans->tra_attachment = attachment;
+	attachment->att_sys_transaction = trans;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 }
 
@@ -3513,7 +3515,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// a savepoint to be started.  This savepoint will be used to
 	// undo the transaction if it rolls back.
 
-	if ((trans != dbb->dbb_sys_trans) && !(trans->tra_flags & TRA_no_auto_undo))
+	if (trans != attachment->getSysTransaction() && !(trans->tra_flags & TRA_no_auto_undo))
 	{
 		VIO_start_save_point(tdbb, trans);
 		trans->tra_save_point->sav_flags |= SAV_trans_level;

@@ -357,7 +357,6 @@ public:
 	Lock*		dbb_sh_counter_lock;	// lock which holds shared counter value
 	SLONG		dbb_sh_counter_curr;	// current value of shared counter lock
 	SLONG		dbb_sh_counter_max;		// maximum cached value of shared counter lock
-	jrd_tra*	dbb_sys_trans;			// system transaction
 	Shadow*		dbb_shadow;				// shadow control block
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
@@ -379,7 +378,6 @@ public:
 	Firebird::Mutex dbb_exe_clone_mutex;
 	Firebird::Mutex dbb_flush_count_mutex;
 	Firebird::Mutex dbb_dyn_mutex;
-	Firebird::Mutex dbb_sys_dfw_mutex;
 
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 

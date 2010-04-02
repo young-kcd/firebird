@@ -291,6 +291,7 @@ static SecurityClass::flags_t get_public_privs(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	SecurityClass::flags_t public_priv = 0;
@@ -337,6 +338,7 @@ static void get_object_info(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	owner = s_class = default_class = "";
@@ -449,6 +451,7 @@ static void get_user_privs(thread_db*					tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName user;
@@ -681,6 +684,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	Acl field_acl(relation_acl);

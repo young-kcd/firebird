@@ -1054,7 +1054,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
-	dbb->dbb_sys_trans->tra_attachment = attachment;
 
 	attachment->att_client_charset = attachment->att_charset = options.dpb_interp;
 
@@ -1073,6 +1072,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	if (options.dpb_working_directory.hasData()) {
 		attachment->att_working_directory = options.dpb_working_directory;
 	}
+
+	TRA_init(attachment);
 
 	// If we're a not a secondary attachment, initialize some stuff
 
@@ -2106,7 +2107,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	dbb->dbb_attachments = attachment;
 	dbb->dbb_flags &= ~DBB_being_opened;
-	dbb->dbb_sys_trans->tra_attachment = attachment;
 
 	if (options.dpb_working_directory.hasData()) {
 		attachment->att_working_directory = options.dpb_working_directory;
@@ -2151,6 +2151,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 
 	dbb->dbb_page_size = (page_size > MAX_PAGE_SIZE) ? MAX_PAGE_SIZE : page_size;
+
+	TRA_init(attachment);
 
 	initing_security = false;
 
@@ -5223,8 +5225,6 @@ static Database* init(thread_db* tdbb,
 
 	// Initialize a number of subsystems
 
-	TRA_init(dbb);
-
 #ifdef ISC_DATABASE_ENCRYPTION
 	// Lookup some external "hooks"
 
@@ -6134,8 +6134,9 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	if (transaction == tdbb->getDatabase()->dbb_sys_trans)
+	if (transaction == attachment->getSysTransaction())
 		return;
 
 	// start a savepoint to rollback changes of all triggers

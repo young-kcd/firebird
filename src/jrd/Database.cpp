@@ -75,8 +75,6 @@ namespace Jrd
 
 	Database::~Database()
 	{
-		delete dbb_sys_trans;
-
 		destroyIntlObjects();
 
 		fb_assert(dbb_pools[0] == dbb_permanent);

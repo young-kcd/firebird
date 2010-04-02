@@ -4010,6 +4010,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 
 		LCK_init(tdbb, LCK_OWNER_attachment);
+		TRA_init(attachment);
 
 		// Notify our creator that we have started
 		dbb->dbb_flags |= DBB_garbage_collector;
