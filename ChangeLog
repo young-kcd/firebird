@@ -1,3 +1,30 @@
+2010-04-01 10:13  dimitr
+
+	* firebird2/src/jrd/sort.cpp (1.155):
+
+	Misc.
+
+2010-04-01 08:57  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.281), btr_proto.h (1.50):
+
+	Release the sort resources as soon as possible, per Claudio's
+	request.  Actually, this corresponds to the pre-v3.0 behavior.
+
+2010-04-01 06:45  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.152), xnet.h (1.25),
+	xnet_proto.h (1.21):
+
+	Cleanup SUPERCLIENT.
+
+2010-04-01 02:21  asfernandes
+
+	* firebird2/src/jrd/: CsConvert.h (1.21), SimilarToMatcher.h
+	(1.35), gdsassert.h (1.21), why.cpp (1.277):
+
+	Misc
+
 2010-03-31 11:42  aafemt
 
 	* firebird2/src/jrd/SimilarToMatcher.h (1.34):
