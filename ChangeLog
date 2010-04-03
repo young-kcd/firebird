@@ -1,3 +1,9 @@
+2010-04-02 18:48  alexpeshkoff
+
+	* firebird2/builds/install/misc/posixLibrary.sh.in (1.23.2.1):
+
+	misc
+
 2010-03-31 10:38  alexpeshkoff
 
 	* firebird2/configure.in (1.368.2.12):
