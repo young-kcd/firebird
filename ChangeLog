@@ -1,3 +1,19 @@
+2010-04-02 23:48  asfernandes
+
+	* firebird2/src/: dsql/StmtNodes.cpp (1.41), gpre/gpre.cpp (1.113),
+	jrd/Attachment.cpp (1.5), jrd/Attachment.h (1.4), jrd/Database.cpp
+	(1.16), jrd/Database.h (1.52), jrd/DebugInterface.cpp (1.13),
+	jrd/Function.epp (1.22), jrd/Relation.cpp (1.25), jrd/blb.cpp
+	(1.218), jrd/cch.cpp (1.259), jrd/cmp.cpp (1.403), jrd/dfw.epp
+	(1.323), jrd/dpm.epp (1.124), jrd/dyn_util.epp (1.78), jrd/exe.cpp
+	(1.337), jrd/grant.epp (1.88), jrd/ini.epp (1.138), jrd/jrd.cpp
+	(1.605), jrd/met.epp (1.324), jrd/pcmet.epp (1.69), jrd/scl.epp
+	(1.122), jrd/tra.cpp (1.219), jrd/tra_proto.h (1.27), jrd/vio.cpp
+	(1.290):
+
+	Fix problem of the system transaction storing pointer to random or
+	already deallocated attachment. Full build (or kind of) required.
+
 2010-04-01 10:13  dimitr
 
 	* firebird2/src/jrd/sort.cpp (1.155):
