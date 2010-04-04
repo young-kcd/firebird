@@ -760,7 +760,7 @@ void TRA_init(Jrd::Attachment* attachment)
 	MemoryPool* const pool = dbb->dbb_permanent;
 	jrd_tra* const trans = FB_NEW(*pool) jrd_tra(pool, &dbb->dbb_memory_stats, NULL, NULL);
 	trans->tra_attachment = attachment;
-	attachment->att_sys_transaction = trans;
+	attachment->setSysTransaction(trans);
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 }
 

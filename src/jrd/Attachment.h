@@ -133,9 +133,12 @@ public:
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
+
+private:
 	jrd_tra*	att_sys_transaction;		// system transaction
+
+public:
 	jrd_req*	att_requests;				// Requests belonging to attachment
-	sort_context*	att_active_sorts;		// Active sorts
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	SLONG		att_attachment_id;			// Attachment ID
 	const ULONG	att_lock_owner_id;			// ID for the lock manager
@@ -176,11 +179,8 @@ public:
 	TraceManager* att_trace_manager;		// Trace API manager
 
 	bool locksmith() const;
-
-	jrd_tra* getSysTransaction()
-	{
-		return att_sys_transaction;
-	}
+	jrd_tra* getSysTransaction();
+	void setSysTransaction(jrd_tra* trans);	// used only by TRA_init
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::string& text, Firebird::MemoryPool* pool = NULL);
@@ -209,15 +209,7 @@ public:
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
 	void backupStateReadUnLock(thread_db* tdbb);
 
-	bool checkHandle() const
-	{
-		if (!isKnownHandle())
-		{
-			return false;
-		}
-
-		return TypedHandle<type_att>::checkHandle();
-	}
+	bool checkHandle() const;
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle);
@@ -258,6 +250,27 @@ inline bool Attachment::locksmith() const
 {
 	return att_user && att_user->locksmith();
 }
+
+inline jrd_tra* Attachment::getSysTransaction()
+{
+	return att_sys_transaction;
+}
+
+inline void Attachment::setSysTransaction(jrd_tra* trans)
+{
+	att_sys_transaction = trans;
+}
+
+inline bool Attachment::checkHandle() const
+{
+	if (!isKnownHandle())
+	{
+		return false;
+	}
+
+	return TypedHandle<type_att>::checkHandle();
+}
+
 
 } // namespace Jrd
 
