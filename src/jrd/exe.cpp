@@ -1359,7 +1359,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	}
 	if (relation == request->req_top_view_erase)
 	{
-		if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
+		if (which_trig == ALL_TRIGS || which_trig == POST_TRIG)
+		{
 			request->req_records_deleted++;
 			request->req_records_affected.bumpModified(true);
 		}

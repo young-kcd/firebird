@@ -312,7 +312,7 @@ namespace
 #define TEXT    SCHAR
 #endif	// WIN_NT
 
-void Jrd::Trigger::compile(thread_db* tdbb)
+void Trigger::compile(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
@@ -360,7 +360,8 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 				delete csb;
 				csb = NULL;
 
-				if (request) {
+				if (request)
+				{
 					CMP_release(tdbb, request);
 					request = NULL;
 				}
@@ -400,7 +401,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 					Firebird::ExternalTrigger::TYPE_DATABASE));
 }
 
-void Jrd::Trigger::release(thread_db* tdbb)
+void Trigger::release(thread_db* tdbb)
 {
 	if (extTrigger)
 	{
@@ -563,10 +564,12 @@ static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void			verify_request_synchronization(jrd_req*& request, SSHORT level);
 static unsigned int purge_transactions(thread_db*, Jrd::Attachment*, const bool, const ULONG);
+
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK, VDN_SECURITY};
 }
 static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
+
 static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, ISC_STATUS* userStatus,
 	Jrd::Attachment* attachment, Database* dbb);
 #ifdef WIN_NT
@@ -613,7 +616,7 @@ static void cancel_attachments()
 						break;
 					}
 
-					{
+					{ // scope
 						const bool cancel_disable = (att->att_flags & ATT_cancel_disable);
 						Database::Checkout dcoHolder(dbb);
 						if (!cancel_disable)
@@ -624,7 +627,7 @@ static void cancel_attachments()
 						}
 
 						THREAD_YIELD();
-					}
+					} // end scope
 
 					// check if attachment still exist
 					if (lockedAtt && lockedAtt->att_next != att) {
@@ -853,9 +856,10 @@ const char SINGLE_QUOTE			= '\'';
 		   2003.02.09 */
 //#define ISC_DATABASE_ENCRYPTION
 
-static const char* CRYPT_IMAGE = "fbcrypt";
-static const char* ENCRYPT = "encrypt";
-static const char* DECRYPT = "decrypt";
+// The code that uses these constants was disabled by Adriano with comment "old PluginManager".
+//static const char* CRYPT_IMAGE = "fbcrypt";
+//static const char* ENCRYPT = "encrypt";
+//static const char* DECRYPT = "decrypt";
 
 
 void trace_failed_attach(TraceManager* traceManager, const char* filename,
