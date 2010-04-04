@@ -1,3 +1,26 @@
+2010-04-04 11:36  robocop
+
+	* firebird2/src/jrd/: Attachment.h (1.5), tra.cpp (1.220):
+
+	Some day we will be able to manipulate objects' data through member
+	functions instead of allowing everyone to change their internals
+	directly.
+
+2010-04-04 10:52  robocop
+
+	* firebird2/src/jrd/: Collation.cpp (1.27), Function.epp (1.23),
+	cmp.cpp (1.404), dfw.epp (1.324), dpm.epp (1.125), dyn_util.epp
+	(1.79), exe.cpp (1.339), ini.epp (1.139), met.epp (1.325), scl.epp
+	(1.123):
+
+	Cleanup.
+
+2010-04-04 10:51  robocop
+
+	* firebird2/src/jrd/: exe.cpp (1.338), jrd.cpp (1.606):
+
+	Style.
+
 2010-04-02 23:48  asfernandes
 
 	* firebird2/src/: dsql/StmtNodes.cpp (1.41), gpre/gpre.cpp (1.113),
