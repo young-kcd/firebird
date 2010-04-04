@@ -312,7 +312,6 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
  *******************************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
 	const SecurityClass* default_s_class = NULL;

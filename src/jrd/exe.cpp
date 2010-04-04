@@ -979,7 +979,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	BLKCHK(request, type_req);
 	BLKCHK(transaction, type_tra);
@@ -1057,7 +1056,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_src_line = 0;
 	request->req_src_column = 0;
 
-	looper_seh(tdbb, request); //, request->req_top_node);
+	looper_seh(tdbb, request);
 
 	// If any requested modify/delete/insert ops have completed, forget them
 
@@ -1260,7 +1259,6 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 	BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();
@@ -1399,7 +1397,6 @@ static void execute_looper(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	// Start a save point
 
@@ -2966,7 +2963,6 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 	BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();
@@ -3423,7 +3419,6 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 	BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();

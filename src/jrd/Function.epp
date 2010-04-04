@@ -705,7 +705,6 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		fb_assert(!fun_return_arg);
 
 		Jrd::Attachment* attachment = tdbb->getAttachment();
-		Database* const dbb = tdbb->getDatabase();
 		jrd_req* const request = tdbb->getRequest();
 
 		ULONG in_msg_length = 0;

@@ -220,7 +220,7 @@ static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, 
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
-static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream);
+static void mark_variant(CompilerScratch* csb, USHORT stream);
 static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
 static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
@@ -3697,7 +3697,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 // referencing, and mark them as variant - the rule is that if a field from one RecordSelExpr is
 // referenced within the scope of another RecordSelExpr, the inner RecordSelExpr can't be invariant.
 // This won't optimize all cases, but it is the simplest operating assumption for now.
-static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+static void mark_variant(CompilerScratch* csb, USHORT stream)
 {
 	if (csb->csb_current_nodes.hasData())
 	{
@@ -3874,7 +3874,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 
-			mark_variant(tdbb, csb, stream);
+			mark_variant(csb, stream);
 
 			jrd_fld* field;
 			tail = &csb->csb_rpt[stream];
@@ -4074,7 +4074,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			for (UCHAR i = 0; i < streamCount; ++i)
 			{
-				mark_variant(tdbb, csb, streamList[i]);
+				mark_variant(csb, streamList[i]);
 				expand_view_nodes(tdbb, csb, streamList[i], stack, nod_dbkey, true);
 			}
 
@@ -4240,7 +4240,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			const nod_t type = node->nod_type;
 			stream = (USHORT)(IPTR) node->nod_arg[0];
 
-			mark_variant(tdbb, csb, stream);
+			mark_variant(csb, stream);
 
 			if (!csb->csb_rpt[stream].csb_map)
 				return node;

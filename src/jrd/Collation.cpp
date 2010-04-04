@@ -900,7 +900,7 @@ void Collation::destroy()
 }
 
 
-void Collation::incUseCount(thread_db* tdbb)
+void Collation::incUseCount(thread_db* /*tdbb*/)
 {
 	fb_assert(!obsolete);
 	fb_assert(useCount >= 0);
