@@ -55,8 +55,8 @@ Jrd::dsql_str* METD_get_default_charset(Jrd::jrd_tra*);
 bool METD_get_domain(Jrd::jrd_tra*, class Jrd::dsql_fld*, const char* name);
 USHORT METD_get_domain_default(Jrd::jrd_tra*, const TEXT*, bool*, UCHAR*, USHORT);
 bool METD_get_exception(Jrd::jrd_tra*, const Jrd::dsql_str*);
-Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*,
-	const Jrd::dsql_str*);
+Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
+	const Firebird::QualifiedName&);
 Jrd::dsql_nod* METD_get_primary_key(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_prc* METD_get_procedure(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*,
 	const Jrd::dsql_str*);

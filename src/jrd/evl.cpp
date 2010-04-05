@@ -940,18 +940,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			return NULL;
 		}
 
-	case nod_function:
-		{
-			const Function* function = reinterpret_cast<Function*>(node->nod_arg[e_fun_function]);
-			return function->execute(tdbb, node->nod_arg[e_fun_args], impure);
-		}
-
-	case nod_sys_function:
-		{
-			const SysFunction* sysFunction = reinterpret_cast<SysFunction*>(node->nod_arg[e_sysfun_function]);
-			return sysFunction->evlFunc(tdbb, sysFunction, node->nod_arg[e_sysfun_args], impure);
-		}
-
 	case nod_literal:
 		return &((Literal*) node)->lit_desc;
 

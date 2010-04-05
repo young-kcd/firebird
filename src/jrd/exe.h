@@ -327,12 +327,6 @@ const int e_prc_view		= 4;
 const int e_prc_context		= 5;
 const int e_prc_length		= 6;
 
-// Function expression
-
-const int e_fun_args		= 0;
-const int e_fun_function	= 1;
-const int e_fun_length		= 2;
-
 // Generate id
 
 const int e_gen_value		= 0;
@@ -446,12 +440,6 @@ const int e_init_var_length		= 3;
 // nod_domain_validation
 const int e_domval_desc			= 0;
 const int e_domval_length		= sizeof (DSC) / sizeof(::Jrd::jrd_nod*);	// Room for descriptor
-
-// System function expression
-const int e_sysfun_args		= 0;
-const int e_sysfun_function	= 1;
-const int e_sysfun_count	= 1;
-const int e_sysfun_length	= 2;
 
 // nod_exec_stmt
 const int e_exec_stmt_stmt_sql		= 0;

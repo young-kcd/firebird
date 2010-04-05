@@ -27,6 +27,8 @@
 #include "../jrd/blr.h"
 #include "../dsql/Nodes.h"
 
+class SysFunction;
+
 namespace Jrd {
 
 
@@ -125,6 +127,73 @@ public:
 	jrd_nod* expr;
 	jrd_nod* pattern;
 	jrd_nod* escape;
+};
+
+
+class SysFuncCallNode : public TypedNode<ExprNode, ExprNode::TYPE_SYSFUNC_CALL>
+{
+public:
+	explicit SysFuncCallNode(MemoryPool& pool, const Firebird::MetaName& aName,
+		dsql_nod* aArgs = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual bool isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const;
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual void genBlr();
+	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+protected:
+	virtual ExprNode* internalDsqlPass();
+
+public:
+	Firebird::MetaName name;
+	dsql_nod* dsqlArgs;
+	bool dsqlSpecialSyntax;
+	jrd_nod* args;
+	const SysFunction* function;
+};
+
+
+class UdfCallNode : public TypedNode<ExprNode, ExprNode::TYPE_UDF_CALL>
+{
+public:
+	explicit UdfCallNode(MemoryPool& pool, const Firebird::QualifiedName& aName,
+		dsql_nod* aArgs = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual bool isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const;
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual void genBlr();
+	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+protected:
+	virtual ExprNode* internalDsqlPass();
+
+public:
+	Firebird::QualifiedName name;
+	dsql_nod* dsqlArgs;
+	jrd_nod* args;
+	/*const*/ Function* function;
+
+private:
+	dsql_udf* dsqlFunction;
 };
 
 

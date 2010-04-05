@@ -411,6 +411,28 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 			switch (exprNode1->type)
 			{
+				case ExprNode::TYPE_SYSFUNC_CALL:
+				case ExprNode::TYPE_UDF_CALL:
+					switch (exprNode1->type)
+					{
+						case ExprNode::TYPE_SYSFUNC_CALL:
+							if (!exprNode1->as<SysFuncCallNode>()->function ||
+								exprNode1->as<SysFuncCallNode>()->function != exprNode2->as<SysFuncCallNode>()->function)
+							{
+								return false;
+							}
+							break;
+
+						case ExprNode::TYPE_UDF_CALL:
+							if (!exprNode1->as<UdfCallNode>()->function ||
+								exprNode1->as<UdfCallNode>()->function != exprNode2->as<UdfCallNode>()->function)
+							{
+								return false;
+							}
+							break;
+					}
+					// fall into
+
 				case ExprNode::TYPE_CONCATENATE:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
 					for (jrd_nod*** i = children1.begin(), ***j = children2.begin();
@@ -476,26 +498,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 				{
 					return true;
 				}
-			}
-			break;
-
-		case nod_function:
-			if (node1->nod_arg[e_fun_function] &&
-				(node1->nod_arg[e_fun_function] == node2->nod_arg[e_fun_function]) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_fun_args],
-									  node2->nod_arg[e_fun_args], stream))
-			{
-				return true;
-			}
-			break;
-
-		case nod_sys_function:
-			if (node1->nod_arg[e_sysfun_function] &&
-				(node1->nod_arg[e_sysfun_function] == node2->nod_arg[e_sysfun_function]) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_sysfun_args],
-									  node2->nod_arg[e_sysfun_args], stream))
-			{
-				return true;
 			}
 			break;
 

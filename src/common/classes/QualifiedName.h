@@ -47,6 +47,11 @@ public:
 	{
 	}
 
+	explicit QualifiedName(const MetaName& aIdentifier)
+		: identifier(aIdentifier)
+	{
+	}
+
 	explicit QualifiedName(MemoryPool& p)
 		: identifier(p),
 		  package(p)

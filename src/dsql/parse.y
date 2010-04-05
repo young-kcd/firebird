@@ -624,6 +624,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	TEXT* textPtr;
 	Jrd::ExternalClause* externalClause;
 	Firebird::Array<Jrd::ParameterClause>* parametersClause;
+	Jrd::ExprNode* exprNode;
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
 	Jrd::CreateAlterFunctionNode* createAlterFunctionNode;
@@ -635,6 +636,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
 	Jrd::ExecBlockNode* execBlockNode;
 	Jrd::AggNode* aggNode;
+	Jrd::SysFuncCallNode* sysFuncCallNode;
 }
 
 %type <legacyNode> access_mode access_type alias_list
@@ -776,7 +778,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> symbol_label_name symbol_procedure_name symbol_role_name symbol_savepoint_name
 %type <legacyNode> symbol_table_alias_name symbol_table_name symbol_trigger_name symbol_user_name
 %type <legacyNode> symbol_variable_name symbol_view_name system_function_expression
-%type <legacyNode> system_function_special_syntax system_function_std_syntax
+%type <legacyNode> system_function_std_syntax
 %type <legacyStr>  sql_string
 %type <int32Val>   signed_long_integer signed_short_integer
 
@@ -832,6 +834,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <packageItem> package_item package_body_item
 
 %type <aggNode> aggregate_function aggregate_window_function window_function
+
+%type <sysFuncCallNode> system_function_special_syntax
 
 %%
 
@@ -5118,9 +5122,10 @@ array_element   : column_name '[' value_list ']'
 		;
 
 value_list_opt
-	:	value_list
-	|	// nothing
-		{ $$ = NULL; }
+	:
+		{ $$ = make_node(nod_list, 0, NULL); }
+	| value_list
+		{ $$ = make_list($1); }
 	;
 
 value_list	: value
@@ -5428,8 +5433,9 @@ octet_length_expression	: OCTET_LENGTH '(' value ')'
 
 system_function_expression
 	: system_function_std_syntax '(' value_list_opt ')'
-		{ $$ = make_node(nod_sys_function, e_sysfunc_count, $1, make_list($3)); }
+		{ $$ = makeClassNode(FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1), $3)); }
 	| system_function_special_syntax
+		{ $$ = makeClassNode($1); }
 	;
 
 system_function_std_syntax
@@ -5489,41 +5495,48 @@ system_function_std_syntax
 system_function_special_syntax
 	: DATEADD '(' value timestamp_part TO value ')'
 		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $4, $6));
+			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+				make_node(nod_list, 3, $3, $4, $6));
+			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEADD '(' timestamp_part ',' value ',' value ')'
 		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $5, $3, $7));
+			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+				make_node(nod_list, 3, $5, $3, $7));
+			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEDIFF '(' timestamp_part FROM value TO value ')'
 		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $5, $7));
+			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+				make_node(nod_list, 3, $3, $5, $7));
+			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEDIFF '(' timestamp_part ',' value ',' value ')'
 		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $5, $7));
+			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+				make_node(nod_list, 3, $3, $5, $7));
+			$$->dsqlSpecialSyntax = true;
 		}
 	| OVERLAY '(' value PLACING value FROM value FOR value ')'
 		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 4, $3, $5, $7, $9));
+			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+				make_node(nod_list, 4, $3, $5, $7, $9));
+			$$->dsqlSpecialSyntax = true;
 		}
 	| OVERLAY '(' value PLACING value FROM value ')'
 		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 3, $3, $5, $7));
+			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+				make_node(nod_list, 3, $3, $5, $7));
+			$$->dsqlSpecialSyntax = true;
 		}
 	| POSITION '(' value KW_IN value ')'
 		{
-			$$ = make_flag_node(nod_sys_function, NOD_SPECIAL_SYNTAX, e_sysfunc_count,
-				$1, make_node(nod_list, 2, $3, $5));
+			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+				make_node(nod_list, 2, $3, $5));
+			$$->dsqlSpecialSyntax = true;
 		}
 	| POSITION '(' value_list_opt ')'
-		{ $$ = make_node(nod_sys_function, e_sysfunc_count, $1, make_list($3)); }
+		{ $$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1), $3); }
 	;
 
 string_value_function	:  substring_function
@@ -5575,13 +5588,25 @@ trim_specification	: BOTH
 
 udf
 	: symbol_UDF_call_name '(' value_list ')'
-		{ $$ = make_node (nod_udf, 3, $1, NULL, $3); }
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) UdfCallNode(
+				getPool(), QualifiedName(toName($1), ""), make_list($3)));
+		}
 	| symbol_UDF_call_name '(' ')'
-		{ $$ = make_node (nod_udf, 2, $1, NULL); }
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) UdfCallNode(
+				getPool(), QualifiedName(toName($1), ""), make_node(nod_list, 0)));
+		}
 	| symbol_package_name '.' symbol_UDF_name '(' value_list ')'
-		{ $$ = make_node (nod_udf, 3, $3, $1, $5); }
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) UdfCallNode(
+				getPool(), QualifiedName(toName($3), toName($1)), make_list($5)));
+		}
 	| symbol_package_name '.' symbol_UDF_name '(' ')'
-		{ $$ = make_node (nod_udf, 2, $3, $1); }
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) UdfCallNode(
+				getPool(), QualifiedName(toName($3), toName($1)), make_node(nod_list, 0)));
+		}
 	;
 
 cast_specification	: CAST '(' value AS data_type_descriptor ')'

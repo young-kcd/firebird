@@ -167,7 +167,6 @@ enum nod_t
 	nod_substr,
 	nod_null,
 	nod_dbkey,
-	nod_udf,
 	nod_cast,
 	nod_upcase,
 	nod_lowcase,
@@ -286,7 +285,6 @@ enum nod_t
 	nod_merge_update,
 	nod_merge_delete,
 	nod_merge_insert,
-	nod_sys_function,
 	nod_similar,
 	nod_mod_role,
 	nod_add_user,
@@ -855,10 +853,6 @@ enum node_args {
 	e_ret_target,
 	e_ret_count,
 
-	e_sysfunc_name = 0,				// nod_sys_function
-	e_sysfunc_args,
-	e_sysfunc_count,
-
 	e_similar_value = 0,
 	e_similar_pattern,
 	e_similar_escape,
@@ -983,8 +977,6 @@ enum nod_flags_vals {
 	NOD_PERMANENT_TABLE			= 1, // nod_def_relation
 	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
 	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3,
-
-	NOD_SPECIAL_SYNTAX		= 1,	// nod_sys_function
 
 	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
 	NOD_TRAN_COMMON = 2,

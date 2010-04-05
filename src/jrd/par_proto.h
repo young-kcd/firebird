@@ -46,6 +46,8 @@ const int ACCESS_TYPE	= 6;
 
 struct dsc;
 
+Jrd::jrd_nod*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, UCHAR, USHORT);
+Jrd::jrd_nod*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG blr_length,
 						Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::jrd_req**, const bool,
 						USHORT);
@@ -69,5 +71,6 @@ typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool,
 Jrd::jrd_nod* PAR_parse_node(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, USHORT expected);
 void PAR_register(UCHAR blr, NodeParseFunc parseFunc);
 void PAR_syntax_error(Jrd::CompilerScratch* csb, const TEXT* string);
+void PAR_warning(const Firebird::Arg::StatusVector& v);
 
 #endif // JRD_PAR_PROTO_H

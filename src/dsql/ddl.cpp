@@ -799,39 +799,6 @@ bool DDL_is_array_or_blob(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 	case nod_alias:
 		return DDL_is_array_or_blob(dsqlScratch, node->nod_arg[e_alias_value]);
 
-	case nod_udf:
-		{
-			const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
-			if (userFunc->udf_dtype == dtype_blob || userFunc->udf_dtype == dtype_array)
-				return true;
-		}
-		// parameters to UDF don't need checking, a blob or array can be passed
-		return false;
-
-	case nod_sys_function:
-		{
-			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
-			dsql_nod* nodeArgs = node->nod_arg[e_sysfunc_args];
-			Array<const dsc*> args;
-
-			if (nodeArgs)
-			{
-				fb_assert(nodeArgs->nod_type == nod_list);
-
-				for (dsql_nod** p = nodeArgs->nod_arg;
-					p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
-				{
-					MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
-					args.add(&(*p)->nod_desc);
-				}
-			}
-
-			dsc desc;
-			DSqlDataTypeUtil(dsqlScratch).makeSysFunction(&desc, name->str_data, args.getCount(), args.begin());
-
-			return DTYPE_IS_BLOB_OR_QUAD(desc.dsc_dtype);
-		}
-
 	case nod_extract:
 	case nod_list:
 		{

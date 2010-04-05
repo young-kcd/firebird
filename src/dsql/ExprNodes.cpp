@@ -24,6 +24,8 @@
 #include "../dsql/node.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/Function.h"
+#include "../jrd/SysFunction.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -35,6 +37,7 @@
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
 #include "../dsql/make_proto.h"
+#include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/DataTypeUtil.h"
@@ -851,6 +854,462 @@ ExprNode* SubstringSimilarNode::internalDsqlPass()
 
 	// X SIMILAR Y ESCAPE ? case.
 	PASS1_set_parameter_type(dsqlScratch, node->dsqlEscape, node->dsqlPattern, true);
+
+	return node;
+}
+
+
+//--------------------
+
+
+static RegisterNode<SysFuncCallNode> regSysFuncCallNode(blr_sys_function);
+
+SysFuncCallNode::SysFuncCallNode(MemoryPool& pool, const MetaName& aName, dsql_nod* aArgs)
+	: TypedNode<ExprNode, ExprNode::TYPE_SYSFUNC_CALL>(pool),
+	  name(pool, aName),
+	  dsqlArgs(aArgs),
+	  dsqlSpecialSyntax(false),
+	  args(NULL),
+	  function(NULL)
+{
+	addChildNode(dsqlArgs, args);
+}
+
+DmlNode* SysFuncCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	UCHAR /*blrOp*/)
+{
+	MetaName name;
+	const USHORT count = PAR_name(csb, name);
+
+	SysFuncCallNode* node = FB_NEW(pool) SysFuncCallNode(pool, name);
+	node->function = SysFunction::lookup(name);
+
+	if (!node->function)
+	{
+		csb->csb_blr_reader.seekBackward(count);
+		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name));
+	}
+
+	node->args = PAR_args(tdbb, csb, VALUE);
+
+	return node;
+}
+
+bool SysFuncCallNode::isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const
+{
+	Array<const dsc*> argsArray;
+
+	for (dsql_nod** p = dsqlArgs->nod_arg; p < dsqlArgs->nod_arg + dsqlArgs->nod_count; ++p)
+	{
+		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
+		argsArray.add(&(*p)->nod_desc);
+	}
+
+	dsc desc;
+	DSqlDataTypeUtil(dsqlScratch).makeSysFunction(&desc, name.c_str(),
+		argsArray.getCount(), argsArray.begin());
+
+	return desc.isBlob();
+}
+
+void SysFuncCallNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "SysFuncCallNode\n\tname: " + string(name.c_str());
+	ExprNode::print(text, nodes);
+}
+
+void SysFuncCallNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = name;
+}
+
+void SysFuncCallNode::genBlr()
+{
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	stuff(statement, blr_sys_function);
+	statement->append_meta_string(function->name.c_str());
+	stuff(statement, dsqlArgs->nod_count);
+
+	dsql_nod* const* ptr = dsqlArgs->nod_arg;
+	for (const dsql_nod* const* const end = ptr + dsqlArgs->nod_count; ptr < end; ptr++)
+		GEN_expr(dsqlScratch, *ptr);
+}
+
+void SysFuncCallNode::make(dsc* desc, dsql_nod* nullReplacement)
+{
+	Array<const dsc*> argsArray;
+
+	for (dsql_nod** p = dsqlArgs->nod_arg; p < dsqlArgs->nod_arg + dsqlArgs->nod_count; ++p)
+	{
+		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
+		argsArray.add(&(*p)->nod_desc);
+	}
+
+	DSqlDataTypeUtil(dsqlScratch).makeSysFunction(desc, name.c_str(),
+		argsArray.getCount(), argsArray.begin());
+}
+
+void SysFuncCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	fb_assert(args->nod_type == nod_list);
+
+	Array<const dsc*> argsArray;
+
+	for (jrd_nod** p = args->nod_arg; p < args->nod_arg + args->nod_count; ++p)
+	{
+		dsc* targetDesc = FB_NEW(*tdbb->getDefaultPool()) dsc();
+		argsArray.push(targetDesc);
+		CMP_get_desc(tdbb, csb, *p, targetDesc);
+
+		// dsc_address is verified in makeFunc to get literals. If the node is not a
+		// literal, set it to NULL, to prevent wrong interpretation of offsets as
+		// pointers - CORE-2612.
+		if ((*p)->nod_type != nod_literal)
+			targetDesc->dsc_address = NULL;
+	}
+
+	DataTypeUtil dataTypeUtil(tdbb);
+	function->makeFunc(&dataTypeUtil, function, desc, argsArray.getCount(), argsArray.begin());
+
+	for (const dsc** pArgs = argsArray.begin(); pArgs != argsArray.end(); ++pArgs)
+		delete *pArgs;
+}
+
+ExprNode* SysFuncCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	SysFuncCallNode* node = FB_NEW(*tdbb->getDefaultPool()) SysFuncCallNode(
+		*tdbb->getDefaultPool(), name);
+	node->args = copier.copy(tdbb, args);
+	node->function = function;
+	return node;
+}
+
+bool SysFuncCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const SysFuncCallNode* otherNode = other->as<SysFuncCallNode>();
+
+	return name == otherNode->name;
+}
+
+ExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	function->checkArgsMismatch(args->nod_count);
+
+	return this;
+}
+
+dsc* SysFuncCallNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
+	return function->evlFunc(tdbb, function, args, impure);
+}
+
+ExprNode* SysFuncCallNode::internalDsqlPass()
+{
+	QualifiedName qualifName(name);
+
+	if (!dsqlSpecialSyntax && METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, qualifName))
+	{
+		UdfCallNode* node = FB_NEW(getPool()) UdfCallNode(getPool(), qualifName, dsqlArgs);
+		return static_cast<ExprNode*>(node->dsqlPass(dsqlScratch));
+	}
+
+	SysFuncCallNode* node = FB_NEW(getPool()) SysFuncCallNode(getPool(), name,
+		PASS1_node(dsqlScratch, dsqlArgs));
+	node->dsqlScratch = dsqlScratch;
+	node->dsqlSpecialSyntax = dsqlSpecialSyntax;
+
+	node->function = SysFunction::lookup(name);
+
+	if (node->function && node->function->setParamsFunc)
+	{
+		Array<dsc*> argsArray;
+		dsql_nod* inArgs = node->dsqlArgs;
+
+		for (unsigned int i = 0; i < inArgs->nod_count; ++i)
+		{
+			dsql_nod* p = inArgs->nod_arg[i];
+			MAKE_desc(dsqlScratch, &p->nod_desc, p, p);
+			argsArray.add(&p->nod_desc);
+		}
+
+		DSqlDataTypeUtil dataTypeUtil(dsqlScratch);
+		node->function->setParamsFunc(&dataTypeUtil, node->function,
+			argsArray.getCount(), argsArray.begin());
+
+		for (unsigned int i = 0; i < inArgs->nod_count; ++i)
+		{
+			dsql_nod* p = inArgs->nod_arg[i];
+			PASS1_set_parameter_type(dsqlScratch, p, p, false);
+		}
+	}
+
+	return node;
+}
+
+
+//--------------------
+
+
+static RegisterNode<UdfCallNode> regUdfCallNode1(blr_function);
+static RegisterNode<UdfCallNode> regUdfCallNode2(blr_function2);
+
+UdfCallNode::UdfCallNode(MemoryPool& pool, const QualifiedName& aName, dsql_nod* aArgs)
+	: TypedNode<ExprNode, ExprNode::TYPE_UDF_CALL>(pool),
+	  name(pool, aName),
+	  dsqlArgs(aArgs),
+	  args(NULL),
+	  function(NULL),
+	  dsqlFunction(NULL)
+{
+	addChildNode(dsqlArgs, args);
+}
+
+DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	UCHAR blrOp)
+{
+	const UCHAR* savePos = csb->csb_blr_reader.getPos();
+
+	QualifiedName name;
+	USHORT count = 0;
+
+	if (blrOp == blr_function2)
+		count = PAR_name(csb, name.package);
+
+	count += PAR_name(csb, name.identifier);
+
+	UdfCallNode* node = FB_NEW(pool) UdfCallNode(pool, name);
+
+	if (blrOp == blr_function &&
+		(name.identifier == "RDB$GET_CONTEXT" || name.identifier == "RDB$SET_CONTEXT"))
+	{
+		csb->csb_blr_reader.setPos(savePos);
+		return SysFuncCallNode::parse(tdbb, pool, csb, blr_sys_function);
+	}
+
+	node->function = Function::lookup(tdbb, name, false);
+
+	if (node->function)
+	{
+		if (!node->function->isUndefined() && !node->function->fun_entrypoint &&
+			!node->function->fun_external && !node->function->getRequest())
+		{
+			if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+			{
+				PAR_warning(Arg::Warning(isc_funnotdef) << Arg::Str(name.toString()) <<
+							Arg::Warning(isc_modnotfound));
+			}
+			else
+			{
+				csb->csb_blr_reader.seekBackward(count);
+				PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()) <<
+						   Arg::Gds(isc_modnotfound));
+			}
+		}
+	}
+	else
+	{
+		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
+		{
+			csb->csb_blr_reader.seekBackward(count);
+			PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
+		}
+	}
+
+	node->args = PAR_args(tdbb, csb, VALUE);
+
+	// Check to see if the argument count matches.
+	if (node->args->nod_count < node->function->fun_inputs - node->function->fun_defaults ||
+		node->args->nod_count > node->function->fun_inputs)
+	{
+		PAR_error(csb, Arg::Gds(isc_funmismat) << Arg::Str(node->function->getName().toString()));
+	}
+
+    // CVC: I will track ufds only if a proc is not being dropped.
+    if (csb->csb_g_flags & csb_get_dependencies)
+    {
+        jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
+        dep_node->nod_type = nod_dependency;
+        dep_node->nod_arg [e_dep_object] = (jrd_nod*) node->function;
+        dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_udf;
+        csb->csb_dependencies.push(dep_node);
+    }
+
+	return node;
+}
+
+bool UdfCallNode::isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const
+{
+	// Parameters to UDF don't need checking, a blob or array can be passed.
+	return dsqlFunction->udf_dtype == dtype_blob || dsqlFunction->udf_dtype == dtype_array;
+}
+
+void UdfCallNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "UdfCallNode\n\tname: " + name.toString();
+	ExprNode::print(text, nodes);
+}
+
+void UdfCallNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = dsqlFunction->udf_name.identifier;
+}
+
+void UdfCallNode::genBlr()
+{
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+
+	if (dsqlFunction->udf_name.package.isEmpty())
+		stuff(statement, blr_function);
+	else
+	{
+		stuff(statement, blr_function2);
+		statement->append_meta_string(dsqlFunction->udf_name.package.c_str());
+	}
+
+	statement->append_meta_string(dsqlFunction->udf_name.identifier.c_str());
+	stuff(statement, dsqlArgs->nod_count);
+
+	dsql_nod* const* ptr = dsqlArgs->nod_arg;
+	for (const dsql_nod* const* const end = ptr + dsqlArgs->nod_count; ptr < end; ptr++)
+		GEN_expr(dsqlScratch, *ptr);
+}
+
+void UdfCallNode::make(dsc* desc, dsql_nod* nullReplacement)
+{
+	desc->dsc_dtype = static_cast<UCHAR>(dsqlFunction->udf_dtype);
+	desc->dsc_length = dsqlFunction->udf_length;
+	desc->dsc_scale = static_cast<SCHAR>(dsqlFunction->udf_scale);
+	// CVC: Setting flags to zero obviously impeded DSQL to acknowledge
+	// the fact that any UDF can return NULL simply returning a NULL
+	// pointer.
+	desc->setNullable(true);
+
+	if (desc->dsc_dtype <= dtype_any_text)
+		desc->dsc_ttype() = dsqlFunction->udf_character_set_id;
+	else
+		desc->dsc_ttype() = dsqlFunction->udf_sub_type;
+}
+
+void UdfCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	// Null value for the function indicates that the function was not
+	// looked up during parsing the BLR. This is true if the function
+	// referenced in the procedure BLR was dropped before dropping the
+	// procedure itself. Ignore the case because we are currently trying
+	// to drop the procedure.
+	// For normal requests, function would never be null. We would have
+	// created a valid block while parsing.
+	if (function)
+		*desc = function->fun_args[function->fun_return_arg].fun_parameter->prm_desc;
+	else
+		desc->clear();
+}
+
+ExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	UdfCallNode* node = FB_NEW(*tdbb->getDefaultPool()) UdfCallNode(*tdbb->getDefaultPool(), name);
+	node->args = copier.copy(tdbb, args);
+	node->function = function;
+	return node;
+}
+
+bool UdfCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const UdfCallNode* otherNode = other->as<UdfCallNode>();
+
+	return name == otherNode->name;
+}
+
+ExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
+	{
+		const TEXT* secName = function->getSecurityName().nullStr();
+
+		if (function->getName().package.isEmpty())
+		{
+			CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_function,
+				function->getName().identifier.c_str());
+		}
+		else
+		{
+			CMP_post_access(tdbb, csb, secName, 0, SCL_execute, SCL_object_package,
+				function->getName().package.c_str());
+		}
+
+		ExternalAccess temp(ExternalAccess::exa_function, function->getId());
+		size_t idx;
+		if (!csb->csb_external.find(temp, idx))
+			csb->csb_external.insert(idx, temp);
+	}
+
+	CMP_post_resource(&csb->csb_resources, function, Resource::rsc_function, function->getId());
+
+	return this;
+}
+
+ExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
+	return function->execute(tdbb, args, impure);
+}
+
+ExprNode* UdfCallNode::internalDsqlPass()
+{
+	UdfCallNode* node = FB_NEW(getPool()) UdfCallNode(getPool(), name,
+		PASS1_node(dsqlScratch, dsqlArgs));
+	node->dsqlScratch = dsqlScratch;
+	node->dsqlFunction = METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, name);
+
+	if (!node->dsqlFunction)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_function_err) <<
+				  Arg::Gds(isc_random) << Arg::Str(name.toString()));
+	}
+
+	dsql_nod** ptr = node->dsqlArgs->nod_arg;
+	for (const dsql_nod* const* const end = ptr + node->dsqlArgs->nod_count; ptr < end; ptr++)
+	{
+		unsigned pos = ptr - node->dsqlArgs->nod_arg;
+
+		if (pos < node->dsqlFunction->udf_arguments.getCount())
+		{
+			dsql_nod temp;
+			temp.nod_desc = node->dsqlFunction->udf_arguments[pos];
+			PASS1_set_parameter_type(dsqlScratch, *ptr, &temp, false);
+		}
+		else
+		{
+			// We should complain here in the future! The parameter is
+			// out of bounds or the function doesn't declare input params.
+		}
+	}
 
 	return node;
 }

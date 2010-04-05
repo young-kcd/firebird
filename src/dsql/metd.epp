@@ -863,7 +863,7 @@ bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
 
 
 dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
-	const dsql_str* name, const dsql_str* package)
+	const QualifiedName& name)
 {
 /**************************************
  *
@@ -881,8 +881,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 	validateTransaction(transaction);
 
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	QualifiedName metaName(MetaName(name->str_data, name->str_length),
-		(package ? MetaName(package->str_data, package->str_length) : NULL));
+	QualifiedName metaName(name);
 
 	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.package.isEmpty();
 	if (maybeUnqualified)
@@ -915,7 +914,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$FUNCTIONS WITH
-			X.RDB$FUNCTION_NAME EQ name->str_data AND
+			X.RDB$FUNCTION_NAME EQ metaName.identifier.c_str() AND
 			X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 
 			if (!DSQL_REQUEST(irq_function))
@@ -948,7 +947,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
-		X.RDB$FUNCTION_NAME EQ name->str_data AND
+		X.RDB$FUNCTION_NAME EQ metaName.identifier.c_str() AND
 		X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 		SORTED BY X.RDB$ARGUMENT_POSITION
 

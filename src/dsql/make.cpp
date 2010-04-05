@@ -1121,50 +1121,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 		return;
 
-	case nod_udf:
-		{
-			const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
-			desc->dsc_dtype = static_cast<UCHAR>(userFunc->udf_dtype);
-			desc->dsc_length = userFunc->udf_length;
-			desc->dsc_scale = static_cast<SCHAR>(userFunc->udf_scale);
-			// CVC: Setting flags to zero obviously impeded DSQL to acknowledge
-			// the fact that any UDF can return NULL simply returning a NULL
-			// pointer.
-			desc->dsc_flags = DSC_nullable;
-
-			if (desc->dsc_dtype <= dtype_any_text) {
-				desc->dsc_ttype() = userFunc->udf_character_set_id;
-			}
-			else {
-				desc->dsc_ttype() = userFunc->udf_sub_type;
-			}
-			return;
-		}
-
-	case nod_sys_function:
-		{
-			dsql_nod* nodeArgs = node->nod_arg[e_sysfunc_args];
-			Firebird::Array<const dsc*> args;
-
-			if (nodeArgs)
-			{
-				fb_assert(nodeArgs->nod_type == nod_list);
-
-				for (dsql_nod** p = nodeArgs->nod_arg;
-					p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
-				{
-					MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
-					args.add(&(*p)->nod_desc);
-				}
-			}
-
-			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
-			DSqlDataTypeUtil(dsqlScratch).makeSysFunction(desc, name->str_data,
-				args.getCount(), args.begin());
-
-			return;
-		}
-
 	case nod_gen_id:
 		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_long;
@@ -1942,15 +1898,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				name_alias = variable->var_field->fld_name.c_str();
 			break;
 		}
-	case nod_udf:
-		{
-			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
-			name_alias = userFunc->udf_name.identifier.c_str();
-			break;
-		}
-	case nod_sys_function:
-		name_alias = ((dsql_str*) item->nod_arg[e_sysfunc_name])->str_data;
-		break;
 	case nod_gen_id:
 	case nod_gen_id2:
 		name_alias	= "GEN_ID";

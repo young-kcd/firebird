@@ -229,9 +229,6 @@ static dsql_nod* pass1_searched_case(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_simple_case(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_sort(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
-static dsql_nod* pass1_sys_function(DsqlCompilerScratch*, dsql_nod*);
-static dsql_nod* pass1_udf(DsqlCompilerScratch*, dsql_nod*);
-static void pass1_udf_args(DsqlCompilerScratch*, dsql_nod*, dsql_udf*, USHORT&, DsqlNodStack&);
 static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT, bool in_select_list = false);
 static dsql_nod* pass1_update(DsqlCompilerScratch*, dsql_nod*, bool);
@@ -1507,12 +1504,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		} // end scope
 
 		return node;
-
-	case nod_udf:
-		return pass1_udf(dsqlScratch, input);
-
-	case nod_sys_function:
-		return pass1_sys_function(dsqlScratch, input);
 
 	case nod_eql:
 	case nod_neq:
@@ -3131,7 +3122,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 
 	case nod_gen_id:
 	case nod_gen_id2:
-	case nod_sys_function:
 	case nod_cast:
 		if (node1->nod_arg[0] != node2->nod_arg[0]) {
 			return false;
@@ -3139,16 +3129,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 
 		if (node1->nod_count == 2) {
 			return PASS1_node_match(node1->nod_arg[1], node2->nod_arg[1], ignore_map_cast);
-		}
-		return true;
-
-	case nod_udf:
-		if (node1->nod_arg[0] != node2->nod_arg[0]) {
-			return false;
-		}
-
-		if (node1->nod_count == 3) {
-			return PASS1_node_match(node1->nod_arg[2], node2->nod_arg[2], ignore_map_cast);
 		}
 		return true;
 
@@ -7914,182 +7894,6 @@ static dsql_nod* pass1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, 
 
 /**
 
- 	pass1_sys_function
-
-    @brief	Handle a reference to a system defined function.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_sys_function(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	dsql_nod* node;
-
-	// Don't look for UDF if the system function has a special syntax
-	if (!(input->nod_flags & NOD_SPECIAL_SYNTAX))
-	{
-		const dsql_str* name = (dsql_str*) input->nod_arg[e_sysfunc_name];
-		dsql_udf* userFunc = METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, name, NULL);
-
-		if (userFunc)
-		{
-			node = MAKE_node(nod_udf, 3);
-			node->nod_arg[0] = (dsql_nod*) name;
-
-			const MetaName& package = userFunc->udf_name.package;
-			if (package.isEmpty())
-				node->nod_arg[1] = NULL;
-			else
-				node->nod_arg[1] = (dsql_nod*) MAKE_string(package.c_str(), package.length());
-
-			node->nod_arg[2] = input->nod_arg[e_sysfunc_args];
-
-			return pass1_udf(dsqlScratch, node);
-		}
-	}
-
-	node = MAKE_node(input->nod_type, e_sysfunc_count);
-	node->nod_arg[e_sysfunc_name] = input->nod_arg[e_sysfunc_name];
-	node->nod_arg[e_sysfunc_args] = PASS1_node(dsqlScratch, input->nod_arg[e_sysfunc_args]);
-
-	if (node->nod_arg[e_sysfunc_args])
-	{
-		const SysFunction* const sf =
-			SysFunction::lookup(((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
-
-		if (sf && sf->setParamsFunc)
-		{
-			Firebird::Array<dsc*> args;
-
-			dsql_nod* in_args = node->nod_arg[e_sysfunc_args];
-			fb_assert(in_args->nod_type == nod_list);
-
-			for (unsigned int i = 0; i < in_args->nod_count; ++i)
-			{
-				dsql_nod* p = in_args->nod_arg[i];
-				MAKE_desc(dsqlScratch, &p->nod_desc, p, p);
-				args.add(&p->nod_desc);
-			}
-
-			DSqlDataTypeUtil dataTypeUtil(dsqlScratch);
-			sf->setParamsFunc(&dataTypeUtil, sf, args.getCount(), args.begin());
-
-			for (unsigned int j = 0; j < in_args->nod_count; ++j)
-			{
-				dsql_nod* p = in_args->nod_arg[j];
-				PASS1_set_parameter_type(dsqlScratch, p, p, false);
-			}
-		}
-	}
-
-	return node;
-}
-
-
-/**
-
- 	pass1_udf
-
-    @brief	Handle a reference to a user defined function.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_udf( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	const dsql_str* name = (dsql_str*) input->nod_arg[0];
-	DEV_BLKCHK(name, dsql_type_str);
-	const dsql_str* package = (dsql_str*) input->nod_arg[1];
-	DEV_BLKCHK(package, dsql_type_str);
-
-	dsql_udf* userFunc = METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, name, package);
-	if (!userFunc)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_function_err) <<
-				  Arg::Gds(isc_random) <<
-				  Arg::Str(QualifiedName(name->str_data,
-				  						 package ? package->str_data : NULL).toString()));
-	}
-
-	dsql_nod* node = MAKE_node(nod_udf, input->nod_count);
-	node->nod_arg[0] = (dsql_nod*) userFunc;
-	if (input->nod_count == 3)
-	{
-		DsqlNodStack stack;
-		USHORT arg_pos = 0;
-		pass1_udf_args(dsqlScratch, input->nod_arg[2], userFunc, arg_pos, stack);
-		node->nod_arg[2] = MAKE_list(stack);
-	}
-
-	return node;
-}
-
-
-/**
-
- 	pass1_udf_args
-
-    @brief	Handle references to function arguments.
-
-
-    @param dsqlScratch
-    @param input
-    @param udf
-    @param arg_pos
-    @param stack
-
- **/
-static void pass1_udf_args(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_udf* userFunc,
-	USHORT& arg_pos, DsqlNodStack& stack)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(userFunc, dsql_type_udf);
-
-	if (!input)
-		return;
-
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	if (input->nod_type != nod_list)
-	{
-		dsql_nod* temp = PASS1_node(dsqlScratch, input);
-		if (arg_pos < userFunc->udf_arguments.getCount())
-		{
-			dsql_nod temp2;
-			temp2.nod_desc = userFunc->udf_arguments[arg_pos];
-			PASS1_set_parameter_type(dsqlScratch, temp, &temp2, false);
-		}
-		else
-		{
-			// We should complain here in the future! The parameter is
-			// out of bounds or the function doesn't declare input params.
-		}
-		stack.push(temp);
-		arg_pos++;
-		return;
-	}
-
-	dsql_nod** ptr = input->nod_arg;
-	for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end; ptr++)
-	{
-		pass1_udf_args(dsqlScratch, *ptr, userFunc, arg_pos, stack);
-	}
-}
-
-
-/**
-
  	pass1_union
 
     @brief	Handle a UNION of substreams, generating
@@ -10728,32 +10532,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		}
 		return;
 
-	case nod_udf:
-		trace_line ("%sfunction: \"", buffer);
-		// nmcc: how are we supposed to tell which type of nod_udf this is ??
-		// CVC: The answer is that nod_arg[0] can be either the udf name or the
-		// pointer to udf struct returned by METD_get_function, so we should resort
-		// to the block type. The replacement happens in pass1_udf().
-		switch (node->nod_arg[e_udf_name]->getType())
-		{
-		case dsql_type_udf:
-			trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name.toString().c_str());
-			break;
-		case dsql_type_str:
-			string = (dsql_str*) node->nod_arg[e_udf_name];
-			trace_line ("%s\"\n", string->str_data);
-			break;
-		default:
-			trace_line ("%s\"\n", "<ERROR>");
-			break;
-		}
-		ptr++;
-
-		if (node->nod_count == 2) {
-			DSQL_pretty (*ptr, column + 1);
-		}
-		return;
-
 	case nod_cursor_open:
 		verb = "cursor_open";
 		break;
@@ -10851,16 +10629,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_merge_insert:
 		verb = "merge_insert";
 		break;
-
-	case nod_sys_function:
-		trace_line("%ssystem function: \"", buffer);
-		string = (dsql_str*) node->nod_arg[e_sysfunc_name];
-		trace_line("%s\"\n", string->str_data);
-		ptr++;
-
-		if (node->nod_count == 2)
-			DSQL_pretty(*ptr, column + 1);
-		return;
 
 	case nod_mod_role:
 		verb = "mod_role";

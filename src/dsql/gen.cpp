@@ -83,9 +83,7 @@ static void gen_select(DsqlCompilerScratch*, dsql_nod*);
 static void gen_simple_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_sort(DsqlCompilerScratch*, dsql_nod*);
 static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_sys_function(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_table_lock(DsqlCompilerScratch*, const dsql_nod*, USHORT);
-static void gen_udf(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
 static void stuff_context(DsqlCompilerScratch*, const dsql_ctx*);
 static void stuff_meta_string(DsqlCompiledStatement*, const char*);
@@ -284,14 +282,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_current_role:
 		stuff(dsqlScratch->getStatement(), blr_current_role);
-		return;
-
-	case nod_udf:
-		gen_udf(dsqlScratch, node);
-		return;
-
-	case nod_sys_function:
-		gen_sys_function(dsqlScratch, node);
 		return;
 
 	case nod_variable:
@@ -2811,37 +2801,6 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 
 /**
 
- 	gen_sys_function
-
-    @brief	Generate a system defined function.
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_sys_function(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	stuff(dsqlScratch->getStatement(), blr_sys_function);
-	stuff_cstring(dsqlScratch->getStatement(), ((dsql_str*) node->nod_arg[e_sysfunc_name])->str_data);
-
-	const dsql_nod* list;
-	if ((node->nod_count == e_sysfunc_args + 1) && (list = node->nod_arg[e_sysfunc_args]))
-	{
-		stuff(dsqlScratch->getStatement(), list->nod_count);
-		dsql_nod* const* ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-		{
-			GEN_expr(dsqlScratch, *ptr);
-		}
-	}
-	else
-		stuff(dsqlScratch->getStatement(), 0);
-}
-
-
-/**
-
  	gen_table_lock
 
     @brief	Generate tpb for table lock.
@@ -2885,46 +2844,6 @@ static void gen_table_lock( DsqlCompilerScratch* dsqlScratch, const dsql_nod* tb
 
 		stuff(dsqlScratch->getStatement(), lock_level);
 	}
-}
-
-
-/**
-
- 	gen_udf
-
-    @brief	Generate a user defined function.
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_udf( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	const dsql_udf* userFunc = (dsql_udf*) node->nod_arg[0];
-
-	if (userFunc->udf_name.package.isEmpty())
-		stuff(dsqlScratch->getStatement(), blr_function);
-	else
-	{
-		stuff(dsqlScratch->getStatement(), blr_function2);
-		stuff_meta_string(dsqlScratch->getStatement(), userFunc->udf_name.package.c_str());
-	}
-
-	stuff_meta_string(dsqlScratch->getStatement(), userFunc->udf_name.identifier.c_str());
-
-	const dsql_nod* list;
-	if ((node->nod_count == 3) && (list = node->nod_arg[2]))
-	{
-		stuff(dsqlScratch->getStatement(), list->nod_count);
-		dsql_nod* const* ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-		{
-			GEN_expr(dsqlScratch, *ptr);
-		}
-	}
-	else
-		stuff(dsqlScratch->getStatement(), 0);
 }
 
 
@@ -3024,7 +2943,7 @@ static void stuff_context(DsqlCompilerScratch* dsqlScratch, const dsql_ctx* cont
     @param string
 
  **/
-static void stuff_meta_string(DsqlCompiledStatement* dsqlScratch, const char* string)
+static void stuff_meta_string(DsqlCompiledStatement* statement, const char* string)
 {
-	dsqlScratch->append_meta_string(string);
+	statement->append_meta_string(string);
 }

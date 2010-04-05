@@ -481,14 +481,8 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		case nod_gen_id:
 		case nod_gen_id2:
 		case nod_cast:
-		case nod_sys_function:
 			if (node->nod_count == 2)
 				ret |= visit(&node->nod_arg[1]);
-			break;
-
-		case nod_udf:
-			if (node->nod_count == 3)
-				ret |= visit(&node->nod_arg[2]);
 			break;
 
 		case nod_or:

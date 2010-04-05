@@ -1949,64 +1949,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 		return;
 
-	case nod_function:
-		{
-			const Function* const function = (Function*) node->nod_arg[e_fun_function];
-			// Null value for the function indicates that the function was not
-			// looked up during parsing the BLR. This is true if the function
-			// referenced in the procedure BLR was dropped before dropping the
-			// procedure itself. Ignore the case because we are currently trying
-			// to drop the procedure.
-			// For normal requests, function would never be null. We would have
-			// created a valid block while parsing in par_function/par.c.
-			if (function)
-			{
-				*desc = function->fun_args[function->fun_return_arg].fun_parameter->prm_desc;
-			}
-			else
-			{
-				/* Note that CMP_get_desc is always called with a pre-allocated DSC, i.e:
-					   DSC desc;
-					   CMP_get_desc (.... &desc);
-				   Hence the code:
-					   *desc = NULL;
-				   will not work. What I've done is memset the structure to zero. */
-				MOVE_CLEAR(desc, sizeof(DSC));
-			}
-			return;
-		}
-
-	case nod_sys_function:
-		{
-			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
-			fb_assert(nodeArgs->nod_type == nod_list);
-
-			Firebird::Array<dsc*> args;
-
-			for (jrd_nod** p = nodeArgs->nod_arg; p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
-			{
-				dsc* targetDesc = FB_NEW(*tdbb->getDefaultPool()) dsc();
-				args.push(targetDesc);
-				CMP_get_desc(tdbb, csb, *p, targetDesc);
-
-				// dsc_address is verified in makeFunc to get literals. If the node is not a
-				// literal, set it to NULL, to prevent wrong interpretation of offsets as
-				// pointers - CORE-2612.
-				if ((*p)->nod_type != nod_literal)
-					targetDesc->dsc_address = NULL;
-			}
-
-			DataTypeUtil dataTypeUtil(tdbb);
-			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
-
-			function->makeFunc(&dataTypeUtil, function,
-				desc, args.getCount(), const_cast<const dsc**>(args.begin()));
-
-			for (dsc** pArgs = args.begin(); pArgs != args.end(); ++pArgs)
-				delete *pArgs;
-		}
-		return;
-
 	case nod_variable:
 		{
 			const jrd_nod* value = node->nod_arg[e_var_variable];
@@ -2987,14 +2929,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		return node;
 	}
 
-	case nod_function:
-		node = PAR_make_node(tdbb, e_fun_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_fun_args] = copy(tdbb, input->nod_arg[e_fun_args]);
-		node->nod_arg[e_fun_function] = input->nod_arg[e_fun_function];
-		return (node);
-
 	case nod_current_time:
 	case nod_current_timestamp:
 		fb_assert(e_current_time_length == e_current_timestamp_length);
@@ -3307,14 +3241,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
 		node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
-		return node;
-
-	case nod_sys_function:
-		node = PAR_make_node(tdbb, e_sysfun_length);
-		node->nod_type = input->nod_type;
-		node->nod_count = e_sysfun_count;
-		node->nod_arg[e_sysfun_args] = copy(tdbb, input->nod_arg[e_sysfun_args]);
-		node->nod_arg[e_sysfun_function] = input->nod_arg[e_sysfun_function];
 		return node;
 
 	case nod_dcl_variable:
@@ -4138,38 +4064,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		post_procedure_access(tdbb, csb, procedure);
 		CMP_post_resource(&csb->csb_resources, procedure,
 						  Resource::rsc_procedure, procedure->getId());
-		break;
-
-	case nod_function:
-		{
-			Function* const function = (Function*) node->nod_arg[e_fun_function];
-
-			if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
-			{
-				const TEXT* sec_name = function->getSecurityName().nullStr();
-
-				if (function->getName().package.isEmpty())
-				{
-					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, SCL_object_function,
-									function->getName().identifier.c_str());
-				}
-				else
-				{
-					CMP_post_access(tdbb, csb, sec_name, 0, SCL_execute, SCL_object_package,
-									function->getName().package.c_str());
-				}
-
-				ExternalAccess temp(ExternalAccess::exa_function, function->getId());
-				size_t idx;
-				if (!csb->csb_external.find(temp, idx))
-				{
-					csb->csb_external.insert(idx, temp);
-				}
-			}
-
-			CMP_post_resource(&csb->csb_resources, function,
-							  Resource::rsc_function, function->getId());
-		}
 		break;
 
 	case nod_store:
@@ -5798,28 +5692,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_multiply2:
 	case nod_divide2:
 		{
-			dsc descriptor_a;
-			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(impure_value);
-		}
-		break;
-
-	case nod_function:
-		{
-			dsc descriptor_a;
-			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(impure_value);
-		}
-		break;
-
-	case nod_sys_function:
-		{
-			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
-			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
-			fb_assert(nodeArgs->nod_type == nod_list);
-
-			function->checkArgsMismatch(nodeArgs->nod_count);
-
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 			csb->csb_impure += sizeof(impure_value);

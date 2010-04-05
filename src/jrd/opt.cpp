@@ -147,7 +147,6 @@ bool JrdNodeVisitor::visitChildren(jrd_nod* node)
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
-		case nod_sys_function:
 		case nod_derived_expr:
 		{
 			jrd_nod* const* ptr = node->nod_arg;
@@ -239,9 +238,6 @@ bool StreamFinder::visit(jrd_nod* node)
 		case nod_rec_version:
 		case nod_dbkey:
 			return (USHORT)(IPTR) node->nod_arg[0] == stream;
-
-		case nod_function:
-			return visit(node->nod_arg[e_fun_args]);
 
 		case nod_procedure:
 			return visit(node->nod_arg[e_prc_inputs]);
@@ -366,10 +362,6 @@ bool StreamsCollector::visit(jrd_nod* node)
 				streams.add(n);
 			break;
 		}
-
-		case nod_function:
-			visit(node->nod_arg[e_fun_args]);
-			break;
 
 		case nod_procedure:
 			visit(node->nod_arg[e_prc_inputs]);

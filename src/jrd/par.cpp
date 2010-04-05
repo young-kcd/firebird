@@ -84,8 +84,6 @@ static NodeParseFunc blr_parsers[256] = {NULL};
 
 
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
-static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT, UCHAR, USHORT);
-static jrd_nod* par_args(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_cast(thread_db*, CompilerScratch*);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
 static SSHORT par_context(CompilerScratch*, SSHORT *);
@@ -93,7 +91,6 @@ static void par_dependency(thread_db*, CompilerScratch*, SSHORT, SSHORT, const F
 static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_function(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
@@ -107,9 +104,7 @@ static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool, bool);
 #ifdef NOT_USED_OR_REPLACED
 static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 #endif
-static jrd_nod* par_sys_function(thread_db*, CompilerScratch*);
 static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
-static void warning(const Arg::StatusVector& v);
 
 
 jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
@@ -825,7 +820,7 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
 
 
 // Parse a counted argument list, given the count.
-static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected, UCHAR count,
+jrd_nod* PAR_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected, UCHAR count,
 	USHORT allocCount)
 {
 	SET_TDBB(tdbb);
@@ -848,11 +843,11 @@ static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 
 // Parse a counted argument list.
-static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
+jrd_nod* PAR_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 {
 	SET_TDBB(tdbb);
 	UCHAR count = csb->csb_blr_reader.getByte();
-	return par_args(tdbb, csb, expected, count, count);
+	return PAR_args(tdbb, csb, expected, count, count);
 }
 
 
@@ -1311,8 +1306,8 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
  					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
-						warning(Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
-															   Arg::Str(relation->rel_name));
+						PAR_warning(Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
+																   Arg::Str(relation->rel_name));
 					}
 					else if (!(relation->rel_flags & REL_deleted))
 					{
@@ -1364,99 +1359,6 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			}
 		}
 	}
-
-	return node;
-}
-
-
-static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
-{
-/**************************************
- *
- *	p a r _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Parse a function reference.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	const UCHAR* savePos = csb->csb_blr_reader.getPos();
-
-	QualifiedName name;
-	USHORT count = 0;
-
-	if (blr_operator == blr_function2)
-		count = PAR_name(csb, name.package);
-
-	count += PAR_name(csb, name.identifier);
-
-	if (blr_operator == blr_function &&
-		(name.identifier == "RDB$GET_CONTEXT" || name.identifier == "RDB$SET_CONTEXT"))
-	{
-		csb->csb_blr_reader.setPos(savePos);
-		jrd_nod* node = par_sys_function(tdbb, csb);
-		node->nod_type = nod_sys_function;
-		return node;
-	}
-
-	Function* const function = Function::lookup(tdbb, name, false);
-
-	if (!function)
-	{
-		if (tdbb->tdbb_flags & TDBB_prc_being_dropped)
-		{
-			jrd_nod* anode = PAR_make_node(tdbb, e_fun_length);
-			anode->nod_count = 1;
-			anode->nod_arg[e_fun_function] = NULL;
-			anode->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
-			return anode;
-		}
-
-		csb->csb_blr_reader.seekBackward(count);
-		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
-	}
-
-	if (!function->isUndefined() && !function->fun_entrypoint &&
-		!function->fun_external && !function->getRequest())
-	{
-		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
-		{
-			warning(Arg::Warning(isc_funnotdef) << Arg::Str(name.toString()) <<
-					Arg::Warning(isc_modnotfound));
-		}
-		else
-		{
-			csb->csb_blr_reader.seekBackward(count);
-			PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()) <<
-					   Arg::Gds(isc_modnotfound));
-		}
-	}
-
-	jrd_nod* node = PAR_make_node(tdbb, e_fun_length);
-	node->nod_count = 1;
-	node->nod_type = nod_function;
-	node->nod_arg[e_fun_function] = (jrd_nod*) function;
-	node->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
-
-	// Check to see if the argument count matches
-	if (node->nod_arg[e_fun_args]->nod_count < function->fun_inputs - function->fun_defaults ||
-		node->nod_arg[e_fun_args]->nod_count > function->fun_inputs)
-	{
-		PAR_error(csb, Arg::Gds(isc_funmismat) << Arg::Str(function->getName().toString()));
-	}
-
-    // CVC: I will track ufds only if a proc is not being dropped.
-    if (csb->csb_g_flags & csb_get_dependencies)
-    {
-        jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-        dep_node->nod_type = nod_dependency;
-        dep_node->nod_arg [e_dep_object] = (jrd_nod*) function;
-        dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_udf;
-        csb->csb_dependencies.push(dep_node);
-    }
 
 	return node;
 }
@@ -1806,8 +1708,8 @@ static jrd_nod* par_partition_by(thread_db* tdbb, CompilerScratch* csb)
 		jrd_nod*& groupNode = list->nod_arg[e_part_group];
 		jrd_nod*& regroupNode = list->nod_arg[e_part_regroup];
 
-		groupNode = par_args(tdbb, csb, VALUE, count, count * 3);
-		regroupNode = par_args(tdbb, csb, VALUE, count, count);
+		groupNode = PAR_args(tdbb, csb, VALUE, count, count * 3);
+		regroupNode = PAR_args(tdbb, csb, VALUE, count, count);
 
 		// We have allocated groupNode with bigger length than expressions. This is to use in
 		// OPT_gen_sort. Now fill that info.
@@ -1928,8 +1830,8 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				{
 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
-						warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
-															   Arg::Str(relation->rel_name));
+						PAR_warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
+																   Arg::Str(relation->rel_name));
 					}
 					else
 					{
@@ -1996,8 +1898,8 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					{
 						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 						{
-							warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
-																   Arg::Str(relation->rel_name));
+							PAR_warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
+																	   Arg::Str(relation->rel_name));
 						}
 						else
 						{
@@ -2597,40 +2499,6 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 #endif
 
 
-static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ s y s _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Parse a system function reference.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	Firebird::MetaName name;
-	const USHORT count = PAR_name(csb, name);
-
-	const SysFunction* function = SysFunction::lookup(name);
-
-	if (!function)
-	{
-		csb->csb_blr_reader.seekBackward(count);
-		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name));
-	}
-
-	jrd_nod* node = PAR_make_node(tdbb, e_sysfun_length);
-	node->nod_count = count_table[blr_sys_function];
-	node->nod_arg[e_sysfun_args] = par_args(tdbb, csb, VALUE);
-	node->nod_arg[e_sysfun_function] = (jrd_nod*) function;
-
-	return node;
-}
-
-
 static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
 {
 /**************************************
@@ -3065,15 +2933,9 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		set_type = false;
 		break;
 
-	case blr_function:
-	case blr_function2:
-		node = par_function(tdbb, csb, blr_operator);
-		set_type = false;
-		break;
-
 	case blr_index:
 		node->nod_arg[0] = PAR_parse_node(tdbb, csb, sub_type);
-		node->nod_arg[1] = par_args(tdbb, csb, sub_type);
+		node->nod_arg[1] = PAR_args(tdbb, csb, sub_type);
 		break;
 
 	case blr_dcl_cursor:
@@ -3424,10 +3286,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		}
 		break;
 
-	case blr_sys_function:
-		node = par_sys_function(tdbb, csb);
-		break;
-
 	case blr_stmt_expr:
 		node->nod_arg[e_stmt_expr_stmt] = PAR_parse_node(tdbb, csb, STATEMENT);
 		node->nod_arg[e_stmt_expr_expr] = PAR_parse_node(tdbb, csb, VALUE);
@@ -3498,11 +3356,11 @@ void PAR_syntax_error(CompilerScratch* csb, const TEXT* string)
 }
 
 
-static void warning(const Arg::StatusVector& v)
+void PAR_warning(const Arg::StatusVector& v)
 {
 /**************************************
  *
- *	w a r n i n g
+ *	P A R _ w a r n i n g
  *
  **************************************
  *
