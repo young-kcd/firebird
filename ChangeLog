@@ -1,3 +1,10 @@
+2010-04-05 05:27  asfernandes
+
+	* firebird2/src/jrd/Optimizer.cpp (1.147):
+
+	Fix problem with ExprNodes in joins causing "no current record"
+	error
+
 2010-04-04 11:36  robocop
 
 	* firebird2/src/jrd/: Attachment.h (1.5), tra.cpp (1.220):
