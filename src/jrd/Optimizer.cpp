@@ -96,7 +96,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	switch (node->nod_type)
 	{
-	case nod_procedure:
+		case nod_procedure:
 		{
 			const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
 			if (inputs)
@@ -110,9 +110,10 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 					}
 				}
 			}
+			break;
 		}
-		break;
-	case nod_union:
+
+		case nod_union:
 		{
 			const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
 			const jrd_nod* const* ptr = clauses->nod_arg;
@@ -122,9 +123,24 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 					return false;
 				}
 			}
+			break;
 		}
-		break;
-	default:
+
+		case nod_class_exprnode_jrd:
+		{
+			const ExprNode* exprNode = reinterpret_cast<const ExprNode*>(node->nod_arg[0]);
+
+			for (const jrd_nod* const* const* i = exprNode->jrdChildNodes.begin();
+				 i != exprNode->jrdChildNodes.end(); ++i)
+			{
+				if (!OPT_computable(csb, **i, stream, idx_use, allowOnlyCurrentStream))
+					return false;
+			}
+
+			break;
+		}
+
+		default:
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
@@ -133,6 +149,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 					return false;
 				}
 			}
+			break;
 		}
 	}
 
@@ -1058,6 +1075,16 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 		for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
 		{
 			findDependentFromStreams(*ptr, streamList);
+		}
+	}
+	else if (node->nod_type == nod_class_exprnode_jrd)
+	{
+		const ExprNode* exprNode = reinterpret_cast<const ExprNode*>(node->nod_arg[0]);
+
+		for (const jrd_nod* const* const* i = exprNode->jrdChildNodes.begin();
+			 i != exprNode->jrdChildNodes.end(); ++i)
+		{
+			findDependentFromStreams(**i, streamList);
 		}
 	}
 	else
