@@ -900,25 +900,20 @@ void CMP_fini(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	// shutdown shared database locks
-	CMP_shutdown_database(tdbb);
+	CMP_shutdown_database(tdbb);	// Shutdown shared database locks.
 
-	// and release them
+	// And release the system requests.
 
 	for (jrd_req** itr = dbb->dbb_internal.begin(); itr < dbb->dbb_internal.end(); itr++)
 	{
 		if (*itr)
-		{
 			CMP_release(tdbb, *itr);
-		}
 	}
 
 	for (jrd_req** itr = dbb->dbb_dyn_req.begin(); itr < dbb->dbb_dyn_req.end(); itr++)
 	{
 		if (*itr)
-		{
 			CMP_release(tdbb, *itr);
-		}
 	}
 }
 
