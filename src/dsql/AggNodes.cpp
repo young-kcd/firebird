@@ -313,7 +313,7 @@ ExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	impure->vlux_count = 0;
 
 	if (distinct)
@@ -322,7 +322,7 @@ void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 		Database* database = request->req_attachment->att_database;
 
-		impure_agg_sort* asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
+		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
 		const sort_key_def* sortKey = asb->asb_key_desc;
 
 		// Get rid of the old sort areas if this request has been used already.
@@ -350,7 +350,7 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 			fb_assert(asb);
 
 			// "Put" the value to sort.
-			impure_agg_sort* asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
+			impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
 			UCHAR* data;
 			asbImpure->iasb_sort->put(tdbb, reinterpret_cast<ULONG**>(&data));
 
@@ -386,7 +386,7 @@ void AggNode::aggFinish(thread_db* tdbb, jrd_req* request) const
 {
 	if (asb)
 	{
-		impure_agg_sort* const asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
+		impure_agg_sort* const asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
 		delete asbImpure->iasb_sort;
 		asbImpure->iasb_sort = NULL;
 	}
@@ -394,7 +394,7 @@ void AggNode::aggFinish(thread_db* tdbb, jrd_req* request) const
 
 dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (impure->vlu_blob)
 	{
@@ -404,7 +404,7 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (distinct)
 	{
-		impure_agg_sort* asbImpure = (impure_agg_sort*) ((SCHAR*) request + asb->nod_impure);
+		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
 		dsc* desc = &asb->asb_desc;
 
 		// Sort the values already "put" to sort.
@@ -578,7 +578,7 @@ void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (dialect1)
 	{
@@ -595,7 +595,7 @@ void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 void AvgAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlux_count;
 
 	if (dialect1)
@@ -606,7 +606,7 @@ void AvgAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (!impure->vlux_count)
 		return NULL;
@@ -626,7 +626,7 @@ dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 		temp.makeDouble(&d);
 	}
 
-	impure_value_ex* impureTemp = (impure_value_ex*) ((SCHAR*) request + tempImpure);
+	impure_value_ex* impureTemp = request->getImpure<impure_value_ex>(tempImpure);
 	EVL_make_value(tdbb, &temp, impureTemp);
 
 	return &impureTemp->vlu_desc;
@@ -696,14 +696,14 @@ void ListAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 	// We don't know here what should be the sub-type and text-type.
 	// Defer blob creation for when first record is found.
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	impure->vlu_blob = NULL;
 	impure->vlu_desc.dsc_dtype = 0;
 }
 
 void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (!impure->vlu_blob)
 	{
@@ -740,7 +740,7 @@ void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (distinct)
 	{
@@ -819,19 +819,19 @@ void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	impure->make_long(0);
 }
 
 void CountAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* /*desc*/) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlu_misc.vlu_long;
 }
 
 dsc* CountAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (!impure->vlu_desc.dsc_dtype)
 		return NULL;
@@ -1054,7 +1054,7 @@ void SumAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (dialect1)
 		impure->make_long(0);
@@ -1068,7 +1068,7 @@ void SumAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 void SumAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlux_count;
 
 	if (dialect1)
@@ -1079,7 +1079,7 @@ void SumAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 dsc* SumAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (!impure->vlux_count)
 		return NULL;
@@ -1137,13 +1137,13 @@ void MaxMinAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	impure->vlu_desc.dsc_dtype = 0;
 }
 
 void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	++impure->vlux_count;
 	if (!impure->vlu_desc.dsc_dtype)
@@ -1160,7 +1160,7 @@ void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 dsc* MaxMinAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = (impure_value_ex*) ((SCHAR*) request + node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
 	if (!impure->vlux_count)
 		return NULL;

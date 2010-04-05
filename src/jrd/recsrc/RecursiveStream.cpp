@@ -68,7 +68,7 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapSt
 void RecursiveStream::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
 
@@ -99,8 +99,8 @@ void RecursiveStream::close(thread_db* tdbb)
 
 	invalidateRecords(request);
 
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-	Impure* const saveImpure = (Impure*) ((UCHAR*) request + m_saveOffset);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
+	Impure* const saveImpure = request->getImpure<Impure>(m_saveOffset);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -124,8 +124,8 @@ void RecursiveStream::close(thread_db* tdbb)
 bool RecursiveStream::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
-	Impure* const saveImpure = (Impure*) ((UCHAR*) request + m_saveOffset);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
+	Impure* const saveImpure = request->getImpure<Impure>(m_saveOffset);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{

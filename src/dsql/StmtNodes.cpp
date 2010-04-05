@@ -269,7 +269,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	Jrd::Attachment* attachment = request->req_attachment;
-	SLONG* savNumber = (SLONG*) ((char*) request + savNumberOffset);
+	SLONG* savNumber = request->getImpure<SLONG>(savNumberOffset);
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{

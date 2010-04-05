@@ -48,7 +48,7 @@ Cursor::Cursor(CompilerScratch* csb, RecordSource* rsb,
 void Cursor::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_active = true;
 	impure->irsb_state = BOS;
@@ -58,7 +58,7 @@ void Cursor::open(thread_db* tdbb)
 	{
 		for (const SLONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
 		{
-			impure_value* const invariant_impure = (impure_value*) ((SCHAR*) request + *iter);
+			impure_value* const invariant_impure = request->getImpure<impure_value>(*iter);
 			invariant_impure->vlu_flags = 0;
 		}
 	}
@@ -69,7 +69,7 @@ void Cursor::open(thread_db* tdbb)
 void Cursor::close(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_active)
 	{
@@ -86,7 +86,7 @@ bool Cursor::fetchNext(thread_db* tdbb)
 	}
 
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
 	{
@@ -149,7 +149,7 @@ bool Cursor::fetchPrior(thread_db* tdbb)
 	}
 
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
 	{
@@ -224,7 +224,7 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset)
 	}
 
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
 	{
@@ -269,7 +269,7 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
 	}
 
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
 	{

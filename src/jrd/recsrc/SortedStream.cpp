@@ -50,7 +50,7 @@ SortedStream::SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* ma
 void SortedStream::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
 
@@ -68,7 +68,7 @@ void SortedStream::close(thread_db* tdbb)
 
 	invalidateRecords(request);
 
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -84,7 +84,7 @@ void SortedStream::close(thread_db* tdbb)
 bool SortedStream::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{
@@ -295,7 +295,7 @@ Sort* SortedStream::init(thread_db* tdbb)
 UCHAR* SortedStream::getData(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	ULONG* data = NULL;
 	impure->irsb_sort->get(tdbb, &data);

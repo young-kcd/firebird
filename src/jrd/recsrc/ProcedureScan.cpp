@@ -48,7 +48,7 @@ ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name,
 void ProcedureScan::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
 
@@ -79,7 +79,7 @@ void ProcedureScan::open(thread_db* tdbb)
 		request->req_operation = saved_state;
 		const Format* const format = (Format*) m_message->nod_arg[e_msg_format];
 		iml = format->fmt_length;
-		im = (UCHAR*) request + m_message->nod_impure;
+		im = request->getImpure<UCHAR>(m_message->nod_impure);
 	}
 	else
 	{
@@ -122,7 +122,7 @@ void ProcedureScan::close(thread_db* tdbb)
 
 	invalidateRecords(request);
 
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -147,7 +147,7 @@ bool ProcedureScan::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{

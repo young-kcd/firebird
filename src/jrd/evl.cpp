@@ -189,7 +189,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();
-	impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 
 	// The only nodes that can be assigned to are: argument, field and variable.
 
@@ -202,8 +202,8 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 		format = (Format*) message->nod_arg[e_msg_format];
 		arg_number = (int) (IPTR) node->nod_arg[e_arg_number];
 		desc = &format->fmt_desc[arg_number];
-		impure->vlu_desc.dsc_address =
-			(UCHAR *) request + message->nod_impure + (IPTR) desc->dsc_address;
+		impure->vlu_desc.dsc_address = request->getImpure<UCHAR>(
+			message->nod_impure + (IPTR) desc->dsc_address);
 		impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 		impure->vlu_desc.dsc_length = desc->dsc_length;
 		impure->vlu_desc.dsc_scale = desc->dsc_scale;
@@ -244,7 +244,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 	case nod_variable:
 		// Calculate descriptor
 		node = node->nod_arg[e_var_variable];
-		impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+		impure = request->getImpure<impure_value>(node->nod_impure);
 		return &impure->vlu_desc;
 
 	default:
@@ -301,7 +301,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 
 	case nod_bit_dbkey:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR*) tdbb->getRequest() + node->nod_impure);
+			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
 			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
 
@@ -325,11 +325,10 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 
 	case nod_index:
 		{
-			impure_inversion* impure = (impure_inversion*) ((SCHAR*) tdbb->getRequest() + node->nod_impure);
+			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
-			BTR_evaluate(tdbb,
-						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
-						 &impure->inv_bitmap, bitmap_and);
+			BTR_evaluate(tdbb, reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
+				&impure->inv_bitmap, bitmap_and);
 			return &impure->inv_bitmap;
 		}
 
@@ -355,7 +354,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	dsc* desc[2];
 	bool value;
 	SSHORT comparison;
-	impure_value*    impure;
+	impure_value* impure;
 	bool computed_invariant = false;
 
 	SET_TDBB(tdbb);
@@ -401,7 +400,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			// Currently only nod_like, nod_contains, nod_starts and nod_similar may be marked invariant
 			if (node->nod_flags & nod_invariant)
 			{
-				impure = reinterpret_cast<impure_value*>((SCHAR *)request + node->nod_impure);
+				impure = request->getImpure<impure_value>(node->nod_impure);
 
 				// Check that data type of operand is still the same.
 				// It may change due to multiple formats present in stream
@@ -578,7 +577,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			if (node->nod_flags & nod_invariant)
 			{
-				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+				impure = request->getImpure<impure_value>(node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed)
 				{
@@ -700,7 +699,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			if (node->nod_flags & nod_invariant)
 			{
-				impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+				impure = request->getImpure<impure_value>(node->nod_impure);
 				invariant_flags = & impure->vlu_flags;
 				if (*invariant_flags & VLU_computed)
 				{
@@ -785,7 +784,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		JRD_reschedule(tdbb, 0, true);
 
 	jrd_req* const request = tdbb->getRequest();
-	impure_value* const impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
 	request->req_flags &= ~req_null;
 
 	// Do a preliminary screen for either simple nodes or nodes that are special cased elsewhere
@@ -1057,7 +1056,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		{
 			const jrd_nod* node2 = node->nod_arg[e_var_variable];
 
-			impure_value* impure2 = (impure_value*) ((SCHAR *) request + node2->nod_impure);
+			impure_value* impure2 = request->getImpure<impure_value>(node2->nod_impure);
 			if (impure2->vlu_desc.dsc_flags & DSC_null)
 				request->req_flags |= req_null;
 
@@ -2331,7 +2330,6 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	// Get request, record parameter block, and relation for stream
 
 	jrd_req* request = tdbb->getRequest();
-	impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
 	const jrd_rel* relation = rpb->rpb_relation;
@@ -2393,7 +2391,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 	if (node->nod_flags & nod_invariant)
 	{
-		invariant_flags = & impure->vlu_flags;
+		invariant_flags = &impure->vlu_flags;
 		if (*invariant_flags & VLU_computed)
 		{
 			// An invariant node has already been computed.
@@ -2411,7 +2409,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		impure->vlu_misc.vlu_int64 = 0;
 		impure->vlu_desc.dsc_dtype = dtype_int64;
 		impure->vlu_desc.dsc_length = sizeof(SINT64);
-		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_int64;
+		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_int64;
 		impure->vlu_desc.dsc_scale = 0;
 	}
 	else
@@ -2419,7 +2417,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		impure->vlu_misc.vlu_long = 0;
 		impure->vlu_desc.dsc_dtype = dtype_long;
 		impure->vlu_desc.dsc_length = sizeof(SLONG);
-		impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
+		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
 	}
 
 	Cursor* const rsb = (Cursor*) node->nod_arg[e_stat_rsb];
@@ -2753,7 +2751,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		part = 0;
 	}
 
-	*(USHORT *) impure->vlu_desc.dsc_address = part;
+	*(USHORT*) impure->vlu_desc.dsc_address = part;
 	return &impure->vlu_desc;
 }
 
@@ -3469,8 +3467,6 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 	// Get request, record parameter block for stream
 
 	jrd_req* request = tdbb->getRequest();
-	// Already set by the caller
-	//impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
 
 	/* If the current transaction has updated the record, the record version
@@ -3498,11 +3494,11 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 
 	// Initialize descriptor
 
-	impure->vlu_misc.vlu_long    = rpb->rpb_transaction_nr;
-	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
-	impure->vlu_desc.dsc_dtype   = dtype_text;
-	impure->vlu_desc.dsc_length  = 4;
-	impure->vlu_desc.dsc_ttype()   = ttype_binary;
+	impure->vlu_misc.vlu_long = rpb->rpb_transaction_nr;
+	impure->vlu_desc.dsc_address = (UCHAR *) &impure->vlu_misc.vlu_long;
+	impure->vlu_desc.dsc_dtype = dtype_text;
+	impure->vlu_desc.dsc_length = 4;
+	impure->vlu_desc.dsc_ttype() = ttype_binary;
 
 	return &impure->vlu_desc;
 }
@@ -3751,7 +3747,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 				{
 					if (node->nod_flags & nod_invariant)
 					{
-						impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+						impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 						impure->vlu_flags |= VLU_computed;
 						impure->vlu_flags |= VLU_null;
 					}
@@ -3784,7 +3780,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 			if (node->nod_flags & nod_invariant)
 			{
-				impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+				impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 
 				if (!(impure->vlu_flags & VLU_computed))
 				{
@@ -3839,7 +3835,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			PatternMatcher* evaluator;
 			if (node->nod_flags & nod_invariant)
 			{
-				impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+				impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 				if (!(impure->vlu_flags & VLU_computed))
 				{
 					delete impure->vlu_misc.vlu_invariant;
@@ -3920,7 +3916,7 @@ static bool string_function(thread_db* tdbb,
 	{
 		if (node->nod_flags & nod_invariant)
 		{
-			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+			impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 			PatternMatcher* evaluator;
 			if (!(impure->vlu_flags & VLU_computed))
 			{
@@ -3972,7 +3968,7 @@ static bool string_function(thread_db* tdbb,
 			{
 				if (node->nod_flags & nod_invariant)
 				{
-					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+					impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 					impure->vlu_flags |= VLU_computed;
 					impure->vlu_flags |= VLU_null;
 				}
@@ -3999,7 +3995,7 @@ static bool string_function(thread_db* tdbb,
 
 		if (node->nod_flags & nod_invariant)
 		{
-			impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+			impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 			PatternMatcher* evaluator;
 
 			if (!(impure->vlu_flags & VLU_computed))
@@ -4118,7 +4114,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 				length = 0;
 		}
 
-		*(ULONG*)impure->vlu_desc.dsc_address = length;
+		*(ULONG*) impure->vlu_desc.dsc_address = length;
 
 		BLB_close(tdbb, blob);
 
@@ -4161,7 +4157,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			length = 0;
 	}
 
-	*(ULONG *) impure->vlu_desc.dsc_address = length;
+	*(ULONG*) impure->vlu_desc.dsc_address = length;
 	return &impure->vlu_desc;
 }
 

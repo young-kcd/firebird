@@ -71,7 +71,7 @@ namespace
 		void locate(thread_db* tdbb, FB_UINT64 position)
 		{
 			jrd_req* const request = tdbb->getRequest();
-			Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+			Impure* const impure = request->getImpure<Impure>(m_impure);
 			impure->irsb_position = position;
 		}
 
@@ -82,7 +82,7 @@ namespace
 
 		FB_UINT64 getPosition(jrd_req* request) const
 		{
-			Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+			Impure* const impure = request->getImpure<Impure>(m_impure);
 			return impure->irsb_position;
 		}
 
@@ -145,7 +145,7 @@ namespace
 	void BufferedStreamWindow::open(thread_db* tdbb)
 	{
 		jrd_req* const request = tdbb->getRequest();
-		Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		impure->irsb_flags = irsb_open;
 		impure->irsb_position = 0;
@@ -157,7 +157,7 @@ namespace
 
 		invalidateRecords(request);
 
-		Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		if (impure->irsb_flags & irsb_open)
 			impure->irsb_flags &= ~irsb_open;
@@ -166,7 +166,7 @@ namespace
 	bool BufferedStreamWindow::getRecord(thread_db* tdbb)
 	{
 		jrd_req* const request = tdbb->getRequest();
-		Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		if (!(impure->irsb_flags & irsb_open))
 			return false;
@@ -241,7 +241,7 @@ namespace
 	void WindowJoin::open(thread_db* tdbb)
 	{
 		jrd_req* const request = tdbb->getRequest();
-		Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		impure->irsb_flags = irsb_open;
 
@@ -264,7 +264,7 @@ namespace
 
 		invalidateRecords(request);
 
-		Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		if (impure->irsb_flags & irsb_open)
 		{
@@ -278,7 +278,7 @@ namespace
 	bool WindowJoin::getRecord(thread_db* tdbb)
 	{
 		jrd_req* const request = tdbb->getRequest();
-		Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+		Impure* const impure = request->getImpure<Impure>(m_impure);
 
 		if (!(impure->irsb_flags & irsb_open))
 			return false;
@@ -533,7 +533,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 void WindowedStream::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
 
@@ -547,7 +547,7 @@ void WindowedStream::close(thread_db* tdbb)
 
 	invalidateRecords(request);
 
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -560,7 +560,7 @@ void WindowedStream::close(thread_db* tdbb)
 bool WindowedStream::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
 		return false;

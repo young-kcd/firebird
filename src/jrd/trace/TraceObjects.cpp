@@ -310,14 +310,15 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		{
 			case nod_argument:
 			{
-				//const impure_value* impure = (impure_value*) ((SCHAR*) m_request + prm->nod_impure);
+				//const impure_value* impure = request->getImpure<impure_value>(prm->nod_impure)
 				const jrd_nod* message = prm->nod_arg[e_arg_message];
 				const Format* format = (Format*) message->nod_arg[e_msg_format];
 				const int arg_number = (int) (IPTR) prm->nod_arg[e_arg_number];
 
 				desc = format->fmt_desc[arg_number];
 				from_desc = &desc;
-				from_desc->dsc_address = (UCHAR *) m_request + message->nod_impure + (IPTR) desc.dsc_address;
+				from_desc->dsc_address = const_cast<jrd_req*>(m_request)->getImpure<UCHAR>(
+					message->nod_impure + (IPTR) desc.dsc_address);
 
 				// handle null flag if present
 				if (prm->nod_arg[e_arg_flag])
@@ -332,7 +333,8 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 			case nod_variable:
 			{
-				impure_value* impure = (impure_value*) ((SCHAR *) m_request + prm->nod_impure);
+				impure_value* impure = const_cast<jrd_req*>(m_request)->getImpure<impure_value>(
+					prm->nod_impure);
 				from_desc = &impure->vlu_desc;
 				break;
 			}

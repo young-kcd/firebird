@@ -3852,7 +3852,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 													   Arg::Num(len));
 				}
 
-				memcpy((SCHAR*) request + in_message->nod_impure, in_msg, in_msg_length);
+				memcpy(request->getImpure<UCHAR>(in_message->nod_impure), in_msg, in_msg_length);
 			}
 
 			EXE_start(tdbb, request, transaction);
@@ -3873,7 +3873,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			}
 
 			if (out_msg_length) {
-				memcpy(out_msg, (SCHAR*) request + out_message->nod_impure, out_msg_length);
+				memcpy(out_msg, request->getImpure<UCHAR>(out_message->nod_impure), out_msg_length);
 			}
 
 			check_autocommit(request, tdbb);

@@ -324,8 +324,8 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 					reinterpret_cast<const ItemInfo*>(to->nod_arg[e_var_info]),
 					from_desc, null == -1);
 			}
-			impure_flags = &((impure_value*) ((SCHAR *) request +
-				to->nod_arg[e_var_variable]->nod_impure))->vlu_flags;
+			impure_flags = &request->getImpure<impure_value>(
+				to->nod_arg[e_var_variable]->nod_impure)->vlu_flags;
 			break;
 
 		case nod_argument:
@@ -337,7 +337,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 					reinterpret_cast<const ItemInfo*>(to->nod_arg[e_arg_info]),
 					from_desc, null == -1);
 			}
-			impure_flags = (USHORT*) ((UCHAR *) request +
+			impure_flags = request->getImpure<USHORT>(
 				(IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_impure_flags] +
 				(sizeof(USHORT) * (IPTR) to->nod_arg[e_arg_number]));
 			break;
@@ -788,7 +788,7 @@ void EXE_receive(thread_db*		tdbb,
 	if (length != format->fmt_length)
 		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << Arg::Num(format->fmt_length));
 
-	memcpy(buffer, (SCHAR*) request + message->nod_impure, length);
+	memcpy(buffer, request->getImpure<UCHAR>(message->nod_impure), length);
 
 	// ASF: temporary blobs returned to the client should not be released
 	// with the request, but in the transaction end.
@@ -915,7 +915,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, USHORT length, cons
 		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << Arg::Num(format->fmt_length));
 	}
 
-	memcpy((SCHAR*) request + message->nod_impure, buffer, length);
+	memcpy(request->getImpure<UCHAR>(message->nod_impure), buffer, length);
 
 	for (USHORT i = 0; i < format->fmt_count; ++i)
 	{
@@ -924,7 +924,8 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, USHORT length, cons
 		// ASF: I'll not test for dtype_cstring because usage is only internal
 		if (desc->dsc_dtype == dtype_text || desc->dsc_dtype == dtype_varying)
 		{
-			const UCHAR* p = (UCHAR*)request + message->nod_impure + (ULONG)(IPTR)desc->dsc_address;
+			const UCHAR* p = request->getImpure<UCHAR>(message->nod_impure) +
+				(ULONG)(IPTR) desc->dsc_address;
 			USHORT len;
 
 			switch (desc->dsc_dtype)
@@ -948,8 +949,8 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, USHORT length, cons
 		{
 			if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
 			{
-				const Jrd::bid* bid = (Jrd::bid*) ((UCHAR*)request +
-					message->nod_impure + (ULONG)(IPTR)desc->dsc_address);
+				const Jrd::bid* bid = request->getImpure<Jrd::bid>(
+					message->nod_impure + (ULONG)(IPTR) desc->dsc_address);
 
 				if (!bid->isEmpty())
 				{
@@ -1039,7 +1040,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	jrd_nod **ptr, **end;
 	for (ptr = request->req_invariants.begin(), end = request->req_invariants.end(); ptr < end; ++ptr)
 	{
-		impure_value* impure = (impure_value*) ((SCHAR *) request + (*ptr)->nod_impure);
+		impure_value* impure = request->getImpure<impure_value>((*ptr)->nod_impure);
 		impure->vlu_flags = 0;
 	}
 
@@ -1108,7 +1109,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				for (size_t i = 0; i < request->req_exec_sta.getCount(); ++i)
 				{
 					jrd_nod* node = request->req_exec_sta[i];
-					ExecuteStatement* impure =(ExecuteStatement*) ((char*) request + node->nod_impure);
+					ExecuteStatement* impure = request->getImpure<ExecuteStatement>(node->nod_impure);
 					impure->close(tdbb);
 				}
 
@@ -1483,7 +1484,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	{
 		const Format* format = (Format*) in_message->nod_arg[e_msg_format];
 		in_msg_length = format->fmt_length;
-		in_msg = (UCHAR*) request + in_message->nod_impure;
+		in_msg = request->getImpure<UCHAR>(in_message->nod_impure);
 	}
 
 	const Format* format = NULL;
@@ -1494,7 +1495,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	{
 		format = (Format*) out_message->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
-		out_msg = (UCHAR*) request + out_message->nod_impure;
+		out_msg = request->getImpure<UCHAR>(out_message->nod_impure);
 	}
 
 	jrd_req* proc_request = EXE_find_request(tdbb, procedure->getRequest(), false);
@@ -1585,7 +1586,7 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 	SET_TDBB(tdbb);
 	BLKCHK(node, type_nod);
 
-	EDS::Statement** stmt_ptr = (EDS::Statement**) ((char*) request + node->nod_impure);
+	EDS::Statement** stmt_ptr = request->getImpure<EDS::Statement*>(node->nod_impure);
 	EDS::Statement* stmt = *stmt_ptr;
 
 	const int inputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
@@ -1971,7 +1972,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					fb_assert(outMsgNode->nod_type == nod_message);
 
 					const Format* outFormat = (Format*) outMsgNode->nod_arg[e_msg_format];
-					UCHAR* outMsg = (UCHAR*) request + outMsgNode->nod_impure;
+					UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode->nod_impure);
 
 					if (!request->resultSet)
 					{
@@ -1987,12 +1988,12 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						const Format* format = (Format*) inMsgNode->nod_arg[e_msg_format];
 
 						// clear the flags from the input message
-						USHORT* impure_flags = (USHORT*) ((UCHAR*) request +
+						USHORT* impure_flags = request->getImpure<USHORT>(
 							(IPTR) request->req_message->nod_arg[e_msg_impure_flags]);
 						memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
 
 						// clear the flags from the output message
-						impure_flags = (USHORT*) ((UCHAR*) request +
+						impure_flags = request->getImpure<USHORT>(
 							(IPTR) outMsgNode->nod_arg[e_msg_impure_flags]);
 						memset(impure_flags, 0, sizeof(USHORT) * outFormat->fmt_count);
 
@@ -2002,7 +2003,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 						if (!request->inputParams)
 						{
-							UCHAR* inMsg = (UCHAR*) request + request->req_message->nod_impure;
+							UCHAR* inMsg = request->getImpure<UCHAR>(request->req_message->nod_impure);
 
 							request->inputParams = FB_NEW(*request->req_pool) ValuesImpl(
 								*request->req_pool, format, inMsg,
@@ -2079,7 +2080,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_dcl_variable:
 			{
-				impure_value* variable = (impure_value*) ((SCHAR*) request + node->nod_impure);
+				impure_value* variable = request->getImpure<impure_value>(node->nod_impure);
 				variable->vlu_desc = *(DSC*) (node->nod_arg + e_dcl_desc);
 				variable->vlu_desc.dsc_flags = 0;
 				variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
@@ -2319,7 +2320,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					VIO_start_save_point(tdbb, transaction);
 					const Savepoint* save_point = transaction->tra_save_point;
 					count = save_point->sav_number;
-					memcpy((SCHAR*) request + node->nod_impure, &count, sizeof(SLONG));
+					memcpy(request->getImpure<SLONG>(node->nod_impure), &count, sizeof(SLONG));
 				}
 				node = node->nod_arg[e_blk_action];
 				break;
@@ -2336,7 +2337,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 						if (transaction != sysTransaction)
 						{
-							memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
+							memcpy(&count, request->getImpure<SLONG>(node->nod_impure), sizeof(SLONG));
 
 							for (const Savepoint* save_point = transaction->tra_save_point;
 								save_point && count <= save_point->sav_number;
@@ -2351,7 +2352,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					}
 					if (transaction != sysTransaction)
 					{
-						memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
+						memcpy(&count, request->getImpure<SLONG>(node->nod_impure), sizeof(SLONG));
 						// Since there occurred an error (req_unwind), undo all savepoints
 						// up to, but not including, the savepoint of this block.  The
 						// savepoint of this block will be dealt with below.
@@ -2460,7 +2461,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			case jrd_req::req_return:
 				if (transaction != sysTransaction)
 				{
-					memcpy(&count, (SCHAR*) request + node->nod_impure, sizeof(SLONG));
+					memcpy(&count, request->getImpure<SLONG>(node->nod_impure), sizeof(SLONG));
 
 					for (const Savepoint* save_point = transaction->tra_save_point;
 						 save_point && count <= save_point->sav_number;
@@ -2527,7 +2528,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_list:
 			{
-				impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+				impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
 				switch (request->req_operation)
 				{
 				case jrd_req::req_evaluate:
@@ -2578,7 +2579,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_modify:
 			{
-				impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+				impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
 				if (request->req_operation == jrd_req::req_unwind) {
 					node = node->nod_parent;
 				}
@@ -2641,7 +2642,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_exec_into:
 			{
-				ExecuteStatement* impure = (ExecuteStatement*) ((SCHAR*) request + node->nod_impure);
+				ExecuteStatement* impure = request->getImpure<ExecuteStatement>(node->nod_impure);
 
 				switch (request->req_operation)
 				{
@@ -2673,8 +2674,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
 				const Format* format = (Format*) node->nod_arg[e_msg_format];
-				USHORT* impure_flags =
-					(USHORT*) ((UCHAR*) request + (IPTR) node->nod_arg[e_msg_impure_flags]);
+				USHORT* impure_flags = request->getImpure<USHORT>(
+					(IPTR) node->nod_arg[e_msg_impure_flags]);
 				memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
 				request->req_operation = jrd_req::req_return;
 			}
@@ -2691,7 +2692,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_store:
 			{
-				impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+				impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
 				if ((request->req_operation == jrd_req::req_return) &&
 					(!impure->sta_state) && (node->nod_arg[e_sto_sub_store]))
 				{
@@ -2768,7 +2769,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				if (itemInfo)
 				{
 					jrd_nod* var_node = node->nod_arg[e_init_var_variable];
-					DSC* to_desc = &((impure_value*) ((SCHAR *) request + var_node->nod_impure))->vlu_desc;
+					DSC* to_desc = &request->getImpure<impure_value>(var_node->nod_impure)->vlu_desc;
 
 					to_desc->dsc_flags |= DSC_null;
 
@@ -2967,7 +2968,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 	jrd_req* request = tdbb->getRequest();
 	jrd_tra* transaction = request->req_transaction;
-	impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+	impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
 
 	const SSHORT org_stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 	record_param* org_rpb = &request->req_rpb[org_stream];
@@ -3423,7 +3424,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 	jrd_req* request = tdbb->getRequest();
 	jrd_tra* transaction = request->req_transaction;
-	impure_state* impure = (impure_state*) ((SCHAR *) request + node->nod_impure);
+	impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
 	SSHORT stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 	record_param* rpb = &request->req_rpb[stream];
 	jrd_rel* relation = rpb->rpb_relation;

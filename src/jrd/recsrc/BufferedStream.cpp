@@ -109,7 +109,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 void BufferedStream::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open | irsb_mustread;
 
@@ -128,7 +128,7 @@ void BufferedStream::close(thread_db* tdbb)
 
 	invalidateRecords(request);
 
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -144,7 +144,7 @@ void BufferedStream::close(thread_db* tdbb)
 bool BufferedStream::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{
@@ -332,7 +332,7 @@ void BufferedStream::restoreRecords(thread_db* tdbb)
 void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	// If we haven't fetched and cached the underlying stream completely, do it now
 	if (impure->irsb_flags & irsb_mustread)
@@ -347,6 +347,6 @@ void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position)
 
 FB_UINT64 BufferedStream::getCount(jrd_req* request) const
 {
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 	return impure->irsb_buffer ? impure->irsb_buffer->getCount() : 0;
 }

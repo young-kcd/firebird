@@ -24,6 +24,7 @@
 #define JRD_RECORD_SOURCE_H
 
 #include "../common/classes/array.h"
+#include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/inf_pub.h"
 
@@ -716,7 +717,7 @@ namespace Jrd
 
 		FB_UINT64 getPosition(jrd_req* request) const
 		{
-			Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+			Impure* const impure = request->getImpure<Impure>(m_impure);
 			return impure->irsb_position;
 		}
 

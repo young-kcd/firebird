@@ -61,7 +61,7 @@ MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
 void MergeJoin::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open;
 
@@ -100,7 +100,7 @@ void MergeJoin::close(thread_db* tdbb)
 
 	invalidateRecords(request);
 
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -130,7 +130,7 @@ void MergeJoin::close(thread_db* tdbb)
 bool MergeJoin::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{
@@ -488,7 +488,7 @@ UCHAR* MergeJoin::getData(thread_db* tdbb, MergeFile* mfb, SLONG record)
 SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	SortedStream* const sort_rsb = m_args[index];
 	Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[index];
@@ -528,7 +528,7 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index)
 bool MergeJoin::fetchRecord(thread_db* tdbb, size_t index)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 	Impure::irsb_mrg_repeat* tail = &impure->irsb_mrg_rpt[index];
 
 	const SSHORT m = tail->irsb_mrg_order;

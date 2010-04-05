@@ -308,6 +308,11 @@ public:
 
 	record_param req_rpb[1];		// record parameter blocks
 
+	template <typename T> T* getImpure(unsigned offset)
+	{
+		return reinterpret_cast<T*>(((SCHAR*) this) + offset);
+	}
+
 	void adjustCallerStats()
 	{
 		if (req_caller) {

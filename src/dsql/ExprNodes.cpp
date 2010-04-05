@@ -246,7 +246,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return NULL;
 
-	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 	dsc desc;
 
 	if (value1->dsc_dtype == dtype_dbkey && value2->dsc_dtype == dtype_dbkey)
@@ -787,7 +787,7 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 	UCHAR* escapeStr;
 	int escapeLen = MOV_make_string2(tdbb, escapeDesc, textType, &escapeStr, escapeBuffer);
 
-	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 
 	AutoPtr<BaseSimilarToMatcher> autoEvaluator;	// deallocate non-invariant evaluator
 	BaseSimilarToMatcher* evaluator;
@@ -1010,7 +1010,7 @@ ExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* SysFuncCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 	return function->evlFunc(tdbb, function, args, impure);
 }
 
@@ -1275,7 +1275,7 @@ ExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = (impure_value*) ((SCHAR*) request + node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 	return function->execute(tdbb, args, impure);
 }
 

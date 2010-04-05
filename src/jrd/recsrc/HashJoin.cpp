@@ -179,7 +179,7 @@ HashJoin::HashJoin(CompilerScratch* csb, size_t count,
 void HashJoin::open(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_open | irsb_mustread;
 
@@ -208,7 +208,7 @@ void HashJoin::open(thread_db* tdbb)
 void HashJoin::close(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	invalidateRecords(request);
 
@@ -231,7 +231,7 @@ void HashJoin::close(thread_db* tdbb)
 bool HashJoin::getRecord(thread_db* tdbb)
 {
 	jrd_req* const request = tdbb->getRequest();
-	Impure* const impure = (Impure*) ((UCHAR*) request + m_impure);
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{
