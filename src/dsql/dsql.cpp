@@ -78,7 +78,6 @@ using namespace Firebird;
 
 
 static void		close_cursor(thread_db*, dsql_req*);
-static USHORT	convert(SLONG, UCHAR*);
 static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, const UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
 static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
@@ -844,45 +843,6 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 
 	request->req_flags &= ~dsql_req::FLAG_OPENED_CURSOR;
 	TRA_unlink_cursor(request->req_transaction, request);
-}
-
-
-/**
-
- 	convert
-
-    @brief	Convert a number to VAX form -- least significant bytes first.
- 	Return the length.
-
-
-    @param number
-    @param buffer
-
- **/
-
-// CVC: This routine should disappear in favor of a centralized function.
-static USHORT convert( SLONG number, UCHAR* buffer)
-{
-	const UCHAR* p;
-
-#ifndef WORDS_BIGENDIAN
-	p = (UCHAR*) &number;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-
-#else
-
-	p = (UCHAR*) (&number + 1);
-	*buffer++ = *--p;
-	*buffer++ = *--p;
-	*buffer++ = *--p;
-	*buffer++ = *--p;
-
-#endif
-
-	return 4;
 }
 
 
@@ -3053,7 +3013,7 @@ static void sql_info(thread_db* tdbb,
 				number = 0;
 				break;
 			}
-			length = convert((SLONG) number, buffer);
+			length = put_vax_long(buffer, (SLONG) number);
 			info = put_item(item, length, buffer, info, end_info);
 			if (!info) {
 				return;
@@ -3069,7 +3029,7 @@ static void sql_info(thread_db* tdbb,
 				number = 0;
 			else
 				number = 1;
-			length = convert((SLONG) number, buffer);
+			length = put_vax_long(buffer, (SLONG) number);
 			if (!(info = put_item(item, length, buffer, info, end_info))) {
 				return;
 			}
@@ -3133,7 +3093,7 @@ static void sql_info(thread_db* tdbb,
 			if (messageFound)
 			{
 				number = message ? message->msg_index : 0;
-				length = convert((SLONG) number, buffer);
+				length = put_vax_long(buffer, (SLONG) number);
 				if (!(info = put_item(item, length, buffer, info, end_info))) {
 					return;
 				}
@@ -3163,7 +3123,7 @@ static void sql_info(thread_db* tdbb,
 			// else fall into
 		default:
 			buffer[0] = item;
-			length = 1 + convert((SLONG) isc_infunk, buffer + 1);
+			length = 1 + put_vax_long(buffer + 1, (SLONG) isc_infunk);
 			if (!(info = put_item(isc_info_error, length, buffer, info, end_info))) {
 				return;
 			}
@@ -3177,7 +3137,7 @@ static void sql_info(thread_db* tdbb,
 		const SLONG number = info - start_info;
 		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
-		USHORT length = convert(number, buffer);
+		USHORT length = put_vax_long(buffer, number);
 		fb_assert(length == 4); // We only accept SLONG
 		put_item(isc_info_length, length, buffer, start_info, end_info);
 	}
@@ -3333,7 +3293,7 @@ static UCHAR* var_info(const dsql_msg* message,
 				switch (item)
 				{
 				case isc_info_sql_sqlda_seq:
-					length = convert((SLONG) param->par_index, buf);
+					length = put_vax_long(buf, (SLONG) param->par_index);
 					break;
 
 				case isc_info_sql_message_seq:
@@ -3341,23 +3301,23 @@ static UCHAR* var_info(const dsql_msg* message,
 					break;
 
 				case isc_info_sql_type:
-					length = convert((SLONG) sql_type, buf);
+					length = put_vax_long(buf, (SLONG) sql_type);
 					break;
 
 				case isc_info_sql_sub_type:
-					length = convert((SLONG) sql_sub_type, buf);
+					length = put_vax_long(buf, (SLONG) sql_sub_type);
 					break;
 
 				case isc_info_sql_scale:
-					length = convert((SLONG) sql_scale, buf);
+					length = put_vax_long(buf, (SLONG) sql_scale);
 					break;
 
 				case isc_info_sql_length:
-					length = convert((SLONG) sql_len, buf);
+					length = put_vax_long(buf, (SLONG) sql_len);
 					break;
 
 				case isc_info_sql_null_ind:
-					length = convert((SLONG) (sql_type & 1), buf);
+					length = put_vax_long(buf, (SLONG) (sql_type & 1));
 					break;
 
 				case isc_info_sql_field:
@@ -3418,7 +3378,7 @@ static UCHAR* var_info(const dsql_msg* message,
 				default:
 					buf[0] = item;
 					item = isc_info_error;
-					length = 1 + convert((SLONG) isc_infunk, buf + 1);
+					length = 1 + put_vax_long(buf + 1, (SLONG) isc_infunk);
 					break;
 				}
 

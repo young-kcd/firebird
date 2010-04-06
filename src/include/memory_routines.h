@@ -116,7 +116,7 @@ inline void put_long(UCHAR* p, SLONG value)
 	memcpy(p, &value, sizeof(SLONG));
 }
 
-inline void put_vax_short(UCHAR* p, SSHORT value)
+inline UCHAR put_vax_short(UCHAR* p, SSHORT value)
 {
 /**************************************
  *
@@ -145,9 +145,11 @@ inline void put_vax_short(UCHAR* p, SSHORT value)
 	p[0] = temp.c[1];
 	p[1] = temp.c[0];
 #endif
+
+	return sizeof(value);
 }
 
-inline void put_vax_long(UCHAR* p, SLONG value)
+inline UCHAR put_vax_long(UCHAR* p, SLONG value)
 {
 /**************************************
  *
@@ -178,9 +180,11 @@ inline void put_vax_long(UCHAR* p, SLONG value)
 	p[2] = temp.c[1];
 	p[3] = temp.c[0];
 #endif
+
+	return sizeof(value);
 }
 
-inline void put_vax_int64(UCHAR* p, SINT64 value)
+inline UCHAR put_vax_int64(UCHAR* p, SINT64 value)
 {
 /**************************************
  *
@@ -215,6 +219,8 @@ inline void put_vax_int64(UCHAR* p, SINT64 value)
 	p[6] = temp.c[1];
 	p[7] = temp.c[0];
 #endif
+
+	return sizeof(value);
 }
 
 #endif // MEMORY_ROUTINES_H
