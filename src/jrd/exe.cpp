@@ -2320,7 +2320,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					VIO_start_save_point(tdbb, transaction);
 					const Savepoint* save_point = transaction->tra_save_point;
 					count = save_point->sav_number;
-					memcpy(request->getImpure<SLONG>(node->nod_impure), &count, sizeof(SLONG));
+					*request->getImpure<SLONG>(node->nod_impure) = count;
 				}
 				node = node->nod_arg[e_blk_action];
 				break;
@@ -2337,7 +2337,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 						if (transaction != sysTransaction)
 						{
-							memcpy(&count, request->getImpure<SLONG>(node->nod_impure), sizeof(SLONG));
+							count = *request->getImpure<SLONG>(node->nod_impure);
 
 							for (const Savepoint* save_point = transaction->tra_save_point;
 								save_point && count <= save_point->sav_number;
@@ -2352,7 +2352,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					}
 					if (transaction != sysTransaction)
 					{
-						memcpy(&count, request->getImpure<SLONG>(node->nod_impure), sizeof(SLONG));
+						count = *request->getImpure<SLONG>(node->nod_impure);
 						// Since there occurred an error (req_unwind), undo all savepoints
 						// up to, but not including, the savepoint of this block.  The
 						// savepoint of this block will be dealt with below.
@@ -2461,7 +2461,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			case jrd_req::req_return:
 				if (transaction != sysTransaction)
 				{
-					memcpy(&count, request->getImpure<SLONG>(node->nod_impure), sizeof(SLONG));
+					count = *request->getImpure<SLONG>(node->nod_impure);
 
 					for (const Savepoint* save_point = transaction->tra_save_point;
 						 save_point && count <= save_point->sav_number;
