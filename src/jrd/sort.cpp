@@ -733,8 +733,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 		case SKD_long:
 		case SKD_short:
 		case SKD_quad:
-		case SKD_timestamp1:
-		case SKD_timestamp2:
+		case SKD_timestamp:
 		case SKD_sql_date:
 		case SKD_int64:
 			*p ^= 1 << 7;
@@ -800,8 +799,7 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 
 		switch (key->skd_dtype)
 		{
-		case SKD_timestamp1:
-		case SKD_timestamp2:
+		case SKD_timestamp:
 		case SKD_sql_time:
 		case SKD_sql_date:
 			p[3] ^= 1 << 7;

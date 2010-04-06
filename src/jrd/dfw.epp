@@ -530,7 +530,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SS
 	switch (field_type)
 	{
 	case dtype_timestamp:
-		return idx_timestamp2;
+		return idx_timestamp;
 	case dtype_sql_date:
 		return idx_sql_date;
 	case dtype_sql_time:

@@ -101,12 +101,12 @@ const USHORT idx_invalid = USHORT(~0);		// Applies to idx_id as special value
 
 const int idx_numeric		= 0;
 const int idx_string		= 1;
-// AB: idx_timestamp1 removed
+// value of 2 was used in ODS < 10
 const int idx_byte_array	= 3;
 const int idx_metadata		= 4;
 const int idx_sql_date		= 5;
 const int idx_sql_time		= 6;
-const int idx_timestamp2	= 7;
+const int idx_timestamp		= 7;
 const int idx_numeric2		= 8;	// Introduced for 64-bit Integer support
 
 				   // idx_itype space for future expansion

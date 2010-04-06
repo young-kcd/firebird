@@ -1272,7 +1272,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			length = sizeof(SLONG);
 			break;
 
-		case idx_timestamp2:
+		case idx_timestamp:
 			length = sizeof(SINT64);
 			break;
 
@@ -1323,7 +1323,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		case idx_sql_date:
 			length = sizeof(ULONG);
 			break;
-		case idx_timestamp2:
+		case idx_timestamp:
 			length = sizeof(SINT64);
 			break;
 		case idx_numeric2:
@@ -2421,7 +2421,7 @@ static void compress(thread_db* tdbb,
 #endif
 
 	}
-	else if (itype == idx_timestamp2)
+	else if (itype == idx_timestamp)
 	{
 		GDS_TIMESTAMP timestamp;
 		timestamp = MOV_get_timestamp(desc);
@@ -2591,7 +2591,7 @@ static void compress(thread_db* tdbb,
 #error compile_time_failure:
 #error Code needs to be written in the non - IEEE floating point case
 #error to handle the following:
-#error 	a) idx_sql_date, idx_sql_time, idx_timestamp2 b) idx_numeric2
+#error 	a) idx_sql_date, idx_sql_time, idx_timestamp b) idx_numeric2
 
 #endif // IEEE
 

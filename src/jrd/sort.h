@@ -147,20 +147,14 @@ const int SKD_text			= 5;
 const int SKD_float			= 6;
 const int SKD_double		= 7;
 const int SKD_quad			= 8;
-const int SKD_timestamp1	= 9;		// Timestamp as Float
+const int SKD_timestamp		= 9;
 const int SKD_bytes			= 10;
 const int SKD_d_float		= 11;
 const int SKD_varying		= 12;		// non-international
 const int SKD_cstring		= 13;		// non-international
-
 const int SKD_sql_time		= 14;
 const int SKD_sql_date		= 15;
-const int SKD_timestamp2	= 16;		// Timestamp as Quad
-
-const int SKD_int64			= 17;
-
-// Historical alias for pre V6 code
-const int SKD_date	= SKD_timestamp1;
+const int SKD_int64			= 16;
 
 // skd_flags
 const UCHAR SKD_ascending		= 0;	// default initializer
