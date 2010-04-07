@@ -371,9 +371,10 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 					desc, &to, INTL_KEY_UNIQUE);
 			}
 
-			asb->asb_desc.dsc_address = data +
+			dsc toDesc = asb->asb_desc;
+			toDesc.dsc_address = data +
 				(asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
-			MOV_move(tdbb, desc, &asb->asb_desc);
+			MOV_move(tdbb, desc, &toDesc);
 
 			return;
 		}
@@ -405,7 +406,7 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (distinct)
 	{
 		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
-		dsc* desc = &asb->asb_desc;
+		dsc desc = asb->asb_desc;
 
 		// Sort the values already "put" to sort.
 		asbImpure->iasb_sort->sort(tdbb);
@@ -425,9 +426,9 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 				break;
 			}
 
-			desc->dsc_address = data + (asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
+			desc.dsc_address = data + (asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
 
-			aggPass(tdbb, request, desc);
+			aggPass(tdbb, request, &desc);
 		}
 	}
 

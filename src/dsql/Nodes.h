@@ -448,7 +448,7 @@ public:
 	bool dialect1;
 	dsql_nod* dsqlArg;
 	jrd_nod* arg;
-	AggregateSort* asb;
+	const AggregateSort* asb;
 	bool indexed;
 };
 
