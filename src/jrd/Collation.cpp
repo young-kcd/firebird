@@ -863,7 +863,6 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 	return NULL;	// compiler silencer
 }
 
-
 void Collation::release()
 {
 	fb_assert(useCount >= 0);
@@ -883,7 +882,6 @@ void Collation::release()
 	}
 }
 
-
 void Collation::destroy()
 {
 	fb_assert(useCount == 0);
@@ -899,7 +897,6 @@ void Collation::destroy()
 	existenceLock = NULL;
 }
 
-
 void Collation::incUseCount(thread_db* /*tdbb*/)
 {
 	fb_assert(!obsolete);
@@ -907,7 +904,6 @@ void Collation::incUseCount(thread_db* /*tdbb*/)
 
 	++useCount;
 }
-
 
 void Collation::decUseCount(thread_db* tdbb)
 {

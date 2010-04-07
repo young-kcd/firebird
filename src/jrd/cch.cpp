@@ -2784,7 +2784,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	// LCK_init fails we won't be able to accomplish anything anyway, so
 	// return, unlike the other try blocks further down the page.
 
-	BufferControl* bcb = 0;
+	BufferControl* bcb = NULL;
 
 	try {
 

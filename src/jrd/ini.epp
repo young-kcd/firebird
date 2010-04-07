@@ -863,12 +863,12 @@ static void add_index_set(thread_db* tdbb)
 		END_STORE;
 
 	}
-	if (handle1) {
+
+	if (handle1)
 		CMP_release(tdbb, handle1);
-	}
-	if (handle2) {
+
+	if (handle2)
 		CMP_release(tdbb, handle2);
-	}
 }
 
 

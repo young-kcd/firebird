@@ -829,8 +829,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			desc = &format->fmt_desc[(int)(IPTR) node->nod_arg[e_arg_number]];
 
-			impure->vlu_desc.dsc_address = (UCHAR *) request +
-				message->nod_impure + (IPTR) desc->dsc_address;
+			impure->vlu_desc.dsc_address = request->getImpure<UCHAR>(
+				message->nod_impure + (IPTR) desc->dsc_address);
 			impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 			impure->vlu_desc.dsc_length = desc->dsc_length;
 			impure->vlu_desc.dsc_scale = desc->dsc_scale;
@@ -839,7 +839,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
 				INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
-			USHORT* impure_flags = (USHORT*) ((UCHAR *) request +
+			USHORT* impure_flags = request->getImpure<USHORT>(
 				(IPTR) message->nod_arg[e_msg_impure_flags] +
 				(sizeof(USHORT) * (IPTR) node->nod_arg[e_arg_number]));
 
@@ -3495,7 +3495,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 	// Initialize descriptor
 
 	impure->vlu_misc.vlu_long = rpb->rpb_transaction_nr;
-	impure->vlu_desc.dsc_address = (UCHAR *) &impure->vlu_misc.vlu_long;
+	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_length = 4;
 	impure->vlu_desc.dsc_ttype() = ttype_binary;
