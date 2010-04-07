@@ -936,7 +936,7 @@ void SysFuncCallNode::genBlr()
 		GEN_expr(dsqlScratch, *ptr);
 }
 
-void SysFuncCallNode::make(dsc* desc, dsql_nod* nullReplacement)
+void SysFuncCallNode::make(dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	Array<const dsc*> argsArray;
 
@@ -1148,7 +1148,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-bool UdfCallNode::isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const
+bool UdfCallNode::isArrayOrBlob(DsqlCompilerScratch* /*dsqlScratch*/) const
 {
 	// Parameters to UDF don't need checking, a blob or array can be passed.
 	return dsqlFunction->udf_dtype == dtype_blob || dsqlFunction->udf_dtype == dtype_array;
@@ -1185,7 +1185,7 @@ void UdfCallNode::genBlr()
 		GEN_expr(dsqlScratch, *ptr);
 }
 
-void UdfCallNode::make(dsc* desc, dsql_nod* nullReplacement)
+void UdfCallNode::make(dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = static_cast<UCHAR>(dsqlFunction->udf_dtype);
 	desc->dsc_length = dsqlFunction->udf_length;
@@ -1201,7 +1201,7 @@ void UdfCallNode::make(dsc* desc, dsql_nod* nullReplacement)
 		desc->dsc_ttype() = dsqlFunction->udf_sub_type;
 }
 
-void UdfCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void UdfCallNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	// Null value for the function indicates that the function was not
 	// looked up during parsing the BLR. This is true if the function
