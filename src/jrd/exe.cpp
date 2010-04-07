@@ -924,8 +924,8 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, USHORT length, cons
 		// ASF: I'll not test for dtype_cstring because usage is only internal
 		if (desc->dsc_dtype == dtype_text || desc->dsc_dtype == dtype_varying)
 		{
-			const UCHAR* p = request->getImpure<UCHAR>(message->nod_impure) +
-				(ULONG)(IPTR) desc->dsc_address;
+			const UCHAR* p = request->getImpure<UCHAR>(message->nod_impure +
+				(ULONG)(IPTR) desc->dsc_address);
 			USHORT len;
 
 			switch (desc->dsc_dtype)
