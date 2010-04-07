@@ -1,3 +1,23 @@
+2010-04-07 04:04  asfernandes
+
+	* firebird2/src/jrd/: Collation.cpp (1.28), cch.cpp (1.260),
+	evl.cpp (1.341), ini.epp (1.140):
+
+	Misc
+
+2010-04-06 18:26  dimitr
+
+	* firebird2/src/jrd/: btr.cpp (1.282), btr.h (1.57), dfw.epp
+	(1.325), opt.cpp (1.420), sort.cpp (1.156), sort.h (1.52):
+
+	Cleanup.
+
+2010-04-06 17:54  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.341):
+
+	Simplify. This is always correctly aligned.
+
 2010-04-06 03:13  asfernandes
 
 	* firebird2/src/: dsql/dsql.cpp (1.325), include/memory_routines.h
