@@ -321,17 +321,16 @@ void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 		// Initialize a sort to reject duplicate values.
 
 		Database* database = request->req_attachment->att_database;
-
-		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
-		const sort_key_def* sortKey = asb->asb_key_desc;
+		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->impure);
 
 		// Get rid of the old sort areas if this request has been used already.
 		delete asbImpure->iasb_sort;
+		asbImpure->iasb_sort = NULL;
 
-		asbImpure->iasb_sort = FB_NEW(request->req_sorts.getPool())
-			Sort(database, &request->req_sorts,
-				 ROUNDUP_LONG(asb->asb_length), (asb->asb_intl ? 2 : 1), 1, sortKey,
-				 RecordSource::rejectDuplicate, 0);
+		asbImpure->iasb_sort = FB_NEW(request->req_sorts.getPool()) Sort(
+			database, &request->req_sorts, ROUNDUP_LONG(asb->length),
+			asb->keyItems.getCount(), 1, asb->keyItems.begin(),
+			RecordSource::rejectDuplicate, 0);
 	}
 }
 
@@ -350,13 +349,13 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 			fb_assert(asb);
 
 			// "Put" the value to sort.
-			impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
+			impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->impure);
 			UCHAR* data;
 			asbImpure->iasb_sort->put(tdbb, reinterpret_cast<ULONG**>(&data));
 
-			MOVE_CLEAR(data, asb->asb_length);
+			MOVE_CLEAR(data, asb->length);
 
-			if (asb->asb_intl)
+			if (asb->intl)
 			{
 				// Convert to an international byte array.
 				dsc to;
@@ -365,15 +364,15 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 				to.dsc_sub_type = 0;
 				to.dsc_scale = 0;
 				to.dsc_ttype() = ttype_sort_key;
-				to.dsc_length = asb->asb_key_desc[0].skd_length;
+				to.dsc_length = asb->keyItems[0].skd_length;
 				to.dsc_address = data;
 				INTL_string_to_key(tdbb, INTL_TEXT_TO_INDEX(desc->getTextType()),
 					desc, &to, INTL_KEY_UNIQUE);
 			}
 
-			dsc toDesc = asb->asb_desc;
+			dsc toDesc = asb->desc;
 			toDesc.dsc_address = data +
-				(asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
+				(asb->intl ? asb->keyItems[1].skd_offset : 0);
 			MOV_move(tdbb, desc, &toDesc);
 
 			return;
@@ -387,7 +386,7 @@ void AggNode::aggFinish(thread_db* tdbb, jrd_req* request) const
 {
 	if (asb)
 	{
-		impure_agg_sort* const asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
+		impure_agg_sort* const asbImpure = request->getImpure<impure_agg_sort>(asb->impure);
 		delete asbImpure->iasb_sort;
 		asbImpure->iasb_sort = NULL;
 	}
@@ -405,8 +404,8 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (distinct)
 	{
-		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->nod_impure);
-		dsc desc = asb->asb_desc;
+		impure_agg_sort* asbImpure = request->getImpure<impure_agg_sort>(asb->impure);
+		dsc desc = asb->desc;
 
 		// Sort the values already "put" to sort.
 		asbImpure->iasb_sort->sort(tdbb);
@@ -426,7 +425,7 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 				break;
 			}
 
-			desc.dsc_address = data + (asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
+			desc.dsc_address = data + (asb->intl ? asb->keyItems[1].skd_offset : 0);
 
 			aggPass(tdbb, request, &desc);
 		}
@@ -569,7 +568,7 @@ ExprNode* AvgAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (dialect1)
 		node->nod_flags |= nod_double;
 
-	// We need a second descriptor in the impure are for AVG.
+	// We need a second descriptor in the impure area for AVG.
 	tempImpure = CMP_impure(csb, sizeof(impure_value_ex));
 
 	return AggNode::pass2(tdbb, csb);

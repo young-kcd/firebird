@@ -2605,20 +2605,15 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod*
 				desc->dsc_length++;
 			}
 
-			const bool asb_intl = desc->isText() && desc->getTextType() != ttype_none &&
+			AggregateSort* asb = FB_NEW(*tdbb->getDefaultPool()) AggregateSort(
+				*tdbb->getDefaultPool());
+			asb->intl = desc->isText() && desc->getTextType() != ttype_none &&
 				desc->getTextType() != ttype_binary && desc->getTextType() != ttype_ascii;
 
-			const USHORT count = asb_delta + 1 +
-				((sizeof(sort_key_def) + sizeof(jrd_nod**)) * (asb_intl ? 2 : 1) - 1) / sizeof(jrd_nod**);
-			AggregateSort* asb = (AggregateSort*) PAR_make_node(tdbb, count);
-			asb->nod_type = nod_asb;
-			asb->asb_intl = asb_intl;
-			asb->nod_count = 0;
-
-			sort_key_def* sort_key = asb->asb_key_desc = (sort_key_def*) asb->asb_key_data;
+			sort_key_def* sort_key = asb->keyItems.getBuffer(asb->intl ? 2 : 1);
 			sort_key->skd_offset = 0;
 
-			if (asb_intl)
+			if (asb->intl)
 			{
 				const USHORT key_length = ROUNDUP(INTL_key_length(tdbb,
 					INTL_TEXT_TO_INDEX(desc->getTextType()), desc->getStringLength()), sizeof(SINT64));
@@ -2630,10 +2625,8 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod*
 				sort_key->skd_vary_offset = 0;
 
 				++sort_key;
-				asb->asb_length = sort_key->skd_offset = key_length;
+				asb->length = sort_key->skd_offset = key_length;
 			}
-			else
-				asb->asb_length = 0;
 
 			fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 			sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
@@ -2648,14 +2641,14 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod*
 			{
 				// allocate space to store varying length
 				sort_key->skd_vary_offset = sort_key->skd_offset + ROUNDUP(desc->dsc_length, sizeof(SLONG));
-				asb->asb_length = sort_key->skd_vary_offset + sizeof(USHORT);
+				asb->length = sort_key->skd_vary_offset + sizeof(USHORT);
 			}
 			else
-				asb->asb_length += sort_key->skd_length;
+				asb->length += sort_key->skd_length;
 
 			sort_key->skd_flags = SKD_ascending;
-			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));
-			asb->asb_desc = *desc;
+			asb->impure = CMP_impure(csb, sizeof(impure_agg_sort));
+			asb->desc = *desc;
 
 			aggNode->asb = asb;
 		}

@@ -50,7 +50,6 @@ enum BlockType
 	type_srpb,
 	type_opt,
 	type_prf,
-	type_asb,
 	type_ctl,
 
 	type_PageSpace,

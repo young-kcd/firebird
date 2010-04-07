@@ -92,7 +92,6 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_not, not, " NOT ")
 			NODE(nod_validate, validate, "")
 
-			NODE(nod_asb, AggregateSort, "")
 			NODE(nod_relation, relation, "")
 			NODE(nod_rse, RecordSelExpr, "")
 			NODE(nod_sort, sort, "")

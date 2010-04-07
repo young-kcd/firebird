@@ -45,6 +45,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/scl.h"
 #include "../jrd/sbm.h"
+#include "../jrd/sort.h"
 
 #include "../jrd/DebugInterface.h"
 #include "../jrd/BlrReader.h"
@@ -176,20 +177,24 @@ const size_t lit_delta	= ((sizeof(Literal) - sizeof(jrd_nod) - sizeof(SINT64)) /
 
 // Aggregate Sort Block (for DISTINCT aggregates)
 
-class AggregateSort : public pool_alloc<type_asb>
+class AggregateSort : protected Firebird::PermanentStorage
 {
 public:
-	jrd_nod*	nod_parent;
-	SLONG	nod_impure;			// Impure offset from request block
-	nod_t	nod_type;			// Type of node
-	UCHAR	nod_flags;
-	SCHAR	nod_scale;
-	USHORT	nod_count;
-	dsc		asb_desc;
-	USHORT	asb_length;
-	bool	asb_intl;
-	sort_key_def* asb_key_desc;	// for the aggregate
-	UCHAR	asb_key_data[1];
+	AggregateSort(Firebird::MemoryPool& p)
+		: PermanentStorage(p),
+		  length(0),
+		  intl(false),
+		  impure(0),
+		  keyItems(p)
+	{
+		desc.clear();
+	}
+
+	dsc desc;
+	USHORT length;
+	bool intl;
+	unsigned impure;
+	Firebird::HalfStaticArray<sort_key_def, 2> keyItems;
 };
 
 const size_t asb_delta	= ((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jrd_nod**));
@@ -339,12 +344,6 @@ const int e_pro_class		= 0;
 const int e_pro_relation	= 1;
 const int e_pro_length		= 2;
 
-// Exception
-
-const int e_xcp_desc		= 0;
-const int e_xcp_msg			= 1;
-const int e_xcp_length		= 2;
-
 // Variable declaration
 
 const int e_var_id			= 0;
@@ -475,6 +474,7 @@ const int e_extproc_output_message	= 1;
 const int e_extproc_input_assign	= 2;
 const int e_extproc_output_assign	= 3;
 
+// Window partition.
 const int e_part_group		= 0;
 const int e_part_regroup	= 1;
 const int e_part_order		= 2;
@@ -496,7 +496,7 @@ struct Resource
 		rsc_function
 	};
 
-	enum rsc_s	rsc_type;
+	rsc_s		rsc_type;
 	USHORT		rsc_id;			// Id of the resource
 	jrd_rel*	rsc_rel;		// Relation block
 	jrd_prc*	rsc_prc;		// Procedure block
@@ -536,7 +536,6 @@ struct AccessItem
 	Firebird::MetaName		acc_security_name;
 	SLONG					acc_view_id;
 	Firebird::MetaName		acc_name, acc_r_name;
-	//const TEXT*			acc_type;
 	SLONG					acc_type;
 	SecurityClass::flags_t	acc_mask;
 
@@ -724,14 +723,6 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > 
 
 // Compile scratch block
 
-/*
- * TMN: I had to move the enclosed csb_repeat outside this class,
- * since it's part of the C API. Compiling as C++ would enclose it.
- */
-// CVC: Mike comment seems to apply only when the conversion to C++
-// was being done. It's almost impossible that a repeating structure of
-// the compiler scratch block be available to outsiders.
-
 class CompilerScratch : public pool_alloc<type_csb>
 {
 	CompilerScratch(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation)
@@ -865,7 +856,6 @@ public:
 		RecordSource** csb_rsb_ptr;		// point to rsb for nod_stream
 	};
 
-
 	typedef csb_repeat* rpt_itr;
 	typedef const csb_repeat* rpt_const_itr;
 	Firebird::HalfStaticArray<csb_repeat, 5> csb_rpt;
@@ -931,7 +921,7 @@ public:
 // must correspond to the size of RDB$EXCEPTIONS.RDB$MESSAGE
 // minus size of vary::vary_length (USHORT) since RDB$MESSAGE
 // declared as varchar
-const int XCP_MESSAGE_LENGTH	= 1023 - sizeof(USHORT);
+const int XCP_MESSAGE_LENGTH = 1023 - sizeof(USHORT);
 
 } //namespace Jrd
 
