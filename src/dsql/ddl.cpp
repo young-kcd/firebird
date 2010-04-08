@@ -327,6 +327,7 @@ void DDL_execute(dsql_req* request)
 	}
 	else
 	{
+		fb_assert(statement->getBlrData().getCount() <= MAX_ULONG);
 		DYN_ddl(request->req_transaction,
 				statement->getBlrData().getCount(), statement->getBlrData().begin(),
 				*statement->getSqlText());
