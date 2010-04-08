@@ -90,6 +90,7 @@
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/dyn_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
@@ -323,15 +324,15 @@ void DDL_execute(dsql_req* request)
 
 			savePoint.release();	// everything is ok
 		}
-
-		JRD_autocommit_ddl(tdbb, request->req_transaction);
 	}
 	else
 	{
-		JRD_ddl(tdbb, /*request->getAttachment()->dbb_attachment,*/ request->req_transaction,
-			statement->getBlrData().getCount(), statement->getBlrData().begin(),
-			*statement->getSqlText());
+		DYN_ddl(request->req_transaction,
+				statement->getBlrData().getCount(), statement->getBlrData().begin(),
+				*statement->getSqlText());
 	}
+
+	JRD_autocommit_ddl(tdbb, request->req_transaction);
 }
 
 

@@ -135,8 +135,6 @@ void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 
 
 void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
-void JRD_ddl(Jrd::thread_db* tdbb, /*Jrd::Attachment* attachment,*/ Jrd::jrd_tra* transaction,
-	USHORT ddl_length, const UCHAR* ddl, const Firebird::string& sqlText);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, USHORT msg_length,
 	UCHAR* msg, SSHORT level);
 void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level, SSHORT item_length,

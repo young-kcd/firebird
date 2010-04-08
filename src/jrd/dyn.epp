@@ -101,8 +101,7 @@ static void	set_field_class_name(Global*, const MetaName&, const MetaName&);
 static void dyn_user(Global*, const UCHAR**);
 
 
-void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, const UCHAR* ddl,
-	const string& sqlText)
+void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string& sqlText)
 {
 /**************************************
  *

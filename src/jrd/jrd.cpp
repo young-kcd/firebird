@@ -82,7 +82,6 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dbg_proto.h"
-#include "../jrd/dyn_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/ext_proto.h"
@@ -6496,24 +6495,6 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 			throw;
 		}
 	}
-}
-
-
-void JRD_ddl(thread_db* tdbb, /*Jrd::Attachment* attachment,*/ jrd_tra* transaction,
-	USHORT ddl_length, const UCHAR* ddl, const string& sqlText)
-{
-/**************************************
- *
- *	J R D _ d d l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	DYN_ddl(/*attachment,*/ transaction, ddl_length, ddl, sqlText);
-	JRD_autocommit_ddl(tdbb, transaction);
 }
 
 
