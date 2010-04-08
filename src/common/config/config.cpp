@@ -144,7 +144,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 #ifdef SUPERSERVER
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},		// pages
 #else
-	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 75},			// pages
+	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 256},			// pages
 #endif
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
