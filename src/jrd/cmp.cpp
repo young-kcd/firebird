@@ -3627,22 +3627,22 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 // This won't optimize all cases, but it is the simplest operating assumption for now.
 static void mark_variant(CompilerScratch* csb, USHORT stream)
 {
-	if (csb->csb_current_nodes.hasData())
+	if (csb->csb_current_nodes.isEmpty())
+		return;
+
+	for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1;
+		 i_node >= csb->csb_current_nodes.begin(); i_node--)
 	{
-		for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1;
-			 i_node >= csb->csb_current_nodes.begin(); i_node--)
+		if ((*i_node)->nod_type == nod_rse)
 		{
-			if ((*i_node)->nod_type == nod_rse)
-			{
-				RecordSelExpr* rse = reinterpret_cast<RecordSelExpr*>(*i_node);
-				if (stream_in_rse(stream, rse))
-					break;
-				rse->nod_flags |= rse_variant;
-			}
-			else
-			{
-				(*i_node)->nod_flags &= ~nod_invariant;
-			}
+			RecordSelExpr* rse = reinterpret_cast<RecordSelExpr*>(*i_node);
+			if (stream_in_rse(stream, rse))
+				break;
+			rse->nod_flags |= rse_variant;
+		}
+		else
+		{
+			(*i_node)->nod_flags &= ~nod_invariant;
 		}
 	}
 }
@@ -4256,7 +4256,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = 0;
 			node->nod_type = type;
 			node->nod_flags |= nod_agg_dbkey;
-			node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
+			node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
 			return node;
 		}
 
@@ -4432,14 +4432,13 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			priv |= SCL_read;
 		}
 
-		const trig_vec* trigger = (relation->rel_pre_erase) ?
+		const trig_vec* trigger = relation->rel_pre_erase ?
 			relation->rel_pre_erase : relation->rel_post_erase;
 
 		// if we have a view with triggers, let's expand it
 
 		if (relation->rel_view_rse && trigger)
 		{
-
 			new_stream = csb->nextStream();
 			node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) new_stream;
 			CMP_csb_element(csb, new_stream)->csb_relation = relation;
@@ -4450,17 +4449,11 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// get the source relation, either a table or yet another view
 
-		jrd_nod* source =
-			pass1_update(tdbb, csb, relation, trigger, stream, new_stream,
-						 priv, parent, parent_stream);
+		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream,
+			new_stream, priv, parent, parent_stream);
 
 		if (!source)
-		{
-
-			// no source means we're done
-
-			return;
-		}
+			return;	// no source means we're done
 
 		parent = relation;
 		parent_stream = stream;
@@ -4471,11 +4464,9 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		if (trigger)
 		{
-
 			// set up the new target stream
 
 			jrd_nod* view_node = NodeCopier::copy(tdbb, csb, node, map);
-
 			view_node->nod_arg[e_erase_statement] = NULL;
 			view_node->nod_arg[e_erase_sub_erase] = NULL;
 
@@ -4483,20 +4474,16 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = MAX(node->nod_count, (USHORT) e_erase_sub_erase + 1);
 
 			// substitute the original delete node with the newly created one
-
 			node = view_node;
 		}
 		else
 		{
-
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
-
 			csb->csb_rpt[new_stream].csb_flags &= ~csb_view_update;
 		}
 
 		// let's reset the target stream
-
 		new_stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
 		node->nod_arg[e_erase_stream] = (jrd_nod*)(IPTR) map[new_stream];
 	}
@@ -4629,7 +4616,6 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		if (relation->rel_view_rse && trigger)
 		{
-
 			node->nod_arg[e_mod_map_view] = pass1_expand_view(tdbb, csb, stream, new_stream, false);
 			node->nod_count = MAX(node->nod_count, (USHORT) e_mod_map_view + 1);
 		}
@@ -4641,12 +4627,10 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		if (!source)
 		{
-
 			// no source means we're done
 
 			if (!relation->rel_view_rse)
 			{
-
 				// apply validation constraints
 
 				if ( (node->nod_arg[e_mod_validate] = make_validation(tdbb, csb, new_stream)) )
@@ -4675,7 +4659,6 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		if (trigger)
 		{
-
 			// set up the new target stream
 
 			const USHORT view_stream = new_stream;
@@ -4684,7 +4667,6 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			map[view_stream] = new_stream;
 
 			jrd_nod* view_node = ViewNodeCopier(csb, map).copy(tdbb, node);
-
 			view_node->nod_arg[e_mod_map_view] = NULL;
 			view_node->nod_arg[e_mod_statement] =
 				pass1_expand_view(tdbb, csb, view_stream, new_stream, true);
@@ -4693,12 +4675,10 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = MAX(node->nod_count, (USHORT) e_mod_sub_mod + 1);
 
 			// substitute the original update node with the newly created one
-
 			node = view_node;
 		}
 		else
 		{
-
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
 
@@ -4707,7 +4687,6 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		}
 
 		// let's reset streams to represent the mapped source and target
-
 		node->nod_arg[e_mod_org_stream] = (jrd_nod*)(IPTR) stream;
 		node->nod_arg[e_mod_new_stream] = source->nod_arg[e_rel_stream];
 	}
@@ -4748,6 +4727,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 			break;
 		}
 	}
+
 	if (top_level_rse)
 		rse->nod_flags |= rse_variant;
 
@@ -4835,7 +4815,6 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 	}
 
 	// we are no longer in the scope of this RecordSelExpr
-
 	csb->csb_current_nodes.pop();
 
 	return rse;
@@ -4897,7 +4876,6 @@ static void pass1_source(thread_db*			tdbb,
 
 			if (sub_rse->rse_boolean)
 			{
-
 				jrd_nod* node = CMP_pass1(tdbb, csb, sub_rse->rse_boolean);
 
 				if (*boolean)
@@ -4962,7 +4940,6 @@ static void pass1_source(thread_db*			tdbb,
 	}
 
 	// special case: union
-
 	if (source->nod_type == nod_union)
 	{
 		CMP_pass1(tdbb, csb, source->nod_arg[e_uni_clauses]);
@@ -4970,7 +4947,6 @@ static void pass1_source(thread_db*			tdbb,
 	}
 
 	// special case: group-by/global aggregates
-
 	if (source->nod_type == nod_aggregate)
 	{
 		fb_assert((int) (IPTR) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
@@ -5064,12 +5040,10 @@ static void pass1_source(thread_db*			tdbb,
 	for (const jrd_nod* const* const end = arg + view_rse->rse_count; arg < end; arg++)
 	{
 		// this call not only copies the node, it adds any streams it finds to the map
-
 		jrd_nod* node = NodeCopier::copy(tdbb, csb, *arg, map);
 
 		// Now go out and process the base table itself. This table might also be a view,
 		// in which case we will continue the process by recursion.
-
 		pass1_source(tdbb, csb, rse, node, boolean, stack);
 	}
 
@@ -5180,14 +5154,11 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		if (!source)
 		{
-
 			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
 
 			if (!relation->rel_view_rse)
 			{
-
 				// apply validation constraints
-
 				if ( (node->nod_arg[e_sto_validate] = make_validation(tdbb, csb, stream)) )
 				{
 					node->nod_count = MAX(node->nod_count, (USHORT) e_sto_validate + 1);
@@ -5204,7 +5175,6 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		if (trigger)
 		{
-
 			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
 
 			// set up the new target stream
@@ -5217,9 +5187,9 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			view_node->nod_arg[e_sto_statement] =
 				pass1_expand_view(tdbb, csb, stream, new_stream, true);
 
-// dimitr:	I don't think the below code is required, but time will show
-//			view_node->nod_arg[e_sto_statement] =
-//				NodeCopier::copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL);
+			// dimitr:	I don't think the below code is required, but time will show
+			//	view_node->nod_arg[e_sto_statement] =
+			//		NodeCopier::copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL);
 
 			// bug 8150: use of blr_store2 against a view with a trigger was causing
 			// the second statement to be executed, which is not desirable
@@ -5230,7 +5200,6 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = MAX(node->nod_count, (USHORT) e_sto_sub_store + 1);
 
 			// substitute the original update node with the newly created one
-
 			node = view_node;
 		}
 		else
@@ -5310,6 +5279,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 				break;
 			}
 		}
+
 		if (user_triggers)
 		{
 			csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
@@ -5787,7 +5757,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		}
 		break;
 
-		// boolean nodes taking one value as input
+	// boolean nodes taking one value as input
 	case nod_missing:
 		{
 			if (node->nod_arg[0]->nod_flags & nod_agg_dbkey) {
