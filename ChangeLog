@@ -1,3 +1,10 @@
+2010-04-08 06:00  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.153.2.2):
+
+	Removed the wrong assertion. In fact, the buffer can be larger than
+	64K, despite what the [unused] length argument suggests.
+
 2010-04-02 18:48  alexpeshkoff
 
 	* firebird2/builds/install/misc/posixLibrary.sh.in (1.23.2.1):
