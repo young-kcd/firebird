@@ -1,3 +1,82 @@
+2010-04-08 14:17  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.407), cmp_proto.h (1.41), exe.h
+	(1.165), rse.h (1.78), recsrc/Cursor.cpp (1.7):
+
+	Let's consistently handle offsets as unsigned integers.
+
+2010-04-08 13:14  dimitr
+
+	* firebird2/src/jrd/: Function.epp (1.24), exe.cpp (1.343),
+	exe_proto.h (1.23), jrd.cpp (1.609), jrd_proto.h (1.89),
+	recsrc/ProcedureScan.cpp (1.8):
+
+	Extending the message size limit from 64K to 4G. First stage.
+
+2010-04-08 11:35  dimitr
+
+	* firebird2/src/: jrd/cch.cpp (1.261), jrd/gds.cpp (1.330),
+	common/classes/alloc.cpp (1.139), common/classes/alloc.h (1.99):
+
+	Cleanup. Let's finally use a single (and standard) behavior of the
+	allocator.
+
+2010-04-08 11:33  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.312):
+
+	Paranoid assertion.
+
+2010-04-08 06:14  dimitr
+
+	* firebird2/: src/common/config/config.cpp (1.115),
+	builds/install/misc/firebird.conf.in (1.11):
+
+	Changed the default page cache size for Classic, as discussed in
+	fb-devel.
+
+2010-04-08 06:13  dimitr
+
+	* firebird2/src/: dsql/ddl.cpp (1.311), jrd/dyn.epp (1.173),
+	jrd/dyn_proto.h (1.16), jrd/jrd.cpp (1.608), jrd/jrd_proto.h
+	(1.88):
+
+	Make the [priorly wrong] assertion working as intended.  Little
+	cleanup.
+
+2010-04-07 18:32  asfernandes
+
+	* firebird2/src/: dsql/AggNodes.cpp (1.10), include/fb_blk.h
+	(1.32), jrd/exe.h (1.164), jrd/nod.h (1.43), jrd/opt.cpp (1.421):
+
+	Cleanup
+
+2010-04-07 17:31  asfernandes
+
+	* firebird2/src/: dsql/AggNodes.cpp (1.9), dsql/Nodes.h (1.27),
+	jrd/exe.h (1.163):
+
+	Thread safety: do not write in request shared place during
+	execution.
+
+2010-04-07 15:11  robocop
+
+	* firebird2/src/dsql/keywords.cpp (1.93):
+
+	Style.
+
+2010-04-07 15:11  robocop
+
+	* firebird2/src/dsql/ExprNodes.cpp (1.11):
+
+	Misc warnings.
+
+2010-04-07 15:10  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.342):
+
+	Misc: be consistent with evl.cpp:205 and exe.cpp:952.
+
 2010-04-07 04:04  asfernandes
 
 	* firebird2/src/jrd/: Collation.cpp (1.28), cch.cpp (1.260),
