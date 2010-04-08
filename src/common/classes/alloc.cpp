@@ -420,26 +420,6 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 	return block;
 }
 
-void* MemoryPool::allocate_nothrow(size_t size
-#ifdef DEBUG_GDS_ALLOC
-	, const char* file, int line
-#endif
-) throw ()
-{
-	try
-	{
-#ifdef DEBUG_GDS_ALLOC
-		return allocate(size, file, line);
-#else
-		return allocate(size);
-#endif
-	}
-	catch (const Firebird::Exception&)
-	{
-		return NULL;
-	}
-}
-
 void* MemoryPool::allocate(size_t size
 #ifdef DEBUG_GDS_ALLOC
 	, const char* fileName, int line

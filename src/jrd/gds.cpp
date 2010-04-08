@@ -217,11 +217,18 @@ static gds_msg* global_default_msg = NULL;
 
 VoidPtr API_ROUTINE gds__alloc_debug(SLONG size_request, const TEXT* filename, ULONG lineno)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request
+	try
+	{
+		return getDefaultMemoryPool()->allocate(size_request
 #ifdef DEBUG_GDS_ALLOC
-		, filename, lineno
+			, filename, lineno
 #endif
-	);
+		);
+	}
+	catch (const Firebird::Exception&)
+	{
+		return NULL;
+	}
 }
 
 ULONG API_ROUTINE gds__free(void* blk)
@@ -3635,11 +3642,18 @@ void gds__trace_printer(void* /*arg*/, SSHORT offset, const TEXT* line)
 
 VoidPtr API_ROUTINE gds__alloc(SLONG size_request)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request
+	try
+	{
+		return getDefaultMemoryPool()->allocate(size_request
 #ifdef DEBUG_GDS_ALLOC
-		, __FILE__, __LINE__
+			, __FILE__, __LINE__
 #endif
-	);
+		);
+	}
+	catch (const Firebird::Exception&)
+	{
+		return NULL;
+	}
 }
 
 

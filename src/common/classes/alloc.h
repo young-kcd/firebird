@@ -303,13 +303,6 @@ public:
 	static void deallocate(void* block) throw ();
 	void validate(void) throw ();
 
-	// Allocate memory block. In case of problems this method returns NULL
-	void* allocate_nothrow(size_t size
-#ifdef DEBUG_GDS_ALLOC
-		, const char* file = NULL, int line = 0
-#endif
-	) throw ();
-
 #ifdef LIBC_CALLS_NEW
 	static void* globalAlloc(size_t s) throw (std::bad_alloc);
 #else
