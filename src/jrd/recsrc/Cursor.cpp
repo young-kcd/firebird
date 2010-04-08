@@ -56,7 +56,7 @@ void Cursor::open(thread_db* tdbb)
 	// Initialize dependent invariants
 	if (m_invariants)
 	{
-		for (const SLONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
+		for (const ULONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
 		{
 			impure_value* const invariant_impure = request->getImpure<impure_value>(*iter);
 			invariant_impure->vlu_flags = 0;

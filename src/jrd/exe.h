@@ -93,7 +93,7 @@ class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
 {
 public:
 	jrd_nod*	nod_parent;
-	SLONG		nod_impure;			// Inpure offset from request block
+	ULONG		nod_impure;			// Inpure offset from request block
 	nod_t		nod_type;			// Type of node
 	USHORT		nod_flags;
 	SCHAR		nod_scale;			// Target scale factor
@@ -800,7 +800,7 @@ public:
 												// candidates within whose scope we are
 	USHORT			csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number
-	SLONG			csb_impure;					// Next offset into impure area
+	ULONG			csb_impure;					// Next offset into impure area
 	USHORT			csb_g_flags;
 	MemoryPool&		csb_pool;					// Memory pool to be used by csb
 	Firebird::DbgInfo	csb_dbg_info;			// Debug information

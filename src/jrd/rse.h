@@ -49,7 +49,7 @@ struct sort_key_def;
 class CompilerScratch;
 
 // Array which stores relative pointers to impure areas of invariant nodes
-typedef Firebird::SortedArray<SLONG> VarInvariantArray;
+typedef Firebird::SortedArray<ULONG> VarInvariantArray;
 
 // Must be less then MAX_SSHORT. Not used for static arrays.
 const int MAX_CONJUNCTS	= 32000;

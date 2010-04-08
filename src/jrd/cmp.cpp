@@ -2033,7 +2033,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 }
 
 
-SLONG CMP_impure(CompilerScratch* csb, USHORT size)
+ULONG CMP_impure(CompilerScratch* csb, ULONG size)
 {
 /**************************************
  *
@@ -2047,11 +2047,18 @@ SLONG CMP_impure(CompilerScratch* csb, USHORT size)
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
 
-	if (!csb) {
+	if (!csb)
+	{
 		return 0;
 	}
 
-	const SLONG offset = FB_ALIGN(csb->csb_impure, FB_ALIGNMENT);
+	const ULONG offset = FB_ALIGN(csb->csb_impure, FB_ALIGNMENT);
+
+	if (offset + size > MAX_REQUEST_SIZE)
+	{
+		IBERROR(226);	// msg 226: request size limit exceeded
+	}
+
 	csb->csb_impure = offset + size;
 
 	return offset;
@@ -5824,8 +5831,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 			if (!top_rse->rse_invariants)
 			{
-				top_rse->rse_invariants = FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(
-					*tdbb->getDefaultPool());
+				top_rse->rse_invariants =
+					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 			}
 
 			top_rse->rse_invariants->add(node->nod_impure);
