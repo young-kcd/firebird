@@ -720,13 +720,12 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 			{
 				in_msg_length = FB_ALIGN(in_msg_length, type_alignments[arg_desc.dsc_dtype]);
 			}
-			const USHORT arg_offset = in_msg_length;
+			const ULONG arg_offset = in_msg_length;
 			in_msg_length += arg_desc.dsc_length;
 
 			in_msg_length = FB_ALIGN(in_msg_length, sizeof(SSHORT));
-			const USHORT null_offset = in_msg_length;
+			const ULONG null_offset = in_msg_length;
 			in_msg_length += sizeof(SSHORT);
-			fb_assert(in_msg_length < ULONG(MAX_USHORT));
 
 			in_buffer.grow(in_msg_length);
 
@@ -749,9 +748,9 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		UCHAR* const in_msg = in_msg_length ? in_buffer.begin() : NULL;
 
 		dsc ret_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
-		USHORT out_msg_length = ret_desc.dsc_length;
+		ULONG out_msg_length = ret_desc.dsc_length;
 		out_msg_length = FB_ALIGN(out_msg_length, sizeof(SSHORT));
-		const USHORT null_offset = out_msg_length;
+		const ULONG null_offset = out_msg_length;
 		out_msg_length += sizeof(SSHORT);
 
 		Firebird::UCharBuffer out_buffer;

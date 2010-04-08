@@ -561,7 +561,7 @@ static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
 static void			init_database_locks(thread_db*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
-static void			verify_request_synchronization(jrd_req*& request, SSHORT level);
+static void			verify_request_synchronization(jrd_req*& request, USHORT level);
 static unsigned int purge_transactions(thread_db*, Jrd::Attachment*, const bool, const ULONG);
 
 namespace {
@@ -3290,17 +3290,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 
 		try
 		{
-			verify_request_synchronization(request, level);
-
-			EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
-
-			check_autocommit(request, tdbb);
-
-			if (request->req_flags & req_warning)
-			{
-				request->req_flags &= ~req_warning;
-				ERR_punt();
-			}
+			JRD_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level);
 		}
 		catch (const Exception& ex)
 		{
@@ -6176,12 +6166,12 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 //
 // @param request The incoming, parent request to be replaced.
 // @param level The level of the sub-request we need to find.
-static void verify_request_synchronization(jrd_req*& request, SSHORT level)
+static void verify_request_synchronization(jrd_req*& request, USHORT level)
 {
-	const USHORT lev = level;
-	if (lev) {
+	if (level)
+	{
 		const vec<jrd_req*>* vector = request->req_sub_requests;
-		if (!vector || lev >= vector->count() || !(request = (*vector)[lev]))
+		if (!vector || level >= vector->count() || !(request = (*vector)[level]))
 		{
 			ERR_post(Arg::Gds(isc_req_sync));
 		}
@@ -6498,8 +6488,9 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_length,
-	UCHAR* msg, SSHORT level)
+void JRD_receive(thread_db* tdbb, jrd_req* request,
+				 USHORT msg_type, ULONG msg_length, UCHAR* msg,
+				 USHORT level)
 {
 /**************************************
  *
@@ -6525,8 +6516,10 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
 }
 
 
-void JRD_request_info(Jrd::thread_db*, jrd_req* request, SSHORT level, SSHORT item_length,
-	const UCHAR* items, SLONG buffer_length, UCHAR* buffer)
+void JRD_request_info(Jrd::thread_db*, jrd_req* request,
+					  USHORT level,
+					  SSHORT item_length, const UCHAR* items,
+					  SLONG buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -6545,7 +6538,35 @@ void JRD_request_info(Jrd::thread_db*, jrd_req* request, SSHORT level, SSHORT it
 }
 
 
-void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, SSHORT level)
+void JRD_send(thread_db* tdbb, jrd_req* request,
+			  USHORT msg_type, ULONG msg_length, UCHAR* msg,
+			  USHORT level)
+{
+/**************************************
+ *
+ *	J R D _ s e n d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get a record from the host program.
+ *
+ **************************************/
+	verify_request_synchronization(request, level);
+
+	EXE_send(tdbb, request, msg_type, msg_length, msg);
+
+	check_autocommit(request, tdbb);
+
+	if (request->req_flags & req_warning)
+	{
+		request->req_flags &= ~req_warning;
+		ERR_punt();
+	}
+}
+
+
+void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, USHORT level)
 {
 /**************************************
  *
@@ -6641,7 +6662,7 @@ void JRD_rollback_retaining(thread_db* tdbb, jrd_tra** transaction)
 
 
 void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction, USHORT msg_type,
-	USHORT msg_length, UCHAR* msg, SSHORT level)
+	ULONG msg_length, UCHAR* msg, USHORT level)
 {
 /**************************************
  *
@@ -6653,7 +6674,6 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-	///jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
 
 	if (level)
 		request = CMP_clone_request(tdbb, request, level, false);
@@ -6802,7 +6822,7 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, SSHORT count,
 }
 
 
-void JRD_unwind_request(thread_db* tdbb, jrd_req* request, SSHORT level)
+void JRD_unwind_request(thread_db* tdbb, jrd_req* request, USHORT level)
 {
 /**************************************
  *

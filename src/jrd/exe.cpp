@@ -707,12 +707,12 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 }
 
 
-void EXE_receive(thread_db*		tdbb,
-				 jrd_req*		request,
-				 USHORT		msg,
-				 USHORT		length,
-				 UCHAR*		buffer,
-				 bool		top_level)
+void EXE_receive(thread_db* tdbb,
+				 jrd_req* request,
+				 USHORT msg,
+				 ULONG length,
+				 UCHAR* buffer,
+				 bool top_level)
 {
 /**************************************
  *
@@ -843,7 +843,7 @@ void EXE_receive(thread_db*		tdbb,
 }
 
 
-void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, USHORT length, const UCHAR* buffer)
+void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const UCHAR* buffer)
 {
 /**************************************
  *
@@ -1477,7 +1477,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 	const jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 
-	USHORT in_msg_length = 0;
+	ULONG in_msg_length = 0;
 	UCHAR* in_msg = NULL;
 	jrd_nod* in_message = node->nod_arg[e_esp_in_msg];
 	if (in_message)
@@ -1488,7 +1488,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	}
 
 	const Format* format = NULL;
-	USHORT out_msg_length = 0;
+	ULONG out_msg_length = 0;
 	UCHAR* out_msg = NULL;
 	jrd_nod* out_message = node->nod_arg[e_esp_out_msg];
 	if (out_message)

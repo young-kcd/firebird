@@ -60,7 +60,7 @@ void ProcedureScan::open(thread_db* tdbb)
 	delete rpb->rpb_record;
 	rpb->rpb_record = NULL;
 
-	USHORT iml;
+	ULONG iml;
 	const UCHAR* im;
 
 	jrd_req* const proc_request = EXE_find_request(tdbb, m_procedure->getRequest(), false);
@@ -166,7 +166,7 @@ bool ProcedureScan::getRecord(thread_db* tdbb)
 		impure->irsb_message->str_length = size;
 	}
 	UCHAR* om = (UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data, FB_ALIGNMENT);
-	USHORT oml = impure->irsb_message->str_length - FB_ALIGNMENT;
+	ULONG oml = impure->irsb_message->str_length - FB_ALIGNMENT;
 
 	Record* record;
 	if (!rpb->rpb_record)
