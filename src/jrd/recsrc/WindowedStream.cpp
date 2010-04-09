@@ -425,6 +425,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
+	m_impure = CMP_impure(csb, sizeof(Impure));
 	m_next = FB_NEW(csb->csb_pool) BufferedStream(csb, next);
 
 	// Process the unpartioned and unordered map, if existent.
