@@ -194,24 +194,25 @@ private:
 
 // request block
 
-class jrd_req : public pool_alloc_rpt<record_param, type_req>
+class jrd_req : public pool_alloc<type_req>
 {
 public:
-	jrd_req(MemoryPool* pool, Firebird::MemoryStats* parent_stats)
+	jrd_req(MemoryPool* pool, USHORT streamCount, ULONG impureSize, Firebird::MemoryStats* parent_stats)
 	:	req_pool(pool), req_memory_stats(parent_stats),
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
 		req_exec_sta(*pool), req_ext_stmt(NULL), req_cursors(*pool), req_invariants(*pool),
 		req_charset(CS_dynamic), req_blr(*pool), req_domain_validation(NULL),
 		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool),
-		req_sorts(*pool)
-	{}
+		req_sorts(*pool), req_rpb(*pool, streamCount), impureArea(*pool, impureSize)
+	{
+		req_rpb.grow(streamCount);
+		impureArea.grow(impureSize);
+	}
 
 	Attachment*	req_attachment;			// database attachment
 	SLONG		req_id;					// request identifier
-	USHORT		req_count;				// number of streams
 	USHORT		req_incarnation;		// incarnation number
-	ULONG		req_impure_size;		// size of impure area
 	MemoryPool* req_pool;
 	Firebird::MemoryStats req_memory_stats;
 	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
@@ -278,7 +279,9 @@ public:
 	ExtEngineManager::ResultSet* resultSet;	// external procedure result set
 	ValuesImpl* inputParams;				// external procedure input values
 	ValuesImpl* outputParams;				// external procedure output values
-	SortOwner		req_sorts;
+	SortOwner req_sorts;
+	Firebird::Array<record_param> req_rpb;	// record parameter blocks
+	Firebird::Array<UCHAR> impureArea;		// impure area
 
 	enum req_ta {
 		// Order should be maintained because the numbers are stored in BLR
@@ -306,11 +309,9 @@ public:
 
 	StatusXcp req_last_xcp;			// last known exception
 
-	record_param req_rpb[1];		// record parameter blocks
-
 	template <typename T> T* getImpure(unsigned offset)
 	{
-		return reinterpret_cast<T*>(((SCHAR*) this) + offset);
+		return reinterpret_cast<T*>(&impureArea[offset]);
 	}
 
 	void adjustCallerStats()
@@ -323,15 +324,6 @@ public:
 
 	const Routine* getRoutine() const;
 };
-
-// Size of request without rpb items at the tail. Used to calculate impure area size
-//
-// 24-Mar-2004, Nickolay Samofatov.
-// Note it may be not accurate on 64-bit RISC targets with 32-bit pointers due to
-// alignment quirks, but from quick glance on code it looks like it should not be
-// causing problems. Good fix for this kludgy behavior is to use some C++ means
-// to manage impure area and array of record parameter blocks
-const size_t REQ_SIZE = sizeof(jrd_req) - sizeof(jrd_req::blk_repeat_type);
 
 // Flags for req_flags
 const ULONG req_active			= 0x1L;

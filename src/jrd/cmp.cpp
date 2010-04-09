@@ -118,18 +118,15 @@ inline bool IS_DATE_AND_TIME(const dsc d1, const dsc d2)
 	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date)));
 }
 
-// size of req_rpb[0]
-const size_t REQ_TAIL = sizeof(Jrd::jrd_req::blk_repeat_type);
-const int MAP_LENGTH = 256;
+const unsigned MAP_LENGTH = 256;
 
-// RITTER - changed HP10 to HPUX
 #if defined (HPUX) && defined (SUPERSERVER)
 const int MAX_RECURSION		= 96;
 #else
 const int MAX_RECURSION		= 128;
 #endif
 
-const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
+const unsigned MAX_REQUEST_SIZE = 10485760;	// 10 MB - just to be safe
 
 using namespace Jrd;
 using namespace Firebird;
@@ -697,12 +694,10 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 	// clone the request
 
-	const size_t n = (request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
-	clone = FB_NEW_RPT(*pool, n) jrd_req(pool, &dbb->dbb_memory_stats);
+	clone = FB_NEW(*pool) jrd_req(pool, ULONG(request->req_rpb.getCount()),
+		ULONG(request->impureArea.getCount()), &dbb->dbb_memory_stats);
 	(*vector)[level] = clone;
 	clone->req_attachment = attachment;
-	clone->req_count = request->req_count;
-	clone->req_impure_size = request->req_impure_size;
 	clone->req_top_node = request->req_top_node;
 	clone->req_trg_name = request->req_trg_name;
 	clone->req_procedure = request->req_procedure;
@@ -718,10 +713,10 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_exec_sta = request->req_exec_sta;
 	clone->req_map_field_info.assign(request->req_map_field_info);
 
-	record_param* rpb1 = clone->req_rpb;
-	const record_param* const end = rpb1 + clone->req_count;
+	record_param* rpb1 = clone->req_rpb.begin();
+	const record_param* const end = rpb1 + clone->req_rpb.getCount();
 
-	for (const record_param* rpb2 = request->req_rpb; rpb1 < end; rpb1++, rpb2++)
+	for (const record_param* rpb2 = request->req_rpb.begin(); rpb1 < end; ++rpb1, ++rpb2)
 	{
 		if (rpb2->rpb_stream_flags & RPB_s_update) {
 			rpb1->rpb_stream_flags |= RPB_s_update;
@@ -2120,7 +2115,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 		fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
 	}
 
-	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
 
 	csb->csb_node = CMP_pass2(tdbb, csb, csb->csb_node, 0);
@@ -2142,12 +2136,9 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	// count of hold the impure areas.
 
 	MemoryPool* const pool = tdbb->getDefaultPool();
-	const size_t n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
 	Firebird::MemoryStats* const parent_stats =
 		internal_flag ? &dbb->dbb_memory_stats : &attachment->att_memory_stats;
-	request = FB_NEW_RPT(*pool, n) jrd_req(pool, parent_stats);
-	request->req_count = csb->csb_n_stream;
-	request->req_impure_size = csb->csb_impure;
+	request = FB_NEW(*pool) jrd_req(pool, csb->csb_n_stream, csb->csb_impure, parent_stats);
 	request->req_top_node = csb->csb_node;
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
@@ -2223,7 +2214,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	const CompilerScratch::csb_repeat* const streams_end = tail + csb->csb_n_stream;
 	DEBUG;
 
-	for (record_param* rpb = request->req_rpb; tail < streams_end; rpb++, tail++)
+	for (record_param* rpb = request->req_rpb.begin(); tail < streams_end; ++rpb, ++tail)
 	{
 		// fetch input stream for update if all booleans matched against indices
 

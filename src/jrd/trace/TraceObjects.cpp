@@ -368,7 +368,7 @@ const char* TraceTriggerImpl::getTriggerName()
 
 const char* TraceTriggerImpl::getRelationName()
 {
-	const jrd_rel* rel = m_trig->req_rpb->rpb_relation;
+	const jrd_rel* rel = m_trig->req_rpb[0].rpb_relation;
 	return rel ? rel->rel_name.c_str() : NULL;
 }
 
