@@ -82,7 +82,7 @@ static const struct {
 	{335544379, "HY000"}, //  59 wrong_ods
 	{335544380, "07002"}, //  60 wronumarg
 	{335544381, "54000"}, //  61 imp_exc
-	{335544382, "00000"}, //  62 random
+	{335544382, "HY000"}, //  62 random
 	{335544383, "HY000"}, //  63 fatal_conflict
 	{335544384, "XX000"}, //  64 badblk
 	{335544385, "XX000"}, //  65 invpoolcl
@@ -547,7 +547,7 @@ static const struct {
 	{335544844, "HY000"}, // 524 ctx_namespace_invalid
 	{335544845, "54000"}, // 525 ctx_too_big
 	{335544846, "HY000"}, // 526 ctx_bad_argument
-	{335544847, "37001"}, // 527 identifier_too_long
+	{335544847, "42000"}, // 527 identifier_too_long
 	{335544848, "HY000"}, // 528 except2
 	{335544849, "22000"}, // 529 malformed_string
 	{335544850, "07002"}, // 530 prc_out_param_mismatch
@@ -803,7 +803,7 @@ static const struct {
 	{336068803, "28000"}, // 195 dyn_kywd_spec_for_role
 	{336068804, "28000"}, // 196 dyn_roles_not_supported
 	{336068812, "42000"}, // 204 dyn_domain_name_exists
-	{336068813, "42S01"}, // 205 dyn_field_name_exists
+	{336068813, "42S21"}, // 205 dyn_field_name_exists
 	{336068814, "42000"}, // 206 dyn_dependency_exists
 	{336068815, "42000"}, // 207 dyn_dtype_invalid
 	{336068816, "42000"}, // 208 dyn_char_fld_too_small
