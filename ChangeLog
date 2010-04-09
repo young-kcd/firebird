@@ -1,3 +1,16 @@
+2010-04-09 10:02  dimitr
+
+	* firebird2/src/include/gen/sql_state.h (1.49.2.4):
+
+	Corrections for SQL states.
+
+2010-04-09 09:53  dimitr
+
+	* firebird2/src/msgs/: sqlstates.sql (1.7.2.1), system_errors2.sql
+	(1.65.2.4):
+
+	Corrections for SQL states.
+
 2010-04-08 06:00  dimitr
 
 	* firebird2/src/jrd/dyn.epp (1.153.2.2):
