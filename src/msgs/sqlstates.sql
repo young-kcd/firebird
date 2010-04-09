@@ -130,9 +130,6 @@ set bulk_insert INSERT INTO SQLSTATES (SQL_CLASS, SQL_SUBCLASS, SQL_STATE_TEXT) 
 -- 36 Cursor Sensitivity Exception
 ('36', '001', 'Request rejected')
 ('36', '002', 'Request failed')
--- 37 Invalid Identifier
-('37', '000', 'Invalid identifier')
-('37', '001', 'Identifier too long')
 -- External Routine Exception
 ('38', '000', 'External routine exception')
 -- External Routine Invocation Exception
