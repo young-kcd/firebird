@@ -1,3 +1,30 @@
+2010-04-09 10:02  dimitr
+
+	* firebird2/src/include/gen/sql_state.h (1.74):
+
+	Corrections for SQL states.
+
+2010-04-09 09:56  dimitr
+
+	* firebird2/src/msgs/: sqlstates.sql (1.8), system_errors2.sql
+	(1.91):
+
+	Corrections for SQL states.
+
+2010-04-09 02:53  asfernandes
+
+	* firebird2/src/: dsql/keywords.cpp (1.94), jrd/cch.cpp (1.262),
+	jrd/cmp.cpp (1.409), jrd/dyn_proto.h (1.17), jrd/exe.h (1.166),
+	jrd/exe_proto.h (1.24), jrd/recsrc/Cursor.cpp (1.8):
+
+	Misc
+
+2010-04-08 17:49  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.408):
+
+	Misc
+
 2010-04-08 14:17  dimitr
 
 	* firebird2/src/jrd/: cmp.cpp (1.407), cmp_proto.h (1.41), exe.h
