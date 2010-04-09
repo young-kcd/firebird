@@ -3630,8 +3630,8 @@ static void mark_variant(CompilerScratch* csb, USHORT stream)
 	if (csb->csb_current_nodes.isEmpty())
 		return;
 
-	for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1;
-		 i_node >= csb->csb_current_nodes.begin(); i_node--)
+	for (jrd_node_base** i_node = csb->csb_current_nodes.end() - 1;
+		 i_node >= csb->csb_current_nodes.begin(); --i_node)
 	{
 		if ((*i_node)->nod_type == nod_rse)
 		{

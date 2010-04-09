@@ -58,8 +58,8 @@ void Cursor::open(thread_db* tdbb)
 	{
 		for (const ULONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
 		{
-			impure_value* const invariant_impure = request->getImpure<impure_value>(*iter);
-			invariant_impure->vlu_flags = 0;
+			impure_value* const invariantImpure = request->getImpure<impure_value>(*iter);
+			invariantImpure->vlu_flags = 0;
 		}
 	}
 

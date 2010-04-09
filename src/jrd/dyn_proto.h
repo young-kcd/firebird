@@ -33,4 +33,3 @@ namespace Jrd
 void	DYN_ddl(Jrd::jrd_tra*, ULONG, const UCHAR*, const Firebird::string& sqlText);
 
 #endif // JRD_DYN_PROTO_H
-

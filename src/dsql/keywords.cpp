@@ -449,20 +449,20 @@ extern "C" {
 
 int API_ROUTINE KEYWORD_stringIsAToken(const char* in_str)
 {
-    const TOK* tok_ptr = tokens;
-    while (tok_ptr->tok_string)
-    {
-        if (!tok_ptr->nonReserved && !strcmp(tok_ptr->tok_string, in_str)) {
-            return true;
-        }
-        ++tok_ptr;
-    }
-    return false;
+	const TOK* tok_ptr = tokens;
+	while (tok_ptr->tok_string)
+	{
+		if (!tok_ptr->nonReserved && !strcmp(tok_ptr->tok_string, in_str)) {
+			return true;
+		}
+		++tok_ptr;
+	}
+	return false;
 }
 
 Tokens API_ROUTINE KEYWORD_getTokens()
 {
-    return tokens;
+	return tokens;
 }
 
 }

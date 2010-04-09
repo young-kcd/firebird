@@ -3536,7 +3536,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 			const size_t alloc_size = dbb->dbb_page_size * (num_per_seg + 1);
 			memory = (UCHAR*) dbb->dbb_bufferpool->allocate(alloc_size);
 			new_block->bcb_memory.push(memory);
-			memory = (UCHAR *) FB_ALIGN((U_IPTR) memory, dbb->dbb_page_size);
+			memory = (UCHAR*) FB_ALIGN((U_IPTR) memory, dbb->dbb_page_size);
 			num_in_seg = num_per_seg;
 			left_to_do -= num_per_seg;
 			if (num_per_seg > left_to_do) {

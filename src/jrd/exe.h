@@ -193,7 +193,7 @@ public:
 	dsc desc;
 	USHORT length;
 	bool intl;
-	unsigned impure;
+	ULONG impure;
 	Firebird::HalfStaticArray<sort_key_def, 2> keyItems;
 };
 

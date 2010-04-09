@@ -126,4 +126,3 @@ namespace Jrd
 }
 
 #endif // JRD_EXE_PROTO_H
-
