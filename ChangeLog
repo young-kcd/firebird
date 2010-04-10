@@ -1,3 +1,16 @@
+2010-04-09 17:43  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.410), req.h (1.108),
+	trace/TraceObjects.cpp (1.24):
+
+	Move impure area and rpbs to their own arrays
+
+2010-04-09 17:35  asfernandes
+
+	* firebird2/src/jrd/recsrc/WindowedStream.cpp (1.15):
+
+	Fix bug: impure space was not being allocated.
+
 2010-04-09 10:02  dimitr
 
 	* firebird2/src/include/gen/sql_state.h (1.74):
