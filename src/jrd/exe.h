@@ -180,7 +180,7 @@ const size_t lit_delta	= ((sizeof(Literal) - sizeof(jrd_nod) - sizeof(SINT64)) /
 class AggregateSort : protected Firebird::PermanentStorage
 {
 public:
-	AggregateSort(Firebird::MemoryPool& p)
+	explicit AggregateSort(Firebird::MemoryPool& p)
 		: PermanentStorage(p),
 		  length(0),
 		  intl(false),
