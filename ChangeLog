@@ -1,3 +1,9 @@
+2010-04-11 13:49  robocop
+
+	* firebird2/src/jrd/exe.h (1.167):
+
+	Misc.
+
 2010-04-09 17:43  asfernandes
 
 	* firebird2/src/jrd/: cmp.cpp (1.410), req.h (1.108),
