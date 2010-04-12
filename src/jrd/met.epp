@@ -118,7 +118,6 @@ static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void make_relation_scope_name(const TEXT*, const USHORT, Firebird::string& str);
 static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::MetaName name = Firebird::MetaName());
-static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static void parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*, bool);
 static void par_messages(thread_db*, const UCHAR* const, USHORT, jrd_prc*, CompilerScratch*);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
@@ -3166,7 +3165,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				const SSHORT pa_collation_id_null = PA.RDB$COLLATION_ID.NULL;
 				const SSHORT pa_collation_id = PA.RDB$COLLATION_ID;
 				const SSHORT pa_default_value_null = PA.RDB$DEFAULT_VALUE.NULL;
-				bid pa_default_value = PA.RDB$DEFAULT_VALUE;
+				bid pa_default_value = pa_default_value_null ? F.RDB$DEFAULT_VALUE : PA.RDB$DEFAULT_VALUE;
 
 				Array<Parameter*>& paramArray = PA.RDB$PARAMETER_TYPE ?
 					procedure->prc_output_fields : procedure->prc_input_fields;
@@ -3193,22 +3192,22 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					 (fb_utils::implicit_domain(F.RDB$FIELD_NAME) && !F.RDB$DEFAULT_VALUE.NULL)))
 				{
 					procedure->prc_defaults++;
-					Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
-					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-					// CVC: It seems we need another try/catch block here.
+					MemoryPool* pool = dbb->createPool();
+					Jrd::ContextPoolHolder context(tdbb, pool);
 
-					if (!pa_default_value_null)
+					try
 					{
-						parameter->prm_default_value =
-							parse_param_blr(tdbb, procedure, &pa_default_value, csb);
+						parameter->prm_default_value = 
+							MET_parse_blob(tdbb, NULL, &pa_default_value, NULL, NULL, false);
 					}
-					else
+					catch(const Exception&)
 					{
-						parameter->prm_default_value =
-							parse_param_blr(tdbb, procedure, &F.RDB$DEFAULT_VALUE, csb);
-					}
+						// Here we loose pools created for previous defaults.
+						// Probably we should use common pool for defaults and procedure itself.
 
-					delete csb;
+						dbb->deletePool(pool);
+						throw;
+					}
 				}
 
 			END_FOR;
@@ -4554,28 +4553,6 @@ static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::M
 
 	csb->csb_blr_reader = BlrReader();
 	delete csb;
-
-	return node;
-}
-
-
-static jrd_nod* parse_param_blr(thread_db* tdbb, jrd_prc* procedure, bid* blob_id,
-	CompilerScratch* csb)
-{
-	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	blb* blob = BLB_open(tdbb, attachment->getSysTransaction(), blob_id);
-	SLONG length = blob->blb_length + 10;
-	Firebird::HalfStaticArray<UCHAR, 512> temp;
-
-	length = BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
-
-	jrd_req* request = procedure->getRequest();
-	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb,
-		&request, false, 0);
-	procedure->setRequest(request);
-	csb->csb_blr_reader = BlrReader();
 
 	return node;
 }
