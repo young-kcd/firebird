@@ -354,31 +354,17 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 					MemoryPool* const csb_pool = dbb->createPool();
 					Jrd::ContextPoolHolder context(tdbb, csb_pool);
-					CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-					jrd_req* request = NULL;
 
 					try
 					{
 						parameter->prm_default_value =
-							MET_parse_blob(tdbb, NULL, &default_value, &csb, &request, false);
+							MET_parse_blob(tdbb, NULL, &default_value, NULL, NULL, false);
 					}
 					catch (const Exception&)
 					{
-						delete csb;
-
-						if (request)
-						{
-							CMP_release(tdbb, request);
-						}
-						else
-						{
-							dbb->deletePool(csb_pool);
-						}
-
+						dbb->deletePool(csb_pool);
 						throw; // an explicit error message would be better
 					}
-
-					delete csb;
 				}
 
 				if (tail->fun_parameter->prm_desc.dsc_dtype == dtype_cstring)
@@ -448,7 +434,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				MemoryPool* const csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-				CompilerScratch* const csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+				AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
 
 				if (!X.RDB$DEBUG_INFO.NULL)
 				{
