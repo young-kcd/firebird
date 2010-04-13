@@ -1,3 +1,24 @@
+2010-04-13 10:13  dimitr
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.94):
+
+	Avoid polluting firebird.log on Vista/Win7 systems when running as
+	application.
+
+2010-04-13 09:01  dimitr
+
+	* firebird2/src/common/classes/TempFile.cpp (1.23):
+
+	Fixed CORE-2966: Wrong results or unexpected errors while sorting a
+	large data set.
+
+2010-04-12 23:19  hvlad
+
+	* firebird2/src/jrd/met.epp (1.326):
+
+	Fix for bug CORE-2956 : Problems with requests of procedure's
+	parameters.  To be reviewed by Dmitry.
+
 2010-04-11 13:49  robocop
 
 	* firebird2/src/jrd/exe.h (1.167):
