@@ -1,3 +1,23 @@
+2010-04-13 10:11  dimitr
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.92.2.2):
+
+	Correction.
+
+2010-04-13 10:09  dimitr
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.92.2.1):
+
+	Avoid polluting firebird.log on Vista/Win7 systems when running as
+	application.
+
+2010-04-13 08:55  dimitr
+
+	* firebird2/src/common/classes/TempFile.cpp (1.22.2.1):
+
+	Fixed CORE-2966: Wrong results or unexpected errors while sorting a
+	large data set.
+
 2010-04-09 10:02  dimitr
 
 	* firebird2/src/include/gen/sql_state.h (1.49.2.4):
