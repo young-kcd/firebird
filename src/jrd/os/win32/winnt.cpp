@@ -1284,18 +1284,20 @@ static void adjustFileSystemCacheSize()
 		return;
 	}
 
-	SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", TRUE);
-	result = pfnSetSystemFileCacheSize(0, maxMem, FILE_CACHE_MAX_HARD_ENABLE);
-	const DWORD error = GetLastError();
-	SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", FALSE);
-	CloseHandle(hToken);
-
-	if (!result)
+	if (SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", TRUE))
 	{
-		// If we do not have enough permissions - silently ignore the error
-		gds__log("SetSystemFileCacheSize error %d. "
-			"The engine will continue to operate, but the system "
-			"performance may degrade significantly when working with "
-			"large databases", error);
+		result = pfnSetSystemFileCacheSize(0, maxMem, FILE_CACHE_MAX_HARD_ENABLE);
+		const DWORD error = GetLastError();
+		SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", FALSE);
+		CloseHandle(hToken);
+
+		if (!result)
+		{
+			// If we do not have enough permissions - silently ignore the error
+			gds__log("SetSystemFileCacheSize error %d. "
+				"The engine will continue to operate, but the system "
+				"performance may degrade significantly when working with "
+				"large databases", error);
+		}
 	}
 }
