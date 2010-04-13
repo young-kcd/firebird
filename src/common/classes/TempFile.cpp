@@ -269,9 +269,9 @@ void TempFile::extend(size_t delta)
 {
 	const char* const buffer = zeros().getBuffer();
 	const size_t bufferSize = zeros().getSize();
-	const size_t newSize = size + delta;
+	const offset_t newSize = size + delta;
 
-	for (size_t offset = size; offset < newSize; offset += bufferSize)
+	for (offset_t offset = size; offset < newSize; offset += bufferSize)
 	{
 		const size_t length = MIN(newSize - offset, bufferSize);
 		write(offset, buffer, length);
