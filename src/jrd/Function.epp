@@ -447,8 +447,6 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				}
 				catch (const Exception&)
 				{
-					delete csb;
-
 					if (function->getRequest())
 					{
 						CMP_release(tdbb, function->getRequest());
@@ -464,8 +462,6 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				}
 
 				function->getRequest()->req_function = function;
-
-				delete csb;
 			}
 			else
 			{
