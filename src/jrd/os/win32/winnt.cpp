@@ -1289,7 +1289,6 @@ static void adjustFileSystemCacheSize()
 		result = pfnSetSystemFileCacheSize(0, maxMem, FILE_CACHE_MAX_HARD_ENABLE);
 		const DWORD error = GetLastError();
 		SetPrivilege(hToken, "SeIncreaseQuotaPrivilege", FALSE);
-		CloseHandle(hToken);
 
 		if (!result)
 		{
@@ -1300,4 +1299,6 @@ static void adjustFileSystemCacheSize()
 				"large databases", error);
 		}
 	}
+
+	CloseHandle(hToken);
 }
