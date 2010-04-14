@@ -1,3 +1,10 @@
+2010-04-13 17:18  hvlad
+
+	* firebird2/src/jrd/met.epp (1.227.2.7):
+
+	Fix for bug CORE-2956 : Problems with requests of procedure's
+	parameters.
+
 2010-03-25 15:05  hvlad
 
 	* firebird2/src/dsql/: dsql.h (1.113.6.3), pass1.cpp (1.348.2.12):
