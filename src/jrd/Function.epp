@@ -434,15 +434,16 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				MemoryPool* const csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-				AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
-
-				if (!X.RDB$DEBUG_INFO.NULL)
-				{
-					DBG_parse_debug_info(tdbb, &X.RDB$DEBUG_INFO, csb->csb_dbg_info);
-				}
 
 				try
 				{
+					AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
+
+					if (!X.RDB$DEBUG_INFO.NULL)
+					{
+						DBG_parse_debug_info(tdbb, &X.RDB$DEBUG_INFO, csb->csb_dbg_info);
+					}
+
 					function->parseBlr(tdbb, &X.RDB$FUNCTION_BLR, csb);
 				}
 				catch (const Exception&)
