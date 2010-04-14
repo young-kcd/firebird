@@ -5746,16 +5746,25 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 				MemoryPool* const csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-				CompilerScratch* const csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
 				try
 				{
-					function->parseBlr(tdbb, &FUN.RDB$FUNCTION_BLR, csb);
-					valid_blr = true;
+					Firebird::AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
+
+					try
+					{
+						function->parseBlr(tdbb, &FUN.RDB$FUNCTION_BLR, csb);
+						valid_blr = true;
+					}
+					catch (const Firebird::Exception&)
+					{
+						fb_utils::init_status(tdbb->tdbb_status_vector);
+					}
 				}
 				catch (const Firebird::Exception&)
 				{
-					fb_utils::init_status(tdbb->tdbb_status_vector);
+					dbb->deletePool(csb_pool);
+					throw;
 				}
 
 				dbb->deletePool(csb_pool);

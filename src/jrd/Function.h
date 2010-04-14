@@ -56,6 +56,7 @@ namespace Jrd
 		void releaseLocks(thread_db* tdbb);
 		void remove(thread_db* tdbb);
 		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);
+		jrd_nod* parseArgs(thread_db* tdbb, CompilerScratch* csb);
 
 	private:
 		explicit Function(MemoryPool& p)

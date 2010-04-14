@@ -1123,14 +1123,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
-	node->args = PAR_args(tdbb, csb, VALUE);
-
-	// Check to see if the argument count matches.
-	if (node->args->nod_count < node->function->fun_inputs - node->function->fun_defaults ||
-		node->args->nod_count > node->function->fun_inputs)
-	{
-		PAR_error(csb, Arg::Gds(isc_funmismat) << Arg::Str(node->function->getName().toString()));
-	}
+	node->args = node->function->parseArgs(tdbb, csb);
 
     // CVC: I will track ufds only if a proc is not being dropped.
     if (csb->csb_g_flags & csb_get_dependencies)

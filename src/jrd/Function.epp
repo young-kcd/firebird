@@ -444,25 +444,21 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 						DBG_parse_debug_info(tdbb, &X.RDB$DEBUG_INFO, csb->csb_dbg_info);
 					}
 
-					function->parseBlr(tdbb, &X.RDB$FUNCTION_BLR, csb);
+					try
+					{
+						function->parseBlr(tdbb, &X.RDB$FUNCTION_BLR, csb);
+					}
+					catch (const Exception&)
+					{
+						const string name = function->getName().toString();
+						status_exception::raise(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name));
+					}
 				}
 				catch (const Exception&)
 				{
-					if (function->getRequest())
-					{
-						CMP_release(tdbb, function->getRequest());
-						function->setRequest(NULL);
-					}
-					else
-					{
-						dbb->deletePool(csb_pool);
-					}
-
-					const string name = function->getName().toString();
-					status_exception::raise(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name));
+					dbb->deletePool(csb_pool);
+					throw;
 				}
-
-				function->getRequest()->req_function = function;
 			}
 			else
 			{
@@ -598,8 +594,40 @@ void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 	fb_assert(blob_id && !blob_id->isEmpty());
 
 	jrd_req* request = getRequest();
+
+	if (request)
+	{
+		CMP_release(tdbb, request);
+		setRequest(NULL);
+		request = NULL;
+	}
+
 	MET_parse_blob(tdbb, NULL, blob_id, &csb, &request, false);
+	request->req_function = this;
 	setRequest(request);
+}
+
+jrd_nod* Function::parseArgs(thread_db* tdbb, CompilerScratch* csb)
+{
+	const UCHAR arg_count = csb->csb_blr_reader.getByte();
+
+	// Check to see if the argument count matches
+	if (arg_count < fun_inputs - fun_defaults || arg_count > fun_inputs)
+	{
+		PAR_error(csb, Arg::Gds(isc_funmismat) << Arg::Str(getName().toString()));
+	}
+	
+	jrd_nod* const args = PAR_args(tdbb, csb, VALUE, arg_count, fun_inputs);
+	
+	for (USHORT i = arg_count; i < fun_inputs; i++)
+	{
+		Parameter* const parameter = fun_args[i + 1].fun_parameter;
+		args->nod_arg[i] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
+	}
+
+	args->nod_count = fun_inputs;
+	
+	return args;
 }
 
 void Function::addRef()
@@ -686,6 +714,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 	{
 		fb_assert(getRequest());
 		fb_assert(!fun_return_arg);
+		fb_assert(args->nod_count == fun_args.getCount() - 1);
 
 		Jrd::Attachment* attachment = tdbb->getAttachment();
 		jrd_req* const request = tdbb->getRequest();
@@ -712,10 +741,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 
 			in_buffer.grow(in_msg_length);
 
-			jrd_nod* const node = (i - 1 < args->nod_count) ?
-				args->nod_arg[i - 1] : parameter->prm_default_value;
-
-			dsc* const src_desc = EVL_expr(tdbb, node);
+			dsc* const src_desc = EVL_expr(tdbb, args->nod_arg[i - 1]);
 			if (src_desc && !(request->req_flags & req_null))
 			{
 				arg_desc.dsc_address = in_buffer.begin() + arg_offset;
