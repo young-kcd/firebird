@@ -1119,11 +1119,8 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	}
 	else
 	{
-		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
-		{
-			csb->csb_blr_reader.seekBackward(count);
-			PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
-		}
+		csb->csb_blr_reader.seekBackward(count);
+		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
 
 	node->args = PAR_args(tdbb, csb, VALUE);

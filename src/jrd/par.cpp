@@ -101,9 +101,6 @@ static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
 static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, bool);
 static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
 static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool, bool);
-#ifdef NOT_USED_OR_REPLACED
-static jrd_nod* par_stream(thread_db*, CompilerScratch*);
-#endif
 static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
 
 
@@ -2058,7 +2055,6 @@ static void par_procedure_parms(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	bool mismatch = false;
 	SLONG count = csb->csb_blr_reader.getWord();
 	const SLONG inputCount = procedure->prc_input_fields.getCount();
 
@@ -2067,14 +2063,8 @@ static void par_procedure_parms(thread_db* tdbb,
 			(count < (inputCount - procedure->prc_defaults) || (count > inputCount) ) :
 			(count != SLONG(procedure->prc_output_fields.getCount())))
 	{
-		// They don't match...Hmmm...Its OK if we were dropping the procedure
-		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
-		{
-			PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
-							Arg::Str(procedure->getName().toString()));
-		}
-		else
-			mismatch = true;
+		PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
+						Arg::Str(procedure->getName().toString()));
 	}
 
 	if (count || input_flag && procedure->prc_defaults)
@@ -2113,14 +2103,7 @@ static void par_procedure_parms(thread_db* tdbb,
 		*fmt_copy = *format;
 		message->nod_arg[e_msg_format] = (jrd_nod*) fmt_copy;
 		// --- end of fix ---
-		if (!mismatch)
-			n = format->fmt_count / 2;
-		else
-		{
-			//  There was a parameter mismatch hence can't depend upon the format's
-			// fmt_count. Use count instead.
-			n = count;
-		}
+		n = format->fmt_count / 2;
 		jrd_nod* list = *parameter_ptr = PAR_make_node(tdbb, n);
 		list->nod_type = nod_list;
 		list->nod_count = n;
@@ -2164,7 +2147,7 @@ static void par_procedure_parms(thread_db* tdbb,
 			prm_f->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
 		}
 	}
-	else if ((input_flag ? inputCount : procedure->prc_output_fields.getCount()) && !mismatch)
+	else if (input_flag ? inputCount : procedure->prc_output_fields.getCount())
 	{
 		PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
 						Arg::Str(procedure->getName().toString()));
@@ -2458,45 +2441,6 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag, bool 
 
 	return clause;
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ s t r e a m
- *
- **************************************
- *
- * Functional description
- *	Parse a stream expression.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	RecordSelExpr* rse = (RecordSelExpr*) PAR_make_node(tdbb, 1 + rse_delta + 2);
-	rse->nod_count = 0;
-	rse->rse_count = 1;
-	rse->rse_relation[0] = PAR_parse_node(tdbb, csb, RELATION);
-
-	while (true)
-	{
-		const UCHAR op = csb->csb_blr_reader.getByte();
-		switch (op)
-		{
-		case blr_boolean:
-			rse->rse_boolean = PAR_parse_node(tdbb, csb, TYPE_BOOL);
-			break;
-
-		default:
-			if (op == (UCHAR) blr_end)
-				return (jrd_nod*) rse;
-			PAR_syntax_error(csb, "stream_clause");
-		}
-	}
-}
-#endif
 
 
 static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)

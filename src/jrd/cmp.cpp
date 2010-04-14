@@ -5543,13 +5543,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_message:
 		{
 			const Format* format = (Format*) node->nod_arg[e_msg_format];
-			if (!((tdbb->tdbb_flags & TDBB_prc_being_dropped) && !format))
-			{
-				csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
+			fb_assert(format);
 
-				node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
-				csb->csb_impure += sizeof(USHORT) * format->fmt_count;
-			}
+			csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
+
+			node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
+			csb->csb_impure += sizeof(USHORT) * format->fmt_count;
 		}
 		break;
 
