@@ -2010,7 +2010,16 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 
 	if (procedure->prc_type == prc_executable)
 	{
-		PAR_error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(procedure->getName().toString()));
+		const string name = procedure->getName().toString();
+
+		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+		{
+			PAR_warning(Arg::Gds(isc_illegal_prc_type) << Arg::Str(name));
+		}
+		else
+		{
+			PAR_error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(name));
+		}
 	}
 
 	jrd_nod* const node = PAR_make_node(tdbb, e_prc_length);
