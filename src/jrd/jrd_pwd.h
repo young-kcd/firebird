@@ -99,17 +99,22 @@ private:
 	isc_req_handle lookup_req;
 
 	int counter;
+	bool server_shutdown;
 
 	void fini();
 	void init();
-	bool lookup_user(const TEXT*, int*, int*, TEXT*);
+	void closeDatabase();
+	void onShutdown();
+	bool lookupUser(const TEXT*, int*, int*, TEXT*);
 	void prepare();
 	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
+
+	static int onShutdown(const int, const int, void*);
 
 	static SecurityDatabase instance;
 
 	SecurityDatabase()
-		: lookup_db(0), lookup_req(0), counter(0)
+		: lookup_db(0), lookup_req(0), counter(0), server_shutdown(false)
 	{}
 
 public:

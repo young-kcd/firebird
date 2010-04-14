@@ -227,30 +227,68 @@ void SecurityDatabase::fini()
 {
 	MutexLockGuard guard(mutex);
 
+	if (server_shutdown)
+	{
+		return;
+	}
+
 	fb_assert(counter > 0);
 
 	if (--counter <= 0)
 	{
-		if (lookup_req)
-		{
-			isc_release_request(status, &lookup_req);
-			checkStatus("isc_release_request");
-		}
-		if (lookup_db)
-		{
-			isc_detach_database(status, &lookup_db);
-			checkStatus("isc_detach_database");
-		}
+		closeDatabase();
 	}
 }
 
 void SecurityDatabase::init()
 {
 	MutexLockGuard guard(mutex);
-	++counter;
+
+	if (server_shutdown)
+	{
+		return;
+	}
+
+	if (counter++ == 0)
+	{
+		if (fb_shutdown_callback(status, onShutdown, fb_shut_preproviders, this))
+		{
+			status_exception::raise(status);
+		}
+	}
 }
 
-bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TEXT* pwd)
+void SecurityDatabase::closeDatabase()
+{
+	// assumes mutex is locked
+
+	if (lookup_req)
+	{
+		isc_release_request(status, &lookup_req);
+		checkStatus("isc_release_request");
+	}
+
+	if (lookup_db)
+	{
+		isc_detach_database(status, &lookup_db);
+		checkStatus("isc_detach_database");
+	}
+}
+
+void SecurityDatabase::onShutdown()
+{
+	MutexLockGuard guard(mutex);
+
+	if (server_shutdown)
+	{
+		return;
+	}
+
+	server_shutdown = true;
+	closeDatabase();
+}
+
+bool SecurityDatabase::lookupUser(const TEXT* user_name, int* uid, int* gid, TEXT* pwd)
 {
 	bool found = false;		// user found flag
 	TEXT uname[129];		// user name buffer
@@ -269,6 +307,11 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	uname[sizeof uname - 1] = 0;
 
 	MutexLockGuard guard(mutex);
+
+	if (server_shutdown)
+	{
+		return false;
+	}
 
 	// Attach database and compile request
 
@@ -362,6 +405,12 @@ void SecurityDatabase::shutdown()
 	instance.fini();
 }
 
+int SecurityDatabase::onShutdown(const int, const int, void* me)
+{
+	((SecurityDatabase*) me)->onShutdown();
+	return FB_SUCCESS;
+}
+
 void SecurityDatabase::verifyUser(string& name,
 								  const TEXT* user_name,
 								  const TEXT* password,
@@ -406,7 +455,7 @@ void SecurityDatabase::verifyUser(string& name,
 	// that means the current context must be saved and restored.
 
 	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
-	const bool found = instance.lookup_user(name.c_str(), uid, gid, pw1);
+	const bool found = instance.lookupUser(name.c_str(), uid, gid, pw1);
 	pw1[MAX_PASSWORD_LENGTH] = 0;
 	string storedHash(pw1, MAX_PASSWORD_LENGTH);
 	storedHash.rtrim();
