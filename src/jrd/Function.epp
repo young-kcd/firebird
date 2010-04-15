@@ -696,6 +696,8 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 				Arg::Str(getName().identifier) << Arg::Str(getName().package));
 	}
 
+	jrd_req* const request = tdbb->getRequest();
+
 	const fun_repeat* const return_ptr = &fun_args[fun_return_arg];
 	value->vlu_desc = return_ptr->fun_parameter->prm_desc;
 
@@ -739,7 +741,6 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		fb_assert(args->nod_count == fun_inputs);
 
 		Jrd::Attachment* attachment = tdbb->getAttachment();
-		jrd_req* const request = tdbb->getRequest();
 
 		const ULONG in_msg_length = fun_in_msg_format.fmt_length;
 		const ULONG out_msg_length = fun_out_msg_format.fmt_length;
@@ -835,7 +836,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		}
 	}
 
-	return &value->vlu_desc;
+	return (request->req_flags & req_null) ? NULL : &value->vlu_desc;
 }
 
 USHORT Function::incrementAlterCount()
