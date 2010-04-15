@@ -632,11 +632,9 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-//	if (dsqlScratch->req_blr_string) {
-		stuff(dsqlScratch->getStatement(), blr_message);
-		stuff(dsqlScratch->getStatement(), message->msg_number);
-		stuff_word(dsqlScratch->getStatement(), message->msg_parameter);
-//	}
+	stuff(dsqlScratch->getStatement(), blr_message);
+	stuff(dsqlScratch->getStatement(), message->msg_number);
+	stuff_word(dsqlScratch->getStatement(), message->msg_parameter);
 
 	ULONG offset = 0;
 

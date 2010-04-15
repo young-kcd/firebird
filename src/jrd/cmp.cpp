@@ -120,7 +120,7 @@ inline bool IS_DATE_AND_TIME(const dsc d1, const dsc d2)
 
 const unsigned MAP_LENGTH = 256;
 
-inline int maxRecusrion()
+inline int maxRecursion()
 {
 // RITTER - changed HP10 to HPUX
 #ifdef HPUX
@@ -869,10 +869,10 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 
 	for (int n = 1; true; n++)
 	{
-		if (n > maxRecusrion())
+		if (n > maxRecursion())
 		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(maxRecusrion()));
+					 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(maxRecursion()));
 			// Msg363 "request depth exceeded. (Recursive definition?)"
 		}
 		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
