@@ -279,6 +279,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\errd.cpp"
 				>
 			</File>
