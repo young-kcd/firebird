@@ -1,3 +1,24 @@
+2010-04-15 13:46  dimitr
+
+	* firebird2/src/jrd/Function.epp (1.30):
+
+	Fixed the NULL handling.
+
+2010-04-15 13:06  dimitr
+
+	* firebird2/src/: jrd/Function.epp (1.29), jrd/Function.h (1.10),
+	dsql/ExprNodes.cpp (1.14):
+
+	Optimization: allocate the messages during prepare time rather than
+	runtime.  Also, fixed one bug in the parameter handling for PSQL
+	functions.
+
+2010-04-15 12:27  dimitr
+
+	* firebird2/src/jrd/val.h (1.50):
+
+	Misc.
+
 2010-04-14 11:55  dimitr
 
 	* firebird2/src/jrd/par.cpp (1.286):
