@@ -64,7 +64,7 @@ const ULONG REMOTE_HOP_SUPPORT			= 0x4L;		// Server can connect to other server
 //const ULONG NO_FORCED_WRITE_SUPPORT	= 0x40L;	// Can not configure sync writes
 //const ULONG NO_SHUTDOWN_SUPPORT		= 0x80L;	// Can not shutdown/restart databases
 const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	// Can not shutdown server
-const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	// Can configure server
+//const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	// Can configure server
 const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	// Can pass quoted filenames in
 
 // Range definitions for service actions.  Any action outside of

@@ -33,6 +33,7 @@
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
+#include "../common/utils_proto.h"
 #include "../config/ScanDir.h"
 
 using namespace Firebird;
@@ -79,9 +80,14 @@ void PluginManager::initialize()
 #else
 	libraryName->assign("fb_inet_server.exe");
 #endif
-#elif !defined(SUPERSERVER)
-	PathUtils::concatPath(libraryName, Config::getRootDirectory(), "lib/libfbembed.so");
+#else // WIN_NT
+	// This will become 
+	// libraryName->assign(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, "libfirebird.so"));
+	// when we start building libfirebird.so.
+#ifndef SUPERSERVER
+	libraryName->assign(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, "libfbembed.so"));
 #endif
+#endif // WIN_NT
 
 	PathName pluginsPath = getPluginsDirectory();
 	ScanDir dir(pluginsPath.c_str(), "*.conf");

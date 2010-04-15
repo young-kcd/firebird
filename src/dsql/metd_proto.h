@@ -38,6 +38,13 @@ namespace Jrd {
 	class dsql_req;
 	class dsql_str;
 	class DsqlCompilerScratch;
+	class jrd_tra;
+	class dsql_intlsym;
+	class dsql_fld;
+	class dsql_udf;
+	class dsql_nod;
+	class dsql_prc;
+	class dsql_rel;
 };
 
 void METD_drop_charset(Jrd::jrd_tra*, const Firebird::MetaName&);

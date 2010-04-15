@@ -864,7 +864,6 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
  *	or password already referenced).
  *
  **************************************/
-#ifndef SUPERSERVER
 
 	// look for the environment variables
 
@@ -914,7 +913,6 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 	}
 	else if (password.length() && !password_seen)
 		isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_password, password.c_str(), 0);
-#endif
 }
 
 

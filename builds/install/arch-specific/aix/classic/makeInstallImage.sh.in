@@ -122,7 +122,7 @@ copyFiles() {
 	then
 	    mkdir -p $TargetDir/usr/include
 	fi
-    cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server
+    cp -f $BuiltFBDir/bin/fb_smp_server $DestDir/bin/fb_smp_server
 
     cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak
     cp $BuiltFBDir/bin/gds_drop $DestDir/bin/gds_drop

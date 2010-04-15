@@ -1084,7 +1084,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (dbb->dbb_filename.empty())
 	{
-#if defined(DEV_BUILD) && defined(SUPERSERVER)
+#if defined(DEV_BUILD) && defined(SHARED_METADATA_CACHE)
 		// make sure we do not reopen same DB twice
 		for (Database* d = databases; d; d = d->dbb_next)
 		{
@@ -1132,7 +1132,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		if (options.dpb_set_page_buffers)
 		{
-#ifdef SUPERSERVER
+#ifdef SHARED_METADATA_CACHE
 			// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
 			// cause other flags is UserId can be set only when DB is opened.
 			// No idea how to test for other cases before init is complete.
@@ -1288,7 +1288,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		SHUT_online(tdbb, options.dpb_online);
 	}
 
-#ifdef SUPERSERVER
 	// Check if another attachment has or is requesting exclusive database access.
 	// If this is an implicit attachment for the security (password) database, don't
 	// try to get exclusive attachment to avoid a deadlock condition which happens
@@ -1314,7 +1313,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
 		}
 	}
-#endif
 
 	// If database is shutdown then kick 'em out.
 
@@ -1435,12 +1433,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_set_page_buffers)
 	{
-#ifdef SUPERSERVER
-		validateAccess(attachment);
-#else
+		if (dbb->dbb_config->getSharedCache())
+		{
+			validateAccess(attachment);
+		}
 		if (attachment->locksmith())
-#endif
+		{
 			PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
+		}
 	}
 
 	if (options.dpb_set_db_readonly)
@@ -4454,13 +4454,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-#ifdef SUPERSERVER
-		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ?
-			Config::getPriorityBoost() : 1) * QUANTUM) :
-#else
-		(quantum ? quantum : QUANTUM) :
-#endif
-		tdbb->tdbb_quantum;
+		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
 
 	return false;
 }
@@ -4788,15 +4782,16 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_set_page_buffers = true;
 			break;
 
-#ifndef SUPERSERVER
 		case isc_dpb_num_buffers:
-			dpb_buffers = rdr.getInt();
-			if (dpb_buffers < 10)
+			if (!Config::getSharedCache())
 			{
-				ERR_post(Arg::Gds(isc_bad_dpb_content));
+				dpb_buffers = rdr.getInt();
+				if (dpb_buffers < 10)
+				{
+					ERR_post(Arg::Gds(isc_bad_dpb_content));
+				}
 			}
 			break;
-#endif
 
 		case isc_dpb_page_size:
 			dpb_page_size = (USHORT) rdr.getInt();
@@ -5153,7 +5148,7 @@ static Database* init(thread_db* tdbb,
 
 	// Check to see if the database is already actively attached
 
-#ifdef SUPERSERVER
+#ifdef SHARED_METADATA_CACHE
 	for (dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
 		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
@@ -5200,19 +5195,10 @@ static Database* init(thread_db* tdbb,
 		else if (gc_policy == GCPolicyCombined) {
 			dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
 		}
-		else // config value is invalid, use default
+		else // config value is invalid
 		{
-			if (GCPolicyDefault == GCPolicyCooperative) {
-				dbb->dbb_flags |= DBB_gc_cooperative;
-			}
-			else if (GCPolicyDefault == GCPolicyBackground) {
-				dbb->dbb_flags |= DBB_gc_background;
-			}
-			else if (GCPolicyDefault == GCPolicyCombined) {
-				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
-			}
-			else
-				fb_assert(false);
+			// this shoudl not happen - means bug in config
+			fb_assert(false);
 		}
 	}
 
@@ -5370,8 +5356,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
 
-#ifdef SUPERSERVER
-	if (dbb->dbb_relations)
+	if (dbb->dbb_config->getSharedCache() && dbb->dbb_relations)
 	{
 		vec<jrd_rel*>& rels = *dbb->dbb_relations;
 		for (size_t i = 1; i < rels.count(); i++)
@@ -5384,7 +5369,6 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 			}
 		}
 	}
-#endif
 
 	if (dbb->dbb_event_mgr && attachment->att_event_session)
 	{
@@ -5394,10 +5378,10 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
 
-#ifndef SUPERSERVER
 	if (attachment->att_temp_pg_lock)
 		LCK_release(tdbb, attachment->att_temp_pg_lock);
 
+#ifndef SHARED_METADATA_CACHE
 	DSqlCache::Accessor accessor(&attachment->att_dsql_cache);
 	for (bool getResult = accessor.getFirst(); getResult; getResult = accessor.getNext())
 	{

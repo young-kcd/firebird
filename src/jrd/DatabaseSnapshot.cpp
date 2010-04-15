@@ -66,12 +66,6 @@
 #include <windows.h>
 #endif
 
-#ifdef SUPERSERVER
-static const bool SHARED_DBB = true;
-#else
-static const bool SHARED_DBB = false;
-#endif
-
 
 using namespace Firebird;
 using namespace Jrd;
@@ -915,7 +909,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	writer.putRecord(record);
 	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 
-	if (SHARED_DBB)
+	if (Config::getSharedDatabase())
 	{
 		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
@@ -990,7 +984,7 @@ bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* att
 	writer.putRecord(record);
 	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 
-	if (SHARED_DBB)
+	if (Config::getSharedDatabase())
 	{
 		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}

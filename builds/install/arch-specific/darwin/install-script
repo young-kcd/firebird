@@ -135,7 +135,7 @@ else
     chmod 444 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
 
     chmod a+s "$FB_FW/Resources/bin/gds_drop"
-    chmod a+s "$FB_FW/Resources/bin/fb_inet_server"
+    chmod a+s "$FB_FW/Resources/bin/fb_smp_server"
 fi
 
 
@@ -178,7 +178,7 @@ echo "Install ourselves in the correct place Classic"
 echo "Test inetd"
 if [ -f /var/run/inetd.pid -a -d /etc/inetd.d ]; then
 	if [ -f /etc/inetd.conf ]; then
-	echo "gds_db stream  tcp     nowait  root $FB_FW/Resources/bin/fb_inet_server fb_inet_server" > /etc/.fb.inetd.conf.entry
+	echo "gds_db stream  tcp     nowait  root $FB_FW/Resources/bin/fb_smp_server fb_smp_server" > /etc/.fb.inetd.conf.entry
 	cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.firebird.temp.install.inetd.conf
 	mv /etc/.firebird.temp.install.inetd.conf /etc/inetd.conf
         rm -f /etc/.fb.inetd.conf.entry
@@ -200,7 +200,7 @@ service gds_db
         wait            = no
         user            = firebird
 EOF
-		echo "server          = $FB_FW/Resources/bin/fb_inet_server" >> /etc/xinetd.d/firebird
+		echo "server          = $FB_FW/Resources/bin/fb_smp_server" >> /etc/xinetd.d/firebird
 		cat >> /etc/xinetd.d/firebird << EOF
         groups          = yes
 }

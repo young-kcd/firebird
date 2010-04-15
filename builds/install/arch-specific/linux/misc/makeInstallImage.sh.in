@@ -161,7 +161,6 @@ copyFiles() {
 	chmod 0755 ${TargetDir}@FB_BINDIR@/*
 
 	#sbin
-    copyIfExists $BuiltFBDir/bin/fb_inet_server ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fb_smp_server ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fbserver ${TargetDir}@FB_SBINDIR@
 	cp -f $BuiltFBDir/bin/fbguard ${TargetDir}@FB_SBINDIR@

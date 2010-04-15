@@ -332,17 +332,14 @@ examples_cp:
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
 
-.PHONY: libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql
+.PHONY: libfbembed fb_smp_server embed_gfix embed_gbak embed_isql
 .PHONY: embed_gpre embed_util
 
-classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql \
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed fb_smp_server embed_gfix embed_gbak embed_isql \
 	embed_gpre libfbclient embed_util embed_qli embed_fbudf $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.libfbembed $@
-
-inet_server:
-	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.inet_server
 
 fb_smp_server:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.smp_server
@@ -585,7 +582,7 @@ clean_makefiles:
 	$(RM) $(SRC_ROOT)/include/gen/blrtable.h
 
 clean_gpre_gen:
-	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
+	-$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.cpp' -print`
 
 clean_yacc_gen:
 	$(RM) $(ROOT)/src/dsql/parse.cpp $(ROOT)/src/dsql/dsql.tab.h

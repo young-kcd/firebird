@@ -87,14 +87,6 @@
 #include <fcntl.h>
 #endif
 
-#ifdef UNIX
-#if (defined SUPERSERVER) || (defined SOLARIS)
-#include <sys/mman.h>
-#include <sys/resource.h>
-#include "../jrd/err_proto.h"
-#endif
-#endif
-
 #include "../common/config/config.h"
 
 #include "gen/sql_code.h"
@@ -365,9 +357,9 @@ const char* const FB_TMP_ENV		= "FIREBIRD_TMP";
 // be printed in. However, this means buffer should be large enough to contain
 // any ULONG (11 bytes) and thus prevent a buffer overflow. If minlen >= 11,
 // then buffer should have be of size = (minlen + 1).
-void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
+void gds__ulstr(char* buffer, FB_UINT64 value, const int minlen, const char filler)
 {
-	ULONG n = value;
+	FB_UINT64 n = value;
 
 	int c = 0;
 	do {
@@ -1140,26 +1132,16 @@ void API_ROUTINE gds__trace(const TEXT* text)
 	*p++ = ' ';
 	ULONG apid =
 #ifdef WIN_NT
-#ifdef SUPERSERVER
-			     GetCurrentThreadId();
-#else
 				 GetCurrentProcessId();
-#endif
 #else
 				 getpid();
 #endif
 	gds__ulstr(p, apid, 5, ' ');
 	p += 5;
 	*p++ = ' ';
-#if (defined(WIN_NT) && !defined(SUPERSERVER))
-	ULONG atid = GetCurrentThreadId();
-	if (apid != atid)	// For superclassic
-	{
-		gds__ulstr(p, atid, 5, ' ');
-		p += 5;
-		*p++ = ' ';
-	}
-#endif
+	gds__ulstr(p, getThreadId(), 5, ' ');
+	p += 5;
+	*p++ = ' ';
 	strcpy(p, text);
 	p += strlen(p);
 	strcat(p, "\n");

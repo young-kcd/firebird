@@ -74,7 +74,7 @@ darwin_finish_cs_framework:
 	cp -r ../gen/firebird/examples $(FB_FW)/Resources
 	mkdir -p $(FB_FW)/Resources/bin
 	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
-	cp ../gen/firebird/bin/fb_inet_server $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gfix $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gbak $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin

@@ -76,47 +76,33 @@ static void set_lock_attachment(Lock*, Jrd::Attachment*);
 
 // globals and macros
 
-#ifdef SUPERSERVER
-
 inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb)
 {
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
+
 inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb)
 {
+#ifdef SHARED_METADATA_CACHE
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getAttachment()->att_lock_owner_id;
+#else
+	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
+#endif
 }
 
 inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb)
 {
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
+
 inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb)
 {
+#ifdef SHARED_METADATA_CACHE
 	return &tdbb->getAttachment()->att_lock_owner_handle;
-}
-
-#else	// SUPERSERVER
-
-inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb)
-{
-	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
-}
-inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb)
-{
-	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
-}
-
-inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb)
-{
+#else
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
+#endif
 }
-inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb)
-{
-	return &tdbb->getDatabase()->dbb_lock_owner_handle;
-}
-
-#endif	// SUPERSERVER
 
 
 static const bool compatibility[LCK_max][LCK_max] =

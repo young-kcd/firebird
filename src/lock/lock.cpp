@@ -191,7 +191,8 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 	  m_dbId(getPool(), id),
 	  m_config(conf),
 	  m_acquireSpins(m_config->getLockAcquireSpins()),
-	  m_memorySize(m_config->getLockMemSize())
+	  m_memorySize(m_config->getLockMemSize()),
+	  m_useBlockingThread(m_config->getSharedDatabase())
 #ifdef USE_SHMEM_EXT
 	  , m_extents(getPool())
 #endif
@@ -221,16 +222,17 @@ LockManager::~LockManager()
 
 	if (m_process)
 	{
-#ifdef USE_BLOCKING_THREAD
-		// Wait for AST thread to start (or 5 secs)
-		m_startupSemaphore.tryEnter(5);
+		if (m_useBlockingThread)
+		{
+			// Wait for AST thread to start (or 5 secs)
+			m_startupSemaphore.tryEnter(5);
 
-		// Wakeup the AST thread - it might be blocking
-		ISC_event_post(&m_process->prc_blocking);
+			// Wakeup the AST thread - it might be blocking
+			ISC_event_post(&m_process->prc_blocking);
 
-		// Wait for the AST thread to finish cleanup or for 5 seconds
-		m_cleanupSemaphore.tryEnter(5);
-#endif
+			// Wait for the AST thread to finish cleanup or for 5 seconds
+			m_cleanupSemaphore.tryEnter(5);
+		}
 
 #if defined HAVE_MMAP || defined WIN_NT
 		ISC_unmap_object(localStatus, (UCHAR**) &m_process, sizeof(prc));
@@ -1773,21 +1775,22 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 	if (!m_process)
 		return false;
 
-#ifdef USE_BLOCKING_THREAD
-	const ULONG status = gds__thread_start(blocking_action_thread, this, THREAD_high, 0, 0);
-	if (status)
+	if (m_useBlockingThread)
 	{
-		statusVector << Arg::Gds(isc_lockmanerr) << Arg::Gds(isc_sys_request) <<
+		const ULONG status = gds__thread_start(blocking_action_thread, this, THREAD_high, 0, 0);
+		if (status)
+		{
+			statusVector << Arg::Gds(isc_lockmanerr) << Arg::Gds(isc_sys_request) <<
 #ifdef WIN_NT
-			Arg::Str("CreateThread") <<
-			Arg::Windows(status);
+				Arg::Str("CreateThread") <<
+				Arg::Windows(status);
 #else
-			Arg::Str("thr_create") <<
-			Arg::Unix(status);
+				Arg::Str("thr_create") <<
+				Arg::Unix(status);
 #endif
-		return false;
+			return false;
+		}
 	}
-#endif
 
 	return true;
 }

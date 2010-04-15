@@ -99,6 +99,7 @@
 #include "../jrd/why_proto.h"
 #include "../common/utils_proto.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/DSqlDataTypeUtil.h"
 #include "../common/StatusArg.h"
 
 #ifdef DSQL_DEBUG

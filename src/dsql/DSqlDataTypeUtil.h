@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		utld_proto.h
- *	DESCRIPTION:	Prototype Header file for utld.cpp
+ *	MODULE:		DSqlDataTypeUtil.h
+ *	DESCRIPTION:	DSqlDataTypeUtil
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -20,22 +20,33 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
- *
  */
 
-#ifndef DSQL_UTLD_PROTO_H
-#define DSQL_UTLD_PROTO_H
+#ifndef DSQL_DSQLDATATYPEUTIL_H
+#define DSQL_DSQLDATATYPEUTIL_H
 
-struct sqlda_sup;
+#include "../jrd/DataTypeUtil.h"
 
-USHORT		UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar);
-ISC_STATUS	UTLD_copy_status(const ISC_STATUS*, ISC_STATUS*);
-ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, const SCHAR*, XSQLDA*, USHORT*);
-ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, sqlda_sup* const, USHORT*, USHORT*,
-	USHORT*, USHORT, const XSQLDA*, const USHORT);
-void		UTLD_save_status_strings(ISC_STATUS*);
-SCHAR*		UTLD_skip_sql_info(SCHAR*);
+namespace Jrd {
 
+	class DsqlCompilerScratch;
 
-#endif //  DSQL_UTLD_PROTO_H
+	class DSqlDataTypeUtil : public DataTypeUtilBase
+	{
+	public:
+		explicit DSqlDataTypeUtil(DsqlCompilerScratch* aDsqlScratch)
+			: dsqlScratch(aDsqlScratch)
+		{
+		}
+
+	public:
+		virtual UCHAR maxBytesPerChar(UCHAR charSet);
+		virtual USHORT getDialect() const;
+
+	private:
+		DsqlCompilerScratch* dsqlScratch;
+	};
+
+} // namespace
+
+#endif // DSQL_DSQLDATATYPEUTIL_H

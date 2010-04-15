@@ -40,9 +40,6 @@
 #include "../jrd/constants.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
-#if !defined(SUPERCLIENT)
-#include "../dsql/metd_proto.h"
-#endif
 #include "../common/classes/init.h"
 
 using namespace Jrd;
@@ -1071,17 +1068,3 @@ static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
 	}
 }
 
-
-#if !defined(SUPERCLIENT)
-
-UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
-{
-	return METD_get_charset_bpc(dsqlScratch->getTransaction(), charSet);
-}
-
-USHORT DSqlDataTypeUtil::getDialect() const
-{
-	return dsqlScratch->clientDialect;
-}
-
-#endif

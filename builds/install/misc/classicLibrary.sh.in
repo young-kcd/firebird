@@ -79,7 +79,7 @@ changeXinetdServiceUser() {
 #  This just adds/replaces the service entry line
 
 updateInetdEntry() {
-    newLine="@FB_SERVICE_NAME@  stream  tcp     nowait.30000      $RunUser @FB_SBINDIR@/fb_inet_server fb_inet_server # Firebird Database Remote Server"
+    newLine="@FB_SERVICE_NAME@  stream  tcp     nowait.30000      $RunUser @FB_SBINDIR@/fb_smp_server fb_smp_server # Firebird Database Remote Server"
     replaceLineInFile /etc/inetd.conf "$newLine" "^@FB_SERVICE_NAME@"
 }
 

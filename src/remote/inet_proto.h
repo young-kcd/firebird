@@ -36,7 +36,6 @@ rem_port*	INET_analyze(const Firebird::PathName&, ISC_STATUS*, const TEXT*, cons
 rem_port*	INET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT, Firebird::ClumpletReader*);
 rem_port*	INET_reconnect(SOCKET, ISC_STATUS*);
 rem_port*	INET_server(SOCKET);
-void		INET_set_clients(int);
 void		setStopMainThread(FPTR_INT func);
 
 #endif // REMOTE_INET_PROTO_H

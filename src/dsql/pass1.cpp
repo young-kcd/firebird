@@ -160,6 +160,7 @@
 #include "../dsql/misc_func.h"
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
+#include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"

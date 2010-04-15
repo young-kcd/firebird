@@ -35,7 +35,7 @@ origDir=`pwd`
 if [ "$1" = "install-embedded" ]
 then
 	# remove server files not needed for embedded usage
-    rm -f @FB_SBINDIR@/fb_inet_server @FB_SBINDIR@/fb_smp_server
+    rm -f @FB_SBINDIR@/fb_smp_server @FB_SBINDIR@/fb_smp_server
     exit 0
 fi
 

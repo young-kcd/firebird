@@ -67,7 +67,6 @@
 extern const char*	GCPolicyCooperative;
 extern const char*	GCPolicyBackground;
 extern const char*	GCPolicyCombined;
-extern const char*	GCPolicyDefault;
 
 extern const char*	AmNative;
 extern const char*	AmTrusted;
@@ -316,6 +315,12 @@ public:
 	static const char* getAuditTraceConfigFile();
 
 	static int getMaxUserTraceLogSize();
+
+	static bool getSharedCache();
+
+	static bool getSharedDatabase();
+
+	static bool getMultiClientServer();
 };
 
 #endif // COMMON_CONFIG_H

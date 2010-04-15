@@ -361,7 +361,6 @@ static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static volatile bool INET_initialized = false;
 static volatile bool INET_shutting_down = false;
 static slct_t INET_select = { 0, 0, 0 };
-static int INET_max_clients;
 static rem_port* inet_async_receive = NULL;
 
 
@@ -965,23 +964,6 @@ rem_port* INET_server(SOCKET sock)
 
 	return port;
 }
-
-void INET_set_clients( int count)
-{
-/**************************************
- *
- *	I N E T _ s e t _ c l i e n t s
- *
- **************************************
- *
- * Functional description
- *	Set maxinum number of clients served before
- *	starting new server
- *
- **************************************/
-	INET_max_clients = (count && count < MAXCLIENTS) ? count : MAXCLIENTS;
-}
-
 
 static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 {

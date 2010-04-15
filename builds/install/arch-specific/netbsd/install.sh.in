@@ -138,7 +138,7 @@ do
 	mkdir -p $DestDir/$D || exit
 done
 
-cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server  || exit
+cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_smp_server  || exit
 cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak  || exit
 cp $BuiltFBDir/bin/gds_drop $DestDir/bin/gds_drop  || exit
 copyIfExists $BuiltFBDir/bin/fb_lock_mgr $DestDir/bin/fb_lock_mgr  || exit
@@ -250,7 +250,7 @@ done
 chmod a=rx isql qli
 
 # SUID is needed for running server programs.
-for i in fb_lock_mgr gds_drop fb_inet_server
+for i in fb_lock_mgr gds_drop fb_smp_server
 do
 	if [ -f $i ]; then
 		chmod ug=rx,o= $i || exit
@@ -303,7 +303,7 @@ if ! grep ^@FB_SERVICE_NAME@ /etc/inetd.conf
 then
 echo Adding firebird to /etc/inetd.conf
 cat >>/etc/inetd.conf <<EOF
-@FB_SERVICE_NAME@	stream	tcp	nowait	firebird	@prefix@/bin/fb_inet_server  fb_inet_server
+@FB_SERVICE_NAME@	stream	tcp	nowait	firebird	@prefix@/bin/fb_smp_server  fb_smp_server
 EOF
 fi
 

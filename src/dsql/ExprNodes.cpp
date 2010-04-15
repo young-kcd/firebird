@@ -40,6 +40,7 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
+#include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/DataTypeUtil.h"
 
 using namespace Firebird;

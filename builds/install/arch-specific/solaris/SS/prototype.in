@@ -59,7 +59,7 @@ f none @prefix@/UDF/fbudf.sql=$SRCDIR/../../src/extlib/fbudf/fbudf.sql 0644 fire
 # bin
 
 d none @prefix@/bin 0755 firebird firebird
-#f none @prefix@/bin/fb_inet_server=$SRCDIR/bin/fb_inet_server 0451 firebird firebird
+#f none @prefix@/bin/fb_smp_server=$SRCDIR/bin/fb_smp_server 0451 firebird firebird
 f none @prefix@/bin/gfix=$SRCDIR/bin/gfix 0755 firebird firebird
 f none @prefix@/bin/gbak=$SRCDIR/bin/gbak 0755 firebird firebird
 f none @prefix@/bin/gsplit=$SRCDIR/bin/gsplit 0755 firebird firebird

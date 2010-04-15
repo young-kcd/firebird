@@ -112,11 +112,6 @@ Firebird::InitInstance<ConfigRoot> rootDetector;
 const char*	GCPolicyCooperative	= "cooperative";
 const char*	GCPolicyBackground	= "background";
 const char*	GCPolicyCombined	= "combined";
-#ifdef SUPERSERVER
-const char*	GCPolicyDefault	= GCPolicyCombined;
-#else
-const char*	GCPolicyDefault	= GCPolicyCooperative;
-#endif
 
 const char*	AmNative	= "native";
 const char*	AmTrusted	= "trusted";
@@ -125,13 +120,7 @@ const char*	AmMixed		= "mixed";
 const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
 	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
-#ifdef SUPERSERVER
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 67108864},	// bytes
-#elif defined(WIN_NT) // win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 8388608},		// bytes
-#else // non-win32 CS
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 0},			// bytes
-#endif
+	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) -1},			// bytes
 #ifdef BOOT_BUILD
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) true},
 #else
@@ -141,11 +130,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
 	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) true},
-#ifdef SUPERSERVER
-	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 2048},		// pages
-#else
-	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) 256},			// pages
-#endif
+	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) -1},			// pages
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
@@ -182,7 +167,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
  	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
 #endif
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
-	{TYPE_STRING,		"GCPolicy",					(ConfigValue) GCPolicyDefault},	// garbage collection policy
+	{TYPE_STRING,		"GCPolicy",					(ConfigValue) NULL},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
 	{TYPE_STRING,		"Authentication",			(ConfigValue) AmNative},	// use native, trusted or mixed
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
@@ -351,7 +336,11 @@ int Config::getTempBlockSize()
 int Config::getTempCacheLimit()
 {
 	int v = (int) getDefaultConfig()->values[KEY_TEMP_CACHE_LIMIT];
-	return v < 0 ? 0 : v;
+	if (v < 0)
+	{
+		v = getSharedDatabase() ? 8388608 : 67108864;	// bytes
+	}
+	return v;
 }
 
 bool Config::getRemoteFileOpenAbility()
@@ -386,7 +375,12 @@ bool Config::getTcpNoNagle()
 
 int Config::getDefaultDbCachePages() const
 {
-	return get<int>(KEY_DEFAULT_DB_CACHE_PAGES);
+	int rc = get<int>(KEY_DEFAULT_DB_CACHE_PAGES);
+	if (rc < 0)
+	{
+		rc = getSharedDatabase() ? 75 : 2048;	// pages
+	}
+	return rc;
 }
 
 int Config::getConnectionTimeout()
@@ -556,7 +550,25 @@ bool Config::getLegacyHash()
 
 const char *Config::getGCPolicy() const
 {
-	return get<const char*>(KEY_GC_POLICY);
+	const char* rc = get<const char*>(KEY_GC_POLICY);
+
+	if (rc)
+	{
+		if (strcmp(rc, GCPolicyCooperative) != 0 &&
+			strcmp(rc, GCPolicyBackground) != 0 &&
+			strcmp(rc, GCPolicyCombined) != 0)
+		{
+			// user-provided value is invalid - fail to default
+			rc = 0;
+		}
+	}
+
+	if (! rc)
+	{
+		rc = getSharedCache() ? GCPolicyCombined : GCPolicyCooperative;
+	}
+
+	return rc;
 }
 
 bool Config::getRedirection()
@@ -603,4 +615,33 @@ const char *Config::getAuditTraceConfigFile()
 int Config::getMaxUserTraceLogSize()
 {
 	return (int) getDefaultConfig()->values[KEY_MAX_TRACELOG_SIZE];
+}
+
+bool Config::getSharedCache()
+{
+#ifdef SUPERSERVER
+	return true;
+#else
+	return false;
+#endif
+}
+
+bool Config::getSharedDatabase()
+{
+#ifdef SUPERSERVER
+	return false;
+#else
+	return true;
+#endif
+}
+
+bool Config::getMultiClientServer()
+{
+	// AP - absolutely wrong for superclassic assumption
+	// should be set by server in case of 'super' mode in it
+#ifdef SUPERSERVER
+	return true;
+#else
+	return false;
+#endif
 }

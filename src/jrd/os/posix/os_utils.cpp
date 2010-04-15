@@ -100,8 +100,22 @@ bool get_user_home(int user_id, PathName& homeDir)
 	return false;
 }
 
-// runuser/rungroup
-static const char* const FIREBIRD = "firebird";
+namespace {
+	// runuser/rungroup
+	const char* const FIREBIRD = "firebird";
+
+	// change ownership and access of file
+	void changeFileRights(const char* pathname, const mode_t mode)
+	{
+		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
+		gid_t gid = get_user_group_id(FIREBIRD);
+		while (chown(pathname, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
+
+		while (chmod(pathname, mode) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
+	}
+} // anonymous namespace
 
 // create directory for lock files and set appropriate access rights
 void createLockDirectory(const char* pathname)
@@ -139,16 +153,7 @@ void createLockDirectory(const char* pathname)
 		(Arg::Gds(isc_lock_dir_access) << pathname).raise();
 	}
 
-#ifndef SUPERSERVER
-	uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
-	gid_t gid = get_user_group_id(FIREBIRD);
-	while (chown(pathname, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
-		;
-#endif //SUPERSERVER
-
-	const mode_t mode = 0770;
-	while (chmod(pathname, mode) < 0 && SYSCALL_INTERRUPTED(errno))
-		;
+	changeFileRights(pathname, 0770);
 }
 
 // open (or create if missing) and set appropriate access rights
@@ -172,16 +177,7 @@ int openCreateSharedFile(const char* pathname, int flags)
 			return -1;
 		}
 
-#ifndef SUPERSERVER
-		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
-		gid_t gid = get_user_group_id(FIREBIRD);
-		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
-			;
-#endif //SUPERSERVER
-
-		const mode_t mode = 0660;
-		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno))
-			;
+		changeFileRights(pathname, 0660);
 	}
 
 	return fd;

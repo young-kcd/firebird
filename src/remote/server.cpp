@@ -1931,15 +1931,18 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 			while (transaction = rdb->rdb_transactions)
 			{
 				if (!transaction->rtr_limbo)
+				{
 					isc_rollback_transaction(status_vector, &transaction->rtr_handle);
-#ifdef SUPERSERVER
-				// The underlying JRD subsystem will release all
-				// memory resources related to a limbo transaction
-				// as a side-effect of the database detach call below.
-				// However, the y-valve handle must be released.
+				}
 				else
+				{
+					// The underlying JRD subsystem will release all
+					// memory resources related to a limbo transaction
+					// as a side-effect of the database detach call below.
+					// However, the y-valve handle must be released.
 					fb_disconnect_transaction(status_vector, &transaction->rtr_handle);
-#endif
+				}
+
 				release_transaction(rdb->rdb_transactions);
 			}
 			isc_detach_database(status_vector, &rdb->rdb_handle);
@@ -4953,14 +4956,17 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		{
 			object = 0;
 			if (operation != op_reconnect)
+			{
 				isc_rollback_transaction(status_vector, &handle);
-#ifdef SUPERSERVER
-			// Note that there is an underlying transaction pool
-			// that won't be released until this connection is
-			// detached. At least release the y-valve handle.
+			}
 			else
+			{
+				// Note that there is an underlying transaction pool
+				// that won't be released until this connection is
+				// detached. At least release the y-valve handle.
 				fb_disconnect_transaction(status_vector, &handle);
-#endif
+			}
+
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
 			status_vector[2] = isc_arg_end;

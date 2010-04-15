@@ -728,18 +728,25 @@ static const serv_entry services[] =
 // The SERVER_CAPABILITIES_FLAG is used to mark architectural
 // differences across servers.  This allows applications like server
 // manager to disable features as necessary.
-
-#ifdef SUPERSERVER
-const ULONG SERVER_CAPABILITIES	= REMOTE_HOP_SUPPORT | MULTI_CLIENT_SUPPORT | SERVER_CONFIG_SUPPORT;
-#  ifdef WIN_NT
-const ULONG SERVER_CAPABILITIES_FLAG	= SERVER_CAPABILITIES | QUOTED_FILENAME_SUPPORT;
-#  else
-const ULONG SERVER_CAPABILITIES_FLAG	= SERVER_CAPABILITIES | NO_SERVER_SHUTDOWN_SUPPORT;
-#  endif // WIN_NT
-#else // SUPERSERVER
-const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_SUPPORT;
-#endif // SERVER_CAPABILITIES
-
+namespace {
+	inline ULONG getServerCapabilities()
+	{
+		ULONG val = REMOTE_HOP_SUPPORT
+#ifdef WIN_NT
+									   | QUOTED_FILENAME_SUPPORT
+#endif // WIN_NT
+																;
+		if (Config::getMultiClientServer())
+		{
+			val |= MULTI_CLIENT_SUPPORT;
+		}
+		else
+		{
+			val |= NO_SERVER_SHUTDOWN_SUPPORT;
+		}
+		return val;
+	}
+}
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()),
@@ -1268,7 +1275,6 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			}
 			break;
 
-#ifdef SUPERSERVER
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
@@ -1280,7 +1286,6 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				fname[length2] = 0;
 				break;
 			}
-#endif
 
 		case isc_info_svc_get_config:
 			// TODO: iterate through all integer-based config values
@@ -1319,7 +1324,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			if (!ck_space_for_numeric(info, end))
 				return 0;
 			*info++ = item;
-			ADD_SPB_NUMERIC(info, SERVER_CAPABILITIES_FLAG);
+			ADD_SPB_NUMERIC(info, getServerCapabilities());
 			break;
 
 		case isc_info_svc_running:
@@ -1692,7 +1697,6 @@ void Service::query(USHORT			send_item_length,
 			//	need_admin_privs(status, "isc_info_svc_get_env");
 			break;
 
-#ifdef SUPERSERVER
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
@@ -1704,7 +1708,6 @@ void Service::query(USHORT			send_item_length,
 				fname[length2] = 0;
 				break;
 			}
-#endif
 		/*
 		case isc_info_svc_get_config:
 			// TODO: iterate through all integer-based config values
@@ -1747,7 +1750,7 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_capabilities:
 			// bitmask defining any specific architectural differences
 
-			length = INF_convert(SERVER_CAPABILITIES_FLAG, buffer);
+			length = INF_convert(getServerCapabilities(), buffer);
 			info = INF_put_item(item, length, buffer, info, end);
 			if (!info)
 				return;

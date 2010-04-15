@@ -1016,49 +1016,6 @@ void ISC_expand_share(tstring& file_name)
 }
 #endif	// WIN_NT
 
-#ifdef NOT_USED_OR_REPLACED
-// There's no signature for this function in any header file.
-#ifdef SUPERSERVER
-int ISC_strip_extension(TEXT* file_name)
-{
-/**************************************
- *
- *      I S C _ s t r i p _ e x t e n s i o n 	( S U P E R S E R V E R )
- *
- **************************************
- *
- * Functional description
- *	Get rid of the file name extension part
- *	(after the dot '.')
- *
- **************************************/
-
-	// Set p to point to the starting part of the actual file name (sans directory name)
-
-	TEXT* p = strrchr(file_name, '/');
-	TEXT* q = strrchr(file_name, '\\');
-
-	if (p || q)
-	{
-		// Get the maximum of the two
-
-		if (q > p)
-			p = q;
-	}
-	else
-		p = file_name;
-
-	// Now search for the first dot in the actual file name
-
-	q = strchr(p, '.');
-	if (q)
-		*q = '\0';				// Truncate the extension including the dot
-
-	return strlen(file_name);
-}
-#endif
-#endif
-
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
 static void expand_filename2(tstring& buff, bool expand_mounts)

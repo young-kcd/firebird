@@ -79,15 +79,7 @@
 */
 
 #ifdef SUPERSERVER
-#define SWEEP_THREAD
 #define GARBAGE_THREAD
-#endif
-
-
-#ifdef SUPERSERVER
-#define FB_ARCHITECTURE isc_info_db_class_server_access
-#else
-#define FB_ARCHITECTURE isc_info_db_class_classic_access
 #endif
 
 

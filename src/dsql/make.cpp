@@ -49,6 +49,7 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
+#include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"

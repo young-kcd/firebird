@@ -43,11 +43,13 @@ public:
 	MainStream(const char* fname, bool fExceptionOnError)
 		: file(fopen(fname, "rt")), l(0)
 	{
+/*
 		if (!file && fExceptionOnError)
 		{
 			// config file does not exist
 			fatal_exception::raiseFmt("Missing configuration file: %s", fname);
 		}
+ */
 	}
 
 	bool getLine(ConfigFile::String& input, unsigned int& line)

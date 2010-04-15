@@ -165,9 +165,7 @@ public:
 	SLONG att_remote_pid;					// Process id of remote client
 	Firebird::PathName att_remote_process;	// Process name of remote client
 	RandomGenerator att_random_generator;	// Random bytes generator
-#ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
-#endif
 	DSqlCache att_dsql_cache;	// DSQL cache locks
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;

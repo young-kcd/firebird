@@ -42,12 +42,9 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 
-#ifdef SUPERSERVER
-#include "../jrd/err_proto.h"
-#endif
-
 
 using namespace Jrd;
+
 
 // Given pointer a field in the block, find the block
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))

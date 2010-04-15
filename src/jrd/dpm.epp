@@ -653,7 +653,7 @@ SLONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 		}
 
 		CCH_RELEASE(tdbb, &window);
-#ifdef SUPERSERVER
+#ifdef SHARED_METADATA_CACHE
 		relPages->rel_data_pages = pages;
 #endif
 	}

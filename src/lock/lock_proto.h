@@ -107,10 +107,6 @@ const UCHAR PLATFORM_LHB_VERSION	= 0;	// 32-bit target
 
 const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 
-#ifndef SUPERSERVER
-#define USE_BLOCKING_THREAD
-#endif
-
 #ifdef DEV_BUILD
 #define VALIDATE_LOCK_TABLE
 #endif
@@ -438,8 +434,10 @@ private:
 	Firebird::string m_dbId;
 	Firebird::RefPtr<Config> m_config;
 
+	// configurations parameters - cached values
 	const ULONG m_acquireSpins;
 	const ULONG m_memorySize;
+	bool m_useBlockingThread;
 
 #ifdef WIN_NT
 	struct mtx m_shmemMutex;

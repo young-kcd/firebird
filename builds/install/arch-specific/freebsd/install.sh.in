@@ -162,7 +162,6 @@ copyFiles() {
 	chmod 0755 ${TargetDir}@FB_BINDIR@/*
 
 	#sbin
-    copyIfExists $BuiltFBDir/bin/fb_inet_server ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fb_smp_server ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fbserver ${TargetDir}@FB_SBINDIR@
 	cp -f $BuiltFBDir/bin/fbguard ${TargetDir}@FB_SBINDIR@
@@ -437,7 +436,7 @@ cat >>/etc/services <<EOF
 @FB_SERVICE_NAME@		@FB_SERVICE_PORT@/tcp  #Firebird Database Remote Protocol
 EOF
 cat >>/etc/inetd.conf <<EOF
-@FB_SERVICE_NAME@	stream	tcp	nowait	firebird	${TargetDir}@FB_SBINDIR@/fb_inet_server  fb_inet_server
+@FB_SERVICE_NAME@	stream	tcp	nowait	firebird	${TargetDir}@FB_SBINDIR@/fb_smp_server  fb_smp_server
 EOF
 if [ -f /var/run/inetd.pid ]; then
         kill -HUP `cat /var/run/inetd.pid`

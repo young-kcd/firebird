@@ -2175,36 +2175,40 @@ void PageManager::releaseLocks()
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 {
 	USHORT result;
-#ifdef SUPERSERVER
-	result = TEMP_PAGE_SPACE;
-#else
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* att = tdbb->getAttachment();
-	if (!att->att_temp_pg_lock)
+
+	if (Config::getSharedDatabase())
 	{
-		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
-		lock->lck_type = LCK_page_space;
-		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-		lock->lck_parent = dbb->dbb_lock;
-		lock->lck_length = sizeof(SLONG);
-		lock->lck_dbb = dbb;
-
-		PAG_attachment_id(tdbb);
-
-		while (true)
+		SET_TDBB(tdbb);
+		Database* dbb = tdbb->getDatabase();
+		Jrd::Attachment* att = tdbb->getAttachment();
+		if (!att->att_temp_pg_lock)
 		{
-			const double tmp = rand() * (MAX_USHORT - TEMP_PAGE_SPACE - 1.0) / (RAND_MAX + 1.0);
-			lock->lck_key.lck_long = static_cast<SLONG>(tmp) + TEMP_PAGE_SPACE + 1;
-			if (LCK_lock(tdbb, lock, LCK_write, LCK_NO_WAIT))
-				break;
+			Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+			lock->lck_type = LCK_page_space;
+			lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+			lock->lck_parent = dbb->dbb_lock;
+			lock->lck_length = sizeof(SLONG);
+			lock->lck_dbb = dbb;
+
+			PAG_attachment_id(tdbb);
+
+			while (true)
+			{
+				const double tmp = rand() * (MAX_USHORT - TEMP_PAGE_SPACE - 1.0) / (RAND_MAX + 1.0);
+				lock->lck_key.lck_long = static_cast<SLONG>(tmp) + TEMP_PAGE_SPACE + 1;
+				if (LCK_lock(tdbb, lock, LCK_write, LCK_NO_WAIT))
+					break;
+			}
+
+			att->att_temp_pg_lock = lock;
 		}
 
-		att->att_temp_pg_lock = lock;
+		result = (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
 	}
-
-	result = (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
-#endif
+	else
+	{
+		result = TEMP_PAGE_SPACE;
+	}
 
 	if (!this->findPageSpace(result)) {
 		attach_temp_pages(tdbb, result);
