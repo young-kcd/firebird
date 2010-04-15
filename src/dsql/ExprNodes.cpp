@@ -1258,7 +1258,7 @@ ExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	node->nod_impure = function->allocateImpure(csb);
 
 	return this;
 }

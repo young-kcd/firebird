@@ -459,6 +459,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					dbb->deletePool(csb_pool);
 					throw;
 				}
+
+				function->makeFormat();
 			}
 			else
 			{
@@ -589,6 +591,26 @@ void Function::remove(thread_db* tdbb)
 	}
 }
 
+ULONG Function::allocateImpure(CompilerScratch* csb)
+{
+	const ULONG impure = CMP_impure(csb, sizeof(impure_value));
+
+	if (getRequest())
+	{
+		if (fun_in_msg_format.fmt_count)
+		{
+			fb_assert(fun_in_msg_format.fmt_length);
+			CMP_impure(csb, fun_in_msg_format.fmt_length);
+		}
+
+		fb_assert(fun_out_msg_format.fmt_count == 2);
+		fb_assert(fun_out_msg_format.fmt_length);
+		CMP_impure(csb, fun_out_msg_format.fmt_length);
+	}
+	
+	return impure;
+}
+
 void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 {
 	fb_assert(blob_id && !blob_id->isEmpty());
@@ -626,7 +648,7 @@ jrd_nod* Function::parseArgs(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	args->nod_count = fun_inputs;
-	
+
 	return args;
 }
 
@@ -714,57 +736,38 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 	{
 		fb_assert(getRequest());
 		fb_assert(!fun_return_arg);
-		fb_assert(args->nod_count == fun_args.getCount() - 1);
+		fb_assert(args->nod_count == fun_inputs);
 
 		Jrd::Attachment* attachment = tdbb->getAttachment();
 		jrd_req* const request = tdbb->getRequest();
 
-		ULONG in_msg_length = 0;
+		const ULONG in_msg_length = fun_in_msg_format.fmt_length;
+		const ULONG out_msg_length = fun_out_msg_format.fmt_length;
 
-		Firebird::UCharBuffer in_buffer;
+		UCHAR* const impure = reinterpret_cast<UCHAR*>(value);
+		UCHAR* const in_msg = (UCHAR*) FB_ALIGN((IPTR) impure + sizeof(impure_value), FB_ALIGNMENT);
+		UCHAR* const out_msg = (UCHAR*) FB_ALIGN((IPTR) in_msg + in_msg_length, FB_ALIGNMENT);
 
-		for (unsigned i = 1; i < fun_args.getCount(); i++)
+		for (USHORT i = 0; i < fun_inputs; i++)
 		{
-			Parameter* const parameter = fun_args[i].fun_parameter;
-			dsc arg_desc = parameter->prm_desc;
+			const ULONG arg_offset = (IPTR) fun_in_msg_format.fmt_desc[i * 2].dsc_address;
+			const ULONG null_offset = (IPTR) fun_in_msg_format.fmt_desc[i * 2 + 1].dsc_address;
+			UCHAR* const null_ptr = in_msg + null_offset;
 
-			if (arg_desc.dsc_dtype >= dtype_aligned)
-			{
-				in_msg_length = FB_ALIGN(in_msg_length, type_alignments[arg_desc.dsc_dtype]);
-			}
-			const ULONG arg_offset = in_msg_length;
-			in_msg_length += arg_desc.dsc_length;
-
-			in_msg_length = FB_ALIGN(in_msg_length, sizeof(SSHORT));
-			const ULONG null_offset = in_msg_length;
-			in_msg_length += sizeof(SSHORT);
-
-			in_buffer.grow(in_msg_length);
-
-			dsc* const src_desc = EVL_expr(tdbb, args->nod_arg[i - 1]);
+			dsc* const src_desc = EVL_expr(tdbb, args->nod_arg[i]);
 			if (src_desc && !(request->req_flags & req_null))
 			{
-				arg_desc.dsc_address = in_buffer.begin() + arg_offset;
+				*reinterpret_cast<SSHORT*>(null_ptr) = FALSE;
+
+				dsc arg_desc = fun_args[i + 1].fun_parameter->prm_desc;
+				arg_desc.dsc_address = in_msg + arg_offset;
 				MOV_move(tdbb, src_desc, &arg_desc);
 			}
 			else
 			{
-				UCHAR* const null_ptr = in_buffer.begin() + null_offset;
 				*reinterpret_cast<SSHORT*>(null_ptr) = TRUE;
 			}
 		}
-
-		UCHAR* const in_msg = in_msg_length ? in_buffer.begin() : NULL;
-
-		dsc ret_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
-		ULONG out_msg_length = ret_desc.dsc_length;
-		out_msg_length = FB_ALIGN(out_msg_length, sizeof(SSHORT));
-		const ULONG null_offset = out_msg_length;
-		out_msg_length += sizeof(SSHORT);
-
-		Firebird::UCharBuffer out_buffer;
-		UCHAR* const out_msg = out_buffer.getBuffer(out_msg_length);
-		ret_desc.dsc_address = out_msg;
 
 		jrd_req* const new_request = EXE_find_request(tdbb, getRequest(), false);
 
@@ -781,11 +784,12 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 
 			EXE_start(tdbb, new_request, transaction);
 
-			if (in_msg)
+			if (in_msg_length)
 			{
 				EXE_send(tdbb, new_request, 0, in_msg_length, in_msg);
 			}
 
+			fb_assert(out_msg_length);
 			EXE_receive(tdbb, new_request, 1, out_msg_length, out_msg);
 
 			// Clean up all savepoints started during execution of the function
@@ -814,6 +818,9 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		new_request->req_attachment = NULL;
 		new_request->req_flags &= ~req_in_use;
 
+		const ULONG arg_offset = (IPTR) fun_out_msg_format.fmt_desc[0].dsc_address;
+		const ULONG null_offset = (IPTR) fun_out_msg_format.fmt_desc[1].dsc_address;
+
 		UCHAR* const null_ptr = out_msg + null_offset;
 		if (*reinterpret_cast<SSHORT*>(null_ptr))
 		{
@@ -821,8 +828,10 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 		}
 		else
 		{
+			dsc arg_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
+			arg_desc.dsc_address = out_msg + arg_offset;
 			request->req_flags &= ~req_null;
-			MOV_move(tdbb, &ret_desc, &value->vlu_desc);
+			MOV_move(tdbb, &arg_desc, &value->vlu_desc);
 		}
 	}
 
@@ -839,4 +848,61 @@ USHORT Function::incrementAlterCount()
 	}
 
 	return ++fun_alter_count;
+}
+
+void Function::makeFormat()
+{
+	// Input format
+
+	const USHORT count = fun_inputs * 2;
+	fun_in_msg_format.fmt_desc.resize(count);
+	fun_in_msg_format.fmt_count = count;
+
+	ULONG offset = 0;
+
+	for (USHORT i = 0; i < fun_inputs; i++)
+	{
+		dsc arg_desc = fun_args[i + 1].fun_parameter->prm_desc;
+
+		if (arg_desc.dsc_dtype >= dtype_aligned)
+		{
+			offset = FB_ALIGN(offset, type_alignments[arg_desc.dsc_dtype]);
+		}
+		arg_desc.dsc_address = (UCHAR*)(IPTR) offset;
+		offset += arg_desc.dsc_length;
+		fun_in_msg_format.fmt_desc[i * 2] = arg_desc;
+
+		arg_desc.makeShort(0);
+		offset = FB_ALIGN(offset, sizeof(SSHORT));
+		arg_desc.dsc_address = (UCHAR*)(IPTR) offset;
+		offset += sizeof(SSHORT);
+		fun_in_msg_format.fmt_desc[i * 2 + 1] = arg_desc;
+	}
+
+	if (offset > MAX_FORMAT_SIZE)
+	{
+		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+	}
+
+	fun_in_msg_format.fmt_length = offset;
+
+	// Output format
+
+	fun_out_msg_format.fmt_desc.resize(2);
+	fun_out_msg_format.fmt_count = 2;
+
+	offset = 0;
+
+	dsc ret_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
+	ret_desc.dsc_address = (UCHAR*)(IPTR) offset;
+	offset += ret_desc.dsc_length;
+	fun_out_msg_format.fmt_desc[0] = ret_desc;
+
+	ret_desc.makeShort(0);
+	offset = FB_ALIGN(offset, sizeof(SSHORT));
+	ret_desc.dsc_address = (UCHAR*)(IPTR) offset;
+	offset += sizeof(SSHORT);
+	fun_out_msg_format.fmt_desc[1] = ret_desc;
+
+	fun_out_msg_format.fmt_length = offset;
 }
