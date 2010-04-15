@@ -1103,7 +1103,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				tdbb->setRequest(request);
 				tdbb->setTransaction(request->req_transaction);
 
-				for (Cursor* const* ptr = request->req_fors.begin();
+				for (RecordSource* const* ptr = request->req_fors.begin();
 					 ptr < request->req_fors.end(); ptr++)
 				{
 					(*ptr)->close(tdbb);
@@ -2153,14 +2153,14 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_dcl_cursor:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_dcl_cursor_number];
+				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_dcl_cur_number];
 				// set up the cursors array...
 				if (number >= request->req_cursors.getCount())
 				{
 					request->req_cursors.grow(number + 1);
 				}
 				// and store cursor there
-				request->req_cursors[number] = (Cursor*) node->nod_arg[e_dcl_cursor_rsb];
+				request->req_cursors[number] = (Cursor*) node->nod_arg[e_dcl_cur_cursor];
 				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
@@ -2171,7 +2171,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				const UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
 				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
 				fb_assert(number < request->req_cursors.getCount());
-				Cursor* const rsb = request->req_cursors[number];
+				Cursor* const cursor = request->req_cursors[number];
 				bool fetched = false;
 
 				switch (op)
@@ -2179,7 +2179,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				case blr_cursor_open:
 					if (request->req_operation == jrd_req::req_evaluate)
 					{
-						rsb->open(tdbb);
+						cursor->open(tdbb);
 						request->req_operation = jrd_req::req_return;
 					}
 					node = node->nod_parent;
@@ -2188,7 +2188,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				case blr_cursor_close:
 					if (request->req_operation == jrd_req::req_evaluate)
 					{
-						rsb->close(tdbb);
+						cursor->close(tdbb);
 						request->req_operation = jrd_req::req_return;
 					}
 					node = node->nod_parent;
@@ -2203,7 +2203,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 						if (op == blr_cursor_fetch)
 						{
-							fetched = rsb->fetchNext(tdbb);
+							fetched = cursor->fetchNext(tdbb);
 						}
 						else
 						{
@@ -2218,22 +2218,22 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							switch (fetch_op)
 							{
 								case blr_scroll_forward:
-									fetched = rsb->fetchNext(tdbb);
+									fetched = cursor->fetchNext(tdbb);
 									break;
 								case blr_scroll_backward:
-									fetched = rsb->fetchPrior(tdbb);
+									fetched = cursor->fetchPrior(tdbb);
 									break;
 								case blr_scroll_bof:
-									fetched = rsb->fetchFirst(tdbb);
+									fetched = cursor->fetchFirst(tdbb);
 									break;
 								case blr_scroll_eof:
-									fetched = rsb->fetchLast(tdbb);
+									fetched = cursor->fetchLast(tdbb);
 									break;
 								case blr_scroll_absolute:
-									fetched = unknown ? false : rsb->fetchAbsolute(tdbb, offset);
+									fetched = unknown ? false : cursor->fetchAbsolute(tdbb, offset);
 									break;
 								case blr_scroll_relative:
-									fetched = unknown ? false : rsb->fetchRelative(tdbb, offset);
+									fetched = unknown ? false : cursor->fetchRelative(tdbb, offset);
 									break;
 								default:
 									fb_assert(false);

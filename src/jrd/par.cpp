@@ -2893,15 +2893,15 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	case blr_dcl_cursor:
 		{
-			node->nod_arg[e_dcl_cursor_number] = (jrd_nod*) (IPTR) csb->csb_blr_reader.getWord();
-			node->nod_arg[e_dcl_cursor_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
+			node->nod_arg[e_dcl_cur_number] = (jrd_nod*) (IPTR) csb->csb_blr_reader.getWord();
+			node->nod_arg[e_dcl_cur_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
 			n = csb->csb_blr_reader.getWord();
 			jrd_nod* temp = PAR_make_node(tdbb, n);
 			temp->nod_type = nod_list;
 			for (jrd_nod** ptr = temp->nod_arg; n; n--) {
 				*ptr++ = PAR_parse_node(tdbb, csb, VALUE);
 			}
-			node->nod_arg[e_dcl_cursor_refs] = temp;
+			node->nod_arg[e_dcl_cur_refs] = temp;
 		}
 		break;
 

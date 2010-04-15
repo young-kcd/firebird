@@ -595,10 +595,10 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			Cursor* const select = (Cursor*) node->nod_arg[e_any_rsb];
-			select->open(tdbb);
-			value = select->fetchNext(tdbb);
-			select->close(tdbb);
+			RecordSource* const rsb = reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]);
+			rsb->open(tdbb);
+			value = rsb->getRecord(tdbb);
+			rsb->close(tdbb);
 
 			if (node->nod_type == nod_any)
 			{
@@ -710,14 +710,17 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			Cursor* const urs = reinterpret_cast<Cursor*>(node->nod_arg[e_any_rsb]);
-			urs->open(tdbb);
-			value = urs->fetchNext(tdbb);
+			RecordSource* const rsb = reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]);
+			rsb->open(tdbb);
+
+			value = rsb->getRecord(tdbb);
+
 			if (value)
 			{
-				value = !urs->fetchNext(tdbb);
+				value = !rsb->getRecord(tdbb);
 			}
-			urs->close(tdbb);
+
+			rsb->close(tdbb);
 			request->req_flags &= ~req_null;
 
 			// If this is an invariant node, save the return value.
@@ -2420,7 +2423,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
 	}
 
-	Cursor* const rsb = (Cursor*) node->nod_arg[e_stat_rsb];
+	RecordSource* const rsb = reinterpret_cast<RecordSource*>(node->nod_arg[e_stat_rsb]);
 	rsb->open(tdbb);
 
 	SLONG count = 0;
@@ -2435,7 +2438,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		{
 		case nod_count:
 			flag = 0;
-			while (rsb->fetchNext(tdbb))
+			while (rsb->getRecord(tdbb))
 			{
 				++impure->vlu_misc.vlu_long;
 			}
@@ -2443,7 +2446,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 		case nod_min:
 		case nod_max:
-			while (rsb->fetchNext(tdbb))
+			while (rsb->getRecord(tdbb))
 			{
 				dsc* value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null) {
@@ -2460,7 +2463,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			break;
 
 		case nod_from:
-			if (rsb->fetchNext(tdbb))
+			if (rsb->getRecord(tdbb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 			}
@@ -2476,7 +2479,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 
 		case nod_average:			// total or average with dialect-1 semantics
 		case nod_total:
-			while (rsb->fetchNext(tdbb))
+			while (rsb->getRecord(tdbb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null) {
@@ -2506,7 +2509,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			break;
 
 		case nod_average2:			// average with dialect-3 semantics
-			while (rsb->fetchNext(tdbb))
+			while (rsb->getRecord(tdbb))
 			{
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
 				if (request->req_flags & req_null)
@@ -2547,8 +2550,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			request->req_flags |= flag;
 		}
 		catch (const Firebird::Exception&)
-		{
-		}
+		{} // no-op
 
 		throw;
 	}

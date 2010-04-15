@@ -400,11 +400,11 @@ const int e_current_date_length		= 1;
 const int e_current_time_length		= 1;
 const int e_current_timestamp_length= 1;
 
-const int e_dcl_cursor_rse		= 0;
-const int e_dcl_cursor_refs		= 1;
-const int e_dcl_cursor_number	= 2;
-const int e_dcl_cursor_rsb		= 3;
-const int e_dcl_cursor_length	= 4;
+const int e_dcl_cur_rse		= 0;
+const int e_dcl_cur_refs	= 1;
+const int e_dcl_cur_number	= 2;
+const int e_dcl_cur_cursor	= 3;
+const int e_dcl_cur_length	= 4;
 
 const int e_cursor_stmt_op			= 0;
 const int e_cursor_stmt_number		= 1;
@@ -793,7 +793,7 @@ public:
 	vec<jrd_nod*>*	csb_variables;				// Vector of variables, if any
 	ResourceList	csb_resources;				// Resources (relations and indexes)
 	NodeStack		csb_dependencies;			// objects this request depends upon
-	Firebird::Array<Cursor*> csb_fors;			// stack of fors
+	Firebird::Array<RecordSource*> csb_fors;	// record sources
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	// RecordSelExpr's and other invariant

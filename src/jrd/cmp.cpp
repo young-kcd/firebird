@@ -237,7 +237,7 @@ static jrd_nod* pass2_validation(thread_db*, CompilerScratch*, const Item&);
 static void plan_check(const CompilerScratch*, const RecordSelExpr*);
 static void plan_set(CompilerScratch*, RecordSelExpr*, jrd_nod*);
 static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
-static Cursor* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
+static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
@@ -3260,13 +3260,13 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		break;
 
 	case nod_dcl_cursor:
-		node = PAR_make_node(tdbb, e_dcl_cursor_length);
+		node = PAR_make_node(tdbb, e_dcl_cur_length);
 		node->nod_count = input->nod_count;
 		node->nod_flags = input->nod_flags;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_dcl_cursor_rse] = copy(tdbb, input->nod_arg[e_dcl_cursor_rse]);
-		node->nod_arg[e_dcl_cursor_refs] = copy(tdbb, input->nod_arg[e_dcl_cursor_refs]);
-		node->nod_arg[e_dcl_cursor_number] = input->nod_arg[e_dcl_cursor_number];
+		node->nod_arg[e_dcl_cur_rse] = copy(tdbb, input->nod_arg[e_dcl_cur_rse]);
+		node->nod_arg[e_dcl_cur_refs] = copy(tdbb, input->nod_arg[e_dcl_cur_refs]);
+		node->nod_arg[e_dcl_cur_number] = input->nod_arg[e_dcl_cur_number];
 		break;
 
 	case nod_cursor_stmt:
@@ -5349,6 +5349,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	DEBUG;
 	RecordSelExpr* rse_node = NULL;
+	RecordSource** rsb_ptr = NULL;
 	Cursor** cursor_ptr = NULL;
 
 	switch (node->nod_type)
@@ -5364,8 +5365,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		return pass2_union(tdbb, csb, node);
 
 	case nod_dcl_cursor:
-		rse_node = (RecordSelExpr*) node->nod_arg[e_dcl_cursor_rse];
-		cursor_ptr = (Cursor**) &node->nod_arg[e_dcl_cursor_rsb];
+		rse_node = (RecordSelExpr*) node->nod_arg[e_dcl_cur_rse];
+		cursor_ptr = (Cursor**) &node->nod_arg[e_dcl_cur_cursor];
 		break;
 
 	case nod_cursor_stmt:
@@ -5388,7 +5389,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		cursor_ptr = (Cursor**) &node->nod_arg[e_stat_rsb];
+		rsb_ptr = (RecordSource**) &node->nod_arg[e_stat_rsb];
 		break;
 
 	case nod_ansi_all:
@@ -5402,7 +5403,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		cursor_ptr = (Cursor**) &node->nod_arg[e_any_rsb];
+		rsb_ptr = (RecordSource**) &node->nod_arg[e_any_rsb];
 		break;
 
 	case nod_like:
@@ -5549,9 +5550,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		{
 			const Format* format = (Format*) node->nod_arg[e_msg_format];
 			fb_assert(format);
-
 			csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
-
 			node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
 			csb->csb_impure += sizeof(USHORT) * format->fmt_count;
 		}
@@ -5808,7 +5807,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	if (rse_node)
 	{
-		Cursor* const cursor = post_rse(tdbb, csb, rse_node);
+		RecordSource* const rsb = post_rse(tdbb, csb, rse_node);
 
 		// for ansi ANY clauses (and ALL's, which are negated ANY's)
 		// the unoptimized boolean expression must be used, since the
@@ -5818,12 +5817,24 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		{
 			const bool ansiAny = (node->nod_type == nod_ansi_any);
 			const bool ansiNot = (node->nod_flags & nod_ansi_not);
-			FilteredStream* const filter = (FilteredStream*) cursor->getAccessPath();
+			FilteredStream* const filter = reinterpret_cast<FilteredStream*>(rsb);
 			filter->setAnyBoolean(rse_node->rse_boolean, ansiAny, ansiNot);
 		}
 
-		fb_assert(cursor_ptr);
-		*cursor_ptr = cursor;
+		csb->csb_fors.add(rsb);
+
+		if (rsb_ptr)
+		{
+			*rsb_ptr = rsb;
+		}
+
+		if (cursor_ptr)
+		{
+			Cursor* const cursor =
+				FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse_node->rse_invariants,
+													   rse_node->nod_flags & rse_scrollable);
+			*cursor_ptr = cursor;
+		}
 	}
 
 	return node;
@@ -6253,7 +6264,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 }
 
 
-static Cursor* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
+static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -6269,8 +6280,6 @@ static Cursor* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rs
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
-
-	bool scrollable = false;
 
 	RecordSource* rsb = OPT_compile(tdbb, csb, rse, NULL);
 
@@ -6291,7 +6300,6 @@ static Cursor* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rs
 
 	if (rse->nod_flags & rse_scrollable)
 	{
-		scrollable = true;
 		rsb = FB_NEW(*tdbb->getDefaultPool()) BufferedStream(csb, rsb);
 	}
 
@@ -6324,11 +6332,7 @@ static Cursor* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rs
 		}
 	}
 
-	Cursor* const cursor =
-		FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants, scrollable);
-
-	csb->csb_fors.push(cursor);
-	return cursor;
+	return rsb;
 }
 
 

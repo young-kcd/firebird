@@ -250,11 +250,11 @@ public:
 
 	jrd_nod*	req_top_node;			// top of execution tree
 	jrd_nod*	req_next;				// next node for execution
-	Firebird::Array<Cursor*> req_fors;	// Vector of for loops, if any
-	Firebird::Array<jrd_nod*>	req_exec_sta;	// Array of exec_into nodes
+	Firebird::Array<RecordSource*> req_fors;	// record sources
+	Firebird::Array<jrd_nod*>	req_exec_sta;	// exec_into nodes
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
-	Firebird::Array<Cursor*>	req_cursors;	// Vector of named cursors, if any
-	Firebird::Array<jrd_nod*>	req_invariants;	// Vector of invariant nodes, if any
+	Firebird::Array<Cursor*>	req_cursors;	// named cursors
+	Firebird::Array<jrd_nod*>	req_invariants;	// invariant nodes
 	USHORT		req_label;				// label for leave
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
