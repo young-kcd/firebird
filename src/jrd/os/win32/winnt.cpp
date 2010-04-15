@@ -126,22 +126,20 @@ struct AdjustFsCache
 
 static InitMutex<AdjustFsCache> adjustFsCacheOnce;
 
+inline static DWORD getShareFlags(bool temporary = false)
+{
+	static bool shared_access = Config::getSharedDatabase();
+	return FILE_SHARE_READ | ((!temporary && shared_access) ? FILE_SHARE_WRITE : 0);
+}
+
 #ifdef SUPERSERVER_V2
-static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
 static const DWORD g_dwExtraFlags = FILE_FLAG_OVERLAPPED |
 									FILE_FLAG_NO_BUFFERING |
 									FILE_FLAG_RANDOM_ACCESS;
 #else
-#ifdef SUPERSERVER
-static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
 static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
-#else
-static const DWORD g_dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
-static const DWORD g_dwExtraFlags = FILE_FLAG_RANDOM_ACCESS;
-#endif
 #endif
 
-static const DWORD g_dwShareTempFlags = FILE_SHARE_READ;
 static const DWORD g_dwExtraTempFlags = FILE_ATTRIBUTE_TEMPORARY |
 										FILE_FLAG_DELETE_ON_CLOSE;
 
@@ -227,7 +225,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 
 	const TEXT* file_name = string.c_str();
 
-	DWORD dwShareMode = (temporary ? g_dwShareTempFlags : g_dwShareFlags);
+	DWORD dwShareMode = getShareFlags(true);
 	if (share_delete)
 		dwShareMode |= FILE_SHARE_DELETE;
 
@@ -379,7 +377,7 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 		maybeCloseFile(hFile);
 		hFile = CreateFile(file->fil_string,
 						  GENERIC_READ | writeMode,
-						  g_dwShareFlags,
+						  getShareFlags(),
 						  NULL,
 						  OPEN_EXISTING,
 						  FILE_ATTRIBUTE_NORMAL | force | fsCache | g_dwExtraFlags,
@@ -569,7 +567,7 @@ jrd_file* PIO_open(Database* dbb,
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
-					  g_dwShareFlags | (share_delete ? FILE_SHARE_DELETE : 0),
+					  getShareFlags() | (share_delete ? FILE_SHARE_DELETE : 0),
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |
