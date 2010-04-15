@@ -227,15 +227,7 @@ static void stuff_stack_trace(const jrd_req*);
 
 
 // macro definitions
-inline size_t maxClones()
-{
-#ifdef WIN_NT
-	if (Config::getMultiClientServer())
-		return 750;
-	else
-#endif
-		return 1000;
-}
+const int MAX_CLONES = 1000;
 
 const int ALL_TRIGS	= 0;
 const int PRE_TRIG	= 1;
@@ -690,7 +682,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 			}
 		}
 
-		if (count > maxClones())
+		if (count > MAX_CLONES)
 		{
 			ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
 		}
