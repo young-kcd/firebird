@@ -378,7 +378,7 @@ int Config::getDefaultDbCachePages() const
 	int rc = get<int>(KEY_DEFAULT_DB_CACHE_PAGES);
 	if (rc < 0)
 	{
-		rc = getSharedDatabase() ? 75 : 2048;	// pages
+		rc = getSharedDatabase() ? 256 : 2048;	// pages
 	}
 	return rc;
 }
@@ -559,7 +559,7 @@ const char *Config::getGCPolicy() const
 			strcmp(rc, GCPolicyCombined) != 0)
 		{
 			// user-provided value is invalid - fail to default
-			rc = 0;
+			rc = NULL;
 		}
 	}
 
