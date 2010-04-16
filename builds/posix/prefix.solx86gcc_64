@@ -53,7 +53,6 @@ endif
 OS_ServerFiles=inet_server.cpp
 
 LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
-Server_main_dummy = os/sun/server_main_dummy.cpp
 
 LINK_OPTS+=-m64
 LIB_LINK+=-m64

@@ -37,19 +37,7 @@ platform_aix() {
 platform_darwin() {
 for i in `grep -v '#' ${1}`
 do 
-	# Client export list must not contain server_main
-	if test "${2}" = "client"
-	then
-		if test "$i" = "server_main"
-		then
-			i=""
-		fi
-	fi
-
-	if test -n "$i"
-	then
-		echo "${TAB}_$i"
-	fi
+	echo "${TAB}_$i"
 done
 }
 
@@ -75,10 +63,11 @@ platform_linux() {
 }
 
 
+# main
 FILE=${1}
 if test -z "$FILE"
 then
-	echo "Usage: vers.sh export-symbol-file-name {client}"
+	echo "Usage: vers.sh export-symbol-file-name"
 	exit 1
 fi
 
@@ -89,12 +78,6 @@ then
 	exit 1
 fi
 
-CLIENT=${2}
-if test -z "$CLIENT"
-then
-	TO="$FILE"
-else
-	TO="$CLIENT.$FILE"
-fi
+TO="$FILE"
 
-platform_@EXPORT_SYMBOLS_STYLE@ $FROM ${2} >$TO
+platform_@EXPORT_SYMBOLS_STYLE@ $FROM >$TO

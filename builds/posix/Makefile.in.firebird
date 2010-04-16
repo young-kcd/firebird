@@ -467,9 +467,6 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 
 # create platform-specific export lists (version scripts) in gen
 
-client.firebird.vers: ../builds/posix/firebird.vers
-	sh vers.sh firebird.vers client
-
 %.vers: ../builds/posix/%.vers
 	sh vers.sh $(firstword $@)
 

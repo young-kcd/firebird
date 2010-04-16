@@ -47,13 +47,7 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-SERVER_Files = $(OS_ServerFiles) server.cpp
-SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) jrd/pwd.cpp
-SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
-
-
-
-AllObjects = $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects) 
+AllObjects = $(LIBFBEMBED_Objects) $(COMMON_Objects) 
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -61,7 +55,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 libfbembed : $(LIBIBUTIL_SO) $(LIBFBEMBED_SONAME)
 
-$(LIBFBEMBED_SO): $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
+$(LIBFBEMBED_SO): $(AllObjects)
 	$(LINK_EMBED) -o $@ $^ $(LINK_EMBED_LIBS)
 
 $(LIBFBEMBED_SOBASENAME): $(LIBFBEMBED_SO)

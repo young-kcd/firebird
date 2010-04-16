@@ -86,7 +86,6 @@ DEV_FLAGS= -g -xs \
 	$(COMMON_FLAGS) $(SFIO_FLAGS)
 
 OS_ServerFiles=inet_server.cpp
-Server_main_dummy= os/sun/server_main_dummy.cpp
 
 LIB_PLATFORM_RPATH= -R $(1)
 LIB_LINK_SONAME= -h $(1)

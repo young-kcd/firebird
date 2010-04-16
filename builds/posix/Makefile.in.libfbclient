@@ -52,9 +52,6 @@ unexport ISC_PASSWORD
 # I would eventually like to set these based on a determination
 # if the file GPRE_STATIC exists or not.
 
-SMD_Sources =	$(addprefix remote/,$(Server_main_dummy))
-SMD_Objects =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
-
 JRD_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_ClientSources))))
 
 DSQL_ClientSources = $(addprefix dsql/, $(DSQL_ClientFiles))
@@ -87,8 +84,7 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(FBCLASSES_MsgObjects)\
 					$(OS_SPECIFIC_Objects)\
 					$(FBCONFIG_Objects) \
-					$(CLUMPLETS_Objects) \
-					$(SMD_Objects)
+					$(CLUMPLETS_Objects)
 
 
 .PHONY: libfbclient

@@ -119,7 +119,7 @@ static bool serverClosing = false;
 
 extern "C" {
 
-int FB_EXPORTED server_main( int argc, char** argv)
+int CLIB_ROUTINE main( int argc, char** argv)
 {
 /**************************************
  *
@@ -265,8 +265,6 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	{
 		INET_SERVER_flag |= SRVR_debug;
 	}
-
-	gds__log("modes are c=%d sac=%d s=%d", classic, standaloneClassic, super);
 
 	// activate paths set with -e family of switches
 	ISC_set_prefix(0, 0);

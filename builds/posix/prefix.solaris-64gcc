@@ -59,8 +59,6 @@ DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(DEBUG_GCC_FLAGS)
 OS_ServerFiles=inet_server.cpp
 LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
 
-Server_main_dummy = os/sun/server_main_dummy.cpp
-
 LIB_LINK_OPTIONS= -G
 
 LIB_PLATFORM_RPATH=-R $(1)
