@@ -1,3 +1,11 @@
+2010-04-16 12:37  hvlad
+
+	* firebird2/src/: common/classes/GenericMap.h (1.16.6.1),
+	jrd/functions.cpp (1.30.2.2):
+
+	Fixed bug CORE-2969 : rdb$set_context does NOT allow to overwrite
+	any vars after encountering limit (default=1000) of them.
+
 2010-04-13 17:18  hvlad
 
 	* firebird2/src/jrd/met.epp (1.227.2.7):
