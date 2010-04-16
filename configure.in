@@ -114,7 +114,7 @@ dnl CPU_TYPE=ppc64
     MAKEFILE_PREFIX=freebsd_amd64
     case "$target" in
         x86_64*-*-k*bsd-gnu)      # Debian/kFreeBSD
-            PLATFORM=LINUX
+            PLATFORM=GENTOOFREEBSD
             INSTALL_PREFIX=linux
             ;;
 		*)
@@ -136,11 +136,11 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
-  *-*-freebsd*)
+  *-*-freebsd* | *-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=freebsd
     case "$target" in
         *-*-k*bsd-gnu)      # Debian/kFreeBSD
-            PLATFORM=LINUX
+            PLATFORM=GENTOOFREEBSD
             INSTALL_PREFIX=linux
             ;;
         *)
@@ -174,7 +174,7 @@ dnl CPU_TYPE=ppc64
     PTHREAD_LIBS=-lpthread
     ;;
 
-  x86_64*-*-linux*)
+  x86_64*-*-linux* | x86_64*-*-gnu*)
     MAKEFILE_PREFIX=linux_amd64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -213,7 +213,7 @@ dnl CPU_TYPE=ppc64
     STD_ICU=true
     ;;
 
-  sparc*-*-linux*)
+  sparc*-*-linux* | sparc*-*-gnu* | sparc*-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=linux_sparc32
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -271,7 +271,7 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
-  *-*-linux*)
+  *-*-linux* | *-*-gnu*)
     MAKEFILE_PREFIX=linux_generic
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
