@@ -1,3 +1,11 @@
+2010-04-16 05:51  dimitr
+
+	* firebird2/src/jrd/: exe.cpp (1.304.2.1), req.h (1.98.2.1),
+	rse.cpp (1.193.2.2):
+
+	Fixed CORE-2965: Incorrect ROW_COUNT value after SINGULAR
+	condition.
+
 2010-04-14 11:58  dimitr
 
 	* firebird2/src/jrd/: jrd_pwd.h (1.39.2.1), pwd.cpp (1.79.2.2):
