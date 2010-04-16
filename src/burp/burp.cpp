@@ -2137,25 +2137,23 @@ static void burp_output( const SCHAR* format, ...)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->sw_redirect == NOOUTPUT || format[0] == '\0')
+	if (tdgbl->sw_redirect != NOOUTPUT && format[0] != '\0')
 	{
-		tdgbl->uSvc->output("");
-	}
-	else if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL)
-	{
-		va_start(arglist, format);
-		vfprintf(tdgbl->output_file, format, arglist);
-		va_end(arglist);
-		tdgbl->uSvc->output("");
-	}
-	else
-	{
-		va_start(arglist, format);
-		Firebird::string buf;
-		buf.vprintf(format, arglist);
-		va_end(arglist);
-		tdgbl->uSvc->output(buf.c_str());
-		fflush(stdout);
+		if (tdgbl->sw_redirect == REDIRECT && tdgbl->output_file != NULL)
+		{
+			va_start(arglist, format);
+			vfprintf(tdgbl->output_file, format, arglist);
+			va_end(arglist);
+		}
+		else
+		{
+			va_start(arglist, format);
+			Firebird::string buf;
+			buf.vprintf(format, arglist);
+			va_end(arglist);
+			tdgbl->uSvc->output(buf.c_str());
+			fflush(stdout);
+		}
 	}
 }
 
