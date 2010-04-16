@@ -162,6 +162,15 @@ public:
 		return false;
 	}
 
+	// Returns pointer to the found value or null otherwise
+	ValueType* get(const KeyType& key) {
+		if (tree.locate(key)) {
+			return &tree.current()->second;
+		}
+
+		return NULL;
+	}
+
 	bool getFirst() { return tree.getFirst(); }
 	
 	bool getLast() { return tree.getLast(); }

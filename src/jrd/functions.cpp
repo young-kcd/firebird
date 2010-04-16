@@ -311,52 +311,58 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
 
+	Firebird::StringMap* context_vars = NULL;
+	bool result = false;
+
 	if (ns_str == USER_SESSION_NAMESPACE) 
 	{
 		Attachment* att = tdbb->getAttachment();
-
 		if (!att) {
 			fb_assert(false);
 			return 0;
 		}
 
-		if (!value_vary)
-			return att->att_context_vars.remove(name_str);
-
-		if (att->att_context_vars.count() >= MAX_CONTEXT_VARS) {
-			// "Too many context variables"
-			ERR_post(isc_ctx_too_big, isc_arg_end);
-		}
-
-		return att->att_context_vars.put(name_str,
-			Firebird::string(value_vary->vary_string, value_vary->vary_length));
+		context_vars = &att->att_context_vars;
 	} 
-	else if (ns_str == USER_TRANSACTION_NAMESPACE) {
+	else if (ns_str == USER_TRANSACTION_NAMESPACE) 
+	{
 		jrd_tra* tra = tdbb->getTransaction();
-
 		if (!tra) {
 			fb_assert(false);
 			return 0;
 		}
 
-		if (!value_vary)
-			return tra->tra_context_vars.remove(name_str);
-
-		if (tra->tra_context_vars.count() >= MAX_CONTEXT_VARS) {
-			// "Too many context variables"
-			ERR_post(isc_ctx_too_big, isc_arg_end);
-		}
-
-		return tra->tra_context_vars.put(name_str,
-			Firebird::string(value_vary->vary_string, value_vary->vary_length));
+		context_vars = &tra->tra_context_vars;
 	} 
-	else {
+	else 
+	{
 		// "Invalid namespace name %s passed to %s"
 		ERR_post(isc_ctx_namespace_invalid,
 			isc_arg_string, ERR_cstring(ns_str.c_str()),
 			isc_arg_string, RDB_SET_CONTEXT, isc_arg_end);
 		return 0;
 	}
+
+	if (!value_vary) {
+		result = context_vars->remove(name_str);
+	}
+	else if (context_vars->count() == MAX_CONTEXT_VARS)
+	{
+		Firebird::string *rc = context_vars->get(name_str);
+		if (rc)
+		{
+			rc->assign(value_vary->vary_string, value_vary->vary_length);
+			result = true;
+		}
+		else
+			ERR_post(isc_ctx_too_big, isc_arg_end); // "Too many context variables"
+	}
+	else
+	{
+		result = context_vars->put(name_str, Firebird::string(value_vary->vary_string, value_vary->vary_length));
+	}
+
+	return (SLONG) result;
 }
 
 static int test(const long* n, char *result)
