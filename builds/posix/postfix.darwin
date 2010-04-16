@@ -88,7 +88,6 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbguard $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
 	cp ../builds/install/arch-specific/darwin/changeMultiConnectMode \
 			$(FB_FW)/Resources/bin/changeMultiConnectMode.sh
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
