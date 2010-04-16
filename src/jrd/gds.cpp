@@ -352,7 +352,7 @@ const char* const FB_TMP_ENV		= "FIREBIRD_TMP";
 
 
 // This function is very crude, but signal-safe.
-// CVC: This function converts and ULONG into a string. I renamed the param
+// CVC: This function converts a FB_UINT64 into a string. I renamed the param
 // maxlen to minlen because it represents the minimum length the number will
 // be printed in. However, this means buffer should be large enough to contain
 // any ULONG (11 bytes) and thus prevent a buffer overflow. If minlen >= 11,

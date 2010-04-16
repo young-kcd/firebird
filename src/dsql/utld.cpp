@@ -1067,4 +1067,3 @@ static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
 		break;
 	}
 }
-

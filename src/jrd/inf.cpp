@@ -788,9 +788,10 @@ void INF_database_info(const UCHAR* items,
 			break;
 
 		case isc_info_db_class:
-		    length = INF_convert(dbb->dbb_config->getSharedDatabase() ? 
-								 isc_info_db_class_classic_access : 
-								 isc_info_db_class_server_access, buffer);
+		    length = INF_convert(
+				(dbb->dbb_config->getSharedDatabase() ?
+					isc_info_db_class_classic_access : isc_info_db_class_server_access),
+				buffer);
 			break;
 
 		case frb_info_att_charset:

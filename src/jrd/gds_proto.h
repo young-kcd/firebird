@@ -141,4 +141,3 @@ void	GDS_init_prefix();
 
 
 #endif /* JRD_GDS_PROTO_H */
-

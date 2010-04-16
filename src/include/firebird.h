@@ -78,4 +78,4 @@
 #define SHARED_METADATA_CACHE
 #endif
 
-#endif /* INCLUDE_Firebird_H */
+#endif // INCLUDE_Firebird_H

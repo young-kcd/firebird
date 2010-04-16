@@ -607,7 +607,7 @@ ULONG Function::allocateImpure(CompilerScratch* csb)
 		fb_assert(fun_out_msg_format.fmt_length);
 		CMP_impure(csb, fun_out_msg_format.fmt_length);
 	}
-	
+
 	return impure;
 }
 
@@ -638,9 +638,9 @@ jrd_nod* Function::parseArgs(thread_db* tdbb, CompilerScratch* csb)
 	{
 		PAR_error(csb, Arg::Gds(isc_funmismat) << Arg::Str(getName().toString()));
 	}
-	
+
 	jrd_nod* const args = PAR_args(tdbb, csb, VALUE, arg_count, fun_inputs);
-	
+
 	for (USHORT i = arg_count; i < fun_inputs; i++)
 	{
 		Parameter* const parameter = fun_args[i + 1].fun_parameter;

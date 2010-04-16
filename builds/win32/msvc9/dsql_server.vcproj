@@ -442,6 +442,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\errd_proto.h"
 				>
 			</File>

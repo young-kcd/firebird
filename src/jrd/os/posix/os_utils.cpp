@@ -100,7 +100,8 @@ bool get_user_home(int user_id, PathName& homeDir)
 	return false;
 }
 
-namespace {
+namespace
+{
 	// runuser/rungroup
 	const char* const FIREBIRD = "firebird";
 

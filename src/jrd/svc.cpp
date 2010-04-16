@@ -728,7 +728,8 @@ static const serv_entry services[] =
 // The SERVER_CAPABILITIES_FLAG is used to mark architectural
 // differences across servers.  This allows applications like server
 // manager to disable features as necessary.
-namespace {
+namespace
+{
 	inline ULONG getServerCapabilities()
 	{
 		ULONG val = REMOTE_HOP_SUPPORT

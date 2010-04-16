@@ -81,7 +81,7 @@ void PluginManager::initialize()
 	libraryName->assign("fb_inet_server.exe");
 #endif
 #else // WIN_NT
-	// This will become 
+	// This will become
 	// libraryName->assign(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, "libfirebird.so"));
 	// when we start building libfirebird.so.
 #ifndef SUPERSERVER

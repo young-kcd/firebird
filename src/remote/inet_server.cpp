@@ -141,15 +141,15 @@ int FB_EXPORTED server_main( int argc, char** argv)
 //    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
 //#endif
 
-// We should support 3 modes:
-// 1. Standalone single-process listener (like SS).
-// 2. Standalone listener, forking on each packet accepted (loke -s switch in CS).
-// 3. Process spawned by (x)inetd (like CS).
+	// We should support 3 modes:
+	// 1. Standalone single-process listener (like SS).
+	// 2. Standalone listener, forking on each packet accepted (look -s switch in CS).
+	// 3. Process spawned by (x)inetd (like CS).
 	bool classic = false;
 	bool standaloneClassic = false;
 	bool super = false;
 
-// It's very easy to detect that we are spawned - just check fd 0 to be a socket.
+	// It's very easy to detect that we are spawned - just check fd 0 to be a socket.
 	const int channel = 0;
 	struct stat stat0;
 	if (fstat(channel, &stat0) == 0 && S_ISSOCK(stat0.st_mode))
@@ -248,7 +248,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 					exit(FINI_OK);
 
 				default:
-					printf("Unknown switch `%c', ignored\n", c);
+					printf("Unknown switch '%c', ignored\n", c);
 					break;
 				}
 				if (done)
@@ -382,7 +382,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 		}
 	}
 
-	if (super) 
+	if (super)
 	{
 		// Server tries to attach to security2.fdb to make sure everything is OK
 		// This code fixes bug# 8429 + all other bug of that kind - from

@@ -66,7 +66,7 @@ void ConfigRoot::osConfigInstallDir()
 	BrInitError brError;
 	if (br_init_lib(&brError))
 	{
-		char *temp = br_find_exe_dir(NULL);
+		char* temp = br_find_exe_dir(NULL);
 		if (temp)
 		{
 			string dummy;
