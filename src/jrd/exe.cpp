@@ -1035,7 +1035,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 /* set up to count records affected by request */
 
-	request->req_flags |= req_count_records;
 	request->req_records_selected = 0;
 	request->req_records_updated = 0;
 	request->req_records_inserted = 0;
@@ -2024,6 +2023,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			case jrd_req::req_sync:
 				if (RSE_get_record(tdbb, (RecordSource*) node->nod_arg[e_for_rsb], g_RSE_get_mode))
 				{
+					request->req_records_selected++;
+					request->req_records_affected.bumpFetched();
 					node = node->nod_arg[e_for_statement];
 					request->req_operation = jrd_req::req_evaluate;
 					break;
@@ -2102,6 +2103,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						// fetch one record
 						if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 						{
+							request->req_records_selected++;
+							request->req_records_affected.bumpFetched();
 							node = node->nod_arg[e_cursor_stmt_into];
 							request->req_operation = jrd_req::req_evaluate;
 							break;

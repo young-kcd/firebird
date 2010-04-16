@@ -308,12 +308,6 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, rse_get_mode mode)
 
 	impure->irsb_flags |= irsb_eof;
 
-/* Turn off the flag so that records at a
-   lower level will not be counted. */
-
-	const bool count = (request->req_flags & req_count_records) != 0;
-	request->req_flags &= ~req_count_records;
-
 	bool result;
 	while ( (result = get_record(tdbb, rsb, NULL, mode)) )
 	{
@@ -355,19 +349,9 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, rse_get_mode mode)
 			}
 		}
 
-		if (count) {
-			request->req_records_selected++;
-			request->req_records_affected.bumpFetched();
-		}
-
 		impure->irsb_flags &= ~irsb_eof;
 		break;
 	}
-
-/* reset the flag to whatever it was */
-
-	if (count)
-		request->req_flags |= req_count_records;
 
 	return result;
 }
