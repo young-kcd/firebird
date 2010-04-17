@@ -1,3 +1,34 @@
+2010-04-16 16:49  alexpeshkoff
+
+	* firebird2/src/burp/burp.cpp (1.181):
+
+	Cleanup - avoid 2 unneeded calls "tdgbl->uSvc->output("");"
+
+2010-04-16 16:24  alexpeshkoff
+
+	* firebird2/configure.in (1.390):
+
+	Patch from Damyan Ivanov to better detect some GNU OSes
+
+2010-04-16 15:33  alexpeshkoff
+
+	* firebird2/: configure.in (1.389),
+	builds/posix/Makefile.in.fbserver (1.31),
+	builds/posix/Makefile.in.firebird (1.109),
+	builds/posix/Makefile.in.libfbclient (1.44),
+	builds/posix/Makefile.in.libfbembed (1.30),
+	builds/posix/Makefile.in.smp_server (1.12),
+	builds/posix/firebird.vers (1.21), builds/posix/make.defaults
+	(1.96), builds/posix/prefix.solaris (1.36),
+	builds/posix/prefix.solaris-64gcc (1.14),
+	builds/posix/prefix.solx86gcc (1.39),
+	builds/posix/prefix.solx86gcc_64 (1.11), builds/posix/vers.sh.in
+	(1.4), src/remote/inet_server.cpp (1.106),
+	src/remote/server_stub.cpp (1.5),
+	src/remote/os/sun/server_main_dummy.cpp (1.4):
+
+	finished fb_inet_server cleanup
+
 2010-04-16 10:26  alexpeshkoff
 
 	* firebird2/builds/posix/Makefile.in.inet_server (1.19):
