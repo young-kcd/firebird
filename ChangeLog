@@ -1,3 +1,9 @@
+2010-04-16 16:01  alexpeshkoff
+
+	* firebird2/configure.in (1.368.2.13):
+
+	Patch from Damyan Ivanov to better detect some GNU OSes
+
 2010-04-16 05:51  dimitr
 
 	* firebird2/src/jrd/: exe.cpp (1.304.2.1), req.h (1.98.2.1),
