@@ -77,8 +77,10 @@ $(OBJ)/jrd/par.o:	$(SRC_ROOT)/include/gen/blrtable.h
 $(SRC_ROOT)/dsql/keywords.cpp: $(SRC_ROOT)/dsql/dsql.tab.h
 $(OBJ)/dsql/Parser.h: $(SRC_ROOT)/dsql/dsql.tab.h
 
+$(OBJ)/dsql/AggNodes.o:		$(SRC_ROOT)/include/gen/blrtable.h
+$(OBJ)/dsql/ExprNodes.o:	$(SRC_ROOT)/include/gen/blrtable.h
 $(OBJ)/dsql/StmtNodes.o:	$(SRC_ROOT)/include/gen/blrtable.h
-$(OBJ)/dsql/AggNodes.o:	$(SRC_ROOT)/include/gen/blrtable.h
+$(OBJ)/dsql/WinNodes.o:		$(SRC_ROOT)/include/gen/blrtable.h
 
 # Special cases for building cpp from epp
 $(OBJ)/dsql/metd.cpp: $(SRC_ROOT)/dsql/metd.epp
