@@ -59,6 +59,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
+static const int TOUCH_INTERVAL = 60 * 60;		// in seconds, one hour should be enough
 
 void checkFileError(const char* filename, const char* operation, ISC_STATUS iscError)
 {
@@ -123,10 +124,15 @@ ConfigStorage::ConfigStorage()
 	StorageGuard guard(this);
 	checkFile();
 	++m_base->cnt_uses;
+
+	gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, 0);
 }
 
 ConfigStorage::~ConfigStorage()
 {
+	// signal touchThread to finish
+	m_touchSemaphore.release();
+
 	::close(m_cfg_file);
 	m_cfg_file = -1;
 
@@ -177,6 +183,7 @@ void ConfigStorage::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 		header->change_number = 0;
 		header->session_number = 1;
 		header->cnt_uses = 0;
+		header->touch_time = 0;
 		memset(header->cfg_file_name, 0, sizeof(header->cfg_file_name));
 #ifndef WIN_NT
 		checkMutex("init", ISC_mutex_init(&header->mutex));
@@ -281,6 +288,43 @@ void ConfigStorage::checkFile()
 			fclose(cfgFile);
 		}
 	}
+
+	touchFile();
+}
+
+
+void ConfigStorage::touchFile()
+{
+	os_utils::touchFile(m_base->cfg_file_name);
+}
+
+
+THREAD_ENTRY_DECLARE ConfigStorage::touchThread(THREAD_ENTRY_PARAM arg)
+{
+	ConfigStorage* storage = (ConfigStorage*) arg;
+	storage->touchThreadFunc();
+	return 0;
+}
+
+
+void ConfigStorage::touchThreadFunc()
+{
+	int delay = TOUCH_INTERVAL / 2;
+	while (!m_touchSemaphore.tryEnter(delay))
+	{
+		StorageGuard guard(this);
+
+		time_t now;
+		time(&now);
+
+		if (!m_base->touch_time || m_base->touch_time < now)
+		{
+			touchFile();
+			m_base->touch_time = now + TOUCH_INTERVAL;
+		}
+
+		delay = difftime(m_base->touch_time, now);
+	} 
 }
 
 

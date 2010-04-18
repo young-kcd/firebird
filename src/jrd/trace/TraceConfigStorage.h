@@ -31,18 +31,24 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
+#include "../../common/classes/semaphore.h"
 #include "../../jrd/isc.h"
+#include "../../jrd/threaddata.h"
 #include "../../jrd/trace/TraceSession.h"
 
 namespace Jrd {
 
+class StorageInstance;
 
 class ConfigStorage : public Firebird::GlobalStorage
 {
-public:
+friend class StorageInstance;
+
+private:
 	ConfigStorage();
 	~ConfigStorage();
 
+public:
 	void addSession(Firebird::TraceSession& session);
 	bool getNextSession(Firebird::TraceSession& session);
 	void removeSession(ULONG id);
@@ -60,6 +66,10 @@ private:
 	static void initShMem(void*, sh_mem*, bool);
 
 	void checkFile();
+	void touchFile();
+
+	static THREAD_ENTRY_DECLARE touchThread(THREAD_ENTRY_PARAM arg);
+	void touchThreadFunc();
 
 	void checkDirty()
 	{
@@ -85,6 +95,7 @@ private:
 		volatile ULONG change_number;
 		volatile ULONG session_number;
 		ULONG cnt_uses;
+		time_t touch_time;
 		char  cfg_file_name[MAXPATHLEN];
 #ifndef WIN_NT
 		struct mtx mutex;
@@ -114,6 +125,7 @@ private:
 #endif
 	int  m_cfg_file;
 	bool m_dirty;
+	Firebird::Semaphore m_touchSemaphore;
 };
 
 

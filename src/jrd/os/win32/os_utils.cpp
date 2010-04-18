@@ -241,4 +241,27 @@ int openCreateSharedFile(const char* pathname, int flags)
 	return ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 }
 
+// set file's last access and modification time to current time
+bool touchFile(const char* pathname)
+{
+    FILETIME ft;
+    SYSTEMTIME st;
+
+	HANDLE hFile = CreateFile(pathname, 
+		GENERIC_READ | FILE_WRITE_ATTRIBUTES, 
+		FILE_SHARE_READ | FILE_SHARE_WRITE, 
+		ISC_get_security_desc(), 
+		OPEN_EXISTING, 
+		FILE_ATTRIBUTE_NORMAL, 
+		0);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return false;
+
+    GetSystemTime(&st);
+	const bool ret = SystemTimeToFileTime(&st, &ft) && SetFileTime(hFile, NULL, &ft, &ft);
+	CloseHandle(hFile);
+
+	return ret;
+}
+
 } // namespace os_utils
