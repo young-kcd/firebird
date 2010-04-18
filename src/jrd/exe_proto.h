@@ -60,6 +60,13 @@ namespace Jrd
 		{
 		}
 
+		AutoCacheRequest()
+			: id(0),
+			  which(0),
+			  request(NULL)
+		{
+		}
+
 		~AutoCacheRequest()
 		{
 			release();
@@ -82,6 +89,11 @@ namespace Jrd
 			request = newRequest;
 			cacheRequest();
 			return *this;
+		}
+
+		jrd_req* operator ->()
+		{
+			return request;
 		}
 
 		operator jrd_req*()

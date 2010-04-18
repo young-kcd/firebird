@@ -290,21 +290,16 @@ bool DYN_is_it_sql_role(Global* gbl,
 
 	bool found = false;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_get_role_nm, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_get_role_nm, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$ROLES WITH
 			X.RDB$ROLE_NAME EQ input_name.c_str()
-		if (!DYN_REQUEST(drq_get_role_nm))
-			DYN_REQUEST(drq_get_role_nm) = request;
-
+	{
 		found = true;
 		output_name = X.RDB$OWNER_NAME;
-
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_get_role_nm))
-		DYN_REQUEST(drq_get_role_nm) = request;
+	}
+	END_FOR
 
 	return found;
 }
@@ -828,33 +823,6 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-void DYN_rundown_request(jrd_req* handle, SSHORT id)
-{
-/**************************************
- *
- *	D Y N _ r u n d o w n _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Unwind a request and save it
- *	in the dyn internal request list.
- *
- **************************************/
-
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	if (!handle) {
-		return;
-	}
-
-	EXE_unwind(tdbb, handle);
-	if (id >= 0 && !DYN_REQUEST(id)) {
-		DYN_REQUEST(id) = handle;
-	}
-}
-
 
 USHORT DYN_skip_attribute(const UCHAR** ptr)
 {
@@ -1042,12 +1010,10 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	}
 	grantor.upper7();
 
-	jrd_req* request = NULL;
-
 	try {
 
-	request = CMP_find_request(tdbb,
-		(USHORT) (field.length() > 0 ? drq_l_grant1 : drq_l_grant2), DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, (field.length() > 0 ? drq_l_grant1 : drq_l_grant2), DYN_REQUESTS);
+
 	for (const TEXT* pr = privileges; *pr; pr++)
 	{
 		bool duplicate = false;
@@ -1065,10 +1031,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 					PRIV.RDB$USER_TYPE = user_type AND
 					PRIV.RDB$GRANTOR EQ grantor.c_str() AND
 					PRIV.RDB$FIELD_NAME EQ field.c_str()
-				if (!DYN_REQUEST(drq_l_grant1)) {
-					DYN_REQUEST(drq_l_grant1) = request;
-				}
-
+			{
 				if ((PRIV.RDB$GRANT_OPTION.NULL) ||
 					(PRIV.RDB$GRANT_OPTION) ||
 					(PRIV.RDB$GRANT_OPTION == options))
@@ -1079,11 +1042,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				{
 					ERASE PRIV;	// has to be 0 and options == 1
 				}
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_grant1))
-			{
-				DYN_REQUEST(drq_l_grant1) = request;
 			}
+			END_FOR
 		}
 		else
 		{
@@ -1097,9 +1057,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 					PRIV.RDB$USER_TYPE = user_type AND
 					PRIV.RDB$GRANTOR EQ grantor.c_str() AND
 					PRIV.RDB$FIELD_NAME MISSING
-				if (!DYN_REQUEST(drq_l_grant2))
-					DYN_REQUEST(drq_l_grant2) = request;
-
+			{
 				if ((PRIV.RDB$GRANT_OPTION.NULL) ||
 					(PRIV.RDB$GRANT_OPTION) ||
 					(PRIV.RDB$GRANT_OPTION == options))
@@ -1110,11 +1068,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				{
 					ERASE PRIV;	// has to be 0 and options == 1
 				}
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_grant2))
-			{
-				DYN_REQUEST(drq_l_grant2) = request;
 			}
+			END_FOR
 		}
 
 		if (duplicate) {
@@ -1183,11 +1138,6 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	catch (const Exception& ex)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
-		// we need to rundown as we have to set the env.
-		// But in case the error is from store_priveledge we have already
-		// unwound the request so passing that as null
-		jrd_req* req1 = (id == drq_s_grant || id == drq_gcg1) ? NULL : request;
-		DYN_rundown_request(req1, -1);
 
 		switch (id)
 		{
@@ -1248,8 +1198,7 @@ static bool grantor_can_grant(Global* gbl,
 
 	// Verify that the input relation exists.
 
-	jrd_req* request = CMP_find_request(tdbb, drq_gcg4, DYN_REQUESTS);
-
+	AutoCacheRequest request(tdbb, drq_gcg4, DYN_REQUESTS);
 
 	try {
 
@@ -1260,14 +1209,13 @@ static bool grantor_can_grant(Global* gbl,
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH
 			REL.RDB$RELATION_NAME = relation_name.c_str()
+	{
 		relation_exists = true;
 		if ((!REL.RDB$FLAGS.NULL) && (REL.RDB$FLAGS & REL_sql))
 			sql_relation = true;
-		if (!DYN_REQUEST(drq_gcg4))
-			DYN_REQUEST(drq_gcg4) = request;
-	END_FOR;
-	if (!DYN_REQUEST(drq_gcg4))
-		DYN_REQUEST(drq_gcg4) = request;
+	}
+	END_FOR
+
 	if (!relation_exists)
 	{
 		DYN_error(false, 175, SafeArg() << relation_name.c_str());
@@ -1283,17 +1231,17 @@ static bool grantor_can_grant(Global* gbl,
 		bool field_exists = false;
 
 		// SELECT RDB$RELATION_FIELDS failed in grant
-		request = CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
+		request.reset(tdbb, drq_gcg5, DYN_REQUESTS);
+
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			G_FLD IN RDB$RELATION_FIELDS WITH
 				G_FLD.RDB$RELATION_NAME = relation_name.c_str() AND
 				G_FLD.RDB$FIELD_NAME = field_name.c_str()
-			if (!DYN_REQUEST(drq_gcg5))
-				DYN_REQUEST(drq_gcg5) = request;
+		{
 			field_exists = true;
-		END_FOR;
-		if (!DYN_REQUEST(drq_gcg5))
-			DYN_REQUEST(drq_gcg5) = request;
+		}
+		END_FOR
+
 		if (!field_exists)
 		{
 			DYN_error(false, 176, SafeArg() << field_name.c_str() << relation_name.c_str());
@@ -1315,20 +1263,19 @@ static bool grantor_can_grant(Global* gbl,
 	bool grantor_is_owner = false;
 	// SELECT RDB$RELATIONS/RDB$OWNER_NAME failed in grant
 
-	request = CMP_find_request(tdbb, drq_gcg2, DYN_REQUESTS);
+	request.reset(tdbb, drq_gcg2, DYN_REQUESTS);
+
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH
 			REL.RDB$RELATION_NAME = relation_name.c_str() AND
 			REL.RDB$OWNER_NAME = UPPERCASE(grantor)
-		if (!DYN_REQUEST(drq_gcg2))
-			DYN_REQUEST(drq_gcg2) = request;
+	{
 		grantor_is_owner = true;
-	END_FOR;
-	if (!DYN_REQUEST(drq_gcg2))
-		DYN_REQUEST(drq_gcg2) = request;
-	if (!sql_relation && grantor_is_owner) {
-		return true;
 	}
+	END_FOR
+
+	if (!sql_relation && grantor_is_owner)
+		return true;
 
 	// Remember the grant option for non field-specific user-privileges, and
 	// the grant option for the user-privileges for the input field.
@@ -1338,14 +1285,14 @@ static bool grantor_can_grant(Global* gbl,
 	SSHORT go_rel = -1;
 	SSHORT go_fld = -1;
 
-
 	// Verify that the grantor has the grant option for this relation/field
 	// in the rdb$user_privileges.  If not, then we don't need to look further.
 
 	err_num = 185;
 	// SELECT RDB$USER_PRIVILEGES failed in grant
 
-	request = CMP_find_request(tdbb, drq_gcg1, DYN_REQUESTS);
+	request.reset(tdbb, drq_gcg1, DYN_REQUESTS);
+
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PRV IN RDB$USER_PRIVILEGES WITH
 			PRV.RDB$USER = UPPERCASE(grantor) AND
@@ -1353,9 +1300,7 @@ static bool grantor_can_grant(Global* gbl,
 			PRV.RDB$RELATION_NAME = relation_name.c_str() AND
 			PRV.RDB$OBJECT_TYPE = obj_relation AND
 			PRV.RDB$PRIVILEGE = privilege
-		if (!DYN_REQUEST(drq_gcg1))
-			DYN_REQUEST(drq_gcg1) = request;
-
+	{
 		if (PRV.RDB$FIELD_NAME.NULL)
 		{
 			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
@@ -1376,11 +1321,8 @@ static bool grantor_can_grant(Global* gbl,
 					go_fld = 1;
 			}
 		}
-	END_FOR;
-	if (!DYN_REQUEST(drq_gcg1))
-	{
-		DYN_REQUEST(drq_gcg1) = request;
 	}
+	END_FOR
 
 	if (field_name.length())
 	{
@@ -1444,7 +1386,8 @@ static bool grantor_can_grant(Global* gbl,
 	err_num = 186;
 	// SELECT RDB$VIEW_RELATIONS/RDB$RELATION_FIELDS/... failed in grant
 
-	request = CMP_find_request(tdbb, drq_gcg3, DYN_REQUESTS);
+	request.reset(tdbb, drq_gcg3, DYN_REQUESTS);
+
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		G_FLD IN RDB$RELATION_FIELDS CROSS
 			G_VIEW IN RDB$VIEW_RELATIONS WITH
@@ -1452,10 +1395,7 @@ static bool grantor_can_grant(Global* gbl,
 			G_FLD.RDB$BASE_FIELD NOT MISSING AND
 			G_VIEW.RDB$VIEW_NAME EQ G_FLD.RDB$RELATION_NAME AND
 			G_VIEW.RDB$VIEW_CONTEXT EQ G_FLD.RDB$VIEW_CONTEXT
-		if (!DYN_REQUEST(drq_gcg3)) {
-			DYN_REQUEST(drq_gcg3) = request;
-		}
-
+	{
 		if (field_name.length())
 		{
 			if (field_name == G_FLD.RDB$FIELD_NAME)
@@ -1473,9 +1413,8 @@ static bool grantor_can_grant(Global* gbl,
 				return false;
 			}
 		}
-	END_FOR;
-	if (!DYN_REQUEST(drq_gcg3))
-		DYN_REQUEST(drq_gcg3) = request;
+	}
+	END_FOR
 
 	// all done.
 
@@ -1483,7 +1422,6 @@ static bool grantor_can_grant(Global* gbl,
 	catch (const Exception& ex)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, err_num);
 		// msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant"
 
@@ -1533,7 +1471,7 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 		return false;
 	}
 
-	jrd_req* request = CMP_find_request(tdbb, drq_get_role_au, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_get_role_au, DYN_REQUESTS);
 
 	// The 'grantor' is not the owner of the ROLE, see if they
 	// have admin privilege on the role
@@ -1544,21 +1482,13 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 			PRV.RDB$RELATION_NAME EQ role_name.c_str() AND
 			PRV.RDB$OBJECT_TYPE = obj_sql_role AND
 			PRV.RDB$PRIVILEGE EQ "M"
-		if (!DYN_REQUEST(drq_get_role_au)) {
-			DYN_REQUEST(drq_get_role_au) = request;
-		}
-
+	{
 		if (PRV.RDB$GRANT_OPTION == 2)
 			grantable = true;
 		else
 			no_admin = true;
-
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_get_role_au))
-	{
-		DYN_REQUEST(drq_get_role_au) = request;
 	}
+	END_FOR
 
 	if (!grantable)
 	{
@@ -1775,7 +1705,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 
 	USHORT id = field.length() ? drq_e_grant1 : drq_e_grant2;
 
-	jrd_req* request = CMP_find_request(tdbb, id, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, id, DYN_REQUESTS);
 
 	try {
 
@@ -1796,9 +1726,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					PRIV.RDB$USER = user.c_str() AND
 					PRIV.RDB$USER_TYPE = user_type AND
 					PRIV.RDB$FIELD_NAME EQ field.c_str()
-				if (!DYN_REQUEST(drq_e_grant1))
-					DYN_REQUEST(drq_e_grant1) = request;
-
+			{
 				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
 				{
 					ERASE PRIV;
@@ -1808,10 +1736,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				{
 					bad_grantor = true;
 				}
-			END_FOR;
-			if (!DYN_REQUEST(drq_e_grant1)) {
-				DYN_REQUEST(drq_e_grant1) = request;
 			}
+			END_FOR
 		}
 		else
 		{
@@ -1822,9 +1748,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					PRIV.RDB$OBJECT_TYPE = obj_type AND
 					PRIV.RDB$USER EQ user.c_str() AND
 					PRIV.RDB$USER_TYPE = user_type
-				if (!DYN_REQUEST(drq_e_grant2))
-					DYN_REQUEST(drq_e_grant2) = request;
-
+			{
 				// revoking a permission at the table level implies
 				// revoking the perm. on all columns. So for all fields
 				// in this table which have been granted the privilege, we
@@ -1839,9 +1763,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				{
 					bad_grantor = true;
 				}
-			END_FOR;
-			if (!DYN_REQUEST(drq_e_grant2))
-				DYN_REQUEST(drq_e_grant2) = request;
+			}
+			END_FOR
 		}
 
 		if (options && grant_erased)
@@ -1880,10 +1803,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	catch (const Exception& ex)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
-		// we need to rundown as we have to set the env.
-		// But in case the error is from store_priveledge we have already
-		// unwound the request so passing that as null
-		DYN_rundown_request(((id == drq_s_grant) ? NULL : request), -1);
+
 		if (id == drq_e_grant1)
 		{
 			DYN_error_punt(true, 111);
@@ -1977,17 +1897,14 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 	bool grant_erased = false;
 	bool bad_grantor = false;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_e_grant3, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_e_grant3, DYN_REQUESTS);
 
 	try {
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH
 				PRIV.RDB$USER = user.c_str() AND
 				PRIV.RDB$USER_TYPE = user_type
-
-			if (!DYN_REQUEST(drq_e_grant1))
-				DYN_REQUEST(drq_e_grant1) = request;
-
+		{
 			if (revoking_user->locksmith() || revoking_as_user_name == PRIV.RDB$GRANTOR)
 			{
 				ERASE PRIV;
@@ -1997,10 +1914,8 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 			{
 				bad_grantor = true;
 			}
-		END_FOR;
-		if (!DYN_REQUEST(drq_e_grant3)) {
-			DYN_REQUEST(drq_e_grant3) = request;
 		}
+		END_FOR
 
 		if (!grant_erased)
 		{
@@ -2019,7 +1934,6 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 	catch (const Exception& ex)
 	{
 		ex.stuff_exception(tdbb->tdbb_status_vector);
-		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 255);
 		// msg 255: "ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL"
 	}
@@ -2042,8 +1956,7 @@ static void set_field_class_name(Global* gbl, const MetaName& relation, const Me
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* const dbb = tdbb->getDatabase();
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
-	jrd_req* request2 = NULL;
+	AutoCacheRequest request(tdbb, drq_s_f_class, DYN_REQUESTS);
 
 	bool unique = false;
 
@@ -2052,7 +1965,7 @@ static void set_field_class_name(Global* gbl, const MetaName& relation, const Me
 		WITH RFR.RDB$FIELD_NAME = field.c_str() AND
 			RFR.RDB$RELATION_NAME = relation.c_str() AND
 		RFR.RDB$SECURITY_CLASS MISSING
-
+	{
 		MODIFY RFR
 			while (!unique)
 		    {
@@ -2060,25 +1973,21 @@ static void set_field_class_name(Global* gbl, const MetaName& relation, const Me
 				DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, 1));
 
 				unique = true;
-				request2 = CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
+
+				AutoCacheRequest request2(tdbb, drq_s_u_class, DYN_REQUESTS);
 				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 					RFR1 IN RDB$RELATION_FIELDS
 					WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
+				{
 					unique = false;
-				END_FOR;
+				}
+				END_FOR
 		    }
 
 			RFR.RDB$SECURITY_CLASS.NULL = FALSE;
-		END_MODIFY;
-
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_s_f_class))
-		DYN_REQUEST(drq_s_f_class) = request;
-
-
-	if (request2 && !DYN_REQUEST(drq_s_u_class))
-		DYN_REQUEST(drq_s_u_class) = request2;
+		END_MODIFY
+	}
+	END_FOR
 }
 
 
@@ -2106,7 +2015,7 @@ static void store_privilege(Global* gbl,
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* const dbb = tdbb->getDatabase();
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_grant, DYN_REQUESTS);
 
 	// need to unwind our own request here!! SM 27-Sep-96
 
@@ -2119,6 +2028,7 @@ static void store_privilege(Global* gbl,
 			strcpy(PRIV.RDB$GRANTOR, grantor.c_str());
 			PRIV.RDB$USER_TYPE = user_type;
 			PRIV.RDB$OBJECT_TYPE = obj_type;
+		{
 			if (field.length())
 			{
 				strcpy(PRIV.RDB$FIELD_NAME, field.c_str());
@@ -2128,17 +2038,12 @@ static void store_privilege(Global* gbl,
 			PRIV.RDB$PRIVILEGE[0] = privilege[0];
 			PRIV.RDB$PRIVILEGE[1] = 0;
 			PRIV.RDB$GRANT_OPTION = option;
-
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_grant)) {
-			DYN_REQUEST(drq_s_grant) = request;
 		}
+		END_STORE
 	}
 	catch (const Exception& ex)
 	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 79);
 		// msg 79: "STORE RDB$USER_PRIVILEGES failed in grant"
 	}

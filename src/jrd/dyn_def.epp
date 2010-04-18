@@ -132,7 +132,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_COLLATION, collation_name, gbl->sqlText);
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_colls, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_colls, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -140,7 +140,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 	{
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$COLLATIONS
-
+		{
 			CharSet* cs = NULL;
 			SubtypeInfo info;
 			USHORT attributes_on = 0;
@@ -164,22 +164,16 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 
 						cs = INTL_charset_lookup(tdbb, X.RDB$CHARACTER_SET_ID);
 
-						jrd_req* request2 = CMP_find_request(tdbb, drq_l_charset, DYN_REQUESTS);
+						AutoCacheRequest request2(tdbb, drq_l_charset, DYN_REQUESTS);
 
 						FOR(REQUEST_HANDLE request2
 							TRANSACTION_HANDLE gbl->gbl_transaction)
 							CS IN RDB$CHARACTER_SETS
 							WITH CS.RDB$CHARACTER_SET_ID EQ X.RDB$CHARACTER_SET_ID
-
-							if (!DYN_REQUEST(drq_l_charset))
-								DYN_REQUEST(drq_l_charset) = request2;
-
+						{
 							charsetName = CS.RDB$CHARACTER_SET_NAME;
-
+						}
 						END_FOR
-
-						if (!DYN_REQUEST(drq_l_charset))
-							DYN_REQUEST(drq_l_charset) = request2;
 
 						break;
 					}
@@ -345,18 +339,14 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			}
 
 			b_ending_store = true;
-
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_colls))
-			DYN_REQUEST(drq_s_colls) = request;
+		}
+		END_STORE
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store)
 		{
-			DYN_rundown_request(request, drq_s_colls);
 			DYN_error_punt(true, 219);
 			// msg 219: "DEFINE COLLATION failed"
 		}
@@ -399,16 +389,16 @@ void DYN_define_constraint(Global*		gbl,
 	if (constraint_name.isEmpty())
 		DYN_UTIL_generate_constraint_name(tdbb, gbl, constraint_name);
 
-	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	try {
 
-	request = CMP_find_request(tdbb, drq_s_rel_con, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_rel_con, DYN_REQUESTS);
 	id = drq_s_rel_con;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		CRT IN RDB$RELATION_CONSTRAINTS
+	{
 		strcpy(CRT.RDB$CONSTRAINT_NAME, constraint_name.c_str());
 		strcpy(CRT.RDB$RELATION_NAME, relation_name->c_str());
 
@@ -461,12 +451,8 @@ void DYN_define_constraint(Global*		gbl,
 
 			SCL_check_index(tdbb, referred_index_name, 0, SCL_sql_references);
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_rel_con))
-	{
-		DYN_REQUEST(drq_s_rel_con) = request;
 	}
+	END_STORE
 
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -506,8 +492,6 @@ void DYN_define_constraint(Global*		gbl,
 				break;
 		}
 
-		DYN_rundown_request(request, local_id);
-
 		DYN_error_punt(true, number, number == 124 ? constraint_name.c_str() : NULL);
 	}
 
@@ -540,7 +524,7 @@ void DYN_define_constraint(Global*		gbl,
 	// Make sure unique field names were specified for UNIQUE/PRIMARY/FOREIGN
 	// All fields must have the NOT NULL attribute specified for UNIQUE/PRIMARY.
 
-	request = CMP_find_request(tdbb, drq_c_unq_nam, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_c_unq_nam, DYN_REQUESTS);
 	id = drq_c_unq_nam;
 
 	bool not_null = true;
@@ -556,25 +540,20 @@ void DYN_define_constraint(Global*		gbl,
 			REDUCED TO IDS.RDB$FIELD_NAME, IDS.RDB$INDEX_NAME,
 			FLX.RDB$NULL_FLAG
 			SORTED BY ASCENDING IDS.RDB$FIELD_NAME
-		if (!DYN_REQUEST(drq_c_unq_nam))
-			DYN_REQUEST(drq_c_unq_nam) = request;
-
+	{
 		if ((FLX.RDB$NULL_FLAG.NULL || !FLX.RDB$NULL_FLAG) &&
 			(RFR.RDB$NULL_FLAG.NULL || !RFR.RDB$NULL_FLAG) &&
 			primary_flag)
 		{
 			not_null = false;
 			null_field_name = RFR.RDB$FIELD_NAME;
-			EXE_unwind(tdbb, request);
 			break;
 		}
 
 		unique_count++;
 		field_list.add() = IDS.RDB$FIELD_NAME;
-	END_FOR;
-	if (!DYN_REQUEST(drq_c_unq_nam)) {
-		DYN_REQUEST(drq_c_unq_nam) = request;
 	}
+	END_FOR
 
 	if (!not_null)
 	{
@@ -582,31 +561,25 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY constraint definition"
 	}
 
-	request = CMP_find_request(tdbb, drq_n_idx_seg, DYN_REQUESTS);
+	request.reset(tdbb, drq_n_idx_seg, DYN_REQUESTS);
 	id = drq_n_idx_seg;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDS IN RDB$INDEX_SEGMENTS WITH IDS.RDB$INDEX_NAME EQ index_name.c_str()
-		if (!DYN_REQUEST(drq_n_idx_seg)) {
-			DYN_REQUEST(drq_n_idx_seg) = request;
-		}
-
+	{
 		all_count++;
-	END_FOR;
-	if (!DYN_REQUEST(drq_n_idx_seg)) {
-		DYN_REQUEST(drq_n_idx_seg) = request;
 	}
+	END_FOR
 
-	if (unique_count != all_count) {
+	if (unique_count != all_count)
 		goto dyn_punt_false_124;
-	}
 
 	// For PRIMARY KEY/UNIQUE constraints, make sure same set of columns
 	// is not used in another constraint of either type
 
 	if (!foreign_flag)
 	{
-		request = CMP_find_request(tdbb, drq_c_dup_con, DYN_REQUESTS);
+		request.reset(tdbb, drq_c_dup_con, DYN_REQUESTS);
 		id = drq_c_dup_con;
 
 		index_name = "";
@@ -620,19 +593,14 @@ void DYN_define_constraint(Global*		gbl,
 				 CRT.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT) AND
 				CRT.RDB$CONSTRAINT_NAME NE constraint_name.c_str()
 				SORTED BY CRT.RDB$INDEX_NAME, DESCENDING IDS.RDB$FIELD_NAME
-			if (!DYN_REQUEST(drq_c_dup_con))
-				DYN_REQUEST(drq_c_dup_con) = request;
-
+		{
 			if (index_name != CRT.RDB$INDEX_NAME)
 			{
 				if (list_index >= 0) {
 					found = false;
 				}
 				if (found)
-				{
-					EXE_unwind(tdbb, request);
 					break;
-				}
 				list_index = field_list.getCount() - 1;
 				index_name = CRT.RDB$INDEX_NAME;
 				found = true;
@@ -648,44 +616,35 @@ void DYN_define_constraint(Global*		gbl,
 			else {
 				found = false;
 			}
-		END_FOR;
-		if (!DYN_REQUEST(drq_c_dup_con)) {
-			DYN_REQUEST(drq_c_dup_con) = request;
 		}
+		END_FOR
 
-		if (list_index >= 0) {
+		if (list_index >= 0)
 			found = false;
-		}
 
-		if (found) {
+		if (found)
 			goto dyn_punt_false_126;
-		}
 	}
 	else
 	{
 		// Foreign key being defined
 
-		request = CMP_find_request(tdbb, drq_s_ref_con, DYN_REQUESTS);
+		request.reset(tdbb, drq_s_ref_con, DYN_REQUESTS);
 		id = drq_s_ref_con;
-
-		jrd_req* old_request = NULL;
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REF IN RDB$REF_CONSTRAINTS
-			old_request = request;
+		{
 			const SSHORT old_id = id;
-			request = CMP_find_request(tdbb, drq_l_intg_con, DYN_REQUESTS);
+			AutoCacheRequest request2(tdbb, drq_l_intg_con, DYN_REQUESTS);
 			id = drq_l_intg_con;
 
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				CRT IN RDB$RELATION_CONSTRAINTS WITH
 					CRT.RDB$INDEX_NAME EQ referred_index_name.c_str() AND
 					(CRT.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
 					 CRT.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
-
-				if (!DYN_REQUEST(drq_l_intg_con))
-					DYN_REQUEST(drq_l_intg_con) = request;
-
+			{
 				fb_utils::exact_name_limit(CRT.RDB$CONSTRAINT_NAME, sizeof(CRT.RDB$CONSTRAINT_NAME));
 				strcpy(REF.RDB$CONST_NAME_UQ, CRT.RDB$CONSTRAINT_NAME);
 				strcpy(REF.RDB$CONSTRAINT_NAME, constraint_name.c_str());
@@ -703,7 +662,6 @@ void DYN_define_constraint(Global*		gbl,
 					// RESTRICT is the default value for this column
 					strcpy(REF.RDB$UPDATE_RULE, RI_RESTRICT);
 
-
 				REF.RDB$DELETE_RULE.NULL = FALSE;
 				if (ri_action & FOR_KEY_DEL_CASCADE)
 					strcpy(REF.RDB$DELETE_RULE, RI_ACTION_CASCADE);
@@ -716,16 +674,12 @@ void DYN_define_constraint(Global*		gbl,
 				else
 					// RESTRICT is the default value for this column
 					strcpy(REF.RDB$DELETE_RULE, RI_RESTRICT);
+			}
+			END_FOR
 
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_intg_con))
-				DYN_REQUEST(drq_l_intg_con) = request;
-			request = old_request;
 			id = old_id;
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_ref_con))
-			DYN_REQUEST(drq_s_ref_con) = request;
+		}
+		END_STORE
 	}
 
 	}	// try
@@ -762,8 +716,6 @@ void DYN_define_constraint(Global*		gbl,
 				break;
 		}
 
-		DYN_rundown_request(request, local_id);
-
 		DYN_error_punt(true, number, number == 124 ? constraint_name.c_str() : NULL);
 	}
 
@@ -799,17 +751,18 @@ void DYN_define_dimension(Global*		gbl,
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
-	jrd_req* request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_dims, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
-	try {
-
+	try
+	{
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			DIM IN RDB$FIELD_DIMENSIONS
 			DIM.RDB$UPPER_BOUND.NULL = TRUE;
 			DIM.RDB$LOWER_BOUND.NULL = TRUE;
 			DIM.RDB$DIMENSION = (SSHORT)DYN_get_number(ptr);
+		{
 			if (field_name) {
 				strcpy(DIM.RDB$FIELD_NAME, field_name->c_str());
 			}
@@ -840,23 +793,19 @@ void DYN_define_dimension(Global*		gbl,
 			}
 
 			b_ending_store = true;
-
-		END_STORE;
+		}
+		END_STORE
 
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (b_ending_store) {
-			DYN_rundown_request(request, drq_s_dims);
+		if (b_ending_store)
+		{
 			DYN_error_punt(true, 3);
 			// msg 3: "STORE RDB$FIELD_DIMENSIONS failed"
 		}
 		throw;
-	}
-
-	if (!DYN_REQUEST(drq_s_dims)) {
-		DYN_REQUEST(drq_s_dims) = request;
 	}
 }
 
@@ -889,7 +838,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 
 		DYN_UTIL_check_unique_name(tdbb, gbl->gbl_transaction, exception_name, obj_exception);
 
-		jrd_req* request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
+		AutoCacheRequest request(tdbb, drq_s_xcp, DYN_REQUESTS);
 
 		const UCHAR* message_ptr = NULL;
 
@@ -923,7 +872,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$EXCEPTIONS
-
+				{
 					X.RDB$EXCEPTION_NUMBER = xcp_id;
 					strcpy(X.RDB$EXCEPTION_NAME, exception_name.c_str());
 
@@ -939,16 +888,13 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 					}
 
 					b_ending_store = true;
-
-				END_STORE;
+				}
+				END_STORE
 
 				break;
 			}
 			catch (const Firebird::status_exception& ex)
 			{
-				if (b_ending_store)
-					DYN_rundown_request(request, drq_s_xcp);
-
 				if (ex.value()[1] != isc_no_dup)
 					throw;
 
@@ -959,20 +905,10 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 				fb_utils::init_status(tdbb->tdbb_status_vector);
 			}
 		}
-
-		if (!DYN_REQUEST(drq_s_xcp)) {
-			DYN_REQUEST(drq_s_xcp) = request;
-		}
-
 	} // try
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (b_ending_store)
-		{
-			DYN_error_punt(true, 142);
-			// msg 142: "DEFINE EXCEPTION failed"
-		}
 		throw;
 	}
 
@@ -1010,8 +946,6 @@ void DYN_define_file(Global*		gbl,
 		ERR_post(Arg::Gds(isc_adm_task_denied));
 	}
 
-	jrd_req* request = NULL;
-
 	try {
 
 		id = -1;
@@ -1020,30 +954,23 @@ void DYN_define_file(Global*		gbl,
 		if (!ISC_expand_filename(temp_f, false))
 			DYN_error_punt(false, 231);	// File name is invalid.
 
-		request = CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
-
-		if (dbb->dbb_filename == temp_f) {
+		if (dbb->dbb_filename == temp_f)
 			DYN_error_punt(false, 166);
-		}
+
+		AutoCacheRequest request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f.c_str()
-			if (!DYN_REQUEST(drq_l_files))
-				DYN_REQUEST(drq_l_files) = request;
-
+		{
 			DYN_error_punt(false, 166);
-		END_FOR;
+		}
+		END_FOR
 
-		if (!DYN_REQUEST(drq_l_files))
-			DYN_REQUEST(drq_l_files) = request;
-
-		request = CMP_find_request(tdbb, id = drq_s_files, DYN_REQUESTS);
+		request.reset(tdbb, id = drq_s_files, DYN_REQUESTS);
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FILES
-			if (!DYN_REQUEST(drq_s_files))
-				DYN_REQUEST(drq_s_files) = request;
-
+		{
 			temp_f.copyTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 			X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 			X.RDB$FILE_FLAGS = 0;
@@ -1082,27 +1009,17 @@ void DYN_define_file(Global*		gbl,
 				}
 			}
 			*start += X.RDB$FILE_LENGTH;
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_files))
-			DYN_REQUEST(drq_s_files) = request;
+		}
+		END_STORE
 
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_l_files)
-		{
-			DYN_rundown_request(request, drq_l_files);
 			DYN_error_punt(false, 166);
-		}
 		else
-		{
-			if (id != -1)
-				DYN_rundown_request(request, drq_s_files);
-
 			DYN_error_punt(true, msg);
-		}
 	}
 
 }
@@ -1124,7 +1041,6 @@ void DYN_define_difference(Global* gbl, const UCHAR** ptr)
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
-	jrd_req* request = NULL;
 
 	if (!tdbb->getAttachment()->locksmith())
 	{
@@ -1135,25 +1051,24 @@ void DYN_define_difference(Global* gbl, const UCHAR** ptr)
 	{
 		bool found = false;
 		id = drq_l_difference;
-		request = CMP_find_request(tdbb, drq_l_difference, DYN_REQUESTS);
+		AutoCacheRequest request(tdbb, drq_l_difference, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FIL IN RDB$FILES
+		{
 			if (FIL.RDB$FILE_FLAGS & FILE_difference)
 				found = true;
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_l_difference)) {
-			DYN_REQUEST(drq_l_difference) = request;
 		}
+		END_FOR
 
-		if (found) {
+		if (found)
 			goto dyn_punt_216;
-		}
 
-		request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+		request.reset(tdbb, drq_s_difference, DYN_REQUESTS);
 		id = drq_s_difference;
+
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FILES
+		{
 			GET_STRING(ptr, X.RDB$FILE_NAME);
 			X.RDB$FILE_FLAGS = FILE_difference;
 			X.RDB$FILE_FLAGS.NULL = FALSE;
@@ -1161,23 +1076,19 @@ void DYN_define_difference(Global* gbl, const UCHAR** ptr)
 			X.RDB$FILE_START.NULL = FALSE;
 			X.RDB$FILE_LENGTH.NULL = TRUE;
 			X.RDB$SHADOW_NUMBER.NULL = TRUE;
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_difference))
-			DYN_REQUEST(drq_s_difference) = request;
+		}
+		END_STORE
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_difference)
 		{
-			DYN_rundown_request(request, drq_s_difference);
 			DYN_error_punt(true, 150);
 			// msg 150: STORE RDB$FILES failed
 		}
 		else
 		{
-			DYN_rundown_request(request, drq_l_difference);
 			DYN_error_punt(true, 156);
 			// msg 156: Difference file lookup failed
 		}
@@ -1210,7 +1121,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName filter_name;
 	GET_STRING(ptr, filter_name);
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_filters, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_filters, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1225,7 +1136,7 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-
+		{
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 			{
@@ -1255,19 +1166,14 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 					DYN_unsupported_verb();
 				}
 			}
-
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_filters)) {
-			DYN_REQUEST(drq_s_filters) = request;
 		}
+		END_STORE
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store)
 		{
-			DYN_rundown_request(request, drq_s_filters);
 			DYN_error_punt(true, 7);
 			// msg 7: "DEFINE BLOB FILTER failed"
 		}
@@ -1298,7 +1204,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_FUNCTION, function_name, gbl->sqlText);
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_funcs, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1306,6 +1212,7 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FUNCTIONS USING
+		{
 			strcpy(X.RDB$FUNCTION_NAME, function_name.c_str());
 			X.RDB$RETURN_ARGUMENT.NULL = TRUE;
 			X.RDB$QUERY_NAME.NULL = TRUE;
@@ -1356,18 +1263,14 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 			}
 
 			b_ending_store = true;
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_funcs)) {
-			DYN_REQUEST(drq_s_funcs) = request;
 		}
+		END_STORE
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store)
 		{
-			DYN_rundown_request(request, drq_s_funcs);
 			DYN_error_punt(true, 10);
 			// msg 10: "DEFINE FUNCTION failed"
 		}
@@ -1392,17 +1295,16 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
  *
  **************************************/
 
-	jrd_req* request = NULL;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
 	try
 	{
-		request = CMP_find_request(tdbb, drq_s_func_args, DYN_REQUESTS);
+		AutoCacheRequest request(tdbb, drq_s_func_args, DYN_REQUESTS);
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FUNCTION_ARGUMENTS
+		{
 			X.RDB$ARGUMENT_POSITION = (SSHORT)DYN_get_number(ptr);
 
 			if (X.RDB$ARGUMENT_POSITION > MAX_UDF_ARGUMENTS)
@@ -1479,20 +1381,12 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 				default:
 					DYN_unsupported_verb();
 				}
-
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_func_args)) {
-			DYN_REQUEST(drq_s_func_args) = request;
 		}
-
+		END_STORE
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (request) {
-			DYN_rundown_request(request, drq_s_func_args);
-		}
 		DYN_error_punt(true, 12);
 		// msg 12: "DEFINE FUNCTION ARGUMENT failed"
 	}
@@ -1530,7 +1424,7 @@ void DYN_define_global_field(Global*		gbl,
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_DOMAIN, global_field_name, gbl->sqlText);
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_gfields, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
@@ -1538,7 +1432,7 @@ void DYN_define_global_field(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS USING
-
+	{
 		strcpy(FLD.RDB$FIELD_NAME, global_field_name.c_str());
 
 		FLD.RDB$SYSTEM_FLAG = 0;
@@ -1738,12 +1632,8 @@ void DYN_define_global_field(Global*		gbl,
 		}
 
 		b_ending_store = true;
-
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_gfields)) {
-		DYN_REQUEST(drq_s_gfields) = request;
 	}
+	END_STORE
 
 	} // try
 	catch (const Firebird::Exception& ex)
@@ -1751,7 +1641,6 @@ void DYN_define_global_field(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store)
 		{
-			DYN_rundown_request(request, drq_s_gfields);
 			DYN_error_punt(true, 13);
 			// msg 13: "STORE RDB$FIELDS failed"
 		}
@@ -1806,7 +1695,6 @@ void DYN_define_index(Global*		gbl,
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_INDEX, index_name, gbl->sqlText);
 
-	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	try {
@@ -1814,14 +1702,14 @@ void DYN_define_index(Global*		gbl,
 	id = drq_l_idx_name;
 	DYN_UTIL_check_unique_name(tdbb, gbl->gbl_transaction, index_name, obj_index);
 
-	request = CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
 
 	ULONG key_length = 0;
-	jrd_req* old_request = NULL;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES
+	{
 		IDX.RDB$UNIQUE_FLAG.NULL = TRUE;
 		IDX.RDB$INDEX_INACTIVE.NULL = TRUE;
 		IDX.RDB$INDEX_TYPE.NULL = TRUE;
@@ -1845,39 +1733,32 @@ void DYN_define_index(Global*		gbl,
 
 		// Check if the table is actually a view
 
-		old_request = request;
 		SSHORT old_id = id;
-		request = CMP_find_request(tdbb, drq_l_view_idx, DYN_REQUESTS);
+		AutoCacheRequest request2(tdbb, drq_l_view_idx, DYN_REQUESTS);
 		id = drq_l_view_idx;
 
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 			VREL IN RDB$RELATIONS
 			WITH VREL.RDB$RELATION_NAME EQ IDX.RDB$RELATION_NAME
-
-			if (!DYN_REQUEST(drq_l_view_idx))
-				DYN_REQUEST(drq_l_view_idx) = request;
-
+		{
 			if (!VREL.RDB$VIEW_BLR.NULL)
 				DYN_error_punt(false, 181); // msg 181: "attempt to index a view"
+		}
+		END_FOR
 
-		END_FOR;
-		if (!DYN_REQUEST(drq_l_view_idx))
-			DYN_REQUEST(drq_l_view_idx) = request;
-
-		request = old_request;
 		id = old_id;
 
 		// The previous 2 lines and the next two lines can be
 		// deleted as long as no code is added in the middle.
 
-		old_request = request;
 		old_id = id;
-		request = CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
+		request2.reset(tdbb, drq_l_lfield, DYN_REQUESTS);
 		id = drq_l_lfield;
 
 		ULONG referred_cols = 0;
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
+		{
 			switch (verb)
 			{
 			case isc_dyn_idx_unique:
@@ -1911,17 +1792,13 @@ void DYN_define_index(Global*		gbl,
 
 					seg_count++;
 
-					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+					FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 						F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
 							WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
 							F.RDB$FIELD_NAME EQ str.c_str() AND
 							IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
-
+					{
 						ULONG length = 0;
-						if (!DYN_REQUEST(drq_l_lfield))
-						{
-							DYN_REQUEST(drq_l_lfield) = request;
-						}
 
 						fld_count++;
 						if (GF.RDB$FIELD_TYPE == blr_blob)
@@ -1975,9 +1852,9 @@ void DYN_define_index(Global*		gbl,
 						{
 							key_length = length;
 						}
-					END_FOR;
-					if (!DYN_REQUEST(drq_l_lfield))
-						DYN_REQUEST(drq_l_lfield) = request;
+					}
+					END_FOR
+
 					break;
 				}
 
@@ -2101,7 +1978,8 @@ void DYN_define_index(Global*		gbl,
 			default:
 				DYN_unsupported_verb();
 			}
-		request = old_request;
+		}
+
 		id = old_id;
 
 		key_length = ROUNDUP(key_length, sizeof(SLONG));
@@ -2113,23 +1991,23 @@ void DYN_define_index(Global*		gbl,
 			if (seg_count != fld_count)
 				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME); // msg 118 "Unknown fields in index %s"
 
-			old_request = request;
 			old_id = id;
-			request = CMP_find_request(tdbb, drq_s_idx_segs, DYN_REQUESTS);
+			request2.reset(tdbb, drq_s_idx_segs, DYN_REQUESTS);
 			id = drq_s_idx_segs;
+
 			while (seg_list.getCount())
 			{
-				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$INDEX_SEGMENTS
+				{
 					strcpy(X.RDB$INDEX_NAME, IDX.RDB$INDEX_NAME);
 					Firebird::MetaName str = seg_list.pop();
 					strcpy(X.RDB$FIELD_NAME, str.c_str());
 					X.RDB$FIELD_POSITION = --fld_count;
-				END_STORE;
+				}
+				END_STORE
 			}
-			if (!DYN_REQUEST(drq_s_idx_segs))
-				DYN_REQUEST(drq_s_idx_segs) = request;
-			request = old_request;
+
 			id = old_id;
 		}
 		else if (IDX.RDB$EXPRESSION_BLR.NULL)
@@ -2149,15 +2027,14 @@ void DYN_define_index(Global*		gbl,
 			// lookup a unique index in the referenced relation with the
 			// referenced fields mentioned
 
-			old_request = request;
 			old_id = id;
-			request = CMP_find_request(tdbb, drq_l_unq_idx, DYN_REQUESTS);
+			request2.reset(tdbb, drq_l_unq_idx, DYN_REQUESTS);
 			id = drq_l_unq_idx;
 
 			index_name = "";
 			int list_index = -1;
 			bool found = false;
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 			    RC IN RDB$RELATION_CONSTRAINTS CROSS
 				IND IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
 					ISEG IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
@@ -2167,19 +2044,13 @@ void DYN_define_index(Global*		gbl,
 					RC.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
 					SORTED BY IND.RDB$INDEX_NAME,
 					DESCENDING ISEG.RDB$FIELD_POSITION
-
-				if (!DYN_REQUEST(drq_l_unq_idx))
-					DYN_REQUEST(drq_l_unq_idx) = request;
-
+			{
 				if (index_name != IND.RDB$INDEX_NAME)
 				{
 					if (list_index >= 0)
 						found = false;
 					if (found)
-					{
-						EXE_unwind(tdbb, request);
 						break;
-					}
 					list_index = field_list.getCount() - 1;
 					index_name = IND.RDB$INDEX_NAME;
 					found = true;
@@ -2198,11 +2069,9 @@ void DYN_define_index(Global*		gbl,
 				}
 				else
 					found = false;
+			}
+			END_FOR
 
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_unq_idx))
-				DYN_REQUEST(drq_l_unq_idx) = request;
-			request = old_request;
 			id = old_id;
 
 			if (list_index >= 0)
@@ -2218,18 +2087,20 @@ void DYN_define_index(Global*		gbl,
 			}
 			else
 			{
-				jrd_req* request2 = NULL;
+				jrd_req* request3 = NULL;
 				found = false;
 				bool isView = false;
 
-				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+				FOR(REQUEST_HANDLE request3 TRANSACTION_HANDLE gbl->gbl_transaction)
 					X IN RDB$RELATIONS
 						WITH X.RDB$RELATION_NAME EQ referenced_relation.c_str()
+				{
 					found = true;
 					isView = !X.RDB$VIEW_BLR.NULL;
+				}
 				END_FOR
 
-				CMP_release(tdbb, request2);
+				CMP_release(tdbb, request3);
 
 				if (isView)
 				{
@@ -2251,20 +2122,17 @@ void DYN_define_index(Global*		gbl,
 		}
 		else if (referenced_relation.length())
 		{
-			old_request = request;
 			old_id = id;
-			request = CMP_find_request(tdbb, drq_l_primary, DYN_REQUESTS);
+			request2.reset(tdbb, drq_l_primary, DYN_REQUESTS);
 			id = drq_l_primary;
 
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				IND IN RDB$INDICES CROSS
 					RC IN RDB$RELATION_CONSTRAINTS
 					OVER RDB$INDEX_NAME WITH
 					IND.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
 					RC.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY
-				if (!DYN_REQUEST(drq_l_primary))
-					DYN_REQUEST(drq_l_primary) = request;
-
+			{
 				// Number of columns in referred index should be same as number
 				// of columns in referring index
 
@@ -2278,11 +2146,9 @@ void DYN_define_index(Global*		gbl,
 				IDX.RDB$FOREIGN_KEY.NULL = FALSE;
 				if (referred_index_name)
 					*referred_index_name = IND.RDB$INDEX_NAME;
+			}
+			END_FOR
 
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_primary))
-				DYN_REQUEST(drq_l_primary) = request;
-			request = old_request;
 			id = old_id;
 
 			if (IDX.RDB$FOREIGN_KEY.NULL)
@@ -2293,11 +2159,8 @@ void DYN_define_index(Global*		gbl,
 		}
 
 		IDX.RDB$SEGMENT_COUNT = seg_count;
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_indices)) {
-		DYN_REQUEST(drq_s_indices) = request;
 	}
+	END_STORE
 
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -2305,18 +2168,14 @@ void DYN_define_index(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_indices)
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 21);
 			// msg 21: "STORE RDB$INDICES failed"
 		}
 		else if (id == drq_s_idx_segs)
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 15);
 			// msg 15: "STORE RDB$INDEX_SEGMENTS failed"
 		}
-
-		DYN_rundown_request(request, -1);
 
 		switch (id)
 		{
@@ -2377,12 +2236,11 @@ void DYN_define_local_field(Global*		gbl,
 	Firebird::MetaName local_field_name;
 	GET_STRING(ptr, local_field_name);
 
-	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	try {
 
-	request = CMP_find_request(tdbb, drq_s_lfields, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_lfields, DYN_REQUESTS);
 	id = drq_s_lfields;
 
 	bool lflag, sflag, slflag, scflag, clflag, prflag;
@@ -2394,6 +2252,7 @@ void DYN_define_local_field(Global*		gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS
+	{
 		strcpy(RFR.RDB$FIELD_NAME, local_field_name.c_str());
 		strcpy(RFR.RDB$FIELD_SOURCE, RFR.RDB$FIELD_NAME);
 		if (field_name) {
@@ -2615,13 +2474,13 @@ void DYN_define_local_field(Global*		gbl,
 
 		if (blr)
 		{
-			jrd_req* old_request = request;
 			const SSHORT old_id = id;
-			request = CMP_find_request(tdbb, drq_s_gfields2, DYN_REQUESTS);
+			AutoCacheRequest request2(tdbb, drq_s_gfields2, DYN_REQUESTS);
+			id = drq_s_gfields2;
 
-			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				FLD IN RDB$FIELDS
-
+			{
 				FLD.RDB$SYSTEM_FLAG = 0;
 				FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 				strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
@@ -2680,12 +2539,9 @@ void DYN_define_local_field(Global*		gbl,
 				}
 				else
 					FLD.RDB$CHARACTER_SET_ID.NULL = TRUE;
+			}
+			END_STORE
 
-			END_STORE;
-
-			if (!DYN_REQUEST(drq_s_gfields2))
-				DYN_REQUEST(drq_s_gfields2) = request;
-			request = old_request;
 			id = old_id;
 		}
 
@@ -2695,11 +2551,8 @@ void DYN_define_local_field(Global*		gbl,
 			DYN_UTIL_find_field_source(tdbb, gbl, *relation_name, RFR.RDB$VIEW_CONTEXT,
 				RFR.RDB$BASE_FIELD, RFR.RDB$FIELD_SOURCE);
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_lfields)) {
-		DYN_REQUEST(drq_s_lfields) = request;
 	}
+	END_STORE
 
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -2707,13 +2560,11 @@ void DYN_define_local_field(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_lfields)
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 23);
 			// msg 23: "STORE RDB$RELATION_FIELDS failed"
 		}
 		else
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 22);
 			// msg 22: "STORE RDB$FIELDS failed"
 		}
@@ -2745,7 +2596,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		(view ? DDL_TRIGGER_CREATE_VIEW : DDL_TRIGGER_CREATE_TABLE), relation_name, gbl->sqlText);
 
-	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	Firebird::PathName Path, Name;
@@ -2757,11 +2607,12 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 	bool sql_prot = false;
 	rel_t rel_type = rel_persistent;
 
-	request = CMP_find_request(tdbb, drq_s_rels, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_rels, DYN_REQUESTS);
 	id = drq_s_rels;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS
+	{
 		strcpy(REL.RDB$RELATION_NAME, relation_name.c_str());
 		REL.RDB$SYSTEM_FLAG = 0;
 		REL.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -2869,19 +2720,16 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 
 			if (rel_type == rel_view)
 			{
-				jrd_req* old_request = request;
 				const SSHORT old_id2 = id;
-				request = CMP_find_request(tdbb, drq_l_view_rels, DYN_REQUESTS);
+				AutoCacheRequest request2(tdbb, drq_l_view_rels, DYN_REQUESTS);
 				id = drq_l_view_rels;
 
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 					VRL IN RDB$VIEW_RELATIONS CROSS
 						PREL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
 						VRL.RDB$PACKAGE_NAME MISSING AND
 						VRL.RDB$VIEW_NAME EQ relation_name.c_str()
-					if (!DYN_REQUEST(drq_l_view_rels))
-						DYN_REQUEST(drq_l_view_rels) = request;
-
+				{
 					// CVC: This never matches so it causes unnecessary calls to verify,
 					// so I included a call to strip trailing blanks.
 					fb_utils::exact_name_limit(PREL.RDB$OWNER_NAME, sizeof(PREL.RDB$OWNER_NAME));
@@ -2908,27 +2756,25 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 							// msg 115: "CREATE VIEW failed"
 						}
 					}
-				END_FOR;
-				if (!DYN_REQUEST(drq_l_view_rels))
-					DYN_REQUEST(drq_l_view_rels) = request;
-				request = old_request;
+				}
+				END_FOR
+
 				id = old_id2;
 			}
 		}
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_rels))
-		DYN_REQUEST(drq_s_rels) = request;
+	}
+	END_STORE
 
 	if (sql_prot)
 	{
 		for (const TEXT* p = ALL_PRIVILEGES; *p; p++)
 		{
-			request = CMP_find_request(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
+			request.reset(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
 			id = drq_s_usr_prvs;
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				X IN RDB$USER_PRIVILEGES
+			{
 				strcpy(X.RDB$RELATION_NAME, relation_name.c_str());
 				strcpy(X.RDB$USER, owner_name.c_str());
 				X.RDB$USER_TYPE = obj_user;
@@ -2936,10 +2782,8 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 				X.RDB$PRIVILEGE[0] = *p;
 				X.RDB$PRIVILEGE[1] = 0;
 				X.RDB$GRANT_OPTION = 1;
-			END_STORE;
-
-			if (!DYN_REQUEST(drq_s_usr_prvs))
-				DYN_REQUEST(drq_s_usr_prvs) = request;
+			}
+			END_STORE
 		}
 	}
 
@@ -2949,18 +2793,14 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_rels)
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 24);
 			// msg 24: "STORE RDB$RELATIONS failed"
 		}
 		else if (id == drq_s_usr_prvs)
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 25);
 			// msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation"
 		}
-
-		DYN_rundown_request(request, -1);
 
 		switch (id)
 		{
@@ -3000,8 +2840,6 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
  *     ROLES cannot be named the same as any existing user name
  *
  **************************************/
-	jrd_req* request = NULL;
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
@@ -3045,30 +2883,24 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			goto do_err_punt;
 		}
 
-		request = CMP_find_request(tdbb, drq_role_gens, DYN_REQUESTS);
+		AutoCacheRequest request(tdbb, drq_role_gens, DYN_REQUESTS);
 
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$ROLES
+		{
 			strcpy(X.RDB$ROLE_NAME, role_name.c_str());
 			strcpy(X.RDB$OWNER_NAME, owner_name.c_str());
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_role_gens)) {
-			DYN_REQUEST(drq_role_gens) = request;
 		}
+		END_STORE
 
-		if (*(*ptr)++ != isc_dyn_end) {
+		if (*(*ptr)++ != isc_dyn_end)
 			goto do_error_punt_9;
-		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (request) {
-			DYN_rundown_request(request, drq_role_gens);
-		}
 		DYN_error_punt(true, 8);
 		// msg 8: "DEFINE ROLE failed"
 	}
@@ -3114,17 +2946,16 @@ void DYN_define_sql_field(Global*		gbl,
 	Firebird::MetaName sql_field_name;
 	GET_STRING(ptr, sql_field_name);
 
-	jrd_req* request = NULL;
 	SSHORT id = -1;
 
 	try {
 
-	request = CMP_find_request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_sql_lfld, DYN_REQUESTS);
 	id = drq_s_sql_lfld;
-	jrd_req* old_request = NULL;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		RFR IN RDB$RELATION_FIELDS
+	{
 		strcpy(RFR.RDB$FIELD_NAME, sql_field_name.c_str());
 		if (field_name)
 			*field_name = RFR.RDB$FIELD_NAME;
@@ -3146,13 +2977,13 @@ void DYN_define_sql_field(Global*		gbl,
 		RFR.RDB$GENERATOR_NAME.NULL = TRUE;
 		RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
 
-		old_request = request;
 		const SSHORT old_id = id;
-		request = CMP_find_request(tdbb, drq_s_sql_gfld, DYN_REQUESTS);
+		AutoCacheRequest request2(tdbb, drq_s_sql_gfld, DYN_REQUESTS);
 		id = drq_s_sql_gfld;
 
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 			FLD IN RDB$FIELDS
+		{
 			FLD.RDB$SYSTEM_FLAG = 0;
 			FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 			FLD.RDB$FIELD_SCALE.NULL = TRUE;
@@ -3397,17 +3228,12 @@ void DYN_define_sql_field(Global*		gbl,
 					RFR.RDB$FIELD_POSITION.NULL = FALSE;
 				}
 			}
+		}
+		END_STORE
 
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_sql_gfld))
-			DYN_REQUEST(drq_s_sql_gfld) = request;
-		request = old_request;
 		id = old_id;
-	END_STORE;
-
-	if (!DYN_REQUEST(drq_s_sql_lfld))
-		DYN_REQUEST(drq_s_sql_lfld) = request;
+	}
+	END_STORE
 
 	}
 	catch (const Firebird::Exception& ex)
@@ -3415,13 +3241,11 @@ void DYN_define_sql_field(Global*		gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_sql_lfld)
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 29);
 			// msg 29: "STORE RDB$RELATION_FIELDS failed"
 		}
 		else
 		{
-			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 28);
 			// msg 28: "STORE RDB$FIELDS failed"
 		}
@@ -3451,23 +3275,20 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 
 	// If a shadow set identified by the shadow number already exists return error.
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_shadow, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_l_shadow, DYN_REQUESTS);
 
-	try {
-
+	try
+	{
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FIRST 1 X IN RDB$FILES WITH X.RDB$SHADOW_NUMBER EQ shadow_number
-				found = true;
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_l_shadow)) {
-			DYN_REQUEST(drq_l_shadow) = request;
+		{
+			found = true;
 		}
+		END_FOR
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, drq_l_shadow);
 		DYN_error_punt(true, 164);
 		// msg 164: "Shadow lookup failed"
 	}
@@ -3532,7 +3353,7 @@ void DYN_define_trigger(Global*						gbl,
 	if (trigger_name)
 		*trigger_name = t;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_triggers, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 	const UCHAR* debug_info_ptr = NULL;
@@ -3541,6 +3362,7 @@ void DYN_define_trigger(Global*						gbl,
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS
+	{
 		X.RDB$TRIGGER_TYPE.NULL = TRUE;
 		X.RDB$TRIGGER_SEQUENCE = 0;
 		X.RDB$TRIGGER_SEQUENCE.NULL = FALSE;
@@ -3675,15 +3497,11 @@ void DYN_define_trigger(Global*						gbl,
 		// after the request is compiled and before the request is sent.
 		// It makes the current request (to define the trigger) go through
 		// without checking any permissions lower in the engine
-
-	END_STORE_SPECIAL;
+	}
+	END_STORE_SPECIAL
 
 	if (ignore_perm)
 		request->req_flags &= ~req_ignore_perm;
-
-	if (!DYN_REQUEST(drq_s_triggers)) {
-		DYN_REQUEST(drq_s_triggers) = request;
-	}
 
 	}
 	catch (const Firebird::Exception& ex)
@@ -3691,7 +3509,6 @@ void DYN_define_trigger(Global*						gbl,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store)
 		{
-			DYN_rundown_request(request, drq_s_triggers);
 			DYN_error_punt(true, 31);
 			// msg 31: "DEFINE TRIGGER failed"
 		}
@@ -3718,7 +3535,7 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 
 	fb_assert(view);
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_view_rels, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_s_view_rels, DYN_REQUESTS);
 	SSHORT id = drq_s_view_rels;
 
 	bool b_ending_store = false;
@@ -3727,6 +3544,7 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 	{
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VRL IN RDB$VIEW_RELATIONS
+		{
 			strcpy(VRL.RDB$VIEW_NAME, view->c_str());
 			GET_STRING(ptr, VRL.RDB$RELATION_NAME);
 			VRL.RDB$CONTEXT_NAME.NULL = TRUE;
@@ -3769,18 +3587,14 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 			}
 
 			b_ending_store = true;
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_view_rels)) {
-			DYN_REQUEST(drq_s_view_rels) = request;
 		}
+		END_STORE
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store)
 		{
-			DYN_rundown_request(request, id);
 			if (id == drq_s_view_rels)
 			{
 				DYN_error_punt(true, 34);
@@ -3806,7 +3620,6 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
  *
  **************************************/
 
-	jrd_req* request;
 	USHORT request_id;
 
 	SET_TDBB(tdbb);
@@ -3819,48 +3632,40 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 		// can infer there is a user with this name
 
 		request_id = drq_get_user_priv;
-		request = CMP_find_request(tdbb, request_id, DYN_REQUESTS);
+		AutoCacheRequest request(tdbb, request_id, DYN_REQUESTS);
+
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH
 				(PRIV.RDB$USER EQ role_name.c_str() AND
 				 PRIV.RDB$USER_TYPE = obj_user) OR
 				(PRIV.RDB$GRANTOR EQ role_name.c_str() AND
 				 PRIV.RDB$OBJECT_TYPE = obj_relation)
-
+		{
 			found = true;
-
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_get_user_priv))
-			DYN_REQUEST(drq_get_user_priv) = request;
-
-		if (found) {
-			return found;
 		}
+		END_FOR
+
+		if (found)
+			return found;
 
 		// We can infer that 'role_name' is a user name if it owns any relations
 		// Note we can only get here if a user creates a table and revokes all
 		// his privileges on the table
 
 		request_id = drq_get_rel_owner;
-		request = CMP_find_request(tdbb, request_id, DYN_REQUESTS);
+		request.reset(tdbb, request_id, DYN_REQUESTS);
+
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			REL IN RDB$RELATIONS WITH
 				REL.RDB$OWNER_NAME EQ role_name.c_str()
-
+		{
 			found = true;
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_get_rel_owner)) {
-			DYN_REQUEST(drq_get_rel_owner) = request;
 		}
+		END_FOR
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (request) {
-			DYN_rundown_request(request, request_id);
-		}
 		ERR_punt();
 	}
 
@@ -3874,22 +3679,16 @@ static rel_t get_relation_type(thread_db* tdbb, Global* gbl, const Firebird::Met
 
 	rel_t rel_type = rel_persistent;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_type, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_l_rel_type, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ rel_name.c_str()
 		  AND REL.RDB$RELATION_TYPE NOT MISSING
-
-		if (!DYN_REQUEST(drq_l_rel_type))
-			DYN_REQUEST(drq_l_rel_type) = request;
-
+	{
 		rel_type = (rel_t) REL.RDB$RELATION_TYPE;
-
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_l_rel_type))
-		DYN_REQUEST(drq_l_rel_type) = request;
+	}
+	END_FOR
 
 	return rel_type;
 }
@@ -3911,7 +3710,7 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
  **********************************************************/
 	Database* dbb = tdbb->getDatabase();
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_l_rel_info, DYN_REQUESTS);
 	bool bErr = false;
 	Firebird::string sMaster, sChild;
 
@@ -3924,10 +3723,7 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
 		 AND RLC_M.RDB$INDEX_NAME EQ master_index_name
 		 AND REL_C.RDB$RELATION_NAME EQ child_rel_name
 		 AND REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
-
-		if (!DYN_REQUEST(drq_l_rel_info))
-			DYN_REQUEST(drq_l_rel_info) = request;
-
+	{
 		const rel_t master_type = get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
 		fb_assert(master_type == rel_persistent ||
 				  master_type == rel_global_temp_preserve ||
@@ -3950,10 +3746,8 @@ static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
 			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
 			make_relation_scope_name(REL_C.RDB$RELATION_NAME, child_type, sChild);
 		}
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_l_rel_info))
-		DYN_REQUEST(drq_l_rel_info) = request;
+	}
+	END_FOR
 
 	if (bErr)
 	{
@@ -3986,7 +3780,7 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 		return;
 	}
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
 	bool bErr = false;
 	Firebird::string sMaster, sChild;
 
@@ -4000,10 +3794,7 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 		 AND IND_C.RDB$INDEX_NAME EQ RLC_C.RDB$INDEX_NAME
 		 AND IND_M.RDB$INDEX_NAME EQ IND_C.RDB$FOREIGN_KEY
 		 AND IND_M.RDB$RELATION_NAME EQ REL_M.RDB$RELATION_NAME
-
-		if (!DYN_REQUEST(drq_l_rel_info2))
-			DYN_REQUEST(drq_l_rel_info2) = request;
-
+	{
 		const rel_t master_type = get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
 		fb_assert(master_type == rel_persistent ||
 				  master_type == rel_global_temp_preserve ||
@@ -4020,10 +3811,8 @@ static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
 			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
 			make_relation_scope_name(child_rel_name, child_type, sChild);
 		}
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_l_rel_info2))
-		DYN_REQUEST(drq_l_rel_info2) = request;
+	}
+	END_FOR
 
 	if (bErr)
 	{
