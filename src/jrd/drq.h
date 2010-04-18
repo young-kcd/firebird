@@ -47,8 +47,6 @@
 #ifndef JRD_DRQ_H
 #define JRD_DRQ_H
 
-#define DYN_REQUEST(drt) dbb->dbb_dyn_req[drt]
-
 enum drq_type_t
 {
 	drq_l_prot_mask,		// lookup protection mask

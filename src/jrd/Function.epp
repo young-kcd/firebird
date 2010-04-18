@@ -85,20 +85,14 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 
 	function = NULL;
 
-	jrd_req* request = CMP_find_request(tdbb, irq_l_fun_id, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_l_fun_id, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$FUNCTIONS WITH X.RDB$FUNCTION_ID EQ id
-
-		if (!REQUEST(irq_l_fun_id))
-			REQUEST(irq_l_fun_id) = request;
-
+	{
 		function = loadMetadata(tdbb, X.RDB$FUNCTION_ID, noscan, flags);
-
-	END_FOR;
-
-	if (!REQUEST(irq_l_fun_id))
-		REQUEST(irq_l_fun_id) = request;
+	}
+	END_FOR
 
 	if (check_function)
 	{
@@ -149,22 +143,16 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 
 	Function* function = NULL;
 
-	jrd_req* request = CMP_find_request(tdbb, irq_l_fun_name, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_l_fun_name, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$FUNCTIONS
 		WITH X.RDB$FUNCTION_NAME EQ name.identifier.c_str() AND
 			 X.RDB$PACKAGE_NAME EQUIV NULLIF(name.package.c_str(), '')
-
-		if (!REQUEST(irq_l_fun_name))
-			REQUEST(irq_l_fun_name) = request;
-
+	{
 		function = loadMetadata(tdbb, X.RDB$FUNCTION_ID, noscan, 0);
-
-	END_FOR;
-
-	if (!REQUEST(irq_l_fun_name))
-		REQUEST(irq_l_fun_name) = request;
+	}
+	END_FOR
 
 	if (check_function)
 	{
@@ -238,17 +226,14 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	{
 		bool valid_blr = true;
 
-		jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
+		AutoCacheRequest request_fun(tdbb, irq_l_functions, IRQ_REQUESTS);
 
 		fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
 
 		FOR(REQUEST_HANDLE request_fun)
 			X IN RDB$FUNCTIONS
 			WITH X.RDB$FUNCTION_ID EQ id
-
-			if (!REQUEST(irq_l_functions))
-				REQUEST(irq_l_functions) = request_fun;
-
+		{
 			function->setName(QualifiedName(X.RDB$FUNCTION_NAME,
 				(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)));
 
@@ -280,17 +265,14 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->fun_inputs = 0;
 			function->fun_defaults = 0;
 
-			jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
+			AutoCacheRequest request_arg(tdbb, irq_l_args, IRQ_REQUESTS);
 
 			FOR(REQUEST_HANDLE request_arg)
 				Y IN RDB$FUNCTION_ARGUMENTS
 				WITH Y.RDB$FUNCTION_NAME EQ function->getName().identifier.c_str() AND
 					 Y.RDB$PACKAGE_NAME EQUIV NULLIF(function->getName().package.c_str(), '')
 				SORTED BY Y.RDB$ARGUMENT_POSITION
-
-				if (!REQUEST(irq_l_args))
-					REQUEST(irq_l_args) = request_arg;
-
+			{
 				if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
 					function->fun_inputs++;
 
@@ -315,15 +297,12 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				{
 					parameter->prm_field_source = Y.RDB$FIELD_SOURCE;
 
-					jrd_req* request_arg_fld = CMP_find_request(tdbb, irq_l_arg_fld, IRQ_REQUESTS);
+					AutoCacheRequest request_arg_fld(tdbb, irq_l_arg_fld, IRQ_REQUESTS);
 
 					FOR(REQUEST_HANDLE request_arg_fld)
 						F IN RDB$FIELDS
 						WITH F.RDB$FIELD_NAME = Y.RDB$FIELD_SOURCE
-
-						if (!REQUEST(irq_l_arg_fld))
-							REQUEST(irq_l_arg_fld) = request_arg_fld;
-
+					{
 						DSC_make_descriptor(&parameter->prm_desc, F.RDB$FIELD_TYPE,
 											F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
 											F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
@@ -334,11 +313,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 							default_value_null = F.RDB$DEFAULT_VALUE.NULL;
 							default_value = F.RDB$DEFAULT_VALUE;
 						}
-
+					}
 					END_FOR
-
-					if (!REQUEST(irq_l_arg_fld))
-						REQUEST(irq_l_arg_fld) = request_arg_fld;
 				}
 				else
 				{
@@ -374,10 +350,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					sizeof(udf_blob) : FB_ALIGN(tail->fun_parameter->prm_desc.dsc_length, FB_DOUBLE_ALIGN);
 
 				count = MAX(count, size_t(Y.RDB$ARGUMENT_POSITION));
-			END_FOR;
-
-			if (!REQUEST(irq_l_args))
-				REQUEST(irq_l_args) = request_arg;
+			}
+			END_FOR
 
 			function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
 			function->fun_temp_length = length;
@@ -495,11 +469,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			}
 
 			function->fun_flags |= FUN_scanned;
-
-		END_FOR;
-
-		if (!REQUEST(irq_l_functions))
-			REQUEST(irq_l_functions) = request_fun;
+		}
+		END_FOR
 
 		if (!(dbb->dbb_flags & DBB_read_only) && !valid_blr)
 		{

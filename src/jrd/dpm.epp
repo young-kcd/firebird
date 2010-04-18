@@ -1715,18 +1715,17 @@ void DPM_pages(thread_db* tdbb, SSHORT rel_id, int type, ULONG sequence, SLONG p
 	}
 #endif
 
-	jrd_req* request = CMP_find_request(tdbb, irq_s_pages, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_s_pages, IRQ_REQUESTS);
 
 	STORE(REQUEST_HANDLE request)
 		X IN RDB$PAGES
+	{
 		X.RDB$RELATION_ID = rel_id;
 		X.RDB$PAGE_TYPE = type;
 		X.RDB$PAGE_SEQUENCE = sequence;
 		X.RDB$PAGE_NUMBER = page;
+	}
 	END_STORE
-
-	if (!REQUEST(irq_s_pages))
-		REQUEST(irq_s_pages) = request;
 }
 
 
@@ -1839,12 +1838,10 @@ void DPM_scan_pages( thread_db* tdbb)
 
 	CCH_RELEASE(tdbb, &window);
 
-	jrd_req* request = CMP_find_request(tdbb, irq_r_pages, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_r_pages, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$PAGES
-
-		if (!REQUEST(irq_r_pages))
-			REQUEST(irq_r_pages) = request;
+	{
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
 		relPages = relation->getBasePages();
 		sequence = X.RDB$PAGE_SEQUENCE;
@@ -1871,10 +1868,8 @@ void DPM_scan_pages( thread_db* tdbb)
 		}
 		vector = *address = vcl::newVector(*dbb->dbb_permanent, *address, sequence + 1);
 		(*vector)[sequence] = X.RDB$PAGE_NUMBER;
-	END_FOR;
-
-	if (!REQUEST(irq_r_pages))
-		REQUEST(irq_r_pages) = request;
+	}
+	END_FOR
 }
 
 

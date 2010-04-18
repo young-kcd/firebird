@@ -76,19 +76,14 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 	MOVE_CLEAR(&idx, sizeof(index_desc));
 
-	jrd_req* request = CMP_find_request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		IDX IN RDB$INDICES CROSS
 			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
 			IDX.RDB$EXPRESSION_BLR NOT MISSING AND
 			IDX.RDB$INDEX_NAME EQ name.c_str()
-
-		if (!REQUEST(irq_c_exp_index))
-		{
-			REQUEST(irq_c_exp_index) = request;
-		}
-
+	{
 		if (!relation)
 		{
 			relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
@@ -103,7 +98,6 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 				IDX_statistics(tdbb, relation, id, selectivity);
 				DFW_update_index(name.c_str(), id, selectivity, transaction);
 
-				EXE_unwind(tdbb, request);
 				return;
 			}
 
@@ -113,14 +107,11 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 				MET_delete_dependencies(tdbb, name, obj_expression_index, transaction);
 				MODIFY IDX
 					IDX.RDB$INDEX_ID.NULL = TRUE;
-				END_MODIFY;
+				END_MODIFY
 			}
 
 			if (IDX.RDB$INDEX_INACTIVE)
-			{
-				EXE_unwind(tdbb, request);
 				return;
-			}
 
 			if (IDX.RDB$SEGMENT_COUNT)
 			{
@@ -165,13 +156,8 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 			delete csb;
 		}
-
-	END_FOR;
-
-	if (!REQUEST(irq_c_exp_index))
-	{
-		REQUEST(irq_c_exp_index) = request;
 	}
+	END_FOR
 
 	if (!relation)
 	{
@@ -242,18 +228,13 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	}
 
 	CompilerScratch* csb = NULL;
-	jrd_req* request = CMP_find_request(tdbb, irq_l_exp_index, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_l_exp_index, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		IDX IN RDB$INDICES WITH
 			IDX.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND
 			IDX.RDB$INDEX_ID EQ idx->idx_id + 1
-
-		if (!REQUEST(irq_l_exp_index))
-		{
-			REQUEST(irq_l_exp_index) = request;
-		}
-
+	{
 		if (idx->idx_expression_request)
 		{
 			CMP_release(tdbb, idx->idx_expression_request);
@@ -270,18 +251,12 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 							   &idx->idx_expression_request, false);
 		} // end scope
-
-	END_FOR;
-
-	if (!REQUEST(irq_l_exp_index))
-	{
-		REQUEST(irq_l_exp_index) = request;
 	}
+	END_FOR
 
 	if (csb)
-	{
 		CMP_get_desc(tdbb, csb, idx->idx_expression, &idx->idx_expression_desc);
-	}
+
 	delete csb;
 
 	// if there is no existing index block for this index, create

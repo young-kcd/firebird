@@ -504,7 +504,6 @@ void DYN_modify_global_field(Global* gbl,
 				new_dom.dyn_dsc.dsc_length = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
-					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str());
 					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
@@ -530,7 +529,6 @@ void DYN_modify_global_field(Global* gbl,
 				new_dom.dyn_dtype = DYN_get_number(ptr);
 				if (++field_adjusted_count > 2)
 				{
-					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str());
 					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
@@ -632,7 +630,6 @@ void DYN_modify_global_field(Global* gbl,
 			case isc_dyn_single_validation:
 				if (single_validate)
 				{
-					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 160);
 					// msg 160: "Only one constraint allowed for a domain"
 					break;
@@ -644,7 +641,6 @@ void DYN_modify_global_field(Global* gbl,
 			case isc_dyn_fld_validation_blr:
 				if (single_validate && (!FLD.RDB$VALIDATION_BLR.NULL))
 				{
-					EXE_unwind(tdbb, request);
 					DYN_error_punt(false, 160);
 					// msg 160: "Only one constraint allowed for a domain"
 					break;

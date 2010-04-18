@@ -845,8 +845,8 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 	Database::CheckoutLockGuard guard(dbb, dbb->dbb_cmp_clone_mutex);
 
 	jrd_req* request;
-	if ((which == IRQ_REQUESTS && !(request = REQUEST(id))) ||
-		(which == DYN_REQUESTS && !(request = DYN_REQUEST(id))) ||
+	if ((which == IRQ_REQUESTS && !(request = dbb->dbb_internal[id])) ||
+		(which == DYN_REQUESTS && !(request = dbb->dbb_dyn_req[id])) ||
 		!(request->req_flags & (req_active | req_reserved)))
 	{
 		if (request) {

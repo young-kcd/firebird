@@ -74,8 +74,6 @@ static const UCHAR blr_bpb[] =
 static void convert_dtype(dsql_fld*, SSHORT);
 static void free_relation(dsql_rel*);
 
-#define DSQL_REQUEST(id) dbb->dbb_database->dbb_internal[id]
-
 namespace
 {
 	inline void validateTransaction(const jrd_tra* transaction)
@@ -286,17 +284,14 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
 
 	symbol = NULL;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_collation, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_collation, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		WITH X.RDB$COLLATION_NAME EQ name->str_data AND
 			 X.RDB$CHARACTER_SET_ID EQ charset_id;
-
-		if (!DSQL_REQUEST(irq_collation))
-			DSQL_REQUEST(irq_collation) = handle;
-
+	{
 		symbol = FB_NEW(dbb->dbb_pool) dsql_intlsym(dbb->dbb_pool);
 		symbol->intlsym_name = metaName;
 		symbol->intlsym_flags = 0;
@@ -306,11 +301,8 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
 			INTL_CS_COLL_TO_TTYPE(symbol->intlsym_charset_id, symbol->intlsym_collate_id);
 		symbol->intlsym_bytes_per_char =
 			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_collation))
-		DSQL_REQUEST(irq_collation) = handle;
 
 	if (!symbol)
 		return NULL;
@@ -354,7 +346,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 
 	*has_default = false;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_col_default, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_col_default, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		RFL IN RDB$RELATION_FIELDS CROSS
@@ -362,10 +354,7 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 		RFL.RDB$RELATION_NAME EQ for_rel_name AND
 		RFL.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
 		RFL.RDB$FIELD_NAME EQ for_col_name
-
-		if (!DSQL_REQUEST(irq_col_default))
-			DSQL_REQUEST(irq_col_default) = handle;
-
+	{
 		if (!RFL.RDB$DEFAULT_VALUE.NULL)
 		{
 			blob_id = &RFL.RDB$DEFAULT_VALUE;
@@ -430,11 +419,8 @@ USHORT METD_get_col_default(jrd_tra* transaction, const char* for_rel_name,
 			buffer[1] = blr_eoc;
 			result = 2;
 		}
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_col_default))
-		DSQL_REQUEST(irq_col_default) = handle;
 
 	return result;
 }
@@ -475,7 +461,7 @@ dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* 
 
 	symbol = NULL;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_charset, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_charset, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 	X IN RDB$COLLATIONS
@@ -485,10 +471,7 @@ dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* 
 		AND Z.RDB$TYPE_NAME EQ name
 		AND Z.RDB$FIELD_NAME EQ "RDB$CHARACTER_SET_NAME"
 		AND Y.RDB$DEFAULT_COLLATE_NAME EQ X.RDB$COLLATION_NAME;
-
-		if (!DSQL_REQUEST(irq_charset))
-			DSQL_REQUEST(irq_charset) = handle;
-
+	{
 		symbol = FB_NEW(dbb->dbb_pool) dsql_intlsym(dbb->dbb_pool);
 		symbol->intlsym_name = metaName;
 		symbol->intlsym_flags = 0;
@@ -498,11 +481,8 @@ dsql_intlsym* METD_get_charset(jrd_tra* transaction, USHORT length, const char* 
 			INTL_CS_COLL_TO_TTYPE(symbol->intlsym_charset_id, symbol->intlsym_collate_id);
 		symbol->intlsym_bytes_per_char =
 			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_charset))
-		DSQL_REQUEST(irq_charset) = handle;
 
 	if (!symbol)
 		return NULL;
@@ -581,21 +561,15 @@ MetaName METD_get_charset_name(jrd_tra* transaction, SSHORT charset_id)
 
 	MetaName name;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_cs_name, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_cs_name, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		Y IN RDB$CHARACTER_SETS
 		WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
-
-		if (!DSQL_REQUEST(irq_cs_name))
-			DSQL_REQUEST(irq_cs_name) = handle;
-
+	{
 		name = Y.RDB$CHARACTER_SET_NAME;
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_cs_name))
-		DSQL_REQUEST(irq_cs_name) = handle;
 
 	// put new charset into hash table if needed
 	METD_get_charset(transaction, name.length(), name.c_str());
@@ -629,15 +603,12 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
 
 	// Now see if it is in the database
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_default_cs, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_default_cs, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		FIRST 1 DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING;
-
-		if (!DSQL_REQUEST(irq_default_cs))
-			DSQL_REQUEST(irq_default_cs) = handle;
-
+	{
 		// Terminate ASCIIZ string on first trailing blank
 		fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
 		const USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
@@ -645,11 +616,8 @@ dsql_str* METD_get_default_charset(jrd_tra* transaction)
 		dbb->dbb_dfl_charset->str_length = length;
 		dbb->dbb_dfl_charset->str_charset = NULL;
 		memcpy(dbb->dbb_dfl_charset->str_data, DBB.RDB$CHARACTER_SET_NAME, length);
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_default_cs))
-		DSQL_REQUEST(irq_default_cs) = handle;
 
 	if (!dbb->dbb_dfl_charset)
 		dbb->dbb_no_charset = true;
@@ -678,14 +646,11 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
 
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_domain, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_domain, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name
-
-		if (!DSQL_REQUEST(irq_domain))
-			DSQL_REQUEST(irq_domain) = handle;
-
+	{
 		found = true;
 		field->fld_length = FLX.RDB$FIELD_LENGTH;
 		field->fld_scale = FLX.RDB$FIELD_SCALE;
@@ -713,11 +678,8 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
 		if (FLX.RDB$FIELD_TYPE == blr_blob) {
 			field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
 		}
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_domain))
-		DSQL_REQUEST(irq_domain) = handle;
 
 	return found;
 }
@@ -745,14 +707,11 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	USHORT result = 0;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_domain_2, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_domain_2, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
-
-		if (!DSQL_REQUEST(irq_domain_2))
-			DSQL_REQUEST(irq_domain_2) = handle;
-
+	{
 		bid* blob_id;
 		if (!FLD.RDB$DEFAULT_VALUE.NULL)
 		{
@@ -813,11 +772,8 @@ USHORT METD_get_domain_default(jrd_tra* transaction, const TEXT* domain_name, bo
 			buffer[1] = blr_eoc;
 			result = 2;
 		}
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_domain_2))
-		DSQL_REQUEST(irq_domain_2) = handle;
 
 	return result;
 }
@@ -842,21 +798,15 @@ bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool found = false;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_exception, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_exception, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$EXCEPTIONS WITH
 		X.RDB$EXCEPTION_NAME EQ name->str_data;
-
-		if (!DSQL_REQUEST(irq_exception))
-			DSQL_REQUEST(irq_exception) = handle;
-
+	{
 		found = true;
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_exception))
-		DSQL_REQUEST(irq_exception) = handle;
 
 	return found;
 }
@@ -910,26 +860,20 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 	while (!userFunc)
 	{
-		jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
+		AutoCacheRequest handle1(tdbb, irq_function, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$FUNCTIONS WITH
 			X.RDB$FUNCTION_NAME EQ metaName.identifier.c_str() AND
 			X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
-
-			if (!DSQL_REQUEST(irq_function))
-				DSQL_REQUEST(irq_function) = handle1;
-
+		{
 			userFunc = FB_NEW(dbb->dbb_pool) dsql_udf(dbb->dbb_pool);
 			userFunc->udf_name = metaName;
 			userFunc->udf_private = !X.RDB$PRIVATE_FLAG.NULL && X.RDB$PRIVATE_FLAG != 0;
 
 			return_arg = X.RDB$RETURN_ARGUMENT;
-
+		}
 		END_FOR
-
-		if (!DSQL_REQUEST(irq_function))
-			DSQL_REQUEST(irq_function) = handle1;
 
 		if (!userFunc)
 		{
@@ -943,28 +887,22 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 		}
 	}
 
-	jrd_req* handle2 = CMP_find_request(tdbb, irq_func_return, IRQ_REQUESTS);
+	AutoCacheRequest handle2(tdbb, irq_func_return, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
 		X.RDB$FUNCTION_NAME EQ metaName.identifier.c_str() AND
 		X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 		SORTED BY X.RDB$ARGUMENT_POSITION
-
-		if (!DSQL_REQUEST(irq_func_return))
-			DSQL_REQUEST(irq_func_return) = handle2;
-
+	{
 		if (!X.RDB$FIELD_SOURCE.NULL)
 		{
-			jrd_req* handle3 = CMP_find_request(tdbb, irq_func_ret_fld, IRQ_REQUESTS);
+			AutoCacheRequest handle3(tdbb, irq_func_ret_fld, IRQ_REQUESTS);
 
 			FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE transaction)
 				F IN RDB$FIELDS WITH
 				F.RDB$FIELD_NAME EQ X.RDB$FIELD_SOURCE
-
-				if (!DSQL_REQUEST(irq_func_ret_fld))
-					DSQL_REQUEST(irq_func_ret_fld) = handle3;
-
+			{
 				if (X.RDB$ARGUMENT_POSITION == return_arg)
 				{
 					userFunc->udf_dtype = (F.RDB$FIELD_TYPE != blr_blob) ?
@@ -1027,10 +965,8 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 					userFunc->udf_arguments.add(d);
 				}
+			}
 			END_FOR
-
-			if (!DSQL_REQUEST(irq_func_ret_fld))
-				DSQL_REQUEST(irq_func_ret_fld) = handle3;
 		}
 		else
 		{
@@ -1097,11 +1033,8 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 				userFunc->udf_arguments.add(d);
 			}
 		}
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_func_return))
-		DSQL_REQUEST(irq_func_return) = handle2;
 
 	// Adjust the return type & length of the UDF to account for
 	// cstring & varying.  While a UDF can return CSTRING, we convert it
@@ -1153,7 +1086,7 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_na
 
 	DsqlNodStack stack;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_primary_key, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_primary_key, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$INDICES CROSS
@@ -1164,16 +1097,10 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_na
 		WITH Z.RDB$RELATION_NAME EQ relation_name->str_data
 		AND Z.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY"
 		SORTED BY Y.RDB$FIELD_POSITION
-
-		if (!DSQL_REQUEST(irq_primary_key))
-			DSQL_REQUEST(irq_primary_key) = handle;
-
+	{
 		stack.push(MAKE_field_name(Y.RDB$FIELD_NAME));
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_primary_key))
-		DSQL_REQUEST(irq_primary_key) = handle;
 
 	return (stack.getCount() ? MAKE_list(stack) : NULL);
 }
@@ -1261,16 +1188,13 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 	while (!procedure)
 	{
-		jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
+		AutoCacheRequest handle1(tdbb, irq_procedure, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$PROCEDURES
 			WITH X.RDB$PROCEDURE_NAME EQ name->str_data AND
 				 X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
-
-			if (!DSQL_REQUEST(irq_procedure))
-				DSQL_REQUEST(irq_procedure) = handle1;
-
+		{
 			fb_utils::exact_name(X.RDB$OWNER_NAME);
 
 			procedure = FB_NEW(dbb->dbb_pool) dsql_prc(dbb->dbb_pool);
@@ -1278,11 +1202,8 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			procedure->prc_name = metaName;
 			procedure->prc_owner = X.RDB$OWNER_NAME;
 			procedure->prc_private = !X.RDB$PRIVATE_FLAG.NULL && X.RDB$PRIVATE_FLAG != 0;
-
+		}
 		END_FOR
-
-		if (!DSQL_REQUEST(irq_procedure))
-			DSQL_REQUEST(irq_procedure) = handle1;
 
 		if (!procedure)
 		{
@@ -1304,7 +1225,7 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 		SSHORT count = 0, defaults = 0;
 
-		jrd_req* handle2 = CMP_find_request(tdbb, irq_parameters, IRQ_REQUESTS);
+		AutoCacheRequest handle2(tdbb, irq_parameters, IRQ_REQUESTS);
 
 		FOR (REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 			PR IN RDB$PROCEDURE_PARAMETERS
@@ -1314,10 +1235,7 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 				 PR.RDB$PARAMETER_TYPE = type AND
 				 PR.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 			SORTED BY DESCENDING PR.RDB$PARAMETER_NUMBER
-
-			if (!DSQL_REQUEST(irq_parameters))
-				DSQL_REQUEST(irq_parameters) = handle2;
-
+		{
 			const SSHORT pr_collation_id_null = PR.RDB$COLLATION_ID.NULL;
 			const SSHORT pr_collation_id = PR.RDB$COLLATION_ID;
 
@@ -1377,11 +1295,8 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			{
 				defaults++;
 			}
-
+		}
 		END_FOR
-
-		if (!DSQL_REQUEST(irq_parameters))
-			DSQL_REQUEST(irq_parameters) = handle2;
 
 		if (type)
 			procedure->prc_out_count = count;
@@ -1451,23 +1366,17 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 	bool permanent = true;
 
-	jrd_req* handle1 = CMP_find_request(tdbb, irq_rel_ids, IRQ_REQUESTS);
+	AutoCacheRequest handle1(tdbb, irq_rel_ids, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 		REL IN RDB$RELATIONS
 		CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 		WITH REL.RDB$RELATION_NAME EQ name->str_data
 		AND (REL.RDB$RELATION_ID MISSING OR RFR.RDB$FIELD_ID MISSING)
-
-		if (!DSQL_REQUEST(irq_rel_ids))
-			DSQL_REQUEST(irq_rel_ids) = handle1;
-
+	{
 		permanent = false;
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_rel_ids))
-		DSQL_REQUEST(irq_rel_ids) = handle1;
 
 	// Now see if it is in the database
 
@@ -1475,14 +1384,11 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 
 	dsql_rel* relation = NULL;
 
-	jrd_req* handle2 = CMP_find_request(tdbb, irq_relation, IRQ_REQUESTS);
+	AutoCacheRequest handle2(tdbb, irq_relation, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
-
-		if (!DSQL_REQUEST(irq_relation))
-			DSQL_REQUEST(irq_relation) = handle2;
-
+	{
 		fb_utils::exact_name(X.RDB$OWNER_NAME);
 
 		// Allocate from default or permanent pool as appropriate
@@ -1492,9 +1398,8 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 			relation = FB_NEW(pool) dsql_rel(pool);
 			relation->rel_id = X.RDB$RELATION_ID;
 		}
-		else if (!DDL_ids(dsqlScratch)) {
+		else if (!DDL_ids(dsqlScratch))
 			relation = FB_NEW(pool) dsql_rel(pool);
-		}
 
 		// fill out the relation information
 
@@ -1505,28 +1410,22 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 			if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
 				relation->rel_dbkey_length = 8;
 			// CVC: let's see if this is a table or a view.
-			if (!X.RDB$VIEW_BLR.NULL) {
+			if (!X.RDB$VIEW_BLR.NULL)
 				relation->rel_flags |= REL_view;
-			}
-			if (!X.RDB$EXTERNAL_FILE.NULL) {
+			if (!X.RDB$EXTERNAL_FILE.NULL)
 				relation->rel_flags |= REL_external;
-			}
 		}
-
+	}
 	END_FOR
 
-	if (!DSQL_REQUEST(irq_relation))
-		DSQL_REQUEST(irq_relation) = handle2;
-
-	if (!relation) {
+	if (!relation)
 		return NULL;
-	}
 
 	// Lookup field stuff
 
 	dsql_fld** ptr = &relation->rel_fields;
 
-	jrd_req* handle3 = CMP_find_request(tdbb, irq_fields, IRQ_REQUESTS);
+	AutoCacheRequest handle3(tdbb, irq_fields, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE transaction)
 		FLX IN RDB$FIELDS CROSS
@@ -1534,10 +1433,7 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
 		AND RFR.RDB$RELATION_NAME EQ name->str_data
 		SORTED BY RFR.RDB$FIELD_POSITION
-
-		if (!DSQL_REQUEST(irq_fields))
-			DSQL_REQUEST(irq_fields) = handle3;
-
+	{
 		// allocate the field block
 
 		fb_utils::exact_name(RFR.RDB$FIELD_NAME);
@@ -1603,11 +1499,8 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 			if (RFR.RDB$SYSTEM_FLAG == 1 || FLX.RDB$SYSTEM_FLAG == 1)
 				field->fld_flags |= FLD_system;
 		}
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_fields))
-		DSQL_REQUEST(irq_fields) = handle3;
 
 	if (dbb->dbb_relations.get(metaName, temp) && !(temp->rel_flags & REL_dropped))
 	{
@@ -1652,14 +1545,11 @@ bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** rel
 	if (relation)
 		*relation = NULL;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_trigger, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_trigger, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data
-
-		if (!DSQL_REQUEST(irq_trigger))
-			DSQL_REQUEST(irq_trigger) = handle;
-
+	{
 		found = true;
 		*trig_type = X.RDB$TRIGGER_TYPE;
 
@@ -1671,11 +1561,8 @@ bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** rel
 				*relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
 			}
 		}
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_trigger))
-		DSQL_REQUEST(irq_trigger) = handle;
 
 	return found;
 }
@@ -1700,22 +1587,16 @@ bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool found = false;
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_type, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_type, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name->str_data;
-
-		if (!DSQL_REQUEST(irq_type))
-			DSQL_REQUEST(irq_type) = handle;
-
+	{
 		found = true;
 		*value = X.RDB$TYPE;
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_type))
-		DSQL_REQUEST(irq_type) = handle;
 
 	return found;
 }
@@ -1754,15 +1635,12 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 	while (cont)
 	{
-		jrd_req* handle1 = CMP_find_request(tdbb, irq_view_base, IRQ_REQUESTS);
+		AutoCacheRequest handle1(tdbb, irq_view_base, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$VIEW_RELATIONS
 			WITH X.RDB$VIEW_NAME EQ view_name
-
-			if (!DSQL_REQUEST(irq_view_base))
-				DSQL_REQUEST(irq_view_base) = handle1;
-
+		{
 			// return NULL if there is more than one context
 			if (X.RDB$VIEW_CONTEXT != 1 || X.RDB$CONTEXT_TYPE == VCT_PROCEDURE)
 			{
@@ -1787,15 +1665,12 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 				break;
 			}
 
-			jrd_req* handle2 = CMP_find_request(tdbb, irq_view_base_flds, IRQ_REQUESTS);
+			AutoCacheRequest handle2(tdbb, irq_view_base_flds, IRQ_REQUESTS);
 
 			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 				RFL IN RDB$RELATION_FIELDS
 				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
-
-				if (!DSQL_REQUEST(irq_view_base_flds))
-					DSQL_REQUEST(irq_view_base_flds) = handle2;
-
+			{
 				if (RFL.RDB$BASE_FIELD.NULL || RFL.RDB$FIELD_NAME.NULL)
 					continue;
 
@@ -1821,11 +1696,8 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 						}
 					}
 				}
-
+			}
 			END_FOR
-
-			if (!DSQL_REQUEST(irq_view_base_flds))
-				DSQL_REQUEST(irq_view_base_flds) = handle2;
 
 			for (const MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
 			{
@@ -1849,11 +1721,8 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			}
 
 			first = false;
-
+		}
 		END_FOR
-
-		if (!DSQL_REQUEST(irq_view_base))
-			DSQL_REQUEST(irq_view_base) = handle1;
 	}
 
 	if (!relation)
@@ -1886,14 +1755,11 @@ dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsql
 
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
-	jrd_req* handle = CMP_find_request(tdbb, irq_view, IRQ_REQUESTS);
+	AutoCacheRequest handle(tdbb, irq_view, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name
-
-		if (!DSQL_REQUEST(irq_view))
-			DSQL_REQUEST(irq_view) = handle;
-
+	{
 		fb_utils::exact_name(X.RDB$CONTEXT_NAME);
 		fb_utils::exact_name(X.RDB$RELATION_NAME);
 
@@ -1911,11 +1777,8 @@ dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsql
 
 		if (relation)
 			return relation;
-
+	}
 	END_FOR
-
-	if (!DSQL_REQUEST(irq_view))
-		DSQL_REQUEST(irq_view) = handle;
 
 	return NULL;
 }

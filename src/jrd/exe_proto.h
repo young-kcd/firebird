@@ -121,9 +121,9 @@ namespace Jrd
 			Database* dbb = JRD_get_thread_data()->getDatabase();
 
 			if (which == IRQ_REQUESTS)
-				REQUEST(id) = request;
+				dbb->dbb_internal[id] = request;
 			else if (which == DYN_REQUESTS)
-				DYN_REQUEST(id) = request;
+				dbb->dbb_dyn_req[id] = request;
 			else
 			{
 				fb_assert(false);

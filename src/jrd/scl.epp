@@ -451,21 +451,16 @@ void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
-	jrd_req* request = CMP_find_request(tdbb, irq_pkg_security, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_pkg_security, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
 		PKG IN RDB$PACKAGES
 		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
-
-        if (!REQUEST(irq_pkg_security))
-			REQUEST(irq_pkg_security) = request;
-
+	{
 		if (!PKG.RDB$SECURITY_CLASS.NULL)
 			s_class = SCL_get_class(tdbb, PKG.RDB$SECURITY_CLASS);
-	END_FOR;
-
-	if (!REQUEST(irq_pkg_security))
-		REQUEST(irq_pkg_security) = request;
+	}
+	END_FOR
 
 	SCL_check_access(tdbb, s_class, 0, id_package, name, mask, SCL_object_package, name);
 }
@@ -496,22 +491,17 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
-	jrd_req* request = CMP_find_request(tdbb, irq_p_security, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_p_security, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
 		SPROC IN RDB$PROCEDURES
 		WITH SPROC.RDB$PROCEDURE_NAME EQ name.c_str() AND
 			 SPROC.RDB$PACKAGE_NAME MISSING
-
-        if (!REQUEST(irq_p_security))
-			REQUEST(irq_p_security) = request;
-
+	{
 		if (!SPROC.RDB$SECURITY_CLASS.NULL)
 			s_class = SCL_get_class(tdbb, SPROC.RDB$SECURITY_CLASS);
-	END_FOR;
-
-	if (!REQUEST(irq_p_security))
-		REQUEST(irq_p_security) = request;
+	}
+	END_FOR
 
 	SCL_check_access(tdbb, s_class, 0, id_procedure, name, mask, SCL_object_procedure, name);
 }
@@ -542,22 +532,17 @@ void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
-	jrd_req* request = CMP_find_request(tdbb, irq_f_security, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_f_security, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
 		SFUN IN RDB$FUNCTIONS
 		WITH SFUN.RDB$FUNCTION_NAME EQ name.c_str() AND
 			 SFUN.RDB$PACKAGE_NAME MISSING
-
-        if (!REQUEST(irq_f_security))
-			REQUEST(irq_f_security) = request;
-
+	{
 		if (!SFUN.RDB$SECURITY_CLASS.NULL)
 			s_class = SCL_get_class(tdbb, SFUN.RDB$SECURITY_CLASS);
-	END_FOR;
-
-	if (!REQUEST(irq_f_security))
-		REQUEST(irq_f_security) = request;
+	}
+	END_FOR
 
 	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, SCL_object_function, name);
 }
@@ -588,20 +573,15 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
-	jrd_req* request = CMP_find_request(tdbb, irq_v_security, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_v_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ name.c_str()
-
-        if (!REQUEST(irq_v_security))
-			REQUEST(irq_v_security) = request;
-
+	{
         if (!REL.RDB$SECURITY_CLASS.NULL)
 			s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
-	END_FOR;
-
-	if (!REQUEST(irq_v_security))
-		REQUEST(irq_v_security) = request;
+	}
+	END_FOR
 
 	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, name);
 }
@@ -753,21 +733,14 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 	{
 		if (!create)
 		{
-			jrd_req* request = CMP_find_request(tdbb, irq_get_role_name, IRQ_REQUESTS);
+			AutoCacheRequest request(tdbb, irq_get_role_name, IRQ_REQUESTS);
 
 			FOR(REQUEST_HANDLE request) X IN RDB$ROLES
 				WITH X.RDB$ROLE_NAME EQ login_name
-
-                if (!REQUEST(irq_get_role_name))
-                    REQUEST(irq_get_role_name) = request;
-
-				EXE_unwind(tdbb, request);
+			{
 				ERR_post(Arg::Gds(isc_login_same_as_role_name) << Arg::Str(login_name));
-
-			END_FOR;
-
-			if (!REQUEST(irq_get_role_name))
-				REQUEST(irq_get_role_name) = request;
+			}
+			END_FOR
 		}
 	}
 
@@ -778,7 +751,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
     {
         bool found = false;
 
-        jrd_req* request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
+        AutoCacheRequest request(tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
         // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
         // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
@@ -796,53 +769,37 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
                  OR UU.RDB$USER          EQ "PUBLIC")
             AND UU.RDB$USER_TYPE         EQ obj_user
             AND UU.RDB$PRIVILEGE         EQ "M"
-
-            if (!REQUEST (irq_verify_role_name))
-                REQUEST (irq_verify_role_name) = request;
-
+		{
             if (!UU.RDB$USER.NULL)
                 found = true;
-
-        END_FOR;
-
-        if (!REQUEST (irq_verify_role_name))
-            REQUEST (irq_verify_role_name) = request;
+		}
+        END_FOR
 
 		if (!found && (tempId.usr_flags & USR_trole))
 		{
-            jrd_req* request = CMP_find_request (tdbb, irq_verify_trusted_role, IRQ_REQUESTS);
+            request.reset(tdbb, irq_verify_trusted_role, IRQ_REQUESTS);
 
             FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
     	        WITH RR.RDB$ROLE_NAME  EQ sql_role
         	    AND RR.RDB$SYSTEM_FLAG > 0
-
-        	    if (!REQUEST (irq_verify_trusted_role))
-                    REQUEST (irq_verify_trusted_role) = request;
-
+			{
                 if (RR.RDB$SYSTEM_FLAG & ROLE_FLAG_MAY_TRUST)
                     found = true;
-
-            END_FOR;
-
-            if (!REQUEST (irq_verify_trusted_role))
-	            REQUEST (irq_verify_trusted_role) = request;
+			}
+            END_FOR
 		}
 
         if (!found)
-		{
             role_name = NULL_ROLE;
-		}
     }
 
 	if (sql_role)
 	{
-        if (role_name != NULL_ROLE) {
+        if (role_name != NULL_ROLE)
             role_name = sql_role;
-        }
 	}
-	else {
+	else
 		role_name = NULL_ROLE;
-	}
 
 	MemoryPool& pool = *attachment->att_pool;
 	UserId* const user = FB_NEW(pool) UserId(pool, tempId);
@@ -1122,14 +1079,11 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 
 	SecurityClass::flags_t privileges = SCL_scanned;
 
-	jrd_req* request = CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_l_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$SECURITY_CLASSES
 		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name.c_str()
-
-        if (!REQUEST(irq_l_security))
-			REQUEST(irq_l_security) = request;
-
+	{
 		privileges |= SCL_exists;
 		blb* blob = BLB_open(tdbb, sysTransaction, &X.RDB$ACL);
 		UCHAR* buffer = acl.getBuffer(ACL_BLOB_BUFFER_SIZE);
@@ -1154,13 +1108,9 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 		acl.shrink(end - buffer);
 
 		if (acl.getCount() > 0)
-		{
 			privileges |= walk_acl(tdbb, acl, view, obj_type, obj_name);
-		}
-	END_FOR;
-
-	if (!REQUEST(irq_l_security))
-		REQUEST(irq_l_security) = request;
+	}
+	END_FOR
 
 	return privileges;
 }
@@ -1265,7 +1215,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 							++q;
 						}
 						hit = false;
-						jrd_req* request = CMP_find_request(tdbb, irq_get_role_mem, IRQ_REQUESTS);
+						AutoCacheRequest request(tdbb, irq_get_role_mem, IRQ_REQUESTS);
 
 						FOR(REQUEST_HANDLE request) U IN RDB$USER_PRIVILEGES WITH
 							(U.RDB$USER EQ login_name OR
@@ -1274,16 +1224,11 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 								U.RDB$RELATION_NAME EQ user.usr_sql_role_name.c_str() AND
 								U.RDB$OBJECT_TYPE EQ obj_sql_role AND
 								U.RDB$PRIVILEGE EQ "M"
-
-                            if (!REQUEST(irq_get_role_mem))
-                                REQUEST(irq_get_role_mem) = request;
-
+						{
 							if (!U.RDB$USER.NULL)
 								hit = true;
-						END_FOR;
-
-						if (!REQUEST(irq_get_role_mem))
-							REQUEST(irq_get_role_mem) = request;
+						}
+						END_FOR
 					}
 					break;
 

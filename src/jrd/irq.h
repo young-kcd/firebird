@@ -27,8 +27,6 @@
 #ifndef JRD_IRQ_H
 #define JRD_IRQ_H
 
-#define REQUEST(irt) dbb->dbb_internal[irt]
-
 enum irq_type_t
 {
 	irq_s_pages,			// store PAGES
