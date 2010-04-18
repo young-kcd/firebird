@@ -1,3 +1,23 @@
+2010-04-18 03:10  asfernandes
+
+	* firebird2/src/jrd/: dyn.epp (1.174), dyn.h (1.52), dyn_def.epp
+	(1.208), dyn_del.epp (1.98), dyn_mod.epp (1.145), dyn_util.epp
+	(1.80), exe_proto.h (1.25):
+
+	Use AutoCacheRequest for DYN requests
+
+2010-04-18 02:36  dimitr
+
+	* firebird2/src/utilities/gstat/dba.epp (1.132):
+
+	Correction.
+
+2010-04-17 17:14  asfernandes
+
+	* firebird2/builds/posix/make.shared.targets (1.36):
+
+	Fix parallel make
+
 2010-04-16 16:49  alexpeshkoff
 
 	* firebird2/src/burp/burp.cpp (1.181):
