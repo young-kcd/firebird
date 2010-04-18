@@ -1559,14 +1559,9 @@ static USHORT get_format_length(ISC_STATUS* status_vector, isc_db_handle databas
 
 	buffer.resize(return_length);
 
-	USHORT count = buffer[0] | (buffer[1] << 8);
-	USHORT format_length = 0;
-	for (const Ods::Descriptor* desc = (Ods::Descriptor*) &buffer[2]; count--; desc++)
-	{
-		format_length += desc->dsc_length;
-	}
-
-	return format_length;
+	const USHORT count = buffer[0] | (buffer[1] << 8);
+	const Ods::Descriptor* const desc = (Ods::Descriptor*) &buffer[2] + count - 1;
+	return desc->dsc_offset + desc->dsc_length;
 }
 
 
